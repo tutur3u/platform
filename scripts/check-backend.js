@@ -24,6 +24,7 @@ const ROOT_DIR = path.resolve(__dirname, '..');
 const BACKEND_DIR = path.join(ROOT_DIR, 'apps', 'backend');
 const WORKER_TARGET = 'wasm32-unknown-unknown';
 const BACKEND_CHECK_ENV = {
+  CARGO_BUILD_JOBS: '2',
   CARGO_PROFILE_TEST_DEBUG: '0',
 };
 

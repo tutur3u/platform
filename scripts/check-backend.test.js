@@ -34,7 +34,9 @@ test('check covers the four CI gates (format, clippy, test, worker)', () => {
 });
 
 test('backend checks use the CI memory profile for test builds', () => {
+  assert.equal(BACKEND_CHECK_ENV.CARGO_BUILD_JOBS, '2');
   assert.equal(BACKEND_CHECK_ENV.CARGO_PROFILE_TEST_DEBUG, '0');
+  assert.match(WORKFLOW, /CARGO_BUILD_JOBS: "2"/u);
   assert.match(WORKFLOW, /CARGO_PROFILE_TEST_DEBUG: "0"/u);
 });
 
