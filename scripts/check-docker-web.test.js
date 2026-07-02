@@ -270,7 +270,7 @@ test('tanstack web healthcheck probes the runner and backend health endpoint', a
   });
 
   assert.deepEqual(urls, [
-    'http://127.0.0.1:9123/',
+    'http://127.0.0.1:9123/__platform/drain-status',
     'http://backend:7820/healthz',
   ]);
 });

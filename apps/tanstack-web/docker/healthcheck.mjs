@@ -48,7 +48,7 @@ async function fetchForHealth(fetchImpl, url) {
 export function getTanStackRunnerHealthUrl(env = process.env) {
   const port = firstConfiguredValue(env.PORT) ?? DEFAULT_TANSTACK_WEB_PORT;
 
-  return `http://127.0.0.1:${port}/`;
+  return `http://127.0.0.1:${port}/__platform/drain-status`;
 }
 
 export function getBackendHealthUrl(env = process.env) {
