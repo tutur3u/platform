@@ -56,7 +56,7 @@
     "@types/node": "^26.0.1",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
-    "@typescript/native-preview": "7.0.0-dev.20260630.1",
+    "@typescript/native-preview": "7.0.0-dev.20260701.1",
     "babel-plugin-react-compiler": "^1.0.0",
     "postcss": "^8.5.16",
     "typescript": "7.0.1-rc"
