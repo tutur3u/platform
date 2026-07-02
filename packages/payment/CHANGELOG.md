@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.1](https://github.com/tutur3u/platform/compare/payment-v0.3.0...payment-v0.3.1) (2026-07-02)
+
+
+### Bug Fixes
+
+* **infrastructure:** default docker web to native builds ([7d89f00](https://github.com/tutur3u/platform/commit/7d89f004f75ab12eddc3cb92df5a1e6a7255fe0d))
+
 ## [0.3.0](https://github.com/tutur3u/platform/compare/payment-v0.2.0...payment-v0.3.0) (2026-06-17)
 
 

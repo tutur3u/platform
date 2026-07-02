@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.13.0](https://github.com/tutur3u/platform/compare/database-v1.12.0...database-v1.13.0) (2026-07-02)
+
+
+### Features
+
+* **cron:** add managed cron operations ([24012e6](https://github.com/tutur3u/platform/commit/24012e69771a2be480824aad2916a218afee0d20))
+
+
+### Bug Fixes
+
+* **cron:** recover stale docker runner ([33cbe47](https://github.com/tutur3u/platform/commit/33cbe471741f872cb15e8b9895465b601ac5ace1))
+* **security:** limit auth recovery code attempts ([72d454c](https://github.com/tutur3u/platform/commit/72d454c507b0d4b7e69c7b38ad2099dbb83193b2))
+
 ## [1.12.0](https://github.com/tutur3u/platform/compare/database-v1.11.0...database-v1.12.0) (2026-06-29)
 
 

@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.11.1](https://github.com/tutur3u/platform/compare/ui-v0.11.0...ui-v0.11.1) (2026-07-02)
+
+
+### Bug Fixes
+
+* **cli:** preserve markdown tables in task descriptions ([9faf8ba](https://github.com/tutur3u/platform/commit/9faf8ba44b92565a9dfc2949c496654fc1fea9b3))
+* **tasks:** refresh task template placeholders ([0c3c309](https://github.com/tutur3u/platform/commit/0c3c30935f67e3e64d548c8a13584fd597e887b8))
+* **ui:** stabilize task property popover handoff ([8fb2e62](https://github.com/tutur3u/platform/commit/8fb2e62904d34a3ae7894bfbbb66c285fcf1a1bd))
+
 ## [0.11.0](https://github.com/tutur3u/platform/compare/ui-v0.10.0...ui-v0.11.0) (2026-06-29)
 
 

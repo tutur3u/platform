@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.4.1](https://github.com/tutur3u/platform/compare/hive-v0.4.0...hive-v0.4.1) (2026-07-02)
+
+
+### Bug Fixes
+
+* **docker:** stabilize native blue-green deploy ([f41fbed](https://github.com/tutur3u/platform/commit/f41fbedc07a5a5effa3ef1d4226fa11742cb7de4))
+* **infrastructure:** default docker web to native builds ([7d89f00](https://github.com/tutur3u/platform/commit/7d89f004f75ab12eddc3cb92df5a1e6a7255fe0d))
+
+
+### Performance Improvements
+
+* **tooling:** improve service build caches ([1a7a5bf](https://github.com/tutur3u/platform/commit/1a7a5bf55c81450914283efed653a72c7b491c2a))
+
 ## [0.4.0](https://github.com/tutur3u/platform/compare/hive-v0.3.1...hive-v0.4.0) (2026-06-29)
 
 
