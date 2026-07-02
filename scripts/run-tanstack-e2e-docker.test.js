@@ -1,5 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const os = require('node:os');
 const path = require('node:path');
 
 const {
@@ -12,7 +14,10 @@ const {
   buildCommandPlan,
   getBackendPort,
   getComposeDownArgs,
+  getComposeLogsArgs,
+  getComposePsArgs,
   getComposeUpArgs,
+  getHealthInspectDetailArgs,
   getHealthInspectArgs,
   getPlaywrightArgs,
   getTanStackWebPort,
@@ -125,6 +130,25 @@ test('getComposeDownArgs tears down the same compose file', () => {
   ]);
 });
 
+test('getComposePsArgs and getComposeLogsArgs scope diagnostics to the dual stack', () => {
+  assert.deepEqual(getComposePsArgs({ composeFile: DEFAULT_COMPOSE_FILE }), [
+    'compose',
+    '-f',
+    DEFAULT_COMPOSE_FILE,
+    'ps',
+    '-a',
+  ]);
+  assert.deepEqual(getComposeLogsArgs({ composeFile: DEFAULT_COMPOSE_FILE }), [
+    'compose',
+    '-f',
+    DEFAULT_COMPOSE_FILE,
+    'logs',
+    '--tail=300',
+    'backend',
+    'tanstack-web',
+  ]);
+});
+
 test('getHealthInspectArgs polls Docker health status for a container', () => {
   assert.deepEqual(HEALTH_CONTAINERS, [
     BACKEND_CONTAINER,
@@ -135,6 +159,15 @@ test('getHealthInspectArgs polls Docker health status for a container', () => {
     '--format',
     '{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}',
     'backend-dual',
+  ]);
+});
+
+test('getHealthInspectDetailArgs captures only Docker healthcheck state', () => {
+  assert.deepEqual(getHealthInspectDetailArgs('tanstack-web-dual'), [
+    'inspect',
+    '--format',
+    '{{json .State.Health}}',
+    'tanstack-web-dual',
   ]);
 });
 
@@ -170,6 +203,15 @@ test('buildCommandPlan plans up/build, health, playwright, and teardown', () => 
   assert.deepEqual(
     plan.healthChecks.map((check) => check.container),
     [BACKEND_CONTAINER, TANSTACK_WEB_CONTAINER]
+  );
+  assert.deepEqual(
+    plan.diagnostics.map((diagnostic) => diagnostic.fileName),
+    [
+      'docker-compose-ps.txt',
+      'docker-compose-services.log',
+      'backend-dual-health.json',
+      'tanstack-web-dual-health.json',
+    ]
   );
   assert.ok(
     plan.healthChecks.every(
@@ -386,4 +428,81 @@ test('runTanStackE2EDocker always tears down even when Playwright fails', async 
     ['bun', 'x playwright test'],
     ['docker', `compose -f ${DEFAULT_COMPOSE_FILE} down`],
   ]);
+});
+
+test('runTanStackE2EDocker collects diagnostics before teardown when health fails', async () => {
+  const diagnosticsDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'tanstack-e2e-diagnostics-')
+  );
+  const events = [];
+
+  await assert.rejects(
+    () =>
+      runTanStackE2EDocker([], {
+        diagnosticsDir,
+        env: {},
+        execFile: (_command, args, _options, callback) => {
+          const joinedArgs = args.join(' ');
+          events.push(`exec:${joinedArgs}`);
+
+          if (joinedArgs.includes('{{if .State.Health}}')) {
+            callback(null, 'unhealthy\n', '');
+            return;
+          }
+
+          if (joinedArgs.includes('ps -a')) {
+            callback(null, 'compose ps output\n', '');
+            return;
+          }
+
+          if (joinedArgs.includes('logs --tail=300')) {
+            callback(null, 'compose logs output\n', '');
+            return;
+          }
+
+          if (joinedArgs.includes('{{json .State.Health}}')) {
+            callback(null, '{"Status":"unhealthy"}\n', '');
+            return;
+          }
+
+          callback(null, '', '');
+        },
+        healthIntervalMs: 0,
+        healthTimeoutMs: 1,
+        output: { write() {} },
+        run: async (command, args) => {
+          events.push(`run:${command} ${args.join(' ')}`);
+        },
+        sleep: async () => {},
+      }),
+    /Timed out waiting for backend-dual, tanstack-web-dual to become healthy/u
+  );
+
+  const diagnosticIndex = events.findIndex((event) =>
+    event.includes('logs --tail=300 backend tanstack-web')
+  );
+  const teardownIndex = events.findIndex((event) =>
+    event.includes(`compose -f ${DEFAULT_COMPOSE_FILE} down`)
+  );
+
+  assert.ok(diagnosticIndex > -1);
+  assert.ok(teardownIndex > diagnosticIndex);
+  assert.equal(
+    fs.readFileSync(path.join(diagnosticsDir, 'docker-compose-ps.txt'), 'utf8'),
+    'compose ps output\n'
+  );
+  assert.equal(
+    fs.readFileSync(
+      path.join(diagnosticsDir, 'docker-compose-services.log'),
+      'utf8'
+    ),
+    'compose logs output\n'
+  );
+  assert.equal(
+    fs.readFileSync(
+      path.join(diagnosticsDir, 'tanstack-web-dual-health.json'),
+      'utf8'
+    ),
+    '{"Status":"unhealthy"}\n'
+  );
 });

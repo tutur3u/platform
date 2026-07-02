@@ -43,6 +43,7 @@ const {
   execFile: nodeExecFile,
   spawn: nodeSpawn,
 } = require('node:child_process');
+const fs = require('node:fs/promises');
 const path = require('node:path');
 
 const ROOT_DIR = path.resolve(__dirname, '..');
@@ -58,6 +59,12 @@ const HEALTH_CONTAINERS = Object.freeze([
 
 const DEFAULT_BACKEND_PORT = '7820';
 const DEFAULT_TANSTACK_WEB_PORT = '7824';
+const DEFAULT_DIAGNOSTICS_DIR = path.join(
+  ROOT_DIR,
+  'tmp',
+  'e2e-diagnostics',
+  'tanstack-dual-stack'
+);
 
 const DEFAULT_HEALTH_TIMEOUT_MS = 300_000;
 const DEFAULT_HEALTH_INTERVAL_MS = 3_000;
@@ -192,6 +199,22 @@ function getComposeDownArgs(options) {
   return ['compose', '-f', options.composeFile, 'down'];
 }
 
+function getComposePsArgs(options) {
+  return ['compose', '-f', options.composeFile, 'ps', '-a'];
+}
+
+function getComposeLogsArgs(options) {
+  return [
+    'compose',
+    '-f',
+    options.composeFile,
+    'logs',
+    '--tail=300',
+    'backend',
+    'tanstack-web',
+  ];
+}
+
 function getHealthInspectArgs(container) {
   return [
     'inspect',
@@ -199,6 +222,10 @@ function getHealthInspectArgs(container) {
     '{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}',
     container,
   ];
+}
+
+function getHealthInspectDetailArgs(container) {
+  return ['inspect', '--format', '{{json .State.Health}}', container];
 }
 
 function getPlaywrightArgs(options) {
@@ -218,6 +245,23 @@ function buildCommandPlan(options, env = process.env) {
       command: 'docker',
       container,
     })),
+    diagnostics: [
+      {
+        args: getComposePsArgs(options),
+        command: 'docker',
+        fileName: 'docker-compose-ps.txt',
+      },
+      {
+        args: getComposeLogsArgs(options),
+        command: 'docker',
+        fileName: 'docker-compose-services.log',
+      },
+      ...HEALTH_CONTAINERS.map((container) => ({
+        args: getHealthInspectDetailArgs(container),
+        command: 'docker',
+        fileName: `${container}-health.json`,
+      })),
+    ],
     playwright: {
       args: getPlaywrightArgs(options),
       command: 'bun',
@@ -352,6 +396,47 @@ async function waitForContainersHealthy(plan, options = {}) {
   );
 }
 
+async function collectTanStackE2EDiagnostics(plan, options = {}) {
+  const env = options.env ?? process.env;
+  const execFileImpl = options.execFile ?? nodeExecFile;
+  const output = options.output ?? process.stderr;
+  const diagnosticsDir = options.diagnosticsDir ?? DEFAULT_DIAGNOSTICS_DIR;
+
+  await fs.mkdir(diagnosticsDir, { recursive: true });
+
+  for (const diagnostic of plan.diagnostics) {
+    const filePath = path.join(diagnosticsDir, diagnostic.fileName);
+
+    output.write(
+      `[tanstack-e2e] Collecting diagnostics: ${diagnostic.command} ${diagnostic.args.join(
+        ' '
+      )}\n`
+    );
+
+    try {
+      const { stderr, stdout } = await execFileForOutput(
+        diagnostic.command,
+        diagnostic.args,
+        { env },
+        execFileImpl
+      );
+      await fs.writeFile(filePath, `${stdout}${stderr}`, 'utf8');
+    } catch (error) {
+      await fs.writeFile(
+        filePath,
+        `Diagnostic command failed: ${
+          error instanceof Error ? error.message : String(error)
+        }\n`,
+        'utf8'
+      );
+    }
+
+    output.write(
+      `[tanstack-e2e] Diagnostic output: ${path.relative(ROOT_DIR, filePath)}\n`
+    );
+  }
+}
+
 async function runTanStackE2EDocker(argv = process.argv.slice(2), deps = {}) {
   const env = deps.env ?? process.env;
   const output = deps.output ?? process.stderr;
@@ -384,7 +469,10 @@ async function runTanStackE2EDocker(argv = process.argv.slice(2), deps = {}) {
     await waitForContainersHealthy(plan, {
       env,
       execFile: execFileImpl,
+      intervalMs: deps.healthIntervalMs,
       output,
+      sleep: deps.sleep,
+      timeoutMs: deps.healthTimeoutMs,
     });
 
     output.write(`[tanstack-e2e] Running Playwright against ${plan.baseUrl}\n`);
@@ -394,6 +482,23 @@ async function runTanStackE2EDocker(argv = process.argv.slice(2), deps = {}) {
     });
   } catch (error) {
     runError = error;
+
+    try {
+      await collectTanStackE2EDiagnostics(plan, {
+        diagnosticsDir: deps.diagnosticsDir,
+        env,
+        execFile: execFileImpl,
+        output,
+      });
+    } catch (diagnosticsError) {
+      output.write(
+        `[tanstack-e2e] Diagnostics failed: ${
+          diagnosticsError instanceof Error
+            ? diagnosticsError.message
+            : String(diagnosticsError)
+        }\n`
+      );
+    }
   }
 
   if (stackTouched && plan.teardown) {
@@ -442,6 +547,7 @@ if (require.main === module) {
 
 module.exports = {
   BACKEND_CONTAINER,
+  DEFAULT_DIAGNOSTICS_DIR,
   DEFAULT_BACKEND_PORT,
   DEFAULT_COMPOSE_FILE,
   DEFAULT_HEALTH_INTERVAL_MS,
@@ -451,10 +557,14 @@ module.exports = {
   HELP_TEXT,
   TANSTACK_WEB_CONTAINER,
   buildCommandPlan,
+  collectTanStackE2EDiagnostics,
   execFileForOutput,
   getBackendPort,
   getComposeDownArgs,
+  getComposeLogsArgs,
+  getComposePsArgs,
   getComposeUpArgs,
+  getHealthInspectDetailArgs,
   getHealthInspectArgs,
   getPlaywrightArgs,
   getTanStackWebPort,
