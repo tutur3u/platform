@@ -522,11 +522,13 @@ fn migration_manifest_endpoint_returns_checked_inventory() {
             .as_array()
             .unwrap()
             .iter()
-            .any(|route| route["routePath"]
-                == "/api/v1/infrastructure/migrate/grouped-score-names"
-                && route["methods"].as_array().unwrap().len() == 1
-                && route["methods"][0] == "PUT"
-                && route["status"] == "migrated")
+            .any(
+                |route| route["routePath"] == "/api/workspaces/:wsId/products/categories/migrate"
+                    && route["methods"].as_array().unwrap().len() == 1
+                    && route["methods"][0] == "PUT"
+                    && route["status"] == "accepted-removal"
+                    && route["targetOwner"] == "rust-backend",
+            )
     );
     assert!(
         response.body["routes"]
