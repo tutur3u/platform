@@ -75,6 +75,7 @@ const {
   hasBlueGreenProxyHostPortBindings,
   isBlueGreenSupportBuildSkipped,
   isBlueGreenWebBuildSkipped,
+  isBlueGreenCronRunnerEnabled,
   isBlueGreenSupermemoryEnabled,
   isNativeWebBuildEnabled,
   isNativeWebRunnerBuildxEnabled,
@@ -660,6 +661,46 @@ test('blue-green support services honor explicit Supermemory disablement', () =>
       targetColor: 'green',
     }),
     ['web-green']
+  );
+});
+
+test('blue-green support services honor explicit cron-runner disablement', () => {
+  const disabledEnv = { DOCKER_WEB_CRON_RUNNER_ENABLED: '0' };
+
+  assert.equal(isBlueGreenCronRunnerEnabled({}), true);
+  assert.equal(isBlueGreenCronRunnerEnabled(disabledEnv), false);
+  assert.deepEqual(getBlueGreenHealthGateSupportServices(disabledEnv), [
+    'backend',
+    'markitdown',
+    'storage-unzip-proxy',
+    'supermemory',
+    'web-docker-control',
+  ]);
+  assert.deepEqual(
+    getBlueGreenDeploymentBuildServices({
+      changedFiles: ['apps/web/docker/cron-runner-entrypoint.js'],
+      env: disabledEnv,
+      targetColor: 'green',
+    }),
+    ['web-green']
+  );
+  assert.deepEqual(
+    getBlueGreenDeploymentBuildServices({
+      env: disabledEnv,
+      forceBuildSupportServices: true,
+      targetColor: 'blue',
+    }),
+    [
+      'web-blue',
+      'backend',
+      'hive-blue',
+      'hive-realtime',
+      'meet-realtime',
+      'markitdown',
+      'storage-unzip-proxy',
+      'supermemory',
+      'web-docker-control',
+    ]
   );
 });
 
