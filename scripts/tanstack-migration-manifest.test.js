@@ -87,6 +87,23 @@ function writeJson(filePath, value) {
   fs.writeFileSync(filePath, `${JSON.stringify(value, null, 2)}\n`);
 }
 
+function listFilesRecursive(dir, predicate) {
+  const entries = fs.readdirSync(dir, { withFileTypes: true });
+  const files = [];
+
+  for (const entry of entries) {
+    const entryPath = path.join(dir, entry.name);
+
+    if (entry.isDirectory()) {
+      files.push(...listFilesRecursive(entryPath, predicate));
+    } else if (!predicate || predicate(entryPath)) {
+      files.push(entryPath);
+    }
+  }
+
+  return files;
+}
+
 test('routePathFromDirectory normalizes route groups and dynamic segments', () => {
   assert.equal(
     routePathFromDirectory('[locale]/(dashboard)/[wsId]/tasks/[taskId]'),
@@ -97,6 +114,44 @@ test('routePathFromDirectory normalizes route groups and dynamic segments', () =
     '/api/files/*path'
   );
   assert.equal(routePathFromDirectory('docs/[[...slug]]'), '/docs/*slug?');
+});
+
+test('web and TanStack E2E skip infrastructure-app accepted-removal routes', () => {
+  const rootDir = path.resolve(__dirname, '..');
+  const e2eDirs = [
+    path.join(rootDir, 'apps', 'web', 'e2e'),
+    path.join(rootDir, 'apps', 'tanstack-web', 'e2e'),
+  ];
+  const forbiddenFragments = [
+    '/api/v1/infrastructure/ai/models',
+    '/api/v1/infrastructure/app-coordination',
+    '/api/v1/infrastructure/lessons',
+    '/api/v1/infrastructure/migrate/',
+    '/api/v1/infrastructure/post-email-queue',
+    '/api/v1/infrastructure/user-monthly-report-logs',
+    '/api/v1/infrastructure/user-monthly-reports',
+    'infrastructure/ai-agents',
+  ];
+  const offenders = [];
+
+  for (const e2eDir of e2eDirs) {
+    for (const filePath of listFilesRecursive(
+      e2eDir,
+      (candidate) => candidate.endsWith('.ts') || candidate.endsWith('.tsx')
+    )) {
+      const content = fs.readFileSync(filePath, 'utf8');
+
+      for (const fragment of forbiddenFragments) {
+        if (content.includes(fragment)) {
+          offenders.push(
+            `${path.relative(rootDir, filePath)} references ${fragment}`
+          );
+        }
+      }
+    }
+  }
+
+  assert.deepEqual(offenders, []);
 });
 
 test('extractRouteMethods finds function, const, and named route exports', () => {

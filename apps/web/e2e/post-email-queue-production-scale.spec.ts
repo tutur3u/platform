@@ -36,32 +36,6 @@ type PostsApiResponse = {
   };
 };
 
-type QueueAnalyticsResponse = {
-  ageBuckets: Array<{
-    bucket: string;
-    failed: number;
-    processing: number;
-    queued: number;
-    total: number;
-  }>;
-  failureReasons: Array<{
-    reason: string;
-    total: number;
-  }>;
-  health: {
-    staleQueued1h: number;
-    staleQueued24h: number;
-  };
-  recentBatches: Array<unknown>;
-  summary: CountSummary;
-  workspaceBreakdown: Array<{
-    staleQueued1h: number;
-    staleQueued24h: number;
-    total: number;
-    ws_id: string | null;
-  }>;
-};
-
 type CronResponse = {
   claimed?: number;
   diagnostics: {
@@ -183,38 +157,6 @@ test.describe('Post email queue production scale', () => {
       await expect(page.getByText('Review Stage')).toBeVisible();
       await expect(page.getByText('Delivery Status').first()).toBeVisible();
 
-      const queueAnalyticsResponse = await request.get(
-        '/api/v1/infrastructure/post-email-queue',
-        { failOnStatusCode: false }
-      );
-      const queueAnalytics = await expectJsonResponse<QueueAnalyticsResponse>(
-        queueAnalyticsResponse
-      );
-
-      expect(queueAnalytics.summary.queued).toBeGreaterThanOrEqual(
-        fixture.approvedQueuedRows
-      );
-      expect(queueAnalytics.health.staleQueued1h).toBeGreaterThanOrEqual(250);
-      expect(queueAnalytics.health.staleQueued24h).toBeGreaterThanOrEqual(25);
-      expect(
-        queueAnalytics.ageBuckets.find((bucket) => bucket.bucket === 'over_24h')
-          ?.queued
-      ).toBeGreaterThanOrEqual(25);
-      expect(
-        queueAnalytics.failureReasons.some(
-          (reason) => reason.reason === 'timeout'
-        )
-      ).toBe(true);
-      expect(
-        queueAnalytics.workspaceBreakdown.some(
-          (workspace) =>
-            workspace.ws_id === fixture?.workspaceId &&
-            workspace.total >= fixture.approvedQueuedRows + 200 &&
-            workspace.staleQueued1h >= 250 &&
-            workspace.staleQueued24h >= 25
-        )
-      ).toBe(true);
-
       const cronResponse = await request.get(
         '/api/cron/process-post-email-queue?debug=1&limit=200&sendLimit=200',
         {
@@ -234,24 +176,6 @@ test.describe('Post email queue production scale', () => {
         fixture.approvedQueuedRows
       );
       expect(cron.diagnostics.queueAfter.total).toBeGreaterThan(0);
-
-      const queueAnalyticsAfterResponse = await request.get(
-        '/api/v1/infrastructure/post-email-queue',
-        { failOnStatusCode: false }
-      );
-      const queueAnalyticsAfter =
-        await expectJsonResponse<QueueAnalyticsResponse>(
-          queueAnalyticsAfterResponse
-        );
-
-      expect(queueAnalyticsAfter.summary.total).toBeGreaterThan(0);
-      expect(
-        queueAnalyticsAfter.workspaceBreakdown.some(
-          (workspace) =>
-            workspace.ws_id === fixture?.workspaceId && workspace.total > 0
-        )
-      ).toBe(true);
-      expect(queueAnalyticsAfter.recentBatches.length).toBeGreaterThan(0);
     } finally {
       if (fixture) {
         await cleanupPostEmailQueueScaleFixture({ fixture, request });
