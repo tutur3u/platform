@@ -52,7 +52,7 @@
     "@types/react": "^19.2.17",
     "@vitejs/plugin-react": "^6.0.3",
     "typescript": "7.0.1-rc",
-    "vite": "^8.1.0",
+    "vite": "^8.1.2",
     "vitest": "^4.1.9"
   },
   "exports": {

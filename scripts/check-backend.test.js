@@ -3,7 +3,11 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const { BACKEND_CHECK_STEPS, WORKER_TARGET } = require('./check-backend.js');
+const {
+  BACKEND_CHECK_ENV,
+  BACKEND_CHECK_STEPS,
+  WORKER_TARGET,
+} = require('./check-backend.js');
 
 const ROOT_DIR = path.resolve(__dirname, '..');
 const WORKFLOW = fs.readFileSync(
@@ -27,6 +31,11 @@ test('every backend check step mirrors a command in rust-backend.yml', () => {
 test('check covers the four CI gates (format, clippy, test, worker)', () => {
   const names = BACKEND_CHECK_STEPS.map((s) => s.name);
   assert.deepEqual(names, ['format', 'clippy', 'test', 'worker-target']);
+});
+
+test('backend checks use the CI memory profile for test builds', () => {
+  assert.equal(BACKEND_CHECK_ENV.CARGO_PROFILE_TEST_DEBUG, '0');
+  assert.match(WORKFLOW, /CARGO_PROFILE_TEST_DEBUG: "0"/u);
 });
 
 test('clippy step denies warnings and uses the native feature', () => {

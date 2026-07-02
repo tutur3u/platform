@@ -78,7 +78,7 @@ RUN --mount=type=cache,id=platform-tanstack-web-bun-install,target=/root/.bun/in
   set -eu; \
   attempt=1; \
   while [ "$attempt" -le 3 ]; do \
-    if bun install --frozen-lockfile --filter @tuturuuu/tanstack-web; then \
+    if bun install --frozen-lockfile --filter tutur3u --filter @tuturuuu/tanstack-web; then \
       break; \
     fi; \
     echo "bun install attempt ${attempt} failed; scrubbing Bun install cache before retry..." >&2; \

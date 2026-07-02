@@ -212,11 +212,11 @@ test('validateTanstackWebDockerfile accepts the current TanStack Dockerfile', ()
   assert.match(
     validateTanstackWebDockerfile(
       dockerfileContent.replace(
-        'bun install --frozen-lockfile --filter @tuturuuu/tanstack-web',
-        'bun install --frozen-lockfile'
+        'bun install --frozen-lockfile --filter tutur3u --filter @tuturuuu/tanstack-web',
+        'bun install --frozen-lockfile --filter @tuturuuu/tanstack-web'
       )
     ).join('\n'),
-    /@tuturuuu\/tanstack-web/u
+    /filter tutur3u/u
   );
   assert.match(
     validateTanstackWebDockerfile(
