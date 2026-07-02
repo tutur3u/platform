@@ -1667,7 +1667,7 @@ function validateTanstackWebDockerfile(
     'COPY packages/ui/vendor/xlsx-0.20.3.tgz ./packages/ui/vendor/xlsx-0.20.3.tgz',
     'COPY --from=deps /usr/local/bin/bun /usr/local/bin/bun',
     ...getRetryWrappedBunInstallSnippets(
-      'bun install --frozen-lockfile --filter @tuturuuu/tanstack-web'
+      'bun install --frozen-lockfile --filter tutur3u --filter @tuturuuu/tanstack-web'
     ),
     '--mount=type=cache,id=platform-tanstack-web-turbo,target=/workspace/.turbo',
     '--mount=type=cache,id=platform-tanstack-web-vite,target=/workspace/apps/tanstack-web/.vite',

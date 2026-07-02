@@ -23,6 +23,9 @@ const { runAutoRustCacheCleanup } = require('./rust-cache.js');
 const ROOT_DIR = path.resolve(__dirname, '..');
 const BACKEND_DIR = path.join(ROOT_DIR, 'apps', 'backend');
 const WORKER_TARGET = 'wasm32-unknown-unknown';
+const BACKEND_CHECK_ENV = {
+  CARGO_PROFILE_TEST_DEBUG: '0',
+};
 
 // The canonical gate. Kept in lockstep with rust-backend.yml; the paired test
 // (scripts/check-backend.test.js) asserts these commands match the workflow.
@@ -80,6 +83,7 @@ function runStep(step) {
   console.log(`\n▸ ${step.name}: ${printable}`);
   const result = spawnSync('cargo', step.args, {
     cwd: BACKEND_DIR,
+    env: { ...process.env, ...BACKEND_CHECK_ENV },
     stdio: 'inherit',
   });
   return result.status === 0;
@@ -153,4 +157,9 @@ if (require.main === module) {
   process.exit(main());
 }
 
-module.exports = { BACKEND_CHECK_STEPS, WORKER_TARGET, main };
+module.exports = {
+  BACKEND_CHECK_ENV,
+  BACKEND_CHECK_STEPS,
+  WORKER_TARGET,
+  main,
+};
