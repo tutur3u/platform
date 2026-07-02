@@ -34,7 +34,7 @@
     "next-intl": "^4.13.1",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
-    "three": "0.185.0",
+    "three": "0.185.1",
     "zod": "^4.4.3"
   },
   "devDependencies": {
