@@ -962,7 +962,7 @@ ALTER POLICY "Allow workspace managers to delete members" ON public.workspace_me
     USING ((has_workspace_permission(ws_id, (select auth.uid()), 'manage_workspace_members'::text) OR ((select auth.uid()) = user_id)));
 
 ALTER POLICY "Allow workspace managers to insert members with constraints" ON public.workspace_members
-    WITH CHECK (((user_id = (select auth.uid())) AND ((((is_personal_workspace(ws_id) = false) OR is_workspace_owner(ws_id, (select auth.uid()))) AND (is_member_invited((select auth.uid()), ws_id) OR (EXISTS ( SELECT 1 FROM workspace_email_invites wei WHERE (lower(wei.email) = lower((select auth.email()))))))) OR (EXISTS ( SELECT 1 FROM workspaces w WHERE ((w.id = workspace_members.ws_id) AND (w.creator_id = (select auth.uid())) AND (NOT (EXISTS ( SELECT 1 FROM workspace_members wm WHERE (wm.ws_id = wm.ws_id))))))))));
+    WITH CHECK (((user_id = (select auth.uid())) AND ((((is_personal_workspace(ws_id) = false) OR is_workspace_owner(ws_id, (select auth.uid()))) AND (is_member_invited((select auth.uid()), ws_id) OR (EXISTS ( SELECT 1 FROM workspace_email_invites wei WHERE (lower(wei.email) = lower((select auth.email()))))))) OR (EXISTS ( SELECT 1 FROM workspaces w WHERE ((w.id = workspace_members.ws_id) AND (w.creator_id = (select auth.uid())) AND (NOT (EXISTS ( SELECT 1 FROM workspace_members wm WHERE (wm.ws_id = workspace_members.ws_id))))))))));
 
 ALTER POLICY "Allow workspace managers to update members" ON public.workspace_members
     USING (has_workspace_permission(ws_id, (select auth.uid()), 'manage_workspace_members'::text))
@@ -1124,7 +1124,13 @@ ALTER POLICY "Allow workspace settings managers to update" ON public.workspaces
     WITH CHECK (((id <> '00000000-0000-0000-0000-000000000000'::uuid) AND has_workspace_permission(id, (select auth.uid()), 'manage_workspace_settings'::text)));
 
 ALTER POLICY "Enable insert for authenticated users only" ON public.workspaces
-    WITH CHECK (((creator_id = (select auth.uid())) AND (is_tuturuuu_email(( SELECT user_private_details.email FROM user_private_details WHERE (user_private_details.user_id = (select auth.uid())))) OR (count_user_workspaces((select auth.uid())) < 10))));
+    WITH CHECK (
+        (creator_id = (select auth.uid()))
+        AND (
+            is_tuturuuu_email(( SELECT user_private_details.email FROM user_private_details WHERE (user_private_details.user_id = (select auth.uid()))))
+            OR (count_user_workspaces((select auth.uid())) < 10)
+        )
+    );
 
 ALTER POLICY "Enable insert with creator and creation permission check" ON public.workspaces
     WITH CHECK (((creator_id = (select auth.uid())) AND can_create_workspace((select auth.uid()))));
