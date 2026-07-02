@@ -49,6 +49,7 @@ const DEFAULT_DIAGNOSTIC_LOG_TAIL = '300';
 const DEFAULT_DOCKER_BUILD_CPUS = '4';
 const DEFAULT_DOCKER_BUILD_MAX_PARALLELISM = '1';
 const DEFAULT_E2E_DOCKER_NATIVE_BUILD = '1';
+const DEFAULT_E2E_DOCKER_WEB_CRON_RUNNER_ENABLED = '0';
 const TANSTACK_WEB_PROXY_HEALTH_PATH = '/';
 const DEFAULT_REUSABLE_LOCAL_REDIS_REST_PROBE_URL = 'http://127.0.0.1:8079/';
 const DEFAULT_REUSABLE_LOCAL_REDIS_REST_URL =
@@ -144,6 +145,14 @@ function getE2EDockerNativeSupportBuildValue(env = process.env) {
     env.E2E_DOCKER_NATIVE_SUPPORT_BUILD ??
     env.DOCKER_WEB_NATIVE_SUPPORT_BUILD ??
     '1'
+  );
+}
+
+function getE2EDockerCronRunnerEnabledValue(env = process.env) {
+  return (
+    env.E2E_DOCKER_WEB_CRON_RUNNER_ENABLED ??
+    env.DOCKER_WEB_CRON_RUNNER_ENABLED ??
+    DEFAULT_E2E_DOCKER_WEB_CRON_RUNNER_ENABLED
   );
 }
 
@@ -1877,6 +1886,10 @@ async function runWebE2E(playwrightArgs = process.argv.slice(2), options = {}) {
     DOCKER_WEB_NATIVE_SUPPORT_BUILD: getE2EDockerNativeSupportBuildValue(
       process.env
     ),
+    DOCKER_WEB_CRON_RUNNER_ENABLED: getE2EDockerCronRunnerEnabledValue({
+      ...process.env,
+      ...(options.env ?? {}),
+    }),
     DOCKER_WEB_SUPABASE_START_EXCLUDE:
       process.env.DOCKER_WEB_SUPABASE_START_EXCLUDE ??
       process.env.E2E_SUPABASE_START_EXCLUDE ??
@@ -2042,6 +2055,7 @@ module.exports = {
   getDockerMemoryLimit,
   getE2EComposeProjectName,
   getE2EDiagnosticLogTail,
+  getE2EDockerCronRunnerEnabledValue,
   getDockerWebDownArgs,
   getDockerWebUpArgs,
   getFrontendE2EBaseUrl,

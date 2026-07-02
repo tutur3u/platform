@@ -1,5 +1,5 @@
 import { createReadStream } from 'node:fs';
-import { stat } from 'node:fs/promises';
+import { readdir, stat } from 'node:fs/promises';
 import { createServer } from 'node:http';
 import path from 'node:path';
 import { Readable } from 'node:stream';
@@ -8,13 +8,11 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 const currentDir = path.dirname(fileURLToPath(import.meta.url));
 const appDir = path.resolve(currentDir, '..');
 const clientDir = path.join(appDir, 'dist', 'client');
-const serverEntryUrl = pathToFileURL(
-  path.join(appDir, 'dist', 'server', 'server.js')
-).href;
 const INTERNAL_DRAIN_STATUS_PATH = '/__platform/drain-status';
 
 const host = process.env.HOST || '0.0.0.0';
 const port = Number.parseInt(process.env.PORT || '7824', 10);
+const serverEntryUrl = pathToFileURL(await resolveServerEntryPath()).href;
 const serverEntry = await import(serverEntryUrl);
 const handler = serverEntry.default;
 
@@ -34,6 +32,54 @@ const contentTypes = new Map([
   ['.woff', 'font/woff'],
   ['.woff2', 'font/woff2'],
 ]);
+
+async function pathExists(filePath) {
+  const fileStat = await stat(filePath).catch((error) => {
+    if (error && error.code === 'ENOENT') {
+      return null;
+    }
+
+    throw error;
+  });
+
+  return fileStat?.isFile() === true;
+}
+
+async function resolveServerEntryPath() {
+  const serverDir = path.join(appDir, 'dist', 'server');
+  const entryCandidates = [
+    path.join(serverDir, 'index.js'),
+    path.join(serverDir, 'server.js'),
+  ];
+
+  for (const candidate of entryCandidates) {
+    if (await pathExists(candidate)) {
+      return candidate;
+    }
+  }
+
+  const assetsDir = path.join(serverDir, 'assets');
+  const assetNames = await readdir(assetsDir).catch((error) => {
+    if (error && error.code === 'ENOENT') {
+      return [];
+    }
+
+    throw error;
+  });
+  const serverAssetEntries = assetNames
+    .filter((name) => /^server-[A-Za-z0-9_-]+\.js$/u.test(name))
+    .sort();
+
+  if (serverAssetEntries.length === 1) {
+    return path.join(assetsDir, serverAssetEntries[0]);
+  }
+
+  throw new Error(
+    `Unable to locate TanStack Start server entry in ${serverDir}. Checked ${entryCandidates.join(
+      ', '
+    )}.`
+  );
+}
 
 function getRequestUrl(request) {
   const protocol = request.headers['x-forwarded-proto'] || 'http';

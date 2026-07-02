@@ -1721,6 +1721,11 @@ function validateTanstackWebServer(serverContent) {
   const errors = [];
   const requiredSnippets = [
     "const INTERNAL_DRAIN_STATUS_PATH = '/__platform/drain-status';",
+    'async function resolveServerEntryPath()',
+    "path.join(serverDir, 'index.js')",
+    "path.join(serverDir, 'server.js')",
+    "path.join(serverDir, 'assets')",
+    'Unable to locate TanStack Start server entry',
     'function tryServeInternalDrainStatus(request, response, url)',
     "frontend: 'tanstack'",
     "'x-platform-drain-status'",

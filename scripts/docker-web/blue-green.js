@@ -268,20 +268,32 @@ function isBlueGreenSupermemoryEnabled(env = {}) {
   return !isExplicitFalseEnvValue(configuredValue);
 }
 
+function isBlueGreenCronRunnerEnabled(env = {}) {
+  return !isExplicitFalseEnvValue(env.DOCKER_WEB_CRON_RUNNER_ENABLED);
+}
+
 function getBlueGreenHealthGateSupportServices(env = {}) {
-  return isBlueGreenSupermemoryEnabled(env)
+  const services = isBlueGreenSupermemoryEnabled(env)
     ? [...BLUE_GREEN_SUPPORT_SERVICES_HEALTH_GATE]
     : BLUE_GREEN_SUPPORT_SERVICES_HEALTH_GATE.filter(
         (serviceName) => serviceName !== 'supermemory'
       );
+
+  return isBlueGreenCronRunnerEnabled(env)
+    ? services
+    : services.filter((serviceName) => serviceName !== 'web-cron-runner');
 }
 
 function getBlueGreenSupportBuildServiceNames(env = {}) {
-  return isBlueGreenSupermemoryEnabled(env)
+  const services = isBlueGreenSupermemoryEnabled(env)
     ? [...BLUE_GREEN_SUPPORT_BUILD_SERVICE_NAMES]
     : BLUE_GREEN_SUPPORT_BUILD_SERVICE_NAMES.filter(
         (serviceName) => serviceName !== 'supermemory'
       );
+
+  return isBlueGreenCronRunnerEnabled(env)
+    ? services
+    : services.filter((serviceName) => serviceName !== 'web-cron-runner');
 }
 
 function sleep(ms) {
@@ -1737,11 +1749,17 @@ function getBlueGreenSupportBuildInputSpecs(targetColor, env = {}) {
     },
   ];
 
-  if (isBlueGreenSupermemoryEnabled(env)) {
-    return specs;
-  }
+  return specs.filter((spec) => {
+    if (spec.serviceName === 'supermemory') {
+      return isBlueGreenSupermemoryEnabled(env);
+    }
 
-  return specs.filter((spec) => spec.serviceName !== 'supermemory');
+    if (spec.serviceName === 'web-cron-runner') {
+      return isBlueGreenCronRunnerEnabled(env);
+    }
+
+    return true;
+  });
 }
 
 async function listBlueGreenBuildInputFiles({
@@ -1923,6 +1941,7 @@ function getBlueGreenChangedSupportBuildServices(
   }
 
   if (
+    isBlueGreenCronRunnerEnabled(env) &&
     BLUE_GREEN_WEB_CRON_RUNNER_BUILD_PATHS.some((watchedPath) =>
       changedFilesIncludePath(changedFiles, watchedPath)
     )
@@ -4635,6 +4654,7 @@ module.exports = {
   hasBlueGreenProxyHostPortBindings,
   isBlueGreenSupportBuildSkipped,
   isBlueGreenWebBuildSkipped,
+  isBlueGreenCronRunnerEnabled,
   isBlueGreenSupermemoryEnabled,
   readBlueGreenDeploymentStamp,
   readBlueGreenSupportBuildHashHistory,
