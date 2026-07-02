@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.5.0](https://github.com/tutur3u/platform/compare/tanstack-web-v0.4.0...tanstack-web-v0.5.0) (2026-07-02)
+
+
+### Features
+
+* **cron:** add managed cron operations ([24012e6](https://github.com/tutur3u/platform/commit/24012e69771a2be480824aad2916a218afee0d20))
+* **infrastructure:** add abuse protection controls ([0e09692](https://github.com/tutur3u/platform/commit/0e09692a553cb10fbbb521e921951c2a6863281d))
+
+
+### Bug Fixes
+
+* **ci:** restore tanstack docker checks ([191c2e8](https://github.com/tutur3u/platform/commit/191c2e8c9d4b7b18d11f6583932b2a7b8a0ca43a))
+* **infrastructure:** improve cron execution monitoring UX ([8abf7b3](https://github.com/tutur3u/platform/commit/8abf7b3c2db45497418b321c0821de5b00bdcdd4))
+
+
+### Performance Improvements
+
+* **tooling:** improve service build caches ([1a7a5bf](https://github.com/tutur3u/platform/commit/1a7a5bf55c81450914283efed653a72c7b491c2a))
+
 ## [0.4.0](https://github.com/tutur3u/platform/compare/tanstack-web-v0.3.0...tanstack-web-v0.4.0) (2026-06-29)
 
 

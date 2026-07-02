@@ -1,5 +1,76 @@
 # Changelog
 
+## [0.16.0](https://github.com/tutur3u/platform/compare/platform-v0.15.0...platform-v0.16.0) (2026-07-02)
+
+
+### Features
+
+* **backend:** add `bun check:backend` one-shot CI-parity gate ([24ec329](https://github.com/tutur3u/platform/commit/24ec329e5b1ea7be2fbd4178b2f0dd50582a139d))
+* **backend:** migrate cron whitelist domain writes + cron-jobs read to Rust ([d44f765](https://github.com/tutur3u/platform/commit/d44f765f115f5c4888231590830618a54d4a49ec))
+* **backend:** migrate GET of 13 more API routes to Rust (batch 5) ([00b0079](https://github.com/tutur3u/platform/commit/00b007913ed1c327b90cdc267b45c6c367bda162))
+* **backend:** migrate GET of 2 final wallet-interest API routes to Rust (batch 7) ([4d79a59](https://github.com/tutur3u/platform/commit/4d79a5970d6f8bc6c915f9be723a7073529c68c7))
+* **backend:** migrate GET of 22 more API routes to Rust (batch 3) ([779720e](https://github.com/tutur3u/platform/commit/779720e911a82063149d39af2b47a7439a85f79a))
+* **backend:** migrate GET of 48 more API routes to Rust (batch 6) ([e639411](https://github.com/tutur3u/platform/commit/e639411ece3679d01b35fee8a060a732dc92da69))
+* **backend:** migrate GET of 50 more API routes to Rust ([f0ec58d](https://github.com/tutur3u/platform/commit/f0ec58de8168c8b742518661c4de900f9a81f7d4))
+* **backend:** migrate GET of 50 more API routes to Rust (batch 2) ([6c147a2](https://github.com/tutur3u/platform/commit/6c147a2db7a5a640a7c7331abd96f269f2d74d4b))
+* **backend:** migrate GET of 50 more API routes to Rust (batch 4) ([687ac51](https://github.com/tutur3u/platform/commit/687ac51ea240cca3943c35c924b74c6e4e42bdfb))
+* **backend:** migrate GET of whiteboards detail + cron whitelist domains to Rust ([cc5d31f](https://github.com/tutur3u/platform/commit/cc5d31fc4903996bffd62d5270e610b0ee5a1b6e))
+* **backend:** migrate managed-cron whitelist POST + cron-job DELETE to Rust ([63a8453](https://github.com/tutur3u/platform/commit/63a84536ad51f39e5a1ecb0d1cb8af805b80c19b))
+* **cron:** add managed cron operations ([24012e6](https://github.com/tutur3u/platform/commit/24012e69771a2be480824aad2916a218afee0d20))
+* **docker:** auto-enable cloudflared from CF_TUNNEL_TOKEN ([80231b6](https://github.com/tutur3u/platform/commit/80231b6647649a87283613170b11d902e7d955f9))
+* **infrastructure:** add abuse protection controls ([0e09692](https://github.com/tutur3u/platform/commit/0e09692a553cb10fbbb521e921951c2a6863281d))
+
+
+### Bug Fixes
+
+* **auth:** show hard IP block support details ([d26684b](https://github.com/tutur3u/platform/commit/d26684b8c7fb2725dacf83a246f08d86ef0e9ef4))
+* **ci:** align docker setup workflow test ([bc4fd61](https://github.com/tutur3u/platform/commit/bc4fd615de7621287ea4418ef027bac1564b5a4b))
+* **ci:** keep cache components enabled in production ([75e6e2b](https://github.com/tutur3u/platform/commit/75e6e2bbbf6fa432bc496ee95b75ade5f8847f9f))
+* **ci:** restore tanstack docker checks ([191c2e8](https://github.com/tutur3u/platform/commit/191c2e8c9d4b7b18d11f6583932b2a7b8a0ca43a))
+* **cli:** preserve markdown tables in task descriptions ([9faf8ba](https://github.com/tutur3u/platform/commit/9faf8ba44b92565a9dfc2949c496654fc1fea9b3))
+* **cron:** recover stale docker runner ([33cbe47](https://github.com/tutur3u/platform/commit/33cbe471741f872cb15e8b9895465b601ac5ace1))
+* **docker:** avoid remote builder for native runner ([a29b9a9](https://github.com/tutur3u/platform/commit/a29b9a9f94fd6ce32c21d23391fe3760c9797a13))
+* **docker:** bootstrap idle watcher runtime ([f8b9e69](https://github.com/tutur3u/platform/commit/f8b9e6961cc721acbca61577acc390580ceee520))
+* **docker:** capture compose recovery output ([650cebf](https://github.com/tutur3u/platform/commit/650cebf69306ded12216f58007f4ba523835939f))
+* **docker:** escalate buildkit memory recovery ([103b85a](https://github.com/tutur3u/platform/commit/103b85ab8f37059013d9e60e886ebd94fff65e6d))
+* **docker:** keep native support builds local ([2171a6b](https://github.com/tutur3u/platform/commit/2171a6baf642da2cc34a0a55ae0ea700b71b2a7f))
+* **docker:** normalize watcher host workspace path ([30f129d](https://github.com/tutur3u/platform/commit/30f129d6542e0cb3ea74c7bf0d662824c7fdd7ab))
+* **docker:** prefer buildkit memory rescue on oom ([05f237e](https://github.com/tutur3u/platform/commit/05f237e91d49878927d1222c2630532f5f73fc52))
+* **docker:** promote stale buildkit fallback state ([f09a810](https://github.com/tutur3u/platform/commit/f09a81057ed3154dccc224941b3ad2d70f32d009))
+* **docker:** recover cloudflared tunnel serving ([10d4774](https://github.com/tutur3u/platform/commit/10d47746511c1d8f20bd5040896aaa777f437a52))
+* **docker:** recover fresh watcher git locks ([5a34ff1](https://github.com/tutur3u/platform/commit/5a34ff18ad11c12095bf2efd7322b28a701e3321))
+* **docker:** recover linked worktree git locks ([8f6781a](https://github.com/tutur3u/platform/commit/8f6781a876033baaf142a21f4f87479bf234c01b))
+* **docker:** recover stale cron runner dependencies ([6b68edf](https://github.com/tutur3u/platform/commit/6b68edf9c3c9bd95621fb4f4dc3c8b0b8f78743f))
+* **docker:** retry serial build profile before shrinking memory ([504c0d7](https://github.com/tutur3u/platform/commit/504c0d74959abaa1f0272a176703fb5023a7581b))
+* **docker:** retry stale compose dependencies ([dcc1fab](https://github.com/tutur3u/platform/commit/dcc1fabd319a93a2c64fb78f535351ff73402aab))
+* **docker:** retry stale support dependencies ([966c869](https://github.com/tutur3u/platform/commit/966c8698de2eed983a0651096a64486d61070f39))
+* **docker:** skip stale no-build recovery ([b1c1369](https://github.com/tutur3u/platform/commit/b1c13693095ad43f5061dadd2bbc48427abcd6e8))
+* **docker:** skip support builds in native recovery ([48bfb43](https://github.com/tutur3u/platform/commit/48bfb437eada57b70f7ba8995c4e9b63a4bf13f8))
+* **docker:** stabilize native blue-green deploy ([f41fbed](https://github.com/tutur3u/platform/commit/f41fbedc07a5a5effa3ef1d4226fa11742cb7de4))
+* **docker:** start cloudflared from watcher startup ([9d596ae](https://github.com/tutur3u/platform/commit/9d596ae735a10f4731c783c7e286a988944e2542))
+* **docker:** support watcher linked worktrees ([d4319f9](https://github.com/tutur3u/platform/commit/d4319f944900a8c76a0c675db881215fd94adde7))
+* **docker:** tolerate stale proxy config directory ([3e32074](https://github.com/tutur3u/platform/commit/3e3207451cf2a1830deccdcfca0f6d138541e917))
+* **infrastructure:** default docker web to native builds ([7d89f00](https://github.com/tutur3u/platform/commit/7d89f004f75ab12eddc3cb92df5a1e6a7255fe0d))
+* **infrastructure:** improve cron execution monitoring UX ([8abf7b3](https://github.com/tutur3u/platform/commit/8abf7b3c2db45497418b321c0821de5b00bdcdd4))
+* **infrastructure:** let watcher recover stale cron runner ([dadc904](https://github.com/tutur3u/platform/commit/dadc904ba93b6f9458637c4ad088aea56b8a4750))
+* **infrastructure:** refresh cron next-run metadata ([5307fa0](https://github.com/tutur3u/platform/commit/5307fa05369306ef3f286ecf033a799037d5b25e))
+* **security:** harden managed cron fetches ([1cb22c7](https://github.com/tutur3u/platform/commit/1cb22c7071d5fcd19f5a187cbfa00e556dfb3486))
+* **security:** keep blue-green native builds opt-in ([078cf7b](https://github.com/tutur3u/platform/commit/078cf7ba3ebb94230ed7a4f8629e452f0a761217))
+* **security:** limit auth recovery code attempts ([72d454c](https://github.com/tutur3u/platform/commit/72d454c507b0d4b7e69c7b38ad2099dbb83193b2))
+* **security:** omit meet publish URL from Rust stream reads ([67f549e](https://github.com/tutur3u/platform/commit/67f549ea98d4f2bc0deb48b18944c3826bc84ba7))
+* **security:** restrict cron whitelist admin gate ([8231bf7](https://github.com/tutur3u/platform/commit/8231bf75b385186833703cb1934d8b8458060e66))
+* **security:** scope chat observability app sessions ([a2ace0f](https://github.com/tutur3u/platform/commit/a2ace0f3bc4177c488ee44ed4550ab101e565066))
+* **security:** scope Square webhook checkout sync ([7618e01](https://github.com/tutur3u/platform/commit/7618e0180e89511fbcc567741d25bbbaf235b023))
+* **security:** scope task update comment reads ([a7553b8](https://github.com/tutur3u/platform/commit/a7553b8d192f693d68f8963a97c223d461ac0965))
+* **tasks:** instantiate templates through task route ([6a0d96f](https://github.com/tutur3u/platform/commit/6a0d96fd04d42631e213ba5afcd62cc309a36073))
+* **tasks:** refresh task template placeholders ([0c3c309](https://github.com/tutur3u/platform/commit/0c3c30935f67e3e64d548c8a13584fd597e887b8))
+* **ui:** stabilize task property popover handoff ([8fb2e62](https://github.com/tutur3u/platform/commit/8fb2e62904d34a3ae7894bfbbb66c285fcf1a1bd))
+
+
+### Performance Improvements
+
+* **tooling:** improve service build caches ([1a7a5bf](https://github.com/tutur3u/platform/commit/1a7a5bf55c81450914283efed653a72c7b491c2a))
+
 ## [0.15.0](https://github.com/tutur3u/platform/compare/platform-v0.14.0...platform-v0.15.0) (2026-06-29)
 
 
