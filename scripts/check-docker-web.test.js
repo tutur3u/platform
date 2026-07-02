@@ -1447,6 +1447,16 @@ test('validateMarkitdownDockerfile accepts the current MarkItDown Dockerfile', (
   assert.deepEqual(validateMarkitdownDockerfile(dockerfileContent), []);
 });
 
+test('validateMarkitdownDockerfile requires cache-free uv sync', () => {
+  const dockerfileContent = fs
+    .readFileSync(MARKITDOWN_DOCKERFILE_PATH, 'utf8')
+    .replace(' --no-cache', '');
+
+  const errors = validateMarkitdownDockerfile(dockerfileContent);
+
+  assert.match(errors.join('\n'), /uv sync --locked --no-dev --no-cache/);
+});
+
 test('validateHiveDockerfile reports missing Turbo cache mount', () => {
   const dockerfileContent = fs
     .readFileSync(HIVE_DOCKERFILE_PATH, 'utf8')
