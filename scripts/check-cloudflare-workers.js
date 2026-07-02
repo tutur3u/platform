@@ -255,6 +255,7 @@ function validateRustBackendWorkflow(workflowContent) {
     'Cloudflare smoke inputs missing',
     '::error title=Cloudflare smoke verification blocked::',
     'bun smoke:cloudflare --output "$CLOUDFLARE_SMOKE_REPORT_PATH"',
+    'CARGO_BUILD_JOBS: "2"',
     'CARGO_PROFILE_TEST_DEBUG: "0"',
     'actions/upload-artifact@v7',
     'if-no-files-found: warn',

@@ -89,6 +89,7 @@ jobs:
     if: needs.check-ci.outputs.should_run == 'true'
     runs-on: ubuntu-latest
     env:
+      CARGO_BUILD_JOBS: "2"
       CARGO_HTTP_MULTIPLEXING: "false"
       CARGO_NET_RETRY: "10"
       CARGO_PROFILE_TEST_DEBUG: "0"
