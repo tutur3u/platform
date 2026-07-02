@@ -55,6 +55,7 @@ const {
   getReusableHiveImageRef,
   getReusableSupportImageRef,
   getReusableSupportImageSpecs,
+  getE2EDockerCronRunnerEnabledValue,
   getPlaywrightJsonSummary,
   getFrontendE2EBaseUrl,
   getWebProxyHealthUrl,
@@ -171,6 +172,21 @@ test('getE2EDockerNativeSupportBuildValue builds support images on clean runners
       E2E_DOCKER_NATIVE_SUPPORT_BUILD: '1',
     }),
     '1'
+  );
+});
+
+test('getE2EDockerCronRunnerEnabledValue disables the cron health gate in E2E by default', () => {
+  assert.equal(getE2EDockerCronRunnerEnabledValue({}), '0');
+  assert.equal(
+    getE2EDockerCronRunnerEnabledValue({ DOCKER_WEB_CRON_RUNNER_ENABLED: '1' }),
+    '1'
+  );
+  assert.equal(
+    getE2EDockerCronRunnerEnabledValue({
+      DOCKER_WEB_CRON_RUNNER_ENABLED: '1',
+      E2E_DOCKER_WEB_CRON_RUNNER_ENABLED: '0',
+    }),
+    '0'
   );
 });
 

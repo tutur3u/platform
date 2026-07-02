@@ -310,6 +310,23 @@ test('validateTanstackWebServer requires the internal drain-status route', () =>
   );
 });
 
+test('validateTanstackWebServer requires resilient server entry resolution', () => {
+  const serverContent = fs.readFileSync(TANSTACK_WEB_SERVER_PATH, 'utf8');
+
+  assert.match(
+    validateTanstackWebServer(
+      serverContent.replace("path.join(serverDir, 'index.js')", '')
+    ).join('\n'),
+    /index\.js/u
+  );
+  assert.match(
+    validateTanstackWebServer(
+      serverContent.replace("path.join(serverDir, 'assets')", '')
+    ).join('\n'),
+    /assets/u
+  );
+});
+
 test('validateDockerignore reports generated app artifacts in the context', () => {
   const dockerignoreContent = fs
     .readFileSync(DOCKERIGNORE_PATH, 'utf8')
