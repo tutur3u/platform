@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.12.1](https://github.com/tutur3u/platform/compare/cms-v0.12.0...cms-v0.12.1) (2026-07-02)
+
+
+### Bug Fixes
+
+* **build:** restore repo check ([4def830](https://github.com/tutur3u/platform/commit/4def830f463ea8a9c31af8e982eab716e9bd5f72))
+
 ## [0.12.0](https://github.com/tutur3u/platform/compare/cms-v0.11.0...cms-v0.12.0) (2026-06-29)
 
 
