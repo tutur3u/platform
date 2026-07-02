@@ -39,6 +39,10 @@ test('RLS initplan migration keeps auth helpers wrapped in scalar selects', () =
     .map((match) => `${match[0]} at offset ${match.index}`);
 
   assert.deepEqual(unwrappedCalls, []);
+  assert.doesNotMatch(
+    migrationSql,
+    /\(\s*select\s+\(\s*select\s+auth\.(uid|role|email)\(\)\s*\)\s*\)/iu
+  );
 });
 
 test('RLS initplan migration keeps workspace member first-seat check correlated', () => {

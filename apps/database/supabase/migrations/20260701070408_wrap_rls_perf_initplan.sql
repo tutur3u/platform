@@ -1,7 +1,12 @@
 -- Wrap every unwrapped auth.* call (USING + WITH CHECK, including calls nested inside
 -- EXISTS/correlated subqueries) in (select ...) so Postgres evaluates each once per
 -- statement (an InitPlan) instead of once per row -- the Supabase-documented RLS perf
--- pattern. Predicate-equivalent (row visibility unchanged). Already-wrapped calls left as-is.
+-- pattern. Already-wrapped calls left as-is.
+--
+-- This migration also preserves existing policy semantics that the generated rewrite
+-- must not widen: the workspace_members first-seat check remains correlated to the
+-- target workspace, and workspace inserts still require creator_id to match the
+-- current authenticated user id.
 
 ALTER POLICY "Allow root workspace users to view abuse activity signals" ON public.abuse_activity_signals
     USING ((EXISTS ( SELECT 1 FROM workspace_user_linked_users WHERE ((workspace_user_linked_users.platform_user_id = (select auth.uid())) AND (workspace_user_linked_users.ws_id = '00000000-0000-0000-0000-000000000000'::uuid)))));
