@@ -748,6 +748,7 @@ function validateDockerSetupWorkflow(workflowContent) {
   const requiredSnippets = [
     'run: node scripts/check-docker-web.js',
     'node --test scripts/check-docker-web.test.js scripts/docker-web.test.js scripts/buildkit-builder.test.js scripts/run-tanstack-e2e-docker.test.js',
+    'Free runner disk before Docker image builds',
     'docker compose -f docker-compose.web.yml --profile cloudflared config > /tmp/docker-compose.web.cloudflared.yml',
     'docker compose -f docker-compose.web.prod.yml --profile cloudflared config > /tmp/docker-compose.web.prod.cloudflared.yml',
     'docker compose -f docker-compose.tanstack-dual.yml config > /tmp/docker-compose.tanstack-dual.yml',
@@ -764,6 +765,10 @@ function validateDockerSetupWorkflow(workflowContent) {
     '--secret id=turbo_token,env=TURBO_TOKEN',
     '-f apps/tanstack-web/Dockerfile .',
   ];
+  const preBuildCleanupIndex = workflowContent.indexOf(
+    'Free runner disk before Docker image builds'
+  );
+  const buildWebDevIndex = workflowContent.indexOf('Build web dev image');
 
   for (const snippet of requiredPathFilterSnippets) {
     if (countOccurrences(workflowContent, snippet) < 2) {
@@ -779,6 +784,19 @@ function validateDockerSetupWorkflow(workflowContent) {
         `.github/workflows/docker-setup-check.yaml is missing the expected snippet: ${snippet}`
       );
     }
+  }
+
+  if (preBuildCleanupIndex === -1) {
+    errors.push(
+      '.github/workflows/docker-setup-check.yaml must free runner disk before Docker image builds.'
+    );
+  } else if (
+    buildWebDevIndex !== -1 &&
+    preBuildCleanupIndex > buildWebDevIndex
+  ) {
+    errors.push(
+      '.github/workflows/docker-setup-check.yaml must free runner disk before the first Docker image build.'
+    );
   }
 
   return errors;

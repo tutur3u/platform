@@ -170,6 +170,15 @@ test('validateDockerSetupWorkflow keeps TanStack Docker paths covered', () => {
     ).join('\n'),
     /docker-tanstack-web-prod/
   );
+  assert.match(
+    validateDockerSetupWorkflow(
+      workflowContent.replace(
+        'Free runner disk before Docker image builds',
+        'Free runner disk after Docker image builds'
+      )
+    ).join('\n'),
+    /free runner disk before Docker image builds/
+  );
 });
 
 test('validateDockerignore accepts the current Docker context excludes', () => {

@@ -93,6 +93,14 @@ jobs:
         with:
           node-version: 24
 
+      - name: Free runner disk before Docker image builds
+        run: |
+          df -h /
+          docker system prune -af --volumes || true
+          docker builder prune -af || true
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL || true
+          df -h /
+
       - name: Pre-pull Docker BuildKit image
         run: |
           for attempt in 1 2 3; do

@@ -348,20 +348,39 @@ test('Docker setup workflow pre-pulls the BuildKit image before Buildx setup', (
     'docker-setup-check.yaml',
     'check-ci'
   );
+  const preBuildCleanupIndex = verifyJob.indexOf(
+    'Free runner disk before Docker image builds'
+  );
   const prePullIndex = verifyJob.indexOf('Pre-pull Docker BuildKit image');
   const setupBuildxIndex = verifyJob.indexOf('Setup Docker Buildx');
+  const buildWebDevIndex = verifyJob.indexOf('Build web dev image');
 
   assert.match(workflow, /\npermissions:\n {2}contents: read\n/u);
   assert.match(
     checkCiJob,
     /permissions:\n {6}contents: read\n {6}deployments: read/u
   );
+  assert.notEqual(preBuildCleanupIndex, -1);
   assert.notEqual(prePullIndex, -1);
   assert.notEqual(setupBuildxIndex, -1);
+  assert.notEqual(buildWebDevIndex, -1);
+  assert.ok(
+    preBuildCleanupIndex < prePullIndex,
+    'runner disk should be freed before BuildKit image pull and image builds'
+  );
   assert.ok(
     prePullIndex < setupBuildxIndex,
     'BuildKit image should be pulled before setup-buildx boots BuildKit'
   );
+  assert.ok(
+    preBuildCleanupIndex < buildWebDevIndex,
+    'runner disk should be freed before the first Docker image build'
+  );
+  assert.match(verifyJob, /docker system prune -af --volumes/u);
+  assert.match(verifyJob, /docker builder prune -af/u);
+  assert.match(verifyJob, /\/usr\/share\/dotnet/u);
+  assert.match(verifyJob, /\/usr\/local\/lib\/android/u);
+  assert.match(verifyJob, /\/opt\/hostedtoolcache\/CodeQL/u);
   assert.match(verifyJob, /docker pull moby\/buildkit:buildx-stable-1/u);
   assert.match(verifyJob, /driver-opts: image=moby\/buildkit:buildx-stable-1/u);
   assert.match(workflow, /scripts\/run-tanstack-e2e-docker\.js/u);
