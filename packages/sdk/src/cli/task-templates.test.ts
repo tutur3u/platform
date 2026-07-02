@@ -1,6 +1,8 @@
 import { mkdir, mkdtemp, readFile, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import type { JSONContent } from '@tiptap/core';
+import { decodeTaskDescriptionYjsState } from '@tuturuuu/utils/task-description-codec';
 import { describe, expect, it } from 'vitest';
 import {
   listLocalTaskTemplates,
@@ -8,6 +10,19 @@ import {
   taskTemplateToMarkdown,
   writeLocalTaskTemplate,
 } from './task-templates';
+
+function findNode(
+  content: JSONContent | undefined,
+  type: string
+): JSONContent | undefined {
+  if (!content) return undefined;
+  if (content.type === type) return content;
+
+  for (const child of content.content ?? []) {
+    const match = findNode(child, type);
+    if (match) return match;
+  }
+}
 
 describe('CLI local task templates', () => {
   it('parses YAML frontmatter and markdown body into a task template payload', async () => {
@@ -50,6 +65,34 @@ project_ids:
       task_name: 'Investigate reported bug',
       visibility: 'workspace',
     });
+  });
+
+  it('generates TipTap Yjs state from local markdown template bodies', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'ttr-task-template-table-'));
+    const file = join(dir, 'handoff.md');
+    await writeFile(
+      file,
+      `---
+key: handoff
+name: Handoff
+task_name: Prepare handoff
+---
+
+| Field | Value |
+| --- | --- |
+| Owner | Platform |
+`,
+      'utf8'
+    );
+
+    const template = parseLocalTaskTemplateFile(file);
+    const decoded = decodeTaskDescriptionYjsState(
+      template.payload.description_yjs_state ?? []
+    );
+
+    expect(template.payload.description).toContain('| Field | Value |');
+    expect(Array.isArray(template.payload.description_yjs_state)).toBe(true);
+    expect(findNode(decoded, 'table')).toBeDefined();
   });
 
   it('lists .tuturuuu task template files and ignores other files', async () => {

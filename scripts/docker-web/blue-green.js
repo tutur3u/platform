@@ -1,5 +1,6 @@
 const fs = require('node:fs');
 const crypto = require('node:crypto');
+const os = require('node:os');
 const path = require('node:path');
 
 const {
@@ -48,6 +49,7 @@ const {
   getNextAdaptiveBuildResourceProfile,
   getRecommendedBuildResourceProfile,
   isAdaptiveBuildResourceProfileEnabled,
+  isBuildkitMemoryExhaustionError,
   isBuildkitResourceProfileFallbackError,
   persistBuildResourceProfile,
 } = require('./resource-profiles.js');
@@ -192,6 +194,7 @@ const BLUE_GREEN_WEB_CRON_RUNNER_BUILD_PATHS = Object.freeze([
   'docker-compose/compose.web.prod.ops.yml',
 ]);
 const BLUE_GREEN_WEB_DOCKER_CONTROL_BUILD_PATHS = Object.freeze([
+  'apps/web/docker/docker-control-recovery.js',
   'apps/web/docker/docker-control-server.js',
   'apps/web/docker/docker-control.Dockerfile',
   'docker-compose/compose.web.prod.ops.yml',
@@ -514,7 +517,31 @@ function readBlueGreenProxyActiveColor(
     return null;
   }
 
-  const config = fsImpl.readFileSync(paths.proxyConfigFile, 'utf8');
+  try {
+    if (
+      typeof fsImpl.statSync === 'function' &&
+      !fsImpl.statSync(paths.proxyConfigFile).isFile()
+    ) {
+      return null;
+    }
+  } catch (error) {
+    if (['ENOENT', 'ENOTDIR'].includes(error?.code)) {
+      return null;
+    }
+
+    throw error;
+  }
+
+  let config;
+  try {
+    config = fsImpl.readFileSync(paths.proxyConfigFile, 'utf8');
+  } catch (error) {
+    if (['EISDIR', 'ENOENT', 'ENOTDIR'].includes(error?.code)) {
+      return null;
+    }
+
+    throw error;
+  }
   const match = config.match(
     /^\s*server\s+(?:web|tanstack-web)-(blue|green):(?:7803|7824)\s+resolve\b(?!.*\bbackup\b).*$/imu
   );
@@ -1523,6 +1550,22 @@ function writeBlueGreenProxyConfig(
   } = {}
 ) {
   ensureBlueGreenRuntime(paths, fsImpl);
+
+  try {
+    if (
+      typeof fsImpl.statSync === 'function' &&
+      typeof fsImpl.rmSync === 'function' &&
+      fsImpl.existsSync(paths.proxyConfigFile) &&
+      fsImpl.statSync(paths.proxyConfigFile).isDirectory()
+    ) {
+      fsImpl.rmSync(paths.proxyConfigFile, { force: true, recursive: true });
+    }
+  } catch (error) {
+    if (!['ENOENT', 'ENOTDIR'].includes(error?.code)) {
+      throw error;
+    }
+  }
+
   fsImpl.writeFileSync(
     paths.proxyConfigFile,
     renderBlueGreenProxyConfig(color, {
@@ -2182,6 +2225,7 @@ async function buildBlueGreenServices({
   composeGlobalArgs = [],
   env,
   fsImpl = fs,
+  osImpl = os,
   rootDir = ROOT_DIR,
   runCommand: run,
   services,
@@ -2203,6 +2247,7 @@ async function buildBlueGreenServices({
     if (!nativeWebArtifactsBuilt) {
       await buildNativeWebArtifacts({
         env: buildEnv,
+        osImpl,
         rootDir,
         runCommand: run,
       });
@@ -2238,25 +2283,35 @@ async function buildBlueGreenServices({
         continue;
       }
 
-      const args =
-        buildStrategy === 'bake'
-          ? getBlueGreenBuildxBakeArgs({
-              bakeFile,
-              composeFile,
-              env: buildEnv,
-              noCache,
-              serviceBatch: dockerBuildServices,
-            })
-          : getComposeCommandArgs(
-              composeFile,
-              composeGlobalArgs,
-              'build',
-              ...(noCache ? ['--no-cache'] : []),
-              ...dockerBuildServices
-            );
+      if (useNativeWebBuild && !isNativeWebSupportBuildEnabled(buildEnv)) {
+        continue;
+      }
+
+      const useBuildxBake =
+        buildStrategy === 'bake' &&
+        (!useNativeWebBuild || isNativeWebSupportBuildxEnabled(buildEnv));
+      const args = useBuildxBake
+        ? getBlueGreenBuildxBakeArgs({
+            bakeFile,
+            composeFile,
+            env: buildEnv,
+            noCache,
+            serviceBatch: dockerBuildServices,
+          })
+        : getComposeCommandArgs(
+            composeFile,
+            composeGlobalArgs,
+            'build',
+            ...(noCache ? ['--no-cache'] : []),
+            ...dockerBuildServices
+          );
+      const commandEnv =
+        useNativeWebBuild && !useBuildxBake
+          ? getNativeWebLocalDockerBuildEnv(buildEnv)
+          : buildEnv;
 
       await runChecked('docker', args, {
-        env: buildEnv,
+        env: commandEnv,
         runCommand: run,
         stdio: 'pipe',
         teeOutput: true,
@@ -2422,6 +2477,7 @@ async function buildBlueGreenServices({
           attemptedProfileNames,
           currentProfileName: currentProfile.name,
           env: buildEnv,
+          preferHardLimitProfile: isBuildkitMemoryExhaustionError(error),
         });
 
         if (!nextProfile) {
@@ -2626,6 +2682,60 @@ function isNativeWebBuildEnabled(env = {}) {
   return isTruthyEnvValue(env.DOCKER_WEB_NATIVE_BUILD);
 }
 
+function isNativeWebRunnerBuildxEnabled(env = {}) {
+  return isTruthyEnvValue(env.DOCKER_WEB_NATIVE_RUNNER_BUILDX);
+}
+
+function getNativeWebLocalDockerBuildEnv(env = {}) {
+  const buildEnv = { ...env };
+
+  delete buildEnv.BUILDX_BUILDER;
+  delete buildEnv.BUILDKIT_HOST;
+  delete buildEnv.DOCKER_WEB_BUILD_BUILDER_NAME;
+
+  return buildEnv;
+}
+
+function getNativeWebRunnerDockerBuildEnv(env = {}) {
+  if (isNativeWebRunnerBuildxEnabled(env)) {
+    return env;
+  }
+
+  return getNativeWebLocalDockerBuildEnv(env);
+}
+
+function isNativeWebSupportBuildxEnabled(env = {}) {
+  return isTruthyEnvValue(env.DOCKER_WEB_NATIVE_SUPPORT_BUILDX);
+}
+
+function isNativeWebSupportBuildEnabled(env = {}) {
+  return (
+    isTruthyEnvValue(env.DOCKER_WEB_NATIVE_SUPPORT_BUILD) ||
+    isNativeWebSupportBuildxEnabled(env)
+  );
+}
+
+function getHostTotalMemoryBuildValue(osImpl = os) {
+  const totalMemoryBytes = osImpl.totalmem?.();
+
+  if (!Number.isFinite(totalMemoryBytes) || totalMemoryBytes <= 0) {
+    return null;
+  }
+
+  const totalMemoryGb = Math.floor(totalMemoryBytes / 1024 / 1024 / 1024);
+
+  return totalMemoryGb > 0 ? `${totalMemoryGb}g` : null;
+}
+
+function getNativeWebBuildMemory(env = {}, osImpl = os) {
+  return (
+    env.DOCKER_WEB_NATIVE_BUILD_MEMORY ??
+    env.DOCKER_WEB_BUILD_MEMORY ??
+    getHostTotalMemoryBuildValue(osImpl) ??
+    '12g'
+  );
+}
+
 function isBlueGreenWebBuildSkipped(env = {}) {
   return isTruthyEnvValue(env.DOCKER_WEB_SKIP_BLUE_GREEN_WEB_BUILD);
 }
@@ -2699,6 +2809,7 @@ function resolveNativeWebBuildEnvFile(env = {}, rootDir = ROOT_DIR) {
 
 async function buildNativeWebArtifacts({
   env = {},
+  osImpl = os,
   rootDir = ROOT_DIR,
   runCommand: run = runCommand,
 }) {
@@ -2714,11 +2825,9 @@ async function buildNativeWebArtifacts({
     env: {
       ...env,
       CI: env.CI ?? '1',
-      DOCKER_WEB_BUILD_MEMORY:
-        env.DOCKER_WEB_NATIVE_BUILD_MEMORY ??
-        env.DOCKER_WEB_BUILD_MEMORY ??
-        '12g',
+      DOCKER_WEB_BUILD_MEMORY: getNativeWebBuildMemory(env, osImpl),
       DOCKER_WEB_DOCKER_MEMORY_LIMIT: env.DOCKER_WEB_NATIVE_BUILD_MEMORY ?? '',
+      DOCKER_WEB_NATIVE_BUILD: '1',
       DOCKER_WEB_STANDALONE: '1',
       NEXT_TELEMETRY_DISABLED: env.NEXT_TELEMETRY_DISABLED ?? '1',
       NODE_ENV: 'production',
@@ -2736,30 +2845,34 @@ async function buildNativeWebRuntimeImages({
   runCommand: run = runCommand,
   services,
 }) {
+  const commandEnv = getNativeWebRunnerDockerBuildEnv(env);
+
   for (const serviceName of services) {
     const builderName = env.BUILDX_BUILDER || env.DOCKER_WEB_BUILD_BUILDER_NAME;
+    const buildArgs = [
+      ...(noCache ? ['--no-cache'] : []),
+      ...getPlatformBuildMetadataBuildArgs(env),
+      '--file',
+      getNativeWebRunnerDockerfile(rootDir),
+      '--tag',
+      getBlueGreenWebServiceImageTag(serviceName, { composeGlobalArgs, env }),
+      rootDir,
+    ];
+    const args = isNativeWebRunnerBuildxEnabled(env)
+      ? [
+          'buildx',
+          'build',
+          ...(builderName ? ['--builder', builderName] : []),
+          '--load',
+          ...buildArgs,
+        ]
+      : ['build', ...buildArgs];
 
-    await runChecked(
-      'docker',
-      [
-        'buildx',
-        'build',
-        ...(builderName ? ['--builder', builderName] : []),
-        '--load',
-        ...(noCache ? ['--no-cache'] : []),
-        ...getPlatformBuildMetadataBuildArgs(env),
-        '--file',
-        getNativeWebRunnerDockerfile(rootDir),
-        '--tag',
-        getBlueGreenWebServiceImageTag(serviceName, { composeGlobalArgs, env }),
-        rootDir,
-      ],
-      {
-        env,
-        runCommand: run,
-        timeoutMs: getBlueGreenBuildTimeoutMs(env),
-      }
-    );
+    await runChecked('docker', args, {
+      env: commandEnv,
+      runCommand: run,
+      timeoutMs: getBlueGreenBuildTimeoutMs(env),
+    });
   }
 }
 
@@ -4529,9 +4642,15 @@ module.exports = {
   getBlueGreenServiceName,
   getBlueGreenServiceDrainStatus,
   getBlueGreenWebServiceImageTag,
+  getHostTotalMemoryBuildValue,
   getNextBlueGreenColor,
+  getNativeWebBuildMemory,
+  getNativeWebRunnerDockerBuildEnv,
   isBlueGreenColor,
   isNativeWebBuildEnabled,
+  isNativeWebRunnerBuildxEnabled,
+  isNativeWebSupportBuildEnabled,
+  isNativeWebSupportBuildxEnabled,
   readBlueGreenActiveColor,
   readBlueGreenProxyActiveColor,
   readBlueGreenTargetState,

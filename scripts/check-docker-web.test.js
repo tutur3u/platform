@@ -16,6 +16,8 @@ const {
   getDockerNodeMaxOldSpaceSizeMb,
   getDockerStaticGenerationMaxConcurrency,
   getEffectiveDockerMemoryMb,
+  getNextBuildEnvironment,
+  isNativeWebBuildEnabled,
   mergeNodeOptions,
   parseMemoryToMb,
 } = require('./run-web-docker-next-build.js');
@@ -162,11 +164,11 @@ test('validateDockerSetupWorkflow keeps TanStack Docker paths covered', () => {
   assert.match(
     validateDockerSetupWorkflow(
       workflowContent.replace(
-        'docker build --target runner -f apps/tanstack-web/Dockerfile .',
+        '--cache-from type=gha,scope=docker-tanstack-web-prod',
         ''
       )
     ).join('\n'),
-    /apps\/tanstack-web\/Dockerfile/
+    /docker-tanstack-web-prod/
   );
 });
 
@@ -210,38 +212,20 @@ test('validateTanstackWebDockerfile accepts the current TanStack Dockerfile', ()
   assert.match(
     validateTanstackWebDockerfile(
       dockerfileContent.replace(
-        'bun install --frozen-lockfile --filter @tuturuuu/tanstack-web',
-        'bun install --frozen-lockfile'
+        'bun install --frozen-lockfile --filter tutur3u --filter @tuturuuu/tanstack-web',
+        'bun install --frozen-lockfile --filter @tuturuuu/tanstack-web'
       )
     ).join('\n'),
-    /@tuturuuu\/tanstack-web/u
+    /filter tutur3u/u
   );
   assert.match(
     validateTanstackWebDockerfile(
       dockerfileContent.replace(
-        '  bun run --filter @tuturuuu/supabase build && \\\n',
+        'bun run turbo:local run build:docker -F @tuturuuu/tanstack-web',
         ''
       )
     ).join('\n'),
-    /@tuturuuu\/supabase build/u
-  );
-  assert.match(
-    validateTanstackWebDockerfile(
-      dockerfileContent.replace(
-        'bun run --filter @tuturuuu/internal-api build && \\\n',
-        ''
-      )
-    ).join('\n'),
-    /@tuturuuu\/internal-api build/u
-  );
-  assert.match(
-    validateTanstackWebDockerfile(
-      dockerfileContent.replace(
-        '  bun run --filter @tuturuuu/supabase build && \\\n  bun run --filter @tuturuuu/internal-api build && \\\n',
-        '  bun run --filter @tuturuuu/internal-api build && \\\n  bun run --filter @tuturuuu/supabase build && \\\n'
-      )
-    ).join('\n'),
-    /@tuturuuu\/supabase build before bun run --filter @tuturuuu\/internal-api build/u
+    /build:docker -F @tuturuuu\/tanstack-web/u
   );
   assert.match(
     validateTanstackWebDockerfile(
@@ -366,7 +350,7 @@ test('Hive realtime Docker image hoists production dependencies for Bun runtime 
   );
 });
 
-test('Hive Docker image builds workspace dist exports before Next build', () => {
+test('Hive Docker image installs root toolchain and routes the Next build through Turbo', () => {
   const dockerfileContent = fs.readFileSync(HIVE_DOCKERFILE_PATH, 'utf8');
   const packageJson = JSON.parse(
     fs.readFileSync(path.join(ROOT_DIR, 'apps', 'hive', 'package.json'), 'utf8')
@@ -379,7 +363,11 @@ test('Hive Docker image builds workspace dist exports before Next build', () => 
   );
   assert.match(
     dockerfileContent,
-    /node scripts\/run-hive-docker-next-build\.js --env-file \/tmp\/web\.env/u
+    /bun install --frozen-lockfile --filter tutur3u --filter @tuturuuu\/hive/u
+  );
+  assert.match(
+    dockerfileContent,
+    /bun --env-file=\/tmp\/web\.env run turbo:local run build:docker -F @tuturuuu\/hive/u
   );
 });
 
@@ -427,7 +415,8 @@ test('Production Docker images retry filtered Bun installs and clear install cac
   const dockerfiles = [
     {
       content: fs.readFileSync(HIVE_DOCKERFILE_PATH, 'utf8'),
-      installCommand: 'bun install --frozen-lockfile --filter @tuturuuu/hive',
+      installCommand:
+        'bun install --frozen-lockfile --filter tutur3u --filter @tuturuuu/hive',
       validate: validateHiveDockerfile,
     },
     {
@@ -667,6 +656,30 @@ test('Docker web build CPU count leaves room on small Docker allocations', () =>
     }),
     3
   );
+});
+
+test('native Docker web build leaves worker counts to Next by default', () => {
+  const env = getNextBuildEnvironment({
+    DOCKER_WEB_BUILD_MEMORY: '64g',
+    DOCKER_WEB_DOCKER_MEMORY_LIMIT: '64g',
+    DOCKER_WEB_NATIVE_BUILD: '1',
+  });
+
+  assert.equal(isNativeWebBuildEnabled(env), true);
+  assert.equal(env.DOCKER_WEB_NEXT_BUILD_CPUS, undefined);
+  assert.equal(env.DOCKER_WEB_STATIC_GENERATION_MAX_CONCURRENCY, undefined);
+  assert.match(env.NODE_OPTIONS, /--max-old-space-size=/u);
+});
+
+test('native Docker web build preserves explicit worker count overrides', () => {
+  const env = getNextBuildEnvironment({
+    DOCKER_WEB_NATIVE_BUILD: '1',
+    DOCKER_WEB_NEXT_BUILD_CPUS: '6',
+    DOCKER_WEB_STATIC_GENERATION_MAX_CONCURRENCY: '5',
+  });
+
+  assert.equal(env.DOCKER_WEB_NEXT_BUILD_CPUS, '6');
+  assert.equal(env.DOCKER_WEB_STATIC_GENERATION_MAX_CONCURRENCY, '5');
 });
 
 test('validateDockerfile reports missing workspace manifest copies', () => {
@@ -939,7 +952,7 @@ test('validateDockerProdCompose reports missing Docker web build args', () => {
         '}',
       '      DOCKER_WEB_REACT_COMPILER: $' +
         '{' +
-        'DOCKER_WEB_REACT_COMPILER:-0' +
+        'DOCKER_WEB_REACT_COMPILER:-1' +
         '}',
       '      DOCKER_WEB_TURBO_CONCURRENCY: $' +
         '{' +
@@ -1173,6 +1186,17 @@ test('validateDockerProdCompose requires watcher companion healthchecks', () => 
   assert.match(errors, /web-cron-runner.*healthcheck/u);
 });
 
+test('validateDockerProdCompose requires cron runner heartbeat healthcheck', () => {
+  const composeContent = readDockerProdComposeMergedText(ROOT_DIR).replace(
+    '/usr/local/bin/cron-runner-entrypoint.js',
+    '/bin/true'
+  );
+
+  const errors = validateDockerProdCompose(composeContent).join('\n');
+
+  assert.match(errors, /cron-runner-entrypoint\.js --healthcheck/u);
+});
+
 test('validateDockerProdCompose reports missing watcher host workspace wiring', () => {
   const composeContent = readDockerProdComposeMergedText(ROOT_DIR).replaceAll(
     '      - ..:' +
@@ -1185,6 +1209,23 @@ test('validateDockerProdCompose reports missing watcher host workspace wiring', 
   const errors = validateDockerProdCompose(composeContent);
 
   assert.match(errors.join('\n'), /PLATFORM_HOST_WORKSPACE_DIR/);
+});
+
+test('validateDockerProdCompose reports missing watcher linked-worktree Git metadata wiring', () => {
+  const composeContent = readDockerProdComposeMergedText(ROOT_DIR)
+    .replaceAll('      - DOCKER_WEB_GIT_COMMON_DIR\n', '')
+    .replaceAll(
+      '      - ${' +
+        'DOCKER_WEB_GIT_COMMON_DIR:-../.git' +
+        '}:${' +
+        'DOCKER_WEB_GIT_COMMON_DIR:-/workspace-git-common' +
+        '}\n',
+      ''
+    );
+
+  const errors = validateDockerProdCompose(composeContent);
+
+  assert.match(errors.join('\n'), /DOCKER_WEB_GIT_COMMON_DIR/);
 });
 
 test('validateDockerProdCompose reports missing watcher project registry wiring', () => {
@@ -1380,30 +1421,30 @@ test('validateMarkitdownDockerfile accepts the current MarkItDown Dockerfile', (
   assert.deepEqual(validateMarkitdownDockerfile(dockerfileContent), []);
 });
 
-test('validateHiveDockerfile reports missing workspace package builds', () => {
-  const dockerfileContent = fs
-    .readFileSync(HIVE_DOCKERFILE_PATH, 'utf8')
-    .replace('  bun run --filter @tuturuuu/supabase build && \\\n', '');
-
-  const errors = validateHiveDockerfile(dockerfileContent);
-
-  assert.match(errors.join('\n'), /@tuturuuu\/supabase build/);
-});
-
-test('validateHiveDockerfile reports Supabase builds after internal API', () => {
+test('validateHiveDockerfile reports missing Turbo cache mount', () => {
   const dockerfileContent = fs
     .readFileSync(HIVE_DOCKERFILE_PATH, 'utf8')
     .replace(
-      '  bun run --filter @tuturuuu/supabase build && \\\n  bun run --filter @tuturuuu/internal-api build && \\\n',
-      '  bun run --filter @tuturuuu/internal-api build && \\\n  bun run --filter @tuturuuu/supabase build && \\\n'
+      '--mount=type=cache,id=platform-hive-turbo,target=/workspace/.turbo',
+      ''
     );
 
   const errors = validateHiveDockerfile(dockerfileContent);
 
-  assert.match(
-    errors.join('\n'),
-    /@tuturuuu\/supabase build before bun run --filter @tuturuuu\/internal-api build/u
-  );
+  assert.match(errors.join('\n'), /platform-hive-turbo/);
+});
+
+test('validateHiveDockerfile reports missing Turbo build command', () => {
+  const dockerfileContent = fs
+    .readFileSync(HIVE_DOCKERFILE_PATH, 'utf8')
+    .replace(
+      'bun --env-file=/tmp/web.env run turbo:local run build:docker -F @tuturuuu/hive',
+      ''
+    );
+
+  const errors = validateHiveDockerfile(dockerfileContent);
+
+  assert.match(errors.join('\n'), /build:docker -F @tuturuuu\/hive/u);
 });
 
 test('validateWatcherDockerfile reports missing docker cli tooling', () => {

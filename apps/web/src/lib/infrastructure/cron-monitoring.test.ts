@@ -2,38 +2,89 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
-import { readCronMonitoringSnapshot } from './cron-monitoring';
+import {
+  readCronMonitoringSnapshot,
+  withManagedExternalCronDiagnostics,
+} from './cron-monitoring';
 
 const ORIGINAL_CWD = process.cwd();
 const ORIGINAL_CRON_CONFIG_PATH = process.env.PLATFORM_WEB_CRON_CONFIG_PATH;
+const ORIGINAL_DOCKER_CONTROL_TOKEN = process.env.PLATFORM_DOCKER_CONTROL_TOKEN;
+const ORIGINAL_DOCKER_CONTROL_URL = process.env.PLATFORM_DOCKER_CONTROL_URL;
 
 function restoreEnv() {
   process.chdir(ORIGINAL_CWD);
 
   if (ORIGINAL_CRON_CONFIG_PATH === undefined) {
     delete process.env.PLATFORM_WEB_CRON_CONFIG_PATH;
-    return;
+  } else {
+    process.env.PLATFORM_WEB_CRON_CONFIG_PATH = ORIGINAL_CRON_CONFIG_PATH;
   }
 
-  process.env.PLATFORM_WEB_CRON_CONFIG_PATH = ORIGINAL_CRON_CONFIG_PATH;
+  if (ORIGINAL_DOCKER_CONTROL_TOKEN === undefined) {
+    delete process.env.PLATFORM_DOCKER_CONTROL_TOKEN;
+  } else {
+    process.env.PLATFORM_DOCKER_CONTROL_TOKEN = ORIGINAL_DOCKER_CONTROL_TOKEN;
+  }
+
+  if (ORIGINAL_DOCKER_CONTROL_URL === undefined) {
+    delete process.env.PLATFORM_DOCKER_CONTROL_URL;
+  } else {
+    process.env.PLATFORM_DOCKER_CONTROL_URL = ORIGINAL_DOCKER_CONTROL_URL;
+  }
 }
 
-function writeCronConfig(configPath: string) {
+function writeCronConfig(
+  configPath: string,
+  jobs = [
+    {
+      description: 'Synchronize payment products.',
+      enabled: true,
+      id: 'payment-products',
+      path: '/api/cron/payment/products',
+      schedule: '0 */12 * * *',
+    },
+  ]
+) {
   fs.mkdirSync(path.dirname(configPath), { recursive: true });
   fs.writeFileSync(
     configPath,
     JSON.stringify({
-      jobs: [
-        {
-          description: 'Synchronize payment products.',
-          enabled: true,
-          id: 'payment-products',
-          path: '/api/cron/payment/products',
-          schedule: '0 */12 * * *',
-        },
-      ],
+      jobs,
     })
   );
+}
+
+function createCronMonitoringPaths(tempDir: string) {
+  const configFile = path.join(tempDir, 'cron.config.json');
+  const runtimeDir = path.join(tempDir, 'runtime');
+  const controlDir = path.join(tempDir, 'control');
+
+  return {
+    configFile,
+    controlDir,
+    controlFile: path.join(controlDir, 'cron-control.json'),
+    dockerControlStatusFile: path.join(
+      runtimeDir,
+      '..',
+      'docker-control',
+      'status.json'
+    ),
+    executionDir: path.join(runtimeDir, 'executions'),
+    runnerRecoveryRequestFile: path.join(
+      controlDir,
+      'cron-runner-recovery.request.json'
+    ),
+    runRequestsDir: path.join(controlDir, 'cron-run-requests'),
+    runtimeDir,
+    statusFile: path.join(runtimeDir, 'status.json'),
+    watcherStatusFile: path.join(
+      runtimeDir,
+      '..',
+      'watch',
+      'blue-green-auto-deploy.status.json'
+    ),
+  };
 }
 
 describe('readCronMonitoringSnapshot', () => {
@@ -190,6 +241,106 @@ describe('readCronMonitoringSnapshot', () => {
       ]);
       expect(snapshot.overview.processingRuns).toBe(1);
       expect(snapshot.overview.queuedRuns).toBe(1);
+    } finally {
+      fs.rmSync(tempDir, { force: true, recursive: true });
+    }
+  });
+
+  it('derives future next-run metadata when persisted schedule fields are stale', () => {
+    const tempDir = fs.mkdtempSync(
+      path.join(os.tmpdir(), 'cron-monitoring-next-run-')
+    );
+    const paths = createCronMonitoringPaths(tempDir);
+
+    try {
+      writeCronConfig(paths.configFile);
+      fs.mkdirSync(paths.runtimeDir, { recursive: true });
+      fs.writeFileSync(
+        paths.statusFile,
+        JSON.stringify({
+          jobs: [
+            {
+              description: 'Stale persisted description.',
+              enabled: true,
+              id: 'payment-products',
+              nextRunAt: Date.parse('2025-12-25T00:00:00.000Z'),
+              path: '/api/cron/old-payment-products',
+              schedule: '0 0 * * *',
+            },
+          ],
+          nextRunAt: Date.parse('2025-12-25T00:00:00.000Z'),
+          updatedAt: Date.parse('2025-12-25T00:00:00.000Z'),
+        })
+      );
+
+      const snapshot = readCronMonitoringSnapshot({
+        now: Date.parse('2026-01-01T00:15:30.000Z'),
+        paths,
+      });
+
+      expect(snapshot.status).toBe('stale');
+      expect(snapshot.nextRunAt).toBe(Date.parse('2026-01-01T12:00:00.000Z'));
+      expect(snapshot.jobs[0]).toMatchObject({
+        description: 'Synchronize payment products.',
+        enabled: true,
+        nextRunAt: Date.parse('2026-01-01T12:00:00.000Z'),
+        path: '/api/cron/payment/products',
+        schedule: '0 */12 * * *',
+      });
+    } finally {
+      fs.rmSync(tempDir, { force: true, recursive: true });
+    }
+  });
+
+  it('keeps disabled jobs out of next-run metadata even with stale persisted values', () => {
+    const tempDir = fs.mkdtempSync(
+      path.join(os.tmpdir(), 'cron-monitoring-disabled-next-run-')
+    );
+    const paths = createCronMonitoringPaths(tempDir);
+
+    try {
+      writeCronConfig(paths.configFile);
+      fs.mkdirSync(paths.runtimeDir, { recursive: true });
+      fs.mkdirSync(paths.controlDir, { recursive: true });
+      fs.writeFileSync(
+        paths.controlFile,
+        JSON.stringify({
+          enabled: true,
+          jobs: {
+            'payment-products': {
+              enabled: false,
+              updatedAt: 1000,
+              updatedBy: 'user-1',
+              updatedByEmail: null,
+            },
+          },
+          updatedAt: 1000,
+        })
+      );
+      fs.writeFileSync(
+        paths.statusFile,
+        JSON.stringify({
+          jobs: [
+            {
+              enabled: true,
+              id: 'payment-products',
+              nextRunAt: Date.parse('2025-12-25T00:00:00.000Z'),
+            },
+          ],
+          nextRunAt: Date.parse('2025-12-25T00:00:00.000Z'),
+          updatedAt: Date.parse('2025-12-25T00:00:00.000Z'),
+        })
+      );
+
+      const snapshot = readCronMonitoringSnapshot({
+        now: Date.parse('2026-01-01T00:15:30.000Z'),
+        paths,
+      });
+
+      expect(snapshot.nextRunAt).toBeNull();
+      expect(snapshot.jobs[0]?.enabled).toBe(false);
+      expect(snapshot.jobs[0]?.nextRunAt).toBeNull();
+      expect(snapshot.status).toBe('stale');
     } finally {
       fs.rmSync(tempDir, { force: true, recursive: true });
     }
@@ -391,6 +542,293 @@ describe('readCronMonitoringSnapshot', () => {
         action: 'restart',
         status: 'succeeded',
       });
+    } finally {
+      fs.rmSync(tempDir, { force: true, recursive: true });
+    }
+  });
+
+  it('emits a stale runner diagnostic without a pending recovery request', () => {
+    const tempDir = fs.mkdtempSync(
+      path.join(os.tmpdir(), 'cron-monitoring-runner-diagnostic-')
+    );
+    const paths = createCronMonitoringPaths(tempDir);
+
+    try {
+      writeCronConfig(paths.configFile);
+      fs.mkdirSync(paths.runtimeDir, { recursive: true });
+      fs.writeFileSync(
+        paths.statusFile,
+        JSON.stringify({
+          updatedAt: Date.parse('2026-06-29T00:00:00.000Z'),
+        })
+      );
+
+      const snapshot = readCronMonitoringSnapshot({
+        now: Date.parse('2026-06-29T00:03:00.000Z'),
+        paths,
+      });
+
+      expect(snapshot.runnerRecoveryRequest).toBeNull();
+      expect(snapshot.diagnostics).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            code: 'runner_not_live',
+            severity: 'error',
+          }),
+        ])
+      );
+    } finally {
+      fs.rmSync(tempDir, { force: true, recursive: true });
+    }
+  });
+
+  it('emits a watcher diagnostic while direct Docker control is live', () => {
+    const tempDir = fs.mkdtempSync(
+      path.join(os.tmpdir(), 'cron-monitoring-watcher-diagnostic-')
+    );
+    const paths = createCronMonitoringPaths(tempDir);
+
+    try {
+      process.env.PLATFORM_DOCKER_CONTROL_TOKEN = 'test-token';
+      process.env.PLATFORM_DOCKER_CONTROL_URL =
+        'http://web-docker-control:7810';
+      writeCronConfig(paths.configFile);
+      fs.mkdirSync(paths.runtimeDir, { recursive: true });
+      fs.writeFileSync(
+        paths.statusFile,
+        JSON.stringify({
+          updatedAt: Date.parse('2026-06-29T00:00:30.000Z'),
+        })
+      );
+      fs.mkdirSync(path.dirname(paths.dockerControlStatusFile), {
+        recursive: true,
+      });
+      fs.writeFileSync(
+        paths.dockerControlStatusFile,
+        JSON.stringify({
+          kind: 'docker-control-status',
+          updatedAt: Date.parse('2026-06-29T00:00:30.000Z'),
+          watchdog: {
+            enabled: true,
+            lastCheckedAt: Date.parse('2026-06-29T00:00:30.000Z'),
+            status: 'healthy',
+          },
+        })
+      );
+
+      const snapshot = readCronMonitoringSnapshot({
+        now: Date.parse('2026-06-29T00:01:00.000Z'),
+        paths,
+      });
+
+      expect(snapshot.recovery.consumer).toBe('direct-control');
+      expect(snapshot.recovery.directControl.watchdog?.status).toBe('healthy');
+      expect(snapshot.diagnostics).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            code: 'watcher_not_live',
+            severity: 'warning',
+          }),
+        ])
+      );
+      expect(snapshot.diagnostics).not.toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            code: 'docker_control_not_live',
+          }),
+        ])
+      );
+    } finally {
+      restoreEnv();
+      fs.rmSync(tempDir, { force: true, recursive: true });
+    }
+  });
+
+  it('emits route-origin failure diagnostics from the latest failed execution', () => {
+    const tempDir = fs.mkdtempSync(
+      path.join(os.tmpdir(), 'cron-monitoring-route-origin-diagnostic-')
+    );
+    const paths = createCronMonitoringPaths(tempDir);
+
+    try {
+      writeCronConfig(paths.configFile);
+      fs.mkdirSync(paths.runtimeDir, { recursive: true });
+      fs.writeFileSync(
+        paths.statusFile,
+        JSON.stringify({
+          lastExecution: {
+            consoleLogs: [],
+            description: 'Synchronize payment products.',
+            durationMs: 12,
+            endedAt: Date.parse('2026-06-29T00:00:01.000Z'),
+            error: 'fetch failed: web-proxy route origin was unreachable',
+            httpStatus: null,
+            id: 'execution-1',
+            jobId: 'payment-products',
+            path: '/api/cron/payment/products',
+            response: null,
+            schedule: '0 */12 * * *',
+            scheduledAt: null,
+            source: 'scheduled',
+            startedAt: Date.parse('2026-06-29T00:00:00.000Z'),
+            status: 'failed',
+            triggerId: null,
+          },
+          updatedAt: Date.parse('2026-06-29T00:00:30.000Z'),
+        })
+      );
+
+      const snapshot = readCronMonitoringSnapshot({
+        now: Date.parse('2026-06-29T00:01:00.000Z'),
+        paths,
+      });
+
+      expect(snapshot.diagnostics).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            code: 'last_execution_failed',
+            detail: expect.stringContaining('web-proxy'),
+            jobId: 'payment-products',
+          }),
+        ])
+      );
+    } finally {
+      fs.rmSync(tempDir, { force: true, recursive: true });
+    }
+  });
+
+  it('emits a managed parent failure diagnostic', () => {
+    const tempDir = fs.mkdtempSync(
+      path.join(os.tmpdir(), 'cron-monitoring-managed-parent-diagnostic-')
+    );
+    const paths = createCronMonitoringPaths(tempDir);
+
+    try {
+      writeCronConfig(paths.configFile, [
+        {
+          description: 'Process managed workspace cron jobs.',
+          enabled: true,
+          id: 'managed-workspace-cron-jobs',
+          path: '/api/cron/workspaces/managed-jobs',
+          schedule: '* * * * *',
+        },
+      ]);
+      fs.mkdirSync(paths.runtimeDir, { recursive: true });
+      fs.writeFileSync(
+        paths.statusFile,
+        JSON.stringify({
+          jobs: [
+            {
+              failureStreak: 2,
+              id: 'managed-workspace-cron-jobs',
+              lastExecution: {
+                consoleLogs: [],
+                description: 'Process managed workspace cron jobs.',
+                durationMs: 50,
+                endedAt: Date.parse('2026-06-29T00:00:01.000Z'),
+                error: 'managed cron RPC failed',
+                httpStatus: 500,
+                id: 'execution-1',
+                jobId: 'managed-workspace-cron-jobs',
+                path: '/api/cron/workspaces/managed-jobs',
+                response: null,
+                schedule: '* * * * *',
+                scheduledAt: null,
+                source: 'scheduled',
+                startedAt: Date.parse('2026-06-29T00:00:00.000Z'),
+                status: 'failed',
+                triggerId: null,
+              },
+            },
+          ],
+          updatedAt: Date.parse('2026-06-29T00:00:30.000Z'),
+        })
+      );
+
+      const snapshot = readCronMonitoringSnapshot({
+        now: Date.parse('2026-06-29T00:01:00.000Z'),
+        paths,
+      });
+
+      expect(snapshot.diagnostics).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            code: 'managed_parent_failed',
+            count: 2,
+            detail: 'managed cron RPC failed',
+            jobId: 'managed-workspace-cron-jobs',
+          }),
+        ])
+      );
+    } finally {
+      fs.rmSync(tempDir, { force: true, recursive: true });
+    }
+  });
+
+  it('emits an overdue managed job diagnostic', () => {
+    const tempDir = fs.mkdtempSync(
+      path.join(os.tmpdir(), 'cron-monitoring-managed-overdue-diagnostic-')
+    );
+    const paths = createCronMonitoringPaths(tempDir);
+
+    try {
+      writeCronConfig(paths.configFile);
+      fs.mkdirSync(paths.runtimeDir, { recursive: true });
+      fs.writeFileSync(
+        paths.statusFile,
+        JSON.stringify({
+          updatedAt: Date.parse('2026-06-29T00:00:30.000Z'),
+        })
+      );
+
+      const snapshot = readCronMonitoringSnapshot({
+        now: Date.parse('2026-06-29T00:01:00.000Z'),
+        paths,
+      });
+      const withDiagnostics = withManagedExternalCronDiagnostics(snapshot, {
+        apps: [
+          {
+            appDisplayName: 'Demo app',
+            appId: 'app-1',
+            configured: true,
+            enabled: true,
+            generatedAt: '2026-06-29T00:01:00.000Z',
+            jobs: [
+              {
+                enabled: true,
+                failureStreak: 0,
+                isOverdue: true,
+                jobKey: 'sync-products',
+                jobName: 'Sync products',
+                lastExecution: null,
+                nextRunAt: '2026-06-29T00:00:00.000Z',
+                overdueReason: 'No execution recorded after scheduled time.',
+                overdueSince: '2026-06-29T00:00:00.000Z',
+                schedule: '* * * * *',
+                scheduleDescription: 'Every minute',
+                scheduleTimezone: 'UTC',
+              },
+            ],
+            serverNow: '2026-06-29T00:01:00.000Z',
+            workspaceId: 'workspace-1',
+          },
+        ],
+        available: true,
+        error: null,
+        executions: [],
+        generatedAt: '2026-06-29T00:01:00.000Z',
+        serverNow: '2026-06-29T00:01:00.000Z',
+      });
+
+      expect(withDiagnostics.diagnostics).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            code: 'managed_external_overdue',
+            count: 1,
+            jobId: 'sync-products',
+          }),
+        ])
+      );
     } finally {
       fs.rmSync(tempDir, { force: true, recursive: true });
     }

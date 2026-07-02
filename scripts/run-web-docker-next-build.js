@@ -186,6 +186,52 @@ function getDockerNextBuildCpus(env) {
   return LARGE_DOCKER_NEXT_BUILD_CPUS;
 }
 
+function isNativeWebBuildEnabled(env) {
+  return String(env.DOCKER_WEB_NATIVE_BUILD ?? '').trim() === '1';
+}
+
+function getNextBuildEnvironment(baseEnv) {
+  const env = {
+    ...baseEnv,
+    NODE_OPTIONS: mergeNodeOptions(baseEnv.NODE_OPTIONS, baseEnv),
+  };
+
+  if (isNativeWebBuildEnabled(baseEnv)) {
+    const explicitCpus = parsePositiveIntegerEnv(
+      baseEnv,
+      'DOCKER_WEB_NEXT_BUILD_CPUS'
+    );
+    const explicitStaticGenerationMaxConcurrency = parsePositiveIntegerEnv(
+      baseEnv,
+      'DOCKER_WEB_STATIC_GENERATION_MAX_CONCURRENCY'
+    );
+
+    if (explicitCpus) {
+      env.DOCKER_WEB_NEXT_BUILD_CPUS = String(explicitCpus);
+    } else {
+      delete env.DOCKER_WEB_NEXT_BUILD_CPUS;
+    }
+
+    if (explicitStaticGenerationMaxConcurrency) {
+      env.DOCKER_WEB_STATIC_GENERATION_MAX_CONCURRENCY = String(
+        explicitStaticGenerationMaxConcurrency
+      );
+    } else {
+      delete env.DOCKER_WEB_STATIC_GENERATION_MAX_CONCURRENCY;
+    }
+
+    return env;
+  }
+
+  return {
+    ...env,
+    DOCKER_WEB_NEXT_BUILD_CPUS: String(getDockerNextBuildCpus(baseEnv)),
+    DOCKER_WEB_STATIC_GENERATION_MAX_CONCURRENCY: String(
+      getDockerStaticGenerationMaxConcurrency(baseEnv)
+    ),
+  };
+}
+
 function getEffectiveDockerMemoryMb(env) {
   const memoryValues = [
     parseMemoryToMb(env.DOCKER_WEB_DOCKER_MEMORY_LIMIT),
@@ -298,14 +344,7 @@ function main() {
   const nodeBinary = process.env.DOCKER_WEB_NODE_BINARY || 'node';
   const result = spawnSync(nodeBinary, getDockerNextBuildArgs(process.env), {
     cwd: WEB_DIR,
-    env: {
-      ...process.env,
-      DOCKER_WEB_NEXT_BUILD_CPUS: String(getDockerNextBuildCpus(process.env)),
-      DOCKER_WEB_STATIC_GENERATION_MAX_CONCURRENCY: String(
-        getDockerStaticGenerationMaxConcurrency(process.env)
-      ),
-      NODE_OPTIONS: mergeNodeOptions(process.env.NODE_OPTIONS, process.env),
-    },
+    env: getNextBuildEnvironment(process.env),
     stdio: 'inherit',
   });
 
@@ -331,6 +370,8 @@ module.exports = {
   getDockerNextBuildCpus,
   getDockerNodeMaxOldSpaceSizeMb,
   getDockerStaticGenerationMaxConcurrency,
+  getNextBuildEnvironment,
+  isNativeWebBuildEnabled,
   mergeNodeOptions,
   parseMemoryToMb,
 };

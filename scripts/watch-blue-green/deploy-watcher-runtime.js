@@ -7,7 +7,14 @@ const {
   readBlueGreenActiveColor,
   readBlueGreenProxyActiveColor,
 } = require('../docker-web/blue-green.js');
-const { getComposeEnvironment, WEB_ENV_FILE } = require('../docker-web/env.js');
+const {
+  DOCKER_WEB_GIT_COMMON_DIR_ENV,
+  getComposeEnvironment,
+  getDockerCloudflaredAutodetect,
+  resolveLinkedWorktreeGitCommonDir,
+  sanitizeGitLocalEnv,
+  WEB_ENV_FILE,
+} = require('../docker-web/env.js');
 const {
   getComposeCommandArgs,
   getComposeFile,
@@ -27,6 +34,9 @@ const BLUE_GREEN_COLORS = ['blue', 'green'];
 const PROD_COMPOSE_FILE = getComposeFile('prod');
 const BLUE_GREEN_PROXY_SERVICE = 'web-proxy';
 const HOST_WORKSPACE_DIR_ENV = 'PLATFORM_HOST_WORKSPACE_DIR';
+const WATCHER_BOOTSTRAP_IDLE_RUNTIME_ENV =
+  'DOCKER_WEB_WATCHER_BOOTSTRAP_IDLE_RUNTIME';
+const DEFAULT_CONTAINER_HOST_WORKSPACE_DIR = '/workspace-host';
 
 function getBlueGreenColorFromServiceName(serviceName) {
   const match = String(serviceName ?? '').match(
@@ -40,28 +50,87 @@ function isTruthyEnv(value) {
   return /^(1|true|yes)$/iu.test(String(value ?? '').trim());
 }
 
+function isDefaultContainerHostWorkspaceDir(value) {
+  if (typeof value !== 'string' || value.trim().length === 0) {
+    return false;
+  }
+
+  return (
+    path.resolve(value.trim()) ===
+    path.resolve(DEFAULT_CONTAINER_HOST_WORKSPACE_DIR)
+  );
+}
+
+function resolveWatcherHostWorkspaceDir({
+  baseEnv = process.env,
+  rootDir = ROOT_DIR,
+} = {}) {
+  const configured =
+    typeof baseEnv[HOST_WORKSPACE_DIR_ENV] === 'string'
+      ? baseEnv[HOST_WORKSPACE_DIR_ENV].trim()
+      : '';
+  const resolvedRootDir = path.resolve(rootDir);
+
+  if (
+    configured.length > 0 &&
+    !(
+      isDefaultContainerHostWorkspaceDir(configured) &&
+      resolvedRootDir !== path.resolve(DEFAULT_CONTAINER_HOST_WORKSPACE_DIR)
+    )
+  ) {
+    return configured;
+  }
+
+  return rootDir;
+}
+
 function getWatcherComposeEnv({
   baseEnv = process.env,
   envFilePath,
   fsImpl = fs,
   rootDir = ROOT_DIR,
 } = {}) {
-  const hostWorkspaceDir =
-    typeof baseEnv[HOST_WORKSPACE_DIR_ENV] === 'string' &&
-    baseEnv[HOST_WORKSPACE_DIR_ENV].trim().length > 0
-      ? baseEnv[HOST_WORKSPACE_DIR_ENV].trim()
-      : rootDir;
+  const hostWorkspaceDir = resolveWatcherHostWorkspaceDir({
+    baseEnv,
+    rootDir,
+  });
+  const cloudflared = getDockerCloudflaredAutodetect({
+    baseEnv,
+    envFilePath,
+    fsImpl,
+    rootDir: hostWorkspaceDir,
+  });
+  const withCloudflared =
+    isTruthyEnv(baseEnv.DOCKER_WEB_WITH_CLOUDFLARED) || cloudflared.enabled;
+  const composeBaseEnv =
+    withCloudflared && !isTruthyEnv(baseEnv.DOCKER_WEB_WITH_CLOUDFLARED)
+      ? {
+          ...baseEnv,
+          DOCKER_WEB_WITH_CLOUDFLARED: '1',
+        }
+      : baseEnv;
+  const sanitizedComposeBaseEnv = sanitizeGitLocalEnv(composeBaseEnv);
+  const gitCommonDir = resolveLinkedWorktreeGitCommonDir({
+    fsImpl,
+    rootDir: hostWorkspaceDir,
+  });
+  const composeEnv = getComposeEnvironment({
+    baseEnv: sanitizedComposeBaseEnv,
+    envFilePath,
+    fsImpl,
+    preferEnvFilePath: true,
+    rootDir: hostWorkspaceDir,
+    withCloudflared,
+    withRedis: true,
+  });
 
   return {
-    ...getComposeEnvironment({
-      baseEnv,
-      envFilePath,
-      fsImpl,
-      preferEnvFilePath: true,
-      rootDir: hostWorkspaceDir,
-      withCloudflared: isTruthyEnv(baseEnv.DOCKER_WEB_WITH_CLOUDFLARED),
-      withRedis: true,
-    }),
+    ...composeEnv,
+    ...(gitCommonDir ? { [DOCKER_WEB_GIT_COMMON_DIR_ENV]: gitCommonDir } : {}),
+    [WATCHER_BOOTSTRAP_IDLE_RUNTIME_ENV]:
+      composeEnv[WATCHER_BOOTSTRAP_IDLE_RUNTIME_ENV] ??
+      sanitizedComposeBaseEnv[WATCHER_BOOTSTRAP_IDLE_RUNTIME_ENV] ??
+      '1',
     [HOST_WORKSPACE_DIR_ENV]: hostWorkspaceDir,
   };
 }
@@ -780,9 +849,11 @@ module.exports = {
   BLUE_GREEN_PROXY_SERVICE,
   HOST_WORKSPACE_DIR_ENV,
   PROD_COMPOSE_FILE,
+  WATCHER_BOOTSTRAP_IDLE_RUNTIME_ENV,
   collectDeploymentTraffic,
   getProdComposeServiceContainerId,
   getWatcherComposeEnv,
   loadRuntimeSnapshot,
+  resolveWatcherHostWorkspaceDir,
   resolveCurrentBlueGreenStatus,
 };

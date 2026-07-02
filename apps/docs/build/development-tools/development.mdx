@@ -367,6 +367,9 @@ Read the report by pressure type:
 - `apps/web/.next/dev/cache/turbopack` is generated Turbopack filesystem cache.
   Multi-GB cache growth can make disk usage look like a live memory leak even
   when process RSS is modest.
+- `apps/web/.next/cache` can include the Next 16.3 Turbopack build filesystem
+  cache from local builds. It speeds repeated local `next build` runs, but it is
+  still local artifact state and must stay out of Turborepo task outputs.
 - `.turbo/cache` is Turborepo task cache. It is separate from the live Next.js
   dev server and should not be treated as app RSS.
 - `Build memory policy` reports Docker and `next build` memory budgets. Those

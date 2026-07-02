@@ -52,6 +52,12 @@ const BUILD_RESOURCE_PROFILES = Object.freeze([
   Object.freeze({
     cpus: '1',
     maxParallelism: '1',
+    memory: '10g',
+    name: 'serial',
+  }),
+  Object.freeze({
+    cpus: '1',
+    maxParallelism: '1',
     memory: '8g',
     name: 'minimal',
   }),
@@ -199,12 +205,33 @@ function isBuildResourceProfileWithinBudget(profile, env = {}) {
   return !budgetBytes || !profileBytes || profileBytes <= budgetBytes;
 }
 
+function getBuildResourceProfileHardLimitBytes(env = {}) {
+  const dockerMemoryLimitBytes = getDockerMemoryLimitBytes(env);
+
+  if (!dockerMemoryLimitBytes) {
+    return null;
+  }
+
+  return Math.max(0, dockerMemoryLimitBytes - AUTO_BUILD_MEMORY_HEADROOM_BYTES);
+}
+
+function isBuildResourceProfileWithinHardLimit(profile, env = {}) {
+  const hardLimitBytes = getBuildResourceProfileHardLimitBytes(env);
+  const profileBytes = getBuildResourceProfileMemoryBytes(profile, env);
+
+  return !!hardLimitBytes && !!profileBytes && profileBytes <= hardLimitBytes;
+}
+
 function getRecommendedBuildResourceProfile(_env = {}) {
   return DEFAULT_BUILD_RESOURCE_PROFILE;
 }
 
 function getBudgetedBuildResourceProfile(profile, env = {}) {
-  if (!profile || isBuildResourceProfileWithinBudget(profile, env)) {
+  if (
+    !profile ||
+    isBuildResourceProfileWithinBudget(profile, env) ||
+    isBuildResourceProfileWithinHardLimit(profile, env)
+  ) {
     return profile;
   }
 
@@ -215,11 +242,24 @@ function getNextAdaptiveBuildResourceProfile({
   attemptedProfileNames = new Set(),
   currentProfileName,
   env = {},
+  preferHardLimitProfile = false,
 } = {}) {
   const currentIndex = getBuildResourceProfileIndex(currentProfileName);
 
   if (currentIndex < 0) {
     return null;
+  }
+
+  const currentProfile = getBuildResourceProfile(currentProfileName);
+  const hardLimitProfile = BUILD_RESOURCE_PROFILES.slice(currentIndex + 1).find(
+    (profile) =>
+      profile.name !== currentProfile?.name &&
+      !attemptedProfileNames.has(profile.name) &&
+      isBuildResourceProfileWithinHardLimit(profile, env)
+  );
+
+  if (preferHardLimitProfile && hardLimitProfile) {
+    return hardLimitProfile;
   }
 
   const nextLowerProfile = BUILD_RESOURCE_PROFILES.slice(currentIndex + 1).find(
@@ -232,7 +272,6 @@ function getNextAdaptiveBuildResourceProfile({
     return nextLowerProfile;
   }
 
-  const currentProfile = getBuildResourceProfile(currentProfileName);
   const recommendedProfile = getRecommendedBuildResourceProfile(env);
 
   if (
@@ -241,6 +280,10 @@ function getNextAdaptiveBuildResourceProfile({
     !attemptedProfileNames.has(recommendedProfile.name)
   ) {
     return recommendedProfile;
+  }
+
+  if (hardLimitProfile) {
+    return hardLimitProfile;
   }
 
   return null;
@@ -276,14 +319,62 @@ function writeBuildResourceProfileState(
   );
 }
 
-function getPersistedBuildResourceProfile({
-  fsImpl = fs,
-  paths = getBuildResourceProfilePaths(),
-} = {}) {
-  const state = readBuildResourceProfileState(paths, fsImpl);
-  const profile = getBuildResourceProfile(state?.profileName);
+function compareBuildResourceProfilesForRescue(a, b, env = {}) {
+  const memoryDelta =
+    (getBuildResourceProfileMemoryBytes(b, env) ?? 0) -
+    (getBuildResourceProfileMemoryBytes(a, env) ?? 0);
 
-  return profile ?? DEFAULT_BUILD_RESOURCE_PROFILE;
+  if (memoryDelta !== 0) {
+    return memoryDelta;
+  }
+
+  const cpuDelta = Number(a.cpus) - Number(b.cpus);
+
+  if (cpuDelta !== 0) {
+    return cpuDelta;
+  }
+
+  return (
+    getBuildResourceProfileIndex(a.name) - getBuildResourceProfileIndex(b.name)
+  );
+}
+
+function shouldPromotePersistedBuildResourceProfile(state) {
+  const reason = state?.reason;
+
+  return (
+    typeof reason === 'string' &&
+    reason.startsWith('buildkit-resource-fallback')
+  );
+}
+
+function getPromotedPersistedBuildResourceProfile({
+  env = {},
+  profile,
+  state,
+} = {}) {
+  if (!profile || !shouldPromotePersistedBuildResourceProfile(state)) {
+    return profile;
+  }
+
+  const currentBytes = getBuildResourceProfileMemoryBytes(profile, env);
+
+  if (!currentBytes) {
+    return profile;
+  }
+
+  const promotedProfile = BUILD_RESOURCE_PROFILES.filter((candidate) => {
+    const candidateBytes = getBuildResourceProfileMemoryBytes(candidate, env);
+
+    return (
+      candidate.name !== profile.name &&
+      !!candidateBytes &&
+      candidateBytes > currentBytes &&
+      isBuildResourceProfileWithinHardLimit(candidate, env)
+    );
+  }).sort((a, b) => compareBuildResourceProfilesForRescue(a, b, env))[0];
+
+  return promotedProfile ?? profile;
 }
 
 function isEmptyEnvValue(value) {
@@ -377,10 +468,28 @@ function createBuildResourceProfileSelection({
     };
   }
 
+  const persistedState = readBuildResourceProfileState(paths, fsImpl);
+  const persistedProfile =
+    getBuildResourceProfile(persistedState?.profileName) ??
+    DEFAULT_BUILD_RESOURCE_PROFILE;
   const profile = getBudgetedBuildResourceProfile(
-    getPersistedBuildResourceProfile({ fsImpl, paths }),
+    getPromotedPersistedBuildResourceProfile({
+      env,
+      profile: persistedProfile,
+      state: persistedState,
+    }),
     env
   );
+
+  if (profile.name !== persistedProfile.name) {
+    persistBuildResourceProfile({
+      fsImpl,
+      previousProfileName: persistedProfile.name,
+      profile,
+      reason: 'buildkit-resource-state-promoted',
+      stateFile: paths.stateFile,
+    });
+  }
 
   return {
     enabled: true,
@@ -498,6 +607,14 @@ function isBuildkitResourceProfileFallbackError(error) {
   );
 }
 
+function isBuildkitMemoryExhaustionError(error) {
+  const message = error instanceof Error ? error.message : String(error);
+
+  return /(?:ResourceExhausted|cannot allocate memory|out of memory|SIGKILL|Forced quit|exit(?:ed)?(?:\s+with)?\s+code\s+137|exited\s*\(137\))/iu.test(
+    message
+  );
+}
+
 module.exports = {
   BUILD_RESOURCE_PROFILE_ADAPTIVE_ENV,
   BUILD_RESOURCE_PROFILE_ENV,
@@ -512,19 +629,23 @@ module.exports = {
   getBuildResourceConfigForSelection,
   getBuildResourceProfile,
   getBuildResourceProfileFromEnv,
+  getBuildResourceProfileHardLimitBytes,
   getBuildResourceProfileMemoryBytes,
   getBuildResourceProfilePaths,
   getBuildResourceProfilePathsFromEnv,
   getAutoBuildMemoryBudget,
   getAutoBuildMemoryBudgetBytes,
   getBudgetedBuildResourceProfile,
-  getNextLowerBuildResourceProfile,
   getNextAdaptiveBuildResourceProfile,
+  getNextLowerBuildResourceProfile,
+  getPromotedPersistedBuildResourceProfile,
   getRecommendedBuildResourceProfile,
   hasExplicitBuildResourceCliConfig,
   hasExplicitBuildResourceEnv,
   isAdaptiveBuildResourceProfileEnabled,
   isBuildResourceProfileWithinBudget,
+  isBuildResourceProfileWithinHardLimit,
+  isBuildkitMemoryExhaustionError,
   isBuildkitResourceProfileFallbackError,
   isDefaultBuildResourceCliConfig,
   parseMemoryToBytes,

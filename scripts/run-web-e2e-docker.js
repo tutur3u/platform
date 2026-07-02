@@ -1863,6 +1863,8 @@ async function runWebE2E(playwrightArgs = process.argv.slice(2), options = {}) {
     [WATCHER_CONTAINER_ENV]: '1',
     DOCKER_WEB_BUILDKIT_PRUNE_AFTER_BUILD:
       process.env.E2E_DOCKER_BUILDKIT_PRUNE_AFTER_BUILD ?? '1',
+    DOCKER_WEB_BUILDKIT_PRUNE_MODE:
+      process.env.E2E_DOCKER_BUILDKIT_PRUNE_MODE ?? 'all',
     DOCKER_WEB_NATIVE_BUILD: getE2EDockerNativeBuildValue(process.env),
     DOCKER_WEB_SUPABASE_START_EXCLUDE:
       process.env.DOCKER_WEB_SUPABASE_START_EXCLUDE ??

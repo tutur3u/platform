@@ -15,10 +15,14 @@ describe('createTuturuuuNextConfig', () => {
 
     expect(config.allowedDevOrigins).toContain('tuturuuu.localhost');
     expect(config.cacheComponents).toBe(true);
+    expect(config.partialPrefetching).toBe(true);
+    expect(config.experimental?.turbopackFileSystemCacheForBuild).toBe(true);
+    expect(config.experimental?.turbopackRustReactCompiler).toBe(true);
     expect(config.images?.remotePatterns).toEqual(
       TUTURUUU_NEXT_IMAGE_REMOTE_PATTERNS
     );
     expect(config.poweredByHeader).toBe(false);
+    expect(config.reactCompiler).toBe(true);
     expect(config.reactStrictMode).toBe(true);
     expect(config.typescript?.ignoreBuildErrors).toBe(true);
   });
@@ -95,10 +99,13 @@ describe('createTuturuuuNextConfig', () => {
   it('preserves app-specific config overrides', () => {
     const config = createTuturuuuNextConfig({
       cacheComponents: false,
-      reactCompiler: true,
+      partialPrefetching: false,
+      reactCompiler: false,
       transpilePackages: ['@tuturuuu/ui'],
       experimental: {
         cpus: 2,
+        turbopackFileSystemCacheForBuild: false,
+        turbopackRustReactCompiler: false,
       },
       typescript: {
         ignoreBuildErrors: false,
@@ -106,10 +113,42 @@ describe('createTuturuuuNextConfig', () => {
     });
 
     expect(config.cacheComponents).toBe(false);
+    expect(config.partialPrefetching).toBe(false);
     expect(config.reactCompiler).toBe(true);
     expect(config.transpilePackages).toEqual(['@tuturuuu/ui']);
     expect(config.experimental?.cpus).toBe(2);
+    expect(config.experimental?.turbopackFileSystemCacheForBuild).toBe(false);
+    expect(config.experimental?.turbopackRustReactCompiler).toBe(false);
     expect(config.typescript?.ignoreBuildErrors).toBe(false);
+  });
+
+  it('keeps cache components enabled for all apps by default', () => {
+    const originalCacheComponents = process.env.TUTURUUU_NEXT_CACHE_COMPONENTS;
+
+    try {
+      process.env.TUTURUUU_NEXT_CACHE_COMPONENTS = '0';
+
+      const config = createTuturuuuNextConfig();
+
+      expect(config.cacheComponents).toBe(true);
+      expect(config.partialPrefetching).toBe(true);
+    } finally {
+      if (originalCacheComponents === undefined) {
+        delete process.env.TUTURUUU_NEXT_CACHE_COMPONENTS;
+      } else {
+        process.env.TUTURUUU_NEXT_CACHE_COMPONENTS = originalCacheComponents;
+      }
+    }
+  });
+
+  it('allows apps to explicitly override partial prefetching', () => {
+    const config = createTuturuuuNextConfig({
+      cacheComponents: true,
+      partialPrefetching: false,
+    });
+
+    expect(config.cacheComponents).toBe(true);
+    expect(config.partialPrefetching).toBe(false);
   });
 });
 
@@ -118,12 +157,12 @@ describe('isTuturuuuNextCacheComponentsEnabled', () => {
     expect(isTuturuuuNextCacheComponentsEnabled({})).toBe(true);
   });
 
-  it('honors explicit environment overrides', () => {
+  it('ignores deprecated environment opt-outs', () => {
     expect(
       isTuturuuuNextCacheComponentsEnabled({
         TUTURUUU_NEXT_CACHE_COMPONENTS: '0',
       })
-    ).toBe(false);
+    ).toBe(true);
     expect(
       isTuturuuuNextCacheComponentsEnabled({
         TUTURUUU_NEXT_CACHE_COMPONENTS: '1',
@@ -133,10 +172,10 @@ describe('isTuturuuuNextCacheComponentsEnabled', () => {
 });
 
 describe('isTuturuuuNextReactCompilerEnabled', () => {
-  it('disables React Compiler by default for next dev', () => {
+  it('keeps React Compiler enabled for next dev', () => {
     expect(
       isTuturuuuNextReactCompilerEnabled({ NODE_ENV: 'development' })
-    ).toBe(false);
+    ).toBe(true);
   });
 
   it('keeps React Compiler enabled by default outside next dev', () => {
@@ -145,13 +184,13 @@ describe('isTuturuuuNextReactCompilerEnabled', () => {
     );
   });
 
-  it('honors explicit environment overrides', () => {
+  it('ignores explicit environment opt-outs', () => {
     expect(
       isTuturuuuNextReactCompilerEnabled({
         NODE_ENV: 'production',
         TUTURUUU_NEXT_REACT_COMPILER: '0',
       })
-    ).toBe(false);
+    ).toBe(true);
     expect(
       isTuturuuuNextReactCompilerEnabled({
         NODE_ENV: 'development',

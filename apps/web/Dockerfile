@@ -22,7 +22,7 @@ COPY apps/external/package.json ./apps/external/package.json
 COPY apps/finance/package.json ./apps/finance/package.json
 COPY apps/hive/package.json ./apps/hive/package.json
 COPY apps/hive-realtime/package.json ./apps/hive-realtime/package.json
-COPY apps/infra/package.json ./apps/infra/package.json
+COPY apps/infrastructure/package.json ./apps/infrastructure/package.json
 COPY apps/inventory/package.json ./apps/inventory/package.json
 COPY apps/mail/package.json ./apps/mail/package.json
 COPY apps/meet/package.json ./apps/meet/package.json
@@ -124,7 +124,7 @@ ARG DOCKER_WEB_DOCKER_MEMORY_LIMIT=
 ARG DOCKER_WEB_NEXT_APP_ONLY=1
 ARG DOCKER_WEB_NEXT_BUILD_ENGINE=turbopack
 ARG DOCKER_WEB_NODE_MAX_OLD_SPACE_SIZE=auto
-ARG DOCKER_WEB_REACT_COMPILER=0
+ARG DOCKER_WEB_REACT_COMPILER=1
 ARG DOCKER_WEB_TURBO_CONCURRENCY=
 ARG PLATFORM_BUILD_BUILT_AT=
 ARG PLATFORM_BUILD_COMMIT_HASH=
@@ -158,7 +158,16 @@ COPY . .
 
 RUN --mount=type=cache,id=platform-web-turbo,target=/workspace/.turbo \
   --mount=type=cache,id=platform-web-next-cache,target=/workspace/apps/web/.next/cache \
+  --mount=type=secret,id=turbo_api,target=/run/secrets/turbo_api,required=false \
+  --mount=type=secret,id=turbo_remote_cache_signature_key,target=/run/secrets/turbo_remote_cache_signature_key,required=false \
+  --mount=type=secret,id=turbo_team,target=/run/secrets/turbo_team,required=false \
+  --mount=type=secret,id=turbo_token,target=/run/secrets/turbo_token,required=false \
   --mount=type=secret,id=web_env,target=/tmp/web.env \
+  set -eu; \
+  if [ -s /run/secrets/turbo_api ]; then export TURBO_API="$(cat /run/secrets/turbo_api)"; fi; \
+  if [ -s /run/secrets/turbo_remote_cache_signature_key ]; then export TURBO_REMOTE_CACHE_SIGNATURE_KEY="$(cat /run/secrets/turbo_remote_cache_signature_key)"; fi; \
+  if [ -s /run/secrets/turbo_team ]; then export TURBO_TEAM="$(cat /run/secrets/turbo_team)"; fi; \
+  if [ -s /run/secrets/turbo_token ]; then export TURBO_TOKEN="$(cat /run/secrets/turbo_token)"; fi; \
   bun --env-file=/tmp/web.env ./scripts/build-web-docker.js
 
 FROM node:24-bookworm-slim AS runner

@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.12.1](https://github.com/tutur3u/platform/compare/sdk-v0.12.0...sdk-v0.12.1) (2026-07-02)
+
+
+### Bug Fixes
+
+* **cli:** preserve markdown tables in task descriptions ([9faf8ba](https://github.com/tutur3u/platform/commit/9faf8ba44b92565a9dfc2949c496654fc1fea9b3))
+
 ## [0.12.0](https://github.com/tutur3u/platform/compare/sdk-v0.11.0...sdk-v0.12.0) (2026-06-29)
 
 

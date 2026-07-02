@@ -667,7 +667,6 @@ function deductSuggestionCredits({
         inputTokens?: number;
         outputTokens?: number;
         outputTokenDetails?: { reasoningTokens?: number };
-        reasoningTokens?: number;
       }
     | null
     | undefined;
@@ -682,8 +681,7 @@ function deductSuggestionCredits({
     modelId,
     inputTokens: usage.inputTokens ?? 0,
     outputTokens: usage.outputTokens ?? 0,
-    reasoningTokens:
-      usage.outputTokenDetails?.reasoningTokens ?? usage.reasoningTokens ?? 0,
+    reasoningTokens: usage.outputTokenDetails?.reasoningTokens ?? 0,
     feature: TASK_SUGGESTIONS_CREDIT_FEATURE,
   }).catch((error: unknown) =>
     serverLogger.error('Failed to deduct task suggestion AI credits', {

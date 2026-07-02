@@ -755,7 +755,13 @@ export type Database = {
       };
       auth_recovery_tokens: {
         Row: {
+          code_failed_attempts: number;
           code_hash: string;
+          code_last_failed_at: string | null;
+          code_last_failed_ip_hash: string | null;
+          code_last_failed_user_agent_hash: string | null;
+          code_locked_at: string | null;
+          code_locked_reason: string | null;
           consumed_at: string | null;
           consumed_ip_hash: string | null;
           consumed_user_agent_hash: string | null;
@@ -771,7 +777,13 @@ export type Database = {
           token_hash: string;
         };
         Insert: {
+          code_failed_attempts?: number;
           code_hash: string;
+          code_last_failed_at?: string | null;
+          code_last_failed_ip_hash?: string | null;
+          code_last_failed_user_agent_hash?: string | null;
+          code_locked_at?: string | null;
+          code_locked_reason?: string | null;
           consumed_at?: string | null;
           consumed_ip_hash?: string | null;
           consumed_user_agent_hash?: string | null;
@@ -787,7 +799,13 @@ export type Database = {
           token_hash: string;
         };
         Update: {
+          code_failed_attempts?: number;
           code_hash?: string;
+          code_last_failed_at?: string | null;
+          code_last_failed_ip_hash?: string | null;
+          code_last_failed_user_agent_hash?: string | null;
+          code_locked_at?: string | null;
+          code_locked_reason?: string | null;
           consumed_at?: string | null;
           consumed_ip_hash?: string | null;
           consumed_user_agent_hash?: string | null;
@@ -11661,6 +11679,10 @@ export type Database = {
           isSetofReturn: true;
         };
       };
+      delete_managed_cron_whitelisted_domain: {
+        Args: { p_domain: string };
+        Returns: undefined;
+      };
       detect_wallet_interest_transactions: {
         Args: { _actor_id: string; _wallet_id: string; _ws_id: string };
         Returns: Json;
@@ -11668,6 +11690,53 @@ export type Database = {
       ensure_user_group_metric_category_ids: {
         Args: { p_category_ids?: string[]; p_ws_id: string };
         Returns: string[];
+      };
+      external_app_managed_cron_executions: {
+        Args: {
+          p_external_app_id: string;
+          p_external_job_key?: string;
+          p_limit?: number;
+          p_offset?: number;
+          p_ws_id: string;
+        };
+        Returns: Json;
+      };
+      external_app_managed_cron_monitoring: {
+        Args: { p_execution_limit?: number };
+        Returns: Json;
+      };
+      external_app_managed_cron_setup: {
+        Args: {
+          p_enabled_secret: string;
+          p_external_app_id: string;
+          p_jobs: Json;
+          p_token_secret: string;
+          p_token_value: string;
+          p_ws_id: string;
+        };
+        Returns: Json;
+      };
+      external_app_managed_cron_status: {
+        Args: {
+          p_enabled_secret?: string;
+          p_expected_job_count?: number;
+          p_external_app_id: string;
+          p_token_secret?: string;
+          p_ws_id: string;
+        };
+        Returns: Json;
+      };
+      external_app_managed_cron_update_job: {
+        Args: {
+          p_enabled?: boolean;
+          p_external_app_id: string;
+          p_external_job_key: string;
+          p_next_run_at?: string;
+          p_schedule?: string;
+          p_schedule_timezone?: string;
+          p_ws_id: string;
+        };
+        Returns: boolean;
       };
       finance_credit_cycle_date: {
         Args: { p_anchor_year: number; p_day: number; p_month_offset: number };
@@ -12476,6 +12545,12 @@ export type Database = {
         Args: { _team_id: string; _user_id: string };
         Returns: boolean;
       };
+      list_enabled_managed_cron_domains: {
+        Args: never;
+        Returns: {
+          domain: string;
+        }[];
+      };
       list_inventory_bundles: {
         Args: {
           p_limit?: number;
@@ -12534,6 +12609,10 @@ export type Database = {
           storefront: Json;
           total_count: number;
         }[];
+      };
+      list_managed_cron_whitelisted_domains: {
+        Args: { p_limit?: number; p_offset?: number; p_search?: string };
+        Returns: Json;
       };
       list_task_source_filter_ids: {
         Args: {
@@ -12650,6 +12729,71 @@ export type Database = {
           starting_date: string;
           ws_id: string;
         }[];
+      };
+      managed_cron_claim_due_jobs: {
+        Args: {
+          p_limit?: number;
+          p_lock_ttl_seconds?: number;
+          p_runner_id?: string;
+        };
+        Returns: {
+          active: boolean;
+          endpoint_url: string;
+          headers_config: Json;
+          http_method: string;
+          id: string;
+          name: string;
+          retry_count: number;
+          schedule: string;
+          schedule_timezone: string;
+          timeout_ms: number;
+          ws_id: string;
+        }[];
+      };
+      managed_cron_claim_external_job: {
+        Args: {
+          p_external_app_id: string;
+          p_external_job_key: string;
+          p_runner_id: string;
+          p_ws_id: string;
+        };
+        Returns: {
+          active: boolean;
+          endpoint_url: string;
+          headers_config: Json;
+          http_method: string;
+          id: string;
+          name: string;
+          retry_count: number;
+          schedule: string;
+          schedule_timezone: string;
+          timeout_ms: number;
+          ws_id: string;
+        }[];
+      };
+      managed_cron_load_secret_values: {
+        Args: { p_secret_names: string[]; p_ws_id: string };
+        Returns: {
+          name: string;
+          value: string;
+        }[];
+      };
+      managed_cron_record_execution: {
+        Args: {
+          p_duration_ms?: number;
+          p_end_time: string;
+          p_endpoint_url?: string;
+          p_error?: string;
+          p_http_status?: number;
+          p_job_id: string;
+          p_next_run_at?: string;
+          p_response?: string;
+          p_runner_id: string;
+          p_source?: string;
+          p_start_time: string;
+          p_status: string;
+        };
+        Returns: boolean;
       };
       materialize_workspace_user_group_session_series: {
         Args: { p_series_id: string; p_until?: string };
@@ -12848,6 +12992,10 @@ export type Database = {
         }[];
       };
       update_expired_sessions: { Args: never; Returns: undefined };
+      update_managed_cron_whitelisted_domain_enabled: {
+        Args: { p_actor_id?: string; p_domain: string; p_enabled: boolean };
+        Returns: undefined;
+      };
       update_time_tracking_request: {
         Args: {
           p_action: string;
@@ -12930,6 +13078,15 @@ export type Database = {
           p_status?: string;
           p_storefront_id?: string;
           p_ws_id: string;
+        };
+        Returns: Json;
+      };
+      upsert_managed_cron_whitelisted_domain: {
+        Args: {
+          p_actor_id?: string;
+          p_description?: string;
+          p_domain: string;
+          p_enabled?: boolean;
         };
         Returns: Json;
       };
@@ -28152,6 +28309,7 @@ export type Database = {
           id: string;
           job_id: string;
           response: string | null;
+          source: string;
           start_time: string | null;
           status: string;
         };
@@ -28166,6 +28324,7 @@ export type Database = {
           id?: string;
           job_id: string;
           response?: string | null;
+          source?: string;
           start_time?: string | null;
           status: string;
         };
@@ -28180,6 +28339,7 @@ export type Database = {
           id?: string;
           job_id?: string;
           response?: string | null;
+          source?: string;
           start_time?: string | null;
           status?: string;
         };
@@ -28214,6 +28374,7 @@ export type Database = {
           next_run_at: string | null;
           retry_count: number;
           schedule: string;
+          schedule_timezone: string;
           timeout_ms: number;
           ws_id: string;
         };
@@ -28237,6 +28398,7 @@ export type Database = {
           next_run_at?: string | null;
           retry_count?: number;
           schedule: string;
+          schedule_timezone?: string;
           timeout_ms?: number;
           ws_id: string;
         };
@@ -28260,6 +28422,7 @@ export type Database = {
           next_run_at?: string | null;
           retry_count?: number;
           schedule?: string;
+          schedule_timezone?: string;
           timeout_ms?: number;
           ws_id?: string;
         };

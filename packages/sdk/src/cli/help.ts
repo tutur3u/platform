@@ -384,7 +384,7 @@ const helpTopics: Record<string, HelpTopic> = {
       'save-from-task <task-id>     snapshot an existing task as a template',
     ],
     description:
-      'Task templates store reusable single-task defaults. Workspace templates live in Tuturuuu; local templates live under .tuturuuu/task-templates/*.md with YAML frontmatter and markdown body.',
+      'Task templates store reusable single-task defaults. Workspace templates live in Tuturuuu; local templates live under .tuturuuu/task-templates/*.md with YAML frontmatter and markdown body, including GFM pipe tables.',
     examples: [
       'ttr task-templates',
       'ttr task-templates create "Bug report" --key bug-report --title "Investigate bug" --priority high',
@@ -423,6 +423,7 @@ const helpTopics: Record<string, HelpTopic> = {
     examples: [
       'ttr tiptap parse --text "Hello" --output json',
       'ttr tiptap parse --input notes.md --format markdown --output yjs-base64',
+      'ttr tiptap parse --text "| Field | Value |\\n| --- | --- |\\n| Owner | Platform |" --format markdown --output json',
       'ttr tiptap encode --input description.json --format json --output bytes-json',
       'ttr tiptap decode --input state.txt --format yjs-base64 --output text',
       'ttr tiptap validate --input description.json --format json',
@@ -811,13 +812,14 @@ const actionHelpTopics: Record<string, Record<string, HelpTopic>> = {
         'ttr tasks create --template bug-report --list <list-id>',
         'ttr tasks create "Fix login" --priority critical --labels bug,cli',
         'ttr tasks create "Ship CLI docs" --description-file notes.md --description-format markdown',
+        'ttr tasks create "QA handoff" --description-file table.md --description-format markdown',
       ],
       options: [
         '--name <name>               task title; positional text is also accepted',
         '--template <key-or-path>     create from a workspace or local task template',
         '--description <text>        task description text',
         '--description-file <path|-> task description file or stdin',
-        '--description-format <fmt>  text, markdown, or json',
+        '--description-format <fmt>  text, markdown, or json; markdown supports pipe tables',
         '--list <id>                 destination list; omitted means selected list or picker',
         '--board <id>                board used when choosing a list',
         '--priority <priority>       task priority',
@@ -847,7 +849,7 @@ const actionHelpTopics: Record<string, Record<string, HelpTopic>> = {
         '--file <path|->             description input file or stdin',
         '--description <text>        alias for --text',
         '--description-file <path|-> alias for --file',
-        '--format <format>           input: text|markdown|json; get output: text|json|yjs-base64|raw',
+        '--format <format>           input: text|markdown|json; markdown supports pipe tables; get output: text|json|yjs-base64|raw',
         '--json                      print machine-readable JSON',
       ],
       usage:
@@ -942,7 +944,7 @@ const actionHelpTopics: Record<string, Record<string, HelpTopic>> = {
         '--json-payload <json>       task update payload',
         '--description <text>        update task description text',
         '--description-file <path|-> update task description file or stdin',
-        '--description-format <fmt>  text, markdown, or json',
+        '--description-format <fmt>  text, markdown, or json; markdown supports pipe tables',
         '--list <id>, --list-id <id> also set list_id in the update payload',
         '--json                      print machine-readable JSON',
       ],

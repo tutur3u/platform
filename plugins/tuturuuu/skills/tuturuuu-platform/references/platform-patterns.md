@@ -138,6 +138,26 @@ shared-package changes.
   is rejected by `scripts/check-tanstack-api-access.js` — wire an internal-api
   facade instead, or leave the route for the backend wave that builds the reader.
 
+## Migration Debt Avoidance (web + backend + tanstack-web)
+
+The `apps/web` → `apps/backend` (Rust) + `apps/web` → `apps/tanstack-web` switch
+is in progress. Do NOT add debt while it is pending — treat the three apps as one
+system on every change:
+
+- Adding/changing an `apps/web` API route: if `apps/backend` already serves that
+  path, update the Rust handler in the same change (faithful status/body/cache;
+  GET first, `None` for un-ported methods). If not, register/refresh it in
+  `apps/tanstack-web/migration/route-overrides.json` and run
+  `bun migration:tanstack:manifest` so it is tracked, not invisible.
+- Adding/changing a dashboard page/route: keep the manifest accurate and route
+  shared data through `packages/internal-api` so the later TanStack port is a
+  move, not a rewrite.
+- Confirm backend route ownership with the runtime coverage probe in
+  `apps/backend/AGENTS.md`. Full reference + cache classes:
+  `apps/docs/platform/architecture/tanstack-rust-migration.mdx`
+  ("No New Debt While The Switch Is Pending"). The cheapest correct unit is GET
+  reads ported behind an `internal-api` facade.
+
 ## Translations And Navigation
 
 - Add, remove, or replace translation keys with `bun i18n:add --app <app>` or

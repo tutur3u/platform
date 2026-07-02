@@ -252,10 +252,10 @@ Tuturuuu supports multiple AI models through the Vercel AI SDK. There is **no
 static model array** anymore — the catalog is sourced dynamically from the AI
 gateway and stored in the `ai_gateway_models` table (synced by
 `packages/ai/src/credits/sync-gateway-models.ts`). The browsable catalog is
-served from `apps/web`:
+served from `apps/infrastructure`:
 
 - **API**: `GET /api/v1/infrastructure/ai/models`
-  (`apps/web/src/app/api/v1/infrastructure/ai/models/route.ts`)
+  (`apps/infrastructure/src/app/api/v1/infrastructure/ai/models/route.ts`)
 - **Docs**: see [Model Catalog](/platform/ai/model-catalog) for how metadata is
   published, browsed, and synced.
 

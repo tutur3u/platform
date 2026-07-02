@@ -44,12 +44,10 @@ struct HasWorkspacePermissionRequest<'a> {
     p_user_id: &'a str,
     p_ws_id: &'a str,
 }
-
 enum DataAuth<'a> {
     AccessToken(&'a str),
     ServiceRole,
 }
-
 pub(crate) async fn authorize_finance_permission(
     config: &BackendConfig,
     request: BackendRequest<'_>,
@@ -57,13 +55,58 @@ pub(crate) async fn authorize_finance_permission(
     permission: &str,
     outbound: &impl OutboundHttpClient,
 ) -> Result<FinanceAuthorization, FinanceAuthorizationError> {
+    authorize_workspace_permission_for_app_targets(
+        config,
+        request,
+        raw_ws_id,
+        permission,
+        &FINANCE_APP_SESSION_TARGETS,
+        true,
+        outbound,
+    )
+    .await
+}
+pub(crate) async fn authorize_scoped_app_permission(
+    config: &BackendConfig,
+    request: BackendRequest<'_>,
+    raw_ws_id: &str,
+    permission: &str,
+    app_session_targets: &[&str],
+    outbound: &impl OutboundHttpClient,
+) -> Result<FinanceAuthorization, FinanceAuthorizationError> {
+    authorize_workspace_permission_for_app_targets(
+        config,
+        request,
+        raw_ws_id,
+        permission,
+        app_session_targets,
+        false,
+        outbound,
+    )
+    .await
+}
+async fn authorize_workspace_permission_for_app_targets(
+    config: &BackendConfig,
+    request: BackendRequest<'_>,
+    raw_ws_id: &str,
+    permission: &str,
+    app_session_targets: &[&str],
+    allow_cli_app_session: bool,
+    outbound: &impl OutboundHttpClient,
+) -> Result<FinanceAuthorization, FinanceAuthorizationError> {
     if !config.contact_data.configured() {
         return Err(FinanceAuthorizationError::Internal);
     }
 
-    let user = authenticated_finance_user(config, request, outbound)
-        .await
-        .ok_or(FinanceAuthorizationError::Unauthorized)?;
+    let user = authenticated_user_for_app_targets(
+        config,
+        request,
+        app_session_targets,
+        allow_cli_app_session,
+        outbound,
+    )
+    .await
+    .ok_or(FinanceAuthorizationError::Unauthorized)?;
     let ws_id = normalize_workspace_id(&config.contact_data, outbound, raw_ws_id, &user)
         .await
         .map_err(|_| FinanceAuthorizationError::Internal)?
@@ -83,15 +126,16 @@ pub(crate) async fn authorize_finance_permission(
         Err(FinanceAuthorizationError::Forbidden)
     }
 }
-
-async fn authenticated_finance_user(
+async fn authenticated_user_for_app_targets(
     config: &BackendConfig,
     request: BackendRequest<'_>,
+    app_session_targets: &[&str],
+    allow_cli_app_session: bool,
     outbound: &impl OutboundHttpClient,
 ) -> Option<AuthenticatedFinanceUser> {
     if contact::request_has_app_session_token(request) {
         if let Ok(identity) =
-            contact::resolve_app_session_identity(config, request, &FINANCE_APP_SESSION_TARGETS)
+            contact::resolve_app_session_identity(config, request, app_session_targets)
             && let Some(id) = non_empty_user_id(identity.id)
         {
             return Some(AuthenticatedFinanceUser {
@@ -100,7 +144,8 @@ async fn authenticated_finance_user(
             });
         }
 
-        if let Ok(identity) = contact::resolve_cli_app_session_identity(config, request)
+        if allow_cli_app_session
+            && let Ok(identity) = contact::resolve_cli_app_session_identity(config, request)
             && let Some(id) = non_empty_user_id(identity.id)
         {
             return Some(AuthenticatedFinanceUser {
@@ -108,8 +153,9 @@ async fn authenticated_finance_user(
                 id,
             });
         }
+
+        return None;
     }
-
     let access_token = supabase_auth::request_access_token_allowing_app_sessions(request)?;
     let user =
         supabase_auth::fetch_supabase_auth_user(&config.contact_data, &access_token, outbound)

@@ -201,10 +201,7 @@ ${lessonInfo}`;
         modelId: QUIZ_GENERATION_MODEL_ID,
         inputTokens: usage.inputTokens ?? 0,
         outputTokens: usage.outputTokens ?? 0,
-        reasoningTokens:
-          usage.outputTokenDetails?.reasoningTokens ??
-          usage.reasoningTokens ??
-          0,
+        reasoningTokens: usage.outputTokenDetails?.reasoningTokens ?? 0,
         feature: QUIZ_GENERATION_CREDIT_FEATURE,
         metadata: {
           count,

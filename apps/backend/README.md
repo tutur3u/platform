@@ -1,8 +1,39 @@
 # Tuturuuu Backend
 
-This app is the Rust backend service scaffold for backend work that should move
-out of `apps/web`. The HTTP core is shared by the native Docker runtime and the
-Cloudflare Workers entrypoint prepared in `wrangler.jsonc`.
+This app is the Rust backend service that API/route logic is being migrated into
+from `apps/web`, handler by handler. The HTTP core is shared by the native Docker
+runtime and the Cloudflare Workers entrypoint in `wrangler.jsonc`.
+
+## Migration progress
+
+The `apps/web` → `apps/backend` move is **GET-first**: a migrated handler matches
+the exact legacy mount path and returns `None` (never `405`) for any method it
+has not ported, so un-ported methods fall through to the still-live Next.js
+route. As of the latest wave, ~240 GET handlers plus the first Supabase-backed
+mutations (managed-cron whitelist `POST`/`PUT`/`DELETE`, cron-job `DELETE`) are
+served by Rust; mutations that need npm-only deps (e.g. `cron-parser`) or
+host-coupled secrets stay on Next.js for now. The checked route inventory and
+per-route ownership live in `apps/tanstack-web/migration/route-manifest.json`
+and the `/api/migration/*` endpoints below; the runtime dual-coverage probe (see
+`AGENTS.md`) is the ground truth for what is actually migrated.
+
+## Source layout
+
+The crate is decomposed so every file stays under a **700-LOC ceiling** (see
+`AGENTS.md`):
+
+- `src/lib.rs` — module registry (`mod <handler>;`), public request/response
+  types, and `pub(crate) use` re-exports.
+- `src/dispatch/` — `handle_backend_request` plus one `dispatch_chunk_NN.rs` per
+  route-table chunk. **New route arms append to a `dispatch_chunk_NN.rs`**; add a
+  fresh chunk file when one approaches the ceiling.
+- Per-route handlers — one `src/<route>.rs` module each, registered in `lib.rs`
+  and wired into a dispatch chunk.
+- Cohesive crate-root families — `types`, `response`, `runtime`, `migration`,
+  `legacy_routes`, `static_routes`, `route_predicates`, `config_env`,
+  `constants`, `native`, `worker_runtime`.
+- `src/tests.rs` → `src/tests/` — the unit suite, split by area (`g00`..`gNN`)
+  with shared helpers in `tests/mod.rs`.
 
 ## Runtime
 
@@ -336,6 +367,22 @@ Cloudflare Workers entrypoint prepared in `wrangler.jsonc`.
   quirk, maps `PGRST116` detail GET misses to the legacy `404` body, preserves
   POST/PUT Zod-style validation responses, maps duplicate creates to `409`, and
   preserves detail update/delete prefetch/not-found behavior.
+- `GET` / `POST` `/api/v1/infrastructure/cron/whitelist/domains` and
+  `PUT` / `DELETE` `/api/v1/infrastructure/cron/whitelist/domains/:domain`:
+  legacy-compatible managed-cron whitelist domain reads and writes. Rust
+  reproduces the `getManagedCronAdminUser` `@tuturuuu.com` admin gate, lists
+  through the private `list_managed_cron_whitelisted_domains` RPC with
+  page/pageSize/q, and runs writes through the `upsert`/`update_enabled`/`delete`
+  managed-cron RPCs (service role, `private` schema). POST faithfully reproduces
+  `normalizeManagedCronDomain` (scheme strip, trailing-dot trim, IP/private-host
+  and DNS-label validation) and preserves the legacy `403`/`400`/`500`/`201`
+  status mapping.
+- `GET` / `DELETE` `/api/v1/workspaces/:wsId/cron/jobs/:jobId`:
+  legacy-compatible workspace cron-job read and delete. Rust forwards the
+  caller's Supabase token so `workspace_cron_jobs` RLS stays active, preserving
+  the `.single()` read and the `{ "message": "success" }` delete body. `PUT`
+  stays legacy-owned because it depends on the npm `cron-parser` package for
+  schedule validation.
 - `GET /api/v1/infrastructure/bill-coupons`,
   `GET /api/v1/infrastructure/bill-packages`,
   `GET /api/v1/infrastructure/class-attendance`,
@@ -553,6 +600,17 @@ Run the test suite:
 ```sh
 cd apps/backend
 cargo test
+```
+
+Run the full local gate before committing (mirrors
+`.github/workflows/rust-backend.yml`: `cargo fmt --check`, `cargo clippy
+--locked --all-targets --features native -- -D warnings`, `cargo test
+--locked`, and the `wasm32-unknown-unknown` worker-target `cargo check`):
+
+```sh
+bun check:backend
+# or skip the Cloudflare Worker target check when wasm32 is not installed:
+bun check:backend --skip-worker
 ```
 
 Build the future Cloudflare Worker bundle after installing the Workers Rust

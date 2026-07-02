@@ -1,14 +1,17 @@
 {
   "$schema": "https://turbo.build/schema.json",
-  "globalDependencies": ["**/.env.*local"],
   "globalPassThroughEnv": [
     "BASE_REF",
     "CHANGED_FILES",
     "CHANGED_FILES_FILE",
     "CHAT_REALTIME_TOKEN_SECRET",
+    "DOCKER_WEB_BUILDKIT_PRUNE_KEEP_STORAGE",
+    "DOCKER_WEB_BUILDKIT_PRUNE_MODE",
+    "DOCKER_WEB_BUILDKIT_PRUNE_UNTIL",
     "DOCKER_WEB_NODE_BINARY",
     "DOCKER_WEB_SUPABASE_START_EXCLUDE",
     "E2E_DOCKER_BUILDKIT_PRUNE_AFTER_BUILD",
+    "E2E_DOCKER_BUILDKIT_PRUNE_MODE",
     "E2E_SUPABASE_START_EXCLUDE",
     "GH_TOKEN",
     "GITHUB_API_URL",
@@ -39,6 +42,10 @@
     "RUNNER_TEMP",
     "SUPABASE_SERVICE_KEY",
     "SUPABASE_SERVICE_ROLE_KEY",
+    "TURBO_API",
+    "TURBO_REMOTE_CACHE_SIGNATURE_KEY",
+    "TURBO_TEAM",
+    "TURBO_TOKEN",
     "WORKFLOW_NAME"
   ],
   "globalEnv": [
@@ -77,6 +84,7 @@
     "TUTURUUU_APP_COORDINATION_SECRET",
     "HIVE_APP_URL",
     "HIVE_DATABASE_URL",
+    "HIVE_DOCKER_BUILD",
     "HIVE_REALTIME_HTTP_URL",
     "HIVE_REALTIME_TOKEN_SECRET",
     "HIVE_REALTIME_URL",
@@ -104,7 +112,7 @@
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
-      "inputs": ["$TURBO_DEFAULT$", ".env*"],
+      "inputs": ["$TURBO_DEFAULT$", ".env*", "$TURBO_ROOT$/.env*"],
       "outputs": [
         ".next/**",
         "!.next/cache/**",
@@ -115,7 +123,7 @@
     },
     "build:docker": {
       "dependsOn": ["^build"],
-      "inputs": ["$TURBO_DEFAULT$", ".env*"],
+      "inputs": ["$TURBO_DEFAULT$", ".env*", "$TURBO_ROOT$/.env*"],
       "outputs": [
         ".next/**",
         "!.next/cache/**",

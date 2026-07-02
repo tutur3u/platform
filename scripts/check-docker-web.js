@@ -157,28 +157,6 @@ function countOccurrences(content, snippet) {
   return content.split(snippet).length - 1;
 }
 
-function validateSnippetOrder(content, snippets, label) {
-  const errors = [];
-  let previousIndex = -1;
-
-  for (const snippet of snippets) {
-    const index = content.indexOf(snippet);
-
-    if (index === -1) {
-      continue;
-    }
-
-    if (index < previousIndex) {
-      errors.push(`${label} must keep ${snippets.join(' before ')}.`);
-      break;
-    }
-
-    previousIndex = index;
-  }
-
-  return errors;
-}
-
 function hasComposeDependsOnService(composeContent, serviceName) {
   const lines = composeContent.split(/\r?\n/u);
 
@@ -608,7 +586,7 @@ function validateDockerfile({
       !/ENV DOCKER_WEB_NODE_MAX_OLD_SPACE_SIZE=\$\{DOCKER_WEB_NODE_MAX_OLD_SPACE_SIZE\}/u.test(
         builderStage
       ) ||
-      !builderStage.includes('ARG DOCKER_WEB_REACT_COMPILER=0') ||
+      !builderStage.includes('ARG DOCKER_WEB_REACT_COMPILER=1') ||
       !/ENV DOCKER_WEB_REACT_COMPILER=\$\{DOCKER_WEB_REACT_COMPILER\}/u.test(
         builderStage
       ) ||
@@ -640,6 +618,23 @@ function validateDockerfile({
       errors.push(
         'apps/web/Dockerfile builder stage must cache /workspace/apps/web/.next/cache during the production build.'
       );
+    }
+
+    for (const secretId of [
+      'turbo_api',
+      'turbo_remote_cache_signature_key',
+      'turbo_team',
+      'turbo_token',
+    ]) {
+      if (
+        !builderStage.includes(
+          `--mount=type=secret,id=${secretId},target=/run/secrets/${secretId},required=false`
+        )
+      ) {
+        errors.push(
+          `apps/web/Dockerfile builder stage must mount optional ${secretId} BuildKit secret for Turbo remote cache.`
+        );
+      }
     }
 
     errors.push(
@@ -752,10 +747,22 @@ function validateDockerSetupWorkflow(workflowContent) {
   ];
   const requiredSnippets = [
     'run: node scripts/check-docker-web.js',
+    'node --test scripts/check-docker-web.test.js scripts/docker-web.test.js scripts/buildkit-builder.test.js scripts/run-tanstack-e2e-docker.test.js',
     'docker compose -f docker-compose.web.yml --profile cloudflared config > /tmp/docker-compose.web.cloudflared.yml',
     'docker compose -f docker-compose.web.prod.yml --profile cloudflared config > /tmp/docker-compose.web.prod.cloudflared.yml',
     'docker compose -f docker-compose.tanstack-dual.yml config > /tmp/docker-compose.tanstack-dual.yml',
-    'docker build --target runner -f apps/tanstack-web/Dockerfile .',
+    'docker buildx build --load',
+    '--cache-from type=gha,scope=docker-web-prod',
+    '--cache-to type=gha,scope=docker-web-prod,mode=max',
+    '--cache-from type=gha,scope=docker-tanstack-web-prod',
+    '--cache-to type=gha,scope=docker-tanstack-web-prod,mode=max',
+    '--cache-from type=gha,scope=docker-backend',
+    '--cache-to type=gha,scope=docker-backend,mode=max',
+    '--secret id=turbo_api,env=TURBO_API',
+    '--secret id=turbo_remote_cache_signature_key,env=TURBO_REMOTE_CACHE_SIGNATURE_KEY',
+    '--secret id=turbo_team,env=TURBO_TEAM',
+    '--secret id=turbo_token,env=TURBO_TOKEN',
+    '-f apps/tanstack-web/Dockerfile .',
   ];
 
   for (const snippet of requiredPathFilterSnippets) {
@@ -827,6 +834,7 @@ function validateDockerCompose(
     '  cloudflared:',
     '    profiles: ["cloudflared"]',
     '    image: cloudflare/cloudflared:latest',
+    '    network_mode: "service:web"',
     '  hive:',
     '      dockerfile: apps/hive/Dockerfile\n      target: dev',
     '      - HIVE_DATABASE_URL=${' +
@@ -1006,7 +1014,7 @@ function validateDockerProdCompose(composeContent) {
       '}',
     '      DOCKER_WEB_REACT_COMPILER: ' +
       '${' +
-      'DOCKER_WEB_REACT_COMPILER:-0' +
+      'DOCKER_WEB_REACT_COMPILER:-1' +
       '}',
     '      DOCKER_WEB_TURBO_CONCURRENCY: ' +
       '${' +
@@ -1088,6 +1096,7 @@ function validateDockerProdCompose(composeContent) {
     '      - DOCKER_WEB_BUILDKIT_STOP_AFTER_BUILD',
     '      - DOCKER_WEB_DOCKER_MEMORY_LIMIT',
     '      - DOCKER_WEB_FRONTEND',
+    '      - DOCKER_WEB_GIT_COMMON_DIR',
     '      - DOCKER_WEB_NATIVE_BUILD',
     '      - DOCKER_WEB_NATIVE_BUILD_MEMORY',
     '      - DOCKER_WEB_NEXT_APP_ONLY',
@@ -1121,6 +1130,18 @@ function validateDockerProdCompose(composeContent) {
     '      - SUPERMEMORY_TIMEOUT_MS=${' + 'SUPERMEMORY_TIMEOUT_MS:-1500' + '}',
     '      - UPSTASH_REDIS_REST_TOKEN',
     '      - UPSTASH_REDIS_REST_URL',
+    '      - PLATFORM_DOCKER_CONTROL_CRON_RECOVERY_COOLDOWN_MS=${' +
+      'PLATFORM_DOCKER_CONTROL_CRON_RECOVERY_COOLDOWN_MS:-60000' +
+      '}',
+    '      - PLATFORM_DOCKER_CONTROL_CRON_RUNNER_STALE_AFTER_MS=${' +
+      'PLATFORM_DOCKER_CONTROL_CRON_RUNNER_STALE_AFTER_MS:-120000' +
+      '}',
+    '      - PLATFORM_DOCKER_CONTROL_CRON_WATCHDOG_DISABLED=${' +
+      'PLATFORM_DOCKER_CONTROL_CRON_WATCHDOG_DISABLED:-false' +
+      '}',
+    '      - PLATFORM_DOCKER_CONTROL_CRON_WATCHDOG_INTERVAL_MS=${' +
+      'PLATFORM_DOCKER_CONTROL_CRON_WATCHDOG_INTERVAL_MS:-30000' +
+      '}',
     '      - PLATFORM_DOCKER_CONTROL_PORT=${' +
       'PLATFORM_DOCKER_CONTROL_PORT:-7810' +
       '}',
@@ -1148,6 +1169,11 @@ function validateDockerProdCompose(composeContent) {
       'PLATFORM_HOST_WORKSPACE_DIR:-/workspace-host' +
       '}',
     '      - DOCKER_WEB_FRONTEND',
+    '      - ${' +
+      'DOCKER_WEB_GIT_COMMON_DIR:-../.git' +
+      '}:${' +
+      'DOCKER_WEB_GIT_COMMON_DIR:-/workspace-git-common' +
+      '}',
     '      - ..:' + '${' + 'PLATFORM_HOST_WORKSPACE_DIR:-/workspace-host' + '}',
     '      - /var/run/docker.sock:/var/run/docker.sock',
     '      - platform-bun-install:/root/.bun/install/cache',
@@ -1159,6 +1185,7 @@ function validateDockerProdCompose(composeContent) {
       '/node_modules',
     '    image: nginx:1.31.0-alpine',
     '    image: cloudflare/cloudflared:latest',
+    'network_mode: "service:web-proxy"',
     '127.0.0.1:${' + 'DOCKER_WEB_DIRECT_HOST_PORT:-7803' + '}:7803',
     '127.0.0.1:${' + 'DOCKER_WEB_PROXY_HOST_PORT:-7803' + '}:7803',
     '127.0.0.1:${' + 'DOCKER_HIVE_PROXY_HOST_PORT:-7814' + '}:7814',
@@ -1180,7 +1207,6 @@ function validateDockerProdCompose(composeContent) {
     '      - PORT=8000\n      - SUPABASE_URL',
     'wget -q -O - --header="Authorization: Bearer $$SRH_TOKEN" --header="Content-Type: application/json" --post-data=\'\'["PING"]\'\' http://127.0.0.1:80/ | grep -q \'\'"PONG"\'\'',
     "ps | grep -q '[w]atch-blue-green-deploy.js'",
-    "ps | grep -q '[w]atch-web-crons.js'",
     '      - ../tmp/docker-web/prod/nginx.conf:/etc/nginx/conf.d/default.conf:ro',
     '      required: false',
     '    - BACKEND_INTERNAL_TOKEN',
@@ -1329,6 +1355,7 @@ function validateDockerProdCompose(composeContent) {
 
   for (const snippet of [
     '      - DOCKER_WEB_BUILD_MEMORY',
+    '      - DOCKER_WEB_GIT_COMMON_DIR',
     '      - DOCKER_WEB_NEXT_BUILD_CPUS',
   ]) {
     if (
@@ -1336,6 +1363,20 @@ function validateDockerProdCompose(composeContent) {
     ) {
       errors.push(
         `docker-compose.web.prod.yml service web-blue-green-watcher is missing the expected snippet: ${snippet}`
+      );
+    }
+  }
+
+  for (const serviceName of ['web-blue-green-watcher', 'web-docker-control']) {
+    if (
+      !serviceBlockIncludes(
+        composeContent,
+        serviceName,
+        '      - DOCKER_WEB_GIT_COMMON_DIR'
+      )
+    ) {
+      errors.push(
+        `docker-compose.web.prod.yml service ${serviceName} must pass DOCKER_WEB_GIT_COMMON_DIR so linked-worktree watcher recreation keeps Git metadata mounted.`
       );
     }
   }
@@ -1403,6 +1444,19 @@ function validateDockerProdCompose(composeContent) {
         `docker-compose.web.prod.yml service ${serviceName} must mount /var/run/docker.sock so watcher and cron recovery can manage the production Compose fleet.`
       );
     }
+  }
+
+  if (
+    !serviceBlockIncludes(
+      composeContent,
+      'web-cron-runner',
+      '/usr/local/bin/cron-runner-entrypoint.js'
+    ) ||
+    !serviceBlockIncludes(composeContent, 'web-cron-runner', '--healthcheck')
+  ) {
+    errors.push(
+      'docker-compose.web.prod.yml service web-cron-runner must use cron-runner-entrypoint.js --healthcheck so stale cron heartbeats mark the service unhealthy.'
+    );
   }
 
   if (!topLevelBlockHasRestartUnlessStopped(composeContent, 'x-web-service')) {
@@ -1565,6 +1619,9 @@ function validateBackendDockerfile(dockerfileContent) {
     'COPY apps/backend/Cargo.toml apps/backend/Cargo.lock apps/backend/build.rs ./apps/backend/',
     'COPY apps/backend/src ./apps/backend/src',
     'COPY apps/tanstack-web/migration/route-manifest.json ./apps/tanstack-web/migration/route-manifest.json',
+    '--mount=type=cache,id=platform-backend-cargo-registry,target=/usr/local/cargo/registry,sharing=locked',
+    '--mount=type=cache,id=platform-backend-cargo-git,target=/usr/local/cargo/git,sharing=locked',
+    '--mount=type=cache,id=platform-backend-target,target=/src/apps/backend/target,sharing=locked',
     'cargo build --release --locked --features native --bin backend',
     'FROM gcr.io/distroless/static-debian12:nonroot AS runner',
     'ENV BACKEND_DEPLOYMENT_TARGET=container',
@@ -1610,13 +1667,15 @@ function validateTanstackWebDockerfile(
     'COPY packages/ui/vendor/xlsx-0.20.3.tgz ./packages/ui/vendor/xlsx-0.20.3.tgz',
     'COPY --from=deps /usr/local/bin/bun /usr/local/bin/bun',
     ...getRetryWrappedBunInstallSnippets(
-      'bun install --frozen-lockfile --filter @tuturuuu/tanstack-web'
+      'bun install --frozen-lockfile --filter tutur3u --filter @tuturuuu/tanstack-web'
     ),
-    'bun run --filter @tuturuuu/types build',
-    'bun run --filter @tuturuuu/supabase build',
-    'bun run --filter @tuturuuu/internal-api build',
-    'node node_modules/vite/bin/vite.js build',
-    'node node_modules/typescript/bin/tsc --noEmit -p tsconfig.json',
+    '--mount=type=cache,id=platform-tanstack-web-turbo,target=/workspace/.turbo',
+    '--mount=type=cache,id=platform-tanstack-web-vite,target=/workspace/apps/tanstack-web/.vite',
+    '--mount=type=secret,id=turbo_api,target=/run/secrets/turbo_api,required=false',
+    '--mount=type=secret,id=turbo_remote_cache_signature_key,target=/run/secrets/turbo_remote_cache_signature_key,required=false',
+    '--mount=type=secret,id=turbo_team,target=/run/secrets/turbo_team,required=false',
+    '--mount=type=secret,id=turbo_token,target=/run/secrets/turbo_token,required=false',
+    'bun run turbo:local run build:docker -F @tuturuuu/tanstack-web',
     'ENV PORT=7824',
     'ENV TANSTACK_WEB_RUNTIME=node',
     'COPY --from=builder /workspace/node_modules/.bun /app/node_modules/.bun',
@@ -1636,18 +1695,6 @@ function validateTanstackWebDockerfile(
       );
     }
   }
-
-  errors.push(
-    ...validateSnippetOrder(
-      dockerfileContent,
-      [
-        'bun run --filter @tuturuuu/types build',
-        'bun run --filter @tuturuuu/supabase build',
-        'bun run --filter @tuturuuu/internal-api build',
-      ],
-      'apps/tanstack-web/Dockerfile builder stage'
-    )
-  );
 
   return errors;
 }
@@ -1698,6 +1745,8 @@ function validateCronRunnerDockerfile(dockerfileContent) {
   const requiredSnippets = [
     'FROM oven/bun:1.3.14-alpine',
     'RUN apk add --no-cache docker-cli docker-cli-compose',
+    '--mount=type=cache,id=platform-cron-runner-bun-install,target=/root/.bun/install/cache',
+    'bun add --exact cron-parser@5.6.1',
     'COPY apps/web/docker/cron-runner-entrypoint.js /usr/local/bin/cron-runner-entrypoint.js',
     'CMD ["bun", "/usr/local/bin/cron-runner-entrypoint.js"]',
   ];
@@ -1719,6 +1768,7 @@ function validateDockerControlDockerfile(dockerfileContent) {
     'FROM oven/bun:1.3.14-alpine',
     'RUN apk add --no-cache docker-cli docker-cli-compose',
     'COPY apps/web/docker/docker-control-server.js /usr/local/bin/docker-control-server.js',
+    'COPY apps/web/docker/docker-control-recovery.js /usr/local/bin/docker-control-recovery.js',
     'CMD ["bun", "/usr/local/bin/docker-control-server.js"]',
   ];
 
@@ -1835,12 +1885,15 @@ function validateHiveDockerfile(
     'COPY --from=deps /usr/local/bin/bun /usr/local/bin/bun',
     'ENV DOCKER_WEB_NODE_BINARY=/usr/local/bin/node',
     ...getRetryWrappedBunInstallSnippets(
-      'bun install --frozen-lockfile --filter @tuturuuu/hive'
+      'bun install --frozen-lockfile --filter tutur3u --filter @tuturuuu/hive'
     ),
-    'bun run --filter @tuturuuu/types build',
-    'bun run --filter @tuturuuu/supabase build',
-    'bun run --filter @tuturuuu/internal-api build',
-    'node scripts/run-hive-docker-next-build.js --env-file /tmp/web.env',
+    '--mount=type=cache,id=platform-hive-turbo,target=/workspace/.turbo',
+    '--mount=type=cache,id=platform-hive-next-cache,target=/workspace/apps/hive/.next/cache',
+    '--mount=type=secret,id=turbo_api,target=/run/secrets/turbo_api,required=false',
+    '--mount=type=secret,id=turbo_remote_cache_signature_key,target=/run/secrets/turbo_remote_cache_signature_key,required=false',
+    '--mount=type=secret,id=turbo_team,target=/run/secrets/turbo_team,required=false',
+    '--mount=type=secret,id=turbo_token,target=/run/secrets/turbo_token,required=false',
+    'bun --env-file=/tmp/web.env run turbo:local run build:docker -F @tuturuuu/hive',
   ];
 
   for (const snippet of requiredSnippets) {
@@ -1850,18 +1903,6 @@ function validateHiveDockerfile(
       );
     }
   }
-
-  errors.push(
-    ...validateSnippetOrder(
-      dockerfileContent,
-      [
-        'bun run --filter @tuturuuu/types build',
-        'bun run --filter @tuturuuu/supabase build',
-        'bun run --filter @tuturuuu/internal-api build',
-      ],
-      'apps/hive/Dockerfile builder stage'
-    )
-  );
 
   return errors;
 }

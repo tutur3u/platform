@@ -15,7 +15,11 @@ vi.mock('../../upstash-rest', () => ({
 }));
 
 import {
+  blockIPEdge,
+  clearEdgeAbuseProtectionControlsCache,
+  EDGE_ABUSE_PROTECTION_CONTROLS_REDIS_KEY,
   extractIPFromRequest,
+  isIPBlockedEdge,
   recordMalformedAuthCookieEdge,
   recordSuspiciousApiRequestEdge,
 } from '../edge';
@@ -25,6 +29,7 @@ describe('abuse-protection edge', () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date());
     vi.clearAllMocks();
+    clearEdgeAbuseProtectionControlsCache();
     mocks.getRedis.mockResolvedValue(mocks.redis);
     mocks.redis.expire.mockResolvedValue(1);
     mocks.redis.get.mockResolvedValue(0);
@@ -58,6 +63,61 @@ describe('abuse-protection edge', () => {
       headers.set('x-forwarded-for', '198.51.100.30, 10.0.0.1');
 
       expect(extractIPFromRequest(headers)).toBe('198.51.100.30');
+    });
+  });
+
+  describe('edge abuse protection controls', () => {
+    it('does not enforce cached IP blocks when IP blocking is disabled', async () => {
+      mocks.redis.get.mockImplementation((key: string) => {
+        if (key === EDGE_ABUSE_PROTECTION_CONTROLS_REDIS_KEY) {
+          return Promise.resolve(
+            JSON.stringify({
+              ipBlockingEnabled: false,
+              rateLimitsEnabled: true,
+            })
+          );
+        }
+
+        return Promise.resolve(
+          JSON.stringify({
+            id: 'block-1',
+            level: 2,
+            reason: 'api_abuse',
+            blockedAt: new Date().toISOString(),
+            expiresAt: new Date(Date.now() + 60_000).toISOString(),
+          })
+        );
+      });
+
+      const blockInfo = await isIPBlockedEdge('203.0.113.40');
+
+      expect(blockInfo).toBeNull();
+      expect(mocks.redis.get).toHaveBeenCalledWith(
+        EDGE_ABUSE_PROTECTION_CONTROLS_REDIS_KEY
+      );
+      expect(mocks.redis.get).not.toHaveBeenCalledWith(
+        'ip:blocked:203.0.113.40'
+      );
+    });
+
+    it('does not create edge IP blocks when IP blocking is disabled', async () => {
+      mocks.redis.get.mockImplementation((key: string) => {
+        if (key === EDGE_ABUSE_PROTECTION_CONTROLS_REDIS_KEY) {
+          return Promise.resolve(
+            JSON.stringify({
+              ipBlockingEnabled: false,
+              rateLimitsEnabled: true,
+            })
+          );
+        }
+
+        return Promise.resolve(0);
+      });
+
+      const blockInfo = await blockIPEdge('203.0.113.50', 'api_abuse');
+
+      expect(blockInfo).toBeNull();
+      expect(mocks.redis.set).not.toHaveBeenCalled();
     });
   });
 

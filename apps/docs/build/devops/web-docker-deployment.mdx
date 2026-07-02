@@ -1,7 +1,7 @@
 ---
 title: "Web Docker Deployment"
 description: "Run the web app in Docker for development, production, and blue/green self-hosted rollout."
-updatedAt: "2026-06-29"
+updatedAt: "2026-07-01"
 ---
 
 This is the operational guide for the Docker-based `apps/web` runtime and the
@@ -89,6 +89,18 @@ parallel `apps/tanstack-web` migration runtime.
   `COMPOSE_DOCKER_CLI_BUILD=1`, `DOCKER_BUILDKIT=1`, and
   `BUILDX_NO_DEFAULT_ATTESTATIONS=1` so local blue/green image exports do not
   stall while resolving default provenance metadata.
+- Web, Hive, and TanStack Docker builder stages mount `/workspace/.turbo` so
+  local Turbo hits survive across Docker builds. They also read optional
+  BuildKit secrets named `turbo_token`, `turbo_team`, `turbo_api`, and
+  `turbo_remote_cache_signature_key` only for build `RUN` steps. When those
+  secrets are absent, builds fall back to the mounted local cache.
+- Rust backend cache cleanup is local maintenance, not a separate cache service.
+  `bun rust-cache report` prints current `apps/backend/target` usage,
+  `bun rust-cache prune --apply` removes stale or oversized target entries, and
+  `bun rust-cache auto` runs at most once every 24 hours by default using
+  `tmp/rust-cache/state.json`. The default policy is local-only, skips CI,
+  keeps target entries newer than 14 days when possible, and starts pruning when
+  the repo-owned target cache exceeds 20 GiB.
 - The dependency stages in `apps/web/Dockerfile`, `apps/hive/Dockerfile`,
   `apps/hive-realtime/Dockerfile`, `apps/meet-realtime/Dockerfile`,
   `apps/chat-realtime/Dockerfile`, and `apps/supermemory/Dockerfile` must copy
@@ -409,10 +421,11 @@ smoke evidence for sign-off without committing generated reports.
 Normal teardown passes `--volumes --rmi local` to Docker Compose and then removes
 custom image tags for the current `ttr-e2e-*` project, so per-run containers,
 Compose volumes, and baked blue/green images do not accumulate. E2E also sets
-`DOCKER_WEB_BUILDKIT_PRUNE_AFTER_BUILD=1` by default because the per-run
-BuildKit cache/state is disposable; set
-`E2E_DOCKER_BUILDKIT_PRUNE_AFTER_BUILD=0` only when debugging a local E2E build
-and you intentionally want to keep BuildKit cache.
+`DOCKER_WEB_BUILDKIT_PRUNE_AFTER_BUILD=1` and
+`DOCKER_WEB_BUILDKIT_PRUNE_MODE=all` by default because the per-run BuildKit
+cache/state is disposable; set `E2E_DOCKER_BUILDKIT_PRUNE_AFTER_BUILD=0` only
+when debugging a local E2E build and you intentionally want to keep BuildKit
+cache.
 Local E2E also starts Supabase with `edge-runtime` excluded by default through
 `DOCKER_WEB_SUPABASE_START_EXCLUDE=edge-runtime`. The platform E2E suite does not
 serve local Edge Functions, and excluding that service keeps local runs from
@@ -431,17 +444,26 @@ headroom. The Next build engine remains Turbopack. Do not switch local E2E runs
 to the Webpack build path; the production and local Docker build paths are
 expected to exercise the same Turbopack compiler.
 
-For local machines where Docker Desktop still cannot allocate enough memory for
-the Turbopack image build, set `DOCKER_WEB_NATIVE_BUILD=1` when running E2E. The
-blue/green build helper then runs `bun run build:web:docker` on the host with
+For blue/green web deploys, the helper defaults to the Docker/BuildKit web image
+build path so production builds keep their container isolation boundary. Set
+`DOCKER_WEB_NATIVE_BUILD=1` only for an explicit operator-approved native host
+build. That opt-in runs `bun run build:web:docker` on the host with
 `DOCKER_WEB_STANDALONE=1`, packages `apps/web/.next/standalone` plus static
 assets into the same Node runtime image shape, and continues with Docker Compose
-startup and Playwright. Native builds default their host-side build memory budget
-to 12 GB instead of Docker Desktop's memory cap; set
-`DOCKER_WEB_NATIVE_BUILD_MEMORY=16g` or another explicit value when the host
-needs a different Node heap bucket. Keep this as a local/debug escape hatch; CI
-and production watchers should keep building the web image entirely inside
-Docker.
+startup and Playwright. Native builds derive their host-side build memory budget
+from the machine's total memory, while leaving Next/Turbopack CPU and static
+generation worker counts unset so the toolchain can auto-configure from the real
+host. Set `DOCKER_WEB_NATIVE_BUILD_MEMORY=16g` or another explicit value only
+when the host needs a different Node heap bucket. Native runner packaging uses
+plain `docker build` by default so a remote BuildKit transport failure does not
+block the host-built artifact path. It also strips builder-routing env such as
+`BUILDX_BUILDER` for that packaging subprocess; set
+`DOCKER_WEB_NATIVE_RUNNER_BUILDX=1` only when that packaging step must use the
+configured buildx builder. Native mode skips support-service image builds by
+default and reuses the existing support images; set
+`DOCKER_WEB_NATIVE_SUPPORT_BUILD=1` to build support images locally with
+`docker compose build`, or `DOCKER_WEB_NATIVE_SUPPORT_BUILDX=1` when those
+support builds should use the configured buildx builder.
 
 When a production blue/green web image was just built locally with
 `bun serve:web:docker:bg`, Dockerized E2E can reuse that image instead of
@@ -796,6 +818,12 @@ as `<hex>_platform-markitdown-1`. The Docker helper treats those as recoverable
 only when the suffix matches one of the services in the current `compose up`
 request, removes that stale temp container, and retries the same narrow up
 operation.
+Compose can also briefly report `dependency failed to start` with `No such
+container: <id>` when a dependency was recreated between Docker's dependency
+resolution and health wait. The helper treats that as a stale dependency
+reference and retries the same narrow `compose up` without deleting unrelated
+containers. Tune that retry budget with
+`DOCKER_WEB_COMPOSE_UP_STALE_DEPENDENCY_RETRY_MAX_ATTEMPTS`.
 
 The production `web-proxy` service is pinned to the official mainline Alpine
 image `nginx:1.31.0-alpine`, and `scripts/check-docker-web.js` verifies that
@@ -937,6 +965,9 @@ In Docker production, the `web-cron-runner` service runs
 `http://web-proxy:7803`. Requests include
 `Authorization: Bearer ${CRON_SECRET || VERCEL_CRON_SECRET}` so the same route
 auth gate can protect Vercel and native Docker executions.
+The cron-runner image bundles the `cron-parser` dependency used by that script,
+so runtime execution does not depend on `node_modules` existing in the mounted
+host checkout.
 
 When neither `CRON_SECRET` nor `VERCEL_CRON_SECRET` is set on the host, the
 Docker environment generator creates a persisted internal secret at
@@ -952,11 +983,76 @@ Compose start. A healthy existing cron runner is left running; a missing control
 sidecar or runner fails watcher bootstrap instead of leaving the stack without
 native cron recovery or execution.
 
+`web-cron-runner` is the executor. The blue/green watcher is one recovery
+consumer, not the owner of cron execution. Each watcher poll reconciles
+cron-runner health before normal deploy work by checking the
+`web-cron-runner` container state, Docker healthcheck result, and
+`tmp/docker-web/cron/status.json.updatedAt`. If the container is missing,
+unhealthy, or the heartbeat is stale, the watcher writes the existing
+`tmp/docker-web/watch/control/cron-runner-recovery.request.json` request and
+processes it immediately with a force-recreate of `web-cron-runner`. It then
+waits for a fresh heartbeat before reporting `cron-runner-recovered`; if the
+Compose restart fails, the request remains on disk with `lastError` and the
+watcher backs off before retrying.
+
+`web-docker-control` also owns an independent cron-runner watchdog. The watchdog
+defaults on, reads the same cron runner heartbeat, inspects the
+`web-cron-runner` container, ensures `web-blue-green-watcher`, and
+force-recreates only `web-cron-runner` when the heartbeat is stale/missing or
+the container is missing/unhealthy. This keeps cron recovery available even when
+the blue/green watcher heartbeat is stale. The watchdog does not recover the
+whole serving stack; route-origin failures such as an unreachable
+`INTERNAL_WEB_API_ORIGIN` / `web-proxy` are reported in monitoring diagnostics
+for an operator to fix separately.
+
+Cron runner heartbeats refresh both runner liveness and schedule metadata. When
+the runner starts a cycle or keeps a long execution alive, it recomputes each
+enabled job's next future run from `apps/web/cron.config.json`, current runtime
+control overrides, and UTC time. The monitoring API also derives future
+`nextRunAt` values from config/control if an older persisted status file still
+contains stale schedule fields, while preserving the separate stale/live runner
+health signal from `status.json.updatedAt`.
+
+`web-cron-runner` also protects itself. The entrypoint restarts the child
+`scripts/watch-web-crons.js` process when the status heartbeat is missing,
+invalid, or stale after startup grace, and the Docker healthcheck calls the same
+entrypoint heartbeat check. This prevents a hung cron child from looking
+healthy just because the process still exists.
+
+Useful cron-runner recovery knobs:
+
+- `DOCKER_WEB_WATCHER_CRON_RUNNER_STALE_AFTER_MS` controls watcher heartbeat
+  staleness detection. Default: `120000`.
+- `DOCKER_WEB_WATCHER_CRON_RUNNER_RECOVERY_WAIT_MS` controls how long the
+  watcher waits for a fresh heartbeat after restart. Default: `90000`.
+- `DOCKER_WEB_WATCHER_CRON_RUNNER_RECOVERY_POLL_MS` controls the heartbeat wait
+  poll interval. Default: `2000`.
+- `PLATFORM_CRON_RUNNER_STATUS_STALE_AFTER_MS` controls the entrypoint child
+  watchdog. Default: `120000`.
+- `PLATFORM_DOCKER_CONTROL_CRON_WATCHDOG_DISABLED` disables the
+  `web-docker-control` cron-runner watchdog when set to `true`. Default:
+  `false`.
+- `PLATFORM_DOCKER_CONTROL_CRON_WATCHDOG_INTERVAL_MS` controls the
+  `web-docker-control` watchdog polling interval. Default: `30000`.
+- `PLATFORM_DOCKER_CONTROL_CRON_RUNNER_STALE_AFTER_MS` controls
+  `web-docker-control` heartbeat staleness detection. Default: `120000`.
+- `PLATFORM_DOCKER_CONTROL_CRON_RECOVERY_COOLDOWN_MS` controls
+  `web-docker-control` recovery cooldown after a restart attempt. Default:
+  `60000`.
+- `PLATFORM_CRON_DOCKER_TELEMETRY_TIMEOUT_MS` bounds Docker `ps` / `logs`
+  probes used for cron telemetry. Default: `10000`.
+
 `web-docker-control` is an internal-only sidecar with the Docker CLI, Docker
 socket, and host worktree mount. `apps/web` reaches it through
 `PLATFORM_DOCKER_CONTROL_URL` and `PLATFORM_DOCKER_CONTROL_TOKEN` for hardcoded
 watcher/cron-runner recovery actions only; it does not expose a general Docker
-or shell interface.
+or shell interface. Its status file at
+`tmp/docker-web/docker-control/status.json` includes both the latest manual or
+watchdog recovery attempt and the latest watchdog check, which the cron
+monitoring dashboard surfaces alongside watcher and runner heartbeat warnings.
+When the runner heartbeat is stale, future cron times in the dashboard are
+scheduled estimates derived from config/control, not proof that the runner will
+execute them.
 
 The managed workspace cron worker runs at
 `/api/cron/workspaces/managed-jobs` through the `managed-workspace-cron-jobs`
@@ -986,8 +1082,11 @@ Runtime cron telemetry is intentionally file-based and local to the host:
 - `tmp/docker-web/cron/status.json` for runner health, the current cycle, and
   the latest manual run lifecycle records. Manual runs move through `queued`,
   `processing`, and a final `success` / `failed` / `timeout` / `skipped` state.
-  While a run is processing, the runner refreshes captured route console logs in
-  this file so the monitoring UI can show near-realtime status and log updates.
+  While any run is processing, the runner refreshes this heartbeat and, for
+  manual runs, captured route console logs so the monitoring UI can show
+  near-realtime status and log updates. Heartbeat refreshes also recompute
+  future per-job and aggregate `nextRunAt` values so a recovered runner does not
+  keep serving stale schedule badges.
 - `tmp/docker-web/cron/state.json` for restart-safe last-run markers.
 - `tmp/docker-web/cron/executions/*.jsonl` for per-run route response,
   duration, status, and captured web-container console logs.
@@ -1021,6 +1120,11 @@ provider sync should not be scheduled through Trigger.dev in production.
 `bun serve:web:docker:bg:watch` locks the current branch/upstream at startup,
 polls every second, fast-forwards when GitHub has a newer commit, and runs the
 blue/green deploy flow automatically.
+
+When the watcher container starts on a host with no active blue/green runtime,
+it treats that idle state as a missing active deployment and bootstraps the
+current commit. This first-run recovery creates `web-proxy`, the active and
+standby lanes, and `cloudflared` when the tunnel profile is enabled.
 
 Run this command from a host-level process manager, not only from inside Docker.
 The command starts and tails the `web-blue-green-watcher` container, but the
@@ -1122,8 +1226,8 @@ archive as soon as it detects failed or timed-out Docker probes. If Docker had
 to be restarted before services recovered, the watcher sends an immediate
 force-restart recovery email to the configured recovery recipients and records
 that incident as notified. If the watcher-side email is disabled or fails, the
-web cron job `/api/cron/infrastructure/docker-recovery-alerts` can still send a
-fallback SES email after Docker and the web app are reachable again. Both paths
+infra app cron job `/api/cron/infrastructure/docker-recovery-alerts` can still
+send a fallback SES email after Docker and the infra app are reachable again. Both paths
 deduplicate by Docker recovery incident id using
 `tmp/docker-web/watch/control/blue-green-docker-recovery-alert-state.json`.
 
@@ -1293,20 +1397,20 @@ deployment kind, and a re-entrant token for nested helper calls).
 
 ### Monitoring Surfaces
 
-The infrastructure monitoring UI in `apps/web` is intentionally split into
-smaller pages instead of one oversized dashboard:
+The infrastructure monitoring UI in `apps/infrastructure` is intentionally split
+into smaller pages instead of one oversized dashboard:
 
-- `/{wsId}/infrastructure/monitoring` for the operator overview, runtime
+- `/{wsId}/monitoring` for the operator overview, runtime
   snapshot, cron health summary, and jump points into deeper surfaces.
-- `/{wsId}/infrastructure/monitoring/cron` for cron job schedules, global
+- `/{wsId}/monitoring/cron` for cron job schedules, global
   enable/disable control, manual run requests, recent execution status, route
   responses, and captured web-container console logs.
-- `/{wsId}/infrastructure/monitoring/rollouts` for rollout controls, deployment
+- `/{wsId}/monitoring/rollouts` for rollout controls, deployment
   charts, event streams, and ledger history.
-- `/{wsId}/infrastructure/monitoring/requests` for paginated proxy request
+- `/{wsId}/monitoring/requests` for paginated proxy request
   history backed by the durable JSONL request store under
   `tmp/docker-web/watch/blue-green-request-logs/`.
-- `/{wsId}/infrastructure/monitoring/watcher-logs` for paginated watcher log
+- `/{wsId}/monitoring/watcher-logs` for paginated watcher log
   browsing backed by `tmp/docker-web/watch/blue-green-auto-deploy.logs.json`.
 
 Operationally, keep the overview route lightweight and treat request/log
@@ -1348,25 +1452,42 @@ transport or resource-pressure signature such as `code = Unavailable`,
 `ResourceExhausted`, `cannot allocate memory`, `context deadline exceeded`, or
 `[internal] waiting for connection`, the deploy keeps retrying lower profiles in
 the same command until the build succeeds or the budget-aware retry ladder is
-exhausted. Each downgrade persists the selected profile for later runs, skips
-fixed profiles that exceed the effective Docker memory budget, recreates the
-Compose-owned BuildKit service even if the cleanup prune command itself fails
-with the same transport signature, then recreates the remote Buildx builder if
-`docker buildx inspect tuturuuu` reports `Status: inactive`. The profile ladder
-is:
+exhausted. Each retry persists the selected profile for later runs, skips fixed
+profiles that exceed the effective Docker memory budget during normal
+selection, and can use a larger hard-limit rescue profile after conservative
+profiles are exhausted if Docker's reported memory limit still has headroom.
+For explicit memory-exhaustion signatures such as `cannot allocate memory` or
+exit code 137, the helper can prefer that hard-limit rescue before smaller
+profiles that are unlikely to help.
+When a later default run sees stale persisted fallback state, it promotes that
+state back to the largest Docker-hard-limit rescue profile, preferring lower CPU
+at equal memory, before starting BuildKit.
+The helper recreates the Compose-owned BuildKit service even if the cleanup
+prune command itself fails with the same transport signature, then recreates the
+remote Buildx builder if `docker buildx inspect tuturuuu` reports
+`Status: inactive`. The profile ladder is:
 
 - `default`: `auto`, 4 CPUs, max parallelism 1
 - `stable`: `16g`, 2 CPUs, max parallelism 1
 - `low`: `10g`, 2 CPUs, max parallelism 1
+- `serial`: `10g`, 1 CPU, max parallelism 1
 - `minimal`: `8g`, 1 CPU, max parallelism 1
 - `floor`: `6g`, 1 CPU, max parallelism 1
 
+The `serial` profile intentionally keeps the `low` memory cap while reducing
+Next/Turbo concurrency. Prefer that retry before shrinking the BuildKit memory
+cap when `low` gets through compilation or page-data work but exits with code
+137.
+
 If the floor profile still fails with the same BuildKit infrastructure
 signature, the helper resets the machine-local profile back to the
-budget-derived `default` profile before surfacing the failure. This prevents a
-machine from getting stuck starting every future deploy at `floor`. Delete
-`tmp/docker-web/buildkit/resource-profile.json` only as an emergency manual
-reset back to the default profile. Explicit build cap flags or
+budget-derived `default` profile. If that profile also fails and Docker's
+reported memory limit can safely fit a larger fixed profile, the helper can
+retry `low` (`10g`) before surfacing the failure. This prevents a machine from
+getting stuck starting every future deploy at `floor` while still allowing
+memory-starved Next builds to recover on Docker VMs with enough real capacity.
+Delete `tmp/docker-web/buildkit/resource-profile.json` only as an emergency
+manual reset back to the default profile. Explicit build cap flags or
 `DOCKER_WEB_BUILD_MEMORY`, `DOCKER_WEB_BUILD_CPUS`, or
 `DOCKER_WEB_BUILD_MAX_PARALLELISM` opt out of the adaptive profile for that run.
 
@@ -1386,6 +1507,9 @@ Equivalent environment variables:
 - `DOCKER_WEB_BUILDKIT_PORT=7914`
 - `DOCKER_WEB_BUILDKIT_ENDPOINT=tcp://127.0.0.1:7914`
 - `DOCKER_WEB_BUILDKIT_PRUNE_AFTER_BUILD=0` for blue/green watcher handoffs
+- `DOCKER_WEB_BUILDKIT_PRUNE_MODE=bounded|all|off` (`bounded` is the default)
+- `DOCKER_WEB_BUILDKIT_PRUNE_UNTIL=168h`
+- `DOCKER_WEB_BUILDKIT_PRUNE_KEEP_STORAGE=50gb`
 - `DOCKER_WEB_BUILDKIT_STOP_AFTER_BUILD=0` to keep the `buildkit` container
   warm after a build
 - `DOCKER_WEB_DOCKER_MEMORY_LIMIT=<bytes from docker info>`
@@ -1395,7 +1519,7 @@ Equivalent environment variables:
 - `DOCKER_WEB_NEXT_APP_ONLY=1`
 - `DOCKER_WEB_NODE_MAX_OLD_SPACE_SIZE=auto`
 - `DOCKER_WEB_NEXT_BUILD_ENGINE=turbopack`
-- `DOCKER_WEB_REACT_COMPILER=0`
+- `DOCKER_WEB_REACT_COMPILER=1`
 
 How it works:
 
@@ -1427,9 +1551,15 @@ How it works:
   while keeping layer state for the next deployment. Set
   `DOCKER_WEB_BUILDKIT_STOP_AFTER_BUILD=0` only when an operator intentionally
   wants BuildKit to stay warm after a handoff.
+- When BuildKit pruning is enabled, the default mode is bounded: the helper runs
+  `docker buildx prune --filter until=168h --keep-storage 50gb` for the active
+  builder. Use `DOCKER_WEB_BUILDKIT_PRUNE_MODE=all` only for disposable build
+  state, or `DOCKER_WEB_BUILDKIT_PRUNE_MODE=off` to skip pruning without
+  changing older `DOCKER_WEB_BUILDKIT_PRUNE_AFTER_BUILD` callers.
 - Dockerized E2E is the exception: its per-run BuildKit state is disposable and
   `scripts/run-web-e2e-docker.js` sets
-  `DOCKER_WEB_BUILDKIT_PRUNE_AFTER_BUILD=1` unless explicitly overridden.
+  `DOCKER_WEB_BUILDKIT_PRUNE_AFTER_BUILD=1` and
+  `DOCKER_WEB_BUILDKIT_PRUNE_MODE=all` unless explicitly overridden.
 - The same max-parallelism value is also forwarded as `COMPOSE_PARALLEL_LIMIT`
   when that variable is not already set. When the limit is `1`, the blue/green
   workflow builds each Bake target group separately so image export and web
@@ -1449,10 +1579,10 @@ How it works:
   forwards it as `DOCKER_WEB_DOCKER_MEMORY_LIMIT`; auto buckets reserve 1 GB of
   effective Docker build memory for BuildKit, the active runtime lane, and
   sidecar overhead before selecting the Node heap bucket on larger allocations.
-  Docker production builds use
-  Turbopack under the real Node 24 runtime with App Router-only compilation and
-  React Compiler disabled. This avoids Bun runtime crashes while loading native
-  Next SWC modules and keeps local E2E aligned with production Docker builds.
+  Docker production builds use Turbopack under the real Node 24 runtime with App
+  Router-only compilation and React Compiler enabled. This avoids Bun runtime
+  crashes while loading native Next SWC modules and keeps local E2E aligned with
+  production Docker builds.
   The Docker `builder` stage is based on
   `node:24-bookworm-slim` and copies the Bun binary in only for workspace script
   orchestration, so the actual `next build` process runs under real Node instead
@@ -1461,8 +1591,8 @@ How it works:
   (pinned by the Dockerfile to `/usr/local/bin/node`) for the Next CLI and
   honors `DOCKER_WEB_NODE_MAX_OLD_SPACE_SIZE=auto` by default. Set a numeric
   heap value only when you need to override the bucket selection; values below
-  4096 MB are rejected. Set `DOCKER_WEB_NEXT_APP_ONLY=0` or
-  `DOCKER_WEB_REACT_COMPILER=1` only when the host has enough memory headroom.
+  4096 MB are rejected. Set `DOCKER_WEB_NEXT_APP_ONLY=0` only when you need to
+  compare a full-app build.
   Keep `DOCKER_WEB_NEXT_BUILD_ENGINE` on its default Turbopack value for
   production watcher hosts and local E2E runs. The wrapper also passes
   Turbo's `--concurrency` flag inside the Dockerfile build. It uses
@@ -1472,16 +1602,18 @@ How it works:
   Turbo cap limits concurrent workspace package builds such as
   `@tuturuuu/types`, `@tuturuuu/devbox`, and `@tuturuuu/masonry`.
 - Docker standalone Next builds default static page generation to a 180 second
-  timeout, and auto-scale the inner Next build CPU count plus static generation
-  concurrency from Docker memory. Docker allocations below 10 GB use 1 Next
-  build CPU and static generation concurrency 1; 10-16 GB allocations use 2
-  for both; 16 GB and larger allocations use 4 for both. The Compose-owned
-  BuildKit service still defaults to a 4 CPU budget, while the inner Next
-  workers stay lower on smaller hosts to avoid OOM kills when the same machine
-  is also running the active blue/green lane and sidecars. Override those with
-  `DOCKER_WEB_STATIC_PAGE_GENERATION_TIMEOUT`,
+  timeout. Legacy all-in-Docker builds auto-scale the inner Next build CPU count
+  plus static generation concurrency from Docker memory. Docker allocations
+  below 10 GB use 1 Next build CPU and static generation concurrency 1; 10-16 GB
+  allocations use 2 for both; 16 GB and larger allocations use 4 for both. The
+  Compose-owned BuildKit service still defaults to a 4 CPU budget, while the
+  inner Next workers stay lower on smaller hosts to avoid OOM kills when the
+  same machine is also running the active blue/green lane and sidecars. Native
+  host builds do not set `DOCKER_WEB_STATIC_GENERATION_MAX_CONCURRENCY` or
+  `DOCKER_WEB_NEXT_BUILD_CPUS` unless the operator explicitly provides them.
+  Override those with `DOCKER_WEB_STATIC_PAGE_GENERATION_TIMEOUT`,
   `DOCKER_WEB_STATIC_GENERATION_MAX_CONCURRENCY`, and
-  `DOCKER_WEB_NEXT_BUILD_CPUS` when a host has more or less headroom.
+  `DOCKER_WEB_NEXT_BUILD_CPUS` only when a host needs a fixed worker count.
 - Hive Docker images use a filtered workspace install and a Next standalone
   runner. Before `apps/hive` runs `next build`, the image must build
   `@tuturuuu/types`, `@tuturuuu/internal-api`, and `@tuturuuu/supabase` because
@@ -1631,19 +1763,29 @@ bun serve:web:docker:bg -- --with-cloudflared
 
 Required env:
 
-- `CLOUDFLARED_TOKEN` or `DOCKER_CLOUDFLARED_TOKEN`
+- `CF_TUNNEL_TOKEN`, `CLOUDFLARED_TOKEN`, or `DOCKER_CLOUDFLARED_TOKEN`
+
+When root `.env.local` contains a non-empty `CF_TUNNEL_TOKEN`, Docker web
+helpers automatically enable the `cloudflared` profile and pass the value to
+Compose as `CLOUDFLARED_TOKEN`. If `--env-file` is passed, the helper applies
+the same auto-detection to that explicit file. Set
+`DOCKER_WEB_WITH_CLOUDFLARED=0` to keep a configured tunnel token available
+without starting the `cloudflared` container; an explicit `--with-cloudflared`
+or `--profile cloudflared` still enables the profile.
 
 For a remotely managed Cloudflare Tunnel, configure the public hostname route in
-Cloudflare to point at the Docker service:
+Cloudflare to point at the Docker service or the local proxy loopback:
 
-- Production blue/green: `https://tuturuuu.com` -> `http://web-proxy:7803`
+- Production blue/green: `https://tuturuuu.com` -> `http://localhost:7803` or
+  `http://web-proxy:7803`
 - Dev stack: `https://dev.tuturuuu.com` or a temporary hostname ->
-  `http://web:7803`
+  `http://localhost:7803` or `http://web:7803`
 
-The tunnel container joins the same compose network, so use Docker service names
-instead of host ports in the Cloudflare service URL. Keep `cms.tuturuuu.com` and
-other satellite app hostnames on Vercel unless those apps are explicitly moved
-into this Docker stack.
+The tunnel container shares the web/proxy network namespace, so existing
+Cloudflare routes that use `localhost:7803` resolve to the Docker web service
+instead of the tunnel container itself. Keep `cms.tuturuuu.com` and other
+satellite app hostnames on Vercel unless those apps are explicitly moved into
+this Docker stack.
 
 Production compose binds host-published web, Hive, Meet, and Redis ports to
 `127.0.0.1` only. Do not remove that loopback prefix during blue/green
@@ -1681,6 +1823,9 @@ The watcher container mounts:
 - the same repo again at the real host checkout path via
   `PLATFORM_HOST_WORKSPACE_DIR`, so host Docker bind mounts resolve against
   the host filesystem when the watcher shells into `docker compose ...`
+- the linked-worktree common Git directory through `DOCKER_WEB_GIT_COMMON_DIR`
+  when `.git` is a file, so in-container Git commands can resolve
+  `.git/worktrees/...` metadata from Docker-mounted checkouts
 - `/var/run/docker.sock` so it can manage the blue/green compose stack itself
 - the shared Bun install cache volume
 - a dedicated watcher `node_modules` volume so the frozen dependency install
@@ -1942,12 +2087,13 @@ Dashboard details:
 - Recoverable Git poll failures stay visible in the dashboard as a retrying
   watcher state instead of terminating the process, and the next-check timer
   reflects the active backoff delay.
-- If `git reset`, `git fetch`, or the reset-disabled `git pull --ff-only` path
-  fails only because a Git lock already exists, the watcher inspects the lock
-  age and removes it automatically only when it is stale (older than 2 minutes).
-  This covers `.git/index.lock`, `.git/packed-refs.lock`, and remote-ref locks
-  such as `.git/refs/remotes/origin/staging.lock`. Fresh lock files are left in
-  place so active Git operations are not interrupted.
+- If `git reset`, `git fetch`, `git checkout`, or the reset-disabled
+  `git pull --ff-only` path fails only because a Git lock already exists, the
+  watcher inspects the lock age. Fresh locks are polled inside the watcher
+  process, then removed automatically only when they are stale (older than 2
+  minutes). This covers linked-worktree `index.lock` files,
+  `.git/packed-refs.lock`, and remote-ref locks such as
+  `.git/refs/remotes/origin/staging.lock`.
 - Build/deploy failures also stay inside the watcher loop. The watcher records
   failed attempts in deployment history, clears stale pending handoff files
   after recovery failures, and stops retrying the same commit after the third
@@ -2119,7 +2265,11 @@ Dashboard details:
   because `/workspace/...` is not a real shared host path.
 - The watcher compose environment preserves `PLATFORM_HOST_WORKSPACE_DIR` and
   pins `COMPOSE_PROJECT_NAME` from that host checkout path unless
-  `DOCKER_WEB_COMPOSE_PROJECT_NAME` is explicitly set. A canonical checkout
+  `DOCKER_WEB_COMPOSE_PROJECT_NAME` is explicitly set. For linked worktrees, the
+  same compose env injects `DOCKER_WEB_GIT_COMMON_DIR` and the watcher service
+  mounts that directory at the same absolute path inside the container. This
+  prevents `fatal: not a git repository` failures for `.git/worktrees/<name>`
+  paths when `.git` points outside the worktree mount. A canonical checkout
   directory named `platform` maps to the `tuturuuu` Compose project so Docker
   Desktop groups the stack under the product name on clean startups. During
   self-refresh from an already-running legacy `platform` Compose project, the
@@ -2148,7 +2298,10 @@ Dashboard details:
   without treating it as a deployment failure. Tune the bounded backoff with
   `DOCKER_WEB_COMPOSE_UP_RETRY_MAX_ATTEMPTS`,
   `DOCKER_WEB_COMPOSE_UP_RETRY_INITIAL_DELAY_MS`, and
-  `DOCKER_WEB_COMPOSE_UP_RETRY_MAX_DELAY_MS`; non-transient Compose errors still
+  `DOCKER_WEB_COMPOSE_UP_RETRY_MAX_DELAY_MS`. Stale dependency container
+  references use `DOCKER_WEB_COMPOSE_UP_STALE_DEPENDENCY_RETRY_MAX_ATTEMPTS`,
+  so registry retry tuning cannot accidentally disable recovery from Compose
+  referencing a removed dependency container. Non-transient Compose errors still
   fail immediately.
 - If `log-drain-postgres` starts but remains unhealthy before promotion, the
   helper removes and recreates only that service container once, collects
@@ -2311,10 +2464,10 @@ Operational notes:
 - `docker compose -f docker-compose.web.prod.yml --profile redis config`
 - `docker compose -f docker-compose.web.prod.yml --profile cloudflared config`
 - `docker compose -f docker-compose.tanstack-dual.yml config`
-- `docker build -f apps/backend/Dockerfile .`
-- `docker build --target dev -f apps/web/Dockerfile .`
-- `docker build --target runner --secret id=web_env,src=apps/web/.env.local -f apps/web/Dockerfile .`
-- `docker build --target runner -f apps/tanstack-web/Dockerfile .`
+- `docker buildx build --load --cache-from type=gha,scope=docker-backend --cache-to type=gha,scope=docker-backend,mode=max -f apps/backend/Dockerfile .`
+- `docker buildx build --load --target dev --cache-from type=gha,scope=docker-web-dev --cache-to type=gha,scope=docker-web-dev,mode=max -f apps/web/Dockerfile .`
+- `docker buildx build --load --target runner --secret id=web_env,src=apps/web/.env.local --cache-from type=gha,scope=docker-web-prod --cache-to type=gha,scope=docker-web-prod,mode=max -f apps/web/Dockerfile .`
+- `docker buildx build --load --target runner --cache-from type=gha,scope=docker-tanstack-web-prod --cache-to type=gha,scope=docker-tanstack-web-prod,mode=max -f apps/tanstack-web/Dockerfile .`
 
 That means Docker CI now covers the dev image, the Next.js production image,
 the TanStack production image, the dual-stack compose file, and the optional

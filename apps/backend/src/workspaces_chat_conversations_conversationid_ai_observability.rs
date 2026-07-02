@@ -3,7 +3,7 @@ use serde_json::{Value, json};
 
 use crate::{
     APPLICATION_JSON, BackendConfig, BackendRequest, BackendResponse, contact,
-    finance_auth::{FinanceAuthorizationError, authorize_finance_permission},
+    finance_auth::{FinanceAuthorizationError, authorize_scoped_app_permission},
     json_response, method_not_allowed, no_store_response,
     outbound::{OutboundHttpClient, OutboundMethod, OutboundRequest},
 };
@@ -12,6 +12,7 @@ use crate::{
 // apps/web/src/app/api/v1/workspaces/[wsId]/chat/conversations/[conversationId]/ai-observability/route.ts
 
 const VIEW_CHAT_PERMISSION: &str = "view_chat";
+const CHAT_APP_SESSION_TARGETS: [&str; 1] = ["chat"];
 const PRIVATE_SCHEMA: &str = "private";
 const CHAT_GET_CONVERSATION_RPC: &str = "chat_get_conversation";
 
@@ -127,11 +128,12 @@ async fn observability_response(
 ) -> BackendResponse {
     // Mirror resolveChatRouteContext({ permission: 'view_chat' }): authenticate,
     // normalize the workspace id, then require view_chat before any data read.
-    let authorization = match authorize_finance_permission(
+    let authorization = match authorize_scoped_app_permission(
         config,
         request,
         route.ws_id,
         VIEW_CHAT_PERMISSION,
+        &CHAT_APP_SESSION_TARGETS,
         outbound,
     )
     .await

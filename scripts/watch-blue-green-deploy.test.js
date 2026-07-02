@@ -6,6 +6,7 @@ const os = require('node:os');
 const path = require('node:path');
 
 const { renderBlueGreenProxyConfig } = require('./docker-web/blue-green.js');
+const { DOCKER_WEB_GIT_COMMON_DIR_ENV } = require('./docker-web/env.js');
 const {
   DEFAULT_DEPLOYMENT_BUILD_TIMEOUT_MS,
   DEPLOYMENT_BUILD_LOCK_TOKEN_ENV,
@@ -46,6 +47,7 @@ const {
   MAX_RECOVERY_CACHE_IMAGES,
   SELF_WATCHED_FILES,
   WATCH_ARGS_FILE,
+  WATCHER_BOOTSTRAP_IDLE_RUNTIME_ENV,
   WATCH_PENDING_DEPLOY_ENV,
   WATCHER_CONTAINER_ENV,
   WEB_CRON_RUNNER_SERVICE,
@@ -75,6 +77,7 @@ const {
   getDockerDaemonRecoverySettingsEnv,
   getDockerLogStreamReconnectMs,
   getWatcherComposeEnv,
+  resolveWatcherHostWorkspaceDir,
   getWatchPaths,
   isGitIndexLockError,
   isGitLockError,
@@ -88,6 +91,7 @@ const {
   pullTrackedBranch,
   readDeploymentHistory,
   readCronRunnerRecoveryRequest,
+  readCronRunnerHeartbeat,
   readWatchArgsFile,
   readWatchLock,
   readPendingDeployRequest,
@@ -98,6 +102,7 @@ const {
   runBlueGreenDeploy,
   runPendingDeployAfterRestart,
   processCronRunnerRecoveryRequest,
+  reconcileCronRunnerHealth,
   runDeployWatchIteration,
   runDeploymentRevertRequestIteration,
   runDeployWatchLoop,
@@ -117,6 +122,7 @@ const {
   writeWatchArgsFile,
   loadRuntimeSnapshot,
   mirrorExistingWatchSession,
+  needsActiveRuntimeRecovery,
   readWatchStatus,
   terminateExistingWatcher,
   clearPendingDeployRequest,
@@ -354,12 +360,259 @@ test('processCronRunnerRecoveryRequest keeps failed cron runner recovery request
   }
 });
 
+test('reconcileCronRunnerHealth leaves a healthy cron runner alone', async () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'cron-runner-health-healthy-')
+  );
+  const paths = getWatchPaths(tempDir);
+  const now = 1_700_000_000_000;
+  const calls = [];
+
+  try {
+    writeCronRunnerStatus(tempDir, { updatedAt: now });
+
+    const result = await reconcileCronRunnerHealth({
+      env: {},
+      paths,
+      rootDir: tempDir,
+      now: () => now,
+      runCommand: createCronRunnerHealthRunCommand({ calls }),
+    });
+
+    assert.equal(result.status, 'healthy');
+    assert.equal(result.heartbeat.status, 'live');
+    assert.equal(
+      calls.some((call) => call.includes(' up ')),
+      false
+    );
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('reconcileCronRunnerHealth skips empty cron runtimes before bootstrap', async () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'cron-runner-health-unconfigured-')
+  );
+  const paths = getWatchPaths(tempDir);
+
+  try {
+    const result = await reconcileCronRunnerHealth({
+      fsImpl: fs,
+      log: { warn() {} },
+      paths,
+      rootDir: tempDir,
+      runCommand: async (command, args) => {
+        throw new Error(`Unexpected command: ${command} ${args.join(' ')}`);
+      },
+    });
+
+    assert.equal(result.status, 'unconfigured');
+    assert.equal(result.heartbeat.status, 'missing');
+    assert.equal(readCronRunnerRecoveryRequest(paths), null);
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('reconcileCronRunnerHealth restarts a missing cron runner', async () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'cron-runner-health-missing-')
+  );
+  const paths = getWatchPaths(tempDir);
+  const now = 1_700_000_000_000;
+  const calls = [];
+
+  try {
+    writeCronRunnerStatus(tempDir, { updatedAt: now });
+
+    const result = await reconcileCronRunnerHealth({
+      env: {},
+      paths,
+      rootDir: tempDir,
+      now: () => now,
+      runCommand: createCronRunnerHealthRunCommand({
+        calls,
+        containerId: '',
+      }),
+    });
+
+    assert.equal(result.status, 'recovered');
+    assert.equal(result.trigger, 'watcher-health-check');
+    assert.equal(
+      result.recovery.request.reason,
+      'cron-runner-container-missing'
+    );
+    assert.ok(
+      calls.some((call) =>
+        call.includes(
+          'up --build --detach --force-recreate --remove-orphans web-cron-runner'
+        )
+      )
+    );
+    assert.equal(readCronRunnerRecoveryRequest(paths), null);
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('reconcileCronRunnerHealth restarts a stale-heartbeat cron runner and waits for refresh', async () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'cron-runner-health-stale-')
+  );
+  const paths = getWatchPaths(tempDir);
+  let now = 1_700_000_000_000;
+  const calls = [];
+
+  try {
+    writeCronRunnerStatus(tempDir, { updatedAt: now - 121_000 });
+
+    const result = await reconcileCronRunnerHealth({
+      env: {
+        DOCKER_WEB_WATCHER_CRON_RUNNER_RECOVERY_POLL_MS: '100',
+        DOCKER_WEB_WATCHER_CRON_RUNNER_RECOVERY_WAIT_MS: '1000',
+      },
+      paths,
+      rootDir: tempDir,
+      now: () => now,
+      runCommand: createCronRunnerHealthRunCommand({ calls }),
+      sleepImpl: async (ms) => {
+        now += ms;
+        writeCronRunnerStatus(tempDir, { updatedAt: now });
+      },
+    });
+
+    assert.equal(result.status, 'recovered');
+    assert.equal(result.previousHeartbeat.status, 'stale');
+    assert.equal(result.heartbeat.status, 'live');
+    assert.equal(result.recovery.request.reason, 'cron-runner-heartbeat-stale');
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('reconcileCronRunnerHealth backs off a recently failed cron recovery request', async () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'cron-runner-health-backoff-')
+  );
+  const paths = getWatchPaths(tempDir);
+  const now = 1_700_000_000_000;
+
+  try {
+    writeCronRunnerRecoveryRequest(
+      {
+        action: 'restart',
+        attemptCount: 1,
+        kind: 'cron-runner-recovery',
+        lastAttemptAt: now - 10_000,
+        lastError: 'compose refused',
+        reason: 'cron-runner-heartbeat-stale',
+        requestedAt: '2026-06-29T00:00:00.000Z',
+        requestedBy: 'blue-green-watcher',
+        requestedByEmail: null,
+      },
+      { paths }
+    );
+
+    const result = await reconcileCronRunnerHealth({
+      env: {},
+      paths,
+      rootDir: tempDir,
+      now: () => now,
+      runCommand: async () => {
+        throw new Error('should not retry during backoff');
+      },
+    });
+
+    assert.equal(result.status, 'backoff');
+    assert.equal(result.trigger, 'queued-request');
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('reconcileCronRunnerHealth preserves failed automatic recovery requests for retry', async () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'cron-runner-health-failed-')
+  );
+  const paths = getWatchPaths(tempDir);
+  const now = 1_700_000_000_000;
+
+  try {
+    writeCronRunnerStatus(tempDir, { updatedAt: now - 121_000 });
+
+    const result = await reconcileCronRunnerHealth({
+      env: {},
+      paths,
+      rootDir: tempDir,
+      now: () => now,
+      runCommand: createCronRunnerHealthRunCommand({
+        upResult: createResult('', { code: 1, stderr: 'compose refused' }),
+      }),
+    });
+    const pending = readCronRunnerRecoveryRequest(paths);
+
+    assert.equal(result.status, 'failed');
+    assert.equal(result.trigger, 'watcher-health-check');
+    assert.equal(pending.attemptCount, 1);
+    assert.equal(pending.lastAttemptAt, now);
+    assert.equal(pending.lastError, 'compose refused');
+    assert.equal(
+      readCronRunnerHeartbeat({ rootDir: tempDir, now }).status,
+      'stale'
+    );
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
 function createResult(stdout = '', { code = 0, stderr = '' } = {}) {
   return {
     code,
     signal: null,
     stderr,
     stdout,
+  };
+}
+
+function writeCronRunnerStatus(rootDir, value) {
+  const statusFile = path.join(
+    rootDir,
+    'tmp',
+    'docker-web',
+    'cron',
+    'status.json'
+  );
+  fs.mkdirSync(path.dirname(statusFile), { recursive: true });
+  fs.writeFileSync(statusFile, `${JSON.stringify(value, null, 2)}\n`);
+}
+
+function createCronRunnerHealthRunCommand({
+  calls = [],
+  containerId = 'cron-runner-123',
+  health = 'healthy',
+  upResult = createResult(''),
+} = {}) {
+  return async (command, args) => {
+    const joined = [command, ...args].join(' ');
+    calls.push(joined);
+
+    if (joined.includes('ps -a -q web-cron-runner')) {
+      return createResult(containerId ? `${containerId}\n` : '');
+    }
+
+    if (joined.includes('docker inspect') && joined.includes(containerId)) {
+      return createResult(`${health}\n`);
+    }
+
+    if (joined.includes('up --build --detach')) {
+      return upResult;
+    }
+
+    return createResult('', {
+      code: 1,
+      stderr: `unexpected command: ${joined}`,
+    });
   };
 }
 
@@ -1449,6 +1702,10 @@ function prodComposePsAllKey(serviceName) {
   return `docker compose -f ${PROD_COMPOSE_FILE} --profile redis ps -a -q ${serviceName}`;
 }
 
+function dockerPsComposeServiceLabelKey(serviceName, projectName) {
+  return `docker ps -aq --filter label=com.docker.compose.project=${projectName} --filter label=com.docker.compose.service=${serviceName} --format {{.ID}}`;
+}
+
 function prodComposeStopKey(...serviceNames) {
   return `docker compose -f ${PROD_COMPOSE_FILE} --profile redis stop --timeout 1 ${serviceNames.join(' ')}`;
 }
@@ -1459,6 +1716,14 @@ function prodComposeWatcherUpKey() {
 
 function prodComposeCronRunnerUpKey() {
   return `docker compose -f ${PROD_COMPOSE_FILE} --profile redis up --build --detach --no-recreate --remove-orphans ${WEB_CRON_RUNNER_SERVICE}`;
+}
+
+function prodComposeCloudflaredProxyPsKey() {
+  return `docker compose -f ${PROD_COMPOSE_FILE} --profile redis --profile cloudflared ps -q ${BLUE_GREEN_PROXY_SERVICE}`;
+}
+
+function prodComposeCloudflaredUpKey() {
+  return `docker compose -f ${PROD_COMPOSE_FILE} --profile redis --profile cloudflared up --detach --no-build --remove-orphans cloudflared`;
 }
 
 function prodComposeDockerControlUpKey() {
@@ -1601,7 +1866,10 @@ test('recoverDownComposeServices starts stopped proxy and Redis services without
 
   try {
     const result = await recoverDownComposeServices({
-      currentBlueGreen: { activeColor: 'green' },
+      currentBlueGreen: {
+        activeColor: 'green',
+        activeServiceRunning: true,
+      },
       env: LOCAL_SUPABASE_TEST_ENV,
       envFilePath,
       fsImpl: fs,
@@ -1632,6 +1900,78 @@ test('recoverDownComposeServices starts stopped proxy and Redis services without
   }
 });
 
+test('recoverDownComposeServices includes cloudflared profile from CF_TUNNEL_TOKEN', async () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'watch-service-recovery-cloudflared-')
+  );
+  const { envFilePath } = setupRecoveryEnv(tempDir);
+  const { calls, runCommand } = createComposeServiceRecoveryRunCommand({
+    initialStatuses: {
+      cloudflared: 'missing',
+      'web-proxy': 'missing',
+    },
+  });
+
+  try {
+    fs.appendFileSync(envFilePath, '\nCF_TUNNEL_TOKEN=cf-tunnel-token\n');
+
+    const result = await recoverDownComposeServices({
+      currentBlueGreen: {
+        activeColor: 'green',
+        activeServiceRunning: true,
+      },
+      env: LOCAL_SUPABASE_TEST_ENV,
+      envFilePath,
+      fsImpl: fs,
+      log: { error() {}, info() {}, warn() {} },
+      rootDir: tempDir,
+      runCommand,
+      sleepImpl: async () => {},
+    });
+
+    assert.equal(result.status, 'recovered');
+    assert.ok(result.startServices.includes('cloudflared'));
+    assert.ok(
+      calls.includes(
+        `docker compose -f ${PROD_COMPOSE_FILE} --profile redis --profile cloudflared up --detach --no-build --remove-orphans web-proxy cloudflared`
+      )
+    );
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('recoverDownComposeServices skips stale active color without runtime anchor', async () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'watch-service-recovery-stale-active-')
+  );
+  const { envFilePath } = setupRecoveryEnv(tempDir);
+
+  try {
+    const result = await recoverDownComposeServices({
+      currentBlueGreen: {
+        activeColor: 'green',
+        activeServiceRunning: false,
+        proxyRunning: false,
+        state: 'degraded',
+      },
+      env: LOCAL_SUPABASE_TEST_ENV,
+      envFilePath,
+      fsImpl: fs,
+      log: { error() {}, info() {}, warn() {} },
+      rootDir: tempDir,
+      runCommand: async (command, args) => {
+        throw new Error(`Unexpected command: ${command} ${args.join(' ')}`);
+      },
+      sleepImpl: async () => {},
+    });
+
+    assert.equal(result, null);
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
 test('recoverDownComposeServices tries cheap recovery for a down active web lane', async () => {
   const tempDir = fs.mkdtempSync(
     path.join(os.tmpdir(), 'watch-service-recovery-web-')
@@ -1645,7 +1985,10 @@ test('recoverDownComposeServices tries cheap recovery for a down active web lane
 
   try {
     const result = await recoverDownComposeServices({
-      currentBlueGreen: { activeColor: 'green' },
+      currentBlueGreen: {
+        activeColor: 'green',
+        proxyRunning: true,
+      },
       env: LOCAL_SUPABASE_TEST_ENV,
       envFilePath,
       fsImpl: fs,
@@ -1685,7 +2028,10 @@ test('recoverDownComposeServices force-recreates unhealthy services', async () =
 
   try {
     const result = await recoverDownComposeServices({
-      currentBlueGreen: { activeColor: 'green' },
+      currentBlueGreen: {
+        activeColor: 'green',
+        activeServiceRunning: true,
+      },
       env: LOCAL_SUPABASE_TEST_ENV,
       envFilePath,
       fsImpl: fs,
@@ -1720,7 +2066,10 @@ test('recoverDownComposeServices waits instead of restarting starting services',
 
   try {
     const result = await recoverDownComposeServices({
-      currentBlueGreen: { activeColor: 'green' },
+      currentBlueGreen: {
+        activeColor: 'green',
+        activeServiceRunning: true,
+      },
       env: LOCAL_SUPABASE_TEST_ENV,
       envFilePath,
       fsImpl: fs,
@@ -1756,7 +2105,10 @@ test('recoverDownComposeServices logs failures without deployment history rows',
 
   try {
     const result = await recoverDownComposeServices({
-      currentBlueGreen: { activeColor: 'green' },
+      currentBlueGreen: {
+        activeColor: 'green',
+        activeServiceRunning: true,
+      },
       env: LOCAL_SUPABASE_TEST_ENV,
       envFilePath,
       fsImpl: fs,
@@ -1918,6 +2270,14 @@ test('isGitIndexLockError detects git index.lock failures', () => {
     true
   );
   assert.equal(
+    isGitIndexLockError(
+      new Error(
+        "Command failed (128): git reset --hard HEAD\nfatal: Unable to create '/workspace/.git/worktrees/production/index.lock': File exists."
+      )
+    ),
+    true
+  );
+  assert.equal(
     isGitIndexLockError(new Error('Command failed (1): git fetch origin main')),
     false
   );
@@ -1996,6 +2356,54 @@ test('removeStaleGitIndexLock removes only stale lock files', () => {
     );
     assert.equal(fs.existsSync(lockPath), true);
     assert.match(logs.at(-1), /Leaving it in place/);
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('removeStaleGitIndexLock removes linked worktree index locks', () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'watch-linked-index-lock-')
+  );
+  const commonGitDir = path.join(tempDir, 'main', '.git');
+  const worktreeDir = path.join(tempDir, 'worktrees', 'production');
+  const worktreeGitDir = path.join(commonGitDir, 'worktrees', 'production');
+  const lockPath = path.join(worktreeGitDir, 'index.lock');
+  const logs = [];
+
+  try {
+    fs.mkdirSync(worktreeDir, { recursive: true });
+    fs.mkdirSync(worktreeGitDir, { recursive: true });
+    fs.writeFileSync(
+      path.join(worktreeDir, '.git'),
+      `gitdir: ${worktreeGitDir}\n`,
+      'utf8'
+    );
+    fs.writeFileSync(path.join(worktreeGitDir, 'commondir'), '../..\n', 'utf8');
+    fs.writeFileSync(lockPath, '', 'utf8');
+
+    const now = Date.now();
+    const staleMtime = new Date(now - DEFAULT_STALE_GIT_INDEX_LOCK_MS - 1_000);
+    fs.utimesSync(lockPath, staleMtime, staleMtime);
+
+    assert.equal(
+      removeStaleGitIndexLock({
+        error: new Error(
+          `Command failed (128): git reset --hard HEAD\nfatal: Unable to create '${lockPath}': File exists.`
+        ),
+        fsImpl: fs,
+        log: {
+          warn(message) {
+            logs.push(message);
+          },
+        },
+        now: () => now,
+        rootDir: worktreeDir,
+      }),
+      true
+    );
+    assert.equal(fs.existsSync(lockPath), false);
+    assert.match(logs.at(-1), /Removed stale git index lock/);
   } finally {
     fs.rmSync(tempDir, { force: true, recursive: true });
   }
@@ -2449,6 +2857,67 @@ test('buildDashboardView shows pending deployments in recent deployment cards', 
   assert.match(output, /Ship hotfix through blue green/);
   assert.match(output, /Last deploy:\s+deploying/);
   assert.match(output, /elapsed 20s/);
+});
+
+test('needsActiveRuntimeRecovery treats fresh idle blue-green runtime as recoverable', () => {
+  assert.equal(
+    needsActiveRuntimeRecovery({
+      currentBlueGreen: {
+        activeColor: null,
+        proxyRunning: false,
+        state: 'idle',
+      },
+      deployments: [],
+    }),
+    false
+  );
+
+  assert.equal(
+    needsActiveRuntimeRecovery(
+      {
+        currentBlueGreen: {
+          activeColor: null,
+          proxyRunning: false,
+          state: 'idle',
+        },
+        deployments: [],
+      },
+      {
+        env: {
+          [WATCHER_BOOTSTRAP_IDLE_RUNTIME_ENV]: '1',
+        },
+      }
+    ),
+    true
+  );
+
+  assert.equal(
+    needsActiveRuntimeRecovery({
+      currentBlueGreen: {
+        activeColor: 'blue',
+        activeServiceRunning: false,
+        state: 'degraded',
+      },
+      deployments: [],
+    }),
+    true
+  );
+
+  assert.equal(
+    needsActiveRuntimeRecovery({
+      currentBlueGreen: {
+        activeColor: 'blue',
+        activeServiceRunning: true,
+        state: 'active',
+      },
+      deployments: [
+        {
+          runtimeState: 'active',
+        },
+      ],
+    }),
+    false
+  );
 });
 
 test('createWatchUi records events and renders cleanly in non-TTY mode', () => {
@@ -4199,6 +4668,247 @@ test('runDeployWatchIteration resets dirty worktrees before comparing upstream b
       'git rev-parse HEAD',
       'git log -1 --format=%H%n%h%n%s%n%cI HEAD',
     ]);
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('runDeployWatchIteration removes stale linked worktree index locks before retrying', async () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'watch-linked-reset-lock-')
+  );
+  const commonGitDir = path.join(tempDir, 'main', '.git');
+  const worktreeDir = path.join(tempDir, 'worktrees', 'production');
+  const worktreeGitDir = path.join(commonGitDir, 'worktrees', 'production');
+  const lockPath = path.join(worktreeGitDir, 'index.lock');
+  const paths = getWatchPaths(worktreeDir);
+  const envFilePath = path.join(worktreeDir, 'apps', 'web', '.env.local');
+  const calls = [];
+  const logs = [];
+  let resetAttempts = 0;
+  const now = Date.now();
+
+  const runCommand = async (command, args) => {
+    const key = `${command} ${args.join(' ')}`;
+    calls.push(key);
+
+    if (key === 'git rev-parse --abbrev-ref HEAD') {
+      return createResult('production\n');
+    }
+
+    if (key === 'git status --porcelain') {
+      return createResult('');
+    }
+
+    if (key === 'git reset --hard HEAD') {
+      resetAttempts += 1;
+
+      if (resetAttempts === 1) {
+        return createResult('', {
+          code: 128,
+          stderr: `fatal: Unable to create '${lockPath}': File exists.`,
+        });
+      }
+
+      return createResult('');
+    }
+
+    if (key === 'git clean -fd' || key === 'git fetch origin production') {
+      return createResult('');
+    }
+
+    if (key === 'git rev-parse HEAD') {
+      return createResult('ddd1111111111111111111111111111111111111\n');
+    }
+
+    if (key === 'git rev-parse origin/production') {
+      return createResult('ddd1111111111111111111111111111111111111\n');
+    }
+
+    if (key === 'git log -1 --format=%H%n%h%n%s%n%cI HEAD') {
+      return createResult(
+        'ddd1111111111111111111111111111111111111\nddd111\nKeep production current\n2026-07-01T05:00:00.000Z\n'
+      );
+    }
+
+    throw new Error(`Unexpected command: ${key}`);
+  };
+
+  try {
+    fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
+    fs.mkdirSync(worktreeGitDir, { recursive: true });
+    fs.writeFileSync(envFilePath, LOCAL_SUPABASE_ENV_FILE_CONTENT, 'utf8');
+    fs.writeFileSync(
+      path.join(worktreeDir, '.git'),
+      `gitdir: ${worktreeGitDir}\n`,
+      'utf8'
+    );
+    fs.writeFileSync(path.join(worktreeGitDir, 'commondir'), '../..\n', 'utf8');
+    fs.writeFileSync(lockPath, '', 'utf8');
+    const staleMtime = new Date(now - DEFAULT_STALE_GIT_INDEX_LOCK_MS - 1_000);
+    fs.utimesSync(lockPath, staleMtime, staleMtime);
+
+    const result = await runDeployWatchIteration(
+      {
+        branch: 'production',
+        remote: 'origin',
+        upstreamBranch: 'production',
+        upstreamRef: 'origin/production',
+      },
+      {
+        envFilePath,
+        fsImpl: fs,
+        log: {
+          error() {},
+          info() {},
+          warn(message) {
+            logs.push(message);
+          },
+        },
+        now: () => now,
+        paths,
+        platformProjectReader: async () => ({
+          deploymentStatus: 'ready',
+          selectedBranch: 'production',
+          source: 'test',
+        }),
+        rootDir: worktreeDir,
+        runCommand,
+      }
+    );
+
+    assert.equal(result.status, 'up-to-date');
+    assert.equal(resetAttempts, 2);
+    assert.equal(fs.existsSync(lockPath), false);
+    assert.ok(
+      logs.some((message) => message.includes('Removed stale git index lock'))
+    );
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('runDeployWatchIteration waits for fresh linked worktree index locks before retrying', async () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'watch-fresh-linked-reset-lock-')
+  );
+  const commonGitDir = path.join(tempDir, 'main', '.git');
+  const worktreeDir = path.join(tempDir, 'worktrees', 'production');
+  const worktreeGitDir = path.join(commonGitDir, 'worktrees', 'production');
+  const lockPath = path.join(worktreeGitDir, 'index.lock');
+  const paths = getWatchPaths(worktreeDir);
+  const envFilePath = path.join(worktreeDir, 'apps', 'web', '.env.local');
+  const logs = [];
+  const sleepCalls = [];
+  let resetAttempts = 0;
+  let currentNow = Date.now();
+
+  const runCommand = async (command, args) => {
+    const key = `${command} ${args.join(' ')}`;
+
+    if (key === 'git rev-parse --abbrev-ref HEAD') {
+      return createResult('production\n');
+    }
+
+    if (key === 'git status --porcelain') {
+      return createResult('');
+    }
+
+    if (key === 'git reset --hard HEAD') {
+      resetAttempts += 1;
+
+      if (resetAttempts === 1) {
+        return createResult('', {
+          code: 128,
+          stderr: `fatal: Unable to create '${lockPath}': File exists.`,
+        });
+      }
+
+      return createResult('');
+    }
+
+    if (key === 'git clean -fd' || key === 'git fetch origin production') {
+      return createResult('');
+    }
+
+    if (key === 'git rev-parse HEAD') {
+      return createResult('eee1111111111111111111111111111111111111\n');
+    }
+
+    if (key === 'git rev-parse origin/production') {
+      return createResult('eee1111111111111111111111111111111111111\n');
+    }
+
+    if (key === 'git log -1 --format=%H%n%h%n%s%n%cI HEAD') {
+      return createResult(
+        'eee1111111111111111111111111111111111111\neee111\nKeep production current\n2026-07-01T05:00:00.000Z\n'
+      );
+    }
+
+    throw new Error(`Unexpected command: ${key}`);
+  };
+
+  try {
+    fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
+    fs.mkdirSync(worktreeGitDir, { recursive: true });
+    fs.writeFileSync(envFilePath, LOCAL_SUPABASE_ENV_FILE_CONTENT, 'utf8');
+    fs.writeFileSync(
+      path.join(worktreeDir, '.git'),
+      `gitdir: ${worktreeGitDir}\n`,
+      'utf8'
+    );
+    fs.writeFileSync(path.join(worktreeGitDir, 'commondir'), '../..\n', 'utf8');
+    fs.writeFileSync(lockPath, '', 'utf8');
+    const almostStaleMtime = new Date(
+      currentNow - DEFAULT_STALE_GIT_INDEX_LOCK_MS + 1_000
+    );
+    fs.utimesSync(lockPath, almostStaleMtime, almostStaleMtime);
+
+    const result = await runDeployWatchIteration(
+      {
+        branch: 'production',
+        remote: 'origin',
+        upstreamBranch: 'production',
+        upstreamRef: 'origin/production',
+      },
+      {
+        envFilePath,
+        fsImpl: fs,
+        log: {
+          error() {},
+          info() {},
+          warn(message) {
+            logs.push(message);
+          },
+        },
+        now: () => currentNow,
+        paths,
+        platformProjectReader: async () => ({
+          deploymentStatus: 'ready',
+          selectedBranch: 'production',
+          source: 'test',
+        }),
+        rootDir: worktreeDir,
+        runCommand,
+        sleepImpl: async (ms) => {
+          sleepCalls.push(ms);
+          currentNow += ms;
+        },
+      }
+    );
+
+    assert.equal(result.status, 'up-to-date');
+    assert.equal(resetAttempts, 2);
+    assert.deepEqual(sleepCalls, [1_000]);
+    assert.equal(fs.existsSync(lockPath), false);
+    assert.ok(
+      logs.some((message) =>
+        message.includes('waiting up to 1s before stale cleanup')
+      )
+    );
+    assert.ok(
+      logs.some((message) => message.includes('Removed stale git index lock'))
+    );
   } finally {
     fs.rmSync(tempDir, { force: true, recursive: true });
   }
@@ -6993,6 +7703,7 @@ test('runDeployWatchLoop backs off for git failures instead of exiting immediate
             },
             onIterationStart() {},
             paths,
+            rootDir: tempDir,
             runCommand: createRunCommandMock(
               new Map([
                 ['git rev-parse --abbrev-ref HEAD', createResult('main\n')],
@@ -7223,6 +7934,7 @@ test('runDeployWatchIteration stops when the locked branch changes', async () =>
           {
             log: { error() {}, info() {}, warn() {} },
             paths,
+            rootDir: tempDir,
             runCommand: createRunCommandMock(
               new Map([
                 ['git rev-parse --abbrev-ref HEAD', createResult('release\n')],
@@ -7341,6 +8053,7 @@ test('runDeployWatchLoop caps long git intervals to the project queue poll inter
             },
             paths,
             projectPollIntervalMs: 60_000,
+            rootDir: tempDir,
             runCommand: createRunCommandMock(
               new Map([
                 ['git rev-parse --abbrev-ref HEAD', createResult('main\n')],
@@ -7490,7 +8203,11 @@ test('startBlueGreenWatcherContainer writes watcher args and recreates the compo
     );
 
     await startBlueGreenWatcherContainer(['--interval-ms', '5000'], {
-      env: { ...LOCAL_SUPABASE_TEST_ENV, PATH: process.env.PATH },
+      env: {
+        ...LOCAL_SUPABASE_TEST_ENV,
+        PATH: process.env.PATH,
+        [HOST_WORKSPACE_DIR_ENV]: '/workspace-host',
+      },
       envFilePath,
       fsImpl: fs,
       rootDir: tempDir,
@@ -7534,6 +8251,134 @@ test('startBlueGreenWatcherContainer writes watcher args and recreates the compo
     assert.equal(envs[2].COMPOSE_PROJECT_NAME, path.basename(tempDir));
     assert.equal(envs[3][HOST_WORKSPACE_DIR_ENV], tempDir);
     assert.equal(envs[3].COMPOSE_PROJECT_NAME, path.basename(tempDir));
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('startBlueGreenWatcherContainer starts cloudflared from root CF_TUNNEL_TOKEN when proxy exists', async () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'watch-container-cloudflared-')
+  );
+  const envFilePath = path.join(tempDir, '.env.local');
+  const calls = [];
+  const envs = [];
+
+  try {
+    fs.writeFileSync(
+      envFilePath,
+      `${LOCAL_SUPABASE_ENV_FILE_CONTENT}CF_TUNNEL_TOKEN=cf-tunnel-token\n`,
+      'utf8'
+    );
+
+    await startBlueGreenWatcherContainer(['--interval-ms', '5000'], {
+      env: {
+        ...LOCAL_SUPABASE_TEST_ENV,
+        PATH: process.env.PATH,
+        [HOST_WORKSPACE_DIR_ENV]: '/workspace-host',
+      },
+      envFilePath,
+      fsImpl: fs,
+      rootDir: tempDir,
+      runCommand: async (command, args, options = {}) => {
+        const key = `${command} ${args.join(' ')}`;
+        calls.push(key);
+        envs.push(options.env ?? null);
+
+        if (key === prodComposeCloudflaredProxyPsKey()) {
+          return createResult('web-proxy-container-id\n');
+        }
+
+        return createResult('');
+      },
+    });
+
+    assert.deepEqual(calls, [
+      'docker compose version',
+      prodComposeWatcherUpKey(),
+      prodComposeDockerControlUpKey(),
+      prodComposeCronRunnerUpKey(),
+      prodComposeCloudflaredProxyPsKey(),
+      prodComposeCloudflaredUpKey(),
+    ]);
+    assert.equal(envs.at(-1).DOCKER_WEB_WITH_CLOUDFLARED, '1');
+    assert.equal(envs.at(-1).CLOUDFLARED_TOKEN, 'cf-tunnel-token');
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('startBlueGreenWatcherContainer recovers stale cron runner dependency containers', async () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'watch-container-cron-stale-dependency-')
+  );
+  const envFilePath = path.join(tempDir, 'apps', 'web', '.env.local');
+  const projectName = path.basename(tempDir);
+  const calls = [];
+  let cronRunnerUpAttempts = 0;
+
+  try {
+    fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
+    fs.writeFileSync(envFilePath, LOCAL_SUPABASE_ENV_FILE_CONTENT, 'utf8');
+
+    await startBlueGreenWatcherContainer(['--interval-ms', '5000'], {
+      env: { ...LOCAL_SUPABASE_TEST_ENV, PATH: process.env.PATH },
+      envFilePath,
+      fsImpl: fs,
+      rootDir: tempDir,
+      runCommand: async (command, args) => {
+        const key = `${command} ${args.join(' ')}`;
+        calls.push(key);
+
+        if (key === prodComposeCronRunnerUpKey()) {
+          cronRunnerUpAttempts += 1;
+
+          if (cronRunnerUpAttempts === 1) {
+            return createResult('', {
+              code: 1,
+              stderr:
+                'dependency failed to start: Error response from daemon: No such container: ff250f55026698d2c8e26b2e152c7b6c39957fb38f4f6aa007c4a6a383ce2562',
+            });
+          }
+        }
+
+        if (
+          key ===
+          dockerPsComposeServiceLabelKey(WEB_CRON_RUNNER_SERVICE, projectName)
+        ) {
+          return createResult('web-cron-runner-123\n');
+        }
+
+        if (
+          key === dockerPsComposeServiceLabelKey('hive-db-migrate', projectName)
+        ) {
+          return createResult('hive-db-migrate-123\n');
+        }
+
+        if (
+          key === dockerPsComposeServiceLabelKey('hive-postgres', projectName)
+        ) {
+          return createResult('hive-postgres-123\n');
+        }
+
+        return createResult('');
+      },
+    });
+
+    assert.equal(cronRunnerUpAttempts, 2);
+    assert.deepEqual(calls, [
+      'docker compose version',
+      prodComposeWatcherUpKey(),
+      prodComposeDockerControlUpKey(),
+      prodComposeCronRunnerUpKey(),
+      dockerPsComposeServiceLabelKey(WEB_CRON_RUNNER_SERVICE, projectName),
+      'docker rm -f web-cron-runner-123',
+      dockerPsComposeServiceLabelKey('hive-db-migrate', projectName),
+      'docker rm -f hive-db-migrate-123',
+      dockerPsComposeServiceLabelKey('hive-postgres', projectName),
+      'docker rm -f hive-postgres-123',
+      prodComposeCronRunnerUpKey(),
+    ]);
   } finally {
     fs.rmSync(tempDir, { force: true, recursive: true });
   }
@@ -7674,9 +8519,109 @@ test('getWatcherComposeEnv injects the mirrored host workspace path', () => {
     });
 
     assert.equal(composeEnv[HOST_WORKSPACE_DIR_ENV], tempDir);
+    assert.equal(composeEnv[WATCHER_BOOTSTRAP_IDLE_RUNTIME_ENV], '1');
     assert.equal(composeEnv.COMPOSE_PROJECT_NAME, path.basename(tempDir));
     assert.equal(composeEnv.SUPERMEMORY_BASE_URL, 'http://supermemory:8787');
     assert.match(composeEnv.SUPERMEMORY_API_KEY, /^[a-f0-9]{64}$/u);
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('getWatcherComposeEnv maps CF_TUNNEL_TOKEN and enables cloudflared', () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'watch-compose-env-cloudflared-')
+  );
+  const envFilePath = path.join(tempDir, '.env.local');
+
+  try {
+    fs.writeFileSync(
+      envFilePath,
+      [
+        'CF_TUNNEL_TOKEN=cf-tunnel-token',
+        'NEXT_PUBLIC_SUPABASE_URL=https://project-ref.supabase.co',
+      ].join('\n'),
+      'utf8'
+    );
+
+    const composeEnv = getWatcherComposeEnv({
+      baseEnv: { PATH: 'test-path' },
+      envFilePath,
+      fsImpl: fs,
+      rootDir: tempDir,
+    });
+
+    assert.equal(composeEnv.CLOUDFLARED_TOKEN, 'cf-tunnel-token');
+    assert.equal(composeEnv.DOCKER_WEB_WITH_CLOUDFLARED, '1');
+    assert.equal(composeEnv[HOST_WORKSPACE_DIR_ENV], tempDir);
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('getWatcherComposeEnv exposes linked worktree Git metadata and strips local Git env', () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'watch-compose-env-worktree-git-')
+  );
+  const commonGitDir = path.join(tempDir, 'primary', '.git');
+  const worktreeDir = path.join(tempDir, 'amber-storm', 'tuturuuu');
+  const worktreeGitDir = path.join(commonGitDir, 'worktrees', 'tuturuuu');
+
+  try {
+    fs.mkdirSync(worktreeGitDir, { recursive: true });
+    fs.mkdirSync(worktreeDir, { recursive: true });
+    fs.writeFileSync(
+      path.join(worktreeDir, '.git'),
+      `gitdir: ${worktreeGitDir}\n`,
+      'utf8'
+    );
+    fs.writeFileSync(path.join(worktreeGitDir, 'commondir'), '../..\n', 'utf8');
+
+    const composeEnv = getWatcherComposeEnv({
+      baseEnv: {
+        GIT_CONFIG_COUNT: '1',
+        GIT_DIR: '/host-only/.git/worktrees/tuturuuu',
+        GIT_WORK_TREE: '/host-only/tuturuuu',
+        PATH: 'test-path',
+      },
+      rootDir: worktreeDir,
+    });
+
+    assert.equal(composeEnv[DOCKER_WEB_GIT_COMMON_DIR_ENV], commonGitDir);
+    assert.equal(composeEnv.GIT_CONFIG_COUNT, undefined);
+    assert.equal(composeEnv.GIT_DIR, undefined);
+    assert.equal(composeEnv.GIT_WORK_TREE, undefined);
+    assert.equal(composeEnv[HOST_WORKSPACE_DIR_ENV], worktreeDir);
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('getWatcherComposeEnv replaces the default container placeholder with the host root', () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'watch-compose-env-host-root-')
+  );
+
+  try {
+    const composeEnv = getWatcherComposeEnv({
+      baseEnv: {
+        PATH: 'test-path',
+        [HOST_WORKSPACE_DIR_ENV]: '/workspace-host',
+      },
+      rootDir: tempDir,
+    });
+
+    assert.equal(
+      resolveWatcherHostWorkspaceDir({
+        baseEnv: {
+          [HOST_WORKSPACE_DIR_ENV]: '/workspace-host',
+        },
+        rootDir: tempDir,
+      }),
+      tempDir
+    );
+    assert.equal(composeEnv[HOST_WORKSPACE_DIR_ENV], tempDir);
+    assert.equal(composeEnv.COMPOSE_PROJECT_NAME, path.basename(tempDir));
   } finally {
     fs.rmSync(tempDir, { force: true, recursive: true });
   }

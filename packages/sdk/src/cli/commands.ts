@@ -1044,9 +1044,15 @@ async function createTaskFromLocalTemplate({
     resolveLocalTaskTemplatePath(reference)
   );
   const overrides = getTaskTemplateCreateOverrides(flags, listId);
+  const hasDescriptionOverride =
+    Object.hasOwn(overrides, 'description') ||
+    Object.hasOwn(overrides, 'description_yjs_state');
   return client.tasks.create(workspaceId, {
     assignee_ids: localTemplate.payload.assignee_ids ?? [],
     description: localTemplate.payload.description ?? null,
+    description_yjs_state: hasDescriptionOverride
+      ? null
+      : (localTemplate.payload.description_yjs_state ?? null),
     end_date: localTemplate.payload.end_date ?? null,
     estimation_points: localTemplate.payload.estimation_points ?? null,
     label_ids: localTemplate.payload.label_ids ?? [],

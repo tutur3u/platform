@@ -25,6 +25,7 @@ services:
       - DOCKER_WEB_DIRECT_HOST_PORT
       - DOCKER_WEB_DOCKER_MEMORY_LIMIT
       - DOCKER_WEB_FRONTEND
+      - DOCKER_WEB_GIT_COMMON_DIR
       - DOCKER_WEB_MIGRATE_FROM_COMPOSE_PROJECT
       - DOCKER_WEB_NATIVE_BUILD
       - DOCKER_WEB_NATIVE_BUILD_MEMORY
@@ -40,6 +41,7 @@ services:
       - DOCKER_WEB_STATIC_PAGE_GENERATION_TIMEOUT
       - DOCKER_WEB_TURBO_CONCURRENCY
       - DOCKER_WEB_WITH_CLOUDFLARED
+      - DOCKER_WEB_WATCHER_BOOTSTRAP_IDLE_RUNTIME
       - GITHUB_TOKEN
       - PLATFORM_HOST_WORKSPACE_DIR=${PLATFORM_HOST_WORKSPACE_DIR:-/workspace-host}
       - PLATFORM_LOG_DRAIN_DATABASE_URL=postgres://platform_log_drain:platform_log_drain@log-drain-postgres:5432/platform_log_drain
@@ -64,6 +66,7 @@ services:
     volumes:
       - ..:/workspace
       - ..:${PLATFORM_HOST_WORKSPACE_DIR:-/workspace-host}
+      - ${DOCKER_WEB_GIT_COMMON_DIR:-../.git}:${DOCKER_WEB_GIT_COMMON_DIR:-/workspace-git-common}
       - /var/run/docker.sock:/var/run/docker.sock
       - platform-bun-install:/root/.bun/install/cache
       - platform-blue-green-watcher-node_modules:/workspace/node_modules
@@ -91,6 +94,7 @@ services:
       - DOCKER_WEB_BUILDKIT_PORT
       - DOCKER_WEB_COMPOSE_PROJECT_NAME
       - DOCKER_WEB_FRONTEND
+      - DOCKER_WEB_GIT_COMMON_DIR
       - DOCKER_WEB_NATIVE_BUILD
       - DOCKER_WEB_NATIVE_BUILD_MEMORY
       - DOCKER_WEB_NEXT_APP_ONLY
@@ -105,6 +109,10 @@ services:
       - HIVE_DATABASE_URL=${HIVE_DATABASE_URL:-postgres://hive:hive@hive-postgres:5432/hive}
       - HIVE_OLLAMA_BASE_URL=${HIVE_OLLAMA_BASE_URL:-http://hive-ollama:11434}
       - INTERNAL_WEB_API_ORIGIN=${INTERNAL_WEB_API_ORIGIN:-http://web-proxy:7803}
+      - PLATFORM_DOCKER_CONTROL_CRON_RECOVERY_COOLDOWN_MS=${PLATFORM_DOCKER_CONTROL_CRON_RECOVERY_COOLDOWN_MS:-60000}
+      - PLATFORM_DOCKER_CONTROL_CRON_RUNNER_STALE_AFTER_MS=${PLATFORM_DOCKER_CONTROL_CRON_RUNNER_STALE_AFTER_MS:-120000}
+      - PLATFORM_DOCKER_CONTROL_CRON_WATCHDOG_DISABLED=${PLATFORM_DOCKER_CONTROL_CRON_WATCHDOG_DISABLED:-false}
+      - PLATFORM_DOCKER_CONTROL_CRON_WATCHDOG_INTERVAL_MS=${PLATFORM_DOCKER_CONTROL_CRON_WATCHDOG_INTERVAL_MS:-30000}
       - PLATFORM_DOCKER_CONTROL_PORT=${PLATFORM_DOCKER_CONTROL_PORT:-7810}
       - PLATFORM_DOCKER_CONTROL_STATUS_FILE=${PLATFORM_HOST_WORKSPACE_DIR:-/workspace-host}/tmp/docker-web/docker-control/status.json
       - PLATFORM_DOCKER_CONTROL_TOKEN
@@ -159,10 +167,16 @@ services:
       - SUPERMEMORY_TIMEOUT_MS=${SUPERMEMORY_TIMEOUT_MS:-1500}
       - VERCEL_CRON_SECRET
     healthcheck:
-      test: ["CMD-SHELL", "ps | grep -q '[w]atch-web-crons.js'"]
+      test:
+        [
+          "CMD",
+          "bun",
+          "/usr/local/bin/cron-runner-entrypoint.js",
+          "--healthcheck",
+        ]
       interval: 30s
       timeout: 5s
-      start_period: 10s
+      start_period: 120s
       retries: 3
     init: true
     restart: unless-stopped

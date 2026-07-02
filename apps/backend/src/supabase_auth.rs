@@ -86,6 +86,19 @@ pub(crate) fn is_valid_tuturuuu_email(email: Option<&str>) -> bool {
         && matches!(domain, "tuturuuu.com" | "xwf.tuturuuu.com")
 }
 
+pub(crate) fn is_exact_tuturuuu_dot_com_email(email: Option<&str>) -> bool {
+    let Some(email) = email.map(str::trim).filter(|email| !email.is_empty()) else {
+        return false;
+    };
+    let Some((local, domain)) = email.split_once('@') else {
+        return false;
+    };
+
+    !local.is_empty()
+        && !local.chars().any(char::is_whitespace)
+        && domain.eq_ignore_ascii_case("tuturuuu.com")
+}
+
 fn supabase_access_token_from_cookie_header(cookie_header: &str) -> Option<String> {
     let groups = supabase_auth_cookie_groups(cookie_header);
 

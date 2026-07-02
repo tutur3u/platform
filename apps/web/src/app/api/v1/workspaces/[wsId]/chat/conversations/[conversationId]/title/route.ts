@@ -298,10 +298,7 @@ async function generateConversationTitle({
     modelId: TITLE_MODEL_ID,
     inputTokens: result.usage.inputTokens ?? 0,
     outputTokens: result.usage.outputTokens ?? 0,
-    reasoningTokens:
-      result.usage.outputTokenDetails?.reasoningTokens ??
-      result.usage.reasoningTokens ??
-      0,
+    reasoningTokens: result.usage.outputTokenDetails?.reasoningTokens ?? 0,
     feature: TITLE_CREDIT_FEATURE,
     metadata: {
       conversationId,

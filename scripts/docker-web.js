@@ -90,6 +90,7 @@ const {
   formatSupabaseOriginReport,
   ensureWebEnvFile,
   getComposeEnvironment,
+  getDockerCloudflaredAutodetect,
   getDockerSupermemoryRuntime,
   getDockerWebSupabaseOriginReport,
   parseEnvFile,
@@ -362,6 +363,20 @@ function getSupabaseStartCommand(env = {}) {
   };
 }
 
+function applyDefaultBlueGreenNativeBuildEnv(composeEnv, parsed) {
+  if (
+    !usesBlueGreenStrategy(parsed) ||
+    composeEnv.DOCKER_WEB_NATIVE_BUILD != null
+  ) {
+    return composeEnv;
+  }
+
+  return {
+    ...composeEnv,
+    DOCKER_WEB_NATIVE_BUILD: '0',
+  };
+}
+
 function parseArgs(argv) {
   const args = [...argv];
   const action = args.shift() ?? 'up';
@@ -620,6 +635,28 @@ function ensureCloudflaredProfileFromEnv(parsed, env) {
   ) {
     parsed.composeGlobalArgs.push('--profile', 'cloudflared');
   }
+}
+
+function getCloudflaredWorkflowEnv({ env, envFilePath, fsImpl, rootDir } = {}) {
+  if (isTruthyEnv(env?.DOCKER_WEB_WITH_CLOUDFLARED)) {
+    return env;
+  }
+
+  const cloudflared = getDockerCloudflaredAutodetect({
+    baseEnv: env,
+    envFilePath,
+    fsImpl,
+    rootDir,
+  });
+
+  if (!cloudflared.enabled) {
+    return env;
+  }
+
+  return {
+    ...env,
+    DOCKER_WEB_WITH_CLOUDFLARED: '1',
+  };
 }
 
 function getInPlaceProdServices(parsed) {
@@ -1059,8 +1096,14 @@ async function runDockerWebWorkflow(parsed, options = {}) {
   const startWatcherContainer =
     options.startWatcherContainer ?? startBlueGreenWatcherContainer;
   const composeFile = getComposeFile(parsed.mode);
-  const env = options.env ?? process.env;
   const envFilePath = options.envFilePath ?? parsed.envFilePath;
+  const rootDir = options.rootDir ?? ROOT_DIR;
+  const env = getCloudflaredWorkflowEnv({
+    env: options.env ?? process.env,
+    envFilePath,
+    fsImpl,
+    rootDir,
+  });
   const processImpl = options.processImpl ?? process;
   const now = options.now ?? (() => Date.now());
   const sleepImpl = options.sleep ?? sleep;
@@ -1084,7 +1127,7 @@ async function runDockerWebWorkflow(parsed, options = {}) {
       envFilePath,
       fsImpl,
       preferEnvFilePath: parsed.mode === 'prod',
-      rootDir: options.rootDir,
+      rootDir,
       withCloudflared,
       withRedis,
     });
@@ -1106,26 +1149,23 @@ async function runDockerWebWorkflow(parsed, options = {}) {
     );
 
     if (usesBlueGreenStrategy(parsed)) {
-      clearBlueGreenRuntime(
-        getBlueGreenPaths(options.rootDir ?? ROOT_DIR),
-        fsImpl
-      );
+      clearBlueGreenRuntime(getBlueGreenPaths(rootDir), fsImpl);
     }
 
     return;
   }
 
-  ensureWebEnvFile(fsImpl, envFilePath, options.rootDir ?? ROOT_DIR);
+  ensureWebEnvFile(fsImpl, envFilePath, rootDir);
   ensureProductionRedisToken(parsed, env, hasComposeProfile, {
     fsImpl,
-    rootDir: options.rootDir,
+    rootDir,
   });
   let composeEnv = getComposeEnvironment({
     baseEnv: env,
     envFilePath,
     fsImpl,
     preferEnvFilePath: parsed.mode === 'prod',
-    rootDir: options.rootDir,
+    rootDir,
     withCloudflared,
     withRedis,
   });
@@ -1134,6 +1174,7 @@ async function runDockerWebWorkflow(parsed, options = {}) {
     runCommand: run,
   });
   composeEnv = applyLowMemoryBuildkitRestartEnv(composeEnv, parsed);
+  composeEnv = applyDefaultBlueGreenNativeBuildEnv(composeEnv, parsed);
   const buildResourceProfileSelection = usesBlueGreenStrategy(parsed)
     ? createBuildResourceProfileSelection({
         cpus: parsed.buildCpus,
@@ -1141,7 +1182,7 @@ async function runDockerWebWorkflow(parsed, options = {}) {
         fsImpl,
         maxParallelism: parsed.buildMaxParallelism,
         memory: parsed.buildMemory,
-        paths: getBuildResourceProfilePaths(options.rootDir ?? ROOT_DIR),
+        paths: getBuildResourceProfilePaths(rootDir),
       })
     : null;
   composeEnv = applyAdaptiveBuildResourceProfileEnv(
@@ -1163,11 +1204,11 @@ async function runDockerWebWorkflow(parsed, options = {}) {
       composeEnv,
       envFilePath,
       fsImpl,
-      rootDir: options.rootDir ?? ROOT_DIR,
+      rootDir,
     });
   }
 
-  const watchPaths = getWatchPaths(options.rootDir ?? ROOT_DIR);
+  const watchPaths = getWatchPaths(rootDir);
   let blueGreenBuildLock = null;
   let deployLockSignalCleanup = null;
   let latestBlueGreenCommit = null;
@@ -1192,7 +1233,7 @@ async function runDockerWebWorkflow(parsed, options = {}) {
         parsed,
         paths: watchPaths,
         processImpl,
-        rootDir: options.rootDir ?? ROOT_DIR,
+        rootDir,
         runCommand: run,
       });
     }
@@ -1228,7 +1269,7 @@ async function runDockerWebWorkflow(parsed, options = {}) {
         composeGlobalArgs: parsed.composeGlobalArgs,
         env: composeEnv,
         fsImpl,
-        rootDir: options.rootDir,
+        rootDir,
         runCommand: run,
       }
     );
@@ -1309,7 +1350,7 @@ async function runDockerWebWorkflow(parsed, options = {}) {
         env,
         fsImpl,
         latestCommit,
-        rootDir: options.rootDir ?? ROOT_DIR,
+        rootDir,
         runCommand: run,
       });
       const workflowResult = await runBlueGreenProdWorkflow(parsed, {
@@ -1322,7 +1363,7 @@ async function runDockerWebWorkflow(parsed, options = {}) {
         fsImpl,
         latestCommit,
         proxyDrainMs: options.proxyDrainMs,
-        rootDir: options.rootDir,
+        rootDir,
         runCommand: run,
       });
       writeDeploymentStagesHandoff(
@@ -1338,7 +1379,7 @@ async function runDockerWebWorkflow(parsed, options = {}) {
 
       if (env[SKIP_WATCH_HISTORY_ENV] !== '1') {
         const deployFinishedAt = Date.now();
-        const blueGreenPaths = getBlueGreenPaths(options.rootDir ?? ROOT_DIR);
+        const blueGreenPaths = getBlueGreenPaths(rootDir);
 
         appendDeploymentHistory(
           {
@@ -1355,7 +1396,7 @@ async function runDockerWebWorkflow(parsed, options = {}) {
           },
           {
             fsImpl,
-            paths: getWatchPaths(options.rootDir ?? ROOT_DIR),
+            paths: getWatchPaths(rootDir),
           }
         );
       }
@@ -1379,7 +1420,7 @@ async function runDockerWebWorkflow(parsed, options = {}) {
             : watcherEnvBase,
           envFilePath,
           fsImpl,
-          rootDir: options.rootDir,
+          rootDir,
           runCommand: run,
         });
       }
@@ -1404,7 +1445,7 @@ async function runDockerWebWorkflow(parsed, options = {}) {
         appendDeploymentHistory(
           {
             activeColor: readBlueGreenActiveColor(
-              getBlueGreenPaths(options.rootDir ?? ROOT_DIR),
+              getBlueGreenPaths(rootDir),
               fsImpl
             ),
             buildDurationMs: Math.max(0, deployFinishedAt - deployStartedAt),
@@ -1421,7 +1462,7 @@ async function runDockerWebWorkflow(parsed, options = {}) {
           },
           {
             fsImpl,
-            paths: getWatchPaths(options.rootDir ?? ROOT_DIR),
+            paths: getWatchPaths(rootDir),
           }
         );
       }
@@ -1542,6 +1583,7 @@ module.exports = {
   PROD_COMPOSE_FILE,
   WEB_ENV_FILE,
   clearBlueGreenRuntime,
+  applyDefaultBlueGreenNativeBuildEnv,
   cancelActiveBlueGreenBuild,
   classifySupabaseOrigin,
   describeActiveDeploymentConflict,

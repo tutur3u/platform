@@ -15,6 +15,12 @@ const DEFAULT_MAX_CAPTURED_OUTPUT_BYTES = 512_000;
 const DEFAULT_COMPOSE_UP_RETRY_MAX_ATTEMPTS = 4;
 const DEFAULT_COMPOSE_UP_RETRY_INITIAL_DELAY_MS = 5_000;
 const DEFAULT_COMPOSE_UP_RETRY_MAX_DELAY_MS = 60_000;
+const DEFAULT_COMPOSE_UP_STALE_DEPENDENCY_RETRY_MAX_ATTEMPTS = 4;
+const DOCKER_NO_SUCH_CONTAINER_PATTERN =
+  /(?:no such (?:object|container)|no such container)/iu;
+const COMPOSE_MISSING_DEPENDENCY_CONTAINER_PATTERN =
+  /\bNo such container:\s*[0-9a-f]{12,64}\b/iu;
+const COMPOSE_DEPENDENCY_FAILED_PATTERN = /dependency .*failed to start/iu;
 
 class CommandTimeoutError extends Error {
   constructor(command, args, timeoutMs) {
@@ -205,6 +211,8 @@ async function runChecked(command, args, options = {}) {
         : `Command failed (${result.code}): ${failedCommand}`
     );
     wrappedError.exitCode = result.code;
+    wrappedError.stderr = result.stderr;
+    wrappedError.stdout = result.stdout;
     throw wrappedError;
   }
 
@@ -279,6 +287,32 @@ function parseDockerContainerNameConflicts(error) {
   return conflicts;
 }
 
+function isComposeMissingContainerDependencyError(error) {
+  const parts = [error instanceof Error ? error.message : String(error)];
+
+  if (error && typeof error === 'object') {
+    if (typeof error.stderr === 'string') parts.push(error.stderr);
+    if (typeof error.stdout === 'string') parts.push(error.stdout);
+  }
+
+  const message = parts.join('\n');
+
+  return (
+    COMPOSE_MISSING_DEPENDENCY_CONTAINER_PATTERN.test(message) &&
+    COMPOSE_DEPENDENCY_FAILED_PATTERN.test(message)
+  );
+}
+
+function replayCommandOutput(result) {
+  if (typeof result.stdout === 'string' && result.stdout.length > 0) {
+    process.stdout.write(result.stdout);
+  }
+
+  if (typeof result.stderr === 'string' && result.stderr.length > 0) {
+    process.stderr.write(result.stderr);
+  }
+}
+
 async function runComposeUpWithNameConflictRecovery({
   composeFile,
   composeGlobalArgs = [],
@@ -306,6 +340,11 @@ async function runComposeUpWithNameConflictRecovery({
     'DOCKER_WEB_COMPOSE_UP_RETRY_MAX_ATTEMPTS',
     DEFAULT_COMPOSE_UP_RETRY_MAX_ATTEMPTS
   );
+  const maxStaleDependencyAttempts = getPositiveIntegerEnv(
+    env,
+    'DOCKER_WEB_COMPOSE_UP_STALE_DEPENDENCY_RETRY_MAX_ATTEMPTS',
+    DEFAULT_COMPOSE_UP_STALE_DEPENDENCY_RETRY_MAX_ATTEMPTS
+  );
   const maxRegistryDelayMs = getPositiveIntegerEnv(
     env,
     'DOCKER_WEB_COMPOSE_UP_RETRY_MAX_DELAY_MS',
@@ -317,15 +356,21 @@ async function runComposeUpWithNameConflictRecovery({
     'DOCKER_WEB_COMPOSE_UP_RETRY_INITIAL_DELAY_MS',
     DEFAULT_COMPOSE_UP_RETRY_INITIAL_DELAY_MS
   );
+  let staleDependencyAttempt = 1;
+  let staleDependencyDelayMs = registryDelayMs;
   let nameConflictRecoveries = 0;
 
   while (true) {
     try {
-      return await runChecked('docker', args, {
+      const result = await runChecked('docker', args, {
         env,
         fsImpl,
         runCommand: run,
+        stdio: 'pipe',
       });
+      replayCommandOutput(result);
+
+      return result;
     } catch (error) {
       const conflictNames = parseDockerContainerNameConflicts(error).filter(
         (containerName) =>
@@ -365,6 +410,24 @@ async function runComposeUpWithNameConflictRecovery({
         await sleepImpl(registryDelayMs);
         registryAttempt += 1;
         registryDelayMs = Math.min(registryDelayMs * 2, maxRegistryDelayMs);
+        continue;
+      }
+
+      if (
+        staleDependencyAttempt < maxStaleDependencyAttempts &&
+        isComposeMissingContainerDependencyError(error)
+      ) {
+        process.stderr.write(
+          `Docker Compose up hit a stale dependency container reference; retrying in ${staleDependencyDelayMs}ms (attempt ${
+            staleDependencyAttempt + 1
+          }/${maxStaleDependencyAttempts}).\n`
+        );
+        await sleepImpl(staleDependencyDelayMs);
+        staleDependencyAttempt += 1;
+        staleDependencyDelayMs = Math.min(
+          staleDependencyDelayMs * 2,
+          maxRegistryDelayMs
+        );
         continue;
       }
 
@@ -601,6 +664,12 @@ async function getContainerHealthStatus(
   return result.stdout.trim();
 }
 
+function isDockerNoSuchContainerError(error) {
+  const message = error instanceof Error ? error.message : String(error);
+
+  return DOCKER_NO_SUCH_CONTAINER_PATTERN.test(message);
+}
+
 async function waitForComposeServiceHealthy(
   serviceName,
   {
@@ -612,25 +681,41 @@ async function waitForComposeServiceHealthy(
     timeoutMs = BLUE_GREEN_HEALTH_TIMEOUT_MS,
   }
 ) {
-  const containerId = await getComposeServiceContainerId(serviceName, {
-    composeFile,
-    composeGlobalArgs,
-    env,
-    runCommand: run,
-  });
-
-  if (!containerId) {
-    throw new Error(`Unable to resolve a container for ${serviceName}.`);
-  }
-
   const deadline = Date.now() + timeoutMs;
+  let containerId = '';
   let lastStatus = 'unknown';
 
   while (Date.now() <= deadline) {
-    lastStatus = await getContainerHealthStatus(containerId, {
-      env,
-      runCommand: run,
-    });
+    if (!containerId) {
+      containerId = await getComposeServiceContainerId(serviceName, {
+        composeFile,
+        composeGlobalArgs,
+        env,
+        runCommand: run,
+      });
+    }
+
+    if (!containerId) {
+      lastStatus = 'missing';
+      await sleep(pollMs);
+      continue;
+    }
+
+    try {
+      lastStatus = await getContainerHealthStatus(containerId, {
+        env,
+        runCommand: run,
+      });
+    } catch (error) {
+      if (!isDockerNoSuchContainerError(error)) {
+        throw error;
+      }
+
+      containerId = '';
+      lastStatus = 'missing';
+      await sleep(pollMs);
+      continue;
+    }
 
     if (lastStatus === 'healthy') {
       return;
@@ -662,7 +747,9 @@ module.exports = {
   getPositiveIntegerEnv,
   hasComposeProfile,
   hasComposeServiceContainer,
+  isComposeMissingContainerDependencyError,
   isComposeServiceHealthy,
+  isDockerNoSuchContainerError,
   listComposeServiceContainerIdsByLabel,
   removeComposeServiceContainersByLabelIfPresent,
   removeComposeServicesIfPresent,

@@ -14,10 +14,14 @@ on:
       - ".github/workflows/rust-backend.yml"
       - ".github/workflows/ci-check.yml"
       - "package.json"
+      - "scripts/check-backend.js"
+      - "scripts/check-backend.test.js"
       - "scripts/check-cloudflare-workers.js"
       - "scripts/check-cloudflare-workers.test.js"
       - "scripts/generate-tanstack-route-tree.js"
       - "scripts/generate-tanstack-route-tree.test.js"
+      - "scripts/rust-cache.js"
+      - "scripts/rust-cache.test.js"
       - "scripts/smoke-cloudflare-workers.js"
       - "scripts/smoke-cloudflare-workers.test.js"
       - "tuturuuu.ts"
@@ -35,10 +39,14 @@ on:
       - ".github/workflows/rust-backend.yml"
       - ".github/workflows/ci-check.yml"
       - "package.json"
+      - "scripts/check-backend.js"
+      - "scripts/check-backend.test.js"
       - "scripts/check-cloudflare-workers.js"
       - "scripts/check-cloudflare-workers.test.js"
       - "scripts/generate-tanstack-route-tree.js"
       - "scripts/generate-tanstack-route-tree.test.js"
+      - "scripts/rust-cache.js"
+      - "scripts/rust-cache.test.js"
       - "scripts/smoke-cloudflare-workers.js"
       - "scripts/smoke-cloudflare-workers.test.js"
       - "tuturuuu.ts"
@@ -83,6 +91,7 @@ jobs:
     env:
       CARGO_HTTP_MULTIPLEXING: "false"
       CARGO_NET_RETRY: "10"
+      CARGO_PROFILE_TEST_DEBUG: "0"
     defaults:
       run:
         working-directory: ./apps/backend
@@ -95,6 +104,18 @@ jobs:
         with:
           components: clippy, rustfmt
           targets: wasm32-unknown-unknown
+
+      - name: Restore Cargo cache
+        uses: actions/cache@v6
+        with:
+          path: |
+            ~/.cargo/git
+            ~/.cargo/registry
+            ~/.cargo/bin/worker-build
+            apps/backend/target
+          key: rust-backend-${{ runner.os }}-${{ hashFiles('apps/backend/Cargo.lock', 'apps/backend/Cargo.toml') }}
+          restore-keys: |
+            rust-backend-${{ runner.os }}-
 
       - name: Check Cloudflare deployment config
         working-directory: .
@@ -135,6 +156,11 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+    env:
+      TURBO_API: ${{ vars.TURBO_API }}
+      TURBO_REMOTE_CACHE_SIGNATURE_KEY: ${{ secrets.TURBO_REMOTE_CACHE_SIGNATURE_KEY }}
+      TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
+      TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
@@ -177,7 +203,11 @@ jobs:
         uses: docker/setup-buildx-action@v4
 
       - name: Build backend image
-        run: docker build -f apps/backend/Dockerfile .
+        run: |
+          docker buildx build --load \
+            --cache-from type=gha,scope=rust-backend-image \
+            --cache-to type=gha,scope=rust-backend-image,mode=max \
+            -f apps/backend/Dockerfile .
 
   cloudflare-deployment-preflight:
     name: Cloudflare deployment preflight

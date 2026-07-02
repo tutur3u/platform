@@ -1,7 +1,7 @@
 ---
 title: "TanStack Start And Rust Migration"
 description: "Migration contract for replacing apps/web with apps/tanstack-web plus the Rust backend"
-updatedAt: "2026-06-26"
+updatedAt: "2026-06-30"
 ---
 
 `apps/tanstack-web` is the replacement frontend for the legacy Next.js
@@ -334,14 +334,71 @@ entries also include a `methods` array derived from exported Next route methods;
 method-level artifacts with `parentId` and `method`; the unmigrated paired
 methods stay visible as `legacy-next`.
 
+### Rust GET-handler migration wave
+
+The backend port proceeds GET-first: a route's read path moves to a Rust handler
+in `apps/backend/src/<module>.rs` while its mutation methods stay on the live
+Next.js route. The Rust handler matches the legacy mount path exactly and returns
+`None` (never `405`) for every method it does not own, so the worker falls through
+to Next.js for `POST`/`PUT`/`PATCH`/`DELETE`. Because the route is still the source
+of truth for writes, it correctly stays `legacy-next` in the manifest until the
+remaining methods are ported and a cutover decision is recorded — GET-only ports
+do not flip ownership status, so they add no manifest debt.
+
+As of this wave the curated non-special fresh-GET surface is migrated: ~235 GET
+routes now have Rust handlers. The only deliberately-skipped GET routes are
+`/api/v1/workspaces/:wsId/mind/boards/:boardId` and
+`/api/v1/workspaces/:wsId/whiteboards/:boardId`, whose CRDT/Yjs binary state lives
+in a store the worker cannot reach; they stay on Next.js. Still pending as
+separate phases: mutation methods for the GET-migrated routes, and special-auth
+GET routes (`/api/cron/*` `CRON_SECRET`, `/api/trpc`, `/:locale` pages, OAuth
+callbacks, and Hive routes backed by `HIVE_DATABASE_URL`).
+
+Each batch is verified with `bun check:backend` (mirrors the CI Rust gate: `cargo
+fmt --check`, `cargo clippy --locked --all-targets --features native -- -D
+warnings`, `cargo test --locked`, and the `wasm32-unknown-unknown` worker check)
+plus a runtime dual coverage probe that asserts every migrated `GET` is served by
+the dispatcher (COVER) and every un-ported method still falls through (FRESH).
+
+### Worker-incompatible routes (native-backend or Next.js only)
+
+Some legacy routes cannot run on the **Cloudflare Worker** build of
+`apps/backend` because the wasm sandbox has no arbitrary sockets, no filesystem,
+and no Redis/Postgres drivers. They split into three buckets:
+
+- **Native-backend portable (deferred, needs secrets wired):** the scheduler
+  `/api/cron/*` jobs that just "call an external API + write Supabase" —
+  `finance/exchange-rates`, `inventory/polar-product-sync`, `payment/{orders,products,subscriptions}`,
+  `ai/sync-models`, `tasks/generate-embeddings`, `calendar/{provider-sync,smart-schedule}`,
+  `process-{post-email-queue,topic-announcement-queue,notification-batches}`, and
+  `hive/simulate`. These ARE portable to the **native Rust container** target
+  (`--features native`, which can do outbound HTTP and reach external DBs) once
+  each job's provider secret/connection is added to `BackendConfig` +
+  `wrangler.jsonc` secrets. They are not portable to the wasm Worker build. Until
+  the secrets are wired they stay on Next.js (`Bearer CRON_SECRET`).
+- **Host/infra-coupled (stay where the runner lives):** the cron-runner
+  *monitoring* surface — `monitoring/cron/{control,run,runner-recovery,executions}`,
+  plus `cron/infrastructure/{docker-recovery-alerts,sample-resources}` — reads a
+  filesystem archive / controls the deployment host (Docker control), and
+  `cron/infrastructure/sync-trust-cache` needs Redis. These belong with whatever
+  orchestrates the runner, not a stateless handler.
+- **Transport that can't be a single handler:** `/api/trpc/[trpc]` is a catch-all
+  that dispatches the entire tRPC procedure router (`appRouter`). The transport
+  stays on Next.js; its data access migrates incrementally as individual
+  procedures move behind `packages/internal-api` / the Rust backend.
+
+Record the chosen disposition for each in
+`apps/tanstack-web/migration/route-overrides.json` with an evidence note rather
+than leaving them as untriaged `legacy-next` backlog.
+
 Current inventory:
 
-- `316` pages
-- `67` layouts
-- `1,237` route handler artifacts
-- `20` cron handlers
-- `1,627` total tracked route artifacts
-- `439` migrated artifacts, `524` terminal artifacts, and `1,103` remaining
+- `266` pages
+- `64` layouts
+- `1,012` route handler artifacts
+- `17` cron handlers
+- `1,349` total tracked route artifacts
+- `339` migrated artifacts, `357` terminal artifacts, and `992` remaining
   legacy-owned artifacts in the checked manifest
 
 Regenerate it after adding or removing legacy routes:
@@ -567,7 +624,7 @@ First TanStack Start migrated ownership:
 | `/:locale/:wsId/mind/boards/:boardId` route layout                                                                                                                                      | `apps/tanstack-web` TanStack Start route loader  | `route-overrides.json` marks the route-specific layout artifact `migrated`; the migrated Mind board page redirects to the standalone Mind board route with query forwarding, while the legacy layout only imported `@xyflow/react` styles and returned children. Mind APIs and parent dashboard/session ownership remain legacy-owned.                                                         |
 | `/:locale/:wsId/documents/:documentId` route layout                                                                                                                                     | `apps/tanstack-web` TanStack Start metadata      | `route-overrides.json` marks the static Document Details metadata layout artifact `migrated`; the legacy layout only exported title/description metadata and returned children. The document detail page, workspace dashboard/session ownership, and document data/API routes remain legacy-owned.                                                                                              |
 | `/:locale/:wsId/infrastructure` and `/:locale/:wsId/platform` parent layouts                                                                                                             | `apps/tanstack-web` TanStack Start parent loaders | `route-overrides.json` marks both layout artifacts `migrated`; the Start parent routes preserve fail-closed current-user auth, workspace resolution, root `view_infrastructure` permission gating, and `Outlet` rendering for migrated children. The exact infrastructure analytics page, platform billing, platform roles, and remaining settings children stay separately tracked as legacy-next artifacts. |
-| `/:locale/:wsId/epm/collections/:collectionId`, `/epm/entries/:entryId`, `/platform/external-projects`, `/settings/infrastructure/app-coordination`, and `/users/topic-announcements`                    | `apps/tanstack-web` TanStack Start route loaders | `route-overrides.json` marks these page artifacts `migrated`; the Start routes preserve the legacy 307 redirects to CMS collection/entry/admin destinations and legacy dashboard aliases. Parent dashboard layout/session ownership remains legacy-owned until workspace provider parity is complete.                                                                                        |
+| `/:locale/:wsId/epm/collections/:collectionId`, `/epm/entries/:entryId`, `/platform/external-projects`, and `/users/topic-announcements`                    | `apps/tanstack-web` TanStack Start route loaders | `route-overrides.json` marks these page artifacts `migrated`; the Start routes preserve the legacy 307 redirects to CMS collection/entry/admin destinations and legacy dashboard aliases. Infrastructure settings/app-coordination routes now live in `apps/infrastructure` and the old TanStack/web route is recorded as an accepted removal. Parent dashboard layout/session ownership remains legacy-owned until workspace provider parity is complete.                                                                                        |
 | `/:locale/:wsId/ai-chat/chatbots`                                                                                                                                                     | `apps/tanstack-web` TanStack Start route loader  | `route-overrides.json` marks the page artifact `migrated`; the Start route preserves fail-closed current-user auth, workspace resolution, `ai_chat` permission gating, route metadata, and localized `FeatureSummary` content. The create action intentionally targets the canonical `/:locale/:wsId/ai-chat/my-chatbots/new` Start route instead of the legacy `/:wsId/chat` alias. Parent dashboard and AI chat session/provider ownership remains legacy-owned. |
 | `/:locale/:wsId/ai-chat/my-chatbots`                                                                                                                                                  | `apps/tanstack-web` TanStack Start route loader  | `route-overrides.json` marks the page artifact `migrated`; the Start route preserves fail-closed current-user auth, workspace resolution, the legacy `ai_chat` layout permission gate, URL-backed table search/pagination, forwarded-auth group-tag reads, internal-api-backed row deletion, and localized `FeatureSummary`/`CustomDataTable` UI. Parent dashboard and AI chat session/provider ownership remains legacy-owned. |
 | `/:locale/:wsId/ai-chat/my-chatbots/new`                                                                                                                                               | `apps/tanstack-web` TanStack Start client route  | `route-overrides.json` marks the static metadata layout and client-only form page `migrated`; the Start route preserves the local validation, localized summary strings, and submit toast behavior without adding protected API, Supabase, or server-action access. Parent dashboard and AI chat session/provider ownership remains legacy-owned.                                            |
@@ -689,7 +746,7 @@ Frontend pages now terminal:
 | `/:locale/:wsId/infrastructure/holidays` | `migrated` | TanStack Start route `/$locale/$wsId/infrastructure/holidays` is registered in `routeTree.gen.ts`, gates anonymous users through `requireCurrentUser`, preserves the legacy root-workspace redirect boundary, requires root `manage_workspace_roles`, carries the year filter through TanStack Router search state, and performs list/create/update/delete/bulk-import work through the Rust-owned holidays backend facade. |
 | `/:locale/:wsId/infrastructure/email-blacklist` | `migrated` | TanStack Start route `/$locale/$wsId/infrastructure/email-blacklist` is registered in `routeTree.gen.ts`, gates anonymous users through `requireCurrentUser`, resolves the workspace, preserves `view_infrastructure` not-found gating, carries URL search/type/pagination filters through TanStack Router, and loads/mutates rows through the Rust-owned email blacklist backend facade. |
 | `/:locale/:wsId/infrastructure/email-templates` | `migrated` | Dynamic no-store TanStack Start route `/$locale/$wsId/infrastructure/email-templates` is registered in `routeTree.gen.ts`, gates anonymous users through `requireCurrentUser`, resolves the workspace, preserves root and workspace `view_infrastructure` not-found gating, and renders the localized React Email template selector, property editor, server-function preview renderer, dark-mode simulation, and iframe HTML preview without raw `/api` fetches or Supabase reads. |
-| `/:locale/:wsId/infrastructure/rate-limits` | `migrated` | Dynamic no-store TanStack Start route `/$locale/$wsId/infrastructure/rate-limits` is registered in `routeTree.gen.ts`, gates anonymous users through `requireCurrentUser`, resolves the workspace, preserves the legacy root-workspace redirect boundary, requires root `view_infrastructure`, forwards `manage_workspace_roles` as can-manage state, and renders the shared TanStack Query/internal-api-backed rate-limit rule, live-usage, and workspace-secret controls. Rate-limit APIs remain separately tracked. |
+| `/:locale/:wsId/infrastructure/rate-limits` | `migrated` | Dynamic no-store TanStack Start route `/$locale/$wsId/infrastructure/rate-limits` is registered in `routeTree.gen.ts`, gates anonymous users through `requireCurrentUser`, resolves the workspace, preserves the legacy root-workspace redirect boundary, requires root `view_infrastructure`, forwards `manage_workspace_roles` as can-manage state, and renders the shared TanStack Query/internal-api-backed protection toggles, rate-limit rule, live-usage, and workspace-secret controls. Rate-limit APIs remain separately tracked. |
 | `/:locale/:wsId/infrastructure/post-email-queue` | `migrated` | TanStack Start route `/$locale/$wsId/infrastructure/post-email-queue` is registered in `routeTree.gen.ts`, gates anonymous users through `requireCurrentUser`, resolves the workspace, preserves `view_infrastructure` not-found gating, and renders the read-only queue summary, workspace breakdown, and recent batches through the Rust-owned post-email-queue backend facade while leaving the legacy cron trigger out of scope. |
 | `/:locale/:wsId/education` | `migrated` | Dynamic no-store TanStack Start route `/$locale/$wsId/education` is registered in `routeTree.gen.ts`, gates anonymous users through `requireCurrentUser`, resolves the workspace, and renders the legacy education overview shell with forwarded-auth internal-api counts for courses, flashcards, and quizzes. Education list APIs remain separately tracked. |
 | `/:locale/:wsId/education/library/flashcards` | `migrated` | Dynamic no-store TanStack Start route `/$locale/$wsId/education/library/flashcards` is registered in `routeTree.gen.ts`, gates anonymous users through `requireCurrentUser`, resolves the workspace, carries `q`/`page`/`pageSize` search state through TanStack Router, and renders the legacy flashcard library table through forwarded internal-api auth plus shared TanStack Query-backed create/update/delete components. Flashcard API ownership remains separately tracked. |
@@ -772,6 +829,65 @@ only sanitized session state to client components.
   `apps/tanstack-web/src` does not call relative protected `/api`, `/internal`,
   or `/trpc` paths directly and does not import or create Supabase clients. Run
   the focused command when reviewing a frontend port before the full repo check.
+
+## Backend Crate Structure And The 700-LOC Ceiling
+
+Every source file in the repo — Rust included — must stay well-maintained and
+under a hard **700-LOC ceiling** whenever possible (start splitting around
+~400 LOC). The `apps/backend` crate root was decomposed to honor this:
+
+- `src/lib.rs` (~680 LOC) is now just the module registry (`mod <handler>;`),
+  the public types, and `pub(crate) use` re-exports.
+- `src/dispatch/` holds `handle_backend_request` plus one
+  `dispatch_chunk_NN.rs` per route-table chunk. **New route arms append to a
+  `dispatch_chunk_NN.rs`**; when a chunk approaches 700 LOC, add a fresh
+  `chunk_NN.rs` and wire it into `dispatch/mod.rs`. Each chunk does
+  `use crate::*;` to reach crate-root helpers/types.
+- Cohesive helper families live in named submodules, each under 700 LOC:
+  `types.rs`, `response.rs`, `runtime.rs`, `migration.rs`, `legacy_routes.rs`,
+  `static_routes.rs`, `route_predicates.rs`, `config_env.rs`, `constants.rs`,
+  `native.rs`, `worker_runtime.rs`. Each is re-exported from `lib.rs` with
+  `pub(crate) use <mod>::*;` so existing call sites resolve unchanged.
+- The unit-test suite lives in `src/tests.rs` (`mod tests;`), split by area so
+  no test file crosses the ceiling.
+
+To extract a new family: move the items into `src/<mod>.rs`, header it with
+`use crate::*;` (plus any external `use serde…`), give moved items `pub(crate)`
+visibility, then add `mod <mod>; pub(crate) use <mod>::*;` to `lib.rs`. Keep a
+struct and the functions that read its private fields in the same module so
+fields only need `pub(crate)` where a cross-module reader (e.g. `tests.rs`)
+requires it. Do not bulk-restructure `lib.rs`/`dispatch/` while batches are
+appending without a `tmp/agent-coordination/` claim. See `apps/backend/AGENTS.md`
+for the full rules.
+
+## No New Debt While The Switch Is Pending
+
+Treat `apps/web`, `apps/backend`, and `apps/tanstack-web` as **one system**. The
+migration runs in parallel with normal feature work, so any change that touches
+only `apps/web` silently grows the backlog the cutover must clear. All future
+work must keep the three surfaces consistent where applicable:
+
+- **New or changed `apps/web` API route (any method).** If `apps/backend` already
+  owns that path, port the same behavior change into the Rust handler in the same
+  PR (match status codes, body shape, cache headers; migrate GET first and return
+  `None` for un-ported methods so they fall through). If it is not owned yet,
+  register/refresh the route in
+  `apps/tanstack-web/migration/route-overrides.json` and regenerate with
+  `bun migration:tanstack:manifest`, so the new surface is tracked as backlog
+  instead of invisible debt. Verify ownership with the runtime coverage probe in
+  `apps/backend/AGENTS.md` (migrated method = COVER, un-ported = FRESH).
+- **New or changed dashboard page/route.** Mirror the manifest registration so
+  `apps/tanstack-web` tracking stays accurate, and route shared data access
+  through `packages/internal-api` (consumed by both frontends) rather than
+  app-local fetchers, so the eventual TanStack port is a move, not a rewrite.
+- **Shared data access.** Prefer adding a `packages/internal-api` facade over a
+  one-off `apps/web` fetcher; the facade is the seam both the Next.js and
+  TanStack frontends call, and it forwards to the Rust backend server-side.
+- **Tracking, not blocking.** You do not have to finish the Rust/TanStack port in
+  every PR, but you must leave the manifest accurate. A route that is added to
+  `apps/web` and not reflected in the manifest is the debt this migration exists
+  to avoid. `bun migration:tanstack:check` and the backend coverage probe are the
+  guards.
 
 ## Security And Test Requirements
 

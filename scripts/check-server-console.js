@@ -6,7 +6,8 @@ const path = require('node:path');
 const ROOT_DIR = path.resolve(__dirname, '..');
 const allowedFragments = [
   'apps/web/src/lib/infrastructure/log-drain.ts:',
-  'apps/web/src/app/api/v1/infrastructure/users/fields/types/route.ts:',
+  'apps/infrastructure/src/lib/infrastructure/log-drain.ts:',
+  'apps/infrastructure/src/app/api/v1/infrastructure/users/fields/types/route.ts:',
   '.test.',
   '.spec.',
 ];
@@ -17,8 +18,9 @@ const result = spawnSync(
     '-n',
     'console\\.',
     'apps/web/src/app/api/cron',
-    'apps/web/src/app/api/v1/infrastructure',
     'apps/web/src/lib/infrastructure',
+    'apps/infrastructure/src/app/api',
+    'apps/infrastructure/src/lib/infrastructure',
     '-g',
     '*.{ts,tsx}',
   ],

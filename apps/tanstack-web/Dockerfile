@@ -21,7 +21,7 @@ COPY apps/external/package.json ./apps/external/package.json
 COPY apps/finance/package.json ./apps/finance/package.json
 COPY apps/hive/package.json ./apps/hive/package.json
 COPY apps/hive-realtime/package.json ./apps/hive-realtime/package.json
-COPY apps/infra/package.json ./apps/infra/package.json
+COPY apps/infrastructure/package.json ./apps/infrastructure/package.json
 COPY apps/inventory/package.json ./apps/inventory/package.json
 COPY apps/mail/package.json ./apps/mail/package.json
 COPY apps/meet/package.json ./apps/meet/package.json
@@ -78,7 +78,7 @@ RUN --mount=type=cache,id=platform-tanstack-web-bun-install,target=/root/.bun/in
   set -eu; \
   attempt=1; \
   while [ "$attempt" -le 3 ]; do \
-    if bun install --frozen-lockfile --filter @tuturuuu/tanstack-web; then \
+    if bun install --frozen-lockfile --filter tutur3u --filter @tuturuuu/tanstack-web; then \
       break; \
     fi; \
     echo "bun install attempt ${attempt} failed; scrubbing Bun install cache before retry..." >&2; \
@@ -115,13 +115,18 @@ COPY --from=deps /workspace ./
 COPY . .
 COPY --from=deps /usr/local/bin/bun /usr/local/bin/bun
 
-RUN --mount=type=cache,id=platform-tanstack-web-vite,target=/workspace/apps/tanstack-web/.vite \
-  bun run --filter @tuturuuu/types build && \
-  bun run --filter @tuturuuu/supabase build && \
-  bun run --filter @tuturuuu/internal-api build && \
-  cd apps/tanstack-web && \
-  node node_modules/vite/bin/vite.js build && \
-  node node_modules/typescript/bin/tsc --noEmit -p tsconfig.json
+RUN --mount=type=cache,id=platform-tanstack-web-turbo,target=/workspace/.turbo \
+  --mount=type=cache,id=platform-tanstack-web-vite,target=/workspace/apps/tanstack-web/.vite \
+  --mount=type=secret,id=turbo_api,target=/run/secrets/turbo_api,required=false \
+  --mount=type=secret,id=turbo_remote_cache_signature_key,target=/run/secrets/turbo_remote_cache_signature_key,required=false \
+  --mount=type=secret,id=turbo_team,target=/run/secrets/turbo_team,required=false \
+  --mount=type=secret,id=turbo_token,target=/run/secrets/turbo_token,required=false \
+  set -eu; \
+  if [ -s /run/secrets/turbo_api ]; then export TURBO_API="$(cat /run/secrets/turbo_api)"; fi; \
+  if [ -s /run/secrets/turbo_remote_cache_signature_key ]; then export TURBO_REMOTE_CACHE_SIGNATURE_KEY="$(cat /run/secrets/turbo_remote_cache_signature_key)"; fi; \
+  if [ -s /run/secrets/turbo_team ]; then export TURBO_TEAM="$(cat /run/secrets/turbo_team)"; fi; \
+  if [ -s /run/secrets/turbo_token ]; then export TURBO_TOKEN="$(cat /run/secrets/turbo_token)"; fi; \
+  bun run turbo:local run build:docker -F @tuturuuu/tanstack-web
 
 FROM node:26-bookworm-slim AS runner
 

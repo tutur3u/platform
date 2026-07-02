@@ -14,6 +14,9 @@ const {
   getAutoBuildMaxParallelism,
   getAutoBuildMemory,
   getBuildkitPaths,
+  getBuildkitPruneKeepStorage,
+  getBuildkitPruneMode,
+  getBuildkitPruneUntil,
   getBuilderConfigFingerprint,
   getDockerMemoryLimitBytes,
   getResolvedBuildkitComposeEnv,
@@ -36,10 +39,16 @@ const {
 const {
   BUILD_RESOURCE_PROFILES,
   createBuildResourceProfileSelection,
+  getBudgetedBuildResourceProfile,
+  getBuildResourceProfile,
   getBuildResourceProfilePaths,
+  getNextAdaptiveBuildResourceProfile,
   getNextLowerBuildResourceProfile,
+  getPromotedPersistedBuildResourceProfile,
   hasExplicitBuildResourceCliConfig,
   hasExplicitBuildResourceEnv,
+  isBuildResourceProfileWithinHardLimit,
+  isBuildkitMemoryExhaustionError,
   isBuildkitResourceProfileFallbackError,
   isDefaultBuildResourceCliConfig,
   persistBuildResourceProfile,
@@ -178,6 +187,53 @@ test('adaptive build resource profile selection reads and persists runtime state
   }
 });
 
+test('adaptive build resource profile selection promotes stale fallback state to hard-limit rescue', () => {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'buildkit-profile-'));
+  const paths = getBuildResourceProfilePaths(tempDir);
+  const env = {
+    DOCKER_WEB_DOCKER_MEMORY_LIMIT: String(12 * 1024 * 1024 * 1024),
+  };
+
+  try {
+    const minimalProfile = getBuildResourceProfile('minimal');
+    persistBuildResourceProfile({
+      previousProfileName: 'serial',
+      profile: minimalProfile,
+      reason: 'buildkit-resource-fallback',
+      stateFile: paths.stateFile,
+    });
+
+    const selection = createBuildResourceProfileSelection({
+      cpus: '4',
+      env,
+      maxParallelism: '1',
+      memory: 'auto',
+      paths,
+    });
+
+    assert.equal(selection.enabled, true);
+    assert.equal(selection.profileName, 'serial');
+    assert.equal(selection.profile.memory, '10g');
+    assert.equal(selection.profile.cpus, '1');
+
+    const state = readBuildResourceProfileState(paths);
+    assert.equal(state.profileName, 'serial');
+    assert.equal(state.previousProfileName, 'minimal');
+    assert.equal(state.reason, 'buildkit-resource-state-promoted');
+
+    assert.equal(
+      getPromotedPersistedBuildResourceProfile({
+        env,
+        profile: getBuildResourceProfile('floor'),
+        state: { reason: 'buildkit-resource-fallback' },
+      })?.name,
+      'serial'
+    );
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
 test('adaptive build resource profile fallback classification is specific to BuildKit infrastructure failures', () => {
   assert.equal(getNextLowerBuildResourceProfile('default')?.name, 'stable');
   assert.equal(getNextLowerBuildResourceProfile('floor'), null);
@@ -210,6 +266,81 @@ test('adaptive build resource profile fallback classification is specific to Bui
   assert.equal(
     isBuildkitResourceProfileFallbackError(
       new Error('TypeScript error: Property "foo" does not exist')
+    ),
+    false
+  );
+});
+
+test('adaptive build resource profiles can rescue to hard-limit profiles after conservative retries fail', () => {
+  const dockerMemoryLimit = String(11 * 1024 * 1024 * 1024);
+  const env = {
+    DOCKER_WEB_DOCKER_MEMORY_LIMIT: dockerMemoryLimit,
+  };
+  const lowProfile = getBuildResourceProfile('low');
+  const serialProfile = getBuildResourceProfile('serial');
+  const stableProfile = getBuildResourceProfile('stable');
+
+  assert.equal(isBuildResourceProfileWithinHardLimit(lowProfile, env), true);
+  assert.equal(isBuildResourceProfileWithinHardLimit(serialProfile, env), true);
+  assert.equal(
+    isBuildResourceProfileWithinHardLimit(stableProfile, env),
+    false
+  );
+  assert.equal(getBudgetedBuildResourceProfile(lowProfile, env)?.name, 'low');
+  assert.equal(
+    getBudgetedBuildResourceProfile(stableProfile, env)?.name,
+    'default'
+  );
+  assert.equal(
+    getNextAdaptiveBuildResourceProfile({
+      attemptedProfileNames: new Set(['floor', 'default']),
+      currentProfileName: 'default',
+      env,
+    })?.name,
+    'low'
+  );
+  assert.equal(
+    getNextAdaptiveBuildResourceProfile({
+      attemptedProfileNames: new Set(['default', 'stable', 'low']),
+      currentProfileName: 'low',
+      env: {
+        DOCKER_WEB_DOCKER_MEMORY_LIMIT: String(12 * 1024 * 1024 * 1024),
+      },
+      preferHardLimitProfile: true,
+    })?.name,
+    'serial'
+  );
+  assert.equal(
+    getNextAdaptiveBuildResourceProfile({
+      attemptedProfileNames: new Set(['default']),
+      currentProfileName: 'default',
+      env: {
+        DOCKER_WEB_DOCKER_MEMORY_LIMIT: String(12 * 1024 * 1024 * 1024),
+      },
+      preferHardLimitProfile: true,
+    })?.name,
+    'low'
+  );
+  assert.equal(
+    getNextAdaptiveBuildResourceProfile({
+      attemptedProfileNames: new Set(['default']),
+      currentProfileName: 'default',
+      env: {
+        DOCKER_WEB_DOCKER_MEMORY_LIMIT: String(12 * 1024 * 1024 * 1024),
+      },
+      preferHardLimitProfile: false,
+    })?.name,
+    'minimal'
+  );
+  assert.equal(
+    isBuildkitMemoryExhaustionError(
+      new Error('ResourceExhausted: cannot allocate memory')
+    ),
+    true
+  );
+  assert.equal(
+    isBuildkitMemoryExhaustionError(
+      new Error('rpc error: code = Unavailable desc = closing transport')
     ),
     false
   );
@@ -442,6 +573,28 @@ test('shouldPruneBuildkitAfterBuild defaults on and accepts explicit opt-out', (
   );
 });
 
+test('getBuildkitPruneMode defaults to bounded and supports legacy switches', () => {
+  assert.equal(getBuildkitPruneMode({}), 'bounded');
+  assert.equal(
+    getBuildkitPruneMode({ DOCKER_WEB_BUILDKIT_PRUNE_MODE: 'all' }),
+    'all'
+  );
+  assert.equal(
+    getBuildkitPruneMode({ DOCKER_WEB_BUILDKIT_PRUNE_MODE: 'off' }),
+    'off'
+  );
+  assert.equal(
+    getBuildkitPruneMode({ DOCKER_WEB_BUILDKIT_PRUNE_AFTER_BUILD: '0' }),
+    'off'
+  );
+  assert.equal(getBuildkitPruneUntil({}), '168h');
+  assert.equal(getBuildkitPruneKeepStorage({}), '50gb');
+  assert.throws(
+    () => getBuildkitPruneMode({ DOCKER_WEB_BUILDKIT_PRUNE_MODE: 'forever' }),
+    /DOCKER_WEB_BUILDKIT_PRUNE_MODE/
+  );
+});
+
 test('shouldStopBuildkitAfterBuild defaults on and accepts explicit opt-out', () => {
   assert.equal(shouldStopBuildkitAfterBuild({}), true);
   assert.equal(
@@ -483,7 +636,7 @@ test('isBunTarballExtractionError detects truncated Bun install failures', () =>
   );
 });
 
-test('pruneBuildkitCacheAfterBuild prunes all cache for the active builder', async () => {
+test('pruneBuildkitCacheAfterBuild prunes bounded cache by default', async () => {
   const calls = [];
 
   const result = await pruneBuildkitCacheAfterBuild({
@@ -501,8 +654,11 @@ test('pruneBuildkitCacheAfterBuild prunes all cache for the active builder', asy
 
   assert.deepEqual(result, {
     builderName: 'platform-test-builder',
+    keepStorage: '50gb',
+    mode: 'bounded',
     pruned: true,
     skipped: false,
+    until: '168h',
   });
   assert.deepEqual(calls, [
     {
@@ -511,12 +667,45 @@ test('pruneBuildkitCacheAfterBuild prunes all cache for the active builder', asy
         'prune',
         '--builder',
         'platform-test-builder',
-        '--all',
         '--force',
+        '--filter',
+        'until=168h',
+        '--keep-storage',
+        '50gb',
       ],
       command: 'docker',
       env: { BUILDX_BUILDER: 'platform-test-builder' },
     },
+  ]);
+});
+
+test('pruneBuildkitCacheAfterBuild can still prune all cache explicitly', async () => {
+  const calls = [];
+
+  const result = await pruneBuildkitCacheAfterBuild({
+    env: {
+      BUILDX_BUILDER: 'platform-test-builder',
+      DOCKER_WEB_BUILDKIT_PRUNE_MODE: 'all',
+    },
+    runCommand: async (command, args) => {
+      calls.push([command, args]);
+      return { code: 0, signal: null, stderr: '', stdout: '' };
+    },
+  });
+
+  assert.equal(result.mode, 'all');
+  assert.deepEqual(calls, [
+    [
+      'docker',
+      [
+        'buildx',
+        'prune',
+        '--builder',
+        'platform-test-builder',
+        '--all',
+        '--force',
+      ],
+    ],
   ]);
 });
 
@@ -533,6 +722,7 @@ test('pruneBuildkitCacheAfterBuild skips when disabled', async () => {
 
   assert.deepEqual(result, {
     builderName: null,
+    mode: 'off',
     pruned: false,
     skipped: true,
   });
@@ -659,6 +849,7 @@ test('cleanupBuildkitAfterBuild skips prune when BuildKit is already stopped', a
   assert.deepEqual(result, {
     prune: {
       builderName: null,
+      mode: 'off',
       pruned: false,
       skipped: true,
     },
@@ -1351,6 +1542,30 @@ test('production Docker root scripts keep the default build caps', () => {
     /NEXT_BUILD_ENGINES\.get\(nextBuildEngine\)/
   );
   assert.deepEqual(turboConfig.tasks['build:docker'].dependsOn, ['^build']);
+  assert.ok(
+    turboConfig.globalEnv.includes('HIVE_DOCKER_BUILD'),
+    'turbo.json must pass the Hive Docker standalone flag into the Docker build'
+  );
+  assert.equal(
+    Object.hasOwn(turboConfig, 'globalDependencies'),
+    false,
+    'turbo.json should avoid repo-wide local env file invalidation'
+  );
+  for (const envName of [
+    'DOCKER_WEB_BUILDKIT_PRUNE_KEEP_STORAGE',
+    'DOCKER_WEB_BUILDKIT_PRUNE_MODE',
+    'DOCKER_WEB_BUILDKIT_PRUNE_UNTIL',
+    'E2E_DOCKER_BUILDKIT_PRUNE_MODE',
+    'TURBO_API',
+    'TURBO_REMOTE_CACHE_SIGNATURE_KEY',
+    'TURBO_TEAM',
+    'TURBO_TOKEN',
+  ]) {
+    assert.ok(
+      turboConfig.globalPassThroughEnv.includes(envName),
+      `turbo.json should pass ${envName} through without hashing it`
+    );
+  }
   for (const taskName of ['build', 'build:docker']) {
     const outputs = turboConfig.tasks[taskName].outputs;
     assert.ok(
@@ -1371,12 +1586,12 @@ test('production Docker root scripts keep the default build caps', () => {
   assert.match(webNextConfig, /DOCKER_WEB_STATIC_GENERATION_MAX_CONCURRENCY/);
   assert.match(
     webNextConfig,
-    /DOCKER_WEB_STATIC_GENERATION_MAX_CONCURRENCY'[\s\S]*isDockerStandaloneBuild \? 4 : undefined/
+    /DOCKER_WEB_STATIC_GENERATION_MAX_CONCURRENCY'[\s\S]*isDockerStandaloneBuild && !isNativeDockerStandaloneBuild \? 4 : undefined/
   );
   assert.match(webNextConfig, /DOCKER_WEB_NEXT_BUILD_CPUS/);
   assert.match(
     webNextConfig,
-    /DOCKER_WEB_NEXT_BUILD_CPUS'[\s\S]*isDockerStandaloneBuild \? 4 : undefined/
+    /DOCKER_WEB_NEXT_BUILD_CPUS'[\s\S]*isDockerStandaloneBuild && !isNativeDockerStandaloneBuild \? 4 : undefined/
   );
   assert.match(webNextConfig, /staticPageGenerationTimeout/);
   assert.match(webNextConfig, /staticGenerationMaxConcurrency/);

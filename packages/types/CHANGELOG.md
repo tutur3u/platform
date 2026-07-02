@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.13.1](https://github.com/tutur3u/platform/compare/types-v0.13.0...types-v0.13.1) (2026-07-02)
+
+
+### Bug Fixes
+
+* **security:** limit auth recovery code attempts ([72d454c](https://github.com/tutur3u/platform/commit/72d454c507b0d4b7e69c7b38ad2099dbb83193b2))
+
 ## [0.13.0](https://github.com/tutur3u/platform/compare/types-v0.12.0...types-v0.13.0) (2026-06-29)
 
 

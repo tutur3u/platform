@@ -21,7 +21,7 @@ COPY apps/external/package.json ./apps/external/package.json
 COPY apps/finance/package.json ./apps/finance/package.json
 COPY apps/hive/package.json ./apps/hive/package.json
 COPY apps/hive-realtime/package.json ./apps/hive-realtime/package.json
-COPY apps/infra/package.json ./apps/infra/package.json
+COPY apps/infrastructure/package.json ./apps/infrastructure/package.json
 COPY apps/inventory/package.json ./apps/inventory/package.json
 COPY apps/mail/package.json ./apps/mail/package.json
 COPY apps/meet/package.json ./apps/meet/package.json
@@ -79,7 +79,7 @@ RUN --mount=type=cache,id=platform-hive-bun-install,target=/root/.bun/install/ca
   set -eu; \
   attempt=1; \
   while [ "$attempt" -le 3 ]; do \
-    if bun install --frozen-lockfile --filter @tuturuuu/hive; then \
+    if bun install --frozen-lockfile --filter tutur3u --filter @tuturuuu/hive; then \
       break; \
     fi; \
     echo "bun install attempt ${attempt} failed; scrubbing Bun install cache before retry..." >&2; \
@@ -123,12 +123,19 @@ COPY --from=deps /workspace ./
 COPY apps/hive ./apps/hive
 COPY packages ./packages
 
-RUN --mount=type=cache,id=platform-hive-next-cache,target=/workspace/apps/hive/.next/cache \
+RUN --mount=type=cache,id=platform-hive-turbo,target=/workspace/.turbo \
+  --mount=type=cache,id=platform-hive-next-cache,target=/workspace/apps/hive/.next/cache \
+  --mount=type=secret,id=turbo_api,target=/run/secrets/turbo_api,required=false \
+  --mount=type=secret,id=turbo_remote_cache_signature_key,target=/run/secrets/turbo_remote_cache_signature_key,required=false \
+  --mount=type=secret,id=turbo_team,target=/run/secrets/turbo_team,required=false \
+  --mount=type=secret,id=turbo_token,target=/run/secrets/turbo_token,required=false \
   --mount=type=secret,id=web_env,target=/tmp/web.env \
-  bun run --filter @tuturuuu/types build && \
-  bun run --filter @tuturuuu/supabase build && \
-  bun run --filter @tuturuuu/internal-api build && \
-  node scripts/run-hive-docker-next-build.js --env-file /tmp/web.env
+  set -eu; \
+  if [ -s /run/secrets/turbo_api ]; then export TURBO_API="$(cat /run/secrets/turbo_api)"; fi; \
+  if [ -s /run/secrets/turbo_remote_cache_signature_key ]; then export TURBO_REMOTE_CACHE_SIGNATURE_KEY="$(cat /run/secrets/turbo_remote_cache_signature_key)"; fi; \
+  if [ -s /run/secrets/turbo_team ]; then export TURBO_TEAM="$(cat /run/secrets/turbo_team)"; fi; \
+  if [ -s /run/secrets/turbo_token ]; then export TURBO_TOKEN="$(cat /run/secrets/turbo_token)"; fi; \
+  bun --env-file=/tmp/web.env run turbo:local run build:docker -F @tuturuuu/hive
 
 FROM node:24-bookworm-slim AS runner
 

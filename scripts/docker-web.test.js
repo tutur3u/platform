@@ -32,6 +32,7 @@ const {
   ensureLogDrainPostgresReady,
   ensureRequiredComposeEnvironment,
   ensureProductionSupabaseOrigin,
+  applyDefaultBlueGreenNativeBuildEnv,
   formatSupabaseOriginReport,
   getActiveDeploymentConflict,
   getBlueGreenBuildTimeoutMs,
@@ -54,6 +55,7 @@ const {
   runDockerWebWorkflow,
   usesBlueGreenStrategy,
   writeBlueGreenActiveColor,
+  writeBlueGreenProxyConfig,
 } = require('./docker-web.js');
 const {
   buildBlueGreenServices,
@@ -66,19 +68,28 @@ const {
   getBlueGreenDeploymentBuildServices,
   getBlueGreenHealthGateSupportServices,
   getBlueGreenWebServiceImageTag,
+  getHostTotalMemoryBuildValue,
+  getNativeWebBuildMemory,
+  getNativeWebRunnerDockerBuildEnv,
   hasComposeServiceExpectedImage,
   hasBlueGreenProxyHostPortBindings,
   isBlueGreenSupportBuildSkipped,
   isBlueGreenWebBuildSkipped,
   isBlueGreenSupermemoryEnabled,
   isNativeWebBuildEnabled,
+  isNativeWebRunnerBuildxEnabled,
+  isNativeWebSupportBuildEnabled,
+  isNativeWebSupportBuildxEnabled,
   readBlueGreenTargetState,
   runBlueGreenProdWorkflow,
   runBlueGreenCachedRecoveryWorkflow,
   testBlueGreenHiveProxyRouting,
 } = require('./docker-web/blue-green.js');
 const {
+  isComposeMissingContainerDependencyError,
+  isDockerNoSuchContainerError,
   removeComposeServiceContainersByLabelIfPresent,
+  waitForComposeServiceHealthy,
 } = require('./docker-web/compose.js');
 const {
   BUILD_RESOURCE_PROFILE_ADAPTIVE_ENV,
@@ -100,6 +111,7 @@ const {
 } = require('./build-web-docker.js');
 const {
   CONTAINER_REFRESH_EXIT_CODE,
+  getWatcherChildEnv,
   getStatusSnapshotHealth,
   shouldRestartWatcherExit,
 } = require('../apps/web/docker/blue-green-watcher-entrypoint.js');
@@ -1093,6 +1105,21 @@ test('watcher entrypoint treats missing startup snapshots as restartable after g
   assert.match(health.reason, /status snapshot missing/);
 });
 
+test('watcher entrypoint strips local Git env from child process', () => {
+  const childEnv = getWatcherChildEnv({
+    GIT_CONFIG_COUNT: '1',
+    GIT_DIR: '/host-only/.git/worktrees/tuturuuu',
+    GIT_WORK_TREE: '/host-only/tuturuuu',
+    PATH: 'test-path',
+  });
+
+  assert.equal(childEnv.GIT_CONFIG_COUNT, undefined);
+  assert.equal(childEnv.GIT_DIR, undefined);
+  assert.equal(childEnv.GIT_WORK_TREE, undefined);
+  assert.equal(childEnv.PATH, 'test-path');
+  assert.equal(childEnv[WATCHER_CONTAINER_ENV], '1');
+});
+
 test('watcher entrypoint detects stale status snapshots from watcher interval', () => {
   assert.deepEqual(
     getStatusSnapshotHealth({
@@ -1260,6 +1287,39 @@ test('readBlueGreenProxyActiveColor recovers the primary lane from nginx config'
     );
 
     assert.equal(readBlueGreenProxyActiveColor(paths), 'green');
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('readBlueGreenProxyActiveColor ignores a stale proxy config directory', () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'docker-web-proxy-active-dir-')
+  );
+  const paths = getBlueGreenPaths(tempDir);
+
+  try {
+    fs.mkdirSync(paths.proxyConfigFile, { recursive: true });
+
+    assert.equal(readBlueGreenProxyActiveColor(paths), null);
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('writeBlueGreenProxyConfig replaces a stale proxy config directory', () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'docker-web-proxy-config-dir-')
+  );
+  const paths = getBlueGreenPaths(tempDir);
+
+  try {
+    fs.mkdirSync(paths.proxyConfigFile, { recursive: true });
+
+    writeBlueGreenProxyConfig('blue', { paths, standbyColor: 'green' });
+
+    assert.equal(fs.statSync(paths.proxyConfigFile).isFile(), true);
+    assert.equal(readBlueGreenProxyActiveColor(paths), 'blue');
   } finally {
     fs.rmSync(tempDir, { force: true, recursive: true });
   }
@@ -2167,6 +2227,35 @@ test('getComposeEnvironment resolves cloudflared tokens from Docker env files', 
         withRedis: true,
       })
     );
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('getComposeEnvironment maps CF_TUNNEL_TOKEN to CLOUDFLARED_TOKEN', () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'docker-web-cf-tunnel-env-')
+  );
+  const envFilePath = path.join(tempDir, '.env.local');
+
+  try {
+    fs.writeFileSync(
+      envFilePath,
+      [
+        'CF_TUNNEL_TOKEN=cf-tunnel-token',
+        'NEXT_PUBLIC_SUPABASE_URL=https://project-ref.supabase.co',
+      ].join('\n')
+    );
+
+    const env = getComposeEnvironment({
+      baseEnv: { PATH: 'test-path' },
+      envFilePath,
+      rootDir: tempDir,
+      withCloudflared: true,
+    });
+
+    assert.equal(env.CLOUDFLARED_TOKEN, 'cf-tunnel-token');
+    assert.equal(env.DOCKER_WEB_WITH_CLOUDFLARED, '1');
   } finally {
     fs.rmSync(tempDir, { force: true, recursive: true });
   }
@@ -3085,7 +3174,7 @@ test('buildBlueGreenServices skips lower profiles that exceed the Docker memory 
                 code: 1,
                 signal: null,
                 stderr:
-                  'ERROR: failed to solve: ResourceExhausted: cannot allocate memory',
+                  'rpc error: code = Unavailable desc = closing transport due to: error reading from server: EOF',
                 stdout: '',
               }
             : { code: 0, signal: null, stderr: '', stdout: '' };
@@ -3122,6 +3211,86 @@ test('buildBlueGreenServices skips lower profiles that exceed the Docker memory 
       ['default', 'minimal']
     );
     assert.equal(buildEnvs[1].DOCKER_WEB_BUILD_MEMORY, '8g');
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('buildBlueGreenServices retries low-memory builds with a serial high-memory profile before reducing memory', async () => {
+  const calls = [];
+  const dockerMemoryLimit = String(12 * 1024 * 1024 * 1024);
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'docker-web-bg-adaptive-serial-')
+  );
+  const profilePaths = getBuildResourceProfilePaths(tempDir);
+  let buildAttempts = 0;
+
+  try {
+    await buildBlueGreenServices({
+      buildStrategy: 'bake',
+      composeFile: PROD_COMPOSE_FILE,
+      env: {
+        BUILDX_BUILDER: DEFAULT_BUILDER_NAME,
+        DOCKER_WEB_DOCKER_MEMORY_LIMIT: dockerMemoryLimit,
+        [BUILD_RESOURCE_PROFILE_ADAPTIVE_ENV]: '1',
+        [BUILD_RESOURCE_PROFILE_ENV]: 'low',
+        [BUILD_RESOURCE_PROFILE_STATE_FILE_ENV]: profilePaths.stateFile,
+      },
+      fsImpl: fs,
+      rootDir: tempDir,
+      runCommand: async (command, args, options = {}) => {
+        calls.push([command, args, options.env]);
+
+        if (args[0] === 'buildx' && args[1] === 'bake') {
+          buildAttempts += 1;
+
+          return buildAttempts === 1
+            ? {
+                code: 1,
+                signal: null,
+                stderr:
+                  'ERROR: failed to solve: ResourceExhausted: cannot allocate memory\nerror: script "turbo" exited with code 137',
+                stdout: '',
+              }
+            : { code: 0, signal: null, stderr: '', stdout: '' };
+        }
+
+        if (args[0] === 'buildx' && args[1] === 'inspect') {
+          return { code: 1, signal: null, stderr: '', stdout: '' };
+        }
+
+        if (args.includes('ps') && args.includes('buildkit')) {
+          return { code: 0, signal: null, stderr: '', stdout: 'buildkit-id\n' };
+        }
+
+        if (args[0] === 'inspect') {
+          return { code: 0, signal: null, stderr: '', stdout: 'healthy\n' };
+        }
+
+        return { code: 0, signal: null, stderr: '', stdout: '' };
+      },
+      services: ['web-blue'],
+    });
+
+    assert.equal(buildAttempts, 2);
+    assert.equal(
+      readBuildResourceProfileState(profilePaths).profileName,
+      'serial'
+    );
+
+    const buildEnvs = calls
+      .filter(([, args]) => args[0] === 'buildx' && args[1] === 'bake')
+      .map(([, , callEnv]) => callEnv);
+
+    assert.deepEqual(
+      buildEnvs.map((callEnv) => callEnv[BUILD_RESOURCE_PROFILE_ENV]),
+      ['low', 'serial']
+    );
+    assert.deepEqual(
+      buildEnvs.map((callEnv) => callEnv.DOCKER_WEB_BUILD_MEMORY),
+      [undefined, '10g']
+    );
+    assert.equal(buildEnvs[1].DOCKER_WEB_BUILD_CPUS, '1');
   } finally {
     fs.rmSync(tempDir, { force: true, recursive: true });
   }
@@ -3232,6 +3401,99 @@ test('buildBlueGreenServices resets a failed floor profile to the budget-derived
         (entry) =>
           entry.includes('resetting to budget-derived build profile default') &&
           entry.includes('resolvedMemory=21504m')
+      )
+    );
+  } finally {
+    process.stderr.write = originalStderrWrite;
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('buildBlueGreenServices can rescue a failed floor and default profile with a hard-limit profile', async () => {
+  const calls = [];
+  const stderrWrites = [];
+  const dockerMemoryLimit = String(11 * 1024 * 1024 * 1024);
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'docker-web-bg-adaptive-hard-limit-')
+  );
+  const profilePaths = getBuildResourceProfilePaths(tempDir);
+  const originalStderrWrite = process.stderr.write;
+  let buildAttempts = 0;
+
+  try {
+    process.stderr.write = (chunk, ...args) => {
+      stderrWrites.push(String(chunk));
+      return originalStderrWrite.call(process.stderr, chunk, ...args);
+    };
+
+    await buildBlueGreenServices({
+      buildStrategy: 'bake',
+      composeFile: PROD_COMPOSE_FILE,
+      env: {
+        BUILDX_BUILDER: DEFAULT_BUILDER_NAME,
+        DOCKER_WEB_BUILD_CPUS: '1',
+        DOCKER_WEB_BUILD_MAX_PARALLELISM: '1',
+        DOCKER_WEB_BUILD_MEMORY: '6g',
+        DOCKER_WEB_DOCKER_MEMORY_LIMIT: dockerMemoryLimit,
+        [BUILD_RESOURCE_PROFILE_ADAPTIVE_ENV]: '1',
+        [BUILD_RESOURCE_PROFILE_ENV]: 'floor',
+        [BUILD_RESOURCE_PROFILE_STATE_FILE_ENV]: profilePaths.stateFile,
+      },
+      fsImpl: fs,
+      rootDir: tempDir,
+      runCommand: async (command, args, options = {}) => {
+        calls.push([command, args, options.env]);
+
+        if (args[0] === 'buildx' && args[1] === 'bake') {
+          buildAttempts += 1;
+
+          return buildAttempts < 3
+            ? {
+                code: 1,
+                signal: null,
+                stderr: 'ResourceExhausted: cannot allocate memory',
+                stdout: '',
+              }
+            : { code: 0, signal: null, stderr: '', stdout: '' };
+        }
+
+        if (args[0] === 'buildx' && args[1] === 'inspect') {
+          return { code: 1, signal: null, stderr: '', stdout: '' };
+        }
+
+        if (args.includes('ps') && args.includes('buildkit')) {
+          return { code: 0, signal: null, stderr: '', stdout: 'buildkit-id\n' };
+        }
+
+        if (args[0] === 'inspect') {
+          return { code: 0, signal: null, stderr: '', stdout: 'healthy\n' };
+        }
+
+        return { code: 0, signal: null, stderr: '', stdout: '' };
+      },
+      services: ['web-blue'],
+    });
+
+    assert.equal(buildAttempts, 3);
+    assert.equal(
+      readBuildResourceProfileState(profilePaths).profileName,
+      'low'
+    );
+
+    const buildEnvs = calls
+      .filter(([, args]) => args[0] === 'buildx' && args[1] === 'bake')
+      .map(([, , callEnv]) => callEnv);
+
+    assert.deepEqual(
+      buildEnvs.map((callEnv) => callEnv[BUILD_RESOURCE_PROFILE_ENV]),
+      ['floor', 'default', 'low']
+    );
+    assert.equal(buildEnvs[2].DOCKER_WEB_BUILD_MEMORY, '10g');
+    assert.ok(
+      stderrWrites.some(
+        (entry) =>
+          entry.includes('retrying with build profile low') &&
+          entry.includes('memory=10g')
       )
     );
   } finally {
@@ -3391,7 +3653,7 @@ test('buildBlueGreenServices keeps retrying lower profiles before failing at the
       /closing transport/
     );
 
-    assert.equal(buildAttempts, 5);
+    assert.equal(buildAttempts, 6);
     assert.equal(
       readBuildResourceProfileState(profilePaths).profileName,
       'default'
@@ -3401,11 +3663,64 @@ test('buildBlueGreenServices keeps retrying lower profiles before failing at the
   }
 });
 
+test('blue/green prod keeps native web builds explicit opt-in', () => {
+  assert.deepEqual(
+    applyDefaultBlueGreenNativeBuildEnv(
+      {},
+      { mode: 'prod', strategy: 'blue-green' }
+    ),
+    { DOCKER_WEB_NATIVE_BUILD: '0' }
+  );
+  assert.deepEqual(
+    applyDefaultBlueGreenNativeBuildEnv(
+      { DOCKER_WEB_NATIVE_BUILD: '1' },
+      { mode: 'prod', strategy: 'blue-green' }
+    ),
+    { DOCKER_WEB_NATIVE_BUILD: '1' }
+  );
+  assert.deepEqual(
+    applyDefaultBlueGreenNativeBuildEnv(
+      { DOCKER_WEB_NATIVE_BUILD: '0' },
+      { mode: 'prod', strategy: 'blue-green' }
+    ),
+    { DOCKER_WEB_NATIVE_BUILD: '0' }
+  );
+  assert.deepEqual(
+    applyDefaultBlueGreenNativeBuildEnv(
+      {},
+      { mode: 'prod', strategy: 'in-place' }
+    ),
+    {}
+  );
+});
+
+test('native web build memory follows host memory when unset', () => {
+  const osImpl = {
+    totalmem: () => 64 * 1024 * 1024 * 1024,
+  };
+
+  assert.equal(getHostTotalMemoryBuildValue(osImpl), '64g');
+  assert.equal(getNativeWebBuildMemory({}, osImpl), '64g');
+  assert.equal(
+    getNativeWebBuildMemory({ DOCKER_WEB_BUILD_MEMORY: '24g' }, osImpl),
+    '24g'
+  );
+  assert.equal(
+    getNativeWebBuildMemory(
+      { DOCKER_WEB_BUILD_MEMORY: '24g', DOCKER_WEB_NATIVE_BUILD_MEMORY: '32g' },
+      osImpl
+    ),
+    '32g'
+  );
+});
+
 test('buildBlueGreenServices can package host-built web artifacts', async () => {
   const calls = [];
   const env = {
     BUILDX_BUILDER: DEFAULT_BUILDER_NAME,
+    BUILDKIT_HOST: 'tcp://remote-buildkit.example:1234',
     COMPOSE_PROJECT_NAME: 'ttr-e2e-local-test',
+    DOCKER_WEB_BUILD_BUILDER_NAME: 'fallback-builder',
     DOCKER_WEB_ENV_FILE: 'tmp/e2e/web.env',
     DOCKER_WEB_NATIVE_BUILD: '1',
     PLATFORM_BUILD_BUILT_AT: '2026-05-28T06:00:00.000Z',
@@ -3423,6 +3738,9 @@ test('buildBlueGreenServices can package host-built web artifacts', async () => 
     composeFile: PROD_COMPOSE_FILE,
     composeGlobalArgs: ['-p', 'explicit-project'],
     env,
+    osImpl: {
+      totalmem: () => 64 * 1024 * 1024 * 1024,
+    },
     runCommand: async (command, args, options = {}) => {
       calls.push([command, args, options.cwd, options.env]);
 
@@ -3432,6 +3750,14 @@ test('buildBlueGreenServices can package host-built web artifacts', async () => 
   });
 
   assert.equal(isNativeWebBuildEnabled(env), true);
+  assert.equal(isNativeWebRunnerBuildxEnabled(env), false);
+  assert.notStrictEqual(getNativeWebRunnerDockerBuildEnv(env), env);
+  assert.equal(getNativeWebRunnerDockerBuildEnv(env).BUILDX_BUILDER, undefined);
+  assert.equal(getNativeWebRunnerDockerBuildEnv(env).BUILDKIT_HOST, undefined);
+  assert.equal(
+    getNativeWebRunnerDockerBuildEnv(env).DOCKER_WEB_BUILD_BUILDER_NAME,
+    undefined
+  );
   assert.equal(
     getBlueGreenWebServiceImageTag('web-green', {
       composeGlobalArgs: ['-p', 'explicit-project'],
@@ -3455,11 +3781,7 @@ test('buildBlueGreenServices can package host-built web artifacts', async () => 
       [
         'docker',
         [
-          'buildx',
           'build',
-          '--builder',
-          DEFAULT_BUILDER_NAME,
-          '--load',
           '--build-arg',
           'PLATFORM_BUILD_BUILT_AT=2026-05-28T06:00:00.000Z',
           '--build-arg',
@@ -3493,36 +3815,209 @@ test('buildBlueGreenServices can package host-built web artifacts', async () => 
     ]
   );
   assert.equal(calls[0][3].DOCKER_WEB_STANDALONE, '1');
-  assert.equal(calls[0][3].DOCKER_WEB_BUILD_MEMORY, '12g');
+  assert.equal(calls[0][3].DOCKER_WEB_NATIVE_BUILD, '1');
+  assert.equal(calls[0][3].DOCKER_WEB_BUILD_MEMORY, '64g');
   assert.equal(calls[0][3].DOCKER_WEB_DOCKER_MEMORY_LIMIT, '');
+  assert.equal(calls[0][3].DOCKER_WEB_NEXT_BUILD_CPUS, undefined);
+  assert.equal(
+    calls[0][3].DOCKER_WEB_STATIC_GENERATION_MAX_CONCURRENCY,
+    undefined
+  );
   assert.equal(calls[0][3].PLATFORM_BUILD_COMMIT_HASH, 'native-commit');
+  assert.equal(calls[1][3].BUILDX_BUILDER, undefined);
+  assert.equal(calls[1][3].BUILDKIT_HOST, undefined);
+  assert.equal(calls[1][3].DOCKER_WEB_BUILD_BUILDER_NAME, undefined);
+  assert.equal(env.BUILDX_BUILDER, DEFAULT_BUILDER_NAME);
+  assert.equal(env.BUILDKIT_HOST, 'tcp://remote-buildkit.example:1234');
+  assert.equal(env.DOCKER_WEB_BUILD_BUILDER_NAME, 'fallback-builder');
 });
 
-test('buildBlueGreenServices only diverts web services to native artifact builds', async () => {
+test('buildBlueGreenServices can explicitly package host-built artifacts with buildx', async () => {
   const calls = [];
+  const env = {
+    BUILDX_BUILDER: DEFAULT_BUILDER_NAME,
+    COMPOSE_PROJECT_NAME: 'ttr-e2e-local-test',
+    DOCKER_WEB_NATIVE_BUILD: '1',
+    DOCKER_WEB_NATIVE_RUNNER_BUILDX: '1',
+  };
 
   await buildBlueGreenServices({
     buildStrategy: 'bake',
     composeFile: PROD_COMPOSE_FILE,
-    env: {
-      COMPOSE_PROJECT_NAME: 'ttr-e2e-local-test',
-      DOCKER_WEB_NATIVE_BUILD: '1',
+    env,
+    runCommand: async (command, args, options = {}) => {
+      calls.push([command, args, options.env]);
+
+      return { code: 0, signal: null, stderr: '', stdout: '' };
     },
-    runCommand: async (command, args) => {
-      calls.push([command, args]);
+    services: ['web-green'],
+  });
+
+  assert.equal(isNativeWebRunnerBuildxEnabled(env), true);
+  assert.strictEqual(getNativeWebRunnerDockerBuildEnv(env), env);
+  assert.deepEqual(calls[1].slice(0, 2), [
+    'docker',
+    [
+      'buildx',
+      'build',
+      '--builder',
+      DEFAULT_BUILDER_NAME,
+      '--load',
+      '--file',
+      path.join(
+        path.resolve(__dirname, '..'),
+        'apps',
+        'web',
+        'docker',
+        'native-runner.Dockerfile'
+      ),
+      '--tag',
+      'ttr-e2e-local-test-web-green',
+      path.resolve(__dirname, '..'),
+    ],
+  ]);
+  assert.strictEqual(calls[1][2], env);
+});
+
+test('buildBlueGreenServices only diverts web services to native artifact builds', async () => {
+  const calls = [];
+  const env = {
+    BUILDX_BUILDER: DEFAULT_BUILDER_NAME,
+    BUILDKIT_HOST: 'tcp://remote-buildkit.example:1234',
+    COMPOSE_PROJECT_NAME: 'ttr-e2e-local-test',
+    DOCKER_WEB_BUILD_BUILDER_NAME: 'fallback-builder',
+    DOCKER_WEB_NATIVE_BUILD: '1',
+  };
+
+  await buildBlueGreenServices({
+    buildStrategy: 'bake',
+    composeFile: PROD_COMPOSE_FILE,
+    env,
+    runCommand: async (command, args, options = {}) => {
+      calls.push([command, args, options.env]);
 
       return { code: 0, signal: null, stderr: '', stdout: '' };
     },
     services: ['web-green', 'hive-green'],
   });
 
+  assert.equal(isNativeWebSupportBuildEnabled(env), false);
+  assert.equal(isNativeWebSupportBuildxEnabled(env), false);
   assert.deepEqual(
     calls.filter(([command]) => command === 'docker').map(([, args]) => args),
     [
       [
-        'buildx',
         'build',
-        '--load',
+        '--file',
+        path.join(
+          path.resolve(__dirname, '..'),
+          'apps',
+          'web',
+          'docker',
+          'native-runner.Dockerfile'
+        ),
+        '--tag',
+        'ttr-e2e-local-test-web-green',
+        path.resolve(__dirname, '..'),
+      ],
+    ]
+  );
+
+  const dockerCalls = calls.filter(([command]) => command === 'docker');
+
+  assert.equal(dockerCalls[0][2].BUILDX_BUILDER, undefined);
+  assert.equal(dockerCalls[0][2].BUILDKIT_HOST, undefined);
+  assert.equal(dockerCalls[0][2].DOCKER_WEB_BUILD_BUILDER_NAME, undefined);
+});
+
+test('buildBlueGreenServices can explicitly build support services during native builds', async () => {
+  const calls = [];
+  const env = {
+    BUILDX_BUILDER: DEFAULT_BUILDER_NAME,
+    BUILDKIT_HOST: 'tcp://remote-buildkit.example:1234',
+    COMPOSE_PROJECT_NAME: 'ttr-e2e-local-test',
+    DOCKER_WEB_BUILD_BUILDER_NAME: 'fallback-builder',
+    DOCKER_WEB_NATIVE_BUILD: '1',
+    DOCKER_WEB_NATIVE_SUPPORT_BUILD: '1',
+  };
+
+  await buildBlueGreenServices({
+    buildStrategy: 'bake',
+    composeFile: PROD_COMPOSE_FILE,
+    env,
+    runCommand: async (command, args, options = {}) => {
+      calls.push([command, args, options.env]);
+
+      return { code: 0, signal: null, stderr: '', stdout: '' };
+    },
+    services: ['web-green', 'hive-green'],
+  });
+
+  assert.equal(isNativeWebSupportBuildEnabled(env), true);
+  assert.equal(isNativeWebSupportBuildxEnabled(env), false);
+
+  const dockerCalls = calls.filter(([command]) => command === 'docker');
+
+  assert.deepEqual(
+    dockerCalls.map(([, args]) => args),
+    [
+      [
+        'build',
+        '--file',
+        path.join(
+          path.resolve(__dirname, '..'),
+          'apps',
+          'web',
+          'docker',
+          'native-runner.Dockerfile'
+        ),
+        '--tag',
+        'ttr-e2e-local-test-web-green',
+        path.resolve(__dirname, '..'),
+      ],
+      ['compose', '-f', PROD_COMPOSE_FILE, 'build', 'hive-green'],
+    ]
+  );
+
+  assert.equal(dockerCalls[0][2].BUILDX_BUILDER, undefined);
+  assert.equal(dockerCalls[0][2].BUILDKIT_HOST, undefined);
+  assert.equal(dockerCalls[0][2].DOCKER_WEB_BUILD_BUILDER_NAME, undefined);
+  assert.equal(dockerCalls[1][2].BUILDX_BUILDER, undefined);
+  assert.equal(dockerCalls[1][2].BUILDKIT_HOST, undefined);
+  assert.equal(dockerCalls[1][2].DOCKER_WEB_BUILD_BUILDER_NAME, undefined);
+});
+
+test('buildBlueGreenServices can explicitly bake support services during native builds', async () => {
+  const calls = [];
+  const env = {
+    BUILDX_BUILDER: DEFAULT_BUILDER_NAME,
+    COMPOSE_PROJECT_NAME: 'ttr-e2e-local-test',
+    DOCKER_WEB_NATIVE_BUILD: '1',
+    DOCKER_WEB_NATIVE_SUPPORT_BUILDX: '1',
+  };
+
+  await buildBlueGreenServices({
+    buildStrategy: 'bake',
+    composeFile: PROD_COMPOSE_FILE,
+    env,
+    runCommand: async (command, args, options = {}) => {
+      calls.push([command, args, options.env]);
+
+      return { code: 0, signal: null, stderr: '', stdout: '' };
+    },
+    services: ['web-green', 'hive-green'],
+  });
+
+  assert.equal(isNativeWebSupportBuildEnabled(env), true);
+  assert.equal(isNativeWebSupportBuildxEnabled(env), true);
+
+  const dockerCalls = calls.filter(([command]) => command === 'docker');
+
+  assert.deepEqual(
+    dockerCalls.map(([, args]) => args),
+    [
+      [
+        'build',
         '--file',
         path.join(
           path.resolve(__dirname, '..'),
@@ -3538,15 +4033,14 @@ test('buildBlueGreenServices only diverts web services to native artifact builds
       getBlueGreenBuildxBakeArgs({
         bakeFile: path.resolve(__dirname, '..', 'docker-bake.web.prod.hcl'),
         composeFile: PROD_COMPOSE_FILE,
-        env: {
-          COMPOSE_PROJECT_NAME: 'ttr-e2e-local-test',
-          DOCKER_WEB_NATIVE_BUILD: '1',
-        },
+        env,
         noCache: false,
         serviceBatch: ['hive-green'],
       }),
     ]
   );
+  assert.equal(dockerCalls[0][2].BUILDX_BUILDER, undefined);
+  assert.strictEqual(dockerCalls[1][2], env);
 });
 
 test('buildBlueGreenServices restarts BuildKit when low-memory restart is requested', async () => {
@@ -3982,6 +4476,170 @@ test('runDockerWebWorkflow applies persisted adaptive profile for default blue-g
   }
 });
 
+test('runDockerWebWorkflow promotes stale fallback profile before BuildKit startup', async () => {
+  const calls = [];
+  const dockerMemoryLimit = String(12 * 1024 * 1024 * 1024);
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'docker-web-adaptive-promote-')
+  );
+  const envFilePath = path.join(tempDir, 'apps', 'web', '.env.local');
+  const minimalProfile = {
+    cpus: '1',
+    maxParallelism: '1',
+    memory: '8g',
+    name: 'minimal',
+  };
+  const stopAfterBuildkit = new Error('stop-after-buildkit');
+  const profilePaths = getBuildResourceProfilePaths(tempDir);
+
+  try {
+    fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
+    fs.writeFileSync(
+      envFilePath,
+      'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001\n'
+    );
+    persistBuildResourceProfile({
+      previousProfileName: 'serial',
+      profile: minimalProfile,
+      reason: 'buildkit-resource-fallback',
+      stateFile: profilePaths.stateFile,
+    });
+
+    await assert.rejects(
+      () =>
+        runDockerWebWorkflow(
+          parseArgs([
+            'up',
+            '--mode',
+            'prod',
+            '--strategy',
+            'blue-green',
+            '--build-memory',
+            'auto',
+            '--build-cpus',
+            '4',
+            '--build-max-parallelism',
+            '1',
+          ]),
+          {
+            env: LOCAL_SUPABASE_TEST_ENV,
+            envFilePath,
+            rootDir: tempDir,
+            runCommand: async (command, args, options = {}) => {
+              calls.push({
+                args,
+                command,
+                env: options.env,
+                stdio: options.stdio ?? 'inherit',
+              });
+
+              if (command === 'docker' && args[0] === 'compose') {
+                if (args[1] === 'version') {
+                  return { code: 0, signal: null, stderr: '', stdout: '' };
+                }
+
+                if (args.includes('up') && args.at(-1) === 'buildkit') {
+                  return { code: 0, signal: null, stderr: '', stdout: '' };
+                }
+
+                if (args.includes('ps') && args.at(-1) === 'buildkit') {
+                  return {
+                    code: 0,
+                    signal: null,
+                    stderr: '',
+                    stdout: 'buildkit-123\n',
+                  };
+                }
+
+                if (
+                  args.includes('up') &&
+                  args.at(-1) === 'log-drain-postgres'
+                ) {
+                  throw stopAfterBuildkit;
+                }
+              }
+
+              if (
+                command === 'docker' &&
+                args[0] === 'info' &&
+                args.includes('{{json .MemTotal}}')
+              ) {
+                return {
+                  code: 0,
+                  signal: null,
+                  stderr: '',
+                  stdout: dockerMemoryLimit,
+                };
+              }
+
+              if (command === 'docker' && args[0] === 'inspect') {
+                return {
+                  code: 0,
+                  signal: null,
+                  stderr: '',
+                  stdout: 'healthy\n',
+                };
+              }
+
+              if (command === 'docker' && args[0] === 'buildx') {
+                if (args[1] === 'inspect') {
+                  return { code: 1, signal: null, stderr: '', stdout: '' };
+                }
+
+                return { code: 0, signal: null, stderr: '', stdout: '' };
+              }
+
+              if (command === 'git' && args[0] === 'log') {
+                return {
+                  code: 0,
+                  signal: null,
+                  stderr: '',
+                  stdout: 'abcdef123456\nabcdef1\nPromoted profile\n',
+                };
+              }
+
+              if (command === 'git' && args[0] === 'branch') {
+                return {
+                  code: 0,
+                  signal: null,
+                  stderr: '',
+                  stdout: 'production\n',
+                };
+              }
+
+              return { code: 0, signal: null, stderr: '', stdout: '' };
+            },
+          }
+        ),
+      (error) => {
+        assert.match(error.message, /Original failure: stop-after-buildkit/);
+        return true;
+      }
+    );
+
+    const buildkitUp = calls.find(
+      (call) =>
+        call.command === 'docker' &&
+        call.args[0] === 'compose' &&
+        call.args.includes('up') &&
+        call.args.includes('--no-build') &&
+        call.args.at(-1) === 'buildkit'
+    );
+
+    assert.equal(buildkitUp?.env.DOCKER_WEB_BUILD_MEMORY, '10g');
+    assert.equal(buildkitUp?.env.DOCKER_WEB_BUILD_CPUS, '1');
+    assert.equal(buildkitUp?.env.DOCKER_WEB_BUILD_MAX_PARALLELISM, '1');
+    assert.equal(buildkitUp?.env[BUILD_RESOURCE_PROFILE_ENV], 'serial');
+
+    const promotedState = readBuildResourceProfileState(profilePaths);
+    assert.equal(promotedState.profileName, 'serial');
+    assert.equal(promotedState.previousProfileName, 'minimal');
+    assert.equal(promotedState.reason, 'buildkit-resource-state-promoted');
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
 test('runDockerWebWorkflow forwards Docker memory limit into build env', async () => {
   const calls = [];
   const fsStub = createFsStub({
@@ -4074,8 +4732,114 @@ test('runDockerWebWorkflow uses the production compose file for in-place deploys
       'serverless-redis-http',
     ],
     command: 'docker',
-    stdio: 'inherit',
+    stdio: 'pipe',
   });
+});
+
+test('runDockerWebWorkflow auto-enables cloudflared from CF_TUNNEL_TOKEN in root env', async () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'docker-web-cloudflared-auto-')
+  );
+  const envFilePath = path.join(tempDir, '.env.local');
+  const calls = [];
+  const logDrainPostgresResult = createHealthyLogDrainPostgresResponder();
+
+  try {
+    fs.writeFileSync(
+      envFilePath,
+      [
+        'CF_TUNNEL_TOKEN=cf-tunnel-token',
+        'NEXT_PUBLIC_SUPABASE_URL=https://project-ref.supabase.co',
+      ].join('\n')
+    );
+
+    await runDockerWebWorkflow(parseArgs(['up', '--mode', 'prod']), {
+      env: { PATH: 'test-path' },
+      rootDir: tempDir,
+      runCommand: async (command, args, options = {}) => {
+        calls.push({ args, command, env: options.env });
+
+        const logDrainResult = logDrainPostgresResult(command, args);
+        if (logDrainResult) return logDrainResult;
+
+        if (args.includes('ps')) {
+          return createCommandResult('');
+        }
+
+        return createCommandResult('');
+      },
+    });
+
+    const webUpCall = calls.find(
+      ({ args, command }) =>
+        command === 'docker' &&
+        args[0] === 'compose' &&
+        args.includes('up') &&
+        args.includes('web')
+    );
+
+    assert.ok(webUpCall);
+    assert.ok(webUpCall.args.includes('cloudflared'));
+    assert.ok(webUpCall.args.includes('--profile'));
+    assert.equal(webUpCall.env.CLOUDFLARED_TOKEN, 'cf-tunnel-token');
+    assert.equal(webUpCall.env.DOCKER_WEB_WITH_CLOUDFLARED, '1');
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('runDockerWebWorkflow honors cloudflared autodetect opt-out', async () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'docker-web-cloudflared-opt-out-')
+  );
+  const envFilePath = path.join(tempDir, '.env.local');
+  const calls = [];
+  const logDrainPostgresResult = createHealthyLogDrainPostgresResponder();
+
+  try {
+    fs.writeFileSync(
+      envFilePath,
+      [
+        'CF_TUNNEL_TOKEN=cf-tunnel-token',
+        'NEXT_PUBLIC_SUPABASE_URL=https://project-ref.supabase.co',
+      ].join('\n')
+    );
+
+    await runDockerWebWorkflow(parseArgs(['up', '--mode', 'prod']), {
+      env: {
+        DOCKER_WEB_WITH_CLOUDFLARED: '0',
+        PATH: 'test-path',
+      },
+      rootDir: tempDir,
+      runCommand: async (command, args, options = {}) => {
+        calls.push({ args, command, env: options.env });
+
+        const logDrainResult = logDrainPostgresResult(command, args);
+        if (logDrainResult) return logDrainResult;
+
+        if (args.includes('ps')) {
+          return createCommandResult('');
+        }
+
+        return createCommandResult('');
+      },
+    });
+
+    const webUpCall = calls.find(
+      ({ args, command }) =>
+        command === 'docker' &&
+        args[0] === 'compose' &&
+        args.includes('up') &&
+        args.includes('web')
+    );
+
+    assert.ok(webUpCall);
+    assert.equal(webUpCall.args.includes('cloudflared'), false);
+    assert.equal(webUpCall.env.CLOUDFLARED_TOKEN, undefined);
+    assert.equal(webUpCall.env.DOCKER_WEB_WITH_CLOUDFLARED, '0');
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
 });
 
 test('runDockerWebWorkflow starts log-drain explicitly for in-place prod deploys', async () => {
@@ -4374,7 +5138,10 @@ test('runDockerWebWorkflow continues blue-green deploys with log-drain disabled 
   fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
   fs.writeFileSync(
     envFilePath,
-    'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001\n'
+    [
+      'CF_TUNNEL_TOKEN=cf-tunnel-token',
+      'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001',
+    ].join('\n')
   );
 
   const runCommand = async (command, args, options = {}) => {
@@ -4567,7 +5334,10 @@ test('runDockerWebWorkflow performs an initial blue-green deployment', async () 
   fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
   fs.writeFileSync(
     envFilePath,
-    'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001\n'
+    [
+      'CF_TUNNEL_TOKEN=cf-tunnel-token',
+      'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001',
+    ].join('\n')
   );
 
   const runCommand = async (command, args, options = {}) => {
@@ -4776,7 +5546,10 @@ test('runDockerWebWorkflow performs an initial blue-green deployment', async () 
     assert.deepEqual(watcherStarts, [
       {
         argv: ['--resume-if-running'],
-        env: LOCAL_SUPABASE_TEST_ENV,
+        env: {
+          ...LOCAL_SUPABASE_TEST_ENV,
+          DOCKER_WEB_WITH_CLOUDFLARED: '1',
+        },
         rootDir: tempDir,
       },
     ]);
@@ -5139,8 +5912,8 @@ test('runDockerWebWorkflow recovers from stale blue-green container name conflic
     'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001\n'
   );
 
-  const runCommand = async (command, args) => {
-    calls.push([command, args]);
+  const runCommand = async (command, args, options = {}) => {
+    calls.push([command, args, options]);
 
     const logDrainPostgresResult = healthyLogDrainPostgresResult(command, args);
     if (logDrainPostgresResult) return logDrainPostgresResult;
@@ -5788,6 +6561,215 @@ test('runBlueGreenProdWorkflow does not promote web before support refresh succe
           call.includes(' exec -T web-proxy wget')
       ),
       false
+    );
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('runBlueGreenProdWorkflow retries stale dependency during support refresh', async () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'docker-web-support-stale-dependency-')
+  );
+  const envFilePath = path.join(tempDir, 'apps', 'web', '.env.local');
+  const paths = getBlueGreenPaths(tempDir);
+  const calls = [];
+  let hiveStarted = false;
+  let proxyReloaded = false;
+  let supportUpAttempts = 0;
+  let webStarted = false;
+
+  fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
+  fs.writeFileSync(
+    envFilePath,
+    'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001\n'
+  );
+  writeBlueGreenActiveColor('blue', paths);
+
+  const resultFor = (stdout = '') => ({
+    code: 0,
+    signal: null,
+    stderr: '',
+    stdout,
+  });
+
+  const runCommand = async (command, args) => {
+    const key = `${command} ${args.join(' ')}`;
+    calls.push(key);
+
+    const cleanupResult = migrationCleanupResult(command, args);
+    if (cleanupResult) return cleanupResult;
+
+    if (command === 'docker' && args[0] === 'ps') {
+      return resultFor('');
+    }
+
+    if (args.includes('ps') && args.includes('-q')) {
+      const serviceName = args.at(-1);
+
+      if (serviceName === 'web') return resultFor('');
+      if (serviceName === 'web-blue') return resultFor('blue-123\n');
+      if (serviceName === 'web-green') {
+        return resultFor(webStarted ? 'green-123\n' : '');
+      }
+      if (serviceName === BLUE_GREEN_PROXY_SERVICE) {
+        return resultFor('proxy-123\n');
+      }
+      if (serviceName === 'hive-db-migrate') {
+        return resultFor(
+          args.includes('-a') && hiveStarted ? 'hive-db-migrate-123\n' : ''
+        );
+      }
+      if (
+        serviceName === getBlueGreenHiveServiceName('green') ||
+        serviceName === 'hive-realtime'
+      ) {
+        return resultFor(hiveStarted ? `${serviceName}-123\n` : '');
+      }
+      if (BLUE_GREEN_SUPPORT_SERVICES.includes(serviceName)) {
+        return resultFor(supportUpAttempts > 1 ? `${serviceName}-123\n` : '');
+      }
+
+      return resultFor('');
+    }
+
+    if (
+      args[0] === 'inspect' &&
+      args[2] === '{{json .NetworkSettings.Ports}}' &&
+      args.at(-1) === 'proxy-123'
+    ) {
+      return resultFor(`${BLUE_GREEN_PROXY_PORTS_JSON}\n`);
+    }
+
+    if (args.includes('config') && args.includes('--format')) {
+      return resultFor(
+        JSON.stringify({
+          services: {
+            [BLUE_GREEN_PROXY_SERVICE]: { image: 'nginx:1.31.0-alpine' },
+          },
+        })
+      );
+    }
+
+    if (
+      args[0] === 'inspect' &&
+      args[2] === '{{.Config.Image}}' &&
+      args.at(-1) === 'proxy-123'
+    ) {
+      return resultFor('nginx:1.31.0-alpine\n');
+    }
+
+    if (args[0] === 'inspect') {
+      return resultFor('healthy\n');
+    }
+
+    if (args.includes('build')) {
+      return resultFor('');
+    }
+
+    if (args[0] === 'buildx' && args[1] === 'bake') {
+      return resultFor('');
+    }
+
+    if (isHiveDbMigrateRun(command, args)) {
+      return resultFor('');
+    }
+
+    if (args.includes('up') && args.includes('web-green')) {
+      webStarted = true;
+      return resultFor('');
+    }
+
+    if (
+      args.includes('up') &&
+      args.includes(getBlueGreenHiveServiceName('green'))
+    ) {
+      hiveStarted = true;
+      return resultFor('');
+    }
+
+    if (
+      args.includes('up') &&
+      BLUE_GREEN_SUPPORT_SERVICES_HEALTH_GATE.some((service) =>
+        args.includes(service)
+      )
+    ) {
+      supportUpAttempts += 1;
+
+      if (supportUpAttempts === 1) {
+        return {
+          code: 1,
+          signal: null,
+          stderr:
+            'dependency failed to start: Error response from daemon: No such container: 3fbc83b3bd9cdd7dbd03169405341f2a997e6d9656795a8121d1f88e420003b6',
+          stdout: '',
+        };
+      }
+
+      return resultFor('');
+    }
+
+    if (
+      args.includes('exec') &&
+      args.includes('web-blue') &&
+      args.includes('node')
+    ) {
+      return resultFor(JSON.stringify({ inflightRequests: 0 }));
+    }
+
+    if (args.includes('exec') && args.includes(BLUE_GREEN_PROXY_SERVICE)) {
+      proxyReloaded = true;
+      return resultFor('');
+    }
+
+    if (args.includes('stop') || args.includes('rm')) {
+      return resultFor('');
+    }
+
+    throw new Error(`Unexpected command: ${key}`);
+  };
+
+  try {
+    const result = await runBlueGreenProdWorkflow(
+      {
+        action: 'up',
+        composeArgs: [],
+        composeGlobalArgs: [],
+        mode: 'prod',
+        strategy: 'blue-green',
+      },
+      {
+        changedFiles: ['apps/storage-unzip-proxy/src/server.js'],
+        drainPollMs: 0,
+        drainTimeoutMs: 5_000,
+        env: {
+          ...LOCAL_SUPABASE_TEST_ENV,
+          DOCKER_WEB_COMPOSE_UP_RETRY_INITIAL_DELAY_MS: '10',
+          DOCKER_WEB_COMPOSE_UP_RETRY_MAX_ATTEMPTS: '1',
+          DOCKER_WEB_COMPOSE_UP_STALE_DEPENDENCY_RETRY_MAX_ATTEMPTS: '3',
+          DOCKER_WEB_SKIP_BLUE_GREEN_SUPPORT_BUILD: '1',
+        },
+        envFilePath,
+        proxyDrainMs: 0,
+        rootDir: tempDir,
+        runCommand,
+      }
+    );
+
+    assert.equal(supportUpAttempts, 2);
+    assert.equal(proxyReloaded, true);
+    assert.equal(readBlueGreenActiveColor(paths), 'green');
+    assert.equal(
+      result.stages.find((stage) => stage.id === 'support-refresh')?.status,
+      'succeeded'
+    );
+    assert.ok(
+      calls.some(
+        (call) =>
+          call.includes(' up --detach --no-build --remove-orphans') &&
+          call.includes('storage-unzip-proxy') &&
+          call.includes('web-cron-runner')
+      )
     );
   } finally {
     fs.rmSync(tempDir, { force: true, recursive: true });
@@ -6745,8 +7727,8 @@ test('runComposeUpWithNameConflictRecovery removes stale Compose recreate temp c
   let upAttempts = 0;
   const tempName = '50824ff4b149_platform-markitdown-1';
 
-  const runCommand = async (command, args) => {
-    calls.push([command, args]);
+  const runCommand = async (command, args, options = {}) => {
+    calls.push([command, args, options]);
 
     if (command === 'docker' && args[0] === 'compose' && args.includes('up')) {
       upAttempts += 1;
@@ -6851,6 +7833,190 @@ test('runComposeUpWithNameConflictRecovery retries transient Docker registry pul
   assert.deepEqual(delays, [10, 20]);
   assert.ok(
     !calls.some(([command, args]) => command === 'docker' && args[0] === 'rm')
+  );
+});
+
+test('runComposeUpWithNameConflictRecovery retries stale dependency container references', async () => {
+  const calls = [];
+  const delays = [];
+  let upAttempts = 0;
+  const staleDependencyError =
+    'dependency failed to start: Error response from daemon: No such container: d558824bb887ae3b4dadda1a70e9a59ede541c0e6c773d7f370fda7051e87ebe';
+
+  const runCommand = async (command, args, options = {}) => {
+    calls.push([command, args, options]);
+
+    if (command === 'docker' && args[0] === 'compose' && args.includes('up')) {
+      upAttempts += 1;
+
+      if (upAttempts === 1) {
+        return {
+          code: 1,
+          signal: null,
+          stderr: staleDependencyError,
+          stdout: '',
+        };
+      }
+    }
+
+    return { code: 0, signal: null, stderr: '', stdout: '' };
+  };
+
+  await runComposeUpWithNameConflictRecovery({
+    composeFile: PROD_COMPOSE_FILE,
+    env: {
+      COMPOSE_PROJECT_NAME: 'platform',
+      DOCKER_WEB_COMPOSE_UP_RETRY_INITIAL_DELAY_MS: '10',
+      DOCKER_WEB_COMPOSE_UP_RETRY_MAX_ATTEMPTS: '3',
+      DOCKER_WEB_COMPOSE_UP_RETRY_MAX_DELAY_MS: '20',
+      PATH: 'test-path',
+    },
+    runCommand,
+    services: ['backend', 'storage-unzip-proxy', 'web-cron-runner'],
+    sleep: async (delayMs) => {
+      delays.push(delayMs);
+    },
+    upArgs: [
+      'up',
+      '--detach',
+      '--no-build',
+      '--remove-orphans',
+      'backend',
+      'storage-unzip-proxy',
+      'web-cron-runner',
+    ],
+  });
+
+  assert.equal(upAttempts, 2);
+  assert.deepEqual(delays, [10]);
+  assert.equal(
+    isComposeMissingContainerDependencyError(new Error(staleDependencyError)),
+    true
+  );
+  assert.ok(
+    calls
+      .filter(
+        ([command, args]) =>
+          command === 'docker' && args[0] === 'compose' && args.includes('up')
+      )
+      .every(([, , options]) => options.stdio === 'pipe')
+  );
+  assert.ok(
+    !calls.some(([command, args]) => command === 'docker' && args[0] === 'rm')
+  );
+});
+
+test('waitForComposeServiceHealthy retries until Compose resolves the service container', async () => {
+  const calls = [];
+  let psCalls = 0;
+
+  const runCommand = async (command, args) => {
+    calls.push([command, args]);
+
+    if (command === 'docker' && args[0] === 'compose' && args.includes('ps')) {
+      psCalls += 1;
+
+      return {
+        code: 0,
+        signal: null,
+        stderr: '',
+        stdout: psCalls === 1 ? '' : 'web-cron-runner-123\n',
+      };
+    }
+
+    if (command === 'docker' && args[0] === 'inspect') {
+      return {
+        code: 0,
+        signal: null,
+        stderr: '',
+        stdout: 'healthy\n',
+      };
+    }
+
+    return { code: 0, signal: null, stderr: '', stdout: '' };
+  };
+
+  await waitForComposeServiceHealthy('web-cron-runner', {
+    composeFile: PROD_COMPOSE_FILE,
+    env: {
+      COMPOSE_PROJECT_NAME: 'platform',
+      PATH: 'test-path',
+    },
+    pollMs: 1,
+    runCommand,
+    timeoutMs: 100,
+  });
+
+  assert.equal(psCalls, 2);
+  assert.ok(
+    calls.some(
+      ([command, args]) =>
+        command === 'docker' &&
+        args[0] === 'inspect' &&
+        args.includes('web-cron-runner-123')
+    )
+  );
+});
+
+test('waitForComposeServiceHealthy refreshes a recreated service container id', async () => {
+  const calls = [];
+  let psCalls = 0;
+
+  const runCommand = async (command, args) => {
+    calls.push([command, args]);
+
+    if (command === 'docker' && args[0] === 'compose' && args.includes('ps')) {
+      psCalls += 1;
+
+      return {
+        code: 0,
+        signal: null,
+        stderr: '',
+        stdout: psCalls === 1 ? 'old-buildkit-123\n' : 'new-buildkit-456\n',
+      };
+    }
+
+    if (command === 'docker' && args[0] === 'inspect') {
+      if (args.includes('old-buildkit-123')) {
+        return {
+          code: 1,
+          signal: null,
+          stderr: 'Error: No such object: old-buildkit-123\n',
+          stdout: '',
+        };
+      }
+
+      return {
+        code: 0,
+        signal: null,
+        stderr: '',
+        stdout: 'healthy\n',
+      };
+    }
+
+    return { code: 0, signal: null, stderr: '', stdout: '' };
+  };
+
+  await waitForComposeServiceHealthy('buildkit', {
+    composeFile: PROD_COMPOSE_FILE,
+    env: {
+      COMPOSE_PROJECT_NAME: 'platform',
+      PATH: 'test-path',
+    },
+    pollMs: 1,
+    runCommand,
+    timeoutMs: 100,
+  });
+
+  assert.equal(psCalls, 2);
+  assert.ok(isDockerNoSuchContainerError(new Error('No such object: test')));
+  assert.ok(
+    calls.some(
+      ([command, args]) =>
+        command === 'docker' &&
+        args[0] === 'inspect' &&
+        args.includes('new-buildkit-456')
+    )
   );
 });
 

@@ -183,7 +183,7 @@ test('Platform production build waits for release packages and records build mar
   assert.match(deployJob, /id:\s*package_release_gate/);
   assert.match(deployJob, /packages_ready == 'false'/);
   assert.match(deployJob, /packages_ready == 'true'/);
-  assert.match(deployJob, /TUTURUUU_NEXT_CACHE_COMPONENTS: "0"/);
+  assert.doesNotMatch(deployJob, /TUTURUUU_NEXT_CACHE_COMPONENTS/);
   assert.match(deployJob, /actions:\s*write/);
   assert.match(deployJob, /GH_TOKEN: \$\{\{ github\.token \}\}/);
   assert.doesNotMatch(
@@ -368,7 +368,7 @@ test('Docker setup workflow pre-pulls the BuildKit image before Buildx setup', (
   assert.match(workflow, /scripts\/run-tanstack-e2e-docker\.test\.js/u);
   assert.match(
     verifyJob,
-    /node --test scripts\/check-docker-web\.test\.js scripts\/docker-web\.test\.js scripts\/run-tanstack-e2e-docker\.test\.js/u
+    /node --test scripts\/check-docker-web\.test\.js scripts\/docker-web\.test\.js scripts\/buildkit-builder\.test\.js scripts\/run-tanstack-e2e-docker\.test\.js/u
   );
 });
 

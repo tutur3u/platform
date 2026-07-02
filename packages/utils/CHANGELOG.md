@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.12.0](https://github.com/tutur3u/platform/compare/utils-v0.11.0...utils-v0.12.0) (2026-07-02)
+
+
+### Features
+
+* **infrastructure:** add abuse protection controls ([0e09692](https://github.com/tutur3u/platform/commit/0e09692a553cb10fbbb521e921951c2a6863281d))
+
+
+### Bug Fixes
+
+* **ci:** keep cache components enabled in production ([75e6e2b](https://github.com/tutur3u/platform/commit/75e6e2bbbf6fa432bc496ee95b75ade5f8847f9f))
+* **cli:** preserve markdown tables in task descriptions ([9faf8ba](https://github.com/tutur3u/platform/commit/9faf8ba44b92565a9dfc2949c496654fc1fea9b3))
+* **infrastructure:** default docker web to native builds ([7d89f00](https://github.com/tutur3u/platform/commit/7d89f004f75ab12eddc3cb92df5a1e6a7255fe0d))
+* **security:** limit auth recovery code attempts ([72d454c](https://github.com/tutur3u/platform/commit/72d454c507b0d4b7e69c7b38ad2099dbb83193b2))
+
 ## [0.11.0](https://github.com/tutur3u/platform/compare/utils-v0.10.0...utils-v0.11.0) (2026-06-29)
 
 

@@ -1,7 +1,7 @@
 ---
 title: 'tuturuuu'
 description: 'Official TypeScript/JavaScript SDK for the Tuturuuu platform'
-updatedAt: '2026-06-29'
+updatedAt: '2026-06-30'
 ---
 
 # Tuturuuu SDK
@@ -393,10 +393,26 @@ Workspace templates are managed with
 from or exported to local markdown files. Local templates live under
 `.tuturuuu/task-templates/*.md`, use YAML frontmatter for fields such as `key`,
 `name`, `task_name`, `priority`, `label_ids`, `assignee_ids`, and
-`project_ids`, and use the markdown body as the task description. `ttr tasks
-create --template <key-or-path>` resolves workspace keys or local markdown
-paths; explicit flags such as `--name`, `--list`, `--priority`, `--labels`, and
-`--projects` override template defaults.
+`project_ids`, and use the markdown body as the task description. Markdown
+descriptions from `--description-format markdown` and local template bodies
+support GFM pipe tables and are stored as TipTap/Yjs table content for the web
+editor. `ttr tasks create --template <key-or-path>` resolves workspace keys or
+local markdown paths; explicit flags such as `--name`, `--list`, `--priority`,
+`--labels`, and `--projects` override template defaults.
+
+```markdown
+---
+key: qa-handoff
+name: QA handoff
+task_name: Verify release handoff
+priority: high
+---
+
+| Field | Value |
+| --- | --- |
+| Owner | Platform |
+| Environment | Staging |
+```
 
 ### Finance CLI
 
@@ -528,7 +544,9 @@ ttr task-templates list
 ttr task-templates create "Bug report" --key bug-report --title "Investigate bug" --priority high
 ttr task-templates export bug-report --file .tuturuuu/task-templates/bug-report.md
 ttr task-templates import .tuturuuu/task-templates/bug-report.md
+ttr tiptap parse --text "| Field | Value |\n| --- | --- |\n| Owner | Platform |" --format markdown --output json
 ttr tasks create --template bug-report --list <list-id> --name "Investigate checkout bug"
+ttr tasks create "QA handoff" --description-file table.md --description-format markdown
 
 # Move with the keyboard picker.
 ttr tasks move

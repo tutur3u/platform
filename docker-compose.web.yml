@@ -399,6 +399,7 @@ services:
         condition: service_started
     image: cloudflare/cloudflared:latest
     init: true
+    network_mode: "service:web"
     restart: unless-stopped
 
   redis:

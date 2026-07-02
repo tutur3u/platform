@@ -29,4 +29,5 @@ services:
         condition: service_healthy
     image: cloudflare/cloudflared:latest
     init: true
+    network_mode: "service:web-proxy"
     restart: unless-stopped

@@ -28,7 +28,7 @@
       "name": "finance.tuturuuu",
       "script": "dev:app"
     },
-    "apps/infra": {
+    "apps/infrastructure": {
       "name": "infra.tuturuuu",
       "script": "dev:app"
     },

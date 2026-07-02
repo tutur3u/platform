@@ -76,9 +76,34 @@ surface you are changing:
   UI and run `bun i18n:sort`.
 - Add new dashboard routes to the relevant `navigation.tsx` aliases, children,
   icons, and permissions.
-- Split files over about 400 LOC and components/widgets over about 200 LOC when
-  you create or significantly edit them. Keep existing import paths stable with
-  thin re-exports when callers depend on them.
+- Migration-aware changes (the `apps/web` → `apps/backend` (Rust) + `apps/web` →
+  `apps/tanstack-web` switch is in progress — do not add debt while it is
+  pending): treat `apps/web`, `apps/backend`, and `apps/tanstack-web` as one
+  system, not three independent apps.
+  - When you ADD or CHANGE an `apps/web` API route (any method), also keep the
+    Rust port in step: if `apps/backend` already owns that path, update the Rust
+    handler in the same change; if it does not yet, register/refresh the route in
+    `apps/tanstack-web/migration/route-overrides.json` and run
+    `bun migration:tanstack:manifest` so the route is tracked as backlog instead
+    of becoming invisible debt. Never silently diverge web behavior from a route
+    Rust already serves.
+  - When you ADD or CHANGE a dashboard page/route, mirror the same registration
+    so `apps/tanstack-web` migration tracking stays accurate, and route shared
+    data access through `packages/internal-api` (which both frontends use)
+    rather than app-local fetchers.
+  - When porting a backend route to Rust, migrate GET first if mutations are not
+    ready, return `None` (not `405`) for un-ported methods so they fall through
+    to the still-live Next.js route, and verify with the runtime coverage probe
+    documented in `apps/backend/AGENTS.md`. Keep behavior, status codes, and
+    cache headers faithful to the legacy route.
+- Keep every source file well-maintained and under a hard ceiling of 700 LOC
+  whenever possible. Treat ~400 LOC (and ~200 LOC for components/widgets) as the
+  point to start splitting when you create or significantly edit a file; never
+  let a file you author or substantially edit cross 700 LOC without splitting it
+  into focused modules. This applies to all languages, including the Rust
+  backend (`apps/backend/src/*.rs` — extract submodules; move large `#[cfg(test)]`
+  blocks into a sibling `mod tests;` file). Keep existing import paths stable
+  with thin re-exports (or `pub use`) when callers depend on them.
 - Update `apps/docs` when work changes how the team should build, run, debug,
   deploy, or operate the system. Add new docs pages to `apps/docs/docs.json`.
 - For TypeScript, JavaScript, root script, or repo config changes, finish with
@@ -92,7 +117,14 @@ surface you are changing:
 
 ## 4. Repository Map
 
-- `apps/web`: main Next.js App Router platform app on port `7803`.
+- `apps/web`: main Next.js App Router platform app on port `7803`. Current source
+  of truth; backend (API/route) logic is being migrated OUT of it into
+  `apps/backend`, and pages/frontend into `apps/tanstack-web`.
+- `apps/backend`: Rust worker (native Docker + Cloudflare Workers) that backend
+  API routes are being migrated INTO, handler-by-handler. See its nested
+  `AGENTS.md`.
+- `apps/tanstack-web`: TanStack Start frontend migration target that consumes the
+  Rust backend through Start server functions / `packages/internal-api` facades.
 - `apps/mobile`: Flutter mobile app.
 - `apps/database`: Supabase migrations, configuration, reset scripts, and tests.
 - `apps/docs`: Mintlify docs and operational runbooks.

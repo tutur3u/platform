@@ -6,6 +6,7 @@ import {
   writeFileSync,
 } from 'node:fs';
 import { basename, dirname, isAbsolute, join, resolve } from 'node:path';
+import { createTaskDescriptionPayload } from '@tuturuuu/utils/task-description-codec';
 import { parse as parseYaml, stringify as stringifyYaml } from 'yaml';
 import type {
   WorkspaceTaskTemplate,
@@ -97,10 +98,33 @@ function inferKeyFromPath(path: string) {
   return basename(path).replace(/\.md$/iu, '');
 }
 
+function createMarkdownDescriptionFields(
+  body: string,
+  frontmatterDescription: unknown
+): Pick<WorkspaceTaskTemplatePayload, 'description' | 'description_yjs_state'> {
+  const description = body.trim() || asNullableString(frontmatterDescription);
+  if (!description) {
+    return {
+      description: null,
+      description_yjs_state: null,
+    };
+  }
+
+  return {
+    description,
+    description_yjs_state: createTaskDescriptionPayload(description, 'markdown')
+      .description_yjs_state,
+  };
+}
+
 export function parseLocalTaskTemplateFile(path: string): LocalTaskTemplate {
   const absolutePath = resolve(path);
   const source = readFileSync(absolutePath, 'utf8');
   const { body, frontmatter } = splitFrontmatter(source);
+  const descriptionFields = createMarkdownDescriptionFields(
+    body,
+    frontmatter.description
+  );
   const name =
     asString(frontmatter.name) ??
     asString(frontmatter.template_name) ??
@@ -127,8 +151,7 @@ export function parseLocalTaskTemplateFile(path: string): LocalTaskTemplate {
         asString(frontmatter.default_list_id) ??
         asString(frontmatter.list_id) ??
         undefined,
-      description:
-        body.trim() || asNullableString(frontmatter.description) || null,
+      ...descriptionFields,
       end_date: asString(frontmatter.end_date) ?? null,
       estimation_points:
         asEstimationPoints(frontmatter.estimation_points) ?? null,

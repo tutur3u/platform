@@ -3,6 +3,19 @@
 Load this reference when changing root scripts, CI workflows, plugin validation,
 formatting behavior, or repo-wide verification.
 
+## File Size Ceiling
+
+- Keep every source file well-maintained and under a hard **700-LOC ceiling**
+  whenever possible, in any language. Start splitting around ~400 LOC (~200 for
+  components/widgets); never leave a file you author or substantially edit above
+  700 LOC — extract cohesive submodules and keep import paths stable with thin
+  re-exports (`pub use`/barrel files).
+- Rust backend specifics (`apps/backend`): the crate root is split into
+  `src/dispatch/` (one `dispatch_chunk_NN.rs` per route-table chunk) plus named
+  helper submodules, each re-exported from `lib.rs` with `pub(crate) use
+  <mod>::*;`; unit tests live in `src/tests.rs` (`mod tests;`). See
+  `apps/backend/AGENTS.md` for the extraction pattern.
+
 ## Commands And Formatting
 
 - Do not run long-lived dev/build commands such as `bun dev`, `bun run build`,
@@ -38,10 +51,17 @@ formatting behavior, or repo-wide verification.
   string literals that trip `noTemplateCurlyInString`.
 - Do not remove caching, fail-fast behavior, or security validation silently;
   document the rationale when tooling behavior changes.
+- `bun rust-cache report|prune|auto` is the repo-owned Rust target cleanup
+  wrapper. It owns only `apps/backend/target` by default, stores auto-run state
+  under ignored `tmp/rust-cache/state.json`, skips CI unless explicitly enabled,
+  and keeps hot target data warm by pruning only stale or size-pressure entries.
 - Turborepo build outputs may include production `.next/**`, but must exclude
-  volatile Next caches such as `.next/cache/**` and `.next/dev/**`. The
-  `.next/dev` tree is local dev-server state; archiving it can capture multi-GB
-  Turbopack caches and slow `bun dev:web` compilation.
+  volatile Next caches such as `.next/cache/**` and `.next/dev/**`. Next 16.3
+  enables the Turbopack build filesystem cache locally through the shared Next
+  config; keep that cache out of generic Turborepo outputs and use an explicit
+  CI cache policy if it ever needs remote reuse. The `.next/dev` tree is local
+  dev-server state; archiving it can capture multi-GB Turbopack caches and slow
+  `bun dev:web` compilation.
 - Before guessing at slow `apps/web` local compilation, run
   `bun diagnose:dev:web`. Use its cache-size, slow-filesystem-warning, and
   `.next/dev/trace` output to decide whether the next fix is cleanup,
@@ -199,6 +219,10 @@ formatting behavior, or repo-wide verification.
   URL with `E422` while verifying the sigstore provenance bundle.
 - If local type-check passes but CI fails from stale incremental state, rerun
   with forced cache invalidation before changing unrelated code.
+- Docker verification workflows should use `docker buildx build --load` plus
+  `type=gha` cache scopes per service image. Pass Turbo remote-cache values as
+  optional BuildKit secrets for build `RUN` steps; never bake those values into
+  image layers, args, labels, or committed env files.
 - Workspace packages with direct `tsc` build scripts must declare
   `typescript` in their own `devDependencies`. Filtered Docker
   installs such as the Hive production image do not install root-only dev tools,

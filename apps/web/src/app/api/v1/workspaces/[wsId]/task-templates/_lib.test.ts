@@ -1,9 +1,13 @@
-import { describe, expect, it } from 'vitest';
+import { handleTaskRoutePOST } from '@tuturuuu/apis/tu-do/tasks/route';
+import { NextResponse } from 'next/server';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   buildTaskTemplateInsert,
   buildTaskTemplateUpdate,
   createTaskTemplateSchema,
   handleUnknownTaskTemplateError,
+  instantiateTaskTemplate,
+  instantiateTaskTemplateSchema,
   isUniqueViolation,
   normalizeTemplateSlug,
   readJson,
@@ -14,8 +18,15 @@ import {
   updateTaskTemplateSchema,
 } from './_lib';
 
+vi.mock('@tuturuuu/apis/tu-do/tasks/route', () => ({
+  handleTaskRoutePOST: vi.fn(),
+}));
+
 const userId = '11111111-1111-4111-8111-111111111111';
 const workspaceId = '22222222-2222-4222-8222-222222222222';
+const listId = '44444444-4444-4444-8444-444444444444';
+
+const mockedHandleTaskRoutePOST = vi.mocked(handleTaskRoutePOST);
 
 function createContext(
   overrides: Partial<TaskTemplatesRouteContext> = {}
@@ -27,6 +38,27 @@ function createContext(
     user: { id: userId } as TaskTemplatesRouteContext['user'],
     wsId: workspaceId,
     ...overrides,
+  };
+}
+
+function createTaskListLookupClient() {
+  const query = {
+    eq: vi.fn(() => query),
+    maybeSingle: vi.fn(async () => ({
+      data: {
+        workspace_boards: {
+          deleted_at: null,
+          ws_id: workspaceId,
+        },
+      },
+      error: null,
+    })),
+    select: vi.fn(() => query),
+  };
+
+  return {
+    from: vi.fn(() => query),
+    query,
   };
 }
 
@@ -59,6 +91,10 @@ function createRow(overrides: Partial<TaskTemplateRow> = {}): TaskTemplateRow {
 }
 
 describe('task-template API helpers', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
   it('normalizes keys into route-safe slugs', () => {
     expect(normalizeTemplateSlug('  Bug: Report!  ')).toBe('bug-report');
     expect(() => normalizeTemplateSlug('***')).toThrow(
@@ -162,5 +198,76 @@ describe('task-template API helpers', () => {
       'malformed json test'
     );
     expect(response.status).toBe(400);
+  });
+
+  it('instantiates task templates through the authenticated task route', async () => {
+    const listLookup = createTaskListLookupClient();
+    const context = createContext({
+      sbAdmin: listLookup as unknown as TaskTemplatesRouteContext['sbAdmin'],
+    });
+    const parsed = instantiateTaskTemplateSchema.parse({
+      listId,
+      name: 'Override task title',
+    });
+    mockedHandleTaskRoutePOST.mockResolvedValueOnce(
+      NextResponse.json(
+        { task: { id: 'task-1', name: 'Override task title' } },
+        { status: 201 }
+      )
+    );
+
+    const response = await instantiateTaskTemplate(
+      context,
+      createRow({
+        assignee_ids: ['55555555-5555-4555-8555-555555555555'],
+        default_list_id: listId,
+        label_ids: ['66666666-6666-4666-8666-666666666666'],
+        priority: 'high',
+      }),
+      parsed
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+      task: { id: 'task-1', name: 'Override task title' },
+      template: { slug: 'bug-report' },
+    });
+    expect(mockedHandleTaskRoutePOST).toHaveBeenCalledOnce();
+
+    const [taskRequest, routeContext, taskAuth] =
+      mockedHandleTaskRoutePOST.mock.calls[0]!;
+    await expect(taskRequest.json()).resolves.toMatchObject({
+      assignee_ids: ['55555555-5555-4555-8555-555555555555'],
+      label_ids: ['66666666-6666-4666-8666-666666666666'],
+      listId,
+      name: 'Override task title',
+      priority: 'high',
+    });
+    await expect(routeContext.params).resolves.toEqual({ wsId: workspaceId });
+    expect(taskAuth).toMatchObject({
+      supabase: context.supabase,
+      user: context.user,
+    });
+  });
+
+  it('passes task route errors back when template instantiation cannot create a task', async () => {
+    const listLookup = createTaskListLookupClient();
+    const context = createContext({
+      sbAdmin: listLookup as unknown as TaskTemplatesRouteContext['sbAdmin'],
+    });
+    mockedHandleTaskRoutePOST.mockResolvedValueOnce(
+      NextResponse.json({ error: 'List not found' }, { status: 404 })
+    );
+
+    const response = await instantiateTaskTemplate(
+      context,
+      createRow({ default_list_id: listId }),
+      instantiateTaskTemplateSchema.parse({ listId })
+    );
+
+    expect(response.status).toBe(404);
+    await expect(response.json()).resolves.toEqual({
+      error: 'List not found',
+    });
   });
 });

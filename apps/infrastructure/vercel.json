@@ -1,0 +1,23 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "git": {
+    "deploymentEnabled": false
+  },
+  "github": {
+    "enabled": false
+  },
+  "crons": [
+    {
+      "path": "/api/cron/infrastructure/sample-resources",
+      "schedule": "* * * * *"
+    },
+    {
+      "path": "/api/cron/infrastructure/docker-recovery-alerts",
+      "schedule": "* * * * *"
+    },
+    {
+      "path": "/api/cron/infrastructure/sync-trust-cache",
+      "schedule": "*/10 * * * *"
+    }
+  ]
+}

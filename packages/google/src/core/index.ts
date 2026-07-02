@@ -1,2 +1,7 @@
-export { OAuth2Client } from 'google-auth-library';
-export { calendar_v3, google } from 'googleapis';
+import type { calendar_v3 } from 'googleapis';
+import { google } from 'googleapis';
+
+const OAuth2Client = google.auth.OAuth2;
+
+export type { calendar_v3 };
+export { google, OAuth2Client };

@@ -44,9 +44,10 @@ infrastructure dashboard changes.
   deployment kind `instant-revert`, and write a deployment pin so normal
   upstream sync does not immediately overwrite the rollback. Older retained
   deployments fall back to the rollback-pin path and may rebuild.
-- PID locks need explicit fail/resume/replace behavior. Stale Git
-  `index.lock` files may be auto-removed only when the error is an index-lock
-  conflict and the lock is old enough to be safe.
+- PID locks need explicit fail/resume/replace behavior. Git lock conflicts
+  should stay in the watcher process: wait on fresh recoverable locks, then
+  auto-remove them only when the error is a Git lock conflict and the lock is
+  old enough to be safe.
 - Watcher failures stay in the loop. Record failed deployment rows, clear stale
   pending handoff files, and cap retries per commit.
 - The watcher sends a build/deploy incident email only for the first failed
@@ -131,12 +132,23 @@ infrastructure dashboard changes.
   exit code 137, or `[internal] waiting for connection` should keep stepping
   through budget-valid profiles in the same command until the build succeeds or
   the retry ladder is exhausted. Persist each retry profile before trying it,
-  skip fixed profiles above the effective Docker budget, and reset persisted
-  state back to the budget-derived `default` profile when `floor` still fails so
-  later runs do not get stuck starting at `floor`. Each retry should restart the
+  skip fixed profiles above the effective Docker budget during normal
+  selection, and reset persisted state back to the budget-derived `default`
+  profile when `floor` still fails so later runs do not get stuck starting at
+  `floor`. The retry ladder includes a `serial` profile (`10g`, 1 CPU, max
+  parallelism 1) after `low` (`10g`, 2 CPUs) so memory-exhausted Next builds can
+  reduce inner concurrency before shrinking the BuildKit memory cap. If
+  `default` also fails and Docker's reported memory limit still has headroom, a
+  hard-limit rescue may retry a larger fixed profile such as `low` or `serial`
+  before surfacing the failure. Explicit memory-exhaustion signatures such as
+  `cannot allocate memory` or exit code 137 may prefer the hard-limit rescue
+  before smaller profiles. Default runs should promote stale persisted fallback
+  state back to the largest Docker-hard-limit rescue profile, preferring lower
+  CPU at equal memory, before starting BuildKit. Each retry should restart the
   Compose-owned BuildKit service and recreate the remote Buildx builder when
   `docker buildx inspect tuturuuu` reports `Status: inactive`. Explicit build
-  cap flags or `DOCKER_WEB_BUILD_MEMORY`, `DOCKER_WEB_BUILD_CPUS`, or
+  cap flags or
+  `DOCKER_WEB_BUILD_MEMORY`, `DOCKER_WEB_BUILD_CPUS`, or
   `DOCKER_WEB_BUILD_MAX_PARALLELISM` opt out for that run.
 - BuildKit max parallelism only limits Docker's build graph. The web image
   still runs Turbo inside the Dockerfile, so pass an inner Turbo concurrency cap
@@ -153,10 +165,34 @@ infrastructure dashboard changes.
   `docker image prune --force --filter dangling=true`. Set
   `DOCKER_WEB_WATCHER_PRUNE_FAILED_BUILD_RESIDUE=0` to opt out for a specific
   host/run.
+- Normal post-build cleanup should keep warm BuildKit state bounded instead of
+  deleting it all. Leave `DOCKER_WEB_BUILDKIT_PRUNE_MODE=bounded` unless the
+  build state is disposable, and tune `DOCKER_WEB_BUILDKIT_PRUNE_UNTIL` plus
+  `DOCKER_WEB_BUILDKIT_PRUNE_KEEP_STORAGE` before reaching for full prune mode.
+  Docker E2E remains the exception because its project-scoped BuildKit state is
+  intentionally short-lived.
 - Watcher images need Docker CLI, Compose plugin, and Buildx when production
   builds are capped.
+- Native web fallback builds (`DOCKER_WEB_NATIVE_BUILD=1`) should build Next.js
+  artifacts on the host, then package the runner image with plain `docker build`
+  by default. Strip builder-routing env such as `BUILDX_BUILDER` from that
+  packaging subprocess so a remote BuildKit outage does not affect the native
+  fallback. Keep `DOCKER_WEB_NATIVE_RUNNER_BUILDX=1` as the explicit opt-in when
+  that lightweight packaging step must use the configured Buildx builder.
+  Native mode should skip support-service image builds by default and reuse the
+  existing support images. Use `DOCKER_WEB_NATIVE_SUPPORT_BUILD=1` to build
+  support images locally with `docker compose build`, or
+  `DOCKER_WEB_NATIVE_SUPPORT_BUILDX=1` to opt those builds back into the
+  configured Buildx builder.
 - Containerized watcher handoffs must run from the mirrored host checkout path
   via `PLATFORM_HOST_WORKSPACE_DIR`, not from a container-only path.
+- When production deployment starts from a linked Git worktree, the watcher
+  service must also receive and mount `DOCKER_WEB_GIT_COMMON_DIR` at the same
+  absolute path inside the container. Linked worktree `.git` files point at
+  `.git/worktrees/<name>` under the common Git directory, and Git inside the
+  watcher container fails with `fatal: not a git repository` unless that common
+  metadata directory is mounted. Strip local `GIT_*` env from watcher child
+  processes so Git discovers the mounted checkout normally.
 - Internal support services that power AI capabilities, such as Supermemory,
   should be wired as health-gated blue/green support services. If the upstream
   vendor ships an enterprise image or deployment package, wrap/tag that artifact
@@ -173,6 +209,22 @@ infrastructure dashboard changes.
   into `apps/web/.env.local`, so prod and blue/green watcher flows must reject
   local Supabase origins unless `DOCKER_WEB_ALLOW_LOCAL_SUPABASE=1` is set for a
   local production-image rehearsal.
+- Docker web helpers should auto-enable the `cloudflared` Compose profile when
+  root `.env.local` (or an explicit `--env-file`) contains `CF_TUNNEL_TOKEN`.
+  Map that alias to Compose's existing `CLOUDFLARED_TOKEN` env, keep
+  `DOCKER_CLOUDFLARED_TOKEN` and `CLOUDFLARED_TOKEN` precedence for explicit
+  overrides, propagate `DOCKER_WEB_WITH_CLOUDFLARED=1` into watcher recovery,
+  and honor `DOCKER_WEB_WITH_CLOUDFLARED=0|false|no|off` as auto-detect opt-out
+  unless the operator explicitly passes `--with-cloudflared` or
+  `--profile cloudflared`.
+- Keep the optional `cloudflared` services in the web/proxy network namespace
+  (`service:web` for dev, `service:web-proxy` for production) so remotely
+  managed tunnel routes that use `localhost:7803` reach the Docker app rather
+  than the tunnel container loopback.
+- Host-started `bun serve:web:docker:bg:watch` containers should treat a fully
+  idle blue/green runtime as missing active deployment and bootstrap the current
+  commit so fresh hosts create `web-proxy`, active/standby lanes, and
+  `cloudflared` when that profile is enabled.
 - When `SUPERMEMORY_ENABLED=false` or `DOCKER_SUPERMEMORY_ENABLED=false` is
   explicit, blue/green helpers should remove the Supermemory sidecar from
   support builds, starts, and health gates. This keeps local-only E2E shards from
@@ -192,6 +244,14 @@ infrastructure dashboard changes.
   cluster look unhealthy after a successful migration. Project-label cleanup
   must honor Compose `--project-name`/`-p`, `COMPOSE_PROJECT_NAME`, and
   `DOCKER_WEB_COMPOSE_PROJECT_NAME`.
+- Docker Compose can briefly fail support-service recovery with
+  `dependency failed to start` and `No such container: <id>` when a dependency
+  container is recreated during the same `compose up`. Treat that as a stale
+  dependency reference and retry the same narrow up command; do not remove
+  unrelated containers for this class of failure. Use
+  `DOCKER_WEB_COMPOSE_UP_STALE_DEPENDENCY_RETRY_MAX_ATTEMPTS` for this retry
+  budget so registry retry tuning does not accidentally disable stale dependency
+  recovery.
 - Log-drain Postgres is an optional script-owned preflight, not a Compose
   `depends_on` gate for `web`, blue/green lanes, or the watcher. If
   `log-drain-postgres` stays unhealthy after one service-container recreate,
