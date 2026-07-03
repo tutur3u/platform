@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
-// Mock Redis — return null to force in-memory fallback
+// Mock Redis — return null to force Redis-unavailable fail-open behavior.
 vi.mock('@upstash/redis', () => ({
   Redis: { fromEnv: vi.fn(() => null) },
 }));
@@ -82,7 +82,7 @@ describe('checkRateLimitMemory', () => {
     vi.useRealTimers();
   });
 
-  it('can clear the in-memory fallback for local test isolation', () => {
+  it('can clear the explicit in-memory store for local test isolation', () => {
     const key = 'test:clear-memory-store';
 
     for (let i = 0; i < config.maxRequests; i++) {
@@ -166,8 +166,8 @@ describe('rate-limit key separation for method-aware limiting', () => {
   });
 });
 
-describe('checkRateLimit adaptive multipliers', () => {
-  it('applies trust multiplier before checking the budget', async () => {
+describe('checkRateLimit Redis-unavailable behavior', () => {
+  it('applies trust multiplier to fail-open headers without blocking', async () => {
     const key = 'test:adaptive-multiplier';
     const config: RateLimitConfig = {
       maxRequests: 2,
@@ -181,14 +181,18 @@ describe('checkRateLimit adaptive multipliers', () => {
       });
     }
 
-    const denied = await checkRateLimit(key, config);
-    const deniedResponse = denied as Response;
+    const allowed = await checkRateLimit(key, config);
 
-    expect(deniedResponse.status).toBe(429);
-    expect(deniedResponse.headers.get('X-RateLimit-Limit')).toBe('6');
+    expect(allowed).toMatchObject({
+      allowed: true,
+      headers: expect.objectContaining({
+        'X-RateLimit-Limit': '6',
+        'X-RateLimit-Remaining': '6',
+      }),
+    });
   });
 
-  it('falls back to at least one request for restrictive multipliers', async () => {
+  it('falls back to at least one request for restrictive multipliers without blocking', async () => {
     const key = 'test:restrictive-multiplier';
     const config: RateLimitConfig = {
       maxRequests: 2,
@@ -200,10 +204,26 @@ describe('checkRateLimit adaptive multipliers', () => {
       allowed: true,
     });
 
-    const denied = await checkRateLimit(key, config);
-    const deniedResponse = denied as Response;
+    const allowed = await checkRateLimit(key, config);
 
-    expect(deniedResponse.status).toBe(429);
-    expect(deniedResponse.headers.get('X-RateLimit-Limit')).toBe('1');
+    expect(allowed).toMatchObject({
+      allowed: true,
+      headers: expect.objectContaining({
+        'X-RateLimit-Limit': '1',
+        'X-RateLimit-Remaining': '1',
+      }),
+    });
+  });
+
+  it('does not return 429 when Redis is unavailable', async () => {
+    const key = 'test:redis-unavailable-fail-open';
+    const config: RateLimitConfig = { windowMs: 60000, maxRequests: 1 };
+
+    await expect(checkRateLimit(key, config)).resolves.toMatchObject({
+      allowed: true,
+    });
+    await expect(checkRateLimit(key, config)).resolves.toMatchObject({
+      allowed: true,
+    });
   });
 });

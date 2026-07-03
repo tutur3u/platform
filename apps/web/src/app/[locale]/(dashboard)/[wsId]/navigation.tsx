@@ -16,6 +16,7 @@ import { DEV_MODE } from '@/constants/env';
 import { getCalendarAppOrigin } from '@/lib/calendar-app-url';
 import { createTierRequirement } from '@/lib/feature-tiers';
 import { HABITS_ENABLED_SECRET } from '@/lib/habits/constants';
+import { getInventoryAppOrigin } from '@/lib/inventory-app-url';
 import { getMailAppOrigin } from '@/lib/mail-app-url';
 import { getQrAppOrigin } from '@/lib/qr-app-url';
 import { TOPIC_ANNOUNCEMENTS_SECRET } from '@/lib/topic-announcements';
@@ -101,6 +102,7 @@ export async function WorkspaceNavigationLinks({
   const qrAppHref = getQrAppOrigin();
   const isMailUser = isExactTuturuuuDotComEmail(user?.email);
   const mailAppHref = `${getMailAppOrigin()}/${personalOrWsId}`;
+  const inventoryAppHref = `${getInventoryAppOrigin()}/${personalOrWsId}`;
   const calendarAppHref = `${getCalendarAppOrigin()}/${personalOrWsId}`;
 
   // Parallelize user-dependent queries
@@ -889,77 +891,11 @@ export async function WorkspaceNavigationLinks({
           id: 'inventory',
           title: t('sidebar_tabs.inventory'),
           icon: createDashboardNavigationIcon('Archive', 'h-5 w-5'),
+          href: inventoryAppHref,
+          external: true,
           requiredWorkspaceTier: createTierRequirement('inventory', {
             alwaysShow: true,
           }),
-          children: [
-            {
-              title: t('workspace-inventory-tabs.overview'),
-              href: `/${personalOrWsId}/inventory`,
-              icon: createDashboardNavigationIcon('LayoutDashboard', 'h-5 w-5'),
-              matchExact: true,
-              disabled: withoutPermission('view_inventory'),
-            },
-            null,
-            {
-              title: t('workspace-inventory-tabs.products'),
-              href: `/${personalOrWsId}/inventory/products`,
-              icon: createDashboardNavigationIcon('Package', 'h-5 w-5'),
-              disabled: withoutPermission('view_inventory'),
-            },
-            {
-              title: t('workspace-inventory-tabs.categories'),
-              href: `/${personalOrWsId}/inventory/categories`,
-              icon: createDashboardNavigationIcon('Tags', 'h-5 w-5'),
-              disabled: withoutPermission('view_inventory'),
-            },
-            {
-              title: t('workspace-inventory-tabs.units'),
-              href: `/${personalOrWsId}/inventory/units`,
-              icon: createDashboardNavigationIcon(
-                'RulerDimensionLine',
-                'h-5 w-5'
-              ),
-              disabled: withoutPermission('view_inventory'),
-            },
-            {
-              title: t('workspace-inventory-tabs.manufacturers'),
-              href: `/${personalOrWsId}/inventory/manufacturers`,
-              icon: createDashboardNavigationIcon('Blocks', 'h-5 w-5'),
-              disabled: withoutPermission('view_inventory'),
-            },
-            {
-              title: t('workspace-inventory-tabs.suppliers'),
-              href: `/${personalOrWsId}/inventory/suppliers`,
-              icon: createDashboardNavigationIcon('Truck', 'h-5 w-5'),
-              disabled: withoutPermission('view_inventory'),
-            },
-            {
-              title: t('workspace-inventory-tabs.warehouses'),
-              href: `/${personalOrWsId}/inventory/warehouses`,
-              icon: createDashboardNavigationIcon('Warehouse', 'h-5 w-5'),
-              disabled: withoutPermission('view_inventory'),
-            },
-            {
-              title: t('workspace-inventory-tabs.batches'),
-              href: `/${personalOrWsId}/inventory/batches`,
-              icon: createDashboardNavigationIcon('Boxes', 'h-5 w-5'),
-              disabled: withoutPermission('view_inventory'),
-            },
-            null,
-            {
-              title: t('workspace-inventory-tabs.storefronts'),
-              href: `/${personalOrWsId}/inventory/storefronts`,
-              icon: createDashboardNavigationIcon('Store', 'h-5 w-5'),
-              disabled: withoutPermission('view_inventory'),
-            },
-            {
-              title: t('workspace-inventory-tabs.promotions'),
-              href: `/${personalOrWsId}/inventory/promotions`,
-              icon: createDashboardNavigationIcon('TicketPercent', 'h-5 w-5'),
-              disabled: withoutPermission('view_inventory'),
-            },
-          ],
           disabled: ENABLE_AI_ONLY || withoutPermission('view_inventory'),
           preferenceSectionLabel: sidebarSections.operations,
         },

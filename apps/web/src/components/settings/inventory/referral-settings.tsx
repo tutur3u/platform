@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Loader2 } from '@tuturuuu/icons';
 import type { Database } from '@tuturuuu/types';
 import { apiFetch } from '@/lib/api-fetch';
-import WorkspaceSettingsForm from '../../../app/[locale]/(dashboard)/[wsId]/inventory/promotions/settings-form';
+import WorkspaceSettingsForm from './promotion-settings-form';
 
 type WorkspaceSettingsRow =
   Database['public']['Tables']['workspace_settings']['Row'];
