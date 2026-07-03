@@ -11,6 +11,22 @@ interface InfrastructureDashboardErrorProps {
   unstable_retry?: () => void;
 }
 
+function formatUnknownErrorValue(value: unknown): string | null {
+  if (value == null) return null;
+
+  if (value instanceof Error) {
+    return [value.name, value.message].filter(Boolean).join(': ');
+  }
+
+  if (typeof value === 'string') return value;
+
+  try {
+    return JSON.stringify(value, null, 2);
+  } catch {
+    return String(value);
+  }
+}
+
 export function InfrastructureDashboardError({
   description,
   error,
@@ -19,7 +35,13 @@ export function InfrastructureDashboardError({
   unstable_retry,
 }: InfrastructureDashboardErrorProps) {
   const retry = unstable_retry ?? reset;
-  const reference = error.digest ?? error.message;
+  const errorName = error.name || 'Error';
+  const errorMessage = error.message || 'No error message was exposed.';
+  const errorDigest = error.digest;
+  const errorCause = formatUnknownErrorValue(
+    (error as Error & { cause?: unknown }).cause
+  );
+  const errorStack = error.stack?.trim();
 
   return (
     <section className="flex min-h-[60vh] items-center justify-center px-4 py-10">
@@ -44,14 +66,53 @@ export function InfrastructureDashboardError({
         </div>
 
         <div className="space-y-5 px-6 py-5">
-          {reference ? (
-            <div className="rounded-md border border-border bg-muted/40 px-4 py-3">
+          <div className="rounded-md border border-border bg-muted/40 px-4 py-3">
+            <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
               <p className="font-medium text-muted-foreground text-xs uppercase">
-                Error reference
+                Captured error
               </p>
-              <p className="mt-1 break-words font-mono text-sm">{reference}</p>
+              {errorDigest ? (
+                <p className="break-all font-mono text-muted-foreground text-xs">
+                  digest: {errorDigest}
+                </p>
+              ) : null}
             </div>
-          ) : null}
+
+            <dl className="mt-3 grid gap-3 text-sm">
+              <div className="grid gap-1 sm:grid-cols-[7rem_1fr]">
+                <dt className="font-medium text-muted-foreground">Name</dt>
+                <dd className="break-words font-mono">{errorName}</dd>
+              </div>
+              <div className="grid gap-1 sm:grid-cols-[7rem_1fr]">
+                <dt className="font-medium text-muted-foreground">Message</dt>
+                <dd className="break-words font-mono">{errorMessage}</dd>
+              </div>
+              {errorCause ? (
+                <div className="grid gap-1 sm:grid-cols-[7rem_1fr]">
+                  <dt className="font-medium text-muted-foreground">Cause</dt>
+                  <dd className="whitespace-pre-wrap break-words font-mono">
+                    {errorCause}
+                  </dd>
+                </div>
+              ) : null}
+            </dl>
+
+            {errorStack ? (
+              <details className="mt-4" open>
+                <summary className="cursor-pointer font-medium text-muted-foreground text-xs uppercase">
+                  Stack trace
+                </summary>
+                <pre className="mt-2 max-h-72 overflow-auto rounded-md border border-border bg-background p-3 text-xs leading-5">
+                  <code>{errorStack}</code>
+                </pre>
+              </details>
+            ) : (
+              <p className="mt-4 text-muted-foreground text-xs leading-5">
+                Stack trace unavailable. Server-rendered errors may be redacted
+                in production; use the digest above with Vercel logs.
+              </p>
+            )}
+          </div>
 
           <div className="flex flex-col gap-3 sm:flex-row">
             {retry ? (
