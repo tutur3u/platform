@@ -19,6 +19,7 @@ import { CommandGroup, CommandItem } from '@tuturuuu/ui/command';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { useRouter } from 'next/navigation';
 import React from 'react';
+import { getTasksAppUrlClient } from '@/lib/tasks-app-url-client';
 import type { Board } from './types';
 
 interface BoardItemProps {
@@ -94,8 +95,8 @@ export function BoardNavigation({ wsId, setOpen }: BoardNavigationProps) {
     enabled: Boolean(wsId) && wsId !== 'undefined',
     queryFn: async () => {
       const response = await fetch(
-        `/api/v1/workspaces/${wsId}/boards-with-lists`,
-        { cache: 'no-store' }
+        getTasksAppUrlClient(`/api/v1/workspaces/${wsId}/boards-with-lists`),
+        { cache: 'no-store', credentials: 'include' }
       );
       if (!response.ok) {
         if (response.status === 401) {
@@ -168,7 +169,7 @@ export function BoardNavigation({ wsId, setOpen }: BoardNavigationProps) {
 
   const handleBoardSelect = (boardId: string) => {
     // Navigate to the board
-    router.push(`/${wsId}/tasks/boards/${boardId}`);
+    window.location.assign(getTasksAppUrlClient(`/${wsId}/boards/${boardId}`));
     setOpen(false);
   };
 
@@ -179,7 +180,7 @@ export function BoardNavigation({ wsId, setOpen }: BoardNavigationProps) {
         <div className="flex items-center justify-between px-3 py-2">
           <div className="flex items-center gap-2">
             <span className="font-medium text-foreground text-sm">
-              📋 Board Navigation
+              Board Navigation
             </span>
             <div className="rounded-md bg-dynamic-orange/10 px-2 py-0.5 font-medium text-dynamic-orange text-xs">
               No workspace
@@ -223,7 +224,7 @@ export function BoardNavigation({ wsId, setOpen }: BoardNavigationProps) {
         <div className="flex items-center justify-between px-3 py-2">
           <div className="flex items-center gap-2">
             <span className="font-medium text-foreground text-sm">
-              📋 Board Navigation
+              Board Navigation
             </span>
             <Loader className="h-3 w-3 animate-spin text-dynamic-blue" />
           </div>
@@ -247,7 +248,7 @@ export function BoardNavigation({ wsId, setOpen }: BoardNavigationProps) {
         <div className="flex items-center justify-between px-3 py-2">
           <div className="flex items-center gap-2">
             <span className="font-medium text-foreground text-sm">
-              📋 Board Navigation
+              Board Navigation
             </span>
             <div className="rounded-md bg-dynamic-red/10 px-2 py-0.5 font-medium text-dynamic-red text-xs">
               Error
@@ -304,7 +305,7 @@ export function BoardNavigation({ wsId, setOpen }: BoardNavigationProps) {
         <div className="flex items-center justify-between px-3 py-2">
           <div className="flex items-center gap-2">
             <span className="font-medium text-foreground text-sm">
-              📋 Board Navigation
+              Board Navigation
             </span>
             <div className="rounded-md bg-dynamic-orange/10 px-2 py-0.5 font-medium text-dynamic-orange text-xs">
               0 boards
@@ -325,7 +326,7 @@ export function BoardNavigation({ wsId, setOpen }: BoardNavigationProps) {
             variant="outline"
             size="sm"
             onClick={() => {
-              router.push(`/${wsId}/tasks/boards`);
+              window.location.assign(getTasksAppUrlClient(`/${wsId}/boards`));
               setOpen(false);
             }}
             className="gap-2"
@@ -344,7 +345,7 @@ export function BoardNavigation({ wsId, setOpen }: BoardNavigationProps) {
       <div className="flex items-center justify-between px-3 py-2">
         <div className="flex items-center gap-2">
           <span className="font-medium text-foreground text-sm">
-            📋 Board Navigation
+            Board Navigation
           </span>
           <div className="rounded-md bg-dynamic-blue/10 px-2 py-0.5 font-medium text-dynamic-blue text-xs">
             {boards.length} boards

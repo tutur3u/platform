@@ -29,6 +29,7 @@ import {
   useRef,
   useState,
 } from 'react';
+import { getTaskApiUrl } from '../lib/tasks-app-url';
 import { useCalendarSync } from './use-calendar-sync';
 
 // Utility function to round time to nearest 15-minute interval
@@ -319,11 +320,14 @@ async function syncTaskDurationAfterEventChange(
     let totalScheduledMinutes = resizedEventMinutes;
 
     const scheduleResponse = await fetch(
-      options?.isPersonalCalendar
-        ? `/api/v1/users/me/tasks/${taskId}/schedule`
-        : `/api/v1/workspaces/${calendarWsId}/tasks/${taskId}/schedule`,
+      getTaskApiUrl(
+        options?.isPersonalCalendar
+          ? `/api/v1/users/me/tasks/${taskId}/schedule`
+          : `/api/v1/workspaces/${calendarWsId}/tasks/${taskId}/schedule`
+      ),
       {
         cache: 'no-store',
+        credentials: 'include',
       }
     );
 

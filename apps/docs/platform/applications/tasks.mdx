@@ -32,6 +32,28 @@ Tasks provides:
 checks, cross-app token verification, and Web API allowlists must use
 `targetApp: 'tasks'`.
 
+`apps/tasks` is also the canonical owner for authenticated task product pages
+and task-owned APIs. Do not add new task UI or task API behavior to `apps/web`.
+Old authenticated Web task URLs should stay as redirects to the Tasks origin,
+while `/products/tasks` remains Web-owned marketing content. Task-owned API
+families include tasks, task boards, board aliases, labels, templates,
+projects, initiatives, cycles, drafts, task progress, plans, shared task links,
+admin task embeddings, task webhooks, task cron routes, Mira task endpoints,
+habits, and habit trackers.
+
+First-party task clients should resolve the Tasks origin through
+`TASKS_APP_URL`, `NEXT_PUBLIC_TASKS_APP_URL`, or `TUTURUUU_TASKS_BASE_URL`.
+Legacy `TUDO_APP_URL` and `NEXT_PUBLIC_TUDO_APP_URL` are accepted only as
+compatibility aliases. Local development falls back to the Tasks app origin
+(`http://localhost:7809` or the matching portless Tasks domain). SDK, CLI,
+mobile, and `packages/internal-api` task-domain helpers should use that Tasks
+origin outside `apps/tasks`; inside `apps/tasks`, relative API calls are still
+preferred.
+
+Tasks may serve credentialed browser API traffic from first-party Web/platform
+origins, but CORS must stay origin-specific. Do not use wildcard credentialed
+CORS for task APIs.
+
 The local `/api/auth/verify-app-token` route must delegate token validation to
 the central Web verifier with `verificationBaseUrl: TTR_URL`. That handoff sets
 both the host-only Tasks app-session cookie and the Web-issued app-session

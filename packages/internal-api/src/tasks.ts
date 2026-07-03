@@ -19,7 +19,12 @@ import {
   encodePathSegment,
   getInternalApiClient,
   type InternalApiClientOptions,
+  withTaskApiBaseUrl,
 } from './client';
+
+function getTaskApiClient(options?: InternalApiClientOptions) {
+  return getInternalApiClient(withTaskApiBaseUrl(options));
+}
 
 export interface InternalApiTaskProjectSummary {
   id: string;
@@ -945,7 +950,7 @@ export async function listWorkspaceTaskProjects(
   workspaceId: string,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getTaskApiClient(options);
   const projects = await client.json<TaskProjectApiRow[]>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/task-projects`,
     {
@@ -977,7 +982,7 @@ export async function listWorkspaceTaskProjectDetails(
   workspaceId: string,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getTaskApiClient(options);
   return client.json<WorkspaceTaskProject[]>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/task-projects`,
     {
@@ -990,7 +995,7 @@ export async function listWorkspaceLabels(
   workspaceId: string,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getTaskApiClient(options);
   const labels = await client.json<InternalApiWorkspaceLabel[]>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/labels`,
     {
@@ -1008,7 +1013,7 @@ export async function listWorkspaceTaskDrafts(
   options?: ListWorkspaceTaskDraftsOptions,
   clientOptions?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(clientOptions);
+  const client = getTaskApiClient(clientOptions);
   const payload = await client.json<{ data: InternalApiTaskDraft[] }>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/task-drafts`,
     {
@@ -1028,7 +1033,7 @@ export async function deleteWorkspaceTaskDraft(
   draftId: string,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getTaskApiClient(options);
   return client.json<{ success: boolean }>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/task-drafts/${encodePathSegment(draftId)}`,
     {
@@ -1044,7 +1049,7 @@ export async function convertWorkspaceTaskDraft(
   payload: { listId: string },
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getTaskApiClient(options);
   return client.json<{ message?: string; taskId?: string }>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/task-drafts/${encodePathSegment(draftId)}/convert`,
     {
@@ -1063,7 +1068,7 @@ export async function createWorkspaceLabel(
   payload: { name: string; color: string },
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getTaskApiClient(options);
   return client.json<InternalApiWorkspaceLabel>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/labels`,
     {
@@ -1083,7 +1088,7 @@ export async function updateWorkspaceLabel(
   payload: { name: string; color: string },
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getTaskApiClient(options);
   return client.json<InternalApiWorkspaceLabel>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/labels/${encodePathSegment(labelId)}`,
     {
@@ -1102,7 +1107,7 @@ export async function deleteWorkspaceLabel(
   labelId: string,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getTaskApiClient(options);
   return client.json<{ success: true }>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/labels/${encodePathSegment(labelId)}`,
     {
@@ -1117,7 +1122,7 @@ export async function listWorkspaceTaskBoards(
   options?: ListWorkspaceTaskBoardsOptions,
   clientOptions?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(clientOptions);
+  const client = getTaskApiClient(clientOptions);
   return client.json<ListWorkspaceTaskBoardsResponse>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/task-boards`,
     {
@@ -1135,7 +1140,7 @@ export async function listWorkspaceTaskBoards(
 export async function listCurrentUserTaskBoards(
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getTaskApiClient(options);
   return client.json<ListCurrentUserTaskBoardsResponse>(
     '/api/v1/users/me/task-boards',
     {
@@ -1149,7 +1154,7 @@ export async function getWorkspaceBoardsData(
   options?: ListWorkspaceTaskBoardsOptions,
   clientOptions?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(clientOptions);
+  const client = getTaskApiClient(clientOptions);
   return client.json<WorkspaceBoardsDataResponse>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/boards-data`,
     {
@@ -1167,7 +1172,7 @@ export async function listWorkspaceBoards(
   workspaceId: string,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getTaskApiClient(options);
   return client.json<ListWorkspaceBoardsResponse>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/boards`,
     {
@@ -1180,7 +1185,7 @@ export async function listWorkspaceBoardsWithLists(
   workspaceId: string,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getTaskApiClient(options);
   return client.json<{ boards: WorkspaceTaskBoardWithLists[] }>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/boards-with-lists`,
     {
@@ -1194,7 +1199,7 @@ export async function createWorkspaceTaskBoard(
   payload: CreateWorkspaceTaskBoardPayload,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getTaskApiClient(options);
   return client.json<{ board: WorkspaceTaskBoardDetail }>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/task-boards`,
     {
@@ -1213,7 +1218,7 @@ export async function getWorkspaceTaskBoard(
   boardId: string,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getTaskApiClient(options);
   return client.json<{ board: WorkspaceTaskBoardDetail }>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/task-boards/${encodePathSegment(boardId)}`,
     {
@@ -1227,7 +1232,7 @@ export async function listWorkspaceTaskBoardShares(
   boardId: string,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getTaskApiClient(options);
   return client.json<WorkspaceTaskBoardSharesResponse>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/task-boards/${encodePathSegment(boardId)}/shares`,
     {
@@ -1242,7 +1247,7 @@ export async function createWorkspaceTaskBoardShare(
   payload: { email: string; permission: WorkspaceTaskBoardSharePermission },
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getTaskApiClient(options);
   return client.json<{ share: WorkspaceTaskBoardShare }>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/task-boards/${encodePathSegment(boardId)}/shares`,
     {
@@ -1265,7 +1270,7 @@ export async function updateWorkspaceTaskBoardShare(
   },
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getTaskApiClient(options);
   return client.json<{ share: WorkspaceTaskBoardShare }>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/task-boards/${encodePathSegment(boardId)}/shares`,
     {
@@ -1285,7 +1290,7 @@ export async function deleteWorkspaceTaskBoardShare(
   shareId: string,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getTaskApiClient(options);
   return client.json<{ success: boolean }>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/task-boards/${encodePathSegment(boardId)}/shares`,
     {
@@ -1301,7 +1306,7 @@ export async function listWorkspaceTaskBoardViewableMembers(
   boardId: string,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getTaskApiClient(options);
   return client.json<WorkspaceTaskBoardViewableMembersResponse>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/task-boards/${encodePathSegment(boardId)}/viewable-members`,
     {
@@ -1315,7 +1320,7 @@ export async function getWorkspaceTaskBoardPublicLink(
   boardId: string,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getTaskApiClient(options);
   return client.json<WorkspaceTaskBoardPublicLinkResponse>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/task-boards/${encodePathSegment(boardId)}/public-link`,
     {
@@ -1329,7 +1334,7 @@ export async function enableWorkspaceTaskBoardPublicLink(
   boardId: string,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getTaskApiClient(options);
   return client.json<WorkspaceTaskBoardPublicLinkResponse>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/task-boards/${encodePathSegment(boardId)}/public-link`,
     {
@@ -1344,7 +1349,7 @@ export async function disableWorkspaceTaskBoardPublicLink(
   boardId: string,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getTaskApiClient(options);
   return client.json<{ success: boolean }>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/task-boards/${encodePathSegment(boardId)}/public-link`,
     {
@@ -1358,7 +1363,7 @@ export async function getPublicTaskBoard(
   code: string,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getTaskApiClient(options);
   return client.json<PublicTaskBoardPayload>(
     `/api/v1/shared/task-boards/${encodePathSegment(code)}`,
     {
@@ -1373,7 +1378,7 @@ export async function updateWorkspaceTaskBoard(
   payload: UpdateWorkspaceTaskBoardPayload,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getTaskApiClient(options);
   return client.json<{ message: string }>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/task-boards/${encodePathSegment(boardId)}`,
     {
@@ -1393,7 +1398,7 @@ export async function updateWorkspaceTaskBoardEstimation(
   payload: UpdateWorkspaceTaskBoardEstimationPayload,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getTaskApiClient(options);
   return client.json<WorkspaceTaskBoardEstimationConfig>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/boards/${encodePathSegment(boardId)}/estimation`,
     {
@@ -1412,7 +1417,7 @@ export async function deleteWorkspaceTaskBoard(
   boardId: string,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getTaskApiClient(options);
   return client.json<{ message: string }>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/task-boards/${encodePathSegment(boardId)}`,
     {
@@ -1431,7 +1436,7 @@ export async function listWorkspaceTaskProjectsByIds(
     return [] as InternalApiTaskProjectSummary[];
   }
 
-  const client = getInternalApiClient(options);
+  const client = getTaskApiClient(options);
   const projects = await client.json<TaskProjectApiRow[]>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/task-projects`,
     {
@@ -1466,7 +1471,7 @@ export async function addWorkspaceTaskLabel(
   labelId: string,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getTaskApiClient(options);
   return client.json<{ success: true }>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/tasks/${encodePathSegment(taskId)}/labels`,
     {
@@ -1486,7 +1491,7 @@ export async function removeWorkspaceTaskLabel(
   labelId: string,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getTaskApiClient(options);
   return client.json<{ success: true }>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/tasks/${encodePathSegment(taskId)}/labels`,
     {
@@ -1505,7 +1510,7 @@ export async function getWorkspaceTaskRelationships(
   taskId: string,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getTaskApiClient(options);
   return client.json<TaskRelationshipsResponse>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/tasks/${encodePathSegment(taskId)}/relationships`,
     {
@@ -1519,7 +1524,7 @@ export async function listWorkspaceTasks(
   options?: ListWorkspaceTasksOptions,
   clientOptions?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(clientOptions);
+  const client = getTaskApiClient(clientOptions);
   return client.json<WorkspaceTasksResponse>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/tasks`,
     {
@@ -1573,7 +1578,7 @@ export async function searchWorkspaceTasks(
   payload: SearchWorkspaceTasksPayload,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getTaskApiClient(options);
   return client.json<SearchWorkspaceTasksResponse>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/tasks/search`,
     {
@@ -1590,7 +1595,7 @@ export async function searchWorkspaceTasks(
 export async function listTaskBoardStatusTemplates(
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getTaskApiClient(options);
   return client.json<{ templates: TaskBoardStatusTemplate[] }>(
     '/api/v1/task-board-status-templates',
     {
@@ -1604,7 +1609,7 @@ export async function getWorkspaceTask(
   taskId: string,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getTaskApiClient(options);
   return client.json<WorkspaceTaskResponse>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/tasks/${encodePathSegment(taskId)}`,
     {
@@ -1622,7 +1627,7 @@ export async function getWorkspaceTaskDescription(
   taskId: string,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getTaskApiClient(options);
   return client.json<WorkspaceTaskDescriptionResponse>(
     workspaceTaskDescriptionPath(workspaceId, taskId),
     {
@@ -1637,7 +1642,7 @@ export async function updateWorkspaceTaskDescription(
   payload: WorkspaceTaskDescriptionUpdatePayload,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getTaskApiClient(options);
   return client.json<WorkspaceTaskDescriptionResponse>(
     workspaceTaskDescriptionPath(workspaceId, taskId),
     {
@@ -1657,7 +1662,7 @@ export async function beginWorkspaceTaskDescriptionChunks(
   fields: WorkspaceTaskDescriptionChunkFields,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getTaskApiClient(options);
   return client.json<{ session_id: string }>(
     workspaceTaskDescriptionPath(workspaceId, taskId),
     {
@@ -1682,7 +1687,7 @@ export async function appendWorkspaceTaskDescriptionChunk(
   },
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getTaskApiClient(options);
   return client.json<{ success: true }>(
     workspaceTaskDescriptionPath(workspaceId, taskId),
     {
@@ -1702,7 +1707,7 @@ export async function commitWorkspaceTaskDescriptionChunks(
   sessionId: string,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getTaskApiClient(options);
   return client.json<WorkspaceTaskDescriptionResponse>(
     workspaceTaskDescriptionPath(workspaceId, taskId),
     {
@@ -1722,7 +1727,7 @@ export async function abortWorkspaceTaskDescriptionChunks(
   sessionId: string,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getTaskApiClient(options);
   return client.json<{ success: true }>(
     workspaceTaskDescriptionPath(workspaceId, taskId),
     {
@@ -1740,7 +1745,7 @@ export async function getCurrentUserTask(
   taskId: string,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getTaskApiClient(options);
   return client.json<CurrentUserTaskDialogResponse>(
     `/api/v1/users/me/tasks/${encodePathSegment(taskId)}`,
     {
@@ -1800,7 +1805,7 @@ export async function upsertCurrentUserTaskPersonalPlacement(
   payload: CurrentUserTaskPersonalPlacementPayload,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getTaskApiClient(options);
   return client.json<CurrentUserTaskPersonalPlacementResponse>(
     `/api/v1/users/me/tasks/${encodePathSegment(taskId)}/personal-placement`,
     {
@@ -1818,7 +1823,7 @@ export async function removeCurrentUserTaskPersonalPlacement(
   taskId: string,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getTaskApiClient(options);
   return client.json<{ success: true }>(
     `/api/v1/users/me/tasks/${encodePathSegment(taskId)}/personal-placement`,
     {
@@ -1833,7 +1838,7 @@ export async function cleanupWorkspaceTaskMentions(
   taskId: string,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getTaskApiClient(options);
   return client.json<{ success: true }>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/tasks/${encodePathSegment(taskId)}/mentions/cleanup`,
     {
@@ -1848,7 +1853,7 @@ export async function createWorkspaceTask(
   payload: CreateWorkspaceTaskPayload,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getTaskApiClient(options);
   return client.json<WorkspaceTaskResponse>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/tasks`,
     {
@@ -1867,7 +1872,7 @@ export async function createWorkspaceTaskJournal(
   payload: CreateWorkspaceTaskJournalPayload,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getTaskApiClient(options);
   return client.json<WorkspaceTaskJournalResponse>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/tasks/journal`,
     {
@@ -1886,7 +1891,7 @@ export async function createWorkspaceTaskSuggestions(
   payload: CreateWorkspaceTaskSuggestionsPayload,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getTaskApiClient(options);
   return client.json<WorkspaceTaskSuggestionsResponse>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/tasks/suggestions`,
     {
@@ -1906,7 +1911,7 @@ export async function createWorkspaceTaskList(
   payload: CreateWorkspaceTaskListPayload,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getTaskApiClient(options);
   return client.json<WorkspaceTaskListResponse>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/task-boards/${encodePathSegment(boardId)}/lists`,
     {
@@ -1925,7 +1930,7 @@ export async function listWorkspaceTaskLists(
   boardId: string,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getTaskApiClient(options);
   return client.json<WorkspaceTaskListsResponse>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/task-boards/${encodePathSegment(boardId)}/lists`,
     {
@@ -1941,7 +1946,7 @@ export async function updateWorkspaceTaskList(
   payload: UpdateWorkspaceTaskListPayload,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getTaskApiClient(options);
   return client.json<WorkspaceTaskListResponse>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/task-boards/${encodePathSegment(boardId)}/lists/${encodePathSegment(listId)}`,
     {
@@ -1961,7 +1966,7 @@ export async function updateWorkspaceTask(
   payload: WorkspaceTaskUpdatePayload,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getTaskApiClient(options);
   return client.json<WorkspaceTaskResponse>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/tasks/${encodePathSegment(taskId)}`,
     {
@@ -1980,7 +1985,7 @@ export async function deleteWorkspaceTask(
   taskId: string,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getTaskApiClient(options);
   return client.json<{ success: true; message: string }>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/tasks/${encodePathSegment(taskId)}`,
     {
@@ -1995,7 +2000,7 @@ export async function triggerWorkspaceTaskEmbedding(
   taskId: string,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getTaskApiClient(options);
   return client.json<{ success?: true; message?: string }>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/tasks/${encodePathSegment(taskId)}/embedding`,
     {
@@ -2011,7 +2016,7 @@ export async function moveWorkspaceTask(
   payload: MoveWorkspaceTaskPayload,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getTaskApiClient(options);
   return client.json<MoveWorkspaceTaskResponse>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/tasks/${encodePathSegment(taskId)}/move`,
     {
@@ -2033,7 +2038,7 @@ export async function bulkWorkspaceTasks(
   },
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getTaskApiClient(options);
   return client.json<BulkWorkspaceTasksResponse>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/tasks/bulk`,
     {
@@ -2057,7 +2062,7 @@ export async function createWorkspaceTaskRelationship(
   payload: CreateTaskRelationshipInput,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getTaskApiClient(options);
   return client.json<WorkspaceTaskRelationshipResponse>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/tasks/${encodePathSegment(taskId)}/relationships`,
     {
@@ -2081,7 +2086,7 @@ export async function deleteWorkspaceTaskRelationship(
   },
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getTaskApiClient(options);
   return client.json<{ success: true }>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/tasks/${encodePathSegment(taskId)}/relationships`,
     {
@@ -2100,7 +2105,7 @@ export async function createWorkspaceTaskProject(
   payload: { name: string; description?: string },
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getTaskApiClient(options);
   return client.json<{ id: string; name: string; status?: string | null }>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/task-projects`,
     {
@@ -2130,7 +2135,7 @@ export async function updateWorkspaceTaskProject(
   },
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getTaskApiClient(options);
   return client.json<WorkspaceTaskProject>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/task-projects/${encodePathSegment(projectId)}`,
     {
@@ -2149,7 +2154,7 @@ export async function deleteWorkspaceTaskProject(
   projectId: string,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getTaskApiClient(options);
   return client.json<{ success?: boolean }>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/task-projects/${encodePathSegment(projectId)}`,
     {
@@ -2163,7 +2168,7 @@ export async function listWorkspaceTaskInitiatives(
   workspaceId: string,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getTaskApiClient(options);
   return client.json<InternalApiTaskInitiative[]>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/task-initiatives`,
     {
@@ -2177,7 +2182,7 @@ export async function createWorkspaceTaskInitiative(
   payload: UpsertWorkspaceTaskInitiativePayload,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getTaskApiClient(options);
   return client.json<InternalApiTaskInitiative>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/task-initiatives`,
     {
@@ -2197,7 +2202,7 @@ export async function updateWorkspaceTaskInitiative(
   payload: Required<UpsertWorkspaceTaskInitiativePayload>,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getTaskApiClient(options);
   return client.json<InternalApiTaskInitiative>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/task-initiatives/${encodePathSegment(initiativeId)}`,
     {
@@ -2216,7 +2221,7 @@ export async function deleteWorkspaceTaskInitiative(
   initiativeId: string,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getTaskApiClient(options);
   return client.json<{ success?: boolean }>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/task-initiatives/${encodePathSegment(initiativeId)}`,
     {
@@ -2232,7 +2237,7 @@ export async function linkWorkspaceTaskInitiativeProject(
   projectId: string,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getTaskApiClient(options);
   return client.json<{ success: boolean }>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/task-initiatives/${encodePathSegment(initiativeId)}/projects`,
     {
@@ -2252,7 +2257,7 @@ export async function unlinkWorkspaceTaskInitiativeProject(
   projectId: string,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getTaskApiClient(options);
   return client.json<{ success: boolean }>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/task-initiatives/${encodePathSegment(initiativeId)}/projects/${encodePathSegment(projectId)}`,
     {
@@ -2268,7 +2273,7 @@ export async function linkWorkspaceTaskProjectTask(
   taskId: string,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getTaskApiClient(options);
   return client.json<{ linkedTask: TaskProjectLinkedItem }>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/task-projects/${encodePathSegment(projectId)}/tasks`,
     {
@@ -2288,7 +2293,7 @@ export async function unlinkWorkspaceTaskProjectTask(
   taskId: string,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getTaskApiClient(options);
   return client.json<{ success: true }>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/task-projects/${encodePathSegment(projectId)}/tasks/${encodePathSegment(taskId)}`,
     {
@@ -2303,7 +2308,7 @@ export async function listWorkspaceTaskHistory(
   options?: ListWorkspaceTaskHistoryOptions,
   clientOptions?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(clientOptions);
+  const client = getTaskApiClient(clientOptions);
   return client.json<WorkspaceTaskHistoryResponse>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/tasks/history`,
     {
@@ -2326,7 +2331,7 @@ export async function getWorkspaceTaskHistory(
   options?: GetWorkspaceTaskHistoryOptions,
   clientOptions?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(clientOptions);
+  const client = getTaskApiClient(clientOptions);
   return client.json<WorkspaceTaskHistoryForTaskResponse>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/tasks/${encodePathSegment(taskId)}/history`,
     {
@@ -2346,7 +2351,7 @@ export async function createWorkspaceTaskWithRelationship(
   payload: CreateWorkspaceTaskWithRelationshipPayload,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getTaskApiClient(options);
   return client.json<CreateWorkspaceTaskWithRelationshipResponse>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/tasks/with-relationship`,
     {
@@ -2367,7 +2372,7 @@ export async function resolveTaskProjectWorkspaceId(
   },
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getTaskApiClient(options);
   const payload = await client.json<{ workspaceId?: string | null }>(
     '/api/v1/task-projects/resolve-workspace',
     {
@@ -2391,7 +2396,7 @@ export async function getWorkspaceTaskProject(
   projectId: string,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getTaskApiClient(options);
   return client.json<TaskProjectWithRelations>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/task-projects/${encodePathSegment(projectId)}`,
     {
@@ -2405,7 +2410,7 @@ export async function getWorkspaceTaskProjectTasks(
   projectId: string,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getTaskApiClient(options);
   return client.json<WorkspaceTaskProjectTasksResponse>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/task-projects/${encodePathSegment(projectId)}/tasks`,
     {

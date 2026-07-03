@@ -13,6 +13,7 @@ import {
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { apiFetch, HttpError } from '@/lib/api-fetch';
+import { getTasksAppUrlClient } from '@/lib/tasks-app-url-client';
 
 const NONE_VALUE = '__none__';
 
@@ -42,8 +43,8 @@ export function BoardDefaultListSettings({ wsId }: { wsId: string }) {
     queryKey: ['boards-with-lists', wsId],
     queryFn: () =>
       apiFetch<{ boards: BoardWithLists[] }>(
-        `/api/v1/workspaces/${wsId}/boards-with-lists`,
-        { cache: 'no-store' }
+        getTasksAppUrlClient(`/api/v1/workspaces/${wsId}/boards-with-lists`),
+        { cache: 'no-store', credentials: 'include' }
       ),
     enabled: !!wsId,
     staleTime: 5 * 60 * 1000,
@@ -57,11 +58,17 @@ export function BoardDefaultListSettings({ wsId }: { wsId: string }) {
       boardId: string;
       defaultListId: string | null;
     }) =>
-      apiFetch(`/api/v1/workspaces/${wsId}/task-boards/${boardId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ default_list_id: defaultListId }),
-      }),
+      apiFetch(
+        getTasksAppUrlClient(
+          `/api/v1/workspaces/${wsId}/task-boards/${boardId}`
+        ),
+        {
+          method: 'PUT',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ default_list_id: defaultListId }),
+        }
+      ),
     onSuccess: (_result, { boardId }) => {
       queryClient.invalidateQueries({
         queryKey: ['boards-with-lists', wsId],

@@ -128,9 +128,10 @@ describe('useTaskContextActions', () => {
     });
 
     expect(global.fetch).toHaveBeenCalledWith(
-      `/api/v1/users/me/tasks/${mockTask.id}/overrides`,
+      `http://localhost:7809/api/v1/users/me/tasks/${mockTask.id}/overrides`,
       {
         method: 'PUT',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ personally_unassigned: true }),
       }
@@ -160,9 +161,10 @@ describe('useTaskContextActions', () => {
     });
 
     expect(global.fetch).toHaveBeenCalledWith(
-      `/api/v1/users/me/tasks/${mockTask.id}/overrides`,
+      `http://localhost:7809/api/v1/users/me/tasks/${mockTask.id}/overrides`,
       {
         method: 'PUT',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           personally_unassigned: false,
@@ -219,9 +221,10 @@ describe('useTaskContextActions', () => {
 
     // Verify override cleanup
     expect(global.fetch).toHaveBeenCalledWith(
-      `/api/v1/users/me/tasks/${taskWithOverrides.id}/overrides`,
+      `http://localhost:7809/api/v1/users/me/tasks/${taskWithOverrides.id}/overrides`,
       expect.objectContaining({
         method: 'PUT',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
       })
     );

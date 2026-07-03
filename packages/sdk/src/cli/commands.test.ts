@@ -129,6 +129,7 @@ describe('CLI commands', () => {
       readFile(configPath, 'utf8').then(JSON.parse)
     ).resolves.toEqual({
       baseUrl: 'http://localhost:7803',
+      tasksBaseUrl: 'http://localhost:7809',
     });
   });
 
@@ -462,7 +463,7 @@ describe('CLI commands', () => {
 
     expect(fetchMock).toHaveBeenNthCalledWith(
       2,
-      'https://tuturuuu.com/api/v1/workspaces/personal-ws/tasks/search',
+      'https://tasks.tuturuuu.com/api/v1/workspaces/personal-ws/tasks/search',
       expect.objectContaining({
         body: JSON.stringify({
           mode: 'hybrid',
@@ -513,7 +514,7 @@ describe('CLI commands', () => {
 
     expect(fetchMock).toHaveBeenNthCalledWith(
       2,
-      'https://tuturuuu.com/api/v1/workspaces/team-ws/tasks/search',
+      'https://tasks.tuturuuu.com/api/v1/workspaces/team-ws/tasks/search',
       expect.objectContaining({
         body: JSON.stringify({
           matchCount: 7,
@@ -562,7 +563,7 @@ describe('CLI commands', () => {
     ]);
 
     expect(fetchMock).toHaveBeenCalledWith(
-      'https://tuturuuu.com/api/v1/workspaces/ws-1/task-templates?includeArchived=false&visibility=workspace',
+      'https://tasks.tuturuuu.com/api/v1/workspaces/ws-1/task-templates?includeArchived=false&visibility=workspace',
       expect.objectContaining({ cache: 'no-store' })
     );
     expect(write).toHaveBeenCalledWith(
@@ -610,7 +611,7 @@ describe('CLI commands', () => {
     ]);
 
     expect(fetchMock).toHaveBeenCalledWith(
-      'https://tuturuuu.com/api/v1/workspaces/ws-1/task-templates',
+      'https://tasks.tuturuuu.com/api/v1/workspaces/ws-1/task-templates',
       expect.objectContaining({
         body: JSON.stringify({
           key: 'bug-report',
@@ -657,7 +658,7 @@ describe('CLI commands', () => {
     ]);
 
     expect(fetchMock).toHaveBeenCalledWith(
-      'https://tuturuuu.com/api/v1/workspaces/ws-1/task-templates/bug-report/instantiate',
+      'https://tasks.tuturuuu.com/api/v1/workspaces/ws-1/task-templates/bug-report/instantiate',
       expect.objectContaining({
         body: JSON.stringify({
           listId: 'list-1',
@@ -721,7 +722,7 @@ label_ids:
     ]);
 
     expect(fetchMock).toHaveBeenCalledWith(
-      'https://tuturuuu.com/api/v1/workspaces/ws-1/tasks',
+      'https://tasks.tuturuuu.com/api/v1/workspaces/ws-1/tasks',
       expect.objectContaining({ method: 'POST' })
     );
     const body = JSON.parse(String(fetchMock.mock.calls[0]?.[1]?.body));
@@ -795,7 +796,7 @@ task_name: Prepare handoff
 
     const body = JSON.parse(String(fetchMock.mock.calls[0]?.[1]?.body));
     expect(fetchMock).toHaveBeenCalledWith(
-      'https://tuturuuu.com/api/v1/workspaces/ws-1/task-templates',
+      'https://tasks.tuturuuu.com/api/v1/workspaces/ws-1/task-templates',
       expect.objectContaining({ method: 'POST' })
     );
     expect(body.description).toContain('| Field | Value |');
@@ -2079,7 +2080,7 @@ task_name: Prepare handoff
 
     const body = JSON.parse(fetchMock.mock.calls[0]?.[1]?.body as string);
     expect(fetchMock).toHaveBeenCalledWith(
-      'https://tuturuuu.com/api/v1/workspaces/ws-1/tasks',
+      'https://tasks.tuturuuu.com/api/v1/workspaces/ws-1/tasks',
       expect.objectContaining({ method: 'POST' })
     );
     expect(JSON.parse(body.description).content[0].content[0].text).toBe(
@@ -2164,7 +2165,7 @@ task_name: Prepare handoff
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(fetchMock).toHaveBeenCalledWith(
-      `https://tuturuuu.com/api/v1/workspaces/ws-1/tasks/${taskId}/description`,
+      `https://tasks.tuturuuu.com/api/v1/workspaces/ws-1/tasks/${taskId}/description`,
       expect.objectContaining({ method: 'PATCH' })
     );
     const body = JSON.parse(fetchMock.mock.calls[0]?.[1]?.body as string);
@@ -2204,7 +2205,7 @@ task_name: Prepare handoff
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(fetchMock).toHaveBeenCalledWith(
-      `https://tuturuuu.com/api/v1/workspaces/ws-1/tasks/${taskId}/description`,
+      `https://tasks.tuturuuu.com/api/v1/workspaces/ws-1/tasks/${taskId}/description`,
       expect.objectContaining({ method: 'PATCH' })
     );
     const body = JSON.parse(fetchMock.mock.calls[0]?.[1]?.body as string);

@@ -3,6 +3,7 @@ import {
   getInternalApiClient,
   type InternalApiClientOptions,
   type InternalApiQuery,
+  withTaskApiBaseUrl,
 } from './client';
 import type {
   CreateTaskLeaderboardMemberPayload,
@@ -32,6 +33,10 @@ import type {
 
 export type * from './task-progress-types';
 
+function getTaskApiClient(options?: InternalApiClientOptions) {
+  return getInternalApiClient(withTaskApiBaseUrl(options));
+}
+
 function progressBasePath(workspaceId: string) {
   return `/api/v1/workspaces/${encodePathSegment(workspaceId)}/task-progress`;
 }
@@ -58,7 +63,7 @@ export function listTaskProgressMetrics(
   workspaceId: string,
   options?: InternalApiClientOptions
 ) {
-  return getInternalApiClient(options).json<TaskProgressMetricsResponse>(
+  return getTaskApiClient(options).json<TaskProgressMetricsResponse>(
     `${progressBasePath(workspaceId)}/metrics`,
     { cache: 'no-store' }
   );
@@ -69,7 +74,7 @@ export function createTaskProgressMetric(
   payload: CreateTaskProgressMetricPayload,
   options?: InternalApiClientOptions
 ) {
-  return getInternalApiClient(options).json<TaskProgressMetricResponse>(
+  return getTaskApiClient(options).json<TaskProgressMetricResponse>(
     `${progressBasePath(workspaceId)}/metrics`,
     jsonInit('POST', payload)
   );
@@ -81,7 +86,7 @@ export function updateTaskProgressMetric(
   payload: UpdateTaskProgressMetricPayload,
   options?: InternalApiClientOptions
 ) {
-  return getInternalApiClient(options).json<TaskProgressMetricResponse>(
+  return getTaskApiClient(options).json<TaskProgressMetricResponse>(
     `${progressBasePath(workspaceId)}/metrics/${encodePathSegment(metricId)}`,
     jsonInit('PATCH', payload)
   );
@@ -92,7 +97,7 @@ export function deleteTaskProgressMetric(
   metricId: string,
   options?: InternalApiClientOptions
 ) {
-  return getInternalApiClient(options).json<{ ok: true }>(
+  return getTaskApiClient(options).json<{ ok: true }>(
     `${progressBasePath(workspaceId)}/metrics/${encodePathSegment(metricId)}`,
     jsonInit('DELETE')
   );
@@ -103,7 +108,7 @@ export function listTaskProgressEntries(
   query?: InternalApiQuery,
   options?: InternalApiClientOptions
 ) {
-  return getInternalApiClient(options).json<TaskProgressEntriesResponse>(
+  return getTaskApiClient(options).json<TaskProgressEntriesResponse>(
     `${progressBasePath(workspaceId)}/entries`,
     { cache: 'no-store', query }
   );
@@ -114,7 +119,7 @@ export function createTaskProgressEntry(
   payload: CreateTaskProgressEntryPayload,
   options?: InternalApiClientOptions
 ) {
-  return getInternalApiClient(options).json<TaskProgressEntryResponse>(
+  return getTaskApiClient(options).json<TaskProgressEntryResponse>(
     `${progressBasePath(workspaceId)}/entries`,
     jsonInit('POST', payload)
   );
@@ -126,7 +131,7 @@ export function updateTaskProgressEntry(
   payload: UpdateTaskProgressEntryPayload,
   options?: InternalApiClientOptions
 ) {
-  return getInternalApiClient(options).json<TaskProgressEntryResponse>(
+  return getTaskApiClient(options).json<TaskProgressEntryResponse>(
     `${progressBasePath(workspaceId)}/entries/${encodePathSegment(entryId)}`,
     jsonInit('PATCH', payload)
   );
@@ -137,7 +142,7 @@ export function deleteTaskProgressEntry(
   entryId: string,
   options?: InternalApiClientOptions
 ) {
-  return getInternalApiClient(options).json<{ ok: true }>(
+  return getTaskApiClient(options).json<{ ok: true }>(
     `${progressBasePath(workspaceId)}/entries/${encodePathSegment(entryId)}`,
     jsonInit('DELETE')
   );
@@ -148,7 +153,7 @@ export function listTaskProgressGoals(
   query?: InternalApiQuery,
   options?: InternalApiClientOptions
 ) {
-  return getInternalApiClient(options).json<TaskProgressGoalsResponse>(
+  return getTaskApiClient(options).json<TaskProgressGoalsResponse>(
     `${progressBasePath(workspaceId)}/goals`,
     { cache: 'no-store', query }
   );
@@ -159,7 +164,7 @@ export function createTaskProgressGoal(
   payload: CreateTaskProgressGoalPayload,
   options?: InternalApiClientOptions
 ) {
-  return getInternalApiClient(options).json<TaskProgressGoalResponse>(
+  return getTaskApiClient(options).json<TaskProgressGoalResponse>(
     `${progressBasePath(workspaceId)}/goals`,
     jsonInit('POST', payload)
   );
@@ -171,7 +176,7 @@ export function updateTaskProgressGoal(
   payload: UpdateTaskProgressGoalPayload,
   options?: InternalApiClientOptions
 ) {
-  return getInternalApiClient(options).json<TaskProgressGoalResponse>(
+  return getTaskApiClient(options).json<TaskProgressGoalResponse>(
     `${progressBasePath(workspaceId)}/goals/${encodePathSegment(goalId)}`,
     jsonInit('PATCH', payload)
   );
@@ -182,7 +187,7 @@ export function deleteTaskProgressGoal(
   goalId: string,
   options?: InternalApiClientOptions
 ) {
-  return getInternalApiClient(options).json<{ ok: true }>(
+  return getTaskApiClient(options).json<{ ok: true }>(
     `${progressBasePath(workspaceId)}/goals/${encodePathSegment(goalId)}`,
     jsonInit('DELETE')
   );
@@ -193,7 +198,7 @@ export function getTaskProgressStats(
   query?: InternalApiQuery,
   options?: InternalApiClientOptions
 ) {
-  return getInternalApiClient(options).json<
+  return getTaskApiClient(options).json<
     TaskProgressStatsResponse | SchemaUnavailableResponse
   >(`${progressBasePath(workspaceId)}/stats`, {
     cache: 'no-store',
@@ -206,7 +211,7 @@ export function listTaskLeaderboards(
   query?: InternalApiQuery,
   options?: InternalApiClientOptions
 ) {
-  return getInternalApiClient(options).json<TaskLeaderboardsResponse>(
+  return getTaskApiClient(options).json<TaskLeaderboardsResponse>(
     `${progressBasePath(workspaceId)}/leaderboards`,
     { cache: 'no-store', query }
   );
@@ -217,7 +222,7 @@ export function createTaskLeaderboard(
   payload: CreateTaskLeaderboardPayload,
   options?: InternalApiClientOptions
 ) {
-  return getInternalApiClient(options).json<TaskLeaderboardResponse>(
+  return getTaskApiClient(options).json<TaskLeaderboardResponse>(
     `${progressBasePath(workspaceId)}/leaderboards`,
     jsonInit('POST', payload)
   );
@@ -229,7 +234,7 @@ export function updateTaskLeaderboard(
   payload: UpdateTaskLeaderboardPayload,
   options?: InternalApiClientOptions
 ) {
-  return getInternalApiClient(options).json<TaskLeaderboardResponse>(
+  return getTaskApiClient(options).json<TaskLeaderboardResponse>(
     `${progressBasePath(workspaceId)}/leaderboards/${encodePathSegment(
       leaderboardId
     )}`,
@@ -242,7 +247,7 @@ export function deleteTaskLeaderboard(
   leaderboardId: string,
   options?: InternalApiClientOptions
 ) {
-  return getInternalApiClient(options).json<{ ok: true }>(
+  return getTaskApiClient(options).json<{ ok: true }>(
     `${progressBasePath(workspaceId)}/leaderboards/${encodePathSegment(
       leaderboardId
     )}`,
@@ -256,7 +261,7 @@ export function createTaskLeaderboardTeam(
   payload: CreateTaskLeaderboardTeamPayload,
   options?: InternalApiClientOptions
 ) {
-  return getInternalApiClient(options).json<{
+  return getTaskApiClient(options).json<{
     ok: true;
     schemaAvailable: true;
     team: TaskLeaderboardTeam;
@@ -274,7 +279,7 @@ export function addTaskLeaderboardMember(
   payload: CreateTaskLeaderboardMemberPayload,
   options?: InternalApiClientOptions
 ) {
-  return getInternalApiClient(options).json<{
+  return getTaskApiClient(options).json<{
     ok: true;
     schemaAvailable: true;
     member: TaskLeaderboardMember;
@@ -291,7 +296,7 @@ export function importTaskProgressEntries(
   payload: { commit?: boolean; entries: CreateTaskProgressEntryPayload[] },
   options?: InternalApiClientOptions
 ) {
-  return getInternalApiClient(options).json<TaskProgressImportResponse>(
+  return getTaskApiClient(options).json<TaskProgressImportResponse>(
     `${progressBasePath(workspaceId)}/import`,
     jsonInit('POST', payload)
   );

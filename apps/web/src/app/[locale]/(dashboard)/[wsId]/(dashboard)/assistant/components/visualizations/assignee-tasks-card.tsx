@@ -12,6 +12,7 @@ import { Card } from '@tuturuuu/ui/card';
 import { cn } from '@tuturuuu/utils/format';
 import Image from 'next/image';
 import Link from 'next/link';
+import { getTasksAppUrlClient } from '@/lib/tasks-app-url-client';
 import type { AssigneeTasksVisualization } from '../../types/visualizations';
 
 interface AssigneeTasksCardProps {
@@ -221,7 +222,7 @@ export function AssigneeTasksCard({
             return wsId ? (
               <Link
                 key={task.id}
-                href={`/${wsId}/tasks/${task.id}`}
+                href={getTasksAppUrlClient(`/${wsId}/tasks/${task.id}`)}
                 target="_blank"
                 className={itemClassName}
               >

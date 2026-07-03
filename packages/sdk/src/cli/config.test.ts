@@ -127,6 +127,7 @@ describe('CLI config path resolution', () => {
       )
     ).toEqual({
       baseUrl: 'http://localhost:7803',
+      tasksBaseUrl: 'http://localhost:7809',
       updateCheck: {
         checkedAt: '2026-06-10T00:00:00.000Z',
         latestVersion: '1.0.0',

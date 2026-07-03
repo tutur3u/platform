@@ -3,6 +3,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import { useEffect, useState } from 'react';
+import { getTaskApiUrl } from '../../../../lib/tasks-app-url';
 
 interface TaskSettingsData {
   task_auto_assign_to_self: boolean;
@@ -32,8 +33,9 @@ export function FadeSettingInitializer() {
   const { data: settings } = useQuery({
     queryKey: ['user-task-settings'],
     queryFn: async (): Promise<TaskSettingsData> => {
-      const res = await fetch('/api/v1/users/task-settings', {
+      const res = await fetch(getTaskApiUrl('/api/v1/users/task-settings'), {
         cache: 'no-store',
+        credentials: 'include',
       });
       if (!res.ok) {
         // Return defaults if API fails

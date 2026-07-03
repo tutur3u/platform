@@ -14,6 +14,7 @@ import { Badge } from '@tuturuuu/ui/badge';
 import { Card } from '@tuturuuu/ui/card';
 import { cn } from '@tuturuuu/utils/format';
 import Link from 'next/link';
+import { getTasksAppUrlClient } from '@/lib/tasks-app-url-client';
 import type { TaskListVisualization } from '../../types/visualizations';
 
 interface TaskListCardProps {
@@ -253,7 +254,7 @@ export function TaskListCard({
             return wsId ? (
               <Link
                 key={task.id}
-                href={`/${wsId}/tasks/${task.id}`}
+                href={getTasksAppUrlClient(`/${wsId}/tasks/${task.id}`)}
                 target="_blank"
                 className={itemClassName}
               >

@@ -40,6 +40,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useState } from 'react';
+import { getTasksAppUrlClient } from '@/lib/tasks-app-url-client';
 
 interface Task {
   id: string;
@@ -127,10 +128,8 @@ export default function ExpandableTaskList({
 
   // Handle task updates (refresh when tasks are edited)
   const handleUpdate = useCallback(() => {
-    console.log('🔄 ExpandableTaskList: Refreshing dashboard tasks...');
     // Small delay to ensure task save has completed
     setTimeout(() => {
-      console.log('🔄 ExpandableTaskList: Calling router.refresh()');
       router.refresh();
     }, 150);
   }, [router]);
@@ -158,9 +157,10 @@ export default function ExpandableTaskList({
 
       try {
         const response = await fetch(
-          `/api/v1/users/me/tasks/${task.id}/overrides`,
+          getTasksAppUrlClient(`/api/v1/users/me/tasks/${task.id}/overrides`),
           {
             method: 'PUT',
+            credentials: 'include',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               completed_at: new Date().toISOString(),
@@ -500,7 +500,9 @@ export default function ExpandableTaskList({
                       return (
                         <>
                           <Link
-                            href={`/${task.list.board.ws_id}/tasks/boards/${task.list.board.id}`}
+                            href={getTasksAppUrlClient(
+                              `/${task.list.board.ws_id}/boards/${task.list.board.id}`
+                            )}
                             onClick={(e) => e.stopPropagation()}
                             className="flex items-center gap-1 rounded-md bg-dynamic-green/10 px-2 py-0.5 font-medium text-dynamic-green transition-colors hover:underline"
                           >

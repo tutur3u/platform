@@ -10,7 +10,15 @@ import type {
   HabitTrackerStreakActionInput,
 } from '@tuturuuu/types/primitives/HabitTracker';
 import type { InternalApiClientOptions } from './client';
-import { encodePathSegment, getInternalApiClient } from './client';
+import {
+  encodePathSegment,
+  getInternalApiClient,
+  withTaskApiBaseUrl,
+} from './client';
+
+function getTaskApiClient(options?: InternalApiClientOptions) {
+  return getInternalApiClient(withTaskApiBaseUrl(options));
+}
 
 export async function listWorkspaceHabitTrackers(
   wsId: string,
@@ -20,7 +28,7 @@ export async function listWorkspaceHabitTrackers(
   },
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getTaskApiClient(options);
   return client.json<HabitTrackerListResponse>(
     `/api/v1/workspaces/${encodePathSegment(wsId)}/habit-trackers`,
     {
@@ -35,7 +43,7 @@ export async function createWorkspaceHabitTracker(
   input: HabitTrackerInput,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getTaskApiClient(options);
   const payload = await client.json<{ tracker: HabitTracker }>(
     `/api/v1/workspaces/${encodePathSegment(wsId)}/habit-trackers`,
     {
@@ -60,7 +68,7 @@ export async function getWorkspaceHabitTracker(
   },
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getTaskApiClient(options);
   return client.json<HabitTrackerDetailResponse>(
     `/api/v1/workspaces/${encodePathSegment(wsId)}/habit-trackers/${encodePathSegment(trackerId)}`,
     {
@@ -76,7 +84,7 @@ export async function updateWorkspaceHabitTracker(
   input: Partial<HabitTrackerInput>,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getTaskApiClient(options);
   const payload = await client.json<{ tracker: HabitTracker }>(
     `/api/v1/workspaces/${encodePathSegment(wsId)}/habit-trackers/${encodePathSegment(trackerId)}`,
     {
@@ -97,7 +105,7 @@ export async function deleteWorkspaceHabitTracker(
   trackerId: string,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getTaskApiClient(options);
   return client.json<{ success: boolean }>(
     `/api/v1/workspaces/${encodePathSegment(wsId)}/habit-trackers/${encodePathSegment(trackerId)}`,
     {
@@ -112,7 +120,7 @@ export async function listWorkspaceHabitTrackerEntries(
   trackerId: string,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getTaskApiClient(options);
   const payload = await client.json<{
     entries: Array<
       HabitTrackerEntry & {
@@ -135,7 +143,7 @@ export async function createWorkspaceHabitTrackerEntry(
   input: HabitTrackerEntryInput,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getTaskApiClient(options);
   const payload = await client.json<{ entry: HabitTrackerEntry }>(
     `/api/v1/workspaces/${encodePathSegment(wsId)}/habit-trackers/${encodePathSegment(trackerId)}/entries`,
     {
@@ -158,7 +166,7 @@ export async function updateWorkspaceHabitTrackerEntry(
   input: Partial<HabitTrackerEntryInput>,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getTaskApiClient(options);
   const payload = await client.json<{ entry: HabitTrackerEntry }>(
     `/api/v1/workspaces/${encodePathSegment(wsId)}/habit-trackers/${encodePathSegment(trackerId)}/entries/${encodePathSegment(entryId)}`,
     {
@@ -180,7 +188,7 @@ export async function deleteWorkspaceHabitTrackerEntry(
   entryId: string,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getTaskApiClient(options);
   return client.json<{ success: boolean }>(
     `/api/v1/workspaces/${encodePathSegment(wsId)}/habit-trackers/${encodePathSegment(trackerId)}/entries/${encodePathSegment(entryId)}`,
     {
@@ -196,7 +204,7 @@ export async function createWorkspaceHabitTrackerStreakAction(
   input: HabitTrackerStreakActionInput,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getTaskApiClient(options);
   const payload = await client.json<{ action: HabitTrackerStreakAction }>(
     `/api/v1/workspaces/${encodePathSegment(wsId)}/habit-trackers/${encodePathSegment(trackerId)}/streak-actions`,
     {

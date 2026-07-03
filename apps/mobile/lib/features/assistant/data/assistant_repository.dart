@@ -25,16 +25,19 @@ import 'assistant_stream_parser.dart';
 class AssistantRepository {
   AssistantRepository({
     ApiClient? apiClient,
+    ApiClient? tasksApiClient,
     http.Client? httpClient,
     ChatRepository? chatRepository,
   }) : this._(
          apiClient ?? ApiClient(),
+         tasksApiClient ?? ApiClient(baseUrl: ApiConfig.tasksBaseUrl),
          httpClient ?? http.Client(),
          chatRepository,
        );
 
   AssistantRepository._(
     this._apiClient,
+    this._tasksApiClient,
     this._httpClient,
     ChatRepository? chatRepository,
   ) : _chatRepository =
@@ -42,6 +45,7 @@ class AssistantRepository {
           ChatRepository(apiClient: _apiClient, httpClient: _httpClient);
 
   final ApiClient _apiClient;
+  final ApiClient _tasksApiClient;
   final http.Client _httpClient;
   final ChatRepository _chatRepository;
   static final Random _random = Random.secure();
@@ -234,7 +238,9 @@ class AssistantRepository {
         final query = Uri(
           queryParameters: {'wsId': wsId, 'isPersonal': isPersonal.toString()},
         ).query;
-        final response = await _apiClient.getJson('/api/v1/mira/tasks?$query');
+        final response = await _tasksApiClient.getJson(
+          '/api/v1/mira/tasks?$query',
+        );
         return AssistantTasksInsight.fromJson(response).toJson();
       },
     );

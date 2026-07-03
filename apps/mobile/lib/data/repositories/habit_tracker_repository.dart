@@ -1,3 +1,4 @@
+import 'package:mobile/core/config/api_config.dart';
 import 'package:mobile/data/models/habit_tracker.dart';
 import 'package:mobile/data/sources/api_client.dart';
 
@@ -42,7 +43,7 @@ abstract class IHabitTrackerRepository {
 
 class HabitTrackerRepository implements IHabitTrackerRepository {
   HabitTrackerRepository({ApiClient? apiClient})
-    : _apiClient = apiClient ?? ApiClient();
+    : _apiClient = apiClient ?? ApiClient(baseUrl: ApiConfig.tasksBaseUrl);
 
   final ApiClient _apiClient;
 

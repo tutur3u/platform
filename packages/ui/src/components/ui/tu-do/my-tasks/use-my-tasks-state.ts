@@ -25,6 +25,7 @@ import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { getTaskApiUrl } from '../../../../lib/tasks-app-url';
 import { getRandomNewLabelColor } from '../utils/taskConstants';
 import type { TaskOptions } from './command-bar';
 import type { JournalTaskResponse } from './task-preview-dialog';
@@ -552,19 +553,23 @@ export function useMyTasksState({
     }
   >({
     mutationFn: async (variables) => {
-      const response = await fetch(`/api/v1/workspaces/${wsId}/tasks/journal`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          entry: variables.entry,
-          previewOnly: true,
-          generateDescriptions: variables.generateDescriptions,
-          generatePriority: variables.generatePriority,
-          generateLabels: variables.generateLabels,
-          clientTimezone: variables.clientTimezone,
-          clientTimestamp: variables.clientTimestamp,
-        }),
-      });
+      const response = await fetch(
+        getTaskApiUrl(`/api/v1/workspaces/${wsId}/tasks/journal`),
+        {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            entry: variables.entry,
+            previewOnly: true,
+            generateDescriptions: variables.generateDescriptions,
+            generatePriority: variables.generatePriority,
+            generateLabels: variables.generateLabels,
+            clientTimezone: variables.clientTimezone,
+            clientTimestamp: variables.clientTimestamp,
+          }),
+        }
+      );
 
       const payload = await response.json().catch(() => null);
       if (!response.ok) {

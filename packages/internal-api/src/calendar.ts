@@ -5,7 +5,11 @@ import type {
 } from '@tuturuuu/types';
 import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
 import type { InternalApiClientOptions, InternalApiQuery } from './client';
-import { encodePathSegment, getInternalApiClient } from './client';
+import {
+  encodePathSegment,
+  getInternalApiClient,
+  withTaskApiBaseUrl,
+} from './client';
 
 export interface WorkspaceCalendarEventUpdatePayload {
   locked?: boolean;
@@ -843,7 +847,7 @@ export async function getWorkspaceTaskScheduleHistory(
   query?: { start?: string; end?: string },
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withTaskApiBaseUrl(options));
   return client.json<TaskScheduleHistoryResponse>(
     `/api/v1/workspaces/${encodePathSegment(wsId)}/tasks/${encodePathSegment(taskId)}/schedule/history`,
     {
@@ -859,7 +863,7 @@ export async function getWorkspaceHabitScheduleHistory(
   query?: { start?: string; end?: string },
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withTaskApiBaseUrl(options));
   return client.json<HabitScheduleHistoryResponse>(
     `/api/v1/workspaces/${encodePathSegment(wsId)}/habits/${encodePathSegment(habitId)}/schedule/history`,
     {
@@ -875,7 +879,7 @@ export async function createWorkspaceHabitSkip(
   payload: HabitSkipPayload,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withTaskApiBaseUrl(options));
   return client.json<{ success: true; occurrenceDate: string }>(
     `/api/v1/workspaces/${encodePathSegment(wsId)}/habits/${encodePathSegment(habitId)}/skips`,
     {
@@ -895,7 +899,7 @@ export async function revokeWorkspaceHabitSkip(
   payload: HabitSkipPayload,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withTaskApiBaseUrl(options));
   return client.json<{ success: true; occurrenceDate: string }>(
     `/api/v1/workspaces/${encodePathSegment(wsId)}/habits/${encodePathSegment(habitId)}/skips`,
     {

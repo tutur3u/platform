@@ -213,6 +213,45 @@ export function getConfiguredInternalApiBaseUrl() {
   );
 }
 
+function isTasksAppRuntime() {
+  const packageName = process.env.npm_package_name;
+  if (packageName === '@tuturuuu/tasks') {
+    return true;
+  }
+
+  try {
+    return process.cwd().replace(/\\/gu, '/').endsWith('/apps/tasks');
+  } catch {
+    return false;
+  }
+}
+
+export function getConfiguredTasksApiBaseUrl() {
+  return normalizeBaseUrl(
+    resolveConfiguredOrigin(process.env.TASKS_APP_URL) ||
+      resolveConfiguredOrigin(process.env.NEXT_PUBLIC_TASKS_APP_URL) ||
+      resolveConfiguredOrigin(process.env.TUTURUUU_TASKS_BASE_URL) ||
+      resolveConfiguredOrigin(process.env.TUDO_APP_URL) ||
+      resolveConfiguredOrigin(process.env.NEXT_PUBLIC_TUDO_APP_URL) ||
+      (isProductionDeployment()
+        ? 'https://tasks.tuturuuu.com'
+        : 'https://tasks.tuturuuu.localhost')
+  );
+}
+
+export function withTaskApiBaseUrl(
+  options: InternalApiClientOptions = {}
+): InternalApiClientOptions {
+  if (options.baseUrl || isTasksAppRuntime()) {
+    return options;
+  }
+
+  return {
+    ...options,
+    baseUrl: getConfiguredTasksApiBaseUrl(),
+  };
+}
+
 export function resolveInternalApiUrl(path: string, baseUrl?: string) {
   const normalizedPath = normalizePath(path);
 
@@ -438,6 +477,13 @@ export function withForwardedInternalApiAuth(
   );
   if (configuredBaseUrl) {
     allowedOrigins.add(configuredBaseUrl.origin);
+  }
+
+  const configuredTasksBaseUrl = tryParseAbsoluteUrl(
+    getConfiguredTasksApiBaseUrl()
+  );
+  if (configuredTasksBaseUrl) {
+    allowedOrigins.add(configuredTasksBaseUrl.origin);
   }
 
   const targetOrigin =

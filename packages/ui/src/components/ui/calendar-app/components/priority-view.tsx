@@ -32,6 +32,7 @@ import { useRouter } from 'next/navigation';
 import React, { useEffect, useMemo, useState } from 'react';
 import { useDebouncedCallback } from 'use-debounce';
 import { useCalendar } from '../../../../hooks/use-calendar';
+import { getTaskApiUrl } from '../../../../lib/tasks-app-url';
 import { Progress } from '../../progress';
 import { toast } from '../../sonner';
 import type { ExtendedWorkspaceTask } from '../../time-tracker/types';
@@ -263,9 +264,11 @@ export default function PriorityView({
       const results = await Promise.allSettled(
         tasksToFetchSchedule.map(async (task) => {
           const response = await fetch(
-            isPersonalWorkspace
-              ? `/api/v1/users/me/tasks/${task.id}/schedule`
-              : `/api/v1/workspaces/${task.ws_id ?? wsId}/tasks/${task.id}/schedule`,
+            getTaskApiUrl(
+              isPersonalWorkspace
+                ? `/api/v1/users/me/tasks/${task.id}/schedule`
+                : `/api/v1/workspaces/${task.ws_id ?? wsId}/tasks/${task.id}/schedule`
+            ),
             { cache: 'no-store' }
           );
           if (!response.ok) {
@@ -378,10 +381,15 @@ export default function PriorityView({
     const task = combinedTasks.find((t) => t.id === taskId);
     const taskWsId = task?.ws_id ?? wsId;
 
-    const response = await fetch(`/api/${taskWsId}/task/${taskId}/edit`, {
-      method: 'PATCH',
-      body: JSON.stringify({ priority: newPriority }),
-    });
+    const response = await fetch(
+      getTaskApiUrl(`/api/${taskWsId}/task/${taskId}/edit`),
+      {
+        method: 'PATCH',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ priority: newPriority }),
+      }
+    );
 
     if (!response.ok) {
       throw new Error('Failed to update task priority');

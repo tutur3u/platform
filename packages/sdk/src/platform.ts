@@ -104,11 +104,13 @@ export interface TuturuuuUserClientConfig {
   fetch?: typeof fetch;
   onSessionRefresh?: (session: CliSession) => void | Promise<void>;
   refreshToken?: string;
+  tasksBaseUrl?: string;
 }
 
 const SESSION_REFRESH_SKEW_MS = 60_000;
 const PROTOCOL_RELATIVE_URL_PATTERN = /^\/\//u;
 const TASK_DESCRIPTION_CHUNK_SIZE = 180_000;
+const DEFAULT_TASKS_BASE_URL = 'https://tasks.tuturuuu.com';
 
 type CliListWorkspaceTasksOptions = ListWorkspaceTasksOptions & {
   includeArchivedBoards?: boolean;
@@ -164,6 +166,29 @@ function shouldAttachSdkAuth(input: RequestInfo | URL, baseUrl: string) {
   } catch {
     return true;
   }
+}
+
+function inferTasksBaseUrl(baseUrl?: string) {
+  const platformBaseUrl = normalizeBaseUrl(baseUrl);
+  const url = new URL(platformBaseUrl);
+
+  if (url.hostname === 'tuturuuu.com') {
+    return DEFAULT_TASKS_BASE_URL;
+  }
+
+  if (url.hostname === 'tuturuuu.localhost') {
+    return 'https://tasks.tuturuuu.localhost';
+  }
+
+  if (
+    ['localhost', '127.0.0.1', '[::1]', '::1'].includes(url.hostname) &&
+    url.port === '7803'
+  ) {
+    url.port = '7809';
+    return url.origin;
+  }
+
+  return DEFAULT_TASKS_BASE_URL;
 }
 
 function chunkText(value: string, chunkSize = TASK_DESCRIPTION_CHUNK_SIZE) {
@@ -334,7 +359,7 @@ export class TasksClient {
       workspaceId,
       taskId,
       labelId,
-      this.client.getClientOptions()
+      this.client.getTaskClientOptions()
     );
   }
 
@@ -345,7 +370,7 @@ export class TasksClient {
     return bulkWorkspaceTasks(
       workspaceId,
       payload,
-      this.client.getClientOptions()
+      this.client.getTaskClientOptions()
     );
   }
 
@@ -353,7 +378,7 @@ export class TasksClient {
     return createWorkspaceTask(
       workspaceId,
       payload,
-      this.client.getClientOptions()
+      this.client.getTaskClientOptions()
     );
   }
 
@@ -361,7 +386,7 @@ export class TasksClient {
     return createWorkspaceTaskTemplate(
       workspaceId,
       payload,
-      this.client.getClientOptions()
+      this.client.getTaskClientOptions()
     );
   }
 
@@ -369,7 +394,7 @@ export class TasksClient {
     return getWorkspaceTaskDescription(
       workspaceId,
       taskId,
-      this.client.getClientOptions()
+      this.client.getTaskClientOptions()
     );
   }
 
@@ -382,7 +407,7 @@ export class TasksClient {
       workspaceId,
       taskId,
       payload,
-      this.client.getClientOptions()
+      this.client.getTaskClientOptions()
     );
   }
 
@@ -400,7 +425,7 @@ export class TasksClient {
       workspaceId,
       taskId,
       fields,
-      this.client.getClientOptions()
+      this.client.getTaskClientOptions()
     );
 
     try {
@@ -415,7 +440,7 @@ export class TasksClient {
               field,
               session_id: sessionId,
             },
-            this.client.getClientOptions()
+            this.client.getTaskClientOptions()
           );
         }
       }
@@ -424,14 +449,14 @@ export class TasksClient {
         workspaceId,
         taskId,
         sessionId,
-        this.client.getClientOptions()
+        this.client.getTaskClientOptions()
       );
     } catch (error) {
       await abortWorkspaceTaskDescriptionChunks(
         workspaceId,
         taskId,
         sessionId,
-        this.client.getClientOptions()
+        this.client.getTaskClientOptions()
       ).catch(() => undefined);
       throw error;
     }
@@ -441,7 +466,7 @@ export class TasksClient {
     return createWorkspaceTaskBoard(
       workspaceId,
       payload,
-      this.client.getClientOptions()
+      this.client.getTaskClientOptions()
     );
   }
 
@@ -454,7 +479,7 @@ export class TasksClient {
       workspaceId,
       boardId,
       payload,
-      this.client.getClientOptions()
+      this.client.getTaskClientOptions()
     );
   }
 
@@ -465,7 +490,7 @@ export class TasksClient {
     return createWorkspaceTaskProject(
       workspaceId,
       payload,
-      this.client.getClientOptions()
+      this.client.getTaskClientOptions()
     );
   }
 
@@ -478,7 +503,7 @@ export class TasksClient {
       workspaceId,
       taskId,
       payload,
-      this.client.getClientOptions()
+      this.client.getTaskClientOptions()
     );
   }
 
@@ -489,7 +514,7 @@ export class TasksClient {
     return createWorkspaceTaskWithRelationship(
       workspaceId,
       payload,
-      this.client.getClientOptions()
+      this.client.getTaskClientOptions()
     );
   }
 
@@ -497,7 +522,7 @@ export class TasksClient {
     return deleteWorkspaceTask(
       workspaceId,
       taskId,
-      this.client.getClientOptions()
+      this.client.getTaskClientOptions()
     );
   }
 
@@ -510,7 +535,7 @@ export class TasksClient {
       workspaceId,
       templateKey,
       options,
-      this.client.getClientOptions()
+      this.client.getTaskClientOptions()
     );
   }
 
@@ -518,7 +543,7 @@ export class TasksClient {
     return deleteWorkspaceTaskBoard(
       workspaceId,
       boardId,
-      this.client.getClientOptions()
+      this.client.getTaskClientOptions()
     );
   }
 
@@ -531,7 +556,7 @@ export class TasksClient {
       workspaceId,
       taskId,
       payload,
-      this.client.getClientOptions()
+      this.client.getTaskClientOptions()
     );
   }
 
@@ -539,7 +564,7 @@ export class TasksClient {
     return getWorkspaceTask(
       workspaceId,
       taskId,
-      this.client.getClientOptions()
+      this.client.getTaskClientOptions()
     );
   }
 
@@ -547,7 +572,7 @@ export class TasksClient {
     return getWorkspaceTaskTemplate(
       workspaceId,
       templateKey,
-      this.client.getClientOptions()
+      this.client.getTaskClientOptions()
     );
   }
 
@@ -555,7 +580,7 @@ export class TasksClient {
     return getWorkspaceTaskBoard(
       workspaceId,
       boardId,
-      this.client.getClientOptions()
+      this.client.getTaskClientOptions()
     );
   }
 
@@ -563,7 +588,7 @@ export class TasksClient {
     return getWorkspaceBoardsData(
       workspaceId,
       options,
-      this.client.getClientOptions()
+      this.client.getTaskClientOptions()
     );
   }
 
@@ -571,7 +596,7 @@ export class TasksClient {
     return getWorkspaceTaskProject(
       workspaceId,
       projectId,
-      this.client.getClientOptions()
+      this.client.getTaskClientOptions()
     );
   }
 
@@ -579,7 +604,7 @@ export class TasksClient {
     return getWorkspaceTaskProjectTasks(
       workspaceId,
       projectId,
-      this.client.getClientOptions()
+      this.client.getTaskClientOptions()
     );
   }
 
@@ -587,12 +612,12 @@ export class TasksClient {
     return getWorkspaceTaskRelationships(
       workspaceId,
       taskId,
-      this.client.getClientOptions()
+      this.client.getTaskClientOptions()
     );
   }
 
   list(workspaceId: string, options?: CliListWorkspaceTasksOptions) {
-    const client = getInternalApiClient(this.client.getClientOptions());
+    const client = getInternalApiClient(this.client.getTaskClientOptions());
 
     return client.json<WorkspaceTasksResponse>(
       `/api/v1/workspaces/${encodePathSegment(workspaceId)}/tasks`,
@@ -631,33 +656,33 @@ export class TasksClient {
     return listWorkspaceTaskBoards(
       workspaceId,
       options,
-      this.client.getClientOptions()
+      this.client.getTaskClientOptions()
     );
   }
 
   listBoardsWithLists(workspaceId: string) {
     return listWorkspaceBoardsWithLists(
       workspaceId,
-      this.client.getClientOptions()
+      this.client.getTaskClientOptions()
     );
   }
 
   listLabels(workspaceId: string) {
-    return listWorkspaceLabels(workspaceId, this.client.getClientOptions());
+    return listWorkspaceLabels(workspaceId, this.client.getTaskClientOptions());
   }
 
   listLists(workspaceId: string, boardId: string) {
     return listWorkspaceTaskLists(
       workspaceId,
       boardId,
-      this.client.getClientOptions()
+      this.client.getTaskClientOptions()
     );
   }
 
   listProjects(workspaceId: string) {
     return listWorkspaceTaskProjects(
       workspaceId,
-      this.client.getClientOptions()
+      this.client.getTaskClientOptions()
     );
   }
 
@@ -668,12 +693,12 @@ export class TasksClient {
     return listWorkspaceTaskTemplates(
       workspaceId,
       options,
-      this.client.getClientOptions()
+      this.client.getTaskClientOptions()
     );
   }
 
   listStatusTemplates() {
-    return listTaskBoardStatusTemplates(this.client.getClientOptions());
+    return listTaskBoardStatusTemplates(this.client.getTaskClientOptions());
   }
 
   move(workspaceId: string, taskId: string, payload: MoveWorkspaceTaskPayload) {
@@ -681,7 +706,7 @@ export class TasksClient {
       workspaceId,
       taskId,
       payload,
-      this.client.getClientOptions()
+      this.client.getTaskClientOptions()
     );
   }
 
@@ -690,7 +715,7 @@ export class TasksClient {
       workspaceId,
       taskId,
       labelId,
-      this.client.getClientOptions()
+      this.client.getTaskClientOptions()
     );
   }
 
@@ -701,7 +726,7 @@ export class TasksClient {
     return searchWorkspaceTasks(
       workspaceId,
       payload,
-      this.client.getClientOptions()
+      this.client.getTaskClientOptions()
     );
   }
 
@@ -712,7 +737,7 @@ export class TasksClient {
     return saveWorkspaceTaskTemplateFromTask(
       workspaceId,
       payload,
-      this.client.getClientOptions()
+      this.client.getTaskClientOptions()
     );
   }
 
@@ -720,7 +745,7 @@ export class TasksClient {
     return triggerWorkspaceTaskEmbedding(
       workspaceId,
       taskId,
-      this.client.getClientOptions()
+      this.client.getTaskClientOptions()
     );
   }
 
@@ -733,7 +758,7 @@ export class TasksClient {
       workspaceId,
       taskId,
       payload,
-      this.client.getClientOptions()
+      this.client.getTaskClientOptions()
     );
   }
 
@@ -746,7 +771,7 @@ export class TasksClient {
       workspaceId,
       templateKey,
       payload,
-      this.client.getClientOptions()
+      this.client.getTaskClientOptions()
     );
   }
 
@@ -759,7 +784,7 @@ export class TasksClient {
       workspaceId,
       templateKey,
       payload,
-      this.client.getClientOptions()
+      this.client.getTaskClientOptions()
     );
   }
 
@@ -772,7 +797,7 @@ export class TasksClient {
       workspaceId,
       boardId,
       payload,
-      this.client.getClientOptions()
+      this.client.getTaskClientOptions()
     );
   }
 
@@ -787,7 +812,7 @@ export class TasksClient {
       boardId,
       listId,
       payload,
-      this.client.getClientOptions()
+      this.client.getTaskClientOptions()
     );
   }
 
@@ -795,7 +820,7 @@ export class TasksClient {
     return createWorkspaceLabel(
       workspaceId,
       payload,
-      this.client.getClientOptions()
+      this.client.getTaskClientOptions()
     );
   }
 }
@@ -810,6 +835,7 @@ export class TuturuuuUserClient {
   ) => void | Promise<void>;
   private refreshPromise?: Promise<CliSession>;
   private refreshToken?: string;
+  private readonly tasksBaseUrl: string;
 
   readonly calendar: CalendarClient;
   readonly devboxes: DevboxesClient;
@@ -822,6 +848,9 @@ export class TuturuuuUserClient {
   constructor(config: TuturuuuUserClientConfig) {
     this.accessToken = config.accessToken;
     this.baseUrl = normalizeBaseUrl(config.baseUrl);
+    this.tasksBaseUrl = normalizeBaseUrl(
+      config.tasksBaseUrl ?? inferTasksBaseUrl(config.baseUrl)
+    );
     this.expiresAt = config.expiresAt;
     this.fetchImpl = config.fetch || globalThis.fetch;
     this.onSessionRefresh = config.onSessionRefresh;
@@ -861,15 +890,15 @@ export class TuturuuuUserClient {
     return nextSession;
   }
 
-  getClientOptions(): InternalApiClientOptions {
+  private createClientOptions(baseUrl: string): InternalApiClientOptions {
     return {
-      baseUrl: this.baseUrl,
+      baseUrl,
       defaultHeaders: {
         'X-SDK-Client': 'tuturuuu-cli',
       },
       fetch: async (input, init) => {
         const headers = new Headers(init?.headers);
-        const attachAuth = shouldAttachSdkAuth(input, this.baseUrl);
+        const attachAuth = shouldAttachSdkAuth(input, baseUrl);
 
         if (!attachAuth) {
           headers.delete('Authorization');
@@ -903,5 +932,13 @@ export class TuturuuuUserClient {
         });
       },
     };
+  }
+
+  getClientOptions(): InternalApiClientOptions {
+    return this.createClientOptions(this.baseUrl);
+  }
+
+  getTaskClientOptions(): InternalApiClientOptions {
+    return this.createClientOptions(this.tasksBaseUrl);
   }
 }

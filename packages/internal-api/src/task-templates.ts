@@ -4,7 +4,12 @@ import {
   encodePathSegment,
   getInternalApiClient,
   type InternalApiClientOptions,
+  withTaskApiBaseUrl,
 } from './client';
+
+function getTaskApiClient(options?: InternalApiClientOptions) {
+  return getInternalApiClient(withTaskApiBaseUrl(options));
+}
 
 export type WorkspaceTaskTemplateVisibility = 'private' | 'workspace';
 
@@ -114,7 +119,7 @@ export async function listWorkspaceTaskTemplates(
   options?: ListWorkspaceTaskTemplatesOptions,
   clientOptions?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(clientOptions);
+  const client = getTaskApiClient(clientOptions);
   return client.json<WorkspaceTaskTemplatesResponse>(
     taskTemplatePath(workspaceId),
     {
@@ -133,7 +138,7 @@ export async function createWorkspaceTaskTemplate(
   payload: WorkspaceTaskTemplatePayload,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getTaskApiClient(options);
   return client.json<WorkspaceTaskTemplateResponse>(
     taskTemplatePath(workspaceId),
     {
@@ -152,7 +157,7 @@ export async function getWorkspaceTaskTemplate(
   templateKey: string,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getTaskApiClient(options);
   return client.json<WorkspaceTaskTemplateResponse>(
     taskTemplatePath(workspaceId, `/${encodePathSegment(templateKey)}`),
     {
@@ -167,7 +172,7 @@ export async function updateWorkspaceTaskTemplate(
   payload: UpdateWorkspaceTaskTemplatePayload,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getTaskApiClient(options);
   return client.json<WorkspaceTaskTemplateResponse>(
     taskTemplatePath(workspaceId, `/${encodePathSegment(templateKey)}`),
     {
@@ -187,7 +192,7 @@ export async function deleteWorkspaceTaskTemplate(
   options?: { permanent?: boolean },
   clientOptions?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(clientOptions);
+  const client = getTaskApiClient(clientOptions);
   return client.json<{ success: true }>(
     taskTemplatePath(workspaceId, `/${encodePathSegment(templateKey)}`),
     {
@@ -206,7 +211,7 @@ export async function instantiateWorkspaceTaskTemplate(
   payload: InstantiateWorkspaceTaskTemplatePayload,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getTaskApiClient(options);
   return client.json<InstantiateWorkspaceTaskTemplateResponse>(
     taskTemplatePath(
       workspaceId,
@@ -228,7 +233,7 @@ export async function saveWorkspaceTaskTemplateFromTask(
   payload: SaveWorkspaceTaskTemplateFromTaskPayload,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getTaskApiClient(options);
   return client.json<WorkspaceTaskTemplateResponse>(
     taskTemplatePath(workspaceId, '/from-task'),
     {

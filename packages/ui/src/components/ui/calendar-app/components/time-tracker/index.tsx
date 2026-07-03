@@ -17,6 +17,7 @@ import {
 import type { TimeTrackingCategory } from '@tuturuuu/types';
 import { cn } from '@tuturuuu/utils/format';
 import { useCallback, useEffect, useState } from 'react';
+import { getTaskApiUrl } from '../../../../../lib/tasks-app-url';
 import { Badge } from '../../../badge';
 import { Button } from '../../../button';
 import { Card, CardContent, CardHeader, CardTitle } from '../../../card';
@@ -201,15 +202,19 @@ export default function TimeTracker({ wsId, tasks = [] }: TimeTrackerProps) {
     setIsCreatingTask(true);
 
     try {
-      const response = await fetch(`/api/v1/workspaces/${wsId}/tasks`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: newTaskName,
-          description: newTaskDescription || null,
-          listId: selectedListId,
-        }),
-      });
+      const response = await fetch(
+        getTaskApiUrl(`/api/v1/workspaces/${wsId}/tasks`),
+        {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: newTaskName,
+            description: newTaskDescription || null,
+            listId: selectedListId,
+          }),
+        }
+      );
 
       if (!response.ok) throw new Error('Failed to create task');
 

@@ -1,6 +1,7 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { getTasksAppUrlClient } from '@/lib/tasks-app-url-client';
 import type {
   CompleteTaskResponse,
   MiraPet,
@@ -35,9 +36,13 @@ async function fetchMiraTasks({
   params.set('wsId', wsId);
   params.set('isPersonal', String(isPersonal));
 
-  const res = await fetch(`/api/v1/mira/tasks?${params.toString()}`, {
-    cache: 'no-store',
-  });
+  const res = await fetch(
+    getTasksAppUrlClient(`/api/v1/mira/tasks?${params.toString()}`),
+    {
+      cache: 'no-store',
+      credentials: 'include',
+    }
+  );
   if (!res.ok) {
     throw new Error('Failed to fetch tasks');
   }
@@ -46,8 +51,9 @@ async function fetchMiraTasks({
 
 // Complete task
 async function completeTask(taskId: string): Promise<CompleteTaskResponse> {
-  const res = await fetch('/api/v1/mira/tasks/complete', {
+  const res = await fetch(getTasksAppUrlClient('/api/v1/mira/tasks/complete'), {
     method: 'POST',
+    credentials: 'include',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ task_id: taskId }),
   });

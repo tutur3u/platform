@@ -17,6 +17,16 @@ class ApiConfig {
 
     return url;
   }
+
+  static String get tasksBaseUrl {
+    var url = Env.tasksApiBaseUrl.replaceAll(RegExp(r'/$'), '');
+
+    if (Platform.isAndroid && url.contains('localhost')) {
+      url = url.replaceAll('localhost', '10.0.2.2');
+    }
+
+    return url;
+  }
 }
 
 /// Auth endpoint paths (called via the mobile auth API on the web backend).

@@ -30,6 +30,7 @@ import {
   normalizeHostBaseUrl,
   readCliConfig,
   resolveCliHostBaseUrl,
+  resolveCliTasksBaseUrl,
   writeCliConfig,
 } from './config';
 import { runDevboxCommand } from './devbox';
@@ -680,6 +681,7 @@ function getClient(config: CliConfig) {
       await writeCliConfig({ ...config, session });
     },
     refreshToken: config.session.refreshToken,
+    tasksBaseUrl: config.tasksBaseUrl ?? resolveCliTasksBaseUrl(config.baseUrl),
   });
 }
 
@@ -714,6 +716,8 @@ async function saveSession(config: CliConfig, token: string) {
       baseUrl: nextConfig.baseUrl,
       expiresAt: session.expiresAt,
       refreshToken: session.refreshToken,
+      tasksBaseUrl:
+        nextConfig.tasksBaseUrl ?? resolveCliTasksBaseUrl(nextConfig.baseUrl),
     }).users
       .profile()
       .then((profile) => profile.email)

@@ -144,11 +144,6 @@
       "targetOwner": "rust-backend",
       "note": "Accepted removal: the legacy development-only Tuturuuu API proxy used Next.js and Undici to forward arbitrary allowlisted API paths and carried SSRF-sensitive outbound proxy behavior. No in-repo callers reference /api/v1/proxy/tuturuuu, and the Cloudflare cutover should use maintained internal API clients or direct backend routes instead. Rust returns terminal 410 ENDPOINT_REMOVED with the legacy GET allow list."
     },
-    "api:/api/admin/tasks/embeddings/stats:apps/web/src/app/api/admin/tasks/embeddings/stats/route.ts": {
-      "status": "migrated",
-      "targetOwner": "rust-backend",
-      "note": "Rust backend handle_backend_request handles GET /api/admin/tasks/embeddings/stats by validating the browser Supabase auth cookie with Supabase Auth, requiring a Tuturuuu admin email domain, reading exact system-wide task counts through the server-owned Supabase REST adapter, and returning the derived legacy embedding coverage payload. POST /api/admin/tasks/embeddings/generate remains legacy-owned because it streams SSE progress and performs embedding writes."
-    },
     "api:/api/v1/workspaces/limits:apps/web/src/app/api/v1/workspaces/limits/route.ts": {
       "status": "migrated",
       "targetOwner": "rust-backend",
@@ -188,11 +183,6 @@
       "status": "migrated",
       "targetOwner": "rust-backend",
       "note": "Rust backend handle_backend_request handles GET /api/v1/nova/me/team by preserving Nova-only app-session auth and browser Supabase cookie fallback, reading only team_id for the authenticated user from private.nova_team_members through the server-owned private-schema REST adapter, and returning the derived legacy teamId payload."
-    },
-    "api:/api/v1/task-board-status-templates:apps/web/src/app/api/v1/task-board-status-templates/route.ts": {
-      "status": "migrated",
-      "targetOwner": "rust-backend",
-      "note": "Rust backend handle_backend_request handles GET /api/v1/task-board-status-templates by preserving authenticated Supabase session access for browser cookies and non-app-session Bearer tokens, rejecting Tuturuuu app-session tokens without falling back to stale cookies, reading the global task_board_status_templates catalog through the server-owned Supabase REST adapter with legacy is_default.desc/name.asc ordering, and returning the raw legacy templates payload."
     },
     "api:/api/v1/devboxes/cache:apps/web/src/app/api/v1/devboxes/cache/route.ts": {
       "status": "migrated",
@@ -429,11 +419,6 @@
       "status": "migrated",
       "targetOwner": "rust-backend",
       "note": "Rust backend handle_backend_request owns GET /api/v1/workspaces/:wsId/quiz-sets/:setId/linked-modules by revalidating a normal Supabase browser session or non-app-session Bearer token, resolving ai_lab workspace permission and ENABLE_EDUCATION, verifying the quiz set belongs to the resolved workspace before service-role linked-module reads, applying legacy page/pageSize/q parsing, and returning the legacy paginated envelope."
-    },
-    "loading:/:locale/:wsId/tasks/boards/:boardId:apps/web/src/app/[locale]/(dashboard)/[wsId]/tasks/boards/[boardId]/loading.tsx": {
-      "status": "migrated",
-      "targetOwner": "tanstack-start",
-      "note": "TanStack Start route /$locale/$wsId/tasks/boards/$boardId renders the shared KanbanSkeleton from @tuturuuu/ui for the legacy route-level loading artifact. This marks only loading.tsx migrated; the task board page/data/auth route remains legacy-owned."
     },
     "loading:/:locale/:wsId/users/groups/:groupId:apps/web/src/app/[locale]/(dashboard)/[wsId]/users/groups/[groupId]/loading.tsx": {
       "status": "migrated",
@@ -751,11 +736,6 @@
       "targetOwner": "rust-backend",
       "note": "Rust backend handle_backend_request owns GET /api/v1/workspaces/:wsId/Mention by revalidating a normal Supabase browser session or non-app-session Bearer token, rejecting app-session tokens, requiring exact MEMBER workspace membership through the caller-token workspace_members read, reading workspace_users.email with the caller token, returning the legacy singular email array payload, and preserving the legacy Unauthorized, Forbidden, Failed to verify workspace access, and Supabase error bodies."
     },
-    "api:/api/v1/workspaces/:wsId/habits/access:apps/web/src/app/api/v1/workspaces/[wsId]/habits/access/route.ts": {
-      "status": "migrated",
-      "targetOwner": "rust-backend",
-      "note": "Rust backend handle_backend_request owns GET /api/v1/workspaces/:wsId/habits/access by revalidating a normal Supabase browser session or non-app-session Bearer token with Supabase Auth, rejecting Tuturuuu app-session tokens, preserving internal, personal, UUID, and handle workspace normalization, requiring exact MEMBER workspace membership through the service-role workspace_members read, reading ENABLE_HABITS from workspace_secrets through the service-role Supabase REST adapter with exact value=true matching, returning the legacy enabled payload, and preserving Unauthorized, Forbidden, workspace-access lookup, and disabled-secret behavior."
-    },
     "api:/api/v1/workspaces/:wsId/mobile/module-flags:apps/web/src/app/api/v1/workspaces/[wsId]/mobile/module-flags/route.ts": {
       "status": "migrated",
       "targetOwner": "rust-backend",
@@ -994,11 +974,6 @@
       "targetOwner": "tanstack-start",
       "note": "TanStack Start route /$locale/$wsId/meet/meetings/$meetingId redirects to the standalone Meet app meeting detail route while preserving query parameters. This marks only the page handoff artifact migrated; Meet data APIs and parent dashboard/session ownership remain separately owned."
     },
-    "page:/:locale/:wsId/habits:apps/web/src/app/[locale]/(dashboard)/[wsId]/habits/page.tsx": {
-      "status": "migrated",
-      "targetOwner": "tanstack-start",
-      "note": "TanStack Start route /$locale/$wsId/habits ports the legacy authenticated habit tracker page as a dynamic no-store workspace route with fail-closed current-user auth, workspace resolution, ENABLE_HABITS gating through the Rust-owned habits access backend route, route metadata, and the shared HabitsClientPage."
-    },
     "page:/:locale/:wsId/posts:apps/web/src/app/[locale]/(dashboard)/[wsId]/posts/page.tsx": {
       "status": "migrated",
       "targetOwner": "tanstack-start",
@@ -1013,86 +988,6 @@
       "status": "migrated",
       "targetOwner": "tanstack-start",
       "note": "TanStack Start route /$locale/$wsId/members preserves the legacy workspace access page with fail-closed auth, full-workspace resolution, personal-workspace/settings redirect, manage_workspace_members gating, manage_workspace_roles context, tab search validation, page metadata, and the shared StandardWorkspaceAccessPage client. The route intentionally defaults disableInvite to false until a Rust/internal-api workspace secret reader lands for the DISABLE_INVITE flag; invite-link creation remains protected by the existing server API check."
-    },
-    "page:/:locale/:wsId/tasks/habits:apps/web/src/app/[locale]/(dashboard)/[wsId]/tasks/habits/page.tsx": {
-      "status": "migrated",
-      "targetOwner": "tanstack-start",
-      "note": "TanStack Start route /$locale/$wsId/tasks/habits preserves the legacy ENABLE_HABITS workspace secret gate and 307 redirects to /:wsId/habits when enabled or /:wsId when disabled. This marks only the legacy redirect page artifact migrated; parent dashboard layout/session and canonical habits page ownership remain legacy-owned."
-    },
-    "page:/:locale/:wsId/tasks/:taskId:apps/web/src/app/[locale]/(dashboard)/[wsId]/tasks/[taskId]/page.tsx": {
-      "status": "migrated",
-      "targetOwner": "tanstack-start",
-      "note": "TanStack Start route /$locale/$wsId/tasks/$taskId preserves the legacy authenticated task-detail recovery page by gating the current user and resolving the task through the internal API facade before redirecting to the canonical board-backed task URL. Parent dashboard layout/session and task data APIs remain separately owned."
-    },
-    "page:/:locale/:wsId/tasks:apps/web/src/app/[locale]/(dashboard)/[wsId]/tasks/page.tsx": {
-      "status": "migrated",
-      "targetOwner": "tanstack-start",
-      "note": "TanStack Start route /$locale/$wsId/tasks preserves the legacy authenticated My Tasks shell by resolving the current user, loading the full workspace row for personal-workspace behavior, and rendering the shared MyTasksContent client. The client self-loads task data through existing internal-api/UI hooks, so backing task APIs remain separately tracked."
-    },
-    "page:/:locale/:wsId/tasks/boards:apps/web/src/app/[locale]/(dashboard)/[wsId]/tasks/boards/page.tsx": {
-      "status": "migrated",
-      "targetOwner": "tanstack-start",
-      "note": "TanStack Start route /$locale/$wsId/tasks/boards preserves the legacy authenticated boards index shell with FeatureSummary, Suspense skeleton, and shared WorkspaceProjectsClientPage. The page self-loads workspace, permissions, and boards through internal-api facades under TanStack Query; backing task-board API ownership remains separately tracked."
-    },
-    "page:/:locale/:wsId/tasks/boards/:boardId:apps/web/src/app/[locale]/(dashboard)/[wsId]/tasks/boards/[boardId]/page.tsx": {
-      "status": "migrated",
-      "targetOwner": "tanstack-start",
-      "note": "TanStack Start route /$locale/$wsId/tasks/boards/$boardId preserves the legacy authenticated board detail flow by authorizing the board through the forwarded-auth internal API, mapping 400/401/403/404 to notFound, resolving the canonical workspace for member access, using the legacy guest workspace shell for guest board access, and rendering the shared BoardClient. The legacy Mira idle chat island remains legacy-only until its local Next.js API/UI dependencies are moved behind shared TanStack/Rust facades."
-    },
-    "page:/:locale/:wsId/tasks/cycles:apps/web/src/app/[locale]/(dashboard)/[wsId]/tasks/cycles/page.tsx": {
-      "status": "migrated",
-      "targetOwner": "tanstack-start",
-      "note": "TanStack Start route /$locale/$wsId/tasks/cycles preserves the legacy authenticated workspace page with getWorkspace-style not-found handling, manage_projects permission gating through the forwarded-auth internal permission check, route metadata, and the shared TaskCyclesClient with an empty initial cycle set. Cycle data APIs remain separately tracked because the client self-loads after mount."
-    },
-    "page:/:locale/:wsId/tasks/estimates:apps/web/src/app/[locale]/(dashboard)/[wsId]/tasks/estimates/page.tsx": {
-      "status": "migrated",
-      "targetOwner": "tanstack-start",
-      "note": "TanStack Start route /$locale/$wsId/tasks/estimates preserves the legacy authenticated workspace page with getWorkspace-style not-found handling, manage_projects permission gating through the forwarded-auth internal permission check, localized task-estimates copy, and the shared TaskEstimatesClient. Parent dashboard layout/session and backing task estimate APIs remain separately owned."
-    },
-    "page:/:locale/:wsId/tasks/initiatives:apps/web/src/app/[locale]/(dashboard)/[wsId]/tasks/initiatives/page.tsx": {
-      "status": "migrated",
-      "targetOwner": "tanstack-start",
-      "note": "TanStack Start route /$locale/$wsId/tasks/initiatives preserves the legacy authenticated workspace page with getWorkspace-style not-found handling, manage_projects permission gating through the forwarded-auth internal permission check, route metadata, and the shared TaskInitiativesClient with an empty initial initiative set. Initiative data APIs remain separately tracked because the client self-loads after mount."
-    },
-    "page:/:locale/:wsId/tasks/labels:apps/web/src/app/[locale]/(dashboard)/[wsId]/tasks/labels/page.tsx": {
-      "status": "migrated",
-      "targetOwner": "tanstack-start",
-      "note": "TanStack Start route /$locale/$wsId/tasks/labels preserves the legacy authenticated workspace page with getWorkspace-style not-found handling, manage_projects permission gating through the forwarded-auth internal permission check, and the shared TaskLabelsClient. Server-prefetched initial labels are intentionally not preserved yet because the client self-loads data and the task label data-origin/API ownership remains separately owned."
-    },
-    "page:/:locale/:wsId/tasks/logs:apps/web/src/app/[locale]/(dashboard)/[wsId]/tasks/logs/page.tsx": {
-      "status": "migrated",
-      "targetOwner": "tanstack-start",
-      "note": "TanStack Start route /$locale/$wsId/tasks/logs preserves the legacy authenticated workspace page with getWorkspace-style not-found handling, manage_projects permission gating through the forwarded-auth internal permission check, route metadata, and the shared LogsClient shell. The legacy server-prefetched board/filter data is represented by empty initial filter state while log data APIs remain separately tracked."
-    },
-    "page:/:locale/:wsId/tasks/notes:apps/web/src/app/[locale]/(dashboard)/[wsId]/tasks/notes/page.tsx": {
-      "status": "migrated",
-      "targetOwner": "tanstack-start",
-      "note": "TanStack Start route /$locale/$wsId/tasks/notes preserves the legacy authenticated workspace page with getWorkspace-style not-found handling and renders the shared NotesContent under the locale layout's next-intl provider. Parent dashboard layout/session and notes data APIs remain separately owned."
-    },
-    "page:/:locale/:wsId/tasks/projects:apps/web/src/app/[locale]/(dashboard)/[wsId]/tasks/projects/page.tsx": {
-      "status": "migrated",
-      "targetOwner": "tanstack-start",
-      "note": "TanStack Start route /$locale/$wsId/tasks/projects preserves the legacy authenticated workspace page with getWorkspace-style not-found handling, manage_projects permission gating through the forwarded-auth internal permission check, localized project copy, and the shared TaskProjectsClient with an empty initial project set. Project data APIs remain separately tracked because the client self-loads after mount."
-    },
-    "page:/:locale/:wsId/tasks/projects/:projectId:apps/web/src/app/[locale]/(dashboard)/[wsId]/tasks/projects/[projectId]/page.tsx": {
-      "status": "migrated",
-      "targetOwner": "tanstack-start",
-      "note": "TanStack Start route /$locale/$wsId/tasks/projects/$projectId preserves the legacy authenticated project detail flow with full workspace resolution, manage_projects permission gating, forwarded-auth internal-api loading for the project and related tasks, notFound mapping on data failures, and the shared TaskProjectDetailPageClient. This is a data-backed migration rather than a shell-only handoff."
-    },
-    "page:/:locale/:wsId/tasks/templates:apps/web/src/app/[locale]/(dashboard)/[wsId]/tasks/templates/page.tsx": {
-      "status": "migrated",
-      "targetOwner": "tanstack-start",
-      "note": "TanStack Start route /$locale/$wsId/tasks/templates preserves the legacy authenticated workspace page with getWorkspace-style not-found handling, manage_projects permission gating through the forwarded-auth internal permission check, localized template gallery header/action, and the shared TemplatesClient with an empty initial template set. Template data APIs remain separately tracked."
-    },
-    "page:/:locale/:wsId/tasks/templates/:templateId:apps/web/src/app/[locale]/(dashboard)/[wsId]/tasks/templates/[templateId]/page.tsx": {
-      "status": "migrated",
-      "targetOwner": "tanstack-start",
-      "note": "TanStack Start route /$locale/$wsId/tasks/templates/$templateId preserves the legacy authenticated template detail flow with UUID validation, workspace not-found handling, manage_projects permission gating, forwarded-auth internal-api loading for the template and signed background URL, notFound mapping on missing template data, and the shared TaskTemplateDetailPageClient. This is a data-backed migration rather than a shell-only handoff."
-    },
-    "page:/:locale/:wsId/tasks/templates/marketplace:apps/web/src/app/[locale]/(dashboard)/[wsId]/tasks/templates/marketplace/page.tsx": {
-      "status": "migrated",
-      "targetOwner": "tanstack-start",
-      "note": "TanStack Start route /$locale/$wsId/tasks/templates/marketplace preserves the legacy authenticated workspace page with getWorkspace-style not-found handling, manage_projects permission gating through the forwarded-auth internal permission check, localized marketplace header/back link, and the shared MarketplaceClient with an empty initial public template set. Template marketplace data APIs remain separately tracked."
     },
     "page:/:locale/:wsId/calendar:apps/web/src/app/[locale]/(dashboard)/[wsId]/calendar/page.tsx": {
       "status": "migrated",
@@ -2530,14 +2425,12 @@
       "targetOwner": "infrastructure-app"
     },
     "page:/:locale/shared/task/:shareCode:apps/web/src/app/[locale]/shared/task/[shareCode]/page.tsx": {
-      "status": "migrated",
-      "targetOwner": "tanstack-start",
-      "note": "TanStack Start route /$locale/shared/task/$shareCode ports the legacy authenticated shared-task page with fail-closed current-user resolution before task data fetch, 307 login redirect preserving nextUrl, noindex head metadata, unavailable shell for revoked or missing links, and shared TaskEditDialog rendering through SharedTaskContent. The page forwards authenticated cookies to the legacy /api/v1/shared/tasks/:shareCode endpoint, so that API artifact remains separately legacy-owned."
+      "status": "accepted-removal",
+      "note": "Moved out of apps/web into apps/tasks during the Tasks app hard cutover. The remaining Web page is a redirect-only compatibility shim to the canonical Tasks shared-task URL while apps/tasks owns the public shared task page and backing task API."
     },
     "page:/:locale/shared/task-boards/:code:apps/web/src/app/[locale]/shared/task-boards/[code]/page.tsx": {
-      "status": "migrated",
-      "targetOwner": "tanstack-start",
-      "note": "TanStack Start route /$locale/shared/task-boards/$code ports the legacy public task-board page as a dynamic no-store shared route. It loads the sanitized public board payload through packages/internal-api, preserves noindex head metadata and the localized unavailable shell for missing or revoked links, and renders the read-only BoardViews public board shell from TanStack-local payload adapters. The backing /api/v1/shared/task-boards/:code endpoint remains separately legacy-owned pending Rust backend migration."
+      "status": "accepted-removal",
+      "note": "Moved out of apps/web into apps/tasks during the Tasks app hard cutover. The remaining Web page is a redirect-only compatibility shim to the canonical Tasks shared-board URL while apps/tasks owns the public shared task-board page and backing task-board API."
     },
     "page:/:locale/shared/user-profile/:code:apps/web/src/app/[locale]/shared/user-profile/[code]/page.tsx": {
       "status": "migrated",

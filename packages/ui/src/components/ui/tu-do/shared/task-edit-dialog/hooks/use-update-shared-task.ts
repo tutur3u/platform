@@ -4,6 +4,7 @@ import {
   useQueryClient,
 } from '@tanstack/react-query';
 import type { Task } from '@tuturuuu/types/primitives/Task';
+import { getTaskApiUrl } from '../../../../../../lib/tasks-app-url';
 
 export interface TaskUpdatePayload {
   name?: string;
@@ -33,11 +34,15 @@ export function useUpdateSharedTask(): UseMutationResult<
       shareCode: string;
       updates: TaskUpdatePayload;
     }) => {
-      const response = await fetch(`/api/v1/shared/tasks/${shareCode}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updates),
-      });
+      const response = await fetch(
+        getTaskApiUrl(`/api/v1/shared/tasks/${shareCode}`),
+        {
+          method: 'PATCH',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(updates),
+        }
+      );
 
       if (!response.ok) {
         const error = await response.json().catch(() => null);

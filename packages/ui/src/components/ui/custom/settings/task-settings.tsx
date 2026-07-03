@@ -27,6 +27,7 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { Switch } from '@tuturuuu/ui/switch';
 import { useTranslations } from 'next-intl';
 import { useEffect } from 'react';
+import { getTaskApiUrl } from '../../../../lib/tasks-app-url';
 import {
   normalizeTaskDialogPresentation,
   TASK_DIALOG_DEFAULT_PRESENTATION_CONFIG_ID,
@@ -145,7 +146,9 @@ export function TaskSettings({ workspace }: TaskSettingsProps) {
   const { data: settings, isLoading } = useQuery({
     queryKey: ['user-task-settings'],
     queryFn: async (): Promise<TaskSettingsData> => {
-      const res = await fetch('/api/v1/users/task-settings');
+      const res = await fetch(getTaskApiUrl('/api/v1/users/task-settings'), {
+        credentials: 'include',
+      });
       if (!res.ok) throw new Error('Failed to fetch task settings');
       return res.json();
     },
@@ -162,8 +165,9 @@ export function TaskSettings({ workspace }: TaskSettingsProps) {
 
   const updateSettings = useMutation({
     mutationFn: async (data: Partial<TaskSettingsData>) => {
-      const res = await fetch('/api/v1/users/task-settings', {
+      const res = await fetch(getTaskApiUrl('/api/v1/users/task-settings'), {
         method: 'PATCH',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
       });

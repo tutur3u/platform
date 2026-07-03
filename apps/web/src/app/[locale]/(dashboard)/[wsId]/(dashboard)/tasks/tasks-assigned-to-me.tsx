@@ -23,6 +23,7 @@ import {
 import { isPast, isToday, isTomorrow } from 'date-fns';
 import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
+import { getTasksAppOrigin } from '@/lib/tasks-app-url';
 import ExpandableTaskList from './expandable-task-list';
 
 interface TasksAssignedToMeProps {
@@ -38,6 +39,7 @@ export default async function TasksAssignedToMe({
 }: TasksAssignedToMeProps) {
   const supabase = await createClient();
   const t = await getTranslations('dashboard');
+  const tasksHref = `${getTasksAppOrigin()}/${wsId}/tasks`;
 
   // Use RPC function to get all accessible tasks, excluding personal overrides
   const { data: rpcTasks, error: tasksError } = await supabase.rpc(
@@ -312,7 +314,7 @@ export default async function TasksAssignedToMe({
             </div>
           </div>
 
-          <Link href={`/${wsId}/tasks`}>
+          <Link href={tasksHref}>
             <Button
               variant="outline"
               size="sm"
@@ -482,7 +484,7 @@ export default async function TasksAssignedToMe({
 
               {/* Action Buttons */}
               <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-                <Link href={`/${wsId}/tasks`}>
+                <Link href={tasksHref}>
                   <Button
                     variant="default"
                     size="default"

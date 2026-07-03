@@ -19,6 +19,11 @@ class Env {
     defaultValue: 'http://localhost:7803',
   );
 
+  static const tasksApiBaseUrl = String.fromEnvironment(
+    'TASKS_API_BASE_URL',
+    defaultValue: 'http://localhost:7809',
+  );
+
   static const turnstileSiteKey = String.fromEnvironment('TURNSTILE_SITE_KEY');
 
   /// The domain registered in the Cloudflare Turnstile widget's allowed
@@ -53,5 +58,6 @@ class Env {
   static bool get isConfigured =>
       supabaseAnonKey.isNotEmpty && supabaseUrl.isNotEmpty;
 
-  static bool get isDevelopment => apiBaseUrl.contains('localhost');
+  static bool get isDevelopment =>
+      apiBaseUrl.contains('localhost') || tasksApiBaseUrl.contains('localhost');
 }

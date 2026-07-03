@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { getTasksAppUrlClient } from '@/lib/tasks-app-url-client';
 import type { Notification as NotificationData } from './useNotifications';
 
 type PermissionState = 'default' | 'granted' | 'denied';
@@ -77,10 +78,9 @@ export function useBrowserNotifications(): UseBrowserNotificationsReturn {
 
         // Navigate to the entity if available
         if (data.entity_id && data.entity_type === 'task') {
-          const taskUrl = data.board_id
-            ? `/${data.ws_id}/tasks/${data.entity_id}`
-            : `/${data.ws_id}/tasks/${data.entity_id}`;
-          window.location.href = taskUrl;
+          window.location.href = getTasksAppUrlClient(
+            `/${data.ws_id}/tasks/${data.entity_id}`
+          );
         }
       };
 

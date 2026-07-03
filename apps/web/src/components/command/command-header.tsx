@@ -53,10 +53,10 @@ export function CommandHeader({
           autoFocus={shouldAutoFocus}
           placeholder={
             page === 'add-task'
-              ? '✨ What task would you like to create?'
+              ? 'What task would you like to create?'
               : page === 'time-tracker'
-                ? '⏱️ What are you working on?'
-                : '🔍 Search boards, commands...'
+                ? 'What are you working on?'
+                : 'Search boards, commands...'
           }
           className="flex h-12 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
           value={inputValue}

@@ -351,7 +351,7 @@ describe('TuturuuuUserClient', () => {
     });
 
     expect(fetchMock).toHaveBeenCalledWith(
-      'https://tuturuuu.com/api/v1/workspaces/ws-1/tasks?listStatuses=not_started%2Cactive&limit=5&includeArchivedBoards=true&includeCount=true',
+      'https://tasks.tuturuuu.com/api/v1/workspaces/ws-1/tasks?listStatuses=not_started%2Cactive&limit=5&includeArchivedBoards=true&includeCount=true',
       expect.objectContaining({
         cache: 'no-store',
       })
@@ -383,7 +383,7 @@ describe('TuturuuuUserClient', () => {
     });
 
     expect(fetchMock).toHaveBeenCalledWith(
-      'https://tuturuuu.com/api/v1/workspaces/ws-1/tasks/search',
+      'https://tasks.tuturuuu.com/api/v1/workspaces/ws-1/tasks/search',
       expect.objectContaining({
         body: JSON.stringify({
           matchCount: 5,
@@ -425,14 +425,14 @@ describe('TuturuuuUserClient', () => {
 
     expect(fetchMock).toHaveBeenNthCalledWith(
       1,
-      'https://tuturuuu.com/api/v1/workspaces/ws-1/tasks/task-1/description',
+      'https://tasks.tuturuuu.com/api/v1/workspaces/ws-1/tasks/task-1/description',
       expect.objectContaining({
         cache: 'no-store',
       })
     );
     expect(fetchMock).toHaveBeenNthCalledWith(
       2,
-      'https://tuturuuu.com/api/v1/workspaces/ws-1/tasks/task-1/description',
+      'https://tasks.tuturuuu.com/api/v1/workspaces/ws-1/tasks/task-1/description',
       expect.objectContaining({
         body: JSON.stringify({
           description: '{"type":"doc","content":[{"type":"paragraph"}]}',

@@ -3,6 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { WorkspaceTaskBoard } from '@tuturuuu/types';
 import { useTranslations } from 'next-intl';
+import { getTaskApiUrl } from '../../../../lib/tasks-app-url';
 
 export interface TaskEstimateBoardsResponse {
   boards: Partial<WorkspaceTaskBoard>[];
@@ -34,9 +35,12 @@ export const taskEstimateBoardKeys = {
 export async function fetchTaskEstimateBoards(
   wsId: string
 ): Promise<TaskEstimateBoardsResponse> {
-  const response = await fetch(`/api/v1/workspaces/${wsId}/boards/estimation`, {
-    cache: 'no-store',
-  });
+  const response = await fetch(
+    getTaskApiUrl(`/api/v1/workspaces/${wsId}/boards/estimation`),
+    {
+      cache: 'no-store',
+    }
+  );
 
   if (!response.ok) {
     throw new Error('Failed to fetch task estimate boards');
@@ -56,9 +60,10 @@ async function updateTaskEstimateBoard(
   }: UpdateTaskEstimateBoardInput
 ) {
   const response = await fetch(
-    `/api/v1/workspaces/${wsId}/boards/${boardId}/estimation`,
+    getTaskApiUrl(`/api/v1/workspaces/${wsId}/boards/${boardId}/estimation`),
     {
       cache: 'no-store',
+      credentials: 'include',
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',

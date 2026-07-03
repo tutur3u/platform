@@ -16,9 +16,9 @@ import { Button } from '@tuturuuu/ui/button';
 import { useBoardActions } from '@tuturuuu/ui/hooks/use-board-actions';
 import { CopyBoardDialog } from '@tuturuuu/ui/tu-do/boards/copy-board-dialog';
 import { SaveAsTemplateDialog } from '@tuturuuu/ui/tu-do/templates/save-as-template-dialog';
-import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import { getTasksAppUrlClient } from '@/lib/tasks-app-url-client';
 
 export function BoardCriticalActionsSettings({
   board,
@@ -30,7 +30,6 @@ export function BoardCriticalActionsSettings({
   wsId: string;
 }) {
   const t = useTranslations();
-  const router = useRouter();
   const [duplicateOpen, setDuplicateOpen] = useState(false);
   const [templateOpen, setTemplateOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -133,7 +132,9 @@ export function BoardCriticalActionsSettings({
                 softDeleteBoard(board.id, {
                   onSuccess: () => {
                     setDeleteOpen(false);
-                    router.push(`/${wsId}/tasks/boards`);
+                    window.location.assign(
+                      getTasksAppUrlClient(`/${wsId}/boards`)
+                    );
                   },
                 })
               }

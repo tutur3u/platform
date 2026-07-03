@@ -14,6 +14,7 @@ import { Button } from '@tuturuuu/ui/button';
 import { CommandGroup, CommandItem } from '@tuturuuu/ui/command';
 import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
+import { getTasksAppUrlClient } from '@/lib/tasks-app-url-client';
 
 // Peak productivity hours configuration
 const PEAK_HOURS = {
@@ -48,7 +49,7 @@ export function QuickActions({ wsId, setOpen, setPage }: QuickActionsProps) {
       setPage('add-task');
     } else {
       // Fallback to external navigation if setPage is not available
-      router.push(`/${wsId}/tasks/boards`);
+      window.location.assign(getTasksAppUrlClient(`/${wsId}/boards`));
       setOpen(false);
     }
   };
@@ -80,7 +81,7 @@ export function QuickActions({ wsId, setOpen, setPage }: QuickActionsProps) {
       <div className="flex items-center justify-between px-3 py-2">
         <div className="flex items-center gap-2">
           <span className="font-medium text-foreground text-sm">
-            ⚡ Quick Actions
+            Quick Actions
           </span>
           <div className="rounded-md bg-dynamic-blue/10 px-2 py-0.5 font-medium text-dynamic-blue text-xs">
             4 actions

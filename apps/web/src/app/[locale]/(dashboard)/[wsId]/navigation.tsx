@@ -21,6 +21,7 @@ import { getInventoryAppOrigin } from '@/lib/inventory-app-url';
 import { getMailAppOrigin } from '@/lib/mail-app-url';
 import { getMindAppOrigin } from '@/lib/mind-app-url';
 import { getQrAppOrigin } from '@/lib/qr-app-url';
+import { getTasksAppOrigin } from '@/lib/tasks-app-url';
 import { TOPIC_ANNOUNCEMENTS_SECRET } from '@/lib/topic-announcements';
 import {
   createDashboardNavigationIcon,
@@ -108,6 +109,7 @@ export async function WorkspaceNavigationLinks({
   const calendarAppHref = `${getCalendarAppOrigin()}/${personalOrWsId}`;
   const mindAppHref = `${getMindAppOrigin()}/${personalOrWsId}`;
   const hiveAppHref = getHiveAppOrigin();
+  const tasksAppHref = `${getTasksAppOrigin()}/${personalOrWsId}`;
 
   // Parallelize user-dependent queries
   const [
@@ -166,13 +168,14 @@ export async function WorkspaceNavigationLinks({
       {
         id: 'tasks',
         title: t('sidebar_tabs.tasks'),
-        href: `/${personalOrWsId}/tasks`,
+        href: `${tasksAppHref}/tasks`,
         aliases: [
           `/${personalOrWsId}/tasks`,
           `/${personalOrWsId}/tasks/boards`,
           `/${personalOrWsId}/tasks/boards/*`,
         ],
         icon: createDashboardNavigationIcon('CheckCircle2', 'h-5 w-5'),
+        external: true,
         experimental: 'beta',
         preferencePlacement: 'root',
         preferenceSectionLabel: sidebarSections.core,
@@ -232,9 +235,10 @@ export async function WorkspaceNavigationLinks({
       ? [
           {
             title: t('task-progress.tabs.progress'),
-            href: `/${personalOrWsId}/tasks/progress`,
+            href: `${tasksAppHref}/progress`,
             icon: createDashboardNavigationIcon('ChartArea', 'h-5 w-5'),
             disabled: taskNavigationDisabled,
+            external: true,
           } satisfies DashboardNavigationLink,
         ]
       : []),
@@ -242,9 +246,10 @@ export async function WorkspaceNavigationLinks({
       ? [
           {
             title: t('task-progress.tabs.goals'),
-            href: `/${personalOrWsId}/tasks/goals`,
+            href: `${tasksAppHref}/goals`,
             icon: createDashboardNavigationIcon('CheckCircle2', 'h-5 w-5'),
             disabled: taskNavigationDisabled,
+            external: true,
           } satisfies DashboardNavigationLink,
         ]
       : []),
@@ -252,9 +257,10 @@ export async function WorkspaceNavigationLinks({
       ? [
           {
             title: t('task-progress.tabs.stats'),
-            href: `/${personalOrWsId}/tasks/stats`,
+            href: `${tasksAppHref}/stats`,
             icon: createDashboardNavigationIcon('ChartColumn', 'h-5 w-5'),
             disabled: taskNavigationDisabled,
+            external: true,
           } satisfies DashboardNavigationLink,
         ]
       : []),
@@ -262,9 +268,10 @@ export async function WorkspaceNavigationLinks({
       ? [
           {
             title: t('task-progress.tabs.leaderboards'),
-            href: `/${personalOrWsId}/tasks/leaderboards`,
+            href: `${tasksAppHref}/leaderboards`,
             icon: createDashboardNavigationIcon('Users', 'h-5 w-5'),
             disabled: taskNavigationDisabled,
+            external: true,
           } satisfies DashboardNavigationLink,
         ]
       : []),
@@ -272,9 +279,10 @@ export async function WorkspaceNavigationLinks({
       ? [
           {
             title: t('task-progress.tabs.import'),
-            href: `/${personalOrWsId}/tasks/import`,
+            href: `${tasksAppHref}/import`,
             icon: createDashboardNavigationIcon('Upload', 'h-5 w-5'),
             disabled: taskNavigationDisabled,
+            external: true,
           } satisfies DashboardNavigationLink,
         ]
       : []),
@@ -282,10 +290,11 @@ export async function WorkspaceNavigationLinks({
   const taskNavigationChildren: (DashboardNavigationLink | null)[] = [
     {
       title: t('sidebar_tabs.tasks'),
-      href: `/${personalOrWsId}/tasks`,
+      href: `${tasksAppHref}/tasks`,
       aliases: [`/${personalOrWsId}/tasks/boards/*`],
       icon: createDashboardNavigationIcon('CheckCircle2', 'h-5 w-5'),
       disabled: taskNavigationDisabled,
+      external: true,
       matchExact: true,
     },
     ...(secondaryTaskNavigationChildren.length
@@ -308,7 +317,7 @@ export async function WorkspaceNavigationLinks({
     {
       id: 'tasks',
       title: t('sidebar_tabs.tasks'),
-      href: `/${personalOrWsId}/tasks`,
+      href: `${tasksAppHref}/tasks`,
       aliases: [
         `/${personalOrWsId}/tasks`,
         `/${personalOrWsId}/tasks/boards`,
@@ -320,6 +329,7 @@ export async function WorkspaceNavigationLinks({
       ],
       icon: createDashboardNavigationIcon('CheckCircle2', 'h-5 w-5'),
       disabled: taskNavigationDisabled,
+      external: true,
       experimental: 'beta',
       preferencePlacement: 'root',
       preferenceSectionLabel: sidebarSections.core,
@@ -328,9 +338,10 @@ export async function WorkspaceNavigationLinks({
     {
       id: 'habits',
       title: t('sidebar_tabs.habits'),
-      href: `/${personalOrWsId}/habits`,
+      href: `${tasksAppHref}/habits`,
       aliases: [`/${personalOrWsId}/habits`, `/${personalOrWsId}/tasks/habits`],
       icon: createDashboardNavigationIcon('Repeat', 'h-5 w-5'),
+      external: true,
       disabled: !ENABLE_HABITS,
       preferenceSectionLabel: sidebarSections.workTools,
     },

@@ -14,6 +14,7 @@ import {
   type WorkspaceTaskDescriptionUpdatePayload,
   type WorkspaceTaskUpdatePayload,
 } from '@tuturuuu/internal-api/tasks';
+import { getTaskApiUrl } from '../../../../../../lib/tasks-app-url';
 import type { WorkspaceTaskLabel } from '../types';
 
 const TASK_DESCRIPTION_DIRECT_BODY_LIMIT_BYTES = 192 * 1024;
@@ -261,14 +262,18 @@ export async function createWorkspaceLabel(
   wsId: string,
   payload: { name: string; color: string }
 ) {
-  const response = await fetch(`/api/v1/workspaces/${wsId}/labels`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(payload),
-    cache: 'no-store',
-  });
+  const response = await fetch(
+    getTaskApiUrl(`/api/v1/workspaces/${wsId}/labels`),
+    {
+      method: 'POST',
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+    }
+  );
 
   if (!response.ok) {
     throw new Error(await getErrorMessage(response, 'Failed to create label'));

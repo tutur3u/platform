@@ -14,6 +14,7 @@ import {
 import { Skeleton } from '@tuturuuu/ui/skeleton';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useState } from 'react';
+import { getTaskApiUrl } from '../../../../lib/tasks-app-url';
 import HabitCard from './habit-card';
 import HabitFormDialog from './habit-form-dialog';
 
@@ -39,7 +40,9 @@ export default function HabitsClientPage({ wsId }: HabitsClientPageProps) {
   } = useQuery({
     queryKey: ['habits', wsId],
     queryFn: async () => {
-      const response = await fetch(`/api/v1/workspaces/${wsId}/habits`);
+      const response = await fetch(
+        getTaskApiUrl(`/api/v1/workspaces/${wsId}/habits`)
+      );
       if (!response.ok) {
         throw new Error('Failed to fetch habits');
       }

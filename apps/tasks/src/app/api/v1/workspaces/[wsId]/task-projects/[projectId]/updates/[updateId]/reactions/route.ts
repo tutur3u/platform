@@ -1,0 +1,190 @@
+import { createClient } from '@tuturuuu/supabase/next/server';
+import { MAX_COLOR_LENGTH } from '@tuturuuu/utils/constants';
+import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
+import type { NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
+import { z } from 'zod';
+import { resolveAuthenticatedSessionUser } from '@/lib/app-session-user';
+
+const addReactionSchema = z.object({
+  emoji: z.string().max(MAX_COLOR_LENGTH).emoji('Must be a valid emoji'),
+});
+
+export async function POST(
+  request: NextRequest,
+  {
+    params,
+  }: {
+    params: Promise<{ wsId: string; projectId: string; updateId: string }>;
+  }
+) {
+  try {
+    const { wsId, updateId } = await params;
+    const supabase = await createClient();
+
+    // Get current user
+    const { user, authError: userError } =
+      await resolveAuthenticatedSessionUser(supabase);
+    if (userError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Verify user has access to workspace
+    const membership = await verifyWorkspaceMembershipType({
+      wsId: wsId,
+      userId: user.id,
+      supabase: supabase,
+    });
+
+    if (membership.error === 'membership_lookup_failed') {
+      return NextResponse.json(
+        { error: 'Failed to verify workspace access' },
+        { status: 500 }
+      );
+    }
+
+    if (!membership.ok) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
+    // Parse and validate request body
+    const body = await request.json();
+    const { emoji } = addReactionSchema.parse(body);
+
+    // Add reaction (if already exists, this will fail due to unique constraint)
+    const { data: newReaction, error: createError } = await supabase
+      .from('task_project_update_reactions')
+      .insert({
+        update_id: updateId,
+        user_id: user.id,
+        emoji,
+      })
+      .select(
+        `
+        *,
+        user:users(
+          id,
+          display_name,
+          avatar_url
+        )
+      `
+      )
+      .single();
+
+    if (createError) {
+      // If unique constraint violation, it means user already reacted with this emoji
+      if (createError.code === '23505') {
+        return NextResponse.json(
+          { error: 'Already reacted with this emoji' },
+          { status: 409 }
+        );
+      }
+      console.error('Error adding reaction:', createError);
+      return NextResponse.json(
+        { error: 'Failed to add reaction' },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json(newReaction, { status: 201 });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return NextResponse.json({ error: error.message }, { status: 400 });
+    }
+    console.error(
+      'Error in POST /api/v1/workspaces/[wsId]/task-projects/[projectId]/updates/[updateId]/reactions:',
+      error
+    );
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(
+  request: NextRequest,
+  {
+    params,
+  }: {
+    params: Promise<{ wsId: string; projectId: string; updateId: string }>;
+  }
+) {
+  try {
+    const { wsId, updateId } = await params;
+    const supabase = await createClient();
+
+    // Get current user
+    const { user, authError: userError } =
+      await resolveAuthenticatedSessionUser(supabase);
+    if (userError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const membership = await verifyWorkspaceMembershipType({
+      wsId,
+      userId: user.id,
+      supabase,
+    });
+
+    if (membership.error === 'membership_lookup_failed') {
+      return NextResponse.json(
+        { error: 'Failed to verify workspace access' },
+        { status: 500 }
+      );
+    }
+
+    if (!membership.ok) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
+    // Get emoji from query params and validate
+    const { searchParams } = new URL(request.url);
+    const emojiParam = searchParams.get('emoji');
+
+    if (!emojiParam) {
+      return NextResponse.json(
+        { error: 'Emoji parameter is required' },
+        { status: 400 }
+      );
+    }
+
+    // Validate emoji using same schema as POST
+    const validation = addReactionSchema.safeParse({ emoji: emojiParam });
+    if (!validation.success) {
+      return NextResponse.json(
+        { error: validation.error.issues[0]?.message || 'Invalid emoji' },
+        { status: 400 }
+      );
+    }
+
+    const emoji = validation.data.emoji;
+
+    // Delete reaction
+    const { error: deleteError } = await supabase
+      .from('task_project_update_reactions')
+      .delete()
+      .eq('update_id', updateId)
+      .eq('user_id', user.id)
+      .eq('emoji', emoji);
+
+    if (deleteError) {
+      console.error('Error removing reaction:', deleteError);
+      return NextResponse.json(
+        { error: 'Failed to remove reaction' },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error(
+      'Error in DELETE /api/v1/workspaces/[wsId]/task-projects/[projectId]/updates/[updateId]/reactions:',
+      error
+    );
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}

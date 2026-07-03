@@ -2,7 +2,12 @@ import {
   encodePathSegment,
   getInternalApiClient,
   type InternalApiClientOptions,
+  withTaskApiBaseUrl,
 } from './client';
+
+function getTaskApiClient(options?: InternalApiClientOptions) {
+  return getInternalApiClient(withTaskApiBaseUrl(options));
+}
 
 export type TaskPlanPeriod = 'week' | 'month' | 'year';
 export type TaskPlanStatus = 'draft' | 'active' | 'sent' | 'archived';
@@ -236,7 +241,7 @@ export async function listWorkspaceTaskPlans(
   query?: { period_type?: TaskPlanPeriod; status?: TaskPlanStatus },
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getTaskApiClient(options);
   return client.json<ListTaskPlansResponse>(planBasePath(workspaceId), {
     cache: 'no-store',
     query,
@@ -248,7 +253,7 @@ export async function createWorkspaceTaskPlan(
   payload: CreateTaskPlanPayload,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getTaskApiClient(options);
   return client.json<TaskPlanResponse>(planBasePath(workspaceId), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -262,7 +267,7 @@ export async function getWorkspaceTaskPlan(
   planId: string,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getTaskApiClient(options);
   return client.json<TaskPlanResponse>(planPath(workspaceId, planId), {
     cache: 'no-store',
   });
@@ -274,7 +279,7 @@ export async function updateWorkspaceTaskPlan(
   payload: UpdateTaskPlanPayload,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getTaskApiClient(options);
   return client.json<TaskPlanResponse>(planPath(workspaceId, planId), {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
@@ -288,7 +293,7 @@ export async function deleteWorkspaceTaskPlan(
   planId: string,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getTaskApiClient(options);
   return client.json<{ ok: true } | TaskPlanSchemaUnavailableResponse>(
     planPath(workspaceId, planId),
     {
@@ -304,7 +309,7 @@ export async function addWorkspaceTaskPlanWorkspace(
   targetWorkspaceId: string,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getTaskApiClient(options);
   return client.json<
     | { ok: true; schemaAvailable: true; workspace: TaskPlanWorkspace }
     | TaskPlanSchemaUnavailableResponse
@@ -322,7 +327,7 @@ export async function removeWorkspaceTaskPlanWorkspace(
   targetWorkspaceId: string,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getTaskApiClient(options);
   return client.json<{ ok: true } | TaskPlanSchemaUnavailableResponse>(
     `${planPath(workspaceId, planId)}/workspaces`,
     {
@@ -339,7 +344,7 @@ export async function listWorkspaceTaskPlanShares(
   planId: string,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getTaskApiClient(options);
   return client.json<TaskPlanSharesResponse>(
     `${planPath(workspaceId, planId)}/shares`,
     { cache: 'no-store' }
@@ -352,7 +357,7 @@ export async function createWorkspaceTaskPlanShare(
   payload: CreateTaskPlanSharePayload,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getTaskApiClient(options);
   return client.json<
     | { ok: true; schemaAvailable: true; share: TaskPlanShare }
     | TaskPlanSchemaUnavailableResponse
@@ -371,7 +376,7 @@ export async function updateWorkspaceTaskPlanShare(
   permission: TaskPlanPermission,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getTaskApiClient(options);
   return client.json<
     | { ok: true; schemaAvailable: true; share: TaskPlanShare }
     | TaskPlanSchemaUnavailableResponse
@@ -389,7 +394,7 @@ export async function deleteWorkspaceTaskPlanShare(
   shareId: string,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getTaskApiClient(options);
   return client.json<{ ok: true } | TaskPlanSchemaUnavailableResponse>(
     `${planPath(workspaceId, planId)}/shares`,
     {
@@ -406,7 +411,7 @@ export async function listWorkspaceTaskPlanItems(
   planId: string,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getTaskApiClient(options);
   return client.json<TaskPlanItemsResponse>(
     `${planPath(workspaceId, planId)}/items`,
     { cache: 'no-store' }
@@ -419,7 +424,7 @@ export async function createWorkspaceTaskPlanItem(
   payload: CreateTaskPlanItemPayload,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getTaskApiClient(options);
   return client.json<TaskPlanItemResponse>(
     `${planPath(workspaceId, planId)}/items`,
     {
@@ -437,7 +442,7 @@ export async function updateWorkspaceTaskPlanItem(
   payload: UpdateTaskPlanItemPayload,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getTaskApiClient(options);
   return client.json<TaskPlanItemResponse>(
     `${planPath(workspaceId, planId)}/items`,
     {
@@ -455,7 +460,7 @@ export async function deleteWorkspaceTaskPlanItem(
   itemId: string,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getTaskApiClient(options);
   return client.json<{ ok: true } | TaskPlanSchemaUnavailableResponse>(
     `${planPath(workspaceId, planId)}/items`,
     {
@@ -472,7 +477,7 @@ export async function getWorkspaceTaskPlanDigest(
   planId: string,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getTaskApiClient(options);
   return client.json<TaskPlanDigestResponse>(
     `${planPath(workspaceId, planId)}/digest`,
     { cache: 'no-store' }

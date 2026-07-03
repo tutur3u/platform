@@ -35,6 +35,7 @@ import { usePathname } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import * as Y from 'yjs';
+import { getTaskApiUrl } from '../../../../lib/tasks-app-url';
 import { BoardEstimationConfigDialog } from '../boards/boardId/task-dialogs/BoardEstimationConfigDialog';
 import { TaskNewLabelDialog } from '../boards/boardId/task-dialogs/TaskNewLabelDialog';
 import { TaskNewProjectDialog } from '../boards/boardId/task-dialogs/TaskNewProjectDialog';
@@ -391,8 +392,9 @@ export function TaskEditDialog({
   const { data: userTaskSettings } = useQuery({
     queryKey: ['user-task-settings'],
     queryFn: async () => {
-      const res = await fetch('/api/v1/users/task-settings', {
+      const res = await fetch(getTaskApiUrl('/api/v1/users/task-settings'), {
         cache: 'no-store',
+        credentials: 'include',
       });
       if (!res.ok) return { task_auto_assign_to_self: false };
       return res.json() as Promise<{ task_auto_assign_to_self: boolean }>;
@@ -793,7 +795,7 @@ export function TaskEditDialog({
     enabled: !!isOpen && !isCreateMode && !!task?.id,
     queryFn: async () => {
       const response = await fetch(
-        `/api/v1/users/me/tasks/${task!.id}/schedule`,
+        getTaskApiUrl(`/api/v1/users/me/tasks/${task!.id}/schedule`),
         { cache: 'no-store' }
       );
       if (!response.ok) return null;

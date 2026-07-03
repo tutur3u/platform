@@ -21,26 +21,26 @@ CLI, documentation, local services, and deployment tooling behind that system.
 <!-- tanstack-rust-migration-progress:start -->
 _Generated from `apps/tanstack-web/migration/route-manifest.json`. Refresh with `bun migration:tanstack:readme` after route ownership changes._
 
-![Overall migration progress](https://img.shields.io/static/v1?color=fb8c00&label=Overall&message=27.85%25+terminal&style=flat-square) ![Rust backend migration progress](https://img.shields.io/static/v1?color=cf222e&label=Rust+backend&message=11.43%25+terminal&style=flat-square) ![TanStack Start migration progress](https://img.shields.io/static/v1?color=1f6feb&label=TanStack+Start&message=73.9%25+terminal&style=flat-square)
+![Overall migration progress](https://img.shields.io/static/v1?color=fb8c00&label=Overall&message=29.59%25+terminal&style=flat-square) ![Rust backend migration progress](https://img.shields.io/static/v1?color=cf222e&label=Rust+backend&message=12.81%25+terminal&style=flat-square) ![TanStack Start migration progress](https://img.shields.io/static/v1?color=1f6feb&label=TanStack+Start&message=73.56%25+terminal&style=flat-square)
 
 | Track | Progress | Terminal | Migrated | Removed | Remaining |
 | --- | --- | ---: | ---: | ---: | ---: |
-| Overall | `[######--------------]` 27.85% | 337 / 1,210 | 319 | 18 | 873 |
-| Rust backend | `[##------------------]` 11.43% | 102 / 892 | 85 | 17 | 790 |
-| TanStack Start | `[###############-----]` 73.9% | 235 / 318 | 234 | 1 | 83 |
+| Overall | `[######--------------]` 29.59% | 316 / 1,068 | 296 | 20 | 752 |
+| Rust backend | `[###-----------------]` 12.81% | 99 / 773 | 82 | 17 | 674 |
+| TanStack Start | `[###############-----]` 73.56% | 217 / 295 | 214 | 3 | 78 |
 
 <details>
 <summary>Remaining work by route kind</summary>
 
 | Kind | Progress | Terminal | Remaining |
 | --- | --- | ---: | ---: |
-| api | `[##--------------]` 11.11% | 97 / 873 | 776 |
-| page | `[############----]` 72.4% | 181 / 250 | 69 |
+| api | `[##--------------]` 12.43% | 94 / 756 | 662 |
+| page | `[###########-----]` 71.3% | 164 / 230 | 66 |
 | layout | `[#############---]` 80.33% | 49 / 61 | 12 |
-| cron | `[##--------------]` 14.29% | 2 / 14 | 12 |
-| loading | `[##########------]` 60% | 3 / 5 | 2 |
+| cron | `[###-------------]` 16.67% | 2 / 12 | 10 |
 | route-handler | `[############----]` 75% | 3 / 4 | 1 |
 | trpc | `[----------------]` 0% | 0 / 1 | 1 |
+| loading | `[################]` 100% | 2 / 2 | 0 |
 | error | `[################]` 100% | 1 / 1 | 0 |
 | not-found | `[################]` 100% | 1 / 1 | 0 |
 
@@ -51,11 +51,11 @@ _Generated from `apps/tanstack-web/migration/route-manifest.json`. Refresh with 
 
 | Route | Owner | Methods | Source |
 | --- | --- | --- | --- |
-| `/api/:wsId/task/:taskId/edit` | Rust backend | `PATCH` | `apps/web/src/app/api/[wsId]/task/[taskId]/edit/route.ts` |
-| `/api/:wsId/task/create` | Rust backend | `POST` | `apps/web/src/app/api/[wsId]/task/create/route.ts` |
-| `/api/admin/tasks/embeddings/generate` | Rust backend | `POST` | `apps/web/src/app/api/admin/tasks/embeddings/generate/route.ts` |
 | `/api/ai/chat` | Rust backend | `POST` | `apps/web/src/app/api/ai/chat/route.ts` |
 | `/api/ai/chat/delete-file` | Rust backend | `POST` | `apps/web/src/app/api/ai/chat/delete-file/route.ts` |
+| `/api/ai/chat/file-urls` | Rust backend | `POST` | `apps/web/src/app/api/ai/chat/file-urls/route.ts` |
+| `/api/ai/chat/google` | Rust backend | `POST` | `apps/web/src/app/api/ai/chat/google/route.ts` |
+| `/api/ai/chat/google/new` | Rust backend | `POST` | `apps/web/src/app/api/ai/chat/google/new/route.ts` |
 
 </details>
 <!-- tanstack-rust-migration-progress:end -->

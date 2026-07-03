@@ -48,11 +48,15 @@ describe('useUpdateSharedTask', () => {
     // Cast to any to access mutationFn which is available in the mock return value
     const response = await (result.current as any).mutationFn(payload);
 
-    expect(global.fetch).toHaveBeenCalledWith('/api/v1/shared/tasks/SHARE123', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload.updates),
-    });
+    expect(global.fetch).toHaveBeenCalledWith(
+      'http://localhost:7809/api/v1/shared/tasks/SHARE123',
+      {
+        method: 'PATCH',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload.updates),
+      }
+    );
     expect(response).toEqual(mockResponse);
   });
 

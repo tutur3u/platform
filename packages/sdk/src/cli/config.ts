@@ -19,6 +19,7 @@ export interface CliConfig {
   currentTaskId?: string;
   currentWorkspaceId?: string;
   session?: CliSession;
+  tasksBaseUrl?: string;
   updateCheck?: {
     checkedAt: string;
     latestVersion?: string;
@@ -32,13 +33,22 @@ export interface ConfigPathOptions {
 }
 
 export const DEFAULT_BASE_URL = 'https://tuturuuu.com';
+export const DEFAULT_TASKS_BASE_URL = 'https://tasks.tuturuuu.com';
 export const PORTLESS_LOCAL_BASE_URL = 'https://tuturuuu.localhost';
+export const PORTLESS_LOCAL_TASKS_BASE_URL = 'https://tasks.tuturuuu.localhost';
 export const LOCAL_BASE_URL_ENV_KEYS = [
   'TUTURUUU_LOCAL_BASE_URL',
   'PORTLESS_URL',
   'WEB_APP_URL',
   'NEXT_PUBLIC_WEB_APP_URL',
   'NEXT_PUBLIC_APP_URL',
+] as const;
+export const TASKS_BASE_URL_ENV_KEYS = [
+  'TUTURUUU_TASKS_BASE_URL',
+  'TASKS_APP_URL',
+  'NEXT_PUBLIC_TASKS_APP_URL',
+  'TUDO_APP_URL',
+  'NEXT_PUBLIC_TUDO_APP_URL',
 ] as const;
 
 export interface NormalizeBaseUrlOptions {
@@ -133,6 +143,46 @@ export function getEnvLocalBaseUrl(
   }
 }
 
+export function getEnvTasksBaseUrl(
+  env: Record<string, string | undefined> = process.env
+) {
+  for (const key of TASKS_BASE_URL_ENV_KEYS) {
+    const value = env[key];
+    if (value?.trim()) {
+      return normalizeHostBaseUrl(value);
+    }
+  }
+}
+
+export function resolveCliTasksBaseUrl(
+  platformBaseUrl?: string,
+  env: Record<string, string | undefined> = process.env
+) {
+  const configuredTasksBaseUrl = getEnvTasksBaseUrl(env);
+  if (configuredTasksBaseUrl) return configuredTasksBaseUrl;
+
+  const baseUrl = normalizeHostBaseUrl(platformBaseUrl);
+  const url = new URL(baseUrl);
+
+  if (url.hostname === 'tuturuuu.com') {
+    return DEFAULT_TASKS_BASE_URL;
+  }
+
+  if (url.hostname === 'tuturuuu.localhost') {
+    return PORTLESS_LOCAL_TASKS_BASE_URL;
+  }
+
+  if (
+    ['localhost', '127.0.0.1', '[::1]', '::1'].includes(url.hostname) &&
+    url.port === '7803'
+  ) {
+    url.port = '7809';
+    return stripTrailingSlash(url.origin);
+  }
+
+  return DEFAULT_TASKS_BASE_URL;
+}
+
 function normalizePort(value?: string) {
   if (!value?.trim()) return undefined;
   const parsed = Number.parseInt(value, 10);
@@ -201,6 +251,7 @@ export function clearHostScopedConfig(
 
   return {
     baseUrl: normalizedNextBaseUrl,
+    tasksBaseUrl: resolveCliTasksBaseUrl(normalizedNextBaseUrl),
     updateCheck: config.updateCheck,
   };
 }
@@ -252,6 +303,9 @@ export async function readCliConfig(
       currentTaskId: parsed.currentTaskId,
       currentWorkspaceId: parsed.currentWorkspaceId,
       session: parsed.session,
+      tasksBaseUrl: parsed.tasksBaseUrl
+        ? normalizeHostBaseUrl(parsed.tasksBaseUrl)
+        : undefined,
       updateCheck: parsed.updateCheck,
     } satisfies CliConfig;
   } catch (error) {
@@ -274,6 +328,9 @@ export async function writeCliConfig(
       {
         ...config,
         baseUrl: normalizeHostBaseUrl(config.baseUrl),
+        tasksBaseUrl: config.tasksBaseUrl
+          ? normalizeHostBaseUrl(config.tasksBaseUrl)
+          : undefined,
       },
       null,
       2
