@@ -45,6 +45,9 @@ import {
 const STORAGE_LIMIT_FALLBACK_BYTES = 104857600;
 const R2_SIGNED_URL_TTL_SECONDS = 900;
 const SUPABASE_STORAGE_LIST_PAGE_SIZE = 1000;
+type SignedUrlClient = Parameters<typeof getSignedUrl>[0];
+type SignedUrlCommand = Parameters<typeof getSignedUrl>[1];
+type SignedUrlOptions = Parameters<typeof getSignedUrl>[2];
 
 export interface WorkspaceStorageUploadPayload {
   signedUrl: string;
@@ -247,6 +250,19 @@ function createR2Client(
       secretAccessKey: config.secretAccessKey,
     },
   });
+}
+
+function createR2SignedUrl(
+  client: S3Client,
+  command: GetObjectCommand | PutObjectCommand,
+  options: SignedUrlOptions
+): Promise<string> {
+  // Bun can install AWS packages against duplicate Smithy type patch versions.
+  return getSignedUrl(
+    client as unknown as SignedUrlClient,
+    command as unknown as SignedUrlCommand,
+    options
+  );
 }
 
 function createSecretsMap(
@@ -1434,7 +1450,7 @@ export async function createWorkspaceStorageSignedReadUrl(
       }
     }
 
-    return getSignedUrl(
+    return createR2SignedUrl(
       client,
       new GetObjectCommand({
         Bucket: config.bucket,
@@ -1510,7 +1526,7 @@ export async function createWorkspaceStorageUploadPayload(
       upsert: options?.upsert,
     });
 
-    const signedUrl = await getSignedUrl(
+    const signedUrl = await createR2SignedUrl(
       client,
       new PutObjectCommand({
         Bucket: config.bucket,
