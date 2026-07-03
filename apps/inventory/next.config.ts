@@ -8,6 +8,7 @@ const withNextIntl = createNextIntlPlugin();
 const WEB_APP_URL = resolveTuturuuuWebAppUrl();
 
 const nextConfig = createTuturuuuNextConfig({
+  transpilePackages: ['@tuturuuu/inventory-core'],
   images: {
     remotePatterns: [
       {

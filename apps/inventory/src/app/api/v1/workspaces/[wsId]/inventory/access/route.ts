@@ -1,0 +1,39 @@
+import { authorizeInventoryWorkspace } from '@tuturuuu/inventory-core/commerce/auth';
+import {
+  canManageInventorySetup,
+  canViewInventoryAnalytics,
+  canViewInventoryAuditLogs,
+  canViewInventoryCatalog,
+  canViewInventoryDashboard,
+  canViewInventorySales,
+  canViewInventoryStock,
+} from '@tuturuuu/inventory-core/permissions';
+import { NextResponse } from 'next/server';
+
+interface Params {
+  params: Promise<{
+    wsId: string;
+  }>;
+}
+
+export async function GET(req: Request, { params }: Params) {
+  const { wsId: id } = await params;
+  const authorization = await authorizeInventoryWorkspace(req, id, {
+    requireInventoryEnabled: false,
+  });
+
+  if (!authorization.ok) return authorization.response;
+
+  const { permissions } = authorization.value;
+
+  return NextResponse.json({
+    enabled:
+      canViewInventoryDashboard(permissions) ||
+      canViewInventoryCatalog(permissions) ||
+      canManageInventorySetup(permissions) ||
+      canViewInventoryStock(permissions) ||
+      canViewInventorySales(permissions) ||
+      canViewInventoryAnalytics(permissions) ||
+      canViewInventoryAuditLogs(permissions),
+  });
+}
