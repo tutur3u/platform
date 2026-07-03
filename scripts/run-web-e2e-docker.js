@@ -110,6 +110,14 @@ const BLUE_GREEN_ACTIVE_COLOR_FILE = path.join(
   'active-color'
 );
 const E2E_FRONTENDS = new Set(['next', 'tanstack', 'compare']);
+const E2E_COMPARE_FRONTEND_IMAGE_SERVICES = Object.freeze({
+  next: Object.freeze(['web-blue', 'web-green']),
+  tanstack: Object.freeze([
+    'tanstack-web',
+    'tanstack-web-blue',
+    'tanstack-web-green',
+  ]),
+});
 
 function getDockerWebUpArgs(envFilePath, env = process.env) {
   return [
@@ -1741,12 +1749,20 @@ async function prepareReusableSupportImages({
   };
 }
 
-function parseE2EProjectImageTags(imageListOutput, projectName) {
+function parseE2EProjectImageTags(
+  imageListOutput,
+  projectName,
+  { imageServices } = {}
+) {
   if (!isE2EComposeProjectName(projectName)) {
     return [];
   }
 
   const repositoryPrefix = `${projectName}-`;
+  const allowedServices =
+    Array.isArray(imageServices) && imageServices.length > 0
+      ? new Set(imageServices)
+      : null;
   const tags = new Set();
 
   for (const line of imageListOutput.split(/\r?\n/u)) {
@@ -1764,9 +1780,17 @@ function parseE2EProjectImageTags(imageListOutput, projectName) {
 
     const repository = imageRef.slice(0, tagSeparatorIndex);
 
-    if (repository.startsWith(repositoryPrefix)) {
-      tags.add(imageRef);
+    if (!repository.startsWith(repositoryPrefix)) {
+      continue;
     }
+
+    const service = repository.slice(repositoryPrefix.length);
+
+    if (allowedServices && !allowedServices.has(service)) {
+      continue;
+    }
+
+    tags.add(imageRef);
   }
 
   return [...tags].sort();
@@ -1792,6 +1816,7 @@ async function getDockerMemoryLimit({
 
 async function removeE2EProjectImages({
   env,
+  imageServices,
   projectName = getE2EComposeProjectName(env),
   runCommand: run = runCommand,
   runCommandForOutput: runForOutput = runCommandForOutput,
@@ -1805,7 +1830,9 @@ async function removeE2EProjectImages({
     ['image', 'ls', '--format', '{{.Repository}}:{{.Tag}}'],
     { env }
   );
-  const imageTags = parseE2EProjectImageTags(imageList.stdout, projectName);
+  const imageTags = parseE2EProjectImageTags(imageList.stdout, projectName, {
+    imageServices,
+  });
 
   if (imageTags.length === 0) {
     return [];
@@ -1815,10 +1842,22 @@ async function removeE2EProjectImages({
   return imageTags;
 }
 
-async function stopDockerizedE2E({ env, envFilePath, preserveImages = false }) {
+async function stopDockerizedE2E({
+  env,
+  envFilePath,
+  imageServicesToRemove,
+  preserveImages = false,
+}) {
+  const removeSelectedImages =
+    !preserveImages &&
+    Array.isArray(imageServicesToRemove) &&
+    imageServicesToRemove.length > 0;
+
   await runDockerWebWorkflow(
     parseDockerWebArgs(
-      getDockerWebDownArgs(envFilePath, env, { preserveImages })
+      getDockerWebDownArgs(envFilePath, env, {
+        preserveImages: preserveImages || removeSelectedImages,
+      })
     ),
     {
       env,
@@ -1826,7 +1865,9 @@ async function stopDockerizedE2E({ env, envFilePath, preserveImages = false }) {
       rootDir: ROOT_DIR,
     }
   );
-  if (!preserveImages) {
+  if (removeSelectedImages) {
+    await removeE2EProjectImages({ env, imageServices: imageServicesToRemove });
+  } else if (!preserveImages) {
     await removeE2EProjectImages({ env });
   }
   await runCommand('bun', ['sb:stop'], { env, cwd: ROOT_DIR });
@@ -1854,6 +1895,8 @@ async function runWebE2E(playwrightArgs = process.argv.slice(2), options = {}) {
     const frontends = {
       next: await runFrontendForCompare('next', frontendArgs.playwrightArgs, {
         ...compareOptions,
+        dockerProjectImageServicesToRemove:
+          E2E_COMPARE_FRONTEND_IMAGE_SERVICES.next,
         preserveDockerProjectImages: false,
       }),
       tanstack: await runFrontendForCompare(
@@ -2003,6 +2046,7 @@ async function runWebE2E(playwrightArgs = process.argv.slice(2), options = {}) {
       await stopDockerizedE2E({
         env,
         envFilePath,
+        imageServicesToRemove: options.dockerProjectImageServicesToRemove,
         preserveImages: options.preserveDockerProjectImages === true,
       });
     } catch (cleanupError) {

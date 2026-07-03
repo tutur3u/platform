@@ -1148,6 +1148,10 @@ test('runWebE2E compare mode removes next project images before TanStack', async
     );
     assert.deepEqual(calls[0].playwrightArgs, ['smoke.spec.ts']);
     assert.equal(calls[0].options.preserveDockerProjectImages, false);
+    assert.deepEqual(calls[0].options.dockerProjectImageServicesToRemove, [
+      'web-blue',
+      'web-green',
+    ]);
     assert.equal(calls[1].options.preserveDockerProjectImages, true);
   } finally {
     fs.rmSync(reportPath, { force: true });
@@ -2028,6 +2032,47 @@ test('removeE2EProjectImages removes current project image tags', async () => {
   assert.deepEqual(calls, [
     ['docker', ['image', 'ls', '--format', '{{.Repository}}:{{.Tag}}']],
     ['docker', ['image', 'rm', 'ttr-e2e-local-123-web-blue:latest']],
+  ]);
+});
+
+test('removeE2EProjectImages can remove only selected service images', async () => {
+  const calls = [];
+
+  const removed = await removeE2EProjectImages({
+    env: { DOCKER_WEB_COMPOSE_PROJECT_NAME: 'ttr-e2e-local-123' },
+    imageServices: ['web-blue', 'web-green'],
+    runCommand: async (command, args) => {
+      calls.push([command, args]);
+    },
+    runCommandForOutput: async (command, args) => {
+      calls.push([command, args]);
+      return {
+        stderr: '',
+        stdout: [
+          'ttr-e2e-local-123-backend:latest',
+          'ttr-e2e-local-123-web-blue:latest',
+          'ttr-e2e-local-123-web-green:latest',
+          'ttr-e2e-local-456-web-blue:latest',
+        ].join('\n'),
+      };
+    },
+  });
+
+  assert.deepEqual(removed, [
+    'ttr-e2e-local-123-web-blue:latest',
+    'ttr-e2e-local-123-web-green:latest',
+  ]);
+  assert.deepEqual(calls, [
+    ['docker', ['image', 'ls', '--format', '{{.Repository}}:{{.Tag}}']],
+    [
+      'docker',
+      [
+        'image',
+        'rm',
+        'ttr-e2e-local-123-web-blue:latest',
+        'ttr-e2e-local-123-web-green:latest',
+      ],
+    ],
   ]);
 });
 
