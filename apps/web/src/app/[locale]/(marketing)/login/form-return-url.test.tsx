@@ -198,7 +198,13 @@ function setWindowLocation(search = '', origin = 'https://tuturuuu.com') {
   });
 }
 
-function renderLoginFormSearch(search = '', options: { origin?: string } = {}) {
+function renderLoginFormSearch(
+  search = '',
+  options: {
+    deferAuthSurfaceUntilSessionCheck?: boolean;
+    origin?: string;
+  } = {}
+) {
   const queryClient = new QueryClient({
     defaultOptions: {
       mutations: { retry: false },
@@ -211,15 +217,27 @@ function renderLoginFormSearch(search = '', options: { origin?: string } = {}) {
 
   render(
     <QueryClientProvider client={queryClient}>
-      <LoginForm />
+      <LoginForm
+        deferAuthSurfaceUntilSessionCheck={
+          options.deferAuthSurfaceUntilSessionCheck
+        }
+      />
     </QueryClientProvider>
   );
 
   return queryClient;
 }
 
-function renderLoginForm(returnUrl: string, options: { origin?: string } = {}) {
+function renderLoginForm(
+  returnUrl: string,
+  options: {
+    deferAuthSurfaceUntilSessionCheck?: boolean;
+    origin?: string;
+  } = {}
+) {
   return renderLoginFormSearch(`?returnUrl=${encodeURIComponent(returnUrl)}`, {
+    deferAuthSurfaceUntilSessionCheck:
+      options.deferAuthSurfaceUntilSessionCheck,
     origin: options.origin,
   });
 }
@@ -340,6 +358,28 @@ describe('LoginForm returnUrl navigation', () => {
     expect(
       screen.getByPlaceholderText('login.email_username_placeholder')
     ).toBeInTheDocument();
+    queryClient.clear();
+  });
+
+  it('renders the profile loading card while deferred internal app bootstrap is pending', () => {
+    mocks.currentUserProfile = null;
+    mocks.getUser.mockReturnValue(new Promise(() => undefined));
+
+    const queryClient = renderLoginForm('https://partner.example/launch', {
+      deferAuthSurfaceUntilSessionCheck: true,
+    });
+
+    expect(
+      screen.getByText('login.loading_account_profile_title')
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: /login\.loading_profile/u })
+    ).toBeDisabled();
+    expect(
+      screen.queryByRole('button', {
+        name: 'login.continue_with_email',
+      })
+    ).not.toBeInTheDocument();
     queryClient.clear();
   });
 

@@ -66,6 +66,7 @@ import {
 } from '@/lib/auth/oauth-providers';
 import { appendDiagnosticReference } from './auth-diagnostic-copy';
 import { resolveAuthRedirectOrigin } from './auth-redirect-origin';
+import { ProfileLoadingState } from './internal-app-account-confirmation-parts';
 import { InvalidReturnUrlWarning } from './invalid-return-url-warning';
 import { completeVerifiedMfaSignIn } from './mfa-navigation';
 import { PasskeyLoginButton } from './passkey-login-button';
@@ -145,13 +146,21 @@ function InputOTPRowFallback() {
   );
 }
 
-function InternalAppAccountConfirmationFallback() {
+function InternalAppAccountConfirmationFallback({
+  appName,
+  disabled,
+  onUseAnotherAccount,
+}: {
+  appName: string;
+  disabled: boolean;
+  onUseAnotherAccount: () => void;
+}) {
   return (
-    <Card className="overflow-hidden rounded-3xl border bg-background/95 shadow-xl">
-      <CardContent className="flex flex-col items-center justify-center gap-3 p-8 text-center">
-        <LoadingIndicator className="size-6" />
-      </CardContent>
-    </Card>
+    <ProfileLoadingState
+      appName={appName}
+      disabled={disabled}
+      onUseAnotherAccount={onUseAnotherAccount}
+    />
   );
 }
 
@@ -1608,9 +1617,11 @@ export default function LoginForm({
 
   if (!canRenderAuthSurface) {
     return (
-      <div className="flex h-full w-full items-center justify-center">
-        <LoadingIndicator />
-      </div>
+      <ProfileLoadingState
+        appName={returnAppName}
+        disabled
+        onUseAnotherAccount={() => void handleUseAnotherAccount()}
+      />
     );
   }
 
@@ -1638,7 +1649,15 @@ export default function LoginForm({
       hasMatchingCurrentProfile && !currentProfileIsLoading;
 
     return (
-      <Suspense fallback={<InternalAppAccountConfirmationFallback />}>
+      <Suspense
+        fallback={
+          <InternalAppAccountConfirmationFallback
+            appName={returnAppName}
+            disabled={confirmingReturn || switchingAccountId !== null}
+            onUseAnotherAccount={() => void handleUseAnotherAccount()}
+          />
+        }
+      >
         <InternalAppAccountConfirmation
           accounts={accounts}
           activeAccountId={activeAccountId}
