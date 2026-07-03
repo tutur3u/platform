@@ -160,6 +160,30 @@ test('app-only changes run only that app', () => {
     },
     false
   );
+  assertWorkflowDecision(
+    {
+      changedFiles: ['apps/infrastructure/src/app/page.tsx'],
+      rootDir,
+      workflowName: 'vercel-preview-infrastructure.yaml',
+    },
+    true
+  );
+  assertWorkflowDecision(
+    {
+      changedFiles: ['apps/infrastructure/src/app/page.tsx'],
+      rootDir,
+      workflowName: 'vercel-production-infrastructure.yaml',
+    },
+    true
+  );
+  assertWorkflowDecision(
+    {
+      changedFiles: ['apps/infrastructure/src/app/page.tsx'],
+      rootDir,
+      workflowName: 'vercel-preview-calendar.yaml',
+    },
+    false
+  );
 });
 
 test('shared package changes fan out through transitive workspace dependencies', () => {
@@ -187,6 +211,24 @@ test('shared package changes fan out through transitive workspace dependencies',
       changedFiles,
       rootDir,
       workflowName: 'vercel-preview-shortener.yaml',
+    },
+    false
+  );
+
+  const paymentChangedFiles = ['packages/payment/src/polar/index.ts'];
+  assertWorkflowDecision(
+    {
+      changedFiles: paymentChangedFiles,
+      rootDir,
+      workflowName: 'vercel-preview-infrastructure.yaml',
+    },
+    true
+  );
+  assertWorkflowDecision(
+    {
+      changedFiles: paymentChangedFiles,
+      rootDir,
+      workflowName: 'vercel-preview-calendar.yaml',
     },
     false
   );
