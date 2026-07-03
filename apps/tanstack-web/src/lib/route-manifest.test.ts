@@ -31,7 +31,8 @@ describe('tanstackRouteManifest', () => {
     expect(
       tanstackRouteManifest.routes.find(
         (route) =>
-          route.id === 'api:/api/health:apps/web/src/app/api/health/route.ts'
+          route.id ===
+          'api:/api/health:apps/web/src/legacy-api-routes/health/route.ts'
       )
     ).toMatchObject({
       methods: ['GET'],
@@ -46,13 +47,13 @@ describe('tanstackRouteManifest', () => {
       tanstackRouteManifest.routes.find(
         (route) =>
           route.id ===
-          'api:OPTIONS:/api/v1/auth/mobile/password-login:apps/web/src/app/api/v1/auth/mobile/password-login/route.ts'
+          'api:OPTIONS:/api/v1/auth/mobile/password-login:apps/web/src/legacy-api-routes/v1/auth/mobile/password-login/route.ts'
       )
     ).toMatchObject({
       method: 'OPTIONS',
       methods: ['OPTIONS'],
       parentId:
-        'api:/api/v1/auth/mobile/password-login:apps/web/src/app/api/v1/auth/mobile/password-login/route.ts',
+        'api:/api/v1/auth/mobile/password-login:apps/web/src/legacy-api-routes/v1/auth/mobile/password-login/route.ts',
       routePath: '/api/v1/auth/mobile/password-login',
       status: 'migrated',
       targetOwner: 'rust-backend',
@@ -61,13 +62,13 @@ describe('tanstackRouteManifest', () => {
       tanstackRouteManifest.routes.find(
         (route) =>
           route.id ===
-          'api:POST:/api/v1/auth/mobile/password-login:apps/web/src/app/api/v1/auth/mobile/password-login/route.ts'
+          'api:POST:/api/v1/auth/mobile/password-login:apps/web/src/legacy-api-routes/v1/auth/mobile/password-login/route.ts'
       )
     ).toMatchObject({
       method: 'POST',
       methods: ['POST'],
       parentId:
-        'api:/api/v1/auth/mobile/password-login:apps/web/src/app/api/v1/auth/mobile/password-login/route.ts',
+        'api:/api/v1/auth/mobile/password-login:apps/web/src/legacy-api-routes/v1/auth/mobile/password-login/route.ts',
       routePath: '/api/v1/auth/mobile/password-login',
       status: 'legacy-next',
       targetOwner: 'rust-backend',
@@ -76,13 +77,13 @@ describe('tanstackRouteManifest', () => {
       tanstackRouteManifest.routes.find(
         (route) =>
           route.id ===
-          'api:OPTIONS:/api/v1/auth/qr-login/challenges/:challengeId/approve:apps/web/src/app/api/v1/auth/qr-login/challenges/[challengeId]/approve/route.ts'
+          'api:OPTIONS:/api/v1/auth/qr-login/challenges/:challengeId/approve:apps/web/src/legacy-api-routes/v1/auth/qr-login/challenges/[challengeId]/approve/route.ts'
       )
     ).toMatchObject({
       method: 'OPTIONS',
       methods: ['OPTIONS'],
       parentId:
-        'api:/api/v1/auth/qr-login/challenges/:challengeId/approve:apps/web/src/app/api/v1/auth/qr-login/challenges/[challengeId]/approve/route.ts',
+        'api:/api/v1/auth/qr-login/challenges/:challengeId/approve:apps/web/src/legacy-api-routes/v1/auth/qr-login/challenges/[challengeId]/approve/route.ts',
       routePath: '/api/v1/auth/qr-login/challenges/:challengeId/approve',
       status: 'migrated',
       targetOwner: 'rust-backend',
@@ -91,13 +92,13 @@ describe('tanstackRouteManifest', () => {
       tanstackRouteManifest.routes.find(
         (route) =>
           route.id ===
-          'api:POST:/api/v1/auth/qr-login/challenges/:challengeId/approve:apps/web/src/app/api/v1/auth/qr-login/challenges/[challengeId]/approve/route.ts'
+          'api:POST:/api/v1/auth/qr-login/challenges/:challengeId/approve:apps/web/src/legacy-api-routes/v1/auth/qr-login/challenges/[challengeId]/approve/route.ts'
       )
     ).toMatchObject({
       method: 'POST',
       methods: ['POST'],
       parentId:
-        'api:/api/v1/auth/qr-login/challenges/:challengeId/approve:apps/web/src/app/api/v1/auth/qr-login/challenges/[challengeId]/approve/route.ts',
+        'api:/api/v1/auth/qr-login/challenges/:challengeId/approve:apps/web/src/legacy-api-routes/v1/auth/qr-login/challenges/[challengeId]/approve/route.ts',
       routePath: '/api/v1/auth/qr-login/challenges/:challengeId/approve',
       status: 'legacy-next',
       targetOwner: 'rust-backend',
@@ -109,13 +110,13 @@ describe('tanstackRouteManifest', () => {
       tanstackRouteManifest.routes.find(
         (route) =>
           route.id ===
-          'api:OPTIONS:/api/v1/workspaces/:wsId/external-projects/webgl-packages/upload:apps/web/src/app/api/v1/workspaces/[wsId]/external-projects/webgl-packages/upload/route.ts'
+          'api:OPTIONS:/api/v1/workspaces/:wsId/external-projects/webgl-packages/upload:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/external-projects/webgl-packages/upload/route.ts'
       )
     ).toMatchObject({
       method: 'OPTIONS',
       methods: ['OPTIONS'],
       parentId:
-        'api:/api/v1/workspaces/:wsId/external-projects/webgl-packages/upload:apps/web/src/app/api/v1/workspaces/[wsId]/external-projects/webgl-packages/upload/route.ts',
+        'api:/api/v1/workspaces/:wsId/external-projects/webgl-packages/upload:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/external-projects/webgl-packages/upload/route.ts',
       routePath:
         '/api/v1/workspaces/:wsId/external-projects/webgl-packages/upload',
       status: 'migrated',
@@ -125,13 +126,13 @@ describe('tanstackRouteManifest', () => {
       tanstackRouteManifest.routes.find(
         (route) =>
           route.id ===
-          'api:PUT:/api/v1/workspaces/:wsId/external-projects/webgl-packages/upload:apps/web/src/app/api/v1/workspaces/[wsId]/external-projects/webgl-packages/upload/route.ts'
+          'api:PUT:/api/v1/workspaces/:wsId/external-projects/webgl-packages/upload:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/external-projects/webgl-packages/upload/route.ts'
       )
     ).toMatchObject({
       method: 'PUT',
       methods: ['PUT'],
       parentId:
-        'api:/api/v1/workspaces/:wsId/external-projects/webgl-packages/upload:apps/web/src/app/api/v1/workspaces/[wsId]/external-projects/webgl-packages/upload/route.ts',
+        'api:/api/v1/workspaces/:wsId/external-projects/webgl-packages/upload:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/external-projects/webgl-packages/upload/route.ts',
       routePath:
         '/api/v1/workspaces/:wsId/external-projects/webgl-packages/upload',
       status: 'legacy-next',
@@ -174,7 +175,7 @@ describe('tanstackRouteManifest', () => {
       tanstackRouteManifest.routes.find(
         (route) =>
           route.id ===
-          'api:/api/workspaces/:wsId/categories:apps/web/src/app/api/workspaces/[wsId]/categories/route.ts'
+          'api:/api/workspaces/:wsId/categories:apps/web/src/legacy-api-routes/workspaces/[wsId]/categories/route.ts'
       )
     ).toMatchObject({
       methods: [],

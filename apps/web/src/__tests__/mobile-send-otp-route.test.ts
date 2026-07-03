@@ -28,7 +28,9 @@ describe('mobile send-otp route', () => {
       status: 200,
     });
 
-    const { POST } = await import('@/app/api/v1/auth/mobile/send-otp/route');
+    const { POST } = await import(
+      '@/legacy-api-routes/v1/auth/mobile/send-otp/route'
+    );
     const response = await POST(
       new NextRequest('http://localhost/api/v1/auth/mobile/send-otp', {
         method: 'POST',

@@ -46,7 +46,9 @@ describe('password-login route', () => {
       status: 200,
     });
 
-    const { POST } = await import('@/app/api/v1/auth/password-login/route');
+    const { POST } = await import(
+      '@/legacy-api-routes/v1/auth/password-login/route'
+    );
     const response = await POST(
       new NextRequest('http://localhost/api/v1/auth/password-login', {
         method: 'POST',
@@ -80,7 +82,9 @@ describe('password-login route', () => {
   it('returns and logs a diagnostic code for unexpected password service throws', async () => {
     mocks.passwordLogin.mockRejectedValue(new Error('vault unavailable'));
 
-    const { POST } = await import('@/app/api/v1/auth/password-login/route');
+    const { POST } = await import(
+      '@/legacy-api-routes/v1/auth/password-login/route'
+    );
     const response = await POST(
       new NextRequest('http://localhost/api/v1/auth/password-login', {
         method: 'POST',
@@ -118,7 +122,9 @@ describe('password-login route', () => {
       status: 429,
     });
 
-    const { POST } = await import('@/app/api/v1/auth/password-login/route');
+    const { POST } = await import(
+      '@/legacy-api-routes/v1/auth/password-login/route'
+    );
     const response = await POST(
       new NextRequest('http://localhost/api/v1/auth/password-login', {
         method: 'POST',

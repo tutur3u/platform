@@ -143,7 +143,7 @@ describe('time tracking request update route', () => {
 
   it('updates request rows through the admin RPC while forwarding the authenticated actor id', async () => {
     const { PUT } = await import(
-      '@/app/api/v1/workspaces/[wsId]/time-tracking/requests/[id]/route'
+      '@/legacy-api-routes/v1/workspaces/[wsId]/time-tracking/requests/[id]/route'
     );
 
     const response = await PUT(
@@ -183,7 +183,7 @@ describe('time tracking request update route', () => {
 
   it('passes actor auth uid to RPC for CONTENT_UPDATED trigger actor attribution', async () => {
     const { PUT } = await import(
-      '@/app/api/v1/workspaces/[wsId]/time-tracking/requests/[id]/route'
+      '@/legacy-api-routes/v1/workspaces/[wsId]/time-tracking/requests/[id]/route'
     );
 
     const response = await PUT(
@@ -231,7 +231,7 @@ describe('time tracking request update route', () => {
     });
 
     const { PUT } = await import(
-      '@/app/api/v1/workspaces/[wsId]/time-tracking/requests/[id]/route'
+      '@/legacy-api-routes/v1/workspaces/[wsId]/time-tracking/requests/[id]/route'
     );
 
     const response = await PUT(

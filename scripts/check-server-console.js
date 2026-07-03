@@ -17,7 +17,7 @@ const result = spawnSync(
   [
     '-n',
     'console\\.',
-    'apps/web/src/app/api/cron',
+    'apps/web/src/legacy-api-routes/cron',
     'apps/web/src/lib/infrastructure',
     'apps/infrastructure/src/app/api',
     'apps/infrastructure/src/lib/infrastructure',

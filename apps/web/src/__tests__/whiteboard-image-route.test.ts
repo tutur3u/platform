@@ -22,7 +22,7 @@ const mocks = vi.hoisted(() => {
   };
 });
 
-vi.mock('@/app/api/v1/workspaces/[wsId]/whiteboards/access', () => ({
+vi.mock('@/legacy-api-routes/v1/workspaces/[wsId]/whiteboards/access', () => ({
   requireWhiteboardAccess: (
     ...args: Parameters<typeof mocks.requireWhiteboardAccess>
   ) => mocks.requireWhiteboardAccess(...args),
@@ -49,7 +49,7 @@ describe('whiteboard image route', () => {
     });
 
     const { POST } = await import(
-      '@/app/api/v1/workspaces/[wsId]/whiteboards/[boardId]/image-url/route'
+      '@/legacy-api-routes/v1/workspaces/[wsId]/whiteboards/[boardId]/image-url/route'
     );
     if (!POST) {
       throw new Error('POST handler is not defined');
@@ -97,7 +97,7 @@ describe('whiteboard image route', () => {
     });
 
     const { GET } = await import(
-      '@/app/api/v1/workspaces/[wsId]/whiteboards/[boardId]/image-url/route'
+      '@/legacy-api-routes/v1/workspaces/[wsId]/whiteboards/[boardId]/image-url/route'
     );
     if (!GET) {
       throw new Error('GET handler is not defined');

@@ -99,7 +99,7 @@ describe('POST /api/workspaces/[wsId]/decline-invite', () => {
 
   it('declines direct and email invites through the server-owned cleanup path', async () => {
     const { POST } = await import(
-      '@/app/api/workspaces/[wsId]/decline-invite/route'
+      '@/legacy-api-routes/workspaces/[wsId]/decline-invite/route'
     );
 
     const response = await POST(new NextRequest('http://localhost/test'), {
@@ -127,7 +127,7 @@ describe('POST /api/workspaces/[wsId]/decline-invite', () => {
 
   it('declines UUID invite paths without workspace RLS normalization', async () => {
     const { POST } = await import(
-      '@/app/api/workspaces/[wsId]/decline-invite/route'
+      '@/legacy-api-routes/workspaces/[wsId]/decline-invite/route'
     );
 
     const response = await POST(new NextRequest('http://localhost/test'), {
@@ -148,7 +148,7 @@ describe('POST /api/workspaces/[wsId]/decline-invite', () => {
 
   it('declines fixture-style Postgres UUID invite paths without workspace normalization', async () => {
     const { POST } = await import(
-      '@/app/api/workspaces/[wsId]/decline-invite/route'
+      '@/legacy-api-routes/workspaces/[wsId]/decline-invite/route'
     );
 
     const response = await POST(new NextRequest('http://localhost/test'), {
@@ -171,7 +171,7 @@ describe('POST /api/workspaces/[wsId]/decline-invite', () => {
     mocks.normalizeWorkspaceId.mockResolvedValueOnce('not-a-uuid');
 
     const { POST } = await import(
-      '@/app/api/workspaces/[wsId]/decline-invite/route'
+      '@/legacy-api-routes/workspaces/[wsId]/decline-invite/route'
     );
 
     const response = await POST(new NextRequest('http://localhost/test'), {

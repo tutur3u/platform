@@ -136,8 +136,12 @@ test('shared satellite logout clears the local app-session cookie before central
 });
 
 test('CLI auth uses Tuturuuu-managed JWTs instead of Supabase Auth sessions', () => {
-  const verifyRoute = read('apps/web/src/app/api/cli/auth/verify/route.ts');
-  const refreshRoute = read('apps/web/src/app/api/cli/auth/refresh/route.ts');
+  const verifyRoute = read(
+    'apps/web/src/legacy-api-routes/cli/auth/verify/route.ts'
+  );
+  const refreshRoute = read(
+    'apps/web/src/legacy-api-routes/cli/auth/refresh/route.ts'
+  );
   const crossAppServer = read('packages/auth/src/cross-app/server.ts');
 
   assert.match(verifyRoute, /sessionKind:\s*'cli-app-session'/);

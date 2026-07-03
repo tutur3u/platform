@@ -86,8 +86,8 @@ vi.mock('@/lib/live/token-builder', () => ({
   ) => mocks.createConstrainedLiveToken(...args),
 }));
 
-import { POST as assistantLiveTokenPOST } from '@/app/api/v1/assistant/live/token/route';
-import { POST as webLiveTokenPOST } from '@/app/api/v1/live/token/route';
+import { POST as assistantLiveTokenPOST } from '@/legacy-api-routes/v1/assistant/live/token/route';
+import { POST as webLiveTokenPOST } from '@/legacy-api-routes/v1/live/token/route';
 
 function postRequest(path: string, body: unknown) {
   return new Request(`http://localhost${path}`, {

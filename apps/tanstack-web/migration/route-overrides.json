@@ -15,37 +15,37 @@
       "targetOwner": "rust-backend",
       "note": "Rust backend route_request handles /serwist/sw.js with a no-store decommissioning service worker that unregisters the legacy Serwist registration during Cloudflare cutover, plus deterministic source-map metadata for /serwist/sw.js.map."
     },
-    "api:/api/health:apps/web/src/app/api/health/route.ts": {
+    "api:/api/health:apps/web/src/legacy-api-routes/health/route.ts": {
       "status": "migrated",
       "targetOwner": "rust-backend",
       "note": "Rust backend route_request handles GET /api/health with the legacy response body."
     },
-    "api:/api/time-tracking/export:apps/web/src/app/api/time-tracking/export/route.ts": {
+    "api:/api/time-tracking/export:apps/web/src/legacy-api-routes/time-tracking/export/route.ts": {
       "status": "migrated",
       "targetOwner": "rust-backend",
       "note": "Rust backend handle_backend_request handles GET /api/time-tracking/export by revalidating the browser Supabase session or non-app-session Bearer token, requiring a @tuturuuu.com root user and root workspace, verifying workspace membership, preserving legacy query parsing and the 1000-row limit cap, forwarding get_grouped_sessions_paginated through the caller Supabase token, and returning the legacy data/pagination envelope with an empty-result fallback when RPC and JS-style recovery cannot produce rows."
     },
-    "api:/api/v1/notifications/unread-count:apps/web/src/app/api/v1/notifications/unread-count/route.ts": {
+    "api:/api/v1/notifications/unread-count:apps/web/src/legacy-api-routes/v1/notifications/unread-count/route.ts": {
       "status": "migrated",
       "targetOwner": "rust-backend",
       "note": "Rust backend handle_backend_request handles GET /api/v1/notifications/unread-count by preserving app-session and browser Supabase auth, validating the optional wsId query parameter, verifying workspace membership before scoped counts, building the legacy notification access filter, and reading the exact unread count through the service-role Supabase REST adapter with no-store JSON responses."
     },
-    "api:/api/v1/cms/workspaces:apps/web/src/app/api/v1/cms/workspaces/route.ts": {
+    "api:/api/v1/cms/workspaces:apps/web/src/legacy-api-routes/v1/cms/workspaces/route.ts": {
       "status": "migrated",
       "targetOwner": "rust-backend",
       "note": "Rust backend handle_backend_request handles GET /api/v1/cms/workspaces by preserving the legacy app-session and browser Supabase auth boundary, loading the caller's admin-visible workspaces through service-role Supabase REST, applying root-admin and per-workspace external-project permission checks, resolving active external-project bindings, and returning the raw legacy workspace array with subscription tier metadata."
     },
-    "api:/api/v1/mira/achievements:apps/web/src/app/api/v1/mira/achievements/route.ts": {
+    "api:/api/v1/mira/achievements:apps/web/src/legacy-api-routes/v1/mira/achievements/route.ts": {
       "status": "migrated",
       "targetOwner": "rust-backend",
       "note": "Rust backend handle_backend_request handles GET /api/v1/mira/achievements by revalidating the browser Supabase session or non-app-session Bearer token, reading the private Mira achievement catalog through the service-role private-schema Supabase REST adapter, reading the caller's unlocked achievements through the caller-token Supabase REST adapter, preserving the legacy unlocked-status merge, category grouping, XP/stat calculation, no-store responses, and empty-unlocked fallback when the user-achievement read fails."
     },
-    "api:/api/v1/storage/list:apps/web/src/app/api/v1/storage/list/route.ts": {
+    "api:/api/v1/storage/list:apps/web/src/legacy-api-routes/v1/storage/list/route.ts": {
       "status": "migrated",
       "targetOwner": "rust-backend",
       "note": "Rust backend handle_backend_request handles GET /api/v1/storage/list by validating workspace API keys with the legacy ttr_ prefix and workspace permission union, requiring manage_drive or admin, preserving legacy query coercion and storage path sanitization, blocking reserved mobile-deployment vault paths, listing Supabase Storage objects through the server-owned storage REST adapter, filtering placeholder and reserved entries, recursively counting matching files for pagination totals, and returning no-store legacy data/pagination and error envelopes."
     },
-    "api:/api/v1/internal/holidays:apps/web/src/app/api/v1/internal/holidays/route.ts": {
+    "api:/api/v1/internal/holidays:apps/web/src/legacy-api-routes/v1/internal/holidays/route.ts": {
       "methods": {
         "GET": {
           "status": "migrated",
@@ -59,152 +59,152 @@
         }
       }
     },
-    "api:/api/v1/internal/holidays/:holidayId:apps/web/src/app/api/v1/internal/holidays/[holidayId]/route.ts": {
+    "api:/api/v1/internal/holidays/:holidayId:apps/web/src/legacy-api-routes/v1/internal/holidays/[holidayId]/route.ts": {
       "status": "migrated",
       "targetOwner": "rust-backend",
       "note": "Rust backend handle_backend_request handles PUT and DELETE /api/v1/internal/holidays/:holidayId by revalidating the browser Supabase auth cookie or bearer token, requiring root workspace MEMBER access like the legacy admin check, validating optional update fields, checking item existence and date conflicts for PUT, and mutating with the caller's Supabase token so vietnamese_holidays RLS remains active. DELETE preserves the legacy behavior of returning the success message for any successful Supabase delete response without a separate existence check."
     },
-    "api:/api/v1/internal/holidays/bulk:apps/web/src/app/api/v1/internal/holidays/bulk/route.ts": {
+    "api:/api/v1/internal/holidays/bulk:apps/web/src/legacy-api-routes/v1/internal/holidays/bulk/route.ts": {
       "status": "migrated",
       "targetOwner": "rust-backend",
       "note": "Rust backend handle_backend_request handles POST /api/v1/internal/holidays/bulk by revalidating the browser Supabase auth cookie or bearer token, requiring root workspace MEMBER access like the legacy admin check, validating the holidays array and optional replaceExisting flag, deleting affected years when replaceExisting is true, and upserting date/name rows with the caller's Supabase token so vietnamese_holidays RLS remains active while preserving the legacy 201 success payload and 400/403/500 error messages."
     },
-    "api:/api/:wsId/crawlers/domains:apps/web/src/app/api/[wsId]/crawlers/domains/route.ts": {
+    "api:/api/:wsId/crawlers/domains:apps/web/src/legacy-api-routes/[wsId]/crawlers/domains/route.ts": {
       "status": "migrated",
       "targetOwner": "rust-backend",
       "note": "Rust backend handle_backend_request handles GET /api/:wsId/crawlers/domains by reading crawled_urls and non-skipped crawled_url_next_urls through the server-owned Supabase REST adapter, extracting valid URL hostnames, deduplicating them, and returning the sorted legacy domain list with cached false. The legacy route ignored wsId; this migration preserves that behavior until crawler workspace ownership is redesigned."
     },
-    "api:/api/:wsId/crawlers/list:apps/web/src/app/api/[wsId]/crawlers/list/route.ts": {
+    "api:/api/:wsId/crawlers/list:apps/web/src/legacy-api-routes/[wsId]/crawlers/list/route.ts": {
       "status": "migrated",
       "targetOwner": "rust-backend",
       "note": "Rust backend handle_backend_request handles GET /api/:wsId/crawlers/list by revalidating the browser Supabase session, requiring a @tuturuuu.com user email before server-owned admin reads, preserving the legacy raw crawled_urls row payload, domain/search filters, created_at.desc ordering, exact-count pagination, and data/count response shape. Unauthorized callers now receive an explicit 401 instead of the legacy catch-all 500."
     },
-    "api:/api/:wsId/crawlers/uncrawled:apps/web/src/app/api/[wsId]/crawlers/uncrawled/route.ts": {
+    "api:/api/:wsId/crawlers/uncrawled:apps/web/src/legacy-api-routes/[wsId]/crawlers/uncrawled/route.ts": {
       "status": "migrated",
       "targetOwner": "rust-backend",
       "note": "Rust backend handle_backend_request handles GET /api/:wsId/crawlers/uncrawled by reading non-skipped crawled_url_next_urls through the server-owned Supabase REST adapter, preserving the legacy domain/search URL filters and pagination shape, removing URLs already present in crawled_urls, and returning uncrawledUrls, groupedUrls, and pagination. The legacy route ignored wsId and auth; this migration preserves that behavior until crawler workspace ownership is redesigned."
     },
-    "api:/api/v1/workspaces/:wsId/crawlers/status:apps/web/src/app/api/v1/workspaces/[wsId]/crawlers/status/route.ts": {
+    "api:/api/v1/workspaces/:wsId/crawlers/status:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/crawlers/status/route.ts": {
       "status": "migrated",
       "targetOwner": "rust-backend",
       "note": "Rust backend handle_backend_request handles GET /api/v1/workspaces/:wsId/crawlers/status by preserving the legacy workspace-agnostic URL status lookup, validating the required url query parameter, reading the exact crawled_urls.url row through the server-owned Supabase REST adapter, then returning raw crawledUrl and crawled_url_next_urls rows ordered by created_at.desc. Missing crawled URLs still return crawledUrl null and relatedUrls []."
     },
-    "api:/api/auth/me/session:apps/web/src/app/api/auth/me/session/route.ts": {
+    "api:/api/auth/me/session:apps/web/src/legacy-api-routes/auth/me/session/route.ts": {
       "status": "accepted-removal",
       "targetOwner": "rust-backend",
       "note": "Accepted removal: this debug-style endpoint exposes raw sb-* auth cookie values and the full Supabase session payload. No in-repo callers reference /api/auth/me/session, and the TanStack/Rust cutover must not preserve raw session export behavior."
     },
-    "api:/api/auth/me:apps/web/src/app/api/auth/me/route.ts": {
+    "api:/api/auth/me:apps/web/src/legacy-api-routes/auth/me/route.ts": {
       "status": "migrated",
       "targetOwner": "rust-backend",
       "note": "Rust backend handle_backend_request handles GET /api/auth/me by revalidating the Supabase browser cookie or non-app-session Bearer token with Supabase Auth and returning the raw legacy { user } JSON payload, or the legacy unauthorized message."
     },
-    "api:/api/auth/mfa/totp/assurance-level:apps/web/src/app/api/auth/mfa/totp/assurance-level/route.ts": {
+    "api:/api/auth/mfa/totp/assurance-level:apps/web/src/legacy-api-routes/auth/mfa/totp/assurance-level/route.ts": {
       "status": "migrated",
       "targetOwner": "rust-backend",
       "note": "Rust backend handle_backend_request handles GET /api/auth/mfa/totp/assurance-level by revalidating the Supabase browser cookie or non-app-session Bearer token with Supabase Auth, deriving currentLevel from the JWT aal claim, deriving nextLevel from verified Supabase Auth factors, and returning currentAuthenticationMethods from the JWT amr claim."
     },
-    "api:/api/auth/mfa/totp/factors:apps/web/src/app/api/auth/mfa/totp/factors/route.ts": {
+    "api:/api/auth/mfa/totp/factors:apps/web/src/legacy-api-routes/auth/mfa/totp/factors/route.ts": {
       "status": "migrated",
       "targetOwner": "rust-backend",
       "note": "Rust backend handle_backend_request handles GET and POST /api/auth/mfa/totp/factors by revalidating the Supabase browser cookie or non-app-session Bearer token with Supabase Auth, deriving listFactors from the revalidated user JSON like Auth JS, and enrolling TOTP factors through Supabase Auth REST while preserving QR-code normalization and legacy error responses."
     },
-    "api:/api/auth/mfa/totp/factors/:factorId:apps/web/src/app/api/auth/mfa/totp/factors/[factorId]/route.ts": {
+    "api:/api/auth/mfa/totp/factors/:factorId:apps/web/src/legacy-api-routes/auth/mfa/totp/factors/[factorId]/route.ts": {
       "status": "migrated",
       "targetOwner": "rust-backend",
       "note": "Rust backend handle_backend_request handles GET and DELETE /api/auth/mfa/totp/factors/:factorId by revalidating the Supabase browser cookie or non-app-session Bearer token with Supabase Auth, finding verified TOTP factors from the Auth JS-compatible listFactors payload, and unenrolling factors through Supabase Auth REST with the legacy success wrapper."
     },
-    "api:/api/v1/user/profile:apps/web/src/app/api/v1/user/profile/route.ts": {
+    "api:/api/v1/user/profile:apps/web/src/legacy-api-routes/v1/user/profile/route.ts": {
       "status": "migrated",
       "targetOwner": "rust-backend",
       "note": "Rust backend handle_backend_request handles PATCH /api/v1/user/profile by revalidating the Supabase browser cookie or non-app-session Bearer token with Supabase Auth, validating display_name, bio, and avatar_url with the legacy limits, and updating only the authenticated user's users row through the server-owned Supabase REST adapter."
     },
-    "api:/api/share/course/:courseId:apps/web/src/app/api/share/course/[courseId]/route.ts": {
+    "api:/api/share/course/:courseId:apps/web/src/legacy-api-routes/share/course/[courseId]/route.ts": {
       "status": "accepted-removal",
       "targetOwner": "rust-backend",
       "note": "Rust backend route_request owns terminal decommission for the redundant legacy shared-course alias and returns 410 ENDPOINT_REMOVED. The maintained shared-course reader remains GET /api/v1/course?courseId=..., so the duplicate alias is intentionally not preserved for Cloudflare cutover."
     },
-    "api:/api/sync-logs:apps/web/src/app/api/sync-logs/route.ts": {
+    "api:/api/sync-logs:apps/web/src/legacy-api-routes/sync-logs/route.ts": {
       "status": "accepted-removal",
       "targetOwner": "rust-backend",
       "note": "Rust backend route_request owns terminal decommission for the broad legacy all-workspace sync logs API and returns 410 ENDPOINT_REMOVED. Calendar sync monitoring now uses workspace-scoped server-owned data fetching, so the legacy API is intentionally not preserved."
     },
-    "api:/api/payment/migrations/subscriptions/cross-check:apps/web/src/app/api/payment/migrations/subscriptions/cross-check/route.ts": {
+    "api:/api/payment/migrations/subscriptions/cross-check:apps/web/src/legacy-api-routes/payment/migrations/subscriptions/cross-check/route.ts": {
       "status": "accepted-removal",
       "targetOwner": "rust-backend",
       "note": "Rust backend route_request owns terminal decommission for the old monolithic subscription cross-check route and returns 410 ENDPOINT_REMOVED. The billing maintenance UI uses the phase-1, phase-2, and phase-3 endpoints, which remain legacy-owned until separately migrated."
     },
-    "api:/api/users/search:apps/web/src/app/api/users/search/route.ts": {
+    "api:/api/users/search:apps/web/src/legacy-api-routes/users/search/route.ts": {
       "status": "accepted-removal",
       "targetOwner": "rust-backend",
       "note": "Rust backend route_request owns terminal decommission for the unused legacy unauthenticated user-search RPC wrapper and returns 410 ENDPOINT_REMOVED. Future people search must use a maintained server-owned API instead of preserving this broad public wrapper."
     },
-    "api:/api/v1/proxy/tuturuuu:apps/web/src/app/api/v1/proxy/tuturuuu/route.ts": {
+    "api:/api/v1/proxy/tuturuuu:apps/web/src/legacy-api-routes/v1/proxy/tuturuuu/route.ts": {
       "status": "accepted-removal",
       "targetOwner": "rust-backend",
       "note": "Accepted removal: the legacy development-only Tuturuuu API proxy used Next.js and Undici to forward arbitrary allowlisted API paths and carried SSRF-sensitive outbound proxy behavior. No in-repo callers reference /api/v1/proxy/tuturuuu, and the Cloudflare cutover should use maintained internal API clients or direct backend routes instead. Rust returns terminal 410 ENDPOINT_REMOVED with the legacy GET allow list."
     },
-    "api:/api/v1/workspaces/limits:apps/web/src/app/api/v1/workspaces/limits/route.ts": {
+    "api:/api/v1/workspaces/limits:apps/web/src/legacy-api-routes/v1/workspaces/limits/route.ts": {
       "status": "migrated",
       "targetOwner": "rust-backend",
       "note": "Rust backend handle_backend_request handles GET /api/v1/workspaces/limits by validating the browser Supabase auth cookie with Supabase Auth, treating tuturuuu.com and xwf.tuturuuu.com user emails as unlimited, reading only exact non-deleted workspace counts by creator_id through the server-owned Supabase REST adapter for external users, and returning the derived legacy canCreate/currentCount/limit/remaining payload."
     },
-    "api:/api/v1/ai/whitelist/me:apps/web/src/app/api/v1/ai/whitelist/me/route.ts": {
+    "api:/api/v1/ai/whitelist/me:apps/web/src/legacy-api-routes/v1/ai/whitelist/me/route.ts": {
       "status": "migrated",
       "targetOwner": "rust-backend",
       "note": "Rust backend handle_backend_request handles GET /api/v1/ai/whitelist/me by preserving the legacy app-session-first auth behavior for satellite app-session targets, falling back to browser Supabase auth cookies only when no app-session token is present, reading only the enabled flag for the authenticated email from private.ai_whitelisted_emails through the server-owned private-schema REST adapter, and returning the derived legacy email/enabled payload."
     },
-    "api:/api/v1/infrastructure/ai/whitelist/domains:apps/web/src/app/api/v1/infrastructure/ai/whitelist/domains/route.ts": {
+    "api:/api/v1/infrastructure/ai/whitelist/domains:apps/web/src/legacy-api-routes/v1/infrastructure/ai/whitelist/domains/route.ts": {
       "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
       "targetOwner": "infrastructure-app"
     },
-    "api:/api/v1/infrastructure/ai/whitelist/domain/:domain:apps/web/src/app/api/v1/infrastructure/ai/whitelist/domain/[domain]/route.ts": {
+    "api:/api/v1/infrastructure/ai/whitelist/domain/:domain:apps/web/src/legacy-api-routes/v1/infrastructure/ai/whitelist/domain/[domain]/route.ts": {
       "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
       "targetOwner": "infrastructure-app"
     },
-    "api:/api/v1/infrastructure/ai/whitelist/emails:apps/web/src/app/api/v1/infrastructure/ai/whitelist/emails/route.ts": {
+    "api:/api/v1/infrastructure/ai/whitelist/emails:apps/web/src/legacy-api-routes/v1/infrastructure/ai/whitelist/emails/route.ts": {
       "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
       "targetOwner": "infrastructure-app"
     },
-    "api:/api/v1/infrastructure/ai/whitelist/:email:apps/web/src/app/api/v1/infrastructure/ai/whitelist/[email]/route.ts": {
+    "api:/api/v1/infrastructure/ai/whitelist/:email:apps/web/src/legacy-api-routes/v1/infrastructure/ai/whitelist/[email]/route.ts": {
       "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
       "targetOwner": "infrastructure-app"
     },
-    "api:/api/v1/users/me/hive-access:apps/web/src/app/api/v1/users/me/hive-access/route.ts": {
+    "api:/api/v1/users/me/hive-access:apps/web/src/legacy-api-routes/v1/users/me/hive-access/route.ts": {
       "status": "migrated",
       "targetOwner": "rust-backend",
       "note": "Rust backend handle_backend_request handles GET /api/v1/users/me/hive-access by preserving the legacy app-session-first auth behavior for current-user app-session targets, falling back to browser Supabase auth cookies only when no app-session token is present, reading only hive_members.enabled and platform_user_roles.enabled/allow_role_management for the authenticated user through the server-owned Supabase REST adapter, returning the derived legacy hasAccess/isAdmin/isMember payload, and keeping the legacy private cache directive on successful responses."
     },
-    "api:/api/v1/nova/me/team:apps/web/src/app/api/v1/nova/me/team/route.ts": {
+    "api:/api/v1/nova/me/team:apps/web/src/legacy-api-routes/v1/nova/me/team/route.ts": {
       "status": "migrated",
       "targetOwner": "rust-backend",
       "note": "Rust backend handle_backend_request handles GET /api/v1/nova/me/team by preserving Nova-only app-session auth and browser Supabase cookie fallback, reading only team_id for the authenticated user from private.nova_team_members through the server-owned private-schema REST adapter, and returning the derived legacy teamId payload."
     },
-    "api:/api/v1/devboxes/cache:apps/web/src/app/api/v1/devboxes/cache/route.ts": {
+    "api:/api/v1/devboxes/cache:apps/web/src/legacy-api-routes/v1/devboxes/cache/route.ts": {
       "status": "migrated",
       "targetOwner": "rust-backend",
       "note": "Rust backend handle_backend_request handles GET /api/v1/devboxes/cache by accepting CLI app-session Bearer tokens for the platform target with cli:access or browser/non-app-session Supabase credentials, requiring root workspace MEMBER access, and returning the legacy { caches: [] } body. Other devbox mutation routes remain legacy-owned."
     },
-    "api:/api/v1/devboxes/cache/prune:apps/web/src/app/api/v1/devboxes/cache/prune/route.ts": {
+    "api:/api/v1/devboxes/cache/prune:apps/web/src/legacy-api-routes/v1/devboxes/cache/prune/route.ts": {
       "status": "migrated",
       "targetOwner": "rust-backend",
       "note": "Rust backend handle_backend_request handles POST /api/v1/devboxes/cache/prune with the same platform CLI app-session or browser/non-app-session Supabase auth boundary as the cache list route, requires root workspace MEMBER access, and returns the legacy { message: \"Devbox cache prune requested.\" } acknowledgement without private devbox table mutations."
     },
-    "api:/api/v1/user/onboarding-progress:apps/web/src/app/api/v1/user/onboarding-progress/route.ts": {
+    "api:/api/v1/user/onboarding-progress:apps/web/src/legacy-api-routes/v1/user/onboarding-progress/route.ts": {
       "status": "migrated",
       "targetOwner": "rust-backend",
       "note": "Rust backend handle_backend_request handles GET and PATCH /api/v1/user/onboarding-progress by validating the browser Supabase session with Supabase Auth, reading or upserting only the authenticated user's onboarding_progress row through the server-owned Supabase REST adapter, preserving the legacy allowed-field filter, empty update rejection, null missing-row response, and unsupported-method behavior."
     },
-    "api:/api/v1/aurora/health:apps/web/src/app/api/v1/aurora/health/route.ts": {
+    "api:/api/v1/aurora/health:apps/web/src/legacy-api-routes/v1/aurora/health/route.ts": {
       "status": "migrated",
       "targetOwner": "rust-backend",
       "note": "Rust backend handle_backend_request handles POST /api/v1/aurora/health by validating the browser Supabase session with Supabase Auth, preserving the legacy exact @tuturuuu.com email-domain gate, calling AURORA_EXTERNAL_URL/health through the outbound HTTP adapter, and returning the legacy success, auth, forbidden, and upstream-failure JSON bodies."
     },
-    "api:/api/v1/aurora/forecast:apps/web/src/app/api/v1/aurora/forecast/route.ts": {
+    "api:/api/v1/aurora/forecast:apps/web/src/legacy-api-routes/v1/aurora/forecast/route.ts": {
       "methods": {
         "GET": {
           "status": "migrated",
@@ -218,7 +218,7 @@
         }
       }
     },
-    "api:/api/v1/aurora/ml-metrics:apps/web/src/app/api/v1/aurora/ml-metrics/route.ts": {
+    "api:/api/v1/aurora/ml-metrics:apps/web/src/legacy-api-routes/v1/aurora/ml-metrics/route.ts": {
       "methods": {
         "GET": {
           "status": "migrated",
@@ -232,7 +232,7 @@
         }
       }
     },
-    "api:/api/v1/aurora/statistical-metrics:apps/web/src/app/api/v1/aurora/statistical-metrics/route.ts": {
+    "api:/api/v1/aurora/statistical-metrics:apps/web/src/legacy-api-routes/v1/aurora/statistical-metrics/route.ts": {
       "methods": {
         "GET": {
           "status": "migrated",
@@ -246,137 +246,137 @@
         }
       }
     },
-    "api:/api/v1/infrastructure/changelog:apps/web/src/app/api/v1/infrastructure/changelog/route.ts": {
+    "api:/api/v1/infrastructure/changelog:apps/web/src/legacy-api-routes/v1/infrastructure/changelog/route.ts": {
       "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
       "targetOwner": "infrastructure-app"
     },
-    "api:/api/v1/infrastructure/changelog/:id:apps/web/src/app/api/v1/infrastructure/changelog/[id]/route.ts": {
+    "api:/api/v1/infrastructure/changelog/:id:apps/web/src/legacy-api-routes/v1/infrastructure/changelog/[id]/route.ts": {
       "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
       "targetOwner": "infrastructure-app"
     },
-    "api:/api/v1/infrastructure/changelog/:id/publish:apps/web/src/app/api/v1/infrastructure/changelog/[id]/publish/route.ts": {
+    "api:/api/v1/infrastructure/changelog/:id/publish:apps/web/src/legacy-api-routes/v1/infrastructure/changelog/[id]/publish/route.ts": {
       "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
       "targetOwner": "infrastructure-app"
     },
-    "api:/api/v1/infrastructure/changelog/slug/:slug:apps/web/src/app/api/v1/infrastructure/changelog/slug/[slug]/route.ts": {
+    "api:/api/v1/infrastructure/changelog/slug/:slug:apps/web/src/legacy-api-routes/v1/infrastructure/changelog/slug/[slug]/route.ts": {
       "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
       "targetOwner": "infrastructure-app"
     },
-    "api:/api/v1/inventory/orders/:publicToken:apps/web/src/app/api/v1/inventory/orders/[publicToken]/route.ts": {
+    "api:/api/v1/inventory/orders/:publicToken:apps/web/src/legacy-api-routes/v1/inventory/orders/[publicToken]/route.ts": {
       "status": "migrated",
       "targetOwner": "rust-backend",
       "note": "Rust backend handle_backend_request handles GET /api/v1/inventory/orders/:publicToken through server-owned private inventory RPCs and private-schema metadata reads, preserving simulated HMAC order tokens, public order reads, private-storefront app-session/browser-session membership checks, private no-store cache headers, and the legacy 404/500 JSON bodies."
     },
-    "api:/api/v1/inventory/storefronts/:slug:apps/web/src/app/api/v1/inventory/storefronts/[slug]/route.ts": {
+    "api:/api/v1/inventory/storefronts/:slug:apps/web/src/legacy-api-routes/v1/inventory/storefronts/[slug]/route.ts": {
       "status": "migrated",
       "targetOwner": "rust-backend",
       "note": "Rust backend handle_backend_request handles GET /api/v1/inventory/storefronts/:slug through the server-owned private get_public_inventory_storefront RPC, preserving public storefront cache headers, private-storefront app-session/browser-session membership checks, and the legacy 401/403/404/500 JSON bodies without exposing private inventory tables to browser code."
     },
-    "api:/api/v1/inventory/storefronts/:slug/checkouts:apps/web/src/app/api/v1/inventory/storefronts/[slug]/checkouts/route.ts": {
+    "api:/api/v1/inventory/storefronts/:slug/checkouts:apps/web/src/legacy-api-routes/v1/inventory/storefronts/[slug]/checkouts/route.ts": {
       "status": "legacy-next",
       "targetOwner": "rust-backend",
       "note": "Next.js still owns public storefront checkout POST. The route now forwards category bundleSelections for selected-items bundles to private.create_inventory_checkout_session, while Rust owns the public storefront GET payload that supplies category components and candidates."
     },
-    "api:/api/v1/topic-announcement-verifications/:token:apps/web/src/app/api/v1/topic-announcement-verifications/[token]/route.ts": {
+    "api:/api/v1/topic-announcement-verifications/:token:apps/web/src/legacy-api-routes/v1/topic-announcement-verifications/[token]/route.ts": {
       "status": "migrated",
       "targetOwner": "rust-backend",
       "note": "Rust backend handle_backend_request handles GET /api/v1/topic-announcement-verifications/:token by decoding the token path segment, hashing it with SHA-256, reading and updating private.topic_announcement_contact_verifications through the server-owned Supabase REST adapter, and returning the legacy public HTML verification pages for success, invalid/already-used, expired, and failure states."
     },
-    "cron:/api/cron/discord/daily-report:apps/web/src/app/api/cron/discord/daily-report/route.ts": {
+    "cron:/api/cron/discord/daily-report:apps/web/src/legacy-api-routes/cron/discord/daily-report/route.ts": {
       "status": "migrated",
       "targetOwner": "rust-backend",
       "note": "Rust backend handle_backend_request proxies GET /api/cron/discord/daily-report to DISCORD_APP_DEPLOYMENT_URL/daily-report with cron bearer auth, upstream JSON/status passthrough, and the legacy invalid-JSON fallback."
     },
-    "cron:/api/cron/discord/wol/daily/remind:apps/web/src/app/api/cron/discord/wol/daily/remind/route.ts": {
+    "cron:/api/cron/discord/wol/daily/remind:apps/web/src/legacy-api-routes/cron/discord/wol/daily/remind/route.ts": {
       "status": "migrated",
       "targetOwner": "rust-backend",
       "note": "Rust backend handle_backend_request proxies GET /api/cron/discord/wol/daily/remind to DISCORD_APP_DEPLOYMENT_URL/wol-reminder with cron bearer auth, upstream JSON/status passthrough, and the legacy invalid-JSON fallback."
     },
-    "api:/api/v1/infrastructure/migrate/grouped-score-names:apps/web/src/app/api/v1/infrastructure/migrate/grouped-score-names/route.ts": {
+    "api:/api/v1/infrastructure/migrate/grouped-score-names:apps/web/src/legacy-api-routes/v1/infrastructure/migrate/grouped-score-names/route.ts": {
       "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
       "targetOwner": "infrastructure-app"
     },
-    "api:/api/workspaces/:wsId/products/categories/migrate:apps/web/src/app/api/workspaces/[wsId]/products/categories/migrate/route.ts": {
+    "api:/api/workspaces/:wsId/products/categories/migrate:apps/web/src/legacy-api-routes/workspaces/[wsId]/products/categories/migrate/route.ts": {
       "status": "accepted-removal",
       "targetOwner": "rust-backend",
       "note": "Rust backend route_request owns terminal decommission for the obsolete PUT product category migration endpoint with the development-only guard and 410 MIGRATION_DISABLED response. The legacy Supabase data write is intentionally not preserved for Cloudflare cutover."
     },
-    "api:/api/workspaces/:wsId/products/units/migrate:apps/web/src/app/api/workspaces/[wsId]/products/units/migrate/route.ts": {
+    "api:/api/workspaces/:wsId/products/units/migrate:apps/web/src/legacy-api-routes/workspaces/[wsId]/products/units/migrate/route.ts": {
       "status": "accepted-removal",
       "targetOwner": "rust-backend",
       "note": "Rust backend route_request owns terminal decommission for the obsolete PUT product unit migration endpoint with the development-only guard and 410 MIGRATION_DISABLED response. The legacy private inventory data write is intentionally not preserved for Cloudflare cutover."
     },
-    "api:/api/workspaces/:wsId/transactions/categories/migrate:apps/web/src/app/api/workspaces/[wsId]/transactions/categories/migrate/route.ts": {
+    "api:/api/workspaces/:wsId/transactions/categories/migrate:apps/web/src/legacy-api-routes/workspaces/[wsId]/transactions/categories/migrate/route.ts": {
       "status": "accepted-removal",
       "targetOwner": "rust-backend",
       "note": "Rust backend route_request owns terminal decommission for the obsolete PUT transaction category migration endpoint with the development-only guard and 410 MIGRATION_DISABLED response. The legacy Supabase data write is intentionally not preserved for Cloudflare cutover."
     },
-    "api:/api/workspaces/:wsId/users/indicators/migrate:apps/web/src/app/api/workspaces/[wsId]/users/indicators/migrate/route.ts": {
+    "api:/api/workspaces/:wsId/users/indicators/migrate:apps/web/src/legacy-api-routes/workspaces/[wsId]/users/indicators/migrate/route.ts": {
       "status": "accepted-removal",
       "targetOwner": "rust-backend",
       "note": "Rust backend route_request owns terminal decommission for the obsolete PUT user indicator migration endpoint with the development-only guard and 410 MIGRATION_DISABLED response. The legacy Supabase data write is intentionally not preserved for Cloudflare cutover."
     },
-    "api:/api/workspaces/:wsId/users/indicators/groups/migrate:apps/web/src/app/api/workspaces/[wsId]/users/indicators/groups/migrate/route.ts": {
+    "api:/api/workspaces/:wsId/users/indicators/groups/migrate:apps/web/src/legacy-api-routes/workspaces/[wsId]/users/indicators/groups/migrate/route.ts": {
       "status": "accepted-removal",
       "targetOwner": "rust-backend",
       "note": "Rust backend route_request owns terminal decommission for the obsolete PUT user indicator group migration endpoint with the development-only guard and 410 MIGRATION_DISABLED response. The legacy private RPC write path is intentionally not preserved for Cloudflare cutover."
     },
-    "api:/api/workspaces/:wsId/wallets/migrate:apps/web/src/app/api/workspaces/[wsId]/wallets/migrate/route.ts": {
+    "api:/api/workspaces/:wsId/wallets/migrate:apps/web/src/legacy-api-routes/workspaces/[wsId]/wallets/migrate/route.ts": {
       "status": "accepted-removal",
       "targetOwner": "rust-backend",
       "note": "Rust backend route_request owns terminal decommission for the obsolete PUT wallet migration endpoint with the development-only guard and 410 MIGRATION_DISABLED response. The legacy private wallet data write is intentionally not preserved for Cloudflare cutover."
     },
-    "api:/api/workspaces/:wsId/wallets/transactions/migrate:apps/web/src/app/api/workspaces/[wsId]/wallets/transactions/migrate/route.ts": {
+    "api:/api/workspaces/:wsId/wallets/transactions/migrate:apps/web/src/legacy-api-routes/workspaces/[wsId]/wallets/transactions/migrate/route.ts": {
       "status": "accepted-removal",
       "targetOwner": "rust-backend",
       "note": "Rust backend route_request owns terminal decommission for the obsolete PUT wallet transaction migration endpoint with the development-only guard and 410 MIGRATION_DISABLED response. The legacy finance data write is intentionally not preserved for Cloudflare cutover."
     },
-    "api:/api/v1/workspaces/:wsId/encryption/migrate:apps/web/src/app/api/v1/workspaces/[wsId]/encryption/migrate/route.ts": {
+    "api:/api/v1/workspaces/:wsId/encryption/migrate:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/encryption/migrate/route.ts": {
       "status": "accepted-removal",
       "targetOwner": "rust-backend",
       "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy workspace encryption GET/POST migration helper with the legacy method allow list and 410 MIGRATION_DISABLED response in all environments. The legacy admin calendar-event encryption read/write path is intentionally not preserved for Cloudflare cutover; use maintained E2EE rollout tooling or local backfill scripts instead."
     },
-    "api:/api/v1/workspaces/:wsId/storage/migrate:apps/web/src/app/api/v1/workspaces/[wsId]/storage/migrate/route.ts": {
+    "api:/api/v1/workspaces/:wsId/storage/migrate:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/storage/migrate/route.ts": {
       "status": "accepted-removal",
       "targetOwner": "rust-backend",
       "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy workspace storage POST migration helper with the legacy method allow list and 410 MIGRATION_DISABLED response in all environments. The legacy provider-to-provider storage mutation path is intentionally not preserved for Cloudflare cutover; use maintained storage migration runbooks or local backfill scripts instead."
     },
-    "api:/api/v2/workspaces/:wsId/migrate/:module:apps/web/src/app/api/v2/workspaces/[wsId]/migrate/[module]/route.ts": {
+    "api:/api/v2/workspaces/:wsId/migrate/:module:apps/web/src/legacy-api-routes/v2/workspaces/[wsId]/migrate/[module]/route.ts": {
       "status": "accepted-removal",
       "targetOwner": "rust-backend",
       "note": "Accepted removal: Rust backend route_request owns terminal decommission for the legacy API-key GET migration export helper with the legacy method allow list and 410 MIGRATION_DISABLED response in all environments. The legacy broad Supabase admin export path is intentionally not preserved for Cloudflare cutover; use maintained database exports or local backfill scripts instead."
     },
-    "api:/api/v1/infrastructure/languages:apps/web/src/app/api/v1/infrastructure/languages/route.ts": {
+    "api:/api/v1/infrastructure/languages:apps/web/src/legacy-api-routes/v1/infrastructure/languages/route.ts": {
       "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
       "targetOwner": "infrastructure-app"
     },
-    "api:/api/v1/infrastructure/sidebar:apps/web/src/app/api/v1/infrastructure/sidebar/route.ts": {
+    "api:/api/v1/infrastructure/sidebar:apps/web/src/legacy-api-routes/v1/infrastructure/sidebar/route.ts": {
       "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
       "targetOwner": "infrastructure-app"
     },
-    "api:/api/v1/infrastructure/sidebar/sizes:apps/web/src/app/api/v1/infrastructure/sidebar/sizes/route.ts": {
+    "api:/api/v1/infrastructure/sidebar/sizes:apps/web/src/legacy-api-routes/v1/infrastructure/sidebar/sizes/route.ts": {
       "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
       "targetOwner": "infrastructure-app"
     },
-    "api:/api/v1/infrastructure/users/fields/types:apps/web/src/app/api/v1/infrastructure/users/fields/types/route.ts": {
+    "api:/api/v1/infrastructure/users/fields/types:apps/web/src/legacy-api-routes/v1/infrastructure/users/fields/types/route.ts": {
       "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
       "targetOwner": "infrastructure-app"
     },
-    "api:/api/v1/infrastructure/ai/models:apps/web/src/app/api/v1/infrastructure/ai/models/route.ts": {
+    "api:/api/v1/infrastructure/ai/models:apps/web/src/legacy-api-routes/v1/infrastructure/ai/models/route.ts": {
       "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
       "targetOwner": "infrastructure-app"
     },
-    "api:/api/v1/inquiries:apps/web/src/app/api/v1/inquiries/route.ts": {
+    "api:/api/v1/inquiries:apps/web/src/legacy-api-routes/v1/inquiries/route.ts": {
       "methods": {
         "POST": {
           "status": "migrated",
@@ -385,37 +385,37 @@
         }
       }
     },
-    "api:/api/v1/inquiries/:id:apps/web/src/app/api/v1/inquiries/[id]/route.ts": {
+    "api:/api/v1/inquiries/:id:apps/web/src/legacy-api-routes/v1/inquiries/[id]/route.ts": {
       "status": "migrated",
       "targetOwner": "rust-backend",
       "note": "Rust backend handle_backend_request handles PATCH /api/v1/inquiries/:id by validating the legacy is_read/is_resolved payload, revalidating the browser Supabase session, requiring a Tuturuuu or XWF email domain, patching support_inquiries through the server-owned Supabase REST adapter, and preserving the legacy { data } success body plus 400/401/500 error bodies. The adjacent media-url storage route remains legacy-owned."
     },
-    "api:/api/v1/users/me/full-name:apps/web/src/app/api/v1/users/me/full-name/route.ts": {
+    "api:/api/v1/users/me/full-name:apps/web/src/legacy-api-routes/v1/users/me/full-name/route.ts": {
       "status": "migrated",
       "targetOwner": "rust-backend",
       "note": "Rust backend handle_backend_request handles PATCH /api/v1/users/me/full-name by revalidating the browser Supabase session cookie or non-app-session Bearer token with Supabase Auth, requiring a JSON full_name string with trimmed length 1..100, and upserting user_private_details with user_id fixed to the authenticated user through Supabase REST using the caller token and on_conflict=user_id."
     },
-    "api:/api/v1/users/me/default-workspace:apps/web/src/app/api/v1/users/me/default-workspace/route.ts": {
+    "api:/api/v1/users/me/default-workspace:apps/web/src/legacy-api-routes/v1/users/me/default-workspace/route.ts": {
       "status": "migrated",
       "targetOwner": "rust-backend",
       "note": "Rust backend handle_backend_request handles GET and PATCH /api/v1/users/me/default-workspace. GET accepts current-user app-session tokens or revalidated browser Supabase sessions, reads the saved default workspace, falls back to the personal workspace when the saved workspace is missing or inaccessible, and preserves the legacy null fallback for unresolved workspace data. PATCH revalidates the browser Supabase session, validates workspaceId as a UUID or null, verifies workspace_members access before setting a UUID, and writes user_private_details.default_workspace_id with the caller token."
     },
-    "api:/api/v1/users/me/identities:apps/web/src/app/api/v1/users/me/identities/route.ts": {
+    "api:/api/v1/users/me/identities:apps/web/src/legacy-api-routes/v1/users/me/identities/route.ts": {
       "status": "migrated",
       "targetOwner": "rust-backend",
       "note": "Rust backend handle_backend_request owns GET /api/v1/users/me/identities by revalidating a normal Supabase browser session or non-app-session Bearer token with Supabase Auth, rejecting Tuturuuu app-session tokens, extracting the Auth JS-compatible identities array from the revalidated Supabase user JSON, returning the legacy identities plus canUnlink payload, and keeping the legacy private cache directive plus Unauthorized, Supabase Auth rejection, and internal error bodies."
     },
-    "api:/api/v1/users/me/profile:apps/web/src/app/api/v1/users/me/profile/route.ts": {
+    "api:/api/v1/users/me/profile:apps/web/src/legacy-api-routes/v1/users/me/profile/route.ts": {
       "status": "migrated",
       "targetOwner": "rust-backend",
       "note": "Rust backend handle_backend_request verifies app-session auth, hydrates users and user_private_details through the server-owned Supabase REST adapter, and persists display_name, bio, and avatar_url profile updates with same-origin mutation protection for cookie auth. This endpoint is migrated for the app-session contract used by TanStack contact; broader Supabase session revalidation remains tracked under auth migration work."
     },
-    "api:/api/v1/workspaces/:wsId/course-modules:apps/web/src/app/api/v1/workspaces/[wsId]/course-modules/route.ts": {
+    "api:/api/v1/workspaces/:wsId/course-modules:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/course-modules/route.ts": {
       "status": "migrated",
       "targetOwner": "rust-backend",
       "note": "Rust backend handle_backend_request owns GET /api/v1/workspaces/:wsId/course-modules by revalidating a normal Supabase browser session or non-app-session Bearer token, resolving workspace permissions for ai_lab, requiring the ENABLE_EDUCATION workspace secret, reading workspace_course_modules through service-role Supabase REST with exact-count pagination, and preserving the legacy { data, count, page, pageSize } envelope."
     },
-    "api:/api/v1/workspaces/:wsId/quiz-sets/:setId/linked-modules:apps/web/src/app/api/v1/workspaces/[wsId]/quiz-sets/[setId]/linked-modules/route.ts": {
+    "api:/api/v1/workspaces/:wsId/quiz-sets/:setId/linked-modules:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/quiz-sets/[setId]/linked-modules/route.ts": {
       "status": "migrated",
       "targetOwner": "rust-backend",
       "note": "Rust backend handle_backend_request owns GET /api/v1/workspaces/:wsId/quiz-sets/:setId/linked-modules by revalidating a normal Supabase browser session or non-app-session Bearer token, resolving ai_lab workspace permission and ENABLE_EDUCATION, verifying the quiz set belongs to the resolved workspace before service-role linked-module reads, applying legacy page/pageSize/q parsing, and returning the legacy paginated envelope."
@@ -430,7 +430,7 @@
       "targetOwner": "tanstack-start",
       "note": "TanStack Start route /$locale/$wsId/users/reports/$reportId renders the legacy dashed loading panel with Loader2 and localized common.loading text from the TanStack message bundle. This marks only loading.tsx migrated; the report detail page/data/auth route remains legacy-owned."
     },
-    "api:/api/v1/auth/password-login:apps/web/src/app/api/v1/auth/password-login/route.ts": {
+    "api:/api/v1/auth/password-login:apps/web/src/legacy-api-routes/v1/auth/password-login/route.ts": {
       "methods": {
         "OPTIONS": {
           "status": "migrated",
@@ -439,7 +439,7 @@
         }
       }
     },
-    "api:/api/v1/auth/mobile/password-login:apps/web/src/app/api/v1/auth/mobile/password-login/route.ts": {
+    "api:/api/v1/auth/mobile/password-login:apps/web/src/legacy-api-routes/v1/auth/mobile/password-login/route.ts": {
       "methods": {
         "OPTIONS": {
           "status": "migrated",
@@ -448,7 +448,7 @@
         }
       }
     },
-    "api:/api/v1/auth/mobile/send-otp:apps/web/src/app/api/v1/auth/mobile/send-otp/route.ts": {
+    "api:/api/v1/auth/mobile/send-otp:apps/web/src/legacy-api-routes/v1/auth/mobile/send-otp/route.ts": {
       "methods": {
         "OPTIONS": {
           "status": "migrated",
@@ -457,7 +457,7 @@
         }
       }
     },
-    "api:/api/v1/auth/mobile/verify-otp:apps/web/src/app/api/v1/auth/mobile/verify-otp/route.ts": {
+    "api:/api/v1/auth/mobile/verify-otp:apps/web/src/legacy-api-routes/v1/auth/mobile/verify-otp/route.ts": {
       "methods": {
         "OPTIONS": {
           "status": "migrated",
@@ -466,7 +466,7 @@
         }
       }
     },
-    "api:/api/v1/auth/otp/send:apps/web/src/app/api/v1/auth/otp/send/route.ts": {
+    "api:/api/v1/auth/otp/send:apps/web/src/legacy-api-routes/v1/auth/otp/send/route.ts": {
       "methods": {
         "OPTIONS": {
           "status": "migrated",
@@ -475,7 +475,7 @@
         }
       }
     },
-    "api:/api/v1/auth/otp/verify:apps/web/src/app/api/v1/auth/otp/verify/route.ts": {
+    "api:/api/v1/auth/otp/verify:apps/web/src/legacy-api-routes/v1/auth/otp/verify/route.ts": {
       "methods": {
         "OPTIONS": {
           "status": "migrated",
@@ -484,7 +484,7 @@
         }
       }
     },
-    "api:/api/v1/auth/otp/settings:apps/web/src/app/api/v1/auth/otp/settings/route.ts": {
+    "api:/api/v1/auth/otp/settings:apps/web/src/legacy-api-routes/v1/auth/otp/settings/route.ts": {
       "methods": {
         "GET": {
           "status": "migrated",
@@ -498,7 +498,7 @@
         }
       }
     },
-    "api:/api/v1/auth/mfa/mobile/challenges:apps/web/src/app/api/v1/auth/mfa/mobile/challenges/route.ts": {
+    "api:/api/v1/auth/mfa/mobile/challenges:apps/web/src/legacy-api-routes/v1/auth/mfa/mobile/challenges/route.ts": {
       "methods": {
         "OPTIONS": {
           "status": "migrated",
@@ -507,7 +507,7 @@
         }
       }
     },
-    "api:/api/v1/auth/mfa/mobile/challenges/:challengeId:apps/web/src/app/api/v1/auth/mfa/mobile/challenges/[challengeId]/route.ts": {
+    "api:/api/v1/auth/mfa/mobile/challenges/:challengeId:apps/web/src/legacy-api-routes/v1/auth/mfa/mobile/challenges/[challengeId]/route.ts": {
       "methods": {
         "OPTIONS": {
           "status": "migrated",
@@ -516,7 +516,7 @@
         }
       }
     },
-    "api:/api/v1/auth/mfa/mobile/challenges/:challengeId/approve:apps/web/src/app/api/v1/auth/mfa/mobile/challenges/[challengeId]/approve/route.ts": {
+    "api:/api/v1/auth/mfa/mobile/challenges/:challengeId/approve:apps/web/src/legacy-api-routes/v1/auth/mfa/mobile/challenges/[challengeId]/approve/route.ts": {
       "methods": {
         "OPTIONS": {
           "status": "migrated",
@@ -525,7 +525,7 @@
         }
       }
     },
-    "api:/api/v1/auth/mfa/mobile/approvals:apps/web/src/app/api/v1/auth/mfa/mobile/approvals/route.ts": {
+    "api:/api/v1/auth/mfa/mobile/approvals:apps/web/src/legacy-api-routes/v1/auth/mfa/mobile/approvals/route.ts": {
       "methods": {
         "OPTIONS": {
           "status": "migrated",
@@ -534,7 +534,7 @@
         }
       }
     },
-    "api:/api/v1/auth/qr-login/challenges:apps/web/src/app/api/v1/auth/qr-login/challenges/route.ts": {
+    "api:/api/v1/auth/qr-login/challenges:apps/web/src/legacy-api-routes/v1/auth/qr-login/challenges/route.ts": {
       "methods": {
         "OPTIONS": {
           "status": "migrated",
@@ -543,7 +543,7 @@
         }
       }
     },
-    "api:/api/v1/auth/qr-login/challenges/:challengeId:apps/web/src/app/api/v1/auth/qr-login/challenges/[challengeId]/route.ts": {
+    "api:/api/v1/auth/qr-login/challenges/:challengeId:apps/web/src/legacy-api-routes/v1/auth/qr-login/challenges/[challengeId]/route.ts": {
       "methods": {
         "OPTIONS": {
           "status": "migrated",
@@ -552,7 +552,7 @@
         }
       }
     },
-    "api:/api/v1/auth/qr-login/challenges/:challengeId/approve:apps/web/src/app/api/v1/auth/qr-login/challenges/[challengeId]/approve/route.ts": {
+    "api:/api/v1/auth/qr-login/challenges/:challengeId/approve:apps/web/src/legacy-api-routes/v1/auth/qr-login/challenges/[challengeId]/approve/route.ts": {
       "methods": {
         "OPTIONS": {
           "status": "migrated",
@@ -561,237 +561,237 @@
         }
       }
     },
-    "api:/api/v1/infrastructure/abuse-intelligence:apps/web/src/app/api/v1/infrastructure/abuse-intelligence/route.ts": {
+    "api:/api/v1/infrastructure/abuse-intelligence:apps/web/src/legacy-api-routes/v1/infrastructure/abuse-intelligence/route.ts": {
       "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
       "targetOwner": "infrastructure-app"
     },
-    "api:/api/v1/infrastructure/abuse-events:apps/web/src/app/api/v1/infrastructure/abuse-events/route.ts": {
+    "api:/api/v1/infrastructure/abuse-events:apps/web/src/legacy-api-routes/v1/infrastructure/abuse-events/route.ts": {
       "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
       "targetOwner": "infrastructure-app"
     },
-    "api:/api/v1/infrastructure/blocked-ips:apps/web/src/app/api/v1/infrastructure/blocked-ips/route.ts": {
+    "api:/api/v1/infrastructure/blocked-ips:apps/web/src/legacy-api-routes/v1/infrastructure/blocked-ips/route.ts": {
       "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
       "targetOwner": "infrastructure-app"
     },
-    "api:/api/v1/infrastructure/suspensions:apps/web/src/app/api/v1/infrastructure/suspensions/route.ts": {
+    "api:/api/v1/infrastructure/suspensions:apps/web/src/legacy-api-routes/v1/infrastructure/suspensions/route.ts": {
       "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
       "targetOwner": "infrastructure-app"
     },
-    "api:/api/v1/infrastructure/classes:apps/web/src/app/api/v1/infrastructure/classes/route.ts": {
+    "api:/api/v1/infrastructure/classes:apps/web/src/legacy-api-routes/v1/infrastructure/classes/route.ts": {
       "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
       "targetOwner": "infrastructure-app"
     },
-    "api:/api/v1/infrastructure/lessons:apps/web/src/app/api/v1/infrastructure/lessons/route.ts": {
+    "api:/api/v1/infrastructure/lessons:apps/web/src/legacy-api-routes/v1/infrastructure/lessons/route.ts": {
       "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
       "targetOwner": "infrastructure-app"
     },
-    "api:/api/v1/infrastructure/mobile-versions:apps/web/src/app/api/v1/infrastructure/mobile-versions/route.ts": {
+    "api:/api/v1/infrastructure/mobile-versions:apps/web/src/legacy-api-routes/v1/infrastructure/mobile-versions/route.ts": {
       "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
       "targetOwner": "infrastructure-app"
     },
-    "api:/api/v1/infrastructure/packages:apps/web/src/app/api/v1/infrastructure/packages/route.ts": {
+    "api:/api/v1/infrastructure/packages:apps/web/src/legacy-api-routes/v1/infrastructure/packages/route.ts": {
       "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
       "targetOwner": "infrastructure-app"
     },
-    "api:/api/v1/infrastructure/post-email-queue:apps/web/src/app/api/v1/infrastructure/post-email-queue/route.ts": {
+    "api:/api/v1/infrastructure/post-email-queue:apps/web/src/legacy-api-routes/v1/infrastructure/post-email-queue/route.ts": {
       "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
       "targetOwner": "infrastructure-app"
     },
-    "api:/api/v1/infrastructure/product-categories:apps/web/src/app/api/v1/infrastructure/product-categories/route.ts": {
+    "api:/api/v1/infrastructure/product-categories:apps/web/src/legacy-api-routes/v1/infrastructure/product-categories/route.ts": {
       "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
       "targetOwner": "infrastructure-app"
     },
-    "api:/api/v1/infrastructure/product-prices:apps/web/src/app/api/v1/infrastructure/product-prices/route.ts": {
+    "api:/api/v1/infrastructure/product-prices:apps/web/src/legacy-api-routes/v1/infrastructure/product-prices/route.ts": {
       "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
       "targetOwner": "infrastructure-app"
     },
-    "api:/api/v1/infrastructure/product-units:apps/web/src/app/api/v1/infrastructure/product-units/route.ts": {
+    "api:/api/v1/infrastructure/product-units:apps/web/src/legacy-api-routes/v1/infrastructure/product-units/route.ts": {
       "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
       "targetOwner": "infrastructure-app"
     },
-    "api:/api/v1/infrastructure/score-names:apps/web/src/app/api/v1/infrastructure/score-names/route.ts": {
+    "api:/api/v1/infrastructure/score-names:apps/web/src/legacy-api-routes/v1/infrastructure/score-names/route.ts": {
       "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
       "targetOwner": "infrastructure-app"
     },
-    "api:/api/v1/infrastructure/bills:apps/web/src/app/api/v1/infrastructure/bills/route.ts": {
+    "api:/api/v1/infrastructure/bills:apps/web/src/legacy-api-routes/v1/infrastructure/bills/route.ts": {
       "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
       "targetOwner": "infrastructure-app"
     },
-    "api:/api/v1/infrastructure/roles:apps/web/src/app/api/v1/infrastructure/roles/route.ts": {
+    "api:/api/v1/infrastructure/roles:apps/web/src/legacy-api-routes/v1/infrastructure/roles/route.ts": {
       "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
       "targetOwner": "infrastructure-app"
     },
-    "api:/api/v1/infrastructure/transaction-categories:apps/web/src/app/api/v1/infrastructure/transaction-categories/route.ts": {
+    "api:/api/v1/infrastructure/transaction-categories:apps/web/src/legacy-api-routes/v1/infrastructure/transaction-categories/route.ts": {
       "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
       "targetOwner": "infrastructure-app"
     },
-    "api:/api/v1/infrastructure/warehouses:apps/web/src/app/api/v1/infrastructure/warehouses/route.ts": {
+    "api:/api/v1/infrastructure/warehouses:apps/web/src/legacy-api-routes/v1/infrastructure/warehouses/route.ts": {
       "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
       "targetOwner": "infrastructure-app"
     },
-    "api:/api/v1/infrastructure/email-blacklist:apps/web/src/app/api/v1/infrastructure/email-blacklist/route.ts": {
+    "api:/api/v1/infrastructure/email-blacklist:apps/web/src/legacy-api-routes/v1/infrastructure/email-blacklist/route.ts": {
       "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
       "targetOwner": "infrastructure-app"
     },
-    "api:/api/v1/infrastructure/email-blacklist/:entryId:apps/web/src/app/api/v1/infrastructure/email-blacklist/[entryId]/route.ts": {
+    "api:/api/v1/infrastructure/email-blacklist/:entryId:apps/web/src/legacy-api-routes/v1/infrastructure/email-blacklist/[entryId]/route.ts": {
       "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
       "targetOwner": "infrastructure-app"
     },
-    "api:/api/v1/infrastructure/bill-coupons:apps/web/src/app/api/v1/infrastructure/bill-coupons/route.ts": {
+    "api:/api/v1/infrastructure/bill-coupons:apps/web/src/legacy-api-routes/v1/infrastructure/bill-coupons/route.ts": {
       "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
       "targetOwner": "infrastructure-app"
     },
-    "api:/api/v1/infrastructure/bill-packages:apps/web/src/app/api/v1/infrastructure/bill-packages/route.ts": {
+    "api:/api/v1/infrastructure/bill-packages:apps/web/src/legacy-api-routes/v1/infrastructure/bill-packages/route.ts": {
       "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
       "targetOwner": "infrastructure-app"
     },
-    "api:/api/v1/infrastructure/class-attendance:apps/web/src/app/api/v1/infrastructure/class-attendance/route.ts": {
+    "api:/api/v1/infrastructure/class-attendance:apps/web/src/legacy-api-routes/v1/infrastructure/class-attendance/route.ts": {
       "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
       "targetOwner": "infrastructure-app"
     },
-    "api:/api/v1/infrastructure/class-members:apps/web/src/app/api/v1/infrastructure/class-members/route.ts": {
+    "api:/api/v1/infrastructure/class-members:apps/web/src/legacy-api-routes/v1/infrastructure/class-members/route.ts": {
       "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
       "targetOwner": "infrastructure-app"
     },
-    "api:/api/v1/infrastructure/class-packages:apps/web/src/app/api/v1/infrastructure/class-packages/route.ts": {
+    "api:/api/v1/infrastructure/class-packages:apps/web/src/legacy-api-routes/v1/infrastructure/class-packages/route.ts": {
       "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
       "targetOwner": "infrastructure-app"
     },
-    "api:/api/v1/infrastructure/class-scores:apps/web/src/app/api/v1/infrastructure/class-scores/route.ts": {
+    "api:/api/v1/infrastructure/class-scores:apps/web/src/legacy-api-routes/v1/infrastructure/class-scores/route.ts": {
       "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
       "targetOwner": "infrastructure-app"
     },
-    "api:/api/v1/infrastructure/package-stock-changes:apps/web/src/app/api/v1/infrastructure/package-stock-changes/route.ts": {
+    "api:/api/v1/infrastructure/package-stock-changes:apps/web/src/legacy-api-routes/v1/infrastructure/package-stock-changes/route.ts": {
       "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
       "targetOwner": "infrastructure-app"
     },
-    "api:/api/v1/infrastructure/student-feedbacks:apps/web/src/app/api/v1/infrastructure/student-feedbacks/route.ts": {
+    "api:/api/v1/infrastructure/student-feedbacks:apps/web/src/legacy-api-routes/v1/infrastructure/student-feedbacks/route.ts": {
       "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
       "targetOwner": "infrastructure-app"
     },
-    "api:/api/v1/infrastructure/user-monthly-report-logs:apps/web/src/app/api/v1/infrastructure/user-monthly-report-logs/route.ts": {
+    "api:/api/v1/infrastructure/user-monthly-report-logs:apps/web/src/legacy-api-routes/v1/infrastructure/user-monthly-report-logs/route.ts": {
       "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
       "targetOwner": "infrastructure-app"
     },
-    "api:/api/v1/infrastructure/user-monthly-reports:apps/web/src/app/api/v1/infrastructure/user-monthly-reports/route.ts": {
+    "api:/api/v1/infrastructure/user-monthly-reports:apps/web/src/legacy-api-routes/v1/infrastructure/user-monthly-reports/route.ts": {
       "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
       "targetOwner": "infrastructure-app"
     },
-    "api:/api/v1/infrastructure/coupons:apps/web/src/app/api/v1/infrastructure/coupons/route.ts": {
+    "api:/api/v1/infrastructure/coupons:apps/web/src/legacy-api-routes/v1/infrastructure/coupons/route.ts": {
       "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
       "targetOwner": "infrastructure-app"
     },
-    "api:/api/v1/infrastructure/user-coupons:apps/web/src/app/api/v1/infrastructure/user-coupons/route.ts": {
+    "api:/api/v1/infrastructure/user-coupons:apps/web/src/legacy-api-routes/v1/infrastructure/user-coupons/route.ts": {
       "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
       "targetOwner": "infrastructure-app"
     },
-    "api:/api/v1/infrastructure/payment-methods:apps/web/src/app/api/v1/infrastructure/payment-methods/route.ts": {
+    "api:/api/v1/infrastructure/payment-methods:apps/web/src/legacy-api-routes/v1/infrastructure/payment-methods/route.ts": {
       "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
       "targetOwner": "infrastructure-app"
     },
-    "api:/api/v1/infrastructure/wallets:apps/web/src/app/api/v1/infrastructure/wallets/route.ts": {
+    "api:/api/v1/infrastructure/wallets:apps/web/src/legacy-api-routes/v1/infrastructure/wallets/route.ts": {
       "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
       "targetOwner": "infrastructure-app"
     },
-    "api:/api/v1/infrastructure/wallet-transactions:apps/web/src/app/api/v1/infrastructure/wallet-transactions/route.ts": {
+    "api:/api/v1/infrastructure/wallet-transactions:apps/web/src/legacy-api-routes/v1/infrastructure/wallet-transactions/route.ts": {
       "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
       "targetOwner": "infrastructure-app"
     },
-    "api:/api/v1/workspaces/:wsId/Mention:apps/web/src/app/api/v1/workspaces/[wsId]/Mention/route.ts": {
+    "api:/api/v1/workspaces/:wsId/Mention:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/Mention/route.ts": {
       "status": "migrated",
       "targetOwner": "rust-backend",
       "note": "Rust backend handle_backend_request owns GET /api/v1/workspaces/:wsId/Mention by revalidating a normal Supabase browser session or non-app-session Bearer token, rejecting app-session tokens, requiring exact MEMBER workspace membership through the caller-token workspace_members read, reading workspace_users.email with the caller token, returning the legacy singular email array payload, and preserving the legacy Unauthorized, Forbidden, Failed to verify workspace access, and Supabase error bodies."
     },
-    "api:/api/v1/workspaces/:wsId/mobile/module-flags:apps/web/src/app/api/v1/workspaces/[wsId]/mobile/module-flags/route.ts": {
+    "api:/api/v1/workspaces/:wsId/mobile/module-flags:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/mobile/module-flags/route.ts": {
       "status": "migrated",
       "targetOwner": "rust-backend",
       "note": "Rust backend handle_backend_request owns GET /api/v1/workspaces/:wsId/mobile/module-flags by revalidating a normal Supabase browser session or non-app-session Bearer token, rejecting app-session tokens, resolving the legacy internal workspace slug, requiring workspace membership through a caller-token workspace_members read, reading MOBILE_HIDE_EXPERIMENTAL_MODULES and MOBILE_HIDDEN_MODULES from workspace_secrets through the server-owned Supabase REST adapter, preserving JSON-array and comma-separated hidden-module parsing, returning sorted hiddenModuleIds, and keeping the legacy private cache directive plus Unauthorized, workspace-access, membership lookup, and module-flag lookup error bodies."
     },
-    "api:/api/v1/workspaces/:wsId/finance/budgets/status:apps/web/src/app/api/v1/workspaces/[wsId]/finance/budgets/status/route.ts": {
+    "api:/api/v1/workspaces/:wsId/finance/budgets/status:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/finance/budgets/status/route.ts": {
       "status": "migrated",
       "targetOwner": "rust-backend",
       "note": "Rust backend handle_backend_request owns GET /api/v1/workspaces/:wsId/finance/budgets/status by accepting finance/platform app-session tokens and CLI app-session tokens before falling back to a normal Supabase browser session or non-app-session Bearer token, normalizing internal, personal, handle, and UUID workspace identifiers, requiring manage_finance through has_workspace_permission, calling get_budget_status with the service-role credential, returning the raw legacy RPC payload, and preserving the legacy Unauthorized, Insufficient permissions, and Error fetching budget status bodies."
     },
-    "api:/api/workspaces/:wsId/finance/charts/balance:apps/web/src/app/api/workspaces/[wsId]/finance/charts/balance/route.ts": {
+    "api:/api/workspaces/:wsId/finance/charts/balance:apps/web/src/legacy-api-routes/workspaces/[wsId]/finance/charts/balance/route.ts": {
       "status": "migrated",
       "targetOwner": "rust-backend",
       "note": "Rust backend handle_backend_request owns GET /api/workspaces/:wsId/finance/charts/balance by accepting finance/platform app-session tokens and CLI app-session tokens before falling back to a normal Supabase browser session or non-app-session Bearer token, normalizing internal, personal, handle, and UUID workspace identifiers, requiring view_finance_stats through has_workspace_permission, preserving the legacy required date query plus includeConfidential boolean parsing, calling get_wallet_balance_at_date, returning the legacy { balance, date } payload, and preserving the legacy Unauthorized, Forbidden, invalid query, and balance lookup error bodies."
     },
-    "api:/api/v1/workspaces/:wsId/finance/debts/summary:apps/web/src/app/api/v1/workspaces/[wsId]/finance/debts/summary/route.ts": {
+    "api:/api/v1/workspaces/:wsId/finance/debts/summary:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/finance/debts/summary/route.ts": {
       "status": "migrated",
       "targetOwner": "rust-backend",
       "note": "Rust backend handle_backend_request owns GET /api/v1/workspaces/:wsId/finance/debts/summary by accepting finance/platform app-session tokens and CLI app-session tokens before falling back to a normal Supabase browser session or non-app-session Bearer token, normalizing internal, personal, handle, and UUID workspace identifiers, requiring manage_finance through has_workspace_permission, calling private-schema get_debt_loan_summary with _actor_id and _ws_id using the service-role credential, returning the first legacy RPC row or the zero summary, and preserving the legacy Unauthorized, Insufficient permissions, and Error fetching debt/loan summary bodies."
     },
-    "api:/api/v1/workspaces/:wsId/finance/filter-users:apps/web/src/app/api/v1/workspaces/[wsId]/finance/filter-users/route.ts": {
+    "api:/api/v1/workspaces/:wsId/finance/filter-users:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/finance/filter-users/route.ts": {
       "status": "migrated",
       "targetOwner": "rust-backend",
       "note": "Rust backend handle_backend_request owns GET /api/v1/workspaces/:wsId/finance/filter-users by accepting finance/platform app-session tokens and CLI app-session tokens before falling back to a normal Supabase browser session or non-app-session Bearer token, normalizing internal, personal, handle, and UUID workspace identifiers, requiring view_transactions through has_workspace_permission, preserving the legacy type query branches, reading distinct_transaction_creators and distinct_invoice_creators with service-role auth and explicit ws_id filters, reading workspace_users with caller-token auth for normal Supabase sessions and service-role auth for app sessions, returning the legacy users envelope, and preserving the legacy Unauthorized and branch-specific failure bodies."
     },
-    "api:/api/v1/workspaces/:wsId/finance/invoices/subscription/context:apps/web/src/app/api/v1/workspaces/[wsId]/finance/invoices/subscription/context/route.ts": {
+    "api:/api/v1/workspaces/:wsId/finance/invoices/subscription/context:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/finance/invoices/subscription/context/route.ts": {
       "status": "migrated",
       "targetOwner": "rust-backend",
       "note": "Rust backend handle_backend_request owns GET /api/v1/workspaces/:wsId/finance/invoices/subscription/context by accepting finance/platform app-session tokens and CLI app-session tokens before falling back to a normal Supabase browser session or non-app-session Bearer token, normalizing internal, personal, handle, and UUID workspace identifiers, requiring create_invoices through has_workspace_permission, preserving the legacy missing-query short-circuit, validating requested STUDENT groups inside the workspace, reading user_group_attendance and finance_invoice_user_groups with service-role auth and explicit workspace/user/group filters, returning the legacy attendance and latestInvoices envelope, and preserving the legacy Unauthorized and Error fetching subscription invoice context bodies."
     },
-    "api:/api/v1/workspaces/:wsId/finance/recurring-transactions/upcoming:apps/web/src/app/api/v1/workspaces/[wsId]/finance/recurring-transactions/upcoming/route.ts": {
+    "api:/api/v1/workspaces/:wsId/finance/recurring-transactions/upcoming:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/finance/recurring-transactions/upcoming/route.ts": {
       "status": "migrated",
       "targetOwner": "rust-backend",
       "note": "Rust backend handle_backend_request owns GET /api/v1/workspaces/:wsId/finance/recurring-transactions/upcoming by accepting finance/platform app-session tokens and CLI app-session tokens before falling back to a normal Supabase browser session or non-app-session Bearer token, normalizing internal, personal, handle, and UUID workspace identifiers, requiring view_transactions through has_workspace_permission, preserving JavaScript parseInt-style daysAhead parsing with a 30-day fallback, calling get_upcoming_recurring_transactions with caller-token auth for normal Supabase sessions and service-role auth for app sessions, and preserving the legacy upcomingTransactions envelope, 403 Unauthorized body, and Failed to fetch upcoming recurring transactions body. Recurring transaction collection and detail routes remain legacy-owned."
     },
-    "api:/api/v1/infrastructure/timezones:apps/web/src/app/api/v1/infrastructure/timezones/route.ts": {
+    "api:/api/v1/infrastructure/timezones:apps/web/src/legacy-api-routes/v1/infrastructure/timezones/route.ts": {
       "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
       "targetOwner": "infrastructure-app"
     },
-    "api:/api/v1/infrastructure/timezones/:timezoneId:apps/web/src/app/api/v1/infrastructure/timezones/[timezoneId]/route.ts": {
+    "api:/api/v1/infrastructure/timezones/:timezoneId:apps/web/src/legacy-api-routes/v1/infrastructure/timezones/[timezoneId]/route.ts": {
       "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
       "targetOwner": "infrastructure-app"
     },
-    "api:/api/v1/infrastructure/user-status-changes:apps/web/src/app/api/v1/infrastructure/user-status-changes/route.ts": {
+    "api:/api/v1/infrastructure/user-status-changes:apps/web/src/legacy-api-routes/v1/infrastructure/user-status-changes/route.ts": {
       "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
       "targetOwner": "infrastructure-app"
     },
-    "api:/api/v1/infrastructure/users:apps/web/src/app/api/v1/infrastructure/users/route.ts": {
+    "api:/api/v1/infrastructure/users:apps/web/src/legacy-api-routes/v1/infrastructure/users/route.ts": {
       "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
       "targetOwner": "infrastructure-app"
     },
-    "api:/api/v1/mobile/version-check:apps/web/src/app/api/v1/mobile/version-check/route.ts": {
+    "api:/api/v1/mobile/version-check:apps/web/src/legacy-api-routes/v1/mobile/version-check/route.ts": {
       "methods": {
         "GET": {
           "status": "migrated",
@@ -805,7 +805,7 @@
         }
       }
     },
-    "api:/api/v1/workspaces/:wsId/external-projects/webgl-packages/upload:apps/web/src/app/api/v1/workspaces/[wsId]/external-projects/webgl-packages/upload/route.ts": {
+    "api:/api/v1/workspaces/:wsId/external-projects/webgl-packages/upload:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/external-projects/webgl-packages/upload/route.ts": {
       "methods": {
         "OPTIONS": {
           "status": "migrated",
@@ -814,37 +814,37 @@
         }
       }
     },
-    "api:/api/v1/workspaces/:wsId/user-groups/:groupId/group-checks/:postId/email:apps/web/src/app/api/v1/workspaces/[wsId]/user-groups/[groupId]/group-checks/[postId]/email/route.ts": {
+    "api:/api/v1/workspaces/:wsId/user-groups/:groupId/group-checks/:postId/email:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/user-groups/[groupId]/group-checks/[postId]/email/route.ts": {
       "status": "migrated",
       "targetOwner": "rust-backend",
       "note": "Rust backend route_request handles the removed POST direct group-check email endpoint with the legacy 410 response; emails are sent by the system queue after approval."
     },
-    "api:/api/v1/workspaces/:wsId/posts/permissions:apps/web/src/app/api/v1/workspaces/[wsId]/posts/permissions/route.ts": {
+    "api:/api/v1/workspaces/:wsId/posts/permissions:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/posts/permissions/route.ts": {
       "status": "migrated",
       "targetOwner": "rust-backend",
       "note": "Rust backend handle_backend_request handles GET /api/v1/workspaces/:wsId/posts/permissions by preserving the legacy quiet-failure contract: missing auth, inaccessible workspaces, RPC failures, and missing permissions all return HTTP 200 with canApprovePosts=false and canForceSendPosts=false. Authenticated callers are revalidated with Supabase Auth, then the backend calls the server-owned has_workspace_permission RPC for workspace approve_posts and root workspace manage_workspace_roles."
     },
-    "api:/api/v1/workspaces/:wsId/education/access:apps/web/src/app/api/v1/workspaces/[wsId]/education/access/route.ts": {
+    "api:/api/v1/workspaces/:wsId/education/access:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/education/access/route.ts": {
       "status": "migrated",
       "targetOwner": "rust-backend",
       "note": "Rust backend handle_backend_request handles GET /api/v1/workspaces/:wsId/education/access by preserving the legacy access-probe contract: missing or invalid Supabase sessions return 401, while invalid workspaces, missing workspace access, disabled ENABLE_EDUCATION workspace secrets, missing ai_lab permission, permission lookup failures, and secret lookup failures all return HTTP 200 with enabled=false. Enabled workspaces require a normal Supabase browser session or non-app-session Bearer token, getPermissions-compatible workspace permission resolution, and a server-owned workspace_secrets ENABLE_EDUCATION=true read."
     },
-    "api:/api/v1/workspaces/:wsId/settings/permissions:apps/web/src/app/api/v1/workspaces/[wsId]/settings/permissions/route.ts": {
+    "api:/api/v1/workspaces/:wsId/settings/permissions:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/settings/permissions/route.ts": {
       "status": "migrated",
       "targetOwner": "rust-backend",
       "note": "Rust backend handle_backend_request handles GET /api/v1/workspaces/:wsId/settings/permissions by revalidating a normal Supabase browser session or non-app-session Bearer token, rejecting app-session tokens, resolving personal/workspace identifiers, requiring workspace access, mirroring getPermissions role/default/creator/admin behavior, and returning the legacy manage_subscription, manage_workspace_settings, and manage_workspace_members flags with the private 30-second success cache directive."
     },
-    "api:/api/v1/workspaces/:wsId/settings/permissions/check:apps/web/src/app/api/v1/workspaces/[wsId]/settings/permissions/check/route.ts": {
+    "api:/api/v1/workspaces/:wsId/settings/permissions/check:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/settings/permissions/check/route.ts": {
       "status": "migrated",
       "targetOwner": "rust-backend",
       "note": "Rust backend handle_backend_request handles GET /api/v1/workspaces/:wsId/settings/permissions/check by revalidating a normal Supabase browser session or non-app-session Bearer token, ignoring app-session tokens and the legacy userId query, resolving personal/workspace identifiers, requiring workspace membership, and mirroring getPermissions role/default/creator/admin behavior before returning hasPermission."
     },
-    "api:/api/v1/workspaces/:wsId/slides:apps/web/src/app/api/v1/workspaces/[wsId]/slides/route.ts": {
+    "api:/api/v1/workspaces/:wsId/slides:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/slides/route.ts": {
       "status": "migrated",
       "targetOwner": "rust-backend",
       "note": "Rust backend route_request handles GET/POST workspace slides collection placeholders with the legacy 501 Not implemented response."
     },
-    "api:/api/v1/workspaces/:wsId/slides/:slideId:apps/web/src/app/api/v1/workspaces/[wsId]/slides/[slideId]/route.ts": {
+    "api:/api/v1/workspaces/:wsId/slides/:slideId:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/slides/[slideId]/route.ts": {
       "status": "migrated",
       "targetOwner": "rust-backend",
       "note": "Rust backend route_request handles PUT/DELETE workspace slide item placeholders with the legacy 501 Not implemented response."
@@ -1519,7 +1519,7 @@
       "targetOwner": "tanstack-start",
       "note": "Dynamic no-store TanStack Start route /$locale/$wsId/documents/$documentId gates anonymous users through requireCurrentUser, resolves the workspace, preserves the legacy manage_documents permission gate, loads the protected document row through the typed documents internal-api facade with forwarded request auth, and renders the document metadata plus read-only rich-text preview. Document edit/share/delete/autosave behavior and workspace document API ownership remain separately tracked."
     },
-    "api:/api/workspaces/:wsId/categories:apps/web/src/app/api/workspaces/[wsId]/categories/route.ts": {
+    "api:/api/workspaces/:wsId/categories:apps/web/src/legacy-api-routes/workspaces/[wsId]/categories/route.ts": {
       "status": "accepted-removal",
       "targetOwner": "rust-backend",
       "note": "Accepted removal: the legacy route.ts file is empty and exports no HTTP methods, so there is no runtime behavior to port."
@@ -1984,332 +1984,332 @@
       "targetOwner": "tanstack-start",
       "note": "TanStack Start route /$locale/ ports the public landing page with local English and Vietnamese content, local landing primitives, and no framer-motion, Next.js APIs, auth, Supabase, or protected workspace data access."
     },
-    "api:/api/v1/infrastructure/migrate/bill-coupons:apps/web/src/app/api/v1/infrastructure/migrate/bill-coupons/route.ts": {
+    "api:/api/v1/infrastructure/migrate/bill-coupons:apps/web/src/legacy-api-routes/v1/infrastructure/migrate/bill-coupons/route.ts": {
       "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
       "targetOwner": "infrastructure-app"
     },
-    "api:/api/v1/infrastructure/migrate/bill-packages:apps/web/src/app/api/v1/infrastructure/migrate/bill-packages/route.ts": {
+    "api:/api/v1/infrastructure/migrate/bill-packages:apps/web/src/legacy-api-routes/v1/infrastructure/migrate/bill-packages/route.ts": {
       "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
       "targetOwner": "infrastructure-app"
     },
-    "api:/api/v1/infrastructure/migrate/bills:apps/web/src/app/api/v1/infrastructure/migrate/bills/route.ts": {
+    "api:/api/v1/infrastructure/migrate/bills:apps/web/src/legacy-api-routes/v1/infrastructure/migrate/bills/route.ts": {
       "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
       "targetOwner": "infrastructure-app"
     },
-    "api:/api/v1/infrastructure/migrate/class-attendance:apps/web/src/app/api/v1/infrastructure/migrate/class-attendance/route.ts": {
+    "api:/api/v1/infrastructure/migrate/class-attendance:apps/web/src/legacy-api-routes/v1/infrastructure/migrate/class-attendance/route.ts": {
       "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
       "targetOwner": "infrastructure-app"
     },
-    "api:/api/v1/infrastructure/migrate/class-members:apps/web/src/app/api/v1/infrastructure/migrate/class-members/route.ts": {
+    "api:/api/v1/infrastructure/migrate/class-members:apps/web/src/legacy-api-routes/v1/infrastructure/migrate/class-members/route.ts": {
       "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
       "targetOwner": "infrastructure-app"
     },
-    "api:/api/v1/infrastructure/migrate/class-packages:apps/web/src/app/api/v1/infrastructure/migrate/class-packages/route.ts": {
+    "api:/api/v1/infrastructure/migrate/class-packages:apps/web/src/legacy-api-routes/v1/infrastructure/migrate/class-packages/route.ts": {
       "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
       "targetOwner": "infrastructure-app"
     },
-    "api:/api/v1/infrastructure/migrate/class-scores:apps/web/src/app/api/v1/infrastructure/migrate/class-scores/route.ts": {
+    "api:/api/v1/infrastructure/migrate/class-scores:apps/web/src/legacy-api-routes/v1/infrastructure/migrate/class-scores/route.ts": {
       "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
       "targetOwner": "infrastructure-app"
     },
-    "api:/api/v1/infrastructure/migrate/class-sessions:apps/web/src/app/api/v1/infrastructure/migrate/class-sessions/route.ts": {
+    "api:/api/v1/infrastructure/migrate/class-sessions:apps/web/src/legacy-api-routes/v1/infrastructure/migrate/class-sessions/route.ts": {
       "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
       "targetOwner": "infrastructure-app"
     },
-    "api:/api/v1/infrastructure/migrate/classes:apps/web/src/app/api/v1/infrastructure/migrate/classes/route.ts": {
+    "api:/api/v1/infrastructure/migrate/classes:apps/web/src/legacy-api-routes/v1/infrastructure/migrate/classes/route.ts": {
       "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
       "targetOwner": "infrastructure-app"
     },
-    "api:/api/v1/infrastructure/migrate/coupons:apps/web/src/app/api/v1/infrastructure/migrate/coupons/route.ts": {
+    "api:/api/v1/infrastructure/migrate/coupons:apps/web/src/legacy-api-routes/v1/infrastructure/migrate/coupons/route.ts": {
       "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
       "targetOwner": "infrastructure-app"
     },
-    "api:/api/v1/infrastructure/migrate/credit-wallets:apps/web/src/app/api/v1/infrastructure/migrate/credit-wallets/route.ts": {
+    "api:/api/v1/infrastructure/migrate/credit-wallets:apps/web/src/legacy-api-routes/v1/infrastructure/migrate/credit-wallets/route.ts": {
       "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
       "targetOwner": "infrastructure-app"
     },
-    "api:/api/v1/infrastructure/migrate/email-blacklist:apps/web/src/app/api/v1/infrastructure/migrate/email-blacklist/route.ts": {
+    "api:/api/v1/infrastructure/migrate/email-blacklist:apps/web/src/legacy-api-routes/v1/infrastructure/migrate/email-blacklist/route.ts": {
       "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
       "targetOwner": "infrastructure-app"
     },
-    "api:/api/v1/infrastructure/migrate/ensure-platform-users:apps/web/src/app/api/v1/infrastructure/migrate/ensure-platform-users/route.ts": {
+    "api:/api/v1/infrastructure/migrate/ensure-platform-users:apps/web/src/legacy-api-routes/v1/infrastructure/migrate/ensure-platform-users/route.ts": {
       "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
       "targetOwner": "infrastructure-app"
     },
-    "api:/api/v1/infrastructure/migrate/finance-budgets:apps/web/src/app/api/v1/infrastructure/migrate/finance-budgets/route.ts": {
+    "api:/api/v1/infrastructure/migrate/finance-budgets:apps/web/src/legacy-api-routes/v1/infrastructure/migrate/finance-budgets/route.ts": {
       "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
       "targetOwner": "infrastructure-app"
     },
-    "api:/api/v1/infrastructure/migrate/finance-invoice-products:apps/web/src/app/api/v1/infrastructure/migrate/finance-invoice-products/route.ts": {
+    "api:/api/v1/infrastructure/migrate/finance-invoice-products:apps/web/src/legacy-api-routes/v1/infrastructure/migrate/finance-invoice-products/route.ts": {
       "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
       "targetOwner": "infrastructure-app"
     },
-    "api:/api/v1/infrastructure/migrate/finance-invoice-promotions:apps/web/src/app/api/v1/infrastructure/migrate/finance-invoice-promotions/route.ts": {
+    "api:/api/v1/infrastructure/migrate/finance-invoice-promotions:apps/web/src/legacy-api-routes/v1/infrastructure/migrate/finance-invoice-promotions/route.ts": {
       "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
       "targetOwner": "infrastructure-app"
     },
-    "api:/api/v1/infrastructure/migrate/finance-invoice-transaction-links:apps/web/src/app/api/v1/infrastructure/migrate/finance-invoice-transaction-links/route.ts": {
+    "api:/api/v1/infrastructure/migrate/finance-invoice-transaction-links:apps/web/src/legacy-api-routes/v1/infrastructure/migrate/finance-invoice-transaction-links/route.ts": {
       "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
       "targetOwner": "infrastructure-app"
     },
-    "api:/api/v1/infrastructure/migrate/finance-invoice-user-groups:apps/web/src/app/api/v1/infrastructure/migrate/finance-invoice-user-groups/route.ts": {
+    "api:/api/v1/infrastructure/migrate/finance-invoice-user-groups:apps/web/src/legacy-api-routes/v1/infrastructure/migrate/finance-invoice-user-groups/route.ts": {
       "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
       "targetOwner": "infrastructure-app"
     },
-    "api:/api/v1/infrastructure/migrate/finance-invoices:apps/web/src/app/api/v1/infrastructure/migrate/finance-invoices/route.ts": {
+    "api:/api/v1/infrastructure/migrate/finance-invoices:apps/web/src/legacy-api-routes/v1/infrastructure/migrate/finance-invoices/route.ts": {
       "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
       "targetOwner": "infrastructure-app"
     },
-    "api:/api/v1/infrastructure/migrate/inventory-batch-products:apps/web/src/app/api/v1/infrastructure/migrate/inventory-batch-products/route.ts": {
+    "api:/api/v1/infrastructure/migrate/inventory-batch-products:apps/web/src/legacy-api-routes/v1/infrastructure/migrate/inventory-batch-products/route.ts": {
       "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
       "targetOwner": "infrastructure-app"
     },
-    "api:/api/v1/infrastructure/migrate/inventory-batches:apps/web/src/app/api/v1/infrastructure/migrate/inventory-batches/route.ts": {
+    "api:/api/v1/infrastructure/migrate/inventory-batches:apps/web/src/legacy-api-routes/v1/infrastructure/migrate/inventory-batches/route.ts": {
       "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
       "targetOwner": "infrastructure-app"
     },
-    "api:/api/v1/infrastructure/migrate/inventory-manufacturers:apps/web/src/app/api/v1/infrastructure/migrate/inventory-manufacturers/route.ts": {
+    "api:/api/v1/infrastructure/migrate/inventory-manufacturers:apps/web/src/legacy-api-routes/v1/infrastructure/migrate/inventory-manufacturers/route.ts": {
       "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
       "targetOwner": "infrastructure-app"
     },
-    "api:/api/v1/infrastructure/migrate/inventory-products:apps/web/src/app/api/v1/infrastructure/migrate/inventory-products/route.ts": {
+    "api:/api/v1/infrastructure/migrate/inventory-products:apps/web/src/legacy-api-routes/v1/infrastructure/migrate/inventory-products/route.ts": {
       "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
       "targetOwner": "infrastructure-app"
     },
-    "api:/api/v1/infrastructure/migrate/inventory-suppliers:apps/web/src/app/api/v1/infrastructure/migrate/inventory-suppliers/route.ts": {
+    "api:/api/v1/infrastructure/migrate/inventory-suppliers:apps/web/src/legacy-api-routes/v1/infrastructure/migrate/inventory-suppliers/route.ts": {
       "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
       "targetOwner": "infrastructure-app"
     },
-    "api:/api/v1/infrastructure/migrate/lessons:apps/web/src/app/api/v1/infrastructure/migrate/lessons/route.ts": {
+    "api:/api/v1/infrastructure/migrate/lessons:apps/web/src/legacy-api-routes/v1/infrastructure/migrate/lessons/route.ts": {
       "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
       "targetOwner": "infrastructure-app"
     },
-    "api:/api/v1/infrastructure/migrate/package-stock-changes:apps/web/src/app/api/v1/infrastructure/migrate/package-stock-changes/route.ts": {
+    "api:/api/v1/infrastructure/migrate/package-stock-changes:apps/web/src/legacy-api-routes/v1/infrastructure/migrate/package-stock-changes/route.ts": {
       "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
       "targetOwner": "infrastructure-app"
     },
-    "api:/api/v1/infrastructure/migrate/packages:apps/web/src/app/api/v1/infrastructure/migrate/packages/route.ts": {
+    "api:/api/v1/infrastructure/migrate/packages:apps/web/src/legacy-api-routes/v1/infrastructure/migrate/packages/route.ts": {
       "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
       "targetOwner": "infrastructure-app"
     },
-    "api:/api/v1/infrastructure/migrate/payment-methods:apps/web/src/app/api/v1/infrastructure/migrate/payment-methods/route.ts": {
+    "api:/api/v1/infrastructure/migrate/payment-methods:apps/web/src/legacy-api-routes/v1/infrastructure/migrate/payment-methods/route.ts": {
       "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
       "targetOwner": "infrastructure-app"
     },
-    "api:/api/v1/infrastructure/migrate/post-email-queue:apps/web/src/app/api/v1/infrastructure/migrate/post-email-queue/route.ts": {
+    "api:/api/v1/infrastructure/migrate/post-email-queue:apps/web/src/legacy-api-routes/v1/infrastructure/migrate/post-email-queue/route.ts": {
       "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
       "targetOwner": "infrastructure-app"
     },
-    "api:/api/v1/infrastructure/migrate/product-categories:apps/web/src/app/api/v1/infrastructure/migrate/product-categories/route.ts": {
+    "api:/api/v1/infrastructure/migrate/product-categories:apps/web/src/legacy-api-routes/v1/infrastructure/migrate/product-categories/route.ts": {
       "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
       "targetOwner": "infrastructure-app"
     },
-    "api:/api/v1/infrastructure/migrate/product-prices:apps/web/src/app/api/v1/infrastructure/migrate/product-prices/route.ts": {
+    "api:/api/v1/infrastructure/migrate/product-prices:apps/web/src/legacy-api-routes/v1/infrastructure/migrate/product-prices/route.ts": {
       "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
       "targetOwner": "infrastructure-app"
     },
-    "api:/api/v1/infrastructure/migrate/product-units:apps/web/src/app/api/v1/infrastructure/migrate/product-units/route.ts": {
+    "api:/api/v1/infrastructure/migrate/product-units:apps/web/src/legacy-api-routes/v1/infrastructure/migrate/product-units/route.ts": {
       "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
       "targetOwner": "infrastructure-app"
     },
-    "api:/api/v1/infrastructure/migrate/roles:apps/web/src/app/api/v1/infrastructure/migrate/roles/route.ts": {
+    "api:/api/v1/infrastructure/migrate/roles:apps/web/src/legacy-api-routes/v1/infrastructure/migrate/roles/route.ts": {
       "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
       "targetOwner": "infrastructure-app"
     },
-    "api:/api/v1/infrastructure/migrate/score-names:apps/web/src/app/api/v1/infrastructure/migrate/score-names/route.ts": {
+    "api:/api/v1/infrastructure/migrate/score-names:apps/web/src/legacy-api-routes/v1/infrastructure/migrate/score-names/route.ts": {
       "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
       "targetOwner": "infrastructure-app"
     },
-    "api:/api/v1/infrastructure/migrate/sent-emails:apps/web/src/app/api/v1/infrastructure/migrate/sent-emails/route.ts": {
+    "api:/api/v1/infrastructure/migrate/sent-emails:apps/web/src/legacy-api-routes/v1/infrastructure/migrate/sent-emails/route.ts": {
       "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
       "targetOwner": "infrastructure-app"
     },
-    "api:/api/v1/infrastructure/migrate/student-feedbacks:apps/web/src/app/api/v1/infrastructure/migrate/student-feedbacks/route.ts": {
+    "api:/api/v1/infrastructure/migrate/student-feedbacks:apps/web/src/legacy-api-routes/v1/infrastructure/migrate/student-feedbacks/route.ts": {
       "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
       "targetOwner": "infrastructure-app"
     },
-    "api:/api/v1/infrastructure/migrate/transaction-categories:apps/web/src/app/api/v1/infrastructure/migrate/transaction-categories/route.ts": {
+    "api:/api/v1/infrastructure/migrate/transaction-categories:apps/web/src/legacy-api-routes/v1/infrastructure/migrate/transaction-categories/route.ts": {
       "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
       "targetOwner": "infrastructure-app"
     },
-    "api:/api/v1/infrastructure/migrate/user-coupons:apps/web/src/app/api/v1/infrastructure/migrate/user-coupons/route.ts": {
+    "api:/api/v1/infrastructure/migrate/user-coupons:apps/web/src/legacy-api-routes/v1/infrastructure/migrate/user-coupons/route.ts": {
       "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
       "targetOwner": "infrastructure-app"
     },
-    "api:/api/v1/infrastructure/migrate/user-group-post-checks:apps/web/src/app/api/v1/infrastructure/migrate/user-group-post-checks/route.ts": {
+    "api:/api/v1/infrastructure/migrate/user-group-post-checks:apps/web/src/legacy-api-routes/v1/infrastructure/migrate/user-group-post-checks/route.ts": {
       "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
       "targetOwner": "infrastructure-app"
     },
-    "api:/api/v1/infrastructure/migrate/user-monthly-report-logs:apps/web/src/app/api/v1/infrastructure/migrate/user-monthly-report-logs/route.ts": {
+    "api:/api/v1/infrastructure/migrate/user-monthly-report-logs:apps/web/src/legacy-api-routes/v1/infrastructure/migrate/user-monthly-report-logs/route.ts": {
       "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
       "targetOwner": "infrastructure-app"
     },
-    "api:/api/v1/infrastructure/migrate/user-monthly-reports:apps/web/src/app/api/v1/infrastructure/migrate/user-monthly-reports/route.ts": {
+    "api:/api/v1/infrastructure/migrate/user-monthly-reports:apps/web/src/legacy-api-routes/v1/infrastructure/migrate/user-monthly-reports/route.ts": {
       "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
       "targetOwner": "infrastructure-app"
     },
-    "api:/api/v1/infrastructure/migrate/user-roles:apps/web/src/app/api/v1/infrastructure/migrate/user-roles/route.ts": {
+    "api:/api/v1/infrastructure/migrate/user-roles:apps/web/src/legacy-api-routes/v1/infrastructure/migrate/user-roles/route.ts": {
       "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
       "targetOwner": "infrastructure-app"
     },
-    "api:/api/v1/infrastructure/migrate/user-status-changes:apps/web/src/app/api/v1/infrastructure/migrate/user-status-changes/route.ts": {
+    "api:/api/v1/infrastructure/migrate/user-status-changes:apps/web/src/legacy-api-routes/v1/infrastructure/migrate/user-status-changes/route.ts": {
       "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
       "targetOwner": "infrastructure-app"
     },
-    "api:/api/v1/infrastructure/migrate/users:apps/web/src/app/api/v1/infrastructure/migrate/users/route.ts": {
+    "api:/api/v1/infrastructure/migrate/users:apps/web/src/legacy-api-routes/v1/infrastructure/migrate/users/route.ts": {
       "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
       "targetOwner": "infrastructure-app"
     },
-    "api:/api/v1/infrastructure/migrate/wallet-transaction-tags:apps/web/src/app/api/v1/infrastructure/migrate/wallet-transaction-tags/route.ts": {
+    "api:/api/v1/infrastructure/migrate/wallet-transaction-tags:apps/web/src/legacy-api-routes/v1/infrastructure/migrate/wallet-transaction-tags/route.ts": {
       "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
       "targetOwner": "infrastructure-app"
     },
-    "api:/api/v1/infrastructure/migrate/wallet-transactions:apps/web/src/app/api/v1/infrastructure/migrate/wallet-transactions/route.ts": {
+    "api:/api/v1/infrastructure/migrate/wallet-transactions:apps/web/src/legacy-api-routes/v1/infrastructure/migrate/wallet-transactions/route.ts": {
       "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
       "targetOwner": "infrastructure-app"
     },
-    "api:/api/v1/infrastructure/migrate/wallet-types:apps/web/src/app/api/v1/infrastructure/migrate/wallet-types/route.ts": {
+    "api:/api/v1/infrastructure/migrate/wallet-types:apps/web/src/legacy-api-routes/v1/infrastructure/migrate/wallet-types/route.ts": {
       "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
       "targetOwner": "infrastructure-app"
     },
-    "api:/api/v1/infrastructure/migrate/wallets:apps/web/src/app/api/v1/infrastructure/migrate/wallets/route.ts": {
+    "api:/api/v1/infrastructure/migrate/wallets:apps/web/src/legacy-api-routes/v1/infrastructure/migrate/wallets/route.ts": {
       "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
       "targetOwner": "infrastructure-app"
     },
-    "api:/api/v1/infrastructure/migrate/warehouses:apps/web/src/app/api/v1/infrastructure/migrate/warehouses/route.ts": {
+    "api:/api/v1/infrastructure/migrate/warehouses:apps/web/src/legacy-api-routes/v1/infrastructure/migrate/warehouses/route.ts": {
       "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
       "targetOwner": "infrastructure-app"
     },
-    "api:/api/v1/infrastructure/migrate/workspace-configs:apps/web/src/app/api/v1/infrastructure/migrate/workspace-configs/route.ts": {
+    "api:/api/v1/infrastructure/migrate/workspace-configs:apps/web/src/legacy-api-routes/v1/infrastructure/migrate/workspace-configs/route.ts": {
       "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
       "targetOwner": "infrastructure-app"
     },
-    "api:/api/v1/infrastructure/migrate/workspace-settings:apps/web/src/app/api/v1/infrastructure/migrate/workspace-settings/route.ts": {
+    "api:/api/v1/infrastructure/migrate/workspace-settings:apps/web/src/legacy-api-routes/v1/infrastructure/migrate/workspace-settings/route.ts": {
       "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
       "targetOwner": "infrastructure-app"
     },
-    "api:/api/v1/infrastructure/migrate/workspace-user-fields:apps/web/src/app/api/v1/infrastructure/migrate/workspace-user-fields/route.ts": {
+    "api:/api/v1/infrastructure/migrate/workspace-user-fields:apps/web/src/legacy-api-routes/v1/infrastructure/migrate/workspace-user-fields/route.ts": {
       "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
       "targetOwner": "infrastructure-app"
     },
-    "api:/api/v1/infrastructure/migrate/workspace-user-group-session-files:apps/web/src/app/api/v1/infrastructure/migrate/workspace-user-group-session-files/route.ts": {
+    "api:/api/v1/infrastructure/migrate/workspace-user-group-session-files:apps/web/src/legacy-api-routes/v1/infrastructure/migrate/workspace-user-group-session-files/route.ts": {
       "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
       "targetOwner": "infrastructure-app"
     },
-    "api:/api/v1/infrastructure/migrate/workspace-user-group-session-series:apps/web/src/app/api/v1/infrastructure/migrate/workspace-user-group-session-series/route.ts": {
+    "api:/api/v1/infrastructure/migrate/workspace-user-group-session-series:apps/web/src/legacy-api-routes/v1/infrastructure/migrate/workspace-user-group-session-series/route.ts": {
       "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
       "targetOwner": "infrastructure-app"
     },
-    "api:/api/v1/infrastructure/migrate/workspace-user-group-session-tag-links:apps/web/src/app/api/v1/infrastructure/migrate/workspace-user-group-session-tag-links/route.ts": {
+    "api:/api/v1/infrastructure/migrate/workspace-user-group-session-tag-links:apps/web/src/legacy-api-routes/v1/infrastructure/migrate/workspace-user-group-session-tag-links/route.ts": {
       "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
       "targetOwner": "infrastructure-app"
     },
-    "api:/api/v1/infrastructure/migrate/workspace-user-group-session-tags:apps/web/src/app/api/v1/infrastructure/migrate/workspace-user-group-session-tags/route.ts": {
+    "api:/api/v1/infrastructure/migrate/workspace-user-group-session-tags:apps/web/src/legacy-api-routes/v1/infrastructure/migrate/workspace-user-group-session-tags/route.ts": {
       "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
       "targetOwner": "infrastructure-app"
     },
-    "api:/api/v1/infrastructure/migrate/workspace-user-group-sessions:apps/web/src/app/api/v1/infrastructure/migrate/workspace-user-group-sessions/route.ts": {
+    "api:/api/v1/infrastructure/migrate/workspace-user-group-sessions:apps/web/src/legacy-api-routes/v1/infrastructure/migrate/workspace-user-group-sessions/route.ts": {
       "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
       "targetOwner": "infrastructure-app"
     },
-    "api:/api/v1/infrastructure/migrate/workspace-user-group-tag-groups:apps/web/src/app/api/v1/infrastructure/migrate/workspace-user-group-tag-groups/route.ts": {
+    "api:/api/v1/infrastructure/migrate/workspace-user-group-tag-groups:apps/web/src/legacy-api-routes/v1/infrastructure/migrate/workspace-user-group-tag-groups/route.ts": {
       "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
       "targetOwner": "infrastructure-app"
     },
-    "api:/api/v1/infrastructure/migrate/workspace-user-group-tags:apps/web/src/app/api/v1/infrastructure/migrate/workspace-user-group-tags/route.ts": {
+    "api:/api/v1/infrastructure/migrate/workspace-user-group-tags:apps/web/src/legacy-api-routes/v1/infrastructure/migrate/workspace-user-group-tags/route.ts": {
       "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
       "targetOwner": "infrastructure-app"
     },
-    "api:/api/v1/infrastructure/migrate/workspace-user-groups-users:apps/web/src/app/api/v1/infrastructure/migrate/workspace-user-groups-users/route.ts": {
+    "api:/api/v1/infrastructure/migrate/workspace-user-groups-users:apps/web/src/legacy-api-routes/v1/infrastructure/migrate/workspace-user-groups-users/route.ts": {
       "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
       "targetOwner": "infrastructure-app"
     },
-    "api:/api/v1/infrastructure/migrate/workspace-user-groups:apps/web/src/app/api/v1/infrastructure/migrate/workspace-user-groups/route.ts": {
+    "api:/api/v1/infrastructure/migrate/workspace-user-groups:apps/web/src/legacy-api-routes/v1/infrastructure/migrate/workspace-user-groups/route.ts": {
       "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
       "targetOwner": "infrastructure-app"
     },
-    "api:/api/v1/infrastructure/migrate/workspace-user-linked-users:apps/web/src/app/api/v1/infrastructure/migrate/workspace-user-linked-users/route.ts": {
+    "api:/api/v1/infrastructure/migrate/workspace-user-linked-users:apps/web/src/legacy-api-routes/v1/infrastructure/migrate/workspace-user-linked-users/route.ts": {
       "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
       "targetOwner": "infrastructure-app"
     },
-    "api:/api/v1/infrastructure/migrate/workspace-user-status-changes:apps/web/src/app/api/v1/infrastructure/migrate/workspace-user-status-changes/route.ts": {
+    "api:/api/v1/infrastructure/migrate/workspace-user-status-changes:apps/web/src/legacy-api-routes/v1/infrastructure/migrate/workspace-user-status-changes/route.ts": {
       "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
       "targetOwner": "infrastructure-app"
     },
-    "api:/api/v1/infrastructure/migrate/workspace-users:apps/web/src/app/api/v1/infrastructure/migrate/workspace-users/route.ts": {
+    "api:/api/v1/infrastructure/migrate/workspace-users:apps/web/src/legacy-api-routes/v1/infrastructure/migrate/workspace-users/route.ts": {
       "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
       "targetOwner": "infrastructure-app"
     },
-    "api:/api/v1/infrastructure/migrate/workspace-wallet-transfers:apps/web/src/app/api/v1/infrastructure/migrate/workspace-wallet-transfers/route.ts": {
+    "api:/api/v1/infrastructure/migrate/workspace-wallet-transfers:apps/web/src/legacy-api-routes/v1/infrastructure/migrate/workspace-wallet-transfers/route.ts": {
       "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
       "targetOwner": "infrastructure-app"
     },
-    "api:/api/v1/infrastructure/migrate/workspace-wallets:apps/web/src/app/api/v1/infrastructure/migrate/workspace-wallets/route.ts": {
+    "api:/api/v1/infrastructure/migrate/workspace-wallets:apps/web/src/legacy-api-routes/v1/infrastructure/migrate/workspace-wallets/route.ts": {
       "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
       "targetOwner": "infrastructure-app"
@@ -2337,12 +2337,12 @@
       "targetOwner": "tanstack-start",
       "note": "TanStack Start route /$locale/users/$handle ports the legacy auth-gated community profile page. The loader runs the shared fail-closed current-user auth gate before any profile lookup, redirects anonymous visitors to the locale login route with nextUrl, sets private no-store route headers, reads only the legacy public profile fields for the requested handle through a caller-scoped internal-api users-server facade that preserves Supabase RLS, renders the profile header with TanStack-safe image/avatar primitives, and has explicit no-auth Playwright coverage. A dedicated Rust/backend reader remains a follow-up backend migration boundary."
     },
-    "api:/api/v1/workspaces/:wsId/settings/calendar-sync:apps/web/src/app/api/v1/workspaces/[wsId]/settings/calendar-sync/route.ts": {
+    "api:/api/v1/workspaces/:wsId/settings/calendar-sync:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/settings/calendar-sync/route.ts": {
       "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
       "targetOwner": "infrastructure-app"
     },
-    "api:/api/v1/workspaces/:wsId/settings/email-audit:apps/web/src/app/api/v1/workspaces/[wsId]/settings/email-audit/route.ts": {
+    "api:/api/v1/workspaces/:wsId/settings/email-audit:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/settings/email-audit/route.ts": {
       "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
       "targetOwner": "infrastructure-app"

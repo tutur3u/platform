@@ -106,7 +106,7 @@ vi.mock('@tuturuuu/utils/ai-temp-auth', () => ({
     mockValidateAiTempAuthRequest(request),
 }));
 
-import { CURRENT_USER_APP_SESSION_AUTH } from '../app/api/v1/users/me/session-auth';
+import { CURRENT_USER_APP_SESSION_AUTH } from '../legacy-api-routes/v1/users/me/session-auth';
 // ---------------------------------------------------------------------------
 // Import after mocks are set up
 // ---------------------------------------------------------------------------

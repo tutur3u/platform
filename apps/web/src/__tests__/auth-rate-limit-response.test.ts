@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   buildAuthRateLimitDiagnosticHeaders,
   jsonWithAuthRateLimitDiagnostics,
-} from '@/app/api/v1/auth/mobile/shared';
+} from '@/legacy-api-routes/v1/auth/mobile/shared';
 
 function requestWithIp(ipAddress: string) {
   return new Request('http://localhost/api/v1/auth/otp/send', {

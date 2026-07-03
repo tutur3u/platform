@@ -41,7 +41,7 @@ describe('workspace API route app-session bridge', () => {
   });
 
   it('allows internal app-session auth on the workspace list route', async () => {
-    await import('@/app/api/v1/workspaces/route');
+    await import('@/legacy-api-routes/v1/workspaces/route');
 
     expect(mocks.withSessionAuth).toHaveBeenCalledWith(expect.any(Function), {
       allowAppSessionAuth: {
@@ -70,7 +70,7 @@ describe('workspace API route app-session bridge', () => {
   });
 
   it('passes authenticated context into the workspace summary loader', async () => {
-    const route = await import('@/app/api/v1/workspaces/route');
+    const route = await import('@/legacy-api-routes/v1/workspaces/route');
     const request = new NextRequest('http://localhost/api/v1/workspaces');
     const response = await route.GET(request);
 
@@ -84,7 +84,7 @@ describe('workspace API route app-session bridge', () => {
   });
 
   it('passes workspace search params into the workspace summary loader', async () => {
-    const route = await import('@/app/api/v1/workspaces/route');
+    const route = await import('@/legacy-api-routes/v1/workspaces/route');
     const request = new NextRequest(
       'http://localhost/api/v1/workspaces?q=alpha&limit=25'
     );
@@ -102,7 +102,7 @@ describe('workspace API route app-session bridge', () => {
   });
 
   it('allows internal app-session auth on legacy workspace GET, PUT, and DELETE', async () => {
-    await import('@/app/api/workspaces/[wsId]/route');
+    await import('@/legacy-api-routes/workspaces/[wsId]/route');
 
     expect(mocks.withSessionAuth).toHaveBeenCalledWith(expect.any(Function), {
       allowAppSessionAuth: {

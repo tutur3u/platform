@@ -84,7 +84,7 @@ const mocks = vi.hoisted(() => {
   };
 });
 
-vi.mock('@/app/api/v1/workspaces/[wsId]/whiteboards/access', () => ({
+vi.mock('@/legacy-api-routes/v1/workspaces/[wsId]/whiteboards/access', () => ({
   requireWhiteboardAccess: (
     ...args: Parameters<typeof mocks.requireWhiteboardAccess>
   ) => mocks.requireWhiteboardAccess(...args),
@@ -143,7 +143,7 @@ describe('whiteboard route', () => {
     });
 
     const { PATCH } = await import(
-      '@/app/api/v1/workspaces/[wsId]/whiteboards/[boardId]/route'
+      '@/legacy-api-routes/v1/workspaces/[wsId]/whiteboards/[boardId]/route'
     );
 
     const response = await PATCH(
@@ -216,7 +216,7 @@ describe('whiteboard route', () => {
     });
 
     const { DELETE } = await import(
-      '@/app/api/v1/workspaces/[wsId]/whiteboards/[boardId]/route'
+      '@/legacy-api-routes/v1/workspaces/[wsId]/whiteboards/[boardId]/route'
     );
 
     const response = await DELETE(

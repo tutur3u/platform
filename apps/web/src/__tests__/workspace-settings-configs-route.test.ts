@@ -121,7 +121,7 @@ describe('workspace settings configs route', () => {
     });
 
     const { GET } = await import(
-      '@/app/api/v1/workspaces/[wsId]/settings/configs/route'
+      '@/legacy-api-routes/v1/workspaces/[wsId]/settings/configs/route'
     );
 
     const response = await GET(
@@ -157,7 +157,7 @@ describe('workspace settings configs route', () => {
     });
 
     const { GET } = await import(
-      '@/app/api/v1/workspaces/[wsId]/settings/configs/route'
+      '@/legacy-api-routes/v1/workspaces/[wsId]/settings/configs/route'
     );
 
     const response = await GET(
@@ -196,7 +196,7 @@ describe('workspace settings configs route', () => {
     });
 
     const { GET } = await import(
-      '@/app/api/v1/workspaces/[wsId]/settings/configs/route'
+      '@/legacy-api-routes/v1/workspaces/[wsId]/settings/configs/route'
     );
 
     const response = await GET(
@@ -223,7 +223,7 @@ describe('workspace settings configs route', () => {
 
   it('allows settings managers to read configs', async () => {
     const { GET } = await import(
-      '@/app/api/v1/workspaces/[wsId]/settings/configs/route'
+      '@/legacy-api-routes/v1/workspaces/[wsId]/settings/configs/route'
     );
 
     const response = await GET(
@@ -252,7 +252,7 @@ describe('workspace settings configs route', () => {
 
   it('includes dedicated default included groups in batch config reads', async () => {
     const { GET } = await import(
-      '@/app/api/v1/workspaces/[wsId]/settings/configs/route'
+      '@/legacy-api-routes/v1/workspaces/[wsId]/settings/configs/route'
     );
 
     const response = await GET(
@@ -285,7 +285,7 @@ describe('workspace settings configs route', () => {
     });
 
     const { GET } = await import(
-      '@/app/api/v1/workspaces/[wsId]/settings/configs/route'
+      '@/legacy-api-routes/v1/workspaces/[wsId]/settings/configs/route'
     );
 
     const response = await GET(
@@ -311,7 +311,7 @@ describe('workspace settings configs route', () => {
     });
 
     const { GET } = await import(
-      '@/app/api/v1/workspaces/[wsId]/settings/configs/route'
+      '@/legacy-api-routes/v1/workspaces/[wsId]/settings/configs/route'
     );
 
     const response = await GET(
@@ -337,7 +337,7 @@ describe('workspace settings configs route', () => {
     });
 
     const { PUT } = await import(
-      '@/app/api/v1/workspaces/[wsId]/settings/configs/route'
+      '@/legacy-api-routes/v1/workspaces/[wsId]/settings/configs/route'
     );
 
     const response = await PUT(
@@ -378,7 +378,7 @@ describe('workspace settings configs route', () => {
     });
 
     const { PUT } = await import(
-      '@/app/api/v1/workspaces/[wsId]/settings/configs/route'
+      '@/legacy-api-routes/v1/workspaces/[wsId]/settings/configs/route'
     );
 
     const response = await PUT(

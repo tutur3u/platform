@@ -13,6 +13,13 @@ const {
 
 const ROOT_DIR = path.resolve(__dirname, '..');
 const DEFAULT_APP_DIR = path.join(ROOT_DIR, 'apps', 'web', 'src', 'app');
+const DEFAULT_LEGACY_API_DIR = path.join(
+  ROOT_DIR,
+  'apps',
+  'web',
+  'src',
+  'legacy-api-routes'
+);
 const DEFAULT_MANIFEST_PATH = path.join(
   ROOT_DIR,
   'apps',
@@ -165,41 +172,81 @@ function extractRouteMethods(source) {
   });
 }
 
+function directoryExists(directory, fsImpl) {
+  try {
+    return fsImpl.statSync(directory).isDirectory();
+  } catch {
+    return false;
+  }
+}
+
+function inventoryRouteArtifacts({
+  baseDir,
+  fsImpl,
+  logicalPrefix = '',
+  rootDir,
+}) {
+  return listFilesRecursive(baseDir, fsImpl)
+    .map((absolutePath) => toPosix(path.relative(baseDir, absolutePath)))
+    .filter((relativeFilePath) =>
+      ROUTE_FILE_NAMES.has(path.posix.basename(relativeFilePath))
+    )
+    .map((relativeFilePath) => {
+      const logicalRelativeFilePath = logicalPrefix
+        ? path.posix.join(logicalPrefix, relativeFilePath)
+        : relativeFilePath;
+      const classified = classifyRoute(logicalRelativeFilePath);
+      const absolutePath = path.join(baseDir, relativeFilePath);
+      const isRouteHandler =
+        path.posix.basename(relativeFilePath) === 'route.ts';
+      const methods = isRouteHandler
+        ? extractRouteMethods(fsImpl.readFileSync(absolutePath, 'utf8'))
+        : [];
+      const sourceFile = toPosix(path.relative(rootDir, absolutePath));
+
+      return {
+        id: `${classified.kind}:${classified.routePath}:${sourceFile}`,
+        kind: classified.kind,
+        methods,
+        routePath: classified.routePath,
+        sourceFile,
+        status: 'legacy-next',
+        targetOwner: classified.targetOwner,
+      };
+    });
+}
+
 function inventoryNextAppRoutes({
   appDir = DEFAULT_APP_DIR,
+  legacyApiDir,
   overridesPath = DEFAULT_OVERRIDES_PATH,
   routeOverrides,
   rootDir = ROOT_DIR,
   fsImpl = fs,
 } = {}) {
   const overrides = routeOverrides ?? readRouteOverrides(overridesPath, fsImpl);
+  const resolvedLegacyApiDir =
+    legacyApiDir === undefined && path.resolve(appDir) === DEFAULT_APP_DIR
+      ? DEFAULT_LEGACY_API_DIR
+      : legacyApiDir;
+  const legacyApiRoutes =
+    resolvedLegacyApiDir && directoryExists(resolvedLegacyApiDir, fsImpl)
+      ? inventoryRouteArtifacts({
+          baseDir: resolvedLegacyApiDir,
+          fsImpl,
+          logicalPrefix: 'api',
+          rootDir,
+        })
+      : [];
   const routes = applyRouteOverrides(
-    listFilesRecursive(appDir, fsImpl)
-      .map((absolutePath) => toPosix(path.relative(appDir, absolutePath)))
-      .filter((relativeFilePath) =>
-        ROUTE_FILE_NAMES.has(path.posix.basename(relativeFilePath))
-      )
-      .map((relativeFilePath) => {
-        const classified = classifyRoute(relativeFilePath);
-        const absolutePath = path.join(appDir, relativeFilePath);
-        const isRouteHandler =
-          path.posix.basename(relativeFilePath) === 'route.ts';
-        const methods = isRouteHandler
-          ? extractRouteMethods(fsImpl.readFileSync(absolutePath, 'utf8'))
-          : [];
-        const sourceFile = toPosix(path.relative(rootDir, absolutePath));
-
-        return {
-          id: `${classified.kind}:${classified.routePath}:${sourceFile}`,
-          kind: classified.kind,
-          methods,
-          routePath: classified.routePath,
-          sourceFile,
-          status: 'legacy-next',
-          targetOwner: classified.targetOwner,
-        };
-      })
-      .sort((a, b) => a.id.localeCompare(b.id)),
+    [
+      ...inventoryRouteArtifacts({
+        baseDir: appDir,
+        fsImpl,
+        rootDir,
+      }),
+      ...legacyApiRoutes,
+    ].sort((a, b) => a.id.localeCompare(b.id)),
     overrides
   );
 

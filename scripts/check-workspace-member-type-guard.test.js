@@ -50,7 +50,7 @@ test('findViolations flags files that miss MEMBER enforcement', () => {
 
   writeFile(
     root,
-    'apps/web/src/app/api/v1/workspaces/[wsId]/unsafe/route.ts',
+    'apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/unsafe/route.ts',
     `
       export async function GET() {
         const { data } = await supabase
@@ -71,8 +71,7 @@ test('findViolations flags files that miss MEMBER enforcement', () => {
       'apps',
       'web',
       'src',
-      'app',
-      'api',
+      'legacy-api-routes',
       'v1',
       'workspaces',
       '[wsId]',

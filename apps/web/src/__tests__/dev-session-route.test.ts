@@ -156,7 +156,7 @@ describe('dev-session route', () => {
       }),
     });
 
-    const { POST } = await import('@/app/api/auth/dev-session/route');
+    const { POST } = await import('@/legacy-api-routes/auth/dev-session/route');
     const response = await POST(request);
 
     expect(mocks.createClient).toHaveBeenCalledWith(request);
@@ -193,7 +193,7 @@ describe('dev-session route', () => {
       }),
     });
 
-    const { POST } = await import('@/app/api/auth/dev-session/route');
+    const { POST } = await import('@/legacy-api-routes/auth/dev-session/route');
     const response = await POST(request);
 
     expect(onboardingBuilder.upsert).toHaveBeenCalledWith(
@@ -236,7 +236,7 @@ describe('dev-session route', () => {
       }),
     });
 
-    const { POST } = await import('@/app/api/auth/dev-session/route');
+    const { POST } = await import('@/legacy-api-routes/auth/dev-session/route');
     const response = await POST(request);
 
     expect(createUser).toHaveBeenCalledWith({
@@ -269,7 +269,7 @@ describe('dev-session route', () => {
       }),
     });
 
-    const { POST } = await import('@/app/api/auth/dev-session/route');
+    const { POST } = await import('@/legacy-api-routes/auth/dev-session/route');
     const response = await POST(request);
 
     expect(mocks.resetRateLimitMemoryStoreForTests).toHaveBeenCalledTimes(1);
@@ -289,7 +289,7 @@ describe('dev-session route', () => {
       }),
     });
 
-    const { POST } = await import('@/app/api/auth/dev-session/route');
+    const { POST } = await import('@/legacy-api-routes/auth/dev-session/route');
     const response = await POST(request);
 
     expect(response.status).toBe(403);
@@ -313,7 +313,7 @@ describe('dev-session route', () => {
       }),
     });
 
-    const { POST } = await import('@/app/api/auth/dev-session/route');
+    const { POST } = await import('@/legacy-api-routes/auth/dev-session/route');
     const response = await POST(request);
 
     expect(response.status).toBe(403);
@@ -346,7 +346,7 @@ describe('dev-session route', () => {
       }
     );
 
-    const { POST } = await import('@/app/api/auth/dev-session/route');
+    const { POST } = await import('@/legacy-api-routes/auth/dev-session/route');
     const response = await POST(request);
 
     expect(response.status).toBe(200);
@@ -377,7 +377,7 @@ describe('dev-session route', () => {
       }
     );
 
-    const { POST } = await import('@/app/api/auth/dev-session/route');
+    const { POST } = await import('@/legacy-api-routes/auth/dev-session/route');
     const response = await POST(request);
 
     expect(response.status).toBe(200);
@@ -408,7 +408,7 @@ describe('dev-session route', () => {
       }
     );
 
-    const { POST } = await import('@/app/api/auth/dev-session/route');
+    const { POST } = await import('@/legacy-api-routes/auth/dev-session/route');
     const response = await POST(request);
 
     expect(response.status).toBe(403);
@@ -446,7 +446,7 @@ describe('dev-session route', () => {
       }
     );
 
-    const { POST } = await import('@/app/api/auth/dev-session/route');
+    const { POST } = await import('@/legacy-api-routes/auth/dev-session/route');
     const response = await POST(request);
 
     expect(response.status).toBe(200);
@@ -480,7 +480,7 @@ describe('dev-session route', () => {
       }
     );
 
-    const { POST } = await import('@/app/api/auth/dev-session/route');
+    const { POST } = await import('@/legacy-api-routes/auth/dev-session/route');
     const response = await POST(request);
 
     expect(response.status).toBe(200);
@@ -513,7 +513,7 @@ describe('dev-session route', () => {
       }),
     });
 
-    const { POST } = await import('@/app/api/auth/dev-session/route');
+    const { POST } = await import('@/legacy-api-routes/auth/dev-session/route');
     const response = await POST(request);
 
     expect(response.status).toBe(200);
@@ -547,7 +547,7 @@ describe('dev-session route', () => {
       }
     );
 
-    const { POST } = await import('@/app/api/auth/dev-session/route');
+    const { POST } = await import('@/legacy-api-routes/auth/dev-session/route');
     const response = await POST(request);
 
     expect(response.status).toBe(200);
@@ -579,7 +579,7 @@ describe('dev-session route', () => {
       }
     );
 
-    const { POST } = await import('@/app/api/auth/dev-session/route');
+    const { POST } = await import('@/legacy-api-routes/auth/dev-session/route');
     const response = await POST(request);
 
     expect(response.status).toBe(200);
@@ -612,7 +612,7 @@ describe('dev-session route', () => {
       }
     );
 
-    const { POST } = await import('@/app/api/auth/dev-session/route');
+    const { POST } = await import('@/legacy-api-routes/auth/dev-session/route');
     const response = await POST(request);
 
     expect(response.status).toBe(200);
@@ -649,7 +649,7 @@ describe('dev-session route', () => {
       }
     );
 
-    const { POST } = await import('@/app/api/auth/dev-session/route');
+    const { POST } = await import('@/legacy-api-routes/auth/dev-session/route');
     const response = await POST(request);
 
     expect(response.status).toBe(200);
@@ -699,7 +699,7 @@ describe('dev-session route', () => {
       }
     );
 
-    const { POST } = await import('@/app/api/auth/dev-session/route');
+    const { POST } = await import('@/legacy-api-routes/auth/dev-session/route');
     const response = await POST(request);
 
     expect(response.status).toBe(200);
@@ -741,7 +741,7 @@ describe('dev-session route', () => {
       }
     );
 
-    const { POST } = await import('@/app/api/auth/dev-session/route');
+    const { POST } = await import('@/legacy-api-routes/auth/dev-session/route');
     const response = await POST(request);
 
     expect(response.status).toBe(200);
@@ -769,7 +769,7 @@ describe('dev-session route', () => {
       }
     );
 
-    const { POST } = await import('@/app/api/auth/dev-session/route');
+    const { POST } = await import('@/legacy-api-routes/auth/dev-session/route');
     const response = await POST(request);
 
     expect(response.status).toBe(403);
@@ -803,7 +803,7 @@ describe('dev-session route', () => {
       }
     );
 
-    const { POST } = await import('@/app/api/auth/dev-session/route');
+    const { POST } = await import('@/legacy-api-routes/auth/dev-session/route');
     const response = await POST(request);
 
     expect(response.status).toBe(403);

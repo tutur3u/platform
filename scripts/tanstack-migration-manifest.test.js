@@ -967,12 +967,12 @@ test('TanStack contact route stays terminal across Rust APIs and Start page', ()
   const routes = new Map(manifest.routes.map((route) => [route.id, route]));
   const terminalContactRoutes = [
     {
-      id: 'api:POST:/api/v1/inquiries:apps/web/src/app/api/v1/inquiries/route.ts',
+      id: 'api:POST:/api/v1/inquiries:apps/web/src/legacy-api-routes/v1/inquiries/route.ts',
       methods: ['POST'],
       targetOwner: 'rust-backend',
     },
     {
-      id: 'api:/api/v1/users/me/profile:apps/web/src/app/api/v1/users/me/profile/route.ts',
+      id: 'api:/api/v1/users/me/profile:apps/web/src/legacy-api-routes/v1/users/me/profile/route.ts',
       methods: ['GET', 'PATCH'],
       targetOwner: 'rust-backend',
     },
@@ -1026,7 +1026,7 @@ test('TanStack models route stays terminal across Rust API and Start page', () =
   );
   const routes = new Map(manifest.routes.map((route) => [route.id, route]));
   const removedModelApiRoute =
-    'api:/api/v1/infrastructure/ai/models:apps/web/src/app/api/v1/infrastructure/ai/models/route.ts';
+    'api:/api/v1/infrastructure/ai/models:apps/web/src/legacy-api-routes/v1/infrastructure/ai/models/route.ts';
   const terminalModelRoutes = [
     {
       id: 'page:/:locale/models:apps/web/src/app/[locale]/(marketing)/models/page.tsx',

@@ -33,7 +33,7 @@ const repoRoot = process.cwd().endsWith('/apps/web')
 
 const subscriptionContextRoutePath = resolve(
   repoRoot,
-  'apps/web/src/app/api/v1/workspaces/[wsId]/finance/invoices/subscription/context/route.ts'
+  'apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/finance/invoices/subscription/context/route.ts'
 );
 
 function createThenableQuery<T>(response: T) {
@@ -150,7 +150,7 @@ describe('subscription invoice context route', () => {
     });
 
     const { GET } = await import(
-      '@/app/api/v1/workspaces/[wsId]/finance/invoices/subscription/context/route'
+      '@/legacy-api-routes/v1/workspaces/[wsId]/finance/invoices/subscription/context/route'
     );
     const response = await GET(
       new Request(
