@@ -501,24 +501,33 @@ function writeE2ECompareReport({
   return resolvedReportPath;
 }
 
-async function runFrontendE2EForCompare(frontend, playwrightArgs, options) {
+async function runFrontendE2EForCompare(
+  frontend,
+  playwrightArgs,
+  options = {}
+) {
+  const { runWebE2EForFrontend = runWebE2E, ...runOptions } = options;
+  const compareEnv = {
+    ...process.env,
+    ...(runOptions.env ?? {}),
+  };
   const startedAt = Date.now();
   const origin = normalizeFrontendE2EOrigin(
-    getFrontendE2EBaseUrl(frontend, process.env)
+    getFrontendE2EBaseUrl(frontend, compareEnv)
   );
   const playwrightJsonReportPath = getE2EPlaywrightJsonReportPath(
     frontend,
-    process.env
+    compareEnv
   );
 
   fs.mkdirSync(path.dirname(playwrightJsonReportPath), { recursive: true });
   fs.rmSync(playwrightJsonReportPath, { force: true });
 
   try {
-    await runWebE2E([], {
-      ...options,
+    await runWebE2EForFrontend([], {
+      ...runOptions,
       env: {
-        ...(options.env ?? {}),
+        ...(runOptions.env ?? {}),
         PLAYWRIGHT_JSON_OUTPUT_NAME: playwrightJsonReportPath,
       },
       frontend,
@@ -1833,20 +1842,28 @@ async function runWebE2E(playwrightArgs = process.argv.slice(2), options = {}) {
       : parseE2EFrontendArgs(playwrightArgs, process.env);
 
   if (frontendArgs.frontend === 'compare') {
+    const {
+      runFrontendE2EForCompare:
+        runFrontendForCompare = runFrontendE2EForCompare,
+      ...compareOptions
+    } = options;
+    const compareEnv = {
+      ...process.env,
+      ...(compareOptions.env ?? {}),
+    };
     const frontends = {
-      next: await runFrontendE2EForCompare(
-        'next',
-        frontendArgs.playwrightArgs,
-        { ...options, preserveDockerProjectImages: true }
-      ),
-      tanstack: await runFrontendE2EForCompare(
+      next: await runFrontendForCompare('next', frontendArgs.playwrightArgs, {
+        ...compareOptions,
+        preserveDockerProjectImages: false,
+      }),
+      tanstack: await runFrontendForCompare(
         'tanstack',
         frontendArgs.playwrightArgs,
-        options
+        compareOptions
       ),
     };
     const report = createE2ECompareReport(frontends);
-    const reportPath = getE2ECompareReportPath(process.env);
+    const reportPath = getE2ECompareReportPath(compareEnv);
     writeE2ECompareReport({
       report,
       reportPath,
@@ -2092,6 +2109,7 @@ module.exports = {
   removePortlessProxyTlsMarker,
   resolveReusableWebImageSourceFromList,
   removeE2EProjectImages,
+  runFrontendE2EForCompare,
   writeE2ECompareReport,
   resolveReusableLocalRedisRuntime,
   routeListHasPortlessAlias,

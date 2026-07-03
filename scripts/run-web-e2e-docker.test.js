@@ -78,6 +78,8 @@ const {
   resolveReusableLocalRedisRuntime,
   resolveReusableWebImageSourceFromList,
   routeListHasPortlessAlias,
+  runFrontendE2EForCompare,
+  runWebE2E,
   shouldKeepStack,
   waitForUrl,
   withPlaywrightJsonReporterArgs,
@@ -1069,6 +1071,86 @@ test('writeE2ECompareReport writes ignored cutover evidence under tmp by default
     );
   } finally {
     fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('runFrontendE2EForCompare removes project images between compare halves', async () => {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'e2e-compare-'));
+  const calls = [];
+
+  try {
+    const result = await runFrontendE2EForCompare('next', ['smoke.spec.ts'], {
+      env: {
+        E2E_PLAYWRIGHT_JSON_REPORT_DIR: tempDir,
+      },
+      preserveDockerProjectImages: false,
+      runWebE2EForFrontend: async (args, options = {}) => {
+        calls.push({ args, options });
+
+        fs.writeFileSync(
+          options.env.PLAYWRIGHT_JSON_OUTPUT_NAME,
+          JSON.stringify({
+            stats: {
+              expected: 1,
+              flaky: 0,
+              skipped: 0,
+              unexpected: 0,
+            },
+          })
+        );
+      },
+    });
+
+    assert.equal(result.passed, true);
+    assert.equal(calls.length, 1);
+    assert.equal(calls[0].options.frontend, 'next');
+    assert.equal(calls[0].options.preserveDockerProjectImages, false);
+    assert.match(
+      calls[0].options.env.PLAYWRIGHT_JSON_OUTPUT_NAME,
+      /next-report\.json$/u
+    );
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('runWebE2E compare mode removes next project images before TanStack', async () => {
+  const reportPath = path.join(
+    process.cwd(),
+    'tmp',
+    'e2e',
+    'web-migration',
+    `compare-mode-${process.pid}-${Date.now()}.json`
+  );
+  const calls = [];
+
+  try {
+    await runWebE2E(['--frontend=compare', 'smoke.spec.ts'], {
+      env: {
+        E2E_COMPARE_REPORT_PATH: reportPath,
+      },
+      preserveDockerProjectImages: true,
+      runFrontendE2EForCompare: async (frontend, playwrightArgs, options) => {
+        calls.push({ frontend, options, playwrightArgs });
+
+        return {
+          durationMs: 1,
+          origin: `https://${frontend}.localhost`,
+          passed: true,
+          status: 'passed',
+        };
+      },
+    });
+
+    assert.deepEqual(
+      calls.map((call) => call.frontend),
+      ['next', 'tanstack']
+    );
+    assert.deepEqual(calls[0].playwrightArgs, ['smoke.spec.ts']);
+    assert.equal(calls[0].options.preserveDockerProjectImages, false);
+    assert.equal(calls[1].options.preserveDockerProjectImages, true);
+  } finally {
+    fs.rmSync(reportPath, { force: true });
   }
 });
 
