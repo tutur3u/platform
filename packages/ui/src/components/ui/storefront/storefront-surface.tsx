@@ -2,6 +2,7 @@
 
 import { ArrowLeft } from '@tuturuuu/icons';
 import type {
+  InventoryBundle,
   InventoryStorefront,
   InventoryStorefrontListing,
 } from '@tuturuuu/internal-api/inventory';
@@ -14,6 +15,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '../dialog';
+import { StorefrontBundleSelectionDialog } from './bundle-selection-dialog';
 import { StorefrontCartPopover } from './cart-popover';
 import { StorefrontCartSummary } from './cart-summary';
 import { StorefrontCheckoutOverlay } from './checkout-overlay';
@@ -32,7 +34,7 @@ import type {
 import { mergeStorefrontSurfaceLabels } from './types';
 import {
   getAccentStyle,
-  getStorefrontLinePrice,
+  getStorefrontCartLineSubtotal,
   getStorefrontListingLimit,
   getStorefrontVariantLimit,
   sanitizeStorefrontAccentColor,
@@ -42,6 +44,7 @@ import {
 } from './utils';
 
 export function StorefrontSurface({
+  bundles = [],
   buyerDefaults,
   cartLines = [],
   cartHref,
@@ -65,12 +68,14 @@ export function StorefrontSurface({
   onCheckoutSubmit,
   onDecrement,
   onDetailListingChange,
+  onAddCartLine,
   onIncrement,
   onInstantCheckout,
   selectedListingId,
   storefront,
   storefrontHref,
 }: {
+  bundles?: InventoryBundle[];
   buyerDefaults?: StorefrontBuyerDefaults;
   cartLines?: StorefrontCartLine[];
   cartHref?: string;
@@ -93,6 +98,7 @@ export function StorefrontSurface({
   onCheckoutOpenChange?: (open: boolean) => void;
   onCheckoutSubmit?: (formData: FormData) => void;
   onDecrement?: (listingId: string, variantId?: string | null) => void;
+  onAddCartLine?: (line: StorefrontCartLine, maxQuantity?: number) => void;
   onDetailListingChange?: (listingId: string | null) => void;
   onIncrement?: (
     listingId: string,
@@ -106,6 +112,9 @@ export function StorefrontSurface({
 }) {
   const labels = mergeStorefrontSurfaceLabels(labelOverrides);
   const [isCartPopoverOpen, setIsCartPopoverOpen] = useState(false);
+  const [bundleSelectionListingId, setBundleSelectionListingId] = useState<
+    string | null
+  >(null);
   const accentColor = sanitizeStorefrontAccentColor(storefront.accentColor);
   const radius = storefrontRadiusClasses[storefront.cornerStyle];
   const resolveVariant = (
@@ -119,7 +128,14 @@ export function StorefrontSurface({
     const listing = listings.find((item) => item.id === line.listingId);
     if (!listing) return [];
     return [
-      { line, listing, variant: resolveVariant(listing, line.variantId) },
+      {
+        bundle: listing.bundleId
+          ? bundles.find((bundle) => bundle.id === listing.bundleId)
+          : undefined,
+        line,
+        listing,
+        variant: resolveVariant(listing, line.variantId),
+      },
     ];
   });
   const lineLimit = (entry: (typeof cartEntries)[number]) =>
@@ -132,7 +148,13 @@ export function StorefrontSurface({
   const total = checkoutEntries.reduce((sum, entry) => {
     const quantity = Math.min(entry.line.quantity, lineLimit(entry));
     return (
-      sum + getStorefrontLinePrice(entry.listing, entry.variant) * quantity
+      sum +
+      getStorefrontCartLineSubtotal({
+        bundle: entry.bundle,
+        line: { ...entry.line, quantity },
+        listing: entry.listing,
+        variant: entry.variant,
+      })
     );
   }, 0);
   const cartQuantity = cartLines.reduce((sum, line) => sum + line.quantity, 0);
@@ -152,6 +174,14 @@ export function StorefrontSurface({
   const isPreview = mode === 'preview';
   const isCartPage = mode === 'cart';
   const listingRows = visibleListings;
+  const bundleSelectionListing = bundleSelectionListingId
+    ? listings.find((listing) => listing.id === bundleSelectionListingId)
+    : null;
+  const bundleSelectionBundle = bundleSelectionListing?.bundleId
+    ? (bundles.find(
+        (bundle) => bundle.id === bundleSelectionListing.bundleId
+      ) ?? null)
+    : null;
   const currency = storefront.currency ?? 'USD';
   const handleCheckoutOpen = () => {
     setIsCartPopoverOpen(false);
@@ -337,9 +367,14 @@ export function StorefrontSurface({
                     />
                   ) : (
                     listingRows.map((listing) => {
-                      const line = cartLines.find(
-                        (item) => item.listingId === listing.id
-                      );
+                      const listingBundle = listing.bundleId
+                        ? bundles.find(
+                            (bundle) => bundle.id === listing.bundleId
+                          )
+                        : undefined;
+                      const quantity = cartLines
+                        .filter((item) => item.listingId === listing.id)
+                        .reduce((sum, item) => sum + item.quantity, 0);
 
                       return (
                         <StorefrontListingCard
@@ -349,13 +384,18 @@ export function StorefrontSurface({
                           labels={labels}
                           listing={listing}
                           onDecrement={onDecrement}
+                          onConfigureBundle={
+                            listingBundle?.categoryComponents.length
+                              ? () => setBundleSelectionListingId(listing.id)
+                              : undefined
+                          }
                           onIncrement={onIncrement}
                           onOpenDetail={
                             onDetailListingChange
                               ? (id) => onDetailListingChange(id)
                               : undefined
                           }
-                          quantity={line?.quantity ?? 0}
+                          quantity={quantity}
                           radius={radius}
                           showInventoryBadges={storefront.showInventoryBadges}
                           surfaceClassName={
@@ -388,6 +428,25 @@ export function StorefrontSurface({
         radius={radius}
         showInventoryBadges={storefront.showInventoryBadges}
         surfaceClassName={storefrontSurfaceClasses[storefront.surfaceStyle]}
+      />
+
+      <StorefrontBundleSelectionDialog
+        bundle={bundleSelectionBundle}
+        currency={currency}
+        labels={labels}
+        listing={bundleSelectionListing ?? null}
+        onAdd={(line) => {
+          if (!bundleSelectionListing) return;
+          onAddCartLine?.(
+            line,
+            getStorefrontListingLimit(bundleSelectionListing)
+          );
+        }}
+        onOpenChange={(open) => {
+          if (!open) setBundleSelectionListingId(null);
+        }}
+        open={Boolean(bundleSelectionListing && bundleSelectionBundle)}
+        radius={radius}
       />
 
       <Dialog

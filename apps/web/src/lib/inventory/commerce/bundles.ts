@@ -58,6 +58,13 @@ function rethrowBundleRpcError(error: SupabaseErrorLike): never {
   if (error?.message?.includes('INVALID_BUNDLE_COMPONENT_WORKSPACE_SCOPE')) {
     throw new InvalidInventoryBundleComponentTargetError();
   }
+  if (
+    error?.message?.includes(
+      'INVALID_BUNDLE_CATEGORY_COMPONENT_WORKSPACE_SCOPE'
+    )
+  ) {
+    throw new InvalidInventoryBundleComponentTargetError();
+  }
 
   throw error ?? new Error('Inventory bundle RPC failed');
 }
@@ -102,12 +109,15 @@ async function upsertBundle(
     'upsert_inventory_bundle_with_components' as never,
     {
       p_bundle_id: bundleId,
+      p_category_candidate_scope: payload.categoryCandidateScope ?? null,
+      p_category_components: payload.categoryComponents ?? null,
       p_components: payload.components ?? null,
       p_description: payload.description ?? null,
       p_image_url: payload.imageUrl ?? null,
       p_max_per_order: payload.maxPerOrder ?? 99,
       p_name: payload.name,
       p_price: payload.price,
+      p_pricing_mode: payload.pricingMode ?? null,
       p_slug: payload.slug,
       p_status: payload.status ?? 'draft',
       p_storefront_id: payload.storefrontId ?? null,
@@ -155,7 +165,7 @@ async function getBundleBase(wsId: string, bundleId: string) {
   const { data, error } = await inventory
     .from('inventory_bundles')
     .select(
-      'storefront_id, slug, name, description, image_url, price, status, max_per_order'
+      'storefront_id, slug, name, description, image_url, price, pricing_mode, category_candidate_scope, status, max_per_order'
     )
     .eq('id', bundleId)
     .eq('ws_id', wsId)
@@ -174,6 +184,10 @@ export async function updateBundle(
   if (!current) return null;
 
   const merged: InventoryBundlePayload = {
+    categoryCandidateScope:
+      payload.categoryCandidateScope ??
+      (current.category_candidate_scope as InventoryBundle['categoryCandidateScope']),
+    categoryComponents: payload.categoryComponents,
     components: payload.components,
     description: hasPayloadKey(payload, 'description')
       ? (payload.description ?? null)
@@ -184,6 +198,9 @@ export async function updateBundle(
     maxPerOrder: payload.maxPerOrder ?? current.max_per_order,
     name: payload.name ?? current.name,
     price: payload.price ?? Number(current.price),
+    pricingMode:
+      payload.pricingMode ??
+      (current.pricing_mode as InventoryBundle['pricingMode']),
     slug: payload.slug ?? current.slug,
     status: payload.status ?? (current.status as InventoryBundleStatus),
     storefrontId: hasPayloadKey(payload, 'storefrontId')

@@ -86,11 +86,13 @@ function PolarSyncBadge({
 }
 
 export function SimpleRows({
+  categories = [],
   products = [],
   rows,
   type,
   wsId,
 }: {
+  categories?: { id: string; name?: string | null }[];
   products?: InventoryProductSummary[];
   rows: Array<InventoryBundle | InventoryStorefront>;
   type: 'bundles' | 'storefronts';
@@ -170,6 +172,7 @@ export function SimpleRows({
       {wsId && editingBundle ? (
         <BundleEditorDialog
           bundle={editingBundle}
+          categories={categories}
           key={editingBundle.id}
           onOpenChange={(nextOpen) => {
             if (!nextOpen) setEditingBundle(null);

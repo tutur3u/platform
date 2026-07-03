@@ -27,6 +27,8 @@ const InventoryItemSchema = z.object({
   amount: z.number().nonnegative().nullable(),
   min_amount: z.number().nonnegative(),
   price: z.number().nonnegative(),
+  revenue_share_partner_id: z.guid().nullable().optional(),
+  revenue_share_bps: z.number().int().min(0).max(10000).default(0),
 });
 
 export const InventoryProductCreateSchema = z.object({

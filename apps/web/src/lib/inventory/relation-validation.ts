@@ -1,5 +1,7 @@
 type InventoryRelationClient = {
-  from: (table: 'inventory_units' | 'inventory_warehouses') => {
+  from: (
+    table: 'inventory_owners' | 'inventory_units' | 'inventory_warehouses'
+  ) => {
     select: (columns: 'id') => {
       eq: (
         column: 'ws_id',
@@ -20,6 +22,7 @@ type InventoryRelationClient = {
 export type InventoryRelationItem = {
   unit_id: string;
   warehouse_id: string;
+  revenue_share_partner_id?: string | null;
 };
 
 export type InventoryRelationValidationResult =
@@ -39,7 +42,7 @@ async function countWorkspaceRows({
 }: {
   client: InventoryRelationClient;
   ids: string[];
-  table: 'inventory_units' | 'inventory_warehouses';
+  table: 'inventory_owners' | 'inventory_units' | 'inventory_warehouses';
   wsId: string;
 }) {
   if (ids.length === 0) return { count: 0, error: null };
@@ -68,21 +71,35 @@ export async function validateInventoryItemWorkspaceRelations({
   const client = inventoryClient as InventoryRelationClient;
   const unitIds = [...new Set(inventory.map((item) => item.unit_id))];
   const warehouseIds = [...new Set(inventory.map((item) => item.warehouse_id))];
+  const revenueSharePartnerIds = [
+    ...new Set(
+      inventory
+        .map((item) => item.revenue_share_partner_id)
+        .filter((id): id is string => Boolean(id))
+    ),
+  ];
 
-  const [unitResult, warehouseResult] = await Promise.all([
-    countWorkspaceRows({
-      client,
-      ids: unitIds,
-      table: 'inventory_units',
-      wsId,
-    }),
-    countWorkspaceRows({
-      client,
-      ids: warehouseIds,
-      table: 'inventory_warehouses',
-      wsId,
-    }),
-  ]);
+  const [unitResult, warehouseResult, revenueSharePartnerResult] =
+    await Promise.all([
+      countWorkspaceRows({
+        client,
+        ids: unitIds,
+        table: 'inventory_units',
+        wsId,
+      }),
+      countWorkspaceRows({
+        client,
+        ids: warehouseIds,
+        table: 'inventory_warehouses',
+        wsId,
+      }),
+      countWorkspaceRows({
+        client,
+        ids: revenueSharePartnerIds,
+        table: 'inventory_owners',
+        wsId,
+      }),
+    ]);
 
   if (unitResult.error) {
     return {
@@ -102,6 +119,15 @@ export async function validateInventoryItemWorkspaceRelations({
     };
   }
 
+  if (revenueSharePartnerResult.error) {
+    return {
+      ok: false,
+      status: 500,
+      message: 'Error validating revenue share partners',
+      error: revenueSharePartnerResult.error,
+    };
+  }
+
   if (unitResult.count !== unitIds.length) {
     return {
       ok: false,
@@ -115,6 +141,14 @@ export async function validateInventoryItemWorkspaceRelations({
       ok: false,
       status: 400,
       message: 'Invalid inventory warehouse',
+    };
+  }
+
+  if (revenueSharePartnerResult.count !== revenueSharePartnerIds.length) {
+    return {
+      ok: false,
+      status: 400,
+      message: 'Invalid revenue share partner',
     };
   }
 

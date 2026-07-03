@@ -228,6 +228,14 @@ export type InventoryListingStatus =
 
 export type InventoryBundleStatus = 'draft' | 'active' | 'paused' | 'archived';
 
+export type InventoryBundlePricingMode = 'fixed_price' | 'selected_items';
+
+export type InventoryBundleCategoryCandidateScope =
+  | 'published_listings'
+  | 'all_stock';
+
+export type InventoryBundleCategoryDiscountStrategy = 'none' | 'cheapest_free';
+
 export type InventoryCheckoutStatus =
   | 'reserved'
   | 'completed'
@@ -422,6 +430,35 @@ export type InventoryBundleComponent = {
   warehouseName?: string | null;
 };
 
+export type InventoryBundleCategoryCandidate = {
+  selectionKind: 'listing' | 'variant' | 'stock';
+  componentId: string;
+  listingId: string | null;
+  variantId: string | null;
+  productId: string;
+  unitId: string;
+  warehouseId: string;
+  title: string;
+  imageUrl?: string | null;
+  price: number;
+  availableQuantity?: number | null;
+  unitName?: string | null;
+  warehouseName?: string | null;
+};
+
+export type InventoryBundleCategoryComponent = {
+  id: string;
+  bundleId: string;
+  categoryId: string;
+  categoryName?: string | null;
+  quantityRequired: number;
+  freeQuantity: number;
+  discountStrategy: InventoryBundleCategoryDiscountStrategy;
+  sortOrder?: number;
+  candidateScope?: InventoryBundleCategoryCandidateScope;
+  candidates?: InventoryBundleCategoryCandidate[];
+};
+
 export type InventoryBundle = {
   id: string;
   wsId: string;
@@ -431,10 +468,13 @@ export type InventoryBundle = {
   description: string | null;
   imageUrl: string | null;
   price: number;
+  pricingMode: InventoryBundlePricingMode;
+  categoryCandidateScope: InventoryBundleCategoryCandidateScope;
   status: InventoryBundleStatus;
   maxPerOrder: number;
   availableQuantity?: number;
   components: InventoryBundleComponent[];
+  categoryComponents: InventoryBundleCategoryComponent[];
   polarProductId?: string | null;
   polarPriceId?: string | null;
   polarSyncStatus?: InventoryPolarSyncStatus;
@@ -860,6 +900,14 @@ export type InventoryProductInventoryItem = {
   amount: number | null;
   min_amount?: number;
   price: number;
+  revenue_share_partner_id?: string | null;
+  revenue_share_bps?: number;
+  revenue_share_partner?: {
+    id?: string | null;
+    name?: string | null;
+    avatar_url?: string | null;
+    linked_workspace_user_id?: string | null;
+  } | null;
 };
 
 export type InventoryProductPayload = {
@@ -980,6 +1028,32 @@ export type InventorySaleDetail = InventorySaleSummary & {
   creator_name: string | null;
   owners: string[];
   lines: InventorySaleLine[];
+};
+
+export type InventoryRevenueShareEarning = {
+  partnerId: string;
+  partnerName: string;
+  avatarUrl?: string | null;
+  revenueShareBps: number;
+  splitPercent: number;
+  currency: string;
+  attributedRevenue: number;
+  earnedAmount: number;
+  unitsSold: number;
+  salesCount: number;
+  productCount: number;
+  products: string[];
+  firstSaleAt: string | null;
+  lastSaleAt: string | null;
+};
+
+export type InventoryRevenueShareEarningsQuery = {
+  partnerId?: string;
+  q?: string;
+  startAt?: string;
+  endAt?: string;
+  offset?: number;
+  limit?: number;
 };
 
 export type InventorySaleUpdatePayload = {
@@ -1190,6 +1264,8 @@ export type InventoryBundlePayload = {
   description?: string | null;
   imageUrl?: string | null;
   price: number;
+  pricingMode?: InventoryBundlePricingMode;
+  categoryCandidateScope?: InventoryBundleCategoryCandidateScope;
   status?: InventoryBundleStatus;
   maxPerOrder?: number;
   components?: Array<{
@@ -1198,7 +1274,32 @@ export type InventoryBundlePayload = {
     warehouseId: string;
     quantity: number;
   }>;
+  categoryComponents?: Array<{
+    categoryId: string;
+    quantityRequired: number;
+    freeQuantity?: number;
+    discountStrategy?: InventoryBundleCategoryDiscountStrategy;
+    sortOrder?: number;
+  }>;
 };
+
+export type InventoryCheckoutBundleSelectionItem = {
+  listingId?: string | null;
+  variantId?: string | null;
+  productId?: string | null;
+  unitId?: string | null;
+  warehouseId?: string | null;
+  quantity?: number;
+};
+
+export type InventoryCheckoutBundleSelection = {
+  componentId?: string;
+  items: InventoryCheckoutBundleSelectionItem[];
+};
+
+export type InventoryCheckoutBundleSelections =
+  | Record<string, InventoryCheckoutBundleSelectionItem[]>
+  | InventoryCheckoutBundleSelection[];
 
 export type InventoryCheckoutCreatePayload = {
   customerName?: string;
@@ -1210,6 +1311,7 @@ export type InventoryCheckoutCreatePayload = {
     bundleId?: string;
     variantId?: string;
     quantity: number;
+    bundleSelections?: InventoryCheckoutBundleSelections;
   }>;
 };
 
@@ -2633,6 +2735,19 @@ export function listInventoryCheckouts(
   return getInternalApiClient(options).json<
     InventoryListResponse<InventoryCheckoutSession>
   >(workspaceInventoryPath(wsId, '/checkouts'), {
+    cache: 'no-store',
+    query: asQuery(query),
+  });
+}
+
+export function listInventoryRevenueShareEarnings(
+  wsId: string,
+  query?: InventoryRevenueShareEarningsQuery,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<
+    InventoryListResponse<InventoryRevenueShareEarning>
+  >(workspaceInventoryPath(wsId, '/revenue-share'), {
     cache: 'no-store',
     query: asQuery(query),
   });

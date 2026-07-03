@@ -17,10 +17,18 @@ export type InventoryManufacturer = Pick<
 >;
 export type InventoryProduct = Pick<
   PrivateTable<'inventory_products'>,
-  'amount' | 'min_amount' | 'price' | 'warehouse_id' | 'unit_id' | 'created_at'
+  | 'amount'
+  | 'min_amount'
+  | 'price'
+  | 'warehouse_id'
+  | 'unit_id'
+  | 'revenue_share_partner_id'
+  | 'revenue_share_bps'
+  | 'created_at'
 > & {
   inventory_warehouses: InventoryWarehouse | null;
   inventory_units: InventoryUnit | null;
+  revenue_share_partner?: InventoryOwnerRelation | null;
 };
 type InventoryProductCategory = Pick<Tables<'product_categories'>, 'name'>;
 type InventoryOwnerRelation = Pick<

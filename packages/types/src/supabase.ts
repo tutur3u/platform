@@ -3295,6 +3295,50 @@ export type Database = {
           },
         ];
       };
+      inventory_bundle_category_components: {
+        Row: {
+          bundle_id: string;
+          category_id: string;
+          created_at: string | null;
+          discount_strategy: string;
+          free_quantity: number;
+          id: string;
+          quantity_required: number;
+          sort_order: number;
+          updated_at: string | null;
+        };
+        Insert: {
+          bundle_id: string;
+          category_id: string;
+          created_at?: string | null;
+          discount_strategy?: string;
+          free_quantity?: number;
+          id?: string;
+          quantity_required?: number;
+          sort_order?: number;
+          updated_at?: string | null;
+        };
+        Update: {
+          bundle_id?: string;
+          category_id?: string;
+          created_at?: string | null;
+          discount_strategy?: string;
+          free_quantity?: number;
+          id?: string;
+          quantity_required?: number;
+          sort_order?: number;
+          updated_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'inventory_bundle_category_components_bundle_id_fkey';
+            columns: ['bundle_id'];
+            isOneToOne: false;
+            referencedRelation: 'inventory_bundles';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       inventory_bundle_components: {
         Row: {
           bundle_id: string;
@@ -3349,6 +3393,7 @@ export type Database = {
       };
       inventory_bundles: {
         Row: {
+          category_candidate_scope: string;
           created_at: string | null;
           description: string | null;
           id: string;
@@ -3363,6 +3408,7 @@ export type Database = {
           polar_sync_status: string;
           polar_synced_at: string | null;
           price: number;
+          pricing_mode: string;
           slug: string;
           status: string;
           storefront_id: string | null;
@@ -3370,6 +3416,7 @@ export type Database = {
           ws_id: string;
         };
         Insert: {
+          category_candidate_scope?: string;
           created_at?: string | null;
           description?: string | null;
           id?: string;
@@ -3384,6 +3431,7 @@ export type Database = {
           polar_sync_status?: string;
           polar_synced_at?: string | null;
           price?: number;
+          pricing_mode?: string;
           slug: string;
           status?: string;
           storefront_id?: string | null;
@@ -3391,6 +3439,7 @@ export type Database = {
           ws_id: string;
         };
         Update: {
+          category_candidate_scope?: string;
           created_at?: string | null;
           description?: string | null;
           id?: string;
@@ -3405,6 +3454,7 @@ export type Database = {
           polar_sync_status?: string;
           polar_synced_at?: string | null;
           price?: number;
+          pricing_mode?: string;
           slug?: string;
           status?: string;
           storefront_id?: string | null;
@@ -4226,6 +4276,8 @@ export type Database = {
           min_amount: number;
           price: number;
           product_id: string;
+          revenue_share_bps: number;
+          revenue_share_partner_id: string | null;
           unit_id: string;
           warehouse_id: string;
         };
@@ -4235,6 +4287,8 @@ export type Database = {
           min_amount?: number;
           price?: number;
           product_id: string;
+          revenue_share_bps?: number;
+          revenue_share_partner_id?: string | null;
           unit_id: string;
           warehouse_id: string;
         };
@@ -4244,10 +4298,19 @@ export type Database = {
           min_amount?: number;
           price?: number;
           product_id?: string;
+          revenue_share_bps?: number;
+          revenue_share_partner_id?: string | null;
           unit_id?: string;
           warehouse_id?: string;
         };
         Relationships: [
+          {
+            foreignKeyName: 'inventory_products_revenue_share_partner_id_fkey';
+            columns: ['revenue_share_partner_id'];
+            isOneToOne: false;
+            referencedRelation: 'inventory_owners';
+            referencedColumns: ['id'];
+          },
           {
             foreignKeyName: 'inventory_products_unit_id_fkey';
             columns: ['unit_id'];
@@ -12516,6 +12579,21 @@ export type Database = {
           undeliverable_count: number;
         }[];
       };
+      inventory_bundle_category_components_json: {
+        Args: {
+          p_bundle_id: string;
+          p_currency?: string;
+          p_include_candidates?: boolean;
+          p_now?: string;
+          p_storefront_id?: string;
+          p_ws_id: string;
+        };
+        Returns: Json;
+      };
+      inventory_bundle_fixed_components_json: {
+        Args: { p_bundle_id: string; p_ws_id: string };
+        Returns: Json;
+      };
       inventory_cost_profile_payload: {
         Args: { p_profile_id: string };
         Returns: Json;
@@ -12535,6 +12613,19 @@ export type Database = {
       };
       inventory_currency_minor_factor: {
         Args: { p_currency: string };
+        Returns: number;
+      };
+      inventory_major_to_minor: {
+        Args: { p_amount: number; p_currency?: string };
+        Returns: number;
+      };
+      inventory_stock_available_quantity: {
+        Args: {
+          p_now?: string;
+          p_product_id: string;
+          p_unit_id: string;
+          p_warehouse_id: string;
+        };
         Returns: number;
       };
       is_nova_user_email_in_team: {
@@ -12587,6 +12678,20 @@ export type Database = {
         };
         Returns: {
           profile: Json;
+          total_count: number;
+        }[];
+      };
+      list_inventory_revenue_share_earnings: {
+        Args: {
+          p_end_at?: string;
+          p_limit?: number;
+          p_offset?: number;
+          p_partner_id?: string;
+          p_start_at?: string;
+          p_ws_id: string;
+        };
+        Returns: {
+          earning: Json;
           total_count: number;
         }[];
       };
@@ -13068,12 +13173,15 @@ export type Database = {
       upsert_inventory_bundle_with_components: {
         Args: {
           p_bundle_id?: string;
+          p_category_candidate_scope?: string;
+          p_category_components?: Json;
           p_components?: Json;
           p_description?: string;
           p_image_url?: string;
           p_max_per_order?: number;
           p_name?: string;
           p_price?: number;
+          p_pricing_mode?: string;
           p_slug?: string;
           p_status?: string;
           p_storefront_id?: string;
@@ -35173,6 +35281,22 @@ export type Database = {
           p_unit_price: number;
           p_variant_id?: string;
           p_warehouse_id: string;
+          p_ws_id: string;
+        };
+        Returns: number;
+      };
+      _inventory_reserve_bundle_components: {
+        Args: {
+          p_bundle_id: string;
+          p_checkout_id: string;
+          p_currency: string;
+          p_expires_at: string;
+          p_fixed_price: number;
+          p_line_payload: Json;
+          p_listing_id: string;
+          p_now: string;
+          p_quantity: number;
+          p_storefront_id: string;
           p_ws_id: string;
         };
         Returns: number;

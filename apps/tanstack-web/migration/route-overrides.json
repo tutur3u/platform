@@ -291,6 +291,11 @@
       "targetOwner": "rust-backend",
       "note": "Rust backend handle_backend_request handles GET /api/v1/inventory/storefronts/:slug through the server-owned private get_public_inventory_storefront RPC, preserving public storefront cache headers, private-storefront app-session/browser-session membership checks, and the legacy 401/403/404/500 JSON bodies without exposing private inventory tables to browser code."
     },
+    "api:/api/v1/inventory/storefronts/:slug/checkouts:apps/web/src/app/api/v1/inventory/storefronts/[slug]/checkouts/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "Next.js still owns public storefront checkout POST. The route now forwards category bundleSelections for selected-items bundles to private.create_inventory_checkout_session, while Rust owns the public storefront GET payload that supplies category components and candidates."
+    },
     "api:/api/v1/topic-announcement-verifications/:token:apps/web/src/app/api/v1/topic-announcement-verifications/[token]/route.ts": {
       "status": "migrated",
       "targetOwner": "rust-backend",
@@ -1519,20 +1524,10 @@
       "targetOwner": "tanstack-start",
       "note": "TanStack Start route /$locale/$wsId/epm/entries/$entryId preserves the legacy 307 redirect to the CMS entry route. This marks only the page artifact migrated; parent dashboard layout/session ownership remains legacy-owned."
     },
-    "page:/:locale/:wsId/platform/external-projects:apps/web/src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/platform/external-projects/page.tsx": {
-      "status": "migrated",
-      "targetOwner": "tanstack-start",
-      "note": "TanStack Start route /$locale/$wsId/platform/external-projects preserves the legacy 307 redirect to the CMS internal admin route. This marks only the page artifact migrated; parent dashboard layout/session ownership remains legacy-owned."
-    },
     "layout:/:locale/:wsId/infrastructure:apps/web/src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/infrastructure/layout.tsx": {
       "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
       "targetOwner": "infrastructure-app"
-    },
-    "layout:/:locale/:wsId/platform:apps/web/src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/platform/layout.tsx": {
-      "status": "migrated",
-      "targetOwner": "tanstack-start",
-      "note": "TanStack Start parent route /$locale/$wsId/platform now owns the legacy platform settings layout gate by requiring an authenticated user, resolving the route workspace, requiring root view_infrastructure permission, and rendering an Outlet for migrated platform children. The platform billing and roles pages stay separately tracked as legacy-next artifacts until their data loaders, mutations, and APIs are migrated."
     },
     "page:/:locale/:wsId/notifications:apps/web/src/app/[locale]/(dashboard)/[wsId]/notifications/page.tsx": {
       "status": "migrated",

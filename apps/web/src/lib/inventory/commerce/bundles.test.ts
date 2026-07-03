@@ -74,9 +74,54 @@ describe('inventory bundle commerce helpers', () => {
     expect(mocks.rpc).toHaveBeenCalledWith(
       'upsert_inventory_bundle_with_components',
       expect.objectContaining({
+        p_category_candidate_scope: null,
+        p_category_components: null,
         p_components: expect.any(Array),
         p_name: 'Kit',
+        p_pricing_mode: null,
         p_ws_id: 'ws-1',
+      })
+    );
+  });
+
+  it('creates category-choice bundles through the atomic private upsert RPC', async () => {
+    mocks.rpc.mockResolvedValue({
+      data: { id: 'bundle-1', name: 'Keychain Deal' },
+      error: null,
+    });
+
+    await expect(
+      createBundle('ws-1', {
+        categoryCandidateScope: 'all_stock',
+        categoryComponents: [
+          {
+            categoryId: 'category-1',
+            discountStrategy: 'cheapest_free',
+            freeQuantity: 1,
+            quantityRequired: 3,
+          },
+        ],
+        name: 'Keychain Deal',
+        price: 0,
+        pricingMode: 'selected_items',
+        slug: 'keychain-deal',
+      })
+    ).resolves.toEqual({ id: 'bundle-1', name: 'Keychain Deal' });
+
+    expect(mocks.rpc).toHaveBeenCalledWith(
+      'upsert_inventory_bundle_with_components',
+      expect.objectContaining({
+        p_category_candidate_scope: 'all_stock',
+        p_category_components: [
+          {
+            categoryId: 'category-1',
+            discountStrategy: 'cheapest_free',
+            freeQuantity: 1,
+            quantityRequired: 3,
+          },
+        ],
+        p_components: null,
+        p_pricing_mode: 'selected_items',
       })
     );
   });

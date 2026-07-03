@@ -1,9 +1,12 @@
 'use client';
 
+import type { StorefrontCartLine } from '@tuturuuu/ui/storefront';
 import { useCallback, useEffect, useState } from 'react';
 
 export type CartLine = {
   listingId: string;
+  bundleSelections?: StorefrontCartLine['bundleSelections'];
+  selectionKey?: string | null;
   variantId?: string | null;
   quantity: number;
 };
@@ -12,8 +15,12 @@ function cartKey(storeSlug: string) {
   return `storefront-cart:${storeSlug}`;
 }
 
-function lineKey(listingId: string, variantId?: string | null) {
-  return `${listingId}::${variantId ?? ''}`;
+function lineKey(
+  listingId: string,
+  variantId?: string | null,
+  selectionKey?: string | null
+) {
+  return `${listingId}::${variantId ?? ''}::${selectionKey ?? ''}`;
 }
 
 function readCart(storeSlug: string): CartLine[] {
@@ -56,7 +63,7 @@ export function useCart(storeSlug: string) {
       setCart((current) =>
         current
           .map((line) =>
-            lineKey(line.listingId, line.variantId) ===
+            lineKey(line.listingId, line.variantId, line.selectionKey) ===
             lineKey(listingId, variantId)
               ? { ...line, quantity: line.quantity - 1 }
               : line
@@ -75,7 +82,8 @@ export function useCart(storeSlug: string) {
       setCart((current) => {
         const key = lineKey(listingId, variantId);
         const existing = current.find(
-          (line) => lineKey(line.listingId, line.variantId) === key
+          (line) =>
+            lineKey(line.listingId, line.variantId, line.selectionKey) === key
         );
         if (!existing) {
           return [
@@ -84,7 +92,7 @@ export function useCart(storeSlug: string) {
           ];
         }
         return current.map((line) =>
-          lineKey(line.listingId, line.variantId) === key
+          lineKey(line.listingId, line.variantId, line.selectionKey) === key
             ? { ...line, quantity: Math.min(line.quantity + 1, maxQuantity) }
             : line
         );
@@ -92,5 +100,27 @@ export function useCart(storeSlug: string) {
     []
   );
 
-  return { cart, clear, decrement, increment };
+  const addLine = useCallback(
+    (line: StorefrontCartLine, maxQuantity = Number.POSITIVE_INFINITY) =>
+      setCart((current) => {
+        const key = lineKey(line.listingId, line.variantId, line.selectionKey);
+        const existing = current.find(
+          (item) =>
+            lineKey(item.listingId, item.variantId, item.selectionKey) === key
+        );
+        if (!existing) return [...current, line];
+
+        return current.map((item) =>
+          lineKey(item.listingId, item.variantId, item.selectionKey) === key
+            ? {
+                ...item,
+                quantity: Math.min(item.quantity + line.quantity, maxQuantity),
+              }
+            : item
+        );
+      }),
+    []
+  );
+
+  return { addLine, cart, clear, decrement, increment };
 }

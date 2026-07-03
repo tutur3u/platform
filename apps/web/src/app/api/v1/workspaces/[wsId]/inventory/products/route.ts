@@ -164,6 +164,10 @@ export async function GET(request: Request, { params }: Params) {
               unit: inventory.inventory_units?.name,
               warehouse: inventory.inventory_warehouses?.name,
               price: inventory.price,
+              revenue_share_partner_id:
+                inventory.revenue_share_partner_id ?? null,
+              revenue_share_bps: inventory.revenue_share_bps ?? 0,
+              revenue_share_partner: inventory.revenue_share_partner ?? null,
             }))
           : [],
         inventory: canViewStockQuantity
@@ -173,6 +177,10 @@ export async function GET(request: Request, { params }: Params) {
               amount: inventory.amount,
               min_amount: inventory.min_amount ?? 0,
               price: inventory.price ?? 0,
+              revenue_share_partner_id:
+                inventory.revenue_share_partner_id ?? null,
+              revenue_share_bps: inventory.revenue_share_bps ?? 0,
+              revenue_share_partner: inventory.revenue_share_partner ?? null,
               unit_name: inventory.inventory_units?.name ?? null,
               warehouse_name: inventory.inventory_warehouses?.name ?? null,
             }))

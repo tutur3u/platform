@@ -61,6 +61,8 @@ export const demoPublicStorefront: InventoryPublicStorefrontResponse = {
   bundles: [
     {
       availableQuantity: 8,
+      categoryCandidateScope: 'published_listings',
+      categoryComponents: [],
       components: [
         {
           bundleId: 'fixture-bundle-starter-kit',
@@ -94,6 +96,7 @@ export const demoPublicStorefront: InventoryPublicStorefrontResponse = {
       name: 'Starter Kit',
       // Prices are stored in minor units (cents): 4900 == $49.00.
       price: 4900,
+      pricingMode: 'fixed_price',
       slug: 'starter-kit',
       status: 'active',
       storefrontId: DEMO_STOREFRONT_ID,

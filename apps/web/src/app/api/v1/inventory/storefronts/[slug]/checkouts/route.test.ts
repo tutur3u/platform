@@ -177,6 +177,80 @@ describe('inventory storefront checkout route', () => {
     );
   });
 
+  it('forwards category bundle selections to the reservation RPC', async () => {
+    mocks.createInventoryPolarCheckout.mockResolvedValue({
+      checkoutUrl: 'https://checkout.example.com/session',
+    });
+
+    const response = await POST(
+      new Request('http://test.local/api', {
+        body: JSON.stringify({
+          customerEmail: 'buyer-entered@example.com',
+          lines: [
+            {
+              bundleId: '00000000-0000-4000-8000-000000000101',
+              bundleSelections: {
+                '00000000-0000-4000-8000-000000000201': [
+                  {
+                    listingId: '00000000-0000-4000-8000-000000000301',
+                    quantity: 1,
+                  },
+                  {
+                    listingId: '00000000-0000-4000-8000-000000000302',
+                    quantity: 1,
+                  },
+                  {
+                    listingId: '00000000-0000-4000-8000-000000000303',
+                    quantity: 1,
+                  },
+                ],
+              },
+              listingId: '00000000-0000-4000-8000-000000000401',
+              quantity: 1,
+            },
+          ],
+        }),
+        method: 'POST',
+      }),
+      { params: Promise.resolve({ slug: 'shop' }) }
+    );
+
+    expect(response.status).toBe(201);
+    expect(mocks.rpc).toHaveBeenCalledWith(
+      'create_inventory_checkout_session',
+      {
+        p_payload: expect.objectContaining({
+          customerAuthUid: 'user-1',
+          customerEmail: 'buyer-entered@example.com',
+          lines: [
+            {
+              bundleId: '00000000-0000-4000-8000-000000000101',
+              bundleSelections: {
+                '00000000-0000-4000-8000-000000000201': [
+                  {
+                    listingId: '00000000-0000-4000-8000-000000000301',
+                    quantity: 1,
+                  },
+                  {
+                    listingId: '00000000-0000-4000-8000-000000000302',
+                    quantity: 1,
+                  },
+                  {
+                    listingId: '00000000-0000-4000-8000-000000000303',
+                    quantity: 1,
+                  },
+                ],
+              },
+              listingId: '00000000-0000-4000-8000-000000000401',
+              quantity: 1,
+            },
+          ],
+        }),
+        p_storefront_slug: 'shop',
+      }
+    );
+  });
+
   it('blocks disabled storefront checkout before creating reservations', async () => {
     mocks.getPublicStorefront.mockResolvedValue({
       listings: [],

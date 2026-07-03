@@ -828,7 +828,7 @@ mod tests {
     async fn inventory_storefront_get_serves_public_payload_with_public_cache() {
         let outbound = TestOutboundHttpClient::new(vec![response(
             200,
-            r#"{"storefront":{"id":"storefront-1","visibility":"public","wsId":"ws-1"},"listings":[],"bundles":[]}"#,
+            r#"{"storefront":{"id":"storefront-1","visibility":"public","wsId":"ws-1"},"listings":[],"bundles":[{"id":"bundle-1","pricingMode":"selected_items","categoryCandidateScope":"all_stock","categoryComponents":[{"id":"component-1","categoryId":"category-1","quantityRequired":3,"freeQuantity":1,"discountStrategy":"cheapest_free","candidates":[{"listingId":"listing-1","productId":"product-1","unitId":"unit-1","warehouseId":"warehouse-1","price":1200}]}]}]}"#,
         )]);
 
         let response = crate::handle_backend_request(
@@ -844,6 +844,15 @@ mod tests {
             Some(PUBLIC_STOREFRONT_CACHE_CONTROL)
         );
         assert_eq!(response.body["storefront"]["id"], "storefront-1");
+        assert_eq!(response.body["bundles"][0]["pricingMode"], "selected_items");
+        assert_eq!(
+            response.body["bundles"][0]["categoryComponents"][0]["quantityRequired"],
+            3
+        );
+        assert_eq!(
+            response.body["bundles"][0]["categoryComponents"][0]["candidates"][0]["listingId"],
+            "listing-1"
+        );
         let requests = outbound.recorded_requests();
         assert_eq!(requests.len(), 1);
         assert_eq!(

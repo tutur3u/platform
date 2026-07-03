@@ -18,7 +18,8 @@ import type {
 } from './types';
 import {
   formatStorefrontPrice,
-  getStorefrontLinePrice,
+  getStorefrontBundleSelectionLabels,
+  getStorefrontCartLineSubtotal,
   getStorefrontVariantLabel,
   storefrontCartLineKey,
 } from './utils';
@@ -229,20 +230,30 @@ function CartLines({
 }) {
   return (
     <div className="-mr-1 grid max-h-72 gap-3 overflow-y-auto pr-1">
-      {cartEntries.map(({ line, listing, variant }) => {
-        const unitPrice = getStorefrontLinePrice(listing, variant);
+      {cartEntries.map(({ bundle, line, listing, variant }) => {
+        const selectedSubtotal = getStorefrontCartLineSubtotal({
+          bundle,
+          line,
+          listing,
+          variant,
+        });
         const variantLabel = variant
           ? getStorefrontVariantLabel(variant)
           : null;
-        const lineTotal = formatStorefrontPrice(
-          unitPrice * line.quantity,
-          currency
+        const selectionLabels = getStorefrontBundleSelectionLabels(
+          bundle,
+          line
         );
+        const lineTotal = formatStorefrontPrice(selectedSubtotal, currency);
 
         return (
           <div
             className="grid grid-cols-[minmax(0,1fr)_auto] gap-x-3 gap-y-1 text-sm"
-            key={storefrontCartLineKey(line.listingId, line.variantId)}
+            key={storefrontCartLineKey(
+              line.listingId,
+              line.variantId,
+              line.selectionKey
+            )}
           >
             <div className="min-w-0">
               <p className="line-clamp-2 break-words font-medium leading-5">
@@ -253,8 +264,17 @@ function CartLines({
                   {variantLabel}
                 </p>
               ) : null}
+              {selectionLabels.length ? (
+                <p className="line-clamp-2 break-words text-muted-foreground text-xs">
+                  {selectionLabels.join(', ')}
+                </p>
+              ) : null}
               <p className="text-muted-foreground text-xs tabular-nums">
-                {line.quantity} × {formatStorefrontPrice(unitPrice, currency)}
+                {line.quantity} ×{' '}
+                {formatStorefrontPrice(
+                  Math.round(selectedSubtotal / Math.max(1, line.quantity)),
+                  currency
+                )}
               </p>
             </div>
             <span

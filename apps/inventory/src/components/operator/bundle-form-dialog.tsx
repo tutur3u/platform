@@ -13,6 +13,7 @@ import { useTranslations } from 'next-intl';
 import { type FormEvent, type ReactNode, useMemo, useState } from 'react';
 import {
   BundleComponentPicker,
+  type DraftBundleCategoryComponent,
   type DraftBundleComponent,
 } from './bundle-component-picker';
 import { InventoryImageUploadField } from './inventory-image-upload';
@@ -26,6 +27,7 @@ import {
 import {
   FieldLabel,
   NumberField,
+  SelectValueField,
   TextAreaField,
   TextField,
 } from './operator-form-fields';
@@ -36,20 +38,24 @@ import {
 } from './smart-suggestions';
 
 const initialForm = {
+  categoryCandidateScope: 'published_listings',
   description: '',
   imageUrl: '',
   maxPerOrder: '99',
   name: '',
   // Price in integer minor units (cents) — the canonical storage unit.
   price: 0,
+  pricingMode: 'fixed_price',
   slug: '',
 };
 
 export function BundleForm({
+  categories = [],
   products,
   trigger,
   wsId,
 }: {
+  categories?: { id: string; name?: string | null }[];
   products: InventoryProductSummary[];
   trigger?: ReactNode;
   wsId: string;
@@ -57,6 +63,9 @@ export function BundleForm({
   const t = useTranslations('inventory.operator.forms');
   const queryClient = useQueryClient();
   const [form, setForm] = useState(initialForm);
+  const [categoryComponents, setCategoryComponents] = useState<
+    DraftBundleCategoryComponent[]
+  >([]);
   const [components, setComponents] = useState<DraftBundleComponent[]>([]);
   const [open, setOpen] = useState(false);
   const estimatedPrice = useMemo(
@@ -70,6 +79,16 @@ export function BundleForm({
   const mutation = useMutation({
     mutationFn: () =>
       createInventoryBundle(wsId, {
+        categoryCandidateScope: form.categoryCandidateScope as
+          | 'all_stock'
+          | 'published_listings',
+        categoryComponents: categoryComponents.map((component, index) => ({
+          categoryId: component.categoryId,
+          discountStrategy: component.discountStrategy,
+          freeQuantity: component.freeQuantity,
+          quantityRequired: component.quantityRequired,
+          sortOrder: component.sortOrder ?? index,
+        })),
         components: components.map((component) => ({
           productId: component.productId,
           quantity: component.quantity,
@@ -83,12 +102,16 @@ export function BundleForm({
         // Components are priced in whole major units, so the estimate fallback
         // is converted to minor units; an explicit price is already minor.
         price: form.price || majorToMinor(estimatedPrice, 'USD'),
+        pricingMode: categoryComponents.length
+          ? 'selected_items'
+          : (form.pricingMode as 'fixed_price' | 'selected_items'),
         slug: form.slug,
         status: 'draft',
       }),
     onError: () => toast.error(t('createBundleError')),
     onSuccess: () => {
       setForm(initialForm);
+      setCategoryComponents([]);
       setComponents([]);
       setOpen(false);
       toast.success(t('createBundleSuccess'));
@@ -140,7 +163,9 @@ export function BundleForm({
     products.length,
     t,
   ]);
-  const canSubmit = Boolean(form.name && form.slug);
+  const canSubmit = Boolean(
+    form.name && form.slug && (components.length || categoryComponents.length)
+  );
 
   return (
     <div className="flex justify-end">
@@ -222,6 +247,49 @@ export function BundleForm({
                     placeholder={t('placeholders.maxPerOrder')}
                     value={form.maxPerOrder}
                   />
+                  <SelectValueField
+                    allowEmpty={false}
+                    hint={t('hints.pricingMode')}
+                    label={t('pricingMode')}
+                    onChange={(pricingMode) =>
+                      setForm((current) => ({ ...current, pricingMode }))
+                    }
+                    options={[
+                      {
+                        label: t('pricingModes.fixedPrice'),
+                        value: 'fixed_price',
+                      },
+                      {
+                        label: t('pricingModes.selectedItems'),
+                        value: 'selected_items',
+                      },
+                    ]}
+                    placeholder={t('placeholders.pricingMode')}
+                    value={form.pricingMode}
+                  />
+                  <SelectValueField
+                    allowEmpty={false}
+                    hint={t('hints.categoryCandidateScope')}
+                    label={t('categoryCandidateScope')}
+                    onChange={(categoryCandidateScope) =>
+                      setForm((current) => ({
+                        ...current,
+                        categoryCandidateScope,
+                      }))
+                    }
+                    options={[
+                      {
+                        label: t('categoryCandidateScopes.publishedListings'),
+                        value: 'published_listings',
+                      },
+                      {
+                        label: t('categoryCandidateScopes.allStock'),
+                        value: 'all_stock',
+                      },
+                    ]}
+                    placeholder={t('placeholders.categoryCandidateScope')}
+                    value={form.categoryCandidateScope}
+                  />
                   <TextAreaField
                     className="md:col-span-2"
                     label={t('description')}
@@ -239,7 +307,10 @@ export function BundleForm({
                 title={t('steps.bundleComponents')}
               >
                 <BundleComponentPicker
+                  categories={categories}
+                  categoryComponents={categoryComponents}
                   components={components}
+                  onCategoryComponentsChange={setCategoryComponents}
                   onChange={setComponents}
                   products={products}
                 />

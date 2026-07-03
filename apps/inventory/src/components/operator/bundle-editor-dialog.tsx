@@ -27,6 +27,7 @@ import { useTranslations } from 'next-intl';
 import { type ReactNode, useMemo, useState } from 'react';
 import {
   BundleComponentPicker,
+  type DraftBundleCategoryComponent,
   type DraftBundleComponent,
 } from './bundle-component-picker';
 import { InventoryImageUploadField } from './inventory-image-upload';
@@ -48,12 +49,14 @@ import { LifecyclePanel } from './operator-lifecycle';
 
 export function BundleEditorDialog({
   bundle,
+  categories = [],
   onOpenChange: onOpenChangeProp,
   open: openProp,
   products,
   wsId,
 }: {
   bundle: InventoryBundle;
+  categories?: { id: string; name?: string | null }[];
   onOpenChange?: (open: boolean) => void;
   open?: boolean;
   products: InventoryProductSummary[];
@@ -69,6 +72,9 @@ export function BundleEditorDialog({
     onOpenChangeProp?.(next);
   };
   const [details, setDetails] = useState(() => getInitialDetails(bundle));
+  const [categoryComponents, setCategoryComponents] = useState<
+    DraftBundleCategoryComponent[]
+  >(() => getInitialCategoryComponents(bundle));
   const [components, setComponents] = useState<DraftBundleComponent[]>(() =>
     getInitialComponents(bundle)
   );
@@ -88,6 +94,16 @@ export function BundleEditorDialog({
   const saveMutation = useMutation({
     mutationFn: () =>
       updateInventoryBundle(wsId, bundle.id, {
+        categoryCandidateScope: details.categoryCandidateScope as
+          | 'all_stock'
+          | 'published_listings',
+        categoryComponents: categoryComponents.map((component, index) => ({
+          categoryId: component.categoryId,
+          discountStrategy: component.discountStrategy,
+          freeQuantity: component.freeQuantity,
+          quantityRequired: component.quantityRequired,
+          sortOrder: component.sortOrder ?? index,
+        })),
         components: components.map((component) => ({
           productId: component.productId,
           quantity: component.quantity,
@@ -99,6 +115,9 @@ export function BundleEditorDialog({
         maxPerOrder: Number(details.maxPerOrder || 99),
         name: details.name.trim(),
         price: details.price,
+        pricingMode: categoryComponents.length
+          ? 'selected_items'
+          : (details.pricingMode as 'fixed_price' | 'selected_items'),
         slug: details.slug.trim(),
         status: details.status as InventoryBundle['status'],
       }),
@@ -133,6 +152,7 @@ export function BundleEditorDialog({
       onOpenChange={(nextOpen) => {
         if (nextOpen) {
           setDetails(getInitialDetails(bundle));
+          setCategoryComponents(getInitialCategoryComponents(bundle));
           setComponents(getInitialComponents(bundle));
         }
         setOpen(nextOpen);
@@ -181,6 +201,54 @@ export function BundleEditorDialog({
                       }
                       placeholder={t('placeholders.slug')}
                       value={details.slug}
+                    />
+                    <SelectValueField
+                      allowEmpty={false}
+                      hint={t('hints.pricingMode')}
+                      label={t('pricingMode')}
+                      onChange={(pricingMode) =>
+                        setDetails((current) => ({
+                          ...current,
+                          pricingMode:
+                            pricingMode as InventoryBundle['pricingMode'],
+                        }))
+                      }
+                      options={[
+                        {
+                          label: t('pricingModes.fixedPrice'),
+                          value: 'fixed_price',
+                        },
+                        {
+                          label: t('pricingModes.selectedItems'),
+                          value: 'selected_items',
+                        },
+                      ]}
+                      placeholder={t('placeholders.pricingMode')}
+                      value={details.pricingMode}
+                    />
+                    <SelectValueField
+                      allowEmpty={false}
+                      hint={t('hints.categoryCandidateScope')}
+                      label={t('categoryCandidateScope')}
+                      onChange={(categoryCandidateScope) =>
+                        setDetails((current) => ({
+                          ...current,
+                          categoryCandidateScope:
+                            categoryCandidateScope as InventoryBundle['categoryCandidateScope'],
+                        }))
+                      }
+                      options={[
+                        {
+                          label: t('categoryCandidateScopes.publishedListings'),
+                          value: 'published_listings',
+                        },
+                        {
+                          label: t('categoryCandidateScopes.allStock'),
+                          value: 'all_stock',
+                        },
+                      ]}
+                      placeholder={t('placeholders.categoryCandidateScope')}
+                      value={details.categoryCandidateScope}
                     />
                     <SelectValueField
                       allowEmpty={false}
@@ -240,10 +308,14 @@ export function BundleEditorDialog({
                 value: 'details',
               },
               {
-                badge: components.length || undefined,
+                badge:
+                  components.length + categoryComponents.length || undefined,
                 content: (
                   <BundleComponentPicker
+                    categories={categories}
+                    categoryComponents={categoryComponents}
                     components={components}
+                    onCategoryComponentsChange={setCategoryComponents}
                     onChange={setComponents}
                     products={products}
                   />
@@ -275,7 +347,9 @@ export function BundleEditorDialog({
                     <AvailabilityCard
                       icon={<Boxes className="h-4 w-4" />}
                       label={t('components')}
-                      value={String(components.length)}
+                      value={String(
+                        components.length + categoryComponents.length
+                      )}
                     />
                     <AvailabilityCard
                       icon={<ImageIcon className="h-4 w-4" />}
@@ -360,9 +434,26 @@ function getInitialDetails(bundle: InventoryBundle) {
     name: bundle.name,
     // Price in integer minor units (cents) — matches the stored bundle price.
     price: bundle.price ?? 0,
+    pricingMode: bundle.pricingMode ?? 'fixed_price',
+    categoryCandidateScope:
+      bundle.categoryCandidateScope ?? 'published_listings',
     slug: bundle.slug,
     status: bundle.status,
   };
+}
+
+function getInitialCategoryComponents(
+  bundle: InventoryBundle
+): DraftBundleCategoryComponent[] {
+  return (bundle.categoryComponents ?? []).map((component) => ({
+    categoryId: component.categoryId,
+    categoryName: component.categoryName,
+    discountStrategy: component.discountStrategy,
+    freeQuantity: component.freeQuantity,
+    id: component.id,
+    quantityRequired: component.quantityRequired,
+    sortOrder: component.sortOrder,
+  }));
 }
 
 function getInitialComponents(bundle: InventoryBundle): DraftBundleComponent[] {

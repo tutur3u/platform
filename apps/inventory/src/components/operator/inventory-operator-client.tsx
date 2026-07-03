@@ -58,7 +58,12 @@ type InventoryQueryState = {
   refetch: () => unknown;
 };
 
-const commerceTabs = ['checkouts', 'sales', 'promotions'] as const;
+const commerceTabs = [
+  'checkouts',
+  'sales',
+  'revenue-share',
+  'promotions',
+] as const;
 
 export function InventoryOperatorClient({
   view,
@@ -118,7 +123,9 @@ export function InventoryOperatorClient({
 
     if (
       view === 'commerce' &&
-      (commerceTab === 'sales' || commerceTab === 'promotions')
+      (commerceTab === 'sales' ||
+        commerceTab === 'revenue-share' ||
+        commerceTab === 'promotions')
     ) {
       return [all];
     }
@@ -197,6 +204,9 @@ export function InventoryOperatorClient({
     ['bundles', 'storefront'].includes(view) ? data.bundles : null,
     view === 'commerce' && commerceTab === 'checkouts' ? data.checkouts : null,
     view === 'commerce' && commerceTab === 'sales' ? data.sales : null,
+    view === 'commerce' && commerceTab === 'revenue-share'
+      ? data.revenueShares
+      : null,
     view === 'commerce' && commerceTab === 'promotions'
       ? data.promotions
       : null,
@@ -241,7 +251,9 @@ export function InventoryOperatorClient({
         ? data.sales.isPending || data.sales.isFetching
         : view === 'commerce' && commerceTab === 'promotions'
           ? data.promotions.isPending || data.promotions.isFetching
-          : false;
+          : view === 'commerce' && commerceTab === 'revenue-share'
+            ? data.revenueShares.isPending || data.revenueShares.isFetching
+            : false;
 
   const headerActions =
     view === 'catalog' ? (
@@ -249,7 +261,11 @@ export function InventoryOperatorClient({
     ) : view === 'storefront' ? (
       <StorefrontForm wsId={wsId} />
     ) : view === 'bundles' ? (
-      <BundleForm products={products} wsId={wsId} />
+      <BundleForm
+        categories={data.formOptions.data?.categories}
+        products={products}
+        wsId={wsId}
+      />
     ) : null;
 
   return (
@@ -354,6 +370,7 @@ export function InventoryOperatorClient({
           {!isLoading && !isError && view === 'bundles' ? (
             <>
               <SimpleRows
+                categories={data.formOptions.data?.categories}
                 products={products}
                 rows={bundles}
                 type="bundles"
@@ -374,6 +391,7 @@ export function InventoryOperatorClient({
               isLoading={commerceLoading}
               promotions={data.promotions.data?.data ?? []}
               query={data.filters.q}
+              revenueShares={data.revenueShares.data?.data ?? []}
               sales={sales}
               setTab={(tab: InventoryCommerceTab) => {
                 void data.setFilters({ status: 'all' });

@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import {
   cancelInventorySquareTerminalCheckout,
   createInventoryBatch,
+  createInventoryBundle,
   createInventoryCheckoutSession,
   createInventoryCostProfile,
   createInventoryMediaUploadUrl,
@@ -38,6 +39,7 @@ import {
   listInventoryBundles,
   listInventoryCostProfiles,
   listInventoryPromotions,
+  listInventoryRevenueShareEarnings,
   listInventorySquareDevices,
   listInventorySquareLocations,
   listInventoryStorefronts,
@@ -641,7 +643,20 @@ describe('inventory internal API helpers', () => {
     await createInventoryCheckoutSession(
       'shop',
       {
-        lines: [{ listingId: 'listing_1', quantity: 2 }],
+        lines: [
+          {
+            bundleId: 'bundle_1',
+            bundleSelections: {
+              component_1: [
+                { listingId: 'listing_1', quantity: 1 },
+                { listingId: 'listing_2', quantity: 1 },
+                { listingId: 'listing_3', quantity: 1 },
+              ],
+            },
+            listingId: 'bundle_listing_1',
+            quantity: 1,
+          },
+        ],
       },
       {
         baseUrl: 'https://internal.example.com',
@@ -663,7 +678,20 @@ describe('inventory internal API helpers', () => {
       'https://internal.example.com/api/v1/inventory/storefronts/shop/checkouts',
       expect.objectContaining({
         body: JSON.stringify({
-          lines: [{ listingId: 'listing_1', quantity: 2 }],
+          lines: [
+            {
+              bundleId: 'bundle_1',
+              bundleSelections: {
+                component_1: [
+                  { listingId: 'listing_1', quantity: 1 },
+                  { listingId: 'listing_2', quantity: 1 },
+                  { listingId: 'listing_3', quantity: 1 },
+                ],
+              },
+              listingId: 'bundle_listing_1',
+              quantity: 1,
+            },
+          ],
         }),
         method: 'POST',
       })
@@ -671,6 +699,75 @@ describe('inventory internal API helpers', () => {
     expect(fetchMock).toHaveBeenNthCalledWith(
       3,
       'https://internal.example.com/api/v1/inventory/orders/order_token',
+      expect.objectContaining({ headers: expect.any(Headers) })
+    );
+  });
+
+  it('serializes category bundle payloads and revenue-share report queries', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(createJsonResponse({ data: { id: 'bundle_1' } }))
+      .mockResolvedValueOnce(createJsonResponse({ count: 0, data: [] }));
+    const options = {
+      baseUrl: 'https://internal.example.com',
+      fetch: fetchMock as unknown as typeof fetch,
+    };
+
+    await createInventoryBundle(
+      'ws_1',
+      {
+        categoryCandidateScope: 'all_stock',
+        categoryComponents: [
+          {
+            categoryId: 'category_1',
+            discountStrategy: 'cheapest_free',
+            freeQuantity: 1,
+            quantityRequired: 3,
+          },
+        ],
+        name: 'Buy 2 Get 1 Keychains',
+        price: 0,
+        pricingMode: 'selected_items',
+        slug: 'buy-2-get-1-keychains',
+      },
+      options
+    );
+    await listInventoryRevenueShareEarnings(
+      'ws_1',
+      {
+        startAt: '2026-07-01T00:00:00.000Z',
+        endAt: '2026-07-31T23:59:59.999Z',
+        partnerId: 'owner_1',
+        q: 'talent',
+      },
+      options
+    );
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      'https://internal.example.com/api/v1/workspaces/ws_1/inventory/bundles',
+      expect.objectContaining({
+        body: JSON.stringify({
+          categoryCandidateScope: 'all_stock',
+          categoryComponents: [
+            {
+              categoryId: 'category_1',
+              discountStrategy: 'cheapest_free',
+              freeQuantity: 1,
+              quantityRequired: 3,
+            },
+          ],
+          name: 'Buy 2 Get 1 Keychains',
+          price: 0,
+          pricingMode: 'selected_items',
+          slug: 'buy-2-get-1-keychains',
+        }),
+        method: 'POST',
+      })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      'https://internal.example.com/api/v1/workspaces/ws_1/inventory/revenue-share?startAt=2026-07-01T00%3A00%3A00.000Z&endAt=2026-07-31T23%3A59%3A59.999Z&partnerId=owner_1&q=talent',
       expect.objectContaining({ headers: expect.any(Headers) })
     );
   });

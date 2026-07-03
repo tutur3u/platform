@@ -1,9 +1,10 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import type {
+  InventoryBundle,
   InventoryStorefront,
   InventoryStorefrontListing,
 } from '@tuturuuu/internal-api/inventory';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { StorefrontSurface } from './storefront-surface';
 import { formatStorefrontPrice, sanitizeStorefrontAccentColor } from './utils';
 
@@ -63,6 +64,95 @@ const secondListing: InventoryStorefrontListing = {
   productId: 'product-2',
   title: 'Team Workshop With Long Name',
   unitId: 'unit-2',
+};
+
+const categoryBundle: InventoryBundle = {
+  availableQuantity: 9,
+  categoryCandidateScope: 'all_stock',
+  categoryComponents: [
+    {
+      bundleId: 'bundle-keychains',
+      candidates: [
+        {
+          availableQuantity: 5,
+          componentId: 'component-keychains',
+          listingId: 'listing-keychain-a',
+          price: 1200,
+          productId: 'product-keychain-a',
+          selectionKind: 'listing',
+          title: 'Acrylic Keychain',
+          unitId: 'unit-1',
+          unitName: 'Each',
+          variantId: null,
+          warehouseId: 'warehouse-1',
+          warehouseName: 'Main',
+        },
+        {
+          availableQuantity: 5,
+          componentId: 'component-keychains',
+          listingId: 'listing-keychain-b',
+          price: 900,
+          productId: 'product-keychain-b',
+          selectionKind: 'listing',
+          title: 'Metal Keychain',
+          unitId: 'unit-1',
+          unitName: 'Each',
+          variantId: null,
+          warehouseId: 'warehouse-1',
+          warehouseName: 'Main',
+        },
+        {
+          availableQuantity: 5,
+          componentId: 'component-keychains',
+          listingId: 'listing-keychain-c',
+          price: 1500,
+          productId: 'product-keychain-c',
+          selectionKind: 'listing',
+          title: 'Charm Keychain',
+          unitId: 'unit-1',
+          unitName: 'Each',
+          variantId: null,
+          warehouseId: 'warehouse-1',
+          warehouseName: 'Main',
+        },
+      ],
+      categoryId: 'category-keychains',
+      categoryName: 'Keychains',
+      discountStrategy: 'cheapest_free',
+      freeQuantity: 1,
+      id: 'component-keychains',
+      quantityRequired: 3,
+      sortOrder: 0,
+    },
+  ],
+  components: [],
+  createdAt: '2026-07-03T00:00:00.000Z',
+  description: 'Choose any three keychains.',
+  id: 'bundle-keychains',
+  imageUrl: null,
+  maxPerOrder: 4,
+  name: 'Buy 2 Get 1 Keychains',
+  price: 0,
+  pricingMode: 'selected_items',
+  slug: 'buy-2-get-1-keychains',
+  status: 'active',
+  storefrontId: storefront.id,
+  updatedAt: '2026-07-03T00:00:00.000Z',
+  wsId: storefront.wsId,
+};
+
+const bundleListing: InventoryStorefrontListing = {
+  ...listing,
+  bundleId: categoryBundle.id,
+  id: 'listing-keychain-bundle',
+  listingType: 'bundle',
+  price: 0,
+  productId: null,
+  title: 'Buy 2 Get 1 Keychains',
+  unitId: null,
+  unitName: null,
+  warehouseId: null,
+  warehouseName: null,
 };
 
 describe('StorefrontSurface', () => {
@@ -141,6 +231,49 @@ describe('StorefrontSurface', () => {
     expect(screen.getByText('1:1 Mentoring')).toBeInTheDocument();
     expect(screen.getAllByText('$2.00')).toHaveLength(2);
     expect(screen.getByRole('button', { name: /Checkout/ })).toBeEnabled();
+  });
+
+  it('opens category bundle selection and adds the configured selection to cart', () => {
+    const onAddCartLine = vi.fn();
+
+    render(
+      <StorefrontSurface
+        bundles={[categoryBundle]}
+        listings={[bundleListing]}
+        mode="store"
+        onAddCartLine={onAddCartLine}
+        storefront={storefront}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /Select options/ }));
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+    expect(screen.getByText('0 of 3 selected')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Add' })).toBeDisabled();
+
+    fireEvent.click(screen.getByRole('button', { name: /Acrylic Keychain/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Metal Keychain/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Charm Keychain/ }));
+
+    expect(screen.getByText('3 of 3 selected')).toBeInTheDocument();
+    expect(screen.getByText('$27.00')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Add' }));
+
+    expect(onAddCartLine).toHaveBeenCalledWith(
+      expect.objectContaining({
+        bundleSelections: {
+          'component-keychains': [
+            expect.objectContaining({ listingId: 'listing-keychain-a' }),
+            expect.objectContaining({ listingId: 'listing-keychain-b' }),
+            expect.objectContaining({ listingId: 'listing-keychain-c' }),
+          ],
+        },
+        listingId: bundleListing.id,
+        quantity: 1,
+        selectionKey: expect.stringContaining('component-keychains='),
+      }),
+      5
+    );
   });
 
   it('keeps long item names and large totals inside the cart row bounds', () => {

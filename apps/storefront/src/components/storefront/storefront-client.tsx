@@ -146,6 +146,9 @@ export function StorefrontClient({
   }, [cart.clear, clearCartOnMount, queryClient, storeSlug]);
 
   type CheckoutLineInput = {
+    bundleSelections?: NonNullable<
+      (typeof cart.cart)[number]['bundleSelections']
+    >;
     listingId: string;
     variantId?: string;
     quantity: number;
@@ -230,6 +233,7 @@ export function StorefrontClient({
 
   const cartCheckoutLines = (): CheckoutLineInput[] =>
     checkoutListings.map(({ line, listing, variant }) => ({
+      bundleSelections: line.bundleSelections,
       listingId: line.listingId,
       quantity: Math.min(line.quantity, lineLimit(listing, variant)),
       variantId: line.variantId ?? undefined,
@@ -369,8 +373,10 @@ export function StorefrontClient({
     available: t('available'),
     browse: t('browse'),
     bundle: t('bundle'),
+    bundleSelectionTitle: t('bundleSelectionTitle'),
     buyNow: t('buyNow'),
     cart: t('cart'),
+    cheapestFreePreview: t('cheapestFreePreview'),
     checkout: t('checkout'),
     checkoutDisabled: t('checkoutDisabled'),
     checkoutDisabledBadge: t('checkoutDisabledBadge'),
@@ -384,7 +390,10 @@ export function StorefrontClient({
     instantCheckout: t('instantCheckout'),
     orderSummary: t('orderSummary'),
     redirectingToCheckout: t('redirectingToCheckout'),
+    requiredItems: t('requiredItems'),
+    searchBundleItems: t('searchBundleItems'),
     selectOptions: t('selectOptions'),
+    selectedItems: t('selectedItems'),
     viewDetails: t('viewDetails'),
     form: {
       email: t('form.email'),
@@ -427,6 +436,7 @@ export function StorefrontClient({
 
   return (
     <StorefrontSurface
+      bundles={storefrontQuery.data?.bundles ?? []}
       buyerDefaults={buyerDefaults}
       cartLines={cart.cart}
       cartHref={`/${storeSlug}/cart`}
@@ -482,6 +492,14 @@ export function StorefrontClient({
         recordAnalyticsEvent({
           eventType: 'remove_from_cart',
           listingId: selectedListingId,
+        });
+      }}
+      onAddCartLine={(line, maxQuantity) => {
+        cart.addLine(line, maxQuantity);
+        recordAnalyticsEvent({
+          eventType: 'add_to_cart',
+          listingId: line.listingId,
+          metadata: { configuredBundle: Boolean(line.bundleSelections) },
         });
       }}
       onDetailListingChange={(nextListingId) =>

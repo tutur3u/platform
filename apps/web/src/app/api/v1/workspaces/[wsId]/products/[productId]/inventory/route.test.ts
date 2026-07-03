@@ -177,6 +177,7 @@ describe('product inventory route', () => {
                 amount: 1,
                 min_amount: 0,
                 price: 100,
+                revenue_share_bps: 0,
               },
             ],
           }),
@@ -202,6 +203,7 @@ describe('product inventory route', () => {
           amount: 1,
           min_amount: 0,
           price: 100,
+          revenue_share_bps: 0,
         },
       ],
       inventoryClient: { from: mocks.inventoryFrom },
@@ -259,6 +261,7 @@ describe('product inventory route', () => {
         min_amount: 2,
         price: 120,
         product_id: PRODUCT_ID,
+        revenue_share_bps: 0,
       },
     ]);
     expect(mocks.stockChangeQuery.insert).toHaveBeenCalledWith([

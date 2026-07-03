@@ -338,3 +338,62 @@ fn workspaces_inventory_bundles_ws_id(path: &str) -> Option<&str> {
     // `/inventory/bundles` collection route (and not e.g. `/inventory/bundles/:id`).
     (!ws_id.is_empty() && !ws_id.contains('/')).then_some(ws_id)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn map_rpc_list_preserves_expanded_category_bundle_payloads() {
+        let payload = map_rpc_list(vec![BundleListRow {
+            bundle: Some(json!({
+                "id": "bundle-1",
+                "pricingMode": "selected_items",
+                "categoryCandidateScope": "all_stock",
+                "categoryComponents": [
+                    {
+                        "id": "component-1",
+                        "categoryId": "category-1",
+                        "quantityRequired": 3,
+                        "freeQuantity": 1,
+                        "discountStrategy": "cheapest_free",
+                        "candidates": [
+                            {
+                                "listingId": "listing-1",
+                                "productId": "product-1",
+                                "unitId": "unit-1",
+                                "warehouseId": "warehouse-1",
+                                "price": 1200
+                            }
+                        ]
+                    }
+                ]
+            })),
+            total_count: Some(1),
+        }]);
+
+        assert_eq!(payload["count"], 1);
+        assert_eq!(payload["data"][0]["pricingMode"], "selected_items");
+        assert_eq!(payload["data"][0]["categoryCandidateScope"], "all_stock");
+        assert_eq!(
+            payload["data"][0]["categoryComponents"][0]["quantityRequired"],
+            3
+        );
+        assert_eq!(
+            payload["data"][0]["categoryComponents"][0]["candidates"][0]["listingId"],
+            "listing-1"
+        );
+    }
+
+    #[test]
+    fn workspace_bundle_route_extracts_only_collection_paths() {
+        assert_eq!(
+            workspaces_inventory_bundles_ws_id("/api/v1/workspaces/ws-1/inventory/bundles"),
+            Some("ws-1")
+        );
+        assert_eq!(
+            workspaces_inventory_bundles_ws_id("/api/v1/workspaces/ws-1/inventory/bundles/id-1"),
+            None
+        );
+    }
+}

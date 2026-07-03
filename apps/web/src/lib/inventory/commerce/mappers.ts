@@ -114,6 +114,8 @@ export type BundleRow = {
   max_per_order: number;
   name: string;
   price: number;
+  pricing_mode?: InventoryBundle['pricingMode'] | null;
+  category_candidate_scope?: InventoryBundle['categoryCandidateScope'] | null;
   slug: string;
   status: InventoryBundleStatus;
   storefront_id: string | null;
@@ -323,6 +325,9 @@ export function mapBundle(
 ): InventoryBundle {
   return {
     availableQuantity: row.available_quantity ?? undefined,
+    categoryCandidateScope:
+      row.category_candidate_scope ?? 'published_listings',
+    categoryComponents: [],
     components: componentsByBundleId.get(row.id) ?? [],
     createdAt: row.created_at,
     description: row.description,
@@ -331,6 +336,7 @@ export function mapBundle(
     maxPerOrder: row.max_per_order,
     name: row.name,
     price: row.price,
+    pricingMode: row.pricing_mode ?? 'fixed_price',
     slug: row.slug,
     status: row.status,
     storefrontId: row.storefront_id,

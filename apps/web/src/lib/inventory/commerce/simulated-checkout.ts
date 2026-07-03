@@ -1,5 +1,7 @@
 import { createHmac, randomUUID, timingSafeEqual } from 'node:crypto';
 import type {
+  InventoryBundleCategoryCandidate,
+  InventoryBundleCategoryComponent,
   InventoryCheckoutResponse,
   InventoryCheckoutSession,
   InventoryPublicStorefrontResponse,
@@ -209,13 +211,119 @@ function getLinePrice(
     ? storefrontPayload.bundles.find((item) => item.id === line.bundleId)
     : null;
 
+  if (bundle?.categoryComponents?.length && line.bundleSelections) {
+    return getCategoryBundleLinePrice(line, bundle, storefrontPayload);
+  }
+
+  const variant = listing?.variants?.find((item) => item.id === line.variantId);
+
   return {
     productId: listing?.productId ?? bundle?.id ?? line.bundleId ?? '',
-    subtotal: (listing?.price ?? bundle?.price ?? 0) * line.quantity,
-    title: listing?.title ?? bundle?.name ?? 'Simulated item',
+    subtotal:
+      (variant?.price ?? listing?.price ?? bundle?.price ?? 0) * line.quantity,
+    title: variant?.title ?? listing?.title ?? bundle?.name ?? 'Simulated item',
     unitId: listing?.unitId ?? '',
-    unitPrice: listing?.price ?? bundle?.price ?? 0,
+    unitPrice: variant?.price ?? listing?.price ?? bundle?.price ?? 0,
     warehouseId: listing?.warehouseId ?? '',
+  };
+}
+
+function getComponentSelectionItems(
+  line: CheckoutPayload['lines'][number],
+  component: InventoryBundleCategoryComponent
+) {
+  const selections = line.bundleSelections;
+  if (!selections) return [];
+
+  if (Array.isArray(selections)) {
+    return (
+      selections.find((selection) => selection.componentId === component.id)
+        ?.items ?? []
+    );
+  }
+
+  return selections[component.id] ?? [];
+}
+
+function resolveCandidate(
+  component: InventoryBundleCategoryComponent,
+  item: ReturnType<typeof getComponentSelectionItems>[number]
+) {
+  return component.candidates?.find((candidate) => {
+    if (item.variantId) {
+      return (
+        candidate.variantId === item.variantId &&
+        candidate.listingId === item.listingId
+      );
+    }
+    if (item.listingId) {
+      return candidate.listingId === item.listingId && !candidate.variantId;
+    }
+    return (
+      candidate.productId === item.productId &&
+      candidate.unitId === item.unitId &&
+      candidate.warehouseId === item.warehouseId
+    );
+  });
+}
+
+function getCategoryBundleLinePrice(
+  line: CheckoutPayload['lines'][number],
+  bundle: InventoryPublicStorefrontResponse['bundles'][number],
+  storefrontPayload: InventoryPublicStorefrontResponse
+) {
+  const selectedCandidates: Array<{
+    candidate: InventoryBundleCategoryCandidate;
+    quantity: number;
+  }> = [];
+
+  let subtotal = 0;
+  for (const component of bundle.categoryComponents) {
+    const items = getComponentSelectionItems(line, component);
+    const selectedQuantity = items.reduce(
+      (total, item) => total + (item.quantity ?? 1),
+      0
+    );
+
+    if (selectedQuantity !== component.quantityRequired) {
+      throw new Error('Invalid bundle selection quantity');
+    }
+
+    const pricedItems = items.map((item) => {
+      const candidate = resolveCandidate(component, item);
+      if (!candidate) throw new Error('Invalid bundle selection item');
+      return {
+        candidate,
+        quantity: item.quantity ?? 1,
+      };
+    });
+
+    selectedCandidates.push(...pricedItems);
+
+    let freeRemaining =
+      component.discountStrategy === 'cheapest_free'
+        ? component.freeQuantity * line.quantity
+        : 0;
+
+    for (const pricedItem of pricedItems.sort(
+      (a, b) => a.candidate.price - b.candidate.price
+    )) {
+      const totalUnits = pricedItem.quantity * line.quantity;
+      const freeUnits = Math.min(totalUnits, freeRemaining);
+      freeRemaining -= freeUnits;
+      subtotal += (totalUnits - freeUnits) * pricedItem.candidate.price;
+    }
+  }
+
+  const firstSelection = selectedCandidates[0]?.candidate;
+
+  return {
+    productId: firstSelection?.productId ?? bundle.id,
+    subtotal,
+    title: bundle.name,
+    unitId: firstSelection?.unitId ?? '',
+    unitPrice: Math.round(subtotal / Math.max(1, line.quantity)),
+    warehouseId: firstSelection?.warehouseId ?? storefrontPayload.storefront.id,
   };
 }
 

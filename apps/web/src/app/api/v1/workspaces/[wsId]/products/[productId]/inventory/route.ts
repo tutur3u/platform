@@ -13,6 +13,8 @@ const InventoryItemSchema = z.object({
   amount: z.number().nonnegative().nullable(),
   min_amount: z.number().nonnegative().optional(),
   price: z.number().nonnegative(),
+  revenue_share_partner_id: z.guid().nullable().optional(),
+  revenue_share_bps: z.number().int().min(0).max(10000).default(0),
 });
 const BodySchema = z.object({
   inventory: z.array(InventoryItemSchema).default([]),
@@ -326,7 +328,10 @@ export async function PATCH(req: Request, { params }: Params) {
     return (
       existing.amount !== item.amount ||
       existing.price !== item.price ||
-      existing.min_amount !== item.min_amount
+      existing.min_amount !== item.min_amount ||
+      existing.revenue_share_partner_id !==
+        (item.revenue_share_partner_id ?? null) ||
+      (existing.revenue_share_bps ?? 0) !== item.revenue_share_bps
     );
   });
 
@@ -459,6 +464,8 @@ export async function PATCH(req: Request, { params }: Params) {
           amount: item.amount,
           price: item.price,
           min_amount: item.min_amount,
+          revenue_share_partner_id: item.revenue_share_partner_id ?? null,
+          revenue_share_bps: item.revenue_share_bps,
         })
         .eq('product_id', productId)
         .eq('warehouse_id', item.warehouse_id)

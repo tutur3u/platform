@@ -21,6 +21,7 @@ export function StorefrontListingCard({
   labels,
   listing,
   onDecrement,
+  onConfigureBundle,
   onIncrement,
   onOpenDetail,
   quantity,
@@ -33,6 +34,7 @@ export function StorefrontListingCard({
   labels: StorefrontSurfaceLabels;
   listing: InventoryStorefrontListing;
   onDecrement?: (listingId: string, variantId?: string | null) => void;
+  onConfigureBundle?: () => void;
   onIncrement?: (
     listingId: string,
     maxQuantity: number,
@@ -45,6 +47,7 @@ export function StorefrontListingCard({
   surfaceClassName: string;
 }) {
   const hasVariants = listingHasVariants(listing);
+  const needsBundleConfiguration = Boolean(onConfigureBundle);
   const limit = getStorefrontListingLimit(listing);
   const disabled = limit === 0 || quantity >= limit;
   const canChange = Boolean(onIncrement || onDecrement);
@@ -139,10 +142,10 @@ export function StorefrontListingCard({
             </p>
           ) : null}
         </div>
-        {hasVariants ? (
+        {hasVariants || needsBundleConfiguration ? (
           <AccentButton
-            disabled={limit === 0 || !openDetail}
-            onClick={openDetail}
+            disabled={limit === 0 || (!openDetail && !onConfigureBundle)}
+            onClick={needsBundleConfiguration ? onConfigureBundle : openDetail}
             radius={radius}
           >
             <SlidersHorizontal className="h-4 w-4" />

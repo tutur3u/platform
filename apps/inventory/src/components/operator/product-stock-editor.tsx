@@ -8,6 +8,7 @@ import type {
   InventoryProductSummary,
 } from '@tuturuuu/internal-api/inventory';
 import {
+  createInventoryOwner,
   createInventoryUnit,
   createInventoryWarehouse,
 } from '@tuturuuu/internal-api/inventory';
@@ -24,6 +25,8 @@ export type ProductStockRowState = {
   key: string;
   minAmount: string;
   price: string;
+  revenueSharePartnerId: string;
+  revenueShareSplitPercent: string;
   unitId: string;
   unlimitedStock: boolean;
   warehouseId: string;
@@ -55,6 +58,10 @@ export function getInitialProductStockRows(
       key: `${warehouseId || 'missing-warehouse'}:${unitId || 'missing-unit'}:${index}`,
       minAmount: String(numberOrDefault(inventory.min_amount, 0)),
       price: String(numberOrDefault(inventory.price, 0)),
+      revenueSharePartnerId: stringField(inventory, 'revenue_share_partner_id'),
+      revenueShareSplitPercent: String(
+        numberOrDefault(inventory.revenue_share_bps, 0) / 100
+      ),
       unitId,
       unlimitedStock: amount === null,
       warehouseId,
@@ -79,6 +86,10 @@ export function getProductStockSaveState(
     amount: row.unlimitedStock ? null : Number(row.amount || 0),
     min_amount: Number(row.minAmount || 0),
     price: Number(row.price || 0),
+    revenue_share_bps: Math.round(
+      Number(row.revenueShareSplitPercent || 0) * 100
+    ),
+    revenue_share_partner_id: row.revenueSharePartnerId || null,
     unit_id: row.unitId,
     warehouse_id: row.warehouseId,
   }));
@@ -259,6 +270,41 @@ export function ProductStockEditor({
                     placeholder={t('placeholders.price')}
                     value={row.price}
                   />
+                  <SelectField
+                    className="lg:col-span-2"
+                    createText={createText(t('revenueSharePartner'))}
+                    creatingText={creatingText(t('revenueSharePartner'))}
+                    emptyText={t('emptyOptions')}
+                    hint={t('hints.revenueSharePartner')}
+                    label={t('revenueSharePartner')}
+                    onChange={(revenueSharePartnerId) =>
+                      updateRow(row.key, (current) => ({
+                        ...current,
+                        revenueSharePartnerId,
+                      }))
+                    }
+                    onCreate={(name) =>
+                      createReference(() =>
+                        createInventoryOwner(wsId, { name })
+                      )
+                    }
+                    options={options?.owners}
+                    placeholder={t('placeholders.revenueSharePartner')}
+                    searchPlaceholder={searchText(t('revenueSharePartner'))}
+                    value={row.revenueSharePartnerId}
+                  />
+                  <NumberField
+                    hint={t('hints.revenueShareSplitPercent')}
+                    label={t('revenueShareSplitPercent')}
+                    onChange={(revenueShareSplitPercent) =>
+                      updateRow(row.key, (current) => ({
+                        ...current,
+                        revenueShareSplitPercent,
+                      }))
+                    }
+                    placeholder={t('placeholders.revenueShareSplitPercent')}
+                    value={row.revenueShareSplitPercent}
+                  />
                 </div>
               </div>
             </FormSection>
@@ -287,6 +333,8 @@ function createDraftStockRow(key: string): ProductStockRowState {
     key,
     minAmount: '',
     price: '',
+    revenueSharePartnerId: '',
+    revenueShareSplitPercent: '',
     unitId: '',
     unlimitedStock: false,
     warehouseId: '',
@@ -298,6 +346,8 @@ function hasStockRowInput(row: ProductStockRowState) {
     row.amount.trim() ||
       row.minAmount.trim() ||
       row.price.trim() ||
+      row.revenueSharePartnerId ||
+      row.revenueShareSplitPercent.trim() ||
       row.unitId ||
       row.unlimitedStock ||
       row.warehouseId

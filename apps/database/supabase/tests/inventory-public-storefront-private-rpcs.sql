@@ -4,7 +4,7 @@ create extension if not exists pgtap with schema extensions;
 
 set local search_path = public, extensions;
 
-select plan(33);
+select plan(38);
 
 select ok(
   to_regprocedure(
@@ -448,6 +448,8 @@ insert into private.inventory_bundles (
   slug,
   name,
   price,
+  pricing_mode,
+  category_candidate_scope,
   status,
   max_per_order
 )
@@ -458,13 +460,17 @@ values (
   'inventory-public-rpc-bundle',
   'Inventory public RPC bundle',
   2100,
+  'selected_items',
+  'published_listings',
   'active',
   3
 )
 on conflict (id) do update
 set
   status = excluded.status,
-  price = excluded.price;
+  price = excluded.price,
+  pricing_mode = excluded.pricing_mode,
+  category_candidate_scope = excluded.category_candidate_scope;
 
 insert into private.inventory_bundle_components (
   bundle_id,
@@ -482,6 +488,30 @@ values (
 )
 on conflict (bundle_id, product_id, unit_id, warehouse_id) do update
 set quantity = excluded.quantity;
+
+insert into private.inventory_bundle_category_components (
+  id,
+  bundle_id,
+  category_id,
+  quantity_required,
+  free_quantity,
+  discount_strategy,
+  sort_order
+)
+values (
+  '00000000-0000-4000-8000-000000001911',
+  '00000000-0000-4000-8000-000000001901',
+  '00000000-0000-4000-8000-000000001301',
+  2,
+  1,
+  'cheapest_free',
+  0
+)
+on conflict (id) do update
+set
+  quantity_required = excluded.quantity_required,
+  free_quantity = excluded.free_quantity,
+  discount_strategy = excluded.discount_strategy;
 
 insert into private.inventory_checkout_sessions (
   id,
@@ -738,6 +768,63 @@ select is(
   ),
   1,
   'public storefront RPC returns active bundles'
+);
+
+select is(
+  private.get_public_inventory_storefront('inventory-public-rpc-test')
+    -> 'bundles'
+    -> 0
+    ->> 'pricingMode',
+  'selected_items',
+  'public storefront RPC returns bundle pricing mode'
+);
+
+select is(
+  private.get_public_inventory_storefront('inventory-public-rpc-test')
+    -> 'bundles'
+    -> 0
+    ->> 'categoryCandidateScope',
+  'published_listings',
+  'public storefront RPC returns bundle category candidate scope'
+);
+
+select is(
+  (
+    private.get_public_inventory_storefront('inventory-public-rpc-test')
+      -> 'bundles'
+      -> 0
+      -> 'categoryComponents'
+      -> 0
+      ->> 'quantityRequired'
+  )::int,
+  2,
+  'public storefront RPC returns category component quantity'
+);
+
+select is(
+  (
+    private.get_public_inventory_storefront('inventory-public-rpc-test')
+      -> 'bundles'
+      -> 0
+      -> 'categoryComponents'
+      -> 0
+      ->> 'discountStrategy'
+  ),
+  'cheapest_free',
+  'public storefront RPC returns cheapest-free strategy'
+);
+
+select is(
+  jsonb_array_length(
+    private.get_public_inventory_storefront('inventory-public-rpc-test')
+      -> 'bundles'
+      -> 0
+      -> 'categoryComponents'
+      -> 0
+      -> 'candidates'
+  ),
+  1,
+  'published-listings category bundles expose published listing candidates'
 );
 
 select ok(

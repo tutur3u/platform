@@ -63,6 +63,21 @@ export const BundleStatusSchema = z.enum([
   'archived',
 ]);
 
+export const BundlePricingModeSchema = z.enum([
+  'fixed_price',
+  'selected_items',
+]);
+
+export const BundleCategoryCandidateScopeSchema = z.enum([
+  'published_listings',
+  'all_stock',
+]);
+
+export const BundleCategoryDiscountStrategySchema = z.enum([
+  'none',
+  'cheapest_free',
+]);
+
 export const CheckoutStatusSchema = z.enum([
   'reserved',
   'completed',
@@ -222,6 +237,18 @@ export const optionTemplatePayloadSchema = z.object({
 export const optionTemplatePatchSchema = optionTemplatePayloadSchema.partial();
 
 export const bundlePayloadSchema = z.object({
+  categoryCandidateScope: BundleCategoryCandidateScopeSchema.optional(),
+  categoryComponents: z
+    .array(
+      z.object({
+        categoryId: z.guid(),
+        discountStrategy: BundleCategoryDiscountStrategySchema.optional(),
+        freeQuantity: z.number().int().min(0).max(999_999).optional(),
+        quantityRequired: z.number().int().min(1).max(999_999),
+        sortOrder: z.number().int().optional(),
+      })
+    )
+    .optional(),
   components: z
     .array(
       z.object({
@@ -237,6 +264,7 @@ export const bundlePayloadSchema = z.object({
   maxPerOrder: z.number().int().min(1).max(999).optional(),
   name: z.string().trim().min(1).max(180),
   price: z.number().int().nonnegative(),
+  pricingMode: BundlePricingModeSchema.optional(),
   slug: z
     .string()
     .trim()
@@ -249,6 +277,28 @@ export const bundlePayloadSchema = z.object({
 
 export const bundlePatchSchema = bundlePayloadSchema.partial();
 
+const checkoutBundleSelectionItemSchema = z.object({
+  listingId: z.guid().nullable().optional(),
+  productId: z.guid().nullable().optional(),
+  quantity: z.number().int().min(1).max(999).optional(),
+  unitId: z.guid().nullable().optional(),
+  variantId: z.guid().nullable().optional(),
+  warehouseId: z.guid().nullable().optional(),
+});
+
+const checkoutBundleSelectionSchema = z.object({
+  componentId: z.guid().optional(),
+  items: z.array(checkoutBundleSelectionItemSchema).min(1).max(999),
+});
+
+const checkoutBundleSelectionsSchema = z.union([
+  z.record(
+    z.guid(),
+    z.array(checkoutBundleSelectionItemSchema).min(1).max(999)
+  ),
+  z.array(checkoutBundleSelectionSchema).min(1).max(64),
+]);
+
 export const checkoutCreatePayloadSchema = z.object({
   customerEmail: z.email().optional(),
   customerName: z.string().trim().min(1).max(160).optional(),
@@ -257,6 +307,7 @@ export const checkoutCreatePayloadSchema = z.object({
     .array(
       z.object({
         bundleId: z.guid().optional(),
+        bundleSelections: checkoutBundleSelectionsSchema.optional(),
         listingId: z.guid().optional(),
         quantity: z.number().int().min(1).max(999),
         variantId: z.guid().optional(),
