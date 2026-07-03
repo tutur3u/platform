@@ -445,6 +445,38 @@ describe('LoginForm returnUrl navigation', () => {
     queryClient.clear();
   });
 
+  it('uses the platform callback while preserving a managed subdomain returnUrl for social OAuth', async () => {
+    vi.stubEnv('WEB_APP_URL', 'https://tuturuuu.com');
+    mocks.currentUserProfile = null;
+    mocks.getUser.mockReturnValue(new Promise(() => undefined));
+
+    const queryClient = renderLoginFormSearch(
+      '?nextUrl=%2Fworkspace%2Fpersonal%2Fplans',
+      {
+        origin: 'https://vc.tuturuuu.com',
+      }
+    );
+
+    fireEvent.click(
+      await screen.findByRole('button', {
+        name: /login\.continue_with_google/u,
+      })
+    );
+
+    await waitFor(() => {
+      expect(mocks.signInWithOAuth).toHaveBeenCalledWith(
+        expect.objectContaining({
+          options: expect.objectContaining({
+            redirectTo:
+              'https://tuturuuu.com/api/auth/callback?returnUrl=https%3A%2F%2Fvc.tuturuuu.com%2Fworkspace%2Fpersonal%2Fplans&nextUrl=%2Fworkspace%2Fpersonal%2Fplans',
+          }),
+          provider: 'google',
+        })
+      );
+    });
+    queryClient.clear();
+  });
+
   it('does not expose generic Microsoft OAuth on the login form', async () => {
     mocks.currentUserProfile = null;
     mocks.getUser.mockReturnValue(new Promise(() => undefined));
@@ -813,6 +845,41 @@ describe('LoginForm returnUrl navigation', () => {
     ).not.toHaveBeenCalled();
     expect(mocks.refreshSession).toHaveBeenCalled();
     expect(mocks.assign).toHaveBeenCalledWith(tokenizedChatReturnUrl);
+    queryClient.clear();
+  });
+
+  it('redirects authenticated managed wildcard returns without account confirmation', async () => {
+    const managedReturnUrl =
+      'https://vc.tuturuuu.com/verify-token?nextUrl=%2Fworkspace%2Fpersonal%2Fplans';
+    const directManagedReturnUrl =
+      'https://vc.tuturuuu.com/workspace/personal/plans';
+    mocks.resolveCrossAppReturnUrlWithInternalApi.mockResolvedValue({
+      appName: 'vc.tuturuuu.com',
+      targetApp: 'managed-tuturuuu',
+    });
+    mocks.createCrossAppReturnUrlWithInternalApi.mockResolvedValue({
+      returnUrl: directManagedReturnUrl,
+      targetApp: 'managed-tuturuuu',
+    });
+
+    const queryClient = renderLoginForm(managedReturnUrl);
+
+    await waitFor(() => {
+      expect(mocks.createCrossAppReturnUrlWithInternalApi).toHaveBeenCalledWith(
+        {
+          returnUrl: managedReturnUrl,
+        }
+      );
+    });
+
+    expect(mocks.resolveCrossAppReturnUrlWithInternalApi).toHaveBeenCalledWith({
+      returnUrl: managedReturnUrl,
+    });
+    expect(mocks.refreshSession).toHaveBeenCalled();
+    expect(mocks.assign).toHaveBeenCalledWith(directManagedReturnUrl);
+    expect(
+      screen.queryByText('login.confirm_internal_app_account_title')
+    ).not.toBeInTheDocument();
     queryClient.clear();
   });
 

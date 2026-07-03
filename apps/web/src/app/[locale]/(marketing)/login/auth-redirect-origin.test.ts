@@ -49,6 +49,15 @@ describe('auth redirect origin', () => {
     ).toBe('https://tuturuuu.com');
   });
 
+  it('uses the canonical platform origin for production wildcard subdomains', () => {
+    expect(
+      resolveAuthRedirectOrigin({
+        currentOrigin: 'https://vc.tuturuuu.com',
+        isProduction: true,
+      })
+    ).toBe('https://tuturuuu.com');
+  });
+
   it('ignores configured non-platform app origins', () => {
     vi.stubEnv('NEXT_PUBLIC_APP_URL', 'https://chat.tuturuuu.com');
 

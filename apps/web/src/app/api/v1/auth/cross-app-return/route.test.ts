@@ -5,6 +5,7 @@ import { POST } from './route';
 const mocks = vi.hoisted(() => ({
   createClient: vi.fn(),
   getExternalAppByReturnUrl: vi.fn(),
+  rpc: vi.fn(),
   serverLoggerWarn: vi.fn(),
 }));
 
@@ -56,7 +57,7 @@ describe('cross-app return route', () => {
           error: null,
         }),
       },
-      rpc: vi.fn().mockResolvedValue({
+      rpc: mocks.rpc.mockResolvedValue({
         data: 'cross-app-token',
         error: null,
       }),
@@ -157,6 +158,60 @@ describe('cross-app return route', () => {
       appName: 'platform',
       targetApp: 'platform',
     });
+  });
+
+  it('resolves managed wildcard Tuturuuu return URLs without creating a token', async () => {
+    const response = await POST(
+      createRequest(
+        'https://vc.tuturuuu.com/verify-token?nextUrl=%2Fworkspace%2Fpersonal%2Fplans',
+        { generateToken: false }
+      )
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+      appName: 'vc.tuturuuu.com',
+      targetApp: 'managed-tuturuuu',
+    });
+    expect(mocks.createClient).not.toHaveBeenCalled();
+  });
+
+  it('redirects managed wildcard Tuturuuu returns directly after authentication', async () => {
+    const response = await POST(
+      createRequest(
+        'https://vc.tuturuuu.com/verify-token?nextUrl=%2Fworkspace%2Fpersonal%2Fplans'
+      )
+    );
+
+    expect(response.status).toBe(200);
+    const body = (await response.json()) as {
+      returnUrl: string;
+      targetApp: string;
+    };
+    const returnUrl = new URL(body.returnUrl);
+
+    expect(body.targetApp).toBe('managed-tuturuuu');
+    expect(returnUrl.toString()).toBe(
+      'https://vc.tuturuuu.com/workspace/personal/plans'
+    );
+    expect(returnUrl.searchParams.has('token')).toBe(false);
+    expect(returnUrl.searchParams.has('originApp')).toBe(false);
+    expect(mocks.rpc).not.toHaveBeenCalled();
+  });
+
+  it('rejects managed wildcard hostname lookalikes', async () => {
+    const response = await POST(
+      createRequest(
+        'https://vc.tuturuuu.com.evil.test/workspace/personal/plans',
+        { generateToken: false }
+      )
+    );
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual({
+      error: 'Invalid returnUrl',
+    });
+    expect(mocks.createClient).not.toHaveBeenCalled();
   });
 
   it('rejects Portless return URLs on arbitrary localhost ports', async () => {

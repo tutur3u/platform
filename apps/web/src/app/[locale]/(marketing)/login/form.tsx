@@ -60,6 +60,11 @@ import { DEV_MODE } from '@/constants/common';
 import { useAccountSwitcher } from '@/context/account-switcher-context';
 import { useCurrentUserProfile } from '@/hooks/use-current-user-profile';
 import {
+  isManagedTuturuuuHostname,
+  isRootTuturuuuHostname,
+  normalizeManagedTuturuuuReturnUrl,
+} from '@/lib/auth/managed-tuturuuu-return-url';
+import {
   AUTH_OAUTH_PROVIDERS,
   type AuthOAuthProvider,
   getAuthOAuthProviderOptions,
@@ -79,6 +84,7 @@ import {
 
 const CAPTCHA_ERROR_RETRY_DELAY = 3000;
 const INVALID_LOCAL_RETURN_URL = '__invalid_local_return_url__';
+const MANAGED_TUTURUUU_RETURN_APP = 'managed-tuturuuu';
 const VERIFY_TOKEN_FALLBACK_PATH = '/onboarding';
 const VERIFY_TOKEN_ROUTE_SEGMENT = 'verify-token';
 
@@ -179,6 +185,39 @@ function getPlatformVerifyTokenNextPath(redirectUrl: URL) {
   );
 }
 
+function isLoginPath(pathname: string) {
+  const pathSegments = pathname.split('/').filter(Boolean);
+
+  return pathSegments[pathSegments.length - 1] === 'login';
+}
+
+function buildManagedTuturuuuCurrentReturnUrl() {
+  try {
+    const currentUrl = new URL(window.location.href);
+
+    if (
+      !isManagedTuturuuuHostname(currentUrl.hostname) ||
+      isRootTuturuuuHostname(currentUrl.hostname)
+    ) {
+      return null;
+    }
+
+    const rawNextPath =
+      currentUrl.searchParams.get('nextUrl') ??
+      currentUrl.searchParams.get('next') ??
+      (isLoginPath(currentUrl.pathname)
+        ? '/'
+        : `${currentUrl.pathname}${currentUrl.search}`);
+    const nextPath = normalizeClientRedirectPath(rawNextPath, '/');
+
+    return normalizeManagedTuturuuuReturnUrl(
+      new URL(nextPath, currentUrl.origin).toString()
+    );
+  } catch {
+    return null;
+  }
+}
+
 type AuthStage = 'identify' | 'otp' | 'password';
 
 interface MobileMfaApprovalChallenge {
@@ -202,6 +241,17 @@ function getReturnAppName(returnApp: string | null) {
   if (returnApp === 'cms') return 'CMS';
   if (returnApp === 'inventory') return 'Inventory';
   return returnApp ?? 'the app';
+}
+
+function requiresAccountConfirmationForReturnApp(
+  returnApp: string | null,
+  isRegisteredInternalAppReturn: boolean
+) {
+  return Boolean(
+    returnApp &&
+      !['platform', 'web', MANAGED_TUTURUUU_RETURN_APP].includes(returnApp) &&
+      !isRegisteredInternalAppReturn
+  );
 }
 
 function SocialLogoMask({ src, alt }: { src: string; alt: string }) {
@@ -314,12 +364,14 @@ export default function LoginForm({
   const returnApp = staticReturnApp ?? resolvedReturnApp?.targetApp ?? null;
   const isResolvingReturnApp =
     shouldResolveReturnApp && isResolvingConfiguredReturnApp;
-  const isInternalAppReturn =
-    returnApp !== null && returnApp !== 'web' && returnApp !== 'platform';
   const isRegisteredInternalAppReturn =
     staticReturnApp !== null &&
     staticReturnApp !== 'web' &&
     staticReturnApp !== 'platform';
+  const requiresReturnAppConfirmation = requiresAccountConfirmationForReturnApp(
+    returnApp,
+    isRegisteredInternalAppReturn
+  );
   const returnAppName =
     resolvedReturnApp?.appName ?? getReturnAppName(returnApp);
 
@@ -431,12 +483,7 @@ export default function LoginForm({
   const oauthErrorToastKeyRef = useRef<string | null>(null);
   const captchaRefPassword = useRef<TurnstileInstance>(null);
   const currentUserProfileQuery = useCurrentUserProfile({
-    enabled: Boolean(
-      user &&
-        isInternalAppReturn &&
-        !isRegisteredInternalAppReturn &&
-        !requiresMFA
-    ),
+    enabled: Boolean(user && requiresReturnAppConfirmation && !requiresMFA),
     userId: user?.id,
   });
   const otpSettingsQuery = useQuery({
@@ -710,11 +757,12 @@ export default function LoginForm({
       return true;
     }
 
-    if (isRegisteredInternalAppReturn) {
-      return false;
-    }
-
-    if (!resolvedReturnApp || ['platform', 'web'].includes(resolvedReturnApp)) {
+    if (
+      !requiresAccountConfirmationForReturnApp(
+        resolvedReturnApp,
+        isRegisteredInternalAppReturn
+      )
+    ) {
       return false;
     }
 
@@ -1249,6 +1297,8 @@ export default function LoginForm({
     const returnUrl = searchParams.get('returnUrl');
     const nextUrl = searchParams.get('nextUrl');
     const multiAccount = searchParams.get('multiAccount');
+    const resolvedReturnUrl =
+      returnUrl ?? buildManagedTuturuuuCurrentReturnUrl();
     const redirectUrl = new URL(
       '/api/auth/callback',
       resolveAuthRedirectOrigin({
@@ -1256,8 +1306,8 @@ export default function LoginForm({
       })
     );
 
-    if (returnUrl) {
-      redirectUrl.searchParams.set('returnUrl', returnUrl);
+    if (resolvedReturnUrl) {
+      redirectUrl.searchParams.set('returnUrl', resolvedReturnUrl);
     }
 
     if (nextUrl) {
@@ -1496,7 +1546,7 @@ export default function LoginForm({
       }
 
       if (user && !requiresMFA) {
-        if (isInternalAppReturn && !isRegisteredInternalAppReturn) {
+        if (requiresReturnAppConfirmation) {
           setRedirectingAfterAuthState(false);
           setReadyForAuth(true);
           return;
@@ -1536,11 +1586,10 @@ export default function LoginForm({
   }, [
     hasActiveReturnUrlFailure,
     initialized,
-    isInternalAppReturn,
-    isRegisteredInternalAppReturn,
     isResolvingReturnApp,
     markReturnUrlValidationFailure,
     processNextUrl,
+    requiresReturnAppConfirmation,
     requiresMFA,
     searchParams,
     setRedirectingAfterAuthState,
@@ -1623,12 +1672,7 @@ export default function LoginForm({
     );
   }
 
-  if (
-    user &&
-    !requiresMFA &&
-    isInternalAppReturn &&
-    !isRegisteredInternalAppReturn
-  ) {
+  if (user && !requiresMFA && requiresReturnAppConfirmation) {
     const currentUserProfile = currentUserProfileQuery.data;
     const hasMatchingCurrentProfile = currentUserProfile?.id === user.id;
     const currentProfileIsLoading =

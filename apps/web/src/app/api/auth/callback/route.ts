@@ -11,6 +11,7 @@ import {
   getReturnUrlKind,
   logAuthDiagnostic,
 } from '@/lib/auth/diagnostics';
+import { normalizeManagedTuturuuuReturnUrl } from '@/lib/auth/managed-tuturuuu-return-url';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 const queryParamsSchema = z.object({
@@ -32,6 +33,7 @@ const queryParamsSchema = z.object({
  * - Relative paths (same origin)
  * - Same-origin absolute URLs
  * - Trusted internal app domains and registered external app origins
+ * - Managed *.tuturuuu.com URLs for temporary internal app subdomains
  */
 async function validateRedirectUrl(
   encodedUrl: string,
@@ -76,6 +78,16 @@ async function validateRedirectUrl(
           : canonicalUrl,
         isExternal: !(isSameOrigin || isSameApp),
         targetApp: isSameOrigin || isSameApp ? null : internalAppDomain.name,
+      };
+    }
+
+    const managedReturnUrl = normalizeManagedTuturuuuReturnUrl(decodedUrl);
+
+    if (managedReturnUrl) {
+      return {
+        url: managedReturnUrl,
+        isExternal: false,
+        targetApp: null,
       };
     }
 
