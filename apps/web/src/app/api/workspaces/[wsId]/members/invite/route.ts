@@ -4,8 +4,10 @@ import {
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import { MAX_EMAIL_LENGTH } from '@tuturuuu/utils/constants';
+import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { canCreateInvitation } from '@/utils/seat-limits';
 
 interface Params {
@@ -19,13 +21,24 @@ const InviteMemberSchema = z.object({
   memberType: z.enum(['MEMBER', 'GUEST']).optional().default('MEMBER'),
 });
 
+const DUPLICATE_INVITE_MESSAGE =
+  'User is already a member of this workspace or has a pending invite.';
+
+function isUniqueViolation(error: { code?: string; message?: string }) {
+  return (
+    error.code === '23505' ||
+    error.message?.toLowerCase().includes('duplicate key value') ||
+    error.message?.toLowerCase().includes('unique constraint')
+  );
+}
+
 // Helper to trigger immediate notification processing
 async function triggerImmediateNotification() {
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://tuturuuu.com';
   const cronSecret = process.env.CRON_SECRET;
 
   if (!cronSecret) {
-    console.warn(
+    serverLogger.warn(
       'CRON_SECRET not configured, skipping immediate notification trigger'
     );
     return;
@@ -40,25 +53,57 @@ async function triggerImmediateNotification() {
         Authorization: `Bearer ${cronSecret}`,
       },
       body: JSON.stringify({}),
-    }).catch((err) => {
-      console.error('Failed to trigger immediate notification:', err);
+    }).catch((error) => {
+      serverLogger.error('Failed to trigger immediate notification', {
+        error,
+      });
     });
   } catch (error) {
-    console.error('Error triggering immediate notification:', error);
+    serverLogger.error('Error triggering immediate notification', { error });
   }
 }
 
 export async function POST(req: Request, { params }: Params) {
   const supabase = await createClient(req);
+  const { wsId: requestedWsId } = await params;
+
+  const { user } = await resolveAuthenticatedSessionUser(supabase);
+
+  if (!user?.id) {
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  }
+
+  const permissions = await getPermissions({ request: req, wsId: requestedWsId });
+  if (
+    permissions?.membershipType !== 'MEMBER' ||
+    permissions.withoutPermission('manage_workspace_members')
+  ) {
+    return NextResponse.json(
+      { message: 'You do not have permission to invite workspace members.' },
+      { status: 403 }
+    );
+  }
+
+  const wsId = permissions.wsId;
   const sbAdmin = await createAdminClient();
-  const { wsId } = await params;
 
   // Block invitations to personal workspaces
-  const { data: wsData } = await supabase
+  const { data: wsData, error: workspaceError } = await sbAdmin
     .from('workspaces')
     .select('personal')
     .eq('id', wsId)
-    .single();
+    .maybeSingle();
+
+  if (workspaceError) {
+    serverLogger.error('Failed to verify workspace before inviting member', {
+      error: workspaceError,
+      wsId,
+    });
+    return NextResponse.json(
+      { message: 'Error inviting workspace member.' },
+      { status: 500 }
+    );
+  }
 
   if (wsData?.personal) {
     return NextResponse.json(
@@ -79,12 +124,30 @@ export async function POST(req: Request, { params }: Params) {
     );
   }
 
-  const { email, memberType } = payload;
+  const email = payload.email.trim().toLowerCase();
 
-  if (!email) {
+  const { data: disableInvite, error: disableInviteError } = await sbAdmin
+    .from('workspace_secrets')
+    .select('value')
+    .eq('ws_id', wsId)
+    .eq('name', 'DISABLE_INVITE')
+    .maybeSingle();
+
+  if (disableInviteError) {
+    serverLogger.error('Failed to verify workspace invite settings', {
+      error: disableInviteError,
+      wsId,
+    });
     return NextResponse.json(
-      { message: 'Email is required.' },
-      { status: 400 }
+      { message: 'Error inviting workspace member.' },
+      { status: 500 }
+    );
+  }
+
+  if (disableInvite) {
+    return NextResponse.json(
+      { message: 'Invitations are disabled for this workspace' },
+      { status: 403 }
     );
   }
 
@@ -101,22 +164,28 @@ export async function POST(req: Request, { params }: Params) {
     );
   }
 
-  const { user } = await resolveAuthenticatedSessionUser(supabase);
-
-  const { error } = await supabase.from('workspace_email_invites').insert({
+  const { error } = await sbAdmin.from('workspace_email_invites').insert({
     ws_id: wsId,
-    email: email.toLowerCase(),
-    invited_by: user?.id,
-    type: memberType,
+    email,
+    invited_by: user.id,
+    type: payload.memberType,
   });
 
   if (error) {
-    console.log(error);
+    if (isUniqueViolation(error)) {
+      return NextResponse.json(
+        { message: DUPLICATE_INVITE_MESSAGE },
+        { status: 409 }
+      );
+    }
+
+    serverLogger.error('Failed to invite workspace member', {
+      error,
+      wsId,
+    });
     return NextResponse.json(
       {
-        message: error.message.includes('duplicate key value')
-          ? 'User is already a member of this workspace or has a pending invite.'
-          : 'Error inviting workspace member.',
+        message: 'Error inviting workspace member.',
       },
       { status: 500 }
     );
