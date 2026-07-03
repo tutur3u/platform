@@ -143,8 +143,8 @@ These workflows:
   self-hosted machines own their own Docker `apps/web` runtime deployment
 - skip production push work when a newer commit already exists on the target
   branch
-- record a non-blocking GitHub Deployment marker after a successful Vercel
-  build or satellite deploy so the next production push can evaluate every
+- record non-blocking GitHub Deployment markers after successful Vercel preview
+  builds and production deploys so the next production push can evaluate every
   change since the last successful run
 
 The platform preview workflow can cross-credit a successful same-SHA production

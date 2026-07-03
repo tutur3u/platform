@@ -48,10 +48,7 @@ test('Vercel workflows grant marker permissions and record successful runs', () 
     } else if (workflowName === 'vercel-production-platform.yaml') {
       assert.match(workflow, /Record successful Vercel build marker/);
       assert.match(workflow, /VERCEL_MARKER_KIND: build/);
-      assert.doesNotMatch(
-        workflow,
-        /Record successful Vercel deployment marker/
-      );
+      assert.match(workflow, /Record successful Vercel deployment marker/);
       assert.doesNotMatch(workflow, /VERCEL_MARKER_KIND: deployment/);
       assert.match(
         workflow,
@@ -148,7 +145,7 @@ test('Platform Vercel workflows build local devbox dependency before Vercel buil
   }
 });
 
-test('Platform production build waits for release packages and records build marker', () => {
+test('Platform production build waits for release packages, deploys, and records markers', () => {
   const deployJob = readWorkflowJobBlock(
     'vercel-production-platform.yaml',
     'Deploy-Production'
@@ -156,14 +153,22 @@ test('Platform production build waits for release packages and records build mar
   const releaseGateIndex = deployJob.indexOf('Gate package release visibility');
   const installIndex = deployJob.indexOf('Install dependencies');
   const vercelBuildIndex = deployJob.indexOf('Build Project Artifacts');
+  const vercelDeployIndex = deployJob.indexOf(
+    'Deploy Project Artifacts to Vercel'
+  );
   const buildMarkerIndex = deployJob.indexOf(
     'Record successful Vercel build marker'
+  );
+  const deploymentMarkerIndex = deployJob.indexOf(
+    'Record successful Vercel deployment marker'
   );
 
   assert.notEqual(releaseGateIndex, -1);
   assert.notEqual(installIndex, -1);
   assert.notEqual(vercelBuildIndex, -1);
+  assert.notEqual(vercelDeployIndex, -1);
   assert.notEqual(buildMarkerIndex, -1);
+  assert.notEqual(deploymentMarkerIndex, -1);
   assert.ok(
     releaseGateIndex < installIndex,
     'platform production build must wait for package releases before installing dependencies'
@@ -173,8 +178,16 @@ test('Platform production build waits for release packages and records build mar
     'platform production build must wait for package releases before Vercel build'
   );
   assert.ok(
-    vercelBuildIndex < buildMarkerIndex,
-    'platform production build marker must be recorded after Vercel build'
+    vercelBuildIndex < vercelDeployIndex,
+    'platform production deploy must use artifacts built by Vercel build'
+  );
+  assert.ok(
+    vercelDeployIndex < buildMarkerIndex,
+    'platform production build marker must be recorded after Vercel deploy succeeds'
+  );
+  assert.ok(
+    buildMarkerIndex < deploymentMarkerIndex,
+    'platform production deployment marker must be recorded after the build marker'
   );
   assert.match(
     deployJob,
@@ -186,7 +199,7 @@ test('Platform production build waits for release packages and records build mar
   assert.doesNotMatch(deployJob, /TUTURUUU_NEXT_CACHE_COMPONENTS/);
   assert.match(deployJob, /actions:\s*write/);
   assert.match(deployJob, /GH_TOKEN: \$\{\{ github\.token \}\}/);
-  assert.doesNotMatch(
+  assert.match(
     deployJob,
     /vercel deploy --archive=tgz --prebuilt --prod --token=\$\{\{ secrets\.VERCEL_TOKEN \}\}/
   );

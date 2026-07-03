@@ -293,13 +293,13 @@ service mesh.
 
 ### Next.js apps: Vercel
 
-Each Next.js app deploys independently to Vercel. CI builds (and validates) each
-app; the actual production deploy is handled by Vercel's Git integration, not by a
-`vercel deploy` step in the workflow.
+Each Next.js app deploys independently to Vercel. CI builds the selected app,
+packages prebuilt artifacts, and deploys the production artifact through the
+matching GitHub Actions workflow.
 
 There is one Vercel workflow per app, named by product surface. For example,
 `vercel-production-platform.yaml` builds `apps/web` on pushes to the `production`
-branch (build-only — the `vercel deploy` step was intentionally removed):
+branch and deploys the prebuilt production artifact:
 
 ```yaml
 # .github/workflows/vercel-production-platform.yaml (abridged)
@@ -321,9 +321,10 @@ jobs:
         with:
           bun-version: 1.3.14
       - run: bash scripts/ci/run-with-backoff.sh bun install
-      # Pull env + build the Vercel artifact; deploy happens via Vercel Git integration.
+      # Pull env, build the Vercel artifact, and deploy the prebuilt output.
       - run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
       - run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
+      - run: vercel deploy --archive=tgz --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}
 ```
 
 Matching `vercel-preview-*.yaml` workflows run for pull requests. Node engines are
