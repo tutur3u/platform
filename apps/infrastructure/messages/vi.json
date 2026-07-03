@@ -8097,6 +8097,41 @@
       "workspaces": "không gian làm việc"
     }
   },
+  "infrastructure-navigation": {
+    "groups": {
+      "ai_operations": {
+        "description": "AI agent, tín dụng, điều khiển model gateway và quyền truy cập whitelist.",
+        "title": "Vận hành AI"
+      },
+      "communications": {
+        "description": "Kiểm tra email, mẫu, hàng đợi, danh sách chặn và gửi thông báo đẩy.",
+        "title": "Liên lạc"
+      },
+      "monitoring": {
+        "description": "Telemetry runtime, triển khai, sức khỏe cron, nhật ký và tài nguyên."
+      },
+      "operations": {
+        "description": "Ứng dụng ngoài, triển khai di động, devbox, di chuyển dữ liệu, điều phối ứng dụng và tích hợp."
+      },
+      "overview": {
+        "description": "Phân tích tổng quan và sức khỏe nền tảng cho không gian nội bộ."
+      },
+      "platform_admin": {
+        "description": "Người dùng, không gian làm việc, giới hạn, bản dịch, nhật ký thay đổi và dữ liệu tham chiếu nền tảng.",
+        "title": "Quản trị nền tảng"
+      },
+      "security": {
+        "description": "Tình báo lạm dụng, IP bị chặn, giới hạn tần suất, khôi phục xác thực và kiểm soát OTP.",
+        "title": "Bảo mật"
+      }
+    },
+    "items": {
+      "ai_whitelisted_domains": "Tên miền whitelist AI",
+      "calendar_sync": "Đồng bộ lịch",
+      "holidays": "Ngày lễ",
+      "monitoring_deployments": "Giai đoạn triển khai"
+    }
+  },
   "infrastructure-tabs": {
     "abuse_events": "Sự kiện lạm dụng",
     "abuse_intelligence": "Tình báo lạm dụng",

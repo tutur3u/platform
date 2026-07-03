@@ -8097,6 +8097,41 @@
       "workspaces": "workspaces"
     }
   },
+  "infrastructure-navigation": {
+    "groups": {
+      "ai_operations": {
+        "description": "AI agents, credits, model gateway controls, and whitelist access.",
+        "title": "AI Operations"
+      },
+      "communications": {
+        "description": "Email audit, templates, queues, blacklist controls, and push delivery.",
+        "title": "Communications"
+      },
+      "monitoring": {
+        "description": "Runtime telemetry, deployments, cron health, logs, and resources."
+      },
+      "operations": {
+        "description": "External apps, mobile deployment, devboxes, migrations, app coordination, and integrations."
+      },
+      "overview": {
+        "description": "High-level analytics and platform health for the internal workspace."
+      },
+      "platform_admin": {
+        "description": "Users, workspaces, limits, translations, changelog, and platform reference data.",
+        "title": "Platform Admin"
+      },
+      "security": {
+        "description": "Abuse intelligence, blocked IPs, rate limits, auth recovery, and OTP controls.",
+        "title": "Security"
+      }
+    },
+    "items": {
+      "ai_whitelisted_domains": "AI Whitelisted Domains",
+      "calendar_sync": "Calendar Sync",
+      "holidays": "Holidays",
+      "monitoring_deployments": "Deployment Stages"
+    }
+  },
   "infrastructure-tabs": {
     "abuse_events": "Abuse Events",
     "abuse_intelligence": "Abuse Intelligence",

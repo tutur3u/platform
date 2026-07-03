@@ -1,16 +1,28 @@
 import { getSatelliteAppSessionUser } from '@tuturuuu/satellite/auth';
+import { SidebarProvider } from '@tuturuuu/satellite/sidebar-context';
 import {
   getPendingWorkspaceInvitation,
   SatelliteWorkspaceInvitationCard,
 } from '@tuturuuu/satellite/workspace-invitation';
 import {
+  getSidebarBehaviorUpdatedAt,
+  getSidebarCollapsedState,
+  parseSidebarBehavior,
+} from '@tuturuuu/satellite/workspace-layout-helpers';
+import { RealtimeLogProvider } from '@tuturuuu/supabase/next/realtime-log-provider';
+import {
   ROOT_WORKSPACE_ID,
   resolveWorkspaceId,
+  toWorkspaceSlug,
 } from '@tuturuuu/utils/constants';
 import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
-import { headers } from 'next/headers';
+import { cookies, headers } from 'next/headers';
 import { notFound, redirect } from 'next/navigation';
-import type { ReactNode } from 'react';
+import { type ReactNode, Suspense } from 'react';
+import NavbarActions from '../../navbar-actions';
+import { UserNav } from '../../user-nav';
+import { getNavigationLinks } from './navigation';
+import { Structure } from './structure';
 
 interface LayoutProps {
   children: ReactNode;
@@ -61,9 +73,52 @@ export default async function Layout({ children, params }: LayoutProps) {
   if (!workspace) redirect('/onboarding');
   if (!workspace.joined) redirect('/');
 
+  const workspaceSlug = toWorkspaceSlug(workspace.id, {
+    personal: !!workspace.personal,
+  });
+  const cookieStore = await cookies();
+  const sidebarBehavior = parseSidebarBehavior(cookieStore);
+  const sidebarBehaviorUpdatedAt = getSidebarBehaviorUpdatedAt(cookieStore);
+  const defaultCollapsed = getSidebarCollapsedState(
+    cookieStore,
+    sidebarBehavior
+  );
+
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-7xl flex-col gap-8 px-4 py-6 sm:px-6 lg:px-8">
-      {children}
-    </main>
+    <SidebarProvider
+      initialBehavior={sidebarBehavior}
+      initialBehaviorUpdatedAt={sidebarBehaviorUpdatedAt}
+    >
+      <Structure
+        actions={
+          <Suspense
+            key={user.id}
+            fallback={
+              <div className="h-10 w-22 animate-pulse rounded-lg bg-foreground/5" />
+            }
+          >
+            <NavbarActions />
+          </Suspense>
+        }
+        defaultCollapsed={defaultCollapsed}
+        links={await getNavigationLinks({ personalOrWsId: workspaceSlug })}
+        userPopover={
+          <Suspense
+            key={user.id}
+            fallback={
+              <div className="h-10 w-10 animate-pulse rounded-lg bg-foreground/5" />
+            }
+          >
+            <UserNav hideMetadata />
+          </Suspense>
+        }
+        workspace={workspace}
+        wsId={workspaceSlug}
+      >
+        <RealtimeLogProvider wsId={workspace.id}>
+          {children}
+        </RealtimeLogProvider>
+      </Structure>
+    </SidebarProvider>
   );
 }

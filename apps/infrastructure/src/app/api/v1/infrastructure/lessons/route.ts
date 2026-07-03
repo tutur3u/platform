@@ -1,8 +1,19 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
+import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 export async function GET(req: Request) {
+  const permissions = await getPermissions({
+    request: req,
+    wsId: ROOT_WORKSPACE_ID,
+  });
+
+  if (!permissions?.containsPermission('view_infrastructure')) {
+    return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
+  }
+
   const sbAdmin = await createAdminClient();
 
   const { searchParams } = new URL(req.url);

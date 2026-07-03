@@ -23,9 +23,17 @@ vi.mock('next/navigation', () => ({
   })),
 }));
 
-vi.mock('next-intl', () => ({
-  NextIntlClientProvider: ({ children }: { children: ReactNode }) => (
-    <section data-testid="intl-provider">{children}</section>
+vi.mock('@/components/providers', () => ({
+  Providers: ({
+    appName,
+    children,
+  }: {
+    appName: string;
+    children: ReactNode;
+  }) => (
+    <section data-app-name={appName} data-testid="satellite-provider">
+      {children}
+    </section>
   ),
 }));
 
@@ -70,7 +78,7 @@ describe('Infrastructure locale layout', () => {
     vi.clearAllMocks();
   });
 
-  it('provides next-intl context to authenticated dashboard client components', async () => {
+  it('mounts the shared satellite provider for dashboard client components', async () => {
     const Layout = (await import('./layout')).default;
 
     const result = await Layout({
@@ -81,7 +89,11 @@ describe('Infrastructure locale layout', () => {
     render(result);
 
     expect(mocks.setRequestLocale).toHaveBeenCalledWith('en');
-    expect(screen.getByTestId('intl-provider')).toHaveTextContent(
+    expect(screen.getByTestId('satellite-provider')).toHaveAttribute(
+      'data-app-name',
+      'Tuturuuu Infra'
+    );
+    expect(screen.getByTestId('satellite-provider')).toHaveTextContent(
       'dashboard child'
     );
   });
