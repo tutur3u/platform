@@ -1,7 +1,7 @@
 ---
 title: "Calendar"
 description: "Shared Calendar product surface across apps/web and apps/calendar."
-updatedAt: "2026-06-23"
+updatedAt: "2026-07-03"
 ---
 
 ## Overview
@@ -106,6 +106,22 @@ inside its settings dialog under Calendar -> Integrations. It should fetch the
 initial connection state through `@tuturuuu/internal-api/calendar` and render the
 shared Calendar connections UI inside `CalendarSyncProvider` rather than
 forking host-local connection controls.
+
+## CI And Deployment
+
+Calendar deploys through dedicated GitHub Actions workflows, not Vercel-owned
+GitHub auto-builds:
+
+- Preview deployments use `.github/workflows/vercel-preview-calendar.yaml`.
+- Production deployments use `.github/workflows/vercel-production-calendar.yaml`.
+- The Vercel project id is provided through the environment-scoped
+  `VERCEL_CALENDAR_PROJECT_ID` secret.
+- `apps/calendar/vercel.json` must keep `git.deploymentEnabled` and
+  `github.enabled` set to `false` so GitHub Actions builds with `vercel build`
+  and deploys prebuilt artifacts with `vercel deploy --prebuilt`.
+
+Keep Calendar cron definitions in `apps/calendar/vercel.json`; disabling Vercel
+GitHub builds must not remove the app-owned cron schedules.
 
 ## Provider Sync
 
