@@ -242,7 +242,7 @@ const landingRoutes =
 const qrAppRedirectLocation =
   /^https:\/\/(?:[a-z0-9-]+\.)?qr\.tuturuuu\.localhost(?::\d+)?\/\?utm_source=e2e&tag=a&tag=b$/u;
 const toolsAppRandomRedirectLocation =
-  /^https:\/\/(?:[a-z0-9-]+\.)?tools\.tuturuuu\.localhost(?::\d+)?\/random\?utm_source=e2e&tag=a&tag=b$/u;
+  /^https:\/\/(?:(?:[a-z0-9-]+\.)?tools\.tuturuuu\.localhost(?::\d+)?|tools\.tuturuuu\.com)\/random\?utm_source=e2e&tag=a&tag=b$/u;
 
 const redirects = [
   {
