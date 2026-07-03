@@ -43,6 +43,7 @@ import { NextResponse } from 'next/server';
 import createIntlMiddleware from 'next-intl/middleware';
 import { BASE_URL, LOCALE_COOKIE_NAME, PUBLIC_PATHS } from './constants/common';
 import { defaultLocale, type Locale, supportedLocales } from './i18n/routing';
+import { getMailAppOrigin } from './lib/mail-app-url';
 import { getQrAppOrigin } from './lib/qr-app-url';
 import {
   getWorkspaceRoutePermissionRequirements,
@@ -111,7 +112,7 @@ const BROWSER_STATE_RECOVERY_PATH = '/~recover-browser-state';
 const RESERVED_ROOT_SEGMENT_PREFIX = '~';
 const BLOCKED_ROOT_SEGMENT_PREFIX = '.';
 const EMAIL_ROUTE_WORKSPACE_PATTERN =
-  /^\/api\/v1\/workspaces\/([^/]+)\/(?:mail\/send|users\/[^/]+\/follow-up|user-groups\/[^/]+\/group-checks\/[^/]+\/email)(?:\/|$)/;
+  /^\/api\/v1\/workspaces\/([^/]+)\/(?:users\/[^/]+\/follow-up|user-groups\/[^/]+\/group-checks\/[^/]+\/email)(?:\/|$)/;
 const EMAIL_RATE_LIMIT_OVERRIDE_SECRET_NAMES = [
   'EMAIL_RATE_LIMIT_MINUTE',
   'EMAIL_RATE_LIMIT_HOUR',
@@ -269,6 +270,36 @@ function redirectToPath(req: NextRequest, pathname: string) {
 
 function redirectToQrApp(req: NextRequest) {
   const redirectUrl = new URL(getQrAppOrigin());
+  redirectUrl.search = req.nextUrl.search;
+
+  return NextResponse.redirect(redirectUrl);
+}
+
+function handleMailAppRedirectRoute(req: NextRequest): NextResponse | null {
+  const pathSegments = req.nextUrl.pathname.split('/').filter(Boolean);
+  const hasLocale =
+    pathSegments[0] && supportedLocales.includes(pathSegments[0] as Locale);
+  const workspaceIndex = hasLocale ? 1 : 0;
+  const workspaceSlug = pathSegments[workspaceIndex];
+
+  if (!workspaceSlug || pathSegments[workspaceIndex + 1] !== 'mail') {
+    return null;
+  }
+
+  const normalizedWorkspaceSlug = workspaceSlug.toLowerCase();
+  const isWorkspaceRoute =
+    normalizedWorkspaceSlug === PERSONAL_WORKSPACE_SLUG ||
+    normalizedWorkspaceSlug === INTERNAL_WORKSPACE_SLUG ||
+    normalizedWorkspaceSlug === ROOT_WORKSPACE_ID.toLowerCase() ||
+    isWorkspaceUuidLiteral(workspaceSlug);
+
+  if (!isWorkspaceRoute) {
+    return null;
+  }
+
+  const mailSuffixSegments = pathSegments.slice(workspaceIndex + 2);
+  const redirectUrl = new URL(getMailAppOrigin());
+  redirectUrl.pathname = ['', workspaceSlug, ...mailSuffixSegments].join('/');
   redirectUrl.search = req.nextUrl.search;
 
   return NextResponse.redirect(redirectUrl);
@@ -1144,6 +1175,11 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
     handlePublicMarketingRedirectRoute(req);
   if (publicMarketingRedirectResponse) {
     return publicMarketingRedirectResponse;
+  }
+
+  const mailAppRedirectResponse = handleMailAppRedirectRoute(req);
+  if (mailAppRedirectResponse) {
+    return mailAppRedirectResponse;
   }
 
   // Handle authentication and MFA with the centralized middleware

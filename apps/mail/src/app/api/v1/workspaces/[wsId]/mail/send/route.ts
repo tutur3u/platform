@@ -6,10 +6,10 @@ import {
 } from '@tuturuuu/utils/abuse-protection';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { isValidTuturuuuEmail } from '@tuturuuu/utils/email/client';
-import { difference } from 'lodash';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { DEV_MODE } from '@/constants/common';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 type ServerDOMPurify = {
   sanitize(dirty: string, config?: unknown): string;
@@ -19,6 +19,14 @@ const ISOMORPHIC_DOMPURIFY_MODULE = 'isomorphic-dompurify';
 
 async function loadServerDOMPurify(): Promise<ServerDOMPurify> {
   return (await import(ISOMORPHIC_DOMPURIFY_MODULE)).default as ServerDOMPurify;
+}
+
+function getDisallowedRecipients(
+  recipients: string[],
+  allowedEmails: string[]
+) {
+  const allowed = new Set(allowedEmails);
+  return recipients.filter((recipient) => !allowed.has(recipient));
 }
 
 export async function POST(
@@ -46,7 +54,6 @@ export async function POST(
   } = await req.json();
 
   if (!data?.mail?.to || !data?.mail?.subject || !data?.mail?.content) {
-    console.log('Invalid request body');
     return NextResponse.json(
       { message: 'Invalid request body' },
       { status: 400 }
@@ -58,7 +65,6 @@ export async function POST(
     data.mail.cc?.length === 0 &&
     data.mail.bcc?.length === 0
   ) {
-    console.log('No recipients specified');
     return NextResponse.json(
       { message: 'No recipients specified' },
       { status: 400 }
@@ -66,7 +72,6 @@ export async function POST(
   }
 
   if (!data.config?.accessKeyId || !data.config?.accessKeySecret) {
-    console.log('Missing email configuration');
     return NextResponse.json(
       { message: 'Missing email configuration' },
       { status: 400 }
@@ -107,12 +112,14 @@ export async function POST(
     .single();
 
   if (apiKeyError) {
-    console.error('Error fetching API key:', apiKeyError);
+    serverLogger.warn('Error fetching internal email API key', {
+      error: apiKeyError,
+      wsId,
+    });
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
   if (!apiKey) {
-    console.error('Invalid API key');
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
@@ -123,35 +130,41 @@ export async function POST(
     .single();
 
   if (apiKeyUserError || !apiKeyUser) {
-    console.error('Error fetching API key user:', apiKeyUserError);
+    serverLogger.warn('Error fetching internal email API key user', {
+      error: apiKeyUserError,
+      wsId,
+    });
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
   const userEmail = apiKeyUser.email;
   if (!userEmail || !isValidTuturuuuEmail(userEmail)) {
-    console.error('User is not using a valid Tuturuuu email');
     return NextResponse.json(
       { message: 'Only Tuturuuu emails are allowed' },
       { status: 401 }
     );
   }
 
-  if (
-    apiKey.allowed_emails &&
-    difference(
-      [...data.mail.to, ...(data.mail.cc || []), ...(data.mail.bcc || [])],
-      apiKey.allowed_emails
-    ).length > 0
-  ) {
-    console.error(
-      'Email not allowed',
-      { to: data.mail.to, cc: data.mail.cc, bcc: data.mail.bcc },
-      apiKey.allowed_emails,
-      difference(
-        [...data.mail.to, ...(data.mail.cc || []), ...(data.mail.bcc || [])],
-        apiKey.allowed_emails
-      )
-    );
+  const recipients = [
+    ...data.mail.to,
+    ...(data.mail.cc || []),
+    ...(data.mail.bcc || []),
+  ];
+  const disallowedRecipients = apiKey.allowed_emails
+    ? getDisallowedRecipients(recipients, apiKey.allowed_emails)
+    : [];
+
+  if (apiKey.allowed_emails && disallowedRecipients.length > 0) {
+    serverLogger.warn('Internal email recipient not allowed', {
+      allowedEmails: apiKey.allowed_emails,
+      requestedEmails: {
+        bcc: data.mail.bcc,
+        cc: data.mail.cc,
+        to: data.mail.to,
+      },
+      rejectedEmails: disallowedRecipients,
+      wsId,
+    });
     return NextResponse.json({ message: 'Email not allowed' }, { status: 400 });
   }
 
@@ -193,10 +206,16 @@ export async function POST(
 
       // Check if all recipients were blocked
       if (result.blockedRecipients && result.blockedRecipients.length > 0) {
-        console.log('Some recipients were blocked:', result.blockedRecipients);
+        serverLogger.warn('Some internal email recipients were blocked', {
+          blockedRecipients: result.blockedRecipients,
+          wsId,
+        });
       }
 
-      console.error('Email sending failed:', result.error);
+      serverLogger.error('Internal email sending failed', {
+        error: result.error,
+        wsId,
+      });
       return NextResponse.json(
         { message: result.error || 'Failed to send email' },
         { status: 500 }
@@ -225,7 +244,10 @@ export async function POST(
       .single();
 
     if (error) {
-      console.error('Error logging sent email:', error);
+      serverLogger.warn('Error logging sent internal email', {
+        error,
+        wsId,
+      });
       // Don't fail the request - email was already sent
     }
 
@@ -243,7 +265,7 @@ export async function POST(
       { status: 200 }
     );
   } catch (error) {
-    console.error('Error sending email:', error);
+    serverLogger.error('Error sending internal email', { error, wsId });
     return NextResponse.json(
       { message: 'Internal server error' },
       { status: 500 }

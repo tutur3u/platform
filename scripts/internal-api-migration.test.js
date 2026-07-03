@@ -35,7 +35,7 @@ test('migrated shared hooks no longer import the deprecated Supabase browser cli
     'apps/web/src/lib/calendar-preferences-settings-bridge.tsx',
     'apps/tanstack-web/src/components/inventory/promotions/settings-form.tsx',
     'apps/web/src/app/[locale]/(dashboard)/[wsId]/posts/filters.tsx',
-    'apps/web/src/app/[locale]/(dashboard)/[wsId]/mail/client.tsx',
+    'apps/mail/src/app/[locale]/(dashboard)/[wsId]/mail-client.tsx',
     'apps/web/src/app/[locale]/(dashboard)/[wsId]/(dashboard)/permission-setup-banner.tsx',
     'apps/web/src/app/[locale]/(dashboard)/[wsId]/(dashboard)/components/mira-model-selector/use-mira-model-selector-data.ts',
     'apps/web/src/app/[locale]/(dashboard)/[wsId]/education/quiz-sets/[setId]/linked-modules/linker.tsx',

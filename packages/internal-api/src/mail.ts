@@ -4,6 +4,7 @@ import {
   getInternalApiClient,
   type InternalApiClientOptions,
   type InternalApiQueryValue,
+  withMailApiBaseUrl,
 } from './client';
 
 export type MailMailboxRole = 'admin' | 'owner' | 'sender' | 'viewer';
@@ -181,12 +182,13 @@ export async function listWorkspaceEmails(
   query?: { page?: number; pageSize?: number },
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withMailApiBaseUrl(options));
   const payload = await client.json<{ emails: InternalEmail[] }>(
     workspaceMailPath(workspaceId),
     {
       query,
       cache: 'no-store',
+      credentials: 'include',
     }
   );
 
@@ -197,11 +199,12 @@ export async function getMailBootstrap(
   workspaceId: string,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withMailApiBaseUrl(options));
   return client.json<MailBootstrapResponse>(
     workspaceMailPath(workspaceId, '/bootstrap'),
     {
       cache: 'no-store',
+      credentials: 'include',
     }
   );
 }
@@ -212,11 +215,12 @@ export async function listMailMessages(
   params?: ListMailMessagesParams,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withMailApiBaseUrl(options));
   return client.json<MailMessagesResponse>(
     mailboxPath(workspaceId, mailboxId, '/messages'),
     {
       cache: 'no-store',
+      credentials: 'include',
       query: normalizeMessagesQuery(params),
     }
   );
@@ -228,7 +232,7 @@ export async function getMailMessage(
   messageId: string,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withMailApiBaseUrl(options));
   return client.json<MailMessageDetail>(
     mailboxPath(
       workspaceId,
@@ -237,6 +241,7 @@ export async function getMailMessage(
     ),
     {
       cache: 'no-store',
+      credentials: 'include',
     }
   );
 }
@@ -247,12 +252,13 @@ export async function createMailDraft(
   payload: CreateMailDraftPayload,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withMailApiBaseUrl(options));
   return client.json<MailMutationResponse>(
     mailboxPath(workspaceId, mailboxId, '/drafts'),
     {
       body: JSON.stringify(payload),
       cache: 'no-store',
+      credentials: 'include',
       headers: jsonHeaders(),
       method: 'POST',
     }
@@ -266,7 +272,7 @@ export async function updateMailDraft(
   payload: UpdateMailDraftPayload,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withMailApiBaseUrl(options));
   return client.json<MailMutationResponse>(
     mailboxPath(
       workspaceId,
@@ -276,6 +282,7 @@ export async function updateMailDraft(
     {
       body: JSON.stringify(payload),
       cache: 'no-store',
+      credentials: 'include',
       headers: jsonHeaders(),
       method: 'PATCH',
     }
@@ -288,7 +295,7 @@ export async function deleteMailDraft(
   draftId: string,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withMailApiBaseUrl(options));
   return client.json<void>(
     mailboxPath(
       workspaceId,
@@ -297,6 +304,7 @@ export async function deleteMailDraft(
     ),
     {
       cache: 'no-store',
+      credentials: 'include',
       method: 'DELETE',
     }
   );
@@ -308,12 +316,13 @@ export async function sendMailMessage(
   payload: SendMailMessagePayload,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withMailApiBaseUrl(options));
   return client.json<MailMutationResponse>(
     mailboxPath(workspaceId, mailboxId, '/messages'),
     {
       body: JSON.stringify(payload),
       cache: 'no-store',
+      credentials: 'include',
       headers: jsonHeaders(),
       method: 'POST',
     }
@@ -327,7 +336,7 @@ export async function updateMailMessageState(
   payload: UpdateMailMessageStatePayload,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withMailApiBaseUrl(options));
   return client.json<MailMutationResponse>(
     mailboxPath(
       workspaceId,
@@ -337,6 +346,7 @@ export async function updateMailMessageState(
     {
       body: JSON.stringify(payload),
       cache: 'no-store',
+      credentials: 'include',
       headers: jsonHeaders(),
       method: 'PATCH',
     }
@@ -348,11 +358,12 @@ export async function listMailMailboxMembers(
   mailboxId: string,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withMailApiBaseUrl(options));
   return client.json<{ members: MailMailboxMember[] }>(
     mailboxPath(workspaceId, mailboxId, '/members'),
     {
       cache: 'no-store',
+      credentials: 'include',
     }
   );
 }
@@ -363,12 +374,13 @@ export async function upsertMailMailboxMember(
   payload: UpsertMailMailboxMemberPayload,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withMailApiBaseUrl(options));
   return client.json<{ member: MailMailboxMember }>(
     mailboxPath(workspaceId, mailboxId, '/members'),
     {
       body: JSON.stringify(payload),
       cache: 'no-store',
+      credentials: 'include',
       headers: jsonHeaders(),
       method: 'POST',
     }
@@ -381,7 +393,7 @@ export async function removeMailMailboxMember(
   userId: string,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withMailApiBaseUrl(options));
   return client.json<void>(
     mailboxPath(
       workspaceId,
@@ -390,6 +402,7 @@ export async function removeMailMailboxMember(
     ),
     {
       cache: 'no-store',
+      credentials: 'include',
       method: 'DELETE',
     }
   );

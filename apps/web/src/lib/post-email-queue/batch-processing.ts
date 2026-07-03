@@ -3,7 +3,7 @@ import { EmailService } from '@tuturuuu/email-service';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase';
 import type { Database } from '@tuturuuu/types/db';
 import dayjs from 'dayjs';
-import PostEmailTemplate from '@/app/[locale]/(dashboard)/[wsId]/mail/default-email-template';
+import PostEmailTemplate from '@/components/email/templates/default-email-template';
 import { preloadBlockedEmailCache } from '@/lib/email-blacklist';
 import { createEmailUnsubscribeUrl } from '@/lib/email-unsubscribe';
 import { serverLogger } from '@/lib/infrastructure/log-drain';

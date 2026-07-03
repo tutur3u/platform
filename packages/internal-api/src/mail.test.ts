@@ -15,6 +15,27 @@ function jsonResponse(payload: unknown) {
 }
 
 describe('mail internal API helpers', () => {
+  it('defaults mail helpers to the configured mail app origin outside apps/mail', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(jsonResponse({ labels: [], mailboxes: [], user: {} }));
+
+    vi.stubEnv('MAIL_APP_URL', 'https://mail.example.com');
+
+    try {
+      await getMailBootstrap('personal', {
+        fetch: fetchMock as unknown as typeof fetch,
+      });
+    } finally {
+      vi.unstubAllEnvs();
+    }
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://mail.example.com/api/v1/workspaces/personal/mail/bootstrap',
+      expect.objectContaining({ cache: 'no-store' })
+    );
+  });
+
   it('fetches bootstrap through the workspace mail API with cache bypass', async () => {
     const fetchMock = vi
       .fn()

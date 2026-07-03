@@ -214,6 +214,10 @@ export function getConfiguredInternalApiBaseUrl() {
 }
 
 function isTasksAppRuntime() {
+  if (typeof process === 'undefined') {
+    return false;
+  }
+
   const packageName = process.env.npm_package_name;
   if (packageName === '@tuturuuu/tasks') {
     return true;
@@ -221,6 +225,23 @@ function isTasksAppRuntime() {
 
   try {
     return process.cwd().replace(/\\/gu, '/').endsWith('/apps/tasks');
+  } catch {
+    return false;
+  }
+}
+
+function isMailAppRuntime() {
+  if (typeof process === 'undefined') {
+    return false;
+  }
+
+  const packageName = process.env.npm_package_name;
+  if (packageName === '@tuturuuu/mail') {
+    return true;
+  }
+
+  try {
+    return process.cwd().replace(/\\/gu, '/').endsWith('/apps/mail');
   } catch {
     return false;
   }
@@ -249,6 +270,30 @@ export function withTaskApiBaseUrl(
   return {
     ...options,
     baseUrl: getConfiguredTasksApiBaseUrl(),
+  };
+}
+
+export function getConfiguredMailApiBaseUrl() {
+  return normalizeBaseUrl(
+    resolveConfiguredOrigin(process.env.MAIL_APP_URL) ||
+      resolveConfiguredOrigin(process.env.NEXT_PUBLIC_MAIL_APP_URL) ||
+      resolveConfiguredOrigin(process.env.TUTURUUU_MAIL_BASE_URL) ||
+      (isProductionDeployment()
+        ? 'https://mail.tuturuuu.com'
+        : 'https://mail.tuturuuu.localhost')
+  );
+}
+
+export function withMailApiBaseUrl(
+  options: InternalApiClientOptions = {}
+): InternalApiClientOptions {
+  if (options.baseUrl || isMailAppRuntime()) {
+    return options;
+  }
+
+  return {
+    ...options,
+    baseUrl: getConfiguredMailApiBaseUrl(),
   };
 }
 
@@ -484,6 +529,13 @@ export function withForwardedInternalApiAuth(
   );
   if (configuredTasksBaseUrl) {
     allowedOrigins.add(configuredTasksBaseUrl.origin);
+  }
+
+  const configuredMailBaseUrl = tryParseAbsoluteUrl(
+    getConfiguredMailApiBaseUrl()
+  );
+  if (configuredMailBaseUrl) {
+    allowedOrigins.add(configuredMailBaseUrl.origin);
   }
 
   const targetOrigin =

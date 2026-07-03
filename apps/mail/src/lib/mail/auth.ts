@@ -1,3 +1,15 @@
+import {
+  attachSupabaseAuthUser,
+  createAppSessionUser,
+  verifyAppSessionRequest,
+} from '@tuturuuu/auth/app-session';
+import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
+import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
+import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { isExactTuturuuuDotComEmail } from '@tuturuuu/utils/email/client';
 import {
   normalizeWorkspaceId,
@@ -5,12 +17,52 @@ import {
 } from '@tuturuuu/utils/workspace-helper';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
-import { resolveSessionAuthContext } from '@/lib/api-auth';
 import type { MailRouteContext } from './types';
 
 export const MAIL_APP_SESSION_AUTH = {
   targetApp: ['mail', 'platform'],
 } as const;
+
+type ResolvedMailAuth =
+  | {
+      response: NextResponse;
+    }
+  | {
+      supabase: TypedSupabaseClient;
+      user: SupabaseUser;
+    };
+
+async function resolveMailAuth(
+  request: NextRequest
+): Promise<ResolvedMailAuth> {
+  const supabase = await createClient(request);
+  const { authError, user } = await resolveAuthenticatedSessionUser(supabase);
+
+  if (user) {
+    return { supabase, user };
+  }
+
+  const verification = verifyAppSessionRequest(request, MAIL_APP_SESSION_AUTH);
+
+  if (!verification.ok) {
+    return {
+      response: NextResponse.json(
+        { message: authError?.message ?? verification.error ?? 'Unauthorized' },
+        { status: 401 }
+      ),
+    };
+  }
+
+  const appSessionUser = createAppSessionUser(verification.claims);
+  const adminSupabase = (await createAdminClient({
+    noCookie: true,
+  })) as TypedSupabaseClient;
+
+  return {
+    supabase: attachSupabaseAuthUser(adminSupabase, appSessionUser),
+    user: appSessionUser,
+  };
+}
 
 export async function resolveMailRouteContext(
   request: NextRequest,
@@ -25,11 +77,9 @@ export async function resolveMailRouteContext(
       response: NextResponse;
     }
 > {
-  const auth = await resolveSessionAuthContext(request, {
-    allowAppSessionAuth: MAIL_APP_SESSION_AUTH,
-  });
+  const auth = await resolveMailAuth(request);
 
-  if (!auth.ok) {
+  if ('response' in auth) {
     return { ok: false, response: auth.response };
   }
 

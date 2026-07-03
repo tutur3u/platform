@@ -504,13 +504,16 @@ describe('web proxy api handling', () => {
 
     const { proxy } = await import('../proxy');
     const response = await proxy(
-      new NextRequest('http://localhost/api/v1/workspaces/~/mail/send', {
-        method: 'POST',
-        body: '{}',
-        headers: {
-          'user-agent': 'Mozilla/5.0',
-        },
-      })
+      new NextRequest(
+        'http://localhost/api/v1/workspaces/~/users/user-1/follow-up',
+        {
+          method: 'POST',
+          body: '{}',
+          headers: {
+            'user-agent': 'Mozilla/5.0',
+          },
+        }
+      )
     );
 
     expect(response.status).toBe(200);
@@ -523,13 +526,16 @@ describe('web proxy api handling', () => {
 
     const { proxy } = await import('../proxy');
     const response = await proxy(
-      new NextRequest('http://localhost/api/v1/workspaces/[locale]/mail/send', {
-        method: 'POST',
-        body: '{}',
-        headers: {
-          'user-agent': 'Mozilla/5.0',
-        },
-      })
+      new NextRequest(
+        'http://localhost/api/v1/workspaces/[locale]/users/user-1/follow-up',
+        {
+          method: 'POST',
+          body: '{}',
+          headers: {
+            'user-agent': 'Mozilla/5.0',
+          },
+        }
+      )
     );
 
     expect(response.status).toBe(200);
@@ -562,19 +568,17 @@ describe('web proxy api handling', () => {
 
     const workspaceId = '00000000-0000-4000-8000-000000000123';
     const { proxy } = await import('../proxy');
+    const emailRoute = `/api/v1/workspaces/${workspaceId}/user-groups/group-1/group-checks/post-1/email`;
     const response = await proxy(
-      new NextRequest(
-        `http://localhost/api/v1/workspaces/${workspaceId}/mail/send`,
-        {
-          method: 'POST',
-          body: '{}',
-          headers: {
-            'content-length': `${600 * 1024}`,
-            'content-type': 'application/json',
-            'user-agent': 'Mozilla/5.0',
-          },
-        }
-      )
+      new NextRequest(`http://localhost${emailRoute}`, {
+        method: 'POST',
+        body: '{}',
+        headers: {
+          'content-length': `${600 * 1024}`,
+          'content-type': 'application/json',
+          'user-agent': 'Mozilla/5.0',
+        },
+      })
     );
 
     expect(response).toBe(guardResponse);
@@ -612,10 +616,7 @@ describe('web proxy api handling', () => {
     );
     expect(
       options?.additionalRoutePolicies?.[0]?.matches(
-        new NextRequest(
-          `http://localhost/api/v1/workspaces/${workspaceId}/mail/send`,
-          { method: 'POST' }
-        )
+        new NextRequest(`http://localhost${emailRoute}`, { method: 'POST' })
       )
     ).toBe(true);
     expect(mocks.authProxy).not.toHaveBeenCalled();
@@ -1105,6 +1106,22 @@ describe('web proxy api handling', () => {
 
     expect(response.status).toBe(307);
     expect(response.headers.get('location')).toBe(expectedLocation);
+    expect(mocks.guardApiProxyRequest).not.toHaveBeenCalled();
+    expect(mocks.authProxy).not.toHaveBeenCalled();
+  });
+
+  it('redirects old workspace mail dashboard routes to the mail app before auth', async () => {
+    const { proxy } = await import('../proxy');
+    const response = await proxy(
+      new NextRequest(
+        'http://localhost/en/personal/mail/sent?mailbox=mailbox-1'
+      )
+    );
+
+    expect(response.status).toBe(307);
+    expect(response.headers.get('location')).toBe(
+      'https://mail.tuturuuu.localhost/personal/sent?mailbox=mailbox-1'
+    );
     expect(mocks.guardApiProxyRequest).not.toHaveBeenCalled();
     expect(mocks.authProxy).not.toHaveBeenCalled();
   });

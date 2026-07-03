@@ -6,12 +6,12 @@
         "acceptedRemoval": 17,
         "key": "api",
         "label": "api",
-        "legacyNext": 662,
+        "legacyNext": 650,
         "migrated": 77,
-        "percentComplete": 12.43,
-        "remaining": 662,
+        "percentComplete": 12.63,
+        "remaining": 650,
         "terminal": 94,
-        "total": 756,
+        "total": 744,
         "unknownStatus": 0
       },
       {
@@ -19,23 +19,23 @@
         "key": "page",
         "label": "page",
         "legacyNext": 66,
-        "migrated": 162,
-        "percentComplete": 71.3,
+        "migrated": 160,
+        "percentComplete": 71.05,
         "remaining": 66,
-        "terminal": 164,
-        "total": 230,
+        "terminal": 162,
+        "total": 228,
         "unknownStatus": 0
       },
       {
-        "acceptedRemoval": 1,
+        "acceptedRemoval": 0,
         "key": "layout",
         "label": "layout",
         "legacyNext": 12,
         "migrated": 48,
-        "percentComplete": 80.33,
+        "percentComplete": 80,
         "remaining": 12,
-        "terminal": 49,
-        "total": 61,
+        "terminal": 48,
+        "total": 60,
         "unknownStatus": 0
       },
       {
@@ -116,24 +116,24 @@
         "acceptedRemoval": 17,
         "key": "rust-backend",
         "label": "Rust backend",
-        "legacyNext": 674,
+        "legacyNext": 662,
         "migrated": 82,
-        "percentComplete": 12.81,
-        "remaining": 674,
+        "percentComplete": 13.01,
+        "remaining": 662,
         "terminal": 99,
-        "total": 773,
+        "total": 761,
         "unknownStatus": 0
       },
       {
-        "acceptedRemoval": 3,
+        "acceptedRemoval": 2,
         "key": "tanstack-start",
         "label": "TanStack Start",
         "legacyNext": 78,
-        "migrated": 214,
-        "percentComplete": 73.56,
+        "migrated": 212,
+        "percentComplete": 73.29,
         "remaining": 78,
-        "terminal": 217,
-        "total": 295,
+        "terminal": 214,
+        "total": 292,
         "unknownStatus": 0
       }
     ],
@@ -249,15 +249,6 @@
       {
         "kind": "api",
         "methods": ["POST"],
-        "routePath": "/api/ai/email-draft",
-        "sourceFile": "apps/web/src/app/api/ai/email-draft/route.ts",
-        "status": "legacy-next",
-        "targetOwner": "rust-backend",
-        "id": "api:/api/ai/email-draft:apps/web/src/app/api/ai/email-draft/route.ts"
-      },
-      {
-        "kind": "api",
-        "methods": ["POST"],
         "routePath": "/api/ai/executions",
         "sourceFile": "apps/web/src/app/api/ai/executions/route.ts",
         "status": "legacy-next",
@@ -317,18 +308,27 @@
         "status": "legacy-next",
         "targetOwner": "rust-backend",
         "id": "api:/api/ai/objects/quizzes/explanation:apps/web/src/app/api/ai/objects/quizzes/explanation/route.ts"
+      },
+      {
+        "kind": "api",
+        "methods": ["POST"],
+        "routePath": "/api/ai/objects/year-plan",
+        "sourceFile": "apps/web/src/app/api/ai/objects/year-plan/route.ts",
+        "status": "legacy-next",
+        "targetOwner": "rust-backend",
+        "id": "api:/api/ai/objects/year-plan:apps/web/src/app/api/ai/objects/year-plan/route.ts"
       }
     ],
     "totals": {
-      "acceptedRemoval": 20,
+      "acceptedRemoval": 19,
       "key": "total",
       "label": "All route artifacts",
-      "legacyNext": 752,
-      "migrated": 296,
-      "percentComplete": 29.59,
-      "remaining": 752,
-      "terminal": 316,
-      "total": 1068,
+      "legacyNext": 740,
+      "migrated": 294,
+      "percentComplete": 29.72,
+      "remaining": 740,
+      "terminal": 313,
+      "total": 1053,
       "unknownStatus": 0
     }
   },
@@ -465,15 +465,6 @@
       "methods": ["POST"],
       "routePath": "/api/ai/course",
       "sourceFile": "apps/web/src/app/api/ai/course/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/ai/email-draft:apps/web/src/app/api/ai/email-draft/route.ts",
-      "kind": "api",
-      "methods": ["POST"],
-      "routePath": "/api/ai/email-draft",
-      "sourceFile": "apps/web/src/app/api/ai/email-draft/route.ts",
       "status": "legacy-next",
       "targetOwner": "rust-backend"
     },
@@ -2619,15 +2610,6 @@
       "targetOwner": "rust-backend"
     },
     {
-      "id": "api:/api/v1/webhooks/mail/ses:apps/web/src/app/api/v1/webhooks/mail/ses/route.ts",
-      "kind": "api",
-      "methods": ["POST"],
-      "routePath": "/api/v1/webhooks/mail/ses",
-      "sourceFile": "apps/web/src/app/api/v1/webhooks/mail/ses/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
       "id": "api:/api/v1/webhooks/sepay/:token:apps/web/src/app/api/v1/webhooks/sepay/[token]/route.ts",
       "kind": "api",
       "methods": ["POST"],
@@ -4329,96 +4311,6 @@
       "methods": ["POST"],
       "routePath": "/api/v1/workspaces/:wsId/logo/upload-url",
       "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/logo/upload-url/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/mail:apps/web/src/app/api/v1/workspaces/[wsId]/mail/route.ts",
-      "kind": "api",
-      "methods": ["GET"],
-      "routePath": "/api/v1/workspaces/:wsId/mail",
-      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/mail/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/mail/bootstrap:apps/web/src/app/api/v1/workspaces/[wsId]/mail/bootstrap/route.ts",
-      "kind": "api",
-      "methods": ["GET"],
-      "routePath": "/api/v1/workspaces/:wsId/mail/bootstrap",
-      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/mail/bootstrap/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/mail/mailboxes/:mailboxId/drafts:apps/web/src/app/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/drafts/route.ts",
-      "kind": "api",
-      "methods": ["POST"],
-      "routePath": "/api/v1/workspaces/:wsId/mail/mailboxes/:mailboxId/drafts",
-      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/drafts/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/mail/mailboxes/:mailboxId/drafts/:draftId:apps/web/src/app/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/drafts/[draftId]/route.ts",
-      "kind": "api",
-      "methods": ["PATCH", "DELETE"],
-      "routePath": "/api/v1/workspaces/:wsId/mail/mailboxes/:mailboxId/drafts/:draftId",
-      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/drafts/[draftId]/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/mail/mailboxes/:mailboxId/members:apps/web/src/app/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/members/route.ts",
-      "kind": "api",
-      "methods": ["GET", "POST"],
-      "routePath": "/api/v1/workspaces/:wsId/mail/mailboxes/:mailboxId/members",
-      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/members/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/mail/mailboxes/:mailboxId/members/:userId:apps/web/src/app/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/members/[userId]/route.ts",
-      "kind": "api",
-      "methods": ["DELETE"],
-      "routePath": "/api/v1/workspaces/:wsId/mail/mailboxes/:mailboxId/members/:userId",
-      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/members/[userId]/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/mail/mailboxes/:mailboxId/messages:apps/web/src/app/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/messages/route.ts",
-      "kind": "api",
-      "methods": ["GET", "POST"],
-      "routePath": "/api/v1/workspaces/:wsId/mail/mailboxes/:mailboxId/messages",
-      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/messages/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/mail/mailboxes/:mailboxId/messages/:messageId:apps/web/src/app/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/messages/[messageId]/route.ts",
-      "kind": "api",
-      "methods": ["GET"],
-      "routePath": "/api/v1/workspaces/:wsId/mail/mailboxes/:mailboxId/messages/:messageId",
-      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/messages/[messageId]/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/mail/mailboxes/:mailboxId/messages/:messageId/state:apps/web/src/app/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/messages/[messageId]/state/route.ts",
-      "kind": "api",
-      "methods": ["PATCH"],
-      "routePath": "/api/v1/workspaces/:wsId/mail/mailboxes/:mailboxId/messages/:messageId/state",
-      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/messages/[messageId]/state/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/mail/send:apps/web/src/app/api/v1/workspaces/[wsId]/mail/send/route.ts",
-      "kind": "api",
-      "methods": ["POST"],
-      "routePath": "/api/v1/workspaces/:wsId/mail/send",
-      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/mail/send/route.ts",
       "status": "legacy-next",
       "targetOwner": "rust-backend"
     },
@@ -7474,15 +7366,6 @@
       "targetOwner": "tanstack-start"
     },
     {
-      "id": "layout:/:locale/:wsId/mail:apps/web/src/app/[locale]/(dashboard)/[wsId]/mail/layout.tsx",
-      "kind": "layout",
-      "methods": [],
-      "routePath": "/:locale/:wsId/mail",
-      "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/mail/layout.tsx",
-      "status": "accepted-removal",
-      "targetOwner": "tanstack-start"
-    },
-    {
       "id": "layout:/:locale/:wsId/mira:apps/web/src/app/[locale]/(dashboard)/[wsId]/mira/layout.tsx",
       "kind": "layout",
       "methods": [],
@@ -8722,24 +8605,6 @@
       "routePath": "/:locale/:wsId/link-shortener/:linkId/analytics",
       "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/link-shortener/[linkId]/analytics/page.tsx",
       "status": "legacy-next",
-      "targetOwner": "tanstack-start"
-    },
-    {
-      "id": "page:/:locale/:wsId/mail:apps/web/src/app/[locale]/(dashboard)/[wsId]/mail/page.tsx",
-      "kind": "page",
-      "methods": [],
-      "routePath": "/:locale/:wsId/mail",
-      "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/mail/page.tsx",
-      "status": "migrated",
-      "targetOwner": "tanstack-start"
-    },
-    {
-      "id": "page:/:locale/:wsId/mail/sent:apps/web/src/app/[locale]/(dashboard)/[wsId]/mail/sent/page.tsx",
-      "kind": "page",
-      "methods": [],
-      "routePath": "/:locale/:wsId/mail/sent",
-      "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/mail/sent/page.tsx",
-      "status": "migrated",
       "targetOwner": "tanstack-start"
     },
     {
@@ -10031,20 +9896,20 @@
     }
   ],
   "summary": {
-    "apiRoutes": 756,
+    "apiRoutes": 744,
     "cronRoutes": 12,
-    "layouts": 61,
-    "pages": 230,
-    "routeHandlers": 773,
+    "layouts": 60,
+    "pages": 228,
+    "routeHandlers": 761,
     "methodCounts": {
-      "GET": 421,
+      "GET": 416,
       "HEAD": 1,
-      "POST": 363,
+      "POST": 357,
       "PUT": 78,
-      "PATCH": 76,
-      "DELETE": 131,
+      "PATCH": 74,
+      "DELETE": 129,
       "OPTIONS": 17
     },
-    "total": 1068
+    "total": 1053
   }
 }

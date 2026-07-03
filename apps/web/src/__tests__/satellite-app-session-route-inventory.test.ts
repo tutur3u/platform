@@ -36,8 +36,9 @@ const satelliteAppApiRoots = [
   // apps/inventory now owns its migrated inventory API routes; it is no longer a
   // thin proxy-only satellite, so it is excluded from the local-API allowlist.
   'apps/drive/src/app/api',
-  'apps/mail/src/app/api',
   'apps/meet/src/app/api',
+  // apps/mail now owns its migrated mail API routes; it is no longer a thin
+  // proxy-only satellite, so it is excluded from the local-API allowlist.
   // apps/mind now owns its migrated mind API routes; it is no longer a
   // thin proxy-only satellite, so it is excluded from the local-API allowlist.
 ];

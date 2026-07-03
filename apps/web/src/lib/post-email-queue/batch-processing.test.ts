@@ -30,12 +30,9 @@ vi.mock('@tuturuuu/email-service', () => ({
   EmailService: mocks.EmailService,
 }));
 
-vi.mock(
-  '@/app/[locale]/(dashboard)/[wsId]/mail/default-email-template',
-  () => ({
-    default: vi.fn(() => null),
-  })
-);
+vi.mock('@/components/email/templates/default-email-template', () => ({
+  default: vi.fn(() => null),
+}));
 
 import {
   processPostEmailQueueBatch,

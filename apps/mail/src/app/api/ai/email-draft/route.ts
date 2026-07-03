@@ -6,6 +6,7 @@ import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import { validateAiTempAuthRequest } from '@tuturuuu/utils/ai-temp-auth';
 import { isValidTuturuuuEmail } from '@tuturuuu/utils/email/client';
 import { generateObject } from 'ai';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { emailDraftSchema } from './schema';
 
 export async function POST(req: Request) {
@@ -27,12 +28,10 @@ export async function POST(req: Request) {
     }
 
     if (!user) {
-      console.error('User is unauthenticated');
       return Response.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
     if (!user.email) {
-      console.error('User has no email address');
       return Response.json(
         { message: 'User email not found' },
         { status: 400 }
@@ -41,7 +40,6 @@ export async function POST(req: Request) {
 
     // Check if user has authorized email domain
     if (!isValidTuturuuuEmail(user.email)) {
-      console.error('User is not using a valid Tuturuuu email');
       return Response.json(
         {
           message: 'Only Tuturuuu emails are allowed',
@@ -126,7 +124,7 @@ Generate the email with a compelling subject line and well-crafted content.`;
 
     return Response.json(result.object);
   } catch (error) {
-    console.error('Error in email draft generation:', error);
+    serverLogger.error('Error in email draft generation', { error });
 
     // Handle specific auth errors
     if (error instanceof Error && error.message.includes('Unauthorized')) {
