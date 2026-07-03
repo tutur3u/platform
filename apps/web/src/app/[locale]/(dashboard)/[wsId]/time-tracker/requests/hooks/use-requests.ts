@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import type { ExtendedTimeTrackingRequest } from '../page';
+import type { ExtendedTimeTrackingRequest } from '../types';
 
 interface UseRequestsParams {
   wsId: string;

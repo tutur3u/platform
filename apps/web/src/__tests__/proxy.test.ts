@@ -1142,6 +1142,34 @@ describe('web proxy api handling', () => {
     expect(mocks.authProxy).not.toHaveBeenCalled();
   });
 
+  it.each([
+    {
+      expectedLocation:
+        'https://drive.tuturuuu.localhost/personal?folder=reports',
+      url: 'http://localhost/en/personal/drive?folder=reports',
+    },
+    {
+      expectedLocation: 'https://chat.tuturuuu.localhost/personal',
+      url: 'http://localhost/en/personal/chat',
+    },
+    {
+      expectedLocation:
+        'https://track.tuturuuu.localhost/personal/history?period=week',
+      url: 'http://localhost/en/personal/time-tracker/history?period=week',
+    },
+  ])('redirects old workspace satellite route $url to its app before auth', async ({
+    expectedLocation,
+    url,
+  }) => {
+    const { proxy } = await import('../proxy');
+    const response = await proxy(new NextRequest(url));
+
+    expect(response.status).toBe(307);
+    expect(response.headers.get('location')).toBe(expectedLocation);
+    expect(mocks.guardApiProxyRequest).not.toHaveBeenCalled();
+    expect(mocks.authProxy).not.toHaveBeenCalled();
+  });
+
   it('returns a direct 404 for reserved root tilde routes', async () => {
     const { proxy } = await import('../proxy');
     const response = await proxy(new NextRequest('http://localhost/~'));

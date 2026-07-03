@@ -152,7 +152,7 @@ import classes from '@/style/mantine-heatmap.module.css';
 
 ### 7. Cleaned Up Route Layout
 
-**File**: `apps/web/src/app/[locale]/(dashboard)/[wsId]/time-tracker/layout.tsx`
+**File**: `apps/track/src/app/[locale]/(dashboard)/[wsId]/layout.tsx`
 
 **Removed**:
 ```typescript
@@ -282,4 +282,3 @@ If Mantine CSS becomes too large, consider:
 **Completed**: 2024-11-24
 **Migrated By**: AI Agent
 **Approved By**: User
-

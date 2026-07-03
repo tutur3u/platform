@@ -994,11 +994,6 @@
       "targetOwner": "tanstack-start",
       "note": "TanStack Start route /$locale/$wsId/calendar preserves the legacy authenticated calendar shell by loading the full workspace row, enforcing manage_calendar through the forwarded-auth internal permission check, and rendering the shared CalendarPageShell. Calendar connections and Google token data are empty first-load state until their protected data APIs move behind shared TanStack/Rust facades."
     },
-    "page:/:locale/:wsId/chat:apps/web/src/app/[locale]/(dashboard)/[wsId]/chat/page.tsx": {
-      "status": "migrated",
-      "targetOwner": "tanstack-start",
-      "note": "TanStack Start route /$locale/$wsId/chat preserves the legacy authenticated chat shell by resolving the current user, enforcing view_chat through the forwarded-auth internal permission check, and rendering the shared ChatWorkspace client. Conversation and message APIs remain separately tracked because the client self-loads after mount."
-    },
     "layout:/:locale/:wsId/crawlers:apps/web/src/app/[locale]/(dashboard)/[wsId]/crawlers/(default)/layout.tsx": {
       "status": "migrated",
       "targetOwner": "tanstack-start",
@@ -1053,11 +1048,6 @@
       "status": "migrated",
       "targetOwner": "tanstack-start",
       "note": "TanStack Start route /$locale/$wsId/qr-generator preserves the legacy 307 redirect to the QR app origin while forwarding query parameters. This marks only the page artifact migrated; parent dashboard layout/session ownership remains legacy-owned."
-    },
-    "page:/:locale/:wsId/drive:apps/web/src/app/[locale]/(dashboard)/[wsId]/drive/page.tsx": {
-      "status": "migrated",
-      "targetOwner": "tanstack-start",
-      "note": "TanStack Start route /$locale/$wsId/drive preserves the legacy handoff to the Drive app origin with root-workspace internal slug handling, personal workspace slug normalization, and query forwarding. This marks only the page handoff artifact migrated; the Drive app owns its own auth and manage_drive permission gate, while parent dashboard layout/session ownership remains legacy-owned."
     },
     "layout:/:locale/:wsId/mail:apps/web/src/app/[locale]/(dashboard)/[wsId]/mail/layout.tsx": {
       "status": "accepted-removal",

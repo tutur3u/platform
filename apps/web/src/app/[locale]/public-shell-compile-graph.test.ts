@@ -153,9 +153,6 @@ const uiDocsComponentPreviewSource = source(
 );
 const uiDocsShikiSource = source('src/app/[locale]/ui/shiki.ts');
 const rootLayoutSource = source('src/app/[locale]/layout.tsx');
-const timeTrackerLayoutSource = source(
-  'src/app/[locale]/(dashboard)/[wsId]/time-tracker/layout.tsx'
-);
 const legalSectionCardSource = source(
   'src/components/legal/legal-section-card.tsx'
 );
@@ -738,13 +735,12 @@ describe('public shell compile graph', () => {
     expect(reportProblemMenuItemSource).toContain('{open && (');
   });
 
-  it('keeps Mantine styles scoped to the time tracker layout', () => {
+  it('keeps Mantine styles out of the public root layout', () => {
     for (const modulePath of [
       '@mantine/charts/styles.layer.css',
       '@mantine/core/styles.layer.css',
     ] as const) {
       expect(rootLayoutSource).not.toContain(modulePath);
-      expect(timeTrackerLayoutSource).toContain(modulePath);
     }
   });
 });

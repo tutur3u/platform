@@ -1,7 +1,7 @@
 import { CheckCircle2Icon, InfoIcon, XCircleIcon } from '@tuturuuu/icons';
 import { format } from 'date-fns';
 import { useTranslations } from 'next-intl';
-import type { ExtendedTimeTrackingRequest } from '../page';
+import type { ExtendedTimeTrackingRequest } from '../types';
 
 interface ApprovalStatusCardProps {
   request: ExtendedTimeTrackingRequest;

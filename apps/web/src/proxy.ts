@@ -43,9 +43,12 @@ import { NextResponse } from 'next/server';
 import createIntlMiddleware from 'next-intl/middleware';
 import { BASE_URL, LOCALE_COOKIE_NAME, PUBLIC_PATHS } from './constants/common';
 import { defaultLocale, type Locale, supportedLocales } from './i18n/routing';
+import { getChatAppOrigin } from './lib/chat-app-url';
+import { getDriveAppOrigin } from './lib/drive-app-url';
 import { getFinanceAppOrigin } from './lib/finance-app-url';
 import { getMailAppOrigin } from './lib/mail-app-url';
 import { getQrAppOrigin } from './lib/qr-app-url';
+import { getTrackAppOrigin } from './lib/track-app-url';
 import {
   getWorkspaceRoutePermissionRequirements,
   hasRequiredWorkspaceRoutePermission,
@@ -287,6 +290,27 @@ function handleFinanceAppRedirectRoute(req: NextRequest): NextResponse | null {
   return handleWorkspaceSatelliteRedirectRoute(req, {
     appOrigin: getFinanceAppOrigin(),
     routeSegment: 'finance',
+  });
+}
+
+function handleDriveAppRedirectRoute(req: NextRequest): NextResponse | null {
+  return handleWorkspaceSatelliteRedirectRoute(req, {
+    appOrigin: getDriveAppOrigin(),
+    routeSegment: 'drive',
+  });
+}
+
+function handleChatAppRedirectRoute(req: NextRequest): NextResponse | null {
+  return handleWorkspaceSatelliteRedirectRoute(req, {
+    appOrigin: getChatAppOrigin(),
+    routeSegment: 'chat',
+  });
+}
+
+function handleTrackAppRedirectRoute(req: NextRequest): NextResponse | null {
+  return handleWorkspaceSatelliteRedirectRoute(req, {
+    appOrigin: getTrackAppOrigin(),
+    routeSegment: 'time-tracker',
   });
 }
 
@@ -1209,6 +1233,21 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
   const financeAppRedirectResponse = handleFinanceAppRedirectRoute(req);
   if (financeAppRedirectResponse) {
     return financeAppRedirectResponse;
+  }
+
+  const driveAppRedirectResponse = handleDriveAppRedirectRoute(req);
+  if (driveAppRedirectResponse) {
+    return driveAppRedirectResponse;
+  }
+
+  const chatAppRedirectResponse = handleChatAppRedirectRoute(req);
+  if (chatAppRedirectResponse) {
+    return chatAppRedirectResponse;
+  }
+
+  const trackAppRedirectResponse = handleTrackAppRedirectRoute(req);
+  if (trackAppRedirectResponse) {
+    return trackAppRedirectResponse;
   }
 
   // Handle authentication and MFA with the centralized middleware

@@ -18,24 +18,24 @@
         "acceptedRemoval": 2,
         "key": "page",
         "label": "page",
-        "legacyNext": 66,
-        "migrated": 144,
-        "percentComplete": 68.87,
-        "remaining": 66,
-        "terminal": 146,
-        "total": 212,
+        "legacyNext": 61,
+        "migrated": 142,
+        "percentComplete": 70.24,
+        "remaining": 61,
+        "terminal": 144,
+        "total": 205,
         "unknownStatus": 0
       },
       {
         "acceptedRemoval": 0,
         "key": "layout",
         "label": "layout",
-        "legacyNext": 12,
+        "legacyNext": 11,
         "migrated": 47,
-        "percentComplete": 79.66,
-        "remaining": 12,
+        "percentComplete": 81.03,
+        "remaining": 11,
         "terminal": 47,
-        "total": 59,
+        "total": 58,
         "unknownStatus": 0
       },
       {
@@ -128,12 +128,12 @@
         "acceptedRemoval": 2,
         "key": "tanstack-start",
         "label": "TanStack Start",
-        "legacyNext": 78,
-        "migrated": 195,
-        "percentComplete": 71.64,
-        "remaining": 78,
-        "terminal": 197,
-        "total": 275,
+        "legacyNext": 72,
+        "migrated": 193,
+        "percentComplete": 73.03,
+        "remaining": 72,
+        "terminal": 195,
+        "total": 267,
         "unknownStatus": 0
       }
     ],
@@ -323,12 +323,12 @@
       "acceptedRemoval": 19,
       "key": "total",
       "label": "All route artifacts",
-      "legacyNext": 740,
-      "migrated": 277,
-      "percentComplete": 28.57,
-      "remaining": 740,
-      "terminal": 296,
-      "total": 1036,
+      "legacyNext": 734,
+      "migrated": 275,
+      "percentComplete": 28.6,
+      "remaining": 734,
+      "terminal": 294,
+      "total": 1028,
       "unknownStatus": 0
     }
   },
@@ -7366,15 +7366,6 @@
       "targetOwner": "tanstack-start"
     },
     {
-      "id": "layout:/:locale/:wsId/time-tracker:apps/web/src/app/[locale]/(dashboard)/[wsId]/time-tracker/layout.tsx",
-      "kind": "layout",
-      "methods": [],
-      "routePath": "/:locale/:wsId/time-tracker",
-      "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/time-tracker/layout.tsx",
-      "status": "legacy-next",
-      "targetOwner": "tanstack-start"
-    },
-    {
       "id": "layout:/:locale/:wsId/users/groups/:groupId:apps/web/src/app/[locale]/(dashboard)/[wsId]/users/groups/[groupId]/layout.tsx",
       "kind": "layout",
       "methods": [],
@@ -7942,15 +7933,6 @@
       "targetOwner": "tanstack-start"
     },
     {
-      "id": "page:/:locale/:wsId/chat:apps/web/src/app/[locale]/(dashboard)/[wsId]/chat/page.tsx",
-      "kind": "page",
-      "methods": [],
-      "routePath": "/:locale/:wsId/chat",
-      "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/chat/page.tsx",
-      "status": "migrated",
-      "targetOwner": "tanstack-start"
-    },
-    {
       "id": "page:/:locale/:wsId/crawlers:apps/web/src/app/[locale]/(dashboard)/[wsId]/crawlers/(default)/page.tsx",
       "kind": "page",
       "methods": [],
@@ -8082,15 +8064,6 @@
       "methods": [],
       "routePath": "/:locale/:wsId/documents/:documentId",
       "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/documents/[documentId]/page.tsx",
-      "status": "migrated",
-      "targetOwner": "tanstack-start"
-    },
-    {
-      "id": "page:/:locale/:wsId/drive:apps/web/src/app/[locale]/(dashboard)/[wsId]/drive/page.tsx",
-      "kind": "page",
-      "methods": [],
-      "routePath": "/:locale/:wsId/drive",
-      "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/drive/page.tsx",
       "status": "migrated",
       "targetOwner": "tanstack-start"
     },
@@ -8676,51 +8649,6 @@
       "methods": [],
       "routePath": "/:locale/:wsId/tasks/*slug?",
       "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/tasks/[[...slug]]/page.tsx",
-      "status": "legacy-next",
-      "targetOwner": "tanstack-start"
-    },
-    {
-      "id": "page:/:locale/:wsId/time-tracker:apps/web/src/app/[locale]/(dashboard)/[wsId]/time-tracker/page.tsx",
-      "kind": "page",
-      "methods": [],
-      "routePath": "/:locale/:wsId/time-tracker",
-      "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/time-tracker/page.tsx",
-      "status": "legacy-next",
-      "targetOwner": "tanstack-start"
-    },
-    {
-      "id": "page:/:locale/:wsId/time-tracker/history:apps/web/src/app/[locale]/(dashboard)/[wsId]/time-tracker/history/page.tsx",
-      "kind": "page",
-      "methods": [],
-      "routePath": "/:locale/:wsId/time-tracker/history",
-      "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/time-tracker/history/page.tsx",
-      "status": "legacy-next",
-      "targetOwner": "tanstack-start"
-    },
-    {
-      "id": "page:/:locale/:wsId/time-tracker/management:apps/web/src/app/[locale]/(dashboard)/[wsId]/time-tracker/management/page.tsx",
-      "kind": "page",
-      "methods": [],
-      "routePath": "/:locale/:wsId/time-tracker/management",
-      "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/time-tracker/management/page.tsx",
-      "status": "legacy-next",
-      "targetOwner": "tanstack-start"
-    },
-    {
-      "id": "page:/:locale/:wsId/time-tracker/requests:apps/web/src/app/[locale]/(dashboard)/[wsId]/time-tracker/requests/page.tsx",
-      "kind": "page",
-      "methods": [],
-      "routePath": "/:locale/:wsId/time-tracker/requests",
-      "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/time-tracker/requests/page.tsx",
-      "status": "legacy-next",
-      "targetOwner": "tanstack-start"
-    },
-    {
-      "id": "page:/:locale/:wsId/time-tracker/timer:apps/web/src/app/[locale]/(dashboard)/[wsId]/time-tracker/timer/page.tsx",
-      "kind": "page",
-      "methods": [],
-      "routePath": "/:locale/:wsId/time-tracker/timer",
-      "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/time-tracker/timer/page.tsx",
       "status": "legacy-next",
       "targetOwner": "tanstack-start"
     },
@@ -9745,8 +9673,8 @@
   "summary": {
     "apiRoutes": 744,
     "cronRoutes": 12,
-    "layouts": 59,
-    "pages": 212,
+    "layouts": 58,
+    "pages": 205,
     "routeHandlers": 761,
     "methodCounts": {
       "GET": 416,
@@ -9757,6 +9685,6 @@
       "DELETE": 129,
       "OPTIONS": 17
     },
-    "total": 1036
+    "total": 1028
   }
 }

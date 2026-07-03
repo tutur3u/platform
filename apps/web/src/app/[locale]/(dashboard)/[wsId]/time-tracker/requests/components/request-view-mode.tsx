@@ -2,7 +2,7 @@ import { CalendarIcon, ClockIcon, Loader2 } from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
 import { format } from 'date-fns';
 import { useTranslations } from 'next-intl';
-import type { ExtendedTimeTrackingRequest } from '../page';
+import type { ExtendedTimeTrackingRequest } from '../types';
 import { calculateDuration as calculateDurationUtil } from '../utils';
 
 interface RequestViewModeProps {

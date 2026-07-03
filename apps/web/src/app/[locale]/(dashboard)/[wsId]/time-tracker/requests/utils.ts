@@ -1,6 +1,6 @@
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import dayjs from 'dayjs';
-import type { ExtendedTimeTrackingRequest } from './page';
+import type { ExtendedTimeTrackingRequest } from './types';
 
 export const STATUS_LABELS: Record<
   'pending' | 'approved' | 'rejected' | 'needs_info' | 'all',
