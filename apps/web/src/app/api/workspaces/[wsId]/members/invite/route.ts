@@ -73,7 +73,10 @@ export async function POST(req: Request, { params }: Params) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
-  const permissions = await getPermissions({ request: req, wsId: requestedWsId });
+  const permissions = await getPermissions({
+    request: req,
+    wsId: requestedWsId,
+  });
   if (
     permissions?.membershipType !== 'MEMBER' ||
     permissions.withoutPermission('manage_workspace_members')

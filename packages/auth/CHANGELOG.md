@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.4](https://github.com/tutur3u/platform/compare/auth-v0.2.3...auth-v0.2.4) (2026-07-03)
+
+
+### Bug Fixes
+
+* **infrastructure:** restore canonical auth host access ([9f6715f](https://github.com/tutur3u/platform/commit/9f6715fb1c5a89598556cba33b16938b76995fc6))
+
 ## [0.2.3](https://github.com/tutur3u/platform/compare/auth-v0.2.2...auth-v0.2.3) (2026-06-17)
 
 

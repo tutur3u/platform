@@ -1,5 +1,23 @@
 # Changelog
 
+## [1.14.0](https://github.com/tutur3u/platform/compare/database-v1.13.0...database-v1.14.0) (2026-07-03)
+
+
+### Features
+
+* **inventory:** add revenue share and category bundles ([20b2e1e](https://github.com/tutur3u/platform/commit/20b2e1e5302d1db275766b7b4b92d9bdf69de04a))
+
+
+### Bug Fixes
+
+* **db:** preserve RLS policy semantics ([30519a9](https://github.com/tutur3u/platform/commit/30519a9b54d3e06b077c1768cce5767de0885772))
+* **inventory:** grant service access to category bundle components ([63c3804](https://github.com/tutur3u/platform/commit/63c38047800352641993cbfd695a6bbd2b864017))
+
+
+### Performance Improvements
+
+* **rls:** wrap auth helpers in (select ...) for per-statement evaluation ([#4907](https://github.com/tutur3u/platform/issues/4907)) ([4de00a9](https://github.com/tutur3u/platform/commit/4de00a9b6ae957edd335cd5ba06ed56f79728cc9))
+
 ## [1.13.0](https://github.com/tutur3u/platform/compare/database-v1.12.0...database-v1.13.0) (2026-07-02)
 
 

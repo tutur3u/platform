@@ -1,6 +1,6 @@
 {
   "name": "@tuturuuu/playground",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "private": true,
   "scripts": {
     "type-check": "node ../../scripts/run-tsc-build.js --build",

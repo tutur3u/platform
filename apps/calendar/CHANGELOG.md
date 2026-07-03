@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.8.0](https://github.com/tutur3u/platform/compare/calendar-v0.7.0...calendar-v0.8.0) (2026-07-03)
+
+
+### Features
+
+* **calendar:** migrate calendar module from web to dedicated calendar app ([678b949](https://github.com/tutur3u/platform/commit/678b949096e90d1c9d215fea50d0eb4ba9698a7e))
+
+
+### Bug Fixes
+
+* **build:** restore repo check ([4def830](https://github.com/tutur3u/platform/commit/4def830f463ea8a9c31af8e982eab716e9bd5f72))
+
 ## [0.7.0](https://github.com/tutur3u/platform/compare/calendar-v0.6.0...calendar-v0.7.0) (2026-06-29)
 
 
