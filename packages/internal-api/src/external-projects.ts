@@ -124,6 +124,29 @@ type ExternalProjectUploadOptions = InternalApiClientOptions & {
   onUploadProgress?: ExternalProjectUploadProgressHandler;
 };
 
+export type ExternalProjectSyncManifest = Record<string, unknown>;
+
+export type WorkspaceExternalProjectSyncApplyPayload = {
+  force?: boolean;
+  manifest: ExternalProjectSyncManifest;
+};
+
+export type WorkspaceExternalProjectSyncDiffPayload = {
+  manifest: ExternalProjectSyncManifest;
+};
+
+export type WorkspaceExternalProjectSyncSetupPayload = {
+  manifest: ExternalProjectSyncManifest;
+};
+
+export type WorkspaceExternalProjectSyncApplyResult = Record<string, unknown>;
+
+export type WorkspaceExternalProjectSyncDiffResult = Record<string, unknown>;
+
+export type WorkspaceExternalProjectSyncSetupResult = Record<string, unknown>;
+
+export type WorkspaceExternalProjectSyncSnapshot = Record<string, unknown>;
+
 export type WorkspaceExternalProjectWebglPackageArtifact = {
   archivePath: string;
   assetUrls: Record<string, string>;
@@ -444,6 +467,76 @@ export async function getWorkspaceExternalProjectSummary(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/external-projects/summary`,
     {
       cache: 'no-store',
+    }
+  );
+}
+
+export async function setupWorkspaceExternalProject(
+  workspaceId: string,
+  payload: WorkspaceExternalProjectSyncSetupPayload,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<WorkspaceExternalProjectSyncSetupResult>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/external-projects/setup`,
+    {
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      method: 'POST',
+    }
+  );
+}
+
+export async function getWorkspaceExternalProjectSyncSnapshot(
+  workspaceId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<WorkspaceExternalProjectSyncSnapshot>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/external-projects/sync/snapshot`,
+    {
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function diffWorkspaceExternalProjectSyncManifest(
+  workspaceId: string,
+  payload: WorkspaceExternalProjectSyncDiffPayload,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<WorkspaceExternalProjectSyncDiffResult>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/external-projects/sync/diff`,
+    {
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      method: 'POST',
+    }
+  );
+}
+
+export async function applyWorkspaceExternalProjectSyncManifest(
+  workspaceId: string,
+  payload: WorkspaceExternalProjectSyncApplyPayload,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<WorkspaceExternalProjectSyncApplyResult>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/external-projects/sync/apply`,
+    {
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      method: 'POST',
     }
   );
 }

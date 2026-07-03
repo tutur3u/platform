@@ -147,6 +147,196 @@ describe('CLI commands', () => {
     );
   });
 
+  it('fetches external project delivery previews with workspace override', async () => {
+    await writeTestConfig({
+      baseUrl: 'https://tuturuuu.com',
+      currentWorkspaceId: 'ws-config',
+      session: {
+        accessToken: 'access-token',
+        refreshToken: 'refresh-token',
+      },
+    });
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue(Response.json({ mode: 'preview' }));
+    const write = vi
+      .spyOn(process.stdout, 'write')
+      .mockImplementation(() => true);
+
+    await runCli([
+      'external',
+      'projects',
+      'delivery',
+      '--workspace',
+      'ws-override',
+      '--preview',
+      '--json',
+      '--no-update-check',
+    ]);
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://tuturuuu.com/api/v1/workspaces/ws-override/external-projects/delivery?preview=true',
+      expect.objectContaining({
+        cache: 'no-store',
+      })
+    );
+    expect(write).toHaveBeenCalledWith(expect.stringContaining('"preview"'));
+  });
+
+  it('writes external project snapshot output to a file', async () => {
+    await writeTestConfig({
+      baseUrl: 'https://tuturuuu.com',
+      currentWorkspaceId: 'ws-1',
+      session: {
+        accessToken: 'access-token',
+        refreshToken: 'refresh-token',
+      },
+    });
+    const dir = await mkdtemp(join(tmpdir(), 'tuturuuu-external-out-'));
+    const outputPath = join(dir, 'snapshot.json');
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      Response.json({
+        collections: [{ id: 'characters' }],
+      })
+    );
+    const write = vi
+      .spyOn(process.stdout, 'write')
+      .mockImplementation(() => true);
+
+    await runCli([
+      'external',
+      'projects',
+      'snapshot',
+      '--out',
+      outputPath,
+      '--no-update-check',
+    ]);
+
+    await expect(
+      readFile(outputPath, 'utf8').then(JSON.parse)
+    ).resolves.toEqual({
+      collections: [{ id: 'characters' }],
+    });
+    expect(write).toHaveBeenCalledWith(`Wrote ${outputPath}\n`);
+  });
+
+  it('loads external project manifests for diff commands', async () => {
+    await writeTestConfig({
+      baseUrl: 'https://tuturuuu.com',
+      currentWorkspaceId: 'ws-1',
+      session: {
+        accessToken: 'access-token',
+        refreshToken: 'refresh-token',
+      },
+    });
+    const dir = await mkdtemp(join(tmpdir(), 'tuturuuu-external-manifest-'));
+    const manifestPath = join(dir, 'external-project.json');
+    const manifest = {
+      adapter: 'exocorpse',
+      collections: [{ id: 'characters' }],
+      version: 1,
+    };
+    await writeFile(manifestPath, JSON.stringify(manifest));
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue(Response.json({ changes: [] }));
+    vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
+
+    await runCli([
+      'external',
+      'projects',
+      'diff',
+      '--manifest',
+      manifestPath,
+      '--json',
+      '--no-update-check',
+    ]);
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://tuturuuu.com/api/v1/workspaces/ws-1/external-projects/sync/diff',
+      expect.objectContaining({
+        body: JSON.stringify({ manifest }),
+        cache: 'no-store',
+        method: 'POST',
+      })
+    );
+  });
+
+  it('requires confirmation before external project apply', async () => {
+    await writeTestConfig({
+      baseUrl: 'https://tuturuuu.com',
+      currentWorkspaceId: 'ws-1',
+      session: {
+        accessToken: 'access-token',
+        refreshToken: 'refresh-token',
+      },
+    });
+    const dir = await mkdtemp(join(tmpdir(), 'tuturuuu-external-apply-'));
+    const manifestPath = join(dir, 'external-project.json');
+    await writeFile(manifestPath, '{"adapter":"exocorpse","version":1}');
+    const fetchMock = vi.spyOn(globalThis, 'fetch');
+
+    await expect(
+      runCli([
+        'external',
+        'projects',
+        'apply',
+        '--manifest',
+        manifestPath,
+        '--no-update-check',
+      ])
+    ).rejects.toThrow('APPLY_EXTERNAL_PROJECT_SYNC');
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('passes force through confirmed external project apply commands', async () => {
+    await writeTestConfig({
+      baseUrl: 'https://tuturuuu.com',
+      currentWorkspaceId: 'ws-1',
+      session: {
+        accessToken: 'access-token',
+        refreshToken: 'refresh-token',
+      },
+    });
+    const dir = await mkdtemp(join(tmpdir(), 'tuturuuu-external-force-'));
+    const manifestPath = join(dir, 'external-project.json');
+    const manifest = {
+      adapter: 'exocorpse',
+      collections: [],
+      version: 1,
+    };
+    await writeFile(manifestPath, JSON.stringify(manifest));
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue(Response.json({ applied: true }));
+    vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
+
+    await runCli([
+      'external',
+      'projects',
+      'apply',
+      '--manifest',
+      manifestPath,
+      '--confirm',
+      'APPLY_EXTERNAL_PROJECT_SYNC',
+      '--force',
+      '--json',
+      '--no-update-check',
+    ]);
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://tuturuuu.com/api/v1/workspaces/ws-1/external-projects/sync/apply',
+      expect.objectContaining({
+        body: JSON.stringify({
+          force: true,
+          manifest,
+        }),
+        cache: 'no-store',
+        method: 'POST',
+      })
+    );
+  });
+
   it('fetches wallet balance through the current workspace wallet read', async () => {
     await writeTestConfig({
       baseUrl: 'https://tuturuuu.com',
@@ -1472,6 +1662,25 @@ task_name: Prepare handoff
     );
     expect(write).toHaveBeenCalledWith(
       expect.stringContaining('Finance commands use the selected workspace')
+    );
+  });
+
+  it.each([
+    ['external', '--help'],
+    ['external', 'projects', '--help'],
+    ['help', 'external', 'projects'],
+  ])('prints external project help for %s', async (...args) => {
+    const write = vi
+      .spyOn(process.stdout, 'write')
+      .mockImplementation(() => true);
+
+    await runCli(args);
+
+    expect(write).toHaveBeenCalledWith(
+      expect.stringContaining('ttr external projects')
+    );
+    expect(write).toHaveBeenCalledWith(
+      expect.stringContaining('APPLY_EXTERNAL_PROJECT_SYNC')
     );
   });
 

@@ -848,6 +848,17 @@ External app admin dashboards can auto-create and bind the workspace studio befo
 await client.externalProjects.sync.setup('workspace-id', { manifest });
 ```
 
+Operators can use the authenticated CLI instead of app-local token scripts:
+
+```bash
+ttr external projects summary --workspace <workspace-id> --json
+ttr external projects delivery --workspace <workspace-id> --preview --out tmp/delivery.json
+ttr external projects snapshot --workspace <workspace-id> --out tmp/snapshot.json
+ttr external projects setup --workspace <workspace-id> --manifest external-project.json
+ttr external projects diff --workspace <workspace-id> --manifest external-project.json --json
+ttr external projects apply --workspace <workspace-id> --manifest external-project.json --confirm APPLY_EXTERNAL_PROJECT_SYNC
+```
+
 ### Public Folder Asset Sync
 
 External apps can keep seed media in their local `public/` folder and still publish it through Tuturuuu Drive. Mark each manifest asset with `metadata.publicPath`, `metadata.localAssetPath`, `metadata.sourcePublicPath`, or a relative `sourceUrl`.

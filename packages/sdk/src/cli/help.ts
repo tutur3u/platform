@@ -148,6 +148,34 @@ const helpTopics: Record<string, HelpTopic> = {
     ],
     usage: 'ttr config set-base-url <url>',
   },
+  external: {
+    commands: [
+      'projects summary             show external-project workspace summary',
+      'projects studio              fetch studio/admin data',
+      'projects delivery --preview  fetch delivery payloads',
+      'projects snapshot            fetch sync snapshot',
+      'projects collections         list configured collections',
+      'projects entries --collection <id>',
+      'projects setup --manifest <path>',
+      'projects diff --manifest <path>',
+      'projects apply --manifest <path> --confirm APPLY_EXTERNAL_PROJECT_SYNC',
+    ],
+    description:
+      'External commands operate on CMS-style external projects for the selected workspace.',
+    examples: [
+      'ttr external projects summary --workspace <workspace-id> --json',
+      'ttr external projects delivery --workspace <workspace-id> --preview --out tmp/delivery.json',
+      'ttr external projects diff --workspace <workspace-id> --manifest external-project.json --json',
+      'ttr external projects apply --workspace <workspace-id> --manifest external-project.json --confirm APPLY_EXTERNAL_PROJECT_SYNC',
+    ],
+    options: [
+      '--workspace, --ws <id>        override the selected workspace',
+      '--json                       print machine-readable JSON',
+      '--out <path>                 write JSON output to a file',
+      '--no-update-check            skip CLI update checks',
+    ],
+    usage: 'ttr external projects <command> [options]',
+  },
   finance: {
     commands: [
       'wallets [list|get|balance|create|update|delete]',
@@ -463,6 +491,48 @@ const helpTopics: Record<string, HelpTopic> = {
 };
 
 const actionHelpTopics: Record<string, Record<string, HelpTopic>> = {
+  external: {
+    projects: {
+      commands: [
+        'summary                     show external-project workspace summary',
+        'studio                      fetch studio/admin data',
+        'delivery --preview          fetch delivery payload, optionally including drafts',
+        'snapshot                    fetch sync snapshot',
+        'collections                 list configured collections',
+        'entries --collection <id>   list entries, optionally filtered by collection',
+        'setup --manifest <path>     initialize/update project setup from a manifest',
+        'diff --manifest <path>      preview sync changes from a manifest',
+        'apply --manifest <path> --confirm APPLY_EXTERNAL_PROJECT_SYNC',
+      ],
+      description:
+        'Reads and syncs external-project data through the authenticated Tuturuuu workspace APIs.',
+      examples: [
+        'ttr external projects summary --workspace <workspace-id> --json',
+        'ttr external projects studio --workspace <workspace-id> --out tmp/studio.json',
+        'ttr external projects delivery --workspace <workspace-id> --preview --out tmp/delivery.json',
+        'ttr external projects snapshot --workspace <workspace-id> --out tmp/snapshot.json',
+        'ttr external projects collections --workspace <workspace-id> --json',
+        'ttr external projects entries --workspace <workspace-id> --collection characters --json',
+        'ttr external projects setup --workspace <workspace-id> --manifest external-project.json',
+        'ttr external projects diff --workspace <workspace-id> --manifest external-project.json --json',
+        'ttr external projects apply --workspace <workspace-id> --manifest external-project.json --confirm APPLY_EXTERNAL_PROJECT_SYNC',
+        'ttr external projects apply --workspace <workspace-id> --manifest external-project.json --confirm APPLY_EXTERNAL_PROJECT_SYNC --force',
+      ],
+      options: [
+        '--workspace, --ws <id>       override the selected workspace',
+        '--json                       print machine-readable JSON',
+        '--out <path>                 write JSON output to a file',
+        '--manifest <path>            JSON sync manifest for setup/diff/apply',
+        '--preview                    include preview/draft data for delivery reads',
+        '--collection <id>            filter entries by collection id',
+        '--confirm APPLY_EXTERNAL_PROJECT_SYNC required for apply',
+        '--force                      allow destructive apply changes supported by the API',
+        '--no-update-check            skip CLI update checks',
+      ],
+      usage:
+        'ttr external projects <summary|studio|delivery|snapshot|collections|entries|setup|diff|apply> [options]',
+    },
+  },
   calendar: {
     accounts: {
       examples: [
@@ -990,6 +1060,7 @@ export function getGlobalHelp() {
     '  host [current|list|use]',
     '  config set-base-url <url>',
     '  box <run|lease|release|preview|agent|shutdown|cache|doctor|setup|repair>',
+    '  external projects <summary|studio|delivery|snapshot|collections|entries|setup|diff|apply>',
     '  calendar <events|schedule|sources|calendars|categories|accounts|auth|provider-calendars|connections>',
     '  finance <wallets|checkpoints|transactions|transfers|categories|tags|budgets|recurring>',
     '  workspaces [list]|use [id]',
@@ -1016,6 +1087,8 @@ export function getGlobalHelp() {
     '',
     'Scoped help:',
     '  ttr finance --help',
+    '  ttr external --help',
+    '  ttr external projects --help',
     '  ttr calendar --help',
     '  ttr calendar events --help',
     '  ttr finance transactions --help',

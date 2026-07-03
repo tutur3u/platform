@@ -578,6 +578,19 @@ await client.epm.deleteEntry(workspaceId, draft.id);
 
 For Yoola-style integrations, set `collection.config.navigation.title` from EPM to drive external navigation labels while keeping the collection title available for operator-facing admin surfaces. `buildEpmNavigationItems(...)` returns enabled collections with the resolved navigation title plus any configured `href`/visibility hints.
 
+CLI operators can read and sync the same workspace surface with the spaced command group:
+
+```bash
+ttr external projects summary --workspace <workspace-id> --json
+ttr external projects delivery --workspace <workspace-id> --preview --out tmp/delivery.json
+ttr external projects snapshot --workspace <workspace-id> --out tmp/snapshot.json
+ttr external projects collections --workspace <workspace-id> --json
+ttr external projects entries --workspace <workspace-id> --collection <collection-id> --json
+ttr external projects setup --workspace <workspace-id> --manifest external-project.json
+ttr external projects diff --workspace <workspace-id> --manifest external-project.json --json
+ttr external projects apply --workspace <workspace-id> --manifest external-project.json --confirm APPLY_EXTERNAL_PROJECT_SYNC
+```
+
 ### Document Operations
 
 #### List Documents
@@ -670,6 +683,17 @@ console.log(studio.collections.length);
 
 const duplicate = await client.epm.duplicateEntry('workspace-id', 'entry-id');
 await client.epm.publishEntry('workspace-id', duplicate.id, 'publish');
+```
+
+For operator workflows, prefer the authenticated `ttr external projects` CLI:
+
+```bash
+ttr external projects summary --workspace <workspace-id> --json
+ttr external projects delivery --workspace <workspace-id> --preview --out tmp/delivery.json
+ttr external projects snapshot --workspace <workspace-id> --out tmp/snapshot.json
+ttr external projects setup --workspace <workspace-id> --manifest external-project.json
+ttr external projects diff --workspace <workspace-id> --manifest external-project.json --json
+ttr external projects apply --workspace <workspace-id> --manifest external-project.json --confirm APPLY_EXTERNAL_PROJECT_SYNC
 ```
 
 ## Error Handling

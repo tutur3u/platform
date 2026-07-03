@@ -4,6 +4,19 @@ import {
   type InternalApiClientOptions,
 } from '@tuturuuu/internal-api/client';
 import {
+  applyWorkspaceExternalProjectSyncManifest,
+  diffWorkspaceExternalProjectSyncManifest,
+  type ExternalProjectSyncManifest,
+  getWorkspaceExternalProjectDelivery,
+  getWorkspaceExternalProjectStudio,
+  getWorkspaceExternalProjectSummary,
+  getWorkspaceExternalProjectSyncSnapshot,
+  listWorkspaceExternalProjectCollections,
+  listWorkspaceExternalProjectEntries,
+  setupWorkspaceExternalProject,
+  type WorkspaceExternalProjectSyncApplyPayload,
+} from '@tuturuuu/internal-api/external-projects';
+import {
   abortWorkspaceTaskDescriptionChunks,
   addWorkspaceTaskLabel,
   appendWorkspaceTaskDescriptionChunk,
@@ -227,6 +240,89 @@ export class UsersClient {
 
   profile() {
     return getCurrentUserProfile(this.client.getClientOptions());
+  }
+}
+
+export class ExternalProjectsUserClient {
+  constructor(private readonly client: TuturuuuUserClient) {}
+
+  apply(
+    workspaceId: string,
+    payload: WorkspaceExternalProjectSyncApplyPayload
+  ) {
+    return applyWorkspaceExternalProjectSyncManifest(
+      workspaceId,
+      payload,
+      this.client.getClientOptions()
+    );
+  }
+
+  collections(workspaceId: string) {
+    return listWorkspaceExternalProjectCollections(
+      workspaceId,
+      this.client.getClientOptions()
+    );
+  }
+
+  delivery(workspaceId: string, options?: { preview?: boolean }) {
+    return getWorkspaceExternalProjectDelivery(
+      workspaceId,
+      options?.preview === true,
+      this.client.getClientOptions()
+    );
+  }
+
+  diff(workspaceId: string, manifest: ExternalProjectSyncManifest) {
+    return diffWorkspaceExternalProjectSyncManifest(
+      workspaceId,
+      { manifest },
+      this.client.getClientOptions()
+    );
+  }
+
+  entries(workspaceId: string, options?: { collectionId?: string }) {
+    return listWorkspaceExternalProjectEntries(
+      workspaceId,
+      options,
+      this.client.getClientOptions()
+    );
+  }
+
+  setup(workspaceId: string, manifest: ExternalProjectSyncManifest) {
+    return setupWorkspaceExternalProject(
+      workspaceId,
+      { manifest },
+      this.client.getClientOptions()
+    );
+  }
+
+  snapshot(workspaceId: string) {
+    return getWorkspaceExternalProjectSyncSnapshot(
+      workspaceId,
+      this.client.getClientOptions()
+    );
+  }
+
+  studio(workspaceId: string) {
+    return getWorkspaceExternalProjectStudio(
+      workspaceId,
+      this.client.getClientOptions()
+    );
+  }
+
+  summary(workspaceId: string) {
+    return getWorkspaceExternalProjectSummary(
+      workspaceId,
+      this.client.getClientOptions()
+    );
+  }
+}
+
+export class ExternalClient {
+  readonly projects: ExternalProjectsUserClient;
+
+  constructor(client: TuturuuuUserClient) {
+    this.projects = new ExternalProjectsUserClient(client);
   }
 }
 
@@ -717,6 +813,7 @@ export class TuturuuuUserClient {
 
   readonly calendar: CalendarClient;
   readonly devboxes: DevboxesClient;
+  readonly external: ExternalClient;
   readonly finance: FinanceClient;
   readonly tasks: TasksClient;
   readonly users: UsersClient;
@@ -731,6 +828,7 @@ export class TuturuuuUserClient {
     this.refreshToken = config.refreshToken;
     this.calendar = new CalendarClient(this);
     this.devboxes = new DevboxesClient(this.getClientOptions());
+    this.external = new ExternalClient(this);
     this.finance = new FinanceClient(this);
     this.tasks = new TasksClient(this);
     this.users = new UsersClient(this);

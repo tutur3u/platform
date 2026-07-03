@@ -131,6 +131,105 @@ describe('TuturuuuUserClient', () => {
     expect(headers.get('x-sdk-client')).toBe('tuturuuu-cli');
   });
 
+  it('routes external project helpers through the workspace API', async () => {
+    const fetchMock = vi
+      .fn<typeof fetch>()
+      .mockImplementation(async () => Response.json({ ok: true }));
+    const client = new TuturuuuUserClient({
+      accessToken: 'access-token',
+      baseUrl: 'https://tuturuuu.com',
+      fetch: fetchMock,
+    });
+    const manifest = {
+      adapter: 'exocorpse',
+      collections: [],
+      version: 1,
+    };
+
+    await client.external.projects.summary('ws-1');
+    await client.external.projects.delivery('ws-1', { preview: true });
+    await client.external.projects.collections('ws-1');
+    await client.external.projects.entries('ws-1', {
+      collectionId: 'characters',
+    });
+    await client.external.projects.snapshot('ws-1');
+    await client.external.projects.setup('ws-1', manifest);
+    await client.external.projects.diff('ws-1', manifest);
+    await client.external.projects.apply('ws-1', {
+      force: true,
+      manifest,
+    });
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      'https://tuturuuu.com/api/v1/workspaces/ws-1/external-projects/summary',
+      expect.objectContaining({
+        cache: 'no-store',
+      })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      'https://tuturuuu.com/api/v1/workspaces/ws-1/external-projects/delivery?preview=true',
+      expect.objectContaining({
+        cache: 'no-store',
+      })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      3,
+      'https://tuturuuu.com/api/v1/workspaces/ws-1/external-projects/collections',
+      expect.objectContaining({
+        cache: 'no-store',
+      })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      4,
+      'https://tuturuuu.com/api/v1/workspaces/ws-1/external-projects/entries?collectionId=characters',
+      expect.objectContaining({
+        cache: 'no-store',
+      })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      5,
+      'https://tuturuuu.com/api/v1/workspaces/ws-1/external-projects/sync/snapshot',
+      expect.objectContaining({
+        cache: 'no-store',
+      })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      6,
+      'https://tuturuuu.com/api/v1/workspaces/ws-1/external-projects/setup',
+      expect.objectContaining({
+        body: JSON.stringify({ manifest }),
+        cache: 'no-store',
+        method: 'POST',
+      })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      7,
+      'https://tuturuuu.com/api/v1/workspaces/ws-1/external-projects/sync/diff',
+      expect.objectContaining({
+        body: JSON.stringify({ manifest }),
+        cache: 'no-store',
+        method: 'POST',
+      })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      8,
+      'https://tuturuuu.com/api/v1/workspaces/ws-1/external-projects/sync/apply',
+      expect.objectContaining({
+        body: JSON.stringify({
+          force: true,
+          manifest,
+        }),
+        cache: 'no-store',
+        method: 'POST',
+      })
+    );
+
+    const requestHeaders = new Headers(fetchMock.mock.calls[0]?.[1]?.headers);
+    expect(requestHeaders.get('authorization')).toBe('Bearer access-token');
+  });
+
   it('does not attach or refresh CLI auth for cross-origin fetch requests', async () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-05-03T00:00:00.000Z'));

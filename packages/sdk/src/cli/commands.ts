@@ -33,6 +33,7 @@ import {
   writeCliConfig,
 } from './config';
 import { runDevboxCommand } from './devbox';
+import { runExternalProjectsCommand } from './external-projects';
 import { runFinanceCommand } from './finance';
 import { getGlobalHelp, getHelpOutput } from './help';
 import {
@@ -1381,6 +1382,21 @@ export async function runCli(argv = process.argv.slice(2)) {
   }
 
   const workspaceId = getWorkspaceId(config, flags);
+
+  if (group === 'external') {
+    if (action !== 'projects') {
+      throw new Error('Unknown command. Use `ttr external projects --help`.');
+    }
+
+    await runExternalProjectsCommand({
+      client,
+      flags,
+      json,
+      positionals: positionals.slice(2),
+      workspaceId,
+    });
+    return;
+  }
 
   if (group === 'calendar') {
     await runCalendarCommand({

@@ -1,9 +1,13 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
+  applyWorkspaceExternalProjectSyncManifest,
   createWorkspaceExternalProjectAssetUploadUrl,
   createWorkspaceExternalProjectFieldDefinition,
   deleteWorkspaceExternalProjectFieldDefinition,
+  diffWorkspaceExternalProjectSyncManifest,
+  getWorkspaceExternalProjectSyncSnapshot,
   listWorkspaceExternalProjectFieldDefinitions,
+  setupWorkspaceExternalProject,
   updateWorkspaceExternalProjectFieldDefinition,
   uploadWorkspaceExternalProjectAssetFile,
   uploadWorkspaceExternalProjectWebglPackageFile,
@@ -341,5 +345,86 @@ describe('external project field definition helpers', () => {
         method: 'DELETE',
       })
     );
+  });
+});
+
+describe('external project sync helpers', () => {
+  it('uses workspace setup, snapshot, diff, and apply routes', async () => {
+    const manifest = {
+      adapter: 'exocorpse',
+      collections: [],
+      project: {
+        id: 'exocorpse',
+      },
+      version: 1,
+    };
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(createJsonResponse({ ok: true }));
+    const options = {
+      baseUrl: 'https://web.example.com',
+      fetch: fetchMock as unknown as typeof fetch,
+    };
+
+    await setupWorkspaceExternalProject('ws-1', { manifest }, options);
+    await getWorkspaceExternalProjectSyncSnapshot('ws-1', options);
+    await diffWorkspaceExternalProjectSyncManifest(
+      'ws-1',
+      { manifest },
+      options
+    );
+    await applyWorkspaceExternalProjectSyncManifest(
+      'ws-1',
+      {
+        force: true,
+        manifest,
+      },
+      options
+    );
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      'https://web.example.com/api/v1/workspaces/ws-1/external-projects/setup',
+      expect.objectContaining({
+        body: JSON.stringify({ manifest }),
+        cache: 'no-store',
+        method: 'POST',
+      })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      'https://web.example.com/api/v1/workspaces/ws-1/external-projects/sync/snapshot',
+      expect.objectContaining({
+        cache: 'no-store',
+      })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      3,
+      'https://web.example.com/api/v1/workspaces/ws-1/external-projects/sync/diff',
+      expect.objectContaining({
+        body: JSON.stringify({ manifest }),
+        cache: 'no-store',
+        method: 'POST',
+      })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      4,
+      'https://web.example.com/api/v1/workspaces/ws-1/external-projects/sync/apply',
+      expect.objectContaining({
+        body: JSON.stringify({
+          force: true,
+          manifest,
+        }),
+        cache: 'no-store',
+        method: 'POST',
+      })
+    );
+
+    for (const [, init] of fetchMock.mock.calls) {
+      const headers = new Headers(init?.headers);
+      if (init?.method === 'POST') {
+        expect(headers.get('content-type')).toBe('application/json');
+      }
+    }
   });
 });

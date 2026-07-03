@@ -77,6 +77,11 @@
       "import": "./dist/external-project-team.js",
       "require": "./dist/external-project-team.js"
     },
+    "./external-projects": {
+      "types": "./dist/external-projects.d.ts",
+      "import": "./dist/external-projects.js",
+      "require": "./dist/external-projects.js"
+    },
     "./finance": {
       "types": "./dist/finance.d.ts",
       "import": "./dist/finance.js",
