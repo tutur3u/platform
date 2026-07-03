@@ -27,6 +27,7 @@ const nextConfig = createTuturuuuNextConfig({
   transpilePackages: [
     '@tuturuuu/hive-ui',
     '@tuturuuu/internal-api',
+    '@tuturuuu/mind-core',
     '@tuturuuu/realtime',
   ],
   async rewrites() {
