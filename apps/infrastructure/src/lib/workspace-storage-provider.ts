@@ -259,8 +259,8 @@ function createR2SignedUrl(
 ): Promise<string> {
   // Bun can install AWS packages against duplicate Smithy type patch versions.
   return getSignedUrl(
-    client as SignedUrlClient,
-    command as SignedUrlCommand,
+    client as unknown as SignedUrlClient,
+    command as unknown as SignedUrlCommand,
     options
   );
 }
