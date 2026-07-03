@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.14.0](https://github.com/tutur3u/platform/compare/internal-api-v0.13.0...internal-api-v0.14.0) (2026-07-03)
+
+
+### Features
+
+* **inventory:** add revenue share and category bundles ([20b2e1e](https://github.com/tutur3u/platform/commit/20b2e1e5302d1db275766b7b4b92d9bdf69de04a))
+* **sdk:** add external project operator commands ([729ab49](https://github.com/tutur3u/platform/commit/729ab4996b6e7e97efdecae72077986b8a6dcbce))
+
 ## [0.13.0](https://github.com/tutur3u/platform/compare/internal-api-v0.12.0...internal-api-v0.13.0) (2026-07-02)
 
 

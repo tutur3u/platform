@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.12.1](https://github.com/tutur3u/platform/compare/utils-v0.12.0...utils-v0.12.1) (2026-07-03)
+
+
+### Bug Fixes
+
+* **infrastructure:** restore canonical auth host access ([9f6715f](https://github.com/tutur3u/platform/commit/9f6715fb1c5a89598556cba33b16938b76995fc6))
+
 ## [0.12.0](https://github.com/tutur3u/platform/compare/utils-v0.11.0...utils-v0.12.0) (2026-07-02)
 
 

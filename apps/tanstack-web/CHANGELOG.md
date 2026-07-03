@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.6.0](https://github.com/tutur3u/platform/compare/tanstack-web-v0.5.0...tanstack-web-v0.6.0) (2026-07-03)
+
+
+### Features
+
+* **calendar:** migrate calendar module from web to dedicated calendar app ([678b949](https://github.com/tutur3u/platform/commit/678b949096e90d1c9d215fea50d0eb4ba9698a7e))
+* **inventory:** add revenue share and category bundles ([20b2e1e](https://github.com/tutur3u/platform/commit/20b2e1e5302d1db275766b7b4b92d9bdf69de04a))
+
+
+### Bug Fixes
+
+* **ci:** drop stale infrastructure web E2E ([dc91e2d](https://github.com/tutur3u/platform/commit/dc91e2dfb572f8313a06dca97e6ef06a75c37bbd))
+* **ci:** stabilize Docker E2E readiness ([2227af4](https://github.com/tutur3u/platform/commit/2227af438a466b81720f642b81f4d849a88437b1))
+* **ci:** stabilize tanstack dual-stack healthcheck ([b5a095e](https://github.com/tutur3u/platform/commit/b5a095e86a40f558af3ba6d63f6055ae482f81fa))
+
 ## [0.5.0](https://github.com/tutur3u/platform/compare/tanstack-web-v0.4.0...tanstack-web-v0.5.0) (2026-07-02)
 
 

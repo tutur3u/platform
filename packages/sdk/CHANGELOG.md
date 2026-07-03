@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.13.0](https://github.com/tutur3u/platform/compare/sdk-v0.12.1...sdk-v0.13.0) (2026-07-03)
+
+
+### Features
+
+* **sdk:** add external project operator commands ([729ab49](https://github.com/tutur3u/platform/commit/729ab4996b6e7e97efdecae72077986b8a6dcbce))
+
 ## [0.12.1](https://github.com/tutur3u/platform/compare/sdk-v0.12.0...sdk-v0.12.1) (2026-07-02)
 
 

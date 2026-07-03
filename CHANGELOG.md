@@ -1,5 +1,41 @@
 # Changelog
 
+## [0.17.0](https://github.com/tutur3u/platform/compare/platform-v0.16.0...platform-v0.17.0) (2026-07-03)
+
+
+### Features
+
+* **calendar:** migrate calendar module from web to dedicated calendar app ([678b949](https://github.com/tutur3u/platform/commit/678b949096e90d1c9d215fea50d0eb4ba9698a7e))
+* **infrastructure:** add satellite shell parity ([d2fcaf3](https://github.com/tutur3u/platform/commit/d2fcaf35a8c2dd2ccb6b14961287c3d518c02a26))
+* **inventory:** add revenue share and category bundles ([20b2e1e](https://github.com/tutur3u/platform/commit/20b2e1e5302d1db275766b7b4b92d9bdf69de04a))
+* **sdk:** add external project operator commands ([729ab49](https://github.com/tutur3u/platform/commit/729ab4996b6e7e97efdecae72077986b8a6dcbce))
+
+
+### Bug Fixes
+
+* **ci:** build E2E support images in native mode ([bc2a2aa](https://github.com/tutur3u/platform/commit/bc2a2aa373b7081da5810eee439bc0675e5620d2))
+* **ci:** cap Rust backend cargo parallelism ([0c8a018](https://github.com/tutur3u/platform/commit/0c8a018d053414bad0778af0441d140c3b3c64fe))
+* **ci:** drop stale infrastructure web E2E ([dc91e2d](https://github.com/tutur3u/platform/commit/dc91e2dfb572f8313a06dca97e6ef06a75c37bbd))
+* **ci:** reduce MarkItDown Docker build disk use ([f83aa17](https://github.com/tutur3u/platform/commit/f83aa1739b5b755baebbf6fd3abf9774f0474157))
+* **ci:** stabilize Docker E2E readiness ([2227af4](https://github.com/tutur3u/platform/commit/2227af438a466b81720f642b81f4d849a88437b1))
+* **ci:** stabilize PR merge gates ([bfa893a](https://github.com/tutur3u/platform/commit/bfa893aa49dc6337c5e111ff6ce924ecc68c65a6))
+* **ci:** stabilize tanstack dual-stack healthcheck ([b5a095e](https://github.com/tutur3u/platform/commit/b5a095e86a40f558af3ba6d63f6055ae482f81fa))
+* **db:** preserve RLS policy semantics ([30519a9](https://github.com/tutur3u/platform/commit/30519a9b54d3e06b077c1768cce5767de0885772))
+* **infrastructure:** harden internal dashboard access ([81e8f8b](https://github.com/tutur3u/platform/commit/81e8f8b2d411bbf43a2b5418ea69593ea32418c5))
+* **infrastructure:** land root workspace on internal ([b3f63c2](https://github.com/tutur3u/platform/commit/b3f63c2e27dab7c5746f58e306d521f1e581b849))
+* **infrastructure:** provide intl context in locale layout ([39ebbba](https://github.com/tutur3u/platform/commit/39ebbba5d2962ca1675b75d7a9e9a598c65418fb))
+* **infrastructure:** restore canonical auth host access ([9f6715f](https://github.com/tutur3u/platform/commit/9f6715fb1c5a89598556cba33b16938b76995fc6))
+* **infrastructure:** show dashboard error details ([70de0b7](https://github.com/tutur3u/platform/commit/70de0b7f7682805e71faa6ead445c5a62077789d))
+* **infrastructure:** stop protected locale redirect loop ([d8843b5](https://github.com/tutur3u/platform/commit/d8843b593fffb577070dc2037b4636de2f7b1e6e))
+* **inventory:** grant service access to category bundle components ([63c3804](https://github.com/tutur3u/platform/commit/63c38047800352641993cbfd695a6bbd2b864017))
+* **web:** authorize workspace member invites ([4adcdc0](https://github.com/tutur3u/platform/commit/4adcdc0f31c47124efbb3cda305ece52c20d5917))
+* **web:** avoid browser IP blocks from stale auth cookies ([b44e9e2](https://github.com/tutur3u/platform/commit/b44e9e2e35da0e3b9f0973ea4e64884e6b332c7b))
+
+
+### Performance Improvements
+
+* **rls:** wrap auth helpers in (select ...) for per-statement evaluation ([#4907](https://github.com/tutur3u/platform/issues/4907)) ([4de00a9](https://github.com/tutur3u/platform/commit/4de00a9b6ae957edd335cd5ba06ed56f79728cc9))
+
 ## [0.16.0](https://github.com/tutur3u/platform/compare/platform-v0.15.0...platform-v0.16.0) (2026-07-02)
 
 

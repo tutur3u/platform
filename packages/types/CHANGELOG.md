@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.14.0](https://github.com/tutur3u/platform/compare/types-v0.13.1...types-v0.14.0) (2026-07-03)
+
+
+### Features
+
+* **inventory:** add revenue share and category bundles ([20b2e1e](https://github.com/tutur3u/platform/commit/20b2e1e5302d1db275766b7b4b92d9bdf69de04a))
+
 ## [0.13.1](https://github.com/tutur3u/platform/compare/types-v0.13.0...types-v0.13.1) (2026-07-02)
 
 

@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.9.1](https://github.com/tutur3u/platform/compare/tasks-v0.9.0...tasks-v0.9.1) (2026-07-03)
+
+
+### Bug Fixes
+
+* **build:** restore repo check ([4def830](https://github.com/tutur3u/platform/commit/4def830f463ea8a9c31af8e982eab716e9bd5f72))
+
 ## [0.9.0](https://github.com/tutur3u/platform/compare/tasks-v0.8.1...tasks-v0.9.0) (2026-06-29)
 
 

@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.10.0](https://github.com/tutur3u/platform/compare/inventory-v0.9.0...inventory-v0.10.0) (2026-07-03)
+
+
+### Features
+
+* **inventory:** add revenue share and category bundles ([20b2e1e](https://github.com/tutur3u/platform/commit/20b2e1e5302d1db275766b7b4b92d9bdf69de04a))
+
+
+### Bug Fixes
+
+* **build:** restore repo check ([4def830](https://github.com/tutur3u/platform/commit/4def830f463ea8a9c31af8e982eab716e9bd5f72))
+
 ## [0.9.0](https://github.com/tutur3u/platform/compare/inventory-v0.8.0...inventory-v0.9.0) (2026-06-29)
 
 
