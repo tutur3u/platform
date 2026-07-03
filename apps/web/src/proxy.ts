@@ -43,6 +43,7 @@ import { NextResponse } from 'next/server';
 import createIntlMiddleware from 'next-intl/middleware';
 import { BASE_URL, LOCALE_COOKIE_NAME, PUBLIC_PATHS } from './constants/common';
 import { defaultLocale, type Locale, supportedLocales } from './i18n/routing';
+import { getFinanceAppOrigin } from './lib/finance-app-url';
 import { getMailAppOrigin } from './lib/mail-app-url';
 import { getQrAppOrigin } from './lib/qr-app-url';
 import {
@@ -276,13 +277,36 @@ function redirectToQrApp(req: NextRequest) {
 }
 
 function handleMailAppRedirectRoute(req: NextRequest): NextResponse | null {
+  return handleWorkspaceSatelliteRedirectRoute(req, {
+    appOrigin: getMailAppOrigin(),
+    routeSegment: 'mail',
+  });
+}
+
+function handleFinanceAppRedirectRoute(req: NextRequest): NextResponse | null {
+  return handleWorkspaceSatelliteRedirectRoute(req, {
+    appOrigin: getFinanceAppOrigin(),
+    routeSegment: 'finance',
+  });
+}
+
+function handleWorkspaceSatelliteRedirectRoute(
+  req: NextRequest,
+  {
+    appOrigin,
+    routeSegment,
+  }: {
+    appOrigin: string;
+    routeSegment: string;
+  }
+): NextResponse | null {
   const pathSegments = req.nextUrl.pathname.split('/').filter(Boolean);
   const hasLocale =
     pathSegments[0] && supportedLocales.includes(pathSegments[0] as Locale);
   const workspaceIndex = hasLocale ? 1 : 0;
   const workspaceSlug = pathSegments[workspaceIndex];
 
-  if (!workspaceSlug || pathSegments[workspaceIndex + 1] !== 'mail') {
+  if (!workspaceSlug || pathSegments[workspaceIndex + 1] !== routeSegment) {
     return null;
   }
 
@@ -297,9 +321,9 @@ function handleMailAppRedirectRoute(req: NextRequest): NextResponse | null {
     return null;
   }
 
-  const mailSuffixSegments = pathSegments.slice(workspaceIndex + 2);
-  const redirectUrl = new URL(getMailAppOrigin());
-  redirectUrl.pathname = ['', workspaceSlug, ...mailSuffixSegments].join('/');
+  const suffixSegments = pathSegments.slice(workspaceIndex + 2);
+  const redirectUrl = new URL(appOrigin);
+  redirectUrl.pathname = ['', workspaceSlug, ...suffixSegments].join('/');
   redirectUrl.search = req.nextUrl.search;
 
   return NextResponse.redirect(redirectUrl);
@@ -1180,6 +1204,11 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
   const mailAppRedirectResponse = handleMailAppRedirectRoute(req);
   if (mailAppRedirectResponse) {
     return mailAppRedirectResponse;
+  }
+
+  const financeAppRedirectResponse = handleFinanceAppRedirectRoute(req);
+  if (financeAppRedirectResponse) {
+    return financeAppRedirectResponse;
   }
 
   // Handle authentication and MFA with the centralized middleware

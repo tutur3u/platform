@@ -19,11 +19,11 @@
         "key": "page",
         "label": "page",
         "legacyNext": 66,
-        "migrated": 160,
-        "percentComplete": 71.05,
+        "migrated": 144,
+        "percentComplete": 68.87,
         "remaining": 66,
-        "terminal": 162,
-        "total": 228,
+        "terminal": 146,
+        "total": 212,
         "unknownStatus": 0
       },
       {
@@ -31,11 +31,11 @@
         "key": "layout",
         "label": "layout",
         "legacyNext": 12,
-        "migrated": 48,
-        "percentComplete": 80,
+        "migrated": 47,
+        "percentComplete": 79.66,
         "remaining": 12,
-        "terminal": 48,
-        "total": 60,
+        "terminal": 47,
+        "total": 59,
         "unknownStatus": 0
       },
       {
@@ -129,11 +129,11 @@
         "key": "tanstack-start",
         "label": "TanStack Start",
         "legacyNext": 78,
-        "migrated": 212,
-        "percentComplete": 73.29,
+        "migrated": 195,
+        "percentComplete": 71.64,
         "remaining": 78,
-        "terminal": 214,
-        "total": 292,
+        "terminal": 197,
+        "total": 275,
         "unknownStatus": 0
       }
     ],
@@ -324,11 +324,11 @@
       "key": "total",
       "label": "All route artifacts",
       "legacyNext": 740,
-      "migrated": 294,
-      "percentComplete": 29.72,
+      "migrated": 277,
+      "percentComplete": 28.57,
       "remaining": 740,
-      "terminal": 313,
-      "total": 1053,
+      "terminal": 296,
+      "total": 1036,
       "unknownStatus": 0
     }
   },
@@ -7348,15 +7348,6 @@
       "targetOwner": "tanstack-start"
     },
     {
-      "id": "layout:/:locale/:wsId/finance:apps/web/src/app/[locale]/(dashboard)/[wsId]/finance/layout.tsx",
-      "kind": "layout",
-      "methods": [],
-      "routePath": "/:locale/:wsId/finance",
-      "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/finance/layout.tsx",
-      "status": "migrated",
-      "targetOwner": "tanstack-start"
-    },
-    {
       "id": "layout:/:locale/:wsId/link-shortener:apps/web/src/app/[locale]/(dashboard)/[wsId]/link-shortener/layout.tsx",
       "kind": "layout",
       "methods": [],
@@ -8361,150 +8352,6 @@
       "methods": [],
       "routePath": "/:locale/:wsId/external-projects",
       "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/external-projects/page.tsx",
-      "status": "migrated",
-      "targetOwner": "tanstack-start"
-    },
-    {
-      "id": "page:/:locale/:wsId/finance:apps/web/src/app/[locale]/(dashboard)/[wsId]/finance/(dashboard)/page.tsx",
-      "kind": "page",
-      "methods": [],
-      "routePath": "/:locale/:wsId/finance",
-      "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/finance/(dashboard)/page.tsx",
-      "status": "migrated",
-      "targetOwner": "tanstack-start"
-    },
-    {
-      "id": "page:/:locale/:wsId/finance/analytics:apps/web/src/app/[locale]/(dashboard)/[wsId]/finance/analytics/page.tsx",
-      "kind": "page",
-      "methods": [],
-      "routePath": "/:locale/:wsId/finance/analytics",
-      "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/finance/analytics/page.tsx",
-      "status": "migrated",
-      "targetOwner": "tanstack-start"
-    },
-    {
-      "id": "page:/:locale/:wsId/finance/budgets:apps/web/src/app/[locale]/(dashboard)/[wsId]/finance/budgets/page.tsx",
-      "kind": "page",
-      "methods": [],
-      "routePath": "/:locale/:wsId/finance/budgets",
-      "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/finance/budgets/page.tsx",
-      "status": "migrated",
-      "targetOwner": "tanstack-start"
-    },
-    {
-      "id": "page:/:locale/:wsId/finance/categories:apps/web/src/app/[locale]/(dashboard)/[wsId]/finance/categories/page.tsx",
-      "kind": "page",
-      "methods": [],
-      "routePath": "/:locale/:wsId/finance/categories",
-      "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/finance/categories/page.tsx",
-      "status": "migrated",
-      "targetOwner": "tanstack-start"
-    },
-    {
-      "id": "page:/:locale/:wsId/finance/debts:apps/web/src/app/[locale]/(dashboard)/[wsId]/finance/debts/page.tsx",
-      "kind": "page",
-      "methods": [],
-      "routePath": "/:locale/:wsId/finance/debts",
-      "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/finance/debts/page.tsx",
-      "status": "migrated",
-      "targetOwner": "tanstack-start"
-    },
-    {
-      "id": "page:/:locale/:wsId/finance/debts/:debtId:apps/web/src/app/[locale]/(dashboard)/[wsId]/finance/debts/[debtId]/page.tsx",
-      "kind": "page",
-      "methods": [],
-      "routePath": "/:locale/:wsId/finance/debts/:debtId",
-      "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/finance/debts/[debtId]/page.tsx",
-      "status": "migrated",
-      "targetOwner": "tanstack-start"
-    },
-    {
-      "id": "page:/:locale/:wsId/finance/invoices:apps/web/src/app/[locale]/(dashboard)/[wsId]/finance/invoices/page.tsx",
-      "kind": "page",
-      "methods": [],
-      "routePath": "/:locale/:wsId/finance/invoices",
-      "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/finance/invoices/page.tsx",
-      "status": "migrated",
-      "targetOwner": "tanstack-start"
-    },
-    {
-      "id": "page:/:locale/:wsId/finance/invoices/:invoiceId:apps/web/src/app/[locale]/(dashboard)/[wsId]/finance/invoices/[invoiceId]/page.tsx",
-      "kind": "page",
-      "methods": [],
-      "routePath": "/:locale/:wsId/finance/invoices/:invoiceId",
-      "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/finance/invoices/[invoiceId]/page.tsx",
-      "status": "migrated",
-      "targetOwner": "tanstack-start"
-    },
-    {
-      "id": "page:/:locale/:wsId/finance/invoices/new:apps/web/src/app/[locale]/(dashboard)/[wsId]/finance/invoices/new/page.tsx",
-      "kind": "page",
-      "methods": [],
-      "routePath": "/:locale/:wsId/finance/invoices/new",
-      "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/finance/invoices/new/page.tsx",
-      "status": "migrated",
-      "targetOwner": "tanstack-start"
-    },
-    {
-      "id": "page:/:locale/:wsId/finance/recurring:apps/web/src/app/[locale]/(dashboard)/[wsId]/finance/recurring/page.tsx",
-      "kind": "page",
-      "methods": [],
-      "routePath": "/:locale/:wsId/finance/recurring",
-      "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/finance/recurring/page.tsx",
-      "status": "migrated",
-      "targetOwner": "tanstack-start"
-    },
-    {
-      "id": "page:/:locale/:wsId/finance/tags:apps/web/src/app/[locale]/(dashboard)/[wsId]/finance/tags/page.tsx",
-      "kind": "page",
-      "methods": [],
-      "routePath": "/:locale/:wsId/finance/tags",
-      "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/finance/tags/page.tsx",
-      "status": "migrated",
-      "targetOwner": "tanstack-start"
-    },
-    {
-      "id": "page:/:locale/:wsId/finance/transactions:apps/web/src/app/[locale]/(dashboard)/[wsId]/finance/transactions/page.tsx",
-      "kind": "page",
-      "methods": [],
-      "routePath": "/:locale/:wsId/finance/transactions",
-      "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/finance/transactions/page.tsx",
-      "status": "migrated",
-      "targetOwner": "tanstack-start"
-    },
-    {
-      "id": "page:/:locale/:wsId/finance/transactions/:transactionId:apps/web/src/app/[locale]/(dashboard)/[wsId]/finance/transactions/[transactionId]/page.tsx",
-      "kind": "page",
-      "methods": [],
-      "routePath": "/:locale/:wsId/finance/transactions/:transactionId",
-      "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/finance/transactions/[transactionId]/page.tsx",
-      "status": "migrated",
-      "targetOwner": "tanstack-start"
-    },
-    {
-      "id": "page:/:locale/:wsId/finance/transactions/categories:apps/web/src/app/[locale]/(dashboard)/[wsId]/finance/transactions/categories/page.tsx",
-      "kind": "page",
-      "methods": [],
-      "routePath": "/:locale/:wsId/finance/transactions/categories",
-      "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/finance/transactions/categories/page.tsx",
-      "status": "migrated",
-      "targetOwner": "tanstack-start"
-    },
-    {
-      "id": "page:/:locale/:wsId/finance/wallets:apps/web/src/app/[locale]/(dashboard)/[wsId]/finance/wallets/page.tsx",
-      "kind": "page",
-      "methods": [],
-      "routePath": "/:locale/:wsId/finance/wallets",
-      "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/finance/wallets/page.tsx",
-      "status": "migrated",
-      "targetOwner": "tanstack-start"
-    },
-    {
-      "id": "page:/:locale/:wsId/finance/wallets/:walletId:apps/web/src/app/[locale]/(dashboard)/[wsId]/finance/wallets/[walletId]/page.tsx",
-      "kind": "page",
-      "methods": [],
-      "routePath": "/:locale/:wsId/finance/wallets/:walletId",
-      "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/finance/wallets/[walletId]/page.tsx",
       "status": "migrated",
       "targetOwner": "tanstack-start"
     },
@@ -9898,8 +9745,8 @@
   "summary": {
     "apiRoutes": 744,
     "cronRoutes": 12,
-    "layouts": 60,
-    "pages": 228,
+    "layouts": 59,
+    "pages": 212,
     "routeHandlers": 761,
     "methodCounts": {
       "GET": 416,
@@ -9910,6 +9757,6 @@
       "DELETE": 129,
       "OPTIONS": 17
     },
-    "total": 1053
+    "total": 1036
   }
 }

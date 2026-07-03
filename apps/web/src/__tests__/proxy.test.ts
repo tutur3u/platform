@@ -1126,6 +1126,22 @@ describe('web proxy api handling', () => {
     expect(mocks.authProxy).not.toHaveBeenCalled();
   });
 
+  it('redirects old workspace finance dashboard routes to the finance app before auth', async () => {
+    const { proxy } = await import('../proxy');
+    const response = await proxy(
+      new NextRequest(
+        'http://localhost/en/personal/finance/invoices/invoice-1?status=paid'
+      )
+    );
+
+    expect(response.status).toBe(307);
+    expect(response.headers.get('location')).toBe(
+      'https://finance.tuturuuu.localhost/personal/invoices/invoice-1?status=paid'
+    );
+    expect(mocks.guardApiProxyRequest).not.toHaveBeenCalled();
+    expect(mocks.authProxy).not.toHaveBeenCalled();
+  });
+
   it('returns a direct 404 for reserved root tilde routes', async () => {
     const { proxy } = await import('../proxy');
     const response = await proxy(new NextRequest('http://localhost/~'));
