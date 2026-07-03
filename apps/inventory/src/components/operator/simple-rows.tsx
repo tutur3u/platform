@@ -209,6 +209,7 @@ function getStorefrontColumns({
           title={row.name}
         />
       ),
+      sortValue: (row) => row.name,
     },
     {
       className: 'w-[9rem]',
@@ -217,6 +218,7 @@ function getStorefrontColumns({
       render: (row) => (
         <StatusBadge value={actionText(`storefrontStatus.${row.status}`)} />
       ),
+      sortValue: (row) => row.status,
     },
     {
       className: 'w-[9rem]',
@@ -231,6 +233,7 @@ function getStorefrontColumns({
           )}
         </span>
       ),
+      sortValue: (row) => row.visibility,
     },
     {
       className: 'w-[10rem]',
@@ -240,6 +243,7 @@ function getStorefrontColumns({
         t('rowDetails.listings', {
           count: row.listingsCount ?? 0,
         }),
+      sortValue: (row) => row.listingsCount ?? 0,
     },
     {
       className: 'w-[11rem]',
@@ -250,6 +254,7 @@ function getStorefrontColumns({
           {actionText(`checkoutModes.${row.checkoutMode}`)}
         </span>
       ),
+      sortValue: (row) => row.checkoutMode,
     },
     {
       className: 'w-[10rem]',
@@ -260,6 +265,7 @@ function getStorefrontColumns({
           {formatDate(row.updatedAt ?? row.createdAt)}
         </span>
       ),
+      sortValue: (row) => row.updatedAt ?? row.createdAt ?? '',
     },
     {
       cellClassName: 'text-right',
@@ -297,6 +303,7 @@ function getBundleColumns({
           title={row.name}
         />
       ),
+      sortValue: (row) => row.name,
     },
     {
       className: 'w-[9rem]',
@@ -305,6 +312,7 @@ function getBundleColumns({
       render: (row) => (
         <StatusBadge value={actionText(`bundleStatus.${row.status}`)} />
       ),
+      sortValue: (row) => row.status,
     },
     {
       className: 'w-[10rem]',
@@ -314,12 +322,17 @@ function getBundleColumns({
         actionText('componentCount', {
           count: row.components.length,
         }),
+      sortValue: (row) => row.components.length,
     },
     {
       className: 'w-[10rem]',
       header: t('columns.available'),
       key: 'available',
       render: (row) => formatAvailability(row.availableQuantity, t),
+      sortValue: (row) =>
+        row.availableQuantity === null
+          ? Number.POSITIVE_INFINITY
+          : (row.availableQuantity ?? 0),
     },
     {
       className: 'w-[9rem]',
@@ -328,6 +341,7 @@ function getBundleColumns({
       render: (row) => (
         <span className="font-medium">{money(row.price, currencyCode)}</span>
       ),
+      sortValue: (row) => row.price,
     },
     {
       className: 'w-[9rem]',
@@ -339,6 +353,7 @@ function getBundleColumns({
           status={row.polarSyncStatus}
         />
       ),
+      sortValue: (row) => row.polarSyncStatus ?? '',
     },
     {
       cellClassName: 'text-right',

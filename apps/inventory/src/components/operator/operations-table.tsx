@@ -1,7 +1,19 @@
 'use client';
 
+import type { ColumnDef } from '@tanstack/react-table';
+import { DataTable } from '@tuturuuu/ui/custom/tables/data-table';
+import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import { cn } from '@tuturuuu/utils/format';
-import type { KeyboardEvent, MouseEvent, ReactNode } from 'react';
+import { useTranslations } from 'next-intl';
+import {
+  cloneElement,
+  type KeyboardEvent,
+  type MouseEvent,
+  type ReactElement,
+  type ReactNode,
+} from 'react';
+
+type OperationsTableSortValue = boolean | number | string | null | undefined;
 
 export type OperationsTableColumn<Row> = {
   cellClassName?: string;
@@ -11,6 +23,7 @@ export type OperationsTableColumn<Row> = {
   mobileHidden?: boolean;
   mobileRender?: (row: Row) => ReactNode;
   render: (row: Row) => ReactNode;
+  sortValue?: (row: Row) => OperationsTableSortValue;
 };
 
 /**
@@ -46,6 +59,7 @@ export function OperationsTable<Row>({
   rowActivateLabel?: (row: Row) => string;
   rows: Row[];
 }) {
+  const tableT = useTranslations();
   const handleRowClick = onRowActivate
     ? (row: Row) => (event: MouseEvent) => {
         if (isInteractiveTarget(event.target)) return;
@@ -63,63 +77,73 @@ export function OperationsTable<Row>({
   const interactiveRowClass = onRowActivate
     ? 'cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset'
     : undefined;
+  const dataTableColumns: ColumnDef<Row>[] = columns.map((column) => ({
+    id: column.key,
+    accessorFn: column.sortValue
+      ? (row) => column.sortValue?.(row) ?? ''
+      : undefined,
+    enableSorting: Boolean(column.sortValue),
+    header: ({ column: tableColumn }) =>
+      typeof column.header === 'string' ? (
+        <DataTableColumnHeader
+          column={tableColumn}
+          t={tableT}
+          title={column.header}
+        />
+      ) : (
+        column.header
+      ),
+    cell: ({ row }) => (
+      <div className={cn('align-middle', column.cellClassName)}>
+        {column.render(row.original)}
+      </div>
+    ),
+    meta: {
+      cellClassName: column.cellClassName,
+      className: column.className,
+    },
+  }));
+
   return (
     <>
-      <div className="hidden overflow-hidden rounded-lg border border-border bg-card lg:block">
-        <div className="overflow-x-auto">
-          <table
-            aria-label={ariaLabel}
-            className={cn('w-full table-fixed text-left text-sm', minWidth)}
-          >
-            <thead className="border-border border-b bg-muted/45 text-muted-foreground text-xs">
-              <tr>
-                {columns.map((column) => (
-                  <th
-                    className={cn(
-                      'px-4 py-3 font-semibold tracking-normal',
-                      column.className
-                    )}
-                    key={column.key}
-                    scope="col"
-                  >
-                    {column.header}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((row) => (
-                <tr
-                  aria-label={
-                    onRowActivate ? rowActivateLabel?.(row) : undefined
-                  }
-                  className={cn(
-                    'border-border/70 border-t transition-colors hover:bg-muted/20',
-                    interactiveRowClass,
-                    getRowClassName?.(row)
-                  )}
-                  key={getRowId(row)}
-                  onClick={handleRowClick?.(row)}
-                  onKeyDown={handleRowKeyDown?.(row)}
-                  tabIndex={onRowActivate ? 0 : undefined}
-                >
-                  {columns.map((column) => (
-                    <td
-                      className={cn(
-                        'px-4 py-3 align-middle',
-                        column.cellClassName
-                      )}
-                      key={column.key}
-                    >
-                      {column.render(row)}
-                    </td>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      <section aria-label={ariaLabel} className="hidden lg:block">
+        <DataTable<Row, unknown>
+          className="space-y-0"
+          columns={dataTableColumns}
+          data={rows}
+          getRowId={getRowId}
+          hidePagination
+          hideToolbar
+          namespace={ariaLabel}
+          rowWrapper={(rowElement, rowData) => {
+            const typedRow = rowElement as ReactElement<
+              Record<string, unknown>
+            >;
+            const currentClassName =
+              typeof typedRow.props.className === 'string'
+                ? typedRow.props.className
+                : undefined;
+
+            return cloneElement(typedRow, {
+              'aria-label': onRowActivate
+                ? rowActivateLabel?.(rowData)
+                : undefined,
+              className: cn(
+                currentClassName,
+                'border-border/70 border-t transition-colors hover:bg-muted/20',
+                interactiveRowClass,
+                getRowClassName?.(rowData)
+              ),
+              onClick: handleRowClick?.(rowData),
+              onKeyDown: handleRowKeyDown?.(rowData),
+              tabIndex: onRowActivate ? 0 : undefined,
+            });
+          }}
+          tableCardClassName="overflow-x-auto rounded-lg border-border bg-card"
+          tableClassName={cn('w-full table-fixed text-left text-sm', minWidth)}
+          t={tableT}
+        />
+      </section>
       <div className="grid gap-3 lg:hidden">
         {rows.map((row) => {
           const primaryColumn = columns[0];

@@ -27,12 +27,15 @@ export function OperatorMetricCard({
         <span
           className={cn(
             'inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-border bg-muted/35 text-muted-foreground',
-            tone === 'danger' && 'bg-destructive/10 text-destructive',
-            tone === 'success' && 'bg-primary/10 text-primary',
-            tone === 'warning' && 'bg-accent text-accent-foreground'
+            tone === 'danger' &&
+              'border-dynamic-red/30 bg-dynamic-red/10 text-dynamic-red',
+            tone === 'success' &&
+              'border-dynamic-green/30 bg-dynamic-green/10 text-dynamic-green',
+            tone === 'warning' &&
+              'border-dynamic-orange/30 bg-dynamic-orange/10 text-dynamic-orange'
           )}
         >
-          <Icon className="h-4 w-4" />
+          <Icon aria-hidden="true" className="h-4 w-4" />
         </span>
       </div>
       <div className="min-w-0">

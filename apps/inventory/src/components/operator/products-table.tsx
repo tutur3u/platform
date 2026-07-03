@@ -155,6 +155,7 @@ function getProductTableColumns({
         header: t('columns.item'),
         key: 'item',
         render: ({ product }) => <ProductIdentity product={product} />,
+        sortValue: ({ product }) => product.name,
       },
       {
         className: 'w-[13rem]',
@@ -168,12 +169,19 @@ function getProductTableColumns({
             secondary={stringField(inventory, 'unit_name') ?? product.unit}
           />
         ),
+        sortValue: ({ inventory, product }) =>
+          [
+            stringField(inventory, 'warehouse_name') ?? product.warehouse ?? '',
+            stringField(inventory, 'unit_name') ?? product.unit ?? '',
+          ].join(' '),
       },
       {
         className: 'w-[9rem]',
         header: t('columns.available'),
         key: 'available',
         render: (row) => <StockAmount row={row} />,
+        sortValue: ({ stockState }) =>
+          stockState.isUnlimited ? Number.POSITIVE_INFINITY : stockState.amount,
       },
       {
         className: 'w-[8rem]',
@@ -182,6 +190,7 @@ function getProductTableColumns({
         render: ({ stockState }) => (
           <span className="font-medium">{stockState.minAmount}</span>
         ),
+        sortValue: ({ stockState }) => stockState.minAmount,
       },
       {
         className: 'w-[10rem]',
@@ -192,6 +201,7 @@ function getProductTableColumns({
             {currency(numberOrZero(inventory.price), currencyCode)}
           </span>
         ),
+        sortValue: ({ inventory }) => numberOrZero(inventory.price),
       },
       {
         className: 'w-[12rem]',
@@ -213,6 +223,7 @@ function getProductTableColumns({
       header: t('columns.item'),
       key: 'item',
       render: ({ product }) => <ProductIdentity product={product} />,
+      sortValue: ({ product }) => product.name,
     },
     {
       className: 'w-[14rem]',
@@ -224,6 +235,8 @@ function getProductTableColumns({
           secondary={product.manufacturer}
         />
       ),
+      sortValue: ({ product }) =>
+        [product.category ?? '', product.manufacturer ?? ''].join(' '),
     },
     {
       className: 'w-[14rem]',
@@ -232,6 +245,8 @@ function getProductTableColumns({
       render: ({ product }) => (
         <TextStack primary={product.owner?.name} secondary={product.usage} />
       ),
+      sortValue: ({ product }) =>
+        [product.owner?.name ?? '', product.usage ?? ''].join(' '),
     },
     {
       className: 'w-[10rem]',
@@ -242,6 +257,7 @@ function getProductTableColumns({
           {currency(numberOrZero(inventory.price), currencyCode)}
         </span>
       ),
+      sortValue: ({ inventory }) => numberOrZero(inventory.price),
     },
     {
       className: 'w-[18rem]',
@@ -252,6 +268,10 @@ function getProductTableColumns({
           badges={badges.filter((badge) => badge.key !== 'costing')}
         />
       ),
+      sortValue: ({ badges }) =>
+        badges.filter(
+          (badge) => badge.key !== 'costing' && badge.tone === 'missing'
+        ).length,
     },
     {
       className: 'w-[12rem]',
@@ -262,6 +282,12 @@ function getProductTableColumns({
           badges={badges.filter((badge) => badge.key === 'costing')}
         />
       ),
+      sortValue: ({ badges }) =>
+        badges.some(
+          (badge) => badge.key === 'costing' && badge.tone === 'ready'
+        )
+          ? 1
+          : 0,
     },
     actionColumn,
   ];
