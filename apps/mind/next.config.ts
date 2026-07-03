@@ -8,7 +8,11 @@ const withNextIntl = createNextIntlPlugin();
 const WEB_APP_URL = resolveTuturuuuWebAppUrl();
 
 const nextConfig = createTuturuuuNextConfig({
-  transpilePackages: ['@tuturuuu/internal-api', '@tuturuuu/mind-ui'],
+  transpilePackages: [
+    '@tuturuuu/internal-api',
+    '@tuturuuu/mind-core',
+    '@tuturuuu/mind-ui',
+  ],
   async rewrites() {
     return {
       beforeFiles: [],

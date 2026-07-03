@@ -1,24 +1,14 @@
-import { MindBoardIndex } from '@tuturuuu/mind-ui';
-import { notFound } from 'next/navigation';
-import { getWebMindWorkspaceContext } from '@/lib/mind-workspace-context';
+import { redirect } from 'next/navigation';
+import { getMindAppOrigin } from '@/lib/mind-app-url';
 
-export default async function MindPage({
-  params,
-}: {
+interface PageProps {
   params: Promise<{ wsId: string }>;
-}) {
+}
+
+// The mind experience has moved to the dedicated mind app (apps/mind), which
+// serves each workspace's mind boards at its root path. This route redirects
+// there to preserve existing links.
+export default async function MindRedirectPage({ params }: PageProps) {
   const { wsId } = await params;
-  const context = await getWebMindWorkspaceContext(wsId);
-
-  if (!context) {
-    notFound();
-  }
-
-  return (
-    <MindBoardIndex
-      mindPrefix="/mind"
-      workspaceSlug={wsId}
-      wsId={context.wsId}
-    />
-  );
+  redirect(`${getMindAppOrigin()}/${wsId}`);
 }
