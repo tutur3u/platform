@@ -18,6 +18,7 @@ const TANSTACK_ROOT_REDIRECT_PATHS = [
   '/pricing',
   '/products/meet-together',
   '/qr-generator',
+  '/tools/random',
 ];
 
 const AUTH_GATED_MARKETING_ROUTE_PATHS = new Set([

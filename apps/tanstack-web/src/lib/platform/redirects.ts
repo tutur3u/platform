@@ -176,6 +176,20 @@ export function getMailAppOrigin() {
   });
 }
 
+export function getToolsAppOrigin() {
+  return resolveInternalAppUrl({
+    appName: 'tools',
+    candidates: [
+      process.env.TOOLS_APP_URL,
+      process.env.NEXT_PUBLIC_TOOLS_APP_URL,
+    ],
+    fallback:
+      process.env.NODE_ENV === 'production'
+        ? 'https://tools.tuturuuu.com'
+        : getLocalInternalAppUrl('tools', 'http://localhost:7825'),
+  });
+}
+
 export function getMeetAppOrigin() {
   return resolveInternalAppUrl({
     appName: 'meet',
@@ -297,6 +311,16 @@ export function buildQrGeneratorRedirectHref(
   search: LegacySearchParams | string | URLSearchParams
 ) {
   const url = new URL(getQrAppOrigin());
+
+  appendSearchParams(url, search, { preserveEmptyStringValues: true });
+
+  return url.toString();
+}
+
+export function buildToolsRandomRedirectHref(
+  search: LegacySearchParams | string | URLSearchParams
+) {
+  const url = new URL('/random', `${getToolsAppOrigin()}/`);
 
   appendSearchParams(url, search, { preserveEmptyStringValues: true });
 

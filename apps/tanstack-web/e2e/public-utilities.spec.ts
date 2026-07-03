@@ -6,13 +6,11 @@ import {
 } from './helpers/public-routes';
 
 /**
- * Public, no-auth utility/tool and security routes confirmed `migrated` in
+ * Public, no-auth utility and security routes confirmed `migrated` in
  * apps/tanstack-web/migration/route-manifest.json with a matching route file
  * under apps/tanstack-web/src/routes/$locale/*.
  *
  * Headings are taken from the rendered <h1> of each migrated route:
- * - `/tools/random` renders the `RandomGeneratorPage` <h1> ("Secure random
- *   generator", the top-level `title` key from random-generator-messages).
  * - `/security`, `/security/policy`, `/security/bug-bounty` render hero <h1>s
  *   whose highlighted text is split across gradient `<span>`s, so heading-role
  *   accessible-name matching is used to concatenate them.
@@ -22,10 +20,6 @@ import {
  * with no renderable content of its own.
  */
 const utilityRoutes = [
-  {
-    path: `/${DEFAULT_LOCALE}/tools/random`,
-    heading: 'Secure random generator',
-  },
   {
     path: `/${DEFAULT_LOCALE}/security`,
     heading: 'Your Security is Our Top Priority',

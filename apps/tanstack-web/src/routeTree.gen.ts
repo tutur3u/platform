@@ -15,6 +15,7 @@ import { Route as PricingRouteImport } from './routes/pricing';
 import { Route as LocaleRouteRouteImport } from './routes/$locale/route';
 import { Route as IndexRouteImport } from './routes/index';
 import { Route as LocaleIndexRouteImport } from './routes/$locale/index';
+import { Route as ToolsRandomRouteImport } from './routes/tools/random';
 import { Route as ProductsMeetTogetherRouteImport } from './routes/products/meet-together';
 import { Route as LocaleWomenInTechRouteImport } from './routes/$locale/women-in-tech';
 import { Route as LocaleVerifyTokenRouteImport } from './routes/$locale/verify-token';
@@ -247,6 +248,11 @@ const LocaleIndexRoute = LocaleIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => LocaleRouteRoute,
+} as any);
+const ToolsRandomRoute = ToolsRandomRouteImport.update({
+  id: '/tools/random',
+  path: '/tools/random',
+  getParentRoute: () => rootRouteImport,
 } as any);
 const ProductsMeetTogetherRoute = ProductsMeetTogetherRouteImport.update({
   id: '/products/meet-together',
@@ -1404,6 +1410,7 @@ export interface FileRoutesByFullPath {
   '/$locale/verify-token': typeof LocaleVerifyTokenRoute;
   '/$locale/women-in-tech': typeof LocaleWomenInTechRoute;
   '/products/meet-together': typeof ProductsMeetTogetherRoute;
+  '/tools/random': typeof ToolsRandomRoute;
   '/$locale/': typeof LocaleIndexRoute;
   '/$locale/$wsId/ai-chat': typeof LocaleWsIdAiChatRouteWithChildren;
   '/$locale/$wsId/calendar': typeof LocaleWsIdCalendarRoute;
@@ -1613,6 +1620,7 @@ export interface FileRoutesByTo {
   '/$locale/verify-token': typeof LocaleVerifyTokenRoute;
   '/$locale/women-in-tech': typeof LocaleWomenInTechRoute;
   '/products/meet-together': typeof ProductsMeetTogetherRoute;
+  '/tools/random': typeof ToolsRandomRoute;
   '/$locale': typeof LocaleIndexRoute;
   '/$locale/$wsId/ai-chat': typeof LocaleWsIdAiChatRouteWithChildren;
   '/$locale/$wsId/calendar': typeof LocaleWsIdCalendarRoute;
@@ -1824,6 +1832,7 @@ export interface FileRoutesById {
   '/$locale/verify-token': typeof LocaleVerifyTokenRoute;
   '/$locale/women-in-tech': typeof LocaleWomenInTechRoute;
   '/products/meet-together': typeof ProductsMeetTogetherRoute;
+  '/tools/random': typeof ToolsRandomRoute;
   '/$locale/': typeof LocaleIndexRoute;
   '/$locale/$wsId/ai-chat': typeof LocaleWsIdAiChatRouteWithChildren;
   '/$locale/$wsId/calendar': typeof LocaleWsIdCalendarRoute;
@@ -2036,6 +2045,7 @@ export interface FileRouteTypes {
     | '/$locale/verify-token'
     | '/$locale/women-in-tech'
     | '/products/meet-together'
+    | '/tools/random'
     | '/$locale/'
     | '/$locale/$wsId/ai-chat'
     | '/$locale/$wsId/calendar'
@@ -2245,6 +2255,7 @@ export interface FileRouteTypes {
     | '/$locale/verify-token'
     | '/$locale/women-in-tech'
     | '/products/meet-together'
+    | '/tools/random'
     | '/$locale'
     | '/$locale/$wsId/ai-chat'
     | '/$locale/$wsId/calendar'
@@ -2455,6 +2466,7 @@ export interface FileRouteTypes {
     | '/$locale/verify-token'
     | '/$locale/women-in-tech'
     | '/products/meet-together'
+    | '/tools/random'
     | '/$locale/'
     | '/$locale/$wsId/ai-chat'
     | '/$locale/$wsId/calendar'
@@ -2641,6 +2653,7 @@ export interface RootRouteChildren {
   QrGeneratorRoute: typeof QrGeneratorRoute;
   Char126offlineRoute: typeof Char126offlineRoute;
   ProductsMeetTogetherRoute: typeof ProductsMeetTogetherRoute;
+  ToolsRandomRoute: typeof ToolsRandomRoute;
 }
 
 declare module '@tanstack/react-router' {
@@ -2686,6 +2699,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/$locale/';
       preLoaderRoute: typeof LocaleIndexRouteImport;
       parentRoute: typeof LocaleRouteRoute;
+    };
+    '/tools/random': {
+      id: '/tools/random';
+      path: '/tools/random';
+      fullPath: '/tools/random';
+      preLoaderRoute: typeof ToolsRandomRouteImport;
+      parentRoute: typeof rootRouteImport;
     };
     '/products/meet-together': {
       id: '/products/meet-together';
@@ -4844,6 +4864,7 @@ const rootRouteChildren: RootRouteChildren = {
   QrGeneratorRoute: QrGeneratorRoute,
   Char126offlineRoute: Char126offlineRoute,
   ProductsMeetTogetherRoute: ProductsMeetTogetherRoute,
+  ToolsRandomRoute: ToolsRandomRoute,
 };
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

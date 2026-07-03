@@ -16,6 +16,7 @@ import {
   buildMindBoardRedirectHref,
   buildMindRedirectHref,
   buildQrGeneratorRedirectHref,
+  buildToolsRandomRedirectHref,
   buildVerifyTokenRedirectHref,
   courseBuilderRedirectHref,
   docsRedirectHref,
@@ -208,6 +209,16 @@ describe('public redirect helpers', () => {
 
     expect(buildQrGeneratorRedirectHref(searchParams)).toBe(
       'https://qr.example.com/?url=https%3A%2F%2Ftuturuuu.com%2Fdocs'
+    );
+  });
+
+  it('redirects tools random to the Tools app and preserves query entries', () => {
+    vi.stubEnv('TOOLS_APP_URL', 'https://tools.example.com/base/');
+
+    expect(
+      buildToolsRandomRedirectHref('?utm_source=e2e&tag=a&tag=b&empty=')
+    ).toBe(
+      'https://tools.example.com/random?utm_source=e2e&tag=a&tag=b&empty='
     );
   });
 
