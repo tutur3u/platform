@@ -1,7 +1,7 @@
 ---
 title: "GitHub Actions Runbook"
 description: "How the repository’s automation is organized, gated, and operated."
-updatedAt: "2026-06-21"
+updatedAt: "2026-07-04"
 ---
 
 GitHub Actions is the primary automation plane for Tuturuuu.
@@ -49,6 +49,28 @@ Affected Vercel rules:
 
 `bun.lock`-only changes intentionally run all Vercel app deploys because ownership
 is ambiguous without a manifest or source path.
+
+## Pull Request Close Cancellation
+
+`cancel-pr-runs-on-close.yaml` runs on the `pull_request_target` `closed` event
+and cancels active GitHub Actions runs that still belong to the closed pull
+request. It exists to stop queued or long-running checks after a PR is closed
+without adding `closed` triggers to every CI workflow.
+
+Because `pull_request_target` runs with base-repository privileges, keep this
+workflow narrow:
+
+- Do not checkout or execute pull request head code.
+- Checkout only the trusted default branch, with persisted credentials disabled.
+- Pin GitHub-owned actions to full commit SHAs.
+- Grant only `actions: write` and `contents: read` to the cancellation job.
+- Do not pass repository secrets other than the short-lived `GITHUB_TOKEN`.
+
+The cancellation script lists active runs by the closed PR head SHA. It cancels
+matching PR workflow runs and same-repository branch push runs for the PR branch,
+but never cancels `main` or `production` push runs. Runs in contributor forks are
+outside the base repository token's authority and are not cancelled by this
+workflow.
 
 ## Main Workflow Groups
 

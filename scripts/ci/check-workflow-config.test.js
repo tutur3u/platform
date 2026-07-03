@@ -427,6 +427,46 @@ test('mobile store deployment workflow is production-push beta delivery only', (
   assert.doesNotMatch(workflow, /path: .*mobile-deployment/i);
 });
 
+test('closed PR cancellation workflow is registered and avoids PR head code', () => {
+  const workflowName = 'cancel-pr-runs-on-close.yaml';
+  const workflow = fs.readFileSync(
+    path.join(repoRoot, '.github', 'workflows', workflowName),
+    'utf8'
+  );
+  const ciConfig = fs.readFileSync(path.join(repoRoot, 'tuturuuu.ts'), 'utf8');
+
+  assert.match(
+    ciConfig,
+    /["']cancel-pr-runs-on-close\.yaml["']:\s*true/,
+    'closed PR cancellation workflow must be registered in tuturuuu.ts'
+  );
+  assert.ok(readWorkflowYaml(workflowName));
+  assert.match(
+    workflow,
+    /^on:\n {2}pull_request_target:\n {4}types:\n {6}- closed\n/m
+  );
+  assert.match(workflow, /^ {2}actions:\s*write\b/m);
+  assert.match(workflow, /^ {2}contents:\s*read\b/m);
+  assert.match(workflow, /uses: \.\/\.github\/workflows\/ci-check\.yml/);
+  assert.match(workflow, /workflow_name: cancel-pr-runs-on-close\.yaml/);
+  assert.match(workflow, /^ {6}deployments:\s*read\b/m);
+  assert.match(workflow, /uses: actions\/checkout@[a-f0-9]{40}/);
+  assert.match(workflow, /uses: actions\/setup-node@[a-f0-9]{40}/);
+  assert.match(
+    workflow,
+    /ref: \$\{\{ github\.event\.repository\.default_branch \}\}/
+  );
+  assert.match(workflow, /persist-credentials: false/);
+  assert.match(
+    workflow,
+    /node --experimental-strip-types scripts\/ci\/cancel-closed-pr-runs\.ts/
+  );
+  assert.doesNotMatch(workflow, /actions\/github-script/);
+  assert.doesNotMatch(workflow, /github\.event\.pull_request\.head/);
+  assert.doesNotMatch(workflow, /\bgithub\.head_ref\b/);
+  assert.doesNotMatch(workflow, /refs\/pull/);
+});
+
 test('workflows use the repo Bun setup and install retry helpers', () => {
   const workflowsDir = path.join(repoRoot, '.github', 'workflows');
   const workflowFiles = fs
