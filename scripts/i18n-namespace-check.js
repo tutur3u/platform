@@ -89,7 +89,7 @@ const UNCHECKED_APPS = new Set([
   'apps/inventory',
   'apps/learn',
   'apps/mail',
-  'apps/qr',
+  'apps/tools',
   'apps/teach',
 ]);
 

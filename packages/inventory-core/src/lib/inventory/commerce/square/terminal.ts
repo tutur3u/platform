@@ -6,10 +6,7 @@ import type {
 } from '@tuturuuu/internal-api/inventory';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { serverLogger } from '../../../infrastructure/log-drain';
-import {
-  getCheckoutById,
-  releaseCheckout,
-} from '../checkouts';
+import { getCheckoutById, releaseCheckout } from '../checkouts';
 import { recordInventorySaleFinanceTransaction } from '../finance';
 import {
   cancelSquareTerminalCheckoutApi,

@@ -1,6 +1,3 @@
-import { NextResponse } from 'next/server';
-import { z } from 'zod';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { authorizeInventoryWorkspace } from '@tuturuuu/inventory-core/commerce/auth';
 import {
   createStorefrontListing,
@@ -14,6 +11,9 @@ import {
   canManageInventoryCatalog,
   canViewInventoryCatalog,
 } from '@tuturuuu/inventory-core/permissions';
+import { NextResponse } from 'next/server';
+import { z } from 'zod';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 interface Params {
   params: Promise<{ storefrontId: string; wsId: string }>;

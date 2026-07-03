@@ -1,3 +1,8 @@
+import {
+  syncInventoryPolarCheckout,
+  syncInventoryPolarOrder,
+} from '@tuturuuu/inventory-core/commerce/polar';
+import { applyPolarProductToInventory } from '@tuturuuu/inventory-core/commerce/polar-product-sync';
 import type {
   Checkout,
   Order,
@@ -9,11 +14,6 @@ import { createPolarClient } from '@tuturuuu/payment/polar/server';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { upsertSubscriptionError } from '@/app/api/payment/migrations/helper';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
-import {
-  syncInventoryPolarCheckout,
-  syncInventoryPolarOrder,
-} from '@tuturuuu/inventory-core/commerce/polar';
-import { applyPolarProductToInventory } from '@tuturuuu/inventory-core/commerce/polar-product-sync';
 import { syncOrderToDatabase } from '@/utils/polar-order-helper';
 import { syncProductToDatabase } from '@/utils/polar-product-helper';
 import { assignSeatsToAllMembers } from '@/utils/polar-seat-helper';

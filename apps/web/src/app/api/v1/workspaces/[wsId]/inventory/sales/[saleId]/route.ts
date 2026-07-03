@@ -1,8 +1,3 @@
-import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
-import { NextResponse } from 'next/server';
-import { z } from 'zod';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { getInventoryActorContext } from '@tuturuuu/inventory-core/actor';
 import {
   createInventoryAuditLog,
@@ -15,6 +10,11 @@ import {
   canViewInventorySales,
 } from '@tuturuuu/inventory-core/permissions';
 import { getInventorySale } from '@tuturuuu/inventory-core/sales-rpc';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
+import { NextResponse } from 'next/server';
+import { z } from 'zod';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 interface Params {
   params: Promise<{

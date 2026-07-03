@@ -1,6 +1,3 @@
-import { NextResponse } from 'next/server';
-import { z } from 'zod';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { authorizeInventoryWorkspace } from '@tuturuuu/inventory-core/commerce/auth';
 import {
   deleteOptionTemplate,
@@ -8,6 +5,9 @@ import {
 } from '@tuturuuu/inventory-core/commerce/repository';
 import { optionTemplatePatchSchema } from '@tuturuuu/inventory-core/commerce/schemas';
 import { canManageInventoryCatalog } from '@tuturuuu/inventory-core/permissions';
+import { NextResponse } from 'next/server';
+import { z } from 'zod';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 interface Params {
   params: Promise<{ templateId: string; wsId: string }>;

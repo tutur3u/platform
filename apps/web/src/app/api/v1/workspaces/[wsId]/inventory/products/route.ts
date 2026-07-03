@@ -1,3 +1,14 @@
+import { authorizeInventoryWorkspace } from '@tuturuuu/inventory-core/commerce/auth';
+import {
+  canCreateInventorySales,
+  canViewInventoryCatalog,
+  canViewInventoryStock,
+} from '@tuturuuu/inventory-core/permissions';
+import {
+  createInventoryProductResponse,
+  InventoryProductCreateSchema,
+} from '@tuturuuu/inventory-core/product-create';
+import { getInventoryCatalogProducts } from '@tuturuuu/inventory-core/product-rpc';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type {
   InventoryProduct,
@@ -10,17 +21,6 @@ import {
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
-import { authorizeInventoryWorkspace } from '@tuturuuu/inventory-core/commerce/auth';
-import {
-  canCreateInventorySales,
-  canViewInventoryCatalog,
-  canViewInventoryStock,
-} from '@tuturuuu/inventory-core/permissions';
-import {
-  createInventoryProductResponse,
-  InventoryProductCreateSchema,
-} from '@tuturuuu/inventory-core/product-create';
-import { getInventoryCatalogProducts } from '@tuturuuu/inventory-core/product-rpc';
 
 const SearchParamsSchema = z.object({
   categoryId: z.guid().optional(),

@@ -1,7 +1,3 @@
-import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import { NextResponse } from 'next/server';
-import { z } from 'zod';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { getInventoryActorContext } from '@tuturuuu/inventory-core/actor';
 import {
   createInventoryAuditLog,
@@ -18,6 +14,10 @@ import {
   canManageInventorySetup,
   canViewInventoryCatalog,
 } from '@tuturuuu/inventory-core/permissions';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { NextResponse } from 'next/server';
+import { z } from 'zod';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 interface Params {
   params: Promise<{ storefrontId: string; wsId: string }>;

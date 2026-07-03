@@ -1,12 +1,12 @@
+import { authorizeInventoryWorkspace } from '@tuturuuu/inventory-core/commerce/auth';
+import { canManageInventoryCatalog } from '@tuturuuu/inventory-core/permissions';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
-import { authorizeInventoryWorkspace } from '@tuturuuu/inventory-core/commerce/auth';
 import {
   isInventoryMediaPath,
   validateFinalizedInventoryMediaUpload,
 } from '@/lib/inventory-media-storage-policy';
-import { canManageInventoryCatalog } from '@tuturuuu/inventory-core/permissions';
 import { WORKSPACE_STORAGE_PROVIDER_OPTIONS } from '@/lib/workspace-storage-config';
 import {
   createWorkspaceStorageSignedReadUrl,

@@ -111,9 +111,9 @@
       "component": "playground",
       "package-name": "@tuturuuu/playground"
     },
-    "apps/qr": {
-      "component": "qr",
-      "package-name": "@tuturuuu/qr"
+    "apps/tools": {
+      "component": "tools",
+      "package-name": "@tuturuuu/tools"
     },
     "apps/redis": {
       "component": "redis",
@@ -183,6 +183,10 @@
       "component": "internal-api",
       "package-name": "@tuturuuu/internal-api"
     },
+    "packages/inventory-core": {
+      "component": "inventory-core",
+      "package-name": "@tuturuuu/inventory-core"
+    },
     "packages/masonry": {
       "component": "masonry",
       "package-name": "@tuturuuu/masonry"
@@ -190,6 +194,10 @@
     "packages/microsoft": {
       "component": "microsoft",
       "package-name": "@tuturuuu/microsoft"
+    },
+    "packages/mind-core": {
+      "component": "mind-core",
+      "package-name": "@tuturuuu/mind-core"
     },
     "packages/mind-ui": {
       "component": "mind-ui",

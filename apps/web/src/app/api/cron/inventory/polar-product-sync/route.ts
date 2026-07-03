@@ -1,9 +1,9 @@
+import { reconcileWorkspacePolarProducts } from '@tuturuuu/inventory-core/commerce/polar-product-sync';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { DEV_MODE } from '@tuturuuu/utils/constants';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { serverLogger, withCronLogDrain } from '@/lib/infrastructure/log-drain';
-import { reconcileWorkspacePolarProducts } from '@tuturuuu/inventory-core/commerce/polar-product-sync';
 
 /**
  * Drift-repair cron for the inventory <-> Polar product catalog. Re-pushes every

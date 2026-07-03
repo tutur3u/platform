@@ -346,6 +346,7 @@
       "name": "@tuturuuu/hive",
       "version": "0.4.1",
       "dependencies": {
+        "@ai-sdk/google": "^4.0.3",
         "@formatjs/intl-localematcher": "^0.8.10",
         "@react-three/drei": "^10.7.7",
         "@react-three/fiber": "^9.6.1",
@@ -355,10 +356,12 @@
         "@tuturuuu/hive-ui": "workspace:*",
         "@tuturuuu/icons": "workspace:*",
         "@tuturuuu/internal-api": "workspace:*",
+        "@tuturuuu/mind-core": "workspace:*",
         "@tuturuuu/offline": "workspace:*",
         "@tuturuuu/realtime": "workspace:*",
         "@tuturuuu/satellite": "workspace:*",
         "@tuturuuu/supabase": "workspace:*",
+        "@tuturuuu/turnstile": "workspace:*",
         "@tuturuuu/types": "workspace:*",
         "@tuturuuu/ui": "workspace:*",
         "@tuturuuu/utils": "workspace:*",
@@ -368,6 +371,7 @@
         "next": "^16.3.0-preview.5",
         "next-intl": "^4.13.1",
         "next-themes": "^0.4.6",
+        "postgres": "^3.4.9",
         "react": "^19.2.7",
         "react-dom": "^19.2.7",
         "three": "0.185.0",
@@ -669,10 +673,12 @@
         "@tuturuuu/auth": "workspace:*",
         "@tuturuuu/icons": "workspace:*",
         "@tuturuuu/internal-api": "workspace:*",
+        "@tuturuuu/mind-core": "workspace:*",
         "@tuturuuu/mind-ui": "workspace:*",
         "@tuturuuu/offline": "workspace:*",
         "@tuturuuu/satellite": "workspace:*",
         "@tuturuuu/supabase": "workspace:*",
+        "@tuturuuu/turnstile": "workspace:*",
         "@tuturuuu/types": "workspace:*",
         "@tuturuuu/ui": "workspace:*",
         "@tuturuuu/utils": "workspace:*",
@@ -683,6 +689,7 @@
         "next": "^16.3.0-preview.5",
         "next-intl": "^4.13.1",
         "next-themes": "^0.4.6",
+        "postgres": "^3.4.9",
         "react": "^19.2.7",
         "react-dom": "^19.2.7",
         "streamdown": "^2.5.0",
@@ -793,32 +800,6 @@
         "react": "^19.2.7",
         "react-dom": "^19.2.7",
         "zod": "^4.4.3",
-      },
-      "devDependencies": {
-        "@tailwindcss/postcss": "^4.3.2",
-        "@tuturuuu/typescript-config": "workspace:*",
-        "@types/node": "^26.0.1",
-        "@types/react": "^19.2.17",
-        "@types/react-dom": "^19.2.3",
-        "@typescript/native-preview": "7.0.0-dev.20260622.1",
-        "babel-plugin-react-compiler": "^1.0.0",
-        "postcss": "^8.5.16",
-        "typescript": "7.0.1-rc",
-      },
-    },
-    "apps/qr": {
-      "name": "@tuturuuu/qr",
-      "version": "0.2.1",
-      "dependencies": {
-        "@tanstack/react-query": "^5.101.2",
-        "@tuturuuu/satellite": "workspace:*",
-        "@tuturuuu/ui": "workspace:*",
-        "@tuturuuu/utils": "workspace:*",
-        "@tuturuuu/vercel": "workspace:*",
-        "next": "^16.3.0-preview.5",
-        "next-intl": "^4.13.1",
-        "react": "^19.2.7",
-        "react-dom": "^19.2.7",
       },
       "devDependencies": {
         "@tailwindcss/postcss": "^4.3.2",
@@ -1126,6 +1107,38 @@
         "typescript": "7.0.1-rc",
       },
     },
+    "apps/tools": {
+      "name": "@tuturuuu/tools",
+      "version": "0.1.0",
+      "dependencies": {
+        "@tanstack/react-query": "^5.101.2",
+        "@tuturuuu/icons": "workspace:*",
+        "@tuturuuu/satellite": "workspace:*",
+        "@tuturuuu/ui": "workspace:*",
+        "@tuturuuu/utils": "workspace:*",
+        "@tuturuuu/vercel": "workspace:*",
+        "next": "^16.3.0-preview.5",
+        "next-intl": "^4.13.1",
+        "react": "^19.2.7",
+        "react-dom": "^19.2.7",
+      },
+      "devDependencies": {
+        "@tailwindcss/postcss": "^4.3.2",
+        "@testing-library/jest-dom": "^6.9.1",
+        "@testing-library/react": "^16.3.2",
+        "@tuturuuu/typescript-config": "workspace:*",
+        "@types/node": "^26.0.1",
+        "@types/react": "^19.2.17",
+        "@types/react-dom": "^19.2.3",
+        "@typescript/native-preview": "7.0.0-dev.20260622.1",
+        "@vitejs/plugin-react": "^6.0.3",
+        "babel-plugin-react-compiler": "^1.0.0",
+        "jsdom": "^29.1.1",
+        "postcss": "^8.5.16",
+        "typescript": "7.0.1-rc",
+        "vitest": "^4.1.9",
+      },
+    },
     "apps/track": {
       "name": "@tuturuuu/track",
       "version": "0.7.1",
@@ -1238,6 +1251,7 @@
         "@tuturuuu/inventory-core": "workspace:*",
         "@tuturuuu/masonry": "workspace:*",
         "@tuturuuu/microsoft": "workspace:*",
+        "@tuturuuu/mind-core": "workspace:*",
         "@tuturuuu/mind-ui": "workspace:*",
         "@tuturuuu/offline": "workspace:*",
         "@tuturuuu/payment": "workspace:*",
@@ -1706,6 +1720,26 @@
         "@tuturuuu/typescript-config": "workspace:*",
         "@types/node": "^26.0.1",
         "typescript": "7.0.1-rc",
+      },
+    },
+    "packages/mind-core": {
+      "name": "@tuturuuu/mind-core",
+      "version": "0.1.0",
+      "dependencies": {
+        "@tuturuuu/ai": "workspace:*",
+        "@tuturuuu/supabase": "workspace:*",
+        "@tuturuuu/types": "workspace:*",
+        "@tuturuuu/utils": "workspace:*",
+        "next": "^16.3.0-preview.5",
+        "postgres": "^3.4.9",
+        "server-only": "^0.0.1",
+        "zod": "^4.4.3",
+      },
+      "devDependencies": {
+        "@tuturuuu/typescript-config": "workspace:*",
+        "@types/node": "^26.0.1",
+        "typescript": "7.0.1-rc",
+        "vitest": "^4.1.9",
       },
     },
     "packages/mind-ui": {
@@ -3752,6 +3786,8 @@
 
     "@tuturuuu/mind": ["@tuturuuu/mind@workspace:apps/mind"],
 
+    "@tuturuuu/mind-core": ["@tuturuuu/mind-core@workspace:packages/mind-core"],
+
     "@tuturuuu/mind-ui": ["@tuturuuu/mind-ui@workspace:packages/mind-ui"],
 
     "@tuturuuu/mobile": ["@tuturuuu/mobile@workspace:apps/mobile"],
@@ -3763,8 +3799,6 @@
     "@tuturuuu/payment": ["@tuturuuu/payment@workspace:packages/payment"],
 
     "@tuturuuu/playground": ["@tuturuuu/playground@workspace:apps/playground"],
-
-    "@tuturuuu/qr": ["@tuturuuu/qr@workspace:apps/qr"],
 
     "@tuturuuu/realtime": ["@tuturuuu/realtime@workspace:packages/realtime"],
 
@@ -3789,6 +3823,8 @@
     "@tuturuuu/tasks": ["@tuturuuu/tasks@workspace:apps/tasks"],
 
     "@tuturuuu/teach": ["@tuturuuu/teach@workspace:apps/teach"],
+
+    "@tuturuuu/tools": ["@tuturuuu/tools@workspace:apps/tools"],
 
     "@tuturuuu/track": ["@tuturuuu/track@workspace:apps/track"],
 

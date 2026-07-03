@@ -1,0 +1,316 @@
+{
+  "command_launcher": {
+    "apps": "Apps",
+    "close": "close",
+    "current": "Current",
+    "current_app": "Current app",
+    "current_workspace": "Current workspace",
+    "empty": "No command found",
+    "empty_description": "Try a workspace, app, page, or a closer spelling.",
+    "error_workspaces": "Could not load workspaces",
+    "guest": "Guest",
+    "loading_workspaces": "Loading workspaces",
+    "match": "Match",
+    "navigate": "navigate",
+    "navigation": "Navigation",
+    "open": "Open",
+    "open_app": "Open app",
+    "open_workspace": "Open workspace",
+    "personal": "Personal",
+    "placeholder": "Search apps, workspaces, and pages...",
+    "search_hint": "Type a workspace, app, page, acronym, or close spelling.",
+    "select": "select",
+    "title": "Command Launcher",
+    "workspaces": "Workspaces"
+  },
+  "common": {
+    "background": "Background",
+    "characters": "characters",
+    "download": "Download",
+    "foreground": "Foreground",
+    "formats": "Formats",
+    "optional": "optional",
+    "or": "or",
+    "qr_generator": "QR Generator",
+    "remove": "Remove",
+    "reset": "Reset",
+    "scan_me": "Scan me",
+    "styles": "Styles",
+    "title": "Title"
+  },
+  "finance": {
+    "new_debt": "New debt",
+    "new_loan": "New loan",
+    "new_recurring_transaction": "New recurring transaction",
+    "unknown_user": "Unknown user"
+  },
+  "finance-analytics": {
+    "failed-to-load-data": "Failed to load data",
+    "next-period": "Next period",
+    "previous-period": "Previous period",
+    "week-of": "Week of {date}"
+  },
+  "finance-recurring": {
+    "active_title": "Active recurring",
+    "amount": "Amount",
+    "amount_description": "Use a negative amount for expenses and a positive amount for income.",
+    "amount_invalid": "Amount must be a valid number",
+    "amount_placeholder": "-500.00",
+    "amount_required": "Amount is required",
+    "cancel": "Cancel",
+    "category": "Category",
+    "create_success": "Recurring transaction created successfully",
+    "create_transaction": "Create recurring transaction",
+    "daily": "Daily",
+    "delete": "Delete",
+    "delete_description": "Are you sure you want to delete \"{name}\"? This action cannot be undone.",
+    "delete_error": "Failed to delete recurring transaction",
+    "delete_success": "Recurring transaction deleted successfully",
+    "delete_title": "Delete recurring transaction",
+    "deleting": "Deleting...",
+    "description": "Description",
+    "description_placeholder": "Optional description",
+    "edit": "Edit",
+    "edit_transaction": "Edit recurring transaction",
+    "end_date": "End date",
+    "end_date_description": "Leave empty to keep this schedule running indefinitely.",
+    "frequency": "Frequency",
+    "monthly": "Monthly",
+    "name": "Name",
+    "name_placeholder": "Monthly rent",
+    "name_required": "Name is required",
+    "next_occurrence": "Next: {date}",
+    "no_active_transactions": "No active recurring transactions",
+    "no_category": "No category",
+    "no_upcoming_transactions": "No upcoming transactions",
+    "open_menu": "Open menu",
+    "page_description": "Manage automatic income and expense schedules that feed your wallets and categories.",
+    "save_error": "Failed to save recurring transaction",
+    "scheduled_for": "Scheduled for {date}",
+    "select_category": "Select category",
+    "select_frequency": "Select frequency",
+    "select_wallet": "Select wallet",
+    "start_date": "Start date",
+    "start_date_required": "Start date is required",
+    "title": "Recurring transactions",
+    "upcoming_title": "Upcoming next 30 days",
+    "update_success": "Recurring transaction updated successfully",
+    "update_transaction": "Update recurring transaction",
+    "wallet": "Wallet",
+    "wallet_required": "Wallet is required",
+    "weekly": "Weekly",
+    "yearly": "Yearly"
+  },
+  "qr": {
+    "image_upload": {
+      "browse": "browse files",
+      "dimensions": "Dimensions",
+      "dimensions_too_large": "Image dimensions are too large. Maximum size is 512x512px.",
+      "dimensions_too_small": "Image dimensions are too small. Minimum size is 32x32px.",
+      "drop_files": "Drop files here",
+      "file_too_large": "File is too large. Maximum size is {size}.",
+      "image_uploaded": "Image uploaded",
+      "invalid_image": "Invalid image file.",
+      "invalid_type": "Invalid file type. Please upload JPG, PNG, WebP, or SVG files.",
+      "max_size": "Max size",
+      "processing": "Processing",
+      "recommended": "Recommended",
+      "rounded_logo": "Rounded logo",
+      "signed_url_failed": "Failed to generate signed URL.",
+      "supported_formats": "Supported formats",
+      "title": "Logo/Image Upload",
+      "upload_failed": "Upload failed. Please try again."
+    }
+  },
+  "qrPage": {
+    "eyebrow": "Tuturuuu QR",
+    "metadata": {
+      "description": "Create branded QR codes instantly with the Tuturuuu generator.",
+      "title": "QR Generator"
+    }
+  },
+  "random_generator": {
+    "actions": {
+      "copied": "Copied {label}",
+      "copy": "Copy",
+      "copy_all": "Copy all",
+      "regenerate": "Regenerate"
+    },
+    "description": "Create UUIDs, NanoID-style IDs, tokens, API-key-style values, and passwords with Web Crypto. Values stay in your browser.",
+    "errors": {
+      "clipboard_failed": "Could not copy to the clipboard.",
+      "no_secure_crypto": "Secure random generation is unavailable in this browser.",
+      "select_password_class": "Select at least one password character set."
+    },
+    "eyebrow": "Browser-local Web Crypto",
+    "fields": {
+      "batch_count": "Batch count",
+      "byte_length": "Byte length",
+      "character_sets": "Character sets",
+      "exclude_ambiguous": "Exclude ambiguous characters",
+      "id_format": "ID format",
+      "length": "Length",
+      "lowercase": "Lowercase",
+      "numbers": "Numbers",
+      "password_length": "Password length",
+      "prefix": "Prefix",
+      "symbols": "Symbols",
+      "token_format": "Token format",
+      "uppercase": "Uppercase"
+    },
+    "formats": {
+      "api_key": "API-key style",
+      "base64url": "Base64url token",
+      "hex": "Hex token",
+      "nanoid": "NanoID-style ID",
+      "uuid": "UUID v4"
+    },
+    "helpers": {
+      "exclude_ambiguous": "Avoid characters such as 0, O, 1, I, l, quotes, and pipes."
+    },
+    "kinds": {
+      "id": "ID",
+      "password": "Password",
+      "token": "Token",
+      "uuid": "UUID"
+    },
+    "meta": {
+      "description": "Generate secure random IDs, tokens, API-key-style values, and passwords locally in your browser.",
+      "title": "Secure Random Generator"
+    },
+    "outputs": {
+      "copy_value": "Copy value {index}",
+      "description": "Each value is freshly generated from Web Crypto.",
+      "empty": "No values generated yet.",
+      "entropy_bits": "{bits} bits",
+      "generated_value": "Generated value {index}",
+      "title": "Generated values"
+    },
+    "privacy_note": "Generated values never leave this page unless you copy them somewhere else.",
+    "tabs": {
+      "ids": "IDs",
+      "passwords": "Passwords",
+      "tokens": "Tokens"
+    },
+    "title": "Secure random generator"
+  },
+  "toolsPage": {
+    "qr_description": "Generate customizable QR codes for links, text, and more.",
+    "random_description": "Generate secure random UUIDs, IDs, tokens, and passwords.",
+    "subtitle": "A collection of free, privacy-friendly utilities.",
+    "title": "Tuturuuu Tools"
+  },
+  "version-badge": {
+    "app": "App",
+    "commit": "Commit",
+    "commit_hash": "Commit hash",
+    "commit_message": "Commit message",
+    "deployment_stamp": "Deployment stamp",
+    "deployment_time": "Deployment time",
+    "deployment_url": "Deployment URL",
+    "description": "Build and deployment details for this app.",
+    "environment": "Environment",
+    "not_available": "Not available",
+    "ref": "Ref",
+    "setting_description": "Show a compact build/version badge in the bottom-right corner of supported apps.",
+    "setting_title": "Version badge",
+    "setting_toggle_label": "Toggle version badge",
+    "title": "Version details",
+    "trigger_label": "Open version details",
+    "version": "Version"
+  },
+  "ws-debt-loan": {
+    "amount_positive": "Amount must be greater than 0",
+    "counterparty_too_long": "Counterparty must be 255 characters or fewer",
+    "description_too_long": "Description must be 500 characters or fewer",
+    "name_required": "Name is required",
+    "start_date_required": "Start date is required"
+  },
+  "ws-task-templates": {
+    "actions": {
+      "archive": "Archive template",
+      "cancel": "Cancel",
+      "create": "Create template",
+      "create_task": "Create task",
+      "new_template": "New template",
+      "save": "Save template",
+      "save_from_task": "Save from task",
+      "use": "Use"
+    },
+    "card": {
+      "assignees": "{count} assignees",
+      "labels": "{count} labels",
+      "projects": "{count} projects"
+    },
+    "create": {
+      "description": "Save reusable task defaults for repeated work.",
+      "title": "Create task template"
+    },
+    "empty": {
+      "description": "Create a template for recurring tasks, checklists, and standard handoffs.",
+      "no_results": "No templates match your search.",
+      "title": "No task templates"
+    },
+    "fields": {
+      "board": "Board",
+      "description": "Description",
+      "description_placeholder": "Default task description",
+      "key": "Key",
+      "key_placeholder": "bug-report",
+      "list": "List",
+      "override_name": "Override task title",
+      "priority": "Priority",
+      "search": "Search",
+      "search_placeholder": "Search task templates",
+      "task_id": "Task ID",
+      "task_id_placeholder": "Task UUID",
+      "task_name": "Task title",
+      "task_name_placeholder": "Investigate reported bug",
+      "template_name": "Template name",
+      "template_name_placeholder": "Sprint bug report",
+      "unnamed_board": "Untitled board",
+      "unnamed_list": "Untitled list",
+      "visibility": "Visibility"
+    },
+    "gallery": {
+      "board_marketplace": "Board marketplace",
+      "description": "Create reusable task starters and keep board templates available in one place.",
+      "header": "Task templates"
+    },
+    "priority": {
+      "critical": "Critical",
+      "high": "High",
+      "low": "Low",
+      "none": "No priority",
+      "normal": "Normal"
+    },
+    "save_from_task": {
+      "description": "Enter a task ID to snapshot its current fields into a reusable template.",
+      "title": "Save task as template"
+    },
+    "tabs": {
+      "boards": "Board Templates",
+      "tasks": "Task Templates"
+    },
+    "toast": {
+      "archived": "Task template archived",
+      "created": "Task template created",
+      "failed": "Task template action failed",
+      "no_template_selected": "No task template selected",
+      "saved_from_task": "Task template saved",
+      "task_created": "Task created from template"
+    },
+    "use": {
+      "description": "Create a task from {name}.",
+      "description_empty": "Create a task from the selected template.",
+      "title": "Use task template"
+    },
+    "visibility": {
+      "private": "Private",
+      "workspace": "Workspace"
+    }
+  },
+  "ws-user-fields": {
+    "value": "Value"
+  }
+}

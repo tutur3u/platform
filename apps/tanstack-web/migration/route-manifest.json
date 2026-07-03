@@ -6,36 +6,24 @@
         "acceptedRemoval": 17,
         "key": "api",
         "label": "api",
-        "legacyNext": 854,
-        "migrated": 81,
-        "percentComplete": 10.29,
-        "remaining": 854,
-        "terminal": 98,
-        "total": 952,
+        "legacyNext": 813,
+        "migrated": 80,
+        "percentComplete": 10.66,
+        "remaining": 813,
+        "terminal": 97,
+        "total": 910,
         "unknownStatus": 0
       },
       {
         "acceptedRemoval": 0,
         "key": "page",
         "label": "page",
-        "legacyNext": 68,
-        "migrated": 194,
-        "percentComplete": 74.05,
-        "remaining": 68,
-        "terminal": 194,
-        "total": 262,
-        "unknownStatus": 0
-      },
-      {
-        "acceptedRemoval": 0,
-        "key": "cron",
-        "label": "cron",
-        "legacyNext": 13,
-        "migrated": 2,
-        "percentComplete": 13.33,
-        "remaining": 13,
-        "terminal": 2,
-        "total": 15,
+        "legacyNext": 69,
+        "migrated": 181,
+        "percentComplete": 72.4,
+        "remaining": 69,
+        "terminal": 181,
+        "total": 250,
         "unknownStatus": 0
       },
       {
@@ -43,11 +31,23 @@
         "key": "layout",
         "label": "layout",
         "legacyNext": 12,
-        "migrated": 50,
-        "percentComplete": 80.95,
+        "migrated": 48,
+        "percentComplete": 80.33,
         "remaining": 12,
-        "terminal": 51,
-        "total": 63,
+        "terminal": 49,
+        "total": 61,
+        "unknownStatus": 0
+      },
+      {
+        "acceptedRemoval": 0,
+        "key": "cron",
+        "label": "cron",
+        "legacyNext": 12,
+        "migrated": 2,
+        "percentComplete": 14.29,
+        "remaining": 12,
+        "terminal": 2,
+        "total": 14,
         "unknownStatus": 0
       },
       {
@@ -116,24 +116,24 @@
         "acceptedRemoval": 17,
         "key": "rust-backend",
         "label": "Rust backend",
-        "legacyNext": 869,
-        "migrated": 86,
-        "percentComplete": 10.6,
-        "remaining": 869,
-        "terminal": 103,
-        "total": 972,
+        "legacyNext": 827,
+        "migrated": 85,
+        "percentComplete": 10.98,
+        "remaining": 827,
+        "terminal": 102,
+        "total": 929,
         "unknownStatus": 0
       },
       {
         "acceptedRemoval": 1,
         "key": "tanstack-start",
         "label": "TanStack Start",
-        "legacyNext": 82,
-        "migrated": 249,
-        "percentComplete": 75.3,
-        "remaining": 82,
-        "terminal": 250,
-        "total": 332,
+        "legacyNext": 83,
+        "migrated": 234,
+        "percentComplete": 73.9,
+        "remaining": 83,
+        "terminal": 235,
+        "total": 318,
         "unknownStatus": 0
       }
     ],
@@ -323,12 +323,12 @@
       "acceptedRemoval": 18,
       "key": "total",
       "label": "All route artifacts",
-      "legacyNext": 951,
-      "migrated": 335,
-      "percentComplete": 27.07,
-      "remaining": 951,
-      "terminal": 353,
-      "total": 1304,
+      "legacyNext": 910,
+      "migrated": 319,
+      "percentComplete": 27.02,
+      "remaining": 910,
+      "terminal": 337,
+      "total": 1247,
       "unknownStatus": 0
     }
   },
@@ -546,15 +546,6 @@
       "methods": ["POST"],
       "routePath": "/api/ai/meetings/transcription",
       "sourceFile": "apps/web/src/app/api/ai/meetings/transcription/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/ai/mind:apps/web/src/app/api/ai/mind/route.ts",
-      "kind": "api",
-      "methods": ["POST"],
-      "routePath": "/api/ai/mind",
-      "sourceFile": "apps/web/src/app/api/ai/mind/route.ts",
       "status": "legacy-next",
       "targetOwner": "rust-backend"
     },
@@ -1856,321 +1847,6 @@
       "methods": ["GET"],
       "routePath": "/api/v1/exchange-rates",
       "sourceFile": "apps/web/src/app/api/v1/exchange-rates/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/hive/access-requests:apps/web/src/app/api/v1/hive/access-requests/route.ts",
-      "kind": "api",
-      "methods": ["GET"],
-      "routePath": "/api/v1/hive/access-requests",
-      "sourceFile": "apps/web/src/app/api/v1/hive/access-requests/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/hive/access-requests/:requestId/approve:apps/web/src/app/api/v1/hive/access-requests/[requestId]/approve/route.ts",
-      "kind": "api",
-      "methods": ["POST"],
-      "routePath": "/api/v1/hive/access-requests/:requestId/approve",
-      "sourceFile": "apps/web/src/app/api/v1/hive/access-requests/[requestId]/approve/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/hive/access-requests/me:apps/web/src/app/api/v1/hive/access-requests/me/route.ts",
-      "kind": "api",
-      "methods": ["GET", "POST"],
-      "routePath": "/api/v1/hive/access-requests/me",
-      "sourceFile": "apps/web/src/app/api/v1/hive/access-requests/me/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/hive/ai/credits:apps/web/src/app/api/v1/hive/ai/credits/route.ts",
-      "kind": "api",
-      "methods": ["GET"],
-      "routePath": "/api/v1/hive/ai/credits",
-      "sourceFile": "apps/web/src/app/api/v1/hive/ai/credits/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/hive/ai/models:apps/web/src/app/api/v1/hive/ai/models/route.ts",
-      "kind": "api",
-      "methods": ["GET"],
-      "routePath": "/api/v1/hive/ai/models",
-      "sourceFile": "apps/web/src/app/api/v1/hive/ai/models/route.ts",
-      "status": "migrated",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/hive/backfill:apps/web/src/app/api/v1/hive/backfill/route.ts",
-      "kind": "api",
-      "methods": ["POST"],
-      "routePath": "/api/v1/hive/backfill",
-      "sourceFile": "apps/web/src/app/api/v1/hive/backfill/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/hive/members:apps/web/src/app/api/v1/hive/members/route.ts",
-      "kind": "api",
-      "methods": ["GET", "POST"],
-      "routePath": "/api/v1/hive/members",
-      "sourceFile": "apps/web/src/app/api/v1/hive/members/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/hive/servers:apps/web/src/app/api/v1/hive/servers/route.ts",
-      "kind": "api",
-      "methods": ["GET", "POST"],
-      "routePath": "/api/v1/hive/servers",
-      "sourceFile": "apps/web/src/app/api/v1/hive/servers/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/hive/servers/:serverId:apps/web/src/app/api/v1/hive/servers/[serverId]/route.ts",
-      "kind": "api",
-      "methods": ["GET", "PATCH", "DELETE"],
-      "routePath": "/api/v1/hive/servers/:serverId",
-      "sourceFile": "apps/web/src/app/api/v1/hive/servers/[serverId]/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/hive/servers/:serverId/crdt:apps/web/src/app/api/v1/hive/servers/[serverId]/crdt/route.ts",
-      "kind": "api",
-      "methods": ["GET", "POST"],
-      "routePath": "/api/v1/hive/servers/:serverId/crdt",
-      "sourceFile": "apps/web/src/app/api/v1/hive/servers/[serverId]/crdt/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/hive/servers/:serverId/economy:apps/web/src/app/api/v1/hive/servers/[serverId]/economy/route.ts",
-      "kind": "api",
-      "methods": ["GET"],
-      "routePath": "/api/v1/hive/servers/:serverId/economy",
-      "sourceFile": "apps/web/src/app/api/v1/hive/servers/[serverId]/economy/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/hive/servers/:serverId/events:apps/web/src/app/api/v1/hive/servers/[serverId]/events/route.ts",
-      "kind": "api",
-      "methods": ["POST"],
-      "routePath": "/api/v1/hive/servers/:serverId/events",
-      "sourceFile": "apps/web/src/app/api/v1/hive/servers/[serverId]/events/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/hive/servers/:serverId/farming:apps/web/src/app/api/v1/hive/servers/[serverId]/farming/route.ts",
-      "kind": "api",
-      "methods": ["POST"],
-      "routePath": "/api/v1/hive/servers/:serverId/farming",
-      "sourceFile": "apps/web/src/app/api/v1/hive/servers/[serverId]/farming/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/hive/servers/:serverId/interactions:apps/web/src/app/api/v1/hive/servers/[serverId]/interactions/route.ts",
-      "kind": "api",
-      "methods": ["POST"],
-      "routePath": "/api/v1/hive/servers/:serverId/interactions",
-      "sourceFile": "apps/web/src/app/api/v1/hive/servers/[serverId]/interactions/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/hive/servers/:serverId/mind-simulations:apps/web/src/app/api/v1/hive/servers/[serverId]/mind-simulations/route.ts",
-      "kind": "api",
-      "methods": ["POST"],
-      "routePath": "/api/v1/hive/servers/:serverId/mind-simulations",
-      "sourceFile": "apps/web/src/app/api/v1/hive/servers/[serverId]/mind-simulations/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/hive/servers/:serverId/npcs:apps/web/src/app/api/v1/hive/servers/[serverId]/npcs/route.ts",
-      "kind": "api",
-      "methods": ["POST"],
-      "routePath": "/api/v1/hive/servers/:serverId/npcs",
-      "sourceFile": "apps/web/src/app/api/v1/hive/servers/[serverId]/npcs/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/hive/servers/:serverId/npcs/:npcId:apps/web/src/app/api/v1/hive/servers/[serverId]/npcs/[npcId]/route.ts",
-      "kind": "api",
-      "methods": ["PATCH", "DELETE"],
-      "routePath": "/api/v1/hive/servers/:serverId/npcs/:npcId",
-      "sourceFile": "apps/web/src/app/api/v1/hive/servers/[serverId]/npcs/[npcId]/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/hive/servers/:serverId/npcs/:npcId/run:apps/web/src/app/api/v1/hive/servers/[serverId]/npcs/[npcId]/run/route.ts",
-      "kind": "api",
-      "methods": ["POST"],
-      "routePath": "/api/v1/hive/servers/:serverId/npcs/:npcId/run",
-      "sourceFile": "apps/web/src/app/api/v1/hive/servers/[serverId]/npcs/[npcId]/run/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/hive/servers/:serverId/ollama:apps/web/src/app/api/v1/hive/servers/[serverId]/ollama/route.ts",
-      "kind": "api",
-      "methods": ["POST"],
-      "routePath": "/api/v1/hive/servers/:serverId/ollama",
-      "sourceFile": "apps/web/src/app/api/v1/hive/servers/[serverId]/ollama/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/hive/servers/:serverId/realtime-token:apps/web/src/app/api/v1/hive/servers/[serverId]/realtime-token/route.ts",
-      "kind": "api",
-      "methods": ["POST"],
-      "routePath": "/api/v1/hive/servers/:serverId/realtime-token",
-      "sourceFile": "apps/web/src/app/api/v1/hive/servers/[serverId]/realtime-token/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/hive/servers/:serverId/research-sessions:apps/web/src/app/api/v1/hive/servers/[serverId]/research-sessions/route.ts",
-      "kind": "api",
-      "methods": ["GET", "POST"],
-      "routePath": "/api/v1/hive/servers/:serverId/research-sessions",
-      "sourceFile": "apps/web/src/app/api/v1/hive/servers/[serverId]/research-sessions/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/hive/servers/:serverId/research-sessions/:sessionId:apps/web/src/app/api/v1/hive/servers/[serverId]/research-sessions/[sessionId]/route.ts",
-      "kind": "api",
-      "methods": ["GET", "PATCH"],
-      "routePath": "/api/v1/hive/servers/:serverId/research-sessions/:sessionId",
-      "sourceFile": "apps/web/src/app/api/v1/hive/servers/[serverId]/research-sessions/[sessionId]/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/hive/servers/:serverId/research-sessions/:sessionId/export:apps/web/src/app/api/v1/hive/servers/[serverId]/research-sessions/[sessionId]/export/route.ts",
-      "kind": "api",
-      "methods": ["GET"],
-      "routePath": "/api/v1/hive/servers/:serverId/research-sessions/:sessionId/export",
-      "sourceFile": "apps/web/src/app/api/v1/hive/servers/[serverId]/research-sessions/[sessionId]/export/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/hive/servers/:serverId/research-sessions/:sessionId/run-pair-queue:apps/web/src/app/api/v1/hive/servers/[serverId]/research-sessions/[sessionId]/run-pair-queue/route.ts",
-      "kind": "api",
-      "methods": ["POST"],
-      "routePath": "/api/v1/hive/servers/:serverId/research-sessions/:sessionId/run-pair-queue",
-      "sourceFile": "apps/web/src/app/api/v1/hive/servers/[serverId]/research-sessions/[sessionId]/run-pair-queue/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/hive/servers/:serverId/settings:apps/web/src/app/api/v1/hive/servers/[serverId]/settings/route.ts",
-      "kind": "api",
-      "methods": ["PATCH"],
-      "routePath": "/api/v1/hive/servers/:serverId/settings",
-      "sourceFile": "apps/web/src/app/api/v1/hive/servers/[serverId]/settings/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/hive/servers/:serverId/simulate:apps/web/src/app/api/v1/hive/servers/[serverId]/simulate/route.ts",
-      "kind": "api",
-      "methods": ["POST"],
-      "routePath": "/api/v1/hive/servers/:serverId/simulate",
-      "sourceFile": "apps/web/src/app/api/v1/hive/servers/[serverId]/simulate/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/hive/servers/:serverId/timeline:apps/web/src/app/api/v1/hive/servers/[serverId]/timeline/route.ts",
-      "kind": "api",
-      "methods": ["GET"],
-      "routePath": "/api/v1/hive/servers/:serverId/timeline",
-      "sourceFile": "apps/web/src/app/api/v1/hive/servers/[serverId]/timeline/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/hive/servers/:serverId/trades:apps/web/src/app/api/v1/hive/servers/[serverId]/trades/route.ts",
-      "kind": "api",
-      "methods": ["POST"],
-      "routePath": "/api/v1/hive/servers/:serverId/trades",
-      "sourceFile": "apps/web/src/app/api/v1/hive/servers/[serverId]/trades/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/hive/servers/:serverId/warehouses:apps/web/src/app/api/v1/hive/servers/[serverId]/warehouses/route.ts",
-      "kind": "api",
-      "methods": ["POST"],
-      "routePath": "/api/v1/hive/servers/:serverId/warehouses",
-      "sourceFile": "apps/web/src/app/api/v1/hive/servers/[serverId]/warehouses/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/hive/servers/:serverId/workflows:apps/web/src/app/api/v1/hive/servers/[serverId]/workflows/route.ts",
-      "kind": "api",
-      "methods": ["GET", "POST"],
-      "routePath": "/api/v1/hive/servers/:serverId/workflows",
-      "sourceFile": "apps/web/src/app/api/v1/hive/servers/[serverId]/workflows/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/hive/servers/:serverId/workflows/:workflowId:apps/web/src/app/api/v1/hive/servers/[serverId]/workflows/[workflowId]/route.ts",
-      "kind": "api",
-      "methods": ["GET", "PATCH", "DELETE"],
-      "routePath": "/api/v1/hive/servers/:serverId/workflows/:workflowId",
-      "sourceFile": "apps/web/src/app/api/v1/hive/servers/[serverId]/workflows/[workflowId]/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/hive/servers/:serverId/workflows/:workflowId/run:apps/web/src/app/api/v1/hive/servers/[serverId]/workflows/[workflowId]/run/route.ts",
-      "kind": "api",
-      "methods": ["POST"],
-      "routePath": "/api/v1/hive/servers/:serverId/workflows/:workflowId/run",
-      "sourceFile": "apps/web/src/app/api/v1/hive/servers/[serverId]/workflows/[workflowId]/run/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/hive/servers/:serverId/workflows/:workflowId/runs:apps/web/src/app/api/v1/hive/servers/[serverId]/workflows/[workflowId]/runs/route.ts",
-      "kind": "api",
-      "methods": ["GET"],
-      "routePath": "/api/v1/hive/servers/:serverId/workflows/:workflowId/runs",
-      "sourceFile": "apps/web/src/app/api/v1/hive/servers/[serverId]/workflows/[workflowId]/runs/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/hive/servers/:serverId/workflows/:workflowId/runs/:runId:apps/web/src/app/api/v1/hive/servers/[serverId]/workflows/[workflowId]/runs/[runId]/route.ts",
-      "kind": "api",
-      "methods": ["GET"],
-      "routePath": "/api/v1/hive/servers/:serverId/workflows/:workflowId/runs/:runId",
-      "sourceFile": "apps/web/src/app/api/v1/hive/servers/[serverId]/workflows/[workflowId]/runs/[runId]/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/hive/workspaces:apps/web/src/app/api/v1/hive/workspaces/route.ts",
-      "kind": "api",
-      "methods": ["GET"],
-      "routePath": "/api/v1/hive/workspaces",
-      "sourceFile": "apps/web/src/app/api/v1/hive/workspaces/route.ts",
       "status": "legacy-next",
       "targetOwner": "rust-backend"
     },
@@ -5575,60 +5251,6 @@
       "targetOwner": "rust-backend"
     },
     {
-      "id": "api:/api/v1/workspaces/:wsId/mind/ai/patches/:patchId/apply:apps/web/src/app/api/v1/workspaces/[wsId]/mind/ai/patches/[patchId]/apply/route.ts",
-      "kind": "api",
-      "methods": ["POST"],
-      "routePath": "/api/v1/workspaces/:wsId/mind/ai/patches/:patchId/apply",
-      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/mind/ai/patches/[patchId]/apply/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/mind/boards:apps/web/src/app/api/v1/workspaces/[wsId]/mind/boards/route.ts",
-      "kind": "api",
-      "methods": ["GET", "POST"],
-      "routePath": "/api/v1/workspaces/:wsId/mind/boards",
-      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/mind/boards/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/mind/boards/:boardId:apps/web/src/app/api/v1/workspaces/[wsId]/mind/boards/[boardId]/route.ts",
-      "kind": "api",
-      "methods": ["GET", "PATCH", "DELETE"],
-      "routePath": "/api/v1/workspaces/:wsId/mind/boards/:boardId",
-      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/mind/boards/[boardId]/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/mind/boards/:boardId/graph:apps/web/src/app/api/v1/workspaces/[wsId]/mind/boards/[boardId]/graph/route.ts",
-      "kind": "api",
-      "methods": ["GET", "PUT"],
-      "routePath": "/api/v1/workspaces/:wsId/mind/boards/:boardId/graph",
-      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/mind/boards/[boardId]/graph/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/mind/boards/:boardId/patches:apps/web/src/app/api/v1/workspaces/[wsId]/mind/boards/[boardId]/patches/route.ts",
-      "kind": "api",
-      "methods": ["GET"],
-      "routePath": "/api/v1/workspaces/:wsId/mind/boards/:boardId/patches",
-      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/mind/boards/[boardId]/patches/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/mind/search:apps/web/src/app/api/v1/workspaces/[wsId]/mind/search/route.ts",
-      "kind": "api",
-      "methods": ["GET"],
-      "routePath": "/api/v1/workspaces/:wsId/mind/search",
-      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/mind/search/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
       "id": "api:/api/v1/workspaces/:wsId/mobile/module-flags:apps/web/src/app/api/v1/workspaces/[wsId]/mobile/module-flags/route.ts",
       "kind": "api",
       "methods": ["GET"],
@@ -9022,15 +8644,6 @@
       "targetOwner": "rust-backend"
     },
     {
-      "id": "cron:/api/cron/hive/simulate:apps/web/src/app/api/cron/hive/simulate/route.ts",
-      "kind": "cron",
-      "methods": ["GET"],
-      "routePath": "/api/cron/hive/simulate",
-      "sourceFile": "apps/web/src/app/api/cron/hive/simulate/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
       "id": "cron:/api/cron/inventory/polar-product-sync:apps/web/src/app/api/cron/inventory/polar-product-sync/route.ts",
       "kind": "cron",
       "methods": ["GET"],
@@ -9256,15 +8869,6 @@
       "targetOwner": "tanstack-start"
     },
     {
-      "id": "layout:/:locale/:wsId/hive:apps/web/src/app/[locale]/(dashboard)/[wsId]/hive/layout.tsx",
-      "kind": "layout",
-      "methods": [],
-      "routePath": "/:locale/:wsId/hive",
-      "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/hive/layout.tsx",
-      "status": "migrated",
-      "targetOwner": "tanstack-start"
-    },
-    {
       "id": "layout:/:locale/:wsId/link-shortener:apps/web/src/app/[locale]/(dashboard)/[wsId]/link-shortener/layout.tsx",
       "kind": "layout",
       "methods": [],
@@ -9280,15 +8884,6 @@
       "routePath": "/:locale/:wsId/mail",
       "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/mail/layout.tsx",
       "status": "accepted-removal",
-      "targetOwner": "tanstack-start"
-    },
-    {
-      "id": "layout:/:locale/:wsId/mind/boards/:boardId:apps/web/src/app/[locale]/(dashboard)/[wsId]/mind/boards/[boardId]/layout.tsx",
-      "kind": "layout",
-      "methods": [],
-      "routePath": "/:locale/:wsId/mind/boards/:boardId",
-      "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/mind/boards/[boardId]/layout.tsx",
-      "status": "migrated",
       "targetOwner": "tanstack-start"
     },
     {
@@ -10507,15 +10102,6 @@
       "targetOwner": "tanstack-start"
     },
     {
-      "id": "page:/:locale/:wsId/hive/not-whitelisted:apps/web/src/app/[locale]/(dashboard)/[wsId]/hive/not-whitelisted/page.tsx",
-      "kind": "page",
-      "methods": [],
-      "routePath": "/:locale/:wsId/hive/not-whitelisted",
-      "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/hive/not-whitelisted/page.tsx",
-      "status": "migrated",
-      "targetOwner": "tanstack-start"
-    },
-    {
       "id": "page:/:locale/:wsId/inquiries:apps/web/src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/inquiries/page.tsx",
       "kind": "page",
       "methods": [],
@@ -10543,102 +10129,12 @@
       "targetOwner": "tanstack-start"
     },
     {
-      "id": "page:/:locale/:wsId/inventory:apps/web/src/app/[locale]/(dashboard)/[wsId]/inventory/(dashboard)/page.tsx",
+      "id": "page:/:locale/:wsId/inventory/*slug?:apps/web/src/app/[locale]/(dashboard)/[wsId]/inventory/[[...slug]]/page.tsx",
       "kind": "page",
       "methods": [],
-      "routePath": "/:locale/:wsId/inventory",
-      "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/inventory/(dashboard)/page.tsx",
-      "status": "migrated",
-      "targetOwner": "tanstack-start"
-    },
-    {
-      "id": "page:/:locale/:wsId/inventory/batches:apps/web/src/app/[locale]/(dashboard)/[wsId]/inventory/batches/page.tsx",
-      "kind": "page",
-      "methods": [],
-      "routePath": "/:locale/:wsId/inventory/batches",
-      "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/inventory/batches/page.tsx",
-      "status": "migrated",
-      "targetOwner": "tanstack-start"
-    },
-    {
-      "id": "page:/:locale/:wsId/inventory/categories:apps/web/src/app/[locale]/(dashboard)/[wsId]/inventory/categories/page.tsx",
-      "kind": "page",
-      "methods": [],
-      "routePath": "/:locale/:wsId/inventory/categories",
-      "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/inventory/categories/page.tsx",
-      "status": "migrated",
-      "targetOwner": "tanstack-start"
-    },
-    {
-      "id": "page:/:locale/:wsId/inventory/manufacturers:apps/web/src/app/[locale]/(dashboard)/[wsId]/inventory/manufacturers/page.tsx",
-      "kind": "page",
-      "methods": [],
-      "routePath": "/:locale/:wsId/inventory/manufacturers",
-      "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/inventory/manufacturers/page.tsx",
-      "status": "migrated",
-      "targetOwner": "tanstack-start"
-    },
-    {
-      "id": "page:/:locale/:wsId/inventory/products:apps/web/src/app/[locale]/(dashboard)/[wsId]/inventory/products/page.tsx",
-      "kind": "page",
-      "methods": [],
-      "routePath": "/:locale/:wsId/inventory/products",
-      "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/inventory/products/page.tsx",
-      "status": "migrated",
-      "targetOwner": "tanstack-start"
-    },
-    {
-      "id": "page:/:locale/:wsId/inventory/products/:productId:apps/web/src/app/[locale]/(dashboard)/[wsId]/inventory/products/[productId]/page.tsx",
-      "kind": "page",
-      "methods": [],
-      "routePath": "/:locale/:wsId/inventory/products/:productId",
-      "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/inventory/products/[productId]/page.tsx",
-      "status": "migrated",
-      "targetOwner": "tanstack-start"
-    },
-    {
-      "id": "page:/:locale/:wsId/inventory/promotions:apps/web/src/app/[locale]/(dashboard)/[wsId]/inventory/promotions/page.tsx",
-      "kind": "page",
-      "methods": [],
-      "routePath": "/:locale/:wsId/inventory/promotions",
-      "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/inventory/promotions/page.tsx",
-      "status": "migrated",
-      "targetOwner": "tanstack-start"
-    },
-    {
-      "id": "page:/:locale/:wsId/inventory/storefronts:apps/web/src/app/[locale]/(dashboard)/[wsId]/inventory/storefronts/page.tsx",
-      "kind": "page",
-      "methods": [],
-      "routePath": "/:locale/:wsId/inventory/storefronts",
-      "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/inventory/storefronts/page.tsx",
-      "status": "migrated",
-      "targetOwner": "tanstack-start"
-    },
-    {
-      "id": "page:/:locale/:wsId/inventory/suppliers:apps/web/src/app/[locale]/(dashboard)/[wsId]/inventory/suppliers/page.tsx",
-      "kind": "page",
-      "methods": [],
-      "routePath": "/:locale/:wsId/inventory/suppliers",
-      "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/inventory/suppliers/page.tsx",
-      "status": "migrated",
-      "targetOwner": "tanstack-start"
-    },
-    {
-      "id": "page:/:locale/:wsId/inventory/units:apps/web/src/app/[locale]/(dashboard)/[wsId]/inventory/units/page.tsx",
-      "kind": "page",
-      "methods": [],
-      "routePath": "/:locale/:wsId/inventory/units",
-      "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/inventory/units/page.tsx",
-      "status": "migrated",
-      "targetOwner": "tanstack-start"
-    },
-    {
-      "id": "page:/:locale/:wsId/inventory/warehouses:apps/web/src/app/[locale]/(dashboard)/[wsId]/inventory/warehouses/page.tsx",
-      "kind": "page",
-      "methods": [],
-      "routePath": "/:locale/:wsId/inventory/warehouses",
-      "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/inventory/warehouses/page.tsx",
-      "status": "migrated",
+      "routePath": "/:locale/:wsId/inventory/*slug?",
+      "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/inventory/[[...slug]]/page.tsx",
+      "status": "legacy-next",
       "targetOwner": "tanstack-start"
     },
     {
@@ -12010,15 +11506,6 @@
       "targetOwner": "tanstack-start"
     },
     {
-      "id": "page:/:locale/tools/random:apps/web/src/app/[locale]/(marketing)/tools/random/page.tsx",
-      "kind": "page",
-      "methods": [],
-      "routePath": "/:locale/tools/random",
-      "sourceFile": "apps/web/src/app/[locale]/(marketing)/tools/random/page.tsx",
-      "status": "migrated",
-      "targetOwner": "tanstack-start"
-    },
-    {
       "id": "page:/:locale/ui:apps/web/src/app/[locale]/ui/page.tsx",
       "kind": "page",
       "methods": [],
@@ -12155,20 +11642,20 @@
     }
   ],
   "summary": {
-    "apiRoutes": 952,
-    "cronRoutes": 15,
-    "layouts": 63,
-    "pages": 262,
-    "routeHandlers": 972,
+    "apiRoutes": 910,
+    "cronRoutes": 14,
+    "layouts": 61,
+    "pages": 250,
+    "routeHandlers": 929,
     "methodCounts": {
-      "GET": 538,
+      "GET": 514,
       "HEAD": 1,
-      "POST": 466,
-      "PUT": 94,
-      "PATCH": 120,
-      "DELETE": 182,
+      "POST": 442,
+      "PUT": 93,
+      "PATCH": 114,
+      "DELETE": 178,
       "OPTIONS": 17
     },
-    "total": 1304
+    "total": 1247
   }
 }

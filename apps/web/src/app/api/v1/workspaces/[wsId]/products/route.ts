@@ -1,3 +1,7 @@
+import {
+  createInventoryProductResponse,
+  InventoryProductCreateSchema,
+} from '@tuturuuu/inventory-core/product-create';
 import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import {
   createAdminClient,
@@ -8,10 +12,6 @@ import {
   normalizeWorkspaceId,
 } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
-import {
-  createInventoryProductResponse,
-  InventoryProductCreateSchema,
-} from '@tuturuuu/inventory-core/product-create';
 
 export const ProductCreateSchema = InventoryProductCreateSchema;
 

@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import { getStockChangeAmount } from '@tuturuuu/inventory-core/stock-change';
+import { describe, expect, it } from 'vitest';
 
 describe('getStockChangeAmount', () => {
   it('returns a positive amount when moving from unlimited to finite', () => {

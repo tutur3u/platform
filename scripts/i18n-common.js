@@ -13,7 +13,7 @@ const DEFAULT_TRANSLATION_DIRS = [
   'apps/inventory/messages',
   'apps/mind/messages',
   'apps/nova/messages',
-  'apps/qr/messages',
+  'apps/tools/messages',
   'apps/rewise/messages',
   'apps/shortener/messages',
   'apps/tasks/messages',

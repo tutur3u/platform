@@ -1,11 +1,14 @@
-import { NextResponse } from 'next/server';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { authorizeInventoryWorkspace } from '@tuturuuu/inventory-core/commerce/auth';
-import { createCostProfile, listCostProfiles } from '@tuturuuu/inventory-core/costing';
+import {
+  createCostProfile,
+  listCostProfiles,
+} from '@tuturuuu/inventory-core/costing';
 import {
   canManageInventorySetup,
   canViewInventoryCatalog,
 } from '@tuturuuu/inventory-core/permissions';
+import { NextResponse } from 'next/server';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { parseCostingJsonBody } from './request';
 import {
   CostProfileListQuerySchema,

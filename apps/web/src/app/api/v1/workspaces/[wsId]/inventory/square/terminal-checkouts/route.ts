@@ -1,10 +1,10 @@
-import { NextResponse } from 'next/server';
-import { z } from 'zod';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { authorizeInventoryWorkspace } from '@tuturuuu/inventory-core/commerce/auth';
 import { squareTerminalCheckoutPayloadSchema } from '@tuturuuu/inventory-core/commerce/schemas';
 import { createInventorySquareTerminalCheckout } from '@tuturuuu/inventory-core/commerce/square';
 import { canUpdateInventorySales } from '@tuturuuu/inventory-core/permissions';
+import { NextResponse } from 'next/server';
+import { z } from 'zod';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 interface Params {
   params: Promise<{ wsId: string }>;

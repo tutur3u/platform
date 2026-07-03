@@ -20,7 +20,7 @@ const satelliteRouteRoots = [
   'apps/web/src/app/api/v1/workspaces/[wsId]/storage',
   'apps/web/src/app/api/v1/workspaces/[wsId]/inventory',
   'apps/web/src/app/api/v1/workspaces/[wsId]/mail',
-  'apps/web/src/app/api/v1/workspaces/[wsId]/mind',
+  // Mind routes migrated to the dedicated mind app (apps/mind).
   'apps/web/src/app/api/v1/workspaces/[wsId]/user-groups/[groupId]/modules',
   'apps/web/src/app/api/v1/workspaces/[wsId]/user-groups/[groupId]/module-order',
   'apps/web/src/app/api/v1/workspaces/[wsId]/user-groups/[groupId]/module-groups',
@@ -38,7 +38,8 @@ const satelliteAppApiRoots = [
   'apps/drive/src/app/api',
   'apps/mail/src/app/api',
   'apps/meet/src/app/api',
-  'apps/mind/src/app/api',
+  // apps/mind now owns its migrated mind API routes; it is no longer a
+  // thin proxy-only satellite, so it is excluded from the local-API allowlist.
 ];
 
 const registeredSatelliteApps = [

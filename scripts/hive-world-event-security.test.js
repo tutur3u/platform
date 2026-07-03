@@ -8,7 +8,7 @@ const MIGRATIONS_DIR = path.join(ROOT_DIR, 'apps/database/supabase/migrations');
 const RPC_SIGNATURE =
   'public.apply_hive_world_event(uuid, uuid, bigint, text, jsonb, jsonb)';
 const HIVE_EVENT_PERSISTENCE_FILES = [
-  'apps/web/src/lib/hive/hive-db.ts',
+  'apps/hive/src/lib/hive/hive-db.ts',
   'apps/hive-realtime/src/hive-db.ts',
 ];
 

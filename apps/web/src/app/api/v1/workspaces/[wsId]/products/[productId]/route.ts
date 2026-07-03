@@ -1,12 +1,3 @@
-import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
-import type { RawInventoryProductWithChanges } from '@tuturuuu/types/primitives/InventoryProductRelations';
-import type { Product2 } from '@tuturuuu/types/primitives/Product';
-import type { ProductInventory } from '@tuturuuu/types/primitives/ProductInventory';
-import { MAX_NAME_LENGTH } from '@tuturuuu/utils/constants';
-import { NextResponse } from 'next/server';
-import { z } from 'zod';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { getInventoryActorContext } from '@tuturuuu/inventory-core/actor';
 import {
   createInventoryAuditLog,
@@ -22,6 +13,15 @@ import {
 } from '@tuturuuu/inventory-core/permissions';
 import { getInventoryCatalogProducts } from '@tuturuuu/inventory-core/product-rpc';
 import { validateInventoryItemWorkspaceRelations } from '@tuturuuu/inventory-core/relation-validation';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
+import type { RawInventoryProductWithChanges } from '@tuturuuu/types/primitives/InventoryProductRelations';
+import type { Product2 } from '@tuturuuu/types/primitives/Product';
+import type { ProductInventory } from '@tuturuuu/types/primitives/ProductInventory';
+import { MAX_NAME_LENGTH } from '@tuturuuu/utils/constants';
+import { NextResponse } from 'next/server';
+import { z } from 'zod';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 const RouteParamsSchema = z.object({
   wsId: z.string().max(MAX_NAME_LENGTH).min(1),

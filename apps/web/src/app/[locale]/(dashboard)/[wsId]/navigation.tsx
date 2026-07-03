@@ -16,8 +16,10 @@ import { DEV_MODE } from '@/constants/env';
 import { getCalendarAppOrigin } from '@/lib/calendar-app-url';
 import { createTierRequirement } from '@/lib/feature-tiers';
 import { HABITS_ENABLED_SECRET } from '@/lib/habits/constants';
+import { getHiveAppOrigin } from '@/lib/hive-app-url';
 import { getInventoryAppOrigin } from '@/lib/inventory-app-url';
 import { getMailAppOrigin } from '@/lib/mail-app-url';
+import { getMindAppOrigin } from '@/lib/mind-app-url';
 import { getQrAppOrigin } from '@/lib/qr-app-url';
 import { TOPIC_ANNOUNCEMENTS_SECRET } from '@/lib/topic-announcements';
 import {
@@ -104,6 +106,8 @@ export async function WorkspaceNavigationLinks({
   const mailAppHref = `${getMailAppOrigin()}/${personalOrWsId}`;
   const inventoryAppHref = `${getInventoryAppOrigin()}/${personalOrWsId}`;
   const calendarAppHref = `${getCalendarAppOrigin()}/${personalOrWsId}`;
+  const mindAppHref = `${getMindAppOrigin()}/${personalOrWsId}`;
+  const hiveAppHref = getHiveAppOrigin();
 
   // Parallelize user-dependent queries
   const [
@@ -111,7 +115,6 @@ export async function WorkspaceNavigationLinks({
     userInvoiceVisibilityConfig,
     userTaskNavigationConfigs,
     workspaceInvoiceVisibilityConfig,
-    hiveAccessResult,
   ] = await Promise.all([
     getPermissions({ user, wsId: resolvedWorkspaceId }),
     // Get user's invoice visibility preference
@@ -137,14 +140,6 @@ export async function WorkspaceNavigationLinks({
       .eq('ws_id', resolvedWorkspaceId)
       .eq('id', 'finance_show_invoices')
       .maybeSingle(),
-    user
-      ? Promise.all([
-          createNavigationAdminClient({ noCookie: true }),
-          import('@/lib/hive-page-context'),
-        ]).then(([sbAdmin, { resolveWebHiveAccess }]) =>
-          resolveWebHiveAccess({ userId: user.id, sbAdmin })
-        )
-      : Promise.resolve(null),
   ]);
   if (!workspacePermissions) {
     if (!user) notFound();
@@ -184,11 +179,6 @@ export async function WorkspaceNavigationLinks({
       },
     ] satisfies DashboardNavigationLink[];
   }
-
-  const hasHiveAccess =
-    hiveAccessResult !== null &&
-    !('error' in hiveAccessResult) &&
-    hiveAccessResult.hasAccess;
 
   const { withoutPermission } = workspacePermissions;
   // Compute effective invoice visibility
@@ -589,28 +579,18 @@ export async function WorkspaceNavigationLinks({
           id: 'mind',
           title: t('sidebar_tabs.mind'),
           icon: createDashboardNavigationIcon('BrainCircuit', 'h-5 w-5'),
-          href: `/${personalOrWsId}/mind`,
-          aliases: [
-            `/${personalOrWsId}/mind`,
-            `/${personalOrWsId}/mind/boards`,
-          ],
+          href: mindAppHref,
+          external: true,
           preferenceSectionLabel: sidebarSections.ai,
         },
-        ...(hasHiveAccess
-          ? [
-              {
-                id: 'hive',
-                title: t('sidebar_tabs.hive'),
-                icon: createDashboardNavigationIcon('Blocks', 'h-5 w-5'),
-                href: `/${personalOrWsId}/hive`,
-                aliases: [
-                  `/${personalOrWsId}/hive`,
-                  `/${personalOrWsId}/hive/not-whitelisted`,
-                ],
-                preferenceSectionLabel: sidebarSections.ai,
-              } satisfies DashboardNavigationLink,
-            ]
-          : []),
+        {
+          id: 'hive',
+          title: t('sidebar_tabs.hive'),
+          icon: createDashboardNavigationIcon('Blocks', 'h-5 w-5'),
+          href: hiveAppHref,
+          external: true,
+          preferenceSectionLabel: sidebarSections.ai,
+        },
         {
           id: 'chat',
           title: t('sidebar_tabs.chat'),

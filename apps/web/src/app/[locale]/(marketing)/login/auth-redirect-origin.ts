@@ -157,6 +157,22 @@ function resolveConfiguredWebOrigin(env: NodeJS.ProcessEnv) {
   );
 }
 
+function resolveCurrentPlatformOrigin(
+  currentOrigin: string | null | undefined
+) {
+  const origin = normalizeHttpOrigin(currentOrigin);
+
+  if (!origin) {
+    return null;
+  }
+
+  const appDomain = getAppDomainByUrl(origin);
+
+  return appDomain?.kind === 'internal' && appDomain.name === 'platform'
+    ? new URL(appDomain.canonicalUrl).origin
+    : null;
+}
+
 function resolveLocalhostFallback(env: NodeJS.ProcessEnv) {
   const port = /^\d+$/u.test(env.PORT ?? '')
     ? env.PORT
@@ -174,8 +190,8 @@ export function resolveAuthRedirectOrigin({
     resolveCurrentPortlessOrigin(currentOrigin) ||
     resolveConfiguredPortlessOrigin(env) ||
     resolveConfiguredWebOrigin(env) ||
-    normalizeConfiguredWebOrigin(currentOrigin) ||
-    normalizeHttpOrigin(currentOrigin) ||
+    resolveCurrentPlatformOrigin(currentOrigin) ||
+    (!isProduction ? normalizeHttpOrigin(currentOrigin) : null) ||
     (isProduction
       ? DEFAULT_PRODUCTION_AUTH_ORIGIN
       : resolveLocalhostFallback(env))

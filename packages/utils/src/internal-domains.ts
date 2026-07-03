@@ -41,6 +41,10 @@ export const PRODUCTION_INTERNAL_APP_DOMAINS = [
     url: 'https://qr.tuturuuu.com',
   },
   {
+    name: 'tools',
+    url: 'https://tools.tuturuuu.com',
+  },
+  {
     name: 'nova',
     url: 'https://nova.ai.vn',
   },
@@ -140,6 +144,10 @@ export const PORTLESS_INTERNAL_APP_DOMAINS = [
     url: getTuturuuuPortlessAppOrigin('qr'),
   },
   {
+    name: 'tools',
+    url: getTuturuuuPortlessAppOrigin('tools'),
+  },
+  {
     name: 'nova',
     url: getTuturuuuPortlessAppOrigin('nova'),
   },
@@ -225,6 +233,10 @@ export const LOCALHOST_INTERNAL_APP_DOMAINS = [
   {
     name: 'qr',
     url: 'http://localhost:7819',
+  },
+  {
+    name: 'tools',
+    url: 'http://localhost:7825',
   },
   {
     name: 'platform',

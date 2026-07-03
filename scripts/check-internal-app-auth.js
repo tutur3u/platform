@@ -36,8 +36,20 @@ const REGISTERED_APP_TARGETS = {
   teach: 'teach',
   track: 'track',
 };
+const COMPATIBLE_SESSION_FALLBACK_FILES = new Set([
+  'apps/calendar/src/lib/api-auth.ts',
+  'apps/hive/src/lib/api-auth.ts',
+  'apps/hive/src/lib/hive-page-context.ts',
+  'apps/inventory/src/app/api/v1/workspaces/[wsId]/integrations/sepay/shared.ts',
+  'apps/inventory/src/lib/api-auth.ts',
+  'apps/mind/src/lib/api-auth.ts',
+]);
+const CHECKED_SUPABASE_AUTH_FALLBACK_FILES = new Set([
+  'apps/hive/src/app/api/v1/hive/_shared.ts',
+]);
 const FORBIDDEN_PATTERNS = [
   {
+    allowedFiles: COMPATIBLE_SESSION_FALLBACK_FILES,
     pattern: /@tuturuuu\/supabase\/next\/auth-session-user/u,
     message: 'Use @tuturuuu/auth/app-session instead of Supabase session auth.',
   },
@@ -51,6 +63,7 @@ const FORBIDDEN_PATTERNS = [
     message: 'Satellite logout must clear the Tuturuuu app-session cookie.',
   },
   {
+    allowedFiles: CHECKED_SUPABASE_AUTH_FALLBACK_FILES,
     pattern:
       /supabase\.auth\.(getUser|setSession|signOut|exchangeCodeForSession|signInWithOtp|signUp|verifyOtp|updateUser)/u,
     message:
@@ -93,8 +106,8 @@ const failures = [];
 for (const filePath of files) {
   const source = fs.readFileSync(path.join(ROOT, filePath), 'utf8');
 
-  for (const { pattern, message } of FORBIDDEN_PATTERNS) {
-    if (pattern.test(source)) {
+  for (const { allowedFiles, pattern, message } of FORBIDDEN_PATTERNS) {
+    if (pattern.test(source) && !allowedFiles?.has(filePath)) {
       failures.push(`${filePath}: ${message}`);
     }
   }
@@ -116,8 +129,9 @@ const cliRefreshSource = fs.readFileSync(
   path.join(ROOT, 'apps/web/src/app/api/cli/auth/refresh/route.ts'),
   'utf8'
 );
+const hiveSharedPath = 'apps/hive/src/app/api/v1/hive/_shared.ts';
 const hiveSharedSource = fs.readFileSync(
-  path.join(ROOT, 'apps/web/src/app/api/v1/hive/_shared.ts'),
+  path.join(ROOT, hiveSharedPath),
   'utf8'
 );
 const internalApiClientSource = fs.readFileSync(
@@ -173,7 +187,7 @@ if (
   !/targetApp:\s*['"]hive['"]/u.test(hiveSharedSource)
 ) {
   failures.push(
-    'apps/web/src/app/api/v1/hive/_shared.ts: Hive gateway APIs must resolve Tuturuuu app-session JWTs for target app hive.'
+    `${hiveSharedPath}: Hive gateway APIs must resolve Tuturuuu app-session JWTs for target app hive.`
   );
 }
 
@@ -182,7 +196,7 @@ if (
   (hiveAppSessionIndex === -1 || hiveSupabaseUserIndex < hiveAppSessionIndex)
 ) {
   failures.push(
-    'apps/web/src/app/api/v1/hive/_shared.ts: Hive gateway APIs must check Tuturuuu app-session auth before Supabase Auth fallback.'
+    `${hiveSharedPath}: Hive gateway APIs must check Tuturuuu app-session auth before Supabase Auth fallback.`
   );
 }
 
@@ -190,7 +204,7 @@ if (
   !/createAdminClient\(\{\s*noCookie:\s*true\s*\}\)/u.test(hiveSharedSource)
 ) {
   failures.push(
-    'apps/web/src/app/api/v1/hive/_shared.ts: Hive admin checks must use noCookie admin clients for app-session requests.'
+    `${hiveSharedPath}: Hive admin checks must use noCookie admin clients for app-session requests.`
   );
 }
 

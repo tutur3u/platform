@@ -1,7 +1,3 @@
-import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
-import { NextResponse } from 'next/server';
-import { resolveSessionAuthContext } from '@/lib/api-auth';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
   getCheckoutByPublicToken,
   getCheckoutStorefrontAccessByPublicToken,
@@ -10,6 +6,10 @@ import {
   getSimulatedOrderResponse,
   isSimulatedOrderToken,
 } from '@tuturuuu/inventory-core/commerce/simulated-checkout';
+import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
+import { NextResponse } from 'next/server';
+import { resolveSessionAuthContext } from '@/lib/api-auth';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 interface Params {
   params: Promise<{ publicToken: string }>;

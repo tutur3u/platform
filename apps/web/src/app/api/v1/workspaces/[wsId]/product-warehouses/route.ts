@@ -1,4 +1,9 @@
 import {
+  getInventoryApiListRange,
+  parseInventoryApiListQuery,
+  shouldReturnPaginatedInventoryList,
+} from '@tuturuuu/inventory-core/api-list-query';
+import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
@@ -8,11 +13,6 @@ import {
 } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
-import {
-  getInventoryApiListRange,
-  parseInventoryApiListQuery,
-  shouldReturnPaginatedInventoryList,
-} from '@tuturuuu/inventory-core/api-list-query';
 
 interface Params {
   params: Promise<{

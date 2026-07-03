@@ -1,0 +1,316 @@
+{
+  "command_launcher": {
+    "apps": "Ứng dụng",
+    "close": "đóng",
+    "current": "Hiện tại",
+    "current_app": "Ứng dụng hiện tại",
+    "current_workspace": "Workspace hiện tại",
+    "empty": "Không tìm thấy lệnh",
+    "empty_description": "Thử workspace, ứng dụng, trang hoặc cách viết gần đúng hơn.",
+    "error_workspaces": "Không thể tải workspace",
+    "guest": "Khách",
+    "loading_workspaces": "Đang tải workspace",
+    "match": "Khớp",
+    "navigate": "di chuyển",
+    "navigation": "Điều hướng",
+    "open": "Mở",
+    "open_app": "Mở ứng dụng",
+    "open_workspace": "Mở workspace",
+    "personal": "Cá nhân",
+    "placeholder": "Tìm ứng dụng, workspace và trang...",
+    "search_hint": "Nhập workspace, ứng dụng, trang, chữ viết tắt hoặc cách viết gần đúng.",
+    "select": "chọn",
+    "title": "Trình mở lệnh",
+    "workspaces": "Workspace"
+  },
+  "common": {
+    "background": "Màu nền",
+    "characters": "kí tự",
+    "download": "Tải xuống",
+    "foreground": "Màu chi tiết",
+    "formats": "Định dạng",
+    "optional": "tùy chọn",
+    "or": "hoặc",
+    "qr_generator": "Tạo mã QR",
+    "remove": "Xóa",
+    "reset": "Đặt lại",
+    "scan_me": "Quét mã QR",
+    "styles": "Kiểu dáng",
+    "title": "Tiêu đề"
+  },
+  "finance": {
+    "new_debt": "Khoản nợ mới",
+    "new_loan": "Khoản cho vay mới",
+    "new_recurring_transaction": "Giao dịch định kỳ mới",
+    "unknown_user": "Người dùng không xác định"
+  },
+  "finance-analytics": {
+    "failed-to-load-data": "Không thể tải dữ liệu",
+    "next-period": "Kỳ tiếp theo",
+    "previous-period": "Kỳ trước",
+    "week-of": "Tuần bắt đầu {date}"
+  },
+  "finance-recurring": {
+    "active_title": "Định kỳ đang hoạt động",
+    "amount": "Số tiền",
+    "amount_description": "Dùng số âm cho chi tiêu và số dương cho thu nhập.",
+    "amount_invalid": "Số tiền phải là một số hợp lệ",
+    "amount_placeholder": "-500.00",
+    "amount_required": "Vui lòng nhập số tiền",
+    "cancel": "Hủy",
+    "category": "Danh mục",
+    "create_success": "Đã tạo giao dịch định kỳ thành công",
+    "create_transaction": "Tạo giao dịch định kỳ",
+    "daily": "Hàng ngày",
+    "delete": "Xóa",
+    "delete_description": "Bạn có chắc muốn xóa \"{name}\" không? Hành động này không thể hoàn tác.",
+    "delete_error": "Không thể xóa giao dịch định kỳ",
+    "delete_success": "Đã xóa giao dịch định kỳ thành công",
+    "delete_title": "Xóa giao dịch định kỳ",
+    "deleting": "Đang xóa...",
+    "description": "Mô tả",
+    "description_placeholder": "Mô tả tùy chọn",
+    "edit": "Chỉnh sửa",
+    "edit_transaction": "Chỉnh sửa giao dịch định kỳ",
+    "end_date": "Ngày kết thúc",
+    "end_date_description": "Để trống để lịch này chạy vô thời hạn.",
+    "frequency": "Tần suất",
+    "monthly": "Hàng tháng",
+    "name": "Tên",
+    "name_placeholder": "Tiền thuê nhà hằng tháng",
+    "name_required": "Vui lòng nhập tên",
+    "next_occurrence": "Tiếp theo: {date}",
+    "no_active_transactions": "Chưa có giao dịch định kỳ đang hoạt động",
+    "no_category": "Không có danh mục",
+    "no_upcoming_transactions": "Không có giao dịch sắp tới",
+    "open_menu": "Mở menu",
+    "page_description": "Quản lý lịch thu nhập và chi tiêu tự động gắn với ví và danh mục của bạn.",
+    "save_error": "Không thể lưu giao dịch định kỳ",
+    "scheduled_for": "Đã lên lịch cho {date}",
+    "select_category": "Chọn danh mục",
+    "select_frequency": "Chọn tần suất",
+    "select_wallet": "Chọn ví",
+    "start_date": "Ngày bắt đầu",
+    "start_date_required": "Vui lòng chọn ngày bắt đầu",
+    "title": "Giao dịch định kỳ",
+    "upcoming_title": "Sắp tới trong 30 ngày",
+    "update_success": "Đã cập nhật giao dịch định kỳ thành công",
+    "update_transaction": "Cập nhật giao dịch định kỳ",
+    "wallet": "Ví",
+    "wallet_required": "Vui lòng chọn ví",
+    "weekly": "Hàng tuần",
+    "yearly": "Hàng năm"
+  },
+  "qr": {
+    "image_upload": {
+      "browse": "duyệt tệp",
+      "dimensions": "Kích thước",
+      "dimensions_too_large": "Kích thước hình ảnh quá lớn. Kích thước tối đa là 512x512px.",
+      "dimensions_too_small": "Kích thước hình ảnh quá nhỏ. Kích thước tối thiểu là 32x32px.",
+      "drop_files": "Thả tệp vào đây",
+      "file_too_large": "Tệp quá lớn. Kích thước tối đa là {size}.",
+      "image_uploaded": "Hình ảnh đã tải lên",
+      "invalid_image": "Tệp hình ảnh không hợp lệ.",
+      "invalid_type": "Loại tệp không hợp lệ. Vui lòng tải lên tệp JPG, PNG, WebP hoặc SVG.",
+      "max_size": "Kích thước tối đa",
+      "processing": "Đang xử lý",
+      "recommended": "Khuyên dùng",
+      "rounded_logo": "Logo tròn",
+      "signed_url_failed": "Không thể tạo URL đã ký.",
+      "supported_formats": "Định dạng được hỗ trợ",
+      "title": "Tải lên Logo/Hình ảnh",
+      "upload_failed": "Tải lên thất bại. Vui lòng thử lại."
+    }
+  },
+  "qrPage": {
+    "eyebrow": "Tuturuuu QR",
+    "metadata": {
+      "description": "Tạo mã QR mang thương hiệu tức thì với trình tạo của Tuturuuu.",
+      "title": "Tạo mã QR"
+    }
+  },
+  "random_generator": {
+    "actions": {
+      "copied": "Đã sao chép {label}",
+      "copy": "Sao chép",
+      "copy_all": "Sao chép tất cả",
+      "regenerate": "Tạo lại"
+    },
+    "description": "Tạo UUID, ID kiểu NanoID, token, giá trị kiểu khóa API và mật khẩu bằng Web Crypto. Các giá trị chỉ ở trong trình duyệt của bạn.",
+    "errors": {
+      "clipboard_failed": "Không thể sao chép vào clipboard.",
+      "no_secure_crypto": "Trình duyệt này không hỗ trợ tạo ngẫu nhiên bảo mật.",
+      "select_password_class": "Chọn ít nhất một nhóm ký tự cho mật khẩu."
+    },
+    "eyebrow": "Web Crypto trong trình duyệt",
+    "fields": {
+      "batch_count": "Số lượng",
+      "byte_length": "Số byte",
+      "character_sets": "Nhóm ký tự",
+      "exclude_ambiguous": "Loại ký tự dễ nhầm",
+      "id_format": "Định dạng ID",
+      "length": "Độ dài",
+      "lowercase": "Chữ thường",
+      "numbers": "Chữ số",
+      "password_length": "Độ dài mật khẩu",
+      "prefix": "Tiền tố",
+      "symbols": "Ký hiệu",
+      "token_format": "Định dạng token",
+      "uppercase": "Chữ hoa"
+    },
+    "formats": {
+      "api_key": "Kiểu khóa API",
+      "base64url": "Token base64url",
+      "hex": "Token hex",
+      "nanoid": "ID kiểu NanoID",
+      "uuid": "UUID v4"
+    },
+    "helpers": {
+      "exclude_ambiguous": "Tránh các ký tự như 0, O, 1, I, l, dấu nháy và dấu gạch đứng."
+    },
+    "kinds": {
+      "id": "ID",
+      "password": "Mật khẩu",
+      "token": "Token",
+      "uuid": "UUID"
+    },
+    "meta": {
+      "description": "Tạo ID, token, giá trị kiểu khóa API và mật khẩu bảo mật ngay trong trình duyệt.",
+      "title": "Trình tạo ngẫu nhiên bảo mật"
+    },
+    "outputs": {
+      "copy_value": "Sao chép giá trị {index}",
+      "description": "Mỗi giá trị được tạo mới từ Web Crypto.",
+      "empty": "Chưa có giá trị nào.",
+      "entropy_bits": "{bits} bit",
+      "generated_value": "Giá trị đã tạo {index}",
+      "title": "Giá trị đã tạo"
+    },
+    "privacy_note": "Các giá trị đã tạo không rời khỏi trang này trừ khi bạn sao chép chúng sang nơi khác.",
+    "tabs": {
+      "ids": "ID",
+      "passwords": "Mật khẩu",
+      "tokens": "Token"
+    },
+    "title": "Trình tạo ngẫu nhiên bảo mật"
+  },
+  "toolsPage": {
+    "qr_description": "Tạo mã QR tùy chỉnh cho liên kết, văn bản và hơn thế nữa.",
+    "random_description": "Tạo UUID, ID, token và mật khẩu ngẫu nhiên an toàn.",
+    "subtitle": "Bộ công cụ miễn phí, thân thiện với quyền riêng tư.",
+    "title": "Công cụ Tuturuuu"
+  },
+  "version-badge": {
+    "app": "Ứng dụng",
+    "commit": "Commit",
+    "commit_hash": "Mã commit",
+    "commit_message": "Nội dung commit",
+    "deployment_stamp": "Dấu triển khai",
+    "deployment_time": "Thời gian triển khai",
+    "deployment_url": "URL triển khai",
+    "description": "Thông tin bản dựng và triển khai của ứng dụng này.",
+    "environment": "Môi trường",
+    "not_available": "Không có",
+    "ref": "Nhánh/thẻ",
+    "setting_description": "Hiển thị huy hiệu phiên bản nhỏ ở góc dưới bên phải trong các ứng dụng được hỗ trợ.",
+    "setting_title": "Huy hiệu phiên bản",
+    "setting_toggle_label": "Bật/tắt huy hiệu phiên bản",
+    "title": "Thông tin phiên bản",
+    "trigger_label": "Mở thông tin phiên bản",
+    "version": "Phiên bản"
+  },
+  "ws-debt-loan": {
+    "amount_positive": "Số tiền phải lớn hơn 0",
+    "counterparty_too_long": "Đối tác không được vượt quá 255 ký tự",
+    "description_too_long": "Mô tả không được vượt quá 500 ký tự",
+    "name_required": "Vui lòng nhập tên",
+    "start_date_required": "Vui lòng chọn ngày bắt đầu"
+  },
+  "ws-task-templates": {
+    "actions": {
+      "archive": "Lưu trữ mẫu",
+      "cancel": "Hủy",
+      "create": "Tạo mẫu",
+      "create_task": "Tạo công việc",
+      "new_template": "Mẫu mới",
+      "save": "Lưu mẫu",
+      "save_from_task": "Lưu từ công việc",
+      "use": "Sử dụng"
+    },
+    "card": {
+      "assignees": "{count} người phụ trách",
+      "labels": "{count} nhãn",
+      "projects": "{count} dự án"
+    },
+    "create": {
+      "description": "Lưu các mặc định công việc có thể tái sử dụng cho công việc lặp lại.",
+      "title": "Tạo mẫu công việc"
+    },
+    "empty": {
+      "description": "Tạo mẫu cho công việc lặp lại, danh sách kiểm tra và bàn giao tiêu chuẩn.",
+      "no_results": "Không có mẫu nào khớp với tìm kiếm.",
+      "title": "Chưa có mẫu công việc"
+    },
+    "fields": {
+      "board": "Bảng",
+      "description": "Mô tả",
+      "description_placeholder": "Mô tả mặc định của công việc",
+      "key": "Khóa",
+      "key_placeholder": "bao-loi",
+      "list": "Danh sách",
+      "override_name": "Ghi đè tiêu đề công việc",
+      "priority": "Độ ưu tiên",
+      "search": "Tìm kiếm",
+      "search_placeholder": "Tìm mẫu công việc",
+      "task_id": "ID công việc",
+      "task_id_placeholder": "UUID công việc",
+      "task_name": "Tiêu đề công việc",
+      "task_name_placeholder": "Điều tra lỗi được báo cáo",
+      "template_name": "Tên mẫu",
+      "template_name_placeholder": "Báo lỗi sprint",
+      "unnamed_board": "Bảng chưa đặt tên",
+      "unnamed_list": "Danh sách chưa đặt tên",
+      "visibility": "Phạm vi hiển thị"
+    },
+    "gallery": {
+      "board_marketplace": "Chợ mẫu bảng",
+      "description": "Tạo mẫu khởi đầu công việc có thể tái sử dụng và giữ mẫu bảng ở cùng một nơi.",
+      "header": "Mẫu công việc"
+    },
+    "priority": {
+      "critical": "Khẩn cấp",
+      "high": "Cao",
+      "low": "Thấp",
+      "none": "Không có ưu tiên",
+      "normal": "Bình thường"
+    },
+    "save_from_task": {
+      "description": "Nhập ID công việc để lưu các trường hiện tại thành mẫu có thể tái sử dụng.",
+      "title": "Lưu công việc thành mẫu"
+    },
+    "tabs": {
+      "boards": "Mẫu bảng",
+      "tasks": "Mẫu công việc"
+    },
+    "toast": {
+      "archived": "Đã lưu trữ mẫu công việc",
+      "created": "Đã tạo mẫu công việc",
+      "failed": "Thao tác mẫu công việc thất bại",
+      "no_template_selected": "Chưa chọn mẫu công việc",
+      "saved_from_task": "Đã lưu mẫu công việc",
+      "task_created": "Đã tạo công việc từ mẫu"
+    },
+    "use": {
+      "description": "Tạo công việc từ {name}.",
+      "description_empty": "Tạo công việc từ mẫu đã chọn.",
+      "title": "Sử dụng mẫu công việc"
+    },
+    "visibility": {
+      "private": "Riêng tư",
+      "workspace": "Không gian làm việc"
+    }
+  },
+  "ws-user-fields": {
+    "value": "Giá trị"
+  }
+}

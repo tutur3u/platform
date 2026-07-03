@@ -1,9 +1,3 @@
-import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
-import { NextResponse } from 'next/server';
-import { z } from 'zod';
-import { resolveSessionAuthContext } from '@/lib/api-auth';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { isInventoryEnabled } from '@tuturuuu/inventory-core/access';
 import {
   getCheckoutByPublicToken,
@@ -14,6 +8,12 @@ import { getPublicStorefront } from '@tuturuuu/inventory-core/commerce/public-st
 import { checkoutCreatePayloadSchema } from '@tuturuuu/inventory-core/commerce/schemas';
 import { createSimulatedCheckoutResponse } from '@tuturuuu/inventory-core/commerce/simulated-checkout';
 import { assertInventorySquareReady } from '@tuturuuu/inventory-core/commerce/square';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
+import { NextResponse } from 'next/server';
+import { z } from 'zod';
+import { resolveSessionAuthContext } from '@/lib/api-auth';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 interface Params {
   params: Promise<{ slug: string }>;

@@ -1,9 +1,9 @@
-import { NextResponse } from 'next/server';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
   processInventorySquareWebhook,
   SquareWebhookSignatureError,
 } from '@tuturuuu/inventory-core/commerce/square';
+import { NextResponse } from 'next/server';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 interface Params {
   params: Promise<{ wsId: string }>;

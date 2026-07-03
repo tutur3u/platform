@@ -1,11 +1,11 @@
+import { authorizeInventoryWorkspace } from '@tuturuuu/inventory-core/commerce/auth';
+import { validateInventoryItemWorkspaceRelations } from '@tuturuuu/inventory-core/relation-validation';
+import { getStockChangeAmount } from '@tuturuuu/inventory-core/stock-change';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
-import { authorizeInventoryWorkspace } from '@tuturuuu/inventory-core/commerce/auth';
-import { validateInventoryItemWorkspaceRelations } from '@tuturuuu/inventory-core/relation-validation';
-import { getStockChangeAmount } from '@tuturuuu/inventory-core/stock-change';
 
 const InventoryItemSchema = z.object({
   warehouse_id: z.guid(),

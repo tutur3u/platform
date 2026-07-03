@@ -1,7 +1,3 @@
-import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import { NextResponse } from 'next/server';
-import { z } from 'zod';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
   parseInventoryApiListQuery,
   shouldReturnPaginatedInventoryList,
@@ -12,6 +8,10 @@ import {
   canViewInventoryCatalog,
 } from '@tuturuuu/inventory-core/permissions';
 import { getInventoryBatches } from '@tuturuuu/inventory-core/product-rpc';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { NextResponse } from 'next/server';
+import { z } from 'zod';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 const BatchPayloadSchema = z.object({
   price: z.number().nonnegative().optional(),

@@ -98,6 +98,7 @@
     "@tuturuuu/inventory-core": "workspace:*",
     "@tuturuuu/masonry": "workspace:*",
     "@tuturuuu/microsoft": "workspace:*",
+    "@tuturuuu/mind-core": "workspace:*",
     "@tuturuuu/mind-ui": "workspace:*",
     "@tuturuuu/offline": "workspace:*",
     "@tuturuuu/payment": "workspace:*",

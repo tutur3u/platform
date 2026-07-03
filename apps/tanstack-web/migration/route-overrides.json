@@ -184,11 +184,6 @@
       "targetOwner": "rust-backend",
       "note": "Rust backend handle_backend_request handles GET /api/v1/users/me/hive-access by preserving the legacy app-session-first auth behavior for current-user app-session targets, falling back to browser Supabase auth cookies only when no app-session token is present, reading only hive_members.enabled and platform_user_roles.enabled/allow_role_management for the authenticated user through the server-owned Supabase REST adapter, returning the derived legacy hasAccess/isAdmin/isMember payload, and keeping the legacy private cache directive on successful responses."
     },
-    "api:/api/v1/hive/ai/models:apps/web/src/app/api/v1/hive/ai/models/route.ts": {
-      "status": "migrated",
-      "targetOwner": "rust-backend",
-      "note": "Rust backend handle_backend_request handles GET /api/v1/hive/ai/models by preserving Hive-only app-session auth and browser Supabase cookie fallback, requiring Hive member or admin access before private reads, reading only UI-safe model columns from private.ai_gateway_models through the server-owned private-schema REST adapter, preserving the legacy enabled/type filters and provider/name ordering, and returning the derived models UI payload."
-    },
     "api:/api/v1/nova/me/team:apps/web/src/app/api/v1/nova/me/team/route.ts": {
       "status": "migrated",
       "targetOwner": "rust-backend",
@@ -979,61 +974,6 @@
       "targetOwner": "tanstack-start",
       "note": "TanStack Start route /$locale/$wsId/billing/success preserves the legacy billing checkout success page with fail-closed current-user auth, forwarded-auth workspace resolution, checkoutId validation, not-found mapping for missing Polar checkouts, normalized server-side Polar checkout data, localized success content, and legacy billing/invoice/dashboard links. The payment checkout/read APIs remain separately tracked backend work."
     },
-    "page:/:locale/:wsId/inventory:apps/web/src/app/[locale]/(dashboard)/[wsId]/inventory/(dashboard)/page.tsx": {
-      "status": "migrated",
-      "targetOwner": "tanstack-start",
-      "note": "TanStack Start route /$locale/$wsId/inventory preserves the legacy inventory dashboard shell with fail-closed current-user auth, forwarded-auth workspace resolution, view_inventory permission handling, localized access-denied state, statistic-card loading/error states, and inventory statistics loaded through the internal-api facade. The backing /api/v1/workspaces/:wsId/inventory/statistics endpoint and deeper inventory management pages remain separately tracked backend/frontend migration work."
-    },
-    "page:/:locale/:wsId/inventory/batches:apps/web/src/app/[locale]/(dashboard)/[wsId]/inventory/batches/page.tsx": {
-      "status": "migrated",
-      "targetOwner": "tanstack-start",
-      "note": "TanStack Start route /$locale/$wsId/inventory/batches ports the legacy authenticated inventory batches dashboard page as a dynamic no-store workspace route with fail-closed auth, workspace resolution, view_inventory permission handling, localized access-denied state, route-search backed q/page/pageSize state, TanStack Query table loading, and protected data access only through the internal-api inventory facade. The backing /api/v1/workspaces/:wsId/inventory/batches endpoint remains separately tracked backend migration work."
-    },
-    "page:/:locale/:wsId/inventory/categories:apps/web/src/app/[locale]/(dashboard)/[wsId]/inventory/categories/page.tsx": {
-      "status": "migrated",
-      "targetOwner": "tanstack-start",
-      "note": "TanStack Start route /$locale/$wsId/inventory/categories ports the legacy authenticated inventory categories dashboard page as a dynamic no-store workspace route with fail-closed auth, workspace resolution, inventory view/create/update/delete permission booleans, localized access-denied state, route-search backed q/page/pageSize state, TanStack Query table loading, and category create/update/delete actions routed through the internal-api inventory facade instead of raw product-categories fetches. The backing /api/v1/workspaces/:wsId/inventory/categories and product-categories compatibility APIs remain separately tracked backend migration work."
-    },
-    "page:/:locale/:wsId/inventory/manufacturers:apps/web/src/app/[locale]/(dashboard)/[wsId]/inventory/manufacturers/page.tsx": {
-      "status": "migrated",
-      "targetOwner": "tanstack-start",
-      "note": "TanStack Start route /$locale/$wsId/inventory/manufacturers ports the legacy authenticated inventory manufacturers setup page as a dynamic no-store workspace route with fail-closed auth, workspace resolution, catalog/setup permission parity, localized access-denied state, route-search backed q/page/pageSize state, TanStack Query table loading, and manufacturer create/update/delete actions routed through the internal-api inventory facade. The backing /api/v1/workspaces/:wsId/inventory/manufacturers endpoint remains separately tracked backend migration work."
-    },
-    "page:/:locale/:wsId/inventory/products:apps/web/src/app/[locale]/(dashboard)/[wsId]/inventory/products/page.tsx": {
-      "status": "migrated",
-      "targetOwner": "tanstack-start",
-      "note": "TanStack Start route /$locale/$wsId/inventory/products ports the legacy authenticated products list page as a dynamic no-store workspace route with fail-closed auth, workspace resolution, inventory and stock permission parity, route metadata, localized access-denied state, and TanStack Query product table loading plus quick edit/delete flows through the internal-api inventory facades. The backing workspace inventory product APIs remain separately tracked backend migration work."
-    },
-    "page:/:locale/:wsId/inventory/products/:productId:apps/web/src/app/[locale]/(dashboard)/[wsId]/inventory/products/[productId]/page.tsx": {
-      "status": "migrated",
-      "targetOwner": "tanstack-start",
-      "note": "TanStack Start route /$locale/$wsId/inventory/products/$productId ports the legacy authenticated product detail/new form page as a dynamic no-store workspace route with fail-closed auth, workspace resolution, inventory and stock permission parity, route metadata, localized access-denied state, and TanStack Query form loading/mutations through the internal-api inventory facades. The backing workspace inventory product APIs remain separately tracked backend migration work."
-    },
-    "page:/:locale/:wsId/inventory/promotions:apps/web/src/app/[locale]/(dashboard)/[wsId]/inventory/promotions/page.tsx": {
-      "status": "migrated",
-      "targetOwner": "tanstack-start",
-      "note": "TanStack Start route /$locale/$wsId/inventory/promotions ports the legacy authenticated inventory promotions page as a dynamic no-store workspace route with fail-closed auth, workspace resolution, inventory view/create/update/delete permission context, route metadata, and TanStack Query CRUD through the internal-api promotion facades. The underlying workspace promotion API routes remain separately tracked backend migration work."
-    },
-    "page:/:locale/:wsId/inventory/storefronts:apps/web/src/app/[locale]/(dashboard)/[wsId]/inventory/storefronts/page.tsx": {
-      "status": "migrated",
-      "targetOwner": "tanstack-start",
-      "note": "TanStack Start route /$locale/$wsId/inventory/storefronts ports the legacy authenticated storefront management page as a dynamic no-store workspace route with fail-closed auth, workspace resolution, inventory catalog permission parity, route metadata, localized access-denied state, and TanStack Query reads/mutations through the internal-api inventory storefront facades. The protected workspace storefront, listing, option-template, product, and public storefront API routes remain separately tracked backend migration work."
-    },
-    "page:/:locale/:wsId/inventory/suppliers:apps/web/src/app/[locale]/(dashboard)/[wsId]/inventory/suppliers/page.tsx": {
-      "status": "migrated",
-      "targetOwner": "tanstack-start",
-      "note": "TanStack Start route /$locale/$wsId/inventory/suppliers ports the legacy authenticated inventory suppliers dashboard page as a dynamic no-store workspace route with fail-closed auth, workspace resolution, inventory view/create/update/delete permission booleans, localized access-denied state, route-search backed q/page/pageSize state, TanStack Query table loading, and supplier create/update/delete actions routed through the internal-api inventory facade. The backing /api/v1/workspaces/:wsId/inventory/suppliers and product-suppliers compatibility APIs remain separately tracked backend migration work."
-    },
-    "page:/:locale/:wsId/inventory/units:apps/web/src/app/[locale]/(dashboard)/[wsId]/inventory/units/page.tsx": {
-      "status": "migrated",
-      "targetOwner": "tanstack-start",
-      "note": "TanStack Start route /$locale/$wsId/inventory/units ports the legacy authenticated inventory units setup page as a dynamic no-store workspace route with fail-closed auth, workspace resolution, catalog/setup permission parity, localized access-denied state, route-search backed q/page/pageSize state, TanStack Query table loading, and unit create/update/delete actions routed through the internal-api inventory facade. The backing /api/v1/workspaces/:wsId/inventory/units and product-units compatibility APIs remain separately tracked backend migration work."
-    },
-    "page:/:locale/:wsId/inventory/warehouses:apps/web/src/app/[locale]/(dashboard)/[wsId]/inventory/warehouses/page.tsx": {
-      "status": "migrated",
-      "targetOwner": "tanstack-start",
-      "note": "TanStack Start route /$locale/$wsId/inventory/warehouses ports the legacy authenticated inventory warehouses dashboard page as a dynamic no-store workspace route with fail-closed auth, workspace resolution, inventory view/create/update/delete permission booleans, localized access-denied state, route-search backed q/page/pageSize state, TanStack Query table loading, and warehouse create/update/delete actions routed through the internal-api inventory facade. The backing /api/v1/workspaces/:wsId/inventory/warehouses and product-warehouses compatibility APIs remain separately tracked backend migration work."
-    },
     "page:/:locale/:wsId/meet:apps/web/src/app/[locale]/(dashboard)/[wsId]/meet/page.tsx": {
       "status": "migrated",
       "targetOwner": "tanstack-start",
@@ -1464,30 +1404,15 @@
       "targetOwner": "tanstack-start",
       "note": "Dynamic no-store TanStack Start route /$locale/$wsId/education/courses/$courseId/modules/$moduleId/quizzes/new ports the legacy manual quiz creation page with fail-closed current-user auth, workspace resolution, localized shell content, TanStack Query/internal-api-backed quiz creation, and locale-prefixed post-submit navigation back to the module quizzes route. This marks only the frontend page artifact migrated; quiz create/update API ownership and the module quiz list page remain separately tracked."
     },
-    "layout:/:locale/:wsId/hive:apps/web/src/app/[locale]/(dashboard)/[wsId]/hive/layout.tsx": {
-      "status": "migrated",
-      "targetOwner": "tanstack-start",
-      "note": "TanStack Start routes /$locale/$wsId/hive and /$locale/$wsId/hive/not-whitelisted already redirect to the standalone Hive app while preserving query parameters. The legacy Hive route layout only imported @xyflow/react styles and returned children, so this marks only the route-specific layout metadata artifact migrated; Hive APIs and parent dashboard/session ownership remain legacy-owned."
-    },
     "page:/:locale/:wsId/hive:apps/web/src/app/[locale]/(dashboard)/[wsId]/hive/page.tsx": {
       "status": "migrated",
       "targetOwner": "tanstack-start",
       "note": "TanStack Start route /$locale/$wsId/hive redirects to the standalone Hive app dashboard while preserving query parameters. This marks only the page handoff artifact migrated; Hive APIs and parent dashboard/session ownership remain separately owned."
     },
-    "page:/:locale/:wsId/hive/not-whitelisted:apps/web/src/app/[locale]/(dashboard)/[wsId]/hive/not-whitelisted/page.tsx": {
-      "status": "migrated",
-      "targetOwner": "tanstack-start",
-      "note": "TanStack Start route /$locale/$wsId/hive/not-whitelisted redirects to the standalone Hive access request page while preserving query parameters. This marks only the page handoff artifact migrated; Hive APIs and parent dashboard/session ownership remain separately owned."
-    },
     "page:/:locale/:wsId/mind:apps/web/src/app/[locale]/(dashboard)/[wsId]/mind/page.tsx": {
       "status": "migrated",
       "targetOwner": "tanstack-start",
       "note": "TanStack Start route /$locale/$wsId/mind redirects to the standalone Mind workspace route while preserving query parameters. This marks only the page handoff artifact migrated; Mind APIs and parent dashboard/session ownership remain separately owned."
-    },
-    "layout:/:locale/:wsId/mind/boards/:boardId:apps/web/src/app/[locale]/(dashboard)/[wsId]/mind/boards/[boardId]/layout.tsx": {
-      "status": "migrated",
-      "targetOwner": "tanstack-start",
-      "note": "TanStack Start route /$locale/$wsId/mind/boards/$boardId already redirects to the standalone Mind board route while preserving query parameters. The legacy Mind board route layout only imported @xyflow/react styles and returned children, so this marks only the route-specific layout metadata artifact migrated; Mind APIs and parent dashboard/session ownership remain legacy-owned."
     },
     "page:/:locale/:wsId/mind/boards/:boardId:apps/web/src/app/[locale]/(dashboard)/[wsId]/mind/boards/[boardId]/page.tsx": {
       "status": "migrated",
@@ -2018,11 +1943,6 @@
       "status": "migrated",
       "targetOwner": "tanstack-start",
       "note": "TanStack Start route /$locale/changelog/$slug ports the legacy public changelog detail page through a Start loader/server function, TanStack Query hydration, ISR-style CDN headers, localized copy, and @tuturuuu/internal-api backend facades backed by the Rust-owned /api/v1/infrastructure/changelog/slug/:slug GET endpoint plus the Rust-owned public changelog list for adjacent navigation. Browser code does not call protected app APIs or Supabase directly."
-    },
-    "page:/:locale/tools/random:apps/web/src/app/[locale]/(marketing)/tools/random/page.tsx": {
-      "status": "migrated",
-      "targetOwner": "tanstack-start",
-      "note": "TanStack Start route /$locale/tools/random ports the legacy browser-local secure random generator with localized English/Vietnamese copy, Web Crypto ID/token/password generation, and clipboard actions without auth, Supabase, server actions, or protected app API access."
     },
     "page:/:locale/contributors:apps/web/src/app/[locale]/(marketing)/contributors/page.tsx": {
       "status": "migrated",

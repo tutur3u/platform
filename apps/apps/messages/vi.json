@@ -49,9 +49,6 @@
       "playground": {
         "description": "Thử nghiệm nội bộ cho AI, SDK và các luồng nguyên mẫu."
       },
-      "qr": {
-        "description": "Trình tạo QR công khai cho mã có thương hiệu và tải xuống."
-      },
       "rewise": {
         "description": "Quy trình học, ôn tập và củng cố kiến thức."
       },
@@ -63,6 +60,9 @@
       },
       "teach": {
         "description": "Dashboard giáo viên, công cụ giảng dạy và quy trình lớp học."
+      },
+      "tools": {
+        "description": "Tiện ích công khai miễn phí: tạo mã QR, tạo mật khẩu/ngẫu nhiên và hơn thế nữa."
       },
       "track": {
         "description": "Theo dõi thời gian, thói quen, hoạt động và nhật ký công việc."

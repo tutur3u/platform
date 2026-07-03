@@ -9,6 +9,7 @@ import {
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getExternalAppByReturnUrl } from '@/lib/app-coordination/external-apps';
+import { normalizeManagedTuturuuuReturnUrl } from '@/lib/auth/managed-tuturuuu-return-url';
 import {
   serverLogger,
   withRequestLogDrain,
@@ -30,7 +31,8 @@ function decodeReturnUrl(returnUrl: string) {
 type ResolvedCrossAppTarget = {
   appName: string;
   canonicalReturnUrl: string;
-  kind: AppDomain['kind'];
+  kind: AppDomain['kind'] | 'managed-tuturuuu';
+  requiresToken: boolean;
   targetApp: string;
 };
 
@@ -45,6 +47,7 @@ function mapConfiguredUrlToApp(returnUrl: string) {
           appName: appDomain.name,
           canonicalReturnUrl: appDomain.canonicalUrl,
           kind: appDomain.kind,
+          requiresToken: true,
           targetApp: appDomain.name,
         }
       : null;
@@ -62,6 +65,18 @@ async function resolveTargetApp(
     return configuredTarget;
   }
 
+  const managedReturnUrl = normalizeManagedTuturuuuReturnUrl(returnUrl);
+
+  if (managedReturnUrl) {
+    return {
+      appName: new URL(managedReturnUrl).hostname,
+      canonicalReturnUrl: managedReturnUrl,
+      kind: 'managed-tuturuuu',
+      requiresToken: false,
+      targetApp: 'managed-tuturuuu',
+    };
+  }
+
   const externalApp = await getExternalAppByReturnUrl(
     decodeReturnUrl(returnUrl)
   );
@@ -71,6 +86,7 @@ async function resolveTargetApp(
         appName: externalApp.displayName,
         canonicalReturnUrl: decodeReturnUrl(returnUrl),
         kind: 'external',
+        requiresToken: true,
         targetApp: externalApp.id,
       }
     : null;
@@ -124,6 +140,14 @@ async function createCrossAppReturn(request: NextRequest) {
 
   if (userError || !user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  if (!target.requiresToken) {
+    return NextResponse.json({
+      appName: target.appName,
+      returnUrl: target.canonicalReturnUrl,
+      targetApp: target.targetApp,
+    });
   }
 
   const { data, error } = await supabase.rpc('generate_cross_app_token', {

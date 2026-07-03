@@ -1,7 +1,4 @@
 import type { InventoryDashboardSnapshot } from '@tuturuuu/internal-api';
-import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import { NextResponse } from 'next/server';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { authorizeInventoryWorkspace } from '@tuturuuu/inventory-core/commerce/auth';
 import {
   canViewInventoryAnalytics,
@@ -15,6 +12,9 @@ import {
   getInventoryOverviewMetrics,
 } from '@tuturuuu/inventory-core/product-rpc';
 import { isInventoryRealtimeEnabled } from '@tuturuuu/inventory-core/realtime';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { NextResponse } from 'next/server';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 interface Params {
   params: Promise<{

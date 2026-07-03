@@ -1,8 +1,3 @@
-import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import { MAX_NAME_LENGTH } from '@tuturuuu/utils/constants';
-import { NextResponse } from 'next/server';
-import { z } from 'zod';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { getInventoryActorContext } from '@tuturuuu/inventory-core/actor';
 import {
   createInventoryAuditLog,
@@ -13,6 +8,11 @@ import {
   canDeleteInventorySetup,
   canUpdateInventorySetup,
 } from '@tuturuuu/inventory-core/permissions';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { MAX_NAME_LENGTH } from '@tuturuuu/utils/constants';
+import { NextResponse } from 'next/server';
+import { z } from 'zod';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 const WarehouseUpdateSchema = z.object({
   name: z.string().trim().min(1).max(MAX_NAME_LENGTH).optional(),

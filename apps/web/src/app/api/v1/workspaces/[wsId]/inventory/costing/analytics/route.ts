@@ -1,8 +1,8 @@
-import { NextResponse } from 'next/server';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { authorizeInventoryWorkspace } from '@tuturuuu/inventory-core/commerce/auth';
 import { getCostingAnalytics } from '@tuturuuu/inventory-core/costing';
 import { canViewInventoryAnalytics } from '@tuturuuu/inventory-core/permissions';
+import { NextResponse } from 'next/server';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 interface Params {
   params: Promise<{ wsId: string }>;

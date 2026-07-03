@@ -8,10 +8,7 @@ import {
 } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { resolveSessionAuthContext } from '../../api-auth';
-import {
-  inventoryNotFoundResponse,
-  isInventoryEnabled,
-} from '../access';
+import { inventoryNotFoundResponse, isInventoryEnabled } from '../access';
 
 export type InventoryWorkspaceAuthorization = {
   permissions: PermissionsResult;

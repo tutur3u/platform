@@ -1,7 +1,3 @@
-import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import { NextResponse } from 'next/server';
-import { z } from 'zod';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { getInventoryActorContext } from '@tuturuuu/inventory-core/actor';
 import {
   createInventoryAuditLog,
@@ -9,6 +5,10 @@ import {
 } from '@tuturuuu/inventory-core/audit';
 import { authorizeInventoryWorkspace } from '@tuturuuu/inventory-core/commerce/auth';
 import { canManageInventorySetup } from '@tuturuuu/inventory-core/permissions';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { NextResponse } from 'next/server';
+import { z } from 'zod';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 const OwnerUpdateSchema = z.object({
   name: z.string().trim().min(1).max(255).optional(),

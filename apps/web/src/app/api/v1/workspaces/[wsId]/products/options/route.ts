@@ -1,3 +1,9 @@
+import {
+  canCreateInventorySales,
+  canViewInventoryCatalog,
+  canViewInventoryStock,
+} from '@tuturuuu/inventory-core/permissions';
+import { getInventoryCatalogProducts } from '@tuturuuu/inventory-core/product-rpc';
 import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import {
   createAdminClient,
@@ -10,12 +16,6 @@ import {
 } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
-import {
-  canCreateInventorySales,
-  canViewInventoryCatalog,
-  canViewInventoryStock,
-} from '@tuturuuu/inventory-core/permissions';
-import { getInventoryCatalogProducts } from '@tuturuuu/inventory-core/product-rpc';
 
 interface Params {
   params: Promise<{

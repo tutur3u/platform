@@ -1,4 +1,11 @@
 import {
+  getInventoryPolarWebhookSecret,
+  InventoryPolarWorkspaceMismatchError,
+  syncInventoryPolarCheckout,
+  syncInventoryPolarOrder,
+} from '@tuturuuu/inventory-core/commerce/polar';
+import { applyPolarProductToInventory } from '@tuturuuu/inventory-core/commerce/polar-product-sync';
+import {
   type Checkout,
   type Order,
   type Product,
@@ -7,13 +14,6 @@ import {
 } from '@tuturuuu/payment/polar';
 import { NextResponse } from 'next/server';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
-import {
-  getInventoryPolarWebhookSecret,
-  InventoryPolarWorkspaceMismatchError,
-  syncInventoryPolarCheckout,
-  syncInventoryPolarOrder,
-} from '@tuturuuu/inventory-core/commerce/polar';
-import { applyPolarProductToInventory } from '@tuturuuu/inventory-core/commerce/polar-product-sync';
 
 interface Params {
   params: Promise<{ wsId: string }>;

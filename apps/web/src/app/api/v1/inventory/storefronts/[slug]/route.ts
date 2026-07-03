@@ -1,9 +1,9 @@
+import { isInventoryEnabled } from '@tuturuuu/inventory-core/access';
+import { getCachedPublicStorefront } from '@tuturuuu/inventory-core/commerce/public-storefront';
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { resolveSessionAuthContext } from '@/lib/api-auth';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
-import { isInventoryEnabled } from '@tuturuuu/inventory-core/access';
-import { getCachedPublicStorefront } from '@tuturuuu/inventory-core/commerce/public-storefront';
 
 interface Params {
   params: Promise<{ slug: string }>;

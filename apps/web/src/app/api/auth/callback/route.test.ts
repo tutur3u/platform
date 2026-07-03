@@ -65,6 +65,66 @@ describe('auth callback route', () => {
     );
   });
 
+  it('redirects managed wildcard Tuturuuu returnUrl values directly', async () => {
+    const managedReturnUrl = encodeURIComponent(
+      'https://vc.tuturuuu.com/workspace/personal/plans'
+    );
+    const response = await GET(
+      new NextRequest(
+        `https://tuturuuu.com/api/auth/callback?returnUrl=${managedReturnUrl}`
+      )
+    );
+
+    expect(response.headers.get('location')).toBe(
+      'https://vc.tuturuuu.com/workspace/personal/plans'
+    );
+  });
+
+  it('canonicalizes managed wildcard Tuturuuu http returnUrl values to https', async () => {
+    const managedReturnUrl = encodeURIComponent(
+      'http://vc.tuturuuu.com/workspace/personal/plans'
+    );
+    const response = await GET(
+      new NextRequest(
+        `https://tuturuuu.com/api/auth/callback?returnUrl=${managedReturnUrl}`
+      )
+    );
+
+    expect(response.headers.get('location')).toBe(
+      'https://vc.tuturuuu.com/workspace/personal/plans'
+    );
+  });
+
+  it('flattens tokenless managed wildcard verifier returnUrl values', async () => {
+    const managedReturnUrl = encodeURIComponent(
+      'https://vc.tuturuuu.com/verify-token?nextUrl=%2Fworkspace%2Fpersonal%2Fplans'
+    );
+    const response = await GET(
+      new NextRequest(
+        `https://tuturuuu.com/api/auth/callback?returnUrl=${managedReturnUrl}`
+      )
+    );
+
+    expect(response.headers.get('location')).toBe(
+      'https://vc.tuturuuu.com/workspace/personal/plans'
+    );
+  });
+
+  it('rejects managed wildcard hostname lookalike returnUrl values', async () => {
+    const managedLookalikeReturnUrl = encodeURIComponent(
+      'https://vc.tuturuuu.com.evil.test/workspace/personal/plans'
+    );
+    const response = await GET(
+      new NextRequest(
+        `https://tuturuuu.com/api/auth/callback?returnUrl=${managedLookalikeReturnUrl}`
+      )
+    );
+
+    expect(response.headers.get('location')).toBe(
+      'https://tuturuuu.com/onboarding'
+    );
+  });
+
   it('does not preserve wildcard listener origins in external app return redirects', async () => {
     vi.stubEnv('WEB_APP_URL', 'https://tuturuuu.com');
 

@@ -1,4 +1,3 @@
-import { NextResponse } from 'next/server';
 import { authorizeInventoryWorkspace } from '@tuturuuu/inventory-core/commerce/auth';
 import { listCheckouts } from '@tuturuuu/inventory-core/commerce/checkouts';
 import {
@@ -6,6 +5,7 @@ import {
   listQuerySchema,
 } from '@tuturuuu/inventory-core/commerce/schemas';
 import { canViewInventorySales } from '@tuturuuu/inventory-core/permissions';
+import { NextResponse } from 'next/server';
 
 interface Params {
   params: Promise<{ wsId: string }>;

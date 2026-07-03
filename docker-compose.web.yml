@@ -106,10 +106,14 @@ services:
       - platform-web-icons-dist:/workspace/packages/icons/dist
       - platform-web-internal-api-node_modules:/workspace/packages/internal-api/node_modules
       - platform-web-internal-api-dist:/workspace/packages/internal-api/dist
+      - platform-web-inventory-core-node_modules:/workspace/packages/inventory-core/node_modules
+      - platform-web-inventory-core-dist:/workspace/packages/inventory-core/dist
       - platform-web-masonry-node_modules:/workspace/packages/masonry/node_modules
       - platform-web-masonry-dist:/workspace/packages/masonry/dist
       - platform-web-microsoft-node_modules:/workspace/packages/microsoft/node_modules
       - platform-web-microsoft-dist:/workspace/packages/microsoft/dist
+      - platform-web-mind-core-node_modules:/workspace/packages/mind-core/node_modules
+      - platform-web-mind-core-dist:/workspace/packages/mind-core/dist
       - platform-web-mind-ui-node_modules:/workspace/packages/mind-ui/node_modules
       - platform-web-mind-ui-dist:/workspace/packages/mind-ui/dist
       - platform-web-offline-node_modules:/workspace/packages/offline/node_modules
@@ -206,6 +210,10 @@ services:
       - platform-web-node_modules:/workspace/node_modules
       - platform-web-internal-api-dist:/workspace/packages/internal-api/dist
       - platform-web-internal-api-node_modules:/workspace/packages/internal-api/node_modules
+      - platform-web-inventory-core-dist:/workspace/packages/inventory-core/dist
+      - platform-web-inventory-core-node_modules:/workspace/packages/inventory-core/node_modules
+      - platform-web-mind-core-dist:/workspace/packages/mind-core/dist
+      - platform-web-mind-core-node_modules:/workspace/packages/mind-core/node_modules
       - platform-web-types-dist:/workspace/packages/types/dist
       - platform-web-types-node_modules:/workspace/packages/types/node_modules
       - platform-web-ui-dist:/workspace/packages/ui/dist
@@ -514,10 +522,14 @@ volumes:
   platform-hive-realtime-node_modules:
   platform-web-internal-api-node_modules:
   platform-web-internal-api-dist:
+  platform-web-inventory-core-node_modules:
+  platform-web-inventory-core-dist:
   platform-web-masonry-node_modules:
   platform-web-masonry-dist:
   platform-web-microsoft-node_modules:
   platform-web-microsoft-dist:
+  platform-web-mind-core-node_modules:
+  platform-web-mind-core-dist:
   platform-web-mind-ui-node_modules:
   platform-web-mind-ui-dist:
   platform-web-next:
