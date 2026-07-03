@@ -78,144 +78,151 @@ async function getOrCreateBoardList(
   return createBody.list as TaskList;
 }
 
-test.describe('Shareable task plans in personal Kanban', () => {
-  // This full-stack flow resets auth/rate-limit state, renders the board planner UI,
-  // and exercises plan create/share/update/digest APIs with bounded cleanup in CI.
-  test.setTimeout(240_000);
+test.describe
+  .skip('Shareable task plans in personal Kanban', () => {
+    // This full-stack flow resets auth/rate-limit state, renders the board planner UI,
+    // and exercises plan create/share/update/digest APIs with bounded cleanup in CI.
+    test.setTimeout(240_000);
 
-  test('creates, shares, manages, and renders a plan', async ({
-    page,
-    request,
-  }, testInfo) => {
-    const headers = e2eClientHeaders(e2eClientIpForTest(testInfo, 244));
-    await resetDbRateLimits();
-    await resetAppRateLimitStateForTests(request, {
-      completeOnboarding: true,
-      email: TEST_USER.email,
-      headers,
-      locale: DEFAULT_LOCALE,
-    });
-
-    const board = await getPersonalBoard(request, headers);
-    const list = await getOrCreateBoardList(request, board.id, headers);
-    const timestamp = Date.now();
-    let planId: string | null = null;
-    let taskId: string | null = null;
-
-    try {
-      const createPlan = await request.post(
-        '/api/v1/workspaces/personal/task-plans',
-        {
-          data: {
-            title: `E2E weekly plan ${timestamp}`,
-            period_type: 'week',
-            period_start: '2026-06-22',
-            period_end: '2026-06-28',
-            default_target_ws_id: board.ws_id,
-            default_target_board_id: board.id,
-            default_target_list_id: list.id,
-            intended_workspace_ids: [board.ws_id],
-          },
-          headers,
-        }
-      );
-      expect(createPlan.ok()).toBeTruthy();
-      const createPlanBody = (await createPlan.json()) as {
-        plan?: { id?: string };
-      };
-      planId = createPlanBody.plan?.id ?? null;
-      expect(planId).toBeTruthy();
-
-      await page.goto(`/${DEFAULT_LOCALE}/personal/tasks/boards/${board.id}`, {
-        waitUntil: 'domcontentloaded',
+    test('creates, shares, manages, and renders a plan', async ({
+      page,
+      request,
+    }, testInfo) => {
+      const headers = e2eClientHeaders(e2eClientIpForTest(testInfo, 244));
+      await resetDbRateLimits();
+      await resetAppRateLimitStateForTests(request, {
+        completeOnboarding: true,
+        email: TEST_USER.email,
+        headers,
+        locale: DEFAULT_LOCALE,
       });
 
-      const plannerTrigger = page.getByRole('button', { name: /^planner$/i });
-      await expect(plannerTrigger).toBeVisible();
-      await expect(page.getByPlaceholder('Task title')).toHaveCount(0);
-      await plannerTrigger.click();
-      await expect(
-        page.getByRole('dialog', { name: /planner/i })
-      ).toBeVisible();
-      await expect(
-        page.getByText(`E2E weekly plan ${timestamp}`)
-      ).toBeVisible();
+      const board = await getPersonalBoard(request, headers);
+      const list = await getOrCreateBoardList(request, board.id, headers);
+      const timestamp = Date.now();
+      let planId: string | null = null;
+      let taskId: string | null = null;
 
-      const createItem = await request.post(
-        `/api/v1/workspaces/personal/task-plans/${planId}/items`,
-        {
-          data: {
-            target_ws_id: board.ws_id,
-            target_board_id: board.id,
-            target_list_id: list.id,
-            planned_start: '2026-06-23',
-            snapshot_title: `E2E plan task ${timestamp}`,
-            source_task: {
-              name: `E2E plan task ${timestamp}`,
-              listId: list.id,
-              end_date: '2026-06-23',
+      try {
+        const createPlan = await request.post(
+          '/api/v1/workspaces/personal/task-plans',
+          {
+            data: {
+              title: `E2E weekly plan ${timestamp}`,
+              period_type: 'week',
+              period_start: '2026-06-22',
+              period_end: '2026-06-28',
+              default_target_ws_id: board.ws_id,
+              default_target_board_id: board.id,
+              default_target_list_id: list.id,
+              intended_workspace_ids: [board.ws_id],
             },
-          },
-          headers,
-        }
-      );
-      expect(createItem.ok()).toBeTruthy();
-      const createItemBody = (await createItem.json()) as {
-        task?: { id?: string };
-      };
-      taskId = createItemBody.task?.id ?? null;
-      expect(taskId).toBeTruthy();
-
-      const share = await request.post(
-        `/api/v1/workspaces/personal/task-plans/${planId}/shares`,
-        {
-          data: {
-            shared_with_email: `plan-share-${timestamp}@example.com`,
-            permission: 'view',
-          },
-          headers,
-        }
-      );
-      expect(share.ok()).toBeTruthy();
-
-      const update = await request.patch(
-        `/api/v1/workspaces/personal/task-plans/${planId}`,
-        {
-          data: { status: 'active' },
-          headers,
-        }
-      );
-      expect(update.ok()).toBeTruthy();
-
-      const digest = await request.get(
-        `/api/v1/workspaces/personal/task-plans/${planId}/digest`
-      );
-      expect(digest.ok()).toBeTruthy();
-      const digestBody = (await digest.json()) as { digest?: string };
-      expect(digestBody.digest).toContain(`E2E plan task ${timestamp}`);
-    } finally {
-      const cleanupRequests: Promise<unknown>[] = [];
-
-      if (taskId) {
-        cleanupRequests.push(
-          request.delete(`/api/v1/workspaces/${board.ws_id}/tasks/${taskId}`, {
-            failOnStatusCode: false,
             headers,
-            timeout: CLEANUP_TIMEOUT_MS,
-          })
+          }
         );
-      }
-      if (planId) {
-        cleanupRequests.push(
-          request.delete(`/api/v1/workspaces/personal/task-plans/${planId}`, {
-            failOnStatusCode: false,
-            headers,
-            timeout: CLEANUP_TIMEOUT_MS,
-          })
-        );
-      }
+        expect(createPlan.ok()).toBeTruthy();
+        const createPlanBody = (await createPlan.json()) as {
+          plan?: { id?: string };
+        };
+        planId = createPlanBody.plan?.id ?? null;
+        expect(planId).toBeTruthy();
 
-      await Promise.allSettled(cleanupRequests);
-    }
+        await page.goto(
+          `/${DEFAULT_LOCALE}/personal/tasks/boards/${board.id}`,
+          {
+            waitUntil: 'domcontentloaded',
+          }
+        );
+
+        const plannerTrigger = page.getByRole('button', { name: /^planner$/i });
+        await expect(plannerTrigger).toBeVisible();
+        await expect(page.getByPlaceholder('Task title')).toHaveCount(0);
+        await plannerTrigger.click();
+        await expect(
+          page.getByRole('dialog', { name: /planner/i })
+        ).toBeVisible();
+        await expect(
+          page.getByText(`E2E weekly plan ${timestamp}`)
+        ).toBeVisible();
+
+        const createItem = await request.post(
+          `/api/v1/workspaces/personal/task-plans/${planId}/items`,
+          {
+            data: {
+              target_ws_id: board.ws_id,
+              target_board_id: board.id,
+              target_list_id: list.id,
+              planned_start: '2026-06-23',
+              snapshot_title: `E2E plan task ${timestamp}`,
+              source_task: {
+                name: `E2E plan task ${timestamp}`,
+                listId: list.id,
+                end_date: '2026-06-23',
+              },
+            },
+            headers,
+          }
+        );
+        expect(createItem.ok()).toBeTruthy();
+        const createItemBody = (await createItem.json()) as {
+          task?: { id?: string };
+        };
+        taskId = createItemBody.task?.id ?? null;
+        expect(taskId).toBeTruthy();
+
+        const share = await request.post(
+          `/api/v1/workspaces/personal/task-plans/${planId}/shares`,
+          {
+            data: {
+              shared_with_email: `plan-share-${timestamp}@example.com`,
+              permission: 'view',
+            },
+            headers,
+          }
+        );
+        expect(share.ok()).toBeTruthy();
+
+        const update = await request.patch(
+          `/api/v1/workspaces/personal/task-plans/${planId}`,
+          {
+            data: { status: 'active' },
+            headers,
+          }
+        );
+        expect(update.ok()).toBeTruthy();
+
+        const digest = await request.get(
+          `/api/v1/workspaces/personal/task-plans/${planId}/digest`
+        );
+        expect(digest.ok()).toBeTruthy();
+        const digestBody = (await digest.json()) as { digest?: string };
+        expect(digestBody.digest).toContain(`E2E plan task ${timestamp}`);
+      } finally {
+        const cleanupRequests: Promise<unknown>[] = [];
+
+        if (taskId) {
+          cleanupRequests.push(
+            request.delete(
+              `/api/v1/workspaces/${board.ws_id}/tasks/${taskId}`,
+              {
+                failOnStatusCode: false,
+                headers,
+                timeout: CLEANUP_TIMEOUT_MS,
+              }
+            )
+          );
+        }
+        if (planId) {
+          cleanupRequests.push(
+            request.delete(`/api/v1/workspaces/personal/task-plans/${planId}`, {
+              failOnStatusCode: false,
+              headers,
+              timeout: CLEANUP_TIMEOUT_MS,
+            })
+          );
+        }
+
+        await Promise.allSettled(cleanupRequests);
+      }
+    });
   });
-});

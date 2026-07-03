@@ -97,10 +97,6 @@ const staticMarketingRoutes = [
     heading: "What's New in Tuturuuu",
   },
   {
-    path: `/${DEFAULT_LOCALE}/tools/random`,
-    heading: 'Secure random generator',
-  },
-  {
     path: `/${DEFAULT_LOCALE}/women-in-tech`,
     heading:
       'From Vietnam to the World: Women Leading the Future of Technology',
@@ -245,6 +241,8 @@ const landingRoutes =
 
 const qrAppRedirectLocation =
   /^https:\/\/(?:[a-z0-9-]+\.)?qr\.tuturuuu\.localhost(?::\d+)?\/\?utm_source=e2e&tag=a&tag=b$/u;
+const toolsAppRandomRedirectLocation =
+  /^https:\/\/(?:[a-z0-9-]+\.)?tools\.tuturuuu\.localhost(?::\d+)?\/random\?utm_source=e2e&tag=a&tag=b$/u;
 
 const redirects = [
   {
@@ -272,6 +270,10 @@ const redirects = [
     location: qrAppRedirectLocation,
   },
   {
+    path: `/${DEFAULT_LOCALE}/tools/random?utm_source=e2e&tag=a&tag=b`,
+    location: toolsAppRandomRedirectLocation,
+  },
+  {
     path: '/pricing',
     location: '/?hash-nav=1#pricing',
   },
@@ -282,6 +284,10 @@ const redirects = [
   {
     path: '/qr-generator?utm_source=e2e&tag=a&tag=b',
     location: qrAppRedirectLocation,
+  },
+  {
+    path: '/tools/random?utm_source=e2e&tag=a&tag=b',
+    location: toolsAppRandomRedirectLocation,
   },
 ];
 

@@ -1094,8 +1094,18 @@ describe('web proxy api handling', () => {
     },
     {
       expectedLocation:
+        'https://tools.tuturuuu.localhost/random?utm_source=e2e&tag=a&tag=b',
+      url: 'http://localhost/en/tools/random?utm_source=e2e&tag=a&tag=b',
+    },
+    {
+      expectedLocation:
         'https://qr.tuturuuu.localhost/?utm_source=e2e&tag=a&tag=b',
       url: 'http://localhost/qr-generator?utm_source=e2e&tag=a&tag=b',
+    },
+    {
+      expectedLocation:
+        'https://tools.tuturuuu.localhost/random?utm_source=e2e&tag=a&tag=b',
+      url: 'http://localhost/tools/random?utm_source=e2e&tag=a&tag=b',
     },
   ])('redirects public marketing alias $url before auth', async ({
     expectedLocation,

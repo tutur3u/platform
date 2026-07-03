@@ -48,6 +48,7 @@ import { getDriveAppOrigin } from './lib/drive-app-url';
 import { getFinanceAppOrigin } from './lib/finance-app-url';
 import { getMailAppOrigin } from './lib/mail-app-url';
 import { getQrAppOrigin } from './lib/qr-app-url';
+import { getToolsAppOrigin } from './lib/tools-app-url';
 import { getTrackAppOrigin } from './lib/track-app-url';
 import {
   getWorkspaceRoutePermissionRequirements,
@@ -279,6 +280,14 @@ function redirectToQrApp(req: NextRequest) {
   return NextResponse.redirect(redirectUrl);
 }
 
+function redirectToToolsApp(req: NextRequest, pathname: string) {
+  const redirectUrl = new URL(getToolsAppOrigin());
+  redirectUrl.pathname = pathname;
+  redirectUrl.search = req.nextUrl.search;
+
+  return NextResponse.redirect(redirectUrl);
+}
+
 function handleMailAppRedirectRoute(req: NextRequest): NextResponse | null {
   return handleWorkspaceSatelliteRedirectRoute(req, {
     appOrigin: getMailAppOrigin(),
@@ -378,6 +387,10 @@ function handlePublicMarketingRedirectRoute(
 
   if (pathnameWithoutLocale === '/qr-generator') {
     return redirectToQrApp(req);
+  }
+
+  if (pathnameWithoutLocale === '/tools/random') {
+    return redirectToToolsApp(req, '/random');
   }
 
   if (

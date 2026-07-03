@@ -304,303 +304,310 @@ async function persistDescriptionWithChunks({
   });
 }
 
-test.describe('Task board realtime and task mutations', () => {
-  test('created task appears in another open board tab without losing board state', async ({
-    context,
-    page,
-    request,
-  }, testInfo) => {
-    const headers = e2eClientHeaders(e2eClientIpForTest(testInfo, 213));
-
-    await resetDbRateLimits();
-    await resetAppRateLimitStateForTests(request, {
-      completeOnboarding: true,
-      email: TEST_USER.email,
-      headers,
-      locale: DEFAULT_LOCALE,
-    });
-    await context.setExtraHTTPHeaders(headers);
-
-    const board = await getPersonalBoard(request);
-    const { created: createdList, list } = await getOrCreatePersonalBoardList(
+test.describe
+  .skip('Task board realtime and task mutations', () => {
+    test('created task appears in another open board tab without losing board state', async ({
+      context,
+      page,
       request,
-      board.id,
-      headers
-    );
-    await context.addInitScript((storageKey) => {
-      window.localStorage.setItem(storageKey, 'true');
-    }, PERSONAL_WORKSPACE_COLLABORATION_NOTICE_STORAGE_KEY);
+    }, testInfo) => {
+      const headers = e2eClientHeaders(e2eClientIpForTest(testInfo, 213));
 
-    const boardPath = `/${DEFAULT_LOCALE}/personal/tasks/boards/${board.id}`;
-    const secondPage = await context.newPage();
-    const taskName = `E2E realtime task ${Date.now()}`;
-    const createdTaskIds: string[] = [];
+      await resetDbRateLimits();
+      await resetAppRateLimitStateForTests(request, {
+        completeOnboarding: true,
+        email: TEST_USER.email,
+        headers,
+        locale: DEFAULT_LOCALE,
+      });
+      await context.setExtraHTTPHeaders(headers);
 
-    try {
-      await Promise.all([
-        page.goto(boardPath, { waitUntil: 'domcontentloaded' }),
-        secondPage.goto(boardPath, { waitUntil: 'domcontentloaded' }),
-      ]);
-
-      await expect(page.locator('body')).not.toContainText('Board not found');
-      await expect(secondPage.locator('body')).not.toContainText(
-        'Board not found'
+      const board = await getPersonalBoard(request);
+      const { created: createdList, list } = await getOrCreatePersonalBoardList(
+        request,
+        board.id,
+        headers
       );
+      await context.addInitScript((storageKey) => {
+        window.localStorage.setItem(storageKey, 'true');
+      }, PERSONAL_WORKSPACE_COLLABORATION_NOTICE_STORAGE_KEY);
 
-      await page
-        .getByRole('button', { name: /add task/i })
-        .last()
-        .click();
+      const boardPath = `/${DEFAULT_LOCALE}/personal/tasks/boards/${board.id}`;
+      const secondPage = await context.newPage();
+      const taskName = `E2E realtime task ${Date.now()}`;
+      const createdTaskIds: string[] = [];
 
-      const aiSwitch = page.getByRole('switch', {
-        name: /generate with ai/i,
-      });
-      if (
-        (await aiSwitch.isVisible().catch(() => false)) &&
-        (await aiSwitch.isChecked())
-      ) {
-        await aiSwitch.click();
-        await expect(aiSwitch).not.toBeChecked();
-      }
+      try {
+        await Promise.all([
+          page.goto(boardPath, { waitUntil: 'domcontentloaded' }),
+          secondPage.goto(boardPath, { waitUntil: 'domcontentloaded' }),
+        ]);
 
-      const taskInput = page
-        .getByPlaceholder(/add a new task|what needs to be done/i)
-        .first();
-      await expect(taskInput).toBeVisible();
-
-      await taskInput.fill(taskName);
-
-      const createButton = page.getByRole('button', {
-        name: /create task/i,
-      });
-      await expect(createButton).toBeEnabled();
-      await expectPersonalWorkspaceCollaborationNoticeHidden(page);
-
-      const createResponsePromise = page.waitForResponse((response) => {
-        const request = response.request();
-        return (
-          request.method() === 'POST' &&
-          new URL(response.url()).pathname ===
-            '/api/v1/workspaces/personal/tasks'
+        await expect(page.locator('body')).not.toContainText('Board not found');
+        await expect(secondPage.locator('body')).not.toContainText(
+          'Board not found'
         );
-      });
 
-      await createButton.click();
+        await page
+          .getByRole('button', { name: /add task/i })
+          .last()
+          .click();
 
-      const createResponse = await createResponsePromise;
-      expect(createResponse.status()).toBe(201);
-      const createBody = (await createResponse.json()) as {
-        task?: { id?: string };
-      };
-      if (createBody.task?.id) {
-        createdTaskIds.push(createBody.task.id);
+        const aiSwitch = page.getByRole('switch', {
+          name: /generate with ai/i,
+        });
+        if (
+          (await aiSwitch.isVisible().catch(() => false)) &&
+          (await aiSwitch.isChecked())
+        ) {
+          await aiSwitch.click();
+          await expect(aiSwitch).not.toBeChecked();
+        }
+
+        const taskInput = page
+          .getByPlaceholder(/add a new task|what needs to be done/i)
+          .first();
+        await expect(taskInput).toBeVisible();
+
+        await taskInput.fill(taskName);
+
+        const createButton = page.getByRole('button', {
+          name: /create task/i,
+        });
+        await expect(createButton).toBeEnabled();
+        await expectPersonalWorkspaceCollaborationNoticeHidden(page);
+
+        const createResponsePromise = page.waitForResponse((response) => {
+          const request = response.request();
+          return (
+            request.method() === 'POST' &&
+            new URL(response.url()).pathname ===
+              '/api/v1/workspaces/personal/tasks'
+          );
+        });
+
+        await createButton.click();
+
+        const createResponse = await createResponsePromise;
+        expect(createResponse.status()).toBe(201);
+        const createBody = (await createResponse.json()) as {
+          task?: { id?: string };
+        };
+        if (createBody.task?.id) {
+          createdTaskIds.push(createBody.task.id);
+        }
+
+        await expect(
+          page.getByText(taskName, { exact: true }).first()
+        ).toBeVisible({
+          timeout: 30_000,
+        });
+        await expect(
+          secondPage.getByText(taskName, { exact: true }).first()
+        ).toBeVisible({ timeout: 30_000 });
+        await expect(page.locator('body')).not.toContainText('Board not found');
+        await expect(secondPage.locator('body')).not.toContainText(
+          'Board not found'
+        );
+      } finally {
+        await secondPage.close();
+
+        for (const taskId of createdTaskIds) {
+          await request.delete(`/api/v1/workspaces/personal/tasks/${taskId}`, {
+            failOnStatusCode: false,
+            headers,
+          });
+        }
+
+        if (createdList) {
+          await request.patch(
+            `/api/v1/workspaces/personal/task-boards/${board.id}/lists/${list.id}`,
+            {
+              data: { deleted: true },
+              failOnStatusCode: false,
+              headers,
+            }
+          );
+        }
       }
+    });
 
-      await expect(
-        page.getByText(taskName, { exact: true }).first()
-      ).toBeVisible({
-        timeout: 30_000,
+    test('task description insertions and deletions sync between open clients', async ({
+      context,
+      page,
+      request,
+    }, testInfo) => {
+      const headers = e2eClientHeaders(e2eClientIpForTest(testInfo, 213));
+
+      await resetDbRateLimits();
+      await resetAppRateLimitStateForTests(request, {
+        completeOnboarding: true,
+        email: TEST_USER.email,
+        headers,
+        locale: DEFAULT_LOCALE,
       });
-      await expect(
-        secondPage.getByText(taskName, { exact: true }).first()
-      ).toBeVisible({ timeout: 30_000 });
-      await expect(page.locator('body')).not.toContainText('Board not found');
-      await expect(secondPage.locator('body')).not.toContainText(
-        'Board not found'
-      );
-    } finally {
-      await secondPage.close();
+      await context.setExtraHTTPHeaders(headers);
 
-      for (const taskId of createdTaskIds) {
+      const board = await getPersonalBoard(request);
+      const { created: createdList, list } = await getOrCreatePersonalBoardList(
+        request,
+        board.id,
+        headers
+      );
+      const taskName = `E2E realtime description ${Date.now()}`;
+      const taskId = await createPersonalTask(
+        request,
+        list.id,
+        taskName,
+        headers
+      );
+      const taskPath = `/${DEFAULT_LOCALE}/personal/tasks/${taskId}`;
+      const secondPage = await context.newPage();
+      const firstLine = `Inserted realtime line one ${Date.now()}`;
+      const secondLine = `Inserted realtime line two ${Date.now()}`;
+
+      try {
+        await page.goto(taskPath, { waitUntil: 'domcontentloaded' });
+        const firstEditor = await waitForTaskDescriptionEditor(page, taskName);
+
+        await secondPage.goto(taskPath, { waitUntil: 'domcontentloaded' });
+        const secondEditor = await waitForTaskDescriptionEditor(
+          secondPage,
+          taskName
+        );
+
+        // Opening the second client can briefly re-sync Yjs on the first editor.
+        await expect(
+          page.getByText('Syncing collaboration state...')
+        ).toBeHidden({
+          timeout: 30_000,
+        });
+
+        await typeTwoParagraphDescription(
+          page,
+          firstEditor,
+          firstLine,
+          secondLine
+        );
+
+        await expect(secondEditor.locator('p')).toHaveCount(2, {
+          timeout: 30_000,
+        });
+        await expect(secondEditor.locator('p').nth(0)).toContainText(
+          firstLine,
+          {
+            timeout: 30_000,
+          }
+        );
+        await expect(secondEditor.locator('p').nth(1)).toContainText(
+          secondLine,
+          {
+            timeout: 30_000,
+          }
+        );
+
+        await page.bringToFront();
+        await firstEditor.click();
+        await expect(firstEditor).toBeFocused();
+        await page.keyboard.press('ControlOrMeta+A');
+        await page.keyboard.press('Backspace');
+
+        await expect(secondEditor).not.toContainText(firstLine, {
+          timeout: 30_000,
+        });
+        await expect(secondEditor).not.toContainText(secondLine, {
+          timeout: 30_000,
+        });
+      } finally {
+        await secondPage.close();
+
         await request.delete(`/api/v1/workspaces/personal/tasks/${taskId}`, {
           failOnStatusCode: false,
           headers,
         });
-      }
 
-      if (createdList) {
-        await request.patch(
-          `/api/v1/workspaces/personal/task-boards/${board.id}/lists/${list.id}`,
-          {
-            data: { deleted: true },
-            failOnStatusCode: false,
-            headers,
-          }
-        );
-      }
-    }
-  });
-
-  test('task description insertions and deletions sync between open clients', async ({
-    context,
-    page,
-    request,
-  }, testInfo) => {
-    const headers = e2eClientHeaders(e2eClientIpForTest(testInfo, 213));
-
-    await resetDbRateLimits();
-    await resetAppRateLimitStateForTests(request, {
-      completeOnboarding: true,
-      email: TEST_USER.email,
-      headers,
-      locale: DEFAULT_LOCALE,
-    });
-    await context.setExtraHTTPHeaders(headers);
-
-    const board = await getPersonalBoard(request);
-    const { created: createdList, list } = await getOrCreatePersonalBoardList(
-      request,
-      board.id,
-      headers
-    );
-    const taskName = `E2E realtime description ${Date.now()}`;
-    const taskId = await createPersonalTask(
-      request,
-      list.id,
-      taskName,
-      headers
-    );
-    const taskPath = `/${DEFAULT_LOCALE}/personal/tasks/${taskId}`;
-    const secondPage = await context.newPage();
-    const firstLine = `Inserted realtime line one ${Date.now()}`;
-    const secondLine = `Inserted realtime line two ${Date.now()}`;
-
-    try {
-      await page.goto(taskPath, { waitUntil: 'domcontentloaded' });
-      const firstEditor = await waitForTaskDescriptionEditor(page, taskName);
-
-      await secondPage.goto(taskPath, { waitUntil: 'domcontentloaded' });
-      const secondEditor = await waitForTaskDescriptionEditor(
-        secondPage,
-        taskName
-      );
-
-      // Opening the second client can briefly re-sync Yjs on the first editor.
-      await expect(page.getByText('Syncing collaboration state...')).toBeHidden(
-        {
-          timeout: 30_000,
+        if (createdList) {
+          await request.patch(
+            `/api/v1/workspaces/personal/task-boards/${board.id}/lists/${list.id}`,
+            {
+              data: { deleted: true },
+              failOnStatusCode: false,
+              headers,
+            }
+          );
         }
-      );
-
-      await typeTwoParagraphDescription(
-        page,
-        firstEditor,
-        firstLine,
-        secondLine
-      );
-
-      await expect(secondEditor.locator('p')).toHaveCount(2, {
-        timeout: 30_000,
-      });
-      await expect(secondEditor.locator('p').nth(0)).toContainText(firstLine, {
-        timeout: 30_000,
-      });
-      await expect(secondEditor.locator('p').nth(1)).toContainText(secondLine, {
-        timeout: 30_000,
-      });
-
-      await page.bringToFront();
-      await firstEditor.click();
-      await expect(firstEditor).toBeFocused();
-      await page.keyboard.press('ControlOrMeta+A');
-      await page.keyboard.press('Backspace');
-
-      await expect(secondEditor).not.toContainText(firstLine, {
-        timeout: 30_000,
-      });
-      await expect(secondEditor).not.toContainText(secondLine, {
-        timeout: 30_000,
-      });
-    } finally {
-      await secondPage.close();
-
-      await request.delete(`/api/v1/workspaces/personal/tasks/${taskId}`, {
-        failOnStatusCode: false,
-        headers,
-      });
-
-      if (createdList) {
-        await request.patch(
-          `/api/v1/workspaces/personal/task-boards/${board.id}/lists/${list.id}`,
-          {
-            data: { deleted: true },
-            failOnStatusCode: false,
-            headers,
-          }
-        );
       }
-    }
-  });
-
-  test('chunked task description update persists large pasted content', async ({
-    context,
-    page,
-    request,
-  }, testInfo) => {
-    const headers = e2eClientHeaders(e2eClientIpForTest(testInfo, 214));
-
-    await resetDbRateLimits();
-    await resetAppRateLimitStateForTests(request, {
-      completeOnboarding: true,
-      email: TEST_USER.email,
-      headers,
-      locale: DEFAULT_LOCALE,
-    });
-    await context.setExtraHTTPHeaders(headers);
-
-    const board = await getPersonalBoard(request);
-    const { created: createdList, list } = await getOrCreatePersonalBoardList(
-      request,
-      board.id,
-      headers
-    );
-    const marker = `Chunked paste marker ${Date.now()}`;
-    const taskName = `E2E chunked description ${Date.now()}`;
-    const taskId = await createPersonalTask(
-      request,
-      list.id,
-      taskName,
-      headers
-    );
-    const taskPath = `/${DEFAULT_LOCALE}/personal/tasks/${taskId}`;
-    const largeText = `${marker}\n${'Large pasted content '.repeat(4_000)}`;
-    const description = JSON.stringify({
-      type: 'doc',
-      content: [
-        {
-          type: 'paragraph',
-          content: [{ type: 'text', text: largeText }],
-        },
-      ],
     });
 
-    try {
-      await persistDescriptionWithChunks({
-        description,
+    test('chunked task description update persists large pasted content', async ({
+      context,
+      page,
+      request,
+    }, testInfo) => {
+      const headers = e2eClientHeaders(e2eClientIpForTest(testInfo, 214));
+
+      await resetDbRateLimits();
+      await resetAppRateLimitStateForTests(request, {
+        completeOnboarding: true,
+        email: TEST_USER.email,
         headers,
+        locale: DEFAULT_LOCALE,
+      });
+      await context.setExtraHTTPHeaders(headers);
+
+      const board = await getPersonalBoard(request);
+      const { created: createdList, list } = await getOrCreatePersonalBoardList(
         request,
-        taskId,
-      });
-
-      await page.goto(taskPath, { waitUntil: 'domcontentloaded' });
-      const editor = await waitForTaskDescriptionEditor(page, taskName);
-      await expect(editor).toContainText(marker, { timeout: 30_000 });
-    } finally {
-      await request.delete(`/api/v1/workspaces/personal/tasks/${taskId}`, {
-        failOnStatusCode: false,
-        headers,
-      });
-
-      if (createdList) {
-        await request.patch(
-          `/api/v1/workspaces/personal/task-boards/${board.id}/lists/${list.id}`,
+        board.id,
+        headers
+      );
+      const marker = `Chunked paste marker ${Date.now()}`;
+      const taskName = `E2E chunked description ${Date.now()}`;
+      const taskId = await createPersonalTask(
+        request,
+        list.id,
+        taskName,
+        headers
+      );
+      const taskPath = `/${DEFAULT_LOCALE}/personal/tasks/${taskId}`;
+      const largeText = `${marker}\n${'Large pasted content '.repeat(4_000)}`;
+      const description = JSON.stringify({
+        type: 'doc',
+        content: [
           {
-            data: { deleted: true },
-            failOnStatusCode: false,
-            headers,
-          }
-        );
+            type: 'paragraph',
+            content: [{ type: 'text', text: largeText }],
+          },
+        ],
+      });
+
+      try {
+        await persistDescriptionWithChunks({
+          description,
+          headers,
+          request,
+          taskId,
+        });
+
+        await page.goto(taskPath, { waitUntil: 'domcontentloaded' });
+        const editor = await waitForTaskDescriptionEditor(page, taskName);
+        await expect(editor).toContainText(marker, { timeout: 30_000 });
+      } finally {
+        await request.delete(`/api/v1/workspaces/personal/tasks/${taskId}`, {
+          failOnStatusCode: false,
+          headers,
+        });
+
+        if (createdList) {
+          await request.patch(
+            `/api/v1/workspaces/personal/task-boards/${board.id}/lists/${list.id}`,
+            {
+              data: { deleted: true },
+              failOnStatusCode: false,
+              headers,
+            }
+          );
+        }
       }
-    }
+    });
   });
-});

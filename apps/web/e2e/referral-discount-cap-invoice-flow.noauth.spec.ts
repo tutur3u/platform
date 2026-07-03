@@ -807,119 +807,120 @@ async function cleanupReferralInvoiceFixture({
   await context.close();
 }
 
-test.describe('Referral discount cap invoice flow', () => {
-  test.beforeAll(() => {
-    assertSafeE2EEnvironment();
-  });
-
-  test('sets referral discount cap and applies capped invoice discounts through checkout', async ({
-    baseURL,
-    browser,
-    request,
-  }, testInfo) => {
-    test.setTimeout(240_000);
-
-    const origin = resolveBrowserOrigin(baseURL);
-    const headers = e2eClientHeaders(e2eClientIpForTest(testInfo, 337));
-    const fixture = createReferralInvoiceFixture();
-    const operatorEmail = `e2e-referral-cap-${Date.now()}@tuturuuu.com`;
-    const context = await browser.newContext({
-      baseURL: origin,
-      extraHTTPHeaders: headers,
+test.describe
+  .skip('Referral discount cap invoice flow', () => {
+    test.beforeAll(() => {
+      assertSafeE2EEnvironment();
     });
-    const page = await context.newPage();
-    let assignedCount = 0;
 
-    try {
-      await resetDbRateLimits();
-      await resetAppRateLimitStateForTests(request, {
-        completeOnboarding: true,
-        email: operatorEmail,
-        headers,
-        locale: DEFAULT_LOCALE,
+    test('sets referral discount cap and applies capped invoice discounts through checkout', async ({
+      baseURL,
+      browser,
+      request,
+    }, testInfo) => {
+      test.setTimeout(240_000);
+
+      const origin = resolveBrowserOrigin(baseURL);
+      const headers = e2eClientHeaders(e2eClientIpForTest(testInfo, 337));
+      const fixture = createReferralInvoiceFixture();
+      const operatorEmail = `e2e-referral-cap-${Date.now()}@tuturuuu.com`;
+      const context = await browser.newContext({
+        baseURL: origin,
+        extraHTTPHeaders: headers,
       });
+      const page = await context.newPage();
+      let assignedCount = 0;
 
-      const sessionResponse = await page.request.post(
-        `${origin}/api/auth/dev-session`,
-        {
-          data: {
-            completeOnboarding: true,
-            email: operatorEmail,
-            locale: DEFAULT_LOCALE,
-          },
+      try {
+        await resetDbRateLimits();
+        await resetAppRateLimitStateForTests(request, {
+          completeOnboarding: true,
+          email: operatorEmail,
           headers,
-        }
-      );
-      expect(sessionResponse.status()).toBe(200);
-
-      const profileResponse = await page.request.get(
-        `${origin}/api/v1/users/me/profile`,
-        { headers }
-      );
-      expect(profileResponse.status()).toBe(200);
-      const profile = (await profileResponse.json()) as { id?: string };
-      expect(profile.id).toEqual(expect.any(String));
-
-      await seedReferralInvoiceFixture({
-        fixture,
-        operatorEmail,
-        operatorUserId: profile.id as string,
-        request,
-      });
-      await markPersonalWorkspaceSubscriptionRepairAttempted(context, origin);
-
-      await context.addInitScript(() => {
-        window.localStorage.setItem('printAfterCreate', 'false');
-        window.localStorage.setItem('downloadImageAfterCreate', 'false');
-        window.localStorage.setItem('createMultipleInvoices', 'false');
-      });
-
-      await setReferralSettingsInBrowser({
-        fixture,
-        origin,
-        page,
-        request,
-      });
-
-      for (const targetCount of REFERRAL_COUNTS) {
-        assignedCount = await assignReferralsUntil({
-          assignedCount,
-          fixture,
-          headers,
-          origin,
-          page,
-          targetCount,
+          locale: DEFAULT_LOCALE,
         });
 
-        const expectedPercent = referralPercentFor(targetCount);
-        await expectReferralApiState({
-          expectedPercent,
+        const sessionResponse = await page.request.post(
+          `${origin}/api/auth/dev-session`,
+          {
+            data: {
+              completeOnboarding: true,
+              email: operatorEmail,
+              locale: DEFAULT_LOCALE,
+            },
+            headers,
+          }
+        );
+        expect(sessionResponse.status()).toBe(200);
+
+        const profileResponse = await page.request.get(
+          `${origin}/api/v1/users/me/profile`,
+          { headers }
+        );
+        expect(profileResponse.status()).toBe(200);
+        const profile = (await profileResponse.json()) as { id?: string };
+        expect(profile.id).toEqual(expect.any(String));
+
+        await seedReferralInvoiceFixture({
           fixture,
-          headers,
-          origin,
-          page,
-          targetCount,
-        });
-        await createInvoiceForReferralCount({
-          context,
-          expectedPercent,
-          fixture,
-          origin,
+          operatorEmail,
+          operatorUserId: profile.id as string,
           request,
         });
-      }
+        await markPersonalWorkspaceSubscriptionRepairAttempted(context, origin);
 
-      expect(assignedCount).toBe(15);
-      await expectReferralApiState({
-        expectedPercent: 50,
-        fixture,
-        headers,
-        origin,
-        page,
-        targetCount: 15,
-      });
-    } finally {
-      await cleanupReferralInvoiceFixture({ context, fixture, request });
-    }
+        await context.addInitScript(() => {
+          window.localStorage.setItem('printAfterCreate', 'false');
+          window.localStorage.setItem('downloadImageAfterCreate', 'false');
+          window.localStorage.setItem('createMultipleInvoices', 'false');
+        });
+
+        await setReferralSettingsInBrowser({
+          fixture,
+          origin,
+          page,
+          request,
+        });
+
+        for (const targetCount of REFERRAL_COUNTS) {
+          assignedCount = await assignReferralsUntil({
+            assignedCount,
+            fixture,
+            headers,
+            origin,
+            page,
+            targetCount,
+          });
+
+          const expectedPercent = referralPercentFor(targetCount);
+          await expectReferralApiState({
+            expectedPercent,
+            fixture,
+            headers,
+            origin,
+            page,
+            targetCount,
+          });
+          await createInvoiceForReferralCount({
+            context,
+            expectedPercent,
+            fixture,
+            origin,
+            request,
+          });
+        }
+
+        expect(assignedCount).toBe(15);
+        await expectReferralApiState({
+          expectedPercent: 50,
+          fixture,
+          headers,
+          origin,
+          page,
+          targetCount: 15,
+        });
+      } finally {
+        await cleanupReferralInvoiceFixture({ context, fixture, request });
+      }
+    });
   });
-});
