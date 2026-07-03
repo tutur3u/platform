@@ -49,8 +49,15 @@ failure side effects.
 
 Platform admins with root workspace `manage_workspace_roles` can temporarily
 disable edge IP blocking or route rate limits from Infrastructure -> Rate
-Limits. The controls are stored in Redis for the proxy runtime and default to
-enabled when Redis is unavailable or unset.
+Limits. The controls are stored in Redis for the proxy runtime.
+
+Redis-backed protection is intentionally availability-sensitive. When Redis is
+not configured, cannot initialize, or a Redis command fails, `apps/web` fails
+open for route rate limits, abuse counters, and IP-block enforcement. The app
+continues to run authentication, authorization, payload-size checks, Turnstile,
+user suspension, and normal request validation, but it does not enforce stale
+database/manual IP blocks or process-local fallback buckets. Restore Redis to
+restore rate-limit and IP-block enforcement.
 
 - Disabling IP blocking stops enforcement of cached `ip:blocked:<ip>` entries
   and prevents proxy abuse counters from creating new edge IP blocks. It does
@@ -207,11 +214,11 @@ The Playwright rate-limit suite intentionally exhausts budgets and records 429
 signals. Its `resetDbRateLimits()` helper must clear both PostgREST rate-limit
 counters and generated adaptive abuse state (`abuse_activity_signals`,
 `abuse_step_up_challenges`, and `abuse_reputation_subjects`) before each spec.
-The local `dev-session` endpoint also supports `resetRateLimits: true` to clear
-the app process's in-memory rate-limit fallback during E2E setup. Specs that
-intentionally hit authenticated route limits should also use a fresh local
-dev-session account per test/retry so Redis-backed user keys and asynchronous
-adaptive reputation writes cannot bleed into the next case.
+Specs that intentionally hit authenticated route limits should use Redis and a
+fresh local dev-session account per test/retry so Redis-backed user keys and
+asynchronous adaptive reputation writes cannot bleed into the next case. Without
+Redis, `apps/web` rate-limit and IP-block checks fail open and will not produce
+the expected `429` responses.
 
 ## Admin Investigation
 

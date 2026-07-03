@@ -112,13 +112,7 @@ type RateLimiter = {
   limit: (identifier: string) => Promise<RateLimitResult>;
 };
 
-type LocalRateLimitState = {
-  count: number;
-  reset: number;
-};
-
 const limiterCache = new Map<string, Limiters>();
-const localLimiterState = new Map<string, LocalRateLimitState>();
 const GENERIC_SUPABASE_AUTH_COOKIE_NAME_PATTERN =
   /^sb-[a-z0-9-]+-auth-token(?:\.\d+)?$/i;
 const UUID_PATH_SEGMENT =
@@ -697,87 +691,10 @@ function createRedisRateLimitBuckets(
   }));
 }
 
-function rateLimitDurationMs(duration: RateLimitConfig['duration']) {
-  switch (duration) {
-    case '1 m':
-      return 60_000;
-    case '1 h':
-      return 60 * 60_000;
-    case '1 d':
-      return 24 * 60 * 60_000;
-  }
-}
-
-function createLocalRateLimiter(
-  prefix: string,
-  config: RateLimitConfig
-): RateLimiter {
-  const durationMs = rateLimitDurationMs(config.duration);
-
-  return {
-    async limit(identifier: string) {
-      const now = Date.now();
-      const key = `${prefix}:${identifier}`;
-      let state = localLimiterState.get(key);
-
-      if (!state || state.reset <= now) {
-        state = {
-          count: 0,
-          reset: now + durationMs,
-        };
-      }
-
-      if (state.count >= config.limit) {
-        localLimiterState.set(key, state);
-        return {
-          limit: config.limit,
-          remaining: 0,
-          reset: state.reset,
-          success: false,
-        };
-      }
-
-      state.count += 1;
-      localLimiterState.set(key, state);
-
-      return {
-        limit: config.limit,
-        remaining: Math.max(0, config.limit - state.count),
-        reset: state.reset,
-        success: true,
-      };
-    },
-  };
-}
-
-function createLocalRateLimitBuckets(
-  prefixBase: string,
-  kind: 'get' | 'mutate',
-  configs: RateLimitConfig[]
-): RateLimitBucket[] {
-  return configs.map((config) => ({
-    window: config.window,
-    limiter: createLocalRateLimiter(
-      `${prefixBase}:local:${kind}:${config.window}`,
-      config
-    ),
-  }));
-}
-
-function createLocalRateLimiters(
-  prefixBase: string,
-  profile: RateLimitProfile
-): Limiters {
-  return {
-    get: createLocalRateLimitBuckets(prefixBase, 'get', profile.get),
-    mutate: createLocalRateLimitBuckets(prefixBase, 'mutate', profile.mutate),
-  };
-}
-
 async function getRateLimiters(
   prefixBase: string,
   profile: RateLimitProfile
-): Promise<Limiters> {
+): Promise<Limiters | null> {
   const cacheKey = `${prefixBase}:${JSON.stringify(profile)}`;
   const cached = limiterCache.get(cacheKey);
   if (cached) {
@@ -786,9 +703,7 @@ async function getRateLimiters(
 
   const redis = await getUpstashRatelimitRedisClient().catch(() => null);
   if (!redis) {
-    const localLimiters = createLocalRateLimiters(prefixBase, profile);
-    limiterCache.set(cacheKey, localLimiters);
-    return localLimiters;
+    return null;
   }
 
   const limiters = {
@@ -803,16 +718,6 @@ async function getRateLimiters(
 
   limiterCache.set(cacheKey, limiters);
   return limiters;
-}
-
-function replaceWithLocalRateLimiters(
-  cacheKey: string,
-  prefixBase: string,
-  profile: RateLimitProfile
-): Limiters {
-  const localLimiters = createLocalRateLimiters(prefixBase, profile);
-  limiterCache.set(cacheKey, localLimiters);
-  return localLimiters;
 }
 
 function getRoutePolicy(
@@ -1242,7 +1147,6 @@ export function isTrustedProxyBypassRequest(
 
 export function clearApiProxyGuardLimiterCache() {
   limiterCache.clear();
-  localLimiterState.clear();
 }
 
 async function requestBodyExceedsLimit(
@@ -1418,32 +1322,26 @@ export async function guardApiProxyRequest(
       );
       const limiterCacheKey = `${limiterPrefix}:${JSON.stringify(rateLimits)}`;
       const limiters = await getRateLimiters(limiterPrefix, rateLimits);
-      let activeLimiters = isRead ? limiters.get : limiters.mutate;
+      const activeLimiters = limiters
+        ? isRead
+          ? limiters.get
+          : limiters.mutate
+        : [];
 
       for (let index = 0; index < activeLimiters.length; index += 1) {
         const { limiter, window } = activeLimiters[index]!;
-        let result: RateLimitResult;
+        let result: RateLimitResult | null | undefined;
 
         try {
           result = await limiter.limit(limiterId);
         } catch {
-          const fallbackLimiters = replaceWithLocalRateLimiters(
-            limiterCacheKey,
-            limiterPrefix,
-            rateLimits
-          );
-          activeLimiters = isRead
-            ? fallbackLimiters.get
-            : fallbackLimiters.mutate;
-          const fallbackBucket =
-            activeLimiters[index] ??
-            activeLimiters.find((bucket) => bucket.window === window);
+          limiterCache.delete(limiterCacheKey);
+          break;
+        }
 
-          if (!fallbackBucket) {
-            continue;
-          }
-
-          result = await fallbackBucket.limiter.limit(limiterId);
+        if (!result) {
+          limiterCache.delete(limiterCacheKey);
+          break;
         }
 
         const { success, limit, remaining, reset } = result;

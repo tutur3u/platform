@@ -1731,7 +1731,8 @@ Generic host `UPSTASH_REDIS_REST_*` and Docker-specific `DOCKER_UPSTASH_*`
 values are stripped from managed project compose runs so untrusted project code
 cannot access platform Redis credentials.
 
-If you intentionally want the memory-only fallback, opt out:
+If you intentionally want to exercise Redis-unavailable fail-open behavior, opt
+out:
 
 ```bash
 bun dev:web:docker -- --without-redis
@@ -1739,10 +1740,12 @@ bun dev:web:docker -- --without-redis
 
 That opt-out disables both the bundled Redis companion services and the
 Docker-injected `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN`
-variables. Redis-optional features such as rate limiting fall back to their
-non-Redis behavior, but security-sensitive one-time state such as CLI
-refresh-token replay protection fails closed until Redis is restored or the CLI
-user signs in again.
+variables. `apps/web` treats Redis-backed route rate limits, abuse counters, and
+IP blocks as fail-open availability guardrails in this mode: requests continue
+through normal auth, authorization, payload-size, Turnstile, suspension, and
+validation checks, but rate-limit buckets and IP-block enforcement are skipped.
+Security-sensitive one-time state such as CLI refresh-token replay protection
+still fails closed until Redis is restored or the CLI user signs in again.
 
 Vercel-hosted satellite apps such as CMS, Calendar, Finance, Learn, Teach, and
 Tasks cannot reach Docker-private Redis hosts such as `serverless-redis-http`.

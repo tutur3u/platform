@@ -264,7 +264,9 @@ and self-hosted blue/green deployment.
 
 Dockerized web commands read `apps/web/.env.local`. Redis is enabled by default
 inside the Docker web flow and can be disabled with `--without-redis` when
-testing the memory-only fallback path.
+testing Redis-unavailable behavior. In that mode, `apps/web` fails open for
+Redis-backed route rate limits and IP-block enforcement while preserving normal
+auth, authorization, payload-size, Turnstile, suspension, and validation checks.
 
 See the [Web Docker Deployment](https://docs.tuturuuu.com/build/devops/web-docker-deployment)
 runbook for flags, lock recovery, BuildKit throttling, blue/green cutover, and

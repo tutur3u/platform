@@ -2,7 +2,7 @@
  * Shared rate-limiting infrastructure.
  *
  * Extracted from api-middleware.ts so that both withApiAuth (API-key routes)
- * and withSessionAuth (session-auth routes) can reuse the same Redis/memory
+ * and withSessionAuth (session-auth routes) can reuse the same Redis-backed
  * sliding-window implementation.
  */
 
@@ -91,12 +91,23 @@ export const RATE_LIMIT_SECRET_NAMES = {
 } as const;
 
 /**
- * In-memory rate limit store (fallback when Redis unavailable)
+ * In-memory rate limit store for explicit local/test use.
  */
 const rateLimitStore = new Map<string, { count: number; resetTime: number }>();
 
 export function resetRateLimitMemoryStoreForTests(): void {
   rateLimitStore.clear();
+}
+
+function buildFailOpenRateLimitResult(
+  config: RateLimitConfig
+): RateLimitResult {
+  return {
+    allowed: true,
+    limit: config.maxRequests,
+    remaining: config.maxRequests,
+    reset: Math.floor((Date.now() + config.windowMs) / 1000),
+  };
 }
 
 /**
@@ -115,7 +126,7 @@ export async function getRedisClient() {
   try {
     if (!hasUpstashRestEnv()) {
       console.warn(
-        'Redis rate limiting disabled: UPSTASH_REDIS_REST_URL or UPSTASH_REDIS_REST_TOKEN not configured'
+        'Redis rate limiting disabled: UPSTASH_REDIS_REST_URL or UPSTASH_REDIS_REST_TOKEN not configured; allowing requests'
       );
       redisInitialized = true;
       return null;
@@ -126,10 +137,7 @@ export async function getRedisClient() {
     console.log('Redis rate limiting enabled');
     return redisClient;
   } catch (error) {
-    console.warn(
-      'Redis rate limiting unavailable - falling back to in-memory:',
-      error
-    );
+    console.warn('Redis rate limiting unavailable - allowing requests:', error);
     redisInitialized = true;
     return null;
   }
@@ -144,7 +152,7 @@ export async function checkRateLimitRedis(
 ): Promise<RateLimitResult> {
   const redis = await getRedisClient();
   if (!redis) {
-    return checkRateLimitMemory(keyId, config);
+    return buildFailOpenRateLimitResult(config);
   }
 
   const key = `ratelimit:${keyId}`;
@@ -168,13 +176,14 @@ export async function checkRateLimitRedis(
       reset: resetTime,
     };
   } catch (error) {
-    console.error('Redis rate limit error, falling back to in-memory:', error);
-    return checkRateLimitMemory(keyId, config);
+    console.error('Redis rate limit error, allowing request:', error);
+    return buildFailOpenRateLimitResult(config);
   }
 }
 
 /**
- * Rate limit using in-memory store (fallback)
+ * Rate limit using the in-memory store. This is only for explicit local/test
+ * callers; production request paths fail open when Redis is unavailable.
  */
 export function checkRateLimitMemory(
   keyId: string,
@@ -312,7 +321,7 @@ function applyRateLimitConfigMultiplier(
 
 /**
  * Checks if a request should be rate limited.
- * Uses Redis if available, falls back to in-memory store.
+ * Uses Redis when available and fails open when Redis is unavailable.
  * Adds standard X-RateLimit-* headers to response.
  * Supports workspace-specific rate limits via workspace_secrets.
  */

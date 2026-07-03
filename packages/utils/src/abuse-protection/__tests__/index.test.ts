@@ -2,7 +2,76 @@
  * Unit tests for OTP Abuse Protection System
  */
 
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+const mocks = vi.hoisted(() => {
+  const store = new Map<string, { expiresAt: number | null; value: unknown }>();
+
+  function getEntry(key: string) {
+    const entry = store.get(key);
+    if (!entry) return null;
+
+    if (entry.expiresAt != null && entry.expiresAt <= Date.now()) {
+      store.delete(key);
+      return null;
+    }
+
+    return entry;
+  }
+
+  return {
+    getRedis: vi.fn(),
+    redis: {
+      del: vi.fn(async (...keys: string[]) => {
+        let deleted = 0;
+        for (const key of keys) {
+          if (store.delete(key)) deleted += 1;
+        }
+        return deleted;
+      }),
+      expire: vi.fn(async (key: string, seconds: number) => {
+        const entry = getEntry(key);
+        if (!entry) return 0;
+        entry.expiresAt = Date.now() + seconds * 1000;
+        return 1;
+      }),
+      get: vi.fn(async <T = unknown>(key: string): Promise<T | null> => {
+        return (getEntry(key)?.value as T | undefined) ?? null;
+      }),
+      incr: vi.fn(async (key: string) => {
+        const entry = getEntry(key);
+        const nextValue =
+          typeof entry?.value === 'number' ? entry.value + 1 : 1;
+        store.set(key, {
+          expiresAt: entry?.expiresAt ?? null,
+          value: nextValue,
+        });
+        return nextValue;
+      }),
+      set: vi.fn(
+        async (key: string, value: unknown, options?: { ex?: number }) => {
+          store.set(key, {
+            expiresAt: options?.ex ? Date.now() + options.ex * 1000 : null,
+            value,
+          });
+          return 'OK';
+        }
+      ),
+      ttl: vi.fn(async (key: string) => {
+        const entry = getEntry(key);
+        if (!entry) return -2;
+        if (entry.expiresAt == null) return -1;
+        return Math.ceil((entry.expiresAt - Date.now()) / 1000);
+      }),
+    },
+    store,
+  };
+});
+
+vi.mock('../../upstash-rest', () => ({
+  getUpstashRestRedisClient: () => mocks.getRedis(),
+  hasUpstashRestEnv: () => true,
+}));
 
 import {
   ABUSE_THRESHOLDS,
@@ -29,6 +98,12 @@ import {
 } from '../index';
 
 describe('abuse-protection', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.store.clear();
+    mocks.getRedis.mockResolvedValue(mocks.redis);
+  });
+
   afterEach(() => {
     vi.useRealTimers();
     vi.unstubAllEnvs();

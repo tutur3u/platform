@@ -278,6 +278,36 @@ describe('guardApiProxyRequest', () => {
     expect(mocks.validateEmoji).toHaveBeenCalled();
   });
 
+  it('skips proxy route buckets when Redis is not configured', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    mocks.extractIp.mockReturnValue('1.2.3.4');
+    mocks.isBlocked.mockResolvedValue(null);
+    mocks.limit.mockResolvedValue({
+      success: false,
+      limit: 1,
+      remaining: 0,
+      reset: Date.now() + 60_000,
+    });
+    mocks.validateEmoji.mockResolvedValue(null);
+
+    const { guardApiProxyRequest, clearApiProxyGuardLimiterCache } =
+      await import('../api-proxy-guard.js');
+    clearApiProxyGuardLimiterCache();
+
+    const response = await guardApiProxyRequest(
+      makeRequest('/api/test', 'GET'),
+      {
+        prefixBase: 'proxy:test:api',
+        routePolicies: singleReadRoutePolicies(),
+      }
+    );
+
+    expect(response).toBeNull();
+    expect(mocks.redis).not.toHaveBeenCalled();
+    expect(mocks.limit).not.toHaveBeenCalled();
+    expect(mocks.validateEmoji).toHaveBeenCalled();
+  });
+
   it('allows a blocked IP to submit the rate-limit appeal endpoint only', async () => {
     vi.stubEnv('NODE_ENV', 'production');
     vi.stubEnv('UPSTASH_REDIS_REST_URL', 'https://redis.test');
@@ -1186,7 +1216,7 @@ describe('guardApiProxyRequest', () => {
     expect(mocks.validateEmoji).not.toHaveBeenCalled();
   });
 
-  it('uses local rate limits when the Redis rate limiter is unreachable', async () => {
+  it('skips proxy route buckets when the Redis rate limiter is unreachable', async () => {
     vi.stubEnv('NODE_ENV', 'production');
     vi.stubEnv(
       'UPSTASH_REDIS_REST_URL',
@@ -1196,7 +1226,7 @@ describe('guardApiProxyRequest', () => {
     mocks.redis.mockReturnValue({});
     mocks.extractIp.mockReturnValue('1.2.3.4');
     mocks.isBlocked.mockResolvedValue(null);
-    mocks.limit.mockRejectedValueOnce(new TypeError('fetch failed'));
+    mocks.limit.mockRejectedValue(new TypeError('fetch failed'));
     mocks.validateEmoji.mockResolvedValue(null);
 
     const { guardApiProxyRequest, clearApiProxyGuardLimiterCache } =
@@ -1216,22 +1246,17 @@ describe('guardApiProxyRequest', () => {
     expect(response).toBeNull();
     expect(mocks.limit).toHaveBeenCalledTimes(1);
 
-    const blockedResponse = await guardApiProxyRequest(
+    const allowedResponse = await guardApiProxyRequest(
       makeRequest('/api/test', 'GET'),
       options
     );
 
-    expect(blockedResponse?.status).toBe(429);
-    expect(blockedResponse?.headers.get('X-Proxy-Block-Reason')).toBe(
-      'route-rate-limit'
-    );
-    expect(blockedResponse?.headers.get('X-RateLimit-Policy')).toBe(
-      'redis-fallback-test'
-    );
-    expect(mocks.limit).toHaveBeenCalledTimes(1);
+    expect(allowedResponse).toBeNull();
+    expect(mocks.limit).toHaveBeenCalledTimes(2);
+    expect(mocks.validateEmoji).toHaveBeenCalledTimes(2);
   });
 
-  it('uses local rate limits when Redis client initialization fails', async () => {
+  it('skips proxy route buckets when Redis client initialization fails', async () => {
     vi.stubEnv('NODE_ENV', 'production');
     vi.stubEnv('UPSTASH_REDIS_REST_URL', 'https://redis.test');
     vi.stubEnv('UPSTASH_REDIS_REST_TOKEN', 'token');
@@ -1258,16 +1283,14 @@ describe('guardApiProxyRequest', () => {
 
     expect(response).toBeNull();
 
-    const blockedResponse = await guardApiProxyRequest(
+    const allowedResponse = await guardApiProxyRequest(
       makeRequest('/api/test', 'GET'),
       options
     );
 
-    expect(blockedResponse?.status).toBe(429);
-    expect(blockedResponse?.headers.get('X-Proxy-Block-Reason')).toBe(
-      'route-rate-limit'
-    );
+    expect(allowedResponse).toBeNull();
     expect(mocks.limit).not.toHaveBeenCalled();
+    expect(mocks.validateEmoji).toHaveBeenCalledTimes(2);
   });
 
   it('rate limits anonymous users/me reads', async () => {
