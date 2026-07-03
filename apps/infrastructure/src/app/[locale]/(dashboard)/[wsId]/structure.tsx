@@ -3,9 +3,9 @@
 import { Server } from '@tuturuuu/icons';
 import { SidebarStructure } from '@tuturuuu/satellite/sidebar-structure';
 import type { NavLink } from '@tuturuuu/ui/custom/navigation';
+import { TuturuuLogo } from '@tuturuuu/ui/custom/tuturuuu-logo';
 import type { ReactNode } from 'react';
-import { TTR_URL } from '@/constants/common';
-import { WorkspaceSelect } from './workspace-select';
+import { TTR_URL, WEB_APP_URL } from '@/constants/common';
 
 interface StructureProps {
   actions: ReactNode;
@@ -29,6 +29,18 @@ function InfraMark({ collapsed = false }: { collapsed?: boolean }) {
         </span>
       )}
     </span>
+  );
+}
+
+function TuturuuuHomeLink() {
+  return (
+    <a
+      aria-label="Tuturuuu"
+      className="flex h-9 w-9 flex-none items-center justify-center rounded-md border border-dynamic bg-foreground/5 transition hover:bg-foreground/10"
+      href={WEB_APP_URL}
+    >
+      <TuturuuLogo alt="" className="h-6 w-6" height={24} width={24} />
+    </a>
   );
 }
 
@@ -57,9 +69,7 @@ export function Structure({
       upgradeHref={`${TTR_URL}/${wsId}/billing`}
       userPopover={userPopover}
       workspace={workspace}
-      workspaceSelect={({ isCollapsed }) => (
-        <WorkspaceSelect hideLeading={isCollapsed} wsId={wsId} />
-      )}
+      workspaceSelect={() => <TuturuuuHomeLink />}
       wsId={wsId}
     >
       {children}
