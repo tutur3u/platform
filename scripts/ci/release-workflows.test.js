@@ -712,8 +712,12 @@ test('E2E workflow frees runner disk before loading cached Docker images', () =>
     'E2E diagnostics artifact should upload before Playwright-only artifacts'
   );
   assert.match(e2eJob, /docker system prune -af --volumes/u);
+  assert.match(e2eJob, /docker builder prune -af/u);
   assert.match(e2eJob, /\/usr\/share\/dotnet/u);
   assert.match(e2eJob, /\/usr\/local\/lib\/android/u);
+  assert.match(e2eJob, /\/usr\/local\/share\/boost/u);
+  assert.match(e2eJob, /\/usr\/share\/swift/u);
+  assert.match(e2eJob, /\/opt\/az/u);
   assert.match(e2eJob, /\/opt\/hostedtoolcache\/CodeQL/u);
   assert.match(e2eJob, /if: \$\{\{ failure\(\) \}\}/u);
   assert.match(
@@ -842,6 +846,11 @@ test('E2E workflow runs TanStack migration dual-stack and compare smoke jobs', (
   assert.ok(installIndex < runIndex);
   assert.ok(runIndex < uploadIndex);
   assert.ok(runIndex < stopIndex);
+  assert.match(migrationJob, /docker system prune -af --volumes/u);
+  assert.match(migrationJob, /docker builder prune -af/u);
+  assert.match(migrationJob, /\/usr\/share\/swift/u);
+  assert.match(migrationJob, /\/usr\/local\/share\/boost/u);
+  assert.match(migrationJob, /\/opt\/az/u);
 });
 
 test('Supabase production migration requires production platform deploy and successful staged SHA', () => {
