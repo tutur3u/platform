@@ -113,6 +113,7 @@ const RESERVED_MANAGED_PROJECT_HOSTNAMES = new Set([
   'staging.tuturuuu.com',
   'tasks.tuturuuu.com',
   'teach.tuturuuu.com',
+  'tools.tuturuuu.com',
   'track.tuturuuu.com',
   'tuturuuu.com',
   'www.tuturuuu.com',

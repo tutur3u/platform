@@ -49,9 +49,6 @@
       "playground": {
         "description": "Internal experiments for AI, SDKs, and prototype flows."
       },
-      "qr": {
-        "description": "Public QR generator for branded codes and downloads."
-      },
       "rewise": {
         "description": "Learning, review, and revision workflows."
       },
@@ -63,6 +60,9 @@
       },
       "teach": {
         "description": "Educator dashboards, teaching tools, and classroom workflows."
+      },
+      "tools": {
+        "description": "Free public utilities: QR generator, password/random generator, and more."
       },
       "track": {
         "description": "Time tracking, habits, activity, and daily work records."

@@ -76,8 +76,8 @@
       "name": "playground.tuturuuu",
       "script": "dev:app"
     },
-    "apps/qr": {
-      "name": "qr.tuturuuu",
+    "apps/tools": {
+      "name": "tools.tuturuuu",
       "script": "dev:app"
     },
     "apps/rewise": {

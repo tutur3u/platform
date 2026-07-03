@@ -19,7 +19,7 @@
   "apps/mobile": "0.7.0",
   "apps/nova": "0.20.1",
   "apps/playground": "0.1.4",
-  "apps/qr": "0.2.1",
+  "apps/tools": "0.1.0",
   "apps/redis": "1.1.0",
   "apps/rewise": "0.20.1",
   "apps/shortener": "0.2.1",

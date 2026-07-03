@@ -44,6 +44,12 @@ export const useNavigation = (t: any): { categories: NavCategory[] } => {
       label: t('common.pricing'),
       description: '',
     },
+    {
+      href: 'https://apps.tuturuuu.com',
+      label: t('common.apps'),
+      description: '',
+      external: true,
+    },
   ];
 
   const resources: NavItem[] = [
@@ -85,10 +91,11 @@ export const useNavigation = (t: any): { categories: NavCategory[] } => {
       icon: <Shield className="h-4 w-4" />,
     },
     {
-      href: '/tools/random',
+      href: 'https://tools.tuturuuu.com/random',
       label: t('common.random_generator'),
       description: t('common.random_generator-description'),
       icon: <Fingerprint className="h-4 w-4" />,
+      external: true,
     },
     {
       href: '/branding',

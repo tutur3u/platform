@@ -100,8 +100,8 @@ const DEV_TARGETS = Object.freeze({
     apps: ['nova', 'web'],
     shared: ['@tuturuuu/types', '@tuturuuu/supabase'],
   },
-  qr: {
-    apps: ['qr'],
+  tools: {
+    apps: ['tools'],
     shared: ['@tuturuuu/types'],
   },
   rewise: {

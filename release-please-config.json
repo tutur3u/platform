@@ -111,9 +111,9 @@
       "component": "playground",
       "package-name": "@tuturuuu/playground"
     },
-    "apps/qr": {
-      "component": "qr",
-      "package-name": "@tuturuuu/qr"
+    "apps/tools": {
+      "component": "tools",
+      "package-name": "@tuturuuu/tools"
     },
     "apps/redis": {
       "component": "redis",

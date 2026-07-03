@@ -41,7 +41,7 @@ function getCanonicalLocaleRedirect(request: NextRequest) {
 export async function proxy(request: NextRequest): Promise<NextResponse> {
   if (request.nextUrl.pathname.startsWith('/api')) {
     const guardResponse = await guardApiProxyRequest(request, {
-      prefixBase: 'proxy:qr:api',
+      prefixBase: 'proxy:tools:api',
     });
 
     return guardResponse ?? NextResponse.next();

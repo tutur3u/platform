@@ -26,6 +26,7 @@ export const TUTURUUU_PORTLESS_APP_ORIGINS = {
   playground: `https://playground.${TUTURUUU_PORTLESS_ROOT_HOST}`,
   qr: `https://qr.${TUTURUUU_PORTLESS_ROOT_HOST}`,
   rewise: `https://rewise.${TUTURUUU_PORTLESS_ROOT_HOST}`,
+  tools: `https://tools.${TUTURUUU_PORTLESS_ROOT_HOST}`,
   shortener: `https://shortener.${TUTURUUU_PORTLESS_ROOT_HOST}`,
   storefront: `https://storefront.${TUTURUUU_PORTLESS_ROOT_HOST}`,
   'tanstack-web': `https://tanstack.${TUTURUUU_PORTLESS_ROOT_HOST}`,

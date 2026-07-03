@@ -53,7 +53,7 @@ const APP_ICONS: Record<GatewayAppSlug, LucideIcon> = {
   nova: Sparkles,
   platform: Command,
   playground: FlaskConical,
-  qr: QrCodeIcon,
+  tools: QrCodeIcon,
   rewise: BookOpenCheck,
   shortener: Link2,
   storefront: Store,
