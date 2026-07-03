@@ -30,14 +30,14 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: () => mocks.createAdminClient(),
 }));
 
-vi.mock('@/lib/inventory/commerce/checkouts', () => ({
+vi.mock('../checkouts', () => ({
   getCheckoutById: (...args: Parameters<typeof mocks.getCheckoutById>) =>
     mocks.getCheckoutById(...args),
   releaseCheckout: (...args: Parameters<typeof mocks.releaseCheckout>) =>
     mocks.releaseCheckout(...args),
 }));
 
-vi.mock('@/lib/inventory/commerce/finance', () => ({
+vi.mock('../finance', () => ({
   recordInventorySaleFinanceTransaction: (
     ...args: Parameters<typeof mocks.recordInventorySaleFinanceTransaction>
   ) => mocks.recordInventorySaleFinanceTransaction(...args),

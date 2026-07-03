@@ -2,7 +2,7 @@ import 'server-only';
 
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { majorToMinor } from '@tuturuuu/utils/money';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
+import { serverLogger } from '../../infrastructure/log-drain';
 import { getWorkspaceDefaultCurrency } from '../workspace-currency';
 import { createStorefront, createStorefrontListing } from './repository';
 

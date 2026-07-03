@@ -2,8 +2,8 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
-import { authorizeInventoryWorkspace } from '@/lib/inventory/commerce/auth';
-import { canManageInventorySetup } from '@/lib/inventory/permissions';
+import { authorizeInventoryWorkspace } from '@tuturuuu/inventory-core/commerce/auth';
+import { canManageInventorySetup } from '@tuturuuu/inventory-core/permissions';
 
 type PrivateInventoryClient = ReturnType<
   Awaited<ReturnType<typeof createAdminClient>>['schema']

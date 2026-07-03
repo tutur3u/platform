@@ -2,22 +2,22 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
-import { getInventoryActorContext } from '@/lib/inventory/actor';
+import { getInventoryActorContext } from '@tuturuuu/inventory-core/actor';
 import {
   createInventoryAuditLog,
   diffInventoryAuditFields,
-} from '@/lib/inventory/audit';
-import { authorizeInventoryWorkspace } from '@/lib/inventory/commerce/auth';
+} from '@tuturuuu/inventory-core/audit';
+import { authorizeInventoryWorkspace } from '@tuturuuu/inventory-core/commerce/auth';
 import {
   deleteStorefront,
   getStorefront,
   updateStorefront,
-} from '@/lib/inventory/commerce/repository';
-import { storefrontPatchSchema } from '@/lib/inventory/commerce/schemas';
+} from '@tuturuuu/inventory-core/commerce/repository';
+import { storefrontPatchSchema } from '@tuturuuu/inventory-core/commerce/schemas';
 import {
   canManageInventorySetup,
   canViewInventoryCatalog,
-} from '@/lib/inventory/permissions';
+} from '@tuturuuu/inventory-core/permissions';
 
 interface Params {
   params: Promise<{ storefrontId: string; wsId: string }>;

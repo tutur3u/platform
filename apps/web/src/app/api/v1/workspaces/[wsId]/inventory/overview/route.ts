@@ -2,19 +2,19 @@ import type { InventoryDashboardSnapshot } from '@tuturuuu/internal-api';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
-import { authorizeInventoryWorkspace } from '@/lib/inventory/commerce/auth';
+import { authorizeInventoryWorkspace } from '@tuturuuu/inventory-core/commerce/auth';
 import {
   canViewInventoryAnalytics,
   canViewInventoryDashboard,
   canViewInventorySales,
   canViewInventoryStock,
-} from '@/lib/inventory/permissions';
+} from '@tuturuuu/inventory-core/permissions';
 import {
   getInventoryDashboardSnapshot,
   getInventoryLowStockProducts,
   getInventoryOverviewMetrics,
-} from '@/lib/inventory/product-rpc';
-import { isInventoryRealtimeEnabled } from '@/lib/inventory/realtime';
+} from '@tuturuuu/inventory-core/product-rpc';
+import { isInventoryRealtimeEnabled } from '@tuturuuu/inventory-core/realtime';
 
 interface Params {
   params: Promise<{

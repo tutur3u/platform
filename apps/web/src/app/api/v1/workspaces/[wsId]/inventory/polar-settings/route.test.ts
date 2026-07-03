@@ -14,13 +14,13 @@ vi.mock('@/lib/infrastructure/log-drain', () => ({
   },
 }));
 
-vi.mock('@/lib/inventory/commerce/auth', () => ({
+vi.mock('@tuturuuu/inventory-core/commerce/auth', () => ({
   authorizeInventoryWorkspace: (
     ...args: Parameters<typeof mocks.authorizeInventoryWorkspace>
   ) => mocks.authorizeInventoryWorkspace(...args),
 }));
 
-vi.mock('@/lib/inventory/commerce/polar', () => ({
+vi.mock('@tuturuuu/inventory-core/commerce/polar', () => ({
   getInventoryPolarSettings: (
     ...args: Parameters<typeof mocks.getInventoryPolarSettings>
   ) => mocks.getInventoryPolarSettings(...args),

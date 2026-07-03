@@ -13,11 +13,11 @@ import type { Checkout, Order } from '@tuturuuu/payment/polar';
 import { createPolarClient } from '@tuturuuu/payment/polar/server';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { decryptField, encryptField } from '@tuturuuu/utils/encryption';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
+import { serverLogger } from '../../infrastructure/log-drain';
 import {
   getOrCreateWorkspaceKey,
   getWorkspaceKey,
-} from '@/lib/workspace-encryption';
+} from '../../workspace-encryption';
 import { recordInventorySaleFinanceTransaction } from './finance';
 import {
   buildPolarDiscountInput,

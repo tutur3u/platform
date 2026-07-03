@@ -6,7 +6,7 @@ const mocks = vi.hoisted(() => ({
   serverError: vi.fn(),
 }));
 
-vi.mock('@/lib/inventory/commerce/checkouts', () => ({
+vi.mock('@tuturuuu/inventory-core/commerce/checkouts', () => ({
   listCheckoutOrderHistory: (
     ...args: Parameters<typeof mocks.listCheckoutOrderHistory>
   ) => mocks.listCheckoutOrderHistory(...args),

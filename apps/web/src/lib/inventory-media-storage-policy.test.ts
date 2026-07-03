@@ -52,7 +52,7 @@ describe('inventory media storage policy', () => {
 
   it('accepts finalized inventory media with matching image bytes', async () => {
     const { validateFinalizedInventoryMediaUpload } = await import(
-      './media-storage-policy'
+      './inventory-media-storage-policy'
     );
 
     await expect(
@@ -75,7 +75,7 @@ describe('inventory media storage policy', () => {
     });
 
     const { validateFinalizedInventoryMediaUpload } = await import(
-      './media-storage-policy'
+      './inventory-media-storage-policy'
     );
 
     await expect(
@@ -105,7 +105,7 @@ describe('inventory media storage policy', () => {
     });
 
     const { validateFinalizedInventoryMediaUpload } = await import(
-      './media-storage-policy'
+      './inventory-media-storage-policy'
     );
 
     await expect(
@@ -127,7 +127,7 @@ describe('inventory media storage policy', () => {
 
   it('rejects unknown inventory media targets', async () => {
     const { validateFinalizedInventoryMediaUpload } = await import(
-      './media-storage-policy'
+      './inventory-media-storage-policy'
     );
 
     await expect(

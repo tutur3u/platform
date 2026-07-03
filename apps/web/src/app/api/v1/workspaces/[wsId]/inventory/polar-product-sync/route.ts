@@ -1,15 +1,15 @@
 import { NextResponse } from 'next/server';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
-import { authorizeInventoryWorkspace } from '@/lib/inventory/commerce/auth';
-import { backfillProductListings } from '@/lib/inventory/commerce/auto-listing';
+import { authorizeInventoryWorkspace } from '@tuturuuu/inventory-core/commerce/auth';
+import { backfillProductListings } from '@tuturuuu/inventory-core/commerce/auto-listing';
 import {
   getInventoryPolarProductSyncSummary,
   reconcileWorkspacePolarProducts,
-} from '@/lib/inventory/commerce/polar-product-sync';
+} from '@tuturuuu/inventory-core/commerce/polar-product-sync';
 import {
   canManageInventorySetup,
   canViewInventoryDashboard,
-} from '@/lib/inventory/permissions';
+} from '@tuturuuu/inventory-core/permissions';
 
 interface Params {
   params: Promise<{ wsId: string }>;

@@ -2,11 +2,11 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
-import { authorizeInventoryWorkspace } from '@/lib/inventory/commerce/auth';
-import { listCompletedCheckoutSales } from '@/lib/inventory/commerce/checkouts';
-import { canViewInventorySales } from '@/lib/inventory/permissions';
-import { isInventoryRealtimeEnabled } from '@/lib/inventory/realtime';
-import { getInventorySales } from '@/lib/inventory/sales-rpc';
+import { authorizeInventoryWorkspace } from '@tuturuuu/inventory-core/commerce/auth';
+import { listCompletedCheckoutSales } from '@tuturuuu/inventory-core/commerce/checkouts';
+import { canViewInventorySales } from '@tuturuuu/inventory-core/permissions';
+import { isInventoryRealtimeEnabled } from '@tuturuuu/inventory-core/realtime';
+import { getInventorySales } from '@tuturuuu/inventory-core/sales-rpc';
 
 const SearchParamsSchema = z.object({
   limit: z.coerce.number().int().min(1).max(100).default(50),

@@ -7,21 +7,21 @@ import { MAX_NAME_LENGTH } from '@tuturuuu/utils/constants';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
-import { getInventoryActorContext } from '@/lib/inventory/actor';
+import { getInventoryActorContext } from '@tuturuuu/inventory-core/actor';
 import {
   createInventoryAuditLog,
   diffInventoryAuditFields,
-} from '@/lib/inventory/audit';
-import { authorizeInventoryWorkspace } from '@/lib/inventory/commerce/auth';
-import { resolveProductManufacturerId } from '@/lib/inventory/manufacturers';
+} from '@tuturuuu/inventory-core/audit';
+import { authorizeInventoryWorkspace } from '@tuturuuu/inventory-core/commerce/auth';
+import { resolveProductManufacturerId } from '@tuturuuu/inventory-core/manufacturers';
 import {
   canAdjustInventoryStock,
   canManageInventoryCatalog,
   canViewInventoryCatalog,
   canViewInventoryStock,
-} from '@/lib/inventory/permissions';
-import { getInventoryCatalogProducts } from '@/lib/inventory/product-rpc';
-import { validateInventoryItemWorkspaceRelations } from '@/lib/inventory/relation-validation';
+} from '@tuturuuu/inventory-core/permissions';
+import { getInventoryCatalogProducts } from '@tuturuuu/inventory-core/product-rpc';
+import { validateInventoryItemWorkspaceRelations } from '@tuturuuu/inventory-core/relation-validation';
 
 const RouteParamsSchema = z.object({
   wsId: z.string().max(MAX_NAME_LENGTH).min(1),

@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { resolveSessionAuthContext } from '@/lib/api-auth';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
-import { listCheckoutOrderHistory } from '@/lib/inventory/commerce/checkouts';
+import { listCheckoutOrderHistory } from '@tuturuuu/inventory-core/commerce/checkouts';
 
 const SearchParamsSchema = z.object({
   limit: z.coerce.number().int().min(1).max(100).default(50),

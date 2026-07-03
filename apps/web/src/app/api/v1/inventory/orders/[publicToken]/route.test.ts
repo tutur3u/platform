@@ -8,7 +8,7 @@ const mocks = vi.hoisted(() => ({
   verifyWorkspaceMembershipType: vi.fn(),
 }));
 
-vi.mock('@/lib/inventory/commerce/checkouts', () => ({
+vi.mock('@tuturuuu/inventory-core/commerce/checkouts', () => ({
   getCheckoutByPublicToken: (
     ...args: Parameters<typeof mocks.getCheckoutByPublicToken>
   ) => mocks.getCheckoutByPublicToken(...args),
@@ -80,7 +80,7 @@ describe('public inventory order route', () => {
 
   it('returns completed order details for signed simulated order tokens', async () => {
     const { createSimulatedOrderToken } = await import(
-      '@/lib/inventory/commerce/simulated-checkout'
+      '@tuturuuu/inventory-core/commerce/simulated-checkout'
     );
     const publicToken = createSimulatedOrderToken({
       currency: 'USD',

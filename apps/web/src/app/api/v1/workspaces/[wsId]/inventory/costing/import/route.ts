@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
-import { authorizeInventoryWorkspace } from '@/lib/inventory/commerce/auth';
-import { importCostingCsv } from '@/lib/inventory/costing';
-import { canManageInventorySetup } from '@/lib/inventory/permissions';
+import { authorizeInventoryWorkspace } from '@tuturuuu/inventory-core/commerce/auth';
+import { importCostingCsv } from '@tuturuuu/inventory-core/costing';
+import { canManageInventorySetup } from '@tuturuuu/inventory-core/permissions';
 import { parseCostingJsonBody } from '../request';
 import { CostingImportPayloadSchema } from '../schemas';
 

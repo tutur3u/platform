@@ -1,13 +1,13 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
-import { authorizeInventoryWorkspace } from '@/lib/inventory/commerce/auth';
+import { authorizeInventoryWorkspace } from '@tuturuuu/inventory-core/commerce/auth';
 import {
   getInventoryPolarSettings,
   saveInventoryPolarSettings,
-} from '@/lib/inventory/commerce/polar';
-import { polarSettingsPayloadSchema } from '@/lib/inventory/commerce/schemas';
-import { canManageInventorySetup } from '@/lib/inventory/permissions';
+} from '@tuturuuu/inventory-core/commerce/polar';
+import { polarSettingsPayloadSchema } from '@tuturuuu/inventory-core/commerce/schemas';
+import { canManageInventorySetup } from '@tuturuuu/inventory-core/permissions';
 
 interface Params {
   params: Promise<{ wsId: string }>;

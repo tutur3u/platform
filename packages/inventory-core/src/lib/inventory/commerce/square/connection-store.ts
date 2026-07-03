@@ -6,11 +6,11 @@ import type {
   InventorySquareEnvironment,
 } from '@tuturuuu/internal-api/inventory';
 import { decryptField, encryptField } from '@tuturuuu/utils/encryption';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
+import { serverLogger } from '../../../infrastructure/log-drain';
 import {
   getOrCreateWorkspaceKey,
   getWorkspaceKey,
-} from '@/lib/workspace-encryption';
+} from '../../../workspace-encryption';
 import {
   getSquareOAuthCredentials,
   loadAppCredentialRows,

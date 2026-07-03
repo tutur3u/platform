@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
-import { authorizeInventoryWorkspace } from '@/lib/inventory/commerce/auth';
-import { canViewInventoryDashboard } from '@/lib/inventory/permissions';
-import { isInventoryRealtimeEnabled } from '@/lib/inventory/realtime';
+import { authorizeInventoryWorkspace } from '@tuturuuu/inventory-core/commerce/auth';
+import { canViewInventoryDashboard } from '@tuturuuu/inventory-core/permissions';
+import { isInventoryRealtimeEnabled } from '@tuturuuu/inventory-core/realtime';
 
 interface Params {
   params: Promise<{

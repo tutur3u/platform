@@ -1,6 +1,6 @@
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import type { Json } from '@tuturuuu/types';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
+import { serverLogger } from '../infrastructure/log-drain';
 
 export interface InventoryAuditActor {
   authUserId: string | null;

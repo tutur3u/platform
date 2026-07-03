@@ -5,13 +5,13 @@ import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
   parseInventoryApiListQuery,
   shouldReturnPaginatedInventoryList,
-} from '@/lib/inventory/api-list-query';
-import { authorizeInventoryWorkspace } from '@/lib/inventory/commerce/auth';
+} from '@tuturuuu/inventory-core/api-list-query';
+import { authorizeInventoryWorkspace } from '@tuturuuu/inventory-core/commerce/auth';
 import {
   canManageInventorySetup,
   canViewInventoryCatalog,
-} from '@/lib/inventory/permissions';
-import { getInventoryBatches } from '@/lib/inventory/product-rpc';
+} from '@tuturuuu/inventory-core/permissions';
+import { getInventoryBatches } from '@tuturuuu/inventory-core/product-rpc';
 
 const BatchPayloadSchema = z.object({
   price: z.number().nonnegative().optional(),

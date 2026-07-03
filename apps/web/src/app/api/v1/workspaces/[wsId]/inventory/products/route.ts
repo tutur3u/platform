@@ -10,17 +10,17 @@ import {
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
-import { authorizeInventoryWorkspace } from '@/lib/inventory/commerce/auth';
+import { authorizeInventoryWorkspace } from '@tuturuuu/inventory-core/commerce/auth';
 import {
   canCreateInventorySales,
   canViewInventoryCatalog,
   canViewInventoryStock,
-} from '@/lib/inventory/permissions';
+} from '@tuturuuu/inventory-core/permissions';
 import {
   createInventoryProductResponse,
   InventoryProductCreateSchema,
-} from '@/lib/inventory/product-create';
-import { getInventoryCatalogProducts } from '@/lib/inventory/product-rpc';
+} from '@tuturuuu/inventory-core/product-create';
+import { getInventoryCatalogProducts } from '@tuturuuu/inventory-core/product-rpc';
 
 const SearchParamsSchema = z.object({
   categoryId: z.guid().optional(),

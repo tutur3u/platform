@@ -12,8 +12,8 @@ import {
   InventoryPolarWorkspaceMismatchError,
   syncInventoryPolarCheckout,
   syncInventoryPolarOrder,
-} from '@/lib/inventory/commerce/polar';
-import { applyPolarProductToInventory } from '@/lib/inventory/commerce/polar-product-sync';
+} from '@tuturuuu/inventory-core/commerce/polar';
+import { applyPolarProductToInventory } from '@tuturuuu/inventory-core/commerce/polar-product-sync';
 
 interface Params {
   params: Promise<{ wsId: string }>;

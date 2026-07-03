@@ -22,7 +22,7 @@ vi.mock('@/lib/infrastructure/log-drain', () => ({
   },
 }));
 
-vi.mock('@/lib/inventory/commerce/square', () => ({
+vi.mock('@tuturuuu/inventory-core/commerce/square', () => ({
   processInventorySquareWebhook: (
     ...args: Parameters<typeof mocks.processInventorySquareWebhook>
   ) => mocks.processInventorySquareWebhook(...args),

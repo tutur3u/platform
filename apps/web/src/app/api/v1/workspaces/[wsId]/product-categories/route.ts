@@ -9,7 +9,7 @@ import {
   getInventoryApiListRange,
   parseInventoryApiListQuery,
   shouldReturnPaginatedInventoryList,
-} from '@/lib/inventory/api-list-query';
+} from '@tuturuuu/inventory-core/api-list-query';
 
 interface Params {
   params: Promise<{

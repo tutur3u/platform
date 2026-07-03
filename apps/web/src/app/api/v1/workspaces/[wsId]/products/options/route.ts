@@ -14,8 +14,8 @@ import {
   canCreateInventorySales,
   canViewInventoryCatalog,
   canViewInventoryStock,
-} from '@/lib/inventory/permissions';
-import { getInventoryCatalogProducts } from '@/lib/inventory/product-rpc';
+} from '@tuturuuu/inventory-core/permissions';
+import { getInventoryCatalogProducts } from '@tuturuuu/inventory-core/product-rpc';
 
 interface Params {
   params: Promise<{

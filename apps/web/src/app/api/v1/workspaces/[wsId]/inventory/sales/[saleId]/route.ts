@@ -3,18 +3,18 @@ import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
-import { getInventoryActorContext } from '@/lib/inventory/actor';
+import { getInventoryActorContext } from '@tuturuuu/inventory-core/actor';
 import {
   createInventoryAuditLog,
   diffInventoryAuditFields,
-} from '@/lib/inventory/audit';
-import { authorizeInventoryWorkspace } from '@/lib/inventory/commerce/auth';
+} from '@tuturuuu/inventory-core/audit';
+import { authorizeInventoryWorkspace } from '@tuturuuu/inventory-core/commerce/auth';
 import {
   canDeleteInventorySales,
   canUpdateInventorySales,
   canViewInventorySales,
-} from '@/lib/inventory/permissions';
-import { getInventorySale } from '@/lib/inventory/sales-rpc';
+} from '@tuturuuu/inventory-core/permissions';
+import { getInventorySale } from '@tuturuuu/inventory-core/sales-rpc';
 
 interface Params {
   params: Promise<{

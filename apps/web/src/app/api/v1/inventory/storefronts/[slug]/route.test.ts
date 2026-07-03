@@ -8,12 +8,12 @@ const mocks = vi.hoisted(() => ({
   verifyWorkspaceMembershipType: vi.fn(),
 }));
 
-vi.mock('@/lib/inventory/commerce/public-storefront', () => ({
+vi.mock('@tuturuuu/inventory-core/commerce/public-storefront', () => ({
   getCachedPublicStorefront: (...args: unknown[]) =>
     mocks.getCachedPublicStorefront(...args),
 }));
 
-vi.mock('@/lib/inventory/access', () => ({
+vi.mock('@tuturuuu/inventory-core/access', () => ({
   isInventoryEnabled: (...args: unknown[]) => mocks.isInventoryEnabled(...args),
 }));
 

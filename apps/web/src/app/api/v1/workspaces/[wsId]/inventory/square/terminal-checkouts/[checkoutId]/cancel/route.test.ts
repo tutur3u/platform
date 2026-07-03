@@ -11,13 +11,13 @@ vi.mock('@/lib/infrastructure/log-drain', () => ({
   },
 }));
 
-vi.mock('@/lib/inventory/commerce/auth', () => ({
+vi.mock('@tuturuuu/inventory-core/commerce/auth', () => ({
   authorizeInventoryWorkspace: (
     ...args: Parameters<typeof mocks.authorizeInventoryWorkspace>
   ) => mocks.authorizeInventoryWorkspace(...args),
 }));
 
-vi.mock('@/lib/inventory/commerce/square', () => ({
+vi.mock('@tuturuuu/inventory-core/commerce/square', () => ({
   cancelInventorySquareTerminalCheckout: (
     ...args: Parameters<typeof mocks.cancelInventorySquareTerminalCheckout>
   ) => mocks.cancelInventorySquareTerminalCheckout(...args),

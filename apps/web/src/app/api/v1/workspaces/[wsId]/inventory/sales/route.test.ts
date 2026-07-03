@@ -20,25 +20,25 @@ vi.mock('@/lib/infrastructure/log-drain', () => ({
   },
 }));
 
-vi.mock('@/lib/inventory/commerce/auth', () => ({
+vi.mock('@tuturuuu/inventory-core/commerce/auth', () => ({
   authorizeInventoryWorkspace: (
     ...args: Parameters<typeof mocks.authorizeInventoryWorkspace>
   ) => mocks.authorizeInventoryWorkspace(...args),
 }));
 
-vi.mock('@/lib/inventory/commerce/checkouts', () => ({
+vi.mock('@tuturuuu/inventory-core/commerce/checkouts', () => ({
   listCompletedCheckoutSales: (
     ...args: Parameters<typeof mocks.listCompletedCheckoutSales>
   ) => mocks.listCompletedCheckoutSales(...args),
 }));
 
-vi.mock('@/lib/inventory/realtime', () => ({
+vi.mock('@tuturuuu/inventory-core/realtime', () => ({
   isInventoryRealtimeEnabled: (
     ...args: Parameters<typeof mocks.isInventoryRealtimeEnabled>
   ) => mocks.isInventoryRealtimeEnabled(...args),
 }));
 
-vi.mock('@/lib/inventory/sales-rpc', () => ({
+vi.mock('@tuturuuu/inventory-core/sales-rpc', () => ({
   getInventorySales: (...args: Parameters<typeof mocks.getInventorySales>) =>
     mocks.getInventorySales(...args),
 }));

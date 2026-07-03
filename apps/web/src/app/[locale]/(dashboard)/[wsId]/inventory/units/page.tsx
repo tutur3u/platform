@@ -8,7 +8,7 @@ import WorkspaceWrapper from '@/components/workspace-wrapper';
 import {
   canManageInventorySetup,
   canViewInventoryCatalog,
-} from '@/lib/inventory/permissions';
+} from '@tuturuuu/inventory-core/permissions';
 import { InventoryDataTableClient } from '../_components/inventory-data-table-client';
 import { productUnitColumns } from './columns';
 import { ProductUnitForm } from './form';

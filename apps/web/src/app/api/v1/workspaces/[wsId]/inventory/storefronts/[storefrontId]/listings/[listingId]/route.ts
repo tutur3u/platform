@@ -2,15 +2,15 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
-import { getInventoryActorContext } from '@/lib/inventory/actor';
-import { createInventoryAuditLog } from '@/lib/inventory/audit';
-import { authorizeInventoryWorkspace } from '@/lib/inventory/commerce/auth';
+import { getInventoryActorContext } from '@tuturuuu/inventory-core/actor';
+import { createInventoryAuditLog } from '@tuturuuu/inventory-core/audit';
+import { authorizeInventoryWorkspace } from '@tuturuuu/inventory-core/commerce/auth';
 import {
   deleteStorefrontListing,
   updateStorefrontListing,
-} from '@/lib/inventory/commerce/repository';
-import { storefrontListingPayloadSchema } from '@/lib/inventory/commerce/schemas';
-import { canManageInventoryCatalog } from '@/lib/inventory/permissions';
+} from '@tuturuuu/inventory-core/commerce/repository';
+import { storefrontListingPayloadSchema } from '@tuturuuu/inventory-core/commerce/schemas';
+import { canManageInventoryCatalog } from '@tuturuuu/inventory-core/permissions';
 
 const storefrontListingPatchSchema = storefrontListingPayloadSchema.partial();
 

@@ -1227,9 +1227,9 @@
         "@tuturuuu/hooks": "workspace:*",
         "@tuturuuu/icons": "workspace:*",
         "@tuturuuu/internal-api": "workspace:*",
+        "@tuturuuu/inventory-core": "workspace:*",
         "@tuturuuu/masonry": "workspace:*",
         "@tuturuuu/microsoft": "workspace:*",
-        "@tuturuuu/mind-core": "workspace:*",
         "@tuturuuu/mind-ui": "workspace:*",
         "@tuturuuu/offline": "workspace:*",
         "@tuturuuu/payment": "workspace:*",
@@ -1642,6 +1642,30 @@
         "vitest": "^4.1.9",
       },
     },
+    "packages/inventory-core": {
+      "name": "@tuturuuu/inventory-core",
+      "version": "0.1.0",
+      "dependencies": {
+        "@tuturuuu/auth": "workspace:*",
+        "@tuturuuu/internal-api": "workspace:*",
+        "@tuturuuu/payment": "workspace:*",
+        "@tuturuuu/supabase": "workspace:*",
+        "@tuturuuu/turnstile": "workspace:*",
+        "@tuturuuu/types": "workspace:*",
+        "@tuturuuu/utils": "workspace:*",
+        "next": "^16.3.0-preview.5",
+        "postgres": "^3.4.9",
+        "server-only": "^0.0.1",
+        "zod": "^4.4.3",
+      },
+      "devDependencies": {
+        "@tuturuuu/typescript-config": "workspace:*",
+        "@types/node": "^26.0.1",
+        "@vitejs/plugin-react": "^6.0.3",
+        "typescript": "7.0.1-rc",
+        "vitest": "^4.1.9",
+      },
+    },
     "packages/masonry": {
       "name": "@tuturuuu/masonry",
       "version": "0.4.3",
@@ -1674,25 +1698,6 @@
         "@tuturuuu/typescript-config": "workspace:*",
         "@types/node": "^26.0.1",
         "typescript": "7.0.1-rc",
-      },
-    },
-    "packages/mind-core": {
-      "name": "@tuturuuu/mind-core",
-      "version": "0.1.0",
-      "dependencies": {
-        "@tuturuuu/ai": "workspace:*",
-        "@tuturuuu/supabase": "workspace:*",
-        "@tuturuuu/types": "workspace:*",
-        "@tuturuuu/utils": "workspace:*",
-        "next": "^16.3.0-preview.5",
-        "server-only": "^0.0.1",
-        "zod": "^4.4.3",
-      },
-      "devDependencies": {
-        "@tuturuuu/typescript-config": "workspace:*",
-        "@types/node": "^26.0.1",
-        "typescript": "7.0.1-rc",
-        "vitest": "^4.1.9",
       },
     },
     "packages/mind-ui": {
@@ -3725,6 +3730,8 @@
 
     "@tuturuuu/inventory": ["@tuturuuu/inventory@workspace:apps/inventory"],
 
+    "@tuturuuu/inventory-core": ["@tuturuuu/inventory-core@workspace:packages/inventory-core"],
+
     "@tuturuuu/learn": ["@tuturuuu/learn@workspace:apps/learn"],
 
     "@tuturuuu/mail": ["@tuturuuu/mail@workspace:apps/mail"],
@@ -3736,8 +3743,6 @@
     "@tuturuuu/microsoft": ["@tuturuuu/microsoft@workspace:packages/microsoft"],
 
     "@tuturuuu/mind": ["@tuturuuu/mind@workspace:apps/mind"],
-
-    "@tuturuuu/mind-core": ["@tuturuuu/mind-core@workspace:packages/mind-core"],
 
     "@tuturuuu/mind-ui": ["@tuturuuu/mind-ui@workspace:packages/mind-ui"],
 

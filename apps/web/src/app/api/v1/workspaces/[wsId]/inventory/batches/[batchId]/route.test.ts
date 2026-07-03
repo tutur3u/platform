@@ -22,7 +22,7 @@ vi.mock('@/lib/infrastructure/log-drain', () => ({
   },
 }));
 
-vi.mock('@/lib/inventory/commerce/auth', () => ({
+vi.mock('@tuturuuu/inventory-core/commerce/auth', () => ({
   authorizeInventoryWorkspace: (
     ...args: Parameters<typeof mocks.authorizeInventoryWorkspace>
   ) => mocks.authorizeInventoryWorkspace(...args),

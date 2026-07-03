@@ -1,5 +1,5 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import { resolveSessionAuthContext } from '@/lib/api-auth';
+import { resolveSessionAuthContext } from '../api-auth';
 
 export async function getInventoryActorContext(req: Request, wsId: string) {
   const sbAdmin = await createAdminClient();

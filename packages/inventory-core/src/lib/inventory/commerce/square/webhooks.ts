@@ -1,7 +1,7 @@
 import 'server-only';
 
 import { createHmac, timingSafeEqual } from 'node:crypto';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
+import { serverLogger } from '../../../infrastructure/log-drain';
 import {
   getInventorySquareWebhookSecrets,
   markConnectionRevoked,

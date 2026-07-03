@@ -1,17 +1,17 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
-import { authorizeInventoryWorkspace } from '@/lib/inventory/commerce/auth';
+import { authorizeInventoryWorkspace } from '@tuturuuu/inventory-core/commerce/auth';
 import {
   createStorefront,
   listStorefronts,
-} from '@/lib/inventory/commerce/repository';
+} from '@tuturuuu/inventory-core/commerce/repository';
 import {
   listQuerySchema,
   StorefrontStatusSchema,
   storefrontPayloadSchema,
-} from '@/lib/inventory/commerce/schemas';
-import { canManageInventorySetup } from '@/lib/inventory/permissions';
+} from '@tuturuuu/inventory-core/commerce/schemas';
+import { canManageInventorySetup } from '@tuturuuu/inventory-core/permissions';
 
 interface Params {
   params: Promise<{ wsId: string }>;

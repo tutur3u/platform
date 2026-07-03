@@ -12,19 +12,19 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
     mocks.createAdminClient(...args),
 }));
 
-vi.mock('@/lib/inventory/actor', () => ({
+vi.mock('@tuturuuu/inventory-core/actor', () => ({
   getInventoryActorContext: (
     ...args: Parameters<typeof mocks.getInventoryActorContext>
   ) => mocks.getInventoryActorContext(...args),
 }));
 
-vi.mock('@/lib/inventory/audit', () => ({
+vi.mock('@tuturuuu/inventory-core/audit', () => ({
   createInventoryAuditLog: (
     ...args: Parameters<typeof mocks.createInventoryAuditLog>
   ) => mocks.createInventoryAuditLog(...args),
 }));
 
-vi.mock('@/lib/inventory/commerce/auth', () => ({
+vi.mock('@tuturuuu/inventory-core/commerce/auth', () => ({
   authorizeInventoryWorkspace: (
     ...args: Parameters<typeof mocks.authorizeInventoryWorkspace>
   ) => mocks.authorizeInventoryWorkspace(...args),

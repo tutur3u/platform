@@ -14,7 +14,7 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: createAdminClientMock,
 }));
 
-vi.mock('@/lib/inventory/commerce/auth', () => ({
+vi.mock('@tuturuuu/inventory-core/commerce/auth', () => ({
   authorizeInventoryWorkspace: authorizeInventoryWorkspaceMock,
 }));
 
@@ -25,7 +25,7 @@ vi.mock('@/lib/infrastructure/log-drain', () => ({
   },
 }));
 
-vi.mock('@/lib/inventory/relation-validation', () => ({
+vi.mock('@tuturuuu/inventory-core/relation-validation', () => ({
   validateInventoryItemWorkspaceRelations:
     validateInventoryItemWorkspaceRelationsMock,
 }));

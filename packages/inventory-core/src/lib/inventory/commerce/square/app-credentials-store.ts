@@ -10,7 +10,7 @@ import { decryptField, encryptField } from '@tuturuuu/utils/encryption';
 import {
   getOrCreateWorkspaceKey,
   getWorkspaceKey,
-} from '@/lib/workspace-encryption';
+} from '../../../workspace-encryption';
 import {
   createSquareOAuthRedirectUrl,
   SquareConfigurationError,

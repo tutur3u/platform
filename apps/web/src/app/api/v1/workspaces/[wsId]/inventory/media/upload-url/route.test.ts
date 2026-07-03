@@ -22,13 +22,13 @@ vi.mock('@/lib/infrastructure/log-drain', () => ({
   serverLogger: mocks.serverLogger,
 }));
 
-vi.mock('@/lib/inventory/commerce/auth', () => ({
+vi.mock('@tuturuuu/inventory-core/commerce/auth', () => ({
   authorizeInventoryWorkspace: (
     ...args: Parameters<typeof mocks.authorizeInventoryWorkspace>
   ) => mocks.authorizeInventoryWorkspace(...args),
 }));
 
-vi.mock('@/lib/inventory/permissions', () => ({
+vi.mock('@tuturuuu/inventory-core/permissions', () => ({
   canManageInventoryCatalog: (permissions: {
     containsPermission: (permission: string) => boolean;
   }) => permissions.containsPermission('manage_inventory_catalog'),

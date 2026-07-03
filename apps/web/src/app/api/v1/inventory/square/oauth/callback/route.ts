@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
-import { completeInventorySquareOAuthCallback } from '@/lib/inventory/commerce/square';
+import { completeInventorySquareOAuthCallback } from '@tuturuuu/inventory-core/commerce/square';
 
 export async function GET(request: Request) {
   const url = new URL(request.url);

@@ -2,13 +2,13 @@ import { generateRandomUUID } from '@tuturuuu/utils/uuid-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
-import { authorizeInventoryWorkspace } from '@/lib/inventory/commerce/auth';
+import { authorizeInventoryWorkspace } from '@tuturuuu/inventory-core/commerce/auth';
 import {
   INVENTORY_IMAGE_CONTENT_TYPES,
   INVENTORY_MEDIA_TARGETS,
   MAX_INVENTORY_IMAGE_BYTES,
-} from '@/lib/inventory/media-storage-policy';
-import { canManageInventoryCatalog } from '@/lib/inventory/permissions';
+} from '@/lib/inventory-media-storage-policy';
+import { canManageInventoryCatalog } from '@tuturuuu/inventory-core/permissions';
 import {
   createWorkspaceStorageUploadPayload,
   WorkspaceStorageError,

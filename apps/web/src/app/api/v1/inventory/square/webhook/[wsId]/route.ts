@@ -3,7 +3,7 @@ import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
   processInventorySquareWebhook,
   SquareWebhookSignatureError,
-} from '@/lib/inventory/commerce/square';
+} from '@tuturuuu/inventory-core/commerce/square';
 
 interface Params {
   params: Promise<{ wsId: string }>;

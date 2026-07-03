@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
-import { authorizeInventoryWorkspace } from '@/lib/inventory/commerce/auth';
-import { squareTerminalCheckoutPayloadSchema } from '@/lib/inventory/commerce/schemas';
-import { createInventorySquareTerminalCheckout } from '@/lib/inventory/commerce/square';
-import { canUpdateInventorySales } from '@/lib/inventory/permissions';
+import { authorizeInventoryWorkspace } from '@tuturuuu/inventory-core/commerce/auth';
+import { squareTerminalCheckoutPayloadSchema } from '@tuturuuu/inventory-core/commerce/schemas';
+import { createInventorySquareTerminalCheckout } from '@tuturuuu/inventory-core/commerce/square';
+import { canUpdateInventorySales } from '@tuturuuu/inventory-core/permissions';
 
 interface Params {
   params: Promise<{ wsId: string }>;

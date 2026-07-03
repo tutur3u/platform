@@ -1,9 +1,9 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
-import { authorizeInventoryWorkspace } from '@/lib/inventory/commerce/auth';
-import { canViewInventoryCatalog } from '@/lib/inventory/permissions';
-import { getInventoryProductFormOptions } from '@/lib/inventory/product-rpc';
+import { authorizeInventoryWorkspace } from '@tuturuuu/inventory-core/commerce/auth';
+import { canViewInventoryCatalog } from '@tuturuuu/inventory-core/permissions';
+import { getInventoryProductFormOptions } from '@tuturuuu/inventory-core/product-rpc';
 
 interface Params {
   params: Promise<{

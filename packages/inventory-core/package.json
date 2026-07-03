@@ -1,0 +1,36 @@
+{
+  "name": "@tuturuuu/inventory-core",
+  "version": "0.1.0",
+  "private": true,
+  "exports": {
+    "./commerce/square": "./src/lib/inventory/commerce/square/index.ts",
+    "./*": "./src/lib/inventory/*.ts"
+  },
+  "license": "MIT",
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "type-check": "tsc --project tsconfig.typecheck.json"
+  },
+  "packageManager": "bun@1.3.14",
+  "dependencies": {
+    "@tuturuuu/auth": "workspace:*",
+    "@tuturuuu/internal-api": "workspace:*",
+    "@tuturuuu/payment": "workspace:*",
+    "@tuturuuu/supabase": "workspace:*",
+    "@tuturuuu/turnstile": "workspace:*",
+    "@tuturuuu/types": "workspace:*",
+    "@tuturuuu/utils": "workspace:*",
+    "next": "^16.3.0-preview.5",
+    "postgres": "^3.4.9",
+    "server-only": "^0.0.1",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@tuturuuu/typescript-config": "workspace:*",
+    "@types/node": "^26.0.1",
+    "@vitejs/plugin-react": "^6.0.3",
+    "typescript": "7.0.1-rc",
+    "vitest": "^4.1.9"
+  }
+}

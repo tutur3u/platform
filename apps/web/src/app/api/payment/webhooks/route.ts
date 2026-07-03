@@ -12,8 +12,8 @@ import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
   syncInventoryPolarCheckout,
   syncInventoryPolarOrder,
-} from '@/lib/inventory/commerce/polar';
-import { applyPolarProductToInventory } from '@/lib/inventory/commerce/polar-product-sync';
+} from '@tuturuuu/inventory-core/commerce/polar';
+import { applyPolarProductToInventory } from '@tuturuuu/inventory-core/commerce/polar-product-sync';
 import { syncOrderToDatabase } from '@/utils/polar-order-helper';
 import { syncProductToDatabase } from '@/utils/polar-product-helper';
 import { assignSeatsToAllMembers } from '@/utils/polar-seat-helper';

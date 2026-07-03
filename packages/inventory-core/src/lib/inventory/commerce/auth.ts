@@ -7,11 +7,11 @@ import {
   verifyWorkspaceMembershipType,
 } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
-import { resolveSessionAuthContext } from '@/lib/api-auth';
+import { resolveSessionAuthContext } from '../../api-auth';
 import {
   inventoryNotFoundResponse,
   isInventoryEnabled,
-} from '@/lib/inventory/access';
+} from '../access';
 
 export type InventoryWorkspaceAuthorization = {
   permissions: PermissionsResult;

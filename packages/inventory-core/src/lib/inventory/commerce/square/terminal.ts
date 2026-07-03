@@ -5,12 +5,12 @@ import type {
   InventorySquareTerminalCheckoutStatus,
 } from '@tuturuuu/internal-api/inventory';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
+import { serverLogger } from '../../../infrastructure/log-drain';
 import {
   getCheckoutById,
   releaseCheckout,
-} from '@/lib/inventory/commerce/checkouts';
-import { recordInventorySaleFinanceTransaction } from '@/lib/inventory/commerce/finance';
+} from '../checkouts';
+import { recordInventorySaleFinanceTransaction } from '../finance';
 import {
   cancelSquareTerminalCheckoutApi,
   createSquareOrderApi,

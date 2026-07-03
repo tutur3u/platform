@@ -3,8 +3,8 @@ import { MAX_SEARCH_LENGTH } from '@tuturuuu/utils/constants';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
-import { authorizeInventoryWorkspace } from '@/lib/inventory/commerce/auth';
-import { canViewInventorySales } from '@/lib/inventory/permissions';
+import { authorizeInventoryWorkspace } from '@tuturuuu/inventory-core/commerce/auth';
+import { canViewInventorySales } from '@tuturuuu/inventory-core/permissions';
 
 const QuerySchema = z.object({
   endAt: z.iso.datetime().optional(),

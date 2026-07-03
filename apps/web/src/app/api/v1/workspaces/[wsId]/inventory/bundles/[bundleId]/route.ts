@@ -2,16 +2,16 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
-import { getInventoryActorContext } from '@/lib/inventory/actor';
-import { createInventoryAuditLog } from '@/lib/inventory/audit';
-import { authorizeInventoryWorkspace } from '@/lib/inventory/commerce/auth';
+import { getInventoryActorContext } from '@tuturuuu/inventory-core/actor';
+import { createInventoryAuditLog } from '@tuturuuu/inventory-core/audit';
+import { authorizeInventoryWorkspace } from '@tuturuuu/inventory-core/commerce/auth';
 import {
   deleteBundle,
   InvalidInventoryBundleComponentTargetError,
   updateBundle,
-} from '@/lib/inventory/commerce/bundles';
-import { bundlePatchSchema } from '@/lib/inventory/commerce/schemas';
-import { canManageInventoryCatalog } from '@/lib/inventory/permissions';
+} from '@tuturuuu/inventory-core/commerce/bundles';
+import { bundlePatchSchema } from '@tuturuuu/inventory-core/commerce/schemas';
+import { canManageInventoryCatalog } from '@tuturuuu/inventory-core/permissions';
 
 interface Params {
   params: Promise<{ bundleId: string; wsId: string }>;

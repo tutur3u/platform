@@ -1,21 +1,21 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
-import { getInventoryActorContext } from '@/lib/inventory/actor';
+import { getInventoryActorContext } from '@tuturuuu/inventory-core/actor';
 import {
   createInventoryAuditLog,
   diffInventoryAuditFields,
-} from '@/lib/inventory/audit';
-import { authorizeInventoryWorkspace } from '@/lib/inventory/commerce/auth';
+} from '@tuturuuu/inventory-core/audit';
+import { authorizeInventoryWorkspace } from '@tuturuuu/inventory-core/commerce/auth';
 import {
   deleteCostProfile,
   getCostProfile,
   updateCostProfile,
-} from '@/lib/inventory/costing';
+} from '@tuturuuu/inventory-core/costing';
 import {
   canManageInventorySetup,
   canViewInventoryCatalog,
-} from '@/lib/inventory/permissions';
+} from '@tuturuuu/inventory-core/permissions';
 import { parseCostingJsonBody } from '../request';
 import { CostProfilePatchSchema } from '../schemas';
 

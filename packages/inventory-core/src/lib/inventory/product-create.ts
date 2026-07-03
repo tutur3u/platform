@@ -10,16 +10,16 @@ import {
 import type { PermissionsResult } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
-import { createInventoryAuditLog } from '@/lib/inventory/audit';
-import { autoCreateProductListing } from '@/lib/inventory/commerce/auto-listing';
-import { resolveProductManufacturerId } from '@/lib/inventory/manufacturers';
+import { serverLogger } from '../infrastructure/log-drain';
+import { createInventoryAuditLog } from './audit';
+import { autoCreateProductListing } from './commerce/auto-listing';
+import { resolveProductManufacturerId } from './manufacturers';
 import {
   canAdjustInventoryStock,
   canManageInventoryCatalog,
-} from '@/lib/inventory/permissions';
-import { validateInventoryItemWorkspaceRelations } from '@/lib/inventory/relation-validation';
-import { getStockChangeAmount } from '@/lib/inventory/stock-change';
+} from './permissions';
+import { validateInventoryItemWorkspaceRelations } from './relation-validation';
+import { getStockChangeAmount } from './stock-change';
 
 const InventoryItemSchema = z.object({
   unit_id: z.guid(),

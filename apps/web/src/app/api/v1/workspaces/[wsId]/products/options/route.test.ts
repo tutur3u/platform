@@ -44,7 +44,7 @@ vi.mock('@/lib/infrastructure/log-drain', () => ({
   },
 }));
 
-vi.mock('@/lib/inventory/product-rpc', () => ({
+vi.mock('@tuturuuu/inventory-core/product-rpc', () => ({
   getInventoryCatalogProducts: (
     ...args: Parameters<typeof mocks.getInventoryCatalogProducts>
   ) => mocks.getInventoryCatalogProducts(...args),

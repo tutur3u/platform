@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
-import { authorizeInventoryWorkspace } from '@/lib/inventory/commerce/auth';
-import { releaseCheckout } from '@/lib/inventory/commerce/checkouts';
-import { canUpdateInventorySales } from '@/lib/inventory/permissions';
+import { authorizeInventoryWorkspace } from '@tuturuuu/inventory-core/commerce/auth';
+import { releaseCheckout } from '@tuturuuu/inventory-core/commerce/checkouts';
+import { canUpdateInventorySales } from '@tuturuuu/inventory-core/permissions';
 
 interface Params {
   params: Promise<{ checkoutId: string; wsId: string }>;

@@ -11,7 +11,7 @@ import { NextResponse } from 'next/server';
 import {
   createInventoryProductResponse,
   InventoryProductCreateSchema,
-} from '@/lib/inventory/product-create';
+} from '@tuturuuu/inventory-core/product-create';
 
 export const ProductCreateSchema = InventoryProductCreateSchema;
 

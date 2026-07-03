@@ -95,6 +95,7 @@
     "@tuturuuu/hooks": "workspace:*",
     "@tuturuuu/icons": "workspace:*",
     "@tuturuuu/internal-api": "workspace:*",
+    "@tuturuuu/inventory-core": "workspace:*",
     "@tuturuuu/masonry": "workspace:*",
     "@tuturuuu/microsoft": "workspace:*",
     "@tuturuuu/mind-ui": "workspace:*",

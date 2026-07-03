@@ -6,13 +6,13 @@ const mocks = vi.hoisted(() => ({
   listCostProfiles: vi.fn(),
 }));
 
-vi.mock('@/lib/inventory/commerce/auth', () => ({
+vi.mock('@tuturuuu/inventory-core/commerce/auth', () => ({
   authorizeInventoryWorkspace: (
     ...args: Parameters<typeof mocks.authorizeInventoryWorkspace>
   ) => mocks.authorizeInventoryWorkspace(...args),
 }));
 
-vi.mock('@/lib/inventory/costing', () => ({
+vi.mock('@tuturuuu/inventory-core/costing', () => ({
   createCostProfile: (...args: Parameters<typeof mocks.createCostProfile>) =>
     mocks.createCostProfile(...args),
   listCostProfiles: (...args: Parameters<typeof mocks.listCostProfiles>) =>

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { authorizeInventoryWorkspace } from '@/lib/inventory/commerce/auth';
+import { authorizeInventoryWorkspace } from '@tuturuuu/inventory-core/commerce/auth';
 import {
   canManageInventorySetup,
   canViewInventoryAnalytics,
@@ -8,7 +8,7 @@ import {
   canViewInventoryDashboard,
   canViewInventorySales,
   canViewInventoryStock,
-} from '@/lib/inventory/permissions';
+} from '@tuturuuu/inventory-core/permissions';
 
 interface Params {
   params: Promise<{

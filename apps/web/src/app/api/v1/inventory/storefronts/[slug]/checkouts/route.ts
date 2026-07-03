@@ -4,16 +4,16 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { resolveSessionAuthContext } from '@/lib/api-auth';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
-import { isInventoryEnabled } from '@/lib/inventory/access';
+import { isInventoryEnabled } from '@tuturuuu/inventory-core/access';
 import {
   getCheckoutByPublicToken,
   markCheckoutProvider,
-} from '@/lib/inventory/commerce/checkouts';
-import { createInventoryPolarCheckout } from '@/lib/inventory/commerce/polar';
-import { getPublicStorefront } from '@/lib/inventory/commerce/public-storefront';
-import { checkoutCreatePayloadSchema } from '@/lib/inventory/commerce/schemas';
-import { createSimulatedCheckoutResponse } from '@/lib/inventory/commerce/simulated-checkout';
-import { assertInventorySquareReady } from '@/lib/inventory/commerce/square';
+} from '@tuturuuu/inventory-core/commerce/checkouts';
+import { createInventoryPolarCheckout } from '@tuturuuu/inventory-core/commerce/polar';
+import { getPublicStorefront } from '@tuturuuu/inventory-core/commerce/public-storefront';
+import { checkoutCreatePayloadSchema } from '@tuturuuu/inventory-core/commerce/schemas';
+import { createSimulatedCheckoutResponse } from '@tuturuuu/inventory-core/commerce/simulated-checkout';
+import { assertInventorySquareReady } from '@tuturuuu/inventory-core/commerce/square';
 
 interface Params {
   params: Promise<{ slug: string }>;

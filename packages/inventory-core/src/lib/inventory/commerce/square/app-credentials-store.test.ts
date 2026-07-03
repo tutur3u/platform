@@ -26,7 +26,7 @@ vi.mock('@tuturuuu/utils/encryption', () => ({
     mocks.encryptField(...args),
 }));
 
-vi.mock('@/lib/workspace-encryption', () => ({
+vi.mock('../../../workspace-encryption', () => ({
   getOrCreateWorkspaceKey: (
     ...args: Parameters<typeof mocks.getOrCreateWorkspaceKey>
   ) => mocks.getOrCreateWorkspaceKey(...args),

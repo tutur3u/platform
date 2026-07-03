@@ -10,7 +10,7 @@ import {
 import type { Product } from '@tuturuuu/payment/polar';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { after } from 'next/server';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
+import { serverLogger } from '../../infrastructure/log-drain';
 import {
   assertInventoryPolarWorkspace,
   resolveInventoryPolarContext,

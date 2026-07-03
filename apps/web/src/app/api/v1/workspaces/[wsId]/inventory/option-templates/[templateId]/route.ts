@@ -1,13 +1,13 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
-import { authorizeInventoryWorkspace } from '@/lib/inventory/commerce/auth';
+import { authorizeInventoryWorkspace } from '@tuturuuu/inventory-core/commerce/auth';
 import {
   deleteOptionTemplate,
   updateOptionTemplate,
-} from '@/lib/inventory/commerce/repository';
-import { optionTemplatePatchSchema } from '@/lib/inventory/commerce/schemas';
-import { canManageInventoryCatalog } from '@/lib/inventory/permissions';
+} from '@tuturuuu/inventory-core/commerce/repository';
+import { optionTemplatePatchSchema } from '@tuturuuu/inventory-core/commerce/schemas';
+import { canManageInventoryCatalog } from '@tuturuuu/inventory-core/permissions';
 
 interface Params {
   params: Promise<{ templateId: string; wsId: string }>;

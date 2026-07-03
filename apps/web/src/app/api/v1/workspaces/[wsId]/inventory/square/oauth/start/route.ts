@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
-import { authorizeInventoryWorkspace } from '@/lib/inventory/commerce/auth';
-import { squareOAuthStartQuerySchema } from '@/lib/inventory/commerce/schemas';
-import { createInventorySquareOAuthStart } from '@/lib/inventory/commerce/square';
-import { canManageInventorySetup } from '@/lib/inventory/permissions';
+import { authorizeInventoryWorkspace } from '@tuturuuu/inventory-core/commerce/auth';
+import { squareOAuthStartQuerySchema } from '@tuturuuu/inventory-core/commerce/schemas';
+import { createInventorySquareOAuthStart } from '@tuturuuu/inventory-core/commerce/square';
+import { canManageInventorySetup } from '@tuturuuu/inventory-core/permissions';
 
 interface Params {
   params: Promise<{ wsId: string }>;

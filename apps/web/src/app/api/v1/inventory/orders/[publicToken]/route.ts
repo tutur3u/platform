@@ -5,11 +5,11 @@ import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
   getCheckoutByPublicToken,
   getCheckoutStorefrontAccessByPublicToken,
-} from '@/lib/inventory/commerce/checkouts';
+} from '@tuturuuu/inventory-core/commerce/checkouts';
 import {
   getSimulatedOrderResponse,
   isSimulatedOrderToken,
-} from '@/lib/inventory/commerce/simulated-checkout';
+} from '@tuturuuu/inventory-core/commerce/simulated-checkout';
 
 interface Params {
   params: Promise<{ publicToken: string }>;

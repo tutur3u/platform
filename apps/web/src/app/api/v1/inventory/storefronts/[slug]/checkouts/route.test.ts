@@ -20,29 +20,29 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: () => mocks.createAdminClient(),
 }));
 
-vi.mock('@/lib/inventory/commerce/checkouts', () => ({
+vi.mock('@tuturuuu/inventory-core/commerce/checkouts', () => ({
   getCheckoutByPublicToken: (...args: unknown[]) =>
     mocks.getCheckoutByPublicToken(...args),
   markCheckoutProvider: (...args: unknown[]) =>
     mocks.markCheckoutProvider(...args),
 }));
 
-vi.mock('@/lib/inventory/commerce/polar', () => ({
+vi.mock('@tuturuuu/inventory-core/commerce/polar', () => ({
   createInventoryPolarCheckout: (...args: unknown[]) =>
     mocks.createInventoryPolarCheckout(...args),
 }));
 
-vi.mock('@/lib/inventory/commerce/square', () => ({
+vi.mock('@tuturuuu/inventory-core/commerce/square', () => ({
   assertInventorySquareReady: (...args: unknown[]) =>
     mocks.assertInventorySquareReady(...args),
 }));
 
-vi.mock('@/lib/inventory/commerce/public-storefront', () => ({
+vi.mock('@tuturuuu/inventory-core/commerce/public-storefront', () => ({
   getPublicStorefront: (...args: unknown[]) =>
     mocks.getPublicStorefront(...args),
 }));
 
-vi.mock('@/lib/inventory/access', () => ({
+vi.mock('@tuturuuu/inventory-core/access', () => ({
   isInventoryEnabled: (...args: unknown[]) => mocks.isInventoryEnabled(...args),
 }));
 

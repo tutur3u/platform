@@ -11,8 +11,8 @@ import {
   getInventoryApiListRange,
   parseInventoryApiListQuery,
   shouldReturnPaginatedInventoryList,
-} from '@/lib/inventory/api-list-query';
-import { syncInventoryPromotionDiscount } from '@/lib/inventory/commerce/polar';
+} from '@tuturuuu/inventory-core/api-list-query';
+import { syncInventoryPromotionDiscount } from '@tuturuuu/inventory-core/commerce/polar';
 
 const PromotionSchema = z
   .object({

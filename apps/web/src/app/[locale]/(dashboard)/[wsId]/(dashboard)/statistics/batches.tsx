@@ -4,7 +4,7 @@ import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import StatisticCard from '@/components/cards/StatisticCard';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
-import { getInventoryBatches } from '@/lib/inventory/product-rpc';
+import { getInventoryBatches } from '@tuturuuu/inventory-core/product-rpc';
 
 export default async function BatchesStatistics({ wsId }: { wsId: string }) {
   const supabase = await createAdminClient();

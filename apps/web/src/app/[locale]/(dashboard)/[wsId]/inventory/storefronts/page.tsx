@@ -3,7 +3,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
-import { canViewInventoryCatalog } from '@/lib/inventory/permissions';
+import { canViewInventoryCatalog } from '@tuturuuu/inventory-core/permissions';
 import { StorefrontsClient } from './storefronts-client';
 
 export const metadata: Metadata = {

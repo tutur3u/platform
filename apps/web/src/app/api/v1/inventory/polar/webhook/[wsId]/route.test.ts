@@ -46,7 +46,7 @@ vi.mock('@/lib/infrastructure/log-drain', () => ({
   },
 }));
 
-vi.mock('@/lib/inventory/commerce/polar', () => ({
+vi.mock('@tuturuuu/inventory-core/commerce/polar', () => ({
   getInventoryPolarWebhookSecret: (...args: unknown[]) =>
     mocks.getInventoryPolarWebhookSecret(...args),
   InventoryPolarWorkspaceMismatchError:
@@ -57,7 +57,7 @@ vi.mock('@/lib/inventory/commerce/polar', () => ({
     mocks.syncInventoryPolarOrder(...args),
 }));
 
-vi.mock('@/lib/inventory/commerce/polar-product-sync', () => ({
+vi.mock('@tuturuuu/inventory-core/commerce/polar-product-sync', () => ({
   applyPolarProductToInventory: (...args: unknown[]) =>
     mocks.applyPolarProductToInventory(...args),
 }));

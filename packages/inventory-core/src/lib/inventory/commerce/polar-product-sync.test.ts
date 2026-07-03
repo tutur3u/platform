@@ -25,7 +25,7 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: () => mocks.createAdminClient(),
 }));
 
-vi.mock('@/lib/infrastructure/log-drain', () => ({
+vi.mock('../../infrastructure/log-drain', () => ({
   serverLogger: {
     error: vi.fn(),
     info: vi.fn(),

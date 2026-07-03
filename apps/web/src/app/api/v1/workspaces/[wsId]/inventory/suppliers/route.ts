@@ -3,19 +3,19 @@ import { MAX_NAME_LENGTH } from '@tuturuuu/utils/constants';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
-import { getInventoryActorContext } from '@/lib/inventory/actor';
+import { getInventoryActorContext } from '@tuturuuu/inventory-core/actor';
 import {
   getInventoryApiListRange,
   parseInventoryApiListQuery,
   shouldReturnPaginatedInventoryList,
-} from '@/lib/inventory/api-list-query';
-import { createInventoryAuditLog } from '@/lib/inventory/audit';
-import { authorizeInventoryWorkspace } from '@/lib/inventory/commerce/auth';
+} from '@tuturuuu/inventory-core/api-list-query';
+import { createInventoryAuditLog } from '@tuturuuu/inventory-core/audit';
+import { authorizeInventoryWorkspace } from '@tuturuuu/inventory-core/commerce/auth';
 import {
   canCreateInventorySetup,
   canManageInventorySetup,
   canViewInventoryCatalog,
-} from '@/lib/inventory/permissions';
+} from '@tuturuuu/inventory-core/permissions';
 
 const SupplierSchema = z.object({
   name: z.string().trim().min(1).max(MAX_NAME_LENGTH),

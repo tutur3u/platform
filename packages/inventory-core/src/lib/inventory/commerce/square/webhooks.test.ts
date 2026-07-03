@@ -44,7 +44,7 @@ vi.mock('./terminal', () => ({
   ) => mocks.syncInventorySquareTerminalCheckout(...args),
 }));
 
-vi.mock('@/lib/infrastructure/log-drain', () => ({
+vi.mock('../../../infrastructure/log-drain', () => ({
   serverLogger: {
     warn: vi.fn(),
   },

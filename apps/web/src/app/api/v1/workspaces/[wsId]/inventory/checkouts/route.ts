@@ -1,11 +1,11 @@
 import { NextResponse } from 'next/server';
-import { authorizeInventoryWorkspace } from '@/lib/inventory/commerce/auth';
-import { listCheckouts } from '@/lib/inventory/commerce/checkouts';
+import { authorizeInventoryWorkspace } from '@tuturuuu/inventory-core/commerce/auth';
+import { listCheckouts } from '@tuturuuu/inventory-core/commerce/checkouts';
 import {
   CheckoutStatusSchema,
   listQuerySchema,
-} from '@/lib/inventory/commerce/schemas';
-import { canViewInventorySales } from '@/lib/inventory/permissions';
+} from '@tuturuuu/inventory-core/commerce/schemas';
+import { canViewInventorySales } from '@tuturuuu/inventory-core/permissions';
 
 interface Params {
   params: Promise<{ wsId: string }>;

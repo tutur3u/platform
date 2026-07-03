@@ -2,8 +2,8 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
-import { isInventoryEnabled } from '@/lib/inventory/access';
-import { getPublicStorefront } from '@/lib/inventory/commerce/public-storefront';
+import { isInventoryEnabled } from '@tuturuuu/inventory-core/access';
+import { getPublicStorefront } from '@tuturuuu/inventory-core/commerce/public-storefront';
 
 const storefrontAnalyticsEventSchema = z.object({
   checkoutSessionId: z.guid().nullable().optional(),

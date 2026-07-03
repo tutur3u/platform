@@ -47,7 +47,7 @@ vi.mock('@tuturuuu/utils/workspace-helper', () => ({
   ) => mocks.normalizeWorkspaceId(...args),
 }));
 
-vi.mock('@/lib/inventory/permissions', () => ({
+vi.mock('@tuturuuu/inventory-core/permissions', () => ({
   canCreateInventorySales: (
     ...args: Parameters<typeof mocks.canCreateInventorySales>
   ) => mocks.canCreateInventorySales(...args),
