@@ -190,6 +190,27 @@ describe('Infra proxy', () => {
     expect(mocks.refreshAppSessionForRequest).not.toHaveBeenCalled();
   });
 
+  it('does not canonicalize localized protected paths after an app session refresh', async () => {
+    mocks.hasWebAppSessionTokenFromRequest.mockReturnValue(true);
+    mocks.refreshAppSessionForRequest.mockResolvedValue({
+      claims: { app: 'infra' },
+      ok: true,
+      response: NextResponse.next(),
+    });
+
+    const request = new NextRequest('https://infrastructure.tuturuuu.com/en');
+
+    const response = await proxy(request);
+
+    expect(response.headers.get('x-middleware-next')).toBe('1');
+    expect(response.headers.get('location')).toBeNull();
+    expect(mocks.refreshAppSessionForRequest).toHaveBeenCalledWith(request, {
+      requireWebAppSession: true,
+      sessionMode: 'supabase-first',
+      targetApp: 'infra',
+    });
+  });
+
   it.each([
     [
       'unlocalized',

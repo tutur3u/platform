@@ -13,7 +13,6 @@ import { guardApiProxyRequest } from '@tuturuuu/utils/api-proxy-guard';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import createIntlMiddleware from 'next-intl/middleware';
-import { LOCALE_COOKIE_NAME } from './constants/common';
 import { type Locale, routing, supportedLocales } from './i18n/routing';
 
 const intlMiddleware = createIntlMiddleware(routing);
@@ -28,14 +27,6 @@ function stripLocale(pathname: string) {
   return `/${segments.slice(hasLocale ? 1 : 0).join('/')}`;
 }
 
-function getPathLocale(pathname: string) {
-  const [firstSegment] = pathname.split('/').filter(Boolean);
-
-  return firstSegment && supportedLocales.includes(firstSegment as Locale)
-    ? (firstSegment as Locale)
-    : null;
-}
-
 function getNextValue(request: NextRequest) {
   const unlocalizedPath = stripLocale(request.nextUrl.pathname);
   return `${unlocalizedPath}${request.nextUrl.search}`;
@@ -47,18 +38,6 @@ function isPublicAuthPath(pathname: string) {
     unlocalizedPath.startsWith('/login') ||
     unlocalizedPath.startsWith('/verify-token')
   );
-}
-
-function getCanonicalLocaleRedirect(request: NextRequest) {
-  const pathLocale = getPathLocale(request.nextUrl.pathname);
-  if (!pathLocale || isPublicAuthPath(request.nextUrl.pathname)) return null;
-
-  const url = new URL(request.url);
-  url.pathname = stripLocale(request.nextUrl.pathname);
-
-  const response = NextResponse.redirect(url);
-  response.cookies.set(LOCALE_COOKIE_NAME, pathLocale);
-  return response;
 }
 
 export async function proxy(request: NextRequest): Promise<NextResponse> {
@@ -95,11 +74,6 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
     return appSessionRefresh?.ok
       ? appSessionRefresh.response
       : clearSupabaseAuthCookies(request, NextResponse.next());
-  }
-
-  const canonicalLocaleRedirect = getCanonicalLocaleRedirect(request);
-  if (canonicalLocaleRedirect) {
-    return clearSupabaseAuthCookies(request, canonicalLocaleRedirect);
   }
 
   const verifyTokenResponse = await consumeVerifyTokenRequest(request, {
