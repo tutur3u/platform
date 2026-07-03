@@ -137,6 +137,29 @@ describe('resolveInternalAppUrl', () => {
     ).toBeNull();
   });
 
+  it('recognizes canonical and legacy infrastructure production origins', () => {
+    expect(
+      getAppDomainByUrl(
+        'https://infrastructure.tuturuuu.com/verify-token?nextUrl=%2Fpersonal'
+      )
+    ).toMatchObject({
+      canonicalUrl:
+        'https://infrastructure.tuturuuu.com/verify-token?nextUrl=%2Fpersonal',
+      kind: 'internal',
+      name: 'infra',
+    });
+    expect(
+      getAppDomainByUrl(
+        'https://infra.tuturuuu.com/verify-token?nextUrl=%2Fpersonal'
+      )
+    ).toMatchObject({
+      canonicalUrl:
+        'https://infra.tuturuuu.com/verify-token?nextUrl=%2Fpersonal',
+      kind: 'internal',
+      name: 'infra',
+    });
+  });
+
   it('canonicalizes production internal app URLs to their registered HTTPS origins', () => {
     expect(
       resolveInternalAppUrl({
@@ -152,6 +175,13 @@ describe('resolveInternalAppUrl', () => {
         fallback: 'http://localhost:7807',
       })
     ).toBe('https://meet.tuturuuu.com');
+    expect(
+      resolveInternalAppUrl({
+        appName: 'infra',
+        candidates: ['http://infrastructure.tuturuuu.com/'],
+        fallback: 'http://localhost:7823',
+      })
+    ).toBe('https://infrastructure.tuturuuu.com');
   });
 
   it('falls back when every configured URL points at another internal app', () => {

@@ -41,9 +41,17 @@ function getNextValue(request: NextRequest) {
   return `${unlocalizedPath}${request.nextUrl.search}`;
 }
 
+function isPublicAuthPath(pathname: string) {
+  const unlocalizedPath = stripLocale(pathname);
+  return (
+    unlocalizedPath.startsWith('/login') ||
+    unlocalizedPath.startsWith('/verify-token')
+  );
+}
+
 function getCanonicalLocaleRedirect(request: NextRequest) {
   const pathLocale = getPathLocale(request.nextUrl.pathname);
-  if (!pathLocale) return null;
+  if (!pathLocale || isPublicAuthPath(request.nextUrl.pathname)) return null;
 
   const url = new URL(request.url);
   url.pathname = stripLocale(request.nextUrl.pathname);
@@ -101,10 +109,7 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
     return verifyTokenResponse;
   }
 
-  const unlocalizedPath = stripLocale(request.nextUrl.pathname);
-  const isPublicPath =
-    unlocalizedPath.startsWith('/login') ||
-    unlocalizedPath.startsWith('/verify-token');
+  const isPublicPath = isPublicAuthPath(request.nextUrl.pathname);
 
   if (!isPublicPath) {
     const appSessionRefresh = await refreshAppSessionForRequest(request, {

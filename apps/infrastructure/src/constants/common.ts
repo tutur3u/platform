@@ -21,7 +21,7 @@ export const CENTRAL_PORT = process.env.CENTRAL_PORT || 7803;
 
 const DEFAULT_INFRA_APP_URL =
   process.env.NODE_ENV === 'production'
-    ? 'https://infra.tuturuuu.com'
+    ? 'https://infrastructure.tuturuuu.com'
     : getLocalInternalAppUrl('infra', `http://localhost:${PORT}`);
 
 const DEFAULT_WEB_APP_URL =

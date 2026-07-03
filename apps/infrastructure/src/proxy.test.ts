@@ -49,7 +49,23 @@ vi.mock('@tuturuuu/utils/api-proxy-guard', () => ({
 }));
 
 vi.mock('next-intl/middleware', () => ({
-  default: () => () => NextResponse.next(),
+  default: () => (request: NextRequest) => {
+    const [firstSegment] = request.nextUrl.pathname.split('/').filter(Boolean);
+
+    if (firstSegment === 'en' || firstSegment === 'vi') {
+      return NextResponse.next();
+    }
+
+    const redirectUrl = new URL(request.url);
+    redirectUrl.pathname =
+      request.nextUrl.pathname === '/'
+        ? '/en'
+        : `/en${request.nextUrl.pathname}`;
+
+    const response = NextResponse.redirect(redirectUrl);
+    response.cookies.set('NEXT_LOCALE', 'en');
+    return response;
+  },
 }));
 
 vi.mock('next-intl/routing', () => ({
@@ -148,15 +164,48 @@ describe('Infra proxy', () => {
     });
   });
 
-  it('consumes verify-token requests before page auth redirects', async () => {
+  it('lets next-intl localize unlocalized public login paths', async () => {
+    const request = new NextRequest(
+      'https://infrastructure.tuturuuu.com/login?next=%2F'
+    );
+
+    const response = await proxy(request);
+
+    expect(response.status).toBe(307);
+    expect(response.headers.get('location')).toBe(
+      'https://infrastructure.tuturuuu.com/en/login?next=%2F'
+    );
+    expect(mocks.refreshAppSessionForRequest).not.toHaveBeenCalled();
+  });
+
+  it('does not canonicalize localized public login paths back to unlocalized login', async () => {
+    const request = new NextRequest(
+      'https://infrastructure.tuturuuu.com/en/login?next=%2F'
+    );
+
+    const response = await proxy(request);
+
+    expect(response.headers.get('x-middleware-next')).toBe('1');
+    expect(response.headers.get('location')).toBeNull();
+    expect(mocks.refreshAppSessionForRequest).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    [
+      'unlocalized',
+      'https://infrastructure.tuturuuu.com/verify-token?token=copy-token&nextUrl=%2Fpersonal',
+    ],
+    [
+      'localized',
+      'https://infrastructure.tuturuuu.com/en/verify-token?token=copy-token&nextUrl=%2Fpersonal',
+    ],
+  ])('consumes %s verify-token requests before page auth redirects', async (_label, url) => {
     const verifyResponse = NextResponse.redirect(
-      'https://infra.tuturuuu.localhost/personal'
+      'https://infrastructure.tuturuuu.com/personal'
     );
     mocks.consumeVerifyTokenRequest.mockResolvedValue(verifyResponse);
 
-    const request = new NextRequest(
-      'https://infra.tuturuuu.localhost/verify-token?token=copy-token&nextUrl=%2Fpersonal'
-    );
+    const request = new NextRequest(url);
 
     const response = await proxy(request);
 

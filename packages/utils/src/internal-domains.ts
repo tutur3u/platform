@@ -62,6 +62,10 @@ export const PRODUCTION_INTERNAL_APP_DOMAINS = [
   },
   {
     name: 'infra',
+    url: 'https://infrastructure.tuturuuu.com',
+  },
+  {
+    name: 'infra',
     url: 'https://infra.tuturuuu.com',
   },
   {

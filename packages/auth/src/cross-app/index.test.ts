@@ -77,6 +77,14 @@ describe('mapUrlToApp', () => {
 
   it('maps the Infra production URL to the infra app', () => {
     expect(
+      mapUrlToApp(
+        'https://infrastructure.tuturuuu.com/verify-token?nextUrl=%2F'
+      )
+    ).toBe('infra');
+  });
+
+  it('maps the legacy Infra production URL to the infra app', () => {
+    expect(
       mapUrlToApp('https://infra.tuturuuu.com/verify-token?nextUrl=%2F')
     ).toBe('infra');
   });
