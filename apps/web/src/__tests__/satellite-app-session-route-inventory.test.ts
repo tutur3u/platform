@@ -33,7 +33,8 @@ const satelliteAppApiRoots = [
   'apps/learn/src/app/api',
   'apps/teach/src/app/api',
   'apps/chat/src/app/api',
-  'apps/inventory/src/app/api',
+  // apps/inventory now owns its migrated inventory API routes; it is no longer a
+  // thin proxy-only satellite, so it is excluded from the local-API allowlist.
   'apps/drive/src/app/api',
   'apps/mail/src/app/api',
   'apps/meet/src/app/api',
@@ -173,11 +174,14 @@ describe('satellite app-session route inventory', () => {
 
   it('keeps Inventory workspace APIs on the inventory app-session target by default', () => {
     const source = readFileSync(
-      resolve(repoRoot, 'apps/web/src/lib/inventory/commerce/auth.ts'),
+      resolve(
+        repoRoot,
+        'packages/inventory-core/src/lib/inventory/commerce/auth.ts'
+      ),
       'utf8'
     );
     const actorSource = readFileSync(
-      resolve(repoRoot, 'apps/web/src/lib/inventory/actor.ts'),
+      resolve(repoRoot, 'packages/inventory-core/src/lib/inventory/actor.ts'),
       'utf8'
     );
 
