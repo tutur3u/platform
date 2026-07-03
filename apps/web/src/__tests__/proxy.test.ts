@@ -400,6 +400,53 @@ describe('web proxy api handling', () => {
     expect(mocks.authProxy).not.toHaveBeenCalled();
   });
 
+  it('clears malformed browser auth cookies without escalating to an IP block', async () => {
+    const now = new Date(Date.now());
+
+    mocks.getMalformedSupabaseAuthCookieNames.mockReturnValue([
+      'sb-test-auth-token',
+    ]);
+    mocks.isIPBlockedEdge.mockResolvedValue({
+      id: 'block-1',
+      blockLevel: 1,
+      reason: 'api_abuse',
+      blockedAt: now,
+      expiresAt: new Date(Date.now() + 300_000),
+    });
+    mocks.recordMalformedAuthCookieEdge.mockResolvedValue({
+      id: 'block-2',
+      blockLevel: 1,
+      reason: 'api_abuse',
+      blockedAt: now,
+      expiresAt: new Date(Date.now() + 300_000),
+    });
+
+    const { proxy } = await import('../proxy');
+    const response = await proxy(
+      new NextRequest('http://localhost/api/v1/users/me/configs/demo', {
+        method: 'GET',
+        headers: {
+          accept: 'application/json',
+          cookie: 'sb-test-auth-token=invalid; theme=dark',
+          'sec-fetch-mode': 'cors',
+          'user-agent':
+            'Mozilla/5.0 (Macintosh; Intel Mac OS X) AppleWebKit/537.36 Chrome/126.0 Safari/537.36',
+        },
+      })
+    );
+
+    expect(response.status).toBe(401);
+    expect(response.headers.get('X-Proxy-Block-Reason')).toBe(
+      'malformed-supabase-auth-cookie'
+    );
+    expect(response.headers.get('Retry-After')).toBeNull();
+    expect(response.cookies.get('sb-test-auth-token')?.value).toBe('');
+    expect(mocks.isIPBlockedEdge).not.toHaveBeenCalled();
+    expect(mocks.recordMalformedAuthCookieEdge).not.toHaveBeenCalled();
+    expect(mocks.guardApiProxyRequest).not.toHaveBeenCalled();
+    expect(mocks.authProxy).not.toHaveBeenCalled();
+  });
+
   it('escalates repeated malformed-cookie traffic into an IP block', async () => {
     const now = new Date(Date.now());
 

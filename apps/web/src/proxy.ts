@@ -622,6 +622,20 @@ function hasMalformedAuthorizationHeader(req: NextRequest): boolean {
   return token.length === 0 || /\s/.test(token);
 }
 
+function isLikelyBrowserRequest(req: NextRequest): boolean {
+  const userAgent = (req.headers.get('user-agent') ?? '').toLowerCase();
+  if (/\b(mozilla|chrome|chromium|firefox|safari|edg|opr)\b/u.test(userAgent)) {
+    return true;
+  }
+
+  if (req.headers.has('sec-fetch-mode') || req.headers.has('sec-fetch-dest')) {
+    return true;
+  }
+
+  const accept = req.headers.get('accept') ?? '';
+  return accept.includes('text/html') || accept.includes('text/x-component');
+}
+
 function buildProxyBlockResponse(
   status: 400 | 401 | 429,
   reason:
@@ -684,6 +698,16 @@ async function blockMalformedApiAuthCookieRequest(
   }
 
   const ipAddress = extractIPFromRequest(req.headers);
+  if (isLikelyBrowserRequest(req)) {
+    const response = buildProxyBlockResponse(
+      401,
+      'malformed-supabase-auth-cookie',
+      { ipAddress }
+    );
+    applyExpiredCookies(response, malformedCookieNames);
+    return response;
+  }
+
   const existingBlock =
     ipAddress === 'unknown' ? null : await isIPBlockedEdge(ipAddress);
 
