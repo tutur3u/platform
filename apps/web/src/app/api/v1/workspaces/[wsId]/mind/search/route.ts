@@ -1,8 +1,8 @@
+import { searchMindNodes } from '@tuturuuu/mind-core';
+import { requireMindAccess } from '@tuturuuu/mind-core/access';
 import { NextResponse } from 'next/server';
 import { withSessionAuth } from '@/lib/api-auth';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
-import { requireMindAccess } from '@/lib/mind/access';
-import { searchMindNodes } from '@/lib/mind/repository';
 
 type Params = {
   wsId: string;

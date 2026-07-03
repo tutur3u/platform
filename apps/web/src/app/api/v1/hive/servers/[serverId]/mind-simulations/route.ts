@@ -1,3 +1,4 @@
+import { getMindBoardGraphSnapshot } from '@tuturuuu/mind-core';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import {
   normalizeWorkspaceId,
@@ -17,7 +18,6 @@ import {
   createHiveWorkflow,
   validateHiveWorkflowForPersistence,
 } from '@/lib/hive/workflows';
-import { getMindBoardGraphSnapshot } from '@/lib/mind/repository';
 import {
   mapHiveNpc,
   requireHiveAdmin,

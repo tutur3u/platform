@@ -1,13 +1,13 @@
+import {
+  getMindBoardGraphSnapshot,
+  SaveMindGraphSchema,
+  saveMindGraph,
+} from '@tuturuuu/mind-core';
+import { requireMindAccess } from '@tuturuuu/mind-core/access';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
-import { requireMindAccess } from '@/lib/mind/access';
-import {
-  getMindBoardGraphSnapshot,
-  saveMindGraph,
-} from '@/lib/mind/repository';
-import { SaveMindGraphSchema } from '@/lib/mind/schemas';
 
 type Params = {
   boardId: string;

@@ -1,19 +1,30 @@
 import 'server-only';
 
+import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
+import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import {
   normalizeWorkspaceId,
   verifyWorkspaceMembershipType,
 } from '@tuturuuu/utils/workspace-helper';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
-import type { SessionAuthContext } from '@/lib/api-auth';
+
+/**
+ * Minimal authenticated-session shape mind-core needs. Structurally compatible
+ * with the app-side `SessionAuthContext` from `@/lib/api-auth`, so route
+ * handlers can pass their resolved auth context directly.
+ */
+export interface MindAuthContext {
+  supabase: TypedSupabaseClient;
+  user: SupabaseUser;
+}
 
 export async function requireMindAccess({
   context,
   request,
   wsId,
 }: {
-  context: SessionAuthContext;
+  context: MindAuthContext;
   request: Request;
   wsId: string;
 }): Promise<

@@ -1,14 +1,14 @@
+import {
+  archiveMindBoard,
+  getMindBoardSnapshot,
+  UpdateMindBoardSchema,
+  updateMindBoard,
+} from '@tuturuuu/mind-core';
+import { requireMindAccess } from '@tuturuuu/mind-core/access';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
-import { requireMindAccess } from '@/lib/mind/access';
-import {
-  archiveMindBoard,
-  getMindBoardSnapshot,
-  updateMindBoard,
-} from '@/lib/mind/repository';
-import { UpdateMindBoardSchema } from '@/lib/mind/schemas';
 
 type Params = {
   boardId: string;

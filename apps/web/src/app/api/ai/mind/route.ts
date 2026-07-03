@@ -1,7 +1,5 @@
 import { resolveAiRouteAuth } from '@tuturuuu/ai/chat/google/route-auth';
 import { createPOST } from '@tuturuuu/ai/mind/route';
-import { resolveSessionAuthContext } from '@/lib/api-auth';
-import { requireMindAccess } from '@/lib/mind/access';
 import {
   applyMindAiPatch,
   createMindAiPatch,
@@ -10,7 +8,9 @@ import {
   listMindBoards,
   persistMindAiMessage,
   searchMindNodes,
-} from '@/lib/mind/repository';
+} from '@tuturuuu/mind-core';
+import { requireMindAccess } from '@tuturuuu/mind-core/access';
+import { resolveSessionAuthContext } from '@/lib/api-auth';
 
 export const POST = createPOST({
   applyPatch: applyMindAiPatch,
