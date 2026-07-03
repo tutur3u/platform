@@ -974,6 +974,7 @@ test('environment-scoped Vercel workflows scope deploy secrets to deploy jobs', 
     shortener: 'VERCEL_SHORTENER_PROJECT_ID',
     tasks: 'VERCEL_TUDO_PROJECT_ID',
     teach: 'VERCEL_TEACH_PROJECT_ID',
+    tools: 'VERCEL_TOOLS_PROJECT_ID',
     track: 'VERCEL_TRACK_PROJECT_ID',
   };
   const forbiddenWorkflowSecrets = [
