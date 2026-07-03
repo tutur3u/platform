@@ -14,9 +14,7 @@ const satelliteRouteRoots = [
   'apps/web/src/app/api/v1/workspaces/[wsId]/tulearn',
   'apps/web/src/app/api/v1/workspaces/[wsId]/users/groups',
   'apps/web/src/app/api/v1/workspaces/[wsId]/time-tracking',
-  'apps/web/src/app/api/v1/workspaces/[wsId]/calendar',
-  'apps/web/src/app/api/v1/workspaces/[wsId]/calendar-settings',
-  'apps/web/src/app/api/v1/workspaces/[wsId]/calendar-hours',
+  // Calendar routes migrated to the dedicated calendar app (apps/calendar).
   'apps/web/src/app/api/v1/workspaces/[wsId]/chat',
   'apps/web/src/app/api/v1/workspaces/[wsId]/encryption',
   'apps/web/src/app/api/v1/workspaces/[wsId]/storage',

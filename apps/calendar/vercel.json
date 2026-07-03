@@ -1,9 +1,19 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "git": {
-    "deploymentEnabled": false
+    "deploymentEnabled": true
   },
   "github": {
-    "enabled": false
-  }
+    "enabled": true
+  },
+  "crons": [
+    {
+      "path": "/api/cron/calendar/provider-sync",
+      "schedule": "*/15 * * * *"
+    },
+    {
+      "path": "/api/cron/calendar/smart-schedule",
+      "schedule": "0 */6 * * *"
+    }
+  ]
 }

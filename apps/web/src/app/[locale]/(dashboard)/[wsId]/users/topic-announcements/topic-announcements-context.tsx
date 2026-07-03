@@ -28,7 +28,7 @@ import {
   useMemo,
   useState,
 } from 'react';
-import { RequireWorkspaceTimezoneDialog } from '../../calendar/components/require-workspace-timezone-dialog';
+import { RequireWorkspaceTimezoneDialog } from './require-workspace-timezone-dialog';
 import type { TemplateFormValues } from './template-form-dialog';
 import { useTopicAnnouncementActions } from './topic-announcements-actions';
 import { isSchedulingTimezoneReady } from './topic-announcements-scheduling';

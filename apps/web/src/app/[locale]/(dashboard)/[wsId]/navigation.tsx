@@ -13,6 +13,7 @@ import {
 import { isExactTuturuuuDotComEmail } from '@tuturuuu/utils/email/client';
 import { notFound } from 'next/navigation';
 import { DEV_MODE } from '@/constants/env';
+import { getCalendarAppOrigin } from '@/lib/calendar-app-url';
 import { createTierRequirement } from '@/lib/feature-tiers';
 import { HABITS_ENABLED_SECRET } from '@/lib/habits/constants';
 import { getMailAppOrigin } from '@/lib/mail-app-url';
@@ -100,6 +101,7 @@ export async function WorkspaceNavigationLinks({
   const qrAppHref = getQrAppOrigin();
   const isMailUser = isExactTuturuuuDotComEmail(user?.email);
   const mailAppHref = `${getMailAppOrigin()}/${personalOrWsId}`;
+  const calendarAppHref = `${getCalendarAppOrigin()}/${personalOrWsId}`;
 
   // Parallelize user-dependent queries
   const [
@@ -344,8 +346,8 @@ export async function WorkspaceNavigationLinks({
       id: 'calendar',
       title: t('sidebar_tabs.calendar'),
       icon: createDashboardNavigationIcon('Calendar', 'h-5 w-5'),
-      href: `/${personalOrWsId}/calendar`,
-      aliases: [`/${personalOrWsId}/calendar`],
+      href: calendarAppHref,
+      external: true,
       disabled: ENABLE_AI_ONLY || withoutPermission('manage_calendar'),
       preferencePlacement: 'root',
       preferenceSectionLabel: sidebarSections.core,

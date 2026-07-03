@@ -1,10 +1,20 @@
 /**
  * Unified Scheduler Exports
  *
- * This module provides the preview engine for client-side scheduling previews.
- * The full server-side scheduler runs via API proxy to the web app.
+ * This module provides both the full server-side scheduler and the preview engine.
  */
 
+export type {
+  BumpedHabitEvent,
+  HabitScheduleResult,
+  ScheduledEvent,
+  ScheduleResult,
+  SchedulingLogEntry,
+  TaskScheduleResult,
+  WorkspaceBreakSettings,
+} from '../unified-scheduler';
+// Re-export from main unified scheduler
+export { scheduleWorkspace } from '../unified-scheduler';
 export type {
   GeneratePreviewOptions,
   HourSettings,

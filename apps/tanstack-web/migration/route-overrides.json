@@ -301,11 +301,6 @@
       "targetOwner": "rust-backend",
       "note": "Rust backend handle_backend_request handles GET /api/v1/topic-announcement-verifications/:token by decoding the token path segment, hashing it with SHA-256, reading and updating private.topic_announcement_contact_verifications through the server-owned Supabase REST adapter, and returning the legacy public HTML verification pages for success, invalid/already-used, expired, and failure states."
     },
-    "api:/api/v1/calendar/mock:apps/web/src/app/api/v1/calendar/mock/route.ts": {
-      "status": "migrated",
-      "targetOwner": "rust-backend",
-      "note": "Rust backend route_request handles GET /api/v1/calendar/mock with the deterministic legacy mock event payload."
-    },
     "cron:/api/cron/discord/daily-report:apps/web/src/app/api/cron/discord/daily-report/route.ts": {
       "status": "migrated",
       "targetOwner": "rust-backend",
@@ -419,11 +414,6 @@
       "status": "migrated",
       "targetOwner": "rust-backend",
       "note": "Rust backend handle_backend_request handles GET and PATCH /api/v1/users/me/default-workspace. GET accepts current-user app-session tokens or revalidated browser Supabase sessions, reads the saved default workspace, falls back to the personal workspace when the saved workspace is missing or inaccessible, and preserves the legacy null fallback for unresolved workspace data. PATCH revalidates the browser Supabase session, validates workspaceId as a UUID or null, verifies workspace_members access before setting a UUID, and writes user_private_details.default_workspace_id with the caller token."
-    },
-    "api:/api/v1/users/calendar-settings:apps/web/src/app/api/v1/users/calendar-settings/route.ts": {
-      "status": "migrated",
-      "targetOwner": "rust-backend",
-      "note": "Rust backend handle_backend_request handles GET and PATCH /api/v1/users/calendar-settings. GET accepts calendar app-session tokens or revalidated browser Supabase sessions, reads timezone, first_day_of_week, and time_format from user_private_details, defaults missing values to auto, and keeps the legacy private success cache. PATCH uses the same auth modes, strips unknown JSON fields, validates the legacy enum/string limits, updates only the authenticated user's settings through Supabase REST, and keeps mutation responses no-store."
     },
     "api:/api/v1/users/me/identities:apps/web/src/app/api/v1/users/me/identities/route.ts": {
       "status": "migrated",

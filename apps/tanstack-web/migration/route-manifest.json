@@ -6,36 +6,36 @@
         "acceptedRemoval": 17,
         "key": "api",
         "label": "api",
-        "legacyNext": 891,
-        "migrated": 83,
-        "percentComplete": 10.09,
-        "remaining": 891,
-        "terminal": 100,
-        "total": 991,
+        "legacyNext": 854,
+        "migrated": 81,
+        "percentComplete": 10.29,
+        "remaining": 854,
+        "terminal": 98,
+        "total": 952,
         "unknownStatus": 0
       },
       {
         "acceptedRemoval": 0,
         "key": "page",
         "label": "page",
-        "legacyNext": 69,
+        "legacyNext": 68,
         "migrated": 194,
-        "percentComplete": 73.76,
-        "remaining": 69,
+        "percentComplete": 74.05,
+        "remaining": 68,
         "terminal": 194,
-        "total": 263,
+        "total": 262,
         "unknownStatus": 0
       },
       {
         "acceptedRemoval": 0,
         "key": "cron",
         "label": "cron",
-        "legacyNext": 15,
+        "legacyNext": 13,
         "migrated": 2,
-        "percentComplete": 11.76,
-        "remaining": 15,
+        "percentComplete": 13.33,
+        "remaining": 13,
         "terminal": 2,
-        "total": 17,
+        "total": 15,
         "unknownStatus": 0
       },
       {
@@ -116,37 +116,28 @@
         "acceptedRemoval": 17,
         "key": "rust-backend",
         "label": "Rust backend",
-        "legacyNext": 908,
-        "migrated": 88,
-        "percentComplete": 10.37,
-        "remaining": 908,
-        "terminal": 105,
-        "total": 1013,
+        "legacyNext": 869,
+        "migrated": 86,
+        "percentComplete": 10.6,
+        "remaining": 869,
+        "terminal": 103,
+        "total": 972,
         "unknownStatus": 0
       },
       {
         "acceptedRemoval": 1,
         "key": "tanstack-start",
         "label": "TanStack Start",
-        "legacyNext": 83,
+        "legacyNext": 82,
         "migrated": 249,
-        "percentComplete": 75.08,
-        "remaining": 83,
+        "percentComplete": 75.3,
+        "remaining": 82,
         "terminal": 250,
-        "total": 333,
+        "total": 332,
         "unknownStatus": 0
       }
     ],
     "topLegacyRoutes": [
-      {
-        "kind": "api",
-        "methods": ["GET", "POST"],
-        "routePath": "/api/:wsId/calendar/auto-schedule",
-        "sourceFile": "apps/web/src/app/api/[wsId]/calendar/auto-schedule/route.ts",
-        "status": "legacy-next",
-        "targetOwner": "rust-backend",
-        "id": "api:/api/:wsId/calendar/auto-schedule:apps/web/src/app/api/[wsId]/calendar/auto-schedule/route.ts"
-      },
       {
         "kind": "api",
         "methods": ["PATCH"],
@@ -317,31 +308,31 @@
         "status": "legacy-next",
         "targetOwner": "rust-backend",
         "id": "api:/api/ai/meetings/summary:apps/web/src/app/api/ai/meetings/summary/route.ts"
+      },
+      {
+        "kind": "api",
+        "methods": ["POST"],
+        "routePath": "/api/ai/meetings/transcription",
+        "sourceFile": "apps/web/src/app/api/ai/meetings/transcription/route.ts",
+        "status": "legacy-next",
+        "targetOwner": "rust-backend",
+        "id": "api:/api/ai/meetings/transcription:apps/web/src/app/api/ai/meetings/transcription/route.ts"
       }
     ],
     "totals": {
       "acceptedRemoval": 18,
       "key": "total",
       "label": "All route artifacts",
-      "legacyNext": 991,
-      "migrated": 337,
-      "percentComplete": 26.37,
-      "remaining": 991,
-      "terminal": 355,
-      "total": 1346,
+      "legacyNext": 951,
+      "migrated": 335,
+      "percentComplete": 27.07,
+      "remaining": 951,
+      "terminal": 353,
+      "total": 1304,
       "unknownStatus": 0
     }
   },
   "routes": [
-    {
-      "id": "api:/api/:wsId/calendar/auto-schedule:apps/web/src/app/api/[wsId]/calendar/auto-schedule/route.ts",
-      "kind": "api",
-      "methods": ["GET", "POST"],
-      "routePath": "/api/:wsId/calendar/auto-schedule",
-      "sourceFile": "apps/web/src/app/api/[wsId]/calendar/auto-schedule/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
     {
       "id": "api:/api/:wsId/crawlers/domains:apps/web/src/app/api/[wsId]/crawlers/domains/route.ts",
       "kind": "api",
@@ -1006,15 +997,6 @@
       "routePath": "/api/sync-logs",
       "sourceFile": "apps/web/src/app/api/sync-logs/route.ts",
       "status": "accepted-removal",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/test-events:apps/web/src/app/api/test-events/route.ts",
-      "kind": "api",
-      "methods": ["POST"],
-      "routePath": "/api/test-events",
-      "sourceFile": "apps/web/src/app/api/test-events/route.ts",
-      "status": "legacy-next",
       "targetOwner": "rust-backend"
     },
     {
@@ -1689,174 +1671,12 @@
       "targetOwner": "rust-backend"
     },
     {
-      "id": "api:/api/v1/calendar/audio:apps/web/src/app/api/v1/calendar/audio/route.ts",
-      "kind": "api",
-      "methods": ["POST"],
-      "routePath": "/api/v1/calendar/audio",
-      "sourceFile": "apps/web/src/app/api/v1/calendar/audio/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/calendar/auth:apps/web/src/app/api/v1/calendar/auth/route.ts",
-      "kind": "api",
-      "methods": ["GET"],
-      "routePath": "/api/v1/calendar/auth",
-      "sourceFile": "apps/web/src/app/api/v1/calendar/auth/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
       "id": "api:/api/v1/calendar/auth/accounts:apps/web/src/app/api/v1/calendar/auth/accounts/route.ts",
       "kind": "api",
       "methods": ["GET", "DELETE"],
       "routePath": "/api/v1/calendar/auth/accounts",
       "sourceFile": "apps/web/src/app/api/v1/calendar/auth/accounts/route.ts",
       "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/calendar/auth/active-sync:apps/web/src/app/api/v1/calendar/auth/active-sync/route.ts",
-      "kind": "api",
-      "methods": ["POST"],
-      "routePath": "/api/v1/calendar/auth/active-sync",
-      "sourceFile": "apps/web/src/app/api/v1/calendar/auth/active-sync/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/calendar/auth/callback:apps/web/src/app/api/v1/calendar/auth/callback/route.ts",
-      "kind": "api",
-      "methods": ["GET"],
-      "routePath": "/api/v1/calendar/auth/callback",
-      "sourceFile": "apps/web/src/app/api/v1/calendar/auth/callback/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/calendar/auth/fetch:apps/web/src/app/api/v1/calendar/auth/fetch/route.ts",
-      "kind": "api",
-      "methods": ["GET"],
-      "routePath": "/api/v1/calendar/auth/fetch",
-      "sourceFile": "apps/web/src/app/api/v1/calendar/auth/fetch/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/calendar/auth/full-sync:apps/web/src/app/api/v1/calendar/auth/full-sync/route.ts",
-      "kind": "api",
-      "methods": ["POST"],
-      "routePath": "/api/v1/calendar/auth/full-sync",
-      "sourceFile": "apps/web/src/app/api/v1/calendar/auth/full-sync/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/calendar/auth/import-calendars:apps/web/src/app/api/v1/calendar/auth/import-calendars/route.ts",
-      "kind": "api",
-      "methods": ["POST"],
-      "routePath": "/api/v1/calendar/auth/import-calendars",
-      "sourceFile": "apps/web/src/app/api/v1/calendar/auth/import-calendars/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/calendar/auth/list-calendars:apps/web/src/app/api/v1/calendar/auth/list-calendars/route.ts",
-      "kind": "api",
-      "methods": ["GET"],
-      "routePath": "/api/v1/calendar/auth/list-calendars",
-      "sourceFile": "apps/web/src/app/api/v1/calendar/auth/list-calendars/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/calendar/auth/microsoft:apps/web/src/app/api/v1/calendar/auth/microsoft/route.ts",
-      "kind": "api",
-      "methods": ["GET"],
-      "routePath": "/api/v1/calendar/auth/microsoft",
-      "sourceFile": "apps/web/src/app/api/v1/calendar/auth/microsoft/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/calendar/auth/microsoft/callback:apps/web/src/app/api/v1/calendar/auth/microsoft/callback/route.ts",
-      "kind": "api",
-      "methods": ["GET"],
-      "routePath": "/api/v1/calendar/auth/microsoft/callback",
-      "sourceFile": "apps/web/src/app/api/v1/calendar/auth/microsoft/callback/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/calendar/auth/provider-calendars:apps/web/src/app/api/v1/calendar/auth/provider-calendars/route.ts",
-      "kind": "api",
-      "methods": ["GET"],
-      "routePath": "/api/v1/calendar/auth/provider-calendars",
-      "sourceFile": "apps/web/src/app/api/v1/calendar/auth/provider-calendars/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/calendar/auth/sync-to-google:apps/web/src/app/api/v1/calendar/auth/sync-to-google/route.ts",
-      "kind": "api",
-      "methods": ["POST"],
-      "routePath": "/api/v1/calendar/auth/sync-to-google",
-      "sourceFile": "apps/web/src/app/api/v1/calendar/auth/sync-to-google/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/calendar/auth/sync:apps/web/src/app/api/v1/calendar/auth/sync/route.ts",
-      "kind": "api",
-      "methods": ["POST", "PUT", "DELETE"],
-      "routePath": "/api/v1/calendar/auth/sync",
-      "sourceFile": "apps/web/src/app/api/v1/calendar/auth/sync/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/calendar/auth/tokens:apps/web/src/app/api/v1/calendar/auth/tokens/route.ts",
-      "kind": "api",
-      "methods": ["GET", "DELETE"],
-      "routePath": "/api/v1/calendar/auth/tokens",
-      "sourceFile": "apps/web/src/app/api/v1/calendar/auth/tokens/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/calendar/connections:apps/web/src/app/api/v1/calendar/connections/route.ts",
-      "kind": "api",
-      "methods": ["GET", "POST", "PATCH", "DELETE"],
-      "routePath": "/api/v1/calendar/connections",
-      "sourceFile": "apps/web/src/app/api/v1/calendar/connections/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/calendar/events/generate:apps/web/src/app/api/v1/calendar/events/generate/route.ts",
-      "kind": "api",
-      "methods": ["POST"],
-      "routePath": "/api/v1/calendar/events/generate",
-      "sourceFile": "apps/web/src/app/api/v1/calendar/events/generate/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/calendar/image:apps/web/src/app/api/v1/calendar/image/route.ts",
-      "kind": "api",
-      "methods": ["POST"],
-      "routePath": "/api/v1/calendar/image",
-      "sourceFile": "apps/web/src/app/api/v1/calendar/image/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/calendar/mock:apps/web/src/app/api/v1/calendar/mock/route.ts",
-      "kind": "api",
-      "methods": ["GET"],
-      "routePath": "/api/v1/calendar/mock",
-      "sourceFile": "apps/web/src/app/api/v1/calendar/mock/route.ts",
-      "status": "migrated",
       "targetOwner": "rust-backend"
     },
     {
@@ -2615,15 +2435,6 @@
       "targetOwner": "rust-backend"
     },
     {
-      "id": "api:/api/v1/mira/calendar:apps/web/src/app/api/v1/mira/calendar/route.ts",
-      "kind": "api",
-      "methods": ["GET"],
-      "routePath": "/api/v1/mira/calendar",
-      "sourceFile": "apps/web/src/app/api/v1/mira/calendar/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
       "id": "api:/api/v1/mira/focus:apps/web/src/app/api/v1/mira/focus/route.ts",
       "kind": "api",
       "methods": ["GET"],
@@ -3047,15 +2858,6 @@
       "methods": ["PATCH"],
       "routePath": "/api/v1/user/profile",
       "sourceFile": "apps/web/src/app/api/v1/user/profile/route.ts",
-      "status": "migrated",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/users/calendar-settings:apps/web/src/app/api/v1/users/calendar-settings/route.ts",
-      "kind": "api",
-      "methods": ["GET", "PATCH"],
-      "routePath": "/api/v1/users/calendar-settings",
-      "sourceFile": "apps/web/src/app/api/v1/users/calendar-settings/route.ts",
       "status": "migrated",
       "targetOwner": "rust-backend"
     },
@@ -3542,159 +3344,6 @@
       "methods": ["GET"],
       "routePath": "/api/v1/workspaces/:wsId/boards/estimation",
       "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/boards/estimation/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/calendar-hours:apps/web/src/app/api/v1/workspaces/[wsId]/calendar-hours/route.ts",
-      "kind": "api",
-      "methods": ["GET", "PATCH"],
-      "routePath": "/api/v1/workspaces/:wsId/calendar-hours",
-      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/calendar-hours/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/calendar-settings:apps/web/src/app/api/v1/workspaces/[wsId]/calendar-settings/route.ts",
-      "kind": "api",
-      "methods": ["GET", "PATCH"],
-      "routePath": "/api/v1/workspaces/:wsId/calendar-settings",
-      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/calendar-settings/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/calendar/categories:apps/web/src/app/api/v1/workspaces/[wsId]/calendar/categories/route.ts",
-      "kind": "api",
-      "methods": ["GET", "POST"],
-      "routePath": "/api/v1/workspaces/:wsId/calendar/categories",
-      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/calendar/categories/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/calendar/categories/:categoryId:apps/web/src/app/api/v1/workspaces/[wsId]/calendar/categories/[categoryId]/route.ts",
-      "kind": "api",
-      "methods": ["PATCH", "DELETE"],
-      "routePath": "/api/v1/workspaces/:wsId/calendar/categories/:categoryId",
-      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/calendar/categories/[categoryId]/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/calendar/categories/reorder:apps/web/src/app/api/v1/workspaces/[wsId]/calendar/categories/reorder/route.ts",
-      "kind": "api",
-      "methods": ["PUT"],
-      "routePath": "/api/v1/workspaces/:wsId/calendar/categories/reorder",
-      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/calendar/categories/reorder/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/calendar/default-source:apps/web/src/app/api/v1/workspaces/[wsId]/calendar/default-source/route.ts",
-      "kind": "api",
-      "methods": ["GET", "PATCH"],
-      "routePath": "/api/v1/workspaces/:wsId/calendar/default-source",
-      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/calendar/default-source/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/calendar/events:apps/web/src/app/api/v1/workspaces/[wsId]/calendar/events/route.ts",
-      "kind": "api",
-      "methods": ["GET", "POST"],
-      "routePath": "/api/v1/workspaces/:wsId/calendar/events",
-      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/calendar/events/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/calendar/events/:eventId:apps/web/src/app/api/v1/workspaces/[wsId]/calendar/events/[eventId]/route.ts",
-      "kind": "api",
-      "methods": ["GET", "PUT", "DELETE"],
-      "routePath": "/api/v1/workspaces/:wsId/calendar/events/:eventId",
-      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/calendar/events/[eventId]/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/calendar/habit-events:apps/web/src/app/api/v1/workspaces/[wsId]/calendar/habit-events/route.ts",
-      "kind": "api",
-      "methods": ["GET"],
-      "routePath": "/api/v1/workspaces/:wsId/calendar/habit-events",
-      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/calendar/habit-events/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/calendar/schedulable-tasks:apps/web/src/app/api/v1/workspaces/[wsId]/calendar/schedulable-tasks/route.ts",
-      "kind": "api",
-      "methods": ["GET"],
-      "routePath": "/api/v1/workspaces/:wsId/calendar/schedulable-tasks",
-      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/calendar/schedulable-tasks/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/calendar/schedule:apps/web/src/app/api/v1/workspaces/[wsId]/calendar/schedule/route.ts",
-      "kind": "api",
-      "methods": ["GET", "POST"],
-      "routePath": "/api/v1/workspaces/:wsId/calendar/schedule",
-      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/calendar/schedule/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/calendar/schedule/preview:apps/web/src/app/api/v1/workspaces/[wsId]/calendar/schedule/preview/route.ts",
-      "kind": "api",
-      "methods": ["POST"],
-      "routePath": "/api/v1/workspaces/:wsId/calendar/schedule/preview",
-      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/calendar/schedule/preview/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/calendar/sync-preferences:apps/web/src/app/api/v1/workspaces/[wsId]/calendar/sync-preferences/route.ts",
-      "kind": "api",
-      "methods": ["GET", "PATCH"],
-      "routePath": "/api/v1/workspaces/:wsId/calendar/sync-preferences",
-      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/calendar/sync-preferences/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/calendar/sync-status:apps/web/src/app/api/v1/workspaces/[wsId]/calendar/sync-status/route.ts",
-      "kind": "api",
-      "methods": ["GET"],
-      "routePath": "/api/v1/workspaces/:wsId/calendar/sync-status",
-      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/calendar/sync-status/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/calendar/sync:apps/web/src/app/api/v1/workspaces/[wsId]/calendar/sync/route.ts",
-      "kind": "api",
-      "methods": ["POST"],
-      "routePath": "/api/v1/workspaces/:wsId/calendar/sync",
-      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/calendar/sync/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/calendars:apps/web/src/app/api/v1/workspaces/[wsId]/calendars/route.ts",
-      "kind": "api",
-      "methods": ["GET", "POST", "PATCH", "DELETE"],
-      "routePath": "/api/v1/workspaces/:wsId/calendars",
-      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/calendars/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/calendars/reset:apps/web/src/app/api/v1/workspaces/[wsId]/calendars/reset/route.ts",
-      "kind": "api",
-      "methods": ["POST"],
-      "routePath": "/api/v1/workspaces/:wsId/calendars/reset",
-      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/calendars/reset/route.ts",
       "status": "legacy-next",
       "targetOwner": "rust-backend"
     },
@@ -9346,24 +8995,6 @@
       "targetOwner": "rust-backend"
     },
     {
-      "id": "cron:/api/cron/calendar/provider-sync:apps/web/src/app/api/cron/calendar/provider-sync/route.ts",
-      "kind": "cron",
-      "methods": ["GET"],
-      "routePath": "/api/cron/calendar/provider-sync",
-      "sourceFile": "apps/web/src/app/api/cron/calendar/provider-sync/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "cron:/api/cron/calendar/smart-schedule:apps/web/src/app/api/cron/calendar/smart-schedule/route.ts",
-      "kind": "cron",
-      "methods": ["GET"],
-      "routePath": "/api/cron/calendar/smart-schedule",
-      "sourceFile": "apps/web/src/app/api/cron/calendar/smart-schedule/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
       "id": "cron:/api/cron/discord/daily-report:apps/web/src/app/api/cron/discord/daily-report/route.ts",
       "kind": "cron",
       "methods": ["GET"],
@@ -10261,15 +9892,6 @@
       "routePath": "/:locale/:wsId/calendar",
       "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/calendar/page.tsx",
       "status": "migrated",
-      "targetOwner": "tanstack-start"
-    },
-    {
-      "id": "page:/:locale/:wsId/calendar/lab:apps/web/src/app/[locale]/(dashboard)/[wsId]/calendar/lab/page.tsx",
-      "kind": "page",
-      "methods": [],
-      "routePath": "/:locale/:wsId/calendar/lab",
-      "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/calendar/lab/page.tsx",
-      "status": "legacy-next",
       "targetOwner": "tanstack-start"
     },
     {
@@ -12533,20 +12155,20 @@
     }
   ],
   "summary": {
-    "apiRoutes": 991,
-    "cronRoutes": 17,
+    "apiRoutes": 952,
+    "cronRoutes": 15,
     "layouts": 63,
-    "pages": 263,
-    "routeHandlers": 1013,
+    "pages": 262,
+    "routeHandlers": 972,
     "methodCounts": {
-      "GET": 565,
+      "GET": 538,
       "HEAD": 1,
-      "POST": 484,
-      "PUT": 97,
-      "PATCH": 128,
-      "DELETE": 188,
+      "POST": 466,
+      "PUT": 94,
+      "PATCH": 120,
+      "DELETE": 182,
       "OPTIONS": 17
     },
-    "total": 1346
+    "total": 1304
   }
 }
