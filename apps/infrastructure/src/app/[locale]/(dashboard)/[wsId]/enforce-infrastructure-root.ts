@@ -1,4 +1,8 @@
 import {
+  INTERNAL_WORKSPACE_SLUG,
+  PERSONAL_WORKSPACE_SLUG,
+} from '@tuturuuu/utils/constants';
+import {
   enforceRootWorkspaceAdmin,
   WorkspaceRedirectRequiredError,
 } from '@tuturuuu/utils/workspace-helper';
@@ -24,6 +28,11 @@ function getRedirectTarget(error: unknown): string | null {
 }
 
 export async function enforceInfrastructureRootWorkspace(wsId: string) {
+  if (wsId.toLowerCase() === PERSONAL_WORKSPACE_SLUG) {
+    redirect(`/${INTERNAL_WORKSPACE_SLUG}`);
+    return;
+  }
+
   try {
     await enforceRootWorkspaceAdmin(wsId, {
       redirectTo: `/${wsId}/settings`,

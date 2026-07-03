@@ -46,6 +46,15 @@ describe('enforceInfrastructureRootWorkspace', () => {
     expect(mocks.redirect).not.toHaveBeenCalled();
   });
 
+  it('redirects stale personal workspace routes to the internal root workspace', async () => {
+    await expect(
+      enforceInfrastructureRootWorkspace('personal')
+    ).resolves.toBeUndefined();
+
+    expect(mocks.enforceRootWorkspaceAdmin).not.toHaveBeenCalled();
+    expect(mocks.redirect).toHaveBeenCalledWith('/internal');
+  });
+
   it('redirects when the root-workspace guard requests it', async () => {
     mocks.enforceRootWorkspaceAdmin.mockRejectedValueOnce(
       new mocks.MockWorkspaceRedirectRequiredError('/ws-1/settings')
