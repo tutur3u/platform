@@ -13,6 +13,7 @@ import { guardApiProxyRequest } from '@tuturuuu/utils/api-proxy-guard';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import createIntlMiddleware from 'next-intl/middleware';
+import { LOCALE_COOKIE_NAME } from './constants/common';
 import { type Locale, routing, supportedLocales } from './i18n/routing';
 
 const intlMiddleware = createIntlMiddleware(routing);
@@ -25,6 +26,29 @@ function stripLocale(pathname: string) {
     firstSegment && supportedLocales.includes(firstSegment as Locale);
 
   return `/${segments.slice(hasLocale ? 1 : 0).join('/')}`;
+}
+
+function getPathLocale(pathname: string) {
+  const [firstSegment] = pathname.split('/').filter(Boolean);
+  return firstSegment && supportedLocales.includes(firstSegment as Locale)
+    ? (firstSegment as Locale)
+    : null;
+}
+
+function getCanonicalLocaleRedirect(request: NextRequest) {
+  const pathLocale = getPathLocale(request.nextUrl.pathname);
+
+  if (!pathLocale) {
+    return null;
+  }
+
+  const url = new URL(
+    `${stripLocale(request.nextUrl.pathname)}${request.nextUrl.search}`,
+    request.url
+  );
+  const response = NextResponse.redirect(url);
+  response.cookies.set(LOCALE_COOKIE_NAME, pathLocale);
+  return response;
 }
 
 function getNextValue(request: NextRequest) {
@@ -81,6 +105,11 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
   });
   if (verifyTokenResponse) {
     return verifyTokenResponse;
+  }
+
+  const canonicalLocaleRedirect = getCanonicalLocaleRedirect(request);
+  if (canonicalLocaleRedirect) {
+    return clearSupabaseAuthCookies(request, canonicalLocaleRedirect);
   }
 
   const isPublicPath = isPublicAuthPath(request.nextUrl.pathname);

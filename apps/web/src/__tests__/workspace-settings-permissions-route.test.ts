@@ -169,15 +169,13 @@ describe('workspace settings permissions route', () => {
     expect(enabledPayload.available.api_keys).toBe(true);
   });
 
-  it('exposes only permission-backed root settings entries', async () => {
+  it('exposes only web-owned permission-backed settings entries', async () => {
     mocks.getPermissions.mockImplementation(({ wsId }: { wsId: string }) =>
       Promise.resolve(
         permissionsResult(
           wsId,
           wsId === ROOT_WORKSPACE_ID
             ? [
-                'manage_external_migrations',
-                'manage_mobile_deployment_vault',
                 'manage_subscription',
                 'manage_user_report_templates',
                 'manage_workspace_integrations',
@@ -185,7 +183,6 @@ describe('workspace settings permissions route', () => {
                 'manage_workspace_roles',
                 'manage_workspace_secrets',
                 'manage_workspace_settings',
-                'view_infrastructure',
               ]
             : [
                 'manage_subscription',
@@ -211,15 +208,8 @@ describe('workspace settings permissions route', () => {
     expect(payload.available).toMatchObject({
       api_keys: false,
       billing: true,
-      infrastructure: true,
-      infrastructure_external_apps: true,
-      infrastructure_mobile_deployment: true,
-      internal_projects: true,
       inquiries: true,
       integrations: true,
-      migrations: true,
-      platform_billing: true,
-      platform_roles: true,
       reports: true,
       secrets: true,
       usage: true,
@@ -227,9 +217,14 @@ describe('workspace settings permissions route', () => {
       workspace_roles: true,
       workspace_settings: true,
     });
+    expect(payload.available).not.toHaveProperty('infrastructure');
+    expect(payload.available).not.toHaveProperty('internal_projects');
+    expect(payload.available).not.toHaveProperty('migrations');
+    expect(payload.available).not.toHaveProperty('platform_billing');
+    expect(payload.available).not.toHaveProperty('platform_roles');
   });
 
-  it('exposes internal projects to root external-project managers without broad infrastructure', async () => {
+  it('does not expose infrastructure settings entries through the web permissions payload', async () => {
     mocks.getPermissions.mockImplementation(({ wsId }: { wsId: string }) =>
       Promise.resolve(
         permissionsResult(
@@ -243,8 +238,9 @@ describe('workspace settings permissions route', () => {
     const payload = await response.json();
 
     expect(response.status).toBe(200);
-    expect(payload.can_manage_internal_projects).toBe(true);
-    expect(payload.available.internal_projects).toBe(true);
-    expect(payload.available.infrastructure).toBe(false);
+    expect(payload).not.toHaveProperty('can_manage_internal_projects');
+    expect(payload).not.toHaveProperty('can_access_infrastructure');
+    expect(payload.available).not.toHaveProperty('internal_projects');
+    expect(payload.available).not.toHaveProperty('infrastructure');
   });
 });

@@ -62,19 +62,10 @@ export const GET = withSessionAuth<{ wsId: string }>(
       const isRootWorkspace = permissions.wsId === ROOT_WORKSPACE_ID;
       const isTuturuuuMember = isValidTuturuuuEmail(user.email);
       const canManageApiKeys = hasWorkspacePermission('manage_api_keys');
-      const canManageExternalMigrations = hasRootPermission(
-        'manage_external_migrations'
-      );
-      const canManageRootExternalProjects = hasRootPermission(
-        'manage_external_projects'
-      );
       const canManageWorkspaceSecrets = hasRootPermission(
         'manage_workspace_secrets'
       );
       const canManageWorkspaceRoles = hasWorkspacePermission(
-        'manage_workspace_roles'
-      );
-      const canManageRootWorkspaceRoles = hasRootPermission(
         'manage_workspace_roles'
       );
       const canManageUserReportTemplates = hasWorkspacePermission(
@@ -95,48 +86,24 @@ export const GET = withSessionAuth<{ wsId: string }>(
       const canManageWorkspaceBilling = hasWorkspacePermission(
         'manage_workspace_billing'
       );
-      const canViewInfrastructure =
-        isRootWorkspace && hasRootPermission('view_infrastructure');
       const canAccessApiKeys = apiKeysEnabled && canManageApiKeys;
       const canAccessBilling =
         canManageSubscription || canManageWorkspaceBilling;
       const canAccessInquiries = isRootWorkspace && isTuturuuuMember;
       const canAccessIntegrations =
         discordAllowed || canManageWorkspaceIntegrations;
-      const canAccessMigrations =
-        isRootWorkspace && canManageExternalMigrations;
-      const canAccessPlatformAdmin =
-        isRootWorkspace && canManageRootWorkspaceRoles;
-      const canManageInternalProjects =
-        isRootWorkspace &&
-        (canManageRootExternalProjects || canManageRootWorkspaceRoles);
-      const canManageExternalApps =
-        isRootWorkspace &&
-        (canManageWorkspaceSecrets || canManageRootWorkspaceRoles);
-      const canManageMobileDeploymentVault = hasRootPermission(
-        'manage_mobile_deployment_vault'
-      );
-      const canManageChangelog = hasRootPermission('manage_changelog');
 
       return NextResponse.json({
         allow_discord_integrations: discordAllowed,
         can_access_api_keys: canAccessApiKeys,
         can_access_billing: canAccessBilling,
-        can_access_infrastructure: canViewInfrastructure,
         can_access_inquiries: canAccessInquiries,
         can_access_integrations: canAccessIntegrations,
-        can_access_migrations: canAccessMigrations,
-        can_access_platform_billing: canAccessPlatformAdmin,
-        can_access_platform_roles: canAccessPlatformAdmin,
         can_access_secrets: canManageWorkspaceSecrets,
-        can_manage_external_apps: canManageExternalApps,
-        can_manage_internal_projects: canManageInternalProjects,
         enable_api_keys: apiKeysEnabled,
         is_root_workspace: isRootWorkspace,
         is_tuturuuu_member: isTuturuuuMember,
         manage_api_keys: canManageApiKeys,
-        manage_external_migrations: canManageExternalMigrations,
-        manage_mobile_deployment_vault: canManageMobileDeploymentVault,
         manage_subscription: canManageSubscription,
         manage_user_report_templates: canManageUserReportTemplates,
         manage_workspace_billing: canManageWorkspaceBilling,
@@ -145,24 +112,12 @@ export const GET = withSessionAuth<{ wsId: string }>(
         manage_workspace_roles: canManageWorkspaceRoles,
         manage_workspace_secrets: canManageWorkspaceSecrets,
         manage_workspace_settings: canManageWorkspaceSettings,
-        manage_changelog: canManageChangelog,
-        view_infrastructure: canViewInfrastructure,
         view_usage: canManageWorkspaceMembers,
         available: {
           api_keys: canAccessApiKeys,
           billing: canAccessBilling,
-          infrastructure: canViewInfrastructure,
-          infrastructure_changelog: canViewInfrastructure && canManageChangelog,
-          infrastructure_external_apps:
-            canViewInfrastructure && canManageExternalApps,
-          infrastructure_mobile_deployment:
-            canViewInfrastructure && canManageMobileDeploymentVault,
-          internal_projects: canManageInternalProjects,
           inquiries: canAccessInquiries,
           integrations: canAccessIntegrations,
-          migrations: canAccessMigrations,
-          platform_billing: canAccessPlatformAdmin,
-          platform_roles: canAccessPlatformAdmin,
           reports: canManageUserReportTemplates,
           secrets: canManageWorkspaceSecrets,
           usage: canManageWorkspaceMembers,

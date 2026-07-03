@@ -83,8 +83,6 @@ export function getWorkspaceRoutePermissionRequirements(
         return ['manage_finance', 'view_finance_stats'];
       }
       return ['manage_finance', 'view_finance_stats'];
-    case 'infrastructure':
-      return ['view_infrastructure'];
     case 'integrations':
       return ['manage_workspace_integrations'];
     case 'inventory':
@@ -102,8 +100,6 @@ export function getWorkspaceRoutePermissionRequirements(
       return ['send_user_group_post_emails'];
     case 'members':
       return ['manage_workspace_members'];
-    case 'migrations':
-      return ['manage_external_migrations'];
     case 'posts':
       return [
         'view_user_groups_posts',

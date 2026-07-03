@@ -1295,8 +1295,6 @@ export async function WorkspaceNavigationLinks({
         `/${personalOrWsId}/secrets/*`,
         `/${personalOrWsId}/integrations`,
         `/${personalOrWsId}/integrations/*`,
-        `/${personalOrWsId}/platform/roles`,
-        `/${personalOrWsId}/platform/billing`,
         `/${personalOrWsId}/inquiries`,
       ],
     },

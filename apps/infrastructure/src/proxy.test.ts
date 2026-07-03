@@ -49,23 +49,7 @@ vi.mock('@tuturuuu/utils/api-proxy-guard', () => ({
 }));
 
 vi.mock('next-intl/middleware', () => ({
-  default: () => (request: NextRequest) => {
-    const [firstSegment] = request.nextUrl.pathname.split('/').filter(Boolean);
-
-    if (firstSegment === 'en' || firstSegment === 'vi') {
-      return NextResponse.next();
-    }
-
-    const redirectUrl = new URL(request.url);
-    redirectUrl.pathname =
-      request.nextUrl.pathname === '/'
-        ? '/en'
-        : `/en${request.nextUrl.pathname}`;
-
-    const response = NextResponse.redirect(redirectUrl);
-    response.cookies.set('NEXT_LOCALE', 'en');
-    return response;
-  },
+  default: () => () => NextResponse.next(),
 }));
 
 vi.mock('next-intl/routing', () => ({
@@ -164,23 +148,9 @@ describe('Infra proxy', () => {
     });
   });
 
-  it('lets next-intl localize unlocalized public login paths', async () => {
+  it('keeps unlocalized public login paths canonical', async () => {
     const request = new NextRequest(
       'https://infrastructure.tuturuuu.com/login?next=%2F'
-    );
-
-    const response = await proxy(request);
-
-    expect(response.status).toBe(307);
-    expect(response.headers.get('location')).toBe(
-      'https://infrastructure.tuturuuu.com/en/login?next=%2F'
-    );
-    expect(mocks.refreshAppSessionForRequest).not.toHaveBeenCalled();
-  });
-
-  it('does not canonicalize localized public login paths back to unlocalized login', async () => {
-    const request = new NextRequest(
-      'https://infrastructure.tuturuuu.com/en/login?next=%2F'
     );
 
     const response = await proxy(request);
@@ -190,7 +160,22 @@ describe('Infra proxy', () => {
     expect(mocks.refreshAppSessionForRequest).not.toHaveBeenCalled();
   });
 
-  it('does not canonicalize localized protected paths after an app session refresh', async () => {
+  it('canonicalizes localized public login paths to unlocalized login', async () => {
+    const request = new NextRequest(
+      'https://infrastructure.tuturuuu.com/en/login?next=%2F'
+    );
+
+    const response = await proxy(request);
+
+    expect(response.status).toBe(307);
+    expect(response.headers.get('location')).toBe(
+      'https://infrastructure.tuturuuu.com/login?next=%2F'
+    );
+    expect(response.cookies.get('NEXT_LOCALE')?.value).toBe('en');
+    expect(mocks.refreshAppSessionForRequest).not.toHaveBeenCalled();
+  });
+
+  it('canonicalizes localized protected paths before an app session refresh', async () => {
     mocks.hasWebAppSessionTokenFromRequest.mockReturnValue(true);
     mocks.refreshAppSessionForRequest.mockResolvedValue({
       claims: { app: 'infra' },
@@ -202,13 +187,27 @@ describe('Infra proxy', () => {
 
     const response = await proxy(request);
 
-    expect(response.headers.get('x-middleware-next')).toBe('1');
-    expect(response.headers.get('location')).toBeNull();
-    expect(mocks.refreshAppSessionForRequest).toHaveBeenCalledWith(request, {
-      requireWebAppSession: true,
-      sessionMode: 'supabase-first',
-      targetApp: 'infra',
-    });
+    expect(response.status).toBe(307);
+    expect(response.headers.get('location')).toBe(
+      'https://infrastructure.tuturuuu.com/'
+    );
+    expect(response.cookies.get('NEXT_LOCALE')?.value).toBe('en');
+    expect(mocks.refreshAppSessionForRequest).not.toHaveBeenCalled();
+  });
+
+  it('canonicalizes localized internal paths to unlocalized internal paths', async () => {
+    const request = new NextRequest(
+      'https://infrastructure.tuturuuu.com/en/internal?debug=1'
+    );
+
+    const response = await proxy(request);
+
+    expect(response.status).toBe(307);
+    expect(response.headers.get('location')).toBe(
+      'https://infrastructure.tuturuuu.com/internal?debug=1'
+    );
+    expect(response.cookies.get('NEXT_LOCALE')?.value).toBe('en');
+    expect(mocks.refreshAppSessionForRequest).not.toHaveBeenCalled();
   });
 
   it.each([

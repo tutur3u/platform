@@ -4,16 +4,8 @@ import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 export type SettingsAvailabilityKey =
   | 'api_keys'
   | 'billing'
-  | 'infrastructure'
-  | 'infrastructure_changelog'
-  | 'infrastructure_external_apps'
-  | 'infrastructure_mobile_deployment'
-  | 'internal_projects'
   | 'inquiries'
   | 'integrations'
-  | 'migrations'
-  | 'platform_billing'
-  | 'platform_roles'
   | 'reports'
   | 'secrets'
   | 'usage'
@@ -27,7 +19,6 @@ export type WorkspaceSettingsPermissions = {
   can_access_billing?: boolean;
   enable_api_keys?: boolean;
   is_root_workspace?: boolean;
-  can_manage_internal_projects?: boolean;
   manage_api_keys?: boolean;
   manage_subscription: boolean;
   manage_user_report_templates?: boolean;
@@ -37,23 +28,14 @@ export type WorkspaceSettingsPermissions = {
   manage_workspace_roles?: boolean;
   manage_workspace_secrets?: boolean;
   manage_workspace_settings: boolean;
-  view_infrastructure?: boolean;
   view_usage?: boolean;
 };
 
 export type SettingsDialogAvailability = {
   allowWorkspaceBasicsEdit: boolean;
   canAccessApiKeys: boolean;
-  canAccessInfrastructure: boolean;
-  canAccessInfrastructureChangelog: boolean;
-  canAccessInfrastructureExternalApps: boolean;
-  canAccessInfrastructureMobileDeployment: boolean;
-  canAccessInternalProjects: boolean;
   canAccessInquiries: boolean;
   canAccessIntegrations: boolean;
-  canAccessMigrations: boolean;
-  canAccessPlatformBilling: boolean;
-  canAccessPlatformRoles: boolean;
   canAccessReports: boolean;
   canAccessSecrets: boolean;
   canAccessUsage: boolean;
@@ -123,15 +105,6 @@ export function getSettingsDialogAvailability({
     'secrets',
     workspacePermissions?.manage_workspace_secrets ?? false
   );
-  const canAccessMigrations = isSettingsEntryAvailable(
-    workspacePermissions,
-    'migrations'
-  );
-  const canAccessInfrastructure = isSettingsEntryAvailable(
-    workspacePermissions,
-    'infrastructure',
-    workspacePermissions?.view_infrastructure ?? false
-  );
   const isRootWorkspace = workspace?.id === ROOT_WORKSPACE_ID;
 
   return {
@@ -139,38 +112,11 @@ export function getSettingsDialogAvailability({
       !isRootWorkspace &&
       (Boolean(workspace?.personal) || canManageWorkspaceSettings),
     canAccessApiKeys,
-    canAccessInfrastructure,
-    canAccessInfrastructureChangelog: isSettingsEntryAvailable(
-      workspacePermissions,
-      'infrastructure_changelog'
-    ),
-    canAccessInfrastructureExternalApps: isSettingsEntryAvailable(
-      workspacePermissions,
-      'infrastructure_external_apps'
-    ),
-    canAccessInfrastructureMobileDeployment: isSettingsEntryAvailable(
-      workspacePermissions,
-      'infrastructure_mobile_deployment'
-    ),
-    canAccessInternalProjects: isSettingsEntryAvailable(
-      workspacePermissions,
-      'internal_projects',
-      workspacePermissions?.can_manage_internal_projects ?? false
-    ),
     canAccessInquiries: isSettingsEntryAvailable(
       workspacePermissions,
       'inquiries'
     ),
     canAccessIntegrations,
-    canAccessMigrations,
-    canAccessPlatformBilling: isSettingsEntryAvailable(
-      workspacePermissions,
-      'platform_billing'
-    ),
-    canAccessPlatformRoles: isSettingsEntryAvailable(
-      workspacePermissions,
-      'platform_roles'
-    ),
     canAccessReports,
     canAccessSecrets,
     canAccessUsage,

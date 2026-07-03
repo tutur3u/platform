@@ -10,6 +10,10 @@ describe('workspace route permission mapping', () => {
     expect(
       getWorkspaceRoutePermissionRequirements(['qr-generator'])
     ).toBeNull();
+    expect(
+      getWorkspaceRoutePermissionRequirements(['infrastructure'])
+    ).toBeNull();
+    expect(getWorkspaceRoutePermissionRequirements(['migrations'])).toBeNull();
   });
 
   it('maps role settings to workspace role management', () => {

@@ -45,7 +45,6 @@ const lazyCalendarPanelsSource = readFileSync(
 const nativeRoutePanelsSource = [
   'src/components/settings/settings-dialog-native-route-panels.tsx',
   'src/components/settings/settings-dialog-native-admin-panels.tsx',
-  'src/components/settings/settings-dialog-native-infrastructure-panels.tsx',
 ]
   .map((relativePath) =>
     readFileSync(resolveSourcePath(relativePath), { encoding: 'utf8' })
@@ -53,8 +52,8 @@ const nativeRoutePanelsSource = [
   .join('\n');
 const registrySource = [
   'src/components/settings/settings-dialog-nav-core.ts',
+  'src/components/settings/settings-dialog-nav-developer.ts',
   'src/components/settings/settings-dialog-nav-domain.ts',
-  'src/components/settings/settings-dialog-nav-infrastructure.ts',
   'src/components/settings/settings-dialog-nav-workspace.ts',
 ]
   .map((relativePath) =>
@@ -94,8 +93,6 @@ const formerRouteOnlyEntries = [
   'api_keys',
   'inquiries',
   'integrations',
-  'platform_billing',
-  'platform_roles',
   'secrets',
   'usage',
   'workspace_reports',
@@ -110,7 +107,6 @@ describe('settings dialog compile graph', () => {
       './account/session-settings',
       './appearance-settings',
       './forms/forms-autosave-settings',
-      './internal-projects-settings',
       './inventory/referral-settings',
       './keyboard-shortcuts-settings',
       './sidebar-settings',
@@ -192,5 +188,11 @@ describe('settings dialog compile graph', () => {
     expect(lazyPanelsSource).not.toContain('settings-route-entry-panel');
     expect(nativeRoutePanelsSource).not.toContain('StaticInfrastructurePanel');
     expect(nativeRoutePanelsSource).not.toContain("status: 'native'");
+    expect(nativeRoutePanelsSource).not.toContain(
+      'settings-dialog-native-infrastructure-panels'
+    );
+    expect(registrySource).not.toMatch(navNamePattern('internal_projects'));
+    expect(registrySource).not.toMatch(navNamePattern('platform_billing'));
+    expect(registrySource).not.toMatch(navNamePattern('platform_roles'));
   });
 });

@@ -1,4 +1,5 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import type {
   ActionFrequencyByHour,
   ActivityHeatmap,
@@ -20,12 +21,40 @@ import type {
   WorkspaceMemberDistribution,
   WorkspaceStatistics,
 } from '@tuturuuu/types';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
+
+type InfrastructureDashboardAdminClient = TypedSupabaseClient;
+
+function createUnavailableAdminClient(
+  cause: unknown
+): InfrastructureDashboardAdminClient {
+  return {
+    from: () => ({
+      select: () => ({
+        order: () => Promise.resolve({ data: null, error: cause }),
+      }),
+    }),
+    rpc: () => Promise.resolve({ data: null, error: cause }),
+  } as unknown as InfrastructureDashboardAdminClient;
+}
+
+async function createDashboardAdminClient(): Promise<InfrastructureDashboardAdminClient> {
+  try {
+    return (await createAdminClient()) as InfrastructureDashboardAdminClient;
+  } catch (error) {
+    serverLogger.error(
+      'Failed to create infrastructure dashboard admin client',
+      error
+    );
+    return createUnavailableAdminClient(error);
+  }
+}
 
 /**
  * Get current engagement metrics (DAU, WAU, MAU)
  */
 export async function getEngagementMetrics(): Promise<EngagementMetrics> {
-  const supabaseAdmin = await createAdminClient();
+  const supabaseAdmin = await createDashboardAdminClient();
   if (!supabaseAdmin) throw new Error('Failed to create admin client');
 
   try {
@@ -45,7 +74,7 @@ export async function getEngagementMetrics(): Promise<EngagementMetrics> {
       mau: Number(mauResult.data || 0),
     };
   } catch (error) {
-    console.error('Error fetching engagement metrics:', error);
+    serverLogger.error('Error fetching engagement metrics:', error);
     return { dau: 0, wau: 0, mau: 0 };
   }
 }
@@ -56,7 +85,7 @@ export async function getEngagementMetrics(): Promise<EngagementMetrics> {
 export async function getEngagementMetricsOverTime(
   days: number = 90
 ): Promise<EngagementMetricsOverTime[]> {
-  const supabaseAdmin = await createAdminClient();
+  const supabaseAdmin = await createDashboardAdminClient();
   if (!supabaseAdmin) throw new Error('Failed to create admin client');
 
   try {
@@ -76,7 +105,7 @@ export async function getEngagementMetricsOverTime(
       })) || []
     );
   } catch (error) {
-    console.error('Error fetching engagement metrics over time:', error);
+    serverLogger.error('Error fetching engagement metrics over time:', error);
     return [];
   }
 }
@@ -85,7 +114,7 @@ export async function getEngagementMetricsOverTime(
  * Get session statistics
  */
 export async function getSessionStatistics(): Promise<SessionStatistics> {
-  const supabaseAdmin = await createAdminClient();
+  const supabaseAdmin = await createDashboardAdminClient();
   if (!supabaseAdmin) throw new Error('Failed to create admin client');
 
   try {
@@ -109,7 +138,7 @@ export async function getSessionStatistics(): Promise<SessionStatistics> {
       sessions_this_month: Number(stats.sessions_this_month || 0),
     };
   } catch (error) {
-    console.error('Error fetching session statistics:', error);
+    serverLogger.error('Error fetching session statistics:', error);
     return {
       total_sessions: 0,
       active_sessions: 0,
@@ -126,7 +155,7 @@ export async function getSessionStatistics(): Promise<SessionStatistics> {
  * Get sessions by device type
  */
 export async function getSessionsByDevice(): Promise<SessionByDevice[]> {
-  const supabaseAdmin = await createAdminClient();
+  const supabaseAdmin = await createDashboardAdminClient();
   if (!supabaseAdmin) throw new Error('Failed to create admin client');
 
   try {
@@ -142,7 +171,7 @@ export async function getSessionsByDevice(): Promise<SessionByDevice[]> {
       })) || []
     );
   } catch (error) {
-    console.error('Error fetching sessions by device:', error);
+    serverLogger.error('Error fetching sessions by device:', error);
     return [];
   }
 }
@@ -151,7 +180,7 @@ export async function getSessionsByDevice(): Promise<SessionByDevice[]> {
  * Get auth provider statistics
  */
 export async function getAuthProviderStats(): Promise<AuthProviderStats[]> {
-  const supabaseAdmin = await createAdminClient();
+  const supabaseAdmin = await createDashboardAdminClient();
   if (!supabaseAdmin) throw new Error('Failed to create admin client');
 
   try {
@@ -168,7 +197,7 @@ export async function getAuthProviderStats(): Promise<AuthProviderStats[]> {
       })) || []
     );
   } catch (error) {
-    console.error('Error fetching auth provider stats:', error);
+    serverLogger.error('Error fetching auth provider stats:', error);
     return [];
   }
 }
@@ -179,7 +208,7 @@ export async function getAuthProviderStats(): Promise<AuthProviderStats[]> {
 export async function getSignInsByProvider(
   days: number = 30
 ): Promise<SignInByProvider[]> {
-  const supabaseAdmin = await createAdminClient();
+  const supabaseAdmin = await createDashboardAdminClient();
   if (!supabaseAdmin) throw new Error('Failed to create admin client');
 
   try {
@@ -200,7 +229,7 @@ export async function getSignInsByProvider(
       })) || []
     );
   } catch (error) {
-    console.error('Error fetching sign-ins by provider:', error);
+    serverLogger.error('Error fetching sign-ins by provider:', error);
     return [];
   }
 }
@@ -211,7 +240,7 @@ export async function getSignInsByProvider(
 export async function getUserGrowthStats(
   timePeriod: 'daily' | 'weekly' | 'monthly' = 'daily'
 ): Promise<UserGrowthStats[]> {
-  const supabaseAdmin = await createAdminClient();
+  const supabaseAdmin = await createDashboardAdminClient();
   if (!supabaseAdmin) throw new Error('Failed to create admin client');
 
   try {
@@ -229,7 +258,7 @@ export async function getUserGrowthStats(
       })) || []
     );
   } catch (error) {
-    console.error('Error fetching user growth stats:', error);
+    serverLogger.error('Error fetching user growth stats:', error);
     return [];
   }
 }
@@ -238,7 +267,7 @@ export async function getUserGrowthStats(
  * Get user growth comparison
  */
 export async function getUserGrowthComparison(): Promise<UserGrowthComparison> {
-  const supabaseAdmin = await createAdminClient();
+  const supabaseAdmin = await createDashboardAdminClient();
   if (!supabaseAdmin) throw new Error('Failed to create admin client');
 
   try {
@@ -263,7 +292,7 @@ export async function getUserGrowthComparison(): Promise<UserGrowthComparison> {
         : null,
     };
   } catch (error) {
-    console.error('Error fetching user growth comparison:', error);
+    serverLogger.error('Error fetching user growth comparison:', error);
     return {
       total_users: 0,
       users_today: 0,
@@ -279,7 +308,7 @@ export async function getUserGrowthComparison(): Promise<UserGrowthComparison> {
  * Get workspace statistics
  */
 export async function getWorkspaceStatistics(): Promise<WorkspaceStatistics> {
-  const supabaseAdmin = await createAdminClient();
+  const supabaseAdmin = await createDashboardAdminClient();
   if (!supabaseAdmin) throw new Error('Failed to create admin client');
 
   try {
@@ -306,7 +335,7 @@ export async function getWorkspaceStatistics(): Promise<WorkspaceStatistics> {
       ),
     };
   } catch (error) {
-    console.error('Error fetching workspace statistics:', error);
+    serverLogger.error('Error fetching workspace statistics:', error);
     return {
       total_workspaces: 0,
       active_workspaces: 0,
@@ -326,7 +355,7 @@ export async function getWorkspaceStatistics(): Promise<WorkspaceStatistics> {
 export async function getWorkspaceMemberDistribution(): Promise<
   WorkspaceMemberDistribution[]
 > {
-  const supabaseAdmin = await createAdminClient();
+  const supabaseAdmin = await createDashboardAdminClient();
   if (!supabaseAdmin) throw new Error('Failed to create admin client');
 
   try {
@@ -344,7 +373,7 @@ export async function getWorkspaceMemberDistribution(): Promise<
       })) || []
     );
   } catch (error) {
-    console.error('Error fetching workspace member distribution:', error);
+    serverLogger.error('Error fetching workspace member distribution:', error);
     return [];
   }
 }
@@ -355,7 +384,7 @@ export async function getWorkspaceMemberDistribution(): Promise<
 export async function getRecentActionsSummary(
   limitCount: number = 100
 ): Promise<AuditLogActionSummary[]> {
-  const supabaseAdmin = await createAdminClient();
+  const supabaseAdmin = await createDashboardAdminClient();
   if (!supabaseAdmin) throw new Error('Failed to create admin client');
 
   try {
@@ -377,7 +406,7 @@ export async function getRecentActionsSummary(
       })) || []
     );
   } catch (error) {
-    console.error('Error fetching recent actions summary:', error);
+    serverLogger.error('Error fetching recent actions summary:', error);
     return [];
   }
 }
@@ -388,7 +417,7 @@ export async function getRecentActionsSummary(
 export async function getActionFrequencyByHour(): Promise<
   ActionFrequencyByHour[]
 > {
-  const supabaseAdmin = await createAdminClient();
+  const supabaseAdmin = await createDashboardAdminClient();
   if (!supabaseAdmin) throw new Error('Failed to create admin client');
 
   try {
@@ -405,7 +434,7 @@ export async function getActionFrequencyByHour(): Promise<
       })) || []
     );
   } catch (error) {
-    console.error('Error fetching action frequency by hour:', error);
+    serverLogger.error('Error fetching action frequency by hour:', error);
     return [];
   }
 }
@@ -416,7 +445,7 @@ export async function getActionFrequencyByHour(): Promise<
 export async function getRecentAuditLogs(
   limitCount: number = 50
 ): Promise<RecentAuditLog[]> {
-  const supabaseAdmin = await createAdminClient();
+  const supabaseAdmin = await createDashboardAdminClient();
   if (!supabaseAdmin) throw new Error('Failed to create admin client');
 
   try {
@@ -438,7 +467,7 @@ export async function getRecentAuditLogs(
       })) || []
     );
   } catch (error) {
-    console.error('Error fetching recent audit logs:', error);
+    serverLogger.error('Error fetching recent audit logs:', error);
     return [];
   }
 }
@@ -447,7 +476,7 @@ export async function getRecentAuditLogs(
  * Get user activity cohorts
  */
 export async function getUserActivityCohorts(): Promise<UserActivityCohort[]> {
-  const supabaseAdmin = await createAdminClient();
+  const supabaseAdmin = await createDashboardAdminClient();
   if (!supabaseAdmin) throw new Error('Failed to create admin client');
 
   try {
@@ -465,7 +494,7 @@ export async function getUserActivityCohorts(): Promise<UserActivityCohort[]> {
       })) || []
     );
   } catch (error) {
-    console.error('Error fetching user activity cohorts:', error);
+    serverLogger.error('Error fetching user activity cohorts:', error);
     return [];
   }
 }
@@ -476,7 +505,7 @@ export async function getUserActivityCohorts(): Promise<UserActivityCohort[]> {
 export async function getRetentionRate(
   period: 'daily' | 'weekly' | 'monthly' = 'weekly'
 ): Promise<RetentionRate[]> {
-  const supabaseAdmin = await createAdminClient();
+  const supabaseAdmin = await createDashboardAdminClient();
   if (!supabaseAdmin) throw new Error('Failed to create admin client');
 
   try {
@@ -495,7 +524,7 @@ export async function getRetentionRate(
       })) || []
     );
   } catch (error) {
-    console.error('Error fetching retention rate:', error);
+    serverLogger.error('Error fetching retention rate:', error);
     return [];
   }
 }
@@ -504,7 +533,7 @@ export async function getRetentionRate(
  * Get activity heatmap data
  */
 export async function getActivityHeatmap(): Promise<ActivityHeatmap[]> {
-  const supabaseAdmin = await createAdminClient();
+  const supabaseAdmin = await createDashboardAdminClient();
   if (!supabaseAdmin) throw new Error('Failed to create admin client');
 
   try {
@@ -520,7 +549,7 @@ export async function getActivityHeatmap(): Promise<ActivityHeatmap[]> {
       })) || []
     );
   } catch (error) {
-    console.error('Error fetching activity heatmap:', error);
+    serverLogger.error('Error fetching activity heatmap:', error);
     return [];
   }
 }
@@ -531,7 +560,7 @@ export async function getActivityHeatmap(): Promise<ActivityHeatmap[]> {
 export async function getUserRegistrationData(): Promise<
   UserRegistrationData[]
 > {
-  const supabaseAdmin = await createAdminClient();
+  const supabaseAdmin = await createDashboardAdminClient();
   if (!supabaseAdmin) throw new Error('Failed to create admin client');
 
   try {
@@ -552,7 +581,7 @@ export async function getUserRegistrationData(): Promise<
         })) || []
     );
   } catch (error) {
-    console.error('Error fetching user registration data:', error);
+    serverLogger.error('Error fetching user registration data:', error);
     return [];
   }
 }
@@ -561,7 +590,7 @@ export async function getUserRegistrationData(): Promise<
  * Get power users
  */
 export async function getPowerUsers(limit: number = 10): Promise<PowerUser[]> {
-  const supabaseAdmin = await createAdminClient();
+  const supabaseAdmin = await createDashboardAdminClient();
   if (!supabaseAdmin) throw new Error('Failed to create admin client');
 
   try {
@@ -580,7 +609,7 @@ export async function getPowerUsers(limit: number = 10): Promise<PowerUser[]> {
       })) || []
     );
   } catch (error) {
-    console.error('Error fetching power users:', error);
+    serverLogger.error('Error fetching power users:', error);
     return [];
   }
 }
@@ -591,7 +620,7 @@ export async function getPowerUsers(limit: number = 10): Promise<PowerUser[]> {
 export async function getFeatureAdoption(
   prefix: string
 ): Promise<FeatureAdoption[]> {
-  const supabaseAdmin = await createAdminClient();
+  const supabaseAdmin = await createDashboardAdminClient();
   if (!supabaseAdmin) throw new Error('Failed to create admin client');
 
   try {
@@ -608,7 +637,7 @@ export async function getFeatureAdoption(
       })) || []
     );
   } catch (error) {
-    console.error('Error fetching feature adoption:', error);
+    serverLogger.error('Error fetching feature adoption:', error);
     return [];
   }
 }

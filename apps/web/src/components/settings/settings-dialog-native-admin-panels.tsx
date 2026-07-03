@@ -15,7 +15,6 @@ import { Button } from '@tuturuuu/ui/button';
 import { useWorkspaceConfigs } from '@tuturuuu/ui/hooks/use-workspace-config';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
-import PlatformBillingPage from '../../app/[locale]/(dashboard)/[wsId]/(workspace-settings)/platform/billing/page';
 import SecretForm from '../../app/[locale]/(dashboard)/[wsId]/(workspace-settings)/secrets/form';
 import {
   leadGenerationConfigs,
@@ -30,6 +29,10 @@ import {
   NativeSimpleTable,
 } from './settings-dialog-native-panel-utils';
 
+const INFRASTRUCTURE_APP_URL =
+  process.env.NEXT_PUBLIC_INFRA_APP_URL ??
+  'https://infrastructure.tuturuuu.com';
+
 interface NativeAdminPanelProps {
   activeTab: string;
   setActiveTab: (tab: string) => void;
@@ -40,8 +43,6 @@ export const WORKSPACE_ADMIN_NATIVE_TABS = new Set([
   'api_keys',
   'inquiries',
   'integrations',
-  'platform_billing',
-  'platform_roles',
   'secrets',
   'usage',
   'workspace_reports',
@@ -49,7 +50,6 @@ export const WORKSPACE_ADMIN_NATIVE_TABS = new Set([
 
 export function WorkspaceAdminNativeSettingsPanels({
   activeTab,
-  setActiveTab,
   wsId,
 }: NativeAdminPanelProps) {
   if (!WORKSPACE_ADMIN_NATIVE_TABS.has(activeTab)) return null;
@@ -62,12 +62,8 @@ export function WorkspaceAdminNativeSettingsPanels({
       {activeTab === 'workspace_reports' && (
         <WorkspaceReportsNativePanel wsId={wsId} />
       )}
-      {activeTab === 'integrations' && (
-        <IntegrationsNativePanel setActiveTab={setActiveTab} />
-      )}
+      {activeTab === 'integrations' && <IntegrationsNativePanel />}
       {activeTab === 'inquiries' && <InquiriesNativePanel />}
-      {activeTab === 'platform_roles' && <PlatformRolesNativePanel />}
-      {activeTab === 'platform_billing' && <PlatformBillingPage />}
     </NativePanelFrame>
   );
 }
@@ -256,11 +252,7 @@ function WorkspaceReportsNativePanel({ wsId }: { wsId: string }) {
   );
 }
 
-function IntegrationsNativePanel({
-  setActiveTab,
-}: {
-  setActiveTab: (tab: string) => void;
-}) {
+function IntegrationsNativePanel() {
   const integrations = [
     {
       description: 'Bot commands, link shortening, and server notifications.',
@@ -298,15 +290,11 @@ function IntegrationsNativePanel({
             {integration.description}
           </p>
           {integration.name === 'Discord' && (
-            <Button
-              className="mt-4"
-              onClick={() => setActiveTab('infrastructure_ai_agents')}
-              size="sm"
-              type="button"
-              variant="secondary"
-            >
-              <KeyRound className="h-4 w-4" />
-              AI agents
+            <Button asChild className="mt-4" size="sm" variant="secondary">
+              <a href={`${INFRASTRUCTURE_APP_URL}/internal/ai-agents`}>
+                <KeyRound className="h-4 w-4" />
+                AI agents
+              </a>
             </Button>
           )}
         </div>
@@ -321,16 +309,6 @@ function InquiriesNativePanel() {
       columns={['id', 'subject', 'type', 'product', 'created_at']}
       path="/api/v1/inquiries"
       queryKey={['native-settings', 'inquiries']}
-    />
-  );
-}
-
-function PlatformRolesNativePanel() {
-  return (
-    <NativeApiPreviewPanel
-      columns={['id', 'name', 'enabled', 'created_at']}
-      path="/api/v1/infrastructure/roles?pageSize=25"
-      queryKey={['native-settings', 'platform-roles']}
     />
   );
 }

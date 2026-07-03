@@ -17405,6 +17405,7 @@
   "workspace-settings-layout": {
     "activities": "Activities",
     "api_keys": "API Keys",
+    "developer": "Developer",
     "external_projects_registry": "External Project Registry",
     "infrastructure": "Infrastructure",
     "members": "Members",
