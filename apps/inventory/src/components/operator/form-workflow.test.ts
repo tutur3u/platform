@@ -141,7 +141,9 @@ describe('Inventory operator form workflows', () => {
       'deleteInventoryStorefront'
     );
     expect(source('commerce-panel.tsx')).not.toContain('deleteInventorySale');
-    expect(source('storefront-listings-panel.tsx')).toContain('LifecyclePanel');
+    expect(source('storefront-listing-editor-dialog.tsx')).toContain(
+      'LifecyclePanel'
+    );
     expect(source('product-row-actions.tsx')).toContain('LifecyclePanel');
     expect(source('bundle-editor-dialog.tsx')).toContain('LifecyclePanel');
     expect(source('costing-profile-dialog.tsx')).toContain('LifecyclePanel');
