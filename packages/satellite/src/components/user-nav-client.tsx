@@ -30,11 +30,12 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
+import { useSettingsDialogShortcut } from '@tuturuuu/ui/hooks/use-settings-dialog-shortcut';
 import { ReportProblemDialog } from '@tuturuuu/ui/report-problem-dialog';
 import { cn } from '@tuturuuu/utils/format';
 import { getInitials } from '@tuturuuu/utils/name-helper';
 import { useTranslations } from 'next-intl';
-import { type ReactNode, useContext, useState } from 'react';
+import { type ReactNode, useCallback, useContext, useState } from 'react';
 import { SidebarContext } from '../context/sidebar-context';
 import { LanguageWrapper } from './language-wrapper';
 import { SystemLanguageWrapper } from './system-language-wrapper';
@@ -65,6 +66,14 @@ export default function UserNavClient({
   const sidebar = useContext(SidebarContext);
   const [reportOpen, setReportOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+
+  // Cmd/Ctrl+, opens the app settings dialog — platform-wide convention, wired
+  // once here so every satellite app (calendar/tasks/finance/…) gets it.
+  const openSettings = useCallback(() => setSettingsOpen(true), []);
+  useSettingsDialogShortcut({
+    enabled: Boolean(user && settingsDialog),
+    onOpen: openSettings,
+  });
 
   const centralUrl =
     ttrUrl ??
