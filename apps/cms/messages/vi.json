@@ -2462,6 +2462,7 @@
   },
   "command_launcher": {
     "apps": "Ứng dụng",
+    "apps_description": "Mở một ứng dụng Tuturuuu khác từ workspace này.",
     "close": "đóng",
     "current": "Hiện tại",
     "current_app": "Ứng dụng hiện tại",
@@ -2476,6 +2477,9 @@
     "navigation": "Điều hướng",
     "open": "Mở",
     "open_app": "Mở ứng dụng",
+    "open_here": "Mở tại đây",
+    "open_in_new_tab": "Mở trong tab mới",
+    "open_options": "Tùy chọn mở",
     "open_workspace": "Mở workspace",
     "personal": "Cá nhân",
     "placeholder": "Tìm ứng dụng, workspace và trang...",

@@ -1,4 +1,11 @@
 {
+  "command_launcher": {
+    "apps": "Ứng dụng",
+    "apps_description": "Mở một ứng dụng Tuturuuu khác từ workspace này.",
+    "open_here": "Mở tại đây",
+    "open_in_new_tab": "Mở trong tab mới",
+    "open_options": "Tùy chọn mở"
+  },
   "common": {
     "0_usd_per_month": "không có phí hàng tháng",
     "404-msg": "Trang bạn đang tìm kiếm không tồn tại.",
@@ -782,11 +789,11 @@
     "bundleSelectionTitle": "Tạo combo",
     "buyNow": "Mua ngay",
     "cart": "Giỏ hàng",
+    "cheapestFreePreview": "Món đủ điều kiện rẻ nhất được miễn phí.",
     "checkout": "Thanh toán",
     "checkoutDisabled": "Thanh toán bị tắt cho cửa hàng này.",
     "checkoutDisabledBadge": "Đã tắt thanh toán",
     "checkoutError": "Không thể bắt đầu thanh toán Polar.",
-    "cheapestFreePreview": "Món đủ điều kiện rẻ nhất được miễn phí.",
     "contactDetails": "Thông tin liên hệ",
     "demoBadge": "Demo thử nghiệm",
     "emptyCart": "Thêm ít nhất một mặt hàng trước khi thanh toán.",

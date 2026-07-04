@@ -1,4 +1,11 @@
 {
+  "command_launcher": {
+    "apps": "Apps",
+    "apps_description": "Open another Tuturuuu app from this workspace.",
+    "open_here": "Open here",
+    "open_in_new_tab": "Open in new tab",
+    "open_options": "Open options"
+  },
   "common": {
     "0_usd_per_month": "$0/month",
     "404-msg": "The page you are looking for does not exist.",
@@ -841,8 +848,8 @@
     "reserving": "Preparing checkout...",
     "retry": "Retry",
     "searchBundleItems": "Search items",
-    "selectOptions": "Select options",
     "selectedItems": "{selected} of {required} selected",
+    "selectOptions": "Select options",
     "signIn": "Sign in",
     "simulatedBadge": "Simulated checkout",
     "simulatedReserve": "Simulate checkout",

@@ -68,6 +68,7 @@
   },
   "command_launcher": {
     "apps": "Apps",
+    "apps_description": "Open another Tuturuuu app from this workspace.",
     "close": "close",
     "current": "Current",
     "current_app": "Current app",
@@ -82,6 +83,9 @@
     "navigation": "Navigation",
     "open": "Open",
     "open_app": "Open app",
+    "open_here": "Open here",
+    "open_in_new_tab": "Open in new tab",
+    "open_options": "Open options",
     "open_workspace": "Open workspace",
     "personal": "Personal",
     "placeholder": "Search apps, workspaces, and pages...",
