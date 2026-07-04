@@ -6619,6 +6619,8 @@
       "show_invoices_personal_help": "Hiển thị Hóa đơn trong điều hướng Tài chính cho tài khoản của bạn",
       "show_invoices_workspace_help": "Hiển thị Hóa đơn trong điều hướng Tài chính cho tất cả thành viên",
       "title": "Tài chính",
+      "transaction_defaults": "Mặc định giao dịch",
+      "transaction_defaults_description": "Kiểm soát ví và danh mục nào được điền sẵn khi bắt đầu tạo một giao dịch mới.",
       "use_workspace_default": "Sử dụng mặc định của không gian làm việc",
       "use_workspace_default_invoices": "Sử dụng mặc định của không gian làm việc",
       "use_workspace_default_invoices_help": "Mặc định hiện tại của không gian làm việc: {status}",

@@ -6619,6 +6619,8 @@
       "show_invoices_personal_help": "Show Invoices in Finance navigation for your account",
       "show_invoices_workspace_help": "Show Invoices in Finance navigation for all members",
       "title": "Finance",
+      "transaction_defaults": "Transaction Defaults",
+      "transaction_defaults_description": "Control which wallet and category are prefilled when someone starts a new transaction.",
       "use_workspace_default": "Use workspace default",
       "use_workspace_default_invoices": "Use workspace default",
       "use_workspace_default_invoices_help": "Current workspace default: {status}",
