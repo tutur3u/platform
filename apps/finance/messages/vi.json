@@ -11373,6 +11373,7 @@
     "default_subscription_category_placeholder": "Chọn một danh mục",
     "default_wallet": "Ví mặc định",
     "default_wallet_card_description": "Chọn ví mặc định sẽ được sử dụng khi tạo hóa đơn mới.",
+    "default_wallet_description": "Đặt ví mà biểu mẫu giao dịch mới sẽ dùng khi không có ví đã nhớ.",
     "default_wallet_label": "Ví mặc định",
     "default_wallet_placeholder": "Chọn một ví",
     "description": "Quản lý cài đặt tài chính cho không gian làm việc của bạn.",

@@ -11373,6 +11373,7 @@
     "default_subscription_category_placeholder": "Select a category",
     "default_wallet": "Default Wallet",
     "default_wallet_card_description": "Select the default wallet to be used when creating new invoices.",
+    "default_wallet_description": "Set the wallet new transaction forms should fall back to when no remembered wallet is available.",
     "default_wallet_label": "Default Wallet",
     "default_wallet_placeholder": "Select a wallet",
     "description": "Manage finance settings for your workspace.",
