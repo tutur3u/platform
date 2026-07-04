@@ -121,11 +121,17 @@ interface UseKanbanDndProps {
   scrollContainerRef: React.RefObject<HTMLDivElement | null>;
 }
 
-function usesPersonalPlacement(task: Task) {
+function hasPersonalExternalSourceMetadata(task: Task) {
+  return Boolean(
+    task.source_workspace_id || task.source_board_id || task.source_list_id
+  );
+}
+
+export function usesPersonalPlacement(task: Task) {
   return (
     task.is_personal_external === true ||
-    Boolean(task.personal_board_id) ||
-    isPersonalExternalStagingListId(task.list_id)
+    isPersonalExternalStagingListId(task.list_id) ||
+    (hasPersonalExternalSourceMetadata(task) && Boolean(task.personal_board_id))
   );
 }
 

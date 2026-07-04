@@ -1,7 +1,23 @@
 import { QueryClient } from '@tanstack/react-query';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+
+vi.mock('@tuturuuu/utils/task-helper', () => {
+  const prefix = 'personal-external-staging:';
+
+  return {
+    getPersonalExternalStagingBoardId: (listId: string | null) =>
+      listId?.startsWith(prefix) && listId.length > prefix.length
+        ? listId.slice(prefix.length)
+        : null,
+    getPersonalExternalStagingListId: (boardId: string) =>
+      `${prefix}${boardId}`,
+    isPersonalExternalStagingListId: (listId: string | null) =>
+      Boolean(listId?.startsWith(prefix) && listId.length > prefix.length),
+  };
+});
+
 import {
   applyTaskDropPreviewToCache,
   getProjectedTaskDropOrderFromPreview,
@@ -14,6 +30,7 @@ import {
   insertTaskAtDropPosition,
   mergePersonalPlacementMutationTask,
   mergeTaskIntoBoardTaskCache,
+  usesPersonalPlacement,
 } from './use-kanban-dnd';
 
 function createTask(overrides: Partial<Task> = {}): Task {
@@ -113,6 +130,25 @@ describe('mergePersonalPlacementMutationTask', () => {
         _localMutationAt: 654_321,
       })
     );
+  });
+});
+
+describe('usesPersonalPlacement', () => {
+  it('does not treat a personal-workspace task as external from personal_board_id alone', () => {
+    const personalTask = createTask({
+      is_personal_external: false,
+      personal_board_id: 'personal-board',
+      personal_list_id: 'list-1',
+      source_board_id: null,
+      source_list_id: null,
+      source_workspace_id: null,
+    } as Partial<Task>);
+
+    expect(usesPersonalPlacement(personalTask)).toBe(false);
+  });
+
+  it('keeps explicit external overlays on the personal-placement path', () => {
+    expect(usesPersonalPlacement(createTask())).toBe(true);
   });
 });
 
