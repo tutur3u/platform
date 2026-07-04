@@ -21,11 +21,10 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import {
-  FormSection,
-  OperatorDialogBody,
   OperatorDialogContent,
   OperatorDialogFooter,
   OperatorDialogHeader,
+  OperatorDialogTabs,
 } from './operator-dialog-shell';
 import { SelectValueField } from './operator-form-fields';
 import { LifecyclePanel } from './operator-lifecycle';
@@ -216,111 +215,133 @@ export function ListingEditorDialog({
             if (title) saveMutation.mutate();
           }}
         >
-          <OperatorDialogBody className="grid gap-6">
-            <FormSection
-              icon={<ListTree className="h-4 w-4" />}
-              title={t('tabs.details')}
-            >
-              <div className="grid min-w-0 gap-3">
-                <label className="grid min-w-0 gap-1 text-sm">
-                  <span className="font-medium">{t('listingTitle')}</span>
-                  <Input
-                    onChange={(event) => setTitle(event.target.value)}
-                    placeholder={t('placeholders.listingTitle')}
-                    value={title}
-                  />
-                </label>
-                <label className="grid min-w-0 gap-1 text-sm">
-                  <span className="font-medium">{t('price')}</span>
-                  <MoneyInput
-                    currency={currency}
-                    hideHelpers
-                    onChange={setPrice}
-                    placeholder={t('placeholders.price')}
-                    value={price}
-                  />
-                </label>
-                <SelectValueField
-                  allowEmpty={false}
-                  label={t('status')}
-                  onChange={setStatus}
-                  options={[
-                    { label: t('listingStatus.draft'), value: 'draft' },
-                    { label: t('listingStatus.published'), value: 'published' },
-                    { label: t('listingStatus.paused'), value: 'paused' },
-                    { label: t('listingStatus.archived'), value: 'archived' },
-                  ]}
-                  placeholder={t('placeholders.status')}
-                  value={status}
-                />
-              </div>
-            </FormSection>
-            {listing.listingType === 'product' ? (
-              <FormSection
-                icon={<ListTree className="h-4 w-4" />}
-                title={t('variantsAndOptions')}
-              >
-                <div className="grid gap-3">
-                  <div className="flex flex-wrap items-end gap-2">
-                    <SelectValueField
-                      allowEmpty
-                      className="min-w-48"
-                      emptyText={t('noTemplates')}
-                      label={t('applyTemplate')}
-                      onChange={applyTemplate}
-                      options={(templates.data?.data ?? []).map((template) => ({
-                        label: template.name,
-                        value: template.id,
-                      }))}
-                      placeholder={t('placeholders.applyTemplate')}
-                      value=""
-                    />
-                    <label className="grid min-w-40 flex-1 gap-1 text-sm">
-                      <span className="text-xs">{t('templateName')}</span>
+          <OperatorDialogTabs
+            tabs={[
+              {
+                content: (
+                  <div className="grid min-w-0 gap-3">
+                    <label className="grid min-w-0 gap-1 text-sm">
+                      <span className="font-medium">{t('listingTitle')}</span>
                       <Input
-                        className="h-9"
-                        onChange={(event) =>
-                          setTemplateName(event.target.value)
-                        }
-                        placeholder={t('placeholders.templateName')}
-                        value={templateName}
+                        onChange={(event) => setTitle(event.target.value)}
+                        placeholder={t('placeholders.listingTitle')}
+                        value={title}
                       />
                     </label>
-                    <Button
-                      disabled={
-                        !templateName.trim() ||
-                        options.length === 0 ||
-                        saveTemplateMutation.isPending
-                      }
-                      onClick={() => saveTemplateMutation.mutate()}
-                      size="sm"
-                      type="button"
-                      variant="secondary"
-                    >
-                      {t('saveAsTemplate')}
-                    </Button>
+                    <label className="grid min-w-0 gap-1 text-sm">
+                      <span className="font-medium">{t('price')}</span>
+                      <MoneyInput
+                        currency={currency}
+                        hideHelpers
+                        onChange={setPrice}
+                        placeholder={t('placeholders.price')}
+                        value={price}
+                      />
+                    </label>
+                    <SelectValueField
+                      allowEmpty={false}
+                      label={t('status')}
+                      onChange={setStatus}
+                      options={[
+                        { label: t('listingStatus.draft'), value: 'draft' },
+                        {
+                          label: t('listingStatus.published'),
+                          value: 'published',
+                        },
+                        { label: t('listingStatus.paused'), value: 'paused' },
+                        {
+                          label: t('listingStatus.archived'),
+                          value: 'archived',
+                        },
+                      ]}
+                      placeholder={t('placeholders.status')}
+                      value={status}
+                    />
                   </div>
-                  <StorefrontListingOptionsEditor
-                    currency={currency}
-                    onOptionsChange={setOptions}
-                    onVariantsChange={setVariants}
-                    options={options}
-                    products={products}
-                    variants={variants}
+                ),
+                icon: <ListTree className="h-4 w-4" />,
+                label: t('tabs.details'),
+                value: 'details',
+              },
+              ...(listing.listingType === 'product'
+                ? [
+                    {
+                      content: (
+                        <div className="grid gap-3">
+                          <div className="flex flex-wrap items-end gap-2">
+                            <SelectValueField
+                              allowEmpty
+                              className="min-w-48"
+                              emptyText={t('noTemplates')}
+                              label={t('applyTemplate')}
+                              onChange={applyTemplate}
+                              options={(templates.data?.data ?? []).map(
+                                (template) => ({
+                                  label: template.name,
+                                  value: template.id,
+                                })
+                              )}
+                              placeholder={t('placeholders.applyTemplate')}
+                              value=""
+                            />
+                            <label className="grid min-w-40 flex-1 gap-1 text-sm">
+                              <span className="text-xs">
+                                {t('templateName')}
+                              </span>
+                              <Input
+                                className="h-9"
+                                onChange={(event) =>
+                                  setTemplateName(event.target.value)
+                                }
+                                placeholder={t('placeholders.templateName')}
+                                value={templateName}
+                              />
+                            </label>
+                            <Button
+                              disabled={
+                                !templateName.trim() ||
+                                options.length === 0 ||
+                                saveTemplateMutation.isPending
+                              }
+                              onClick={() => saveTemplateMutation.mutate()}
+                              size="sm"
+                              type="button"
+                              variant="secondary"
+                            >
+                              {t('saveAsTemplate')}
+                            </Button>
+                          </div>
+                          <StorefrontListingOptionsEditor
+                            currency={currency}
+                            onOptionsChange={setOptions}
+                            onVariantsChange={setVariants}
+                            options={options}
+                            products={products}
+                            variants={variants}
+                          />
+                        </div>
+                      ),
+                      icon: <ListTree className="h-4 w-4" />,
+                      label: t('variantsAndOptions'),
+                      value: 'options',
+                    },
+                  ]
+                : []),
+              {
+                content: (
+                  <LifecyclePanel
+                    archivePending={archiveMutation.isPending}
+                    deletePending={deleteMutation.isPending}
+                    onArchive={() => archiveMutation.mutate()}
+                    onDelete={() => deleteMutation.mutate()}
+                    title={t('lifecycle')}
                   />
-                </div>
-              </FormSection>
-            ) : null}
-            <FormSection title={t('tabs.lifecycle')}>
-              <LifecyclePanel
-                archivePending={archiveMutation.isPending}
-                deletePending={deleteMutation.isPending}
-                onArchive={() => archiveMutation.mutate()}
-                onDelete={() => deleteMutation.mutate()}
-                title={t('lifecycle')}
-              />
-            </FormSection>
-          </OperatorDialogBody>
+                ),
+                label: t('tabs.lifecycle'),
+                value: 'lifecycle',
+              },
+            ]}
+          />
           <OperatorDialogFooter>
             <DialogClose asChild>
               <Button type="button" variant="ghost">
