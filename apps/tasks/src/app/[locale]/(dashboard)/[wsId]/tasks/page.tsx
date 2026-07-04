@@ -10,6 +10,7 @@ import { toWorkspaceSlug } from '@tuturuuu/utils/constants';
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
+import { connection } from 'next/server';
 import { createElement } from 'react';
 
 interface Props {
@@ -17,6 +18,9 @@ interface Props {
     wsId: string;
   }>;
 }
+
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 async function resolveBoardEntrypoint(
   workspaceId: string,
@@ -47,6 +51,8 @@ async function resolveBoardEntrypoint(
 }
 
 export default async function Page({ params }: Props) {
+  await connection();
+
   const { wsId: id } = await params;
   const user = await getSatelliteAppSessionUser('tasks');
 

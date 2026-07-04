@@ -1017,8 +1017,20 @@ describe('workspace task route personal external loading', () => {
       ...externalTask(UNPLACED_TASK_ID),
       end_date: '2026-07-05T09:00:00.000Z',
     };
+    const consoleWarnSpy = vi
+      .spyOn(console, 'warn')
+      .mockImplementation(() => {});
 
     queuePersonalWorkspace();
+    queueRpcResult('get_personal_task_board_external_counts', {
+      data: null,
+      error: {
+        code: 'P0001',
+        details: null,
+        hint: null,
+        message: 'Unauthorized',
+      },
+    });
     queueResult(mocks.adminQueues, 'tasks', {
       data: [dueLocalTask],
       error: null,
@@ -1058,7 +1070,7 @@ describe('workspace task route personal external loading', () => {
     const { GET } = await import('./route.js');
     const response = await GET(
       new NextRequest(
-        `http://localhost/api/v1/workspaces/${PERSONAL_WS_ID}/tasks?boardId=${PERSONAL_BOARD_ID}&sourceScope=all_visible&listStatuses=not_started,active&limit=200&offset=0&completed=exclude&closed=exclude&hasDueDate=true&externalSortBy=due-asc&includeRelationshipSummary=false`
+        `http://localhost/api/v1/workspaces/${PERSONAL_WS_ID}/tasks?boardId=${PERSONAL_BOARD_ID}&sourceScope=all_visible&listStatuses=not_started,active&limit=200&offset=0&completed=exclude&closed=exclude&hasDueDate=true&externalSortBy=due-asc&includeRelationshipSummary=false&includeCount=true`
       ),
       { params: Promise.resolve({ wsId: PERSONAL_WS_ID }) }
     );
@@ -1069,10 +1081,22 @@ describe('workspace task route personal external loading', () => {
 
     expect(taskIds).toEqual([LOCAL_TASK_ID, PLACED_TASK_ID, UNPLACED_TASK_ID]);
     expect(new Set(taskIds).size).toBe(taskIds.length);
+    expect(payload.count).toBe(3);
+    expect(consoleWarnSpy).toHaveBeenCalledWith(
+      'Failed to load personal external task counts; continuing without external count totals:',
+      expect.any(Error),
+      expect.objectContaining({
+        boardId: PERSONAL_BOARD_ID,
+        route: '/api/v1/workspaces/[wsId]/tasks',
+        sourceScope: 'all_visible',
+        workspaceId: PERSONAL_WS_ID,
+      })
+    );
     expect(mocks.adminSchemaClient.rpc).not.toHaveBeenCalledWith(
       'list_task_source_filter_ids',
       expect.anything()
     );
+    consoleWarnSpy.mockRestore();
 
     const placedExternalQuery = mocks.adminQueries.find(
       (query) =>

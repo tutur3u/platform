@@ -570,6 +570,28 @@ function isExternalSourceScope(sourceScope: TaskSourceScope) {
   );
 }
 
+function isUnauthorizedSupabaseRpcError(error: unknown) {
+  const candidates = [
+    error,
+    error instanceof Error ? error.cause : undefined,
+  ].filter(Boolean);
+
+  return candidates.some((candidate) => {
+    if (!candidate || typeof candidate !== 'object') return false;
+
+    const { code, message } = candidate as {
+      code?: unknown;
+      message?: unknown;
+    };
+
+    return (
+      code === 'P0001' &&
+      typeof message === 'string' &&
+      message.toLowerCase() === 'unauthorized'
+    );
+  });
+}
+
 function parseTaskListStatuses(value: string | null): ExternalSourceStatus[] {
   if (!value) return [];
 
@@ -1309,15 +1331,23 @@ export async function handleTaskRouteGET(
             }
           );
       } catch (countError) {
-        logTaskRouteError(
-          'Failed to load personal external task counts:',
-          countError,
-          taskRouteLogContext
-        );
-        return NextResponse.json(
-          { error: 'Failed to load personal external task counts' },
-          { status: 500 }
-        );
+        if (isUnauthorizedSupabaseRpcError(countError)) {
+          console.warn(
+            'Failed to load personal external task counts; continuing without external count totals:',
+            countError,
+            taskRouteLogContext
+          );
+        } else {
+          logTaskRouteError(
+            'Failed to load personal external task counts:',
+            countError,
+            taskRouteLogContext
+          );
+          return NextResponse.json(
+            { error: 'Failed to load personal external task counts' },
+            { status: 500 }
+          );
+        }
       }
     }
 

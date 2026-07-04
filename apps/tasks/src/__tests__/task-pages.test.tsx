@@ -122,6 +122,7 @@ describe('tasks app task pages', () => {
     ).rejects.toMatchObject({
       href: '/workspace-1/boards/board-default',
     });
+    expect(mocks.connection).toHaveBeenCalledTimes(1);
     expect(mocks.getUserWorkspaceConfig).toHaveBeenCalledWith(
       'workspace-1',
       'TASK_DEFAULT_BOARD_ID',
