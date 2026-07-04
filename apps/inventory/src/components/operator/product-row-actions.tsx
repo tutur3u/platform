@@ -352,8 +352,8 @@ export function ProductEditDialog({
                                 className={cn(
                                   'font-semibold text-sm',
                                   margin.marginPercentage >= 0
-                                    ? 'text-emerald-600 dark:text-emerald-500'
-                                    : 'text-destructive'
+                                    ? 'text-dynamic-green'
+                                    : 'text-dynamic-red'
                                 )}
                               >
                                 {margin.marginPercentage}%

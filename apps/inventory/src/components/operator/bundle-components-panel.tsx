@@ -248,6 +248,7 @@ function BundleComponentsDialog({
                         )
                       )
                     }
+                    aria-label={t('remove')}
                     size="icon"
                     type="button"
                     variant="destructive"

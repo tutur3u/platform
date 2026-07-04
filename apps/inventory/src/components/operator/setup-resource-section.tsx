@@ -130,6 +130,8 @@ function ResourceRow({
   item: NamedResource;
   wsId: string;
 }) {
+  const t = useTranslations('inventory.operator.forms');
+
   return (
     <div className="grid min-w-0 gap-2 border-border border-t p-2 text-sm sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
       <p className="truncate font-medium">{item.name ?? item.id}</p>
@@ -138,7 +140,12 @@ function ResourceRow({
           config={config}
           item={item}
           trigger={
-            <Button size="icon" type="button" variant="outline">
+            <Button
+              aria-label={t('edit')}
+              size="icon"
+              type="button"
+              variant="outline"
+            >
               <Pencil className="h-4 w-4" />
             </Button>
           }

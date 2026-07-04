@@ -442,7 +442,7 @@ export function ProductCreateForm({
                       />
                     </div>
                     {needsStockTarget && !hasStockTarget ? (
-                      <p className="text-amber-600 text-xs leading-5 dark:text-amber-500">
+                      <p className="text-dynamic-orange text-xs leading-5">
                         {t('stockTargetHint')}
                       </p>
                     ) : null}
