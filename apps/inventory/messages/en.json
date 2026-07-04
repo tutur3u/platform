@@ -1794,6 +1794,7 @@
         "warehouses": "Warehouses"
       },
       "square": {
+        "advancedUrls": "Advanced URLs",
         "appCredentialsDescription": "Save each workspace's Square application credentials here before starting OAuth.",
         "appCredentialsTitle": "Square app credentials",
         "applicationIdLabel": "Application ID",

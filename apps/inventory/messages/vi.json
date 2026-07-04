@@ -1794,6 +1794,7 @@
         "warehouses": "Kho"
       },
       "square": {
+        "advancedUrls": "URL nâng cao",
         "appCredentialsDescription": "Lưu thông tin ứng dụng Square của từng workspace tại đây trước khi bắt đầu OAuth.",
         "appCredentialsTitle": "Thông tin ứng dụng Square",
         "applicationIdLabel": "Application ID",

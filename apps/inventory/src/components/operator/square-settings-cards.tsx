@@ -1,6 +1,7 @@
 'use client';
 
 import {
+  ChevronDown,
   Copy,
   KeyRound,
   MonitorSmartphone,
@@ -12,6 +13,11 @@ import type {
   InventorySquareEnvironment,
 } from '@tuturuuu/internal-api/inventory';
 import { Button } from '@tuturuuu/ui/button';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@tuturuuu/ui/collapsible';
 import { Input } from '@tuturuuu/ui/input';
 import { useTranslations } from 'next-intl';
 import { SelectValueField } from './operator-form-fields';
@@ -112,29 +118,37 @@ export function SquareAppCredentialsCard({
           />
         </label>
       </div>
-      <div className="mt-3 grid gap-3 md:grid-cols-2">
-        <label className="grid gap-1 text-sm">
-          <span className="font-medium">{t('oauthRedirectLabel')}</span>
-          <Input
-            onChange={(event) => setOauthRedirectUrl(event.target.value)}
-            placeholder={
-              appCredential?.oauthRedirectUrl ?? t('oauthRedirectPlaceholder')
-            }
-            value={oauthRedirectUrl}
-          />
-        </label>
-        <label className="grid gap-1 text-sm">
-          <span className="font-medium">{t('webhookNotificationLabel')}</span>
-          <Input
-            onChange={(event) => setWebhookNotificationUrl(event.target.value)}
-            placeholder={
-              appCredential?.webhookNotificationUrl ??
-              t('webhookNotificationPlaceholder')
-            }
-            value={webhookNotificationUrl}
-          />
-        </label>
-      </div>
+      <Collapsible className="mt-3">
+        <CollapsibleTrigger className="group flex items-center gap-1.5 font-medium text-muted-foreground text-sm">
+          <ChevronDown className="h-4 w-4 transition-transform group-data-[state=open]:rotate-180" />
+          {t('advancedUrls')}
+        </CollapsibleTrigger>
+        <CollapsibleContent className="mt-3 grid gap-3 md:grid-cols-2">
+          <label className="grid gap-1 text-sm">
+            <span className="font-medium">{t('oauthRedirectLabel')}</span>
+            <Input
+              onChange={(event) => setOauthRedirectUrl(event.target.value)}
+              placeholder={
+                appCredential?.oauthRedirectUrl ?? t('oauthRedirectPlaceholder')
+              }
+              value={oauthRedirectUrl}
+            />
+          </label>
+          <label className="grid gap-1 text-sm">
+            <span className="font-medium">{t('webhookNotificationLabel')}</span>
+            <Input
+              onChange={(event) =>
+                setWebhookNotificationUrl(event.target.value)
+              }
+              placeholder={
+                appCredential?.webhookNotificationUrl ??
+                t('webhookNotificationPlaceholder')
+              }
+              value={webhookNotificationUrl}
+            />
+          </label>
+        </CollapsibleContent>
+      </Collapsible>
       <div className="mt-3 flex flex-wrap items-center gap-3">
         <Button
           disabled={saveAppCredentialsPending}
