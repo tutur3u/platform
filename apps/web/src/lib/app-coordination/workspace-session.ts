@@ -6,7 +6,10 @@ import {
 } from '@tuturuuu/utils/constants';
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { validate as validateUUID } from 'uuid';
-import { getWorkspaceInviteStatus } from '@/lib/workspace-invitations/status';
+import {
+  getWorkspaceInviteStatus,
+  type WorkspaceInvitationRecord,
+} from '@/lib/workspace-invitations/status';
 
 type AdminDb = TypedSupabaseClient;
 
@@ -18,6 +21,7 @@ export type WorkspaceSessionAppTokenExchangeAuthorization =
   | {
       code?: 'PENDING_WORKSPACE_INVITE';
       error: string;
+      invitation?: WorkspaceInvitationRecord;
       normalizedWorkspaceId?: string;
       ok: false;
       status: 400 | 403 | 500;
@@ -154,6 +158,7 @@ export async function authorizeWorkspaceSessionAppTokenExchange({
     return {
       code: 'PENDING_WORKSPACE_INVITE',
       error: 'Pending workspace invitation',
+      invitation: inviteStatus.invitation,
       normalizedWorkspaceId,
       ok: false,
       status: 403,

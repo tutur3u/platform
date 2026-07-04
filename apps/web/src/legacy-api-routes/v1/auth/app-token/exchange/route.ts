@@ -18,10 +18,16 @@ import {
   getAllowedAppTokenScopes,
   verifyExternalAppSecret,
 } from '@/lib/app-coordination/external-apps';
+import {
+  INVITATION_ACTION_SCOPE,
+  INVITATION_ACTION_TOKEN_TTL_SECONDS,
+  invitationWorkspaceScope,
+} from '@/lib/app-coordination/invitation-action-token';
 import { getAppCoordinationSessionPolicy } from '@/lib/app-coordination/session-policy';
 import { authorizeWorkspaceSessionAppTokenExchange } from '@/lib/app-coordination/workspace-session';
 import { authorizeExternalProjectAppTokenExchange } from '@/lib/external-projects/access';
 import { withRequestLogDrain } from '@/lib/infrastructure/log-drain';
+import type { WorkspaceInvitationRecord } from '@/lib/workspace-invitations/status';
 
 const APP_TOKEN_REFRESH_SCOPE = 'app-token:refresh';
 const APP_TOKEN_REFRESH_REPLAY_KEY_PREFIX = 'app-token:refresh:used';
@@ -359,6 +365,91 @@ function buildInvitationUrl(request: NextRequest, workspaceId: string) {
   return path;
 }
 
+function toSafeInvitation(
+  invitation: WorkspaceInvitationRecord | undefined,
+  workspaceId: string
+) {
+  if (!invitation) {
+    return {
+      createdAt: null,
+      role: null,
+      source: null,
+      workspaceHandle: null,
+      workspaceId,
+      workspaceName: null,
+    };
+  }
+
+  return {
+    createdAt: invitation.createdAt,
+    role: invitation.type,
+    source: invitation.source,
+    workspaceHandle: invitation.workspace.handle,
+    workspaceId: invitation.workspace.id,
+    workspaceName: invitation.workspace.name,
+  };
+}
+
+function createInvitationActionToken({
+  email,
+  targetApp,
+  userId,
+  workspaceId,
+}: {
+  email: string | null;
+  targetApp: string;
+  userId: string;
+  workspaceId: string;
+}) {
+  return createAppCoordinationToken({
+    email,
+    expiresInSeconds: INVITATION_ACTION_TOKEN_TTL_SECONDS,
+    originApp: 'web',
+    scopes: [INVITATION_ACTION_SCOPE, invitationWorkspaceScope(workspaceId)],
+    targetApp,
+    userId,
+  });
+}
+
+function createPendingInvitationResponse({
+  authEmail,
+  error,
+  invitation,
+  request,
+  status,
+  targetApp,
+  userId,
+  workspaceId,
+}: {
+  authEmail: string | null;
+  error: string;
+  invitation?: WorkspaceInvitationRecord;
+  request: NextRequest;
+  status: 403 | 500;
+  targetApp: string;
+  userId: string;
+  workspaceId: string;
+}) {
+  const invitationActionToken = createInvitationActionToken({
+    email: authEmail,
+    targetApp,
+    userId,
+    workspaceId,
+  });
+
+  return NextResponse.json(
+    {
+      code: 'PENDING_WORKSPACE_INVITE',
+      error,
+      invitation: toSafeInvitation(invitation, workspaceId),
+      invitationActionToken: invitationActionToken.token,
+      invitationUrl: buildInvitationUrl(request, workspaceId),
+      workspaceId,
+    },
+    { status }
+  );
+}
+
 async function createExchangeTokenResponse({
   email,
   normalizedWorkspaceId,
@@ -651,18 +742,16 @@ async function exchangeAppToken(request: NextRequest) {
     if (workspaceSessionAuthorization.code === 'PENDING_WORKSPACE_INVITE') {
       const normalizedWorkspaceId =
         workspaceSessionAuthorization.normalizedWorkspaceId;
-      return NextResponse.json(
-        {
-          code: 'PENDING_WORKSPACE_INVITE',
-          error: workspaceSessionAuthorization.error,
-          invitationUrl: buildInvitationUrl(
-            request,
-            normalizedWorkspaceId ?? workspaceId ?? ''
-          ),
-          workspaceId: normalizedWorkspaceId ?? workspaceId ?? null,
-        },
-        { status: workspaceSessionAuthorization.status }
-      );
+      return createPendingInvitationResponse({
+        authEmail: authIdentity.email,
+        error: workspaceSessionAuthorization.error,
+        invitation: workspaceSessionAuthorization.invitation,
+        request,
+        status: workspaceSessionAuthorization.status === 403 ? 403 : 500,
+        targetApp: resolvedTarget.targetApp,
+        userId,
+        workspaceId: normalizedWorkspaceId ?? workspaceId ?? '',
+      });
     }
 
     return NextResponse.json(
@@ -683,18 +772,16 @@ async function exchangeAppToken(request: NextRequest) {
   if (!exchangeAuthorization.ok) {
     if (exchangeAuthorization.code === 'PENDING_WORKSPACE_INVITE') {
       const normalizedWorkspaceId = exchangeAuthorization.normalizedWorkspaceId;
-      return NextResponse.json(
-        {
-          code: 'PENDING_WORKSPACE_INVITE',
-          error: exchangeAuthorization.error,
-          invitationUrl: buildInvitationUrl(
-            request,
-            normalizedWorkspaceId ?? workspaceId ?? ''
-          ),
-          workspaceId: normalizedWorkspaceId ?? workspaceId ?? null,
-        },
-        { status: exchangeAuthorization.status }
-      );
+      return createPendingInvitationResponse({
+        authEmail: authIdentity.email,
+        error: exchangeAuthorization.error,
+        invitation: exchangeAuthorization.invitation,
+        request,
+        status: exchangeAuthorization.status === 403 ? 403 : 500,
+        targetApp: resolvedTarget.targetApp,
+        userId,
+        workspaceId: normalizedWorkspaceId ?? workspaceId ?? '',
+      });
     }
 
     return NextResponse.json(

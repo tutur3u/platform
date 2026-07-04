@@ -56,6 +56,10 @@ vi.mock('@/lib/infrastructure/log-drain', () => ({
     handler(),
 }));
 
+import {
+  INVITATION_ACTION_SCOPE,
+  invitationWorkspaceScope,
+} from '@/lib/app-coordination/invitation-action-token';
 import { POST } from './route';
 
 const victimUserId = '11111111-1111-4111-8111-111111111111';
@@ -329,6 +333,48 @@ function createExchangeRequest(body: Record<string, unknown>) {
     body: JSON.stringify(body),
     method: 'POST',
   });
+}
+
+function expectPendingInvitationAction(
+  body: {
+    code?: string;
+    invitation?: {
+      role?: string;
+      source?: string;
+      workspaceId?: string;
+      workspaceName?: string | null;
+    };
+    invitationActionToken?: string;
+    invitationUrl?: string;
+    workspaceId?: string;
+  },
+  appId: string
+) {
+  expect(body).toMatchObject({
+    code: 'PENDING_WORKSPACE_INVITE',
+    invitation: {
+      role: 'MEMBER',
+      source: 'direct',
+      workspaceId,
+      workspaceName: 'Linked Workspace',
+    },
+    workspaceId,
+  });
+  expect(body.invitationUrl).toContain(encodeURIComponent(workspaceId));
+  expect(body.invitationActionToken).toEqual(expect.any(String));
+
+  const verification = verifyAppCoordinationToken(body.invitationActionToken!);
+  expect(verification.ok).toBe(true);
+  if (!verification.ok) return;
+
+  expect(verification.claims.target_app).toBe(appId);
+  expect(verification.claims.sub).toBe(victimUserId);
+  expect(verification.claims.scopes).toEqual(
+    expect.arrayContaining([
+      INVITATION_ACTION_SCOPE,
+      invitationWorkspaceScope(workspaceId),
+    ])
+  );
 }
 
 describe('app token exchange route', () => {
@@ -630,14 +676,17 @@ describe('app token exchange route', () => {
     expect(response.status).toBe(403);
     const body = (await response.json()) as {
       code?: string;
+      invitation?: {
+        role?: string;
+        source?: string;
+        workspaceId?: string;
+        workspaceName?: string | null;
+      };
+      invitationActionToken?: string;
       invitationUrl?: string;
       workspaceId?: string;
     };
-    expect(body).toMatchObject({
-      code: 'PENDING_WORKSPACE_INVITE',
-      workspaceId,
-    });
-    expect(body.invitationUrl).toContain(encodeURIComponent(workspaceId));
+    expectPendingInvitationAction(body, 'workspace-app');
   });
 
   it('refreshes workspace session app tokens without a fresh cross-app token', async () => {
@@ -906,14 +955,17 @@ describe('app token exchange route', () => {
     expect(response.status).toBe(403);
     const body = (await response.json()) as {
       code?: string;
+      invitation?: {
+        role?: string;
+        source?: string;
+        workspaceId?: string;
+        workspaceName?: string | null;
+      };
+      invitationActionToken?: string;
       invitationUrl?: string;
       workspaceId?: string;
     };
-    expect(body).toMatchObject({
-      code: 'PENDING_WORKSPACE_INVITE',
-      workspaceId,
-    });
-    expect(body.invitationUrl).toContain(encodeURIComponent(workspaceId));
+    expectPendingInvitationAction(body, appId);
   });
 
   it('rejects external-project app exchanges when the app does not match the workspace adapter', async () => {
