@@ -4,13 +4,9 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Calculator,
   ClipboardList,
-  Layers3,
   Pencil,
-  PieChart,
-  Plus,
   Save,
   Settings2,
-  Trash2,
 } from '@tuturuuu/icons';
 import type {
   InventoryCostProfile,
@@ -29,6 +25,15 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { type ReactNode, useState } from 'react';
 import {
+  CostingProfitSharesEditor,
+  CostingScenariosEditor,
+} from './costing-profile-editors';
+import {
+  buildProfilePayload,
+  type FormState,
+  initialState,
+} from './costing-profile-form-state';
+import {
   FormSection,
   OperatorDialogBody,
   OperatorDialogContent,
@@ -45,112 +50,6 @@ import {
 import { LifecyclePanel } from './operator-lifecycle';
 import { numberOrZero } from './operator-stock';
 import { useWorkspaceCurrency } from './workspace-currency';
-
-type ScenarioInput = {
-  id?: string;
-  artCommissionCost: string;
-  batchSize: string;
-  manufacturingCostPerUnit: string;
-  name: string;
-  otherCostPerUnit: string;
-  packagingCostPerUnit: string;
-  shippingCost: string;
-  tariffCost: string;
-};
-
-type ProfitShareInput = {
-  id?: string;
-  recipientLabel: string;
-  sharePercentage: string;
-};
-
-type FormState = {
-  categoryId: string;
-  currency: string;
-  name: string;
-  notes: string;
-  productId: string;
-  profitShares: ProfitShareInput[];
-  scenarios: ScenarioInput[];
-  status: InventoryCostProfile['status'];
-  targetRetailPrice: string;
-};
-
-function numeric(value: string) {
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : 0;
-}
-
-function emptyScenario(): ScenarioInput {
-  return {
-    artCommissionCost: '',
-    batchSize: '30',
-    manufacturingCostPerUnit: '',
-    name: '',
-    otherCostPerUnit: '',
-    packagingCostPerUnit: '',
-    shippingCost: '',
-    tariffCost: '',
-  };
-}
-
-function defaultProfitShares(): ProfitShareInput[] {
-  return [
-    { recipientLabel: 'Talent', sharePercentage: '70' },
-    { recipientLabel: 'Partner', sharePercentage: '30' },
-  ];
-}
-
-function initialState(
-  profile: InventoryCostProfile | undefined,
-  fallbackCurrency: string
-): FormState {
-  if (!profile) {
-    return {
-      categoryId: '',
-      currency: fallbackCurrency,
-      name: '',
-      notes: '',
-      productId: '',
-      profitShares: defaultProfitShares(),
-      scenarios: [emptyScenario()],
-      status: 'active',
-      targetRetailPrice: '',
-    };
-  }
-
-  return {
-    categoryId: profile.categoryId ?? '',
-    currency: profile.currency,
-    name: profile.name,
-    notes: profile.notes ?? '',
-    productId: profile.productId ?? '',
-    profitShares: profile.profitShares.length
-      ? profile.profitShares.map((share) => ({
-          id: share.id,
-          recipientLabel: share.recipientLabel,
-          sharePercentage: String(share.sharePercentage),
-        }))
-      : defaultProfitShares(),
-    scenarios: profile.scenarios.length
-      ? profile.scenarios.map((scenario) => ({
-          artCommissionCost: String(scenario.artCommissionCost ?? ''),
-          batchSize: String(scenario.batchSize ?? ''),
-          id: scenario.id,
-          manufacturingCostPerUnit: String(
-            scenario.manufacturingCostPerUnit ?? ''
-          ),
-          name: scenario.name,
-          otherCostPerUnit: String(scenario.otherCostPerUnit ?? ''),
-          packagingCostPerUnit: String(scenario.packagingCostPerUnit ?? ''),
-          shippingCost: String(scenario.shippingCost ?? ''),
-          tariffCost: String(scenario.tariffCost ?? ''),
-        }))
-      : [emptyScenario()],
-    status: profile.status,
-    targetRetailPrice: String(profile.targetRetailPrice ?? ''),
-  };
-}
 
 /**
  * Single dialog used for both creating and editing a costing profile. Pass a
@@ -218,39 +117,15 @@ export function CostingProfileDialog({
     }
   };
 
-  const buildPayload = () => ({
-    categoryId: form.categoryId || null,
-    currency: form.currency.trim().toUpperCase() || 'USD',
-    name: form.name.trim(),
-    notes: form.notes || null,
-    productId: form.productId || null,
-    profitShares: form.profitShares.map((share, index) => ({
-      ...(share.id ? { id: share.id } : {}),
-      recipientLabel: share.recipientLabel.trim() || `Recipient ${index + 1}`,
-      sharePercentage: numeric(share.sharePercentage),
-      sortOrder: index,
-    })),
-    scenarios: form.scenarios.map((scenario, index) => ({
-      ...(scenario.id ? { id: scenario.id } : {}),
-      artCommissionCost: numeric(scenario.artCommissionCost),
-      batchSize: Math.max(1, numeric(scenario.batchSize)),
-      manufacturingCostPerUnit: numeric(scenario.manufacturingCostPerUnit),
-      name: scenario.name.trim() || `${scenario.batchSize || index + 1} units`,
-      otherCostPerUnit: numeric(scenario.otherCostPerUnit),
-      packagingCostPerUnit: numeric(scenario.packagingCostPerUnit),
-      shippingCost: numeric(scenario.shippingCost),
-      sortOrder: index,
-      tariffCost: numeric(scenario.tariffCost),
-    })),
-    status: form.status,
-    targetRetailPrice: numeric(form.targetRetailPrice),
-  });
-
   const saveMutation = useMutation({
     mutationFn: () =>
       profile
-        ? updateInventoryCostProfile(wsId, profile.id, buildPayload())
-        : createInventoryCostProfile(wsId, buildPayload()),
+        ? updateInventoryCostProfile(
+            wsId,
+            profile.id,
+            buildProfilePayload(form)
+          )
+        : createInventoryCostProfile(wsId, buildProfilePayload(form)),
     onError: () => toast.error(forms('saveError')),
     onSuccess: () => {
       toast.success(forms('saveSuccess'));
@@ -288,29 +163,7 @@ export function CostingProfileDialog({
     },
   });
 
-  const sharesTotal = form.profitShares.reduce(
-    (sum, share) => sum + numeric(share.sharePercentage),
-    0
-  );
-  const sharesOff =
-    form.profitShares.length > 0 && Math.abs(sharesTotal - 100) > 0.01;
   const canSave = Boolean(form.name.trim() && form.targetRetailPrice);
-
-  const updateScenario = (index: number, patch: Partial<ScenarioInput>) =>
-    setForm((current) => ({
-      ...current,
-      scenarios: current.scenarios.map((item, itemIndex) =>
-        itemIndex === index ? { ...item, ...patch } : item
-      ),
-    }));
-
-  const updateShare = (index: number, patch: Partial<ProfitShareInput>) =>
-    setForm((current) => ({
-      ...current,
-      profitShares: current.profitShares.map((item, itemIndex) =>
-        itemIndex === index ? { ...item, ...patch } : item
-      ),
-    }));
 
   return (
     <Dialog
@@ -439,206 +292,19 @@ export function CostingProfileDialog({
               </div>
             </FormSection>
 
-            <FormSection
-              description={t('steps.scenariosDescription')}
-              icon={<Layers3 className="h-4 w-4" />}
-              title={forms('tabs.scenarios')}
-            >
-              <div className="grid min-w-0 gap-3">
-                {form.scenarios.map((scenario, index) => (
-                  <div
-                    className="grid min-w-0 gap-2 rounded-md border border-border p-3"
-                    key={scenario.id ?? `scenario-${index}`}
-                  >
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="font-medium text-sm">
-                        {t('scenario')} {index + 1}
-                      </span>
-                      <Button
-                        aria-label={forms('delete')}
-                        disabled={form.scenarios.length === 1}
-                        onClick={() =>
-                          setForm((current) => ({
-                            ...current,
-                            scenarios: current.scenarios.filter(
-                              (_, itemIndex) => itemIndex !== index
-                            ),
-                          }))
-                        }
-                        size="icon"
-                        type="button"
-                        variant="ghost"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                    <div className="grid min-w-0 gap-2 md:grid-cols-2 xl:grid-cols-4">
-                      <TextField
-                        label={t('scenarioName')}
-                        onChange={(name) => updateScenario(index, { name })}
-                        placeholder={forms('placeholders.batchSize')}
-                        value={scenario.name}
-                      />
-                      <NumberField
-                        hint={forms('hints.batchSize')}
-                        label={t('batchSize')}
-                        onChange={(batchSize) =>
-                          updateScenario(index, { batchSize })
-                        }
-                        placeholder={forms('placeholders.batchSize')}
-                        value={scenario.batchSize}
-                      />
-                      <NumberField
-                        hint={forms('hints.unitCost')}
-                        label={t('unitCost')}
-                        onChange={(manufacturingCostPerUnit) =>
-                          updateScenario(index, { manufacturingCostPerUnit })
-                        }
-                        placeholder={forms('placeholders.unitCost')}
-                        value={scenario.manufacturingCostPerUnit}
-                      />
-                      <NumberField
-                        hint={t('hints.artCommission')}
-                        label={t('artCommission')}
-                        onChange={(artCommissionCost) =>
-                          updateScenario(index, { artCommissionCost })
-                        }
-                        placeholder={forms('placeholders.unitCost')}
-                        value={scenario.artCommissionCost}
-                      />
-                      <NumberField
-                        hint={t('hints.shipping')}
-                        label={t('shipping')}
-                        onChange={(shippingCost) =>
-                          updateScenario(index, { shippingCost })
-                        }
-                        placeholder={forms('placeholders.unitCost')}
-                        value={scenario.shippingCost}
-                      />
-                      <NumberField
-                        hint={t('hints.tariff')}
-                        label={t('tariff')}
-                        onChange={(tariffCost) =>
-                          updateScenario(index, { tariffCost })
-                        }
-                        placeholder={forms('placeholders.unitCost')}
-                        value={scenario.tariffCost}
-                      />
-                      <NumberField
-                        hint={t('hints.packaging')}
-                        label={t('packaging')}
-                        onChange={(packagingCostPerUnit) =>
-                          updateScenario(index, { packagingCostPerUnit })
-                        }
-                        placeholder={forms('placeholders.unitCost')}
-                        value={scenario.packagingCostPerUnit}
-                      />
-                      <NumberField
-                        hint={t('hints.other')}
-                        label={t('other')}
-                        onChange={(otherCostPerUnit) =>
-                          updateScenario(index, { otherCostPerUnit })
-                        }
-                        placeholder={forms('placeholders.unitCost')}
-                        value={scenario.otherCostPerUnit}
-                      />
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <Button
-                className="w-fit"
-                onClick={() =>
-                  setForm((current) => ({
-                    ...current,
-                    scenarios: [...current.scenarios, emptyScenario()],
-                  }))
-                }
-                type="button"
-                variant="outline"
-              >
-                <Plus className="h-4 w-4" />
-                {t('addScenario')}
-              </Button>
-            </FormSection>
+            <CostingScenariosEditor
+              onChange={(scenarios) =>
+                setForm((current) => ({ ...current, scenarios }))
+              }
+              scenarios={form.scenarios}
+            />
 
-            <FormSection
-              description={t('steps.profitSharesDescription')}
-              icon={<PieChart className="h-4 w-4" />}
-              title={forms('tabs.profitShares')}
-            >
-              <div className="grid min-w-0 gap-2">
-                {form.profitShares.map((share, index) => (
-                  <div
-                    className="grid min-w-0 items-end gap-2 rounded-md border border-border p-2 sm:grid-cols-[minmax(0,1fr)_140px_auto]"
-                    key={share.id ?? `share-${index}`}
-                  >
-                    <TextField
-                      label={t('recipient')}
-                      onChange={(recipientLabel) =>
-                        updateShare(index, { recipientLabel })
-                      }
-                      placeholder={t('recipient')}
-                      value={share.recipientLabel}
-                    />
-                    <NumberField
-                      label={t('sharePercentage')}
-                      onChange={(sharePercentage) =>
-                        updateShare(index, { sharePercentage })
-                      }
-                      placeholder="0"
-                      value={share.sharePercentage}
-                    />
-                    <Button
-                      aria-label={forms('delete')}
-                      onClick={() =>
-                        setForm((current) => ({
-                          ...current,
-                          profitShares: current.profitShares.filter(
-                            (_, itemIndex) => itemIndex !== index
-                          ),
-                        }))
-                      }
-                      size="icon"
-                      type="button"
-                      variant="ghost"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ))}
-              </div>
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <Button
-                  className="w-fit"
-                  onClick={() =>
-                    setForm((current) => ({
-                      ...current,
-                      profitShares: [
-                        ...current.profitShares,
-                        { recipientLabel: '', sharePercentage: '' },
-                      ],
-                    }))
-                  }
-                  type="button"
-                  variant="outline"
-                >
-                  <Plus className="h-4 w-4" />
-                  {t('addProfitShare')}
-                </Button>
-                <span
-                  className={
-                    sharesOff
-                      ? 'text-dynamic-orange text-xs'
-                      : 'text-muted-foreground text-xs'
-                  }
-                >
-                  {sharesOff
-                    ? t('sharesWarning', { total: sharesTotal })
-                    : t('sharesTotal', { total: sharesTotal })}
-                </span>
-              </div>
-            </FormSection>
+            <CostingProfitSharesEditor
+              onChange={(profitShares) =>
+                setForm((current) => ({ ...current, profitShares }))
+              }
+              shares={form.profitShares}
+            />
 
             {isEdit ? (
               <FormSection

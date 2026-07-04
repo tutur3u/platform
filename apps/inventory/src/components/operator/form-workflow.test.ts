@@ -243,10 +243,11 @@ describe('Inventory operator form workflows', () => {
 
   it('connects costing profiles back to catalog products', () => {
     const costingSource = source('costing-profile-dialog.tsx');
+    const costingStateSource = source('costing-profile-form-state.ts');
     const tableSource = source('products-table.tsx');
     const dataHookSource = source('use-inventory-data.ts');
 
-    expect(costingSource).toContain('productId: form.productId || null');
+    expect(costingStateSource).toContain('productId: form.productId || null');
     expect(costingSource).toContain('handleProductChange');
     expect(costingSource).toContain('product.inventory?.[0]?.price');
     expect(dataHookSource).toMatch(
