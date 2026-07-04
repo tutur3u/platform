@@ -2,6 +2,7 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import type {
   CanonicalExternalProject,
+  Database,
   ExternalProjectWorkspaceBindingSummary,
   Json,
   WorkspaceExternalProjectBinding,
@@ -14,6 +15,10 @@ import {
 } from './constants';
 
 type AdminDb = TypedSupabaseClient;
+type CanonicalExternalProjectInsert =
+  Database['public']['Tables']['canonical_external_projects']['Insert'];
+type CanonicalExternalProjectUpdate =
+  Database['public']['Tables']['canonical_external_projects']['Update'];
 const WORKSPACE_SECRET_QUERY_CHUNK_SIZE = 100;
 
 export class CmsExternalProjectAdminError extends Error {
@@ -112,13 +117,15 @@ export async function createCanonicalExternalProject(
 ) {
   const admin = db ?? ((await createAdminClient()) as TypedSupabaseClient);
   const { actorId, ...values } = payload;
+  const insertValues: CanonicalExternalProjectInsert = {
+    ...values,
+    created_by: actorId,
+    updated_by: actorId,
+  };
+
   const { data, error } = await admin
     .from('canonical_external_projects')
-    .insert({
-      ...values,
-      created_by: actorId,
-      updated_by: actorId,
-    })
+    .insert(insertValues)
     .select('*')
     .single();
 
@@ -146,12 +153,14 @@ export async function updateCanonicalExternalProject(
 ) {
   const admin = db ?? ((await createAdminClient()) as TypedSupabaseClient);
   const { actorId, ...values } = payload;
+  const updateValues: CanonicalExternalProjectUpdate = {
+    ...values,
+    updated_by: actorId,
+  };
+
   const { data, error } = await admin
     .from('canonical_external_projects')
-    .update({
-      ...values,
-      updated_by: actorId,
-    })
+    .update(updateValues)
     .eq('id', canonicalId)
     .select('*')
     .single();

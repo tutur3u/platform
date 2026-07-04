@@ -748,7 +748,14 @@ export type AIWhitelistDomain = Tables<
   { schema: 'private' },
   'ai_whitelisted_domains'
 >;
-export type CanonicalExternalProject = Tables<'canonical_external_projects'>;
+export type ExternalProjectAdapterKind =
+  Database['public']['Enums']['external_project_adapter_kind'];
+export type CanonicalExternalProject = Omit<
+  Tables<'canonical_external_projects'>,
+  'adapter'
+> & {
+  adapter: ExternalProjectAdapterKind;
+};
 export type ExternalProjectCollection =
   Tables<'workspace_external_project_collections'>;
 export type ExternalProjectEntry = Tables<'workspace_external_project_entries'>;
@@ -780,8 +787,6 @@ export type ExternalProjectEntryPlacement =
   Tables<'workspace_external_project_entry_placements'>;
 // --- end additive CMS tables -------------------------------------------------
 
-export type ExternalProjectAdapterKind =
-  Database['public']['Enums']['external_project_adapter_kind'];
 export type ExternalProjectEntryStatus =
   Database['public']['Enums']['external_project_entry_status'];
 export type ExternalProjectImportStatus =
