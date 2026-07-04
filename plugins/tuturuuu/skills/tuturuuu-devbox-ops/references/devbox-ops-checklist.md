@@ -7,6 +7,8 @@ up Tuturuuu devbox runners.
 
 - `TUTURUUU_CONFIG` is the SDK config override. Do not use
   `TUTURUUU_CLI_CONFIG`.
+- Devbox agent poll and heartbeat routes are blocked unless the platform web app
+  has `TUTURUUU_DEVBOX_AGENT_API_ENABLED=true`.
 - `bun ttr ...` runs the repo-local SDK CLI.
 - `ttr ...` runs the installed CLI.
 - Use `ttr whoami --no-update-check` or equivalent config inspection before

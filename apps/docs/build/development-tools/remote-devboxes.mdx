@@ -64,6 +64,12 @@ Runner heartbeats report a small observability snapshot, including `ttr`, Bun,
 Node, Docker, Git, OS, CPU, RAM, load average, and uptime. Root workspace admins
 can inspect those fields from Infrastructure > Devboxes.
 
+Devbox agent poll and heartbeat traffic is blocked by default at the platform
+API boundary. Set `TUTURUUU_DEVBOX_AGENT_API_ENABLED=true` on the web app before
+starting or repairing runners. When the flag is absent, agent poll and heartbeat
+requests return `403` before runner tokens are authenticated or runner state is
+updated.
+
 If a host completed `ttr box setup` but does not appear in Infrastructure >
 Devboxes, confirm it was registered as a runner. Plain setup prepares the
 checkout, dependencies, local Supabase, and ignored env files only; it does not

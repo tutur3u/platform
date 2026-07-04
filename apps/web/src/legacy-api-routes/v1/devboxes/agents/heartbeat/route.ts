@@ -2,6 +2,10 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { authorizeDevboxAgent } from '@/lib/devboxes/agent-auth';
 import { heartbeatDevboxRunner } from '@/lib/devboxes/agent-store';
+import {
+  createDevboxAgentApiDisabledResponse,
+  isDevboxAgentApiEnabled,
+} from '@/lib/devboxes/agent-traffic-gate';
 import { createDevboxRouteErrorResponse } from '@/lib/devboxes/store-utils';
 
 const NullableStringSchema = z.string().trim().max(500).nullable();
@@ -63,6 +67,10 @@ const HeartbeatSchema = z
   .optional();
 
 export async function POST(request: Request) {
+  if (!isDevboxAgentApiEnabled()) {
+    return createDevboxAgentApiDisabledResponse();
+  }
+
   const authorization = await authorizeDevboxAgent(request);
   if (!authorization.ok) return authorization.response;
 
