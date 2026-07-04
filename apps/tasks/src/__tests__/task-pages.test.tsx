@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => ({
   headers: vi.fn(),
   listWorkspaceBoards: vi.fn(),
   myTasksPage: vi.fn(),
+  connection: vi.fn(),
   redirect: vi.fn(),
   taskBoardServerPage: vi.fn(),
   toWorkspaceSlug: vi.fn(),
@@ -66,6 +67,11 @@ vi.mock('next/navigation', () => ({
     mocks.redirect(...args),
 }));
 
+vi.mock('next/server', () => ({
+  connection: (...args: Parameters<typeof mocks.connection>) =>
+    mocks.connection(...args),
+}));
+
 describe('tasks app task pages', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -103,6 +109,7 @@ describe('tasks app task pages', () => {
         options?.personal ? 'personal' : workspaceId
     );
     mocks.withForwardedInternalApiAuth.mockReturnValue({ auth: 'forwarded' });
+    mocks.connection.mockResolvedValue(undefined);
   });
 
   it('redirects /tasks to the configured default board', async () => {
@@ -175,13 +182,22 @@ describe('tasks app task pages', () => {
     });
   });
 
-  it('marks the boards list route as dynamic no-store rendering', async () => {
-    const pageModule = await import(
+  it('opts the boards list route into request-time rendering', async () => {
+    const { default: Page } = await import(
       '@/app/[locale]/(dashboard)/[wsId]/boards/page'
     );
 
-    expect(pageModule.dynamic).toBe('force-dynamic');
-    expect(pageModule.revalidate).toBe(0);
-    expect(pageModule.fetchCache).toBe('force-no-store');
+    const params = Promise.resolve({ wsId: 'workspace-1' });
+    const searchParams = Promise.resolve({ q: 'active' });
+    const result = await Page({ params, searchParams });
+
+    expect(mocks.connection).toHaveBeenCalledTimes(1);
+    expect(result).toMatchObject({
+      props: {
+        params,
+        searchParams,
+      },
+      type: mocks.workspaceProjectsPage,
+    });
   });
 });
