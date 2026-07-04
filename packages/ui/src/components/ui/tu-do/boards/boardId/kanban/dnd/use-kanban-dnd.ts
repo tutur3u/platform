@@ -128,6 +128,10 @@ function hasPersonalExternalSourceMetadata(task: Task) {
 }
 
 export function usesPersonalPlacement(task: Task) {
+  if (task.is_personal_external === false) {
+    return false;
+  }
+
   return (
     task.is_personal_external === true ||
     isPersonalExternalStagingListId(task.list_id) ||

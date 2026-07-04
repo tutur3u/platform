@@ -147,6 +147,19 @@ describe('usesPersonalPlacement', () => {
     expect(usesPersonalPlacement(personalTask)).toBe(false);
   });
 
+  it('does not treat an explicitly native personal task as external when source metadata is present', () => {
+    const personalTask = createTask({
+      is_personal_external: false,
+      personal_board_id: 'personal-board',
+      personal_list_id: 'list-1',
+      source_workspace_id: 'personal-workspace',
+      source_board_id: 'personal-board',
+      source_list_id: 'list-1',
+    } as Partial<Task>);
+
+    expect(usesPersonalPlacement(personalTask)).toBe(false);
+  });
+
   it('keeps explicit external overlays on the personal-placement path', () => {
     expect(usesPersonalPlacement(createTask())).toBe(true);
   });
