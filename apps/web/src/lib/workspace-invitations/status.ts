@@ -422,3 +422,15 @@ export async function listPendingWorkspaceInvitations(
     return bTime - aTime;
   });
 }
+
+export async function hasPendingWorkspaceInvitations(
+  admin: TypedSupabaseClient,
+  params: {
+    authEmail: string | null | undefined;
+    userId: string;
+  }
+) {
+  const invitations = await listPendingWorkspaceInvitations(admin, params);
+
+  return invitations.length > 0;
+}

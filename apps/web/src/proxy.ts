@@ -50,6 +50,7 @@ import { getMailAppOrigin } from './lib/mail-app-url';
 import { getQrAppOrigin } from './lib/qr-app-url';
 import { getToolsAppOrigin } from './lib/tools-app-url';
 import { getTrackAppOrigin } from './lib/track-app-url';
+import { hasPendingWorkspaceInvitations } from './lib/workspace-invitations/status';
 import {
   getWorkspaceRoutePermissionRequirements,
   hasRequiredWorkspaceRoutePermission,
@@ -1024,6 +1025,45 @@ async function hasCompletedOnboarding(userId: string): Promise<boolean> {
   }
 }
 
+async function userHasPendingWorkspaceInvitation({
+  email,
+  id,
+}: {
+  email?: string | null;
+  id: string;
+}): Promise<boolean> {
+  try {
+    const sbAdmin = await createAdminClient({ noCookie: true });
+
+    return hasPendingWorkspaceInvitations(sbAdmin, {
+      authEmail: email,
+      userId: id,
+    });
+  } catch (error) {
+    console.error('Error checking pending workspace invitations:', error);
+    return false;
+  }
+}
+
+async function buildDefaultWorkspaceRedirectResponse(
+  req: NextRequest,
+  authRes: NextResponse
+) {
+  const defaultWorkspace = await getUserDefaultWorkspace();
+  const target = defaultWorkspace
+    ? defaultWorkspace.personal
+      ? 'personal'
+      : defaultWorkspace.id === ROOT_WORKSPACE_ID
+        ? 'internal'
+        : defaultWorkspace.id
+    : 'personal';
+  const redirectUrl = new URL(`/${target}`, req.nextUrl);
+  const redirectResponse = NextResponse.redirect(redirectUrl);
+  propagateAuthCookies(authRes, redirectResponse);
+
+  return redirectResponse;
+}
+
 /**
  * Check if the path is the onboarding page
  */
@@ -1279,26 +1319,13 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
       const { user } = await resolveAuthenticatedSessionUser(supabase);
 
       if (user) {
+        if (await userHasPendingWorkspaceInvitation(user)) {
+          return buildDefaultWorkspaceRedirectResponse(req, authRes);
+        }
+
         const completed = await hasCompletedOnboarding(user.id);
         if (completed) {
-          // Get user's default workspace
-          const defaultWorkspace = await getUserDefaultWorkspace();
-          if (defaultWorkspace) {
-            const target = defaultWorkspace.personal
-              ? 'personal'
-              : defaultWorkspace.id === ROOT_WORKSPACE_ID
-                ? 'internal'
-                : defaultWorkspace.id;
-            const redirectUrl = new URL(`/${target}`, req.nextUrl);
-            const onboardRedirect = NextResponse.redirect(redirectUrl);
-            propagateAuthCookies(authRes, onboardRedirect);
-            return onboardRedirect;
-          }
-          // Fallback to personal if no default workspace
-          const redirectUrl = new URL('/personal', req.nextUrl);
-          const onboardFallback = NextResponse.redirect(redirectUrl);
-          propagateAuthCookies(authRes, onboardFallback);
-          return onboardFallback;
+          return buildDefaultWorkspaceRedirectResponse(req, authRes);
         }
       }
     } catch (error) {
@@ -1319,34 +1346,41 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
 
       if (user) {
         const needsOnboarding = await shouldRedirectToOnboarding(user.id);
+        let pendingInviteSkipsOnboarding = false;
+
         if (needsOnboarding) {
-          const redirectUrl = new URL('/onboarding', req.nextUrl);
+          pendingInviteSkipsOnboarding =
+            await userHasPendingWorkspaceInvitation(user);
 
-          // Preserve returnUrl if coming from external app login flow
-          // This ensures users are redirected back to the external app after onboarding
-          const returnUrl = req.nextUrl.searchParams.get('returnUrl');
-          if (returnUrl) {
-            redirectUrl.searchParams.set('returnUrl', returnUrl);
-          }
+          if (!pendingInviteSkipsOnboarding) {
+            const redirectUrl = new URL('/onboarding', req.nextUrl);
 
-          // Also preserve nextUrl for internal redirects
-          const nextUrl = req.nextUrl.searchParams.get('nextUrl');
-          if (nextUrl) {
-            redirectUrl.searchParams.set('nextUrl', nextUrl);
-          } else {
-            // If no nextUrl param, use the current path + search params as nextUrl
-            // This ensures users who land on a deep link (e.g. /finance/invoices)
-            // get redirected back there after onboarding
-            const currentPath = req.nextUrl.pathname + req.nextUrl.search;
-            // Only set if we're not already on a root/home path to avoid infinite loops or redundancy
-            if (currentPath !== '/' && currentPath !== '/login') {
-              redirectUrl.searchParams.set('nextUrl', currentPath);
+            // Preserve returnUrl if coming from external app login flow
+            // This ensures users are redirected back to the external app after onboarding
+            const returnUrl = req.nextUrl.searchParams.get('returnUrl');
+            if (returnUrl) {
+              redirectUrl.searchParams.set('returnUrl', returnUrl);
             }
-          }
 
-          const needsOnboardRedirect = NextResponse.redirect(redirectUrl);
-          propagateAuthCookies(authRes, needsOnboardRedirect);
-          return needsOnboardRedirect;
+            // Also preserve nextUrl for internal redirects
+            const nextUrl = req.nextUrl.searchParams.get('nextUrl');
+            if (nextUrl) {
+              redirectUrl.searchParams.set('nextUrl', nextUrl);
+            } else {
+              // If no nextUrl param, use the current path + search params as nextUrl
+              // This ensures users who land on a deep link (e.g. /finance/invoices)
+              // get redirected back there after onboarding
+              const currentPath = req.nextUrl.pathname + req.nextUrl.search;
+              // Only set if we're not already on a root/home path to avoid infinite loops or redundancy
+              if (currentPath !== '/' && currentPath !== '/login') {
+                redirectUrl.searchParams.set('nextUrl', currentPath);
+              }
+            }
+
+            const needsOnboardRedirect = NextResponse.redirect(redirectUrl);
+            propagateAuthCookies(authRes, needsOnboardRedirect);
+            return needsOnboardRedirect;
+          }
         }
 
         // User completed onboarding — check if their personal workspace
@@ -1355,21 +1389,26 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
         const alreadyAttempted =
           req.cookies.get('subscription_fix_attempted')?.value === '1';
 
-        if (!alreadyAttempted) {
+        if (!alreadyAttempted && !pendingInviteSkipsOnboarding) {
           const isMissing = await personalWorkspaceMissingSubscription(user.id);
 
           if (isMissing) {
-            const fixUrl = new URL('/onboarding', req.nextUrl);
-            const response = NextResponse.redirect(fixUrl);
-            response.cookies.set('subscription_fix_attempted', '1', {
-              httpOnly: true,
-              secure: process.env.NODE_ENV === 'production',
-              sameSite: 'lax',
-              maxAge: 60 * 60 * 24, // 24 hours
-              path: '/',
-            });
-            propagateAuthCookies(authRes, response);
-            return response;
+            const hasPendingInvite =
+              await userHasPendingWorkspaceInvitation(user);
+
+            if (!hasPendingInvite) {
+              const fixUrl = new URL('/onboarding', req.nextUrl);
+              const response = NextResponse.redirect(fixUrl);
+              response.cookies.set('subscription_fix_attempted', '1', {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production',
+                sameSite: 'lax',
+                maxAge: 60 * 60 * 24, // 24 hours
+                path: '/',
+              });
+              propagateAuthCookies(authRes, response);
+              return response;
+            }
           }
         }
       }

@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
   getWorkspaceInviteStatus,
+  hasPendingWorkspaceInvitations,
   listPendingWorkspaceInvitations,
 } from './status';
 
@@ -335,5 +336,47 @@ describe('workspace invitation status helpers', () => {
       source: 'direct',
       workspace: { id: workspaceId },
     });
+  });
+
+  it('detects pending invitations across direct and email invite rows', async () => {
+    const admin = createAdminClientMock({
+      emailInvites: [
+        {
+          created_at: '2026-06-01T00:00:00.000Z',
+          email: 'private@example.com',
+          type: 'MEMBER',
+          ws_id: otherWorkspaceId,
+        },
+      ],
+      privateEmail: 'private@example.com',
+    });
+
+    await expect(
+      hasPendingWorkspaceInvitations(admin as never, {
+        authEmail: null,
+        userId,
+      })
+    ).resolves.toBe(true);
+  });
+
+  it('does not treat existing memberships as pending invitations', async () => {
+    const admin = createAdminClientMock({
+      directInvites: [
+        {
+          created_at: '2026-06-01T00:00:00.000Z',
+          type: 'MEMBER',
+          user_id: userId,
+          ws_id: workspaceId,
+        },
+      ],
+      members: [{ user_id: userId, ws_id: workspaceId }],
+    });
+
+    await expect(
+      hasPendingWorkspaceInvitations(admin as never, {
+        authEmail: 'user@example.com',
+        userId,
+      })
+    ).resolves.toBe(false);
   });
 });

@@ -24,6 +24,7 @@ const mocks = vi.hoisted(() => ({
   normalizeWorkspaceId: vi.fn(),
   verifyWorkspaceMembershipType: vi.fn(),
   getUserDefaultWorkspace: vi.fn(),
+  hasPendingWorkspaceInvitations: vi.fn(),
   isExactTuturuuuDotComEmail: vi.fn(),
 }));
 
@@ -101,6 +102,12 @@ vi.mock('@tuturuuu/utils/user-helper', () => ({
   ) => mocks.getUserDefaultWorkspace(...args),
 }));
 
+vi.mock('../lib/workspace-invitations/status', () => ({
+  hasPendingWorkspaceInvitations: (
+    ...args: Parameters<typeof mocks.hasPendingWorkspaceInvitations>
+  ) => mocks.hasPendingWorkspaceInvitations(...args),
+}));
+
 vi.mock('@tuturuuu/utils/email/client', () => ({
   isExactTuturuuuDotComEmail: (
     ...args: Parameters<typeof mocks.isExactTuturuuuDotComEmail>
@@ -115,16 +122,20 @@ describe('web proxy api handling', () => {
     user: { email?: string; id: string } = {
       email: 'member@example.com',
       id: 'user-1',
+    },
+    onboardingProgress: {
+      completed_at: string | null;
+      profile_completed?: boolean | null;
+    } | null = {
+      completed_at: new Date().toISOString(),
+      profile_completed: true,
     }
   ) {
     const completedOnboardingBuilder = {
       select: vi.fn().mockReturnThis(),
       eq: vi.fn().mockReturnThis(),
       maybeSingle: vi.fn().mockResolvedValue({
-        data: {
-          completed_at: new Date().toISOString(),
-          profile_completed: true,
-        },
+        data: onboardingProgress,
         error: null,
       }),
     };
@@ -183,6 +194,7 @@ describe('web proxy api handling', () => {
     mocks.normalizeWorkspaceId.mockImplementation(async (wsId: string) => wsId);
     mocks.verifyWorkspaceMembershipType.mockResolvedValue({ ok: true });
     mocks.getUserDefaultWorkspace.mockResolvedValue(null);
+    mocks.hasPendingWorkspaceInvitations.mockResolvedValue(false);
   });
 
   function createSessionRequest(url: string) {
@@ -1350,6 +1362,68 @@ describe('web proxy api handling', () => {
     expect(authOptions?.isPublicPath?.('/personal')).toBe(false);
     expect(authOptions?.isPublicPath?.('/auth/mfa')).toBe(false);
     expect(authOptions?.isPublicPath?.('/auth/recovery-token')).toBe(false);
+  });
+
+  it('redirects pending-invitation users away from onboarding', async () => {
+    mocks.createClient.mockResolvedValue(
+      createAuthenticatedSupabaseClient(
+        {
+          email: 'invitee@example.com',
+          id: 'user-1',
+        },
+        null
+      )
+    );
+    mocks.createAdminClient.mockResolvedValue({ from: vi.fn() });
+    mocks.hasPendingWorkspaceInvitations.mockResolvedValue(true);
+    mocks.getUserDefaultWorkspace.mockResolvedValue({
+      id: 'ws-1',
+      personal: false,
+    });
+
+    const { proxy } = await import('../proxy');
+    const response = await proxy(
+      createSessionRequest('http://localhost/onboarding')
+    );
+
+    expect(response.status).toBe(307);
+    expect(response.headers.get('location')).toBe('http://localhost/ws-1');
+    expect(mocks.hasPendingWorkspaceInvitations).toHaveBeenCalledWith(
+      expect.anything(),
+      {
+        authEmail: 'invitee@example.com',
+        userId: 'user-1',
+      }
+    );
+  });
+
+  it('skips forced onboarding for protected routes when an invite is pending', async () => {
+    mocks.createClient.mockResolvedValue(
+      createAuthenticatedSupabaseClient(
+        {
+          email: 'invitee@example.com',
+          id: 'user-1',
+        },
+        null
+      )
+    );
+    mocks.createAdminClient.mockResolvedValue({ from: vi.fn() });
+    mocks.hasPendingWorkspaceInvitations.mockResolvedValue(true);
+
+    const { proxy } = await import('../proxy');
+    const response = await proxy(
+      createSessionRequest('http://localhost/settings')
+    );
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get('location')).toBeNull();
+    expect(mocks.hasPendingWorkspaceInvitations).toHaveBeenCalledWith(
+      expect.anything(),
+      {
+        authEmail: 'invitee@example.com',
+        userId: 'user-1',
+      }
+    );
   });
 
   it('redirects the legacy dashboard alias to the default workspace home', async () => {
