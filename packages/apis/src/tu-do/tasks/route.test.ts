@@ -1113,6 +1113,76 @@ describe('workspace task route personal external loading', () => {
     expect(defaultExternalQuery?.calls).toContainEqual(['range', [0, 199]]);
   });
 
+  it('keeps personal external tasks readable when optional metadata fails', async () => {
+    const dueDefaultTask = {
+      ...externalTask(UNPLACED_TASK_ID),
+      end_date: '2026-07-05T09:00:00.000Z',
+    };
+    const consoleErrorSpy = vi
+      .spyOn(console, 'error')
+      .mockImplementation(() => {});
+
+    queuePersonalWorkspace();
+    queueResult(mocks.adminQueues, 'tasks', {
+      data: [],
+      error: null,
+      count: 0,
+    });
+    queueResult(mocks.adminQueues, 'task_user_overrides', {
+      data: [],
+      error: null,
+      count: 0,
+    });
+    queueResult(mocks.adminQueues, 'tasks', {
+      data: [dueDefaultTask],
+      error: null,
+      count: 1,
+    });
+    queueSourceMembership();
+    queueResult(mocks.adminQueues, 'task_user_override_labels', {
+      data: null,
+      error: { message: 'metadata unavailable' },
+    });
+    queueResult(mocks.adminQueues, 'task_user_override_projects', {
+      data: [],
+      error: null,
+    });
+    queueResult(mocks.memberQueues, 'task_user_scheduling_settings', {
+      data: [],
+      error: null,
+    });
+
+    const { GET } = await import('./route.js');
+    const response = await GET(
+      new NextRequest(
+        `http://localhost/api/v1/workspaces/${PERSONAL_WS_ID}/tasks?boardId=${PERSONAL_BOARD_ID}&sourceScope=all_visible&listStatuses=not_started,active&limit=200&offset=0&completed=exclude&closed=exclude&hasDueDate=true&externalSortBy=due-asc&includeRelationshipSummary=false`
+      ),
+      { params: Promise.resolve({ wsId: PERSONAL_WS_ID }) }
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+      tasks: [
+        expect.objectContaining({
+          id: UNPLACED_TASK_ID,
+          labels: [],
+          projects: [],
+        }),
+      ],
+    });
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
+      'Failed to load personal task metadata; continuing with empty metadata:',
+      expect.any(Error),
+      expect.objectContaining({
+        boardId: PERSONAL_BOARD_ID,
+        route: '/api/v1/workspaces/[wsId]/tasks',
+        sourceScope: 'all_visible',
+        workspaceId: PERSONAL_WS_ID,
+      })
+    );
+    consoleErrorSpy.mockRestore();
+  });
+
   it('uses RPC-backed external counts for personal list totals', async () => {
     queuePersonalWorkspace();
     queueRpcResult('get_personal_task_board_external_counts', {

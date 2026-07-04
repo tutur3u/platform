@@ -397,6 +397,16 @@ type TaskSourceFilterListCountRow = {
   total_count: number | string | null;
 };
 
+type TaskRouteLogContext = Record<string, unknown>;
+
+function logTaskRouteError(
+  message: string,
+  error: unknown,
+  context: TaskRouteLogContext
+) {
+  console.error(message, error, context);
+}
+
 async function loadTaskSchedulingSettingsByTaskId({
   supabase,
   taskIds,
@@ -430,7 +440,9 @@ async function loadTaskSchedulingSettingsByTaskId({
     .in('task_id', uniqueTaskIds);
 
   if (error) {
-    throw new Error('TASK_SCHEDULING_SETTINGS_QUERY_FAILED');
+    throw new Error('TASK_SCHEDULING_SETTINGS_QUERY_FAILED', {
+      cause: error,
+    });
   }
 
   for (const row of (data ?? []) as TaskSchedulingSettingsRow[]) {
@@ -640,7 +652,7 @@ async function loadAccessibleWorkspaceIds(
     .in('ws_id', uniqueWorkspaceIds);
 
   if (error) {
-    throw new Error('SOURCE_WORKSPACE_ACCESS_QUERY_FAILED');
+    throw new Error('SOURCE_WORKSPACE_ACCESS_QUERY_FAILED', { cause: error });
   }
 
   return new Set(
@@ -683,7 +695,9 @@ async function loadPersonalTaskBoardExternalCounts(
   );
 
   if (error) {
-    throw new Error('PERSONAL_EXTERNAL_COUNTS_QUERY_FAILED');
+    throw new Error('PERSONAL_EXTERNAL_COUNTS_QUERY_FAILED', {
+      cause: error,
+    });
   }
 
   return new Map(
@@ -881,7 +895,7 @@ async function loadTaskSourceFilterIds({
     });
 
   if (error) {
-    throw new Error('TASK_SOURCE_FILTER_RPC_FAILED');
+    throw new Error('TASK_SOURCE_FILTER_RPC_FAILED', { cause: error });
   }
 
   const rows = ((data ?? []) as TaskSourceFilterIdRow[]).filter(
@@ -981,7 +995,7 @@ async function loadTaskSourceFilterListCounts({
     });
 
   if (error) {
-    throw new Error('TASK_SOURCE_FILTER_COUNTS_RPC_FAILED');
+    throw new Error('TASK_SOURCE_FILTER_COUNTS_RPC_FAILED', { cause: error });
   }
 
   return ((data ?? []) as TaskSourceFilterListCountRow[]).flatMap((row) => {
@@ -1216,6 +1230,28 @@ export async function handleTaskRouteGET(
       (sourceScope !== 'all_visible' ||
         hasRpcOnlyTaskFilters ||
         includeListCounts);
+    const taskRouteLogContext = {
+      boardId,
+      closedMode,
+      completedMode,
+      externalSortBy,
+      forTimeTracking,
+      hasDueDate,
+      includeCount,
+      includeListCounts,
+      limit,
+      listId,
+      listStatuses,
+      offset,
+      rawWorkspaceId: wsId,
+      route: '/api/v1/workspaces/[wsId]/tasks',
+      shouldUseTaskFilterRpc,
+      sourceBoardIdsCount: sourceBoardIds.length,
+      sourceScope,
+      sourceWorkspaceIdsCount: sourceWorkspaceIds.length,
+      sortBy,
+      workspaceId: normalizedWorkspaceId,
+    };
 
     if (isGuestBoardAccess) {
       if (
@@ -1240,6 +1276,11 @@ export async function handleTaskRouteGET(
       .maybeSingle();
 
     if (workspaceError) {
+      logTaskRouteError(
+        'Failed to validate task workspace:',
+        workspaceError,
+        taskRouteLogContext
+      );
       return NextResponse.json(
         { error: 'Failed to validate workspace' },
         { status: 500 }
@@ -1267,7 +1308,12 @@ export async function handleTaskRouteGET(
               includeDoneClosed: externalIncludeDoneClosed,
             }
           );
-      } catch {
+      } catch (countError) {
+        logTaskRouteError(
+          'Failed to load personal external task counts:',
+          countError,
+          taskRouteLogContext
+        );
         return NextResponse.json(
           { error: 'Failed to load personal external task counts' },
           { status: 500 }
@@ -1502,7 +1548,12 @@ export async function handleTaskRouteGET(
           dueDateTo,
           includeUnassigned,
         });
-      } catch {
+      } catch (listCountError) {
+        logTaskRouteError(
+          'Failed to load task filter counts:',
+          listCountError,
+          taskRouteLogContext
+        );
         return NextResponse.json(
           { error: 'Failed to load task filter counts' },
           { status: 500 }
@@ -1556,7 +1607,9 @@ export async function handleTaskRouteGET(
             .in('id', taskIds);
 
           if (rpcTaskError) {
-            throw new Error('TASK_SOURCE_FILTER_HYDRATION_FAILED');
+            throw new Error('TASK_SOURCE_FILTER_HYDRATION_FAILED', {
+              cause: rpcTaskError,
+            });
           }
 
           const rpcTaskRecords = ((rpcTaskRows as unknown as
@@ -1578,7 +1631,12 @@ export async function handleTaskRouteGET(
         }
 
         loadedViaSourceFilterRpc = true;
-      } catch {
+      } catch (sourceFilterError) {
+        logTaskRouteError(
+          'Failed to load task source filters:',
+          sourceFilterError,
+          taskRouteLogContext
+        );
         return NextResponse.json(
           { error: 'Failed to load task source filters' },
           { status: 500 }
@@ -1682,7 +1740,11 @@ export async function handleTaskRouteGET(
       };
 
       if (error) {
-        console.error('Database error in tasks query:', error);
+        logTaskRouteError(
+          'Database error in tasks query:',
+          error,
+          taskRouteLogContext
+        );
         throw new Error('TASKS_QUERY_FAILED');
       }
 
@@ -1743,6 +1805,11 @@ export async function handleTaskRouteGET(
         const placementResult = await placementQuery;
 
         if (placementResult.error) {
+          logTaskRouteError(
+            'Failed to load personal task placements:',
+            placementResult.error,
+            taskRouteLogContext
+          );
           return NextResponse.json(
             { error: 'Failed to load personal task placements' },
             { status: 500 }
@@ -1773,6 +1840,11 @@ export async function handleTaskRouteGET(
             .not('personal_list_id', 'is', null);
 
         if (placedPlacementsError) {
+          logTaskRouteError(
+            'Failed to load placed personal task ids:',
+            placedPlacementsError,
+            taskRouteLogContext
+          );
           return NextResponse.json(
             { error: 'Failed to load personal task placements' },
             { status: 500 }
@@ -1875,6 +1947,11 @@ export async function handleTaskRouteGET(
           await placedTasksQuery;
 
         if (placedTasksError) {
+          logTaskRouteError(
+            'Failed to hydrate placed personal tasks:',
+            placedTasksError,
+            taskRouteLogContext
+          );
           return NextResponse.json(
             { error: 'Failed to load personal task placements' },
             { status: 500 }
@@ -1893,7 +1970,12 @@ export async function handleTaskRouteGET(
             user.id,
             sourceWorkspaceIds
           );
-        } catch {
+        } catch (accessError) {
+          logTaskRouteError(
+            'Failed to verify placed source task access:',
+            accessError,
+            taskRouteLogContext
+          );
           return NextResponse.json(
             { error: 'Failed to verify source task access' },
             { status: 500 }
@@ -2074,6 +2156,11 @@ export async function handleTaskRouteGET(
         );
 
         if (defaultExternalResult.error) {
+          logTaskRouteError(
+            'Failed to load default external tasks:',
+            defaultExternalResult.error,
+            taskRouteLogContext
+          );
           return NextResponse.json(
             { error: 'Failed to load external tasks' },
             { status: 500 }
@@ -2095,7 +2182,12 @@ export async function handleTaskRouteGET(
             user.id,
             sourceWorkspaceIds
           );
-        } catch {
+        } catch (accessError) {
+          logTaskRouteError(
+            'Failed to verify default external task access:',
+            accessError,
+            taskRouteLogContext
+          );
           return NextResponse.json(
             { error: 'Failed to verify source task access' },
             { status: 500 }
@@ -2147,10 +2239,11 @@ export async function handleTaskRouteGET(
           externalTasks = externalTasks.map((task) =>
             applyPersonalTaskMetadata(task, metadataByTaskId.get(task.id))
           );
-        } catch {
-          return NextResponse.json(
-            { error: 'Failed to load personal task metadata' },
-            { status: 500 }
+        } catch (metadataError) {
+          logTaskRouteError(
+            'Failed to load personal task metadata; continuing with empty metadata:',
+            metadataError,
+            taskRouteLogContext
           );
         }
       }
@@ -2165,9 +2258,10 @@ export async function handleTaskRouteGET(
         userId: user.id,
       });
     } catch (schedulingError) {
-      console.error(
+      logTaskRouteError(
         'Failed to load task scheduling settings:',
-        schedulingError
+        schedulingError,
+        taskRouteLogContext
       );
       return NextResponse.json(
         { error: 'Failed to load task scheduling settings' },
