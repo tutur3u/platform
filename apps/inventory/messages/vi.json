@@ -1666,7 +1666,9 @@
         },
         "environmentLabel": "Môi trường",
         "hub": {
+          "activityTab": "Hoạt động",
           "connectedEnvironments": "Môi trường đã kết nối",
+          "connectionTab": "Kết nối",
           "notConnected": "Chưa kết nối",
           "productReady": "Sản phẩm thanh toán",
           "productStatusTitle": "Sản phẩm Polar theo môi trường",
@@ -1677,7 +1679,8 @@
           "syncedCoupons": "Mã giảm giá đã đồng bộ",
           "syncedCouponsDescription": "Mã giảm giá tạo ở đây được tự động đồng bộ sang Polar.",
           "syncedCouponsEmpty": "Chưa có mã giảm giá nào được đồng bộ sang Polar.",
-          "syncedCouponsTitle": "Mã giảm giá đã đồng bộ"
+          "syncedCouponsTitle": "Mã giảm giá đã đồng bộ",
+          "syncHealthTab": "Tình trạng đồng bộ"
         },
         "manage": "Quản lý Polar",
         "notConfigured": "Chưa lưu token",

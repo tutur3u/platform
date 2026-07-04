@@ -1666,7 +1666,9 @@
         },
         "environmentLabel": "Environment",
         "hub": {
+          "activityTab": "Activity",
           "connectedEnvironments": "Connected environments",
+          "connectionTab": "Connection",
           "notConnected": "Not connected",
           "productReady": "Checkout product",
           "productStatusTitle": "Polar product per environment",
@@ -1677,7 +1679,8 @@
           "syncedCoupons": "Synced coupons",
           "syncedCouponsDescription": "Coupons created here are mirrored to a Polar discount automatically.",
           "syncedCouponsEmpty": "No coupons are mirrored to Polar yet.",
-          "syncedCouponsTitle": "Synced coupons"
+          "syncedCouponsTitle": "Synced coupons",
+          "syncHealthTab": "Sync health"
         },
         "manage": "Manage Polar",
         "notConfigured": "No token saved",
