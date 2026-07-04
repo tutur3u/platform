@@ -19,9 +19,6 @@ interface Props {
   }>;
 }
 
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
-
 async function resolveBoardEntrypoint(
   workspaceId: string,
   internalApiOptions: Parameters<typeof listWorkspaceBoards>[1]
