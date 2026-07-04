@@ -1,4 +1,10 @@
-import { CircleStop, KeyRound, RotateCcw, Server } from '@tuturuuu/icons';
+import {
+  Activity,
+  CircleStop,
+  KeyRound,
+  RotateCcw,
+  Server,
+} from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -18,6 +24,7 @@ import type {
 import {
   releaseDevboxLeaseAction,
   revokeDevboxRunnerAction,
+  setDevboxRunnerHeartbeatEnabledAction,
   stopDevboxRunAction,
 } from './actions';
 import {
@@ -73,6 +80,7 @@ export function RunnersTable({
             <TableRow>
               <TableHead>{t('columns.runner')}</TableHead>
               <TableHead>{t('columns.health')}</TableHead>
+              <TableHead>{t('columns.heartbeat')}</TableHead>
               <TableHead>{t('columns.last_heartbeat')}</TableHead>
               <TableHead>{t('columns.environment')}</TableHead>
               <TableHead>{t('columns.tokens')}</TableHead>
@@ -82,7 +90,7 @@ export function RunnersTable({
           <TableBody>
             {runners.length === 0 ? (
               <EmptyRow
-                colSpan={canManage ? 6 : 5}
+                colSpan={canManage ? 7 : 6}
                 label={t('empty.runners')}
               />
             ) : (
@@ -124,6 +132,15 @@ export function RunnersTable({
                         </div>
                       </div>
                     </TableCell>
+                    <TableCell>
+                      <ToneBadge
+                        tone={runner.heartbeat_enabled ? 'green' : 'muted'}
+                      >
+                        {runner.heartbeat_enabled
+                          ? t('labels.heartbeat_enabled')
+                          : t('labels.heartbeat_disabled')}
+                      </ToneBadge>
+                    </TableCell>
                     <TableCell className="min-w-36">
                       <div>
                         {formatRelativeAge(runner.last_heartbeat_at, now)}
@@ -153,23 +170,45 @@ export function RunnersTable({
                     </TableCell>
                     {canManage ? (
                       <TableCell>
-                        <form
-                          action={revokeDevboxRunnerAction.bind(
-                            null,
-                            wsId,
-                            runner.id
-                          )}
-                        >
-                          <Button
-                            disabled={runner.status === 'revoked'}
-                            size="sm"
-                            type="submit"
-                            variant="outline"
+                        <div className="flex flex-wrap gap-2">
+                          <form
+                            action={setDevboxRunnerHeartbeatEnabledAction.bind(
+                              null,
+                              wsId,
+                              runner.id,
+                              !runner.heartbeat_enabled
+                            )}
                           >
-                            <RotateCcw className="h-4 w-4" />
-                            {t('actions.revoke')}
-                          </Button>
-                        </form>
+                            <Button
+                              disabled={runner.status === 'revoked'}
+                              size="sm"
+                              type="submit"
+                              variant="outline"
+                            >
+                              <Activity className="h-4 w-4" />
+                              {runner.heartbeat_enabled
+                                ? t('actions.disable_heartbeat')
+                                : t('actions.enable_heartbeat')}
+                            </Button>
+                          </form>
+                          <form
+                            action={revokeDevboxRunnerAction.bind(
+                              null,
+                              wsId,
+                              runner.id
+                            )}
+                          >
+                            <Button
+                              disabled={runner.status === 'revoked'}
+                              size="sm"
+                              type="submit"
+                              variant="outline"
+                            >
+                              <RotateCcw className="h-4 w-4" />
+                              {t('actions.revoke')}
+                            </Button>
+                          </form>
+                        </div>
                       </TableCell>
                     ) : null}
                   </TableRow>

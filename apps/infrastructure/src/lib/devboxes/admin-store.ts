@@ -11,6 +11,8 @@ type QueryResult<T = unknown> = {
 };
 
 type SelectQuery<T = unknown> = {
+  eq: (column: string, value: string) => SelectQuery<T>;
+  limit: (count: number) => Promise<QueryResult<T>>;
   order: (
     column: string,
     options?: { ascending?: boolean }
@@ -36,6 +38,7 @@ export interface DevboxAdminRunner {
   actor_id: string;
   capabilities: unknown;
   created_at: string;
+  heartbeat_enabled: boolean;
   id: string;
   last_heartbeat_at: string | null;
   name: string;
@@ -135,18 +138,60 @@ function countByStatus(rows: { status: string }[], status: string) {
   return rows.filter((row) => row.status === status).length;
 }
 
+function isMissingHeartbeatEnabledColumn(error: DevboxStorageErrorLike) {
+  const normalized = error?.message?.toLowerCase() ?? '';
+  return (
+    normalized.includes('heartbeat_enabled') &&
+    (normalized.includes('schema cache') ||
+      normalized.includes('does not exist') ||
+      normalized.includes('could not find'))
+  );
+}
+
+async function listDevboxAdminRunners(client: DevboxPrivateSchemaClient) {
+  const runnersResult = await getPrivateAdminTable<DevboxAdminRunner>(
+    client,
+    'devbox_runners'
+  )
+    .select(
+      'id,actor_id,name,status,capabilities,heartbeat_enabled,last_heartbeat_at,created_at,updated_at'
+    )
+    .order('updated_at', { ascending: false })
+    .limit(50);
+
+  if (
+    !runnersResult.error ||
+    !isMissingHeartbeatEnabledColumn(runnersResult.error)
+  ) {
+    return runnersResult;
+  }
+
+  const fallbackResult = await getPrivateAdminTable<
+    Omit<DevboxAdminRunner, 'heartbeat_enabled'>
+  >(client, 'devbox_runners')
+    .select(
+      'id,actor_id,name,status,capabilities,last_heartbeat_at,created_at,updated_at'
+    )
+    .order('updated_at', { ascending: false })
+    .limit(50);
+
+  return {
+    data:
+      fallbackResult.data?.map((runner) => ({
+        ...runner,
+        heartbeat_enabled: false,
+      })) ?? null,
+    error: fallbackResult.error,
+  };
+}
+
 export async function listDevboxControlSnapshot(): Promise<DevboxControlSnapshot> {
   const privateClient = await createPrivateDevboxClient();
   const client = privateClient as DevboxPrivateSchemaClient;
 
   const [runnersResult, leasesResult, runsResult, eventsResult, cachesResult] =
     await Promise.all([
-      getPrivateAdminTable<DevboxAdminRunner>(client, 'devbox_runners')
-        .select(
-          'id,actor_id,name,status,capabilities,last_heartbeat_at,created_at,updated_at'
-        )
-        .order('updated_at', { ascending: false })
-        .limit(50),
+      listDevboxAdminRunners(client),
       getPrivateAdminTable<DevboxAdminLease>(client, 'devbox_leases')
         .select(
           'id,actor_id,runner_id,status,profile,keep,expires_at,released_at,cleanup_status,created_at,updated_at'
@@ -238,4 +283,49 @@ export async function revokeDevboxRunner(runnerId: string) {
   }
 
   return { message: `Devbox runner ${runnerId} revoked.` };
+}
+
+export async function setDevboxRunnerHeartbeatEnabled(
+  runnerId: string,
+  enabled: boolean
+) {
+  const privateClient =
+    (await createPrivateDevboxClient()) as DevboxPrivateSchemaClient;
+  const now = new Date().toISOString();
+
+  const runnerResult = await getPrivateAdminTable<{ status: string }>(
+    privateClient,
+    'devbox_runners'
+  )
+    .select('status')
+    .eq('id', runnerId)
+    .limit(1);
+
+  if (runnerResult.error) {
+    throw getDevboxStorageError(runnerResult.error);
+  }
+
+  const status = runnerResult.data?.[0]?.status;
+  const update = {
+    heartbeat_enabled: enabled,
+    ...(!enabled && status !== 'revoked' ? { status: 'registered' } : {}),
+    updated_at: now,
+  };
+
+  const updateResult = await getPrivateAdminTable(
+    privateClient,
+    'devbox_runners'
+  )
+    .update(update)
+    .eq('id', runnerId);
+
+  if (updateResult.error) {
+    throw getDevboxStorageError(updateResult.error);
+  }
+
+  return {
+    message: `Devbox runner ${runnerId} heartbeat ${
+      enabled ? 'enabled' : 'disabled'
+    }.`,
+  };
 }

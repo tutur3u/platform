@@ -66,6 +66,13 @@ export async function POST(request: Request) {
   const authorization = await authorizeDevboxAgent(request);
   if (!authorization.ok) return authorization.response;
 
+  if (!authorization.runner.heartbeatEnabled) {
+    return NextResponse.json(
+      { message: 'Heartbeat disabled for this runner' },
+      { status: 403 }
+    );
+  }
+
   const parsed = HeartbeatSchema.safeParse(
     await request.json().catch(() => undefined)
   );

@@ -1,18 +1,18 @@
 import type { NextRequest } from 'next/server';
 
-import { dispatchLegacyApiRoute } from '@/legacy-api-routes/dispatcher';
+import { dispatchLegacyV1ApiRoute } from '@/legacy-api-routes/dispatcher';
 
 export const GET = (request: NextRequest) =>
-  dispatchLegacyApiRoute(request, 'GET');
+  dispatchLegacyV1ApiRoute(request, 'GET');
 export const HEAD = (request: NextRequest) =>
-  dispatchLegacyApiRoute(request, 'HEAD');
+  dispatchLegacyV1ApiRoute(request, 'HEAD');
 export const POST = (request: NextRequest) =>
-  dispatchLegacyApiRoute(request, 'POST');
+  dispatchLegacyV1ApiRoute(request, 'POST');
 export const PUT = (request: NextRequest) =>
-  dispatchLegacyApiRoute(request, 'PUT');
+  dispatchLegacyV1ApiRoute(request, 'PUT');
 export const PATCH = (request: NextRequest) =>
-  dispatchLegacyApiRoute(request, 'PATCH');
+  dispatchLegacyV1ApiRoute(request, 'PATCH');
 export const DELETE = (request: NextRequest) =>
-  dispatchLegacyApiRoute(request, 'DELETE');
+  dispatchLegacyV1ApiRoute(request, 'DELETE');
 export const OPTIONS = (request: NextRequest) =>
-  dispatchLegacyApiRoute(request, 'OPTIONS');
+  dispatchLegacyV1ApiRoute(request, 'OPTIONS');

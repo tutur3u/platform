@@ -5828,6 +5828,8 @@
   },
   "devbox-control": {
     "actions": {
+      "disable_heartbeat": "Tắt heartbeat",
+      "enable_heartbeat": "Bật heartbeat",
       "release": "Giải phóng",
       "revoke": "Thu hồi",
       "stop": "Dừng"
@@ -5860,6 +5862,7 @@
       "exit_code": "Mã thoát",
       "expires": "Hết hạn",
       "health": "Sức khỏe",
+      "heartbeat": "Heartbeat",
       "keep": "Giữ lại",
       "last_heartbeat": "Heartbeat cuối",
       "last_used": "Dùng lần cuối",
@@ -5891,6 +5894,8 @@
     "labels": {
       "active_total": "đang hoạt động / tổng",
       "default_profile": "Profile mặc định",
+      "heartbeat_disabled": "Đã tắt",
+      "heartbeat_enabled": "Đã bật",
       "latest_run": "Run mới nhất",
       "no": "Không",
       "no_exit_code": "Chưa có mã thoát",

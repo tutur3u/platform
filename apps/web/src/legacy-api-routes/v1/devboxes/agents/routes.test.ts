@@ -42,16 +42,46 @@ function createRequest(body?: unknown) {
   });
 }
 
+function mockAuthorizedRunner(heartbeatEnabled: boolean) {
+  authorizeDevboxAgentMock.mockResolvedValue({
+    ok: true,
+    runner: { heartbeatEnabled, id: 'runner-1' },
+  });
+}
+
 describe('devbox agent routes', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockAuthorizedRunner(false);
+  });
+
+  it('blocks runner heartbeats until an admin enables them', async () => {
+    const response = await heartbeat(createRequest());
+
+    expect(response.status).toBe(403);
+    expect(heartbeatDevboxRunnerMock).not.toHaveBeenCalled();
+    await expect(response.json()).resolves.toEqual({
+      message: 'Heartbeat disabled for this runner',
+    });
+  });
+
+  it('preserves unauthorized heartbeat responses for invalid runner tokens', async () => {
     authorizeDevboxAgentMock.mockResolvedValue({
-      ok: true,
-      runner: { id: 'runner-1' },
+      ok: false,
+      response: Response.json({ message: 'Unauthorized' }, { status: 401 }),
+    });
+
+    const response = await heartbeat(createRequest());
+
+    expect(response.status).toBe(401);
+    expect(heartbeatDevboxRunnerMock).not.toHaveBeenCalled();
+    await expect(response.json()).resolves.toEqual({
+      message: 'Unauthorized',
     });
   });
 
   it('records runner heartbeats', async () => {
+    mockAuthorizedRunner(true);
     heartbeatDevboxRunnerMock.mockResolvedValue({
       message: 'heartbeat accepted',
     });
@@ -69,6 +99,7 @@ describe('devbox agent routes', () => {
   });
 
   it('records runner heartbeat capabilities', async () => {
+    mockAuthorizedRunner(true);
     heartbeatDevboxRunnerMock.mockResolvedValue({
       message: 'heartbeat accepted',
     });
@@ -93,6 +124,25 @@ describe('devbox agent routes', () => {
       'runner-1',
       capabilities
     );
+  });
+
+  it('rejects invalid runner heartbeat bodies after heartbeat is enabled', async () => {
+    mockAuthorizedRunner(true);
+
+    const response = await heartbeat(
+      createRequest({
+        capabilities: {
+          cli: { name: 'ttr', version: '0.2.0' },
+          unexpected: true,
+        },
+      })
+    );
+
+    expect(response.status).toBe(400);
+    expect(heartbeatDevboxRunnerMock).not.toHaveBeenCalled();
+    await expect(response.json()).resolves.toMatchObject({
+      message: 'Invalid heartbeat body',
+    });
   });
 
   it('shuts down the authenticated runner', async () => {

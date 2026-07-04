@@ -5828,6 +5828,8 @@
   },
   "devbox-control": {
     "actions": {
+      "disable_heartbeat": "Disable heartbeat",
+      "enable_heartbeat": "Enable heartbeat",
       "release": "Release",
       "revoke": "Revoke",
       "stop": "Stop"
@@ -5860,6 +5862,7 @@
       "exit_code": "Exit code",
       "expires": "Expires",
       "health": "Health",
+      "heartbeat": "Heartbeat",
       "keep": "Keep",
       "last_heartbeat": "Last heartbeat",
       "last_used": "Last used",
@@ -5891,6 +5894,8 @@
     "labels": {
       "active_total": "active / total",
       "default_profile": "Default profile",
+      "heartbeat_disabled": "Disabled",
+      "heartbeat_enabled": "Enabled",
       "latest_run": "Latest run",
       "no": "No",
       "no_exit_code": "No exit code",

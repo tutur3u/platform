@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from 'next/server';
 
 import { apiRouteLoaders } from './registry';
+import { v1RouteLoaders } from './registry/v1';
 import type { LegacyApiRouteModule, LegacyApiRouteParams } from './types';
 
 type HttpMethod =
@@ -13,28 +14,24 @@ type HttpMethod =
   | 'OPTIONS';
 
 const API_ROUTE_PREFIX = '/api/';
-const routeEntries = Object.keys(apiRouteLoaders)
-  .map((routeFile) => ({
-    routeFile,
-    segments: routeFile.split('/').slice(0, -1),
-    score: scoreRoute(routeFile),
-  }))
-  .sort(
-    (left, right) =>
-      right.score - left.score ||
-      right.segments.length - left.segments.length ||
-      left.routeFile.localeCompare(right.routeFile)
-  );
 
-function scoreRoute(routeFile: string): number {
-  return routeFile
-    .split('/')
-    .slice(0, -1)
-    .reduce((score, segment) => {
-      if (isCatchAllSegment(segment)) return score;
-      if (isDynamicSegment(segment)) return score + 2;
-      return score + 4;
-    }, 0);
+type RouteEntry = {
+  routeFile: string;
+  score: number;
+  segments: string[];
+};
+
+type LegacyApiDispatcherOptions = {
+  requestPrefixSegments?: string[];
+  routeFilePrefixSegments?: string[];
+};
+
+function scoreRoute(segments: string[]): number {
+  return segments.reduce((score, segment) => {
+    if (isCatchAllSegment(segment)) return score;
+    if (isDynamicSegment(segment)) return score + 2;
+    return score + 4;
+  }, 0);
 }
 
 function isDynamicSegment(segment: string) {
@@ -66,6 +63,40 @@ function requestApiSegments(request: NextRequest) {
     .map(decodePathSegment);
 }
 
+function startsWithSegments(segments: string[], prefix: string[]) {
+  return prefix.every((segment, index) => segments[index] === segment);
+}
+
+function stripSegmentPrefix(segments: string[], prefix: string[]) {
+  if (prefix.length === 0) return segments;
+  if (!startsWithSegments(segments, prefix)) return null;
+  return segments.slice(prefix.length);
+}
+
+function createRouteEntries(
+  routeLoaders: Record<string, unknown>,
+  routeFilePrefixSegments: string[]
+): RouteEntry[] {
+  return Object.keys(routeLoaders)
+    .map((routeFile) => {
+      const rawSegments = routeFile.split('/').slice(0, -1);
+      const segments =
+        stripSegmentPrefix(rawSegments, routeFilePrefixSegments) ?? rawSegments;
+
+      return {
+        routeFile,
+        score: scoreRoute(segments),
+        segments,
+      };
+    })
+    .sort(
+      (left, right) =>
+        right.score - left.score ||
+        right.segments.length - left.segments.length ||
+        left.routeFile.localeCompare(right.routeFile)
+    );
+}
+
 function dynamicParamName(segment: string) {
   return segment.slice(1, -1);
 }
@@ -74,7 +105,7 @@ function catchAllParamName(segment: string) {
   return segment.slice(4, -1);
 }
 
-function matchRoute(segments: string[]) {
+function matchRoute(segments: string[], routeEntries: RouteEntry[]) {
   for (const route of routeEntries) {
     const params: LegacyApiRouteParams = {};
     let requestIndex = 0;
@@ -126,45 +157,75 @@ function supportedMethods(routeModule: LegacyApiRouteModule) {
   );
 }
 
-export async function dispatchLegacyApiRoute(
-  request: NextRequest,
-  method: HttpMethod
+export function createLegacyApiDispatcher(
+  routeLoaders: Record<string, () => Promise<unknown>>,
+  options: LegacyApiDispatcherOptions = {}
 ) {
-  const segments = requestApiSegments(request);
+  const requestPrefixSegments = options.requestPrefixSegments ?? [];
+  const routeEntries = createRouteEntries(
+    routeLoaders,
+    options.routeFilePrefixSegments ?? []
+  );
 
-  if (!segments) {
-    return NextResponse.json({ error: 'Not found' }, { status: 404 });
-  }
+  return async function dispatchLegacyApiRoute(
+    request: NextRequest,
+    method: HttpMethod
+  ) {
+    const segments = requestApiSegments(request);
 
-  const match = matchRoute(segments);
-  if (!match) {
-    return NextResponse.json({ error: 'Not found' }, { status: 404 });
-  }
+    if (!segments) {
+      return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    }
 
-  const loader =
-    apiRouteLoaders[match.routeFile as keyof typeof apiRouteLoaders];
-  const routeModule = (await loader()) as LegacyApiRouteModule;
-  const handler =
-    routeModule[method] ?? (method === 'HEAD' ? routeModule.GET : undefined);
+    const scopedSegments = stripSegmentPrefix(segments, requestPrefixSegments);
+    if (!scopedSegments) {
+      return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    }
 
-  if (typeof handler !== 'function') {
-    return new NextResponse(null, {
-      headers: { Allow: supportedMethods(routeModule).join(', ') },
-      status: 405,
+    const match = matchRoute(scopedSegments, routeEntries);
+    if (!match) {
+      return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    }
+
+    const loader = routeLoaders[match.routeFile];
+    if (!loader) {
+      return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    }
+
+    const routeModule = (await loader()) as LegacyApiRouteModule;
+    const handler =
+      routeModule[method] ?? (method === 'HEAD' ? routeModule.GET : undefined);
+
+    if (typeof handler !== 'function') {
+      return new NextResponse(null, {
+        headers: { Allow: supportedMethods(routeModule).join(', ') },
+        status: 405,
+      });
+    }
+
+    const response = await handler(request, {
+      params: Promise.resolve(match.params),
     });
-  }
 
-  const response = await handler(request, {
-    params: Promise.resolve(match.params),
-  });
+    if (method === 'HEAD' && !routeModule.HEAD) {
+      return new Response(null, {
+        headers: response.headers,
+        status: response.status,
+        statusText: response.statusText,
+      });
+    }
 
-  if (method === 'HEAD' && !routeModule.HEAD) {
-    return new Response(null, {
-      headers: response.headers,
-      status: response.status,
-      statusText: response.statusText,
-    });
-  }
-
-  return response;
+    return response;
+  };
 }
+
+export const dispatchLegacyApiRoute =
+  createLegacyApiDispatcher(apiRouteLoaders);
+
+export const dispatchLegacyV1ApiRoute = createLegacyApiDispatcher(
+  v1RouteLoaders,
+  {
+    requestPrefixSegments: ['v1'],
+    routeFilePrefixSegments: ['v1'],
+  }
+);

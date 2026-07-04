@@ -45,6 +45,7 @@ describe('devbox store', () => {
       data: [
         {
           actor_id: 'user-1',
+          heartbeat_enabled: true,
           id: 'runner-1',
           status: 'online',
         },
@@ -89,6 +90,7 @@ describe('devbox store', () => {
 
   it('accepts active runner tokens', async () => {
     await expect(verifyDevboxRunnerToken('tdbx_active')).resolves.toEqual({
+      heartbeatEnabled: true,
       id: 'runner-1',
     });
 
@@ -101,7 +103,9 @@ describe('devbox store', () => {
     );
     expect(tokenIsMock).toHaveBeenCalledWith('revoked_at', null);
     expect(privateFromMock).toHaveBeenCalledWith('devbox_runners');
-    expect(runnerSelectMock).toHaveBeenCalledWith('id, actor_id, status');
+    expect(runnerSelectMock).toHaveBeenCalledWith(
+      'id, actor_id, status, heartbeat_enabled'
+    );
     expect(runnerEqMock).toHaveBeenCalledWith('id', 'runner-1');
     expect(publicFromMock).toHaveBeenCalledWith('workspace_members');
     expect(membershipEqWorkspaceMock).toHaveBeenCalledWith(
@@ -129,6 +133,7 @@ describe('devbox store', () => {
       data: [
         {
           actor_id: 'user-1',
+          heartbeat_enabled: false,
           id: 'runner-1',
           status: 'revoked',
         },
@@ -157,6 +162,7 @@ describe('devbox store', () => {
       data: [
         {
           actor_id: 'user-1',
+          heartbeat_enabled: true,
           id: 'runner-1',
           status: 'registered',
         },
@@ -165,6 +171,7 @@ describe('devbox store', () => {
     });
 
     await expect(verifyDevboxRunnerToken('tdbx_registered')).resolves.toEqual({
+      heartbeatEnabled: true,
       id: 'runner-1',
     });
   });
@@ -174,6 +181,7 @@ describe('devbox store', () => {
       data: [
         {
           actor_id: 'user-1',
+          heartbeat_enabled: true,
           id: 'runner-1',
           status: 'registered',
         },
@@ -184,5 +192,37 @@ describe('devbox store', () => {
     await expect(
       verifyDevboxRunnerToken('tdbx_registered', { requireOnline: true })
     ).resolves.toBeNull();
+  });
+
+  it('falls back to disabled heartbeat when the column is not visible yet', async () => {
+    runnerLimitMock
+      .mockResolvedValueOnce({
+        data: null,
+        error: {
+          message:
+            "Could not find the 'heartbeat_enabled' column of 'devbox_runners' in the schema cache",
+        },
+      })
+      .mockResolvedValueOnce({
+        data: [
+          {
+            actor_id: 'user-1',
+            id: 'runner-1',
+            status: 'online',
+          },
+        ],
+        error: null,
+      });
+
+    await expect(verifyDevboxRunnerToken('tdbx_active')).resolves.toEqual({
+      heartbeatEnabled: false,
+      id: 'runner-1',
+    });
+
+    expect(runnerSelectMock).toHaveBeenNthCalledWith(
+      1,
+      'id, actor_id, status, heartbeat_enabled'
+    );
+    expect(runnerSelectMock).toHaveBeenNthCalledWith(2, 'id, actor_id, status');
   });
 });

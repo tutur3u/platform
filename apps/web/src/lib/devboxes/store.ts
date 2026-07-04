@@ -52,6 +52,11 @@ type PrivateTableClient = {
 
 const DEVBOX_RUNNER_AUTHORIZED_STATUSES = new Set(['online', 'registered']);
 
+export interface VerifiedDevboxRunner {
+  heartbeatEnabled: boolean;
+  id: string;
+}
+
 export interface CreateDevboxRunInput {
   actorId: string;
   command: string[];
@@ -90,6 +95,45 @@ function getPrivateTable(
   table: string
 ): PrivateTableClient {
   return client.from(table) as PrivateTableClient;
+}
+
+function isMissingHeartbeatEnabledColumn(error: DevboxStorageErrorLike) {
+  const normalized = error?.message?.toLowerCase() ?? '';
+  return (
+    normalized.includes('heartbeat_enabled') &&
+    (normalized.includes('schema cache') ||
+      normalized.includes('does not exist') ||
+      normalized.includes('could not find'))
+  );
+}
+
+async function selectDevboxRunnerForToken(
+  privateClient: DevboxPrivateSchemaClient,
+  runnerId: string,
+  includeHeartbeatEnabled = true
+) {
+  const result = await getPrivateTable(privateClient, 'devbox_runners')
+    .select(
+      includeHeartbeatEnabled
+        ? 'id, actor_id, status, heartbeat_enabled'
+        : 'id, actor_id, status'
+    )
+    .eq('id', runnerId)
+    .order('updated_at', { ascending: false })
+    .limit(1);
+
+  if (
+    result.error &&
+    includeHeartbeatEnabled &&
+    isMissingHeartbeatEnabledColumn(result.error)
+  ) {
+    return selectDevboxRunnerForToken(privateClient, runnerId, false);
+  }
+
+  return {
+    data: result.data,
+    error: result.error,
+  };
 }
 
 export async function createDevboxRun(input: CreateDevboxRunInput) {
@@ -346,7 +390,7 @@ export async function updateDevboxEnv(input: {
 export async function verifyDevboxRunnerToken(
   token: string,
   options: { requireOnline?: boolean } = {}
-) {
+): Promise<VerifiedDevboxRunner | null> {
   const admin = (await createAdminClient({
     noCookie: true,
   })) as TypedSupabaseClient;
@@ -376,14 +420,8 @@ export async function verifyDevboxRunnerToken(
     return null;
   }
 
-  const { data: runnerData, error: runnerError } = await getPrivateTable(
-    privateClient,
-    'devbox_runners'
-  )
-    .select('id, actor_id, status')
-    .eq('id', runnerId)
-    .order('updated_at', { ascending: false })
-    .limit(1);
+  const { data: runnerData, error: runnerError } =
+    await selectDevboxRunnerForToken(privateClient, runnerId);
 
   if (runnerError) {
     throw getDevboxStorageError(runnerError);
@@ -398,6 +436,10 @@ export async function verifyDevboxRunnerToken(
     runner && typeof runner === 'object' && 'status' in runner
       ? String(runner.status ?? '')
       : '';
+  const heartbeatEnabled =
+    runner && typeof runner === 'object' && 'heartbeat_enabled' in runner
+      ? runner.heartbeat_enabled === true
+      : false;
 
   if (
     !actorId ||
@@ -415,7 +457,7 @@ export async function verifyDevboxRunnerToken(
     wsId: ROOT_WORKSPACE_ID,
   });
 
-  return membership.ok ? { id: runnerId } : null;
+  return membership.ok ? { heartbeatEnabled, id: runnerId } : null;
 }
 
 export async function listDevboxRuns(actorId: string) {
