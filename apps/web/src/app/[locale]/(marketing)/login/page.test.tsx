@@ -305,6 +305,26 @@ describe('Login page', () => {
     ).rejects.toThrow('redirect:/en/personal/tasks?view=board');
   });
 
+  it('keeps MFA verification hard loads on the login page for authenticated sessions', async () => {
+    mocks.cookieHeader = 'sb-test-auth-token=session';
+    mocks.resolveAuthenticatedSessionUser.mockResolvedValue({
+      user: { id: 'user-1' },
+    });
+
+    await renderLoginPage({
+      mfa: 'required',
+      nextUrl: '/en/personal/tasks',
+    });
+
+    expect(redirectMock).not.toHaveBeenCalled();
+    expect(mocks.resolveAuthenticatedSessionUser).not.toHaveBeenCalled();
+    expect(screen.getByTestId('login-form')).toBeInTheDocument();
+    expect(screen.getByTestId('login-form')).toHaveAttribute(
+      'data-defer-auth-surface',
+      'false'
+    );
+  });
+
   it('keeps authenticated external returnUrls on the confirmation flow', async () => {
     mocks.cookieHeader = 'sb-test-auth-token=session';
     mocks.resolveAuthenticatedSessionUser.mockResolvedValue({

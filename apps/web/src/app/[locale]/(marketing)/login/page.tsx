@@ -127,6 +127,9 @@ const getAuthenticatedLoginRedirectPath = (params: LoginSearchParams) => {
   return getSafeLocalRedirectPath(getSingleSearchParam(params.nextUrl)) ?? '/';
 };
 
+const isMfaVerificationRequest = (params: LoginSearchParams) =>
+  getSingleSearchParam(params.mfa) === 'required';
+
 async function hasAuthenticatedSession() {
   try {
     const headerStore = await headers();
@@ -167,9 +170,13 @@ export default async function Login({ searchParams }: LoginProps) {
 
   const returnUrl = getSingleSearchParam(params.returnUrl);
   const multiAccount = getSingleSearchParam(params.multiAccount) === 'true';
-  const authenticatedRedirectPath = getAuthenticatedLoginRedirectPath(params);
+  const mfaVerificationRequest = isMfaVerificationRequest(params);
+  const authenticatedRedirectPath = mfaVerificationRequest
+    ? null
+    : getAuthenticatedLoginRedirectPath(params);
   const shouldCheckAuthenticatedSession =
-    Boolean(authenticatedRedirectPath) || Boolean(returnUrl && !multiAccount);
+    !mfaVerificationRequest &&
+    (Boolean(authenticatedRedirectPath) || Boolean(returnUrl && !multiAccount));
   const authenticatedSession = shouldCheckAuthenticatedSession
     ? await hasAuthenticatedSession()
     : false;
