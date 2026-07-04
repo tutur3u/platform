@@ -14,6 +14,12 @@ import type {
   InventoryStorefrontThemePreset,
   InventoryStorefrontVisibility,
 } from '@tuturuuu/internal-api/inventory';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@tuturuuu/ui/accordion';
 import { Button } from '@tuturuuu/ui/button';
 import { useTranslations } from 'next-intl';
 import { InventoryImageUploadField } from './inventory-image-upload';
@@ -287,94 +293,112 @@ export function StorefrontBuilderFields({
 
   return (
     <div className="grid gap-3">
-      {form.sections.map((section, index) => (
-        <section
-          className="grid gap-3 rounded-lg border border-border bg-muted/15 p-3"
-          key={`${section.sectionType}-${index}`}
-        >
-          <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
-            <p className="font-semibold text-sm">
-              {t('builderSection', { index: index + 1 })}
-            </p>
-            <Button
-              onClick={() => removeSection(index)}
-              size="sm"
-              type="button"
-              variant="ghost"
+      {form.sections.length ? (
+        <Accordion className="grid gap-2" type="multiple">
+          {form.sections.map((section, index) => (
+            <AccordionItem
+              className="rounded-lg border border-border bg-muted/15 px-3"
+              key={`${section.sectionType}-${index}`}
+              value={`section-${index}`}
             >
-              <Trash2 className="h-4 w-4" />
-              {t('removeSection')}
-            </Button>
-          </div>
-          <div className="grid gap-3 md:grid-cols-2">
-            <SelectValueField
-              allowEmpty={false}
-              hint={t('hints.sectionType')}
-              label={t('sectionType')}
-              onChange={(sectionType) =>
-                updateSection(index, {
-                  sectionType: sectionType as InventoryStorefrontSectionType,
-                })
-              }
-              options={sectionTypes.map((value) => ({
-                label: t(`sectionTypes.${value}`),
-                value,
-              }))}
-              placeholder={t('placeholders.sectionType')}
-              value={section.sectionType}
-            />
-            <SelectValueField
-              allowEmpty={false}
-              hint={t('hints.sectionStatus')}
-              label={t('sectionStatus')}
-              onChange={(status) =>
-                updateSection(index, {
-                  status: status as InventoryStorefrontSectionStatus,
-                })
-              }
-              options={sectionStatuses.map((value) => ({
-                label: t(`sectionStatuses.${value}`),
-                value,
-              }))}
-              placeholder={t('placeholders.sectionStatus')}
-              value={section.status ?? 'published'}
-            />
-            <TextField
-              label={t('sectionTitle')}
-              onChange={(title) => updateSection(index, { title })}
-              placeholder={t('placeholders.sectionTitle')}
-              value={section.title ?? ''}
-            />
-            <TextField
-              hint={t('hints.sectionHref')}
-              inputMode="url"
-              label={t('sectionHref')}
-              onChange={(href) => updateSection(index, { href: href || null })}
-              placeholder={t('placeholders.sectionHref')}
-              value={section.href ?? ''}
-            />
-            <TextAreaField
-              className="md:col-span-2"
-              label={t('sectionDescription')}
-              onChange={(description) => updateSection(index, { description })}
-              placeholder={t('placeholders.sectionDescription')}
-              value={section.description ?? ''}
-            />
-            <div className="md:col-span-2">
-              <InventoryImageUploadField
-                description={t('sectionImageDescription')}
-                label={t('sectionImage')}
-                onChange={(imageUrl) =>
-                  updateSection(index, { imageUrl: imageUrl || null })
-                }
-                target="storefront-banner"
-                value={section.imageUrl ?? ''}
-                wsId={wsId}
-              />
-            </div>
-          </div>
-        </section>
-      ))}
+              <AccordionTrigger className="py-3 font-semibold text-sm">
+                <span className="flex min-w-0 flex-1 items-center gap-2">
+                  {t('builderSection', { index: index + 1 })}
+                  {section.title ? (
+                    <span className="truncate font-normal text-muted-foreground text-xs">
+                      {section.title}
+                    </span>
+                  ) : null}
+                </span>
+              </AccordionTrigger>
+              <AccordionContent>
+                <div className="grid gap-3 md:grid-cols-2">
+                  <SelectValueField
+                    allowEmpty={false}
+                    hint={t('hints.sectionType')}
+                    label={t('sectionType')}
+                    onChange={(sectionType) =>
+                      updateSection(index, {
+                        sectionType:
+                          sectionType as InventoryStorefrontSectionType,
+                      })
+                    }
+                    options={sectionTypes.map((value) => ({
+                      label: t(`sectionTypes.${value}`),
+                      value,
+                    }))}
+                    placeholder={t('placeholders.sectionType')}
+                    value={section.sectionType}
+                  />
+                  <SelectValueField
+                    allowEmpty={false}
+                    hint={t('hints.sectionStatus')}
+                    label={t('sectionStatus')}
+                    onChange={(status) =>
+                      updateSection(index, {
+                        status: status as InventoryStorefrontSectionStatus,
+                      })
+                    }
+                    options={sectionStatuses.map((value) => ({
+                      label: t(`sectionStatuses.${value}`),
+                      value,
+                    }))}
+                    placeholder={t('placeholders.sectionStatus')}
+                    value={section.status ?? 'published'}
+                  />
+                  <TextField
+                    label={t('sectionTitle')}
+                    onChange={(title) => updateSection(index, { title })}
+                    placeholder={t('placeholders.sectionTitle')}
+                    value={section.title ?? ''}
+                  />
+                  <TextField
+                    hint={t('hints.sectionHref')}
+                    inputMode="url"
+                    label={t('sectionHref')}
+                    onChange={(href) =>
+                      updateSection(index, { href: href || null })
+                    }
+                    placeholder={t('placeholders.sectionHref')}
+                    value={section.href ?? ''}
+                  />
+                  <TextAreaField
+                    className="md:col-span-2"
+                    label={t('sectionDescription')}
+                    onChange={(description) =>
+                      updateSection(index, { description })
+                    }
+                    placeholder={t('placeholders.sectionDescription')}
+                    value={section.description ?? ''}
+                  />
+                  <div className="md:col-span-2">
+                    <InventoryImageUploadField
+                      description={t('sectionImageDescription')}
+                      label={t('sectionImage')}
+                      onChange={(imageUrl) =>
+                        updateSection(index, { imageUrl: imageUrl || null })
+                      }
+                      target="storefront-banner"
+                      value={section.imageUrl ?? ''}
+                      wsId={wsId}
+                    />
+                  </div>
+                </div>
+                <Button
+                  className="mt-3"
+                  onClick={() => removeSection(index)}
+                  size="sm"
+                  type="button"
+                  variant="ghost"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  {t('removeSection')}
+                </Button>
+              </AccordionContent>
+            </AccordionItem>
+          ))}
+        </Accordion>
+      ) : null}
       <Button
         className="w-fit"
         onClick={addSection}
