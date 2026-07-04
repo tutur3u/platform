@@ -1312,6 +1312,7 @@ export default function LoginForm({
       '/api/auth/callback',
       resolveAuthRedirectOrigin({
         currentOrigin: window.location.origin,
+        preserveCurrentManagedOrigin: true,
       })
     );
 

@@ -58,6 +58,30 @@ describe('auth redirect origin', () => {
     ).toBe('https://tuturuuu.com');
   });
 
+  it('can preserve a managed platform origin for OAuth callbacks', () => {
+    vi.stubEnv('WEB_APP_URL', 'https://tuturuuu.com');
+
+    expect(
+      resolveAuthRedirectOrigin({
+        currentOrigin: 'https://vercel.tuturuuu.com',
+        isProduction: true,
+        preserveCurrentManagedOrigin: true,
+      })
+    ).toBe('https://vercel.tuturuuu.com');
+  });
+
+  it('does not preserve known satellite app origins as platform callbacks', () => {
+    vi.stubEnv('WEB_APP_URL', 'https://tuturuuu.com');
+
+    expect(
+      resolveAuthRedirectOrigin({
+        currentOrigin: 'https://tasks.tuturuuu.com',
+        isProduction: true,
+        preserveCurrentManagedOrigin: true,
+      })
+    ).toBe('https://tuturuuu.com');
+  });
+
   it('ignores configured non-platform app origins', () => {
     vi.stubEnv('NEXT_PUBLIC_APP_URL', 'https://chat.tuturuuu.com');
 

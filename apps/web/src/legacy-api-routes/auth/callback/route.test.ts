@@ -165,6 +165,42 @@ describe('auth callback route', () => {
     expect(location.toString()).not.toContain('0.0.0.0');
   });
 
+  it('preserves a managed platform origin for social OAuth callback failures', async () => {
+    vi.stubEnv('WEB_APP_URL', 'https://tuturuuu.com');
+    mocks.createClient.mockResolvedValue({
+      auth: {
+        exchangeCodeForSession: vi
+          .fn()
+          .mockRejectedValue(new Error('exchange failed')),
+      },
+    });
+
+    const response = await GET(
+      new NextRequest(
+        'https://vercel.tuturuuu.com/api/auth/callback?code=oauth-code'
+      )
+    );
+
+    const location = new URL(response.headers.get('location') ?? '');
+    expect(location.origin).toBe('https://vercel.tuturuuu.com');
+    expect(location.pathname).toBe('/login');
+    expect(location.searchParams.get('error')).toBe('auth_failed');
+  });
+
+  it('preserves a managed platform origin for default callback redirects', async () => {
+    vi.stubEnv('WEB_APP_URL', 'https://tuturuuu.com');
+
+    const response = await GET(
+      new NextRequest(
+        'https://vercel.tuturuuu.com/api/auth/callback?code=oauth-code&nextUrl=mail'
+      )
+    );
+
+    const location = new URL(response.headers.get('location') ?? '');
+    expect(location.origin).toBe('https://vercel.tuturuuu.com');
+    expect(location.pathname).toBe('/mail');
+  });
+
   it('ignores forwarded host headers when building callback redirects', async () => {
     const response = await GET(
       new NextRequest('https://tuturuuu.com/api/auth/callback?nextUrl=mail', {

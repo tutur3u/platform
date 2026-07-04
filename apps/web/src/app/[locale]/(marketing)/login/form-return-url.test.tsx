@@ -485,7 +485,7 @@ describe('LoginForm returnUrl navigation', () => {
     queryClient.clear();
   });
 
-  it('uses the platform callback while preserving a managed subdomain returnUrl for social OAuth', async () => {
+  it('uses the managed platform callback while preserving a managed subdomain returnUrl for social OAuth', async () => {
     vi.stubEnv('WEB_APP_URL', 'https://tuturuuu.com');
     mocks.currentUserProfile = null;
     mocks.getUser.mockReturnValue(new Promise(() => undefined));
@@ -508,7 +508,7 @@ describe('LoginForm returnUrl navigation', () => {
         expect.objectContaining({
           options: expect.objectContaining({
             redirectTo:
-              'https://tuturuuu.com/api/auth/callback?returnUrl=https%3A%2F%2Fvc.tuturuuu.com%2Fworkspace%2Fpersonal%2Fplans&nextUrl=%2Fworkspace%2Fpersonal%2Fplans',
+              'https://vc.tuturuuu.com/api/auth/callback?returnUrl=https%3A%2F%2Fvc.tuturuuu.com%2Fworkspace%2Fpersonal%2Fplans&nextUrl=%2Fworkspace%2Fpersonal%2Fplans',
           }),
           provider: 'google',
         })

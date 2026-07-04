@@ -12,7 +12,6 @@ import {
   logAuthDiagnostic,
 } from '@/lib/auth/diagnostics';
 import { normalizeManagedTuturuuuReturnUrl } from '@/lib/auth/managed-tuturuuu-return-url';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 const queryParamsSchema = z.object({
   code: z.string().max(MAX_NAME_LENGTH).nullable(),
@@ -107,7 +106,7 @@ async function validateRedirectUrl(
     }
 
     // Untrusted external URL
-    serverLogger.warn('[auth/callback] Untrusted returnUrl', {
+    console.warn('[auth/callback] Untrusted returnUrl', {
       returnUrl: decodedUrl,
     });
     return null;
@@ -121,6 +120,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   const requestUrl = new URL(request.url);
   const redirectOrigin = resolveAuthRedirectOrigin({
     currentOrigin: requestUrl.origin,
+    preserveCurrentManagedOrigin: true,
   });
 
   // Parse and validate query parameters
@@ -132,7 +132,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   });
 
   if (!parseResult.success) {
-    serverLogger.warn('[auth/callback] Invalid query parameters', {
+    console.warn('[auth/callback] Invalid query parameters', {
       error: parseResult.error.message,
     });
     return NextResponse.redirect(new URL('/onboarding', redirectOrigin));
@@ -212,7 +212,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     }
 
     // Invalid returnUrl - fall back to default
-    serverLogger.warn('[auth/callback] Invalid returnUrl, using default');
+    console.warn('[auth/callback] Invalid returnUrl, using default');
   }
 
   // Use nextUrl or fall back to default

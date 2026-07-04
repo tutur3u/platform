@@ -11,6 +11,7 @@ type AuthRedirectOriginOptions = {
   currentOrigin?: string | null;
   env?: NodeJS.ProcessEnv;
   isProduction?: boolean;
+  preserveCurrentManagedOrigin?: boolean;
   request?: HeaderCarrier | null;
 };
 
@@ -173,6 +174,40 @@ function resolveCurrentPlatformOrigin(
     : null;
 }
 
+function resolveCurrentManagedPlatformOrigin(
+  currentOrigin: string | null | undefined
+) {
+  const origin = normalizeHttpOrigin(currentOrigin);
+
+  if (!origin) {
+    return null;
+  }
+
+  const url = new URL(origin);
+
+  if (
+    url.hostname === 'tuturuuu.com' ||
+    !url.hostname.endsWith('.tuturuuu.com')
+  ) {
+    return null;
+  }
+
+  const appDomain = getAppDomainByUrl(origin);
+
+  if (appDomain?.kind === 'external') {
+    return null;
+  }
+
+  if (appDomain?.kind === 'internal' && appDomain.name !== 'platform') {
+    return null;
+  }
+
+  url.protocol = 'https:';
+  url.port = '';
+
+  return url.origin;
+}
+
 function resolveLocalhostFallback(env: NodeJS.ProcessEnv) {
   const port = /^\d+$/u.test(env.PORT ?? '')
     ? env.PORT
@@ -185,10 +220,14 @@ export function resolveAuthRedirectOrigin({
   currentOrigin,
   env = process.env,
   isProduction = env.NODE_ENV === 'production',
+  preserveCurrentManagedOrigin = false,
 }: AuthRedirectOriginOptions = {}) {
   return (
     resolveCurrentPortlessOrigin(currentOrigin) ||
     resolveConfiguredPortlessOrigin(env) ||
+    (preserveCurrentManagedOrigin
+      ? resolveCurrentManagedPlatformOrigin(currentOrigin)
+      : null) ||
     resolveConfiguredWebOrigin(env) ||
     resolveCurrentPlatformOrigin(currentOrigin) ||
     (!isProduction ? normalizeHttpOrigin(currentOrigin) : null) ||
