@@ -943,6 +943,10 @@
         "attributedRevenue": "Attributed revenue",
         "cancelSquare": "Cancel terminal",
         "earnedAmount": "Earned amount",
+        "empty": "No commerce records yet",
+        "emptyDescriptions": {
+          "revenueShare": "Revenue share earnings will appear here after finalized sales include eligible stock rows."
+        },
         "items": "{count, plural, one {# item} other {# items}}",
         "metrics": {
           "completed": "Completed",

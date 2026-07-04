@@ -943,6 +943,10 @@
         "attributedRevenue": "Doanh thu ghi nhận",
         "cancelSquare": "Hủy trên terminal",
         "earnedAmount": "Số tiền kiếm được",
+        "empty": "Chưa có bản ghi thương mại",
+        "emptyDescriptions": {
+          "revenueShare": "Thu nhập chia doanh thu sẽ xuất hiện tại đây sau khi doanh số đã hoàn tất có dòng tồn kho đủ điều kiện."
+        },
         "items": "{count, plural, one {# mặt hàng} other {# mặt hàng}}",
         "metrics": {
           "completed": "Hoàn tất",

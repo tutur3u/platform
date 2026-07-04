@@ -7267,6 +7267,7 @@
     "invite-people": "Invite People",
     "lab": "Lab",
     "labels": "Labels",
+    "leaderboards": "Leaderboards",
     "link_shortener": "Link Shortener",
     "logs": "Logs",
     "mail": "Mail",
@@ -7313,6 +7314,7 @@
     "sites": "Sites",
     "slides": "Slides",
     "spark": "Spark",
+    "stats": "Stats",
     "stats_period": "Last 24 hours",
     "structure": "Structure",
     "tasks": "Tasks",
@@ -13130,6 +13132,12 @@
     "name": "Board Name",
     "no_boards_found": "No boards found",
     "plural": "Task Boards",
+    "public": {
+      "metadata_description": "Read-only public task board.",
+      "unavailable_description": "This public board link is disabled, expired, or no longer available.",
+      "unavailable_title": "Public board unavailable",
+      "untitled_board": "Untitled board"
+    },
     "quick_create": {
       "default_name": "Task"
     },

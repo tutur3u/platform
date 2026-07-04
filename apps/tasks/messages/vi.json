@@ -7267,6 +7267,7 @@
     "invite-people": "Mời người dùng",
     "lab": "Phòng thí nghiệm",
     "labels": "Nhãn",
+    "leaderboards": "Bảng xếp hạng",
     "link_shortener": "Liên kết rút ngắn",
     "logs": "Nhật ký",
     "mail": "Hộp thư",
@@ -7313,6 +7314,7 @@
     "sites": "Trang web",
     "slides": "Trang trình bày",
     "spark": "Spark",
+    "stats": "Thống kê",
     "stats_period": "24 giờ qua",
     "structure": "Kết cấu",
     "tasks": "Nhiệm vụ",
@@ -13130,6 +13132,12 @@
     "name": "Tên bảng",
     "no_boards_found": "Chưa có bảng nào. Tạo bảng đầu tiên để bắt đầu.",
     "plural": "Bảng nhiệm vụ",
+    "public": {
+      "metadata_description": "Bảng nhiệm vụ công khai chỉ đọc.",
+      "unavailable_description": "Liên kết bảng công khai này đã bị tắt, hết hạn hoặc không còn khả dụng.",
+      "unavailable_title": "Bảng công khai không khả dụng",
+      "untitled_board": "Bảng chưa đặt tên"
+    },
     "quick_create": {
       "default_name": "Công việc"
     },

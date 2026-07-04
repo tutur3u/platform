@@ -106,43 +106,48 @@ export function OperationsTable<Row>({
 
   return (
     <>
-      <section aria-label={ariaLabel} className="hidden lg:block">
-        <DataTable<Row, unknown>
-          className="space-y-0"
-          columns={dataTableColumns}
-          data={rows}
-          getRowId={getRowId}
-          hidePagination
-          hideToolbar
-          namespace={ariaLabel}
-          rowWrapper={(rowElement, rowData) => {
-            const typedRow = rowElement as ReactElement<
-              Record<string, unknown>
-            >;
-            const currentClassName =
-              typeof typedRow.props.className === 'string'
-                ? typedRow.props.className
-                : undefined;
+      <section aria-label={ariaLabel} className="hidden min-w-0 lg:block">
+        <div className="max-h-[min(68vh,44rem)] overflow-auto rounded-lg border border-border bg-card">
+          <DataTable<Row, unknown>
+            className="space-y-0"
+            columns={dataTableColumns}
+            data={rows}
+            getRowId={getRowId}
+            hidePagination
+            hideToolbar
+            namespace={ariaLabel}
+            rowWrapper={(rowElement, rowData) => {
+              const typedRow = rowElement as ReactElement<
+                Record<string, unknown>
+              >;
+              const currentClassName =
+                typeof typedRow.props.className === 'string'
+                  ? typedRow.props.className
+                  : undefined;
 
-            return cloneElement(typedRow, {
-              'aria-label': onRowActivate
-                ? rowActivateLabel?.(rowData)
-                : undefined,
-              className: cn(
-                currentClassName,
-                'border-border/70 border-t transition-colors hover:bg-muted/20',
-                interactiveRowClass,
-                getRowClassName?.(rowData)
-              ),
-              onClick: handleRowClick?.(rowData),
-              onKeyDown: handleRowKeyDown?.(rowData),
-              tabIndex: onRowActivate ? 0 : undefined,
-            });
-          }}
-          tableCardClassName="overflow-x-auto rounded-lg border-border bg-card"
-          tableClassName={cn('w-full table-fixed text-left text-sm', minWidth)}
-          t={tableT}
-        />
+              return cloneElement(typedRow, {
+                'aria-label': onRowActivate
+                  ? rowActivateLabel?.(rowData)
+                  : undefined,
+                className: cn(
+                  currentClassName,
+                  'border-border/70 border-t transition-colors hover:bg-muted/20',
+                  interactiveRowClass,
+                  getRowClassName?.(rowData)
+                ),
+                onClick: handleRowClick?.(rowData),
+                onKeyDown: handleRowKeyDown?.(rowData),
+                tabIndex: onRowActivate ? 0 : undefined,
+              });
+            }}
+            tableCardClassName="rounded-none border-0 bg-card shadow-none"
+            tableClassName={cn(
+              'w-full table-fixed text-left text-sm',
+              minWidth
+            )}
+            t={tableT}
+          />
+        </div>
       </section>
       <div className="grid gap-3 lg:hidden">
         {rows.map((row) => {

@@ -166,6 +166,7 @@
     "quizXp": "+{xp} XP",
     "quizzes": "Quizzes",
     "reviewTest": "Review test",
+    "saveError": "Could not save your answer.",
     "savingAnswer": "Saving...",
     "selectModule": "Select a module to view its content",
     "sharedCourse": "Shared course",
