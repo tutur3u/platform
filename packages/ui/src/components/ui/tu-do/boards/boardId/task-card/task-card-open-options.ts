@@ -131,7 +131,7 @@ export function getTaskCardHydratingOpenOptions({
     taskWorkspacePersonal: sourceWorkspaceId ? false : isPersonalWorkspace,
     canUseBoardAssignees: canUseBoardAssignees ?? sourceBoardAssigneesEnabled,
     assigneeMemberSource:
-      assigneeMemberSource ?? (sourceWorkspaceId ? 'workspace' : undefined),
+      assigneeMemberSource ?? (sourceWorkspaceId ? 'board' : undefined),
     initialSharedContext,
   };
 }

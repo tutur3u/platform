@@ -76,7 +76,7 @@ describe('getTaskCardHydratingOpenOptions', () => {
       taskWsId: 'source-workspace',
       taskWorkspacePersonal: false,
       canUseBoardAssignees: true,
-      assigneeMemberSource: 'workspace',
+      assigneeMemberSource: 'board',
       initialSharedContext: {
         boardConfig: {
           id: 'source-board',

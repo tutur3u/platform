@@ -528,7 +528,7 @@ function InteractiveListView({
           isPersonalWorkspace,
           canUseBoardAssignees: task.source_workspace_id ? true : showAssignees,
           assigneeMemberSource: task.source_workspace_id
-            ? 'workspace'
+            ? 'board'
             : effectiveAssigneeMemberSource,
         })
       );

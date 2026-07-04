@@ -254,7 +254,7 @@ export function TimelineBoard({
               ? true
               : showAssignees,
             assigneeMemberSource: task.source_workspace_id
-              ? 'workspace'
+              ? 'board'
               : effectiveAssigneeMemberSource,
           })
         );

@@ -168,6 +168,68 @@ describe('workspace task API route app-session bridge', () => {
     );
   });
 
+  it('allows platform CLI and Tasks app-session auth on task label detail routes', async () => {
+    await import('@/app/api/v1/workspaces/[wsId]/labels/[labelId]/route');
+
+    expect(mocks.withSessionAuth).toHaveBeenNthCalledWith(
+      1,
+      expect.any(Function),
+      {
+        allowAppSessionAuth: {
+          targetApp: ['platform', 'tasks'],
+        },
+      }
+    );
+    expect(mocks.withSessionAuth).toHaveBeenNthCalledWith(
+      2,
+      expect.any(Function),
+      {
+        allowAppSessionAuth: {
+          targetApp: ['platform', 'tasks'],
+        },
+      }
+    );
+  });
+
+  it('allows platform CLI and Tasks app-session auth on task project collection routes', async () => {
+    await import('@/app/api/v1/workspaces/[wsId]/task-projects/route');
+
+    expect(mocks.withSessionAuth).toHaveBeenNthCalledWith(
+      1,
+      expect.any(Function),
+      {
+        allowAppSessionAuth: {
+          targetApp: ['platform', 'tasks'],
+        },
+      }
+    );
+    expect(mocks.withSessionAuth).toHaveBeenNthCalledWith(
+      2,
+      expect.any(Function),
+      {
+        allowAppSessionAuth: {
+          targetApp: ['platform', 'tasks'],
+        },
+      }
+    );
+  });
+
+  it('allows platform CLI and Tasks app-session auth on task board viewable member routes', async () => {
+    await import(
+      '@/app/api/v1/workspaces/[wsId]/task-boards/[boardId]/viewable-members/route'
+    );
+
+    expect(mocks.withSessionAuth).toHaveBeenNthCalledWith(
+      1,
+      expect.any(Function),
+      {
+        allowAppSessionAuth: {
+          targetApp: ['platform', 'tasks'],
+        },
+      }
+    );
+  });
+
   it('allows platform CLI and Tasks app-session auth on task board collection routes', async () => {
     await import('@/app/api/v1/workspaces/[wsId]/task-boards/route');
 

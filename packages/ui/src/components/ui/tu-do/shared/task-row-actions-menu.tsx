@@ -180,7 +180,7 @@ export function TaskRowActionsMenu({
           canUseBoardAssignees ??
           (task.source_workspace_id ? true : !isPersonalWorkspace),
         assigneeMemberSource: task.source_workspace_id
-          ? 'workspace'
+          ? 'board'
           : assigneeMemberSource,
       }
     );

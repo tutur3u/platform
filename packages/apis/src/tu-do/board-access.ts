@@ -29,7 +29,7 @@ export interface TaskBoardGuestShare {
 export type TaskBoardAccess =
   | {
       mode: 'member';
-      permission: 'edit';
+      permission: TaskBoardGuestPermission;
     }
   | {
       mode: 'guest';
@@ -100,7 +100,7 @@ export function normalizeTaskBoardShareEmail(email: string | null | undefined) {
 }
 
 export function canEditTaskBoardAccess(access: TaskBoardAccess) {
-  return access.mode === 'member' || access.permission === 'edit';
+  return access.permission === 'edit';
 }
 
 export function strongestTaskBoardGuestPermission(
@@ -515,11 +515,16 @@ export async function resolveTaskBoardAccess({
       wsId: context.wsId,
       user,
     });
+    const canManageProjects =
+      permissions?.containsPermission('manage_projects') === true;
 
-    if (permissions?.containsPermission('manage_projects')) {
+    if (canManageProjects || requiredPermission === 'view') {
       return {
         ...context,
-        access: { mode: 'member', permission: 'edit' },
+        access: {
+          mode: 'member',
+          permission: canManageProjects ? 'edit' : 'view',
+        },
         sbAdmin,
         supabase,
         user,

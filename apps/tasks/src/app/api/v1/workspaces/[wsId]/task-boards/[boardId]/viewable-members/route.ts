@@ -1,4 +1,5 @@
 import { resolveTaskBoardAccess } from '@tuturuuu/apis/tu-do/board-access';
+import { CLI_APP_TARGET_APP } from '@tuturuuu/auth/cli-session';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import type { Database } from '@tuturuuu/types';
@@ -12,6 +13,9 @@ import {
 } from '@/lib/workspace-members';
 
 const MANAGE_PROJECTS_PERMISSION = 'manage_projects';
+const TASK_BOARD_VIEWABLE_MEMBERS_APP_SESSION_AUTH = {
+  targetApp: [CLI_APP_TARGET_APP, 'tasks'],
+} as const;
 
 type BoardSharePermission =
   Database['public']['Tables']['task_board_shares']['Row']['permission'];
@@ -232,5 +236,6 @@ export const GET = withSessionAuth<{ wsId: string; boardId: string }>(
         { status: 500 }
       );
     }
-  }
+  },
+  { allowAppSessionAuth: TASK_BOARD_VIEWABLE_MEMBERS_APP_SESSION_AUTH }
 );

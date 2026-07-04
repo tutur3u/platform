@@ -154,6 +154,7 @@ import {
   getTaskCardHydratingOpenOptions,
   isExternalTaskSnapshot,
 } from './task-card-open-options';
+import { getTaskCardResourceContext } from './task-card-resource-context';
 import { getTaskCardVisibilityState } from './task-card-visibility';
 import { TaskSchedulingBadge } from './task-scheduling-badge';
 
@@ -391,12 +392,20 @@ function TaskCardInner({
   // Use React Query hooks for shared data (cached across all task cards)
   const workspaceContextWsId = workspaceId ?? wsId;
   const { data: boardConfig } = useBoardConfig(boardId, workspaceContextWsId);
-  const effectiveWorkspaceId = workspaceId ?? boardConfig?.ws_id ?? wsId;
-  const isSourceWorkspaceTask = Boolean(task.source_workspace_id);
-  const boardViewableMembersBoardId =
-    isSourceWorkspaceTask && task.source_board_id
-      ? task.source_board_id
-      : boardId;
+  const pageWorkspaceId = workspaceId ?? boardConfig?.ws_id ?? wsId;
+  const {
+    boardViewableMembersBoardId,
+    boardViewableMembersWorkspaceId,
+    effectiveWorkspaceId,
+    initialAvailableLists,
+    isSourceWorkspaceTask,
+    taskBoardId,
+  } = getTaskCardResourceContext({
+    boardId,
+    pageWorkspaceId,
+    propAvailableLists,
+    task,
+  });
   const taskProjectIds = useMemo(
     () => task.projects?.map((project) => project.id).filter(Boolean) ?? [],
     [task.projects]
@@ -494,14 +503,16 @@ function TaskCardInner({
   const boardViewableMembersQuery = useQuery({
     queryKey: [
       'task-board-viewable-members',
-      effectiveWorkspaceId,
+      boardViewableMembersWorkspaceId,
       boardViewableMembersBoardId,
     ],
     queryFn: async (): Promise<WorkspaceMember[]> => {
-      if (!effectiveWorkspaceId || !boardViewableMembersBoardId) return [];
+      if (!boardViewableMembersWorkspaceId || !boardViewableMembersBoardId) {
+        return [];
+      }
 
       const payload = await listWorkspaceTaskBoardViewableMembers(
-        effectiveWorkspaceId,
+        boardViewableMembersWorkspaceId,
         boardViewableMembersBoardId
       );
       const members = Array.isArray(payload?.members) ? payload.members : [];
@@ -509,14 +520,14 @@ function TaskCardInner({
       return members.map((member) => ({
         id: member.user_id,
         user_id: member.user_id,
-        workspace_id: effectiveWorkspaceId,
+        workspace_id: boardViewableMembersWorkspaceId,
         display_name: member.display_name ?? member.email ?? member.user_id,
         email: member.email ?? undefined,
         avatar_url: member.avatar_url ?? undefined,
       }));
     },
     enabled:
-      !!effectiveWorkspaceId &&
+      !!boardViewableMembersWorkspaceId &&
       !!boardViewableMembersBoardId &&
       shouldLoadBoardViewableMembers,
     staleTime: 5 * 60 * 1000,
@@ -745,15 +756,15 @@ function TaskCardInner({
 
   // Fetch available task lists using React Query (same key as other components)
   const { data: availableLists = [] } = useQuery({
-    queryKey: ['task_lists', boardId],
+    queryKey: ['task_lists', taskBoardId],
     queryFn: async () => {
-      if (!effectiveWorkspaceId) {
+      if (!effectiveWorkspaceId || !taskBoardId) {
         return [];
       }
 
       const { lists } = await listWorkspaceTaskLists(
         effectiveWorkspaceId,
-        boardId,
+        taskBoardId,
         typeof window !== 'undefined'
           ? { baseUrl: window.location.origin }
           : undefined
@@ -761,8 +772,8 @@ function TaskCardInner({
 
       return lists.filter((list) => !list.deleted) as TaskList[];
     },
-    enabled: !propAvailableLists && !!effectiveWorkspaceId, // Only fetch if not provided as prop
-    initialData: propAvailableLists,
+    enabled: !initialAvailableLists && !!effectiveWorkspaceId && !!taskBoardId,
+    initialData: initialAvailableLists,
     staleTime: 60 * 1000, // 1 minute - lists change less frequently
   });
 
@@ -1126,7 +1137,7 @@ function TaskCardInner({
           ? true
           : shouldUseBoardAssignees,
         assigneeMemberSource: task.source_workspace_id
-          ? 'workspace'
+          ? 'board'
           : effectiveAssigneeMemberSource,
         effectiveWorkspaceId,
         isPersonalWorkspace,
@@ -1229,7 +1240,13 @@ function TaskCardInner({
   const handleAddSubtask = () => {
     setMenuOpen(false);
     // Open subtask creation dialog - the relationship will be created when the user saves
-    createSubtask(task.id, task.name, boardId, task.list_id, availableLists);
+    createSubtask(
+      task.id,
+      task.name,
+      taskBoardId,
+      task.list_id,
+      availableLists
+    );
   };
 
   const handleMoveToExternalStaging = async () => {
@@ -2743,7 +2760,7 @@ function TaskCardInner({
         <CreateListDialog
           open={isCreateListDialogOpen}
           onOpenChange={setIsCreateListDialogOpen}
-          boardId={boardId}
+          boardId={taskBoardId}
           wsId={effectiveWorkspaceId}
           initialStatus="active"
           onSuccess={(listId) => {

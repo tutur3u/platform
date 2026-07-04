@@ -104,7 +104,40 @@ describe('task board direct share access', () => {
     expect((sbAdmin as any).from).toHaveBeenCalledTimes(1);
   });
 
-  it('rejects a workspace member without manage_projects when no direct share exists', async () => {
+  it('returns read access for a workspace member without manage_projects', async () => {
+    verifyWorkspaceMembershipTypeMock.mockResolvedValue({ ok: true });
+    getPermissionsMock.mockResolvedValue({
+      containsPermission: vi.fn().mockReturnValue(false),
+    });
+    const supabase = createSupabaseMock({});
+    const sbAdmin = createSupabaseMock({
+      workspace_boards: [
+        {
+          data: {
+            id: '00000000-0000-4000-8000-000000000010',
+            ws_id: '00000000-0000-4000-8000-000000000020',
+          },
+          error: null,
+        },
+      ],
+    });
+
+    const result = await resolveTaskBoardAccess({
+      boardId: '00000000-0000-4000-8000-000000000010',
+      sbAdmin,
+      supabase,
+      user,
+      wsId: '00000000-0000-4000-8000-000000000020',
+    });
+
+    expect(result).toMatchObject({
+      access: { mode: 'member', permission: 'view' },
+      boardId: '00000000-0000-4000-8000-000000000010',
+    });
+    expect((sbAdmin as any).from).toHaveBeenCalledTimes(1);
+  });
+
+  it('rejects a workspace member without manage_projects when edit is required and no direct share exists', async () => {
     verifyWorkspaceMembershipTypeMock.mockResolvedValue({ ok: true });
     getPermissionsMock.mockResolvedValue({
       containsPermission: vi.fn().mockReturnValue(false),
@@ -128,6 +161,7 @@ describe('task board direct share access', () => {
 
     const result = await resolveTaskBoardAccess({
       boardId: '00000000-0000-4000-8000-000000000010',
+      requiredPermission: 'edit',
       sbAdmin,
       supabase,
       user,

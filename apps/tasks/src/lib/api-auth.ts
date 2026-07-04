@@ -393,36 +393,28 @@ export async function resolveSessionAuthContext(
         options.allowAppSessionAuth
       );
 
-      if (!appSessionVerification) {
+      if (appSessionVerification) {
+        const appSessionUser = createAppSessionUser(
+          appSessionVerification.claims
+        );
+        setLogDrainUserContext({
+          userEmail: appSessionUser.email,
+          userId: appSessionUser.id,
+        });
+
+        writeVerifiedSessionCacheForRequest(request, appSessionUser.id);
+
         return {
-          ok: false,
-          response: NextResponse.json(
-            { error: 'Unauthorized' },
-            { status: 401 }
+          ok: true,
+          supabase: attachSupabaseAuthUser(
+            (await createAdminClient({
+              noCookie: true,
+            })) as TypedSupabaseClient,
+            appSessionUser
           ),
+          user: appSessionUser,
         };
       }
-
-      const appSessionUser = createAppSessionUser(
-        appSessionVerification.claims
-      );
-      setLogDrainUserContext({
-        userEmail: appSessionUser.email,
-        userId: appSessionUser.id,
-      });
-
-      writeVerifiedSessionCacheForRequest(request, appSessionUser.id);
-
-      return {
-        ok: true,
-        supabase: attachSupabaseAuthUser(
-          (await createAdminClient({
-            noCookie: true,
-          })) as TypedSupabaseClient,
-          appSessionUser
-        ),
-        user: appSessionUser,
-      };
     }
   }
 
@@ -797,93 +789,91 @@ export function withSessionAuth<T = unknown>(
           options.allowAppSessionAuth
         );
 
-        if (!appSessionVerification) {
-          return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-        }
-
-        const appSessionUser = createAppSessionUser(
-          appSessionVerification.claims
-        );
-        setLogDrainUserContext({
-          userEmail: appSessionUser.email,
-          userId: appSessionUser.id,
-        });
-
-        try {
-          const { checkUserSuspension } = await import(
-            '@tuturuuu/utils/abuse-protection/user-suspension'
+        if (appSessionVerification) {
+          const appSessionUser = createAppSessionUser(
+            appSessionVerification.claims
           );
-          const suspension = await checkUserSuspension(appSessionUser.id);
-          if (suspension.suspended) {
-            return NextResponse.json(
-              {
-                error: 'Forbidden',
-                message: suspension.reason ?? 'Account suspended',
-              },
-              { status: 403 }
+          setLogDrainUserContext({
+            userEmail: appSessionUser.email,
+            userId: appSessionUser.id,
+          });
+
+          try {
+            const { checkUserSuspension } = await import(
+              '@tuturuuu/utils/abuse-protection/user-suspension'
             );
+            const suspension = await checkUserSuspension(appSessionUser.id);
+            if (suspension.suspended) {
+              return NextResponse.json(
+                {
+                  error: 'Forbidden',
+                  message: suspension.reason ?? 'Account suspended',
+                },
+                { status: 403 }
+              );
+            }
+          } catch {
+            // User suspension module not yet available or failed — fail-open
           }
-        } catch {
-          // User suspension module not yet available or failed — fail-open
-        }
 
-        const adminSupabase = (await createAdminClient({
-          noCookie: true,
-        })) as TypedSupabaseClient;
-        const appSessionSupabase = attachSupabaseAuthUser(
-          adminSupabase,
-          appSessionUser
-        );
-        const params = routeContext?.params
-          ? await Promise.resolve(routeContext.params)
-          : ({} as T);
-        const adaptiveControls = await applyAdaptiveSessionControls({
-          authKind: 'app-session',
-          endpoint,
-          ipAddress,
-          isRead,
-          rateLimit: options?.rateLimit,
-          request,
-          skipStepUpChallenge:
-            options?.skipAppSessionStepUpChallenge === true ||
-            isCliAppSessionClaims(appSessionVerification.claims),
-          user: appSessionUser,
-        });
-        if (adaptiveControls.response) {
-          return adaptiveControls.response;
-        }
-
-        const response = await handler(
-          request,
-          { user: appSessionUser, supabase: appSessionSupabase },
-          params
-        );
-
-        if (
-          options?.cache &&
-          request.method === 'GET' &&
-          response.status >= 200 &&
-          response.status < 300
-        ) {
-          const { maxAge, swr } = options.cache;
-          const directives = [`private`, `max-age=${maxAge}`];
-          if (swr !== undefined) {
-            directives.push(`stale-while-revalidate=${swr}`);
+          const adminSupabase = (await createAdminClient({
+            noCookie: true,
+          })) as TypedSupabaseClient;
+          const appSessionSupabase = attachSupabaseAuthUser(
+            adminSupabase,
+            appSessionUser
+          );
+          const params = routeContext?.params
+            ? await Promise.resolve(routeContext.params)
+            : ({} as T);
+          const adaptiveControls = await applyAdaptiveSessionControls({
+            authKind: 'app-session',
+            endpoint,
+            ipAddress,
+            isRead,
+            rateLimit: options?.rateLimit,
+            request,
+            skipStepUpChallenge:
+              options?.skipAppSessionStepUpChallenge === true ||
+              isCliAppSessionClaims(appSessionVerification.claims),
+            user: appSessionUser,
+          });
+          if (adaptiveControls.response) {
+            return adaptiveControls.response;
           }
-          response.headers.set('Cache-Control', directives.join(', '));
+
+          const response = await handler(
+            request,
+            { user: appSessionUser, supabase: appSessionSupabase },
+            params
+          );
+
+          if (
+            options?.cache &&
+            request.method === 'GET' &&
+            response.status >= 200 &&
+            response.status < 300
+          ) {
+            const { maxAge, swr } = options.cache;
+            const directives = [`private`, `max-age=${maxAge}`];
+            if (swr !== undefined) {
+              directives.push(`stale-while-revalidate=${swr}`);
+            }
+            response.headers.set('Cache-Control', directives.join(', '));
+          }
+
+          applyAdaptiveRateLimitHeaders(response, adaptiveControls.headers);
+          recordResponseAbuseSignal({
+            decision: adaptiveControls.decision,
+            ipAddress,
+            method: request.method,
+            response,
+            route: endpoint,
+            userId: appSessionUser.id,
+          });
+
+          return response;
         }
-
-        applyAdaptiveRateLimitHeaders(response, adaptiveControls.headers);
-        recordResponseAbuseSignal({
-          decision: adaptiveControls.decision,
-          ipAddress,
-          method: request.method,
-          response,
-          route: endpoint,
-          userId: appSessionUser.id,
-        });
-
-        return response;
       }
     }
 
