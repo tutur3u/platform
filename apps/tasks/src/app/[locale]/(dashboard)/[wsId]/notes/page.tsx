@@ -1,4 +1,6 @@
 import NotesPage from '@tuturuuu/ui/tu-do/notes/notes-page';
+import { connection } from 'next/server';
+import { createElement } from 'react';
 
 interface Props {
   params: Promise<{
@@ -7,5 +9,7 @@ interface Props {
 }
 
 export default async function Page({ params }: Props) {
-  return <NotesPage params={params} />;
+  await connection();
+
+  return createElement(NotesPage, { params });
 }

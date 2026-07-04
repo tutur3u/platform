@@ -1,3 +1,4 @@
+import { connection } from 'next/server';
 import { TaskProgressRoute } from '../_components/task-progress-route';
 
 interface Props {
@@ -11,6 +12,8 @@ export const metadata = {
   description: 'Preview and import task progress entries.',
 };
 
-export default function Page({ params }: Props) {
+export default async function Page({ params }: Props) {
+  await connection();
+
   return <TaskProgressRoute params={params} view="import" />;
 }

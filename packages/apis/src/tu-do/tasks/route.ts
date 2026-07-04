@@ -1317,6 +1317,7 @@ export async function handleTaskRouteGET(
       includeCount &&
       memberCheck.ok &&
       isPersonalWorkspace &&
+      auth.appSession !== true &&
       !forTimeTracking &&
       personalExternalCountBoardId
     ) {
@@ -1331,13 +1332,7 @@ export async function handleTaskRouteGET(
             }
           );
       } catch (countError) {
-        if (isUnauthorizedSupabaseRpcError(countError)) {
-          console.warn(
-            'Failed to load personal external task counts; continuing without external count totals:',
-            countError,
-            taskRouteLogContext
-          );
-        } else {
+        if (!isUnauthorizedSupabaseRpcError(countError)) {
           logTaskRouteError(
             'Failed to load personal external task counts:',
             countError,

@@ -1,3 +1,4 @@
+import { connection } from 'next/server';
 import { TaskProgressRoute } from '../_components/task-progress-route';
 
 interface Props {
@@ -11,6 +12,8 @@ export const metadata = {
   description: 'Track task progress entries, metrics, and recent activity.',
 };
 
-export default function Page({ params }: Props) {
+export default async function Page({ params }: Props) {
+  await connection();
+
   return <TaskProgressRoute params={params} view="progress" />;
 }

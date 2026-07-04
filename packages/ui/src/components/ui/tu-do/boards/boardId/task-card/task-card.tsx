@@ -33,6 +33,7 @@ import {
   listWorkspaceTaskBoardViewableMembers,
   listWorkspaceTaskLists,
   listWorkspaceTaskProjects,
+  listWorkspaceTaskProjectsByIds,
   removeCurrentUserTaskPersonalPlacement,
 } from '@tuturuuu/internal-api/tasks';
 import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
@@ -391,6 +392,15 @@ function TaskCardInner({
   const workspaceContextWsId = workspaceId ?? wsId;
   const { data: boardConfig } = useBoardConfig(boardId, workspaceContextWsId);
   const effectiveWorkspaceId = workspaceId ?? boardConfig?.ws_id ?? wsId;
+  const isSourceWorkspaceTask = Boolean(task.source_workspace_id);
+  const boardViewableMembersBoardId =
+    isSourceWorkspaceTask && task.source_board_id
+      ? task.source_board_id
+      : boardId;
+  const taskProjectIds = useMemo(
+    () => task.projects?.map((project) => project.id).filter(Boolean) ?? [],
+    [task.projects]
+  );
   const taskShareWsId = effectiveWorkspaceId;
   const { data: workspaceLabels = [], isLoading: labelsLoading } =
     useWorkspaceLabels(effectiveWorkspaceId);
@@ -431,12 +441,24 @@ function TaskCardInner({
   // Fetch workspace projects
   const { data: workspaceProjects = [], isLoading: projectsLoading } = useQuery(
     {
-      queryKey: ['task_projects', effectiveWorkspaceId],
+      queryKey: [
+        'task_projects',
+        effectiveWorkspaceId,
+        isSourceWorkspaceTask ? taskProjectIds.join(',') : 'all',
+      ],
       queryFn: async () => {
         if (!effectiveWorkspaceId) return [];
+        if (isSourceWorkspaceTask) {
+          return listWorkspaceTaskProjectsByIds(
+            effectiveWorkspaceId,
+            taskProjectIds
+          );
+        }
         return listWorkspaceTaskProjects(effectiveWorkspaceId);
       },
-      enabled: !!effectiveWorkspaceId,
+      enabled:
+        !!effectiveWorkspaceId &&
+        (!isSourceWorkspaceTask || taskProjectIds.length > 0),
       staleTime: 5 * 60 * 1000, // 5 minutes - projects rarely change
     }
   );
@@ -470,13 +492,17 @@ function TaskCardInner({
     enabled: !!effectiveWorkspaceId && shouldLoadWorkspaceMembers,
   });
   const boardViewableMembersQuery = useQuery({
-    queryKey: ['task-board-viewable-members', effectiveWorkspaceId, boardId],
+    queryKey: [
+      'task-board-viewable-members',
+      effectiveWorkspaceId,
+      boardViewableMembersBoardId,
+    ],
     queryFn: async (): Promise<WorkspaceMember[]> => {
-      if (!effectiveWorkspaceId || !boardId) return [];
+      if (!effectiveWorkspaceId || !boardViewableMembersBoardId) return [];
 
       const payload = await listWorkspaceTaskBoardViewableMembers(
         effectiveWorkspaceId,
-        boardId
+        boardViewableMembersBoardId
       );
       const members = Array.isArray(payload?.members) ? payload.members : [];
 
@@ -490,7 +516,9 @@ function TaskCardInner({
       }));
     },
     enabled:
-      !!effectiveWorkspaceId && !!boardId && shouldLoadBoardViewableMembers,
+      !!effectiveWorkspaceId &&
+      !!boardViewableMembersBoardId &&
+      shouldLoadBoardViewableMembers,
     staleTime: 5 * 60 * 1000,
   });
   const normalWorkspaceMembers = normalMembersQuery.data ?? [];

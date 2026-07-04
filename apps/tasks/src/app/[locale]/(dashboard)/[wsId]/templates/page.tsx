@@ -1,4 +1,5 @@
 import TaskTemplatesPage from '@tuturuuu/ui/tu-do/templates/task-templates-page';
+import { connection } from 'next/server';
 
 interface Props {
   params: Promise<{
@@ -7,6 +8,8 @@ interface Props {
 }
 
 export default async function TemplatesPage({ params }: Props) {
+  await connection();
+
   return (
     <TaskTemplatesPage
       params={params}

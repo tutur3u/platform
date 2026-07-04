@@ -1,4 +1,5 @@
 import TaskDraftsPage from '@tuturuuu/ui/tu-do/drafts/task-drafts-page';
+import { connection } from 'next/server';
 
 interface Props {
   params: Promise<{
@@ -7,5 +8,7 @@ interface Props {
 }
 
 export default async function Page({ params }: Props) {
+  await connection();
+
   return <TaskDraftsPage params={params} />;
 }
