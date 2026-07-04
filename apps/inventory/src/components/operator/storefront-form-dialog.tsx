@@ -1,7 +1,7 @@
 'use client';
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { CreditCard, FileImage, Store } from '@tuturuuu/icons';
+import { CreditCard, FileImage, LayoutGrid, Store } from '@tuturuuu/icons';
 import { createInventoryStorefront } from '@tuturuuu/internal-api/inventory';
 import { Button } from '@tuturuuu/ui/button';
 import { Dialog, DialogClose, DialogTrigger } from '@tuturuuu/ui/dialog';
@@ -10,11 +10,10 @@ import { sanitizeStorefrontAccentColor } from '@tuturuuu/ui/storefront';
 import { useTranslations } from 'next-intl';
 import { type ReactNode, useMemo, useState } from 'react';
 import {
-  FormSection,
-  OperatorDialogBody,
   OperatorDialogContent,
   OperatorDialogFooter,
   OperatorDialogHeader,
+  OperatorDialogTabs,
 } from './operator-dialog-shell';
 import {
   createSlugSuggestion,
@@ -156,57 +155,65 @@ export function StorefrontForm({
               if (canSubmit) mutation.mutate();
             }}
           >
-            <OperatorDialogBody className="grid gap-6">
-              <FormSection
-                description={t('steps.storefrontIdentityDescription')}
-                icon={<Store className="h-4 w-4" />}
-                title={t('steps.storefrontIdentity')}
-              >
-                <StorefrontIdentityFields
-                  form={form}
-                  setForm={setForm}
-                  wsId={wsId}
-                />
-              </FormSection>
-              <FormSection
-                description={t('steps.storefrontBrandDescription')}
-                icon={<FileImage className="h-4 w-4" />}
-                title={t('steps.storefrontBrand')}
-              >
-                <StorefrontBrandFields
-                  form={form}
-                  setForm={setForm}
-                  wsId={wsId}
-                />
-              </FormSection>
-              <FormSection
-                description={t('steps.storefrontBuilderDescription')}
-                icon={<FileImage className="h-4 w-4" />}
-                title={t('steps.storefrontBuilder')}
-              >
-                <StorefrontBuilderFields
-                  form={form}
-                  setForm={setForm}
-                  wsId={wsId}
-                />
-              </FormSection>
-              <FormSection
-                description={t('steps.storefrontCheckoutDescription')}
-                icon={<CreditCard className="h-4 w-4" />}
-                title={t('steps.storefrontCheckout')}
-              >
-                <StorefrontCheckoutFields
-                  form={form}
-                  setForm={setForm}
-                  wsId={wsId}
-                />
-              </FormSection>
-              <SmartSuggestions
-                emptyLabel={t('suggestions.empty')}
-                suggestions={suggestions}
-                title={t('suggestions.title')}
-              />
-            </OperatorDialogBody>
+            <OperatorDialogTabs
+              tabs={[
+                {
+                  content: (
+                    <div className="grid gap-6">
+                      <StorefrontIdentityFields
+                        form={form}
+                        setForm={setForm}
+                        wsId={wsId}
+                      />
+                      <SmartSuggestions
+                        emptyLabel={t('suggestions.empty')}
+                        suggestions={suggestions}
+                        title={t('suggestions.title')}
+                      />
+                    </div>
+                  ),
+                  icon: <Store className="h-4 w-4" />,
+                  label: t('steps.storefrontIdentity'),
+                  value: 'identity',
+                },
+                {
+                  content: (
+                    <StorefrontBrandFields
+                      form={form}
+                      setForm={setForm}
+                      wsId={wsId}
+                    />
+                  ),
+                  icon: <FileImage className="h-4 w-4" />,
+                  label: t('steps.storefrontBrand'),
+                  value: 'brand',
+                },
+                {
+                  content: (
+                    <StorefrontBuilderFields
+                      form={form}
+                      setForm={setForm}
+                      wsId={wsId}
+                    />
+                  ),
+                  icon: <LayoutGrid className="h-4 w-4" />,
+                  label: t('steps.storefrontBuilder'),
+                  value: 'builder',
+                },
+                {
+                  content: (
+                    <StorefrontCheckoutFields
+                      form={form}
+                      setForm={setForm}
+                      wsId={wsId}
+                    />
+                  ),
+                  icon: <CreditCard className="h-4 w-4" />,
+                  label: t('steps.storefrontCheckout'),
+                  value: 'checkout',
+                },
+              ]}
+            />
             <OperatorDialogFooter>
               <DialogClose asChild>
                 <Button type="button" variant="ghost">
