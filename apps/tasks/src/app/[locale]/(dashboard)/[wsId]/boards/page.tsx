@@ -1,6 +1,9 @@
-import { BoardsListSkeleton } from '@tuturuuu/ui/tu-do/boards/boards-list-skeleton';
 import WorkspaceProjectsPage from '@tuturuuu/ui/tu-do/boards/workspace-projects-page';
-import { Suspense } from 'react';
+import { createElement } from 'react';
+
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+export const fetchCache = 'force-no-store';
 
 interface Props {
   params: Promise<{
@@ -14,9 +17,5 @@ interface Props {
 }
 
 export default async function ProjectsPage({ params, searchParams }: Props) {
-  return (
-    <Suspense fallback={<BoardsListSkeleton />}>
-      <WorkspaceProjectsPage params={params} searchParams={searchParams} />
-    </Suspense>
-  );
+  return createElement(WorkspaceProjectsPage, { params, searchParams });
 }

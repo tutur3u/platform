@@ -16,6 +16,7 @@ const SOURCE_BOARD_ID = '66666666-6666-4666-8666-666666666666';
 const SOURCE_LIST_ID = '77777777-7777-4777-8777-777777777777';
 const PLACED_TASK_ID = '88888888-8888-4888-8888-888888888888';
 const UNPLACED_TASK_ID = '99999999-9999-4999-8999-999999999999';
+const LOCAL_TASK_ID = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 
 const mocks = vi.hoisted(() => {
   const adminQueues = new Map<string, QueryResult[]>();
@@ -1001,6 +1002,115 @@ describe('workspace task route personal external loading', () => {
       })
     );
     expectSourceMembershipQueriesRequireMemberAccess();
+  });
+
+  it('serves the production personal board due-date query without duplicating external tasks', async () => {
+    const dueLocalTask = {
+      ...boardTask(LOCAL_TASK_ID),
+      end_date: '2026-07-04T08:00:00.000Z',
+    };
+    const duePlacedTask = {
+      ...externalTask(PLACED_TASK_ID),
+      end_date: '2026-07-04T09:00:00.000Z',
+    };
+    const dueDefaultTask = {
+      ...externalTask(UNPLACED_TASK_ID),
+      end_date: '2026-07-05T09:00:00.000Z',
+    };
+
+    queuePersonalWorkspace();
+    queueResult(mocks.adminQueues, 'tasks', {
+      data: [dueLocalTask],
+      error: null,
+      count: 1,
+    });
+    queueResult(mocks.adminQueues, 'task_user_overrides', {
+      data: [
+        {
+          task_id: PLACED_TASK_ID,
+          personal_board_id: PERSONAL_BOARD_ID,
+          personal_list_id: PERSONAL_LIST_ID,
+          personal_sort_key: 1_500_000,
+          personal_added_at: '2026-05-07T00:00:00.000Z',
+          personal_placed_at: '2026-05-07T01:00:00.000Z',
+        },
+      ],
+      error: null,
+      count: 1,
+    });
+    queueResult(mocks.adminQueues, 'tasks', {
+      data: [duePlacedTask],
+      error: null,
+    });
+    queueSourceMembership();
+    queueResult(mocks.adminQueues, 'tasks', {
+      data: [duePlacedTask, dueDefaultTask],
+      error: null,
+      count: 2,
+    });
+    queueSourceMembership();
+    queueEmptyPersonalMetadata();
+    queueResult(mocks.memberQueues, 'task_user_scheduling_settings', {
+      data: [],
+      error: null,
+    });
+
+    const { GET } = await import('./route.js');
+    const response = await GET(
+      new NextRequest(
+        `http://localhost/api/v1/workspaces/${PERSONAL_WS_ID}/tasks?boardId=${PERSONAL_BOARD_ID}&sourceScope=all_visible&listStatuses=not_started,active&limit=200&offset=0&completed=exclude&closed=exclude&hasDueDate=true&externalSortBy=due-asc&includeRelationshipSummary=false`
+      ),
+      { params: Promise.resolve({ wsId: PERSONAL_WS_ID }) }
+    );
+
+    expect(response.status).toBe(200);
+    const payload = await response.json();
+    const taskIds = payload.tasks.map((task: { id: string }) => task.id);
+
+    expect(taskIds).toEqual([LOCAL_TASK_ID, PLACED_TASK_ID, UNPLACED_TASK_ID]);
+    expect(new Set(taskIds).size).toBe(taskIds.length);
+    expect(mocks.adminSchemaClient.rpc).not.toHaveBeenCalledWith(
+      'list_task_source_filter_ids',
+      expect.anything()
+    );
+
+    const placedExternalQuery = mocks.adminQueries.find(
+      (query) =>
+        query.table === 'tasks' &&
+        query.calls.some(
+          ([method, args]) =>
+            method === 'in' &&
+            args[0] === 'id' &&
+            Array.isArray(args[1]) &&
+            args[1].includes(PLACED_TASK_ID)
+        )
+    );
+    const defaultExternalQuery = mocks.adminQueries.find(
+      (query) =>
+        query.table === 'tasks' &&
+        query.calls.some(
+          ([method, args]) =>
+            method === 'neq' &&
+            args[0] === 'task_lists.workspace_boards.ws_id' &&
+            args[1] === PERSONAL_WS_ID
+        )
+    );
+
+    for (const query of [placedExternalQuery, defaultExternalQuery]) {
+      expect(query?.calls).toContainEqual([
+        'in',
+        ['task_lists.status', ['not_started', 'active']],
+      ]);
+      expect(query?.calls).toContainEqual(['is', ['completed_at', null]]);
+      expect(query?.calls).toContainEqual(['is', ['closed_at', null]]);
+      expect(query?.calls).toContainEqual(['not', ['end_date', 'is', null]]);
+    }
+
+    expect(defaultExternalQuery?.calls).toContainEqual([
+      'order',
+      ['end_date', { ascending: true, nullsFirst: false }],
+    ]);
+    expect(defaultExternalQuery?.calls).toContainEqual(['range', [0, 199]]);
   });
 
   it('uses RPC-backed external counts for personal list totals', async () => {

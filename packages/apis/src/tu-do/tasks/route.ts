@@ -1787,7 +1787,7 @@ export async function handleTaskRouteGET(
       }
 
       if (placedTaskIds.length > 0) {
-        const { data: placedTaskRows, error: placedTasksError } = await sbAdmin
+        let placedTasksQuery = sbAdmin
           .from('tasks')
           .select(fullSelect)
           .in('id', placedTaskIds)
@@ -1795,6 +1795,84 @@ export async function handleTaskRouteGET(
           .eq('task_lists.deleted', false)
           .is('task_lists.workspace_boards.deleted_at', null)
           .is('task_lists.workspace_boards.archived_at', null);
+
+        if (listStatuses.length > 0) {
+          placedTasksQuery = placedTasksQuery.in(
+            'task_lists.status',
+            listStatuses
+          );
+        }
+
+        if (completedMode === 'exclude') {
+          placedTasksQuery = placedTasksQuery.is('completed_at', null);
+        } else if (completedMode === 'only') {
+          placedTasksQuery = placedTasksQuery.not(
+            'completed_at',
+            'is',
+            null
+          ) as typeof placedTasksQuery;
+        }
+
+        if (closedMode === 'exclude') {
+          placedTasksQuery = placedTasksQuery.is('closed_at', null);
+        } else if (closedMode === 'only') {
+          placedTasksQuery = placedTasksQuery.not(
+            'closed_at',
+            'is',
+            null
+          ) as typeof placedTasksQuery;
+        }
+
+        if (hasDueDate) {
+          placedTasksQuery = placedTasksQuery.not(
+            'end_date',
+            'is',
+            null
+          ) as typeof placedTasksQuery;
+        }
+
+        if (dueDateFrom) {
+          placedTasksQuery = placedTasksQuery.gte('end_date', dueDateFrom);
+        }
+
+        if (dueDateTo) {
+          placedTasksQuery = placedTasksQuery.lte('end_date', dueDateTo);
+        }
+
+        if (estimationMin !== null) {
+          placedTasksQuery = placedTasksQuery.gte(
+            'estimation_points',
+            estimationMin
+          );
+        }
+
+        if (estimationMax !== null) {
+          placedTasksQuery = placedTasksQuery.lte(
+            'estimation_points',
+            estimationMax
+          );
+        }
+
+        if (searchQuery) {
+          placedTasksQuery = placedTasksQuery.ilike('name', `%${searchQuery}%`);
+        }
+
+        if (parsedIdentifier) {
+          placedTasksQuery = placedTasksQuery.eq(
+            'display_number',
+            parsedIdentifier.displayNumber
+          );
+
+          if (parsedIdentifier.ticketPrefix) {
+            placedTasksQuery = placedTasksQuery.eq(
+              'task_lists.workspace_boards.ticket_prefix',
+              parsedIdentifier.ticketPrefix
+            );
+          }
+        }
+
+        const { data: placedTaskRows, error: placedTasksError } =
+          await placedTasksQuery;
 
         if (placedTasksError) {
           return NextResponse.json(
@@ -1908,6 +1986,42 @@ export async function handleTaskRouteGET(
             'is',
             null
           ) as typeof defaultExternalQuery;
+        }
+
+        if (hasDueDate) {
+          defaultExternalQuery = defaultExternalQuery.not(
+            'end_date',
+            'is',
+            null
+          ) as typeof defaultExternalQuery;
+        }
+
+        if (dueDateFrom) {
+          defaultExternalQuery = defaultExternalQuery.gte(
+            'end_date',
+            dueDateFrom
+          );
+        }
+
+        if (dueDateTo) {
+          defaultExternalQuery = defaultExternalQuery.lte(
+            'end_date',
+            dueDateTo
+          );
+        }
+
+        if (estimationMin !== null) {
+          defaultExternalQuery = defaultExternalQuery.gte(
+            'estimation_points',
+            estimationMin
+          );
+        }
+
+        if (estimationMax !== null) {
+          defaultExternalQuery = defaultExternalQuery.lte(
+            'estimation_points',
+            estimationMax
+          );
         }
 
         if (searchQuery) {
