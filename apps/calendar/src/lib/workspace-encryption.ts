@@ -206,9 +206,13 @@ export async function decryptEventsFromStorage<
   const key = await getWorkspaceKey(wsId);
 
   if (!key) {
+    // Most common cause in the calendar app: ENCRYPTION_MASTER_KEY is not set in
+    // this app's runtime (it must match apps/web). Without it getWorkspaceKey()
+    // returns null and events stay encrypted, so name the env var so ops can act.
     console.error(
-      'Encrypted events found but no encryption key available for workspace:',
-      wsId
+      `Encrypted calendar events found for workspace ${wsId} but no encryption key is available. ` +
+        'Set ENCRYPTION_MASTER_KEY in this app to the same value as apps/web so getWorkspaceKey() can derive the workspace key; ' +
+        'returning events undecrypted.'
     );
     return events;
   }
