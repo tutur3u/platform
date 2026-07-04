@@ -253,6 +253,7 @@
                   "build/devops/overview",
                   "build/devops/environments-release-flow",
                   "build/devops/web-docker-deployment",
+                  "build/devops/tanstack-rust-local-deploy",
                   "build/devops/tanstack-rust-cutover-runbook",
                   "build/devops/chat-realtime-runbook",
                   "build/devops/hive-realtime-runbook",

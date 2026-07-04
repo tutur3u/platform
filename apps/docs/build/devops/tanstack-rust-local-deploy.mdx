@@ -1,0 +1,381 @@
+---
+title: "TanStack/Rust Local And Deployment"
+description: "Run apps/backend and apps/tanstack-web locally, deploy to Cloudflare Workers, validate the Vercel build, and self-host with Docker plus Cloudflare Tunnel."
+updatedAt: "2026-07-04"
+---
+
+This is the operator runbook for the migration stack:
+
+- `apps/backend`: Rust API runtime, native on port `7820`, Docker sidecar, and
+  Cloudflare Worker `tuturuuu-backend`.
+- `apps/tanstack-web`: TanStack Start frontend, local dev on port `7824`,
+  Docker sidecar, Cloudflare Worker `tuturuuu-tanstack-web`, and opt-in Vercel
+  build validation.
+
+Keep the legacy `apps/web` runtime available until the cutover gates pass. This
+page explains how to start, validate, and deploy the new stack; route ownership
+and cutover evidence stay in the
+[TanStack/Rust migration contract](/platform/architecture/tanstack-rust-migration)
+and [cutover runbook](/build/devops/tanstack-rust-cutover-runbook).
+
+## Required Environment
+
+Use real values only in ignored env files, shell variables, GitHub Environment
+secrets, Cloudflare Worker secrets, Vercel Project Environment Variables, or VPS
+secret stores. Do not commit values.
+
+| Variable | Used by | Notes |
+| --- | --- | --- |
+| `BACKEND_INTERNAL_TOKEN` | backend and frontend server runtime | Shared bearer token for internal migration/status calls. |
+| `BACKEND_INTERNAL_URL` | `apps/tanstack-web` outside Cloudflare service bindings | Server-only backend origin, such as `http://localhost:7820` or an HTTPS backend Worker/VPS origin. |
+| `BACKEND_PUBLIC_ORIGIN` | `apps/tanstack-web` browser-safe backend origin fallback | Public backend origin when the frontend needs a browser-safe base URL. |
+| `SUPABASE_URL` | backend Worker | Server-side Supabase REST origin. |
+| `SUPABASE_SERVICE_ROLE_KEY` | backend Worker | Server-side Supabase service key. |
+| `TUTURUUU_APP_COORDINATION_SECRET` | backend Worker | App coordination token verification. |
+| `CRON_SECRET` | backend Worker | Cron proxy parity. |
+| `DISCORD_APP_DEPLOYMENT_URL` | backend Worker | Discord app deployment proxy. |
+| `AURORA_EXTERNAL_URL` | backend Worker | Aurora health and ingest upstream. |
+| `AURORA_EXTERNAL_WSID` | backend Worker | Aurora ingest workspace id. |
+| `TANSTACK_WEB_RUNTIME` | frontend build/runtime selection | Use `node` for Docker/node output, `vercel` for Vercel build validation, and unset for Cloudflare Workers. |
+
+## Local Native Run
+
+Native local development is two processes: Rust backend first, then TanStack
+Start. `apps/backend/.env.example` is a template; the native Rust binary reads
+environment variables from the process environment.
+
+1. From the repo root, export local-only backend values:
+
+   ```bash
+   export BACKEND_ENV=development
+   export BACKEND_INTERNAL_TOKEN="<local-only shared token>"
+   export PORT=7820
+   ```
+
+2. Start the Rust backend:
+
+   ```bash
+   cargo run --manifest-path apps/backend/Cargo.toml --features native --bin backend
+   ```
+
+3. In another shell, point TanStack Start at the backend and start the frontend:
+
+   ```bash
+   BACKEND_INTERNAL_TOKEN="${BACKEND_INTERNAL_TOKEN:?set BACKEND_INTERNAL_TOKEN}" \
+   BACKEND_INTERNAL_URL=http://localhost:7820 \
+   BACKEND_PUBLIC_ORIGIN=http://localhost:7820 \
+   bun dev:tanstack-web
+   ```
+
+4. Verify the backend:
+
+   ```bash
+   curl -fsS http://127.0.0.1:7820/healthz
+   curl -fsS http://127.0.0.1:7820/readyz
+   curl -fsS \
+     -H "Authorization: Bearer ${BACKEND_INTERNAL_TOKEN:?set BACKEND_INTERNAL_TOKEN}" \
+     http://127.0.0.1:7820/api/migration/status
+   ```
+
+5. Open the frontend on port `7824`. The root migration shell should report the
+   backend as reachable when the URL and token match.
+
+Common local failures:
+
+- `readyz` is not ready: `BACKEND_INTERNAL_TOKEN` is missing from the backend
+  process.
+- TanStack shows backend unreachable: the frontend shell does not have
+  `BACKEND_INTERNAL_URL` or `BACKEND_INTERNAL_TOKEN`, or the backend is running
+  on a different port.
+- Rust starts but route calls fail: the route may require additional Supabase,
+  Aurora, Discord, cron, or app coordination env values.
+
+## Docker Dual-Stack Rehearsal
+
+Use the minimal dual-stack compose file when you want production artifacts for
+only the migration stack:
+
+```bash
+docker compose -f docker-compose.tanstack-dual.yml config
+docker compose -f docker-compose.tanstack-dual.yml up -d --build
+```
+
+The default loopback ports are:
+
+| Service | Container | Host URL |
+| --- | --- | --- |
+| Rust backend | `backend-dual` | `http://127.0.0.1:7820` |
+| TanStack frontend | `tanstack-web-dual` | `http://127.0.0.1:7824` |
+
+Run the minimal Playwright E2E rehearsal:
+
+```bash
+bun test:e2e:tanstack:docker -- -- --project=chromium
+```
+
+Keep the stack up for manual debugging:
+
+```bash
+bun test:e2e:tanstack:docker -- --keep-up -- --project=chromium
+```
+
+Shut it down when finished:
+
+```bash
+docker compose -f docker-compose.tanstack-dual.yml down
+```
+
+Use the broader production web Docker path when the migration stack needs to run
+behind `web-proxy`, blue/green cutover, watcher recovery, Redis, cron, or
+Cloudflare Tunnel. That path is covered in
+[Web Docker Deployment](/build/devops/web-docker-deployment).
+
+## Cloudflare Workers Deployment
+
+Cloudflare Workers is the edge preview path for both runtimes. The frontend
+Worker uses the `BACKEND` service binding to call the backend Worker first, with
+HTTP env fallback only for local and emergency non-binding runs. This follows
+the current TanStack Start Cloudflare guidance for
+`@cloudflare/vite-plugin` plus `wrangler`.
+
+1. Authenticate and validate config:
+
+   ```bash
+   bun wrangler whoami
+   bun check:cloudflare
+   ```
+
+2. Install Rust Worker prerequisites if the machine has not built Workers
+   before:
+
+   ```bash
+   rustup target add wasm32-unknown-unknown
+   cargo install worker-build --locked
+   ```
+
+3. Bootstrap backend Worker secrets in Cloudflare:
+
+   ```bash
+   bun wrangler secret put BACKEND_INTERNAL_TOKEN --config apps/backend/wrangler.jsonc
+   bun wrangler secret put TUTURUUU_APP_COORDINATION_SECRET --config apps/backend/wrangler.jsonc
+   bun wrangler secret put SUPABASE_URL --config apps/backend/wrangler.jsonc
+   bun wrangler secret put SUPABASE_SERVICE_ROLE_KEY --config apps/backend/wrangler.jsonc
+   bun wrangler secret put CRON_SECRET --config apps/backend/wrangler.jsonc
+   bun wrangler secret put DISCORD_APP_DEPLOYMENT_URL --config apps/backend/wrangler.jsonc
+   bun wrangler secret put AURORA_EXTERNAL_URL --config apps/backend/wrangler.jsonc
+   bun wrangler secret put AURORA_EXTERNAL_WSID --config apps/backend/wrangler.jsonc
+   ```
+
+4. Deploy the backend Worker first:
+
+   ```bash
+   bun wrangler deploy --config apps/backend/wrangler.jsonc
+   ```
+
+5. Bootstrap TanStack Worker secrets:
+
+   ```bash
+   bun wrangler secret put BACKEND_PUBLIC_ORIGIN --config apps/tanstack-web/wrangler.jsonc
+   bun wrangler secret put BACKEND_INTERNAL_TOKEN --config apps/tanstack-web/wrangler.jsonc
+   ```
+
+6. Generate Worker types and deploy the TanStack Worker:
+
+   ```bash
+   bun --cwd apps/tanstack-web run cf-typegen
+   bun --cwd apps/tanstack-web run deploy:cloudflare
+   ```
+
+7. Smoke both Worker origins:
+
+   ```bash
+   BACKEND_INTERNAL_TOKEN="${BACKEND_INTERNAL_TOKEN:?set BACKEND_INTERNAL_TOKEN}" \
+   BACKEND_WORKER_ORIGIN=https://<backend-worker-origin> \
+   TANSTACK_WEB_WORKER_ORIGIN=https://<tanstack-worker-origin> \
+   bun smoke:cloudflare
+   ```
+
+For secret rotation on an already serving Worker, prefer the versions flow:
+
+```bash
+bun wrangler versions secret put BACKEND_INTERNAL_TOKEN --config apps/backend/wrangler.jsonc
+bun wrangler versions deploy --config apps/backend/wrangler.jsonc
+```
+
+Rollback is Worker-version or route/DNS based:
+
+```bash
+bun wrangler deployments list --config apps/backend/wrangler.jsonc
+bun wrangler rollback <VERSION_ID> --config apps/backend/wrangler.jsonc
+bun wrangler deployments list --config apps/tanstack-web/wrangler.jsonc
+bun wrangler rollback <VERSION_ID> --config apps/tanstack-web/wrangler.jsonc
+```
+
+External references: [TanStack Start hosting](https://tanstack.com/start/v0/docs/framework/react/guide/hosting),
+[Cloudflare TanStack Start](https://developers.cloudflare.com/workers/framework-guides/web-apps/tanstack-start/),
+[Wrangler configuration](https://developers.cloudflare.com/workers/wrangler/configuration/),
+and [Cloudflare Worker secrets](https://developers.cloudflare.com/workers/configuration/secrets/).
+
+## Vercel Frontend Build Validation
+
+Vercel is used to validate that `apps/tanstack-web` can produce Vercel-compatible
+TanStack Start output. This repository does not deploy or publish the TanStack
+frontend to Vercel. The Rust backend must still be reachable over HTTPS during
+the build, usually through the Cloudflare backend Worker or a self-hosted
+backend origin. Vercel mode uses the app-local
+`TANSTACK_WEB_RUNTIME=vercel` branch and Nitro, matching the current Vercel
+TanStack Start guidance.
+
+Configure the Vercel project:
+
+| Setting | Value |
+| --- | --- |
+| Project root | `apps/tanstack-web` |
+| Build command | `bun run build:vercel` |
+| Framework preset | Other, unless Vercel auto-detects the TanStack/Nitro output correctly |
+| Git integration | Disabled by `apps/tanstack-web/vercel.json`; GitHub Actions runs `vercel build` only |
+
+Required Vercel Project Environment Variables:
+
+| Variable | Value source |
+| --- | --- |
+| `TANSTACK_WEB_RUNTIME` | `vercel` |
+| `BACKEND_PUBLIC_ORIGIN` | HTTPS backend origin |
+| `BACKEND_INTERNAL_URL` | Same HTTPS backend origin unless a separate private origin exists |
+| `BACKEND_INTERNAL_TOKEN` | Same token configured on the backend |
+| `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL, if the rendered routes need Supabase client config |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Supabase publishable key, if routes need browser Supabase config |
+
+Manual CLI sequence from the repo root:
+
+```bash
+bash scripts/ci/run-with-backoff.sh bun install
+bash scripts/ci/run-with-backoff.sh bun install --global vercel@latest
+
+VERCEL_ORG_ID="${VERCEL_ORG_ID:?set VERCEL_ORG_ID}" \
+VERCEL_PROJECT_ID="${VERCEL_TANSTACK_WEB_PROJECT_ID:?set VERCEL_TANSTACK_WEB_PROJECT_ID}" \
+vercel pull --yes --environment=preview --token="${VERCEL_TOKEN:?set VERCEL_TOKEN}"
+
+TANSTACK_WEB_RUNTIME=vercel \
+bun turbo:local run build '--filter=@tuturuuu/tanstack-web^...'
+
+bun run --silent scripts/ci/generate-build-metadata.ts
+
+TANSTACK_WEB_RUNTIME=vercel \
+VERCEL_ORG_ID="${VERCEL_ORG_ID:?set VERCEL_ORG_ID}" \
+VERCEL_PROJECT_ID="${VERCEL_TANSTACK_WEB_PROJECT_ID:?set VERCEL_TANSTACK_WEB_PROJECT_ID}" \
+vercel build --token="${VERCEL_TOKEN:?set VERCEL_TOKEN}"
+```
+
+Production uses the same sequence with `vercel pull --environment=production`
+and `vercel build --prod`. It intentionally does not run `vercel deploy`.
+
+GitHub Actions owns the normal path:
+
+- `.github/workflows/vercel-preview-tanstack-web.yaml`
+- `.github/workflows/vercel-production-tanstack-web.yaml`
+
+The workflows use `VERCEL_TANSTACK_WEB_PROJECT_ID`, `VERCEL_ORG_ID`, and
+`VERCEL_TOKEN` inside the build jobs only. Preview builds require
+`workflow_dispatch` from protected `main` plus a trusted actor. Production builds
+run from the `production` branch. They record build markers after `vercel build`
+passes and do not create Vercel deployments.
+
+External references: [Vercel TanStack Start](https://vercel.com/docs/frameworks/full-stack/tanstack-start),
+[vercel pull](https://vercel.com/docs/cli/pull),
+[vercel build](https://vercel.com/docs/cli/build).
+
+## VPS Or Self-Hosting With Cloudflare Tunnel
+
+Self-hosting uses the existing production Docker stack. Use this when the full
+platform proxy, blue/green deployment history, watcher recovery, and
+Cloudflare Tunnel container should own traffic.
+
+1. Prepare the server:
+
+   ```bash
+   git clone https://github.com/tutur3u/platform.git tuturuuu
+   cd tuturuuu
+   bun install
+   ```
+
+2. Put production env values in root `.env.local` or an explicit deployment env
+   file. Set the frontend selector and backend token:
+
+   ```bash
+   DOCKER_WEB_FRONTEND=tanstack
+   BACKEND_INTERNAL_TOKEN=<shared backend token>
+   ```
+
+3. If using Cloudflare Tunnel, create a remotely managed tunnel in Cloudflare
+   Zero Trust, add a public hostname for the desired domain, and route it to:
+
+   ```text
+   http://localhost:7803
+   ```
+
+   Store the tunnel token as `CF_TUNNEL_TOKEN`, `CLOUDFLARED_TOKEN`, or
+   `DOCKER_CLOUDFLARED_TOKEN` in the server env file. The Docker helper maps
+   `CF_TUNNEL_TOKEN` to the Compose `CLOUDFLARED_TOKEN`.
+
+4. Start the TanStack production stack without a tunnel:
+
+   ```bash
+   DOCKER_WEB_FRONTEND=tanstack bun serve:web:docker:bg
+   ```
+
+   Start it with the bundled Cloudflare Tunnel sidecar:
+
+   ```bash
+   DOCKER_WEB_FRONTEND=tanstack bun serve:web:docker:bg -- --with-cloudflared
+   ```
+
+   A non-empty `CF_TUNNEL_TOKEN` in root `.env.local` also auto-enables the
+   tunnel sidecar unless the Docker helper is explicitly opted out.
+
+5. Verify through the local proxy:
+
+   ```bash
+   curl -fsS http://127.0.0.1:7803/__platform/drain-status
+   ```
+
+6. Verify through the public hostname after Tunnel reports healthy:
+
+   ```bash
+   curl -fsS https://<public-hostname>/
+   ```
+
+7. Stop the stack:
+
+   ```bash
+   DOCKER_WEB_FRONTEND=tanstack bun serve:web:docker:bg:down
+   ```
+
+Rollback options:
+
+- Blue/green: use the existing cached rollback path documented in
+  [Web Docker Deployment](/build/devops/web-docker-deployment).
+- Git: check out the previous known-good commit and rerun
+  `DOCKER_WEB_FRONTEND=tanstack bun serve:web:docker:bg`.
+- Tunnel: remove or change the Cloudflare public hostname route while the local
+  stack is repaired.
+
+External references: [Cloudflare Tunnel setup](https://developers.cloudflare.com/tunnel/setup/)
+and [Cloudflare remote tunnel creation](https://developers.cloudflare.com/cloudflare-one/networks/connectors/cloudflare-tunnel/get-started/create-remote-tunnel/).
+
+## Verification Checklist
+
+Run these before handing off a local or deployment-config change:
+
+```bash
+python3 -m json.tool apps/docs/docs.json apps/tanstack-web/vercel.json
+node --test scripts/check-cloudflare-workers.test.js scripts/ci/check-workflow-config.test.js scripts/ci/release-workflows.test.js
+bun check:cloudflare
+bun type-check:tanstack-web
+git diff --check
+bun check
+```
+
+Do not run deploy commands, production Supabase pushes, or long build commands
+from an implementation session unless the user explicitly requested live
+deployment or build execution.

@@ -244,6 +244,7 @@ incremental preview validation:
    bun wrangler secret put CRON_SECRET --config apps/backend/wrangler.jsonc
    bun wrangler secret put DISCORD_APP_DEPLOYMENT_URL --config apps/backend/wrangler.jsonc
    bun wrangler secret put AURORA_EXTERNAL_URL --config apps/backend/wrangler.jsonc
+   bun wrangler secret put AURORA_EXTERNAL_WSID --config apps/backend/wrangler.jsonc
    bun wrangler deploy --config apps/backend/wrangler.jsonc
    ```
 
@@ -252,9 +253,10 @@ incremental preview validation:
    read `users` and `user_private_details` and insert `support_inquiries`
    through Supabase REST.
    `CRON_SECRET` and `DISCORD_APP_DEPLOYMENT_URL` are required for Rust-owned
-   Discord cron proxy preview readiness, and `AURORA_EXTERNAL_URL` is required
-   for the Rust-owned Aurora health probe; configure them even when the first
-   smoke target is only `/healthz`.
+   Discord cron proxy preview readiness, and `AURORA_EXTERNAL_URL` with
+   `AURORA_EXTERNAL_WSID` is required for the Rust-owned Aurora health and
+   ingest probes; configure them even when the first smoke target is only
+   `/healthz`.
 
    Use `wrangler secret put` for first preview bootstrap only. It creates and
    deploys a new active Worker version when the secret changes. For rotations or
@@ -268,6 +270,7 @@ incremental preview validation:
    bun wrangler versions secret put CRON_SECRET --config apps/backend/wrangler.jsonc
    bun wrangler versions secret put DISCORD_APP_DEPLOYMENT_URL --config apps/backend/wrangler.jsonc
    bun wrangler versions secret put AURORA_EXTERNAL_URL --config apps/backend/wrangler.jsonc
+   bun wrangler versions secret put AURORA_EXTERNAL_WSID --config apps/backend/wrangler.jsonc
    bun wrangler versions deploy --config apps/backend/wrangler.jsonc
    ```
 

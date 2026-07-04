@@ -19,6 +19,20 @@ const expectedBiomeCliVersionPattern = expectedBiomeCliVersion.replaceAll(
   '.',
   '\\.'
 );
+const tanstackWebVercelWorkflows = new Set([
+  'vercel-preview-tanstack-web.yaml',
+  'vercel-production-tanstack-web.yaml',
+]);
+
+function getVercelRunJobName(workflowName) {
+  const jobTarget = workflowName.startsWith('vercel-preview-')
+    ? 'Preview'
+    : 'Production';
+
+  return tanstackWebVercelWorkflows.has(workflowName)
+    ? `Build-${jobTarget}`
+    : `Deploy-${jobTarget}`;
+}
 
 test('Vercel workflows grant marker permissions and record successful runs', () => {
   for (const workflowName of vercelWorkflows) {
@@ -29,9 +43,7 @@ test('Vercel workflows grant marker permissions and record successful runs', () 
     const checkCiJob = readWorkflowJobBlock(workflowName, 'check-ci');
     const deployJob = readWorkflowJobBlock(
       workflowName,
-      workflowName.startsWith('vercel-preview-')
-        ? 'Deploy-Preview'
-        : 'Deploy-Production'
+      getVercelRunJobName(workflowName)
     );
 
     assert.match(checkCiJob, /deployments:\s*read/);
@@ -53,6 +65,18 @@ test('Vercel workflows grant marker permissions and record successful runs', () 
       assert.match(
         workflow,
         /node --experimental-strip-types scripts\/ci\/record-vercel-deployment\.ts/
+      );
+    } else if (tanstackWebVercelWorkflows.has(workflowName)) {
+      assert.match(workflow, /Record successful Vercel build marker/);
+      assert.match(workflow, /VERCEL_MARKER_KIND: build/);
+      assert.doesNotMatch(
+        workflow,
+        /Record successful Vercel deployment marker/
+      );
+      assert.doesNotMatch(workflow, /\bvercel deploy\b/);
+      assert.match(
+        workflow,
+        /bun run --silent scripts\/ci\/record-vercel-deployment\.ts/
       );
     } else {
       assert.match(workflow, /Record successful Vercel deployment marker/);
@@ -103,9 +127,7 @@ test('Platform Vercel workflows build local devbox dependency before Vercel buil
   ]) {
     const deployJob = readWorkflowJobBlock(
       workflowName,
-      workflowName.startsWith('vercel-preview-')
-        ? 'Deploy-Preview'
-        : 'Deploy-Production'
+      getVercelRunJobName(workflowName)
     );
     const dependencyBuildIndex = deployJob.indexOf(
       'Build workspace dependencies'
@@ -218,9 +240,7 @@ test('mail deployment workflows do not persist checkout credentials', () => {
       path.join(repoRoot, '.github', 'workflows', workflowName),
       'utf8'
     );
-    const jobName = workflowName.startsWith('vercel-preview-')
-      ? 'Deploy-Preview'
-      : 'Deploy-Production';
+    const jobName = getVercelRunJobName(workflowName);
     const deployJob = readWorkflowJobBlock(workflowName, jobName);
 
     assert.match(
@@ -952,7 +972,7 @@ test('Supabase production migration requires production platform deploy and succ
   assert.match(deployJob, /supabase db push --include-all/);
 });
 
-test('environment-scoped Vercel workflows scope deploy secrets to deploy jobs', () => {
+test('environment-scoped Vercel workflows scope project secrets to protected jobs', () => {
   const projectSecretsByApp = {
     apps: 'VERCEL_APPS_PROJECT_ID',
     calendar: 'VERCEL_CALENDAR_PROJECT_ID',
@@ -972,6 +992,7 @@ test('environment-scoped Vercel workflows scope deploy secrets to deploy jobs', 
     qr: 'VERCEL_QR_PROJECT_ID',
     rewise: 'VERCEL_REWISE_PROJECT_ID',
     shortener: 'VERCEL_SHORTENER_PROJECT_ID',
+    'tanstack-web': 'VERCEL_TANSTACK_WEB_PROJECT_ID',
     tasks: 'VERCEL_TUDO_PROJECT_ID',
     teach: 'VERCEL_TEACH_PROJECT_ID',
     tools: 'VERCEL_TOOLS_PROJECT_ID',
@@ -1000,7 +1021,7 @@ test('environment-scoped Vercel workflows scope deploy secrets to deploy jobs', 
     const [, target, app] = match;
     const isPreview = target === 'preview';
     const isPlatformPreview = workflowName === 'vercel-preview-platform.yaml';
-    const jobName = isPreview ? 'Deploy-Preview' : 'Deploy-Production';
+    const jobName = getVercelRunJobName(workflowName);
     const expectedEnvironment = `vercel-${target}-${app}`;
     const expectedRefGuard =
       isPreview && isPlatformPreview
