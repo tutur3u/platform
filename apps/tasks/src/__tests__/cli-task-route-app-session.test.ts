@@ -11,6 +11,8 @@ const mocks = vi.hoisted(() => ({
   handleTaskDetailRoutePUT: vi.fn(),
   handleTaskDescriptionRouteGET: vi.fn(),
   handleTaskDescriptionRoutePATCH: vi.fn(),
+  handleTaskLabelRouteDELETE: vi.fn(),
+  handleTaskLabelRoutePOST: vi.fn(),
   handleTaskRouteGET: vi.fn(),
   handleTaskRoutePOST: vi.fn(),
   supabase: { from: vi.fn() },
@@ -70,6 +72,11 @@ vi.mock('@tuturuuu/apis/tu-do/tasks/taskId/description/route', () => ({
   handleTaskDescriptionRoutePATCH: mocks.handleTaskDescriptionRoutePATCH,
 }));
 
+vi.mock('@tuturuuu/apis/tu-do/tasks/taskId/labels/route', () => ({
+  handleTaskLabelRouteDELETE: mocks.handleTaskLabelRouteDELETE,
+  handleTaskLabelRoutePOST: mocks.handleTaskLabelRoutePOST,
+}));
+
 vi.mock('@/lib/api-auth', () => ({
   withSessionAuth: mocks.withSessionAuth,
 }));
@@ -94,6 +101,12 @@ describe('workspace task API route app-session bridge', () => {
       Response.json({ ok: true })
     );
     mocks.handleTaskDescriptionRoutePATCH.mockResolvedValue(
+      Response.json({ ok: true })
+    );
+    mocks.handleTaskLabelRouteDELETE.mockResolvedValue(
+      Response.json({ ok: true })
+    );
+    mocks.handleTaskLabelRoutePOST.mockResolvedValue(
       Response.json({ ok: true })
     );
     mocks.handleTaskRouteGET.mockResolvedValue(Response.json({ ok: true }));
@@ -170,6 +183,29 @@ describe('workspace task API route app-session bridge', () => {
 
   it('allows platform CLI and Tasks app-session auth on task label detail routes', async () => {
     await import('@/app/api/v1/workspaces/[wsId]/labels/[labelId]/route');
+
+    expect(mocks.withSessionAuth).toHaveBeenNthCalledWith(
+      1,
+      expect.any(Function),
+      {
+        allowAppSessionAuth: {
+          targetApp: ['platform', 'tasks'],
+        },
+      }
+    );
+    expect(mocks.withSessionAuth).toHaveBeenNthCalledWith(
+      2,
+      expect.any(Function),
+      {
+        allowAppSessionAuth: {
+          targetApp: ['platform', 'tasks'],
+        },
+      }
+    );
+  });
+
+  it('allows platform CLI and Tasks app-session auth on task-label association routes', async () => {
+    await import('@/app/api/v1/workspaces/[wsId]/tasks/[taskId]/labels/route');
 
     expect(mocks.withSessionAuth).toHaveBeenNthCalledWith(
       1,
@@ -458,6 +494,85 @@ describe('workspace task API route app-session bridge', () => {
       wsId: 'personal',
     });
     expect(auth).toMatchObject({
+      appSession: true,
+      supabase: mocks.supabase,
+      user: mocks.user,
+    });
+  });
+
+  it('passes app-session auth context into task-label association handlers', async () => {
+    mocks.getAppSessionTokenFromRequest.mockReturnValue('ttr_app_access');
+
+    const route = await import(
+      '@/app/api/v1/workspaces/[wsId]/tasks/[taskId]/labels/route'
+    );
+
+    const postResponse = await route.POST(
+      new NextRequest(
+        'http://localhost/api/v1/workspaces/personal/tasks/task-1/labels',
+        {
+          body: JSON.stringify({ labelId: 'label-1' }),
+          headers: { Authorization: 'Bearer ttr_app_access' },
+          method: 'POST',
+        }
+      ),
+      { params: Promise.resolve({ taskId: 'task-1', wsId: 'personal' }) }
+    );
+    const deleteResponse = await route.DELETE(
+      new NextRequest(
+        'http://localhost/api/v1/workspaces/personal/tasks/task-1/labels',
+        {
+          body: JSON.stringify({ labelId: 'label-1' }),
+          headers: { Authorization: 'Bearer ttr_app_access' },
+          method: 'DELETE',
+        }
+      ),
+      { params: Promise.resolve({ taskId: 'task-1', wsId: 'personal' }) }
+    );
+
+    expect(postResponse.status).toBe(200);
+    expect(deleteResponse.status).toBe(200);
+    expect(mocks.handleTaskLabelRoutePOST).toHaveBeenCalledTimes(1);
+    expect(mocks.handleTaskLabelRouteDELETE).toHaveBeenCalledTimes(1);
+
+    const postCall = mocks.handleTaskLabelRoutePOST.mock.calls[0];
+    const deleteCall = mocks.handleTaskLabelRouteDELETE.mock.calls[0];
+    expect(postCall).toBeDefined();
+    expect(deleteCall).toBeDefined();
+
+    const [, postContext, postAuth] = postCall as [
+      NextRequest,
+      { params: Promise<{ taskId: string; wsId: string }> },
+      {
+        appSession: boolean;
+        supabase: typeof mocks.supabase;
+        user: typeof mocks.user;
+      },
+    ];
+    const [, deleteContext, deleteAuth] = deleteCall as [
+      NextRequest,
+      { params: Promise<{ taskId: string; wsId: string }> },
+      {
+        appSession: boolean;
+        supabase: typeof mocks.supabase;
+        user: typeof mocks.user;
+      },
+    ];
+
+    await expect(postContext.params).resolves.toEqual({
+      taskId: 'task-1',
+      wsId: 'personal',
+    });
+    await expect(deleteContext.params).resolves.toEqual({
+      taskId: 'task-1',
+      wsId: 'personal',
+    });
+    expect(postAuth).toMatchObject({
+      appSession: true,
+      supabase: mocks.supabase,
+      user: mocks.user,
+    });
+    expect(deleteAuth).toMatchObject({
       appSession: true,
       supabase: mocks.supabase,
       user: mocks.user,

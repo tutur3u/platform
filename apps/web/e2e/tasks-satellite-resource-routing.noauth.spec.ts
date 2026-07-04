@@ -1,15 +1,19 @@
 import { expect, test } from '@playwright/test';
 import {
+  addWorkspaceTaskLabel,
   listWorkspaceLabels,
   listWorkspaceTaskBoardViewableMembers,
   listWorkspaceTaskProjectsByIds,
+  removeWorkspaceTaskLabel,
 } from '../../../packages/internal-api/src/tasks';
 import { getTaskCardResourceContext } from '../../../packages/ui/src/components/ui/tu-do/boards/boardId/task-card/task-card-resource-context';
 
 test.describe('Tasks satellite source resource routing', () => {
   test('keeps source-task support APIs on the tasks origin and source workspace', async () => {
     const requestedUrls: string[] = [];
-    const fetchMock: typeof fetch = async (input) => {
+    const requestedRequests: Array<{ body?: string | null; method: string }> =
+      [];
+    const fetchMock: typeof fetch = async (input, init) => {
       const url =
         typeof input === 'string'
           ? input
@@ -17,6 +21,19 @@ test.describe('Tasks satellite source resource routing', () => {
             ? input.toString()
             : input.url;
       requestedUrls.push(url);
+      requestedRequests.push({
+        body:
+          typeof init?.body === 'string'
+            ? init.body
+            : typeof Request !== 'undefined' && input instanceof Request
+              ? await input.clone().text()
+              : null,
+        method:
+          init?.method ??
+          (typeof Request !== 'undefined' && input instanceof Request
+            ? input.method
+            : 'GET'),
+      });
 
       return new Response(
         JSON.stringify(
@@ -88,11 +105,32 @@ test.describe('Tasks satellite source resource routing', () => {
       resourceContext.boardViewableMembersBoardId,
       clientOptions
     );
+    await addWorkspaceTaskLabel(
+      resourceContext.effectiveWorkspaceId ?? '',
+      'task-1',
+      'label-1',
+      clientOptions
+    );
+    await removeWorkspaceTaskLabel(
+      resourceContext.effectiveWorkspaceId ?? '',
+      'task-1',
+      'label-1',
+      clientOptions
+    );
 
     expect(requestedUrls).toEqual([
       'https://tasks.tuturuuu.test/api/v1/workspaces/source-workspace/labels',
       'https://tasks.tuturuuu.test/api/v1/workspaces/source-workspace/task-projects?compact=true&ids=source-project',
       'https://tasks.tuturuuu.test/api/v1/workspaces/source-workspace/task-boards/source-board/viewable-members',
+      'https://tasks.tuturuuu.test/api/v1/workspaces/source-workspace/tasks/task-1/labels',
+      'https://tasks.tuturuuu.test/api/v1/workspaces/source-workspace/tasks/task-1/labels',
+    ]);
+    expect(requestedRequests).toEqual([
+      { body: null, method: 'GET' },
+      { body: null, method: 'GET' },
+      { body: null, method: 'GET' },
+      { body: JSON.stringify({ labelId: 'label-1' }), method: 'POST' },
+      { body: JSON.stringify({ labelId: 'label-1' }), method: 'DELETE' },
     ]);
     expect(requestedUrls.join('\n')).not.toContain('personal-workspace');
     expect(requestedUrls.join('\n')).not.toContain('https://tuturuuu.com');
