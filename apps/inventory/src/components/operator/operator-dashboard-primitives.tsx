@@ -138,6 +138,7 @@ export function OperatorDataList({
         aria-busy="true"
         aria-label={loadingLabel}
         className="grid min-w-0 gap-2"
+        role="status"
       >
         <LoadingRows />
       </div>
