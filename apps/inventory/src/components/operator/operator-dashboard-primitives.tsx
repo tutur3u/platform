@@ -1,11 +1,12 @@
 'use client';
 
 import type { LucideIcon } from '@tuturuuu/icons';
-import { ArrowRight, Loader2, PackageOpen } from '@tuturuuu/icons';
+import { ArrowRight, PackageOpen } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { cn } from '@tuturuuu/utils/format';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
+import { LoadingRows } from './operator-shell';
 
 export function OperatorMetricCard({
   description,
@@ -130,10 +131,15 @@ export function OperatorDataList({
   loadingLabel: string;
 }) {
   if (isLoading) {
+    // Layout-preserving skeleton (consistent with the rest of the console); the
+    // label is kept as an accessible name for assistive tech.
     return (
-      <div className="flex min-h-32 items-center justify-center rounded-lg border border-border bg-muted/20 text-muted-foreground text-sm">
-        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-        {loadingLabel}
+      <div
+        aria-busy="true"
+        aria-label={loadingLabel}
+        className="grid min-w-0 gap-2"
+      >
+        <LoadingRows />
       </div>
     );
   }
