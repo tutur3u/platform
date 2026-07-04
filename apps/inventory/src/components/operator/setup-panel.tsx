@@ -32,6 +32,7 @@ import {
 } from '@tuturuuu/internal-api/inventory';
 import type { ProductBatch } from '@tuturuuu/types/primitives/ProductBatch';
 import type { ProductSupplier } from '@tuturuuu/types/primitives/ProductSupplier';
+import { Accordion } from '@tuturuuu/ui/accordion';
 import { Button } from '@tuturuuu/ui/button';
 import { useTranslations } from 'next-intl';
 import { OperatorMetricCard } from './operator-dashboard-primitives';
@@ -160,11 +161,11 @@ export function SetupPanel({
           label={t('emptyWorkspaceTitle')}
         />
       ) : null}
-      <div className="grid min-w-0 gap-3 lg:grid-cols-2">
+      <Accordion className="grid min-w-0 gap-2" type="multiple">
         {configs.map((config) => (
           <ResourceSection config={config} key={config.key} wsId={wsId} />
         ))}
-      </div>
+      </Accordion>
       <BatchSection
         batches={batches}
         options={options}

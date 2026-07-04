@@ -2,6 +2,11 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Pencil, Plus } from '@tuturuuu/icons';
+import {
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@tuturuuu/ui/accordion';
 import { Button } from '@tuturuuu/ui/button';
 import { Dialog, DialogClose, DialogTrigger } from '@tuturuuu/ui/dialog';
 import { Input } from '@tuturuuu/ui/input';
@@ -133,7 +138,7 @@ function ResourceRow({
   const t = useTranslations('inventory.operator.forms');
 
   return (
-    <div className="grid min-w-0 gap-2 border-border border-t p-2 text-sm sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+    <div className="grid min-w-0 gap-2 border-border border-t p-2 text-sm first:border-t-0 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
       <p className="truncate font-medium">{item.name ?? item.id}</p>
       <div className="flex items-center gap-2 sm:justify-end">
         <ResourceDialog
@@ -167,40 +172,49 @@ export function ResourceSection({
   const Icon = config.icon;
 
   return (
-    <section className="overflow-hidden rounded-lg border border-border bg-card">
-      <div className="grid min-w-0 gap-3 border-border border-b px-3 py-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
-        <div className="flex min-w-0 items-center gap-2">
+    <AccordionItem
+      className="overflow-hidden rounded-lg border border-border bg-card px-3"
+      value={config.key}
+    >
+      <AccordionTrigger className="py-3">
+        <span className="flex min-w-0 flex-1 items-center gap-2">
           <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
             <Icon className="h-4 w-4" />
           </span>
-          <div className="min-w-0">
-            <p className="truncate font-medium text-sm">{config.title}</p>
-            <p className="text-muted-foreground text-xs">
-              {config.rows.length}
-            </p>
+          <span className="min-w-0 flex-1 truncate font-medium text-sm">
+            {config.title}
+          </span>
+          <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-muted px-1.5 font-normal text-muted-foreground text-xs">
+            {config.rows.length}
+          </span>
+        </span>
+      </AccordionTrigger>
+      <AccordionContent className="grid min-w-0 gap-2 pb-3">
+        {config.rows.length ? (
+          <div className="overflow-hidden rounded-md border border-border">
+            {config.rows.map((item) => (
+              <ResourceRow
+                config={config}
+                item={item}
+                key={`${config.key}-${item.id}`}
+                wsId={wsId}
+              />
+            ))}
           </div>
-        </div>
+        ) : (
+          <p className="text-muted-foreground text-sm">{t('emptyResource')}</p>
+        )}
         <ResourceDialog
           config={config}
           trigger={
-            <Button size="sm" type="button">
+            <Button className="w-fit" size="sm" type="button" variant="outline">
               <Plus className="h-4 w-4" />
               {t('create')}
             </Button>
           }
           wsId={wsId}
         />
-      </div>
-      {config.rows.length
-        ? config.rows.map((item) => (
-            <ResourceRow
-              config={config}
-              item={item}
-              key={`${config.key}-${item.id}`}
-              wsId={wsId}
-            />
-          ))
-        : null}
-    </section>
+      </AccordionContent>
+    </AccordionItem>
   );
 }
