@@ -1,6 +1,6 @@
 'use client';
 
-import { Layers3, PieChart, Plus, Trash2 } from '@tuturuuu/icons';
+import { Plus, Trash2 } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { useTranslations } from 'next-intl';
 import {
@@ -9,7 +9,6 @@ import {
   type ProfitShareInput,
   type ScenarioInput,
 } from './costing-profile-form-state';
-import { FormSection } from './operator-dialog-shell';
 import { NumberField, TextField } from './operator-form-fields';
 
 export function CostingScenariosEditor({
@@ -29,11 +28,10 @@ export function CostingScenariosEditor({
     );
 
   return (
-    <FormSection
-      description={t('steps.scenariosDescription')}
-      icon={<Layers3 className="h-4 w-4" />}
-      title={forms('tabs.scenarios')}
-    >
+    <div className="grid gap-3">
+      <p className="text-muted-foreground text-sm">
+        {t('steps.scenariosDescription')}
+      </p>
       <div className="grid min-w-0 gap-3">
         {scenarios.map((scenario, index) => (
           <div
@@ -136,7 +134,7 @@ export function CostingScenariosEditor({
         <Plus className="h-4 w-4" />
         {t('addScenario')}
       </Button>
-    </FormSection>
+    </div>
   );
 }
 
@@ -162,11 +160,10 @@ export function CostingProfitSharesEditor({
     );
 
   return (
-    <FormSection
-      description={t('steps.profitSharesDescription')}
-      icon={<PieChart className="h-4 w-4" />}
-      title={forms('tabs.profitShares')}
-    >
+    <div className="grid gap-3">
+      <p className="text-muted-foreground text-sm">
+        {t('steps.profitSharesDescription')}
+      </p>
       <div className="grid min-w-0 gap-2">
         {shares.map((share, index) => (
           <div
@@ -223,6 +220,6 @@ export function CostingProfitSharesEditor({
             : t('sharesTotal', { total: sharesTotal })}
         </span>
       </div>
-    </FormSection>
+    </div>
   );
 }

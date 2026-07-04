@@ -4,7 +4,9 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Calculator,
   ClipboardList,
+  Layers3,
   Pencil,
+  PieChart,
   Save,
   Settings2,
 } from '@tuturuuu/icons';
@@ -34,11 +36,10 @@ import {
   initialState,
 } from './costing-profile-form-state';
 import {
-  FormSection,
-  OperatorDialogBody,
   OperatorDialogContent,
   OperatorDialogFooter,
   OperatorDialogHeader,
+  OperatorDialogTabs,
 } from './operator-dialog-shell';
 import {
   NumberField,
@@ -195,132 +196,153 @@ export function CostingProfileDialog({
             if (canSave) saveMutation.mutate();
           }}
         >
-          <OperatorDialogBody className="grid gap-6">
-            <FormSection
-              description={t('steps.profileDescription')}
-              icon={<Settings2 className="h-4 w-4" />}
-              title={forms('tabs.details')}
-            >
-              <div className="grid min-w-0 gap-3 lg:grid-cols-2 xl:grid-cols-4">
-                <SelectField
-                  className="xl:col-span-2"
-                  emptyText={forms('emptyOptions')}
-                  label={forms('product')}
-                  onChange={handleProductChange}
-                  options={products}
-                  placeholder={forms('placeholders.product')}
-                  searchPlaceholder={forms('searchOptions', {
-                    resource: forms('product'),
-                  })}
-                  value={form.productId}
-                />
-                <SelectField
-                  createText={forms('createOption', {
-                    resource: forms('category'),
-                  })}
-                  creatingText={forms('creatingOption', {
-                    resource: forms('category'),
-                  })}
-                  emptyText={forms('emptyOptions')}
-                  label={forms('category')}
-                  onChange={(categoryId) =>
-                    setForm((current) => ({ ...current, categoryId }))
-                  }
-                  onCreate={createCategory}
-                  options={options?.categories}
-                  placeholder={forms('placeholders.category')}
-                  searchPlaceholder={forms('searchOptions', {
-                    resource: forms('category'),
-                  })}
-                  value={form.categoryId}
-                />
-                <SelectValueField
-                  allowEmpty={false}
-                  label={forms('status')}
-                  onChange={(status) =>
-                    setForm((current) => ({
-                      ...current,
-                      status: status as InventoryCostProfile['status'],
-                    }))
-                  }
-                  options={[
-                    { label: t('status.draft'), value: 'draft' },
-                    { label: t('status.active'), value: 'active' },
-                    { label: t('status.archived'), value: 'archived' },
-                  ]}
-                  placeholder={forms('placeholders.status')}
-                  value={form.status}
-                />
-                <TextField
-                  className="xl:col-span-2"
-                  label={t('itemName')}
-                  onChange={(name) =>
-                    setForm((current) => ({ ...current, name }))
-                  }
-                  placeholder={forms('placeholders.costingProfileName')}
-                  value={form.name}
-                />
-                <TextField
-                  label={forms('currency')}
-                  onChange={(currencyValue) =>
-                    setForm((current) => ({
-                      ...current,
-                      currency: currencyValue,
-                    }))
-                  }
-                  placeholder={forms('placeholders.currency')}
-                  value={form.currency}
-                />
-                <NumberField
-                  hint={forms('hints.retail')}
-                  label={t('retail')}
-                  onChange={(targetRetailPrice) =>
-                    setForm((current) => ({ ...current, targetRetailPrice }))
-                  }
-                  placeholder={forms('placeholders.retail')}
-                  value={form.targetRetailPrice}
-                />
-                <TextAreaField
-                  className="lg:col-span-2 xl:col-span-4"
-                  label={forms('note')}
-                  onChange={(notes) =>
-                    setForm((current) => ({ ...current, notes }))
-                  }
-                  placeholder={forms('placeholders.saleNote')}
-                  value={form.notes}
-                />
-              </div>
-            </FormSection>
-
-            <CostingScenariosEditor
-              onChange={(scenarios) =>
-                setForm((current) => ({ ...current, scenarios }))
-              }
-              scenarios={form.scenarios}
-            />
-
-            <CostingProfitSharesEditor
-              onChange={(profitShares) =>
-                setForm((current) => ({ ...current, profitShares }))
-              }
-              shares={form.profitShares}
-            />
-
-            {isEdit ? (
-              <FormSection
-                icon={<ClipboardList className="h-4 w-4" />}
-                title={forms('tabs.lifecycle')}
-              >
-                <LifecyclePanel
-                  archivePending={archiveMutation.isPending}
-                  deletePending={deleteMutation.isPending}
-                  onArchive={() => archiveMutation.mutate()}
-                  onDelete={() => deleteMutation.mutate()}
-                  title={forms('lifecycle')}
-                />
-              </FormSection>
-            ) : null}
-          </OperatorDialogBody>
+          <OperatorDialogTabs
+            tabs={[
+              {
+                content: (
+                  <div className="grid min-w-0 gap-3 lg:grid-cols-2 xl:grid-cols-4">
+                    <SelectField
+                      className="xl:col-span-2"
+                      emptyText={forms('emptyOptions')}
+                      label={forms('product')}
+                      onChange={handleProductChange}
+                      options={products}
+                      placeholder={forms('placeholders.product')}
+                      searchPlaceholder={forms('searchOptions', {
+                        resource: forms('product'),
+                      })}
+                      value={form.productId}
+                    />
+                    <SelectField
+                      createText={forms('createOption', {
+                        resource: forms('category'),
+                      })}
+                      creatingText={forms('creatingOption', {
+                        resource: forms('category'),
+                      })}
+                      emptyText={forms('emptyOptions')}
+                      label={forms('category')}
+                      onChange={(categoryId) =>
+                        setForm((current) => ({ ...current, categoryId }))
+                      }
+                      onCreate={createCategory}
+                      options={options?.categories}
+                      placeholder={forms('placeholders.category')}
+                      searchPlaceholder={forms('searchOptions', {
+                        resource: forms('category'),
+                      })}
+                      value={form.categoryId}
+                    />
+                    <SelectValueField
+                      allowEmpty={false}
+                      label={forms('status')}
+                      onChange={(status) =>
+                        setForm((current) => ({
+                          ...current,
+                          status: status as InventoryCostProfile['status'],
+                        }))
+                      }
+                      options={[
+                        { label: t('status.draft'), value: 'draft' },
+                        { label: t('status.active'), value: 'active' },
+                        { label: t('status.archived'), value: 'archived' },
+                      ]}
+                      placeholder={forms('placeholders.status')}
+                      value={form.status}
+                    />
+                    <TextField
+                      className="xl:col-span-2"
+                      label={t('itemName')}
+                      onChange={(name) =>
+                        setForm((current) => ({ ...current, name }))
+                      }
+                      placeholder={forms('placeholders.costingProfileName')}
+                      value={form.name}
+                    />
+                    <TextField
+                      label={forms('currency')}
+                      onChange={(currencyValue) =>
+                        setForm((current) => ({
+                          ...current,
+                          currency: currencyValue,
+                        }))
+                      }
+                      placeholder={forms('placeholders.currency')}
+                      value={form.currency}
+                    />
+                    <NumberField
+                      hint={forms('hints.retail')}
+                      label={t('retail')}
+                      onChange={(targetRetailPrice) =>
+                        setForm((current) => ({
+                          ...current,
+                          targetRetailPrice,
+                        }))
+                      }
+                      placeholder={forms('placeholders.retail')}
+                      value={form.targetRetailPrice}
+                    />
+                    <TextAreaField
+                      className="lg:col-span-2 xl:col-span-4"
+                      label={forms('note')}
+                      onChange={(notes) =>
+                        setForm((current) => ({ ...current, notes }))
+                      }
+                      placeholder={forms('placeholders.saleNote')}
+                      value={form.notes}
+                    />
+                  </div>
+                ),
+                icon: <Settings2 className="h-4 w-4" />,
+                label: forms('tabs.details'),
+                value: 'details',
+              },
+              {
+                content: (
+                  <CostingScenariosEditor
+                    onChange={(scenarios) =>
+                      setForm((current) => ({ ...current, scenarios }))
+                    }
+                    scenarios={form.scenarios}
+                  />
+                ),
+                icon: <Layers3 className="h-4 w-4" />,
+                label: forms('tabs.scenarios'),
+                value: 'scenarios',
+              },
+              {
+                content: (
+                  <CostingProfitSharesEditor
+                    onChange={(profitShares) =>
+                      setForm((current) => ({ ...current, profitShares }))
+                    }
+                    shares={form.profitShares}
+                  />
+                ),
+                icon: <PieChart className="h-4 w-4" />,
+                label: forms('tabs.profitShares'),
+                value: 'profit-shares',
+              },
+              ...(isEdit
+                ? [
+                    {
+                      content: (
+                        <LifecyclePanel
+                          archivePending={archiveMutation.isPending}
+                          deletePending={deleteMutation.isPending}
+                          onArchive={() => archiveMutation.mutate()}
+                          onDelete={() => deleteMutation.mutate()}
+                          title={forms('lifecycle')}
+                        />
+                      ),
+                      icon: <ClipboardList className="h-4 w-4" />,
+                      label: forms('tabs.lifecycle'),
+                      value: 'lifecycle',
+                    },
+                  ]
+                : []),
+            ]}
+          />
           <OperatorDialogFooter>
             <DialogClose asChild>
               <Button type="button" variant="ghost">
