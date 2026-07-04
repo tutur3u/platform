@@ -10,7 +10,6 @@ import {
   findDisallowedFields,
   getLinkUnavailableReason,
 } from '@/features/user-profile-links/server';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 interface Params {
   params: Promise<{ code: string }>;
@@ -122,7 +121,7 @@ export async function POST(req: Request, { params }: Params) {
       }
     );
     if (error || !updated) {
-      serverLogger.error('Error completing per_user profile link:', error);
+      console.error('Error completing per_user profile link:', error);
       return NextResponse.json(
         { message: 'Error saving profile' },
         { status: 500 }
@@ -156,7 +155,7 @@ export async function POST(req: Request, { params }: Params) {
         }
       );
       if (error || !updated) {
-        serverLogger.error('Error updating generic profile link row:', error);
+        console.error('Error updating generic profile link row:', error);
         return NextResponse.json(
           { message: 'Error saving profile' },
           { status: 500 }
@@ -173,7 +172,7 @@ export async function POST(req: Request, { params }: Params) {
         }
       );
       if (error || !created) {
-        serverLogger.error('Error creating generic profile link row:', error);
+        console.error('Error creating generic profile link row:', error);
         return NextResponse.json(
           { message: 'Error saving profile' },
           { status: 500 }
@@ -204,10 +203,7 @@ export async function POST(req: Request, { params }: Params) {
   if (submissionError) {
     // The profile write already succeeded and was audited; don't fail the
     // request just because the supplementary submission log failed.
-    serverLogger.error(
-      'Error recording profile link submission:',
-      submissionError
-    );
+    console.error('Error recording profile link submission:', submissionError);
   }
 
   return NextResponse.json({ message: 'success' });

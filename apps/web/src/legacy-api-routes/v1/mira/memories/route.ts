@@ -18,7 +18,6 @@ import {
 } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 const memoryCategories = [
   'preference',
@@ -108,7 +107,7 @@ async function resolveMiraMemoryContext(
     try {
       wsId = await normalizeWorkspaceId(requestedWsId, supabase, request);
     } catch (error) {
-      serverLogger.warn('Failed to normalize Mira memory workspace id', error);
+      console.warn('Failed to normalize Mira memory workspace id', error);
       return {
         ok: false,
         response: NextResponse.json(
@@ -139,7 +138,7 @@ async function resolveMiraMemoryContext(
   });
 
   if (membership.error === 'membership_lookup_failed') {
-    serverLogger.error('Failed to verify Mira memory workspace access', {
+    console.error('Failed to verify Mira memory workspace access', {
       userId: user.id,
       wsId,
     });
@@ -237,7 +236,7 @@ export async function GET(request: NextRequest) {
   });
 
   if (!result.ok) {
-    serverLogger.error('Failed to load Mira AI memories', {
+    console.error('Failed to load Mira AI memories', {
       error: result.error,
       userId: context.userId,
       wsId: context.wsId,
@@ -291,7 +290,7 @@ export async function POST(request: NextRequest) {
   });
 
   if (!result.ok) {
-    serverLogger.error('Failed to save Mira AI memory', {
+    console.error('Failed to save Mira AI memory', {
       error: result.error,
       userId: context.userId,
       wsId: context.wsId,
@@ -345,7 +344,7 @@ export async function DELETE(request: NextRequest) {
   });
 
   if (!result.ok) {
-    serverLogger.error('Failed to delete Mira AI memory', {
+    console.error('Failed to delete Mira AI memory', {
       error: result.error,
       memoryId: parsed.data.memory_id,
       userId: context.userId,

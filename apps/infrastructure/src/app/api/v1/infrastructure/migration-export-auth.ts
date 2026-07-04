@@ -5,7 +5,6 @@ import {
   normalizeWorkspaceId,
 } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 export async function authorizeInfrastructureMigrationExport(
   request: Request,
@@ -26,7 +25,7 @@ export async function authorizeInfrastructureMigrationExport(
   try {
     normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
   } catch (error) {
-    serverLogger.error('Error normalizing infrastructure export workspace:', {
+    console.error('Error normalizing infrastructure export workspace:', {
       error,
       wsId,
     });

@@ -2,7 +2,6 @@ import { getFinanceRouteContext } from '@tuturuuu/apis/finance/request-access';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { resolveFinanceRouteAuthContext } from '@/lib/finance-route-auth';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 const recurringTransactionSchema = z.object({
   name: z.string().min(1),
@@ -53,7 +52,7 @@ export async function PUT(request: Request, { params }: Params) {
     .maybeSingle();
 
   if (error) {
-    serverLogger.error('Error updating recurring transaction:', error);
+    console.error('Error updating recurring transaction:', error);
     return NextResponse.json(
       { message: 'Failed to update recurring transaction' },
       { status: 500 }
@@ -96,7 +95,7 @@ export async function DELETE(request: Request, { params }: Params) {
     .maybeSingle();
 
   if (error) {
-    serverLogger.error('Error deleting recurring transaction:', error);
+    console.error('Error deleting recurring transaction:', error);
     return NextResponse.json(
       { message: 'Failed to delete recurring transaction' },
       { status: 500 }

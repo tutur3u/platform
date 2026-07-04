@@ -2,7 +2,6 @@ import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
   getTeachActorWorkspaceUserId,
   requireTeachWorkspaceAccess,
@@ -138,7 +137,7 @@ export const GET = withSessionAuth(
     ]);
 
     if (metricsResult.error) {
-      serverLogger.error('Failed to fetch Teach indicators', {
+      console.error('Failed to fetch Teach indicators', {
         error: metricsResult.error,
       });
       return NextResponse.json(
@@ -148,7 +147,7 @@ export const GET = withSessionAuth(
     }
 
     if (valuesResult.error) {
-      serverLogger.error('Failed to fetch Teach indicator values', {
+      console.error('Failed to fetch Teach indicator values', {
         error: valuesResult.error,
       });
       return NextResponse.json(
@@ -239,7 +238,7 @@ export const POST = withSessionAuth(
       .single();
 
     if (error) {
-      serverLogger.error('Failed to create Teach indicator', { error });
+      console.error('Failed to create Teach indicator', { error });
       return NextResponse.json(
         { message: 'Error creating indicator' },
         { status: 500 }
@@ -316,7 +315,7 @@ export const PATCH = withSessionAuth(
         wsId: access.normalizedWsId,
       });
     } catch (error) {
-      serverLogger.error('Failed to validate Teach indicator value targets', {
+      console.error('Failed to validate Teach indicator value targets', {
         error,
       });
       return NextResponse.json(
@@ -359,7 +358,7 @@ export const PATCH = withSessionAuth(
     );
 
     if (error) {
-      serverLogger.error('Failed to save Teach indicator values', { error });
+      console.error('Failed to save Teach indicator values', { error });
       return NextResponse.json(
         { message: 'Error saving indicator values' },
         { status: 500 }

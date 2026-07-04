@@ -12,6 +12,8 @@ const mocks = {
   serverError: vi.fn(),
 };
 
+const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
 vi.mock('@/lib/api-auth', () => ({
   withSessionAuth:
     (handler: (request: Request, auth: unknown, params: unknown) => Response) =>
@@ -130,7 +132,7 @@ describe('chat realtime route', () => {
     expect(response.status).toBe(200);
     expect(response.headers.get('content-type')).toContain('text/event-stream');
     await expect(response.text()).resolves.toContain('realtime_unavailable');
-    expect(mocks.serverError).toHaveBeenCalledWith(
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
       'Chat realtime upstream unavailable',
       expect.objectContaining({ status: 400, wsId: 'workspace-1' })
     );
@@ -147,7 +149,7 @@ describe('chat realtime route', () => {
     expect(response.status).toBe(200);
     expect(response.headers.get('content-type')).toContain('text/event-stream');
     await expect(response.text()).resolves.toContain('realtime_unavailable');
-    expect(mocks.serverError).toHaveBeenCalledWith(
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
       'Chat realtime subscribe URL failed',
       expect.objectContaining({ wsId: 'workspace-1' })
     );

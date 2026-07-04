@@ -3,7 +3,6 @@ import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
 import { JsonPayloadSchema } from '@/lib/education/json-payload-schema';
 import { attachPrivateWorkspaceQuizAnswers } from '@/lib/education/private-quiz-answers';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
   requireTeachWorkspaceAccess,
   validateTeachCourse,
@@ -74,7 +73,7 @@ async function validateCourseTest({
     .maybeSingle();
 
   if (error) {
-    serverLogger.error('Failed to validate course test', {
+    console.error('Failed to validate course test', {
       courseId,
       error,
       testId,
@@ -113,7 +112,7 @@ async function validateCourseTestModule({
     .maybeSingle();
 
   if (error) {
-    serverLogger.error('Failed to validate course test module', {
+    console.error('Failed to validate course test module', {
       error,
       moduleId,
       testId,
@@ -210,7 +209,7 @@ export const GET = withSessionAuth(
 
     const { data: testQuizzes, error: tqErr } = await query;
     if (tqErr) {
-      serverLogger.error('Failed to fetch course test quizzes link', {
+      console.error('Failed to fetch course test quizzes link', {
         error: tqErr,
         testId,
         wsId: access.normalizedWsId,
@@ -241,7 +240,7 @@ export const GET = withSessionAuth(
       .order('created_at', { ascending: false });
 
     if (error) {
-      serverLogger.error('Failed to fetch workspace quizzes for test', {
+      console.error('Failed to fetch workspace quizzes for test', {
         error,
         wsId: access.normalizedWsId,
       });
@@ -365,7 +364,7 @@ export const POST = withSessionAuth(
         message: 'All test questions processed successfully',
       });
     } catch (error) {
-      serverLogger.error('Bulk test question error', { error });
+      console.error('Bulk test question error', { error });
       return NextResponse.json(
         { message: 'An error occurred processing test questions' },
         { status: 500 }

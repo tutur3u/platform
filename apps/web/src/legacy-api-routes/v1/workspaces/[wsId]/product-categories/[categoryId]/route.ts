@@ -6,7 +6,6 @@ import {
 } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 const CategoryUpdateSchema = z.object({
   name: z.string().trim().min(1).max(MAX_NAME_LENGTH).optional(),
@@ -53,7 +52,7 @@ export async function PUT(req: Request, { params }: Params) {
     .maybeSingle();
 
   if (error) {
-    serverLogger.error('Error updating product category', error);
+    console.error('Error updating product category', error);
     return NextResponse.json(
       { message: 'Error updating product category' },
       { status: 500 }
@@ -96,7 +95,7 @@ export async function DELETE(req: Request, { params }: Params) {
     .maybeSingle();
 
   if (error) {
-    serverLogger.error('Error deleting product category', error);
+    console.error('Error deleting product category', error);
     return NextResponse.json(
       { message: 'Error deleting product category' },
       { status: 500 }

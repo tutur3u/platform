@@ -257,9 +257,9 @@ you find it in the Trigger.dev run logs. We lean on:
 <Note>
   There is no `@tuturuuu/logging` or `@tuturuuu/observability` package and no
   cross-service distributed-tracing system wired into these tasks today.
-  Inside `apps/web` runtime code, use the internal log-drain logger rather than
-  raw `console.*`; the Trigger.dev tasks in `packages/trigger` log via
-  `console.*` to the Trigger.dev run logs.
+  Inside runtime code, use the native console method matching severity; the
+  Trigger.dev tasks in `packages/trigger` log the same way to Trigger.dev run
+  logs.
 </Note>
 
 ---

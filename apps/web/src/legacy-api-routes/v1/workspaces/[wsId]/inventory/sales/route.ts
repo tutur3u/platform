@@ -6,7 +6,6 @@ import { getInventorySales } from '@tuturuuu/inventory-core/sales-rpc';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 const SearchParamsSchema = z.object({
   limit: z.coerce.number().int().min(1).max(100).default(50),
@@ -105,7 +104,7 @@ export async function GET(req: Request, { params }: Params) {
     ]);
 
   if (financeSalesResult.error || checkoutSalesResult.error) {
-    serverLogger.error('Error fetching inventory sales', {
+    console.error('Error fetching inventory sales', {
       checkoutSalesError: checkoutSalesResult.error,
       financeSalesError: financeSalesResult.error,
     });

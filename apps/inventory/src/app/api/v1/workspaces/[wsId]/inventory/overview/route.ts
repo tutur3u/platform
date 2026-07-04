@@ -14,7 +14,6 @@ import {
 import { isInventoryRealtimeEnabled } from '@tuturuuu/inventory-core/realtime';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 interface Params {
   params: Promise<{
@@ -126,13 +125,13 @@ export async function GET(req: Request, { params }: Params) {
     ]);
 
   if (dashboardResult.error) {
-    serverLogger.error('Error fetching inventory dashboard snapshot', {
+    console.error('Error fetching inventory dashboard snapshot', {
       dashboardError: dashboardResult.error,
     });
   }
 
   if (lowStockResult.error || metricsResult.error) {
-    serverLogger.error('Error fetching inventory overview', {
+    console.error('Error fetching inventory overview', {
       lowStockError: lowStockResult.error,
       metricsError: metricsResult.error,
     });

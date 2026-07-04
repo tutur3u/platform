@@ -9,10 +9,7 @@ import {
   AI_AGENT_ADAPTERS,
   AI_AGENT_ALLOWED_TOOLS,
 } from '@/lib/ai-agents/types';
-import {
-  serverLogger,
-  withRequestLogDrain,
-} from '@/lib/infrastructure/log-drain';
+import { withRequestLogDrain } from '@/lib/infrastructure/log-drain';
 import { requireAiAgentAdmin } from './access';
 
 const channelSchema = z.object({
@@ -69,7 +66,7 @@ async function listAgents(request: NextRequest) {
 
     return NextResponse.json({ agents, identities });
   } catch (error) {
-    serverLogger.error('Failed to list AI agents', error);
+    console.error('Failed to list AI agents', error);
     return NextResponse.json(
       { error: 'Failed to list AI agents' },
       { status: 500 }
@@ -104,7 +101,7 @@ async function saveAgent(request: NextRequest) {
 
     return NextResponse.json({ agent });
   } catch (error) {
-    serverLogger.warn('Failed to save AI agent', {
+    console.warn('Failed to save AI agent', {
       error: error instanceof Error ? error.message : String(error),
       id: parsed.data.id,
     });

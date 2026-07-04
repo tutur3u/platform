@@ -1,7 +1,6 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { getPostEmailMaxAgeCutoff } from '@/lib/post-email-queue';
 
 interface Params {
@@ -51,7 +50,7 @@ export async function GET(request: Request, { params }: Params) {
   );
 
   if (error) {
-    serverLogger.error('Error loading post filter options', { error });
+    console.error('Error loading post filter options', { error });
     return NextResponse.json(
       { message: 'Failed to load filter options' },
       { status: 500 }

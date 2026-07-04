@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { getHiveAiCreditStatus, HiveAiAccessError } from '@/lib/hive/ai';
-import { requireHiveAccess, serverLogger, withHiveRoute } from '../../_shared';
+import { requireHiveAccess, withHiveRoute } from '../../_shared';
 
 const ROUTE = '/api/v1/hive/ai/credits';
 
@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
         );
       }
 
-      serverLogger.error('Failed to resolve Hive AI credits', {
+      console.error('Failed to resolve Hive AI credits', {
         error: error instanceof Error ? error.message : String(error),
         userId: result.access.user.id,
         wsId,

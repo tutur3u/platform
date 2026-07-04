@@ -7,7 +7,6 @@ import type {
 import { chatRealtimeEventSchema } from '@tuturuuu/realtime/chat';
 import { signChatRealtimeToken } from '@tuturuuu/realtime/chat/token';
 import type { ChatConversation } from '@/lib/chat/private-rpc';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 const TOKEN_TTL_MS = 10 * 60_000;
 const DEFAULT_CHAT_REALTIME_INTERNAL_URL =
@@ -136,7 +135,7 @@ export async function publishChatRealtimeEvent(event: ChatRealtimeEventInput) {
     );
 
     if (!response.ok) {
-      serverLogger.error('Chat realtime publish failed', {
+      console.error('Chat realtime publish failed', {
         conversationId: parsed.conversationId,
         status: response.status,
         type: parsed.type,
@@ -144,7 +143,7 @@ export async function publishChatRealtimeEvent(event: ChatRealtimeEventInput) {
       });
     }
   } catch (error) {
-    serverLogger.error('Chat realtime publish failed', {
+    console.error('Chat realtime publish failed', {
       conversationId: parsed.conversationId,
       error,
       type: parsed.type,

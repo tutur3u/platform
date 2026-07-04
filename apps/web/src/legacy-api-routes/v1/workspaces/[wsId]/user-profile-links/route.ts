@@ -16,7 +16,6 @@ import {
   generateProfileLinkCode,
   PROFILE_LINK_FIELDS,
 } from '@/features/user-profile-links/server';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 interface Params {
   params: Promise<{ wsId: string }>;
@@ -102,7 +101,7 @@ export async function GET(req: Request, { params }: Params) {
     .order('created_at', { ascending: false });
 
   if (error) {
-    serverLogger.error('Error listing profile links:', error);
+    console.error('Error listing profile links:', error);
     return NextResponse.json(
       { message: 'Error listing profile links' },
       { status: 500 }
@@ -129,7 +128,7 @@ export async function GET(req: Request, { params }: Params) {
       .in('id', targetUserIds);
 
     if (targetUsersError) {
-      serverLogger.error('Error loading profile link target users:', {
+      console.error('Error loading profile link target users:', {
         error: targetUsersError,
       });
       return NextResponse.json(
@@ -215,7 +214,7 @@ export async function POST(req: Request, { params }: Params) {
     .in('id', [...WORKSPACE_USER_PROFILE_LINK_DEFAULT_CONFIG_IDS]);
 
   if (defaultConfigError) {
-    serverLogger.error('Error loading profile link defaults:', {
+    console.error('Error loading profile link defaults:', {
       error: defaultConfigError,
       wsId,
     });
@@ -278,7 +277,7 @@ export async function POST(req: Request, { params }: Params) {
     .single();
 
   if (error || !link) {
-    serverLogger.error('Error creating profile link:', error);
+    console.error('Error creating profile link:', error);
     return NextResponse.json(
       { message: 'Error creating profile link' },
       { status: 500 }

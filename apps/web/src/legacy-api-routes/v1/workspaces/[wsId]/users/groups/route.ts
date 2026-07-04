@@ -14,7 +14,6 @@ import {
   getShouldCountManagersInAttendance,
 } from '@/app/[locale]/(dashboard)/[wsId]/users/groups/utils';
 import { resolveSessionAuthContext } from '@/lib/api-auth';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { buildPostgrestRateLimitResponse } from '@/lib/postgrest-rate-limit';
 import {
   countUserGroupsForTable,
@@ -208,7 +207,7 @@ export async function GET(request: Request, { params }: Params) {
       return rateLimitResponse;
     }
 
-    serverLogger.error('Error in workspace user groups API', { error });
+    console.error('Error in workspace user groups API', { error });
     return NextResponse.json(
       { message: 'Internal server error' },
       { status: 500 }

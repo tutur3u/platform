@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { getManagedCronAdminUser } from '@/lib/managed-cron/authorization';
 import {
   deleteManagedCronWhitelistedDomain,
@@ -44,7 +43,7 @@ export async function PUT(
       );
     }
 
-    serverLogger.error('Error updating managed cron whitelist domain', error);
+    console.error('Error updating managed cron whitelist domain', error);
     return NextResponse.json(
       { message: 'Failed to update managed cron whitelist domain' },
       { status: 500 }
@@ -65,7 +64,7 @@ export async function DELETE(
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    serverLogger.error('Error deleting managed cron whitelist domain', error);
+    console.error('Error deleting managed cron whitelist domain', error);
     return NextResponse.json(
       { message: 'Failed to delete managed cron whitelist domain' },
       { status: 500 }

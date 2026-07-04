@@ -1,7 +1,6 @@
 import { MAX_SEARCH_LENGTH } from '@tuturuuu/utils/constants';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { enrichRateLimitAppeals } from '@/lib/rate-limits/subject-resolution';
 import { authorizeAbuseIntelligenceRequest } from '../abuse-intelligence/_shared';
 
@@ -50,7 +49,7 @@ export async function GET(request: Request) {
   }
   const { data, error } = await query;
   if (error) {
-    serverLogger.error('Failed to load rate-limit appeals', error);
+    console.error('Failed to load rate-limit appeals', error);
     return NextResponse.json(
       { message: 'Failed to load rate-limit appeals' },
       { status: 500 }

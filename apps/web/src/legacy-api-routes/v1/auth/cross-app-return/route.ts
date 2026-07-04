@@ -10,10 +10,7 @@ import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getExternalAppByReturnUrl } from '@/lib/app-coordination/external-apps';
 import { normalizeManagedTuturuuuReturnUrl } from '@/lib/auth/managed-tuturuuu-return-url';
-import {
-  serverLogger,
-  withRequestLogDrain,
-} from '@/lib/infrastructure/log-drain';
+import { withRequestLogDrain } from '@/lib/infrastructure/log-drain';
 
 const returnUrlSchema = z.object({
   generateToken: z.boolean().optional().default(true),
@@ -159,7 +156,7 @@ async function createCrossAppReturn(request: NextRequest) {
   });
 
   if (error || !data) {
-    serverLogger.warn('Failed to generate cross-app return token', {
+    console.warn('Failed to generate cross-app return token', {
       error: error?.message,
       targetApp: target.targetApp,
     });

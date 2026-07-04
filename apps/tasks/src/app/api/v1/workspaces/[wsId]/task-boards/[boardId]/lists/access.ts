@@ -10,7 +10,6 @@ import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import type { SessionAuthContext } from '@/lib/api-auth';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 const paramsSchema = z.object({
   wsId: z.string().min(1),
@@ -59,7 +58,7 @@ export async function requireBoardAccess(
   if ('error' in access) return access;
 
   if (normalizedWsId !== access.wsId) {
-    serverLogger.warn('Board workspace did not match route workspace', {
+    console.warn('Board workspace did not match route workspace', {
       boardId,
       boardWsId: access.wsId,
       routeWsId: normalizedWsId,

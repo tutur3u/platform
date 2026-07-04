@@ -4,10 +4,7 @@ import {
   listZaloIdentityLinks,
   saveZaloIdentityLink,
 } from '@/lib/ai-agents/registry';
-import {
-  serverLogger,
-  withRequestLogDrain,
-} from '@/lib/infrastructure/log-drain';
+import { withRequestLogDrain } from '@/lib/infrastructure/log-drain';
 import { requireAiAgentAdmin } from '../access';
 
 const identitySchema = z.object({
@@ -55,7 +52,7 @@ async function saveIdentity(request: NextRequest) {
 
     return NextResponse.json({ identity });
   } catch (error) {
-    serverLogger.warn('Failed to save AI agent identity link', {
+    console.warn('Failed to save AI agent identity link', {
       error: error instanceof Error ? error.message : String(error),
       externalUserId: parsed.data.externalUserId,
     });

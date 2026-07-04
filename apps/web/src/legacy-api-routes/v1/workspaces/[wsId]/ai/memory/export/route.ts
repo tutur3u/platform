@@ -14,7 +14,6 @@ import {
   verifyWorkspaceMembershipType,
 } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 type Params = {
   wsId: string;
@@ -42,10 +41,7 @@ export async function POST(
   try {
     wsId = await normalizeWorkspaceId(rawWsId, supabase, request);
   } catch (error) {
-    serverLogger.warn(
-      'Failed to normalize AI memory export workspace id',
-      error
-    );
+    console.warn('Failed to normalize AI memory export workspace id', error);
     return NextResponse.json(
       { error: 'Invalid workspace identifier' },
       { status: 422 }
@@ -59,7 +55,7 @@ export async function POST(
     wsId,
   });
   if (membership.error === 'membership_lookup_failed') {
-    serverLogger.error('Failed to verify AI memory export workspace access', {
+    console.error('Failed to verify AI memory export workspace access', {
       userId: user.id,
       wsId,
     });
@@ -88,7 +84,7 @@ export async function POST(
   });
 
   if (!result.ok) {
-    serverLogger.error('Failed to export AI memories', {
+    console.error('Failed to export AI memories', {
       error: result.error,
       product,
       userId: user.id,

@@ -1,7 +1,6 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 interface Params {
   params: Promise<{ wsId: string }>;
@@ -28,7 +27,7 @@ export async function GET(request: Request, { params }: Params) {
     .limit(1);
 
   if (defaultError) {
-    serverLogger.error('Error checking default permissions', {
+    console.error('Error checking default permissions', {
       error: defaultError,
       wsId,
     });
@@ -49,7 +48,7 @@ export async function GET(request: Request, { params }: Params) {
     .limit(1);
 
   if (rolesError) {
-    serverLogger.error('Error checking roles', { error: rolesError, wsId });
+    console.error('Error checking roles', { error: rolesError, wsId });
     return NextResponse.json(
       { message: 'Internal server error' },
       { status: 500 }

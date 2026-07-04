@@ -16,7 +16,6 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { type AuthorizedRequest, withSessionAuth } from '@/lib/api-auth';
 import { checkEducationWorkspaceAccess } from '@/lib/education/access';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 type Params = {
   wsId: string;
@@ -344,7 +343,7 @@ Avoid generic language. Make it feel like a real classroom moment.`,
         reasoningTokens: usage.outputTokenDetails?.reasoningTokens ?? 0,
         feature: 'generate',
       }).catch((error: unknown) =>
-        serverLogger.warn('Failed to deduct Valsea scenario credits', error)
+        console.warn('Failed to deduct Valsea scenario credits', error)
       );
 
       return NextResponse.json(object);
@@ -356,7 +355,7 @@ Avoid generic language. Make it feel like a real classroom moment.`,
         );
       }
 
-      serverLogger.warn('Falling back to local Valsea scenario seed', error);
+      console.warn('Falling back to local Valsea scenario seed', error);
       return NextResponse.json(fallback);
     }
   },

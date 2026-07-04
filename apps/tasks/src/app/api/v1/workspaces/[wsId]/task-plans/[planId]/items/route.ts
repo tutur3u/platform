@@ -1,5 +1,4 @@
 import { type NextRequest, NextResponse } from 'next/server';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
   createSourceTaskFromPlanItem,
   isTaskPlanSchemaUnavailableError,
@@ -51,7 +50,7 @@ export async function GET(request: NextRequest, context: Context) {
   } catch (error) {
     if (isTaskPlanSchemaUnavailableError(error))
       return taskPlanSchemaUnavailableResponse({ items: [] });
-    serverLogger.error('Failed to list task plan items', { error, planId });
+    console.error('Failed to list task plan items', { error, planId });
     return taskPlanErrorResponse('Failed to list task plan items', 500);
   }
 }
@@ -135,7 +134,7 @@ export async function POST(request: NextRequest, context: Context) {
   } catch (error) {
     if (isTaskPlanSchemaUnavailableError(error))
       return taskPlanSchemaUnavailableResponse();
-    serverLogger.error('Failed to create task plan item', { error, planId });
+    console.error('Failed to create task plan item', { error, planId });
     return taskPlanRouteErrorResponse(error, 'Failed to create task plan item');
   }
 }
@@ -181,7 +180,7 @@ export async function PATCH(request: NextRequest, context: Context) {
   } catch (error) {
     if (isTaskPlanSchemaUnavailableError(error))
       return taskPlanSchemaUnavailableResponse();
-    serverLogger.error('Failed to update task plan item', { error, planId });
+    console.error('Failed to update task plan item', { error, planId });
     return taskPlanRouteErrorResponse(error, 'Failed to update task plan item');
   }
 }
@@ -210,7 +209,7 @@ export async function DELETE(request: NextRequest, context: Context) {
   } catch (error) {
     if (isTaskPlanSchemaUnavailableError(error))
       return taskPlanSchemaUnavailableResponse();
-    serverLogger.error('Failed to delete task plan item', { error, planId });
+    console.error('Failed to delete task plan item', { error, planId });
     return taskPlanRouteErrorResponse(error, 'Failed to delete task plan item');
   }
 }

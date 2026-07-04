@@ -242,7 +242,7 @@ const checks = [
     name: 'server-console',
     command: 'node',
     args: ['scripts/check-server-console.js'],
-    parseOutput: () => 'Server logs use internal drain',
+    parseOutput: () => 'Server logs use native console methods',
   },
   {
     name: 'internal-app-auth',

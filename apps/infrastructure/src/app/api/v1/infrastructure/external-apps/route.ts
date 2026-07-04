@@ -4,10 +4,7 @@ import {
   listExternalApps,
   upsertExternalApp,
 } from '@/lib/app-coordination/external-apps';
-import {
-  serverLogger,
-  withRequestLogDrain,
-} from '@/lib/infrastructure/log-drain';
+import { withRequestLogDrain } from '@/lib/infrastructure/log-drain';
 import { requireExternalAppRegistryAdmin } from './access';
 
 const externalAppSchema = z.object({
@@ -39,7 +36,7 @@ async function listApps(request: NextRequest) {
       apps: await listExternalApps(access.sbAdmin),
     });
   } catch (error) {
-    serverLogger.error('Failed to list external app registry', error);
+    console.error('Failed to list external app registry', error);
     return NextResponse.json(
       { error: 'Failed to list external apps' },
       { status: 500 }
@@ -72,7 +69,7 @@ async function saveApp(request: NextRequest) {
 
     return NextResponse.json(result);
   } catch (error) {
-    serverLogger.warn('Failed to save external app registration', {
+    console.warn('Failed to save external app registration', {
       error: error instanceof Error ? error.message : String(error),
       id: parsed.data.id,
     });

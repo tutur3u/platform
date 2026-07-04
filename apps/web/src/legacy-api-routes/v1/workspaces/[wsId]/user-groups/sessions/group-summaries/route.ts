@@ -2,7 +2,6 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { resolveUserGroupRouteWorkspaceId } from '@/lib/user-groups/route-helpers';
 import { listUserGroupScheduleGroupSummaries } from '@/lib/user-groups/session-schedule';
 
@@ -78,7 +77,7 @@ export async function GET(req: Request, { params }: Params) {
 
     return NextResponse.json({ data });
   } catch (error) {
-    serverLogger.error('Failed to list user group schedule summaries', {
+    console.error('Failed to list user group schedule summaries', {
       error,
     });
     return NextResponse.json(

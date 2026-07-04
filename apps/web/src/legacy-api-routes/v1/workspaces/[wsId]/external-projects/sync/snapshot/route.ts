@@ -1,10 +1,7 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { requireWorkspaceExternalProjectAccess } from '@/lib/external-projects/access';
 import { getWorkspaceExternalProjectSyncSnapshot } from '@/lib/external-projects/sync';
-import {
-  serverLogger,
-  withRequestLogDrain,
-} from '@/lib/infrastructure/log-drain';
+import { withRequestLogDrain } from '@/lib/infrastructure/log-drain';
 
 interface Params {
   params: Promise<{
@@ -32,7 +29,7 @@ async function getSnapshot(request: NextRequest, { params }: Params) {
 
     return NextResponse.json(snapshot);
   } catch (error) {
-    serverLogger.error('Failed to load external project sync snapshot', {
+    console.error('Failed to load external project sync snapshot', {
       error: error instanceof Error ? error.message : String(error),
       wsId: access.normalizedWorkspaceId,
     });

@@ -12,7 +12,6 @@ import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper'
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { resolveSessionAuthContext } from '@/lib/api-auth';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { normalizeWorkspaceId } from '@/lib/workspace-helper';
 
 interface Params {
@@ -77,7 +76,7 @@ async function authorizeWorkspaceRequest(
   try {
     normalizedWsId = await normalizeWorkspaceId(rawWsId, supabase);
   } catch (error) {
-    serverLogger.error('Workspace ID normalization failed:', error);
+    console.error('Workspace ID normalization failed:', error);
     return {
       context: null,
       response: NextResponse.json(
@@ -94,7 +93,7 @@ async function authorizeWorkspaceRequest(
   });
 
   if (membership.error === 'membership_lookup_failed') {
-    serverLogger.error('Workspace membership lookup failed:', membership.error);
+    console.error('Workspace membership lookup failed:', membership.error);
     return {
       context: null,
       response: NextResponse.json(
@@ -157,7 +156,7 @@ export async function GET(request: Request, { params }: Params) {
       total: typedCalendars.length,
     });
   } catch (error) {
-    serverLogger.error('Calendars GET error:', error);
+    console.error('Calendars GET error:', error);
     return NextResponse.json(
       { error: 'Failed to fetch calendars' },
       { status: 500 }
@@ -237,7 +236,7 @@ export async function POST(request: Request, { params }: Params) {
       );
     }
 
-    serverLogger.error('Calendars POST error:', error);
+    console.error('Calendars POST error:', error);
     return NextResponse.json(
       { error: 'Failed to create calendar' },
       { status: 500 }
@@ -336,7 +335,7 @@ export async function PATCH(request: Request, { params }: Params) {
       );
     }
 
-    serverLogger.error('Calendars PATCH error:', error);
+    console.error('Calendars PATCH error:', error);
     return NextResponse.json(
       { error: 'Failed to update calendar' },
       { status: 500 }
@@ -434,7 +433,7 @@ export async function DELETE(request: Request, { params }: Params) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    serverLogger.error('Calendars DELETE error:', error);
+    console.error('Calendars DELETE error:', error);
     return NextResponse.json(
       { error: 'Failed to delete calendar' },
       { status: 500 }

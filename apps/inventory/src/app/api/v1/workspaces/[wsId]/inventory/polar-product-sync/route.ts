@@ -9,7 +9,6 @@ import {
   canViewInventoryDashboard,
 } from '@tuturuuu/inventory-core/permissions';
 import { NextResponse } from 'next/server';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 interface Params {
   params: Promise<{ wsId: string }>;
@@ -34,7 +33,7 @@ export async function GET(request: Request, { params }: Params) {
     );
     return NextResponse.json(summary);
   } catch (error) {
-    serverLogger.error('Failed to load inventory Polar sync summary', error);
+    console.error('Failed to load inventory Polar sync summary', error);
     return NextResponse.json(
       { message: 'Failed to load Polar sync summary' },
       { status: 500 }
@@ -66,7 +65,7 @@ export async function POST(request: Request, { params }: Params) {
 
     return NextResponse.json({ ok: true, synced: { ...result, listed } });
   } catch (error) {
-    serverLogger.error('Failed to sync inventory products to Polar', error);
+    console.error('Failed to sync inventory products to Polar', error);
     return NextResponse.json(
       {
         message:

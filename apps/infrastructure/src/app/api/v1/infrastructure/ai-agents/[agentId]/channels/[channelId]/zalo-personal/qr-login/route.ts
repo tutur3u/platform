@@ -5,10 +5,7 @@ import {
   getAiAgentZaloPersonalQrLoginStatus,
   startAiAgentZaloPersonalQrLogin,
 } from '@/lib/ai-agents/zalo-personal-qr-login';
-import {
-  serverLogger,
-  withRequestLogDrain,
-} from '@/lib/infrastructure/log-drain';
+import { withRequestLogDrain } from '@/lib/infrastructure/log-drain';
 import { requireAiAgentAdmin } from '../../../../../access';
 
 interface Params {
@@ -41,7 +38,7 @@ async function startQrLogin(request: NextRequest, { params }: Params) {
 
     return NextResponse.json({ session });
   } catch (error) {
-    serverLogger.warn('Failed to start personal Zalo QR login', {
+    console.warn('Failed to start personal Zalo QR login', {
       agentId,
       channelId,
       error: error instanceof Error ? error.message : String(error),
@@ -81,7 +78,7 @@ async function getQrLoginStatus(request: NextRequest, { params }: Params) {
 
     return NextResponse.json({ session });
   } catch (error) {
-    serverLogger.warn('Failed to get personal Zalo QR login status', {
+    console.warn('Failed to get personal Zalo QR login status', {
       agentId,
       channelId,
       error: error instanceof Error ? error.message : String(error),
@@ -122,7 +119,7 @@ async function abortQrLogin(request: NextRequest, { params }: Params) {
 
     return NextResponse.json({ session });
   } catch (error) {
-    serverLogger.warn('Failed to abort personal Zalo QR login', {
+    console.warn('Failed to abort personal Zalo QR login', {
       agentId,
       channelId,
       error: error instanceof Error ? error.message : String(error),

@@ -1,7 +1,6 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { withSessionAuth } from '@/lib/api-auth';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
   getLearnerCourseDetail,
   resolveTulearnSubject,
@@ -43,7 +42,7 @@ export const GET = withSessionAuth<Params>(
       const accessResponse = tulearnAccessErrorResponse(error);
       if (accessResponse) return accessResponse;
 
-      serverLogger.error('Failed to load Tulearn course:', error);
+      console.error('Failed to load Tulearn course:', error);
       return NextResponse.json(
         { message: 'Failed to load course' },
         { status: 500 }

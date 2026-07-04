@@ -7,7 +7,6 @@ import {
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getLinkUnavailableReason } from '@/features/user-profile-links/server';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 interface Params {
   params: Promise<{ code: string }>;
@@ -73,7 +72,7 @@ export async function POST(req: Request, { params }: Params) {
     .createSignedUploadUrl(filePath);
 
   if (error) {
-    serverLogger.error('Error creating profile-link avatar upload URL:', error);
+    console.error('Error creating profile-link avatar upload URL:', error);
     return NextResponse.json(
       { message: 'Error creating signed upload URL' },
       { status: 500 }

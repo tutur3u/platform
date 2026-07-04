@@ -2,7 +2,6 @@ import { type NextRequest, NextResponse } from 'next/server';
 import { withSessionAuth } from '@/lib/api-auth';
 import { resolveChatRouteContext } from '@/lib/chat/private-rpc';
 import { getChatRealtimeSubscribeUrl } from '@/lib/chat/realtime';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 type RouteParams = {
   wsId: string;
@@ -69,7 +68,7 @@ export const GET = withSessionAuth<RouteParams>(
         wsId: context.context.normalizedWsId,
       }).url;
     } catch (error) {
-      serverLogger.error('Chat realtime subscribe URL failed', {
+      console.error('Chat realtime subscribe URL failed', {
         error,
         wsId: context.context.normalizedWsId,
       });
@@ -100,7 +99,7 @@ export const GET = withSessionAuth<RouteParams>(
           });
 
           if (!response.ok || !response.body) {
-            serverLogger.error('Chat realtime upstream unavailable', {
+            console.error('Chat realtime upstream unavailable', {
               status: response.status,
               wsId: context.context.normalizedWsId,
             });
@@ -117,7 +116,7 @@ export const GET = withSessionAuth<RouteParams>(
           }
         } catch (error) {
           if (!abort.signal.aborted) {
-            serverLogger.error('Chat realtime stream failed', {
+            console.error('Chat realtime stream failed', {
               error,
               wsId: context.context.normalizedWsId,
             });

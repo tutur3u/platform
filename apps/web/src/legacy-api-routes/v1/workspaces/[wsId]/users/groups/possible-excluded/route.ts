@@ -3,10 +3,7 @@ import { MAX_SEARCH_LENGTH } from '@tuturuuu/utils/constants';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import {
-  serverLogger,
-  withRequestLogDrain,
-} from '@/lib/infrastructure/log-drain';
+import { withRequestLogDrain } from '@/lib/infrastructure/log-drain';
 
 function normalizeListParam(value: string | string[]) {
   const rawValues = Array.isArray(value) ? value : [value];
@@ -120,7 +117,7 @@ async function handlePossibleExcludedGroupsRequest(
   const { data, error, count } = await queryBuilder;
 
   if (error) {
-    serverLogger.error(
+    console.error(
       'Error fetching possible excluded groups',
       {
         includedGroupCount: sp.includedGroups.length,

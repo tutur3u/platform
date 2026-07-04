@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { updateCronMonitoringControl } from '@/lib/infrastructure/cron-monitoring';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { authorizeInfrastructureOperator } from '../../blue-green/authorization';
 
 const payloadSchema = z.object({
@@ -35,7 +34,7 @@ export async function PUT(request: Request) {
           : 'Disabled native cron execution.',
     });
   } catch (error) {
-    serverLogger.error('Failed to update cron monitoring control:', error);
+    console.error('Failed to update cron monitoring control:', error);
     return NextResponse.json(
       { message: 'Failed to update cron monitoring control' },
       { status: 500 }

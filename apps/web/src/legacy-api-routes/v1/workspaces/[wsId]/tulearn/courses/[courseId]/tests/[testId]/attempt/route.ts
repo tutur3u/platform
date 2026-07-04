@@ -1,7 +1,6 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { withSessionAuth } from '@/lib/api-auth';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
   resolveTulearnSubject,
   tulearnAccessErrorResponse,
@@ -192,7 +191,7 @@ export const GET = withSessionAuth<Params>(
       const accessResponse = tulearnAccessErrorResponse(error);
       if (accessResponse) return accessResponse;
 
-      serverLogger.error('Failed to get test attempt:', error);
+      console.error('Failed to get test attempt:', error);
       return NextResponse.json(
         { message: 'Failed to load test attempt' },
         { status: 500 }

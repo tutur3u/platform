@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
   parseRateLimitBucketKey,
   scanReadUsageKeys,
@@ -32,7 +31,7 @@ export async function GET(request: Request) {
   ]);
 
   if (error) {
-    serverLogger.error('Failed to load rate-limit counters', error);
+    console.error('Failed to load rate-limit counters', error);
     return NextResponse.json(
       { message: 'Failed to load rate-limit counters' },
       { status: 500 }

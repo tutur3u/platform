@@ -8,7 +8,6 @@ import {
   canViewInventoryCatalog,
 } from '@tuturuuu/inventory-core/permissions';
 import { NextResponse } from 'next/server';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { parseCostingJsonBody } from './request';
 import {
   CostProfileListQuerySchema,
@@ -42,7 +41,7 @@ export async function GET(request: Request, { params }: Params) {
     const data = await listCostProfiles(authorization.value.wsId, parsed.data);
     return NextResponse.json(data);
   } catch (error) {
-    serverLogger.error('Failed to list inventory cost profiles', error);
+    console.error('Failed to list inventory cost profiles', error);
     return NextResponse.json(
       { message: 'Failed to list inventory cost profiles' },
       { status: 500 }
@@ -73,7 +72,7 @@ export async function POST(request: Request, { params }: Params) {
     );
     return NextResponse.json({ data }, { status: 201 });
   } catch (error) {
-    serverLogger.error('Failed to create inventory cost profile', error);
+    console.error('Failed to create inventory cost profile', error);
     return NextResponse.json(
       { message: 'Failed to create inventory cost profile' },
       { status: 500 }

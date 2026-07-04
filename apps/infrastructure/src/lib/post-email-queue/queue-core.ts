@@ -5,7 +5,6 @@ import type {
   WorkspaceUser,
 } from '@tuturuuu/types/db';
 import { preloadBlockedEmailCache } from '@/lib/email-blacklist';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
   buildPostEmailAgeSkipReason,
   getPostEmailMaxAgeCutoff,
@@ -129,7 +128,7 @@ export async function fetchAllPaginatedRows<T>(
 
 function debugLog(message: string, data?: Record<string, unknown>) {
   if (!POST_EMAIL_QUEUE_DEBUG) return;
-  serverLogger.debug(message, data ?? {});
+  console.debug(message, data ?? {});
 }
 
 function getRpcClient(

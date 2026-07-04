@@ -11,7 +11,6 @@ import {
   isMissingCalendarSyncSchemaError,
   saveCalendarSyncPreferences,
 } from '@/lib/calendar/sync-preferences';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 const patchSchema = z.object({
   inboundSyncEnabled: z.boolean().optional(),
@@ -78,7 +77,7 @@ export async function GET(request: Request, { params }: Params) {
       })
     );
   } catch (error) {
-    serverLogger.error('Failed to load calendar sync preferences', {
+    console.error('Failed to load calendar sync preferences', {
       wsId: access.wsId,
       error,
     });
@@ -120,7 +119,7 @@ export async function PATCH(request: Request, { params }: Params) {
       return NextResponse.json({ error: message }, { status: 400 });
     }
 
-    serverLogger.error('Failed to update calendar sync preferences', {
+    console.error('Failed to update calendar sync preferences', {
       wsId: access.wsId,
       error,
     });

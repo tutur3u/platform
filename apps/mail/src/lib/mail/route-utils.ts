@@ -1,7 +1,6 @@
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import type { z } from 'zod';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { resolveMailRouteContext } from './auth';
 import type { MailRouteContext } from './types';
 
@@ -50,7 +49,7 @@ export async function withMailContext(
 
     return await handler(resolved.context);
   } catch (error) {
-    serverLogger.error('[mail] route failed', {
+    console.error('[mail] route failed', {
       error,
       wsId,
     });

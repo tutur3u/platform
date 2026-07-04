@@ -7,7 +7,6 @@ import {
   normalizeWorkspaceId,
 } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { TutoringQueueQuerySchema } from '../shared';
 
 interface Params {
@@ -124,7 +123,7 @@ export async function GET(request: Request, { params }: Params) {
     await attendanceQuery;
 
   if (attendanceError) {
-    serverLogger.error(
+    console.error(
       'Failed to load attendance deficits for tutoring queue',
       attendanceError
     );
@@ -154,10 +153,7 @@ export async function GET(request: Request, { params }: Params) {
   const { data: completedRows, error: completedError } = await completedQuery;
 
   if (completedError) {
-    serverLogger.error(
-      'Failed to load completed tutoring sessions',
-      completedError
-    );
+    console.error('Failed to load completed tutoring sessions', completedError);
     return NextResponse.json(
       { message: 'Failed to load queue' },
       { status: 500 }
@@ -184,7 +180,7 @@ export async function GET(request: Request, { params }: Params) {
   const { data: feedbackRows, error: feedbackError } = await feedbackQuery;
 
   if (feedbackError) {
-    serverLogger.error(
+    console.error(
       'Failed to load attention feedback for tutoring queue',
       feedbackError
     );

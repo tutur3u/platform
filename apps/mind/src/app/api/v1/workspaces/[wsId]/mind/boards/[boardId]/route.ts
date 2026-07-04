@@ -8,7 +8,6 @@ import { requireMindAccess } from '@tuturuuu/mind-core/access';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 type Params = {
   boardId: string;
@@ -34,7 +33,7 @@ export const GET = withSessionAuth<Params>(
 
       return NextResponse.json(snapshot);
     } catch (error) {
-      serverLogger.error('Error loading Mind board:', error);
+      console.error('Error loading Mind board:', error);
       return NextResponse.json(
         { error: 'Failed to load Mind board' },
         { status: 500 }
@@ -72,7 +71,7 @@ export const PATCH = withSessionAuth<Params>(
         );
       }
 
-      serverLogger.error('Error updating Mind board:', error);
+      console.error('Error updating Mind board:', error);
       return NextResponse.json(
         { error: 'Failed to update Mind board' },
         { status: 500 }
@@ -98,7 +97,7 @@ export const DELETE = withSessionAuth<Params>(
 
       return NextResponse.json({ board });
     } catch (error) {
-      serverLogger.error('Error deleting Mind board:', error);
+      console.error('Error deleting Mind board:', error);
       return NextResponse.json(
         { error: 'Failed to delete Mind board' },
         { status: 500 }

@@ -4,10 +4,7 @@ import {
   getAppCoordinationSessionPolicy,
   saveAppCoordinationSessionPolicy,
 } from '@/lib/app-coordination/session-policy';
-import {
-  serverLogger,
-  withRequestLogDrain,
-} from '@/lib/infrastructure/log-drain';
+import { withRequestLogDrain } from '@/lib/infrastructure/log-drain';
 import { requireExternalAppRegistryAdmin } from '../external-apps/access';
 
 async function readPolicy(request: NextRequest) {
@@ -25,7 +22,7 @@ async function readPolicy(request: NextRequest) {
       })
     );
   } catch (error) {
-    serverLogger.error('Failed to read app coordination session policy', error);
+    console.error('Failed to read app coordination session policy', error);
     return NextResponse.json(
       { error: 'Failed to read app coordination policy' },
       { status: 500 }
@@ -64,7 +61,7 @@ async function updatePolicy(request: NextRequest) {
       source: 'secret',
     });
   } catch (error) {
-    serverLogger.error('Failed to save app coordination session policy', error);
+    console.error('Failed to save app coordination session policy', error);
     return NextResponse.json(
       { error: 'Failed to save app coordination policy' },
       { status: 500 }

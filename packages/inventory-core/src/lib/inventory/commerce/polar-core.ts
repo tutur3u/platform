@@ -11,7 +11,6 @@ import {
 import { createPolarClient } from '@tuturuuu/payment/polar/server';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { decryptField, encryptField } from '@tuturuuu/utils/encryption';
-import { serverLogger } from '../../infrastructure/log-drain';
 import {
   getOrCreateWorkspaceKey,
   getWorkspaceKey,
@@ -365,7 +364,7 @@ export async function ensureInventoryPolarProduct({
       });
       return integration.polar_product_id;
     } catch (error) {
-      serverLogger.warn('Inventory Polar product validation failed', {
+      console.warn('Inventory Polar product validation failed', {
         environment,
         error: extractErrorMessage(error),
         wsId,
@@ -500,7 +499,7 @@ export async function ensureInventoryPolarCheckoutProduct({
       const product = await polar.products.get({ id: existingId });
       if (productHasCurrency(product, priceCurrency)) return existingId;
     } catch (error) {
-      serverLogger.warn('Inventory Polar checkout product validation failed', {
+      console.warn('Inventory Polar checkout product validation failed', {
         currency: currencyUpper,
         environment,
         error: extractErrorMessage(error),

@@ -8,7 +8,6 @@ import type {
 } from '@tuturuuu/types';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 interface Params {
   params: Promise<{
@@ -79,7 +78,7 @@ export async function GET(req: Request, { params }: Params) {
     .order('permission', { ascending: true });
 
   if (error) {
-    serverLogger.error('Error fetching default workspace permissions', {
+    console.error('Error fetching default workspace permissions', {
       error,
       memberType,
       wsId: resolvedWsId,
@@ -151,7 +150,7 @@ export async function PUT(req: Request, { params }: Params) {
   );
 
   if (error) {
-    serverLogger.error('Error updating default workspace permissions', {
+    console.error('Error updating default workspace permissions', {
       error,
       memberType: bodyMemberType,
       wsId: resolvedWsId,

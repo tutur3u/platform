@@ -20,17 +20,12 @@ import type {
   HiveWorldEventRow,
 } from '@/lib/hive/types';
 import { resolveWebHiveAccess } from '@/lib/hive-page-context';
-import {
-  serverLogger,
-  withRequestLogDrain,
-} from '@/lib/infrastructure/log-drain';
+import { withRequestLogDrain } from '@/lib/infrastructure/log-drain';
 
 export {
   signHiveRealtimeToken,
   verifyHiveRealtimeToken,
 } from './_realtime-token';
-
-export { serverLogger };
 
 export const hiveVectorSchema = z.object({
   x: z.number().finite(),
@@ -403,7 +398,7 @@ export async function requireHiveAccess(request: NextRequest) {
   });
 
   if ('error' in accessResult) {
-    serverLogger.error('Failed to resolve Hive access', {
+    console.error('Failed to resolve Hive access', {
       userId: user.id,
     });
     return {

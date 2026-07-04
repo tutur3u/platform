@@ -8,7 +8,6 @@ import type { JSONContent } from '@tuturuuu/types/tiptap';
 import { connection, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { resolveSessionAuthContext } from '@/lib/api-auth';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
   getLearnerCourseDetail,
   getLearnerCourseSummaries,
@@ -118,7 +117,7 @@ export async function GET(request: Request) {
     if (tulearnErrorResponse) return tulearnErrorResponse;
 
     if (error instanceof CourseRouteError) {
-      serverLogger.error('Failed to load course content', {
+      console.error('Failed to load course content', {
         code: error.code,
         error,
       });
@@ -127,7 +126,7 @@ export async function GET(request: Request) {
         { status: error.status }
       );
     }
-    serverLogger.error('Failed to load course content', { error });
+    console.error('Failed to load course content', { error });
     return NextResponse.json(
       { error: 'Internal Server Error' },
       { status: 500 }

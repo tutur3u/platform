@@ -2,7 +2,6 @@ import { listMindAiPatches } from '@tuturuuu/mind-core';
 import { requireMindAccess } from '@tuturuuu/mind-core/access';
 import { NextResponse } from 'next/server';
 import { withSessionAuth } from '@/lib/api-auth';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 type Params = {
   boardId: string;
@@ -22,7 +21,7 @@ export const GET = withSessionAuth<Params>(
 
       return NextResponse.json({ patches });
     } catch (error) {
-      serverLogger.error('Error loading Mind AI patches:', error);
+      console.error('Error loading Mind AI patches:', error);
       return NextResponse.json(
         { error: 'Failed to load Mind AI patches' },
         { status: 500 }

@@ -5,7 +5,6 @@ import {
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
   CURRENT_USER_PROFILE_READ_APP_SESSION_AUTH,
   CURRENT_USER_PROFILE_WRITE_APP_SESSION_AUTH,
@@ -28,7 +27,7 @@ export const GET = withSessionAuth(
         .maybeSingle();
 
       if (userError) {
-        serverLogger.error('Error fetching user profile:', userError);
+        console.error('Error fetching user profile:', userError);
         return NextResponse.json(
           { message: 'Error fetching user profile' },
           { status: 500 }
@@ -43,7 +42,7 @@ export const GET = withSessionAuth(
         .maybeSingle();
 
       if (privateError) {
-        serverLogger.error('Error fetching user private profile details:', {
+        console.error('Error fetching user private profile details:', {
           error: privateError.message,
           userId: user.id,
         });
@@ -64,7 +63,7 @@ export const GET = withSessionAuth(
         default_workspace_id: privateData?.default_workspace_id ?? null,
       });
     } catch (error) {
-      serverLogger.error('Request error while fetching user profile:', error);
+      console.error('Request error while fetching user profile:', error);
       return NextResponse.json(
         { message: 'Internal server error' },
         { status: 500 }
@@ -100,7 +99,7 @@ export const PATCH = withSessionAuth(
         .eq('id', user.id);
 
       if (error) {
-        serverLogger.error('Error updating user profile:', error);
+        console.error('Error updating user profile:', error);
         return NextResponse.json(
           { message: 'Internal server error' },
           { status: 500 }
@@ -116,7 +115,7 @@ export const PATCH = withSessionAuth(
         );
       }
 
-      serverLogger.error('Request error while updating user profile:', error);
+      console.error('Request error while updating user profile:', error);
       return NextResponse.json(
         { message: 'Internal server error' },
         { status: 500 }

@@ -15,7 +15,6 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { MAX_NAME_LENGTH } from '@tuturuuu/utils/constants';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 const ManufacturerSchema = z.object({
   name: z.string().trim().min(1).max(MAX_NAME_LENGTH),
@@ -67,7 +66,7 @@ export async function GET(req: Request, { params }: Params) {
   const { data, error, count } = await query.order('name');
 
   if (error) {
-    serverLogger.error('Error fetching inventory manufacturers', error);
+    console.error('Error fetching inventory manufacturers', error);
     return NextResponse.json(
       { message: 'Failed to fetch inventory manufacturers' },
       { status: 500 }
@@ -112,7 +111,7 @@ export async function POST(req: Request, { params }: Params) {
     .single();
 
   if (error) {
-    serverLogger.error('Error creating inventory manufacturer', error);
+    console.error('Error creating inventory manufacturer', error);
     return NextResponse.json(
       { message: 'Failed to create inventory manufacturer' },
       { status: error.code === '23505' ? 409 : 500 }

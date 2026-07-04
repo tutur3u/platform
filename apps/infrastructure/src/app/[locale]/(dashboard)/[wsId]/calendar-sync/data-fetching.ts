@@ -1,7 +1,6 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { SyncLog } from '@tuturuuu/ui/legacy/calendar/settings/types';
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 interface SyncMetrics {
   totalSyncs24h: number;
@@ -171,7 +170,7 @@ export async function getSyncLogs(
   } = await supabase.auth.getUser();
 
   if (authError || !user) {
-    serverLogger.error('[CalendarSyncData] Authentication error', authError);
+    console.error('[CalendarSyncData] Authentication error', authError);
     return { logs: [], totalCount: 0, hasMore: false };
   }
 
@@ -182,7 +181,7 @@ export async function getSyncLogs(
   });
 
   if (membership.error === 'membership_lookup_failed') {
-    serverLogger.error(
+    console.error(
       '[CalendarSyncData] Membership lookup failed for calendar sync logs',
       { wsId, userId: user.id }
     );
@@ -190,7 +189,7 @@ export async function getSyncLogs(
   }
 
   if (!membership.ok) {
-    serverLogger.error('[CalendarSyncData] No workspace access', {
+    console.error('[CalendarSyncData] No workspace access', {
       wsId,
       userId: user.id,
     });
@@ -210,7 +209,7 @@ export async function getSyncLogs(
   const { count: totalCount, error: countError } = await countQuery;
 
   if (countError) {
-    serverLogger.error(
+    console.error(
       '[CalendarSyncData] Failed to count calendar sync logs',
       countError
     );
@@ -273,7 +272,7 @@ export async function getSyncLogs(
   const { data: syncLogs, error } = await query;
 
   if (error) {
-    serverLogger.error(
+    console.error(
       '[CalendarSyncData] Failed to fetch calendar sync logs',
       error
     );

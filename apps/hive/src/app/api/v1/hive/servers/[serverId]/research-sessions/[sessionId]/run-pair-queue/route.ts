@@ -8,7 +8,6 @@ import {
   mapHiveEvent,
   mapHiveNpcRun,
   requireHiveAccess,
-  serverLogger,
   withHiveRoute,
 } from '../../../../../_shared';
 
@@ -97,7 +96,7 @@ export async function POST(request: NextRequest, { params }: Params) {
             ? error.message
             : 'Failed to run Hive pair interaction';
 
-        serverLogger.warn('Hive pair queue interaction failed', {
+        console.warn('Hive pair queue interaction failed', {
           error: message,
           index,
           serverId,

@@ -5,7 +5,6 @@ import { type NextRequest, NextResponse } from 'next/server';
 import { validate } from 'uuid';
 import { withSessionAuth } from '@/lib/api-auth';
 import { scheduleTask } from '@/lib/calendar/task-scheduler';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 interface ScheduleParams {
   wsId: string;
@@ -204,7 +203,7 @@ export const POST = withSessionAuth<ScheduleParams>(
         warnings: result.warning ? [result.warning] : [],
       });
     } catch (error) {
-      serverLogger.error('Error scheduling task:', error);
+      console.error('Error scheduling task:', error);
       return NextResponse.json(
         { error: 'Internal server error' },
         { status: 500 }
@@ -393,7 +392,7 @@ export const GET = withSessionAuth<ScheduleParams>(
           })) ?? [],
       });
     } catch (error) {
-      serverLogger.error('Error fetching task schedule:', error);
+      console.error('Error fetching task schedule:', error);
       return NextResponse.json(
         { error: 'Internal server error' },
         { status: 500 }

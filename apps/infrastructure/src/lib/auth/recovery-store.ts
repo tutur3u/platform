@@ -5,7 +5,6 @@ import {
   checkIfUserExists,
   validateEmail,
 } from '@tuturuuu/utils/email/server';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 export const AUTH_RECOVERY_TOKEN_TTL_MINUTES = 15;
 export const AUTH_RECOVERY_GENERIC_ERROR =
@@ -267,7 +266,7 @@ export async function getActiveAuthRecoveryOverride(email: string) {
   );
 
   if (error) {
-    serverLogger.warn('Failed to load active auth recovery override', {
+    console.warn('Failed to load active auth recovery override', {
       email: normalizedEmail,
       message: error.message,
     });
@@ -300,7 +299,7 @@ export async function logAuthRecoveryEvent(input: {
     });
 
   if (error) {
-    serverLogger.warn('Failed to write auth recovery event', {
+    console.warn('Failed to write auth recovery event', {
       eventType: input.eventType,
       message: error.message,
     });

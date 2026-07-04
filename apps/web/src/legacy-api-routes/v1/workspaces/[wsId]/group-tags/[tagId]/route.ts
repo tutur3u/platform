@@ -2,7 +2,6 @@ import { createClient } from '@tuturuuu/supabase/next/server';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 const UpdateGroupTagSchema = z.object({
   color: z.string().min(1),
@@ -34,7 +33,7 @@ export async function GET(req: Request, { params }: Params) {
     .maybeSingle();
 
   if (error) {
-    serverLogger.error('Error fetching workspace user group tag', error);
+    console.error('Error fetching workspace user group tag', error);
     return NextResponse.json(
       { message: 'Error fetching workspace user group tag' },
       { status: 500 }
@@ -98,7 +97,7 @@ export async function PUT(req: Request, { params }: Params) {
     .maybeSingle();
 
   if (error) {
-    serverLogger.error('Error updating workspace user group tag', error);
+    console.error('Error updating workspace user group tag', error);
     return NextResponse.json(
       { message: 'Error updating workspace user group tag' },
       { status: 500 }
@@ -133,7 +132,7 @@ export async function DELETE(req: Request, { params }: Params) {
     .maybeSingle();
 
   if (error) {
-    serverLogger.error('Error deleting workspace user group tag', error);
+    console.error('Error deleting workspace user group tag', error);
     return NextResponse.json(
       { message: 'Error deleting workspace user group tag' },
       { status: 500 }

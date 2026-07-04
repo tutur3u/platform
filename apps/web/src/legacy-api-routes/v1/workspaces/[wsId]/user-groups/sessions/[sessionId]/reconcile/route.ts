@@ -1,7 +1,6 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { resolveUserGroupRouteWorkspaceId } from '@/lib/user-groups/route-helpers';
 import {
   previewDetachedUserGroupSessionReconciliation,
@@ -130,7 +129,7 @@ export async function GET(req: Request, { params }: Params) {
     const knownErrorResponse = recurringReconciliationErrorResponse(error);
     if (knownErrorResponse) return knownErrorResponse;
 
-    serverLogger.error('Failed to preview user group session recurrence', {
+    console.error('Failed to preview user group session recurrence', {
       error,
     });
     return NextResponse.json(
@@ -168,7 +167,7 @@ export async function POST(req: Request, { params }: Params) {
     const knownErrorResponse = recurringReconciliationErrorResponse(error);
     if (knownErrorResponse) return knownErrorResponse;
 
-    serverLogger.error('Failed to reconcile user group session recurrence', {
+    console.error('Failed to reconcile user group session recurrence', {
       error,
     });
     return NextResponse.json(

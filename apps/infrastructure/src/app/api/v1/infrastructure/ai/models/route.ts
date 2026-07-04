@@ -1,7 +1,6 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 const PUBLIC_MODEL_COLUMNS = [
   'cache_read_price_per_token',
@@ -117,7 +116,7 @@ export async function GET(request: NextRequest) {
   const { data, error, count } = await query;
 
   if (error) {
-    serverLogger.info(error);
+    console.info(error);
     return NextResponse.json(
       { message: 'Error fetching AI Models' },
       { status: 500 }

@@ -13,7 +13,6 @@ import {
   normalizeWorkspaceId,
 } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { getWorkspaceMembers } from '@/lib/workspace-members';
 
 interface Params {
@@ -112,7 +111,7 @@ export async function GET(request: NextRequest, { params }: Params) {
 
     return NextResponse.json(members);
   } catch (error) {
-    serverLogger.error('Error fetching workspace members:', error);
+    console.error('Error fetching workspace members:', error);
     return NextResponse.json(
       { message: 'Error fetching workspace members' },
       { status: 500 }

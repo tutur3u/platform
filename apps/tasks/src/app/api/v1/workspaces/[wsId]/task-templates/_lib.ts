@@ -21,7 +21,6 @@ import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import type { SessionAuthContext } from '@/lib/api-auth';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 export const TASK_TEMPLATES_APP_SESSION_AUTH = {
   targetApp: [CLI_APP_TARGET_APP, 'tasks'],
@@ -220,7 +219,7 @@ export function handleUnknownTaskTemplateError(error: unknown, label: string) {
     return jsonError(error.message, 400);
   }
 
-  serverLogger.error(label, error);
+  console.error(label, error);
   return jsonError('Internal server error', 500);
 }
 
@@ -414,7 +413,7 @@ export async function listTaskTemplates(
   };
 
   if (error) {
-    serverLogger.error('Failed to list task templates', error);
+    console.error('Failed to list task templates', error);
     return jsonError('Failed to list task templates', 500);
   }
 
@@ -459,7 +458,7 @@ export async function resolveTaskTemplate(
   };
 
   if (error) {
-    serverLogger.error('Failed to resolve task template', error);
+    console.error('Failed to resolve task template', error);
     return { error: jsonError('Failed to resolve task template', 500) };
   }
 
@@ -500,7 +499,7 @@ export async function createTaskTemplate(
   }
 
   if (error || !data) {
-    serverLogger.error('Failed to create task template', error);
+    console.error('Failed to create task template', error);
     return jsonError('Failed to create task template', 500);
   }
 

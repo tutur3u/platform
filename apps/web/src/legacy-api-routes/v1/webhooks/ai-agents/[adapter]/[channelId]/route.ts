@@ -6,10 +6,7 @@ import {
   createAiAgentChatRuntime,
 } from '@/lib/ai-agents/runtime';
 import type { AiAgentChannelConfig } from '@/lib/ai-agents/types';
-import {
-  serverLogger,
-  withRequestLogDrain,
-} from '@/lib/infrastructure/log-drain';
+import { withRequestLogDrain } from '@/lib/infrastructure/log-drain';
 
 interface Params {
   params: Promise<{
@@ -160,7 +157,7 @@ async function handleWebhook(request: NextRequest, { params }: Params) {
       waitUntil: (task) => after(() => task),
     });
   } catch (error) {
-    serverLogger.warn('Failed to handle AI agent webhook', {
+    console.warn('Failed to handle AI agent webhook', {
       adapter,
       channelId,
       error: error instanceof Error ? error.message : String(error),

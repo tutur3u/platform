@@ -8,7 +8,6 @@ import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper'
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
   applyAdminAiCreditsModelFilters,
   parseAdminAiCreditsModelFilters,
@@ -93,7 +92,7 @@ export async function GET(req: NextRequest) {
       pagination: { page, limit, total: count ?? 0 },
     });
   } catch (error) {
-    serverLogger.error('Error in AI credits models GET:', error);
+    console.error('Error in AI credits models GET:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -170,7 +169,7 @@ export async function PATCH(req: Request) {
 
     return NextResponse.json(data);
   } catch (error) {
-    serverLogger.error('Error in AI credits models PATCH:', error);
+    console.error('Error in AI credits models PATCH:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

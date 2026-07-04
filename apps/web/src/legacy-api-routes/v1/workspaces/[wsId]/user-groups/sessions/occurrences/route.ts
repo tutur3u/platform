@@ -2,7 +2,6 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { resolveUserGroupRouteWorkspaceId } from '@/lib/user-groups/route-helpers';
 import { repairUserGroupSessionOccurrence } from '@/lib/user-groups/session-schedule';
 
@@ -80,7 +79,7 @@ export async function POST(req: Request, { params }: Params) {
       );
     }
 
-    serverLogger.error('Failed to repair user group session occurrence', {
+    console.error('Failed to repair user group session occurrence', {
       error,
     });
     return NextResponse.json(

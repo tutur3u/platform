@@ -1,5 +1,4 @@
 import { type NextRequest, NextResponse } from 'next/server';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
   isTaskPlanSchemaUnavailableError,
   planUpdateSchema,
@@ -85,7 +84,7 @@ export async function GET(
   } catch (error) {
     if (isTaskPlanSchemaUnavailableError(error))
       return taskPlanSchemaUnavailableResponse();
-    serverLogger.error('Failed to load task plan', { error, planId });
+    console.error('Failed to load task plan', { error, planId });
     return taskPlanErrorResponse('Failed to load task plan', 500);
   }
 }
@@ -138,7 +137,7 @@ export async function PATCH(
   } catch (error) {
     if (isTaskPlanSchemaUnavailableError(error))
       return taskPlanSchemaUnavailableResponse();
-    serverLogger.error('Failed to update task plan', { error, planId });
+    console.error('Failed to update task plan', { error, planId });
     return taskPlanRouteErrorResponse(error, 'Failed to update task plan');
   }
 }
@@ -163,7 +162,7 @@ export async function DELETE(
   } catch (error) {
     if (isTaskPlanSchemaUnavailableError(error))
       return taskPlanSchemaUnavailableResponse();
-    serverLogger.error('Failed to delete task plan', { error, planId });
+    console.error('Failed to delete task plan', { error, planId });
     return taskPlanErrorResponse('Failed to delete task plan', 500);
   }
 }

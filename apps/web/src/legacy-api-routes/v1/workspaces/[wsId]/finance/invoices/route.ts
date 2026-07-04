@@ -21,7 +21,6 @@ import { getWorkspaceConfig } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { resolveFinanceRouteAuthContext } from '@/lib/finance-route-auth';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 const SearchParamsSchema = z.object({
   q: z.string().max(MAX_SEARCH_LENGTH).default(''),
@@ -251,7 +250,7 @@ async function attachInvoiceCustomers({
     .in('id', customerIds);
 
   if (error) {
-    serverLogger.error('Error fetching invoice customers:', error);
+    console.error('Error fetching invoice customers:', error);
     return invoices.map((invoice) => ({
       ...invoice,
       customer: null,
@@ -428,7 +427,7 @@ export async function GET(request: Request, { params }: Params) {
 
     const parsed = SearchParamsSchema.safeParse(params_obj);
     if (!parsed.success) {
-      serverLogger.error('Invalid invoice query parameters:', parsed.error);
+      console.error('Invalid invoice query parameters:', parsed.error);
       return NextResponse.json(
         { message: 'Invalid query parameters' },
         { status: 400 }
@@ -454,7 +453,7 @@ export async function GET(request: Request, { params }: Params) {
       );
 
       if (rpcError) {
-        serverLogger.error('Error searching invoices:', rpcError);
+        console.error('Error searching invoices:', rpcError);
         return NextResponse.json(
           { message: 'Error searching invoices' },
           { status: 500 }
@@ -545,7 +544,7 @@ export async function GET(request: Request, { params }: Params) {
     } = await queryBuilder.returns<FullInvoiceData[]>();
 
     if (error) {
-      serverLogger.error('Error fetching invoices:', error);
+      console.error('Error fetching invoices:', error);
       return NextResponse.json(
         { message: 'Error fetching invoices' },
         { status: 500 }
@@ -569,7 +568,7 @@ export async function GET(request: Request, { params }: Params) {
       count: count ?? 0,
     });
   } catch (error) {
-    serverLogger.error('Error in workspace invoices API:', error);
+    console.error('Error in workspace invoices API:', error);
     return NextResponse.json(
       { message: 'Internal server error' },
       { status: 500 }
@@ -644,7 +643,7 @@ export async function POST(req: Request, { params }: Params) {
     });
     if (!walletValidation.ok) {
       if (walletValidation.status === 500) {
-        serverLogger.error(walletValidation.message, walletValidation.error);
+        console.error(walletValidation.message, walletValidation.error);
       }
       return NextResponse.json(
         { message: walletValidation.message },
@@ -659,10 +658,7 @@ export async function POST(req: Request, { params }: Params) {
     });
     if (!customerValidation.ok) {
       if (customerValidation.status === 500) {
-        serverLogger.error(
-          customerValidation.message,
-          customerValidation.error
-        );
+        console.error(customerValidation.message, customerValidation.error);
       }
       return NextResponse.json(
         { message: customerValidation.message },
@@ -783,10 +779,7 @@ export async function POST(req: Request, { params }: Params) {
     });
     if (!inventoryRelations.ok) {
       if (inventoryRelations.status === 500) {
-        serverLogger.error(
-          inventoryRelations.message,
-          inventoryRelations.error
-        );
+        console.error(inventoryRelations.message, inventoryRelations.error);
       }
       return NextResponse.json(
         { message: inventoryRelations.message },
@@ -863,7 +856,7 @@ export async function POST(req: Request, { params }: Params) {
       .single();
 
     if (invoiceError) {
-      serverLogger.error('Error creating invoice:', invoiceError);
+      console.error('Error creating invoice:', invoiceError);
       return NextResponse.json(
         { message: 'Error creating invoice', details: invoiceError.message },
         { status: 500 }
@@ -884,7 +877,7 @@ export async function POST(req: Request, { params }: Params) {
       .eq('ws_id', wsId);
 
     if (productsError) {
-      serverLogger.error('Error getting products information:', productsError);
+      console.error('Error getting products information:', productsError);
       return NextResponse.json(
         {
           message: 'Error getting products information',
@@ -923,10 +916,7 @@ export async function POST(req: Request, { params }: Params) {
     ]);
 
     if (ownersError) {
-      serverLogger.error(
-        'Error getting inventory owners information:',
-        ownersError
-      );
+      console.error('Error getting inventory owners information:', ownersError);
       return NextResponse.json(
         {
           message: 'Error getting inventory owners information',
@@ -937,7 +927,7 @@ export async function POST(req: Request, { params }: Params) {
     }
 
     if (unitsError) {
-      serverLogger.error('Error getting units information:', unitsError);
+      console.error('Error getting units information:', unitsError);
       return NextResponse.json(
         {
           message: 'Error getting units information',
@@ -983,10 +973,7 @@ export async function POST(req: Request, { params }: Params) {
       .insert(invoiceProducts);
 
     if (invoiceProductsError) {
-      serverLogger.error(
-        'Error creating invoice products:',
-        invoiceProductsError
-      );
+      console.error('Error creating invoice products:', invoiceProductsError);
       // Rollback: delete the created invoice and transaction
       await Promise.all([
         sbAdmin.from('finance_invoices').delete().eq('id', invoiceId),
@@ -1041,7 +1028,7 @@ export async function POST(req: Request, { params }: Params) {
           );
         }
 
-        serverLogger.error('Error creating invoice promotion:', promotionError);
+        console.error('Error creating invoice promotion:', promotionError);
         return NextResponse.json(
           {
             message: 'Error applying promotion to invoice',
@@ -1067,7 +1054,7 @@ export async function POST(req: Request, { params }: Params) {
       .insert(stockChanges);
 
     if (stockError) {
-      serverLogger.error('Error creating stock changes:', stockError);
+      console.error('Error creating stock changes:', stockError);
       // Rollback: delete all created records
       await Promise.all([
         sbAdmin
@@ -1148,7 +1135,7 @@ export async function POST(req: Request, { params }: Params) {
       },
     });
   } catch (error) {
-    serverLogger.error('Unexpected error creating invoice:', error);
+    console.error('Unexpected error creating invoice:', error);
     return NextResponse.json(
       { message: 'Internal server error' },
       { status: 500 }

@@ -9,7 +9,6 @@ import {
   normalizeWorkspaceId,
 } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
   findConflictsWithExistingSessions,
   type TutoringSessionSlotInput,
@@ -125,7 +124,7 @@ export async function PUT(request: Request, { params }: Params) {
       .maybeSingle();
 
   if (currentSessionError) {
-    serverLogger.error('Failed to load tutoring session for update', {
+    console.error('Failed to load tutoring session for update', {
       error: currentSessionError,
       sessionId: id,
       wsId: normalizedWsId,
@@ -150,7 +149,7 @@ export async function PUT(request: Request, { params }: Params) {
     );
 
     if (teacherCheck.error) {
-      serverLogger.error('Failed to validate tutoring teacher assignment', {
+      console.error('Failed to validate tutoring teacher assignment', {
         error: teacherCheck.error,
         sessionId: id,
         teacherUserId: parsed.data.teacherUserId,
@@ -218,7 +217,7 @@ export async function PUT(request: Request, { params }: Params) {
     ]);
 
     if (teacherResult.error || studentResult.error) {
-      serverLogger.error('Failed to validate tutoring scheduling conflicts', {
+      console.error('Failed to validate tutoring scheduling conflicts', {
         error: teacherResult.error ?? studentResult.error,
         sessionId: id,
         wsId: normalizedWsId,
@@ -267,7 +266,7 @@ export async function PUT(request: Request, { params }: Params) {
     .maybeSingle();
 
   if (error) {
-    serverLogger.error('Failed to update tutoring session', error);
+    console.error('Failed to update tutoring session', error);
     return NextResponse.json(
       { message: 'Failed to update session' },
       { status: 500 }

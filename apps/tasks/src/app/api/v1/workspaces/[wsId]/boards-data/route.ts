@@ -15,7 +15,6 @@ import {
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 const TASKS_APP_SESSION_AUTH = {
   targetApp: 'tasks',
@@ -168,7 +167,7 @@ export const GET = withSessionAuth<{ wsId: string }>(
           : guestSummary.highestPermission,
       });
     } catch (error) {
-      serverLogger.error('Error fetching boards data:', error);
+      console.error('Error fetching boards data:', error);
       return NextResponse.json(
         { error: 'Internal server error' },
         { status: 500 }

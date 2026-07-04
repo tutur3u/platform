@@ -4,7 +4,6 @@ import {
   requireRootExternalProjectsAdmin,
   resolveWorkspaceExternalProjectBinding,
 } from '@/lib/external-projects/access';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 const bindingSchema = z.object({
   canonicalId: z.string().min(1).max(120).nullable(),
@@ -25,7 +24,7 @@ export async function GET(
     );
     return NextResponse.json(binding);
   } catch (error) {
-    serverLogger.error(
+    console.error(
       'Failed to resolve workspace external project binding',
       error
     );
@@ -74,10 +73,7 @@ export async function PATCH(
       );
     }
 
-    serverLogger.error(
-      'Failed to update workspace external project binding',
-      error
-    );
+    console.error('Failed to update workspace external project binding', error);
     return NextResponse.json(
       { error: 'Failed to update workspace external project binding' },
       { status: 500 }

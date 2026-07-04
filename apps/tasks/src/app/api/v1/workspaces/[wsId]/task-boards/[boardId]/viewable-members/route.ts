@@ -6,7 +6,6 @@ import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { type SessionAuthContext, withSessionAuth } from '@/lib/api-auth';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
   type EnhancedWorkspaceMember,
   getWorkspaceMembers,
@@ -227,7 +226,7 @@ export const GET = withSessionAuth<{ wsId: string; boardId: string }>(
         );
       }
 
-      serverLogger.error('Error loading task board viewable members:', error);
+      console.error('Error loading task board viewable members:', error);
       return NextResponse.json(
         { error: 'Internal server error' },
         { status: 500 }

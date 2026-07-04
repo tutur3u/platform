@@ -9,7 +9,6 @@ import {
 } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 const WarehouseUpdateSchema = z.object({
   name: z.string().trim().min(1).max(MAX_NAME_LENGTH).optional(),
@@ -59,7 +58,7 @@ export async function PUT(req: Request, { params }: Params) {
     .maybeSingle();
 
   if (error) {
-    serverLogger.error('Error updating product warehouse', error);
+    console.error('Error updating product warehouse', error);
     return NextResponse.json(
       { message: 'Error updating warehouse' },
       { status: 500 }
@@ -105,7 +104,7 @@ export async function DELETE(req: Request, { params }: Params) {
     .maybeSingle();
 
   if (error) {
-    serverLogger.error('Error deleting product warehouse', error);
+    console.error('Error deleting product warehouse', error);
     return NextResponse.json(
       { message: 'Internal server error' },
       { status: 500 }

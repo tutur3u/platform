@@ -17,7 +17,6 @@ import {
 } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 type Params = {
   wsId: string;
@@ -55,10 +54,7 @@ async function resolveMemoryRequestContext(
   try {
     wsId = await normalizeWorkspaceId(rawWsId, supabase, request);
   } catch (error) {
-    serverLogger.warn(
-      'Failed to normalize AI memory items workspace id',
-      error
-    );
+    console.warn('Failed to normalize AI memory items workspace id', error);
     return {
       ok: false as const,
       response: NextResponse.json(
@@ -76,7 +72,7 @@ async function resolveMemoryRequestContext(
   });
 
   if (membership.error === 'membership_lookup_failed') {
-    serverLogger.error('Failed to verify AI memory items workspace access', {
+    console.error('Failed to verify AI memory items workspace access', {
       userId: user.id,
       wsId,
     });
@@ -141,7 +137,7 @@ export async function GET(
       });
 
   if (!result.ok) {
-    serverLogger.error('Failed to load AI memory items', {
+    console.error('Failed to load AI memory items', {
       error: result.error,
       product,
       userId: context.user.id,
@@ -201,7 +197,7 @@ export async function POST(
   });
 
   if (!result.ok) {
-    serverLogger.error('Failed to create AI memory item', {
+    console.error('Failed to create AI memory item', {
       error: result.error,
       product,
       userId: context.user.id,

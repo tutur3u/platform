@@ -2,7 +2,6 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 export async function GET(req: Request) {
   const permissions = await getPermissions({
@@ -39,7 +38,7 @@ export async function GET(req: Request) {
     );
 
   if (error) {
-    serverLogger.error('Error fetching user_group_posts:', error);
+    console.error('Error fetching user_group_posts:', error);
     return NextResponse.json(
       { message: 'Error fetching user_group_posts' },
       { status: 500 }

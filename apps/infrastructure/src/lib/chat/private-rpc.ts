@@ -9,7 +9,6 @@ import {
 } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import type { SessionAuthContext } from '@/lib/api-auth';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 export type ChatConversationType = 'ai' | 'channel' | 'direct' | 'group';
 export type ChatMessageKind = 'assistant' | 'system' | 'user';
@@ -200,7 +199,7 @@ export function chatRpcErrorResponse(error: unknown, fallback: string) {
   };
 
   if (status >= 500) {
-    serverLogger.error(fallback, {
+    console.error(fallback, {
       error: {
         code: rpcError.code,
         details: rpcError.details,

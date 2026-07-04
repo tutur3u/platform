@@ -2,7 +2,6 @@ import { createClient } from '@tuturuuu/supabase/next/server';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 const referralSettingsSchema = z.object({
   referral_count_cap: z.number().int().min(0),
@@ -31,7 +30,7 @@ export async function GET(request: Request, { params }: Params) {
     .maybeSingle();
 
   if (error) {
-    serverLogger.error('Failed to fetch workspace referral settings:', error);
+    console.error('Failed to fetch workspace referral settings:', error);
     return NextResponse.json(
       { message: 'Failed to fetch referral settings' },
       { status: 500 }
@@ -74,7 +73,7 @@ export async function PUT(request: Request, { params }: Params) {
   });
 
   if (error) {
-    serverLogger.error('Failed to update workspace referral settings:', error);
+    console.error('Failed to update workspace referral settings:', error);
     return NextResponse.json(
       { message: 'Failed to update referral settings' },
       { status: 500 }
@@ -132,7 +131,7 @@ export async function PUT(request: Request, { params }: Params) {
         }
       }
     } catch (migrationError) {
-      serverLogger.error(
+      console.error(
         'Failed to migrate referral default promotion links',
         migrationError
       );

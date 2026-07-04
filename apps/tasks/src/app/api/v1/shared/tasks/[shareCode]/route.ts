@@ -11,7 +11,6 @@ import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper'
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { resolveAuthenticatedSessionUser } from '@/lib/app-session-user';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 interface SharedTaskParams {
   shareCode: string;
@@ -360,7 +359,7 @@ export async function GET(
           })) || [],
     });
   } catch (error) {
-    serverLogger.error('Error in GET /shared/tasks/[shareCode]:', error);
+    console.error('Error in GET /shared/tasks/[shareCode]:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -542,7 +541,7 @@ export async function PATCH(
       .single();
 
     if (updateError) {
-      serverLogger.error('Error updating task:', updateError);
+      console.error('Error updating task:', updateError);
       return NextResponse.json(
         { error: 'Failed to update task' },
         { status: 500 }
@@ -551,7 +550,7 @@ export async function PATCH(
 
     return NextResponse.json({ task: updatedTask });
   } catch (error) {
-    serverLogger.error('Error in PATCH /shared/tasks/[shareCode]:', error);
+    console.error('Error in PATCH /shared/tasks/[shareCode]:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

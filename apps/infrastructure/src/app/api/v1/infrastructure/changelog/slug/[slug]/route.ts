@@ -1,6 +1,5 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 interface Params {
   params: Promise<{
@@ -22,7 +21,7 @@ export async function GET(_: Request, { params }: Params) {
     .single();
 
   if (error) {
-    serverLogger.error('Error fetching changelog entry:', error);
+    console.error('Error fetching changelog entry:', error);
     return NextResponse.json(
       { message: 'Changelog entry not found' },
       { status: error.code === 'PGRST116' ? 404 : 500 }

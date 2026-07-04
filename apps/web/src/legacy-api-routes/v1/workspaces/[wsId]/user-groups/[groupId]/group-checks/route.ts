@@ -6,7 +6,6 @@ import {
 } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { enqueueApprovedPostEmails } from '@/lib/post-email-queue';
 import { resolvePostEmailEnqueueAccess } from '@/lib/post-email-queue/enqueue-access';
 import { hasUserGroupPostInWorkspace } from '@/lib/user-groups/route-helpers';
@@ -65,7 +64,7 @@ export async function GET(req: Request, { params }: Params) {
       postId,
     });
   } catch (error) {
-    serverLogger.error('Error resolving user group post workspace', {
+    console.error('Error resolving user group post workspace', {
       error,
       groupId,
       postId,
@@ -90,7 +89,7 @@ export async function GET(req: Request, { params }: Params) {
     .eq('post_id', postId);
 
   if (error) {
-    serverLogger.error('Error fetching group checks', {
+    console.error('Error fetching group checks', {
       error,
       groupId,
       postId,
@@ -200,7 +199,7 @@ export async function POST(req: Request, { params }: Params) {
     .insert(insertPayload);
 
   if (error) {
-    serverLogger.error('Error inserting data into user_group_post_checks', {
+    console.error('Error inserting data into user_group_post_checks', {
       error,
       groupId,
       postId,

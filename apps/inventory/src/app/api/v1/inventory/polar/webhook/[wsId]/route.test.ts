@@ -34,6 +34,8 @@ const mocks = vi.hoisted(() => {
   };
 });
 
+const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
 vi.mock('@tuturuuu/payment/polar', () => ({
   validateEvent: (...args: unknown[]) => mocks.validateEvent(...args),
   WebhookVerificationError: mocks.WebhookVerificationError,
@@ -142,7 +144,7 @@ describe('inventory Polar webhook route', () => {
       message: 'Webhook workspace mismatch',
     });
     expect(response.status).toBe(403);
-    expect(mocks.serverLoggerWarn).toHaveBeenCalledWith(
+    expect(consoleWarnSpy).toHaveBeenCalledWith(
       'Rejected inventory Polar webhook workspace mismatch',
       expect.objectContaining({
         actualWsId: 'victim-ws',

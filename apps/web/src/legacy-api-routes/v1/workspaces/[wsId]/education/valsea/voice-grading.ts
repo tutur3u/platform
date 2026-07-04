@@ -1,7 +1,5 @@
 import 'server-only';
 
-import { serverLogger } from '@/lib/infrastructure/log-drain';
-
 type ValseaRecord = Record<string, unknown>;
 
 export type VoiceGradeLevel = 'amber' | 'green' | 'orange' | 'red';
@@ -723,7 +721,7 @@ async function gradeWithLocalModel(
     });
 
     if (!response.ok) {
-      serverLogger.warn('Local pronunciation assessor failed', {
+      console.warn('Local pronunciation assessor failed', {
         status: response.status,
       });
       return null;
@@ -732,7 +730,7 @@ async function gradeWithLocalModel(
     const data = (await response.json()) as ValseaRecord;
     return normalizeExternalGrade(data, fallback);
   } catch (error) {
-    serverLogger.warn('Local pronunciation assessor unavailable', error);
+    console.warn('Local pronunciation assessor unavailable', error);
     return null;
   }
 }

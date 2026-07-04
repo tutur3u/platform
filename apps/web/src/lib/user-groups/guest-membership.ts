@@ -1,5 +1,4 @@
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 export const DEFAULT_GUEST_MEMBERSHIP_WARNINGS = {
   linkFailed: 'Failed to link user to guest group.',
@@ -37,7 +36,7 @@ export async function syncWorkspaceUserGuestMembership({
     .eq('is_guest', true);
 
   if (groupError) {
-    serverLogger.error('Error resolving guest workspace user groups:', {
+    console.error('Error resolving guest workspace user groups:', {
       error: groupError,
       userId,
       wsId,
@@ -72,7 +71,7 @@ export async function syncWorkspaceUserGuestMembership({
       );
 
     if (linkError) {
-      serverLogger.error('Error linking guest workspace user:', {
+      console.error('Error linking guest workspace user:', {
         error: linkError,
         guestGroupIds,
         userId,
@@ -91,7 +90,7 @@ export async function syncWorkspaceUserGuestMembership({
     .in('group_id', guestGroupIds);
 
   if (unlinkError) {
-    serverLogger.error('Error unlinking guest workspace user:', {
+    console.error('Error unlinking guest workspace user:', {
       error: unlinkError,
       guestGroupIds,
       userId,

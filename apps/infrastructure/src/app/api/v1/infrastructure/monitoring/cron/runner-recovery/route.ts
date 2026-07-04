@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { queueCronRunnerRecoveryRequest } from '@/lib/infrastructure/cron-monitoring';
 import { requestDockerControlCronRunnerRecovery } from '@/lib/infrastructure/docker-control';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { authorizeInfrastructureOperator } from '../../blue-green/authorization';
 
 const payloadSchema = z.object({
@@ -74,7 +73,7 @@ export async function POST(request: Request) {
       request: queuedRequest,
     });
   } catch (error) {
-    serverLogger.error('Failed to queue cron runner recovery request:', error);
+    console.error('Failed to queue cron runner recovery request:', error);
     return NextResponse.json(
       { message: 'Failed to queue cron runner recovery request' },
       { status: 500 }

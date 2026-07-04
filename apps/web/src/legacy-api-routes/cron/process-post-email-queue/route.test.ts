@@ -84,6 +84,8 @@ const {
   };
 });
 
+const consoleInfoSpy = vi.spyOn(console, 'info').mockImplementation(() => {});
+
 vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: createAdminClientMock,
 }));
@@ -659,7 +661,7 @@ describe('process-post-email-queue cron route', () => {
 
     expect(response.status).toBe(200);
 
-    const completionLog = serverLoggerMock.info.mock.calls.find(([message]) =>
+    const completionLog = consoleInfoSpy.mock.calls.find(([message]) =>
       String(message).includes('Cron job completed successfully')
     );
     expect(completionLog).toBeDefined();

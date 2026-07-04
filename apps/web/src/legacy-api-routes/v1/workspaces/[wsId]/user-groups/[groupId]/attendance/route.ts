@@ -3,7 +3,6 @@ import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
   hasUserGroupInWorkspace,
   resolveRequestActorAuthUid,
@@ -160,7 +159,7 @@ export async function GET(req: Request, { params }: Params) {
         );
       }
     } catch (error) {
-      serverLogger.error('Error validating group attendance session:', error);
+      console.error('Error validating group attendance session:', error);
       return NextResponse.json(
         { message: 'Error fetching attendance' },
         { status: 500 }
@@ -188,7 +187,7 @@ export async function GET(req: Request, { params }: Params) {
   };
 
   if (error) {
-    serverLogger.error('Error fetching group attendance:', error);
+    console.error('Error fetching group attendance:', error);
     return NextResponse.json(
       { message: 'Error fetching attendance' },
       { status: 500 }
@@ -257,7 +256,7 @@ export async function POST(req: Request, { params }: Params) {
       );
     }
   } catch (error) {
-    serverLogger.error('Error validating group attendance session:', error);
+    console.error('Error validating group attendance session:', error);
     return NextResponse.json(
       { message: 'Error saving attendance' },
       { status: 500 }
@@ -278,7 +277,7 @@ export async function POST(req: Request, { params }: Params) {
   );
 
   if (error) {
-    serverLogger.error('Error saving group attendance:', error);
+    console.error('Error saving group attendance:', error);
     return NextResponse.json(
       { message: 'Error saving attendance' },
       { status: 500 }

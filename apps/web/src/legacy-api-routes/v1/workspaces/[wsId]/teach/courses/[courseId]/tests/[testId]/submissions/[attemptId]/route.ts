@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
   requireTeachWorkspaceAccess,
   validateTeachCourse,
@@ -163,7 +162,7 @@ export const GET = withSessionAuth(
         answers: answers ?? [],
       });
     } catch (error) {
-      serverLogger.error('Failed to get test submission details:', error);
+      console.error('Failed to get test submission details:', error);
       return NextResponse.json(
         { message: 'Failed to load submission details' },
         { status: 500 }
@@ -330,7 +329,7 @@ export const PATCH = withSessionAuth(
         .single();
 
       if (updateErr) {
-        serverLogger.error('Failed to update submission feedback:', {
+        console.error('Failed to update submission feedback:', {
           error: updateErr,
           attemptId,
           quizId,
@@ -363,7 +362,7 @@ export const PATCH = withSessionAuth(
 
       return NextResponse.json({ success: true, answer: updated });
     } catch (error) {
-      serverLogger.error('Failed to patch test submission feedback:', error);
+      console.error('Failed to patch test submission feedback:', error);
       return NextResponse.json(
         { message: 'Failed to update feedback' },
         { status: 500 }

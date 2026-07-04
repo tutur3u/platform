@@ -6,7 +6,6 @@ import type {
   InventorySquareEnvironment,
 } from '@tuturuuu/internal-api/inventory';
 import { decryptField, encryptField } from '@tuturuuu/utils/encryption';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
   getOrCreateWorkspaceKey,
   getWorkspaceKey,
@@ -346,7 +345,7 @@ export async function refreshConnectionIfNeeded(row: SquareConnectionRow) {
     });
     return (await getActiveConnection(row.ws_id, row.environment)) ?? row;
   } catch (error) {
-    serverLogger.warn('Inventory Square OAuth refresh failed', {
+    console.warn('Inventory Square OAuth refresh failed', {
       environment: row.environment,
       error: extractErrorMessage(error),
       wsId: row.ws_id,

@@ -2,7 +2,6 @@ import { authorizeInventoryWorkspace } from '@tuturuuu/inventory-core/commerce/a
 import { importCostingCsv } from '@tuturuuu/inventory-core/costing';
 import { canManageInventorySetup } from '@tuturuuu/inventory-core/permissions';
 import { NextResponse } from 'next/server';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { parseCostingJsonBody } from '../request';
 import { CostingImportPayloadSchema } from '../schemas';
 
@@ -32,7 +31,7 @@ export async function POST(request: Request, { params }: Params) {
       status: payload.data.commit ? 201 : 200,
     });
   } catch (error) {
-    serverLogger.error('Failed to import inventory costing CSV', error);
+    console.error('Failed to import inventory costing CSV', error);
     return NextResponse.json(
       { message: 'Failed to import inventory costing CSV' },
       { status: 500 }

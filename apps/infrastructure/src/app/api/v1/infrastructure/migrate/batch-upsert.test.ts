@@ -20,6 +20,8 @@ const LOCAL_E2E_URL_ENV_KEYS = [
   'WEB_APP_URL',
 ];
 
+const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
 vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: vi.fn(),
 }));
@@ -75,7 +77,7 @@ describe('requireDevMode', () => {
     const { requireDevMode } = await import('./batch-upsert');
 
     expect(requireDevMode()).toBeNull();
-    expect(mocks.serverLoggerError).not.toHaveBeenCalled();
+    expect(consoleErrorSpy).not.toHaveBeenCalled();
   });
 
   it('allows local Docker E2E migration routes with local targets', async () => {
@@ -84,7 +86,7 @@ describe('requireDevMode', () => {
     const { requireDevMode } = await import('./batch-upsert');
 
     expect(requireDevMode()).toBeNull();
-    expect(mocks.serverLoggerError).not.toHaveBeenCalled();
+    expect(consoleErrorSpy).not.toHaveBeenCalled();
   });
 
   it('rejects local E2E bypass when Supabase points at a cloud project', async () => {
@@ -96,7 +98,7 @@ describe('requireDevMode', () => {
     const response = requireDevMode();
 
     expect(response?.status).toBe(403);
-    expect(mocks.serverLoggerError).toHaveBeenCalledWith(
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
       '[SECURITY] Blocked access to infrastructure migration route in production'
     );
   });

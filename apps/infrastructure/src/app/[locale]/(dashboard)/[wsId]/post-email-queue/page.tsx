@@ -8,7 +8,6 @@ import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
   getPostEmailQueueObservability,
   POST_EMAIL_QUEUE_DEFAULT_DRAIN_LIMIT,
@@ -40,7 +39,7 @@ async function getQueueAnalytics() {
     const sbAdmin = await createAdminClient();
     return await getPostEmailQueueObservability(sbAdmin);
   } catch (error) {
-    serverLogger.error('[PostEmailQueueInfra] Error fetching analytics', {
+    console.error('[PostEmailQueueInfra] Error fetching analytics', {
       errorName: error instanceof Error ? error.name : typeof error,
       message: error instanceof Error ? error.message : 'Unknown error',
     });

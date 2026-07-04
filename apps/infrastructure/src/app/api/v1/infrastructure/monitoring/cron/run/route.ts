@@ -4,7 +4,6 @@ import {
   queueCronRunRequest,
   readCronMonitoringSnapshot,
 } from '@/lib/infrastructure/cron-monitoring';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { authorizeInfrastructureOperator } from '../../blue-green/authorization';
 
 const payloadSchema = z.object({
@@ -44,7 +43,7 @@ export async function POST(request: Request) {
       request: queuedRequest,
     });
   } catch (error) {
-    serverLogger.error('Failed to queue cron run request:', error);
+    console.error('Failed to queue cron run request:', error);
     return NextResponse.json(
       { message: 'Failed to queue cron run request' },
       { status: 500 }

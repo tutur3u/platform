@@ -1,6 +1,5 @@
 import { completeInventorySquareOAuthCallback } from '@tuturuuu/inventory-core/commerce/square';
 import { NextResponse } from 'next/server';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
@@ -30,7 +29,7 @@ export async function GET(request: Request) {
     redirect.searchParams.set('square', 'connected');
     return NextResponse.redirect(redirect);
   } catch (error) {
-    serverLogger.error('Failed to complete Square OAuth callback', error);
+    console.error('Failed to complete Square OAuth callback', error);
     const redirect = new URL('/?square=oauth_error', url.origin);
     return NextResponse.redirect(redirect);
   }

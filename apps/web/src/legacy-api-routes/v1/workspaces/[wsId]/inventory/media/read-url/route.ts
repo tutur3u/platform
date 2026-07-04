@@ -2,7 +2,6 @@ import { authorizeInventoryWorkspace } from '@tuturuuu/inventory-core/commerce/a
 import { canManageInventoryCatalog } from '@tuturuuu/inventory-core/permissions';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
   isInventoryMediaPath,
   validateFinalizedInventoryMediaUpload,
@@ -94,7 +93,7 @@ export async function POST(request: Request, { params }: Params) {
       );
     }
 
-    serverLogger.error('Failed to create inventory media read URL', error);
+    console.error('Failed to create inventory media read URL', error);
     return NextResponse.json(
       { message: 'Failed to create inventory media read URL' },
       { status: 500 }

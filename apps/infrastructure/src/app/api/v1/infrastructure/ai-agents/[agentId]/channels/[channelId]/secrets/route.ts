@@ -1,10 +1,7 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { rotateAiAgentChannelSecret } from '@/lib/ai-agents/registry';
-import {
-  serverLogger,
-  withRequestLogDrain,
-} from '@/lib/infrastructure/log-drain';
+import { withRequestLogDrain } from '@/lib/infrastructure/log-drain';
 import { requireAiAgentAdmin } from '../../../../access';
 
 interface Params {
@@ -51,7 +48,7 @@ async function rotateSecret(request: NextRequest, { params }: Params) {
 
     return NextResponse.json({ secret });
   } catch (error) {
-    serverLogger.warn('Failed to rotate AI agent channel secret', {
+    console.warn('Failed to rotate AI agent channel secret', {
       agentId,
       channelId,
       error: error instanceof Error ? error.message : String(error),

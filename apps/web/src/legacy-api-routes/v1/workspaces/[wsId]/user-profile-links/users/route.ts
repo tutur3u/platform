@@ -2,7 +2,6 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { normalizeAvatarImageSrc } from '@tuturuuu/utils/avatar-url';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 interface Params {
   params: Promise<{ wsId: string }>;
@@ -82,7 +81,7 @@ export async function GET(req: NextRequest, { params }: Params) {
     .range(0, limit - 1);
 
   if (error) {
-    serverLogger.error('Error searching profile link target users:', error);
+    console.error('Error searching profile link target users:', error);
     return NextResponse.json(
       { message: 'Error searching users' },
       { status: 500 }

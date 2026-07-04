@@ -11,7 +11,6 @@ import {
   isLocalE2EAuthBypassEnabled,
   isLocalE2EAuthRequestAllowed,
 } from '@/lib/auth/local-e2e';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { resetRateLimitMemoryStoreForTests } from '@/lib/rate-limit';
 
 const LOCAL_E2E_SESSION_COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 400;
@@ -218,10 +217,7 @@ export async function POST(request: NextRequest) {
       );
 
       if (updateError) {
-        serverLogger.error(
-          '[auth/dev-session] Failed to update user:',
-          updateError
-        );
+        console.error('[auth/dev-session] Failed to update user:', updateError);
         return NextResponse.json(
           { error: 'Failed to update user' },
           { status: 500 }
@@ -236,10 +232,7 @@ export async function POST(request: NextRequest) {
         });
 
       if (createError) {
-        serverLogger.error(
-          '[auth/dev-session] Failed to create user:',
-          createError
-        );
+        console.error('[auth/dev-session] Failed to create user:', createError);
         return NextResponse.json(
           { error: 'Failed to create user' },
           { status: 500 }
@@ -251,7 +244,7 @@ export async function POST(request: NextRequest) {
 
     if (completeOnboarding === true) {
       if (!userId) {
-        serverLogger.error(
+        console.error(
           '[auth/dev-session] Failed to resolve user for onboarding'
         );
         return NextResponse.json(
@@ -266,7 +259,7 @@ export async function POST(request: NextRequest) {
       );
 
       if (onboardingError) {
-        serverLogger.error(
+        console.error(
           '[auth/dev-session] Failed to complete onboarding:',
           onboardingError
         );
@@ -285,7 +278,7 @@ export async function POST(request: NextRequest) {
 
     const tokenHash = linkData?.properties?.hashed_token;
     if (linkError || !tokenHash) {
-      serverLogger.error(
+      console.error(
         '[auth/dev-session] Failed to generate magic link:',
         linkError
       );
@@ -303,7 +296,7 @@ export async function POST(request: NextRequest) {
       });
 
     if (verifyError || !verifyData.session) {
-      serverLogger.error(
+      console.error(
         '[auth/dev-session] Failed to verify magic link:',
         verifyError
       );
@@ -318,7 +311,7 @@ export async function POST(request: NextRequest) {
 
     return response;
   } catch (error) {
-    serverLogger.error('[auth/dev-session] Unexpected error:', error);
+    console.error('[auth/dev-session] Unexpected error:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

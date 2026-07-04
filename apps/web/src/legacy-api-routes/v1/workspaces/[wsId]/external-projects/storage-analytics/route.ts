@@ -1,7 +1,6 @@
 import { posix } from 'node:path';
 import { NextResponse } from 'next/server';
 import { requireWorkspaceExternalProjectAccess } from '@/lib/external-projects/access';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { checkRateLimit } from '@/lib/rate-limit';
 import {
   getWorkspaceStorageOverview,
@@ -147,7 +146,7 @@ export async function GET(
       );
     }
 
-    serverLogger.error('Failed to load external project storage analytics', {
+    console.error('Failed to load external project storage analytics', {
       error,
     });
     return NextResponse.json(

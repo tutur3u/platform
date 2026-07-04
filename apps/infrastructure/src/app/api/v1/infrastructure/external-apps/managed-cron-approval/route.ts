@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { upsertManagedCronWhitelistedDomain } from '@/lib/managed-cron/domain-repository';
 import { requireExternalAppRegistryAdmin } from '../access';
 
@@ -39,7 +38,7 @@ export async function POST(request: Request) {
       enabled: true,
     });
   } catch (error) {
-    serverLogger.error('Failed to approve external app managed cron domain', {
+    console.error('Failed to approve external app managed cron domain', {
       error,
       origin: parsed.data.origin,
     });

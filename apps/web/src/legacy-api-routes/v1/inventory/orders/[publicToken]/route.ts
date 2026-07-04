@@ -9,7 +9,6 @@ import {
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { resolveSessionAuthContext } from '@/lib/api-auth';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 interface Params {
   params: Promise<{ publicToken: string }>;
@@ -96,7 +95,7 @@ export async function GET(request: Request, { params }: Params) {
 
     return NextResponse.json({ order }, { headers });
   } catch (error) {
-    serverLogger.error('Failed to load public inventory order', error);
+    console.error('Failed to load public inventory order', error);
     return NextResponse.json(
       { message: 'Failed to load order' },
       { status: 500 }

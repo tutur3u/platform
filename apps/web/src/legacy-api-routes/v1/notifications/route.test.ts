@@ -40,6 +40,8 @@ const mocks = vi.hoisted(() => {
   };
 });
 
+const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
 vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: vi.fn(() =>
     Promise.resolve({
@@ -120,6 +122,6 @@ describe('notifications route', () => {
     );
     expect(mocks.isMock).toHaveBeenCalledWith('read_at', null);
     expect(mocks.rangeMock).toHaveBeenCalledWith(0, 14);
-    expect(mocks.serverLoggerError).not.toHaveBeenCalled();
+    expect(consoleErrorSpy).not.toHaveBeenCalled();
   });
 });

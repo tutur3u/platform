@@ -18,12 +18,7 @@ import {
   createHiveWorkflow,
   validateHiveWorkflowForPersistence,
 } from '@/lib/hive/workflows';
-import {
-  mapHiveNpc,
-  requireHiveAdmin,
-  serverLogger,
-  withHiveRoute,
-} from '../../../_shared';
+import { mapHiveNpc, requireHiveAdmin, withHiveRoute } from '../../../_shared';
 
 type Params = {
   params: Promise<{ serverId: string }>;
@@ -218,7 +213,7 @@ export async function POST(request: NextRequest, { params }: Params) {
         { status: 201 }
       );
     } catch (error) {
-      serverLogger.error('Failed to create Hive simulation from Mind board', {
+      console.error('Failed to create Hive simulation from Mind board', {
         boardId: parsed.data.boardId,
         error: error instanceof Error ? error.message : String(error),
         serverId,

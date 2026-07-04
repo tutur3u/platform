@@ -21,10 +21,7 @@ import {
 import { getAppCoordinationSessionPolicy } from '@/lib/app-coordination/session-policy';
 import { authorizeWorkspaceSessionAppTokenExchange } from '@/lib/app-coordination/workspace-session';
 import { authorizeExternalProjectAppTokenExchange } from '@/lib/external-projects/access';
-import {
-  serverLogger,
-  withRequestLogDrain,
-} from '@/lib/infrastructure/log-drain';
+import { withRequestLogDrain } from '@/lib/infrastructure/log-drain';
 
 const APP_TOKEN_REFRESH_SCOPE = 'app-token:refresh';
 const APP_TOKEN_REFRESH_REPLAY_KEY_PREFIX = 'app-token:refresh:used';
@@ -278,7 +275,7 @@ async function getAuthUserIdentity({
   const { data, error } = await sbAdmin.auth.admin.getUserById(userId);
 
   if (error) {
-    serverLogger.warn('Failed to fetch app token auth user profile', {
+    console.warn('Failed to fetch app token auth user profile', {
       error: error.message,
       userId,
     });
@@ -315,7 +312,7 @@ async function getExchangeUserProfile({
     .maybeSingle();
 
   if (error) {
-    serverLogger.warn('Failed to fetch app token user profile', {
+    console.warn('Failed to fetch app token user profile', {
       error: error.message,
       userId,
     });
@@ -459,7 +456,7 @@ async function consumeRefreshTokenWithGrace({
 
     return consumed === 'OK' ? 'consumed' : 'replayed';
   } catch (error) {
-    serverLogger.warn('External app refresh replay check failed', {
+    console.warn('External app refresh replay check failed', {
       error: error instanceof Error ? error.message : String(error),
     });
     return 'unavailable';
@@ -611,7 +608,7 @@ async function exchangeAppToken(request: NextRequest) {
     );
 
     if (error) {
-      serverLogger.warn('Failed to validate cross-app token for app exchange', {
+      console.warn('Failed to validate cross-app token for app exchange', {
         error: error.message,
         targetApp: resolvedTarget.targetApp,
       });

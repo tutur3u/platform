@@ -2,7 +2,6 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { revalidateUserGroupCache } from '@/lib/user-groups/revalidate';
 import {
   hasUserGroupInWorkspace,
@@ -76,7 +75,7 @@ export async function GET(req: Request, { params }: Params) {
 
     return NextResponse.json(page);
   } catch (error) {
-    serverLogger.error('Error fetching group members:', error);
+    console.error('Error fetching group members:', error);
     return NextResponse.json(
       { message: 'Error fetching group members' },
       { status: 500 }
@@ -124,7 +123,7 @@ export async function POST(req: Request, { params }: Params) {
     });
 
   if (groupError) {
-    serverLogger.error('Error adding new members to group:', groupError);
+    console.error('Error adding new members to group:', groupError);
     return NextResponse.json(
       { message: 'Error adding new members to group' },
       { status: 500 }

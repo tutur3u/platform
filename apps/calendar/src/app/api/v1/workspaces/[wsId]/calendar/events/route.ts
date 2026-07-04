@@ -21,7 +21,6 @@ import {
   getCalendarSyncPreferences,
   resolveOutboundSyncSource,
 } from '@/lib/calendar/sync-preferences';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
   decryptEventsFromStorage,
   encryptEventForStorage,
@@ -185,7 +184,7 @@ export async function GET(request: Request, { params }: Params) {
       count: decryptedEvents.length,
     });
   } catch (error) {
-    serverLogger.error('Calendar events API error', { wsId, error });
+    console.error('Calendar events API error', { wsId, error });
     return NextResponse.json(
       { error: 'An error occurred while processing your request' },
       { status: 500 }
@@ -248,7 +247,7 @@ export async function POST(request: Request, { params }: Params) {
           });
         } catch (error) {
           providerWriteError = error;
-          serverLogger.warn('Failed to mirror native calendar event', {
+          console.warn('Failed to mirror native calendar event', {
             wsId,
             provider: outboundSource.provider,
             error,
@@ -332,7 +331,7 @@ export async function POST(request: Request, { params }: Params) {
     const message =
       error instanceof Error ? error.message : 'Calendar event creation failed';
     const isSourceError = message.toLowerCase().includes('calendar source');
-    serverLogger.error('Calendar events API error', { wsId, error });
+    console.error('Calendar events API error', { wsId, error });
     return NextResponse.json(
       {
         error: isSourceError

@@ -9,7 +9,6 @@ import {
   hasRootExternalProjectsAdminPermission,
   resolveWorkspaceExternalProjectBinding,
 } from '@/lib/external-projects/access';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 type JoinedWorkspace = NonNullable<
   Awaited<ReturnType<typeof getWorkspaces>>
@@ -72,7 +71,7 @@ export const GET = withSessionAuth(
 
       return NextResponse.json(accessibleWorkspaces);
     } catch (error) {
-      serverLogger.error('Failed to load CMS workspaces', error);
+      console.error('Failed to load CMS workspaces', error);
       return NextResponse.json(
         { error: 'Failed to load CMS workspaces' },
         { status: 500 }

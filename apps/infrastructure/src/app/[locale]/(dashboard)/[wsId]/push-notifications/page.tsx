@@ -11,7 +11,6 @@ import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { getFirebaseMessagingConfigurationStatus } from '@/lib/notifications/firebase-admin';
 import { enforceInfrastructureRootWorkspace } from '../enforce-infrastructure-root';
 import { PushTestForm } from './push-test-form';
@@ -104,11 +103,7 @@ async function countRows(
 
   const { count, error } = await query;
   if (error) {
-    serverLogger.error(
-      '[PushNotificationsInfra] Count query failed:',
-      table,
-      error
-    );
+    console.error('[PushNotificationsInfra] Count query failed:', table, error);
     return 0;
   }
 
@@ -228,14 +223,14 @@ async function getPushDashboardData() {
   ]);
 
   if (recentDevicesResult.error) {
-    serverLogger.error(
+    console.error(
       '[PushNotificationsInfra] Failed to load recent devices:',
       recentDevicesResult.error
     );
   }
 
   if (recentBatchesResult.error) {
-    serverLogger.error(
+    console.error(
       '[PushNotificationsInfra] Failed to load recent push batches:',
       recentBatchesResult.error
     );
@@ -260,14 +255,14 @@ async function getPushDashboardData() {
         ]);
 
   if (usersResult.error) {
-    serverLogger.error(
+    console.error(
       '[PushNotificationsInfra] Failed to load user display names:',
       usersResult.error
     );
   }
 
   if (privateDetailsResult.error) {
-    serverLogger.error(
+    console.error(
       '[PushNotificationsInfra] Failed to load user private details:',
       privateDetailsResult.error
     );

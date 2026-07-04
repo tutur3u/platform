@@ -529,9 +529,8 @@ export async function GET() {
 ### Correlation IDs
 
 There is no dedicated `@tuturuuu/logging` or `@tuturuuu/observability` package and
-no event-store; the example below is an illustrative pattern. Note that `apps/web`
-server-side code must route logs through the internal log-drain logger rather than
-raw `console.*` calls.
+no event-store; the example below is an illustrative pattern. Runtime server
+code should log diagnostics with the native console method matching severity.
 
 ```typescript
 import { tasks } from '@trigger.dev/sdk/v3';
@@ -543,7 +542,7 @@ export async function POST(request: Request) {
   // Hand off async work to a Trigger.dev task, threading the correlation id.
   await tasks.trigger('schedule-task', { ws_id: workspaceId, correlationId });
 
-  // Use the internal log-drain logger in apps/web server code (not console.*).
+  console.log('Queued schedule task', { correlationId, workspaceId });
 }
 ```
 

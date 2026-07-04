@@ -2,7 +2,6 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { withSessionAuth } from '@/lib/api-auth';
 import { resolveWebHiveAccess } from '@/lib/hive-page-context';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { CURRENT_USER_APP_SESSION_AUTH } from '../session-auth';
 
 export const GET = withSessionAuth(
@@ -27,7 +26,7 @@ export const GET = withSessionAuth(
         isMember: accessResult.isMember,
       });
     } catch (error) {
-      serverLogger.error('Error resolving Hive access:', error);
+      console.error('Error resolving Hive access:', error);
       return NextResponse.json(
         { error: 'Internal server error' },
         { status: 500 }

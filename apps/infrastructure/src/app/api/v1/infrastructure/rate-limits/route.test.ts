@@ -10,6 +10,8 @@ const mocks = vi.hoisted(() => ({
   writeEdgeAbuseProtectionControls: vi.fn(),
 }));
 
+const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
 vi.mock('@tuturuuu/utils/abuse-protection', () => ({
   ABUSE_REPUTATION_SUBJECT_TYPES: [
     'api_key',
@@ -159,6 +161,6 @@ describe('rate-limits route PATCH', () => {
     await expect(response.json()).resolves.toMatchObject({
       message: 'Failed to update abuse protection controls',
     });
-    expect(mocks.serverLoggerError).toHaveBeenCalled();
+    expect(consoleErrorSpy).toHaveBeenCalled();
   });
 });

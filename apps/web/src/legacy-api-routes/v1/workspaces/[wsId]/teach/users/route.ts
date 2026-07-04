@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { requireTeachWorkspaceAccess } from '@/lib/teach/api';
 
 const RouteParamsSchema = z.object({
@@ -60,7 +59,7 @@ export const GET = withSessionAuth(
     const { count, data, error } = await query;
 
     if (error) {
-      serverLogger.error('Failed to fetch Teach workspace users', { error });
+      console.error('Failed to fetch Teach workspace users', { error });
       return NextResponse.json(
         { message: 'Error fetching workspace users' },
         { status: 500 }

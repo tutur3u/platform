@@ -6,7 +6,6 @@ import {
 import { NextResponse } from 'next/server';
 import { requireWorkspaceExternalProjectAccess } from '@/lib/external-projects/access';
 import { resolveFinanceRouteAuthContext } from '@/lib/finance-route-auth';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
   listWorkspaceDefaultIncludedGroupIds,
   replaceWorkspaceDefaultIncludedGroupIds,
@@ -68,7 +67,7 @@ export async function PUT(req: Request, { params }: Params) {
       .eq('id', id);
 
     if (error) {
-      serverLogger.error('Error upserting CMS workspace config:', error);
+      console.error('Error upserting CMS workspace config:', error);
       return NextResponse.json(
         {
           message:
@@ -159,7 +158,7 @@ export async function PUT(req: Request, { params }: Params) {
       .maybeSingle();
 
     if (walletError) {
-      serverLogger.error('Error validating default wallet:', walletError);
+      console.error('Error validating default wallet:', walletError);
       return NextResponse.json(
         { message: 'Failed to validate default wallet' },
         { status: 500 }
@@ -186,7 +185,7 @@ export async function PUT(req: Request, { params }: Params) {
     .eq('id', id);
 
   if (error) {
-    serverLogger.error('Error upserting workspace config:', error);
+    console.error('Error upserting workspace config:', error);
     return NextResponse.json(
       {
         message:

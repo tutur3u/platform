@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
   requireTeachWorkspaceAccess,
   validateTeachCourse,
@@ -74,7 +73,7 @@ export const GET = withSessionAuth(
       .order('created_at', { ascending: false });
 
     if (error) {
-      serverLogger.error('Failed to fetch course tests', { error });
+      console.error('Failed to fetch course tests', { error });
       return NextResponse.json(
         { message: 'Error fetching course tests' },
         { status: 500 }
@@ -170,7 +169,7 @@ export const POST = withSessionAuth(
         .in('id', uniqueModuleIds);
 
     if (selectedModulesError) {
-      serverLogger.error('Failed to validate course test modules', {
+      console.error('Failed to validate course test modules', {
         error: selectedModulesError,
       });
       return NextResponse.json(
@@ -199,7 +198,7 @@ export const POST = withSessionAuth(
     );
 
     if (testError || !testId) {
-      serverLogger.error('Failed to create course test', { error: testError });
+      console.error('Failed to create course test', { error: testError });
       return NextResponse.json(
         { message: 'Error creating course test' },
         { status: 500 }
@@ -310,7 +309,7 @@ export const PATCH = withSessionAuth(
       .maybeSingle();
 
     if (error) {
-      serverLogger.error('Failed to update course test', { error });
+      console.error('Failed to update course test', { error });
       return NextResponse.json(
         { message: 'Error updating course test' },
         { status: 500 }

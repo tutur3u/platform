@@ -9,7 +9,6 @@ import {
   normalizeWorkspaceId,
 } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
   findConflictsWithExistingSessions,
   findConflictsWithinSlots,
@@ -110,7 +109,7 @@ export async function GET(request: Request, { params }: Params) {
     .range(from, to);
 
   if (error) {
-    serverLogger.error('Failed to list tutoring sessions', error);
+    console.error('Failed to list tutoring sessions', error);
     return NextResponse.json(
       { message: 'Failed to list sessions' },
       { status: 500 }
@@ -148,7 +147,7 @@ export async function GET(request: Request, { params }: Params) {
   ]);
 
   if (groupsResult.error || usersResult.error) {
-    serverLogger.error('Failed to load tutoring session relations', {
+    console.error('Failed to load tutoring session relations', {
       error: groupsResult.error ?? usersResult.error,
       wsId: normalizedWsId,
     });
@@ -267,7 +266,7 @@ export async function POST(request: Request, { params }: Params) {
     });
 
     if (teacherCheck.error) {
-      serverLogger.error('Failed to validate tutoring teacher assignment', {
+      console.error('Failed to validate tutoring teacher assignment', {
         error: teacherCheck.error,
         groupId: payload.groupId,
         teacherUserId: payload.teacherUserId,
@@ -321,7 +320,7 @@ export async function POST(request: Request, { params }: Params) {
   });
 
   if (potentialConflicts.error) {
-    serverLogger.error('Failed to validate tutoring session conflicts', {
+    console.error('Failed to validate tutoring session conflicts', {
       error: potentialConflicts.error,
       groupId: payload.groupId,
       studentUserId: payload.studentUserId,
@@ -372,7 +371,7 @@ export async function POST(request: Request, { params }: Params) {
     .select('id');
 
   if (error) {
-    serverLogger.error('Failed to create tutoring session', error);
+    console.error('Failed to create tutoring session', error);
     return NextResponse.json(
       { message: 'Failed to create session' },
       { status: 500 }

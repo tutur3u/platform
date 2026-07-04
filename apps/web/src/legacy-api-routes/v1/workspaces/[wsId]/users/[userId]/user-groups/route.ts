@@ -4,7 +4,6 @@ import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { headers } from 'next/headers';
 import { NextResponse } from 'next/server';
 import { resolveFinanceRouteAuthContext } from '@/lib/finance-route-auth';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { listUserGroupSessionDatesByGroupIds } from '@/lib/user-groups/session-schedule';
 import { validateWorkspaceApiKey } from '@/lib/workspace-api-key';
 
@@ -45,7 +44,7 @@ async function attachSessionDates({
       wsId,
     });
   } catch (error) {
-    serverLogger.error('Error attaching user group session dates:', error);
+    console.error('Error attaching user group session dates:', error);
   }
 
   return rows.map((row) => {
@@ -110,7 +109,7 @@ async function getDataWithApiKey({
   const { data, error } = response;
 
   if (error) {
-    serverLogger.error('Error fetching user groups with API key:', error);
+    console.error('Error fetching user groups with API key:', error);
     return NextResponse.json(
       { message: 'Error fetching workspace users' },
       { status: 500 }
@@ -150,7 +149,7 @@ async function getDataFromSession({
     .eq('user_id', userId);
 
   if (error) {
-    serverLogger.error('Error fetching user groups:', error);
+    console.error('Error fetching user groups:', error);
     return NextResponse.json(
       { message: 'Error fetching workspace users' },
       { status: 500 }

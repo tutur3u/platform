@@ -6,7 +6,6 @@ import {
 import { MAX_SEARCH_LENGTH } from '@tuturuuu/utils/constants';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
   enrichRateLimitAppeals,
   verifyWorkspaceAppealMembership,
@@ -212,7 +211,7 @@ export async function GET(request: Request, context: RouteContext) {
     );
     return NextResponse.json({ appeal: enrichedAppeal ?? appeal });
   } catch (error) {
-    serverLogger.error('Failed to load rate-limit appeal', error);
+    console.error('Failed to load rate-limit appeal', error);
     return NextResponse.json(
       { message: 'Failed to load rate-limit appeal' },
       { status: 500 }
@@ -375,7 +374,7 @@ export async function PATCH(request: Request, context: RouteContext) {
       unblocked: true,
     });
   } catch (error) {
-    serverLogger.error('Failed to update rate-limit appeal', error);
+    console.error('Failed to update rate-limit appeal', error);
     return NextResponse.json(
       { message: 'Failed to update rate-limit appeal' },
       { status: 500 }

@@ -21,7 +21,6 @@ import type {
   WorkspaceMemberDistribution,
   WorkspaceStatistics,
 } from '@tuturuuu/types';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 type InfrastructureDashboardAdminClient = TypedSupabaseClient;
 
@@ -42,7 +41,7 @@ async function createDashboardAdminClient(): Promise<InfrastructureDashboardAdmi
   try {
     return (await createAdminClient()) as InfrastructureDashboardAdminClient;
   } catch (error) {
-    serverLogger.error(
+    console.error(
       'Failed to create infrastructure dashboard admin client',
       error
     );
@@ -74,7 +73,7 @@ export async function getEngagementMetrics(): Promise<EngagementMetrics> {
       mau: Number(mauResult.data || 0),
     };
   } catch (error) {
-    serverLogger.error('Error fetching engagement metrics:', error);
+    console.error('Error fetching engagement metrics:', error);
     return { dau: 0, wau: 0, mau: 0 };
   }
 }
@@ -105,7 +104,7 @@ export async function getEngagementMetricsOverTime(
       })) || []
     );
   } catch (error) {
-    serverLogger.error('Error fetching engagement metrics over time:', error);
+    console.error('Error fetching engagement metrics over time:', error);
     return [];
   }
 }
@@ -138,7 +137,7 @@ export async function getSessionStatistics(): Promise<SessionStatistics> {
       sessions_this_month: Number(stats.sessions_this_month || 0),
     };
   } catch (error) {
-    serverLogger.error('Error fetching session statistics:', error);
+    console.error('Error fetching session statistics:', error);
     return {
       total_sessions: 0,
       active_sessions: 0,
@@ -171,7 +170,7 @@ export async function getSessionsByDevice(): Promise<SessionByDevice[]> {
       })) || []
     );
   } catch (error) {
-    serverLogger.error('Error fetching sessions by device:', error);
+    console.error('Error fetching sessions by device:', error);
     return [];
   }
 }
@@ -197,7 +196,7 @@ export async function getAuthProviderStats(): Promise<AuthProviderStats[]> {
       })) || []
     );
   } catch (error) {
-    serverLogger.error('Error fetching auth provider stats:', error);
+    console.error('Error fetching auth provider stats:', error);
     return [];
   }
 }
@@ -229,7 +228,7 @@ export async function getSignInsByProvider(
       })) || []
     );
   } catch (error) {
-    serverLogger.error('Error fetching sign-ins by provider:', error);
+    console.error('Error fetching sign-ins by provider:', error);
     return [];
   }
 }
@@ -258,7 +257,7 @@ export async function getUserGrowthStats(
       })) || []
     );
   } catch (error) {
-    serverLogger.error('Error fetching user growth stats:', error);
+    console.error('Error fetching user growth stats:', error);
     return [];
   }
 }
@@ -292,7 +291,7 @@ export async function getUserGrowthComparison(): Promise<UserGrowthComparison> {
         : null,
     };
   } catch (error) {
-    serverLogger.error('Error fetching user growth comparison:', error);
+    console.error('Error fetching user growth comparison:', error);
     return {
       total_users: 0,
       users_today: 0,
@@ -335,7 +334,7 @@ export async function getWorkspaceStatistics(): Promise<WorkspaceStatistics> {
       ),
     };
   } catch (error) {
-    serverLogger.error('Error fetching workspace statistics:', error);
+    console.error('Error fetching workspace statistics:', error);
     return {
       total_workspaces: 0,
       active_workspaces: 0,
@@ -373,7 +372,7 @@ export async function getWorkspaceMemberDistribution(): Promise<
       })) || []
     );
   } catch (error) {
-    serverLogger.error('Error fetching workspace member distribution:', error);
+    console.error('Error fetching workspace member distribution:', error);
     return [];
   }
 }
@@ -406,7 +405,7 @@ export async function getRecentActionsSummary(
       })) || []
     );
   } catch (error) {
-    serverLogger.error('Error fetching recent actions summary:', error);
+    console.error('Error fetching recent actions summary:', error);
     return [];
   }
 }
@@ -434,7 +433,7 @@ export async function getActionFrequencyByHour(): Promise<
       })) || []
     );
   } catch (error) {
-    serverLogger.error('Error fetching action frequency by hour:', error);
+    console.error('Error fetching action frequency by hour:', error);
     return [];
   }
 }
@@ -467,7 +466,7 @@ export async function getRecentAuditLogs(
       })) || []
     );
   } catch (error) {
-    serverLogger.error('Error fetching recent audit logs:', error);
+    console.error('Error fetching recent audit logs:', error);
     return [];
   }
 }
@@ -494,7 +493,7 @@ export async function getUserActivityCohorts(): Promise<UserActivityCohort[]> {
       })) || []
     );
   } catch (error) {
-    serverLogger.error('Error fetching user activity cohorts:', error);
+    console.error('Error fetching user activity cohorts:', error);
     return [];
   }
 }
@@ -524,7 +523,7 @@ export async function getRetentionRate(
       })) || []
     );
   } catch (error) {
-    serverLogger.error('Error fetching retention rate:', error);
+    console.error('Error fetching retention rate:', error);
     return [];
   }
 }
@@ -549,7 +548,7 @@ export async function getActivityHeatmap(): Promise<ActivityHeatmap[]> {
       })) || []
     );
   } catch (error) {
-    serverLogger.error('Error fetching activity heatmap:', error);
+    console.error('Error fetching activity heatmap:', error);
     return [];
   }
 }
@@ -581,7 +580,7 @@ export async function getUserRegistrationData(): Promise<
         })) || []
     );
   } catch (error) {
-    serverLogger.error('Error fetching user registration data:', error);
+    console.error('Error fetching user registration data:', error);
     return [];
   }
 }
@@ -609,7 +608,7 @@ export async function getPowerUsers(limit: number = 10): Promise<PowerUser[]> {
       })) || []
     );
   } catch (error) {
-    serverLogger.error('Error fetching power users:', error);
+    console.error('Error fetching power users:', error);
     return [];
   }
 }
@@ -637,7 +636,7 @@ export async function getFeatureAdoption(
       })) || []
     );
   } catch (error) {
-    serverLogger.error('Error fetching feature adoption:', error);
+    console.error('Error fetching feature adoption:', error);
     return [];
   }
 }

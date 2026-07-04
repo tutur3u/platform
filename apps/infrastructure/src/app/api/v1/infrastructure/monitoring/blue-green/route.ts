@@ -1,7 +1,6 @@
 import type { BlueGreenMonitoringSnapshot } from '@tuturuuu/internal-api/infrastructure/monitoring';
 import { NextResponse } from 'next/server';
 import { readBlueGreenMonitoringSnapshot } from '@/lib/infrastructure/blue-green-monitoring';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { authorizeInfrastructureViewer } from './authorization';
 
 function parseOptionalPositiveInt(value: string | null) {
@@ -33,7 +32,7 @@ export async function GET(request: Request) {
 
     return NextResponse.json(snapshot);
   } catch (error) {
-    serverLogger.error('Failed to load blue-green monitoring snapshot:', error);
+    console.error('Failed to load blue-green monitoring snapshot:', error);
     return NextResponse.json(
       { message: 'Failed to load blue-green monitoring snapshot' },
       { status: 500 }

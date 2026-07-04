@@ -6,7 +6,6 @@ import {
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
   getTeachActorWorkspaceUserId,
   requireTeachWorkspaceAccess,
@@ -83,7 +82,7 @@ export const GET = withSessionAuth(
 
     const { count, data, error } = await query;
     if (error) {
-      serverLogger.error('Failed to fetch Teach posts', { error });
+      console.error('Failed to fetch Teach posts', { error });
       return NextResponse.json(
         { message: 'Error fetching posts' },
         { status: 500 }
@@ -174,7 +173,7 @@ export const POST = withSessionAuth(
         .maybeSingle();
 
     if (approvalConfigError) {
-      serverLogger.error('Failed to resolve Teach post approval config', {
+      console.error('Failed to resolve Teach post approval config', {
         error: approvalConfigError,
       });
       return NextResponse.json(
@@ -207,7 +206,7 @@ export const POST = withSessionAuth(
       .single();
 
     if (error) {
-      serverLogger.error('Failed to create Teach post', { error });
+      console.error('Failed to create Teach post', { error });
       return NextResponse.json(
         { message: 'Error creating post' },
         { status: 500 }

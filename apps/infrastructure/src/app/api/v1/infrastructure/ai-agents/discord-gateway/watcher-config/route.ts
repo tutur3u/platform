@@ -5,10 +5,7 @@ import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { type NextRequest, NextResponse } from 'next/server';
 import { getRootSecretValue, listAiAgents } from '@/lib/ai-agents/registry';
-import {
-  serverLogger,
-  withRequestLogDrain,
-} from '@/lib/infrastructure/log-drain';
+import { withRequestLogDrain } from '@/lib/infrastructure/log-drain';
 
 const WATCHER_SECRET_NAME = 'AI_AGENT_DISCORD_GATEWAY_WATCHER_SECRET';
 
@@ -113,7 +110,7 @@ export async function GET(request: NextRequest) {
       try {
         return await handleGet(request);
       } catch (error) {
-        serverLogger.warn(
+        console.warn(
           'Failed to resolve Discord Gateway watcher configuration',
           {
             error: error instanceof Error ? error.message : String(error),

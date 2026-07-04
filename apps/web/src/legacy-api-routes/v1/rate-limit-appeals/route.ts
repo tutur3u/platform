@@ -18,7 +18,6 @@ import { MAX_SEARCH_LENGTH } from '@tuturuuu/utils/constants';
 import { getUpstashRestRedisClient } from '@tuturuuu/utils/upstash-rest';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
   buildRateLimitAppealRowFields,
   extractWorkspaceIdFromAppealDiagnostics,
@@ -42,7 +41,7 @@ function rateLimitAppealsTable(client: unknown) {
 
 async function checkAppealThrottle(userId: string, clientIp: string) {
   const redis = await getUpstashRestRedisClient().catch((error) => {
-    serverLogger.warn('Rate-limit appeal throttle Redis unavailable', error);
+    console.warn('Rate-limit appeal throttle Redis unavailable', error);
     return null;
   });
 
@@ -73,7 +72,7 @@ async function checkAppealThrottle(userId: string, clientIp: string) {
           : APPEAL_THROTTLE_WINDOW_SECONDS,
     };
   } catch (error) {
-    serverLogger.warn('Rate-limit appeal throttle failed open', error);
+    console.warn('Rate-limit appeal throttle failed open', error);
     return { allowed: true, retryAfterSeconds: 0 };
   }
 }
@@ -210,7 +209,7 @@ export async function POST(request: Request) {
       );
     }
 
-    serverLogger.error('Unexpected Turnstile verification error', error);
+    console.error('Unexpected Turnstile verification error', error);
     return NextResponse.json(
       { message: 'Turnstile verification failed' },
       { status: 400 }
@@ -269,7 +268,7 @@ export async function POST(request: Request) {
       temporaryReliefExpiresAt: reliefExpiresAt,
     });
   } catch (error) {
-    serverLogger.error('Failed to submit rate-limit appeal', error);
+    console.error('Failed to submit rate-limit appeal', error);
     return NextResponse.json(
       { message: 'Failed to submit appeal' },
       { status: 500 }

@@ -5,7 +5,6 @@ import {
   MAX_MONTHLY_REPORT_TITLE_LENGTH,
 } from '@/features/reports/report-limits';
 import { withSessionAuth } from '@/lib/api-auth';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
   getTeachActorWorkspaceUserId,
   requireTeachWorkspaceAccess,
@@ -83,7 +82,7 @@ export const GET = withSessionAuth(
       .limit(limit);
 
     if (error) {
-      serverLogger.error('Failed to fetch Teach reports', { error });
+      console.error('Failed to fetch Teach reports', { error });
       return NextResponse.json(
         { message: 'Error fetching reports' },
         { status: 500 }
@@ -172,7 +171,7 @@ export const POST = withSessionAuth(
       .maybeSingle();
 
     if (membershipError) {
-      serverLogger.error('Failed to validate Teach report recipient', {
+      console.error('Failed to validate Teach report recipient', {
         error: membershipError,
       });
       return NextResponse.json(
@@ -219,7 +218,7 @@ export const POST = withSessionAuth(
         .maybeSingle();
 
     if (approvalConfigError) {
-      serverLogger.error('Failed to resolve Teach report approval config', {
+      console.error('Failed to resolve Teach report approval config', {
         error: approvalConfigError,
       });
       return NextResponse.json(
@@ -258,7 +257,7 @@ export const POST = withSessionAuth(
       .single();
 
     if (error) {
-      serverLogger.error('Failed to create Teach report', { error });
+      console.error('Failed to create Teach report', { error });
       return NextResponse.json(
         { message: 'Error creating report' },
         { status: 500 }

@@ -10,7 +10,6 @@ import {
 import { type NextRequest, NextResponse } from 'next/server';
 import { validate } from 'uuid';
 import { withSessionAuth } from '@/lib/api-auth';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 interface WorkspaceParams {
   wsId: string;
@@ -129,7 +128,7 @@ export const GET = withSessionAuth<WorkspaceParams>(
       }
 
       if (error) {
-        serverLogger.error('Supabase error:', error);
+        console.error('Supabase error:', error);
         return NextResponse.json(
           { error: 'Failed to fetch boards' },
           { status: 500 }
@@ -138,7 +137,7 @@ export const GET = withSessionAuth<WorkspaceParams>(
 
       return NextResponse.json({ boards });
     } catch (error) {
-      serverLogger.error('Error fetching boards with lists:', error);
+      console.error('Error fetching boards with lists:', error);
       return NextResponse.json(
         { error: 'Internal server error' },
         { status: 500 }

@@ -7,7 +7,6 @@ import {
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 const ModuleOrderSchema = z.object({
   moduleIds: z.array(z.string().uuid()).min(1).max(500),
@@ -161,7 +160,7 @@ export const PATCH = withSessionAuth(
         name: reorderError.name,
         stack: reorderError.stack?.split('\n').slice(0, 5).join('\n'),
       };
-      serverLogger.error('Failed to reorder modules', {
+      console.error('Failed to reorder modules', {
         groupId,
         modulesPreview: moduleIds.slice(0, 10),
         modulesTotal: moduleIds.length,

@@ -8,7 +8,6 @@ import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper'
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { resolveSessionAuthContext } from '@/lib/api-auth';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 const createConnectionSchema = z.object({
   wsId: z.guid(),
@@ -70,7 +69,7 @@ async function requireWorkspaceAccess({
   });
 
   if (memberCheck.error === 'membership_lookup_failed') {
-    serverLogger.error('Calendar connection membership lookup failed:', {
+    console.error('Calendar connection membership lookup failed:', {
       wsId,
       error: memberCheck.error,
     });
@@ -155,10 +154,7 @@ export async function GET(request: Request) {
       .order('created_at', { ascending: true });
 
     if (connectionsError) {
-      serverLogger.error(
-        'Error fetching calendar connections:',
-        connectionsError
-      );
+      console.error('Error fetching calendar connections:', connectionsError);
       return NextResponse.json(
         { error: 'Failed to fetch calendar connections' },
         { status: 500 }
@@ -175,7 +171,7 @@ export async function GET(request: Request) {
       }
     );
   } catch (error: any) {
-    serverLogger.error('Error in GET calendar connections:', error);
+    console.error('Error in GET calendar connections:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -293,7 +289,7 @@ export async function POST(request: Request) {
       .single();
 
     if (insertError) {
-      serverLogger.error('Error creating calendar connection:', insertError);
+      console.error('Error creating calendar connection:', insertError);
 
       // Check for unique constraint violation
       if (insertError.code === '23505') {
@@ -311,7 +307,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ connection }, { status: 201 });
   } catch (error: any) {
-    serverLogger.error('Error in POST calendar connection:', error);
+    console.error('Error in POST calendar connection:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -393,7 +389,7 @@ export async function PATCH(request: Request) {
       .single();
 
     if (updateError) {
-      serverLogger.error('Error updating calendar connection:', updateError);
+      console.error('Error updating calendar connection:', updateError);
       return NextResponse.json(
         { error: 'Failed to update calendar connection' },
         { status: 500 }
@@ -402,7 +398,7 @@ export async function PATCH(request: Request) {
 
     return NextResponse.json({ connection }, { status: 200 });
   } catch (error: any) {
-    serverLogger.error('Error in PATCH calendar connection:', error);
+    console.error('Error in PATCH calendar connection:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -450,7 +446,7 @@ export async function DELETE(request: Request) {
       .eq('id', id);
 
     if (deleteError) {
-      serverLogger.error('Error deleting calendar connection:', deleteError);
+      console.error('Error deleting calendar connection:', deleteError);
       return NextResponse.json(
         { error: 'Failed to delete calendar connection' },
         { status: 500 }
@@ -459,7 +455,7 @@ export async function DELETE(request: Request) {
 
     return NextResponse.json({ success: true }, { status: 200 });
   } catch (error: any) {
-    serverLogger.error('Error in DELETE calendar connection:', error);
+    console.error('Error in DELETE calendar connection:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

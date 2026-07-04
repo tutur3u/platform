@@ -11,7 +11,6 @@ import {
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { resolveAuthenticatedSessionUser } from '@/lib/app-session-user';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
   DEFAULT_TASK_PROGRESS_METRICS,
   TASK_PROGRESS_ENTRY_SELECT,
@@ -462,6 +461,6 @@ export async function hydrateGoalsWithProgress(
 
 export function logTaskProgressError(message: string, error: unknown) {
   if (!isTaskProgressSchemaUnavailableError(error)) {
-    serverLogger.error(message, { error });
+    console.error(message, { error });
   }
 }

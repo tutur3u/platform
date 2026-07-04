@@ -1,9 +1,6 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import {
-  serverLogger,
-  withRequestLogDrain,
-} from '@/lib/infrastructure/log-drain';
+import { withRequestLogDrain } from '@/lib/infrastructure/log-drain';
 import {
   persistStressTestRun,
   queueStressTestAbortFile,
@@ -105,7 +102,7 @@ export async function POST(
             runId,
           });
         } catch (error) {
-          serverLogger.error(
+          console.error(
             'Failed to queue infrastructure stress test abort control file',
             error
           );
@@ -129,7 +126,7 @@ export async function POST(
           run: nextRun,
         });
       } catch (error) {
-        serverLogger.error('Failed to abort infrastructure stress test', error);
+        console.error('Failed to abort infrastructure stress test', error);
         return NextResponse.json(
           { message: 'Failed to abort stress test' },
           { status: 500 }

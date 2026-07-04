@@ -3,7 +3,6 @@ import {
   SquareWebhookSignatureError,
 } from '@tuturuuu/inventory-core/commerce/square';
 import { NextResponse } from 'next/server';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 interface Params {
   params: Promise<{ wsId: string }>;
@@ -30,7 +29,7 @@ export async function POST(request: Request, { params }: Params) {
       );
     }
 
-    serverLogger.error('Failed to handle Square webhook', error);
+    console.error('Failed to handle Square webhook', error);
     return NextResponse.json(
       { message: 'Event handling failed' },
       { status: 500 }

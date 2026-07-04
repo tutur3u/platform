@@ -1,7 +1,7 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { AIModelUI } from '@tuturuuu/types';
 import { type NextRequest, NextResponse } from 'next/server';
-import { requireHiveAccess, serverLogger, withHiveRoute } from '../../_shared';
+import { requireHiveAccess, withHiveRoute } from '../../_shared';
 
 const ROUTE = '/api/v1/hive/ai/models';
 
@@ -65,7 +65,7 @@ export async function GET(request: NextRequest) {
     const { data, error } = await query;
 
     if (error) {
-      serverLogger.error('Failed to list Hive AI models', {
+      console.error('Failed to list Hive AI models', {
         error: error.message,
       });
       return NextResponse.json(

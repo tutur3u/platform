@@ -4,7 +4,6 @@ import { createInventorySquareOAuthStart } from '@tuturuuu/inventory-core/commer
 import { canManageInventorySetup } from '@tuturuuu/inventory-core/permissions';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 interface Params {
   params: Promise<{ wsId: string }>;
@@ -41,7 +40,7 @@ export async function GET(request: Request, { params }: Params) {
       );
     }
 
-    serverLogger.error('Failed to start Square OAuth', error);
+    console.error('Failed to start Square OAuth', error);
     return NextResponse.json(
       {
         message:

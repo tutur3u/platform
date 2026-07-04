@@ -3,7 +3,6 @@ import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import StatisticCard from '@/components/cards/StatisticCard';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 export default async function InventoryProductsStatistics({
   wsId,
@@ -22,7 +21,7 @@ export default async function InventoryProductsStatistics({
     : { data: 0, error: null };
 
   if (error) {
-    serverLogger.error('Error fetching inventory products count', error);
+    console.error('Error fetching inventory products count', error);
   }
 
   const permissions = await getPermissions({

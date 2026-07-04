@@ -5,7 +5,6 @@ import {
   normalizeWorkspaceId,
   verifyWorkspaceMembershipType,
 } from '@tuturuuu/utils/workspace-helper';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
   isValidLiveSessionHandle,
   type LiveSessionScopeValidation,
@@ -73,7 +72,7 @@ async function verifyLiveSessionScope({
     .maybeSingle();
 
   if (error != null) {
-    serverLogger.error(
+    console.error(
       '[Session API] Error verifying assistant live chat scope',
       error
     );
@@ -158,7 +157,7 @@ export async function GET(req: Request) {
       .maybeSingle();
 
     if (error) {
-      serverLogger.error('[Session API] Error fetching session', error);
+      console.error('[Session API] Error fetching session', error);
       return Response.json({ sessionHandle: null });
     }
 
@@ -167,7 +166,7 @@ export async function GET(req: Request) {
       sessionHandle: sessionData?.session_handle || null,
     });
   } catch (error) {
-    serverLogger.error('[Session API] Unexpected error in GET', error);
+    console.error('[Session API] Unexpected error in GET', error);
     return Response.json({ sessionHandle: null });
   }
 }
@@ -255,7 +254,7 @@ export async function POST(req: Request) {
       );
 
     if (error) {
-      serverLogger.error('[Session API] Error storing session', error);
+      console.error('[Session API] Error storing session', error);
       return Response.json(
         { error: 'Failed to store session handle' },
         { status: 500 }
@@ -264,7 +263,7 @@ export async function POST(req: Request) {
 
     return Response.json({ success: true });
   } catch (error) {
-    serverLogger.error('[Session API] Unexpected error in POST', error);
+    console.error('[Session API] Unexpected error in POST', error);
     return Response.json(
       { error: 'Failed to store session handle' },
       { status: 500 }
@@ -338,7 +337,7 @@ export async function DELETE(req: Request) {
       .eq('scope_key', scopeKey);
 
     if (error) {
-      serverLogger.error('[Session API] Error deleting session', error);
+      console.error('[Session API] Error deleting session', error);
       return Response.json(
         { error: 'Failed to delete session handle' },
         { status: 500 }
@@ -347,7 +346,7 @@ export async function DELETE(req: Request) {
 
     return Response.json({ success: true });
   } catch (error) {
-    serverLogger.error('[Session API] Unexpected error in DELETE', error);
+    console.error('[Session API] Unexpected error in DELETE', error);
     return Response.json(
       { error: 'Failed to delete session handle' },
       { status: 500 }

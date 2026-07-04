@@ -3,7 +3,6 @@ import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { NextResponse } from 'next/server';
 import { CURRENT_USER_APP_SESSION_AUTH } from '@/legacy-api-routes/v1/users/me/session-auth';
 import { withSessionAuth } from '@/lib/api-auth';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { getWorkspaceInviteStatus } from '@/lib/workspace-invitations/status';
 
 export const GET = withSessionAuth<{ wsId: string }>(
@@ -35,7 +34,7 @@ export const GET = withSessionAuth<{ wsId: string }>(
         },
       });
     } catch (error) {
-      serverLogger.error('Failed to read workspace invite status:', {
+      console.error('Failed to read workspace invite status:', {
         error,
         userId: user.id,
         wsId,

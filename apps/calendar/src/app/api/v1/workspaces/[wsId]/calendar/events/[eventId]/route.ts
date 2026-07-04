@@ -29,7 +29,6 @@ import {
   getCalendarSyncPreferences,
   resolveOutboundSyncSource,
 } from '@/lib/calendar/sync-preferences';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
   decryptEventFromStorage,
   encryptEventForStorage,
@@ -170,7 +169,7 @@ export async function GET(request: Request, { params }: Params) {
 
     return NextResponse.json(decryptedEvent);
   } catch (error) {
-    serverLogger.error('Calendar event API error', { wsId, eventId, error });
+    console.error('Calendar event API error', { wsId, eventId, error });
     return NextResponse.json(
       { error: 'An error occurred while processing your request' },
       { status: 500 }
@@ -311,7 +310,7 @@ export async function PUT(request: Request, { params }: Params) {
             });
           } catch (error) {
             providerWriteError = error;
-            serverLogger.warn('Failed to mirror native calendar event update', {
+            console.warn('Failed to mirror native calendar event update', {
               wsId,
               eventId,
               provider: outboundSource.provider,
@@ -495,7 +494,7 @@ export async function PUT(request: Request, { params }: Params) {
       return NextResponse.json({ error: message }, { status: 400 });
     }
 
-    serverLogger.error('Calendar event API error', { wsId, eventId, error });
+    console.error('Calendar event API error', { wsId, eventId, error });
     return NextResponse.json(
       { error: 'An error occurred while processing your request' },
       { status: 500 }
@@ -587,7 +586,7 @@ export async function DELETE(request: Request, { params }: Params) {
       return NextResponse.json({ error: message }, { status: 400 });
     }
 
-    serverLogger.error('Calendar event API error', { wsId, eventId, error });
+    console.error('Calendar event API error', { wsId, eventId, error });
     return NextResponse.json(
       { error: 'An error occurred while processing your request' },
       { status: 500 }

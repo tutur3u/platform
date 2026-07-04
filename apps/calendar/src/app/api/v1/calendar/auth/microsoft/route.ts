@@ -20,7 +20,6 @@ import {
   getMicrosoftOAuthConfig,
   isMicrosoftConfigComplete,
 } from '@/lib/calendar/microsoft-config';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { normalizeWorkspaceId } from '@/lib/workspace-helper';
 
 const microsoftAuthQuerySchema = z.object({
@@ -120,7 +119,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
     return response;
   } catch (error) {
-    serverLogger.error('Error generating Microsoft auth URL:', error);
+    console.error('Error generating Microsoft auth URL:', error);
     return NextResponse.json(
       { error: 'Failed to generate authentication URL' },
       { status: 500 }

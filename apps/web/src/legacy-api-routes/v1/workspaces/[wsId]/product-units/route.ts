@@ -15,7 +15,6 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { MAX_NAME_LENGTH } from '@tuturuuu/utils/constants';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 const UnitSchema = z.object({
   name: z.string().trim().min(1).max(MAX_NAME_LENGTH),
@@ -70,7 +69,7 @@ export async function GET(req: Request, { params }: Params) {
   const { data, error, count } = await query.order('name');
 
   if (error) {
-    serverLogger.error('Error fetching product units', error);
+    console.error('Error fetching product units', error);
     return NextResponse.json(
       { message: 'Error fetching product units' },
       { status: 500 }
@@ -118,7 +117,7 @@ export async function POST(req: Request, { params }: Params) {
     .single();
 
   if (error) {
-    serverLogger.error('Error creating product unit', error);
+    console.error('Error creating product unit', error);
     return NextResponse.json(
       { message: 'Error creating product unit' },
       { status: 500 }

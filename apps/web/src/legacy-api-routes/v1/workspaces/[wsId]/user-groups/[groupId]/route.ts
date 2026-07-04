@@ -6,7 +6,6 @@ import {
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { revalidateUserGroupCache } from '@/lib/user-groups/revalidate';
 import {
   resolveRequestActorAuthUid,
@@ -70,7 +69,7 @@ export async function GET(req: Request, { params }: Params) {
     .maybeSingle();
 
   if (error) {
-    serverLogger.error('Error fetching workspace user group:', error);
+    console.error('Error fetching workspace user group:', error);
     return NextResponse.json(
       { message: 'Error fetching workspace user group' },
       { status: 500 }
@@ -157,7 +156,7 @@ export async function PUT(req: Request, { params }: Params) {
     });
 
   if (error) {
-    serverLogger.error('Error updating workspace user group:', error);
+    console.error('Error updating workspace user group:', error);
     return NextResponse.json(
       { message: 'Error updating workspace user group' },
       { status: 500 }
@@ -204,7 +203,7 @@ export async function DELETE(req: Request, { params }: Params) {
     });
 
   if (error) {
-    serverLogger.error('Error deleting workspace user group:', error);
+    console.error('Error deleting workspace user group:', error);
     return NextResponse.json(
       { message: 'Error deleting workspace user group' },
       { status: 500 }

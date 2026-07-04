@@ -1,7 +1,6 @@
 import { getFinanceRouteContext } from '@tuturuuu/apis/finance/request-access';
 import { NextResponse } from 'next/server';
 import { resolveFinanceRouteAuthContext } from '@/lib/finance-route-auth';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 interface Params {
   params: Promise<{
@@ -96,7 +95,7 @@ export async function GET(req: Request, { params }: Params) {
     .in('group_id', groupIds);
 
   if (validGroupsError) {
-    serverLogger.error(
+    console.error(
       'Error fetching valid groups for subscription invoice context:',
       validGroupsError
     );
@@ -141,7 +140,7 @@ export async function GET(req: Request, { params }: Params) {
   ]);
 
   if (attendanceResponse.error) {
-    serverLogger.error(
+    console.error(
       'Error fetching subscription attendance context:',
       attendanceResponse.error
     );
@@ -152,7 +151,7 @@ export async function GET(req: Request, { params }: Params) {
   }
 
   if (latestInvoicesResponse.error) {
-    serverLogger.error(
+    console.error(
       'Error fetching subscription invoice history context:',
       latestInvoicesResponse.error
     );

@@ -17,6 +17,8 @@ const mocks = vi.hoisted(() => ({
   ),
 }));
 
+const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
 vi.mock('server-only', () => ({}));
 
 vi.mock('@tuturuuu/auth/app-coordination', () => ({
@@ -198,7 +200,7 @@ describe('external app managed cron routes', () => {
     });
     expect(body.developerDebug.requiredEnv).toContain('SUPABASE_SECRET_KEY');
     expectNoSensitiveDiagnostics(body);
-    expect(mocks.serverLoggerError).toHaveBeenCalledWith(
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
       'External app managed cron operation failed',
       expect.objectContaining({
         code: 'MANAGED_CRON_SUPABASE_ADMIN_UNAVAILABLE',
@@ -282,7 +284,7 @@ describe('external app managed cron routes', () => {
       origin: appOrigin,
       workspaceId,
     });
-    expect(mocks.serverLoggerError).not.toHaveBeenCalled();
+    expect(consoleErrorSpy).not.toHaveBeenCalled();
     expect(body.adminRecoveryHref).toBeUndefined();
     expectNoSensitiveDiagnostics(body);
   });
@@ -371,7 +373,7 @@ describe('external app managed cron routes', () => {
       jobs: [],
     });
     expectNoSensitiveDiagnostics(body);
-    expect(mocks.serverLoggerError).toHaveBeenCalledWith(
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
       'External app managed cron operation failed',
       expect.objectContaining({
         code: 'MANAGED_CRON_STATUS_CHECK_FAILED',

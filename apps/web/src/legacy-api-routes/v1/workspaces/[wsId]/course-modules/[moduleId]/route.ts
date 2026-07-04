@@ -9,7 +9,6 @@ import {
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 interface RouteParams {
   moduleId: string;
@@ -259,7 +258,7 @@ export const PUT = withSessionAuth(
 
       if (!shouldReallocateSortKey || error.code !== '23505') {
         const scrubbedPayload = summarizeUpdatePayload(updatePayload);
-        serverLogger.error('Failed to update workspace course module', {
+        console.error('Failed to update workspace course module', {
           error,
           moduleId,
           updatePayload: scrubbedPayload,

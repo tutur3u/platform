@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { runManagedExternalCronJobNow } from '@/lib/infrastructure/managed-external-cron-monitoring';
 import { authorizeInfrastructureOperator } from '../../../blue-green/authorization';
 
@@ -25,7 +24,7 @@ export async function POST(request: Request) {
       result,
     });
   } catch (error) {
-    serverLogger.error('Failed to run managed external cron job:', error);
+    console.error('Failed to run managed external cron job:', error);
     const invalidRequest = error instanceof z.ZodError;
     const notFound =
       error instanceof Error && error.message === 'Managed cron job not found';

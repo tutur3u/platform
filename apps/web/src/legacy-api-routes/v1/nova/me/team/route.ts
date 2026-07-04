@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import { withSessionAuth } from '@/lib/api-auth';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 export const GET = withSessionAuth(
   async (_request, { supabase, user }) => {
@@ -21,7 +20,7 @@ export const GET = withSessionAuth(
 
       return NextResponse.json({ teamId: data?.team_id ?? null });
     } catch (error) {
-      serverLogger.error('Unexpected nova team lookup error:', error);
+      console.error('Unexpected nova team lookup error:', error);
       return NextResponse.json(
         { message: 'Internal server error' },
         { status: 500 }

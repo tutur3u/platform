@@ -2,10 +2,7 @@ import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { requireWorkspaceExternalProjectAccess } from '@/lib/external-projects/access';
 import { applyWorkspaceExternalProjectSyncManifest } from '@/lib/external-projects/sync';
-import {
-  serverLogger,
-  withRequestLogDrain,
-} from '@/lib/infrastructure/log-drain';
+import { withRequestLogDrain } from '@/lib/infrastructure/log-drain';
 import { parseSyncManifestRequest } from '../shared';
 
 interface Params {
@@ -55,7 +52,7 @@ async function applyManifest(request: NextRequest, { params }: Params) {
       return NextResponse.json({ error: error.message }, { status: 409 });
     }
 
-    serverLogger.error('Failed to apply external project sync manifest', {
+    console.error('Failed to apply external project sync manifest', {
       error: error instanceof Error ? error.message : String(error),
       wsId: access.normalizedWorkspaceId,
     });

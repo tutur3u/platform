@@ -3,7 +3,7 @@ import { DEV_MODE, ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { isTaskBoardResolvedStatus } from '@tuturuuu/utils/task-list-status';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
-import { serverLogger, withCronLogDrain } from '@/lib/infrastructure/log-drain';
+import { withCronLogDrain } from '@/lib/infrastructure/log-drain';
 
 /**
  * Vercel Cron Job: Process Task Deadline Reminders
@@ -131,7 +131,7 @@ async function handleGET(req: NextRequest) {
       };
 
     if (settingsError) {
-      serverLogger.error('Error fetching reminder settings:', settingsError);
+      console.error('Error fetching reminder settings:', settingsError);
       return NextResponse.json(
         { error: 'Error fetching settings' },
         { status: 500 }
@@ -207,7 +207,7 @@ async function handleGET(req: NextRequest) {
     };
 
     if (tasksError) {
-      serverLogger.error('Error fetching tasks:', tasksError);
+      console.error('Error fetching tasks:', tasksError);
       return NextResponse.json(
         { error: 'Error fetching tasks' },
         { status: 500 }
@@ -268,7 +268,7 @@ async function handleGET(req: NextRequest) {
               });
 
             if (reminderCheckError) {
-              serverLogger.error(
+              console.error(
                 `Error checking reminder tracking for task ${task.id}:`,
                 reminderCheckError
               );
@@ -320,7 +320,7 @@ async function handleGET(req: NextRequest) {
               });
 
             if (notifError) {
-              serverLogger.error(
+              console.error(
                 `Error creating notification for task ${task.id}:`,
                 notifError
               );
@@ -338,7 +338,7 @@ async function handleGET(req: NextRequest) {
             );
 
             if (trackError) {
-              serverLogger.error(
+              console.error(
                 `Error tracking reminder for task ${task.id}:`,
                 trackError
               );
@@ -348,7 +348,7 @@ async function handleGET(req: NextRequest) {
             taskNotifications++;
 
             if (DEV_MODE) {
-              serverLogger.info(
+              console.info(
                 `[DEBUG] Sent ${interval} reminder for task "${task.name}" to user ${watcher.user_id}`
               );
             }
@@ -374,7 +374,7 @@ async function handleGET(req: NextRequest) {
       results,
     });
   } catch (error) {
-    serverLogger.error('Error in deadline reminders cron:', error);
+    console.error('Error in deadline reminders cron:', error);
     return NextResponse.json(
       {
         error: 'Internal server error',

@@ -1,7 +1,6 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { withSessionAuth } from '@/lib/api-auth';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { normalizeWorkspaceId } from '@/lib/workspace-helper';
 
 interface Params {
@@ -33,7 +32,7 @@ export const POST = withSessionAuth<Params>(
         });
 
       if (permissionError) {
-        serverLogger.error('Error checking permission:', permissionError);
+        console.error('Error checking permission:', permissionError);
         return NextResponse.json(
           { error: 'Error checking permission' },
           { status: 500 }
@@ -62,7 +61,7 @@ export const POST = withSessionAuth<Params>(
         .select('id');
 
       if (tokensError) {
-        serverLogger.error('Error deactivating auth tokens:', tokensError);
+        console.error('Error deactivating auth tokens:', tokensError);
       } else {
         results.authTokensDeactivated = deactivatedTokens?.length || 0;
       }
@@ -76,10 +75,7 @@ export const POST = withSessionAuth<Params>(
           .select('id');
 
       if (connectionsError) {
-        serverLogger.error(
-          'Error deleting calendar connections:',
-          connectionsError
-        );
+        console.error('Error deleting calendar connections:', connectionsError);
       } else {
         results.calendarConnectionsDeleted = deletedConnections?.length || 0;
       }
@@ -92,7 +88,7 @@ export const POST = withSessionAuth<Params>(
         .select('id');
 
       if (eventsError) {
-        serverLogger.error('Error deleting calendar events:', eventsError);
+        console.error('Error deleting calendar events:', eventsError);
       } else {
         results.eventsDeleted = deletedEvents?.length || 0;
       }
@@ -105,10 +101,7 @@ export const POST = withSessionAuth<Params>(
         .eq('is_system', false);
 
       if (customCalendarsError) {
-        serverLogger.error(
-          'Error deleting custom calendars:',
-          customCalendarsError
-        );
+        console.error('Error deleting custom calendars:', customCalendarsError);
       }
 
       return NextResponse.json({
@@ -117,7 +110,7 @@ export const POST = withSessionAuth<Params>(
         ...results,
       });
     } catch (error) {
-      serverLogger.error('Calendar reset error:', error);
+      console.error('Calendar reset error:', error);
       return NextResponse.json(
         { error: 'Failed to reset calendar data' },
         { status: 500 }

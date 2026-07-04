@@ -12,7 +12,6 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { MAX_NAME_LENGTH } from '@tuturuuu/utils/constants';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 const WarehouseUpdateSchema = z.object({
   name: z.string().trim().min(1).max(MAX_NAME_LENGTH).optional(),
@@ -70,7 +69,7 @@ export async function PATCH(req: Request, { params }: Params) {
     .maybeSingle();
 
   if (existingError) {
-    serverLogger.error(
+    console.error(
       'Error loading inventory warehouse for update',
       existingError
     );
@@ -96,7 +95,7 @@ export async function PATCH(req: Request, { params }: Params) {
     .single();
 
   if (error) {
-    serverLogger.error('Error updating inventory warehouse', error);
+    console.error('Error updating inventory warehouse', error);
     return NextResponse.json(
       { message: 'Failed to update inventory warehouse' },
       { status: error.code === '23505' ? 409 : 500 }
@@ -141,7 +140,7 @@ export async function DELETE(req: Request, { params }: Params) {
     .maybeSingle();
 
   if (existingError) {
-    serverLogger.error(
+    console.error(
       'Error loading inventory warehouse for deletion',
       existingError
     );
@@ -165,7 +164,7 @@ export async function DELETE(req: Request, { params }: Params) {
     .limit(1);
 
   if (linkedStockRowsError) {
-    serverLogger.error(
+    console.error(
       'Error validating inventory warehouse stock usage',
       linkedStockRowsError
     );
@@ -191,7 +190,7 @@ export async function DELETE(req: Request, { params }: Params) {
     .limit(1);
 
   if (linkedBatchesError) {
-    serverLogger.error(
+    console.error(
       'Error validating inventory warehouse batch usage',
       linkedBatchesError
     );
@@ -217,7 +216,7 @@ export async function DELETE(req: Request, { params }: Params) {
     .maybeSingle();
 
   if (error) {
-    serverLogger.error('Error deleting inventory warehouse', error);
+    console.error('Error deleting inventory warehouse', error);
     return NextResponse.json(
       { message: 'Failed to delete inventory warehouse' },
       { status: 500 }

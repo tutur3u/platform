@@ -4,7 +4,6 @@ import { MAX_COLOR_LENGTH } from '@tuturuuu/utils/constants';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { resolveFinanceRouteAuthContext } from '@/lib/finance-route-auth';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
   MAX_FINANCE_DAILY_DATE_RANGE_DAYS,
   MAX_FINANCE_EXTENDED_DATE_RANGE_DAYS,
@@ -153,7 +152,7 @@ export async function GET(request: Request, { params }: Params) {
       walletCount: toNumber(metrics.wallet_count),
     });
   } catch (error) {
-    serverLogger.error('Error fetching finance overview metrics:', error);
+    console.error('Error fetching finance overview metrics:', error);
     return NextResponse.json(
       { message: 'Failed to fetch finance overview metrics' },
       { status: 500 }

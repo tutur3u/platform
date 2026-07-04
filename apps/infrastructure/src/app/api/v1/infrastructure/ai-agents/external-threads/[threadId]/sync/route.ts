@@ -1,9 +1,6 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { syncAiAgentExternalThread } from '@/lib/ai-agents/external-chat-actions';
-import {
-  serverLogger,
-  withRequestLogDrain,
-} from '@/lib/infrastructure/log-drain';
+import { withRequestLogDrain } from '@/lib/infrastructure/log-drain';
 import { requireAiAgentAdmin } from '../../../access';
 
 type RouteParams = {
@@ -25,7 +22,7 @@ async function syncThread(request: NextRequest, params: RouteParams) {
 
     return NextResponse.json(result, { status: result.ok ? 200 : 400 });
   } catch (error) {
-    serverLogger.error('Failed to sync AI agent external thread', error);
+    console.error('Failed to sync AI agent external thread', error);
     return NextResponse.json(
       { message: 'Failed to sync external thread', ok: false, synced: 0 },
       { status: 500 }

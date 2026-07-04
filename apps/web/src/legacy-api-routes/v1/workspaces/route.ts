@@ -1,7 +1,6 @@
 import { fetchWorkspaceSummaries } from '@tuturuuu/ui/lib/workspace-actions';
 import { NextResponse } from 'next/server';
 import { withSessionAuth } from '@/lib/api-auth';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { CURRENT_USER_APP_SESSION_AUTH } from '../users/me/session-auth';
 
 const MAX_WORKSPACE_QUERY_LENGTH = 120;
@@ -44,7 +43,7 @@ export const GET = withSessionAuth(
       ) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
       }
-      serverLogger.error('Error in workspaces API:', error);
+      console.error('Error in workspaces API:', error);
       return NextResponse.json(
         { error: 'Internal server error' },
         { status: 500 }

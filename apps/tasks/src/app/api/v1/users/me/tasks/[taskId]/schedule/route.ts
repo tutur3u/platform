@@ -7,7 +7,6 @@ import { validate } from 'uuid';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
 import { scheduleTask } from '@/lib/calendar/task-scheduler';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 const USER_TASK_SCHEDULE_APP_SESSION_AUTH = {
   targetApp: ['calendar', 'tasks'],
@@ -307,7 +306,7 @@ export const GET = withSessionAuth<{ taskId: string }>(
           })) ?? [],
       });
     } catch (error) {
-      serverLogger.error('Error fetching personal task schedule:', error);
+      console.error('Error fetching personal task schedule:', error);
       return NextResponse.json(
         { error: 'Internal server error' },
         { status: 500 }
@@ -370,7 +369,7 @@ export const PATCH = withSessionAuth<{ taskId: string }>(
         );
 
       if (error) {
-        serverLogger.error('Error updating task scheduling settings:', error);
+        console.error('Error updating task scheduling settings:', error);
         return NextResponse.json(
           { error: 'Failed to update scheduling settings' },
           { status: 500 }
@@ -386,7 +385,7 @@ export const PATCH = withSessionAuth<{ taskId: string }>(
         );
       }
 
-      serverLogger.error('Error patching personal task schedule:', error);
+      console.error('Error patching personal task schedule:', error);
       return NextResponse.json(
         { error: 'Internal server error' },
         { status: 500 }
@@ -528,7 +527,7 @@ export const POST = withSessionAuth<{ taskId: string }>(
         task_ws_id: taskWsId,
       });
     } catch (error) {
-      serverLogger.error('Error scheduling task in personal workspace:', error);
+      console.error('Error scheduling task in personal workspace:', error);
       return NextResponse.json(
         { error: 'Internal server error' },
         { status: 500 }

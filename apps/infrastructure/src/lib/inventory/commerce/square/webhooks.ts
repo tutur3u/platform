@@ -1,7 +1,6 @@
 import 'server-only';
 
 import { createHmac, timingSafeEqual } from 'node:crypto';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
   getInventorySquareWebhookSecrets,
   markConnectionRevoked,
@@ -130,7 +129,7 @@ export async function handleInventorySquareWebhookEvent(
         merchantId: event.merchant_id,
       });
     }
-    serverLogger.warn('Square OAuth authorization revoked', {
+    console.warn('Square OAuth authorization revoked', {
       eventId: event.event_id,
       merchantId: event.merchant_id,
     });

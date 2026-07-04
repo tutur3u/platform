@@ -15,7 +15,6 @@ import {
 } from '@tuturuuu/inventory-core/permissions';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { parseCostingJsonBody } from '../request';
 import { CostProfilePatchSchema } from '../schemas';
 
@@ -40,7 +39,7 @@ export async function GET(request: Request, { params }: Params) {
 
     return NextResponse.json({ data });
   } catch (error) {
-    serverLogger.error('Failed to load inventory cost profile', error);
+    console.error('Failed to load inventory cost profile', error);
     return NextResponse.json(
       { message: 'Failed to load inventory cost profile' },
       { status: 500 }
@@ -100,7 +99,7 @@ export async function PATCH(request: Request, { params }: Params) {
 
     return NextResponse.json({ data });
   } catch (error) {
-    serverLogger.error('Failed to update inventory cost profile', error);
+    console.error('Failed to update inventory cost profile', error);
     return NextResponse.json(
       { message: 'Failed to update inventory cost profile' },
       { status: 500 }
@@ -141,7 +140,7 @@ export async function DELETE(request: Request, { params }: Params) {
 
     return NextResponse.json({ ok: true });
   } catch (error) {
-    serverLogger.error('Failed to delete inventory cost profile', error);
+    console.error('Failed to delete inventory cost profile', error);
     return NextResponse.json(
       { message: 'Failed to delete inventory cost profile' },
       { status: 500 }

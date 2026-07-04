@@ -1,7 +1,6 @@
 import { getFinanceRouteContext } from '@tuturuuu/apis/finance/request-access';
 import { NextResponse } from 'next/server';
 import { resolveFinanceRouteAuthContext } from '@/lib/finance-route-auth';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 interface Params {
   params: Promise<{
@@ -32,7 +31,7 @@ export async function GET(request: Request, { params }: Params) {
     .eq('user_id', userId);
 
   if (error) {
-    serverLogger.error('Error fetching referral discounts:', error);
+    console.error('Error fetching referral discounts:', error);
     return NextResponse.json(
       { message: 'Error fetching referral discounts' },
       { status: 500 }

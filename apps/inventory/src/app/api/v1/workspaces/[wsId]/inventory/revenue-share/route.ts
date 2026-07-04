@@ -4,7 +4,6 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { MAX_SEARCH_LENGTH } from '@tuturuuu/utils/constants';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 const QuerySchema = z.object({
   endAt: z.iso.datetime().optional(),
@@ -55,7 +54,7 @@ export async function GET(request: Request, { params }: Params) {
     );
 
     if (error) {
-      serverLogger.error('Failed to list inventory revenue share earnings', {
+      console.error('Failed to list inventory revenue share earnings', {
         error,
         wsId: authorization.value.wsId,
       });
@@ -90,10 +89,7 @@ export async function GET(request: Request, { params }: Params) {
       data: filtered.map((row) => row.earning).filter(Boolean),
     });
   } catch (error) {
-    serverLogger.error(
-      'Failed to list inventory revenue share earnings',
-      error
-    );
+    console.error('Failed to list inventory revenue share earnings', error);
     return NextResponse.json(
       { message: 'Failed to list revenue share earnings' },
       { status: 500 }

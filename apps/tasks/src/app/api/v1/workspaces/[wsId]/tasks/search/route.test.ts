@@ -36,6 +36,8 @@ const mocks = vi.hoisted(() => {
   };
 });
 
+const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
 vi.mock('@tuturuuu/ai/embeddings/metered', () => ({
   createMeteredTextEmbedding: mocks.createMeteredTextEmbedding,
 }));
@@ -264,7 +266,7 @@ describe('workspace task search route', () => {
       reason: 'credits_unavailable',
       tasks: [{ id: 'task-1', name: 'Deadline review', similarity: 0.9 }],
     });
-    expect(mocks.serverLoggerWarn).toHaveBeenCalledWith(
+    expect(consoleWarnSpy).toHaveBeenCalledWith(
       'Task hybrid search falling back to text search',
       expect.objectContaining({
         reason: 'credits_unavailable',

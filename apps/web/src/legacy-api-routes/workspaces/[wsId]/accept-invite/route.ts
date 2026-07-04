@@ -9,7 +9,6 @@ import {
 import { NextResponse } from 'next/server';
 import { CURRENT_USER_APP_SESSION_AUTH } from '@/legacy-api-routes/v1/users/me/session-auth';
 import { withSessionAuth } from '@/lib/api-auth';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
   assignSeatToMember,
   revokeSeatFromMember,
@@ -115,7 +114,7 @@ export const POST = withSessionAuth<{ wsId: string }>(
       .maybeSingle();
 
     if (pendingInviteError) {
-      serverLogger.error('Failed to read pending workspace invite:', {
+      console.error('Failed to read pending workspace invite:', {
         error: pendingInviteError,
         userId: user.id,
         wsId,
@@ -139,7 +138,7 @@ export const POST = withSessionAuth<{ wsId: string }>(
         : { data: null, error: null };
 
     if (pendingEmailInviteError) {
-      serverLogger.error('Failed to read pending workspace email invite:', {
+      console.error('Failed to read pending workspace email invite:', {
         candidateEmails,
         error: pendingEmailInviteError,
         userId: user.id,
@@ -181,7 +180,7 @@ export const POST = withSessionAuth<{ wsId: string }>(
           workspaceId: wsId,
         });
       } catch (guestCandidateError) {
-        serverLogger.error(
+        console.error(
           'Failed to resolve guest self-join candidate:',
           guestCandidateError
         );
@@ -304,7 +303,7 @@ export const POST = withSessionAuth<{ wsId: string }>(
           await revokeSeatFromMember(polar, sbAdmin, wsId, user.id);
         }
 
-        serverLogger.error(
+        console.error(
           'Failed to link platform user to workspace user:',
           linkError
         );
@@ -355,7 +354,7 @@ export const POST = withSessionAuth<{ wsId: string }>(
           .eq('virtual_user_id', matchedWorkspaceUserId);
       }
 
-      serverLogger.error('Error accepting invite:', error);
+      console.error('Error accepting invite:', error);
       return NextResponse.json(
         {
           error: getSupabaseErrorMessage(error, 'Failed to accept invite'),

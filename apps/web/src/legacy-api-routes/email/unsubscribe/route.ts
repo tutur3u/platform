@@ -6,7 +6,6 @@ import {
   type EmailUnsubscribeTokenClaims,
   verifyEmailUnsubscribeToken,
 } from '@/lib/email-unsubscribe';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
   cancelPendingPostEmailsForRecipientEmail,
   POST_EMAIL_UNSUBSCRIBED_RECIPIENT_REASON,
@@ -188,7 +187,7 @@ export async function POST(request: NextRequest) {
       cancelledPostEmails,
     });
   } catch (error) {
-    serverLogger.error('Failed to unsubscribe email recipient', {
+    console.error('Failed to unsubscribe email recipient', {
       error,
     });
     return NextResponse.json(

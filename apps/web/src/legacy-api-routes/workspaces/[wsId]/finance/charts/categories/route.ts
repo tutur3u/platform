@@ -4,7 +4,6 @@ import {
 } from '@tuturuuu/utils/constants';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
   MAX_FINANCE_DAILY_DATE_RANGE_DAYS,
   MAX_FINANCE_EXTENDED_DATE_RANGE_DAYS,
@@ -150,7 +149,7 @@ export async function GET(
       data: data || [],
     });
   } catch (error) {
-    serverLogger.error('Error fetching category breakdown', { error });
+    console.error('Error fetching category breakdown', { error });
     return NextResponse.json(
       { message: 'Internal server error while fetching category breakdown' },
       { status: 500 }

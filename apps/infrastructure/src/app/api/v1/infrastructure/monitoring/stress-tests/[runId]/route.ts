@@ -1,8 +1,5 @@
 import { NextResponse } from 'next/server';
-import {
-  serverLogger,
-  withRequestLogDrain,
-} from '@/lib/infrastructure/log-drain';
+import { withRequestLogDrain } from '@/lib/infrastructure/log-drain';
 import { readStressTestRun } from '@/lib/infrastructure/stress-testing';
 import { authorizeInfrastructureViewer } from '../../blue-green/authorization';
 
@@ -32,7 +29,7 @@ export async function GET(
 
         return NextResponse.json(run);
       } catch (error) {
-        serverLogger.error('Failed to load infrastructure stress test', error);
+        console.error('Failed to load infrastructure stress test', error);
         return NextResponse.json(
           { message: 'Failed to load stress test run' },
           { status: 500 }

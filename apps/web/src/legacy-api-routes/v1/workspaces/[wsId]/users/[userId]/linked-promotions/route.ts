@@ -2,7 +2,6 @@ import { getFinanceRouteContext } from '@tuturuuu/apis/finance/request-access';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { resolveFinanceRouteAuthContext } from '@/lib/finance-route-auth';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 interface Params {
   params: Promise<{
@@ -32,7 +31,7 @@ export async function GET(req: Request, { params }: Params) {
     .eq('user_id', userId);
 
   if (error) {
-    serverLogger.error('Error fetching linked promotions:', error);
+    console.error('Error fetching linked promotions:', error);
     return NextResponse.json(
       { message: 'Error fetching linked promotions' },
       { status: 500 }
@@ -54,7 +53,7 @@ export async function GET(req: Request, { params }: Params) {
     .in('id', promoIds);
 
   if (promotionsError) {
-    serverLogger.error('Error fetching linked promotions:', promotionsError);
+    console.error('Error fetching linked promotions:', promotionsError);
     return NextResponse.json(
       { message: 'Error fetching linked promotions' },
       { status: 500 }
@@ -130,7 +129,7 @@ export async function POST(req: Request, { params }: Params) {
   });
 
   if (error) {
-    serverLogger.error('Error linking promotion:', error);
+    console.error('Error linking promotion:', error);
     return NextResponse.json(
       { message: 'Error linking promotion' },
       { status: 500 }
@@ -176,7 +175,7 @@ export async function DELETE(req: Request, { params }: Params) {
     .eq('promo_id', promoId);
 
   if (error) {
-    serverLogger.error('Error unlinking promotion:', error);
+    console.error('Error unlinking promotion:', error);
     return NextResponse.json(
       { message: 'Error unlinking promotion' },
       { status: 500 }

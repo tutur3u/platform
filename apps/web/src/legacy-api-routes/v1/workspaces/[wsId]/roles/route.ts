@@ -2,7 +2,6 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { Database, TablesInsert, WorkspaceRole } from '@tuturuuu/types';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { normalizeRoleMembers } from '@/lib/workspace-role-members';
 
 interface Params {
@@ -64,7 +63,7 @@ export async function GET(req: Request, { params }: Params) {
   const { data, error, count } = await rolesQuery;
 
   if (error) {
-    serverLogger.error('Error fetching workspace roles', {
+    console.error('Error fetching workspace roles', {
       error,
       wsId: resolvedWsId,
     });
@@ -115,7 +114,7 @@ export async function POST(req: Request, { params }: Params) {
     .single();
 
   if (roleError) {
-    serverLogger.error('Error creating workspace role', {
+    console.error('Error creating workspace role', {
       error: roleError,
       wsId: resolvedWsId,
     });
@@ -145,7 +144,7 @@ export async function POST(req: Request, { params }: Params) {
       .eq('id', role.id);
 
     if (roleError) {
-      serverLogger.error('Error rolling back workspace role creation', {
+      console.error('Error rolling back workspace role creation', {
         error: roleError,
         roleId: role.id,
         wsId: resolvedWsId,
@@ -156,7 +155,7 @@ export async function POST(req: Request, { params }: Params) {
       );
     }
 
-    serverLogger.error('Error creating workspace role permissions', {
+    console.error('Error creating workspace role permissions', {
       error: permissionsError,
       roleId: role.id,
       wsId: resolvedWsId,

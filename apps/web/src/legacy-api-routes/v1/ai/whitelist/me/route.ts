@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { isAIWhitelistEmailEnabled } from '@/lib/ai-whitelist/email-repository';
 import { withSessionAuth } from '@/lib/api-auth';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 export const GET = withSessionAuth(
   async (_request, { user }) => {
@@ -17,7 +16,7 @@ export const GET = withSessionAuth(
         enabled,
       });
     } catch (error) {
-      serverLogger.error('Error checking current AI whitelist email:', error);
+      console.error('Error checking current AI whitelist email:', error);
       return NextResponse.json(
         { message: 'Internal server error' },
         { status: 500 }

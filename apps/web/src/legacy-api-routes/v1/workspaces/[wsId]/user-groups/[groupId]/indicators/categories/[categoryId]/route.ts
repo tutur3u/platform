@@ -1,7 +1,6 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { resolveUserGroupRouteWorkspaceId } from '@/lib/user-groups/route-helpers';
 
 interface Params {
@@ -51,7 +50,7 @@ export async function DELETE(req: Request, { params }: Params) {
   const { data: category, error: categoryError } = categoryResult;
 
   if (groupError) {
-    serverLogger.error('Failed to resolve user group for metric deletion', {
+    console.error('Failed to resolve user group for metric deletion', {
       error: groupError,
       groupId,
       wsId: normalizedWsId,
@@ -70,7 +69,7 @@ export async function DELETE(req: Request, { params }: Params) {
   }
 
   if (categoryError) {
-    serverLogger.error('Failed to resolve metric category for deletion', {
+    console.error('Failed to resolve metric category for deletion', {
       categoryId,
       error: categoryError,
       wsId: normalizedWsId,
@@ -94,7 +93,7 @@ export async function DELETE(req: Request, { params }: Params) {
     .eq('category_id', categoryId);
 
   if (linkDeleteError) {
-    serverLogger.error('Failed to unlink metric category before deletion', {
+    console.error('Failed to unlink metric category before deletion', {
       categoryId,
       error: linkDeleteError,
       wsId: normalizedWsId,
@@ -112,7 +111,7 @@ export async function DELETE(req: Request, { params }: Params) {
     .eq('ws_id', normalizedWsId);
 
   if (deleteError) {
-    serverLogger.error('Failed to delete metric category', {
+    console.error('Failed to delete metric category', {
       categoryId,
       error: deleteError,
       wsId: normalizedWsId,

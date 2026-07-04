@@ -20,7 +20,6 @@ import { isExactTuturuuuDotComEmail } from '@tuturuuu/utils/email/client';
 import { getUpstashRestRedisClient } from '@tuturuuu/utils/upstash-rest';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 const UnblockSchema = z.object({
   ip_address: z.string().max(MAX_IP_LENGTH).min(1),
@@ -130,7 +129,7 @@ export async function GET(req: Request) {
   const { data, count, error } = await query;
 
   if (error) {
-    serverLogger.error('Error fetching blocked IPs:', error);
+    console.error('Error fetching blocked IPs:', error);
     return NextResponse.json(
       { message: 'Error fetching blocked IPs' },
       { status: 500 }
@@ -184,7 +183,7 @@ export async function DELETE(req: Request) {
       );
     }
 
-    serverLogger.error('Unexpected error:', error);
+    console.error('Unexpected error:', error);
     return NextResponse.json(
       { message: 'Internal server error' },
       { status: 500 }
@@ -261,7 +260,7 @@ export async function POST(req: Request) {
       .single();
 
     if (error) {
-      serverLogger.error('Error blocking IP:', error);
+      console.error('Error blocking IP:', error);
       return NextResponse.json(
         { message: 'Failed to block IP' },
         { status: 500 }
@@ -290,7 +289,7 @@ export async function POST(req: Request) {
         ]);
       }
     } catch (redisError) {
-      serverLogger.warn('Redis cache update failed:', redisError);
+      console.warn('Redis cache update failed:', redisError);
       // Continue - DB is the source of truth
     }
 
@@ -306,7 +305,7 @@ export async function POST(req: Request) {
       );
     }
 
-    serverLogger.error('Unexpected error:', error);
+    console.error('Unexpected error:', error);
     return NextResponse.json(
       { message: 'Internal server error' },
       { status: 500 }

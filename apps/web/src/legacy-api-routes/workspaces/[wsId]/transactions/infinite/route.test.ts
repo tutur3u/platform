@@ -18,6 +18,9 @@ const mocks = vi.hoisted(() => {
   };
 });
 
+const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
 vi.mock('@tuturuuu/apis/finance/request-access', () => ({
   getFinanceRouteContext: (
     ...args: Parameters<typeof mocks.getFinanceRouteContext>
@@ -173,7 +176,7 @@ describe('workspace transactions infinite route', () => {
       nextCursor: null,
     });
     expect(response.status).toBe(200);
-    expect(mocks.serverLoggerWarn).not.toHaveBeenCalled();
+    expect(consoleWarnSpy).not.toHaveBeenCalled();
   });
 
   it('falls back to base transactions when enrichment is permission-denied during rollout', async () => {
@@ -219,7 +222,7 @@ describe('workspace transactions infinite route', () => {
       wallet: 'Main Wallet',
     });
     expect(body.data[0]).not.toHaveProperty('wallet_currency');
-    expect(mocks.serverLoggerWarn).toHaveBeenCalledWith(
+    expect(consoleWarnSpy).toHaveBeenCalledWith(
       'Transaction list enrichment unavailable; continuing without enrichment',
       expect.objectContaining({
         normalizedWsId: 'ws-1',
@@ -254,8 +257,8 @@ describe('workspace transactions infinite route', () => {
       message: 'main transaction list failed',
     });
     expect(response.status).toBe(500);
-    expect(mocks.serverLoggerWarn).not.toHaveBeenCalled();
-    expect(mocks.serverLoggerError).toHaveBeenCalledWith(
+    expect(consoleWarnSpy).not.toHaveBeenCalled();
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
       'Error fetching transactions',
       {
         error: expect.any(Error),

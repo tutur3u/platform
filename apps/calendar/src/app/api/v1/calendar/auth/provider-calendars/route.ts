@@ -9,7 +9,6 @@ import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper'
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { resolveSessionAuthContext } from '@/lib/api-auth';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { normalizeWorkspaceId } from '@/lib/workspace-helper';
 
 const querySchema = z.object({
@@ -147,7 +146,7 @@ export async function GET(request: Request) {
         calendars.push(...accountCalendars);
       }
     } catch (error) {
-      serverLogger.warn('Failed to fetch provider calendars', {
+      console.warn('Failed to fetch provider calendars', {
         provider: token.provider,
         tokenId: token.id,
         error,

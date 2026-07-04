@@ -1,7 +1,6 @@
 import { sendWorkspaceEmail } from '@tuturuuu/email-service';
 import type { SendMailMessagePayload } from '@tuturuuu/internal-api';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import type { MailRouteContext } from '../types';
 import { requireMailboxAccess } from './bootstrap';
 import { createMailDraft, updateMailDraft } from './drafts';
@@ -122,7 +121,7 @@ export async function sendMailMessage({
   ]);
 
   if (!result.success) {
-    serverLogger.warn('[mail] outbound send failed', {
+    console.warn('[mail] outbound send failed', {
       error: result.error,
       mailboxId,
       messageId: message.id,

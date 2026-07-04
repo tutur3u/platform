@@ -6,7 +6,6 @@ import {
 import { NextResponse } from 'next/server';
 import { CURRENT_USER_APP_SESSION_AUTH } from '@/legacy-api-routes/v1/users/me/session-auth';
 import { withSessionAuth } from '@/lib/api-auth';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 export const POST = withSessionAuth<{ wsId: string }>(
   async (_request, { supabase, user }, { wsId: rawWsId }) => {
@@ -46,7 +45,7 @@ export const POST = withSessionAuth<{ wsId: string }>(
       .maybeSingle();
 
     if (privateDetailsError) {
-      serverLogger.error('Failed to read invite recipient private email:', {
+      console.error('Failed to read invite recipient private email:', {
         error: privateDetailsError,
         userId: user.id,
         wsId,
@@ -76,7 +75,7 @@ export const POST = withSessionAuth<{ wsId: string }>(
     }
 
     if (workspaceInvitesError || workspaceEmailInvitesError) {
-      serverLogger.error('Error declining invite:', {
+      console.error('Error declining invite:', {
         workspaceInvitesError,
         workspaceEmailInvitesError,
       });

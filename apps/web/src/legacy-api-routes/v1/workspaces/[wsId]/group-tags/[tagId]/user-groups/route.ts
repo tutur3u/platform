@@ -2,7 +2,6 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 const DEFAULT_PAGE_SIZE = 10;
 const MAX_PAGE_SIZE = 100;
@@ -64,7 +63,7 @@ export async function GET(req: Request, { params }: Params) {
   try {
     tagExists = await ensureTagBelongsToWorkspace(wsId, tagId);
   } catch (error) {
-    serverLogger.error('Error checking workspace user group tag', error);
+    console.error('Error checking workspace user group tag', error);
     return NextResponse.json(
       { message: 'Error fetching user groups' },
       { status: 500 }
@@ -96,7 +95,7 @@ export async function GET(req: Request, { params }: Params) {
   const { data, error, count } = await queryBuilder;
 
   if (error) {
-    serverLogger.error('Error fetching user groups for tag', error);
+    console.error('Error fetching user groups for tag', error);
     return NextResponse.json(
       { message: 'Error fetching user groups' },
       { status: 500 }
@@ -125,7 +124,7 @@ export async function POST(req: Request, { params }: Params) {
   try {
     tagExists = await ensureTagBelongsToWorkspace(wsId, tagId);
   } catch (error) {
-    serverLogger.error('Error checking workspace user group tag', error);
+    console.error('Error checking workspace user group tag', error);
     return NextResponse.json(
       { message: 'Error adding new groups to tag' },
       { status: 500 }
@@ -170,7 +169,7 @@ export async function POST(req: Request, { params }: Params) {
     .in('id', groupIds);
 
   if (groupsError) {
-    serverLogger.error(
+    console.error(
       'Error validating workspace user groups for tag',
       groupsError
     );
@@ -197,7 +196,7 @@ export async function POST(req: Request, { params }: Params) {
     );
 
   if (tagError) {
-    serverLogger.error('Error adding new groups to tag', tagError);
+    console.error('Error adding new groups to tag', tagError);
     return NextResponse.json(
       { message: 'Error adding new groups to tag' },
       { status: 500 }

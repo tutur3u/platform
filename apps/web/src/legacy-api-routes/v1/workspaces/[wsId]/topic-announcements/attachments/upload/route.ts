@@ -2,7 +2,6 @@ import { posix } from 'node:path';
 import { sanitizeFilename } from '@tuturuuu/utils/storage-path';
 import { generateRandomUUID } from '@tuturuuu/utils/uuid-helper';
 import { NextResponse } from 'next/server';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
   resolveWorkspaceStorageProvider,
   uploadWorkspaceStorageFileDirect,
@@ -125,7 +124,7 @@ export async function POST(
       );
     }
 
-    await serverLogger.error('Topic announcement attachment upload failed', {
+    await console.error('Topic announcement attachment upload failed', {
       error,
     });
     return NextResponse.json(

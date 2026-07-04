@@ -15,7 +15,6 @@ import {
   verifyWorkspaceMembershipType,
 } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 interface Params {
   params: Promise<{
@@ -89,7 +88,7 @@ export async function GET(request: Request, { params }: Params) {
 
     return NextResponse.json({ data: products });
   } catch (error) {
-    serverLogger.error('Error fetching product options:', error);
+    console.error('Error fetching product options:', error);
     return NextResponse.json(
       { message: 'Internal server error' },
       { status: 500 }

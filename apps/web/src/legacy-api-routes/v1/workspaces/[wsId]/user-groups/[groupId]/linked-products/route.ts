@@ -1,7 +1,6 @@
 import { getFinanceRouteContext } from '@tuturuuu/apis/finance/request-access';
 import { NextResponse } from 'next/server';
 import { resolveFinanceRouteAuthContext } from '@/lib/finance-route-auth';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { revalidateUserGroupCache } from '@/lib/user-groups/revalidate';
 
 interface Params {
@@ -59,7 +58,7 @@ export async function GET(req: Request, { params }: Params) {
     .order('created_at', { ascending: false });
 
   if (error) {
-    serverLogger.error('Error fetching linked products:', error);
+    console.error('Error fetching linked products:', error);
     return NextResponse.json(
       { message: 'Error fetching linked products' },
       { status: 500 }
@@ -134,7 +133,7 @@ export async function POST(req: Request, { params }: Params) {
   });
 
   if (error) {
-    serverLogger.error('Error creating linked product:', error);
+    console.error('Error creating linked product:', error);
     return NextResponse.json(
       { message: 'Error creating linked product' },
       { status: 500 }

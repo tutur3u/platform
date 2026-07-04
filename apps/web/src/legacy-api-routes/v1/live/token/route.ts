@@ -7,7 +7,6 @@ import {
   verifyWorkspaceMembershipType,
 } from '@tuturuuu/utils/workspace-helper';
 import { isFeatureAvailable } from '@/lib/feature-tiers';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
   ASSISTANT_LIVE_MODEL,
   ASSISTANT_LIVE_TOOL_CONFIG,
@@ -86,7 +85,7 @@ export async function POST(request: Request) {
       model: ASSISTANT_LIVE_MODEL,
     });
   } catch (error) {
-    serverLogger.error('Error generating ephemeral token', error);
+    console.error('Error generating ephemeral token', error);
     return Response.json(
       { error: 'Failed to generate token' },
       { status: 500 }

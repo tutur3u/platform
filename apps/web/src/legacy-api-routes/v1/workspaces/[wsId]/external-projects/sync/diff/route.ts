@@ -5,10 +5,7 @@ import {
   buildExternalProjectSyncDiff,
   getWorkspaceExternalProjectSyncSnapshot,
 } from '@/lib/external-projects/sync';
-import {
-  serverLogger,
-  withRequestLogDrain,
-} from '@/lib/infrastructure/log-drain';
+import { withRequestLogDrain } from '@/lib/infrastructure/log-drain';
 import { parseSyncManifestRequest } from '../shared';
 
 interface Params {
@@ -48,7 +45,7 @@ async function diffManifest(request: NextRequest, { params }: Params) {
       );
     }
 
-    serverLogger.error('Failed to diff external project sync manifest', {
+    console.error('Failed to diff external project sync manifest', {
       error: error instanceof Error ? error.message : String(error),
       wsId: access.normalizedWorkspaceId,
     });

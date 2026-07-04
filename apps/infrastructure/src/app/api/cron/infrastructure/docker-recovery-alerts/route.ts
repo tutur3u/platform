@@ -10,7 +10,7 @@ import {
   readBlueGreenDockerRecoveryAlertState,
   writeBlueGreenDockerRecoveryAlertState,
 } from '@/lib/infrastructure/blue-green-monitoring-controls';
-import { serverLogger, withCronLogDrain } from '@/lib/infrastructure/log-drain';
+import { withCronLogDrain } from '@/lib/infrastructure/log-drain';
 
 const JOB_ID = 'infrastructure-docker-recovery-alerts';
 const PATH = '/api/cron/infrastructure/docker-recovery-alerts';
@@ -278,7 +278,7 @@ async function handleGET(request: NextRequest) {
     });
 
     if (!result.success) {
-      serverLogger.error('Failed to send Docker recovery alert email', {
+      console.error('Failed to send Docker recovery alert email', {
         error: result.error,
         incidentIds: incidents.map((incident) => incident.id),
         recipients,
@@ -299,7 +299,7 @@ async function handleGET(request: NextRequest) {
       ],
     });
 
-    serverLogger.warn('Sent Docker recovery alert email', {
+    console.warn('Sent Docker recovery alert email', {
       incidentIds: incidents.map((incident) => incident.id),
       recipients,
     });
@@ -310,7 +310,7 @@ async function handleGET(request: NextRequest) {
       sent: incidents.length,
     });
   } catch (error) {
-    serverLogger.error('Failed to process Docker recovery alerts', error);
+    console.error('Failed to process Docker recovery alerts', error);
     return NextResponse.json(
       {
         ok: false,

@@ -1,7 +1,6 @@
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { revalidatePath } from 'next/cache';
 import { defaultLocale, supportedLocales } from '@/i18n/routing';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 type ModuleCourseRow = {
   group_id: string | null;
@@ -61,7 +60,7 @@ export async function revalidateCourseModuleQuizPaths({
     .in('id', [...new Set(moduleIds)]);
 
   if (error) {
-    serverLogger.warn('Failed to revalidate quiz module paths', {
+    console.warn('Failed to revalidate quiz module paths', {
       error,
       moduleIds,
       wsId,
@@ -71,7 +70,7 @@ export async function revalidateCourseModuleQuizPaths({
 
   for (const row of (data ?? []) as ModuleCourseRow[]) {
     if (!row.group_id) {
-      serverLogger.warn('Skipping quiz path revalidation for orphaned module', {
+      console.warn('Skipping quiz path revalidation for orphaned module', {
         moduleId: row.id,
         wsId,
       });
@@ -100,7 +99,7 @@ export async function revalidateQuizLinkedModulePaths({
     .eq('quiz_id', quizId);
 
   if (error) {
-    serverLogger.warn('Failed to look up quiz module paths for revalidation', {
+    console.warn('Failed to look up quiz module paths for revalidation', {
       error,
       quizId,
       wsId,

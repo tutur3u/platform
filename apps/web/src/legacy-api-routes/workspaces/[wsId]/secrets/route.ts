@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
   canMutateManagedCronEnableSecret,
   isManagedCronEnableSecretName,
@@ -30,7 +29,7 @@ export async function GET(request: Request, { params }: Params) {
     .order('name', { ascending: true });
 
   if (error) {
-    serverLogger.error('Error fetching workspace secrets', error);
+    console.error('Error fetching workspace secrets', error);
     return NextResponse.json(
       { message: 'Error fetching workspace API configs' },
       { status: 500 }
@@ -78,7 +77,7 @@ export async function POST(req: Request, { params }: Params) {
   });
 
   if (error) {
-    serverLogger.error('Error creating workspace secret', error);
+    console.error('Error creating workspace secret', error);
     return NextResponse.json(
       { message: 'Error creating workspace API config' },
       { status: 500 }

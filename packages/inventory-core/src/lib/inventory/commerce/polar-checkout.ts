@@ -6,7 +6,6 @@ import {
   toPolarCurrency,
 } from '@tuturuuu/internal-api/inventory';
 import { createPolarClient } from '@tuturuuu/payment/polar/server';
-import { serverLogger } from '../../infrastructure/log-drain';
 import {
   decryptIntegrationToken,
   ensureInventoryPolarCheckoutProduct,
@@ -74,7 +73,7 @@ async function resolveSingleListingPolarProduct({
       return data.polar_product_id;
     }
   } catch (error) {
-    serverLogger.warn('Single-listing Polar product check failed', {
+    console.warn('Single-listing Polar product check failed', {
       error: extractErrorMessage(error),
       listingId: line.listingId,
     });

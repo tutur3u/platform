@@ -1,7 +1,7 @@
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { type NextRequest, NextResponse } from 'next/server';
 import { backfillHiveProductData } from '@/lib/hive/backfill';
-import { requireHiveAdmin, serverLogger, withHiveRoute } from '../_shared';
+import { requireHiveAdmin, withHiveRoute } from '../_shared';
 
 const ROUTE = '/api/v1/hive/backfill';
 
@@ -52,7 +52,7 @@ async function backfill(request: NextRequest) {
 
     return NextResponse.json({ counts });
   } catch (error) {
-    serverLogger.error('Hive backfill failed', error);
+    console.error('Hive backfill failed', error);
     return NextResponse.json(
       { error: 'Failed to backfill Hive product data' },
       { status: 500 }

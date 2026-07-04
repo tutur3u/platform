@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import { readCronExecutionArchive } from '@/lib/infrastructure/cron-monitoring';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { authorizeInfrastructureViewer } from '../../blue-green/authorization';
 
 function parseOptionalPositiveInt(value: string | null, fallback: number) {
@@ -28,7 +27,7 @@ export async function GET(request: Request) {
       })
     );
   } catch (error) {
-    serverLogger.error('Failed to load cron execution archive:', error);
+    console.error('Failed to load cron execution archive:', error);
     return NextResponse.json(
       { message: 'Failed to load cron execution archive' },
       { status: 500 }

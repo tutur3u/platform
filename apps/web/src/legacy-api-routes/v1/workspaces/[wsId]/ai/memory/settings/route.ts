@@ -10,7 +10,6 @@ import {
 } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 const UpdateSettingsSchema = z.object({
   enabled: z.boolean(),
@@ -51,7 +50,7 @@ async function resolveMemoryRequestContext(
   try {
     wsId = await normalizeWorkspaceId(rawWsId, supabase, request);
   } catch (error) {
-    serverLogger.warn('Failed to normalize AI memory workspace id', error);
+    console.warn('Failed to normalize AI memory workspace id', error);
     return {
       ok: false as const,
       response: NextResponse.json(
@@ -69,7 +68,7 @@ async function resolveMemoryRequestContext(
   });
 
   if (membership.error === 'membership_lookup_failed') {
-    serverLogger.error('Failed to verify AI memory workspace membership', {
+    console.error('Failed to verify AI memory workspace membership', {
       userId: user.id,
       wsId,
     });
@@ -111,7 +110,7 @@ export async function GET(
   );
 
   if (error) {
-    serverLogger.error('Failed to load AI memory settings', {
+    console.error('Failed to load AI memory settings', {
       error,
       product,
       userId: context.user.id,
@@ -167,7 +166,7 @@ export async function PATCH(
   );
 
   if (error) {
-    serverLogger.error('Failed to update AI memory settings', {
+    console.error('Failed to update AI memory settings', {
       error,
       userId: context.user.id,
       wsId: context.wsId,

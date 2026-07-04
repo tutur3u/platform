@@ -3,7 +3,6 @@ import { getInventorySalesByProduct } from '@tuturuuu/inventory-core/commerce/pn
 import { canViewInventorySales } from '@tuturuuu/inventory-core/permissions';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 interface Params {
   params: Promise<{
@@ -26,7 +25,7 @@ export async function GET(req: Request, { params }: Params) {
     const data = await getInventorySalesByProduct({ sbAdmin, wsId });
     return NextResponse.json({ data });
   } catch (error) {
-    serverLogger.error('Error fetching inventory sales by product', error);
+    console.error('Error fetching inventory sales by product', error);
     return NextResponse.json(
       { message: 'Failed to fetch inventory sales by product' },
       { status: 500 }

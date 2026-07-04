@@ -1,7 +1,6 @@
 import { MAX_SEARCH_LENGTH } from '@tuturuuu/utils/constants';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { searchRateLimitSubjectCandidates } from '@/lib/rate-limits/subject-resolution';
 import { authorizeAbuseIntelligenceRequest } from '../abuse-intelligence/_shared';
 
@@ -41,7 +40,7 @@ export async function GET(request: Request) {
 
     return NextResponse.json({ results });
   } catch (error) {
-    serverLogger.error('Failed to search rate-limit subjects', error);
+    console.error('Failed to search rate-limit subjects', error);
     return NextResponse.json(
       { message: 'Failed to search rate-limit subjects' },
       { status: 500 }

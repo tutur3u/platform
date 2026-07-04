@@ -11,7 +11,6 @@ import {
   normalizeWorkspaceId,
   verifyWorkspaceMembershipType,
 } from '@tuturuuu/utils/workspace-helper';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { MIRA_LIVE_SCOPE_KEY } from '@/lib/live/session-scope';
 import { createConstrainedLiveToken } from '@/lib/live/token-builder';
 
@@ -212,7 +211,7 @@ export async function POST(request: Request) {
       model: MIRA_LIVE_MODEL,
     });
   } catch (error) {
-    serverLogger.error('Error generating Mira token', error);
+    console.error('Error generating Mira token', error);
     return Response.json(
       { error: 'Failed to generate token' },
       { status: 500 }

@@ -3,7 +3,6 @@ import {
   readCronMonitoringSnapshot,
   withManagedExternalCronDiagnostics,
 } from '@/lib/infrastructure/cron-monitoring';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
   readManagedExternalCronMonitoring,
   unavailableManagedExternalCronMonitoring,
@@ -26,7 +25,7 @@ export async function GET(request: Request) {
         managedExternalCron,
       });
     } catch (error) {
-      serverLogger.error(
+      console.error(
         'Failed to load managed external cron monitoring snapshot:',
         error
       );
@@ -37,7 +36,7 @@ export async function GET(request: Request) {
       });
     }
   } catch (error) {
-    serverLogger.error('Failed to load cron monitoring snapshot:', error);
+    console.error('Failed to load cron monitoring snapshot:', error);
     return NextResponse.json(
       { message: 'Failed to load cron monitoring snapshot' },
       { status: 500 }

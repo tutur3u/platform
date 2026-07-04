@@ -6,7 +6,6 @@ import {
 } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { resolveSessionAuthContext } from '@/lib/api-auth';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 type StoragePermissions = Awaited<ReturnType<typeof getPermissions>>;
 
@@ -83,5 +82,5 @@ export async function resolveWorkspaceStorageRouteAuth(
 }
 
 export function logWorkspaceStorageRouteError(message: string, error: unknown) {
-  serverLogger.error(message, error);
+  console.error(message, error);
 }

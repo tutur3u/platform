@@ -7,7 +7,6 @@ import { requireMindAccess } from '@tuturuuu/mind-core/access';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 type Params = {
   boardId: string;
@@ -33,7 +32,7 @@ export const GET = withSessionAuth<Params>(
 
       return NextResponse.json(snapshot);
     } catch (error) {
-      serverLogger.error('Error loading Mind graph snapshot:', error);
+      console.error('Error loading Mind graph snapshot:', error);
       return NextResponse.json(
         { error: 'Failed to load Mind graph snapshot' },
         { status: 500 }
@@ -78,7 +77,7 @@ export const PUT = withSessionAuth<Params>(
         );
       }
 
-      serverLogger.error('Error saving Mind graph:', error);
+      console.error('Error saving Mind graph:', error);
       return NextResponse.json(
         { error: 'Failed to save Mind graph' },
         { status: 500 }

@@ -10,7 +10,6 @@ import {
 } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { revalidateUserGroupCache } from '@/lib/user-groups/revalidate';
 import { hasUserGroupPostInWorkspace } from '@/lib/user-groups/route-helpers';
 
@@ -75,7 +74,7 @@ export async function PUT(req: Request, { params }: Params) {
       postId,
     });
   } catch (error) {
-    serverLogger.error('Error resolving user group post workspace', {
+    console.error('Error resolving user group post workspace', {
       error,
       groupId,
       postId,
@@ -101,7 +100,7 @@ export async function PUT(req: Request, { params }: Params) {
     .maybeSingle();
 
   if (error) {
-    serverLogger.error('Error updating workspace user group post', {
+    console.error('Error updating workspace user group post', {
       error,
       groupId,
       postId,
@@ -148,7 +147,7 @@ export async function DELETE(req: Request, { params }: Params) {
       postId,
     });
   } catch (error) {
-    serverLogger.error('Error resolving user group post workspace', {
+    console.error('Error resolving user group post workspace', {
       error,
       groupId,
       postId,
@@ -174,7 +173,7 @@ export async function DELETE(req: Request, { params }: Params) {
     .maybeSingle();
 
   if (error) {
-    serverLogger.error('Error deleting workspace user group post', {
+    console.error('Error deleting workspace user group post', {
       error,
       groupId,
       postId,

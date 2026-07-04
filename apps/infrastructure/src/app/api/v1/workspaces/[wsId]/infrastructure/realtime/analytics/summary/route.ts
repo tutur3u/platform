@@ -2,7 +2,6 @@ import { createClient } from '@tuturuuu/supabase/next/server';
 import { MAX_NAME_LENGTH } from '@tuturuuu/utils/constants';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 const QueryParamsSchema = z.object({
   workspaceId: z.guid().optional(),
@@ -82,7 +81,7 @@ export async function GET(req: NextRequest) {
     const { data: rawData, error } = await query;
 
     if (error) {
-      serverLogger.error('[RealtimeAnalytics] Failed to fetch summary', {
+      console.error('[RealtimeAnalytics] Failed to fetch summary', {
         message: error.message,
       });
       return NextResponse.json(
@@ -305,7 +304,7 @@ export async function GET(req: NextRequest) {
       errorBreakdown,
     });
   } catch (error) {
-    serverLogger.error('[RealtimeAnalytics] Unexpected summary API error', {
+    console.error('[RealtimeAnalytics] Unexpected summary API error', {
       errorName: error instanceof Error ? error.name : typeof error,
       message: error instanceof Error ? error.message : 'Unknown error',
     });

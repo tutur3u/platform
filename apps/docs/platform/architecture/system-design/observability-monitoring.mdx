@@ -49,21 +49,12 @@ fans out across dozens of services.
 
 Tuturuuu does **not** run OpenTelemetry or `@vercel/otel`, and there is no
 `instrumentation.ts` that registers an OTel exporter. The real
-`apps/web/src/instrumentation.ts` only installs the console log drain on the
-Node runtime:
+`apps/web/src/instrumentation.ts` does not install a console drain:
 
 ```typescript
 // apps/web/src/instrumentation.ts (real)
 export async function register() {
-  if (process.env.NEXT_RUNTIME === 'edge') {
-    return;
-  }
-
-  const { installConsoleLogDrain } = await import(
-    './lib/infrastructure/log-drain'
-  );
-
-  installConsoleLogDrain();
+  return;
 }
 ```
 
@@ -81,8 +72,7 @@ export async function withRequestLogDrain<T extends Response>(
   handler: () => Promise<T>
 ) {
   // Runs handler inside an AsyncLocalStorage context.
-  // All console/serverLogger calls during the request are
-  // captured and persisted with a shared requestId.
+  // Retained request/cron events are persisted with a shared requestId.
 }
 ```
 
@@ -109,14 +99,12 @@ searched, filtered, and correlated across boundaries.
 
 ### What Tuturuuu actually does
 
-This pattern **is implemented**. `apps/web/src/lib/infrastructure/log-drain.ts`
-is a self-hosted log drain backed by Postgres. Per the platform operating
-mandate, server-side `apps/web` API, cron, and infrastructure runtime code must
-not emit raw `console.*` calls directly—they go through the log-drain path.
-
-The drain wraps the console (via `installConsoleLogDrain`) and also exposes a
-`serverLogger` with `debug` / `info` / `warn` / `error` methods. Captured events
-are persisted to dedicated tables:
+This pattern **is partially implemented**. `apps/web/src/lib/infrastructure/log-drain.ts`
+is a self-hosted Postgres store for retained request, cron, deployment, and
+usage events. Server runtime logs use the native console method that matches
+severity; do not add `serverLogger` runtime imports or automatic console
+log-drain installation.
+Captured retained events are persisted to dedicated tables:
 
 | Table          | Holds                                                          |
 | -------------- | ------------------------------------------------------------- |
@@ -133,11 +121,8 @@ persisting, and is designed to **never throw into the caller**—logging failure
 are swallowed.
 
 ```typescript
-// Using the server logger (real)
-import { serverLogger } from '@/lib/infrastructure/log-drain';
-
-serverLogger.info('Payment processing started', /* ...args */);
-serverLogger.error('Payment failed', error); // Error stack captured + redacted
+console.info('Payment processing started', { workspaceId });
+console.error('Payment failed', error);
 ```
 
 Configuration is environment-driven (referenced by name, not value):
@@ -304,7 +289,7 @@ history, **not** a replayable domain-event log.
 | ----------------------------- | ------------------ | ------- |
 | Request-scoped correlation    | Implemented        | `AsyncLocalStorage` `requestId` in the log drain |
 | Distributed tracing (OTel)    | Aspirational       | No OTel / `@vercel/otel`; no cross-service spans |
-| Centralized logging           | Implemented        | Postgres log drain + `serverLogger` |
+| Centralized logging           | Partial            | Native `console.*` plus retained Postgres request/cron/deployment data |
 | Per-service metrics           | Partial            | SQL aggregation over `requests`/`usage_events`; no Prometheus |
 | Health checks                 | Implemented        | Web `/api/health`; backend `/healthz` + `/readyz` |
 | Self-healing orchestration    | Partial            | Blue/green watcher, not Kubernetes pods |
@@ -312,10 +297,10 @@ history, **not** a replayable domain-event log.
 
 ## Observability Best Practices Here
 
-1. **Route server logs through the drain.** In `apps/web` API, cron, and
-   infrastructure runtime code, use `serverLogger` (or rely on the installed
-   console drain) rather than raw `console.*`. Include structured metadata so it
-   lands in the `metadata` JSON column.
+1. **Use native server logs.** In API, cron, and infrastructure runtime code,
+   log diagnostics with the native console method that matches severity. Include
+   structured metadata in the same call so retained platform views and deployment
+   logs stay readable.
 2. **Correlate by `requestId`.** When debugging, find the request row, then pull
    its `log_events`—that is the unit of correlation, not a trace ID.
 3. **Record metrics as `usage_events`.** New product/business metrics belong in

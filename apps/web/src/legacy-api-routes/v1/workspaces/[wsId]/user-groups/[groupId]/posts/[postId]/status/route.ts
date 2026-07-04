@@ -5,7 +5,6 @@ import {
 } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import type { GroupPostStatusSummaryRow } from '@/app/[locale]/(dashboard)/[wsId]/users/groups/[groupId]/posts/[postId]/types';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 interface Params {
   params: Promise<{
@@ -59,7 +58,7 @@ export async function GET(req: Request, { params }: Params) {
   );
 
   if (error) {
-    serverLogger.error('Error fetching group post status summary', {
+    console.error('Error fetching group post status summary', {
       error,
       groupId,
       postId,

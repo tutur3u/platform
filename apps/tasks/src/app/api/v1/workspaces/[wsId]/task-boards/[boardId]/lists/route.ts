@@ -3,7 +3,6 @@ import { CLI_APP_TARGET_APP } from '@tuturuuu/auth/cli-session';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { requireBoardAccess } from './access';
 import { supportedColorSchema } from './schema';
 
@@ -138,7 +137,7 @@ export const GET = withSessionAuth<Params>(
         );
       }
 
-      serverLogger.error('Error fetching task lists:', error);
+      console.error('Error fetching task lists:', error);
       return NextResponse.json(
         { error: 'Internal server error' },
         { status: 500 }
@@ -175,7 +174,7 @@ export const POST = withSessionAuth<Params>(
           return taskListNameExistsResponse();
         }
 
-        serverLogger.error('Error creating task list via RPC:', error);
+        console.error('Error creating task list via RPC:', error);
 
         const publicError = getPublicTaskListCreateRpcError(error);
         return NextResponse.json(
@@ -199,7 +198,7 @@ export const POST = withSessionAuth<Params>(
         boardId,
         event: 'list:upsert',
         list: createdList,
-        logWarning: serverLogger.warn.bind(serverLogger),
+        logWarning: console.warn,
         sbAdmin,
       });
 
@@ -212,7 +211,7 @@ export const POST = withSessionAuth<Params>(
         );
       }
 
-      serverLogger.error('Error creating task list:', error);
+      console.error('Error creating task list:', error);
       return NextResponse.json(
         { error: 'Internal server error' },
         { status: 500 }

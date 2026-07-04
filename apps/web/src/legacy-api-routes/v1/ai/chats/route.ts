@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import { withSessionAuth } from '@/lib/api-auth';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 export const GET = withSessionAuth(
   async (_request, { supabase, user }) => {
@@ -20,7 +19,7 @@ export const GET = withSessionAuth(
 
       return NextResponse.json(data ?? []);
     } catch (error) {
-      serverLogger.error('Unexpected AI chats list error:', error);
+      console.error('Unexpected AI chats list error:', error);
       return NextResponse.json(
         { message: 'Internal server error' },
         { status: 500 }

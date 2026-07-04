@@ -8,6 +8,8 @@ const mocks = vi.hoisted(() => ({
   serverLoggerError: vi.fn(),
 }));
 
+const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
 vi.mock('@/lib/external-projects/access', () => ({
   requireWorkspaceExternalProjectAccess: (
     ...args: Parameters<typeof mocks.requireWorkspaceExternalProjectAccess>
@@ -64,7 +66,7 @@ describe('external project storage analytics route', () => {
     mocks.checkRateLimit.mockReset();
     mocks.getWorkspaceStorageOverview.mockReset();
     mocks.listWorkspaceStorageRawObjectsForProvider.mockReset();
-    mocks.serverLoggerError.mockReset();
+    consoleErrorSpy.mockReset();
     mocks.requireWorkspaceExternalProjectAccess.mockResolvedValue({
       binding: {
         adapter: 'kendra',

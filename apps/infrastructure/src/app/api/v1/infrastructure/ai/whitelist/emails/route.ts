@@ -5,7 +5,6 @@ import {
   addAIWhitelistEmail,
   listAIWhitelistEmails,
 } from '@/lib/ai-whitelist/email-repository';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 const createEmailSchema = z.object({
   email: z.email(),
@@ -34,7 +33,7 @@ export async function GET(request: Request) {
 
     return NextResponse.json(emails);
   } catch (error) {
-    serverLogger.error('Error listing AI whitelist emails:', error);
+    console.error('Error listing AI whitelist emails:', error);
     return new NextResponse('Internal Server Error', { status: 500 });
   }
 }
@@ -60,7 +59,7 @@ export async function POST(request: Request) {
       );
     }
 
-    serverLogger.error('Error creating AI whitelist email:', error);
+    console.error('Error creating AI whitelist email:', error);
     return new NextResponse('Internal Server Error', { status: 500 });
   }
 }

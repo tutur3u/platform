@@ -3,7 +3,6 @@ import { canViewInventoryAuditLogs } from '@tuturuuu/inventory-core/permissions'
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 const SearchParamsSchema = z.object({
   dateFrom: z.string().optional(),
@@ -134,7 +133,7 @@ export async function GET(req: Request, { params }: Params) {
   const { data, error, count } = await query;
 
   if (error) {
-    serverLogger.error('Error fetching inventory audit logs', error);
+    console.error('Error fetching inventory audit logs', error);
     return NextResponse.json(
       { message: 'Failed to fetch inventory audit logs' },
       { status: 500 }
@@ -155,7 +154,7 @@ export async function GET(req: Request, { params }: Params) {
       .in('id', actorIds);
 
     if (actorError) {
-      serverLogger.error('Error fetching inventory audit actors', actorError);
+      console.error('Error fetching inventory audit actors', actorError);
     } else {
       for (const actor of actorRows ?? []) {
         actorNameById.set(

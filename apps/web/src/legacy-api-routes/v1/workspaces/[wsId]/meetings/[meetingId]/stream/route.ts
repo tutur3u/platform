@@ -5,7 +5,6 @@ import {
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { resolveSessionAuthContext } from '@/lib/api-auth';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
   createMeetStreamAdminClient,
   ensureMeetStreamLiveInput,
@@ -99,7 +98,7 @@ async function resolveMeetRouteContext(
     .maybeSingle();
 
   if (error) {
-    serverLogger.error('Failed to load Meet meeting for stream route', {
+    console.error('Failed to load Meet meeting for stream route', {
       error: error.message,
       meetingId,
       wsId,
@@ -163,7 +162,7 @@ export async function GET(request: Request, { params }: Params) {
       stream: stream ? serializeMeetStreamLiveInput(stream) : null,
     });
   } catch (error) {
-    serverLogger.error('Failed to load Meet stream state', {
+    console.error('Failed to load Meet stream state', {
       error: error instanceof Error ? error.message : String(error),
       meetingId,
       rawWsId,
@@ -211,7 +210,7 @@ export async function POST(request: Request, { params }: Params) {
       { status: created ? 201 : 200 }
     );
   } catch (error) {
-    serverLogger.error('Failed to create Meet stream live input', {
+    console.error('Failed to create Meet stream live input', {
       error: error instanceof Error ? error.message : String(error),
       meetingId,
       rawWsId,
@@ -275,7 +274,7 @@ export async function PATCH(request: Request, { params }: Params) {
       stream: serializeMeetStreamLiveInput(stream),
     });
   } catch (error) {
-    serverLogger.error('Failed to update Meet stream live input', {
+    console.error('Failed to update Meet stream live input', {
       error: error instanceof Error ? error.message : String(error),
       meetingId,
       rawWsId,

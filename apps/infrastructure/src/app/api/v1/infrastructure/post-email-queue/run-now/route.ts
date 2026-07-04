@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
   POST_EMAIL_QUEUE_DEFAULT_DRAIN_LIMIT,
   POST_EMAIL_QUEUE_DEFAULT_SEND_LIMIT,
@@ -59,7 +58,7 @@ export async function POST(request: NextRequest) {
       })
     );
   } catch (error) {
-    serverLogger.error('[PostEmailQueueInfra] Error running queue manually', {
+    console.error('[PostEmailQueueInfra] Error running queue manually', {
       errorName: error instanceof Error ? error.name : typeof error,
       message: error instanceof Error ? error.message : 'Unknown error',
     });

@@ -3,7 +3,6 @@ import { canViewInventoryDashboard } from '@tuturuuu/inventory-core/permissions'
 import { getInventoryBatches } from '@tuturuuu/inventory-core/product-rpc';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 interface Params {
   params: Promise<{
@@ -15,7 +14,7 @@ async function countOrZero(label: string, loader: () => Promise<number>) {
   try {
     return await loader();
   } catch (error) {
-    serverLogger.error(`Error fetching inventory statistic: ${label}`, error);
+    console.error(`Error fetching inventory statistic: ${label}`, error);
     return 0;
   }
 }

@@ -2,7 +2,6 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { headers } from 'next/headers';
 import { NextResponse } from 'next/server';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { validateWorkspaceApiKey } from '@/lib/workspace-api-key';
 
 interface Params {
@@ -47,7 +46,7 @@ async function getDataWithApiKey({
   const { data, error } = response;
 
   if (error) {
-    serverLogger.error('Error fetching promotions count:', error);
+    console.error('Error fetching promotions count:', error);
     return NextResponse.json(
       { message: 'Error fetching workspace users' },
       { status: 500 }
@@ -73,7 +72,7 @@ async function getDataFromSession({ wsId }: { wsId: string }) {
     .single();
 
   if (error) {
-    serverLogger.error('Error fetching promotions count:', error);
+    console.error('Error fetching promotions count:', error);
     return NextResponse.json(
       { message: 'Error fetching workspace users' },
       { status: 500 }

@@ -1,5 +1,4 @@
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { fetchAllPaginatedRows } from './queue-core';
 
 const FALLBACK_MAX_ROWS = 25_000;
@@ -172,7 +171,7 @@ async function callPrivateRpc<T>(
 
   const { data, error } = await client.rpc(fn, args);
   if (error) {
-    serverLogger.warn('[PostEmailQueueObservability] RPC unavailable', {
+    console.warn('[PostEmailQueueObservability] RPC unavailable', {
       functionName: fn,
       message:
         error instanceof Error

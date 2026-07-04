@@ -9,7 +9,6 @@ import {
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { resolveSessionAuthContext } from '@/lib/api-auth';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
   getMeetRealtimeUrl,
   signMeetJoinToken,
@@ -108,7 +107,7 @@ export async function POST(request: Request, { params }: Params) {
       .maybeSingle();
 
     if (error) {
-      serverLogger.error('Failed to load Meet meeting for realtime token', {
+      console.error('Failed to load Meet meeting for realtime token', {
         error: error.message,
         meetingId,
         wsId,
@@ -152,7 +151,7 @@ export async function POST(request: Request, { params }: Params) {
       token: signed.token,
     });
   } catch (error) {
-    serverLogger.error('Failed to create Meet realtime token', {
+    console.error('Failed to create Meet realtime token', {
       error: error instanceof Error ? error.message : String(error),
       meetingId,
       rawWsId,

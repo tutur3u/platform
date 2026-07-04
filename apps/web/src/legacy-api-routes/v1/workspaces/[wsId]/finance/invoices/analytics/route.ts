@@ -1,7 +1,6 @@
 import { getFinanceRouteContext } from '@tuturuuu/apis/finance/request-access';
 import { NextResponse } from 'next/server';
 import { resolveFinanceRouteAuthContext } from '@/lib/finance-route-auth';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 import { parseAnalyticsQuery } from './analytics-query';
 import {
@@ -154,7 +153,7 @@ export async function GET(req: Request, { params }: Params) {
       hasDateRange: false,
     });
   } catch (error) {
-    serverLogger.error('Error fetching invoice analytics:', error);
+    console.error('Error fetching invoice analytics:', error);
     return NextResponse.json(
       { message: 'Error fetching invoice analytics' },
       { status: 500 }

@@ -7,7 +7,6 @@ import {
 import { MAX_SEARCH_LENGTH } from '@tuturuuu/utils/constants';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { authorizeAbuseIntelligenceRequest } from '../../../abuse-intelligence/_shared';
 
 const WindowLimitsSchema = z.object({
@@ -157,7 +156,7 @@ export async function PATCH(request: Request, context: RouteContext) {
     .single();
 
   if (error) {
-    serverLogger.error('Failed to update rate-limit rule', error);
+    console.error('Failed to update rate-limit rule', error);
     return NextResponse.json(
       { message: 'Failed to update rate-limit rule' },
       { status: 500 }
@@ -198,7 +197,7 @@ export async function DELETE(request: Request, context: RouteContext) {
     .single();
 
   if (error) {
-    serverLogger.error('Failed to revoke rate-limit rule', error);
+    console.error('Failed to revoke rate-limit rule', error);
     return NextResponse.json(
       { message: 'Failed to revoke rate-limit rule' },
       { status: 500 }

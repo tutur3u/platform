@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { createTimezone, listTimezones } from '@/lib/infrastructure/timezones';
 import { authorizeInfrastructureOperator } from '../monitoring/blue-green/authorization';
 
@@ -11,7 +10,7 @@ export async function GET(request: Request) {
     const data = await listTimezones();
     return NextResponse.json(data);
   } catch (error) {
-    serverLogger.info(error);
+    console.info(error);
     return NextResponse.json(
       { message: 'Error fetching timezones' },
       { status: 500 }
@@ -28,7 +27,7 @@ export async function POST(request: Request) {
     await createTimezone(data);
     return NextResponse.json({ message: 'success' });
   } catch (error) {
-    serverLogger.info(error);
+    console.info(error);
     return NextResponse.json(
       { message: 'Error creating timezone' },
       { status: 500 }

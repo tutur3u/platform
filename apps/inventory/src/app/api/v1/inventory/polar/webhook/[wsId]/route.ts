@@ -13,7 +13,6 @@ import {
   WebhookVerificationError,
 } from '@tuturuuu/payment/polar';
 import { NextResponse } from 'next/server';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 interface Params {
   params: Promise<{ wsId: string }>;
@@ -60,7 +59,7 @@ export async function POST(request: Request, { params }: Params) {
     } catch (error) {
       // Wrong-environment secret: try the next one. Any other error is fatal.
       if (error instanceof WebhookVerificationError) continue;
-      serverLogger.error('Inventory Polar webhook verification error', error);
+      console.error('Inventory Polar webhook verification error', error);
       return NextResponse.json({ message: 'Webhook error' }, { status: 400 });
     }
 
@@ -68,25 +67,19 @@ export async function POST(request: Request, { params }: Params) {
       await handleInventoryPolarEvent(event, wsId);
     } catch (error) {
       if (error instanceof InventoryPolarWorkspaceMismatchError) {
-        serverLogger.warn(
-          'Rejected inventory Polar webhook workspace mismatch',
-          {
-            actualWsId: error.actualWsId,
-            eventType: event.type,
-            expectedWsId: error.expectedWsId,
-            verifiedWsId: wsId,
-          }
-        );
+        console.warn('Rejected inventory Polar webhook workspace mismatch', {
+          actualWsId: error.actualWsId,
+          eventType: event.type,
+          expectedWsId: error.expectedWsId,
+          verifiedWsId: wsId,
+        });
         return NextResponse.json(
           { message: 'Webhook workspace mismatch' },
           { status: 403 }
         );
       }
 
-      serverLogger.error(
-        'Failed to handle inventory Polar webhook event',
-        error
-      );
+      console.error('Failed to handle inventory Polar webhook event', error);
       return NextResponse.json(
         { message: 'Event handling failed' },
         { status: 500 }

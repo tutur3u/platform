@@ -6,7 +6,6 @@ import {
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { saveNotificationPreferences } from '../notification-preferences-write';
 
 const querySchema = z.object({
@@ -93,7 +92,7 @@ export async function GET(request: NextRequest) {
     });
 
     if (membership.error === 'membership_lookup_failed') {
-      serverLogger.error('Membership check error:', membership.error);
+      console.error('Membership check error:', membership.error);
       return NextResponse.json(
         { error: 'Failed to verify workspace access' },
         { status: 500 }
@@ -115,7 +114,7 @@ export async function GET(request: NextRequest) {
       .eq('user_id', user.id);
 
     if (error) {
-      serverLogger.error('Error fetching preferences:', error);
+      console.error('Error fetching preferences:', error);
       return NextResponse.json(
         { error: 'Failed to fetch preferences' },
         { status: 500 }
@@ -124,7 +123,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ preferences: preferences || [] });
   } catch (error) {
-    serverLogger.error('Error in preferences API:', error);
+    console.error('Error in preferences API:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -169,7 +168,7 @@ export async function PUT(request: Request) {
     });
 
     if (membership.error === 'membership_lookup_failed') {
-      serverLogger.error('Membership check error:', membership.error);
+      console.error('Membership check error:', membership.error);
       return NextResponse.json(
         { error: 'Failed to verify workspace access' },
         { status: 500 }
@@ -193,7 +192,7 @@ export async function PUT(request: Request) {
       });
 
       if (saveError) {
-        serverLogger.error('Error saving notification preferences:', saveError);
+        console.error('Error saving notification preferences:', saveError);
         return NextResponse.json(
           { error: 'Failed to update preferences' },
           { status: 500 }
@@ -203,7 +202,7 @@ export async function PUT(request: Request) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    serverLogger.error('Error in preferences update:', error);
+    console.error('Error in preferences update:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

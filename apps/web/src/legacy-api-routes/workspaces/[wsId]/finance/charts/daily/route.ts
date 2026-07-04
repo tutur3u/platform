@@ -1,7 +1,6 @@
 import { MAX_COLOR_LENGTH } from '@tuturuuu/utils/constants';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { validateFinanceDateRange } from '../../date-range';
 import { requireFinanceStatsAccess } from '../access';
 
@@ -77,7 +76,7 @@ export async function GET(
       data: data || [],
     });
   } catch (error) {
-    serverLogger.error('Error fetching daily chart data', { error });
+    console.error('Error fetching daily chart data', { error });
     return NextResponse.json(
       { message: 'Internal server error while fetching daily chart data' },
       { status: 500 }

@@ -5,7 +5,6 @@ import { PERSONAL_WORKSPACE_SLUG } from '@tuturuuu/utils/constants';
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { withSessionAuth } from '@/lib/api-auth';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { normalizeWorkspaceId } from '@/lib/workspace-helper';
 
 type ProductTier = 'FREE' | 'PLUS' | 'PRO' | 'ENTERPRISE';
@@ -111,7 +110,7 @@ export const GET = withSessionAuth<{ wsId: string }>(
       );
 
       if (balanceError) {
-        serverLogger.error('Error getting credit balance:', balanceError);
+        console.error('Error getting credit balance:', balanceError);
         return NextResponse.json(
           { error: 'Failed to get credit balance' },
           { status: 500 }
@@ -139,7 +138,7 @@ export const GET = withSessionAuth<{ wsId: string }>(
         .gt('expires_at', new Date().toISOString());
 
       if (paygError) {
-        serverLogger.error('Error fetching payg credit packs:', paygError);
+        console.error('Error fetching payg credit packs:', paygError);
         return NextResponse.json(
           { error: 'Failed to get pay-as-you-go balances' },
           { status: 500 }
@@ -266,7 +265,7 @@ export const GET = withSessionAuth<{ wsId: string }>(
         seatCount,
       });
     } catch (error) {
-      serverLogger.error('Error in AI credits route:', error);
+      console.error('Error in AI credits route:', error);
       return NextResponse.json(
         { error: 'Failed to get AI credit status' },
         { status: 500 }

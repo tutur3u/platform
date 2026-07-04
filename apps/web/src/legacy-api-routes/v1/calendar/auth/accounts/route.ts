@@ -14,7 +14,6 @@ import {
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { resolveSessionAuthContext } from '@/lib/api-auth';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { normalizeWorkspaceId } from '@/lib/workspace-helper';
 
 const accountsQuerySchema = z.object({
@@ -60,7 +59,7 @@ export async function GET(request: Request): Promise<NextResponse> {
       .order('created_at', { ascending: true });
 
     if (error) {
-      serverLogger.error('Error fetching accounts:', error);
+      console.error('Error fetching accounts:', error);
       return NextResponse.json(
         { error: 'Failed to fetch accounts' },
         { status: 500 }
@@ -82,7 +81,7 @@ export async function GET(request: Request): Promise<NextResponse> {
       { status: 200 }
     );
   } catch (error) {
-    serverLogger.error('Error in GET /api/v1/calendar/auth/accounts:', error);
+    console.error('Error in GET /api/v1/calendar/auth/accounts:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -143,7 +142,7 @@ export async function DELETE(request: Request): Promise<NextResponse> {
       .eq('ws_id', normalizedWsId);
 
     if (updateError) {
-      serverLogger.error('Error disconnecting account:', updateError);
+      console.error('Error disconnecting account:', updateError);
       return NextResponse.json(
         { error: 'Failed to disconnect account' },
         { status: 500 }
@@ -158,10 +157,7 @@ export async function DELETE(request: Request): Promise<NextResponse> {
       .eq('ws_id', normalizedWsId);
 
     if (connectionsError) {
-      serverLogger.error(
-        'Error disabling calendar connections:',
-        connectionsError
-      );
+      console.error('Error disabling calendar connections:', connectionsError);
       // We don't return error here because the main account is already disconnected
     }
 
@@ -173,10 +169,7 @@ export async function DELETE(request: Request): Promise<NextResponse> {
       { status: 200 }
     );
   } catch (error) {
-    serverLogger.error(
-      'Error in DELETE /api/v1/calendar/auth/accounts:',
-      error
-    );
+    console.error('Error in DELETE /api/v1/calendar/auth/accounts:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

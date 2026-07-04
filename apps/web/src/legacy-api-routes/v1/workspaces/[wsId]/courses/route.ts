@@ -8,7 +8,6 @@ import {
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 const DEFAULT_PAGE_SIZE = 20;
 const MAX_PAGE_SIZE = 100;
@@ -146,7 +145,7 @@ export const GET = withSessionAuth(
 
     const { data, error, count } = await queryBuilder;
     if (error) {
-      serverLogger.error('Failed to fetch workspace courses', { error });
+      console.error('Failed to fetch workspace courses', { error });
       return NextResponse.json(
         { message: 'Error fetching workspace courses' },
         { status: 500 }
@@ -244,7 +243,7 @@ export const POST = withSessionAuth(
       .single();
 
     if (error) {
-      serverLogger.error('Failed to create workspace course', { error });
+      console.error('Failed to create workspace course', { error });
       return NextResponse.json(
         { message: 'Error creating workspace course' },
         { status: 500 }

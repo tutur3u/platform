@@ -1,5 +1,4 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { asHiveJson, getHiveSql } from './hive-db';
 import { runHiveNpcInteraction } from './npc-interactions';
 import { getLatestHiveNpcAutonomousRun } from './npcs';
@@ -168,7 +167,7 @@ async function runAutonomousNpcInteractions(input: {
         );
       }
     } catch (error) {
-      serverLogger.warn('Hive autonomous NPC interaction skipped', {
+      console.warn('Hive autonomous NPC interaction skipped', {
         error: error instanceof Error ? error.message : String(error),
         serverId: input.serverId,
         sourceNpcId: sourceNpc.id,

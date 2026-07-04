@@ -4,7 +4,6 @@ import { isExactTuturuuuDotComEmail } from '@tuturuuu/utils/email/client';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { buildPostgrestRateLimitResponse } from '@/lib/postgrest-rate-limit';
 import { safeParseBody } from '@/lib/safe-parse-body';
 
@@ -25,7 +24,7 @@ export const GET = withSessionAuth<{ configId: string }>(
       .maybeSingle();
 
     if (error) {
-      serverLogger.error('Error fetching user config:', error);
+      console.error('Error fetching user config:', error);
       return NextResponse.json(
         { message: 'Error fetching user config' },
         { status: 500 }
@@ -91,7 +90,7 @@ export const PUT = withSessionAuth<{ configId: string }>(
         .eq('id', id);
 
       if (error) {
-        serverLogger.error('Error deleting user config:', error);
+        console.error('Error deleting user config:', error);
         return NextResponse.json(
           { message: 'Error deleting user config' },
           { status: 500 }
@@ -121,7 +120,7 @@ export const PUT = withSessionAuth<{ configId: string }>(
         return rateLimitResponse;
       }
 
-      serverLogger.error('Error upserting user config:', error);
+      console.error('Error upserting user config:', error);
       return NextResponse.json(
         { message: 'Error upserting user config' },
         { status: 500 }
@@ -142,7 +141,7 @@ export const DELETE = withSessionAuth<{ configId: string }>(
       .eq('id', id);
 
     if (error) {
-      serverLogger.error('Error deleting user config:', error);
+      console.error('Error deleting user config:', error);
       return NextResponse.json(
         { message: 'Error deleting user config' },
         { status: 500 }

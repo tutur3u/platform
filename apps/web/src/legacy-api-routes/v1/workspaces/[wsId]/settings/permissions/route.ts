@@ -5,7 +5,6 @@ import { isValidTuturuuuEmail } from '@tuturuuu/utils/email/client';
 import { getPermissions, verifySecret } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { withSessionAuth } from '@/lib/api-auth';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 async function resolveDiscordIntegrationAccess({
   supabase,
@@ -21,7 +20,7 @@ async function resolveDiscordIntegrationAccess({
     .maybeSingle();
 
   if (error) {
-    serverLogger.warn('Failed to load Discord integration availability', error);
+    console.warn('Failed to load Discord integration availability', error);
     return false;
   }
 
@@ -127,7 +126,7 @@ export const GET = withSessionAuth<{ wsId: string }>(
         },
       });
     } catch (error) {
-      serverLogger.error('Error loading workspace permissions:', error);
+      console.error('Error loading workspace permissions:', error);
       return NextResponse.json(
         { message: 'Internal server error' },
         { status: 500 }

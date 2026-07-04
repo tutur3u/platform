@@ -1,5 +1,4 @@
 import { type NextRequest, NextResponse } from 'next/server';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
   isTaskPlanSchemaUnavailableError,
   normalizeTaskPlanShareEmail,
@@ -48,7 +47,7 @@ export async function GET(request: NextRequest, context: Context) {
   } catch (error) {
     if (isTaskPlanSchemaUnavailableError(error))
       return taskPlanSchemaUnavailableResponse({ shares: [] });
-    serverLogger.error('Failed to list task plan shares', { error, planId });
+    console.error('Failed to list task plan shares', { error, planId });
     return taskPlanErrorResponse('Failed to list task plan shares', 500);
   }
 }
@@ -96,7 +95,7 @@ export async function POST(request: NextRequest, context: Context) {
   } catch (error) {
     if (isTaskPlanSchemaUnavailableError(error))
       return taskPlanSchemaUnavailableResponse();
-    serverLogger.error('Failed to create task plan share', { error, planId });
+    console.error('Failed to create task plan share', { error, planId });
     return taskPlanRouteErrorResponse(
       error,
       'Failed to create task plan share'
@@ -130,7 +129,7 @@ export async function PATCH(request: NextRequest, context: Context) {
   } catch (error) {
     if (isTaskPlanSchemaUnavailableError(error))
       return taskPlanSchemaUnavailableResponse();
-    serverLogger.error('Failed to update task plan share', { error, planId });
+    console.error('Failed to update task plan share', { error, planId });
     return taskPlanRouteErrorResponse(
       error,
       'Failed to update task plan share'
@@ -162,7 +161,7 @@ export async function DELETE(request: NextRequest, context: Context) {
   } catch (error) {
     if (isTaskPlanSchemaUnavailableError(error))
       return taskPlanSchemaUnavailableResponse();
-    serverLogger.error('Failed to delete task plan share', { error, planId });
+    console.error('Failed to delete task plan share', { error, planId });
     return taskPlanRouteErrorResponse(
       error,
       'Failed to delete task plan share'

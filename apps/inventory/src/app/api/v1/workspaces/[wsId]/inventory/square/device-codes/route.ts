@@ -4,7 +4,6 @@ import { createInventorySquareDeviceCode } from '@tuturuuu/inventory-core/commer
 import { canManageInventorySetup } from '@tuturuuu/inventory-core/permissions';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 interface Params {
   params: Promise<{ wsId: string }>;
@@ -35,7 +34,7 @@ export async function POST(request: Request, { params }: Params) {
       );
     }
 
-    serverLogger.error('Failed to create Square device code', error);
+    console.error('Failed to create Square device code', error);
     return NextResponse.json(
       {
         message:

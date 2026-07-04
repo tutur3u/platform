@@ -2,7 +2,6 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { getFirebaseMessagingConfigurationStatus } from '@/lib/notifications/firebase-admin';
 
 type PushDeviceCoverage = Record<
@@ -68,7 +67,7 @@ async function countRows(
 
   const { count, error } = await query;
   if (error) {
-    serverLogger.error(
+    console.error(
       '[SettingsDialogPushNotifications] Count query failed',
       table,
       error
@@ -195,14 +194,14 @@ export async function GET(request: Request) {
   ]);
 
   if (recentDevicesResult.error) {
-    serverLogger.error(
+    console.error(
       '[SettingsDialogPushNotifications] Failed to load recent devices',
       recentDevicesResult.error
     );
   }
 
   if (recentBatchesResult.error) {
-    serverLogger.error(
+    console.error(
       '[SettingsDialogPushNotifications] Failed to load recent batches',
       recentBatchesResult.error
     );

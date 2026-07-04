@@ -5,7 +5,6 @@ import {
 } from '@tuturuuu/supabase/next/server';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { buildPostgrestRateLimitResponse } from '@/lib/postgrest-rate-limit';
 import {
   buildWorkspaceFeedbacksQuery,
@@ -39,7 +38,7 @@ function buildFeedbackDbErrorResponse({
     return rateLimitResponse;
   }
 
-  serverLogger.error(logMessage, metadata, error);
+  console.error(logMessage, metadata, error);
   return NextResponse.json({ message: publicMessage }, { status: 500 });
 }
 

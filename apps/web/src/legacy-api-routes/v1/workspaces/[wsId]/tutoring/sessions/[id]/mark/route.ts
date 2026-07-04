@@ -7,7 +7,6 @@ import {
   normalizeWorkspaceId,
 } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { TutoringMarkSchema } from '../../../shared';
 
 interface Params {
@@ -65,7 +64,7 @@ export async function POST(request: Request, { params }: Params) {
     .maybeSingle();
 
   if (error) {
-    serverLogger.error('Failed to mark tutoring session', error);
+    console.error('Failed to mark tutoring session', error);
     return NextResponse.json(
       { message: 'Failed to mark session' },
       { status: 500 }

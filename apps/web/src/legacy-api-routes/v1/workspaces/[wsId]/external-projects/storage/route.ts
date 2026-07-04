@@ -8,7 +8,6 @@ import {
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { requireWorkspaceExternalProjectAccess } from '@/lib/external-projects/access';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
   createWorkspaceStorageFolderObject,
   createWorkspaceStorageSignedReadUrl,
@@ -472,7 +471,7 @@ export async function GET(
       return errorJson(error.message, error.status);
     }
 
-    serverLogger.error('Failed to read external project storage', { error });
+    console.error('Failed to read external project storage', { error });
     return errorJson('Failed to read external project storage', 500);
   }
 }
@@ -533,7 +532,7 @@ export async function POST(
       return errorJson(error.message, error.status);
     }
 
-    serverLogger.error('Failed to change external project storage', { error });
+    console.error('Failed to change external project storage', { error });
     return errorJson('Failed to change external project storage', 500);
   }
 }
@@ -611,7 +610,7 @@ export async function PATCH(
       return errorJson(error.message, error.status);
     }
 
-    serverLogger.error('Failed to rename external project storage entry', {
+    console.error('Failed to rename external project storage entry', {
       error,
     });
     return errorJson('Failed to rename external project storage entry', 500);
@@ -679,7 +678,7 @@ export async function DELETE(
       return errorJson(error.message, error.status);
     }
 
-    serverLogger.error('Failed to delete external project storage entry', {
+    console.error('Failed to delete external project storage entry', {
       error,
     });
     return errorJson('Failed to delete external project storage entry', 500);

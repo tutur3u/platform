@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { updateManagedExternalCronJob } from '@/lib/infrastructure/managed-external-cron-monitoring';
 import { authorizeInfrastructureOperator } from '../../../blue-green/authorization';
 
@@ -40,7 +39,7 @@ export async function PATCH(request: Request) {
       status,
     });
   } catch (error) {
-    serverLogger.error('Failed to update managed external cron job:', error);
+    console.error('Failed to update managed external cron job:', error);
     return NextResponse.json(
       {
         message:

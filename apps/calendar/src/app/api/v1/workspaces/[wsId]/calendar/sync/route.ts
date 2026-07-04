@@ -15,7 +15,6 @@ import {
   getCalendarSyncPreferences,
   resolveOutboundSyncSource,
 } from '@/lib/calendar/sync-preferences';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { decryptEventsFromStorage } from '@/lib/workspace-encryption';
 
 interface RouteParams {
@@ -150,7 +149,7 @@ async function clearStaleRunningSyncRuns(sbAdmin: any, wsId: string) {
     .lt('start_time', staleThresholdIso);
 
   if (error) {
-    serverLogger.error('Failed to clear stale calendar sync runs', {
+    console.error('Failed to clear stale calendar sync runs', {
       wsId,
       error,
     });
@@ -529,7 +528,7 @@ async function syncTuturuuuOutbound(args: {
         .eq('id', event.id)
         .eq('ws_id', args.wsId);
 
-      serverLogger.warn('Failed to outbound-sync Tuturuuu calendar event', {
+      console.warn('Failed to outbound-sync Tuturuuu calendar event', {
         wsId: args.wsId,
         eventId: event.id,
         provider: source.provider,
@@ -617,7 +616,7 @@ export async function POST(
       .single();
 
     if (dashboardInsertError || !dashboardRow) {
-      serverLogger.error('Failed to insert calendar sync dashboard row', {
+      console.error('Failed to insert calendar sync dashboard row', {
         wsId,
         direction,
         source,
@@ -720,7 +719,7 @@ export async function POST(
       },
     });
   } catch (error) {
-    serverLogger.error('Error in workspace calendar sync route', { error });
+    console.error('Error in workspace calendar sync route', { error });
     if (sbAdmin && dashboardRunId) {
       await sbAdmin
         .from('calendar_sync_dashboard')

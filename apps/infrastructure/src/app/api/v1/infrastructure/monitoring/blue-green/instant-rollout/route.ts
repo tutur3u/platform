@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import { queueBlueGreenInstantRolloutRequest } from '@/lib/infrastructure/blue-green-monitoring-controls';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { authorizeInfrastructureOperator } from '../authorization';
 
 export async function POST(request: Request) {
@@ -20,7 +19,7 @@ export async function POST(request: Request) {
       request: queuedRequest,
     });
   } catch (error) {
-    serverLogger.error('Failed to queue instant standby sync request:', error);
+    console.error('Failed to queue instant standby sync request:', error);
     return NextResponse.json(
       { message: 'Failed to queue instant standby sync request' },
       { status: 500 }

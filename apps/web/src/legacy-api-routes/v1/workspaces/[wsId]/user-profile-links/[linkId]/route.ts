@@ -3,7 +3,6 @@ import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { PROFILE_LINK_FIELDS } from '@/features/user-profile-links/server';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 interface Params {
   params: Promise<{ wsId: string; linkId: string }>;
@@ -90,7 +89,7 @@ export async function PATCH(req: Request, { params }: Params) {
     .eq('id', linkId);
 
   if (error) {
-    serverLogger.error('Error updating profile link:', error);
+    console.error('Error updating profile link:', error);
     return NextResponse.json(
       { message: 'Error updating profile link' },
       { status: 500 }
@@ -114,7 +113,7 @@ export async function DELETE(req: Request, { params }: Params) {
     .eq('id', linkId);
 
   if (error) {
-    serverLogger.error('Error deleting profile link:', error);
+    console.error('Error deleting profile link:', error);
     return NextResponse.json(
       { message: 'Error deleting profile link' },
       { status: 500 }

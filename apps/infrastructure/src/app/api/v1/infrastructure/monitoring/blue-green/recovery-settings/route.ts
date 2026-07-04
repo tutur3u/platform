@@ -3,7 +3,6 @@ import {
   normalizeBlueGreenDockerRecoverySettings,
   writeBlueGreenDockerRecoverySettings,
 } from '@/lib/infrastructure/blue-green-monitoring-controls';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { authorizeInfrastructureOperator } from '../authorization';
 
 export async function PATCH(request: Request) {
@@ -42,7 +41,7 @@ export async function PATCH(request: Request) {
       settings,
     });
   } catch (error) {
-    serverLogger.error('Failed to update Docker recovery settings:', error);
+    console.error('Failed to update Docker recovery settings:', error);
     return NextResponse.json(
       { message: 'Failed to update Docker recovery settings' },
       { status: 500 }

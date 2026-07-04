@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
   requireTeachWorkspaceAccess,
   validateTeachCourse,
@@ -89,7 +88,7 @@ export const GET = withSessionAuth(
       .order('submitted_at', { ascending: false, nullsFirst: false });
 
     if (attemptsErr) {
-      serverLogger.error('Failed to fetch test submissions', {
+      console.error('Failed to fetch test submissions', {
         error: attemptsErr,
         testId,
         wsId: access.normalizedWsId,
@@ -120,7 +119,7 @@ export const GET = withSessionAuth(
       .select('quiz_id')
       .eq('test_id', testId);
     if (testQuizzesErr) {
-      serverLogger.error('Failed to fetch test quizzes for submissions', {
+      console.error('Failed to fetch test quizzes for submissions', {
         error: testQuizzesErr,
         testId,
         wsId: access.normalizedWsId,
@@ -140,7 +139,7 @@ export const GET = withSessionAuth(
         .select('id, score')
         .in('id', quizIds);
       if (quizScoresErr) {
-        serverLogger.error('Failed to fetch test quiz scores', {
+        console.error('Failed to fetch test quiz scores', {
           error: quizScoresErr,
           testId,
           wsId: access.normalizedWsId,
@@ -174,7 +173,7 @@ export const GET = withSessionAuth(
         .eq('is_correct', true),
     ]);
     if (answeredCountsErr || correctCountsErr) {
-      serverLogger.error('Failed to fetch test submission answer counts', {
+      console.error('Failed to fetch test submission answer counts', {
         answeredCountsError: answeredCountsErr,
         attemptIds,
         correctCountsError: correctCountsErr,

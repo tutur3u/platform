@@ -2,7 +2,6 @@ import { authorizeInventoryWorkspace } from '@tuturuuu/inventory-core/commerce/a
 import { releaseCheckout } from '@tuturuuu/inventory-core/commerce/checkouts';
 import { canUpdateInventorySales } from '@tuturuuu/inventory-core/permissions';
 import { NextResponse } from 'next/server';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 interface Params {
   params: Promise<{ checkoutId: string; wsId: string }>;
@@ -26,7 +25,7 @@ export async function POST(request: Request, { params }: Params) {
 
     return NextResponse.json({ data });
   } catch (error) {
-    serverLogger.error('Failed to release inventory checkout', error);
+    console.error('Failed to release inventory checkout', error);
     return NextResponse.json(
       { message: 'Failed to release inventory checkout' },
       { status: 500 }

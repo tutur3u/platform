@@ -9,7 +9,6 @@ import { isValidTuturuuuEmail } from '@tuturuuu/utils/email/client';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { DEV_MODE } from '@/constants/common';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 type ServerDOMPurify = {
   sanitize(dirty: string, config?: unknown): string;
@@ -112,7 +111,7 @@ export async function POST(
     .single();
 
   if (apiKeyError) {
-    serverLogger.warn('Error fetching internal email API key', {
+    console.warn('Error fetching internal email API key', {
       error: apiKeyError,
       wsId,
     });
@@ -130,7 +129,7 @@ export async function POST(
     .single();
 
   if (apiKeyUserError || !apiKeyUser) {
-    serverLogger.warn('Error fetching internal email API key user', {
+    console.warn('Error fetching internal email API key user', {
       error: apiKeyUserError,
       wsId,
     });
@@ -155,7 +154,7 @@ export async function POST(
     : [];
 
   if (apiKey.allowed_emails && disallowedRecipients.length > 0) {
-    serverLogger.warn('Internal email recipient not allowed', {
+    console.warn('Internal email recipient not allowed', {
       allowedEmails: apiKey.allowed_emails,
       requestedEmails: {
         bcc: data.mail.bcc,
@@ -206,13 +205,13 @@ export async function POST(
 
       // Check if all recipients were blocked
       if (result.blockedRecipients && result.blockedRecipients.length > 0) {
-        serverLogger.warn('Some internal email recipients were blocked', {
+        console.warn('Some internal email recipients were blocked', {
           blockedRecipients: result.blockedRecipients,
           wsId,
         });
       }
 
-      serverLogger.error('Internal email sending failed', {
+      console.error('Internal email sending failed', {
         error: result.error,
         wsId,
       });
@@ -244,7 +243,7 @@ export async function POST(
       .single();
 
     if (error) {
-      serverLogger.warn('Error logging sent internal email', {
+      console.warn('Error logging sent internal email', {
         error,
         wsId,
       });
@@ -265,7 +264,7 @@ export async function POST(
       { status: 200 }
     );
   } catch (error) {
-    serverLogger.error('Error sending internal email', { error, wsId });
+    console.error('Error sending internal email', { error, wsId });
     return NextResponse.json(
       { message: 'Internal server error' },
       { status: 500 }

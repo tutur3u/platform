@@ -2,7 +2,6 @@ import { createHash } from 'node:crypto';
 import { GetObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { isExactTuturuuuDotComEmail } from '@tuturuuu/utils/email/client';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { createSnippet, sanitizeMailHtml, stripHtml } from '../html';
 import { normalizeAddress, parseRawEmail } from './parser';
 import type { AnyRecord, ParsedEmail, SesNotification } from './types';
@@ -379,7 +378,7 @@ export async function ingestSesNotification(notification: SesNotification) {
 }
 
 export function logSesInboundError(error: unknown, messageId?: string) {
-  serverLogger.error('[mail] SES inbound ingestion failed', {
+  console.error('[mail] SES inbound ingestion failed', {
     error,
     messageId,
   });

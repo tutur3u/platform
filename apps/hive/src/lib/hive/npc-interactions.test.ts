@@ -34,6 +34,8 @@ const mocks = vi.hoisted(() => {
   };
 });
 
+const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
 vi.mock('@ai-sdk/google', () => ({
   google: (...args: unknown[]) => mocks.google(...args),
 }));
@@ -168,7 +170,7 @@ describe('runHiveNpcInteraction AI credit handling', () => {
     mocks.resolveHiveAllowedModel.mockReset();
     mocks.resolveHiveCreditContext.mockReset();
     mocks.resolveHiveResearchSessionId.mockReset();
-    mocks.serverLogger.warn.mockReset();
+    consoleWarnSpy.mockReset();
     mocks.toBareModelName.mockReset();
 
     mocks.ensureHiveResearchSchema.mockResolvedValue(undefined);
@@ -234,7 +236,7 @@ describe('runHiveNpcInteraction AI credit handling', () => {
     expect(mocks.persistHiveNpcRun).not.toHaveBeenCalled();
     expect(mocks.createHiveWorldEvent).not.toHaveBeenCalled();
     expect(mocks.appendHiveNpcMemories).not.toHaveBeenCalled();
-    expect(mocks.serverLogger.warn).toHaveBeenCalledWith(
+    expect(consoleWarnSpy).toHaveBeenCalledWith(
       'Hive AI credit deduction failed',
       expect.objectContaining({
         errorCode: 'INSUFFICIENT_CREDITS',
@@ -276,7 +278,7 @@ describe('runHiveNpcInteraction AI credit handling', () => {
       })
     );
     expect(mocks.createHiveWorldEvent).toHaveBeenCalledTimes(1);
-    expect(mocks.serverLogger.warn).not.toHaveBeenCalledWith(
+    expect(consoleWarnSpy).not.toHaveBeenCalledWith(
       'Hive AI credit deduction failed',
       expect.anything()
     );

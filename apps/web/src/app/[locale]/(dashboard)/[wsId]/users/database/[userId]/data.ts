@@ -2,7 +2,6 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { normalizeAvatarImageSrc } from '@tuturuuu/utils/avatar-url';
 import { notFound } from 'next/navigation';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { fetchRequireAttentionUserIds } from '@/lib/require-attention-users';
 import { listUserGroupSessionDatesByGroupIds } from '@/lib/user-groups/session-schedule';
 import { listAvailableReferralUsers } from '@/lib/user-referrals';
@@ -27,7 +26,7 @@ async function fetchRequireAttentionUserIdsOrEmpty(
   try {
     return await fetchRequireAttentionUserIds(sbAdmin, options);
   } catch (error) {
-    serverLogger.error(
+    console.error(
       'Failed to load user detail require-attention flags',
       metadata,
       error
@@ -52,7 +51,7 @@ export async function loadOptionalUserDetailResource<T>({
   try {
     return await loader();
   } catch (error) {
-    serverLogger.error(
+    console.error(
       'Failed to load user detail resource',
       { resource: name, userId, wsId },
       error
@@ -334,7 +333,7 @@ export async function getCouponData({
     .eq('user_id', userId);
 
   if (linksError) {
-    serverLogger.error(
+    console.error(
       'Error fetching user detail coupon links',
       { userId, wsId },
       linksError
@@ -355,7 +354,7 @@ export async function getCouponData({
     .in('id', promoIds);
 
   if (error) {
-    serverLogger.error(
+    console.error(
       'Error fetching user detail coupon data',
       { promoCount: promoIds.length, userId, wsId },
       error

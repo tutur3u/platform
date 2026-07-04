@@ -20,7 +20,6 @@ import {
 } from '@tuturuuu/utils/constants';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 const SearchParamsSchema = z.object({
   categoryId: z.guid().optional(),
@@ -84,7 +83,7 @@ export async function GET(request: Request, { params }: Params) {
 
     const parsed = SearchParamsSchema.safeParse(params_obj);
     if (!parsed.success) {
-      serverLogger.error('Invalid query parameters:', parsed.error);
+      console.error('Invalid query parameters:', parsed.error);
       return NextResponse.json(
         { message: 'Invalid query parameters' },
         { status: 400 }
@@ -222,7 +221,7 @@ export async function GET(request: Request, { params }: Params) {
       count: count ?? 0,
     });
   } catch (error) {
-    serverLogger.error('Error in workspace products API:', error);
+    console.error('Error in workspace products API:', error);
     return NextResponse.json(
       { message: 'Internal server error' },
       { status: 500 }
@@ -255,7 +254,7 @@ export async function POST(request: Request, { params }: Params) {
       wsId: authorization.value.wsId,
     });
   } catch (error) {
-    serverLogger.error('Error creating inventory product:', error);
+    console.error('Error creating inventory product:', error);
     return NextResponse.json(
       { message: 'Internal server error' },
       { status: 500 }

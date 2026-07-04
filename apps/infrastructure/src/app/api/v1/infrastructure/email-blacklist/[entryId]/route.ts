@@ -3,7 +3,6 @@ import { createClient } from '@tuturuuu/supabase/next/server';
 import { MAX_SEARCH_LENGTH } from '@tuturuuu/utils/constants';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 const UpdateEmailBlacklistSchema = z.object({
   reason: z.string().max(MAX_SEARCH_LENGTH).optional(),
@@ -56,7 +55,7 @@ export async function GET(_: Request, { params }: Params) {
     .single();
 
   if (error) {
-    serverLogger.error('Error fetching email blacklist entry:', error);
+    console.error('Error fetching email blacklist entry:', error);
     return NextResponse.json(
       { message: 'Error fetching email blacklist entry' },
       { status: error.code === 'PGRST116' ? 404 : 500 }
@@ -104,7 +103,7 @@ export async function PUT(req: Request, { params }: Params) {
       .single();
 
     if (error) {
-      serverLogger.error('Error updating email blacklist entry:', error);
+      console.error('Error updating email blacklist entry:', error);
       return NextResponse.json(
         { message: 'Error updating email blacklist entry' },
         { status: 500 }
@@ -120,7 +119,7 @@ export async function PUT(req: Request, { params }: Params) {
       );
     }
 
-    serverLogger.error('Unexpected error:', error);
+    console.error('Unexpected error:', error);
     return NextResponse.json(
       { message: 'Internal server error' },
       { status: 500 }
@@ -160,7 +159,7 @@ export async function DELETE(_: Request, { params }: Params) {
     .eq('id', entryId);
 
   if (error) {
-    serverLogger.error('Error deleting email blacklist entry:', error);
+    console.error('Error deleting email blacklist entry:', error);
     return NextResponse.json(
       { message: 'Error deleting email blacklist entry' },
       { status: 500 }

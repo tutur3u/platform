@@ -7,7 +7,7 @@ import {
   getPrivateSchemaClient,
   type TopicAnnouncementsSupabaseClient,
 } from '@/legacy-api-routes/v1/workspaces/[wsId]/topic-announcements/shared';
-import { serverLogger, withCronLogDrain } from '@/lib/infrastructure/log-drain';
+import { withCronLogDrain } from '@/lib/infrastructure/log-drain';
 
 const LOG_PREFIX = '[TopicAnnouncementQueueCron]';
 const BATCH_LIMIT = 25;
@@ -122,7 +122,7 @@ async function handler(request: NextRequest) {
   } catch (cause) {
     const message =
       cause instanceof Error ? cause.message : 'Unknown processing reset error';
-    serverLogger.error(
+    console.error(
       `${LOG_PREFIX} Failed to reset stale processing announcements`,
       { error: message }
     );
@@ -142,7 +142,7 @@ async function handler(request: NextRequest) {
     .limit(BATCH_LIMIT);
 
   if (error) {
-    serverLogger.error(`${LOG_PREFIX} Failed to load queued announcements`, {
+    console.error(`${LOG_PREFIX} Failed to load queued announcements`, {
       error: error.message,
     });
     return NextResponse.json(
@@ -204,7 +204,7 @@ async function handler(request: NextRequest) {
           success: false,
           wsId: row.ws_id,
         });
-        serverLogger.warn(`${LOG_PREFIX} Send failed`, {
+        console.warn(`${LOG_PREFIX} Send failed`, {
           announcementId: row.id,
           error: result.error,
           wsId: row.ws_id,
@@ -225,7 +225,7 @@ async function handler(request: NextRequest) {
         success: false,
         wsId: row.ws_id,
       });
-      serverLogger.error(`${LOG_PREFIX} Unexpected send failure`, {
+      console.error(`${LOG_PREFIX} Unexpected send failure`, {
         announcementId: row.id,
         error: message,
         wsId: row.ws_id,

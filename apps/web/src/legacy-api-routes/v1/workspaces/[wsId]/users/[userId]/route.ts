@@ -18,7 +18,6 @@ import { headers } from 'next/headers';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { resolveFinanceRouteAuthContext } from '@/lib/finance-route-auth';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
   cancelPendingPostEmailsForWorkspaceUser,
   isWorkspaceUserInactiveForPostEmail,
@@ -135,7 +134,7 @@ export async function PUT(req: Request, { params }: Params) {
     .single();
 
   if (fetchError || !currentUser) {
-    serverLogger.error('Error fetching workspace user:', fetchError);
+    console.error('Error fetching workspace user:', fetchError);
     return NextResponse.json(
       { message: 'Error fetching workspace user' },
       { status: 500 }
@@ -154,7 +153,7 @@ export async function PUT(req: Request, { params }: Params) {
   );
 
   if (error || !updatedUser) {
-    serverLogger.error('Error updating workspace user:', error);
+    console.error('Error updating workspace user:', error);
     return NextResponse.json(
       { message: 'Error updating workspace user' },
       { status: 500 }
@@ -189,7 +188,7 @@ export async function PUT(req: Request, { params }: Params) {
       });
 
     if (logError) {
-      serverLogger.error('Failed to log status change:', logError);
+      console.error('Failed to log status change:', logError);
       // Don't fail the request if logging fails, just log it
     }
   }
@@ -207,7 +206,7 @@ export async function PUT(req: Request, { params }: Params) {
         reason: POST_EMAIL_INACTIVE_RECIPIENT_REASON,
       });
     } catch (cancelError) {
-      serverLogger.error(
+      console.error(
         'Failed to cancel pending post emails for inactive workspace user:',
         cancelError
       );
@@ -260,7 +259,7 @@ export async function DELETE(_: Request, { params }: Params) {
   );
 
   if (error) {
-    serverLogger.error('Error deleting workspace user:', error);
+    console.error('Error deleting workspace user:', error);
     return NextResponse.json(
       { message: 'Error deleting workspace user' },
       { status: 500 }
@@ -298,7 +297,7 @@ async function getDataWithApiKey({
   const { data, error } = response;
 
   if (error) {
-    serverLogger.error('Error fetching workspace user with API key:', error);
+    console.error('Error fetching workspace user with API key:', error);
     return NextResponse.json(
       { message: 'Error fetching workspace users' },
       { status: 500 }
@@ -336,7 +335,7 @@ async function getDataFromSession({
     .eq('id', userId);
 
   if (error) {
-    serverLogger.error('Error fetching workspace user:', error);
+    console.error('Error fetching workspace user:', error);
     return NextResponse.json(
       { message: 'Error fetching workspace users' },
       { status: 500 }

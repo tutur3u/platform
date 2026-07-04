@@ -1,7 +1,6 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 interface Params {
   params: Promise<{
@@ -18,10 +17,7 @@ async function getEmailStats(wsId: string) {
   });
 
   if (error) {
-    serverLogger.error(
-      '[SettingsDialogEmailAudit] Failed to load stats',
-      error
-    );
+    console.error('[SettingsDialogEmailAudit] Failed to load stats', error);
     return { failed: 0, rateLimited: 0, sent: 0, total: 0 };
   }
 
@@ -55,7 +51,7 @@ export async function GET(_request: Request, { params }: Params) {
   ]);
 
   if (auditResult.error) {
-    serverLogger.error(
+    console.error(
       '[SettingsDialogEmailAudit] Failed to load audit rows',
       auditResult.error
     );

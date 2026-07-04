@@ -1,7 +1,6 @@
 import 'server-only';
 
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import type { ChatConversation, ChatMessage } from './private-rpc';
 
 type PrivateRpcClient = {
@@ -112,7 +111,7 @@ export async function notifyChatMessageRecipients({
       }
 
       failedCount += 1;
-      serverLogger.error('Failed to queue chat message push notification', {
+      console.error('Failed to queue chat message push notification', {
         conversationId: conversation.id,
         error: result.reason,
         messageId: message.id,
@@ -126,7 +125,7 @@ export async function notifyChatMessageRecipients({
       recipientCount: recipientUserIds.length,
     };
   } catch (error) {
-    serverLogger.error('Failed to queue chat message push notifications', {
+    console.error('Failed to queue chat message push notifications', {
       conversationId: conversation.id,
       error,
       messageId: message.id,

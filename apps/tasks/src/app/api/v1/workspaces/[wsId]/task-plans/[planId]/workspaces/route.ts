@@ -1,5 +1,4 @@
 import { type NextRequest, NextResponse } from 'next/server';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
   isTaskPlanSchemaUnavailableError,
   planWorkspacePayloadSchema,
@@ -44,7 +43,7 @@ export async function GET(request: NextRequest, context: Context) {
   } catch (error) {
     if (isTaskPlanSchemaUnavailableError(error))
       return taskPlanSchemaUnavailableResponse({ workspaces: [] });
-    serverLogger.error('Failed to list task plan workspaces', {
+    console.error('Failed to list task plan workspaces', {
       error,
       planId,
     });
@@ -89,7 +88,7 @@ export async function POST(request: NextRequest, context: Context) {
   } catch (error) {
     if (isTaskPlanSchemaUnavailableError(error))
       return taskPlanSchemaUnavailableResponse();
-    serverLogger.error('Failed to add task plan workspace', { error, planId });
+    console.error('Failed to add task plan workspace', { error, planId });
     return taskPlanRouteErrorResponse(
       error,
       'Failed to add task plan workspace'
@@ -121,7 +120,7 @@ export async function DELETE(request: NextRequest, context: Context) {
   } catch (error) {
     if (isTaskPlanSchemaUnavailableError(error))
       return taskPlanSchemaUnavailableResponse();
-    serverLogger.error('Failed to remove task plan workspace', {
+    console.error('Failed to remove task plan workspace', {
       error,
       planId,
     });

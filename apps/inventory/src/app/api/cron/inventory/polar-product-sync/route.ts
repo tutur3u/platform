@@ -3,7 +3,7 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { DEV_MODE } from '@tuturuuu/utils/constants';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
-import { serverLogger, withCronLogDrain } from '@/lib/infrastructure/log-drain';
+import { withCronLogDrain } from '@/lib/infrastructure/log-drain';
 
 /**
  * Drift-repair cron for the inventory <-> Polar product catalog. Re-pushes every
@@ -61,7 +61,7 @@ async function handleGET(req: NextRequest) {
         bundles += result.bundles;
       } catch (workspaceError) {
         failed.push(wsId);
-        serverLogger.error('Inventory Polar product cron sync failed', {
+        console.error('Inventory Polar product cron sync failed', {
           error:
             workspaceError instanceof Error
               ? workspaceError.message
@@ -77,7 +77,7 @@ async function handleGET(req: NextRequest) {
       failed,
     });
   } catch (error) {
-    serverLogger.error('Inventory Polar product cron failed', error);
+    console.error('Inventory Polar product cron failed', error);
     return NextResponse.json(
       { error: 'Internal Server Error' },
       { status: 500 }

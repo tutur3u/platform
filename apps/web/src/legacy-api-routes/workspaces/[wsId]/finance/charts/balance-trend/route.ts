@@ -1,7 +1,6 @@
 import { MAX_COLOR_LENGTH } from '@tuturuuu/utils/constants';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { validateFinanceDateRange } from '../../date-range';
 import { requireFinanceStatsAccess } from '../access';
 
@@ -107,7 +106,7 @@ export async function GET(
       })),
     });
   } catch (error) {
-    serverLogger.error('Error fetching balance trend data', { error });
+    console.error('Error fetching balance trend data', { error });
     return NextResponse.json(
       { message: 'Internal server error while fetching balance trend data' },
       { status: 500 }

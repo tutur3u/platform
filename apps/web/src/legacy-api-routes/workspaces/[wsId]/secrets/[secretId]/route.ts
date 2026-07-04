@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
   canMutateManagedCronEnableSecret,
   isManagedCronEnableSecretName,
@@ -43,7 +42,7 @@ export async function PUT(req: Request, { params }: Params) {
     .maybeSingle();
 
   if (existingError) {
-    serverLogger.error(
+    console.error(
       'Error loading workspace secret before update',
       existingError
     );
@@ -78,7 +77,7 @@ export async function PUT(req: Request, { params }: Params) {
     .eq('ws_id', access.resolvedWsId);
 
   if (error) {
-    serverLogger.error('Error updating workspace secret', error);
+    console.error('Error updating workspace secret', error);
     return NextResponse.json(
       { message: 'Error updating workspace API config' },
       { status: 500 }
@@ -107,7 +106,7 @@ export async function DELETE(request: Request, { params }: Params) {
     .maybeSingle();
 
   if (existingError) {
-    serverLogger.error(
+    console.error(
       'Error loading workspace secret before delete',
       existingError
     );
@@ -141,7 +140,7 @@ export async function DELETE(request: Request, { params }: Params) {
     .eq('ws_id', access.resolvedWsId);
 
   if (error) {
-    serverLogger.error('Error deleting workspace secret', error);
+    console.error('Error deleting workspace secret', error);
     return NextResponse.json(
       { message: 'Error deleting workspace API config' },
       { status: 500 }

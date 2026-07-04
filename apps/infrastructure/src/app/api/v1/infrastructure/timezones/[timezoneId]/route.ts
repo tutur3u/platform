@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { deleteTimezone, updateTimezone } from '@/lib/infrastructure/timezones';
 import { authorizeInfrastructureOperator } from '../../monitoring/blue-green/authorization';
 
@@ -20,7 +19,7 @@ export async function PUT(req: Request, { params }: Params) {
     await updateTimezone(id, data);
     return NextResponse.json({ message: 'success' });
   } catch (error) {
-    serverLogger.info(error);
+    console.info(error);
     return NextResponse.json(
       { message: 'Error updating timezone' },
       { status: 500 }
@@ -38,7 +37,7 @@ export async function DELETE(request: Request, { params }: Params) {
     await deleteTimezone(id);
     return NextResponse.json({ message: 'success' });
   } catch (error) {
-    serverLogger.info(error);
+    console.info(error);
     return NextResponse.json(
       { message: 'Error deleting timezone' },
       { status: 500 }

@@ -3,7 +3,7 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { DEV_MODE } from '@tuturuuu/utils/constants';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
-import { serverLogger, withCronLogDrain } from '@/lib/infrastructure/log-drain';
+import { withCronLogDrain } from '@/lib/infrastructure/log-drain';
 import { syncProductToDatabase } from '@/utils/polar-product-helper';
 
 /**
@@ -92,7 +92,7 @@ async function handleGET(req: NextRequest) {
       errors: errors.slice(0, 20), // Limit error messages
     });
   } catch (error) {
-    serverLogger.error('Cron job error:', error);
+    console.error('Cron job error:', error);
     return NextResponse.json(
       {
         error: 'Internal server error',

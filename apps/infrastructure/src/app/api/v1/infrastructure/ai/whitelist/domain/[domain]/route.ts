@@ -4,7 +4,6 @@ import {
   deleteAIWhitelistDomain,
   updateAIWhitelistDomainEnabled,
 } from '@/lib/ai-whitelist/domain-repository';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 function forbiddenResponse() {
   return NextResponse.json(
@@ -29,7 +28,7 @@ export async function PUT(
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    serverLogger.error('Error updating domain:', error);
+    console.error('Error updating domain:', error);
     return new NextResponse('Internal Server Error', { status: 500 });
   }
 }
@@ -49,7 +48,7 @@ export async function DELETE(
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    serverLogger.error('Error deleting domain:', error);
+    console.error('Error deleting domain:', error);
     return new NextResponse('Internal Server Error', { status: 500 });
   }
 }

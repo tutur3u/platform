@@ -8,7 +8,6 @@ import { toBareModelName } from '@tuturuuu/ai/credits/model-mapping';
 import { withAiMemory } from '@tuturuuu/ai/memory';
 import type { Json } from '@tuturuuu/types/db';
 import { z } from 'zod';
-import { serverLogger } from '../infrastructure/log-drain';
 import {
   HiveAiAccessError,
   type HiveCreditSource,
@@ -253,7 +252,7 @@ async function loadMemories(npcs: HiveNpcRow[]) {
       try {
         memoriesByNpc.set(npc.id, await listHiveNpcMemories(npc.id));
       } catch (error) {
-        serverLogger.warn('Failed to load Hive NPC memories', {
+        console.warn('Failed to load Hive NPC memories', {
           error: error instanceof Error ? error.message : String(error),
           npcId: npc.id,
           serverId: npc.server_id,
@@ -415,7 +414,7 @@ async function generateConversation(input: {
     if (deduction.success) {
       creditsDeducted = deduction.creditsDeducted;
     } else {
-      serverLogger.warn('Hive AI credit deduction failed', {
+      console.warn('Hive AI credit deduction failed', {
         errorCode: deduction.errorCode ?? 'UNKNOWN',
         modelId,
         wsId: creditContext.creditWsId,
@@ -438,7 +437,7 @@ async function generateConversation(input: {
       throw error;
     }
 
-    serverLogger.warn('Hive NPC AI interaction generation failed', {
+    console.warn('Hive NPC AI interaction generation failed', {
       error: error instanceof Error ? error.message : String(error),
       modelId,
     });

@@ -3,7 +3,6 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { resolveUserGroupRouteWorkspaceId } from '@/lib/user-groups/route-helpers';
 import {
   createUserGroupSession,
@@ -93,7 +92,7 @@ export async function GET(req: Request, { params }: Params) {
 
     return NextResponse.json(result);
   } catch (error) {
-    serverLogger.error('Failed to list user group sessions', { error });
+    console.error('Failed to list user group sessions', { error });
     return NextResponse.json(
       { message: 'Failed to list user group sessions' },
       { status: 500 }
@@ -151,7 +150,7 @@ export async function POST(req: Request, { params }: Params) {
 
     return NextResponse.json({ data, message: 'success' });
   } catch (error) {
-    serverLogger.error('Failed to create user group session', { error });
+    console.error('Failed to create user group session', { error });
     return NextResponse.json(
       { message: 'Failed to create user group session' },
       { status: 500 }

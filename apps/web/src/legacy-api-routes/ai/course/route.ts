@@ -7,7 +7,6 @@ import { sanitizePath } from '@tuturuuu/utils/storage-path';
 import { generateObject } from 'ai';
 import { NextResponse } from 'next/server';
 import { withSessionAuth } from '@/lib/api-auth';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { requireTeachWorkspaceAccess } from '@/lib/teach/api';
 import {
   COURSE_GENERATION_PROMPT,
@@ -213,7 +212,7 @@ async function cleanupGeneratedCourseArtifacts({
   }
 
   if (cleanupErrors.length) {
-    serverLogger.error('Failed to clean up generated course artifacts', {
+    console.error('Failed to clean up generated course artifacts', {
       cleanupErrors,
     });
   }
@@ -660,7 +659,7 @@ export const POST = withSessionAuth(
             sbAdmin,
           });
         } catch (cleanupError) {
-          serverLogger.error('Generated course cleanup failed unexpectedly', {
+          console.error('Generated course cleanup failed unexpectedly', {
             cleanupError,
             originalError: error,
           });
@@ -686,7 +685,7 @@ export const POST = withSessionAuth(
         },
       });
     } catch (error) {
-      serverLogger.error('Failed to generate course', { error });
+      console.error('Failed to generate course', { error });
       return NextResponse.json(
         {
           error: 'Internal Server Error',

@@ -4,7 +4,6 @@ import {
 } from '@tuturuuu/utils/constants';
 import { NextResponse } from 'next/server';
 import { withSessionAuth } from '@/lib/api-auth';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 export const POST = withSessionAuth(
   async (req, { user, supabase }) => {
@@ -30,7 +29,7 @@ export const POST = withSessionAuth(
           .maybeSingle();
 
         if (error || !data) {
-          serverLogger.error('Error fetching personal workspace:', error);
+          console.error('Error fetching personal workspace:', error);
           return NextResponse.json(
             { error: 'Personal workspace not found' },
             { status: 404 }
@@ -45,7 +44,7 @@ export const POST = withSessionAuth(
 
       return NextResponse.json({ workspaceId });
     } catch (error) {
-      serverLogger.error('Error resolving workspace ID:', error);
+      console.error('Error resolving workspace ID:', error);
       return NextResponse.json(
         { error: 'Failed to resolve workspace ID' },
         { status: 500 }

@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { runHiveSimulationTick } from '@/lib/hive/simulation';
-import { serverLogger, withCronLogDrain } from '@/lib/infrastructure/log-drain';
+import { withCronLogDrain } from '@/lib/infrastructure/log-drain';
 
 const JOB_ID = 'hive-simulate';
 const PATH = '/api/cron/hive/simulate';
@@ -31,10 +31,10 @@ async function handleGET(request: NextRequest) {
 
   try {
     const results = await runHiveSimulationTick();
-    serverLogger.info('Hive simulation tick completed', { results });
+    console.info('Hive simulation tick completed', { results });
     return NextResponse.json({ ok: true, results });
   } catch (error) {
-    serverLogger.error('Hive simulation tick failed', error);
+    console.error('Hive simulation tick failed', error);
     return NextResponse.json(
       {
         ok: false,

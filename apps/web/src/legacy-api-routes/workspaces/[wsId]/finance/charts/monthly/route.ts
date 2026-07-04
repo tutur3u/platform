@@ -1,7 +1,6 @@
 import { MAX_COLOR_LENGTH } from '@tuturuuu/utils/constants';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
   MAX_FINANCE_EXTENDED_DATE_RANGE_DAYS,
   validateFinanceDateRange,
@@ -81,7 +80,7 @@ export async function GET(
       data: data || [],
     });
   } catch (error) {
-    serverLogger.error('Error fetching monthly chart data', { error });
+    console.error('Error fetching monthly chart data', { error });
     return NextResponse.json(
       { message: 'Internal server error while fetching monthly chart data' },
       { status: 500 }

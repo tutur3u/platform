@@ -3,7 +3,6 @@ import { canUseRequestedFinanceWalletOnCreate } from '@tuturuuu/utils/finance';
 import { getWorkspaceConfig } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { resolveFinanceRouteAuthContext } from '@/lib/finance-route-auth';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { isGroupBlockedForSubscriptionInvoices } from '@/utils/workspace-config';
 import {
   type CalculatedValues,
@@ -313,10 +312,7 @@ export async function POST(req: Request, { params }: Params) {
     });
     if (!customerValidation.ok) {
       if (customerValidation.status === 500) {
-        serverLogger.error(
-          customerValidation.message,
-          customerValidation.error
-        );
+        console.error(customerValidation.message, customerValidation.error);
       }
       return NextResponse.json(
         { message: customerValidation.message },
@@ -411,7 +407,7 @@ export async function POST(req: Request, { params }: Params) {
       .single();
 
     if (invoiceError) {
-      serverLogger.error('Error creating subscription invoice:', invoiceError);
+      console.error('Error creating subscription invoice:', invoiceError);
       return NextResponse.json(
         {
           message: 'Error creating subscription invoice',
@@ -459,7 +455,7 @@ export async function POST(req: Request, { params }: Params) {
       .insert(invoiceGroupRows);
 
     if (invoiceGroupsError) {
-      serverLogger.error('Error creating invoice groups:', invoiceGroupsError);
+      console.error('Error creating invoice groups:', invoiceGroupsError);
       await cleanupInvoice();
       return NextResponse.json(
         {
@@ -496,7 +492,7 @@ export async function POST(req: Request, { params }: Params) {
       .eq('ws_id', wsId);
 
     if (productsError) {
-      serverLogger.error('Error getting products information:', productsError);
+      console.error('Error getting products information:', productsError);
       await cleanupInvoice();
       return NextResponse.json(
         {
@@ -516,7 +512,7 @@ export async function POST(req: Request, { params }: Params) {
       .eq('ws_id', wsId);
 
     if (unitsError) {
-      serverLogger.error('Error getting units information:', unitsError);
+      console.error('Error getting units information:', unitsError);
       await cleanupInvoice();
       return NextResponse.json(
         {
@@ -545,7 +541,7 @@ export async function POST(req: Request, { params }: Params) {
       .insert(invoiceProducts);
 
     if (invoiceProductsError) {
-      serverLogger.error(
+      console.error(
         'Error creating subscription invoice products:',
         invoiceProductsError
       );
@@ -579,7 +575,7 @@ export async function POST(req: Request, { params }: Params) {
         });
 
       if (promotionError) {
-        serverLogger.error('Error creating invoice promotion:', promotionError);
+        console.error('Error creating invoice promotion:', promotionError);
         await cleanupInvoice();
         return NextResponse.json(
           {
@@ -606,7 +602,7 @@ export async function POST(req: Request, { params }: Params) {
       .insert(stockChanges);
 
     if (stockError) {
-      serverLogger.error('Error creating stock changes:', stockError);
+      console.error('Error creating stock changes:', stockError);
       await cleanupInvoice();
       return NextResponse.json(
         {
@@ -655,10 +651,7 @@ export async function POST(req: Request, { params }: Params) {
       },
     });
   } catch (error) {
-    serverLogger.error(
-      'Unexpected error creating subscription invoice:',
-      error
-    );
+    console.error('Unexpected error creating subscription invoice:', error);
     if (createdInvoiceId) {
       await Promise.allSettled([
         sbAdmin

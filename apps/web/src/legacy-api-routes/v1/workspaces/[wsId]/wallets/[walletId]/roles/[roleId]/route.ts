@@ -2,7 +2,6 @@ import { createClient } from '@tuturuuu/supabase/next/server';
 import { viewingWindowBaseSchema } from '@tuturuuu/ui/finance/wallets/wallet-form-schema';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 interface Params {
   params: Promise<{
@@ -56,7 +55,7 @@ export async function PUT(req: Request, { params }: Params) {
     .single();
 
   if (error) {
-    serverLogger.error('Error updating wallet role access', {
+    console.error('Error updating wallet role access', {
       error,
       roleId,
       walletId,
@@ -98,7 +97,7 @@ export async function DELETE(req: Request, { params }: Params) {
     .eq('role_id', roleId);
 
   if (error) {
-    serverLogger.error('Error removing wallet role access', {
+    console.error('Error removing wallet role access', {
       error,
       roleId,
       walletId,

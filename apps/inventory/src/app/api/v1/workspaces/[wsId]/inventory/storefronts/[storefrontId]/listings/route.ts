@@ -13,7 +13,6 @@ import {
 } from '@tuturuuu/inventory-core/permissions';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 interface Params {
   params: Promise<{ storefrontId: string; wsId: string }>;
@@ -73,7 +72,7 @@ export async function POST(request: Request, { params }: Params) {
       );
     }
 
-    serverLogger.error('Failed to create inventory storefront listing', error);
+    console.error('Failed to create inventory storefront listing', error);
     return NextResponse.json(
       { message: 'Failed to create inventory storefront listing' },
       { status: 500 }

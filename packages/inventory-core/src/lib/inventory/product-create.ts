@@ -10,7 +10,6 @@ import {
 import type { PermissionsResult } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { serverLogger } from '../infrastructure/log-drain';
 import { createInventoryAuditLog } from './audit';
 import { autoCreateProductListing } from './commerce/auto-listing';
 import { resolveProductManufacturerId } from './manufacturers';
@@ -237,10 +236,7 @@ export async function createInventoryProductResponse({
     });
     if (!inventoryRelations.ok) {
       if (inventoryRelations.status === 500) {
-        serverLogger.error(
-          inventoryRelations.message,
-          inventoryRelations.error
-        );
+        console.error(inventoryRelations.message, inventoryRelations.error);
       }
       return NextResponse.json(
         { message: inventoryRelations.message },
@@ -269,7 +265,7 @@ export async function createInventoryProductResponse({
     .single();
 
   if (product.error) {
-    serverLogger.error('Error creating product', product.error);
+    console.error('Error creating product', product.error);
     return NextResponse.json(
       { message: 'Error creating product' },
       { status: 500 }
@@ -290,7 +286,7 @@ export async function createInventoryProductResponse({
         .delete()
         .eq('id', product.data.id)
         .eq('ws_id', wsId);
-      serverLogger.error('Error creating inventory for product', error);
+      console.error('Error creating inventory for product', error);
       return NextResponse.json(
         { message: 'Error creating inventory' },
         { status: 500 }
@@ -324,7 +320,7 @@ export async function createInventoryProductResponse({
           .from('product_stock_changes')
           .insert(stockChanges);
         if (stockChangeError) {
-          serverLogger.error('Error logging stock changes', stockChangeError);
+          console.error('Error logging stock changes', stockChangeError);
         }
       }
     }

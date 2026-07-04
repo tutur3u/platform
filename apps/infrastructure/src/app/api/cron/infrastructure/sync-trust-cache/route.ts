@@ -4,7 +4,7 @@ import {
   setCachedTrustEntry,
 } from '@tuturuuu/utils/abuse-protection/edge-trust';
 import { type NextRequest, NextResponse } from 'next/server';
-import { serverLogger, withCronLogDrain } from '@/lib/infrastructure/log-drain';
+import { withCronLogDrain } from '@/lib/infrastructure/log-drain';
 
 const JOB_ID = 'infrastructure-sync-trust-cache';
 const PATH = '/api/cron/infrastructure/sync-trust-cache';
@@ -108,7 +108,7 @@ async function handleGET(request: NextRequest) {
     );
 
     if (error) {
-      serverLogger.error('Failed to load trusted subjects for cache', error);
+      console.error('Failed to load trusted subjects for cache', error);
       return NextResponse.json(
         { ok: false, error: 'Failed to load trusted subjects' },
         { status: 500 }
@@ -136,7 +136,7 @@ async function handleGET(request: NextRequest) {
       );
     }
 
-    serverLogger.info('Reconciled edge trust cache', {
+    console.info('Reconciled edge trust cache', {
       skipped,
       total: rows.length,
       written,
@@ -149,7 +149,7 @@ async function handleGET(request: NextRequest) {
       written,
     });
   } catch (error) {
-    serverLogger.error('Failed to sync edge trust cache', error);
+    console.error('Failed to sync edge trust cache', error);
     return NextResponse.json(
       { ok: false, error: 'Failed to sync trust cache' },
       { status: 500 }

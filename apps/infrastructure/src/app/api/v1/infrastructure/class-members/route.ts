@@ -1,6 +1,5 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 export async function GET(req: Request) {
   const supabase = await createClient();
@@ -32,7 +31,7 @@ export async function GET(req: Request) {
     );
 
   if (error) {
-    serverLogger.error('Error fetching workspace_user_groups_users:', error);
+    console.error('Error fetching workspace_user_groups_users:', error);
     return NextResponse.json(
       { message: 'Error fetching workspace_user_groups_users' },
       { status: 500 }

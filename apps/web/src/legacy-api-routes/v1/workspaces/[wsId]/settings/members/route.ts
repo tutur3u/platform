@@ -4,7 +4,6 @@ import {
 } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { withSessionAuth } from '@/lib/api-auth';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 export const GET = withSessionAuth<{ wsId: string }>(
   async (request, _context, { wsId }) => {
@@ -33,7 +32,7 @@ export const GET = withSessionAuth<{ wsId: string }>(
 
       return NextResponse.json({ disableInvite });
     } catch (error) {
-      serverLogger.error('Error loading workspace member settings:', error);
+      console.error('Error loading workspace member settings:', error);
       return NextResponse.json(
         { message: 'Internal server error' },
         { status: 500 }

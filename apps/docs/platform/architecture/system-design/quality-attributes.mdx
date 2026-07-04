@@ -372,7 +372,7 @@ name: Vercel Finance Preview Deployment
 
 Because each app is its own Vercel project, finance can deploy without rebuilding or redeploying the web or calendar apps.
 
-**Monitoring:** Tuturuuu does not ship a custom per-service metrics SDK. Runtime/server logs in `apps/web` API, cron, and infrastructure code flow through the internal **log-drain logger** (never raw `console.*`), and Vercel provides per-project deployment and runtime insight. Treat the `monitorErrorRate(...)` snippet style as conceptual.
+**Monitoring:** Tuturuuu does not ship a custom per-service metrics SDK. Runtime/server logs in API, cron, and infrastructure code use the native console method matching severity, while retained request, cron, deployment, and usage data still flows through the internal log-drain storage where those wrappers are wired. Vercel provides per-project deployment and runtime insight. Treat the `monitorErrorRate(...)` snippet style as conceptual.
 
 #### Clarifying Additions
 

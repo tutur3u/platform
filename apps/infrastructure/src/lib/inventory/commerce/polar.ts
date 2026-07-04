@@ -13,7 +13,6 @@ import type { Checkout, Order } from '@tuturuuu/payment/polar';
 import { createPolarClient } from '@tuturuuu/payment/polar/server';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { decryptField, encryptField } from '@tuturuuu/utils/encryption';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
   getOrCreateWorkspaceKey,
   getWorkspaceKey,
@@ -405,7 +404,7 @@ export async function ensureInventoryPolarProduct({
       });
       return integration.polar_product_id;
     } catch (error) {
-      serverLogger.warn('Inventory Polar product validation failed', {
+      console.warn('Inventory Polar product validation failed', {
         environment,
         error: extractErrorMessage(error),
         wsId,
@@ -540,7 +539,7 @@ export async function ensureInventoryPolarCheckoutProduct({
       const product = await polar.products.get({ id: existingId });
       if (productHasCurrency(product, priceCurrency)) return existingId;
     } catch (error) {
-      serverLogger.warn('Inventory Polar checkout product validation failed', {
+      console.warn('Inventory Polar checkout product validation failed', {
         currency: currencyUpper,
         environment,
         error: extractErrorMessage(error),
@@ -711,7 +710,7 @@ async function resolveSingleListingPolarProduct({
       return data.polar_product_id;
     }
   } catch (error) {
-    serverLogger.warn('Single-listing Polar product check failed', {
+    console.warn('Single-listing Polar product check failed', {
       error: extractErrorMessage(error),
       listingId: line.listingId,
     });
@@ -994,7 +993,7 @@ export async function syncInventoryPromotionDiscount({
       const discount = await polar.discounts.create(input as never);
       return { discountId: discount.id, environment };
     } catch (error) {
-      serverLogger.warn('Inventory promotion Polar discount sync failed', {
+      console.warn('Inventory promotion Polar discount sync failed', {
         environment,
         error: extractErrorMessage(error),
         wsId,

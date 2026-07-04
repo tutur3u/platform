@@ -1,5 +1,3 @@
-import { serverLogger } from '@/lib/infrastructure/log-drain';
-
 const OAUTH_DEBUG_ENV_KEY = 'TUTURUUU_CALENDAR_OAUTH_DEBUG';
 
 export function calendarOAuthDebug(...args: unknown[]) {
@@ -7,9 +5,9 @@ export function calendarOAuthDebug(...args: unknown[]) {
     return;
   }
 
-  serverLogger.debug(...args);
+  console.debug(...args);
 }
 
 export function calendarOAuthError(...args: unknown[]) {
-  serverLogger.error(...args);
+  console.error(...args);
 }

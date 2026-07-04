@@ -6,7 +6,6 @@ import {
 import type { Wallet } from '@tuturuuu/types/primitives/Wallet';
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 interface Params {
   params: Promise<{
@@ -54,7 +53,7 @@ export async function PUT(req: Request, { params }: Params) {
     .eq('id', data.id);
 
   if (error) {
-    serverLogger.error('Error migrating workspace wallets:', error);
+    console.error('Error migrating workspace wallets:', error);
     return NextResponse.json(
       { message: 'Error migrating workspace wallets' },
       { status: 500 }

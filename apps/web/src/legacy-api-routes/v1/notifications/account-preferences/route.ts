@@ -5,7 +5,6 @@ import {
 } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { saveNotificationPreferences } from '../notification-preferences-write';
 
 const updateSchema = z.object({
@@ -48,7 +47,7 @@ export async function GET(_: Request) {
       .eq('user_id', user.id);
 
     if (error) {
-      serverLogger.error('Error fetching account preferences:', error);
+      console.error('Error fetching account preferences:', error);
       return NextResponse.json(
         { error: 'Failed to fetch preferences' },
         { status: 500 }
@@ -57,7 +56,7 @@ export async function GET(_: Request) {
 
     return NextResponse.json({ preferences: preferences || [] });
   } catch (error) {
-    serverLogger.error('Error in account preferences API:', error);
+    console.error('Error in account preferences API:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -104,7 +103,7 @@ export async function PUT(request: Request) {
       });
 
       if (saveError) {
-        serverLogger.error('Error saving account preferences:', saveError);
+        console.error('Error saving account preferences:', saveError);
         return NextResponse.json(
           { error: 'Failed to update preferences' },
           { status: 500 }
@@ -114,7 +113,7 @@ export async function PUT(request: Request) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    serverLogger.error('Error in account preferences update:', error);
+    console.error('Error in account preferences update:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

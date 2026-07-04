@@ -1,7 +1,6 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 interface Params {
   params: Promise<{ wsId: string }>;
@@ -33,7 +32,7 @@ export async function GET(request: Request, { params }: Params) {
     .range(start, end);
 
   if (error) {
-    serverLogger.error('Failed to fetch internal emails', { error, wsId });
+    console.error('Failed to fetch internal emails', { error, wsId });
     return NextResponse.json(
       { message: 'Failed to fetch emails' },
       { status: 500 }

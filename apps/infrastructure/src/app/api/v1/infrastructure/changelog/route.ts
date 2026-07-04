@@ -6,7 +6,6 @@ import {
 } from '@tuturuuu/utils/constants';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
   authorizedChangelogUser,
   changelogPermissionDeniedResponse,
@@ -73,7 +72,7 @@ export async function GET(req: Request) {
   const { data, error, count } = await query;
 
   if (error) {
-    serverLogger.error('Error fetching changelog entries:', error);
+    console.error('Error fetching changelog entries:', error);
     return NextResponse.json(
       { message: 'Error fetching changelog entries' },
       { status: 500 }
@@ -120,7 +119,7 @@ export async function POST(req: Request) {
       .single();
 
     if (error) {
-      serverLogger.error('Error creating changelog entry:', error);
+      console.error('Error creating changelog entry:', error);
 
       if (error.code === '23505') {
         return NextResponse.json(
@@ -144,7 +143,7 @@ export async function POST(req: Request) {
       );
     }
 
-    serverLogger.error('Unexpected error:', error);
+    console.error('Unexpected error:', error);
     return NextResponse.json(
       { message: 'Internal server error' },
       { status: 500 }

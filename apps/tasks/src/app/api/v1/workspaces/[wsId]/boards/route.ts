@@ -10,7 +10,6 @@ import {
 import { type NextRequest, NextResponse } from 'next/server';
 import { validate } from 'uuid';
 import { withSessionAuth } from '@/lib/api-auth';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 interface WorkspaceParams {
   wsId: string;
@@ -36,7 +35,7 @@ export const GET = withSessionAuth<WorkspaceParams>(
       });
 
       if (memberCheck.error === 'membership_lookup_failed') {
-        serverLogger.error('Membership check error:', memberCheck.error);
+        console.error('Membership check error:', memberCheck.error);
         return NextResponse.json(
           { error: 'Failed to verify workspace access' },
           { status: 500 }
@@ -89,7 +88,7 @@ export const GET = withSessionAuth<WorkspaceParams>(
       const { data, error } = await query;
 
       if (error) {
-        serverLogger.error('Supabase error:', error);
+        console.error('Supabase error:', error);
         return NextResponse.json(
           { error: 'Failed to fetch boards' },
           { status: 500 }
@@ -98,7 +97,7 @@ export const GET = withSessionAuth<WorkspaceParams>(
 
       return NextResponse.json({ boards: data });
     } catch (error) {
-      serverLogger.error('Error fetching boards:', error);
+      console.error('Error fetching boards:', error);
       return NextResponse.json(
         { error: 'Internal server error' },
         { status: 500 }

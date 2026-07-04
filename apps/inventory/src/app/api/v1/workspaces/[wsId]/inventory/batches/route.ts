@@ -11,7 +11,6 @@ import { getInventoryBatches } from '@tuturuuu/inventory-core/product-rpc';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 const BatchPayloadSchema = z.object({
   price: z.number().nonnegative().optional(),
@@ -151,7 +150,7 @@ export async function GET(req: Request, { params }: Params) {
 
     return NextResponse.json(result);
   } catch (error) {
-    serverLogger.error('Error fetching inventory batches', error);
+    console.error('Error fetching inventory batches', error);
     return NextResponse.json(
       { message: 'Failed to fetch inventory batches' },
       { status: 500 }
@@ -205,7 +204,7 @@ export async function POST(req: Request, { params }: Params) {
     const batch = await loadBatch({ batchId: data.id, inventory, wsId });
     return NextResponse.json({ data: batch }, { status: 201 });
   } catch (error) {
-    serverLogger.error('Error creating inventory batch', error);
+    console.error('Error creating inventory batch', error);
     return NextResponse.json(
       { message: 'Failed to create inventory batch' },
       { status: 500 }

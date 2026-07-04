@@ -3,7 +3,6 @@ import { CLI_APP_TARGET_APP } from '@tuturuuu/auth/cli-session';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { requireBoardAccess } from '../access';
 import { type SupportedColor, supportedColorSchema } from '../schema';
 
@@ -167,7 +166,7 @@ export const PATCH = withSessionAuth<Params>(
         event: list.deleted ? 'list:delete' : 'list:upsert',
         list: list.deleted ? undefined : list,
         listId,
-        logWarning: serverLogger.warn.bind(serverLogger),
+        logWarning: console.warn,
         sbAdmin,
       });
 
@@ -180,7 +179,7 @@ export const PATCH = withSessionAuth<Params>(
         );
       }
 
-      serverLogger.error('Error updating task list:', error);
+      console.error('Error updating task list:', error);
       return NextResponse.json(
         { error: 'Internal server error' },
         { status: 500 }

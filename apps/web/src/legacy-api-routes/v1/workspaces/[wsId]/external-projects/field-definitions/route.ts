@@ -6,10 +6,7 @@ import {
   createWorkspaceExternalProjectFieldDefinition,
   listWorkspaceExternalProjectFieldDefinitions,
 } from '@/lib/external-projects/store';
-import {
-  serverLogger,
-  withRequestLogDrain,
-} from '@/lib/infrastructure/log-drain';
+import { withRequestLogDrain } from '@/lib/infrastructure/log-drain';
 
 const fieldScopeSchema = z.enum(['profile_data', 'metadata']);
 const fieldTypeSchema = z.enum([
@@ -87,7 +84,7 @@ async function listFieldDefinitions(request: NextRequest, { params }: Params) {
 
     return NextResponse.json(fieldDefinitions);
   } catch (error) {
-    serverLogger.error('Failed to list external project field definitions', {
+    console.error('Failed to list external project field definitions', {
       error: error instanceof Error ? error.message : String(error),
       wsId: access.normalizedWorkspaceId,
     });
@@ -137,7 +134,7 @@ async function createFieldDefinition(request: NextRequest, { params }: Params) {
       );
     }
 
-    serverLogger.error('Failed to create external project field definition', {
+    console.error('Failed to create external project field definition', {
       error: error instanceof Error ? error.message : String(error),
       wsId: access.normalizedWorkspaceId,
     });

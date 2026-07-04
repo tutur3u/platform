@@ -2,7 +2,7 @@ import { syncGatewayModels } from '@tuturuuu/ai/credits/sync-gateway-models';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
-import { serverLogger, withCronLogDrain } from '@/lib/infrastructure/log-drain';
+import { withCronLogDrain } from '@/lib/infrastructure/log-drain';
 
 export async function GET(req: NextRequest) {
   return withCronLogDrain(
@@ -25,7 +25,7 @@ async function handleGET(req: NextRequest) {
 
     return NextResponse.json(result);
   } catch (error) {
-    serverLogger.error('Error in cron AI model sync:', error);
+    console.error('Error in cron AI model sync:', error);
     return NextResponse.json(
       {
         error:

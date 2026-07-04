@@ -3,7 +3,6 @@ import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
   awardTulearnXp,
   getAssignedCourseIds,
@@ -53,7 +52,7 @@ export const GET = withSessionAuth<Params>(
       const accessResponse = tulearnAccessErrorResponse(error);
       if (accessResponse) return accessResponse;
 
-      serverLogger.error('Failed to load Tulearn practice:', error);
+      console.error('Failed to load Tulearn practice:', error);
       return NextResponse.json(
         { message: 'Failed to load practice' },
         { status: 500 }
@@ -159,7 +158,7 @@ export const POST = withSessionAuth<Params>(
       const accessResponse = tulearnAccessErrorResponse(error);
       if (accessResponse) return accessResponse;
 
-      serverLogger.error('Failed to submit Tulearn practice:', error);
+      console.error('Failed to submit Tulearn practice:', error);
       return NextResponse.json(
         { message: 'Failed to submit practice' },
         { status: 500 }

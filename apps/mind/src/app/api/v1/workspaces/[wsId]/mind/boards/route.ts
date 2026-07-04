@@ -7,7 +7,6 @@ import { requireMindAccess } from '@tuturuuu/mind-core/access';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 type Params = {
   wsId: string;
@@ -22,7 +21,7 @@ export const GET = withSessionAuth<Params>(
       const boards = await listMindBoards(access.normalizedWsId);
       return NextResponse.json({ boards });
     } catch (error) {
-      serverLogger.error('Error listing Mind boards:', error);
+      console.error('Error listing Mind boards:', error);
       return NextResponse.json(
         { error: 'Failed to list Mind boards' },
         { status: 500 }
@@ -54,7 +53,7 @@ export const POST = withSessionAuth<Params>(
         );
       }
 
-      serverLogger.error('Error creating Mind board:', error);
+      console.error('Error creating Mind board:', error);
       return NextResponse.json(
         { error: 'Failed to create Mind board' },
         { status: 500 }

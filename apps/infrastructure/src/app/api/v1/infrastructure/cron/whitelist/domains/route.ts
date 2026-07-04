@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { getManagedCronAdminUser } from '@/lib/managed-cron/authorization';
 import {
   addManagedCronWhitelistedDomain,
@@ -34,7 +33,7 @@ export async function GET(request: Request) {
 
     return NextResponse.json(domains);
   } catch (error) {
-    serverLogger.error('Error listing managed cron whitelist domains', error);
+    console.error('Error listing managed cron whitelist domains', error);
     return NextResponse.json(
       { message: 'Failed to list managed cron whitelist domains' },
       { status: 500 }
@@ -64,7 +63,7 @@ export async function POST(request: Request) {
       );
     }
 
-    serverLogger.error('Error creating managed cron whitelist domain', error);
+    console.error('Error creating managed cron whitelist domain', error);
     return NextResponse.json(
       { message: 'Failed to create managed cron whitelist domain' },
       { status: 500 }

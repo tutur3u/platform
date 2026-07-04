@@ -8,6 +8,8 @@ const mocks = vi.hoisted(() => ({
   serverLoggerError: vi.fn(),
 }));
 
+const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
 vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: (...args: Parameters<typeof mocks.createAdminClient>) =>
     mocks.createAdminClient(...args),
@@ -136,7 +138,7 @@ describe('post filter options route', () => {
     await expect(response.json()).resolves.toEqual({
       message: 'Failed to load filter options',
     });
-    expect(mocks.serverLoggerError).toHaveBeenCalledWith(
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
       'Error loading post filter options',
       { error }
     );

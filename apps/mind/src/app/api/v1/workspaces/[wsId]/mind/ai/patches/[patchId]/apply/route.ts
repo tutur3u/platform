@@ -2,7 +2,6 @@ import { applyMindAiPatch } from '@tuturuuu/mind-core';
 import { requireMindAccess } from '@tuturuuu/mind-core/access';
 import { NextResponse } from 'next/server';
 import { withSessionAuth } from '@/lib/api-auth';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 type Params = {
   patchId: string;
@@ -29,7 +28,7 @@ export const POST = withSessionAuth<Params>(
 
       return NextResponse.json({ patch });
     } catch (error) {
-      serverLogger.error('Error applying Mind AI patch:', error);
+      console.error('Error applying Mind AI patch:', error);
       return NextResponse.json(
         { error: 'Failed to apply Mind AI patch' },
         { status: 500 }

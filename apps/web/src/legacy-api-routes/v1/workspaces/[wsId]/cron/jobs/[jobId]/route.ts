@@ -1,6 +1,5 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { listEnabledManagedCronDomains } from '@/lib/managed-cron/domain-repository';
 import {
   assertValidManagedCronSchedule,
@@ -111,7 +110,7 @@ export async function GET(_: Request, { params }: Params) {
     .single();
 
   if (error) {
-    serverLogger.error('Error fetching workspace cron job', error);
+    console.error('Error fetching workspace cron job', error);
     return NextResponse.json(
       { message: 'Error fetching workspace cron job' },
       { status: 500 }
@@ -134,7 +133,7 @@ export async function PUT(req: Request, { params }: Params) {
     .eq('ws_id', wsId);
 
   if (error) {
-    serverLogger.error('Error updating workspace cron job', error);
+    console.error('Error updating workspace cron job', error);
     return NextResponse.json(
       { message: 'Error updating workspace cron job' },
       { status: 500 }
@@ -155,7 +154,7 @@ export async function DELETE(_: Request, { params }: Params) {
     .eq('ws_id', wsId);
 
   if (error) {
-    serverLogger.error('Error deleting workspace cron job', error);
+    console.error('Error deleting workspace cron job', error);
     return NextResponse.json(
       { message: 'Error deleting workspace cron job' },
       { status: 500 }

@@ -1,9 +1,6 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import {
-  serverLogger,
-  withRequestLogDrain,
-} from '@/lib/infrastructure/log-drain';
+import { withRequestLogDrain } from '@/lib/infrastructure/log-drain';
 import {
   createQueuedStressTestRun,
   persistStressTestRun,
@@ -103,7 +100,7 @@ export async function POST(request: Request) {
         try {
           queueStressTestRunFile(run);
         } catch (error) {
-          serverLogger.error(
+          console.error(
             'Failed to queue infrastructure stress test control file',
             error
           );
@@ -132,7 +129,7 @@ export async function POST(request: Request) {
           );
         }
 
-        serverLogger.error('Failed to queue infrastructure stress test', error);
+        console.error('Failed to queue infrastructure stress test', error);
         return NextResponse.json(
           { message: 'Failed to queue stress test' },
           { status: 500 }

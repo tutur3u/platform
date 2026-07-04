@@ -24,7 +24,6 @@ import { NextResponse } from 'next/server';
 import { validate as validateUUID } from 'uuid';
 import { z } from 'zod';
 import { getExternalAppById } from '@/lib/app-coordination/external-apps';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
   type EnhancedWorkspaceMember,
   getWorkspaceMembers,
@@ -602,7 +601,7 @@ export async function removeExternalAppWorkspaceMember({
       .eq('email', email);
 
     if (error) {
-      serverLogger.error('Error resolving external app invite identities', {
+      console.error('Error resolving external app invite identities', {
         error,
         wsId: access.normalizedWorkspaceId,
       });
@@ -654,7 +653,7 @@ export async function removeExternalAppWorkspaceMember({
   ]);
 
   if (inviteResult.error || emailInviteResult.error || memberResult.error) {
-    serverLogger.error('Error removing external app workspace member', {
+    console.error('Error removing external app workspace member', {
       emailInviteError: emailInviteResult.error,
       inviteError: inviteResult.error,
       memberError: memberResult.error,
@@ -874,7 +873,7 @@ export async function updateExternalAppWorkspaceMemberRole({
       });
     }
   } catch (error) {
-    serverLogger.error('Error updating external app workspace member role', {
+    console.error('Error updating external app workspace member role', {
       error,
       userId,
       wsId: access.normalizedWorkspaceId,
@@ -944,7 +943,7 @@ export async function updateExternalAppWorkspaceDefaultAdmin({
     );
 
   if (error) {
-    serverLogger.error('Error updating external app default admin access', {
+    console.error('Error updating external app default admin access', {
       error,
       wsId: access.normalizedWorkspaceId,
     });

@@ -1,7 +1,6 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
   changelogPermissionDeniedResponse,
   checkChangelogPermission,
@@ -65,7 +64,7 @@ export async function POST(req: Request, { params }: Params) {
       .single();
 
     if (error) {
-      serverLogger.error('Error updating changelog publish status:', error);
+      console.error('Error updating changelog publish status:', error);
       return NextResponse.json(
         { message: 'Error updating changelog publish status' },
         { status: 500 }
@@ -81,7 +80,7 @@ export async function POST(req: Request, { params }: Params) {
       );
     }
 
-    serverLogger.error('Unexpected error:', error);
+    console.error('Unexpected error:', error);
     return NextResponse.json(
       { message: 'Internal server error' },
       { status: 500 }

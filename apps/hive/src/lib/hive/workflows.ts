@@ -1,5 +1,4 @@
 import type { Json } from '@tuturuuu/types/db';
-import { serverLogger } from '../infrastructure/log-drain';
 import { HiveAiAccessError } from './ai';
 import {
   acceptHiveTradeOffer,
@@ -226,7 +225,7 @@ export async function runHiveWorkflow(input: {
                 ? error.message
                 : 'Failed to run Hive agent interaction';
 
-            serverLogger.warn('Hive workflow agent interaction failed', {
+            console.warn('Hive workflow agent interaction failed', {
               error: message,
               index,
               serverId: input.serverId,

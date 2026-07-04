@@ -2,7 +2,6 @@ import type { BlueGreenMonitoringDeployment } from '@tuturuuu/internal-api/infra
 import { NextResponse } from 'next/server';
 import { readBlueGreenMonitoringSnapshot } from '@/lib/infrastructure/blue-green-monitoring';
 import { queueBlueGreenDeploymentRevertRequest } from '@/lib/infrastructure/blue-green-monitoring-controls';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { authorizeInfrastructureOperator } from '../authorization';
 
 function normalizeCommitHash(value: unknown) {
@@ -102,7 +101,7 @@ export async function POST(request: Request) {
       request: revertRequest,
     });
   } catch (error) {
-    serverLogger.error('Failed to queue production deployment revert:', error);
+    console.error('Failed to queue production deployment revert:', error);
     return NextResponse.json(
       { message: 'Failed to queue production deployment revert' },
       { status: 500 }

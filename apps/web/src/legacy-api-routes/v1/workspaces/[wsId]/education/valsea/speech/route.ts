@@ -5,7 +5,6 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { type AuthorizedRequest, withSessionAuth } from '@/lib/api-auth';
 import { checkEducationWorkspaceAccess } from '@/lib/education/access';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
   uploadWorkspaceStorageFileDirect,
   WorkspaceStorageError,
@@ -86,7 +85,7 @@ export const POST = withSessionAuth<Params>(
         .json()
         .catch(() => ({}))) as LocalSpeechResponse;
       if (!response.ok || !data.audioBase64) {
-        serverLogger.error('Local speech synthesis upstream failed', {
+        console.error('Local speech synthesis upstream failed', {
           hasPublicDetail: Boolean(data.detail || data.message),
           status: response.status,
         });
@@ -144,7 +143,7 @@ export const POST = withSessionAuth<Params>(
         );
       }
 
-      serverLogger.error('Failed to synthesize Valsea speech:', error);
+      console.error('Failed to synthesize Valsea speech:', error);
       return NextResponse.json(
         { message: 'Failed to synthesize classroom speech' },
         { status: 500 }

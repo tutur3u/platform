@@ -29,7 +29,6 @@ import {
   getChatRealtimeAudience,
   publishChatRealtimeEvent,
 } from '@/lib/chat/realtime';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 type RouteParams = {
   conversationId: string;
@@ -124,7 +123,7 @@ export const POST = withSessionAuth<RouteParams>(
 
       return NextResponse.json({ conversation, title });
     } catch (error) {
-      serverLogger.error('Failed to generate chat title', {
+      console.error('Failed to generate chat title', {
         conversationId: params.conversationId,
         error,
       });
@@ -305,7 +304,7 @@ async function generateConversationTitle({
       source: 'native_chat_title',
     },
   }).catch((error: unknown) =>
-    serverLogger.warn('Failed to deduct chat title AI credits', {
+    console.warn('Failed to deduct chat title AI credits', {
       conversationId,
       error,
       userId: auth.user.id,

@@ -12,7 +12,6 @@ import {
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 const paramsSchema = z.object({
   wsId: z.string().min(1),
@@ -210,7 +209,7 @@ export const GET = withSessionAuth<{ wsId: string; boardId: string }>(
         );
       }
 
-      serverLogger.error('Error loading task board shares:', error);
+      console.error('Error loading task board shares:', error);
       return NextResponse.json(
         { error: 'Internal server error' },
         { status: 500 }
@@ -314,7 +313,7 @@ export const POST = withSessionAuth<{ wsId: string; boardId: string }>(
         );
       }
 
-      serverLogger.error('Error saving task board share:', error);
+      console.error('Error saving task board share:', error);
       return NextResponse.json(
         { error: 'Internal server error' },
         { status: 500 }
@@ -364,7 +363,7 @@ export const PATCH = withSessionAuth<{ wsId: string; boardId: string }>(
         );
       }
 
-      serverLogger.error('Error updating task board share:', error);
+      console.error('Error updating task board share:', error);
       return NextResponse.json(
         { error: 'Internal server error' },
         { status: 500 }
@@ -416,7 +415,7 @@ export const DELETE = withSessionAuth<{ wsId: string; boardId: string }>(
         );
       }
 
-      serverLogger.error('Error removing task board share:', error);
+      console.error('Error removing task board share:', error);
       return NextResponse.json(
         { error: 'Internal server error' },
         { status: 500 }

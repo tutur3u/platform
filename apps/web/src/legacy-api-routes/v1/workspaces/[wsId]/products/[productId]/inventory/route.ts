@@ -5,7 +5,6 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 const InventoryItemSchema = z.object({
   warehouse_id: z.guid(),
@@ -97,10 +96,7 @@ export async function POST(req: Request, { params }: Params) {
     .maybeSingle();
 
   if (productError) {
-    serverLogger.error(
-      'Error validating product inventory target',
-      productError
-    );
+    console.error('Error validating product inventory target', productError);
     return NextResponse.json(
       { message: 'Error validating product' },
       { status: 500 }
@@ -118,7 +114,7 @@ export async function POST(req: Request, { params }: Params) {
   });
   if (!inventoryRelations.ok) {
     if (inventoryRelations.status === 500) {
-      serverLogger.error(inventoryRelations.message, inventoryRelations.error);
+      console.error(inventoryRelations.message, inventoryRelations.error);
     }
     return NextResponse.json(
       { message: inventoryRelations.message },
@@ -135,7 +131,7 @@ export async function POST(req: Request, { params }: Params) {
   );
 
   if (error) {
-    serverLogger.error('Error creating product inventory', error);
+    console.error('Error creating product inventory', error);
     return NextResponse.json(
       { message: 'Error creating inventory' },
       { status: 500 }
@@ -232,7 +228,7 @@ export async function PATCH(req: Request, { params }: Params) {
   });
   if (!inventoryRelations.ok) {
     if (inventoryRelations.status === 500) {
-      serverLogger.error(inventoryRelations.message, inventoryRelations.error);
+      console.error(inventoryRelations.message, inventoryRelations.error);
     }
     return NextResponse.json(
       { message: inventoryRelations.message },
@@ -247,7 +243,7 @@ export async function PATCH(req: Request, { params }: Params) {
     .eq('product_id', productId);
 
   if (fetchError) {
-    serverLogger.error('Error fetching existing product inventory', fetchError);
+    console.error('Error fetching existing product inventory', fetchError);
     return NextResponse.json(
       { message: 'Error fetching existing inventory' },
       { status: 500 }
@@ -291,7 +287,7 @@ export async function PATCH(req: Request, { params }: Params) {
       .eq('product_id', productId);
 
     if (deleteError) {
-      serverLogger.error('Error deleting product inventory items', deleteError);
+      console.error('Error deleting product inventory items', deleteError);
       return NextResponse.json(
         { message: 'Error deleting inventory items' },
         { status: 500 }
@@ -340,7 +336,7 @@ export async function PATCH(req: Request, { params }: Params) {
     for (const item of toDelete) {
       const { unit_id, warehouse_id } = item;
       if (!warehouse_id || !unit_id) {
-        serverLogger.warn('Invalid product inventory key', {
+        console.warn('Invalid product inventory key', {
           warehouse_id,
           unit_id,
         });
@@ -373,10 +369,7 @@ export async function PATCH(req: Request, { params }: Params) {
         .eq('unit_id', unit_id);
 
       if (deleteError) {
-        serverLogger.error(
-          'Error deleting product inventory item',
-          deleteError
-        );
+        console.error('Error deleting product inventory item', deleteError);
         return NextResponse.json(
           { message: 'Error deleting inventory items' },
           { status: 500 }
@@ -397,10 +390,7 @@ export async function PATCH(req: Request, { params }: Params) {
       );
 
     if (insertError) {
-      serverLogger.error(
-        'Error inserting product inventory items',
-        insertError
-      );
+      console.error('Error inserting product inventory items', insertError);
       return NextResponse.json(
         { message: 'Error inserting new inventory items' },
         { status: 500 }
@@ -472,10 +462,7 @@ export async function PATCH(req: Request, { params }: Params) {
         .eq('unit_id', item.unit_id);
 
       if (updateError) {
-        serverLogger.error(
-          'Error updating product inventory item',
-          updateError
-        );
+        console.error('Error updating product inventory item', updateError);
         return NextResponse.json(
           { message: 'Error updating inventory items' },
           { status: 500 }
@@ -527,7 +514,7 @@ export async function GET(req: Request, { params }: Params) {
     .eq('product_id', productId);
 
   if (error) {
-    serverLogger.error('Error fetching product inventory', error);
+    console.error('Error fetching product inventory', error);
     return NextResponse.json(
       { message: 'Error fetching inventory' },
       { status: 500 }
@@ -574,10 +561,7 @@ export async function DELETE(req: Request, { params }: Params) {
     .eq('product_id', productId);
 
   if (fetchError) {
-    serverLogger.error(
-      'Error fetching product inventory before delete',
-      fetchError
-    );
+    console.error('Error fetching product inventory before delete', fetchError);
     return NextResponse.json(
       { message: 'Error fetching existing inventory' },
       { status: 500 }
@@ -612,7 +596,7 @@ export async function DELETE(req: Request, { params }: Params) {
         .from('product_stock_changes')
         .insert(stockChanges);
       if (stockChangeError) {
-        serverLogger.error('Error logging stock changes', stockChangeError);
+        console.error('Error logging stock changes', stockChangeError);
       }
     }
   }
@@ -624,7 +608,7 @@ export async function DELETE(req: Request, { params }: Params) {
     .eq('product_id', productId);
 
   if (error) {
-    serverLogger.error('Error deleting product inventory', error);
+    console.error('Error deleting product inventory', error);
     return NextResponse.json(
       { message: 'Error deleting inventory' },
       { status: 500 }

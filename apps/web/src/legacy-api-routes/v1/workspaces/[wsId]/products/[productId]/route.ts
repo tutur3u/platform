@@ -21,7 +21,6 @@ import type { ProductInventory } from '@tuturuuu/types/primitives/ProductInvento
 import { MAX_NAME_LENGTH } from '@tuturuuu/utils/constants';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 const RouteParamsSchema = z.object({
   wsId: z.string().max(MAX_NAME_LENGTH).min(1),
@@ -127,7 +126,7 @@ export async function GET(req: Request, { params }: Params) {
     });
     item = result.data[0] ?? null;
   } catch (error) {
-    serverLogger.error('Error fetching product:', error);
+    console.error('Error fetching product:', error);
     return NextResponse.json(
       { message: 'Error fetching product' },
       { status: 500 }
@@ -288,10 +287,7 @@ export async function PATCH(req: Request, { params }: Params) {
     });
     if (!inventoryRelations.ok) {
       if (inventoryRelations.status === 500) {
-        serverLogger.error(
-          inventoryRelations.message,
-          inventoryRelations.error
-        );
+        console.error(inventoryRelations.message, inventoryRelations.error);
       }
       return NextResponse.json(
         { message: inventoryRelations.message },
@@ -336,7 +332,7 @@ export async function PATCH(req: Request, { params }: Params) {
     .maybeSingle();
 
   if (product.error) {
-    serverLogger.error('Error updating product', product.error);
+    console.error('Error updating product', product.error);
     return NextResponse.json(
       { message: 'Error updating product' },
       { status: 500 }
@@ -356,10 +352,7 @@ export async function PATCH(req: Request, { params }: Params) {
       .eq('product_id', productId);
 
     if (deleteError) {
-      serverLogger.error(
-        'Error deleting existing product inventory',
-        deleteError
-      );
+      console.error('Error deleting existing product inventory', deleteError);
       return NextResponse.json(
         { message: 'Error updating inventory' },
         { status: 500 }
@@ -377,7 +370,7 @@ export async function PATCH(req: Request, { params }: Params) {
       );
 
     if (insertError) {
-      serverLogger.error('Error inserting product inventory', insertError);
+      console.error('Error inserting product inventory', insertError);
       return NextResponse.json(
         { message: 'Error updating inventory' },
         { status: 500 }
@@ -464,7 +457,7 @@ export async function DELETE(req: Request, { params }: Params) {
     .maybeSingle();
 
   if (productError) {
-    serverLogger.error('Error fetching product for deletion:', productError);
+    console.error('Error fetching product for deletion:', productError);
     return NextResponse.json(
       { message: 'Error deleting workspace product' },
       { status: 500 }
@@ -484,7 +477,7 @@ export async function DELETE(req: Request, { params }: Params) {
     .maybeSingle();
 
   if (error) {
-    serverLogger.error('Error deleting workspace product', error);
+    console.error('Error deleting workspace product', error);
     return NextResponse.json(
       { message: 'Error deleting workspace product' },
       { status: 500 }

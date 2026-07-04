@@ -13,7 +13,6 @@ import {
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { resolveAuthenticatedSessionUser } from '@/lib/app-session-user';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 export const taskPlanPermissionSchema = z.enum(['view', 'edit']);
 export const taskPlanPeriodSchema = z.enum(['week', 'month', 'year']);
@@ -289,7 +288,7 @@ export async function requireTaskPlanAccess({
       return { schemaUnavailable: true as const };
     }
 
-    serverLogger.error('Failed to verify task plan access', {
+    console.error('Failed to verify task plan access', {
       error,
       planId,
       permission,
@@ -362,7 +361,7 @@ export async function requireIntendedWorkspace({
       return { schemaUnavailable: true as const };
     }
 
-    serverLogger.error('Failed to verify task plan intended workspace', {
+    console.error('Failed to verify task plan intended workspace', {
       error,
       planId,
       wsId,

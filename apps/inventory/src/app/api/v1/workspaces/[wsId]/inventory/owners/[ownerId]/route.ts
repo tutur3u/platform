@@ -8,7 +8,6 @@ import { canManageInventorySetup } from '@tuturuuu/inventory-core/permissions';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 const OwnerUpdateSchema = z.object({
   name: z.string().trim().min(1).max(255).optional(),
@@ -83,7 +82,7 @@ export async function PATCH(req: Request, { params }: Params) {
     .single();
 
   if (error) {
-    serverLogger.error('Error updating inventory owner', error);
+    console.error('Error updating inventory owner', error);
     return NextResponse.json(
       { message: 'Failed to update inventory owner' },
       { status: 500 }
@@ -149,7 +148,7 @@ export async function DELETE(req: Request, { params }: Params) {
     .maybeSingle();
 
   if (error) {
-    serverLogger.error('Error deleting inventory owner', error);
+    console.error('Error deleting inventory owner', error);
     return NextResponse.json(
       { message: 'Failed to delete inventory owner' },
       { status: 500 }

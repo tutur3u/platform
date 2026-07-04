@@ -23,6 +23,8 @@ const {
   serverLoggerErrorMock: vi.fn(),
 }));
 
+const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
 vi.mock('@tuturuuu/supabase/next/server', () => ({
   createClient: createClientMock,
 }));
@@ -203,7 +205,7 @@ describe('infrastructure stress-test route', () => {
     expect(body.message).toBe('Unable to queue stress-test control request.');
     expect(body.message).not.toContain('/app/runtime');
     expect(persistStressTestRunMock).not.toHaveBeenCalled();
-    expect(serverLoggerErrorMock).toHaveBeenCalledWith(
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
       'Failed to queue infrastructure stress test control file',
       writeError
     );
@@ -236,7 +238,7 @@ describe('infrastructure stress-test route', () => {
     expect(body.message).toBe('Unable to queue stress-test control request.');
     expect(body.message).not.toContain('/app/runtime');
     expect(persistStressTestRunMock).not.toHaveBeenCalled();
-    expect(serverLoggerErrorMock).toHaveBeenCalledWith(
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
       'Failed to queue infrastructure stress test abort control file',
       writeError
     );

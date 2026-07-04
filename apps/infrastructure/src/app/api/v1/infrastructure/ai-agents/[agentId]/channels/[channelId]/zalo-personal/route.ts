@@ -8,10 +8,7 @@ import {
   syncAiAgentZaloPersonalPhoneHistory,
   validateAiAgentZaloPersonalChannel,
 } from '@/lib/ai-agents/zalo-personal-listeners';
-import {
-  serverLogger,
-  withRequestLogDrain,
-} from '@/lib/infrastructure/log-drain';
+import { withRequestLogDrain } from '@/lib/infrastructure/log-drain';
 import { requireAiAgentAdmin } from '../../../../access';
 
 interface Params {
@@ -84,7 +81,7 @@ function startPhoneSyncJob(input: PhoneSyncInput) {
         snapshot.status = 'completed';
         snapshot.sync = result.sync;
 
-        serverLogger.info('Personal Zalo phone sync background job completed', {
+        console.info('Personal Zalo phone sync background job completed', {
           agentId: input.agentId,
           channelId: input.channelId,
           status: result.sync.status,
@@ -104,7 +101,7 @@ function startPhoneSyncJob(input: PhoneSyncInput) {
         snapshot.error = error instanceof Error ? error.message : String(error);
         snapshot.status = 'failed';
 
-        serverLogger.warn('Personal Zalo phone sync background job failed', {
+        console.warn('Personal Zalo phone sync background job failed', {
           agentId: input.agentId,
           channelId: input.channelId,
           error: snapshot.error,
@@ -184,7 +181,7 @@ async function getStatus(request: NextRequest, { params }: Params) {
       status,
     });
   } catch (error) {
-    serverLogger.warn('Failed to get personal Zalo AI agent status', {
+    console.warn('Failed to get personal Zalo AI agent status', {
       agentId,
       channelId,
       error: error instanceof Error ? error.message : String(error),
@@ -271,7 +268,7 @@ async function runAction(request: NextRequest, { params }: Params) {
 
     return NextResponse.json({ status });
   } catch (error) {
-    serverLogger.warn('Failed to run personal Zalo AI agent action', {
+    console.warn('Failed to run personal Zalo AI agent action', {
       action: parsed.data.action,
       agentId,
       channelId,

@@ -2,7 +2,6 @@ import { searchMindNodes } from '@tuturuuu/mind-core';
 import { requireMindAccess } from '@tuturuuu/mind-core/access';
 import { NextResponse } from 'next/server';
 import { withSessionAuth } from '@/lib/api-auth';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 type Params = {
   wsId: string;
@@ -23,7 +22,7 @@ export const GET = withSessionAuth<Params>(
 
       return NextResponse.json({ nodes });
     } catch (error) {
-      serverLogger.error('Error searching Mind nodes:', error);
+      console.error('Error searching Mind nodes:', error);
       return NextResponse.json(
         { error: 'Failed to search Mind nodes' },
         { status: 500 }

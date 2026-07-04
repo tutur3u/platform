@@ -1,6 +1,5 @@
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import type { Json } from '@tuturuuu/types';
-import { serverLogger } from '../infrastructure/log-drain';
 
 export interface InventoryAuditActor {
   authUserId: string | null;
@@ -66,7 +65,7 @@ export async function createInventoryAuditLog(
     ]);
 
   if (error) {
-    serverLogger.error('Failed to create inventory audit log', error);
+    console.error('Failed to create inventory audit log', error);
   }
 }
 

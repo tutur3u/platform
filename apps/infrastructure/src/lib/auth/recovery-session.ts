@@ -4,7 +4,6 @@ import {
   createDetachedClient,
 } from '@tuturuuu/supabase/next/server';
 import { checkIfUserExists } from '@tuturuuu/utils/email/server';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
   getActiveAuthRecoveryOverride,
   logAuthRecoveryEvent,
@@ -147,7 +146,7 @@ export async function prepareNormalAuthRecoveryOverrideUse(input: {
       email_confirm: true,
     });
     if (error) {
-      serverLogger.warn('Failed to unban auth recovery user', {
+      console.warn('Failed to unban auth recovery user', {
         message: error.message,
         overrideId: override.id,
       });

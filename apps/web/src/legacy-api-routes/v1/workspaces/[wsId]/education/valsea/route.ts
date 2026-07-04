@@ -17,7 +17,6 @@ import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { type AuthorizedRequest, withSessionAuth } from '@/lib/api-auth';
 import { checkEducationWorkspaceAccess } from '@/lib/education/access';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
   isValseaAudioStoragePath,
   MAX_VALSEA_AUDIO_UPLOAD_BYTES,
@@ -517,7 +516,7 @@ Return observable sentiment dimensions, short evidence spans copied from the tra
       reasoningTokens: usage.outputTokenDetails?.reasoningTokens ?? 0,
       feature: 'generate',
     }).catch((error: unknown) =>
-      serverLogger.warn('Failed to deduct Valsea sentiment credits', error)
+      console.warn('Failed to deduct Valsea sentiment credits', error)
     );
 
     stages.push({
@@ -546,7 +545,7 @@ Return observable sentiment dimensions, short evidence spans copied from the tra
       provider: 'mira',
       status: 'skipped',
     });
-    serverLogger.warn('Mira sentiment layer unavailable', error);
+    console.warn('Mira sentiment layer unavailable', error);
     return null;
   }
 }
@@ -929,10 +928,7 @@ export const POST = withSessionAuth<Params>(
         );
       }
 
-      serverLogger.error(
-        'Failed to generate Valsea classroom artifact:',
-        error
-      );
+      console.error('Failed to generate Valsea classroom artifact:', error);
       return NextResponse.json(
         { message: 'Failed to generate classroom artifact' },
         { status: 500 }

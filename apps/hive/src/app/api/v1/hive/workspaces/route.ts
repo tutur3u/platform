@@ -1,7 +1,7 @@
 import { fetchWorkspaceSummaries } from '@tuturuuu/ui/lib/workspace-actions';
 import { type NextRequest, NextResponse } from 'next/server';
 import { getHivePersonalWorkspaceId } from '@/lib/hive/ai';
-import { requireHiveAccess, serverLogger, withHiveRoute } from '../_shared';
+import { requireHiveAccess, withHiveRoute } from '../_shared';
 
 const ROUTE = '/api/v1/hive/workspaces';
 
@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
 
       return NextResponse.json({ personalWorkspaceId, workspaces });
     } catch (error) {
-      serverLogger.error('Failed to list Hive workspaces', {
+      console.error('Failed to list Hive workspaces', {
         error: error instanceof Error ? error.message : String(error),
         userId: result.access.user.id,
       });

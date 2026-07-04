@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
   budgetPayloadSchema,
   requireBudgetAccess,
@@ -53,7 +52,7 @@ export async function PATCH(request: Request, { params }: Params) {
     .maybeSingle();
 
   if (existing.error) {
-    serverLogger.error('Error loading budget for update:', existing.error);
+    console.error('Error loading budget for update:', existing.error);
     return NextResponse.json(
       { message: 'Error updating budget' },
       { status: 500 }
@@ -76,7 +75,7 @@ export async function PATCH(request: Request, { params }: Params) {
     .maybeSingle();
 
   if (error) {
-    serverLogger.error('Error updating budget:', error);
+    console.error('Error updating budget:', error);
     return NextResponse.json(
       { message: 'Error updating budget' },
       { status: 500 }
@@ -118,7 +117,7 @@ export async function DELETE(request: Request, { params }: Params) {
     .maybeSingle();
 
   if (error) {
-    serverLogger.error('Error deleting budget:', error);
+    console.error('Error deleting budget:', error);
     return NextResponse.json(
       { message: 'Error deleting budget' },
       { status: 500 }

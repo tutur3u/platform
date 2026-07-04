@@ -12,7 +12,6 @@ import {
   chatRpcErrorResponse,
   resolveChatRouteContext,
 } from '@/lib/chat/private-rpc';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 type RouteParams = {
   conversationId: string;
@@ -161,7 +160,7 @@ async function listAiMessages(chatId: string) {
     .order('created_at', { ascending: true });
 
   if (error) {
-    serverLogger.error('Failed to load AI chat messages for observability', {
+    console.error('Failed to load AI chat messages for observability', {
       chatId,
       error,
     });
@@ -183,7 +182,7 @@ async function listAiCreditTransactions(messageIds: string[]) {
     .in('chat_message_id', messageIds);
 
   if (error) {
-    serverLogger.error('Failed to load AI credit transactions for chat', {
+    console.error('Failed to load AI credit transactions for chat', {
       error,
       messageCount: messageIds.length,
     });

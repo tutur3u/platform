@@ -4,10 +4,7 @@ import {
   type ChatIntegrationKind,
   createChatIntegrationChannel,
 } from '@/lib/ai-agents/chat-integrations';
-import {
-  serverLogger,
-  withRequestLogDrain,
-} from '@/lib/infrastructure/log-drain';
+import { withRequestLogDrain } from '@/lib/infrastructure/log-drain';
 import { requireAiAgentAdmin } from '../access';
 
 const chatIntegrationSchema = z.object({
@@ -43,7 +40,7 @@ async function createIntegration(request: NextRequest) {
 
     return NextResponse.json(result, { status: 201 });
   } catch (error) {
-    serverLogger.warn('Failed to create chat integration channel', {
+    console.warn('Failed to create chat integration channel', {
       error: error instanceof Error ? error.message : String(error),
       kind: parsed.data.kind,
     });

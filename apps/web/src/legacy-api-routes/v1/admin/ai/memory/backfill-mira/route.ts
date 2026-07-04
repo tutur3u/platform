@@ -8,7 +8,6 @@ import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { isValidTuturuuuEmail } from '@tuturuuu/utils/email/client';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 const BackfillSchema = z.object({
   limit: z.number().int().min(1).max(500).default(100),
@@ -69,7 +68,7 @@ export async function POST(request: NextRequest) {
   );
 
   if (runError || !runId) {
-    serverLogger.error('Failed to create AI memory backfill run', {
+    console.error('Failed to create AI memory backfill run', {
       error: runError,
       userId: user.id,
     });

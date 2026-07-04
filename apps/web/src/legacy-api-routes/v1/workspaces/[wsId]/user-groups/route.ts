@@ -7,7 +7,6 @@ import {
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
   resolveRequestActorAuthUid,
   resolveUserGroupRouteWorkspaceId,
@@ -67,7 +66,7 @@ export async function GET(req: Request, { params }: Params) {
     .eq('ws_id', normalizedWsId);
 
   if (error) {
-    serverLogger.error('Error fetching workspace user groups:', error);
+    console.error('Error fetching workspace user groups:', error);
     return NextResponse.json(
       { message: 'Error fetching workspace user groups' },
       { status: 500 }
@@ -121,7 +120,7 @@ export async function POST(req: Request, { params }: Params) {
     });
 
   if (error) {
-    serverLogger.error('Error creating workspace user group:', error);
+    console.error('Error creating workspace user group:', error);
     return NextResponse.json(
       { message: 'Error creating workspace user group' },
       { status: 500 }
@@ -138,7 +137,7 @@ export async function POST(req: Request, { params }: Params) {
     );
 
   if (configError) {
-    serverLogger.error(
+    console.error(
       'Error fetching default-included-group configs:',
       configError
     );
@@ -162,7 +161,7 @@ export async function POST(req: Request, { params }: Params) {
     );
 
     if (errorMessage) {
-      serverLogger.error(
+      console.error(
         'Error updating default included user groups after group creation:',
         errorMessage
       );

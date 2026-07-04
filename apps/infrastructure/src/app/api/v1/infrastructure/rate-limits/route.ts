@@ -13,7 +13,6 @@ import {
 import { MAX_SEARCH_LENGTH } from '@tuturuuu/utils/constants';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { readEdgeTrustState } from '@/lib/infrastructure/rate-limit-redis-admin';
 import { enrichRateLimitRules } from '@/lib/rate-limits/subject-resolution';
 import {
@@ -175,7 +174,7 @@ export async function GET(request: Request) {
   const { data, error } = await query;
 
   if (error) {
-    serverLogger.error('Failed to load rate-limit rules', error);
+    console.error('Failed to load rate-limit rules', error);
     return NextResponse.json(
       { message: 'Failed to load rate-limit rules' },
       { status: 500 }
@@ -284,7 +283,7 @@ export async function POST(request: Request) {
     .single();
 
   if (error) {
-    serverLogger.error('Failed to create rate-limit rule', error);
+    console.error('Failed to create rate-limit rule', error);
     return NextResponse.json(
       { message: 'Failed to create rate-limit rule' },
       { status: 500 }
@@ -346,7 +345,7 @@ export async function PATCH(request: Request) {
       message: 'Updated abuse protection controls.',
     });
   } catch (error) {
-    serverLogger.error('Failed to update abuse protection controls', error);
+    console.error('Failed to update abuse protection controls', error);
     return NextResponse.json(
       { message: 'Failed to update abuse protection controls' },
       { status: 500 }

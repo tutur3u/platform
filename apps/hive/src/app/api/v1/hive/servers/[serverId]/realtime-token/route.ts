@@ -2,7 +2,6 @@ import { type NextRequest, NextResponse } from 'next/server';
 import { getHiveServer } from '@/lib/hive/hive-db';
 import {
   requireHiveAccess,
-  serverLogger,
   signHiveRealtimeToken,
   withHiveRoute,
 } from '../../../_shared';
@@ -46,7 +45,7 @@ async function createToken(request: NextRequest, serverId: string) {
       userId: result.access.user.id,
     });
   } catch (error) {
-    serverLogger.error('Failed to sign Hive realtime token', {
+    console.error('Failed to sign Hive realtime token', {
       error: error instanceof Error ? error.message : String(error),
       serverId,
     });

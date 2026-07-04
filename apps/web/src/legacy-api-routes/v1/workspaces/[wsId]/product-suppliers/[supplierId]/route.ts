@@ -1,7 +1,6 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 interface Params {
   params: Promise<{
@@ -36,7 +35,7 @@ export async function PUT(req: Request, { params }: Params) {
     .eq('ws_id', wsId);
 
   if (error) {
-    serverLogger.error('Error updating product supplier', error);
+    console.error('Error updating product supplier', error);
     return NextResponse.json(
       { message: 'Error updating product category' },
       { status: 500 }
@@ -71,7 +70,7 @@ export async function DELETE(_: Request, { params }: Params) {
     .eq('ws_id', wsId);
 
   if (error) {
-    serverLogger.error('Error deleting product supplier', error);
+    console.error('Error deleting product supplier', error);
     return NextResponse.json(
       { message: 'Error deleting product category' },
       { status: 500 }

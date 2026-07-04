@@ -1,7 +1,6 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { TransactionCategory } from '@tuturuuu/types/primitives/TransactionCategory';
 import { NextResponse } from 'next/server';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 interface Params {
   params: Promise<{
@@ -25,7 +24,7 @@ export async function PUT(req: Request, { params }: Params) {
     .eq('id', data.id);
 
   if (error) {
-    serverLogger.error('Error migrating product categories:', error);
+    console.error('Error migrating product categories:', error);
     return NextResponse.json(
       { message: 'Error migrating product categories' },
       { status: 500 }

@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
   requireTeachWorkspaceAccess,
   validateTeachCourse,
@@ -61,7 +60,7 @@ export const GET = withSessionAuth(
       .order('role', { ascending: true });
 
     if (error) {
-      serverLogger.error('Failed to fetch Teach course members', { error });
+      console.error('Failed to fetch Teach course members', { error });
       return NextResponse.json(
         { message: 'Error fetching course members' },
         { status: 500 }
@@ -145,7 +144,7 @@ export const POST = withSessionAuth(
       .in('id', uniqueMemberIds);
 
     if (usersError) {
-      serverLogger.error('Failed to validate Teach course members', {
+      console.error('Failed to validate Teach course members', {
         error: usersError,
       });
       return NextResponse.json(
@@ -173,7 +172,7 @@ export const POST = withSessionAuth(
       );
 
     if (error) {
-      serverLogger.error('Failed to add Teach course members', { error });
+      console.error('Failed to add Teach course members', { error });
       return NextResponse.json(
         { message: 'Error adding course members' },
         { status: 500 }

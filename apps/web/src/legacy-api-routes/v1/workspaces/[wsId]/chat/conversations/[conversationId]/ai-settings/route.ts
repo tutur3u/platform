@@ -25,7 +25,6 @@ import {
   chatRpcErrorResponse,
   resolveChatRouteContext,
 } from '@/lib/chat/private-rpc';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 type RouteParams = {
   conversationId: string;
@@ -202,7 +201,7 @@ async function getPersonalWorkspaceId(userId: string) {
     .maybeSingle();
 
   if (error) {
-    serverLogger.error('Failed to resolve personal workspace for AI settings', {
+    console.error('Failed to resolve personal workspace for AI settings', {
       error,
       userId,
     });
@@ -229,7 +228,7 @@ async function getNativeAiSettings({
   let error = fullResult.error;
 
   if (error && isChatAiSettingsSchemaCacheError(error)) {
-    serverLogger.warn('Chat AI settings schema cache stale on read', {
+    console.warn('Chat AI settings schema cache stale on read', {
       conversationId,
       error: serializeChatAiSettingsDbError(error),
     });
@@ -245,7 +244,7 @@ async function getNativeAiSettings({
   }
 
   if (error) {
-    serverLogger.error('Failed to load native AI chat settings', {
+    console.error('Failed to load native AI chat settings', {
       conversationId,
       error: serializeChatAiSettingsDbError(error),
     });
@@ -282,7 +281,7 @@ async function updateNativeAiSettings({
   let error = fullResult.error;
 
   if (error && isChatAiSettingsSchemaCacheError(error)) {
-    serverLogger.warn('Chat AI settings schema cache stale on update', {
+    console.warn('Chat AI settings schema cache stale on update', {
       conversationId,
       error: serializeChatAiSettingsDbError(error),
       payloadFields: Object.keys(updatePayload),

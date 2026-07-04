@@ -3,7 +3,6 @@ import { canViewInventoryCatalog } from '@tuturuuu/inventory-core/permissions';
 import { getInventoryProductFormOptions } from '@tuturuuu/inventory-core/product-rpc';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 interface Params {
   params: Promise<{
@@ -29,7 +28,7 @@ export async function GET(req: Request, { params }: Params) {
 
     return NextResponse.json(data);
   } catch (error) {
-    serverLogger.error('Error fetching inventory product form options', error);
+    console.error('Error fetching inventory product form options', error);
     return NextResponse.json(
       { message: 'Failed to fetch inventory product form options' },
       { status: 500 }

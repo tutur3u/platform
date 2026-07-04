@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
   requireTeachWorkspaceAccess,
   validateTeachCourse,
@@ -109,7 +108,7 @@ export const GET = withSessionAuth(
         .lt('date', endDate);
 
       if (error) {
-        serverLogger.error('Failed to fetch Teach attendance month', {
+        console.error('Failed to fetch Teach attendance month', {
           error,
         });
         return NextResponse.json(
@@ -161,7 +160,7 @@ export const GET = withSessionAuth(
       .eq('date', parsedDate ?? '');
 
     if (error) {
-      serverLogger.error('Failed to fetch Teach attendance', { error });
+      console.error('Failed to fetch Teach attendance', { error });
       return NextResponse.json(
         { message: 'Error fetching attendance' },
         { status: 500 }
@@ -259,7 +258,7 @@ export const POST = withSessionAuth(
         .in('user_id', toDelete);
 
       if (error) {
-        serverLogger.error('Failed to delete Teach attendance', { error });
+        console.error('Failed to delete Teach attendance', { error });
         return NextResponse.json(
           { message: 'Error deleting attendance' },
           { status: 500 }
@@ -273,7 +272,7 @@ export const POST = withSessionAuth(
         .upsert(toUpsert);
 
       if (error) {
-        serverLogger.error('Failed to save Teach attendance', { error });
+        console.error('Failed to save Teach attendance', { error });
         return NextResponse.json(
           { message: 'Error saving attendance' },
           { status: 500 }

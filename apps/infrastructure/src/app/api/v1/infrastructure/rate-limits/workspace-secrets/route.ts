@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { RATE_LIMIT_SECRET_NAMES } from '@/lib/rate-limit';
 import { authorizeAbuseIntelligenceRequest } from '../../abuse-intelligence/_shared';
 
@@ -42,7 +41,7 @@ export async function GET(request: Request) {
     .in('name', MANAGED_SECRET_NAMES);
 
   if (error) {
-    serverLogger.error('Failed to load workspace rate-limit secrets', error);
+    console.error('Failed to load workspace rate-limit secrets', error);
     return NextResponse.json(
       { message: 'Failed to load workspace rate-limit secrets' },
       { status: 500 }
@@ -91,10 +90,7 @@ export async function PUT(request: Request) {
     .in('name', MANAGED_SECRET_NAMES);
 
   if (loadError) {
-    serverLogger.error(
-      'Failed to load workspace secrets for update',
-      loadError
-    );
+    console.error('Failed to load workspace secrets for update', loadError);
     return NextResponse.json(
       { message: 'Failed to update workspace rate-limit secrets' },
       { status: 500 }
@@ -132,7 +128,7 @@ export async function PUT(request: Request) {
     }
 
     if (mutationError) {
-      serverLogger.error('Failed to persist workspace rate-limit secret', {
+      console.error('Failed to persist workspace rate-limit secret', {
         message: mutationError.message,
         name,
         wsId,

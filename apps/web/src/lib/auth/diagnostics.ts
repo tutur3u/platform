@@ -1,8 +1,4 @@
 import { randomBytes } from 'node:crypto';
-import {
-  type LogDrainLevel,
-  serverLogger,
-} from '@/lib/infrastructure/log-drain';
 
 export type AuthDiagnosticStage =
   | 'account_list'
@@ -29,6 +25,7 @@ type ReturnUrlKind =
   | 'missing'
   | 'same-origin'
   | 'unsupported';
+type AuthDiagnosticLevel = 'error' | 'warn';
 
 const AUTH_DIAGNOSTIC_PREFIXES: Record<AuthDiagnosticStage, string> = {
   account_list: 'AUTH-ACC-LIST',
@@ -107,7 +104,7 @@ export function logAuthDiagnostic({
   client?: string | null;
   code: string;
   error?: unknown;
-  level?: Extract<LogDrainLevel, 'error' | 'warn'>;
+  level?: AuthDiagnosticLevel;
   message: string;
   platform?: string | null;
   request?: Request;
@@ -116,7 +113,9 @@ export function logAuthDiagnostic({
   stage: AuthDiagnosticStage;
   status?: number;
 }) {
-  serverLogger[level](message, {
+  const log = level === 'warn' ? console.warn : console.error;
+
+  log(message, {
     authMethod,
     client: client || undefined,
     diagnosticCode: code,

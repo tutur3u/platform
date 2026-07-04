@@ -2,7 +2,6 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
   awardTulearnXp,
   getAssignedCourseIds,
@@ -40,7 +39,7 @@ export const GET = withSessionAuth<Params>(
       const accessResponse = tulearnAccessErrorResponse(error);
       if (accessResponse) return accessResponse;
 
-      serverLogger.error('Failed to list Tulearn assignments:', error);
+      console.error('Failed to list Tulearn assignments:', error);
       return NextResponse.json(
         { message: 'Failed to load assignments' },
         { status: 500 }
@@ -140,7 +139,7 @@ export const PATCH = withSessionAuth<Params>(
       const accessResponse = tulearnAccessErrorResponse(error);
       if (accessResponse) return accessResponse;
 
-      serverLogger.error('Failed to update Tulearn assignment:', error);
+      console.error('Failed to update Tulearn assignment:', error);
       return NextResponse.json(
         { message: 'Failed to update assignment' },
         { status: 500 }

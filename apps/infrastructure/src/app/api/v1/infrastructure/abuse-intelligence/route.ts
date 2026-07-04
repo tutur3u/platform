@@ -7,7 +7,6 @@ import {
 import { MAX_SEARCH_LENGTH } from '@tuturuuu/utils/constants';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
   authorizeAbuseIntelligenceRequest,
   defaultTrustMultiplierForTier,
@@ -90,10 +89,7 @@ export async function GET(request: Request) {
     overridesResult.error;
 
   if (firstError) {
-    serverLogger.error(
-      'Failed to load abuse intelligence snapshot',
-      firstError
-    );
+    console.error('Failed to load abuse intelligence snapshot', firstError);
     return NextResponse.json(
       { message: 'Failed to load abuse intelligence snapshot' },
       { status: 500 }
@@ -179,7 +175,7 @@ export async function POST(request: Request) {
     .single();
 
   if (error) {
-    serverLogger.error('Failed to create abuse trust override', error);
+    console.error('Failed to create abuse trust override', error);
     return NextResponse.json(
       { message: 'Failed to create abuse trust override' },
       { status: 500 }

@@ -1,5 +1,4 @@
 import { type NextRequest, NextResponse } from 'next/server';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
   isTaskPlanSchemaUnavailableError,
   planCreateSchema,
@@ -102,7 +101,7 @@ export async function GET(request: NextRequest, context: TaskPlanRouteContext) {
       return taskPlanSchemaUnavailableResponse({ plans: [] });
     }
 
-    serverLogger.error('Failed to list task plans', { error });
+    console.error('Failed to list task plans', { error });
     return taskPlanErrorResponse('Failed to list task plans', 500);
   }
 }
@@ -185,7 +184,7 @@ export async function POST(
       return taskPlanSchemaUnavailableResponse();
     }
 
-    serverLogger.error('Failed to create task plan', { error });
+    console.error('Failed to create task plan', { error });
     return taskPlanRouteErrorResponse(error, 'Failed to create task plan');
   }
 }

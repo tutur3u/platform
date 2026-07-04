@@ -13,7 +13,6 @@ import {
   getUserGroupMemberships,
 } from '@/app/[locale]/(dashboard)/[wsId]/users/groups/utils';
 import { sortWorkspaceUsersByArchive } from '@/app/[locale]/(dashboard)/[wsId]/users/reports/user-archive';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { getPostgrestRateLimitMetadata } from '@/lib/postgrest-rate-limit';
 
 const SearchParamsSchema = z.object({
@@ -83,9 +82,9 @@ function reportsDashboardErrorResponse({
   };
 
   if (status >= 500) {
-    serverLogger.error('Reports dashboard API failed', metadata);
+    console.error('Reports dashboard API failed', metadata);
   } else {
-    serverLogger.warn('Reports dashboard API rejected request', metadata);
+    console.warn('Reports dashboard API rejected request', metadata);
   }
 
   return NextResponse.json({ code, message }, { status, headers });
@@ -400,7 +399,7 @@ export async function GET(request: Request, { params }: Params) {
       : null;
 
     if (reportId && reportId !== 'new' && !reportDetail) {
-      serverLogger.warn('Reports dashboard selected report was not found', {
+      console.warn('Reports dashboard selected report was not found', {
         availableReportIds: reports.map((report) => report.id),
         groupId,
         reportId,

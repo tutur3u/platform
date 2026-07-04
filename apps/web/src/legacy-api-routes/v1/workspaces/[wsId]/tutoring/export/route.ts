@@ -8,7 +8,6 @@ import {
 } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 const QuerySchema = z.object({
   attendanceStatus: z
@@ -118,7 +117,7 @@ export async function GET(request: Request, { params }: Params) {
 
     const { data: pageData, error } = await query;
     if (error) {
-      serverLogger.error('Failed to export tutoring sessions', error);
+      console.error('Failed to export tutoring sessions', error);
       return NextResponse.json({ message: 'Export failed' }, { status: 500 });
     }
 
@@ -156,7 +155,7 @@ export async function GET(request: Request, { params }: Params) {
   ]);
 
   if (groupsResult.error || usersResult.error) {
-    serverLogger.error('Failed to load tutoring export relations', {
+    console.error('Failed to load tutoring export relations', {
       error: groupsResult.error ?? usersResult.error,
       wsId: normalizedWsId,
     });

@@ -13,7 +13,6 @@ import { NextResponse } from 'next/server';
 import { withSessionAuth } from '@/lib/api-auth';
 import { setPrivateWorkspaceQuizAnswer } from '@/lib/education/private-quiz-answers';
 import { revalidateCourseModuleQuizPaths } from '@/lib/education/revalidate-quiz-paths';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { requireTeachWorkspaceAccess } from '@/lib/teach/api';
 import {
   GenerateQuizRequestSchema,
@@ -49,7 +48,7 @@ async function cleanupQuizzes(quizIds: string[], sbAdmin: TypedSupabaseClient) {
     await sbAdmin.from('course_module_quizzes').delete().in('quiz_id', quizIds);
     await sbAdmin.from('workspace_quizzes').delete().in('id', quizIds);
   } catch (error) {
-    serverLogger.error('Failed to clean up generated quizzes', {
+    console.error('Failed to clean up generated quizzes', {
       error,
       quizIds,
     });
@@ -210,7 +209,7 @@ ${lessonInfo}`;
           source: 'quiz_generation',
         },
       }).catch((error: unknown) =>
-        serverLogger.warn('Failed to deduct quiz generation AI credits', {
+        console.warn('Failed to deduct quiz generation AI credits', {
           error,
           lessonId,
           userId: context.user.id,
@@ -327,7 +326,7 @@ ${lessonInfo}`;
         throw error;
       }
     } catch (error) {
-      serverLogger.error('Failed to generate quiz', { error });
+      console.error('Failed to generate quiz', { error });
       return NextResponse.json(
         {
           error: 'Internal Server Error',

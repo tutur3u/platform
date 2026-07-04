@@ -2,7 +2,6 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import type { MetricCategory } from '@/app/[locale]/(dashboard)/[wsId]/users/groups/[groupId]/indicators/types';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
   hasUserGroupInWorkspace,
   resolveRequestActorAuthUid,
@@ -96,7 +95,7 @@ export async function GET(req: Request, { params }: Params) {
     .order('created_at', { ascending: true });
 
   if (indicatorsError) {
-    serverLogger.error('Error fetching group indicators:', indicatorsError);
+    console.error('Error fetching group indicators:', indicatorsError);
     return NextResponse.json(
       { message: 'Error fetching group indicators' },
       { status: 500 }
@@ -117,7 +116,7 @@ export async function GET(req: Request, { params }: Params) {
       : { data: [], error: null };
 
   if (metricCategoryLinksError) {
-    serverLogger.error(
+    console.error(
       'Error fetching group indicator categories:',
       metricCategoryLinksError
     );
@@ -138,7 +137,7 @@ export async function GET(req: Request, { params }: Params) {
     .order('name', { ascending: true });
 
   if (metricCategoriesError) {
-    serverLogger.error(
+    console.error(
       'Error fetching group metric categories:',
       metricCategoriesError
     );
@@ -160,10 +159,7 @@ export async function GET(req: Request, { params }: Params) {
     .eq('user_group_metrics.group_id', groupId);
 
   if (userIndicatorsError) {
-    serverLogger.error(
-      'Error fetching group user indicators:',
-      userIndicatorsError
-    );
+    console.error('Error fetching group user indicators:', userIndicatorsError);
     return NextResponse.json(
       { message: 'Error fetching user indicators' },
       { status: 500 }
@@ -178,7 +174,7 @@ export async function GET(req: Request, { params }: Params) {
     .eq('role', 'TEACHER');
 
   if (managersError) {
-    serverLogger.error('Error fetching group managers:', managersError);
+    console.error('Error fetching group managers:', managersError);
     return NextResponse.json(
       { message: 'Error fetching group managers' },
       { status: 500 }
@@ -251,7 +247,7 @@ export async function POST(req: Request, { params }: Params) {
     });
 
   if (error) {
-    serverLogger.error('Error creating group indicator:', error);
+    console.error('Error creating group indicator:', error);
     return NextResponse.json(
       { message: 'Error creating indicator' },
       { status: 500 }
@@ -301,7 +297,7 @@ export async function PATCH(req: Request, { params }: Params) {
     });
 
   if (error) {
-    serverLogger.error('Error updating group indicator values:', error);
+    console.error('Error updating group indicator values:', error);
     return NextResponse.json(
       { message: 'Error updating indicator values' },
       { status: 500 }

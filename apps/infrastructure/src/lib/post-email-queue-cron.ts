@@ -2,7 +2,7 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
-import { serverLogger, withCronLogDrain } from '@/lib/infrastructure/log-drain';
+import { withCronLogDrain } from '@/lib/infrastructure/log-drain';
 import {
   autoSkipOldApprovedPostChecks,
   autoSkipOldPostEmails,
@@ -163,11 +163,11 @@ function log(
   const timestamp = new Date().toISOString();
   const logLine = `${timestamp} ${LOG_PREFIX} ${message}`;
   if (level === 'error') {
-    serverLogger.error(logLine, data ?? {});
+    console.error(logLine, data ?? {});
   } else if (level === 'warn') {
-    serverLogger.warn(logLine, data ?? {});
+    console.warn(logLine, data ?? {});
   } else {
-    serverLogger.info(logLine, data ?? {});
+    console.info(logLine, data ?? {});
   }
 }
 

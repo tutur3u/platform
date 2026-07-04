@@ -8,7 +8,6 @@ import {
   setPrivateWorkspaceQuizAnswer,
 } from '@/lib/education/private-quiz-answers';
 import { revalidateCourseModuleQuizPaths } from '@/lib/education/revalidate-quiz-paths';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { requireTeachWorkspaceAccess } from '@/lib/teach/api';
 
 const DEFAULT_PAGE_SIZE = 20;
@@ -109,7 +108,7 @@ export const GET = withSessionAuth(
         .eq('module_id', moduleId);
 
       if (mqErr) {
-        serverLogger.error('Failed to fetch course module quizzes', {
+        console.error('Failed to fetch course module quizzes', {
           error: mqErr,
           moduleId,
           wsId: access.normalizedWsId,
@@ -141,7 +140,7 @@ export const GET = withSessionAuth(
 
     const { data, error, count } = await queryBuilder;
     if (error) {
-      serverLogger.error('Failed to fetch workspace quizzes', {
+      console.error('Failed to fetch workspace quizzes', {
         error,
         wsId: access.normalizedWsId,
       });
@@ -316,7 +315,7 @@ export const POST = withSessionAuth(
         message: 'All quizzes processed successfully',
       });
     } catch (error) {
-      serverLogger.error('Bulk quiz error', { error });
+      console.error('Bulk quiz error', { error });
       return NextResponse.json(
         { message: 'An error occurred processing quizzes' },
         { status: 500 }

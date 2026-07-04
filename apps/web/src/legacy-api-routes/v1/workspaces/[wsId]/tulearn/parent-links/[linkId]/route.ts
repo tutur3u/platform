@@ -6,7 +6,6 @@ import {
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 type Params = {
   linkId: string;
@@ -61,7 +60,7 @@ export const PATCH = withSessionAuth<Params>(
 
       return NextResponse.json({ link: data });
     } catch (error) {
-      serverLogger.error('Failed to update Tulearn parent link:', error);
+      console.error('Failed to update Tulearn parent link:', error);
       return NextResponse.json(
         { message: 'Failed to update parent link' },
         { status: 500 }

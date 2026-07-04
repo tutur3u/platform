@@ -11,7 +11,6 @@ import {
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { sendCustomPushMessageBatch } from '@/lib/notifications/push-delivery';
 
 const MAX_BROADCAST_DEVICES = 50;
@@ -90,7 +89,7 @@ async function cleanupInvalidPushTokens(sbAdmin: any, tokens: string[]) {
     .in('token', uniqueTokens);
 
   if (error) {
-    serverLogger.error(
+    console.error(
       '[InfrastructurePushNotifications] Failed to delete invalid push tokens:',
       error
     );
@@ -154,7 +153,7 @@ export async function POST(request: Request) {
   const { data: devices, error } = await query;
 
   if (error) {
-    serverLogger.error(
+    console.error(
       '[InfrastructurePushNotifications] Failed to load push devices:',
       error
     );

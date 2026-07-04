@@ -2,7 +2,6 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { Database } from '@tuturuuu/types';
 import type { InvoiceTotalsByGroup } from '@tuturuuu/types/primitives/Invoice';
 import dayjs from 'dayjs';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 import type { DateRangeParams, WeekStartsOn } from './analytics-types';
 
@@ -97,7 +96,7 @@ export const getDailyInvoiceTotals = async (
   });
 
   if (error) {
-    serverLogger.error('Error fetching daily invoice totals:', error);
+    console.error('Error fetching daily invoice totals:', error);
     return [];
   }
 
@@ -121,7 +120,7 @@ export const getWeeklyInvoiceTotals = async (
   });
 
   if (error) {
-    serverLogger.error('Error fetching weekly invoice totals:', error);
+    console.error('Error fetching weekly invoice totals:', error);
     return [];
   }
 
@@ -143,7 +142,7 @@ export const getMonthlyInvoiceTotals = async (
   });
 
   if (error) {
-    serverLogger.error('Error fetching monthly invoice totals:', error);
+    console.error('Error fetching monthly invoice totals:', error);
     return [];
   }
 
@@ -176,10 +175,7 @@ export const getDailyInvoiceTotalsByCreator = async (
   );
 
   if (error) {
-    serverLogger.error(
-      'Error fetching daily invoice totals by creator:',
-      error
-    );
+    console.error('Error fetching daily invoice totals by creator:', error);
     return [];
   }
 
@@ -213,10 +209,7 @@ export const getWeeklyInvoiceTotalsByCreator = async (
   );
 
   if (error) {
-    serverLogger.error(
-      'Error fetching weekly invoice totals by creator:',
-      error
-    );
+    console.error('Error fetching weekly invoice totals by creator:', error);
     return [];
   }
 
@@ -247,10 +240,7 @@ export const getMonthlyInvoiceTotalsByCreator = async (
   );
 
   if (error) {
-    serverLogger.error(
-      'Error fetching monthly invoice totals by creator:',
-      error
-    );
+    console.error('Error fetching monthly invoice totals by creator:', error);
     return [];
   }
 

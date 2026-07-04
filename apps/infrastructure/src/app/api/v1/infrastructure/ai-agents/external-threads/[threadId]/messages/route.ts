@@ -1,9 +1,6 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { listAiAgentExternalThreadMessages } from '@/lib/ai-agents/external-chat-mirror';
-import {
-  serverLogger,
-  withRequestLogDrain,
-} from '@/lib/infrastructure/log-drain';
+import { withRequestLogDrain } from '@/lib/infrastructure/log-drain';
 import { requireAiAgentAdmin } from '../../../access';
 
 type RouteParams = {
@@ -28,7 +25,7 @@ async function listMessages(request: NextRequest, params: RouteParams) {
 
     return NextResponse.json({ messages });
   } catch (error) {
-    serverLogger.error('Failed to list AI agent external messages', error);
+    console.error('Failed to list AI agent external messages', error);
     return NextResponse.json(
       { error: 'Failed to list external messages' },
       { status: 500 }

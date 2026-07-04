@@ -1,10 +1,7 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { deployAiAgentChannel } from '@/lib/ai-agents/registry';
-import {
-  serverLogger,
-  withRequestLogDrain,
-} from '@/lib/infrastructure/log-drain';
+import { withRequestLogDrain } from '@/lib/infrastructure/log-drain';
 import { requireAiAgentAdmin } from '../../access';
 
 interface Params {
@@ -45,7 +42,7 @@ async function deployAgentChannel(request: NextRequest, { params }: Params) {
 
     return NextResponse.json(result, { status: result.ok ? 200 : 400 });
   } catch (error) {
-    serverLogger.warn('Failed to deploy AI agent channel', {
+    console.warn('Failed to deploy AI agent channel', {
       agentId,
       channelId: parsed.data.channelId,
       error: error instanceof Error ? error.message : String(error),

@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
 vi.mock('server-only', () => ({}));
 
 const createAdminClientMock = vi.fn();
@@ -194,7 +196,7 @@ describe('user detail data loaders', () => {
       id: 'user-1',
     });
 
-    expect(serverLoggerErrorMock).toHaveBeenCalledWith(
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
       'Failed to load user detail require-attention flags',
       expect.objectContaining({
         loader: 'getUserDetailData',
@@ -218,7 +220,7 @@ describe('user detail data loaders', () => {
       })
     ).resolves.toEqual({ count: 0, data: [] });
 
-    expect(serverLoggerErrorMock).toHaveBeenCalledWith(
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
       'Failed to load user detail resource',
       expect.objectContaining({
         resource: 'reports',

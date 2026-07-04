@@ -5,7 +5,6 @@ import {
   addAIWhitelistDomain,
   listAIWhitelistDomains,
 } from '@/lib/ai-whitelist/domain-repository';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 const createDomainSchema = z.object({
   description: z.string().trim().nullable().optional(),
@@ -35,7 +34,7 @@ export async function GET(request: Request) {
 
     return NextResponse.json(domains);
   } catch (error) {
-    serverLogger.error('Error listing AI whitelist domains:', error);
+    console.error('Error listing AI whitelist domains:', error);
     return new NextResponse('Internal Server Error', { status: 500 });
   }
 }
@@ -62,7 +61,7 @@ export async function POST(request: Request) {
       );
     }
 
-    serverLogger.error('Error creating AI whitelist domain:', error);
+    console.error('Error creating AI whitelist domain:', error);
     return new NextResponse('Internal Server Error', { status: 500 });
   }
 }

@@ -2,7 +2,6 @@ import { createClient } from '@tuturuuu/supabase/next/server';
 import { MAX_NAME_LENGTH } from '@tuturuuu/utils/constants';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 const QueryParamsSchema = z.object({
   workspaceId: z.guid().optional(),
@@ -62,7 +61,7 @@ export async function GET(req: NextRequest) {
     const { data: rawData, error } = await query;
 
     if (error) {
-      serverLogger.error('[RealtimeAnalytics] Failed to fetch analytics', {
+      console.error('[RealtimeAnalytics] Failed to fetch analytics', {
         message: error.message,
       });
       return NextResponse.json(
@@ -84,7 +83,7 @@ export async function GET(req: NextRequest) {
       metric,
     });
   } catch (error) {
-    serverLogger.error('[RealtimeAnalytics] Unexpected analytics API error', {
+    console.error('[RealtimeAnalytics] Unexpected analytics API error', {
       errorName: error instanceof Error ? error.name : typeof error,
       message: error instanceof Error ? error.message : 'Unknown error',
     });

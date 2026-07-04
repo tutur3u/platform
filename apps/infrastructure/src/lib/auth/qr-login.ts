@@ -21,7 +21,6 @@ import {
 } from '@tuturuuu/utils/constants';
 import { INTERNAL_DOMAINS } from '@tuturuuu/utils/internal-domains';
 import { z } from 'zod';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { checkRateLimit } from '@/lib/rate-limit';
 
 export const QR_LOGIN_CHALLENGE_TTL_SECONDS = 120;
@@ -220,7 +219,7 @@ async function getChallengeBySecret(input: {
     .maybeSingle();
 
   if (error) {
-    serverLogger.warn('Failed to load QR login challenge', {
+    console.warn('Failed to load QR login challenge', {
       challengeId: input.challengeId,
       message: error.message,
     });
@@ -239,7 +238,7 @@ async function markExpired(challengeId: string) {
     .eq('status', 'pending');
 
   if (error) {
-    serverLogger.warn('Failed to mark QR login challenge expired', {
+    console.warn('Failed to mark QR login challenge expired', {
       challengeId,
       message: error.message,
     });
@@ -262,7 +261,7 @@ async function consumeApprovedChallenge(row: QrLoginChallengeRow) {
     .maybeSingle();
 
   if (error) {
-    serverLogger.warn('Failed to consume QR login challenge', {
+    console.warn('Failed to consume QR login challenge', {
       challengeId: row.id,
       message: error.message,
     });
@@ -344,7 +343,7 @@ export async function createQrLoginChallenge(
     .single();
 
   if (error || !data) {
-    serverLogger.error('Failed to create QR login challenge', {
+    console.error('Failed to create QR login challenge', {
       message: error?.message,
     });
     return {
@@ -446,7 +445,7 @@ export async function pollQrLoginChallenge(
       status: 200,
     };
   } catch (error) {
-    serverLogger.error('Failed to issue QR login session', {
+    console.error('Failed to issue QR login session', {
       challengeId: consumed.id,
       error,
     });
@@ -537,7 +536,7 @@ export async function approveQrLoginChallenge(
     .maybeSingle();
 
   if (error) {
-    serverLogger.error('Failed to approve QR login challenge', {
+    console.error('Failed to approve QR login challenge', {
       challengeId: input.challengeId,
       message: error.message,
     });
@@ -624,7 +623,7 @@ export async function issueQrLoginSessionForUser(
 }
 
 export function toQrLoginErrorResult(error: unknown) {
-  serverLogger.error('Unexpected QR login error', error);
+  console.error('Unexpected QR login error', error);
   return {
     body: { error: QR_LOGIN_GENERIC_ERROR },
     status: 500,

@@ -8,7 +8,6 @@ import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { requireBoardAccess } from './lists/access';
 
 const paramsSchema = z.object({
@@ -111,7 +110,7 @@ async function boardHasGuestAccess({
     .eq('board_id', boardId);
 
   if (error) {
-    serverLogger.warn('Failed to load task board guest share count', {
+    console.warn('Failed to load task board guest share count', {
       boardId,
       error,
     });
@@ -251,7 +250,7 @@ export const GET = withSessionAuth<Params>(
         );
       }
 
-      serverLogger.error('Error fetching task board:', error);
+      console.error('Error fetching task board:', error);
       return NextResponse.json(
         { error: 'Internal server error' },
         { status: 500 }

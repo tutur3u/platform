@@ -2,7 +2,6 @@ import { recordAbuseActivitySignal } from '@tuturuuu/utils/abuse-protection';
 import { MAX_SEARCH_LENGTH } from '@tuturuuu/utils/constants';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { authorizeAbuseIntelligenceRequest } from '../../_shared';
 
 const RevokeOverrideSchema = z.object({
@@ -46,7 +45,7 @@ export async function PATCH(request: Request, context: RouteContext) {
     .single();
 
   if (error) {
-    serverLogger.error('Failed to revoke abuse trust override', error);
+    console.error('Failed to revoke abuse trust override', error);
     return NextResponse.json(
       { message: 'Failed to revoke abuse trust override' },
       { status: 500 }

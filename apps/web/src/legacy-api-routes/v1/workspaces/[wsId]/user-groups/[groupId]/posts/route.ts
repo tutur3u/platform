@@ -15,7 +15,6 @@ import {
 } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { revalidateUserGroupCache } from '@/lib/user-groups/revalidate';
 import { hasUserGroupInWorkspace } from '@/lib/user-groups/route-helpers';
 
@@ -76,7 +75,7 @@ export async function GET(req: Request, { params }: Params) {
       groupId,
     });
   } catch (error) {
-    serverLogger.error('Error resolving user group workspace', {
+    console.error('Error resolving user group workspace', {
       error,
       groupId,
       wsId,
@@ -109,7 +108,7 @@ export async function GET(req: Request, { params }: Params) {
   const { data, error, count } = await query;
 
   if (error) {
-    serverLogger.error('Error fetching user group posts', {
+    console.error('Error fetching user group posts', {
       error,
       groupId,
       wsId,
@@ -264,7 +263,7 @@ export async function POST(req: Request, { params }: Params) {
     });
 
   if (error) {
-    serverLogger.error('Error creating group post', {
+    console.error('Error creating group post', {
       error,
       groupId,
       wsId,

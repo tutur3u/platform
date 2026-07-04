@@ -1,6 +1,5 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
   batchUpsert,
   createMigrationResponse,
@@ -75,7 +74,7 @@ export async function PUT(req: Request) {
       .in('name', manufacturerNames);
 
     if (error) {
-      serverLogger.error('Error resolving migrated manufacturers', error);
+      console.error('Error resolving migrated manufacturers', error);
       return NextResponse.json(
         { message: 'Failed to resolve migrated manufacturers' },
         { status: 500 }

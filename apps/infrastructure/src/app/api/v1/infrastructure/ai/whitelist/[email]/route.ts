@@ -4,7 +4,6 @@ import {
   deleteAIWhitelistEmail,
   updateAIWhitelistEmailEnabled,
 } from '@/lib/ai-whitelist/email-repository';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 function forbiddenResponse() {
   return NextResponse.json(
@@ -41,7 +40,7 @@ export async function PUT(
 
     return NextResponse.json({ success: true }, { status: 200 });
   } catch (error) {
-    serverLogger.error('Error updating AI whitelist email:', error);
+    console.error('Error updating AI whitelist email:', error);
     return NextResponse.json(
       { message: 'Error updating AI whitelist email' },
       { status: 500 }
@@ -72,7 +71,7 @@ export async function DELETE(
 
     return NextResponse.json({ success: true }, { status: 200 });
   } catch (error) {
-    serverLogger.error('Error deleting AI whitelist email:', error);
+    console.error('Error deleting AI whitelist email:', error);
     return NextResponse.json(
       { message: 'Error deleting AI whitelist email' },
       { status: 500 }

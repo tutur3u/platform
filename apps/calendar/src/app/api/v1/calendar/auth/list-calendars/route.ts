@@ -7,7 +7,6 @@ import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper'
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { resolveSessionAuthContext } from '@/lib/api-auth';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { normalizeWorkspaceId } from '@/lib/workspace-helper';
 
 const listCalendarsQuerySchema = z.object({
@@ -93,7 +92,7 @@ export async function GET(request: Request): Promise<NextResponse> {
     const { data: tokens, error: tokensError } = await query;
 
     if (tokensError) {
-      serverLogger.error('Error fetching calendar tokens:', tokensError);
+      console.error('Error fetching calendar tokens:', tokensError);
       return NextResponse.json(
         { error: 'Failed to fetch calendar accounts' },
         { status: 500 }
@@ -150,7 +149,7 @@ export async function GET(request: Request): Promise<NextResponse> {
           });
         }
       } catch (error) {
-        serverLogger.error(
+        console.error(
           `Error fetching calendars for account ${token.id}:`,
           error
         );
@@ -180,7 +179,7 @@ export async function GET(request: Request): Promise<NextResponse> {
       { status: 200 }
     );
   } catch (error: unknown) {
-    serverLogger.error('Error fetching Google Calendar list:', error);
+    console.error('Error fetching Google Calendar list:', error);
     const errorMessage =
       error instanceof Error ? error.message : 'Unknown error';
 

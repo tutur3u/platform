@@ -1,7 +1,6 @@
 import { getFinanceRouteContext } from '@tuturuuu/apis/finance/request-access';
 import { NextResponse } from 'next/server';
 import { resolveFinanceRouteAuthContext } from '@/lib/finance-route-auth';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 interface Params {
   params: Promise<{ wsId: string }>;
@@ -38,7 +37,7 @@ export async function GET(request: Request, { params }: Params) {
       .eq('ws_id', wsId);
 
     if (error) {
-      serverLogger.error('Failed to fetch transaction creators:', error);
+      console.error('Failed to fetch transaction creators:', error);
       return NextResponse.json(
         { message: 'Failed to fetch transaction creators' },
         { status: 500 }
@@ -55,7 +54,7 @@ export async function GET(request: Request, { params }: Params) {
       .eq('ws_id', wsId);
 
     if (error) {
-      serverLogger.error('Failed to fetch invoice creators:', error);
+      console.error('Failed to fetch invoice creators:', error);
       return NextResponse.json(
         { message: 'Failed to fetch invoice creators' },
         { status: 500 }
@@ -72,7 +71,7 @@ export async function GET(request: Request, { params }: Params) {
     .order('full_name', { ascending: true });
 
   if (error) {
-    serverLogger.error('Failed to fetch workspace users:', error);
+    console.error('Failed to fetch workspace users:', error);
     return NextResponse.json(
       { message: 'Failed to fetch workspace users' },
       { status: 500 }

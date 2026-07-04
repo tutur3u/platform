@@ -14,7 +14,6 @@ import {
   verifyWorkspaceMembershipType,
 } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 type Params = {
   memoryId: string;
@@ -45,10 +44,7 @@ async function resolveMemoryRequestContext(
   try {
     wsId = await normalizeWorkspaceId(rawWsId, supabase, request);
   } catch (error) {
-    serverLogger.warn(
-      'Failed to normalize AI memory delete workspace id',
-      error
-    );
+    console.warn('Failed to normalize AI memory delete workspace id', error);
     return {
       ok: false as const,
       response: NextResponse.json(
@@ -66,7 +62,7 @@ async function resolveMemoryRequestContext(
   });
 
   if (membership.error === 'membership_lookup_failed') {
-    serverLogger.error('Failed to verify AI memory delete workspace access', {
+    console.error('Failed to verify AI memory delete workspace access', {
       userId: user.id,
       wsId,
     });
@@ -114,7 +110,7 @@ export async function DELETE(
   });
 
   if (!result.ok) {
-    serverLogger.error('Failed to delete AI memory item', {
+    console.error('Failed to delete AI memory item', {
       error: result.error,
       memoryId,
       product,

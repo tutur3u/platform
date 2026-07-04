@@ -6,7 +6,6 @@ import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import { validateAiTempAuthRequest } from '@tuturuuu/utils/ai-temp-auth';
 import { isValidTuturuuuEmail } from '@tuturuuu/utils/email/client';
 import { generateObject } from 'ai';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { emailDraftSchema } from './schema';
 
 export async function POST(req: Request) {
@@ -124,7 +123,7 @@ Generate the email with a compelling subject line and well-crafted content.`;
 
     return Response.json(result.object);
   } catch (error) {
-    serverLogger.error('Error in email draft generation', { error });
+    console.error('Error in email draft generation', { error });
 
     // Handle specific auth errors
     if (error instanceof Error && error.message.includes('Unauthorized')) {

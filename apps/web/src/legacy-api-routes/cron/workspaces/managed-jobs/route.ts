@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from 'next/server';
-import { serverLogger, withCronLogDrain } from '@/lib/infrastructure/log-drain';
+import { withCronLogDrain } from '@/lib/infrastructure/log-drain';
 import { processDueManagedCronJobs } from '@/lib/managed-cron/service';
 
 const JOB_ID = 'managed-workspace-cron-jobs';
@@ -31,11 +31,11 @@ async function handleGET(request: NextRequest) {
 
   try {
     const summary = await processDueManagedCronJobs();
-    serverLogger.info('Processed managed workspace cron jobs', summary);
+    console.info('Processed managed workspace cron jobs', summary);
 
     return NextResponse.json({ ok: true, summary });
   } catch (error) {
-    serverLogger.error('Failed to process managed workspace cron jobs', error);
+    console.error('Failed to process managed workspace cron jobs', error);
     return NextResponse.json(
       { ok: false, error: 'Failed to process managed workspace cron jobs' },
       { status: 500 }

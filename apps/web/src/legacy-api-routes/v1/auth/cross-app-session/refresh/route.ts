@@ -13,10 +13,7 @@ import { getUpstashRestRedisClient } from '@tuturuuu/utils/upstash-rest';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getAppCoordinationSessionPolicy } from '@/lib/app-coordination/session-policy';
-import {
-  serverLogger,
-  withRequestLogDrain,
-} from '@/lib/infrastructure/log-drain';
+import { withRequestLogDrain } from '@/lib/infrastructure/log-drain';
 
 const REFRESH_REPLAY_KEY_PREFIX = 'app-session:refresh:used';
 
@@ -86,7 +83,7 @@ async function consumeRefreshTokenWithGrace({
 
     return consumed === 'OK' ? 'consumed' : 'replayed';
   } catch (error) {
-    serverLogger.warn('App-session refresh replay check failed', {
+    console.warn('App-session refresh replay check failed', {
       error: error instanceof Error ? error.message : String(error),
     });
     return 'unavailable';

@@ -10,7 +10,6 @@ import {
   verifyWorkspaceMembershipType,
 } from '@tuturuuu/utils/workspace-helper';
 import { isFeatureAvailable } from '@/lib/feature-tiers';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
   ensureAssistantLiveChat,
   loadAssistantLiveSeedHistory,
@@ -45,7 +44,7 @@ async function loadStoredSessionHandle({
     .maybeSingle();
 
   if (error != null) {
-    serverLogger.error(
+    console.error(
       'Failed to load assistant live session handle during token mint',
       error
     );
@@ -133,7 +132,7 @@ export async function POST(request: Request) {
       chatId,
       model: resolvedModel,
     }).catch((error) => {
-      serverLogger.error('Failed to prepare assistant live chat', error);
+      console.error('Failed to prepare assistant live chat', error);
       return null;
     });
 
@@ -172,7 +171,7 @@ export async function POST(request: Request) {
         sessionHandlePromise,
       ]);
     } catch (error) {
-      serverLogger.error('Failed to provision assistant live token', error);
+      console.error('Failed to provision assistant live token', error);
       return Response.json(
         { error: 'Failed to provision Gemini Live token' },
         { status: 502 }
@@ -186,7 +185,7 @@ export async function POST(request: Request) {
             chatId: chat.id,
             userId: user.id,
           }).catch((error) => {
-            serverLogger.error(
+            console.error(
               'Failed to restore assistant live seed history',
               error
             );
@@ -210,7 +209,7 @@ export async function POST(request: Request) {
       seedHistory,
     });
   } catch (error) {
-    serverLogger.error('Error generating mobile assistant live token', error);
+    console.error('Error generating mobile assistant live token', error);
     return Response.json(
       { error: 'Failed to generate assistant live token' },
       { status: 500 }

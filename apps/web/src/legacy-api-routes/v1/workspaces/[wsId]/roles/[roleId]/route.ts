@@ -7,7 +7,6 @@ import type {
 } from '@tuturuuu/types';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 interface Params {
   params: Promise<{
@@ -53,7 +52,7 @@ export async function GET(req: Request, { params }: Params) {
     .single();
 
   if (error) {
-    serverLogger.error('Error fetching workspace role', {
+    console.error('Error fetching workspace role', {
       error,
       roleId: id,
       wsId: resolvedWsId,
@@ -111,7 +110,7 @@ export async function PUT(req: Request, { params }: Params) {
   ]);
 
   if (roleRes.error || permissionsRes.error) {
-    serverLogger.error('Error updating workspace role', {
+    console.error('Error updating workspace role', {
       permissionsError: permissionsRes.error,
       roleError: roleRes.error,
       roleId: id,
@@ -141,7 +140,7 @@ export async function DELETE(req: Request, { params }: Params) {
     .eq('ws_id', resolvedWsId);
 
   if (error) {
-    serverLogger.error('Error deleting workspace role', {
+    console.error('Error deleting workspace role', {
       error,
       roleId: id,
       wsId: resolvedWsId,

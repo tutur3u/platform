@@ -9,7 +9,6 @@ import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
 import { validateRequestBody } from '@/lib/api-middleware';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 type Params = { wsId: string };
 
@@ -102,14 +101,11 @@ export const POST = withSessionAuth<Params>(
       });
 
       if (membership.error === 'membership_lookup_failed') {
-        serverLogger.error(
-          'Failed to verify workspace membership for task search',
-          {
-            error: membership.error,
-            userId: user.id,
-            wsId,
-          }
-        );
+        console.error('Failed to verify workspace membership for task search', {
+          error: membership.error,
+          userId: user.id,
+          wsId,
+        });
         return NextResponse.json(
           { error: 'Failed to verify workspace membership' },
           { status: 500 }
@@ -148,7 +144,7 @@ export const POST = withSessionAuth<Params>(
         } else {
           fallbackReason = embeddingResult.reason;
           searchMode = 'text';
-          serverLogger.warn('Task hybrid search falling back to text search', {
+          console.warn('Task hybrid search falling back to text search', {
             reason: fallbackReason,
             userId: user.id,
             wsId,
@@ -167,7 +163,7 @@ export const POST = withSessionAuth<Params>(
       });
 
       if (error) {
-        serverLogger.error('Error searching tasks', {
+        console.error('Error searching tasks', {
           error,
           mode: searchMode,
           userId: user.id,
@@ -189,7 +185,7 @@ export const POST = withSessionAuth<Params>(
         tasks: data ?? [],
       });
     } catch (error) {
-      serverLogger.error('Error in task search', error);
+      console.error('Error in task search', error);
       return NextResponse.json(
         {
           message: 'Internal server error',

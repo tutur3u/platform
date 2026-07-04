@@ -299,10 +299,10 @@ async function storeSensitiveData(data: SensitiveData) {
 
 ### Architectural Choice
 
-Security-relevant actions should be traceable, and heavier security workflows (anomaly scans, notifications, periodic reviews) should run as durable background jobs. Tuturuuu uses **Trigger.dev v4 `task()`** for background work and the internal **log-drain logger** for server-side observability.
+Security-relevant actions should be traceable, and heavier security workflows (anomaly scans, notifications, periodic reviews) should run as durable background jobs. Tuturuuu uses **Trigger.dev v4 `task()`** for background work and native server console logs plus retained platform observability data for server-side diagnostics.
 
 <Warning>
-**Aspirational, not implemented as written.** A comprehensive, cryptographically signed, immutable, event-sourced audit log is a **target pattern**, not a shipped subsystem. Tuturuuu does not have an event store or event-sourcing layer, and there is no global `audit_events` table that captures every state change. Treat the audit-log code below as an illustration of the goal. What exists today: Supabase keeps row history where tables are designed for it, the log-drain logger records server-side events, and Trigger.dev runs durable background tasks. Do not add raw `console.*` calls in `apps/web` API/cron/infra runtime code — route server logging through the internal log-drain logger.
+**Aspirational, not implemented as written.** A comprehensive, cryptographically signed, immutable, event-sourced audit log is a **target pattern**, not a shipped subsystem. Tuturuuu does not have an event store or event-sourcing layer, and there is no global `audit_events` table that captures every state change. Treat the audit-log code below as an illustration of the goal. What exists today: Supabase keeps row history where tables are designed for it, retained platform observability data records selected server-side events, Trigger.dev runs durable background tasks, and runtime diagnostics use the native console method matching severity.
 </Warning>
 
 ### Impact and Justification
@@ -319,7 +319,7 @@ Security is not just about prevention; it's also about **detection and accountab
 ```typescript
 // Illustrative: how a critical operation could record an audit entry.
 // There is no global event store today; persist via your table's history
-// mechanism and emit server-side logs through the log-drain logger.
+// mechanism and emit server-side logs through native console methods.
 export async function updateWorkspaceSettings(
   workspaceId: string,
   settings: WorkspaceSettings,
@@ -403,15 +403,15 @@ export const securityScanTask = task({
 });
 ```
 
-Trigger it from server code with `securityScanTask.trigger({ userId })` (or `batchTrigger` for many). See the [Event-Driven Architecture](/platform/architecture/system-design/event-driven-architecture) page for how Tuturuuu actually uses Trigger.dev v4 and the log-drain logger.
+Trigger it from server code with `securityScanTask.trigger({ userId })` (or `batchTrigger` for many). See the [Event-Driven Architecture](/platform/architecture/system-design/event-driven-architecture) page for how Tuturuuu actually uses Trigger.dev v4 and native server console logs.
 
 ### Clarifying Additions
 
 **Durable background tasks keep heavy security work off the request path.** Anomaly scans and notifications run as Trigger.dev v4 tasks rather than blocking the user's request.
 
-**An append-only audit trail would support accountability and forensics.** This is the target; today, rely on the log-drain logger and table-level history for traceability.
+**An append-only audit trail would support accountability and forensics.** This is the target; today, rely on retained platform observability data, native server console logs, and table-level history for traceability.
 
-**Compliance benefits from consistent, centralized logging.** Routing server-side events through the log-drain logger (never raw `console.*` in `apps/web` runtime code) keeps audit signals consistent.
+**Compliance benefits from consistent logging.** Use the native console method matching severity and retain structured metadata where platform observability wrappers are wired.
 
 ---
 

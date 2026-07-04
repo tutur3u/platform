@@ -1,5 +1,4 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { requireDevMode } from '../batch-upsert';
 
 /**
@@ -62,7 +61,7 @@ export async function POST(req: Request) {
         .upsert(batch, { onConflict: 'id', ignoreDuplicates: true });
 
       if (insertError) {
-        serverLogger.error(
+        console.error(
           `Error creating placeholder users (batch ${batchNumber}):`,
           insertError
         );
@@ -82,7 +81,7 @@ export async function POST(req: Request) {
       );
     }
 
-    serverLogger.info(
+    console.info(
       `Ensured ${uniqueUserIds.length} platform users:`,
       uniqueUserIds.slice(0, 5),
       uniqueUserIds.length > 5 ? `... and ${uniqueUserIds.length - 5} more` : ''
@@ -94,7 +93,7 @@ export async function POST(req: Request) {
       message: 'Platform users ensured (new users created, existing skipped)',
     });
   } catch (error) {
-    serverLogger.error('Error in ensure-platform-users:', error);
+    console.error('Error in ensure-platform-users:', error);
     return Response.json(
       { error: 'Internal server error', details: String(error) },
       { status: 500 }

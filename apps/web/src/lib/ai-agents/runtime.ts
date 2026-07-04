@@ -33,7 +33,6 @@ import {
   ToolLoopAgent,
   type ToolSet,
 } from 'ai';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { checkRateLimitRedis } from '@/lib/rate-limit';
 import { persistAiAgentExternalSdkMessage } from './external-chat-mirror';
 import {
@@ -375,7 +374,7 @@ function createAiAgentCreditDeduction({
       });
 
       if (!result.success) {
-        serverLogger.warn('AI agent credit deduction returned no charge', {
+        console.warn('AI agent credit deduction returned no charge', {
           agentId: agent.id,
           channelId: channel.id,
           errorCode: result.errorCode,
@@ -384,7 +383,7 @@ function createAiAgentCreditDeduction({
         });
       }
     } catch (error) {
-      serverLogger.warn('Failed to deduct AI agent credits', {
+      console.warn('Failed to deduct AI agent credits', {
         agentId: agent.id,
         channelId: channel.id,
         error: error instanceof Error ? error.message : String(error),

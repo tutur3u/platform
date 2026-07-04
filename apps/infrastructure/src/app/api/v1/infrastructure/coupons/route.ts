@@ -1,6 +1,5 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { authorizeInfrastructureMigrationExport } from '../migration-export-auth';
 
 export async function GET(req: Request) {
@@ -32,7 +31,7 @@ export async function GET(req: Request) {
     );
 
   if (error) {
-    serverLogger.error('Error fetching workspace promotions:', error);
+    console.error('Error fetching workspace promotions:', error);
     return NextResponse.json(
       { message: 'Error fetching workspace promotions' },
       { status: 500 }

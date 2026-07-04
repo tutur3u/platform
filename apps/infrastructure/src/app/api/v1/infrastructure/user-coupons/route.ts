@@ -1,6 +1,5 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { authorizeInfrastructureMigrationExport } from '../migration-export-auth';
 
 export async function GET(req: Request) {
@@ -28,7 +27,7 @@ export async function GET(req: Request) {
     .eq('ws_id', authorization.value.wsId);
 
   if (promotionsError) {
-    serverLogger.error('Error fetching workspace_promotions:', promotionsError);
+    console.error('Error fetching workspace_promotions:', promotionsError);
     return NextResponse.json(
       { message: 'Error fetching workspace_promotions' },
       { status: 500 }
@@ -58,7 +57,7 @@ export async function GET(req: Request) {
     );
 
   if (error) {
-    serverLogger.error('Error fetching user_linked_promotions:', error);
+    console.error('Error fetching user_linked_promotions:', error);
     return NextResponse.json(
       { message: 'Error fetching user_linked_promotions' },
       { status: 500 }

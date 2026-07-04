@@ -12,7 +12,6 @@ import {
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { resolveFinanceRouteAuthContext } from '@/lib/finance-route-auth';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 const PromotionSchema = z
   .object({
@@ -91,7 +90,7 @@ export async function GET(req: Request, { params }: Params) {
   });
 
   if (error) {
-    serverLogger.error('Error fetching promotions:', error);
+    console.error('Error fetching promotions:', error);
     return NextResponse.json(
       { message: 'Error fetching promotions' },
       { status: 500 }
@@ -174,7 +173,7 @@ export async function POST(req: Request, { params }: Params) {
     .single();
 
   if (error) {
-    serverLogger.error('Error creating promotion:', error);
+    console.error('Error creating promotion:', error);
     return NextResponse.json(
       { message: 'Error creating promotion' },
       { status: 500 }
@@ -202,7 +201,7 @@ export async function POST(req: Request, { params }: Params) {
         .eq('id', created.id);
     }
   } catch (polarError) {
-    serverLogger.warn('Polar promotion mirror failed', polarError);
+    console.warn('Polar promotion mirror failed', polarError);
   }
 
   return NextResponse.json({ message: 'success', data: created });

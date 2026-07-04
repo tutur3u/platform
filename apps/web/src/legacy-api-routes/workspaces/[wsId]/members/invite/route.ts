@@ -7,7 +7,6 @@ import { MAX_EMAIL_LENGTH } from '@tuturuuu/utils/constants';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { canCreateInvitation } from '@/utils/seat-limits';
 
 interface Params {
@@ -38,7 +37,7 @@ async function triggerImmediateNotification() {
   const cronSecret = process.env.CRON_SECRET;
 
   if (!cronSecret) {
-    serverLogger.warn(
+    console.warn(
       'CRON_SECRET not configured, skipping immediate notification trigger'
     );
     return;
@@ -54,12 +53,12 @@ async function triggerImmediateNotification() {
       },
       body: JSON.stringify({}),
     }).catch((error) => {
-      serverLogger.error('Failed to trigger immediate notification', {
+      console.error('Failed to trigger immediate notification', {
         error,
       });
     });
   } catch (error) {
-    serverLogger.error('Error triggering immediate notification', { error });
+    console.error('Error triggering immediate notification', { error });
   }
 }
 
@@ -98,7 +97,7 @@ export async function POST(req: Request, { params }: Params) {
     .maybeSingle();
 
   if (workspaceError) {
-    serverLogger.error('Failed to verify workspace before inviting member', {
+    console.error('Failed to verify workspace before inviting member', {
       error: workspaceError,
       wsId,
     });
@@ -137,7 +136,7 @@ export async function POST(req: Request, { params }: Params) {
     .maybeSingle();
 
   if (disableInviteError) {
-    serverLogger.error('Failed to verify workspace invite settings', {
+    console.error('Failed to verify workspace invite settings', {
       error: disableInviteError,
       wsId,
     });
@@ -182,7 +181,7 @@ export async function POST(req: Request, { params }: Params) {
       );
     }
 
-    serverLogger.error('Failed to invite workspace member', {
+    console.error('Failed to invite workspace member', {
       error,
       wsId,
     });

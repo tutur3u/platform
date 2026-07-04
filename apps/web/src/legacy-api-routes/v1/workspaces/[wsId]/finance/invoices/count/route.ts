@@ -4,7 +4,6 @@ import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 import { headers } from 'next/headers';
 import { NextResponse } from 'next/server';
 import { resolveFinanceRouteAuthContext } from '@/lib/finance-route-auth';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { validateWorkspaceApiKey } from '@/lib/workspace-api-key';
 
 interface Params {
@@ -53,7 +52,7 @@ async function getDataWithApiKey({
   const { data, error } = response;
 
   if (error) {
-    serverLogger.error('Error fetching invoice count with API key:', error);
+    console.error('Error fetching invoice count with API key:', error);
     return NextResponse.json(
       { message: 'Error fetching workspace users' },
       { status: 500 }
@@ -94,7 +93,7 @@ async function getDataFromSession({
     .single();
 
   if (error) {
-    serverLogger.error('Error fetching invoice count:', error);
+    console.error('Error fetching invoice count:', error);
     return NextResponse.json(
       { message: 'Error fetching workspace users' },
       { status: 500 }

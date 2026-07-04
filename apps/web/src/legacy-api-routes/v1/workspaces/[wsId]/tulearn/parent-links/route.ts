@@ -8,7 +8,6 @@ import {
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { hasEducationEnabled } from '@/lib/tulearn/service';
 
 type Params = {
@@ -53,7 +52,7 @@ export const GET = withSessionAuth<Params>(
       if (error) throw error;
       return NextResponse.json({ links: data ?? [] });
     } catch (error) {
-      serverLogger.error('Failed to list Tulearn parent links:', error);
+      console.error('Failed to list Tulearn parent links:', error);
       return NextResponse.json(
         { message: 'Failed to load parent links' },
         { status: 500 }
@@ -186,7 +185,7 @@ export const POST = withSessionAuth<Params>(
       if (error) throw error;
       return NextResponse.json({ invite, token }, { status: 201 });
     } catch (error) {
-      serverLogger.error('Failed to create Tulearn parent link:', error);
+      console.error('Failed to create Tulearn parent link:', error);
       return NextResponse.json(
         { message: 'Failed to create parent link' },
         { status: 500 }

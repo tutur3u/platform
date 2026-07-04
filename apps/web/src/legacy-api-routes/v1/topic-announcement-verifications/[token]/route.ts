@@ -1,7 +1,6 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { getPrivateSchemaClient } from '@/legacy-api-routes/v1/workspaces/[wsId]/topic-announcements/shared';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { htmlEscape } from '@/lib/topic-announcements-email';
 import { hashTopicAnnouncementVerificationToken } from '@/lib/topic-announcements-verification';
 
@@ -58,7 +57,7 @@ export async function GET(_request: Request, { params }: Params) {
     .maybeSingle();
 
   if (error) {
-    serverLogger.error('Failed to load topic announcement verification token', {
+    console.error('Failed to load topic announcement verification token', {
       error,
     });
     return htmlPage(
@@ -94,7 +93,7 @@ export async function GET(_request: Request, { params }: Params) {
     .eq('id', data.id);
 
   if (updateError) {
-    serverLogger.error('Failed to verify topic announcement contact email', {
+    console.error('Failed to verify topic announcement contact email', {
       error: updateError,
       verificationId: data.id,
     });

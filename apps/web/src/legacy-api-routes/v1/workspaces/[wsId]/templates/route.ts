@@ -8,7 +8,6 @@ import {
   verifyWorkspaceMembershipType,
 } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 type TemplateContent = {
   lists?: Array<{ tasks?: unknown[] }>;
@@ -67,7 +66,7 @@ export async function GET(_request: Request, { params }: Params) {
       .order('created_at', { ascending: false });
 
     if (error) {
-      serverLogger.error('Failed to fetch board templates', error);
+      console.error('Failed to fetch board templates', error);
       return NextResponse.json(
         { error: 'Failed to fetch templates' },
         { status: 500 }
@@ -86,7 +85,7 @@ export async function GET(_request: Request, { params }: Params) {
               .createSignedUrl(template.background_path, 3600);
 
           if (signedUrlError) {
-            serverLogger.error(
+            console.error(
               'Failed to sign board template background URL',
               signedUrlError
             );
@@ -123,7 +122,7 @@ export async function GET(_request: Request, { params }: Params) {
 
     return NextResponse.json({ templates: serializedTemplates });
   } catch (error) {
-    serverLogger.error('Error listing board templates', error);
+    console.error('Error listing board templates', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

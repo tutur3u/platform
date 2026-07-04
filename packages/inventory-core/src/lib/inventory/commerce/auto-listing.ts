@@ -2,7 +2,6 @@ import 'server-only';
 
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { majorToMinor } from '@tuturuuu/utils/money';
-import { serverLogger } from '../../infrastructure/log-drain';
 import { getWorkspaceDefaultCurrency } from '../workspace-currency';
 import { createStorefront, createStorefrontListing } from './repository';
 
@@ -89,7 +88,7 @@ export async function autoCreateProductListing(
       warehouseId: params.warehouseId,
     });
   } catch (error) {
-    serverLogger.error('Failed to auto-create product listing', error);
+    console.error('Failed to auto-create product listing', error);
   }
 }
 
@@ -143,7 +142,7 @@ export async function backfillProductListings(wsId: string): Promise<number> {
       });
       created += 1;
     } catch (error) {
-      serverLogger.error('Failed to backfill product listing', error);
+      console.error('Failed to backfill product listing', error);
     }
   }
 

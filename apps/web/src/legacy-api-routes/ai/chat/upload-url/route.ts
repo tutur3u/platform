@@ -3,7 +3,6 @@ import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper'
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { normalizeWorkspaceId } from '@/lib/workspace-helper';
 import { AI_CHAT_FILE_APP_SESSION_TARGETS } from '../_lib/session-targets';
 
@@ -70,10 +69,10 @@ export const POST = withSessionAuth(
       });
 
       if (membership.error === 'membership_lookup_failed') {
-        serverLogger.error(
-          'Error validating workspace membership for upload-url',
-          { error: membership.error, wsId }
-        );
+        console.error('Error validating workspace membership for upload-url', {
+          error: membership.error,
+          wsId,
+        });
         return NextResponse.json(
           { message: 'Failed to verify workspace access' },
           { status: 500 }
@@ -125,7 +124,7 @@ export const POST = withSessionAuth(
         .createSignedUploadUrl(storagePath, { upsert: true });
 
       if (error || !data) {
-        serverLogger.error('Error creating signed upload URL', {
+        console.error('Error creating signed upload URL', {
           error,
           storagePath,
         });
@@ -148,7 +147,7 @@ export const POST = withSessionAuth(
         );
       }
 
-      serverLogger.error('Unexpected error in chat upload-url', err);
+      console.error('Unexpected error in chat upload-url', err);
       return NextResponse.json(
         { message: 'Internal server error' },
         { status: 500 }

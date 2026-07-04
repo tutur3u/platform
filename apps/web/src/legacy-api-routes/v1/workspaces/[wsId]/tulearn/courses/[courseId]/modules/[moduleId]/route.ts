@@ -4,7 +4,6 @@ import type { Json } from '@tuturuuu/types';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
   asRecord,
   displayText,
@@ -186,7 +185,7 @@ export const GET = withSessionAuth<Params>(
       const accessResponse = tulearnAccessErrorResponse(error);
       if (accessResponse) return accessResponse;
 
-      serverLogger.error('Failed to load Tulearn module:', error);
+      console.error('Failed to load Tulearn module:', error);
       return NextResponse.json(
         { message: 'Failed to load module' },
         { status: 500 }
@@ -407,7 +406,7 @@ export const POST = withSessionAuth<Params>(
       const accessResponse = tulearnAccessErrorResponse(error);
       if (accessResponse) return accessResponse;
 
-      serverLogger.error('Failed to submit quiz response:', error);
+      console.error('Failed to submit quiz response:', error);
       return NextResponse.json(
         { message: 'Failed to submit response' },
         { status: 500 }
@@ -453,7 +452,7 @@ export const DELETE = withSessionAuth<Params>(
       const accessResponse = tulearnAccessErrorResponse(error);
       if (accessResponse) return accessResponse;
 
-      serverLogger.error('Failed to reset quiz submissions:', error);
+      console.error('Failed to reset quiz submissions:', error);
       return NextResponse.json(
         { message: 'Failed to reset submissions' },
         { status: 500 }

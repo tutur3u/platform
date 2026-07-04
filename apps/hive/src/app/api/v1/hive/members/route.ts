@@ -4,7 +4,6 @@ import {
   hiveMemberSchema,
   mapHiveMember,
   requireHiveAdmin,
-  serverLogger,
   syncSupabaseHiveMember,
   withHiveRoute,
 } from '../_shared';
@@ -58,7 +57,7 @@ export async function POST(request: NextRequest) {
     });
 
     if (syncError) {
-      serverLogger.error('Failed to sync Hive member with satellite gate', {
+      console.error('Failed to sync Hive member with satellite gate', {
         error: syncError.message,
         userId: payload.userId,
       });

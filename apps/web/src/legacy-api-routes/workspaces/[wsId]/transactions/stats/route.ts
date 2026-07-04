@@ -7,7 +7,6 @@ import {
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { resolveFinanceRouteAuthContext } from '@/lib/finance-route-auth';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 const querySchema = z.object({
   q: z.string().max(MAX_SEARCH_LENGTH).optional().nullable(),
@@ -119,7 +118,7 @@ export async function GET(
       hasRedactedAmounts: Boolean(stats.has_redacted_amounts),
     });
   } catch (error) {
-    serverLogger.error('Error fetching transaction stats:', error);
+    console.error('Error fetching transaction stats:', error);
     return NextResponse.json(
       {
         message: 'Internal server error while fetching transaction stats',

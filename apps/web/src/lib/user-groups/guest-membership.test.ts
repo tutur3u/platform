@@ -5,6 +5,8 @@ const mocks = vi.hoisted(() => ({
   serverLoggerError: vi.fn(),
 }));
 
+const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
 vi.mock('@/lib/infrastructure/log-drain', () => ({
   serverLogger: {
     error: (...args: Parameters<typeof mocks.serverLoggerError>) =>
@@ -141,7 +143,7 @@ describe('syncWorkspaceUserGuestMembership', () => {
 
     expect(warning).toBe(DEFAULT_GUEST_MEMBERSHIP_WARNINGS.resolveFailed);
     expect(upsertMock).not.toHaveBeenCalled();
-    expect(mocks.serverLoggerError).toHaveBeenCalledWith(
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
       'Error resolving guest workspace user groups:',
       expect.objectContaining({
         userId: 'user-1',

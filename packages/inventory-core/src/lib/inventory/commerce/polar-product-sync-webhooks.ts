@@ -6,7 +6,6 @@ import type {
 } from '@tuturuuu/internal-api/inventory';
 import type { Product } from '@tuturuuu/payment/polar';
 import { after } from 'next/server';
-import { serverLogger } from '../../infrastructure/log-drain';
 import { resolveInventoryPolarContext } from './polar-core';
 import { assertInventoryPolarWorkspace } from './polar-errors';
 import {
@@ -164,7 +163,7 @@ export function scheduleInventoryPolarProductArchive(args: {
         productUpdate: { isArchived: true },
       });
     } catch (error) {
-      serverLogger.warn('Inventory Polar product archive-on-delete failed', {
+      console.warn('Inventory Polar product archive-on-delete failed', {
         error: extractErrorMessage(error),
         polarProductId: args.polarProductId,
         wsId: args.wsId,

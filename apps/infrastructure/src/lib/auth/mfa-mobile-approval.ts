@@ -25,7 +25,6 @@ import {
   MAX_LONG_TEXT_LENGTH,
 } from '@tuturuuu/utils/constants';
 import { z } from 'zod';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { checkRateLimit } from '@/lib/rate-limit';
 
 export const MFA_MOBILE_APPROVAL_GENERIC_ERROR =
@@ -201,7 +200,7 @@ async function markExpired(challengeId: string) {
     .eq('status', 'pending');
 
   if (error) {
-    serverLogger.warn('Failed to mark mobile MFA approval expired', {
+    console.warn('Failed to mark mobile MFA approval expired', {
       challengeId,
       message: error.message,
     });
@@ -265,7 +264,7 @@ async function getChallengeBySecret(input: {
     .maybeSingle();
 
   if (error) {
-    serverLogger.warn('Failed to load mobile MFA approval challenge', {
+    console.warn('Failed to load mobile MFA approval challenge', {
       challengeId: input.challengeId,
       message: error.message,
     });
@@ -339,7 +338,7 @@ export async function createMfaMobileApprovalChallenge(
     .single();
 
   if (error || !data) {
-    serverLogger.error('Failed to create mobile MFA approval challenge', {
+    console.error('Failed to create mobile MFA approval challenge', {
       message: error?.message,
     });
     return {
@@ -450,7 +449,7 @@ export async function pollMfaMobileApprovalChallenge(
       .maybeSingle();
 
     if (error || !data) {
-      serverLogger.error('Failed to consume mobile MFA approval challenge', {
+      console.error('Failed to consume mobile MFA approval challenge', {
         challengeId: row.id,
         message: error?.message,
       });
@@ -555,7 +554,7 @@ export async function listPendingMfaMobileApprovals(
     .limit(5);
 
   if (error) {
-    serverLogger.error('Failed to list pending mobile MFA approvals', {
+    console.error('Failed to list pending mobile MFA approvals', {
       message: error.message,
     });
     return {
@@ -621,7 +620,7 @@ export async function approveMfaMobileApprovalChallenge(
     .maybeSingle();
 
   if (loadError) {
-    serverLogger.warn('Failed to load mobile MFA approval before approval', {
+    console.warn('Failed to load mobile MFA approval before approval', {
       challengeId: input.challengeId,
       message: loadError.message,
     });
@@ -693,7 +692,7 @@ export async function approveMfaMobileApprovalChallenge(
     .maybeSingle();
 
   if (error) {
-    serverLogger.error('Failed to approve mobile MFA challenge', {
+    console.error('Failed to approve mobile MFA challenge', {
       challengeId: input.challengeId,
       message: error.message,
     });
@@ -718,7 +717,7 @@ export async function approveMfaMobileApprovalChallenge(
 }
 
 export function toMfaMobileApprovalErrorResult(error: unknown) {
-  serverLogger.error('Unexpected mobile MFA approval error', error);
+  console.error('Unexpected mobile MFA approval error', error);
   return {
     body: { error: MFA_MOBILE_APPROVAL_GENERIC_ERROR },
     status: 500,

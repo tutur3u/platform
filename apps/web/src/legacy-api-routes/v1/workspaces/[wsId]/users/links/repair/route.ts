@@ -5,7 +5,6 @@ import {
 } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 const RepairRequestSchema = z
   .object({
@@ -155,7 +154,7 @@ export async function POST(request: Request, { params }: Params) {
       ]);
 
     if (workspaceUsersResult.error) {
-      serverLogger.error('Failed to load workspace users for link repair', {
+      console.error('Failed to load workspace users for link repair', {
         error: workspaceUsersResult.error,
         wsId,
       });
@@ -166,7 +165,7 @@ export async function POST(request: Request, { params }: Params) {
     }
 
     if (existingLinksResult.error) {
-      serverLogger.error('Failed to load workspace user links for repair', {
+      console.error('Failed to load workspace user links for repair', {
         error: existingLinksResult.error,
         wsId,
       });
@@ -177,7 +176,7 @@ export async function POST(request: Request, { params }: Params) {
     }
 
     if (workspaceMembersResult.error) {
-      serverLogger.error('Failed to load workspace members for link repair', {
+      console.error('Failed to load workspace members for link repair', {
         error: workspaceMembersResult.error,
         wsId,
       });
@@ -221,13 +220,10 @@ export async function POST(request: Request, { params }: Params) {
         .in('user_id', memberIdChunk);
 
       if (error) {
-        serverLogger.error(
-          'Failed to load member private details for link repair',
-          {
-            error,
-            wsId,
-          }
-        );
+        console.error('Failed to load member private details for link repair', {
+          error,
+          wsId,
+        });
         return NextResponse.json(
           { message: 'Error loading workspace member details' },
           { status: 500 }
@@ -357,7 +353,7 @@ export async function POST(request: Request, { params }: Params) {
         .insert(linkRowsToInsert);
 
       if (error) {
-        serverLogger.error('Failed to insert repaired workspace user links', {
+        console.error('Failed to insert repaired workspace user links', {
           error,
           wsId,
         });
@@ -378,7 +374,7 @@ export async function POST(request: Request, { params }: Params) {
       },
     });
   } catch (error) {
-    serverLogger.error('Unexpected workspace user link repair error', {
+    console.error('Unexpected workspace user link repair error', {
       error,
     });
     return NextResponse.json(

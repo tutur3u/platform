@@ -1,5 +1,4 @@
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 export type TransactionListEnrichment = {
   wallet_currency: string | null;
@@ -164,7 +163,7 @@ export async function loadTransactionListEnrichment({
 
   if (error) {
     if (isRecoverableEnrichmentError(error)) {
-      serverLogger.warn(
+      console.warn(
         'Transaction list enrichment unavailable; continuing without enrichment',
         {
           error,

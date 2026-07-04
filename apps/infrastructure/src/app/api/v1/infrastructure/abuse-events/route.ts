@@ -1,7 +1,6 @@
 import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 export async function GET(req: Request) {
   const supabase = await createClient();
@@ -59,7 +58,7 @@ export async function GET(req: Request) {
   const { data, count, error } = await query;
 
   if (error) {
-    serverLogger.error('Error fetching abuse events:', error);
+    console.error('Error fetching abuse events:', error);
     return NextResponse.json(
       { message: 'Error fetching abuse events' },
       { status: 500 }

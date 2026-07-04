@@ -5,10 +5,7 @@ import {
   ensureWorkspaceExternalProjectStudio,
   requireWorkspaceExternalProjectSetupAccess,
 } from '@/lib/external-projects/access';
-import {
-  serverLogger,
-  withRequestLogDrain,
-} from '@/lib/infrastructure/log-drain';
+import { withRequestLogDrain } from '@/lib/infrastructure/log-drain';
 import { syncManifestSchema } from '../sync/shared';
 
 interface Params {
@@ -87,7 +84,7 @@ async function setupExternalProjectStudio(
       return NextResponse.json({ error: error.message }, { status: 409 });
     }
 
-    serverLogger.error('Failed to auto-setup external project studio', {
+    console.error('Failed to auto-setup external project studio', {
       error: error instanceof Error ? error.message : String(error),
       wsId: access.normalizedWorkspaceId,
     });

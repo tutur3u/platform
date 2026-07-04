@@ -1,7 +1,6 @@
 import { getFinanceRouteContext } from '@tuturuuu/apis/finance/request-access';
 import { NextResponse } from 'next/server';
 import { resolveFinanceRouteAuthContext } from '@/lib/finance-route-auth';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 interface Params {
   params: Promise<{
@@ -51,7 +50,7 @@ export async function GET(req: Request, { params }: Params) {
     });
 
   if (error) {
-    serverLogger.error('Error fetching multi-group linked products:', error);
+    console.error('Error fetching multi-group linked products:', error);
     return NextResponse.json(
       { message: 'Error fetching linked products' },
       { status: 500 }

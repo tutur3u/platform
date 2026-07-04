@@ -3,7 +3,6 @@ import { resolveWorkspaceId } from '@tuturuuu/utils/constants';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { resolveAuthenticatedSessionUser } from '@/lib/app-session-user';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 const querySchema = z.object({
   limit: z
@@ -132,7 +131,7 @@ export async function GET(
     );
 
     if (historyError) {
-      serverLogger.error('Error fetching task history:', historyError);
+      console.error('Error fetching task history:', historyError);
 
       // Handle specific error messages from the RPC
       if (historyError.message === 'Task not found') {
@@ -177,7 +176,7 @@ export async function GET(
       },
     });
   } catch (error) {
-    serverLogger.error('Error in task history API:', error);
+    console.error('Error in task history API:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

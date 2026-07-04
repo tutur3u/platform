@@ -7,7 +7,6 @@ import {
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 const certificateTemplateOptions = Constants.public.Enums.certificate_templates;
 type CertificateTemplate = (typeof certificateTemplateOptions)[number];
@@ -162,7 +161,7 @@ export const PUT = withSessionAuth(
       .maybeSingle();
 
     if (error) {
-      serverLogger.error('Failed to update workspace course', { error });
+      console.error('Failed to update workspace course', { error });
       return NextResponse.json(
         { message: 'Error updating workspace course' },
         { status: 500 }
@@ -225,7 +224,7 @@ export const DELETE = withSessionAuth(
       .maybeSingle();
 
     if (error) {
-      serverLogger.error('Failed to delete workspace course', { error });
+      console.error('Failed to delete workspace course', { error });
       return NextResponse.json(
         { message: 'Error deleting workspace course' },
         { status: 500 }

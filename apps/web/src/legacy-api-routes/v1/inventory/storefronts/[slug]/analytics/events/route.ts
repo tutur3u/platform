@@ -3,7 +3,6 @@ import { getPublicStorefront } from '@tuturuuu/inventory-core/commerce/public-st
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 const storefrontAnalyticsEventSchema = z.object({
   checkoutSessionId: z.guid().nullable().optional(),
@@ -74,7 +73,7 @@ export async function POST(request: Request, { params }: Params) {
       );
     }
 
-    serverLogger.error('Failed to record storefront analytics event', error);
+    console.error('Failed to record storefront analytics event', error);
     return NextResponse.json(
       { message: 'Failed to record storefront analytics event' },
       { status: 500 }

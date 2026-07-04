@@ -2,10 +2,7 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import {
-  serverLogger,
-  withRequestLogDrain,
-} from '@/lib/infrastructure/log-drain';
+import { withRequestLogDrain } from '@/lib/infrastructure/log-drain';
 
 function normalizeListParam(value: string | string[]) {
   const rawValues = Array.isArray(value) ? value : [value];
@@ -116,7 +113,7 @@ async function handleFeaturedGroupCountsRequest(
 
   if (error) {
     if (isSupabaseGatewayHtmlError(error)) {
-      serverLogger.warn('Featured group counts temporarily unavailable', {
+      console.warn('Featured group counts temporarily unavailable', {
         featuredGroupCount: sp.featuredGroupIds.length,
         wsId,
       });
@@ -126,7 +123,7 @@ async function handleFeaturedGroupCountsRequest(
       );
     }
 
-    serverLogger.error(
+    console.error(
       'Error fetching featured group counts',
       {
         excludedGroupCount: sp.excludedGroups.length,

@@ -1,7 +1,6 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { withSessionAuth } from '@/lib/api-auth';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
   getLearnerMarks,
   resolveTulearnSubject,
@@ -32,7 +31,7 @@ export const GET = withSessionAuth<Params>(
       const accessResponse = tulearnAccessErrorResponse(error);
       if (accessResponse) return accessResponse;
 
-      serverLogger.error('Failed to list Tulearn marks:', error);
+      console.error('Failed to list Tulearn marks:', error);
       return NextResponse.json(
         { message: 'Failed to load marks' },
         { status: 500 }

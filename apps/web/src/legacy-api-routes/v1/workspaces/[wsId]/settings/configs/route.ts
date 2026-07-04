@@ -15,7 +15,6 @@ import {
 } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
 import { availableConfigs } from '@/constants/configs/reports';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { listWorkspaceDefaultIncludedGroupIds } from '@/lib/workspace-default-included-groups';
 
 type AutoApprovalSummary = {
@@ -166,7 +165,7 @@ export async function GET(req: NextRequest, { params }: Params) {
         .in('id', workspaceConfigIds);
 
       if (error) {
-        serverLogger.error('Error fetching workspace configs:', error);
+        console.error('Error fetching workspace configs:', error);
         return NextResponse.json(
           { error: 'Failed to fetch workspace configs' },
           { status: 500 }
@@ -181,7 +180,7 @@ export async function GET(req: NextRequest, { params }: Params) {
       : { data: [] as string[] };
 
     if (defaultIncludedGroups.errorMessage) {
-      serverLogger.error('Error fetching default included user groups:', {
+      console.error('Error fetching default included user groups:', {
         error: defaultIncludedGroups.errorMessage,
         wsId,
       });
@@ -209,7 +208,7 @@ export async function GET(req: NextRequest, { params }: Params) {
 
     return NextResponse.json(result);
   } catch (error) {
-    serverLogger.error('Error in workspace configs API:', error);
+    console.error('Error in workspace configs API:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -365,7 +364,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
       );
 
     if (transitionError) {
-      serverLogger.error(
+      console.error(
         'Error updating workspace configs with transitions:',
         transitionError
       );
@@ -407,7 +406,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
       auto_approved: autoApproved,
     });
   } catch (error) {
-    serverLogger.error('Error in workspace configs API (PUT):', error);
+    console.error('Error in workspace configs API (PUT):', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

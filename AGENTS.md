@@ -44,8 +44,9 @@ surface you are changing:
   package manager command for the owning workspace.
 - Do not use native browser dialogs, emojis in UI code, hard-coded hue classes,
   client-side raw app API fetches, or `useEffect` for data fetching.
-- Do not add raw server-side `console.*` calls in `apps/web` API, cron, or
-  infrastructure runtime code. Use the internal log-drain logger/path.
+- Use native `console.*` for server runtime logs, preserving severity
+  (`console.error`, `console.warn`, etc.). Do not add `serverLogger` runtime
+  imports or automatic console log-drain installation.
 - Do not modify, format, stage, commit, delete, rename, or clean up files you
   did not intentionally touch.
 - Do not use destructive Git or filesystem commands unless the user clearly asks

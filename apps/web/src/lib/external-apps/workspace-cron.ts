@@ -22,7 +22,6 @@ import { validate as validateUUID } from 'uuid';
 import { z } from 'zod';
 import { getExternalAppById } from '@/lib/app-coordination/external-apps';
 import {
-  serverLogger,
   setLogDrainUserContext,
   withRequestLogDrain,
 } from '@/lib/infrastructure/log-drain';
@@ -363,7 +362,7 @@ function managedCronFailureResponse({
   const failure = managedCronFailureForOperation(operation, error);
   const adminRecoveryHref = buildManagedCronAdminRecoveryHref();
 
-  serverLogger.error('External app managed cron operation failed', {
+  console.error('External app managed cron operation failed', {
     code: failure.code,
     errorName: errorName(error),
     externalAppId: access?.targetApp.id ?? null,

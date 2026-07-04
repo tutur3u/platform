@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from 'next/server';
-import { serverLogger, withCronLogDrain } from '@/lib/infrastructure/log-drain';
+import { withCronLogDrain } from '@/lib/infrastructure/log-drain';
 import { sampleObservabilityResources } from '@/lib/infrastructure/observability';
 
 const JOB_ID = 'infrastructure-sample-resources';
@@ -31,11 +31,11 @@ async function handleGET(request: NextRequest) {
 
   try {
     const sample = await sampleObservabilityResources();
-    serverLogger.info('Sampled infrastructure resources', sample);
+    console.info('Sampled infrastructure resources', sample);
 
     return NextResponse.json({ ok: true, sample });
   } catch (error) {
-    serverLogger.error('Failed to sample infrastructure resources', error);
+    console.error('Failed to sample infrastructure resources', error);
     return NextResponse.json(
       {
         ok: false,

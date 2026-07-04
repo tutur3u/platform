@@ -5,7 +5,6 @@ import {
   decryptDataKey,
   decryptSecretValue,
 } from '@/lib/mobile-deployment/crypto';
-import { serverLogger } from '../log-drain';
 import { sanitizeAuditMetadata } from './sanitize';
 import {
   type AdminClient,
@@ -158,7 +157,7 @@ export async function recordAudit(
   });
 
   if (error) {
-    serverLogger.warn('Failed to record GitHub bot audit event');
+    console.warn('Failed to record GitHub bot audit event');
   }
 }
 

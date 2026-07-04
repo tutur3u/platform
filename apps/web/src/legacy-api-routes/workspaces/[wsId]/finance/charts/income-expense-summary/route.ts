@@ -1,7 +1,6 @@
 import { MAX_COLOR_LENGTH } from '@tuturuuu/utils/constants';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
   MAX_FINANCE_DAILY_DATE_RANGE_DAYS,
   MAX_FINANCE_EXTENDED_DATE_RANGE_DAYS,
@@ -122,7 +121,7 @@ export async function GET(
 
     return NextResponse.json(rpcResponseSchema.parse(data ?? {}));
   } catch (error) {
-    serverLogger.error('Error fetching income expense chart summary', {
+    console.error('Error fetching income expense chart summary', {
       error,
     });
     return NextResponse.json(

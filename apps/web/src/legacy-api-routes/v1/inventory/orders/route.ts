@@ -2,7 +2,6 @@ import { listCheckoutOrderHistory } from '@tuturuuu/inventory-core/commerce/chec
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { resolveSessionAuthContext } from '@/lib/api-auth';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 const SearchParamsSchema = z.object({
   limit: z.coerce.number().int().min(1).max(100).default(50),
@@ -47,7 +46,7 @@ export async function GET(request: Request) {
       headers: { 'Cache-Control': 'private, no-store' },
     });
   } catch (error) {
-    serverLogger.error('Failed to load inventory order history', error);
+    console.error('Failed to load inventory order history', error);
     return NextResponse.json(
       { message: 'Failed to load order history' },
       { status: 500 }

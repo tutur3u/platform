@@ -1,5 +1,4 @@
 import { type NextRequest, NextResponse } from 'next/server';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
   buildTaskPlanDigest,
   isTaskPlanSchemaUnavailableError,
@@ -61,7 +60,7 @@ export async function GET(request: NextRequest, context: Context) {
   } catch (error) {
     if (isTaskPlanSchemaUnavailableError(error))
       return taskPlanSchemaUnavailableResponse({ digest: '' });
-    serverLogger.error('Failed to generate task plan digest', {
+    console.error('Failed to generate task plan digest', {
       error,
       planId,
     });

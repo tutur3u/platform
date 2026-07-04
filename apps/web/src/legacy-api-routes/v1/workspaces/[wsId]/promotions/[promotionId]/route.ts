@@ -7,7 +7,6 @@ import {
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { resolveFinanceRouteAuthContext } from '@/lib/finance-route-auth';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 const PromotionUpdateSchema = z
   .object({
@@ -95,7 +94,7 @@ export async function PUT(req: Request, { params }: Params) {
     .eq('ws_id', wsId);
 
   if (error) {
-    serverLogger.error('Error updating promotion:', error);
+    console.error('Error updating promotion:', error);
     return NextResponse.json(
       { message: 'Error updating promotion' },
       { status: 500 }
@@ -137,7 +136,7 @@ export async function DELETE(req: Request, { params }: Params) {
     .eq('ws_id', wsId);
 
   if (error) {
-    serverLogger.error('Error deleting promotion:', error);
+    console.error('Error deleting promotion:', error);
     return NextResponse.json(
       { message: 'Error deleting promotion' },
       { status: 500 }

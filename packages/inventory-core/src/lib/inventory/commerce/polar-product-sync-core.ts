@@ -7,7 +7,6 @@ import {
   toPolarCurrency,
 } from '@tuturuuu/internal-api/inventory';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import { serverLogger } from '../../infrastructure/log-drain';
 import { resolveInventoryPolarContext } from './polar-core';
 
 export type SupabaseErrorLike = { message?: string } | null;
@@ -107,7 +106,7 @@ export async function markRowSyncState(
     .eq('ws_id', wsId)) as { error: SupabaseErrorLike };
 
   if (error) {
-    serverLogger.warn('Failed to persist Polar product sync state', {
+    console.warn('Failed to persist Polar product sync state', {
       error: error.message,
       rowId,
       table,
@@ -240,7 +239,7 @@ export async function pushRowToPolar(
     });
   } catch (error) {
     const message = extractErrorMessage(error);
-    serverLogger.warn('Inventory Polar product push failed', {
+    console.warn('Inventory Polar product push failed', {
       error: message,
       kind,
       rowId: row.rowId,
@@ -282,7 +281,7 @@ export async function archiveRowInPolar(
     });
   } catch (error) {
     const message = extractErrorMessage(error);
-    serverLogger.warn('Inventory Polar product archive failed', {
+    console.warn('Inventory Polar product archive failed', {
       error: message,
       rowId,
       table,

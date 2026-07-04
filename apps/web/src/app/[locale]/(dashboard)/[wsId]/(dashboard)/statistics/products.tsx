@@ -3,7 +3,6 @@ import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import StatisticCard from '@/components/cards/StatisticCard';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 export default async function ProductsStatistics({ wsId }: { wsId: string }) {
   const supabase = await createAdminClient();
@@ -25,7 +24,7 @@ export default async function ProductsStatistics({ wsId }: { wsId: string }) {
   );
 
   if (error) {
-    serverLogger.error('Error fetching workspace products count', error);
+    console.error('Error fetching workspace products count', error);
   }
 
   return (

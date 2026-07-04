@@ -8,11 +8,7 @@ import type {
   InfrastructureStressTestSummary,
 } from '@tuturuuu/internal-api/infrastructure/monitoring';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import {
-  ensureLogDrainSchema,
-  getLogDrainSqlClient,
-  serverLogger,
-} from './log-drain';
+import { ensureLogDrainSchema, getLogDrainSqlClient } from './log-drain';
 import {
   getDefaultStressTestSummary,
   summarizeStressTestSamples,
@@ -124,7 +120,7 @@ export async function persistStressTestRun(run: InfrastructureStressTestRun) {
       updated_at: toStressTestDate(run.updatedAt),
     });
   } catch (error) {
-    serverLogger.warn('Failed to persist stress-test run', {
+    console.warn('Failed to persist stress-test run', {
       error,
       runId: run.id,
     });
@@ -195,7 +191,7 @@ async function persistSamples(run: InfrastructureStressTestRun) {
       { onConflict: 'run_id,sampled_at' }
     );
   } catch (error) {
-    serverLogger.warn('Failed to persist stress-test samples', {
+    console.warn('Failed to persist stress-test samples', {
       error,
       runId: run.id,
     });
@@ -271,7 +267,7 @@ async function persistSamplesToLogDrain(run: InfrastructureStressTestRun) {
       `;
     }
   } catch (error) {
-    serverLogger.warn('Failed to persist stress-test usage samples', {
+    console.warn('Failed to persist stress-test usage samples', {
       error,
       runId: run.id,
     });

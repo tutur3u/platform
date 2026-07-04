@@ -8,7 +8,6 @@ import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
   getMobileVersionPolicies,
   MOBILE_VERSION_POLICY_CONFIG_KEYS,
@@ -67,7 +66,7 @@ export async function GET(request: NextRequest) {
     const policies = await getMobileVersionPolicies();
     return NextResponse.json(policies);
   } catch (error) {
-    serverLogger.error('Failed to load mobile version policies:', error);
+    console.error('Failed to load mobile version policies:', error);
     return NextResponse.json(
       { message: 'Failed to load mobile version policies' },
       { status: 500 }
@@ -150,7 +149,7 @@ export async function PUT(request: NextRequest) {
     .upsert(rows, { onConflict: 'ws_id,id' });
 
   if (error) {
-    serverLogger.error('Failed to save mobile version policies:', error);
+    console.error('Failed to save mobile version policies:', error);
     return NextResponse.json(
       { message: 'Failed to save mobile version policies' },
       { status: 500 }

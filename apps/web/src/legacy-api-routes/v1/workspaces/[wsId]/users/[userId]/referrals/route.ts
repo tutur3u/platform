@@ -8,7 +8,6 @@ import { MAX_SEARCH_LENGTH } from '@tuturuuu/utils/constants';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
   fetchRequireAttentionUserIds,
   withRequireAttentionFlag,
@@ -69,7 +68,7 @@ async function resolveActorVirtualUserId({
     .maybeSingle();
 
   if (error) {
-    serverLogger.error('Error resolving referral actor workspace user', {
+    console.error('Error resolving referral actor workspace user', {
       error,
       wsId,
     });
@@ -210,7 +209,7 @@ export async function GET(req: Request, { params }: Params) {
         })
       );
     } catch (error) {
-      serverLogger.error('Error fetching available referral users', { error });
+      console.error('Error fetching available referral users', { error });
       return NextResponse.json(
         { message: 'Error fetching available referral users' },
         { status: 500 }
@@ -230,7 +229,7 @@ export async function GET(req: Request, { params }: Params) {
     .order('created_at', { ascending: false });
 
   if (error) {
-    serverLogger.error('Error fetching referred users', { error });
+    console.error('Error fetching referred users', { error });
     return NextResponse.json(
       { message: 'Error fetching referred users' },
       { status: 500 }
@@ -312,7 +311,7 @@ export async function POST(req: Request, { params }: Params) {
   );
 
   if (error) {
-    serverLogger.error('Error assigning user referral', {
+    console.error('Error assigning user referral', {
       error,
       referredUserId,
       userId,
@@ -377,7 +376,7 @@ export async function DELETE(req: Request, { params }: Params) {
   );
 
   if (error) {
-    serverLogger.error('Error removing user referral', {
+    console.error('Error removing user referral', {
       error,
       referredUserId,
       userId,

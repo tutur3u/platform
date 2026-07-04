@@ -20,6 +20,8 @@ const mocks = vi.hoisted(() => ({
   withSessionAuth: vi.fn(),
 }));
 
+const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
 vi.mock('node:crypto', async (importOriginal) => {
   const actual = await importOriginal<typeof import('node:crypto')>();
 
@@ -128,7 +130,7 @@ describe('Valsea speech route', () => {
     expect(payload).toEqual({ message: 'Local speech synthesis failed' });
     expect(JSON.stringify(payload)).not.toContain('token:secret');
     expect(mocks.uploadWorkspaceStorageFileDirect).not.toHaveBeenCalled();
-    expect(mocks.serverLogger.error).toHaveBeenCalledWith(
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
       'Local speech synthesis upstream failed',
       {
         hasPublicDetail: true,

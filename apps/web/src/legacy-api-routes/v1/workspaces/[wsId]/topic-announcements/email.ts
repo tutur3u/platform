@@ -7,7 +7,6 @@ import {
 } from '@tuturuuu/email-service';
 import { extractIPFromHeaders } from '@tuturuuu/utils/abuse-protection';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { normalizeTopicAnnouncementAttachmentFileName } from '@/lib/topic-announcement-attachments';
 import {
   htmlEscape,
@@ -418,7 +417,7 @@ export async function sendTopicVerificationEmail({
       .from('topic_announcement_contact_verifications')
       .update({ status: 'revoked' })
       .eq('token_hash', tokenHash);
-    serverLogger.error('Failed to send topic announcement verification email', {
+    console.error('Failed to send topic announcement verification email', {
       contactId: contact.id,
       error: result.error,
       wsId: normalizedWsId,

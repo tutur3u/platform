@@ -8,7 +8,6 @@ import {
   mapHiveAccessRequest,
   mapHiveMember,
   requireHiveAdmin,
-  serverLogger,
   syncSupabaseHiveMember,
   withHiveRoute,
 } from '../../../_shared';
@@ -50,7 +49,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
       });
 
       if (syncError) {
-        serverLogger.error('Failed to sync approved Hive member', {
+        console.error('Failed to sync approved Hive member', {
           error: syncError.message,
           requestId,
           userId: accessRequest.user_id,

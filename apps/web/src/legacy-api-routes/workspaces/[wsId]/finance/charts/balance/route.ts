@@ -1,7 +1,6 @@
 import { MAX_COLOR_LENGTH } from '@tuturuuu/utils/constants';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { requireFinanceStatsAccess } from '../access';
 
 const querySchema = z.object({
@@ -60,7 +59,7 @@ export async function GET(
       date,
     });
   } catch (error) {
-    serverLogger.error('Error fetching balance at date', { error });
+    console.error('Error fetching balance at date', { error });
     return NextResponse.json(
       { message: 'Internal server error while fetching balance' },
       { status: 500 }

@@ -9,7 +9,6 @@ import {
   normalizeWorkspaceId,
 } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 interface Params {
   params: Promise<{
@@ -58,7 +57,7 @@ export async function GET(req: Request, { params }: Params) {
   const { data, error, count } = await query;
 
   if (error) {
-    serverLogger.error('Error fetching product categories', error);
+    console.error('Error fetching product categories', error);
     return NextResponse.json(
       { message: 'Error fetching product categories' },
       { status: 500 }
@@ -96,7 +95,7 @@ export async function POST(req: Request, { params }: Params) {
   });
 
   if (error) {
-    serverLogger.error('Error creating inventory category', error);
+    console.error('Error creating inventory category', error);
     return NextResponse.json(
       { message: 'Error creating inventory category' },
       { status: 500 }

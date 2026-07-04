@@ -7,7 +7,6 @@ import {
 } from '@tuturuuu/supabase/next/server';
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { cookies } from 'next/headers';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { isPolarWorkspaceSetupEnabled } from '@/lib/polar-config';
 import { getOrCreatePolarCustomer } from '@/utils/customer-helper';
 import { syncSubscriptionToDatabase } from '@/utils/polar-subscription-helper';
@@ -84,7 +83,7 @@ export async function setupWorkspace(
     const result = await createFreeSubscription(polar, sbAdmin, wsId);
 
     if (result.status === 'error') {
-      serverLogger.warn(
+      console.warn(
         'Workspace free-subscription provisioning failed; allowing workspace entry',
         { wsId, reason: result.message }
       );
@@ -96,13 +95,10 @@ export async function setupWorkspace(
 
     return { success: true, subscriptionProvisioned: true };
   } catch (error) {
-    serverLogger.error(
-      'Workspace Polar setup threw; allowing workspace entry',
-      {
-        wsId,
-        error: error instanceof Error ? error.message : String(error),
-      }
-    );
+    console.error('Workspace Polar setup threw; allowing workspace entry', {
+      wsId,
+      error: error instanceof Error ? error.message : String(error),
+    });
     return { success: true, subscriptionProvisioned: false };
   }
 }

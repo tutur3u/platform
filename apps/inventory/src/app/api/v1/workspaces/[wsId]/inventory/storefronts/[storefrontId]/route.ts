@@ -17,7 +17,6 @@ import {
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 interface Params {
   params: Promise<{ storefrontId: string; wsId: string }>;
@@ -41,7 +40,7 @@ export async function GET(request: Request, { params }: Params) {
 
     return NextResponse.json({ data });
   } catch (error) {
-    serverLogger.error('Failed to load inventory storefront', error);
+    console.error('Failed to load inventory storefront', error);
     return NextResponse.json(
       { message: 'Failed to load inventory storefront' },
       { status: 500 }
@@ -103,7 +102,7 @@ export async function PATCH(request: Request, { params }: Params) {
       );
     }
 
-    serverLogger.error('Failed to update inventory storefront', error);
+    console.error('Failed to update inventory storefront', error);
     return NextResponse.json(
       { message: 'Failed to update inventory storefront' },
       { status: 500 }
@@ -145,7 +144,7 @@ export async function DELETE(request: Request, { params }: Params) {
 
     return NextResponse.json({ ok: true });
   } catch (error) {
-    serverLogger.error('Failed to delete inventory storefront', error);
+    console.error('Failed to delete inventory storefront', error);
     return NextResponse.json(
       { message: 'Failed to delete inventory storefront' },
       { status: 500 }

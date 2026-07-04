@@ -5,7 +5,6 @@ import {
 import { roleFormSchema } from '@tuturuuu/ui/finance/wallets/wallet-form-schema';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 interface Params {
   params: Promise<{
@@ -53,7 +52,7 @@ export async function GET(req: Request, { params }: Params) {
     .order('created_at', { ascending: false });
 
   if (error) {
-    serverLogger.error('Error fetching wallet role access list', {
+    console.error('Error fetching wallet role access list', {
       error,
       walletId,
       wsId,
@@ -143,7 +142,7 @@ export async function POST(req: Request, { params }: Params) {
     .single();
 
   if (error) {
-    serverLogger.error('Error adding wallet role access', {
+    console.error('Error adding wallet role access', {
       error,
       roleId: role_id,
       walletId,

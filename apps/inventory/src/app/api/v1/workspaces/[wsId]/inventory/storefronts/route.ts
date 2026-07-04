@@ -11,7 +11,6 @@ import {
 import { canManageInventorySetup } from '@tuturuuu/inventory-core/permissions';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 interface Params {
   params: Promise<{ wsId: string }>;
@@ -57,7 +56,7 @@ export async function POST(request: Request, { params }: Params) {
       );
     }
 
-    serverLogger.error('Failed to create inventory storefront', error);
+    console.error('Failed to create inventory storefront', error);
     return NextResponse.json(
       { message: 'Failed to create inventory storefront' },
       { status: 500 }

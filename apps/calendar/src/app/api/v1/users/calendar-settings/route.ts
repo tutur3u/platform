@@ -2,7 +2,6 @@ import { MAX_SHORT_TEXT_LENGTH } from '@tuturuuu/utils/constants';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 const calendarSettingsSchema = z.object({
   timezone: z.string().max(MAX_SHORT_TEXT_LENGTH).optional(),
@@ -27,7 +26,7 @@ export const GET = withSessionAuth(
         .single();
 
       if (error) {
-        serverLogger.error('Error fetching user calendar settings:', error);
+        console.error('Error fetching user calendar settings:', error);
         return NextResponse.json(
           { error: 'Failed to fetch user calendar settings' },
           { status: 500 }
@@ -40,7 +39,7 @@ export const GET = withSessionAuth(
         time_format: userData.time_format || 'auto',
       });
     } catch (error) {
-      serverLogger.error('Error in user calendar settings API:', error);
+      console.error('Error in user calendar settings API:', error);
       return NextResponse.json(
         { error: 'Internal server error' },
         { status: 500 }
@@ -77,7 +76,7 @@ export const PATCH = withSessionAuth(
         .single();
 
       if (error) {
-        serverLogger.error('Error updating user calendar settings:', error);
+        console.error('Error updating user calendar settings:', error);
         return NextResponse.json(
           { error: 'Failed to update user calendar settings' },
           { status: 500 }
@@ -97,7 +96,7 @@ export const PATCH = withSessionAuth(
         );
       }
 
-      serverLogger.error('Error in user calendar settings API:', error);
+      console.error('Error in user calendar settings API:', error);
       return NextResponse.json(
         { error: 'Internal server error' },
         { status: 500 }

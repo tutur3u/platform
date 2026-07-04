@@ -6,7 +6,6 @@ import type {
 } from '@tuturuuu/types/primitives';
 import { NextResponse } from 'next/server';
 import { resolveFinanceRouteAuthContext } from '@/lib/finance-route-auth';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { loadTransactionListEnrichment } from '../list-enrichment';
 
 interface Params {
@@ -259,7 +258,7 @@ export async function GET(req: Request, { params }: Params) {
       hasMore,
     });
   } catch (error) {
-    serverLogger.error('Error fetching transaction periods', { error });
+    console.error('Error fetching transaction periods', { error });
     return NextResponse.json(
       {
         message:

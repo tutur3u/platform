@@ -1,10 +1,7 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { sendAiAgentExternalResponse } from '@/lib/ai-agents/external-chat-actions';
-import {
-  serverLogger,
-  withRequestLogDrain,
-} from '@/lib/infrastructure/log-drain';
+import { withRequestLogDrain } from '@/lib/infrastructure/log-drain';
 import { requireAiAgentAdmin } from '../../../access';
 
 type RouteParams = {
@@ -42,7 +39,7 @@ async function sendResponse(request: NextRequest, params: RouteParams) {
 
     return NextResponse.json({ message }, { status: 201 });
   } catch (error) {
-    serverLogger.error('Failed to send AI agent external response', error);
+    console.error('Failed to send AI agent external response', error);
     return NextResponse.json(
       { error: 'Failed to send external response' },
       { status: 500 }

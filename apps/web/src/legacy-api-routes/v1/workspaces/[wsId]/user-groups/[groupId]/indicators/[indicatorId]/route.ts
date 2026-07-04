@@ -1,7 +1,6 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
   resolveRequestActorAuthUid,
   resolveUserGroupRouteWorkspaceId,
@@ -59,7 +58,7 @@ export async function PUT(req: Request, { params }: Params) {
     });
 
   if (error) {
-    serverLogger.error('Error updating group indicator:', error);
+    console.error('Error updating group indicator:', error);
     return NextResponse.json(
       { message: 'Error updating indicator' },
       { status: 500 }
@@ -110,7 +109,7 @@ export async function DELETE(req: Request, { params }: Params) {
     });
 
   if (error) {
-    serverLogger.error('Error deleting group indicator:', error);
+    console.error('Error deleting group indicator:', error);
     return NextResponse.json(
       { message: 'Error deleting indicator' },
       { status: 500 }

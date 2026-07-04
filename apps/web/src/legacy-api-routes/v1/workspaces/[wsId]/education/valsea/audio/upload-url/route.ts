@@ -6,7 +6,6 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { type AuthorizedRequest, withSessionAuth } from '@/lib/api-auth';
 import { checkEducationWorkspaceAccess } from '@/lib/education/access';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
   MAX_VALSEA_AUDIO_UPLOAD_BYTES,
   VALSEA_AUDIO_DRIVE_PATH,
@@ -110,7 +109,7 @@ export const POST = withSessionAuth<Params>(
         );
       }
 
-      serverLogger.error('Failed to prepare Valsea audio upload:', error);
+      console.error('Failed to prepare Valsea audio upload:', error);
       return NextResponse.json(
         { message: 'Failed to prepare audio upload' },
         { status: 500 }

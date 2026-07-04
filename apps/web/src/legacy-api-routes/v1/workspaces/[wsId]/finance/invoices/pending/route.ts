@@ -4,7 +4,6 @@ import { MAX_MEDIUM_TEXT_LENGTH } from '@tuturuuu/utils/constants';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { resolveFinanceRouteAuthContext } from '@/lib/finance-route-auth';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 const PendingInvoicesParamsSchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
@@ -177,7 +176,7 @@ export async function GET(request: Request, { params }: Params) {
     const pgError = error as { code?: string; message?: string } | null;
     const isTimeout = pgError?.code === '57014';
 
-    serverLogger.error('Error in pending invoices API:', {
+    console.error('Error in pending invoices API:', {
       code: pgError?.code,
       message: pgError?.message,
       isTimeout,

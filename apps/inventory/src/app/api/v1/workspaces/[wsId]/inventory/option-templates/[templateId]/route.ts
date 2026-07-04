@@ -7,7 +7,6 @@ import { optionTemplatePatchSchema } from '@tuturuuu/inventory-core/commerce/sch
 import { canManageInventoryCatalog } from '@tuturuuu/inventory-core/permissions';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 interface Params {
   params: Promise<{ templateId: string; wsId: string }>;
@@ -41,7 +40,7 @@ export async function PATCH(request: Request, { params }: Params) {
       );
     }
 
-    serverLogger.error('Failed to update inventory option template', error);
+    console.error('Failed to update inventory option template', error);
     return NextResponse.json(
       { message: 'Failed to update inventory option template' },
       { status: 500 }

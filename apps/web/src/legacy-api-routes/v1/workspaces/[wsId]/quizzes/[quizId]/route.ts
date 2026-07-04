@@ -5,7 +5,6 @@ import { withSessionAuth } from '@/lib/api-auth';
 import { JsonPayloadSchema } from '@/lib/education/json-payload-schema';
 import { setPrivateWorkspaceQuizAnswer } from '@/lib/education/private-quiz-answers';
 import { revalidateQuizLinkedModulePaths } from '@/lib/education/revalidate-quiz-paths';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { requireTeachWorkspaceAccess } from '@/lib/teach/api';
 
 const RouteParamsSchema = z.object({
@@ -97,7 +96,7 @@ export const PUT = withSessionAuth(
       .maybeSingle();
 
     if (error) {
-      serverLogger.error('Failed to update workspace quiz', {
+      console.error('Failed to update workspace quiz', {
         error,
         quizId: parsedParams.data.quizId,
         wsId: access.normalizedWsId,
@@ -125,7 +124,7 @@ export const PUT = withSessionAuth(
         .eq('quiz_id', parsedParams.data.quizId);
 
       if (deleteOptionsError) {
-        serverLogger.error('Failed to reset quiz options', {
+        console.error('Failed to reset quiz options', {
           error: deleteOptionsError,
           quizId: parsedParams.data.quizId,
           wsId: access.normalizedWsId,
@@ -149,7 +148,7 @@ export const PUT = withSessionAuth(
           );
 
         if (insertOptionsError) {
-          serverLogger.error('Failed to insert quiz options', {
+          console.error('Failed to insert quiz options', {
             error: insertOptionsError,
             quizId: parsedParams.data.quizId,
             wsId: access.normalizedWsId,
@@ -214,7 +213,7 @@ export const DELETE = withSessionAuth(
       .maybeSingle();
 
     if (error) {
-      serverLogger.error('Failed to delete workspace quiz', {
+      console.error('Failed to delete workspace quiz', {
         error,
         quizId: parsedParams.data.quizId,
         wsId: access.normalizedWsId,

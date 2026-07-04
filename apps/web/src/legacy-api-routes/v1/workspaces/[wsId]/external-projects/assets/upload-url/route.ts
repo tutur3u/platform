@@ -4,7 +4,6 @@ import { generateRandomUUID } from '@tuturuuu/utils/uuid-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { requireWorkspaceExternalProjectAccess } from '@/lib/external-projects/access';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
   createWorkspaceStorageUploadPayload,
   uploadWorkspaceStorageFileDirect,
@@ -221,7 +220,7 @@ export async function POST(
       );
     }
 
-    serverLogger.error('Failed to upload external project asset', {
+    console.error('Failed to upload external project asset', {
       error,
     });
     return NextResponse.json(

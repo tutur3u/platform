@@ -2,7 +2,6 @@ import { authorizeInventoryWorkspace } from '@tuturuuu/inventory-core/commerce/a
 import { listInventorySquareDevices } from '@tuturuuu/inventory-core/commerce/square';
 import { canManageInventorySetup } from '@tuturuuu/inventory-core/permissions';
 import { NextResponse } from 'next/server';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 interface Params {
   params: Promise<{ wsId: string }>;
@@ -20,7 +19,7 @@ export async function GET(request: Request, { params }: Params) {
     const data = await listInventorySquareDevices(authorization.value.wsId);
     return NextResponse.json({ data });
   } catch (error) {
-    serverLogger.error('Failed to list Square devices', error);
+    console.error('Failed to list Square devices', error);
     return NextResponse.json(
       { message: 'Failed to list Square devices' },
       { status: 500 }

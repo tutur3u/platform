@@ -39,7 +39,6 @@ import utc from 'dayjs/plugin/utc';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { resolveAuthenticatedSessionUser } from '@/lib/app-session-user';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -229,7 +228,7 @@ async function loadBoardContext(
     .maybeSingle();
 
   if (error) {
-    serverLogger.error('Failed to load board for task suggestions', {
+    console.error('Failed to load board for task suggestions', {
       boardId,
       error,
       wsId,
@@ -282,7 +281,7 @@ async function loadSuggestionContext(
   ]);
 
   if (listsResult.error) {
-    serverLogger.error('Failed to load lists for task suggestions', {
+    console.error('Failed to load lists for task suggestions', {
       boardId,
       error: listsResult.error,
       wsId,
@@ -297,7 +296,7 @@ async function loadSuggestionContext(
   }
 
   if (labelsResult.error) {
-    serverLogger.error('Failed to load labels for task suggestions', {
+    console.error('Failed to load labels for task suggestions', {
       error: labelsResult.error,
       wsId,
     });
@@ -311,7 +310,7 @@ async function loadSuggestionContext(
   }
 
   if (projectsResult.error) {
-    serverLogger.error('Failed to load projects for task suggestions', {
+    console.error('Failed to load projects for task suggestions', {
       error: projectsResult.error,
       wsId,
     });
@@ -611,7 +610,7 @@ async function resolveModelOrResponse(wsId: string) {
       };
     }
 
-    serverLogger.error('Failed to resolve task suggestions model', {
+    console.error('Failed to resolve task suggestions model', {
       error,
       wsId,
     });
@@ -684,7 +683,7 @@ function deductSuggestionCredits({
     reasoningTokens: usage.outputTokenDetails?.reasoningTokens ?? 0,
     feature: TASK_SUGGESTIONS_CREDIT_FEATURE,
   }).catch((error: unknown) =>
-    serverLogger.error('Failed to deduct task suggestion AI credits', {
+    console.error('Failed to deduct task suggestion AI credits', {
       error,
       modelId,
       userId,
@@ -839,7 +838,7 @@ export async function POST(
         { status: 200 }
       );
     } catch (generationError) {
-      serverLogger.error('Task suggestion AI generation failed', {
+      console.error('Task suggestion AI generation failed', {
         error: generationError,
         wsId,
       });
@@ -859,7 +858,7 @@ export async function POST(
       );
     }
   } catch (error) {
-    serverLogger.error('Unexpected task suggestions route failure', { error });
+    console.error('Unexpected task suggestions route failure', { error });
     return NextResponse.json(
       { error: 'Failed to generate task suggestions' },
       { status: 500 }

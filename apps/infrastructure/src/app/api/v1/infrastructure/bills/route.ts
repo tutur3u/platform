@@ -1,6 +1,5 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 export async function GET(req: Request) {
   const supabase = await createClient();
@@ -27,7 +26,7 @@ export async function GET(req: Request) {
     );
 
   if (error) {
-    serverLogger.error('Error fetching finance invoices:', error);
+    console.error('Error fetching finance invoices:', error);
     return NextResponse.json(
       { message: 'Error fetching finance invoices' },
       { status: 500 }

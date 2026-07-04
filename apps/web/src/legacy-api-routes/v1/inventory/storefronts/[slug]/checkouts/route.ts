@@ -13,7 +13,6 @@ import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper'
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { resolveSessionAuthContext } from '@/lib/api-auth';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 interface Params {
   params: Promise<{ slug: string }>;
@@ -138,7 +137,7 @@ async function recordCheckoutAnalyticsEvent(
     });
 
   if (error) {
-    serverLogger.error('Failed to record checkout analytics event', error);
+    console.error('Failed to record checkout analytics event', error);
   }
 }
 
@@ -149,7 +148,7 @@ async function recordCheckoutAnalyticsEventWithAdmin(
     const sbAdmin = (await createAdminClient()) as unknown as RpcClient;
     await recordCheckoutAnalyticsEvent(sbAdmin.schema('private'), args);
   } catch (error) {
-    serverLogger.error('Failed to record checkout analytics event', error);
+    console.error('Failed to record checkout analytics event', error);
   }
 }
 
@@ -290,7 +289,7 @@ export async function POST(request: Request, { params }: Params) {
 
     const publicToken = data?.publicToken ?? data?.public_token;
     if (!publicToken) {
-      serverLogger.error('Inventory checkout RPC returned no public token', {
+      console.error('Inventory checkout RPC returned no public token', {
         data,
         slug,
       });
@@ -345,7 +344,7 @@ export async function POST(request: Request, { params }: Params) {
         );
 
         if (releaseError) {
-          serverLogger.error(
+          console.error(
             'Failed to release inventory checkout after Square error',
             releaseError
           );
@@ -358,10 +357,7 @@ export async function POST(request: Request, { params }: Params) {
           storefront: storefrontPayload.storefront,
         });
 
-        serverLogger.error(
-          'Failed to prepare Square inventory checkout',
-          error
-        );
+        console.error('Failed to prepare Square inventory checkout', error);
         return NextResponse.json(
           {
             message:
@@ -407,7 +403,7 @@ export async function POST(request: Request, { params }: Params) {
       );
 
       if (releaseError) {
-        serverLogger.error(
+        console.error(
           'Failed to release inventory checkout after Polar error',
           releaseError
         );
@@ -420,7 +416,7 @@ export async function POST(request: Request, { params }: Params) {
         storefront: storefrontPayload.storefront,
       });
 
-      serverLogger.error('Failed to create Polar inventory checkout', error);
+      console.error('Failed to create Polar inventory checkout', error);
       return NextResponse.json(
         {
           message:
@@ -439,7 +435,7 @@ export async function POST(request: Request, { params }: Params) {
       );
     }
 
-    serverLogger.error('Failed to create inventory checkout', error);
+    console.error('Failed to create inventory checkout', error);
     return NextResponse.json(
       { message: 'Failed to create checkout' },
       { status: 500 }

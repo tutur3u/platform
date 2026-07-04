@@ -1,7 +1,6 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 interface Params {
   params: Promise<{
@@ -29,7 +28,7 @@ export async function DELETE(req: Request, { params }: Params) {
     .maybeSingle();
 
   if (tagError) {
-    serverLogger.error('Error checking workspace user group tag', tagError);
+    console.error('Error checking workspace user group tag', tagError);
     return NextResponse.json(
       { message: 'Error removing user group' },
       { status: 500 }
@@ -51,7 +50,7 @@ export async function DELETE(req: Request, { params }: Params) {
     .maybeSingle();
 
   if (groupError) {
-    serverLogger.error('Error checking workspace user group', groupError);
+    console.error('Error checking workspace user group', groupError);
     return NextResponse.json(
       { message: 'Error removing user group' },
       { status: 500 }
@@ -72,7 +71,7 @@ export async function DELETE(req: Request, { params }: Params) {
     .eq('group_id', groupId);
 
   if (error) {
-    serverLogger.error('Error removing user group from tag', error);
+    console.error('Error removing user group from tag', error);
     return NextResponse.json(
       { message: 'Error removing user group' },
       { status: 500 }

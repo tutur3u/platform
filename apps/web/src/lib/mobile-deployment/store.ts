@@ -6,7 +6,6 @@ import type { InfrastructureJsonValue } from '@tuturuuu/internal-api/infrastruct
 import type { SupabaseClient } from '@tuturuuu/supabase/types';
 import type { Database, Json } from '@tuturuuu/types';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
   downloadWorkspaceStorageObjectForProvider,
   uploadWorkspaceStorageFileDirect,
@@ -1108,10 +1107,7 @@ async function recordBundleFetch({
     });
 
   if (error) {
-    serverLogger.warn(
-      'Failed to record mobile deployment bundle fetch:',
-      error
-    );
+    console.warn('Failed to record mobile deployment bundle fetch:', error);
   }
 }
 
@@ -1414,6 +1410,6 @@ export async function recordAudit(
     });
 
   if (error) {
-    serverLogger.warn('Failed to record mobile deployment audit event:', error);
+    console.warn('Failed to record mobile deployment audit event:', error);
   }
 }

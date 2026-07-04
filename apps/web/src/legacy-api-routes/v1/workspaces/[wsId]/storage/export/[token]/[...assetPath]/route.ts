@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { isReservedMobileDeploymentDrivePath } from '@/lib/mobile-deployment/storage-policy';
 import {
   resolveWorkspaceStorageExportAssetPath,
@@ -56,10 +55,7 @@ export async function GET(
       );
     }
 
-    serverLogger.error(
-      'Unexpected error resolving rotating export URL:',
-      error
-    );
+    console.error('Unexpected error resolving rotating export URL:', error);
     return NextResponse.json(
       { message: 'Internal server error' },
       { status: 500 }

@@ -2,7 +2,6 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { resolveUserGroupRouteWorkspaceId } from '@/lib/user-groups/route-helpers';
 
 interface Params {
@@ -105,7 +104,7 @@ export async function PUT(req: Request, { params }: Params) {
   }
 
   if (error) {
-    serverLogger.error('Error migrating workspace indicator groups:', error);
+    console.error('Error migrating workspace indicator groups:', error);
     return NextResponse.json(
       { message: 'Error migrating workspace indicator groups' },
       { status: 500 }

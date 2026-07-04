@@ -5,7 +5,6 @@ import type {
   InventorySquareTerminalCheckoutStatus,
 } from '@tuturuuu/internal-api/inventory';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import { serverLogger } from '../../../infrastructure/log-drain';
 import { getCheckoutById, releaseCheckout } from '../checkouts';
 import { recordInventorySaleFinanceTransaction } from '../finance';
 import {
@@ -218,7 +217,7 @@ export async function cancelInventorySquareTerminalCheckout({
         square_status: mapTerminalStatus(squareCheckout?.status ?? 'CANCELED'),
       });
     } catch (error) {
-      serverLogger.warn('Failed to cancel Square terminal checkout', {
+      console.warn('Failed to cancel Square terminal checkout', {
         checkoutId,
         error: error instanceof Error ? error.message : 'Square cancel failed',
         wsId,

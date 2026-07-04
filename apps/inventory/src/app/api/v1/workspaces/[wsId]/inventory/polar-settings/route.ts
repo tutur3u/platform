@@ -7,7 +7,6 @@ import { polarSettingsPayloadSchema } from '@tuturuuu/inventory-core/commerce/sc
 import { canManageInventorySetup } from '@tuturuuu/inventory-core/permissions';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 interface Params {
   params: Promise<{ wsId: string }>;
@@ -26,7 +25,7 @@ export async function GET(request: Request, { params }: Params) {
     const settings = await getInventoryPolarSettings(authorization.value.wsId);
     return NextResponse.json(settings);
   } catch (error) {
-    serverLogger.error('Failed to load inventory Polar settings', error);
+    console.error('Failed to load inventory Polar settings', error);
     return NextResponse.json(
       { message: 'Failed to load Polar settings' },
       { status: 500 }
@@ -60,7 +59,7 @@ export async function PUT(request: Request, { params }: Params) {
       );
     }
 
-    serverLogger.error('Failed to save inventory Polar settings', error);
+    console.error('Failed to save inventory Polar settings', error);
     return NextResponse.json(
       {
         message:

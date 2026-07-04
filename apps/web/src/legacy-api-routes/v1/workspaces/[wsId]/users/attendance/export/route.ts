@@ -2,7 +2,6 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 const SearchParamsSchema = z
   .object({
@@ -108,7 +107,7 @@ export async function GET(request: Request, { params }: Params) {
     .range(offset, offset + limit - 1);
 
   if (error) {
-    serverLogger.error('Error exporting workspace attendance:', error);
+    console.error('Error exporting workspace attendance:', error);
     return NextResponse.json(
       { message: 'Error exporting attendance' },
       { status: 500 }

@@ -1,9 +1,6 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { rotateExternalAppSecret } from '@/lib/app-coordination/external-apps';
-import {
-  serverLogger,
-  withRequestLogDrain,
-} from '@/lib/infrastructure/log-drain';
+import { withRequestLogDrain } from '@/lib/infrastructure/log-drain';
 import { requireExternalAppRegistryAdmin } from '../../access';
 
 interface Params {
@@ -29,7 +26,7 @@ async function rotateSecret(request: NextRequest, { params }: Params) {
 
     return NextResponse.json(result);
   } catch (error) {
-    serverLogger.warn('Failed to rotate external app secret', {
+    console.warn('Failed to rotate external app secret', {
       appId,
       error: error instanceof Error ? error.message : String(error),
     });

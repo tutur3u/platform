@@ -40,7 +40,6 @@ import {
   getChatRealtimeUserAudience,
   publishChatRealtimeEvent,
 } from '@/lib/chat/realtime';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
   downloadWorkspaceStorageObjectForProvider,
   resolveWorkspaceStorageProvider,
@@ -269,7 +268,7 @@ export const POST = withSessionAuth<RouteParams>(
               userMessage: message,
             });
           } catch (error) {
-            serverLogger.error(
+            console.error(
               'Native Chat AI response failed after user message was saved',
               {
                 conversationId: conversation.id,
@@ -415,7 +414,7 @@ function streamNativeAiConversationResponse({
         write({ messages: assistantMessages, type: 'messages' });
         write({ type: 'done' });
       } catch (error) {
-        serverLogger.error('Failed to stream native Chat AI response', {
+        console.error('Failed to stream native Chat AI response', {
           conversationId: conversation.id,
           error,
           userMessageId: userMessage.id,
@@ -481,7 +480,7 @@ async function sendAiChatMessage({
     .maybeSingle();
 
   if (error) {
-    serverLogger.error('Failed to load AI chat', error);
+    console.error('Failed to load AI chat', error);
     return NextResponse.json(
       { message: 'Failed to load AI chat' },
       { status: 500 }
@@ -639,7 +638,7 @@ function streamAiChatMessageResponse({
         write({ messages: newMessages, type: 'messages' });
         write({ type: 'done' });
       } catch (error) {
-        serverLogger.error('Failed to stream AI chat response', {
+        console.error('Failed to stream AI chat response', {
           conversationId,
           error,
         });
@@ -741,7 +740,7 @@ async function sendNativeAiConversationMessages({
 
   if (!aiResponse.ok) {
     const errorText = await aiResponse.text().catch(() => '');
-    serverLogger.error('Native Chat AI response failed', {
+    console.error('Native Chat AI response failed', {
       conversationId: conversation.id,
       status: aiResponse.status,
       errorText,
@@ -758,7 +757,7 @@ async function sendNativeAiConversationMessages({
   });
 
   if (!assistantResponse?.content?.trim()) {
-    serverLogger.error('Native Chat AI response was not saved', {
+    console.error('Native Chat AI response was not saved', {
       conversationId: conversation.id,
     });
     throw new Error('AI response was not saved');
@@ -829,7 +828,7 @@ async function copyChatAttachmentsToAiResources({
           }
         );
       } catch (error) {
-        serverLogger.error('Failed to mirror Chat attachment for AI context', {
+        console.error('Failed to mirror Chat attachment for AI context', {
           attachmentId: attachment.id,
           conversationId,
           error,
@@ -864,7 +863,7 @@ async function maybeAutoRenameAiChat({
     .eq('id', chatId);
 
   if (error) {
-    serverLogger.error('Failed to auto-rename AI chat', { chatId, error });
+    console.error('Failed to auto-rename AI chat', { chatId, error });
   }
 }
 
@@ -898,7 +897,7 @@ async function maybeAutoRenameNativeAiConversation({
       p_ws_id: context.normalizedWsId,
     });
   } catch (error) {
-    serverLogger.error('Failed to auto-rename native Chat AI conversation', {
+    console.error('Failed to auto-rename native Chat AI conversation', {
       conversationId: conversation.id,
       error,
     });
@@ -1036,7 +1035,7 @@ async function getNativeAiSettings(conversationId: string) {
   let error = fullResult.error;
 
   if (error && isChatAiSettingsSchemaCacheError(error)) {
-    serverLogger.warn('Native Chat AI settings schema cache stale on read', {
+    console.warn('Native Chat AI settings schema cache stale on read', {
       conversationId,
       error: serializeChatAiSettingsDbError(error),
     });
@@ -1055,7 +1054,7 @@ async function getNativeAiSettings(conversationId: string) {
   }
 
   if (error) {
-    serverLogger.error('Failed to load native Chat AI settings', {
+    console.error('Failed to load native Chat AI settings', {
       conversationId,
       error: serializeChatAiSettingsDbError(error),
     });
@@ -1086,7 +1085,7 @@ async function ensureNativeAiShadowChat({
   );
 
   if (error) {
-    serverLogger.error('Failed to prepare native Chat AI shadow chat', error);
+    console.error('Failed to prepare native Chat AI shadow chat', error);
     return { ok: false };
   }
 
@@ -1106,7 +1105,7 @@ async function listExistingAiMessageIds({
     .eq('chat_id', chatId);
 
   if (error) {
-    serverLogger.error('Failed to load native Chat AI message markers', error);
+    console.error('Failed to load native Chat AI message markers', error);
     return new Set<string>();
   }
 
@@ -1131,10 +1130,7 @@ async function getLatestNewAiAssistantMessage({
     .limit(10);
 
   if (error) {
-    serverLogger.error(
-      'Failed to load native Chat AI assistant response',
-      error
-    );
+    console.error('Failed to load native Chat AI assistant response', error);
     return null;
   }
 

@@ -9,7 +9,6 @@ import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { preloadBlockedEmailCache } from '@/lib/email-blacklist';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
   chunkValues,
   fetchAllChunkedPaginatedRows,
@@ -298,7 +297,7 @@ async function cleanupInvalidPushTokens(sbAdmin: any, tokens: string[]) {
       .in('token', tokenChunk);
 
     if (error) {
-      serverLogger.error('Failed to delete invalid push tokens:', error);
+      console.error('Failed to delete invalid push tokens:', error);
     }
   }
 }
@@ -751,7 +750,7 @@ export async function POST(req: NextRequest) {
 
     for (const batch of filteredBatches) {
       if (Date.now() > processingDeadline) {
-        serverLogger.warn(
+        console.warn(
           '[ImmediateNotificationProcessor] Processing deadline reached before all batches were handled'
         );
         break;
@@ -1050,10 +1049,7 @@ export async function POST(req: NextRequest) {
 
         processedCount++;
       } catch (error) {
-        serverLogger.error(
-          `Error processing immediate batch ${batch.id}:`,
-          error
-        );
+        console.error(`Error processing immediate batch ${batch.id}:`, error);
         const errorMessage =
           error instanceof Error ? error.message : 'Unknown error';
 
@@ -1076,7 +1072,7 @@ export async function POST(req: NextRequest) {
       results,
     });
   } catch (error) {
-    serverLogger.error('Error in immediate notification processor:', error);
+    console.error('Error in immediate notification processor:', error);
     return NextResponse.json(
       {
         error: 'Internal server error',

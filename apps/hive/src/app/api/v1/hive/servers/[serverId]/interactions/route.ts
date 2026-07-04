@@ -6,7 +6,6 @@ import {
   mapHiveEvent,
   mapHiveNpcRun,
   requireHiveAccess,
-  serverLogger,
   withHiveRoute,
 } from '../../../_shared';
 
@@ -75,7 +74,7 @@ export async function POST(request: NextRequest, { params }: Params) {
           );
         }
 
-        serverLogger.error('Hive NPC interaction failed', {
+        console.error('Hive NPC interaction failed', {
           error: error instanceof Error ? error.message : String(error),
           serverId,
         });

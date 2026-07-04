@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 const updateChatSchema = z.object({
   is_public: z.boolean().optional(),
@@ -45,7 +44,7 @@ export const PATCH = withSessionAuth<{ chatId: string }>(
 
       return NextResponse.json({ success: true });
     } catch (error) {
-      serverLogger.error('Unexpected AI chat update error:', error);
+      console.error('Unexpected AI chat update error:', error);
       return NextResponse.json(
         { message: 'Internal server error' },
         { status: 500 }

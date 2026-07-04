@@ -12,7 +12,6 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { MAX_NAME_LENGTH } from '@tuturuuu/utils/constants';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 const CategoryUpdateSchema = z.object({
   name: z.string().trim().min(1).max(MAX_NAME_LENGTH).optional(),
@@ -69,10 +68,7 @@ export async function PATCH(req: Request, { params }: Params) {
     .maybeSingle();
 
   if (existingError) {
-    serverLogger.error(
-      'Error loading inventory category for update',
-      existingError
-    );
+    console.error('Error loading inventory category for update', existingError);
     return NextResponse.json(
       { message: 'Failed to fetch inventory category' },
       { status: 500 }
@@ -95,7 +91,7 @@ export async function PATCH(req: Request, { params }: Params) {
     .single();
 
   if (error) {
-    serverLogger.error('Error updating inventory category', error);
+    console.error('Error updating inventory category', error);
     return NextResponse.json(
       { message: 'Failed to update inventory category' },
       { status: error.code === '23505' ? 409 : 500 }
@@ -139,7 +135,7 @@ export async function DELETE(req: Request, { params }: Params) {
     .maybeSingle();
 
   if (existingError) {
-    serverLogger.error(
+    console.error(
       'Error loading inventory category for deletion',
       existingError
     );
@@ -164,7 +160,7 @@ export async function DELETE(req: Request, { params }: Params) {
     .limit(1);
 
   if (linkedProductsError) {
-    serverLogger.error(
+    console.error(
       'Error validating inventory category usage',
       linkedProductsError
     );
@@ -190,7 +186,7 @@ export async function DELETE(req: Request, { params }: Params) {
     .maybeSingle();
 
   if (error) {
-    serverLogger.error('Error deleting inventory category', error);
+    console.error('Error deleting inventory category', error);
     return NextResponse.json(
       { message: 'Failed to delete inventory category' },
       { status: 500 }

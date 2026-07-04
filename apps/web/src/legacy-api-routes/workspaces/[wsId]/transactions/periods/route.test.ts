@@ -18,6 +18,8 @@ const mocks = vi.hoisted(() => {
   };
 });
 
+const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
 vi.mock('@tuturuuu/apis/finance/request-access', () => ({
   getFinanceRouteContext: (
     ...args: Parameters<typeof mocks.getFinanceRouteContext>
@@ -153,7 +155,7 @@ describe('workspace transaction periods route', () => {
       nextCursor: null,
     });
     expect(response.status).toBe(200);
-    expect(mocks.serverLoggerWarn).toHaveBeenCalledWith(
+    expect(consoleWarnSpy).toHaveBeenCalledWith(
       'Transaction list enrichment unavailable; continuing without enrichment',
       expect.objectContaining({
         normalizedWsId: 'ws-1',

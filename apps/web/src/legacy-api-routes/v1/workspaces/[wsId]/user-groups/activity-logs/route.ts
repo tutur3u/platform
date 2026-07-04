@@ -1,7 +1,6 @@
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { listUserGroupActivityEventsForRange } from '@/lib/user-group-activity/data';
 
 const SearchParamsSchema = z.object({
@@ -53,7 +52,7 @@ export async function GET(req: Request, { params }: Params) {
 
     return NextResponse.json(data);
   } catch (error) {
-    serverLogger.error('Error fetching user group activity logs:', error);
+    console.error('Error fetching user group activity logs:', error);
 
     return NextResponse.json(
       { message: 'Error fetching user group activity logs' },

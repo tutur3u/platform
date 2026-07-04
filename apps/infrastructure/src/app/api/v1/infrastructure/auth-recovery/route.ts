@@ -5,7 +5,6 @@ import {
   createAuthRecoveryOverride,
   listAuthRecoverySnapshot,
 } from '@/lib/auth/recovery';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { authorizeAbuseIntelligenceRequest } from '../abuse-intelligence/_shared';
 
 const CreateAuthRecoveryOverrideSchema = z.object({
@@ -28,7 +27,7 @@ export async function GET(request: Request) {
   try {
     return NextResponse.json(await listAuthRecoverySnapshot(email));
   } catch (error) {
-    serverLogger.error('Failed to load auth recovery snapshot', error);
+    console.error('Failed to load auth recovery snapshot', error);
     return NextResponse.json(
       { message: 'Failed to load auth recovery snapshot' },
       { status: 500 }

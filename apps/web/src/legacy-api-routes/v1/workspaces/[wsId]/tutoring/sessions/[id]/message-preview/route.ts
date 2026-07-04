@@ -7,7 +7,6 @@ import {
   normalizeWorkspaceId,
 } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 interface Params {
   params: Promise<{ wsId: string; id: string }>;
@@ -75,7 +74,7 @@ export async function POST(request: Request, { params }: Params) {
     .maybeSingle();
 
   if (error) {
-    serverLogger.error('Failed to load tutoring session for preview', error);
+    console.error('Failed to load tutoring session for preview', error);
     return NextResponse.json(
       { message: 'Failed to load session' },
       { status: 500 }
@@ -114,7 +113,7 @@ export async function POST(request: Request, { params }: Params) {
   ]);
 
   if (groupResult.error || studentResult.error || teacherResult.error) {
-    serverLogger.error('Failed to load tutoring preview relations', {
+    console.error('Failed to load tutoring preview relations', {
       error: groupResult.error ?? studentResult.error ?? teacherResult.error,
       sessionId: id,
       wsId: normalizedWsId,
@@ -145,7 +144,7 @@ export async function POST(request: Request, { params }: Params) {
     .eq('ws_id', normalizedWsId);
 
   if (updateError) {
-    serverLogger.error('Failed to save tutoring message preview', updateError);
+    console.error('Failed to save tutoring message preview', updateError);
     return NextResponse.json(
       { message: 'Failed to save message preview' },
       { status: 500 }

@@ -12,7 +12,6 @@ import {
   normalizeWorkspaceId,
 } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 interface Params {
   params: Promise<{
@@ -63,7 +62,7 @@ export async function GET(req: Request, { params }: Params) {
   const { data, error, count } = await query;
 
   if (error) {
-    serverLogger.error('Error fetching product warehouses', error);
+    console.error('Error fetching product warehouses', error);
     return NextResponse.json(
       { message: 'Error fetching product warehouses' },
       { status: 500 }
@@ -104,7 +103,7 @@ export async function POST(req: Request, { params }: Params) {
   });
 
   if (error) {
-    serverLogger.error('Error creating product warehouse', error);
+    console.error('Error creating product warehouse', error);
     return NextResponse.json(
       { message: 'Internal server error' },
       { status: 500 }

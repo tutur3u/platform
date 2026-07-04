@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import { readBlueGreenMonitoringWatcherLogArchive } from '@/lib/infrastructure/blue-green-monitoring';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { authorizeInfrastructureViewer } from '../authorization';
 
 function parsePositiveInt(value: string | null, fallback: number) {
@@ -30,7 +29,7 @@ export async function GET(request: Request) {
       })
     );
   } catch (error) {
-    serverLogger.error(
+    console.error(
       'Failed to load blue-green monitoring watcher log archive:',
       error
     );

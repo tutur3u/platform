@@ -15,7 +15,6 @@ import { headers } from 'next/headers';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { resolveFinanceRouteAuthContext } from '@/lib/finance-route-auth';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { syncWorkspaceUserGuestMembership } from '@/lib/user-groups/guest-membership';
 import { validateWorkspaceApiKey } from '@/lib/workspace-api-key';
 
@@ -130,7 +129,7 @@ async function getDataWithApiKey(
   const { data, count, error } = response;
 
   if (error) {
-    serverLogger.error('Error fetching workspace users with API key:', error);
+    console.error('Error fetching workspace users with API key:', error);
     return NextResponse.json(
       { message: 'Error fetching workspace users' },
       { status: 500 }
@@ -166,7 +165,7 @@ async function getDataFromSession(
   const { data, count, error } = await mainQuery;
 
   if (error) {
-    serverLogger.error('Error fetching workspace users:', error);
+    console.error('Error fetching workspace users:', error);
     return NextResponse.json(
       { message: 'Error fetching workspace users' },
       { status: 500 }
@@ -227,7 +226,7 @@ export async function POST(req: Request, { params }: Params) {
   );
 
   if (error) {
-    serverLogger.error('Error creating workspace user:', error);
+    console.error('Error creating workspace user:', error);
     return NextResponse.json(
       { message: 'Error creating workspace user' },
       { status: 500 }

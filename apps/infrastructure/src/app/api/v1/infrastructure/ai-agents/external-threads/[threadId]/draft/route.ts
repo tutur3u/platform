@@ -1,10 +1,7 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { draftAiAgentExternalResponse } from '@/lib/ai-agents/external-chat-actions';
-import {
-  serverLogger,
-  withRequestLogDrain,
-} from '@/lib/infrastructure/log-drain';
+import { withRequestLogDrain } from '@/lib/infrastructure/log-drain';
 import { requireAiAgentAdmin } from '../../../access';
 
 type RouteParams = {
@@ -42,7 +39,7 @@ async function draftResponse(request: NextRequest, params: RouteParams) {
 
     return NextResponse.json(result);
   } catch (error) {
-    serverLogger.error('Failed to draft AI agent external response', error);
+    console.error('Failed to draft AI agent external response', error);
     return NextResponse.json(
       { error: 'Failed to draft external response' },
       { status: 500 }

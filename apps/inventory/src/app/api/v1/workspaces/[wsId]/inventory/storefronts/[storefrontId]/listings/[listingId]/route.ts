@@ -10,7 +10,6 @@ import { canManageInventoryCatalog } from '@tuturuuu/inventory-core/permissions'
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 const storefrontListingPatchSchema = storefrontListingPayloadSchema.partial();
 
@@ -65,7 +64,7 @@ export async function PATCH(request: Request, { params }: Params) {
       );
     }
 
-    serverLogger.error('Failed to update inventory storefront listing', error);
+    console.error('Failed to update inventory storefront listing', error);
     return NextResponse.json(
       { message: 'Failed to update inventory storefront listing' },
       { status: 500 }
@@ -105,7 +104,7 @@ export async function DELETE(request: Request, { params }: Params) {
 
     return NextResponse.json({ ok: true });
   } catch (error) {
-    serverLogger.error('Failed to delete inventory storefront listing', error);
+    console.error('Failed to delete inventory storefront listing', error);
     return NextResponse.json(
       { message: 'Failed to delete inventory storefront listing' },
       { status: 500 }

@@ -6,10 +6,7 @@ import {
   deleteWorkspaceExternalProjectFieldDefinition,
   updateWorkspaceExternalProjectFieldDefinition,
 } from '@/lib/external-projects/store';
-import {
-  serverLogger,
-  withRequestLogDrain,
-} from '@/lib/infrastructure/log-drain';
+import { withRequestLogDrain } from '@/lib/infrastructure/log-drain';
 
 const fieldScopeSchema = z.enum(['profile_data', 'metadata']);
 const fieldTypeSchema = z.enum([
@@ -94,7 +91,7 @@ async function updateFieldDefinition(request: NextRequest, { params }: Params) {
       );
     }
 
-    serverLogger.error('Failed to update external project field definition', {
+    console.error('Failed to update external project field definition', {
       error: error instanceof Error ? error.message : String(error),
       fieldDefinitionId,
       wsId: access.normalizedWorkspaceId,
@@ -135,7 +132,7 @@ async function deleteFieldDefinition(request: NextRequest, { params }: Params) {
 
     return NextResponse.json(result);
   } catch (error) {
-    serverLogger.error('Failed to delete external project field definition', {
+    console.error('Failed to delete external project field definition', {
       error: error instanceof Error ? error.message : String(error),
       fieldDefinitionId,
       wsId: access.normalizedWorkspaceId,

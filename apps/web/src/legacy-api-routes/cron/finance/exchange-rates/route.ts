@@ -2,7 +2,7 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { SUPPORTED_CURRENCIES } from '@tuturuuu/utils/currencies';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
-import { serverLogger, withCronLogDrain } from '@/lib/infrastructure/log-drain';
+import { withCronLogDrain } from '@/lib/infrastructure/log-drain';
 
 const PRIMARY_API_URL =
   'https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json';
@@ -98,7 +98,7 @@ async function handlePOST(req: NextRequest) {
       });
 
     if (error) {
-      serverLogger.error('Failed to upsert exchange rates:', error.message);
+      console.error('Failed to upsert exchange rates:', error.message);
       return NextResponse.json(
         { error: 'Database upsert failed' },
         { status: 500 }
@@ -111,7 +111,7 @@ async function handlePOST(req: NextRequest) {
       ratesUpdated: rows.length,
     });
   } catch (error) {
-    serverLogger.error('Exchange rates cron error:', error);
+    console.error('Exchange rates cron error:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

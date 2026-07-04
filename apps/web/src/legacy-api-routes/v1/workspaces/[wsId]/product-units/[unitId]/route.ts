@@ -12,7 +12,6 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { MAX_NAME_LENGTH } from '@tuturuuu/utils/constants';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 const UnitUpdateSchema = z.object({
   name: z.string().trim().min(1).max(MAX_NAME_LENGTH).optional(),
@@ -57,7 +56,7 @@ export async function PUT(req: Request, { params }: Params) {
     .maybeSingle();
 
   if (existingError) {
-    serverLogger.error('Error loading product unit for update', existingError);
+    console.error('Error loading product unit for update', existingError);
     return NextResponse.json(
       { message: 'Error loading product unit for update' },
       { status: 500 }
@@ -77,7 +76,7 @@ export async function PUT(req: Request, { params }: Params) {
     .single();
 
   if (error) {
-    serverLogger.error('Error updating product unit', error);
+    console.error('Error updating product unit', error);
     return NextResponse.json(
       { message: 'Error updating product unit' },
       { status: 500 }
@@ -124,10 +123,7 @@ export async function DELETE(req: Request, { params }: Params) {
     .maybeSingle();
 
   if (existingError) {
-    serverLogger.error(
-      'Error loading product unit for deletion',
-      existingError
-    );
+    console.error('Error loading product unit for deletion', existingError);
     return NextResponse.json(
       { message: 'Error loading product unit for deletion' },
       { status: 500 }
@@ -145,10 +141,7 @@ export async function DELETE(req: Request, { params }: Params) {
     .limit(1);
 
   if (linkedProductsError) {
-    serverLogger.error(
-      'Error validating product unit usage',
-      linkedProductsError
-    );
+    console.error('Error validating product unit usage', linkedProductsError);
     return NextResponse.json(
       { message: 'Failed to validate unit usage' },
       { status: 500 }
@@ -169,7 +162,7 @@ export async function DELETE(req: Request, { params }: Params) {
     .eq('ws_id', wsId);
 
   if (error) {
-    serverLogger.error('Error deleting product unit', error);
+    console.error('Error deleting product unit', error);
     return NextResponse.json(
       { message: 'Error deleting product unit' },
       { status: 500 }

@@ -5,6 +5,8 @@ const mocks = vi.hoisted(() => ({
   serverLoggerError: vi.fn(),
 }));
 
+const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
 vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: () => mocks.createAdminClient(),
 }));
@@ -26,11 +28,11 @@ describe('infrastructure dashboard data fetching', () => {
       mau: 0,
       wau: 0,
     });
-    expect(mocks.serverLoggerError).toHaveBeenCalledWith(
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
       'Failed to create infrastructure dashboard admin client',
       expect.any(Error)
     );
-    expect(mocks.serverLoggerError).toHaveBeenCalledWith(
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
       'Error fetching engagement metrics:',
       expect.any(Error)
     );

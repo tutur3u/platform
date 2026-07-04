@@ -10,10 +10,7 @@ import type {
   AiAgentDefinition,
   AiAgentDiagnosticCheck,
 } from '@/lib/ai-agents/types';
-import {
-  serverLogger,
-  withRequestLogDrain,
-} from '@/lib/infrastructure/log-drain';
+import { withRequestLogDrain } from '@/lib/infrastructure/log-drain';
 import { requireAiAgentAdmin } from '../../access';
 
 interface Params {
@@ -79,7 +76,7 @@ async function testAgentChannel(request: NextRequest, { params }: Params) {
         : `Agent "${agent.name}" is ready for ${channel.adapter} webhook traffic.`,
     });
   } catch (error) {
-    serverLogger.warn('Failed to test AI agent channel', {
+    console.warn('Failed to test AI agent channel', {
       agentId,
       channelId: parsed.data.channelId,
       error: error instanceof Error ? error.message : String(error),

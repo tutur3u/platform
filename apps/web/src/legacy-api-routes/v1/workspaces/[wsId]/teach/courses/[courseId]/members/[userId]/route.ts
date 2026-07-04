@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
   requireTeachWorkspaceAccess,
   validateTeachCourse,
@@ -55,7 +54,7 @@ export const DELETE = withSessionAuth(
       .eq('user_id', parsedParams.data.userId);
 
     if (error) {
-      serverLogger.error('Failed to remove Teach course member', { error });
+      console.error('Failed to remove Teach course member', { error });
       return NextResponse.json(
         { message: 'Error removing course member' },
         { status: 500 }

@@ -3,7 +3,6 @@ import { canManageInventorySetup } from '@tuturuuu/inventory-core/permissions';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 type PrivateInventoryClient = ReturnType<
   Awaited<ReturnType<typeof createAdminClient>>['schema']
@@ -186,7 +185,7 @@ export async function PATCH(req: Request, { params }: Params) {
     });
     return NextResponse.json({ data });
   } catch (error) {
-    serverLogger.error('Error updating inventory batch', error);
+    console.error('Error updating inventory batch', error);
     return NextResponse.json(
       { message: 'Failed to update inventory batch' },
       { status: 500 }
@@ -235,7 +234,7 @@ export async function DELETE(req: Request, { params }: Params) {
 
     return NextResponse.json({ ok: true });
   } catch (error) {
-    serverLogger.error('Error deleting inventory batch', error);
+    console.error('Error deleting inventory batch', error);
     return NextResponse.json(
       { message: 'Failed to delete inventory batch' },
       { status: 500 }

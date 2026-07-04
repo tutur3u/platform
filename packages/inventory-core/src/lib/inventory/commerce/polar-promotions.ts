@@ -2,7 +2,6 @@ import 'server-only';
 
 import type { InventoryPolarEnvironment } from '@tuturuuu/internal-api/inventory';
 import { createPolarClient } from '@tuturuuu/payment/polar/server';
-import { serverLogger } from '../../infrastructure/log-drain';
 import {
   decryptIntegrationToken,
   ensureInventoryPolarProduct,
@@ -50,7 +49,7 @@ export async function syncInventoryPromotionDiscount({
       const discount = await polar.discounts.create(input as never);
       return { discountId: discount.id, environment };
     } catch (error) {
-      serverLogger.warn('Inventory promotion Polar discount sync failed', {
+      console.warn('Inventory promotion Polar discount sync failed', {
         environment,
         error: extractErrorMessage(error),
         wsId,

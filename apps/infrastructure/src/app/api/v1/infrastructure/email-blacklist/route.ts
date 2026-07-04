@@ -7,7 +7,6 @@ import {
 } from '@tuturuuu/utils/email/validation';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 const CreateEmailBlacklistSchema = z.object({
   entry_type: z.enum(['email', 'domain']),
@@ -43,7 +42,7 @@ export async function GET(_req: Request) {
     .order('created_at', { ascending: false });
 
   if (error) {
-    serverLogger.error('Error fetching email blacklist:', error);
+    console.error('Error fetching email blacklist:', error);
     return NextResponse.json(
       { message: 'Error fetching email blacklist entries' },
       { status: 500 }
@@ -106,7 +105,7 @@ export async function POST(req: Request) {
       .single();
 
     if (error) {
-      serverLogger.error('Error creating email blacklist entry:', error);
+      console.error('Error creating email blacklist entry:', error);
 
       // Check for unique constraint violation
       if (error.code === '23505') {
@@ -131,7 +130,7 @@ export async function POST(req: Request) {
       );
     }
 
-    serverLogger.error('Unexpected error:', error);
+    console.error('Unexpected error:', error);
     return NextResponse.json(
       { message: 'Internal server error' },
       { status: 500 }

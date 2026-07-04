@@ -1,6 +1,5 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { loadPublicTaskBoard } from '@/lib/tasks/public-task-board';
 
 const paramsSchema = z.object({
@@ -35,7 +34,7 @@ export async function GET(
       );
     }
 
-    serverLogger.error('Error loading public task board:', error);
+    console.error('Error loading public task board:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

@@ -1,7 +1,6 @@
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { NextResponse } from 'next/server';
 import type { z } from 'zod';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
   parseTimeToMinutes,
   type TutoringSessionCreateSchema,
@@ -105,7 +104,7 @@ export async function validateTutoringSessionScope({
     .maybeSingle();
 
   if (groupError) {
-    serverLogger.error('Failed to validate tutoring group ownership', {
+    console.error('Failed to validate tutoring group ownership', {
       error: groupError,
       groupId: payload.groupId,
       wsId: normalizedWsId,
@@ -129,7 +128,7 @@ export async function validateTutoringSessionScope({
     .maybeSingle();
 
   if (studentError) {
-    serverLogger.error('Failed to validate tutoring student ownership', {
+    console.error('Failed to validate tutoring student ownership', {
       error: studentError,
       studentUserId: payload.studentUserId,
       wsId: normalizedWsId,
@@ -153,7 +152,7 @@ export async function validateTutoringSessionScope({
     .maybeSingle();
 
   if (groupStudentError) {
-    serverLogger.error('Failed to validate tutoring student group membership', {
+    console.error('Failed to validate tutoring student group membership', {
       error: groupStudentError,
       groupId: payload.groupId,
       studentUserId: payload.studentUserId,
@@ -189,7 +188,7 @@ export async function validateTutoringSessionScope({
     .maybeSingle();
 
   if (feedbackError) {
-    serverLogger.error('Failed to validate tutoring source feedback', {
+    console.error('Failed to validate tutoring source feedback', {
       error: feedbackError,
       sourceFeedbackId: payload.sourceFeedbackId,
       wsId: normalizedWsId,

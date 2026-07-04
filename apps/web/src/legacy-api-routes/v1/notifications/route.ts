@@ -2,7 +2,6 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { CURRENT_USER_APP_SESSION_AUTH } from '../users/me/session-auth';
 import {
   buildNotificationAccessFilter,
@@ -110,7 +109,7 @@ export const GET = withSessionAuth(
       });
 
       if (!queryParams.success) {
-        serverLogger.error('Notifications query validation error', {
+        console.error('Notifications query validation error', {
           issues: queryParams.error.issues,
         });
         return NextResponse.json(
@@ -193,7 +192,7 @@ export const GET = withSessionAuth(
       const { data: notifications, error, count } = await query;
 
       if (error) {
-        serverLogger.error('Error fetching notifications', error);
+        console.error('Error fetching notifications', error);
         return NextResponse.json(
           { error: 'Failed to fetch notifications' },
           { status: 500 }
@@ -237,7 +236,7 @@ export const GET = withSessionAuth(
         offset,
       });
     } catch (error) {
-      serverLogger.error('Error in notifications API', error);
+      console.error('Error in notifications API', error);
       return NextResponse.json(
         { error: 'Internal server error' },
         { status: 500 }
@@ -323,7 +322,7 @@ export const PATCH = withSessionAuth(
       const { error } = await query;
 
       if (error) {
-        serverLogger.error('Error updating notifications', error);
+        console.error('Error updating notifications', error);
         return NextResponse.json(
           { error: 'Failed to update notifications' },
           { status: 500 }
@@ -332,7 +331,7 @@ export const PATCH = withSessionAuth(
 
       return NextResponse.json({ success: true });
     } catch (error) {
-      serverLogger.error('Error in bulk notifications update', error);
+      console.error('Error in bulk notifications update', error);
       return NextResponse.json(
         { error: 'Internal server error' },
         { status: 500 }

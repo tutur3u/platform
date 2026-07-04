@@ -4,7 +4,7 @@ import {
 } from '@tuturuuu/ai/embeddings/metered';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { type NextRequest, NextResponse } from 'next/server';
-import { serverLogger, withCronLogDrain } from '@/lib/infrastructure/log-drain';
+import { withCronLogDrain } from '@/lib/infrastructure/log-drain';
 
 /**
  * Cron job to generate embeddings for tasks without embeddings
@@ -61,7 +61,7 @@ async function handleGET(req: NextRequest) {
       .limit(100);
 
     if (fetchError) {
-      serverLogger.error('Error fetching tasks:', fetchError);
+      console.error('Error fetching tasks:', fetchError);
       return NextResponse.json(
         {
           ok: false,
@@ -220,7 +220,7 @@ async function handleGET(req: NextRequest) {
       errors: results.errors.slice(0, 10), // Limit error messages
     });
   } catch (error) {
-    serverLogger.error('Cron job error:', error);
+    console.error('Cron job error:', error);
     return NextResponse.json(
       {
         ok: false,

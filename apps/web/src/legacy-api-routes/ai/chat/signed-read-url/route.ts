@@ -3,7 +3,6 @@ import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper'
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { AI_CHAT_FILE_APP_SESSION_TARGETS } from '../_lib/session-targets';
 
 const SignedReadUrlRequestSchema = z.object({
@@ -50,7 +49,7 @@ export const POST = withSessionAuth(
         });
 
         if (membership.error === 'membership_lookup_failed') {
-          serverLogger.error(
+          console.error(
             'Error validating workspace membership for signed-read-url',
             { error: membership.error, wsId }
           );
@@ -75,7 +74,7 @@ export const POST = withSessionAuth(
         .createSignedUrls(paths, SIGNED_URL_EXPIRY_SECONDS);
 
       if (error) {
-        serverLogger.error('Error creating signed read URLs', {
+        console.error('Error creating signed read URLs', {
           error,
           pathCount: paths.length,
         });
@@ -99,7 +98,7 @@ export const POST = withSessionAuth(
         );
       }
 
-      serverLogger.error('Unexpected error in signed-read-url', err);
+      console.error('Unexpected error in signed-read-url', err);
       return NextResponse.json(
         { message: 'Internal server error' },
         { status: 500 }

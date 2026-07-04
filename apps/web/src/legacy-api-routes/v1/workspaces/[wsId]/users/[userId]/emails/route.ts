@@ -1,7 +1,6 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { buildPostgrestRateLimitResponse } from '@/lib/postgrest-rate-limit';
 
 interface Params {
@@ -41,7 +40,7 @@ export async function GET(req: Request, { params }: Params) {
       return rateLimitResponse;
     }
 
-    serverLogger.error('Error fetching user sent emails', {
+    console.error('Error fetching user sent emails', {
       error,
       userId,
       wsId,

@@ -76,6 +76,8 @@ const mocks = vi.hoisted(() => {
   };
 });
 
+const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
 vi.mock('@tuturuuu/supabase/next/auth-session-user', () => ({
   resolveAuthenticatedSessionUser: (...args: unknown[]) =>
     mocks.resolveAuthenticatedSessionUser(...args),
@@ -336,7 +338,7 @@ describe('workspace members invite route', () => {
       message:
         'User is already a member of this workspace or has a pending invite.',
     });
-    expect(mocks.serverLoggerError).not.toHaveBeenCalled();
+    expect(consoleErrorSpy).not.toHaveBeenCalled();
   });
 
   it('returns 500 and logs unexpected insert failures without logging the invited email', async () => {
@@ -354,14 +356,14 @@ describe('workspace members invite route', () => {
     await expect(response.json()).resolves.toEqual({
       message: 'Error inviting workspace member.',
     });
-    expect(mocks.serverLoggerError).toHaveBeenCalledWith(
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
       'Failed to invite workspace member',
       {
         error: insertError,
         wsId: 'canonical-ws',
       }
     );
-    expect(JSON.stringify(mocks.serverLoggerError.mock.calls)).not.toContain(
+    expect(JSON.stringify(consoleErrorSpy.mock.calls)).not.toContain(
       'SensitiveUser'
     );
   });

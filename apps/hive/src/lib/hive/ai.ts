@@ -10,7 +10,6 @@ import {
   getWorkspaceTier,
   verifyWorkspaceMembershipType,
 } from '@tuturuuu/utils/workspace-helper';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 type ProductTier = 'ENTERPRISE' | 'FREE' | 'PLUS' | 'PRO';
 
@@ -85,7 +84,7 @@ export async function getHivePersonalWorkspaceId(input: {
     .maybeSingle();
 
   if (error) {
-    serverLogger.error('Failed to resolve Hive personal workspace', {
+    console.error('Failed to resolve Hive personal workspace', {
       error: error.message,
       userId: input.userId,
     });
@@ -223,7 +222,7 @@ export async function getHiveAiCreditStatus(input: {
   );
 
   if (balanceError) {
-    serverLogger.error('Failed to get Hive AI credit balance', {
+    console.error('Failed to get Hive AI credit balance', {
       error: balanceError.message,
       userId: input.userId,
       wsId: normalizedWsId,
@@ -269,7 +268,7 @@ export async function getHiveAiCreditStatus(input: {
     .gt('expires_at', new Date().toISOString());
 
   if (paygError) {
-    serverLogger.error('Failed to load Hive AI pay-as-you-go credits', {
+    console.error('Failed to load Hive AI pay-as-you-go credits', {
       error: paygError.message,
       wsId: normalizedWsId,
     });

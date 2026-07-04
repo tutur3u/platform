@@ -3,7 +3,6 @@ import { canManageInventoryCatalog } from '@tuturuuu/inventory-core/permissions'
 import { generateRandomUUID } from '@tuturuuu/utils/uuid-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
   INVENTORY_IMAGE_CONTENT_TYPES,
   INVENTORY_MEDIA_TARGETS,
@@ -87,7 +86,7 @@ export async function POST(request: Request, { params }: Params) {
       );
     }
 
-    serverLogger.error('Failed to create inventory media upload URL', error);
+    console.error('Failed to create inventory media upload URL', error);
     return NextResponse.json(
       { message: 'Failed to create inventory media upload URL' },
       { status: 500 }

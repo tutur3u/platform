@@ -13,7 +13,6 @@ import { Webhooks } from '@tuturuuu/payment/polar/next';
 import { createPolarClient } from '@tuturuuu/payment/polar/server';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { upsertSubscriptionError } from '@/legacy-api-routes/payment/migrations/helper';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { syncOrderToDatabase } from '@/utils/polar-order-helper';
 import { syncProductToDatabase } from '@/utils/polar-product-helper';
 import { assignSeatsToAllMembers } from '@/utils/polar-seat-helper';
@@ -61,7 +60,7 @@ export const POST = Webhooks({
       await syncInventoryPolarCheckout(payload.data as Checkout);
     } catch (e) {
       const errorMessage = e instanceof Error ? e.message : 'Unknown error';
-      serverLogger.error('Webhook: Checkout created error', {
+      console.error('Webhook: Checkout created error', {
         error: errorMessage,
       });
       throw new Response('Internal Server Error', { status: 500 });
@@ -73,7 +72,7 @@ export const POST = Webhooks({
       await syncInventoryPolarCheckout(payload.data as Checkout);
     } catch (e) {
       const errorMessage = e instanceof Error ? e.message : 'Unknown error';
-      serverLogger.error('Webhook: Checkout updated error', {
+      console.error('Webhook: Checkout updated error', {
         error: errorMessage,
       });
       throw new Response('Internal Server Error', { status: 500 });
