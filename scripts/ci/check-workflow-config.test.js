@@ -10,6 +10,34 @@ const {
   vercelWorkflows,
 } = require('./workflow-config-test-helpers.js');
 
+function readWorkflowYaml(workflowName) {
+  const workflowPath = path.join(
+    repoRoot,
+    '.github',
+    'workflows',
+    workflowName
+  );
+  const workflowJson = execFileSync(
+    'ruby',
+    [
+      '-e',
+      "require 'yaml'; require 'json'; puts JSON.generate(YAML.load_file(ARGV.fetch(0)))",
+      workflowPath,
+    ],
+    {
+      cwd: repoRoot,
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'pipe'],
+    }
+  );
+
+  return JSON.parse(workflowJson);
+}
+
+function githubExpression(expression) {
+  return `${String.fromCharCode(36)}{{ ${expression} }}`;
+}
+
 test('docs-only changes skip all Vercel deploy workflows', () => {
   const rootDir = createFixtureRoot();
 
@@ -94,15 +122,15 @@ test('app-only changes run only that app', () => {
   );
   assertWorkflowDecision(
     {
-      changedFiles: ['apps/qr/src/app/page.tsx'],
+      changedFiles: ['apps/tools/src/app/page.tsx'],
       rootDir,
-      workflowName: 'vercel-preview-qr.yaml',
+      workflowName: 'vercel-preview-tools.yaml',
     },
     true
   );
   assertWorkflowDecision(
     {
-      changedFiles: ['apps/qr/src/app/page.tsx'],
+      changedFiles: ['apps/tools/src/app/page.tsx'],
       rootDir,
       workflowName: 'vercel-preview-apps.yaml',
     },
@@ -129,6 +157,30 @@ test('app-only changes run only that app', () => {
       changedFiles: ['apps/mail/src/app/page.tsx'],
       rootDir,
       workflowName: 'vercel-preview-teach.yaml',
+    },
+    false
+  );
+  assertWorkflowDecision(
+    {
+      changedFiles: ['apps/infrastructure/src/app/page.tsx'],
+      rootDir,
+      workflowName: 'vercel-preview-infrastructure.yaml',
+    },
+    true
+  );
+  assertWorkflowDecision(
+    {
+      changedFiles: ['apps/infrastructure/src/app/page.tsx'],
+      rootDir,
+      workflowName: 'vercel-production-infrastructure.yaml',
+    },
+    true
+  );
+  assertWorkflowDecision(
+    {
+      changedFiles: ['apps/infrastructure/src/app/page.tsx'],
+      rootDir,
+      workflowName: 'vercel-preview-calendar.yaml',
     },
     false
   );
@@ -159,6 +211,24 @@ test('shared package changes fan out through transitive workspace dependencies',
       changedFiles,
       rootDir,
       workflowName: 'vercel-preview-shortener.yaml',
+    },
+    false
+  );
+
+  const paymentChangedFiles = ['packages/payment/src/polar/index.ts'];
+  assertWorkflowDecision(
+    {
+      changedFiles: paymentChangedFiles,
+      rootDir,
+      workflowName: 'vercel-preview-infrastructure.yaml',
+    },
+    true
+  );
+  assertWorkflowDecision(
+    {
+      changedFiles: paymentChangedFiles,
+      rootDir,
+      workflowName: 'vercel-preview-calendar.yaml',
     },
     false
   );
@@ -221,6 +291,32 @@ test('release-please workflow uses static switchboard gating', () => {
     decision.output,
     /release-please\.yaml uses static tuturuuu\.ts gating/
   );
+});
+
+test('Vercel app projects disable Vercel-owned GitHub builds', () => {
+  const appsRoot = path.join(repoRoot, 'apps');
+  const vercelJsonPaths = fs
+    .readdirSync(appsRoot)
+    .map((appName) => path.join(appsRoot, appName, 'vercel.json'))
+    .filter((vercelJsonPath) => fs.existsSync(vercelJsonPath));
+
+  assert.ok(vercelJsonPaths.length > 0, 'expected app Vercel configs');
+
+  for (const vercelJsonPath of vercelJsonPaths) {
+    const relativePath = path.relative(repoRoot, vercelJsonPath);
+    const vercelConfig = JSON.parse(fs.readFileSync(vercelJsonPath, 'utf8'));
+
+    assert.equal(
+      vercelConfig.git?.deploymentEnabled,
+      false,
+      `${relativePath} must let GitHub Actions own deployments`
+    );
+    assert.equal(
+      vercelConfig.github?.enabled,
+      false,
+      `${relativePath} must disable Vercel GitHub auto-builds`
+    );
+  }
 });
 
 test('mobile store deployment workflow is production-push beta delivery only', () => {
@@ -331,6 +427,46 @@ test('mobile store deployment workflow is production-push beta delivery only', (
   assert.doesNotMatch(workflow, /path: .*mobile-deployment/i);
 });
 
+test('closed PR cancellation workflow is registered and avoids PR head code', () => {
+  const workflowName = 'cancel-pr-runs-on-close.yaml';
+  const workflow = fs.readFileSync(
+    path.join(repoRoot, '.github', 'workflows', workflowName),
+    'utf8'
+  );
+  const ciConfig = fs.readFileSync(path.join(repoRoot, 'tuturuuu.ts'), 'utf8');
+
+  assert.match(
+    ciConfig,
+    /["']cancel-pr-runs-on-close\.yaml["']:\s*true/,
+    'closed PR cancellation workflow must be registered in tuturuuu.ts'
+  );
+  assert.ok(readWorkflowYaml(workflowName));
+  assert.match(
+    workflow,
+    /^on:\n {2}pull_request_target:\n {4}types:\n {6}- closed\n/m
+  );
+  assert.match(workflow, /^ {2}actions:\s*write\b/m);
+  assert.match(workflow, /^ {2}contents:\s*read\b/m);
+  assert.match(workflow, /uses: \.\/\.github\/workflows\/ci-check\.yml/);
+  assert.match(workflow, /workflow_name: cancel-pr-runs-on-close\.yaml/);
+  assert.match(workflow, /^ {6}deployments:\s*read\b/m);
+  assert.match(workflow, /uses: actions\/checkout@[a-f0-9]{40}/);
+  assert.match(workflow, /uses: actions\/setup-node@[a-f0-9]{40}/);
+  assert.match(
+    workflow,
+    /ref: \$\{\{ github\.event\.repository\.default_branch \}\}/
+  );
+  assert.match(workflow, /persist-credentials: false/);
+  assert.match(
+    workflow,
+    /node --experimental-strip-types scripts\/ci\/cancel-closed-pr-runs\.ts/
+  );
+  assert.doesNotMatch(workflow, /actions\/github-script/);
+  assert.doesNotMatch(workflow, /github\.event\.pull_request\.head/);
+  assert.doesNotMatch(workflow, /\bgithub\.head_ref\b/);
+  assert.doesNotMatch(workflow, /refs\/pull/);
+});
+
 test('workflows use the repo Bun setup and install retry helpers', () => {
   const workflowsDir = path.join(repoRoot, '.github', 'workflows');
   const workflowFiles = fs
@@ -356,6 +492,11 @@ test('workflows use the repo Bun setup and install retry helpers', () => {
       workflow,
       /^\s*run:\s*bun (?:install|setup)\b/m,
       `${workflowFile} must run Bun install/setup through scripts/ci/run-with-backoff.sh`
+    );
+    assert.doesNotMatch(
+      workflow,
+      /^\s*run:\s*bunx\b/m,
+      `${workflowFile} must use "bun x" because the local Bun setup action only installs the bun binary`
     );
 
     if (workflow.includes('./.github/actions/setup-bun-with-retry')) {
@@ -406,6 +547,86 @@ test('Bun workflow helpers use bounded exponential backoff', () => {
   assert.match(retryScript, /delay=\$\(\(delay \* 2\)\)/);
 });
 
+test('TanStack migration E2E workflow keeps dual-stack and compare coverage', () => {
+  const workflow = readWorkflowYaml('e2e-tests.yaml');
+  const job = workflow.jobs?.['migration-e2e'];
+
+  assert.ok(job, 'e2e-tests.yaml must define the migration-e2e job');
+  assert.deepEqual(job.needs, ['check-ci']);
+  assert.equal(
+    job.if,
+    "github.ref != 'refs/heads/production' && needs.check-ci.outputs.should_run == 'true'"
+  );
+  assert.equal(job['timeout-minutes'], 60);
+  assert.equal(job.strategy?.['fail-fast'], false);
+
+  const matrixRows = job.strategy?.matrix?.include;
+  assert.ok(Array.isArray(matrixRows));
+  assert.equal(matrixRows.length, 2);
+
+  const rowByMode = new Map(matrixRows.map((row) => [row.mode, row]));
+  assert.deepEqual([...rowByMode.keys()].sort(), [
+    'compare-smoke',
+    'tanstack-dual-stack',
+  ]);
+  assert.deepEqual(rowByMode.get('tanstack-dual-stack'), {
+    command: 'bun test:e2e:tanstack:docker -- -- --project=chromium',
+    mode: 'tanstack-dual-stack',
+    playwright_workdir: 'apps/tanstack-web',
+    setup_supabase: 'false',
+  });
+  assert.deepEqual(rowByMode.get('compare-smoke'), {
+    command:
+      'bun test:e2e:web:docker:compare -- public-marketing-routes.noauth.spec.ts --project=chromium-no-auth',
+    mode: 'compare-smoke',
+    playwright_workdir: 'apps/web',
+    setup_supabase: 'true',
+  });
+
+  const steps = job.steps || [];
+  assert.ok(
+    steps.some(
+      (step) =>
+        step.name === 'Run migration E2E' &&
+        step.run === githubExpression('matrix.command')
+    ),
+    'migration-e2e must execute the matrix command'
+  );
+
+  const artifactStep = steps.find(
+    (step) => step.name === 'Upload migration E2E artifacts'
+  );
+  assert.ok(artifactStep, 'migration-e2e must upload diagnostics artifacts');
+  assert.equal(artifactStep.uses, 'actions/upload-artifact@v7');
+  assert.equal(artifactStep.if, githubExpression('!cancelled()'));
+  assert.equal(
+    artifactStep.with?.name,
+    `migration-e2e-${githubExpression('matrix.mode')}`
+  );
+  assert.match(
+    artifactStep.with?.path || '',
+    /apps\/tanstack-web\/playwright-report\//
+  );
+  assert.match(artifactStep.with?.path || '', /apps\/web\/blob-report\//);
+  assert.match(artifactStep.with?.path || '', /tmp\/e2e\//);
+  assert.equal(artifactStep.with?.['if-no-files-found'], 'ignore');
+
+  const cleanupStep = steps.find(
+    (step) => step.name === 'Stop migration E2E stacks'
+  );
+  assert.ok(cleanupStep, 'migration-e2e must clean up both Docker stacks');
+  assert.equal(cleanupStep.if, 'always()');
+  assert.match(
+    cleanupStep.run || '',
+    /docker compose -f docker-compose\.tanstack-dual\.yml down \|\| true/
+  );
+  assert.match(
+    cleanupStep.run || '',
+    /node scripts\/docker-web\.js down --mode prod --strategy blue-green --env-file tmp\/e2e\/web\.env \|\| true/
+  );
+  assert.match(cleanupStep.run || '', /bun sb:stop \|\| true/);
+});
+
 test('Supabase CLI workflows use tokenized retry setup', () => {
   const workflowsDir = path.join(repoRoot, '.github', 'workflows');
   const workflowFiles = fs
@@ -420,6 +641,12 @@ test('Supabase CLI workflows use tokenized retry setup', () => {
       'action.yml'
     ),
     'utf8'
+  );
+
+  assert.match(
+    setupAction,
+    /BUN_INSTALL: \$\{\{ runner\.temp \}\}\/supabase-cli-bun/,
+    'Supabase CLI setup must isolate its transient Bun install from repo Bun setup'
   );
 
   for (const workflowFile of workflowFiles) {
@@ -482,6 +709,43 @@ test('ci configuration gate runs TypeScript scripts with Node strip-types', () =
     workflow,
     /bun run --silent scripts\/ci\/(?:resolve-changed-files|check-workflow-config)\.ts/
   );
+});
+
+test('restricted ci-check callers grant deployment marker read access', () => {
+  const workflowsDir = path.join(repoRoot, '.github', 'workflows');
+  const workflowFiles = fs
+    .readdirSync(workflowsDir)
+    .filter((fileName) => /\.ya?ml$/.test(fileName));
+
+  for (const workflowFile of workflowFiles) {
+    const workflow = fs.readFileSync(
+      path.join(workflowsDir, workflowFile),
+      'utf8'
+    );
+
+    if (!workflow.includes('uses: ./.github/workflows/ci-check.yml')) {
+      continue;
+    }
+
+    const jobsIndex = workflow.indexOf('\njobs:');
+    const preamble = jobsIndex === -1 ? workflow : workflow.slice(0, jobsIndex);
+    const restrictsTokenPermissions = /^permissions:\s*(?:\n|\{)/m.test(
+      preamble
+    );
+    const workflowCanReadDeployments = /^ {2}deployments:\s*read\b/m.test(
+      preamble
+    );
+
+    if (!restrictsTokenPermissions || workflowCanReadDeployments) {
+      continue;
+    }
+
+    assert.match(
+      workflow,
+      /^ {2}check-ci:\n(?: {4}.*\n)* {4}permissions:\n(?: {6}.*\n)* {6}deployments:\s*read\b/m,
+      `${workflowFile} check-ci job must grant deployments: read when top-level permissions restrict the token`
+    );
+  }
 });
 
 test('disabled ci entries still skip regardless of affected status', () => {

@@ -3,6 +3,19 @@
 Load this reference when changing root scripts, CI workflows, plugin validation,
 formatting behavior, or repo-wide verification.
 
+## File Size Ceiling
+
+- Keep every source file well-maintained and under a hard **700-LOC ceiling**
+  whenever possible, in any language. Start splitting around ~400 LOC (~200 for
+  components/widgets); never leave a file you author or substantially edit above
+  700 LOC — extract cohesive submodules and keep import paths stable with thin
+  re-exports (`pub use`/barrel files).
+- Rust backend specifics (`apps/backend`): the crate root is split into
+  `src/dispatch/` (one `dispatch_chunk_NN.rs` per route-table chunk) plus named
+  helper submodules, each re-exported from `lib.rs` with `pub(crate) use
+  <mod>::*;`; unit tests live in `src/tests.rs` (`mod tests;`). See
+  `apps/backend/AGENTS.md` for the extraction pattern.
+
 ## Commands And Formatting
 
 - Do not run long-lived dev/build commands such as `bun dev`, `bun run build`,
@@ -38,10 +51,17 @@ formatting behavior, or repo-wide verification.
   string literals that trip `noTemplateCurlyInString`.
 - Do not remove caching, fail-fast behavior, or security validation silently;
   document the rationale when tooling behavior changes.
+- `bun rust-cache report|prune|auto` is the repo-owned Rust target cleanup
+  wrapper. It owns only `apps/backend/target` by default, stores auto-run state
+  under ignored `tmp/rust-cache/state.json`, skips CI unless explicitly enabled,
+  and keeps hot target data warm by pruning only stale or size-pressure entries.
 - Turborepo build outputs may include production `.next/**`, but must exclude
-  volatile Next caches such as `.next/cache/**` and `.next/dev/**`. The
-  `.next/dev` tree is local dev-server state; archiving it can capture multi-GB
-  Turbopack caches and slow `bun dev:web` compilation.
+  volatile Next caches such as `.next/cache/**` and `.next/dev/**`. Next 16.3
+  enables the Turbopack build filesystem cache locally through the shared Next
+  config; keep that cache out of generic Turborepo outputs and use an explicit
+  CI cache policy if it ever needs remote reuse. The `.next/dev` tree is local
+  dev-server state; archiving it can capture multi-GB Turbopack caches and slow
+  `bun dev:web` compilation.
 - Before guessing at slow `apps/web` local compilation, run
   `bun diagnose:dev:web`. Use its cache-size, slow-filesystem-warning, and
   `.next/dev/trace` output to decide whether the next fix is cleanup,
@@ -49,9 +69,23 @@ formatting behavior, or repo-wide verification.
 - If diagnostics show `Watchpack Error (watcher): Error: EMFILE`, fix the dev
   launcher or shell open-file limit first. The default web dev wrapper raises
   the child process limit with `TUTURUUU_DEV_MAX_OPEN_FILES=65536`; set the env
-  var to another positive value or `0` to disable the wrapper behavior. The
-  same wrapper defaults `WATCHPACK_POLLING=true`; override it only when native
-  watchers are known to be stable on the local machine.
+  var to another positive value or `0` to disable the wrapper behavior. Native
+  local dev leaves `WATCHPACK_POLLING` unset by default for faster, lower-memory
+  watcher behavior; set `WATCHPACK_POLLING=true` only when a local filesystem or
+  container workflow needs polling.
+- `bun dev:web` is the lean web-only launcher by default. It skips
+  `@tuturuuu/types` and `@tuturuuu/supabase` watch builds unless the caller
+  passes `--with-shared-watchers`; use that opt-in only while editing those
+  package sources and needing live `dist` rebuilds.
+- `apps/web` does not mount React Query Devtools in the default development
+  provider. Keep it out of the always-mounted provider graph; add a temporary
+  local mount only for query-cache debugging and remove it before handoff.
+- Keep the `apps/web` public shell compile graph lean. Mobile-only menu drawers,
+  marketing footer bodies, report-problem dialogs, and authenticated-dropdown
+  only UI should stay behind dynamic imports where practical, and shell icons
+  should use `@tuturuuu/icons/lucide-static` instead of the root icon entrypoint
+  or broad `@tuturuuu/icons/lucide` barrel. Protect these split points with
+  compile-graph tests when changing shell code.
 
 ## CI And Dependency Drift
 
@@ -75,9 +109,10 @@ formatting behavior, or repo-wide verification.
 - Use `bun git-release-please` from a clean `main` checkout to merge the latest
   `release-please--branches--production` branch. The helper fetches the bot
   branch, merges without committing, syncs the platform badge version files from
-  `platform-version.txt`, runs `bun ff`, stages the resolved merge, then lets
-  the normal commit hook run `bun check` and conditional `bun check:mobile`
-  before the merge commit lands. If a manual merge is already in progress, run
+  `platform-version.txt`, runs `bun ff`, stages the resolved merge, then runs
+  `bun check` directly before the merge commit lands. If the staged release
+  merge includes `apps/mobile` paths, the helper also runs `bun check:mobile`.
+  If a manual merge is already in progress, run
   `bun release:sync-platform-version` before staging the resolved
   `TUTURUUU_PLATFORM_VERSION` files.
 - Keep the Release Please token fallback ordered as
@@ -150,7 +185,7 @@ formatting behavior, or repo-wide verification.
   vendored SheetJS tarball must stay local in source manifests and packed npm
   manifests when the tarball is included in the package artifact; do not rewrite
   them to mutable external HTTPS tarballs before `npm pack`.
-- Platform Vercel production build validation should run
+- Platform Vercel production deployment should run
   `node scripts/ci/package-release-readiness.js gate-changed-package-versions`
   before dependency installation when release-please package manifests changed.
   The gate inspects only the checked-out latest commit instead of the whole push
@@ -158,19 +193,20 @@ formatting behavior, or repo-wide verification.
   `git diff`, dispatches missing package release workflows for the same SHA,
   fails fast if a related package release workflow failed, and exits
   successfully with `packages_ready=false` while package releases are still
-  queued or running. Downstream install/build steps must be skipped when
+  queued or running. Downstream install/build/deploy steps must be skipped when
   packages are pending so the Vercel workflow does not occupy a runner while
   waiting for npm. The deploy job therefore needs `actions: write` for workflow
   dispatch recovery; keep npm publish authority isolated to package
   `publish-npm` jobs. Because a package-gate skip is still a successful workflow
   conclusion, production database migration gates must require the successful
-  `vercel-production-platform` build marker for the same SHA before running
-  `supabase db push`.
+  `vercel-production-platform` deployment marker for the same SHA before
+  running `supabase db push`.
   Platform Vercel workflows must build local `@tuturuuu/devbox` artifacts before
-  `vercel build` because `apps/web` imports that workspace package. The
-  platform preview and production workflows are build-only signals for
-  on-premise deployment and may cross-credit successful same-SHA build markers;
-  satellite Vercel workflows still deploy prebuilt artifacts.
+  `vercel build` because `apps/web` imports that workspace package. Platform
+  preview remains build validation only and may cross-credit successful same-SHA
+  production build markers. Platform production must build and deploy prebuilt
+  artifacts, then record both build and deployment markers. Satellite Vercel
+  workflows still deploy prebuilt artifacts independently.
 - Package release workflows must use npm trusted publishing. Keep
   `id-token: write` isolated to the final `publish-npm` job, publish a downloaded and
   verified tarball with `npm publish --ignore-scripts`, and do not reintroduce
@@ -183,10 +219,21 @@ formatting behavior, or repo-wide verification.
   URL with `E422` while verifying the sigstore provenance bundle.
 - If local type-check passes but CI fails from stale incremental state, rerun
   with forced cache invalidation before changing unrelated code.
-- Workspace packages with direct `tsgo` build scripts must declare
-  `@typescript/native-preview` in their own `devDependencies`. Filtered Docker
+- Docker verification workflows should use `docker buildx build --load` plus
+  `type=gha` cache scopes per service image. Pass Turbo remote-cache values as
+  optional BuildKit secrets for build `RUN` steps; never bake those values into
+  image layers, args, labels, or committed env files.
+- Workspace packages with direct `tsc` build scripts must declare
+  `typescript` in their own `devDependencies`. Filtered Docker
   installs such as the Hive production image do not install root-only dev tools,
-  so package-owned build scripts cannot rely on the root `tsgo` binary.
+  so package-owned build scripts cannot rely on the root `tsc` binary.
+- Programmatic compiler API consumers must stay on the active TypeScript 7
+  toolchain instead of carrying legacy compiler compatibility packages.
+- Next.js apps that run `next build` must declare `@typescript/native-preview`
+  while the repo uses the TypeScript 7 native compiler package. TS7 no longer
+  exposes the classic `typescript/lib/typescript.js` file that Next probes
+  during build-time TypeScript setup; the native-preview marker uses Next's
+  supported native compiler path without reverting the repo to TS6.
 - Do not patch unrelated packages just because `bun check` fails outside the
   owned scope. Run focused verification and report the blocker.
 - Package subpath imports must be covered by the package `exports`; do not

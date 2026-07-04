@@ -5,9 +5,26 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { WalletFormValues } from './form';
 import { WalletForm } from './form';
 
-vi.mock('@tuturuuu/ui/hooks/use-workspace-currency', () => ({
-  useWorkspaceCurrency: () => ({ currency: 'USD' }),
+const mocks = vi.hoisted(() => ({
+  createWallet: vi.fn(),
+  updateWallet: vi.fn(),
 }));
+
+vi.mock('@tuturuuu/ui/hooks/use-workspace-currency', () => ({
+  useWorkspaceCurrency: (_wsId: string, fallbackCurrency = 'USD') => ({
+    currency: fallbackCurrency,
+  }),
+}));
+
+vi.mock('@tuturuuu/internal-api/finance', async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import('@tuturuuu/internal-api/finance')>();
+  return {
+    ...actual,
+    createWallet: mocks.createWallet,
+    updateWallet: mocks.updateWallet,
+  };
+});
 
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ refresh: vi.fn() }),
@@ -29,6 +46,7 @@ function renderWalletForm(
   options: {
     data?: ComponentProps<typeof WalletForm>['data'];
     defaultType?: WalletFormValues['type'];
+    defaultCurrency?: string;
   } = {}
 ) {
   const data =
@@ -41,13 +59,18 @@ function renderWalletForm(
           name: 'Primary',
           type: 'STANDARD',
         } as never);
-  const { defaultType } = options;
+  const { defaultCurrency, defaultType } = options;
 
   const queryClient = new QueryClient();
 
   return render(
     <QueryClientProvider client={queryClient}>
-      <WalletForm wsId="ws-1" data={data} defaultType={defaultType} />
+      <WalletForm
+        wsId="ws-1"
+        data={data}
+        defaultType={defaultType}
+        defaultCurrency={defaultCurrency}
+      />
     </QueryClientProvider>
   );
 }
@@ -69,6 +92,8 @@ function typeIntoCurrencyInput(input: HTMLInputElement, value: string) {
 describe('WalletForm', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.createWallet.mockResolvedValue({ message: 'success' });
+    mocks.updateWallet.mockResolvedValue({ message: 'success' });
     // biome-ignore lint/suspicious/noDocumentCookie: test resets the finance visibility cookie.
     document.cookie =
       'finance-confidential-mode=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/';
@@ -115,6 +140,29 @@ describe('WalletForm', () => {
     ).toHaveValue(1);
     expect(screen.getByLabelText('wallet-data-table.payment_date')).toHaveValue(
       15
+    );
+  });
+
+  it('initializes new wallet currency from the supplied workspace default', async () => {
+    renderWalletForm({
+      data: undefined,
+      defaultCurrency: 'SGD',
+    });
+
+    fireEvent.change(screen.getByLabelText('wallet-data-table.wallet_name'), {
+      target: { value: 'Singapore Cash' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'ws-wallets.create' }));
+
+    await waitFor(() =>
+      expect(mocks.createWallet).toHaveBeenCalledWith(
+        'ws-1',
+        expect.objectContaining({
+          currency: 'SGD',
+          name: 'Singapore Cash',
+          type: 'STANDARD',
+        })
+      )
     );
   });
 

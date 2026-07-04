@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from '@tuturuuu/ui/sonner';
+import { getTaskApiUrl } from '../lib/tasks-app-url';
 
 async function boardAction(
   wsId: string,
@@ -7,13 +8,17 @@ async function boardAction(
   method: 'PUT' | 'DELETE' | 'PATCH',
   body?: any
 ) {
-  const response = await fetch(`/api/v1/workspaces/${wsId}/boards/${boardId}`, {
-    method,
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: body ? JSON.stringify(body) : undefined,
-  });
+  const response = await fetch(
+    getTaskApiUrl(`/api/v1/workspaces/${wsId}/boards/${boardId}`),
+    {
+      method,
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: body ? JSON.stringify(body) : undefined,
+    }
+  );
 
   if (!response.ok) {
     const errorData = await response.json();
@@ -29,9 +34,10 @@ async function archiveAction(
   method: 'POST' | 'DELETE'
 ) {
   const response = await fetch(
-    `/api/v1/workspaces/${wsId}/boards/${boardId}/archive`,
+    getTaskApiUrl(`/api/v1/workspaces/${wsId}/boards/${boardId}/archive`),
     {
       method,
+      credentials: 'include',
       headers: {
         'Content-Type': 'application/json',
       },
@@ -166,15 +172,19 @@ export function useBoardActions(wsId: string) {
     { boardId: string; options?: BoardActionOptions }
   >({
     mutationFn: ({ boardId }) =>
-      fetch(`/api/v1/workspaces/${wsId}/task-boards/${boardId}/copy`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          targetWorkspaceId: wsId,
-        }),
-      }).then(async (res) => {
+      fetch(
+        getTaskApiUrl(`/api/v1/workspaces/${wsId}/task-boards/${boardId}/copy`),
+        {
+          method: 'POST',
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            targetWorkspaceId: wsId,
+          }),
+        }
+      ).then(async (res) => {
         if (!res.ok) {
           const errorData = await res.json();
           throw new Error(errorData.error || 'Failed to duplicate board');

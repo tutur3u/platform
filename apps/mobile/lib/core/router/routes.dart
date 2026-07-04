@@ -61,6 +61,7 @@ abstract final class Routes {
   static const walletDetail = '/finance/wallets/:walletId';
   static const transactions = '/finance/transactions';
   static const transactionDetail = '/finance/transactions/:transactionId';
+  static const financeCheckpoints = '/finance/checkpoints';
   static const categories = '/finance/categories';
   static const inventoryProducts = '/inventory/products';
   static const inventoryProductCreate = '/inventory/products/create';
@@ -77,6 +78,13 @@ abstract final class Routes {
 
   static String walletDetailPath(String walletId) =>
       '/finance/wallets/$walletId';
+
+  static String financeCheckpointsPath({String? walletId}) => Uri(
+    path: financeCheckpoints,
+    queryParameters: walletId == null || walletId.isEmpty
+        ? null
+        : {'walletId': walletId},
+  ).toString();
 
   static String inventoryProductDetailPath(String productId) =>
       '/inventory/products/$productId';

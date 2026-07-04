@@ -6,7 +6,6 @@ import {
   ChevronDown,
   Loader2,
 } from '@tuturuuu/icons';
-import type { Database } from '@tuturuuu/types';
 import {
   Card,
   CardContent,
@@ -29,6 +28,7 @@ import {
   getSubscriptionCoverageInvoiceForGroup,
   isSubscriptionMonthPaidForGroup,
   parseLocalCalendarDate,
+  type WorkspaceUserGroup,
 } from '../utils';
 
 type LatestInvoice = {
@@ -38,9 +38,7 @@ type LatestInvoice = {
 };
 
 type UserGroupItem = {
-  workspace_user_groups:
-    | Database['public']['Tables']['workspace_user_groups']['Row']
-    | null;
+  workspace_user_groups: WorkspaceUserGroup | null;
 };
 
 function hasSchedule(group: UserGroupItem['workspace_user_groups']): boolean {
@@ -84,7 +82,7 @@ function GroupRow({
   onToggle,
   t,
 }: {
-  group: Database['public']['Tables']['workspace_user_groups']['Row'];
+  group: WorkspaceUserGroup;
   isSelected: boolean;
   isMonthPaid: boolean;
   latestInvoice: LatestInvoice | undefined;

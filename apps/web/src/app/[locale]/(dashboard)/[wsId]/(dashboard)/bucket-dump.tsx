@@ -48,6 +48,7 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import { getTasksAppUrlClient } from '@/lib/tasks-app-url-client';
 
 interface BucketDumpProps {
   wsId: string;
@@ -147,9 +148,10 @@ function BucketDumpContent({ wsId }: { wsId: string }) {
       queryKey: ['workspace', wsId, 'boards-with-lists'],
       queryFn: async () => {
         const response = await fetch(
-          `/api/v1/workspaces/${wsId}/boards-with-lists`,
+          getTasksAppUrlClient(`/api/v1/workspaces/${wsId}/boards-with-lists`),
           {
             method: 'GET',
+            credentials: 'include',
             headers: {
               'Content-Type': 'application/json',
             },
@@ -264,9 +266,12 @@ function BucketDumpContent({ wsId }: { wsId: string }) {
   >({
     mutationFn: async ({ noteId, listId }) => {
       const response = await fetch(
-        `/api/v1/workspaces/${wsId}/notes/${noteId}/convert-to-task`,
+        getTasksAppUrlClient(
+          `/api/v1/workspaces/${wsId}/notes/${noteId}/convert-to-task`
+        ),
         {
           method: 'POST',
+          credentials: 'include',
           headers: {
             'Content-Type': 'application/json',
           },

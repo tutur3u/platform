@@ -37,9 +37,11 @@ import { ProductCreateForm } from './product-management';
 import { ProductsTable } from './products-table';
 import { SetupPanel } from './setup-panel';
 import { SimpleRows } from './simple-rows';
+import { StockWorkspacePanel } from './stock-workspace-panel';
 import { StorefrontAnalyticsPanel } from './storefront-analytics-panel';
 import { StorefrontListingsPanel } from './storefront-listings-panel';
 import { useInventoryData } from './use-inventory-data';
+import { WorkspaceCurrencyProvider } from './workspace-currency';
 
 export type { InventoryOperatorView } from './operator-types';
 
@@ -56,7 +58,12 @@ type InventoryQueryState = {
   refetch: () => unknown;
 };
 
-const commerceTabs = ['checkouts', 'sales', 'promotions'] as const;
+const commerceTabs = [
+  'checkouts',
+  'sales',
+  'revenue-share',
+  'promotions',
+] as const;
 
 export function InventoryOperatorClient({
   view,
@@ -116,7 +123,9 @@ export function InventoryOperatorClient({
 
     if (
       view === 'commerce' &&
-      (commerceTab === 'sales' || commerceTab === 'promotions')
+      (commerceTab === 'sales' ||
+        commerceTab === 'revenue-share' ||
+        commerceTab === 'promotions')
     ) {
       return [all];
     }
@@ -195,6 +204,9 @@ export function InventoryOperatorClient({
     ['bundles', 'storefront'].includes(view) ? data.bundles : null,
     view === 'commerce' && commerceTab === 'checkouts' ? data.checkouts : null,
     view === 'commerce' && commerceTab === 'sales' ? data.sales : null,
+    view === 'commerce' && commerceTab === 'revenue-share'
+      ? data.revenueShares
+      : null,
     view === 'commerce' && commerceTab === 'promotions'
       ? data.promotions
       : null,
@@ -239,7 +251,9 @@ export function InventoryOperatorClient({
         ? data.sales.isPending || data.sales.isFetching
         : view === 'commerce' && commerceTab === 'promotions'
           ? data.promotions.isPending || data.promotions.isFetching
-          : false;
+          : view === 'commerce' && commerceTab === 'revenue-share'
+            ? data.revenueShares.isPending || data.revenueShares.isFetching
+            : false;
 
   const headerActions =
     view === 'catalog' ? (
@@ -247,134 +261,152 @@ export function InventoryOperatorClient({
     ) : view === 'storefront' ? (
       <StorefrontForm wsId={wsId} />
     ) : view === 'bundles' ? (
-      <BundleForm products={products} wsId={wsId} />
+      <BundleForm
+        categories={data.formOptions.data?.categories}
+        products={products}
+        wsId={wsId}
+      />
     ) : null;
 
   return (
-    <SectionShell
-      actions={headerActions}
-      description={section[2] as string}
-      icon={<Icon className="h-5 w-5" />}
-      title={section[1] as string}
-    >
-      <Toolbar
-        filters={data.filters}
-        setFilters={data.setFilters}
-        statusOptions={statusOptions}
-      />
-      <div className="grid gap-4">
-        {isLoading && view !== 'commerce' ? <LoadingRows /> : null}
-        {isError ? (
-          <StatePanel
-            actionLabel={t('states.retry')}
-            description={t('states.errorDescription')}
-            onAction={() => {
-              for (const query of activeQueries) query.refetch();
-            }}
-            title={t('states.errorTitle')}
-            tone="danger"
-          />
-        ) : null}
-        {!isLoading && !isError && view === 'overview' ? (
-          <>
-            <InventoryGuidance
-              costingProfilesCount={data.costingProfiles.data?.data.length ?? 0}
-              productsCount={products.length}
-              storefrontsCount={storefronts.length}
+    <WorkspaceCurrencyProvider wsId={wsId}>
+      <SectionShell
+        actions={headerActions}
+        description={section[2] as string}
+        icon={<Icon className="h-5 w-5" />}
+        title={section[1] as string}
+      >
+        <Toolbar
+          filters={data.filters}
+          setFilters={data.setFilters}
+          statusOptions={statusOptions}
+        />
+        <div className="grid gap-4">
+          {isLoading && view !== 'commerce' ? <LoadingRows /> : null}
+          {isError ? (
+            <StatePanel
+              actionLabel={t('states.retry')}
+              description={t('states.errorDescription')}
+              onAction={() => {
+                for (const query of activeQueries) query.refetch();
+              }}
+              title={t('states.errorTitle')}
+              tone="danger"
+            />
+          ) : null}
+          {!isLoading && !isError && view === 'overview' ? (
+            <>
+              <InventoryGuidance
+                costingProfilesCount={
+                  data.costingProfiles.data?.data.length ?? 0
+                }
+                productsCount={products.length}
+                storefrontsCount={storefronts.length}
+                view={view}
+                wsId={wsId}
+              />
+              <OverviewPanel
+                bundles={bundles}
+                dashboard={data.overview.data?.dashboard}
+                formOptions={data.formOptions.data}
+                lowStock={lowStock}
+                polarSettings={data.polarSettings.data}
+                products={products}
+                storefronts={storefronts}
+                wsId={wsId}
+              />
+            </>
+          ) : null}
+          {!isLoading && !isError && view === 'catalog' ? (
+            <ProductsTable
+              costingProfiles={data.costingProfiles.data?.data ?? []}
+              formOptions={data.formOptions.data}
+              rows={products}
               view={view}
               wsId={wsId}
             />
-            <OverviewPanel
-              bundles={bundles}
-              dashboard={data.overview.data?.dashboard}
+          ) : null}
+          {!isLoading && !isError && view === 'stock' ? (
+            <StockWorkspacePanel
+              costingProfiles={data.costingProfiles.data?.data ?? []}
               formOptions={data.formOptions.data}
-              lowStock={lowStock}
-              polarSettings={data.polarSettings.data}
               products={products}
-              storefronts={storefronts}
               wsId={wsId}
             />
-          </>
-        ) : null}
-        {!isLoading && !isError && (view === 'catalog' || view === 'stock') ? (
-          <ProductsTable
-            costingProfiles={data.costingProfiles.data?.data ?? []}
-            formOptions={data.formOptions.data}
-            rows={products}
-            view={view}
-            wsId={wsId}
-          />
-        ) : null}
-        {!isLoading && !isError && view === 'setup' ? (
-          <SetupPanel
-            batches={batches}
-            options={data.formOptions.data}
-            suppliers={suppliers}
-            wsId={wsId}
-          />
-        ) : null}
-        {!isLoading && !isError && view === 'costing' ? (
-          <CostingPanel
-            analytics={data.costingAnalytics.data}
-            options={data.formOptions.data}
-            profiles={data.costingProfiles.data?.data ?? []}
-            products={products}
-            wsId={wsId}
-          />
-        ) : null}
-        {!isLoading && !isError && view === 'storefront' ? (
-          <>
-            <SimpleRows rows={storefronts} type="storefronts" wsId={wsId} />
-            {storefronts.length > 0 ? (
-              <>
-                <StorefrontAnalyticsPanel wsId={wsId} />
-                <StorefrontListingsPanel
-                  bundles={bundles}
-                  products={products}
-                  storefronts={storefronts}
-                  wsId={wsId}
-                />
-              </>
-            ) : null}
-          </>
-        ) : null}
-        {!isLoading && !isError && view === 'bundles' ? (
-          <>
-            <SimpleRows
-              products={products}
-              rows={bundles}
-              type="bundles"
+          ) : null}
+          {!isLoading && !isError && view === 'setup' ? (
+            <SetupPanel
+              batches={batches}
+              options={data.formOptions.data}
+              suppliers={suppliers}
               wsId={wsId}
             />
-            {bundles.length > 0 ? (
-              <BundleComponentsPanel
-                bundles={bundles}
+          ) : null}
+          {!isLoading && !isError && view === 'costing' ? (
+            <CostingPanel
+              analytics={data.costingAnalytics.data}
+              options={data.formOptions.data}
+              profiles={data.costingProfiles.data?.data ?? []}
+              products={products}
+              wsId={wsId}
+            />
+          ) : null}
+          {!isLoading && !isError && view === 'storefront' ? (
+            <>
+              <SimpleRows rows={storefronts} type="storefronts" wsId={wsId} />
+              {storefronts.length > 0 ? (
+                <>
+                  <StorefrontAnalyticsPanel wsId={wsId} />
+                  <StorefrontListingsPanel
+                    bundles={bundles}
+                    products={products}
+                    storefronts={storefronts}
+                    wsId={wsId}
+                  />
+                </>
+              ) : null}
+            </>
+          ) : null}
+          {!isLoading && !isError && view === 'bundles' ? (
+            <>
+              <SimpleRows
+                categories={data.formOptions.data?.categories}
                 products={products}
+                rows={bundles}
+                type="bundles"
                 wsId={wsId}
               />
-            ) : null}
-          </>
-        ) : null}
-        {!isError && view === 'commerce' ? (
-          <CommercePanel
-            checkouts={data.checkouts.data?.data ?? []}
-            isLoading={commerceLoading}
-            promotions={data.promotions.data?.data ?? []}
-            query={data.filters.q}
-            sales={sales}
-            setTab={(tab: InventoryCommerceTab) => {
-              void data.setFilters({ status: 'all' });
-              void setCommerceTab(tab);
-            }}
-            tab={commerceTab}
-            wsId={wsId}
-          />
-        ) : null}
-        {!isLoading && !isError && view === 'audits' ? (
-          <AuditRows rows={data.audits.data?.data ?? []} wsId={wsId} />
-        ) : null}
-        {!isError && view === 'polar' ? <PolarHubPanel wsId={wsId} /> : null}
-      </div>
-    </SectionShell>
+              {bundles.length > 0 ? (
+                <BundleComponentsPanel
+                  bundles={bundles}
+                  products={products}
+                  wsId={wsId}
+                />
+              ) : null}
+            </>
+          ) : null}
+          {!isError && view === 'commerce' ? (
+            <CommercePanel
+              checkouts={data.checkouts.data?.data ?? []}
+              isLoading={commerceLoading}
+              promotions={data.promotions.data?.data ?? []}
+              query={data.filters.q}
+              revenueShares={data.revenueShares.data?.data ?? []}
+              sales={sales}
+              setTab={(tab: InventoryCommerceTab) => {
+                void data.setFilters({ status: 'all' });
+                void setCommerceTab(tab);
+              }}
+              tab={commerceTab}
+              wsId={wsId}
+            />
+          ) : null}
+          {!isLoading && !isError && view === 'audits' ? (
+            <AuditRows rows={data.audits.data?.data ?? []} wsId={wsId} />
+          ) : null}
+          {!isError && view === 'polar' ? <PolarHubPanel wsId={wsId} /> : null}
+        </div>
+      </SectionShell>
+    </WorkspaceCurrencyProvider>
   );
 }

@@ -14,7 +14,7 @@ import type { ReactNode } from 'react';
 import { CostingCharts } from './costing-charts';
 import { CostingImportDialog } from './costing-import-dialog';
 import { CostingMetricCard } from './costing-metric-card';
-import { CostingProfileDialog } from './costing-profile-form';
+import { CostingProfileDialog } from './costing-profile-dialog';
 import { CostingProfileList } from './costing-profile-list';
 import { currency } from './operator-format';
 import { EmptyRow } from './operator-shell';

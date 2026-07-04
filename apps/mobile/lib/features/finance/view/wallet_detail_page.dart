@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart' hide AppBar, Card, Scaffold;
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/models/finance/exchange_rate.dart';
 import 'package:mobile/data/models/finance/transaction.dart';
@@ -160,6 +161,11 @@ class _WalletDetailViewState extends State<_WalletDetailView> {
                                 onEdit: _isLoadingInitial
                                     ? null
                                     : _onEditWallet,
+                                onOpenCheckpoints: () => context.push(
+                                  Routes.financeCheckpointsPath(
+                                    walletId: wallet.id,
+                                  ),
+                                ),
                               ),
                               const shad.Gap(12),
                             ],

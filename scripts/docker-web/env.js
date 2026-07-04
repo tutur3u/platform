@@ -22,6 +22,10 @@ const DOCKER_WEB_CRON_TOKEN_FILE = path.join(
   DOCKER_WEB_RUNTIME_DIR,
   'cron-token'
 );
+const DOCKER_WEB_DOCKER_CONTROL_TOKEN_FILE = path.join(
+  DOCKER_WEB_RUNTIME_DIR,
+  'docker-control-token'
+);
 const DOCKER_WEB_STORAGE_UNZIP_TOKEN_FILE = path.join(
   DOCKER_WEB_RUNTIME_DIR,
   'storage-unzip-token'
@@ -74,15 +78,39 @@ const DOCKER_STORAGE_UNZIP_PROXY_URL =
 const DOCKER_PRONUNCIATION_ASSESSOR_URL =
   'http://pronunciation-assessor:8010/assess';
 const DOCKER_BACKEND_INTERNAL_URL = 'http://backend:7820';
+const DOCKER_CONTROL_INTERNAL_URL = 'http://web-docker-control:7810';
 const DOCKER_WEB_NEXT_PRIVATE_ORIGIN = 'http://127.0.0.1:7803';
 const DOCKER_SUPERMEMORY_BASE_URL = 'http://supermemory:8787';
 const DOCKER_SUPERMEMORY_DATABASE_HOST = 'supermemory-postgres';
 const DOCKER_SUPERMEMORY_DATABASE_NAME = 'supermemory';
 const DOCKER_SUPERMEMORY_DATABASE_USER = 'supermemory';
+const CLOUDFLARED_TOKEN_KEYS = Object.freeze([
+  'DOCKER_CLOUDFLARED_TOKEN',
+  'CLOUDFLARED_TOKEN',
+  'CF_TUNNEL_TOKEN',
+]);
 const DEFAULT_DOCKER_WEB_COMPOSE_PROJECT_NAME = 'tuturuuu';
 const LEGACY_DOCKER_WEB_COMPOSE_PROJECT_NAME = 'platform';
 const DOCKER_WEB_MIGRATE_FROM_COMPOSE_PROJECT_ENV =
   'DOCKER_WEB_MIGRATE_FROM_COMPOSE_PROJECT';
+const DOCKER_WEB_GIT_COMMON_DIR_ENV = 'DOCKER_WEB_GIT_COMMON_DIR';
+const GIT_LOCAL_ENV_KEYS = Object.freeze([
+  'GIT_ALTERNATE_OBJECT_DIRECTORIES',
+  'GIT_COMMON_DIR',
+  'GIT_CONFIG',
+  'GIT_CONFIG_COUNT',
+  'GIT_CONFIG_PARAMETERS',
+  'GIT_DIR',
+  'GIT_GRAFT_FILE',
+  'GIT_IMPLICIT_WORK_TREE',
+  'GIT_INDEX_FILE',
+  'GIT_NO_REPLACE_OBJECTS',
+  'GIT_OBJECT_DIRECTORY',
+  'GIT_PREFIX',
+  'GIT_REPLACE_REF_BASE',
+  'GIT_SHALLOW_FILE',
+  'GIT_WORK_TREE',
+]);
 
 function stripUnquotedInlineComment(value) {
   const quote = value[0];
@@ -126,6 +154,74 @@ function parseEnvFile(envFilePath, fsImpl = fs) {
   }
 
   return values;
+}
+
+function sanitizeGitLocalEnv(env = {}) {
+  const sanitized = { ...env };
+
+  for (const key of GIT_LOCAL_ENV_KEYS) {
+    delete sanitized[key];
+  }
+
+  return sanitized;
+}
+
+function resolveGitMetadataPath(value, baseDir) {
+  const trimmed = typeof value === 'string' ? value.trim() : '';
+
+  if (!trimmed) {
+    return null;
+  }
+
+  return path.resolve(baseDir, trimmed);
+}
+
+function readGitFileReference(filePath, fsImpl) {
+  const content = fsImpl.readFileSync(filePath, 'utf8');
+  const match = content.match(/^gitdir:\s*(.+?)\s*$/imu);
+
+  return match ? match[1] : null;
+}
+
+function resolveLinkedWorktreeGitCommonDir({
+  fsImpl = fs,
+  rootDir = ROOT_DIR,
+} = {}) {
+  if (typeof fsImpl.statSync !== 'function') {
+    return null;
+  }
+
+  const dotGitPath = path.join(rootDir, '.git');
+
+  if (!fsImpl.existsSync(dotGitPath)) {
+    return null;
+  }
+
+  const dotGitStat = fsImpl.statSync(dotGitPath);
+
+  if (!dotGitStat.isFile()) {
+    return null;
+  }
+
+  const gitDir = resolveGitMetadataPath(
+    readGitFileReference(dotGitPath, fsImpl),
+    rootDir
+  );
+
+  if (!gitDir) {
+    return null;
+  }
+
+  const commonDirFile = path.join(gitDir, 'commondir');
+
+  if (!fsImpl.existsSync(commonDirFile)) {
+    return gitDir;
+  }
+
+  return resolveGitMetadataPath(
+    fsImpl.readFileSync(commonDirFile, 'utf8').split(/\r?\n/u)[0],
+    gitDir
+  );
 }
 
 function getWebEnvFileCandidates({
@@ -308,6 +404,10 @@ function isTruthyEnvValue(value) {
   return /^(1|true|yes)$/iu.test(String(value ?? '').trim());
 }
 
+function isFalseyEnvValue(value) {
+  return /^(0|false|no|off)$/iu.test(String(value ?? '').trim());
+}
+
 function getEnvCandidate({ baseEnv, envData, key }) {
   if (Object.hasOwn(envData.values, key)) {
     return {
@@ -332,6 +432,18 @@ function getFirstEnvCandidate(candidates) {
   return candidates.find((candidate) => candidate && candidate.value != null);
 }
 
+function getEffectiveEnvFileSource({ envFilePath, fsImpl, rootDir }) {
+  const resolvedEnvFile = resolveWebEnvFile({
+    envFilePath,
+    fsImpl,
+    rootDir,
+  });
+
+  return resolvedEnvFile
+    ? path.relative(rootDir, resolvedEnvFile) || '.env.local'
+    : undefined;
+}
+
 function createSupabaseOriginEntry({ effective = true, key, source, value }) {
   return {
     classification: classifySupabaseOrigin(value),
@@ -353,6 +465,16 @@ function getDockerWebSupabaseOriginReport({
     fsImpl,
     rootDir,
   });
+  const effectiveEnvFileSource = getEffectiveEnvFileSource({
+    envFilePath,
+    fsImpl,
+    rootDir,
+  });
+  const envFileAllowLocal =
+    envData.sources[DOCKER_WEB_ALLOW_LOCAL_SUPABASE_ENV] ===
+    effectiveEnvFileSource
+      ? envData.values[DOCKER_WEB_ALLOW_LOCAL_SUPABASE_ENV]
+      : undefined;
   const nextPublicCandidate = getFirstEnvCandidate([
     getEnvCandidate({
       baseEnv,
@@ -403,7 +525,7 @@ function getDockerWebSupabaseOriginReport({
   return {
     allowLocal: isTruthyEnvValue(
       composeEnv?.[DOCKER_WEB_ALLOW_LOCAL_SUPABASE_ENV] ??
-        envData.values[DOCKER_WEB_ALLOW_LOCAL_SUPABASE_ENV] ??
+        envFileAllowLocal ??
         baseEnv[DOCKER_WEB_ALLOW_LOCAL_SUPABASE_ENV]
     ),
     entries: [
@@ -588,6 +710,19 @@ function getComposeEnvironment({
       baseEnv.DOCKER_WEB_NEXT_PRIVATE_ORIGIN,
       envFile.DOCKER_WEB_NEXT_PRIVATE_ORIGIN,
     ]) ?? DOCKER_WEB_NEXT_PRIVATE_ORIGIN;
+  const dockerWebFrontend = preferEnvFilePath
+    ? getFirstNonBlank([
+        envFile.DOCKER_WEB_FRONTEND,
+        baseEnv.DOCKER_WEB_FRONTEND,
+      ])
+    : getFirstNonBlank([
+        baseEnv.DOCKER_WEB_FRONTEND,
+        envFile.DOCKER_WEB_FRONTEND,
+      ]);
+
+  if (dockerWebFrontend) {
+    composeEnv.DOCKER_WEB_FRONTEND = dockerWebFrontend.trim();
+  }
 
   if (dockerInternalSupabaseUrl) {
     composeEnv.SUPABASE_URL = dockerInternalSupabaseUrl;
@@ -634,6 +769,14 @@ function getComposeEnvironment({
       rootDir,
     });
     composeEnv.CRON_SECRET = dockerCronRuntime.secret;
+
+    const dockerControlRuntime = getDockerControlRuntime({
+      baseEnv,
+      fsImpl,
+      rootDir,
+    });
+    composeEnv.PLATFORM_DOCKER_CONTROL_TOKEN = dockerControlRuntime.token;
+    composeEnv.PLATFORM_DOCKER_CONTROL_URL = dockerControlRuntime.url;
 
     const dockerMarkitdownRuntime = getDockerMarkitdownRuntime({
       baseEnv,
@@ -769,6 +912,12 @@ function getDockerWebRuntimePaths(rootDir = ROOT_DIR) {
   return {
     backendTokenFile: path.join(rootDir, 'tmp', 'docker-web', 'backend-token'),
     cronTokenFile: path.join(rootDir, 'tmp', 'docker-web', 'cron-token'),
+    dockerControlTokenFile: path.join(
+      rootDir,
+      'tmp',
+      'docker-web',
+      'docker-control-token'
+    ),
     markitdownTokenFile: path.join(
       rootDir,
       'tmp',
@@ -990,11 +1139,51 @@ function getDockerCloudflaredRuntime({
 } = {}) {
   return {
     token: getFirstNonBlank([
-      baseEnv.DOCKER_CLOUDFLARED_TOKEN,
-      baseEnv.CLOUDFLARED_TOKEN,
-      envFile.DOCKER_CLOUDFLARED_TOKEN,
-      envFile.CLOUDFLARED_TOKEN,
+      ...CLOUDFLARED_TOKEN_KEYS.map((key) => baseEnv[key]),
+      ...CLOUDFLARED_TOKEN_KEYS.map((key) => envFile[key]),
     ]),
+  };
+}
+
+function getDockerCloudflaredAutodetectEnvFile({
+  envFilePath,
+  rootDir = ROOT_DIR,
+} = {}) {
+  const rootEnvFile = path.join(rootDir, '.env.local');
+
+  if (envFilePath && path.resolve(envFilePath) !== path.resolve(rootEnvFile)) {
+    return envFilePath;
+  }
+
+  return rootEnvFile;
+}
+
+function getDockerCloudflaredAutodetect({
+  baseEnv = process.env,
+  envFilePath,
+  fsImpl = fs,
+  rootDir = ROOT_DIR,
+} = {}) {
+  if (isFalseyEnvValue(baseEnv.DOCKER_WEB_WITH_CLOUDFLARED)) {
+    return {
+      enabled: false,
+      token: null,
+    };
+  }
+
+  const envFile = parseEnvFile(
+    getDockerCloudflaredAutodetectEnvFile({ envFilePath, rootDir }),
+    fsImpl
+  );
+  const triggerToken = getFirstNonBlank([
+    baseEnv.CF_TUNNEL_TOKEN,
+    envFile.CF_TUNNEL_TOKEN,
+  ]);
+  const token = getDockerCloudflaredRuntime({ baseEnv, envFile }).token;
+
+  return {
+    enabled: typeof triggerToken === 'string' && triggerToken.trim().length > 0,
+    token: token ?? null,
   };
 }
 
@@ -1019,6 +1208,35 @@ function getDockerCronRuntime({
   }
 
   return { secret };
+}
+
+function getDockerControlRuntime({
+  baseEnv = process.env,
+  fsImpl = fs,
+  rootDir = ROOT_DIR,
+} = {}) {
+  const paths = getDockerWebRuntimePaths(rootDir);
+  const envToken = getFirstNonBlank([
+    baseEnv.DOCKER_PLATFORM_DOCKER_CONTROL_TOKEN,
+    baseEnv.PLATFORM_DOCKER_CONTROL_TOKEN,
+  ]);
+  const token =
+    envToken ??
+    getPersistedDockerToken(paths.dockerControlTokenFile, fsImpl) ??
+    generateDockerServiceToken();
+
+  if (token !== envToken) {
+    writeDockerToken(token, paths.dockerControlTokenFile, paths, fsImpl);
+  }
+
+  return {
+    token,
+    url:
+      getFirstNonBlank([
+        baseEnv.DOCKER_PLATFORM_DOCKER_CONTROL_URL,
+        baseEnv.PLATFORM_DOCKER_CONTROL_URL,
+      ]) ?? DOCKER_CONTROL_INTERNAL_URL,
+  };
 }
 
 function getDockerBackendRuntime({
@@ -1123,6 +1341,7 @@ function getDockerStorageUnzipRuntime({
 module.exports = {
   DEFAULT_DOCKER_WEB_COMPOSE_PROJECT_NAME,
   DOCKER_BACKEND_INTERNAL_URL,
+  DOCKER_CONTROL_INTERNAL_URL,
   DOCKER_WEB_MIGRATE_FROM_COMPOSE_PROJECT_ENV,
   DOCKER_WEB_NEXT_PRIVATE_ORIGIN,
   DOCKER_MARKITDOWN_ENDPOINT_URL,
@@ -1132,6 +1351,8 @@ module.exports = {
   DOCKER_STORAGE_UNZIP_PROXY_URL,
   DOCKER_WEB_BACKEND_TOKEN_FILE,
   DOCKER_WEB_CRON_TOKEN_FILE,
+  DOCKER_WEB_DOCKER_CONTROL_TOKEN_FILE,
+  DOCKER_WEB_GIT_COMMON_DIR_ENV,
   DOCKER_WEB_MARKITDOWN_TOKEN_FILE,
   DOCKER_WEB_ALLOW_LOCAL_SUPABASE_ENV,
   DOCKER_WEB_REDIS_TOKEN_FILE,
@@ -1142,6 +1363,7 @@ module.exports = {
   DOCKER_WEB_SUPERMEMORY_POSTGRES_PASSWORD_FILE,
   DOCKER_HOST_ALIAS,
   DOCKER_SUPERMEMORY_BASE_URL,
+  GIT_LOCAL_ENV_KEYS,
   LEGACY_WEB_ENV_FILE,
   LEGACY_DOCKER_WEB_COMPOSE_PROJECT_NAME,
   WEB_ENV_FILE,
@@ -1159,8 +1381,10 @@ module.exports = {
   getDefaultComposeProjectName,
   getDockerWebComposeProjectName,
   getDockerBackendRuntime,
+  getDockerCloudflaredAutodetect,
   getDockerCloudflaredRuntime,
   getDockerCronRuntime,
+  getDockerControlRuntime,
   getDockerMarkitdownRuntime,
   getDockerRedisRuntime,
   getDockerSupermemoryRuntime,
@@ -1172,8 +1396,10 @@ module.exports = {
   parseEnvFile,
   parseWebEnvFilesWithSources,
   parseWebEnvFiles,
+  resolveLinkedWorktreeGitCommonDir,
   resolveWebEnvFile,
   rewriteLocalhostUrl,
+  sanitizeGitLocalEnv,
   formatSupabaseOriginReport,
   stripUnquotedInlineComment,
   writeDockerRedisToken,

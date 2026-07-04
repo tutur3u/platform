@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
+  ChevronDown,
   Copy,
   KeyRound,
   Settings2,
@@ -14,15 +15,14 @@ import {
   updateInventoryPolarSettings,
 } from '@tuturuuu/internal-api/inventory';
 import { Button } from '@tuturuuu/ui/button';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@tuturuuu/ui/collapsible';
 import { Dialog, DialogClose, DialogTrigger } from '@tuturuuu/ui/dialog';
 import { Input } from '@tuturuuu/ui/input';
 import { toast } from '@tuturuuu/ui/sonner';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@tuturuuu/ui/tooltip';
 import { useTranslations } from 'next-intl';
 import type { FormEvent } from 'react';
 import { useEffect, useState } from 'react';
@@ -47,14 +47,6 @@ export function PolarSettingsPanel({ wsId }: { wsId: string }) {
   const [tokenEnvironment, setTokenEnvironment] =
     useState<InventoryPolarEnvironment>('sandbox');
 
-  // The inventory app proxies /api to the platform, so the current origin is the
-  // correct public webhook host. Resolved on the client to avoid a hydration
-  // mismatch.
-  useEffect(() => {
-    setWebhookUrl(
-      `${window.location.origin}/api/v1/inventory/polar/webhook/${wsId}`
-    );
-  }, [wsId]);
   const [testingEnvironment, setTestingEnvironment] = useState<
     InventoryPolarEnvironment | ''
   >('');
@@ -65,6 +57,18 @@ export function PolarSettingsPanel({ wsId }: { wsId: string }) {
     queryFn: () => getInventoryPolarSettings(wsId),
     queryKey: ['inventory', wsId, 'polar-settings'],
   });
+
+  // The inventory app proxies /api to the platform, so the current origin is the
+  // correct public webhook host. Build the URL from the RESOLVED workspace UUID
+  // (settings.wsId) — never the `personal` alias: Polar calls the webhook
+  // server-to-server with no session, so an alias can't be resolved and every
+  // delivery would fail signature lookup (Polar then disables the endpoint).
+  const resolvedWsId = settings.data?.wsId ?? wsId;
+  useEffect(() => {
+    setWebhookUrl(
+      `${window.location.origin}/api/v1/inventory/polar/webhook/${resolvedWsId}`
+    );
+  }, [resolvedWsId]);
   const tokenMutation = useMutation({
     mutationFn: () =>
       updateInventoryPolarSettings(wsId, {
@@ -246,48 +250,40 @@ export function PolarSettingsPanel({ wsId }: { wsId: string }) {
         </form>
       </div>
 
-      <div className="rounded-lg border border-border bg-card p-4">
-        <div className="flex min-w-0 items-start gap-3">
-          <span className="mt-1 inline-flex h-9 w-9 items-center justify-center rounded-md border border-border bg-primary/10 text-primary">
+      <Collapsible className="rounded-lg border border-border bg-card">
+        <CollapsibleTrigger className="group flex w-full min-w-0 items-start gap-3 p-4 text-left">
+          <span className="mt-1 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-border bg-primary/10 text-primary">
             <Webhook className="h-4 w-4" />
           </span>
-          <div className="min-w-0">
-            <div className="flex items-center gap-2">
-              <p className="font-semibold">{t('webhookTitle')}</p>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <span className="inline-flex h-4 w-4 cursor-help items-center justify-center rounded-full border border-border text-[10px] text-muted-foreground">
-                      ?
-                    </span>
-                  </TooltipTrigger>
-                  <TooltipContent className="max-w-xs">
-                    {t('webhookGuidance')}
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            </div>
+          <div className="min-w-0 flex-1">
+            <p className="font-semibold">{t('webhookTitle')}</p>
             <p className="mt-1 text-muted-foreground text-sm">
               {t('webhookDescription')}
             </p>
           </div>
-        </div>
-        <div className="mt-3 flex flex-wrap items-center gap-2">
-          <code className="min-w-0 flex-1 truncate rounded-md border border-border bg-muted/40 px-3 py-2 font-mono text-xs">
-            {webhookUrl || `…/api/v1/inventory/polar/webhook/${wsId}`}
-          </code>
-          <Button
-            disabled={!webhookUrl}
-            onClick={copyWebhookUrl}
-            size="sm"
-            type="button"
-            variant="outline"
-          >
-            <Copy className="h-4 w-4" />
-            {t('webhookCopy')}
-          </Button>
-        </div>
-      </div>
+          <ChevronDown className="mt-1 h-4 w-4 shrink-0 text-muted-foreground transition-transform group-data-[state=open]:rotate-180" />
+        </CollapsibleTrigger>
+        <CollapsibleContent className="grid gap-2 px-4 pb-4">
+          <div className="flex flex-wrap items-center gap-2">
+            <code className="min-w-0 flex-1 truncate rounded-md border border-border bg-muted/40 px-3 py-2 font-mono text-xs">
+              {webhookUrl || `…/api/v1/inventory/polar/webhook/${resolvedWsId}`}
+            </code>
+            <Button
+              disabled={!webhookUrl}
+              onClick={copyWebhookUrl}
+              size="sm"
+              type="button"
+              variant="outline"
+            >
+              <Copy className="h-4 w-4" />
+              {t('webhookCopy')}
+            </Button>
+          </div>
+          <p className="text-muted-foreground text-xs">
+            {t('webhookGuidance')}
+          </p>
+        </CollapsibleContent>
+      </Collapsible>
 
       <div className="grid gap-3 lg:grid-cols-2">
         {environments.map((environment) => {

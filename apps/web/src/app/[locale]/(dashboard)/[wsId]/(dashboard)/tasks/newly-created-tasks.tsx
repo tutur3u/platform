@@ -4,6 +4,7 @@ import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
+import { getTasksAppOrigin } from '@/lib/tasks-app-url';
 import ExpandableTaskList from './expandable-task-list';
 
 interface NewlyCreatedTasksProps {
@@ -15,6 +16,7 @@ export default async function NewlyCreatedTasks({
 }: NewlyCreatedTasksProps) {
   const supabase = await createClient();
   const t = await getTranslations('dashboard');
+  const tasksBoardsHref = `${getTasksAppOrigin()}/${wsId}/boards`;
   // Get recently created tasks (last 7 days)
   const sevenDaysAgo = new Date();
   sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
@@ -74,7 +76,7 @@ export default async function NewlyCreatedTasks({
           </div>
           <div className="line-clamp-1">{t('recently_created_tasks')}</div>
         </CardTitle>
-        <Link href={`/${wsId}/tasks/boards`}>
+        <Link href={tasksBoardsHref}>
           <Button
             variant="ghost"
             size="sm"
@@ -102,7 +104,7 @@ export default async function NewlyCreatedTasks({
               </p>
             </div>
             <div className="mt-8">
-              <Link href={`/${wsId}/tasks/boards`}>
+              <Link href={tasksBoardsHref}>
                 <Button
                   variant="outline"
                   size="sm"

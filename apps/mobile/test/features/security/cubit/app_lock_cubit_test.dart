@@ -41,7 +41,20 @@ void main() {
       act: (cubit) => cubit.load(),
       expect: () => [
         const AppLockState(status: AppLockStatus.loading),
-        const AppLockState(enabled: true),
+        const AppLockState(enabled: true, hasLoaded: true),
+      ],
+    );
+
+    blocTest<AppLockCubit, AppLockState>(
+      'locks authenticated startup after persisted lock setting loads',
+      setUp: () {
+        when(settingsStore.isEnabled).thenAnswer((_) async => true);
+      },
+      build: buildCubit,
+      act: (cubit) => cubit.load(lockIfEnabled: true),
+      expect: () => [
+        const AppLockState(status: AppLockStatus.loading),
+        const AppLockState(enabled: true, locked: true, hasLoaded: true),
       ],
     );
 
@@ -52,7 +65,7 @@ void main() {
           cubit.setEnabled(enabled: true, reason: 'Enable app lock'),
       expect: () => [
         const AppLockState(status: AppLockStatus.authenticating),
-        const AppLockState(enabled: true),
+        const AppLockState(enabled: true, hasLoaded: true),
       ],
       verify: (_) {
         verify(
@@ -64,6 +77,7 @@ void main() {
 
     blocTest<AppLockCubit, AppLockState>(
       'blocks QR approval when app lock is disabled',
+      seed: () => const AppLockState(hasLoaded: true),
       build: buildCubit,
       act: (cubit) async {
         final approved = await cubit.authenticateForQrLogin(

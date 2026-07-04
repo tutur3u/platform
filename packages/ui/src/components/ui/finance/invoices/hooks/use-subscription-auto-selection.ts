@@ -16,14 +16,9 @@ import type {
 } from '../types';
 import type { UserGroup } from '../utils';
 import {
-  getEffectiveAttendanceDays,
+  getBillableQuantityMapForGroupsRange,
   getEffectiveDays,
-  getSessionsForMonth,
-  getSessionsUntilMonth,
-  getSubscriptionCoverageInvoiceForGroup,
   getTotalSessionsForGroups,
-  isSubscriptionMonthPaidForGroup,
-  parseLocalCalendarDate,
 } from '../utils';
 
 interface UseSubscriptionAutoSelectionProps {
@@ -42,6 +37,7 @@ interface UseSubscriptionAutoSelectionProps {
     created_at?: string | null;
   }[];
   onSelectedProductsChange: Dispatch<SetStateAction<SelectedProductItem[]>>;
+  prepaidMonthCount?: number;
 }
 
 export type UseSubscriptionAutoSelectionResult = undefined;
@@ -165,54 +161,59 @@ const computeGroupAttendanceDaysMap = (
   }[],
   selectedMonth: string,
   userAttendance: { status: string; date: string; group_id?: string }[],
-  useAttendanceBased: boolean
+  useAttendanceBased: boolean,
+  prepaidMonthCount = 1
 ) => {
-  const groupAttendanceDaysMap: Record<string, number> = {};
+  return getBillableQuantityMapForGroupsRange({
+    groupIds: selectedGroupIds,
+    latestInvoices: latestSubscriptionInvoices,
+    prepaidMonthCount,
+    selectedMonth,
+    useAttendanceBased,
+    userAttendance,
+    userGroups,
+  });
+};
 
-  for (const groupId of selectedGroupIds) {
-    const group = userGroups.find(
-      (g) => g.workspace_user_groups?.id === groupId
-    );
-    if (!group) continue;
+const sumQuantityMap = (quantityMap: Record<string, number>) =>
+  Object.values(quantityMap).reduce((total, value) => total + value, 0);
 
-    const latestInvoice = getSubscriptionCoverageInvoiceForGroup(
-      latestSubscriptionInvoices,
-      groupId
-    );
-    const validUntil = latestInvoice?.valid_until
-      ? parseLocalCalendarDate(latestInvoice.valid_until)
-      : null;
-
-    const isGroupPaid = isSubscriptionMonthPaidForGroup(
-      groupId,
-      selectedMonth,
-      latestSubscriptionInvoices
-    );
-
-    const sessionsArray = group.workspace_user_groups?.sessions || [];
-    const groupSessions = isGroupPaid
-      ? 0
-      : validUntil
-        ? getSessionsUntilMonth(sessionsArray, selectedMonth, validUntil)
-        : getSessionsForMonth(sessionsArray, selectedMonth);
-
-    if (useAttendanceBased) {
-      const groupAttendance = isGroupPaid
-        ? []
-        : userAttendance.filter((a) => {
-            if (a.group_id !== groupId) return false;
-            if (!validUntil) return true;
-            const attendanceDate = parseLocalCalendarDate(a.date);
-            return attendanceDate >= validUntil;
-          });
-      groupAttendanceDaysMap[groupId] =
-        getEffectiveAttendanceDays(groupAttendance);
-    } else {
-      groupAttendanceDaysMap[groupId] = groupSessions;
-    }
+const computeFallbackAttendanceDays = ({
+  groupAttendanceDaysMap,
+  latestSubscriptionInvoices,
+  prepaidMonthCount,
+  selectedGroupIds,
+  selectedMonth,
+  useAttendanceBased,
+  userAttendance,
+  userGroups,
+}: {
+  groupAttendanceDaysMap: Record<string, number>;
+  latestSubscriptionInvoices: {
+    group_id?: string;
+    valid_until?: string | null;
+    created_at?: string | null;
+  }[];
+  prepaidMonthCount: number;
+  selectedGroupIds: string[];
+  selectedMonth: string;
+  useAttendanceBased: boolean;
+  userAttendance: { status: string; date: string; group_id?: string }[];
+  userGroups: UserGroup[];
+}): number => {
+  const mappedQuantity = sumQuantityMap(groupAttendanceDaysMap);
+  if (mappedQuantity > 0 || prepaidMonthCount > 1) {
+    return mappedQuantity;
   }
 
-  return groupAttendanceDaysMap;
+  const totalSessions = getTotalSessionsForGroups(
+    userGroups,
+    selectedGroupIds,
+    selectedMonth,
+    latestSubscriptionInvoices
+  );
+
+  return getEffectiveDays(userAttendance, totalSessions, useAttendanceBased);
 };
 
 export function useSubscriptionAutoSelection({
@@ -227,6 +228,7 @@ export function useSubscriptionAutoSelection({
   userAttendance,
   latestSubscriptionInvoices,
   onSelectedProductsChange,
+  prepaidMonthCount = 1,
 }: UseSubscriptionAutoSelectionProps): UseSubscriptionAutoSelectionResult {
   const t = useTranslations();
   const previousGroupIdRef = useRef<string>('');
@@ -248,7 +250,8 @@ export function useSubscriptionAutoSelection({
         latestSubscriptionInvoices,
         selectedMonth,
         userAttendance,
-        useAttendanceBased
+        useAttendanceBased,
+        prepaidMonthCount
       ),
     [
       sortedSelectedGroupIds,
@@ -257,6 +260,7 @@ export function useSubscriptionAutoSelection({
       selectedMonth,
       userAttendance,
       useAttendanceBased,
+      prepaidMonthCount,
     ]
   );
 
@@ -307,18 +311,22 @@ export function useSubscriptionAutoSelection({
 
     fallbackToastShownRef.current = false;
 
-    const totalSessions = getTotalSessionsForGroups(
-      userGroups,
-      sortedSelectedGroupIds,
-      selectedMonth,
-      latestSubscriptionInvoices
-    );
-
     const shouldUsePrefill =
-      prefillAmount != null && !initialPrefillUsedRef.current;
+      prepaidMonthCount === 1 &&
+      prefillAmount != null &&
+      !initialPrefillUsedRef.current;
     const attendanceDays = shouldUsePrefill
       ? prefillAmount
-      : getEffectiveDays(userAttendance, totalSessions, useAttendanceBased);
+      : computeFallbackAttendanceDays({
+          groupAttendanceDaysMap,
+          latestSubscriptionInvoices,
+          prepaidMonthCount,
+          selectedGroupIds: sortedSelectedGroupIds,
+          selectedMonth,
+          useAttendanceBased,
+          userAttendance,
+          userGroups,
+        });
 
     updateSelectedProducts(
       attendanceDays,
@@ -340,6 +348,7 @@ export function useSubscriptionAutoSelection({
     latestSubscriptionInvoices,
     updateSelectedProducts,
     groupAttendanceDaysMap,
+    prepaidMonthCount,
   ]);
 
   // Auto-add group products based on attendance when group is selected
@@ -352,22 +361,24 @@ export function useSubscriptionAutoSelection({
       return;
     }
 
-    if (prefillAmount != null && !initialPrefillUsedRef.current) {
+    if (
+      prepaidMonthCount === 1 &&
+      prefillAmount != null &&
+      !initialPrefillUsedRef.current
+    ) {
       return;
     }
 
-    const totalSessions = getTotalSessionsForGroups(
-      userGroups,
-      sortedSelectedGroupIds,
+    const attendanceDays = computeFallbackAttendanceDays({
+      groupAttendanceDaysMap,
+      latestSubscriptionInvoices,
+      prepaidMonthCount,
+      selectedGroupIds: sortedSelectedGroupIds,
       selectedMonth,
-      latestSubscriptionInvoices
-    );
-
-    const attendanceDays = getEffectiveDays(
+      useAttendanceBased,
       userAttendance,
-      totalSessions,
-      useAttendanceBased
-    );
+      userGroups,
+    });
 
     if (attendanceDays === 0) return;
 
@@ -409,5 +420,6 @@ export function useSubscriptionAutoSelection({
     onSelectedProductsChange,
     products,
     groupAttendanceDaysMap,
+    prepaidMonthCount,
   ]);
 }

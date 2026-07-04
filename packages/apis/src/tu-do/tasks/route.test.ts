@@ -16,6 +16,7 @@ const SOURCE_BOARD_ID = '66666666-6666-4666-8666-666666666666';
 const SOURCE_LIST_ID = '77777777-7777-4777-8777-777777777777';
 const PLACED_TASK_ID = '88888888-8888-4888-8888-888888888888';
 const UNPLACED_TASK_ID = '99999999-9999-4999-8999-999999999999';
+const LOCAL_TASK_ID = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 
 const mocks = vi.hoisted(() => {
   const adminQueues = new Map<string, QueryResult[]>();
@@ -454,6 +455,90 @@ describe('workspace task route personal external loading', () => {
       ['task_lists.workspace_boards.deleted_at', null],
     ]);
     expect(taskQuery?.calls).toContainEqual(['ilike', ['name', '%cms%']]);
+  });
+
+  it('keeps board task reads available when relationship summaries fail', async () => {
+    queueResult(mocks.adminQueues, 'workspaces', {
+      data: { personal: false },
+      error: null,
+    });
+    queueResult(mocks.adminQueues, 'tasks', {
+      data: [boardTask(PLACED_TASK_ID)],
+      error: null,
+      count: 1,
+    });
+    queueResult(mocks.adminQueues, 'task_relationships', {
+      data: null,
+      error: { message: 'relationship query failed' },
+    });
+    queueResult(mocks.adminQueues, 'task_relationships', {
+      data: [],
+      error: null,
+    });
+    const consoleErrorSpy = vi
+      .spyOn(console, 'error')
+      .mockImplementation(() => {});
+
+    const { GET } = await import('./route.js');
+    const response = await GET(
+      new NextRequest(
+        `http://localhost/api/v1/workspaces/ws-1/tasks?boardId=${PERSONAL_BOARD_ID}`
+      ),
+      { params: Promise.resolve({ wsId: 'ws-1' }) }
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+      tasks: [
+        expect.objectContaining({
+          id: PLACED_TASK_ID,
+          relationship_summary: {
+            blocked_by_count: 0,
+            blocking_count: 0,
+            child_count: 0,
+            completed_child_count: 0,
+            parent_task: null,
+            parent_task_id: null,
+            related_count: 0,
+          },
+        }),
+      ],
+    });
+    expect(
+      mocks.adminQueries.some((query) => query.table === 'task_relationships')
+    ).toBe(true);
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
+      'Failed to load task relationship summaries:',
+      expect.any(Error)
+    );
+  });
+
+  it('skips relationship summary queries when the client opts out', async () => {
+    queueResult(mocks.adminQueues, 'workspaces', {
+      data: { personal: false },
+      error: null,
+    });
+    queueResult(mocks.adminQueues, 'tasks', {
+      data: [boardTask(PLACED_TASK_ID)],
+      error: null,
+      count: 1,
+    });
+
+    const { GET } = await import('./route.js');
+    const response = await GET(
+      new NextRequest(
+        `http://localhost/api/v1/workspaces/ws-1/tasks?boardId=${PERSONAL_BOARD_ID}&includeRelationshipSummary=false`
+      ),
+      { params: Promise.resolve({ wsId: 'ws-1' }) }
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+      tasks: [expect.objectContaining({ id: PLACED_TASK_ID })],
+    });
+    expect(
+      mocks.adminQueries.some((query) => query.table === 'task_relationships')
+    ).toBe(false);
   });
 
   it('hydrates per-user scheduling settings for returned board tasks', async () => {
@@ -917,6 +1002,200 @@ describe('workspace task route personal external loading', () => {
       })
     );
     expectSourceMembershipQueriesRequireMemberAccess();
+  });
+
+  it('serves the production app-session personal board due-date query without count RPC noise', async () => {
+    const dueLocalTask = {
+      ...boardTask(LOCAL_TASK_ID),
+      end_date: '2026-07-04T08:00:00.000Z',
+    };
+    const duePlacedTask = {
+      ...externalTask(PLACED_TASK_ID),
+      end_date: '2026-07-04T09:00:00.000Z',
+    };
+    const dueDefaultTask = {
+      ...externalTask(UNPLACED_TASK_ID),
+      end_date: '2026-07-05T09:00:00.000Z',
+    };
+    const consoleWarnSpy = vi
+      .spyOn(console, 'warn')
+      .mockImplementation(() => {});
+
+    queuePersonalWorkspace();
+    queueResult(mocks.adminQueues, 'tasks', {
+      data: [dueLocalTask],
+      error: null,
+      count: 1,
+    });
+    queueResult(mocks.adminQueues, 'task_user_overrides', {
+      data: [
+        {
+          task_id: PLACED_TASK_ID,
+          personal_board_id: PERSONAL_BOARD_ID,
+          personal_list_id: PERSONAL_LIST_ID,
+          personal_sort_key: 1_500_000,
+          personal_added_at: '2026-05-07T00:00:00.000Z',
+          personal_placed_at: '2026-05-07T01:00:00.000Z',
+        },
+      ],
+      error: null,
+      count: 1,
+    });
+    queueResult(mocks.adminQueues, 'tasks', {
+      data: [duePlacedTask],
+      error: null,
+    });
+    queueSourceMembership();
+    queueResult(mocks.adminQueues, 'tasks', {
+      data: [duePlacedTask, dueDefaultTask],
+      error: null,
+      count: 2,
+    });
+    queueSourceMembership();
+    queueEmptyPersonalMetadata();
+    queueResult(mocks.memberQueues, 'task_user_scheduling_settings', {
+      data: [],
+      error: null,
+    });
+
+    const { handleTaskRouteGET } = await import('./route.js');
+    const response = await handleTaskRouteGET(
+      new NextRequest(
+        `http://localhost/api/v1/workspaces/${PERSONAL_WS_ID}/tasks?boardId=${PERSONAL_BOARD_ID}&sourceScope=all_visible&listStatuses=not_started,active&limit=200&offset=0&completed=exclude&closed=exclude&hasDueDate=true&externalSortBy=due-asc&includeRelationshipSummary=false&includeCount=true`
+      ),
+      { params: Promise.resolve({ wsId: PERSONAL_WS_ID }) },
+      {
+        appSession: true,
+        supabase: mocks.memberClient as never,
+        user: { id: USER_ID } as never,
+      }
+    );
+
+    expect(response.status).toBe(200);
+    const payload = await response.json();
+    const taskIds = payload.tasks.map((task: { id: string }) => task.id);
+
+    expect(taskIds).toEqual([LOCAL_TASK_ID, PLACED_TASK_ID, UNPLACED_TASK_ID]);
+    expect(new Set(taskIds).size).toBe(taskIds.length);
+    expect(payload.count).toBe(3);
+    expect(consoleWarnSpy).not.toHaveBeenCalled();
+    expect(mocks.memberClient.rpc).not.toHaveBeenCalledWith(
+      'get_personal_task_board_external_counts',
+      expect.anything()
+    );
+    expect(mocks.adminSchemaClient.rpc).not.toHaveBeenCalledWith(
+      'list_task_source_filter_ids',
+      expect.anything()
+    );
+    consoleWarnSpy.mockRestore();
+
+    const placedExternalQuery = mocks.adminQueries.find(
+      (query) =>
+        query.table === 'tasks' &&
+        query.calls.some(
+          ([method, args]) =>
+            method === 'in' &&
+            args[0] === 'id' &&
+            Array.isArray(args[1]) &&
+            args[1].includes(PLACED_TASK_ID)
+        )
+    );
+    const defaultExternalQuery = mocks.adminQueries.find(
+      (query) =>
+        query.table === 'tasks' &&
+        query.calls.some(
+          ([method, args]) =>
+            method === 'neq' &&
+            args[0] === 'task_lists.workspace_boards.ws_id' &&
+            args[1] === PERSONAL_WS_ID
+        )
+    );
+
+    for (const query of [placedExternalQuery, defaultExternalQuery]) {
+      expect(query?.calls).toContainEqual([
+        'in',
+        ['task_lists.status', ['not_started', 'active']],
+      ]);
+      expect(query?.calls).toContainEqual(['is', ['completed_at', null]]);
+      expect(query?.calls).toContainEqual(['is', ['closed_at', null]]);
+      expect(query?.calls).toContainEqual(['not', ['end_date', 'is', null]]);
+    }
+
+    expect(defaultExternalQuery?.calls).toContainEqual([
+      'order',
+      ['end_date', { ascending: true, nullsFirst: false }],
+    ]);
+    expect(defaultExternalQuery?.calls).toContainEqual(['range', [0, 199]]);
+  });
+
+  it('keeps personal external tasks readable when optional metadata fails', async () => {
+    const dueDefaultTask = {
+      ...externalTask(UNPLACED_TASK_ID),
+      end_date: '2026-07-05T09:00:00.000Z',
+    };
+    const consoleErrorSpy = vi
+      .spyOn(console, 'error')
+      .mockImplementation(() => {});
+
+    queuePersonalWorkspace();
+    queueResult(mocks.adminQueues, 'tasks', {
+      data: [],
+      error: null,
+      count: 0,
+    });
+    queueResult(mocks.adminQueues, 'task_user_overrides', {
+      data: [],
+      error: null,
+      count: 0,
+    });
+    queueResult(mocks.adminQueues, 'tasks', {
+      data: [dueDefaultTask],
+      error: null,
+      count: 1,
+    });
+    queueSourceMembership();
+    queueResult(mocks.adminQueues, 'task_user_override_labels', {
+      data: null,
+      error: { message: 'metadata unavailable' },
+    });
+    queueResult(mocks.adminQueues, 'task_user_override_projects', {
+      data: [],
+      error: null,
+    });
+    queueResult(mocks.memberQueues, 'task_user_scheduling_settings', {
+      data: [],
+      error: null,
+    });
+
+    const { GET } = await import('./route.js');
+    const response = await GET(
+      new NextRequest(
+        `http://localhost/api/v1/workspaces/${PERSONAL_WS_ID}/tasks?boardId=${PERSONAL_BOARD_ID}&sourceScope=all_visible&listStatuses=not_started,active&limit=200&offset=0&completed=exclude&closed=exclude&hasDueDate=true&externalSortBy=due-asc&includeRelationshipSummary=false`
+      ),
+      { params: Promise.resolve({ wsId: PERSONAL_WS_ID }) }
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+      tasks: [
+        expect.objectContaining({
+          id: UNPLACED_TASK_ID,
+          labels: [],
+          projects: [],
+        }),
+      ],
+    });
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
+      'Failed to load personal task metadata; continuing with empty metadata:',
+      expect.any(Error),
+      expect.objectContaining({
+        boardId: PERSONAL_BOARD_ID,
+        route: '/api/v1/workspaces/[wsId]/tasks',
+        sourceScope: 'all_visible',
+        workspaceId: PERSONAL_WS_ID,
+      })
+    );
+    consoleErrorSpy.mockRestore();
   });
 
   it('uses RPC-backed external counts for personal list totals', async () => {

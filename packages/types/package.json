@@ -1,7 +1,7 @@
 {
   "name": "@tuturuuu/types",
   "license": "MIT",
-  "version": "0.9.0",
+  "version": "0.14.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/tutur3u/platform",
@@ -14,24 +14,23 @@
     "access": "public"
   },
   "scripts": {
-    "build": "tsgo --project tsconfig.build.json",
-    "dev": "tsgo --project tsconfig.build.json --watch --incremental",
-    "type-check": "tsgo --project tsconfig.build.json",
+    "build": "tsc --project tsconfig.build.json",
+    "dev": "tsc --project tsconfig.build.json --watch --incremental",
+    "type-check": "tsc --project tsconfig.build.json",
     "clean": "rm -rf dist .turbo",
     "prepublishOnly": "bun run clean && bun run build"
   },
   "dependencies": {
-    "@tiptap/react": "3.26.1",
+    "@tiptap/react": "3.27.1",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "zod": "^4.4.3"
   },
   "devDependencies": {
     "@tuturuuu/typescript-config": "workspace:*",
-    "@types/node": "^25.9.3",
+    "@types/node": "^26.0.1",
     "@types/react": "^19.2.17",
-    "@typescript/native-preview": "^7.0.0-dev.20260614.1",
-    "typescript": "^6.0.3"
+    "typescript": "7.0.1-rc"
   },
   "exports": {
     ".": {

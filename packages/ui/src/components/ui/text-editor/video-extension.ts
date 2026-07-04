@@ -29,6 +29,15 @@ const VIDEO_INPUT_REGEX = /!\[(.+|:?)]\((\S+)(?:(?:\s+)["'](\S+)["'])?\)/;
 
 interface VideoOptions {
   onVideoUpload?: (file: File) => Promise<string>;
+  getOnVideoUpload?: () => ((file: File) => Promise<string>) | undefined;
+}
+
+function resolveVideoUploadHandler(options: VideoOptions) {
+  if (options.getOnVideoUpload) {
+    return options.getOnVideoUpload();
+  }
+
+  return options.onVideoUpload;
 }
 
 /**
@@ -114,8 +123,6 @@ export const Video = (options: VideoOptions = {}) =>
     },
 
     addProseMirrorPlugins() {
-      const { onVideoUpload } = options;
-
       return [
         // Video upload placeholder plugin - manages loading state decorations
         new Plugin({
@@ -166,6 +173,7 @@ export const Video = (options: VideoOptions = {}) =>
           props: {
             handleDOMEvents: {
               paste: (view, event: ClipboardEvent) => {
+                const onVideoUpload = resolveVideoUploadHandler(options);
                 if (!onVideoUpload) return false;
 
                 const items = event.clipboardData?.items;
@@ -303,6 +311,7 @@ export const Video = (options: VideoOptions = {}) =>
           props: {
             handleDOMEvents: {
               drop(view, event) {
+                const onVideoUpload = resolveVideoUploadHandler(options);
                 if (!onVideoUpload) return false;
 
                 const { schema } = view.state;

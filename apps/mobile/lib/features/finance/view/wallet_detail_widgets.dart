@@ -18,6 +18,7 @@ class WalletDetailSummaryCard extends StatelessWidget {
     required this.exchangeRates,
     required this.showAmounts,
     this.onEdit,
+    this.onOpenCheckpoints,
     super.key,
   });
 
@@ -27,6 +28,7 @@ class WalletDetailSummaryCard extends StatelessWidget {
   final List<ExchangeRate> exchangeRates;
   final bool showAmounts;
   final VoidCallback? onEdit;
+  final VoidCallback? onOpenCheckpoints;
 
   @override
   Widget build(BuildContext context) {
@@ -104,10 +106,29 @@ class WalletDetailSummaryCard extends StatelessWidget {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  shad.OutlineButton(
-                    density: shad.ButtonDensity.icon,
-                    onPressed: onEdit,
-                    child: const Icon(Icons.edit_outlined, size: 16),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (onOpenCheckpoints != null) ...[
+                        Tooltip(
+                          message: context.l10n.financeCheckpointsTitle,
+                          child: shad.OutlineButton(
+                            density: shad.ButtonDensity.icon,
+                            onPressed: onOpenCheckpoints,
+                            child: const Icon(
+                              Icons.fact_check_outlined,
+                              size: 16,
+                            ),
+                          ),
+                        ),
+                        const shad.Gap(8),
+                      ],
+                      shad.OutlineButton(
+                        density: shad.ButtonDensity.icon,
+                        onPressed: onEdit,
+                        child: const Icon(Icons.edit_outlined, size: 16),
+                      ),
+                    ],
                   ),
                   const shad.Gap(12),
                   FinanceAmountText(

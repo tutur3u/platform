@@ -4,7 +4,7 @@ create extension if not exists pgtap with schema extensions;
 
 set local search_path = public, extensions;
 
-select plan(7);
+select plan(13);
 
 insert into public.users (id, display_name)
 values
@@ -127,6 +127,57 @@ values
 on conflict (product_id, unit_id, warehouse_id) do update
 set amount = excluded.amount;
 
+select lives_ok(
+  $$
+    update private.inventory_products
+    set
+      revenue_share_partner_id = '00000000-0000-4000-8000-000000000351',
+      revenue_share_bps = 2500
+    where product_id = '00000000-0000-4000-8000-000000000401'
+      and unit_id = '00000000-0000-4000-8000-000000000501'
+      and warehouse_id = '00000000-0000-4000-8000-000000000601'
+  $$,
+  'stock revenue share accepts partners from the same workspace'
+);
+
+select is(
+  (
+    select revenue_share_bps
+    from private.inventory_products
+    where product_id = '00000000-0000-4000-8000-000000000401'
+      and unit_id = '00000000-0000-4000-8000-000000000501'
+      and warehouse_id = '00000000-0000-4000-8000-000000000601'
+  ),
+  2500,
+  'stock revenue share split is persisted in basis points'
+);
+
+select throws_ok(
+  $$
+    update private.inventory_products
+    set revenue_share_partner_id = '00000000-0000-4000-8000-000000000352'
+    where product_id = '00000000-0000-4000-8000-000000000401'
+      and unit_id = '00000000-0000-4000-8000-000000000501'
+      and warehouse_id = '00000000-0000-4000-8000-000000000601'
+  $$,
+  'P0001',
+  'INVALID_REVENUE_SHARE_PARTNER_WORKSPACE_SCOPE',
+  'stock revenue share rejects partners from another workspace'
+);
+
+select throws_ok(
+  $$
+    update private.inventory_products
+    set revenue_share_bps = 10001
+    where product_id = '00000000-0000-4000-8000-000000000401'
+      and unit_id = '00000000-0000-4000-8000-000000000501'
+      and warehouse_id = '00000000-0000-4000-8000-000000000601'
+  $$,
+  '23514',
+  'new row for relation "inventory_products" violates check constraint "inventory_products_revenue_share_bps_check"',
+  'stock revenue share split rejects values above 100 percent'
+);
+
 insert into private.inventory_storefronts (
   id,
   ws_id,
@@ -209,6 +260,28 @@ select throws_ok(
   'bundle components reject stock from another workspace'
 );
 
+select throws_ok(
+  $$
+    insert into private.inventory_bundle_category_components (
+      bundle_id,
+      category_id,
+      quantity_required,
+      free_quantity,
+      discount_strategy
+    )
+    values (
+      '00000000-0000-4000-8000-000000000801',
+      '00000000-0000-4000-8000-000000000302',
+      3,
+      1,
+      'cheapest_free'
+    )
+  $$,
+  'P0001',
+  'INVALID_BUNDLE_CATEGORY_COMPONENT_WORKSPACE_SCOPE',
+  'category bundle components reject categories from another workspace'
+);
+
 select lives_ok(
   $$
     insert into private.inventory_bundle_components (
@@ -272,14 +345,40 @@ select lives_ok(
   'reservation helper accepts stock from the checkout workspace'
 );
 
+select lives_ok(
+  $$
+    update private.inventory_products
+    set amount = null
+    where product_id = '00000000-0000-4000-8000-000000000401'
+      and unit_id = '00000000-0000-4000-8000-000000000501'
+      and warehouse_id = '00000000-0000-4000-8000-000000000601';
+
+    select public._inventory_create_reserved_line(
+      '00000000-0000-4000-8000-000000000201',
+      '00000000-0000-4000-8000-000000000901',
+      null,
+      '00000000-0000-4000-8000-000000000801',
+      '00000000-0000-4000-8000-000000000401',
+      '00000000-0000-4000-8000-000000000501',
+      '00000000-0000-4000-8000-000000000601',
+      'Unlimited attacker line',
+      12,
+      100,
+      now() + interval '15 minutes',
+      now()
+    )
+  $$,
+  'reservation helper accepts unlimited stock rows'
+);
+
 select is(
   (
     select count(*)::int
     from private.inventory_reservations
     where checkout_session_id = '00000000-0000-4000-8000-000000000901'
   ),
-  1,
-  'only the same-workspace reservation was persisted'
+  2,
+  'only same-workspace reservations were persisted'
 );
 
 select is(
@@ -288,7 +387,7 @@ select is(
     from private.inventory_reservations
     where checkout_session_id = '00000000-0000-4000-8000-000000000901'
   ),
-  2::bigint,
+  14::bigint,
   'reservation amount belongs to the same-workspace stock line'
 );
 

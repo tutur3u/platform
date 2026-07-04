@@ -1,8 +1,50 @@
+import type {
+  PostApprovalItem,
+  PostLogEntry,
+  ReportApprovalItem,
+  ReportLogEntry,
+  WorkspaceUser,
+} from '@tuturuuu/types/db';
 import {
   encodePathSegment,
   getInternalApiClient,
   type InternalApiClientOptions,
+  withTaskApiBaseUrl,
 } from './client';
+
+export interface CurrentWorkspaceUserLink {
+  platform_user_id: string;
+  virtual_user_id: string;
+  ws_id: string;
+  created_at: string;
+  workspace_users?: WorkspaceUser;
+}
+
+export interface CurrentWorkspaceUserResponse {
+  data: CurrentWorkspaceUserLink;
+}
+
+/**
+ * Reads the current authenticated caller's workspace-user link for `wsId` via
+ * `GET /api/v1/workspaces/:wsId/users/me` (forwarded auth). Provides the
+ * `virtual_user_id` user-scoped dashboard pages need without a direct Supabase
+ * read. Returns `null` when the caller has no link (404).
+ */
+export async function getCurrentWorkspaceUserLink(
+  workspaceId: string,
+  options?: InternalApiClientOptions
+): Promise<CurrentWorkspaceUserLink | null> {
+  const client = getInternalApiClient(options);
+  try {
+    const payload = await client.json<CurrentWorkspaceUserResponse>(
+      `/api/v1/workspaces/${encodePathSegment(workspaceId)}/users/me`,
+      { cache: 'no-store' }
+    );
+    return payload.data ?? null;
+  } catch {
+    return null;
+  }
+}
 
 type UserConfigResponse = {
   value: string | null;
@@ -13,6 +55,48 @@ type UserWorkspaceConfigResponse = {
 };
 
 export const SHOW_VERSION_BADGE_CONFIG_ID = 'SHOW_VERSION_BADGE';
+export const TASK_DEFAULT_BOARD_ID_CONFIG_ID = 'TASK_DEFAULT_BOARD_ID';
+export const TASK_BOARD_PINNED_SPECIAL_LISTS_CONFIG_ID =
+  'TASK_BOARD_PINNED_SPECIAL_LISTS';
+export const TASK_LAST_BOARD_VIEW_CONFIG_ID = 'TASK_LAST_BOARD_VIEW';
+export const TASK_REMEMBER_LAST_BOARD_CONFIG_ID = 'TASK_REMEMBER_LAST_BOARD';
+export const TASK_NAVIGATION_PROGRESS_CONFIG_ID = 'TASK_NAVIGATION_PROGRESS';
+export const TASK_NAVIGATION_GOALS_CONFIG_ID = 'TASK_NAVIGATION_GOALS';
+export const TASK_NAVIGATION_STATS_CONFIG_ID = 'TASK_NAVIGATION_STATS';
+export const TASK_NAVIGATION_LEADERBOARDS_CONFIG_ID =
+  'TASK_NAVIGATION_LEADERBOARDS';
+export const TASK_NAVIGATION_IMPORT_CONFIG_ID = 'TASK_NAVIGATION_IMPORT';
+
+export const TASK_SECONDARY_NAVIGATION_CONFIG_IDS = [
+  TASK_NAVIGATION_PROGRESS_CONFIG_ID,
+  TASK_NAVIGATION_GOALS_CONFIG_ID,
+  TASK_NAVIGATION_STATS_CONFIG_ID,
+  TASK_NAVIGATION_LEADERBOARDS_CONFIG_ID,
+  TASK_NAVIGATION_IMPORT_CONFIG_ID,
+] as const;
+
+export function isTaskRememberLastBoardEnabled(
+  value: string | null | undefined
+) {
+  return value !== 'false';
+}
+
+export function serializeTaskRememberLastBoard(enabled: boolean) {
+  return enabled ? 'true' : 'false';
+}
+
+function isTaskScopedConfig(configId: string) {
+  return configId.startsWith('TASK_') || configId.startsWith('TASKS_');
+}
+
+function getUserConfigClient(
+  configId: string,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(
+    isTaskScopedConfig(configId) ? withTaskApiBaseUrl(options) : options
+  );
+}
 
 export type RootNavigationTarget =
   | 'workspace_home'
@@ -39,7 +123,6 @@ const ROOT_NAVIGATION_TARGETS: readonly RootNavigationTarget[] = [
   'finance',
 ];
 
-const TASK_SUBMODULES = ['home', 'boards'] as const;
 const FINANCE_SUBMODULES = [
   'home',
   'transactions',
@@ -96,15 +179,9 @@ export function normalizeRootNavigationConfig(
   const parsed = parseRootNavigationConfig(raw);
 
   if (parsed.target === 'tasks') {
-    const submodule = (TASK_SUBMODULES as readonly string[]).includes(
-      parsed.submodule ?? ''
-    )
-      ? (parsed.submodule as string)
-      : 'home';
-
     return {
       target: parsed.target,
-      submodule,
+      submodule: 'home',
       boardId: parsed.boardId?.trim() ? parsed.boardId : 'none',
     };
   }
@@ -287,7 +364,7 @@ export async function getUserConfig(
   configId: string,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getUserConfigClient(configId, options);
   return client.json<UserConfigResponse>(
     `/api/v1/users/me/configs/${encodePathSegment(configId)}`,
     {
@@ -301,7 +378,7 @@ export async function updateUserConfig(
   value: string | null,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getUserConfigClient(configId, options);
   return client.json<{ message: string }>(
     `/api/v1/users/me/configs/${encodePathSegment(configId)}`,
     {
@@ -319,7 +396,7 @@ export async function getUserWorkspaceConfig(
   configId: string,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getUserConfigClient(configId, options);
   return client.json<UserWorkspaceConfigResponse>(
     `/api/v1/users/me/workspaces/${encodePathSegment(workspaceId)}/configs/${encodePathSegment(configId)}`,
     {
@@ -334,7 +411,7 @@ export async function updateUserWorkspaceConfig(
   value: string | null,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getUserConfigClient(configId, options);
   return client.json<{ message: string }>(
     `/api/v1/users/me/workspaces/${encodePathSegment(workspaceId)}/configs/${encodePathSegment(configId)}`,
     {
@@ -587,6 +664,20 @@ export async function listWorkspaceBasicUsers(
   );
 }
 
+export async function getWorkspaceUser(
+  workspaceId: string,
+  userId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<WorkspaceBasicUserRecord>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/users/${encodePathSegment(userId)}`,
+    {
+      cache: 'no-store',
+    }
+  );
+}
+
 export async function listWorkspaceUserReferralCandidates(
   workspaceId: string,
   userId: string,
@@ -658,6 +749,123 @@ export async function deleteWorkspaceUserReferral(
       method: 'DELETE',
       query: {
         referredUserId,
+      },
+    }
+  );
+}
+
+// ---------------------------------------------------------------------------
+// User approvals (reports + posts)
+// ---------------------------------------------------------------------------
+
+export type WorkspaceUserApprovalKind = 'reports' | 'posts';
+
+export type WorkspaceUserApprovalStatusFilter =
+  | 'all'
+  | 'pending'
+  | 'approved'
+  | 'rejected';
+
+export interface ListWorkspaceUserApprovalsParams {
+  kind: WorkspaceUserApprovalKind;
+  status?: WorkspaceUserApprovalStatusFilter;
+  page?: number;
+  limit?: number;
+  groupId?: string;
+  userId?: string;
+  creatorId?: string;
+}
+
+export interface ListWorkspaceUserApprovalsResponse<
+  TItem = ReportApprovalItem | PostApprovalItem,
+> {
+  items: TItem[];
+  totalCount: number;
+  totalPages: number;
+}
+
+export interface UpdateWorkspaceUserApprovalPayload {
+  action: 'approve' | 'reject' | 'approveAll' | 'unapprove';
+  kind: WorkspaceUserApprovalKind;
+  itemId?: string;
+  reason?: string;
+  filters?: {
+    groupId?: string;
+    userId?: string;
+    creatorId?: string;
+  };
+}
+
+export interface UpdateWorkspaceUserApprovalResponse {
+  success: boolean;
+}
+
+export interface ListWorkspaceUserApprovalLogsParams {
+  kind: WorkspaceUserApprovalKind;
+  reportId?: string;
+  postId?: string;
+}
+
+export async function listWorkspaceUserApprovals<
+  TItem = ReportApprovalItem | PostApprovalItem,
+>(
+  workspaceId: string,
+  params: ListWorkspaceUserApprovalsParams,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<ListWorkspaceUserApprovalsResponse<TItem>>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/users/approvals`,
+    {
+      cache: 'no-store',
+      query: {
+        kind: params.kind,
+        status: params.status,
+        page: params.page,
+        limit: params.limit,
+        groupId: params.groupId,
+        userId: params.userId,
+        creatorId: params.creatorId,
+      },
+    }
+  );
+}
+
+export async function updateWorkspaceUserApproval(
+  workspaceId: string,
+  payload: UpdateWorkspaceUserApprovalPayload,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<UpdateWorkspaceUserApprovalResponse>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/users/approvals`,
+    {
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      method: 'PUT',
+    }
+  );
+}
+
+export async function listWorkspaceUserApprovalLogs<
+  TLog = ReportLogEntry | PostLogEntry,
+>(
+  workspaceId: string,
+  params: ListWorkspaceUserApprovalLogsParams,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<TLog | null>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/users/approvals/logs`,
+    {
+      cache: 'no-store',
+      query: {
+        kind: params.kind,
+        reportId: params.reportId,
+        postId: params.postId,
       },
     }
   );
@@ -736,7 +944,7 @@ export interface ListWorkspaceUserProfileLinkUsersResponse {
 export interface CreateWorkspaceUserProfileLinkPayload {
   mode: WorkspaceUserProfileLinkMode;
   target_user_id?: string | null;
-  allowed_fields: WorkspaceUserProfileLinkField[];
+  allowed_fields?: WorkspaceUserProfileLinkField[];
   prefill_existing_values?: boolean;
   requires_auth?: boolean;
   expires_at?: string | null;

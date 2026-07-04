@@ -1,6 +1,6 @@
 'use client';
 
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Search,
   UserCircle,
@@ -9,7 +9,10 @@ import {
   UserX,
   X,
 } from '@tuturuuu/icons';
-import { updateWorkspaceTask } from '@tuturuuu/internal-api/tasks';
+import {
+  listWorkspaceTaskBoardViewableMembers,
+  updateWorkspaceTask,
+} from '@tuturuuu/internal-api/tasks';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
 import { useWorkspaceMembers } from '@tuturuuu/ui/hooks/use-workspace-members';
@@ -26,7 +29,15 @@ import {
   useMemo,
   useState,
 } from 'react';
-import { useBoardBroadcast } from './board-broadcast-context';
+import {
+  getActiveBoardRefresh,
+  useBoardBroadcast,
+} from './board-broadcast-context';
+import {
+  patchTaskInVisibleCaches,
+  restoreVisibleTaskCaches,
+  snapshotVisibleTaskCaches,
+} from './task-cache-patches';
 
 interface Member {
   id: string;
@@ -36,7 +47,7 @@ interface Member {
   avatar_url?: string;
 }
 
-interface Task {
+interface TaskWithAssignees {
   id: string;
   assignees?: Member[];
 }
@@ -66,7 +77,8 @@ export const AssigneeSelect = forwardRef<AssigneeSelectHandle, Props>(
     const params = useParams();
     const rawWsId = params.wsId;
     const wsId = Array.isArray(rawWsId) ? rawWsId[0] : rawWsId;
-    const boardId = params.boardId as string;
+    const rawBoardId = params.boardId;
+    const boardId = Array.isArray(rawBoardId) ? rawBoardId[0] : rawBoardId;
     const queryClient = useQueryClient();
     const broadcast = useBoardBroadcast();
 
@@ -104,11 +116,41 @@ export const AssigneeSelect = forwardRef<AssigneeSelectHandle, Props>(
     }, [uniqueAssignees]);
 
     // Fetch workspace members with React Query
-    const {
-      data: fetchedMembers = [],
-      isLoading: isFetchingMembers,
-      error: membersError,
-    } = useWorkspaceMembers(wsId);
+    const shouldFetchBoardMembers = Boolean(wsId && boardId);
+    const workspaceMembersQuery = useWorkspaceMembers(wsId, {
+      enabled: Boolean(wsId) && !shouldFetchBoardMembers,
+    });
+    const boardMembersQuery = useQuery({
+      queryKey: ['task-board-viewable-members', wsId, boardId],
+      queryFn: async (): Promise<Member[]> => {
+        if (!wsId || !boardId) return [];
+
+        const payload = await listWorkspaceTaskBoardViewableMembers(
+          wsId,
+          boardId
+        );
+        const members = Array.isArray(payload?.members) ? payload.members : [];
+
+        return members.map((member) => ({
+          id: member.user_id,
+          user_id: member.user_id,
+          display_name: member.display_name || member.email || member.user_id,
+          email: member.email ?? undefined,
+          avatar_url: member.avatar_url ?? undefined,
+        }));
+      },
+      enabled: shouldFetchBoardMembers,
+      staleTime: 5 * 60 * 1000,
+    });
+    const fetchedMembers = shouldFetchBoardMembers
+      ? (boardMembersQuery.data ?? [])
+      : (workspaceMembersQuery.data ?? []);
+    const isFetchingMembers = shouldFetchBoardMembers
+      ? boardMembersQuery.isLoading
+      : workspaceMembersQuery.isLoading;
+    const membersError = shouldFetchBoardMembers
+      ? boardMembersQuery.error
+      : workspaceMembersQuery.error;
 
     // Deduplicate members by ID using O(n) Map approach
     // Also ensure user_id is set for consistency with task creation flow
@@ -148,7 +190,10 @@ export const AssigneeSelect = forwardRef<AssigneeSelectHandle, Props>(
           throw new Error(t('please_try_again_later'));
         }
 
-        const boardTasks = queryClient.getQueryData<Task[]>(['tasks', boardId]);
+        const boardTasks = queryClient.getQueryData<TaskWithAssignees[]>([
+          'tasks',
+          boardId,
+        ]);
         const currentTask = boardTasks?.find((task) => task.id === taskId);
         const existingIds =
           currentTask?.assignees
@@ -171,19 +216,24 @@ export const AssigneeSelect = forwardRef<AssigneeSelectHandle, Props>(
       onMutate: async ({ memberId, action }) => {
         // Cancel any outgoing refetches
         await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
+        if (boardId) {
+          await queryClient.cancelQueries({
+            queryKey: ['tasks-full', boardId],
+          });
+        }
 
         // Snapshot the previous value
-        const previousTasks = queryClient.getQueryData(['tasks', boardId]);
+        const cacheSnapshot = boardId
+          ? snapshotVisibleTaskCaches(queryClient, boardId, [taskId])
+          : undefined;
 
         // Optimistically update the cache
-        queryClient.setQueryData(
-          ['tasks', boardId],
-          (old: Task[] | undefined) => {
-            if (!old) return old;
-
-            return old.map((task: Task) => {
-              if (task.id !== taskId) return task;
-
+        if (boardId) {
+          patchTaskInVisibleCaches({
+            queryClient,
+            boardId,
+            taskId,
+            updater: (task) => {
               const currentAssignees = task.assignees || [];
               let newAssignees: Member[];
 
@@ -204,9 +254,9 @@ export const AssigneeSelect = forwardRef<AssigneeSelectHandle, Props>(
               }
 
               return { ...task, assignees: newAssignees };
-            });
-          }
-        );
+            },
+          });
+        }
 
         const previousLocalAssignees = localAssigneesState;
 
@@ -223,12 +273,12 @@ export const AssigneeSelect = forwardRef<AssigneeSelectHandle, Props>(
           return old.filter((assignee) => assignee.id !== memberId);
         });
 
-        return { previousTasks, previousLocalAssignees };
+        return { cacheSnapshot, previousLocalAssignees };
       },
       onError: (err, _, context) => {
         // Rollback optimistic update on error
-        if (context?.previousTasks) {
-          queryClient.setQueryData(['tasks', boardId], context.previousTasks);
+        if (context?.cacheSnapshot) {
+          restoreVisibleTaskCaches(queryClient, context.cacheSnapshot);
         }
 
         if (context?.previousLocalAssignees) {
@@ -242,6 +292,7 @@ export const AssigneeSelect = forwardRef<AssigneeSelectHandle, Props>(
       },
       onSuccess: () => {
         broadcast?.('task:relations-changed', { taskId });
+        getActiveBoardRefresh()?.({ invalidateTasks: false });
       },
       // Note: Removed onSettled invalidation to prevent flicker
       // Optimistic updates handle immediate UI feedback

@@ -1,4 +1,11 @@
 {
+  "command_launcher": {
+    "apps": "Ứng dụng",
+    "apps_description": "Mở một ứng dụng Tuturuuu khác từ workspace này.",
+    "open_here": "Mở tại đây",
+    "open_in_new_tab": "Mở trong tab mới",
+    "open_options": "Tùy chọn mở"
+  },
   "common": {
     "0_usd_per_month": "không có phí hàng tháng",
     "404-msg": "Trang bạn đang tìm kiếm không tồn tại.",
@@ -779,11 +786,15 @@
     "browse": "Xem cửa hàng",
     "bundle": "Combo",
     "bundleAvailability": "Combo",
+    "bundleSelectionTitle": "Tạo combo",
+    "buyNow": "Mua ngay",
     "cart": "Giỏ hàng",
+    "cheapestFreePreview": "Món đủ điều kiện rẻ nhất được miễn phí.",
     "checkout": "Thanh toán",
     "checkoutDisabled": "Thanh toán bị tắt cho cửa hàng này.",
     "checkoutDisabledBadge": "Đã tắt thanh toán",
     "checkoutError": "Không thể bắt đầu thanh toán Polar.",
+    "contactDetails": "Thông tin liên hệ",
     "demoBadge": "Demo thử nghiệm",
     "emptyCart": "Thêm ít nhất một mặt hàng trước khi thanh toán.",
     "emptyListingsDescription": "Các listing đã xuất bản sẽ xuất hiện tại đây dưới dạng sản phẩm sẵn sàng cho khách.",
@@ -795,6 +806,26 @@
       "note": "Ghi chú đơn hàng",
       "phone": "Số điện thoại"
     },
+    "fromPrice": "Từ",
+    "history": {
+      "allStoresSubtitle": "Các giao dịch đã hoàn tất trong tài khoản cửa hàng của bạn.",
+      "andMore": "+{count} mục nữa",
+      "backToStore": "Về cửa hàng",
+      "backToStorefronts": "Về danh sách cửa hàng",
+      "emptyDescription": "Các giao dịch đã hoàn tất từ mọi cửa hàng sẽ xuất hiện tại đây.",
+      "emptyStoreDescription": "Các giao dịch đã hoàn tất từ cửa hàng này sẽ xuất hiện tại đây.",
+      "emptyTitle": "Chưa có lịch sử mua hàng.",
+      "errorDescription": "Không thể tải lịch sử mua hàng. Vui lòng thử lại sau.",
+      "errorTitle": "Lịch sử mua hàng không khả dụng",
+      "noItems": "Không có dòng sản phẩm",
+      "refresh": "Làm mới",
+      "refreshing": "Đang làm mới...",
+      "shortTitle": "Lịch sử",
+      "storeSubtitle": "Các giao dịch đã hoàn tất từ cửa hàng này.",
+      "title": "Lịch sử mua hàng",
+      "viewOrder": "Xem đơn"
+    },
+    "instantCheckout": "Thanh toán nhanh",
     "loading": "Đang tải cửa hàng...",
     "notFound": "Không tìm thấy cửa hàng.",
     "order": "Đơn hàng",
@@ -804,23 +835,118 @@
     "orderPlacedDescription": "Cảm ơn — đơn hàng của bạn đã được ghi nhận. Hãy lưu mã tham chiếu này.",
     "orderReference": "Mã tham chiếu",
     "orderStatus": "Trạng thái: {status}",
+    "orderSummary": "Tóm tắt đơn hàng",
     "previewBadge": "Xem trước",
     "privateStore": "Cửa hàng riêng tư",
     "product": "Sản phẩm",
     "publicStore": "Cửa hàng công khai",
     "quantity": "Số lượng",
+    "redirectingToCheckout": "Đang mở thanh toán an toàn...",
+    "requiredItems": "Chọn {count} món",
     "reserve": "Tiếp tục với Polar",
     "reservedCopy": "Tồn kho được giữ chỗ trước khi mở thanh toán Polar.",
     "reserving": "Đang chuẩn bị thanh toán...",
     "retry": "Thử lại",
+    "searchBundleItems": "Tìm món",
+    "selectedItems": "Đã chọn {selected}/{required}",
+    "selectOptions": "Chọn tùy chọn",
     "signIn": "Đăng nhập",
     "simulatedBadge": "Thanh toán mô phỏng",
     "simulatedReserve": "Mô phỏng thanh toán",
     "simulatedReservedCopy": "Cửa hàng này mô phỏng thanh toán mà không thay đổi tồn kho hoặc mở Polar.",
     "simulatedReserving": "Đang mô phỏng thanh toán...",
     "soldOut": "Hết hàng",
+    "squareOrderPlacedDescription": "Đơn hàng của bạn đã được giữ. Hãy đưa mã tham chiếu này cho nhân viên để thanh toán trên Square Terminal.",
+    "squareReserve": "Đặt đơn thanh toán terminal",
+    "squareReservedCopy": "Tồn kho đã được giữ; nhân viên sẽ gửi tổng tiền tới Square Terminal.",
+    "squareReserving": "Đang đặt đơn...",
     "storefrontErrorDescription": "Bạn có thể cần đăng nhập, hoặc cửa hàng này không khả dụng.",
     "storefrontErrorTitle": "Cửa hàng không khả dụng",
-    "total": "Tổng cộng"
+    "total": "Tổng cộng",
+    "viewDetails": "Xem chi tiết"
+  },
+  "ws-task-templates": {
+    "actions": {
+      "archive": "Lưu trữ mẫu",
+      "cancel": "Hủy",
+      "create": "Tạo mẫu",
+      "create_task": "Tạo công việc",
+      "new_template": "Mẫu mới",
+      "save": "Lưu mẫu",
+      "save_from_task": "Lưu từ công việc",
+      "use": "Sử dụng"
+    },
+    "card": {
+      "assignees": "{count} người phụ trách",
+      "labels": "{count} nhãn",
+      "projects": "{count} dự án"
+    },
+    "create": {
+      "description": "Lưu các mặc định công việc có thể tái sử dụng cho công việc lặp lại.",
+      "title": "Tạo mẫu công việc"
+    },
+    "empty": {
+      "description": "Tạo mẫu cho công việc lặp lại, danh sách kiểm tra và bàn giao tiêu chuẩn.",
+      "no_results": "Không có mẫu nào khớp với tìm kiếm.",
+      "title": "Chưa có mẫu công việc"
+    },
+    "fields": {
+      "board": "Bảng",
+      "description": "Mô tả",
+      "description_placeholder": "Mô tả mặc định của công việc",
+      "key": "Khóa",
+      "key_placeholder": "bao-loi",
+      "list": "Danh sách",
+      "override_name": "Ghi đè tiêu đề công việc",
+      "priority": "Độ ưu tiên",
+      "search": "Tìm kiếm",
+      "search_placeholder": "Tìm mẫu công việc",
+      "task_id": "ID công việc",
+      "task_id_placeholder": "UUID công việc",
+      "task_name": "Tiêu đề công việc",
+      "task_name_placeholder": "Điều tra lỗi được báo cáo",
+      "template_name": "Tên mẫu",
+      "template_name_placeholder": "Báo lỗi sprint",
+      "unnamed_board": "Bảng chưa đặt tên",
+      "unnamed_list": "Danh sách chưa đặt tên",
+      "visibility": "Phạm vi hiển thị"
+    },
+    "gallery": {
+      "board_marketplace": "Chợ mẫu bảng",
+      "description": "Tạo mẫu khởi đầu công việc có thể tái sử dụng và giữ mẫu bảng ở cùng một nơi.",
+      "header": "Mẫu công việc"
+    },
+    "priority": {
+      "critical": "Khẩn cấp",
+      "high": "Cao",
+      "low": "Thấp",
+      "none": "Không có ưu tiên",
+      "normal": "Bình thường"
+    },
+    "save_from_task": {
+      "description": "Nhập ID công việc để lưu các trường hiện tại thành mẫu có thể tái sử dụng.",
+      "title": "Lưu công việc thành mẫu"
+    },
+    "tabs": {
+      "boards": "Mẫu bảng",
+      "tasks": "Mẫu công việc"
+    },
+    "toast": {
+      "archived": "Đã lưu trữ mẫu công việc",
+      "created": "Đã tạo mẫu công việc",
+      "failed": "Thao tác mẫu công việc thất bại",
+      "no_template_selected": "Chưa chọn mẫu công việc",
+      "saved_from_task": "Đã lưu mẫu công việc",
+      "task_created": "Đã tạo công việc từ mẫu"
+    },
+    "use": {
+      "description": "Tạo công việc từ {name}.",
+      "description_empty": "Tạo công việc từ mẫu đã chọn.",
+      "title": "Sử dụng mẫu công việc"
+    },
+    "visibility": {
+      "private": "Riêng tư",
+      "workspace": "Không gian làm việc"
+    }
   }
 }

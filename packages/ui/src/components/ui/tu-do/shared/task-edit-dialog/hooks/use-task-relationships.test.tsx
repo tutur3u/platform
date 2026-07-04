@@ -146,4 +146,67 @@ describe('useTaskRelationships', () => {
       ])
     ).toEqual([newLabel, existingLabel]);
   });
+
+  it('patches visible task caches when labels change without invalidating board task queries', async () => {
+    const cachedTask = {
+      id: 'task-1',
+      labels: [],
+    } as unknown as Task;
+
+    queryClient.setQueryData(['tasks', 'board-1'], [cachedTask]);
+    queryClient.setQueryData(['tasks-full', 'board-1', 'all'], [cachedTask]);
+    queryClient.setQueryData(['task', 'task-1'], cachedTask);
+    const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
+
+    const { result } = renderHook(
+      () =>
+        useTaskRelationships({
+          wsId: 'personal',
+          taskId: 'task-1',
+          isCreateMode: false,
+          boardId: 'board-1',
+          selectedLabels: [],
+          selectedAssignees: [],
+          selectedProjects: [],
+          newLabelName: '',
+          newLabelColor: '#14b8a6',
+          newProjectName: '',
+          setSelectedLabels: vi.fn(),
+          setSelectedAssignees: vi.fn(),
+          setSelectedProjects: vi.fn(),
+          setAvailableLabels: vi.fn(),
+          setNewLabelName: vi.fn(),
+          setNewLabelColor: vi.fn(),
+          setNewProjectName: vi.fn(),
+          setShowNewLabelDialog: vi.fn(),
+          setShowNewProjectDialog: vi.fn(),
+          onUpdate: vi.fn(),
+        }),
+      { wrapper }
+    );
+
+    await act(async () => {
+      await result.current.toggleLabel(newLabel);
+    });
+
+    expect(
+      queryClient.getQueryData<Task[]>(['tasks', 'board-1'])?.[0]?.labels
+    ).toEqual([newLabel]);
+    expect(
+      queryClient.getQueryData<Task[]>(['tasks-full', 'board-1', 'all'])?.[0]
+        ?.labels
+    ).toEqual([newLabel]);
+    expect(queryClient.getQueryData<Task>(['task', 'task-1'])?.labels).toEqual([
+      newLabel,
+    ]);
+    expect(invalidateSpy).not.toHaveBeenCalledWith({
+      queryKey: ['tasks', 'board-1'],
+    });
+    expect(invalidateSpy).not.toHaveBeenCalledWith({
+      queryKey: ['tasks-full', 'board-1'],
+    });
+    expect(mocks.broadcast).toHaveBeenCalledWith('task:relations-changed', {
+      taskId: 'task-1',
+    });
+  });
 });

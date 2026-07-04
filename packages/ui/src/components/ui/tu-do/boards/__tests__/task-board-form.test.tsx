@@ -104,6 +104,18 @@ describe('TaskBoardForm', () => {
     });
   });
 
+  it('uses the surface background for the board name input', () => {
+    render(
+      <QueryClientProvider client={queryClient}>
+        <TaskBoardForm wsId="ws-1" onFinish={vi.fn()} />
+      </QueryClientProvider>
+    );
+
+    expect(screen.getByLabelText('ws-task-boards.name')).toHaveClass(
+      'bg-background'
+    );
+  });
+
   it('shows the localized duplicate-name message when the API rejects a duplicate board name', async () => {
     mutateAsync.mockRejectedValueOnce({
       code: 'TASK_BOARD_NAME_EXISTS',

@@ -10,12 +10,14 @@ import { AccountSwitcherProvider } from '@/context/account-switcher-context';
 import {
   installFetchInterceptor,
   setRateLimitMessage,
+  setRateLimitToastLabels,
+  setRateLimitWarningMessage,
 } from '@/lib/fetch-interceptor';
 
-const ReactQueryDevtools = dynamic(
+const RateLimitDetailsDialog = dynamic(
   () =>
-    import('@tanstack/react-query-devtools').then(
-      (module) => module.ReactQueryDevtools
+    import('./rate-limit-details-dialog').then(
+      (module) => module.RateLimitDetailsDialog
     ),
   { ssr: false }
 );
@@ -33,6 +35,10 @@ function FetchInterceptorI18n() {
     setRateLimitMessage((seconds) =>
       t('rate_limited_retry', { seconds: String(seconds) })
     );
+    setRateLimitToastLabels({
+      viewDetails: t('rate_limited_view_details'),
+    });
+    setRateLimitWarningMessage(() => t('rate_limited_staff_debug_warning'));
   }, [t]);
 
   return null;
@@ -44,12 +50,7 @@ export function ClientProviders({ children }: { children: ReactNode }) {
       <TooltipProvider>{children}</TooltipProvider>
       <AccountSwitcherKeyboardShortcut />
       <FetchInterceptorI18n />
-      {process.env.NODE_ENV === 'development' ? (
-        <ReactQueryDevtools
-          initialIsOpen={false}
-          buttonPosition="bottom-right"
-        />
-      ) : null}
+      <RateLimitDetailsDialog />
     </>
   );
 

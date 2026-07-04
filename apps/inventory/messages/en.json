@@ -1,6 +1,7 @@
 {
   "command_launcher": {
     "apps": "Apps",
+    "apps_description": "Open another Tuturuuu app from this workspace.",
     "close": "close",
     "current": "Current",
     "current_app": "Current app",
@@ -15,6 +16,9 @@
     "navigation": "Navigation",
     "open": "Open",
     "open_app": "Open app",
+    "open_here": "Open here",
+    "open_in_new_tab": "Open in new tab",
+    "open_options": "Open options",
     "open_workspace": "Open workspace",
     "personal": "Personal",
     "placeholder": "Search apps, workspaces, and pages...",
@@ -940,6 +944,13 @@
         "visibility": "Visibility"
       },
       "commerce": {
+        "attributedRevenue": "Attributed revenue",
+        "cancelSquare": "Cancel terminal",
+        "earnedAmount": "Earned amount",
+        "empty": "No commerce records yet",
+        "emptyDescriptions": {
+          "revenueShare": "Revenue share earnings will appear here after finalized sales include eligible stock rows."
+        },
         "items": "{count, plural, one {# item} other {# items}}",
         "metrics": {
           "completed": "Completed",
@@ -967,9 +978,16 @@
           "uncosted": "No costing",
           "units": "Units sold"
         },
+        "productsLabel": "{count, plural, one {# product} other {# products}}",
         "release": "Release",
         "releaseHint": "Frees the inventory this reservation is holding back into available stock and cancels the checkout. Use it for abandoned or stuck reservations.",
         "releaseUnavailable": "Only live reserved holds can be released. This checkout has already been finalized or released.",
+        "sendSquare": "Send to terminal",
+        "source": {
+          "checkout": "Checkout",
+          "finance": "Invoice"
+        },
+        "splitLabel": "{value}% split",
         "status": {
           "completed": "Completed",
           "expired": "Expired",
@@ -980,11 +998,15 @@
           "checkouts": "Checkouts",
           "label": "Commerce view",
           "promotions": "Promotions",
+          "revenueShare": "Revenue share",
           "sales": "Sales"
-        }
+        },
+        "unitsLabel": "{count, plural, one {# unit} other {# units}}"
       },
       "costing": {
+        "addProfitShare": "Add profit share",
         "addScenario": "Add scenario",
+        "artCommission": "Art commission (batch)",
         "averageMargin": "Average margin",
         "batchSize": "Batch size",
         "bestScenario": "Best margin scenario",
@@ -995,6 +1017,13 @@
         "editProfileTitle": "Edit costing profile",
         "emptyDescription": "Import a Google Sheets CSV or create a first batch scenario to start tracking margins.",
         "emptyTitle": "No costing profiles yet.",
+        "hints": {
+          "artCommission": "One-off art/commission cost for the whole batch.",
+          "other": "Any other per-unit cost.",
+          "packaging": "Packaging cost per unit.",
+          "shipping": "Shipping cost for the whole batch.",
+          "tariff": "Tariffs or duties for the whole batch."
+        },
         "importCsv": "Import CSV",
         "importDescription": "Paste an exported Google Sheets CSV with item category, batch size, manufacturing cost, total cost, and target retail price columns.",
         "importError": "Could not import costing CSV.",
@@ -1007,12 +1036,20 @@
         "margin": "Margin",
         "marginChart": "Gross margin by scenario",
         "newProfile": "New costing profile",
+        "other": "Other/unit",
+        "packaging": "Packaging/unit",
         "previewImport": "Preview",
         "profiles": "Profiles",
+        "recipient": "Recipient",
         "retail": "Retail price",
         "saveProfile": "Save profile",
         "scenario": "Scenario",
+        "scenarioName": "Scenario name",
         "scenarios": "Scenarios",
+        "sharePercentage": "Share %",
+        "sharesTotal": "Shares total {total}%",
+        "sharesWarning": "Shares total {total}% (should be 100%)",
+        "shipping": "Shipping (batch)",
         "status": {
           "active": "Active",
           "archived": "Archived",
@@ -1021,11 +1058,13 @@
         "steps": {
           "profile": "Profile",
           "profileDescription": "Name the item, choose a category, and set the target retail price.",
+          "profitSharesDescription": "Split profit between talent, partners, and the platform.",
           "scenarios": "Scenarios",
           "scenariosDescription": "Add batch sizes and unit costs to calculate margins and break-even quantities."
         },
         "summary": "Costing workspace",
         "summaryDescription": "Replace spreadsheet margin tracking with reusable batch scenarios and profit-share assumptions.",
+        "tariff": "Tariff (batch)",
         "totalCost": "Total cost/unit",
         "uncategorized": "Uncategorized",
         "unitCost": "Mfg cost/unit",
@@ -1145,16 +1184,22 @@
         "audits": "Audit events will appear after checkout, stock, or setup changes are recorded.",
         "bundles": "Create a bundle, then attach component products to prepare a campaign-ready listing.",
         "checkouts": "Reserved and completed Polar checkout sessions will appear here.",
-        "sales": "Finalized checkout sales linked to finance invoices will appear here.",
+        "revenueShare": "Partner revenue share earnings will appear after completed merchandise sales.",
+        "sales": "Completed checkout and invoice sales will appear here.",
         "storefronts": "Create a storefront, customize its theme, then publish listings for buyers."
       },
       "forms": {
         "accentColor": "Accent color",
         "actions": "Actions",
+        "addCategoryComponent": "Add category group",
         "addComponent": "Add component",
+        "addOptionGroup": "Add option",
         "addSection": "Add section",
+        "addStockRow": "Add stock row",
+        "addVariant": "Add variant",
         "amount": "Amount",
         "analyticsEnabled": "Collect storefront analytics",
+        "applyTemplate": "Apply template",
         "archive": "Archive",
         "archiveConfirmDescription": "This keeps the record for history but removes it from active operator workflows.",
         "archiveConfirmTitle": "Archive this record?",
@@ -1177,11 +1222,19 @@
         },
         "cancel": "Cancel",
         "category": "Category",
+        "categoryBundleSummary": "Select {required}; {free} cheapest free",
+        "categoryCandidateScope": "Category candidate scope",
+        "categoryCandidateScopes": {
+          "allStock": "All eligible stock",
+          "publishedListings": "Published storefront listings"
+        },
+        "categoryChoiceMode": "Category choice mode",
         "checkoutMode": "Checkout mode",
         "checkoutModes": {
           "disabled": "Disabled",
           "polar": "Polar",
-          "simulated": "Simulated"
+          "simulated": "Simulated",
+          "square_terminal": "Square Terminal"
         },
         "clearImage": "Clear image",
         "componentCount": "{count, plural, one {# component} other {# components}}",
@@ -1226,6 +1279,7 @@
         "deleting": "Deleting...",
         "description": "Description",
         "drivePath": "Drive path",
+        "duplicateStockTargetHint": "Each stock row needs a unique unit and warehouse combination.",
         "edit": "Edit",
         "editBundleDescription": "Update bundle details, stock-backed components, media, availability, and lifecycle.",
         "editBundleTitle": "Edit bundle",
@@ -1244,10 +1298,12 @@
         "editStorefrontTitle": "Customize storefront",
         "emptyOptions": "No matching options.",
         "emptyResource": "No setup records yet.",
+        "emptyStockRows": "No stock rows for this product.",
         "estimatedMargin": "Estimated margin",
         "featuredImage": "Featured image",
         "featuredImageDescription": "Upload a product image to Tuturuuu Drive or paste a hosted product image URL.",
         "financeCategory": "Finance category",
+        "fixedStockMode": "Fixed stock mode",
         "heroImageDescription": "Use a wide storefront image that still works when cropped on mobile.",
         "heroImageUrl": "Hero image URL",
         "hints": {
@@ -1256,6 +1312,7 @@
           "analyticsEnabled": "Record visits and sales so you can track this storefront’s performance.",
           "batchSize": "How many units you produce or buy in a single run.",
           "category": "Group similar products together for cleaner reporting and storefronts.",
+          "categoryCandidateScope": "Choose whether shoppers can pick only published storefront listings or any eligible stock row in this category.",
           "checkoutMode": "How shoppers pay — instant online payment, or a manual order request you confirm.",
           "cornerStyle": "How rounded buttons and cards appear on your storefront.",
           "currency": "The currency shoppers are charged in at checkout.",
@@ -1269,7 +1326,10 @@
           "owner": "The person or brand accountable for this product.",
           "polarEnvironment": "Which Polar account this storefront checks out against. Use Sandbox for testing (no real charges) and Production for live sales. Connect the matching token in the Polar hub.",
           "price": "What a customer pays for one unit.",
+          "pricingMode": "Fixed price charges the bundle price; selected items charges the selected stock rows and applies category discounts.",
           "retail": "The price you intend to sell one unit for. Drives the profit estimate.",
+          "revenueSharePartner": "Talent or partner attributed to this exact stock row for merchandise revenue splits.",
+          "revenueShareSplitPercent": "Percent of realized merchandise revenue attributed to the revenue share partner.",
           "sectionHref": "Optional link this block opens when a shopper clicks it.",
           "sectionStatus": "Published blocks are visible to shoppers. Draft and hidden blocks are not.",
           "sectionType": "What this storefront block shows — a cover, product grid, promo, and more.",
@@ -1324,22 +1384,32 @@
         "next": "Next",
         "noBundleComponents": "No component products attached yet.",
         "noBundleProducts": "Create stock-backed products before adding bundle components.",
+        "noOptionGroups": "No options yet. Add an option like Size or Color.",
         "noStorefrontsForListings": "Create a storefront before adding listings.",
         "note": "Note",
+        "noTemplates": "No templates yet.",
         "notSet": "Not set",
+        "noVariants": "No variants yet. Add a variant for each combination.",
+        "optionGroupName": "Option name",
+        "optionGroups": "Options",
+        "optionValues": "Values (comma separated)",
         "owner": "Owner",
+        "pauseListing": "Pause",
         "placeholders": {
           "accentColor": "#111827",
           "amount": "120",
+          "applyTemplate": "Apply a template",
           "batchSize": "30",
           "bundleDescription": "What is included and why buyers should choose this bundle",
           "bundleName": "Launch weekend bundle",
           "category": "Choose a category",
+          "categoryCandidateScope": "Choose candidate scope",
           "checkoutMode": "Choose checkout mode",
           "cornerStyle": "Choose corner style",
           "costingProfileName": "Acrylic Keychain",
           "currency": "USD",
           "financeCategory": "Link to a finance category",
+          "freeQuantity": "1 free",
           "imageUrl": "https://example.com/image.webp",
           "layoutStyle": "Choose layout",
           "listingTitle": "Limited edition keychain",
@@ -1347,14 +1417,21 @@
           "manufacturer": "Choose a manufacturer",
           "maxPerOrder": "3",
           "minAmount": "24",
+          "optionGroupName": "Size",
+          "optionValue": "Pick a value",
+          "optionValues": "S, M, L, XL",
           "owner": "Choose an owner",
           "price": "10.00",
+          "pricingMode": "Choose pricing mode",
           "product": "Choose a product",
           "productDescription": "Material, size, care notes, and buyer-facing details",
           "productName": "Acrylic Keychain",
           "quantity": "1",
+          "quantityRequired": "3 required",
           "resourceName": "New {resource} name",
           "retail": "10.00",
+          "revenueSharePartner": "Choose talent or partner",
+          "revenueShareSplitPercent": "15",
           "saleNote": "Customer preference, payout note, or fulfillment context",
           "sectionDescription": "Limited drop, preorder window, or buyer-facing promo copy",
           "sectionHref": "https://example.com/campaign",
@@ -1363,17 +1440,20 @@
           "sectionType": "Choose section type",
           "slug": "summer-drop",
           "status": "Choose status",
+          "stockRow": "Choose a stock row",
           "storeDescription": "Short buyer-facing description for this storefront",
           "storefront": "Choose a storefront",
           "storeName": "Sokora Shop",
           "supplier": "Choose a supplier",
           "surfaceStyle": "Choose surface style",
           "target": "Choose a product or bundle",
+          "templateName": "Apparel sizes",
           "themePreset": "Choose theme",
           "totalCost": "1.37",
           "unit": "Choose a unit",
           "unitCost": "0.70",
           "usage": "Shelf label, event pack, or campaign note",
+          "variantSku": "TEE-BLK-M",
           "visibility": "Choose visibility",
           "warehouse": "Choose a warehouse"
         },
@@ -1383,12 +1463,24 @@
           "sandbox": "Sandbox (testing)"
         },
         "price": "Price",
+        "pricingMode": "Pricing mode",
+        "pricingModes": {
+          "fixedPrice": "Fixed bundle price",
+          "selectedItems": "Selected item prices"
+        },
         "product": "Product",
         "productName": "Product name",
         "profitPerUnit": "Profit / unit",
+        "publishListing": "Publish",
         "quantity": "Quantity",
+        "remove": "Remove",
         "removeSection": "Remove section",
+        "removeStockRow": "Remove row",
+        "retail": "Retail",
+        "revenueSharePartner": "Revenue share partner",
+        "revenueShareSplitPercent": "Split %",
         "save": "Save",
+        "saveAsTemplate": "Save as template",
         "saveError": "Could not save changes.",
         "saveSuccess": "Changes saved.",
         "saving": "Saving...",
@@ -1440,8 +1532,11 @@
           "storefrontIdentity": "Identity",
           "storefrontIdentityDescription": "Name the storefront, reserve its slug, and describe the buyer experience."
         },
+        "stockRow": "Stock row",
+        "stockRowDescription": "Choose where this stock lives, how it is counted, and the available quantity.",
+        "stockRowTitle": "Stock row {index}",
         "stockTargetHint": "Select a unit and warehouse to save the stock values you entered.",
-        "stockUnavailableDescription": "This product does not have a warehouse and unit stock row yet. Add opening stock from the product create flow or setup stock from the Stock module.",
+        "stockUnavailableDescription": "This product does not have a warehouse and unit stock row yet. Add a stock row here or manage warehouses from the Stock workspace.",
         "storefront": "Storefront",
         "storefrontStatus": {
           "draft": "Draft",
@@ -1497,6 +1592,7 @@
           "theme": "Theme"
         },
         "target": "Target",
+        "templateName": "Template name",
         "themePreset": "Theme",
         "themePresets": {
           "boutique": "Boutique",
@@ -1511,6 +1607,12 @@
         "uploadingImage": "Uploading...",
         "uploadToDrive": "Upload to Drive",
         "usage": "Usage",
+        "variantCount": "{count} variants",
+        "variantNoStock": "A variant product has no stock location; pick a product with stock.",
+        "variants": "Variants",
+        "variantsAndOptions": "Variants & options",
+        "variantSku": "SKU",
+        "variantStockProduct": "Stock product",
         "visibility": "Visibility",
         "visibilityPrivate": "Private",
         "visibilityPublic": "Public",
@@ -1564,7 +1666,9 @@
         },
         "environmentLabel": "Environment",
         "hub": {
+          "activityTab": "Activity",
           "connectedEnvironments": "Connected environments",
+          "connectionTab": "Connection",
           "notConnected": "Not connected",
           "productReady": "Checkout product",
           "productStatusTitle": "Polar product per environment",
@@ -1575,7 +1679,8 @@
           "syncedCoupons": "Synced coupons",
           "syncedCouponsDescription": "Coupons created here are mirrored to a Polar discount automatically.",
           "syncedCouponsEmpty": "No coupons are mirrored to Polar yet.",
-          "syncedCouponsTitle": "Synced coupons"
+          "syncedCouponsTitle": "Synced coupons",
+          "syncHealthTab": "Sync health"
         },
         "manage": "Manage Polar",
         "notConfigured": "No token saved",
@@ -1695,6 +1800,59 @@
         "units": "Units",
         "warehouses": "Warehouses"
       },
+      "square": {
+        "advancedUrls": "Advanced URLs",
+        "appCredentialsDescription": "Save each workspace's Square application credentials here before starting OAuth.",
+        "appCredentialsTitle": "Square app credentials",
+        "applicationIdLabel": "Application ID",
+        "applicationIdPlaceholder": "Square application ID",
+        "applicationSecretLabel": "Application secret",
+        "applicationSecretPlaceholder": "Square application secret",
+        "appSecretEnding": "Application secret ending in {last4}",
+        "connectOAuth": "Connect OAuth",
+        "copyWebhook": "Copy URL",
+        "createDeviceCode": "Create pairing code",
+        "description": "Connect Square, select a location, and send reserved orders to a physical Square Terminal.",
+        "deviceCodeError": "Could not create device code.",
+        "deviceCodeNamePlaceholder": "Front counter terminal",
+        "deviceCodeSuccess": "Pairing code created.",
+        "deviceLabel": "Default terminal",
+        "devicePlaceholder": "Choose a terminal",
+        "environment": {
+          "production": "Production",
+          "sandbox": "Sandbox"
+        },
+        "environmentLabel": "Environment",
+        "locationLabel": "Location",
+        "locationPlaceholder": "Choose a location",
+        "notConfigured": "No Square token saved",
+        "oauthError": "Could not start Square OAuth.",
+        "oauthRedirectLabel": "OAuth redirect URL",
+        "oauthRedirectPlaceholder": "Defaults to this app's Square OAuth callback URL",
+        "oauthRequiresAppCredentials": "Save an application ID and secret before connecting OAuth.",
+        "readiness": "Readiness: {issues}",
+        "ready": "ready",
+        "sandboxDeviceLabel": "Sandbox device ID",
+        "saveAppCredentials": "Save app credentials",
+        "saveDefaults": "Save defaults",
+        "saveError": "Could not save Square settings.",
+        "saveManual": "Save manual token",
+        "saveSuccess": "Square settings saved.",
+        "saving": "Saving...",
+        "selectedEnvironment": "Selected: {environment}",
+        "terminalDescription": "Use a paired device in production. In sandbox, paste Square's sandbox terminal device ID.",
+        "terminalTitle": "Terminal routing",
+        "title": "Square Terminal",
+        "tokenEnding": "Token ending in {last4}",
+        "tokenLabel": "Access token",
+        "tokenPlaceholder": "Square access token",
+        "webhookNotificationLabel": "Webhook notification URL",
+        "webhookNotificationPlaceholder": "Defaults to the workspace Square webhook URL",
+        "webhookSignatureLabel": "Webhook signature key",
+        "webhookSignaturePlaceholder": "Square webhook signature key",
+        "webhookTitle": "Webhook ingestion",
+        "webhookUrlPending": "Webhook URL will appear after settings load"
+      },
       "states": {
         "errorDescription": "Refresh this view or try again after the API recovers.",
         "errorTitle": "Inventory data could not be loaded",
@@ -1712,6 +1870,14 @@
         "reserved": "Reserved"
       },
       "statusSearch": "Search status",
+      "stockWorkspace": {
+        "tabs": {
+          "stock": "Stock rows",
+          "warehouses": "Warehouses"
+        },
+        "warehousesDescription": "Create and rename the warehouses and units that product stock rows use.",
+        "warehousesTitle": "Warehouse setup"
+      },
       "views": {
         "audits": {
           "description": "Trace inventory, checkout, and finance events in one audit timeline.",
@@ -1776,7 +1942,9 @@
       "browse": "Browse storefront",
       "bundle": "Bundle",
       "bundleAvailability": "Bundle stock",
+      "bundleSelectionTitle": "Build bundle",
       "cart": "Cart",
+      "cheapestFreePreview": "Cheapest eligible item is free.",
       "checkout": "Checkout",
       "checkoutDisabled": "Checkout is disabled in preview.",
       "checkoutError": "Could not reserve this order.",
@@ -1801,10 +1969,13 @@
       "product": "Product",
       "publicStore": "Public storefront",
       "quantity": "Quantity",
+      "requiredItems": "Select {count} items",
       "reserve": "Reserve order",
       "reservedCopy": "Checkout reserves stock through Polar. Polar accounts for its platform fees and Stripe fees; Tuturuuu does not add a platform fee at this stage.",
       "reserving": "Reserving...",
       "retry": "Retry",
+      "searchBundleItems": "Search items",
+      "selectedItems": "{selected} of {required} selected",
       "soldOut": "Sold out",
       "store": "Store",
       "storefrontErrorDescription": "Refresh the storefront or try again later.",
@@ -2442,10 +2613,19 @@
       "workspace_navigation_title": "Workspace Default"
     },
     "inventory": {
+      "currency_description": "Used across inventory prices and inherited by new storefronts and costing profiles.",
+      "currency_placeholder": "Select currency",
+      "currency_save": "Save",
+      "currency_saving": "Saving…",
+      "currency_title": "Default currency",
+      "currency_update_error": "Could not update currency.",
+      "currency_update_success": "Currency updated.",
       "general": "General",
       "general_description": "Workspace identity and Inventory preferences",
       "polar": "Polar checkout",
       "polar_description": "Workspace checkout credentials and environment defaults",
+      "square": "Square Terminal",
+      "square_description": "Square OAuth, terminal pairing, and webhook readiness",
       "title": "Inventory",
       "workspace_name": "Workspace",
       "workspace_name_description": "The workspace currently powering this Inventory console."
@@ -2910,5 +3090,89 @@
     "description_too_long": "Description must be 500 characters or fewer",
     "name_required": "Name is required",
     "start_date_required": "Start date is required"
+  },
+  "ws-task-templates": {
+    "actions": {
+      "archive": "Archive template",
+      "cancel": "Cancel",
+      "create": "Create template",
+      "create_task": "Create task",
+      "new_template": "New template",
+      "save": "Save template",
+      "save_from_task": "Save from task",
+      "use": "Use"
+    },
+    "card": {
+      "assignees": "{count} assignees",
+      "labels": "{count} labels",
+      "projects": "{count} projects"
+    },
+    "create": {
+      "description": "Save reusable task defaults for repeated work.",
+      "title": "Create task template"
+    },
+    "empty": {
+      "description": "Create a template for recurring tasks, checklists, and standard handoffs.",
+      "no_results": "No templates match your search.",
+      "title": "No task templates"
+    },
+    "fields": {
+      "board": "Board",
+      "description": "Description",
+      "description_placeholder": "Default task description",
+      "key": "Key",
+      "key_placeholder": "bug-report",
+      "list": "List",
+      "override_name": "Override task title",
+      "priority": "Priority",
+      "search": "Search",
+      "search_placeholder": "Search task templates",
+      "task_id": "Task ID",
+      "task_id_placeholder": "Task UUID",
+      "task_name": "Task title",
+      "task_name_placeholder": "Investigate reported bug",
+      "template_name": "Template name",
+      "template_name_placeholder": "Sprint bug report",
+      "unnamed_board": "Untitled board",
+      "unnamed_list": "Untitled list",
+      "visibility": "Visibility"
+    },
+    "gallery": {
+      "board_marketplace": "Board marketplace",
+      "description": "Create reusable task starters and keep board templates available in one place.",
+      "header": "Task templates"
+    },
+    "priority": {
+      "critical": "Critical",
+      "high": "High",
+      "low": "Low",
+      "none": "No priority",
+      "normal": "Normal"
+    },
+    "save_from_task": {
+      "description": "Enter a task ID to snapshot its current fields into a reusable template.",
+      "title": "Save task as template"
+    },
+    "tabs": {
+      "boards": "Board Templates",
+      "tasks": "Task Templates"
+    },
+    "toast": {
+      "archived": "Task template archived",
+      "created": "Task template created",
+      "failed": "Task template action failed",
+      "no_template_selected": "No task template selected",
+      "saved_from_task": "Task template saved",
+      "task_created": "Task created from template"
+    },
+    "use": {
+      "description": "Create a task from {name}.",
+      "description_empty": "Create a task from the selected template.",
+      "title": "Use task template"
+    },
+    "visibility": {
+      "private": "Private",
+      "workspace": "Workspace"
+    }
   }
 }

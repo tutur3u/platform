@@ -5,6 +5,8 @@ import { DebtsPage } from './debts-page';
 
 const mocks = vi.hoisted(() => ({
   debtLoanForm: vi.fn(),
+  debtLoanList: vi.fn(),
+  debtLoanSummaryCards: vi.fn(),
   getDebtLoanSummary: vi.fn(),
   listDebtLoans: vi.fn(),
   listWallets: vi.fn(),
@@ -31,15 +33,22 @@ vi.mock('./debt-loan-form', () => ({
 }));
 
 vi.mock('./debt-loan-list', () => ({
-  DebtLoanList: () => null,
+  DebtLoanList: (props: unknown) => {
+    mocks.debtLoanList(props);
+    return null;
+  },
 }));
 
 vi.mock('./debt-loan-summary', () => ({
-  DebtLoanSummaryCards: () => null,
+  DebtLoanSummaryCards: (props: unknown) => {
+    mocks.debtLoanSummaryCards(props);
+    return null;
+  },
 }));
 
 function renderDebtsPage(
-  searchParams: { create?: string; type?: string } = {}
+  searchParams: { create?: string; type?: string } = {},
+  props: { currency?: string } = {}
 ) {
   const queryClient = new QueryClient({
     defaultOptions: {
@@ -51,7 +60,11 @@ function renderDebtsPage(
 
   return render(
     <QueryClientProvider client={queryClient}>
-      <DebtsPage wsId="ws-1" searchParams={searchParams} />
+      <DebtsPage
+        wsId="ws-1"
+        searchParams={searchParams}
+        currency={props.currency}
+      />
     </QueryClientProvider>
   );
 }
@@ -83,13 +96,49 @@ describe('debts page', () => {
   });
 
   it('opens the loan create dialog from query state', async () => {
-    renderDebtsPage({ create: 'loan' });
+    renderDebtsPage({ create: 'loan' }, { currency: 'SGD' });
 
     await waitFor(() => {
       expect(mocks.debtLoanForm).toHaveBeenCalledWith(
         expect.objectContaining({
+          defaultCurrency: 'SGD',
           defaultType: 'loan',
           wsId: 'ws-1',
+        })
+      );
+    });
+  });
+
+  it('passes workspace currency to summary without overriding list row currencies', async () => {
+    mocks.listDebtLoans.mockResolvedValueOnce([
+      {
+        currency: 'USD',
+        id: 'debt-1',
+        name: 'USD Debt',
+        status: 'active',
+        type: 'debt',
+      },
+    ]);
+
+    renderDebtsPage({}, { currency: 'SGD' });
+
+    await waitFor(() => {
+      expect(mocks.debtLoanSummaryCards).toHaveBeenCalledWith(
+        expect.objectContaining({
+          currency: 'SGD',
+          locale: 'en-SG',
+        })
+      );
+      expect(mocks.debtLoanList).toHaveBeenCalledWith(
+        expect.not.objectContaining({
+          currency: expect.anything(),
+        })
+      );
+      expect(mocks.debtLoanList).toHaveBeenCalledWith(
+        expect.objectContaining({
+          debtLoans: expect.arrayContaining([
+            expect.objectContaining({ currency: 'USD' }),
+          ]),
         })
       );
     });

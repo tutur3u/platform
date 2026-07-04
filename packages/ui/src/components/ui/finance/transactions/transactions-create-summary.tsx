@@ -15,6 +15,7 @@ interface TransactionsCreateSummaryProps {
   createDescription: string;
   createTitle: string;
   defaultOpen?: boolean;
+  defaultCurrency?: string;
   description: string;
   initialMode?: 'transaction' | 'transfer';
   permissionRequestUser?: FinancePermissionRequestUser | null;
@@ -32,6 +33,7 @@ export function TransactionsCreateSummary({
   createDescription,
   createTitle,
   defaultOpen = false,
+  defaultCurrency,
   description,
   initialMode = 'transaction',
   permissionRequestUser,
@@ -59,6 +61,7 @@ export function TransactionsCreateSummary({
               canCreateConfidentialTransactions
             }
             initialMode={initialMode}
+            defaultCurrency={defaultCurrency}
             timezone={timezone}
             permissionRequestUser={permissionRequestUser}
           />

@@ -1,11 +1,12 @@
 ---
 title: Storefront
-description: Public and private inventory storefronts with Polar checkout.
+description: Public and private inventory storefronts with Polar and Square Terminal checkout.
 ---
 
 `apps/storefront` is the buyer-facing Inventory commerce app. Operators manage
-catalog, stock, storefront visibility, and Polar settings in `apps/inventory`;
-buyers browse, cart, and start checkout from `storefront.tuturuuu.com`.
+catalog, stock, storefront visibility, and checkout-provider settings in
+`apps/inventory`; buyers browse, cart, and start checkout from
+`storefront.tuturuuu.com`.
 
 ## Hosts
 
@@ -32,3 +33,16 @@ Storefront checkout reserves inventory first, creates a Polar checkout session
 with the workspace-owned private one-time product, and redirects the buyer to
 Polar. If Polar checkout creation fails after reservation, the reservation is
 released immediately.
+
+## Square Terminal Checkout
+
+Square Terminal checkout is a pay-at-terminal handoff. Storefront validates
+Square readiness, creates a local reservation, and shows the buyer a local order
+reference page instead of redirecting to a hosted payment page. Inventory staff
+then sends that reserved checkout to a paired Square Terminal, cancels it, or
+checks its status from the commerce workflow.
+
+Square payment success is accepted only from verified Square webhook or status
+data. Cancellation, failure, or expiry releases the local reservation so stock
+returns to availability. Square catalog sync is intentionally out of scope;
+Inventory remains the source of truth for items, prices, and stock.

@@ -6,6 +6,10 @@ import type { JSONContent } from '@tiptap/react';
  */
 const IMAGE_NODE_TYPES = ['image', 'imageResize'];
 
+function getContentChildren(node: JSONContent): JSONContent[] | null {
+  return Array.isArray(node.content) ? node.content : null;
+}
+
 /**
  * Migrates content from inline images (inside paragraphs) to block-level images.
  * This ensures backward compatibility when switching from inline: true to inline: false.
@@ -36,13 +40,19 @@ const IMAGE_NODE_TYPES = ['image', 'imageResize'];
 export function migrateInlineImagesToBlock(
   content: JSONContent | null
 ): JSONContent | null {
-  if (!content?.content) return content;
+  if (!content) return content;
+
+  const contentChildren = getContentChildren(content);
+  if (!contentChildren) return content;
 
   const newContent: JSONContent[] = [];
 
-  for (const node of content.content) {
+  for (const node of contentChildren) {
     // Recursively migrate nested structures (lists, blockquotes, etc.)
-    if (node.content && !IMAGE_NODE_TYPES.includes(node.type || '')) {
+    if (
+      getContentChildren(node) &&
+      !IMAGE_NODE_TYPES.includes(node.type || '')
+    ) {
       const migratedNode = migrateNodeContent(node);
       if (migratedNode.extractedImages.length > 0) {
         // Add the node with non-image content (if it has any)
@@ -74,18 +84,23 @@ interface MigratedNode {
  * Recursively migrates a node's content, extracting inline images from paragraphs.
  */
 function migrateNodeContent(node: JSONContent): MigratedNode {
+  const contentChildren = getContentChildren(node);
+
   // Handle paragraph nodes - extract inline images
-  if (node.type === 'paragraph' && node.content?.length) {
+  if (node.type === 'paragraph' && contentChildren?.length) {
     return extractImagesFromParagraph(node);
   }
 
   // Handle container nodes (list items, blockquotes, table cells, etc.) - recurse into children
-  if (node.content?.length) {
+  if (contentChildren?.length) {
     const migratedChildren: JSONContent[] = [];
     const allExtractedImages: JSONContent[] = [];
 
-    for (const child of node.content) {
-      if (child.content && !IMAGE_NODE_TYPES.includes(child.type || '')) {
+    for (const child of contentChildren) {
+      if (
+        getContentChildren(child) &&
+        !IMAGE_NODE_TYPES.includes(child.type || '')
+      ) {
         const result = migrateNodeContent(child);
 
         if (result.extractedImages.length > 0) {
@@ -116,14 +131,16 @@ function migrateNodeContent(node: JSONContent): MigratedNode {
  * and the extracted images separately.
  */
 function extractImagesFromParagraph(paragraph: JSONContent): MigratedNode {
-  if (!paragraph.content) {
+  const contentChildren = getContentChildren(paragraph);
+
+  if (!contentChildren) {
     return { node: paragraph, extractedImages: [] };
   }
 
   const textContent: JSONContent[] = [];
   const images: JSONContent[] = [];
 
-  for (const child of paragraph.content) {
+  for (const child of contentChildren) {
     if (IMAGE_NODE_TYPES.includes(child.type || '')) {
       images.push(child);
     } else {
@@ -148,9 +165,10 @@ function extractImagesFromParagraph(paragraph: JSONContent): MigratedNode {
  * Empty paragraphs should be filtered out when all content was extracted.
  */
 function hasNonEmptyContent(node: JSONContent): boolean {
-  if (!node.content || node.content.length === 0) return false;
+  const contentChildren = getContentChildren(node);
+  if (!contentChildren || contentChildren.length === 0) return false;
 
-  return node.content.some((child) => {
+  return contentChildren.some((child) => {
     // Check for text content
     if (child.text && child.text.trim().length > 0) return true;
 
@@ -165,7 +183,7 @@ function hasNonEmptyContent(node: JSONContent): boolean {
     }
 
     // Recursively check children
-    if (child.content) return hasNonEmptyContent(child);
+    if (getContentChildren(child)) return hasNonEmptyContent(child);
 
     return false;
   });
@@ -176,24 +194,29 @@ function hasNonEmptyContent(node: JSONContent): boolean {
  * Used to avoid unnecessary processing.
  */
 export function needsMigration(content: JSONContent | null): boolean {
-  if (!content?.content) return false;
+  if (!content) return false;
+
+  const contentChildren = getContentChildren(content);
+  if (!contentChildren) return false;
 
   function checkNode(node: JSONContent): boolean {
+    const nodeChildren = getContentChildren(node);
+
     // Check if this is a paragraph with inline images
-    if (node.type === 'paragraph' && node.content?.length) {
-      const hasImage = node.content.some((child) =>
+    if (node.type === 'paragraph' && nodeChildren?.length) {
+      const hasImage = nodeChildren.some((child) =>
         IMAGE_NODE_TYPES.includes(child.type || '')
       );
       if (hasImage) return true;
     }
 
     // Recursively check children
-    if (node.content?.length) {
-      return node.content.some((child) => checkNode(child));
+    if (nodeChildren?.length) {
+      return nodeChildren.some((child) => checkNode(child));
     }
 
     return false;
   }
 
-  return content.content.some((node) => checkNode(node));
+  return contentChildren.some((node) => checkNode(node));
 }

@@ -56,6 +56,17 @@ export type WorkspaceInvitationsResponse = {
   invitations: WorkspaceInvitationRecord[];
 };
 
+export type WorkspaceMemberSettingsResponse = {
+  disableInvite: boolean;
+};
+
+export type WorkspaceSecretSummary = {
+  created_at?: string | null;
+  id?: string;
+  name?: string | null;
+  updated_at?: string | null;
+};
+
 export type ListWorkspacesParams = {
   limit?: number;
   q?: string;
@@ -222,6 +233,34 @@ export async function listWorkspaceMembers(
   return payload.members ?? [];
 }
 
+export async function getWorkspaceMemberSettings(
+  workspaceId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+
+  return client.json<WorkspaceMemberSettingsResponse>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/settings/members`,
+    {
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function listWorkspaceSecrets(
+  workspaceId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+
+  return client.json<WorkspaceSecretSummary[]>(
+    `/api/workspaces/${encodePathSegment(workspaceId)}/secrets`,
+    {
+      cache: 'no-store',
+    }
+  );
+}
+
 export async function listEnhancedWorkspaceMembers(
   workspaceId: string,
   status?: 'all' | 'joined' | 'invited',
@@ -258,7 +297,6 @@ export async function updateWorkspaceMemberProfile(
     workspaceUser: {
       id: string;
       display_name: string | null;
-      email: string | null;
     };
   }>(`/api/workspaces/${encodePathSegment(workspaceId)}/members/profile`, {
     body: JSON.stringify(payload),

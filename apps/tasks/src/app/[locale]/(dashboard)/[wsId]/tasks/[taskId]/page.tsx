@@ -1,5 +1,6 @@
 import TaskDetailServerPage from '@tuturuuu/ui/tu-do/shared/task-detail-server-page';
 import type { Metadata } from 'next';
+import { connection } from 'next/server';
 
 export const metadata: Metadata = {
   title: 'Task Details',
@@ -14,5 +15,7 @@ interface Props {
 }
 
 export default async function Page({ params }: Props) {
+  await connection();
+
   return <TaskDetailServerPage params={params} routePrefix="" />;
 }

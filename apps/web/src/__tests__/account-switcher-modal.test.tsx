@@ -70,7 +70,7 @@ vi.mock('next-intl', () => ({
 }));
 
 // Mock icons
-vi.mock('@tuturuuu/icons/lucide', () => ({
+vi.mock('@tuturuuu/icons/lucide-static', () => ({
   Check: () => <div>Check Icon</div>,
   Loader2: () => <div>Loading Icon</div>,
   Plus: () => <div>Plus Icon</div>,

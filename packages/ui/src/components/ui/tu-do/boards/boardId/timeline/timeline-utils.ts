@@ -62,6 +62,7 @@ const DEFAULT_PAST_PADDING_DAYS = 3;
 const DEFAULT_FUTURE_PADDING_DAYS = 6;
 const EMPTY_PAST_PADDING_DAYS = 7;
 const EMPTY_FUTURE_PADDING_DAYS = 14;
+export const MAX_TIMELINE_DAYS = 180;
 const TIMELINE_LIST_STATUS_ORDER: Record<string, number> = {
   not_started: 0,
   active: 1,
@@ -124,6 +125,48 @@ export function buildMonthSegments(days: Date[]) {
   }
 
   return segments;
+}
+
+function capTimelineRange(
+  rangeStart: Date,
+  rangeEnd: Date,
+  todayMid: dayjs.Dayjs
+) {
+  const start = dayjs(rangeStart).startOf('day');
+  const end = dayjs(rangeEnd).startOf('day');
+  const totalDays = end.diff(start, 'day') + 1;
+
+  if (totalDays <= MAX_TIMELINE_DAYS) {
+    return {
+      rangeStart: start.toDate(),
+      rangeEnd: end.toDate(),
+    };
+  }
+
+  const latestStart = end.subtract(MAX_TIMELINE_DAYS - 1, 'day');
+  let cappedStart = start;
+
+  if (
+    (todayMid.isAfter(start) || todayMid.isSame(start, 'day')) &&
+    (todayMid.isBefore(end) || todayMid.isSame(end, 'day'))
+  ) {
+    cappedStart = todayMid.subtract(Math.floor(MAX_TIMELINE_DAYS / 2), 'day');
+  } else if (todayMid.isAfter(end)) {
+    cappedStart = latestStart;
+  }
+
+  if (cappedStart.isBefore(start)) {
+    cappedStart = start;
+  }
+
+  if (cappedStart.isAfter(latestStart)) {
+    cappedStart = latestStart;
+  }
+
+  return {
+    rangeStart: cappedStart.toDate(),
+    rangeEnd: cappedStart.add(MAX_TIMELINE_DAYS - 1, 'day').toDate(),
+  };
 }
 
 function withTaskRows(
@@ -280,7 +323,7 @@ export function buildTimelineModel(
     });
   }
 
-  const rangeStart = scheduled.length
+  const rawRangeStart = scheduled.length
     ? dayjs(
         scheduled.reduce(
           (min, item) => (item.start < min ? item.start : min),
@@ -292,7 +335,7 @@ export function buildTimelineModel(
         .toDate()
     : todayMid.subtract(EMPTY_PAST_PADDING_DAYS, 'day').toDate();
 
-  const rangeEnd = scheduled.length
+  const rawRangeEnd = scheduled.length
     ? dayjs(
         scheduled.reduce(
           (max, item) => (item.end > max ? item.end : max),
@@ -303,6 +346,12 @@ export function buildTimelineModel(
         .startOf('day')
         .toDate()
     : todayMid.add(EMPTY_FUTURE_PADDING_DAYS, 'day').toDate();
+
+  const { rangeStart, rangeEnd } = capTimelineRange(
+    rawRangeStart,
+    rawRangeEnd,
+    todayMid
+  );
 
   const days = enumerateDays(rangeStart, rangeEnd);
   const monthSegments = buildMonthSegments(days);

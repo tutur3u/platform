@@ -7,14 +7,21 @@ import {
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskBoardStatus } from '@tuturuuu/types/primitives/TaskBoard';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
+import { isPersonalExternalStagingListId } from '@tuturuuu/utils/task-helper';
 import {
   isTaskBoardCompletedStatus,
   isTaskBoardTerminalStatus,
 } from '@tuturuuu/utils/task-list-status';
 
 export function isPersonalExternalTask(task?: Task) {
+  const hasSourceTaskMetadata = Boolean(
+    task?.source_workspace_id || task?.source_board_id || task?.source_list_id
+  );
+
   return (
-    task?.is_personal_external === true || Boolean(task?.personal_board_id)
+    task?.is_personal_external === true ||
+    Boolean(task?.list_id && isPersonalExternalStagingListId(task.list_id)) ||
+    (hasSourceTaskMetadata && Boolean(task?.personal_board_id))
   );
 }
 

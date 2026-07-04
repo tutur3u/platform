@@ -1,10 +1,10 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
-import type { WorkspaceCronExecution } from '@tuturuuu/types';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import { CustomDataTable } from '@/components/custom-data-table';
+import type { ManagedWorkspaceCronExecution } from '../types';
 import { getColumns } from './columns';
 
 export const metadata: Metadata = {
@@ -36,17 +36,16 @@ export default async function WorkspaceCronExecutionsPage({
 
   const executions = data.map((e) => ({
     ...e,
+    job: e.workspace_cron_jobs?.name ?? e.job_id,
     href: `/${wsId}/cron/executions/${e.id}`,
   }));
 
   return (
     <>
       <FeatureSummary
-        pluralTitle={t('ws-cron-jobs.plural')}
-        singularTitle={t('ws-cron-jobs.singular')}
-        description={t('ws-cron-jobs.description')}
-        createTitle={t('ws-cron-jobs.create')}
-        createDescription={t('ws-cron-jobs.create_description')}
+        pluralTitle={t('ws-cron-executions.plural')}
+        singularTitle={t('ws-cron-executions.singular')}
+        description={t('ws-cron-executions.description')}
       />
       <Separator className="my-4" />
       <CustomDataTable
@@ -78,7 +77,8 @@ async function getData(
 
   const queryBuilder = supabase
     .from('workspace_cron_executions')
-    .select('*')
+    .select('*, workspace_cron_jobs!inner(ws_id, name)', { count: 'exact' })
+    .eq('workspace_cron_jobs.ws_id', wsId)
     .order('created_at', { ascending: false });
 
   if (page && pageSize) {
@@ -97,7 +97,7 @@ async function getData(
   }
 
   return { data, count } as unknown as {
-    data: WorkspaceCronExecution[];
+    data: ManagedWorkspaceCronExecution[];
     count: number;
   };
 }

@@ -1,7 +1,14 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { CalendarDays, Palette, PanelLeft, User } from '@tuturuuu/icons';
+import {
+  CalendarDays,
+  Clock,
+  LayoutGrid,
+  Palette,
+  PanelLeft,
+  User,
+} from '@tuturuuu/icons';
 import { listCalendarConnections } from '@tuturuuu/internal-api/calendar';
 import { getWorkspace } from '@tuturuuu/internal-api/workspaces';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
@@ -17,6 +24,8 @@ import { isExactTuturuuuDotComEmail } from '@tuturuuu/utils/email/client';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { useSidebar } from '@/context/sidebar-context';
+import { CalendarSettingsContent } from './calendar/calendar-settings-content';
+import { CalendarSettingsWrapper } from './calendar/calendar-settings-wrapper';
 
 interface SettingsDialogProps {
   wsId?: string;
@@ -38,7 +47,7 @@ export function SettingsDialog({
   );
 
   // Fetch workspace for settings
-  const { data: _workspace } = useQuery({
+  const { data: workspace } = useQuery({
     queryKey: ['workspace', wsId],
     queryFn: async () => {
       if (!wsId) throw new Error('No workspace ID');
@@ -78,6 +87,20 @@ export function SettingsDialog({
         },
         ...(wsId
           ? [
+              {
+                name: 'calendar_hours',
+                label: t('settings.calendar.hours'),
+                icon: Clock,
+                description: t('settings.calendar.hours_description'),
+                keywords: ['Calendar', 'Hours', 'Timezone'],
+              },
+              {
+                name: 'calendar_colors',
+                label: t('settings.calendar.colors'),
+                icon: LayoutGrid,
+                description: t('settings.calendar.colors_description'),
+                keywords: ['Calendar', 'Colors', 'Categories'],
+              },
               {
                 name: 'calendar_integrations',
                 label: t('settings.calendar.integrations'),
@@ -135,6 +158,19 @@ export function SettingsDialog({
           <LunarCalendarSettings />
         </div>
       )}
+
+      {(activeTab === 'calendar_hours' || activeTab === 'calendar_colors') &&
+        wsId && (
+          <CalendarSettingsWrapper wsId={wsId}>
+            <div className="h-full">
+              <CalendarSettingsContent
+                section={activeTab}
+                wsId={wsId}
+                workspace={workspace ?? null}
+              />
+            </div>
+          </CalendarSettingsWrapper>
+        )}
 
       {activeTab === 'calendar_integrations' && wsId && (
         <CalendarSyncProvider

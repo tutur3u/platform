@@ -394,6 +394,87 @@ describe('wallets route', () => {
     expect(mocks.creditWalletUpsert).not.toHaveBeenCalled();
   });
 
+  it('uses workspace default currency when wallet create omits currency', async () => {
+    mocks.getWorkspaceConfig.mockResolvedValue('SGD');
+    mocks.getFinanceRouteContext.mockResolvedValue({
+      context: {
+        normalizedWsId: 'ws-1',
+        permissions: withPermissions(['create_wallets']),
+        sbAdmin: createAdminClient(),
+        user: {
+          id: 'user-1',
+        },
+      },
+    });
+
+    const { POST } = await import('./route.js');
+    const response = await POST(
+      new Request('http://localhost/api/v1/workspaces/ws-1/wallets', {
+        method: 'POST',
+        body: JSON.stringify({
+          name: 'Cash',
+          type: 'STANDARD',
+        }),
+      }),
+      {
+        params: Promise.resolve({
+          wsId: 'ws-1',
+        }),
+      }
+    );
+
+    expect(response.status).toBe(200);
+    expect(mocks.getWorkspaceConfig).toHaveBeenCalledWith(
+      'ws-1',
+      'DEFAULT_CURRENCY'
+    );
+    expect(mocks.privateWalletUpsert).toHaveBeenCalledWith([
+      expect.objectContaining({
+        currency: 'SGD',
+        name: 'Cash',
+        type: 'STANDARD',
+        ws_id: 'ws-1',
+      }),
+    ]);
+  });
+
+  it('rejects unsupported explicit wallet currencies', async () => {
+    mocks.getFinanceRouteContext.mockResolvedValue({
+      context: {
+        normalizedWsId: 'ws-1',
+        permissions: withPermissions(['create_wallets']),
+        sbAdmin: createAdminClient(),
+        user: {
+          id: 'user-1',
+        },
+      },
+    });
+
+    const { POST } = await import('./route.js');
+    const response = await POST(
+      new Request('http://localhost/api/v1/workspaces/ws-1/wallets', {
+        method: 'POST',
+        body: JSON.stringify({
+          name: 'Cash',
+          currency: 'DOGE',
+          type: 'STANDARD',
+        }),
+      }),
+      {
+        params: Promise.resolve({
+          wsId: 'ws-1',
+        }),
+      }
+    );
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual({
+      message: 'Unsupported currency',
+    });
+    expect(mocks.getWorkspaceConfig).not.toHaveBeenCalled();
+    expect(mocks.privateWalletUpsert).not.toHaveBeenCalled();
+  });
+
   it('upserts credit metadata for credit wallet creation', async () => {
     mocks.getFinanceRouteContext.mockResolvedValue({
       context: {

@@ -1,6 +1,6 @@
 {
   "name": "@tuturuuu/supabase",
-  "version": "0.3.3",
+  "version": "0.4.0",
   "description": "Supabase client and utilities for Next.js applications with SSR support, cookie handling, and TypeScript type safety",
   "keywords": [
     "supabase",
@@ -71,6 +71,11 @@
       "bun": "./src/next/realtime-log-provider.tsx",
       "default": "./dist/next/realtime-log-provider.js"
     },
+    "./request/server": {
+      "types": "./dist/request/server.d.ts",
+      "bun": "./src/request/server.ts",
+      "default": "./dist/request/server.js"
+    },
     "./next/server": {
       "types": "./dist/next/server.d.ts",
       "bun": "./src/next/server.ts",
@@ -90,9 +95,9 @@
     "access": "public"
   },
   "scripts": {
-    "build": "tsgo --build",
-    "dev": "tsgo --build --watch",
-    "type-check": "tsgo --project tsconfig.typecheck.json",
+    "build": "tsc --build",
+    "dev": "tsc --build --watch",
+    "type-check": "tsc --project tsconfig.typecheck.json",
     "clean": "rm -rf dist .turbo",
     "prepublishOnly": "bun run clean && bun run build",
     "test": "vitest run",
@@ -100,26 +105,25 @@
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.0",
-    "@supabase/supabase-js": "^2.108.1",
+    "@supabase/supabase-js": "^2.110.0",
     "@tuturuuu/types": "workspace:*",
-    "next": "^16.2.9",
+    "next": "^16.3.0-preview.5",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "zod": "^4.4.3"
   },
   "devDependencies": {
     "@tuturuuu/typescript-config": "workspace:*",
-    "@types/node": "^25.9.3",
+    "@types/node": "^26.0.1",
     "@types/react": "^19.2.17",
-    "@typescript/native-preview": "^7.0.0-dev.20260614.1",
-    "next": "^16.2.9",
+    "next": "^16.3.0-preview.5",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
-    "typescript": "^6.0.3",
-    "vitest": "^4.1.8"
+    "typescript": "7.0.1-rc",
+    "vitest": "^4.1.9"
   },
   "peerDependencies": {
-    "next": ">=16.2.9",
+    "next": ">=16.3.0-preview.5",
     "react": ">=19.2.7",
     "react-dom": ">=19.2.7"
   },

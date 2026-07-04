@@ -356,12 +356,14 @@ export async function generateWorkspaceCourseModulesFromStorage(
 
 export interface GenerateQuizFromLessonPayload {
   lessonId: string;
+  testId?: string;
   context?: string;
   questionType?:
     | 'multiple_choice'
     | 'true_false'
     | 'matching'
     | 'ordering'
+    | 'paragraph'
     | 'mix';
   count?: number;
 }

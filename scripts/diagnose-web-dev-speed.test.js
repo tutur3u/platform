@@ -2,11 +2,15 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 
 const {
+  classifyDiagnostics,
+  collectMatchingProcessTree,
   collectWebDevSpeedDiagnostics,
+  extractDockerBuildMemoryPolicy,
   extractSlowFilesystemWarnings,
   extractWatcherErrors,
   formatBytes,
   formatDiagnosticsReport,
+  getCleanupRecommendations,
   getLatestDevServerStartTime,
   getLatestDevServerTraceEvents,
   parseTraceEvents,
@@ -122,6 +126,22 @@ test('collectWebDevSpeedDiagnostics reads cache state, logs, and traces', () => 
         '[{"name":"compile-path","duration":5000,"startTime":220,"tags":{"trigger":"/[locale]/[wsId]"}}]',
       ].join('\n'),
     ],
+    [
+      '/repo/apps/web/Dockerfile',
+      [
+        'ARG DOCKER_WEB_BUILD_MEMORY=12g',
+        'ARG DOCKER_WEB_NODE_MAX_OLD_SPACE_SIZE=auto',
+      ].join('\n'),
+    ],
+    [
+      '/repo/apps/web/package.json',
+      JSON.stringify({
+        scripts: {
+          build:
+            "NODE_OPTIONS='--max-old-space-size=8192' next build --turbopack",
+        },
+      }),
+    ],
   ]);
   const existing = new Set([
     '/repo/.turbo/cache',
@@ -136,7 +156,18 @@ test('collectWebDevSpeedDiagnostics reads cache state, logs, and traces', () => 
 
   const diagnostics = collectWebDevSpeedDiagnostics({
     cachePaths: ['.turbo/cache', 'apps/web/.next/dev', 'missing'],
-    execFileSyncImpl: (_command, _args) => '2048\tpath\n',
+    execFileSyncImpl: (command, args) => {
+      if (command === 'ps') {
+        assert.deepEqual(args, ['-axo', 'pid=,ppid=,rss=,command=']);
+        return [
+          '100 1 10000 node apps/web/node_modules/.bin/next dev -p 7803 --turbopack',
+          '101 100 20000 next-server (v16.2.9)',
+          '102 101 3000 node apps/web/.next/dev/build/example.js',
+        ].join('\n');
+      }
+
+      return '2048\tpath\n';
+    },
     fsImpl,
     rootDir: '/repo',
   });
@@ -158,13 +189,162 @@ test('collectWebDevSpeedDiagnostics reads cache state, logs, and traces', () => 
   assert.equal(diagnostics.traceSpans[0].durationMs, 42000);
   assert.equal(diagnostics.latestTraceSpans[0].durationMs, 500);
   assert.equal(diagnostics.latestTraceSpans[1].durationMs, 5);
+  assert.equal(diagnostics.processDiagnostics.totalRssBytes, 33_000 * 1024);
+  assert.deepEqual(diagnostics.buildMemoryPolicy, {
+    dockerBuildMemory: '12g',
+    dockerNodeMaxOldSpace: 'auto',
+    webBuildMaxOldSpace: '8192',
+  });
+});
+
+test('collectMatchingProcessTree includes matching web dev descendants', () => {
+  assert.deepEqual(
+    collectMatchingProcessTree(
+      [
+        {
+          command: 'node apps/web/node_modules/.bin/next dev -p 7803',
+          pid: 10,
+          ppid: 1,
+          rssBytes: 10,
+        },
+        {
+          command: 'next-server (v16.2.9)',
+          pid: 11,
+          ppid: 10,
+          rssBytes: 20,
+        },
+        {
+          command: 'node apps/web/.next/dev/build/chunk.js',
+          pid: 12,
+          ppid: 11,
+          rssBytes: 5,
+        },
+        { command: 'node unrelated.js', pid: 20, ppid: 1, rssBytes: 999 },
+      ],
+      ['apps/web']
+    ).map(({ pid }) => pid),
+    [11, 10, 12]
+  );
+});
+
+test('collectMatchingProcessTree excludes Vitest roots from Next dev RSS', () => {
+  assert.deepEqual(
+    collectMatchingProcessTree([
+      {
+        command: 'node apps/web/node_modules/.bin/vitest run',
+        pid: 10,
+        ppid: 1,
+        rssBytes: 400,
+      },
+      {
+        command: 'node vitest/dist/workers/forks.js',
+        pid: 11,
+        ppid: 10,
+        rssBytes: 300,
+      },
+      {
+        command: 'node apps/web/node_modules/.bin/next dev -p 7803 --turbopack',
+        pid: 20,
+        ppid: 1,
+        rssBytes: 100,
+      },
+      {
+        command: 'next-server (v16.2.9)',
+        pid: 21,
+        ppid: 20,
+        rssBytes: 200,
+      },
+    ]).map(({ pid }) => pid),
+    [21, 20]
+  );
+});
+
+test('extractDockerBuildMemoryPolicy tolerates missing package JSON', () => {
+  const files = new Map([
+    [
+      '/repo/apps/web/Dockerfile',
+      [
+        'ARG DOCKER_WEB_BUILD_MEMORY=8g',
+        'ARG DOCKER_WEB_NODE_MAX_OLD_SPACE_SIZE=4096',
+      ].join('\n'),
+    ],
+  ]);
+  const fsImpl = {
+    existsSync: (filePath) => files.has(filePath),
+    readFileSync: (filePath) => files.get(filePath),
+  };
+
+  assert.deepEqual(
+    extractDockerBuildMemoryPolicy({ fsImpl, rootDir: '/repo' }),
+    {
+      dockerBuildMemory: '8g',
+      dockerNodeMaxOldSpace: '4096',
+      webBuildMaxOldSpace: null,
+    }
+  );
+});
+
+test('classifyDiagnostics separates RSS, cache, watcher, and build pressure', () => {
+  const findings = classifyDiagnostics({
+    buildMemoryPolicy: {
+      dockerBuildMemory: '12g',
+      webBuildMaxOldSpace: '8192',
+    },
+    cacheSummaries: [
+      {
+        bytes: 3 * 1024 * 1024 * 1024,
+        exists: true,
+        path: 'apps/web/.next/dev/cache/turbopack',
+      },
+    ],
+    processDiagnostics: {
+      available: true,
+      processes: [],
+      totalRssBytes: 512 * 1024 * 1024,
+    },
+    watcherErrors: ['Watchpack Error (watcher): Error: EMFILE'],
+  });
+
+  assert.match(findings.join('\n'), /Turbopack dev cache is large/);
+  assert.match(findings.join('\n'), /watcher errors are present/);
+  assert.match(findings.join('\n'), /build memory policy is configured/);
+  assert.doesNotMatch(findings.join('\n'), /live Next dev process RSS is high/);
+});
+
+test('getCleanupRecommendations suggests targeted dev cache cleanup', () => {
+  assert.deepEqual(
+    getCleanupRecommendations({
+      cacheSummaries: [
+        {
+          bytes: 3 * 1024 * 1024 * 1024,
+          exists: true,
+          path: 'apps/web/.next/dev/cache/turbopack',
+        },
+        {
+          bytes: 2 * 1024 * 1024 * 1024,
+          exists: true,
+          path: '.turbo/cache',
+        },
+      ],
+    }),
+    [
+      'run `bun clean:dev:web --dry-run`, then `bun clean:dev:web` to remove the web Next dev cache',
+      'add `--include-turbo-cache` when you also want to clear `.turbo/cache` after branch or graph churn',
+    ]
+  );
 });
 
 test('formatDiagnosticsReport prints missing traces without failing', () => {
   assert.match(
     formatDiagnosticsReport({
+      buildMemoryPolicy: {},
       cacheSummaries: [{ path: '.turbo/cache', exists: false, bytes: 0 }],
       latestTraceSpans: [],
+      processDiagnostics: {
+        available: true,
+        processes: [],
+        totalRssBytes: 0,
+      },
       slowFilesystemWarnings: [],
       traceSpans: [],
       watcherErrors: [],

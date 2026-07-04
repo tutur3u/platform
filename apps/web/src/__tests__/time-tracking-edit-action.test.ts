@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { handleEditAction } from '../app/api/v1/workspaces/[wsId]/time-tracking/sessions/[sessionId]/actions/edit';
-import type { SessionRecord } from '../app/api/v1/workspaces/[wsId]/time-tracking/sessions/[sessionId]/schemas';
+import { handleEditAction } from '../legacy-api-routes/v1/workspaces/[wsId]/time-tracking/sessions/[sessionId]/actions/edit';
+import type { SessionRecord } from '../legacy-api-routes/v1/workspaces/[wsId]/time-tracking/sessions/[sessionId]/schemas';
 
 const baseSession = {
   id: 'session-1',

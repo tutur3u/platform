@@ -1,6 +1,6 @@
 'use client';
 
-import { UserPlus } from '@tuturuuu/icons/lucide';
+import { UserPlus } from '@tuturuuu/icons/lucide-static';
 import {
   DropdownMenuGroup,
   DropdownMenuItem,

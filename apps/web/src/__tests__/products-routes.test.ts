@@ -270,6 +270,22 @@ vi.mock('@tuturuuu/utils/workspace-helper', () => ({
   verifySecret: vi.fn(() => Promise.resolve(true)),
 }));
 
+// The product/[productId] and inventory routes now resolve auth through the
+// inventory app-session-aware helper. Mock it to grant access with the same
+// permission shape the rest of these tests rely on.
+vi.mock('@tuturuuu/inventory-core/commerce/auth', () => ({
+  authorizeInventoryWorkspace: vi.fn(() =>
+    Promise.resolve({
+      ok: true,
+      value: {
+        permissions: mocks.permissions,
+        userId: 'user-1',
+        wsId: 'normalized-ws',
+      },
+    })
+  ),
+}));
+
 vi.mock('server-only', () => ({}));
 
 vi.mock('next/headers', () => ({
@@ -346,7 +362,7 @@ describe('product routes', () => {
     });
 
     const { GET } = await import(
-      '@/app/api/v1/workspaces/[wsId]/products/[productId]/route'
+      '@/legacy-api-routes/v1/workspaces/[wsId]/products/[productId]/route'
     );
     const response = await GET(
       new NextRequest(
@@ -378,7 +394,7 @@ describe('product routes', () => {
     });
 
     const { POST } = await import(
-      '@/app/api/v1/workspaces/[wsId]/products/route'
+      '@/legacy-api-routes/v1/workspaces/[wsId]/products/route'
     );
     const response = await POST(
       new NextRequest('http://localhost/api/v1/workspaces/ws-1/products', {
@@ -411,7 +427,7 @@ describe('product routes', () => {
     });
 
     const { POST } = await import(
-      '@/app/api/v1/workspaces/[wsId]/products/route'
+      '@/legacy-api-routes/v1/workspaces/[wsId]/products/route'
     );
     const response = await POST(
       new NextRequest('http://localhost/api/v1/workspaces/personal/products', {
@@ -458,7 +474,7 @@ describe('product routes', () => {
     });
 
     const { POST } = await import(
-      '@/app/api/v1/workspaces/[wsId]/products/[productId]/inventory/route'
+      '@/legacy-api-routes/v1/workspaces/[wsId]/products/[productId]/inventory/route'
     );
     const response = await POST(
       new NextRequest(
@@ -519,7 +535,7 @@ describe('product routes', () => {
     });
 
     const { PATCH } = await import(
-      '@/app/api/v1/workspaces/[wsId]/products/[productId]/inventory/route'
+      '@/legacy-api-routes/v1/workspaces/[wsId]/products/[productId]/inventory/route'
     );
     const response = await PATCH(
       new NextRequest(
@@ -562,7 +578,7 @@ describe('product routes', () => {
     });
 
     const { GET } = await import(
-      '@/app/api/v1/workspaces/[wsId]/products/count/route'
+      '@/legacy-api-routes/v1/workspaces/[wsId]/products/count/route'
     );
     const response = await GET(
       new NextRequest('http://localhost/api/v1/workspaces/ws-1/products/count'),
@@ -597,7 +613,7 @@ describe('product routes', () => {
     });
 
     const { GET } = await import(
-      '@/app/api/v1/workspaces/[wsId]/products/[productId]/route'
+      '@/legacy-api-routes/v1/workspaces/[wsId]/products/[productId]/route'
     );
     const response = await GET(
       new NextRequest(
@@ -626,7 +642,7 @@ describe('product routes', () => {
     });
 
     const { POST } = await import(
-      '@/app/api/v1/workspaces/[wsId]/products/route'
+      '@/legacy-api-routes/v1/workspaces/[wsId]/products/route'
     );
     const response = await POST(
       new NextRequest('http://localhost/api/v1/workspaces/ws-1/products', {
@@ -657,7 +673,7 @@ describe('product routes', () => {
     });
 
     const { POST } = await import(
-      '@/app/api/v1/workspaces/[wsId]/products/[productId]/inventory/route'
+      '@/legacy-api-routes/v1/workspaces/[wsId]/products/[productId]/inventory/route'
     );
     const response = await POST(
       new NextRequest(
@@ -719,7 +735,7 @@ describe('product routes', () => {
     });
 
     const { PATCH } = await import(
-      '@/app/api/v1/workspaces/[wsId]/products/[productId]/inventory/route'
+      '@/legacy-api-routes/v1/workspaces/[wsId]/products/[productId]/inventory/route'
     );
     const response = await PATCH(
       new NextRequest(

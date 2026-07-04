@@ -30,6 +30,7 @@ export interface NavLink {
   tempDisabled?: boolean;
   isBack?: boolean;
   onClick?: () => void;
+  openSettingsDialog?: boolean | { tab?: string };
   children?: (NavLink | null)[];
   aliases?: string[];
   requiredWorkspaceTier?: {

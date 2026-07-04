@@ -93,6 +93,7 @@ export function useProgressiveBoardLoader(
           offset: page * PAGE_SIZE,
           includeCount: true,
           ...options,
+          includeRelationshipSummary: false,
         });
         const tasks = payload.tasks ?? [];
         const loadedThrough = page * PAGE_SIZE + tasks.length;
@@ -206,6 +207,7 @@ export function useProgressiveBoardLoader(
             offset: page * PAGE_SIZE,
             includeCount: true,
             ...listOptionsRef.current[listId],
+            includeRelationshipSummary: false,
           })
         )
       );

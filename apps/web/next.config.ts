@@ -1,16 +1,12 @@
 import { getTurbopackConfig } from '@tuturuuu/offline/config';
-import {
-  createTuturuuuNextConfig,
-  isTuturuuuNextReactCompilerEnabled,
-} from '@tuturuuu/utils/next-config';
+import { createTuturuuuNextConfig } from '@tuturuuu/utils/next-config';
 import createNextIntlPlugin from 'next-intl/plugin';
 
 const withNextIntl = createNextIntlPlugin();
 const serwistConfig = getTurbopackConfig();
 const isDockerStandaloneBuild = process.env.DOCKER_WEB_STANDALONE === '1';
-const reactCompilerEnabled = isDockerStandaloneBuild
-  ? process.env.DOCKER_WEB_REACT_COMPILER === '1'
-  : isTuturuuuNextReactCompilerEnabled();
+const isNativeDockerStandaloneBuild =
+  isDockerStandaloneBuild && process.env.DOCKER_WEB_NATIVE_BUILD === '1';
 
 function parsePositiveIntegerEnv(name: string, fallback?: number) {
   const rawValue = process.env[name]?.trim();
@@ -34,25 +30,18 @@ const staticPageGenerationTimeout = parsePositiveIntegerEnv(
 );
 const staticGenerationMaxConcurrency = parsePositiveIntegerEnv(
   'DOCKER_WEB_STATIC_GENERATION_MAX_CONCURRENCY',
-  isDockerStandaloneBuild ? 4 : undefined
+  isDockerStandaloneBuild && !isNativeDockerStandaloneBuild ? 4 : undefined
 );
 const dockerNextBuildCpus = parsePositiveIntegerEnv(
   'DOCKER_WEB_NEXT_BUILD_CPUS',
-  isDockerStandaloneBuild ? 4 : undefined
+  isDockerStandaloneBuild && !isNativeDockerStandaloneBuild ? 4 : undefined
 );
-const cronMonitoringTraceIncludes = {
-  '/api/v1/infrastructure/monitoring/cron': ['./cron.config.json'],
-  '/api/v1/infrastructure/monitoring/cron/**': ['./cron.config.json'],
-};
 const nextConfig = createTuturuuuNextConfig({
   ...serwistConfig,
   ...(isDockerStandaloneBuild ? { output: 'standalone' } : {}),
   ...(staticPageGenerationTimeout ? { staticPageGenerationTimeout } : {}),
-  outputFileTracingIncludes: {
-    ...(serwistConfig.outputFileTracingIncludes ?? {}),
-    ...cronMonitoringTraceIncludes,
-  },
-  reactCompiler: reactCompilerEnabled,
+  outputFileTracingIncludes: serwistConfig.outputFileTracingIncludes,
+  reactCompiler: true,
   serverExternalPackages: [...(serwistConfig.serverExternalPackages ?? [])],
   experimental: {
     ...(serwistConfig.experimental ?? {}),
@@ -72,6 +61,7 @@ const nextConfig = createTuturuuuNextConfig({
     '@tuturuuu/google',
     '@tuturuuu/hive-ui',
     '@tuturuuu/internal-api',
+    '@tuturuuu/inventory-core',
     '@tuturuuu/mind-ui',
     '@tuturuuu/offline',
     '@tuturuuu/realtime',

@@ -3,9 +3,8 @@ import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
+import { UserGroupSessionCalendar } from '../../_components/user-group-session-calendar';
 import EditEndDateDialog from './edit-end-date-dialog';
-import RecurringScheduleDialog from './recurring-schedule-dialog';
-import ScheduleCalendar from './schedule-calendar';
 
 export const metadata: Metadata = {
   title: 'Schedule',
@@ -23,7 +22,7 @@ interface Props {
 export default async function UserGroupDetailsPage({ params }: Props) {
   return (
     <WorkspaceWrapper params={params}>
-      {async ({ wsId, groupId, locale }) => {
+      {async ({ wsId, groupId }) => {
         const permissions = await getPermissions({ wsId });
         if (!permissions) notFound();
         const { containsPermission } = permissions;
@@ -40,21 +39,12 @@ export default async function UserGroupDetailsPage({ params }: Props) {
                 currentStartDate={group.starting_date}
                 currentEndDate={group.ending_date}
               />
-              <RecurringScheduleDialog
-                wsId={wsId}
-                groupId={groupId}
-                endingDate={group.ending_date}
-              />
             </div>
-            <ScheduleCalendar
-              locale={locale}
+            <UserGroupSessionCalendar
               wsId={wsId}
               groupId={groupId}
-              initialSessions={group.sessions || []}
-              hideOutsideMonthDays={true}
               canUpdateSchedule={canUpdateUserGroups}
-              startingDate={group.starting_date}
-              endingDate={group.ending_date}
+              title={group.name ?? undefined}
             />
           </>
         );
@@ -68,7 +58,7 @@ async function getData(wsId: string, groupId: string) {
 
   const { data, error } = await supabase
     .from('workspace_user_groups')
-    .select('*')
+    .select('id, name, starting_date, ending_date')
     .eq('ws_id', wsId)
     .eq('id', groupId)
     .maybeSingle();

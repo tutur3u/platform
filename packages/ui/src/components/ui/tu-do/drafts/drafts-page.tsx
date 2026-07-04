@@ -2,6 +2,10 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { FileText } from '@tuturuuu/icons';
+import {
+  deleteWorkspaceTaskDraft,
+  listWorkspaceTaskDrafts,
+} from '@tuturuuu/internal-api/tasks';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
@@ -11,38 +15,51 @@ import { DraftConvertDialog } from './draft-convert-dialog';
 
 interface DraftsPageProps {
   wsId: string;
+  boardId?: string;
+  includeUnassignedForBoard?: boolean;
 }
 
-export function DraftsPage({ wsId }: DraftsPageProps) {
+function getBrowserInternalApiOptions() {
+  return typeof window !== 'undefined'
+    ? { baseUrl: window.location.origin }
+    : undefined;
+}
+
+export function DraftsPage({
+  wsId,
+  boardId,
+  includeUnassignedForBoard = false,
+}: DraftsPageProps) {
   const t = useTranslations('task-drafts');
   const queryClient = useQueryClient();
   const { editDraft } = useTaskDialogContext();
   const [convertDraft, setConvertDraft] = useState<TaskDraft | null>(null);
+  const draftQueryKey = [
+    'task-drafts',
+    wsId,
+    boardId ?? 'all',
+    includeUnassignedForBoard,
+  ] as const;
 
   const { data: drafts = [], isLoading } = useQuery<TaskDraft[]>({
-    queryKey: ['task-drafts', wsId],
-    queryFn: async () => {
-      const res = await fetch(`/api/v1/workspaces/${wsId}/task-drafts`);
-      if (!res.ok) throw new Error('Failed to fetch drafts');
-      const json = await res.json();
-      return json.data;
-    },
+    queryKey: draftQueryKey,
+    queryFn: () =>
+      listWorkspaceTaskDrafts(
+        wsId,
+        { boardId, includeUnassignedForBoard },
+        getBrowserInternalApiOptions()
+      ) as Promise<TaskDraft[]>,
   });
 
   const deleteMutation = useMutation({
-    mutationFn: async (draftId: string) => {
-      const res = await fetch(
-        `/api/v1/workspaces/${wsId}/task-drafts/${draftId}`,
-        { method: 'DELETE' }
-      );
-      if (!res.ok) throw new Error('Failed to delete draft');
-    },
+    mutationFn: async (draftId: string) =>
+      deleteWorkspaceTaskDraft(wsId, draftId, getBrowserInternalApiOptions()),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['task-drafts', wsId] });
       toast.success(t('deleted_success'));
     },
     onError: () => {
-      toast.error('Failed to delete draft');
+      toast.error(t('delete_failed'));
     },
   });
 

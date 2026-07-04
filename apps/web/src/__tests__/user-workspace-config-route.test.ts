@@ -62,7 +62,7 @@ describe('user workspace config route payload protection', () => {
 
   it('rejects PUT bodies that omit value instead of deleting the config', async () => {
     const { PUT } = await import(
-      '@/app/api/v1/users/me/workspaces/[wsId]/configs/[configId]/route'
+      '@/legacy-api-routes/v1/users/me/workspaces/[wsId]/configs/[configId]/route'
     );
 
     const response = await PUT(

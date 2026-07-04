@@ -1,30 +1,67 @@
 ---
 title: "Encapsulation Patterns"
 description: "Strategies for preventing unwanted communication within and between services in Tuturuuu's architecture"
-updatedAt: "2025-11-16"
+updatedAt: "2026-06-21"
 ---
 
-Encapsulation is a critical architectural quality that prevents unwanted coupling and maintains clear boundaries. This document covers patterns for preventing unwanted communication both **within microservices** (cross-layer) and **between microservices** (cross-service).
+Encapsulation is a critical architectural quality that prevents unwanted coupling and maintains clear boundaries. This document covers patterns for preventing unwanted communication both **within an app** (cross-layer) and **between apps** (cross-service).
 
 <Info>
 For a comprehensive comparison of how different architectural patterns handle encapsulation, see [Architectural Patterns Comparison](/platform/architecture/system-design/architectural-patterns-comparison).
 </Info>
 
-## Preventing Cross-Layer Communication (Inside a Microservice)
+<Warning>
+**How to read this page.** The cross-layer hexagonal examples below
+(`domain/`, `application/`, `infrastructure/` directories, `WorkspaceRepository`
+ports, rich `Workspace` domain models) are **illustrative teaching patterns**,
+not a description of the current codebase. Tuturuuu apps are conventional
+**Next.js App Router** trees: `apps/web/src` contains `app/`, `components/`,
+`features/`, `hooks/`, `lib/`, and `utils/` — there is no
+`domain/`/`application/`/`infrastructure/` layering and no separate ports/adapters
+package. Likewise, apps communicate primarily through a **shared Supabase
+database** plus **Trigger.dev v4** background tasks, not through a broker with
+event ACLs. Each "in Tuturuuu" snippet below is marked as either *real* or
+*illustrative*. Treat the illustrative ones as design inspiration you could adopt,
+not as files that exist today.
+</Warning>
 
-Within each microservice, we enforce strict boundaries between architectural layers to maintain code quality and prevent tight coupling.
+<Note>
+**Migration in progress.** `apps/web` (Next.js, port 7803) is being replaced by
+`apps/tanstack-web` (TanStack Start) plus `apps/backend` (Rust, port 7820). The
+encapsulation principles here remain valid across both stacks, but treat any
+`apps/web`-specific path as legacy-or-current rather than permanent. See
+[TanStack Start and Rust Migration](/platform/architecture/tanstack-rust-migration).
+</Note>
+
+## Preventing Cross-Layer Communication (Inside an App)
+
+Even without formal hexagonal layering, an app benefits from clear internal
+boundaries that prevent tight coupling. The patterns below show how dependency
+inversion, DTOs, and layered responsibility *could* be applied; where Tuturuuu
+already does something equivalent (RLS, package boundaries, `internal-api`
+helpers), that is called out as *real*.
 
 ### 1. The Dependency Inversion Principle (via Ports)
 
-Within each service, the **Hexagonal Architecture** is used. High-level business logic defines interfaces ("Ports") it requires, and low-level infrastructure (like database code) implements them.
+<Info>
+**Illustrative pattern.** The ports/adapters file paths below
+(`packages/types/src/domain/*`, `apps/web/src/domain/*`,
+`apps/web/src/infrastructure/*`) **do not exist** in the repo today and are shown
+purely to teach the dependency inversion principle. `packages/types/src` exposes
+flat modules (`db.ts`, `index.ts`, `supabase.ts`, `sdk.ts`, …) with no `domain/`
+directory.
+</Info>
+
+High-level business logic can define interfaces ("Ports") it requires, and
+low-level infrastructure (like database code) implements them.
 
 **Architectural Principle:** High-level modules should not depend on low-level modules. Both should depend on abstractions.
 
-**Example from Tuturuuu:**
+**Illustrative example:**
 
 ```typescript
-// Domain layer defines interface (PORT)
-// packages/types/src/domain/workspace.ts
+// Hypothetical domain layer defines interface (PORT)
+// e.g. packages/types/src/domain/workspace.ts (does not exist today)
 export interface WorkspaceRepository {
   findById(id: string): Promise<Workspace | null>;
   findByOwnerId(ownerId: string): Promise<Workspace[]>;
@@ -33,7 +70,7 @@ export interface WorkspaceRepository {
 }
 
 // Business logic depends on abstraction, NOT concrete implementation
-// apps/web/src/domain/services/workspace-service.ts
+// e.g. apps/web/src/domain/services/workspace-service.ts (illustrative path)
 export class WorkspaceService {
   constructor(
     private readonly repository: WorkspaceRepository  // Depends on interface
@@ -50,7 +87,7 @@ export class WorkspaceService {
 }
 
 // Infrastructure layer implements interface (ADAPTER)
-// apps/web/src/infrastructure/repositories/supabase-workspace-repository.ts
+// e.g. apps/web/src/infrastructure/repositories/supabase-workspace-repository.ts (illustrative path)
 export class SupabaseWorkspaceRepository implements WorkspaceRepository {
   constructor(private readonly supabase: SupabaseClient) {}
 
@@ -82,24 +119,35 @@ export class SupabaseWorkspaceRepository implements WorkspaceRepository {
 
 **Clarifying Additions:** This enforces a clean separation that preserves the integrity of business rules. Infrastructure choices become replaceable rather than deeply embedded. The architecture stays flexible as technical needs evolve.
 
-**Anti-pattern to avoid:**
+**"Anti-pattern" — but also how Tuturuuu actually writes code today:**
 
 ```typescript
-// BAD: Direct dependency on infrastructure
-export class WorkspaceService {
-  async createWorkspace(ownerId: string, name: string) {
-    const supabase = createClient();  // WRONG: Tight coupling to Supabase
+// In the hexagonal sense this "couples business logic to Supabase".
+// In practice this IS the current Tuturuuu pattern: route handlers and
+// server components call the Supabase client directly.
+import { createClient } from '@tuturuuu/supabase/next/server';
 
-    const { data } = await supabase
-      .from('workspaces')
-      .insert({ owner_id: ownerId, name });
+export async function createWorkspace(ownerId: string, name: string) {
+  // NOTE: createClient() from @tuturuuu/supabase/next/server is ASYNC — await it.
+  // (createAdminClient() is synchronous; createDynamicClient() is async.)
+  const supabase = await createClient();
 
-    return data;
-  }
+  const { data } = await supabase
+    .from('workspaces')
+    .insert({ owner_id: ownerId, name })
+    .select()
+    .single();
+
+  return data;
 }
-// This couples business logic to Supabase implementation
-// Hard to test, hard to change technology
 ```
+
+The hexagonal critique (harder to unit-test, technology lock-in) is real, but
+Tuturuuu deliberately accepts direct Supabase access for app/API code and relies
+on **Row-Level Security**, **shared `@tuturuuu/supabase` wrappers**, and
+**`packages/internal-api` helpers** for boundaries instead of a ports/adapters
+layer. Adopt the repository pattern only where a unit of logic genuinely needs to
+be storage-agnostic or heavily unit-tested.
 
 ---
 
@@ -109,11 +157,20 @@ The outer API layer of a service communicates with its inner Application layer u
 
 **Architectural Principle:** External layers communicate via simple data structures, not rich domain objects.
 
-**Example from Tuturuuu:**
+<Info>
+**Illustrative pattern.** The rich `Workspace` domain class and
+`apps/web/src/domain/models/workspace.ts` path are illustrative. Real
+`apps/web` API routes work with plain objects and generated DB row types from
+`@tuturuuu/types/db`, not behavior-rich domain entities. The DTO discipline (keep
+HTTP request/response shapes separate from internal models, serialize dates as
+ISO strings) is still worth applying.
+</Info>
+
+**Illustrative example:**
 
 ```typescript
 // API layer DTO (external contract)
-// apps/web/src/app/api/workspaces/create/route.ts
+// e.g. apps/web/src/app/api/workspaces/create/route.ts
 interface CreateWorkspaceRequest {
   name: string;
   description?: string;
@@ -150,8 +207,8 @@ export async function POST(request: Request) {
   return Response.json(response);
 }
 
-// Domain model (internal, rich behavior)
-// apps/web/src/domain/models/workspace.ts
+// Domain model (internal, rich behavior) — illustrative; no such file exists today
+// e.g. apps/web/src/domain/models/workspace.ts
 export class Workspace {
   constructor(
     public readonly id: string,
@@ -226,29 +283,44 @@ The architecture enforces a clear separation of concerns. The **Presentation lay
 
 **Architectural Principle:** Each layer has a single, well-defined responsibility and communicates only through defined interfaces.
 
-**Layer Structure in Tuturuuu:**
+**Actual `apps/web/src` structure (real):**
 
 ```
 apps/web/src/
-├── app/                          # Presentation Layer (HTTP)
-│   └── api/workspaces/
-│       └── create/route.ts       # HTTP handling only
-├── application/                  # Application Layer (Orchestration)
-│   └── use-cases/
-│       └── create-workspace.ts   # Workflow orchestration
-├── domain/                       # Domain Layer (Business Logic)
-│   ├── models/
-│   │   └── workspace.ts          # Pure business entities
-│   └── services/
-│       └── workspace-service.ts  # Domain logic
-└── infrastructure/               # Infrastructure Layer (Technical)
-    ├── repositories/
-    │   └── supabase-workspace-repository.ts
-    └── events/
-        └── trigger-event-publisher.ts
+├── app/            # Next.js App Router: pages, layouts, and api/ route handlers
+├── components/     # Shared React components for this app
+├── features/       # Feature-scoped UI + logic
+├── hooks/          # React hooks
+├── lib/            # App-level helpers and clients
+├── utils/          # Cross-cutting utilities
+├── context/        # React context providers
+├── data/           # Static/seed data
+├── trpc/           # Local tRPC stub (healthCheck only — not a product data layer)
+└── i18n/           # Localization config
 ```
 
-**Example with clear layer responsibilities:**
+There is **no** `application/`, `domain/`, or `infrastructure/` directory. Cross-app
+product data flows through the **shared Supabase database** and
+**`packages/internal-api`** helpers calling REST `/api/v1` routes — not through a
+ports/adapters layer.
+
+**Illustrative hexagonal structure** (what an explicitly layered service *could*
+look like — not present today):
+
+```
+src/
+├── app/                          # Presentation Layer (HTTP) — real today
+│   └── api/workspaces/create/route.ts
+├── application/                  # Application Layer (Orchestration) — illustrative
+│   └── use-cases/create-workspace.ts
+├── domain/                       # Domain Layer (Business Logic) — illustrative
+│   ├── models/workspace.ts
+│   └── services/workspace-service.ts
+└── infrastructure/               # Infrastructure Layer (Technical) — illustrative
+    └── repositories/supabase-workspace-repository.ts
+```
+
+**Illustrative example with clear layer responsibilities:**
 
 ```typescript
 // PRESENTATION LAYER: HTTP concerns only
@@ -377,8 +449,10 @@ export async function POST(request: Request) {
     .from('workspaces')
     .insert({ name: body.name });
 
-  // WRONG: Event publishing from API layer
-  await trigger.event({ name: 'workspace.created', payload: data });
+  // WRONG (and outdated API): firing a background task inline with no structure.
+  // In Trigger.dev v4 you trigger a defined task, e.g.:
+  //   await myTask.trigger({ workspaceId: data.id });
+  // (Trigger.dev v2 APIs like trigger.event/client.defineJob do not exist in this repo.)
 
   return Response.json(data);
 }
@@ -391,73 +465,131 @@ export async function POST(request: Request) {
 
 ---
 
-## Preventing Unwanted Cross-Service Communication (Between Microservices)
+## Preventing Unwanted Cross-Service Communication (Between Apps)
 
-### 1. Published Event Contracts as the Sole Interface
+<Warning>
+**Reality check.** Tuturuuu apps do **not** communicate exclusively through
+published events, and there is **no broker-level event ACL**. The current primary
+inter-app pattern is a **shared Supabase (PostgreSQL) database** with Row-Level
+Security, complemented by **Trigger.dev v4** tasks for asynchronous/background
+work. This matches the
+[Microservices Patterns](/platform/architecture/system-design/microservices-patterns)
+page, which lists "Shared Database (Current)" as the live pattern. The
+event-as-sole-interface material below is therefore an **aspirational pattern**
+showing the encapsulation benefits a fully event-driven design would provide —
+not the way the apps interact today.
+</Warning>
 
-The only way services interact is through the events they publish. The internal implementation, database schema, and private functions of each service are **completely hidden**. Services are black boxes that communicate only through public, versioned event schemas, providing the strongest possible form of encapsulation.
+### 1. Background Tasks as a Decoupling Boundary
 
-**Architectural Principle:** Services communicate only via well-defined event contracts.
+When one app needs to kick off work in another context without a synchronous
+dependency, Tuturuuu uses **Trigger.dev v4 `task()`** definitions in
+`packages/trigger/src`. A trigger payload acts as a small, explicit contract: the
+caller passes only what the task needs, and the task does not reach back into the
+caller's internals.
 
-**Example from Tuturuuu:**
+**Architectural Principle:** Cross-context work is dispatched via explicit task payloads, not by calling another app's private functions.
+
+**Real example (Trigger.dev v4):**
 
 ```typescript
-// Service A (apps/web): Publishes events
-export async function createWorkspace(data: CreateWorkspaceData) {
-  const workspace = await db.workspaces.insert(data);
+// packages/trigger/src/schedule-tasks.ts (real, abridged)
+import { task } from '@trigger.dev/sdk/v3';
+import { schedulableTasksHelper } from './schedule-tasks-helper';
 
-  // PUBLIC CONTRACT: Event schema
-  await trigger.event({
-    name: "workspace.created",  // Public event name
-    payload: {                   // Public event schema
-      workspaceId: workspace.id,
-      ownerId: workspace.ownerId,
-      name: workspace.name,
-      createdAt: workspace.createdAt.toISOString()
+export const scheduleTask = task({
+  id: 'schedule-task',
+  queue: { concurrencyLimit: 10 },
+  // The payload is the entire contract this task depends on.
+  run: async (payload: { ws_id: string }) => {
+    const result = await schedulableTasksHelper(payload.ws_id);
+    if (!result.success) {
+      throw new Error(result.error || 'Schedule tasks failed');
     }
-  });
-
-  // Internal implementation hidden:
-  // - Database schema
-  // - Business logic
-  // - Internal functions
-  // - Data structures
-}
-
-// Service B (apps/rewise): Consumes events
-client.defineJob({
-  id: "setup-ai-workspace",
-  trigger: eventTrigger({ name: "workspace.created" }),
-  run: async (payload, io) => {
-    // Only knows about event schema
-    // Doesn't know about Service A's internals
-    await io.runTask("create-ai-config", async () => {
-      return await createAIConfig({
-        workspaceId: payload.workspaceId,
-        ownerId: payload.ownerId
-      });
-    });
-  }
+    return { ws_id: payload.ws_id, ...result, success: true };
+  },
 });
 ```
 
-**Event Schema Governance:**
+```typescript
+// Dispatching the task from app code (Trigger.dev v4):
+import { scheduleTask } from '@tuturuuu/trigger';
+
+// Fire-and-forget; returns a run handle, does not block on completion.
+await scheduleTask.trigger({ ws_id: workspaceId });
+```
+
+<Note>
+The import path is `@trigger.dev/sdk/v3` even though the installed package is
+`@trigger.dev/sdk@^4.4.5` — the `/v3` subpath is the v4 SDK's stable entrypoint
+for `task()`. The Trigger.dev **v2** APIs referenced in older drafts
+(`client.defineJob`, `eventTrigger`, `io.runTask`, `trigger.event`) **do not
+exist** in this repo.
+</Note>
+
+---
+
+### 2. (Aspirational) Published Event Contracts as the Sole Interface
+
+In a fully event-driven design, the only way services interact is through the
+events they publish; internal implementation, database schema, and private
+functions stay **completely hidden**. Tuturuuu does **not** implement this today
+(apps share a database), but the pattern is the strongest form of cross-service
+encapsulation and is worth understanding.
+
+**Architectural Principle:** Services communicate only via well-defined event contracts.
+
+**Aspirational example (expressed in real Trigger.dev v4 syntax):**
 
 ```typescript
-// packages/types/src/events/workspace.ts
+// Producer side: instead of a v2 trigger.event(...) broadcast,
+// dispatch a typed task with an explicit payload contract.
+import { setupAiWorkspaceTask } from '@tuturuuu/trigger';
+
+export async function createWorkspace(data: CreateWorkspaceData) {
+  const supabase = await createClient(); // async client — await it
+  const { data: workspace } = await supabase
+    .from('workspaces')
+    .insert(data)
+    .select()
+    .single();
+
+  // Public contract = the task payload shape, nothing more.
+  await setupAiWorkspaceTask.trigger({
+    workspaceId: workspace.id,
+    ownerId: workspace.owner_id,
+  });
+}
+
+// Consumer side (Trigger.dev v4): a task() definition, not client.defineJob.
+import { task } from '@trigger.dev/sdk/v3';
+
+export const setupAiWorkspaceTask = task({
+  id: 'setup-ai-workspace',
+  run: async (payload: { workspaceId: string; ownerId: string }) => {
+    // Only knows about the payload contract, not the producer's internals.
+    return await createAIConfig(payload);
+  },
+});
+```
+
+**Event Schema Governance (aspirational):**
+
+```typescript
+// Illustrative: e.g. packages/types/src/events/workspace.ts (no such file today)
 import { z } from 'zod';
 
-// Versioned event schemas
+// Versioned schemas keep payload contracts backward compatible.
 export const WorkspaceCreatedEventV1 = z.object({
-  workspaceId: z.guid(),
-  ownerId: z.guid(),
+  workspaceId: z.string().uuid(),
+  ownerId: z.string().uuid(),
   name: z.string().min(1).max(100),
   createdAt: z.string().datetime()
 });
 
 export const WorkspaceCreatedEventV2 = z.object({
-  workspaceId: z.guid(),
-  ownerId: z.guid(),
+  workspaceId: z.string().uuid(),
+  ownerId: z.string().uuid(),
   name: z.string().min(1).max(100),
   createdAt: z.string().datetime(),
   // New optional fields (backward compatible)
@@ -501,16 +633,29 @@ export async function createWorkspace(data: CreateWorkspaceData) {
 
 ---
 
-### 2. Broker-Level Access Control (ACLs)
+### 3. (Hypothetical) Broker-Level Access Control (ACLs)
 
-The architecture does not rely on trust. The message broker itself is configured to enforce communication boundaries. Using ACLs, we can define that only the `AccountManagementService` can produce `UserRegistered` events, and only specific downstream services are allowed to consume them.
+<Warning>
+**Hypothetical pattern — not implemented.** There is **no message broker** and
+**no event ACL system** in Tuturuuu. The file `packages/trigger/src/events/acl.ts`
+and the `EVENT_PRODUCERS`/`EVENT_CONSUMERS` maps below **do not exist** —
+`packages/trigger/src` contains task definitions (`schedule-tasks.ts`,
+`google-calendar-sync.ts`, etc.), not an ACL layer. This section is kept only to
+illustrate what infrastructure-enforced boundaries would look like if Tuturuuu
+moved to a true event-driven broker.
+</Warning>
+
+In a broker-based design you would not rely on trust; the broker itself enforces
+communication boundaries. Using ACLs you could declare that only one service may
+produce `user.registered` events, and only specific downstream services may
+consume them.
 
 **Architectural Principle:** Enforce service boundaries at the infrastructure level, not just by convention.
 
-**Example with Trigger.dev:**
+**Hypothetical example (does not reflect repo code):**
 
 ```typescript
-// packages/trigger/src/events/acl.ts
+// Hypothetical: packages/trigger/src/events/acl.ts (no such file exists)
 export const EVENT_PRODUCERS = {
   'user.registered': ['apps/web'],
   'workspace.created': ['apps/web'],
@@ -555,51 +700,52 @@ export function validateEventProducer(
 
 ---
 
-### 3. Elimination of Synchronous Coupling
+### 4. Elimination of Synchronous Coupling
 
-By committing to an event-driven design, the architecture inherently avoids direct, synchronous calls between services for core business flows. This prevents the tight coupling that arises when one service needs to know the network location, API signature, and synchronous availability of another, reinforcing service autonomy.
+Dispatching background work asynchronously avoids direct, synchronous calls
+between contexts for slow or non-critical flows. This prevents the tight coupling
+that arises when one caller must know the network location, API signature, and
+live availability of another. Tuturuuu applies this with **Trigger.dev v4** tasks:
+the request returns immediately while follow-up work runs out of band.
 
-**Architectural Principle:** Services don't make synchronous calls to each other.
+**Architectural Principle:** Don't block a user request on slow, non-critical downstream work.
 
-**Example - Async event flow:**
+**Async flow (real Trigger.dev v4 syntax):**
 
 ```typescript
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { setupUserAiTask, sendWelcomeEmailTask } from '@tuturuuu/trigger';
+
 // apps/web: User registers
 export async function registerUser(data: UserRegistrationData) {
-  const user = await createUser(data);
+  const supabase = createAdminClient(); // SYNC factory — do NOT await it
+  const user = await createUser(supabase, data);
 
-  // Publish event (non-blocking)
-  await trigger.event({
-    name: 'user.registered',
-    payload: { userId: user.id, email: user.email }
-  });
+  // Dispatch background tasks (non-blocking); each returns a run handle.
+  await setupUserAiTask.trigger({ userId: user.id });
+  await sendWelcomeEmailTask.trigger({ email: user.email });
 
   return user;  // Returns immediately
 }
 
-// apps/rewise: Sets up AI chat (asynchronous)
-client.defineJob({
+// packages/trigger/src: each consumer is a task() definition.
+import { task } from '@trigger.dev/sdk/v3';
+
+export const setupUserAiTask = task({
   id: 'setup-user-ai',
-  trigger: eventTrigger({ name: 'user.registered' }),
-  run: async (payload, io) => {
-    await io.runTask('create-ai-profile', async () => {
-      return await createAIProfile(payload.userId);
-    });
-  }
+  run: async (payload: { userId: string }) => {
+    return await createAIProfile(payload.userId);
+  },
 });
 
-// apps/web: Sends welcome email (asynchronous)
-client.defineJob({
+export const sendWelcomeEmailTask = task({
   id: 'send-welcome-email',
-  trigger: eventTrigger({ name: 'user.registered' }),
-  run: async (payload, io) => {
-    await io.runTask('send-email', async () => {
-      return await sendEmail(payload.email, 'welcome');
-    });
-  }
+  run: async (payload: { email: string }) => {
+    return await sendEmail(payload.email, 'welcome');
+  },
 });
 
-// All services work independently, no blocking
+// Each task runs independently; registration never blocks on them.
 ```
 
 **Benefits:**
@@ -634,7 +780,12 @@ export async function registerUser(data: UserRegistrationData) {
 
 ## Encapsulation in Practice
 
-### Workspace Isolation via RLS
+### Workspace Isolation via RLS (real)
+
+This is Tuturuuu's actual primary encapsulation mechanism: because apps share one
+Supabase database, **Row-Level Security** — defined by migrations under
+`apps/database/supabase/migrations/` — keeps every app inside its permitted data
+scope at the database level, regardless of which app issues the query.
 
 ```sql
 -- apps/database/supabase/migrations/
@@ -654,31 +805,40 @@ USING (
 -- Enforced at database level, not application level
 ```
 
-### Package Boundaries
+### Package Boundaries (real)
 
-```json
-// apps/web/package.json
+Apps depend on shared `workspace:*` packages and never import another app's
+internals. (Add or update these with scoped installs, e.g.
+`cd apps/web && bun add <pkg>` — never `bun add --workspace`.)
+
+```jsonc
+// apps/web/package.json (illustrative subset)
 {
   "dependencies": {
     "@tuturuuu/ui": "workspace:*",        // ✅ Allowed
     "@tuturuuu/types": "workspace:*",     // ✅ Allowed
     "@tuturuuu/supabase": "workspace:*"   // ✅ Allowed
-    // ❌ Cannot import from apps/rewise directly
-    // ❌ Cannot import from apps/finance directly
+    // ❌ Do not import from apps/rewise or apps/finance directly
   }
 }
 ```
 
 ## Summary
 
-| Encapsulation Type | Pattern | Enforced By | Benefit |
-|--------------------|---------|-------------|---------|
-| **Cross-Layer (Internal)** | Dependency Inversion | Hexagonal Architecture | Testable, flexible |
-| **Cross-Layer (Internal)** | DTOs | Layer boundaries | Stable APIs |
-| **Cross-Layer (Internal)** | Layered Responsibility | Directory structure | Clear organization |
-| **Cross-Service (External)** | Event Contracts | Event schemas | Service autonomy |
-| **Cross-Service (External)** | Broker ACLs | Infrastructure config | Security, governance |
-| **Cross-Service (External)** | Async-only | Event-driven architecture | No cascading failures |
+Status legend: **real** = implemented today; **illustrative/aspirational** =
+teaching pattern not implemented in the repo.
+
+| Encapsulation Type | Pattern | Status | Enforced By | Benefit |
+|--------------------|---------|--------|-------------|---------|
+| **Cross-Layer (Internal)** | Dependency Inversion / ports | Illustrative | Hexagonal layering (not adopted) | Testable, flexible |
+| **Cross-Layer (Internal)** | DTOs | Illustrative | Layer boundaries | Stable APIs |
+| **Cross-Layer (Internal)** | Layered Responsibility | Illustrative | Directory structure (apps/web is flat) | Clear organization |
+| **Cross-Layer (Internal)** | Row-Level Security | Real | Supabase RLS policies | Data scoping at the DB |
+| **Cross-Layer (Internal)** | Package boundaries | Real | `workspace:*` deps + Biome/import rules | No cross-app imports |
+| **Cross-Service (External)** | Background task payloads | Real | Trigger.dev v4 `task()` | Async decoupling |
+| **Cross-Service (External)** | Event Contracts as sole interface | Aspirational | Event schemas | Service autonomy |
+| **Cross-Service (External)** | Broker ACLs | Hypothetical | Broker config (no broker today) | Security, governance |
+| **Cross-Service (External)** | Async background work | Real | Trigger.dev v4 tasks | No cascading failures |
 
 ## Related Documentation
 

@@ -23,6 +23,11 @@ import { useOptionalWorkspacePresenceContext } from './workspace-presence-provid
 
 export type { PendingRelationship, PendingRelationshipType };
 
+export type TaskAssigneeMemberSource =
+  | 'workspace'
+  | 'board'
+  | 'workspace-and-board';
+
 type WorkspaceLabelSummary = {
   id: string;
   name: string | null;
@@ -57,6 +62,10 @@ interface TaskDialogState {
   taskWsId?: string;
   /** Whether the task's workspace is personal (affects realtime/presence decisions) */
   taskWorkspacePersonal?: boolean;
+  /** Whether the board context should expose assignee controls. */
+  canUseBoardAssignees?: boolean;
+  /** Where assignee candidates should be loaded from. */
+  assigneeMemberSource?: TaskAssigneeMemberSource;
   /** The task workspace tier used to gate cursor tracking for edit mode */
   taskWorkspaceTier?: WorkspaceProductTier;
   /** Initial board/list context used for immediate partial-task rendering. */
@@ -78,6 +87,8 @@ interface OpenTaskByIdOptions {
   taskWsId?: string;
   taskWorkspacePersonal?: boolean;
   taskWorkspaceTier?: WorkspaceProductTier;
+  canUseBoardAssignees?: boolean;
+  assigneeMemberSource?: TaskAssigneeMemberSource;
   initialSharedContext?: SharedTaskContext;
 }
 
@@ -100,6 +111,10 @@ interface TaskDialogContextValue {
       taskWsId?: string;
       /** Whether the task's workspace is personal (affects realtime features) */
       taskWorkspacePersonal?: boolean;
+      /** Whether the board context should expose assignee controls */
+      canUseBoardAssignees?: boolean;
+      /** Where assignee candidates should be loaded from */
+      assigneeMemberSource?: TaskAssigneeMemberSource;
       /** The task's workspace tier (affects cursor tracking) */
       taskWorkspaceTier?: WorkspaceProductTier;
     }
@@ -383,6 +398,8 @@ export function TaskDialogProvider({
         preserveUrl?: boolean;
         taskWsId?: string;
         taskWorkspacePersonal?: boolean;
+        canUseBoardAssignees?: boolean;
+        assigneeMemberSource?: TaskAssigneeMemberSource;
         taskWorkspaceTier?: WorkspaceProductTier;
       }
     ) => {
@@ -408,6 +425,9 @@ export function TaskDialogProvider({
         fakeTaskUrl,
         taskWsId: options?.taskWsId,
         taskWorkspacePersonal: isTaskWorkspacePersonal,
+        canUseBoardAssignees:
+          options?.canUseBoardAssignees ?? !isTaskWorkspacePersonal,
+        assigneeMemberSource: options?.assigneeMemberSource,
         taskWorkspaceTier: options?.taskWorkspaceTier,
       });
     },
@@ -461,6 +481,9 @@ export function TaskDialogProvider({
         fakeTaskUrl: options?.fakeTaskUrl,
         taskWsId: options?.taskWsId,
         taskWorkspacePersonal: initialTaskWorkspacePersonal,
+        canUseBoardAssignees:
+          options?.canUseBoardAssignees ?? !initialTaskWorkspacePersonal,
+        assigneeMemberSource: options?.assigneeMemberSource,
         taskWorkspaceTier: options?.taskWorkspaceTier,
         initialSharedContext: options?.initialSharedContext,
         isHydratingTask: true,
@@ -540,6 +563,9 @@ export function TaskDialogProvider({
           fakeTaskUrl: options?.fakeTaskUrl,
           taskWsId,
           taskWorkspacePersonal: isTaskWorkspacePersonal,
+          canUseBoardAssignees:
+            options?.canUseBoardAssignees ?? !isTaskWorkspacePersonal,
+          assigneeMemberSource: options?.assigneeMemberSource,
           taskWorkspaceTier,
           isHydratingTask: false,
           taskLoadError: false,

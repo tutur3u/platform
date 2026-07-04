@@ -1,17 +1,9 @@
 import type { QueryClient } from '@tanstack/react-query';
-import { createClient } from '@tuturuuu/supabase/next/client';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { DEV_MODE } from '@tuturuuu/utils/constants';
 import { useCallback, useEffect, useRef } from 'react';
 import type { BoardRealtimePayload } from './useBoardRealtime.types';
-
-type TaskRelationRow = {
-  id: string;
-  assignees?: Array<{ user: NonNullable<Task['assignees']>[number] | null }>;
-  labels?: Array<{ label: NonNullable<Task['labels']>[number] | null }>;
-  projects?: Array<{ project: NonNullable<Task['projects']>[number] | null }>;
-};
 
 type CallbackRef<T> = {
   current: T | undefined;
@@ -29,9 +21,6 @@ type UseBoardRealtimeEventHandlerOptions = {
   >;
   onTaskRelationsChangeRef?: CallbackRef<(taskIds: string[]) => void>;
 };
-
-const isDefined = <T>(value: T | null | undefined): value is T =>
-  value !== null && value !== undefined;
 
 function mergeRealtimeTask(
   old: Task[] | undefined,
@@ -188,8 +177,33 @@ function invalidateTaskMembershipQueries(
   void queryClient.invalidateQueries({
     queryKey: ['task-list-counts', boardId],
   });
+  void queryClient.invalidateQueries({
+    predicate: (query) => {
+      const queryKey = query.queryKey;
+      return (
+        Array.isArray(queryKey) &&
+        queryKey[0] === 'kanban-deadline-tasks' &&
+        queryKey[2] === boardId
+      );
+    },
+  });
   void queryClient.invalidateQueries({ queryKey: ['my-tasks'] });
   void queryClient.invalidateQueries({ queryKey: ['my-completed-tasks'] });
+}
+
+function invalidateTaskRelationQueries(
+  queryClient: QueryClient,
+  boardId: string,
+  taskIds: string[]
+) {
+  void queryClient.invalidateQueries({
+    predicate: (query) =>
+      Array.isArray(query.queryKey) &&
+      query.queryKey[0] === 'workspaceTask' &&
+      typeof query.queryKey[2] === 'string' &&
+      taskIds.includes(query.queryKey[2]),
+  });
+  invalidateTaskMembershipQueries(queryClient, boardId);
 }
 
 export function useBoardRealtimeEventHandler({
@@ -201,90 +215,27 @@ export function useBoardRealtimeEventHandler({
   onTaskRelationsChangeRef,
 }: UseBoardRealtimeEventHandlerOptions) {
   // Collects task IDs from task:relations-changed events over 150ms
-  // and batch-fetches all relations in one query.
+  // and reconciles relation-bearing queries together. Visible board task arrays
+  // stay patched in place by the sender and by board background revalidation.
   const pendingRelationIdsRef = useRef<Set<string>>(new Set());
-  const relationFetchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
-    null
-  );
+  const relationInvalidationTimerRef = useRef<ReturnType<
+    typeof setTimeout
+  > | null>(null);
 
-  const fetchBatchedRelations = useCallback(async () => {
-    relationFetchTimerRef.current = null;
+  const invalidateBatchedRelations = useCallback(() => {
+    relationInvalidationTimerRef.current = null;
     const taskIds = [...pendingRelationIdsRef.current];
     pendingRelationIdsRef.current.clear();
     if (taskIds.length === 0) return;
 
     if (DEV_MODE) {
       console.log(
-        `[useBoardRealtime] Batch-fetching relations for ${taskIds.length} task(s):`,
+        `[useBoardRealtime] Reconciling relations for ${taskIds.length} task(s):`,
         taskIds
       );
     }
 
-    try {
-      const supabase = createClient();
-      const { data, error } = await supabase
-        .from('tasks')
-        .select(
-          `
-            id,
-            assignees:task_assignees(
-              user:users(id, display_name, avatar_url)
-            ),
-            labels:task_labels(
-              label:workspace_task_labels(id, name, color, created_at)
-            ),
-            projects:task_project_tasks(
-              project:task_projects(id, name, status)
-            )
-          `
-        )
-        .in('id', taskIds);
-
-      if (error || !data) {
-        if (DEV_MODE) {
-          console.error(
-            '[useBoardRealtime] Failed to batch-fetch relations:',
-            error
-          );
-        }
-        return;
-      }
-
-      const relationsMap = new Map<
-        string,
-        {
-          assignees: NonNullable<Task['assignees']>;
-          labels: NonNullable<Task['labels']>;
-          projects: NonNullable<Task['projects']>;
-        }
-      >();
-      for (const d of data as TaskRelationRow[]) {
-        relationsMap.set(d.id, {
-          assignees: d.assignees?.map((a) => a.user).filter(isDefined) || [],
-          labels: d.labels?.map((l) => l.label).filter(isDefined) || [],
-          projects: d.projects?.map((p) => p.project).filter(isDefined) || [],
-        });
-      }
-
-      updateBoardTaskCaches(queryClient, boardId, (old) => {
-        if (!old) return old;
-        return old.map((task) => {
-          const relations = relationsMap.get(task.id);
-          return relations ? { ...task, ...relations } : task;
-        });
-      });
-      for (const [taskId, relations] of relationsMap.entries()) {
-        patchWorkspaceTaskCaches(queryClient, { id: taskId, ...relations });
-        patchMyTasksCaches(queryClient, { id: taskId, ...relations });
-      }
-    } catch (err) {
-      if (DEV_MODE) {
-        console.error(
-          '[useBoardRealtime] Error batch-fetching relations:',
-          err
-        );
-      }
-    }
+    invalidateTaskRelationQueries(queryClient, boardId, taskIds);
   }, [boardId, queryClient]);
 
   const handleBoardRealtimeEvent = useCallback(
@@ -342,6 +293,7 @@ export function useBoardRealtimeEventHandler({
         patchMyTasksCaches(queryClient, taskData);
         if (
           'list_id' in taskData ||
+          'end_date' in taskData ||
           'completed' in taskData ||
           'completed_at' in taskData ||
           'closed_at' in taskData ||
@@ -453,10 +405,13 @@ export function useBoardRealtimeEventHandler({
           onTaskRelationsChangeRef?.current?.(ids);
         }
 
-        if (relationFetchTimerRef.current) {
-          clearTimeout(relationFetchTimerRef.current);
+        if (relationInvalidationTimerRef.current) {
+          clearTimeout(relationInvalidationTimerRef.current);
         }
-        relationFetchTimerRef.current = setTimeout(fetchBatchedRelations, 150);
+        relationInvalidationTimerRef.current = setTimeout(
+          invalidateBatchedRelations,
+          150
+        );
         return;
       }
 
@@ -474,7 +429,7 @@ export function useBoardRealtimeEventHandler({
     },
     [
       boardId,
-      fetchBatchedRelations,
+      invalidateBatchedRelations,
       onListChangeRef,
       onTaskRelationsChangeRef,
       onTaskChangeRef,
@@ -485,9 +440,9 @@ export function useBoardRealtimeEventHandler({
 
   useEffect(() => {
     return () => {
-      if (relationFetchTimerRef.current) {
-        clearTimeout(relationFetchTimerRef.current);
-        relationFetchTimerRef.current = null;
+      if (relationInvalidationTimerRef.current) {
+        clearTimeout(relationInvalidationTimerRef.current);
+        relationInvalidationTimerRef.current = null;
       }
       pendingRelationIdsRef.current.clear();
     };

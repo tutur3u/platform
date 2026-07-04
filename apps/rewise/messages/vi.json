@@ -462,6 +462,10 @@
     "ai_models": "Mô hình AI",
     "all_conversations": "Tất cả cuộc trò chuyện",
     "anonymous": "Ẩn danh",
+    "api_input": "Đầu vào API",
+    "api_input_coming_soon": "Đầu vào API sắp ra mắt",
+    "api_input_description": "Dán khóa API để dùng thông tin xác thực nhà cung cấp của bạn.",
+    "chat_name_hidden": "Tên cuộc trò chuyện bị ẩn",
     "chat_notes": "Ghi chú",
     "chat_summary": "Tóm tắt",
     "chat_updated": "Cập nhật trò chuyện",
@@ -490,6 +494,7 @@
     "experimental_disclaimer": "Chú ý: Nội dung được tạo ra bởi AI có thể không chính xác hoặc cập nhật, vui lòng kiểm tra thông tin trước khi sử dụng.",
     "extra_options": "Tùy chọn khác",
     "flashcards": "Thẻ ghi nhớ",
+    "get-api-key-from": "Lấy khóa API từ",
     "imagine_placeholder": "Mô tả hình ảnh bạn muốn tạo...",
     "incorrect": "không chính xác",
     "latest_messages": "Tin nhắn mới nhất",
@@ -526,6 +531,7 @@
     "summarized": "Có tóm tắt",
     "summary": "Tóm tắt",
     "try_again_later": "Vui lòng thử lại sau.",
+    "untitled": "Cuộc trò chuyện chưa đặt tên",
     "upload_file_description": "Chọn tệp bạn muốn tải lên cuộc trò chuyện này.",
     "upload_files": "Tải lên tập tin",
     "view_conversation": "Xem cuộc trò chuyện",
@@ -1969,6 +1975,7 @@
   },
   "command_launcher": {
     "apps": "Ứng dụng",
+    "apps_description": "Mở một ứng dụng Tuturuuu khác từ workspace này.",
     "close": "đóng",
     "current": "Hiện tại",
     "current_app": "Ứng dụng hiện tại",
@@ -1983,6 +1990,9 @@
     "navigation": "Điều hướng",
     "open": "Mở",
     "open_app": "Mở ứng dụng",
+    "open_here": "Mở tại đây",
+    "open_in_new_tab": "Mở trong tab mới",
+    "open_options": "Tùy chọn mở",
     "open_workspace": "Mở workspace",
     "personal": "Cá nhân",
     "placeholder": "Tìm ứng dụng, workspace và trang...",
@@ -2284,6 +2294,7 @@
     "error_updating_name": "Lỗi khi cập nhật tên",
     "error_updating_visibility": "Lỗi khi cập nhật quyền truy cập",
     "estimation": "Ước tính",
+    "example_content": "Nội dung mẫu",
     "expand": "Mở rộng",
     "expand_on_hover": "Mở rộng khi di chuột",
     "expanded": "Mở rộng",
@@ -2320,6 +2331,7 @@
     "generate": "Tạo nội dung",
     "generate_explanation": "Tạo lời giải thích",
     "generate_with_ai": "Tạo với AI",
+    "generating": "Đang tạo...",
     "get-started": "Bắt đầu ngay",
     "get-started-desc": "Đăng ký miễn phí và bắt đầu sử dụng nền tảng của chúng tôi ngay hôm nay.",
     "github-description": "Xem các dự án nguồn mở của chúng tôi trên GitHub.",
@@ -2453,6 +2465,7 @@
     "none": "Không có",
     "not_completed": "Chưa hoàn thành",
     "not_whitelisted": "Không có trong danh sách trắng",
+    "not_whitelisted_desc": "Tài khoản của bạn chưa được phép truy cập workspace này.",
     "nova-description": "Sân chơi prompt engineering cho mọi người.",
     "of": "trên",
     "open_menu": "Mở menu",
@@ -7354,6 +7367,7 @@
     "converting": "Đang chuyển đổi...",
     "create_task": "Tạo tác vụ",
     "delete_draft": "Xóa bản nháp",
+    "delete_failed": "Không thể xóa bản nháp",
     "deleted_success": "Đã xóa bản nháp",
     "discard": "Bỏ",
     "draft_mode_active": "Chế độ nháp",
@@ -7440,6 +7454,103 @@
       "update_success": "Đã cập nhật loại ước lượng thành công"
     },
     "unnamed_board": "Bảng chưa đặt tên"
+  },
+  "task-progress": {
+    "actions": {
+      "add_entry": "Thêm ghi nhận",
+      "add_goal": "Thêm mục tiêu",
+      "add_leaderboard": "Thêm bảng xếp hạng",
+      "add_metric": "Thêm chỉ số",
+      "add_team": "Thêm đội",
+      "commit_import": "Ghi nhận nhập liệu",
+      "preview": "Xem trước"
+    },
+    "empty": {
+      "entries": "Chưa có ghi nhận tiến độ.",
+      "goals": "Chưa có mục tiêu đang hoạt động.",
+      "leaderboards": "Chưa có bảng xếp hạng đang hoạt động.",
+      "stats": "Chưa có thống kê tiến độ."
+    },
+    "fields": {
+      "color": "Màu",
+      "goal_name": "Tên mục tiêu",
+      "leaderboard_name": "Tên bảng xếp hạng",
+      "metric_name": "Tên chỉ số",
+      "note": "Ghi chú",
+      "tags": "Thẻ",
+      "target": "Mục tiêu",
+      "team_name": "Tên đội",
+      "unit": "Đơn vị",
+      "value": "Giá trị"
+    },
+    "goal_types": {
+      "habit": "Thói quen",
+      "target": "Mục tiêu"
+    },
+    "goals": {
+      "create_goal": "Tạo mục tiêu"
+    },
+    "import": {
+      "placeholder": "2026-06-25,500,Words,writing|draft,Bản nháp chương",
+      "preview_count": "Đã xem trước {count} dòng",
+      "title": "Nhập tiến độ"
+    },
+    "leaderboards": {
+      "create_leaderboard": "Tạo bảng xếp hạng"
+    },
+    "progress": {
+      "log_entry": "Ghi tiến độ",
+      "recent_entries": "Ghi nhận gần đây"
+    },
+    "schema_unavailable": "Tiến độ công việc cần migration cơ sở dữ liệu mới nhất trước khi tải.",
+    "stats": {
+      "daily_progress": "Tiến độ hằng ngày"
+    },
+    "summary": {
+      "entries": "Lượt ghi",
+      "goals": "Mục tiêu",
+      "streak": "Chuỗi ngày",
+      "total": "Tổng"
+    },
+    "tabs": {
+      "goals": "Mục tiêu",
+      "import": "Nhập",
+      "leaderboards": "Bảng xếp hạng",
+      "progress": "Tiến độ",
+      "stats": "Thống kê"
+    },
+    "toast": {
+      "entry_created": "Đã ghi nhận tiến độ",
+      "goal_created": "Đã tạo mục tiêu",
+      "import_committed": "Đã ghi nhận nhập liệu",
+      "import_failed": "Nhập liệu thất bại",
+      "import_previewed": "Đã chuẩn bị bản xem trước",
+      "leaderboard_created": "Đã tạo bảng xếp hạng",
+      "metric_created": "Đã tạo chỉ số",
+      "team_created": "Đã tạo đội"
+    },
+    "views": {
+      "goals": {
+        "description": "Theo dõi mục tiêu và thói quen bằng các chỉ số tiến độ công việc.",
+        "title": "Mục tiêu công việc"
+      },
+      "import": {
+        "description": "Xem trước và ghi nhận nhiều dòng tiến độ.",
+        "title": "Nhập tiến độ"
+      },
+      "leaderboards": {
+        "description": "Tạo bảng xếp hạng và đội nội bộ cho các chỉ số tiến độ.",
+        "title": "Bảng xếp hạng công việc"
+      },
+      "progress": {
+        "description": "Ghi nhận tiến độ linh hoạt theo công việc, dự án và bảng.",
+        "title": "Tiến độ công việc"
+      },
+      "stats": {
+        "description": "Xem tổng tiến độ, ngày hoạt động, chuỗi ngày và tiến độ hằng ngày.",
+        "title": "Thống kê công việc"
+      }
+    }
   },
   "task-projects": {
     "badges": {
@@ -7635,14 +7746,25 @@
       "activity": "Lịch sử",
       "assignee_added": "Đã giao cho người dùng",
       "assignee_removed": "Đã xóa người được giao",
+      "before_clear_version": "Trước khi xóa",
       "changed": "Đã thay đổi",
+      "compare_version": "So sánh",
       "completed": "Hoàn thành",
       "content_changed": "Nội dung đã thay đổi",
       "core_fields": "Trường Cơ Bản",
       "current": "Hiện tại:",
       "dates": "Ngày Tháng",
+      "description_change_title": "Thay đổi mô tả",
+      "description_restore_banner_description": "Nội dung hiện tại khác với phiên bản đã theo dõi mới nhất. Khôi phục hoặc so sánh tất cả phiên bản đã theo dõi.",
+      "description_restore_banner_title": "Có phiên bản mô tả đã theo dõi",
+      "description_restore_failed": "Không thể khôi phục mô tả",
+      "description_restore_success": "Đã khôi phục mô tả",
+      "description_version_no_preview": "Không có xem trước văn bản",
+      "description_versions_description": "So sánh các phiên bản mô tả đã theo dõi và khôi phục phiên bản nên là hiện tại.",
+      "description_versions_title": "Phiên bản mô tả",
       "deselect_all": "Bỏ chọn tất cả",
       "empty": "Chưa có lịch sử cho công việc này",
+      "empty_description_value": "Trống hoặc không thể khôi phục",
       "error": "Không thể tải lịch sử công việc",
       "error_loading": "Không thể tải ảnh chụp",
       "field": {
@@ -7674,10 +7796,13 @@
       "incomplete": "Chưa hoàn thành",
       "label_added": "Đã thêm nhãn",
       "label_removed": "Đã xóa nhãn",
+      "latest_version": "Mới nhất",
       "no_change": "Không thay đổi",
       "no_changes": "Không có thay đổi so với hiện tại",
+      "no_recoverable_description_versions": "Không tìm thấy phiên bản mô tả có thể khôi phục trong lịch sử.",
       "no_snapshot": "Không có dữ liệu ảnh chụp",
       "points": "điểm",
+      "previous_description_value": "Trước",
       "priority": {
         "critical": "Cực kỳ khẩn cấp",
         "high": "Cao",
@@ -7689,6 +7814,12 @@
       "project_linked": "Đã liên kết dự án",
       "project_unlinked": "Đã hủy liên kết dự án",
       "relationships": "Mối Quan Hệ",
+      "restore_from_change": "Khôi phục từ thay đổi này",
+      "restore_latest_tracked": "Khôi phục bản mới nhất",
+      "restore_previous_description": "Khôi phục bản trước",
+      "restore_resulting_description": "Khôi phục bản sau",
+      "restore_version": "Khôi phục",
+      "resulting_description_value": "Sau",
       "revert_error_description": "Vui lòng thử lại",
       "revert_error_title": "Khôi phục thất bại",
       "revert_selected": "Khôi phục {count} trường",
@@ -7700,8 +7831,11 @@
       "snapshot": "Ảnh chụp:",
       "snapshot_title": "Ảnh Chụp Công Việc",
       "task_created": "Đã tạo công việc",
+      "tracked_by_user": "Được theo dõi bởi",
       "unknown_change": "Đã thực hiện thay đổi",
       "unknown_user": "Người dùng không xác định",
+      "view_description_diff": "Xem so sánh",
+      "view_description_versions": "Xem phiên bản",
       "view_snapshot": "Xem ảnh chụp & khôi phục",
       "was_empty": "Trống"
     },
@@ -7757,6 +7891,7 @@
     "unknown_project": "Dự án không xác định",
     "unknown_user": "Người dùng không xác định",
     "unlinked_from_project": "đã hủy liên kết với dự án",
+    "view_description_change": "Xem thay đổi mô tả",
     "view_snapshot": "Xem Ảnh Chụp",
     "with_description": "với mô tả"
   },
@@ -12890,6 +13025,136 @@
       "table": "Bảng",
       "timeline": "Lịch trình",
       "timeline_description": "Lịch trình trực quan của công việc"
+    }
+  },
+  "ws-task-plans": {
+    "add_workspace": "Thêm không gian",
+    "close_planner": "Đóng kế hoạch",
+    "create_draft": "Tạo nháp",
+    "create_plan": "Tạo kế hoạch",
+    "create_task": "Tạo công việc",
+    "digest": "Tóm tắt kế hoạch",
+    "generate_digest": "Tạo tóm tắt",
+    "intended_workspace": "Đã chọn",
+    "loading": "Đang tải",
+    "mode_month": "Tháng",
+    "mode_week": "Tuần",
+    "mode_year": "Năm",
+    "no_items": "Chưa có công việc",
+    "no_plans": "Chưa có kế hoạch",
+    "open_planner": "Mở kế hoạch",
+    "permission_edit": "Sửa",
+    "permission_view": "Xem",
+    "plan_status_draft": "Nháp",
+    "plan_switcher_placeholder": "Chọn kế hoạch",
+    "plan_title_placeholder": "Tên kế hoạch",
+    "planned_date": "Ngày dự kiến",
+    "planned_tasks": "Việc đã lên kế hoạch",
+    "planner": "Kế hoạch",
+    "save_plan": "Lưu kế hoạch",
+    "schema_unavailable": "Chưa có kế hoạch",
+    "scope_draft": "Nháp",
+    "scope_external_workspace": "Không gian ngoài",
+    "scope_my_override": "Ghi đè của tôi",
+    "scope_personal": "Cá nhân",
+    "scope_shared_plan": "Kế hoạch chia sẻ",
+    "scope_team_source": "Nguồn nhóm",
+    "share_email": "Chia sẻ email",
+    "share_email_placeholder": "dongdoi@example.com",
+    "share_plan": "Chia sẻ",
+    "share_saved": "Đã chia sẻ kế hoạch",
+    "share_workspace": "Chia sẻ không gian",
+    "share_workspace_name": "Chia sẻ {name}",
+    "target_board": "Bảng đích",
+    "target_list": "Danh sách đích",
+    "target_workspace": "Không gian đích",
+    "task_title_placeholder": "Tên công việc",
+    "untitled_board": "Bảng chưa đặt tên",
+    "untitled_task": "Công việc chưa đặt tên",
+    "untitled_workspace": "Không gian chưa đặt tên"
+  },
+  "ws-task-templates": {
+    "actions": {
+      "archive": "Lưu trữ mẫu",
+      "cancel": "Hủy",
+      "create": "Tạo mẫu",
+      "create_task": "Tạo công việc",
+      "new_template": "Mẫu mới",
+      "save": "Lưu mẫu",
+      "save_from_task": "Lưu từ công việc",
+      "use": "Sử dụng"
+    },
+    "card": {
+      "assignees": "{count} người phụ trách",
+      "labels": "{count} nhãn",
+      "projects": "{count} dự án"
+    },
+    "create": {
+      "description": "Lưu các mặc định công việc có thể tái sử dụng cho công việc lặp lại.",
+      "title": "Tạo mẫu công việc"
+    },
+    "empty": {
+      "description": "Tạo mẫu cho công việc lặp lại, danh sách kiểm tra và bàn giao tiêu chuẩn.",
+      "no_results": "Không có mẫu nào khớp với tìm kiếm.",
+      "title": "Chưa có mẫu công việc"
+    },
+    "fields": {
+      "board": "Bảng",
+      "description": "Mô tả",
+      "description_placeholder": "Mô tả mặc định của công việc",
+      "key": "Khóa",
+      "key_placeholder": "bao-loi",
+      "list": "Danh sách",
+      "override_name": "Ghi đè tiêu đề công việc",
+      "priority": "Độ ưu tiên",
+      "search": "Tìm kiếm",
+      "search_placeholder": "Tìm mẫu công việc",
+      "task_id": "ID công việc",
+      "task_id_placeholder": "UUID công việc",
+      "task_name": "Tiêu đề công việc",
+      "task_name_placeholder": "Điều tra lỗi được báo cáo",
+      "template_name": "Tên mẫu",
+      "template_name_placeholder": "Báo lỗi sprint",
+      "unnamed_board": "Bảng chưa đặt tên",
+      "unnamed_list": "Danh sách chưa đặt tên",
+      "visibility": "Phạm vi hiển thị"
+    },
+    "gallery": {
+      "board_marketplace": "Chợ mẫu bảng",
+      "description": "Tạo mẫu khởi đầu công việc có thể tái sử dụng và giữ mẫu bảng ở cùng một nơi.",
+      "header": "Mẫu công việc"
+    },
+    "priority": {
+      "critical": "Khẩn cấp",
+      "high": "Cao",
+      "low": "Thấp",
+      "none": "Không có ưu tiên",
+      "normal": "Bình thường"
+    },
+    "save_from_task": {
+      "description": "Nhập ID công việc để lưu các trường hiện tại thành mẫu có thể tái sử dụng.",
+      "title": "Lưu công việc thành mẫu"
+    },
+    "tabs": {
+      "boards": "Mẫu bảng",
+      "tasks": "Mẫu công việc"
+    },
+    "toast": {
+      "archived": "Đã lưu trữ mẫu công việc",
+      "created": "Đã tạo mẫu công việc",
+      "failed": "Thao tác mẫu công việc thất bại",
+      "no_template_selected": "Chưa chọn mẫu công việc",
+      "saved_from_task": "Đã lưu mẫu công việc",
+      "task_created": "Đã tạo công việc từ mẫu"
+    },
+    "use": {
+      "description": "Tạo công việc từ {name}.",
+      "description_empty": "Tạo công việc từ mẫu đã chọn.",
+      "title": "Sử dụng mẫu công việc"
+    },
+    "visibility": {
+      "private": "Riêng tư",
+      "workspace": "Không gian làm việc"
     }
   },
   "ws-tasks": {

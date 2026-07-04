@@ -1,6 +1,13 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  TASK_NAVIGATION_GOALS_CONFIG_ID,
+  TASK_NAVIGATION_IMPORT_CONFIG_ID,
+  TASK_NAVIGATION_LEADERBOARDS_CONFIG_ID,
+  TASK_NAVIGATION_PROGRESS_CONFIG_ID,
+  TASK_NAVIGATION_STATS_CONFIG_ID,
+} from '@tuturuuu/internal-api/users';
 import type { Workspace } from '@tuturuuu/types';
 import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
 import {
@@ -20,6 +27,7 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { Switch } from '@tuturuuu/ui/switch';
 import { useTranslations } from 'next-intl';
 import { useEffect } from 'react';
+import { getTaskApiUrl } from '../../../../lib/tasks-app-url';
 import {
   normalizeTaskDialogPresentation,
   TASK_DIALOG_DEFAULT_PRESENTATION_CONFIG_ID,
@@ -86,6 +94,36 @@ export function TaskSettings({ workspace }: TaskSettingsProps) {
     isPending: showReviewDueDatesPending,
   } = useUserBooleanConfig(TASKS_SHOW_REVIEW_DUE_DATES_CONFIG_ID, false);
   const {
+    value: showTaskProgressNavigation,
+    setValue: setShowTaskProgressNavigation,
+    isLoading: showTaskProgressNavigationLoading,
+    isPending: showTaskProgressNavigationPending,
+  } = useUserBooleanConfig(TASK_NAVIGATION_PROGRESS_CONFIG_ID, false);
+  const {
+    value: showTaskGoalsNavigation,
+    setValue: setShowTaskGoalsNavigation,
+    isLoading: showTaskGoalsNavigationLoading,
+    isPending: showTaskGoalsNavigationPending,
+  } = useUserBooleanConfig(TASK_NAVIGATION_GOALS_CONFIG_ID, false);
+  const {
+    value: showTaskStatsNavigation,
+    setValue: setShowTaskStatsNavigation,
+    isLoading: showTaskStatsNavigationLoading,
+    isPending: showTaskStatsNavigationPending,
+  } = useUserBooleanConfig(TASK_NAVIGATION_STATS_CONFIG_ID, false);
+  const {
+    value: showTaskLeaderboardsNavigation,
+    setValue: setShowTaskLeaderboardsNavigation,
+    isLoading: showTaskLeaderboardsNavigationLoading,
+    isPending: showTaskLeaderboardsNavigationPending,
+  } = useUserBooleanConfig(TASK_NAVIGATION_LEADERBOARDS_CONFIG_ID, false);
+  const {
+    value: showTaskImportNavigation,
+    setValue: setShowTaskImportNavigation,
+    isLoading: showTaskImportNavigationLoading,
+    isPending: showTaskImportNavigationPending,
+  } = useUserBooleanConfig(TASK_NAVIGATION_IMPORT_CONFIG_ID, false);
+  const {
     value: soundEffectsEnabled,
     setValue: setSoundEffectsEnabled,
     isLoading: soundEffectsEnabledLoading,
@@ -108,7 +146,9 @@ export function TaskSettings({ workspace }: TaskSettingsProps) {
   const { data: settings, isLoading } = useQuery({
     queryKey: ['user-task-settings'],
     queryFn: async (): Promise<TaskSettingsData> => {
-      const res = await fetch('/api/v1/users/task-settings');
+      const res = await fetch(getTaskApiUrl('/api/v1/users/task-settings'), {
+        credentials: 'include',
+      });
       if (!res.ok) throw new Error('Failed to fetch task settings');
       return res.json();
     },
@@ -125,8 +165,9 @@ export function TaskSettings({ workspace }: TaskSettingsProps) {
 
   const updateSettings = useMutation({
     mutationFn: async (data: Partial<TaskSettingsData>) => {
-      const res = await fetch('/api/v1/users/task-settings', {
+      const res = await fetch(getTaskApiUrl('/api/v1/users/task-settings'), {
         method: 'PATCH',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
       });
@@ -343,6 +384,73 @@ export function TaskSettings({ workspace }: TaskSettingsProps) {
             checked={showReviewDueDates}
             onCheckedChange={setShowReviewDueDates}
             disabled={showReviewDueDatesLoading || showReviewDueDatesPending}
+          />
+        </SettingItemTab>
+        <Separator />
+        <SettingItemTab
+          title={t('navigation_progress')}
+          description={t('navigation_progress_description')}
+        >
+          <Switch
+            checked={showTaskProgressNavigation}
+            onCheckedChange={setShowTaskProgressNavigation}
+            disabled={
+              showTaskProgressNavigationLoading ||
+              showTaskProgressNavigationPending
+            }
+          />
+        </SettingItemTab>
+        <Separator />
+        <SettingItemTab
+          title={t('navigation_goals')}
+          description={t('navigation_goals_description')}
+        >
+          <Switch
+            checked={showTaskGoalsNavigation}
+            onCheckedChange={setShowTaskGoalsNavigation}
+            disabled={
+              showTaskGoalsNavigationLoading || showTaskGoalsNavigationPending
+            }
+          />
+        </SettingItemTab>
+        <Separator />
+        <SettingItemTab
+          title={t('navigation_stats')}
+          description={t('navigation_stats_description')}
+        >
+          <Switch
+            checked={showTaskStatsNavigation}
+            onCheckedChange={setShowTaskStatsNavigation}
+            disabled={
+              showTaskStatsNavigationLoading || showTaskStatsNavigationPending
+            }
+          />
+        </SettingItemTab>
+        <Separator />
+        <SettingItemTab
+          title={t('navigation_leaderboards')}
+          description={t('navigation_leaderboards_description')}
+        >
+          <Switch
+            checked={showTaskLeaderboardsNavigation}
+            onCheckedChange={setShowTaskLeaderboardsNavigation}
+            disabled={
+              showTaskLeaderboardsNavigationLoading ||
+              showTaskLeaderboardsNavigationPending
+            }
+          />
+        </SettingItemTab>
+        <Separator />
+        <SettingItemTab
+          title={t('navigation_import')}
+          description={t('navigation_import_description')}
+        >
+          <Switch
+            checked={showTaskImportNavigation}
+            onCheckedChange={setShowTaskImportNavigation}
+            disabled={
+              showTaskImportNavigationLoading || showTaskImportNavigationPending
+            }
           />
         </SettingItemTab>
         <Separator />

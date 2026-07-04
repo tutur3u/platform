@@ -158,4 +158,76 @@ describe('ReferralSectionClient', () => {
     });
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
+
+  it('keeps referral selection available when referred users exceed the discount cap', () => {
+    listWorkspaceUserReferralsMock.mockResolvedValue({
+      count: 2,
+      data: [
+        {
+          id: 'referred-1',
+          full_name: 'Mai Nguyen',
+          display_name: null,
+          email: 'mai@example.com',
+          phone: null,
+        },
+        {
+          id: 'referred-2',
+          full_name: 'Hoa Pham',
+          display_name: null,
+          email: 'hoa@example.com',
+          phone: null,
+        },
+      ],
+    });
+
+    renderWithQueryClient(
+      <ReferralSectionClient
+        wsId="ws-123"
+        userId="user-123"
+        canUpdateUsers
+        workspaceSettings={{
+          referral_count_cap: 1,
+          referral_increment_percent: 10,
+          referral_promotion_id: null,
+          referral_reward_type: 'BOTH',
+        }}
+        initialAvailableUsers={[
+          {
+            id: 'candidate-1',
+            full_name: 'Linh Tran',
+            display_name: null,
+            email: 'linh@example.com',
+            phone: null,
+          },
+        ]}
+        initialAvailableUsersCount={1}
+        initialReferredUsers={[
+          {
+            id: 'referred-1',
+            full_name: 'Mai Nguyen',
+            display_name: null,
+            email: 'mai@example.com',
+            phone: null,
+          },
+          {
+            id: 'referred-2',
+            full_name: 'Hoa Pham',
+            display_name: null,
+            email: 'hoa@example.com',
+            phone: null,
+          },
+        ]}
+      />
+    );
+
+    expect(screen.getByText('Mai Nguyen')).toBeInTheDocument();
+    expect(screen.getByText('Hoa Pham')).toBeInTheDocument();
+    expect(screen.getByText('select_person_to_refer')).toBeInTheDocument();
+    expect(
+      screen.getByRole('textbox', {
+        name: 'search_person_to_refer_placeholder',
+      })
+    ).toBeInTheDocument();
+    expect(screen.queryByText('reached_max_referrals')).not.toBeInTheDocument();
+  });
 });

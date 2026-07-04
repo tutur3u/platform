@@ -138,6 +138,7 @@ export function TransactionForm({
   canUpdateConfidentialTransactions,
   canChangeFinanceWallets = true,
   canSetFinanceWalletsOnCreate = true,
+  defaultCurrency,
   initialMode = 'transaction',
   initialTransaction,
   initialTransfer,
@@ -1005,6 +1006,7 @@ export function TransactionForm({
         setNewContentType={setNewContentType}
         newContent={newContent}
         setNewContent={setNewContent}
+        defaultCurrency={defaultCurrency}
         newTagColor={newTagColor}
         setNewTagColor={setNewTagColor}
       />

@@ -24,6 +24,20 @@ class _MockWorkspaceCubit extends MockCubit<WorkspaceState>
 class _MockWorkspacePermissionsRepository extends Mock
     implements WorkspacePermissionsRepository {}
 
+TaskProjectSummary _projectSummary(int index) {
+  return TaskProjectSummary(
+    id: 'project-$index',
+    name: 'Project $index',
+    wsId: 'ws-1',
+    creatorId: 'user-1',
+    createdAt: DateTime(2026, 3),
+    tasksCount: 0,
+    completedTasksCount: 0,
+    linkedTasks: const [],
+    priority: 'normal',
+  );
+}
+
 void main() {
   group('TaskPortfolioView', () {
     late _MockTaskPortfolioCubit taskPortfolioCubit;
@@ -134,5 +148,57 @@ void main() {
         expect(find.text('Select project'), findsOneWidget);
       },
     );
+
+    testWidgets('does not mount distant project cards before scrolling', (
+      tester,
+    ) async {
+      const workspace = Workspace(id: 'ws-1', name: 'Platform');
+      const workspaceState = WorkspaceState(
+        status: WorkspaceStatus.loaded,
+        currentWorkspace: workspace,
+        workspaces: [workspace],
+      );
+      final portfolioState = TaskPortfolioState(
+        status: TaskPortfolioStatus.loaded,
+        workspaceId: 'ws-1',
+        projects: List.generate(250, _projectSummary),
+      );
+
+      whenListen(
+        workspaceCubit,
+        const Stream<WorkspaceState>.empty(),
+        initialState: workspaceState,
+      );
+      whenListen(
+        taskPortfolioCubit,
+        const Stream<TaskPortfolioState>.empty(),
+        initialState: portfolioState,
+      );
+      when(
+        () => permissionsRepository.getPermissions(wsId: 'ws-1'),
+      ).thenAnswer(
+        (_) async => const WorkspacePermissions(
+          permissions: {'manage_projects'},
+          isCreator: false,
+        ),
+      );
+
+      await tester.pumpApp(
+        MultiBlocProvider(
+          providers: [
+            BlocProvider<WorkspaceCubit>.value(value: workspaceCubit),
+            BlocProvider<TaskPortfolioCubit>.value(value: taskPortfolioCubit),
+            BlocProvider(create: (_) => ShellMiniNavCubit()),
+          ],
+          child: TaskPortfolioView(
+            permissionsRepository: permissionsRepository,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Project 0'), findsOneWidget);
+      expect(find.text('Project 249'), findsNothing);
+    });
   });
 }

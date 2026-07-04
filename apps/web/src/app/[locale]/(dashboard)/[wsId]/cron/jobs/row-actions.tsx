@@ -2,7 +2,7 @@
 
 import type { Row } from '@tanstack/react-table';
 import { Ellipsis, Eye } from '@tuturuuu/icons';
-import type { WorkspaceCronJob } from '@tuturuuu/types';
+import { deleteWorkspaceCronJob } from '@tuturuuu/internal-api';
 import { Button } from '@tuturuuu/ui/button';
 import ModifiableDialogTrigger from '@tuturuuu/ui/custom/modifiable-dialog-trigger';
 import {
@@ -17,10 +17,11 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import type { ManagedWorkspaceCronJob } from '../types';
 import { CronJobForm } from './form';
 
 interface RowActionsProps {
-  row: Row<WorkspaceCronJob>;
+  row: Row<ManagedWorkspaceCronJob>;
   href?: string;
   extraData?: any;
 }
@@ -32,20 +33,13 @@ export function RowActions({ row, href }: RowActionsProps) {
   const data = row.original;
 
   const deleteData = async () => {
-    const res = await fetch(
-      `/api/v1/workspaces/${data.ws_id}/cron/jobs/${data.id}`,
-      {
-        method: 'DELETE',
-      }
-    );
-
-    if (res.ok) {
+    try {
+      await deleteWorkspaceCronJob(data.ws_id, data.id);
       router.refresh();
-    } else {
-      const data = await res.json();
+    } catch (error) {
       toast({
-        title: 'Failed to delete cron job',
-        description: data.message,
+        title: t('cron-job-form.delete_failed'),
+        description: error instanceof Error ? error.message : String(error),
       });
     }
   };
@@ -70,7 +64,7 @@ export function RowActions({ row, href }: RowActionsProps) {
             className="flex h-8 w-8 p-0 data-[state=open]:bg-muted"
           >
             <Ellipsis className="h-4 w-4" />
-            <span className="sr-only">Open menu</span>
+            <span className="sr-only">{t('common.open_menu')}</span>
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-[160px]">

@@ -1,7 +1,7 @@
 import { UserIcon } from '@tuturuuu/icons';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { format } from 'date-fns';
-import type { ExtendedTimeTrackingRequest } from '../page';
+import type { ExtendedTimeTrackingRequest } from '../types';
 
 interface UserInfoCardProps {
   request: ExtendedTimeTrackingRequest;

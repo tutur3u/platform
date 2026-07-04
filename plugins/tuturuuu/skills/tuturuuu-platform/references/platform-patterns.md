@@ -22,6 +22,28 @@ shared-package changes.
   after significant edits, split it by concern and keep import paths stable
   with a thin barrel when needed.
 
+## Effect Orchestration
+
+- Import Effect through `@tuturuuu/utils/effect`, not directly from `effect`,
+  so Tuturuuu code uses one curated server/service orchestration entrypoint.
+- Prefer Effect for new or substantially edited TypeScript server/shared flows
+  that coordinate multiple async resources, expected failures, dependency
+  services/layers, retry/schedule policy, resource lifetime, or bounded
+  concurrency.
+- Keep client fetching in TanStack Query and shared app API boundaries in
+  `packages/internal-api`; Effect programs can sit behind those boundaries, but
+  should not replace query hooks or React state.
+- Keep input validation in Zod and generated DB types. Use Effect to compose
+  validated operations, not as a replacement for existing schema contracts.
+- Use the Tuturuuu helpers (`withTuturuuuRetry`, `withTuturuuuTimeout`, and
+  `forEachConcurrently`) for common service reliability policy before adding
+  ad hoc retry loops, raw timeout races, or unbounded parallel maps.
+- Do not wrap simple pure helpers, formatting utilities, or one-line data
+  transforms in Effect unless they are part of a larger Effect workflow.
+- Expose adoption through additive subpaths such as `@tuturuuu/ai/effect` or
+  `@tuturuuu/trigger/effect`; avoid rewriting stable call sites solely to make
+  them Effect-based.
+
 ## Routes, Auth, And API Boundaries
 
 - Dashboard routes should stay thin server gates when the UI needs search,
@@ -68,17 +90,73 @@ shared-package changes.
   default or placed external cards. Guest source membership is not sufficient
   for personal-board task data.
 - Forward request auth when server-side loaders call internal API helpers.
-- Keep password login, OTP send, and OTP verify on separate proxy route-limit
-  policies for shared-IP classrooms and centers. Do not route these human auth
-  `429`s into `recordSuspiciousApiRequestEdge`; preserve `Retry-After`, retry
+- Keep password login, OTP send, OTP verify, MFA verify, and reauth verify on
+  throttles that do not write hard IP blocks for shared-IP classrooms and
+  centers. Do not route human auth or backend-service `429`s into
+  `recordSuspiciousApiRequestEdge`/`blockIPEdge`; preserve `Retry-After`, retry
   only idempotent `GET`/`HEAD` `429`s in the fetch interceptor, and rely on
-  per-email cooldown/failed-attempt controls for account-specific abuse. For a
-  live incident, check the customer public IP in Abuse Intelligence and clear
-  only confirmed false-positive `api_abuse` or `password_login_failed` blocks.
+  per-email cooldown/failed-attempt controls for account-specific abuse. Generic
+  anonymous scanner traffic, malformed auth-cookie abuse, `api_auth_failed`, and
+  manual blocks can still hard-block IPs. For a live incident, check the
+  customer public IP in Abuse Intelligence, clear confirmed false-positive
+  blocks, and add a time-bound IP/CIDR trust or rate-limit uplift only when
+  traffic is organic.
 - Treat workspace/resource IDs embedded in rich-text documents, Yjs payloads,
   mention nodes, or other user-authored content as untrusted hints. Resolve
   stale content through the current route/document workspace or a server-returned
   resource workspace, not through the embedded attribute alone.
+
+## TanStack Start Migration (apps/tanstack-web)
+
+- Shared `@tuturuuu/ui` clients import Next-only framework APIs. apps/tanstack-web
+  resolves them at runtime via three compat layers so ported routes keep the
+  shared imports AS-IS (no source rewrites):
+  - `next/navigation` -> vite `resolve.alias` to
+    `src/lib/platform/next-navigation-shim.tsx` (useRouter/usePathname/
+    useSearchParams/useParams/redirect/notFound on TanStack Router).
+  - `next/link` -> vite `resolve.alias` to `src/lib/platform/next-link-shim.tsx`
+    (renders identical `<a href>`, upgrades plain internal left-clicks to SPA
+    navigation).
+  - `nuqs` (useQueryState/useQueryStates) -> the OFFICIAL
+    `nuqs/adapters/tanstack-router` `NuqsAdapter`, mounted in `__root.tsx`
+    `RootComponent` (inside router context). Prefer this first-party adapter
+    over a hand-rolled shim.
+- nuqs gotcha: the TanStack adapter reads URL state from router `state.search`
+  (filtered to watched keys) and writes via `navigate({ to: pathname + query })`.
+  So a route hosting nuqs hooks MUST let its nuqs-managed query keys pass through
+  TanStack Router `validateSearch` — a strict whitelist that drops unknown keys
+  silently breaks nuqs reads. Pass through unknown keys (or include the nuqs keys
+  in the route's search schema).
+- Auth-gate ported routes fail closed: call `requireCurrentUser({ locale,
+  nextPath })` FIRST in the loader (before workspace resolution), so anonymous or
+  unreachable-backend requests redirect to `/{locale}/login?nextUrl=...` with the
+  original `/{wsId}/{route}` path preserved. The unauthenticated redirect is
+  covered offline by `e2e/dashboard-auth-gate.noauth.spec.ts`.
+- Route porting is gated on backend readiness: a route is portable only when an
+  EXISTING `@tuturuuu/internal-api` reader already ships all its data. Raw
+  `fetch('/api/...')`, `/internal/...`, or direct `@tuturuuu/supabase` client use
+  is rejected by `scripts/check-tanstack-api-access.js` — wire an internal-api
+  facade instead, or leave the route for the backend wave that builds the reader.
+
+## Migration Debt Avoidance (web + backend + tanstack-web)
+
+The `apps/web` → `apps/backend` (Rust) + `apps/web` → `apps/tanstack-web` switch
+is in progress. Do NOT add debt while it is pending — treat the three apps as one
+system on every change:
+
+- Adding/changing an `apps/web` API route: if `apps/backend` already serves that
+  path, update the Rust handler in the same change (faithful status/body/cache;
+  GET first, `None` for un-ported methods). If not, register/refresh it in
+  `apps/tanstack-web/migration/route-overrides.json` and run
+  `bun migration:tanstack:manifest` so it is tracked, not invisible.
+- Adding/changing a dashboard page/route: keep the manifest accurate and route
+  shared data through `packages/internal-api` so the later TanStack port is a
+  move, not a rewrite.
+- Confirm backend route ownership with the runtime coverage probe in
+  `apps/backend/AGENTS.md`. Full reference + cache classes:
+  `apps/docs/platform/architecture/tanstack-rust-migration.mdx`
+  ("No New Debt While The Switch Is Pending"). The cheapest correct unit is GET
+  reads ported behind an `internal-api` facade.
 
 ## Translations And Navigation
 

@@ -198,7 +198,13 @@ function setWindowLocation(search = '', origin = 'https://tuturuuu.com') {
   });
 }
 
-function renderLoginFormSearch(search = '', options: { origin?: string } = {}) {
+function renderLoginFormSearch(
+  search = '',
+  options: {
+    deferAuthSurfaceUntilSessionCheck?: boolean;
+    origin?: string;
+  } = {}
+) {
   const queryClient = new QueryClient({
     defaultOptions: {
       mutations: { retry: false },
@@ -211,15 +217,27 @@ function renderLoginFormSearch(search = '', options: { origin?: string } = {}) {
 
   render(
     <QueryClientProvider client={queryClient}>
-      <LoginForm />
+      <LoginForm
+        deferAuthSurfaceUntilSessionCheck={
+          options.deferAuthSurfaceUntilSessionCheck
+        }
+      />
     </QueryClientProvider>
   );
 
   return queryClient;
 }
 
-function renderLoginForm(returnUrl: string, options: { origin?: string } = {}) {
+function renderLoginForm(
+  returnUrl: string,
+  options: {
+    deferAuthSurfaceUntilSessionCheck?: boolean;
+    origin?: string;
+  } = {}
+) {
   return renderLoginFormSearch(`?returnUrl=${encodeURIComponent(returnUrl)}`, {
+    deferAuthSurfaceUntilSessionCheck:
+      options.deferAuthSurfaceUntilSessionCheck,
     origin: options.origin,
   });
 }
@@ -343,6 +361,28 @@ describe('LoginForm returnUrl navigation', () => {
     queryClient.clear();
   });
 
+  it('renders the profile loading card while deferred internal app bootstrap is pending', () => {
+    mocks.currentUserProfile = null;
+    mocks.getUser.mockReturnValue(new Promise(() => undefined));
+
+    const queryClient = renderLoginForm('https://partner.example/launch', {
+      deferAuthSurfaceUntilSessionCheck: true,
+    });
+
+    expect(
+      screen.getByText('login.loading_account_profile_title')
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: /login\.loading_profile/u })
+    ).toBeDisabled();
+    expect(
+      screen.queryByRole('button', {
+        name: 'login.continue_with_email',
+      })
+    ).not.toBeInTheDocument();
+    queryClient.clear();
+  });
+
   it('shows redirecting instead of the public form for authenticated login hard loads', async () => {
     const queryClient = renderLoginFormSearch();
 
@@ -437,6 +477,38 @@ describe('LoginForm returnUrl navigation', () => {
         expect.objectContaining({
           options: expect.objectContaining({
             redirectTo: 'http://localhost:7803/api/auth/callback?returnUrl=%2F',
+          }),
+          provider: 'google',
+        })
+      );
+    });
+    queryClient.clear();
+  });
+
+  it('uses the managed platform callback while preserving a managed subdomain returnUrl for social OAuth', async () => {
+    vi.stubEnv('WEB_APP_URL', 'https://tuturuuu.com');
+    mocks.currentUserProfile = null;
+    mocks.getUser.mockReturnValue(new Promise(() => undefined));
+
+    const queryClient = renderLoginFormSearch(
+      '?nextUrl=%2Fworkspace%2Fpersonal%2Fplans',
+      {
+        origin: 'https://vc.tuturuuu.com',
+      }
+    );
+
+    fireEvent.click(
+      await screen.findByRole('button', {
+        name: /login\.continue_with_google/u,
+      })
+    );
+
+    await waitFor(() => {
+      expect(mocks.signInWithOAuth).toHaveBeenCalledWith(
+        expect.objectContaining({
+          options: expect.objectContaining({
+            redirectTo:
+              'https://vc.tuturuuu.com/api/auth/callback?returnUrl=https%3A%2F%2Fvc.tuturuuu.com%2Fworkspace%2Fpersonal%2Fplans&nextUrl=%2Fworkspace%2Fpersonal%2Fplans',
           }),
           provider: 'google',
         })
@@ -813,6 +885,47 @@ describe('LoginForm returnUrl navigation', () => {
     ).not.toHaveBeenCalled();
     expect(mocks.refreshSession).toHaveBeenCalled();
     expect(mocks.assign).toHaveBeenCalledWith(tokenizedChatReturnUrl);
+    queryClient.clear();
+  });
+
+  it('redirects authenticated managed wildcard returns without account confirmation', async () => {
+    const managedReturnUrl =
+      'https://vc.tuturuuu.com/verify-token?nextUrl=%2Fworkspace%2Fpersonal%2Fplans';
+    const directManagedReturnUrl =
+      'https://vc.tuturuuu.com/workspace/personal/plans';
+
+    const queryClient = renderLoginForm(managedReturnUrl);
+
+    await waitFor(() => {
+      expect(mocks.assign).toHaveBeenCalledWith(directManagedReturnUrl);
+    });
+
+    expect(
+      mocks.resolveCrossAppReturnUrlWithInternalApi
+    ).not.toHaveBeenCalled();
+    expect(mocks.createCrossAppReturnUrlWithInternalApi).not.toHaveBeenCalled();
+    expect(mocks.refreshSession).toHaveBeenCalled();
+    expect(
+      screen.queryByText('login.confirm_internal_app_account_title')
+    ).not.toBeInTheDocument();
+    queryClient.clear();
+  });
+
+  it('treats unregistered Tuturuuu subdomains as verified managed return URLs', async () => {
+    const queryClient = renderLoginForm('https://vercel.tuturuuu.com');
+
+    await waitFor(() => {
+      expect(mocks.assign).toHaveBeenCalledWith('https://vercel.tuturuuu.com/');
+    });
+
+    expect(
+      mocks.resolveCrossAppReturnUrlWithInternalApi
+    ).not.toHaveBeenCalled();
+    expect(mocks.createCrossAppReturnUrlWithInternalApi).not.toHaveBeenCalled();
+    expect(mocks.refreshSession).toHaveBeenCalled();
+    expect(
+      screen.queryByText('login.invalid_return_url_title')
+    ).not.toBeInTheDocument();
     queryClient.clear();
   });
 

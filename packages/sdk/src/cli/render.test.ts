@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { render, sortTaskResponseForCli } from './render';
+import { render, renderWhoami, sortTaskResponseForCli } from './render';
 
 describe('CLI rendering', () => {
   afterEach(() => {
@@ -56,6 +56,70 @@ describe('CLI rendering', () => {
     expect(output).toContain('list-1');
   });
 
+  it('escapes terminal control characters in task table cells', () => {
+    const write = vi
+      .spyOn(process.stdout, 'write')
+      .mockImplementation(() => true);
+
+    render(
+      {
+        tasks: [
+          {
+            board_name: 'Board\x9b31m',
+            id: 'task-1',
+            name: 'Name\x1b]52;c;payload\x07\nNext',
+            task_lists: { name: 'List\x1b[31m' },
+          },
+        ],
+      },
+      { group: 'tasks' }
+    );
+
+    const output = write.mock.calls.map(([value]) => String(value)).join('');
+    expect(output).toContain('Name\\x1B]52;c;payload\\x07\\nNext');
+    expect(output).toContain('List\\x1B[31m');
+    expect(output).toContain('Board\\x9B31m');
+    expect(output).not.toContain('\x1b]52;c;payload');
+    expect(output).not.toContain('\x07');
+    expect(output).not.toContain('\x9b31m');
+  });
+
+  it('escapes terminal control characters in whoami metadata', () => {
+    const write = vi
+      .spyOn(process.stdout, 'write')
+      .mockImplementation(() => true);
+
+    renderWhoami({
+      baseUrl: 'https://app.tuturuuu.com',
+      configPath: '/tmp/ttr',
+      currentWorkspace: {
+        id: 'workspace-\x1b[32m',
+        name: 'Current\x9b31m',
+      },
+      defaultWorkspace: {
+        id: 'default-\x1b]52;c;id\x07',
+        name: 'Default\x1b[34m',
+      },
+      loggedIn: true,
+      session: 'active',
+      user: {
+        display_name: 'Name\x1b]52;c;payload\x07\nNext',
+        email: 'person\x1b[31m@example.com',
+        id: 'user-\x9b31m',
+      },
+    });
+
+    const output = write.mock.calls.map(([value]) => String(value)).join('');
+    expect(output).toContain('Name\\x1B]52;c;payload\\x07\\nNext');
+    expect(output).toContain('person\\x1B[31m@example.com');
+    expect(output).toContain('Current\\x9B31m');
+    expect(output).toContain('Default\\x1B[34m');
+    expect(output).toContain('default-\\x1B]52;c;id\\x07');
+    expect(output).not.toContain('\x1b]52;c;payload');
+    expect(output).not.toContain('\x1b]52;c;id');
+    expect(output).not.toContain('\x9b31m');
+  });
+
   it('renders task command success messages without a table', () => {
     const write = vi
       .spyOn(process.stdout, 'write')
@@ -103,6 +167,40 @@ describe('CLI rendering', () => {
         { id: 'low-overdue' },
       ],
     });
+  });
+
+  it('preserves ranked task search order and renders scores', () => {
+    const write = vi
+      .spyOn(process.stdout, 'write')
+      .mockImplementation(() => true);
+
+    render(
+      {
+        tasks: [
+          {
+            id: 'lower-priority-first',
+            name: 'Lower priority but first ranked',
+            priority: 'low',
+            similarity: 0.4,
+          },
+          {
+            id: 'critical-second',
+            name: 'Critical but second ranked',
+            priority: 'critical',
+            similarity: 0.9,
+          },
+        ],
+      },
+      { group: 'tasks', preserveTaskOrder: true, showTaskScore: true }
+    );
+
+    const output = write.mock.calls.map(([value]) => String(value)).join('');
+    expect(output).toContain('Score');
+    expect(output).toContain('40.0%');
+    expect(output).toContain('90.0%');
+    expect(output.indexOf('Lower priority but first ranked')).toBeLessThan(
+      output.indexOf('Critical but second ranked')
+    );
   });
 
   it('formats task due dates for table output', () => {

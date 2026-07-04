@@ -1,5 +1,7 @@
 import {
+  AlertTriangle,
   CalendarIcon,
+  Check,
   ChevronLeft,
   ChevronRight,
   Moon,
@@ -81,7 +83,7 @@ export function CalendarHeader({
       return newDate;
     });
 
-  const { isLoading, isSyncing } = useCalendarSync();
+  const { syncStatus } = useCalendarSync();
   const selectToday = () => setDate(new Date());
   const isTodaySelected = () => dayjs(date).isSame(dayjs(), 'day');
   const isCurrentMonth = () =>
@@ -112,6 +114,14 @@ export function CalendarHeader({
   };
 
   const LunarIcon = showLunar ? MoonStar : Moon;
+  const statusLabel =
+    syncStatus.state === 'error'
+      ? t('failed_to_load_events')
+      : syncStatus.lastSyncTime
+        ? `${t('sync_completed')} ${dayjs(syncStatus.lastSyncTime)
+            .locale(locale)
+            .format('HH:mm')}`
+        : null;
 
   return (
     <div className="mb-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
@@ -121,8 +131,18 @@ export function CalendarHeader({
       </div>
       <div className="flex flex-col gap-2 md:flex-row md:items-center">
         <div className="flex items-center gap-2">
-          {(isLoading || isSyncing) && (
-            <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+          {statusLabel && (
+            <div
+              aria-live="polite"
+              className="hidden min-w-0 items-center gap-1.5 rounded-full border bg-background/80 px-2 py-1 text-muted-foreground text-xs shadow-xs sm:inline-flex"
+            >
+              {syncStatus.state === 'error' ? (
+                <AlertTriangle className="h-3.5 w-3.5 text-dynamic-red" />
+              ) : (
+                <Check className="h-3.5 w-3.5 text-dynamic-green" />
+              )}
+              <span className="truncate">{statusLabel}</span>
+            </div>
           )}
           <div className="flex flex-none items-center justify-center gap-2 md:justify-start">
             <Button

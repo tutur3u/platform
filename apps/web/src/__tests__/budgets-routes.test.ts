@@ -109,7 +109,7 @@ describe('budget routes', () => {
     });
 
     const { GET } = await import(
-      '@/app/api/v1/workspaces/[wsId]/finance/budgets/route'
+      '@/legacy-api-routes/v1/workspaces/[wsId]/finance/budgets/route'
     );
 
     const response = await GET(
@@ -135,7 +135,7 @@ describe('budget routes', () => {
     });
 
     const { POST } = await import(
-      '@/app/api/v1/workspaces/[wsId]/finance/budgets/route'
+      '@/legacy-api-routes/v1/workspaces/[wsId]/finance/budgets/route'
     );
 
     const response = await POST(
@@ -173,7 +173,7 @@ describe('budget routes', () => {
     });
 
     const { GET } = await import(
-      '@/app/api/v1/workspaces/[wsId]/finance/budgets/status/route'
+      '@/legacy-api-routes/v1/workspaces/[wsId]/finance/budgets/status/route'
     );
 
     const response = await GET(
@@ -201,7 +201,7 @@ describe('budget routes', () => {
     });
 
     const { DELETE } = await import(
-      '@/app/api/v1/workspaces/[wsId]/finance/budgets/[budgetId]/route'
+      '@/legacy-api-routes/v1/workspaces/[wsId]/finance/budgets/[budgetId]/route'
     );
 
     const response = await DELETE(

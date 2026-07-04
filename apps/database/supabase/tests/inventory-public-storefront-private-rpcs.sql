@@ -4,7 +4,7 @@ create extension if not exists pgtap with schema extensions;
 
 set local search_path = public, extensions;
 
-select plan(15);
+select plan(38);
 
 select ok(
   to_regprocedure(
@@ -20,6 +20,22 @@ select ok(
   'private checkout-by-public-token RPC exists'
 );
 
+with square_completion_functions as (
+  select
+    to_regprocedure(
+      'private.complete_inventory_checkout_session_square_payment(uuid,uuid,text,text,timestamptz)'
+    ) as private_fn,
+    to_regprocedure(
+      'public.complete_inventory_checkout_session_square_payment(uuid,uuid,text,text,timestamptz)'
+    ) as public_fn
+)
+select ok(
+  private_fn is not null
+  and public_fn is not null,
+  'Square payment completion RPCs exist'
+)
+from square_completion_functions;
+
 select ok(
   has_function_privilege(
     'service_role',
@@ -33,6 +49,19 @@ select ok(
   ),
   'service role can execute public storefront private RPCs'
 );
+
+with square_completion_functions as (
+  select to_regprocedure(
+    'private.complete_inventory_checkout_session_square_payment(uuid,uuid,text,text,timestamptz)'
+  ) as private_fn
+)
+select ok(
+  has_function_privilege('service_role', private_fn, 'execute')
+  and not has_function_privilege('anon', private_fn, 'execute')
+  and not has_function_privilege('authenticated', private_fn, 'execute'),
+  'Square completion RPC is service-role only'
+)
+from square_completion_functions;
 
 select ok(
   not has_function_privilege(
@@ -56,6 +85,79 @@ select ok(
     'execute'
   ),
   'anon and authenticated cannot execute public storefront private RPCs'
+);
+
+select ok(
+  to_regclass('private.inventory_square_connections') is not null
+  and to_regclass('private.inventory_square_app_credentials') is not null
+  and to_regclass('private.inventory_square_settings') is not null
+  and to_regclass('private.inventory_square_devices') is not null
+  and to_regclass('private.inventory_square_oauth_states') is not null,
+  'Square private tables exist'
+);
+
+select ok(
+  not has_table_privilege(
+    'anon',
+    'private.inventory_square_connections',
+    'select'
+  )
+  and not has_table_privilege(
+    'authenticated',
+    'private.inventory_square_connections',
+    'select'
+  )
+  and not has_table_privilege(
+    'anon',
+    'private.inventory_square_settings',
+    'select'
+  )
+  and not has_table_privilege(
+    'authenticated',
+    'private.inventory_square_settings',
+    'select'
+  )
+  and not has_table_privilege(
+    'anon',
+    'private.inventory_square_app_credentials',
+    'select'
+  )
+  and not has_table_privilege(
+    'authenticated',
+    'private.inventory_square_app_credentials',
+    'select'
+  ),
+  'Square private connection/settings/app credential tables are not exposed to anon or authenticated'
+);
+
+select ok(
+  has_table_privilege(
+    'service_role',
+    'private.inventory_square_app_credentials',
+    'insert'
+  )
+  and has_table_privilege(
+    'service_role',
+    'private.inventory_square_app_credentials',
+    'update'
+  )
+  and has_table_privilege(
+    'service_role',
+    'private.inventory_square_app_credentials',
+    'select'
+  ),
+  'Square app credentials table is service-role writable'
+);
+
+select ok(
+  exists (
+    select 1
+    from pg_constraint
+    where conname = 'inventory_square_app_credentials_ws_environment_key'
+      and conrelid = 'private.inventory_square_app_credentials'::regclass
+      and contype = 'u'
+  ),
+  'Square app credentials are unique per workspace and environment'
 );
 
 insert into public.users (id, display_name)
@@ -168,7 +270,8 @@ insert into private.inventory_storefronts (
   layout_style,
   surface_style,
   corner_style,
-  show_inventory_badges
+  show_inventory_badges,
+  checkout_mode
 )
 values (
   '00000000-0000-4000-8000-000000001701',
@@ -182,13 +285,15 @@ values (
   'feature',
   'glass',
   'soft',
-  false
+  false,
+  'square_terminal'
 )
 on conflict (id) do update
 set
   slug = excluded.slug,
   status = excluded.status,
   visibility = excluded.visibility,
+  checkout_mode = excluded.checkout_mode,
   theme_preset = excluded.theme_preset,
   layout_style = excluded.layout_style,
   surface_style = excluded.surface_style,
@@ -343,6 +448,8 @@ insert into private.inventory_bundles (
   slug,
   name,
   price,
+  pricing_mode,
+  category_candidate_scope,
   status,
   max_per_order
 )
@@ -353,13 +460,17 @@ values (
   'inventory-public-rpc-bundle',
   'Inventory public RPC bundle',
   2100,
+  'selected_items',
+  'published_listings',
   'active',
   3
 )
 on conflict (id) do update
 set
   status = excluded.status,
-  price = excluded.price;
+  price = excluded.price,
+  pricing_mode = excluded.pricing_mode,
+  category_candidate_scope = excluded.category_candidate_scope;
 
 insert into private.inventory_bundle_components (
   bundle_id,
@@ -378,6 +489,30 @@ values (
 on conflict (bundle_id, product_id, unit_id, warehouse_id) do update
 set quantity = excluded.quantity;
 
+insert into private.inventory_bundle_category_components (
+  id,
+  bundle_id,
+  category_id,
+  quantity_required,
+  free_quantity,
+  discount_strategy,
+  sort_order
+)
+values (
+  '00000000-0000-4000-8000-000000001911',
+  '00000000-0000-4000-8000-000000001901',
+  '00000000-0000-4000-8000-000000001301',
+  2,
+  1,
+  'cheapest_free',
+  0
+)
+on conflict (id) do update
+set
+  quantity_required = excluded.quantity_required,
+  free_quantity = excluded.free_quantity,
+  discount_strategy = excluded.discount_strategy;
+
 insert into private.inventory_checkout_sessions (
   id,
   ws_id,
@@ -389,7 +524,14 @@ insert into private.inventory_checkout_sessions (
   status,
   expires_at,
   subtotal_amount,
-  total_amount
+  total_amount,
+  checkout_provider,
+  square_environment,
+  square_location_id,
+  square_device_id,
+  square_order_id,
+  square_terminal_checkout_id,
+  square_status
 )
 values (
   '00000000-0000-4000-8000-000000002001',
@@ -402,12 +544,31 @@ values (
   'reserved',
   now() + interval '15 minutes',
   1200,
-  1200
+  1200,
+  'square_terminal',
+  'sandbox',
+  'location-1',
+  'device-1',
+  'square-order-1',
+  'square-terminal-checkout-1',
+  'checkout_created'
 )
 on conflict (id) do update
 set
   public_token = excluded.public_token,
-  status = excluded.status;
+  status = excluded.status,
+  polar_order_id = null,
+  polar_status = null,
+  checkout_provider = excluded.checkout_provider,
+  square_environment = excluded.square_environment,
+  square_location_id = excluded.square_location_id,
+  square_device_id = excluded.square_device_id,
+  square_order_id = excluded.square_order_id,
+  square_terminal_checkout_id = excluded.square_terminal_checkout_id,
+  square_payment_id = null,
+  square_receipt_url = null,
+  square_status = excluded.square_status,
+  completed_at = null;
 
 insert into private.inventory_checkout_lines (
   id,
@@ -436,6 +597,98 @@ values (
 on conflict (id) do update
 set quantity = excluded.quantity;
 
+select lives_ok(
+  $$
+    update private.inventory_checkout_sessions
+    set square_status = 'cancel_requested'
+    where id = '00000000-0000-4000-8000-000000002001'
+  $$,
+  'Square checkout status accepts cancel_requested'
+);
+
+select is(
+  (
+    select square_status
+    from private.inventory_checkout_sessions
+    where id = '00000000-0000-4000-8000-000000002001'
+  ),
+  'cancel_requested',
+  'cancel_requested status is persisted for Square checkout rows'
+);
+
+update private.inventory_checkout_sessions
+set square_status = 'checkout_created'
+where id = '00000000-0000-4000-8000-000000002001';
+
+select throws_ok(
+  $$
+    select private.release_inventory_checkout_session(
+      p_checkout_id := '00000000-0000-4000-8000-000000002001',
+      p_ws_id := '00000000-0000-4000-8000-000000009999'
+    )
+  $$,
+  'P0001',
+  'CHECKOUT_NOT_FOUND',
+  'release RPC rejects checkout ids outside the supplied workspace'
+);
+
+select is(
+  (
+    select status
+    from private.inventory_checkout_sessions
+    where id = '00000000-0000-4000-8000-000000002001'
+  ),
+  'reserved',
+  'wrong-workspace release leaves checkout reserved'
+);
+
+select throws_ok(
+  $$
+    select private.complete_inventory_checkout_session_payment(
+      p_checkout_id := '00000000-0000-4000-8000-000000002001',
+      p_ws_id := '00000000-0000-4000-8000-000000009999',
+      p_polar_order_id := 'forged-order-id'
+    )
+  $$,
+  'P0001',
+  'CHECKOUT_NOT_FOUND',
+  'payment RPC rejects checkout ids outside the supplied workspace'
+);
+
+select is(
+  (
+    select polar_order_id
+    from private.inventory_checkout_sessions
+    where id = '00000000-0000-4000-8000-000000002001'
+  ),
+  null::text,
+  'wrong-workspace payment leaves checkout unpaid'
+);
+
+select throws_ok(
+  $$
+    select private.complete_inventory_checkout_session_square_payment(
+      p_checkout_id := '00000000-0000-4000-8000-000000002001',
+      p_ws_id := '00000000-0000-4000-8000-000000009999',
+      p_square_payment_id := 'forged-payment-id',
+      p_square_order_id := 'forged-order-id'
+    )
+  $$,
+  'P0001',
+  'CHECKOUT_NOT_FOUND',
+  'Square payment RPC rejects checkout ids outside the supplied workspace'
+);
+
+select is(
+  (
+    select square_payment_id
+    from private.inventory_checkout_sessions
+    where id = '00000000-0000-4000-8000-000000002001'
+  ),
+  null::text,
+  'wrong-workspace Square payment leaves checkout unpaid'
+);
+
 select ok(
   private.get_public_inventory_storefront('missing-public-rpc-store') is null,
   'missing storefront returns null'
@@ -455,6 +708,14 @@ select is(
     ->> 'themePreset',
   'boutique',
   'public storefront RPC returns storefront theme fields'
+);
+
+select is(
+  private.get_public_inventory_storefront('inventory-public-rpc-test')
+    -> 'storefront'
+    ->> 'checkoutMode',
+  'square_terminal',
+  'public storefront RPC returns Square checkout mode'
 );
 
 select is(
@@ -509,6 +770,63 @@ select is(
   'public storefront RPC returns active bundles'
 );
 
+select is(
+  private.get_public_inventory_storefront('inventory-public-rpc-test')
+    -> 'bundles'
+    -> 0
+    ->> 'pricingMode',
+  'selected_items',
+  'public storefront RPC returns bundle pricing mode'
+);
+
+select is(
+  private.get_public_inventory_storefront('inventory-public-rpc-test')
+    -> 'bundles'
+    -> 0
+    ->> 'categoryCandidateScope',
+  'published_listings',
+  'public storefront RPC returns bundle category candidate scope'
+);
+
+select is(
+  (
+    private.get_public_inventory_storefront('inventory-public-rpc-test')
+      -> 'bundles'
+      -> 0
+      -> 'categoryComponents'
+      -> 0
+      ->> 'quantityRequired'
+  )::int,
+  2,
+  'public storefront RPC returns category component quantity'
+);
+
+select is(
+  (
+    private.get_public_inventory_storefront('inventory-public-rpc-test')
+      -> 'bundles'
+      -> 0
+      -> 'categoryComponents'
+      -> 0
+      ->> 'discountStrategy'
+  ),
+  'cheapest_free',
+  'public storefront RPC returns cheapest-free strategy'
+);
+
+select is(
+  jsonb_array_length(
+    private.get_public_inventory_storefront('inventory-public-rpc-test')
+      -> 'bundles'
+      -> 0
+      -> 'categoryComponents'
+      -> 0
+      -> 'candidates'
+  ),
+  1,
+  'published-listings category bundles expose published listing candidates'
+);
+
 select ok(
   private.get_inventory_checkout_by_public_token('missing-public-rpc-token') is null,
   'missing public checkout token returns null'
@@ -519,6 +837,27 @@ select is(
     ->> 'publicToken',
   'inventory-public-rpc-token',
   'public checkout RPC returns checkout identity'
+);
+
+select is(
+  private.get_inventory_checkout_by_public_token('inventory-public-rpc-token')
+    ->> 'checkoutProvider',
+  'square_terminal',
+  'public checkout RPC returns Square checkout provider'
+);
+
+select is(
+  private.get_inventory_checkout_by_public_token('inventory-public-rpc-token')
+    ->> 'squareStatus',
+  'checkout_created',
+  'public checkout RPC returns Square checkout status'
+);
+
+select is(
+  private.get_inventory_checkout_by_public_token('inventory-public-rpc-token')
+    ->> 'squareTerminalCheckoutId',
+  'square-terminal-checkout-1',
+  'public checkout RPC returns Square terminal checkout id'
 );
 
 select is(

@@ -11,6 +11,7 @@ import { cn } from '@tuturuuu/utils/format';
 import { isPast, isToday } from 'date-fns';
 import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
+import { getTasksAppOrigin } from '@/lib/tasks-app-url';
 
 interface CompactTasksSummaryProps {
   wsId: string;
@@ -23,6 +24,7 @@ export default async function CompactTasksSummary({
 }: CompactTasksSummaryProps) {
   const supabase = await createClient();
   const t = await getTranslations('dashboard');
+  const tasksHref = `${getTasksAppOrigin()}/${wsId}/tasks`;
 
   const { data: rpcTasks, error } = await supabase.rpc(
     'get_user_accessible_tasks',
@@ -67,7 +69,7 @@ export default async function CompactTasksSummary({
             size="sm"
             className="h-5 shrink-0 px-1.5 text-[11px]"
           >
-            <Link href={`/${wsId}/tasks`}>
+            <Link href={tasksHref}>
               {t('view_all')}
               <ArrowRight className="ml-1 h-3 w-3" />
             </Link>

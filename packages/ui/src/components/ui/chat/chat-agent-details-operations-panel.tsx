@@ -14,7 +14,7 @@ import {
 import type {
   AiAgentChannelConfig,
   AiAgentTestResponse,
-} from '@tuturuuu/internal-api/infrastructure';
+} from '@tuturuuu/internal-api/infrastructure/ai';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { Button } from '../button';

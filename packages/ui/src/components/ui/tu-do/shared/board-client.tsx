@@ -21,9 +21,10 @@ import {
   setActiveBoardRefresh,
   setActiveBroadcast,
 } from './board-broadcast-context';
-import { BoardViews } from './board-views';
+import { BoardViews, type ViewType } from './board-views';
 import { ProgressiveLoaderProvider } from './progressive-loader-context';
 import { dispatchRecentSidebarVisit } from './recent-sidebar-events';
+import { TaskBoardLoadingState } from './task-board-loading-state';
 import { useProgressiveBoardLoader } from './use-progressive-board-loader';
 
 const BOARD_REVALIDATE_COOLDOWN_MS = 30_000;
@@ -34,16 +35,20 @@ interface Props {
   workspaceTier?: WorkspaceProductTier | null;
   currentUserId?: string;
   routePrefix?: string;
+  defaultView?: ViewType;
   idleBottomIsland?: ReactNode;
+  rootLoading?: boolean;
 }
 
 export function BoardClient({
   boardId,
+  defaultView,
   idleBottomIsland,
   workspace,
   workspaceTier,
   currentUserId,
   routePrefix = '/tasks',
+  rootLoading = false,
 }: Props) {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -80,6 +85,7 @@ export function BoardClient({
     queryFn: async () => {
       const result = await listWorkspaceTasks(boardWorkspaceId, {
         boardId,
+        includeRelationshipSummary: false,
       });
       return result.tasks;
     },
@@ -142,8 +148,6 @@ export function BoardClient({
   // Fetch workspace labels once at the board level
   const { data: workspaceLabels = [] } = useWorkspaceLabels(boardWorkspaceId);
 
-  const { broadcast } = useBoardRealtime(boardId);
-
   const refreshActiveBoard = useCallback(
     (options?: BoardRefreshOptions) => {
       const invalidateTasks = options?.invalidateTasks ?? true;
@@ -179,6 +183,12 @@ export function BoardClient({
       workspace.id,
     ]
   );
+
+  const { broadcast } = useBoardRealtime(boardId, {
+    onTaskRelationsChange: () => {
+      refreshActiveBoard({ invalidateTasks: false });
+    },
+  });
 
   // Register broadcast at module level so components outside the
   // BoardBroadcastProvider tree (e.g. task dialog) can access it.
@@ -238,11 +248,7 @@ export function BoardClient({
 
   if (boardLoading && !board) {
     return (
-      <div className="flex flex-col">
-        <div className="p-4 text-center text-muted-foreground">
-          Loading board...
-        </div>
-      </div>
+      <TaskBoardLoadingState root={rootLoading} showHeader={rootLoading} />
     );
   }
 
@@ -267,6 +273,7 @@ export function BoardClient({
           lists={lists}
           workspaceLabels={workspaceLabels}
           currentUserId={currentUserId}
+          defaultView={defaultView}
           canManageBoard={canManageBoard}
           idleBottomIsland={idleBottomIsland}
         />

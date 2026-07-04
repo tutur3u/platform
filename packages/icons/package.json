@@ -11,15 +11,16 @@
     "access": "public"
   },
   "scripts": {
-    "type-check": "tsgo --project tsconfig.typecheck.json",
+    "type-check": "tsc --project tsconfig.typecheck.json",
     "ui": "bunx shadcn-ui@latest"
   },
   "dependencies": {
     "@lucide/lab": "^0.1.2",
-    "lucide-react": "^1.18.0"
+    "lucide-react": "^1.22.0"
   },
   "devDependencies": {
-    "@tuturuuu/typescript-config": "workspace:*"
+    "@tuturuuu/typescript-config": "workspace:*",
+    "typescript": "7.0.1-rc"
   },
   "exports": {
     ".": {
@@ -33,6 +34,10 @@
     "./lucide": {
       "types": "./src/lucide.tsx",
       "import": "./src/lucide.tsx"
+    },
+    "./lucide-static": {
+      "types": "./src/lucide-static.tsx",
+      "import": "./src/lucide-static.tsx"
     }
   },
   "packageManager": "bun@1.3.14"

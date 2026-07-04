@@ -75,6 +75,8 @@ describe('getTaskCardHydratingOpenOptions', () => {
       ],
       taskWsId: 'source-workspace',
       taskWorkspacePersonal: false,
+      canUseBoardAssignees: true,
+      assigneeMemberSource: 'board',
       initialSharedContext: {
         boardConfig: {
           id: 'source-board',
@@ -118,7 +120,25 @@ describe('getTaskCardHydratingOpenOptions', () => {
       availableLists: [list],
       taskWsId: 'workspace-1',
       taskWorkspacePersonal: true,
+      canUseBoardAssignees: false,
+      assigneeMemberSource: undefined,
       initialSharedContext: undefined,
+    });
+  });
+
+  it('can keep assignees enabled for shared personal board tasks', () => {
+    expect(
+      getTaskCardHydratingOpenOptions({
+        task,
+        boardId: 'board-1',
+        availableLists: [list],
+        canUseBoardAssignees: true,
+        effectiveWorkspaceId: 'workspace-1',
+        isPersonalWorkspace: true,
+      })
+    ).toMatchObject({
+      canUseBoardAssignees: true,
+      taskWorkspacePersonal: true,
     });
   });
 

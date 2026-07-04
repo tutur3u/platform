@@ -98,6 +98,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!changelog) {
     return {
       title: 'Changelog Not Found | Tuturuuu',
+      description: 'The requested changelog entry could not be found.',
     };
   }
 

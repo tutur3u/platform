@@ -4,7 +4,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { DefaultChatTransport } from '@tuturuuu/ai/core';
 import { matchesAllowedModel } from '@tuturuuu/ai/credits/model-mapping';
 import { useChat } from '@tuturuuu/ai/react';
-import { resolveInfrastructureWorkspaceId } from '@tuturuuu/internal-api/infrastructure';
+import { resolveInfrastructureWorkspaceId } from '@tuturuuu/internal-api/infrastructure/workspace';
 import { useAiCredits } from '@tuturuuu/ui/hooks/use-ai-credits';
 import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useRef, useState } from 'react';

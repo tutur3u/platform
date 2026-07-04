@@ -1,0 +1,273 @@
+import { sendWorkspaceEmail } from '@tuturuuu/email-service';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import {
+  extractIPFromHeaders,
+  isIPBlocked,
+} from '@tuturuuu/utils/abuse-protection';
+import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
+import { isValidTuturuuuEmail } from '@tuturuuu/utils/email/client';
+import type { NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
+import { DEV_MODE } from '@/constants/common';
+
+type ServerDOMPurify = {
+  sanitize(dirty: string, config?: unknown): string;
+};
+
+const ISOMORPHIC_DOMPURIFY_MODULE = 'isomorphic-dompurify';
+
+async function loadServerDOMPurify(): Promise<ServerDOMPurify> {
+  return (await import(ISOMORPHIC_DOMPURIFY_MODULE)).default as ServerDOMPurify;
+}
+
+function getDisallowedRecipients(
+  recipients: string[],
+  allowedEmails: string[]
+) {
+  const allowed = new Set(allowedEmails);
+  return recipients.filter((recipient) => !allowed.has(recipient));
+}
+
+export async function POST(
+  req: NextRequest,
+  {
+    params,
+  }: {
+    params: Promise<{ wsId: string }>;
+  }
+) {
+  const { wsId } = await params;
+
+  const data: {
+    mail?: {
+      to?: string[];
+      cc?: string[];
+      bcc?: string[];
+      subject?: string;
+      content?: string;
+    };
+    config?: {
+      accessKeyId?: string;
+      accessKeySecret?: string;
+    };
+  } = await req.json();
+
+  if (!data?.mail?.to || !data?.mail?.subject || !data?.mail?.content) {
+    return NextResponse.json(
+      { message: 'Invalid request body' },
+      { status: 400 }
+    );
+  }
+
+  if (
+    data.mail.to.length === 0 &&
+    data.mail.cc?.length === 0 &&
+    data.mail.bcc?.length === 0
+  ) {
+    return NextResponse.json(
+      { message: 'No recipients specified' },
+      { status: 400 }
+    );
+  }
+
+  if (!data.config?.accessKeyId || !data.config?.accessKeySecret) {
+    return NextResponse.json(
+      { message: 'Missing email configuration' },
+      { status: 400 }
+    );
+  }
+
+  const sbAdmin = await createAdminClient();
+
+  // Get client IP for rate limiting
+  const ipAddress = extractIPFromHeaders(req.headers);
+
+  if (ipAddress !== 'unknown') {
+    const blockInfo = await isIPBlocked(ipAddress);
+    if (blockInfo) {
+      const retryAfter = Math.max(
+        1,
+        Math.ceil((blockInfo.expiresAt.getTime() - Date.now()) / 1000)
+      );
+
+      return NextResponse.json(
+        { message: 'Rate limit exceeded', retryAfter },
+        {
+          status: 429,
+          headers: {
+            'Retry-After': `${retryAfter}`,
+          },
+        }
+      );
+    }
+  }
+
+  const { data: apiKey, error: apiKeyError } = await sbAdmin
+    .schema('private')
+    .from('internal_email_api_keys')
+    .select('user_id, allowed_emails')
+    .eq('id', data.config.accessKeyId)
+    .eq('value', data.config.accessKeySecret)
+    .single();
+
+  if (apiKeyError) {
+    console.warn('Error fetching internal email API key', {
+      error: apiKeyError,
+      wsId,
+    });
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  }
+
+  if (!apiKey) {
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  }
+
+  const { data: apiKeyUser, error: apiKeyUserError } = await sbAdmin
+    .from('users')
+    .select('id, display_name, ...user_private_details(email)')
+    .eq('id', apiKey.user_id)
+    .single();
+
+  if (apiKeyUserError || !apiKeyUser) {
+    console.warn('Error fetching internal email API key user', {
+      error: apiKeyUserError,
+      wsId,
+    });
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  }
+
+  const userEmail = apiKeyUser.email;
+  if (!userEmail || !isValidTuturuuuEmail(userEmail)) {
+    return NextResponse.json(
+      { message: 'Only Tuturuuu emails are allowed' },
+      { status: 401 }
+    );
+  }
+
+  const recipients = [
+    ...data.mail.to,
+    ...(data.mail.cc || []),
+    ...(data.mail.bcc || []),
+  ];
+  const disallowedRecipients = apiKey.allowed_emails
+    ? getDisallowedRecipients(recipients, apiKey.allowed_emails)
+    : [];
+
+  if (apiKey.allowed_emails && disallowedRecipients.length > 0) {
+    console.warn('Internal email recipient not allowed', {
+      allowedEmails: apiKey.allowed_emails,
+      requestedEmails: {
+        bcc: data.mail.bcc,
+        cc: data.mail.cc,
+        to: data.mail.to,
+      },
+      rejectedEmails: disallowedRecipients,
+      wsId,
+    });
+    return NextResponse.json({ message: 'Email not allowed' }, { status: 400 });
+  }
+
+  try {
+    // Send email using centralized EmailService with rate limiting and blacklist checks
+    const result = await sendWorkspaceEmail(ROOT_WORKSPACE_ID, {
+      recipients: {
+        to: data.mail.to,
+        cc: data.mail.cc,
+        bcc: data.mail.bcc,
+      },
+      content: {
+        subject: data.mail.subject,
+        html: data.mail.content,
+      },
+      source: {
+        name: apiKeyUser.display_name || 'Tuturuuu',
+        email: userEmail,
+      },
+      metadata: {
+        wsId,
+        userId: apiKeyUser.id,
+        templateType: 'internal-email',
+        ipAddress,
+      },
+    });
+
+    if (!result.success) {
+      // Check if it was a rate limit issue
+      if (result.rateLimitInfo && !result.rateLimitInfo.allowed) {
+        return NextResponse.json(
+          {
+            message: 'Rate limit exceeded',
+            retryAfter: result.rateLimitInfo.retryAfter,
+          },
+          { status: 429 }
+        );
+      }
+
+      // Check if all recipients were blocked
+      if (result.blockedRecipients && result.blockedRecipients.length > 0) {
+        console.warn('Some internal email recipients were blocked', {
+          blockedRecipients: result.blockedRecipients,
+          wsId,
+        });
+      }
+
+      console.error('Internal email sending failed', {
+        error: result.error,
+        wsId,
+      });
+      return NextResponse.json(
+        { message: result.error || 'Failed to send email' },
+        { status: 500 }
+      );
+    }
+
+    const DOMPurify = await loadServerDOMPurify();
+    const payload = DOMPurify.sanitize(data.mail.content);
+
+    // Store the sent email in the internal_emails table for backwards compatibility
+    const { error } = await sbAdmin
+      .from('internal_emails')
+      .insert({
+        ws_id: wsId,
+        user_id: apiKeyUser.id,
+        source_email: `${apiKeyUser.display_name || 'Tuturuuu'} <${userEmail}>`,
+        subject: data.mail.subject,
+        to_addresses: data.mail.to,
+        cc_addresses: data.mail.cc || [],
+        bcc_addresses: data.mail.bcc || [],
+        reply_to_addresses: [],
+        payload,
+        html_payload: true,
+      })
+      .select('id')
+      .single();
+
+    if (error) {
+      console.warn('Error logging sent internal email', {
+        error,
+        wsId,
+      });
+      // Don't fail the request - email was already sent
+    }
+
+    const message = DEV_MODE
+      ? 'Email saved (DEV_MODE, not sent)'
+      : 'Email sent successfully';
+
+    return NextResponse.json(
+      {
+        message,
+        messageId: result.messageId,
+        auditId: result.auditId,
+        blockedRecipients: result.blockedRecipients,
+      },
+      { status: 200 }
+    );
+  } catch (error) {
+    console.error('Error sending internal email', { error, wsId });
+    return NextResponse.json(
+      { message: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}

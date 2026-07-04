@@ -41,6 +41,10 @@ export const PRODUCTION_INTERNAL_APP_DOMAINS = [
     url: 'https://qr.tuturuuu.com',
   },
   {
+    name: 'tools',
+    url: 'https://tools.tuturuuu.com',
+  },
+  {
     name: 'nova',
     url: 'https://nova.ai.vn',
   },
@@ -61,12 +65,24 @@ export const PRODUCTION_INTERNAL_APP_DOMAINS = [
     url: 'https://finance.tuturuuu.com',
   },
   {
+    name: 'infra',
+    url: 'https://infrastructure.tuturuuu.com',
+  },
+  {
+    name: 'infra',
+    url: 'https://infra.tuturuuu.com',
+  },
+  {
     name: 'inventory',
     url: 'https://inventory.tuturuuu.com',
   },
   {
     name: 'storefront',
     url: 'https://storefront.tuturuuu.com',
+  },
+  {
+    name: 'tanstack-web',
+    url: 'https://tanstack.tuturuuu.com',
   },
   {
     name: 'track',
@@ -128,6 +144,10 @@ export const PORTLESS_INTERNAL_APP_DOMAINS = [
     url: getTuturuuuPortlessAppOrigin('qr'),
   },
   {
+    name: 'tools',
+    url: getTuturuuuPortlessAppOrigin('tools'),
+  },
+  {
     name: 'nova',
     url: getTuturuuuPortlessAppOrigin('nova'),
   },
@@ -144,12 +164,20 @@ export const PORTLESS_INTERNAL_APP_DOMAINS = [
     url: getTuturuuuPortlessAppOrigin('finance'),
   },
   {
+    name: 'infra',
+    url: getTuturuuuPortlessAppOrigin('infra'),
+  },
+  {
     name: 'inventory',
     url: getTuturuuuPortlessAppOrigin('inventory'),
   },
   {
     name: 'storefront',
     url: getTuturuuuPortlessAppOrigin('storefront'),
+  },
+  {
+    name: 'tanstack-web',
+    url: getTuturuuuPortlessAppOrigin('tanstack-web'),
   },
   {
     name: 'track',
@@ -207,6 +235,10 @@ export const LOCALHOST_INTERNAL_APP_DOMAINS = [
     url: 'http://localhost:7819',
   },
   {
+    name: 'tools',
+    url: 'http://localhost:7825',
+  },
+  {
     name: 'platform',
     url: 'http://localhost:7803',
   },
@@ -227,12 +259,20 @@ export const LOCALHOST_INTERNAL_APP_DOMAINS = [
     url: 'http://localhost:7808',
   },
   {
+    name: 'infra',
+    url: 'http://localhost:7823',
+  },
+  {
     name: 'inventory',
     url: 'http://localhost:7815',
   },
   {
     name: 'storefront',
     url: 'http://localhost:7822',
+  },
+  {
+    name: 'tanstack-web',
+    url: 'http://localhost:7824',
   },
   {
     name: 'track',

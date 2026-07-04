@@ -1,7 +1,7 @@
 ---
 title: "Quality Attributes"
 description: "Maintainability, testability, and deployability in Tuturuuu's architecture"
-updatedAt: "2025-11-17"
+updatedAt: "2026-06-21"
 ---
 
 This document covers three critical quality attributes that are foundational to long-term system success: **Maintainability** (the ease of evolving and fixing the system), **Testability** (the ability to verify system correctness), and **Deployability** (the ease and safety of releasing changes).
@@ -9,6 +9,14 @@ This document covers three critical quality attributes that are foundational to 
 <Note>
 These quality attributes are not added after the fact but are designed into the architecture from the beginning, ensuring the system remains healthy and productive as it grows.
 </Note>
+
+<Warning>
+**How to read this page.** Several patterns below (Hexagonal Architecture, ports/adapters, event sourcing, replay testing) are presented as **teaching models**, not as a description of the current codebase. Tuturuuu's apps are conventional **Next.js App Router** apps (plus a Rust backend) that share a single Supabase project — there are no `domain/`/`infrastructure/` hexagonal layers, no event store, and no per-app inter-service contracts package. Code samples that show those layers are **illustrative**; sections labeled **"In Tuturuuu today"** describe the real, verifiable structure. Treat the rest as design guidance for how we want isolated modules to behave.
+</Warning>
+
+<Info>
+**Active migration.** `apps/web` (Next.js, port `7803`) is being incrementally replaced by `apps/tanstack-web` (TanStack Start) plus `apps/backend` (Rust, port `7820`). The maintainability and deployability properties described here are being carried forward into that target architecture. See [TanStack + Rust Migration](/platform/architecture/tanstack-rust-migration) for the current state.
+</Info>
 
 <Info>
 To understand how different architectural patterns affect these quality attributes, see [Architectural Patterns Comparison](/platform/architecture/system-design/architectural-patterns-comparison).
@@ -30,21 +38,26 @@ In a monolithic, tightly-coupled system, understanding how to make a change requ
 
 **Clear domain boundaries** solve this by ensuring each service or module has a focused responsibility. A developer working on the `FinanceService` only needs to understand finance-related concepts and the clearly-defined interfaces for interacting with other services. This dramatically reduces cognitive load and enables faster, more confident changes.
 
-**In Tuturuuu:**
-```typescript
-// Clear domain boundaries in monorepo
+**In Tuturuuu today:**
+```text
 apps/
-├── web/           // Main platform - workspace management
-├── finance/       // Finance domain - isolated
-├── calendar/      // Calendar domain - isolated
-├── tasks/          // Tasks domain - isolated
-├── nova/          // AI challenges - isolated
-└── rewise/        // AI chat - isolated
+├── web/          // Main Next.js platform (port 7803) - workspace management
+├── tanstack-web/ // TanStack Start successor to apps/web (migration in progress)
+├── backend/      // Rust backend (port 7820)
+├── finance/      // Finance surface
+├── calendar/     // Calendar surface
+├── tasks/        // Tasks surface
+├── nova/         // AI challenges
+├── rewise/       // AI chat
+└── mobile/       // Flutter mobile app
 
-// Each app has clear responsibilities
-// Finance developers don't need to understand calendar logic
-// Calendar developers don't need to understand finance logic
+// Each app owns a focused surface. The web-facing apps are conventional
+// Next.js App Router apps; they share one Supabase project rather than
+// each owning a private datastore. Cross-cutting product logic lives in
+// shared packages (packages/internal-api, packages/types, packages/ui).
 ```
+
+The boundary that reduces cognitive load here is the **app + feature folder**, not a separate per-service runtime with its own database. A developer working on finance can stay inside `apps/finance` (and the finance helpers in `packages/apis`/`packages/internal-api`) without learning the calendar surface.
 
 **Module boundaries in frontend:**
 ```typescript
@@ -73,18 +86,20 @@ finance/
 
 #### Architectural Choice
 
-The Hexagonal Architecture and microservices pattern ensure that technology choices (databases, frameworks, external services) are isolated from core business logic through well-defined interfaces.
+Isolating technology choices (databases, frameworks, external services) behind well-defined interfaces keeps core business logic decoupled from the tools that implement it.
 
 #### Impact and Justification
 
 Technology evolves rapidly. Frameworks fall out of favor, databases become outdated, and new tools emerge. Systems that tightly couple business logic to specific technologies become **legacy systems**—expensive and risky to modernize.
 
-**Technology independence** protects the valuable business logic (which changes rarely) from technological churn (which happens frequently). Because infrastructure details are isolated in adapter layers, we can upgrade or replace technologies without rewriting business rules.
+**Technology independence** protects the valuable business logic (which changes rarely) from technological churn (which happens frequently). When infrastructure details sit behind an interface, you can upgrade or replace technologies without rewriting business rules.
 
-**In Tuturuuu:**
+<Note>
+**Illustrative pattern.** The `WorkspaceRepository` / `SupabaseWorkspaceRepository` example below is a teaching model. Tuturuuu does **not** ship `packages/types/src/domain/workspace.ts` or `apps/web/src/infrastructure/repositories/*`; there is no repository-interface layer. In the real code, route handlers and shared helpers in `packages/internal-api` and `packages/apis` call the Supabase client directly (see "In Tuturuuu today" below). Read this as how to keep a swappable seam if you introduce one.
+</Note>
+
 ```typescript
-// Business logic defined in terms of interfaces, not implementations
-// packages/types/src/domain/workspace.ts
+// Illustrative: business logic expressed against an interface, not an implementation
 export interface WorkspaceRepository {
   findById(id: string): Promise<Workspace | null>;
   save(workspace: Workspace): Promise<void>;
@@ -104,8 +119,7 @@ export class WorkspaceService {
   }
 }
 
-// Infrastructure implementation (swappable)
-// apps/web/src/infrastructure/repositories/supabase-workspace-repository.ts
+// Illustrative infrastructure implementation (the swappable seam)
 export class SupabaseWorkspaceRepository implements WorkspaceRepository {
   constructor(private client: SupabaseClient) {}
 
@@ -153,6 +167,14 @@ const service = new WorkspaceService(repo);
 await service.archiveWorkspace('ws-123');
 ```
 
+**In Tuturuuu today:** technology independence comes from a few concrete seams rather than a full ports/adapters layer:
+
+- Supabase access is centralized behind the `@tuturuuu/supabase/next/server` factories (`createClient()` and `createDynamicClient()` are async, `createAdminClient()` is sync). Swapping how a client is built happens in one place.
+- Generated DB types are imported from `@tuturuuu/types/db`, so schema changes propagate through types instead of hand-written mappers.
+- Shared product logic lives in `packages/internal-api` and `packages/apis`, so the web app and its TanStack successor can reuse the same helpers as the migration proceeds.
+
+The biggest real-world example of this independence is the in-progress move of `apps/web` to `apps/tanstack-web` + a Rust `apps/backend`: shared packages let the data layer be re-pointed without rewriting every call site.
+
 #### Clarifying Additions
 
 **No single technical choice restricts future evolution.** The architecture accommodates technological progress without requiring expensive rewrites of core business logic.
@@ -177,9 +199,12 @@ Hexagonal Architecture **inverts the dependency direction**. The core domain is 
 
 This means infrastructure changes stay contained in the adapter layer. Upgrading from PostgreSQL 14 to PostgreSQL 16, changing from REST to GraphQL, or switching message brokers requires modifying only the relevant adapters—the domain core remains untouched.
 
-**In Tuturuuu - Infrastructure changes isolated:**
+<Note>
+**Illustrative pattern, not current code.** Tuturuuu does **not** implement a `TaskService` with injected `TaskRepository` / `EventBus` / `Logger` ports, and there is no `@tuturuuu/logging` or `@tuturuuu/observability` package. Task logic lives in conventional Next.js route handlers and shared helpers. The example below shows the *shape* of a hexagonal seam so you can recognize where one would help if a piece of logic becomes worth isolating. For background work, Tuturuuu uses **Trigger.dev v4 `task()`** definitions in `packages/trigger/src` — not a custom `EventBus`.
+</Note>
+
 ```typescript
-// Domain core (unchanged when infrastructure changes)
+// Illustrative domain core (unchanged when infrastructure changes)
 export class TaskService {
   constructor(
     private taskRepo: TaskRepository,
@@ -256,9 +281,9 @@ The **modular monolith** approach enforces architectural discipline by organizin
 
 This structure makes maintenance dramatically easier because changes stay localized within module boundaries.
 
-**In Tuturuuu - Frontend modules:**
-```typescript
-// Clear module structure
+**In Tuturuuu today:** `apps/web` follows exactly this shape — feature folders under `app/[locale]/(dashboard)/[wsId]/` (finance, calendar, tasks, ...) each own their routes and colocated `_components/`. Client state uses **Jotai** (and TanStack Query for server data); the per-module `state.ts` paths below are a representative shape rather than fixed filenames.
+
+```text
 apps/web/src/
 ├── app/[locale]/(dashboard)/[wsId]/
 │   ├── finance/                    // Finance module
@@ -328,47 +353,26 @@ In a monolithic architecture, operational tasks affect the entire system. Deploy
 
 This independence accelerates development velocity and reduces the coordination overhead that plagues monolithic systems.
 
-**In Tuturuuu:**
-```typescript
-// Each app is independently deployable
-// package.json scripts
+**In Tuturuuu today:** there are no `deploy:web` / `deploy:finance` / `deploy:calendar` package scripts. Independence is achieved through **per-app Vercel projects** wired up by dedicated GitHub Actions workflows. Each app has its own preview workflow under `.github/workflows/` (for example `vercel-preview-finance.yaml`, `vercel-preview-calendar.yaml`, `vercel-preview-drive.yaml`), and Turborepo only rebuilds the apps affected by a change:
 
-{
-  "scripts": {
-    // Deploy each app independently
-    "deploy:web": "vercel --prod",
-    "deploy:finance": "vercel --prod",
-    "deploy:calendar": "vercel --prod",
+```bash
+# Build a single workspace and its dependency graph (Turborepo filters by app)
+bun turbo run build --filter=@tuturuuu/web
 
-    // Each app has independent build configuration
-    "build:web": "next build",
-    "build:finance": "next build",
-
-    // Services scale independently in Vercel
-  }
-}
+# Run an app locally (each app owns its own dev script)
+cd apps/finance && bun dev
 ```
 
-**Independent monitoring:**
-```typescript
-// Each service has its own dashboards and alerts
-const webMetrics = {
-  service: 'web',
-  errorRate: monitorErrorRate('web'),
-  latency: monitorLatency('web'),
-  activeUsers: monitorActiveUsers('web')
-};
-
-const financeMetrics = {
-  service: 'finance',
-  errorRate: monitorErrorRate('finance'),
-  latency: monitorLatency('finance'),
-  transactionVolume: monitorTransactions('finance')
-};
-
-// Finance issues don't affect web monitoring
-// Teams can focus on their service metrics
+```yaml
+# Real per-app preview workflow — .github/workflows/vercel-preview-finance.yaml
+name: Vercel Finance Preview Deployment
+# Builds only the shared deps the finance app needs, then deploys it to Vercel:
+#   bun turbo:local run build --filter=@tuturuuu/types --filter=@tuturuuu/supabase --filter=@tuturuuu/internal-api
 ```
+
+Because each app is its own Vercel project, finance can deploy without rebuilding or redeploying the web or calendar apps.
+
+**Monitoring:** Tuturuuu does not ship a custom per-service metrics SDK. Runtime/server logs in API, cron, and infrastructure code use the native console method matching severity, while retained request, cron, deployment, and usage data still flows through the internal log-drain storage where those wrappers are wired. Vercel provides per-project deployment and runtime insight. Treat the `monitorErrorRate(...)` snippet style as conceptual.
 
 #### Clarifying Additions
 
@@ -384,11 +388,11 @@ const financeMetrics = {
 
 Testability determines how easily we can write and maintain automated tests that verify system correctness. High testability leads to better quality, faster development, and greater confidence in changes.
 
-### 1. Hexagonal Architecture Enables Pure Unit Testing
+### 1. Pure Logic Enables Fast Unit Testing
 
 #### Architectural Choice
 
-The Hexagonal Architecture's isolation of domain logic from infrastructure enables pure, fast unit tests that don't require databases, network calls, or other external dependencies.
+Keeping pure logic free of infrastructure dependencies enables fast unit tests that don't require databases, network calls, or other external systems. (A full Hexagonal layer is one way to enforce this; Tuturuuu does not implement that layering, but the *principle* — isolate decision logic from I/O — still applies inside conventional modules.)
 
 #### Impact and Justification
 
@@ -400,12 +404,14 @@ In traditional architectures, business logic is often tightly coupled to infrast
 
 These tests are slow (seconds per test instead of milliseconds), fragile (break when infrastructure changes), and difficult to write (require complex setup).
 
-**Hexagonal Architecture** solves this by making the domain core pure and isolated. Business logic has zero infrastructure dependencies. Tests simply instantiate domain objects and verify business rules using simple, in-memory test doubles. These tests run in milliseconds and never fail due to infrastructure issues.
+Isolating pure logic solves this by making the decision code free of infrastructure dependencies. Tests instantiate the object and verify rules with simple in-memory inputs. These tests run in milliseconds and never fail due to infrastructure issues.
 
-**In Tuturuuu - Pure unit tests:**
+<Note>
+**Illustrative pattern.** The `Workspace` class below does not exist at `packages/types/src/domain/workspace.ts` (there is no `domain/` directory). It models how a pure, framework-free unit would look. Real tests in the repo run on **Vitest** (`vitest run`) and live next to the code they cover as `*.test.ts` — for example the route handler tests under `packages/apis/src/finance/**`.
+</Note>
+
 ```typescript
-// Domain logic - pure, testable
-// packages/types/src/domain/workspace.ts
+// Illustrative pure logic — no I/O, fully testable
 export class Workspace {
   private constructor(
     public readonly id: string,
@@ -443,8 +449,7 @@ export class Workspace {
   }
 }
 
-// Test - no infrastructure required!
-// packages/types/src/domain/workspace.test.ts
+// Test - no infrastructure required (Vitest, colocated *.test.ts)
 describe('Workspace', () => {
   describe('create', () => {
     it('creates workspace with valid name', () => {
@@ -510,11 +515,14 @@ Real external systems (databases, APIs, message brokers) are problematic for tes
 - **Stateful**: Tests can interfere with each other through shared state
 - **Complex**: Require extensive setup and teardown
 
-**Test doubles** (in-memory implementations of interfaces) solve all these problems. They're fast, reliable, isolated, and simple. The Hexagonal Architecture makes test doubles trivial because all external dependencies are already behind interfaces.
+**Test doubles** (in-memory implementations of interfaces) solve all these problems. They're fast, reliable, isolated, and simple. The pattern works wherever a dependency is reachable behind an interface or an injected client.
 
-**In Tuturuuu - Test doubles:**
+<Note>
+**Illustrative pattern.** `TaskRepository` / `InMemoryTaskRepository` is a model, not repo code. In practice, Tuturuuu tests usually mock the Supabase client (or use Vitest mocks) at the boundary of a route handler rather than swapping a hand-written repository port. The shape below shows the underlying idea: keep the seam mockable.
+</Note>
+
 ```typescript
-// Interface defined by domain
+// Illustrative interface seam
 export interface TaskRepository {
   findById(id: string): Promise<Task | null>;
   save(task: Task): Promise<void>;
@@ -615,10 +623,12 @@ In a microservices architecture, services evolve independently. A breaking chang
 
 This catches breaking changes early (at build time) without requiring full integration test environments.
 
-**In Tuturuuu - Contract testing:**
+<Note>
+**Illustrative pattern.** There is no `packages/apis/src/contracts/workspace.contract.ts`, and Tuturuuu does not run formal producer/consumer contract tests today. `packages/apis` (`@tuturuuu/apis`) holds **REST route handlers** (e.g. `src/finance/debts/route.ts`) with colocated `*.test.ts` files — not contract schemas. The closest real practice is validating request/response payloads with **Zod** inside route handlers and asserting on them in tests. The schema/contract code below is a conceptual model for how an explicit contract would look if introduced.
+</Note>
+
 ```typescript
-// Define API contract
-// packages/apis/src/contracts/workspace.contract.ts
+// Illustrative API contract definition
 import { z } from 'zod';
 
 export const WorkspaceContract = {
@@ -775,9 +785,12 @@ Traditional request-response systems are ephemeral. Once a request completes, re
 
 This makes debugging significantly more reliable and enables regression testing for complex, multi-step workflows.
 
-**In Tuturuuu - Event replay testing:**
+<Warning>
+**Aspirational pattern — not implemented.** Tuturuuu has **no event store and no event-sourcing layer**, so there is no `eventStore.query(...)` or production event replay. Background work runs as **Trigger.dev v4 `task()`** definitions (`packages/trigger/src`), which are individually testable but are not a replayable event log. The code below illustrates the *concept* of replay testing; do not treat it as an available API.
+</Warning>
+
 ```typescript
-// Capture events from production
+// Aspirational: capture events from an event store (not present in Tuturuuu)
 export async function captureEventSequence(
   workspaceId: string,
   startTime: Date,
@@ -886,65 +899,36 @@ In a monolithic architecture, all tests run in a single, long CI pipeline. A fai
 - **Focus**: Teams see only their service's test results, reducing noise
 - **Speed**: Smaller test suites run faster than monolithic suites
 
-**In Tuturuuu - Independent CI:**
-```yaml
-# .github/workflows/web-ci.yml
-name: Web App CI
+**In Tuturuuu today:** there are no `web-ci.yml` / `finance-ci.yml` per-app pipeline files. Instead, shared workflows test the whole graph with Turborepo's affected-package filtering, and **per-app Vercel preview workflows** handle build/deploy. Real workflows under `.github/workflows/` include:
 
-on:
-  push:
-    paths:
-      - 'apps/web/**'
-      - 'packages/**'
+- `turbo-unit-tests.yaml` — runs unit tests across affected workspaces
+- `type-check.yaml` — type checking
+- `biome-check.yaml` — lint/format (Tuturuuu uses **Biome**, not ESLint/Prettier)
+- `ci-check.yml` — validates CI configuration
+- `vercel-preview-finance.yaml`, `vercel-preview-calendar.yaml`, `vercel-preview-drive.yaml`, ... — one preview-deploy workflow per app
+- `rust-backend.yml` — builds/tests `apps/backend`
 
-jobs:
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: oven-sh/setup-bun@v1
+The independence comes from Turborepo only running tasks for changed packages plus separate Vercel projects per app, rather than from one CI file per service.
 
-      # Only run tests for web app
-      - run: bun install
-      - run: bun --filter @tuturuuu/web test
-      - run: bun --filter @tuturuuu/web run type-check
-      - run: bun --filter @tuturuuu/web run build
-
-# .github/workflows/finance-ci.yml
-name: Finance App CI
-
-on:
-  push:
-    paths:
-      - 'apps/finance/**'
-      - 'packages/**'
-
-jobs:
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: oven-sh/setup-bun@v1
-
-      # Only run tests for finance app (runs in parallel with web)
-      - run: bun install
-      - run: bun --filter @tuturuuu/finance test
-      - run: bun --filter @tuturuuu/finance run type-check
-      - run: bun --filter @tuturuuu/finance run build
+```bash
+# How affected work is scoped locally and in CI
+bun turbo run test --filter=@tuturuuu/web
+bun turbo run build --filter=@tuturuuu/finance
 ```
 
-**Turborepo caching for speed:**
+**Turborepo task configuration.** The repo runs **Turborepo 2.x**, which uses the `tasks` key (the older `pipeline` key was removed in v2):
+
 ```json
-// turbo.json
+// turbo.json (real key is "tasks", not "pipeline")
 {
-  "pipeline": {
+  "$schema": "https://turbo.build/schema.json",
+  "tasks": {
     "test": {
-      "cache": true,
-      "inputs": ["src/**", "tests/**", "package.json"]
+      "cache": true
     },
     "build": {
       "dependsOn": ["^build"],
-      "outputs": [".next/**", "!.next/cache/**", "!.next/dev/**", "dist/**"],
+      "outputs": [".next/**", "!.next/cache/**", "dist/**"],
       "cache": true
     }
   }
@@ -985,50 +969,22 @@ Monolithic architectures force **all-or-nothing deployments**. Every change, no 
 - **Team autonomy**: No cross-team coordination required for deployments
 - **Continuous delivery**: Deploy multiple times per day without fear
 
-**In Tuturuuu:**
-```typescript
-// Independent deployment commands
-// Each team can deploy their service independently
+**In Tuturuuu today:** there is no `bun deploy:web` / `bun deploy:finance` / `bun deploy:calendar` command. Each app is a **separate Vercel project**, driven by its own GitHub Actions workflow, so deploys are already decoupled per app:
 
-// Web team deploys main platform
-$ bun deploy:web
-✓ Deployed to production (3m 45s)
-✓ Health checks passed
-✓ Rollout complete
-
-// Finance team deploys finance module (doesn't affect web)
-$ bun deploy:finance
-✓ Deployed to production (2m 12s)
-✓ Health checks passed
-✓ Rollout complete
-
-// Calendar team deploys calendar module (doesn't affect web or finance)
-$ bun deploy:calendar
-✓ Deployed to production (1m 58s)
-✓ Health checks passed
-✓ Rollout complete
-
-// All deployments independent - no coordination required
+```text
+.github/workflows/
+├── vercel-preview-finance.yaml    // Finance app preview/deploy
+├── vercel-preview-calendar.yaml   // Calendar app preview/deploy
+├── vercel-preview-drive.yaml      // Drive app preview/deploy
+├── vercel-preview-apps.yaml       // Shared preview orchestration
+└── rust-backend.yml               // apps/backend (Rust) build + deploy
 ```
 
-**Vercel deployment configuration:**
-```json
-// vercel.json for each app
-{
-  "name": "tuturuuu-web",
-  "buildCommand": "bun run build",
-  "devCommand": "bun run dev",
-  "installCommand": "bun install",
-  "framework": "nextjs",
-  "outputDirectory": ".next",
+Each workflow builds only the shared dependencies that app needs (via Turborepo `--filter`) and ships that one Vercel project. Deploying finance does not rebuild or redeploy web or calendar.
 
-  // Each app has independent deployment settings
-  "regions": ["iad1"],
-  "env": {
-    "NEXT_PUBLIC_APP_NAME": "web"
-  }
-}
-```
+<Note>
+The Rust `apps/backend` (port `7820`) deploys on its own track (`rust-backend.yml`), independent of the Vercel front-ends — another axis of deployment independence introduced by the migration.
+</Note>
 
 #### Clarifying Additions
 
@@ -1056,9 +1012,12 @@ Even with small deployments, risk remains. A bug can slip through testing and im
 
 Service boundaries make these strategies practical because each service can have independent routing and versioning.
 
-**In Tuturuuu - Deployment strategies:**
+<Note>
+**Mixed: real platform capability + illustrative code.** Per-app Vercel projects give Tuturuuu **atomic, instantly-revertible deployments** and preview URLs per change — that part is real. However, Tuturuuu does **not** ship the `featureFlags.get/enable(...)` service or the `switchTraffic('blue' -> 'green')` / `supabase.rpc('run_migration')` orchestration shown below; those are conceptual illustrations of canary, feature-flag, and blue-green strategies, not repo APIs. (Tuturuuu's Supabase migrations are plain SQL applied via the migration workflow, not an RPC call.)
+</Note>
+
 ```typescript
-// Canary deployment (Vercel automatic)
+// Conceptual: canary deployment (Vercel handles atomic deploy + instant rollback)
 // New version serves 10% of traffic initially
 
 // vercel.json
@@ -1105,7 +1064,8 @@ await featureFlags.enable('finance.ai-forecasting', {
 });
 ```
 
-**Blue-green deployment (for databases):**
+**Blue-green deployment (conceptual snippet).** Tuturuuu's self-hosted Docker deploy does use a real blue/green release watcher (snapshot + cutover) for the web app, but it is driven by deployment scripts, not the `switchTraffic(...)` / `supabase.rpc(...)` calls shown here. Read this as the idea, not the API:
+
 ```typescript
 // Run migrations on "green" environment
 // Switch traffic after validation
@@ -1195,32 +1155,32 @@ DATABASE_URL=
 
   "build": {
     "env": {
-      // Build-time variables
-      "NEXT_PUBLIC_APP_VERSION": "1.0.0"
+      // Build-time variables. The platform version is owned by Release Please
+      // and read from TUTURUUU_PLATFORM_VERSION in
+      // packages/utils/src/platform-release.ts — do not hard-code a literal here.
+      "NEXT_PUBLIC_APP_VERSION": "$TUTURUUU_PLATFORM_VERSION"
     }
   }
 }
 ```
 
-**Docker ensures runtime consistency (if used):**
+**Pinned toolchain ensures runtime consistency.** The repo pins its toolchain so every environment resolves identical versions: `packageManager` is `bun@1.3.14`, and Node `engines` require `>=22`. A container image would mirror those pins:
+
 ```dockerfile
-# Dockerfile
-FROM oven/bun:1.3.0 as base
+# Illustrative Dockerfile — keep versions aligned with package.json pins
+FROM oven/bun:1.3.14 as base
 
 WORKDIR /app
 
-# Install dependencies (same versions everywhere)
-COPY package.json bun.lockb ./
+# Install dependencies (frozen lockfile => same versions everywhere)
+COPY package.json bun.lock ./
 RUN bun install --frozen-lockfile
 
-# Copy source
 COPY . .
-
-# Build (same process everywhere)
 RUN bun run build
 
 # Production image (identical across environments)
-FROM oven/bun:1.3.0-slim
+FROM oven/bun:1.3.14-slim
 WORKDIR /app
 COPY --from=base /app/.next ./.next
 COPY --from=base /app/node_modules ./node_modules
@@ -1229,18 +1189,23 @@ COPY --from=base /app/package.json ./
 CMD ["bun", "run", "start"]
 ```
 
-**Supabase local development matches production:**
+**Supabase local development matches production.** Migrations are written once and applied identically; type generation keeps types in sync:
+
 ```bash
-# Local Supabase exactly mirrors production schema
-$ bun sb:start
+# Start local Supabase (mirrors the production schema)
+bun sb:start
 
-# Migrations applied identically everywhere
-$ bun sb:up  # Local
-$ bun sb:push  # Production
+# Author and apply migrations locally
+bun sb:new      # scaffold a new migration
+bun sb:up       # apply migrations to the local database
 
-# Type generation ensures consistency
-$ bun sb:typegen  # Same types in all environments
+# Regenerate DB types after schema changes
+bun sb:typegen
 ```
+
+<Warning>
+Production migrations are applied by a maintainer, not from agent/CI prose. Do **not** run `bun sb:push` / `bun sb:linkpush` from this workflow — prepare the migration and let the owner apply it.
+</Warning>
 
 #### Clarifying Additions
 
@@ -1254,11 +1219,17 @@ $ bun sb:typegen  # Same types in all environments
 
 ## Quality Attributes Summary
 
-| Attribute | Key Mechanisms | Primary Benefit | Related Patterns |
-|-----------|---------------|-----------------|------------------|
-| **Maintainability** | Domain boundaries, technology independence, hexagonal architecture, modular frontend, operational independence | Sustainable long-term evolution | Microservices, Hexagonal, Modular Monolith |
-| **Testability** | Pure unit tests, test doubles, contract testing, event replay, independent CI | High confidence in changes | Hexagonal, Event-Driven, Microservices |
-| **Deployability** | Independent pipelines, controlled rollouts, environment consistency | Frequent, low-risk releases | Microservices, IaC, Feature Flags |
+The table separates what is **implemented today** from patterns presented as **teaching models / aspirational** so the mechanisms aren't read as all-adopted.
+
+| Attribute | Implemented today | Illustrative / aspirational | Primary Benefit |
+|-----------|-------------------|-----------------------------|-----------------|
+| **Maintainability** | App + feature-folder boundaries, shared Supabase + `@tuturuuu/types/db`, shared `packages/internal-api` / `packages/apis`, modular Next.js frontend, per-app Vercel projects | Hexagonal ports/adapters, repository interfaces, technology-swap seams | Sustainable long-term evolution |
+| **Testability** | Vitest unit + colocated `*.test.ts`, Zod payload validation, Turborepo affected-package CI | Pure domain objects, in-memory test doubles, formal contract tests, event replay | High confidence in changes |
+| **Deployability** | Per-app Vercel preview/deploy workflows, separate Rust `apps/backend` track, pinned toolchain (`bun@1.3.14`, Node `>=22`), Supabase migrations + typegen | Canary/blue-green orchestration scripts, custom feature-flag service | Frequent, low-risk releases |
+
+<Note>
+These properties are being preserved through the `apps/web` → `apps/tanstack-web` + Rust `apps/backend` migration. See [TanStack + Rust Migration](/platform/architecture/tanstack-rust-migration).
+</Note>
 
 ## Related Documentation
 

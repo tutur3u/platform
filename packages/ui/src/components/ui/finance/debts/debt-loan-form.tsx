@@ -9,6 +9,10 @@ import type {
   InterestCalculationType,
 } from '@tuturuuu/types/primitives/DebtLoan';
 import type { Wallet } from '@tuturuuu/types/primitives/Wallet';
+import {
+  resolveSupportedCurrency,
+  SUPPORTED_CURRENCIES,
+} from '@tuturuuu/utils/currencies';
 import { useTranslations } from 'next-intl';
 import { useCallback, useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -36,6 +40,7 @@ interface Props {
   data?: DebtLoan;
   wallets?: Wallet[];
   defaultType?: DebtLoanType;
+  defaultCurrency?: string;
   onFinish?: (data: DebtLoanFormData) => void;
   onCancel?: () => void;
 }
@@ -45,12 +50,14 @@ export function DebtLoanForm({
   data,
   wallets = [],
   defaultType = 'debt',
+  defaultCurrency,
   onFinish,
   onCancel,
 }: Props) {
   const t = useTranslations('ws-debt-loan');
   const [loading, setLoading] = useState(false);
   const formSchema = createDebtLoanFormSchema(t);
+  const workspaceCurrency = resolveSupportedCurrency(defaultCurrency);
 
   const form = useForm<DebtLoanFormValues>({
     resolver: zodResolver(formSchema),
@@ -60,7 +67,7 @@ export function DebtLoanForm({
       counterparty: data?.counterparty || '',
       type: (data?.type || defaultType) as DebtLoanType,
       principal_amount: data?.principal_amount || 0,
-      currency: data?.currency || 'VND',
+      currency: data?.currency || workspaceCurrency,
       interest_rate: data?.interest_rate ?? undefined,
       interest_type: (data?.interest_type || undefined) as
         | InterestCalculationType
@@ -226,10 +233,10 @@ export function DebtLoanForm({
                 <SelectField
                   id="currency"
                   placeholder={t('select_currency')}
-                  options={[
-                    { value: 'VND', label: 'VND' },
-                    { value: 'USD', label: 'USD' },
-                  ]}
+                  options={SUPPORTED_CURRENCIES.map((currency) => ({
+                    value: currency.code,
+                    label: `${currency.code} - ${currency.name}`,
+                  }))}
                   classNames={{ selectTrigger: 'w-full' }}
                   value={field.value}
                   onValueChange={field.onChange}

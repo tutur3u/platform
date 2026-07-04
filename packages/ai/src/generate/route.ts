@@ -259,7 +259,7 @@ export function createPOST(
             usage: {
               inputTokens: usage.inputTokens ?? 0,
               outputTokens: usage.outputTokens ?? 0,
-              reasoningTokens: usage.reasoningTokens ?? 0,
+              reasoningTokens: usage.outputTokenDetails?.reasoningTokens ?? 0,
               totalTokens: usage.totalTokens ?? 0,
             },
             finishReason,
@@ -274,7 +274,7 @@ export function createPOST(
             finish_reason: String(finishReason),
             input_tokens: usage.inputTokens ?? 0,
             output_tokens: usage.outputTokens ?? 0,
-            reasoning_tokens: usage.reasoningTokens ?? 0,
+            reasoning_tokens: usage.outputTokenDetails?.reasoningTokens ?? 0,
             total_tokens: usage.totalTokens ?? 0,
             system_prompt: configs.systemPrompt ?? '',
           };
@@ -296,10 +296,7 @@ export function createPOST(
             modelId: effectiveModel,
             inputTokens: usage.inputTokens ?? 0,
             outputTokens: usage.outputTokens ?? 0,
-            reasoningTokens:
-              usage.outputTokenDetails?.reasoningTokens ??
-              usage.reasoningTokens ??
-              0,
+            reasoningTokens: usage.outputTokenDetails?.reasoningTokens ?? 0,
             feature: 'generate',
             executionId: execData?.id,
           }).catch((err) => console.error('Failed to deduct AI credits:', err));

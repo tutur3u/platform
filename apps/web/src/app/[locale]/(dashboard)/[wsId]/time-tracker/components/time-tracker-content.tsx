@@ -41,6 +41,7 @@ import utc from 'dayjs/plugin/utc';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { getTasksAppUrlClient } from '@/lib/tasks-app-url-client';
 import type {
   ExtendedWorkspaceTask,
   SessionWithRelations,
@@ -180,6 +181,7 @@ export default function TimeTrackerContent({
 
       try {
         const response = await fetch(url, {
+          credentials: 'include',
           headers: {
             'Content-Type': 'application/json',
             ...options.headers,
@@ -214,7 +216,9 @@ export default function TimeTrackerContent({
   const fetchNextTasks = useCallback(async () => {
     try {
       const response = await apiCall(
-        `/api/v1/workspaces/${wsId}/tasks?limit=100&forTimeTracking=true`
+        getTasksAppUrlClient(
+          `/api/v1/workspaces/${wsId}/tasks?limit=100&forTimeTracking=true`
+        )
       );
 
       // 1. First priority: Urgent tasks (priority 1) assigned to current user
@@ -347,7 +351,9 @@ export default function TimeTrackerContent({
             name: 'tasks',
             call: () =>
               apiCall(
-                `/api/v1/workspaces/${wsId}/tasks?limit=100&forTimeTracking=true`
+                getTasksAppUrlClient(
+                  `/api/v1/workspaces/${wsId}/tasks?limit=100&forTimeTracking=true`
+                )
               ),
             fallback: { tasks: [] },
           },
@@ -853,7 +859,7 @@ export default function TimeTrackerContent({
                         <p className="mb-3 text-muted-foreground text-xs">
                           {t('createTasksInstruction')}
                         </p>
-                        <Link href={`/${wsId}/tasks/boards`}>
+                        <Link href={getTasksAppUrlClient(`/${wsId}/boards`)}>
                           <Button
                             variant="outline"
                             size="sm"
@@ -1252,7 +1258,9 @@ export default function TimeTrackerContent({
                         variant="outline"
                         onClick={() => {
                           setShowTaskSelector(false);
-                          window.location.href = `/${wsId}/tasks/boards`;
+                          window.location.href = getTasksAppUrlClient(
+                            `/${wsId}/boards`
+                          );
                         }}
                         className="gap-2"
                       >
@@ -1354,7 +1362,9 @@ export default function TimeTrackerContent({
                     size="sm"
                     onClick={() => {
                       setShowTaskSelector(false);
-                      window.location.href = `/${wsId}/tasks/boards`;
+                      window.location.href = getTasksAppUrlClient(
+                        `/${wsId}/boards`
+                      );
                     }}
                   >
                     {t('viewAllTasks')}

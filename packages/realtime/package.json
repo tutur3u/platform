@@ -8,7 +8,7 @@
   "scripts": {
     "test": "vitest run",
     "test:watch": "vitest",
-    "type-check": "tsgo --project tsconfig.typecheck.json"
+    "type-check": "tsc --project tsconfig.typecheck.json"
   },
   "exports": {
     "./chat": "./src/chat/index.ts",
@@ -26,8 +26,8 @@
   },
   "devDependencies": {
     "@tuturuuu/typescript-config": "workspace:*",
-    "@types/node": "^25.9.3",
-    "typescript": "^6.0.3",
-    "vitest": "^4.1.8"
+    "@types/node": "^26.0.1",
+    "typescript": "7.0.1-rc",
+    "vitest": "^4.1.9"
   }
 }

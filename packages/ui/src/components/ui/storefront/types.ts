@@ -1,13 +1,23 @@
-import type { InventoryStorefrontListing } from '@tuturuuu/internal-api/inventory';
+import type {
+  InventoryBundle,
+  InventoryCheckoutBundleSelections,
+  InventoryListingVariant,
+  InventoryStorefrontListing,
+} from '@tuturuuu/internal-api/inventory';
 
 export type StorefrontCartLine = {
   listingId: string;
+  bundleSelections?: InventoryCheckoutBundleSelections;
+  selectionKey?: string | null;
+  variantId?: string | null;
   quantity: number;
 };
 
 export type StorefrontCartEntry = {
+  bundle?: InventoryBundle;
   line: StorefrontCartLine;
   listing: InventoryStorefrontListing;
+  variant?: InventoryListingVariant;
 };
 
 export type StorefrontBuyerDefaults = {
@@ -27,13 +37,26 @@ export type StorefrontSurfaceLabels = {
   available: string;
   browse: string;
   bundle: string;
+  bundleSelectionTitle: string;
+  buyNow: string;
   cart: string;
+  cheapestFreePreview: string;
   checkout: string;
   checkoutDisabled: string;
   checkoutDisabledBadge: string;
+  contactDetails: string;
   couponNote: string;
   demoBadge: string;
   emptyCart: string;
+  fromPrice: string;
+  instantCheckout: string;
+  orderSummary: string;
+  redirectingToCheckout: string;
+  requiredItems: string;
+  selectOptions: string;
+  searchBundleItems: string;
+  selectedItems: string;
+  viewDetails: string;
   emptyListingsDescription: string;
   emptyListingsTitle: string;
   fallbackDescription: string;
@@ -61,13 +84,26 @@ export const defaultStorefrontSurfaceLabels: StorefrontSurfaceLabels = {
   available: 'available',
   browse: 'Browse',
   bundle: 'Bundle',
+  bundleSelectionTitle: 'Build bundle',
+  buyNow: 'Buy now',
   cart: 'Cart',
+  cheapestFreePreview: 'Cheapest eligible item is free.',
   checkout: 'Checkout',
   checkoutDisabled: 'Checkout is disabled in preview',
   checkoutDisabledBadge: 'Checkout disabled',
+  contactDetails: 'Contact details',
   couponNote: 'Have a coupon? You can apply it at checkout.',
   demoBadge: 'Demo',
   emptyCart: 'Add a listing to start checkout.',
+  fromPrice: 'From',
+  instantCheckout: 'Instant checkout',
+  orderSummary: 'Order summary',
+  redirectingToCheckout: 'Taking you to secure checkout…',
+  requiredItems: 'Select {count} items',
+  selectOptions: 'Select options',
+  searchBundleItems: 'Search items',
+  selectedItems: '{selected} of {required} selected',
+  viewDetails: 'View details',
   emptyListingsDescription:
     'Publish a listing to make this storefront ready for buyers.',
   emptyListingsTitle: 'No listings yet',

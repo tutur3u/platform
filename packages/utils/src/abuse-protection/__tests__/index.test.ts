@@ -2,25 +2,108 @@
  * Unit tests for OTP Abuse Protection System
  */
 
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+const mocks = vi.hoisted(() => {
+  const store = new Map<string, { expiresAt: number | null; value: unknown }>();
+
+  function getEntry(key: string) {
+    const entry = store.get(key);
+    if (!entry) return null;
+
+    if (entry.expiresAt != null && entry.expiresAt <= Date.now()) {
+      store.delete(key);
+      return null;
+    }
+
+    return entry;
+  }
+
+  return {
+    getRedis: vi.fn(),
+    redis: {
+      del: vi.fn(async (...keys: string[]) => {
+        let deleted = 0;
+        for (const key of keys) {
+          if (store.delete(key)) deleted += 1;
+        }
+        return deleted;
+      }),
+      expire: vi.fn(async (key: string, seconds: number) => {
+        const entry = getEntry(key);
+        if (!entry) return 0;
+        entry.expiresAt = Date.now() + seconds * 1000;
+        return 1;
+      }),
+      get: vi.fn(async <T = unknown>(key: string): Promise<T | null> => {
+        return (getEntry(key)?.value as T | undefined) ?? null;
+      }),
+      incr: vi.fn(async (key: string) => {
+        const entry = getEntry(key);
+        const nextValue =
+          typeof entry?.value === 'number' ? entry.value + 1 : 1;
+        store.set(key, {
+          expiresAt: entry?.expiresAt ?? null,
+          value: nextValue,
+        });
+        return nextValue;
+      }),
+      set: vi.fn(
+        async (key: string, value: unknown, options?: { ex?: number }) => {
+          store.set(key, {
+            expiresAt: options?.ex ? Date.now() + options.ex * 1000 : null,
+            value,
+          });
+          return 'OK';
+        }
+      ),
+      ttl: vi.fn(async (key: string) => {
+        const entry = getEntry(key);
+        if (!entry) return -2;
+        if (entry.expiresAt == null) return -1;
+        return Math.ceil((entry.expiresAt - Date.now()) / 1000);
+      }),
+    },
+    store,
+  };
+});
+
+vi.mock('../../upstash-rest', () => ({
+  getUpstashRestRedisClient: () => mocks.getRedis(),
+  hasUpstashRestEnv: () => true,
+}));
+
 import {
   ABUSE_THRESHOLDS,
   BLOCK_DURATIONS,
+  checkMFAVerifyLimit,
   checkOTPSendAllowed,
+  checkOTPVerifyLimit,
   checkPasswordLoginLimit,
+  checkReauthVerifyLimit,
   classifyPotentialSpamUserAgent,
   clearPasswordLoginFailures,
   extractIPFromHeaders,
   hashEmail,
+  isSharedIpThrottleOnlyBlockReason,
   MAX_BLOCK_LEVEL,
   REDIS_KEYS,
+  recordMFAVerifyFailure,
   recordOTPSendSuccess,
+  recordOTPVerifyFailure,
   recordPasswordLoginFailure,
+  recordReauthVerifyFailure,
   resetOtpLimitsForEmail,
   WINDOW_MS,
 } from '../index';
 
 describe('abuse-protection', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.store.clear();
+    mocks.getRedis.mockResolvedValue(mocks.redis);
+  });
+
   afterEach(() => {
     vi.useRealTimers();
     vi.unstubAllEnvs();
@@ -251,6 +334,23 @@ describe('abuse-protection', () => {
     });
   });
 
+  describe('shared-IP hard block suppression', () => {
+    it('keeps human-auth failure reasons throttle-only', () => {
+      expect(isSharedIpThrottleOnlyBlockReason('otp_send')).toBe(true);
+      expect(isSharedIpThrottleOnlyBlockReason('otp_verify_failed')).toBe(true);
+      expect(isSharedIpThrottleOnlyBlockReason('mfa_verify_failed')).toBe(true);
+      expect(isSharedIpThrottleOnlyBlockReason('reauth_verify_failed')).toBe(
+        true
+      );
+      expect(isSharedIpThrottleOnlyBlockReason('password_login_failed')).toBe(
+        true
+      );
+      expect(isSharedIpThrottleOnlyBlockReason('api_auth_failed')).toBe(false);
+      expect(isSharedIpThrottleOnlyBlockReason('api_abuse')).toBe(false);
+      expect(isSharedIpThrottleOnlyBlockReason('manual')).toBe(false);
+    });
+  });
+
   describe('password login failure limits', () => {
     it('keeps the IP-wide failure counter after another account succeeds', async () => {
       const ipAddress = '203.0.113.41';
@@ -292,6 +392,33 @@ describe('abuse-protection', () => {
         allowed: true,
         remainingAttempts: 10,
       });
+    });
+
+    it('throttles shared-IP password failures without writing a hard IP block', async () => {
+      const ipAddress = '203.0.113.42';
+
+      for (
+        let attempt = 0;
+        attempt < ABUSE_THRESHOLDS.PASSWORD_LOGIN_FAILED_MAX;
+        attempt += 1
+      ) {
+        await recordPasswordLoginFailure(
+          ipAddress,
+          `password-shared-ip-${attempt}@example.com`
+        );
+      }
+
+      const result = await checkPasswordLoginLimit(
+        ipAddress,
+        'another-user@example.com'
+      );
+
+      expect(result).toMatchObject({
+        allowed: false,
+        reason: 'Too many failed login attempts',
+        remainingAttempts: 0,
+      });
+      expect(result.blocked).not.toBe(true);
     });
   });
 
@@ -401,14 +528,19 @@ describe('abuse-protection', () => {
   });
 
   describe('checkOTPSendAllowed', () => {
-    it('does not consume quota during preflight checks', async () => {
-      const email = `preflight-${Date.now()}@example.com`;
+    it('reserves same-email cooldown before provider success', async () => {
+      const email = `reserved-cooldown-${Date.now()}@example.com`;
 
-      const firstAttempt = await checkOTPSendAllowed('198.51.100.1', email);
-      const secondAttempt = await checkOTPSendAllowed('198.51.100.2', email);
+      const attempts = await Promise.all([
+        checkOTPSendAllowed('198.51.100.1', email),
+        checkOTPSendAllowed('198.51.100.2', email),
+      ]);
+      const allowedAttempts = attempts.filter((attempt) => attempt.allowed);
+      const blockedAttempts = attempts.filter((attempt) => !attempt.allowed);
 
-      expect(firstAttempt.allowed).toBe(true);
-      expect(secondAttempt.allowed).toBe(true);
+      expect(allowedAttempts).toHaveLength(1);
+      expect(blockedAttempts).toHaveLength(1);
+      expect(blockedAttempts[0]?.retryAfter).toBeGreaterThan(0);
     });
 
     it('blocks repeated sends to the same email across different IPs during cooldown', async () => {
@@ -462,6 +594,90 @@ describe('abuse-protection', () => {
 
       expect(blockedAttempt.allowed).toBe(false);
       expect(blockedAttempt.retryAfter).toBeGreaterThan(0);
+    });
+
+    it('throttles aggressive shared-IP OTP sends without writing a hard IP block', async () => {
+      vi.stubEnv('ABUSE_OTP_SEND_IP_LIMIT_MINUTE', '1');
+      const ipAddress = '198.51.100.12';
+
+      await expect(
+        checkOTPSendAllowed(ipAddress, 'otp-shared-ip-1@example.com')
+      ).resolves.toMatchObject({ allowed: true });
+
+      const blockedAttempt = await checkOTPSendAllowed(
+        ipAddress,
+        'otp-shared-ip-2@example.com'
+      );
+
+      expect(blockedAttempt).toMatchObject({
+        allowed: false,
+        remainingAttempts: 0,
+      });
+      expect(blockedAttempt.blocked).not.toBe(true);
+    });
+
+    it('throttles shared-IP OTP verify failures without writing a hard IP block', async () => {
+      const ipAddress = '198.51.100.13';
+
+      for (
+        let attempt = 0;
+        attempt < ABUSE_THRESHOLDS.OTP_VERIFY_FAILED_MAX;
+        attempt += 1
+      ) {
+        await recordOTPVerifyFailure(
+          ipAddress,
+          `otp-verify-shared-ip-${attempt}@example.com`
+        );
+      }
+
+      const result = await checkOTPVerifyLimit(
+        ipAddress,
+        'legit-teacher@example.com'
+      );
+
+      expect(result).toMatchObject({
+        allowed: false,
+        reason: 'Too many failed verification attempts from this IP',
+        remainingAttempts: 0,
+      });
+      expect(result.blocked).not.toBe(true);
+    });
+
+    it('throttles shared-IP MFA and reauth failures without writing a hard IP block', async () => {
+      const mfaIpAddress = '198.51.100.14';
+      const reauthIpAddress = '198.51.100.15';
+
+      for (
+        let attempt = 0;
+        attempt < ABUSE_THRESHOLDS.MFA_VERIFY_FAILED_MAX;
+        attempt += 1
+      ) {
+        await recordMFAVerifyFailure(mfaIpAddress);
+      }
+
+      for (
+        let attempt = 0;
+        attempt < ABUSE_THRESHOLDS.REAUTH_VERIFY_FAILED_MAX;
+        attempt += 1
+      ) {
+        await recordReauthVerifyFailure(reauthIpAddress);
+      }
+
+      const mfaResult = await checkMFAVerifyLimit(mfaIpAddress);
+      const reauthResult = await checkReauthVerifyLimit(reauthIpAddress);
+
+      expect(mfaResult).toMatchObject({
+        allowed: false,
+        reason: 'Too many failed MFA verification attempts',
+        remainingAttempts: 0,
+      });
+      expect(reauthResult).toMatchObject({
+        allowed: false,
+        reason: 'Too many failed reauthentication attempts',
+        remainingAttempts: 0,
+      });
+      expect(mfaResult.blocked).not.toBe(true);
+      expect(reauthResult.blocked).not.toBe(true);
     });
 
     it('caps successful sends for the same email across distributed IPs within an hour', async () => {

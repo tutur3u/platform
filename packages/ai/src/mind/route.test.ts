@@ -404,8 +404,9 @@ describe('mind route payload validation', () => {
       text: 'Done',
       totalUsage: {
         inputTokens: 10,
+        inputTokenDetails: {},
         outputTokens: 20,
-        reasoningTokens: 3,
+        outputTokenDetails: { reasoningTokens: 3 },
         totalTokens: 33,
       },
       usage: undefined,

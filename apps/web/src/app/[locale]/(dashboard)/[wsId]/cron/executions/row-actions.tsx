@@ -2,7 +2,6 @@
 
 import type { Row } from '@tanstack/react-table';
 import { Ellipsis, Eye } from '@tuturuuu/icons';
-import type { WorkspaceCronExecution } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
 import {
   DropdownMenu,
@@ -16,9 +15,10 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import type { ManagedWorkspaceCronExecution } from '../types';
 
 interface RowActionsProps {
-  row: Row<WorkspaceCronExecution>;
+  row: Row<ManagedWorkspaceCronExecution>;
   href?: string;
   extraData?: any;
 }

@@ -1,67 +1,14 @@
-import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
-import { CalendarPageShell } from '@tuturuuu/ui/calendar-app/calendar-page-shell';
-import { fetchUserWorkspaceCalendarGoogleTokenForClient } from '@tuturuuu/utils/calendar-auth-token';
-import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
-import type { Metadata } from 'next';
-import { notFound, redirect } from 'next/navigation';
-
-export const metadata: Metadata = {
-  title: 'Calendar',
-  description: 'Manage Calendar in your Tuturuuu workspace.',
-};
+import { redirect } from 'next/navigation';
+import { getCalendarAppOrigin } from '@/lib/calendar-app-url';
 
 interface PageProps {
-  params: Promise<{
-    wsId: string;
-    locale: string;
-  }>;
-  searchParams: Promise<Record<string, string | string[] | undefined>>;
+  params: Promise<{ wsId: string }>;
 }
 
-export default async function CalendarPage({ params }: PageProps) {
-  const { wsId, locale } = await params;
-  const supabase = await createClient();
-  const { user } = await resolveAuthenticatedSessionUser(supabase);
-
-  if (!user?.id) redirect('/login');
-
-  const workspace = await getWorkspace(wsId);
-  if (!workspace) notFound();
-
-  const permissions = await getPermissions({ wsId: workspace.id });
-  if (!permissions) notFound();
-
-  if (permissions.withoutPermission('manage_calendar')) {
-    redirect(`/${wsId}`);
-  }
-
-  const sbAdmin = await createAdminClient({ noCookie: true });
-
-  const [googleToken, { data: calendarConnections }] = await Promise.all([
-    fetchUserWorkspaceCalendarGoogleTokenForClient(supabase, {
-      wsId: workspace.id,
-      userId: user.id,
-    }),
-    sbAdmin
-      .from('calendar_connections')
-      .select('*')
-      .eq('ws_id', workspace.id)
-      .order('created_at', { ascending: true }),
-  ]);
-
-  return (
-    <CalendarPageShell
-      calendarConnections={calendarConnections || []}
-      enableSmartScheduling
-      experimentalGoogleToken={googleToken}
-      isPersonalWorkspace={workspace.id === user.id}
-      locale={locale}
-      userId={user.id}
-      workspace={workspace}
-    />
-  );
+// The calendar experience has moved to the dedicated calendar app
+// (apps/calendar), which serves each workspace's calendar at its root path.
+// This route now redirects there to preserve existing links.
+export default async function CalendarRedirectPage({ params }: PageProps) {
+  const { wsId } = await params;
+  redirect(`${getCalendarAppOrigin()}/${wsId}`);
 }

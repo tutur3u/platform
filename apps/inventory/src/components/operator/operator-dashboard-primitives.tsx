@@ -1,11 +1,12 @@
 'use client';
 
 import type { LucideIcon } from '@tuturuuu/icons';
-import { ArrowRight, Loader2, PackageOpen } from '@tuturuuu/icons';
+import { ArrowRight, PackageOpen } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { cn } from '@tuturuuu/utils/format';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
+import { LoadingRows } from './operator-shell';
 
 export function OperatorMetricCard({
   description,
@@ -27,12 +28,15 @@ export function OperatorMetricCard({
         <span
           className={cn(
             'inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-border bg-muted/35 text-muted-foreground',
-            tone === 'danger' && 'bg-destructive/10 text-destructive',
-            tone === 'success' && 'bg-primary/10 text-primary',
-            tone === 'warning' && 'bg-accent text-accent-foreground'
+            tone === 'danger' &&
+              'border-dynamic-red/30 bg-dynamic-red/10 text-dynamic-red',
+            tone === 'success' &&
+              'border-dynamic-green/30 bg-dynamic-green/10 text-dynamic-green',
+            tone === 'warning' &&
+              'border-dynamic-orange/30 bg-dynamic-orange/10 text-dynamic-orange'
           )}
         >
-          <Icon className="h-4 w-4" />
+          <Icon aria-hidden="true" className="h-4 w-4" />
         </span>
       </div>
       <div className="min-w-0">
@@ -127,10 +131,16 @@ export function OperatorDataList({
   loadingLabel: string;
 }) {
   if (isLoading) {
+    // Layout-preserving skeleton (consistent with the rest of the console); the
+    // label is kept as an accessible name for assistive tech.
     return (
-      <div className="flex min-h-32 items-center justify-center rounded-lg border border-border bg-muted/20 text-muted-foreground text-sm">
-        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-        {loadingLabel}
+      <div
+        aria-busy="true"
+        aria-label={loadingLabel}
+        className="grid min-w-0 gap-2"
+        role="status"
+      >
+        <LoadingRows />
       </div>
     );
   }

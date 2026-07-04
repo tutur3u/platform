@@ -11,6 +11,16 @@ export interface UserGroup extends Entity {
   attendance_amount?: number;
   has_session_today?: boolean;
   sessions?: string[];
+  /**
+   * Server-computed today-attendance snapshot for the groups table cell.
+   * Precomputed in one batched query instead of one fetch per row.
+   */
+  today_attendance?: {
+    available: boolean;
+    attended: number;
+    absent: number;
+    count: number;
+  };
   href?: string;
   description?: string;
   starting_date?: string | null;

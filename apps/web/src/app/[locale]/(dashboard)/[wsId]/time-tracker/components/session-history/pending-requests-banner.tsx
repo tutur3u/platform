@@ -17,8 +17,8 @@ import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
 import { useRequests } from '../../requests/hooks/use-requests';
-import type { ExtendedTimeTrackingRequest } from '../../requests/page';
 import { RequestDetailModal } from '../../requests/request-detail-modal';
+import type { ExtendedTimeTrackingRequest } from '../../requests/types';
 import { calculateDuration, getStatusColorClasses } from '../../requests/utils';
 
 const MAX_SHOWN = 5;

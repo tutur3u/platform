@@ -1,5 +1,11 @@
 'use client';
-import { Download, Monitor, Smartphone, Tablet, X } from '@tuturuuu/icons';
+import {
+  Download,
+  Monitor,
+  Smartphone,
+  Tablet,
+  X,
+} from '@tuturuuu/icons/lucide';
 import { Button } from '@tuturuuu/ui/button';
 import { cn } from '@tuturuuu/utils/format';
 import { useLocale, useTranslations } from 'next-intl';

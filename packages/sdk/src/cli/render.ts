@@ -1,4 +1,5 @@
 import { inspect } from 'node:util';
+import { escapeTerminalText } from './select';
 import { getDateParts, inferUserTimeZone } from './timezone';
 
 type RenderableRecord = Record<string, unknown>;
@@ -17,6 +18,8 @@ export interface RenderOptions {
   financeResource?: string;
   group?: string;
   json?: boolean;
+  preserveTaskOrder?: boolean;
+  showTaskScore?: boolean;
   workspaceName?: string;
 }
 
@@ -30,6 +33,10 @@ function asArray(value: unknown): unknown[] {
 
 function asString(value: unknown, fallback = '') {
   return typeof value === 'string' && value.trim() ? value : fallback;
+}
+
+function asTerminalString(value: unknown, fallback = '') {
+  return escapeTerminalText(asString(value, fallback));
 }
 
 function supportsColor() {
@@ -487,7 +494,9 @@ function renderTable(
   const tableRows = rows.map((row, index) => ({
     index: String(index + 1),
     row,
-    cells: columns.map((column) => String(row[column] ?? '')),
+    cells: columns.map((column) =>
+      escapeTerminalText(String(row[column] ?? ''))
+    ),
   }));
 
   const columnNames = ['', ...columns];
@@ -574,6 +583,7 @@ function styleTier(value: string) {
 }
 
 function styleTaskCell({ column, row, value }: Parameters<TableCellStyle>[0]) {
+  if (column === 'Score') return color.magenta(value);
   if (column === 'Key') return color.cyan(value);
   if (column === 'List' && value)
     return formatListName(value, asString(row.__ListColor));
@@ -1146,10 +1156,25 @@ function renderCalendar(data: unknown, resource?: string) {
   renderTable(calendarRows(data, resource));
 }
 
-function getTaskRows(tasks: unknown[]) {
-  return sortTasksForCli(tasks).map((task) => {
+function getDisplayTasks(tasks: unknown[], options: RenderOptions) {
+  return options.preserveTaskOrder ? tasks : sortTasksForCli(tasks);
+}
+
+function formatTaskScore(value: unknown) {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return '';
+  if (value >= 0 && value <= 1) {
+    return `${(value * 100).toFixed(1)}%`;
+  }
+  return value.toFixed(3);
+}
+
+function getTaskRows(tasks: unknown[], options: RenderOptions) {
+  return getDisplayTasks(tasks, options).map((task) => {
     const record = asRecord(task);
     return {
+      ...(options.showTaskScore
+        ? { Score: formatTaskScore(record.similarity) }
+        : {}),
       Key: getTaskKey(task),
       Title: asString(record.name, 'Untitled task'),
       List: getTaskListName(task),
@@ -1202,17 +1227,24 @@ function renderTasks(data: unknown, options: RenderOptions) {
 
   if (options.compact) {
     renderTable(
-      sortTasksForCli(tasks).map((task) => ({
-        Title: asString(asRecord(task).name, 'Untitled task'),
-        List: getTaskListName(task),
-        Workspace: getTaskWorkspaceName(
-          task,
-          options.workspaceName || options.currentWorkspaceId || ''
-        ),
-        __ListColor: getTaskListColor(task),
-      })),
+      getDisplayTasks(tasks, options).map((task) => {
+        const record = asRecord(task);
+        return {
+          ...(options.showTaskScore
+            ? { Score: formatTaskScore(record.similarity) }
+            : {}),
+          Title: asString(record.name, 'Untitled task'),
+          List: getTaskListName(task),
+          Workspace: getTaskWorkspaceName(
+            task,
+            options.workspaceName || options.currentWorkspaceId || ''
+          ),
+          __ListColor: getTaskListColor(task),
+        };
+      }),
       {
         styleCell: ({ column, row, value }) => {
+          if (column === 'Score') return color.magenta(value);
           if (column === 'List') {
             return formatListName(value, asString(row.__ListColor));
           }
@@ -1224,7 +1256,7 @@ function renderTasks(data: unknown, options: RenderOptions) {
     return;
   }
 
-  renderTable(getTaskRows(tasks), { styleCell: styleTaskCell });
+  renderTable(getTaskRows(tasks, options), { styleCell: styleTaskCell });
   renderTaskPagination(record);
 }
 
@@ -1238,6 +1270,9 @@ export function renderWhoami(data: unknown, json = false) {
   const user = asRecord(record.user);
   const currentWorkspace = asRecord(record.currentWorkspace);
   const defaultWorkspace = asRecord(record.defaultWorkspace);
+  const userEmail = asTerminalString(user.email, 'unknown');
+  const currentWorkspaceId = asTerminalString(currentWorkspace.id);
+  const defaultWorkspaceId = asTerminalString(defaultWorkspace.id);
 
   process.stdout.write(
     `${[
@@ -1247,19 +1282,19 @@ export function renderWhoami(data: unknown, json = false) {
           ? color.green('logged in')
           : color.yellow('not logged in')
       }`,
-      `User: ${color.bold(asString(user.display_name, asString(user.email, 'unknown')))}`,
-      `Email: ${color.cyan(asString(user.email, 'unknown'))}`,
-      `User ID: ${color.dim(asString(user.id, 'unknown'))}`,
-      `Base URL: ${color.cyan(asString(record.baseUrl))}`,
-      `Config: ${color.dim(asString(record.configPath))}`,
-      `Current workspace: ${color.bold(asString(currentWorkspace.name, 'none'))}${currentWorkspace.id ? color.dim(` (${currentWorkspace.id})`) : ''}`,
-      `Current board: ${color.dim(asString(record.currentBoardId, 'none'))}`,
-      `Current list: ${color.dim(asString(record.currentListId, 'none'))}`,
-      `Current task: ${color.dim(asString(record.currentTaskId, 'none'))}`,
-      `Current label: ${color.dim(asString(record.currentLabelId, 'none'))}`,
-      `Current project: ${color.dim(asString(record.currentProjectId, 'none'))}`,
-      `Default workspace: ${color.bold(asString(defaultWorkspace.name, 'none'))}${defaultWorkspace.id ? color.dim(` (${defaultWorkspace.id})`) : ''}`,
-      `Session: ${color.magenta(asString(record.session, 'none'))}`,
+      `User: ${color.bold(asTerminalString(user.display_name, userEmail))}`,
+      `Email: ${color.cyan(userEmail)}`,
+      `User ID: ${color.dim(asTerminalString(user.id, 'unknown'))}`,
+      `Base URL: ${color.cyan(asTerminalString(record.baseUrl))}`,
+      `Config: ${color.dim(asTerminalString(record.configPath))}`,
+      `Current workspace: ${color.bold(asTerminalString(currentWorkspace.name, 'none'))}${currentWorkspace.id ? color.dim(` (${currentWorkspaceId})`) : ''}`,
+      `Current board: ${color.dim(asTerminalString(record.currentBoardId, 'none'))}`,
+      `Current list: ${color.dim(asTerminalString(record.currentListId, 'none'))}`,
+      `Current task: ${color.dim(asTerminalString(record.currentTaskId, 'none'))}`,
+      `Current label: ${color.dim(asTerminalString(record.currentLabelId, 'none'))}`,
+      `Current project: ${color.dim(asTerminalString(record.currentProjectId, 'none'))}`,
+      `Default workspace: ${color.bold(asTerminalString(defaultWorkspace.name, 'none'))}${defaultWorkspace.id ? color.dim(` (${defaultWorkspaceId})`) : ''}`,
+      `Session: ${color.magenta(asTerminalString(record.session, 'none'))}`,
     ].join('\n')}\n`
   );
 }

@@ -14,6 +14,7 @@ import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { headers } from 'next/headers';
 import { notFound, redirect } from 'next/navigation';
 import type { ReactNode } from 'react';
+import type { ViewType } from '../../shared/board-views';
 
 interface Props {
   params: Promise<{
@@ -22,7 +23,9 @@ interface Props {
   }>;
   /** Route prefix for tasks URLs. Defaults to '/tasks' (web app). Set to '' for satellite apps. */
   routePrefix?: string;
+  defaultView?: ViewType;
   idleBottomIsland?: ReactNode;
+  rootLoading?: boolean;
 }
 
 type AuthorizedWorkspace = Workspace & {
@@ -53,7 +56,10 @@ async function getAuthorizedBoard(wsId: string, boardId: string) {
   } catch (error) {
     if (
       error instanceof InternalApiError &&
-      (error.status === 401 || error.status === 403 || error.status === 404)
+      (error.status === 400 ||
+        error.status === 401 ||
+        error.status === 403 ||
+        error.status === 404)
     ) {
       return null;
     }
@@ -68,9 +74,11 @@ async function getAuthorizedBoard(wsId: string, boardId: string) {
  * Used by both apps/web and apps/tasks.
  */
 export default async function TaskBoardServerPage({
+  defaultView,
   idleBottomIsland,
   params,
   routePrefix = '/tasks',
+  rootLoading = false,
 }: Props) {
   const { wsId: id, boardId } = await params;
 
@@ -82,7 +90,7 @@ export default async function TaskBoardServerPage({
 
   const isMemberBoardAccess = board.access_type === 'member';
   const workspace = isMemberBoardAccess
-    ? await getWorkspace(id, { useAdmin: true })
+    ? await getWorkspace(board.ws_id, { useAdmin: true })
     : createBoardGuestWorkspace(board.ws_id);
   if (!workspace) notFound();
 
@@ -92,8 +100,10 @@ export default async function TaskBoardServerPage({
       workspace={workspace}
       workspaceTier={workspace.tier ?? null}
       currentUserId={user.id}
+      defaultView={defaultView}
       routePrefix={routePrefix}
       idleBottomIsland={idleBottomIsland}
+      rootLoading={rootLoading}
     />
   );
 }

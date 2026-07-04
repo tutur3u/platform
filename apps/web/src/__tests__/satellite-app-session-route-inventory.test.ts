@@ -9,37 +9,38 @@ const repoRoot = resolve(
 );
 
 const satelliteRouteRoots = [
-  'apps/web/src/app/api/v1/tulearn',
-  'apps/web/src/app/api/v1/course',
-  'apps/web/src/app/api/v1/workspaces/[wsId]/tulearn',
-  'apps/web/src/app/api/v1/workspaces/[wsId]/users/groups',
-  'apps/web/src/app/api/v1/workspaces/[wsId]/time-tracking',
-  'apps/web/src/app/api/v1/workspaces/[wsId]/calendar',
-  'apps/web/src/app/api/v1/workspaces/[wsId]/calendar-settings',
-  'apps/web/src/app/api/v1/workspaces/[wsId]/calendar-hours',
-  'apps/web/src/app/api/v1/workspaces/[wsId]/chat',
-  'apps/web/src/app/api/v1/workspaces/[wsId]/encryption',
-  'apps/web/src/app/api/v1/workspaces/[wsId]/storage',
-  'apps/web/src/app/api/v1/workspaces/[wsId]/inventory',
-  'apps/web/src/app/api/v1/workspaces/[wsId]/mail',
-  'apps/web/src/app/api/v1/workspaces/[wsId]/mind',
-  'apps/web/src/app/api/v1/workspaces/[wsId]/user-groups/[groupId]/modules',
-  'apps/web/src/app/api/v1/workspaces/[wsId]/user-groups/[groupId]/module-order',
-  'apps/web/src/app/api/v1/workspaces/[wsId]/user-groups/[groupId]/module-groups',
-  'apps/web/src/app/api/v1/users/me/profile',
-  'apps/web/src/app/api/v1/users/me/avatar',
-  'apps/web/src/app/api/v1/users/me/email',
+  'apps/web/src/legacy-api-routes/v1/tulearn',
+  'apps/web/src/legacy-api-routes/v1/course',
+  'apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/tulearn',
+  'apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/users/groups',
+  'apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/time-tracking',
+  // Calendar routes migrated to the dedicated calendar app (apps/calendar).
+  'apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/chat',
+  'apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/encryption',
+  'apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/storage',
+  'apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/inventory',
+  'apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/mail',
+  // Mind routes migrated to the dedicated mind app (apps/mind).
+  'apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/user-groups/[groupId]/modules',
+  'apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/user-groups/[groupId]/module-order',
+  'apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/user-groups/[groupId]/module-groups',
+  'apps/web/src/legacy-api-routes/v1/users/me/profile',
+  'apps/web/src/legacy-api-routes/v1/users/me/avatar',
+  'apps/web/src/legacy-api-routes/v1/users/me/email',
 ];
 
 const satelliteAppApiRoots = [
   'apps/learn/src/app/api',
   'apps/teach/src/app/api',
   'apps/chat/src/app/api',
-  'apps/inventory/src/app/api',
+  // apps/inventory now owns its migrated inventory API routes; it is no longer a
+  // thin proxy-only satellite, so it is excluded from the local-API allowlist.
   'apps/drive/src/app/api',
-  'apps/mail/src/app/api',
   'apps/meet/src/app/api',
-  'apps/mind/src/app/api',
+  // apps/mail now owns its migrated mail API routes; it is no longer a thin
+  // proxy-only satellite, so it is excluded from the local-API allowlist.
+  // apps/mind now owns its migrated mind API routes; it is no longer a
+  // thin proxy-only satellite, so it is excluded from the local-API allowlist.
 ];
 
 const registeredSatelliteApps = [
@@ -175,11 +176,14 @@ describe('satellite app-session route inventory', () => {
 
   it('keeps Inventory workspace APIs on the inventory app-session target by default', () => {
     const source = readFileSync(
-      resolve(repoRoot, 'apps/web/src/lib/inventory/commerce/auth.ts'),
+      resolve(
+        repoRoot,
+        'packages/inventory-core/src/lib/inventory/commerce/auth.ts'
+      ),
       'utf8'
     );
     const actorSource = readFileSync(
-      resolve(repoRoot, 'apps/web/src/lib/inventory/actor.ts'),
+      resolve(repoRoot, 'packages/inventory-core/src/lib/inventory/actor.ts'),
       'utf8'
     );
 
@@ -196,7 +200,7 @@ describe('satellite app-session route inventory', () => {
     const productsRoute = readFileSync(
       resolve(
         repoRoot,
-        'apps/web/src/app/api/v1/workspaces/[wsId]/inventory/products/route.ts'
+        'apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/inventory/products/route.ts'
       ),
       'utf8'
     );
@@ -207,7 +211,7 @@ describe('satellite app-session route inventory', () => {
       .filter(
         (file) =>
           file !==
-          'apps/web/src/app/api/v1/workspaces/[wsId]/inventory/products/route.ts'
+          'apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/inventory/products/route.ts'
       )
       .filter((file) =>
         readFileSync(resolve(repoRoot, file), 'utf8').includes("'finance'")
@@ -226,7 +230,7 @@ describe('satellite app-session route inventory', () => {
     const routeAuthSource = readFileSync(
       resolve(
         repoRoot,
-        'apps/web/src/app/api/v1/workspaces/[wsId]/storage/route-auth.ts'
+        'apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/storage/route-auth.ts'
       ),
       'utf8'
     );
@@ -235,7 +239,7 @@ describe('satellite app-session route inventory', () => {
       'utf8'
     );
     const storageRouteFiles = walkRouteFiles(
-      'apps/web/src/app/api/v1/workspaces/[wsId]/storage'
+      'apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/storage'
     );
     const financeTargetRoutes = storageRouteFiles
       .map(relative)
@@ -262,12 +266,12 @@ describe('satellite app-session route inventory', () => {
     );
     expect(routeAuthSource).not.toContain('ALL_SATELLITE_APP_SESSION_TARGETS');
     expect(financeTargetRoutes).toEqual([
-      'apps/web/src/app/api/v1/workspaces/[wsId]/storage/finalize-upload/route.ts',
-      'apps/web/src/app/api/v1/workspaces/[wsId]/storage/list/route.ts',
-      'apps/web/src/app/api/v1/workspaces/[wsId]/storage/object/[id]/route.ts',
-      'apps/web/src/app/api/v1/workspaces/[wsId]/storage/object/route.ts',
-      'apps/web/src/app/api/v1/workspaces/[wsId]/storage/share/route.ts',
-      'apps/web/src/app/api/v1/workspaces/[wsId]/storage/upload-url/route.ts',
+      'apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/storage/finalize-upload/route.ts',
+      'apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/storage/list/route.ts',
+      'apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/storage/object/[id]/route.ts',
+      'apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/storage/object/route.ts',
+      'apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/storage/share/route.ts',
+      'apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/storage/upload-url/route.ts',
     ]);
     expect(financeTargetRoutes).toEqual(financeStorageAccessRoutes);
   });

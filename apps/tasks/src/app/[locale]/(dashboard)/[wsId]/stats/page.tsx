@@ -1,0 +1,19 @@
+import { connection } from 'next/server';
+import { TaskProgressRoute } from '../_components/task-progress-route';
+
+interface Props {
+  params: Promise<{
+    wsId: string;
+  }>;
+}
+
+export const metadata = {
+  title: 'Task Stats',
+  description: 'Review task progress totals, streaks, and daily activity.',
+};
+
+export default async function Page({ params }: Props) {
+  await connection();
+
+  return <TaskProgressRoute params={params} view="stats" />;
+}

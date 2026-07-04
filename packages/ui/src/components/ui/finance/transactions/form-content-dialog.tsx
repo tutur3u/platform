@@ -31,6 +31,7 @@ interface FormContentDialogProps {
   setNewContentType: Dispatch<SetStateAction<NewContentType | undefined>>;
   newContent: NewContent;
   setNewContent: Dispatch<SetStateAction<NewContent>>;
+  defaultCurrency?: string;
   newTagColor: string;
   setNewTagColor: Dispatch<SetStateAction<string>>;
 }
@@ -53,6 +54,7 @@ export function FormContentDialog({
   setNewContentType,
   newContent,
   setNewContent,
+  defaultCurrency,
   newTagColor,
   setNewTagColor,
 }: FormContentDialogProps) {
@@ -101,6 +103,7 @@ export function FormContentDialog({
           <WalletForm
             wsId={wsId}
             data={newContent as WalletType}
+            defaultCurrency={defaultCurrency}
             onFinish={() => {
               setNewContent(undefined);
               setNewContentType(undefined);

@@ -1,7 +1,7 @@
 ---
 title: 'tuturuuu'
 description: 'Official TypeScript/JavaScript SDK for the Tuturuuu platform'
-updatedAt: '2026-05-16'
+updatedAt: '2026-06-30'
 ---
 
 # Tuturuuu SDK
@@ -105,6 +105,9 @@ ttr lists use
 ttr tasks use
 ttr tasks --board <board-id>
 ttr tasks --compact
+ttr tasks search "deadline review"
+ttr tasks search "deadline review" --mode text
+ttr tasks search "deadline review" --mode semantic
 ttr tasks create "Add Tuturuuu CLI"
 ttr tasks create --list <list-id> --name "Write release notes"
 ttr tasks done <task-id>
@@ -305,7 +308,11 @@ ttr calendar events --help
 ttr finance --help
 ttr finance transactions --help
 ttr tasks --help
+ttr tasks search --help
 ttr tasks create --help
+ttr task-templates --help
+ttr task-templates import --help
+ttr task-templates export --help
 ttr tasks done --help
 ttr tasks close --help
 ttr tasks update --help
@@ -358,8 +365,18 @@ priority and due date, with prettier due dates and configured task-list colors
 in table output. Human-readable tables use smooth box borders, respect the
 terminal width, and wrap long cell content so task titles stay readable instead
 of overflowing narrow panes. Add `--json`
-when another agent or script needs machine-readable output. `tasks
-create`, `boards create`, and `lists create` accept a quoted positional name as
+when another agent or script needs machine-readable output.
+
+Use `ttr tasks search <query>` for ranked task search. Search defaults to
+`--mode hybrid`, accepts `--mode text` for PostgreSQL full-text search only and
+`--mode semantic` for embedding similarity only, and supports
+`--query`/`--q`, `--limit`/`--match-count`, `--threshold`/`--match-threshold`,
+`--workspace`/`--ws`, `--compact`, and `--json`. Search output preserves API
+relevance order and shows the score when available. Existing list filtering
+with `ttr tasks --q <query>` is unchanged and remains the lightweight list text
+filter.
+
+`tasks create`, `boards create`, and `lists create` accept a quoted positional name as
 a shorthand for `--name`. Task CRUD accepts either the task UUID or the board
 identifier shown in the UI, such as `VHP-12`; prefixed identifiers resolve
 within the selected workspace even when another list is selected, and matching
@@ -369,6 +386,33 @@ pass `--list <done-list-id>` or include `list_id` in `--json-payload` to choose
 another done destination. Use `ttr tasks done [task-id]` as the quick shortcut.
 Use `ttr tasks close [task-id]` to stamp `closed_at`; pass `--list
 <closed-list-id>` to choose a specific closed destination.
+
+Task templates are single-task starters, separate from board templates.
+Workspace templates are managed with
+`ttr task-templates list/show/create/update/delete/use` and can be imported
+from or exported to local markdown files. Local templates live under
+`.tuturuuu/task-templates/*.md`, use YAML frontmatter for fields such as `key`,
+`name`, `task_name`, `priority`, `label_ids`, `assignee_ids`, and
+`project_ids`, and use the markdown body as the task description. Markdown
+descriptions from `--description-format markdown` and local template bodies
+support GFM pipe tables and are stored as TipTap/Yjs table content for the web
+editor. `ttr tasks create --template <key-or-path>` resolves workspace keys or
+local markdown paths; explicit flags such as `--name`, `--list`, `--priority`,
+`--labels`, and `--projects` override template defaults.
+
+```markdown
+---
+key: qa-handoff
+name: QA handoff
+task_name: Verify release handoff
+priority: high
+---
+
+| Field | Value |
+| --- | --- |
+| Owner | Platform |
+| Environment | Staging |
+```
 
 ### Finance CLI
 
@@ -484,11 +528,25 @@ ttr tasks --compact
 # Machine-readable output for agents.
 ttr tasks --json --no-update-check
 
+# Ranked full-text, semantic, or hybrid search.
+ttr tasks search "deadline review"
+ttr tasks search "deadline review" --mode hybrid --limit 20 --threshold 0.25
+ttr tasks search --query "deadline review" --mode text --json --no-update-check
+
 # Create from the selected board/list, prompting when needed.
 ttr tasks create "Add Tuturuuu CLI"
 
 # Create directly into a known list.
 ttr tasks create --list <list-id> --name "Write release notes"
+
+# Create and use task templates.
+ttr task-templates list
+ttr task-templates create "Bug report" --key bug-report --title "Investigate bug" --priority high
+ttr task-templates export bug-report --file .tuturuuu/task-templates/bug-report.md
+ttr task-templates import .tuturuuu/task-templates/bug-report.md
+ttr tiptap parse --text "| Field | Value |\n| --- | --- |\n| Owner | Platform |" --format markdown --output json
+ttr tasks create --template bug-report --list <list-id> --name "Investigate checkout bug"
+ttr tasks create "QA handoff" --description-file table.md --description-format markdown
 
 # Move with the keyboard picker.
 ttr tasks move
@@ -790,6 +848,17 @@ External app admin dashboards can auto-create and bind the workspace studio befo
 await client.externalProjects.sync.setup('workspace-id', { manifest });
 ```
 
+Operators can use the authenticated CLI instead of app-local token scripts:
+
+```bash
+ttr external projects summary --workspace <workspace-id> --json
+ttr external projects delivery --workspace <workspace-id> --preview --out tmp/delivery.json
+ttr external projects snapshot --workspace <workspace-id> --out tmp/snapshot.json
+ttr external projects setup --workspace <workspace-id> --manifest external-project.json
+ttr external projects diff --workspace <workspace-id> --manifest external-project.json --json
+ttr external projects apply --workspace <workspace-id> --manifest external-project.json --confirm APPLY_EXTERNAL_PROJECT_SYNC
+```
+
 ### Public Folder Asset Sync
 
 External apps can keep seed media in their local `public/` folder and still publish it through Tuturuuu Drive. Mark each manifest asset with `metadata.publicPath`, `metadata.localAssetPath`, `metadata.sourcePublicPath`, or a relative `sourceUrl`.
@@ -811,7 +880,7 @@ console.log(sync.uploaded.length);
 console.log(linkedManifest.content.entries[0]?.assets?.[0]?.storagePath);
 ```
 
-The linker writes deterministic storage paths under `external-projects/{adapter}/{collectionSlug}/{entrySlug}/{filename}`. The upload helper uses the external-project asset app-server upload route so Tuturuuu measures the actual bytes before writing storage objects; production Supabase keys are not needed in external apps.
+The linker writes deterministic storage paths under `external-projects/{adapter}/{collectionSlug}/{entrySlug}/{filename}`. External apps can upload those assets through signed upload URLs, or through the external-project asset multipart route when they need the app server to stream the file with a server-owned bearer token. Production Supabase keys are not needed in external apps.
 
 ### TanStack Query
 
@@ -1281,16 +1350,35 @@ await new Promise(resolve => setTimeout(resolve, 1000));
 
 ## Changelog
 
-### v0.1.0 (2025-10-21)
+The package version is managed by Release Please, and the full, authoritative
+changelog is generated per release. For the complete history (currently shipping
+the `0.10.x` line), see the maintained changelog rather than this page:
 
-- Initial release
+<CardGroup cols={2}>
+<Card title="CHANGELOG.md" icon="github" href="https://github.com/tutur3u/platform/blob/main/packages/sdk/CHANGELOG.md">
+  Full per-release changelog (source of truth)
+</Card>
+<Card title="npm" icon="npm" href="https://www.npmjs.com/package/tuturuuu">
+  Published versions and release tags
+</Card>
+</CardGroup>
+
+**Highlights since the initial release:**
+
 - Storage operations (list, upload, download, delete, folders, share, analytics)
 - Document operations (CRUD, search)
-- Comprehensive error handling
-- Full TypeScript support
-- Zod validation
+- `ttr` CLI with workspace, host switching, and session-based auth
+- Finance commands (wallets, transactions, transfers, tags, wallet checkpoints)
+- Calendar commands
+- External projects support and remote devbox tooling
+- Comprehensive error handling, full TypeScript types, and Zod validation
+
+<Note>
+  Do not treat any version number quoted in this page as exact — the SDK is on a
+  fast release cadence. Always check the linked changelog or npm for the current
+  version.
+</Note>
 
 ## License
 
 MIT
-```

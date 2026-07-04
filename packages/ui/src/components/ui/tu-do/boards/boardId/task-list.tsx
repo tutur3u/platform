@@ -10,6 +10,7 @@ import { useTranslations } from 'next-intl';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import type { DragPreviewPosition } from './kanban/dnd/use-kanban-dnd';
 import { MeasuredTaskCard } from './task';
+import type { TaskCardAssigneeMemberSource } from './task-card/task-card';
 
 const VIRTUALIZE_THRESHOLD = 60; // only virtualize for fairly large lists
 const ESTIMATED_ITEM_HEIGHT = 96; // px including margin (space-y-2 gap)
@@ -33,6 +34,8 @@ interface VirtualizedTaskListProps {
   isMultiSelectMode?: boolean;
   selectedTasks?: Set<string>;
   isPersonalWorkspace?: boolean;
+  canUseBoardAssignees?: boolean;
+  assigneeMemberSource?: TaskCardAssigneeMemberSource;
   onTaskSelect?: (taskId: string, event: React.MouseEvent) => void;
   onClearSelection?: () => void;
   dragPreviewPosition?: DragPreviewPosition | null;
@@ -43,6 +46,7 @@ interface VirtualizedTaskListProps {
   onLoadMore?: () => void;
   hasMore?: boolean;
   isLoadingMore?: boolean;
+  readOnly?: boolean;
 }
 
 interface TaskListContentProps {
@@ -55,6 +59,8 @@ interface TaskListContentProps {
   isMultiSelectMode?: boolean;
   selectedTasks?: Set<string>;
   isPersonalWorkspace?: boolean;
+  canUseBoardAssignees?: boolean;
+  assigneeMemberSource?: TaskCardAssigneeMemberSource;
   onTaskSelect?: (taskId: string, event: React.MouseEvent) => void;
   onClearSelection?: () => void;
   dragPreviewPosition?: DragPreviewPosition | null;
@@ -64,6 +70,7 @@ interface TaskListContentProps {
   bulkUpdateCustomDueDate?: (date: Date | null) => Promise<void>;
   startIndex?: number;
   taskOrder?: Pick<Task, 'id'>[];
+  readOnly?: boolean;
 }
 
 export function getTaskDragPreviewSlotIndex({
@@ -123,6 +130,8 @@ function TaskListContent({
   isMultiSelectMode,
   selectedTasks,
   isPersonalWorkspace,
+  canUseBoardAssignees,
+  assigneeMemberSource,
   onTaskSelect,
   onClearSelection,
   dragPreviewPosition,
@@ -132,6 +141,7 @@ function TaskListContent({
   bulkUpdateCustomDueDate,
   startIndex = 0,
   taskOrder = tasks,
+  readOnly = false,
 }: TaskListContentProps) {
   const slotIndex = getTaskDragPreviewSlotIndex({
     columnId: column.id,
@@ -162,6 +172,8 @@ function TaskListContent({
               )}
               isMultiSelectMode={isMultiSelectMode}
               isPersonalWorkspace={isPersonalWorkspace}
+              canUseBoardAssignees={canUseBoardAssignees}
+              assigneeMemberSource={assigneeMemberSource}
               onSelect={onTaskSelect}
               onClearSelection={onClearSelection}
               suppressSortableTransform={suppressSortableTransform}
@@ -170,6 +182,7 @@ function TaskListContent({
               optimisticUpdateInProgress={optimisticUpdateInProgress}
               selectedTasks={selectedTasks}
               bulkUpdateCustomDueDate={bulkUpdateCustomDueDate}
+              readOnly={readOnly}
             />
             {slotIndex === globalIndex + 1 && (
               <DragPreviewSlot
@@ -228,6 +241,8 @@ function VirtualizedTaskListInner({
   isMultiSelectMode,
   selectedTasks,
   isPersonalWorkspace,
+  canUseBoardAssignees,
+  assigneeMemberSource,
   onTaskSelect,
   onClearSelection,
   dragPreviewPosition,
@@ -238,6 +253,7 @@ function VirtualizedTaskListInner({
   onLoadMore,
   hasMore,
   isLoadingMore,
+  readOnly = false,
 }: VirtualizedTaskListProps) {
   const t = useTranslations('common');
   const tTasks = useTranslations('ws-tasks');
@@ -465,6 +481,8 @@ function VirtualizedTaskListInner({
                 isMultiSelectMode={isMultiSelectMode}
                 selectedTasks={selectedTasks}
                 isPersonalWorkspace={isPersonalWorkspace}
+                canUseBoardAssignees={canUseBoardAssignees}
+                assigneeMemberSource={assigneeMemberSource}
                 onTaskSelect={onTaskSelect}
                 onClearSelection={onClearSelection}
                 dragPreviewPosition={dragPreviewPosition}
@@ -474,6 +492,7 @@ function VirtualizedTaskListInner({
                 bulkUpdateCustomDueDate={bulkUpdateCustomDueDate}
                 startIndex={startIndex}
                 taskOrder={tasks}
+                readOnly={readOnly}
               />
             </div>
           </div>
@@ -494,6 +513,8 @@ function VirtualizedTaskListInner({
             isMultiSelectMode={isMultiSelectMode}
             selectedTasks={selectedTasks}
             isPersonalWorkspace={isPersonalWorkspace}
+            canUseBoardAssignees={canUseBoardAssignees}
+            assigneeMemberSource={assigneeMemberSource}
             onTaskSelect={onTaskSelect}
             onClearSelection={onClearSelection}
             dragPreviewPosition={dragPreviewPosition}
@@ -502,6 +523,7 @@ function VirtualizedTaskListInner({
             optimisticUpdateInProgress={optimisticUpdateInProgress}
             bulkUpdateCustomDueDate={bulkUpdateCustomDueDate}
             taskOrder={tasks}
+            readOnly={readOnly}
           />
           {loadMoreSentinel}
         </SortableContext>

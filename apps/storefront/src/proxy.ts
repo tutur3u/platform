@@ -27,6 +27,8 @@ const PUBLIC_STOREFRONT_API_PATTERN =
 const PUBLIC_STOREFRONT_ANALYTICS_API_PATTERN =
   /^\/api\/v1\/inventory\/storefronts\/[^/]+\/analytics\/events\/?$/u;
 const PUBLIC_ORDER_API_PATTERN = /^\/api\/v1\/inventory\/orders\/[^/]+\/?$/u;
+const PUBLIC_SQUARE_WEBHOOK_API_PATTERN =
+  /^\/api\/v1\/inventory\/square\/webhook(?:\/[^/]+)?\/?$/u;
 
 function stripLocale(pathname: string) {
   const segments = pathname.split('/').filter(Boolean);
@@ -54,16 +56,28 @@ function getNextValue(request: NextRequest) {
 
 function isPublicStorefrontPath(unlocalizedPath: string) {
   if (unlocalizedPath === '/') return true;
+  if (unlocalizedPath === '/orders') return false;
   if (
     unlocalizedPath.startsWith('/login') ||
-    unlocalizedPath.startsWith('/verify-token') ||
-    unlocalizedPath.startsWith('/store')
+    unlocalizedPath.startsWith('/verify-token')
   ) {
     return true;
   }
 
-  const [, , childPath] = unlocalizedPath.split('/');
-  return childPath !== 'checkout';
+  const segments = unlocalizedPath.split('/').filter(Boolean);
+
+  if (segments[0] === 'store') {
+    const [, , childPath, publicToken] = segments;
+    if (childPath === 'checkout') return false;
+    if (childPath === 'orders' && !publicToken) return false;
+    return true;
+  }
+
+  const [, childPath, publicToken] = segments;
+  if (childPath === 'checkout') return false;
+  if (childPath === 'orders' && !publicToken) return false;
+
+  return true;
 }
 
 function getCanonicalLocaleRedirect(request: NextRequest) {
@@ -105,6 +119,10 @@ function isPublicStorefrontApiRequest(request: NextRequest) {
     method === 'POST' &&
     PUBLIC_STOREFRONT_ANALYTICS_API_PATTERN.test(pathname)
   ) {
+    return true;
+  }
+
+  if (method === 'POST' && PUBLIC_SQUARE_WEBHOOK_API_PATTERN.test(pathname)) {
     return true;
   }
 

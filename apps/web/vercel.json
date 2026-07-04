@@ -16,10 +16,6 @@
       "schedule": "0 */12 * * *"
     },
     {
-      "path": "/api/cron/inventory/polar-product-sync",
-      "schedule": "0 */6 * * *"
-    },
-    {
       "path": "/api/cron/process-notification-batches",
       "schedule": "*/15 * * * *"
     },
@@ -32,23 +28,11 @@
       "schedule": "*/15 * * * *"
     },
     {
-      "path": "/api/cron/calendar/provider-sync",
-      "schedule": "*/15 * * * *"
-    },
-    {
-      "path": "/api/cron/calendar/smart-schedule",
-      "schedule": "0 */6 * * *"
-    },
-    {
       "path": "/api/cron/tasks/deadline-reminders",
       "schedule": "0 */4 * * *"
     },
     {
-      "path": "/api/cron/infrastructure/sample-resources",
-      "schedule": "* * * * *"
-    },
-    {
-      "path": "/api/cron/infrastructure/docker-recovery-alerts",
+      "path": "/api/cron/workspaces/managed-jobs",
       "schedule": "* * * * *"
     }
   ]

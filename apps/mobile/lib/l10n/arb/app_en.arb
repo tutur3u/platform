@@ -1547,6 +1547,76 @@
     "financeOverviewLabel": "Overview",
     "financeActivityLabel": "Activity",
     "financeManageLabel": "Manage",
+    "financeCheckpointsShortLabel": "Checkpoints",
+    "financeCheckpointsTitle": "Wallet checkpoints",
+    "financeCheckpointsDescription": "Record real balances, compare ledger movement, and resolve differences between checks.",
+    "financeCheckpointsOverviewHint": "Record actual balances and review unresolved audit windows.",
+    "financeCheckpointsWalletsTitle": "Wallet audit",
+    "financeCheckpointsWalletsSubtitle": "Pick a wallet to review its latest checkpoint and reconciliation windows.",
+    "financeCheckpointsLatest": "Latest checkpoint",
+    "financeCheckpointsRecord": "Record checkpoint",
+    "financeCheckpointsEdit": "Edit checkpoint",
+    "financeCheckpointsBatchRecord": "All-wallet check",
+    "financeCheckpointsBatchDescription": "Enter actual balances for every wallet you want to checkpoint at the same time.",
+    "financeCheckpointsBatchSaved": "Wallet checkpoints saved",
+    "financeCheckpointsSaved": "Checkpoint saved",
+    "financeCheckpointsDeleted": "Checkpoint deleted",
+    "financeCheckpointsDelete": "Delete checkpoint",
+    "financeCheckpointsDeleteDescription": "Delete this checkpoint and recalculate the wallet audit timeline.",
+    "financeCheckpointsRecordDescription": "Save the actual balance visible in {wallet}.",
+    "@financeCheckpointsRecordDescription": {
+        "placeholders": {
+            "wallet": { "type": "String" }
+        }
+    },
+    "financeCheckpointsActualBalance": "Actual balance",
+    "financeCheckpointsActualBalanceWithCurrency": "Actual balance ({currency})",
+    "@financeCheckpointsActualBalanceWithCurrency": {
+        "placeholders": {
+            "currency": { "type": "String" }
+        }
+    },
+    "financeCheckpointsLedgerBalance": "Ledger balance",
+    "financeCheckpointsCurrentVariance": "Current variance",
+    "financeCheckpointsActualDelta": "Actual delta",
+    "financeCheckpointsLedgerDelta": "Ledger delta",
+    "financeCheckpointsVariance": "Variance",
+    "financeCheckpointsVarianceValue": "Variance: {value}",
+    "@financeCheckpointsVarianceValue": {
+        "placeholders": {
+            "value": { "type": "String" }
+        }
+    },
+    "financeCheckpointsCheckedAt": "Checked at",
+    "financeCheckpointsCheckedAtRequired": "Enter a valid checked-at time",
+    "financeCheckpointsNote": "Note",
+    "financeCheckpointsSharedNote": "Shared note",
+    "financeCheckpointsNotePlaceholder": "Optional context for this checkpoint",
+    "financeCheckpointsAmountRequired": "Enter a valid actual balance",
+    "financeCheckpointsEntriesRequired": "Enter at least one wallet balance",
+    "financeCheckpointsWindows": "Reconciliation windows",
+    "financeCheckpointsWindowsSubtitle": "Each window compares real movement against ledger movement between two checkpoints.",
+    "financeCheckpointsTransactionCountHint": "Transaction counts are based on ledger activity inside each window.",
+    "financeCheckpointsTimeline": "Checkpoint timeline",
+    "financeCheckpointsReconcile": "Reconcile",
+    "financeCheckpointsReconcileDescription": "Create a non-reporting adjustment transaction for the signed variance in this window.",
+    "financeCheckpointsCreateReconciliation": "Create reconciliation",
+    "financeCheckpointsReconciliationCreated": "Reconciliation transaction created",
+    "financeCheckpointsReconciliationClean": "Checkpoint is already clean",
+    "financeCheckpointsReconcileDefaultDescription": "Wallet reconciliation for {wallet}",
+    "@financeCheckpointsReconcileDefaultDescription": {
+        "placeholders": {
+            "wallet": { "type": "String" }
+        }
+    },
+    "financeCheckpointsCategory": "Category",
+    "financeCheckpointsNoCategory": "No category",
+    "financeCheckpointsDescriptionLabel": "Description",
+    "financeCheckpointsNoCheckpoint": "No checkpoint",
+    "financeCheckpointsNoCheckpointShort": "No checkpoint",
+    "financeCheckpointsNoCheckpointDetail": "Record a checkpoint to start audited balance tracking.",
+    "financeCheckpointsNoWallets": "No wallets available",
+    "financeCheckpointsNoWalletsDetail": "Create wallets before recording finance checkpoints.",
     "financeOverviewEyebrow": "Workspace snapshot",
     "financeOverviewCrossCurrencyHint": "Includes converted balances across wallets. Base currency: {currency}.",
     "@financeOverviewCrossCurrencyHint": {

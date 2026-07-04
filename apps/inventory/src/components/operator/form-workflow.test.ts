@@ -94,14 +94,17 @@ describe('Inventory operator form workflows', () => {
 
   it('supports direct creation for simple setup-backed combobox fields', () => {
     const productSource = source('product-create-dialog.tsx');
+    const productStockSource = source('product-stock-editor.tsx');
     const setupBatchSource = source('setup-batch-section.tsx');
-    const costingSource = source('costing-profile-form.tsx');
+    const costingSource = source('costing-profile-dialog.tsx');
 
     expect(productSource).toContain('createInventoryProductCategory');
     expect(productSource).toContain('createInventoryOwner');
     expect(productSource).toContain('createInventoryManufacturer');
     expect(productSource).toContain('createInventoryUnit');
     expect(productSource).toContain('createInventoryWarehouse');
+    expect(productStockSource).toContain('createInventoryUnit');
+    expect(productStockSource).toContain('createInventoryWarehouse');
     expect(setupBatchSource).toContain('createInventorySupplier');
     expect(setupBatchSource).toContain('createInventoryWarehouse');
     expect(costingSource).toContain('createInventoryProductCategory');
@@ -138,10 +141,12 @@ describe('Inventory operator form workflows', () => {
       'deleteInventoryStorefront'
     );
     expect(source('commerce-panel.tsx')).not.toContain('deleteInventorySale');
-    expect(source('storefront-listings-panel.tsx')).toContain('LifecyclePanel');
+    expect(source('storefront-listing-editor-dialog.tsx')).toContain(
+      'LifecyclePanel'
+    );
     expect(source('product-row-actions.tsx')).toContain('LifecyclePanel');
     expect(source('bundle-editor-dialog.tsx')).toContain('LifecyclePanel');
-    expect(source('costing-profile-list.tsx')).toContain('LifecyclePanel');
+    expect(source('costing-profile-dialog.tsx')).toContain('LifecyclePanel');
     expect(source('setup-resource-section.tsx')).toContain('LifecyclePanel');
     expect(source('setup-batch-section.tsx')).toContain('LifecyclePanel');
   });
@@ -170,7 +175,7 @@ describe('Inventory operator form workflows', () => {
   it('uses single-form create flows instead of sequential steppers', () => {
     for (const fileName of [
       'bundle-form-dialog.tsx',
-      'costing-profile-form.tsx',
+      'costing-profile-dialog.tsx',
       'product-create-dialog.tsx',
       'storefront-form-dialog.tsx',
     ]) {
@@ -218,27 +223,36 @@ describe('Inventory operator form workflows', () => {
   it('creates product stock rows only when stock is explicit and supports unlimited stock', () => {
     const productSource = source('product-create-dialog.tsx');
     const rowActionsSource = source('product-row-actions.tsx');
+    const stockEditorSource = source('product-stock-editor.tsx');
 
     expect(productSource).toContain('shouldCreateStockRow');
     expect(productSource).toContain(
       'amount: form.unlimitedStock ? null : Number(amountValue || 0)'
     );
     expect(productSource).toContain('disabled={form.unlimitedStock}');
-    expect(rowActionsSource).toContain(
-      'amount: unlimitedStock ? null : Number(amount || 0)'
+    expect(rowActionsSource).toContain('stockSaveState.shouldSave');
+    expect(rowActionsSource).toContain('inventory: stockSaveState.inventory');
+    expect(stockEditorSource).toContain('getInitialProductStockRows');
+    expect(stockEditorSource).toContain('getProductStockSaveState');
+    expect(stockEditorSource).toContain(
+      'amount: row.unlimitedStock ? null : Number(row.amount || 0)'
     );
-    expect(rowActionsSource).toContain('disabled={unlimitedStock}');
-    expect(rowActionsSource).toContain('stockAmount === null');
+    expect(stockEditorSource).toContain('disabled={row.unlimitedStock}');
     expect(source('products-table.tsx')).toContain('stockState.isUnlimited');
   });
 
   it('connects costing profiles back to catalog products', () => {
-    const costingSource = source('costing-profile-form.tsx');
+    const costingSource = source('costing-profile-dialog.tsx');
+    const costingStateSource = source('costing-profile-form-state.ts');
     const tableSource = source('products-table.tsx');
+    const dataHookSource = source('use-inventory-data.ts');
 
-    expect(costingSource).toContain('productId: productId || null');
+    expect(costingStateSource).toContain('productId: form.productId || null');
     expect(costingSource).toContain('handleProductChange');
     expect(costingSource).toContain('product.inventory?.[0]?.price');
+    expect(dataHookSource).toMatch(
+      /enabled:\s*\[[\s\S]*'costing'[\s\S]*\]\.includes\(view\),\s*queryFn:\s*\(\)\s*=>\s*listInventoryProducts/u
+    );
     expect(tableSource).toContain('hasCostingCoverage');
     expect(tableSource).toContain("t('badges.costingReady')");
   });
@@ -259,6 +273,23 @@ describe('Inventory operator form workflows', () => {
       'inventory.operator.columns.visibility',
       'inventory.operator.forms.costingCoverageMissing',
       'inventory.operator.forms.costingCoverageReady',
+      'inventory.operator.forms.addStockRow',
+      'inventory.operator.forms.addCategoryComponent',
+      'inventory.operator.forms.categoryCandidateScope',
+      'inventory.operator.forms.categoryChoiceMode',
+      'inventory.operator.forms.duplicateStockTargetHint',
+      'inventory.operator.forms.fixedStockMode',
+      'inventory.operator.forms.pricingMode',
+      'inventory.operator.forms.removeStockRow',
+      'inventory.operator.forms.revenueSharePartner',
+      'inventory.operator.forms.revenueShareSplitPercent',
+      'inventory.operator.forms.stockRowDescription',
+      'inventory.operator.forms.stockRowTitle',
+      'inventory.operator.forms.stockRow',
+      'inventory.operator.stockWorkspace.tabs.stock',
+      'inventory.operator.stockWorkspace.tabs.warehouses',
+      'inventory.operator.stockWorkspace.warehousesDescription',
+      'inventory.operator.stockWorkspace.warehousesTitle',
     ];
 
     for (const locale of ['en', 'vi'] as const) {
@@ -277,6 +308,7 @@ describe('Inventory operator form workflows', () => {
     const rowsSource = source('simple-rows.tsx');
 
     expect(productsSource).toContain("view === 'stock'");
+    expect(productsSource).toContain('toStockTableRows');
     expect(productsSource).toContain("t('columns.readiness')");
     expect(productsSource).toContain("t('columns.coverage')");
     expect(productsSource).toContain("t('columns.available')");
@@ -295,10 +327,38 @@ describe('Inventory operator form workflows', () => {
 
   it('creates bundles with stock-backed component payloads', () => {
     const bundleSource = source('bundle-form-dialog.tsx');
+    const pickerSource = source('bundle-component-picker.tsx');
 
     expect(bundleSource).toContain('components: components.map');
+    expect(bundleSource).toContain(
+      'categoryComponents: categoryComponents.map'
+    );
+    expect(bundleSource).toContain('pricingMode: categoryComponents.length');
+    expect(bundleSource).toContain('categoryCandidateScope:');
     expect(bundleSource).toContain('productId: component.productId');
     expect(bundleSource).toContain('unitId: component.unitId');
     expect(bundleSource).toContain('warehouseId: component.warehouseId');
+    expect(pickerSource).toContain("t('fixedStockMode')");
+    expect(pickerSource).toContain("t('categoryChoiceMode')");
+    expect(pickerSource).toContain('selectedInventory');
+    expect(pickerSource).toContain('createStockKey');
+    expect(pickerSource).not.toContain('inventory?.[0]');
+  });
+
+  it('renders stock-row revenue share controls separately from product ownership', () => {
+    const createSource = source('product-create-dialog.tsx');
+    const editorSource = source('product-stock-editor.tsx');
+    const formTypesSource = source('product-form-types.ts');
+
+    expect(formTypesSource).toContain('revenueSharePartnerId');
+    expect(formTypesSource).toContain('revenueShareSplitPercent');
+    expect(createSource).toContain('revenue_share_partner_id');
+    expect(createSource).toContain('revenue_share_bps');
+    expect(createSource).toContain("t('revenueSharePartner')");
+    expect(createSource).toContain("t('revenueShareSplitPercent')");
+    expect(editorSource).toContain('revenueSharePartnerId');
+    expect(editorSource).toContain('revenueShareSplitPercent');
+    expect(editorSource).toContain('revenue_share_partner_id');
+    expect(editorSource).toContain('revenue_share_bps');
   });
 });

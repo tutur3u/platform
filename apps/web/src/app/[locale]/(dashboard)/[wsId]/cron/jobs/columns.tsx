@@ -2,13 +2,13 @@
 
 import type { ColumnDef } from '@tanstack/react-table';
 import { CheckCircle, Clock, PowerOff, XCircle } from '@tuturuuu/icons';
-import type { WorkspaceCronJob } from '@tuturuuu/types';
 import type { ColumnGeneratorOptions } from '@tuturuuu/ui/custom/tables/data-table';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import parser from 'cron-parser';
 import cronstrue from 'cronstrue';
 import moment from 'moment';
 import Link from 'next/link';
+import type { ManagedWorkspaceCronJob } from '../types';
 import { RowActions } from './row-actions';
 
 function getNextRunTime(schedule: string, lastRun?: string | null) {
@@ -77,7 +77,7 @@ export const getColumns = ({
   t,
   namespace,
   extraData,
-}: ColumnGeneratorOptions<WorkspaceCronJob>): ColumnDef<WorkspaceCronJob>[] => [
+}: ColumnGeneratorOptions<ManagedWorkspaceCronJob>): ColumnDef<ManagedWorkspaceCronJob>[] => [
   {
     accessorKey: 'id',
     header: ({ column }) => (
@@ -132,7 +132,37 @@ export const getColumns = ({
     },
   },
   {
-    accessorKey: 'last_run',
+    accessorKey: 'endpoint_url',
+    header: ({ column }) => (
+      <DataTableColumnHeader
+        t={t}
+        column={column}
+        title={t(`${namespace}.endpoint_url`)}
+      />
+    ),
+    cell: ({ row }) => (
+      <div className="line-clamp-1 min-w-48">
+        {(row.getValue('endpoint_url') as string | null) || '-'}
+      </div>
+    ),
+  },
+  {
+    accessorKey: 'last_status',
+    header: ({ column }) => (
+      <DataTableColumnHeader
+        t={t}
+        column={column}
+        title={t(`${namespace}.last_status`)}
+      />
+    ),
+    cell: ({ row }) => (
+      <div className="min-w-32">
+        {(row.getValue('last_status') as string | null) || '-'}
+      </div>
+    ),
+  },
+  {
+    accessorKey: 'last_run_at',
     header: ({ column }) => (
       <DataTableColumnHeader
         t={t}
@@ -142,14 +172,14 @@ export const getColumns = ({
     ),
     cell: ({ row }) => (
       <div className="min-w-32">
-        {row.getValue('last_run')
-          ? moment(row.getValue('last_run')).format('DD/MM/YYYY HH:mm')
+        {row.getValue('last_run_at')
+          ? moment(row.getValue('last_run_at')).format('DD/MM/YYYY HH:mm')
           : '-'}
       </div>
     ),
   },
   {
-    accessorKey: 'next_run',
+    accessorKey: 'next_run_at',
     header: ({ column }) => (
       <DataTableColumnHeader
         t={t}
@@ -159,8 +189,8 @@ export const getColumns = ({
     ),
     cell: ({ row }) => {
       const schedule = row.getValue('schedule') as string;
-      const lastRun = row.getValue('last_run') as string;
-      const nextRun = row.getValue('next_run') as string;
+      const lastRun = row.getValue('last_run_at') as string;
+      const nextRun = row.getValue('next_run_at') as string;
 
       // Use stored next_run if available, otherwise calculate it
       const nextRunTime =

@@ -54,6 +54,8 @@ interface SubscriptionAttendanceSummaryProps {
   };
   totalSessions: number;
   attendanceRate: number;
+  coverageRangeLabel: string;
+  prepaidMonthCount: number;
 }
 
 export function SubscriptionAttendanceSummary({
@@ -73,6 +75,8 @@ export function SubscriptionAttendanceSummary({
   attendanceStats,
   totalSessions,
   attendanceRate,
+  coverageRangeLabel,
+  prepaidMonthCount,
 }: SubscriptionAttendanceSummaryProps): React.ReactElement {
   const t = useTranslations();
 
@@ -82,6 +86,8 @@ export function SubscriptionAttendanceSummary({
     ? selectedMonth
     : (availableMonths[0]?.value ?? selectedMonth);
   const monthLabel = formatMonthLabel(resolvedSelectedMonth, locale);
+  const displayedRangeLabel =
+    prepaidMonthCount > 1 ? coverageRangeLabel : monthLabel;
 
   return (
     <Card>
@@ -98,17 +104,25 @@ export function SubscriptionAttendanceSummary({
           <CardDescription className="flex flex-col gap-1">
             {selectedGroupIds.length === 1
               ? t('ws-invoices.attendance_for_month', {
-                  month: monthLabel,
+                  month: displayedRangeLabel,
                 })
               : t('ws-invoices.combined_attendance_for_month', {
                   count: selectedGroupIds.length,
-                  month: monthLabel,
-                  default: `Combined attendance from ${selectedGroupIds.length} groups for ${monthLabel}`,
+                  month: displayedRangeLabel,
+                  default: `Combined attendance from ${selectedGroupIds.length} groups for ${displayedRangeLabel}`,
                 })}
             <span className="text-muted-foreground text-xs">
               {isSelectedMonthPaid
-                ? t('ws-invoices.all_groups_paid_for_month')
-                : t('ws-invoices.some_groups_unpaid_for_month')}
+                ? t(
+                    prepaidMonthCount > 1
+                      ? 'ws-invoices.all_groups_paid_for_range'
+                      : 'ws-invoices.all_groups_paid_for_month'
+                  )
+                : t(
+                    prepaidMonthCount > 1
+                      ? 'ws-invoices.some_groups_unpaid_for_range'
+                      : 'ws-invoices.some_groups_unpaid_for_month'
+                  )}
             </span>
           </CardDescription>
         </div>

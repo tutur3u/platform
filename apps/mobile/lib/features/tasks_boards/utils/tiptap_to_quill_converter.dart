@@ -21,7 +21,7 @@ Document tipTapJsonToQuillDocument(String? rawDescription) {
 
 Delta _tipTapDocToDelta(Map<String, dynamic> doc) {
   final delta = Delta();
-  final content = (doc['content'] as List?)?.cast<Object?>() ?? const [];
+  final content = _objectList(doc['content']);
 
   for (final node in content) {
     _appendBlockNodeToDelta(node, delta);
@@ -40,7 +40,7 @@ void _appendBlockNodeToDelta(Object? node, Delta delta, {int indent = 0}) {
   }
 
   final type = node['type'];
-  final attrs = node['attrs'] as Map?;
+  final attrs = _objectMap(node['attrs']);
 
   if (type == 'paragraph') {
     _appendInlineContentToDelta(node['content'], delta);
@@ -64,8 +64,7 @@ void _appendBlockNodeToDelta(Object? node, Delta delta, {int indent = 0}) {
   }
 
   if (type == 'blockquote') {
-    final quoteContent =
-        (node['content'] as List?)?.cast<Object?>() ?? const [];
+    final quoteContent = _objectList(node['content']);
     if (quoteContent.isEmpty) {
       delta.insert('\n', {'blockquote': true});
       return;
@@ -102,15 +101,14 @@ void _appendBlockNodeToDelta(Object? node, Delta delta, {int indent = 0}) {
   }
 
   if (type == 'bulletList' || type == 'orderedList') {
-    final listItems = (node['content'] as List?)?.cast<Object?>() ?? const [];
+    final listItems = _objectList(node['content']);
     final listKind = type == 'orderedList' ? 'ordered' : 'bullet';
     for (final item in listItems) {
       if (item is! Map<String, dynamic> || item['type'] != 'listItem') {
         continue;
       }
 
-      final itemParagraphs =
-          (item['content'] as List?)?.cast<Object?>() ?? const [];
+      final itemParagraphs = _objectList(item['content']);
       if (itemParagraphs.isEmpty) {
         final lineAttrs = <String, dynamic>{'list': listKind};
         if (indent > 0) lineAttrs['indent'] = indent;
@@ -123,7 +121,7 @@ void _appendBlockNodeToDelta(Object? node, Delta delta, {int indent = 0}) {
             paragraph['type'] == 'paragraph') {
           _appendInlineContentToDelta(paragraph['content'], delta);
           final lineAttrs = _lineAttrsWithTextAlign(
-            paragraph['attrs'] as Map?,
+            _objectMap(paragraph['attrs']),
             {'list': listKind},
           );
           if (indent > 0) lineAttrs['indent'] = indent;
@@ -137,16 +135,15 @@ void _appendBlockNodeToDelta(Object? node, Delta delta, {int indent = 0}) {
   }
 
   if (type == 'taskList') {
-    final items = (node['content'] as List?)?.cast<Object?>() ?? const [];
+    final items = _objectList(node['content']);
     for (final item in items) {
       if (item is! Map<String, dynamic> || item['type'] != 'taskItem') {
         continue;
       }
 
-      final checked = (item['attrs'] as Map?)?['checked'] == true;
+      final checked = _objectMap(item['attrs'])?['checked'] == true;
       final listKind = checked ? 'checked' : 'unchecked';
-      final itemParagraphs =
-          (item['content'] as List?)?.cast<Object?>() ?? const [];
+      final itemParagraphs = _objectList(item['content']);
       if (itemParagraphs.isEmpty) {
         final lineAttrs = <String, dynamic>{'list': listKind};
         if (indent > 0) lineAttrs['indent'] = indent;
@@ -159,7 +156,7 @@ void _appendBlockNodeToDelta(Object? node, Delta delta, {int indent = 0}) {
             paragraph['type'] == 'paragraph') {
           _appendInlineContentToDelta(paragraph['content'], delta);
           final lineAttrs = _lineAttrsWithTextAlign(
-            paragraph['attrs'] as Map?,
+            _objectMap(paragraph['attrs']),
             {'list': listKind},
           );
           if (indent > 0) lineAttrs['indent'] = indent;
@@ -183,9 +180,9 @@ void _appendBlockNodeToDelta(Object? node, Delta delta, {int indent = 0}) {
   }
 
   if (type == 'video' || type == 'youtube') {
-    final attrs = node['attrs'] as Map?;
+    final attrs = _objectMap(node['attrs']);
     final src =
-        ((attrs?['src'] as String?) ?? (attrs?['videoId'] as String?))
+        (_stringOrNull(attrs?['src']) ?? _stringOrNull(attrs?['videoId']))
             ?.trim() ??
         '';
     if (src.isNotEmpty) {
@@ -209,7 +206,7 @@ void _appendBlockNodeToDelta(Object? node, Delta delta, {int indent = 0}) {
 }
 
 void _appendInlineContentToDelta(Object? content, Delta delta) {
-  final nodes = (content as List?)?.cast<Object?>() ?? const [];
+  final nodes = _objectList(content);
   for (final child in nodes) {
     if (child is! Map<String, dynamic>) {
       continue;
@@ -217,7 +214,7 @@ void _appendInlineContentToDelta(Object? content, Delta delta) {
 
     final type = child['type'];
     if (type == 'text') {
-      final text = child['text'] as String?;
+      final text = _stringOrNull(child['text']);
       if (text == null || text.isEmpty) {
         continue;
       }
@@ -236,7 +233,7 @@ void _appendInlineContentToDelta(Object? content, Delta delta) {
     }
 
     if (type == 'image' || type == 'imageResize') {
-      final payload = _quillImageEmbedValue(child['attrs'] as Map?);
+      final payload = _quillImageEmbedValue(_objectMap(child['attrs']));
       if (payload != null) {
         delta.insert({'image': payload});
       }
@@ -251,7 +248,8 @@ void _appendInlineContentToDelta(Object? content, Delta delta) {
     }
 
     if (type == 'video') {
-      final src = ((child['attrs'] as Map?)?['src'] as String?)?.trim() ?? '';
+      final src =
+          _stringOrNull(_objectMap(child['attrs'])?['src'])?.trim() ?? '';
       if (src.isNotEmpty) {
         delta.insert({'video': src});
       }
@@ -259,9 +257,9 @@ void _appendInlineContentToDelta(Object? content, Delta delta) {
     }
 
     if (type == 'youtube') {
-      final attrs = child['attrs'] as Map?;
+      final attrs = _objectMap(child['attrs']);
       final src =
-          ((attrs?['src'] as String?) ?? (attrs?['videoId'] as String?))
+          (_stringOrNull(attrs?['src']) ?? _stringOrNull(attrs?['videoId']))
               ?.trim() ??
           '';
       if (src.isNotEmpty) {
@@ -273,7 +271,7 @@ void _appendInlineContentToDelta(Object? content, Delta delta) {
 }
 
 Map<String, dynamic> _quillAttrsFromTipTapMarks(Object? marksValue) {
-  final marks = (marksValue as List?)?.cast<Object?>() ?? const [];
+  final marks = _objectList(marksValue);
   final attrs = <String, dynamic>{};
 
   for (final mark in marks) {
@@ -298,9 +296,9 @@ Map<String, dynamic> _quillAttrsFromTipTapMarks(Object? marksValue) {
       attrs['script'] = 'super';
     } else if (type == 'highlight') {
       attrs['background'] =
-          ((mark['attrs'] as Map?)?['color'] as String?) ?? '#FFF59D';
+          _stringOrNull(_objectMap(mark['attrs'])?['color']) ?? '#FFF59D';
     } else if (type == 'link') {
-      final href = (mark['attrs'] as Map?)?['href'];
+      final href = _objectMap(mark['attrs'])?['href'];
       if (href is String && href.trim().isNotEmpty) {
         attrs['link'] = href;
       }
@@ -315,7 +313,7 @@ Map<String, dynamic> _lineAttrsWithTextAlign(
   Map<String, dynamic> base = const <String, dynamic>{},
 ]) {
   final lineAttrs = <String, dynamic>{...base};
-  final textAlign = (attrs?['textAlign'] as String?)?.trim();
+  final textAlign = _stringOrNull(attrs?['textAlign'])?.trim();
   if (textAlign != null && textAlign.isNotEmpty) {
     lineAttrs['align'] = textAlign;
   }
@@ -323,17 +321,17 @@ Map<String, dynamic> _lineAttrsWithTextAlign(
 }
 
 String? _quillImageEmbedValue(Map<Object?, Object?>? attrs) {
-  final src = (attrs?['src'] as String?)?.trim() ?? '';
+  final src = _stringOrNull(attrs?['src'])?.trim() ?? '';
   if (src.isEmpty) {
     return null;
   }
 
-  final alt = (attrs?['alt'] as String?)?.trim();
-  final title = (attrs?['title'] as String?)?.trim();
+  final alt = _stringOrNull(attrs?['alt'])?.trim();
+  final title = _stringOrNull(attrs?['title'])?.trim();
   final width = attrs?['width'];
   final height = attrs?['height'];
-  final containerStyle = (attrs?['containerStyle'] as String?)?.trim();
-  final wrapperStyle = (attrs?['wrapperStyle'] as String?)?.trim();
+  final containerStyle = _stringOrNull(attrs?['containerStyle'])?.trim();
+  final wrapperStyle = _stringOrNull(attrs?['wrapperStyle'])?.trim();
 
   final hasExtraAttrs =
       (alt != null && alt.isNotEmpty) ||
@@ -359,7 +357,7 @@ String? _quillImageEmbedValue(Map<Object?, Object?>? attrs) {
 }
 
 String _flattenTipTapText(Object? nodesValue) {
-  final nodes = (nodesValue as List?)?.cast<Object?>() ?? const [];
+  final nodes = _objectList(nodesValue);
   final buffer = StringBuffer();
   for (final node in nodes) {
     if (node is! Map<String, dynamic>) {
@@ -367,12 +365,24 @@ String _flattenTipTapText(Object? nodesValue) {
     }
     final type = node['type'];
     if (type == 'text') {
-      buffer.write(node['text'] as String? ?? '');
+      buffer.write(_stringOrNull(node['text']) ?? '');
     } else {
       buffer.write(_flattenTipTapText(node['content']));
     }
   }
   return buffer.toString();
+}
+
+List<Object?> _objectList(Object? value) {
+  return value is List ? value : const [];
+}
+
+Map<Object?, Object?>? _objectMap(Object? value) {
+  return value is Map ? value : null;
+}
+
+String? _stringOrNull(Object? value) {
+  return value is String ? value : null;
 }
 
 bool _deltaEndsWithNewLine(Delta delta) {

@@ -36,36 +36,135 @@ insert into public.workspace_user_groups (
   id,
   ws_id,
   name,
-  archived,
-  sessions
+  archived
 )
 values
   (
     '00000000-0000-0000-0000-000000010101',
     '00000000-0000-0000-0000-000000010010',
     'Zed No Session',
-    false,
-    array[(current_timestamp at time zone 'Asia/Ho_Chi_Minh')::date - 1]
+    false
   ),
   (
     '00000000-0000-0000-0000-000000010102',
     '00000000-0000-0000-0000-000000010010',
     'Lớp Cô Tuyết',
-    false,
-    array[(current_timestamp at time zone 'Asia/Ho_Chi_Minh')::date]
+    false
   ),
   (
     '00000000-0000-0000-0000-000000010103',
     '00000000-0000-0000-0000-000000010010',
     'Archived Session',
-    true,
-    array[(current_timestamp at time zone 'Asia/Ho_Chi_Minh')::date]
+    true
   )
 on conflict (id) do update
 set
   name = excluded.name,
-  archived = excluded.archived,
-  sessions = excluded.sessions;
+  archived = excluded.archived;
+
+insert into private.workspace_user_group_sessions (
+  id,
+  ws_id,
+  group_id,
+  starts_at,
+  ends_at,
+  start_timezone,
+  end_timezone,
+  recurrence_instance_date,
+  source,
+  source_legacy_date
+)
+values
+  (
+    '00000000-0000-0000-0000-000000010201',
+    '00000000-0000-0000-0000-000000010010',
+    '00000000-0000-0000-0000-000000010101',
+    make_timestamptz(
+      extract(year from ((current_timestamp at time zone 'Asia/Ho_Chi_Minh')::date - 1))::integer,
+      extract(month from ((current_timestamp at time zone 'Asia/Ho_Chi_Minh')::date - 1))::integer,
+      extract(day from ((current_timestamp at time zone 'Asia/Ho_Chi_Minh')::date - 1))::integer,
+      7,
+      0,
+      0,
+      'Asia/Ho_Chi_Minh'
+    ),
+    make_timestamptz(
+      extract(year from ((current_timestamp at time zone 'Asia/Ho_Chi_Minh')::date - 1))::integer,
+      extract(month from ((current_timestamp at time zone 'Asia/Ho_Chi_Minh')::date - 1))::integer,
+      extract(day from ((current_timestamp at time zone 'Asia/Ho_Chi_Minh')::date - 1))::integer,
+      8,
+      0,
+      0,
+      'Asia/Ho_Chi_Minh'
+    ),
+    'Asia/Ho_Chi_Minh',
+    'Asia/Ho_Chi_Minh',
+    (current_timestamp at time zone 'Asia/Ho_Chi_Minh')::date - 1,
+    'test',
+    (current_timestamp at time zone 'Asia/Ho_Chi_Minh')::date - 1
+  ),
+  (
+    '00000000-0000-0000-0000-000000010202',
+    '00000000-0000-0000-0000-000000010010',
+    '00000000-0000-0000-0000-000000010102',
+    make_timestamptz(
+      extract(year from (current_timestamp at time zone 'Asia/Ho_Chi_Minh')::date)::integer,
+      extract(month from (current_timestamp at time zone 'Asia/Ho_Chi_Minh')::date)::integer,
+      extract(day from (current_timestamp at time zone 'Asia/Ho_Chi_Minh')::date)::integer,
+      7,
+      0,
+      0,
+      'Asia/Ho_Chi_Minh'
+    ),
+    make_timestamptz(
+      extract(year from (current_timestamp at time zone 'Asia/Ho_Chi_Minh')::date)::integer,
+      extract(month from (current_timestamp at time zone 'Asia/Ho_Chi_Minh')::date)::integer,
+      extract(day from (current_timestamp at time zone 'Asia/Ho_Chi_Minh')::date)::integer,
+      8,
+      0,
+      0,
+      'Asia/Ho_Chi_Minh'
+    ),
+    'Asia/Ho_Chi_Minh',
+    'Asia/Ho_Chi_Minh',
+    (current_timestamp at time zone 'Asia/Ho_Chi_Minh')::date,
+    'test',
+    (current_timestamp at time zone 'Asia/Ho_Chi_Minh')::date
+  ),
+  (
+    '00000000-0000-0000-0000-000000010203',
+    '00000000-0000-0000-0000-000000010010',
+    '00000000-0000-0000-0000-000000010103',
+    make_timestamptz(
+      extract(year from (current_timestamp at time zone 'Asia/Ho_Chi_Minh')::date)::integer,
+      extract(month from (current_timestamp at time zone 'Asia/Ho_Chi_Minh')::date)::integer,
+      extract(day from (current_timestamp at time zone 'Asia/Ho_Chi_Minh')::date)::integer,
+      7,
+      0,
+      0,
+      'Asia/Ho_Chi_Minh'
+    ),
+    make_timestamptz(
+      extract(year from (current_timestamp at time zone 'Asia/Ho_Chi_Minh')::date)::integer,
+      extract(month from (current_timestamp at time zone 'Asia/Ho_Chi_Minh')::date)::integer,
+      extract(day from (current_timestamp at time zone 'Asia/Ho_Chi_Minh')::date)::integer,
+      8,
+      0,
+      0,
+      'Asia/Ho_Chi_Minh'
+    ),
+    'Asia/Ho_Chi_Minh',
+    'Asia/Ho_Chi_Minh',
+    (current_timestamp at time zone 'Asia/Ho_Chi_Minh')::date,
+    'test',
+    (current_timestamp at time zone 'Asia/Ho_Chi_Minh')::date
+  )
+on conflict (id) do update
+set
+  starts_at = excluded.starts_at,
+  ends_at = excluded.ends_at,
+  recurrence_instance_date = excluded.recurrence_instance_date,
+  source_legacy_date = excluded.source_legacy_date;
 
 select ok(
   to_regprocedure(

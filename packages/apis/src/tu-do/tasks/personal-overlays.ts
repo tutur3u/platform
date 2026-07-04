@@ -73,11 +73,15 @@ export async function loadPersonalTaskMetadata(
   ]);
 
   if (labelResult.error) {
-    throw new Error('PERSONAL_TASK_LABELS_QUERY_FAILED');
+    throw new Error('PERSONAL_TASK_LABELS_QUERY_FAILED', {
+      cause: labelResult.error,
+    });
   }
 
   if (projectResult.error) {
-    throw new Error('PERSONAL_TASK_PROJECTS_QUERY_FAILED');
+    throw new Error('PERSONAL_TASK_PROJECTS_QUERY_FAILED', {
+      cause: projectResult.error,
+    });
   }
 
   for (const taskId of uniqueTaskIds) {
@@ -129,7 +133,7 @@ export async function ensureTaskUserOverride(
   );
 
   if (error) {
-    throw new Error('TASK_USER_OVERRIDE_UPSERT_FAILED');
+    throw new Error('TASK_USER_OVERRIDE_UPSERT_FAILED', { cause: error });
   }
 }
 
@@ -148,7 +152,9 @@ export async function replacePersonalTaskLabels(
     .eq('task_id', taskId);
 
   if (deleteError) {
-    throw new Error('PERSONAL_TASK_LABELS_DELETE_FAILED');
+    throw new Error('PERSONAL_TASK_LABELS_DELETE_FAILED', {
+      cause: deleteError,
+    });
   }
 
   const uniqueLabelIds = [...new Set(labelIds)];
@@ -167,7 +173,9 @@ export async function replacePersonalTaskLabels(
     );
 
   if (insertError && insertError.code !== '23505') {
-    throw new Error('PERSONAL_TASK_LABELS_INSERT_FAILED');
+    throw new Error('PERSONAL_TASK_LABELS_INSERT_FAILED', {
+      cause: insertError,
+    });
   }
 }
 
@@ -186,7 +194,9 @@ export async function replacePersonalTaskProjects(
     .eq('task_id', taskId);
 
   if (deleteError) {
-    throw new Error('PERSONAL_TASK_PROJECTS_DELETE_FAILED');
+    throw new Error('PERSONAL_TASK_PROJECTS_DELETE_FAILED', {
+      cause: deleteError,
+    });
   }
 
   const uniqueProjectIds = [...new Set(projectIds)];
@@ -205,7 +215,9 @@ export async function replacePersonalTaskProjects(
     );
 
   if (insertError && insertError.code !== '23505') {
-    throw new Error('PERSONAL_TASK_PROJECTS_INSERT_FAILED');
+    throw new Error('PERSONAL_TASK_PROJECTS_INSERT_FAILED', {
+      cause: insertError,
+    });
   }
 }
 
@@ -226,7 +238,7 @@ export async function addPersonalTaskLabel(
     });
 
   if (error && error.code !== '23505') {
-    throw new Error('PERSONAL_TASK_LABEL_INSERT_FAILED');
+    throw new Error('PERSONAL_TASK_LABEL_INSERT_FAILED', { cause: error });
   }
 }
 
@@ -244,7 +256,7 @@ export async function removePersonalTaskLabel(
     .eq('label_id', labelId);
 
   if (error) {
-    throw new Error('PERSONAL_TASK_LABEL_DELETE_FAILED');
+    throw new Error('PERSONAL_TASK_LABEL_DELETE_FAILED', { cause: error });
   }
 }
 
@@ -265,7 +277,7 @@ export async function addPersonalTaskProject(
     });
 
   if (error && error.code !== '23505') {
-    throw new Error('PERSONAL_TASK_PROJECT_INSERT_FAILED');
+    throw new Error('PERSONAL_TASK_PROJECT_INSERT_FAILED', { cause: error });
   }
 }
 
@@ -283,6 +295,6 @@ export async function removePersonalTaskProject(
     .eq('project_id', projectId);
 
   if (error) {
-    throw new Error('PERSONAL_TASK_PROJECT_DELETE_FAILED');
+    throw new Error('PERSONAL_TASK_PROJECT_DELETE_FAILED', { cause: error });
   }
 }

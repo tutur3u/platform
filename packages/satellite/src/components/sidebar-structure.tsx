@@ -1,9 +1,10 @@
 'use client';
 
-import { ArrowLeft } from '@tuturuuu/icons';
+import { ArrowLeft, Boxes } from '@tuturuuu/icons';
 import type { NavLink } from '@tuturuuu/ui/custom/navigation';
 import { SidebarFooterActions } from '@tuturuuu/ui/custom/sidebar-footer-actions';
 import { Structure as BaseStructure } from '@tuturuuu/ui/custom/structure';
+import type { LaunchableWorkspace } from '@tuturuuu/utils/launchable-apps';
 import { setCookie } from 'cookies-next';
 import { usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
@@ -16,6 +17,7 @@ import {
 } from 'react';
 import { SIDEBAR_COLLAPSED_COOKIE_NAME } from '../constants/common';
 import { SIDEBAR_COOKIE_OPTIONS, useSidebar } from '../context/sidebar-context';
+import { AppsLauncherDialog } from './apps-launcher';
 import { SidebarStructureContent } from './sidebar-structure-content';
 import {
   SidebarStructureHeader,
@@ -50,7 +52,12 @@ export interface SidebarStructureProps {
   upgradeExternal?: boolean;
   upgradeHref?: string;
   userPopover: ReactNode;
-  workspace: { tier?: string | null } | null;
+  workspace: {
+    id?: string | null;
+    name?: string | null;
+    personal?: boolean | null;
+    tier?: string | null;
+  } | null;
   workspaceSelect: WorkspaceSelectRenderer;
   wsId: string;
   showBrandOnRoot?: boolean;
@@ -86,14 +93,28 @@ export function SidebarStructure({
   const pathname = usePathname();
   const { behavior, handleBehaviorChange } = useSidebar();
   const [isCollapsed, setIsCollapsed] = useState(defaultCollapsed);
+  const [appsLauncherOpen, setAppsLauncherOpen] = useState(false);
+  const appsLauncherLink: NavLink = useMemo(
+    () => ({
+      icon: <Boxes className="h-4 w-4" />,
+      id: 'apps-launcher',
+      onClick: () => setAppsLauncherOpen(true),
+      title: t('command_launcher.apps'),
+    }),
+    [t]
+  );
+  const navigationLinks = useMemo<(NavLink | null)[]>(
+    () => [appsLauncherLink, null, ...links],
+    [appsLauncherLink, links]
+  );
   const [navState, setNavState] = useState<NavigationState>(() => {
     const activeNavigation = findActiveNavigation({
       currentPath: pathname,
-      navLinks: links,
+      navLinks: navigationLinks,
     });
     return (
       activeNavigation ?? {
-        currentLinks: links,
+        currentLinks: navigationLinks,
         direction: 'forward',
         history: [],
         titleHistory: [],
@@ -109,22 +130,22 @@ export function SidebarStructure({
     setNavState((prevState) => {
       const activeNavigation = findActiveNavigation({
         currentPath: pathname,
-        navLinks: links,
+        navLinks: navigationLinks,
       });
       if (activeNavigation) return activeNavigation;
 
       if (prevState.history.length > 0) {
         return {
-          currentLinks: links,
+          currentLinks: navigationLinks,
           direction: 'backward',
           history: [],
           titleHistory: [],
         };
       }
 
-      return { ...prevState, currentLinks: links };
+      return { ...prevState, currentLinks: navigationLinks };
     });
-  }, [links, pathname]);
+  }, [navigationLinks, pathname]);
 
   const backButton: NavLink = useMemo(
     () => ({
@@ -134,7 +155,7 @@ export function SidebarStructure({
         setNavState((prevState) => {
           const newHistory = prevState.history.slice(0, -1);
           return {
-            currentLinks: prevState.history.at(-1) ?? links,
+            currentLinks: prevState.history.at(-1) ?? navigationLinks,
             direction: 'backward',
             history: newHistory,
             titleHistory: prevState.titleHistory.slice(0, -1),
@@ -143,7 +164,7 @@ export function SidebarStructure({
       },
       title: t('common.back'),
     }),
-    [links, t]
+    [navigationLinks, t]
   );
 
   const handleToggle = () => {
@@ -211,72 +232,84 @@ export function SidebarStructure({
           setIsCollapsed,
         })
       : sidebarContentAfter;
+  const currentWorkspace: LaunchableWorkspace = {
+    id: workspace?.id ?? wsId,
+    name: workspace?.name ?? null,
+    personal: workspace?.personal ?? false,
+  };
 
   return (
-    <BaseStructure
-      actions={actions}
-      feedbackButton={
-        <SidebarFooterActions
-          isCollapsed={isCollapsed}
-          showUpgrade={!workspace?.tier || workspace.tier === 'FREE'}
-          upgradeExternal={upgradeExternal}
-          upgradeHref={upgradeHref}
-          wsId={wsId}
-        />
-      }
-      header={null}
-      hideSizeToggle={behavior === 'hover'}
-      isCollapsed={isCollapsed}
-      mobileHeader={
-        <SidebarStructureMobileHeader
-          brandHref={brandHref}
-          currentIcon={currentLink?.icon}
-          currentTitle={currentLink?.title}
-          mobileBrand={mobileBrand}
-          showDivider={mobileHeaderDivider}
-        />
-      }
-      onMouseEnter={onMouseEnter}
-      onMouseLeave={onMouseLeave}
-      overlayOnExpand={behavior === 'hover'}
-      sidebarCollapsedWidth={sidebarCollapsedWidth}
-      sidebarExpandedWidth={sidebarExpandedWidth}
-      sidebarHeaderClassName={sidebarHeaderClassName}
-      sidebarHeaderHeight={sidebarHeaderHeight}
-      setIsCollapsed={handleToggle}
-      sidebarContent={
-        <SidebarStructureContent
-          backButton={backButton}
-          currentTitle={currentTitle}
-          extraContent={extraContent}
-          filteredCurrentLinks={filteredCurrentLinks}
-          isCollapsed={isCollapsed}
-          navState={navState}
-          setIsCollapsed={setIsCollapsed}
-          setNavState={setNavState}
-          wsId={wsId}
-        />
-      }
-      sidebarHeader={
-        <SidebarStructureHeader
-          brand={brand}
-          brandHref={brandHref}
-          collapsedBrand={collapsedBrand}
-          isCollapsed={isCollapsed}
-          linkBrand={linkBrand}
-          showBrandOnRoot={showBrandOnRoot}
-          stackWorkspaceSelect={stackWorkspaceSelect}
-          workspaceSelect={workspaceSelect}
-          wsId={wsId}
-        />
-      }
-      userPopover={userPopover}
-    >
-      {childContainerClassName ? (
-        <div className={childContainerClassName}>{children}</div>
-      ) : (
-        children
-      )}
-    </BaseStructure>
+    <>
+      <AppsLauncherDialog
+        currentWorkspace={currentWorkspace}
+        onOpenChange={setAppsLauncherOpen}
+        open={appsLauncherOpen}
+      />
+      <BaseStructure
+        actions={actions}
+        feedbackButton={
+          <SidebarFooterActions
+            isCollapsed={isCollapsed}
+            showUpgrade={!workspace?.tier || workspace.tier === 'FREE'}
+            upgradeExternal={upgradeExternal}
+            upgradeHref={upgradeHref}
+            wsId={wsId}
+          />
+        }
+        header={null}
+        hideSizeToggle={behavior === 'hover'}
+        isCollapsed={isCollapsed}
+        mobileHeader={
+          <SidebarStructureMobileHeader
+            brandHref={brandHref}
+            currentIcon={currentLink?.icon}
+            currentTitle={currentLink?.title}
+            mobileBrand={mobileBrand}
+            showDivider={mobileHeaderDivider}
+          />
+        }
+        onMouseEnter={onMouseEnter}
+        onMouseLeave={onMouseLeave}
+        overlayOnExpand={behavior === 'hover'}
+        sidebarCollapsedWidth={sidebarCollapsedWidth}
+        sidebarExpandedWidth={sidebarExpandedWidth}
+        sidebarHeaderClassName={sidebarHeaderClassName}
+        sidebarHeaderHeight={sidebarHeaderHeight}
+        setIsCollapsed={handleToggle}
+        sidebarContent={
+          <SidebarStructureContent
+            backButton={backButton}
+            currentTitle={currentTitle}
+            extraContent={extraContent}
+            filteredCurrentLinks={filteredCurrentLinks}
+            isCollapsed={isCollapsed}
+            navState={navState}
+            setIsCollapsed={setIsCollapsed}
+            setNavState={setNavState}
+            wsId={wsId}
+          />
+        }
+        sidebarHeader={
+          <SidebarStructureHeader
+            brand={brand}
+            brandHref={brandHref}
+            collapsedBrand={collapsedBrand}
+            isCollapsed={isCollapsed}
+            linkBrand={linkBrand}
+            showBrandOnRoot={showBrandOnRoot}
+            stackWorkspaceSelect={stackWorkspaceSelect}
+            workspaceSelect={workspaceSelect}
+            wsId={wsId}
+          />
+        }
+        userPopover={userPopover}
+      >
+        {childContainerClassName ? (
+          <div className={childContainerClassName}>{children}</div>
+        ) : (
+          children
+        )}
+      </BaseStructure>
+    </>
   );
 }

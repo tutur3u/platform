@@ -1,0 +1,496 @@
+#!/usr/bin/env node
+
+const fs = require('node:fs');
+const path = require('node:path');
+const { listFilesRecursive } = require('./tanstack-file-utils.js');
+const {
+  summarizeMigrationProgress,
+} = require('./tanstack-migration-progress.js');
+const {
+  applyRouteOverrides,
+  readRouteOverrides,
+} = require('./tanstack-route-overrides.js');
+
+const ROOT_DIR = path.resolve(__dirname, '..');
+const DEFAULT_APP_DIR = path.join(ROOT_DIR, 'apps', 'web', 'src', 'app');
+const DEFAULT_LEGACY_API_DIR = path.join(
+  ROOT_DIR,
+  'apps',
+  'web',
+  'src',
+  'legacy-api-routes'
+);
+const DEFAULT_MANIFEST_PATH = path.join(
+  ROOT_DIR,
+  'apps',
+  'tanstack-web',
+  'migration',
+  'route-manifest.json'
+);
+const DEFAULT_OVERRIDES_PATH = path.join(
+  ROOT_DIR,
+  'apps',
+  'tanstack-web',
+  'migration',
+  'route-overrides.json'
+);
+const ROUTE_FILE_NAMES = new Set([
+  'error.tsx',
+  'layout.tsx',
+  'loading.tsx',
+  'not-found.tsx',
+  'page.tsx',
+  'route.ts',
+]);
+const HTTP_METHODS = [
+  'GET',
+  'HEAD',
+  'POST',
+  'PUT',
+  'PATCH',
+  'DELETE',
+  'OPTIONS',
+];
+const MIGRATED_STATUSES = new Set(['accepted-removal', 'migrated']);
+
+function toPosix(relativePath) {
+  return relativePath.split(path.sep).join('/');
+}
+
+function isRouteGroup(segment) {
+  return segment.startsWith('(') && segment.endsWith(')');
+}
+
+function normalizeRouteSegment(segment) {
+  if (segment.startsWith('@') || isRouteGroup(segment)) {
+    return null;
+  }
+
+  const optionalCatchAll = segment.match(/^\[\[\.\.\.(.+)\]\]$/u);
+  if (optionalCatchAll) {
+    return `*${optionalCatchAll[1]}?`;
+  }
+
+  const catchAll = segment.match(/^\[\.\.\.(.+)\]$/u);
+  if (catchAll) {
+    return `*${catchAll[1]}`;
+  }
+
+  const dynamic = segment.match(/^\[(.+)\]$/u);
+  if (dynamic) {
+    return `:${dynamic[1]}`;
+  }
+
+  return segment;
+}
+
+function routePathFromDirectory(relativeDirectory) {
+  const segments = relativeDirectory
+    .split(/[\\/]/u)
+    .filter(Boolean)
+    .map(normalizeRouteSegment)
+    .filter(Boolean);
+
+  return segments.length ? `/${segments.join('/')}` : '/';
+}
+
+function classifyRoute(relativeFilePath) {
+  const fileName = path.posix.basename(relativeFilePath);
+  const routePath = routePathFromDirectory(
+    path.posix.dirname(relativeFilePath)
+  );
+
+  if (fileName === 'page.tsx') {
+    return {
+      kind: 'page',
+      routePath,
+      targetOwner: 'tanstack-start',
+    };
+  }
+
+  if (fileName === 'layout.tsx') {
+    return {
+      kind: 'layout',
+      routePath,
+      targetOwner: 'tanstack-start',
+    };
+  }
+
+  if (fileName === 'route.ts') {
+    if (routePath.startsWith('/api/cron')) {
+      return {
+        kind: 'cron',
+        routePath,
+        targetOwner: 'rust-backend',
+      };
+    }
+
+    if (routePath.startsWith('/api/trpc')) {
+      return {
+        kind: 'trpc',
+        routePath,
+        targetOwner: 'rust-backend',
+      };
+    }
+
+    return {
+      kind: routePath.startsWith('/api') ? 'api' : 'route-handler',
+      routePath,
+      targetOwner: 'rust-backend',
+    };
+  }
+
+  return {
+    kind: fileName.replace(/\.tsx$/u, ''),
+    routePath,
+    targetOwner: 'tanstack-start',
+  };
+}
+
+function extractRouteMethods(source) {
+  return HTTP_METHODS.filter((method) => {
+    const functionExport = new RegExp(
+      `\\bexport\\s+(?:async\\s+)?function\\s+${method}\\b`,
+      'u'
+    );
+    const constExport = new RegExp(`\\bexport\\s+const\\s+${method}\\b`, 'u');
+    const namedExport = new RegExp(
+      `\\bexport\\s*\\{[^}]*\\b(?:as\\s+)?${method}\\b[^}]*\\}`,
+      'u'
+    );
+    const destructuredConstExport = new RegExp(
+      `\\bexport\\s+const\\s*\\{[^}]*\\b${method}\\b[^}]*\\}\\s*=`,
+      'u'
+    );
+
+    return (
+      functionExport.test(source) ||
+      constExport.test(source) ||
+      namedExport.test(source) ||
+      destructuredConstExport.test(source)
+    );
+  });
+}
+
+function directoryExists(directory, fsImpl) {
+  try {
+    return fsImpl.statSync(directory).isDirectory();
+  } catch {
+    return false;
+  }
+}
+
+function inventoryRouteArtifacts({
+  baseDir,
+  fsImpl,
+  logicalPrefix = '',
+  rootDir,
+}) {
+  return listFilesRecursive(baseDir, fsImpl)
+    .map((absolutePath) => toPosix(path.relative(baseDir, absolutePath)))
+    .filter((relativeFilePath) =>
+      ROUTE_FILE_NAMES.has(path.posix.basename(relativeFilePath))
+    )
+    .map((relativeFilePath) => {
+      const logicalRelativeFilePath = logicalPrefix
+        ? path.posix.join(logicalPrefix, relativeFilePath)
+        : relativeFilePath;
+      const classified = classifyRoute(logicalRelativeFilePath);
+      const absolutePath = path.join(baseDir, relativeFilePath);
+      const isRouteHandler =
+        path.posix.basename(relativeFilePath) === 'route.ts';
+      const methods = isRouteHandler
+        ? extractRouteMethods(fsImpl.readFileSync(absolutePath, 'utf8'))
+        : [];
+      const sourceFile = toPosix(path.relative(rootDir, absolutePath));
+
+      return {
+        id: `${classified.kind}:${classified.routePath}:${sourceFile}`,
+        kind: classified.kind,
+        methods,
+        routePath: classified.routePath,
+        sourceFile,
+        status: 'legacy-next',
+        targetOwner: classified.targetOwner,
+      };
+    });
+}
+
+function inventoryNextAppRoutes({
+  appDir = DEFAULT_APP_DIR,
+  legacyApiDir,
+  overridesPath = DEFAULT_OVERRIDES_PATH,
+  routeOverrides,
+  rootDir = ROOT_DIR,
+  fsImpl = fs,
+} = {}) {
+  const overrides = routeOverrides ?? readRouteOverrides(overridesPath, fsImpl);
+  const resolvedLegacyApiDir =
+    legacyApiDir === undefined && path.resolve(appDir) === DEFAULT_APP_DIR
+      ? DEFAULT_LEGACY_API_DIR
+      : legacyApiDir;
+  const legacyApiRoutes =
+    resolvedLegacyApiDir && directoryExists(resolvedLegacyApiDir, fsImpl)
+      ? inventoryRouteArtifacts({
+          baseDir: resolvedLegacyApiDir,
+          fsImpl,
+          logicalPrefix: 'api',
+          rootDir,
+        })
+      : [];
+  const routes = applyRouteOverrides(
+    [
+      ...inventoryRouteArtifacts({
+        baseDir: appDir,
+        fsImpl,
+        rootDir,
+      }),
+      ...legacyApiRoutes,
+    ].sort((a, b) => a.id.localeCompare(b.id)),
+    overrides
+  );
+
+  return {
+    generatedBy: 'scripts/tanstack-migration-manifest.js',
+    progress: summarizeMigrationProgress(routes),
+    routes,
+    summary: summarizeRoutes(routes),
+  };
+}
+
+function summarizeRoutes(routes) {
+  const methodCounts = Object.fromEntries(
+    HTTP_METHODS.map((method) => [
+      method,
+      routes.filter((route) => route.methods.includes(method)).length,
+    ])
+  );
+
+  return {
+    apiRoutes: routes.filter((route) => route.kind === 'api').length,
+    cronRoutes: routes.filter((route) => route.kind === 'cron').length,
+    layouts: routes.filter((route) => route.kind === 'layout').length,
+    pages: routes.filter((route) => route.kind === 'page').length,
+    routeHandlers: routes.filter((route) =>
+      ['api', 'cron', 'route-handler', 'trpc'].includes(route.kind)
+    ).length,
+    methodCounts,
+    total: routes.length,
+  };
+}
+
+function readManifest(manifestPath = DEFAULT_MANIFEST_PATH, fsImpl = fs) {
+  return JSON.parse(fsImpl.readFileSync(manifestPath, 'utf8'));
+}
+
+function compareManifestToInventory(manifest, inventory) {
+  const expectedIds = new Set(inventory.routes.map((route) => route.id));
+  const actualIds = new Set(manifest.routes.map((route) => route.id));
+  const errors = [];
+
+  const missing = [...expectedIds].filter((id) => !actualIds.has(id)).sort();
+  const stale = [...actualIds].filter((id) => !expectedIds.has(id)).sort();
+
+  if (missing.length > 0) {
+    errors.push(`Manifest is missing current routes:\n${missing.join('\n')}`);
+  }
+
+  if (stale.length > 0) {
+    errors.push(`Manifest contains stale routes:\n${stale.join('\n')}`);
+  }
+
+  if (JSON.stringify(manifest.summary) !== JSON.stringify(inventory.summary)) {
+    errors.push(
+      `Manifest summary is stale. Expected ${JSON.stringify(
+        inventory.summary
+      )}, got ${JSON.stringify(manifest.summary)}.`
+    );
+  }
+
+  if (
+    JSON.stringify(manifest.progress) !== JSON.stringify(inventory.progress)
+  ) {
+    errors.push('Manifest progress is stale. Regenerate the route manifest.');
+  }
+
+  const expectedRoutes = new Map(
+    inventory.routes.map((route) => [route.id, route])
+  );
+
+  for (const route of manifest.routes) {
+    const expected = expectedRoutes.get(route.id);
+
+    if (!expected) {
+      continue;
+    }
+
+    if (
+      route.method !== expected.method ||
+      route.parentId !== expected.parentId ||
+      route.status !== expected.status ||
+      route.targetOwner !== expected.targetOwner ||
+      JSON.stringify(route.methods) !== JSON.stringify(expected.methods)
+    ) {
+      errors.push(
+        `Manifest route ownership is stale for ${route.id}. Expected status=${expected.status} targetOwner=${expected.targetOwner} methods=${expected.methods.join(',')} method=${expected.method ?? ''} parentId=${expected.parentId ?? ''}, got status=${route.status} targetOwner=${route.targetOwner} methods=${(route.methods ?? []).join(',')} method=${route.method ?? ''} parentId=${route.parentId ?? ''}.`
+      );
+    }
+  }
+
+  return errors;
+}
+
+function checkManifest({
+  appDir = DEFAULT_APP_DIR,
+  fsImpl = fs,
+  manifestPath = DEFAULT_MANIFEST_PATH,
+  overridesPath = DEFAULT_OVERRIDES_PATH,
+  requireMigrated = false,
+  rootDir = ROOT_DIR,
+} = {}) {
+  const manifest = readManifest(manifestPath, fsImpl);
+  const inventory = inventoryNextAppRoutes({
+    appDir,
+    fsImpl,
+    overridesPath,
+    rootDir,
+  });
+  const errors = compareManifestToInventory(manifest, inventory);
+
+  if (requireMigrated) {
+    const legacyRoutes = manifest.routes.filter(
+      (route) => !MIGRATED_STATUSES.has(route.status)
+    );
+
+    if (legacyRoutes.length > 0) {
+      errors.push(
+        `Cutover check requires migrated ownership. Legacy routes remaining: ${legacyRoutes.length}`
+      );
+    }
+  }
+
+  return errors;
+}
+
+function writeManifest({
+  appDir = DEFAULT_APP_DIR,
+  fsImpl = fs,
+  manifestPath = DEFAULT_MANIFEST_PATH,
+  overridesPath = DEFAULT_OVERRIDES_PATH,
+  rootDir = ROOT_DIR,
+} = {}) {
+  const manifest = inventoryNextAppRoutes({
+    appDir,
+    fsImpl,
+    overridesPath,
+    rootDir,
+  });
+  fsImpl.mkdirSync(path.dirname(manifestPath), { recursive: true });
+  fsImpl.writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
+  return manifest;
+}
+
+function parseArgs(argv) {
+  const parsed = {
+    appDir: DEFAULT_APP_DIR,
+    command: argv[0] ?? 'check',
+    manifestPath: DEFAULT_MANIFEST_PATH,
+    overridesPath: DEFAULT_OVERRIDES_PATH,
+    requireMigrated: false,
+  };
+
+  for (let index = 1; index < argv.length; index += 1) {
+    const arg = argv[index];
+
+    if (arg === '--app-dir') {
+      parsed.appDir = path.resolve(argv[index + 1]);
+      index += 1;
+      continue;
+    }
+
+    if (arg === '--manifest' || arg === '--output') {
+      parsed.manifestPath = path.resolve(argv[index + 1]);
+      index += 1;
+      continue;
+    }
+
+    if (arg === '--overrides') {
+      parsed.overridesPath = path.resolve(argv[index + 1]);
+      index += 1;
+      continue;
+    }
+
+    if (arg === '--require-migrated') {
+      parsed.requireMigrated = true;
+      continue;
+    }
+
+    if (arg === '--allow-legacy') {
+      parsed.requireMigrated = false;
+      continue;
+    }
+
+    throw new Error(`Unknown argument: ${arg}`);
+  }
+
+  return parsed;
+}
+
+function main(argv = process.argv.slice(2)) {
+  const args = parseArgs(argv);
+
+  if (args.command === 'generate') {
+    const manifest = writeManifest(args);
+    console.log(
+      `Wrote ${manifest.routes.length} route entries to ${path.relative(
+        ROOT_DIR,
+        args.manifestPath
+      )}.`
+    );
+    return 0;
+  }
+
+  if (args.command === 'check') {
+    const errors = checkManifest(args);
+
+    if (errors.length > 0) {
+      console.error(errors.join('\n\n'));
+      return 1;
+    }
+
+    console.log('TanStack migration route manifest is current.');
+    return 0;
+  }
+
+  if (args.command === 'summary') {
+    const manifest = readManifest(args.manifestPath);
+    console.log(JSON.stringify(manifest.summary, null, 2));
+    return 0;
+  }
+
+  throw new Error(`Unknown command: ${args.command}`);
+}
+
+if (require.main === module) {
+  try {
+    process.exitCode = main();
+  } catch (error) {
+    console.error(error instanceof Error ? error.message : String(error));
+    process.exitCode = 1;
+  }
+}
+
+module.exports = {
+  checkManifest,
+  classifyRoute,
+  compareManifestToInventory,
+  extractRouteMethods,
+  inventoryNextAppRoutes,
+  main,
+  parseArgs,
+  readRouteOverrides,
+  routePathFromDirectory,
+  summarizeMigrationProgress,
+  summarizeRoutes,
+  writeManifest,
+};

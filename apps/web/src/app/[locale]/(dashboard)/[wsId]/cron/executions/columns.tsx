@@ -1,18 +1,18 @@
 'use client';
 
 import type { ColumnDef } from '@tanstack/react-table';
-import type { WorkspaceCronExecution } from '@tuturuuu/types';
 import type { ColumnGeneratorOptions } from '@tuturuuu/ui/custom/tables/data-table';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import moment from 'moment';
 import Link from 'next/link';
+import type { ManagedWorkspaceCronExecution } from '../types';
 import { RowActions } from './row-actions';
 
 export const getColumns = ({
   t,
   namespace,
   extraData,
-}: ColumnGeneratorOptions<WorkspaceCronExecution>): ColumnDef<WorkspaceCronExecution>[] => [
+}: ColumnGeneratorOptions<ManagedWorkspaceCronExecution>): ColumnDef<ManagedWorkspaceCronExecution>[] => [
   {
     accessorKey: 'id',
     header: ({ column }) => (
@@ -57,7 +57,7 @@ export const getColumns = ({
     ),
   },
   {
-    accessorKey: 'started_at',
+    accessorKey: 'start_time',
     header: ({ column }) => (
       <DataTableColumnHeader
         t={t}
@@ -67,12 +67,14 @@ export const getColumns = ({
     ),
     cell: ({ row }) => (
       <div className="min-w-32">
-        {moment(row.getValue('started_at')).format('DD/MM/YYYY HH:mm:ss')}
+        {row.getValue('start_time')
+          ? moment(row.getValue('start_time')).format('DD/MM/YYYY HH:mm:ss')
+          : '-'}
       </div>
     ),
   },
   {
-    accessorKey: 'finished_at',
+    accessorKey: 'end_time',
     header: ({ column }) => (
       <DataTableColumnHeader
         t={t}
@@ -82,8 +84,38 @@ export const getColumns = ({
     ),
     cell: ({ row }) => (
       <div className="min-w-32">
-        {row.getValue('finished_at')
-          ? moment(row.getValue('finished_at')).format('DD/MM/YYYY HH:mm:ss')
+        {row.getValue('end_time')
+          ? moment(row.getValue('end_time')).format('DD/MM/YYYY HH:mm:ss')
+          : '-'}
+      </div>
+    ),
+  },
+  {
+    accessorKey: 'http_status',
+    header: ({ column }) => (
+      <DataTableColumnHeader
+        t={t}
+        column={column}
+        title={t(`${namespace}.http_status`)}
+      />
+    ),
+    cell: ({ row }) => (
+      <div className="min-w-24">{row.getValue('http_status') || '-'}</div>
+    ),
+  },
+  {
+    accessorKey: 'duration_ms',
+    header: ({ column }) => (
+      <DataTableColumnHeader
+        t={t}
+        column={column}
+        title={t(`${namespace}.duration_ms`)}
+      />
+    ),
+    cell: ({ row }) => (
+      <div className="min-w-24">
+        {row.getValue('duration_ms')
+          ? `${row.getValue('duration_ms')} ms`
           : '-'}
       </div>
     ),

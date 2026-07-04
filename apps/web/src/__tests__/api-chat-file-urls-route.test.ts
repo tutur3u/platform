@@ -109,7 +109,9 @@ describe('chat file-urls route', () => {
       error: null,
     });
 
-    const { POST } = await import('@/app/api/ai/chat/file-urls/route');
+    const { POST } = await import(
+      '@/legacy-api-routes/ai/chat/file-urls/route'
+    );
     const response = await (POST as FileUrlsRouteHandler)(
       new NextRequest('http://localhost/api/ai/chat/file-urls', {
         method: 'POST',
@@ -171,7 +173,9 @@ describe('chat file-urls route', () => {
       },
     });
 
-    const { POST } = await import('@/app/api/ai/chat/file-urls/route');
+    const { POST } = await import(
+      '@/legacy-api-routes/ai/chat/file-urls/route'
+    );
     const response = await (POST as FileUrlsRouteHandler)(
       new NextRequest('http://localhost/api/ai/chat/file-urls', {
         method: 'POST',

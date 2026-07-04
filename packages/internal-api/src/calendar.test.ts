@@ -3,6 +3,7 @@ import {
   createCalendarConnection,
   createWorkspaceCalendar,
   createWorkspaceCalendarCategory,
+  createWorkspaceCalendarEvent,
   deleteCalendarConnection,
   deleteWorkspaceCalendar,
   deleteWorkspaceCalendarCategory,
@@ -23,6 +24,7 @@ import {
   updateCalendarConnection,
   updateWorkspaceCalendar,
   updateWorkspaceCalendarCategory,
+  updateWorkspaceCalendarEvent,
 } from './calendar';
 
 function createJsonResponse(payload: unknown) {
@@ -85,6 +87,26 @@ describe('calendar internal API helpers', () => {
       'event 1',
       options(fetchMock)
     );
+    await createWorkspaceCalendarEvent(
+      'workspace 1',
+      {
+        title: 'Planning',
+        start_at: '2026-06-11T00:00:00.000Z',
+        end_at: '2026-06-11T01:00:00.000Z',
+        color: 'BLUE',
+        locked: true,
+      },
+      options(fetchMock)
+    );
+    await updateWorkspaceCalendarEvent(
+      'workspace 1',
+      'event 1',
+      {
+        end_at: '2026-06-11T02:00:00.000Z',
+        locked: true,
+      },
+      options(fetchMock)
+    );
 
     expect(fetchMock).toHaveBeenNthCalledWith(
       1,
@@ -102,6 +124,31 @@ describe('calendar internal API helpers', () => {
       expect.objectContaining({
         cache: 'no-store',
         method: 'DELETE',
+      })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      4,
+      'https://internal.example.com/api/v1/workspaces/workspace%201/calendar/events',
+      expect.objectContaining({
+        body: JSON.stringify({
+          title: 'Planning',
+          start_at: '2026-06-11T00:00:00.000Z',
+          end_at: '2026-06-11T01:00:00.000Z',
+          color: 'BLUE',
+          locked: true,
+        }),
+        method: 'POST',
+      })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      5,
+      'https://internal.example.com/api/v1/workspaces/workspace%201/calendar/events/event%201',
+      expect.objectContaining({
+        body: JSON.stringify({
+          end_at: '2026-06-11T02:00:00.000Z',
+          locked: true,
+        }),
+        method: 'PUT',
       })
     );
   });

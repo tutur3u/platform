@@ -15,6 +15,7 @@ import {
 } from '@dnd-kit/core';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { updateWorkspaceTaskList } from '@tuturuuu/internal-api';
+import type { ListWorkspaceTasksOptions } from '@tuturuuu/internal-api/tasks';
 import type { Workspace, WorkspaceProductTier } from '@tuturuuu/types';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
@@ -28,12 +29,20 @@ import { useOptionalWorkspacePresenceContext } from '../../providers/workspace-p
 import { useBoardBroadcast } from '../../shared/board-broadcast-context';
 import type { ListStatusFilter } from '../../shared/board-header';
 import { buildEstimationIndices } from '../../shared/estimation-mapping';
+import type {
+  SpecialTaskListPin,
+  SpecialTaskListPinState,
+} from '../../shared/special-task-list-pins';
+import { TaskBoardLoadingState } from '../../shared/task-board-loading-state';
 import { BoardSelector } from '../board-selector';
 import { BulkActionsIsland } from './kanban/bulk/bulk-actions-island';
 import { BulkCustomDateDialog } from './kanban/bulk/bulk-custom-date-dialog';
 import { BulkDeleteDialog } from './kanban/bulk/bulk-delete-dialog';
 import { useBulkOperations } from './kanban/bulk/bulk-operations';
-import { listKanbanDeadlineTasks } from './kanban/data/kanban-deadline-query';
+import {
+  getKanbanDeadlineTasksQueryKey,
+  listKanbanDeadlineTasks,
+} from './kanban/data/kanban-deadline-query';
 import { useAppliedSets } from './kanban/data/use-applied-sets';
 import { useBulkResources } from './kanban/data/use-bulk-resources';
 import { useFilteredResources } from './kanban/data/use-filtered-resources';
@@ -42,8 +51,11 @@ import { DragPreview } from './kanban/dnd/drag-preview';
 import { useKanbanDnd } from './kanban/dnd/use-kanban-dnd';
 import { DRAG_ACTIVATION_DISTANCE } from './kanban/kanban-constants';
 import { KanbanColumns } from './kanban/rendering/kanban-columns';
+import type {
+  KanbanDeadlineCollapsedState,
+  KanbanDeadlineSection,
+} from './kanban/rendering/kanban-deadline-panels';
 import { buildKanbanDeadlineSections } from './kanban/rendering/kanban-deadline-tasks';
-import { KanbanSkeleton } from './kanban/rendering/kanban-skeleton';
 import { useKeyboardShortcuts } from './kanban/selection/use-keyboard-shortcuts';
 import { useMultiSelect } from './kanban/selection/use-multi-select';
 import type { TaskFilters } from './task-filter';
@@ -61,6 +73,8 @@ const kanbanCollisionDetection: CollisionDetection = (args) => {
   return closestCenter(args);
 };
 
+const DEADLINE_REFRESH_INTERVAL_MS = 60_000;
+
 interface Props {
   workspace: Workspace;
   workspaceTier?: WorkspaceProductTier | null;
@@ -72,11 +86,25 @@ interface Props {
   disableSort?: boolean;
   listStatusFilter?: ListStatusFilter;
   filters?: TaskFilters;
+  deadlineTaskQueryOptions?: ListWorkspaceTasksOptions;
   isMultiSelectMode: boolean;
   setIsMultiSelectMode: (enabled: boolean) => void;
   onExternalTasksCollapsedChange?: (collapsed: boolean) => void;
   onTaskListCollapsedChange?: (listId: string, collapsed: boolean) => void;
+  deadlineSectionsCollapsed?: KanbanDeadlineCollapsedState;
+  onDeadlineSectionCollapsedChange?: (
+    section: KanbanDeadlineSection,
+    collapsed: boolean
+  ) => void;
+  specialTaskListPins?: SpecialTaskListPinState;
+  onSpecialTaskListPinnedChange?: (
+    pin: SpecialTaskListPin,
+    pinned: boolean
+  ) => void;
   onBulkSelectionActiveChange?: (active: boolean) => void;
+  canUseBoardAssignees?: boolean;
+  assigneeMemberSource?: 'workspace' | 'board' | 'workspace-and-board';
+  readOnly?: boolean;
 }
 
 export function KanbanBoard({
@@ -89,12 +117,22 @@ export function KanbanBoard({
   disableSort = false,
   listStatusFilter = 'all',
   filters,
+  deadlineTaskQueryOptions,
   isMultiSelectMode,
   setIsMultiSelectMode,
   onExternalTasksCollapsedChange,
   onTaskListCollapsedChange,
+  deadlineSectionsCollapsed,
+  onDeadlineSectionCollapsedChange,
+  specialTaskListPins,
+  onSpecialTaskListPinnedChange,
   onBulkSelectionActiveChange,
+  canUseBoardAssignees,
+  assigneeMemberSource,
+  readOnly = false,
 }: Props) {
+  const tCommon = useTranslations('common');
+  const tBoards = useTranslations('ws-task-boards');
   const tLayout = useTranslations('ws-task-boards.layout_settings');
   const tTasks = useTranslations('ws-tasks');
   const invalidColumnMoveMessage = tLayout.has('cannot_reorder_across_statuses')
@@ -104,6 +142,7 @@ export function KanbanBoard({
   const [bulkWorking, setBulkWorking] = useState(false);
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const [bulkCustomDateOpen, setBulkCustomDateOpen] = useState(false);
+  const [deadlineNow, setDeadlineNow] = useState(() => Date.now());
 
   // Search state
   const [labelSearchQuery, setLabelSearchQuery] = useState('');
@@ -118,6 +157,7 @@ export function KanbanBoard({
   const queryClient = useQueryClient();
   const wsPresence = useOptionalWorkspacePresenceContext();
   const cursorsEnabled =
+    !readOnly &&
     !workspace.personal &&
     !!boardId &&
     !!wsPresence?.cursorsEnabled &&
@@ -126,21 +166,32 @@ export function KanbanBoard({
   const reorderTaskMutation = useReorderTask(boardId ?? '', workspaceId);
   const { createTask } = useTaskDialog();
   const { weekStartsOn } = useCalendarPreferences();
+  const boardAssigneesEnabled = canUseBoardAssignees ?? !workspace.personal;
 
-  const { data: boardConfig } = useBoardConfig(boardId, workspaceId);
-  const { data: deadlineTasks = [] } = useQuery({
-    enabled: Boolean(boardId),
-    queryFn: () =>
-      listKanbanDeadlineTasks({
-        boardId: boardId ?? '',
+  const { data: boardConfig } = useBoardConfig(
+    readOnly ? null : boardId,
+    readOnly ? null : workspaceId
+  );
+  const { data: deadlineTasks = [], isPending: deadlineTasksPending } =
+    useQuery({
+      enabled: Boolean(boardId) && !readOnly,
+      queryFn: () =>
+        listKanbanDeadlineTasks({
+          boardId: boardId ?? '',
+          taskQueryOptions: deadlineTaskQueryOptions,
+          workspaceId,
+        }),
+      queryKey: getKanbanDeadlineTasksQueryKey(
         workspaceId,
-      }),
-    queryKey: ['kanban-deadline-tasks', workspaceId, boardId],
-    staleTime: 30_000,
-  });
+        boardId,
+        deadlineTaskQueryOptions
+      ),
+      staleTime: 30_000,
+    });
   const persistListPositions = useCallback(
     async (updates: Array<{ listId: string; newPosition: number }>) => {
       if (!boardId || updates.length === 0) return;
+      if (readOnly) return;
 
       await Promise.all(
         updates.map(({ listId, newPosition }) =>
@@ -150,7 +201,7 @@ export function KanbanBoard({
         )
       );
     },
-    [boardId, workspaceId]
+    [boardId, readOnly, workspaceId]
   );
 
   const columns: TaskList[] = lists.map((list) => ({
@@ -158,7 +209,28 @@ export function KanbanBoard({
     title: list.name,
   }));
 
-  const orderedColumns = useMemo(() => sortKanbanColumns(columns), [columns]);
+  const orderedColumns = useMemo(() => {
+    const sortedColumns = sortKanbanColumns(columns);
+    const externalColumns = sortedColumns.filter(
+      (column) => column.is_external_staging
+    );
+    const realColumns = sortedColumns.filter(
+      (column) => !column.is_external_staging
+    );
+
+    if (!specialTaskListPins?.closed_tasks) {
+      return [...externalColumns, ...realColumns];
+    }
+
+    const closedColumns = realColumns.filter(
+      (column) => column.status === 'closed'
+    );
+    const otherColumns = realColumns.filter(
+      (column) => column.status !== 'closed'
+    );
+
+    return [...externalColumns, ...closedColumns, ...otherColumns];
+  }, [columns, specialTaskListPins?.closed_tasks]);
   const orderedRealColumns = useMemo(
     () => orderedColumns.filter((column) => !column.is_external_staging),
     [orderedColumns]
@@ -172,28 +244,54 @@ export function KanbanBoard({
       buildKanbanDeadlineSections({
         deadlineTasks,
         lists: orderedColumns,
+        now: new Date(deadlineNow),
         visibleTasks: tasks,
       }),
-    [deadlineTasks, orderedColumns, tasks]
+    [deadlineNow, deadlineTasks, orderedColumns, tasks]
   );
   const deadlineLabels = useMemo(
     () => ({
+      collapseSection: (name: string) => tTasks('collapse_task_list', { name }),
+      expandSection: (name: string) => tTasks('expand_task_list', { name }),
+      filter: tCommon('filters'),
       overdue: tTasks('overdue'),
+      pinSection: (name: string) => tTasks('pin_task_list', { name }),
+      reset: tCommon('reset'),
+      showDocuments: tTasks('external_tasks_show_documents'),
+      showExternalTasks: tTasks('external_tasks'),
+      sort: tCommon('sort'),
+      sortCreatedAsc: tBoards('filters.sort_options.oldest_first'),
+      sortCreatedDesc: tBoards('filters.sort_options.newest_first'),
+      sortDueAsc: tBoards('filters.sort_options.soonest_first'),
+      sortDueDesc: tBoards('filters.sort_options.latest_first'),
+      sortNameAsc: tTasks('external_tasks_sort_name_asc'),
+      sortSourceAsc: tTasks('external_tasks_sort_source_asc'),
+      unpinSection: (name: string) => tTasks('unpin_task_list', { name }),
       upcoming: tTasks('upcoming'),
     }),
-    [tTasks]
+    [tBoards, tCommon, tTasks]
   );
 
   // Selection Hook
   const { selectedTasks, handleTaskSelect, clearSelection } = useMultiSelect(
     tasks,
-    isMultiSelectMode,
+    readOnly ? false : isMultiSelectMode,
     setIsMultiSelectMode
   );
 
   useEffect(() => {
     onBulkSelectionActiveChange?.(selectedTasks.size > 0);
   }, [onBulkSelectionActiveChange, selectedTasks.size]);
+
+  useEffect(() => {
+    if (readOnly) return;
+
+    const interval = window.setInterval(() => {
+      setDeadlineNow(Date.now());
+    }, DEADLINE_REFRESH_INTERVAL_MS);
+
+    return () => window.clearInterval(interval);
+  }, [readOnly]);
 
   useEffect(
     () => () => {
@@ -205,6 +303,9 @@ export function KanbanBoard({
   // Resources Hooks
   const { workspaceLabels, workspaceProjects, workspaceMembers } =
     useBulkResources({
+      boardId,
+      canUseBoardAssignees: boardAssigneesEnabled,
+      assigneeMemberSource,
       workspace,
       isMultiSelectMode,
       selectedCount: selectedTasks.size,
@@ -233,6 +334,7 @@ export function KanbanBoard({
     columns: orderedRealColumns,
     workspaceLabels,
     workspaceProjects,
+    workspaceMembers,
     weekStartsOn,
     setBulkWorking,
     clearSelection,
@@ -270,12 +372,13 @@ export function KanbanBoard({
     columns: orderedRealColumns,
     boardId,
     filters,
-    selectedTasks,
-    isMultiSelectMode,
-    setIsMultiSelectMode,
-    createTask,
+    selectedTasks: readOnly ? new Set<string>() : selectedTasks,
+    isMultiSelectMode: readOnly ? false : isMultiSelectMode,
+    setIsMultiSelectMode: readOnly ? () => {} : setIsMultiSelectMode,
+    createTask: readOnly ? () => {} : createTask,
     clearSelection,
     handleCrossBoardMove: () => {
+      if (readOnly) return;
       if (selectedTasks.size > 0) {
         setBoardSelectorOpen(true);
       }
@@ -360,56 +463,58 @@ export function KanbanBoard({
   );
 
   if (isLoading) {
-    return <KanbanSkeleton />;
+    return <TaskBoardLoadingState />;
   }
 
   return (
     <div className="flex h-full flex-col">
-      <BulkActionsIsland
-        selectedCount={selectedTasks.size}
-        bulkWorking={bulkWorking}
-        onClearSelection={clearSelection}
-        onOpenBoardSelector={() => setBoardSelectorOpen(true)}
-        menuProps={{
-          workspace,
-          boardConfig,
-          columns: orderedRealColumns,
-          bulkWorking,
-          estimationOptions,
-          appliedSets: appliedSetsMap,
-          filtered: filteredMap,
-          search: {
-            labelQuery: labelSearchQuery,
-            setLabelQuery: setLabelSearchQuery,
-            projectQuery: projectSearchQuery,
-            setProjectQuery: setProjectSearchQuery,
-            assigneeQuery: assigneeSearchQuery,
-            setAssigneeQuery: setAssigneeSearchQuery,
-          },
-          actions: {
-            bulkMoveToStatus: (s) => bulkOps.bulkMoveToStatus(s as any),
-            bulkUpdatePriority: (p) => bulkOps.bulkUpdatePriority(p as any),
-            bulkUpdateDueDate: (t) => bulkOps.bulkUpdateDueDate(t as any),
-            bulkUpdateEstimation: bulkOps.bulkUpdateEstimation,
-            bulkAddLabel: bulkOps.bulkAddLabel,
-            bulkRemoveLabel: bulkOps.bulkRemoveLabel,
-            bulkClearLabels: bulkOps.bulkClearLabels,
-            bulkAddProject: bulkOps.bulkAddProject,
-            bulkRemoveProject: bulkOps.bulkRemoveProject,
-            bulkClearProjects: bulkOps.bulkClearProjects,
-            bulkMoveToList: bulkOps.bulkMoveToList,
-            bulkAddAssignee: bulkOps.bulkAddAssignee,
-            bulkRemoveAssignee: bulkOps.bulkRemoveAssignee,
-            bulkClearAssignees: bulkOps.bulkClearAssignees,
-          },
-          onOpenCustomDate: () => setBulkCustomDateOpen(true),
-          onConfirmDelete: () => setBulkDeleteOpen(true),
-        }}
-      />
+      {!readOnly && (
+        <BulkActionsIsland
+          selectedCount={selectedTasks.size}
+          bulkWorking={bulkWorking}
+          onClearSelection={clearSelection}
+          onOpenBoardSelector={() => setBoardSelectorOpen(true)}
+          menuProps={{
+            workspace,
+            boardConfig,
+            columns: orderedRealColumns,
+            bulkWorking,
+            estimationOptions,
+            appliedSets: appliedSetsMap,
+            filtered: filteredMap,
+            search: {
+              labelQuery: labelSearchQuery,
+              setLabelQuery: setLabelSearchQuery,
+              projectQuery: projectSearchQuery,
+              setProjectQuery: setProjectSearchQuery,
+              assigneeQuery: assigneeSearchQuery,
+              setAssigneeQuery: setAssigneeSearchQuery,
+            },
+            actions: {
+              bulkMoveToStatus: (s) => bulkOps.bulkMoveToStatus(s as any),
+              bulkUpdatePriority: (p) => bulkOps.bulkUpdatePriority(p as any),
+              bulkUpdateDueDate: (t) => bulkOps.bulkUpdateDueDate(t as any),
+              bulkUpdateEstimation: bulkOps.bulkUpdateEstimation,
+              bulkAddLabel: bulkOps.bulkAddLabel,
+              bulkRemoveLabel: bulkOps.bulkRemoveLabel,
+              bulkClearLabels: bulkOps.bulkClearLabels,
+              bulkAddProject: bulkOps.bulkAddProject,
+              bulkRemoveProject: bulkOps.bulkRemoveProject,
+              bulkClearProjects: bulkOps.bulkClearProjects,
+              bulkMoveToList: bulkOps.bulkMoveToList,
+              bulkAddAssignee: bulkOps.bulkAddAssignee,
+              bulkRemoveAssignee: bulkOps.bulkRemoveAssignee,
+              bulkClearAssignees: bulkOps.bulkClearAssignees,
+            },
+            onOpenCustomDate: () => setBulkCustomDateOpen(true),
+            onConfirmDelete: () => setBulkDeleteOpen(true),
+          }}
+        />
+      )}
 
       <div className="min-h-0 flex-1 overflow-x-auto overflow-y-hidden">
         <DndContext
-          sensors={sensors}
+          sensors={readOnly ? [] : sensors}
           collisionDetection={kanbanCollisionDetection}
           onDragStart={onDragStart}
           onDragMove={onDragMove}
@@ -428,12 +533,14 @@ export function KanbanBoard({
             boardId={boardId ?? ''}
             workspaceId={workspaceId}
             isPersonalWorkspace={workspace.personal}
+            canUseBoardAssignees={boardAssigneesEnabled}
+            assigneeMemberSource={assigneeMemberSource}
             cursorsEnabled={cursorsEnabled}
             disableSort={disableSort}
-            selectedTasks={selectedTasks}
-            isMultiSelectMode={isMultiSelectMode}
-            setIsMultiSelectMode={setIsMultiSelectMode}
-            onTaskSelect={handleTaskSelect}
+            selectedTasks={readOnly ? new Set<string>() : selectedTasks}
+            isMultiSelectMode={readOnly ? false : isMultiSelectMode}
+            setIsMultiSelectMode={readOnly ? () => {} : setIsMultiSelectMode}
+            onTaskSelect={readOnly ? () => {} : handleTaskSelect}
             onClearSelection={clearSelection}
             onUpdate={() => {}} // Optimistic updates handled in DnD
             dragPreviewPosition={dragPreviewPosition}
@@ -450,58 +557,73 @@ export function KanbanBoard({
             columnsId={columnsId}
             deadlineLabels={deadlineLabels}
             deadlineSections={deadlineSections}
+            deadlineSectionsLoading={deadlineTasksPending}
+            deadlineSectionsCollapsed={deadlineSectionsCollapsed}
+            deadlineNow={deadlineNow}
+            onDeadlineSectionCollapsedChange={onDeadlineSectionCollapsedChange}
             onExternalTasksCollapsedChange={onExternalTasksCollapsedChange}
             onTaskListCollapsedChange={onTaskListCollapsedChange}
+            specialTaskListPins={specialTaskListPins}
+            onSpecialTaskListPinnedChange={onSpecialTaskListPinnedChange}
+            readOnly={readOnly}
           />
 
-          <DragOverlay dropAnimation={null}>
-            <DragPreview
-              activeTask={activeTask}
-              activeColumn={activeColumn}
-              tasks={tasks}
-              columns={orderedColumns}
-              boardId={boardId ?? ''}
-              isPersonalWorkspace={workspace.personal}
-              isMultiSelectMode={isMultiSelectMode}
-              selectedTasks={selectedTasks}
-              onUpdate={() => {}}
-              wsId={workspaceId}
-            />
-          </DragOverlay>
+          {!readOnly && (
+            <DragOverlay dropAnimation={null}>
+              <DragPreview
+                activeTask={activeTask}
+                activeColumn={activeColumn}
+                tasks={tasks}
+                columns={orderedColumns}
+                boardId={boardId ?? ''}
+                isPersonalWorkspace={workspace.personal}
+                canUseBoardAssignees={boardAssigneesEnabled}
+                assigneeMemberSource={assigneeMemberSource}
+                isMultiSelectMode={isMultiSelectMode}
+                selectedTasks={selectedTasks}
+                onUpdate={() => {}}
+                wsId={workspaceId}
+              />
+            </DragOverlay>
+          )}
         </DndContext>
       </div>
 
-      <BoardSelector
-        open={boardSelectorOpen}
-        onOpenChange={setBoardSelectorOpen}
-        wsId={workspaceId}
-        currentBoardId={boardId ?? ''}
-        taskCount={selectedTasks.size}
-        onMove={handleBoardMove}
-        isMoving={bulkWorking}
-      />
+      {!readOnly && (
+        <>
+          <BoardSelector
+            open={boardSelectorOpen}
+            onOpenChange={setBoardSelectorOpen}
+            wsId={workspaceId}
+            currentBoardId={boardId ?? ''}
+            taskCount={selectedTasks.size}
+            onMove={handleBoardMove}
+            isMoving={bulkWorking}
+          />
 
-      <BulkDeleteDialog
-        open={bulkDeleteOpen}
-        onOpenChange={setBulkDeleteOpen}
-        selectedCount={selectedTasks.size}
-        onConfirm={bulkOps.bulkDeleteTasks}
-        isLoading={bulkWorking}
-      />
+          <BulkDeleteDialog
+            open={bulkDeleteOpen}
+            onOpenChange={setBulkDeleteOpen}
+            selectedCount={selectedTasks.size}
+            onConfirm={bulkOps.bulkDeleteTasks}
+            isLoading={bulkWorking}
+          />
 
-      <BulkCustomDateDialog
-        open={bulkCustomDateOpen}
-        onOpenChange={setBulkCustomDateOpen}
-        onDateChange={(date) => {
-          bulkOps.bulkUpdateCustomDueDate(date ?? null);
-          setBulkCustomDateOpen(false);
-        }}
-        onClear={() => {
-          bulkOps.bulkUpdateDueDate('clear');
-          setBulkCustomDateOpen(false);
-        }}
-        isLoading={bulkWorking}
-      />
+          <BulkCustomDateDialog
+            open={bulkCustomDateOpen}
+            onOpenChange={setBulkCustomDateOpen}
+            onDateChange={(date) => {
+              bulkOps.bulkUpdateCustomDueDate(date ?? null);
+              setBulkCustomDateOpen(false);
+            }}
+            onClear={() => {
+              bulkOps.bulkUpdateDueDate('clear');
+              setBulkCustomDateOpen(false);
+            }}
+            isLoading={bulkWorking}
+          />
+        </>
+      )}
     </div>
   );
 }

@@ -1,11 +1,12 @@
 ---
 title: Internal Log Drain and Observability
 description: Operate the Postgres-backed log drain that powers web runtime logs, requests, deployments, analytics, cron, and observability views.
+updatedAt: "2026-07-04"
 ---
 
 ## Overview
 
-`apps/web` captures server-side API, cron, and infrastructure logs through the internal log drain. The drain preserves normal stdout/stderr output, stores structured events in a dedicated Postgres container, and exposes them in Infrastructure → Monitoring.
+`apps/web` stores request, cron, deployment, and runtime-monitoring events in the internal log drain where those wrappers are still wired. Application runtime logging uses the native console method that matches severity (`console.error`, `console.warn`, `console.info`, `console.log`, or `console.debug`); the drain preserves normal stdout/stderr output for deployment and monitoring views instead of requiring a custom app logger.
 
 The monitoring navigation uses compact labels:
 
@@ -39,25 +40,42 @@ Relevant environment variables:
 
 ## Logging Rules
 
-Server-side code in `apps/web` API, cron, and infrastructure paths must not add raw `console.*` calls. Use:
+Server runtime code should use the native console method that matches diagnostic severity:
 
 ```ts
-import { serverLogger } from '@/lib/infrastructure/log-drain';
-
-serverLogger.info('Processed job', { jobId });
-serverLogger.error('Job failed', error);
+console.info('Processed job', { jobId });
+console.error('Job failed', error);
 ```
 
-`serverLogger` mirrors each call to stdout/stderr as one serialized line. Pass
-structured objects directly to the logger, but do not rely on Node's default
-multi-line object printing; the drain and Docker log capture treat one logger
-call as one retained event.
+Do not add `serverLogger` runtime imports or automatic console log-drain
+installation. Prefer a single console call with a short message and a structured
+metadata object so Docker, Vercel, and any retained drain views can keep the
+event readable.
 
 For route or cron handlers, wrap execution with `withRequestLogDrain(...)` or `withCronLogDrain(...)` when the handler should attach logs to a request or cron run id.
 
 The drain is fail-open: if Postgres is unavailable, requests and cron jobs continue normally and logs still go to stdout/stderr.
 
 ## Legacy Compatibility
+
+The monitoring UI reads both the Postgres drain and the pre-drain blue/green
+files under `tmp/docker-web`. Before the Postgres log drain existed, the
+blue/green watcher captured proxy traffic, watcher logs, and request console
+lines as plain files. The Requests and Logs tabs still merge those legacy files
+in, and Deployments are enriched from the watcher snapshot so commit subject,
+full hash, short hash, stamp, active color, and runtime lane remain visible even
+before the Postgres drain has a complete history.
+
+Legacy Docker console capture coalesces timestamped continuation lines from the
+same container write before persisting request console logs. This keeps object
+dumps from old route console output attached to one function/request row instead
+of turning every serialized property into a separate log row.
+
+Request-archive console lenses store and return redacted summaries only. Both the
+watcher ingestion path and the web-side archive normalization redact common
+bearer tokens, JWTs, sensitive key/value fields, sensitive query parameters, and
+email addresses, then cap each attached console message at 500 characters. Raw
+app-container console payloads are never persisted in `blue-green-request-logs`.
 
 ## Projects
 
@@ -82,8 +100,6 @@ The project list also reconciles stale queued state for the built-in project fro
 
 For imported projects, the same watcher polls enabled projects from the registry, keeps managed source checkouts under `tmp/docker-web/projects/<projectId>/repo`, and writes generated Next.js compose/runtime files under `tmp/docker-web/projects/<projectId>/runtime`. These services run with the shared `tuturuuu` Compose project name, attach to the central Docker network, and receive `PLATFORM_PROJECT_ID`, selected branch, log-drain, Redis, `PORT`, and `HOSTNAME=0.0.0.0` environment wiring. Hostname routes are merged into the central nginx proxy config so nginx remains the mandatory entrypoint. Managed project hostnames must be plain DNS names; the API rejects ports, wildcards, whitespace, nginx syntax, and reserved Tuturuuu platform hostnames, and the watcher defensively drops unsafe persisted values before rendering nginx.
 
-The revamped monitoring UI reads both the Postgres drain and the pre-drain blue/green files under `tmp/docker-web`. Requests and Logs include retained proxy traffic, watcher logs, and request console lines while deployments are enriched from the watcher snapshot so commit subject, full hash, short hash, stamp, active color, and runtime lane remain visible even before the Postgres drain has a complete history.
-
 The Logs tab serves grouped rows. Events with the same request id collapse into
 one expandable row; legacy standalone logs fall back to route, source,
 deployment, and minute bucket grouping. Operators can filter by route, status
@@ -106,9 +122,9 @@ The Requests tab intentionally freezes its result window when opened. New traffi
 
 Monitoring links preserve the selected `project` query parameter so Overview, Deployments, Logs, Analytics, Observability, Cron, Requests, and Resources stay scoped to the same project while an operator moves between tabs. The project scope card on each tab is the visible source of truth for the active project, branch, hostnames, commit, and addons.
 
-Queued deployment rows only advance while the blue/green deployment watcher is live and connected to log-drain Postgres. If the Projects tab sees a queued project while the watcher is missing, offline, stale, or locked to a different branch than the built-in project, the UI queues a `blue-green-watcher-recovery.request.json` control request. The Docker cron runner reads that request from the shared control directory, clears stale watcher lock/status files, and recreates the `web-blue-green-watcher` service through Docker Compose so recovery does not depend on the stuck watcher process. The production watcher service must receive `PLATFORM_LOG_DRAIN_DATABASE_URL`, optional `GITHUB_TOKEN`, and any addon env such as Redis from Compose.
+Queued deployment rows only advance while the blue/green deployment watcher is live and connected to log-drain Postgres. If the Projects tab sees a queued project while the watcher is missing, offline, stale, or locked to a different branch than the built-in project, the UI queues a `blue-green-watcher-recovery.request.json` control request. The Docker cron runner reads that request from the shared control directory, clears stale watcher lock/status files, and recreates the `web-blue-green-watcher` service through Docker Compose so recovery does not depend on the stuck watcher process. The production watcher service must receive `PLATFORM_LOG_DRAIN_DATABASE_URL`, `DOCKER_WEB_FRONTEND`, optional `GITHUB_TOKEN`, and any addon env such as Redis from Compose so queued recovery recreates the same frontend family that production is serving.
 
-Each drained request stores the client IP address and user agent when those headers are available. Server logs emitted inside the request or cron AsyncLocalStorage context are scoped back to the same request id, so Requests can show related console/server lines next to the originating request without relying on terminal access.
+Each drained request stores the client IP address and user agent when those headers are available. Console logs emitted inside an already-wrapped request or cron AsyncLocalStorage context can be scoped back to the same request id, so Requests can show related console lines next to the originating request without relying on terminal access.
 
 ## Cron Control
 
@@ -180,7 +196,34 @@ If the UI is empty:
 
 1. Confirm `log-drain-postgres` is healthy with Docker Compose.
 2. Confirm `PLATFORM_LOG_DRAIN_DATABASE_URL` is present in the web container.
-3. Check that the route or cron handler is using `serverLogger` or a log-drain wrapper.
+3. Check that the route or cron handler logs with the native console method matching severity and still runs inside a request or cron wrapper when retained correlation is required.
 4. Use Infrastructure → Monitoring → Logs to search by message, route, request id, level, or source.
+
+If `bun serve:web:docker:bg` fails with
+`dependency failed to start: container ...-log-drain-postgres-1 exited (1)`,
+the deploy helper now starts `log-drain-postgres` before promoting the web lane
+and retries once after removing only the exited service container. The
+`platform-log-drain-postgres` volume is intentionally left intact. Web and
+watcher services do not declare Compose `depends_on` for this optional
+Postgres service, so a failed retry is not reintroduced as a later dependency
+startup failure. In current deploys, a failed retry is not a hard promotion
+blocker unless
+`DOCKER_WEB_LOG_DRAIN_REQUIRED=1` is set; the rollout continues for that run with
+`PLATFORM_LOG_DRAIN_ENABLED=false`, so traffic can serve while persisted
+request/server logs and Infrastructure monitoring are degraded. Inspect the
+Postgres logs before deciding whether the volume needs migration or a reset:
+
+```bash
+docker compose -f docker-compose.web.prod.yml --profile redis ps --all log-drain-postgres
+docker compose -f docker-compose.web.prod.yml --profile redis logs --tail 200 log-drain-postgres
+docker volume ls --filter label=com.docker.compose.volume=platform-log-drain-postgres
+```
+
+When the logs mention incompatible database files, a corrupted data directory,
+or another persistent storage problem, back up or migrate the
+`platform-log-drain-postgres` volume before retrying. Do not remove that volume
+unless losing local observability history is an explicit operator decision.
+Set `DOCKER_WEB_LOG_DRAIN_REQUIRED=1` only when blocking a rollout is preferable
+to serving without persisted log-drain telemetry.
 
 If logs are missing only for cron jobs, verify the cron route is wrapped with `withCronLogDrain(...)` and the cron runner is calling the expected web origin.

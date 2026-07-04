@@ -1,4 +1,4 @@
-import { CalendarPlus } from '@tuturuuu/icons';
+import { History } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { Separator } from '@tuturuuu/ui/separator';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
@@ -6,16 +6,25 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
+import { Suspense } from 'react';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
 import {
   type UserGroupActivityLogSearchParams,
   UserGroupActivityLogTable,
 } from '../activity-log-table';
-import GroupMembers from './group-members';
-import GroupStorage from './group-storage';
-import LinkedProductsClient from './linked-products-client';
-import PostsClient from './posts-client';
-import GroupSchedule from './schedule';
+import {
+  ListCardSkeleton,
+  MembersCardSkeleton,
+  ScheduleCardSkeleton,
+} from './_components/card-skeletons';
+import { GroupSectionCard } from './_components/group-section-card';
+import {
+  LinkedProductsCardServer,
+  MembersCardServer,
+  PostsCardServer,
+  ScheduleCardServer,
+  StorageCardServer,
+} from './_components/overview-cards';
 
 export const metadata: Metadata = {
   title: 'Group Details',
@@ -25,6 +34,7 @@ export const metadata: Metadata = {
 
 interface SearchParams extends UserGroupActivityLogSearchParams {
   q?: string;
+  month?: string;
   page?: string;
   pageSize?: string;
   excludedGroups?: string | string[];
@@ -38,6 +48,8 @@ interface Props {
   }>;
   searchParams: Promise<SearchParams>;
 }
+
+const MEMBERS_PAGE_SIZE = 10;
 
 export default async function UserGroupDetailsPage({
   params,
@@ -79,41 +91,32 @@ export default async function UserGroupDetailsPage({
           'delete_user_groups_posts'
         );
 
-        const MEMBERS_PAGE_SIZE = 10;
-
         return (
           <>
             <div className="grid w-full grid-cols-1 gap-5 lg:grid-cols-2">
-              <GroupMembers
-                wsId={wsId}
-                groupId={groupId}
-                pageSize={MEMBERS_PAGE_SIZE}
-                canViewPersonalInfo={canViewPersonalInfo}
-                canViewPublicInfo={canViewPublicInfo}
-                canUpdateUserGroups={canUpdateUserGroups}
-              />
+              <Suspense fallback={<MembersCardSkeleton />}>
+                <MembersCardServer
+                  wsId={wsId}
+                  groupId={groupId}
+                  pageSize={MEMBERS_PAGE_SIZE}
+                  canViewPersonalInfo={canViewPersonalInfo}
+                  canViewPublicInfo={canViewPublicInfo}
+                  canUpdateUserGroups={canUpdateUserGroups}
+                />
+              </Suspense>
 
-              <div className="flex flex-col rounded-lg border border-border/60 bg-background p-5 shadow-sm">
-                <div className="mb-3 flex flex-row items-center justify-between">
-                  <div className="font-semibold text-lg">
-                    {t('ws-user-group-details.schedule')}
-                  </div>
-                  {canUpdateUserGroups && (
-                    <Link href={`/${wsId}/users/groups/${groupId}/schedule`}>
-                      <Button variant="default" size="sm">
-                        <CalendarPlus className="h-4 w-4" />
-                        {t('ws-user-group-details.modify_schedule')}
-                      </Button>
-                    </Link>
-                  )}
-                </div>
+              <Suspense fallback={<ScheduleCardSkeleton />}>
+                <ScheduleCardServer
+                  wsId={wsId}
+                  groupId={groupId}
+                  canUpdateUserGroups={canUpdateUserGroups}
+                  month={sp.month}
+                />
+              </Suspense>
 
-                <GroupSchedule wsId={wsId} groupId={groupId} />
-              </div>
-
-              <div className="flex flex-col rounded-lg border border-border/60 bg-background p-5 shadow-sm">
-                {canViewUserGroupsPosts && (
-                  <PostsClient
+              {canViewUserGroupsPosts && (
+                <Suspense fallback={<ListCardSkeleton rows={3} />}>
+                  <PostsCardServer
                     wsId={wsId}
                     groupId={groupId}
                     canUpdatePosts={canUpdateUserGroupsPosts}
@@ -121,34 +124,35 @@ export default async function UserGroupDetailsPage({
                     canDeletePosts={canDeleteUserGroupsPosts}
                     canViewPosts={canViewUserGroupsPosts}
                   />
-                )}
-              </div>
+                </Suspense>
+              )}
 
-              <LinkedProductsClient
-                wsId={wsId}
-                groupId={groupId}
-                canUpdateLinkedProducts={canUpdateUserGroups}
-              />
+              <Suspense fallback={<ListCardSkeleton rows={2} />}>
+                <LinkedProductsCardServer
+                  wsId={wsId}
+                  groupId={groupId}
+                  canUpdateLinkedProducts={canUpdateUserGroups}
+                />
+              </Suspense>
 
-              <div className="flex flex-col rounded-lg border border-border/60 bg-background p-5 shadow-sm">
-                <GroupStorage
+              <Suspense fallback={<ListCardSkeleton rows={3} />}>
+                <StorageCardServer
                   wsId={wsId}
                   groupId={groupId}
                   canUpdateGroup={canUpdateUserGroups}
                 />
-              </div>
+              </Suspense>
 
               {canViewAuditLogs && (
-                <div className="flex flex-col gap-3 rounded-lg border border-border/60 bg-background p-5 shadow-sm lg:col-span-2">
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <div>
-                      <div className="font-semibold text-lg">
-                        {t('ws-user-group-activity.title')}
-                      </div>
-                      <div className="text-muted-foreground text-sm">
-                        {t('ws-user-group-activity.group_panel_description')}
-                      </div>
-                    </div>
+                <GroupSectionCard
+                  className="lg:col-span-2"
+                  accent="neutral"
+                  icon={<History className="h-5 w-5" />}
+                  title={t('ws-user-group-activity.title')}
+                  description={t(
+                    'ws-user-group-activity.group_panel_description'
+                  )}
+                  action={
                     <Button asChild variant="outline" size="sm">
                       <Link
                         href={`/${wsId}/users/groups?tab=audit-log&logGroupId=${groupId}`}
@@ -156,14 +160,15 @@ export default async function UserGroupDetailsPage({
                         {t('ws-user-group-activity.open_full_log')}
                       </Link>
                     </Button>
-                  </div>
+                  }
+                >
                   <UserGroupActivityLogTable
                     wsId={wsId}
                     groupId={groupId}
                     searchParams={sp}
                     compact
                   />
-                </div>
+                </GroupSectionCard>
               )}
             </div>
             <Separator className="my-5" />

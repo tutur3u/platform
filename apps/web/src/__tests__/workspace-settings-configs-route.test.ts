@@ -7,6 +7,9 @@ const mocks = vi.hoisted(() => {
   const listWorkspaceDefaultIncludedGroupIds = vi.fn();
   const getPermissions = vi.fn();
   const normalizeWorkspaceId = vi.fn(() => Promise.resolve('normalized-ws'));
+  const serverLogger = {
+    error: vi.fn(),
+  };
 
   const sessionSupabase = {
     auth: {
@@ -54,6 +57,7 @@ const mocks = vi.hoisted(() => {
     sessionSupabase,
     listWorkspaceDefaultIncludedGroupIds,
     workspaceConfigsIn,
+    serverLogger,
   };
 });
 
@@ -75,6 +79,10 @@ vi.mock('@tuturuuu/utils/workspace-helper', async (importOriginal) => {
 vi.mock('@/lib/workspace-default-included-groups', () => ({
   listWorkspaceDefaultIncludedGroupIds:
     mocks.listWorkspaceDefaultIncludedGroupIds,
+}));
+
+vi.mock('@/lib/infrastructure/log-drain', () => ({
+  serverLogger: mocks.serverLogger,
 }));
 
 describe('workspace settings configs route', () => {
@@ -101,17 +109,19 @@ describe('workspace settings configs route', () => {
     });
 
     mocks.getPermissions.mockResolvedValue({
+      containsPermission: vi.fn(() => false),
       withoutPermission: vi.fn(() => false),
     });
   });
 
   it('rejects workspace config reads without manage_workspace_settings', async () => {
     mocks.getPermissions.mockResolvedValueOnce({
+      containsPermission: vi.fn(() => false),
       withoutPermission: vi.fn(() => true),
     });
 
     const { GET } = await import(
-      '@/app/api/v1/workspaces/[wsId]/settings/configs/route'
+      '@/legacy-api-routes/v1/workspaces/[wsId]/settings/configs/route'
     );
 
     const response = await GET(
@@ -134,9 +144,86 @@ describe('workspace settings configs route', () => {
     expect(mocks.workspaceConfigsIn).not.toHaveBeenCalled();
   });
 
+  it('allows report viewers to read report render configs without settings permission', async () => {
+    mocks.getPermissions.mockResolvedValueOnce({
+      containsPermission: vi.fn(
+        (permission: string) => permission === 'view_user_groups_reports'
+      ),
+      withoutPermission: vi.fn(() => true),
+    });
+    mocks.workspaceConfigsIn.mockResolvedValueOnce({
+      data: [{ id: 'BRAND_NAME', value: 'Easy Language Center' }],
+      error: null,
+    });
+
+    const { GET } = await import(
+      '@/legacy-api-routes/v1/workspaces/[wsId]/settings/configs/route'
+    );
+
+    const response = await GET(
+      new NextRequest(
+        'http://localhost/api/v1/workspaces/ws-1/settings/configs?ids=BRAND_NAME,REPORT_TITLE_PREFIX'
+      ),
+      {
+        params: Promise.resolve({ wsId: 'ws-1' }),
+      }
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({
+      BRAND_NAME: 'Easy Language Center',
+      REPORT_TITLE_PREFIX: null,
+    });
+    expect(mocks.workspaceConfigsIn).toHaveBeenCalledWith('id', [
+      'BRAND_NAME',
+      'REPORT_TITLE_PREFIX',
+    ]);
+  });
+
+  it('allows invoice creators to read invoice creation defaults without settings permission', async () => {
+    mocks.getPermissions.mockResolvedValueOnce({
+      containsPermission: vi.fn(
+        (permission: string) => permission === 'create_invoices'
+      ),
+      withoutPermission: vi.fn(() => true),
+    });
+    mocks.workspaceConfigsIn.mockResolvedValueOnce({
+      data: [
+        { id: 'DEFAULT_CURRENCY', value: 'VND' },
+        { id: 'default_wallet_id', value: 'wallet-1' },
+      ],
+      error: null,
+    });
+
+    const { GET } = await import(
+      '@/legacy-api-routes/v1/workspaces/[wsId]/settings/configs/route'
+    );
+
+    const response = await GET(
+      new NextRequest(
+        'http://localhost/api/v1/workspaces/ws-1/settings/configs?ids=default_wallet_id,DEFAULT_SUBSCRIPTION_CATEGORY_ID,DEFAULT_CURRENCY'
+      ),
+      {
+        params: Promise.resolve({ wsId: 'ws-1' }),
+      }
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({
+      DEFAULT_CURRENCY: 'VND',
+      DEFAULT_SUBSCRIPTION_CATEGORY_ID: null,
+      default_wallet_id: 'wallet-1',
+    });
+    expect(mocks.workspaceConfigsIn).toHaveBeenCalledWith('id', [
+      'default_wallet_id',
+      'DEFAULT_SUBSCRIPTION_CATEGORY_ID',
+      'DEFAULT_CURRENCY',
+    ]);
+  });
+
   it('allows settings managers to read configs', async () => {
     const { GET } = await import(
-      '@/app/api/v1/workspaces/[wsId]/settings/configs/route'
+      '@/legacy-api-routes/v1/workspaces/[wsId]/settings/configs/route'
     );
 
     const response = await GET(
@@ -165,7 +252,7 @@ describe('workspace settings configs route', () => {
 
   it('includes dedicated default included groups in batch config reads', async () => {
     const { GET } = await import(
-      '@/app/api/v1/workspaces/[wsId]/settings/configs/route'
+      '@/legacy-api-routes/v1/workspaces/[wsId]/settings/configs/route'
     );
 
     const response = await GET(
@@ -198,7 +285,7 @@ describe('workspace settings configs route', () => {
     });
 
     const { GET } = await import(
-      '@/app/api/v1/workspaces/[wsId]/settings/configs/route'
+      '@/legacy-api-routes/v1/workspaces/[wsId]/settings/configs/route'
     );
 
     const response = await GET(
@@ -224,7 +311,7 @@ describe('workspace settings configs route', () => {
     });
 
     const { GET } = await import(
-      '@/app/api/v1/workspaces/[wsId]/settings/configs/route'
+      '@/legacy-api-routes/v1/workspaces/[wsId]/settings/configs/route'
     );
 
     const response = await GET(
@@ -245,11 +332,12 @@ describe('workspace settings configs route', () => {
 
   it('keeps config mutations guarded by manage_workspace_settings', async () => {
     mocks.getPermissions.mockResolvedValueOnce({
+      containsPermission: vi.fn(() => false),
       withoutPermission: vi.fn(() => true),
     });
 
     const { PUT } = await import(
-      '@/app/api/v1/workspaces/[wsId]/settings/configs/route'
+      '@/legacy-api-routes/v1/workspaces/[wsId]/settings/configs/route'
     );
 
     const response = await PUT(
@@ -281,6 +369,7 @@ describe('workspace settings configs route', () => {
 
   it('returns 500 when workspace membership lookup fails in PUT', async () => {
     mocks.getPermissions.mockResolvedValue({
+      containsPermission: vi.fn(() => false),
       withoutPermission: vi.fn(() => false),
     });
     mocks.memberMaybeSingle.mockResolvedValueOnce({
@@ -289,7 +378,7 @@ describe('workspace settings configs route', () => {
     });
 
     const { PUT } = await import(
-      '@/app/api/v1/workspaces/[wsId]/settings/configs/route'
+      '@/legacy-api-routes/v1/workspaces/[wsId]/settings/configs/route'
     );
 
     const response = await PUT(

@@ -6,14 +6,20 @@ import {
   deleteWorkspaceLabel,
   deleteWorkspaceTaskBoard,
   deleteWorkspaceTaskProject,
+  disableWorkspaceTaskBoardPublicLink,
+  enableWorkspaceTaskBoardPublicLink,
+  getPublicTaskBoard,
   getTaskDialogHydration,
   getWorkspaceBoardsData,
   getWorkspaceTaskBoard,
+  getWorkspaceTaskBoardPublicLink,
   getWorkspaceTaskProjectTasks,
   linkWorkspaceTaskProjectTask,
+  listCurrentUserTaskBoards,
   listWorkspaceBoardsWithLists,
   listWorkspaceLabels,
   listWorkspaceTaskBoards,
+  listWorkspaceTaskBoardViewableMembers,
   listWorkspaceTaskLists,
   listWorkspaceTaskProjectDetails,
   listWorkspaceTasks,
@@ -52,6 +58,33 @@ describe('workspace board internal-api helpers', () => {
 
     expect(fetchMock).toHaveBeenCalledWith(
       'https://internal.example.com/api/v1/workspaces/ws-1/task-boards?q=alpha&page=2&pageSize=25&status=archived',
+      expect.objectContaining({
+        cache: 'no-store',
+      })
+    );
+  });
+
+  it('lists current user accessible task boards', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      createJsonResponse({
+        boards: [
+          {
+            access_type: 'guest',
+            id: 'board-1',
+            name: 'Shared Board',
+            ws_id: 'ws-1',
+          },
+        ],
+      })
+    );
+
+    await listCurrentUserTaskBoards({
+      baseUrl: 'https://internal.example.com',
+      fetch: fetchMock as unknown as typeof fetch,
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://internal.example.com/api/v1/users/me/task-boards',
       expect.objectContaining({
         cache: 'no-store',
       })
@@ -134,7 +167,12 @@ describe('workspace board internal-api helpers', () => {
 
     await searchWorkspaceTasks(
       'ws-1',
-      { query: 'deadline review', matchCount: 20, matchThreshold: 0.3 },
+      {
+        query: 'deadline review',
+        matchCount: 20,
+        matchThreshold: 0.3,
+        mode: 'text',
+      },
       {
         baseUrl: 'https://internal.example.com',
         fetch: fetchMock as unknown as typeof fetch,
@@ -149,6 +187,7 @@ describe('workspace board internal-api helpers', () => {
           query: 'deadline review',
           matchCount: 20,
           matchThreshold: 0.3,
+          mode: 'text',
         }),
         cache: 'no-store',
       })
@@ -278,6 +317,119 @@ describe('workspace board internal-api helpers', () => {
     );
   });
 
+  it('manages workspace task board public links', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        createJsonResponse({
+          publicLink: {
+            board_id: 'board-1',
+            code: 'public-code',
+            enabled: true,
+            id: 'link-1',
+          },
+        })
+      )
+      .mockResolvedValueOnce(
+        createJsonResponse({
+          publicLink: {
+            board_id: 'board-1',
+            code: 'public-code',
+            enabled: true,
+            id: 'link-1',
+          },
+        })
+      )
+      .mockResolvedValueOnce(createJsonResponse({ success: true }));
+
+    const options = {
+      baseUrl: 'https://internal.example.com',
+      fetch: fetchMock as unknown as typeof fetch,
+    };
+
+    await getWorkspaceTaskBoardPublicLink('ws-1', 'board-1', options);
+    await enableWorkspaceTaskBoardPublicLink('ws-1', 'board-1', options);
+    await disableWorkspaceTaskBoardPublicLink('ws-1', 'board-1', options);
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      'https://internal.example.com/api/v1/workspaces/ws-1/task-boards/board-1/public-link',
+      expect.objectContaining({
+        cache: 'no-store',
+      })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      'https://internal.example.com/api/v1/workspaces/ws-1/task-boards/board-1/public-link',
+      expect.objectContaining({
+        method: 'POST',
+        cache: 'no-store',
+      })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      3,
+      'https://internal.example.com/api/v1/workspaces/ws-1/task-boards/board-1/public-link',
+      expect.objectContaining({
+        method: 'DELETE',
+        cache: 'no-store',
+      })
+    );
+  });
+
+  it('loads a public task board through the shared public endpoint', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      createJsonResponse({
+        board: {
+          id: 'board-1',
+          name: 'Public roadmap',
+          created_at: '2026-06-24T00:00:00.000Z',
+        },
+        generatedAt: '2026-06-24T01:00:00.000Z',
+        lists: [],
+        tasks: [],
+        truncated: false,
+      })
+    );
+
+    await getPublicTaskBoard('Shared Code', {
+      baseUrl: 'https://internal.example.com',
+      fetch: fetchMock as unknown as typeof fetch,
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://internal.example.com/api/v1/shared/task-boards/Shared%20Code',
+      expect.objectContaining({
+        cache: 'no-store',
+      })
+    );
+  });
+
+  it('lists workspace task board viewable members', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      createJsonResponse({
+        members: [
+          {
+            display_name: 'Project Manager',
+            id: 'user-1',
+            user_id: 'user-1',
+          },
+        ],
+      })
+    );
+
+    await listWorkspaceTaskBoardViewableMembers('ws-1', 'board-1', {
+      baseUrl: 'https://internal.example.com',
+      fetch: fetchMock as unknown as typeof fetch,
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://internal.example.com/api/v1/workspaces/ws-1/task-boards/board-1/viewable-members',
+      expect.objectContaining({
+        cache: 'no-store',
+      })
+    );
+  });
+
   it('lists workspace task lists through the board lists route', async () => {
     const fetchMock = vi
       .fn()
@@ -309,6 +461,9 @@ describe('workspace board internal-api helpers', () => {
             display_number: 12,
             created_at: '2026-06-12T00:00:00.000Z',
           },
+          taskWsId: 'source-ws',
+          taskWorkspacePersonal: false,
+          taskWorkspaceTier: 'PRO',
         })
       )
       .mockResolvedValueOnce(
@@ -329,8 +484,6 @@ describe('workspace board internal-api helpers', () => {
       'task-1',
       {
         taskWsId: 'source-ws',
-        taskWorkspacePersonal: false,
-        taskWorkspaceTier: 'PRO',
       },
       {
         baseUrl: 'https://internal.example.com',

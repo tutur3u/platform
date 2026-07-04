@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { getTasksAppUrlClient } from '@/lib/tasks-app-url-client';
 
 export interface TaskHistoryEntry {
   id: string;
@@ -84,8 +85,10 @@ export function useTaskHistory({
       });
 
       const response = await fetch(
-        `/api/v1/workspaces/${wsId}/tasks/${taskId}/history?${params}`,
-        { cache: 'no-store' }
+        getTasksAppUrlClient(
+          `/api/v1/workspaces/${wsId}/tasks/${taskId}/history?${params}`
+        ),
+        { cache: 'no-store', credentials: 'include' }
       );
 
       if (!response.ok) {
@@ -128,8 +131,10 @@ export function useTaskHistoryInfinite({
       });
 
       const response = await fetch(
-        `/api/v1/workspaces/${wsId}/tasks/${taskId}/history?${params}`,
-        { cache: 'no-store' }
+        getTasksAppUrlClient(
+          `/api/v1/workspaces/${wsId}/tasks/${taskId}/history?${params}`
+        ),
+        { cache: 'no-store', credentials: 'include' }
       );
 
       if (!response.ok) {

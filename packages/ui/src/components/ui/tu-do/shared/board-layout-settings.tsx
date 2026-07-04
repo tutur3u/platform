@@ -76,13 +76,13 @@ import { EditListDialog } from './edit-list-dialog';
 import { isTaskListNameExistsError } from './task-board-errors';
 import { translateTaskListNameForDisplay } from './utils/translate-task-list-display-name';
 
-interface BoardLayoutSettingsProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
+interface BoardLayoutSettingsContentProps {
   boardId: string;
   wsId?: string;
   lists: WorkspaceTaskList[];
   onUpdate: () => void;
+  disableScrollArea?: boolean;
+  scrollAreaClassName?: string;
   translations?: {
     boardLayoutSettings?: string;
     boardLayoutSettingsDescription?: string;
@@ -134,6 +134,11 @@ interface BoardLayoutSettingsProps {
     indigo?: string;
     cyan?: string;
   };
+}
+
+interface BoardLayoutSettingsProps extends BoardLayoutSettingsContentProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }
 
 const statusConfig = {
@@ -458,15 +463,15 @@ function SortableListItem({
   );
 }
 
-export function BoardLayoutSettings({
-  open,
-  onOpenChange,
+export function BoardLayoutSettingsContent({
   boardId,
   wsId,
   lists,
   onUpdate,
+  disableScrollArea = false,
+  scrollAreaClassName,
   translations,
-}: BoardLayoutSettingsProps) {
+}: BoardLayoutSettingsContentProps) {
   const t = useMemo(
     () => ({
       boardLayoutSettings:
@@ -895,139 +900,127 @@ export function BoardLayoutSettings({
     setCreatingList(true);
   }, []);
 
+  const listGroups = (
+    <DndContext
+      sensors={sensors}
+      collisionDetection={closestCenter}
+      onDragEnd={handleDragEnd}
+    >
+      <div className="space-y-6">
+        {statuses.map((status) => {
+          const StatusIcon = statusConfig[status].icon;
+          const statusLists = (groupedLists[status] || []).sort(
+            (a, b) => (a?.position || 0) - (b?.position || 0)
+          );
+
+          return (
+            <div key={status} className="space-y-3">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <div
+                    className={cn(
+                      'flex h-6 w-6 items-center justify-center rounded',
+                      statusConfig[status].bgColor
+                    )}
+                  >
+                    <StatusIcon
+                      className={cn('h-3.5 w-3.5', statusConfig[status].color)}
+                    />
+                  </div>
+                  <h3 className="font-semibold text-sm">
+                    {statusLabels[status]}
+                  </h3>
+                  <Badge variant="secondary" className="text-[10px]">
+                    {statusLists.length}
+                  </Badge>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 gap-1.5 px-2 text-muted-foreground hover:text-foreground"
+                  onClick={() => openCreateListDialog(status)}
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  {t.addNewList}
+                </Button>
+              </div>
+
+              {statusLists.length === 0 ? (
+                <div className="rounded-lg border-2 border-dashed p-4 text-center">
+                  <p className="text-muted-foreground text-sm">
+                    {t.noListsInStatus}
+                  </p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="mt-3 gap-1.5"
+                    onClick={() => openCreateListDialog(status)}
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                    {t.addNewList}
+                  </Button>
+                </div>
+              ) : (
+                <SortableContext
+                  items={statusLists.map((l) => l.id)}
+                  strategy={verticalListSortingStrategy}
+                >
+                  <div className="space-y-2">
+                    {statusLists.map((list) => (
+                      <SortableListItem
+                        key={list.id}
+                        list={list}
+                        taskCount={0}
+                        onEdit={setEditingList}
+                        onDelete={setDeletingList}
+                        onColorChange={handleColorChange}
+                        translations={{
+                          task: t.task,
+                          tasks: t.tasks,
+                          changeColor: t.changeColor,
+                          editList: t.editList,
+                          deleteList: t.deleteList,
+                          backlog: t.backlog,
+                          active: t.active,
+                          review: t.review,
+                          doneStatus: t.doneStatus,
+                          closed: t.closed,
+                          documents: t.documents,
+                          gray: t.gray,
+                          red: t.red,
+                          blue: t.blue,
+                          green: t.green,
+                          yellow: t.yellow,
+                          orange: t.orange,
+                          purple: t.purple,
+                          pink: t.pink,
+                          indigo: t.indigo,
+                          cyan: t.cyan,
+                        }}
+                      />
+                    ))}
+                  </div>
+                </SortableContext>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </DndContext>
+  );
+
   return (
     <>
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-3xl">
-          <DialogHeader>
-            <DialogTitle>{t.boardLayoutSettings}</DialogTitle>
-            <DialogDescription>
-              {t.boardLayoutSettingsDescription}
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-6">
-            {/* Lists by Status */}
-            <ScrollArea className="h-125 pr-4">
-              <DndContext
-                sensors={sensors}
-                collisionDetection={closestCenter}
-                onDragEnd={handleDragEnd}
-              >
-                <div className="space-y-6">
-                  {statuses.map((status) => {
-                    const StatusIcon = statusConfig[status].icon;
-                    const statusLists = (groupedLists[status] || []).sort(
-                      (a, b) => (a?.position || 0) - (b?.position || 0)
-                    );
-
-                    return (
-                      <div key={status} className="space-y-3">
-                        <div className="flex items-center justify-between gap-3">
-                          <div className="flex items-center gap-2">
-                            <div
-                              className={cn(
-                                'flex h-6 w-6 items-center justify-center rounded',
-                                statusConfig[status].bgColor
-                              )}
-                            >
-                              <StatusIcon
-                                className={cn(
-                                  'h-3.5 w-3.5',
-                                  statusConfig[status].color
-                                )}
-                              />
-                            </div>
-                            <h3 className="font-semibold text-sm">
-                              {statusLabels[status]}
-                            </h3>
-                            <Badge variant="secondary" className="text-[10px]">
-                              {statusLists.length}
-                            </Badge>
-                          </div>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-8 gap-1.5 px-2 text-muted-foreground hover:text-foreground"
-                            onClick={() => openCreateListDialog(status)}
-                          >
-                            <Plus className="h-3.5 w-3.5" />
-                            {t.addNewList}
-                          </Button>
-                        </div>
-
-                        {statusLists.length === 0 ? (
-                          <div className="rounded-lg border-2 border-dashed p-4 text-center">
-                            <p className="text-muted-foreground text-sm">
-                              {t.noListsInStatus}
-                            </p>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="mt-3 gap-1.5"
-                              onClick={() => openCreateListDialog(status)}
-                            >
-                              <Plus className="h-3.5 w-3.5" />
-                              {t.addNewList}
-                            </Button>
-                          </div>
-                        ) : (
-                          <SortableContext
-                            items={statusLists.map((l) => l.id)}
-                            strategy={verticalListSortingStrategy}
-                          >
-                            <div className="space-y-2">
-                              {statusLists.map((list) => (
-                                <SortableListItem
-                                  key={list.id}
-                                  list={list}
-                                  taskCount={0}
-                                  onEdit={setEditingList}
-                                  onDelete={setDeletingList}
-                                  onColorChange={handleColorChange}
-                                  translations={{
-                                    task: t.task,
-                                    tasks: t.tasks,
-                                    changeColor: t.changeColor,
-                                    editList: t.editList,
-                                    deleteList: t.deleteList,
-                                    backlog: t.backlog,
-                                    active: t.active,
-                                    review: t.review,
-                                    doneStatus: t.doneStatus,
-                                    closed: t.closed,
-                                    documents: t.documents,
-                                    gray: t.gray,
-                                    red: t.red,
-                                    blue: t.blue,
-                                    green: t.green,
-                                    yellow: t.yellow,
-                                    orange: t.orange,
-                                    purple: t.purple,
-                                    pink: t.pink,
-                                    indigo: t.indigo,
-                                    cyan: t.cyan,
-                                  }}
-                                />
-                              ))}
-                            </div>
-                          </SortableContext>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </DndContext>
-            </ScrollArea>
-          </div>
-
-          <DialogFooter>
-            <Button variant="outline" onClick={() => onOpenChange(false)}>
-              {t.done}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <div className="space-y-6">
+        {/* Lists by Status */}
+        {disableScrollArea ? (
+          <div className={scrollAreaClassName}>{listGroups}</div>
+        ) : (
+          <ScrollArea className={cn('h-125 pr-4', scrollAreaClassName)}>
+            {listGroups}
+          </ScrollArea>
+        )}
+      </div>
 
       {/* Create List Dialog */}
       <CreateListDialog
@@ -1101,5 +1094,41 @@ export function BoardLayoutSettings({
         </AlertDialogContent>
       </AlertDialog>
     </>
+  );
+}
+
+export function BoardLayoutSettings({
+  open,
+  onOpenChange,
+  translations,
+  ...contentProps
+}: BoardLayoutSettingsProps) {
+  const title = translations?.boardLayoutSettings ?? 'Board Layout Settings';
+  const description =
+    translations?.boardLayoutSettingsDescription ??
+    'Manage your board columns and organize them by status. Drag to reorder within each status group.';
+  const done = translations?.done ?? 'Done';
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-3xl">
+        <DialogHeader>
+          <DialogTitle>{title}</DialogTitle>
+          <DialogDescription>{description}</DialogDescription>
+        </DialogHeader>
+
+        <BoardLayoutSettingsContent
+          {...contentProps}
+          scrollAreaClassName="h-125 pr-4"
+          translations={translations}
+        />
+
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            {done}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

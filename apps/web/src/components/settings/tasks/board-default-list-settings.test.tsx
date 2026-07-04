@@ -125,9 +125,11 @@ describe('BoardDefaultListSettings', () => {
 
     await waitFor(() =>
       expect(mocks.apiFetch).toHaveBeenCalledWith(
-        '/api/v1/workspaces/ws-1/task-boards/board-1',
+        'http://localhost:7809/api/v1/workspaces/ws-1/task-boards/board-1',
         expect.objectContaining({
           method: 'PUT',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ default_list_id: 'list-2' }),
         })
       )
@@ -156,9 +158,11 @@ describe('BoardDefaultListSettings', () => {
 
     await waitFor(() =>
       expect(mocks.apiFetch).toHaveBeenCalledWith(
-        '/api/v1/workspaces/ws-1/task-boards/board-1',
+        'http://localhost:7809/api/v1/workspaces/ws-1/task-boards/board-1',
         expect.objectContaining({
           method: 'PUT',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ default_list_id: null }),
         })
       )

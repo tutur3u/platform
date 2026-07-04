@@ -19,11 +19,14 @@ import {
   OperatorDialogFooter,
   OperatorDialogHeader,
 } from './operator-dialog-shell';
+import { currency } from './operator-format';
+import { useWorkspaceCurrency } from './workspace-currency';
 
 export function CostingImportDialog({ wsId }: { wsId: string }) {
   const t = useTranslations('inventory.operator.costing');
   const forms = useTranslations('inventory.operator.forms');
   const queryClient = useQueryClient();
+  const wsCurrency = useWorkspaceCurrency();
   const [open, setOpen] = useState(false);
   const [csv, setCsv] = useState('');
   const [preview, setPreview] = useState<InventoryCostImportPreview | null>(
@@ -85,7 +88,8 @@ export function CostingImportDialog({ wsId }: { wsId: string }) {
                         <th className="px-3 py-2">{t('item')}</th>
                         <th className="px-3 py-2">{t('batchSize')}</th>
                         <th className="px-3 py-2">{t('unitCost')}</th>
-                        <th className="px-3 py-2">{t('totalCost')}</th>
+                        <th className="px-3 py-2">{t('artCommission')}</th>
+                        <th className="px-3 py-2">{t('shipping')}</th>
                         <th className="px-3 py-2">{t('retail')}</th>
                       </tr>
                     </thead>
@@ -98,12 +102,21 @@ export function CostingImportDialog({ wsId }: { wsId: string }) {
                           <td className="px-3 py-2">{row.itemCategory}</td>
                           <td className="px-3 py-2">{row.batchSize}</td>
                           <td className="px-3 py-2">
-                            {row.manufacturingCostPerUnit}
+                            {currency(row.manufacturingCostPerUnit, wsCurrency)}
                           </td>
                           <td className="px-3 py-2">
-                            {row.totalCostPerUnit ?? '-'}
+                            {row.artCommissionCost
+                              ? currency(row.artCommissionCost, wsCurrency)
+                              : '-'}
                           </td>
-                          <td className="px-3 py-2">{row.targetRetailPrice}</td>
+                          <td className="px-3 py-2">
+                            {row.shippingCost
+                              ? currency(row.shippingCost, wsCurrency)
+                              : '-'}
+                          </td>
+                          <td className="px-3 py-2">
+                            {currency(row.targetRetailPrice, wsCurrency)}
+                          </td>
                         </tr>
                       ))}
                     </tbody>

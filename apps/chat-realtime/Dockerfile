@@ -18,6 +18,7 @@ COPY apps/external/package.json ./apps/external/package.json
 COPY apps/finance/package.json ./apps/finance/package.json
 COPY apps/hive/package.json ./apps/hive/package.json
 COPY apps/hive-realtime/package.json ./apps/hive-realtime/package.json
+COPY apps/infrastructure/package.json ./apps/infrastructure/package.json
 COPY apps/inventory/package.json ./apps/inventory/package.json
 COPY apps/mail/package.json ./apps/mail/package.json
 COPY apps/meet/package.json ./apps/meet/package.json
@@ -25,7 +26,6 @@ COPY apps/mind/package.json ./apps/mind/package.json
 COPY apps/mobile/package.json ./apps/mobile/package.json
 COPY apps/nova/package.json ./apps/nova/package.json
 COPY apps/playground/package.json ./apps/playground/package.json
-COPY apps/qr/package.json ./apps/qr/package.json
 COPY apps/redis/package.json ./apps/redis/package.json
 COPY apps/rewise/package.json ./apps/rewise/package.json
 COPY apps/shortener/package.json ./apps/shortener/package.json
@@ -33,7 +33,9 @@ COPY apps/storage-unzip-proxy/package.json ./apps/storage-unzip-proxy/package.js
 COPY apps/storefront/package.json ./apps/storefront/package.json
 COPY apps/supermemory/package.json ./apps/supermemory/package.json
 COPY apps/tasks/package.json ./apps/tasks/package.json
+COPY apps/tanstack-web/package.json ./apps/tanstack-web/package.json
 COPY apps/teach/package.json ./apps/teach/package.json
+COPY apps/tools/package.json ./apps/tools/package.json
 COPY apps/track/package.json ./apps/track/package.json
 COPY apps/learn/package.json ./apps/learn/package.json
 COPY apps/web/package.json ./apps/web/package.json
@@ -48,8 +50,10 @@ COPY packages/hive-ui/package.json ./packages/hive-ui/package.json
 COPY packages/hooks/package.json ./packages/hooks/package.json
 COPY packages/icons/package.json ./packages/icons/package.json
 COPY packages/internal-api/package.json ./packages/internal-api/package.json
+COPY packages/inventory-core/package.json ./packages/inventory-core/package.json
 COPY packages/masonry/package.json ./packages/masonry/package.json
 COPY packages/microsoft/package.json ./packages/microsoft/package.json
+COPY packages/mind-core/package.json ./packages/mind-core/package.json
 COPY packages/mind-ui/package.json ./packages/mind-ui/package.json
 COPY packages/offline/package.json ./packages/offline/package.json
 COPY packages/payment/package.json ./packages/payment/package.json

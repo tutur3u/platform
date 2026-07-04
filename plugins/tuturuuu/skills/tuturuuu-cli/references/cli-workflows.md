@@ -52,6 +52,9 @@ ttr finance transactions --help
 ttr workspaces --help
 ttr tasks --help
 ttr tasks create --help
+ttr task-templates --help
+ttr task-templates import --help
+ttr task-templates export --help
 ttr tasks done --help
 ttr tasks close --help
 ttr tasks update --help
@@ -76,6 +79,9 @@ ttr box setup
 ttr workspaces
 ttr workspaces --json --no-update-check
 ttr workspaces use
+ttr task-templates list
+ttr task-templates export bug-report --file .tuturuuu/task-templates/bug-report.md
+ttr tasks create --template bug-report --list <list-id>
 ```
 
 Use JSON output for agent workflows:
@@ -141,6 +147,13 @@ and adjacent `platform-*.ts` modules. Keep command handlers focused on parsing,
 payload construction, rendering, and config/session concerns. Put authenticated
 API details in SDK client helpers or `packages/internal-api/src/*` helpers.
 
+Task-template commands use the same boundary. Keep workspace-stored template
+CRUD and instantiation in `client.tasks`, and keep local markdown parsing,
+frontmatter validation, and import/export helpers in focused `packages/sdk/src`
+modules. `ttr tasks create --template <key-or-path>` should resolve workspace
+template keys or `.tuturuuu/task-templates/*.md` files, then apply explicit
+task-create flags as overrides.
+
 When a new command group becomes substantial, split focused modules under
 `packages/sdk/src/cli/` before the command file grows too large. Keep public
 exports in `packages/sdk/src/index.ts` aligned with new SDK clients and payload
@@ -199,8 +212,9 @@ globally installed CLI.
 
 Use focused CLI skills for command families:
 
-- `$tuturuuu-cli-tasks` for `ttr tasks`, task board/list/label discovery, task
-  capture, compact task output, completion, closure, movement, and task
+- `$tuturuuu-cli-tasks` for `ttr tasks`, `ttr task-templates`, task
+  board/list/label discovery, task capture, compact task output, completion,
+  closure, movement, reusable task-template import/export, and task
   verification.
 - `$tuturuuu-cli-finance` for `ttr finance`, wallet/transaction/category/budget
   and recurring CRUD, analytics reads, pagination, explicit-workspace finance

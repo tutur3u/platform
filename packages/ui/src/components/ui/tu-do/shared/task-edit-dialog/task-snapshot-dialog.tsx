@@ -29,15 +29,20 @@ interface TaskSnapshotDialogProps {
   onClose: () => void;
   onRevertSuccess?: () => void;
   locale?: string;
-  t?: (key: string, options?: { defaultValue?: string }) => string;
+  t?: (
+    key: string,
+    options?: { count?: number; defaultValue?: string }
+  ) => string;
   /** Estimation type for displaying points */
   estimationType?: EstimationType;
   /** When true, disables the revert functionality (feature not stable) */
   revertDisabled?: boolean;
 }
 
-const defaultT = (key: string, opts?: { defaultValue?: string }) =>
-  opts?.defaultValue || key;
+const defaultT = (
+  key: string,
+  opts?: { count?: number; defaultValue?: string }
+) => opts?.defaultValue || key;
 
 export function TaskSnapshotDialog({
   wsId,

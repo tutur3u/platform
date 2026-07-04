@@ -1,4 +1,4 @@
-import { Blocks, Layers, Sparkles } from '@tuturuuu/icons';
+import { Blocks, Layers, Sparkles } from '@tuturuuu/icons/lucide-static';
 import { cn } from '@tuturuuu/utils/format';
 import type { Metadata } from 'next';
 import { getTranslations, setRequestLocale } from 'next-intl/server';

@@ -3,6 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { TaskUserOverride } from '@tuturuuu/types';
 import { toast } from '@tuturuuu/ui/sonner';
+import { getTaskApiUrl } from '../../../../../../lib/tasks-app-url';
 
 type OverrideInput = Partial<
   Omit<TaskUserOverride, 'task_id' | 'user_id' | 'created_at' | 'updated_at'>
@@ -23,7 +24,10 @@ export function useTaskOverrides(
     queryKey,
     queryFn: async (): Promise<TaskUserOverride | null> => {
       if (!taskId) return null;
-      const res = await fetch(`/api/v1/users/me/tasks/${taskId}/overrides`);
+      const res = await fetch(
+        getTaskApiUrl(`/api/v1/users/me/tasks/${taskId}/overrides`),
+        { credentials: 'include' }
+      );
       if (!res.ok) throw new Error('Failed to fetch override');
       const json = await res.json();
       return json.data ?? null;
@@ -35,11 +39,15 @@ export function useTaskOverrides(
   const upsertMutation = useMutation({
     mutationFn: async (input: OverrideInput): Promise<TaskUserOverride> => {
       if (!taskId) throw new Error('No task ID');
-      const res = await fetch(`/api/v1/users/me/tasks/${taskId}/overrides`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(input),
-      });
+      const res = await fetch(
+        getTaskApiUrl(`/api/v1/users/me/tasks/${taskId}/overrides`),
+        {
+          method: 'PUT',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(input),
+        }
+      );
       if (!res.ok) {
         const err = await res.json().catch(() => null);
         throw new Error(err?.error || 'Failed to save override');
@@ -85,9 +93,13 @@ export function useTaskOverrides(
   const deleteMutation = useMutation({
     mutationFn: async () => {
       if (!taskId) throw new Error('No task ID');
-      const res = await fetch(`/api/v1/users/me/tasks/${taskId}/overrides`, {
-        method: 'DELETE',
-      });
+      const res = await fetch(
+        getTaskApiUrl(`/api/v1/users/me/tasks/${taskId}/overrides`),
+        {
+          method: 'DELETE',
+          credentials: 'include',
+        }
+      );
       if (!res.ok) throw new Error('Failed to delete override');
     },
     onMutate: async () => {

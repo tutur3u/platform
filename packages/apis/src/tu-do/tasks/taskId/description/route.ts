@@ -4,6 +4,7 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import type { TaskActorRpcArgs } from '@tuturuuu/types/db';
 import {
@@ -50,6 +51,44 @@ type StoredChunkLengthRow = Pick<ChunkRow, 'chunk' | 'chunk_index'>;
 type PrivateChunkClient = {
   from: (table: string) => any;
 };
+type LoadChunkSessionResult =
+  | {
+      session: ChunkSessionRow;
+    }
+  | {
+      error: NextResponse;
+    };
+type ParsedJsonBody =
+  | {
+      body: unknown;
+    }
+  | {
+      error: NextResponse;
+    };
+export type TaskDescriptionRouteAuthContext = {
+  appSession?: boolean;
+  supabase: TypedSupabaseClient;
+  user: SupabaseUser;
+};
+type TaskDescriptionRouteContext = {
+  params: Promise<{ wsId: string; taskId: string }>;
+};
+type TaskDescriptionRequestAuth =
+  | {
+      auth: TaskDescriptionRouteAuthContext;
+    }
+  | {
+      error: NextResponse;
+    };
+type TaskDescriptionWorkspaceAccess =
+  | {
+      sbAdmin: TypedSupabaseClient;
+      taskId: string;
+      user: SupabaseUser;
+    }
+  | {
+      error: NextResponse;
+    };
 
 async function fetchPersistedTaskDescription(
   sbAdmin: TypedSupabaseClient,
@@ -116,7 +155,7 @@ function getPrivateChunkClient(sbAdmin: TypedSupabaseClient) {
   return sbAdmin.schema('private') as unknown as PrivateChunkClient;
 }
 
-async function parseJsonBody(request: NextRequest) {
+async function parseJsonBody(request: NextRequest): Promise<ParsedJsonBody> {
   try {
     return { body: await request.json() };
   } catch {
@@ -147,7 +186,7 @@ async function loadChunkSession({
   sessionId: string;
   taskId: string;
   userId: string;
-}) {
+}): Promise<LoadChunkSessionResult> {
   const { data, error } = await privateDb
     .from('task_description_chunk_sessions')
     .select('id, task_id, user_id, fields')
@@ -227,7 +266,7 @@ async function persistTaskDescriptionUpdate({
   sbAdmin: TypedSupabaseClient;
   taskId: string;
   userId: string;
-}) {
+}): Promise<NextResponse> {
   if (
     body.description_yjs_state !== undefined &&
     !(await validateTaskDescriptionYjsState(body.description_yjs_state))
@@ -342,7 +381,7 @@ async function handleBeginChunks({
   privateDb: PrivateChunkClient;
   taskId: string;
   userId: string;
-}) {
+}): Promise<NextResponse> {
   await cleanupExpiredChunkSessions(privateDb);
 
   const { data, error } = await privateDb
@@ -375,7 +414,7 @@ async function handleAppendChunk({
   privateDb: PrivateChunkClient;
   taskId: string;
   userId: string;
-}) {
+}): Promise<NextResponse> {
   const sessionResult = await loadChunkSession({
     privateDb,
     sessionId: body.session_id,
@@ -479,7 +518,7 @@ async function handleCommitChunks({
   sessionId: string;
   taskId: string;
   userId: string;
-}) {
+}): Promise<NextResponse> {
   const sessionResult = await loadChunkSession({
     privateDb,
     sessionId,
@@ -561,7 +600,7 @@ async function handleAbortChunks({
   sessionId: string;
   taskId: string;
   userId: string;
-}) {
+}): Promise<NextResponse> {
   const { error } = await privateDb
     .from('task_description_chunk_sessions')
     .delete()
@@ -579,13 +618,20 @@ async function handleAbortChunks({
   return NextResponse.json({ success: true });
 }
 
-async function requireWorkspaceTaskAccess(
+async function resolveTaskDescriptionRequestAuth(
   request: NextRequest,
-  rawParams: unknown
-) {
-  const { wsId: rawWsId, taskId } = paramsSchema.parse(rawParams);
-  const supabase = await createClient(request);
+  auth?: TaskDescriptionRouteAuthContext
+): Promise<TaskDescriptionRequestAuth> {
+  if (auth) {
+    return {
+      auth: {
+        ...auth,
+        appSession: auth.appSession === true,
+      },
+    };
+  }
 
+  const supabase = (await createClient(request)) as TypedSupabaseClient;
   const { user, authError } = await resolveAuthenticatedSessionUser(supabase);
 
   if (authError || !user) {
@@ -594,6 +640,19 @@ async function requireWorkspaceTaskAccess(
     };
   }
 
+  return { auth: { appSession: false, supabase, user } };
+}
+
+async function requireWorkspaceTaskAccess(
+  request: NextRequest,
+  auth: TaskDescriptionRouteAuthContext | undefined,
+  rawParams: unknown
+): Promise<TaskDescriptionWorkspaceAccess> {
+  const { wsId: rawWsId, taskId } = paramsSchema.parse(rawParams);
+  const resolvedAuth = await resolveTaskDescriptionRequestAuth(request, auth);
+  if ('error' in resolvedAuth) return resolvedAuth;
+
+  const { supabase, user } = resolvedAuth.auth;
   const wsId = await normalizeWorkspaceId(rawWsId, supabase);
 
   const memberCheck = await verifyWorkspaceMembershipType({
@@ -658,12 +717,17 @@ async function requireWorkspaceTaskAccess(
   return { sbAdmin, taskId, user };
 }
 
-export async function GET(
+export async function handleTaskDescriptionRouteGET(
   request: NextRequest,
-  { params }: { params: Promise<{ wsId: string; taskId: string }> }
-) {
+  { params }: TaskDescriptionRouteContext,
+  auth?: TaskDescriptionRouteAuthContext
+): Promise<NextResponse> {
   try {
-    const access = await requireWorkspaceTaskAccess(request, await params);
+    const access = await requireWorkspaceTaskAccess(
+      request,
+      auth,
+      await params
+    );
     if ('error' in access) return access.error;
 
     const { sbAdmin, taskId } = access;
@@ -702,12 +766,24 @@ export async function GET(
   }
 }
 
-export async function PATCH(
+export function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ wsId: string; taskId: string }> }
+  context: TaskDescriptionRouteContext
 ) {
+  return handleTaskDescriptionRouteGET(request, context);
+}
+
+export async function handleTaskDescriptionRoutePATCH(
+  request: NextRequest,
+  { params }: TaskDescriptionRouteContext,
+  auth?: TaskDescriptionRouteAuthContext
+): Promise<NextResponse> {
   try {
-    const access = await requireWorkspaceTaskAccess(request, await params);
+    const access = await requireWorkspaceTaskAccess(
+      request,
+      auth,
+      await params
+    );
     if ('error' in access) return access.error;
 
     const { sbAdmin, taskId, user } = access;
@@ -753,6 +829,11 @@ export async function PATCH(
             userId: user.id,
           });
       }
+
+      return NextResponse.json(
+        { error: 'Unsupported task description chunk action' },
+        { status: 400 }
+      );
     }
 
     const body = updateTaskDescriptionSchema.parse(rawBody);
@@ -775,4 +856,11 @@ export async function PATCH(
       { status: 500 }
     );
   }
+}
+
+export function PATCH(
+  request: NextRequest,
+  context: TaskDescriptionRouteContext
+): Promise<NextResponse> {
+  return handleTaskDescriptionRoutePATCH(request, context);
 }

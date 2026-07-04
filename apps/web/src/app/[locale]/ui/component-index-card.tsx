@@ -1,4 +1,4 @@
-import { ArrowRight } from '@tuturuuu/icons';
+import { ArrowRight } from '@tuturuuu/icons/lucide-static';
 import { cn } from '@tuturuuu/utils/format';
 import Link from 'next/link';
 import type { ShowcaseCategory } from './component-registry';

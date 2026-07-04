@@ -1,9 +1,6 @@
 'use client';
 
-import { XIcon } from '@tuturuuu/icons';
-import { motion } from 'framer-motion';
-import Image from 'next/image';
-import Link from 'next/link';
+import { XIcon } from '@tuturuuu/icons/lucide-static';
 import { useTranslations } from 'next-intl';
 import { Suspense } from 'react';
 import LoginForm from './form';
@@ -21,14 +18,27 @@ export type LoginRuntimeSupabaseConfig = {
 
 type LoginContentProps = {
   currentDomain: LoginDomain | null;
+  deferAuthSurfaceUntilSessionCheck: boolean;
   localE2EAuthBypass: boolean;
   multiAccount: boolean;
   runtimeSupabaseConfig: LoginRuntimeSupabaseConfig | null;
   tuturuuuDomain: LoginDomain;
 };
 
+function LoginDomainLogo({ domain }: { domain: LoginDomain }) {
+  return (
+    <span
+      aria-label={`${domain.name} Logo`}
+      className="block h-20 w-20 bg-center bg-contain bg-no-repeat"
+      role="img"
+      style={{ backgroundImage: `url(${domain.logo})` }}
+    />
+  );
+}
+
 export function LoginContent({
   currentDomain,
+  deferAuthSurfaceUntilSessionCheck,
   localE2EAuthBypass,
   multiAccount,
   runtimeSupabaseConfig,
@@ -37,14 +47,9 @@ export function LoginContent({
   const t = useTranslations();
 
   const renderLogo = (domain: LoginDomain) => (
-    <Link href={domain.href} className="flex items-center justify-center">
-      <Image
-        src={domain.logo}
-        width={80}
-        height={80}
-        alt={`${domain.name} Logo`}
-      />
-    </Link>
+    <a href={domain.href} className="flex items-center justify-center">
+      <LoginDomainLogo domain={domain} />
+    </a>
   );
 
   const isPartnerDomain =
@@ -54,12 +59,7 @@ export function LoginContent({
   return (
     <div className="min-h-screen">
       <div className="mx-auto flex min-h-screen max-w-[36rem] items-center justify-center px-6 py-16">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.35 }}
-          className="w-full"
-        >
+        <div className="fade-in-0 slide-in-from-bottom-4 w-full animate-in duration-300">
           <div className="mb-8 text-center">
             {isPartnerDomain ? (
               <div className="space-y-4">
@@ -102,11 +102,7 @@ export function LoginContent({
             )}
           </div>
 
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.35, delay: 0.05 }}
-          >
+          <div className="fade-in-0 slide-in-from-bottom-3 animate-in duration-300 [animation-delay:50ms] [animation-fill-mode:both]">
             <Suspense
               fallback={
                 <div className="animate-pulse rounded-3xl border bg-background/95 p-8 shadow-xl">
@@ -122,37 +118,35 @@ export function LoginContent({
               }
             >
               <LoginForm
+                deferAuthSurfaceUntilSessionCheck={
+                  deferAuthSurfaceUntilSessionCheck
+                }
                 localE2EAuthBypass={localE2EAuthBypass}
                 runtimeSupabaseConfig={runtimeSupabaseConfig}
               />
             </Suspense>
-          </motion.div>
+          </div>
 
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.35, delay: 0.1 }}
-            className="mt-8 text-center"
-          >
+          <div className="fade-in-0 mt-8 animate-in text-center duration-300 [animation-delay:100ms] [animation-fill-mode:both]">
             <div className="text-balance text-muted-foreground text-xs leading-relaxed">
               <span>{t('auth.notice-p1')} </span>
-              <Link
+              <a
                 href="/terms"
                 className="text-primary underline underline-offset-2 transition-colors hover:text-primary/80"
               >
                 {t('auth.tos')}
-              </Link>
+              </a>
               <span> {t('common.and')} </span>
-              <Link
+              <a
                 href="/privacy"
                 className="text-primary underline underline-offset-2 transition-colors hover:text-primary/80"
               >
                 {t('auth.privacy')}
-              </Link>
+              </a>
               <span> {t('auth.notice-p2')}.</span>
             </div>
-          </motion.div>
-        </motion.div>
+          </div>
+        </div>
       </div>
     </div>
   );

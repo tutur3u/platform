@@ -1,7 +1,5 @@
 import { type QueryClient, useQueryClient } from '@tanstack/react-query';
-import type { Task } from '@tuturuuu/types/primitives/Task';
 import { toast } from '@tuturuuu/ui/sonner';
-import { invalidateTaskCaches } from '@tuturuuu/utils/task-helper';
 import {
   type Dispatch,
   type SetStateAction,
@@ -11,9 +9,11 @@ import {
 import { getRandomNewLabelColor } from '../../../utils/taskConstants';
 import {
   type BoardBroadcastFn,
+  getActiveBoardRefresh,
   getActiveBroadcast,
   useBoardBroadcast,
 } from '../../board-broadcast-context';
+import { patchTaskInVisibleCaches } from '../../task-cache-patches';
 import type {
   WorkspaceTaskAssignee,
   WorkspaceTaskLabel,
@@ -129,6 +129,32 @@ function upsertWorkspaceLabelCaches({
   }
 }
 
+function normalizeTaskAssignees(assignees: WorkspaceTaskAssignee[]) {
+  return assignees
+    .map((assignee) => {
+      const id = assignee.user_id || assignee.id;
+      if (!id) return null;
+
+      return {
+        id,
+        display_name: assignee.display_name ?? undefined,
+        email: assignee.email ?? undefined,
+        avatar_url: assignee.avatar_url ?? undefined,
+      };
+    })
+    .filter((assignee): assignee is NonNullable<typeof assignee> =>
+      Boolean(assignee)
+    );
+}
+
+function normalizeTaskProjects(projects: WorkspaceTaskProject[]) {
+  return projects.map((project) => ({
+    id: project.id,
+    name: project.name,
+    status: project.status ?? 'unknown',
+  }));
+}
+
 export function useTaskRelationships({
   wsId,
   labelCacheWorkspaceId,
@@ -189,9 +215,18 @@ export function useTaskRelationships({
         });
 
         setSelectedLabels(nextSelectedLabels);
-        await invalidateTaskCaches(queryClient, boardId);
+        patchTaskInVisibleCaches({
+          queryClient,
+          boardId,
+          taskId,
+          updater: (task) => ({
+            ...task,
+            labels: nextSelectedLabels,
+          }),
+        });
         queryClient.invalidateQueries({ queryKey: ['task-history'] });
         broadcast?.('task:relations-changed', { taskId });
+        getActiveBoardRefresh()?.({ invalidateTasks: false });
         onUpdate();
       } catch (error: unknown) {
         toast.error('Label update failed', {
@@ -246,30 +281,18 @@ export function useTaskRelationships({
         });
 
         setSelectedAssignees(nextSelectedAssignees);
-        queryClient.setQueryData(
-          ['tasks', boardId],
-          (old: Task[] | undefined) => {
-            if (!old) return old;
-            return old.map((task) => {
-              if (task.id !== taskId) return task;
-              const currentAssignees = task.assignees || [];
-              const newAssignees = exists
-                ? currentAssignees.filter((assignee) => assignee.id !== userId)
-                : [
-                    ...currentAssignees,
-                    {
-                      id: userId,
-                      display_name: member.display_name,
-                      email: member.email,
-                      avatar_url: member.avatar_url,
-                    },
-                  ];
-              return { ...task, assignees: newAssignees };
-            });
-          }
-        );
+        patchTaskInVisibleCaches({
+          queryClient,
+          boardId,
+          taskId,
+          updater: (task) => ({
+            ...task,
+            assignees: normalizeTaskAssignees(nextSelectedAssignees),
+          }),
+        });
         queryClient.invalidateQueries({ queryKey: ['task-history'] });
         broadcast?.('task:relations-changed', { taskId });
+        getActiveBoardRefresh()?.({ invalidateTasks: false });
         onUpdate();
       } catch (error: unknown) {
         toast.error('Assignee update failed', {
@@ -315,22 +338,18 @@ export function useTaskRelationships({
         });
 
         setSelectedProjects(nextSelectedProjects);
-        queryClient.setQueryData(
-          ['tasks', boardId],
-          (old: Task[] | undefined) => {
-            if (!old) return old;
-            return old.map((task) => {
-              if (task.id !== taskId) return task;
-              const currentProjects = task.projects || [];
-              const newProjects = exists
-                ? currentProjects.filter((entry) => entry.id !== project.id)
-                : [...currentProjects, project];
-              return { ...task, projects: newProjects };
-            });
-          }
-        );
+        patchTaskInVisibleCaches({
+          queryClient,
+          boardId,
+          taskId,
+          updater: (task) => ({
+            ...task,
+            projects: normalizeTaskProjects(nextSelectedProjects),
+          }),
+        });
         queryClient.invalidateQueries({ queryKey: ['task-history'] });
         broadcast?.('task:relations-changed', { taskId });
+        getActiveBoardRefresh()?.({ invalidateTasks: false });
         onUpdate();
       } catch (error: unknown) {
         toast.error('Project update failed', {
@@ -393,23 +412,17 @@ export function useTaskRelationships({
         });
 
         setSelectedLabels(nextSelectedLabels);
-        queryClient.setQueryData(
-          ['tasks', boardId],
-          (old: Task[] | undefined) => {
-            if (!old) return old;
-            return old.map((task) => {
-              if (task.id !== taskId) return task;
-              const currentLabels = task.labels || [];
-              return {
-                ...task,
-                labels: [...currentLabels, newLabel].sort((a, b) =>
-                  compareLabelsByName(a, b)
-                ),
-              };
-            });
-          }
-        );
+        patchTaskInVisibleCaches({
+          queryClient,
+          boardId,
+          taskId,
+          updater: (task) => ({
+            ...task,
+            labels: nextSelectedLabels,
+          }),
+        });
         broadcast?.('task:relations-changed', { taskId });
+        getActiveBoardRefresh()?.({ invalidateTasks: false });
         onUpdate();
         toast.success('Label created & linked', {
           description: 'New label added and attached to this task.',
@@ -485,21 +498,17 @@ export function useTaskRelationships({
         });
 
         setSelectedProjects(nextSelectedProjects);
-        queryClient.setQueryData(
-          ['tasks', boardId],
-          (old: Task[] | undefined) => {
-            if (!old) return old;
-            return old.map((task) => {
-              if (task.id !== taskId) return task;
-              const currentProjects = task.projects || [];
-              return {
-                ...task,
-                projects: [...currentProjects, newProject],
-              };
-            });
-          }
-        );
+        patchTaskInVisibleCaches({
+          queryClient,
+          boardId,
+          taskId,
+          updater: (task) => ({
+            ...task,
+            projects: normalizeTaskProjects(nextSelectedProjects),
+          }),
+        });
         broadcast?.('task:relations-changed', { taskId });
+        getActiveBoardRefresh()?.({ invalidateTasks: false });
         onUpdate();
         toast.success('Project created & linked', {
           description: 'New project added and attached to this task.',

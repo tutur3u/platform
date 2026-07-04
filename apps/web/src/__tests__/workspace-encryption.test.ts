@@ -51,7 +51,7 @@ import {
   generateWorkspaceKey,
   isEncryptionEnabled,
 } from '@tuturuuu/utils/encryption';
-import { looksLikeEncryptedData } from '../app/api/v1/workspaces/[wsId]/encryption/utils';
+import { looksLikeEncryptedData } from '../legacy-api-routes/v1/workspaces/[wsId]/encryption/utils';
 import { WORKSPACE_CALENDAR_EVENT_LIMITS } from '../lib/calendar/sync-field-limits';
 import { encryptEventForStorage } from '../lib/workspace-encryption';
 

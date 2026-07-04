@@ -105,7 +105,7 @@ describe('workspace setting config route', () => {
 
   it('reads default included groups from the dedicated store', async () => {
     const { GET } = await import(
-      '@/app/api/v1/workspaces/[wsId]/settings/[configId]/route'
+      '@/legacy-api-routes/v1/workspaces/[wsId]/settings/[configId]/route'
     );
 
     const response = await GET(
@@ -133,7 +133,7 @@ describe('workspace setting config route', () => {
 
   it('writes default included groups through the dedicated store', async () => {
     const { PUT } = await import(
-      '@/app/api/v1/workspaces/[wsId]/settings/[configId]/route'
+      '@/legacy-api-routes/v1/workspaces/[wsId]/settings/[configId]/route'
     );
 
     const response = await PUT(
@@ -173,7 +173,7 @@ describe('workspace setting config route', () => {
     });
 
     const { PUT } = await import(
-      '@/app/api/v1/workspaces/[wsId]/settings/[configId]/route'
+      '@/legacy-api-routes/v1/workspaces/[wsId]/settings/[configId]/route'
     );
 
     const response = await PUT(

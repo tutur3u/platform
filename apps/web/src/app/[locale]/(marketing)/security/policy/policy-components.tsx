@@ -1,7 +1,9 @@
-import { CheckCircle2, type LucideIcon } from '@tuturuuu/icons';
-import { Badge } from '@tuturuuu/ui/badge';
-import { Card } from '@tuturuuu/ui/card';
+import { CheckCircle2, type LucideIcon } from '@tuturuuu/icons/lucide';
 import { cn } from '@tuturuuu/utils/format';
+import {
+  SecuritySubpageBadge as Badge,
+  SecuritySubpageCard as Card,
+} from '../security-subpage-primitives';
 
 export type PolicyCard = {
   className: string;

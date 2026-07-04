@@ -15,6 +15,7 @@ describe('CommercePanel', () => {
         isLoading
         promotions={[]}
         query=""
+        revenueShares={[]}
         sales={[]}
         setTab={() => undefined}
         tab="sales"
@@ -25,6 +26,7 @@ describe('CommercePanel', () => {
     expect(html).toContain('checkouts');
     expect(html).toContain('sales');
     expect(html).toContain('promotions');
+    expect(html).toContain('revenueShare');
     expect(html).toContain('animate-pulse');
     expect(html).not.toContain('emptyDescriptions.sales');
   });

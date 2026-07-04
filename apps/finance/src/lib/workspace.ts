@@ -1,4 +1,5 @@
 import { getSatelliteAppSessionUser } from '@tuturuuu/satellite/auth';
+import { resolveSupportedCurrency } from '@tuturuuu/utils/currencies';
 import {
   getPermissions,
   getWorkspace,
@@ -71,7 +72,7 @@ export async function getFinanceWorkspaceContext(
   };
 
   return {
-    currency: currency ?? 'USD',
+    currency: resolveSupportedCurrency(currency),
     permissions,
     user: {
       displayName:

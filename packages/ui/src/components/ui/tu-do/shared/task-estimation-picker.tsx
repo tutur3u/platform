@@ -17,6 +17,7 @@ import { Label } from '@tuturuuu/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { cn } from '@tuturuuu/utils/format';
 import { useMemo, useState } from 'react';
+import { getTaskApiUrl } from '../../../../lib/tasks-app-url';
 import {
   buildEstimationIndices,
   mapEstimationPoints,
@@ -58,11 +59,13 @@ export function TaskEstimationPicker({
     queryFn: async () => {
       if (!boardId) return null;
       const response = await fetch(
-        `/api/v1/workspaces/${wsId}/boards/${boardId}/estimation`
+        getTaskApiUrl(`/api/v1/workspaces/${wsId}/boards/${boardId}/estimation`)
       );
       if (!response.ok) {
         // If the endpoint doesn't exist, we'll create a fallback
-        const boardResponse = await fetch(`/api/v1/workspaces/${wsId}/boards`);
+        const boardResponse = await fetch(
+          getTaskApiUrl(`/api/v1/workspaces/${wsId}/boards`)
+        );
         if (!boardResponse.ok) throw new Error('Failed to fetch boards');
         const boards = await boardResponse.json();
         const board = boards.find((b: any) => b.id === boardId);

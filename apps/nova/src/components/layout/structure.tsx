@@ -1,11 +1,16 @@
 'use client';
 
+import { Boxes } from '@tuturuuu/icons';
+import { AppsLauncherDialog } from '@tuturuuu/satellite';
+import { Button } from '@tuturuuu/ui/button';
 import { LogoTitle } from '@tuturuuu/ui/custom/logo-title';
 import { SidebarFooterActions } from '@tuturuuu/ui/custom/sidebar-footer-actions';
 import { Structure as BaseStructure } from '@tuturuuu/ui/custom/structure';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { type ReactNode, useState } from 'react';
 import { Nav } from './nav';
 
@@ -37,6 +42,8 @@ export default function Structure({
   children,
 }: StructureProps) {
   const [isCollapsed, setIsCollapsed] = useState(defaultCollapsed);
+  const [appsLauncherOpen, setAppsLauncherOpen] = useState(false);
+  const t = useTranslations('command_launcher');
 
   const sidebarHeader = (
     <Link href="/" className="flex w-full items-center gap-2">
@@ -60,14 +67,51 @@ export default function Structure({
     </Link>
   );
 
+  const appsLauncherButton = isCollapsed ? (
+    <Tooltip delayDuration={0}>
+      <TooltipTrigger asChild>
+        <Button
+          className="h-9 w-9"
+          onClick={() => setAppsLauncherOpen(true)}
+          type="button"
+          variant="ghost"
+        >
+          <Boxes className="h-4 w-4" />
+          <span className="sr-only">{t('apps')}</span>
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent
+        className="flex items-center gap-4 border bg-background text-foreground"
+        side="right"
+      >
+        {t('apps')}
+      </TooltipContent>
+    </Tooltip>
+  ) : (
+    <Button
+      className="w-full justify-start gap-2"
+      onClick={() => setAppsLauncherOpen(true)}
+      type="button"
+      variant="ghost"
+    >
+      <Boxes className="h-4 w-4" />
+      {t('apps')}
+    </Button>
+  );
+
   const sidebarContent = (
-    <Nav
-      allowChallengeManagement={allowChallengeManagement}
-      allowRoleManagement={allowRoleManagement}
-      isCollapsed={isCollapsed}
-      navItems={navItems}
-      onClick={() => window.innerWidth < 768 && setIsCollapsed(true)}
-    />
+    <>
+      <div className={cn('px-2 pt-2', isCollapsed && 'flex justify-center')}>
+        {appsLauncherButton}
+      </div>
+      <Nav
+        allowChallengeManagement={allowChallengeManagement}
+        allowRoleManagement={allowRoleManagement}
+        isCollapsed={isCollapsed}
+        navItems={navItems}
+        onClick={() => window.innerWidth < 768 && setIsCollapsed(true)}
+      />
+    </>
   );
 
   const mobileHeader = (
@@ -93,23 +137,30 @@ export default function Structure({
   );
 
   return (
-    <BaseStructure
-      isCollapsed={isCollapsed}
-      setIsCollapsed={setIsCollapsed}
-      mobileHeader={mobileHeader}
-      sidebarHeader={sidebarHeader}
-      sidebarContent={sidebarContent}
-      feedbackButton={
-        <SidebarFooterActions
-          wsId=""
-          isCollapsed={isCollapsed}
-          showUpgrade={false}
-        />
-      }
-      actions={actions}
-      userPopover={userPopover}
-    >
-      {children}
-    </BaseStructure>
+    <>
+      <AppsLauncherDialog
+        currentWorkspace={null}
+        onOpenChange={setAppsLauncherOpen}
+        open={appsLauncherOpen}
+      />
+      <BaseStructure
+        actions={actions}
+        feedbackButton={
+          <SidebarFooterActions
+            isCollapsed={isCollapsed}
+            showUpgrade={false}
+            wsId=""
+          />
+        }
+        isCollapsed={isCollapsed}
+        mobileHeader={mobileHeader}
+        setIsCollapsed={setIsCollapsed}
+        sidebarContent={sidebarContent}
+        sidebarHeader={sidebarHeader}
+        userPopover={userPopover}
+      >
+        {children}
+      </BaseStructure>
+    </>
   );
 }

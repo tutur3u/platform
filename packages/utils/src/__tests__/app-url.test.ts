@@ -137,6 +137,29 @@ describe('resolveInternalAppUrl', () => {
     ).toBeNull();
   });
 
+  it('recognizes canonical and legacy infrastructure production origins', () => {
+    expect(
+      getAppDomainByUrl(
+        'https://infrastructure.tuturuuu.com/verify-token?nextUrl=%2Fpersonal'
+      )
+    ).toMatchObject({
+      canonicalUrl:
+        'https://infrastructure.tuturuuu.com/verify-token?nextUrl=%2Fpersonal',
+      kind: 'internal',
+      name: 'infra',
+    });
+    expect(
+      getAppDomainByUrl(
+        'https://infra.tuturuuu.com/verify-token?nextUrl=%2Fpersonal'
+      )
+    ).toMatchObject({
+      canonicalUrl:
+        'https://infra.tuturuuu.com/verify-token?nextUrl=%2Fpersonal',
+      kind: 'internal',
+      name: 'infra',
+    });
+  });
+
   it('canonicalizes production internal app URLs to their registered HTTPS origins', () => {
     expect(
       resolveInternalAppUrl({
@@ -152,6 +175,13 @@ describe('resolveInternalAppUrl', () => {
         fallback: 'http://localhost:7807',
       })
     ).toBe('https://meet.tuturuuu.com');
+    expect(
+      resolveInternalAppUrl({
+        appName: 'infra',
+        candidates: ['http://infrastructure.tuturuuu.com/'],
+        fallback: 'http://localhost:7823',
+      })
+    ).toBe('https://infrastructure.tuturuuu.com');
   });
 
   it('falls back when every configured URL points at another internal app', () => {
@@ -203,6 +233,7 @@ describe('getLocalInternalAppUrl', () => {
     ['chat', 'https://chat.tuturuuu.localhost'],
     ['drive', 'https://drive.tuturuuu.localhost'],
     ['qr', 'https://qr.tuturuuu.localhost'],
+    ['tools', 'https://tools.tuturuuu.localhost'],
     ['nova', 'https://nova.tuturuuu.localhost'],
     ['rewise', 'https://rewise.tuturuuu.localhost'],
     ['tasks', 'https://tasks.tuturuuu.localhost'],
@@ -264,6 +295,7 @@ describe('Portless app origin registry', () => {
       'https://finance.tuturuuu.localhost',
       'https://hive.tuturuuu.localhost',
       'https://realtime.hive.tuturuuu.localhost',
+      'https://infra.tuturuuu.localhost',
       'https://inventory.tuturuuu.localhost',
       'https://learn.tuturuuu.localhost',
       'https://mail.tuturuuu.localhost',
@@ -274,8 +306,10 @@ describe('Portless app origin registry', () => {
       'https://playground.tuturuuu.localhost',
       'https://qr.tuturuuu.localhost',
       'https://rewise.tuturuuu.localhost',
+      'https://tools.tuturuuu.localhost',
       'https://shortener.tuturuuu.localhost',
       'https://storefront.tuturuuu.localhost',
+      'https://tanstack.tuturuuu.localhost',
       'https://tasks.tuturuuu.localhost',
       'https://teach.tuturuuu.localhost',
       'https://track.tuturuuu.localhost',

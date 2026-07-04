@@ -61,6 +61,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useBulkOperations } from '../boards/boardId/kanban/bulk/bulk-operations';
+import type { TaskCardAssigneeMemberSource } from '../boards/boardId/task-card/task-card';
 import {
   getTaskCardHydratingOpenOptions,
   isExternalTaskSnapshot,
@@ -85,9 +86,12 @@ interface Props {
   tasks: Task[];
   lists: TaskList[];
   isPersonalWorkspace?: boolean;
+  canUseBoardAssignees?: boolean;
+  assigneeMemberSource?: TaskCardAssigneeMemberSource;
   preserveTaskOrder?: boolean;
   searchQuery?: string;
   weekStartsOn?: 0 | 1 | 6;
+  readOnly?: boolean;
 }
 
 interface ColumnVisibility {
@@ -105,12 +109,241 @@ type TaskMenuState = {
   point?: { x: number; y: number } | null;
 };
 
-export function ListView({
+export function ListView(props: Props) {
+  if (props.readOnly) {
+    return <ReadOnlyListView {...props} />;
+  }
+
+  return <InteractiveListView {...props} />;
+}
+
+function ReadOnlyListView({
+  tasks,
+  lists,
+  isPersonalWorkspace = false,
+  canUseBoardAssignees,
+  preserveTaskOrder = false,
+  searchQuery,
+}: Props) {
+  const t = useTranslations();
+  const tc = useTranslations('common');
+  const locale = useLocale();
+  const dateLocale = locale === 'vi' ? vi : enUS;
+  const [sortField, setSortField] = useState<ListViewSortField>('created_at');
+  const [sortOrder, setSortOrder] = useState<ListViewSortOrder>('desc');
+  const showAssignees = canUseBoardAssignees ?? !isPersonalWorkspace;
+  const listsById = useMemo(
+    () => new Map(lists.map((list) => [list.id, list])),
+    [lists]
+  );
+  const sortedTasks = useMemo(
+    () =>
+      sortListViewTasks(tasks, {
+        preserveTaskOrder,
+        searchQuery,
+        sortField,
+        sortOrder,
+      }),
+    [preserveTaskOrder, searchQuery, sortField, sortOrder, tasks]
+  );
+
+  function handleSort(field: ListViewSortField) {
+    if (field === sortField) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortOrder('asc');
+    }
+  }
+
+  function getSortIcon(field: ListViewSortField) {
+    if (sortField !== field) {
+      return <ArrowDownUp className="ml-2 h-3 w-3 text-muted-foreground" />;
+    }
+    return sortOrder === 'asc' ? (
+      <ArrowUp className="ml-2 h-3 w-3 text-foreground" />
+    ) : (
+      <ArrowDown className="ml-2 h-3 w-3 text-foreground" />
+    );
+  }
+
+  function formatDate(date: string) {
+    return format(new Date(date), 'MMM dd', { locale: dateLocale });
+  }
+
+  return (
+    <div className="flex h-full flex-col">
+      {sortedTasks.length === 0 ? (
+        <div className="flex flex-1 items-center justify-center">
+          <p className="text-muted-foreground text-sm">{tc('no_tasks')}</p>
+        </div>
+      ) : (
+        <div className="relative flex-1 overflow-auto">
+          <Table>
+            <TableHeader className="sticky top-0 z-10 border-b bg-background">
+              <TableRow className="hover:bg-transparent">
+                <TableHead className="h-9 min-w-62.5 px-3">
+                  <Button
+                    variant="ghost"
+                    className={cn(
+                      '-ml-2 h-6 justify-start gap-1 px-2 font-medium text-[10px] uppercase tracking-wider transition-colors hover:bg-muted/50',
+                      sortField === 'name'
+                        ? 'text-foreground'
+                        : 'text-muted-foreground'
+                    )}
+                    onClick={() => handleSort('name')}
+                  >
+                    {tc('task_header')}
+                    {getSortIcon('name')}
+                  </Button>
+                </TableHead>
+                <TableHead className="h-9 w-32 px-2">
+                  <span className="font-medium text-[10px] text-muted-foreground uppercase tracking-wider">
+                    {tc('status')}
+                  </span>
+                </TableHead>
+                <TableHead className="h-9 w-24 px-2">
+                  <Button
+                    variant="ghost"
+                    className={cn(
+                      '-ml-2 h-6 justify-start gap-1 px-2 font-medium text-[10px] uppercase tracking-wider transition-colors hover:bg-muted/50',
+                      sortField === 'priority'
+                        ? 'text-foreground'
+                        : 'text-muted-foreground'
+                    )}
+                    onClick={() => handleSort('priority')}
+                  >
+                    {tc('priority')}
+                    {getSortIcon('priority')}
+                  </Button>
+                </TableHead>
+                <TableHead className="h-9 w-28 px-2">
+                  <Button
+                    variant="ghost"
+                    className={cn(
+                      '-ml-2 h-6 justify-start gap-1 px-2 font-medium text-[10px] uppercase tracking-wider transition-colors hover:bg-muted/50',
+                      sortField === 'end_date'
+                        ? 'text-foreground'
+                        : 'text-muted-foreground'
+                    )}
+                    onClick={() => handleSort('end_date')}
+                  >
+                    {tc('due')}
+                    {getSortIcon('end_date')}
+                  </Button>
+                </TableHead>
+                {showAssignees && (
+                  <TableHead className="h-9 w-32 px-2">
+                    <span className="font-medium text-[10px] text-muted-foreground uppercase tracking-wider">
+                      {tc('assignee')}
+                    </span>
+                  </TableHead>
+                )}
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {sortedTasks.map((task) => {
+                const list = listsById.get(task.list_id);
+                return (
+                  <TableRow key={task.id} className="h-12 border-b">
+                    <TableCell className="px-3 py-2">
+                      <div className="min-w-0 space-y-1">
+                        <div
+                          className={cn(
+                            'truncate font-medium text-sm',
+                            (task.completed_at || task.closed_at) &&
+                              'text-muted-foreground line-through'
+                          )}
+                        >
+                          {task.name}
+                        </div>
+                        {(task.labels?.length || task.projects?.length) && (
+                          <div className="flex flex-wrap items-center gap-1">
+                            {task.labels?.slice(0, 3).map((label) => (
+                              <Badge
+                                key={label.id}
+                                variant="outline"
+                                className="h-4 gap-1 px-1.5 font-normal text-[10px]"
+                              >
+                                <span
+                                  aria-hidden="true"
+                                  className="h-2 w-2 rounded-full"
+                                  style={{ backgroundColor: label.color }}
+                                />
+                                {label.name}
+                              </Badge>
+                            ))}
+                            {task.projects?.slice(0, 2).map((project) => (
+                              <Badge
+                                key={project.id}
+                                variant="secondary"
+                                className="h-4 px-1.5 font-normal text-[10px]"
+                              >
+                                {project.name}
+                              </Badge>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell className="px-2 py-2">
+                      <Badge variant="outline" className="font-normal">
+                        {list?.name ?? tc('untitled')}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="px-2 py-2">
+                      {task.priority && (
+                        <Badge variant="secondary" className="font-normal">
+                          {t(`tasks.priority_${task.priority}`)}
+                        </Badge>
+                      )}
+                    </TableCell>
+                    <TableCell className="px-2 py-2">
+                      {task.end_date && (
+                        <span className="text-muted-foreground text-xs">
+                          {formatDate(task.end_date)}
+                        </span>
+                      )}
+                    </TableCell>
+                    {showAssignees && (
+                      <TableCell className="px-2 py-2">
+                        {task.assignees && task.assignees.length > 0 && (
+                          <div className="flex flex-wrap gap-1">
+                            {task.assignees.slice(0, 2).map((assignee) => (
+                              <Badge
+                                key={assignee.id}
+                                variant="secondary"
+                                className="font-normal"
+                              >
+                                {assignee.display_name ||
+                                  assignee.email ||
+                                  assignee.handle ||
+                                  tc('assignee')}
+                              </Badge>
+                            ))}
+                          </div>
+                        )}
+                      </TableCell>
+                    )}
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function InteractiveListView({
   workspaceId,
   boardId,
   tasks,
   lists,
   isPersonalWorkspace = false,
+  canUseBoardAssignees,
+  assigneeMemberSource,
   preserveTaskOrder = false,
   searchQuery,
   weekStartsOn = 0,
@@ -134,6 +367,9 @@ export function ListView({
   const previousWorkspaceIdRef = useRef(workspaceId);
   const previousBoardIdRef = useRef(boardId);
   const { openTask, openTaskById } = useTaskDialog();
+  const showAssignees = canUseBoardAssignees ?? !isPersonalWorkspace;
+  const effectiveAssigneeMemberSource =
+    assigneeMemberSource ?? (isPersonalWorkspace ? 'board' : 'workspace');
 
   // Infinite scroll
   const [displayCount, setDisplayCount] = useState(50);
@@ -146,7 +382,7 @@ export function ListView({
     priority: true,
     start_date: false,
     end_date: true,
-    assignees: !isPersonalWorkspace,
+    assignees: showAssignees,
     actions: true,
   });
 
@@ -290,6 +526,10 @@ export function ListView({
           availableLists: lists,
           effectiveWorkspaceId: workspaceId,
           isPersonalWorkspace,
+          canUseBoardAssignees: task.source_workspace_id ? true : showAssignees,
+          assigneeMemberSource: task.source_workspace_id
+            ? 'board'
+            : effectiveAssigneeMemberSource,
         })
       );
       return;
@@ -298,6 +538,8 @@ export function ListView({
     openTask(task, boardId, lists, false, {
       taskWsId: workspaceId,
       taskWorkspacePersonal: isPersonalWorkspace,
+      canUseBoardAssignees: showAssignees,
+      assigneeMemberSource: effectiveAssigneeMemberSource,
     });
   }
 
@@ -746,6 +988,8 @@ export function ListView({
                             workspaceId={workspaceId}
                             lists={lists}
                             isPersonalWorkspace={isPersonalWorkspace}
+                            canUseBoardAssignees={showAssignees}
+                            assigneeMemberSource={effectiveAssigneeMemberSource}
                             onUpdate={() => {
                               void queryClient.invalidateQueries({
                                 queryKey: ['tasks', boardId],

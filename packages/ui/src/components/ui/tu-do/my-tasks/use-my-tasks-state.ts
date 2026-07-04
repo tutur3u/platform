@@ -25,6 +25,7 @@ import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { getTaskApiUrl } from '../../../../lib/tasks-app-url';
 import { getRandomNewLabelColor } from '../utils/taskConstants';
 import type { TaskOptions } from './command-bar';
 import type { JournalTaskResponse } from './task-preview-dialog';
@@ -39,12 +40,28 @@ dayjs.extend(utc);
 dayjs.extend(timezone);
 
 interface UseMyTasksStateProps {
+  disableAutoCreateBoard?: boolean;
+  initialBoard?: {
+    id: string;
+    name: string | null;
+  };
+  initialListId?: string;
+  initialLists?: Array<{
+    deleted?: boolean | null;
+    id: string;
+    name: string | null;
+    position?: number | null;
+  }>;
   wsId: string;
   userId: string;
   isPersonal: boolean;
 }
 
 export function useMyTasksState({
+  disableAutoCreateBoard = false,
+  initialBoard,
+  initialListId,
+  initialLists,
   wsId,
   userId,
   isPersonal,
@@ -96,8 +113,16 @@ export function useMyTasksState({
   // Board selector state
   const [boardSelectorOpen, setBoardSelectorOpen] = useState(false);
   const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<string>(wsId);
-  const [selectedBoardId, setSelectedBoardId] = useState<string>('');
-  const [selectedListId, setSelectedListId] = useState<string>('');
+  const [selectedBoardId, setSelectedBoardId] = useState<string>(
+    initialBoard?.id ?? ''
+  );
+  const [selectedListId, setSelectedListId] = useState<string>(
+    initialListId ??
+      initialLists
+        ?.filter((list) => !list.deleted)
+        .sort((a, b) => (a.position ?? 0) - (b.position ?? 0))[0]?.id ??
+      ''
+  );
   const [newBoardDialogOpen, setNewBoardDialogOpen] = useState(false);
   const [newBoardName, setNewBoardName] = useState<string>('');
   const [newListDialogOpen, setNewListDialogOpen] = useState(false);
@@ -276,6 +301,7 @@ export function useMyTasksState({
       });
       return payload.count ?? 0;
     },
+    enabled: !disableAutoCreateBoard,
   });
 
   // Auto-create a board if the workspace has none
@@ -294,7 +320,13 @@ export function useMyTasksState({
   );
 
   useEffect(() => {
-    if (wsBoardCountLoading || wsBoardCount === undefined) return;
+    if (
+      disableAutoCreateBoard ||
+      wsBoardCountLoading ||
+      wsBoardCount === undefined
+    ) {
+      return;
+    }
     if (wsBoardCount > 0) return;
     if (autoCreateAttemptedRef.current) return;
     autoCreateAttemptedRef.current = true;
@@ -344,6 +376,7 @@ export function useMyTasksState({
     queryClient,
     defaultBoardName,
     defaultListNames,
+    disableAutoCreateBoard,
   ]);
 
   // Fetch boards with lists for selected workspace
@@ -422,11 +455,16 @@ export function useMyTasksState({
   const availableLists = useMemo(() => {
     if (!selectedBoardId) return [];
     const board = boardsData.find((b: any) => b.id === selectedBoardId);
-    if (!board?.task_lists) return [];
+    if (!board?.task_lists) {
+      if (selectedBoardId !== initialBoard?.id) return [];
+      return (initialLists ?? [])
+        .filter((list) => !list.deleted)
+        .sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
+    }
     return (board.task_lists as any[])
       .filter((l: any) => !l.deleted)
       .sort((a: any, b: any) => (a.position || 0) - (b.position || 0));
-  }, [selectedBoardId, boardsData]);
+  }, [selectedBoardId, boardsData, initialBoard?.id, initialLists]);
 
   const hasValidSelectedList = useMemo(
     () => availableLists.some((list: any) => list.id === selectedListId),
@@ -515,19 +553,23 @@ export function useMyTasksState({
     }
   >({
     mutationFn: async (variables) => {
-      const response = await fetch(`/api/v1/workspaces/${wsId}/tasks/journal`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          entry: variables.entry,
-          previewOnly: true,
-          generateDescriptions: variables.generateDescriptions,
-          generatePriority: variables.generatePriority,
-          generateLabels: variables.generateLabels,
-          clientTimezone: variables.clientTimezone,
-          clientTimestamp: variables.clientTimestamp,
-        }),
-      });
+      const response = await fetch(
+        getTaskApiUrl(`/api/v1/workspaces/${wsId}/tasks/journal`),
+        {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            entry: variables.entry,
+            previewOnly: true,
+            generateDescriptions: variables.generateDescriptions,
+            generatePriority: variables.generatePriority,
+            generateLabels: variables.generateLabels,
+            clientTimezone: variables.clientTimezone,
+            clientTimestamp: variables.clientTimestamp,
+          }),
+        }
+      );
 
       const payload = await response.json().catch(() => null);
       if (!response.ok) {
@@ -794,13 +836,23 @@ export function useMyTasksState({
   const selectedDestination = useMemo(() => {
     if (!selectedBoardId || !selectedListId) return null;
     const board = boardsData.find((b: any) => b.id === selectedBoardId);
-    const lists = (board?.task_lists as any[]) || [];
+    const isInitialBoard = selectedBoardId === initialBoard?.id;
+    const lists =
+      (board?.task_lists as any[]) ||
+      (isInitialBoard ? (initialLists ?? []) : []);
     const list = lists.find((l: any) => l.id === selectedListId);
     return {
-      boardName: board?.name || 'Unknown Board',
+      boardName: board?.name || initialBoard?.name || 'Unknown Board',
       listName: list?.name || 'Unknown List',
     };
-  }, [selectedBoardId, selectedListId, boardsData]);
+  }, [
+    selectedBoardId,
+    selectedListId,
+    boardsData,
+    initialBoard?.id,
+    initialBoard?.name,
+    initialLists,
+  ]);
 
   const handleClearDestination = () => {
     setSelectedBoardId('');

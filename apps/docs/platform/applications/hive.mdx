@@ -1,6 +1,7 @@
 ---
 title: Hive
 description: Voxel research playground for CRDT worlds, farming simulation, NPC economies, and manual or autonomous society experiments.
+updatedAt: '2026-06-21'
 ---
 
 Hive is the Tuturuuu research satellite app at `https://hive.tuturuuu.com`.
@@ -67,34 +68,64 @@ so the standalone app and web-hosted app stay 1:1.
   lists, snapshots, realtime membership, or world data.
 - `apps/web` remains the login authority and verifies platform roles through
   internal APIs. Hive itself uses the app-session JWT as the local identity
-  cookie. Hive product data belongs in the dedicated Docker-managed Hive
-  Postgres database and is accessed through `HIVE_DATABASE_URL`.
+  cookie. Hive product data is split across two databases (see
+  [Data Model](#data-model)): the authoritative world-event, CRDT, and research
+  tables live in the main Supabase `public` schema, while a parallel Docker-managed
+  Hive Postgres baseline accessed through `HIVE_DATABASE_URL` carries the
+  dedicated-store mirror used by backfill and product-data workflows.
 
 ## Data Model
 
-Hive stores product state in the dedicated Hive Postgres database:
+Hive product state spans **two physical databases**, and it matters which one is
+authoritative for any given table when you operate or debug the app.
+
+### Authoritative store: main Supabase `public` schema
+
+The live world-event, CRDT, economy, NPC, and research tables that the running
+`/api/v1/hive/*` routes read and write are in the **main Supabase project**
+(`public.hive_*`). All apps share one Supabase project, so these tables are
+managed by the standard Supabase migration flow in
+`apps/database/supabase/migrations/`, not by the Hive Postgres migrator. This is
+where the audited world-event path actually runs:
 
 - `hive_servers`
-- `hive_world_states`
-- `hive_world_events`
-- `hive_crdt_updates`
-- `hive_npcs`
-- `hive_npc_needs`
-- `hive_npc_wallets`
-- `hive_npc_memories`
-- `hive_npc_runs`
-- `hive_ledger_entries`
-- `hive_inventory_items`
-- `hive_warehouses`
-- `hive_trade_offers`
-- `hive_crop_instances`
-- `hive_simulation_ticks`
-- `hive_workflows`
-- `hive_workflow_runs`
-- `hive_research_sessions`
-- `hive_research_session_events`
-- `hive_members`
-- `hive_access_requests`
+- `hive_world_states` — authoritative full-world snapshots
+- `hive_world_events` — event metadata and compact payloads
+- `hive_npcs`, `hive_npc_runs`, `hive_npc_memories`
+- `hive_workflows`, `hive_workflow_runs`
+- `hive_research_sessions`, `hive_research_session_events`
+- `hive_members`, `hive_access_requests`
+
+The `apply_hive_world_event()` Postgres function is defined as
+`public.apply_hive_world_event(...)` in the Supabase migrations
+(`20260510143500_add_hive_research_engine.sql`, then hardened by
+`20260511160200_fix_hive_world_event_ambiguity.sql`,
+`20260512151000_make_hive_revision_conflicts_non_exceptional.sql`, and
+`20260512204028_secure_hive_world_event_actor.sql`). It inserts/updates
+`public.hive_world_states` and appends to `public.hive_world_events` in one
+transaction. It is **not** a Hive-Postgres migration. If a world save returns
+`hive_event_failed`, debug it against Supabase — see
+[Hive world event troubleshooting](/platform/applications/hive-world-event-troubleshooting).
+
+### Dedicated Hive Postgres mirror (`HIVE_DATABASE_URL`)
+
+A separate Docker-managed Hive Postgres database holds a parallel
+dedicated-store baseline (`apps/hive/db/001_schema.sql`) that the one-shot
+backfill path populates from legacy Supabase Hive rows. Its `001_schema.sql`
+baseline declares its own copies of `hive_members`, `hive_access_requests`,
+`hive_servers`, `hive_world_states`, `hive_world_events`,
+`hive_research_sessions`, `hive_research_session_events`, `hive_crdt_updates`,
+`hive_npcs`, `hive_npc_needs`, `hive_npc_wallets`, `hive_npc_memories`,
+`hive_npc_runs`, `hive_ledger_entries`, `hive_inventory_items`,
+`hive_warehouses`, `hive_trade_offers`, `hive_crop_instances`, and
+`hive_simulation_ticks`. The `apply_hive_world_event` function and the
+world-event/actor-security logic are **not** present in this baseline; that path
+lives only in Supabase.
+
+Because the dedicated baseline mirrors many of the same table names, do not
+assume a fix applied to one database is visible to the other. App access gates
+read Supabase `public.hive_members` (and platform-admin roles), and approving a
+request writes **both** stores (see [Access Model](#access-model)).
 
 ## Database Migrations
 
@@ -146,10 +177,14 @@ audit counter. It is not a write precondition for normal CRDT world edits.
 Authoritative economy writes must use SQL transactions, idempotency keys where
 available, and ledger rows.
 
-The one-shot Hive backfill path copies legacy Supabase Hive rows into Hive
-Postgres. After backfill, `/api/v1/hive/*` routes should write Hive Postgres
-only, while `apps/web` internal APIs use the forwarded app-session cookie to
-resolve the caller and platform-admin status.
+The one-shot Hive backfill path copies legacy Hive rows into the dedicated Hive
+Postgres baseline so the dedicated store mirrors prior product data. Note that
+the authoritative live world-event, CRDT, economy, NPC, and research writes
+performed by `/api/v1/hive/*` run against the main Supabase `public` schema (see
+[Data Model](#data-model)); the dedicated Hive Postgres is the mirrored
+dedicated store, not the runtime authority for the world-event path. In all
+cases, `apps/web` internal APIs use the forwarded app-session cookie to resolve
+the caller and platform-admin status.
 
 In Docker production, Hive satellite API rewrites must target the web service
 through `INTERNAL_WEB_API_ORIGIN=http://web-proxy:7803`. If that value is empty,
@@ -254,9 +289,10 @@ server controls: creating a server creates its world, deleting a server deletes
 the world through database cascade, and clear/reseed actions persist typed audit
 events plus CRDT updates against the current server document.
 
-Manual editor changes persist through the web gateway world-event API. That API
-stores the authoritative `world_data` and the matching CRDT state in the same
-Hive Postgres transaction, then the Hive client only broadcasts the already
+Manual editor changes persist through the web gateway world-event API, which
+calls the Supabase `public.apply_hive_world_event()` function. That function
+stores the authoritative `world_data` and the matching event metadata in the
+same Supabase transaction, then the Hive client only broadcasts the already
 applied event through `hive-realtime`. Do not add a second client-side
 `sync.update` persistence write after the gateway event succeeds; duplicate
 writes can churn `op_seq`, slow visible save completion, and let older world

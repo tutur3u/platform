@@ -1,7 +1,7 @@
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { type MouseEvent, useEffect, useRef } from 'react';
-import { TaskCard } from './task-card';
+import { TaskCard, type TaskCardAssigneeMemberSource } from './task-card';
 
 interface MeasuredTaskCardProps {
   task: Task;
@@ -13,6 +13,8 @@ interface MeasuredTaskCardProps {
   isSelected: boolean;
   isMultiSelectMode?: boolean;
   isPersonalWorkspace?: boolean;
+  canUseBoardAssignees?: boolean;
+  assigneeMemberSource?: TaskCardAssigneeMemberSource;
   onSelect?: (taskId: string, event: MouseEvent) => void;
   onClearSelection?: () => void;
   suppressSortableTransform?: boolean;
@@ -21,6 +23,7 @@ interface MeasuredTaskCardProps {
   optimisticUpdateInProgress?: Set<string>;
   selectedTasks?: Set<string>;
   bulkUpdateCustomDueDate?: (date: Date | null) => Promise<void>;
+  readOnly?: boolean;
 }
 
 export function MeasuredTaskCard({
@@ -33,6 +36,8 @@ export function MeasuredTaskCard({
   isSelected,
   isMultiSelectMode,
   isPersonalWorkspace,
+  canUseBoardAssignees,
+  assigneeMemberSource,
   onSelect,
   onClearSelection,
   suppressSortableTransform,
@@ -41,6 +46,7 @@ export function MeasuredTaskCard({
   optimisticUpdateInProgress,
   selectedTasks,
   bulkUpdateCustomDueDate,
+  readOnly = false,
 }: MeasuredTaskCardProps) {
   const ref = useRef<HTMLDivElement | null>(null);
   const onHeightRef = useRef(onHeight);
@@ -97,12 +103,15 @@ export function MeasuredTaskCard({
         isSelected={isSelected}
         isMultiSelectMode={isMultiSelectMode}
         isPersonalWorkspace={isPersonalWorkspace}
+        canUseBoardAssignees={canUseBoardAssignees}
+        assigneeMemberSource={assigneeMemberSource}
         onSelect={onSelect}
         onClearSelection={onClearSelection}
         suppressSortableTransform={suppressSortableTransform}
         optimisticUpdateInProgress={optimisticUpdateInProgress}
         selectedTasks={selectedTasks}
         bulkUpdateCustomDueDate={bulkUpdateCustomDueDate}
+        readOnly={readOnly}
       />
     </div>
   );

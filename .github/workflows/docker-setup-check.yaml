@@ -6,11 +6,15 @@ on:
       - ".dockerignore"
       - ".github/workflows/docker-setup-check.yaml"
       - "apps/backend/**"
+      - "apps/hive/Dockerfile"
+      - "apps/tanstack-web/**"
       - "apps/*/package.json"
       - "apps/storage-unzip-proxy/Dockerfile"
       - "apps/web/Dockerfile"
+      - "apps/web/docker/*.Dockerfile"
       - "bun.lock"
       - "docker-bake.web.prod.hcl"
+      - "docker-compose.tanstack-dual.yml"
       - "docker-compose/compose.web.prod.*.yml"
       - "docker-compose.web.prod.yml"
       - "docker-compose.web.yml"
@@ -18,9 +22,12 @@ on:
       - "packages/*/package.json"
       - "scripts/check-docker-web.js"
       - "scripts/check-docker-web.test.js"
+      - "scripts/buildkit-builder.test.js"
       - "scripts/docker-web.js"
       - "scripts/docker-web/**/*.js"
       - "scripts/docker-web.test.js"
+      - "scripts/run-tanstack-e2e-docker.js"
+      - "scripts/run-tanstack-e2e-docker.test.js"
       - "scripts/watch-blue-green/**/*.js"
       - "turbo.json"
   push:
@@ -29,11 +36,15 @@ on:
       - ".dockerignore"
       - ".github/workflows/docker-setup-check.yaml"
       - "apps/backend/**"
+      - "apps/hive/Dockerfile"
+      - "apps/tanstack-web/**"
       - "apps/*/package.json"
       - "apps/storage-unzip-proxy/Dockerfile"
       - "apps/web/Dockerfile"
+      - "apps/web/docker/*.Dockerfile"
       - "bun.lock"
       - "docker-bake.web.prod.hcl"
+      - "docker-compose.tanstack-dual.yml"
       - "docker-compose/compose.web.prod.*.yml"
       - "docker-compose.web.prod.yml"
       - "docker-compose.web.yml"
@@ -41,16 +52,25 @@ on:
       - "packages/*/package.json"
       - "scripts/check-docker-web.js"
       - "scripts/check-docker-web.test.js"
+      - "scripts/buildkit-builder.test.js"
       - "scripts/docker-web.js"
       - "scripts/docker-web/**/*.js"
       - "scripts/docker-web.test.js"
+      - "scripts/run-tanstack-e2e-docker.js"
+      - "scripts/run-tanstack-e2e-docker.test.js"
       - "scripts/watch-blue-green/**/*.js"
       - "turbo.json"
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   check-ci:
     uses: ./.github/workflows/ci-check.yml
+    permissions:
+      contents: read
+      deployments: read
     with:
       workflow_name: docker-setup-check.yaml
 
@@ -59,14 +79,27 @@ jobs:
     needs: [check-ci]
     if: needs.check-ci.outputs.should_run == 'true'
     runs-on: ubuntu-latest
+    env:
+      TURBO_API: ${{ vars.TURBO_API }}
+      TURBO_REMOTE_CACHE_SIGNATURE_KEY: ${{ secrets.TURBO_REMOTE_CACHE_SIGNATURE_KEY }}
+      TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
+      TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
           node-version: 24
+
+      - name: Free runner disk before Docker image builds
+        run: |
+          df -h /
+          docker system prune -af --volumes || true
+          docker builder prune -af || true
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL || true
+          df -h /
 
       - name: Pre-pull Docker BuildKit image
         run: |
@@ -92,7 +125,7 @@ jobs:
         run: node scripts/check-docker-web.js
 
       - name: Run Docker helper tests
-        run: node --test scripts/check-docker-web.test.js scripts/docker-web.test.js
+        run: node --test scripts/check-docker-web.test.js scripts/docker-web.test.js scripts/buildkit-builder.test.js scripts/run-tanstack-e2e-docker.test.js
 
       - name: Prepare production Docker runtime files
         run: |
@@ -117,17 +150,100 @@ jobs:
         run: |
           docker compose -f docker-compose.web.yml config > /tmp/docker-compose.web.yml
           docker compose -f docker-compose.web.yml --profile redis config > /tmp/docker-compose.web.redis.yml
+          docker compose -f docker-compose.web.yml --profile cloudflared config > /tmp/docker-compose.web.cloudflared.yml
           docker compose -f docker-compose.web.prod.yml config > /tmp/docker-compose.web.prod.yml
           docker compose -f docker-compose.web.prod.yml --profile redis config > /tmp/docker-compose.web.prod.redis.yml
+          docker compose -f docker-compose.web.prod.yml --profile cloudflared config > /tmp/docker-compose.web.prod.cloudflared.yml
+          docker compose -f docker-compose.tanstack-dual.yml config > /tmp/docker-compose.tanstack-dual.yml
 
       - name: Build web dev image
-        run: docker build --target dev -f apps/web/Dockerfile .
+        run: |
+          turbo_secrets=()
+          if [ -n "${TURBO_API:-}" ]; then turbo_secrets+=(--secret id=turbo_api,env=TURBO_API); fi
+          if [ -n "${TURBO_REMOTE_CACHE_SIGNATURE_KEY:-}" ]; then turbo_secrets+=(--secret id=turbo_remote_cache_signature_key,env=TURBO_REMOTE_CACHE_SIGNATURE_KEY); fi
+          if [ -n "${TURBO_TEAM:-}" ]; then turbo_secrets+=(--secret id=turbo_team,env=TURBO_TEAM); fi
+          if [ -n "${TURBO_TOKEN:-}" ]; then turbo_secrets+=(--secret id=turbo_token,env=TURBO_TOKEN); fi
+
+          docker buildx build --load \
+            --target dev \
+            --cache-from type=gha,scope=docker-web-dev \
+            --cache-to type=gha,scope=docker-web-dev,mode=max \
+            "${turbo_secrets[@]}" \
+            -f apps/web/Dockerfile .
+
+      - name: Free Docker disk after web dev image
+        if: always()
+        run: |
+          df -h /
+          docker system prune -af --volumes || true
+          docker builder prune -af || true
+          df -h /
 
       - name: Build web prod image
-        run: docker build --target runner --secret id=web_env,src=apps/web/.env.local -f apps/web/Dockerfile .
+        run: |
+          turbo_secrets=()
+          if [ -n "${TURBO_API:-}" ]; then turbo_secrets+=(--secret id=turbo_api,env=TURBO_API); fi
+          if [ -n "${TURBO_REMOTE_CACHE_SIGNATURE_KEY:-}" ]; then turbo_secrets+=(--secret id=turbo_remote_cache_signature_key,env=TURBO_REMOTE_CACHE_SIGNATURE_KEY); fi
+          if [ -n "${TURBO_TEAM:-}" ]; then turbo_secrets+=(--secret id=turbo_team,env=TURBO_TEAM); fi
+          if [ -n "${TURBO_TOKEN:-}" ]; then turbo_secrets+=(--secret id=turbo_token,env=TURBO_TOKEN); fi
+
+          docker buildx build --load \
+            --target runner \
+            --secret id=web_env,src=apps/web/.env.local \
+            --cache-from type=gha,scope=docker-web-prod \
+            --cache-to type=gha,scope=docker-web-prod,mode=max \
+            "${turbo_secrets[@]}" \
+            -f apps/web/Dockerfile .
+
+      - name: Free Docker disk after web prod image
+        if: always()
+        run: |
+          df -h /
+          docker system prune -af --volumes || true
+          docker builder prune -af || true
+          df -h /
+
+      - name: Build TanStack web prod image
+        run: |
+          turbo_secrets=()
+          if [ -n "${TURBO_API:-}" ]; then turbo_secrets+=(--secret id=turbo_api,env=TURBO_API); fi
+          if [ -n "${TURBO_REMOTE_CACHE_SIGNATURE_KEY:-}" ]; then turbo_secrets+=(--secret id=turbo_remote_cache_signature_key,env=TURBO_REMOTE_CACHE_SIGNATURE_KEY); fi
+          if [ -n "${TURBO_TEAM:-}" ]; then turbo_secrets+=(--secret id=turbo_team,env=TURBO_TEAM); fi
+          if [ -n "${TURBO_TOKEN:-}" ]; then turbo_secrets+=(--secret id=turbo_token,env=TURBO_TOKEN); fi
+
+          docker buildx build --load \
+            --target runner \
+            --cache-from type=gha,scope=docker-tanstack-web-prod \
+            --cache-to type=gha,scope=docker-tanstack-web-prod,mode=max \
+            "${turbo_secrets[@]}" \
+            -f apps/tanstack-web/Dockerfile .
+
+      - name: Free Docker disk after TanStack web prod image
+        if: always()
+        run: |
+          df -h /
+          docker system prune -af --volumes || true
+          docker builder prune -af || true
+          df -h /
 
       - name: Build storage unzip proxy image
-        run: docker build -f apps/storage-unzip-proxy/Dockerfile apps/storage-unzip-proxy
+        run: |
+          docker buildx build --load \
+            --cache-from type=gha,scope=docker-storage-unzip-proxy \
+            --cache-to type=gha,scope=docker-storage-unzip-proxy,mode=max \
+            -f apps/storage-unzip-proxy/Dockerfile apps/storage-unzip-proxy
+
+      - name: Free Docker disk after storage unzip proxy image
+        if: always()
+        run: |
+          df -h /
+          docker system prune -af --volumes || true
+          docker builder prune -af || true
+          df -h /
 
       - name: Build backend image
-        run: docker build -f apps/backend/Dockerfile .
+        run: |
+          docker buildx build --load \
+            --cache-from type=gha,scope=docker-backend \
+            --cache-to type=gha,scope=docker-backend,mode=max \
+            -f apps/backend/Dockerfile .

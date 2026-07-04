@@ -7,6 +7,7 @@ import ExportDialogContent from '@tuturuuu/ui/finance/transactions/export-dialog
 import { TransactionsCreateSummary } from '@tuturuuu/ui/finance/transactions/transactions-create-summary';
 import { TransactionsInfinitePage } from '@tuturuuu/ui/finance/transactions/transactions-infinite-page';
 import { Separator } from '@tuturuuu/ui/separator';
+import { resolveSupportedCurrency } from '@tuturuuu/utils/currencies';
 import {
   getPermissions,
   getWorkspace,
@@ -51,6 +52,7 @@ export default async function TransactionsPage({
     ]);
   if (!resolvedWorkspace || !resolvedPermissions) return notFound();
   const { containsPermission } = resolvedPermissions;
+  const workspaceCurrency = resolveSupportedCurrency(resolvedCurrency);
 
   const canViewTransactions = containsPermission('view_transactions');
   const canExportFinanceData = containsPermission('export_finance_data');
@@ -110,13 +112,14 @@ export default async function TransactionsPage({
         canChangeFinanceWallets={canChangeFinanceWallets}
         canSetFinanceWalletsOnCreate={canSetFinanceWalletsOnCreate}
         canCreateConfidentialTransactions={canCreateConfidentialTransactions}
+        defaultCurrency={workspaceCurrency}
         timezone={resolvedWorkspace.timezone}
         permissionRequestUser={permissionRequestUser}
       />
       <Separator className="my-4" />
       <TransactionsInfinitePage
         wsId={wsId}
-        currency={resolvedCurrency ?? 'USD'}
+        currency={workspaceCurrency}
         timezone={resolvedWorkspace.timezone}
         canExport={canExportFinanceData}
         exportContent={

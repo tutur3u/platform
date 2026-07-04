@@ -23,9 +23,9 @@ import {
   toWorkspaceSlug,
 } from '@tuturuuu/utils/constants';
 import { cn } from '@tuturuuu/utils/format';
-import { getInitials } from '@tuturuuu/utils/name-helper';
 import { workspaceHandleSchema } from '@tuturuuu/utils/workspace-handle';
 import { WORKSPACE_LIMIT_ERROR_CODE } from '@tuturuuu/utils/workspace-limits';
+import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
@@ -66,7 +66,10 @@ import {
 import { Input } from '../input';
 import { Popover, PopoverContent, PopoverTrigger } from '../popover';
 import { TUTURUUU_LOGO_URL } from './tuturuuu-logo';
-import { mergeWorkspaceSelectWorkspaces } from './workspace-select-helpers';
+import {
+  mergeWorkspaceSelectWorkspaces,
+  normalizeWorkspaceSwitchPath,
+} from './workspace-select-helpers';
 
 const FormSchema = z.object({
   name: z.string().min(1).max(100),
@@ -98,6 +101,7 @@ function WorkspaceIcon({
     avatarUrl,
     fallbackLogoUrl
   );
+  const shouldSkipFallbackOptimization = /^https?:\/\//u.test(fallbackLogoUrl);
 
   return (
     <Avatar
@@ -124,11 +128,15 @@ function WorkspaceIcon({
           resolvedAvatarUrl ? 'rounded-xs' : 'rounded-sm'
         )}
       >
-        <AvatarImage
+        <Image
+          alt=""
+          aria-hidden="true"
           className="h-full w-full object-cover"
+          height={20}
           src={fallbackLogoUrl}
+          unoptimized={shouldSkipFallbackOptimization}
+          width={20}
         />
-        {name ? getInitials(name) : '?'}
       </AvatarFallback>
     </Avatar>
   );
@@ -433,22 +441,20 @@ export function WorkspaceSelect({
     const selectedTeam = groups
       .flatMap((group) => group.teams)
       .find((team) => team.value === nextSlug);
-    let newPathname =
-      selectedTeam?.accessType === 'guest' && selectedTeam.guestLandingPath
-        ? `/${nextSlug}${selectedTeam.guestLandingPath}`
-        : pathname
-          ? (resolveNextPathname?.({
-              currentPathname: pathname,
-              nextSlug,
-            }) ?? pathname.replace(/^\/[^/]+/, `/${nextSlug}`))
-          : undefined;
+    const usesGuestLandingPath =
+      selectedTeam?.accessType === 'guest' && selectedTeam.guestLandingPath;
+    let newPathname = usesGuestLandingPath
+      ? `/${nextSlug}${selectedTeam.guestLandingPath}`
+      : pathname
+        ? (resolveNextPathname?.({
+            currentPathname: pathname,
+            nextSlug,
+          }) ?? pathname.replace(/^\/[^/]+/, `/${nextSlug}`))
+        : undefined;
+    if (newPathname && !usesGuestLandingPath) {
+      newPathname = normalizeWorkspaceSwitchPath(newPathname, nextSlug);
+    }
     if (newPathname) {
-      // Regex to match a UUID at the end of the string, with or without dashes
-      const uuidRegex =
-        /\/([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}|[0-9a-fA-F]{32})$/;
-      // Remove the UUID if present, and the current path is not /:wsId
-      if (uuidRegex.test(newPathname) && newPathname !== `/${nextSlug}`)
-        newPathname = newPathname.replace(uuidRegex, '');
       router.push(newPathname);
     }
   };

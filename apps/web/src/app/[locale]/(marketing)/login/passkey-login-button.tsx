@@ -1,6 +1,6 @@
 'use client';
 
-import { Fingerprint } from '@tuturuuu/icons';
+import { Fingerprint } from '@tuturuuu/icons/lucide-static';
 import { createAuthClient } from '@tuturuuu/supabase/next/auth-browser';
 import { Button } from '@tuturuuu/ui/button';
 import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';

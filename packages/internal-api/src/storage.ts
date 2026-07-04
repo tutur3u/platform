@@ -6,6 +6,7 @@ import {
   encodePathSegment,
   getInternalApiClient,
   type InternalApiClientOptions,
+  withTaskApiBaseUrl,
 } from './client';
 
 export interface WorkspaceUploadUrlResponse {
@@ -570,7 +571,7 @@ export async function createWorkspaceTaskUploadUrl(
   },
   clientOptions?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(clientOptions);
+  const client = getInternalApiClient(withTaskApiBaseUrl(clientOptions));
   const payload = await client.json<WorkspaceUploadUrlResponse>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/tasks/upload-url`,
     {

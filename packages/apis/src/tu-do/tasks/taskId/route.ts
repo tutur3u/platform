@@ -213,7 +213,10 @@ async function getWorkspaceTask(
         workspace_boards!inner (
           id,
           ws_id,
-          name
+          name,
+          workspace:workspaces (
+            personal
+          )
         )
       ),
       assignees:task_assignees(
@@ -415,6 +418,86 @@ async function validatePersonalProjectIds(
   }
 
   return null;
+}
+
+type TaskAssigneeValidationResult =
+  | {
+      assigneeIds: string[];
+    }
+  | {
+      error: NextResponse;
+    };
+
+async function validateTaskAssigneeIds({
+  assigneeIds,
+  boardId,
+  sbAdmin,
+  wsId,
+}: {
+  assigneeIds: string[];
+  boardId: string | null | undefined;
+  sbAdmin: TypedSupabaseClient;
+  wsId: string;
+}): Promise<TaskAssigneeValidationResult> {
+  const uniqueAssigneeIds = [...new Set(assigneeIds)];
+  if (uniqueAssigneeIds.length === 0) return { assigneeIds: [] };
+
+  const validAssigneeIds = new Set<string>();
+  const { data: members, error: membersError } = await sbAdmin
+    .from('workspace_members')
+    .select('user_id')
+    .eq('ws_id', wsId)
+    .in('user_id', uniqueAssigneeIds);
+
+  if (membersError) {
+    return {
+      error: NextResponse.json(
+        { error: 'Failed to validate task assignees' },
+        { status: 500 }
+      ),
+    };
+  }
+
+  for (const member of members ?? []) {
+    if (member.user_id) validAssigneeIds.add(member.user_id);
+  }
+
+  const remainingAssigneeIds = uniqueAssigneeIds.filter(
+    (assigneeId) => !validAssigneeIds.has(assigneeId)
+  );
+
+  if (boardId && remainingAssigneeIds.length > 0) {
+    const { data: boardShares, error: boardSharesError } = await (
+      sbAdmin as any
+    )
+      .from('task_board_shares')
+      .select('shared_with_user_id')
+      .eq('board_id', boardId)
+      .in('shared_with_user_id', remainingAssigneeIds);
+
+    if (boardSharesError) {
+      return {
+        error: NextResponse.json(
+          { error: 'Failed to validate task assignees' },
+          { status: 500 }
+        ),
+      };
+    }
+
+    for (const boardShare of (boardShares as Array<{
+      shared_with_user_id?: string | null;
+    }> | null) ?? []) {
+      if (boardShare.shared_with_user_id) {
+        validAssigneeIds.add(boardShare.shared_with_user_id);
+      }
+    }
+  }
+
+  return {
+    assigneeIds: uniqueAssigneeIds.filter((assigneeId) =>
+      validAssigneeIds.has(assigneeId)
+    ),
+  };
 }
 
 function serializeTask(task: TaskRecord) {
@@ -626,7 +709,26 @@ export async function handleTaskDetailRouteGET(
       return NextResponse.json({ error: 'Task not found' }, { status: 404 });
     }
 
-    return NextResponse.json({ task: serializeTask(task) });
+    const workspace = task.task_lists?.workspace_boards?.workspace;
+    const { data: taskWorkspaceTier, error: tierError } = await sbAdmin.rpc(
+      '_resolve_workspace_tier',
+      { p_ws_id: wsId }
+    );
+
+    if (tierError) {
+      console.error('Error resolving task workspace tier:', tierError);
+      return NextResponse.json(
+        { error: 'Failed to resolve task workspace tier' },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({
+      task: serializeTask(task),
+      taskWsId: wsId,
+      taskWorkspacePersonal: workspace?.personal ?? false,
+      taskWorkspaceTier: taskWorkspaceTier ?? 'FREE',
+    });
   } catch (error) {
     if (error instanceof ZodError) {
       return NextResponse.json(
@@ -770,7 +872,6 @@ export async function handleTaskDetailRoutePUT(
     if (isGuestBoardAccess) {
       if (
         body.deleted !== undefined ||
-        (normalizedAssigneeIds?.length ?? 0) > 0 ||
         (normalizedLabelIds?.length ?? 0) > 0 ||
         (normalizedProjectIds?.length ?? 0) > 0
       ) {
@@ -823,27 +924,16 @@ export async function handleTaskDetailRoutePUT(
       normalizedAssigneeIds !== undefined &&
       normalizedAssigneeIds.length > 0
     ) {
-      const { data: members, error: membersError } = await sbAdmin
-        .from('workspace_members')
-        .select('user_id')
-        .eq('ws_id', wsId)
-        .in('user_id', normalizedAssigneeIds);
+      const assigneeValidation = await validateTaskAssigneeIds({
+        assigneeIds: normalizedAssigneeIds,
+        boardId: task.task_lists?.board_id,
+        sbAdmin,
+        wsId,
+      });
 
-      if (membersError) {
-        console.error('Error validating assignees:', membersError);
-        return NextResponse.json(
-          { error: 'Failed to validate task assignees' },
-          { status: 500 }
-        );
-      }
+      if ('error' in assigneeValidation) return assigneeValidation.error;
 
-      const validAssigneeIds = new Set(
-        (members ?? []).map((member) => member.user_id)
-      );
-
-      normalizedAssigneeIds = normalizedAssigneeIds.filter((assigneeId) =>
-        validAssigneeIds.has(assigneeId)
-      );
+      normalizedAssigneeIds = assigneeValidation.assigneeIds;
     }
 
     if (normalizedLabelIds !== undefined && normalizedLabelIds.length > 0) {

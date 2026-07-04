@@ -118,15 +118,15 @@ class CalendarCubit extends Cubit<CalendarState> {
   /// Loads events within a 3-month window around the selected date.
   Future<void> loadEvents(String wsId, {bool forceRefresh = false}) async {
     final memoryCacheKey = _memoryCacheKey(wsId);
+    final hasVisibleData = _wsId == wsId && state.hasLoadedOnce;
     final cached =
         _cache[memoryCacheKey] ??
-        (state.hasLoadedOnce && state.events.isNotEmpty
+        (hasVisibleData && state.events.isNotEmpty
             ? _CalendarCacheEntry(
                 state: state,
                 fetchedAt: state.lastUpdatedAt ?? DateTime.now(),
               )
             : null);
-    final hasVisibleData = _wsId == wsId && state.hasLoadedOnce;
     _wsId = wsId;
     final cacheKey = _cacheKey(wsId);
     final shouldReadDiskCache = cached == null && !hasVisibleData;

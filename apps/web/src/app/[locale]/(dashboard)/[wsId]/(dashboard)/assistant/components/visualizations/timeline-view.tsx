@@ -19,6 +19,7 @@ import {
 } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
 import Link from 'next/link';
+import { getTasksAppUrlClient } from '@/lib/tasks-app-url-client';
 import type { GanttTimelineVisualization } from '../../types/visualizations';
 
 interface TimelineViewProps {
@@ -617,7 +618,7 @@ export function TimelineView({
                     return (
                       <Link
                         key={task.id}
-                        href={`/${wsId}/tasks/${task.id}`}
+                        href={getTasksAppUrlClient(`/${wsId}/tasks/${task.id}`)}
                         target="_blank"
                         className={taskClassName}
                       >

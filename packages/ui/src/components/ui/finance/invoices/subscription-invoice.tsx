@@ -6,6 +6,7 @@ import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import { Separator } from '@tuturuuu/ui/separator';
 import { toast } from '@tuturuuu/ui/sonner';
+import { resolveSupportedCurrency } from '@tuturuuu/utils/currencies';
 import { shouldLockFinanceWalletSelectionOnCreate } from '@tuturuuu/utils/finance';
 import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
@@ -36,6 +37,7 @@ import {
 } from './components/invoice-products-permission-warning';
 import { SubscriptionAttendanceSummary } from './components/subscription-attendance-summary';
 import { SubscriptionGroupSelector } from './components/subscription-group-selector';
+import { SubscriptionPrepaidControls } from './components/subscription-prepaid-controls';
 import { CreatePromotionDialog } from './create-promotion-dialog';
 import type { AvailablePromotion } from './hooks';
 import {
@@ -62,15 +64,19 @@ import { formatInvoiceRecalculationDescription } from './invoice-visibility-form
 import { ProductSelection } from './product-selection';
 import type { SelectedProductItem } from './types';
 import {
+  formatCoverageRangeLabel,
+  formatMonthLabel,
   formatMonthValue,
   getAvailableMonths,
-  getBillableAttendanceRecords,
-  getBillableSessionsForGroups,
+  getBillableAttendanceRecordsInRange,
+  getBillableSessionsForGroupsInRange,
+  getCoverageValidUntilMonthValue,
   getGroupsDateRange,
   getLinkedFinanceCategorySelection,
   getMonthStartDate,
   getSubscriptionAttendanceDisplayData,
-  isSubscriptionMonthPaidForGroup,
+  isSubscriptionRangeFullyPaidForGroups,
+  PREPAID_MONTH_OPTION_HORIZON,
 } from './utils';
 
 interface Props {
@@ -81,7 +87,7 @@ interface Props {
   downloadImageAfterCreate?: boolean;
   defaultWalletId?: string;
   defaultCategoryId?: string;
-  defaultCurrency?: 'VND' | 'USD';
+  defaultCurrency?: string;
   canChangeFinanceWallets?: boolean;
   canSetFinanceWalletsOnCreate?: boolean;
   canReadInvoiceProducts?: boolean;
@@ -98,7 +104,7 @@ export function SubscriptionInvoice({
   downloadImageAfterCreate = false,
   defaultWalletId,
   defaultCategoryId,
-  defaultCurrency = 'USD',
+  defaultCurrency: rawDefaultCurrency = 'USD',
   canChangeFinanceWallets = true,
   canSetFinanceWalletsOnCreate = true,
   canReadInvoiceProducts = true,
@@ -108,6 +114,7 @@ export function SubscriptionInvoice({
 }: Props) {
   const t = useTranslations();
   const locale = useLocale();
+  const defaultCurrency = resolveSupportedCurrency(rawDefaultCurrency);
   const { isConfidential: areNumbersHidden } =
     useFinanceConfidentialVisibility();
   const router = useRouter();
@@ -129,6 +136,7 @@ export function SubscriptionInvoice({
     defaultValue: formatMonthValue(new Date()),
     shallow: true,
   });
+  const [prepaidMonthCount, setPrepaidMonthCount] = useState(1);
 
   const [customerSearch, setCustomerSearch] = useState('');
   const [debouncedCustomerSearch] = useDebounce(customerSearch, 300);
@@ -277,7 +285,8 @@ export function SubscriptionInvoice({
         selectedGroupIds,
         [],
         locale,
-        selectedMonth
+        selectedMonth,
+        PREPAID_MONTH_OPTION_HORIZON
       ),
     [locale, selectedGroupIds, selectedMonth, userGroups]
   );
@@ -322,7 +331,8 @@ export function SubscriptionInvoice({
     wsId,
     selectedUserId,
     selectedGroupIds,
-    effectiveSelectedMonth
+    effectiveSelectedMonth,
+    prepaidMonthCount
   );
 
   const userAttendance = subscriptionInvoiceContext?.attendance ?? [];
@@ -333,35 +343,62 @@ export function SubscriptionInvoice({
       ? subscriptionInvoiceContextError
       : null;
 
-  const isSelectedMonthPaid = useMemo(() => {
+  const coverageRangeLabel = useMemo(
+    () =>
+      formatCoverageRangeLabel({
+        locale,
+        prepaidMonthCount,
+        selectedMonth: effectiveSelectedMonth,
+      }),
+    [effectiveSelectedMonth, locale, prepaidMonthCount]
+  );
+  const coverageValidUntilLabel = useMemo(
+    () =>
+      formatMonthLabel(
+        getCoverageValidUntilMonthValue(
+          effectiveSelectedMonth,
+          prepaidMonthCount
+        ),
+        locale
+      ),
+    [effectiveSelectedMonth, locale, prepaidMonthCount]
+  );
+
+  const isSelectedRangePaid = useMemo(() => {
     if (selectedGroupIds.length === 0 || !effectiveSelectedMonth) return false;
 
     const selectedMonthStart = getMonthStartDate(effectiveSelectedMonth);
 
-    // A month is considered paid ONLY if ALL selected groups have paid for it.
-    // If ANY selected group has not paid, we allow creating an invoice.
+    // A range is paid only if all selected groups have coverage for every month.
+    // If any selected group has an unpaid month, invoice creation stays enabled.
     if (Number.isNaN(selectedMonthStart.getTime())) return false;
 
-    return selectedGroupIds.every((groupId) =>
-      isSubscriptionMonthPaidForGroup(
-        groupId,
-        effectiveSelectedMonth,
-        latestSubscriptionInvoices
-      )
+    return isSubscriptionRangeFullyPaidForGroups(
+      selectedGroupIds,
+      effectiveSelectedMonth,
+      prepaidMonthCount,
+      latestSubscriptionInvoices
     );
-  }, [effectiveSelectedMonth, latestSubscriptionInvoices, selectedGroupIds]);
+  }, [
+    effectiveSelectedMonth,
+    latestSubscriptionInvoices,
+    prepaidMonthCount,
+    selectedGroupIds,
+  ]);
 
   const billableAttendance = useMemo(
     () =>
-      getBillableAttendanceRecords(
+      getBillableAttendanceRecordsInRange(
         userAttendance,
         selectedGroupIds,
         effectiveSelectedMonth,
+        prepaidMonthCount,
         latestSubscriptionInvoices
       ),
     [
       effectiveSelectedMonth,
       latestSubscriptionInvoices,
+      prepaidMonthCount,
       selectedGroupIds,
       userAttendance,
     ]
@@ -369,15 +406,17 @@ export function SubscriptionInvoice({
 
   const billableSessions = useMemo(
     () =>
-      getBillableSessionsForGroups(
+      getBillableSessionsForGroupsInRange(
         userGroups,
         selectedGroupIds,
         effectiveSelectedMonth,
+        prepaidMonthCount,
         latestSubscriptionInvoices
       ),
     [
       effectiveSelectedMonth,
       latestSubscriptionInvoices,
+      prepaidMonthCount,
       selectedGroupIds,
       userGroups,
     ]
@@ -385,22 +424,29 @@ export function SubscriptionInvoice({
 
   const monthlyAttendance = useMemo(
     () =>
-      getBillableAttendanceRecords(
+      getBillableAttendanceRecordsInRange(
         userAttendance,
         selectedGroupIds,
-        effectiveSelectedMonth
+        effectiveSelectedMonth,
+        prepaidMonthCount
       ),
-    [effectiveSelectedMonth, selectedGroupIds, userAttendance]
+    [
+      effectiveSelectedMonth,
+      prepaidMonthCount,
+      selectedGroupIds,
+      userAttendance,
+    ]
   );
 
   const monthlySessions = useMemo(
     () =>
-      getBillableSessionsForGroups(
+      getBillableSessionsForGroupsInRange(
         userGroups,
         selectedGroupIds,
-        effectiveSelectedMonth
+        effectiveSelectedMonth,
+        prepaidMonthCount
       ),
-    [effectiveSelectedMonth, selectedGroupIds, userGroups]
+    [effectiveSelectedMonth, prepaidMonthCount, selectedGroupIds, userGroups]
   );
 
   const {
@@ -412,7 +458,7 @@ export function SubscriptionInvoice({
   } = useMemo(
     () =>
       getSubscriptionAttendanceDisplayData({
-        isSelectedMonthPaid,
+        isSelectedMonthPaid: isSelectedRangePaid,
         billableAttendance,
         billableSessions,
         monthlyAttendance,
@@ -421,7 +467,7 @@ export function SubscriptionInvoice({
     [
       billableAttendance,
       billableSessions,
-      isSelectedMonthPaid,
+      isSelectedRangePaid,
       monthlyAttendance,
       monthlySessions,
     ]
@@ -500,6 +546,7 @@ export function SubscriptionInvoice({
     userAttendance: billableAttendance,
     latestSubscriptionInvoices,
     onSelectedProductsChange: setSubscriptionSelectedProducts,
+    prepaidMonthCount,
   });
 
   useSubscriptionInvoiceContent({
@@ -511,10 +558,11 @@ export function SubscriptionInvoice({
     subscriptionSelectedProducts,
     userAttendance: billableAttendance,
     latestSubscriptionInvoices,
-    isSelectedMonthPaid,
+    isSelectedMonthPaid: isSelectedRangePaid,
     locale,
     onContentChange: setInvoiceContent,
     onNotesChange: setInvoiceNotes,
+    prepaidMonthCount,
   });
 
   const subtotal = useInvoiceSubtotal(subscriptionSelectedProducts);
@@ -580,6 +628,7 @@ export function SubscriptionInvoice({
       setSelectedCategoryId(defaultCategoryId || '');
       setSelectedGroupIds(null);
       setSelectedMonth(null);
+      setPrepaidMonthCount(1);
     }
   }, [
     selectedUserId,
@@ -627,7 +676,8 @@ export function SubscriptionInvoice({
         selectedGroupIds,
         latestSubscriptionInvoices,
         locale,
-        effectiveSelectedMonth
+        effectiveSelectedMonth,
+        PREPAID_MONTH_OPTION_HORIZON
       ),
     [
       effectiveSelectedMonth,
@@ -776,6 +826,7 @@ export function SubscriptionInvoice({
         frontend_subtotal: subtotal,
         frontend_discount_amount: discountAmount,
         frontend_total: subscriptionRoundedTotal,
+        prepaid_month_count: prepaidMonthCount,
       };
 
       const result = await createSubscriptionInvoiceWithInternalApi(wsId, {
@@ -822,6 +873,7 @@ export function SubscriptionInvoice({
         setSelectedWalletId(defaultWalletId || '');
         setSelectedCategoryId(defaultCategoryId || '');
         setSelectedGroupIds(null);
+        setPrepaidMonthCount(1);
         setCustomerSearch('');
       }
     } catch (error) {
@@ -903,7 +955,16 @@ export function SubscriptionInvoice({
           />
         )}
 
-        {selectedGroupIds.length > 0 && !isSelectedMonthPaid && !isBlocked && (
+        {selectedGroupIds.length > 0 && (
+          <SubscriptionPrepaidControls
+            coverageRangeLabel={coverageRangeLabel}
+            prepaidMonthCount={prepaidMonthCount}
+            validUntilLabel={coverageValidUntilLabel}
+            onPrepaidMonthCountChange={setPrepaidMonthCount}
+          />
+        )}
+
+        {selectedGroupIds.length > 0 && !isSelectedRangePaid && !isBlocked && (
           <>
             <ProductSelection
               products={products}
@@ -963,7 +1024,7 @@ export function SubscriptionInvoice({
               <SubscriptionAttendanceSummary
                 selectedGroupIds={selectedGroupIds}
                 selectedMonth={effectiveSelectedMonth}
-                isSelectedMonthPaid={isSelectedMonthPaid}
+                isSelectedMonthPaid={isSelectedRangePaid}
                 locale={locale}
                 navigateMonth={navigateMonth}
                 canNavigateMonth={canNavigateMonth}
@@ -977,11 +1038,13 @@ export function SubscriptionInvoice({
                 attendanceStats={attendanceStats}
                 totalSessions={totalSessions}
                 attendanceRate={attendanceRate}
+                coverageRangeLabel={coverageRangeLabel}
+                prepaidMonthCount={prepaidMonthCount}
               />
             )}
 
             {subscriptionSelectedProducts.length > 0 &&
-              !isSelectedMonthPaid && (
+              !isSelectedRangePaid && (
                 <Card>
                   <CardHeader>
                     <CardTitle>
@@ -1093,7 +1156,7 @@ export function SubscriptionInvoice({
                           !selectedWalletId ||
                           !selectedCategoryId ||
                           isCreating ||
-                          isSelectedMonthPaid
+                          isSelectedRangePaid
                         }
                       >
                         {isCreating ? (

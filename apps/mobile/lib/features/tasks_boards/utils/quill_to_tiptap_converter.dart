@@ -460,8 +460,8 @@ Map<String, dynamic>? _imageResizeAttrsFromEmbed(String? rawValue) {
             'src': src,
             'alt': _nonEmptyString(decoded['alt']),
             'title': _nonEmptyString(decoded['title']),
-            'width': decoded['width'] as num?,
-            'height': decoded['height'] as num?,
+            'width': _optionalNumber(decoded['width']),
+            'height': _optionalNumber(decoded['height']),
             'containerStyle': _nonEmptyString(decoded['containerStyle']) ?? '',
             'wrapperStyle': _nonEmptyString(decoded['wrapperStyle']) ?? '',
           };
@@ -485,6 +485,10 @@ Map<String, dynamic>? _imageResizeAttrsFromEmbed(String? rawValue) {
 
 String? _nonEmptyString(Object? value) {
   return value is String && value.trim().isNotEmpty ? value.trim() : null;
+}
+
+num? _optionalNumber(Object? value) {
+  return value is num ? value : null;
 }
 
 Map<String, dynamic> _wrapListForDepth(Map<String, dynamic> child, int depth) {

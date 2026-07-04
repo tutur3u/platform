@@ -14,6 +14,7 @@ import { Progress } from '@tuturuuu/ui/progress';
 import { Separator } from '@tuturuuu/ui/separator';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useState } from 'react';
+import { getTasksAppUrlClient } from '@/lib/tasks-app-url-client';
 
 interface EmbeddingStats {
   total: number;
@@ -43,7 +44,12 @@ export default function AdminTaskEmbeddings() {
   } = useQuery<EmbeddingStats>({
     queryKey: ['admin', 'task-embeddings', 'stats'],
     queryFn: async () => {
-      const response = await fetch('/api/admin/tasks/embeddings/stats');
+      const response = await fetch(
+        getTasksAppUrlClient('/api/admin/tasks/embeddings/stats'),
+        {
+          credentials: 'include',
+        }
+      );
       if (!response.ok) {
         const error = await response.json();
         throw new Error(error.message || 'Failed to fetch statistics');
@@ -62,13 +68,17 @@ export default function AdminTaskEmbeddings() {
     setProgress(null);
 
     try {
-      const response = await fetch('/api/admin/tasks/embeddings/generate', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ batchSize }),
-      });
+      const response = await fetch(
+        getTasksAppUrlClient('/api/admin/tasks/embeddings/generate'),
+        {
+          method: 'POST',
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ batchSize }),
+        }
+      );
 
       if (!response.ok) {
         const error = await response.json();

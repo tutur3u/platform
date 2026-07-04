@@ -14,6 +14,7 @@ function sale(paid: number, qty: number): InventorySaleSummary {
     id: `s-${paid}-${qty}`,
     items_count: 1,
     paid_amount: paid,
+    source: 'checkout_session',
     total_quantity: qty,
   };
 }
@@ -114,16 +115,18 @@ function profileWithCost(
 
 describe('buildProductPnl', () => {
   it('computes COGS, profit, and margin from matched costing', () => {
+    // Revenue is in minor units ($300 -> 30000 cents); costing unitCost is in
+    // major units ($40) and is converted to minor units before subtracting.
     const [row] = buildProductPnl(
-      [productSales('p1', 'Mentoring', 300, 3)],
+      [productSales('p1', 'Mentoring', 30_000, 3)],
       [profileWithCost('p1', 40)]
     );
 
     expect(row).toMatchObject({
-      estCogs: 120, // 40 * 3 units
-      estProfit: 180, // 300 - 120
-      marginPercentage: 60, // 180 / 300
-      revenue: 300,
+      estCogs: 12_000, // ($40 -> 4000c) * 3 units
+      estProfit: 18_000, // 30000 - 12000
+      marginPercentage: 60, // 18000 / 30000
+      revenue: 30_000,
       unitCost: 40,
       unitsSold: 3,
     });
@@ -131,7 +134,7 @@ describe('buildProductPnl', () => {
 
   it('leaves cost/margin null when no costing profile matches', () => {
     const [row] = buildProductPnl(
-      [productSales('p2', 'Sticker', 50, 10)],
+      [productSales('p2', 'Sticker', 5000, 10)],
       [profileWithCost('p1', 40)]
     );
 
@@ -139,7 +142,7 @@ describe('buildProductPnl', () => {
       estCogs: null,
       estProfit: null,
       marginPercentage: null,
-      revenue: 50,
+      revenue: 5000,
     });
   });
 });

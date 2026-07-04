@@ -20,8 +20,16 @@ function createLogoutResponse(request: NextRequest) {
   return clearSupabaseAuthCookies(request, clearAppSessionAndReturn(response));
 }
 
-export function GET(request: NextRequest) {
-  return createLogoutResponse(request);
+export function GET(_request: NextRequest) {
+  return NextResponse.json(
+    { error: 'Method not allowed' },
+    {
+      headers: { Allow: 'POST' },
+      status: 405,
+    }
+  );
 }
 
-export const POST = GET;
+export function POST(request: NextRequest) {
+  return createLogoutResponse(request);
+}

@@ -28,7 +28,7 @@ import { cn } from '@tuturuuu/utils/format';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
-import { CostingProfileDialog } from './costing-profile-form';
+import { CostingProfileDialog } from './costing-profile-dialog';
 import { BundleForm, StorefrontForm } from './inventory-forms';
 import {
   OperatorActionRail,
@@ -36,7 +36,7 @@ import {
   OperatorMetricCard,
   OperatorModuleCard,
 } from './operator-dashboard-primitives';
-import { currency } from './operator-format';
+import { money } from './operator-format';
 import { OverviewCharts } from './overview-charts';
 import { OverviewReadiness } from './overview-readiness';
 import { ProductCreateForm } from './product-management';
@@ -273,7 +273,7 @@ export function OverviewPanel({
           description={t('itemsSold', { count: quantity ?? 0 })}
           icon={CircleDollarSign}
           label={t('kpis.revenue')}
-          value={currency(revenue ?? 0)}
+          value={money(revenue ?? 0)}
         />
         <OperatorMetricCard
           description={t('kpis.readinessDescription')}

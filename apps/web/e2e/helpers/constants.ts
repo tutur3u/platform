@@ -8,10 +8,11 @@ export const TEST_USER = {
 export const DEFAULT_LOCALE = 'en';
 
 /**
- * Stable authenticated workspace route covered by the seeded e2e account.
- * The broader e2e suite already exercises this route successfully.
+ * Stable authenticated web-owned workspace route covered by the seeded e2e
+ * account. Keep this away from satellite-owned routes so generic web shell and
+ * account settings tests do not depend on production satellite domains.
  */
-export const TEST_WORKSPACE_ROUTE = 'personal/tasks';
+export const TEST_WORKSPACE_ROUTE = 'personal';
 
 /** Dashboard URL for the authenticated test user */
 export const DASHBOARD_URL = `/${DEFAULT_LOCALE}/${TEST_WORKSPACE_ROUTE}`;

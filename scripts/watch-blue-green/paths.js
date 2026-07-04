@@ -64,6 +64,10 @@ const WATCH_DEPLOYMENT_PIN_FILE = path.join(
   WATCH_CONTROL_DIR,
   'blue-green-deployment-pin.json'
 );
+const WATCH_CRON_RUNNER_RECOVERY_REQUEST_FILE = path.join(
+  WATCH_CONTROL_DIR,
+  'cron-runner-recovery.request.json'
+);
 const WATCH_REQUEST_LOG_DIR = path.join(
   WATCH_RUNTIME_DIR,
   'blue-green-request-logs'
@@ -100,6 +104,11 @@ function getWatchPaths(rootDir = ROOT_DIR, env = process.env) {
     ),
     blueGreen: getBlueGreenPaths(rootDir),
     controlDir: path.join(runtimeDir, 'control'),
+    cronRunnerRecoveryRequestFile: path.join(
+      runtimeDir,
+      'control',
+      'cron-runner-recovery.request.json'
+    ),
     deploymentBuildLockFile: path.join(
       runtimeDir,
       'blue-green-deployment-build.lock'
@@ -163,6 +172,7 @@ module.exports = {
   WATCH_ARGS_FILE_ENV,
   WATCH_ARGS_FILE,
   WATCH_CONTROL_DIR,
+  WATCH_CRON_RUNNER_RECOVERY_REQUEST_FILE,
   WATCH_DEPLOYMENT_BUILD_LOCK_FILE,
   WATCH_DEPLOYMENT_REVERT_REQUEST_FILE,
   WATCH_DEPLOYMENT_PIN_FILE,

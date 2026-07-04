@@ -4,13 +4,30 @@ import {
   type InternalApiClientOptions,
 } from '@tuturuuu/internal-api/client';
 import {
+  applyWorkspaceExternalProjectSyncManifest,
+  diffWorkspaceExternalProjectSyncManifest,
+  type ExternalProjectSyncManifest,
+  getWorkspaceExternalProjectDelivery,
+  getWorkspaceExternalProjectStudio,
+  getWorkspaceExternalProjectSummary,
+  getWorkspaceExternalProjectSyncSnapshot,
+  listWorkspaceExternalProjectCollections,
+  listWorkspaceExternalProjectEntries,
+  setupWorkspaceExternalProject,
+  type WorkspaceExternalProjectSyncApplyPayload,
+} from '@tuturuuu/internal-api/external-projects';
+import {
+  abortWorkspaceTaskDescriptionChunks,
   addWorkspaceTaskLabel,
+  appendWorkspaceTaskDescriptionChunk,
   type BulkWorkspaceTaskOperation,
+  beginWorkspaceTaskDescriptionChunks,
   bulkWorkspaceTasks,
   type CreateWorkspaceTaskBoardPayload,
   type CreateWorkspaceTaskListPayload,
   type CreateWorkspaceTaskPayload,
   type CreateWorkspaceTaskWithRelationshipPayload,
+  commitWorkspaceTaskDescriptionChunks,
   createWorkspaceLabel,
   createWorkspaceTask,
   createWorkspaceTaskBoard,
@@ -24,6 +41,7 @@ import {
   getWorkspaceBoardsData,
   getWorkspaceTask,
   getWorkspaceTaskBoard,
+  getWorkspaceTaskDescription,
   getWorkspaceTaskProject,
   getWorkspaceTaskProjectTasks,
   getWorkspaceTaskRelationships,
@@ -38,12 +56,18 @@ import {
   type MoveWorkspaceTaskPayload,
   moveWorkspaceTask,
   removeWorkspaceTaskLabel,
+  type SearchWorkspaceTasksPayload,
+  type SearchWorkspaceTasksResponse,
+  searchWorkspaceTasks,
   triggerWorkspaceTaskEmbedding,
   type UpdateWorkspaceTaskBoardPayload,
   type UpdateWorkspaceTaskListPayload,
   updateWorkspaceTask,
   updateWorkspaceTaskBoard,
+  updateWorkspaceTaskDescription,
   updateWorkspaceTaskList,
+  type WorkspaceTaskDescriptionChunkFields,
+  type WorkspaceTaskDescriptionUpdatePayload,
   type WorkspaceTasksResponse,
   type WorkspaceTaskUpdatePayload,
 } from '@tuturuuu/internal-api/tasks';
@@ -52,11 +76,26 @@ import {
   getCurrentUserProfile,
 } from '@tuturuuu/internal-api/users';
 import { listWorkspaces } from '@tuturuuu/internal-api/workspaces';
+import { taskDescriptionYjsStateToBase64 } from '@tuturuuu/utils/task-description-codec';
 import { refreshCliSession } from './cli/auth';
 import { type CliSession, normalizeBaseUrl } from './cli/config';
 import { CalendarClient } from './platform-calendar';
 import { DevboxesClient } from './platform-devbox';
 import { FinanceClient } from './platform-finance';
+import {
+  createWorkspaceTaskTemplate,
+  deleteWorkspaceTaskTemplate,
+  getWorkspaceTaskTemplate,
+  type InstantiateWorkspaceTaskTemplatePayload,
+  instantiateWorkspaceTaskTemplate,
+  type ListWorkspaceTaskTemplatesOptions,
+  listWorkspaceTaskTemplates,
+  type SaveWorkspaceTaskTemplateFromTaskPayload,
+  saveWorkspaceTaskTemplateFromTask,
+  type UpdateWorkspaceTaskTemplatePayload,
+  updateWorkspaceTaskTemplate,
+  type WorkspaceTaskTemplatePayload,
+} from './task-templates';
 
 export interface TuturuuuUserClientConfig {
   accessToken: string;
@@ -65,15 +104,28 @@ export interface TuturuuuUserClientConfig {
   fetch?: typeof fetch;
   onSessionRefresh?: (session: CliSession) => void | Promise<void>;
   refreshToken?: string;
+  tasksBaseUrl?: string;
 }
 
 const SESSION_REFRESH_SKEW_MS = 60_000;
 const PROTOCOL_RELATIVE_URL_PATTERN = /^\/\//u;
+const TASK_DESCRIPTION_CHUNK_SIZE = 180_000;
+const DEFAULT_TASKS_BASE_URL = 'https://tasks.tuturuuu.com';
 
 type CliListWorkspaceTasksOptions = ListWorkspaceTasksOptions & {
   includeArchivedBoards?: boolean;
   listStatuses?: string[];
 };
+
+type TaskDescriptionChunkPayloadField =
+  | {
+      field: 'description';
+      value: string | null;
+    }
+  | {
+      field: 'description_yjs_state';
+      value: string | null;
+    };
 
 function getAuthorizationHeader(accessToken: string) {
   return `Bearer ${accessToken}`;
@@ -116,6 +168,86 @@ function shouldAttachSdkAuth(input: RequestInfo | URL, baseUrl: string) {
   }
 }
 
+function inferTasksBaseUrl(baseUrl?: string) {
+  const platformBaseUrl = normalizeBaseUrl(baseUrl);
+  const url = new URL(platformBaseUrl);
+
+  if (url.hostname === 'tuturuuu.com') {
+    return DEFAULT_TASKS_BASE_URL;
+  }
+
+  if (url.hostname === 'tuturuuu.localhost') {
+    return 'https://tasks.tuturuuu.localhost';
+  }
+
+  if (
+    ['localhost', '127.0.0.1', '[::1]', '::1'].includes(url.hostname) &&
+    url.port === '7803'
+  ) {
+    url.port = '7809';
+    return url.origin;
+  }
+
+  return DEFAULT_TASKS_BASE_URL;
+}
+
+function chunkText(value: string, chunkSize = TASK_DESCRIPTION_CHUNK_SIZE) {
+  const chunks: string[] = [];
+  for (let index = 0; index < value.length; index += chunkSize) {
+    chunks.push(value.slice(index, index + chunkSize));
+  }
+  return chunks;
+}
+
+function buildTaskDescriptionChunkFields(
+  payload: WorkspaceTaskDescriptionUpdatePayload
+) {
+  const fields: WorkspaceTaskDescriptionChunkFields = {};
+  const payloadFields: TaskDescriptionChunkPayloadField[] = [];
+
+  if ('description' in payload) {
+    payloadFields.push({
+      field: 'description',
+      value: payload.description ?? null,
+    });
+  }
+
+  if ('description_yjs_state' in payload) {
+    payloadFields.push({
+      field: 'description_yjs_state',
+      value: taskDescriptionYjsStateToBase64(payload.description_yjs_state),
+    });
+  }
+
+  const chunksByField = new Map<
+    TaskDescriptionChunkPayloadField['field'],
+    string[]
+  >();
+
+  for (const { field, value } of payloadFields) {
+    const normalizedValue = value === '' ? null : value;
+
+    if (normalizedValue === null) {
+      fields[field] = {
+        chunk_count: 0,
+        is_null: true,
+        total_length: 0,
+      };
+      chunksByField.set(field, []);
+      continue;
+    }
+
+    const chunks = chunkText(normalizedValue);
+    fields[field] = {
+      chunk_count: chunks.length,
+      total_length: normalizedValue.length,
+    };
+    chunksByField.set(field, chunks);
+  }
+
+  return { chunksByField, fields };
+}
+
 export class WorkspacesClient {
   constructor(private readonly client: TuturuuuUserClient) {}
 
@@ -136,6 +268,89 @@ export class UsersClient {
   }
 }
 
+export class ExternalProjectsUserClient {
+  constructor(private readonly client: TuturuuuUserClient) {}
+
+  apply(
+    workspaceId: string,
+    payload: WorkspaceExternalProjectSyncApplyPayload
+  ) {
+    return applyWorkspaceExternalProjectSyncManifest(
+      workspaceId,
+      payload,
+      this.client.getClientOptions()
+    );
+  }
+
+  collections(workspaceId: string) {
+    return listWorkspaceExternalProjectCollections(
+      workspaceId,
+      this.client.getClientOptions()
+    );
+  }
+
+  delivery(workspaceId: string, options?: { preview?: boolean }) {
+    return getWorkspaceExternalProjectDelivery(
+      workspaceId,
+      options?.preview === true,
+      this.client.getClientOptions()
+    );
+  }
+
+  diff(workspaceId: string, manifest: ExternalProjectSyncManifest) {
+    return diffWorkspaceExternalProjectSyncManifest(
+      workspaceId,
+      { manifest },
+      this.client.getClientOptions()
+    );
+  }
+
+  entries(workspaceId: string, options?: { collectionId?: string }) {
+    return listWorkspaceExternalProjectEntries(
+      workspaceId,
+      options,
+      this.client.getClientOptions()
+    );
+  }
+
+  setup(workspaceId: string, manifest: ExternalProjectSyncManifest) {
+    return setupWorkspaceExternalProject(
+      workspaceId,
+      { manifest },
+      this.client.getClientOptions()
+    );
+  }
+
+  snapshot(workspaceId: string) {
+    return getWorkspaceExternalProjectSyncSnapshot(
+      workspaceId,
+      this.client.getClientOptions()
+    );
+  }
+
+  studio(workspaceId: string) {
+    return getWorkspaceExternalProjectStudio(
+      workspaceId,
+      this.client.getClientOptions()
+    );
+  }
+
+  summary(workspaceId: string) {
+    return getWorkspaceExternalProjectSummary(
+      workspaceId,
+      this.client.getClientOptions()
+    );
+  }
+}
+
+export class ExternalClient {
+  readonly projects: ExternalProjectsUserClient;
+
+  constructor(client: TuturuuuUserClient) {
+    this.projects = new ExternalProjectsUserClient(client);
+  }
+}
+
 export class TasksClient {
   constructor(private readonly client: TuturuuuUserClient) {}
 
@@ -144,7 +359,7 @@ export class TasksClient {
       workspaceId,
       taskId,
       labelId,
-      this.client.getClientOptions()
+      this.client.getTaskClientOptions()
     );
   }
 
@@ -155,7 +370,7 @@ export class TasksClient {
     return bulkWorkspaceTasks(
       workspaceId,
       payload,
-      this.client.getClientOptions()
+      this.client.getTaskClientOptions()
     );
   }
 
@@ -163,15 +378,95 @@ export class TasksClient {
     return createWorkspaceTask(
       workspaceId,
       payload,
-      this.client.getClientOptions()
+      this.client.getTaskClientOptions()
     );
+  }
+
+  createTemplate(workspaceId: string, payload: WorkspaceTaskTemplatePayload) {
+    return createWorkspaceTaskTemplate(
+      workspaceId,
+      payload,
+      this.client.getTaskClientOptions()
+    );
+  }
+
+  getDescription(workspaceId: string, taskId: string) {
+    return getWorkspaceTaskDescription(
+      workspaceId,
+      taskId,
+      this.client.getTaskClientOptions()
+    );
+  }
+
+  updateDescription(
+    workspaceId: string,
+    taskId: string,
+    payload: WorkspaceTaskDescriptionUpdatePayload
+  ) {
+    return updateWorkspaceTaskDescription(
+      workspaceId,
+      taskId,
+      payload,
+      this.client.getTaskClientOptions()
+    );
+  }
+
+  async updateDescriptionChunked(
+    workspaceId: string,
+    taskId: string,
+    payload: WorkspaceTaskDescriptionUpdatePayload
+  ) {
+    const { chunksByField, fields } = buildTaskDescriptionChunkFields(payload);
+    if (Object.keys(fields).length === 0) {
+      throw new Error('Task description chunked update payload is empty');
+    }
+
+    const { session_id: sessionId } = await beginWorkspaceTaskDescriptionChunks(
+      workspaceId,
+      taskId,
+      fields,
+      this.client.getTaskClientOptions()
+    );
+
+    try {
+      for (const [field, chunks] of chunksByField.entries()) {
+        for (const [chunkIndex, chunk] of chunks.entries()) {
+          await appendWorkspaceTaskDescriptionChunk(
+            workspaceId,
+            taskId,
+            {
+              chunk,
+              chunk_index: chunkIndex,
+              field,
+              session_id: sessionId,
+            },
+            this.client.getTaskClientOptions()
+          );
+        }
+      }
+
+      return await commitWorkspaceTaskDescriptionChunks(
+        workspaceId,
+        taskId,
+        sessionId,
+        this.client.getTaskClientOptions()
+      );
+    } catch (error) {
+      await abortWorkspaceTaskDescriptionChunks(
+        workspaceId,
+        taskId,
+        sessionId,
+        this.client.getTaskClientOptions()
+      ).catch(() => undefined);
+      throw error;
+    }
   }
 
   createBoard(workspaceId: string, payload: CreateWorkspaceTaskBoardPayload) {
     return createWorkspaceTaskBoard(
       workspaceId,
       payload,
-      this.client.getClientOptions()
+      this.client.getTaskClientOptions()
     );
   }
 
@@ -184,7 +479,7 @@ export class TasksClient {
       workspaceId,
       boardId,
       payload,
-      this.client.getClientOptions()
+      this.client.getTaskClientOptions()
     );
   }
 
@@ -195,7 +490,7 @@ export class TasksClient {
     return createWorkspaceTaskProject(
       workspaceId,
       payload,
-      this.client.getClientOptions()
+      this.client.getTaskClientOptions()
     );
   }
 
@@ -208,7 +503,7 @@ export class TasksClient {
       workspaceId,
       taskId,
       payload,
-      this.client.getClientOptions()
+      this.client.getTaskClientOptions()
     );
   }
 
@@ -219,7 +514,7 @@ export class TasksClient {
     return createWorkspaceTaskWithRelationship(
       workspaceId,
       payload,
-      this.client.getClientOptions()
+      this.client.getTaskClientOptions()
     );
   }
 
@@ -227,7 +522,20 @@ export class TasksClient {
     return deleteWorkspaceTask(
       workspaceId,
       taskId,
-      this.client.getClientOptions()
+      this.client.getTaskClientOptions()
+    );
+  }
+
+  deleteTemplate(
+    workspaceId: string,
+    templateKey: string,
+    options?: { permanent?: boolean }
+  ) {
+    return deleteWorkspaceTaskTemplate(
+      workspaceId,
+      templateKey,
+      options,
+      this.client.getTaskClientOptions()
     );
   }
 
@@ -235,7 +543,7 @@ export class TasksClient {
     return deleteWorkspaceTaskBoard(
       workspaceId,
       boardId,
-      this.client.getClientOptions()
+      this.client.getTaskClientOptions()
     );
   }
 
@@ -248,7 +556,7 @@ export class TasksClient {
       workspaceId,
       taskId,
       payload,
-      this.client.getClientOptions()
+      this.client.getTaskClientOptions()
     );
   }
 
@@ -256,7 +564,15 @@ export class TasksClient {
     return getWorkspaceTask(
       workspaceId,
       taskId,
-      this.client.getClientOptions()
+      this.client.getTaskClientOptions()
+    );
+  }
+
+  getTemplate(workspaceId: string, templateKey: string) {
+    return getWorkspaceTaskTemplate(
+      workspaceId,
+      templateKey,
+      this.client.getTaskClientOptions()
     );
   }
 
@@ -264,7 +580,7 @@ export class TasksClient {
     return getWorkspaceTaskBoard(
       workspaceId,
       boardId,
-      this.client.getClientOptions()
+      this.client.getTaskClientOptions()
     );
   }
 
@@ -272,7 +588,7 @@ export class TasksClient {
     return getWorkspaceBoardsData(
       workspaceId,
       options,
-      this.client.getClientOptions()
+      this.client.getTaskClientOptions()
     );
   }
 
@@ -280,7 +596,7 @@ export class TasksClient {
     return getWorkspaceTaskProject(
       workspaceId,
       projectId,
-      this.client.getClientOptions()
+      this.client.getTaskClientOptions()
     );
   }
 
@@ -288,7 +604,7 @@ export class TasksClient {
     return getWorkspaceTaskProjectTasks(
       workspaceId,
       projectId,
-      this.client.getClientOptions()
+      this.client.getTaskClientOptions()
     );
   }
 
@@ -296,12 +612,12 @@ export class TasksClient {
     return getWorkspaceTaskRelationships(
       workspaceId,
       taskId,
-      this.client.getClientOptions()
+      this.client.getTaskClientOptions()
     );
   }
 
   list(workspaceId: string, options?: CliListWorkspaceTasksOptions) {
-    const client = getInternalApiClient(this.client.getClientOptions());
+    const client = getInternalApiClient(this.client.getTaskClientOptions());
 
     return client.json<WorkspaceTasksResponse>(
       `/api/v1/workspaces/${encodePathSegment(workspaceId)}/tasks`,
@@ -340,38 +656,49 @@ export class TasksClient {
     return listWorkspaceTaskBoards(
       workspaceId,
       options,
-      this.client.getClientOptions()
+      this.client.getTaskClientOptions()
     );
   }
 
   listBoardsWithLists(workspaceId: string) {
     return listWorkspaceBoardsWithLists(
       workspaceId,
-      this.client.getClientOptions()
+      this.client.getTaskClientOptions()
     );
   }
 
   listLabels(workspaceId: string) {
-    return listWorkspaceLabels(workspaceId, this.client.getClientOptions());
+    return listWorkspaceLabels(workspaceId, this.client.getTaskClientOptions());
   }
 
   listLists(workspaceId: string, boardId: string) {
     return listWorkspaceTaskLists(
       workspaceId,
       boardId,
-      this.client.getClientOptions()
+      this.client.getTaskClientOptions()
     );
   }
 
   listProjects(workspaceId: string) {
     return listWorkspaceTaskProjects(
       workspaceId,
-      this.client.getClientOptions()
+      this.client.getTaskClientOptions()
+    );
+  }
+
+  listTemplates(
+    workspaceId: string,
+    options?: ListWorkspaceTaskTemplatesOptions
+  ) {
+    return listWorkspaceTaskTemplates(
+      workspaceId,
+      options,
+      this.client.getTaskClientOptions()
     );
   }
 
   listStatusTemplates() {
-    return listTaskBoardStatusTemplates(this.client.getClientOptions());
+    return listTaskBoardStatusTemplates(this.client.getTaskClientOptions());
   }
 
   move(workspaceId: string, taskId: string, payload: MoveWorkspaceTaskPayload) {
@@ -379,7 +706,7 @@ export class TasksClient {
       workspaceId,
       taskId,
       payload,
-      this.client.getClientOptions()
+      this.client.getTaskClientOptions()
     );
   }
 
@@ -388,7 +715,29 @@ export class TasksClient {
       workspaceId,
       taskId,
       labelId,
-      this.client.getClientOptions()
+      this.client.getTaskClientOptions()
+    );
+  }
+
+  search(
+    workspaceId: string,
+    payload: SearchWorkspaceTasksPayload
+  ): Promise<SearchWorkspaceTasksResponse> {
+    return searchWorkspaceTasks(
+      workspaceId,
+      payload,
+      this.client.getTaskClientOptions()
+    );
+  }
+
+  saveTemplateFromTask(
+    workspaceId: string,
+    payload: SaveWorkspaceTaskTemplateFromTaskPayload
+  ) {
+    return saveWorkspaceTaskTemplateFromTask(
+      workspaceId,
+      payload,
+      this.client.getTaskClientOptions()
     );
   }
 
@@ -396,7 +745,7 @@ export class TasksClient {
     return triggerWorkspaceTaskEmbedding(
       workspaceId,
       taskId,
-      this.client.getClientOptions()
+      this.client.getTaskClientOptions()
     );
   }
 
@@ -409,7 +758,33 @@ export class TasksClient {
       workspaceId,
       taskId,
       payload,
-      this.client.getClientOptions()
+      this.client.getTaskClientOptions()
+    );
+  }
+
+  updateTemplate(
+    workspaceId: string,
+    templateKey: string,
+    payload: UpdateWorkspaceTaskTemplatePayload
+  ) {
+    return updateWorkspaceTaskTemplate(
+      workspaceId,
+      templateKey,
+      payload,
+      this.client.getTaskClientOptions()
+    );
+  }
+
+  useTemplate(
+    workspaceId: string,
+    templateKey: string,
+    payload: InstantiateWorkspaceTaskTemplatePayload
+  ) {
+    return instantiateWorkspaceTaskTemplate(
+      workspaceId,
+      templateKey,
+      payload,
+      this.client.getTaskClientOptions()
     );
   }
 
@@ -422,7 +797,7 @@ export class TasksClient {
       workspaceId,
       boardId,
       payload,
-      this.client.getClientOptions()
+      this.client.getTaskClientOptions()
     );
   }
 
@@ -437,7 +812,7 @@ export class TasksClient {
       boardId,
       listId,
       payload,
-      this.client.getClientOptions()
+      this.client.getTaskClientOptions()
     );
   }
 
@@ -445,7 +820,7 @@ export class TasksClient {
     return createWorkspaceLabel(
       workspaceId,
       payload,
-      this.client.getClientOptions()
+      this.client.getTaskClientOptions()
     );
   }
 }
@@ -460,9 +835,11 @@ export class TuturuuuUserClient {
   ) => void | Promise<void>;
   private refreshPromise?: Promise<CliSession>;
   private refreshToken?: string;
+  private readonly tasksBaseUrl: string;
 
   readonly calendar: CalendarClient;
   readonly devboxes: DevboxesClient;
+  readonly external: ExternalClient;
   readonly finance: FinanceClient;
   readonly tasks: TasksClient;
   readonly users: UsersClient;
@@ -471,12 +848,16 @@ export class TuturuuuUserClient {
   constructor(config: TuturuuuUserClientConfig) {
     this.accessToken = config.accessToken;
     this.baseUrl = normalizeBaseUrl(config.baseUrl);
+    this.tasksBaseUrl = normalizeBaseUrl(
+      config.tasksBaseUrl ?? inferTasksBaseUrl(config.baseUrl)
+    );
     this.expiresAt = config.expiresAt;
     this.fetchImpl = config.fetch || globalThis.fetch;
     this.onSessionRefresh = config.onSessionRefresh;
     this.refreshToken = config.refreshToken;
     this.calendar = new CalendarClient(this);
     this.devboxes = new DevboxesClient(this.getClientOptions());
+    this.external = new ExternalClient(this);
     this.finance = new FinanceClient(this);
     this.tasks = new TasksClient(this);
     this.users = new UsersClient(this);
@@ -509,15 +890,15 @@ export class TuturuuuUserClient {
     return nextSession;
   }
 
-  getClientOptions(): InternalApiClientOptions {
+  private createClientOptions(baseUrl: string): InternalApiClientOptions {
     return {
-      baseUrl: this.baseUrl,
+      baseUrl,
       defaultHeaders: {
         'X-SDK-Client': 'tuturuuu-cli',
       },
       fetch: async (input, init) => {
         const headers = new Headers(init?.headers);
-        const attachAuth = shouldAttachSdkAuth(input, this.baseUrl);
+        const attachAuth = shouldAttachSdkAuth(input, baseUrl);
 
         if (!attachAuth) {
           headers.delete('Authorization');
@@ -551,5 +932,13 @@ export class TuturuuuUserClient {
         });
       },
     };
+  }
+
+  getClientOptions(): InternalApiClientOptions {
+    return this.createClientOptions(this.baseUrl);
+  }
+
+  getTaskClientOptions(): InternalApiClientOptions {
+    return this.createClientOptions(this.tasksBaseUrl);
   }
 }

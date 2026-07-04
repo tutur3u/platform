@@ -123,7 +123,7 @@ function extractMeteredUsage(usage: LanguageModelUsage): MeteredUsage {
     inputTokens: normalizeTokenCount(usage.inputTokens),
     outputTokens: normalizeTokenCount(usage.outputTokens),
     reasoningTokens: normalizeTokenCount(
-      usage.outputTokenDetails.reasoningTokens ?? usage.reasoningTokens
+      usage.outputTokenDetails.reasoningTokens
     ),
   };
 }

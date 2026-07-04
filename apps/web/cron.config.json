@@ -57,17 +57,10 @@
       "schedule": "0 */4 * * *"
     },
     {
-      "description": "Sample Docker resource usage for infrastructure observability.",
+      "description": "Run due Tuturuuu-managed workspace endpoint cron jobs.",
       "enabled": true,
-      "id": "infrastructure-sample-resources",
-      "path": "/api/cron/infrastructure/sample-resources",
-      "schedule": "* * * * *"
-    },
-    {
-      "description": "Email operators when Docker daemon crash recovery events are recorded.",
-      "enabled": true,
-      "id": "infrastructure-docker-recovery-alerts",
-      "path": "/api/cron/infrastructure/docker-recovery-alerts",
+      "id": "managed-workspace-cron-jobs",
+      "path": "/api/cron/workspaces/managed-jobs",
       "schedule": "* * * * *"
     },
     {

@@ -10,12 +10,10 @@ import {
   Target,
   Users,
   Zap,
-} from '@tuturuuu/icons';
-import { Button } from '@tuturuuu/ui/button';
-import { Card } from '@tuturuuu/ui/card';
+} from '@tuturuuu/icons/lucide';
+import { cn } from '@tuturuuu/utils/format';
 import { motion } from 'framer-motion';
-import Image from 'next/image';
-import Link from 'next/link';
+import type { ComponentProps } from 'react';
 
 interface Partner {
   name: string;
@@ -26,6 +24,37 @@ interface Partner {
   website: string;
   highlights: string[];
   featured?: boolean;
+}
+
+function PartnersCard({ className, ...props }: ComponentProps<'div'>) {
+  return (
+    <div
+      className={cn(
+        'rounded-xl border bg-card text-card-foreground shadow-sm',
+        className
+      )}
+      {...props}
+    />
+  );
+}
+
+function PartnersLinkButton({
+  className,
+  variant = 'default',
+  ...props
+}: ComponentProps<'a'> & { variant?: 'default' | 'outline' }) {
+  return (
+    <a
+      className={cn(
+        'inline-flex h-11 items-center justify-center gap-2 whitespace-nowrap rounded-md px-8 font-medium text-sm shadow-xs transition-[color,box-shadow] hover:scale-105',
+        variant === 'outline'
+          ? 'border border-input bg-background hover:bg-accent hover:text-accent-foreground'
+          : 'bg-primary text-primary-foreground shadow-sm hover:bg-primary/90',
+        className
+      )}
+      {...props}
+    />
+  );
 }
 
 const partners: Partner[] = [
@@ -437,10 +466,10 @@ export default function PartnersPage() {
                         }}
                       />
 
-                      <Card
+                      <PartnersCard
                         className={`group relative h-full overflow-hidden bg-linear-to-br to-background backdrop-blur-sm transition-all duration-700 hover:scale-[1.02] hover:shadow-2xl ${colors.border} ${colors.glow}`}
                       >
-                        <Link
+                        <a
                           href={partner.website}
                           target="_blank"
                           rel="noopener noreferrer"
@@ -471,12 +500,11 @@ export default function PartnersPage() {
 
                             {/* Image with proper aspect ratio handling */}
                             <div className="relative aspect-[21/9] w-full overflow-hidden bg-linear-to-br from-muted/30 to-background">
-                              <Image
+                              {/* biome-ignore lint/performance/noImgElement: local partner logos stay on native images to keep this dev route off next/image. */}
+                              <img
                                 src={partner.logo}
                                 alt={partner.name}
-                                fill
-                                className="object-cover object-center transition-all duration-700 group-hover:scale-105 group-hover:brightness-110"
-                                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                                className="h-full w-full object-cover object-center transition-all duration-700 group-hover:scale-105 group-hover:brightness-110"
                               />
                             </div>
                           </div>
@@ -533,8 +561,8 @@ export default function PartnersPage() {
                               <ExternalLink className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1 group-hover:-translate-y-1" />
                             </div>
                           </div>
-                        </Link>
-                      </Card>
+                        </a>
+                      </PartnersCard>
                     </div>
                   </motion.div>
                 );
@@ -730,10 +758,10 @@ export default function PartnersPage() {
                       }}
                     />
 
-                    <Card
+                    <PartnersCard
                       className={`group relative h-full overflow-hidden bg-linear-to-br to-background backdrop-blur-sm transition-all duration-500 hover:scale-[1.03] hover:shadow-2xl ${colors.border} ${colors.glow}`}
                     >
-                      <Link
+                      <a
                         href={partner.website}
                         target="_blank"
                         rel="noopener noreferrer"
@@ -767,12 +795,11 @@ export default function PartnersPage() {
 
                           {/* Image with aspect ratio */}
                           <div className="relative aspect-[16/9] w-full overflow-hidden bg-linear-to-br from-muted/20 to-background">
-                            <Image
+                            {/* biome-ignore lint/performance/noImgElement: local partner logos stay on native images to keep this dev route off next/image. */}
+                            <img
                               src={partner.logo}
                               alt={partner.name}
-                              fill
-                              className="object-cover object-center transition-all duration-700 group-hover:scale-110 group-hover:brightness-105"
-                              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1280px) 33vw, 25vw"
+                              className="h-full w-full object-cover object-center transition-all duration-700 group-hover:scale-110 group-hover:brightness-105"
                             />
                           </div>
                         </div>
@@ -821,8 +848,8 @@ export default function PartnersPage() {
                             <ExternalLink className="h-3.5 w-3.5 transition-transform duration-300 group-hover:translate-x-1 group-hover:-translate-y-1" />
                           </div>
                         </div>
-                      </Link>
-                    </Card>
+                      </a>
+                    </PartnersCard>
                   </div>
                 </motion.div>
               );
@@ -838,7 +865,7 @@ export default function PartnersPage() {
             viewport={{ once: true }}
             transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
           >
-            <Card className="relative overflow-hidden border-dynamic-purple/30 bg-linear-to-br from-dynamic-purple/10 via-dynamic-pink/5 to-background p-12 backdrop-blur-sm md:p-16 lg:p-20">
+            <PartnersCard className="relative overflow-hidden border-dynamic-purple/30 bg-linear-to-br from-dynamic-purple/10 via-dynamic-pink/5 to-background p-12 backdrop-blur-sm md:p-16 lg:p-20">
               {/* Decorative Floating Orbs */}
               <div className="pointer-events-none absolute inset-0 overflow-hidden opacity-50">
                 <motion.div
@@ -925,27 +952,21 @@ export default function PartnersPage() {
                   transition={{ delay: 0.5, duration: 0.6 }}
                   className="mb-8 flex flex-col flex-wrap items-center justify-center gap-4 sm:flex-row"
                 >
-                  <Button
-                    asChild
-                    size="lg"
+                  <PartnersLinkButton
+                    href="mailto:partners@tuturuuu.com"
                     className="group w-full shadow-lg transition-all hover:scale-105 hover:shadow-xl sm:w-auto"
                   >
-                    <Link href="mailto:partners@tuturuuu.com">
-                      Get in Touch
-                      <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
-                    </Link>
-                  </Button>
-                  <Button
-                    asChild
-                    size="lg"
+                    Get in Touch
+                    <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
+                  </PartnersLinkButton>
+                  <PartnersLinkButton
+                    href="/about"
                     variant="outline"
                     className="w-full transition-all hover:scale-105 sm:w-auto"
                   >
-                    <Link href="/about">
-                      Learn More About Us
-                      <Sparkles className="ml-2 h-5 w-5" />
-                    </Link>
-                  </Button>
+                    Learn More About Us
+                    <Sparkles className="ml-2 h-5 w-5" />
+                  </PartnersLinkButton>
                 </motion.div>
 
                 {/* Trust Indicators */}
@@ -970,7 +991,7 @@ export default function PartnersPage() {
                   </div>
                 </motion.div>
               </div>
-            </Card>
+            </PartnersCard>
           </motion.div>
         </section>
       </div>

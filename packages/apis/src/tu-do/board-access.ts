@@ -1,6 +1,9 @@
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
-import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
+import {
+  getPermissions,
+  verifyWorkspaceMembershipType,
+} from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 
 export type TaskBoardGuestPermission = 'view' | 'edit';
@@ -26,7 +29,7 @@ export interface TaskBoardGuestShare {
 export type TaskBoardAccess =
   | {
       mode: 'member';
-      permission: 'edit';
+      permission: TaskBoardGuestPermission;
     }
   | {
       mode: 'guest';
@@ -97,7 +100,7 @@ export function normalizeTaskBoardShareEmail(email: string | null | undefined) {
 }
 
 export function canEditTaskBoardAccess(access: TaskBoardAccess) {
-  return access.mode === 'member' || access.permission === 'edit';
+  return access.permission === 'edit';
 }
 
 export function strongestTaskBoardGuestPermission(
@@ -508,13 +511,25 @@ export async function resolveTaskBoardAccess({
   }
 
   if (memberCheck.ok) {
-    return {
-      ...context,
-      access: { mode: 'member', permission: 'edit' },
-      sbAdmin,
-      supabase,
+    const permissions = await getPermissions({
+      wsId: context.wsId,
       user,
-    };
+    });
+    const canManageProjects =
+      permissions?.containsPermission('manage_projects') === true;
+
+    if (canManageProjects || requiredPermission === 'view') {
+      return {
+        ...context,
+        access: {
+          mode: 'member',
+          permission: canManageProjects ? 'edit' : 'view',
+        },
+        sbAdmin,
+        supabase,
+        user,
+      };
+    }
   }
 
   const shares = await loadTaskBoardGuestSharesForBoard({

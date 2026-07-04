@@ -40,6 +40,7 @@ type CalendarConnection = {
 export type CalendarEventWithHabitInfo = CalendarEvent & {
   _isHabit?: boolean;
   _habitCompleted?: boolean;
+  _optimisticStatus?: CalendarOptimisticStatus;
 };
 
 // Sync status type
@@ -50,13 +51,31 @@ type SyncStatus = {
   direction?: 'google-to-tuturuuu' | 'tuturuuu-to-google' | 'both';
 };
 
-type OptimisticCalendarSyncEvent = {
-  id: string;
-  title: string;
-  start_at: string;
-  end_at: string;
-  color?: string | null;
-  locked?: boolean;
+export type CalendarOptimisticStatus =
+  | 'creating'
+  | 'updating'
+  | 'deleting'
+  | 'error';
+
+type OptimisticCalendarSyncEvent = Partial<
+  Omit<CalendarEvent, 'color' | 'description' | 'location'>
+> &
+  Pick<CalendarEvent, 'id'> & {
+    color?: CalendarEvent['color'] | string | null;
+    description?: string | null;
+    location?: string | null;
+    _optimisticStatus?: CalendarOptimisticStatus;
+  };
+
+type OptimisticCalendarPatchOptions = {
+  removeIds?: string[];
+  clearIds?: string[];
+  status?: CalendarOptimisticStatus;
+};
+
+type OptimisticCalendarState = {
+  events: Record<string, OptimisticCalendarSyncEvent>;
+  removedIds: string[];
 };
 
 const CalendarSyncContext = createContext<{
@@ -90,7 +109,7 @@ const CalendarSyncContext = createContext<{
   refresh: () => void;
   patchVisibleEvents: (
     events: OptimisticCalendarSyncEvent[],
-    options?: { removeIds?: string[] }
+    options?: OptimisticCalendarPatchOptions
   ) => void;
 
   syncToGoogle: () => Promise<void>;
@@ -167,15 +186,21 @@ export const CalendarSyncProvider = ({
   wsId,
   experimentalGoogleToken: _experimentalGoogleToken,
   initialCalendarConnections = [],
+  externalEvents,
+  externalEventsLoading = false,
+  externalRefresh,
 }: {
   children: React.ReactNode;
   wsId: Workspace['id'];
   experimentalGoogleToken?: WorkspaceCalendarGoogleTokenClient | null;
   initialCalendarConnections?: CalendarConnection[];
+  externalEvents?: CalendarEvent[];
+  externalEventsLoading?: boolean;
+  externalRefresh?: () => void;
 }) => {
-  const [data, setData] = useState<WorkspaceCalendarEvent[] | null>(null);
   const [googleData] = useState<WorkspaceCalendarEvent[] | null>(null);
   const [events, setEvents] = useState<CalendarEventWithHabitInfo[]>([]);
+  const hasExternalEvents = externalEvents !== undefined;
 
   const [error, setError] = useState<Error | null>(null);
   const [dates, setDates] = useState<Date[]>([]);
@@ -186,6 +211,11 @@ export const CalendarSyncProvider = ({
   const [calendarCache, setCalendarCache] = useState<CalendarCache>({});
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncStatus, setSyncStatus] = useState<SyncStatus>({ state: 'idle' });
+  const [optimisticState, setOptimisticState] =
+    useState<OptimisticCalendarState>({
+      events: {},
+      removedIds: [],
+    });
   const prevDatesRef = useRef<string>('');
   const isForcedRef = useRef<boolean>(false);
   const lastSyncTimeRef = useRef<number>(0);
@@ -231,6 +261,14 @@ export const CalendarSyncProvider = ({
     }
     return `${dateRange[0]!.toISOString()}-${dateRange[dateRange.length - 1]!.toISOString()}`;
   }, []);
+
+  const activeCacheKey = useMemo(
+    () => getCacheKey(dates),
+    [dates, getCacheKey]
+  );
+  const activeCachedDatabaseEvents = activeCacheKey
+    ? calendarCache[activeCacheKey]?.dbEvents
+    : undefined;
 
   // Helper to check if a date range includes today (current week issue)
   const includesCurrentWeek = useCallback((dateRange: Date[]) => {
@@ -306,104 +344,112 @@ export const CalendarSyncProvider = ({
     });
   }, []);
 
-  const patchVisibleEvents = useCallback(
-    (
-      incomingEvents: OptimisticCalendarSyncEvent[],
-      options?: { removeIds?: string[] }
-    ) => {
-      const cacheKey = getCacheKey(dates);
-      if (!cacheKey) return;
+  const isVisibleInCurrentRange = useCallback(
+    (event: { start_at?: string; end_at?: string }) => {
+      if (dates.length === 0) return true;
 
       const firstDate = dates[0];
       const lastDate = dates[dates.length - 1];
-      if (!firstDate || !lastDate) return;
+      if (!firstDate || !lastDate) return true;
+
+      if (!event.start_at && !event.end_at) return true;
 
       const rangeStart = dayjs(firstDate).startOf('day').valueOf();
       const rangeEnd = dayjs(lastDate).endOf('day').valueOf();
-      const removeIds = new Set(options?.removeIds ?? []);
+      const startAt = event.start_at ? dayjs(event.start_at).valueOf() : NaN;
+      const endAt = event.end_at ? dayjs(event.end_at).valueOf() : startAt;
 
-      const isVisibleInRange = (event: {
-        start_at?: string;
-        end_at?: string;
-      }) => {
-        const startAt = event.start_at ? dayjs(event.start_at).valueOf() : NaN;
-        const endAt = event.end_at ? dayjs(event.end_at).valueOf() : startAt;
+      if (Number.isNaN(startAt) || Number.isNaN(endAt)) {
+        return true;
+      }
 
-        return !Number.isNaN(startAt) && !Number.isNaN(endAt)
-          ? startAt <= rangeEnd && endAt >= rangeStart
-          : false;
-      };
+      return startAt <= rangeEnd && endAt >= rangeStart;
+    },
+    [dates]
+  );
 
-      const mergeEvents = (existingData: WorkspaceCalendarEvent[] | null) => {
-        const existing = Array.isArray(existingData) ? existingData : [];
-        const byId = new Map(
-          existing
-            .filter((event) => !removeIds.has(event.id))
-            .map((event) => [event.id, event])
-        );
+  const patchVisibleEvents = useCallback(
+    (
+      incomingEvents: OptimisticCalendarSyncEvent[],
+      options?: OptimisticCalendarPatchOptions
+    ) => {
+      setOptimisticState((prev) => {
+        const events = { ...prev.events };
+        const removedIds = new Set(prev.removedIds);
 
-        for (const event of incomingEvents) {
-          if (!event.id || !isVisibleInRange(event)) continue;
-          byId.set(event.id, {
-            ...(byId.get(event.id) ?? {}),
-            ...event,
-          } as WorkspaceCalendarEvent);
+        for (const id of options?.clearIds ?? []) {
+          delete events[id];
+          removedIds.delete(id);
         }
 
-        return [...byId.values()].sort(
-          (left, right) =>
-            new Date(left.start_at).getTime() -
-            new Date(right.start_at).getTime()
-        );
-      };
+        for (const id of options?.removeIds ?? []) {
+          delete events[id];
+          removedIds.add(id);
+        }
 
-      const nextDbEvents = mergeEvents(
-        calendarCache[cacheKey]?.dbEvents ?? data ?? []
-      );
+        for (const event of incomingEvents) {
+          if (!event.id) continue;
 
-      updateCache(cacheKey, {
-        dbEvents: nextDbEvents,
-        dbLastUpdated: Date.now(),
+          if (!isVisibleInCurrentRange(event)) {
+            delete events[event.id];
+            removedIds.add(event.id);
+            continue;
+          }
+
+          removedIds.delete(event.id);
+
+          const nextEvent: OptimisticCalendarSyncEvent = {
+            ...(events[event.id] ?? {}),
+            ...event,
+          };
+
+          if (options?.status) {
+            nextEvent._optimisticStatus = options.status;
+          } else {
+            delete nextEvent._optimisticStatus;
+          }
+
+          events[event.id] = nextEvent;
+        }
+
+        return {
+          events,
+          removedIds: [...removedIds],
+        };
       });
-      setData(nextDbEvents);
-      queryClient.setQueryData(
-        ['databaseCalendarEvents', wsId, cacheKey],
-        nextDbEvents
-      );
     },
-    [calendarCache, data, dates, getCacheKey, queryClient, updateCache, wsId]
+    [isVisibleInCurrentRange]
   );
 
   // Fetch database events with caching
   const { data: fetchedData, isLoading: isDatabaseLoading } = useQuery({
-    queryKey: ['databaseCalendarEvents', wsId, getCacheKey(dates)],
-    enabled: !!wsId && dates.length > 0,
+    queryKey: ['databaseCalendarEvents', wsId, activeCacheKey],
+    enabled: !hasExternalEvents && !!wsId && dates.length > 0,
     staleTime: 30000, // Consider data fresh for 30 seconds
     gcTime: 5 * 60 * 1000, // Keep in cache for 5 minutes
     queryFn: async () => {
-      const cacheKey = getCacheKey(dates);
-      if (!cacheKey) return null;
+      if (!activeCacheKey) return null;
 
-      const cachedData = calendarCache[cacheKey];
+      const cachedData = calendarCache[activeCacheKey];
 
       // If we have cached data and it's not stale, return it immediately
       if (
-        cachedData?.dbEvents &&
-        cachedData.dbEvents.length > 0 &&
+        cachedData &&
         !isCacheStaleEnhanced(cachedData.dbLastUpdated, dates) &&
         !isForcedRef.current
       ) {
-        setData(cachedData.dbEvents);
         return cachedData.dbEvents;
       }
 
       // Otherwise fetch fresh data via API (which handles E2EE decryption)
       const startDate = dayjs(dates[0]).startOf('day');
-      const endDate = dayjs(dates[dates.length - 1]).endOf('day');
+      const endDate = dayjs(dates[dates.length - 1])
+        .add(1, 'day')
+        .startOf('day');
 
       try {
         const response = await fetch(
-          `/api/v1/workspaces/${wsId}/calendar/events?start_at=${startDate.toISOString()}&end_at=${endDate.add(1, 'day').toISOString()}`,
+          `/api/v1/workspaces/${wsId}/calendar/events?start_at=${startDate.toISOString()}&end_at=${endDate.toISOString()}`,
           { cache: 'no-store' }
         );
 
@@ -416,7 +462,7 @@ export const CalendarSyncProvider = ({
         const fetchedData = result.data || [];
 
         // Update cache with new data and reset isForced flag
-        updateCache(cacheKey, {
+        updateCache(activeCacheKey, {
           dbEvents: fetchedData,
           dbLastUpdated: Date.now(),
         });
@@ -424,7 +470,7 @@ export const CalendarSyncProvider = ({
         // Reset the ref immediately (synchronous)
         isForcedRef.current = false;
 
-        setData(fetchedData);
+        setError(null);
         return fetchedData;
       } catch (err) {
         const errorMessage =
@@ -443,7 +489,7 @@ export const CalendarSyncProvider = ({
           lastSyncTime: new Date(),
         });
 
-        return null;
+        return cachedData?.dbEvents ?? [];
       }
     },
     refetchInterval: 60000, // Reduced from 30s to 60s to lower load
@@ -452,7 +498,7 @@ export const CalendarSyncProvider = ({
   // Legacy direct Google fetch/reconcile is disabled. Provider inbound sync is
   // owned by the workspace sync route so account/calendar identity stays scoped.
   const { isLoading: isGoogleLoading } = useQuery({
-    queryKey: ['googleCalendarEvents', wsId, getCacheKey(dates)],
+    queryKey: ['googleCalendarEvents', wsId, activeCacheKey],
     enabled: false,
     staleTime: 30000, // Consider data fresh for 30 seconds
     gcTime: 5 * 60 * 1000, // Keep in cache for 5 minutes
@@ -462,17 +508,19 @@ export const CalendarSyncProvider = ({
 
   // Fetch habit calendar events to identify which events are habits
   const { data: habitEventData } = useQuery({
-    queryKey: ['habitCalendarEvents', wsId, getCacheKey(dates)],
-    enabled: !!wsId && dates.length > 0,
+    queryKey: ['habitCalendarEvents', wsId, activeCacheKey],
+    enabled: !hasExternalEvents && !!wsId && dates.length > 0,
     staleTime: 60000, // Consider data fresh for 1 minute
     gcTime: 5 * 60 * 1000, // Keep in cache for 5 minutes
     queryFn: async () => {
       const startDate = dayjs(dates[0]).startOf('day');
-      const endDate = dayjs(dates[dates.length - 1]).endOf('day');
+      const endDate = dayjs(dates[dates.length - 1])
+        .add(1, 'day')
+        .startOf('day');
 
       try {
         const response = await fetch(
-          `/api/v1/workspaces/${wsId}/calendar/habit-events?start_at=${startDate.toISOString()}&end_at=${endDate.add(1, 'day').toISOString()}`,
+          `/api/v1/workspaces/${wsId}/calendar/habit-events?start_at=${startDate.toISOString()}&end_at=${endDate.toISOString()}`,
           { cache: 'no-store' }
         );
 
@@ -516,15 +564,19 @@ export const CalendarSyncProvider = ({
 
   // Invalidate and refetch events
   const refresh = useCallback(() => {
-    const cacheKey = getCacheKey(dates);
-    if (!cacheKey) return null;
+    if (hasExternalEvents) {
+      externalRefresh?.();
+      return null;
+    }
+
+    if (!activeCacheKey) return null;
 
     isForcedRef.current = true;
 
     queryClient.invalidateQueries({
-      queryKey: ['databaseCalendarEvents', wsId, cacheKey],
+      queryKey: ['databaseCalendarEvents', wsId, activeCacheKey],
     });
-  }, [queryClient, wsId, dates, getCacheKey]);
+  }, [queryClient, wsId, activeCacheKey, hasExternalEvents, externalRefresh]);
 
   // Sync Google events of current view to Tuturuuu database
   const syncToTuturuuu = useCallback(
@@ -547,9 +599,6 @@ export const CalendarSyncProvider = ({
       const SYNC_COOLDOWN_MS = 30000; // 30 seconds
 
       if (!options?.skipCooldown && timeSinceLastSync < SYNC_COOLDOWN_MS) {
-        console.log(
-          `🔒 Sync skipped - cooldown active (${Math.ceil((SYNC_COOLDOWN_MS - timeSinceLastSync) / 1000)}s remaining)`
-        );
         return;
       }
 
@@ -650,13 +699,16 @@ export const CalendarSyncProvider = ({
 
   // Trigger refetch from DB when changing views (optimized to reduce load)
   useEffect(() => {
+    if (hasExternalEvents) {
+      return;
+    }
+
     // Skip if dates haven't actually changed
     if (areDatesEqual(dates)) {
       return;
     }
 
-    const cacheKey = getCacheKey(dates);
-    const cacheData = calendarCache[cacheKey];
+    const cacheData = calendarCache[activeCacheKey];
 
     // For current week, force a fresh database fetch
     const isCurrentWeek = includesCurrentWeek(dates);
@@ -664,170 +716,137 @@ export const CalendarSyncProvider = ({
     if (cacheData && isCurrentWeek) {
       isForcedRef.current = true;
       // For current week, reset database cache timestamp to force refresh
-      updateCache(cacheKey, {
+      updateCache(activeCacheKey, {
         dbLastUpdated: 0,
       });
     }
-
-    // Only invalidate database queries (cheap) - not Google queries (expensive)
-    // Google sync will happen automatically via the 30s cooldown mechanism
-    queryClient.invalidateQueries({
-      queryKey: ['databaseCalendarEvents', wsId, getCacheKey(dates)],
-    });
   }, [
     dates,
-    queryClient,
-    wsId,
     calendarCache,
     includesCurrentWeek,
     areDatesEqual,
-    getCacheKey,
+    activeCacheKey,
     updateCache,
+    hasExternalEvents,
   ]);
 
   /*
   Show data from database to Tuturuuu
   */
 
-  // Create a unique signature for an event based on its content
-  const createEventSignature = useCallback((event: CalendarEvent): string => {
-    return `${event.title}|${event.description || ''}|${event.start_at}|${event.end_at}`;
-  }, []);
-
-  // Detect and remove duplicate events
-  const removeDuplicateEvents = useCallback(
-    async (eventsData: CalendarEvent[]) => {
-      if (!wsId || !eventsData || eventsData.length === 0) return eventsData;
-
-      // Group events by their signature
-      const eventGroups = new Map<string, CalendarEvent[]>();
-
-      eventsData.forEach((event) => {
-        const signature = createEventSignature(event);
-        if (!eventGroups.has(signature)) {
-          eventGroups.set(signature, []);
-        }
-        eventGroups.get(signature)!.push(event);
-      });
-
-      // Find duplicates that need to be removed
-      const eventsToDelete: string[] = [];
-      let deletionPerformed = false;
-
-      eventGroups.forEach((eventGroup) => {
-        if (eventGroup.length > 1) {
-          // Sort by creation time if available, otherwise by ID
-          // Keep the first/oldest event, delete the rest
-          const sortedEvents = [...eventGroup].sort((a, b) => {
-            // If we have created_at field, use it (check with optional chaining)
-            const aCreatedAt = (a as any)?.created_at;
-            const bCreatedAt = (b as any)?.created_at;
-            if (aCreatedAt && bCreatedAt) {
-              return (
-                new Date(aCreatedAt).getTime() - new Date(bCreatedAt).getTime()
-              );
-            }
-            // Otherwise sort by ID which is often sequential
-            return a.id.localeCompare(b.id);
-          });
-
-          // Keep the first event (oldest), mark the rest for deletion
-          const eventsToRemove = sortedEvents.slice(1);
-          eventsToRemove.forEach((event) => {
-            eventsToDelete.push(event.id);
-          });
-        }
-      });
-
-      // Delete duplicate events if any were found
-      if (eventsToDelete.length > 0) {
-        try {
-          for (const eventId of eventsToDelete) {
-            const response = await fetch(
-              `/api/v1/workspaces/${wsId}/calendar/events/${eventId}`,
-              {
-                method: 'DELETE',
-              }
-            );
-
-            if (!response.ok) {
-              // Error deleting duplicate events
-              continue;
-            }
-
-            deletionPerformed = true;
-          }
-
-          // If events were deleted, refresh to get updated data
-          if (deletionPerformed) {
-            queryClient.invalidateQueries({
-              queryKey: ['databaseCalendarEvents', wsId],
-              exact: false,
-            });
-          }
-        } catch (err) {
-          // Failed to delete duplicate events
-          console.error(err);
-        }
-      }
-
-      // Return the filtered list without duplicates
-      return eventsData.filter((event) => !eventsToDelete.includes(event.id));
-    },
-    [wsId, queryClient, createEventSignature]
+  const visibleDatabaseEvents = useMemo(
+    () =>
+      hasExternalEvents
+        ? ((externalEvents ?? []) as WorkspaceCalendarEvent[])
+        : (fetchedData ?? activeCachedDatabaseEvents ?? []),
+    [activeCachedDatabaseEvents, externalEvents, fetchedData, hasExternalEvents]
   );
 
-  const visibleDatabaseEvents = data ?? fetchedData ?? null;
+  const visibleEventsWithOptimisticState = useMemo(() => {
+    const removedIds = new Set(optimisticState.removedIds);
 
-  useEffect(() => {
-    const processEvents = async () => {
-      if (visibleDatabaseEvents) {
-        const result = await removeDuplicateEvents(
-          visibleDatabaseEvents as CalendarEvent[]
-        );
+    // Filter external events by enabled provider calendars. Local Tuturuuu
+    // events are always shown here; native calendar visibility is handled
+    // by the workspace calendar endpoints.
+    const filteredEvents =
+      !hasExternalEvents && calendarConnections.length > 0
+        ? (visibleDatabaseEvents as CalendarEvent[]).filter((event) => {
+            const eventCalendarId =
+              (event as any).external_calendar_id ||
+              (event as any).google_calendar_id;
+            return !eventCalendarId || enabledCalendarIds.has(eventCalendarId);
+          })
+        : (visibleDatabaseEvents as CalendarEvent[]);
 
-        // Filter external events by enabled provider calendars. Local Tuturuuu
-        // events are always shown here; native calendar visibility is handled
-        // by the workspace calendar endpoints.
-        const filteredEvents =
-          calendarConnections.length > 0
-            ? result.filter((event) => {
-                const eventCalendarId =
-                  (event as any).external_calendar_id ||
-                  (event as any).google_calendar_id;
-                return (
-                  !eventCalendarId || enabledCalendarIds.has(eventCalendarId)
-                );
-              })
-            : result;
+    const byId = new Map<string, CalendarEvent>();
 
-        // Merge habit info into events
-        const habitEventIds =
-          habitEventData?.habitEventIds || new Set<string>();
-        const completedHabitEventIds =
-          habitEventData?.completedHabitEventIds || new Set<string>();
+    for (const event of filteredEvents) {
+      if (!event.id || removedIds.has(event.id)) continue;
+      byId.set(event.id, event);
+    }
 
-        const eventsWithHabitInfo: CalendarEventWithHabitInfo[] =
-          filteredEvents.map((event) => ({
-            ...event,
-            _isHabit: habitEventIds.has(event.id),
-            _habitCompleted: completedHabitEventIds.has(event.id),
-          }));
+    for (const optimisticEvent of Object.values(optimisticState.events)) {
+      if (!optimisticEvent.id || removedIds.has(optimisticEvent.id)) continue;
+      if (!isVisibleInCurrentRange(optimisticEvent)) continue;
 
-        setEvents(eventsWithHabitInfo);
-      } else {
-        setEvents([]);
-      }
-    };
+      byId.set(optimisticEvent.id, {
+        ...(byId.get(optimisticEvent.id) ?? {}),
+        ...optimisticEvent,
+      } as CalendarEvent);
+    }
 
-    processEvents();
+    return [...byId.values()].sort(
+      (left, right) =>
+        new Date(left.start_at).getTime() - new Date(right.start_at).getTime()
+    );
   }, [
-    visibleDatabaseEvents,
-    removeDuplicateEvents,
     calendarConnections.length,
     enabledCalendarIds,
-    habitEventData,
+    hasExternalEvents,
+    isVisibleInCurrentRange,
+    optimisticState.events,
+    optimisticState.removedIds,
+    visibleDatabaseEvents,
   ]);
+
+  useEffect(() => {
+    setOptimisticState((prev) => {
+      const serverEventsById = new Map(
+        (visibleDatabaseEvents as CalendarEvent[])
+          .filter((event) => event.id)
+          .map((event) => [event.id, event])
+      );
+      const nextEvents = { ...prev.events };
+      const nextRemovedIds = prev.removedIds.filter((id) =>
+        serverEventsById.has(id)
+      );
+      let changed = nextRemovedIds.length !== prev.removedIds.length;
+
+      for (const [id, event] of Object.entries(prev.events)) {
+        const serverEvent = serverEventsById.get(id);
+
+        if (
+          !event._optimisticStatus &&
+          serverEvent &&
+          (event.title === undefined || serverEvent.title === event.title) &&
+          (event.description === undefined ||
+            serverEvent.description === event.description) &&
+          (event.start_at === undefined ||
+            serverEvent.start_at === event.start_at) &&
+          (event.end_at === undefined || serverEvent.end_at === event.end_at) &&
+          (event.color === undefined || serverEvent.color === event.color) &&
+          (event.location === undefined ||
+            serverEvent.location === event.location) &&
+          (event.locked === undefined || serverEvent.locked === event.locked)
+        ) {
+          delete nextEvents[id];
+          changed = true;
+        }
+      }
+
+      return changed
+        ? {
+            events: nextEvents,
+            removedIds: nextRemovedIds,
+          }
+        : prev;
+    });
+  }, [visibleDatabaseEvents]);
+
+  useEffect(() => {
+    const habitEventIds = habitEventData?.habitEventIds || new Set<string>();
+    const completedHabitEventIds =
+      habitEventData?.completedHabitEventIds || new Set<string>();
+
+    const eventsWithHabitInfo: CalendarEventWithHabitInfo[] =
+      visibleEventsWithOptimisticState.map((event) => ({
+        ...event,
+        _isHabit: habitEventIds.has(event.id),
+        _habitCompleted: completedHabitEventIds.has(event.id),
+      }));
+
+    setEvents(eventsWithHabitInfo);
+  }, [habitEventData, visibleEventsWithOptimisticState]);
 
   const eventsWithoutAllDays = useMemo(() => {
     // Process events immediately when they change
@@ -847,23 +866,6 @@ export const CalendarSyncProvider = ({
     });
   }, [events]);
 
-  // Add a ref to track if we've processed the initial data
-  const hasProcessedInitialData = useRef(false);
-
-  // Effect to process initial data
-  useEffect(() => {
-    if (fetchedData && !hasProcessedInitialData.current) {
-      hasProcessedInitialData.current = true;
-      // Force a re-render by updating the data state
-      setData(fetchedData);
-    }
-  }, [fetchedData]);
-
-  // Effect to reset the processed flag when dates change
-  useEffect(() => {
-    hasProcessedInitialData.current = false;
-  }, []);
-
   const syncToGoogle = useCallback(async () => {
     toast.info('Provider events sync when you create or edit them.');
     setSyncStatus({
@@ -875,7 +877,9 @@ export const CalendarSyncProvider = ({
   }, []);
 
   const value = {
-    data,
+    data: hasExternalEvents
+      ? ((externalEvents ?? []) as WorkspaceCalendarEvent[])
+      : (fetchedData ?? activeCachedDatabaseEvents ?? null),
     googleData,
     error,
     dates,
@@ -905,7 +909,7 @@ export const CalendarSyncProvider = ({
     syncStatus,
 
     // Loading states
-    isLoading: isDatabaseLoading || isGoogleLoading,
+    isLoading: externalEventsLoading || isDatabaseLoading || isGoogleLoading,
     isSyncing,
   };
 

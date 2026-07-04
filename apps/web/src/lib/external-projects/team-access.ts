@@ -8,7 +8,6 @@ import type {
 import { MAX_COLOR_LENGTH, MAX_EMAIL_LENGTH } from '@tuturuuu/utils/constants';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { getWorkspaceMembers } from '@/lib/workspace-members';
 import { normalizeRoleMembers } from '@/lib/workspace-role-members';
 import { getEffectiveAvailableSeats } from '@/utils/seat-limits';
@@ -264,7 +263,7 @@ export async function removeExternalProjectTeamMember({
       .eq('email', userEmail);
 
     if (error) {
-      serverLogger.error('Error resolving CMS team invite identities', {
+      console.error('Error resolving CMS team invite identities', {
         error,
         wsId: access.normalizedWorkspaceId,
       });
@@ -316,7 +315,7 @@ export async function removeExternalProjectTeamMember({
   ]);
 
   if (inviteResult.error || emailInviteResult.error || memberResult.error) {
-    serverLogger.error('Error removing CMS team member', {
+    console.error('Error removing CMS team member', {
       emailInviteError: emailInviteResult.error,
       inviteError: inviteResult.error,
       memberError: memberResult.error,
@@ -343,7 +342,7 @@ export async function listExternalProjectTeamRoles(
     .order('created_at', { ascending: false });
 
   if (error) {
-    serverLogger.error('Error fetching CMS team roles', {
+    console.error('Error fetching CMS team roles', {
       error,
       wsId: access.normalizedWorkspaceId,
     });
@@ -370,7 +369,7 @@ export async function getExternalProjectTeamRole({
     .single();
 
   if (error) {
-    serverLogger.error('Error fetching CMS team role', {
+    console.error('Error fetching CMS team role', {
       error,
       roleId,
       wsId: access.normalizedWorkspaceId,
@@ -405,7 +404,7 @@ export async function createExternalProjectTeamRole({
     .single();
 
   if (roleError) {
-    serverLogger.error('Error creating CMS team role', {
+    console.error('Error creating CMS team role', {
       error: roleError,
       wsId: access.normalizedWorkspaceId,
     });
@@ -430,7 +429,7 @@ export async function createExternalProjectTeamRole({
 
   if (permissionsError) {
     await access.admin.from('workspace_roles').delete().eq('id', role.id);
-    serverLogger.error('Error creating CMS team role permissions', {
+    console.error('Error creating CMS team role permissions', {
       error: permissionsError,
       roleId: role.id,
       wsId: access.normalizedWorkspaceId,
@@ -495,7 +494,7 @@ export async function updateExternalProjectTeamRole({
   ]);
 
   if (roleResult.error || permissionsResult.error) {
-    serverLogger.error('Error updating CMS team role', {
+    console.error('Error updating CMS team role', {
       permissionsError: permissionsResult.error,
       roleError: roleResult.error,
       roleId,
@@ -524,7 +523,7 @@ export async function deleteExternalProjectTeamRole({
     .eq('ws_id', access.normalizedWorkspaceId);
 
   if (error) {
-    serverLogger.error('Error deleting CMS team role', {
+    console.error('Error deleting CMS team role', {
       error,
       roleId,
       wsId: access.normalizedWorkspaceId,
@@ -553,7 +552,7 @@ export async function getExternalProjectTeamDefaultPermissions({
     .order('permission', { ascending: true });
 
   if (error) {
-    serverLogger.error('Error fetching CMS team default permissions', {
+    console.error('Error fetching CMS team default permissions', {
       error,
       memberType,
       wsId: access.normalizedWorkspaceId,
@@ -600,7 +599,7 @@ export async function updateExternalProjectTeamDefaultPermissions({
     );
 
   if (error) {
-    serverLogger.error('Error updating CMS team default permissions', {
+    console.error('Error updating CMS team default permissions', {
       error,
       memberType,
       wsId: access.normalizedWorkspaceId,
@@ -691,7 +690,7 @@ export async function addExternalProjectRoleMembers({
   );
 
   if (error) {
-    serverLogger.error('Error adding CMS team role members', {
+    console.error('Error adding CMS team role members', {
       error,
       roleId,
       wsId: access.normalizedWorkspaceId,
@@ -730,7 +729,7 @@ export async function listExternalProjectRoleMembers({
     .eq('role_id', roleId);
 
   if (error) {
-    serverLogger.error('Error fetching CMS team role members', {
+    console.error('Error fetching CMS team role members', {
       error,
       roleId,
       wsId: access.normalizedWorkspaceId,
@@ -779,7 +778,7 @@ export async function removeExternalProjectRoleMember({
     .eq('user_id', userId);
 
   if (error) {
-    serverLogger.error('Error removing CMS team role member', {
+    console.error('Error removing CMS team role member', {
       error,
       roleId,
       userId,
@@ -795,6 +794,6 @@ export async function removeExternalProjectRoleMember({
 }
 
 export function createRouteErrorResponse(message: string, error: unknown) {
-  serverLogger.error(message, { error });
+  console.error(message, { error });
   return NextResponse.json({ message }, { status: 500 });
 }

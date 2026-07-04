@@ -880,6 +880,8 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
         height: `${HOUR_HEIGHT}px`,
       }}
       onContextMenu={(e) => {
+        const target = e.target as HTMLElement | null;
+        if (target?.closest('[data-slot="context-menu-trigger"]')) return;
         e.preventDefault();
       }}
       onMouseEnter={() => setIsHovering(true)}

@@ -158,6 +158,16 @@ function matchesTarget(
 
   const currentPath = normalizePath(pathname);
   const targetPath = normalizePath(target);
+  const wildcardTarget = targetPath.endsWith('/*')
+    ? targetPath.slice(0, -2).replace(/\/+$/u, '') || '/'
+    : null;
+
+  if (wildcardTarget) {
+    return (
+      currentPath === wildcardTarget ||
+      currentPath.startsWith(`${wildcardTarget}/`)
+    );
+  }
 
   if (matchExact) {
     return currentPath === targetPath;

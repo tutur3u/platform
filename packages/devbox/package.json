@@ -1,7 +1,7 @@
 {
   "name": "@tuturuuu/devbox",
   "license": "MIT",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "repository": {
     "type": "git",
     "url": "https://github.com/tutur3u/platform",
@@ -14,12 +14,12 @@
     "access": "public"
   },
   "scripts": {
-    "build": "tsgo --project tsconfig.json",
+    "build": "tsc --project tsconfig.json",
     "clean": "rm -rf dist .turbo tsconfig.tsbuildinfo",
     "prepack": "bun run clean && bun run build",
     "test": "vitest run",
     "test:watch": "vitest",
-    "type-check": "tsgo --project tsconfig.typecheck.json"
+    "type-check": "tsc --project tsconfig.typecheck.json"
   },
   "exports": {
     ".": {
@@ -31,9 +31,8 @@
   "packageManager": "bun@1.3.14",
   "devDependencies": {
     "@tuturuuu/typescript-config": "workspace:*",
-    "@types/node": "^25.9.3",
-    "@typescript/native-preview": "^7.0.0-dev.20260614.1",
-    "typescript": "^6.0.3",
-    "vitest": "^4.1.8"
+    "@types/node": "^26.0.1",
+    "typescript": "7.0.1-rc",
+    "vitest": "^4.1.9"
   }
 }

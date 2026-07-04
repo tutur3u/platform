@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   authProxy: vi.fn(),
+  createCentralizedAuthProxy: vi.fn(),
   verifyCliAccessToken: vi.fn(),
   guardApiProxyRequest: vi.fn(),
   hasSupabaseSessionCookie: vi.fn(),
@@ -27,7 +28,9 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock('@tuturuuu/auth/proxy', () => ({
-  createCentralizedAuthProxy: () => mocks.authProxy,
+  createCentralizedAuthProxy: (
+    ...args: Parameters<typeof mocks.createCentralizedAuthProxy>
+  ) => mocks.createCentralizedAuthProxy(...args),
   propagateAuthCookies: vi.fn(),
 }));
 
@@ -105,7 +108,15 @@ vi.mock('@tuturuuu/utils/email/client', () => ({
 }));
 
 describe('web proxy api handling', () => {
-  function createAuthenticatedSupabaseClient() {
+  const AUTH_COOKIE_HEADER =
+    'sb-resolved-kingfish-21146-auth-token.0=base64-validvalue';
+
+  function createAuthenticatedSupabaseClient(
+    user: { email?: string; id: string } = {
+      email: 'member@example.com',
+      id: 'user-1',
+    }
+  ) {
     const completedOnboardingBuilder = {
       select: vi.fn().mockReturnThis(),
       eq: vi.fn().mockReturnThis(),
@@ -125,9 +136,7 @@ describe('web proxy api handling', () => {
 
     return {
       auth: {
-        getUser: vi
-          .fn()
-          .mockResolvedValue({ data: { user: { id: 'user-1' } } }),
+        getUser: vi.fn().mockResolvedValue({ data: { user } }),
       },
       from: vi.fn((table: string) =>
         table === 'onboarding_progress'
@@ -143,6 +152,7 @@ describe('web proxy api handling', () => {
     vi.resetModules();
     vi.clearAllMocks();
     mocks.authProxy.mockResolvedValue(NextResponse.next());
+    mocks.createCentralizedAuthProxy.mockReturnValue(mocks.authProxy);
     mocks.guardApiProxyRequest.mockResolvedValue(null);
     mocks.hasSupabaseSessionCookie.mockImplementation((req: NextRequest) => {
       return req.cookies
@@ -175,6 +185,14 @@ describe('web proxy api handling', () => {
     mocks.getUserDefaultWorkspace.mockResolvedValue(null);
   });
 
+  function createSessionRequest(url: string) {
+    return new NextRequest(url, {
+      headers: {
+        cookie: AUTH_COOKIE_HEADER,
+      },
+    });
+  }
+
   afterEach(() => {
     vi.useRealTimers();
   });
@@ -198,6 +216,7 @@ describe('web proxy api handling', () => {
     );
 
     expect(response).toBe(guardResponse);
+    expect(response.headers.get('X-RateLimit-Client-IP')).toBe('203.0.113.10');
     expect(mocks.guardApiProxyRequest).toHaveBeenCalledWith(
       expect.any(NextRequest),
       expect.objectContaining({
@@ -381,6 +400,53 @@ describe('web proxy api handling', () => {
     expect(mocks.authProxy).not.toHaveBeenCalled();
   });
 
+  it('clears malformed browser auth cookies without escalating to an IP block', async () => {
+    const now = new Date(Date.now());
+
+    mocks.getMalformedSupabaseAuthCookieNames.mockReturnValue([
+      'sb-test-auth-token',
+    ]);
+    mocks.isIPBlockedEdge.mockResolvedValue({
+      id: 'block-1',
+      blockLevel: 1,
+      reason: 'api_abuse',
+      blockedAt: now,
+      expiresAt: new Date(Date.now() + 300_000),
+    });
+    mocks.recordMalformedAuthCookieEdge.mockResolvedValue({
+      id: 'block-2',
+      blockLevel: 1,
+      reason: 'api_abuse',
+      blockedAt: now,
+      expiresAt: new Date(Date.now() + 300_000),
+    });
+
+    const { proxy } = await import('../proxy');
+    const response = await proxy(
+      new NextRequest('http://localhost/api/v1/users/me/configs/demo', {
+        method: 'GET',
+        headers: {
+          accept: 'application/json',
+          cookie: 'sb-test-auth-token=invalid; theme=dark',
+          'sec-fetch-mode': 'cors',
+          'user-agent':
+            'Mozilla/5.0 (Macintosh; Intel Mac OS X) AppleWebKit/537.36 Chrome/126.0 Safari/537.36',
+        },
+      })
+    );
+
+    expect(response.status).toBe(401);
+    expect(response.headers.get('X-Proxy-Block-Reason')).toBe(
+      'malformed-supabase-auth-cookie'
+    );
+    expect(response.headers.get('Retry-After')).toBeNull();
+    expect(response.cookies.get('sb-test-auth-token')?.value).toBe('');
+    expect(mocks.isIPBlockedEdge).not.toHaveBeenCalled();
+    expect(mocks.recordMalformedAuthCookieEdge).not.toHaveBeenCalled();
+    expect(mocks.guardApiProxyRequest).not.toHaveBeenCalled();
+    expect(mocks.authProxy).not.toHaveBeenCalled();
+  });
+
   it('escalates repeated malformed-cookie traffic into an IP block', async () => {
     const now = new Date(Date.now());
 
@@ -406,6 +472,7 @@ describe('web proxy api handling', () => {
     expect(response.headers.get('X-Proxy-Block-Reason')).toBe(
       'ip-already-blocked'
     );
+    expect(response.headers.get('X-RateLimit-Client-IP')).toBe('203.0.113.10');
     expect(response.headers.get('Retry-After')).not.toBeNull();
     expect(mocks.guardApiProxyRequest).not.toHaveBeenCalled();
   });
@@ -437,13 +504,16 @@ describe('web proxy api handling', () => {
 
     const { proxy } = await import('../proxy');
     const response = await proxy(
-      new NextRequest('http://localhost/api/v1/workspaces/~/mail/send', {
-        method: 'POST',
-        body: '{}',
-        headers: {
-          'user-agent': 'Mozilla/5.0',
-        },
-      })
+      new NextRequest(
+        'http://localhost/api/v1/workspaces/~/users/user-1/follow-up',
+        {
+          method: 'POST',
+          body: '{}',
+          headers: {
+            'user-agent': 'Mozilla/5.0',
+          },
+        }
+      )
     );
 
     expect(response.status).toBe(200);
@@ -456,13 +526,16 @@ describe('web proxy api handling', () => {
 
     const { proxy } = await import('../proxy');
     const response = await proxy(
-      new NextRequest('http://localhost/api/v1/workspaces/[locale]/mail/send', {
-        method: 'POST',
-        body: '{}',
-        headers: {
-          'user-agent': 'Mozilla/5.0',
-        },
-      })
+      new NextRequest(
+        'http://localhost/api/v1/workspaces/[locale]/users/user-1/follow-up',
+        {
+          method: 'POST',
+          body: '{}',
+          headers: {
+            'user-agent': 'Mozilla/5.0',
+          },
+        }
+      )
     );
 
     expect(response.status).toBe(200);
@@ -495,19 +568,17 @@ describe('web proxy api handling', () => {
 
     const workspaceId = '00000000-0000-4000-8000-000000000123';
     const { proxy } = await import('../proxy');
+    const emailRoute = `/api/v1/workspaces/${workspaceId}/user-groups/group-1/group-checks/post-1/email`;
     const response = await proxy(
-      new NextRequest(
-        `http://localhost/api/v1/workspaces/${workspaceId}/mail/send`,
-        {
-          method: 'POST',
-          body: '{}',
-          headers: {
-            'content-length': `${600 * 1024}`,
-            'content-type': 'application/json',
-            'user-agent': 'Mozilla/5.0',
-          },
-        }
-      )
+      new NextRequest(`http://localhost${emailRoute}`, {
+        method: 'POST',
+        body: '{}',
+        headers: {
+          'content-length': `${600 * 1024}`,
+          'content-type': 'application/json',
+          'user-agent': 'Mozilla/5.0',
+        },
+      })
     );
 
     expect(response).toBe(guardResponse);
@@ -545,10 +616,7 @@ describe('web proxy api handling', () => {
     );
     expect(
       options?.additionalRoutePolicies?.[0]?.matches(
-        new NextRequest(
-          `http://localhost/api/v1/workspaces/${workspaceId}/mail/send`,
-          { method: 'POST' }
-        )
+        new NextRequest(`http://localhost${emailRoute}`, { method: 'POST' })
       )
     ).toBe(true);
     expect(mocks.authProxy).not.toHaveBeenCalled();
@@ -619,6 +687,7 @@ describe('web proxy api handling', () => {
     expect(response.headers.get('X-Proxy-Block-Reason')).toBe(
       'ip-already-blocked'
     );
+    expect(response.headers.get('X-RateLimit-Client-IP')).toBe('203.0.113.10');
     expect(response.headers.get('Retry-After')).not.toBeNull();
     expect(mocks.guardApiProxyRequest).not.toHaveBeenCalled();
   });
@@ -676,27 +745,17 @@ describe('web proxy api handling', () => {
     expect(mocks.recordSuspiciousApiRequestEdge).not.toHaveBeenCalled();
   });
 
-  it('escalates repeated anonymous proxy guard rate-limit hits into an IP block', async () => {
-    const now = new Date(Date.now());
-
-    mocks.guardApiProxyRequest.mockResolvedValue(
-      NextResponse.json(
-        { error: 'Too Many Requests', message: 'Rate limit exceeded' },
-        {
-          status: 429,
-          headers: {
-            'X-Proxy-Block-Reason': 'route-rate-limit',
-          },
-        }
-      )
+  it('keeps anonymous proxy guard rate-limit hits as route throttles', async () => {
+    const guardResponse = NextResponse.json(
+      { error: 'Too Many Requests', message: 'Rate limit exceeded' },
+      {
+        status: 429,
+        headers: {
+          'X-Proxy-Block-Reason': 'route-rate-limit',
+        },
+      }
     );
-    mocks.recordSuspiciousApiRequestEdge.mockResolvedValue({
-      id: 'block-3',
-      blockLevel: 1,
-      reason: 'api_abuse',
-      blockedAt: now,
-      expiresAt: new Date(Date.now() + 300_000),
-    });
+    mocks.guardApiProxyRequest.mockResolvedValue(guardResponse);
 
     const { proxy } = await import('../proxy');
     const response = await proxy(
@@ -708,36 +767,27 @@ describe('web proxy api handling', () => {
       })
     );
 
+    expect(response).toBe(guardResponse);
     expect(response.status).toBe(429);
     expect(response.headers.get('X-Proxy-Block-Reason')).toBe(
-      'ip-already-blocked'
+      'route-rate-limit'
     );
-    expect(mocks.recordSuspiciousApiRequestEdge).toHaveBeenCalledWith(
-      '203.0.113.10'
-    );
+    expect(response.headers.get('X-RateLimit-Client-IP')).toBe('203.0.113.10');
+    expect(response.headers.get('X-RateLimit-User-Id')).toBeNull();
+    expect(mocks.recordSuspiciousApiRequestEdge).not.toHaveBeenCalled();
   });
 
-  it('escalates forged bearer proxy guard rate-limit hits into an IP block', async () => {
-    const now = new Date(Date.now());
-
-    mocks.guardApiProxyRequest.mockResolvedValue(
-      NextResponse.json(
-        { error: 'Too Many Requests', message: 'Rate limit exceeded' },
-        {
-          status: 429,
-          headers: {
-            'X-Proxy-Block-Reason': 'route-rate-limit',
-          },
-        }
-      )
+  it('keeps forged bearer proxy guard rate-limit hits as route throttles', async () => {
+    const guardResponse = NextResponse.json(
+      { error: 'Too Many Requests', message: 'Rate limit exceeded' },
+      {
+        status: 429,
+        headers: {
+          'X-Proxy-Block-Reason': 'route-rate-limit',
+        },
+      }
     );
-    mocks.recordSuspiciousApiRequestEdge.mockResolvedValue({
-      id: 'block-4',
-      blockLevel: 1,
-      reason: 'api_abuse',
-      blockedAt: now,
-      expiresAt: new Date(Date.now() + 300_000),
-    });
+    mocks.guardApiProxyRequest.mockResolvedValue(guardResponse);
 
     const { proxy } = await import('../proxy');
     const response = await proxy(
@@ -750,13 +800,12 @@ describe('web proxy api handling', () => {
       })
     );
 
+    expect(response).toBe(guardResponse);
     expect(response.status).toBe(429);
     expect(response.headers.get('X-Proxy-Block-Reason')).toBe(
-      'ip-already-blocked'
+      'route-rate-limit'
     );
-    expect(mocks.recordSuspiciousApiRequestEdge).toHaveBeenCalledWith(
-      '203.0.113.10'
-    );
+    expect(mocks.recordSuspiciousApiRequestEdge).not.toHaveBeenCalled();
   });
 
   it('does not escalate human auth route-rate-limit responses into an IP block', async () => {
@@ -788,16 +837,24 @@ describe('web proxy api handling', () => {
     expect(response.headers.get('X-Proxy-Block-Reason')).toBe(
       'route-rate-limit'
     );
+    expect(response.headers.get('X-RateLimit-Client-IP')).toBe('203.0.113.10');
     expect(mocks.recordSuspiciousApiRequestEdge).not.toHaveBeenCalled();
   });
 
   it('does not escalate signed-in browser route-rate-limit responses into an IP block', async () => {
+    mocks.createClient.mockResolvedValue(
+      createAuthenticatedSupabaseClient({
+        email: 'member@example.com',
+        id: 'user-1',
+      })
+    );
     const guardResponse = NextResponse.json(
       { error: 'Too Many Requests', message: 'Rate limit exceeded' },
       {
         status: 429,
         headers: {
           'X-Proxy-Block-Reason': 'route-rate-limit',
+          'X-RateLimit-Policy': 'users-me',
         },
       }
     );
@@ -819,7 +876,142 @@ describe('web proxy api handling', () => {
     );
 
     expect(response).toBe(guardResponse);
+    expect(response.status).toBe(429);
+    expect(response.headers.get('X-RateLimit-Client-IP')).toBe('203.0.113.10');
+    expect(response.headers.get('X-RateLimit-User-Id')).toBe('user-1');
+    expect(response.headers.get('X-RateLimit-User-Email')).toBe(
+      'member@example.com'
+    );
+    expect(response.headers.get('X-RateLimit-Warning')).toBeNull();
+    expect(response.headers.get('X-RateLimit-Policy')).toBe('users-me');
     expect(mocks.recordSuspiciousApiRequestEdge).not.toHaveBeenCalled();
+  });
+
+  it('allows verified exact Tuturuuu staff browser sessions through proxy rate limits with warning headers', async () => {
+    mocks.createClient.mockResolvedValue(
+      createAuthenticatedSupabaseClient({
+        email: 'member@tuturuuu.com',
+        id: 'staff-user-1',
+      })
+    );
+    mocks.isExactTuturuuuDotComEmail.mockImplementation(
+      (email: string | null | undefined) => email === 'member@tuturuuu.com'
+    );
+    const guardResponse = NextResponse.json(
+      { error: 'Too Many Requests', message: 'Rate limit exceeded' },
+      {
+        status: 429,
+        headers: {
+          'CF-Ray': 'ray-123',
+          'Retry-After': '60',
+          'X-Proxy-Block-Reason': 'route-rate-limit',
+          'X-RateLimit-Limit': '600',
+          'X-RateLimit-Policy': 'users-me',
+          'X-RateLimit-Remaining': '0',
+          'X-RateLimit-Reset': '1893456000',
+          'X-RateLimit-Window': 'minute',
+        },
+      }
+    );
+    mocks.guardApiProxyRequest.mockResolvedValue(guardResponse);
+
+    const { proxy } = await import('../proxy');
+    const response = await proxy(
+      new NextRequest(
+        'http://localhost/api/v1/workspaces/ws-1/users/database',
+        {
+          method: 'GET',
+          headers: {
+            cookie:
+              'sb-resolved-kingfish-21146-auth-token.0=base64-validvalue; theme=dark',
+            'user-agent': 'Mozilla/5.0',
+          },
+        }
+      )
+    );
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get('X-RateLimit-Warning')).toBe(
+      'staff-debug-bypass'
+    );
+    expect(response.headers.get('X-RateLimit-Debug-Bypass')).toBe(
+      'tuturuuu-staff'
+    );
+    expect(response.headers.get('X-RateLimit-Original-Status')).toBe('429');
+    expect(response.headers.get('X-RateLimit-Client-IP')).toBe('203.0.113.10');
+    expect(response.headers.get('X-RateLimit-User-Id')).toBe('staff-user-1');
+    expect(response.headers.get('X-RateLimit-User-Email')).toBe(
+      'member@tuturuuu.com'
+    );
+    expect(response.headers.get('Retry-After')).toBe('60');
+    expect(response.headers.get('X-RateLimit-Policy')).toBe('users-me');
+    expect(response.headers.get('X-RateLimit-Window')).toBe('minute');
+    expect(response.headers.get('CF-Ray')).toBe('ray-123');
+    expect(mocks.recordSuspiciousApiRequestEdge).not.toHaveBeenCalled();
+    expect(mocks.authProxy).not.toHaveBeenCalled();
+  });
+
+  it('allows verified exact Tuturuuu staff bearer sessions through proxy rate limits without reblocking the IP', async () => {
+    mocks.createClient.mockResolvedValue(
+      createAuthenticatedSupabaseClient({
+        email: 'member@tuturuuu.com',
+        id: 'staff-user-2',
+      })
+    );
+    mocks.isExactTuturuuuDotComEmail.mockImplementation(
+      (email: string | null | undefined) => email === 'member@tuturuuu.com'
+    );
+    mocks.recordSuspiciousApiRequestEdge.mockResolvedValue({
+      id: 'block-5',
+      blockLevel: 1,
+      reason: 'api_abuse',
+      blockedAt: new Date(Date.now()),
+      expiresAt: new Date(Date.now() + 300_000),
+    });
+    const guardResponse = NextResponse.json(
+      { error: 'Too Many Requests', message: 'Rate limit exceeded' },
+      {
+        status: 429,
+        headers: {
+          'Retry-After': '60',
+          'X-Proxy-Block-Reason': 'route-rate-limit',
+          'X-RateLimit-Policy': 'time-tracking',
+        },
+      }
+    );
+    mocks.guardApiProxyRequest.mockResolvedValue(guardResponse);
+
+    const { proxy } = await import('../proxy');
+    const response = await proxy(
+      new NextRequest(
+        'http://localhost/api/v1/workspaces/071e0fc7-9aa8-42d8-92e5-cc9b3aeec2f1/time-tracking/sessions?type=running',
+        {
+          method: 'GET',
+          headers: {
+            authorization: 'Bearer header.payload.signature',
+            'user-agent': 'Mozilla/5.0',
+          },
+        }
+      )
+    );
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get('X-RateLimit-Warning')).toBe(
+      'staff-debug-bypass'
+    );
+    expect(response.headers.get('X-RateLimit-Debug-Bypass')).toBe(
+      'tuturuuu-staff'
+    );
+    expect(response.headers.get('X-RateLimit-Original-Status')).toBe('429');
+    expect(response.headers.get('X-RateLimit-Client-IP')).toBe('203.0.113.10');
+    expect(response.headers.get('X-RateLimit-User-Id')).toBe('staff-user-2');
+    expect(response.headers.get('X-RateLimit-User-Email')).toBe(
+      'member@tuturuuu.com'
+    );
+    expect(response.headers.get('Retry-After')).toBe('60');
+    expect(response.headers.get('X-RateLimit-Policy')).toBe('time-tracking');
+    expect(mocks.recordSuspiciousApiRequestEdge).not.toHaveBeenCalled();
+    expect(mocks.authProxy).not.toHaveBeenCalled();
   });
 
   it('bypasses auth and locale rewriting for the offline fallback route', async () => {
@@ -866,6 +1058,124 @@ describe('web proxy api handling', () => {
     expect(response.headers.get('location')).toBe(
       'http://localhost/~recover-browser-state?retry=1'
     );
+    expect(mocks.guardApiProxyRequest).not.toHaveBeenCalled();
+    expect(mocks.authProxy).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    {
+      expectedLocation: 'http://localhost/pricing',
+      url: 'http://localhost/en/pricing',
+    },
+    {
+      expectedLocation: 'http://localhost/?hash-nav=1#pricing',
+      url: 'http://localhost/pricing',
+    },
+    {
+      expectedLocation: 'http://localhost/meet-together',
+      url: 'http://localhost/en/products/meet-together',
+    },
+    {
+      expectedLocation: 'http://localhost/meet-together',
+      url: 'http://localhost/products/meet-together',
+    },
+    {
+      expectedLocation: 'http://localhost/meet-together/plans/summer',
+      url: 'http://localhost/en/calendar/meet-together/plans/summer',
+    },
+    {
+      expectedLocation: 'https://docs.tuturuuu.com/',
+      url: 'http://localhost/en/docs',
+    },
+    {
+      expectedLocation:
+        'https://qr.tuturuuu.localhost/?utm_source=e2e&tag=a&tag=b',
+      url: 'http://localhost/en/qr-generator?utm_source=e2e&tag=a&tag=b',
+    },
+    {
+      expectedLocation:
+        'https://tools.tuturuuu.localhost/random?utm_source=e2e&tag=a&tag=b',
+      url: 'http://localhost/en/tools/random?utm_source=e2e&tag=a&tag=b',
+    },
+    {
+      expectedLocation:
+        'https://qr.tuturuuu.localhost/?utm_source=e2e&tag=a&tag=b',
+      url: 'http://localhost/qr-generator?utm_source=e2e&tag=a&tag=b',
+    },
+    {
+      expectedLocation:
+        'https://tools.tuturuuu.localhost/random?utm_source=e2e&tag=a&tag=b',
+      url: 'http://localhost/tools/random?utm_source=e2e&tag=a&tag=b',
+    },
+  ])('redirects public marketing alias $url before auth', async ({
+    expectedLocation,
+    url,
+  }) => {
+    const { proxy } = await import('../proxy');
+    const response = await proxy(new NextRequest(url));
+
+    expect(response.status).toBe(307);
+    expect(response.headers.get('location')).toBe(expectedLocation);
+    expect(mocks.guardApiProxyRequest).not.toHaveBeenCalled();
+    expect(mocks.authProxy).not.toHaveBeenCalled();
+  });
+
+  it('redirects old workspace mail dashboard routes to the mail app before auth', async () => {
+    const { proxy } = await import('../proxy');
+    const response = await proxy(
+      new NextRequest(
+        'http://localhost/en/personal/mail/sent?mailbox=mailbox-1'
+      )
+    );
+
+    expect(response.status).toBe(307);
+    expect(response.headers.get('location')).toBe(
+      'https://mail.tuturuuu.localhost/personal/sent?mailbox=mailbox-1'
+    );
+    expect(mocks.guardApiProxyRequest).not.toHaveBeenCalled();
+    expect(mocks.authProxy).not.toHaveBeenCalled();
+  });
+
+  it('redirects old workspace finance dashboard routes to the finance app before auth', async () => {
+    const { proxy } = await import('../proxy');
+    const response = await proxy(
+      new NextRequest(
+        'http://localhost/en/personal/finance/invoices/invoice-1?status=paid'
+      )
+    );
+
+    expect(response.status).toBe(307);
+    expect(response.headers.get('location')).toBe(
+      'https://finance.tuturuuu.localhost/personal/invoices/invoice-1?status=paid'
+    );
+    expect(mocks.guardApiProxyRequest).not.toHaveBeenCalled();
+    expect(mocks.authProxy).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    {
+      expectedLocation:
+        'https://drive.tuturuuu.localhost/personal?folder=reports',
+      url: 'http://localhost/en/personal/drive?folder=reports',
+    },
+    {
+      expectedLocation: 'https://chat.tuturuuu.localhost/personal',
+      url: 'http://localhost/en/personal/chat',
+    },
+    {
+      expectedLocation:
+        'https://track.tuturuuu.localhost/personal/history?period=week',
+      url: 'http://localhost/en/personal/time-tracker/history?period=week',
+    },
+  ])('redirects old workspace satellite route $url to its app before auth', async ({
+    expectedLocation,
+    url,
+  }) => {
+    const { proxy } = await import('../proxy');
+    const response = await proxy(new NextRequest(url));
+
+    expect(response.status).toBe(307);
+    expect(response.headers.get('location')).toBe(expectedLocation);
     expect(mocks.guardApiProxyRequest).not.toHaveBeenCalled();
     expect(mocks.authProxy).not.toHaveBeenCalled();
   });
@@ -952,7 +1262,7 @@ describe('web proxy api handling', () => {
     expect(response).toBeInstanceOf(NextResponse);
   });
 
-  it('redirects root to a configured workspace board when board config is valid', async () => {
+  it('redirects root to the tasks entry when stale board config is present', async () => {
     const adminQueryBuilder = {
       select: vi.fn().mockReturnThis(),
       eq: vi.fn().mockReturnThis(),
@@ -983,12 +1293,63 @@ describe('web proxy api handling', () => {
     });
 
     const { proxy } = await import('../proxy');
-    const response = await proxy(new NextRequest('http://localhost/'));
+    const response = await proxy(createSessionRequest('http://localhost/'));
 
     expect(response.status).toBe(307);
     expect(response.headers.get('location')).toBe(
-      'http://localhost/ws-1/tasks/boards/board-1'
+      'http://localhost/ws-1/tasks'
     );
+  });
+
+  it('skips default workspace redirect auth when root requests have no session cookie', async () => {
+    mocks.createClient.mockResolvedValue(createAuthenticatedSupabaseClient());
+    mocks.getUserDefaultWorkspace.mockResolvedValue({
+      id: 'ws-1',
+      personal: false,
+    });
+
+    const { proxy } = await import('../proxy');
+    const response = await proxy(new NextRequest('http://localhost/'));
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get('location')).toBeNull();
+    expect(mocks.createAdminClient).not.toHaveBeenCalled();
+    expect(mocks.getUserDefaultWorkspace).not.toHaveBeenCalled();
+  });
+
+  it('configures localized root paths as exact public auth paths', async () => {
+    const { proxy } = await import('../proxy');
+    await proxy(new NextRequest('http://localhost/en'));
+
+    const authOptions = mocks.createCentralizedAuthProxy.mock.calls[0]?.[0] as
+      | {
+          isPublicPath?: (pathname: string) => boolean;
+        }
+      | undefined;
+
+    expect(authOptions?.isPublicPath?.('/en')).toBe(true);
+    expect(authOptions?.isPublicPath?.('/vi')).toBe(true);
+    expect(authOptions?.isPublicPath?.('/en/personal')).toBe(false);
+    expect(authOptions?.isPublicPath?.('/vi/personal')).toBe(false);
+  });
+
+  it('configures only auth recovery routes as public auth paths', async () => {
+    const { proxy } = await import('../proxy');
+    await proxy(new NextRequest('http://localhost/auth/recovery/confirm'));
+
+    const authOptions = mocks.createCentralizedAuthProxy.mock.calls[0]?.[0] as
+      | {
+          isPublicPath?: (pathname: string) => boolean;
+        }
+      | undefined;
+
+    expect(authOptions?.isPublicPath?.('/auth/recovery')).toBe(true);
+    expect(authOptions?.isPublicPath?.('/auth/recovery/confirm')).toBe(true);
+    expect(authOptions?.isPublicPath?.('/en/auth/recovery/confirm')).toBe(true);
+    expect(authOptions?.isPublicPath?.('/vi/auth/recovery/confirm')).toBe(true);
+    expect(authOptions?.isPublicPath?.('/personal')).toBe(false);
+    expect(authOptions?.isPublicPath?.('/auth/mfa')).toBe(false);
+    expect(authOptions?.isPublicPath?.('/auth/recovery-token')).toBe(false);
   });
 
   it('redirects the legacy dashboard alias to the default workspace home', async () => {
@@ -1008,7 +1369,9 @@ describe('web proxy api handling', () => {
     });
 
     const { proxy } = await import('../proxy');
-    const response = await proxy(new NextRequest('http://localhost/dashboard'));
+    const response = await proxy(
+      createSessionRequest('http://localhost/dashboard')
+    );
 
     expect(response.status).toBe(307);
     expect(response.headers.get('location')).toBe('http://localhost/ws-1');
@@ -1018,7 +1381,7 @@ describe('web proxy api handling', () => {
     );
   });
 
-  it('applies the personal default board preference only from the root redirect', async () => {
+  it('lets the tasks entry resolve the personal default board preference', async () => {
     const workspaceConfigBuilder = {
       select: vi.fn().mockReturnThis(),
       eq: vi.fn().mockReturnThis(),
@@ -1065,17 +1428,17 @@ describe('web proxy api handling', () => {
     });
 
     const { proxy } = await import('../proxy');
-    const response = await proxy(new NextRequest('http://localhost/'));
+    const response = await proxy(createSessionRequest('http://localhost/'));
 
     expect(response.status).toBe(307);
     expect(response.headers.get('location')).toBe(
-      'http://localhost/personal/tasks/boards/board-1'
+      'http://localhost/personal/tasks'
     );
-    expect(adminFrom).toHaveBeenCalledWith('user_configs');
-    expect(adminFrom).toHaveBeenCalledWith('workspace_boards');
+    expect(adminFrom).not.toHaveBeenCalledWith('user_configs');
+    expect(adminFrom).not.toHaveBeenCalledWith('workspace_boards');
   });
 
-  it('preserves locale when redirecting root to a configured workspace board', async () => {
+  it('preserves locale when redirecting root to the tasks entry', async () => {
     const adminQueryBuilder = {
       select: vi.fn().mockReturnThis(),
       eq: vi.fn().mockReturnThis(),
@@ -1104,11 +1467,11 @@ describe('web proxy api handling', () => {
     });
 
     const { proxy } = await import('../proxy');
-    const response = await proxy(new NextRequest('http://localhost/vi'));
+    const response = await proxy(createSessionRequest('http://localhost/vi'));
 
     expect(response.status).toBe(307);
     expect(response.headers.get('location')).toBe(
-      'http://localhost/vi/ws-1/tasks/boards/board-1'
+      'http://localhost/vi/ws-1/tasks'
     );
   });
 
@@ -1130,7 +1493,7 @@ describe('web proxy api handling', () => {
 
     const { proxy } = await import('../proxy');
     const response = await proxy(
-      new NextRequest('http://localhost/vi/dashboard')
+      createSessionRequest('http://localhost/vi/dashboard')
     );
 
     expect(response.status).toBe(307);
@@ -1141,6 +1504,31 @@ describe('web proxy api handling', () => {
       'dashboard',
       expect.anything()
     );
+  });
+
+  it('normalizes the internal tasks entry to Kanban mode', async () => {
+    const { proxy } = await import('../proxy');
+    const response = await proxy(
+      createSessionRequest('http://localhost/internal/tasks')
+    );
+
+    expect(response.status).toBe(307);
+    expect(response.headers.get('location')).toBe(
+      'http://localhost/internal/tasks?view=kanban'
+    );
+  });
+
+  it('preserves locale and query params when normalizing internal tasks', async () => {
+    const { proxy } = await import('../proxy');
+    const response = await proxy(
+      createSessionRequest('http://localhost/vi/internal/tasks?task=task-1')
+    );
+
+    expect(response.status).toBe(307);
+    const location = new URL(response.headers.get('location') ?? '');
+    expect(location.pathname).toBe('/vi/internal/tasks');
+    expect(location.searchParams.get('task')).toBe('task-1');
+    expect(location.searchParams.get('view')).toBe('kanban');
   });
 
   it('does not apply configured board navigation on direct personal workspace home paths', async () => {
@@ -1351,11 +1739,11 @@ describe('web proxy api handling', () => {
     });
 
     const { proxy } = await import('../proxy');
-    const response = await proxy(new NextRequest('http://localhost/'));
+    const response = await proxy(createSessionRequest('http://localhost/'));
 
     expect(response.status).toBe(307);
     expect(response.headers.get('location')).toBe(
-      'http://localhost/ws-1/tasks/boards'
+      'http://localhost/ws-1/tasks'
     );
     expect(adminUpsert).toHaveBeenCalled();
   });

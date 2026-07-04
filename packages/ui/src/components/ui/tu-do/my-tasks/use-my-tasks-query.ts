@@ -6,6 +6,7 @@ import {
   useQuery,
 } from '@tanstack/react-query';
 import type { TaskWithRelations } from '@tuturuuu/types';
+import { getTaskApiUrl } from '../../../../lib/tasks-app-url';
 
 export interface MyTasksData {
   overdue: TaskWithRelations[];
@@ -62,9 +63,13 @@ export function useMyTasksQuery(
         }
       }
 
-      const res = await fetch(`/api/v1/users/me/tasks?${params}`, {
-        cache: 'no-store',
-      });
+      const res = await fetch(
+        getTaskApiUrl(`/api/v1/users/me/tasks?${params}`),
+        {
+          cache: 'no-store',
+          credentials: 'include',
+        }
+      );
       if (!res.ok) {
         throw new Error('Failed to fetch tasks');
       }
@@ -117,9 +122,13 @@ export function useCompletedTasksQuery(
         }
       }
 
-      const res = await fetch(`/api/v1/users/me/tasks?${params}`, {
-        cache: 'no-store',
-      });
+      const res = await fetch(
+        getTaskApiUrl(`/api/v1/users/me/tasks?${params}`),
+        {
+          cache: 'no-store',
+          credentials: 'include',
+        }
+      );
       if (!res.ok) {
         throw new Error('Failed to fetch completed tasks');
       }

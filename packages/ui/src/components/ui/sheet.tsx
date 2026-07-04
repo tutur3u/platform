@@ -1,7 +1,7 @@
 'use client';
 
 import * as SheetPrimitive from '@radix-ui/react-dialog';
-import { XIcon } from '@tuturuuu/icons';
+import { XIcon } from '@tuturuuu/icons/lucide-static';
 import { cn } from '@tuturuuu/utils/format';
 import type * as React from 'react';
 

@@ -66,7 +66,7 @@ describe('auth callback route', () => {
       new Error('provider exchange failed')
     );
 
-    const { GET } = await import('@/app/api/auth/callback/route');
+    const { GET } = await import('@/legacy-api-routes/auth/callback/route');
     const response = await GET(
       new NextRequest(
         'http://0.0.0.0:7803/api/auth/callback?code=bad-code&returnUrl=https%3A%2F%2Ftuturuuu.com%2Fverify-token%3FnextUrl%3D%2Fonboarding'
@@ -94,7 +94,7 @@ describe('auth callback route', () => {
   it('does not preserve wildcard listener origins for external app confirmation redirects', async () => {
     mocks.getExternalAppByReturnUrl.mockResolvedValue({ id: 'tulearn' });
 
-    const { GET } = await import('@/app/api/auth/callback/route');
+    const { GET } = await import('@/legacy-api-routes/auth/callback/route');
     const response = await GET(
       new NextRequest(
         'http://0.0.0.0:7803/api/auth/callback?returnUrl=https%3A%2F%2Flearn.tuturuuu.com%2Fverify-token%3FnextUrl%3D%2Fonboarding'
@@ -112,7 +112,7 @@ describe('auth callback route', () => {
   it('preserves a local Portless port for multi-account callback redirects', async () => {
     clearConfiguredWebOrigins();
 
-    const { GET } = await import('@/app/api/auth/callback/route');
+    const { GET } = await import('@/legacy-api-routes/auth/callback/route');
     const response = await GET(
       new NextRequest(
         'https://tuturuuu.localhost:1355/api/auth/callback?multiAccount=true&returnUrl=%2Fen%2Fpersonal%2Ftasks',

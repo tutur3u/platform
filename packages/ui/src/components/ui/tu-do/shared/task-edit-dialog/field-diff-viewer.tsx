@@ -373,8 +373,9 @@ function DescriptionDiff({
     </>
   );
 
-  // If both exist and there are text changes, show the full diff viewer
-  if (hasSnapshot && hasCurrent && hasTextChanges) {
+  // Show the full viewer whenever either side has content so users can inspect
+  // content-only, empty/content, and structural editor changes.
+  if (hasSnapshot || hasCurrent || hasTextChanges) {
     return (
       <div className="text-sm">
         <div className="flex items-center gap-2">

@@ -66,12 +66,30 @@ function clearImageResizeUIFromNodeDom(nodeDom: Node | null): void {
   }
 }
 
+export type ImageSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
+
+type UploadHandler = (file: File) => Promise<string>;
+type UploadHandlerGetter = () => UploadHandler | undefined;
+
+function resolveUploadHandler({
+  configuredHandler,
+  delegatedGetter,
+}: {
+  configuredHandler?: UploadHandler;
+  delegatedGetter?: UploadHandlerGetter;
+}): UploadHandler | undefined {
+  if (delegatedGetter) {
+    return delegatedGetter();
+  }
+
+  return configuredHandler;
+}
+
 export const __imageExtensionPrivate = {
   clearImageResizeUIFromNodeDom,
   getSelectedImagePos,
+  resolveUploadHandler,
 };
-
-export type ImageSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
 
 // Size presets in pixels (will be calculated based on editor width)
 const SIZE_PERCENTAGES: Record<ImageSize, number> = {
@@ -137,10 +155,10 @@ function calculatePresetWidth(
 }
 
 interface ImageOptions {
-  onImageUpload?: (file: File) => Promise<string>;
-  onVideoUpload?: (file: File) => Promise<string>;
-  getOnImageUpload?: () => ((file: File) => Promise<string>) | undefined;
-  getOnVideoUpload?: () => ((file: File) => Promise<string>) | undefined;
+  onImageUpload?: UploadHandler;
+  onVideoUpload?: UploadHandler;
+  getOnImageUpload?: UploadHandlerGetter;
+  getOnVideoUpload?: UploadHandlerGetter;
 }
 
 /**
@@ -166,10 +184,10 @@ interface ExtendedImageResizeOptions {
   HTMLAttributes: Record<string, any>;
   minWidth?: number;
   maxWidth?: number;
-  onImageUpload?: (file: File) => Promise<string>;
-  onVideoUpload?: (file: File) => Promise<string>;
-  getOnImageUpload?: () => ((file: File) => Promise<string>) | undefined;
-  getOnVideoUpload?: () => ((file: File) => Promise<string>) | undefined;
+  onImageUpload?: UploadHandler;
+  onVideoUpload?: UploadHandler;
+  getOnImageUpload?: UploadHandlerGetter;
+  getOnVideoUpload?: UploadHandlerGetter;
 }
 
 export const CustomImage = (options: ImageOptions = {}) => {
@@ -229,15 +247,19 @@ export const CustomImage = (options: ImageOptions = {}) => {
     addProseMirrorPlugins() {
       const parentPlugins = this.parent?.() || [];
       const getOnImageUpload = () =>
-        this?.options?.getOnImageUpload?.() ??
-        this?.options?.onImageUpload ??
-        options.getOnImageUpload?.() ??
-        options.onImageUpload;
+        resolveUploadHandler({
+          delegatedGetter:
+            this?.options?.getOnImageUpload ?? options.getOnImageUpload,
+          configuredHandler:
+            this?.options?.onImageUpload ?? options.onImageUpload,
+        });
       const getOnVideoUpload = () =>
-        this?.options?.getOnVideoUpload?.() ??
-        this?.options?.onVideoUpload ??
-        options.getOnVideoUpload?.() ??
-        options.onVideoUpload;
+        resolveUploadHandler({
+          delegatedGetter:
+            this?.options?.getOnVideoUpload ?? options.getOnVideoUpload,
+          configuredHandler:
+            this?.options?.onVideoUpload ?? options.onVideoUpload,
+        });
 
       return [
         ...parentPlugins,

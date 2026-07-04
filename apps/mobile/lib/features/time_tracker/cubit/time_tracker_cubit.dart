@@ -18,6 +18,7 @@ import 'package:mobile/data/models/time_tracking/stats.dart';
 import 'package:mobile/data/models/workspace_settings.dart';
 import 'package:mobile/data/repositories/time_tracker_repository.dart';
 import 'package:mobile/features/time_tracker/cubit/time_tracker_state.dart';
+import 'package:mobile/features/time_tracker/utils/history_anchor.dart';
 import 'package:mobile/features/time_tracker/utils/threshold.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -195,7 +196,9 @@ class TimeTrackerCubit extends Cubit<TimeTrackerState> {
         orElse: () => HistoryViewMode.week,
       ),
       historyAnchorDate: json['historyAnchorDate'] is String
-          ? DateTime.tryParse(json['historyAnchorDate'] as String)
+          ? normalizeTimeTrackerHistoryAnchorDate(
+              DateTime.tryParse(json['historyAnchorDate'] as String),
+            )
           : null,
       historySessions:
           ((json['historySessions'] as List<dynamic>?) ?? const <dynamic>[])
@@ -462,7 +465,7 @@ class TimeTrackerCubit extends Cubit<TimeTrackerState> {
 
     try {
       await _ensureHistoryPreferencesLoaded();
-      final anchorDate = state.historyAnchorDate ?? DateTime.now();
+      final anchorDate = _currentHistoryAnchorDate();
       final timezone = await getCurrentTimezoneIdentifier();
       final periodRange = _historyPeriodRange(
         state.historyViewMode,
@@ -780,14 +783,13 @@ class TimeTrackerCubit extends Cubit<TimeTrackerState> {
   }
 
   void setHistoryContext({HistoryViewMode? viewMode, DateTime? anchorDate}) {
-    final normalizedAnchorDate = anchorDate == null
-        ? null
-        : DateTime(anchorDate.year, anchorDate.month, anchorDate.day);
+    final normalizedAnchorDate = normalizeTimeTrackerHistoryAnchorDate(
+      anchorDate,
+    );
     emit(
       state.copyWith(
         historyViewMode: viewMode ?? state.historyViewMode,
-        historyAnchorDate:
-            normalizedAnchorDate ?? state.historyAnchorDate ?? DateTime.now(),
+        historyAnchorDate: normalizedAnchorDate ?? _currentHistoryAnchorDate(),
       ),
     );
   }
@@ -806,7 +808,7 @@ class TimeTrackerCubit extends Cubit<TimeTrackerState> {
       emit(
         state.copyWith(
           historyViewMode: viewMode,
-          historyAnchorDate: state.historyAnchorDate ?? DateTime.now(),
+          historyAnchorDate: _currentHistoryAnchorDate(),
         ),
       );
     }
@@ -841,7 +843,11 @@ class TimeTrackerCubit extends Cubit<TimeTrackerState> {
     int firstDayOfWeek = DateTime.monday,
   }) async {
     _historyFirstDayOfWeek = firstDayOfWeek;
-    emit(state.copyWith(historyAnchorDate: DateTime.now()));
+    emit(
+      state.copyWith(
+        historyAnchorDate: resolveTimeTrackerHistoryAnchorDate(null),
+      ),
+    );
     await loadHistoryInitial(wsId, userId, firstDayOfWeek: firstDayOfWeek);
   }
 
@@ -864,7 +870,7 @@ class TimeTrackerCubit extends Cubit<TimeTrackerState> {
     _historyFirstDayOfWeek = effectiveFirstDayOfWeek;
     if (wsId.isEmpty) return;
     await _ensureHistoryPreferencesLoaded();
-    final anchorDate = state.historyAnchorDate ?? DateTime.now();
+    final anchorDate = _currentHistoryAnchorDate();
     final periodRange = _historyPeriodRange(
       state.historyViewMode,
       anchorDate,
@@ -946,7 +952,7 @@ class TimeTrackerCubit extends Cubit<TimeTrackerState> {
       return;
     }
 
-    final anchorDate = state.historyAnchorDate ?? DateTime.now();
+    final anchorDate = _currentHistoryAnchorDate();
     final periodRange = _historyPeriodRange(
       state.historyViewMode,
       anchorDate,
@@ -1517,8 +1523,8 @@ class TimeTrackerCubit extends Cubit<TimeTrackerState> {
   }
 
   DateTime _moveHistoryAnchor(int delta) {
-    final current = state.historyAnchorDate ?? DateTime.now();
-    return switch (state.historyViewMode) {
+    final current = _currentHistoryAnchorDate();
+    final moved = switch (state.historyViewMode) {
       HistoryViewMode.day => current.add(Duration(days: delta)),
       HistoryViewMode.week => current.add(Duration(days: delta * 7)),
       HistoryViewMode.month => () {
@@ -1552,6 +1558,11 @@ class TimeTrackerCubit extends Cubit<TimeTrackerState> {
         );
       }(),
     };
+    return normalizeTimeTrackerHistoryAnchorDate(moved) ?? current;
+  }
+
+  DateTime _currentHistoryAnchorDate() {
+    return resolveTimeTrackerHistoryAnchorDate(state.historyAnchorDate);
   }
 
   ({DateTime start, DateTime end}) _historyPeriodRange(
@@ -1559,7 +1570,7 @@ class TimeTrackerCubit extends Cubit<TimeTrackerState> {
     DateTime anchor, {
     int firstDayOfWeek = DateTime.monday,
   }) {
-    final localAnchor = anchor.toLocal();
+    final localAnchor = resolveTimeTrackerHistoryAnchorDate(anchor);
     switch (mode) {
       case HistoryViewMode.day:
         final start = DateTime(

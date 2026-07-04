@@ -1,6 +1,7 @@
 ---
 title: "@tuturuuu/supabase"
 description: "Supabase client creation patterns and utilities"
+updatedAt: '2026-06-21'
 ---
 
 # @tuturuuu/supabase
@@ -28,7 +29,7 @@ import { createClient, createAdminClient } from '@tuturuuu/supabase/next/server'
 import { createClient } from '@tuturuuu/supabase/next/server';
 
 export default async function TaskPage() {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   // Queries respect RLS policies
   const { data: tasks } = await supabase
@@ -69,7 +70,7 @@ export async function createWorkspace(name: string, ownerId: string) {
     .single();
 
   // Add owner as member
-  await supabase
+  await sbAdmin
     .from('workspace_members')
     .insert({
       ws_id: workspace.id,
@@ -87,6 +88,14 @@ export async function createWorkspace(name: string, ownerId: string) {
 - ❌ NEVER expose to client
 - ❌ NEVER use for user-initiated queries (always prefer `createClient()`)
 
+> **Return type note:** `createAdminClient()` has the signature
+> `({ noCookie }?: { noCookie?: boolean }) => SupabaseClient | Promise<SupabaseClient>`.
+> The default call (`createAdminClient()` with `noCookie: false`) resolves cookies
+> via `next/headers`, so it returns a `Promise` — `await` it as shown above. The
+> `createAdminClient({ noCookie: true })` variant returns a client synchronously.
+> Awaiting either form is safe (`await` on a non-Promise is a no-op), so prefer
+> `await createAdminClient()` everywhere for consistency.
+
 ### `createDynamicClient()` - Middleware Client
 
 **Use Case:** Middleware and edge runtime contexts.
@@ -98,7 +107,7 @@ import { createDynamicClient } from '@tuturuuu/supabase/next/server';
 import { NextRequest } from 'next/server';
 
 export async function proxy(request: NextRequest) {
-  const supabase = createDynamicClient();
+  const supabase = await createDynamicClient();
 
   const { data: { user } } = await supabase.auth.getUser();
 
@@ -133,7 +142,7 @@ operation runs.
 import { createClient } from '@tuturuuu/supabase/next/server';
 
 export async function getCurrentUser() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: { user }, error } = await supabase.auth.getUser();
 
   if (error || !user) {
@@ -152,7 +161,7 @@ export async function getCurrentUser() {
 import { createClient } from '@tuturuuu/supabase/next/server';
 
 export async function createTask(formData: FormData) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   // Check authentication
   const { data: { user } } = await supabase.auth.getUser();
@@ -184,7 +193,7 @@ export async function createTask(formData: FormData) {
 import { createClient } from '@tuturuuu/supabase/next/server';
 
 export async function getUserWorkspaces(userId: string) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const { data: memberships } = await supabase
     .from('workspace_members')
@@ -218,7 +227,7 @@ export async function hasPermission(
   wsId: string,
   permission: Permission
 ): Promise<boolean> {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const { data } = await supabase
     .from('workspace_members')
@@ -245,7 +254,7 @@ export async function hasPermission(
 import { createClient } from '@tuturuuu/supabase/next/server';
 
 export async function getTasks(wsId: string, page = 0, pageSize = 20) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const from = page * pageSize;
   const to = from + pageSize - 1;
@@ -274,7 +283,7 @@ export async function getTasks(wsId: string, page = 0, pageSize = 20) {
 import { createClient } from '@tuturuuu/supabase/next/server';
 
 export async function getTasksWithAssignees(wsId: string, completed?: boolean) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   let query = supabase
     .from('workspace_tasks')
@@ -306,6 +315,12 @@ export async function getTasksWithAssignees(wsId: string, completed?: boolean) {
 ```
 
 ### Realtime Subscriptions
+
+The browser `createClient()` from `@tuturuuu/supabase/next/client` is
+**synchronous** (returns a `SupabaseClient`, not a `Promise`), so it is used
+without `await`. Note this client is deprecated for general CRUD/storage — route
+those through `@tuturuuu/internal-api` — but it remains valid for realtime
+channel subscriptions, which are not covered by the internal API client.
 
 ```typescript
 'use client';
@@ -377,7 +392,7 @@ type TaskInsert = Database['public']['Tables']['workspace_tasks']['Insert'];
 type TaskUpdate = Database['public']['Tables']['workspace_tasks']['Update'];
 
 export async function createTypedTask(task: TaskInsert): Promise<Task> {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const { data, error } = await supabase
     .from('workspace_tasks')
@@ -415,7 +430,7 @@ type Permission = Enums<'workspace_role_permission'>;
 import { createClient } from '@tuturuuu/supabase/next/server';
 
 export async function getTask(taskId: string) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const { data, error } = await supabase
     .from('workspace_tasks')
@@ -439,7 +454,7 @@ import { createClient } from '@tuturuuu/supabase/next/server';
 
 export async function safeGetTask(taskId: string) {
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
 
     const { data, error } = await supabase
       .from('workspace_tasks')
@@ -464,7 +479,7 @@ export async function safeGetTask(taskId: string) {
 import { createClient } from '@tuturuuu/supabase/next/server';
 
 export async function uploadAvatar(userId: string, file: File) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const fileName = `${userId}-${Date.now()}.${file.name.split('.').pop()}`;
   const filePath = `avatars/${fileName}`;
@@ -492,7 +507,7 @@ export async function uploadAvatar(userId: string, file: File) {
 import { createClient } from '@tuturuuu/supabase/next/server';
 
 export async function downloadFile(path: string) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const { data, error } = await supabase.storage
     .from('public')
@@ -509,7 +524,7 @@ export async function downloadFile(path: string) {
 
 1. **Use `createClient()` by default**
    ```typescript
-   const supabase = createClient(); // Respects RLS
+   const supabase = await createClient(); // Respects RLS
    ```
 
 2. **Check authentication early**

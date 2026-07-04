@@ -1,3 +1,4 @@
+export { AppsLauncherDialog } from './components/apps-launcher';
 export {
   SidebarStructure,
   type SidebarStructureProps,

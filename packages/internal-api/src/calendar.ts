@@ -5,7 +5,11 @@ import type {
 } from '@tuturuuu/types';
 import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
 import type { InternalApiClientOptions, InternalApiQuery } from './client';
-import { encodePathSegment, getInternalApiClient } from './client';
+import {
+  encodePathSegment,
+  getInternalApiClient,
+  withTaskApiBaseUrl,
+} from './client';
 
 export interface WorkspaceCalendarEventUpdatePayload {
   locked?: boolean;
@@ -55,6 +59,24 @@ export type CalendarSourceOption =
 export interface CalendarDefaultSourceResponse {
   defaultSource: CalendarSourceOption;
   options: CalendarSourceOption[];
+}
+
+export type CalendarConflictPolicy = 'latest_write_wins';
+
+export interface CalendarSyncPreferencesResponse {
+  inboundSyncEnabled: boolean;
+  outboundSyncEnabled: boolean;
+  conflictPolicy: CalendarConflictPolicy;
+  defaultOutboundConnectionId: string | null;
+  options: CalendarSourceOption[];
+  settingsAvailable: boolean;
+}
+
+export interface CalendarSyncPreferencesPayload {
+  inboundSyncEnabled?: boolean;
+  outboundSyncEnabled?: boolean;
+  conflictPolicy?: CalendarConflictPolicy;
+  defaultOutboundConnectionId?: string | null;
 }
 
 export interface WorkspaceCalendarEventCreatePayload {
@@ -214,6 +236,9 @@ export interface CalendarConnectionPayload {
   calendarName: string;
   color?: string | null;
   isEnabled?: boolean;
+  syncDeleteEnabled?: boolean;
+  syncInboundEnabled?: boolean;
+  syncOutboundEnabled?: boolean;
 }
 
 export interface CalendarConnectionUpdatePayload
@@ -683,6 +708,37 @@ export async function updateWorkspaceCalendarDefaultSource(
   );
 }
 
+export async function getWorkspaceCalendarSyncPreferences(
+  wsId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<CalendarSyncPreferencesResponse>(
+    `/api/v1/workspaces/${encodePathSegment(wsId)}/calendar/sync-preferences`,
+    {
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function updateWorkspaceCalendarSyncPreferences(
+  wsId: string,
+  payload: CalendarSyncPreferencesPayload,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<CalendarSyncPreferencesResponse>(
+    `/api/v1/workspaces/${encodePathSegment(wsId)}/calendar/sync-preferences`,
+    {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    }
+  );
+}
+
 export async function updateWorkspaceCalendarEvent(
   wsId: string,
   eventId: string,
@@ -791,7 +847,7 @@ export async function getWorkspaceTaskScheduleHistory(
   query?: { start?: string; end?: string },
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withTaskApiBaseUrl(options));
   return client.json<TaskScheduleHistoryResponse>(
     `/api/v1/workspaces/${encodePathSegment(wsId)}/tasks/${encodePathSegment(taskId)}/schedule/history`,
     {
@@ -807,7 +863,7 @@ export async function getWorkspaceHabitScheduleHistory(
   query?: { start?: string; end?: string },
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withTaskApiBaseUrl(options));
   return client.json<HabitScheduleHistoryResponse>(
     `/api/v1/workspaces/${encodePathSegment(wsId)}/habits/${encodePathSegment(habitId)}/schedule/history`,
     {
@@ -823,7 +879,7 @@ export async function createWorkspaceHabitSkip(
   payload: HabitSkipPayload,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withTaskApiBaseUrl(options));
   return client.json<{ success: true; occurrenceDate: string }>(
     `/api/v1/workspaces/${encodePathSegment(wsId)}/habits/${encodePathSegment(habitId)}/skips`,
     {
@@ -843,7 +899,7 @@ export async function revokeWorkspaceHabitSkip(
   payload: HabitSkipPayload,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withTaskApiBaseUrl(options));
   return client.json<{ success: true; occurrenceDate: string }>(
     `/api/v1/workspaces/${encodePathSegment(wsId)}/habits/${encodePathSegment(habitId)}/skips`,
     {

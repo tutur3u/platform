@@ -1,10 +1,10 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
-import type { WorkspaceCronJob } from '@tuturuuu/types';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import { CustomDataTable } from '@/components/custom-data-table';
+import type { ManagedWorkspaceCronJob } from '../types';
 import { getColumns } from './columns';
 import { CronJobForm } from './form';
 
@@ -79,7 +79,8 @@ async function getData(
 
   const queryBuilder = supabase
     .from('workspace_cron_jobs')
-    .select('*')
+    .select('*', { count: 'exact' })
+    .eq('ws_id', wsId)
     .order('name', { ascending: true, nullsFirst: false });
 
   if (page && pageSize) {
@@ -98,7 +99,7 @@ async function getData(
   }
 
   return { data, count } as unknown as {
-    data: WorkspaceCronJob[];
+    data: ManagedWorkspaceCronJob[];
     count: number;
   };
 }

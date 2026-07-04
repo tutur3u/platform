@@ -14,6 +14,7 @@ import { Badge } from '@tuturuuu/ui/badge';
 import { Card } from '@tuturuuu/ui/card';
 import { cn } from '@tuturuuu/utils/format';
 import Link from 'next/link';
+import { getTasksAppUrlClient } from '@/lib/tasks-app-url-client';
 import type { TaskDetailVisualization } from '../../types/visualizations';
 
 interface TaskDetailViewProps {
@@ -319,7 +320,7 @@ export function TaskDetailView({
           </div>
           {wsId && (
             <Link
-              href={`/${wsId}/tasks/${id}`}
+              href={getTasksAppUrlClient(`/${wsId}/tasks/${id}`)}
               target="_blank"
               className="flex items-center gap-1 rounded-md bg-primary/10 px-2 py-1 font-medium text-primary text-xs transition-colors hover:bg-primary/20"
             >

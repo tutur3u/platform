@@ -4,6 +4,11 @@ import type {
   DebtLoanType,
   DebtLoanWithBalance,
 } from '@tuturuuu/types/primitives/DebtLoan';
+import {
+  isSupportedCurrency,
+  resolveSupportedCurrency,
+} from '@tuturuuu/utils/currencies';
+import { getWorkspaceConfig } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import {
   type FinanceRouteAuthContext,
@@ -115,13 +120,28 @@ export async function POST(
     );
   }
 
+  const requestedCurrency =
+    typeof body.currency === 'string' ? body.currency.trim() : '';
+  if (requestedCurrency && !isSupportedCurrency(requestedCurrency)) {
+    return NextResponse.json(
+      { message: 'Unsupported currency' },
+      { status: 400 }
+    );
+  }
+  const workspaceCurrency = resolveSupportedCurrency(
+    await getWorkspaceConfig(normalizedWsId, 'DEFAULT_CURRENCY')
+  );
+  const currency = requestedCurrency
+    ? resolveSupportedCurrency(requestedCurrency)
+    : workspaceCurrency;
+
   // Build the insert data
   const insertData: DebtLoanInsert = {
     ws_id: normalizedWsId,
     name: body.name as string,
     type: body.type as 'debt' | 'loan',
     principal_amount: body.principal_amount as number,
-    currency: (body.currency as string) || 'VND',
+    currency,
     start_date:
       (body.start_date as string) || new Date().toISOString().split('T')[0],
     status: (body.status || 'active') as

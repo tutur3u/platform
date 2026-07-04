@@ -1,94 +1,45 @@
 import { useQueryClient } from '@tanstack/react-query';
 import {
-  Archive,
-  ArrowDown,
   ArrowDownAZ,
   ArrowLeft,
-  ArrowUp,
   ArrowUpAZ,
-  Bookmark,
+  Bolt,
   CalendarDays,
-  Check,
-  ChevronDown,
   Clock,
-  Columns3Cog,
-  Copy,
   CopyCheck,
   Flag,
   Gauge,
   KanbanSquare,
+  Layers,
+  LayoutDashboard,
   LayoutGrid,
   List,
   Loader2,
-  MoreHorizontal,
   Pencil,
   Play,
-  RotateCcw,
   Search,
-  Settings,
+  Share2,
   Trash2,
+  UserStar,
   X,
   Zap,
 } from '@tuturuuu/icons';
-import {
-  deleteWorkspaceTaskBoard,
-  updateWorkspaceTaskBoard,
-} from '@tuturuuu/internal-api';
+import { getWorkspaceTaskBoard } from '@tuturuuu/internal-api/tasks';
 import type { WorkspaceTaskBoard } from '@tuturuuu/types';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@tuturuuu/ui/alert-dialog';
 import { Button } from '@tuturuuu/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@tuturuuu/ui/dialog';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuShortcut,
-  DropdownMenuSub,
-  DropdownMenuSubContent,
-  DropdownMenuSubTrigger,
-  DropdownMenuTrigger,
-} from '@tuturuuu/ui/dropdown-menu';
-import { useBoardActions } from '@tuturuuu/ui/hooks/use-board-actions';
+import { Combobox } from '@tuturuuu/ui/custom/combobox';
 import { Input } from '@tuturuuu/ui/input';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@tuturuuu/ui/select';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
+import { BoardShareDialog } from '../boards/board-share-dialog';
+import { KanbanPlannerDialog } from '../boards/boardId/kanban/planner/kanban-planner-dialog';
 import { TaskFilter, type TaskFilters } from '../boards/boardId/task-filter';
-import { CopyBoardDialog } from '../boards/copy-board-dialog';
-import { TaskBoardForm } from '../boards/form';
-import { useTasksHref } from '../tasks-route-context';
-import { SaveAsTemplateDialog } from '../templates/save-as-template-dialog';
 import { saveBoardConfig } from './board-config-storage';
-import { BoardLayoutSettings } from './board-layout-settings';
-import { syncBoardTicketPrefixCaches } from './board-query-cache';
 import { BoardSwitcher } from './board-switcher';
 import { BoardUserPresenceAvatarsComponent } from './board-user-presence-avatars';
 import type { ViewType } from './board-views';
@@ -102,9 +53,11 @@ interface Props {
     WorkspaceTaskBoard,
     'id' | 'name' | 'ticket_prefix' | 'archived_at'
   > & {
+    access_type?: 'member' | 'guest';
     ws_id?: WorkspaceTaskBoard['ws_id'] | null;
     icon?: WorkspaceTaskBoard['icon'];
     default_list_id?: WorkspaceTaskBoard['default_list_id'] | null;
+    has_guest_access?: boolean;
   };
   currentUserId?: string;
   currentView: ViewType;
@@ -123,6 +76,40 @@ interface Props {
   onRecycleBinOpen?: () => void;
   isMultiSelectMode: boolean;
   setIsMultiSelectMode: (enabled: boolean) => void;
+  availableViews?: ViewType[];
+  publicView?: boolean;
+  readOnly?: boolean;
+  titlePrefix?: ReactNode;
+  onBoardSettingsIntent?: () => void;
+}
+
+function ToolbarTooltip({
+  children,
+  label,
+}: {
+  children: ReactNode;
+  label: string;
+}) {
+  return (
+    <Tooltip delayDuration={0}>
+      <TooltipTrigger asChild>{children}</TooltipTrigger>
+      <TooltipContent>{label}</TooltipContent>
+    </Tooltip>
+  );
+}
+
+const toolbarButtonClass =
+  'h-7 w-7 px-0 text-muted-foreground transition-colors hover:text-foreground sm:h-8 sm:w-8';
+const toolbarComboboxClass =
+  'w-auto [&_button]:h-7 [&_button]:w-7 [&_button]:min-w-7 [&_button]:text-muted-foreground [&_button]:transition-colors hover:[&_button]:text-foreground [&_button_svg]:text-current sm:[&_button]:h-8 sm:[&_button]:w-8 sm:[&_button]:min-w-8';
+const BOARD_SETTINGS_PRELOAD_EVENT = 'tuturuuu:board-settings-intent';
+const SETTINGS_DIALOG_OPEN_INTENT_EVENT =
+  'tuturuuu:settings-dialog-open-intent';
+
+function getBrowserInternalApiOptions() {
+  return typeof window !== 'undefined'
+    ? { baseUrl: window.location.origin }
+    : undefined;
 }
 
 export function BoardHeader({
@@ -140,35 +127,41 @@ export function BoardHeader({
   backUrl,
   hideActions = false,
   isSearching = false,
-  lists = [],
-  onUpdate,
-  onRecycleBinOpen,
   isMultiSelectMode,
   setIsMultiSelectMode,
+  availableViews,
+  publicView = false,
+  readOnly = false,
+  titlePrefix,
+  onBoardSettingsIntent,
 }: Props) {
   const t = useTranslations();
+  const queryClient = useQueryClient();
   const [isLoading, setIsLoading] = useState(false);
-  const [editBoardOpen, setEditBoardOpen] = useState(false);
-  const [duplicateBoardOpen, setDuplicateBoardOpen] = useState(false);
-  const [saveAsTemplateOpen, setSaveAsTemplateOpen] = useState(false);
-  const [boardMenuOpen, setBoardMenuOpen] = useState(false);
-  const [viewMenuOpen, setViewMenuOpen] = useState(false);
-  const [sortMenuOpen, setSortMenuOpen] = useState(false);
-  const [layoutSettingsOpen, setLayoutSettingsOpen] = useState(false);
-  const [boardSettingsOpen, setBoardSettingsOpen] = useState(false);
-  const [showArchiveDialog, setShowArchiveDialog] = useState(false);
-  const [showUnarchiveDialog, setShowUnarchiveDialog] = useState(false);
-  const [ticketPrefix, setTicketPrefix] = useState(board.ticket_prefix || '');
-  const [defaultListId, setDefaultListId] = useState<string | null>(
-    board.default_list_id ?? null
-  );
+  const [shareBoardOpen, setShareBoardOpen] = useState(false);
+  const [plannerOpen, setPlannerOpen] = useState(false);
   const [localSearchQuery, setLocalSearchQuery] = useState(
     filters.searchQuery || ''
   );
-  const { archiveBoard, unarchiveBoard } = useBoardActions(workspaceId);
-  const queryClient = useQueryClient();
   const router = useRouter();
-  const tasksHref = useTasksHref();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const enabledViews = availableViews ?? ['kanban', 'list', 'timeline'];
+  const activeView = enabledViews.includes(currentView)
+    ? currentView
+    : (enabledViews[0] ?? 'kanban');
+  const interactiveControlsVisible = !readOnly;
+  const managerControlsVisible = !hideActions && !readOnly;
+  const plannerVisible =
+    interactiveControlsVisible &&
+    !publicView &&
+    isPersonalWorkspace &&
+    currentView === 'kanban';
+  const hasSharedBoardGuests =
+    board.access_type === 'guest' || board.has_guest_access === true;
+  const presenceVisible =
+    interactiveControlsVisible &&
+    (!isPersonalWorkspace || hasSharedBoardGuests);
 
   // Stable refs for callbacks and values to avoid effect re-runs
   const onFiltersChangeRef = useRef(onFiltersChange);
@@ -229,62 +222,58 @@ export function BoardHeader({
     return () => clearTimeout(timeoutId);
   }, [board.id, currentView, filters, listStatusFilter]);
 
-  async function handleDelete() {
-    try {
-      setIsLoading(true);
-      await deleteWorkspaceTaskBoard(workspaceId, board.id);
-      router.push(`/${workspaceId}${tasksHref('/boards')}`);
-    } catch (error) {
-      console.error('Failed to delete board:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  }
-
-  async function handleSaveTicketPrefix() {
-    try {
-      setIsLoading(true);
-
-      // Validate and clean the prefix
-      const cleanedPrefix = ticketPrefix.trim().toUpperCase();
-      const nextTicketPrefix = cleanedPrefix || null;
-
-      await updateWorkspaceTaskBoard(workspaceId, board.id, {
-        ticket_prefix: nextTicketPrefix,
-        default_list_id: defaultListId,
-      });
-
-      syncBoardTicketPrefixCaches({
-        queryClient,
-        workspaceId,
-        board,
-        ticketPrefix: nextTicketPrefix,
-      });
-
-      setBoardSettingsOpen(false);
-
-      // Invalidate relevant caches
-      queryClient.invalidateQueries({
-        queryKey: ['task-board', workspaceId, board.id],
-      });
-      queryClient.invalidateQueries({
-        queryKey: ['board-config', workspaceId, board.id],
-      });
-
-      // Trigger parent update
-      if (onUpdate) {
-        onUpdate();
-      }
-    } catch (error) {
-      console.error('Failed to update ticket prefix:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  }
-
   function handleSortChange(sortBy: TaskFilters['sortBy']) {
     onFiltersChange({ ...filters, sortBy });
-    setSortMenuOpen(false);
+  }
+
+  function openBoardSettings() {
+    prefetchBoardSettings();
+    announceSettingsOpenIntent();
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('settingsDialog', 'open');
+    params.set('settingsTab', 'task_board');
+    params.set('settingsBoardId', board.id);
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+  }
+
+  function prefetchBoardSettings() {
+    if (!managerControlsVisible) return;
+
+    onBoardSettingsIntent?.();
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new Event(BOARD_SETTINGS_PRELOAD_EVENT));
+    }
+
+    void queryClient.prefetchQuery({
+      queryKey: ['task-board-settings', workspaceId, board.id],
+      queryFn: async () => {
+        const payload = await getWorkspaceTaskBoard(
+          workspaceId,
+          board.id,
+          getBrowserInternalApiOptions()
+        );
+        return payload.board;
+      },
+      staleTime: 30_000,
+    });
+  }
+
+  function announceSettingsOpenIntent() {
+    if (typeof window === 'undefined') return;
+
+    window.dispatchEvent(
+      new CustomEvent(SETTINGS_DIALOG_OPEN_INTENT_EVENT, {
+        detail: {
+          settingsBoardId: board.id,
+          settingsTab: 'task_board',
+        },
+      })
+    );
+  }
+
+  function handleBoardSettingsPointerDown() {
+    prefetchBoardSettings();
+    announceSettingsOpenIntent();
   }
 
   function handleSmartFocus() {
@@ -348,8 +337,139 @@ export function BoardHeader({
       label: t('ws-task-boards.views.timeline'),
       description: t('ws-task-boards.views.timeline_description'),
     },
+    my_tasks: {
+      icon: UserStar,
+      label: t('ws-task-boards.views.my_tasks'),
+      description: t('ws-task-boards.views.my_tasks_description'),
+    },
+    drafts: {
+      icon: Pencil,
+      label: t('task-drafts.title'),
+      description: t('task-drafts.board_view_description'),
+    },
+    recycle_bin: {
+      icon: Trash2,
+      label: t('common.recycle_bin'),
+      description: t('common.recycle_bin_board_description'),
+    },
   };
+  const viewOptions = Object.entries(viewConfig).filter(([view]) =>
+    enabledViews.includes(view as ViewType)
+  );
+  const listStatusOptions = [
+    {
+      value: 'all',
+      label: t('common.all'),
+      icon: <LayoutGrid className="h-3.5 w-3.5" />,
+    },
+    {
+      value: 'active',
+      label: t('common.active'),
+      icon: <Play className="h-3.5 w-3.5" />,
+    },
+    {
+      value: 'not_started',
+      label: t('common.backlog'),
+      icon: <Clock className="h-3.5 w-3.5" />,
+    },
+  ];
+  const viewComboboxOptions = viewOptions.map(([view, config]) => {
+    const Icon = config.icon;
+    const hotkeyLabel = viewHotkeyLabels?.[view as ViewType];
 
+    return {
+      value: view,
+      label: config.label,
+      description: config.description,
+      icon: <Icon className="h-3.5 w-3.5" />,
+      badge: hotkeyLabel ? (
+        <span className="text-muted-foreground text-xs">{hotkeyLabel}</span>
+      ) : undefined,
+    };
+  });
+  const sortOptions = [
+    {
+      value: '__none__',
+      label: t('common.sort'),
+      description: filters.sortBy
+        ? t('ws-task-boards.filters.sort_options.clear_sorting')
+        : undefined,
+      icon: <ArrowUpAZ className="h-3.5 w-3.5" />,
+      muted: !filters.sortBy,
+    },
+    {
+      value: 'name-asc',
+      label: `${t('ws-task-boards.filters.sort.name')} · ${t(
+        'ws-task-boards.filters.sort_order.asc'
+      )}`,
+      icon: <ArrowUpAZ className="h-3.5 w-3.5" />,
+    },
+    {
+      value: 'name-desc',
+      label: `${t('ws-task-boards.filters.sort.name')} · ${t(
+        'ws-task-boards.filters.sort_order.desc'
+      )}`,
+      icon: <ArrowDownAZ className="h-3.5 w-3.5" />,
+    },
+    {
+      value: 'priority-high',
+      label: t('ws-task-boards.filters.sort_options.high_to_low'),
+      description: t('ws-task-boards.filters.sort_options.priority'),
+      icon: <Flag className="h-3.5 w-3.5" />,
+    },
+    {
+      value: 'priority-low',
+      label: t('ws-task-boards.filters.sort_options.low_to_high'),
+      description: t('ws-task-boards.filters.sort_options.priority'),
+      icon: <Flag className="h-3.5 w-3.5" />,
+    },
+    {
+      value: 'due-date-asc',
+      label: t('ws-task-boards.filters.sort_options.soonest_first'),
+      description: t('ws-task-boards.filters.sort_options.due_date'),
+      icon: <CalendarDays className="h-3.5 w-3.5" />,
+    },
+    {
+      value: 'due-date-desc',
+      label: t('ws-task-boards.filters.sort_options.latest_first'),
+      description: t('ws-task-boards.filters.sort_options.due_date'),
+      icon: <CalendarDays className="h-3.5 w-3.5" />,
+    },
+    {
+      value: 'created-date-desc',
+      label: t('ws-task-boards.filters.sort_options.newest_first'),
+      description: t('ws-task-boards.filters.sort.created_at'),
+      icon: <Clock className="h-3.5 w-3.5" />,
+    },
+    {
+      value: 'created-date-asc',
+      label: t('ws-task-boards.filters.sort_options.oldest_first'),
+      description: t('ws-task-boards.filters.sort.created_at'),
+      icon: <Clock className="h-3.5 w-3.5" />,
+    },
+    {
+      value: 'estimation-high',
+      label: t('ws-task-boards.filters.sort_options.highest_first'),
+      description: t('ws-task-boards.filters.sort_options.estimate'),
+      icon: <Gauge className="h-3.5 w-3.5" />,
+    },
+    {
+      value: 'estimation-low',
+      label: t('ws-task-boards.filters.sort_options.lowest_first'),
+      description: t('ws-task-boards.filters.sort_options.estimate'),
+      icon: <Gauge className="h-3.5 w-3.5" />,
+    },
+  ];
+  const selectedListStatusOption =
+    listStatusOptions.find((option) => option.value === listStatusFilter) ??
+    listStatusOptions[0];
+  const selectedViewOption =
+    viewComboboxOptions.find((option) => option.value === activeView) ??
+    viewComboboxOptions[0];
+  const selectedSortOption =
+    sortOptions.find(
+      (option) => option.value === (filters.sortBy ?? '__none__')
+    ) ?? sortOptions[0];
   // Create metadata for presence tracking (excludes search query for stability)
   const presenceMetadata: BoardFiltersMetadata = useMemo(() => {
     const { searchQuery: _, ...filtersWithoutSearch } = filters;
@@ -372,26 +492,46 @@ export function BoardHeader({
               <ArrowLeft className="h-5 w-5" />
             </Link>
           )}
-          <BoardSwitcher
-            board={{ ...board, ws_id: workspaceId }}
-            translations={{
-              loadingBoards: t('common.loading'),
-              noOtherBoards: t('common.no_other_boards'),
-              activeBoards: t('common.active_boards'),
-              archivedBoards: t('common.archived_boards'),
-              deletedBoards: t('common.deleted_boards'),
-              untitled: t('common.untitled'),
-              active: t('common.active'),
-              archived: t('common.archived'),
-              deleted: t('common.deleted'),
-              daysLeft: t('common.days_left', { count: '{count}' }),
-              tasks: t('common.tasks'),
-            }}
-          />
+          {publicView ? (
+            <div className="flex min-w-0 items-center gap-2">
+              {titlePrefix}
+              <h1 className="truncate font-semibold text-foreground text-sm">
+                {board.name || t('common.untitled')}
+              </h1>
+            </div>
+          ) : currentView === 'my_tasks' ? (
+            <div className="flex h-7 min-w-0 items-center gap-2 rounded-md border bg-background px-2 text-foreground sm:h-8">
+              <UserStar className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+              <span className="truncate font-semibold text-sm">
+                {t('ws-task-boards.views.my_tasks')}
+              </span>
+            </div>
+          ) : (
+            <BoardSwitcher
+              board={{ ...board, ws_id: workspaceId }}
+              translations={{
+                loadingBoards: t('common.loading'),
+                noOtherBoards: t('common.no_other_boards'),
+                activeBoards: t('common.active_boards'),
+                archivedBoards: t('common.archived_boards'),
+                deletedBoards: t('common.deleted_boards'),
+                untitled: t('common.untitled'),
+                active: t('common.active'),
+                archived: t('common.archived'),
+                deleted: t('common.deleted'),
+                daysLeft: t('common.days_left', { count: '{count}' }),
+                searchBoards: t('common.search_boards'),
+                tasks: t('common.tasks'),
+                createBoard: t('ws-task-boards.create'),
+                creatingBoard: t('common.creating'),
+                createBoardError: t('ws-task-boards.errors.unexpected'),
+              }}
+            />
+          )}
         </div>
 
         {/* Search Bar */}
-        <div className="relative max-w-md flex-1">
+        <div className="relative min-w-0 flex-1 basis-72">
           {isSearching ? (
             <Loader2 className="pointer-events-none absolute top-1/2 left-2 h-4 w-4 -translate-y-1/2 animate-spin text-muted-foreground" />
           ) : (
@@ -417,9 +557,9 @@ export function BoardHeader({
         </div>
 
         {/* Controls - Compact Row */}
-        <div className="flex items-center gap-1.5 sm:gap-2">
+        <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
           {/* Online Users */}
-          {!isPersonalWorkspace && (
+          {presenceVisible && (
             <BoardUserPresenceAvatarsComponent
               boardId={board.id}
               currentMetadata={presenceMetadata}
@@ -429,859 +569,215 @@ export function BoardHeader({
           )}
 
           {/* Smart Focus Button */}
-          <Button
-            variant={isSmartFocusActive ? 'secondary' : 'outline'}
-            size="xs"
-            onClick={handleSmartFocus}
-            disabled={isLoading}
-            className={cn(
-              'h-7 px-1.5 transition-colors sm:h-8 sm:px-2',
-              isSmartFocusActive
-                ? 'border-dynamic-yellow/20 bg-dynamic-yellow/10 text-dynamic-yellow hover:bg-dynamic-yellow/20'
-                : 'text-muted-foreground hover:text-dynamic-yellow'
-            )}
-            title={
-              isSmartFocusActive
-                ? t('common.clear_smart_focus')
-                : t('common.smart_focus')
-            }
-          >
-            <Zap
-              className={cn(
-                'h-3.5 w-3.5',
-                isSmartFocusActive && 'fill-current'
-              )}
-            />
-          </Button>
+          {interactiveControlsVisible && (
+            <ToolbarTooltip
+              label={
+                isSmartFocusActive
+                  ? t('common.clear_smart_focus')
+                  : t('common.smart_focus')
+              }
+            >
+              <Button
+                variant={isSmartFocusActive ? 'secondary' : 'outline'}
+                size="xs"
+                onClick={handleSmartFocus}
+                disabled={isLoading}
+                className={cn(
+                  toolbarButtonClass,
+                  isSmartFocusActive
+                    ? 'border-primary/50 bg-primary/5 text-foreground hover:bg-primary/10'
+                    : 'hover:bg-accent'
+                )}
+                aria-label={
+                  isSmartFocusActive
+                    ? t('common.clear_smart_focus')
+                    : t('common.smart_focus')
+                }
+              >
+                <Zap
+                  className={cn(
+                    'h-3.5 w-3.5',
+                    isSmartFocusActive && 'fill-current text-foreground'
+                  )}
+                />
+              </Button>
+            </ToolbarTooltip>
+          )}
 
           {/* Multi-select Toggle */}
-          <Button
-            variant={isMultiSelectMode ? 'secondary' : 'outline'}
-            size="xs"
-            onClick={() => setIsMultiSelectMode(!isMultiSelectMode)}
-            className={cn(
-              'h-7 px-1.5 sm:h-8 sm:px-2',
-              isMultiSelectMode &&
-                'bg-primary/10 text-primary hover:bg-primary/20'
-            )}
-            title={t('common.choose_tasks')}
-          >
-            <CopyCheck
-              className={cn('h-3.5 w-3.5', isMultiSelectMode && 'text-primary')}
-            />
-          </Button>
+          {interactiveControlsVisible && (
+            <ToolbarTooltip label={t('common.choose_tasks')}>
+              <Button
+                variant={isMultiSelectMode ? 'secondary' : 'outline'}
+                size="xs"
+                onClick={() => setIsMultiSelectMode(!isMultiSelectMode)}
+                className={cn(
+                  toolbarButtonClass,
+                  isMultiSelectMode &&
+                    'border-primary/50 bg-primary/5 text-foreground hover:bg-primary/10'
+                )}
+                aria-label={t('common.choose_tasks')}
+              >
+                <CopyCheck className="h-3.5 w-3.5" />
+              </Button>
+            </ToolbarTooltip>
+          )}
 
           {/* List Status Filter */}
-          <Select
-            value={listStatusFilter}
-            onValueChange={(value) =>
+          <Combobox
+            mode="single"
+            options={listStatusOptions}
+            selected={listStatusFilter}
+            onChange={(value) =>
               onListStatusFilterChange(value as ListStatusFilter)
             }
-          >
-            <SelectTrigger
-              className={cn(
-                'h-7 w-auto gap-1 bg-background px-2 text-[10px] sm:h-8 sm:px-2.5 sm:text-xs',
-                listStatusFilter !== 'all' && 'border-primary/50 bg-primary/5'
-              )}
-            >
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">
-                <div className="flex items-center gap-2">
-                  <LayoutGrid className="h-3.5 w-3.5 text-foreground" />
-                  <span>{t('common.all')}</span>
-                </div>
-              </SelectItem>
-              <SelectItem value="active">
-                <div className="flex items-center gap-2">
-                  <Play className="h-3.5 w-3.5 text-dynamic-green" />
-                  <span>{t('common.active')}</span>
-                </div>
-              </SelectItem>
-              <SelectItem value="not_started">
-                <div className="flex items-center gap-2">
-                  <Clock className="h-3.5 w-3.5 text-dynamic-orange" />
-                  <span>{t('common.backlog')}</span>
-                </div>
-              </SelectItem>
-            </SelectContent>
-          </Select>
-
-          {/* View Switcher Dropdown */}
-          <DropdownMenu open={viewMenuOpen} onOpenChange={setViewMenuOpen}>
-            <DropdownMenuTrigger asChild>
-              <Button size="xs" variant="outline">
-                {(() => {
-                  const Icon = viewConfig[currentView].icon;
-                  return (
-                    <>
-                      <Icon className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
-                      <span className="hidden text-[10px] sm:text-xs md:inline">
-                        {viewConfig[currentView].label}
-                      </span>
-                      <ChevronDown className="h-3 w-3 opacity-50 sm:h-3.5 sm:w-3.5" />
-                    </>
-                  );
-                })()}
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              {Object.entries(viewConfig).map(([view, config]) => {
-                const Icon = config.icon;
-                return (
-                  <DropdownMenuItem
-                    key={view}
-                    onClick={() => {
-                      onViewChange(view as ViewType);
-                      setViewMenuOpen(false);
-                    }}
-                    className="gap-3"
-                  >
-                    <Icon className="h-4 w-4" />
-                    <div className="flex flex-1 flex-col">
-                      <span className="font-medium">{config.label}</span>
-                      <span className="text-muted-foreground text-xs">
-                        {config.description}
-                      </span>
-                    </div>
-                    {viewHotkeyLabels?.[view as ViewType] && (
-                      <DropdownMenuShortcut className="self-start pt-0.5">
-                        {viewHotkeyLabels[view as ViewType]}
-                      </DropdownMenuShortcut>
-                    )}
-                  </DropdownMenuItem>
-                );
-              })}
-            </DropdownMenuContent>
-          </DropdownMenu>
-
-          {/* Task Filter */}
-          <TaskFilter
-            wsId={workspaceId}
-            currentUserId={currentUserId}
-            filters={filters}
-            onFiltersChange={onFiltersChange}
+            ariaLabel={selectedListStatusOption?.label ?? t('common.all')}
+            contentWidth="sm"
+            hideTriggerLabel
+            placeholder={t('common.all')}
+            searchPlaceholder={t('common.search_tasks')}
+            showChevron={false}
+            triggerMode="compact"
+            triggerTooltip={`${t('common.status')}: ${selectedListStatusOption?.label ?? t('common.all')}`}
+            triggerIcon={<Layers className="h-3.5 w-3.5" />}
+            colorizeTriggerIcon={false}
+            className={cn(
+              toolbarComboboxClass,
+              listStatusFilter !== 'all' &&
+                '[&_button]:border-primary/50 [&_button]:bg-primary/5'
+            )}
           />
 
-          {/* Sort Dropdown */}
-          <DropdownMenu open={sortMenuOpen} onOpenChange={setSortMenuOpen}>
-            <DropdownMenuTrigger asChild>
+          {/* View Switcher */}
+          <Combobox
+            mode="single"
+            options={viewComboboxOptions}
+            selected={activeView}
+            onChange={(value) => onViewChange(value as ViewType)}
+            ariaLabel={
+              selectedViewOption?.label ?? viewConfig[activeView].label
+            }
+            contentWidth="md"
+            hideTriggerLabel
+            placeholder={viewConfig[activeView].label}
+            searchPlaceholder={t('common.search_tasks')}
+            showChevron={false}
+            triggerMode="compact"
+            triggerTooltip={`${t('common.view')}: ${
+              selectedViewOption?.label ?? viewConfig[activeView].label
+            }`}
+            triggerIcon={<LayoutDashboard className="h-3.5 w-3.5" />}
+            colorizeTriggerIcon={false}
+            className={toolbarComboboxClass}
+          />
+
+          {/* Task Filter */}
+          {interactiveControlsVisible && (
+            <TaskFilter
+              wsId={workspaceId}
+              currentUserId={currentUserId}
+              filters={filters}
+              onFiltersChange={onFiltersChange}
+            />
+          )}
+
+          {/* Sort */}
+          <Combobox
+            mode="single"
+            options={sortOptions}
+            selected={filters.sortBy ?? '__none__'}
+            onChange={(value) =>
+              handleSortChange(
+                value === '__none__'
+                  ? undefined
+                  : (value as TaskFilters['sortBy'])
+              )
+            }
+            ariaLabel={selectedSortOption?.label ?? t('common.sort')}
+            contentWidth="md"
+            hideTriggerLabel
+            placeholder={t('common.sort')}
+            searchPlaceholder={t('common.search_tasks')}
+            showChevron={false}
+            triggerMode="compact"
+            triggerTooltip={`${t('common.sort')}: ${
+              selectedSortOption?.value === '__none__'
+                ? t('common.sort')
+                : (selectedSortOption?.label ?? t('common.sort'))
+            }`}
+            colorizeTriggerIcon={false}
+            className={cn(
+              toolbarComboboxClass,
+              filters.sortBy &&
+                '[&_button]:border-primary/50 [&_button]:bg-primary/5'
+            )}
+          />
+
+          {plannerVisible && (
+            <ToolbarTooltip label={t('ws-task-plans.planner')}>
               <Button
+                type="button"
                 size="xs"
                 variant="outline"
-                className={cn(
-                  'text-[10px] sm:text-xs',
-                  filters.sortBy && 'border-primary/50 bg-primary/5'
-                )}
+                className={toolbarButtonClass}
+                onClick={() => setPlannerOpen(true)}
+                aria-label={t('ws-task-plans.planner')}
               >
-                {filters.sortBy ? (
-                  <ArrowDownAZ className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
-                ) : (
-                  <ArrowUpAZ className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
-                )}
-                <span className="hidden sm:inline">{t('common.sort')}</span>
+                <CalendarDays className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
               </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-50">
-              {/* Name */}
-              <DropdownMenuSub>
-                <DropdownMenuSubTrigger className="gap-2">
-                  <ArrowUpAZ className="h-4 w-4 text-muted-foreground" />
-                  <span className="flex-1">
-                    {t('ws-task-boards.filters.sort.name')}
-                  </span>
-                  {(filters.sortBy === 'name-asc' ||
-                    filters.sortBy === 'name-desc') && (
-                    <Check className="h-3.5 w-3.5 text-primary" />
-                  )}
-                </DropdownMenuSubTrigger>
-                <DropdownMenuSubContent>
-                  <DropdownMenuItem
-                    onClick={() =>
-                      handleSortChange(
-                        filters.sortBy === 'name-asc' ? undefined : 'name-asc'
-                      )
-                    }
-                    className="gap-2"
-                  >
-                    <ArrowUp className="h-3.5 w-3.5 text-dynamic-blue" />
-                    <span className="flex-1">
-                      {t('ws-task-boards.filters.sort_order.asc')}
-                    </span>
-                    {filters.sortBy === 'name-asc' && (
-                      <Check className="h-4 w-4 text-primary" />
-                    )}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() =>
-                      handleSortChange(
-                        filters.sortBy === 'name-desc' ? undefined : 'name-desc'
-                      )
-                    }
-                    className="gap-2"
-                  >
-                    <ArrowDown className="h-3.5 w-3.5 text-dynamic-purple" />
-                    <span className="flex-1">
-                      {t('ws-task-boards.filters.sort_order.desc')}
-                    </span>
-                    {filters.sortBy === 'name-desc' && (
-                      <Check className="h-4 w-4 text-primary" />
-                    )}
-                  </DropdownMenuItem>
-                </DropdownMenuSubContent>
-              </DropdownMenuSub>
+            </ToolbarTooltip>
+          )}
 
-              {/* Priority */}
-              <DropdownMenuSub>
-                <DropdownMenuSubTrigger className="gap-2">
-                  <Flag className="h-4 w-4 text-dynamic-red" />
-                  <span className="flex-1">
-                    {t('ws-task-boards.filters.sort_options.priority')}
-                  </span>
-                  {(filters.sortBy === 'priority-high' ||
-                    filters.sortBy === 'priority-low') && (
-                    <Check className="h-3.5 w-3.5 text-primary" />
-                  )}
-                </DropdownMenuSubTrigger>
-                <DropdownMenuSubContent>
-                  <DropdownMenuItem
-                    onClick={() =>
-                      handleSortChange(
-                        filters.sortBy === 'priority-high'
-                          ? undefined
-                          : 'priority-high'
-                      )
-                    }
-                    className="gap-2"
-                  >
-                    <ArrowUp className="h-3.5 w-3.5 text-dynamic-red" />
-                    <span className="flex-1">
-                      {t('ws-task-boards.filters.sort_options.high_to_low')}
-                    </span>
-                    {filters.sortBy === 'priority-high' && (
-                      <Check className="h-4 w-4 text-primary" />
-                    )}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() =>
-                      handleSortChange(
-                        filters.sortBy === 'priority-low'
-                          ? undefined
-                          : 'priority-low'
-                      )
-                    }
-                    className="gap-2"
-                  >
-                    <ArrowDown className="h-3.5 w-3.5 text-dynamic-gray" />
-                    <span className="flex-1">
-                      {t('ws-task-boards.filters.sort_options.low_to_high')}
-                    </span>
-                    {filters.sortBy === 'priority-low' && (
-                      <Check className="h-4 w-4 text-primary" />
-                    )}
-                  </DropdownMenuItem>
-                </DropdownMenuSubContent>
-              </DropdownMenuSub>
+          {managerControlsVisible && (
+            <ToolbarTooltip label={t('ws-task-boards.share.action')}>
+              <Button
+                type="button"
+                size="xs"
+                variant="outline"
+                className={toolbarButtonClass}
+                onClick={() => setShareBoardOpen(true)}
+                aria-label={t('ws-task-boards.share.action')}
+              >
+                <Share2 className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+              </Button>
+            </ToolbarTooltip>
+          )}
 
-              {/* Due Date */}
-              <DropdownMenuSub>
-                <DropdownMenuSubTrigger className="gap-2">
-                  <CalendarDays className="h-4 w-4 text-dynamic-orange" />
-                  <span className="flex-1">
-                    {t('ws-task-boards.filters.sort_options.due_date')}
-                  </span>
-                  {(filters.sortBy === 'due-date-asc' ||
-                    filters.sortBy === 'due-date-desc') && (
-                    <Check className="h-3.5 w-3.5 text-primary" />
-                  )}
-                </DropdownMenuSubTrigger>
-                <DropdownMenuSubContent>
-                  <DropdownMenuItem
-                    onClick={() =>
-                      handleSortChange(
-                        filters.sortBy === 'due-date-asc'
-                          ? undefined
-                          : 'due-date-asc'
-                      )
-                    }
-                    className="gap-2"
-                  >
-                    <ArrowUp className="h-3.5 w-3.5 text-dynamic-orange" />
-                    <span className="flex-1">
-                      {t('ws-task-boards.filters.sort_options.soonest_first')}
-                    </span>
-                    {filters.sortBy === 'due-date-asc' && (
-                      <Check className="h-4 w-4 text-primary" />
-                    )}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() =>
-                      handleSortChange(
-                        filters.sortBy === 'due-date-desc'
-                          ? undefined
-                          : 'due-date-desc'
-                      )
-                    }
-                    className="gap-2"
-                  >
-                    <ArrowDown className="h-3.5 w-3.5 text-dynamic-blue" />
-                    <span className="flex-1">
-                      {t('ws-task-boards.filters.sort_options.latest_first')}
-                    </span>
-                    {filters.sortBy === 'due-date-desc' && (
-                      <Check className="h-4 w-4 text-primary" />
-                    )}
-                  </DropdownMenuItem>
-                </DropdownMenuSubContent>
-              </DropdownMenuSub>
-
-              {/* Created Date */}
-              <DropdownMenuSub>
-                <DropdownMenuSubTrigger className="gap-2">
-                  <Clock className="h-4 w-4 text-dynamic-green" />
-                  <span className="flex-1">
-                    {t('ws-task-boards.filters.sort.created_at')}
-                  </span>
-                  {(filters.sortBy === 'created-date-desc' ||
-                    filters.sortBy === 'created-date-asc') && (
-                    <Check className="h-3.5 w-3.5 text-primary" />
-                  )}
-                </DropdownMenuSubTrigger>
-                <DropdownMenuSubContent>
-                  <DropdownMenuItem
-                    onClick={() =>
-                      handleSortChange(
-                        filters.sortBy === 'created-date-desc'
-                          ? undefined
-                          : 'created-date-desc'
-                      )
-                    }
-                    className="gap-2"
-                  >
-                    <ArrowDown className="h-3.5 w-3.5 text-dynamic-green" />
-                    <span className="flex-1">
-                      {t('ws-task-boards.filters.sort_options.newest_first')}
-                    </span>
-                    {filters.sortBy === 'created-date-desc' && (
-                      <Check className="h-4 w-4 text-primary" />
-                    )}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() =>
-                      handleSortChange(
-                        filters.sortBy === 'created-date-asc'
-                          ? undefined
-                          : 'created-date-asc'
-                      )
-                    }
-                    className="gap-2"
-                  >
-                    <ArrowUp className="h-3.5 w-3.5 text-muted-foreground" />
-                    <span className="flex-1">
-                      {t('ws-task-boards.filters.sort_options.oldest_first')}
-                    </span>
-                    {filters.sortBy === 'created-date-asc' && (
-                      <Check className="h-4 w-4 text-primary" />
-                    )}
-                  </DropdownMenuItem>
-                </DropdownMenuSubContent>
-              </DropdownMenuSub>
-
-              {/* Estimation Points */}
-              <DropdownMenuSub>
-                <DropdownMenuSubTrigger className="gap-2">
-                  <Gauge className="h-4 w-4 text-dynamic-purple" />
-                  <span className="flex-1">
-                    {t('ws-task-boards.filters.sort_options.estimate')}
-                  </span>
-                  {(filters.sortBy === 'estimation-high' ||
-                    filters.sortBy === 'estimation-low') && (
-                    <Check className="h-3.5 w-3.5 text-primary" />
-                  )}
-                </DropdownMenuSubTrigger>
-                <DropdownMenuSubContent>
-                  <DropdownMenuItem
-                    onClick={() =>
-                      handleSortChange(
-                        filters.sortBy === 'estimation-high'
-                          ? undefined
-                          : 'estimation-high'
-                      )
-                    }
-                    className="gap-2"
-                  >
-                    <ArrowUp className="h-3.5 w-3.5 text-dynamic-purple" />
-                    <span className="flex-1">
-                      {t('ws-task-boards.filters.sort_options.highest_first')}
-                    </span>
-                    {filters.sortBy === 'estimation-high' && (
-                      <Check className="h-4 w-4 text-primary" />
-                    )}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() =>
-                      handleSortChange(
-                        filters.sortBy === 'estimation-low'
-                          ? undefined
-                          : 'estimation-low'
-                      )
-                    }
-                    className="gap-2"
-                  >
-                    <ArrowDown className="h-3.5 w-3.5 text-dynamic-cyan" />
-                    <span className="flex-1">
-                      {t('ws-task-boards.filters.sort_options.lowest_first')}
-                    </span>
-                    {filters.sortBy === 'estimation-low' && (
-                      <Check className="h-4 w-4 text-primary" />
-                    )}
-                  </DropdownMenuItem>
-                </DropdownMenuSubContent>
-              </DropdownMenuSub>
-
-              {filters.sortBy && (
-                <>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    onClick={() => handleSortChange(undefined)}
-                    className="gap-2 text-dynamic-red/80 focus:text-dynamic-red"
-                  >
-                    <X className="h-4 w-4" />
-                    <span>
-                      {t('ws-task-boards.filters.sort_options.clear_sorting')}
-                    </span>
-                  </DropdownMenuItem>
-                </>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
-
-          {/* Board Actions Menu */}
-          {!hideActions && (
-            <DropdownMenu open={boardMenuOpen} onOpenChange={setBoardMenuOpen}>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-6 w-6 transition-all hover:bg-muted sm:h-7 sm:w-7"
-                >
-                  <MoreHorizontal className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                  <span className="sr-only">Open board menu</span>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-50">
-                <DropdownMenuItem
-                  onClick={() => {
-                    setEditBoardOpen(true);
-                    setBoardMenuOpen(false);
-                  }}
-                  className="gap-2"
-                >
-                  <Pencil className="h-4 w-4" />
-                  {t('common.edit')}
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onClick={() => {
-                    setDuplicateBoardOpen(true);
-                    setBoardMenuOpen(false);
-                  }}
-                  className="gap-2"
-                >
-                  <Copy className="h-4 w-4" />
-                  {t('ws-task-boards.actions.duplicate')}
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => {
-                    setSaveAsTemplateOpen(true);
-                    setBoardMenuOpen(false);
-                  }}
-                  className="gap-2"
-                >
-                  <Bookmark className="h-4 w-4" />
-                  {t('ws-task-boards.actions.save_as_template')}
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onClick={() => {
-                    setLayoutSettingsOpen(true);
-                    setBoardMenuOpen(false);
-                  }}
-                  className="gap-2"
-                >
-                  <Columns3Cog className="h-4 w-4" />
-                  {t('ws-task-boards.actions.board_layout')}
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => {
-                    setTicketPrefix(board.ticket_prefix || '');
-                    setDefaultListId(board.default_list_id ?? null);
-                    setBoardSettingsOpen(true);
-                    setBoardMenuOpen(false);
-                  }}
-                  className="gap-2"
-                >
-                  <Settings className="h-4 w-4" />
-                  {t('ws-task-boards.actions.board_settings')}
-                </DropdownMenuItem>
-                {(onRecycleBinOpen || board.archived_at) && (
-                  <DropdownMenuSeparator />
-                )}
-                {onRecycleBinOpen && (
-                  <DropdownMenuItem
-                    onClick={() => {
-                      onRecycleBinOpen();
-                      setBoardMenuOpen(false);
-                    }}
-                    className="gap-2"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                    {t('ws-task-boards.actions.recycle_bin')}
-                  </DropdownMenuItem>
-                )}
-                {board.archived_at ? (
-                  <DropdownMenuItem
-                    onClick={() => {
-                      setShowUnarchiveDialog(true);
-                      setBoardMenuOpen(false);
-                    }}
-                    className="gap-2"
-                  >
-                    <RotateCcw className="h-4 w-4" />
-                    {t('ws-task-boards.row_actions.unarchive')}
-                  </DropdownMenuItem>
-                ) : (
-                  <DropdownMenuItem
-                    onClick={() => {
-                      setShowArchiveDialog(true);
-                      setBoardMenuOpen(false);
-                    }}
-                    className="gap-2"
-                  >
-                    <Archive className="h-4 w-4" />
-                    {t('ws-task-boards.row_actions.archive')}
-                  </DropdownMenuItem>
-                )}
-                <DropdownMenuSeparator />
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <DropdownMenuItem
-                      onSelect={(e) => e.preventDefault()}
-                      className="gap-2 text-dynamic-red/80 focus:text-dynamic-red"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                      {t('ws-task-boards.actions.delete_board')}
-                    </DropdownMenuItem>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>
-                        {t('common.are_you_sure')}
-                      </AlertDialogTitle>
-                      <AlertDialogDescription>
-                        {t('ws-task-boards.dialog.delete_board_confirmation', {
-                          name: board.name || '',
-                        })}
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel disabled={isLoading}>
-                        {t('common.cancel')}
-                      </AlertDialogCancel>
-                      <AlertDialogAction
-                        onClick={handleDelete}
-                        disabled={isLoading}
-                        className="bg-dynamic-red/90 text-white hover:bg-dynamic-red"
-                      >
-                        {isLoading
-                          ? t('common.deleting')
-                          : t('ws-task-boards.actions.delete_board')}
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-              </DropdownMenuContent>
-            </DropdownMenu>
+          {/* Board Settings */}
+          {managerControlsVisible && (
+            <ToolbarTooltip label={t('ws-task-boards.actions.board_settings')}>
+              <Button
+                type="button"
+                variant="outline"
+                size="xs"
+                className={toolbarButtonClass}
+                onFocus={prefetchBoardSettings}
+                onMouseEnter={prefetchBoardSettings}
+                onClick={openBoardSettings}
+                onPointerDown={handleBoardSettingsPointerDown}
+                aria-label={t('ws-task-boards.actions.board_settings')}
+              >
+                <Bolt className="h-3.5 w-3.5" />
+              </Button>
+            </ToolbarTooltip>
           )}
         </div>
       </div>
-      {/* Edit Board (name + icon) Dialog */}
-      <Dialog open={editBoardOpen} onOpenChange={setEditBoardOpen}>
-        <DialogContent className="p-0 sm:max-w-lg">
-          <DialogHeader className="sr-only">
-            <DialogTitle>{t('ws-task-boards.edit_dialog.title')}</DialogTitle>
-            <DialogDescription>
-              {t('ws-task-boards.edit_dialog.description')}
-            </DialogDescription>
-          </DialogHeader>
-          <TaskBoardForm
-            wsId={workspaceId}
-            data={{
-              id: board.id,
-              name: board.name ?? '',
-              icon: board.icon ?? null,
-            }}
-            showCancel
-            onCancel={() => setEditBoardOpen(false)}
-            onFinish={() => {
-              setEditBoardOpen(false);
-              queryClient.invalidateQueries({
-                queryKey: ['task-board', workspaceId, board.id],
-              });
-              queryClient.invalidateQueries({
-                queryKey: ['other-boards', workspaceId, board.id],
-              });
-            }}
-          />
-        </DialogContent>
-      </Dialog>
-      {/* Duplicate Board Dialog */}
-      <CopyBoardDialog
-        board={{ id: board.id, ws_id: workspaceId, name: board.name }}
-        open={duplicateBoardOpen}
-        onOpenChange={setDuplicateBoardOpen}
+      <BoardShareDialog
+        board={{ id: board.id, name: board.name }}
+        open={shareBoardOpen}
+        onOpenChange={setShareBoardOpen}
+        wsId={workspaceId}
       />
-      {/* Save as Template Dialog */}
-      <SaveAsTemplateDialog
-        board={{ id: board.id, ws_id: workspaceId, name: board.name }}
-        open={saveAsTemplateOpen}
-        onOpenChange={setSaveAsTemplateOpen}
-      />
-      {/* Board Layout Settings */}
-      {onUpdate && (
-        <BoardLayoutSettings
-          open={layoutSettingsOpen}
-          onOpenChange={setLayoutSettingsOpen}
+      {plannerVisible && (
+        <KanbanPlannerDialog
           boardId={board.id}
-          wsId={workspaceId}
-          lists={lists}
-          onUpdate={onUpdate}
-          translations={{
-            boardLayoutSettings: t('ws-task-boards.layout_settings.title'),
-            boardLayoutSettingsDescription: t(
-              'ws-task-boards.layout_settings.description'
-            ),
-            addNewList: t('ws-task-boards.layout_settings.add_new_list'),
-            noListsInStatus: t('ws-task-boards.layout_settings.no_lists'),
-            done: t('common.done'),
-            editList: t('ws-task-boards.layout_settings.edit_list'),
-            updateListDescription: t(
-              'ws-task-boards.layout_settings.edit_list_description'
-            ),
-            listName: t('ws-task-boards.layout_settings.list_name'),
-            statusCategory: t('ws-task-boards.layout_settings.status_category'),
-            color: t('common.color'),
-            cancel: t('common.cancel'),
-            saving: t('common.saving'),
-            saveChanges: t('common.save_changes'),
-            deleteListTitle: t('ws-task-boards.layout_settings.delete_list'),
-            deleteListDescription: t(
-              'ws-task-boards.layout_settings.delete_list_description',
-              { name: '{name}' }
-            ),
-            deleteListConfirm: t('ws-task-boards.layout_settings.delete_list'),
-            listUpdatedSuccessfully: t(
-              'ws-task-boards.layout_settings.list_updated'
-            ),
-            failedToUpdateList: t(
-              'ws-task-boards.layout_settings.failed_to_update'
-            ),
-            listNameAlreadyExists: t(
-              'ws-task-boards.layout_settings.list_name_exists'
-            ),
-            colorUpdated: t('ws-task-boards.layout_settings.color_updated'),
-            failedToUpdateColor: t(
-              'ws-task-boards.layout_settings.failed_to_update_color'
-            ),
-            listDeletedSuccessfully: t(
-              'ws-task-boards.layout_settings.list_deleted'
-            ),
-            failedToDeleteList: t(
-              'ws-task-boards.layout_settings.failed_to_delete'
-            ),
-            cannotMoveToClosedStatus: t(
-              'ws-task-boards.layout_settings.cannot_move_to_closed'
-            ),
-            listsReordered: t('ws-task-boards.layout_settings.lists_reordered'),
-            failedToReorderLists: t(
-              'ws-task-boards.layout_settings.failed_to_reorder'
-            ),
-            task: t('common.task'),
-            tasks: t('common.tasks_plural'),
-            changeColor: t('ws-task-boards.layout_settings.change_color'),
-            backlog: t('ws-task-boards.layout_settings.backlog'),
-            active: t('ws-task-boards.layout_settings.active'),
-            review: t('ws-task-boards.layout_settings.review'),
-            doneStatus: t('ws-task-boards.layout_settings.done_status'),
-            closed: t('ws-task-boards.layout_settings.closed'),
-            documents: t('ws-task-boards.layout_settings.documents'),
-            gray: t('ws-task-boards.layout_settings.gray'),
-            red: t('ws-task-boards.layout_settings.red'),
-            blue: t('ws-task-boards.layout_settings.blue'),
-            green: t('ws-task-boards.layout_settings.green'),
-            yellow: t('ws-task-boards.layout_settings.yellow'),
-            orange: t('ws-task-boards.layout_settings.orange'),
-            purple: t('ws-task-boards.layout_settings.purple'),
-            pink: t('ws-task-boards.layout_settings.pink'),
-            indigo: t('ws-task-boards.layout_settings.indigo'),
-            cyan: t('ws-task-boards.layout_settings.cyan'),
-            movedToStatus: t('ws-task-boards.layout_settings.moved_to_status', {
-              status: '{status}',
-            }),
-            deleteList: t('ws-task-boards.layout_settings.delete_list'),
-          }}
+          isPersonalWorkspace={isPersonalWorkspace}
+          onOpenChange={setPlannerOpen}
+          open={plannerOpen}
+          workspaceId={workspaceId}
         />
       )}
-      {/* Board Settings Dialog */}
-      <Dialog open={boardSettingsOpen} onOpenChange={setBoardSettingsOpen}>
-        <DialogContent className="sm:max-w-106.25">
-          <DialogHeader>
-            <DialogTitle>
-              {t('ws-task-boards.actions.board_settings')}
-            </DialogTitle>
-            <DialogDescription>
-              {t('ws-task-boards.settings.configure_description')}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <label htmlFor="ticketPrefix" className="font-medium text-sm">
-                {t('ws-task-boards.settings.ticket_prefix')}
-              </label>
-              <Input
-                id="ticketPrefix"
-                value={ticketPrefix}
-                onChange={(e) => setTicketPrefix(e.target.value.toUpperCase())}
-                placeholder={t(
-                  'ws-task-boards.settings.ticket_prefix_placeholder'
-                )}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault();
-                    handleSaveTicketPrefix();
-                  }
-                }}
-                maxLength={10}
-                autoFocus
-              />
-              <p className="text-muted-foreground text-xs">
-                {t('ws-task-boards.settings.ticket_prefix_description')}
-              </p>
-            </div>
-            <div className="grid gap-2">
-              <label htmlFor="defaultList" className="font-medium text-sm">
-                {t('ws-task-boards.settings.default_list')}
-              </label>
-              <Select
-                value={defaultListId ?? '__none__'}
-                onValueChange={(value) =>
-                  setDefaultListId(value === '__none__' ? null : value)
-                }
-              >
-                <SelectTrigger id="defaultList">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__none__">
-                    {t('ws-task-boards.settings.default_list_none')}
-                  </SelectItem>
-                  {lists
-                    .filter(
-                      (list) => !list.deleted && !list.is_external_staging
-                    )
-                    .map((list) => (
-                      <SelectItem key={list.id} value={list.id}>
-                        {list.name ||
-                          t('ws-task-boards.settings.untitled_list')}
-                      </SelectItem>
-                    ))}
-                </SelectContent>
-              </Select>
-              <p className="text-muted-foreground text-xs">
-                {t('ws-task-boards.settings.default_list_description')}
-              </p>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setBoardSettingsOpen(false)}
-              disabled={isLoading}
-            >
-              {t('common.cancel')}
-            </Button>
-            <Button onClick={handleSaveTicketPrefix} disabled={isLoading}>
-              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {t('common.save_changes')}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>{' '}
-      {/* End Board Settings Dialog */}
-      {/* Archive Dialog */}
-      <AlertDialog open={showArchiveDialog} onOpenChange={setShowArchiveDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>
-              {t('ws-task-boards.row_actions.dialog.archive_title')}
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              {(() => {
-                const name = board.name ?? '';
-                const truncated = name.length > 20;
-                const display = truncated ? `${name.slice(0, 20)}…` : name;
-                return t(
-                  'ws-task-boards.row_actions.dialog.archive_description',
-                  { name: display }
-                );
-              })()}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => archiveBoard(board.id)}
-              className="bg-primary text-primary-foreground hover:bg-primary/90"
-            >
-              {t('ws-task-boards.row_actions.dialog.archive_button')}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-      {/* Unarchive Dialog */}
-      <AlertDialog
-        open={showUnarchiveDialog}
-        onOpenChange={setShowUnarchiveDialog}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>
-              {t('ws-task-boards.row_actions.dialog.unarchive_title')}
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              {(() => {
-                const name = board.name ?? '';
-                const truncated = name.length > 20;
-                const display = truncated ? `${name.slice(0, 20)}…` : name;
-                return t(
-                  'ws-task-boards.row_actions.dialog.unarchive_description',
-                  { name: display }
-                );
-              })()}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => unarchiveBoard(board.id)}
-              className="bg-primary text-primary-foreground hover:bg-primary/90"
-            >
-              {t('ws-task-boards.row_actions.dialog.unarchive_button')}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 }

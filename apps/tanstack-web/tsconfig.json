@@ -1,0 +1,22 @@
+{
+  "extends": "@tuturuuu/typescript-config/typecheck.json",
+  "compilerOptions": {
+    "allowImportingTsExtensions": true,
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "paths": {
+      "@/*": ["./src/*"],
+      "next/link": ["./src/lib/platform/next-link-shim.tsx"],
+      "next/navigation": ["./src/lib/platform/next-navigation-shim.tsx"],
+      "@tuturuuu/internal-api": ["../../packages/internal-api/src/index.ts"],
+      "@tuturuuu/internal-api/*": ["../../packages/internal-api/src/*"],
+      "@tuturuuu/supabase": ["../../packages/supabase/src/index.ts"],
+      "@tuturuuu/supabase/*": ["../../packages/supabase/src/*"],
+      "@tuturuuu/types": ["../../packages/types/src/index.ts"],
+      "@tuturuuu/types/*": ["../../packages/types/src/*"]
+    },
+    "types": ["node", "vite/client"]
+  },
+  "include": ["src", "vite.config.ts", "playwright.config.ts"],
+  "exclude": ["node_modules", ".output", ".turbo", "dist"]
+}

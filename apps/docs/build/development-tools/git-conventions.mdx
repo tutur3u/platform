@@ -1,12 +1,12 @@
 ---
 title: "Git Conventions"
 description: "Learn how Tuturuuu uses Conventional Commits and Branch naming to improve development workflow."
-updatedAt: "2026-06-12"
+updatedAt: "2026-06-21"
 ---
 
 <Info>
   **Prerequisite**: You should be familiar with basic Git operations and
-  understand the [Monorepo Architecture](/monorepo-architecture) of our
+  understand the [Monorepo Architecture](/build/development-tools/monorepo-architecture) of our
   codebase.
 </Info>
 
@@ -223,9 +223,10 @@ When bringing the generated release PR branch back to `main`, run
 `bun git-release-please` from a clean `main` checkout. The helper fetches the
 latest `release-please--branches--production` branch, merges it without
 committing, syncs `platform-version.txt` into the platform badge constant and
-test expectation, runs `bun ff`, stages the resolved merge, then lets the normal
-commit hook run `bun check` and conditional `bun check:mobile` before the merge
-commit lands. If you are already inside a manual merge, run
+test expectation, runs `bun ff`, stages the resolved merge, then runs `bun check`
+directly before the merge commit lands. When the staged release merge includes
+`apps/mobile` paths, the helper also runs `bun check:mobile`. If you are already
+inside a manual merge, run
 `bun release:sync-platform-version` to resolve the recurring
 `TUTURUUU_PLATFORM_VERSION` conflict before staging the merge.
 
@@ -303,7 +304,8 @@ jobs:
 ### Writing Good Commit Messages
 
 1. Use the imperative mood ("add" not "added" or "adds")
-2. Capitalize the first letter of the description
+2. Keep the description in lowercase to match the repository's observed convention
+   (for example, `feat(backend): migrate nova team read`)
 3. Do not end the description with a period
 4. Keep the description under 72 characters
 5. Use the body to explain the what and why, not the how
@@ -311,7 +313,7 @@ jobs:
 Example of a well-formatted commit:
 
 ```
-feat(auth): Add multi-factor authentication support
+feat(auth): add multi-factor authentication support
 
 Implement TOTP-based multi-factor authentication to improve security.
 The implementation follows the RFC 6238 standard.
@@ -327,6 +329,19 @@ ignored `tmp/agent-coordination/` directory, so it protects the Git index and
 commit operation without becoming part of a commit. Claims default to 10
 minutes and may only be 5-10 minutes, so claim only when ready to stage,
 inspect, and commit.
+
+This coordination is **per-checkout** and **harness-agnostic**. The commit
+window and the `tmp/agent-coordination/` notes both live in the working
+directory, so they coordinate every agent or human sharing one checkout —
+parallel Codex or Claude Code sessions, background tasks, and same-directory
+subagents — regardless of which tool they run under. A separate `git worktree`
+has its own lock file, its own notes, and its own Git index, so the window does
+not span worktrees; separate worktrees stay isolated by being on different
+branches and integrate through the shared remote instead. In a hot shared
+checkout, commit your owned paths promptly in small scoped commits: a large
+unstaged set can be discarded by a concurrent rebase, `reset --hard`,
+`checkout`, or `stash` from any agent or human. (`bun git-sync` is isolated and
+safe; manual destructive Git is not.)
 
 ```bash
 bun git-commit-window status
@@ -349,6 +364,9 @@ bun git-commit-window wait --owner "<agent/task>" --scope "type(scope): subject"
 
 Use `--allow-staged` only after inspecting existing staged files. The commit
 window does not grant ownership of files or permission to stage unrelated paths.
+Existing staged files are owned by the staging agent or coordinator until
+explicitly reassigned. If a file appears as `MM`, both its staged and unstaged
+diffs need owner review before commit.
 
 Let commit hooks run by default. This is a proof-gated no-verify path: use
 `git commit --no-verify` only when the current agent can prove its exact staged
@@ -361,6 +379,13 @@ skipped components with path-based rationale; unrelated dirty files excluded
 from the claim; and `bun check:mobile` coverage when `apps/mobile` is touched.
 If ownership is unclear, proof is incomplete, or the check mapping is uncertain,
 do not bypass the hook.
+
+Commit hooks and repo checks can read the whole worktree, including files owned
+by other agents. If they fail on unrelated dirty files, release the commit
+window and report the blocker instead of formatting, fixing, staging, or
+committing those files for convenience. Only the staged-set owner may use the
+proof-gated no-verify path, and only with exact-path evidence for the staged
+files.
 
 ### Branch Management
 

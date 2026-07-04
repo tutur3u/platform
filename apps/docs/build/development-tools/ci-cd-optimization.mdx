@@ -1,7 +1,7 @@
 ---
 title: 'CI/CD Pipeline Optimization'
-description: 'Smart caching and content detection strategies to minimize unnecessary CI/CD runs.'
-updatedAt: '2025-01-30'
+description: 'Centralized affected-path gating and smart caching to minimize unnecessary CI/CD runs.'
+updatedAt: '2026-06-21'
 ---
 
 <Info>
@@ -10,685 +10,377 @@ updatedAt: '2025-01-30'
 
 ## Overview
 
-Our CI/CD pipelines implement a sophisticated **three-layer optimization strategy** to minimize unnecessary builds, tests, and deployments. This approach reduces GitHub Actions minutes consumption by 60-80% while maintaining safety and reliability.
+Our CI/CD pipelines avoid wasted builds, tests, and deployments through a
+**centralized affected-path gate** plus **build caching**. Instead of every
+workflow re-implementing its own change detection, each gated workflow calls a
+single reusable workflow (`ci-check.yml`) that computes the changed-file set
+once and asks a shared TypeScript decision function whether the workflow is
+actually affected.
 
-This document details the optimization techniques, implementation patterns, and troubleshooting approaches used across all workflows.
+This page documents how that gate works, how the per-app Vercel workflows are
+wired, and how to debug skip decisions.
+
+<Note>
+  The platform is mid-migration from `apps/web` (Next.js, port `7803`) to
+  `apps/tanstack-web` (TanStack Start) plus `apps/backend` (Rust, port `7820`).
+  See [TanStack + Rust migration](/platform/architecture/tanstack-rust-migration).
+  The optimization model below applies to both stacks: every Vercel app target
+  is gated the same way, regardless of framework.
+</Note>
 
 ## The Problem
 
-Before optimization, our workflows ran on every push regardless of:
-- Whether relevant files actually changed
-- Whether the code already passed identical tests
+Before centralized gating, workflows ran on every push regardless of:
+
+- Whether files relevant to that specific app or package actually changed
+- Whether the change only touched an unrelated app
 - Whether build artifacts were already cached
-- Whether deployment content was different
 
-This resulted in:
-- **Wasted CI time**: ~48 hours/month of unnecessary runs
-- **Slower feedback**: Developers waiting for redundant builds
-- **Higher costs**: Unnecessary GitHub Actions minutes consumption
-- **Queue congestion**: Important builds waiting behind unnecessary ones
+With a large monorepo of apps and shared packages, this meant a single commit to
+one app could trigger dozens of unrelated build and deploy workflows, slowing
+feedback and congesting the Actions queue.
 
-## Optimization Strategy
+## How Gating Works Today
 
-### Three-Layer Detection
+Gated workflows do **not** rely on GitHub's native `on.push.paths` filters.
+Path filters are coarse (they cannot understand workspace dependency graphs) and
+they would have to be duplicated and kept in sync across every workflow. Instead,
+the logic is centralized in three pieces:
 
-Our optimization uses a layered approach where each layer provides increasing accuracy at increasing cost:
+1. **`tuturuuu.ts`** — the source of truth. It exports a `ci` toggle map (each
+   workflow can be globally enabled/disabled), the `vercelWorkflowTargets` table
+   that maps each app to its preview/production workflow and package name, and
+   the `getWorkflowDecision()` function that decides whether a given workflow is
+   affected by a set of changed files.
+2. **`scripts/ci/resolve-changed-files.ts`** — resolves the changed-file set for
+   the current event (push payload, pull-request base/head, or git diff against
+   the last successful deployment marker).
+3. **`.github/workflows/ci-check.yml`** — a reusable workflow that runs the two
+   scripts and exposes a `should_run` output.
 
-```mermaid
-graph TD
-    A[Push to GitHub] --> B{Layer 1: Path Filters}
-    B -->|No match| Z[Skip Workflow]
-    B -->|Match| C{Layer 2: Content Detection}
-    C -->|No changes| Z
-    C -->|Changes detected| D{Layer 3: Turborepo Cache}
-    D -->|All cached| Z
-    D -->|Uncached tasks| E[Run Build/Deploy]
-```
+### The `ci-check` reusable workflow
 
-#### Layer 1: GitHub Path Filters (0s overhead)
-
-GitHub's native path filtering triggers workflows only when specific files change:
-
-```yaml
-on:
-  push:
-    paths:
-      - 'apps/web/**'
-      - 'packages/**'
-      - '.github/workflows/vercel-production-platform.yaml'
-```
-
-**Benefits:**
-- Zero overhead (GitHub checks this before starting the workflow)
-- Prevents workflow from even starting for unrelated changes
-- Reduces queue congestion
-
-**Applied to:** All 20 workflows
-
-#### Layer 2: Quick Content Detection (~3-5s overhead)
-
-Git diff analysis to detect meaningful changes:
+Each gated workflow declares a `check-ci` job that calls `ci-check.yml`, then
+gates its real job on the result:
 
 ```yaml
-- name: Quick content change detection
-  id: quick_check
-  run: |
-    # Safe base commit (handles initial commits and shallow clones)
-    BASE_COMMIT=$(git rev-parse --verify HEAD~ 2>/dev/null || echo "$GITHUB_SHA")
+jobs:
+  check-ci:
+    uses: ./.github/workflows/ci-check.yml
+    with:
+      workflow_name: vercel-production-platform.yaml
+    permissions:
+      contents: read
+      deployments: read
 
-    # Check for relevant file changes
-    git diff --name-only "$BASE_COMMIT" HEAD | grep -E 'apps/web/|packages/' > "$RUNNER_TEMP/changed_files.txt" || true
-
-    if [ ! -s "$RUNNER_TEMP/changed_files.txt" ]; then
-      echo "No relevant content changes detected. Skipping build."
-      echo "skip_quick=true" >> $GITHUB_OUTPUT
-    else
-      echo "Content changes detected in $(wc -l < "$RUNNER_TEMP/changed_files.txt") files."
-      echo "skip_quick=false" >> $GITHUB_OUTPUT
-    fi
+  Deploy-Production:
+    needs: [check-ci]
+    if: github.ref == 'refs/heads/production' && needs.check-ci.outputs.should_run == 'true'
+    runs-on: ubuntu-latest
+    # ...
 ```
 
-**Key Features:**
-- **Safe BASE_COMMIT**: Handles edge cases (initial commits, shallow clones)
-- **App-specific filtering**: Each workflow checks its own app directory
-- **Fast execution**: Typically completes in 3-5 seconds
-
-**Benefits:**
-- Catches scenarios where path filters matched but content didn't actually change
-- Skips workflow-only changes (updating the workflow file itself)
-- Minimal overhead for maximum value
-
-**Applied to:** All 20 workflows
-
-#### Layer 3: Turborepo Cache Validation (~20-30s overhead)
-
-Semantic content analysis using Turborepo's content-based hashing:
+Internally, `ci-check.yml` uses a sparse checkout (only the manifests and
+scripts it needs), computes the changed files, and runs the decision script:
 
 ```yaml
-- name: Check Turborepo cache
-  id: turbo_check
-  if: steps.quick_check.outputs.skip_quick != 'true'
-  run: |
-    # Run Turborepo dry-run to check cache status
-    bun turbo:local run build --filter=@tuturuuu/web --dry-run=json > "$RUNNER_TEMP/turbo-plan-raw.json" 2>&1 || {
-      echo "::warning::Turborepo dry-run failed, proceeding with build for safety"
-      echo "skip_turbo=false" >> $GITHUB_OUTPUT
-      exit 0
-    }
-
-    # Extract JSON from output (handles warnings/headers)
-    sed -n '/{/,$ p' "$RUNNER_TEMP/turbo-plan-raw.json" > "$RUNNER_TEMP/turbo-plan.json" 2>/dev/null || {
-      echo "::warning::Failed to extract JSON, proceeding with build for safety"
-      echo "skip_turbo=false" >> $GITHUB_OUTPUT
-      exit 0
-    }
-
-    # Validate file exists
-    if [ ! -s "$RUNNER_TEMP/turbo-plan.json" ]; then
-      echo "::warning::Turborepo plan is empty, proceeding with build for safety"
-      echo "skip_turbo=false" >> $GITHUB_OUTPUT
-      exit 0
-    fi
-
-    # Count uncached tasks
-    uncached_count=$(jq -r '.tasks[] | select(.cache.status != "HIT") | .taskId' "$RUNNER_TEMP/turbo-plan.json" 2>/dev/null | wc -l || echo "1")
-
-    if [ "$uncached_count" -eq 0 ]; then
-      echo "All tasks cached in Turborepo. Skipping build."
-      echo "skip_turbo=true" >> $GITHUB_OUTPUT
-    else
-      echo "Found $uncached_count uncached tasks. Build required."
-      echo "skip_turbo=false" >> $GITHUB_OUTPUT
-    fi
+- name: Compute changed files
+  id: changed_files
   env:
-    TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
-    TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
+    GITHUB_TOKEN: ${{ github.token }}
+    WORKFLOW_NAME: ${{ inputs.workflow_name }}
+  run: node --experimental-strip-types scripts/ci/resolve-changed-files.ts
+
+- name: Check Configuration
+  id: check_config
+  env:
+    CHANGED_FILES_FILE: ${{ steps.changed_files.outputs.changed_files_path }}
+    WORKFLOW_NAME: ${{ inputs.workflow_name }}
+  run: node --experimental-strip-types scripts/ci/check-workflow-config.ts
 ```
 
-**Key Features:**
-- **Content-based hashing**: Detects actual code changes, not just file timestamps
-- **Dependency-aware**: Understands transitive dependencies
-- **Remote cache**: Leverages Vercel's remote cache across runs
-- **Multiple fallbacks**: Defaults to building on any uncertainty
+The scripts run with Node's `--experimental-strip-types`, so the `.ts` sources
+execute directly without a separate build step.
 
-**Benefits:**
-- Most accurate cache detection
-- Understands semantic changes (not just file changes)
-- Tracks dependencies across packages
+### The decision function
 
-**Applied to:** All 16 Vercel workflows
+`getWorkflowDecision()` in `tuturuuu.ts` resolves to `should_run` using this
+order of precedence:
 
-### Dependency Caching
+1. **Global toggle.** If the workflow is `false` in the `ci` map, it never runs.
+2. **`workflow_dispatch` bypass.** Manual runs always proceed (affected-path
+   gating is skipped), so you can force a deploy from the Actions UI.
+3. **Non-Vercel workflows.** Workflows without an entry in
+   `vercelWorkflowTargets` fall back to their static `ci` toggle.
+4. **Unavailable change data.** If the changed-file set cannot be resolved, the
+   gate stays **open** (`should_run = true`) to fail safe.
+5. **Affected-path matching (Vercel workflows).** The workflow runs only if at
+   least one changed file matches one of:
+   - a **global affecting path** (`bun.lock`, `package.json`, `turbo.json`,
+     `tuturuuu.ts`, or `.github/workflows/ci-check.yml`);
+   - the workflow's **own** workflow file;
+   - the target app's directory (e.g. `apps/web/**` for the platform target);
+   - any package inside the target app's **workspace dependency closure**. The
+     closure is built from `workspace:*` dependencies, so editing a shared
+     package only triggers the apps that actually depend on it.
 
-All workflows cache dependencies to avoid repeated installations:
+If nothing matches, the decision is `should_run = false` and the heavy job is
+skipped.
 
-```yaml
-- name: Cache dependencies
-  uses: actions/cache@v4
-  with:
-    path: |
-      ~/.bun/install/cache
-      node_modules
-    key: ${{ runner.os }}-bun-${{ hashFiles('**/bun.lock') }}
-    restore-keys: |
-      ${{ runner.os }}-bun-
-```
+### Vercel target table
 
-**Benefits:**
-- **~60 seconds saved** per run on cache hit
-- Consistent dependency versions
-- Faster feedback for developers
+Every Vercel app is registered once in `vercelWorkflowTargets`. Adding a new app
+means adding a single entry there (app slug, app path, package name, and the
+preview/production workflow filenames) — the gating logic and changed-file
+matching then apply automatically.
 
-**Applied to:** All 20 workflows
-
-## Implementation Patterns
-
-### Preview Workflows (Aggressive Optimization)
-
-Preview workflows use aggressive optimization to provide fast feedback:
-
-**Characteristics:**
-- Skip on any cache hit
-- Use `|| true` for non-critical errors
-- Prioritize speed over absolute certainty
-
-**Example:** `vercel-preview-platform.yaml`
-
-```yaml
-- name: Quick content change detection
-  # Skips if no app/package files changed
-
-- name: Check Turborepo cache
-  # Skips if all tasks cached
-  # Uses || true for errors (assumes build needed)
-
-- name: Deploy
-  if: steps.quick_check.outputs.skip_quick != 'true' && steps.turbo_check.outputs.skip_turbo != 'true'
-```
-
-### Production Workflows (Conservative Optimization)
-
-Production workflows use conservative optimization with safety fallbacks:
-
-**Characteristics:**
-- Build on any uncertainty
-- Explicit error handling with warnings
-- Multiple validation layers
-
-**Example:** `vercel-production-platform.yaml`
-
-```yaml
-- name: Check Turborepo cache (conservative)
-  run: |
-    # Multiple safety fallbacks
-    bun turbo:local ... || {
-      echo "::warning::Turborepo dry-run failed, proceeding with build for safety"
-      echo "skip_turbo=false" >> $GITHUB_OUTPUT
-      exit 0
-    }
-
-    # Validate output exists
-    if [ ! -s "$RUNNER_TEMP/turbo-plan.json" ]; then
-      echo "::warning::Turborepo plan is empty, proceeding with build for safety"
-      echo "skip_turbo=false" >> $GITHUB_OUTPUT
-      exit 0
-    fi
-
-    # Default to building if parsing fails
-    uncached_count=$(... || echo "1")
-```
-
-### Specialized Workflows
-
-Different workflows have domain-specific optimizations:
-
-#### Supabase Type Generation
-
-Checks for migration-specific changes:
-
-```yaml
-- name: Check for migration changes
-  run: |
-    BASE_COMMIT=$(git rev-parse --verify HEAD~ 2>/dev/null || echo "$GITHUB_SHA")
-    changed=$(git diff --name-only "$BASE_COMMIT" HEAD | grep 'apps/database/supabase/migrations/\|packages/types/src/supabase.ts' | wc -l)
-
-    if [ "$changed" -eq 0 ]; then
-      echo "No migrations or type changes detected. Skipping type generation check."
-      echo "skip_check=true" >> $GITHUB_OUTPUT
-    fi
-```
-
-**Saves ~2-3 minutes** when no database changes occurred.
-
-#### Biome Code Quality Checks
-
-Skips workflow-only changes:
-
-```yaml
-- name: Check for meaningful changes
-  run: |
-    BASE_COMMIT=$(git rev-parse --verify HEAD~ 2>/dev/null || echo "$GITHUB_SHA")
-    changed=$(git diff --name-only "$BASE_COMMIT" HEAD | \
-      grep -v '.github/workflows/biome-check.yaml' | \
-      grep -E '\.(ts|tsx|js|jsx|json|yaml|yml)$' | wc -l)
-
-    if [ "$changed" -eq 0 ]; then
-      echo "No meaningful code changes detected. Skipping format check."
-      echo "skip_check=true" >> $GITHUB_OUTPUT
-    fi
-```
-
-**Prevents false positives** when only updating workflow files.
-
-#### Unit Tests & Coverage
-
-Test-relevant file detection:
-
-```yaml
-- name: Check for test-relevant changes
-  run: |
-    BASE_COMMIT=$(git rev-parse --verify HEAD~ 2>/dev/null || echo "$GITHUB_SHA")
-    changed=$(git diff --name-only "$BASE_COMMIT" HEAD | \
-      grep -E 'apps/.*/src/|packages/.*/src/|\.test\.(ts|tsx)|package\.json' | wc -l)
-
-    if [ "$changed" -eq 0 ]; then
-      echo "No test-relevant changes detected. Skipping tests."
-      echo "skip_tests=true" >> $GITHUB_OUTPUT
-    fi
-```
-
-**Skips tests** for documentation-only changes.
-
-## Edge Case Handling
-
-### Initial Commits
-
-**Problem:** `HEAD~` doesn't exist on the first commit.
-
-**Solution:** Safe BASE_COMMIT computation:
-
-```bash
-BASE_COMMIT=$(git rev-parse --verify HEAD~ 2>/dev/null || echo "$GITHUB_SHA")
-```
-
-**Behavior:**
-- Normal case: Uses `HEAD~` (parent commit)
-- Initial commit: Falls back to `$GITHUB_SHA` (current commit)
-- Result: git diff shows no changes → triggers full build (safe!)
-
-### Shallow Clones
-
-**Problem:** `fetch-depth: 2` might not include parent commit.
-
-**Solution:** Same fallback mechanism handles this gracefully.
-
-**Behavior:**
-- If `HEAD~` unavailable: Uses `$GITHUB_SHA`
-- Triggers full build (conservative approach)
-
-### Turborepo Warnings
-
-**Problem:** Turborepo outputs warnings before JSON, breaking jq parsing.
-
-**Solution:** JSON extraction before parsing:
-
-```bash
-# Extract JSON (skip warnings/headers)
-sed -n '/{/,$ p' "$RUNNER_TEMP/turbo-plan-raw.json" > "$RUNNER_TEMP/turbo-plan.json"
-
-# Now parse clean JSON
-jq -r '.tasks[]...' "$RUNNER_TEMP/turbo-plan.json"
-```
-
-**Example Turborepo output:**
-```
-turbo 2.5.8
- WARNING  Unable to calculate transitive closures: No lockfile entry...
+```ts
 {
-  "id": "...",
-  "tasks": [...]
+  app: 'platform',
+  appPath: 'apps/web',
+  packageName: '@tuturuuu/web',
+  previewWorkflow: 'vercel-preview-platform.yaml',
+  productionWorkflow: 'vercel-production-platform.yaml',
 }
 ```
 
-The `sed` command extracts everything from the first `{` to the end, giving us clean JSON.
+**Applied to:** all Vercel app workflows (currently 20 preview + 20 production =
+40 workflows) plus the other gated CI workflows wired through `ci-check.yml`.
 
-### Concurrent Runs
+## Build Caching
 
-**Problem:** Multiple workflows might create conflicting temp files.
+Once a workflow decides it must run, the actual build is still accelerated by
+Turborepo's content-based caching. Workspace dependencies are built with
+Turborepo before the app build:
 
-**Solution:** Use `$RUNNER_TEMP` for isolated temporary storage:
-
-```bash
-# Each workflow run gets its own RUNNER_TEMP directory
-"$RUNNER_TEMP/changed_files.txt"
-"$RUNNER_TEMP/turbo-plan.json"
+```yaml
+- name: Build workspace dependencies
+  run: bun turbo:local run build --filter=@tuturuuu/types --filter=@tuturuuu/supabase --filter=@tuturuuu/internal-api --filter=@tuturuuu/masonry --filter=@tuturuuu/devbox
 ```
 
-### Race Conditions
+Turborepo hashes inputs and reuses cached task outputs (via the remote cache when
+`TURBO_TOKEN`/`TURBO_TEAM` are configured), so unchanged dependency builds resolve
+to cache hits instead of recompiling. This is content-aware: it understands the
+dependency graph rather than relying on file timestamps.
 
-**Problem:** Newer commits might be pushed while workflow is running.
+Docker and Rust verification use the same principle at their native cache
+layers. Docker setup jobs build through `docker buildx build --load` with
+GitHub BuildKit cache scopes per image, and the Rust backend workflow restores
+Cargo registry/git/target state before `cargo fetch`, clippy, test, Worker, and
+native build steps. Keep those caches scoped to the service image or Rust crate
+instead of adding a new shared cache store.
 
-**Solution:** Check for newer commits before deployment:
+<Note>
+  Earlier versions of these workflows ran an inline Turborepo `--dry-run=json`
+  step to *decide* whether to skip a build. That per-workflow skip step has been
+  removed in favor of the centralized `ci-check` gate above. Turborepo is now
+  used for caching the build itself, not for the run/skip decision.
+</Note>
+
+## Race-Condition Handling
+
+Production deployments guard against superseded commits. Before building, the
+workflow checks whether a newer commit already landed on the production branch:
 
 ```yaml
 - name: Check for newer commits
   id: check_commits
   run: |
-    git fetch origin production
+    git fetch origin production || { echo "Remote branch not found, continuing with build"; echo "skip_build=false" >> $GITHUB_OUTPUT; exit 0; }
     LATEST_COMMIT=$(git rev-parse origin/production 2>/dev/null || echo "")
     CURRENT_COMMIT=${GITHUB_SHA}
-
     if [ -n "$LATEST_COMMIT" ] && [ "$LATEST_COMMIT" != "$CURRENT_COMMIT" ]; then
       echo "Newer commit found on production branch. Skipping build."
       echo "skip_build=true" >> $GITHUB_OUTPUT
+    else
+      echo "skip_build=false" >> $GITHUB_OUTPUT
     fi
+```
+
+Every subsequent step is gated on `steps.check_commits.outputs.skip_build != 'true'`,
+so a stale run short-circuits instead of deploying an outdated artifact.
+
+## Edge Case Handling
+
+`resolve-changed-files.ts` and the gate are written to fail safe.
+
+### Missing or unresolvable change data
+
+If the changed-file set cannot be computed (e.g. an unusual event payload or a
+missing base commit), `getWorkflowDecision()` returns `should_run = true`. The
+guiding principle: **build when uncertain** rather than skip incorrectly.
+
+### Initial commits and shallow clones
+
+When a parent commit is unavailable (the very first commit, or a shallow clone
+without history), the changed-file resolver cannot diff against a base, so the
+gate opens and a full build runs. The workflow that needs deeper history checks
+out with an appropriate `fetch-depth`, and `ci-check.yml` uses `fetch-depth: 0`
+with a sparse checkout so it always has enough history to diff.
+
+### Last-successful-deployment markers
+
+For push events, the resolver can diff against the SHA of the last successful
+deployment (recorded as a GitHub deployment marker) rather than only the parent
+commit. This catches the case where intermediate commits never deployed, so the
+full diff since the last live deploy is considered.
+
+## Monitoring & Debugging
+
+### Inspect the gate decision
+
+`check-workflow-config.ts` logs its decision and the matched paths. In the
+`check-ci` job logs you will see lines like:
+
+```text
+Workflow: vercel-production-platform.yaml
+Should run: false
+Reason: vercel-production-platform.yaml is unaffected by the changed paths
+```
+
+or, when it does run:
+
+```text
+Should run: true
+Reason: vercel-production-platform.yaml is affected by 3 changed path(s)
+Matched paths:
+- apps/web/src/app/page.tsx
+- packages/ui/src/button.tsx
+```
+
+### Reproduce a decision locally
+
+You can run the decision script directly to debug why a workflow did or did not
+run:
+
+```bash
+CHANGED_FILES="apps/web/src/app/page.tsx" \
+WORKFLOW_NAME="vercel-production-platform.yaml" \
+node --experimental-strip-types scripts/ci/check-workflow-config.ts
+```
+
+There are also unit tests covering the gating logic:
+
+```bash
+bun test scripts/ci/check-workflow-config.test.js
+bun test scripts/ci/resolve-changed-files.test.js
+```
+
+### Common Issues
+
+#### Issue: A workflow never runs for legitimate changes
+
+**Likely causes:**
+
+- The app is missing (or misconfigured) in `vercelWorkflowTargets`.
+- The changed package is not in the target app's workspace dependency closure
+  (the app does not actually `workspace:*`-depend on it).
+- The workflow is toggled off in the `ci` map in `tuturuuu.ts`.
+
+**Fix:** Verify the target entry and the dependency edges, then re-run the local
+reproduction above to confirm the decision.
+
+#### Issue: A workflow always runs
+
+**Likely causes:**
+
+- A global affecting path (`bun.lock`, `package.json`, `turbo.json`,
+  `tuturuuu.ts`) changed — these intentionally trigger every Vercel target.
+- The change-data resolver failed, so the gate fell open by design.
+
+This is usually correct behavior; only investigate if it persists for changes
+that clearly do not touch shared roots.
+
+#### Issue: Need to force a run
+
+Use the workflow's manual trigger — `workflow_dispatch` bypasses affected-path
+gating entirely:
+
+```yaml
+on:
+  workflow_dispatch:
 ```
 
 ## Performance Impact
 
-### Expected Savings
+The exact savings depend on the size of the app set and how localized each
+commit is, so treat the following as **illustrative** rather than a fixed figure.
 
-Based on actual implementation across 20 workflows:
+The monorepo currently registers **20 Vercel app targets**, each with a preview
+and a production workflow (**40 Vercel deploy workflows**), out of ~80 total
+workflow files. Without gating, a single-app change would attempt to run every
+target's preview/production deploy. With affected-path gating, a change scoped to
+one app skips the other ~38 Vercel deploys, plus any unrelated CI workflows.
 
-**Monthly Estimates:**
-- **50 deployments/month per app**
-- **8 apps × 2 environments = 16 workflows**
-- **60% average skip rate**
-- **6 minutes saved per skip**
+For a change that touches only one app:
 
-**Calculation:**
-```
-16 workflows × 50 runs × 60% skip rate × 6 min savings
-= 2,880 minutes/month
-= 48 hours/month saved
-```
-
-**Annual Impact:**
-```
-2,880 min/month × 12 months = 34,560 minutes/year
-= 576 hours/year
-= 24 days of CI time saved annually
+```text
+~40 Vercel deploy workflows
+- 2 that actually deploy the touched app (preview + production)
+= ~38 deploy workflows skipped at the cheap check-ci gate
 ```
 
-### Per-Workflow Savings
-
-| Workflow Type | Scenario | Time Saved | Skip Rate |
-|---------------|----------|------------|-----------|
-| Preview Deploy | No changes | 5-8 min | 60-80% |
-| Production Deploy | No changes | 5-8 min | 40-60% |
-| Type Generation | No migrations | 2-3 min | 80% |
-| Unit Tests | No src changes | 3-5 min | 50-70% |
-| Biome Check | No code changes | 1-2 min | 50-70% |
-
-### Cost Reduction
-
-**GitHub Actions Pricing:**
-- ~$0.008 per minute for Linux runners
-- 48 hours saved/month = 2,880 minutes
-- **Savings: ~$23/month or $276/year**
+Each skipped deploy avoids several minutes of install + build + deploy time and
+only pays the cost of the lightweight `check-ci` job. Changes to shared roots
+(`package.json`, `bun.lock`, `turbo.json`, `tuturuuu.ts`) intentionally fan out
+to all targets, so headline skip rates will vary with how often those roots
+change.
 
 <Note>
-  Actual savings may vary based on your workflow patterns and change frequency. Monitor your Actions usage to track real-world impact.
+  To measure real-world impact, watch the **Actions** tab: gated runs that skip
+  resolve in the `check-ci` job within seconds, while full deploys take minutes.
+  Counting skipped vs. full runs over a representative window is the most
+  reliable estimate for your change patterns.
 </Note>
-
-## Monitoring & Debugging
-
-### Workflow Run Analysis
-
-Check workflow logs for skip decisions:
-
-```bash
-# Look for these output patterns
-"No relevant content changes detected. Skipping build."
-"All tasks cached in Turborepo. Skipping build."
-"Found X uncached tasks. Build required."
-```
-
-### Skip Rate Tracking
-
-Track skip rates using GitHub Actions insights:
-
-1. Go to **Actions** tab in GitHub
-2. Select a workflow
-3. View **Runs** over time
-4. Count skipped runs (typically 6-9 seconds) vs full runs (5-8 minutes)
-
-### Common Issues
-
-#### Issue: Builds Always Run
-
-**Symptoms:**
-- Every push triggers full build
-- No "skipping" messages in logs
-
-**Debugging:**
-1. Check if path filters match your changes
-2. Verify git diff detects files correctly
-3. Check Turborepo cache status
-
-**Example debug commands:**
-```bash
-# Check what files changed
-git diff --name-only HEAD~ HEAD
-
-# Check if they match app pattern
-git diff --name-only HEAD~ HEAD | grep -E 'apps/web/|packages/'
-
-# Check Turborepo cache
-bun turbo:local run build --filter=@tuturuuu/web --dry-run=json
-```
-
-#### Issue: Builds Never Run
-
-**Symptoms:**
-- Legitimate changes are skipped
-- New features not deployed
-
-**Debugging:**
-1. Check if files are in correct directories
-2. Verify path filters include your directories
-3. Check git diff patterns
-
-**Fix:** Ensure your changes are in directories covered by path filters:
-```yaml
-paths:
-  - 'apps/your-app/**'  # Add if missing
-  - 'packages/**'
-```
-
-#### Issue: JSON Parsing Errors
-
-**Symptoms:**
-- Turborepo cache check fails
-- Warnings about JSON parsing
-
-**Cause:** Turborepo outputting warnings before JSON
-
-**Already Fixed:** All workflows now use JSON extraction:
-```bash
-sed -n '/{/,$ p' "$RUNNER_TEMP/turbo-plan-raw.json" > "$RUNNER_TEMP/turbo-plan.json"
-```
 
 ## Best Practices
 
-### 1. Trust the Fallbacks
+### 1. Keep `tuturuuu.ts` as the source of truth
 
-**Don't fight the safety mechanisms:**
-- Production workflows default to building on uncertainty
-- This is intentional and correct behavior
-- Better to build unnecessarily than skip incorrectly
+When adding an app or workflow, register it in `tuturuuu.ts` (the `ci` map and,
+for Vercel apps, `vercelWorkflowTargets`) instead of hand-editing path filters in
+individual workflows. The gate and the tests key off that file.
 
-### 2. Monitor Skip Rates
+### 2. Trust the fail-safe
 
-**Track your optimization effectiveness:**
-- Preview workflows: 60-80% skip rate (aggressive)
-- Production workflows: 40-60% skip rate (conservative)
-- Specialized workflows: Varies by type
+When change data is missing, the gate opens and the workflow runs. This is
+intentional — it is safer to build unnecessarily than to skip a real change.
+Don't add ad-hoc skip logic that defeats it.
 
-**If skip rates are lower:**
-- Your changes might affect many packages
-- You might need more granular path filters
-- Cache might not be warming properly
+### 3. Model dependencies with `workspace:*`
 
-### 3. Use Consistent Patterns
+The dependency-closure matching only works because shared packages are wired as
+`workspace:*` dependencies. If an app consumes shared code without declaring the
+dependency, the gate will not know to run it when that package changes.
 
-**When adding new workflows:**
-- Copy from existing workflows
-- Maintain the three-layer approach
-- Use safe BASE_COMMIT computation
-- Include dependency caching
+### 4. Use `workflow_dispatch` to debug
 
-### 4. Test Edge Cases
+To bypass gating for a one-off investigation, trigger the workflow manually from
+the Actions UI rather than touching the gate logic.
 
-**Before deploying new workflows, test:**
-- Initial commit scenario
-- Shallow clone behavior
-- Concurrent runs
-- Cache miss scenarios
+### 5. Update tests when changing the gate
 
-### 5. Document Workflow-Specific Logic
-
-**Each workflow should document:**
-- Which files trigger it (path filters)
-- What content checks it performs
-- Any special edge cases
-
-## Troubleshooting Guide
-
-### Workflow Debugging Checklist
-
-When a workflow behaves unexpectedly:
-
-1. **Check workflow logs**
-   - Look for skip decision messages
-   - Verify which layer made the decision
-   - Check for warnings or errors
-
-2. **Verify git diff**
-   ```bash
-   BASE_COMMIT=$(git rev-parse --verify HEAD~)
-   git diff --name-only "$BASE_COMMIT" HEAD
-   ```
-
-3. **Check Turborepo cache**
-   ```bash
-   bun turbo:local run build --filter=@tuturuuu/web --dry-run=json
-   ```
-
-4. **Validate path filters**
-   - Ensure changed files match path patterns
-   - Check for typos in path filters
-
-5. **Review environment variables**
-   - Verify TURBO_TOKEN and TURBO_TEAM are set
-   - Check Vercel tokens are valid
-
-### Force Running a Workflow
-
-To bypass optimizations for debugging:
-
-**Option 1: Manual trigger**
-```yaml
-workflow_dispatch:  # Allows manual triggering from GitHub UI
-```
-
-**Option 2: Modify skip logic temporarily**
-```yaml
-# Temporarily force run by setting skip=false
-echo "skip_quick=false" >> $GITHUB_OUTPUT
-```
-
-**Option 3: Modify a watched file**
-```bash
-# Touch the workflow file itself to force a run
-touch .github/workflows/your-workflow.yaml
-git commit -am "chore: force workflow run"
-```
-
-## Migration Guide
-
-If you're adding optimization to an existing workflow:
-
-### Step 1: Add Path Filters
-
-```yaml
-on:
-  push:
-    branches: ["main"]
-    paths:  # Add this
-      - 'apps/your-app/**'
-      - 'packages/**'
-      - '.github/workflows/your-workflow.yaml'
-```
-
-### Step 2: Add Content Detection
-
-```yaml
-- name: Quick content change detection
-  id: quick_check
-  run: |
-    BASE_COMMIT=$(git rev-parse --verify HEAD~ 2>/dev/null || echo "$GITHUB_SHA")
-    git diff --name-only "$BASE_COMMIT" HEAD | grep -E 'apps/your-app/|packages/' > "$RUNNER_TEMP/changed_files.txt" || true
-
-    if [ ! -s "$RUNNER_TEMP/changed_files.txt" ]; then
-      echo "skip_quick=true" >> $GITHUB_OUTPUT
-    else
-      echo "skip_quick=false" >> $GITHUB_OUTPUT
-    fi
-```
-
-### Step 3: Add Dependency Caching
-
-```yaml
-- name: Cache dependencies
-  if: steps.quick_check.outputs.skip_quick != 'true'
-  uses: actions/cache@v4
-  with:
-    path: |
-      ~/.bun/install/cache
-      node_modules
-    key: ${{ runner.os }}-bun-${{ hashFiles('**/bun.lock') }}
-```
-
-### Step 4: Add Turborepo Cache (Optional)
-
-For build/deploy workflows:
-
-```yaml
-- name: Check Turborepo cache
-  id: turbo_check
-  if: steps.quick_check.outputs.skip_quick != 'true'
-  run: |
-    # See full implementation above
-```
-
-### Step 5: Update Conditionals
-
-Update all step conditions:
-
-```yaml
-# Before
-if: steps.some_check.outputs.skip != 'true'
-
-# After (add all skip conditions)
-if: steps.some_check.outputs.skip != 'true' && steps.quick_check.outputs.skip_quick != 'true' && steps.turbo_check.outputs.skip_turbo != 'true'
-```
+`getWorkflowDecision()` and the resolver are covered by unit tests under
+`scripts/ci/`. Update them alongside any change to the matching rules so the
+behavior stays pinned.
 
 ## Further Reading
 
-- [GitHub Actions: Path Filters](https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#onpushpull_requestpull_request_targetpathspaths-ignore)
-- [Turborepo: Remote Caching](https://turbo.build/repo/docs/core-concepts/remote-caching)
-- [GitHub Actions: Caching Dependencies](https://docs.github.com/en/actions/using-workflows/caching-dependencies-to-speed-up-workflows)
-- [jq Manual](https://stedolan.github.io/jq/manual/)
+- [CI/CD Pipelines](/build/development-tools/ci-cd-pipelines)
+- [TanStack + Rust migration](/platform/architecture/tanstack-rust-migration)
+- [Turborepo: Remote Caching](https://turborepo.com/docs/core-concepts/remote-caching)
+- [GitHub Actions: Reusing workflows](https://docs.github.com/en/actions/using-workflows/reusing-workflows)
 
 ## Summary
 
-Our three-layer optimization strategy provides:
+Our CI/CD optimization centralizes change detection so each workflow stays thin:
 
-✅ **Significant cost savings**: ~48 hours/month of CI time saved
-✅ **Faster feedback**: Developers get results in seconds for unchanged code
-✅ **Reliable deployments**: Conservative fallbacks prevent false negatives
-✅ **Flexible approach**: Aggressive for preview, conservative for production
-✅ **Edge case handling**: Works with initial commits, shallow clones, and race conditions
+- A single reusable `ci-check.yml` workflow computes the changed-file set once.
+- `tuturuuu.ts` decides, per workflow, whether the change is relevant — including
+  workspace dependency-closure awareness for shared packages.
+- Turborepo caches the actual build once a run is warranted.
+- The gate fails safe (builds on uncertainty), and `workflow_dispatch` always
+  bypasses gating for manual runs.
 
-The key to success is **layered defense** - multiple independent checks that each catch different scenarios, with safety fallbacks ensuring we build when uncertain.
+The result: a one-app change skips the ~38 other Vercel deploys at a cheap gate,
+while shared-root changes still correctly fan out everywhere they matter.

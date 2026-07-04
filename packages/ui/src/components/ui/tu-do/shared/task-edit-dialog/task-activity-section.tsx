@@ -22,6 +22,7 @@ import {
   UserMinus,
   UserPlus,
 } from '@tuturuuu/icons';
+import { getWorkspaceTaskHistory } from '@tuturuuu/internal-api/tasks';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
@@ -34,6 +35,9 @@ import { useLocale, useTranslations } from 'next-intl';
 import { useState } from 'react';
 import type { EstimationType } from '../estimation-mapping';
 import { mapEstimationPoints } from '../estimation-mapping';
+import type { RecoverableTaskDescriptionVersion } from './description-versions';
+import { isTaskDescriptionHistoryEntry } from './description-versions';
+import { TaskDescriptionChangeDialog } from './task-description-change-dialog';
 import { TaskSnapshotDialog } from './task-snapshot-dialog';
 
 /** Represents a task history entry from the API */
@@ -77,6 +81,11 @@ interface TaskActivitySectionProps {
   estimationType?: EstimationType;
   /** When true, disables the revert functionality (feature not stable) */
   revertDisabled?: boolean;
+  /** Restores a tracked description version through the Yjs-safe description path. */
+  onRestoreDescriptionVersion?: (
+    version: RecoverableTaskDescriptionVersion
+  ) => Promise<void> | void;
+  restoringDescriptionVersionId?: string | null;
 }
 
 // Task history section for showing activity logs and snapshots
@@ -91,14 +100,19 @@ export function TaskActivitySection({
   onTaskUpdate,
   estimationType,
   revertDisabled = false,
+  onRestoreDescriptionVersion,
+  restoringDescriptionVersionId,
 }: TaskActivitySectionProps) {
   const t = useTranslations('tasks-history');
+  const snapshotT = useTranslations('tasks.history');
   const locale = useLocale();
   const [isExpanded, setIsExpanded] = useState(false);
   const [showAll, setShowAll] = useState(false);
   const [snapshotEntry, setSnapshotEntry] = useState<TaskHistoryEntry | null>(
     null
   );
+  const [descriptionChangeEntry, setDescriptionChangeEntry] =
+    useState<TaskHistoryEntry | null>(null);
   const dateLocale = locale === 'vi' ? vi : enUS;
 
   // Fetch task history
@@ -106,12 +120,9 @@ export function TaskActivitySection({
     queryKey: ['task-history', wsId, taskId],
     queryFn: async () => {
       if (!taskId) return null;
-      const res = await fetch(
-        `/api/v1/workspaces/${wsId}/tasks/${taskId}/history?limit=50`,
-        { cache: 'no-store' }
-      );
-      if (!res.ok) throw new Error('Failed to fetch task history');
-      return res.json() as Promise<{
+      return getWorkspaceTaskHistory(wsId, taskId, {
+        limit: 50,
+      }) as Promise<{
         history: TaskHistoryEntry[];
         count: number;
       }>;
@@ -178,7 +189,21 @@ export function TaskActivitySection({
                     }
                     dateLocale={dateLocale}
                     showActions={!!currentTask && !!boardId}
-                    onViewSnapshot={() => setSnapshotEntry(entry)}
+                    onViewSnapshot={() => {
+                      if (isTaskDescriptionHistoryEntry(entry)) {
+                        setDescriptionChangeEntry(entry);
+                        return;
+                      }
+
+                      setSnapshotEntry(entry);
+                    }}
+                    viewLabel={
+                      isTaskDescriptionHistoryEntry(entry)
+                        ? t('view_description_change', {
+                            defaultValue: 'View description change',
+                          })
+                        : t('view_snapshot')
+                    }
                     estimationType={estimationType}
                   />
                 ))}
@@ -219,9 +244,36 @@ export function TaskActivitySection({
             onTaskUpdate?.();
           }}
           locale={locale}
-          t={t as (key: string, options?: { defaultValue?: string }) => string}
+          t={
+            snapshotT as (
+              key: string,
+              options?: { count?: number; defaultValue?: string }
+            ) => string
+          }
           estimationType={estimationType}
           revertDisabled={revertDisabled}
+        />
+      )}
+
+      {descriptionChangeEntry && (
+        <TaskDescriptionChangeDialog
+          canRestore={Boolean(onRestoreDescriptionVersion)}
+          entry={descriptionChangeEntry}
+          isOpen={!!descriptionChangeEntry}
+          locale={locale}
+          onClose={() => setDescriptionChangeEntry(null)}
+          onRestoreVersion={async (version) => {
+            await onRestoreDescriptionVersion?.(version);
+            setDescriptionChangeEntry(null);
+            onTaskUpdate?.();
+          }}
+          restoringVersionId={restoringDescriptionVersionId}
+          t={
+            snapshotT as (
+              key: string,
+              options?: { count?: number; defaultValue?: string }
+            ) => string
+          }
         />
       )}
     </div>
@@ -234,6 +286,7 @@ interface ActivityEntryProps {
   dateLocale: typeof enUS | typeof vi;
   showActions?: boolean;
   onViewSnapshot?: () => void;
+  viewLabel?: string;
   estimationType?: EstimationType;
 }
 
@@ -243,6 +296,7 @@ function ActivityEntry({
   dateLocale,
   showActions = false,
   onViewSnapshot,
+  viewLabel,
   estimationType,
 }: ActivityEntryProps) {
   const { icon, color } = getChangeIcon(entry.change_type, entry.field_name);
@@ -332,7 +386,7 @@ function ActivityEntry({
               </Button>
             </TooltipTrigger>
             <TooltipContent side="top" className="text-xs">
-              {t('view_snapshot')}
+              {viewLabel ?? t('view_snapshot')}
             </TooltipContent>
           </Tooltip>
         </div>

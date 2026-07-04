@@ -15,11 +15,17 @@ const {
 const {
   getWatcherComposeEnv,
 } = require('./watch-blue-green/deploy-watcher-runtime.js');
+const {
+  getBlueGreenFrontend,
+  getBlueGreenServiceName,
+} = require('./docker-web/blue-green.js');
 
 const DEFAULT_INTERNAL_WEB_API_ORIGIN = 'http://web-proxy:7803';
 const DEFAULT_INTERVAL_MS = 30_000;
 const DEFAULT_REQUEST_TIMEOUT_MS = 10 * 60 * 1000;
 const DEFAULT_RETENTION_DAYS = 14;
+const DEFAULT_STATUS_HEARTBEAT_INTERVAL_MS = 15_000;
+const DEFAULT_DOCKER_TELEMETRY_TIMEOUT_MS = 10_000;
 const CRON_RUNTIME_DIR = path.join(ROOT_DIR, 'tmp', 'docker-web', 'cron');
 const CRON_CONTROL_DIR = path.join(
   ROOT_DIR,
@@ -85,6 +91,34 @@ function writeJsonFile(filePath, value, fsImpl = fs) {
   fsImpl.writeFileSync(filePath, `${JSON.stringify(value, null, 2)}\n`);
 }
 
+function getPositiveIntegerEnv(env, name, fallback) {
+  const value = env?.[name];
+
+  if (value == null || String(value).trim() === '') {
+    return fallback;
+  }
+
+  const parsed = Number.parseInt(String(value).trim(), 10);
+
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+function getStatusHeartbeatIntervalMs(env = process.env) {
+  return getPositiveIntegerEnv(
+    env,
+    'PLATFORM_CRON_STATUS_HEARTBEAT_INTERVAL_MS',
+    DEFAULT_STATUS_HEARTBEAT_INTERVAL_MS
+  );
+}
+
+function getDockerTelemetryTimeoutMs(env = process.env) {
+  return getPositiveIntegerEnv(
+    env,
+    'PLATFORM_CRON_DOCKER_TELEMETRY_TIMEOUT_MS',
+    DEFAULT_DOCKER_TELEMETRY_TIMEOUT_MS
+  );
+}
+
 function normalizeWatcherRecoveryRequest(request) {
   if (!request || typeof request !== 'object' || Array.isArray(request)) {
     return null;
@@ -128,9 +162,25 @@ function getCronPaths({
 }
 
 function loadCronParser(rootDir = ROOT_DIR) {
-  return require(
-    path.join(rootDir, 'apps', 'web', 'node_modules', 'cron-parser')
-  );
+  const candidates = [
+    path.join(rootDir, 'apps', 'web', 'node_modules', 'cron-parser'),
+    path.join(rootDir, 'node_modules', 'cron-parser'),
+    path.join('/workspace', 'node_modules', 'cron-parser'),
+    'cron-parser',
+  ].filter(Boolean);
+
+  const errors = [];
+  for (const candidate of candidates) {
+    try {
+      return require(candidate);
+    } catch (error) {
+      errors.push(
+        `${candidate}: ${error instanceof Error ? error.message : String(error)}`
+      );
+    }
+  }
+
+  throw new Error(`Unable to load cron-parser. Tried ${errors.join('; ')}`);
 }
 
 function getPreviousScheduledAt(schedule, now, rootDir = ROOT_DIR) {
@@ -278,6 +328,8 @@ function runCommand(command, args, options = {}) {
 
     let stdout = '';
     let stderr = '';
+    let timedOut = false;
+    let timeout = null;
 
     child.stdout?.on('data', (chunk) => {
       stdout += chunk;
@@ -287,13 +339,25 @@ function runCommand(command, args, options = {}) {
       stderr += chunk;
     });
 
-    child.on('error', reject);
+    if (Number.isFinite(options.timeoutMs) && options.timeoutMs > 0) {
+      timeout = setTimeout(() => {
+        timedOut = true;
+        child.kill('SIGTERM');
+      }, options.timeoutMs);
+    }
+
+    child.on('error', (error) => {
+      if (timeout) clearTimeout(timeout);
+      reject(error);
+    });
     child.on('close', (code, signal) => {
+      if (timeout) clearTimeout(timeout);
       resolve({
         code: code ?? 1,
         signal: signal ?? null,
         stderr,
         stdout,
+        timedOut,
       });
     });
   });
@@ -404,16 +468,22 @@ async function listWebContainers({
   env = process.env,
   run = runCommand,
 } = {}) {
+  const composeEnv = getWatcherComposeEnv({
+    baseEnv: env,
+    rootDir: env.PLATFORM_HOST_WORKSPACE_DIR || ROOT_DIR,
+  });
+  getBlueGreenFrontend(composeEnv);
   const containers = [];
 
   for (const deploymentColor of ['blue', 'green']) {
-    const serviceName = `web-${deploymentColor}`;
+    const serviceName = getBlueGreenServiceName(deploymentColor, composeEnv);
     const result = await run(
       'docker',
       ['compose', '-f', composeFile, 'ps', '-q', serviceName],
       {
-        env,
+        env: composeEnv,
         stdio: 'pipe',
+        timeoutMs: getDockerTelemetryTimeoutMs(env),
       }
     );
 
@@ -452,6 +522,7 @@ async function readRouteConsoleLogs({
       {
         env,
         stdio: 'pipe',
+        timeoutMs: getDockerTelemetryTimeoutMs(env),
       }
     );
 
@@ -548,7 +619,7 @@ function buildRunRecordFromRequest({ execution = null, job, request, status }) {
   };
 }
 
-function upsertRunStatus(paths, runRecord, fsImpl = fs) {
+function upsertRunStatus(paths, runRecord, fsImpl = fs, scheduleContext) {
   const current = readJsonFile(paths.statusFile, {}, fsImpl);
   const currentRuns = Array.isArray(current.runs) ? current.runs : [];
   const runs = [
@@ -564,15 +635,103 @@ function upsertRunStatus(paths, runRecord, fsImpl = fs) {
     })
     .slice(0, 25);
 
-  writeJsonFile(
-    paths.statusFile,
+  touchCronStatus(paths, { runs }, fsImpl, scheduleContext);
+}
+
+function refreshCronScheduleMetadata(status, context) {
+  if (!context?.config || !context?.control || !context?.state) {
+    return status;
+  }
+
+  const now = context.now ?? Date.now();
+  const currentJobs = Array.isArray(status.jobs) ? status.jobs : [];
+  const jobs = context.config.jobs.map((job) => {
+    const currentJob =
+      currentJobs.find((candidate) => candidate?.id === job.id) ?? {};
+    const enabled = getEffectiveJobEnabled(job, context.control);
+
+    return {
+      ...currentJob,
+      ...job,
+      configuredEnabled: job.enabled,
+      controlEnabled: getJobControlEnabled(context.control, job.id),
+      enabled,
+      lastScheduledAt:
+        context.state.lastScheduledAtByJobId?.[job.id] ??
+        currentJob.lastScheduledAt ??
+        null,
+      nextRunAt: enabled
+        ? getNextScheduledAt(job.schedule, now, context.rootDir)
+        : null,
+    };
+  });
+  const nextRunAt =
+    jobs
+      .map((job) => job.nextRunAt)
+      .filter((value) => typeof value === 'number')
+      .sort((left, right) => left - right)[0] ?? null;
+
+  return {
+    ...status,
+    jobs,
+    nextRunAt,
+  };
+}
+
+function touchCronStatus(paths, patch = {}, fsImpl = fs, scheduleContext) {
+  const now = Date.now();
+  const current = readJsonFile(paths.statusFile, {}, fsImpl);
+  const nextStatus = refreshCronScheduleMetadata(
     {
       ...current,
-      runs,
-      updatedAt: Date.now(),
+      ...patch,
+      status: 'live',
+      updatedAt: now,
     },
-    fsImpl
+    scheduleContext ? { ...scheduleContext, now } : null
   );
+
+  writeJsonFile(paths.statusFile, nextStatus, fsImpl);
+}
+
+function createCronStatusHeartbeat({
+  env = process.env,
+  execution,
+  fsImpl = fs,
+  job,
+  paths,
+  scheduleContext,
+  source,
+}) {
+  const intervalMs = getStatusHeartbeatIntervalMs(env);
+  const heartbeat = () =>
+    touchCronStatus(
+      paths,
+      {
+        activeExecution: {
+          id: execution.id,
+          jobId: job.id,
+          path: job.path,
+          scheduledAt: execution.scheduledAt ?? null,
+          source,
+          startedAt: execution.startedAt,
+          status: 'processing',
+        },
+      },
+      fsImpl,
+      scheduleContext
+    );
+
+  heartbeat();
+
+  const timer = setInterval(heartbeat, intervalMs);
+  timer.unref?.();
+
+  return {
+    stop() {
+      clearInterval(timer);
+    },
+  };
 }
 
 function createManualRunLogRefresher({
@@ -583,6 +742,7 @@ function createManualRunLogRefresher({
   paths,
   request,
   run,
+  scheduleContext,
 }) {
   if (!request?.id) {
     return {
@@ -620,7 +780,8 @@ function createManualRunLogRefresher({
             request,
             status: 'processing',
           }),
-          fsImpl
+          fsImpl,
+          scheduleContext
         );
       }
     } finally {
@@ -636,7 +797,8 @@ function createManualRunLogRefresher({
       request,
       status: 'processing',
     }),
-    fsImpl
+    fsImpl,
+    scheduleContext
   );
 
   timer = setInterval(() => {
@@ -661,6 +823,7 @@ async function executeJob({
   job,
   paths,
   run = runCommand,
+  scheduleContext,
   scheduledAt = null,
   source,
   triggerId = null,
@@ -695,6 +858,15 @@ async function executeJob({
     status: 'failed',
     triggerId,
   };
+  const statusHeartbeat = createCronStatusHeartbeat({
+    env,
+    execution,
+    fsImpl,
+    job,
+    paths,
+    scheduleContext,
+    source,
+  });
   const manualRunRefresher =
     source === 'manual' && triggerRequest
       ? createManualRunLogRefresher({
@@ -705,6 +877,7 @@ async function executeJob({
           paths,
           request: triggerRequest,
           run,
+          scheduleContext,
         })
       : null;
 
@@ -736,6 +909,7 @@ async function executeJob({
   } finally {
     execution.endedAt = Date.now();
     execution.durationMs = Math.max(0, execution.endedAt - execution.startedAt);
+    statusHeartbeat.stop();
     manualRunRefresher?.stop();
     execution.consoleLogs = await readRouteConsoleLogs({
       env,
@@ -753,7 +927,8 @@ async function executeJob({
           request: triggerRequest,
           status: getExecutionRunStatus(execution),
         }),
-        fsImpl
+        fsImpl,
+        scheduleContext
       );
     }
   }
@@ -900,13 +1075,6 @@ async function runCronCycle({
   ensureDir(paths.runtimeDir, fsImpl);
   ensureDir(paths.executionDir, fsImpl);
   ensureDir(paths.runRequestsDir, fsImpl);
-  await processWatcherRecoveryRequest({
-    env,
-    fsImpl,
-    paths,
-    rootDir,
-    run,
-  });
 
   const now = Date.now();
   const config = readCronConfig({ configPath, fsImpl });
@@ -917,9 +1085,38 @@ async function runCronCycle({
     rootDir,
     state: readJsonFile(paths.stateFile, {}, fsImpl),
   });
+  const currentStatus = readJsonFile(paths.statusFile, {}, fsImpl);
+  writeJsonFile(
+    paths.statusFile,
+    buildStatus({
+      config,
+      control,
+      executions: readExecutionRecords(paths, fsImpl),
+      intervalMs,
+      now: Date.now(),
+      rootDir,
+      runs: Array.isArray(currentStatus.runs) ? currentStatus.runs : [],
+      state,
+    }),
+    fsImpl
+  );
+  await processWatcherRecoveryRequest({
+    env,
+    fsImpl,
+    paths,
+    rootDir,
+    run,
+  });
+
   const executions = [];
   const requests =
     control.enabled === false ? [] : readRunRequests(paths, fsImpl);
+  const getScheduleContext = () => ({
+    config,
+    control,
+    rootDir,
+    state,
+  });
 
   for (const request of requests) {
     const job = config.jobs.find((candidate) => candidate.id === request.jobId);
@@ -946,7 +1143,8 @@ async function runCronCycle({
           request,
           status: 'skipped',
         }),
-        fsImpl
+        fsImpl,
+        getScheduleContext()
       );
       removeRunRequest(request, fsImpl);
       continue;
@@ -960,6 +1158,7 @@ async function runCronCycle({
         job,
         paths,
         run,
+        scheduleContext: getScheduleContext(),
         source: 'manual',
         triggerId: request.id,
         triggerRequest: request,
@@ -991,6 +1190,7 @@ async function runCronCycle({
           job: due.job,
           paths,
           run,
+          scheduleContext: getScheduleContext(),
           scheduledAt: due.scheduledAt,
           source: 'scheduled',
         })
@@ -1077,6 +1277,7 @@ module.exports = {
   executeJob,
   getCronPaths,
   getDueScheduledJobs,
+  loadCronParser,
   getNextScheduledAt,
   getPreviousScheduledAt,
   initializeScheduleState,

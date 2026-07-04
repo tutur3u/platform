@@ -3,6 +3,7 @@ import type {
   InventoryProductSalesRow,
   InventorySaleSummary,
 } from '@tuturuuu/internal-api/inventory';
+import { majorToMinor } from '@tuturuuu/utils/money';
 import { bestMarginAcrossProfiles } from './operator-margin';
 
 export type ProfitSummary = {
@@ -79,7 +80,13 @@ export function buildProductPnl(
   return sales.map((row) => {
     const margin = bestMarginAcrossProfiles(matchProfiles(row, profiles));
     const unitCost = margin?.unitCost ?? null;
-    const estCogs = unitCost === null ? null : unitCost * row.unitsSold;
+    // Sales revenue is in minor units, but costing (unitCost) is in major
+    // units; convert the cost to minor units before subtracting so COGS and
+    // profit stay on the same scale as revenue.
+    const estCogs =
+      unitCost === null
+        ? null
+        : majorToMinor(unitCost, margin?.currency ?? 'USD') * row.unitsSold;
     const estProfit = estCogs === null ? null : row.revenue - estCogs;
     const marginPercentage =
       estProfit !== null && row.revenue > 0

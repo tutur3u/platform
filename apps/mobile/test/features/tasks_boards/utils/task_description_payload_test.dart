@@ -46,5 +46,19 @@ void main() {
       const emptyDoc = '{"type":"doc","content":[]}';
       expect(normalizeTaskDescriptionPayload(emptyDoc), isNull);
     });
+
+    test('preserves malformed TipTap text nodes as plain text', () {
+      const malformedDoc =
+          '{"type":"doc","content":[{"type":"text","text":1}]}';
+
+      expect(normalizeTaskDescriptionPayload(malformedDoc), malformedDoc);
+    });
+
+    test('preserves malformed TipTap child nodes as plain text', () {
+      const malformedDoc =
+          '{"type":"doc","content":[{"type":"paragraph","content":["bad"]}]}';
+
+      expect(normalizeTaskDescriptionPayload(malformedDoc), malformedDoc);
+    });
   });
 }

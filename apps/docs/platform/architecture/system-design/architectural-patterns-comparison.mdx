@@ -1,7 +1,7 @@
 ---
 title: "Architectural Patterns Comparison"
 description: "Comprehensive comparison of architectural patterns with design justifications, pros, cons, and usage guidance"
-updatedAt: "2025-11-17"
+updatedAt: "2026-06-21"
 ---
 
 This document provides a comprehensive comparison of all major architectural patterns, including their design justifications, advantages, disadvantages, and practical guidance on when to use each pattern.
@@ -9,6 +9,10 @@ This document provides a comprehensive comparison of all major architectural pat
 <Note>
 **Key Insight**: Different architectural patterns solve different problems. Understanding the trade-offs is essential for making informed architectural decisions.
 </Note>
+
+<Warning>
+**How to read the "In Tuturuuu" notes**: This page is primarily a pattern-education reference. The Tuturuuu apps (`apps/web`, `apps/finance`, `apps/calendar`, etc.) are conventional Next.js App Router apps organized as `app/`, `components/`, `lib/`, and `utils/` — they do **not** implement formal hexagonal/clean/onion layering, and they share a single Supabase project rather than per-service databases. Where an "In Tuturuuu" note describes a pattern as adopted, treat it as **aspirational/illustrative** unless it is explicitly grounded in real code. The platform is also mid-migration from `apps/web` (Next.js) to `apps/tanstack-web` (TanStack Start) plus a Rust backend (`apps/backend`); see [TanStack Start And Rust Migration](/platform/architecture/tanstack-rust-migration).
+</Warning>
 
 ## Pattern Categories
 
@@ -299,7 +303,7 @@ private toDatabase(workspace: Workspace): any { ... }
 ❌ **Projects with extreme time constraints**
 ❌ **Very small codebases** (&lt;5k LOC)
 
-**In Tuturuuu**: Used within each microservice to protect business logic and enable comprehensive testing.
+**In Tuturuuu (aspirational)**: Full ports-and-adapters layering is a target pattern we reach for in genuinely complex domains, not a blanket rule. Today the apps are conventional Next.js App Router apps (`app/`, `components/`, `lib/`, `utils/`) without dedicated `domain/`, `application/`, and `infrastructure/` directories. Business logic that benefits from isolation is factored into shared `packages/*` helpers (for example `packages/internal-api`, `packages/utils`) rather than a strict hexagon.
 
 ---
 
@@ -732,7 +736,7 @@ apps/web/src/
 ❌ **True fault isolation** is critical
 ❌ **Modules have very different technology needs**
 
-**In Tuturuuu**: Used for frontend (web app) with clear module boundaries for Finance, Calendar, Tasks, etc.
+**In Tuturuuu**: `apps/web` is organized as a modular monolith, with feature folders (Finance, Calendar, Tasks, and more) under `app/[locale]/(dashboard)/[wsId]/` and shared code in `packages/*`. The boundaries are convention-based rather than compiler-enforced. The successor frontend, `apps/tanstack-web`, follows the same modular approach with TanStack Router route trees.
 
 ---
 
@@ -912,7 +916,7 @@ async function createWorkspaceWithResources(data: WorkspaceData) {
 ❌ **Strong consistency requirements** dominate
 ❌ **Startup MVP** or proof of concept
 
-**In Tuturuuu**: Each app (`web`, `finance`, `calendar`, `rewise`, `nova`) is an independent microservice with its own deployment, scaling, and technology choices.
+**In Tuturuuu**: The monorepo hosts many independently deployable apps (`web`, `finance`, `calendar`, `nova`, `rewise`, and more) that scale separately. This resembles microservices at the deployment layer, but with two important caveats: the apps share a **single Supabase project** rather than per-service databases, and most are built on the same Next.js stack rather than diverse technologies. The notable exception is `apps/backend`, the new Rust API service (port `7820`) introduced by the [TanStack Start And Rust Migration](/platform/architecture/tanstack-rust-migration).
 
 ---
 
@@ -959,35 +963,53 @@ graph LR
 - Services can be added/removed without changes
 - Natural extensibility
 
-**Example:**
+<Note>
+Tuturuuu uses **Trigger.dev v4** (`@trigger.dev/sdk` `^4.4.5`). The v4 API is built around `task()` with a typed `run` function, triggered with `myTask.trigger(payload)` or fanned out with `batchTrigger(...)`. The older v2 `client.defineJob` / `eventTrigger` / `trigger.event` API is **not** used in this repo. Real tasks live in `packages/trigger/src` (for example `scheduleTask`, `unifiedScheduleTask`, `googleCalendarFullSync`).
+</Note>
+
+**Example (Trigger.dev v4 `task()`):**
 ```typescript
-// Producer: Publishes event, unaware of consumers
-await trigger.event({
-  name: 'workspace.created',
-  payload: { workspaceId, ownerId, name }
-});
+import { task } from '@trigger.dev/sdk/v3';
 
-// Consumer 1: Sends welcome email (can add without changing producer)
-client.defineJob({
+// Consumer 1: Send welcome email — a standalone task
+export const sendWelcomeEmail = task({
   id: 'send-welcome-email',
-  trigger: eventTrigger({ name: 'workspace.created' }),
-  run: async (payload) => await sendEmail(payload.ownerId)
+  run: async (payload: { ownerId: string }) => {
+    await sendEmail(payload.ownerId);
+  },
 });
 
-// Consumer 2: Setup analytics (added later, no producer change)
-client.defineJob({
+// Consumer 2: Setup analytics — added later, no producer change
+export const setupAnalytics = task({
   id: 'setup-analytics',
-  trigger: eventTrigger({ name: 'workspace.created' }),
-  run: async (payload) => await trackWorkspace(payload.workspaceId)
+  run: async (payload: { workspaceId: string }) => {
+    await trackWorkspace(payload.workspaceId);
+  },
 });
 
-// Consumer 3: AI onboarding (added even later, still no producer change)
-client.defineJob({
+// Consumer 3: AI onboarding — added even later, still independent
+export const aiOnboarding = task({
   id: 'ai-onboarding',
-  trigger: eventTrigger({ name: 'workspace.created' }),
-  run: async (payload) => await setupAI(payload.workspaceId)
+  run: async (payload: { workspaceId: string }) => {
+    await setupAI(payload.workspaceId);
+  },
 });
+
+// Producer: fan out to each task when a workspace is created.
+// Each task runs independently; new tasks can be added without
+// touching this call site beyond adding a new trigger.
+async function onWorkspaceCreated(workspaceId: string, ownerId: string) {
+  await Promise.all([
+    sendWelcomeEmail.trigger({ ownerId }),
+    setupAnalytics.trigger({ workspaceId }),
+    aiOnboarding.trigger({ workspaceId }),
+  ]);
+}
 ```
+
+<Note>
+Trigger.dev v4 dispatches by **task id**, so the producer references each task explicitly rather than publishing to a named topic. To get topic-style fan-out where a producer is fully unaware of consumers, pair Trigger.dev with a database table, Supabase Realtime channel, or a dedicated dispatcher task that decides which downstream tasks to trigger.
+</Note>
 
 **2. Natural Resilience**
 - Broker acts as buffer for failures
@@ -1074,7 +1096,7 @@ const analytics = await analyticsService.getWorkspaceAnalytics(workspaceId);
 ❌ **Debugging complexity** is unacceptable
 ❌ **Real-time guarantees** are essential
 
-**In Tuturuuu**: Primary communication pattern between microservices using Trigger.dev as event broker.
+**In Tuturuuu**: Trigger.dev v4 runs background and scheduled work — calendar sync, task scheduling, and similar jobs in `packages/trigger/src` — rather than serving as a full cross-service event bus. It is not the primary request path; most product data flows synchronously through `packages/internal-api` helpers and REST `/api/v1` routes (and, increasingly, the Rust `apps/backend`). Treat broad "event broker between every service" framing as illustrative.
 
 ---
 
@@ -1148,41 +1170,48 @@ graph TD
 
 ## Tuturuuu's Architectural Decisions
 
-Tuturuuu uses a **combination of patterns**, applying each where it provides the most value:
+Tuturuuu uses a **combination of patterns**, applying each where it provides the most value. The descriptions below reflect the real codebase as of mid-2026; the patterns are applied pragmatically, not dogmatically.
 
-### External Architecture: Microservices + Event-Driven
+<Note>
+**Active migration**: The frontend and backend architecture is mid-transition. `apps/web` (Next.js, port `7803`) is being replaced by `apps/tanstack-web` (TanStack Start) plus a dedicated Rust backend, `apps/backend` (port `7820`). Decisions described here as current truth are subject to that migration — see [TanStack Start And Rust Migration](/platform/architecture/tanstack-rust-migration) for the authoritative contract.
+</Note>
 
-**Decision**: Decompose system into independent microservices communicating via events
+### Deployment: Many Independently Deployable Apps
+
+**Decision**: Split the product surface into separate deployable apps (`web`, `finance`, `calendar`, `nova`, and more) that scale independently
+
+**Reality and caveats**:
+- Multiple domains (AI, Finance, Calendar, Tasks) live as distinct apps in the monorepo
+- Apps deploy and scale independently, which gives microservice-like operational benefits
+- They share a **single Supabase project** rather than per-service databases, so this is not a textbook "database-per-service" microservices topology
+- Most apps share the same Next.js stack; the Rust `apps/backend` is the main technology-diversity example
+
+### Background Work: Trigger.dev v4 Tasks
+
+**Decision**: Run asynchronous and scheduled work as Trigger.dev v4 `task()` definitions in `packages/trigger/src`
 
 **Justification**:
-- Multiple teams working on different domains (AI, Finance, Calendar)
-- Need independent deployment and scaling
-- Want technology flexibility per service
-- High availability requirements
+- Long-running and scheduled jobs (calendar sync, task scheduling) should not block request handling
+- Built-in retries, concurrency controls, and queues add resilience
+- This is background processing, not a general cross-service event bus; synchronous flows use `packages/internal-api` helpers and REST `/api/v1` routes
 
-**Pattern Combination**:
-- **Microservices** for organizational scalability and independent deployment
-- **Event-Driven** for decoupling and resilience
+### Internal Code Organization: Conventional Next.js Layering
 
-### Internal Architecture: Hexagonal (Within Each Service)
+**Decision**: Organize each app as a conventional Next.js App Router project (`app/`, `components/`, `lib/`, `utils/`), extracting shared logic into `packages/*`
 
-**Decision**: Each microservice uses Hexagonal Architecture internally
-
-**Justification**:
-- Complex business logic needs protection
-- High test coverage requirements
-- Long-term maintainability is critical
-- May need to swap infrastructure (Supabase → another provider)
+**Reality and caveats**:
+- The apps do **not** implement formal hexagonal/clean/onion layering (no `domain/`, `application/`, `infrastructure/` directories)
+- Reuse and isolation come from shared workspace packages (`packages/internal-api`, `packages/utils`, `packages/ui`, `packages/types`), not a strict ports-and-adapters hexagon
+- Hexagonal/clean principles are an aspirational reference for unusually complex domains rather than an enforced rule
 
 ### Frontend: Modular Monolith
 
-**Decision**: Web frontend is a modular monolith with clear module boundaries
+**Decision**: The web frontend is a modular monolith with convention-based module boundaries
 
 **Justification**:
-- Single deployment simplifies frontend operations
-- Clear module boundaries support team scalability
-- Don't need independent frontend deployment yet
-- Migration path to micro-frontends if needed
+- Single deployment per frontend app simplifies operations
+- Feature folders (Finance, Calendar, Tasks) provide organizational clarity
+- The successor `apps/tanstack-web` keeps the same modular approach using TanStack Router route trees
 
 ---
 

@@ -41,6 +41,8 @@ describe('getPostsPageData', () => {
           data: [
             {
               approval_rejection_reason: null,
+              approval_approved_at: '2026-01-05T01:00:00.000Z',
+              approval_rejected_at: null,
               approval_status: 'APPROVED',
               can_remove_approval: true,
               check_created_at: '2026-01-05T00:00:00.000Z',
@@ -57,9 +59,15 @@ describe('getPostsPageData', () => {
               post_id: 'post-1',
               post_title: 'Post 1',
               queue_attempt_count: 0,
+              queue_cancelled_at: null,
+              queue_claimed_at: null,
+              queue_created_at: '2026-01-05T01:05:00.000Z',
               queue_last_error: null,
+              queue_last_attempt_at: '2026-01-05T01:10:00.000Z',
               queue_sent_at: null,
+              queue_skipped_at: null,
               queue_status: 'queued',
+              queue_updated_at: '2026-01-05T01:10:00.000Z',
               recipient: 'Recipient',
               review_stage: 'pending_approval',
               row_key: 'row-1',
@@ -141,7 +149,11 @@ describe('getPostsPageData', () => {
     );
     expect(result.postsData.count).toBe(3);
     expect(result.postsData.data[0]).toMatchObject({
+      approval_approved_at: '2026-01-05T01:00:00.000Z',
       id: 'row-1',
+      queue_created_at: '2026-01-05T01:05:00.000Z',
+      queue_last_attempt_at: '2026-01-05T01:10:00.000Z',
+      queue_skipped_at: null,
       stage: 'pending_approval',
       user_id: 'user-1',
     });

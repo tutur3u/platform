@@ -16,12 +16,23 @@ const {
   DNS_IPV4_FIRST_NODE_OPTION,
   DEFAULT_PORTLESS_HEALTH_URL,
   DEFAULT_PORTLESS_PROXY_TLS_MARKER,
+  DEFAULT_E2E_COMPARE_REPORT_PATH,
+  DEFAULT_TANSTACK_PORTLESS_BASE_URL,
+  DEFAULT_TANSTACK_DIRECT_HOST_PORT,
+  DEFAULT_REUSABLE_LOCAL_REDIS_REST_PROBE_URL,
+  DEFAULT_REUSABLE_LOCAL_REDIS_REST_TOKEN,
+  DEFAULT_REUSABLE_LOCAL_REDIS_REST_URL,
   DEFAULT_REUSABLE_WEB_IMAGE_COLOR,
   DEFAULT_REUSABLE_WEB_IMAGE_PROJECT,
+  createE2ECompareReport,
   ensurePortlessRoute,
   ensureLocalE2EEnvFile,
   formatBlueGreenStages,
   getPortlessCommandEnv,
+  getE2ECompareReportPath,
+  getE2EPlaywrightJsonReportPath,
+  getE2EPortlessRouteName,
+  getE2EPortlessTargetPort,
   getDockerComposeDiagnosticArgs,
   getDockerMemoryLimit,
   getE2EComposeProjectName,
@@ -30,32 +41,49 @@ const {
   getDockerWebUpArgs,
   getPortlessHealthUrl,
   getPortlessProxyStartArgs,
+  getTanStackDirectHostPort,
+  getFrontendE2EEnv,
   getReadinessFetchOptions,
   getDockerImageRefCandidates,
+  getReusableLocalRedisRuntime,
   getReusableWebImageProject,
   getReusableWebImageRef,
   getReusableWebImageSource,
   getReusableWebImageTargets,
+  getE2EDockerNativeBuildValue,
+  getE2EDockerNativeSupportBuildValue,
   getReusableHiveImageRef,
   getReusableSupportImageRef,
   getReusableSupportImageSpecs,
+  getE2EDockerCronRunnerEnabledValue,
+  getPlaywrightJsonSummary,
+  getFrontendE2EBaseUrl,
   getWebProxyHealthUrl,
   getWebProxyHostPort,
   isPortlessProxyConfigMismatchError,
   isPortlessProxyStartExitError,
   isPortlessNotReadyBody,
   isE2EComposeProjectName,
+  isReusableLocalRedisResponse,
+  isReusingLocalRedis,
   parseE2EProjectImageTags,
+  parseE2EFrontendArgs,
+  probeReusableLocalRedis,
   prepareReusableWebImage,
   prepareReusableSupportImages,
   printE2EFailureDiagnostics,
   readReusableWebImageColor,
   removeE2EProjectImages,
   removePortlessProxyTlsMarker,
+  resolveReusableLocalRedisRuntime,
   resolveReusableWebImageSourceFromList,
   routeListHasPortlessAlias,
+  runFrontendE2EForCompare,
+  runWebE2E,
   shouldKeepStack,
   waitForUrl,
+  withPlaywrightJsonReporterArgs,
+  writeE2ECompareReport,
 } = require('./run-web-e2e-docker.js');
 
 test('getDockerWebUpArgs starts production blue-green Docker with reset local Supabase', () => {
@@ -69,9 +97,9 @@ test('getDockerWebUpArgs starts production blue-green Docker with reset local Su
     '--build-memory',
     'auto',
     '--build-cpus',
-    'auto',
+    '4',
     '--build-max-parallelism',
-    'auto',
+    '1',
     '--env-file',
     'tmp/e2e/web.env',
   ]);
@@ -92,6 +120,78 @@ test('getDockerWebUpArgs starts production blue-green Docker with reset local Su
   );
 });
 
+test('getDockerWebUpArgs reuses a detected local Redis bridge', () => {
+  assert.deepEqual(
+    getDockerWebUpArgs('tmp/e2e/web.env', {
+      E2E_REUSED_LOCAL_REDIS: '1',
+    }),
+    [
+      'up',
+      '--mode',
+      'prod',
+      '--strategy',
+      'blue-green',
+      '--reset-supabase',
+      '--without-redis',
+      '--build-memory',
+      'auto',
+      '--build-cpus',
+      '4',
+      '--build-max-parallelism',
+      '1',
+      '--env-file',
+      'tmp/e2e/web.env',
+    ]
+  );
+});
+
+test('getE2EDockerNativeBuildValue defaults E2E to host-built web artifacts', () => {
+  assert.equal(getE2EDockerNativeBuildValue({}), '1');
+  assert.equal(
+    getE2EDockerNativeBuildValue({ DOCKER_WEB_NATIVE_BUILD: '0' }),
+    '0'
+  );
+  assert.equal(
+    getE2EDockerNativeBuildValue({
+      DOCKER_WEB_NATIVE_BUILD: '0',
+      E2E_DOCKER_NATIVE_BUILD: '1',
+    }),
+    '1'
+  );
+});
+
+test('getE2EDockerNativeSupportBuildValue builds support images on clean runners by default', () => {
+  assert.equal(getE2EDockerNativeSupportBuildValue({}), '1');
+  assert.equal(
+    getE2EDockerNativeSupportBuildValue({
+      DOCKER_WEB_NATIVE_SUPPORT_BUILD: '0',
+    }),
+    '0'
+  );
+  assert.equal(
+    getE2EDockerNativeSupportBuildValue({
+      DOCKER_WEB_NATIVE_SUPPORT_BUILD: '0',
+      E2E_DOCKER_NATIVE_SUPPORT_BUILD: '1',
+    }),
+    '1'
+  );
+});
+
+test('getE2EDockerCronRunnerEnabledValue disables the cron health gate in E2E by default', () => {
+  assert.equal(getE2EDockerCronRunnerEnabledValue({}), '0');
+  assert.equal(
+    getE2EDockerCronRunnerEnabledValue({ DOCKER_WEB_CRON_RUNNER_ENABLED: '1' }),
+    '1'
+  );
+  assert.equal(
+    getE2EDockerCronRunnerEnabledValue({
+      DOCKER_WEB_CRON_RUNNER_ENABLED: '1',
+      E2E_DOCKER_WEB_CRON_RUNNER_ENABLED: '0',
+    }),
+    '0'
+  );
+});
+
 test('getDockerWebDownArgs stops the same production blue-green Docker stack', () => {
   assert.deepEqual(getDockerWebDownArgs('tmp/e2e/web.env'), [
     'down',
@@ -109,6 +209,37 @@ test('getDockerWebDownArgs stops the same production blue-green Docker stack', (
     getDockerWebDownArgs('tmp/e2e/web.env', {
       DOCKER_WEB_REUSED_WEB_IMAGE_SOURCE: 'tuturuuu-web-blue',
     }),
+    [
+      'down',
+      '--mode',
+      'prod',
+      '--strategy',
+      'blue-green',
+      '--env-file',
+      'tmp/e2e/web.env',
+      '--volumes',
+    ]
+  );
+  assert.deepEqual(
+    getDockerWebDownArgs('tmp/e2e/web.env', {
+      E2E_REUSED_LOCAL_REDIS: 'true',
+    }),
+    [
+      'down',
+      '--mode',
+      'prod',
+      '--strategy',
+      'blue-green',
+      '--without-redis',
+      '--env-file',
+      'tmp/e2e/web.env',
+      '--volumes',
+      '--rmi',
+      'local',
+    ]
+  );
+  assert.deepEqual(
+    getDockerWebDownArgs('tmp/e2e/web.env', {}, { preserveImages: true }),
     [
       'down',
       '--mode',
@@ -167,12 +298,147 @@ test('ensureLocalE2EEnvFile writes a local-only web env file', () => {
   }
 });
 
+test('ensureLocalE2EEnvFile writes reusable Redis overrides', () => {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ttr-e2e-env-'));
+  const envFilePath = path.join(tempDir, 'web.env');
+
+  try {
+    ensureLocalE2EEnvFile(envFilePath, {
+      DOCKER_UPSTASH_REDIS_REST_TOKEN: 'reuse-token',
+      DOCKER_UPSTASH_REDIS_REST_URL: 'http://host.docker.internal:8079',
+      UPSTASH_REDIS_REST_TOKEN: 'reuse-token',
+      UPSTASH_REDIS_REST_URL: 'http://host.docker.internal:8079',
+    });
+    const content = fs.readFileSync(envFilePath, 'utf8');
+
+    assert.match(content, /DOCKER_UPSTASH_REDIS_REST_TOKEN=reuse-token/u);
+    assert.match(
+      content,
+      /DOCKER_UPSTASH_REDIS_REST_URL=http:\/\/host\.docker\.internal:8079/u
+    );
+    assert.match(content, /UPSTASH_REDIS_REST_TOKEN=reuse-token/u);
+    assert.match(
+      content,
+      /UPSTASH_REDIS_REST_URL=http:\/\/host\.docker\.internal:8079/u
+    );
+    assert.doesNotMatch(content, /serverless-redis-http/u);
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
 test('shouldKeepStack supports explicit local debugging opt-in', () => {
   assert.equal(shouldKeepStack({}), false);
   assert.equal(shouldKeepStack({ E2E_KEEP_DOCKER_STACK: '1' }), true);
   assert.equal(shouldKeepStack({ E2E_KEEP_DOCKER_STACK: 'true' }), true);
   assert.equal(shouldKeepStack({ E2E_KEEP_DOCKER_STACK: 'on' }), true);
   assert.equal(shouldKeepStack({ E2E_KEEP_DOCKER_STACK: 'false' }), false);
+});
+
+test('getReusableLocalRedisRuntime defaults to the local Redis app bridge', () => {
+  assert.equal(isReusingLocalRedis({}), false);
+  assert.equal(isReusingLocalRedis({ E2E_REUSED_LOCAL_REDIS: '1' }), true);
+  assert.deepEqual(getReusableLocalRedisRuntime({}), {
+    probeUrl: DEFAULT_REUSABLE_LOCAL_REDIS_REST_PROBE_URL,
+    token: DEFAULT_REUSABLE_LOCAL_REDIS_REST_TOKEN,
+    url: DEFAULT_REUSABLE_LOCAL_REDIS_REST_URL,
+  });
+  assert.deepEqual(
+    getReusableLocalRedisRuntime({
+      DOCKER_UPSTASH_REDIS_REST_TOKEN: 'docker-token',
+      DOCKER_UPSTASH_REDIS_REST_URL: 'https://redis.example.test',
+      E2E_REUSE_LOCAL_REDIS_REST_PROBE_URL: 'http://127.0.0.1:18079/',
+      E2E_REUSE_LOCAL_REDIS_REST_TOKEN: 'local-token',
+      E2E_REUSE_LOCAL_REDIS_REST_URL: 'http://host.docker.internal:18079',
+    }),
+    {
+      probeUrl: 'http://127.0.0.1:18079/',
+      token: 'local-token',
+      url: 'http://host.docker.internal:18079',
+    }
+  );
+});
+
+test('resolveReusableLocalRedisRuntime reuses a reachable local bridge', async () => {
+  const chunks = [];
+  const runtime = await resolveReusableLocalRedisRuntime({
+    env: {},
+    fetchImpl: async (url, options = {}) => {
+      assert.equal(url, DEFAULT_REUSABLE_LOCAL_REDIS_REST_PROBE_URL);
+      assert.equal(options.redirect, 'manual');
+
+      return {
+        status: 200,
+        text: async () => '"Welcome to Serverless Redis HTTP!"',
+      };
+    },
+    output: {
+      write(chunk) {
+        chunks.push(String(chunk));
+      },
+    },
+  });
+
+  assert.deepEqual(runtime, getReusableLocalRedisRuntime({}));
+  assert.equal(
+    isReusableLocalRedisResponse(
+      { status: 404 },
+      '{"error":"SRH: Endpoint not found."}'
+    ),
+    true
+  );
+  assert.equal(
+    await probeReusableLocalRedis(getReusableLocalRedisRuntime({}), {
+      fetchImpl: async () => ({
+        status: 200,
+        text: async () => '"Welcome to Serverless Redis HTTP!"',
+      }),
+    }),
+    true
+  );
+  assert.match(chunks.join(''), /Reusing local Redis HTTP bridge/u);
+});
+
+test('resolveReusableLocalRedisRuntime preserves bundled Redis fallback by default', async () => {
+  assert.equal(
+    await resolveReusableLocalRedisRuntime({
+      env: {},
+      fetchImpl: async () => {
+        throw new Error('connection refused');
+      },
+      output: {
+        write() {},
+      },
+    }),
+    null
+  );
+  assert.equal(
+    await resolveReusableLocalRedisRuntime({
+      env: { E2E_REUSE_LOCAL_REDIS: 'false' },
+      fetchImpl: async () => {
+        throw new Error('should not probe');
+      },
+      output: {
+        write() {},
+      },
+    }),
+    null
+  );
+
+  await assert.rejects(
+    () =>
+      resolveReusableLocalRedisRuntime({
+        env: { E2E_REUSE_LOCAL_REDIS: 'true' },
+        fetchImpl: async () => ({
+          status: 200,
+          text: async () => '<html>different service</html>',
+        }),
+        output: {
+          write() {},
+        },
+      }),
+    /Expected a Serverless Redis HTTP bridge/u
+  );
 });
 
 test('getReusableWebImageSource defaults to the active serve:web:docker:bg lane', () => {
@@ -564,9 +830,396 @@ test('getPortlessHealthUrl targets the browser-facing local E2E login route', ()
     }),
     'https://tuturuuu.localhost/login'
   );
+  assert.equal(
+    getPortlessHealthUrl({
+      BASE_URL: DEFAULT_TANSTACK_PORTLESS_BASE_URL,
+      E2E_PORTLESS_HEALTH_PATH: '/',
+    }),
+    `${DEFAULT_TANSTACK_PORTLESS_BASE_URL}/`
+  );
 });
 
-test('getWebProxyHealthUrl targets the direct Docker web proxy login route', () => {
+test('parseE2EFrontendArgs strips frontend flags before Playwright runs', () => {
+  assert.deepEqual(
+    parseE2EFrontendArgs(['--frontend', 'tanstack', '--project', 'chromium']),
+    {
+      frontend: 'tanstack',
+      playwrightArgs: ['--project', 'chromium'],
+    }
+  );
+  assert.deepEqual(
+    parseE2EFrontendArgs(['--frontend=compare', 'auth.spec.ts']),
+    {
+      frontend: 'compare',
+      playwrightArgs: ['auth.spec.ts'],
+    }
+  );
+});
+
+test('withPlaywrightJsonReporterArgs forces JSON reporter evidence for compare mode', () => {
+  assert.deepEqual(
+    withPlaywrightJsonReporterArgs([
+      '--project',
+      'chromium',
+      '--reporter',
+      'line',
+      'auth.spec.ts',
+    ]),
+    ['--project', 'chromium', 'auth.spec.ts', '--reporter=json']
+  );
+  assert.deepEqual(withPlaywrightJsonReporterArgs(['--reporter=html']), [
+    '--reporter=json',
+  ]);
+});
+
+test('getPlaywrightJsonSummary extracts executed test counts', () => {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'playwright-json-'));
+  const reportPath = path.join(tempDir, 'report.json');
+
+  try {
+    fs.writeFileSync(
+      reportPath,
+      JSON.stringify({
+        stats: {
+          expected: 7,
+          flaky: 1,
+          skipped: 2,
+          unexpected: 1,
+        },
+      })
+    );
+
+    assert.deepEqual(getPlaywrightJsonSummary(reportPath), {
+      executedCount: 9,
+      failedCount: 1,
+      flakyCount: 1,
+      passedCount: 7,
+      skippedCount: 2,
+      testCount: 11,
+    });
+    assert.match(
+      getE2EPlaywrightJsonReportPath('tanstack', {
+        E2E_PLAYWRIGHT_JSON_REPORT_DIR: tempDir,
+      }),
+      /tanstack-report\.json$/u
+    );
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('createE2ECompareReport summarizes next and TanStack results', () => {
+  const report = createE2ECompareReport(
+    {
+      next: {
+        durationMs: 1000,
+        executedCount: 4,
+        failedCount: 0,
+        flakyCount: 0,
+        origin: 'https://tuturuuu.localhost',
+        passed: true,
+        passedCount: 4,
+        playwright: {
+          reporter: 'json',
+          reportPath: 'tmp/e2e/web-migration/playwright-json/next-report.json',
+        },
+        skippedCount: 1,
+        status: 'passed',
+        testCount: 5,
+      },
+      tanstack: {
+        durationMs: 1200,
+        executedCount: 4,
+        failedCount: 0,
+        flakyCount: 0,
+        passed: true,
+        passedCount: 4,
+        skippedCount: 0,
+        status: 'passed',
+        testCount: 4,
+      },
+    },
+    new Date('2026-06-20T00:00:00.000Z')
+  );
+
+  assert.deepEqual(report, {
+    frontend: 'compare',
+    frontends: {
+      next: {
+        durationMs: 1000,
+        executedCount: 4,
+        failedCount: 0,
+        flakyCount: 0,
+        origin: 'https://tuturuuu.localhost',
+        passed: true,
+        passRate: 1,
+        passedCount: 4,
+        playwright: {
+          reporter: 'json',
+          reportPath: 'tmp/e2e/web-migration/playwright-json/next-report.json',
+        },
+        skippedCount: 1,
+        status: 'passed',
+        testCount: 5,
+        wallMs: 1000,
+      },
+      tanstack: {
+        durationMs: 1200,
+        executedCount: 4,
+        failedCount: 0,
+        flakyCount: 0,
+        origin: null,
+        passed: true,
+        passRate: 1,
+        passedCount: 4,
+        skippedCount: 0,
+        status: 'passed',
+        testCount: 4,
+        wallMs: 1200,
+      },
+    },
+    generatedAt: '2026-06-20T00:00:00.000Z',
+    origins: {
+      next: 'https://tuturuuu.localhost',
+      tanstack: null,
+    },
+    passed: true,
+    status: 'passed',
+  });
+  assert.deepEqual(
+    createE2ECompareReport({
+      next: { durationMs: 1000, passed: true, status: 'passed' },
+      tanstack: {
+        durationMs: 1200,
+        passed: true,
+        passRate: 0.95,
+        status: 'passed',
+        wallMs: 1300,
+      },
+    }).frontends.tanstack,
+    {
+      durationMs: 1200,
+      origin: null,
+      passed: true,
+      passRate: 0.95,
+      status: 'passed',
+      wallMs: 1300,
+    }
+  );
+  assert.equal(
+    createE2ECompareReport({
+      next: { passed: true, status: 'passed' },
+      tanstack: { error: 'failed', passed: false, status: 'failed' },
+    }).status,
+    'failed'
+  );
+});
+
+test('writeE2ECompareReport writes ignored cutover evidence under tmp by default', () => {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'e2e-report-'));
+  const reportPath = path.join(tempDir, 'tmp', 'e2e', 'compare-report.json');
+  const unsafeReportPath = path.join(
+    tempDir,
+    'apps',
+    'web',
+    'compare-report.json'
+  );
+  const chunks = [];
+
+  try {
+    assert.equal(
+      getE2ECompareReportPath({
+        E2E_COMPARE_REPORT_PATH: reportPath,
+      }),
+      reportPath
+    );
+    assert.equal(
+      DEFAULT_E2E_COMPARE_REPORT_PATH.endsWith(
+        path.join('tmp', 'e2e', 'web-migration', 'compare-report.json')
+      ),
+      true
+    );
+
+    writeE2ECompareReport({
+      output: {
+        write(chunk) {
+          chunks.push(String(chunk));
+        },
+      },
+      report: { frontend: 'compare', passed: true, status: 'passed' },
+      reportPath,
+      rootDir: tempDir,
+    });
+
+    assert.deepEqual(JSON.parse(fs.readFileSync(reportPath, 'utf8')), {
+      frontend: 'compare',
+      passed: true,
+      status: 'passed',
+    });
+    assert.match(chunks.join(''), /Docker E2E compare report/u);
+    assert.throws(
+      () =>
+        writeE2ECompareReport({
+          output: {
+            write() {},
+          },
+          report: { frontend: 'compare', passed: true, status: 'passed' },
+          reportPath: unsafeReportPath,
+          rootDir: tempDir,
+        }),
+      /Docker E2E compare reports must be written under tmp/u
+    );
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('runFrontendE2EForCompare removes project images between compare halves', async () => {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'e2e-compare-'));
+  const calls = [];
+
+  try {
+    const result = await runFrontendE2EForCompare('next', ['smoke.spec.ts'], {
+      env: {
+        E2E_PLAYWRIGHT_JSON_REPORT_DIR: tempDir,
+      },
+      preserveDockerProjectImages: false,
+      runWebE2EForFrontend: async (args, options = {}) => {
+        calls.push({ args, options });
+
+        fs.writeFileSync(
+          options.env.PLAYWRIGHT_JSON_OUTPUT_NAME,
+          JSON.stringify({
+            stats: {
+              expected: 1,
+              flaky: 0,
+              skipped: 0,
+              unexpected: 0,
+            },
+          })
+        );
+      },
+    });
+
+    assert.equal(result.passed, true);
+    assert.equal(calls.length, 1);
+    assert.equal(calls[0].options.frontend, 'next');
+    assert.equal(calls[0].options.preserveDockerProjectImages, false);
+    assert.match(
+      calls[0].options.env.PLAYWRIGHT_JSON_OUTPUT_NAME,
+      /next-report\.json$/u
+    );
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('runWebE2E compare mode removes next project images before TanStack', async () => {
+  const reportPath = path.join(
+    process.cwd(),
+    'tmp',
+    'e2e',
+    'web-migration',
+    `compare-mode-${process.pid}-${Date.now()}.json`
+  );
+  const calls = [];
+
+  try {
+    await runWebE2E(['--frontend=compare', 'smoke.spec.ts'], {
+      env: {
+        E2E_COMPARE_REPORT_PATH: reportPath,
+      },
+      preserveDockerProjectImages: true,
+      runFrontendE2EForCompare: async (frontend, playwrightArgs, options) => {
+        calls.push({ frontend, options, playwrightArgs });
+
+        return {
+          durationMs: 1,
+          origin: `https://${frontend}.localhost`,
+          passed: true,
+          status: 'passed',
+        };
+      },
+    });
+
+    assert.deepEqual(
+      calls.map((call) => call.frontend),
+      ['next', 'tanstack']
+    );
+    assert.deepEqual(calls[0].playwrightArgs, ['smoke.spec.ts']);
+    assert.equal(calls[0].options.preserveDockerProjectImages, false);
+    assert.deepEqual(calls[0].options.dockerProjectImageServicesToRemove, [
+      'web-blue',
+      'web-green',
+    ]);
+    assert.equal(calls[1].options.preserveDockerProjectImages, true);
+  } finally {
+    fs.rmSync(reportPath, { force: true });
+  }
+});
+
+test('getFrontendE2EEnv points TanStack runs at the TanStack route', () => {
+  const env = getFrontendE2EEnv('tanstack', {});
+
+  assert.equal(getFrontendE2EBaseUrl('next', {}), LOCAL_E2E_BASE_URL);
+  assert.equal(
+    getFrontendE2EBaseUrl('next', {
+      BASE_URL: 'https://custom.localhost/path',
+    }),
+    'https://custom.localhost/path'
+  );
+  assert.equal(env.BASE_URL, DEFAULT_TANSTACK_PORTLESS_BASE_URL);
+  assert.equal(env.DOCKER_WEB_FRONTEND, 'tanstack');
+  assert.equal(env.E2E_PORTLESS_HEALTH_PATH, '/');
+  assert.equal(getE2EPortlessRouteName(env), 'tanstack.tuturuuu');
+  assert.equal(getE2EPortlessTargetPort(env), getWebProxyHostPort(env));
+  assert.equal(getFrontendE2EEnv('next', {}).BASE_URL, LOCAL_E2E_BASE_URL);
+  assert.equal(getFrontendE2EEnv('next', {}).DOCKER_WEB_FRONTEND, 'next');
+});
+
+test('getE2EPortlessTargetPort routes Docker TanStack frontend through web proxy', () => {
+  assert.equal(getE2EPortlessTargetPort({}), '7803');
+  assert.equal(
+    getTanStackDirectHostPort({}),
+    DEFAULT_TANSTACK_DIRECT_HOST_PORT
+  );
+  assert.equal(
+    getE2EPortlessTargetPort(getFrontendE2EEnv('tanstack', {})),
+    '7803'
+  );
+  assert.equal(
+    getE2EPortlessTargetPort({
+      PORTLESS_ROUTE_NAME: 'tanstack.tuturuuu',
+    }),
+    '7824'
+  );
+  assert.equal(
+    getE2EPortlessTargetPort({
+      DOCKER_TANSTACK_WEB_DIRECT_HOST_PORT: '17824',
+      PORTLESS_ROUTE_NAME: 'tanstack.tuturuuu',
+    }),
+    '17824'
+  );
+  assert.throws(
+    () =>
+      getE2EPortlessTargetPort({
+        DOCKER_TANSTACK_WEB_DIRECT_HOST_PORT: '7803',
+        PORTLESS_ROUTE_NAME: 'tanstack.tuturuuu',
+      }),
+    /Refusing to alias the TanStack Portless route to the Next web proxy port 7803/u
+  );
+  assert.equal(
+    getE2EPortlessTargetPort({
+      DOCKER_TANSTACK_WEB_DIRECT_HOST_PORT: '7803',
+      DOCKER_WEB_FRONTEND: 'tanstack',
+      E2E_ALLOW_TANSTACK_WEB_PROXY_PORT: '1',
+      PORTLESS_ROUTE_NAME: 'tanstack.tuturuuu',
+    }),
+    '7803'
+  );
+});
+
+test('getWebProxyHealthUrl targets the direct Docker web proxy readiness route', () => {
   assert.equal(getWebProxyHostPort({}), '7803');
   assert.equal(
     getWebProxyHostPort({ DOCKER_WEB_PROXY_HOST_PORT: '17803' }),
@@ -582,6 +1235,19 @@ test('getWebProxyHealthUrl targets the direct Docker web proxy login route', () 
       DOCKER_WEB_PROXY_HOST_PORT: '17803',
     }),
     'http://127.0.0.1:17803/login'
+  );
+  assert.equal(
+    getWebProxyHealthUrl({
+      DOCKER_WEB_FRONTEND: 'tanstack',
+    }),
+    'http://127.0.0.1:7803/'
+  );
+  assert.equal(
+    getWebProxyHealthUrl({
+      DOCKER_WEB_FRONTEND: 'tanstack',
+      DOCKER_WEB_PROXY_HOST_PORT: '17803',
+    }),
+    'http://127.0.0.1:17803/'
   );
   assert.equal(
     getWebProxyHealthUrl({
@@ -745,6 +1411,20 @@ test('routeListHasPortlessAlias requires the expected alias and proxy port', () 
     ),
     true
   );
+  assert.equal(
+    routeListHasPortlessAlias(
+      'Active routes:\n  https://tanstack.tuturuuu.localhost -> localhost:7824 (alias)\n',
+      getFrontendE2EEnv('tanstack', {})
+    ),
+    false
+  );
+  assert.equal(
+    routeListHasPortlessAlias(
+      'Active routes:\n  https://tanstack.tuturuuu.localhost -> localhost:7803 (alias)\n',
+      getFrontendE2EEnv('tanstack', {})
+    ),
+    true
+  );
 });
 
 test('isPortlessNotReadyBody detects Portless placeholder responses', () => {
@@ -867,6 +1547,11 @@ test('getReadinessFetchOptions refuses insecure TLS for non-local HTTPS origins'
       .rejectUnauthorized,
     false
   );
+  assert.equal(
+    getReadinessFetchOptions('https://tanstack.tuturuuu.localhost:1355/')
+      .rejectUnauthorized,
+    false
+  );
 });
 
 test('waitForUrl timeout keeps nested fetch failure causes visible', async () => {
@@ -930,6 +1615,43 @@ test('ensurePortlessRoute starts the wildcard proxy and refreshes the route', as
     )
   );
   assert.match(chunks.join(''), /https:\/\/tuturuuu\.localhost/u);
+});
+
+test('ensurePortlessRoute points the Docker TanStack host at the web proxy port', async () => {
+  const calls = [];
+
+  await ensurePortlessRoute({
+    env: getFrontendE2EEnv('tanstack', { PATH: 'test-path' }),
+    output: {
+      write() {},
+    },
+    runCommand: async (command, args, options = {}) => {
+      calls.push([command, args, options]);
+
+      if (args.includes('--remove')) {
+        throw new Error('route not registered yet');
+      }
+    },
+    runCommandForOutput: async (command, args, options = {}) => {
+      calls.push([command, args, options]);
+
+      return {
+        stderr: '',
+        stdout:
+          'Active routes:\n  https://tanstack.tuturuuu.localhost  ->  localhost:7803  (alias)\n',
+      };
+    },
+  });
+
+  assert.deepEqual(
+    calls.map(([command, args]) => [command, args]),
+    [
+      ['bunx', ['portless', 'proxy', 'start', '--wildcard']],
+      ['bunx', ['portless', 'alias', '--remove', 'tanstack.tuturuuu']],
+      ['bunx', ['portless', 'alias', 'tanstack.tuturuuu', '7803', '--force']],
+      ['bunx', ['portless', 'list']],
+    ]
+  );
 });
 
 test('ensurePortlessRoute honors the configured proxy host and Portless ports', async () => {
@@ -1310,6 +2032,47 @@ test('removeE2EProjectImages removes current project image tags', async () => {
   assert.deepEqual(calls, [
     ['docker', ['image', 'ls', '--format', '{{.Repository}}:{{.Tag}}']],
     ['docker', ['image', 'rm', 'ttr-e2e-local-123-web-blue:latest']],
+  ]);
+});
+
+test('removeE2EProjectImages can remove only selected service images', async () => {
+  const calls = [];
+
+  const removed = await removeE2EProjectImages({
+    env: { DOCKER_WEB_COMPOSE_PROJECT_NAME: 'ttr-e2e-local-123' },
+    imageServices: ['web-blue', 'web-green'],
+    runCommand: async (command, args) => {
+      calls.push([command, args]);
+    },
+    runCommandForOutput: async (command, args) => {
+      calls.push([command, args]);
+      return {
+        stderr: '',
+        stdout: [
+          'ttr-e2e-local-123-backend:latest',
+          'ttr-e2e-local-123-web-blue:latest',
+          'ttr-e2e-local-123-web-green:latest',
+          'ttr-e2e-local-456-web-blue:latest',
+        ].join('\n'),
+      };
+    },
+  });
+
+  assert.deepEqual(removed, [
+    'ttr-e2e-local-123-web-blue:latest',
+    'ttr-e2e-local-123-web-green:latest',
+  ]);
+  assert.deepEqual(calls, [
+    ['docker', ['image', 'ls', '--format', '{{.Repository}}:{{.Tag}}']],
+    [
+      'docker',
+      [
+        'image',
+        'rm',
+        'ttr-e2e-local-123-web-blue:latest',
+        'ttr-e2e-local-123-web-green:latest',
+      ],
+    ],
   ]);
 });
 

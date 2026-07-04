@@ -1,5 +1,6 @@
 const fs = require('node:fs');
 const crypto = require('node:crypto');
+const os = require('node:os');
 const path = require('node:path');
 
 const {
@@ -30,13 +31,28 @@ const {
   BUILD_STALL_RECOVERY_REASON,
   BUILDKIT_SERVICE_NAME,
   CACHED_BUILD_ERROR_RECOVERY_REASON,
+  getAutoBuildMemory,
+  getResolvedBuildkitComposeEnv,
   isBuildStallTimeoutError,
   isBunTarballExtractionError,
   isCachedBuildError,
   isTransientDockerRegistryError,
   cleanupBuildkitAfterBuild,
+  ensureBuildkitBuilder,
   recoverBuildkitBunInstallCache,
 } = require('./buildkit-builder.js');
+const {
+  BUILD_RESOURCE_PROFILE_REASON_ENV,
+  applyBuildResourceProfileToEnv,
+  getBuildResourceProfileFromEnv,
+  getBuildResourceProfilePathsFromEnv,
+  getNextAdaptiveBuildResourceProfile,
+  getRecommendedBuildResourceProfile,
+  isAdaptiveBuildResourceProfileEnabled,
+  isBuildkitMemoryExhaustionError,
+  isBuildkitResourceProfileFallbackError,
+  persistBuildResourceProfile,
+} = require('./resource-profiles.js');
 
 const ROOT_DIR = path.resolve(__dirname, '..', '..');
 const DOCKER_WEB_RUNTIME_DIR = path.join(ROOT_DIR, 'tmp', 'docker-web');
@@ -110,6 +126,7 @@ const BLUE_GREEN_SUPPORT_SERVICES_HEALTH_GATE = Object.freeze([
   'markitdown',
   'storage-unzip-proxy',
   'supermemory',
+  'web-docker-control',
   'web-cron-runner',
 ]);
 const BLUE_GREEN_SUPPORT_SERVICES = Object.freeze([
@@ -124,6 +141,7 @@ const BLUE_GREEN_SUPPORT_BUILD_SERVICE_NAMES = Object.freeze([
   'markitdown',
   'storage-unzip-proxy',
   'supermemory',
+  'web-docker-control',
   'web-cron-runner',
 ]);
 const BLUE_GREEN_BUILD_HASH_VERSION = 1;
@@ -175,7 +193,26 @@ const BLUE_GREEN_WEB_CRON_RUNNER_BUILD_PATHS = Object.freeze([
   'apps/web/docker/cron-runner.Dockerfile',
   'docker-compose/compose.web.prod.ops.yml',
 ]);
+const BLUE_GREEN_WEB_DOCKER_CONTROL_BUILD_PATHS = Object.freeze([
+  'apps/web/docker/docker-control-recovery.js',
+  'apps/web/docker/docker-control-server.js',
+  'apps/web/docker/docker-control.Dockerfile',
+  'docker-compose/compose.web.prod.ops.yml',
+]);
 const BLUE_GREEN_COLORS = ['blue', 'green'];
+const BLUE_GREEN_FRONTENDS = Object.freeze({
+  next: {
+    cacheLabel: 'web',
+    port: '7803',
+    servicePrefix: 'web',
+  },
+  tanstack: {
+    cacheLabel: 'tanstack-web',
+    port: '7824',
+    servicePrefix: 'tanstack-web',
+  },
+});
+const DEFAULT_BLUE_GREEN_FRONTEND = 'next';
 const LEGACY_HIVE_SERVICE = 'hive';
 const BLUE_GREEN_PROXY_DRAIN_MS = 20_000;
 const BLUE_GREEN_CLIENT_HEADER_BUFFER_SIZE = '64k';
@@ -231,20 +268,32 @@ function isBlueGreenSupermemoryEnabled(env = {}) {
   return !isExplicitFalseEnvValue(configuredValue);
 }
 
+function isBlueGreenCronRunnerEnabled(env = {}) {
+  return !isExplicitFalseEnvValue(env.DOCKER_WEB_CRON_RUNNER_ENABLED);
+}
+
 function getBlueGreenHealthGateSupportServices(env = {}) {
-  return isBlueGreenSupermemoryEnabled(env)
+  const services = isBlueGreenSupermemoryEnabled(env)
     ? [...BLUE_GREEN_SUPPORT_SERVICES_HEALTH_GATE]
     : BLUE_GREEN_SUPPORT_SERVICES_HEALTH_GATE.filter(
         (serviceName) => serviceName !== 'supermemory'
       );
+
+  return isBlueGreenCronRunnerEnabled(env)
+    ? services
+    : services.filter((serviceName) => serviceName !== 'web-cron-runner');
 }
 
 function getBlueGreenSupportBuildServiceNames(env = {}) {
-  return isBlueGreenSupermemoryEnabled(env)
+  const services = isBlueGreenSupermemoryEnabled(env)
     ? [...BLUE_GREEN_SUPPORT_BUILD_SERVICE_NAMES]
     : BLUE_GREEN_SUPPORT_BUILD_SERVICE_NAMES.filter(
         (serviceName) => serviceName !== 'supermemory'
       );
+
+  return isBlueGreenCronRunnerEnabled(env)
+    ? services
+    : services.filter((serviceName) => serviceName !== 'web-cron-runner');
 }
 
 function sleep(ms) {
@@ -401,6 +450,68 @@ function isBlueGreenColor(value) {
   return BLUE_GREEN_COLORS.includes(value);
 }
 
+function normalizeBlueGreenFrontend(value) {
+  const frontend = String(value ?? '')
+    .trim()
+    .toLowerCase();
+
+  if (!frontend) {
+    return DEFAULT_BLUE_GREEN_FRONTEND;
+  }
+
+  if (Object.hasOwn(BLUE_GREEN_FRONTENDS, frontend)) {
+    return frontend;
+  }
+
+  throw new Error(
+    `Unsupported Docker web frontend "${value}". Expected one of: ${Object.keys(
+      BLUE_GREEN_FRONTENDS
+    ).join(', ')}.`
+  );
+}
+
+function getBlueGreenFrontend(envOrFrontend = process.env) {
+  if (typeof envOrFrontend === 'string') {
+    return normalizeBlueGreenFrontend(envOrFrontend);
+  }
+
+  return normalizeBlueGreenFrontend(envOrFrontend?.DOCKER_WEB_FRONTEND);
+}
+
+function getBlueGreenFrontendConfig(envOrFrontend = process.env) {
+  return BLUE_GREEN_FRONTENDS[getBlueGreenFrontend(envOrFrontend)];
+}
+
+function getBlueGreenFrontendPort(envOrFrontend = process.env) {
+  return getBlueGreenFrontendConfig(envOrFrontend).port;
+}
+
+function getBlueGreenDirectServiceName(envOrFrontend = process.env) {
+  return getBlueGreenFrontendConfig(envOrFrontend).servicePrefix;
+}
+
+function getBlueGreenAllWebServiceNames() {
+  return Object.keys(BLUE_GREEN_FRONTENDS).flatMap((frontend) =>
+    BLUE_GREEN_COLORS.map((color) => getBlueGreenServiceName(color, frontend))
+  );
+}
+
+function getBlueGreenAllDirectWebServiceNames() {
+  return Object.values(BLUE_GREEN_FRONTENDS).map(
+    ({ servicePrefix }) => servicePrefix
+  );
+}
+
+function isBlueGreenWebServiceName(serviceName) {
+  return getBlueGreenAllWebServiceNames().includes(serviceName);
+}
+
+function isBlueGreenNativeWebServiceName(serviceName) {
+  return BLUE_GREEN_COLORS.some(
+    (color) => serviceName === getBlueGreenServiceName(color, 'next')
+  );
+}
+
 function readBlueGreenActiveColor(paths = getBlueGreenPaths(), fsImpl = fs) {
   if (!fsImpl.existsSync(paths.stateFile)) {
     return null;
@@ -418,9 +529,33 @@ function readBlueGreenProxyActiveColor(
     return null;
   }
 
-  const config = fsImpl.readFileSync(paths.proxyConfigFile, 'utf8');
+  try {
+    if (
+      typeof fsImpl.statSync === 'function' &&
+      !fsImpl.statSync(paths.proxyConfigFile).isFile()
+    ) {
+      return null;
+    }
+  } catch (error) {
+    if (['ENOENT', 'ENOTDIR'].includes(error?.code)) {
+      return null;
+    }
+
+    throw error;
+  }
+
+  let config;
+  try {
+    config = fsImpl.readFileSync(paths.proxyConfigFile, 'utf8');
+  } catch (error) {
+    if (['EISDIR', 'ENOENT', 'ENOTDIR'].includes(error?.code)) {
+      return null;
+    }
+
+    throw error;
+  }
   const match = config.match(
-    /^\s*server\s+web-(blue|green):7803\s+resolve\b(?!.*\bbackup\b).*$/imu
+    /^\s*server\s+(?:web|tanstack-web)-(blue|green):(?:7803|7824)\s+resolve\b(?!.*\bbackup\b).*$/imu
   );
   const color = match?.[1] ?? null;
 
@@ -447,6 +582,7 @@ function normalizeBlueGreenTargetRuntime(value) {
       commitHash: null,
       commitShortHash: null,
       deploymentStamp: null,
+      frontend: DEFAULT_BLUE_GREEN_FRONTEND,
       health: 'unknown',
       lastPromotedAt: null,
       standbyColor: null,
@@ -467,6 +603,13 @@ function normalizeBlueGreenTargetRuntime(value) {
       typeof value.commitShortHash === 'string' ? value.commitShortHash : null,
     deploymentStamp:
       typeof value.deploymentStamp === 'string' ? value.deploymentStamp : null,
+    frontend: (() => {
+      try {
+        return normalizeBlueGreenFrontend(value.frontend);
+      } catch {
+        return DEFAULT_BLUE_GREEN_FRONTEND;
+      }
+    })(),
     health: typeof value.health === 'string' ? value.health : 'unknown',
     lastPromotedAt:
       typeof value.lastPromotedAt === 'number' &&
@@ -879,7 +1022,7 @@ function createBlueGreenDeploymentStages({
   targetColor,
 }) {
   const webBuildService = buildServices.filter(
-    (serviceName) => serviceName === getBlueGreenServiceName(targetColor)
+    (serviceName) => serviceName === getBlueGreenServiceName(targetColor, env)
   );
   const hiveBuildServices = buildServices.filter(
     (serviceName) =>
@@ -887,8 +1030,7 @@ function createBlueGreenDeploymentStages({
   );
   const supportBuildServices = buildServices.filter(
     (serviceName) =>
-      serviceName !== 'web-blue' &&
-      serviceName !== 'web-green' &&
+      !isBlueGreenWebServiceName(serviceName) &&
       !serviceName.startsWith('hive-') &&
       serviceName !== 'hive-realtime'
   );
@@ -1003,12 +1145,16 @@ function getBlueGreenBuildTimeoutMs(env = process.env) {
   return value;
 }
 
-function getBlueGreenServiceName(color) {
+function getBlueGreenServiceName(
+  color,
+  envOrFrontend = DEFAULT_BLUE_GREEN_FRONTEND
+) {
   if (!isBlueGreenColor(color)) {
     throw new Error(`Unsupported blue/green color "${color}".`);
   }
 
-  return `web-${color}`;
+  const { servicePrefix } = getBlueGreenFrontendConfig(envOrFrontend);
+  return `${servicePrefix}-${color}`;
 }
 
 function getBlueGreenHiveServiceName(color) {
@@ -1055,7 +1201,29 @@ function getBlueGreenCacheImageTag(commitShortHash, { composeFile, env }) {
     throw new Error('A commit short hash is required for cache image tagging.');
   }
 
-  return `${getComposeProjectName(composeFile, env)}-web-cache:${commitShortHash.trim()}`;
+  const { cacheLabel } = getBlueGreenFrontendConfig(env);
+
+  return `${getComposeProjectName(composeFile, env)}-${cacheLabel}-cache:${commitShortHash.trim()}`;
+}
+
+async function assertBlueGreenCachedImageExists(
+  cachedImageTag,
+  { env, runCommand: run }
+) {
+  const imageTag =
+    typeof cachedImageTag === 'string' ? cachedImageTag.trim() : '';
+
+  if (!imageTag) {
+    throw new Error('Cached recovery image tag is required.');
+  }
+
+  await runChecked('docker', ['image', 'inspect', imageTag], {
+    env,
+    runCommand: run,
+    stdio: 'pipe',
+  });
+
+  return imageTag;
 }
 
 async function retagCachedImageForService(
@@ -1063,24 +1231,16 @@ async function retagCachedImageForService(
   serviceName,
   { composeFile, env, runCommand: run }
 ) {
-  if (
-    typeof cachedImageTag !== 'string' ||
-    cachedImageTag.trim().length === 0
-  ) {
-    throw new Error('Cached recovery image tag is required.');
-  }
-
+  const imageTag = await assertBlueGreenCachedImageExists(cachedImageTag, {
+    env,
+    runCommand: run,
+  });
   const serviceImageName = getComposeServiceImageName(serviceName, {
     composeFile,
     env,
   });
 
-  await runChecked('docker', ['image', 'inspect', cachedImageTag], {
-    env,
-    runCommand: run,
-    stdio: 'pipe',
-  });
-  await runChecked('docker', ['tag', cachedImageTag, serviceImageName], {
+  await runChecked('docker', ['tag', imageTag, serviceImageName], {
     env,
     runCommand: run,
   });
@@ -1119,13 +1279,17 @@ function renderBlueGreenProxyConfig(
   color,
   {
     deploymentStamp = null,
+    env = null,
     extraServerBlocks = [],
+    frontend = null,
     hiveColor = null,
     hiveStandbyColor = null,
     standbyColor = null,
   } = {}
 ) {
   const webColor = color;
+  const selectedFrontend = getBlueGreenFrontend(frontend ?? env ?? {});
+  const selectedFrontendPort = getBlueGreenFrontendPort(selectedFrontend);
   const resolvedHiveColor = hiveColor ?? webColor;
   const resolvedHiveStandbyColor =
     hiveStandbyColor ?? (resolvedHiveColor === webColor ? standbyColor : null);
@@ -1140,11 +1304,14 @@ function renderBlueGreenProxyConfig(
     );
   }
 
-  const primaryServiceName = getBlueGreenServiceName(webColor);
+  const primaryServiceName = getBlueGreenServiceName(
+    webColor,
+    selectedFrontend
+  );
   const primaryHiveServiceName = getBlueGreenHiveServiceName(resolvedHiveColor);
   const backupServiceName =
     standbyColor && standbyColor !== webColor
-      ? getBlueGreenServiceName(standbyColor)
+      ? getBlueGreenServiceName(standbyColor, selectedFrontend)
       : null;
   const backupHiveServiceName =
     resolvedHiveStandbyColor && resolvedHiveStandbyColor !== resolvedHiveColor
@@ -1192,16 +1359,16 @@ function renderBlueGreenProxyConfig(
     'resolver 127.0.0.11 ipv6=off valid=5s;',
     '',
     'log_format platform_blue_green_json escape=json',
-    `  '{"time":"$time_iso8601","remoteAddr":"$remote_addr","host":"$host","method":"$request_method","path":"$request_uri","status":$status,"requestTime":$request_time,"upstreamResponseTime":"$upstream_response_time","upstreamAddr":"$upstream_addr","projectId":"$platform_project_id","selectedBranch":"$platform_selected_branch","upstreamService":"$platform_upstream_service","deploymentStamp":"$upstream_http_x_platform_deployment_stamp","deploymentColor":"$upstream_http_x_platform_blue_green_color","primaryColor":"${webColor}","standbyColor":"${standbyColor ?? 'none'}","hivePrimaryColor":"${resolvedHiveColor}","hiveStandbyColor":"${resolvedHiveStandbyColor ?? 'none'}","userAgent":"$http_user_agent"}';`,
+    `  '{"time":"$time_iso8601","remoteAddr":"$remote_addr","host":"$host","method":"$request_method","path":"$request_uri","status":$status,"requestTime":$request_time,"upstreamResponseTime":"$upstream_response_time","upstreamAddr":"$upstream_addr","projectId":"$platform_project_id","selectedBranch":"$platform_selected_branch","upstreamService":"$platform_upstream_service","deploymentStamp":"$upstream_http_x_platform_deployment_stamp","deploymentColor":"$upstream_http_x_platform_blue_green_color","frontend":"${selectedFrontend}","primaryColor":"${webColor}","standbyColor":"${standbyColor ?? 'none'}","hivePrimaryColor":"${resolvedHiveColor}","hiveStandbyColor":"${resolvedHiveStandbyColor ?? 'none'}","userAgent":"$http_user_agent"}';`,
     'access_log /dev/stdout platform_blue_green_json;',
     'error_log /dev/stderr warn;',
     '',
     'upstream web_upstream {',
     '  zone web_upstream 64k;',
-    `  server ${primaryServiceName}:7803 resolve max_fails=1 fail_timeout=5s;`,
+    `  server ${primaryServiceName}:${selectedFrontendPort} resolve max_fails=1 fail_timeout=5s;`,
     ...(backupServiceName
       ? [
-          `  server ${backupServiceName}:7803 backup resolve max_fails=1 fail_timeout=5s;`,
+          `  server ${backupServiceName}:${selectedFrontendPort} backup resolve max_fails=1 fail_timeout=5s;`,
         ]
       : []),
     '}',
@@ -1384,7 +1551,9 @@ function writeBlueGreenProxyConfig(
   color,
   {
     deploymentStamp = null,
+    env = null,
     extraServerBlocks = [],
+    frontend = null,
     fsImpl = fs,
     hiveColor = null,
     hiveStandbyColor = null,
@@ -1393,11 +1562,29 @@ function writeBlueGreenProxyConfig(
   } = {}
 ) {
   ensureBlueGreenRuntime(paths, fsImpl);
+
+  try {
+    if (
+      typeof fsImpl.statSync === 'function' &&
+      typeof fsImpl.rmSync === 'function' &&
+      fsImpl.existsSync(paths.proxyConfigFile) &&
+      fsImpl.statSync(paths.proxyConfigFile).isDirectory()
+    ) {
+      fsImpl.rmSync(paths.proxyConfigFile, { force: true, recursive: true });
+    }
+  } catch (error) {
+    if (!['ENOENT', 'ENOTDIR'].includes(error?.code)) {
+      throw error;
+    }
+  }
+
   fsImpl.writeFileSync(
     paths.proxyConfigFile,
     renderBlueGreenProxyConfig(color, {
       deploymentStamp,
+      env,
       extraServerBlocks,
+      frontend,
       hiveColor,
       hiveStandbyColor,
       standbyColor,
@@ -1422,7 +1609,7 @@ function getBlueGreenProdServicesWithProxyOption(
   env = {}
 ) {
   const services = [
-    getBlueGreenServiceName(targetColor),
+    getBlueGreenServiceName(targetColor, env),
     ...getBlueGreenColorScopedSupportServices(targetColor),
     ...getBlueGreenHealthGateSupportServices(env),
   ];
@@ -1549,17 +1736,30 @@ function getBlueGreenSupportBuildInputSpecs(targetColor, env = {}) {
     {
       paths: [
         'docker-compose.web.prod.yml',
+        ...BLUE_GREEN_WEB_DOCKER_CONTROL_BUILD_PATHS,
+      ],
+      serviceName: 'web-docker-control',
+    },
+    {
+      paths: [
+        'docker-compose.web.prod.yml',
         ...BLUE_GREEN_WEB_CRON_RUNNER_BUILD_PATHS,
       ],
       serviceName: 'web-cron-runner',
     },
   ];
 
-  if (isBlueGreenSupermemoryEnabled(env)) {
-    return specs;
-  }
+  return specs.filter((spec) => {
+    if (spec.serviceName === 'supermemory') {
+      return isBlueGreenSupermemoryEnabled(env);
+    }
 
-  return specs.filter((spec) => spec.serviceName !== 'supermemory');
+    if (spec.serviceName === 'web-cron-runner') {
+      return isBlueGreenCronRunnerEnabled(env);
+    }
+
+    return true;
+  });
 }
 
 async function listBlueGreenBuildInputFiles({
@@ -1733,6 +1933,15 @@ function getBlueGreenChangedSupportBuildServices(
   }
 
   if (
+    BLUE_GREEN_WEB_DOCKER_CONTROL_BUILD_PATHS.some((watchedPath) =>
+      changedFilesIncludePath(changedFiles, watchedPath)
+    )
+  ) {
+    addService('web-docker-control');
+  }
+
+  if (
+    isBlueGreenCronRunnerEnabled(env) &&
     BLUE_GREEN_WEB_CRON_RUNNER_BUILD_PATHS.some((watchedPath) =>
       changedFilesIncludePath(changedFiles, watchedPath)
     )
@@ -1751,7 +1960,7 @@ function getBlueGreenDeploymentBuildServices({
   supportBuildHashes = null,
   targetColor,
 } = {}) {
-  const services = [getBlueGreenServiceName(targetColor)];
+  const services = [getBlueGreenServiceName(targetColor, env)];
   const hasPreviousSupportBuildHashes =
     previousSupportBuildHashes &&
     typeof previousSupportBuildHashes === 'object' &&
@@ -2005,6 +2214,8 @@ async function restartBuildkitBeforeBlueGreenBuild({
     return;
   }
 
+  const composeEnv = getResolvedBuildkitComposeEnv(env);
+
   await runChecked(
     'docker',
     getComposeCommandArgs(
@@ -2014,14 +2225,14 @@ async function restartBuildkitBeforeBlueGreenBuild({
       BUILDKIT_SERVICE_NAME
     ),
     {
-      env,
+      env: composeEnv,
       runCommand: run,
     }
   );
   await waitForComposeServiceHealthy(BUILDKIT_SERVICE_NAME, {
     composeFile,
     composeGlobalArgs,
-    env,
+    env: composeEnv,
     runCommand: run,
   });
 }
@@ -2032,6 +2243,8 @@ async function buildBlueGreenServices({
   composeFile,
   composeGlobalArgs = [],
   env,
+  fsImpl = fs,
+  osImpl = os,
   rootDir = ROOT_DIR,
   runCommand: run,
   services,
@@ -2044,20 +2257,25 @@ async function buildBlueGreenServices({
 
   const buildNativeWebServices = async (
     webServices,
-    { noCache = false } = {}
+    { buildEnv = env, noCache = false } = {}
   ) => {
     if (webServices.length === 0) {
       return;
     }
 
     if (!nativeWebArtifactsBuilt) {
-      await buildNativeWebArtifacts({ env, rootDir, runCommand: run });
+      await buildNativeWebArtifacts({
+        env: buildEnv,
+        osImpl,
+        rootDir,
+        runCommand: run,
+      });
       nativeWebArtifactsBuilt = true;
     }
 
     await buildNativeWebRuntimeImages({
       composeGlobalArgs,
-      env,
+      env: buildEnv,
       noCache,
       rootDir,
       runCommand: run,
@@ -2065,12 +2283,11 @@ async function buildBlueGreenServices({
     });
   };
 
-  const runBuildBatches = async ({ noCache = false } = {}) => {
+  const runBuildBatches = async ({ buildEnv = env, noCache = false } = {}) => {
     for (const serviceBatch of buildServiceBatches) {
       const nativeWebServices = useNativeWebBuild
-        ? serviceBatch.filter(
-            (serviceName) =>
-              serviceName === 'web-blue' || serviceName === 'web-green'
+        ? serviceBatch.filter((serviceName) =>
+            isBlueGreenNativeWebServiceName(serviceName)
           )
         : [];
       const dockerBuildServices = nativeWebServices.length
@@ -2079,31 +2296,41 @@ async function buildBlueGreenServices({
           )
         : serviceBatch;
 
-      await buildNativeWebServices(nativeWebServices, { noCache });
+      await buildNativeWebServices(nativeWebServices, { buildEnv, noCache });
 
       if (dockerBuildServices.length === 0) {
         continue;
       }
 
-      const args =
-        buildStrategy === 'bake'
-          ? getBlueGreenBuildxBakeArgs({
-              bakeFile,
-              composeFile,
-              env,
-              noCache,
-              serviceBatch: dockerBuildServices,
-            })
-          : getComposeCommandArgs(
-              composeFile,
-              composeGlobalArgs,
-              'build',
-              ...(noCache ? ['--no-cache'] : []),
-              ...dockerBuildServices
-            );
+      if (useNativeWebBuild && !isNativeWebSupportBuildEnabled(buildEnv)) {
+        continue;
+      }
+
+      const useBuildxBake =
+        buildStrategy === 'bake' &&
+        (!useNativeWebBuild || isNativeWebSupportBuildxEnabled(buildEnv));
+      const args = useBuildxBake
+        ? getBlueGreenBuildxBakeArgs({
+            bakeFile,
+            composeFile,
+            env: buildEnv,
+            noCache,
+            serviceBatch: dockerBuildServices,
+          })
+        : getComposeCommandArgs(
+            composeFile,
+            composeGlobalArgs,
+            'build',
+            ...(noCache ? ['--no-cache'] : []),
+            ...dockerBuildServices
+          );
+      const commandEnv =
+        useNativeWebBuild && !useBuildxBake
+          ? getNativeWebLocalDockerBuildEnv(buildEnv)
+          : buildEnv;
 
       await runChecked('docker', args, {
-        env,
+        env: commandEnv,
         runCommand: run,
         stdio: 'pipe',
         teeOutput: true,
@@ -2113,6 +2340,7 @@ async function buildBlueGreenServices({
   };
 
   const runBuildBatchesWithDockerRegistryBackoff = async ({
+    buildEnv = env,
     noCache = false,
   } = {}) => {
     const maxAttempts = getPositiveIntegerEnv(
@@ -2134,7 +2362,7 @@ async function buildBlueGreenServices({
 
     while (attempt <= maxAttempts) {
       try {
-        return await runBuildBatches({ noCache });
+        return await runBuildBatches({ buildEnv, noCache });
       } catch (error) {
         if (attempt >= maxAttempts || !isTransientDockerRegistryError(error)) {
           throw error;
@@ -2154,6 +2382,183 @@ async function buildBlueGreenServices({
     throw new Error('Unable to build blue/green services.');
   };
 
+  const runBuildWithCacheRecovery = async ({
+    buildEnv = env,
+    noCache = false,
+  } = {}) => {
+    try {
+      await runBuildBatchesWithDockerRegistryBackoff({ buildEnv, noCache });
+      return;
+    } catch (error) {
+      const isRecoverableBuildError =
+        isBunTarballExtractionError(error) ||
+        isBuildStallTimeoutError(error) ||
+        isCachedBuildError(error);
+
+      if (!isRecoverableBuildError) {
+        throw error;
+      }
+
+      const recoveryReason = isBuildStallTimeoutError(error)
+        ? BUILD_STALL_RECOVERY_REASON
+        : isCachedBuildError(error)
+          ? CACHED_BUILD_ERROR_RECOVERY_REASON
+          : 'bun-tarball-extraction';
+
+      await recoverBuildkitBunInstallCache({
+        composeFile,
+        composeGlobalArgs,
+        env: buildEnv,
+        reason: recoveryReason,
+        runCommand: run,
+      });
+
+      await runBuildBatchesWithDockerRegistryBackoff({
+        buildEnv,
+        noCache: true,
+      });
+    }
+  };
+
+  const runBuildWithAdaptiveResourceFallback = async () => {
+    let buildEnv = env;
+    const attemptedProfileNames = new Set();
+
+    const getResolvedBuildMemoryForLog = (attemptEnv) => {
+      const rawMemory = attemptEnv.DOCKER_WEB_BUILD_MEMORY;
+
+      if (
+        String(rawMemory ?? '')
+          .trim()
+          .toLowerCase() === 'auto'
+      ) {
+        return getAutoBuildMemory(attemptEnv);
+      }
+
+      return rawMemory ?? 'unset';
+    };
+
+    const writeAdaptiveAttemptLog = (attemptEnv) => {
+      if (!isAdaptiveBuildResourceProfileEnabled(attemptEnv)) {
+        return;
+      }
+
+      const currentProfile = getBuildResourceProfileFromEnv(attemptEnv);
+      const paths = getBuildResourceProfilePathsFromEnv(attemptEnv, rootDir);
+
+      process.stderr.write(
+        `BuildKit build attempt using profile ${currentProfile.name} (memory=${currentProfile.memory}, resolvedMemory=${getResolvedBuildMemoryForLog(attemptEnv)}, cpus=${attemptEnv.DOCKER_WEB_BUILD_CPUS ?? 'unset'}, maxParallelism=${attemptEnv.DOCKER_WEB_BUILD_MAX_PARALLELISM ?? 'unset'}, dockerMemoryLimit=${attemptEnv.DOCKER_WEB_DOCKER_MEMORY_LIMIT ?? 'unknown'}, dockerContext=${attemptEnv.DOCKER_CONTEXT ?? 'current'}, stateFile=${paths.stateFile}).\n`
+      );
+    };
+
+    const persistRecommendedProfileAfterFailure = ({
+      currentProfile,
+      reason,
+      stateFile,
+    }) => {
+      const recommendedProfile = getRecommendedBuildResourceProfile(buildEnv);
+
+      if (
+        !recommendedProfile ||
+        recommendedProfile.name === currentProfile.name
+      ) {
+        return;
+      }
+
+      persistBuildResourceProfile({
+        fsImpl,
+        previousProfileName: currentProfile.name,
+        profile: recommendedProfile,
+        reason,
+        stateFile,
+      });
+    };
+
+    while (true) {
+      const currentProfile = getBuildResourceProfileFromEnv(buildEnv);
+      writeAdaptiveAttemptLog(buildEnv);
+
+      try {
+        await runBuildWithCacheRecovery({ buildEnv });
+        return;
+      } catch (error) {
+        if (
+          !isAdaptiveBuildResourceProfileEnabled(buildEnv) ||
+          !isBuildkitResourceProfileFallbackError(error)
+        ) {
+          throw error;
+        }
+
+        attemptedProfileNames.add(currentProfile.name);
+
+        const paths = getBuildResourceProfilePathsFromEnv(buildEnv, rootDir);
+        const nextProfile = getNextAdaptiveBuildResourceProfile({
+          attemptedProfileNames,
+          currentProfileName: currentProfile.name,
+          env: buildEnv,
+          preferHardLimitProfile: isBuildkitMemoryExhaustionError(error),
+        });
+
+        if (!nextProfile) {
+          persistRecommendedProfileAfterFailure({
+            currentProfile,
+            reason:
+              currentProfile.name === 'floor'
+                ? 'buildkit-resource-floor-failed'
+                : 'buildkit-resource-fallback-exhausted',
+            stateFile: paths.stateFile,
+          });
+          throw error;
+        }
+
+        const fallbackReason = 'buildkit-resource-fallback';
+
+        persistBuildResourceProfile({
+          fsImpl,
+          previousProfileName: currentProfile.name,
+          profile: nextProfile,
+          reason: fallbackReason,
+          stateFile: paths.stateFile,
+        });
+
+        const retryEnv = {
+          ...applyBuildResourceProfileToEnv(buildEnv, nextProfile),
+          [BUILD_RESOURCE_PROFILE_REASON_ENV]: fallbackReason,
+        };
+
+        process.stderr.write(
+          `BuildKit transport/resource failure detected for build profile ${currentProfile.name}; ${nextProfile.name === 'default' ? 'resetting to budget-derived' : 'retrying with'} build profile ${nextProfile.name} (memory=${nextProfile.memory}, resolvedMemory=${getResolvedBuildMemoryForLog(retryEnv)}, cpus=${nextProfile.cpus}, maxParallelism=${nextProfile.maxParallelism}).\n`
+        );
+
+        await recoverBuildkitBunInstallCache({
+          composeFile,
+          composeGlobalArgs,
+          env: retryEnv,
+          reason: fallbackReason,
+          runCommand: run,
+        });
+
+        buildEnv = await ensureBuildkitBuilder(
+          {
+            builderName:
+              retryEnv.DOCKER_WEB_BUILD_BUILDER_NAME || retryEnv.BUILDX_BUILDER,
+            cpus: retryEnv.DOCKER_WEB_BUILD_CPUS,
+            maxParallelism: retryEnv.DOCKER_WEB_BUILD_MAX_PARALLELISM,
+            memory: retryEnv.DOCKER_WEB_BUILD_MEMORY,
+          },
+          {
+            composeFile,
+            composeGlobalArgs,
+            env: retryEnv,
+            fsImpl,
+            rootDir,
+            runCommand: run,
+          }
+        );
+      }
+    }
+  };
+
   await restartBuildkitBeforeBlueGreenBuild({
     composeFile,
     composeGlobalArgs,
@@ -2161,34 +2566,7 @@ async function buildBlueGreenServices({
     runCommand: run,
   });
 
-  try {
-    await runBuildBatchesWithDockerRegistryBackoff();
-  } catch (error) {
-    const isRecoverableBuildError =
-      isBunTarballExtractionError(error) ||
-      isBuildStallTimeoutError(error) ||
-      isCachedBuildError(error);
-
-    if (!isRecoverableBuildError) {
-      throw error;
-    }
-
-    const recoveryReason = isBuildStallTimeoutError(error)
-      ? BUILD_STALL_RECOVERY_REASON
-      : isCachedBuildError(error)
-        ? CACHED_BUILD_ERROR_RECOVERY_REASON
-        : 'bun-tarball-extraction';
-
-    await recoverBuildkitBunInstallCache({
-      composeFile,
-      composeGlobalArgs,
-      env,
-      reason: recoveryReason,
-      runCommand: run,
-    });
-
-    await runBuildBatchesWithDockerRegistryBackoff({ noCache: true });
-  }
+  await runBuildWithAdaptiveResourceFallback();
 }
 
 async function runHiveDbForwardMigrations({
@@ -2323,6 +2701,60 @@ function isNativeWebBuildEnabled(env = {}) {
   return isTruthyEnvValue(env.DOCKER_WEB_NATIVE_BUILD);
 }
 
+function isNativeWebRunnerBuildxEnabled(env = {}) {
+  return isTruthyEnvValue(env.DOCKER_WEB_NATIVE_RUNNER_BUILDX);
+}
+
+function getNativeWebLocalDockerBuildEnv(env = {}) {
+  const buildEnv = { ...env };
+
+  delete buildEnv.BUILDX_BUILDER;
+  delete buildEnv.BUILDKIT_HOST;
+  delete buildEnv.DOCKER_WEB_BUILD_BUILDER_NAME;
+
+  return buildEnv;
+}
+
+function getNativeWebRunnerDockerBuildEnv(env = {}) {
+  if (isNativeWebRunnerBuildxEnabled(env)) {
+    return env;
+  }
+
+  return getNativeWebLocalDockerBuildEnv(env);
+}
+
+function isNativeWebSupportBuildxEnabled(env = {}) {
+  return isTruthyEnvValue(env.DOCKER_WEB_NATIVE_SUPPORT_BUILDX);
+}
+
+function isNativeWebSupportBuildEnabled(env = {}) {
+  return (
+    isTruthyEnvValue(env.DOCKER_WEB_NATIVE_SUPPORT_BUILD) ||
+    isNativeWebSupportBuildxEnabled(env)
+  );
+}
+
+function getHostTotalMemoryBuildValue(osImpl = os) {
+  const totalMemoryBytes = osImpl.totalmem?.();
+
+  if (!Number.isFinite(totalMemoryBytes) || totalMemoryBytes <= 0) {
+    return null;
+  }
+
+  const totalMemoryGb = Math.floor(totalMemoryBytes / 1024 / 1024 / 1024);
+
+  return totalMemoryGb > 0 ? `${totalMemoryGb}g` : null;
+}
+
+function getNativeWebBuildMemory(env = {}, osImpl = os) {
+  return (
+    env.DOCKER_WEB_NATIVE_BUILD_MEMORY ??
+    env.DOCKER_WEB_BUILD_MEMORY ??
+    getHostTotalMemoryBuildValue(osImpl) ??
+    '12g'
+  );
+}
+
 function isBlueGreenWebBuildSkipped(env = {}) {
   return isTruthyEnvValue(env.DOCKER_WEB_SKIP_BLUE_GREEN_WEB_BUILD);
 }
@@ -2396,6 +2828,7 @@ function resolveNativeWebBuildEnvFile(env = {}, rootDir = ROOT_DIR) {
 
 async function buildNativeWebArtifacts({
   env = {},
+  osImpl = os,
   rootDir = ROOT_DIR,
   runCommand: run = runCommand,
 }) {
@@ -2411,11 +2844,9 @@ async function buildNativeWebArtifacts({
     env: {
       ...env,
       CI: env.CI ?? '1',
-      DOCKER_WEB_BUILD_MEMORY:
-        env.DOCKER_WEB_NATIVE_BUILD_MEMORY ??
-        env.DOCKER_WEB_BUILD_MEMORY ??
-        '12g',
+      DOCKER_WEB_BUILD_MEMORY: getNativeWebBuildMemory(env, osImpl),
       DOCKER_WEB_DOCKER_MEMORY_LIMIT: env.DOCKER_WEB_NATIVE_BUILD_MEMORY ?? '',
+      DOCKER_WEB_NATIVE_BUILD: '1',
       DOCKER_WEB_STANDALONE: '1',
       NEXT_TELEMETRY_DISABLED: env.NEXT_TELEMETRY_DISABLED ?? '1',
       NODE_ENV: 'production',
@@ -2433,30 +2864,34 @@ async function buildNativeWebRuntimeImages({
   runCommand: run = runCommand,
   services,
 }) {
+  const commandEnv = getNativeWebRunnerDockerBuildEnv(env);
+
   for (const serviceName of services) {
     const builderName = env.BUILDX_BUILDER || env.DOCKER_WEB_BUILD_BUILDER_NAME;
+    const buildArgs = [
+      ...(noCache ? ['--no-cache'] : []),
+      ...getPlatformBuildMetadataBuildArgs(env),
+      '--file',
+      getNativeWebRunnerDockerfile(rootDir),
+      '--tag',
+      getBlueGreenWebServiceImageTag(serviceName, { composeGlobalArgs, env }),
+      rootDir,
+    ];
+    const args = isNativeWebRunnerBuildxEnabled(env)
+      ? [
+          'buildx',
+          'build',
+          ...(builderName ? ['--builder', builderName] : []),
+          '--load',
+          ...buildArgs,
+        ]
+      : ['build', ...buildArgs];
 
-    await runChecked(
-      'docker',
-      [
-        'buildx',
-        'build',
-        ...(builderName ? ['--builder', builderName] : []),
-        '--load',
-        ...(noCache ? ['--no-cache'] : []),
-        ...getPlatformBuildMetadataBuildArgs(env),
-        '--file',
-        getNativeWebRunnerDockerfile(rootDir),
-        '--tag',
-        getBlueGreenWebServiceImageTag(serviceName, { composeGlobalArgs, env }),
-        rootDir,
-      ],
-      {
-        env,
-        runCommand: run,
-        timeoutMs: getBlueGreenBuildTimeoutMs(env),
-      }
-    );
+    await runChecked('docker', args, {
+      env: commandEnv,
+      runCommand: run,
+      timeoutMs: getBlueGreenBuildTimeoutMs(env),
+    });
   }
 }
 
@@ -2552,6 +2987,7 @@ async function refreshBlueGreenProxyIfRunning({
 
   writeBlueGreenProxyConfig(activeColor, {
     deploymentStamp: readBlueGreenDeploymentStamp(paths, fsImpl),
+    env: composeEnv,
     fsImpl,
     hiveColor,
     hiveStandbyColor,
@@ -2931,7 +3367,7 @@ async function resolveBlueGreenActiveColor(
 
   for (const color of candidateColors) {
     if (
-      await isComposeServiceHealthy(getBlueGreenServiceName(color), {
+      await isComposeServiceHealthy(getBlueGreenServiceName(color, env), {
         composeFile,
         composeGlobalArgs,
         env,
@@ -2955,18 +3391,21 @@ async function resolveBlueGreenStandbyColor(
 
   const standbyColor = getNextBlueGreenColor(activeColor);
 
-  return (await isComposeServiceHealthy(getBlueGreenServiceName(standbyColor), {
-    composeFile,
-    composeGlobalArgs,
-    env,
-    runCommand: run,
-  }))
+  return (await isComposeServiceHealthy(
+    getBlueGreenServiceName(standbyColor, env),
+    {
+      composeFile,
+      composeGlobalArgs,
+      env,
+      runCommand: run,
+    }
+  ))
     ? standbyColor
     : null;
 }
 
 function getBlueGreenDeploymentServiceGroups(parsed, targetColor, env = {}) {
-  const webServices = [getBlueGreenServiceName(targetColor)];
+  const webServices = [getBlueGreenServiceName(targetColor, env)];
   const hiveServices = [
     getBlueGreenHiveServiceName(targetColor),
     'hive-realtime',
@@ -2988,8 +3427,8 @@ function getBlueGreenDeploymentServiceGroups(parsed, targetColor, env = {}) {
 }
 
 function splitBlueGreenDeploymentBuildServiceGroups(buildServices) {
-  const webBuildServices = buildServices.filter(
-    (serviceName) => serviceName === 'web-blue' || serviceName === 'web-green'
+  const webBuildServices = buildServices.filter((serviceName) =>
+    isBlueGreenWebServiceName(serviceName)
   );
   const hiveBuildServices = buildServices.filter(
     (serviceName) =>
@@ -2997,8 +3436,7 @@ function splitBlueGreenDeploymentBuildServiceGroups(buildServices) {
   );
   const supportBuildServices = buildServices.filter(
     (serviceName) =>
-      serviceName !== 'web-blue' &&
-      serviceName !== 'web-green' &&
+      !isBlueGreenWebServiceName(serviceName) &&
       !serviceName.startsWith('hive-') &&
       serviceName !== 'hive-realtime'
   );
@@ -3055,6 +3493,9 @@ async function runBlueGreenProdWorkflow(parsed, options = {}) {
     runCommand: run,
   });
   const env = migration?.targetEnv ?? baseEnv;
+  const selectedFrontend = getBlueGreenFrontend(env);
+  const selectedDirectServiceName =
+    getBlueGreenDirectServiceName(selectedFrontend);
   const persistedActiveColor = readBlueGreenActiveColor(paths, fsImpl);
   const proxyActiveColor = readBlueGreenProxyActiveColor(paths, fsImpl);
   const proxyDrainMs = options.proxyDrainMs ?? BLUE_GREEN_PROXY_DRAIN_MS;
@@ -3081,6 +3522,7 @@ async function runBlueGreenProdWorkflow(parsed, options = {}) {
     latestCommitHash != null &&
     previousTargetState.targets.web.commitHash === latestCommitHash &&
     isBlueGreenColor(previousTargetState.targets.web.activeColor) &&
+    previousTargetState.targets.web.frontend === selectedFrontend &&
     previousTargetState.targets.web.health === 'healthy';
   const proxyRunning = await hasComposeServiceContainer(
     BLUE_GREEN_PROXY_SERVICE,
@@ -3124,6 +3566,7 @@ async function runBlueGreenProdWorkflow(parsed, options = {}) {
   const targetEnv = createBlueGreenBuildMetadataEnv({
     baseEnv: {
       ...env,
+      DOCKER_WEB_FRONTEND: selectedFrontend,
       PLATFORM_BLUE_GREEN_COLOR: targetColor,
       PLATFORM_DEPLOYMENT_STAMP: deploymentStamp,
     },
@@ -3154,6 +3597,7 @@ async function runBlueGreenProdWorkflow(parsed, options = {}) {
       writeBlueGreenProxyConfig(initialProxyColor, {
         deploymentStamp:
           readBlueGreenDeploymentStamp(paths, fsImpl) ?? deploymentStamp,
+        env: targetEnv,
         fsImpl,
         hiveColor:
           previousTargetState.targets.hive.activeColor ?? initialProxyColor,
@@ -3191,7 +3635,8 @@ async function runBlueGreenProdWorkflow(parsed, options = {}) {
     });
     const buildServices = webAlreadyPromoted
       ? requestedBuildServices.filter(
-          (serviceName) => serviceName !== getBlueGreenServiceName(targetColor)
+          (serviceName) =>
+            serviceName !== getBlueGreenServiceName(targetColor, targetEnv)
         )
       : requestedBuildServices;
     stages = createBlueGreenDeploymentStages({
@@ -3237,6 +3682,8 @@ async function runBlueGreenProdWorkflow(parsed, options = {}) {
             composeFile,
             composeGlobalArgs: parsed.composeGlobalArgs,
             env: targetEnv,
+            fsImpl,
+            rootDir: options.rootDir ?? ROOT_DIR,
             runCommand: run,
             services: webBuildServices,
           });
@@ -3244,7 +3691,7 @@ async function runBlueGreenProdWorkflow(parsed, options = {}) {
       }
 
       await runBlueGreenStage(stages, 'web-promote', async () => {
-        await stopComposeServicesIfPresent(['web'], {
+        await stopComposeServicesIfPresent([selectedDirectServiceName], {
           composeFile,
           composeGlobalArgs: parsed.composeGlobalArgs,
           env,
@@ -3252,7 +3699,7 @@ async function runBlueGreenProdWorkflow(parsed, options = {}) {
         });
 
         await stopComposeServicesIfPresent(
-          [getBlueGreenServiceName(targetColor)],
+          [getBlueGreenServiceName(targetColor, targetEnv)],
           {
             composeFile,
             composeGlobalArgs: parsed.composeGlobalArgs,
@@ -3261,7 +3708,7 @@ async function runBlueGreenProdWorkflow(parsed, options = {}) {
           }
         );
         await removeComposeServicesIfPresent(
-          [getBlueGreenServiceName(targetColor)],
+          [getBlueGreenServiceName(targetColor, targetEnv)],
           {
             composeFile,
             composeGlobalArgs: parsed.composeGlobalArgs,
@@ -3288,7 +3735,7 @@ async function runBlueGreenProdWorkflow(parsed, options = {}) {
         });
 
         await waitForComposeServiceHealthy(
-          getBlueGreenServiceName(targetColor),
+          getBlueGreenServiceName(targetColor, targetEnv),
           {
             composeFile,
             composeGlobalArgs: parsed.composeGlobalArgs,
@@ -3304,6 +3751,7 @@ async function runBlueGreenProdWorkflow(parsed, options = {}) {
             commitHash: options.latestCommit?.hash ?? null,
             commitShortHash: options.latestCommit?.shortHash ?? null,
             deploymentStamp,
+            frontend: selectedFrontend,
             health: 'staged',
             lastPromotedAt: null,
             standbyColor,
@@ -3334,6 +3782,8 @@ async function runBlueGreenProdWorkflow(parsed, options = {}) {
           composeFile,
           composeGlobalArgs: parsed.composeGlobalArgs,
           env: targetEnv,
+          fsImpl,
+          rootDir: options.rootDir ?? ROOT_DIR,
           runCommand: run,
           services: hiveBuildServices,
         });
@@ -3402,6 +3852,7 @@ async function runBlueGreenProdWorkflow(parsed, options = {}) {
 
         writeBlueGreenProxyConfig(targetColor, {
           deploymentStamp,
+          env: targetEnv,
           fsImpl,
           hiveColor: targetColor,
           hiveStandbyColor:
@@ -3462,6 +3913,8 @@ async function runBlueGreenProdWorkflow(parsed, options = {}) {
             composeFile,
             composeGlobalArgs: parsed.composeGlobalArgs,
             env: targetEnv,
+            fsImpl,
+            rootDir: options.rootDir ?? ROOT_DIR,
             runCommand: run,
             services: supportBuildServices,
           });
@@ -3528,6 +3981,7 @@ async function runBlueGreenProdWorkflow(parsed, options = {}) {
       writeBlueGreenDeploymentStamp(deploymentStamp, paths, fsImpl);
       writeBlueGreenProxyConfig(targetColor, {
         deploymentStamp,
+        env: targetEnv,
         fsImpl,
         hiveColor: promotedHiveColor,
         hiveStandbyColor: promotedHiveStandbyColor,
@@ -3595,6 +4049,7 @@ async function runBlueGreenProdWorkflow(parsed, options = {}) {
           commitHash: options.latestCommit?.hash ?? null,
           commitShortHash: options.latestCommit?.shortHash ?? null,
           deploymentStamp,
+          frontend: selectedFrontend,
           health: 'healthy',
           lastPromotedAt: Date.now(),
           standbyColor,
@@ -3605,15 +4060,18 @@ async function runBlueGreenProdWorkflow(parsed, options = {}) {
     });
 
     if (activeColor && activeColor !== targetColor) {
-      await waitForBlueGreenServiceDrain(getBlueGreenServiceName(activeColor), {
-        composeFile,
-        composeGlobalArgs: parsed.composeGlobalArgs,
-        env,
-        pollMs: drainPollMs,
-        proxyDrainMs,
-        runCommand: run,
-        timeoutMs: drainTimeoutMs,
-      });
+      await waitForBlueGreenServiceDrain(
+        getBlueGreenServiceName(activeColor, env),
+        {
+          composeFile,
+          composeGlobalArgs: parsed.composeGlobalArgs,
+          env,
+          pollMs: drainPollMs,
+          proxyDrainMs,
+          runCommand: run,
+          timeoutMs: drainTimeoutMs,
+        }
+      );
     }
 
     return {
@@ -3632,6 +4090,7 @@ async function runBlueGreenProdWorkflow(parsed, options = {}) {
         writeBlueGreenProxyConfig(activeColor, {
           deploymentStamp:
             readBlueGreenDeploymentStamp(paths, fsImpl) ?? deploymentStamp,
+          env: targetEnv,
           fsImpl,
           hiveColor: previousHiveColor,
           hiveStandbyColor: previousHiveStandbyColor,
@@ -3757,6 +4216,7 @@ async function runBlueGreenStandbyRefreshWorkflow(parsed, options = {}) {
       composeFile,
       composeGlobalArgs: parsed.composeGlobalArgs,
       env: standbyEnv,
+      fsImpl,
       rootDir: buildRootDir,
       runCommand: run,
       services: standbyBuildServices,
@@ -3764,7 +4224,7 @@ async function runBlueGreenStandbyRefreshWorkflow(parsed, options = {}) {
 
     await stopComposeServicesIfPresent(
       [
-        getBlueGreenServiceName(standbyColor),
+        getBlueGreenServiceName(standbyColor, standbyEnv),
         getBlueGreenHiveServiceName(standbyColor),
       ],
       {
@@ -3776,7 +4236,7 @@ async function runBlueGreenStandbyRefreshWorkflow(parsed, options = {}) {
     );
     await removeComposeServicesIfPresent(
       [
-        getBlueGreenServiceName(standbyColor),
+        getBlueGreenServiceName(standbyColor, standbyEnv),
         getBlueGreenHiveServiceName(standbyColor),
       ],
       {
@@ -3845,12 +4305,15 @@ async function runBlueGreenStandbyRefreshWorkflow(parsed, options = {}) {
       });
     }
 
-    await waitForComposeServiceHealthy(getBlueGreenServiceName(standbyColor), {
-      composeFile,
-      composeGlobalArgs: parsed.composeGlobalArgs,
-      env: standbyEnv,
-      runCommand: run,
-    });
+    await waitForComposeServiceHealthy(
+      getBlueGreenServiceName(standbyColor, standbyEnv),
+      {
+        composeFile,
+        composeGlobalArgs: parsed.composeGlobalArgs,
+        env: standbyEnv,
+        runCommand: run,
+      }
+    );
 
     for (const serviceName of getBlueGreenPromotionHealthGateServices(
       standbyColor,
@@ -3926,11 +4389,19 @@ async function runBlueGreenCachedRecoveryWorkflow(parsed, options = {}) {
     options.deploymentStamp ??
     readBlueGreenDeploymentStamp(paths, fsImpl) ??
     generateBlueGreenDeploymentStamp();
-  const activeServiceName = getBlueGreenServiceName(activeColor);
-  const standbyServiceName = getBlueGreenServiceName(standbyColor);
+  const selectedFrontend = getBlueGreenFrontend(env);
+  const activeServiceName = getBlueGreenServiceName(
+    activeColor,
+    selectedFrontend
+  );
+  const standbyServiceName = getBlueGreenServiceName(
+    standbyColor,
+    selectedFrontend
+  );
   const activeEnv = createBlueGreenBuildMetadataEnv({
     baseEnv: {
       ...env,
+      DOCKER_WEB_FRONTEND: selectedFrontend,
       PLATFORM_BLUE_GREEN_COLOR: activeColor,
       PLATFORM_DEPLOYMENT_STAMP: deploymentStamp,
     },
@@ -3940,6 +4411,7 @@ async function runBlueGreenCachedRecoveryWorkflow(parsed, options = {}) {
   const standbyEnv = createBlueGreenBuildMetadataEnv({
     baseEnv: {
       ...env,
+      DOCKER_WEB_FRONTEND: selectedFrontend,
       PLATFORM_BLUE_GREEN_COLOR: standbyColor,
       PLATFORM_DEPLOYMENT_STAMP: deploymentStamp,
     },
@@ -3958,6 +4430,7 @@ async function runBlueGreenCachedRecoveryWorkflow(parsed, options = {}) {
 
   writeBlueGreenProxyConfig(activeColor, {
     deploymentStamp,
+    env: activeEnv,
     fsImpl,
     paths,
     standbyColor: null,
@@ -4095,6 +4568,7 @@ async function runBlueGreenCachedRecoveryWorkflow(parsed, options = {}) {
 
   writeBlueGreenProxyConfig(activeColor, {
     deploymentStamp,
+    env: standbyEnv,
     fsImpl,
     paths,
     standbyColor,
@@ -4149,6 +4623,7 @@ module.exports = {
   BLUE_GREEN_SUPPORT_SERVICES,
   BLUE_GREEN_SUPPORT_SERVICES_HEALTH_GATE,
   DEFAULT_BLUE_GREEN_BUILD_TIMEOUT_MS,
+  assertBlueGreenCachedImageExists,
   buildBlueGreenServices,
   buildNativeWebArtifacts,
   buildNativeWebRuntimeImages,
@@ -4165,6 +4640,11 @@ module.exports = {
   getBlueGreenSupportBuildInputHashes,
   getBlueGreenBuildTimeoutMs,
   getBlueGreenComposeMigration,
+  getBlueGreenAllDirectWebServiceNames,
+  getBlueGreenAllWebServiceNames,
+  getBlueGreenDirectServiceName,
+  getBlueGreenFrontend,
+  getBlueGreenFrontendPort,
   getBlueGreenHiveServiceName,
   getBlueGreenProdServices,
   getBlueGreenProdServicesWithProxyOption,
@@ -4174,6 +4654,7 @@ module.exports = {
   hasBlueGreenProxyHostPortBindings,
   isBlueGreenSupportBuildSkipped,
   isBlueGreenWebBuildSkipped,
+  isBlueGreenCronRunnerEnabled,
   isBlueGreenSupermemoryEnabled,
   readBlueGreenDeploymentStamp,
   readBlueGreenSupportBuildHashHistory,
@@ -4181,9 +4662,15 @@ module.exports = {
   getBlueGreenServiceName,
   getBlueGreenServiceDrainStatus,
   getBlueGreenWebServiceImageTag,
+  getHostTotalMemoryBuildValue,
   getNextBlueGreenColor,
+  getNativeWebBuildMemory,
+  getNativeWebRunnerDockerBuildEnv,
   isBlueGreenColor,
   isNativeWebBuildEnabled,
+  isNativeWebRunnerBuildxEnabled,
+  isNativeWebSupportBuildEnabled,
+  isNativeWebSupportBuildxEnabled,
   readBlueGreenActiveColor,
   readBlueGreenProxyActiveColor,
   readBlueGreenTargetState,

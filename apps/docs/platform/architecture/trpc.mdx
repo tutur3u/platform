@@ -1,649 +1,356 @@
 ---
-title: "tRPC Implementation Guide"
-description: "How to create and use tRPC routers in the Tuturuuu platform"
+title: "tRPC Scaffold"
+description: "What the tRPC layer in apps/web actually is today: a minimal, intentional stub kept alive during the TanStack/Rust migration"
+updatedAt: "2026-06-21"
 ---
 
-The Tuturuuu platform uses [tRPC](https://trpc.io/) for end-to-end type-safe API communication between the Next.js frontend and backend.
+<Warning>
+  tRPC in this monorepo is an **intentional stub**, not the product API. The
+  router in `apps/web/src/trpc/routers/_app.ts` exposes a single `healthCheck`
+  procedure. There are **no** workspace, user, AI, or tasks routers, and there is
+  **no** auth middleware. Product authentication and data flow through
+  [`@tuturuuu/internal-api`](/platform/architecture/api-routes) helpers and REST
+  routes under `/api/v1`, not tRPC. This page documents the real scaffold so you
+  do not build on procedures that do not exist.
+</Warning>
 
-## Architecture Overview
+## Why a stub?
 
-```
-┌─────────────────────────────────────────────────────────┐
-│                    Client (Browser)                      │
-│  ┌──────────────────────────────────────────────────┐   │
-│  │  React Components (RSC or 'use client')          │   │
-│  │  ↓                                                │   │
-│  │  trpc.workspace.get.useQuery()                    │   │
-│  └────────────────┬─────────────────────────────────┘   │
-└────────────────────┼─────────────────────────────────────┘
-                     │ HTTP Request
-                     ↓
-┌─────────────────────────────────────────────────────────┐
-│                Server (Next.js API)                      │
-│  ┌──────────────────────────────────────────────────┐   │
-│  │  tRPC Router (/api/trpc/[trpc]/route.ts)         │   │
-│  │  ↓                                                │   │
-│  │  Procedure Handler (input validation with Zod)   │   │
-│  │  ↓                                                │   │
-│  │  Supabase Query / Business Logic                 │   │
-│  │  ↓                                                │   │
-│  │  Type-safe Response                              │   │
-│  └──────────────────────────────────────────────────┘   │
-└─────────────────────────────────────────────────────────┘
-```
+The `apps/web` Next.js app (port `7803`) is being replaced by `apps/tanstack-web`
+(TanStack Start) and `apps/backend` (Rust, port `7820`). See the
+[TanStack + Rust migration](/platform/architecture/tanstack-rust-migration) for
+the full plan.
 
-## Directory Structure
+Rather than build out a tRPC API surface that would be thrown away, the team
+keeps a minimal tRPC scaffold wired end-to-end so the type system and client
+plumbing stay valid and ready, while all real reads and writes go through the
+internal API client and REST routes. New product features should **not** add
+tRPC routers — use the patterns in
+[Data Fetching](/platform/architecture/data-fetching) and
+[API Routes](/platform/architecture/api-routes).
+
+<Note>
+  A repository guard (`scripts/check-tanstack-api-access.js`, run as part of
+  `bun check`) forbids calls to `/trpc` from `apps/tanstack-web/src`. The
+  TanStack app talks to the Rust backend and REST API, never to this stub.
+</Note>
+
+## What actually exists today
 
 ```
 apps/web/src/trpc/
-├── init.ts              # tRPC initialization
-├── routers/
-│   ├── _app.ts          # Root router aggregating all routes
-│   ├── workspace.ts     # Workspace-related procedures
-│   ├── user.ts          # User-related procedures
-│   ├── ai.ts            # AI-related procedures
-│   └── ...              # Other domain routers
-├── client.tsx           # Client-side hooks (useQuery, useMutation)
-├── server.ts            # Server-side caller
-└── query.ts             # React Query integration
+├── init.ts                       # initTRPC + context + exported helpers
+├── query.ts                      # makeQueryClient (superjson + rate-limit retry)
+├── client.tsx                    # TRPCProvider + createTRPCReact client
+├── server.ts                     # RSC caller + HydrateClient hydration helpers
+└── routers/
+    └── _app.ts                   # appRouter: a single healthCheck procedure
+
+apps/web/src/app/api/trpc/[trpc]/route.ts   # fetch adapter (GET + POST)
 ```
 
-## Creating a New Router
+Relevant versions in `apps/web/package.json`: `@trpc/server`, `@trpc/client`,
+and `@trpc/react-query` are all on `^11.x`, paired with
+`@tanstack/react-query` `^5.x` and `superjson` `^2.x`. (Check the manifest for
+exact pinned versions; do not hard-code them in code.)
 
-### Step 1: Define the Router
+## Initialization (`init.ts`)
 
-Create a new file in `apps/web/src/trpc/routers/`:
+`init.ts` creates the tRPC instance with the superjson transformer and exports
+helper factories. Note the **real** export names — there is no `router`,
+`publicProcedure`, or `protectedProcedure`.
 
 ```typescript
-// apps/web/src/trpc/routers/tasks.ts
-import { z } from 'zod';
-import { router, protectedProcedure } from '../init';
-import { createClient } from '@tuturuuu/supabase/next/server';
+// apps/web/src/trpc/init.ts
+import { initTRPC } from '@trpc/server';
+import { cache } from 'react';
+import superjson from 'superjson';
 
-export const tasksRouter = router({
-  // GET single task
-  get: protectedProcedure
-    .input(
-      z.object({
-        taskId: z.guid(),
-      })
-    )
-    .query(async ({ input, ctx }) => {
-      const supabase = createClient();
-
-      const { data, error } = await supabase
-        .from('workspace_tasks')
-        .select('*')
-        .eq('id', input.taskId)
-        .single();
-
-      if (error) throw new Error(error.message);
-      return data;
-    }),
-
-  // LIST tasks in workspace
-  list: protectedProcedure
-    .input(
-      z.object({
-        wsId: z.string(),
-        listId: z.string().optional(),
-        completed: z.boolean().optional(),
-      })
-    )
-    .query(async ({ input, ctx }) => {
-      const supabase = createClient();
-
-      let query = supabase
-        .from('workspace_tasks')
-        .select('*')
-        .eq('ws_id', input.wsId);
-
-      if (input.listId) {
-        query = query.eq('list_id', input.listId);
-      }
-
-      if (input.completed !== undefined) {
-        query = query.eq('completed', input.completed);
-      }
-
-      const { data, error } = await query;
-      if (error) throw new Error(error.message);
-      return data;
-    }),
-
-  // CREATE task
-  create: protectedProcedure
-    .input(
-      z.object({
-        wsId: z.string(),
-        listId: z.string(),
-        name: z.string().min(1).max(255),
-        description: z.string().optional(),
-        priority: z.number().int().min(0).max(5).optional(),
-        dueDate: z.date().optional(),
-      })
-    )
-    .mutation(async ({ input, ctx }) => {
-      const supabase = createClient();
-
-      const { data, error } = await supabase
-        .from('workspace_tasks')
-        .insert({
-          ws_id: input.wsId,
-          list_id: input.listId,
-          name: input.name,
-          description: input.description,
-          priority: input.priority,
-          due_date: input.dueDate?.toISOString(),
-          created_by: ctx.user.id, // From protected context
-        })
-        .select()
-        .single();
-
-      if (error) throw new Error(error.message);
-      return data;
-    }),
-
-  // UPDATE task
-  update: protectedProcedure
-    .input(
-      z.object({
-        taskId: z.guid(),
-        name: z.string().min(1).max(255).optional(),
-        description: z.string().optional(),
-        completed: z.boolean().optional(),
-        priority: z.number().int().min(0).max(5).optional(),
-      })
-    )
-    .mutation(async ({ input, ctx }) => {
-      const supabase = createClient();
-
-      const { taskId, ...updates } = input;
-
-      const { data, error } = await supabase
-        .from('workspace_tasks')
-        .update(updates)
-        .eq('id', taskId)
-        .select()
-        .single();
-
-      if (error) throw new Error(error.message);
-      return data;
-    }),
-
-  // DELETE task
-  delete: protectedProcedure
-    .input(
-      z.object({
-        taskId: z.guid(),
-      })
-    )
-    .mutation(async ({ input }) => {
-      const supabase = createClient();
-
-      const { error } = await supabase
-        .from('workspace_tasks')
-        .delete()
-        .eq('id', input.taskId);
-
-      if (error) throw new Error(error.message);
-      return { success: true };
-    }),
+export const createTRPCContext = cache(async () => {
+  // @see: https://trpc.io/docs/server/context
+  // This is a placeholder context. There is no Supabase auth here —
+  // login authentication uses API routes via @tuturuuu/internal-api.
+  return { userId: 'user_123' };
 });
+
+const t = initTRPC.create({
+  // superjson preserves Dates, Maps, Sets, etc. across the wire.
+  transformer: superjson,
+});
+
+// Base router and procedure helpers
+export const createTRPCRouter = t.router;
+export const createCallerFactory = t.createCallerFactory;
+export const baseProcedure = t.procedure;
 ```
 
-### Step 2: Add to Root Router
+Exported helpers:
 
-Add your router to `apps/web/src/trpc/routers/_app.ts`:
+| Export | What it is | Used by |
+| --- | --- | --- |
+| `createTRPCContext` | Async cached context factory. Returns a hardcoded `{ userId: 'user_123' }` placeholder — **no real auth**. | `route.ts`, `server.ts` |
+| `createTRPCRouter` | `t.router` — builds routers. | `routers/_app.ts` |
+| `createCallerFactory` | `t.createCallerFactory` — builds RSC server callers. | `server.ts` |
+| `baseProcedure` | `t.procedure` — the only procedure builder. | `routers/_app.ts` |
+
+<Warning>
+  The context is a hardcoded stub, not an authenticated user. Do not read
+  `ctx.userId` expecting a real identity, and do not invent a
+  `protectedProcedure` / `isAuthed` middleware — none exists. If you need the
+  signed-in user, use the auth helpers and `@tuturuuu/internal-api`, not tRPC.
+</Warning>
+
+## The root router (`routers/_app.ts`)
+
+The entire API surface is one health-check query that keeps the tRPC type system
+compiling:
 
 ```typescript
-import { router } from '../init';
-import { workspaceRouter } from './workspace';
-import { userRouter } from './user';
-import { tasksRouter } from './tasks'; // Import new router
+// apps/web/src/trpc/routers/_app.ts
+import { baseProcedure, createTRPCRouter } from '../init';
 
-export const appRouter = router({
-  workspace: workspaceRouter,
-  user: userRouter,
-  tasks: tasksRouter, // Add to root
+// tRPC router for the web app
+// Login authentication uses API routes via @tuturuuu/internal-api.
+export const appRouter = createTRPCRouter({
+  // Health check procedure to maintain tRPC type system compatibility
+  healthCheck: baseProcedure.query(() => {
+    return { status: 'ok', timestamp: Date.now() };
+  }),
 });
 
+// export type definition of API
 export type AppRouter = typeof appRouter;
 ```
 
-### Step 3: Use in Components
+That is the complete router. The only callable procedure is
+`appRouter.healthCheck`.
 
-#### Client Component with useQuery
+## The route handler (`app/api/trpc/[trpc]/route.ts`)
 
-```tsx
-'use client';
+A standard tRPC fetch adapter exposes the router over HTTP for both `GET` and
+`POST`:
 
-import { trpc } from '@/trpc/client';
+```typescript
+// apps/web/src/app/api/trpc/[trpc]/route.ts
+import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
+import type { NextRequest } from 'next/server';
+import { createTRPCContext } from '@/trpc/init';
+import { appRouter } from '@/trpc/routers/_app';
 
-export function TaskList({ wsId }: { wsId: string }) {
-  const { data: tasks, isLoading, error } = trpc.tasks.list.useQuery({
-    wsId,
-    completed: false,
+const handler = (req: NextRequest) =>
+  fetchRequestHandler({
+    endpoint: '/api/trpc',
+    req,
+    router: appRouter,
+    createContext: createTRPCContext,
   });
 
-  if (isLoading) return <div>Loading...</div>;
-  if (error) return <div>Error: {error.message}</div>;
+export { handler as GET, handler as POST };
+```
 
-  return (
-    <ul>
-      {tasks?.map((task) => (
-        <li key={task.id}>{task.name}</li>
-      ))}
-    </ul>
-  );
+## Query client (`query.ts`)
+
+`makeQueryClient` builds a TanStack Query v5 `QueryClient` with superjson
+de/serialization and rate-limit-aware retries. This is shared by both the client
+provider and the RSC caller.
+
+```typescript
+// apps/web/src/trpc/query.ts (abridged)
+import { defaultShouldDehydrateQuery, QueryClient } from '@tanstack/react-query';
+import { deserialize, serialize } from 'superjson';
+import { HttpError, isRateLimitError } from '@/lib/api-fetch';
+
+export function makeQueryClient(options?: MakeQueryClientOptions) {
+  return new QueryClient({
+    queryCache: options?.queryCache,
+    mutationCache: options?.mutationCache,
+    defaultOptions: {
+      queries: {
+        staleTime: 30 * 1000,
+        // Retry only rate-limited requests, up to 3 times.
+        retry: (failureCount, error) =>
+          isRateLimitError(error) ? failureCount < 3 : false,
+        retryDelay: (_attemptIndex, error) =>
+          error instanceof HttpError && error.retryAfter
+            ? error.retryAfter * 1000
+            : 1000,
+      },
+      // mutations use the same rate-limit retry policy
+      dehydrate: {
+        serializeData: serialize,
+        shouldDehydrateQuery: (query) =>
+          defaultShouldDehydrateQuery(query) ||
+          query.state.status === 'pending',
+      },
+      hydrate: { deserializeData: deserialize },
+    },
+  });
 }
 ```
 
-#### Client Component with useMutation
+<Note>
+  On TanStack Query v5, the cache-retention option is `gcTime`, not the v4
+  `cacheTime`. The factory above relies on the v5 default `gcTime`; if you set it
+  explicitly anywhere, use `gcTime`.
+</Note>
+
+## Client provider (`client.tsx`)
+
+`client.tsx` creates the typed React client with `createTRPCReact<AppRouter>()`
+and wires a `TRPCProvider` over `@tanstack/react-query`. The HTTP batch link
+points at `/api/trpc` and uses the superjson transformer.
 
 ```tsx
+// apps/web/src/trpc/client.tsx (abridged)
 'use client';
 
-import { trpc } from '@/trpc/client';
+import { QueryClientProvider } from '@tanstack/react-query';
+import { httpBatchLink } from '@trpc/client';
+import { createTRPCReact } from '@trpc/react-query';
 import { useState } from 'react';
+import superjson from 'superjson';
+import { makeQueryClient } from './query';
+import type { AppRouter } from './routers/_app';
 
-export function CreateTaskForm({ wsId, listId }: { wsId: string; listId: string }) {
-  const [name, setName] = useState('');
-  const utils = trpc.useContext();
+export const trpc = createTRPCReact<AppRouter>();
 
-  const createTask = trpc.tasks.create.useMutation({
-    onSuccess: () => {
-      // Invalidate tasks list to refetch
-      utils.tasks.list.invalidate({ wsId });
-      setName('');
-    },
-  });
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    createTask.mutate({ wsId, listId, name });
-  };
+export function TRPCProvider({ children }: { children: React.ReactNode }) {
+  const queryClient = getQueryClient(); // singleton in browser, fresh on server
+  const [trpcClient] = useState(() =>
+    trpc.createClient({
+      links: [httpBatchLink({ transformer: superjson, url: getUrl() })],
+    })
+  );
 
   return (
-    <form onSubmit={handleSubmit}>
-      <input
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-        placeholder="Task name"
-      />
-      <button type="submit" disabled={createTask.isPending}>
-        {createTask.isPending ? 'Creating...' : 'Create Task'}
-      </button>
-      {createTask.error && <p>Error: {createTask.error.message}</p>}
-    </form>
+    <trpc.Provider client={trpcClient} queryClient={queryClient}>
+      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    </trpc.Provider>
   );
 }
 ```
 
-#### Server Component (Server-Side Caller)
-
-```tsx
-import { createCaller } from '@/trpc/server';
-
-export default async function TaskPage({ params }: { params: { taskId: string } }) {
-  const trpc = await createCaller();
-  const task = await trpc.tasks.get({ taskId: params.taskId });
-
-  return (
-    <div>
-      <h1>{task.name}</h1>
-      <p>{task.description}</p>
-    </div>
-  );
-}
-```
-
-## Procedure Types
-
-### `publicProcedure`
-
-No authentication required. Use for public endpoints.
-
-```typescript
-export const publicRouter = router({
-  status: publicProcedure.query(() => {
-    return { status: 'ok' };
-  }),
-});
-```
-
-### `protectedProcedure`
-
-Requires authentication. Provides `ctx.user` in handler.
-
-```typescript
-export const protectedRouter = router({
-  profile: protectedProcedure.query(({ ctx }) => {
-    return { userId: ctx.user.id }; // ctx.user is guaranteed
-  }),
-});
-```
-
-Implementation in `apps/web/src/trpc/init.ts`:
-
-```typescript
-const isAuthed = t.middleware(async ({ ctx, next }) => {
-  const supabase = createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-
-  if (!user) {
-    throw new Error('Unauthorized');
-  }
-
-  return next({
-    ctx: {
-      user, // Add user to context
-    },
-  });
-});
-
-export const protectedProcedure = t.procedure.use(isAuthed);
-```
-
-## Input Validation with Zod
-
-Always validate inputs using Zod schemas:
-
-```typescript
-import { z } from 'zod';
-
-const createTaskSchema = z.object({
-  wsId: z.string().min(1, 'Workspace ID required'),
-  name: z.string().min(1, 'Name required').max(255, 'Name too long'),
-  priority: z.number().int().min(0).max(5).default(0),
-  dueDate: z.date().optional(),
-  tags: z.array(z.string()).optional(),
-});
-
-export const tasksRouter = router({
-  create: protectedProcedure
-    .input(createTaskSchema)
-    .mutation(async ({ input }) => {
-      // input is fully typed and validated
-      // ...
-    }),
-});
-```
-
-### Common Zod Patterns
-
-```typescript
-// UUID validation
-z.guid()
-
-// Email validation
-z.email()
-
-// URL validation
-z.url()
-
-// Enum
-z.enum(['pending', 'in_progress', 'completed'])
-
-// Date
-z.date() // or z.string().datetime() for ISO strings
-
-// Optional with default
-z.string().default('default-value')
-
-// Nested objects
-z.object({
-  user: z.object({
-    id: z.guid(),
-    name: z.string(),
-  }),
-})
-
-// Arrays
-z.array(z.string())
-
-// Union types
-z.union([z.string(), z.number()])
-
-// Transform
-z.string().transform((val) => val.toLowerCase())
-
-// Refine (custom validation)
-z.string().refine((val) => val.includes('@'), {
-  message: 'Must be an email',
-})
-```
-
-## Error Handling
-
-### Throwing Errors
-
-```typescript
-import { TRPCError } from '@trpc/server';
-
-export const tasksRouter = router({
-  get: protectedProcedure
-    .input(z.object({ taskId: z.guid() }))
-    .query(async ({ input }) => {
-      const supabase = createClient();
-      const { data, error } = await supabase
-        .from('workspace_tasks')
-        .select('*')
-        .eq('id', input.taskId)
-        .single();
-
-      if (error) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: `Task ${input.taskId} not found`,
-          cause: error,
-        });
-      }
-
-      return data;
-    }),
-});
-```
-
-### Error Codes
-
-- `BAD_REQUEST` - Invalid input
-- `UNAUTHORIZED` - Not authenticated
-- `FORBIDDEN` - Authenticated but not authorized
-- `NOT_FOUND` - Resource not found
-- `INTERNAL_SERVER_ERROR` - Server error
-- `TIMEOUT` - Request timeout
-- `CONFLICT` - Resource conflict
-
-### Handling Errors Client-Side
+The only hook you can actually call through this client today is:
 
 ```tsx
 'use client';
 
 import { trpc } from '@/trpc/client';
 
-export function TaskDetails({ taskId }: { taskId: string }) {
-  const { data, error } = trpc.tasks.get.useQuery({ taskId });
-
-  if (error) {
-    if (error.data?.code === 'NOT_FOUND') {
-      return <div>Task not found</div>;
-    }
-    if (error.data?.code === 'UNAUTHORIZED') {
-      return <div>Please log in</div>;
-    }
-    return <div>Error: {error.message}</div>;
-  }
-
-  return <div>{data?.name}</div>;
+export function HealthBadge() {
+  const { data } = trpc.healthCheck.useQuery();
+  return <span>{data?.status ?? 'checking…'}</span>;
 }
 ```
 
-## React Query Integration
+## Server caller and hydration (`server.ts`)
 
-tRPC uses React Query under the hood. You have access to all React Query features:
+`server.ts` builds an RSC-side caller from the root router plus the same query
+client, and exposes `trpc` and `HydrateClient` via tRPC's
+`createHydrationHelpers`. It is marked `server-only`.
 
-### Query Options
+```typescript
+// apps/web/src/trpc/server.ts
+import { createCallerFactory, createTRPCContext } from './init';
+import { makeQueryClient } from './query';
+import { appRouter } from './routers/_app';
+import { createHydrationHelpers } from '@trpc/react-query/rsc';
+import { cache } from 'react';
+import 'server-only';
 
-```tsx
-const { data } = trpc.tasks.list.useQuery(
-  { wsId },
-  {
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    refetchOnWindowFocus: false,
-    retry: 3,
-    enabled: !!wsId, // Only run if wsId exists
-  }
+export const getQueryClient = cache(makeQueryClient);
+const caller = createCallerFactory(appRouter)(createTRPCContext);
+export const { trpc, HydrateClient } = createHydrationHelpers<typeof appRouter>(
+  caller,
+  getQueryClient
 );
 ```
 
-### Optimistic Updates
+In a Server Component you can prefetch and hydrate the single health-check
+procedure:
 
 ```tsx
-const utils = trpc.useContext();
+import { trpc, HydrateClient } from '@/trpc/server';
 
-const updateTask = trpc.tasks.update.useMutation({
-  onMutate: async (newData) => {
-    // Cancel outgoing refetches
-    await utils.tasks.get.cancel({ taskId: newData.taskId });
-
-    // Snapshot previous value
-    const previous = utils.tasks.get.getData({ taskId: newData.taskId });
-
-    // Optimistically update
-    utils.tasks.get.setData({ taskId: newData.taskId }, (old) => ({
-      ...old!,
-      ...newData,
-    }));
-
-    return { previous };
-  },
-  onError: (err, newData, context) => {
-    // Rollback on error
-    if (context?.previous) {
-      utils.tasks.get.setData({ taskId: newData.taskId }, context.previous);
-    }
-  },
-  onSettled: (data, error, variables) => {
-    // Always refetch after error or success
-    utils.tasks.get.invalidate({ taskId: variables.taskId });
-  },
-});
-```
-
-### Cache Invalidation
-
-```tsx
-const utils = trpc.useContext();
-
-// Invalidate specific query
-utils.tasks.get.invalidate({ taskId: '123' });
-
-// Invalidate all tasks.list queries
-utils.tasks.list.invalidate();
-
-// Invalidate all tasks queries
-utils.tasks.invalidate();
-
-// Reset to initial state
-utils.tasks.list.reset({ wsId });
-```
-
-## Performance Best Practices
-
-### 1. Use Query Keys Wisely
-
-```typescript
-// ✅ Good: Specific query keys
-trpc.tasks.list.useQuery({ wsId, listId, completed: false });
-
-// ❌ Bad: Over-fetching
-trpc.tasks.getAll.useQuery(); // Gets ALL tasks
-```
-
-### 2. Enable Request Batching
-
-tRPC automatically batches requests made within 10ms:
-
-```tsx
-// These three queries are sent in a single HTTP request
-const tasks = trpc.tasks.list.useQuery({ wsId });
-const boards = trpc.boards.list.useQuery({ wsId });
-const members = trpc.workspace.members.useQuery({ wsId });
-```
-
-### 3. Use `staleTime` for Cacheable Data
-
-```tsx
-// User profile rarely changes - cache for 10 minutes
-const { data: profile } = trpc.user.profile.useQuery(undefined, {
-  staleTime: 10 * 60 * 1000,
-});
-```
-
-### 4. Prefetch on Server
-
-```tsx
-// app/workspace/[wsId]/tasks/page.tsx
-import { createCaller } from '@/trpc/server';
-import { HydrateClient } from '@/trpc/query';
-
-export default async function TasksPage({ params }: { params: { wsId: string } }) {
-  const trpc = await createCaller();
-  const tasks = await trpc.tasks.list({ wsId: params.wsId });
-
+export default async function Page() {
+  // The only available procedure today
+  await trpc.healthCheck();
   return (
     <HydrateClient>
-      <TaskList wsId={params.wsId} /> {/* Uses prefetched data */}
+      {/* client components can read the hydrated cache */}
     </HydrateClient>
   );
 }
 ```
 
-## Testing tRPC Procedures
+## How to actually fetch product data
+
+Because tRPC is a stub, real data access uses the platform's standard stack:
+
+- **Server Components** read data directly (via Supabase server clients and
+  `@tuturuuu/internal-api` helpers) and pass it down as props.
+- **Client components** use **TanStack Query v5** hooks wrapping
+  `@tuturuuu/internal-api` helpers / REST `/api/v1` routes. Never fetch in
+  `useEffect`, and never call raw app APIs from the client directly.
+- **Realtime** updates are wired into the TanStack Query cache, not into
+  `useEffect`.
+
+When using the Supabase server clients from `@tuturuuu/supabase/next/server`,
+remember:
 
 ```typescript
-// __tests__/tasks.test.ts
-import { createCaller } from '@/trpc/server';
-import { describe, it, expect } from 'vitest';
+import {
+  createClient,
+  createDynamicClient,
+  createAdminClient,
+} from '@tuturuuu/supabase/next/server';
 
-describe('tasks router', () => {
-  it('should create a task', async () => {
-    const trpc = await createCaller();
-
-    const task = await trpc.tasks.create({
-      wsId: 'test-workspace',
-      listId: 'test-list',
-      name: 'Test Task',
-    });
-
-    expect(task.name).toBe('Test Task');
-    expect(task.ws_id).toBe('test-workspace');
-  });
-
-  it('should throw on invalid input', async () => {
-    const trpc = await createCaller();
-
-    await expect(
-      trpc.tasks.create({
-        wsId: '',
-        listId: 'test-list',
-        name: '', // Invalid: empty name
-      })
-    ).rejects.toThrow();
-  });
-});
+const supabase = await createClient();         // ASYNC — await it
+const dynamic = await createDynamicClient();    // ASYNC — await it
+const admin = createAdminClient();              // SYNC  — do NOT await
 ```
+
+See [Data Fetching](/platform/architecture/data-fetching) for the canonical
+patterns and decision table.
+
+## Extending the stub (rarely needed)
+
+If you genuinely need to add a procedure to the stub (for example, another
+lightweight diagnostic), follow the real helper names:
+
+```typescript
+// apps/web/src/trpc/routers/_app.ts
+import { baseProcedure, createTRPCRouter } from '../init';
+
+export const appRouter = createTRPCRouter({
+  healthCheck: baseProcedure.query(() => ({ status: 'ok', timestamp: Date.now() })),
+  // example diagnostic addition
+  ping: baseProcedure.query(() => ({ pong: true })),
+});
+
+export type AppRouter = typeof appRouter;
+```
+
+Procedures here run with the placeholder context only — there is no auth
+middleware to attach. For anything user-facing, authenticated, or
+product-related, prefer `@tuturuuu/internal-api` + REST routes instead of
+growing this scaffold during the migration.
 
 ## Related Documentation
 
-- [API Routes](/platform/architecture/api-routes) - REST API patterns
-- [Data Fetching](/platform/architecture/data-fetching) - When to use tRPC vs other patterns
-- [Authentication](/platform/architecture/authentication) - Auth middleware
-- [Authorization](/platform/architecture/authorization) - Permission checking
+- [Data Fetching](/platform/architecture/data-fetching) — the real client/server
+  fetching stack (Server Components + internal-api + TanStack Query)
+- [API Routes](/platform/architecture/api-routes) — REST `/api/v1` patterns and
+  `@tuturuuu/internal-api`
+- [TanStack + Rust migration](/platform/architecture/tanstack-rust-migration) —
+  why this layer is a stub
+- [Authentication](/platform/architecture/authentication)
+- [Authorization](/platform/architecture/authorization)
 
 ## External Resources
 
 - [tRPC Official Docs](https://trpc.io/)
-- [Zod Documentation](https://zod.dev/)
-- [React Query Docs](https://tanstack.com/query/latest)
+- [TanStack Query Docs](https://tanstack.com/query/latest)
+- [superjson](https://github.com/flightcontrol/superjson)
+</content>
+</invoke>

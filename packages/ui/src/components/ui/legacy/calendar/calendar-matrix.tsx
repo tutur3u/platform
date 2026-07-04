@@ -4,6 +4,7 @@ import { useCalendarSync } from '@tuturuuu/ui/hooks/use-calendar-sync';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
 import { useParams } from 'next/navigation';
+import { useMemo } from 'react';
 import { CalendarColumn } from './calendar-column';
 import { DAY_HEIGHT, MAX_LEVEL } from './config';
 import { EventCard } from './event-card';
@@ -11,6 +12,146 @@ import { processCalendarEvent } from './event-utils';
 import { useCalendarSettings } from './settings/settings-context';
 
 dayjs.extend(timezone);
+
+type LayoutCalendarEvent = CalendarEvent & {
+  _dayKey: string;
+  _endMs: number;
+  _startMs: number;
+};
+
+function getDayKeyFromDate(date: Date, tz?: string) {
+  return (tz === 'auto' ? dayjs(date) : dayjs(date).tz(tz)).format(
+    'YYYY-MM-DD'
+  );
+}
+
+function getDayKeyFromIso(value: string, tz?: string) {
+  return (tz === 'auto' ? dayjs(value) : dayjs(value).tz(tz)).format(
+    'YYYY-MM-DD'
+  );
+}
+
+function withLayoutMetadata(
+  event: CalendarEvent,
+  tz?: string
+): LayoutCalendarEvent {
+  return {
+    ...event,
+    _dayKey: getDayKeyFromIso(event.start_at, tz),
+    _endMs: new Date(event.end_at).getTime(),
+    _startMs: new Date(event.start_at).getTime(),
+  };
+}
+
+function assignEventLayout(
+  visibleEvents: CalendarEvent[],
+  tz?: string
+): CalendarEvent[] {
+  const sortedEvents = visibleEvents
+    .map((event) => withLayoutMetadata(event, tz))
+    .sort((left, right) => left._startMs - right._startMs);
+
+  const eventLevels = new Map<string, number>();
+  const eventOverlapCounts = new Map<string, number>();
+  const eventOverlapGroups = new Map<string, string[]>();
+  const eventColumns = new Map<string, number>();
+  const eventsByDay = new Map<string, LayoutCalendarEvent[]>();
+
+  for (const event of sortedEvents) {
+    const dayEvents = eventsByDay.get(event._dayKey) ?? [];
+    dayEvents.push(event);
+    eventsByDay.set(event._dayKey, dayEvents);
+  }
+
+  for (const dayEvents of eventsByDay.values()) {
+    const sortedDayEvents = [...dayEvents].sort(
+      (left, right) => left._startMs - right._startMs
+    );
+
+    const overlapGroups: LayoutCalendarEvent[][] = [];
+    let activeGroup: LayoutCalendarEvent[] = [];
+    let activeGroupEnd = Number.NEGATIVE_INFINITY;
+
+    for (const event of sortedDayEvents) {
+      if (activeGroup.length === 0 || event._startMs < activeGroupEnd) {
+        activeGroup.push(event);
+        activeGroupEnd = Math.max(activeGroupEnd, event._endMs);
+      } else {
+        overlapGroups.push(activeGroup);
+        activeGroup = [event];
+        activeGroupEnd = event._endMs;
+      }
+    }
+
+    if (activeGroup.length > 0) overlapGroups.push(activeGroup);
+
+    for (const group of overlapGroups) {
+      const sortedGroup = [...group].sort((left, right) => {
+        if (left._startMs !== right._startMs)
+          return left._startMs - right._startMs;
+        return right._endMs - right._startMs - (left._endMs - left._startMs);
+      });
+
+      const groupEventColumns = new Map<string, number>();
+      const columnEndTimes: number[] = [];
+
+      for (const event of sortedGroup) {
+        let column = columnEndTimes.findIndex(
+          (columnEndTime) => event._startMs >= columnEndTime
+        );
+
+        if (column === -1) column = columnEndTimes.length;
+
+        groupEventColumns.set(event.id, column);
+        columnEndTimes[column] = event._endMs;
+      }
+
+      const maxColumn = Math.max(0, ...groupEventColumns.values());
+      const orderedEventIds: string[] = [];
+
+      for (let column = 0; column <= maxColumn; column++) {
+        const columnEvents = sortedGroup
+          .filter((event) => groupEventColumns.get(event.id) === column)
+          .sort(
+            (left, right) =>
+              right._endMs - right._startMs - (left._endMs - left._startMs)
+          );
+        orderedEventIds.push(...columnEvents.map((event) => event.id));
+      }
+
+      for (const event of sortedGroup) {
+        eventOverlapCounts.set(event.id, sortedGroup.length);
+        eventOverlapGroups.set(event.id, orderedEventIds);
+        eventColumns.set(event.id, groupEventColumns.get(event.id) ?? 0);
+      }
+    }
+
+    const levelEndTimes: number[] = [];
+
+    for (const event of sortedDayEvents) {
+      let level = 0;
+      while (
+        level < MAX_LEVEL &&
+        levelEndTimes[level] !== undefined &&
+        event._startMs < levelEndTimes[level]!
+      ) {
+        level++;
+      }
+
+      level = Math.min(level, MAX_LEVEL - 1);
+      eventLevels.set(event.id, level);
+      levelEndTimes[level] = event._endMs;
+    }
+  }
+
+  return sortedEvents.map((event) => ({
+    ...event,
+    _column: eventColumns.get(event.id) ?? 0,
+    _level: eventLevels.get(event.id) ?? 0,
+    _overlapCount: eventOverlapCounts.get(event.id) ?? 1,
+    _overlapGroup: eventOverlapGroups.get(event.id) ?? [event.id],
+  }));
+}
 
 export const CalendarMatrix = ({
   dates,
@@ -55,250 +196,47 @@ export const CalendarEventMatrix = ({ dates }: { dates: Date[] }) => {
     useCalendar();
   const tz = settings?.timezone?.timezone;
 
-  // When hideNonPreviewEvents is ON, filter out affected events at matrix level
-  // This ensures proper elevation calculation without affected events
-  const filteredRealEvents = hideNonPreviewEvents
-    ? eventsWithoutAllDays.filter(
-        (e) => !affectedEventIds.has(e.id) || e._isPreview
-      )
-    : eventsWithoutAllDays;
-
-  // Merge real events with preview events for visual demo
-  // Deduplicate by ID: if a preview event has the same ID as a real event,
-  // prefer the real event (this happens when locked events are included in preview)
-  const realEventIds = new Set(filteredRealEvents.map((e) => e.id));
-  const filteredPreviewEvents = previewEvents.filter(
-    (e) => !realEventIds.has(e.id)
-  );
-  const allEvents = [...filteredRealEvents, ...filteredPreviewEvents];
-
-  // Process events to handle multi-day events
-  // Events ending at exactly midnight are treated as ending on the previous day
-  const processedEvents = allEvents.flatMap((event) =>
-    processCalendarEvent(event, tz)
+  const visibleDayKeys = useMemo(
+    () => new Set(dates.map((date) => getDayKeyFromDate(date, tz))),
+    [dates, tz]
   );
 
-  // Filter events to only include those visible in the current date range
-  const visibleEvents = processedEvents.filter((event) => {
-    const eventStart =
-      tz === 'auto' ? dayjs(event.start_at) : dayjs(event.start_at).tz(tz);
-    const eventStartDay = eventStart.startOf('day');
+  const filteredRealEvents = useMemo(
+    () =>
+      hideNonPreviewEvents
+        ? eventsWithoutAllDays.filter(
+            (event) => !affectedEventIds.has(event.id) || event._isPreview
+          )
+        : eventsWithoutAllDays,
+    [affectedEventIds, eventsWithoutAllDays, hideNonPreviewEvents]
+  );
 
-    // Check if the event falls within any of the visible dates
-    return dates.some((date) => {
-      const dateDay =
-        tz === 'auto'
-          ? dayjs(date).startOf('day')
-          : dayjs(date).tz(tz).startOf('day');
-      return dateDay.isSame(eventStartDay);
-    });
-  });
+  const allEvents = useMemo(() => {
+    const realEventIds = new Set(filteredRealEvents.map((event) => event.id));
+    const filteredPreviewEvents = previewEvents.filter(
+      (event) => !realEventIds.has(event.id)
+    );
+    return [...filteredRealEvents, ...filteredPreviewEvents];
+  }, [filteredRealEvents, previewEvents]);
 
-  // Simple algorithm to assign levels to events
-  const assignLevels = () => {
-    // Sort events by start time
-    const sortedEvents = [...visibleEvents].sort((a, b) => {
-      const aStart = new Date(a.start_at).getTime();
-      const bStart = new Date(b.start_at).getTime();
-      return aStart - bStart;
-    });
+  const visibleEvents = useMemo(() => {
+    const nextVisibleEvents: CalendarEvent[] = [];
 
-    // Create maps to store event data
-    const eventLevels = new Map<string, number>();
-    const eventOverlapCounts = new Map<string, number>();
-    const eventOverlapGroups = new Map<string, string[]>();
-    const eventColumns = new Map<string, number>();
-
-    // Group events by day
-    const eventsByDay = new Map<string, CalendarEvent[]>();
-
-    // Populate the day groups
-    sortedEvents.forEach((event) => {
-      const date = new Date(event.start_at);
-      const dateKey = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
-
-      if (!eventsByDay.has(dateKey)) {
-        eventsByDay.set(dateKey, []);
+    for (const event of allEvents) {
+      for (const processedEvent of processCalendarEvent(event, tz)) {
+        if (visibleDayKeys.has(getDayKeyFromIso(processedEvent.start_at, tz))) {
+          nextVisibleEvents.push(processedEvent);
+        }
       }
+    }
 
-      const dayEvents = eventsByDay.get(dateKey);
-      if (dayEvents) {
-        dayEvents.push(event);
-      }
-    });
+    return nextVisibleEvents;
+  }, [allEvents, tz, visibleDayKeys]);
 
-    // Process each day's events
-    eventsByDay.forEach((dayEvents) => {
-      // Sort by start time
-      const sortedDayEvents = [...dayEvents].sort((a, b) => {
-        const aStart = new Date(a.start_at).getTime();
-        const bStart = new Date(b.start_at).getTime();
-        return aStart - bStart;
-      });
-
-      // Track end times for each level
-      const levelEndTimes: number[] = [];
-
-      // Create a more accurate grouping of overlapping events
-      // Helper function to check if two events overlap
-      const eventsOverlap = (event1: CalendarEvent, event2: CalendarEvent) => {
-        const event1Start = new Date(event1.start_at).getTime();
-        const event1End = new Date(event1.end_at).getTime();
-        const event2Start = new Date(event2.start_at).getTime();
-        const event2End = new Date(event2.end_at).getTime();
-
-        return event1Start < event2End && event1End > event2Start;
-      };
-
-      // Create overlap groups
-      const overlapGroups: CalendarEvent[][] = [];
-
-      // Process each event to find its overlap group
-      sortedDayEvents.forEach((event) => {
-        // Find all groups this event overlaps with
-        const overlappingGroupIndices: number[] = [];
-
-        for (let i = 0; i < overlapGroups.length; i++) {
-          const group = overlapGroups[i];
-          // Check if event overlaps with any event in this group
-          if (group?.some((groupEvent) => eventsOverlap(event, groupEvent))) {
-            overlappingGroupIndices.push(i);
-          }
-        }
-
-        if (overlappingGroupIndices.length === 0) {
-          // No overlapping groups, create a new one
-          overlapGroups.push([event]);
-        } else {
-          // Merge all overlapping groups and add this event
-          const newGroup = [event];
-
-          // Sort indices in descending order to safely remove from array
-          overlappingGroupIndices.sort((a, b) => b - a);
-
-          // Merge all overlapping groups
-          overlappingGroupIndices.forEach((index) => {
-            newGroup.push(...(overlapGroups[index] ?? []));
-            overlapGroups.splice(index, 1);
-          });
-
-          // Add the merged group
-          overlapGroups.push(newGroup);
-        }
-      });
-
-      // Now assign column positions using a graph coloring approach
-      overlapGroups.forEach((group) => {
-        // For each group, assign column positions
-        // Column 0 = all non-overlapping events with each other
-        // Column 1+ = events that overlap with column 0
-
-        // Sort group by start time, then duration (longest first)
-        const sortedGroup = [...group].sort((a, b) => {
-          const aStart = new Date(a.start_at).getTime();
-          const bStart = new Date(b.start_at).getTime();
-          if (aStart !== bStart) return aStart - bStart;
-
-          const aDuration =
-            new Date(a.end_at).getTime() - new Date(a.start_at).getTime();
-          const bDuration =
-            new Date(b.end_at).getTime() - new Date(b.start_at).getTime();
-
-          // Longer events first
-          return bDuration - aDuration;
-        });
-
-        // Assign columns using greedy coloring
-        const groupEventColumns = new Map<string, number>();
-        const columnEndTimes: number[] = [];
-
-        sortedGroup.forEach((event) => {
-          const eventStart = new Date(event.start_at).getTime();
-          const eventEnd = new Date(event.end_at).getTime();
-
-          // Find the first column where this event can fit
-          let column = -1;
-          for (let i = 0; i < columnEndTimes.length; i++) {
-            if (eventStart >= columnEndTimes[i]!) {
-              column = i;
-              break;
-            }
-          }
-
-          // If no existing column works, create a new one
-          if (column === -1) {
-            column = columnEndTimes.length;
-          }
-
-          groupEventColumns.set(event.id, column);
-          columnEndTimes[column] = eventEnd;
-        });
-
-        // Now create the ordered list based on column assignment
-        // Column 0 events first (sorted by duration), then column 1, etc.
-        const maxColumn = Math.max(...Array.from(groupEventColumns.values()));
-        const orderedEventIds: string[] = [];
-
-        for (let col = 0; col <= maxColumn; col++) {
-          const colEvents = sortedGroup
-            .filter((e) => groupEventColumns.get(e.id) === col)
-            .sort((a, b) => {
-              const aDuration =
-                new Date(a.end_at).getTime() - new Date(a.start_at).getTime();
-              const bDuration =
-                new Date(b.end_at).getTime() - new Date(b.start_at).getTime();
-              return bDuration - aDuration; // Longest first
-            });
-          orderedEventIds.push(...colEvents.map((e) => e.id));
-        }
-
-        // For each event in the group, store the ordered group and column number
-        sortedGroup.forEach((event) => {
-          eventOverlapCounts.set(event.id, sortedGroup.length);
-          eventOverlapGroups.set(event.id, orderedEventIds);
-          eventColumns.set(event.id, groupEventColumns.get(event.id) || 0);
-        });
-      });
-
-      // Assign levels (for fallback positioning) using the original algorithm
-      sortedDayEvents.forEach((event) => {
-        const eventStart = new Date(event.start_at).getTime();
-
-        // Find the first level where this event can fit
-        let level = 0;
-        while (level < MAX_LEVEL) {
-          if (
-            !levelEndTimes[level] ||
-            eventStart >= (levelEndTimes?.[level] ?? 0)
-          ) {
-            break;
-          }
-          level++;
-        }
-
-        // Cap at maximum level
-        level = Math.min(level, MAX_LEVEL - 1);
-
-        // Store the level for this event
-        eventLevels.set(event.id, level);
-
-        // Update the end time for this level
-        levelEndTimes[level] = new Date(event.end_at).getTime();
-      });
-    });
-
-    // Return events with assigned levels and overlap information
-    return sortedEvents.map((event) => ({
-      ...event,
-      _level: eventLevels.get(event.id) || 0,
-      _overlapCount: eventOverlapCounts.get(event.id) || 1,
-      _overlapGroup: eventOverlapGroups.get(event.id) || [event.id],
-      _column: eventColumns.get(event.id) || 0,
-    }));
-  };
-
-  // Get events with levels assigned
-  const eventsWithLevels = assignLevels();
+  const eventsWithLevels = useMemo(
+    () => assignEventLayout(visibleEvents, tz),
+    [visibleEvents, tz]
+  );
 
   const columns = dates.length;
 

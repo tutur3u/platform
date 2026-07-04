@@ -131,6 +131,105 @@ describe('TuturuuuUserClient', () => {
     expect(headers.get('x-sdk-client')).toBe('tuturuuu-cli');
   });
 
+  it('routes external project helpers through the workspace API', async () => {
+    const fetchMock = vi
+      .fn<typeof fetch>()
+      .mockImplementation(async () => Response.json({ ok: true }));
+    const client = new TuturuuuUserClient({
+      accessToken: 'access-token',
+      baseUrl: 'https://tuturuuu.com',
+      fetch: fetchMock,
+    });
+    const manifest = {
+      adapter: 'exocorpse',
+      collections: [],
+      version: 1,
+    };
+
+    await client.external.projects.summary('ws-1');
+    await client.external.projects.delivery('ws-1', { preview: true });
+    await client.external.projects.collections('ws-1');
+    await client.external.projects.entries('ws-1', {
+      collectionId: 'characters',
+    });
+    await client.external.projects.snapshot('ws-1');
+    await client.external.projects.setup('ws-1', manifest);
+    await client.external.projects.diff('ws-1', manifest);
+    await client.external.projects.apply('ws-1', {
+      force: true,
+      manifest,
+    });
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      'https://tuturuuu.com/api/v1/workspaces/ws-1/external-projects/summary',
+      expect.objectContaining({
+        cache: 'no-store',
+      })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      'https://tuturuuu.com/api/v1/workspaces/ws-1/external-projects/delivery?preview=true',
+      expect.objectContaining({
+        cache: 'no-store',
+      })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      3,
+      'https://tuturuuu.com/api/v1/workspaces/ws-1/external-projects/collections',
+      expect.objectContaining({
+        cache: 'no-store',
+      })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      4,
+      'https://tuturuuu.com/api/v1/workspaces/ws-1/external-projects/entries?collectionId=characters',
+      expect.objectContaining({
+        cache: 'no-store',
+      })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      5,
+      'https://tuturuuu.com/api/v1/workspaces/ws-1/external-projects/sync/snapshot',
+      expect.objectContaining({
+        cache: 'no-store',
+      })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      6,
+      'https://tuturuuu.com/api/v1/workspaces/ws-1/external-projects/setup',
+      expect.objectContaining({
+        body: JSON.stringify({ manifest }),
+        cache: 'no-store',
+        method: 'POST',
+      })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      7,
+      'https://tuturuuu.com/api/v1/workspaces/ws-1/external-projects/sync/diff',
+      expect.objectContaining({
+        body: JSON.stringify({ manifest }),
+        cache: 'no-store',
+        method: 'POST',
+      })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      8,
+      'https://tuturuuu.com/api/v1/workspaces/ws-1/external-projects/sync/apply',
+      expect.objectContaining({
+        body: JSON.stringify({
+          force: true,
+          manifest,
+        }),
+        cache: 'no-store',
+        method: 'POST',
+      })
+    );
+
+    const requestHeaders = new Headers(fetchMock.mock.calls[0]?.[1]?.headers);
+    expect(requestHeaders.get('authorization')).toBe('Bearer access-token');
+  });
+
   it('does not attach or refresh CLI auth for cross-origin fetch requests', async () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-05-03T00:00:00.000Z'));
@@ -252,7 +351,7 @@ describe('TuturuuuUserClient', () => {
     });
 
     expect(fetchMock).toHaveBeenCalledWith(
-      'https://tuturuuu.com/api/v1/workspaces/ws-1/tasks?listStatuses=not_started%2Cactive&limit=5&includeArchivedBoards=true&includeCount=true',
+      'https://tasks.tuturuuu.com/api/v1/workspaces/ws-1/tasks?listStatuses=not_started%2Cactive&limit=5&includeArchivedBoards=true&includeCount=true',
       expect.objectContaining({
         cache: 'no-store',
       })
@@ -261,6 +360,169 @@ describe('TuturuuuUserClient', () => {
     expect(new Headers(requestInit?.headers).get('authorization')).toBe(
       'Bearer access-token'
     );
+  });
+
+  it('searches tasks through the authenticated task search API', async () => {
+    const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(
+      Response.json({
+        tasks: [{ id: 'task-1', name: 'Deadline review', similarity: 0.92 }],
+      })
+    );
+
+    const client = new TuturuuuUserClient({
+      accessToken: 'access-token',
+      baseUrl: 'https://tuturuuu.com',
+      fetch: fetchMock,
+    });
+
+    await client.tasks.search('ws-1', {
+      matchCount: 5,
+      matchThreshold: 0.25,
+      mode: 'hybrid',
+      query: 'deadline review',
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://tasks.tuturuuu.com/api/v1/workspaces/ws-1/tasks/search',
+      expect.objectContaining({
+        body: JSON.stringify({
+          matchCount: 5,
+          matchThreshold: 0.25,
+          mode: 'hybrid',
+          query: 'deadline review',
+        }),
+        cache: 'no-store',
+        method: 'POST',
+      })
+    );
+    const requestInit = fetchMock.mock.calls[0]?.[1];
+    expect(new Headers(requestInit?.headers).get('authorization')).toBe(
+      'Bearer access-token'
+    );
+  });
+
+  it('passes task description reads and direct updates through the authenticated internal API client', async () => {
+    const fetchMock = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(
+        Response.json({ description: null, description_yjs_state: null })
+      )
+      .mockResolvedValueOnce(
+        Response.json({ description: null, description_yjs_state: null })
+      );
+
+    const client = new TuturuuuUserClient({
+      accessToken: 'access-token',
+      baseUrl: 'https://tuturuuu.com',
+      fetch: fetchMock,
+    });
+
+    await client.tasks.getDescription('ws-1', 'task-1');
+    await client.tasks.updateDescription('ws-1', 'task-1', {
+      description: '{"type":"doc","content":[{"type":"paragraph"}]}',
+      description_yjs_state: [1, 2, 3],
+    });
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      'https://tasks.tuturuuu.com/api/v1/workspaces/ws-1/tasks/task-1/description',
+      expect.objectContaining({
+        cache: 'no-store',
+      })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      'https://tasks.tuturuuu.com/api/v1/workspaces/ws-1/tasks/task-1/description',
+      expect.objectContaining({
+        body: JSON.stringify({
+          description: '{"type":"doc","content":[{"type":"paragraph"}]}',
+          description_yjs_state: [1, 2, 3],
+        }),
+        method: 'PATCH',
+      })
+    );
+    const requestInit = fetchMock.mock.calls[0]?.[1];
+    expect(new Headers(requestInit?.headers).get('authorization')).toBe(
+      'Bearer access-token'
+    );
+  });
+
+  it('uploads task descriptions through the chunked description API', async () => {
+    const fetchMock = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(Response.json({ session_id: 'session-1' }))
+      .mockResolvedValueOnce(Response.json({ success: true }))
+      .mockResolvedValueOnce(Response.json({ success: true }))
+      .mockResolvedValueOnce(
+        Response.json({
+          description: 'Hello',
+          description_yjs_state: [1, 2, 3],
+        })
+      );
+
+    const client = new TuturuuuUserClient({
+      accessToken: 'access-token',
+      baseUrl: 'https://tuturuuu.com',
+      fetch: fetchMock,
+    });
+
+    await client.tasks.updateDescriptionChunked('ws-1', 'task-1', {
+      description: 'Hello',
+      description_yjs_state: [1, 2, 3],
+    });
+
+    expect(JSON.parse(fetchMock.mock.calls[0]?.[1]?.body as string)).toEqual({
+      action: 'begin',
+      fields: {
+        description: { chunk_count: 1, total_length: 5 },
+        description_yjs_state: { chunk_count: 1, total_length: 4 },
+      },
+    });
+    expect(JSON.parse(fetchMock.mock.calls[1]?.[1]?.body as string)).toEqual({
+      action: 'append',
+      chunk: 'Hello',
+      chunk_index: 0,
+      field: 'description',
+      session_id: 'session-1',
+    });
+    expect(JSON.parse(fetchMock.mock.calls[2]?.[1]?.body as string)).toEqual({
+      action: 'append',
+      chunk: 'AQID',
+      chunk_index: 0,
+      field: 'description_yjs_state',
+      session_id: 'session-1',
+    });
+    expect(JSON.parse(fetchMock.mock.calls[3]?.[1]?.body as string)).toEqual({
+      action: 'commit',
+      session_id: 'session-1',
+    });
+  });
+
+  it('aborts chunked task description uploads when appending fails', async () => {
+    const fetchMock = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(Response.json({ session_id: 'session-1' }))
+      .mockResolvedValueOnce(
+        Response.json({ error: 'append failed' }, { status: 500 })
+      )
+      .mockResolvedValueOnce(Response.json({ success: true }));
+
+    const client = new TuturuuuUserClient({
+      accessToken: 'access-token',
+      baseUrl: 'https://tuturuuu.com',
+      fetch: fetchMock,
+    });
+
+    await expect(
+      client.tasks.updateDescriptionChunked('ws-1', 'task-1', {
+        description: 'Hello',
+      })
+    ).rejects.toThrow();
+
+    expect(JSON.parse(fetchMock.mock.calls[2]?.[1]?.body as string)).toEqual({
+      action: 'abort',
+      session_id: 'session-1',
+    });
   });
 
   it('passes finance requests through the authenticated internal API client', async () => {

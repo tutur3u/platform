@@ -148,6 +148,34 @@ const helpTopics: Record<string, HelpTopic> = {
     ],
     usage: 'ttr config set-base-url <url>',
   },
+  external: {
+    commands: [
+      'projects summary             show external-project workspace summary',
+      'projects studio              fetch studio/admin data',
+      'projects delivery --preview  fetch delivery payloads',
+      'projects snapshot            fetch sync snapshot',
+      'projects collections         list configured collections',
+      'projects entries --collection <id>',
+      'projects setup --manifest <path>',
+      'projects diff --manifest <path>',
+      'projects apply --manifest <path> --confirm APPLY_EXTERNAL_PROJECT_SYNC',
+    ],
+    description:
+      'External commands operate on CMS-style external projects for the selected workspace.',
+    examples: [
+      'ttr external projects summary --workspace <workspace-id> --json',
+      'ttr external projects delivery --workspace <workspace-id> --preview --out tmp/delivery.json',
+      'ttr external projects diff --workspace <workspace-id> --manifest external-project.json --json',
+      'ttr external projects apply --workspace <workspace-id> --manifest external-project.json --confirm APPLY_EXTERNAL_PROJECT_SYNC',
+    ],
+    options: [
+      '--workspace, --ws <id>        override the selected workspace',
+      '--json                       print machine-readable JSON',
+      '--out <path>                 write JSON output to a file',
+      '--no-update-check            skip CLI update checks',
+    ],
+    usage: 'ttr external projects <command> [options]',
+  },
   finance: {
     commands: [
       'wallets [list|get|balance|create|update|delete]',
@@ -317,10 +345,12 @@ const helpTopics: Record<string, HelpTopic> = {
   tasks: {
     commands: [
       'list                         list open tasks plus assigned external tasks in personal workspace',
+      'search <query>               full-text, semantic, or hybrid task search',
       'use [id]                     select a task',
       'get [id]                     show task details',
       'create [name]                create a task',
       'update [id] --json-payload   update task fields',
+      'description [action] [id]    read or edit a task description',
       'done [id]                    mark a task as done',
       'close [id]                   mark a task as closed',
       'delete [id]                  delete a task',
@@ -331,10 +361,16 @@ const helpTopics: Record<string, HelpTopic> = {
       'Task lists are sorted by priority and due date. Unscoped lists start from the personal workspace and include assigned tasks from other accessible workspaces. Human-readable lists show total tasks and page/max page. Use task UUIDs or board identifiers like VHP-12 for task CRUD. Omit ids in a TTY to choose with the keyboard.',
     examples: [
       'ttr tasks',
+      'ttr tasks search "deadline review"',
+      'ttr tasks search "deadline review" --mode text',
+      'ttr tasks search "deadline review" --mode semantic',
       'ttr tasks --compact',
       'ttr tasks --page 2 --page-size 50',
       'ttr tasks --include-review --include-done',
       'ttr tasks create "Add Tuturuuu CLI"',
+      'ttr tasks create --template bug-report --list <list-id>',
+      'ttr tasks description get VHP-12',
+      'ttr tasks description set VHP-12 --file notes.md --format markdown',
       'ttr tasks done VHP-12',
       'ttr tasks close <task-id>',
       'ttr tasks update VHP-12 --json-payload \'{"completed":true}\'',
@@ -356,11 +392,79 @@ const helpTopics: Record<string, HelpTopic> = {
       '--list <id>                  filter by list or choose target list',
       '--page <n>, --page-size <n>   paginate list output',
       '--limit <n>, --offset <n>     paginate list output (offset form)',
-      '--q <query>                  search task text',
+      '--q <query>                  filter list output by task text; search query alias for tasks search',
+      '--template <key|file>         create a task from a workspace or local task template',
       '--json                       print machine-readable JSON',
     ],
     usage:
-      'ttr tasks [list|use|get|create|update|delete|move|bulk] [id] [options]',
+      'ttr tasks [list|search|use|get|create|update|description|delete|move|bulk] [id] [options]',
+  },
+  'task-templates': {
+    commands: [
+      'list                         list workspace task templates',
+      'show <key>                   show a workspace or local task template',
+      'create [name]                create a workspace task template',
+      'update <key>                 update a workspace task template',
+      'delete <key>                 archive or permanently delete a template',
+      'use <key|file>               create a task from a template',
+      'import <file>                create a workspace template from a local markdown file',
+      'export <key>                 export a workspace template to markdown',
+      'save-from-task <task-id>     snapshot an existing task as a template',
+    ],
+    description:
+      'Task templates store reusable single-task defaults. Workspace templates live in Tuturuuu; local templates live under .tuturuuu/task-templates/*.md with YAML frontmatter and markdown body, including GFM pipe tables.',
+    examples: [
+      'ttr task-templates',
+      'ttr task-templates create "Bug report" --key bug-report --title "Investigate bug" --priority high',
+      'ttr task-templates use bug-report --list <list-id>',
+      'ttr tasks create --template bug-report --list <list-id> --name "Investigate checkout bug"',
+      'ttr task-templates import .tuturuuu/task-templates/bug-report.md',
+      'ttr task-templates export bug-report --file .tuturuuu/task-templates/bug-report.md',
+      'ttr task-templates list --local',
+    ],
+    options: [
+      '--workspace, --ws <id>        override the selected workspace',
+      '--key <key>                  stable template key',
+      '--title, --task-name <text>   default task title',
+      '--description <text>          default task description',
+      '--priority <value>            low, normal, high, or critical',
+      '--visibility <value>          private or workspace',
+      '--board <id>, --list <id>     default or destination board/list',
+      '--labels, --assignees, --projects <ids> comma-separated metadata ids',
+      '--file <path>                local markdown import/export/create path',
+      '--local                      resolve against .tuturuuu/task-templates',
+      '--permanent                  permanently delete instead of archive',
+      '--json                       print machine-readable JSON',
+    ],
+    usage:
+      'ttr task-templates [list|show|create|update|delete|use|import|export|save-from-task] [key|file] [options]',
+  },
+  tiptap: {
+    commands: [
+      'parse                        parse text, markdown, or TipTap JSON',
+      'encode                       encode content as Yjs state',
+      'decode                       decode Yjs state to TipTap JSON or text',
+      'validate                     validate TipTap JSON or Yjs state',
+    ],
+    description:
+      'Local task-description TipTap/Yjs codec utilities. These commands do not require login or read saved CLI config.',
+    examples: [
+      'ttr tiptap parse --text "Hello" --output json',
+      'ttr tiptap parse --input notes.md --format markdown --output yjs-base64',
+      'ttr tiptap parse --text "| Field | Value |\\n| --- | --- |\\n| Owner | Platform |" --format markdown --output json',
+      'ttr tiptap encode --input description.json --format json --output bytes-json',
+      'ttr tiptap decode --input state.txt --format yjs-base64 --output text',
+      'ttr tiptap validate --input description.json --format json',
+    ],
+    options: [
+      '--input <path|->             input file or stdin',
+      '--file <path|->              alias for --input',
+      '--text <text>                inline input',
+      '--format <format>            text|markdown|json or yjs-base64|bytes-json for decode',
+      '--output <format>            json|text|yjs-base64|bytes-json',
+      '--json                       wrap output in a JSON envelope',
+    ],
+    usage: 'ttr tiptap [parse|encode|decode|validate] [options]',
   },
   whoami: {
     description:
@@ -387,6 +491,48 @@ const helpTopics: Record<string, HelpTopic> = {
 };
 
 const actionHelpTopics: Record<string, Record<string, HelpTopic>> = {
+  external: {
+    projects: {
+      commands: [
+        'summary                     show external-project workspace summary',
+        'studio                      fetch studio/admin data',
+        'delivery --preview          fetch delivery payload, optionally including drafts',
+        'snapshot                    fetch sync snapshot',
+        'collections                 list configured collections',
+        'entries --collection <id>   list entries, optionally filtered by collection',
+        'setup --manifest <path>     initialize/update project setup from a manifest',
+        'diff --manifest <path>      preview sync changes from a manifest',
+        'apply --manifest <path> --confirm APPLY_EXTERNAL_PROJECT_SYNC',
+      ],
+      description:
+        'Reads and syncs external-project data through the authenticated Tuturuuu workspace APIs.',
+      examples: [
+        'ttr external projects summary --workspace <workspace-id> --json',
+        'ttr external projects studio --workspace <workspace-id> --out tmp/studio.json',
+        'ttr external projects delivery --workspace <workspace-id> --preview --out tmp/delivery.json',
+        'ttr external projects snapshot --workspace <workspace-id> --out tmp/snapshot.json',
+        'ttr external projects collections --workspace <workspace-id> --json',
+        'ttr external projects entries --workspace <workspace-id> --collection characters --json',
+        'ttr external projects setup --workspace <workspace-id> --manifest external-project.json',
+        'ttr external projects diff --workspace <workspace-id> --manifest external-project.json --json',
+        'ttr external projects apply --workspace <workspace-id> --manifest external-project.json --confirm APPLY_EXTERNAL_PROJECT_SYNC',
+        'ttr external projects apply --workspace <workspace-id> --manifest external-project.json --confirm APPLY_EXTERNAL_PROJECT_SYNC --force',
+      ],
+      options: [
+        '--workspace, --ws <id>       override the selected workspace',
+        '--json                       print machine-readable JSON',
+        '--out <path>                 write JSON output to a file',
+        '--manifest <path>            JSON sync manifest for setup/diff/apply',
+        '--preview                    include preview/draft data for delivery reads',
+        '--collection <id>            filter entries by collection id',
+        '--confirm APPLY_EXTERNAL_PROJECT_SYNC required for apply',
+        '--force                      allow destructive apply changes supported by the API',
+        '--no-update-check            skip CLI update checks',
+      ],
+      usage:
+        'ttr external projects <summary|studio|delivery|snapshot|collections|entries|setup|diff|apply> [options]',
+    },
+  },
   calendar: {
     accounts: {
       examples: [
@@ -733,10 +879,17 @@ const actionHelpTopics: Record<string, Record<string, HelpTopic>> = {
       examples: [
         'ttr tasks create "Add Tuturuuu CLI"',
         'ttr tasks create --list <list-id> --name "Write release notes"',
+        'ttr tasks create --template bug-report --list <list-id>',
         'ttr tasks create "Fix login" --priority critical --labels bug,cli',
+        'ttr tasks create "Ship CLI docs" --description-file notes.md --description-format markdown',
+        'ttr tasks create "QA handoff" --description-file table.md --description-format markdown',
       ],
       options: [
         '--name <name>               task title; positional text is also accepted',
+        '--template <key-or-path>     create from a workspace or local task template',
+        '--description <text>        task description text',
+        '--description-file <path|-> task description file or stdin',
+        '--description-format <fmt>  text, markdown, or json; markdown supports pipe tables',
         '--list <id>                 destination list; omitted means selected list or picker',
         '--board <id>                board used when choosing a list',
         '--priority <priority>       task priority',
@@ -747,6 +900,30 @@ const actionHelpTopics: Record<string, Record<string, HelpTopic>> = {
         '--assignees <ids>           comma-separated assignee ids',
       ],
       usage: 'ttr tasks create [name] [options]',
+    },
+    description: {
+      description:
+        'Reads or mutates a task description through the dedicated TipTap/Yjs description API.',
+      examples: [
+        'ttr tasks description get VHP-12',
+        'ttr tasks description get VHP-12 --format yjs-base64',
+        'ttr tasks description set VHP-12 --text "Follow up with QA"',
+        'ttr tasks description set VHP-12 --file notes.md --format markdown',
+        'ttr tasks description append VHP-12 --file - --format markdown',
+        'ttr tasks description edit VHP-12',
+        'ttr tasks description clear VHP-12',
+      ],
+      options: [
+        '--task <id>                 task id when omitted positionally',
+        '--text <text>               description input',
+        '--file <path|->             description input file or stdin',
+        '--description <text>        alias for --text',
+        '--description-file <path|-> alias for --file',
+        '--format <format>           input: text|markdown|json; markdown supports pipe tables; get output: text|json|yjs-base64|raw',
+        '--json                      print machine-readable JSON',
+      ],
+      usage:
+        'ttr tasks description [get|set|append|prepend|edit|clear] [task-id] [options]',
     },
     close: {
       description:
@@ -790,6 +967,26 @@ const actionHelpTopics: Record<string, Record<string, HelpTopic>> = {
       options: helpTopics.tasks?.options ?? [],
       usage: 'ttr tasks [list] [options]',
     },
+    search: {
+      description:
+        'Searches task name and description text with text, semantic, or hybrid ranking. Results preserve API relevance order.',
+      examples: [
+        'ttr tasks search "deadline review"',
+        'ttr tasks search "deadline review" --mode text',
+        'ttr tasks search "deadline review" --mode semantic',
+        'ttr tasks search --query "deadline review" --mode hybrid --limit 20 --threshold 0.25',
+      ],
+      options: [
+        '--query, --q <query>        search query',
+        '--mode <mode>               text, semantic, or hybrid; default hybrid',
+        '--limit, --match-count <n>  maximum matches',
+        '--threshold, --match-threshold <n> semantic similarity threshold from 0 to 1',
+        '--compact                   show compact table output',
+        '--workspace, --ws <id>      override the selected workspace',
+        '--json                      print machine-readable JSON',
+      ],
+      usage: 'ttr tasks search <query> [options]',
+    },
     move: {
       examples: [
         'ttr tasks move',
@@ -808,11 +1005,16 @@ const actionHelpTopics: Record<string, Record<string, HelpTopic>> = {
       examples: [
         'ttr tasks update',
         'ttr tasks update VHP-12 --json-payload \'{"name":"New title"}\'',
+        'ttr tasks update VHP-12 --description "Clarified acceptance criteria"',
+        'ttr tasks update VHP-12 --description-file notes.md --description-format markdown',
         'ttr tasks update <task-id> --json-payload \'{"completed":true}\'',
         'ttr tasks update <task-id> --list <done-list-id> --json-payload \'{"completed":true}\'',
       ],
       options: [
         '--json-payload <json>       task update payload',
+        '--description <text>        update task description text',
+        '--description-file <path|-> update task description file or stdin',
+        '--description-format <fmt>  text, markdown, or json; markdown supports pipe tables',
         '--list <id>, --list-id <id> also set list_id in the update payload',
         '--json                      print machine-readable JSON',
       ],
@@ -858,12 +1060,15 @@ export function getGlobalHelp() {
     '  host [current|list|use]',
     '  config set-base-url <url>',
     '  box <run|lease|release|preview|agent|shutdown|cache|doctor|setup|repair>',
+    '  external projects <summary|studio|delivery|snapshot|collections|entries|setup|diff|apply>',
     '  calendar <events|schedule|sources|calendars|categories|accounts|auth|provider-calendars|connections>',
     '  finance <wallets|checkpoints|transactions|transfers|categories|tags|budgets|recurring>',
     '  workspaces [list]|use [id]',
     '  boards [list]|use|create|update|delete',
     '  lists [list]|use|create|update --board <id>',
-    '  tasks [list]|use|get|create|update|done|close|delete|move|bulk',
+    '  tasks [list]|search|use|get|create|update|done|close|delete|move|bulk',
+    '  task-templates [list]|show|create|update|delete|use|import|export',
+    '  tiptap [parse|encode|decode|validate]',
     '  labels [list]|use|create',
     '  projects [list]|use|create|get|tasks',
     '  relationships [list]|create|delete <task-id>',
@@ -882,13 +1087,18 @@ export function getGlobalHelp() {
     '',
     'Scoped help:',
     '  ttr finance --help',
+    '  ttr external --help',
+    '  ttr external projects --help',
     '  ttr calendar --help',
     '  ttr calendar events --help',
     '  ttr finance transactions --help',
     '  ttr host --help',
     '  ttr tasks --help',
+    '  ttr task-templates --help',
+    '  ttr tiptap --help',
     '  ttr box --help',
     '  ttr tasks create --help',
+    '  ttr tasks description --help',
     '  ttr help workspaces',
     '',
     'Global options:',
@@ -908,6 +1118,10 @@ function normalizeHelpAction(group: string, action?: string) {
 
   if (['archive', 'closed', 'mark-closed'].includes(action || '')) {
     return 'close';
+  }
+
+  if (['desc', 'descriptions'].includes(action || '')) {
+    return 'description';
   }
 
   return action;

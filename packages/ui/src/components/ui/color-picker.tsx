@@ -1,6 +1,6 @@
 'use client';
 
-import { TextIcon } from '@tuturuuu/icons';
+import { TextIcon } from '@tuturuuu/icons/lucide-static';
 import { forwardRef, useMemo, useState } from 'react';
 import { HexColorPicker } from 'react-colorful';
 import { useDomResolvedTheme } from '../../hooks/use-dom-resolved-theme';

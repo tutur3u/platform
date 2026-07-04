@@ -242,13 +242,19 @@ const checks = [
     name: 'server-console',
     command: 'node',
     args: ['scripts/check-server-console.js'],
-    parseOutput: () => 'Server logs use internal drain',
+    parseOutput: () => 'Server logs use native console methods',
   },
   {
     name: 'internal-app-auth',
     command: 'node',
     args: ['scripts/check-internal-app-auth.js'],
     parseOutput: () => 'Registered app auth surfaces use app sessions',
+  },
+  {
+    name: 'tanstack-api-access',
+    command: 'node',
+    args: ['scripts/check-tanstack-api-access.js'],
+    parseOutput: () => 'TanStack app uses server-owned API facades',
   },
   {
     name: 'platform-release-version',
@@ -539,6 +545,56 @@ function formatSignalError(pid, signal, error) {
   );
 }
 
+function readProcessCommand(pid, execFile = execFileSync) {
+  if (!Number.isInteger(pid) || pid <= 0) {
+    return '';
+  }
+
+  try {
+    return execFile('ps', ['-p', String(pid), '-o', 'command='], {
+      encoding: 'utf8',
+    }).trim();
+  } catch {
+    return '';
+  }
+}
+
+function isCheckQueueProcess(pid, options = {}) {
+  const readCommand = options.readProcessCommand ?? readProcessCommand;
+  const command = readCommand(pid);
+  if (!command) {
+    return false;
+  }
+
+  const normalizedCommand = command.replace(/\0/g, ' ').replace(/\\/g, '/');
+  const hasCheckScript =
+    /(^|\s)(?:\.\/)?(?:[^ ]+\/)?scripts\/check\.js(?:\s|$)/.test(
+      normalizedCommand
+    );
+  const hasCheckPackageScript =
+    /(^|\s)(?:[^ ]+\/)?bun(?:\s+run)?\s+check(?::now)?(?:\s|$)/.test(
+      normalizedCommand
+    );
+  const hasExpectedRuntime =
+    /(^|\s)(?:[^ ]+\/)?(?:bun|node)(?:\s|$)/.test(normalizedCommand) ||
+    /(^|\s)(?:[^ ]+\/)?bun(?:\s+run)?\s+check(?::now)?(?:\s|$)/.test(
+      normalizedCommand
+    );
+
+  return hasExpectedRuntime && (hasCheckScript || hasCheckPackageScript);
+}
+
+function isTrustedCheckQueuePid(pid, options = {}) {
+  const currentPid = options.pid ?? process.pid;
+  if (pid === currentPid) {
+    return true;
+  }
+
+  return isCheckQueueProcess(pid, {
+    readProcessCommand: options.readProcessCommand,
+  });
+}
+
 function getCheckQueuePaths(rootDir = ROOT_DIR, options = {}) {
   const fsImpl = options.fsImpl ?? fs;
   const queueRoot = options.queueRoot ?? CHECK_QUEUE_ROOT;
@@ -589,6 +645,7 @@ function createQueueTicket(paths, options = {}) {
 function listActiveTickets(paths, options = {}) {
   const fsImpl = options.fsImpl ?? fs;
   const isPidActive = options.isPidActive ?? isProcessActive;
+  const isPidTrusted = options.isPidTrusted ?? (() => true);
   const entries = [];
 
   fsImpl.mkdirSync(paths.ticketsDir, { recursive: true });
@@ -602,7 +659,7 @@ function listActiveTickets(paths, options = {}) {
     const ticket = readJsonFile(ticketPath, fsImpl);
     const ticketPid = Number(ticket?.pid);
 
-    if (!ticket || !isPidActive(ticketPid)) {
+    if (!ticket || !isPidActive(ticketPid) || !isPidTrusted(ticketPid)) {
       removeFileIfExists(ticketPath, fsImpl);
       continue;
     }
@@ -629,6 +686,7 @@ function listActiveTickets(paths, options = {}) {
 function pruneStaleLock(paths, options = {}) {
   const fsImpl = options.fsImpl ?? fs;
   const isPidActive = options.isPidActive ?? isProcessActive;
+  const isPidTrusted = options.isPidTrusted ?? (() => true);
 
   if (!fsImpl.existsSync(paths.lockDir)) {
     return;
@@ -637,7 +695,7 @@ function pruneStaleLock(paths, options = {}) {
   const owner = readJsonFile(paths.lockMetaPath, fsImpl);
   const ownerPid = Number(owner?.pid);
 
-  if (!owner || !isPidActive(ownerPid)) {
+  if (!owner || !isPidActive(ownerPid) || !isPidTrusted(ownerPid)) {
     removeDirIfExists(paths.lockDir, fsImpl);
   }
 }
@@ -705,16 +763,36 @@ async function forceClearCheckQueue(options = {}) {
     fsImpl,
     isPidActive,
   }).filter((entry) => entry.pid !== currentPid);
+  const trustedProcesses = trackedProcesses.filter((entry) =>
+    isCheckQueueProcess(entry.pid, {
+      readProcessCommand: options.readProcessCommand,
+    })
+  );
+  const untrustedProcesses = trackedProcesses.filter(
+    (entry) => !trustedProcesses.some((trusted) => trusted.pid === entry.pid)
+  );
 
   if (trackedProcesses.length === 0) {
     return;
   }
 
+  if (untrustedProcesses.length > 0) {
+    stdoutWriter(
+      `${colors.yellow}Discarding ${untrustedProcesses.length} unverified bun check queue record${untrustedProcesses.length === 1 ? '' : 's'} without signaling their PID${untrustedProcesses.length === 1 ? '' : 's'}.${colors.reset}\n`
+    );
+  }
+
+  if (trustedProcesses.length === 0) {
+    removeDirIfExists(paths.lockDir, fsImpl);
+    removeDirIfExists(paths.ticketsDir, fsImpl);
+    return;
+  }
+
   stdoutWriter(
-    `${colors.yellow}${colors.bold}Force stopping ${trackedProcesses.length} earlier bun check invocation${trackedProcesses.length === 1 ? '' : 's'}...${colors.reset}\n`
+    `${colors.yellow}${colors.bold}Force stopping ${trustedProcesses.length} earlier bun check invocation${trustedProcesses.length === 1 ? '' : 's'}...${colors.reset}\n`
   );
 
-  for (const processInfo of trackedProcesses) {
+  for (const processInfo of trustedProcesses) {
     try {
       signalProcess(processInfo.pid, 'SIGTERM', killImpl);
     } catch (error) {
@@ -724,13 +802,13 @@ async function forceClearCheckQueue(options = {}) {
 
   const waitUntil = Date.now() + forceGraceMs;
   while (
-    trackedProcesses.some((processInfo) => isPidActive(processInfo.pid)) &&
+    trustedProcesses.some((processInfo) => isPidActive(processInfo.pid)) &&
     Date.now() < waitUntil
   ) {
     await sleepImpl(Math.min(CHECK_QUEUE_POLL_MS, forceGraceMs));
   }
 
-  const stubbornProcesses = trackedProcesses.filter((processInfo) =>
+  const stubbornProcesses = trustedProcesses.filter((processInfo) =>
     isPidActive(processInfo.pid)
   );
 
@@ -748,8 +826,8 @@ async function forceClearCheckQueue(options = {}) {
     }
   }
 
-  pruneStaleLock(paths, { fsImpl, isPidActive });
-  listActiveTickets(paths, { fsImpl, isPidActive });
+  removeDirIfExists(paths.lockDir, fsImpl);
+  removeDirIfExists(paths.ticketsDir, fsImpl);
 }
 
 async function acquireCheckQueueLock(options = {}) {
@@ -772,14 +850,23 @@ async function acquireCheckQueueLock(options = {}) {
     pid: options.pid,
   });
   const isPidActive = options.isPidActive ?? isProcessActive;
+  const isPidTrusted = (pid) =>
+    isTrustedCheckQueuePid(pid, {
+      pid: ticket.pid,
+      readProcessCommand: options.readProcessCommand,
+    });
   const sleepImpl = options.sleepImpl ?? sleep;
   let lastAnnouncedBlockers = -1;
 
   try {
     while (true) {
-      pruneStaleLock(paths, { fsImpl, isPidActive });
+      pruneStaleLock(paths, { fsImpl, isPidActive, isPidTrusted });
 
-      const activeTickets = listActiveTickets(paths, { fsImpl, isPidActive });
+      const activeTickets = listActiveTickets(paths, {
+        fsImpl,
+        isPidActive,
+        isPidTrusted,
+      });
       const position = activeTickets.findIndex(
         (entry) => entry.ticketId === ticket.ticketId
       );
@@ -1202,7 +1289,9 @@ module.exports = {
   getActiveChecks,
   getCheckQueuePaths,
   getChangedFiles,
+  isCheckQueueProcess,
   isProcessActive,
+  isTrustedCheckQueuePid,
   listTrackedCheckProcesses,
   main,
   parseBiomeIssueStats,

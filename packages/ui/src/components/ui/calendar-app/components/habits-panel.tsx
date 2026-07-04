@@ -15,6 +15,7 @@ import { getRecurrenceDescription } from '@tuturuuu/types/primitives/Habit';
 import { cn } from '@tuturuuu/utils/format';
 import Link from 'next/link';
 import { useState } from 'react';
+import { getTaskApiUrl, getTasksAppUrl } from '../../../../lib/tasks-app-url';
 import { Badge } from '../../badge';
 import { Button } from '../../button';
 import { Card, CardContent } from '../../card';
@@ -65,7 +66,9 @@ export function HabitsPanel({ wsId }: HabitsPanelProps) {
   } = useQuery({
     queryKey: ['habits', wsId],
     queryFn: async () => {
-      const response = await fetch(`/api/v1/workspaces/${wsId}/habits`);
+      const response = await fetch(
+        getTaskApiUrl(`/api/v1/workspaces/${wsId}/habits`)
+      );
       if (!response.ok) {
         throw new Error('Failed to fetch habits');
       }
@@ -308,7 +311,7 @@ export function HabitsPanel({ wsId }: HabitsPanelProps) {
 
       {/* Footer */}
       <div className="border-t p-3">
-        <Link href={`/${wsId}/tasks/habits`}>
+        <Link href={getTasksAppUrl(`/${wsId}/habits`)}>
           <Button variant="outline" size="sm" className="w-full">
             Manage Habits
           </Button>

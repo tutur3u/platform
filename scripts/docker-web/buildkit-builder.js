@@ -10,6 +10,10 @@ const {
   waitForComposeServiceHealthy,
 } = require('./compose.js');
 const { isTransientDockerRegistryError } = require('./registry-errors.js');
+const {
+  getAutoBuildMemoryBudget,
+  isBuildkitResourceProfileFallbackError,
+} = require('./resource-profiles.js');
 
 const ROOT_DIR = path.resolve(__dirname, '..', '..');
 const BUILDKIT_RUNTIME_DIR = path.join(
@@ -32,14 +36,16 @@ const CACHED_BUILD_ERROR_RECOVERY_REASON = 'cached-build-error';
 const DISABLED_ENV_VALUES = new Set(['0', 'false', 'no', 'off']);
 const AUTO_BUILD_RESOURCE = 'auto';
 const BYTES_PER_GIB = 1024 * 1024 * 1024;
-const BYTES_PER_MIB = 1024 * 1024;
-const AUTO_BUILD_MEMORY_HEADROOM_BYTES = 512 * 1024 * 1024;
 const DEFAULT_AUTO_BUILD_MEMORY = '12g';
 const LOW_DOCKER_MEMORY_THRESHOLD_BYTES = 10 * BYTES_PER_GIB;
 const LARGE_DOCKER_MEMORY_THRESHOLD_BYTES = 16 * BYTES_PER_GIB;
 const DEFAULT_BUILDKIT_COMPOSE_UP_MAX_ATTEMPTS = 4;
 const DEFAULT_BUILDKIT_COMPOSE_UP_INITIAL_DELAY_MS = 5_000;
 const DEFAULT_BUILDKIT_COMPOSE_UP_MAX_DELAY_MS = 60_000;
+const BUILDKIT_PRUNE_MODES = new Set(['all', 'bounded', 'off']);
+const DEFAULT_BUILDKIT_PRUNE_MODE = 'bounded';
+const DEFAULT_BUILDKIT_PRUNE_UNTIL = '168h';
+const DEFAULT_BUILDKIT_PRUNE_KEEP_STORAGE = '50gb';
 
 function parsePositiveNumber(value) {
   if (typeof value === 'number') {
@@ -125,21 +131,7 @@ function getDockerMemoryLimitBytes(env = process.env) {
 }
 
 function getAutoBuildMemory(env = process.env) {
-  const dockerMemoryLimitBytes = getDockerMemoryLimitBytes(env);
-
-  if (!dockerMemoryLimitBytes) {
-    return DEFAULT_AUTO_BUILD_MEMORY;
-  }
-
-  const buildMemoryMib = Math.max(
-    4096,
-    Math.floor(
-      (dockerMemoryLimitBytes - AUTO_BUILD_MEMORY_HEADROOM_BYTES) /
-        BYTES_PER_MIB
-    )
-  );
-
-  return `${buildMemoryMib}m`;
+  return getAutoBuildMemoryBudget(env) ?? DEFAULT_AUTO_BUILD_MEMORY;
 }
 
 function getAutoBuildCpus(env = process.env) {
@@ -338,11 +330,25 @@ async function inspectBuildxBuilder(
   }
 
   const driverMatch = result.stdout.match(/^Driver:\s*(.+)$/imu);
+  const statusMatch = result.stdout.match(/^Status:\s*(.+)$/imu);
 
   return {
     driver: driverMatch?.[1]?.trim() ?? null,
     exists: true,
+    status: statusMatch?.[1]?.trim() ?? null,
   };
+}
+
+function isBuildxBuilderUsable(builder) {
+  if (!builder.exists || builder.driver !== 'remote') {
+    return false;
+  }
+
+  if (!builder.status) {
+    return true;
+  }
+
+  return /^running$/iu.test(builder.status);
 }
 
 async function removeLegacyBuildkitContainer(
@@ -414,15 +420,39 @@ async function removeLegacyBuildxBuilders(
 }
 
 function getBuildkitComposeEnv(config, env) {
+  const baseEnv = getResolvedBuildkitComposeEnv(env);
+
+  return {
+    ...baseEnv,
+    DOCKER_WEB_BUILD_CPUS:
+      config.cpus == null ? baseEnv.DOCKER_WEB_BUILD_CPUS : String(config.cpus),
+    DOCKER_WEB_BUILD_MAX_PARALLELISM:
+      config.maxParallelism == null
+        ? baseEnv.DOCKER_WEB_BUILD_MAX_PARALLELISM
+        : String(config.maxParallelism),
+    DOCKER_WEB_BUILD_MEMORY: config.memory ?? baseEnv.DOCKER_WEB_BUILD_MEMORY,
+    DOCKER_WEB_BUILDKIT_PORT:
+      env.DOCKER_WEB_BUILDKIT_PORT ?? String(DEFAULT_BUILDKIT_HOST_PORT),
+  };
+}
+
+function getResolvedBuildkitComposeEnv(env = process.env) {
+  const memory = normalizeBuildMemory(env.DOCKER_WEB_BUILD_MEMORY, env);
+  const cpus = normalizeBuildCpus(env.DOCKER_WEB_BUILD_CPUS, env);
+  const maxParallelism = normalizeBuildMaxParallelism(
+    env.DOCKER_WEB_BUILD_MAX_PARALLELISM,
+    env
+  );
+
   return {
     ...env,
     DOCKER_WEB_BUILD_CPUS:
-      config.cpus == null ? env.DOCKER_WEB_BUILD_CPUS : String(config.cpus),
+      cpus == null ? env.DOCKER_WEB_BUILD_CPUS : String(cpus),
     DOCKER_WEB_BUILD_MAX_PARALLELISM:
-      config.maxParallelism == null
+      maxParallelism == null
         ? env.DOCKER_WEB_BUILD_MAX_PARALLELISM
-        : String(config.maxParallelism),
-    DOCKER_WEB_BUILD_MEMORY: config.memory ?? env.DOCKER_WEB_BUILD_MEMORY,
+        : String(maxParallelism),
+    DOCKER_WEB_BUILD_MEMORY: memory ?? env.DOCKER_WEB_BUILD_MEMORY,
     DOCKER_WEB_BUILDKIT_PORT:
       env.DOCKER_WEB_BUILDKIT_PORT ?? String(DEFAULT_BUILDKIT_HOST_PORT),
   };
@@ -570,11 +600,7 @@ async function ensureBuildkitBuilder(
     runCommand: run,
   });
 
-  if (
-    !builder.exists ||
-    builder.driver !== 'remote' ||
-    state?.fingerprint !== fingerprint
-  ) {
+  if (!isBuildxBuilderUsable(builder) || state?.fingerprint !== fingerprint) {
     if (builder.exists) {
       await runChecked('docker', ['buildx', 'rm', config.builderName], {
         env,
@@ -648,19 +674,20 @@ function isCachedBuildError(error) {
   return /\bCACHED\s+ERROR\b/iu.test(message);
 }
 
-async function recoverBuildkitBunInstallCache({
-  composeFile,
-  composeGlobalArgs = [],
+function getErrorMessage(error) {
+  return error instanceof Error ? error.message : String(error);
+}
+
+function isRecoverableBuildkitCleanupError(error) {
+  return isBuildkitResourceProfileFallbackError(error);
+}
+
+async function pruneBuildkitExecCacheMounts({
+  builderName,
   env = process.env,
   fsImpl = fs,
-  reason = 'bun-tarball-extraction',
   runCommand: run = runCommand,
 } = {}) {
-  const builderName =
-    env.BUILDX_BUILDER ||
-    env.DOCKER_WEB_BUILD_BUILDER_NAME ||
-    DEFAULT_BUILDER_NAME;
-
   await runChecked(
     'docker',
     [
@@ -678,9 +705,49 @@ async function recoverBuildkitBunInstallCache({
       runCommand: run,
     }
   );
+}
 
+async function recreateBuildkitComposeService({
+  composeFile,
+  composeGlobalArgs = [],
+  env = process.env,
+  fsImpl = fs,
+  runCommand: run = runCommand,
+} = {}) {
   if (!composeFile) {
-    return;
+    return {
+      recreated: false,
+      skipped: true,
+    };
+  }
+
+  const composeEnv = getResolvedBuildkitComposeEnv(env);
+
+  try {
+    await runChecked(
+      'docker',
+      getComposeCommandArgs(
+        composeFile,
+        composeGlobalArgs,
+        'stop',
+        '--timeout',
+        '1',
+        BUILDKIT_SERVICE_NAME
+      ),
+      {
+        env: composeEnv,
+        fsImpl,
+        runCommand: run,
+      }
+    );
+  } catch (error) {
+    if (!isRecoverableBuildkitCleanupError(error)) {
+      throw error;
+    }
+
+    process.stderr.write(
+      `BuildKit stop failed during recovery; continuing with recreate: ${getErrorMessage(error)}\n`
+    );
   }
 
   await runChecked(
@@ -688,17 +755,17 @@ async function recoverBuildkitBunInstallCache({
     getComposeCommandArgs(
       composeFile,
       composeGlobalArgs,
-      'stop',
-      '--timeout',
-      '1',
+      'rm',
+      '-f',
       BUILDKIT_SERVICE_NAME
     ),
     {
-      env,
+      env: composeEnv,
       fsImpl,
       runCommand: run,
     }
   );
+
   await runChecked(
     'docker',
     getComposeCommandArgs(
@@ -710,7 +777,7 @@ async function recoverBuildkitBunInstallCache({
       BUILDKIT_SERVICE_NAME
     ),
     {
-      env,
+      env: composeEnv,
       fsImpl,
       runCommand: run,
     }
@@ -718,99 +785,111 @@ async function recoverBuildkitBunInstallCache({
   await waitForComposeServiceHealthy(BUILDKIT_SERVICE_NAME, {
     composeFile,
     composeGlobalArgs,
+    env: composeEnv,
+    runCommand: run,
+  });
+
+  return {
+    recreated: true,
+    skipped: false,
+  };
+}
+
+async function recoverBuildkitBunInstallCache({
+  composeFile,
+  composeGlobalArgs = [],
+  env = process.env,
+  fsImpl = fs,
+  reason = 'bun-tarball-extraction',
+  runCommand: run = runCommand,
+} = {}) {
+  const builderName =
+    env.BUILDX_BUILDER ||
+    env.DOCKER_WEB_BUILD_BUILDER_NAME ||
+    DEFAULT_BUILDER_NAME;
+  let execCachePruned = false;
+
+  try {
+    await pruneBuildkitExecCacheMounts({
+      builderName,
+      env,
+      fsImpl,
+      runCommand: run,
+    });
+    execCachePruned = true;
+  } catch (error) {
+    if (!composeFile || !isRecoverableBuildkitCleanupError(error)) {
+      throw error;
+    }
+
+    process.stderr.write(
+      `BuildKit exec-cache prune failed during recovery; recreating BuildKit anyway: ${getErrorMessage(error)}\n`
+    );
+  }
+
+  const service = await recreateBuildkitComposeService({
+    composeFile,
+    composeGlobalArgs,
     env,
+    fsImpl,
     runCommand: run,
   });
 
   return {
     builderName,
+    execCachePruned,
     reason,
+    service,
   };
 }
 
-function shouldPruneBuildkitAfterBuild(env = process.env) {
-  const rawValue = env.DOCKER_WEB_BUILDKIT_PRUNE_AFTER_BUILD;
-
-  if (rawValue == null || String(rawValue).trim() === '') {
-    return true;
-  }
-
-  return !DISABLED_ENV_VALUES.has(String(rawValue).trim().toLowerCase());
-}
-
-function shouldStopBuildkitAfterBuild(env = process.env) {
-  const rawValue = env.DOCKER_WEB_BUILDKIT_STOP_AFTER_BUILD;
-
-  if (rawValue == null || String(rawValue).trim() === '') {
-    return true;
-  }
-
-  return !DISABLED_ENV_VALUES.has(String(rawValue).trim().toLowerCase());
-}
-
-async function pruneBuildkitCacheAfterBuild({
+async function forceRecoverBuildkitAfterFailure({
+  composeFile,
+  composeGlobalArgs = [],
   env = process.env,
   fsImpl = fs,
+  reason = 'buildkit-failure',
   runCommand: run = runCommand,
 } = {}) {
-  if (!shouldPruneBuildkitAfterBuild(env)) {
-    return {
-      builderName: null,
-      pruned: false,
-      skipped: true,
-    };
-  }
-
   const builderName =
     env.BUILDX_BUILDER ||
     env.DOCKER_WEB_BUILD_BUILDER_NAME ||
     DEFAULT_BUILDER_NAME;
 
-  await runChecked(
-    'docker',
-    ['buildx', 'prune', '--builder', builderName, '--all', '--force'],
-    {
-      env,
-      fsImpl,
-      runCommand: run,
-    }
-  );
-
-  return {
-    builderName,
-    pruned: true,
-    skipped: false,
-  };
+  return recoverBuildkitBunInstallCache({
+    composeFile,
+    composeGlobalArgs,
+    env: {
+      ...env,
+      BUILDX_BUILDER: builderName,
+    },
+    fsImpl,
+    reason,
+    runCommand: run,
+  });
 }
 
-async function stopBuildkitComposeServiceAfterBuild({
+async function removeBuildkitComposeServiceAfterBuild({
   composeFile,
   composeGlobalArgs = [],
   env = process.env,
   fsImpl = fs,
   runCommand: run = runCommand,
 } = {}) {
-  if (!composeFile || !shouldStopBuildkitAfterBuild(env)) {
-    return {
-      removed: false,
-      skipped: true,
-      stopped: false,
-    };
-  }
-
+  const composeEnv = getResolvedBuildkitComposeEnv(env);
   const hasRunningContainer = await hasComposeServiceContainer(
     BUILDKIT_SERVICE_NAME,
     {
       composeFile,
       composeGlobalArgs,
-      env,
+      env: composeEnv,
       runCommand: run,
     }
   );
   const hasContainer = await hasComposeServiceContainer(BUILDKIT_SERVICE_NAME, {
     composeFile,
     composeGlobalArgs,
-    env,
+    env: composeEnv,
     includeStopped: true,
     runCommand: run,
   });
@@ -835,7 +914,7 @@ async function stopBuildkitComposeServiceAfterBuild({
         BUILDKIT_SERVICE_NAME
       ),
       {
-        env,
+        env: composeEnv,
         fsImpl,
         runCommand: run,
       }
@@ -852,7 +931,7 @@ async function stopBuildkitComposeServiceAfterBuild({
       BUILDKIT_SERVICE_NAME
     ),
     {
-      env,
+      env: composeEnv,
       fsImpl,
       runCommand: run,
     }
@@ -863,6 +942,136 @@ async function stopBuildkitComposeServiceAfterBuild({
     skipped: false,
     stopped: hasRunningContainer,
   };
+}
+
+function shouldPruneBuildkitAfterBuild(env = process.env) {
+  const rawValue = env.DOCKER_WEB_BUILDKIT_PRUNE_AFTER_BUILD;
+
+  if (rawValue == null || String(rawValue).trim() === '') {
+    return true;
+  }
+
+  return !DISABLED_ENV_VALUES.has(String(rawValue).trim().toLowerCase());
+}
+
+function getBuildkitPruneMode(env = process.env) {
+  if (!shouldPruneBuildkitAfterBuild(env)) {
+    return 'off';
+  }
+
+  const rawMode = String(env.DOCKER_WEB_BUILDKIT_PRUNE_MODE ?? '').trim();
+
+  if (!rawMode) {
+    return DEFAULT_BUILDKIT_PRUNE_MODE;
+  }
+
+  const mode = rawMode.toLowerCase();
+
+  if (!BUILDKIT_PRUNE_MODES.has(mode)) {
+    throw new Error(
+      `DOCKER_WEB_BUILDKIT_PRUNE_MODE must be one of: ${[
+        ...BUILDKIT_PRUNE_MODES,
+      ].join(', ')}.`
+    );
+  }
+
+  return mode;
+}
+
+function getBuildkitPruneUntil(env = process.env) {
+  const value = String(env.DOCKER_WEB_BUILDKIT_PRUNE_UNTIL ?? '').trim();
+  return value || DEFAULT_BUILDKIT_PRUNE_UNTIL;
+}
+
+function getBuildkitPruneKeepStorage(env = process.env) {
+  const value = String(env.DOCKER_WEB_BUILDKIT_PRUNE_KEEP_STORAGE ?? '').trim();
+  return value || DEFAULT_BUILDKIT_PRUNE_KEEP_STORAGE;
+}
+
+function shouldStopBuildkitAfterBuild(env = process.env) {
+  const rawValue = env.DOCKER_WEB_BUILDKIT_STOP_AFTER_BUILD;
+
+  if (rawValue == null || String(rawValue).trim() === '') {
+    return true;
+  }
+
+  return !DISABLED_ENV_VALUES.has(String(rawValue).trim().toLowerCase());
+}
+
+async function pruneBuildkitCacheAfterBuild({
+  env = process.env,
+  fsImpl = fs,
+  runCommand: run = runCommand,
+} = {}) {
+  const pruneMode = getBuildkitPruneMode(env);
+
+  if (pruneMode === 'off') {
+    return {
+      builderName: null,
+      mode: pruneMode,
+      pruned: false,
+      skipped: true,
+    };
+  }
+
+  const builderName =
+    env.BUILDX_BUILDER ||
+    env.DOCKER_WEB_BUILD_BUILDER_NAME ||
+    DEFAULT_BUILDER_NAME;
+  const pruneArgs =
+    pruneMode === 'all'
+      ? ['buildx', 'prune', '--builder', builderName, '--all', '--force']
+      : [
+          'buildx',
+          'prune',
+          '--builder',
+          builderName,
+          '--force',
+          '--filter',
+          `until=${getBuildkitPruneUntil(env)}`,
+          '--keep-storage',
+          getBuildkitPruneKeepStorage(env),
+        ];
+
+  await runChecked('docker', pruneArgs, {
+    env,
+    fsImpl,
+    runCommand: run,
+  });
+
+  return {
+    builderName,
+    keepStorage:
+      pruneMode === 'bounded' ? getBuildkitPruneKeepStorage(env) : null,
+    mode: pruneMode,
+    pruned: true,
+    skipped: false,
+    until: pruneMode === 'bounded' ? getBuildkitPruneUntil(env) : null,
+  };
+}
+
+async function stopBuildkitComposeServiceAfterBuild({
+  composeFile,
+  composeGlobalArgs = [],
+  env = process.env,
+  fsImpl = fs,
+  runCommand: run = runCommand,
+} = {}) {
+  if (!composeFile || !shouldStopBuildkitAfterBuild(env)) {
+    return {
+      removed: false,
+      skipped: true,
+      stopped: false,
+    };
+  }
+
+  return removeBuildkitComposeServiceAfterBuild({
+    composeFile,
+    composeGlobalArgs,
+    env,
+    fsImpl,
+    runCommand: run,
+  });
 }
 
 async function cleanupBuildkitAfterBuild({
@@ -876,6 +1085,7 @@ async function cleanupBuildkitAfterBuild({
     return {
       prune: {
         builderName: null,
+        mode: 'off',
         pruned: false,
         skipped: true,
       },
@@ -902,6 +1112,7 @@ async function cleanupBuildkitAfterBuild({
   const errors = [];
   let pruneResult = {
     builderName: null,
+    mode: 'off',
     pruned: false,
     skipped: true,
   };
@@ -954,17 +1165,27 @@ module.exports = {
   BUILDKIT_SERVICE_NAME,
   CACHED_BUILD_ERROR_RECOVERY_REASON,
   DEFAULT_BUILDKIT_HOST_PORT,
+  DEFAULT_BUILDKIT_PRUNE_KEEP_STORAGE,
+  DEFAULT_BUILDKIT_PRUNE_MODE,
+  DEFAULT_BUILDKIT_PRUNE_UNTIL,
   DEFAULT_BUILDER_NAME,
   LEGACY_BUILDER_NAMES,
   cleanupBuildkitAfterBuild,
   ensureBuildkitComposeService,
   ensureBuildkitBuilder,
+  forceRecoverBuildkitAfterFailure,
   getBuildkitPaths,
+  getBuildkitPruneKeepStorage,
+  getBuildkitPruneMode,
+  getBuildkitPruneUntil,
   getAutoBuildCpus,
   getAutoBuildMaxParallelism,
   getAutoBuildMemory,
   getBuilderConfigFingerprint,
   getDockerMemoryLimitBytes,
+  getResolvedBuildkitComposeEnv,
+  isBuildxBuilderUsable,
+  isRecoverableBuildkitCleanupError,
   isTransientDockerRegistryError,
   isTransientBuildkitComposeUpError,
   isBuildStallTimeoutError,
@@ -976,9 +1197,12 @@ module.exports = {
   parsePositiveInteger,
   parsePositiveNumber,
   pruneBuildkitCacheAfterBuild,
+  pruneBuildkitExecCacheMounts,
   recoverBuildkitBunInstallCache,
+  recreateBuildkitComposeService,
   renderBuildkitConfig,
   readBuilderState,
+  removeBuildkitComposeServiceAfterBuild,
   shouldPruneBuildkitAfterBuild,
   shouldStopBuildkitAfterBuild,
   stopBuildkitComposeServiceAfterBuild,

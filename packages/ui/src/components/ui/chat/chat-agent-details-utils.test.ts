@@ -1,5 +1,5 @@
 import type { ChatConversation } from '@tuturuuu/internal-api';
-import type { AiAgentDefinition } from '@tuturuuu/internal-api/infrastructure';
+import type { AiAgentDefinition } from '@tuturuuu/internal-api/infrastructure/ai';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { describe, expect, it } from 'vitest';
 import {

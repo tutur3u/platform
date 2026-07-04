@@ -21,6 +21,7 @@ COPY apps/external/package.json ./apps/external/package.json
 COPY apps/finance/package.json ./apps/finance/package.json
 COPY apps/hive/package.json ./apps/hive/package.json
 COPY apps/hive-realtime/package.json ./apps/hive-realtime/package.json
+COPY apps/infrastructure/package.json ./apps/infrastructure/package.json
 COPY apps/inventory/package.json ./apps/inventory/package.json
 COPY apps/mail/package.json ./apps/mail/package.json
 COPY apps/meet/package.json ./apps/meet/package.json
@@ -28,7 +29,6 @@ COPY apps/mind/package.json ./apps/mind/package.json
 COPY apps/mobile/package.json ./apps/mobile/package.json
 COPY apps/nova/package.json ./apps/nova/package.json
 COPY apps/playground/package.json ./apps/playground/package.json
-COPY apps/qr/package.json ./apps/qr/package.json
 COPY apps/redis/package.json ./apps/redis/package.json
 COPY apps/rewise/package.json ./apps/rewise/package.json
 COPY apps/shortener/package.json ./apps/shortener/package.json
@@ -36,7 +36,9 @@ COPY apps/storage-unzip-proxy/package.json ./apps/storage-unzip-proxy/package.js
 COPY apps/storefront/package.json ./apps/storefront/package.json
 COPY apps/supermemory/package.json ./apps/supermemory/package.json
 COPY apps/tasks/package.json ./apps/tasks/package.json
+COPY apps/tanstack-web/package.json ./apps/tanstack-web/package.json
 COPY apps/teach/package.json ./apps/teach/package.json
+COPY apps/tools/package.json ./apps/tools/package.json
 COPY apps/track/package.json ./apps/track/package.json
 COPY apps/learn/package.json ./apps/learn/package.json
 COPY apps/web/package.json ./apps/web/package.json
@@ -51,8 +53,10 @@ COPY packages/hive-ui/package.json ./packages/hive-ui/package.json
 COPY packages/hooks/package.json ./packages/hooks/package.json
 COPY packages/icons/package.json ./packages/icons/package.json
 COPY packages/internal-api/package.json ./packages/internal-api/package.json
+COPY packages/inventory-core/package.json ./packages/inventory-core/package.json
 COPY packages/masonry/package.json ./packages/masonry/package.json
 COPY packages/microsoft/package.json ./packages/microsoft/package.json
+COPY packages/mind-core/package.json ./packages/mind-core/package.json
 COPY packages/mind-ui/package.json ./packages/mind-ui/package.json
 COPY packages/offline/package.json ./packages/offline/package.json
 COPY packages/payment/package.json ./packages/payment/package.json
@@ -77,7 +81,7 @@ RUN --mount=type=cache,id=platform-hive-bun-install,target=/root/.bun/install/ca
   set -eu; \
   attempt=1; \
   while [ "$attempt" -le 3 ]; do \
-    if bun install --frozen-lockfile --filter @tuturuuu/hive; then \
+    if bun install --frozen-lockfile --filter tutur3u --filter @tuturuuu/hive; then \
       break; \
     fi; \
     echo "bun install attempt ${attempt} failed; scrubbing Bun install cache before retry..." >&2; \
@@ -121,12 +125,19 @@ COPY --from=deps /workspace ./
 COPY apps/hive ./apps/hive
 COPY packages ./packages
 
-RUN --mount=type=cache,id=platform-hive-next-cache,target=/workspace/apps/hive/.next/cache \
+RUN --mount=type=cache,id=platform-hive-turbo,target=/workspace/.turbo \
+  --mount=type=cache,id=platform-hive-next-cache,target=/workspace/apps/hive/.next/cache \
+  --mount=type=secret,id=turbo_api,target=/run/secrets/turbo_api,required=false \
+  --mount=type=secret,id=turbo_remote_cache_signature_key,target=/run/secrets/turbo_remote_cache_signature_key,required=false \
+  --mount=type=secret,id=turbo_team,target=/run/secrets/turbo_team,required=false \
+  --mount=type=secret,id=turbo_token,target=/run/secrets/turbo_token,required=false \
   --mount=type=secret,id=web_env,target=/tmp/web.env \
-  bun run --filter @tuturuuu/types build && \
-  bun run --filter @tuturuuu/internal-api build && \
-  bun run --filter @tuturuuu/supabase build && \
-  node scripts/run-hive-docker-next-build.js --env-file /tmp/web.env
+  set -eu; \
+  if [ -s /run/secrets/turbo_api ]; then export TURBO_API="$(cat /run/secrets/turbo_api)"; fi; \
+  if [ -s /run/secrets/turbo_remote_cache_signature_key ]; then export TURBO_REMOTE_CACHE_SIGNATURE_KEY="$(cat /run/secrets/turbo_remote_cache_signature_key)"; fi; \
+  if [ -s /run/secrets/turbo_team ]; then export TURBO_TEAM="$(cat /run/secrets/turbo_team)"; fi; \
+  if [ -s /run/secrets/turbo_token ]; then export TURBO_TOKEN="$(cat /run/secrets/turbo_token)"; fi; \
+  bun --env-file=/tmp/web.env run turbo:local run build:docker -F @tuturuuu/hive
 
 FROM node:24-bookworm-slim AS runner
 

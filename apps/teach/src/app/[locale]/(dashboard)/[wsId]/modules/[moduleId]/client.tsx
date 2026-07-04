@@ -15,6 +15,7 @@ import {
   SortableContext,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
+import { useQuery } from '@tanstack/react-query';
 import {
   ArrowLeft,
   BookOpenCheck,
@@ -22,11 +23,13 @@ import {
   Plus,
   Sparkles,
 } from '@tuturuuu/icons';
+import { listWorkspaceCourseTests } from '@tuturuuu/internal-api';
 import Link from 'next/link';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { useCallback, useState } from 'react';
 import { CourseMembersPanel } from '@/components/teach-operations/course-members-panel';
 import { AiGenerateDialog } from './ai-generate-dialog';
+import { CourseTestDialog } from './course-test-dialog';
 import { EmptyState, LoadingSkeleton } from './module-detail-components';
 import { ModuleGroupSection } from './module-group-section';
 import { ModuleStorageDialog } from './module-storage-dialog';
@@ -60,7 +63,19 @@ export function ModuleDetailClient({
     renameModule,
     togglePublished,
   } = useModuleDetail(wsId, courseId);
+  const locale = useLocale();
   const t = useTranslations();
+
+  const {
+    data: testsData,
+    isError: isTestsError,
+    isLoading: isLoadingTests,
+    refetch: refetchTests,
+  } = useQuery({
+    queryKey: ['course-tests', wsId, courseId],
+    queryFn: () => listWorkspaceCourseTests(wsId, courseId),
+  });
+  const tests = testsData?.data ?? [];
 
   // Local optimistic group order for drag
   const [localGroups, setLocalGroups] = useState<
@@ -178,7 +193,7 @@ export function ModuleDetailClient({
   return (
     <>
       <main className="min-h-screen bg-root-background px-5 py-5 text-foreground md:px-8">
-        <div className="mx-auto max-w-4xl space-y-6">
+        <div className="mx-auto max-w-6xl space-y-6">
           {/* Page header */}
           <div className="border-2 border-border bg-background p-6 shadow-[8px_8px_0_var(--border)] md:p-8">
             <Link
@@ -211,145 +226,248 @@ export function ModuleDetailClient({
 
           <CourseMembersPanel courseId={courseId} wsId={wsId} />
 
-          {/* Toolbar */}
-          <div className="flex items-center justify-between gap-4">
-            <div>
-              <span className="font-black text-xl">
-                {displayGroups.length} section
-                {displayGroups.length !== 1 ? 's' : ''}
-              </span>
-              <span className="ml-2 text-muted-foreground text-sm">
-                · {displayGroups.reduce((s, g) => s + g.modules.length, 0)}{' '}
-                modules
-              </span>
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-4">
+            {/* Left Sidebar: Tests list */}
+            <div className="space-y-4 md:col-span-1">
+              <div className="border-2 border-border bg-background p-5 shadow-[4px_4px_0_var(--border)]">
+                <h2 className="mb-4 flex items-center gap-2 border-border border-b-2 pb-2 font-black text-lg uppercase tracking-wider">
+                  <BookOpenCheck className="h-5 w-5 text-primary" />
+                  {t('teachModules.tests')}
+                </h2>
+                {isLoadingTests ? (
+                  <div className="space-y-3">
+                    <div className="h-16 animate-pulse border-2 border-border bg-muted" />
+                    <div className="h-16 animate-pulse border-2 border-border bg-muted" />
+                  </div>
+                ) : isTestsError ? (
+                  <div className="space-y-3">
+                    <p className="py-2 text-destructive text-sm">
+                      {t('teachModules.testsLoadError')}
+                    </p>
+                    <button
+                      className="border-2 border-border bg-background px-3 py-1.5 font-bold text-xs shadow-[2px_2px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[3px_3px_0_var(--border)]"
+                      onClick={() => {
+                        void refetchTests();
+                      }}
+                      type="button"
+                    >
+                      {t('common.retry')}
+                    </button>
+                  </div>
+                ) : tests.length === 0 ? (
+                  <p className="py-2 text-muted-foreground text-sm italic">
+                    {t('teachModules.noTestsCreated')}
+                  </p>
+                ) : (
+                  <div className="space-y-3">
+                    {tests.map((test) => (
+                      <Link
+                        key={test.id}
+                        href={`/${wsId}/modules/${courseId}/tests/${test.id}`}
+                        className="block flex cursor-pointer flex-col gap-1.5 border-2 border-border bg-muted/10 p-3 shadow-[2px_2px_0_var(--border)] transition hover:bg-muted/20"
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <h3 className="break-words font-bold text-primary text-sm leading-tight">
+                            {test.name}
+                          </h3>
+                          {!test.is_published && (
+                            <span className="shrink-0 border border-border bg-muted px-1.5 py-0.5 font-bold text-[9px] text-muted-foreground uppercase tracking-wider shadow-[1px_1px_0_var(--border)]">
+                              {t('teachModules.testDraft')}
+                            </span>
+                          )}
+                        </div>
+                        {test.start_at && (
+                          <div className="flex flex-wrap items-center gap-1 text-[11px] text-muted-foreground">
+                            <span className="font-black text-[10px] uppercase tracking-wider">
+                              {t('teachModules.testDetailsStartAt')}:
+                            </span>
+                            <span>
+                              {new Date(test.start_at).toLocaleString(locale, {
+                                dateStyle: 'short',
+                                timeStyle: 'short',
+                              })}
+                            </span>
+                          </div>
+                        )}
+                        {test.duration_in_minutes && (
+                          <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
+                            <span className="font-black text-[10px] uppercase tracking-wider">
+                              {t('teachModules.testDetailsDuration')}:
+                            </span>
+                            <span>
+                              {t('teachModules.durationMinutes', {
+                                minutes: test.duration_in_minutes,
+                              })}
+                            </span>
+                          </div>
+                        )}
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
 
-            {showAddSection ? (
-              <div className="flex items-center gap-2">
-                <input
-                  ref={sectionInputRef}
-                  className="border-2 border-border bg-background px-3 py-1.5 text-sm shadow-[2px_2px_0_var(--border)] outline-none focus:border-primary"
-                  placeholder="Section name…"
-                  value={addingSectionName}
-                  onChange={(e) => setAddingSectionName(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') commitAddSection();
-                    if (e.key === 'Escape') {
-                      setAddingSectionName('');
-                      setShowAddSection(false);
-                    }
-                  }}
-                />
-                <button
-                  className="border-2 border-border bg-primary px-3 py-1.5 font-bold text-primary-foreground text-sm shadow-[2px_2px_0_var(--border)] disabled:opacity-40"
-                  disabled={!addingSectionName.trim() || createGroup.isPending}
-                  onClick={commitAddSection}
-                  type="button"
-                >
-                  Add
-                </button>
-                <button
-                  className="border-2 border-border bg-card px-3 py-1.5 font-bold text-sm shadow-[2px_2px_0_var(--border)]"
-                  onClick={() => {
-                    setAddingSectionName('');
-                    setShowAddSection(false);
-                  }}
-                  type="button"
-                >
-                  Cancel
-                </button>
-              </div>
-            ) : (
-              <div className="flex items-center gap-2">
-                <button
-                  className="inline-flex items-center gap-2 border-2 border-border bg-dynamic-yellow/15 px-4 py-2 font-bold text-sm shadow-[3px_3px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[4px_4px_0_var(--border)]"
-                  onClick={() => setShowAiDialog(true)}
-                  type="button"
-                >
-                  <Sparkles className="h-4 w-4" />
-                  {t('teachModules.aiGenerate.title')}
-                </button>
-                <ModuleStorageDialog courseId={courseId} wsId={wsId} />
-                <button
-                  className="inline-flex items-center gap-2 border-2 border-border bg-primary px-4 py-2 font-bold text-primary-foreground text-sm shadow-[3px_3px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[4px_4px_0_var(--border)]"
-                  onClick={() => setShowAddSection(true)}
-                  type="button"
-                >
-                  <Plus className="h-4 w-4" />
-                  {t('teachModules.addSection')}
-                </button>
-              </div>
-            )}
-          </div>
-
-          {/* Content */}
-          {isLoading ? (
-            <LoadingSkeleton />
-          ) : isError ? (
-            <div className="border-2 border-border border-dashed bg-muted/60 p-8 text-center shadow-[8px_8px_0_var(--border)]">
-              <p className="text-muted-foreground">Failed to load modules.</p>
-            </div>
-          ) : displayGroups.length === 0 ? (
-            <EmptyState onAdd={() => setShowAddSection(true)} />
-          ) : (
-            <DndContext
-              sensors={sensors}
-              collisionDetection={closestCenter}
-              onDragStart={onDragStart}
-              onDragEnd={onDragEnd}
-              onDragCancel={clearActiveDrag}
-            >
-              <SortableContext
-                items={displayGroups.map((g) => g.id)}
-                strategy={verticalListSortingStrategy}
-              >
-                <div className="space-y-4">
-                  {displayGroups.map((group) => (
-                    <ModuleGroupSection
-                      key={group.id}
-                      group={group}
-                      wsId={wsId}
-                      courseId={courseId}
-                      onAddModule={(moduleGroupId, name) =>
-                        createModule.mutate({ moduleGroupId, name })
-                      }
-                      onDeleteGroup={(id) => deleteGroup.mutate(id)}
-                      onRenameGroup={(id, title) =>
-                        renameGroup.mutate({ moduleGroupId: id, title })
-                      }
-                      onRenameModule={(id, name) =>
-                        renameModule.mutate({ moduleId: id, name })
-                      }
-                      onDeleteModule={(id) => deleteModule.mutate(id)}
-                      onTogglePublished={(id, val) =>
-                        togglePublished.mutate({
-                          moduleId: id,
-                          is_published: val,
-                        })
-                      }
-                      isAddingModule={createModule.isPending}
-                      isDeletingGroup={deleteGroup.isPending}
-                    />
-                  ))}
+            {/* Main content: Modules list */}
+            <div className="space-y-6 md:col-span-3">
+              {/* Toolbar */}
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <span className="font-black text-xl">
+                    {displayGroups.length} section
+                    {displayGroups.length !== 1 ? 's' : ''}
+                  </span>
+                  <span className="ml-2 text-muted-foreground text-sm">
+                    · {displayGroups.reduce((s, g) => s + g.modules.length, 0)}{' '}
+                    modules
+                  </span>
                 </div>
-              </SortableContext>
 
-              {/* Drag overlay — ghost while dragging */}
-              <DragOverlay>
-                {activeGroupId ? (
-                  <div className="border-2 border-primary bg-background px-4 py-3 font-bold text-sm opacity-90 shadow-[6px_6px_0_var(--border)]">
-                    {displayGroups.find((g) => g.id === activeGroupId)?.title}
+                {showAddSection ? (
+                  <div className="flex flex-wrap items-center gap-2">
+                    <input
+                      ref={sectionInputRef}
+                      className="border-2 border-border bg-background px-3 py-1.5 text-sm shadow-[2px_2px_0_var(--border)] outline-none focus:border-primary"
+                      placeholder="Section name…"
+                      value={addingSectionName}
+                      onChange={(e) => setAddingSectionName(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') commitAddSection();
+                        if (e.key === 'Escape') {
+                          setAddingSectionName('');
+                          setShowAddSection(false);
+                        }
+                      }}
+                    />
+                    <button
+                      className="whitespace-nowrap border-2 border-border bg-primary px-3 py-1.5 font-bold text-primary-foreground text-sm shadow-[2px_2px_0_var(--border)] disabled:opacity-40"
+                      disabled={
+                        !addingSectionName.trim() || createGroup.isPending
+                      }
+                      onClick={commitAddSection}
+                      type="button"
+                    >
+                      Add
+                    </button>
+                    <button
+                      className="whitespace-nowrap border-2 border-border bg-card px-3 py-1.5 font-bold text-sm shadow-[2px_2px_0_var(--border)]"
+                      onClick={() => {
+                        setAddingSectionName('');
+                        setShowAddSection(false);
+                      }}
+                      type="button"
+                    >
+                      Cancel
+                    </button>
                   </div>
-                ) : activeModuleId ? (
-                  <div className="border-2 border-primary bg-background px-4 py-2.5 text-sm opacity-90 shadow-[4px_4px_0_var(--border)]">
-                    {displayGroups
-                      .flatMap((g) => g.modules)
-                      .find((m) => m.id === activeModuleId)?.name ?? 'Module'}
+                ) : (
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button
+                      className="inline-flex items-center gap-2 whitespace-nowrap border-2 border-border bg-dynamic-yellow/15 px-4 py-2 font-bold text-sm shadow-[3px_3px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[4px_4px_0_var(--border)]"
+                      onClick={() => setShowAiDialog(true)}
+                      type="button"
+                    >
+                      <Sparkles className="h-4 w-4" />
+                      {t('teachModules.aiGenerate.title')}
+                    </button>
+                    <CourseTestDialog
+                      courseId={courseId}
+                      wsId={wsId}
+                      modules={displayGroups.flatMap((g) => g.modules)}
+                    />
+                    <ModuleStorageDialog courseId={courseId} wsId={wsId} />
+                    <button
+                      className="inline-flex items-center gap-2 whitespace-nowrap border-2 border-border bg-primary px-4 py-2 font-bold text-primary-foreground text-sm shadow-[3px_3px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[4px_4px_0_var(--border)]"
+                      onClick={() => setShowAddSection(true)}
+                      type="button"
+                      aria-label={t('teachModules.addSection')}
+                      title={t('teachModules.addSection')}
+                    >
+                      <Plus className="h-4 w-4" />
+                      <span className="sr-only">
+                        {t('teachModules.addSection')}
+                      </span>
+                    </button>
                   </div>
-                ) : null}
-              </DragOverlay>
-            </DndContext>
-          )}
+                )}
+              </div>
+
+              {/* Content */}
+              {isLoading ? (
+                <LoadingSkeleton />
+              ) : isError ? (
+                <div className="border-2 border-border border-dashed bg-muted/60 p-8 text-center shadow-[8px_8px_0_var(--border)]">
+                  <p className="text-muted-foreground">
+                    Failed to load modules.
+                  </p>
+                </div>
+              ) : displayGroups.length === 0 ? (
+                <EmptyState onAdd={() => setShowAddSection(true)} />
+              ) : (
+                <DndContext
+                  sensors={sensors}
+                  collisionDetection={closestCenter}
+                  onDragStart={onDragStart}
+                  onDragEnd={onDragEnd}
+                  onDragCancel={clearActiveDrag}
+                >
+                  <SortableContext
+                    items={displayGroups.map((g) => g.id)}
+                    strategy={verticalListSortingStrategy}
+                  >
+                    <div className="space-y-4">
+                      {displayGroups.map((group) => (
+                        <ModuleGroupSection
+                          key={group.id}
+                          group={group}
+                          wsId={wsId}
+                          courseId={courseId}
+                          onAddModule={(moduleGroupId, name) =>
+                            createModule.mutate({ moduleGroupId, name })
+                          }
+                          onDeleteGroup={(id) => deleteGroup.mutate(id)}
+                          onRenameGroup={(id, title) =>
+                            renameGroup.mutate({ moduleGroupId: id, title })
+                          }
+                          onRenameModule={(id, name) =>
+                            renameModule.mutate({ moduleId: id, name })
+                          }
+                          onDeleteModule={(id) => deleteModule.mutate(id)}
+                          onTogglePublished={(id, val) =>
+                            togglePublished.mutate({
+                              moduleId: id,
+                              is_published: val,
+                            })
+                          }
+                          isAddingModule={createModule.isPending}
+                          isDeletingGroup={deleteGroup.isPending}
+                        />
+                      ))}
+                    </div>
+                  </SortableContext>
+
+                  {/* Drag overlay — ghost while dragging */}
+                  <DragOverlay>
+                    {activeGroupId ? (
+                      <div className="border-2 border-primary bg-background px-4 py-3 font-bold text-sm opacity-90 shadow-[6px_6px_0_var(--border)]">
+                        {
+                          displayGroups.find((g) => g.id === activeGroupId)
+                            ?.title
+                        }
+                      </div>
+                    ) : activeModuleId ? (
+                      <div className="border-2 border-primary bg-background px-4 py-2.5 text-sm opacity-90 shadow-[4px_4px_0_var(--border)]">
+                        {displayGroups
+                          .flatMap((g) => g.modules)
+                          .find((m) => m.id === activeModuleId)?.name ??
+                          'Module'}
+                      </div>
+                    ) : null}
+                  </DragOverlay>
+                </DndContext>
+              )}
+            </div>
+          </div>
         </div>
       </main>
 

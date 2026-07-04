@@ -9,6 +9,7 @@ services:
       interval: 5s
       timeout: 3s
       retries: 5
+    restart: unless-stopped
 
   serverless-redis-http:
     profiles: ["redis"]
@@ -32,3 +33,4 @@ services:
       timeout: 5s
       start_period: 10s
       retries: 3
+    restart: unless-stopped

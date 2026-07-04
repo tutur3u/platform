@@ -30,12 +30,9 @@ vi.mock('@tuturuuu/email-service', () => ({
   EmailService: mocks.EmailService,
 }));
 
-vi.mock(
-  '@/app/[locale]/(dashboard)/[wsId]/mail/default-email-template',
-  () => ({
-    default: vi.fn(() => null),
-  })
-);
+vi.mock('@/components/email/templates/default-email-template', () => ({
+  default: vi.fn(() => null),
+}));
 
 import {
   processPostEmailQueueBatch,
@@ -86,6 +83,8 @@ type CheckRow = {
   notes: string | null;
   post_id: string;
   user: {
+    archived?: boolean | null;
+    archived_until?: string | null;
     display_name: string | null;
     email: string | null;
     full_name: string | null;
@@ -165,6 +164,8 @@ function createCheckRow(
       email: overrides.userEmail,
       full_name: overrides.user?.full_name ?? 'Recipient',
       id: overrides.user?.id ?? overrides.user_id,
+      archived: overrides.user?.archived ?? false,
+      archived_until: overrides.user?.archived_until ?? null,
     },
     user_id: overrides.user_id,
   };
@@ -195,6 +196,7 @@ function createSbAdminMock({
   checkRows,
   emailAuditRows = [],
   failSentEmailInsert = false,
+  onQueueUpdate,
   onSendEmail,
   queueRows,
   sentEmailRows = [],
@@ -203,6 +205,13 @@ function createSbAdminMock({
   checkRows: CheckRow[];
   emailAuditRows?: EmailAuditRow[];
   failSentEmailInsert?: boolean;
+  onQueueUpdate?: (args: {
+    patch: Record<string, unknown>;
+    state: {
+      queueRows: QueueRow[];
+    };
+    updatedRows: QueueRow[];
+  }) => void;
   onSendEmail?: () => void;
   queueRows: QueueRow[];
   sentEmailRows?: SentEmailRow[];
@@ -278,6 +287,10 @@ function createSbAdminMock({
                   eqFilters.set(field, value);
                   return this;
                 },
+                is(field: string, value: unknown) {
+                  eqFilters.set(field, value);
+                  return this;
+                },
                 order() {
                   return this;
                 },
@@ -319,11 +332,22 @@ function createSbAdminMock({
                   ids: updatedRows.map((row) => row.id),
                   patch,
                 });
+                onQueueUpdate?.({
+                  patch,
+                  state: {
+                    queueRows: state.queueRows,
+                  },
+                  updatedRows,
+                });
                 return updatedRows;
               };
 
               const builder = {
                 eq(field: string, value: unknown) {
+                  eqFilters.set(field, value);
+                  return builder;
+                },
+                is(field: string, value: unknown) {
                   eqFilters.set(field, value);
                   return builder;
                 },
@@ -399,7 +423,7 @@ function createSbAdminMock({
               in: vi.fn(async (_field: string, values: string[]) => ({
                 data: values.map((postId) => ({
                   content: 'Post content',
-                  created_at: '2026-03-28T00:00:00.000Z',
+                  created_at: new Date().toISOString(),
                   group_id: GROUP_ID,
                   id: postId,
                   title: 'Post title',
@@ -668,6 +692,92 @@ describe('post email batch processing', () => {
         }),
       })
     );
+  });
+
+  it('cancels inactive queued recipients before calling the email service', async () => {
+    const queueRow = createQueueRow({ id: QUEUE_ID, user_id: USER_ID });
+    const { sbAdmin, state } = createSbAdminMock({
+      checkRows: [
+        createCheckRow({
+          user_id: USER_ID,
+          userEmail: 'user-1@example.com',
+          user: {
+            archived: false,
+            archived_until: '2999-01-01T00:00:00.000Z',
+            display_name: 'Recipient',
+            email: 'user-1@example.com',
+            full_name: 'Recipient',
+            id: USER_ID,
+          },
+        }),
+      ],
+      queueRows: [queueRow],
+    });
+
+    const result = await processPostEmailQueueBatch(sbAdmin as never, {
+      concurrency: 1,
+      limit: 1,
+      maxDurationMs: 1_000,
+      sendLimit: 1,
+    });
+
+    expect(result.results).toEqual([{ id: QUEUE_ID, status: 'cancelled' }]);
+    expect(mocks.emailServiceSendMock).not.toHaveBeenCalled();
+    expect(state.queueUpdates).toContainEqual(
+      expect.objectContaining({
+        ids: [QUEUE_ID],
+        patch: expect.objectContaining({
+          status: 'cancelled',
+          last_error:
+            'Post is no longer approved or recipient is no longer eligible.',
+        }),
+      })
+    );
+  });
+
+  it('does not send a row that is cancelled after the batch claims it', async () => {
+    mocks.emailServiceSendMock.mockResolvedValue({
+      messageId: 'provider-1',
+      success: true,
+    });
+
+    const queueRow = createQueueRow({ id: QUEUE_ID, user_id: USER_ID });
+    const { sbAdmin, state } = createSbAdminMock({
+      checkRows: [
+        createCheckRow({ user_id: USER_ID, userEmail: 'user-1@example.com' }),
+      ],
+      onQueueUpdate: ({ patch, updatedRows }) => {
+        if (patch.status !== 'processing') return;
+
+        for (const row of updatedRows) {
+          row.status = 'cancelled';
+          row.batch_id = null;
+          row.claimed_at = null;
+          row.cancelled_at = '2026-03-28T00:03:00.000Z';
+          row.last_error = 'Recipient is archived or temporarily archived.';
+        }
+      },
+      queueRows: [queueRow],
+    });
+
+    const result = await processPostEmailQueueBatch(sbAdmin as never, {
+      concurrency: 1,
+      limit: 1,
+      maxDurationMs: 1_000,
+      sendLimit: 1,
+    });
+
+    expect(result.results).toEqual([{ id: QUEUE_ID, status: 'cancelled' }]);
+    expect(mocks.emailServiceSendMock).not.toHaveBeenCalled();
+    expect(state.queueRows.find((row) => row.id === QUEUE_ID)).toMatchObject({
+      status: 'cancelled',
+      batch_id: null,
+      claimed_at: null,
+      last_error: 'Recipient is archived or temporarily archived.',
+    });
+    expect(
+      state.queueUpdates.some(({ patch }) => patch.status === 'sent')
+    ).toBe(false);
   });
 
   it('marks the queue row as sent when provider delivery succeeds but sent email persistence fails', async () => {

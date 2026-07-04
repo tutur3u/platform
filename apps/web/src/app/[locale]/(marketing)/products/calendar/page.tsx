@@ -13,11 +13,13 @@ import {
   Users,
   Video,
   Zap,
-} from '@tuturuuu/icons';
-import { Badge } from '@tuturuuu/ui/badge';
-import { Button } from '@tuturuuu/ui/button';
-import { Card } from '@tuturuuu/ui/card';
-import NextLink from 'next/link';
+} from '@tuturuuu/icons/lucide';
+import {
+  ProductBadge,
+  ProductButton,
+  ProductCard,
+  ProductLinkButton,
+} from '../product-page-primitives';
 
 const features = [
   {
@@ -93,9 +95,7 @@ export default function CalendarProductPage() {
     <div className="container mx-auto mt-8 flex max-w-6xl flex-col gap-6 px-3 py-16 lg:gap-14 lg:py-24">
       {/* Hero Section */}
       <div className="mb-16 text-center">
-        <Badge variant="secondary" className="mb-4">
-          Coming Soon
-        </Badge>
+        <ProductBadge className="mb-4">Coming Soon</ProductBadge>
         <h1 className="mb-4 font-bold text-4xl">Smart Calendar Management</h1>
         <p className="mx-auto max-w-2xl text-lg text-muted-foreground">
           Streamline your scheduling and time management with our intelligent
@@ -103,18 +103,14 @@ export default function CalendarProductPage() {
           productivity across teams.
         </p>
         <div className="mt-8 flex justify-center gap-4">
-          <Button size="lg" disabled>
-            Join Waitlist
-          </Button>
-          <Button size="lg" variant="outline" asChild>
-            <NextLink href="/contact">Contact Sales</NextLink>
-          </Button>
+          <ProductButton disabled>Join Waitlist</ProductButton>
+          <ProductLinkButton href="/contact">Contact Sales</ProductLinkButton>
         </div>
       </div>
 
       {/* Trust Section */}
       <section className="mb-24">
-        <Card className="border-primary bg-primary/5 p-8">
+        <ProductCard className="border-primary bg-primary/5 p-8">
           <div className="mx-auto flex max-w-4xl flex-col items-center gap-4 text-center">
             <ShieldCheck className="h-12 w-12 text-primary" />
             <h2 className="font-bold text-2xl">Enterprise-Ready Calendar</h2>
@@ -124,7 +120,7 @@ export default function CalendarProductPage() {
               and compliance.
             </p>
           </div>
-        </Card>
+        </ProductCard>
       </section>
 
       {/* Features Grid */}
@@ -134,13 +130,13 @@ export default function CalendarProductPage() {
         </h2>
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {features.map((feature) => (
-            <Card key={feature.title} className="p-6">
+            <ProductCard key={feature.title} className="p-6">
               <div className="mb-4 flex items-center gap-3">
                 <div className="text-primary">{feature.icon}</div>
                 <h3 className="font-semibold text-xl">{feature.title}</h3>
               </div>
               <p className="text-muted-foreground">{feature.description}</p>
-            </Card>
+            </ProductCard>
           ))}
         </div>
       </section>
@@ -150,7 +146,7 @@ export default function CalendarProductPage() {
         <h2 className="mb-12 text-center font-bold text-3xl">Use Cases</h2>
         <div className="grid gap-8 md:grid-cols-3">
           {useCases.map((useCase) => (
-            <Card key={useCase.title} className="p-6">
+            <ProductCard key={useCase.title} className="p-6">
               <Calendar className="mb-4 h-8 w-8 text-primary" />
               <h3 className="mb-4 font-semibold text-xl">{useCase.title}</h3>
               <ul className="space-y-2 text-muted-foreground">
@@ -161,14 +157,14 @@ export default function CalendarProductPage() {
                   </li>
                 ))}
               </ul>
-            </Card>
+            </ProductCard>
           ))}
         </div>
       </section>
 
       {/* Integration Section */}
       <section className="mb-24">
-        <Card className="overflow-hidden">
+        <ProductCard className="overflow-hidden">
           <div className="grid md:grid-cols-2">
             <div className="flex flex-col justify-center gap-4 border-border border-b p-8 md:border-r md:border-b-0">
               <Globe className="h-8 w-8 text-primary" />
@@ -187,7 +183,7 @@ export default function CalendarProductPage() {
               </p>
             </div>
           </div>
-        </Card>
+        </ProductCard>
       </section>
 
       {/* Communication Section */}
@@ -196,22 +192,22 @@ export default function CalendarProductPage() {
           Enhanced Communication
         </h2>
         <div className="grid gap-6 md:grid-cols-2">
-          <Card className="p-6">
+          <ProductCard className="p-6">
             <MessageSquare className="mb-4 h-8 w-8 text-primary" />
             <h3 className="mb-2 font-bold text-xl">Meeting Chat</h3>
             <p className="text-muted-foreground">
               Built-in chat functionality for quick discussions and meeting
               coordination.
             </p>
-          </Card>
-          <Card className="p-6">
+          </ProductCard>
+          <ProductCard className="p-6">
             <Zap className="mb-4 h-8 w-8 text-primary" />
             <h3 className="mb-2 font-bold text-xl">Quick Actions</h3>
             <p className="text-muted-foreground">
               Streamlined workflows with one-click actions for common calendar
               operations.
             </p>
-          </Card>
+          </ProductCard>
         </div>
       </section>
     </div>

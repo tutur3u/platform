@@ -112,6 +112,14 @@ function cleanNavigationSeparators(
   return result;
 }
 
+function getNavigationChildCount(link: NavLink | null | undefined) {
+  return link?.children?.filter(Boolean).length ?? 0;
+}
+
+function hasMultipleNavigationChildren(link: NavLink | null | undefined) {
+  return getNavigationChildCount(link) > 1;
+}
+
 function insertArchivedNavigationLink({
   archivedNavigationLink,
   children,
@@ -172,7 +180,7 @@ function findNavigationByTitleHistory({
 
   for (const title of titleHistory) {
     const parentLink = currentLinks.find(
-      (link) => link?.title === title && link.children
+      (link) => link?.title === title && hasMultipleNavigationChildren(link)
     );
 
     if (!parentLink?.children) return null;
@@ -494,6 +502,32 @@ export function StructureImpl({
       t,
     ]
   );
+  const getFilteredLinks = useCallback(
+    (linksToFilter: (NavLink | null)[] | undefined): (NavLink | null)[] =>
+      filterDashboardNavigationLinks(linksToFilter, {
+        currentWsId: wsId,
+        flattenSingleChild: false,
+        prodMode: PROD_MODE,
+        userEmail: user?.email,
+        workspaceTier: workspace?.tier ?? null,
+      }),
+    [user?.email, workspace?.tier, wsId]
+  );
+  const getVisibleNavigationChildCount = useCallback(
+    (link: NavLink | null | undefined) =>
+      getFilteredLinks(link?.children).filter(Boolean).length,
+    [getFilteredLinks]
+  );
+  const hasVisibleNavigationChildren = useCallback(
+    (link: NavLink | null | undefined) =>
+      getVisibleNavigationChildCount(link) > 0,
+    [getVisibleNavigationChildCount]
+  );
+  const hasMultipleVisibleNavigationChildren = useCallback(
+    (link: NavLink | null | undefined) =>
+      getVisibleNavigationChildCount(link) > 1,
+    [getVisibleNavigationChildCount]
+  );
 
   useEffect(() => {
     setInitialized(true);
@@ -503,6 +537,11 @@ export function StructureImpl({
   const matchesPath = useCallback(
     (pathname: string, target?: string, hasChildren?: boolean) => {
       if (!target) return false;
+
+      if (target.endsWith('/*')) {
+        const prefix = target.slice(0, -2).replace(/\/+$/u, '') || '/';
+        return pathname === prefix || pathname.startsWith(`${prefix}/`);
+      }
 
       // For items WITH children, use startsWith to match subroutes
       if (hasChildren) {
@@ -532,14 +571,10 @@ export function StructureImpl({
             matchesPath(
               pathname,
               child.href,
-              child.children && child.children.length > 0
+              hasVisibleNavigationChildren(child)
             )) ||
           child?.aliases?.some((alias) =>
-            matchesPath(
-              pathname,
-              alias,
-              child.children && child.children.length > 0
-            )
+            matchesPath(pathname, alias, hasVisibleNavigationChildren(child))
           );
 
         if (childMatches) {
@@ -553,7 +588,7 @@ export function StructureImpl({
         return false;
       });
     },
-    [pathname, matchesPath]
+    [hasVisibleNavigationChildren, pathname, matchesPath]
   );
 
   // Universal helper function to find active navigation structure
@@ -571,8 +606,9 @@ export function StructureImpl({
         if (!link) continue;
 
         // Depth-first: attempt to resolve deeper levels first
-        if (link.children && link.children.length > 0) {
-          const deeper = findActiveNavigation(link.children, currentPath);
+        if (hasMultipleVisibleNavigationChildren(link)) {
+          const children = link.children ?? [];
+          const deeper = findActiveNavigation(children, currentPath);
           if (deeper) {
             return {
               currentLinks: deeper.currentLinks,
@@ -583,9 +619,9 @@ export function StructureImpl({
           }
 
           // If any descendant leaf matches, open this submenu level
-          if (hasActiveChild(link.children)) {
+          if (hasActiveChild(children)) {
             return {
-              currentLinks: link.children,
+              currentLinks: children,
               history: [navLinks],
               titleHistory: [link.title],
               direction: 'forward' as const,
@@ -599,20 +635,16 @@ export function StructureImpl({
             matchesPath(
               currentPath,
               link.href,
-              link.children && link.children.length > 0
+              hasVisibleNavigationChildren(link)
             )) ||
           link.aliases?.some((alias) =>
-            matchesPath(
-              currentPath,
-              alias,
-              link.children && link.children.length > 0
-            )
+            matchesPath(currentPath, alias, hasVisibleNavigationChildren(link))
           );
 
-        if (linkMatches && link.children && link.children.length > 0) {
+        if (linkMatches && hasMultipleVisibleNavigationChildren(link)) {
           // Prefer showing submenu when current link matches and has children
           return {
-            currentLinks: link.children,
+            currentLinks: link.children ?? [],
             history: [navLinks],
             titleHistory: [link.title],
             direction: 'forward' as const,
@@ -621,7 +653,12 @@ export function StructureImpl({
       }
       return null;
     },
-    [matchesPath, hasActiveChild]
+    [
+      hasActiveChild,
+      hasMultipleVisibleNavigationChildren,
+      hasVisibleNavigationChildren,
+      matchesPath,
+    ]
   );
 
   const [navState, setNavState] = useState<NavigationState>(() => {
@@ -632,14 +669,8 @@ export function StructureImpl({
       return activeNavigation;
     }
 
-    // Flatten links with a single child
-    const flattenedLinks = preferredLinks.flatMap((link) =>
-      link?.children && link.children.length === 1
-        ? [link.children[0] as NavLink]
-        : [link]
-    );
     return {
-      currentLinks: flattenedLinks,
+      currentLinks: preferredLinks,
       history: [] as (NavLink | null)[][],
       titleHistory: [],
       direction: 'forward' as const,
@@ -675,15 +706,8 @@ export function StructureImpl({
           : activeNavigation;
       }
 
-      // Flatten links with a single child
-      const flattenedLinks = preferredLinks.flatMap((link) =>
-        link?.children && link.children.length === 1
-          ? [link.children[0] as NavLink]
-          : [link]
-      );
-
       const nextState = {
-        currentLinks: flattenedLinks,
+        currentLinks: preferredLinks,
         history: [] as (NavLink | null)[][],
         titleHistory: [],
         direction:
@@ -767,17 +791,6 @@ export function StructureImpl({
       }
     : undefined;
 
-  const getFilteredLinks = (
-    linksToFilter: (NavLink | null)[] | undefined
-  ): (NavLink | null)[] =>
-    filterDashboardNavigationLinks(linksToFilter, {
-      currentWsId: wsId,
-      flattenSingleChild: true,
-      prodMode: PROD_MODE,
-      userEmail: user?.email,
-      workspaceTier: workspace?.tier ?? null,
-    });
-
   const backButton: NavLink = {
     title: t('common.back'),
     icon: <DashboardNavigationIcon className="h-4 w-4" name="ArrowLeft" />,
@@ -814,14 +827,10 @@ export function StructureImpl({
           matchesPath(
             pathname,
             link.href,
-            link.children && link.children.length > 0
+            hasVisibleNavigationChildren(link)
           )) ||
         link.aliases?.some((alias) =>
-          matchesPath(
-            pathname,
-            alias,
-            link.children && link.children.length > 0
-          )
+          matchesPath(pathname, alias, hasVisibleNavigationChildren(link))
         )
     )
     .sort((a, b) => (b.href?.length || 0) - (a.href?.length || 0));

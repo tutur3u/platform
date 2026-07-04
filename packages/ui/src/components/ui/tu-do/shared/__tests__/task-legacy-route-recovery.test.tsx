@@ -65,6 +65,22 @@ describe('TaskLegacyRouteRecovery', () => {
     });
   });
 
+  it('uses the board skeleton while resolving the canonical task route', () => {
+    mockGetWorkspaceTask.mockReturnValue(new Promise(() => {}));
+
+    renderWithQueryClient(
+      <TaskLegacyRouteRecovery
+        routePrefix="/tasks"
+        taskId="task-1"
+        workspaceId="personal"
+      />
+    );
+
+    expect(screen.getByTestId('task-board-loading-state')).toBeInTheDocument();
+    expect(screen.getByTestId('kanban-skeleton')).toBeInTheDocument();
+    expect(screen.queryByText('loading')).not.toBeInTheDocument();
+  });
+
   it('shows a recoverable error state instead of a 404 when resolution fails', async () => {
     mockGetWorkspaceTask.mockRejectedValue(new Error('boom'));
 

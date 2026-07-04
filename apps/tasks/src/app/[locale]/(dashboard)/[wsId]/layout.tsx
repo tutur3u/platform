@@ -12,6 +12,7 @@ import { toWorkspaceSlug } from '@tuturuuu/utils/constants';
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { cookies, headers } from 'next/headers';
 import { redirect } from 'next/navigation';
+import { connection } from 'next/server';
 import { type ReactNode, Suspense } from 'react';
 import {
   SIDEBAR_BEHAVIOR_COOKIE_NAME,
@@ -31,6 +32,8 @@ interface LayoutProps {
 }
 
 export default async function Layout({ children, params }: LayoutProps) {
+  await connection();
+
   const { wsId: id } = await params;
   const requestHeaders = await headers();
 

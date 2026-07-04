@@ -9,6 +9,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { Switch } from '@tuturuuu/ui/switch';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { useTranslations } from 'next-intl';
+import { getTaskApiUrl } from '../../../../../../lib/tasks-app-url';
 import { TASK_SOUND_EFFECTS_ENABLED_CONFIG_ID } from '../../task-sound-effects';
 
 interface TaskSettingsData {
@@ -28,6 +29,8 @@ function updateBodyFadeAttribute(enabled: boolean) {
 interface QuickSettingsPopoverProps {
   /** Whether the workspace is personal (forces auto-assign to true) */
   isPersonalWorkspace?: boolean;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
 /**
@@ -36,6 +39,8 @@ interface QuickSettingsPopoverProps {
  */
 export function QuickSettingsPopover({
   isPersonalWorkspace = false,
+  open,
+  onOpenChange,
 }: QuickSettingsPopoverProps) {
   const t = useTranslations('settings.tasks');
   const tCommon = useTranslations('common');
@@ -50,7 +55,9 @@ export function QuickSettingsPopover({
   const { data: settings, isLoading } = useQuery({
     queryKey: ['user-task-settings'],
     queryFn: async (): Promise<TaskSettingsData> => {
-      const res = await fetch('/api/v1/users/task-settings');
+      const res = await fetch(getTaskApiUrl('/api/v1/users/task-settings'), {
+        credentials: 'include',
+      });
       if (!res.ok) {
         // Return defaults if API fails
         return { task_auto_assign_to_self: false, fade_completed_tasks: false };
@@ -64,8 +71,9 @@ export function QuickSettingsPopover({
 
   const updateSettings = useMutation({
     mutationFn: async (data: Partial<TaskSettingsData>) => {
-      const res = await fetch('/api/v1/users/task-settings', {
+      const res = await fetch(getTaskApiUrl('/api/v1/users/task-settings'), {
         method: 'PATCH',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
       });
@@ -96,7 +104,7 @@ export function QuickSettingsPopover({
     : (settings?.task_auto_assign_to_self ?? false);
 
   return (
-    <Popover>
+    <Popover open={open} onOpenChange={onOpenChange}>
       <Tooltip>
         <TooltipTrigger asChild>
           <PopoverTrigger asChild>

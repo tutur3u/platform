@@ -11,9 +11,12 @@ import 'package:mobile/data/sources/supabase_client.dart';
 ///
 /// Ported from apps/native/lib/api/client.ts.
 class ApiClient {
-  ApiClient({http.Client? httpClient}) : _client = httpClient ?? http.Client();
+  ApiClient({String? baseUrl, http.Client? httpClient})
+    : _baseUrl = (baseUrl ?? ApiConfig.baseUrl).replaceAll(RegExp(r'/$'), ''),
+      _client = httpClient ?? http.Client();
 
   final http.Client _client;
+  final String _baseUrl;
   static const int _expiryBufferMs = 60 * 1000;
 
   Future<void> _ensureValidSession({bool forceRefresh = false}) async {
@@ -85,12 +88,12 @@ class ApiClient {
     };
   }
 
-  /// GET JSON from [path] (relative to [ApiConfig.baseUrl]).
+  /// GET JSON from [path] (relative to [_baseUrl]).
   Future<Map<String, dynamic>> getJson(
     String path, {
     bool requiresAuth = true,
   }) async {
-    final url = Uri.parse('${ApiConfig.baseUrl}$path');
+    final url = Uri.parse('$_baseUrl$path');
 
     final response = await _performRequest(
       () async => _client.get(
@@ -103,14 +106,14 @@ class ApiClient {
     return _handleResponse(response);
   }
 
-  /// GET JSON array from [path] (relative to [ApiConfig.baseUrl]).
+  /// GET JSON array from [path] (relative to [_baseUrl]).
   ///
   /// Supports both raw array responses and object responses with `data: []`.
   Future<List<dynamic>> getJsonList(
     String path, {
     bool requiresAuth = true,
   }) async {
-    final url = Uri.parse('${ApiConfig.baseUrl}$path');
+    final url = Uri.parse('$_baseUrl$path');
 
     final response = await _performRequest(
       () async => _client.get(
@@ -146,7 +149,7 @@ class ApiClient {
     }
   }
 
-  /// POST JSON to [path] (relative to [ApiConfig.baseUrl]).
+  /// POST JSON to [path] (relative to [_baseUrl]).
   ///
   /// Returns the decoded JSON body on success, or throws [ApiException].
   Future<Map<String, dynamic>> postJson(
@@ -154,7 +157,7 @@ class ApiClient {
     Object? body, {
     bool requiresAuth = true,
   }) async {
-    final url = Uri.parse('${ApiConfig.baseUrl}$path');
+    final url = Uri.parse('$_baseUrl$path');
 
     final response = await _performRequest(
       () async => _client.post(
@@ -171,7 +174,7 @@ class ApiClient {
     return _handleResponse(response);
   }
 
-  /// PATCH JSON to [path] (relative to [ApiConfig.baseUrl]).
+  /// PATCH JSON to [path] (relative to [_baseUrl]).
   ///
   /// Returns the decoded JSON body on success, or throws [ApiException].
   Future<Map<String, dynamic>> patchJson(
@@ -179,7 +182,7 @@ class ApiClient {
     Map<String, dynamic> body, {
     bool requiresAuth = true,
   }) async {
-    final url = Uri.parse('${ApiConfig.baseUrl}$path');
+    final url = Uri.parse('$_baseUrl$path');
 
     final response = await _performRequest(
       () async => _client.patch(
@@ -196,7 +199,7 @@ class ApiClient {
     return _handleResponse(response);
   }
 
-  /// DELETE [path] (relative to [ApiConfig.baseUrl]).
+  /// DELETE [path] (relative to [_baseUrl]).
   ///
   /// Returns the decoded JSON body on success, or throws [ApiException].
   Future<Map<String, dynamic>> deleteJson(
@@ -204,7 +207,7 @@ class ApiClient {
     Map<String, dynamic>? body,
     bool requiresAuth = true,
   }) async {
-    final url = Uri.parse('${ApiConfig.baseUrl}$path');
+    final url = Uri.parse('$_baseUrl$path');
 
     final response = await _performRequest(
       () async => _client.delete(
@@ -221,7 +224,7 @@ class ApiClient {
     return _handleResponse(response);
   }
 
-  /// PUT JSON to [path] (relative to [ApiConfig.baseUrl]).
+  /// PUT JSON to [path] (relative to [_baseUrl]).
   ///
   /// Returns the decoded JSON body on success, or throws [ApiException].
   Future<Map<String, dynamic>> putJson(
@@ -229,7 +232,7 @@ class ApiClient {
     Map<String, dynamic> body, {
     bool requiresAuth = true,
   }) async {
-    final url = Uri.parse('${ApiConfig.baseUrl}$path');
+    final url = Uri.parse('$_baseUrl$path');
 
     final response = await _performRequest(
       () async => _client.put(
@@ -251,7 +254,7 @@ class ApiClient {
     String accept = 'application/octet-stream',
     bool requiresAuth = true,
   }) async {
-    final url = Uri.parse('${ApiConfig.baseUrl}$path');
+    final url = Uri.parse('$_baseUrl$path');
 
     return _performStreamedRequest(() async {
       final request = http.Request('GET', url)
@@ -269,7 +272,7 @@ class ApiClient {
     String accept = 'application/octet-stream',
     bool requiresAuth = true,
   }) async {
-    final url = Uri.parse('${ApiConfig.baseUrl}$path');
+    final url = Uri.parse('$_baseUrl$path');
 
     return _performStreamedRequest(() async {
       final request = http.Request(method, url)
@@ -292,7 +295,7 @@ class ApiClient {
     List<ApiMultipartFile> files = const [],
     bool requiresAuth = true,
   }) async {
-    final url = Uri.parse('${ApiConfig.baseUrl}$path');
+    final url = Uri.parse('$_baseUrl$path');
 
     final streamedResponse = await _performStreamedRequest(() async {
       final request = http.MultipartRequest(method, url)

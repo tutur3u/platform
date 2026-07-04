@@ -1,27 +1,13 @@
 import crypto from 'node:crypto';
-
-/**
- * Profile fields an external user may complete through a profile-completion
- * link. This is the single source of truth shared by the DB CHECK constraint,
- * the link-creation API, and the public submit endpoint.
- */
-export const PROFILE_LINK_FIELDS = [
-  'display_name',
-  'full_name',
-  'birthday',
-  'gender',
-  'avatar_url',
-  'email',
-  'phone',
-] as const;
-
-export type ProfileLinkField = (typeof PROFILE_LINK_FIELDS)[number];
+import {
+  isProfileLinkField,
+  PROFILE_LINK_FIELDS,
+  type ProfileLinkField,
+} from './fields';
 
 export type ProfileLinkMode = 'per_user' | 'generic';
 
-export function isProfileLinkField(value: string): value is ProfileLinkField {
-  return (PROFILE_LINK_FIELDS as readonly string[]).includes(value);
-}
+export { isProfileLinkField, PROFILE_LINK_FIELDS, type ProfileLinkField };
 
 /**
  * Generates a URL-safe, unambiguous share code (mirrors the forms share-code

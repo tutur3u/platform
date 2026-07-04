@@ -25,7 +25,7 @@ jobs:
       is_sorted: ${{ steps.sort-check.outputs.is_sorted }}
     steps:
       - name: Check out code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Setup Bun
         uses: ./.github/actions/setup-bun-with-retry
@@ -64,7 +64,7 @@ jobs:
       has_issues: ${{ steps.i18n-check.outputs.has_issues }}
     steps:
       - name: Check out code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Setup Bun
         uses: ./.github/actions/setup-bun-with-retry
@@ -120,7 +120,7 @@ jobs:
       missing_in_en: ${{ steps.parity-check.outputs.missing_in_en }}
     steps:
       - name: Check out code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Setup Node.js
         uses: actions/setup-node@v6
@@ -164,7 +164,7 @@ jobs:
       has_issues: ${{ steps.namespace-check.outputs.has_issues }}
     steps:
       - name: Check out code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Setup Node.js
         uses: actions/setup-node@v6

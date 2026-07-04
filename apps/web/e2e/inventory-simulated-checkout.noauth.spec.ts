@@ -330,4 +330,348 @@ test.describe('Inventory public checkout modes', () => {
       );
     }
   });
+
+  test('returns category bundle candidates according to bundle scope', async ({
+    baseURL,
+    request,
+  }) => {
+    const origin = baseURL ?? 'https://tuturuuu.localhost';
+    const workspaceId = randomUUID();
+    const categoryId = randomUUID();
+    const ownerId = randomUUID();
+    const unitId = randomUUID();
+    const warehouseId = randomUUID();
+    const storefrontId = randomUUID();
+    const productIds = [randomUUID(), randomUUID(), randomUUID()];
+    const listingIds = [randomUUID(), randomUUID()];
+    const publishedBundleId = randomUUID();
+    const allStockBundleId = randomUUID();
+    const slugSuffix = workspaceId.slice(0, 8);
+    const slug = `e2e-category-bundles-${slugSuffix}`;
+
+    try {
+      const workspaceResponse = await request.post(
+        `${SUPABASE_URL}/rest/v1/workspaces`,
+        {
+          data: {
+            creator_id: TEST_USER.id,
+            handle: `e2e-category-bundles-${slugSuffix}`,
+            id: workspaceId,
+            name: 'E2E Category Bundle Scope',
+            personal: false,
+          },
+          failOnStatusCode: false,
+          headers: serviceHeaders({ prefer: 'return=minimal' }),
+        }
+      );
+      expect(workspaceResponse.status()).toBe(201);
+
+      const secretResponse = await request.post(
+        `${SUPABASE_URL}/rest/v1/workspace_secrets`,
+        {
+          data: {
+            name: 'ENABLE_INVENTORY',
+            value: 'true',
+            ws_id: workspaceId,
+          },
+          failOnStatusCode: false,
+          headers: serviceHeaders({ prefer: 'return=minimal' }),
+        }
+      );
+      expect(secretResponse.status()).toBe(201);
+
+      const categoryResponse = await request.post(
+        `${SUPABASE_URL}/rest/v1/product_categories`,
+        {
+          data: {
+            id: categoryId,
+            name: 'E2E Keychains',
+            ws_id: workspaceId,
+          },
+          failOnStatusCode: false,
+          headers: serviceHeaders({ prefer: 'return=minimal' }),
+        }
+      );
+      expect(categoryResponse.status()).toBe(201);
+
+      const ownerResponse = await request.post(
+        `${SUPABASE_URL}/rest/v1/inventory_owners`,
+        {
+          data: {
+            id: ownerId,
+            name: 'E2E Talent',
+            ws_id: workspaceId,
+          },
+          failOnStatusCode: false,
+          headers: serviceHeaders({
+            prefer: 'return=minimal',
+            schema: 'private',
+          }),
+        }
+      );
+      expect(ownerResponse.status()).toBe(201);
+
+      const unitResponse = await request.post(
+        `${SUPABASE_URL}/rest/v1/inventory_units`,
+        {
+          data: {
+            id: unitId,
+            name: 'piece',
+            ws_id: workspaceId,
+          },
+          failOnStatusCode: false,
+          headers: serviceHeaders({
+            prefer: 'return=minimal',
+            schema: 'private',
+          }),
+        }
+      );
+      expect(unitResponse.status()).toBe(201);
+
+      const warehouseResponse = await request.post(
+        `${SUPABASE_URL}/rest/v1/inventory_warehouses`,
+        {
+          data: {
+            id: warehouseId,
+            name: 'Main',
+            ws_id: workspaceId,
+          },
+          failOnStatusCode: false,
+          headers: serviceHeaders({
+            prefer: 'return=minimal',
+            schema: 'private',
+          }),
+        }
+      );
+      expect(warehouseResponse.status()).toBe(201);
+
+      const productsResponse = await request.post(
+        `${SUPABASE_URL}/rest/v1/workspace_products`,
+        {
+          data: productIds.map((id, index) => ({
+            category_id: categoryId,
+            id,
+            name: `E2E Keychain ${index + 1}`,
+            owner_id: ownerId,
+            ws_id: workspaceId,
+          })),
+          failOnStatusCode: false,
+          headers: serviceHeaders({ prefer: 'return=minimal' }),
+        }
+      );
+      expect(productsResponse.status()).toBe(201);
+
+      const stockResponse = await request.post(
+        `${SUPABASE_URL}/rest/v1/inventory_products`,
+        {
+          data: productIds.map((productId, index) => ({
+            amount: 5,
+            price: [1200, 900, 1500][index],
+            product_id: productId,
+            revenue_share_bps: 1500,
+            revenue_share_partner_id: ownerId,
+            unit_id: unitId,
+            warehouse_id: warehouseId,
+          })),
+          failOnStatusCode: false,
+          headers: serviceHeaders({
+            prefer: 'return=minimal',
+            schema: 'private',
+          }),
+        }
+      );
+      expect(stockResponse.status()).toBe(201);
+
+      const storefrontResponse = await request.post(
+        `${SUPABASE_URL}/rest/v1/inventory_storefronts`,
+        {
+          data: {
+            checkout_mode: 'simulated',
+            currency: 'USD',
+            id: storefrontId,
+            name: 'E2E Category Bundle Storefront',
+            slug,
+            status: 'published',
+            visibility: 'public',
+            ws_id: workspaceId,
+          },
+          failOnStatusCode: false,
+          headers: serviceHeaders({
+            prefer: 'return=minimal',
+            schema: 'private',
+          }),
+        }
+      );
+      expect(storefrontResponse.status()).toBe(201);
+
+      const listingResponse = await request.post(
+        `${SUPABASE_URL}/rest/v1/inventory_storefront_listings`,
+        {
+          data: [
+            {
+              id: listingIds[0],
+              listing_type: 'product',
+              max_per_order: 5,
+              price: 1200,
+              product_id: productIds[0],
+              status: 'published',
+              storefront_id: storefrontId,
+              title: 'Published Keychain',
+              unit_id: unitId,
+              warehouse_id: warehouseId,
+              ws_id: workspaceId,
+            },
+            {
+              id: listingIds[1],
+              listing_type: 'product',
+              max_per_order: 5,
+              price: 900,
+              product_id: productIds[1],
+              status: 'draft',
+              storefront_id: storefrontId,
+              title: 'Draft Keychain',
+              unit_id: unitId,
+              warehouse_id: warehouseId,
+              ws_id: workspaceId,
+            },
+          ],
+          failOnStatusCode: false,
+          headers: serviceHeaders({
+            prefer: 'return=minimal',
+            schema: 'private',
+          }),
+        }
+      );
+      expect(listingResponse.status()).toBe(201);
+
+      const bundlesResponse = await request.post(
+        `${SUPABASE_URL}/rest/v1/inventory_bundles`,
+        {
+          data: [
+            {
+              category_candidate_scope: 'published_listings',
+              id: publishedBundleId,
+              name: 'Published Keychain Deal',
+              price: 0,
+              pricing_mode: 'selected_items',
+              slug: `published-keychains-${slugSuffix}`,
+              status: 'active',
+              storefront_id: storefrontId,
+              ws_id: workspaceId,
+            },
+            {
+              category_candidate_scope: 'all_stock',
+              id: allStockBundleId,
+              name: 'All Stock Keychain Deal',
+              price: 0,
+              pricing_mode: 'selected_items',
+              slug: `all-stock-keychains-${slugSuffix}`,
+              status: 'active',
+              storefront_id: storefrontId,
+              ws_id: workspaceId,
+            },
+          ],
+          failOnStatusCode: false,
+          headers: serviceHeaders({
+            prefer: 'return=minimal',
+            schema: 'private',
+          }),
+        }
+      );
+      expect(bundlesResponse.status()).toBe(201);
+
+      const componentResponse = await request.post(
+        `${SUPABASE_URL}/rest/v1/inventory_bundle_category_components`,
+        {
+          data: [
+            {
+              bundle_id: publishedBundleId,
+              category_id: categoryId,
+              discount_strategy: 'cheapest_free',
+              free_quantity: 1,
+              quantity_required: 3,
+              sort_order: 0,
+            },
+            {
+              bundle_id: allStockBundleId,
+              category_id: categoryId,
+              discount_strategy: 'cheapest_free',
+              free_quantity: 1,
+              quantity_required: 3,
+              sort_order: 0,
+            },
+          ],
+          failOnStatusCode: false,
+          headers: serviceHeaders({
+            prefer: 'return=minimal',
+            schema: 'private',
+          }),
+        }
+      );
+      expect(componentResponse.status()).toBe(201);
+
+      const storefrontPayloadResponse = await request.get(
+        `${origin}/api/v1/inventory/storefronts/${slug}`,
+        { failOnStatusCode: false }
+      );
+      expect(storefrontPayloadResponse.status()).toBe(200);
+      const payload = await storefrontPayloadResponse.json();
+      const publishedBundle = payload.bundles.find(
+        (bundle: { id: string }) => bundle.id === publishedBundleId
+      );
+      const allStockBundle = payload.bundles.find(
+        (bundle: { id: string }) => bundle.id === allStockBundleId
+      );
+
+      expect(publishedBundle?.categoryCandidateScope).toBe(
+        'published_listings'
+      );
+      expect(
+        publishedBundle?.categoryComponents[0].candidates.map(
+          (candidate: { title: string }) => candidate.title
+        )
+      ).toEqual(['Published Keychain']);
+      expect(allStockBundle?.categoryCandidateScope).toBe('all_stock');
+      expect(
+        allStockBundle?.categoryComponents[0].candidates
+          .map((candidate: { title: string }) => candidate.title)
+          .sort()
+      ).toEqual(['E2E Keychain 1', 'E2E Keychain 2', 'E2E Keychain 3']);
+    } finally {
+      await request.delete(
+        `${SUPABASE_URL}/rest/v1/inventory_checkout_sessions?ws_id=eq.${workspaceId}`,
+        {
+          failOnStatusCode: false,
+          headers: serviceHeaders({
+            prefer: 'return=minimal',
+            schema: 'private',
+          }),
+        }
+      );
+      await request.delete(
+        `${SUPABASE_URL}/rest/v1/inventory_bundles?ws_id=eq.${workspaceId}`,
+        {
+          failOnStatusCode: false,
+          headers: serviceHeaders({
+            prefer: 'return=minimal',
+            schema: 'private',
+          }),
+        }
+      );
+      await request.delete(
+        `${SUPABASE_URL}/rest/v1/workspace_products?ws_id=eq.${workspaceId}`,
+        {
+          failOnStatusCode: false,
+          headers: serviceHeaders({ prefer: 'return=minimal' }),
+        }
+      );
+      await request.delete(
+        `${SUPABASE_URL}/rest/v1/workspaces?id=eq.${workspaceId}`,
+        {
+          failOnStatusCode: false,
+          headers: serviceHeaders({ prefer: 'return=minimal' }),
+        }
+      );
+    }
+  });
 });

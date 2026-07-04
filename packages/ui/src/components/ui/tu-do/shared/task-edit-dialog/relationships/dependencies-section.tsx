@@ -25,10 +25,15 @@ export function DependenciesSection({
   onNavigateToTask,
   onAddBlockingTaskDialog,
   onAddBlockedByTaskDialog,
+  searchOpen: controlledSearchOpen,
+  onSearchOpenChange,
   disabled,
 }: DependenciesSectionProps) {
   const [subTab, setSubTab] = React.useState<DependencySubTab>(initialSubTab);
-  const [searchOpen, setSearchOpen] = React.useState(false);
+  const [uncontrolledSearchOpen, setUncontrolledSearchOpen] =
+    React.useState(false);
+  const searchOpen = controlledSearchOpen ?? uncontrolledSearchOpen;
+  const setSearchOpen = onSearchOpenChange ?? setUncontrolledSearchOpen;
 
   const allExcludeIds = React.useMemo(() => {
     const ids = new Set<string>();
@@ -56,7 +61,10 @@ export function DependenciesSection({
         <Button
           variant={subTab === 'blocks' ? 'default' : 'outline'}
           size="sm"
-          onClick={() => setSubTab('blocks')}
+          onClick={() => {
+            setSubTab('blocks');
+            setSearchOpen(false);
+          }}
           className="h-7 text-xs"
         >
           Blocks ({blockingTasks.length})
@@ -64,7 +72,10 @@ export function DependenciesSection({
         <Button
           variant={subTab === 'blocked-by' ? 'default' : 'outline'}
           size="sm"
-          onClick={() => setSubTab('blocked-by')}
+          onClick={() => {
+            setSubTab('blocked-by');
+            setSearchOpen(false);
+          }}
           className="h-7 text-xs"
         >
           Blocked By ({blockedByTasks.length})

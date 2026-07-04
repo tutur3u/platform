@@ -26,7 +26,7 @@ This page distills the canonical rules defined in [AGENTS.md](https://github.com
 | **AI Endpoints** | Add handlers under `app/api/...` using Vercel AI SDK | Enforce auth + feature flags, validate payloads | Expose provider keys or skip validation |
 | **Tooling** | Adjust configs (`biome.json`, `turbo.json`, etc.) | Document the rationale | Remove caching or security settings silently |
 | **Docs** | Update `.md`/`.mdx` for accuracy | Cross-link neighbouring guides | Invent behaviour that is not implemented |
-| **Dependencies** | `bun add --workspace` / remove deps | Prefer `workspace:*` for internal packages | Add duplicate versions already satisfied |
+| **Dependencies** | `cd <app-or-package> && bun add <pkg>` / remove deps | Prefer `workspace:*` for internal packages | Add duplicate versions already satisfied |
 
 ## Mandatory Guardrails
 
@@ -46,7 +46,7 @@ This page distills the canonical rules defined in [AGENTS.md](https://github.com
 
 ## Canonical Workflows (Cheat Sheet)
 
-- **Add/Update dependency** – scope → `bun add --workspace` → ensure types/docs → run targeted build.
+- **Add/Update dependency** – scope → `cd <app-or-package> && bun add <pkg>` → ensure types/docs → run targeted build.
 - **New shared package** – scaffold under `packages/`, add `package.json` + `tsconfig`, export via `src/index.ts`, add tests & README, then build/test.
 - **Next.js API route** – implement under `app/api/.../route.ts`, enforce auth, validate with Zod, add tests or docs.
 - **AI structured endpoint** – define schema in `packages/ai`, use `generateObject`/`streamObject`, guard feature flags, redact secrets, handle errors gracefully.
@@ -79,6 +79,8 @@ Use `tmp/agent-coordination/` as the ignored, in-worktree conversation space for
 
 Before editing, run `git status --short`. If dirty or untracked files already exist, record which ones are unrelated and leave them alone. If `tmp/agent-coordination/` exists, inspect top-level notes marked `working`, `blocked`, or `handoff` before choosing files. Stale active notes still count as ownership signals until checked against the current worktree.
 
+Use exact `Status:` values in coordination notes: `working`, `blocked`, `handoff`, or `done`. Put details such as `committed`, `done with concerns`, or follow-up context in `Needs`, `Verification`, or `Risks`. Treat missing or noncanonical statuses as active until resolved.
+
 Completed context should move out of the active scan path. Use `tmp/agent-coordination/archive/<YYYY>/<original-note-name>.md` for notes that are already marked `done` and no longer need top-level visibility. Search the archive with targeted keywords when a task mentions prior work or a workflow decision needs history; archived notes explain context, verification, and residual risks, but they are not active ownership claims.
 
 Create a note named `tmp/agent-coordination/<YYYYMMDD-HHMMSS>-<agent-or-task>.md` when the worktree is dirty, active notes touch a nearby area, the task is long-running, or the task changes coordination, commit, validation, CI, deployment, plugin, or skill behavior.
@@ -96,6 +98,37 @@ Each note should include:
 - `Risks`: remaining overlap or validation risk, when relevant.
 
 If two agents need the same file set, do not race. Reply in `tmp/agent-coordination/`, choose a disjoint slice, or ask the human partner to arbitrate. Do not edit another agent's note unless explicitly asked. Before the final response or handoff, update your own note to `done`, `handoff`, or `blocked` with verification and residual risks. Archive only your own completed `done` note unless the human partner explicitly requests broader cleanup. When committing, stage explicit paths only and never stage coordination notes or archived coordination notes. If a repo-wide check or commit hook fails because of another agent's files, do not fix those files just to satisfy the hook; report the blocker and keep your own diff scoped.
+
+For parallel subagent work, split lanes before spawning workers. Each worker
+needs a narrow owned path set, forbidden overlap, validation commands, and a
+handoff contract; workers should not stage or commit unless that is their
+explicit lane. Make the lane contract explicit: owner, mode, owned paths,
+excluded paths, generated outputs, validation, handoff shape, lifecycle
+(`pending`, `active`, `handoff`, `integrated`, or `closed`), and commit
+authority. Do not overlap implementation worker write paths unless the parent
+note records an explicit takeover or continuation. In Codex, use either a typed
+worker/explorer prompt with explicit lane context or a full-history fork without
+a role override; combining both is rejected by the subagent harness. The
+coordinator owns integration: review
+worker diffs, regenerate
+shared artifacts such as route trees, route manifests, route overrides, OpenAPI
+snapshots, docs navigation, sorted translations, or generated DB types after
+inputs are stable, then stage exact paths. After each integrated slice, refresh
+status, close completed subagents in the harness, mark their lanes integrated or
+closed in the parent note, list validation and unrelated blockers, and choose the
+next lane from current worktree state. Existing staged files belong to the
+staging agent or coordinator until explicitly reassigned; if a path is `MM`,
+review both staged and unstaged portions before committing.
+
+When unrelated dirty files touch shared generated inputs or outputs such as route
+trees, migration manifests, `packages/internal-api/src/index.ts`, generated DB
+types, message bundles, or `bun.lock`, default new implementation work to an
+isolated worktree or read-only audit unless the write set is clearly disjoint
+and no generator or root formatter will scan those files. If you must generate
+from a dirty shared checkout, use a clean tree or explicit input/output paths and
+record the base commit, scanned globs, copied lane inputs, generator command,
+copied-back artifacts, cleanup, and proof that no untracked or other-lane files
+leaked into the output.
 
 ### Git Commit Window
 
@@ -115,12 +148,18 @@ bun git-commit-window wait --owner "<agent/task>" --scope "<commit scope>"
 
 Use `status` to inspect, `check --token <token>` before committing if needed, and `release --token <token>` after the commit operation succeeds or aborts. Do not put tokens in coordination notes.
 
+For commits made in a dirty shared checkout, record a closeout packet in the
+parent note: staged path list, validation results for the staged set, hook result
+or proof-gated `--no-verify` rationale, commit hash, release confirmation, and
+remaining dirty-path summary.
+
 ## Tooling & Environment Rules
 
 - Single package manager: **Bun**. Use workspace filters (`bun --filter ...`) to target apps/packages.
 - Use `bun check:now` when you need to cancel queued or running repo-root `bun check` invocations for the current workspace and start a fresh pass immediately.
 - Supabase lifecycle via scripts: `sb:start`, `sb:stop`, `sb:new`, `sb:up`, `sb:typegen` (user applies pushes).
-- Do not invent new caches; rely on Turborepo + Bun caching.
+- Do not invent new cache stores; rely on Turborepo, Bun, BuildKit, and Cargo
+  caches plus the documented bounded cleanup wrappers.
 - Python services (`apps/discord/`) maintain their own pinned dependencies and README instructions.
 
 ## Testing & Quality Expectations

@@ -1,16 +1,36 @@
+import { QueryClient } from '@tanstack/react-query';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+
+vi.mock('@tuturuuu/utils/task-helper', () => {
+  const prefix = 'personal-external-staging:';
+
+  return {
+    getPersonalExternalStagingBoardId: (listId: string | null) =>
+      listId?.startsWith(prefix) && listId.length > prefix.length
+        ? listId.slice(prefix.length)
+        : null,
+    getPersonalExternalStagingListId: (boardId: string) =>
+      `${prefix}${boardId}`,
+    isPersonalExternalStagingListId: (listId: string | null) =>
+      Boolean(listId?.startsWith(prefix) && listId.length > prefix.length),
+  };
+});
+
 import {
+  applyTaskDropPreviewToCache,
   getProjectedTaskDropOrderFromPreview,
   getTaskDropEndPreviewFromRects,
   getTaskDropPositionFromRects,
   getTaskDropPreviewCacheTasks,
   getTaskDropPreviewFromRects,
   getTaskInsertionIndex,
+  hasTaskLocalMutationAt,
   insertTaskAtDropPosition,
   mergePersonalPlacementMutationTask,
   mergeTaskIntoBoardTaskCache,
+  usesPersonalPlacement,
 } from './use-kanban-dnd';
 
 function createTask(overrides: Partial<Task> = {}): Task {
@@ -110,6 +130,25 @@ describe('mergePersonalPlacementMutationTask', () => {
         _localMutationAt: 654_321,
       })
     );
+  });
+});
+
+describe('usesPersonalPlacement', () => {
+  it('does not treat a personal-workspace task as external from personal_board_id alone', () => {
+    const personalTask = createTask({
+      is_personal_external: false,
+      personal_board_id: 'personal-board',
+      personal_list_id: 'list-1',
+      source_board_id: null,
+      source_list_id: null,
+      source_workspace_id: null,
+    } as Partial<Task>);
+
+    expect(usesPersonalPlacement(personalTask)).toBe(false);
+  });
+
+  it('keeps explicit external overlays on the personal-placement path', () => {
+    expect(usesPersonalPlacement(createTask())).toBe(true);
   });
 });
 
@@ -682,5 +721,65 @@ describe('task drag insertion helpers', () => {
         list_id: 'done-list',
       })
     );
+  });
+
+  it('marks optimistic previews so stale drag rollbacks can be skipped', () => {
+    const queryClient = new QueryClient();
+    const boardId = 'board-1';
+    const activeTask = createTask({
+      id: 'task-1',
+      list_id: 'source-list',
+      sort_key: 1_000_000,
+    });
+    const targetTask = createTask({
+      id: 'task-2',
+      list_id: 'target-list',
+      sort_key: 2_000_000,
+    });
+    const snapshot = {
+      fullTasks: [activeTask, targetTask],
+      tasks: [activeTask, targetTask],
+    };
+
+    queryClient.setQueryData(['tasks', boardId], snapshot.tasks);
+    queryClient.setQueryData(['tasks-full', boardId], snapshot.fullTasks);
+
+    const preview = applyTaskDropPreviewToCache({
+      activeTask,
+      boardId,
+      orderedTasks: [targetTask, activeTask],
+      queryClient,
+      snapshot,
+      targetList: createList({ id: 'target-list' }),
+      targetListId: 'target-list',
+    });
+
+    expect(preview?.localMutationAt).toEqual(expect.any(Number));
+    expect(
+      hasTaskLocalMutationAt(
+        queryClient.getQueryData<Task[]>(['tasks', boardId]),
+        activeTask.id,
+        preview?.localMutationAt ?? -1
+      )
+    ).toBe(true);
+
+    queryClient.setQueryData<Task[]>(['tasks', boardId], (currentTasks) =>
+      currentTasks?.map((task) =>
+        task.id === activeTask.id
+          ? ({
+              ...task,
+              _localMutationAt: (preview?.localMutationAt ?? 0) + 1,
+            } as Task & { _localMutationAt: number })
+          : task
+      )
+    );
+
+    expect(
+      hasTaskLocalMutationAt(
+        queryClient.getQueryData<Task[]>(['tasks', boardId]),
+        activeTask.id,
+        preview?.localMutationAt ?? -1
+      )
+    ).toBe(false);
   });
 });

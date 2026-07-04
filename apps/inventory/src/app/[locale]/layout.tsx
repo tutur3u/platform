@@ -30,8 +30,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return generateCommonMetadata({
     config: {
       description: {
-        en: 'Manage inventory, stock movements, bundles, Polar checkout readiness, and payment audit trails.',
-        vi: 'Quản lý kho hàng, biến động tồn kho, combo, trạng thái sẵn sàng của Polar checkout và nhật ký kiểm toán thanh toán.',
+        en: 'Manage inventory, stock movements, bundles, checkout readiness, and payment audit trails.',
+        vi: 'Quản lý kho hàng, biến động tồn kho, combo, trạng thái sẵn sàng checkout và nhật ký kiểm toán thanh toán.',
       },
       name: siteConfig.name,
       url: siteConfig.url,

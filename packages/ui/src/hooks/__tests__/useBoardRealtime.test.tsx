@@ -78,6 +78,7 @@ describe('useBoardRealtime', () => {
     subscribe: ReturnType<typeof vi.fn>;
     send: ReturnType<typeof vi.fn>;
   };
+  let mockFrom: ReturnType<typeof vi.fn>;
   let mockRemoveChannel: ReturnType<typeof vi.fn>;
   let broadcastListeners: Map<string, BroadcastListener>;
   let subscribeCallback: ((status: string, err?: unknown) => void) | undefined;
@@ -142,92 +143,14 @@ describe('useBoardRealtime', () => {
     };
 
     mockRemoveChannel = vi.fn();
+    mockFrom = vi.fn();
 
     const mockCreateClient = createClient as unknown as MockCreateClientFn;
 
     mockCreateClient.mockReturnValue({
       channel: vi.fn(() => mockChannel),
       removeChannel: mockRemoveChannel,
-      from: vi.fn(() => ({
-        select: vi.fn(() => ({
-          in: vi.fn(() =>
-            Promise.resolve({
-              data: [
-                {
-                  id: 'task-1',
-                  assignees: [
-                    {
-                      user: {
-                        id: 'u-1',
-                        display_name: 'User 1',
-                        avatar_url: null,
-                      },
-                    },
-                  ],
-                  labels: [
-                    {
-                      label: {
-                        id: 'l-1',
-                        name: 'Bug',
-                        color: 'red',
-                        created_at: '2025-01-01',
-                      },
-                    },
-                  ],
-                  projects: [
-                    {
-                      project: {
-                        id: 'p-1',
-                        name: 'Project 1',
-                        status: 'active',
-                      },
-                    },
-                  ],
-                },
-              ],
-              error: null,
-            })
-          ),
-          eq: vi.fn(() => ({
-            single: vi.fn(() =>
-              Promise.resolve({
-                data: {
-                  id: 'task-1',
-                  assignees: [
-                    {
-                      user: {
-                        id: 'u-1',
-                        display_name: 'User 1',
-                        avatar_url: null,
-                      },
-                    },
-                  ],
-                  labels: [
-                    {
-                      label: {
-                        id: 'l-1',
-                        name: 'Bug',
-                        color: 'red',
-                        created_at: '2025-01-01',
-                      },
-                    },
-                  ],
-                  projects: [
-                    {
-                      project: {
-                        id: 'p-1',
-                        name: 'Project 1',
-                        status: 'active',
-                      },
-                    },
-                  ],
-                },
-                error: null,
-              })
-            ),
-          })),
-        })),
-      })),
+      from: mockFrom,
     });
 
     vi.clearAllMocks();
@@ -835,11 +758,12 @@ describe('useBoardRealtime', () => {
   });
 
   describe('task:relations-changed event', () => {
-    it('should fetch relations from DB and merge into cache', async () => {
+    it('reconciles relation-bearing queries without refetching visible board caches', async () => {
       queryClient.setQueryData(
         ['tasks', 'board-1'],
         [{ ...mockTaskWithRelations, id: 'task-1' }]
       );
+      const invalidateQueriesSpy = vi.spyOn(queryClient, 'invalidateQueries');
 
       renderHook(() => useBoardRealtime('board-1', { enabled: true }), {
         wrapper,
@@ -847,31 +771,29 @@ describe('useBoardRealtime', () => {
 
       const listener = broadcastListeners.get('task:relations-changed')!;
 
-      // Fire the listener — it debounces for 150ms before fetching
+      // Fire the listener — it debounces for 150ms before invalidating caches.
       await act(async () => {
         listener({ payload: { taskId: 'task-1' } });
       });
 
-      // Advance past the 150ms receiver debounce and flush microtasks
+      // Advance past the 150ms receiver debounce.
       await act(async () => {
         vi.advanceTimersByTime(200);
-        // Allow the async fetch to resolve
-        await Promise.resolve();
-        await Promise.resolve();
       });
 
-      const cachedTasks = queryClient.getQueryData<Task[]>([
-        'tasks',
-        'board-1',
-      ]);
-      const task = cachedTasks?.[0];
-      // The mock returns one assignee, one label, one project
-      expect(task?.assignees).toHaveLength(1);
-      expect(task?.labels).toHaveLength(1);
-      expect(task?.projects).toHaveLength(1);
+      expect(mockFrom).not.toHaveBeenCalled();
+      expect(invalidateQueriesSpy).not.toHaveBeenCalledWith({
+        queryKey: ['tasks', 'board-1'],
+      });
+      expect(invalidateQueriesSpy).not.toHaveBeenCalledWith({
+        queryKey: ['tasks-full', 'board-1'],
+      });
+      expect(invalidateQueriesSpy).toHaveBeenCalledWith({
+        queryKey: ['task-list-counts', 'board-1'],
+      });
     });
 
-    it('should merge fetched relations into the full task cache when it exists', async () => {
+    it('keeps the full task cache warm when relations change', async () => {
       queryClient.setQueryData(
         ['tasks', 'board-1'],
         [{ ...mockTaskWithRelations, id: 'task-1' }]
@@ -880,6 +802,7 @@ describe('useBoardRealtime', () => {
         ['tasks-full', 'board-1'],
         [{ ...mockTaskWithRelations, id: 'task-1' }]
       );
+      const invalidateQueriesSpy = vi.spyOn(queryClient, 'invalidateQueries');
 
       renderHook(() => useBoardRealtime('board-1', { enabled: true }), {
         wrapper,
@@ -893,57 +816,14 @@ describe('useBoardRealtime', () => {
 
       await act(async () => {
         vi.advanceTimersByTime(200);
-        await Promise.resolve();
-        await Promise.resolve();
       });
 
-      const task = queryClient.getQueryData<Task[]>([
-        'tasks-full',
-        'board-1',
-      ])?.[0];
-      expect(task?.assignees).toHaveLength(1);
-      expect(task?.labels).toHaveLength(1);
-      expect(task?.projects).toHaveLength(1);
-    });
-
-    it('should handle DB fetch errors gracefully', async () => {
-      queryClient.setQueryData(['tasks', 'board-1'], [mockTaskWithRelations]);
-
-      // Mock a batched fetch error from the .in(...) branch.
-      (createClient as unknown as MockCreateClientFn).mockReturnValue({
-        channel: vi.fn(() => mockChannel),
-        removeChannel: mockRemoveChannel,
-        from: vi.fn(() => ({
-          select: vi.fn(() => ({
-            in: vi.fn(() =>
-              Promise.resolve({ data: null, error: { message: 'Not found' } })
-            ),
-          })),
-        })),
+      expect(invalidateQueriesSpy).not.toHaveBeenCalledWith({
+        queryKey: ['tasks-full', 'board-1'],
       });
-
-      renderHook(() => useBoardRealtime('board-1', { enabled: true }), {
-        wrapper,
-      });
-
-      const listener = broadcastListeners.get('task:relations-changed')!;
-
-      await act(async () => {
-        listener({ payload: { taskId: 'task-1' } });
-      });
-
-      await act(async () => {
-        vi.advanceTimersByTime(150);
-        await Promise.resolve();
-        await Promise.resolve();
-      });
-
-      // Cache should remain unchanged
-      const cachedTasks = queryClient.getQueryData<Task[]>([
-        'tasks',
-        'board-1',
-      ]);
-      expect(cachedTasks?.[0]?.assignees).toEqual([]);
+      expect(
+        queryClient.getQueryData<Task[]>(['tasks-full', 'board-1'])?.[0]?.id
+      ).toBe('task-1');
     });
 
     it('calls onTaskRelationsChange for Supabase relation broadcasts', async () => {

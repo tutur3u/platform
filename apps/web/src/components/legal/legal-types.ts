@@ -1,4 +1,4 @@
-import type { LucideIcon } from '@tuturuuu/icons';
+import type { LucideIcon } from '@tuturuuu/icons/lucide';
 import type { ReactNode } from 'react';
 
 export interface LegalSection {
@@ -21,7 +21,7 @@ export interface ThirdPartyProvider {
 
 export interface ThirdPartyCategory {
   name: string;
-  icon: LucideIcon;
+  icon?: LucideIcon;
   providers: ThirdPartyProvider[];
 }
 

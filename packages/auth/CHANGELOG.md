@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.2.4](https://github.com/tutur3u/platform/compare/auth-v0.2.3...auth-v0.2.4) (2026-07-03)
+
+
+### Bug Fixes
+
+* **infrastructure:** restore canonical auth host access ([9f6715f](https://github.com/tutur3u/platform/commit/9f6715fb1c5a89598556cba33b16938b76995fc6))
+
+## [0.2.3](https://github.com/tutur3u/platform/compare/auth-v0.2.2...auth-v0.2.3) (2026-06-17)
+
+
+### Bug Fixes
+
+* **auth:** consume external app refresh tokens ([7f5a4ab](https://github.com/tutur3u/platform/commit/7f5a4ab250214018ca34e61b7084fd55865c17bc))
+* **auth:** enforce MFA for satellite Supabase sessions ([fff184e](https://github.com/tutur3u/platform/commit/fff184e754326fd3b91dac3e68263795aa386325))
+* **auth:** reject unsafe verify-token redirects ([1a1db96](https://github.com/tutur3u/platform/commit/1a1db960b0570af7f311afe25a62a24515b4a188))
+* **auth:** restrict Portless return ports ([7977bfc](https://github.com/tutur3u/platform/commit/7977bfc074a211a20b3bf133fe78cf94ff8c1d33))
+
 ## [0.2.2](https://github.com/tutur3u/platform/compare/auth-v0.2.1...auth-v0.2.2) (2026-06-13)
 
 

@@ -165,6 +165,9 @@ export async function invalidateTaskCaches(
     promises.push(
       queryClient.invalidateQueries({ queryKey: ['task_lists', boardId] })
     );
+    promises.push(
+      queryClient.invalidateQueries({ queryKey: ['kanban-deadline-tasks'] })
+    );
   }
 
   promises.push(

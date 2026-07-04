@@ -8,6 +8,12 @@ import {
   Download,
   Loader2,
 } from '@tuturuuu/icons';
+import {
+  InternalApiError,
+  listWorkspaceGroupReportDashboard,
+  type WorkspaceGroupReportDashboardReport,
+  type WorkspaceGroupReportDashboardResponse,
+} from '@tuturuuu/internal-api';
 import type { WorkspaceUserReport } from '@tuturuuu/types';
 import type { WorkspaceConfig } from '@tuturuuu/types/primitives/WorkspaceConfig';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
@@ -29,6 +35,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@tuturuuu/ui/select';
+import { Skeleton } from '@tuturuuu/ui/skeleton';
 import { toast } from '@tuturuuu/ui/sonner';
 import { cn } from '@tuturuuu/utils/format';
 import { useFormatter, useLocale, useTranslations } from 'next-intl';
@@ -36,6 +43,11 @@ import { useTheme } from 'next-themes';
 import { parseAsString, useQueryStates } from 'nuqs';
 import { useEffect, useMemo, useState } from 'react';
 import { availableConfigs } from '@/constants/configs/reports';
+import {
+  getReportSelectionRecovery,
+  getReportsDashboardErrorKind,
+  type ReportSelectionRecovery,
+} from '@/features/reports/group-report-dashboard';
 import EditableReportPreview from '../../../reports/[reportId]/editable-report-preview';
 import {
   type ReportStatusCounts,
@@ -50,14 +62,7 @@ import { BulkReportExporter } from './components/bulk-report-exporter';
 // Feature flag for experimental factor functionality
 const ENABLE_FACTOR_CALCULATION = false;
 
-type ReportWithNames = WorkspaceUserReport & {
-  group_name?: string | null;
-  creator_name?: string | null;
-  user_name?: string | null;
-  user_archived?: boolean;
-  user_archived_until?: string | null;
-  user_note?: string | null;
-};
+type ReportWithNames = WorkspaceGroupReportDashboardReport;
 
 interface Props {
   wsId: string;
@@ -143,42 +148,13 @@ export default function GroupReportsClient({
       userId,
       reportId,
     ],
-    queryFn: async (): Promise<{
-      group: { id: string; name: string | null };
-      userGroupMetrics: Array<{
-        factor: number;
-        id: string;
-        is_weighted: boolean;
-        name: string;
-        unit: string;
-        value: number | null;
-      }>;
-      managers: Array<{ id: string; full_name: string | null }>;
-      reportDetail: ReportWithNames | null;
-      reports: ReportWithNames[];
-      userStatusSummary: Array<{
-        approved_count: number;
-        pending_count: number;
-        rejected_count: number;
-        user_id: string;
-      }>;
-      users: WorkspaceUser[];
-    }> => {
-      const searchParams = new URLSearchParams();
-      if (userId) searchParams.set('userId', userId);
-      if (reportId) searchParams.set('reportId', reportId);
-
-      const response = await fetch(
-        `/api/v1/workspaces/${wsId}/users/reports/groups/${groupId}/dashboard?${searchParams.toString()}`,
-        { cache: 'no-store' }
-      );
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch group reports');
-      }
-
-      return response.json();
-    },
+    queryFn: (): Promise<WorkspaceGroupReportDashboardResponse> =>
+      listWorkspaceGroupReportDashboard({
+        groupId,
+        reportId,
+        userId,
+        workspaceId: wsId,
+      }),
     enabled: Boolean(wsId && groupId),
   });
 
@@ -308,6 +284,35 @@ export default function GroupReportsClient({
   ]);
 
   const reportDetail = dashboardQuery.data?.reportDetail;
+  const reportSelectionRecovery: ReportSelectionRecovery = useMemo(() => {
+    if (!userId) return { action: 'none' };
+
+    return getReportSelectionRecovery({
+      canCreateReports,
+      reportDetail,
+      reportId,
+      reports: dashboardQuery.data?.reports,
+    });
+  }, [
+    canCreateReports,
+    dashboardQuery.data?.reports,
+    reportDetail,
+    reportId,
+    userId,
+  ]);
+
+  useEffect(() => {
+    if (!dashboardQuery.isSuccess) return;
+
+    if (reportSelectionRecovery.action === 'set-report') {
+      setQueryParams({ reportId: reportSelectionRecovery.reportId });
+      return;
+    }
+
+    if (reportSelectionRecovery.action === 'clear-report') {
+      setQueryParams({ reportId: null });
+    }
+  }, [dashboardQuery.isSuccess, reportSelectionRecovery, setQueryParams]);
 
   // Local state to allow overriding displayed group manager for export/preview only
   const [selectedManagerName, setSelectedManagerName] = useState<
@@ -369,6 +374,30 @@ export default function GroupReportsClient({
   }, [configsQuery.data]);
 
   const isLoading = dashboardQuery.isLoading || configsQuery.isLoading;
+  const dashboardRequestError =
+    dashboardQuery.error instanceof InternalApiError
+      ? dashboardQuery.error
+      : null;
+  const reportLoadErrorCode =
+    dashboardRequestError?.code ??
+    (dashboardQuery.isError
+      ? 'REPORTS_REQUEST_FAILED'
+      : configsQuery.isError
+        ? 'REPORTS_CONFIG_FETCH_FAILED'
+        : null);
+  const reportLoadErrorStatus = dashboardRequestError?.status ?? null;
+  const reportLoadErrorKind = getReportsDashboardErrorKind({
+    code: reportLoadErrorCode,
+    status: reportLoadErrorStatus,
+  });
+  const reportLoadErrorDescription =
+    reportLoadErrorKind === 'permission'
+      ? t('ws-reports.dashboard_error_permission_description')
+      : reportLoadErrorKind === 'rate-limit'
+        ? t('ws-reports.dashboard_error_rate_limit_description')
+        : reportLoadErrorKind === 'not-found'
+          ? t('ws-reports.dashboard_error_not_found_description')
+          : t('ws-reports.dashboard_error_description');
 
   const selectedReport: ReportWithNames | Partial<ReportWithNames> | undefined =
     useMemo(() => {
@@ -491,23 +520,63 @@ export default function GroupReportsClient({
     }
   };
 
-  const reportContent = dashboardQuery.isError ? (
+  const hasReportLoadError = dashboardQuery.isError || configsQuery.isError;
+  const hasNoReportsForSelectedUser = Boolean(
+    userId &&
+      dashboardQuery.data &&
+      dashboardQuery.data.reports.length === 0 &&
+      reportId !== 'new'
+  );
+  const emptyReportTitle = hasNoReportsForSelectedUser
+    ? t('ws-reports.no_reports_found')
+    : t('ws-reports.no_report_selected');
+  const emptyReportDescription = hasNoReportsForSelectedUser
+    ? canCreateReports
+      ? t('ws-reports.no_reports_for_user_create_description')
+      : t('ws-reports.no_reports_for_user_description')
+    : reportId && reportId !== 'new'
+      ? t('ws-reports.selected_report_missing_description')
+      : t('ws-reports.select_report_description');
+
+  const reportContent = hasReportLoadError ? (
     <div className="flex min-h-100 w-full items-center justify-center rounded-lg border border-dashed py-20">
       <div className="flex flex-col items-center gap-2 text-center">
         <AlertCircle className="h-8 w-8 text-dynamic-red" />
-        <p className="font-medium text-sm">Failed to load reports</p>
-        <p className="max-w-md text-muted-foreground text-sm">
-          The reports data request failed. Retry this page after the current
-          rate limit window resets.
+        <p className="font-medium text-sm">
+          {t('ws-reports.dashboard_error_title')}
         </p>
+        <p className="max-w-md text-muted-foreground text-sm">
+          {reportLoadErrorDescription}
+        </p>
+        {reportLoadErrorCode && (
+          <Badge variant="outline" className="font-mono text-xs">
+            {reportLoadErrorStatus
+              ? t('ws-reports.troubleshooting_code_with_status', {
+                  code: reportLoadErrorCode,
+                  status: reportLoadErrorStatus,
+                })
+              : t('ws-reports.troubleshooting_code', {
+                  code: reportLoadErrorCode,
+                })}
+          </Badge>
+        )}
       </div>
     </div>
   ) : groupId && userId ? (
     isLoading ? (
-      <div className="flex min-h-100 w-full items-center justify-center rounded-lg border border-dashed py-20">
-        <div className="flex flex-col items-center gap-2">
-          <Loader2 className="h-8 w-8 animate-spin text-dynamic-blue" />
-          <p className="text-muted-foreground text-sm">{t('common.loading')}</p>
+      <div className="w-full space-y-4 rounded-lg border p-6">
+        <div className="flex items-center justify-between">
+          <Skeleton className="h-7 w-1/3" />
+          <Skeleton className="h-8 w-24" />
+        </div>
+        <Skeleton className="h-4 w-1/4" />
+        <div className="space-y-3 pt-2">
+          {Array.from({ length: 6 }, (_, i) => (
+            <div key={`report-skel-${i}`} className="space-y-2">
+              <Skeleton className="h-4 w-32" />
+              <Skeleton className="h-10 w-full" />
+            </div>
+          ))}
         </div>
       </div>
     ) : selectedReport && configsData.length > 0 ? (
@@ -574,13 +643,9 @@ export default function GroupReportsClient({
       <div className="flex min-h-100 w-full items-center justify-center rounded-lg border border-dashed py-20">
         <div className="flex flex-col items-center gap-2 text-center">
           <AlertCircle className="h-8 w-8 text-dynamic-yellow" />
-          <p className="font-medium text-sm">
-            {t('ws-reports.no_report_selected')}
-          </p>
+          <p className="font-medium text-sm">{emptyReportTitle}</p>
           <p className="max-w-md text-muted-foreground text-sm">
-            {reportId && reportId !== 'new'
-              ? 'The selected report could not be loaded. Please try selecting a different report or user.'
-              : 'Select a report from the dropdown above to view details.'}
+            {emptyReportDescription}
           </p>
         </div>
       </div>

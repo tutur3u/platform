@@ -2,10 +2,19 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const {
+  getBlueGreenFrontend,
+  getBlueGreenServiceName,
   readBlueGreenActiveColor,
   readBlueGreenProxyActiveColor,
 } = require('../docker-web/blue-green.js');
-const { getComposeEnvironment, WEB_ENV_FILE } = require('../docker-web/env.js');
+const {
+  DOCKER_WEB_GIT_COMMON_DIR_ENV,
+  getComposeEnvironment,
+  getDockerCloudflaredAutodetect,
+  resolveLinkedWorktreeGitCommonDir,
+  sanitizeGitLocalEnv,
+  WEB_ENV_FILE,
+} = require('../docker-web/env.js');
 const {
   getComposeCommandArgs,
   getComposeFile,
@@ -25,9 +34,54 @@ const BLUE_GREEN_COLORS = ['blue', 'green'];
 const PROD_COMPOSE_FILE = getComposeFile('prod');
 const BLUE_GREEN_PROXY_SERVICE = 'web-proxy';
 const HOST_WORKSPACE_DIR_ENV = 'PLATFORM_HOST_WORKSPACE_DIR';
+const WATCHER_BOOTSTRAP_IDLE_RUNTIME_ENV =
+  'DOCKER_WEB_WATCHER_BOOTSTRAP_IDLE_RUNTIME';
+const DEFAULT_CONTAINER_HOST_WORKSPACE_DIR = '/workspace-host';
+
+function getBlueGreenColorFromServiceName(serviceName) {
+  const match = String(serviceName ?? '').match(
+    /^(?:web|tanstack-web)-(blue|green)$/u
+  );
+
+  return match?.[1] ?? null;
+}
 
 function isTruthyEnv(value) {
   return /^(1|true|yes)$/iu.test(String(value ?? '').trim());
+}
+
+function isDefaultContainerHostWorkspaceDir(value) {
+  if (typeof value !== 'string' || value.trim().length === 0) {
+    return false;
+  }
+
+  return (
+    path.resolve(value.trim()) ===
+    path.resolve(DEFAULT_CONTAINER_HOST_WORKSPACE_DIR)
+  );
+}
+
+function resolveWatcherHostWorkspaceDir({
+  baseEnv = process.env,
+  rootDir = ROOT_DIR,
+} = {}) {
+  const configured =
+    typeof baseEnv[HOST_WORKSPACE_DIR_ENV] === 'string'
+      ? baseEnv[HOST_WORKSPACE_DIR_ENV].trim()
+      : '';
+  const resolvedRootDir = path.resolve(rootDir);
+
+  if (
+    configured.length > 0 &&
+    !(
+      isDefaultContainerHostWorkspaceDir(configured) &&
+      resolvedRootDir !== path.resolve(DEFAULT_CONTAINER_HOST_WORKSPACE_DIR)
+    )
+  ) {
+    return configured;
+  }
+
+  return rootDir;
 }
 
 function getWatcherComposeEnv({
@@ -36,22 +90,47 @@ function getWatcherComposeEnv({
   fsImpl = fs,
   rootDir = ROOT_DIR,
 } = {}) {
-  const hostWorkspaceDir =
-    typeof baseEnv[HOST_WORKSPACE_DIR_ENV] === 'string' &&
-    baseEnv[HOST_WORKSPACE_DIR_ENV].trim().length > 0
-      ? baseEnv[HOST_WORKSPACE_DIR_ENV].trim()
-      : rootDir;
+  const hostWorkspaceDir = resolveWatcherHostWorkspaceDir({
+    baseEnv,
+    rootDir,
+  });
+  const cloudflared = getDockerCloudflaredAutodetect({
+    baseEnv,
+    envFilePath,
+    fsImpl,
+    rootDir: hostWorkspaceDir,
+  });
+  const withCloudflared =
+    isTruthyEnv(baseEnv.DOCKER_WEB_WITH_CLOUDFLARED) || cloudflared.enabled;
+  const composeBaseEnv =
+    withCloudflared && !isTruthyEnv(baseEnv.DOCKER_WEB_WITH_CLOUDFLARED)
+      ? {
+          ...baseEnv,
+          DOCKER_WEB_WITH_CLOUDFLARED: '1',
+        }
+      : baseEnv;
+  const sanitizedComposeBaseEnv = sanitizeGitLocalEnv(composeBaseEnv);
+  const gitCommonDir = resolveLinkedWorktreeGitCommonDir({
+    fsImpl,
+    rootDir: hostWorkspaceDir,
+  });
+  const composeEnv = getComposeEnvironment({
+    baseEnv: sanitizedComposeBaseEnv,
+    envFilePath,
+    fsImpl,
+    preferEnvFilePath: true,
+    rootDir: hostWorkspaceDir,
+    withCloudflared,
+    withRedis: true,
+  });
 
   return {
-    ...getComposeEnvironment({
-      baseEnv,
-      envFilePath,
-      fsImpl,
-      preferEnvFilePath: true,
-      rootDir: hostWorkspaceDir,
-      withCloudflared: isTruthyEnv(baseEnv.DOCKER_WEB_WITH_CLOUDFLARED),
-      withRedis: true,
-    }),
+    ...composeEnv,
+    ...(gitCommonDir ? { [DOCKER_WEB_GIT_COMMON_DIR_ENV]: gitCommonDir } : {}),
+    [WATCHER_BOOTSTRAP_IDLE_RUNTIME_ENV]:
+      composeEnv[WATCHER_BOOTSTRAP_IDLE_RUNTIME_ENV] ??
+      sanitizedComposeBaseEnv[WATCHER_BOOTSTRAP_IDLE_RUNTIME_ENV] ??
+      '1',
     [HOST_WORKSPACE_DIR_ENV]: hostWorkspaceDir,
   };
 }
@@ -142,6 +221,13 @@ async function resolveCurrentBlueGreenStatus({
   rootDir = ROOT_DIR,
   runCommand: run = runCommand,
 } = {}) {
+  const composeEnv = getWatcherComposeEnv({
+    baseEnv: env,
+    envFilePath,
+    fsImpl,
+    rootDir,
+  });
+  getBlueGreenFrontend(composeEnv);
   const activeColor =
     readBlueGreenActiveColor(paths.blueGreen, fsImpl) ??
     readBlueGreenProxyActiveColor(paths.blueGreen, fsImpl);
@@ -151,7 +237,7 @@ async function resolveCurrentBlueGreenStatus({
     const proxyContainerId = await getProdComposeServiceContainerId(
       BLUE_GREEN_PROXY_SERVICE,
       {
-        env,
+        env: composeEnv,
         envFilePath,
         fsImpl,
         rootDir,
@@ -168,10 +254,11 @@ async function resolveCurrentBlueGreenStatus({
     }
 
     for (const color of BLUE_GREEN_COLORS) {
+      const serviceName = getBlueGreenServiceName(color, composeEnv);
       serviceStates[color] = await getProdComposeServiceContainerId(
-        `web-${color}`,
+        serviceName,
         {
-          env,
+          env: composeEnv,
           envFilePath,
           fsImpl,
           rootDir,
@@ -217,8 +304,8 @@ async function resolveCurrentBlueGreenStatus({
       proxyRunning,
       serviceContainers: {
         proxy: proxyContainerId,
-        'web-blue': serviceStates.blue,
-        'web-green': serviceStates.green,
+        [getBlueGreenServiceName('blue', composeEnv)]: serviceStates.blue,
+        [getBlueGreenServiceName('green', composeEnv)]: serviceStates.green,
       },
       standbyColor,
       state:
@@ -402,19 +489,9 @@ async function collectDockerResources(
     .map(([serviceName, containerId]) => ({
       containerId,
       label:
-        serviceName === 'web-green'
-          ? 'green'
-          : serviceName === 'web-blue'
-            ? 'blue'
-            : serviceName === 'proxy'
-              ? 'proxy'
-              : serviceName,
-      color:
-        serviceName === 'web-green'
-          ? 'green'
-          : serviceName === 'web-blue'
-            ? 'blue'
-            : 'cyan',
+        getBlueGreenColorFromServiceName(serviceName) ??
+        (serviceName === 'proxy' ? 'proxy' : serviceName),
+      color: getBlueGreenColorFromServiceName(serviceName) ?? 'cyan',
       serviceName,
     }));
 
@@ -604,10 +681,17 @@ async function collectDeploymentTraffic(
   }
 
   try {
+    const composeEnv = getWatcherComposeEnv({
+      baseEnv: env,
+      envFilePath,
+      fsImpl,
+      rootDir,
+    });
+    getBlueGreenFrontend(composeEnv);
     const containerId = await getProdComposeServiceContainerId(
       BLUE_GREEN_PROXY_SERVICE,
       {
-        env,
+        env: composeEnv,
         envFilePath,
         fsImpl,
         rootDir,
@@ -619,9 +703,9 @@ async function collectDeploymentTraffic(
           await Promise.all(
             ['blue', 'green'].map(async (deploymentColor) => ({
               containerId: await getProdComposeServiceContainerId(
-                `web-${deploymentColor}`,
+                getBlueGreenServiceName(deploymentColor, composeEnv),
                 {
-                  env,
+                  env: composeEnv,
                   envFilePath,
                   fsImpl,
                   rootDir,
@@ -638,7 +722,7 @@ async function collectDeploymentTraffic(
       await syncProxyTrafficStore(deployments, {
         appContainers,
         containerId,
-        env,
+        env: composeEnv,
         fsImpl,
         now,
         paths,
@@ -765,9 +849,11 @@ module.exports = {
   BLUE_GREEN_PROXY_SERVICE,
   HOST_WORKSPACE_DIR_ENV,
   PROD_COMPOSE_FILE,
+  WATCHER_BOOTSTRAP_IDLE_RUNTIME_ENV,
   collectDeploymentTraffic,
   getProdComposeServiceContainerId,
   getWatcherComposeEnv,
   loadRuntimeSnapshot,
+  resolveWatcherHostWorkspaceDir,
   resolveCurrentBlueGreenStatus,
 };

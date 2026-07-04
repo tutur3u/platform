@@ -1,15 +1,16 @@
 import type { JSONContent } from '@tiptap/core';
 import {
+  decodeTaskDescriptionYjsState,
+  encodeTaskDescriptionYjsState,
+  parsePersistedTaskDescriptionContent,
+  parseTaskDescriptionInput,
+} from './task-description-codec';
+import {
   hasMeaningfulTaskDescriptionContent,
   isValidTaskDescriptionContent,
-  parseTaskDescriptionContent,
   taskDescriptionSchema,
 } from './task-description-content';
 import { getDescriptionText } from './text-helper';
-import {
-  convertJsonContentToYjsState,
-  convertYjsStateToJsonContent,
-} from './yjs-helper';
 
 export { isValidTaskDescriptionContent, taskDescriptionSchema };
 
@@ -21,10 +22,7 @@ export function isValidTaskDescriptionYjsState(
   }
 
   try {
-    convertYjsStateToJsonContent(
-      Uint8Array.from(yjsState),
-      taskDescriptionSchema
-    );
+    decodeTaskDescriptionYjsState(yjsState);
     return true;
   } catch {
     return false;
@@ -32,11 +30,11 @@ export function isValidTaskDescriptionYjsState(
 }
 
 function encodeYjsState(content: JSONContent): number[] | null {
-  const encoded = convertJsonContentToYjsState(content, taskDescriptionSchema);
+  const encoded = encodeTaskDescriptionYjsState(content);
   if (encoded.length === 0) {
     return null;
   }
-  return Array.from(encoded);
+  return encoded;
 }
 
 /**
@@ -51,7 +49,9 @@ export function deriveTaskDescriptionYjsState(
     return null;
   }
 
-  const content = parseTaskDescriptionContent(normalizedDescription);
+  const content = parsePersistedTaskDescriptionContent({
+    description: normalizedDescription,
+  });
   if (!hasMeaningfulTaskDescriptionContent(content)) {
     return null;
   }
@@ -65,15 +65,7 @@ export function deriveTaskDescriptionYjsState(
     }
 
     try {
-      return encodeYjsState({
-        type: 'doc',
-        content: [
-          {
-            type: 'paragraph',
-            content: [{ type: 'text', text: fallbackText }],
-          },
-        ],
-      });
+      return encodeYjsState(parseTaskDescriptionInput(fallbackText, 'text'));
     } catch {
       return null;
     }

@@ -6,7 +6,7 @@ import type {
   AiAgentChannelConfig,
   AiAgentDefinition,
   SaveAiAgentPayload,
-} from '@tuturuuu/internal-api/infrastructure';
+} from '@tuturuuu/internal-api/infrastructure/ai';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';

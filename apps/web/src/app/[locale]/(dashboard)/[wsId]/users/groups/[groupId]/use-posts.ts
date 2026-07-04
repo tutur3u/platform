@@ -23,10 +23,18 @@ export interface UserGroupPostFormInput {
   notes: string | null;
 }
 
+export interface GroupPostsInitialData {
+  posts: UserGroupPost[];
+  total: number;
+  hasMore: boolean;
+  nextCursor: string | null;
+}
+
 export function useGroupPostsInfiniteQuery(
   wsId: string,
   groupId: string,
-  canViewPosts: boolean
+  canViewPosts: boolean,
+  initialData?: GroupPostsInitialData
 ) {
   const loadMoreRef = useRef<HTMLDivElement>(null);
 
@@ -45,6 +53,9 @@ export function useGroupPostsInfiniteQuery(
   }>({
     queryKey: ['group-posts', wsId, groupId],
     enabled: Boolean(wsId && groupId && canViewPosts),
+    initialData: initialData
+      ? { pages: [initialData], pageParams: [null as string | null] }
+      : undefined,
     queryFn: async ({ pageParam }) => {
       const search = new URLSearchParams({
         limit: String(PAGINATION_LIMIT),

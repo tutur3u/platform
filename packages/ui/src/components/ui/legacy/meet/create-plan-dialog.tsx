@@ -32,13 +32,18 @@ import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { Input } from '@tuturuuu/ui/input';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { Separator } from '@tuturuuu/ui/separator';
-import { RichTextEditor } from '@tuturuuu/ui/text-editor/editor';
 import { cn } from '@tuturuuu/utils/format';
 import dayjs from 'dayjs';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { lazy, Suspense, useState } from 'react';
 import * as z from 'zod';
+
+const RichTextEditor = lazy(async () => {
+  const module = await import('@tuturuuu/ui/text-editor/editor');
+
+  return { default: module.RichTextEditor };
+});
 
 interface Props {
   user: Partial<User> | null;
@@ -369,14 +374,18 @@ export default function CreatePlanDialog({ plan }: Props) {
                       <FormItem>
                         <FormControl>
                           <div className="rounded-lg border border-dynamic-green/30 bg-dynamic-green/5 p-3">
-                            <RichTextEditor
-                              content={field.value || null}
-                              onChange={field.onChange}
-                              readOnly={false}
-                              titlePlaceholder={t('agenda_title_placeholder')}
-                              writePlaceholder={t('agenda_content_placeholder')}
-                              className="h-64 border-0 bg-transparent"
-                            />
+                            <Suspense fallback={<div className="h-64" />}>
+                              <RichTextEditor
+                                content={field.value || null}
+                                onChange={field.onChange}
+                                readOnly={false}
+                                titlePlaceholder={t('agenda_title_placeholder')}
+                                writePlaceholder={t(
+                                  'agenda_content_placeholder'
+                                )}
+                                className="h-64 border-0 bg-transparent"
+                              />
+                            </Suspense>
                           </div>
                         </FormControl>
                         <FormMessage />

@@ -1,6 +1,6 @@
 'use client';
 
-import { CalendarClock } from '@tuturuuu/icons/lucide';
+import { CalendarClock } from '@tuturuuu/icons/lucide-static';
 import {
   DropdownMenuGroup,
   DropdownMenuItem,

@@ -22,7 +22,7 @@ import { cn } from '@tuturuuu/utils/format';
 import { containsHtml, sanitizeHtml } from '@tuturuuu/utils/html-sanitizer';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import {
   ContextMenu,
   ContextMenuContent,
@@ -34,6 +34,7 @@ import {
   ContextMenuTrigger,
 } from '../../context-menu';
 import { GRID_SNAP, HOUR_HEIGHT, MAX_HOURS, MIN_EVENT_HEIGHT } from './config';
+import { CalendarEventProviderIcon } from './event-provider-display';
 import { useCalendarSettings } from './settings/settings-context';
 
 dayjs.extend(timezone);
@@ -58,7 +59,7 @@ interface EventCardProps {
   level?: number; // Level for stacking events
 }
 
-export function EventCard({ dates, event, level = 0 }: EventCardProps) {
+function EventCardComponent({ dates, event, level = 0 }: EventCardProps) {
   const {
     id,
     title,
@@ -83,6 +84,7 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
     _isReused,
     _previewType,
     _warning,
+    _optimisticStatus,
   } = event as CalendarEvent & {
     _isHabit?: boolean;
     _habitCompleted?: boolean;
@@ -90,6 +92,7 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
     _isReused?: boolean;
     _previewType?: 'habit' | 'task';
     _warning?: string;
+    _optimisticStatus?: 'creating' | 'updating' | 'deleting' | 'error';
   };
 
   // Default values for overlap properties if not provided
@@ -107,6 +110,11 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
     hoveredEventColumn,
     setHoveredEventColumn,
     affectedEventIds,
+    disableBuiltInEventUi,
+    preservePastEventOpacity,
+    renderEventContextMenu,
+    isEventReadOnly,
+    readOnly,
   } = useCalendar();
 
   // NOTE: Event filtering for hideNonPreviewEvents is handled in CalendarEventMatrix
@@ -114,6 +122,7 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
   const { settings } = useCalendarSettings();
   const queryClient = useQueryClient();
   const tz = settings?.timezone?.timezone;
+  const isReadOnlyEvent = readOnly || isEventReadOnly(event);
 
   // Local state for immediate UI updates
   const [localEvent, setLocalEvent] = useState<CalendarEvent>(event);
@@ -168,6 +177,12 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
     isDragging: false,
     isResizing: false,
   });
+  const isOptimisticallyPending =
+    _optimisticStatus === 'creating' ||
+    _optimisticStatus === 'updating' ||
+    _optimisticStatus === 'deleting';
+  const isOptimisticallyMutating =
+    _optimisticStatus === 'updating' || _optimisticStatus === 'deleting';
 
   // Status feedback timeout
   const statusTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -443,7 +458,7 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
     if (shouldBeTransparent) {
       cardEl.style.opacity = '0.05';
       cardEl.style.pointerEvents = 'none';
-    } else if (isPastEvent) {
+    } else if (isPastEvent && !preservePastEventOpacity) {
       cardEl.style.opacity = '0.5';
       cardEl.style.pointerEvents = 'all';
     } else {
@@ -467,12 +482,14 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
     hoveredBaseEventId,
     hoveredEventColumn,
     endDate,
+    preservePastEventOpacity,
   ]);
 
   // Event resizing - only enable for non-multi-day events or the start/end segments
   useEffect(() => {
     // Disable resizing for middle segments of multi-day events
     // Note: locked events CAN still be resized - locked only prevents auto-scheduling
+    if (isReadOnlyEvent) return;
     if (_isMultiDay && _dayPosition === 'middle') return;
 
     const handleEl = handleRef.current;
@@ -663,12 +680,14 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
     showStatusFeedback, // Update visual state
     updateVisualState,
     queryClient,
+    isReadOnlyEvent,
   ]);
 
   // Event dragging - only enable for non-multi-day events
   useEffect(() => {
     // Disable dragging for multi-day events only
     // Note: locked events CAN still be dragged - locked only prevents auto-scheduling
+    if (isReadOnlyEvent) return;
     if (_isMultiDay) return;
 
     const contentEl = contentRef.current;
@@ -914,6 +933,7 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
     scheduleUpdate,
     showStatusFeedback, // Update visual state for immediate feedback
     updateVisualState,
+    isReadOnlyEvent,
   ]);
 
   // Color styles based on event color
@@ -989,13 +1009,8 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
     const eventId = event._originalId || id;
     const newLockedState = !locked;
 
-    console.log(
-      `Toggling lock status for event ${eventId} from ${locked} to ${newLockedState}`
-    );
-
     updateEvent(eventId, { locked: newLockedState })
       .then(() => {
-        console.log(`Successfully updated lock status to ${newLockedState}`);
         // Update local state immediately for better UX
         setLocalEvent((prev) => ({
           ...prev,
@@ -1038,6 +1053,7 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
   // For visual effects, check if this is likely a shorter event (higher in stack)
   // Shorter events get enhanced visual treatment
   const isLikelyTopEvent = hasOverlaps && duration < 1.5; // Events < 1.5 hours likely on top
+  const customContextMenu = renderEventContextMenu?.(event);
 
   return (
     <ContextMenu>
@@ -1046,6 +1062,7 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
           type="button"
           ref={cardRef}
           id={`event-${id}`}
+          data-testid={`calendar-event-${event._originalId || id}`}
           className={cn(
             'pointer-events-auto absolute max-w-none select-none overflow-hidden rounded-r-md rounded-l transition-all duration-300',
             'group hover:ring-1 focus:outline-none',
@@ -1053,7 +1070,10 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
               'transform shadow-md': isDragging || isResizing, // Subtle transform during interaction
               'shadow-sm': hasOverlaps && !isDragging && !isResizing, // Subtle shadow for stacked events
               'hover:shadow-md': hasOverlaps, // Enhanced shadow on hover for stacked events
-              'opacity-50': isPastEvent && !isAffectedByPreview, // Lower opacity for past events
+              'opacity-50':
+                isPastEvent &&
+                !isAffectedByPreview &&
+                !preservePastEventOpacity, // Lower opacity for past events
               'opacity-30 grayscale transition-all duration-500':
                 isAffectedByPreview, // Dim affected events during preview
               'rounded-l-none border-l-4': showStartIndicator, // Special styling for continuation from previous day
@@ -1063,6 +1083,10 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
               'opacity-60': _isHabit && _habitCompleted, // Dimmed for completed habits
               // Preview-specific styling - dashed border only for NEW/MOVED events (not reused)
               'border-2 border-dashed': _isPreview && !_isReused,
+              'opacity-60 outline outline-dashed outline-1 outline-primary/50':
+                isOptimisticallyMutating,
+              'opacity-80 ring-1 ring-primary/30':
+                isOptimisticallyPending && !isOptimisticallyMutating,
             },
             level ? 'border border-l-2' : 'border-l-2',
             border,
@@ -1118,6 +1142,7 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
             wasResizedRef.current = false;
           }}
           aria-label={`Event: ${title || 'Untitled event'}${hasCalendarInfo ? ` from ${calendarDisplayName}` : ''}`}
+          aria-busy={isOptimisticallyPending || updateStatus === 'syncing'}
           title={
             hasCalendarInfo ? `Calendar: ${calendarDisplayName}` : undefined
           }
@@ -1163,27 +1188,32 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
           )}
 
           {/* Edit button overlay */}
-          <div
-            className={cn(
-              'absolute top-2 rounded-full p-0.5 opacity-0 shadow-sm',
-              _isHabit ? 'right-5' : 'right-2', // Offset if habit icon is shown
-              'z-10 transition-opacity group-hover:opacity-100', // Higher z-index
-              {
-                'opacity-0!':
-                  isDragging || isResizing || updateStatus !== 'idle',
-              } // Hide during interaction or status updates
-            )}
-            onClick={(e) => {
-              e.stopPropagation();
-              e.preventDefault();
-              openModal(event._originalId || id);
-            }}
-          >
-            <Pencil className="h-3 w-3" />
-          </div>
+          {!disableBuiltInEventUi && (
+            <div
+              className={cn(
+                'absolute top-2 rounded-full p-0.5 opacity-0 shadow-sm',
+                _isHabit ? 'right-5' : 'right-2', // Offset if habit icon is shown
+                'z-10 transition-opacity group-hover:opacity-100', // Higher z-index
+                {
+                  'opacity-0!':
+                    isDragging ||
+                    isResizing ||
+                    updateStatus !== 'idle' ||
+                    isOptimisticallyPending,
+                } // Hide during interaction or status updates
+              )}
+              onClick={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                openModal(event._originalId || id);
+              }}
+            >
+              <Pencil className="h-3 w-3" />
+            </div>
+          )}
 
           {/* Status indicators */}
-          {updateStatus === 'syncing' && (
+          {updateStatus === 'syncing' && !isOptimisticallyPending && (
             <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center bg-background/5">
               {/* <div
                 className="animate-shimmer h-full w-full bg-linear-to-r from-transparent via-background/10 to-transparent"
@@ -1243,6 +1273,10 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
                 {localEvent.locked && !_isPreview && (
                   <Lock className="mr-1 inline-block h-3 w-3 align-middle opacity-70" />
                 )}
+                <CalendarEventProviderIcon
+                  event={localEvent}
+                  className="mr-1 h-3 w-3 opacity-80"
+                />
                 <span>{localEvent.title || 'Untitled event'}</span>
                 {_isPreview && !_isReused && (
                   <span
@@ -1299,7 +1333,7 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
           </div>
 
           {/* Only show resize handle for non-multi-day events or start/end segments */}
-          {(!_isMultiDay || _dayPosition !== 'middle') && (
+          {!isReadOnlyEvent && (!_isMultiDay || _dayPosition !== 'middle') && (
             <div
               ref={handleRef}
               className={cn(
@@ -1310,121 +1344,176 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
           )}
         </button>
       </ContextMenuTrigger>
-      <ContextMenuContent className="w-48">
-        <ContextMenuItem
-          onClick={() => openModal(event._originalId || id)}
-          className="flex items-center gap-2"
-        >
-          <Edit className="h-4 w-4" />
-          <span>Edit Event</span>
-        </ContextMenuItem>
+      {customContextMenu ??
+        (!disableBuiltInEventUi && (
+          <ContextMenuContent className="w-48">
+            <ContextMenuItem
+              onClick={() => openModal(event._originalId || id)}
+              className="flex items-center gap-2"
+            >
+              <Edit className="h-4 w-4" />
+              <span>Edit Event</span>
+            </ContextMenuItem>
 
-        <ContextMenuItem
-          onClick={handleLockToggle}
-          className="flex items-center gap-2"
-        >
-          {locked ? (
-            <>
-              <Unlock className="h-4 w-4" />
-              <span>Unlock Event</span>
-            </>
-          ) : (
-            <>
-              <Lock className="h-4 w-4" />
-              <span>Lock Event</span>
-            </>
-          )}
-        </ContextMenuItem>
+            <ContextMenuItem
+              onClick={handleLockToggle}
+              className="flex items-center gap-2"
+            >
+              {locked ? (
+                <>
+                  <Unlock className="h-4 w-4" />
+                  <span>Unlock Event</span>
+                </>
+              ) : (
+                <>
+                  <Lock className="h-4 w-4" />
+                  <span>Lock Event</span>
+                </>
+              )}
+            </ContextMenuItem>
 
-        <ContextMenuSub>
-          <ContextMenuSubTrigger className="flex items-center gap-2">
-            <Palette className="h-4 w-4" />
-            <span className="text-foreground">Change Color</span>
-          </ContextMenuSubTrigger>
-          <ContextMenuSubContent className="grid w-56 grid-cols-2 gap-1 p-2">
-            <ContextMenuItem
-              onClick={() => handleColorChange('RED')}
-              className="flex items-center gap-2"
-            >
-              <div className="h-4 w-4 flex-none rounded-full border border-dynamic-light-red/80 bg-calendar-bg-red"></div>
-              <span>Red</span>
-            </ContextMenuItem>
-            <ContextMenuItem
-              onClick={() => handleColorChange('BLUE')}
-              className="flex items-center gap-2"
-            >
-              <div className="h-4 w-4 flex-none rounded-full border border-dynamic-light-blue/80 bg-calendar-bg-blue"></div>
-              <span>Blue</span>
-            </ContextMenuItem>
-            <ContextMenuItem
-              onClick={() => handleColorChange('GREEN')}
-              className="flex items-center gap-2"
-            >
-              <div className="h-4 w-4 flex-none rounded-full border border-dynamic-light-green/80 bg-calendar-bg-green"></div>
-              <span>Green</span>
-            </ContextMenuItem>
-            <ContextMenuItem
-              onClick={() => handleColorChange('YELLOW')}
-              className="flex items-center gap-2"
-            >
-              <div className="h-4 w-4 flex-none rounded-full border border-dynamic-light-yellow/80 bg-calendar-bg-yellow"></div>
-              <span>Yellow</span>
-            </ContextMenuItem>
-            <ContextMenuItem
-              onClick={() => handleColorChange('PURPLE')}
-              className="flex items-center gap-2"
-            >
-              <div className="h-4 w-4 flex-none rounded-full border border-dynamic-light-purple/80 bg-calendar-bg-purple"></div>
-              <span>Purple</span>
-            </ContextMenuItem>
-            <ContextMenuItem
-              onClick={() => handleColorChange('PINK')}
-              className="flex items-center gap-2"
-            >
-              <div className="h-4 w-4 flex-none rounded-full border border-dynamic-light-pink/80 bg-calendar-bg-pink"></div>
-              <span>Pink</span>
-            </ContextMenuItem>
-            <ContextMenuItem
-              onClick={() => handleColorChange('ORANGE')}
-              className="flex items-center gap-2"
-            >
-              <div className="h-4 w-4 flex-none rounded-full border border-dynamic-light-orange/80 bg-calendar-bg-orange"></div>
-              <span>Orange</span>
-            </ContextMenuItem>
-            <ContextMenuItem
-              onClick={() => handleColorChange('INDIGO')}
-              className="flex items-center gap-2"
-            >
-              <div className="h-4 w-4 flex-none rounded-full border border-dynamic-light-indigo/80 bg-calendar-bg-indigo"></div>
-              <span>Indigo</span>
-            </ContextMenuItem>
-            <ContextMenuItem
-              onClick={() => handleColorChange('CYAN')}
-              className="flex items-center gap-2"
-            >
-              <div className="h-4 w-4 flex-none rounded-full border border-dynamic-light-cyan/80 bg-calendar-bg-cyan"></div>
-              <span>Cyan</span>
-            </ContextMenuItem>
-            <ContextMenuItem
-              onClick={() => handleColorChange('GRAY')}
-              className="flex items-center gap-2"
-            >
-              <div className="h-4 w-4 flex-none rounded-full border border-dynamic-light-gray/80 bg-calendar-bg-gray"></div>
-              <span>Gray</span>
-            </ContextMenuItem>
-          </ContextMenuSubContent>
-        </ContextMenuSub>
+            <ContextMenuSub>
+              <ContextMenuSubTrigger className="flex items-center gap-2">
+                <Palette className="h-4 w-4" />
+                <span className="text-foreground">Change Color</span>
+              </ContextMenuSubTrigger>
+              <ContextMenuSubContent className="grid w-56 grid-cols-2 gap-1 p-2">
+                <ContextMenuItem
+                  onClick={() => handleColorChange('RED')}
+                  className="flex items-center gap-2"
+                >
+                  <div className="h-4 w-4 flex-none rounded-full border border-dynamic-light-red/80 bg-calendar-bg-red"></div>
+                  <span>Red</span>
+                </ContextMenuItem>
+                <ContextMenuItem
+                  onClick={() => handleColorChange('BLUE')}
+                  className="flex items-center gap-2"
+                >
+                  <div className="h-4 w-4 flex-none rounded-full border border-dynamic-light-blue/80 bg-calendar-bg-blue"></div>
+                  <span>Blue</span>
+                </ContextMenuItem>
+                <ContextMenuItem
+                  onClick={() => handleColorChange('GREEN')}
+                  className="flex items-center gap-2"
+                >
+                  <div className="h-4 w-4 flex-none rounded-full border border-dynamic-light-green/80 bg-calendar-bg-green"></div>
+                  <span>Green</span>
+                </ContextMenuItem>
+                <ContextMenuItem
+                  onClick={() => handleColorChange('YELLOW')}
+                  className="flex items-center gap-2"
+                >
+                  <div className="h-4 w-4 flex-none rounded-full border border-dynamic-light-yellow/80 bg-calendar-bg-yellow"></div>
+                  <span>Yellow</span>
+                </ContextMenuItem>
+                <ContextMenuItem
+                  onClick={() => handleColorChange('PURPLE')}
+                  className="flex items-center gap-2"
+                >
+                  <div className="h-4 w-4 flex-none rounded-full border border-dynamic-light-purple/80 bg-calendar-bg-purple"></div>
+                  <span>Purple</span>
+                </ContextMenuItem>
+                <ContextMenuItem
+                  onClick={() => handleColorChange('PINK')}
+                  className="flex items-center gap-2"
+                >
+                  <div className="h-4 w-4 flex-none rounded-full border border-dynamic-light-pink/80 bg-calendar-bg-pink"></div>
+                  <span>Pink</span>
+                </ContextMenuItem>
+                <ContextMenuItem
+                  onClick={() => handleColorChange('ORANGE')}
+                  className="flex items-center gap-2"
+                >
+                  <div className="h-4 w-4 flex-none rounded-full border border-dynamic-light-orange/80 bg-calendar-bg-orange"></div>
+                  <span>Orange</span>
+                </ContextMenuItem>
+                <ContextMenuItem
+                  onClick={() => handleColorChange('INDIGO')}
+                  className="flex items-center gap-2"
+                >
+                  <div className="h-4 w-4 flex-none rounded-full border border-dynamic-light-indigo/80 bg-calendar-bg-indigo"></div>
+                  <span>Indigo</span>
+                </ContextMenuItem>
+                <ContextMenuItem
+                  onClick={() => handleColorChange('CYAN')}
+                  className="flex items-center gap-2"
+                >
+                  <div className="h-4 w-4 flex-none rounded-full border border-dynamic-light-cyan/80 bg-calendar-bg-cyan"></div>
+                  <span>Cyan</span>
+                </ContextMenuItem>
+                <ContextMenuItem
+                  onClick={() => handleColorChange('GRAY')}
+                  className="flex items-center gap-2"
+                >
+                  <div className="h-4 w-4 flex-none rounded-full border border-dynamic-light-gray/80 bg-calendar-bg-gray"></div>
+                  <span>Gray</span>
+                </ContextMenuItem>
+              </ContextMenuSubContent>
+            </ContextMenuSub>
 
-        <ContextMenuSeparator />
+            <ContextMenuSeparator />
 
-        <ContextMenuItem
-          onClick={handleDelete}
-          className="flex items-center gap-2"
-        >
-          <Trash2 className="h-4 w-4" />
-          <span>Delete Event</span>
-        </ContextMenuItem>
-      </ContextMenuContent>
+            <ContextMenuItem
+              onClick={handleDelete}
+              className="flex items-center gap-2"
+            >
+              <Trash2 className="h-4 w-4" />
+              <span>Delete Event</span>
+            </ContextMenuItem>
+          </ContextMenuContent>
+        ))}
     </ContextMenu>
   );
 }
+
+function datesEqual(left: Date[], right: Date[]) {
+  if (left.length !== right.length) return false;
+  return left.every(
+    (date, index) => date.getTime() === right[index]?.getTime()
+  );
+}
+
+function eventCardPropsEqual(previous: EventCardProps, next: EventCardProps) {
+  if (previous.wsId !== next.wsId || previous.level !== next.level) {
+    return false;
+  }
+
+  if (!datesEqual(previous.dates, next.dates)) return false;
+
+  const left = previous.event as CalendarEvent & {
+    _optimisticStatus?: string;
+    _warning?: string;
+  };
+  const right = next.event as CalendarEvent & {
+    _optimisticStatus?: string;
+    _warning?: string;
+  };
+
+  return (
+    left.id === right.id &&
+    left.title === right.title &&
+    left.description === right.description &&
+    left.start_at === right.start_at &&
+    left.end_at === right.end_at &&
+    left.color === right.color &&
+    left.locked === right.locked &&
+    left.provider === right.provider &&
+    left.external_event_id === right.external_event_id &&
+    left.external_calendar_id === right.external_calendar_id &&
+    left.google_event_id === right.google_event_id &&
+    left.google_calendar_id === right.google_calendar_id &&
+    left.location === right.location &&
+    left._originalId === right._originalId &&
+    left._isMultiDay === right._isMultiDay &&
+    left._dayPosition === right._dayPosition &&
+    left._overlapCount === right._overlapCount &&
+    left._column === right._column &&
+    left._calendarName === right._calendarName &&
+    left._calendarColor === right._calendarColor &&
+    left._level === right._level &&
+    left._optimisticStatus === right._optimisticStatus &&
+    left._warning === right._warning
+  );
+}
+
+export const EventCard = memo(EventCardComponent, eventCardPropsEqual);

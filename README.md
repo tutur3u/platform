@@ -16,6 +16,50 @@ action, keep teams in sync, and let software handle more of the coordination
 load. This monorepo contains the apps, shared packages, mobile client, SDK,
 CLI, documentation, local services, and deployment tooling behind that system.
 
+## Migration Progress
+
+<!-- tanstack-rust-migration-progress:start -->
+_Generated from `apps/tanstack-web/migration/route-manifest.json`. Refresh with `bun migration:tanstack:readme` after route ownership changes._
+
+![Overall migration progress](https://img.shields.io/static/v1?color=fb8c00&label=Overall&message=28.03%25+terminal&style=flat-square) ![Rust backend migration progress](https://img.shields.io/static/v1?color=cf222e&label=Rust+backend&message=12.66%25+terminal&style=flat-square) ![TanStack Start migration progress](https://img.shields.io/static/v1?color=1f6feb&label=TanStack+Start&message=73.03%25+terminal&style=flat-square)
+
+| Track | Progress | Terminal | Migrated | Removed | Remaining |
+| --- | --- | ---: | ---: | ---: | ---: |
+| Overall | `[######--------------]` 28.03% | 294 / 1,049 | 275 | 19 | 755 |
+| Rust backend | `[###-----------------]` 12.66% | 99 / 782 | 82 | 17 | 683 |
+| TanStack Start | `[###############-----]` 73.03% | 195 / 267 | 193 | 2 | 72 |
+
+<details>
+<summary>Remaining work by route kind</summary>
+
+| Kind | Progress | Terminal | Remaining |
+| --- | --- | ---: | ---: |
+| api | `[##--------------]` 12.32% | 94 / 763 | 669 |
+| page | `[###########-----]` 70.24% | 144 / 205 | 61 |
+| layout | `[#############---]` 81.03% | 47 / 58 | 11 |
+| cron | `[##--------------]` 15.38% | 2 / 13 | 11 |
+| trpc | `[----------------]` 0% | 0 / 2 | 2 |
+| route-handler | `[############----]` 75% | 3 / 4 | 1 |
+| loading | `[################]` 100% | 2 / 2 | 0 |
+| error | `[################]` 100% | 1 / 1 | 0 |
+| not-found | `[################]` 100% | 1 / 1 | 0 |
+
+</details>
+
+<details>
+<summary>Next legacy artifacts in the manifest</summary>
+
+| Route | Owner | Methods | Source |
+| --- | --- | --- | --- |
+| `/api/:wsId/*path?` | Rust backend | `GET, HEAD, POST, PUT, PATCH, DELETE, OPTIONS` | `apps/web/src/app/api/[wsId]/[[...path]]/route.ts` |
+| `/api/admin/*path?` | Rust backend | `GET, HEAD, POST, PUT, PATCH, DELETE, OPTIONS` | `apps/web/src/app/api/admin/[[...path]]/route.ts` |
+| `/api/ai/*path?` | Rust backend | `GET, HEAD, POST, PUT, PATCH, DELETE, OPTIONS` | `apps/web/src/app/api/ai/[[...path]]/route.ts` |
+| `/api/ai/chat` | Rust backend | `POST` | `apps/web/src/legacy-api-routes/ai/chat/route.ts` |
+| `/api/ai/chat/delete-file` | Rust backend | `POST` | `apps/web/src/legacy-api-routes/ai/chat/delete-file/route.ts` |
+
+</details>
+<!-- tanstack-rust-migration-progress:end -->
+
 ## What Tuturuuu Builds
 
 | Product layer | What it does | Where to start |
@@ -76,7 +120,7 @@ app-local duplicates.
 | APIs | Next.js Route Handlers, tRPC, `@tuturuuu/internal-api` |
 | AI | Vercel AI SDK and provider-specific packages |
 | Mobile | Flutter, Dart, BLoC/Cubit |
-| Tests and checks | Vitest, Playwright, Biome, tsgo, Flutter checks |
+| Tests and checks | Vitest, Playwright, Biome, tsc, Flutter checks |
 | Deployment | Vercel, GitHub Actions, Docker blue/green workflow |
 
 ## Quick Start
@@ -220,7 +264,9 @@ and self-hosted blue/green deployment.
 
 Dockerized web commands read `apps/web/.env.local`. Redis is enabled by default
 inside the Docker web flow and can be disabled with `--without-redis` when
-testing the memory-only fallback path.
+testing Redis-unavailable behavior. In that mode, `apps/web` fails open for
+Redis-backed route rate limits and IP-block enforcement while preserving normal
+auth, authorization, payload-size, Turnstile, suspension, and validation checks.
 
 See the [Web Docker Deployment](https://docs.tuturuuu.com/build/devops/web-docker-deployment)
 runbook for flags, lock recovery, BuildKit throttling, blue/green cutover, and

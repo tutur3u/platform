@@ -20,6 +20,7 @@ import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
 import { useEffect } from 'react';
 import { PostApprovalActions } from '@/components/post-approval-actions';
+import { DeliveryDiagnostics } from './delivery-diagnostics';
 import { ForceSendPostButton } from './force-send-button';
 import {
   getPostApprovalStatusAppearance,
@@ -72,7 +73,9 @@ export function PostDisplay({
       ? t('delivery_issue_reason_missing_email')
       : postEmail.delivery_issue_reason === 'missing_sender_platform_user'
         ? t('delivery_issue_reason_missing_sender_platform_user')
-        : null;
+        : postEmail.delivery_issue_reason === 'blacklisted_email_or_domain'
+          ? t('delivery_issue_reason_blacklisted_email_or_domain')
+          : null;
   const hasFollowUp = Boolean(
     postEmail.approval_rejection_reason || postEmail.queue_last_error
   );
@@ -90,33 +93,55 @@ export function PostDisplay({
       <div className="flex flex-col gap-3 rounded-t-lg border-b px-4 py-4 backdrop-blur-sm">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h3 className="font-semibold text-lg">{t('details_title')}</h3>
-          <div className="flex flex-wrap items-center gap-1.5">
-            <Badge variant="outline" className={stageAppearance.className}>
-              <stageAppearance.icon
-                className={cn(
-                  'mr-1 h-3.5 w-3.5',
-                  stageAppearance.iconClassName
-                )}
-              />
-              {t(stageAppearance.labelKey)}
-            </Badge>
-            {approvalAppearance && (
-              <Badge variant="outline" className={approvalAppearance.className}>
-                <approvalAppearance.icon className="mr-1 h-3.5 w-3.5" />
-                {t(approvalAppearance.labelKey)}
-              </Badge>
-            )}
-            {queueAppearance && (
-              <Badge variant="outline" className={queueAppearance.className}>
-                <queueAppearance.icon
+          <div className="grid w-full grid-cols-1 gap-2 sm:w-auto sm:grid-cols-3">
+            <div className="space-y-1 rounded-md border bg-background/70 p-2">
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wide">
+                {t('review_stage')}
+              </p>
+              <Badge variant="outline" className={stageAppearance.className}>
+                <stageAppearance.icon
                   className={cn(
                     'mr-1 h-3.5 w-3.5',
-                    queueAppearance.iconClassName
+                    stageAppearance.iconClassName
                   )}
                 />
-                {t(queueAppearance.labelKey)}
+                {t(stageAppearance.labelKey)}
               </Badge>
-            )}
+            </div>
+            <div className="space-y-1 rounded-md border bg-background/70 p-2">
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wide">
+                {t('approval_status')}
+              </p>
+              {approvalAppearance ? (
+                <Badge
+                  variant="outline"
+                  className={approvalAppearance.className}
+                >
+                  <approvalAppearance.icon className="mr-1 h-3.5 w-3.5" />
+                  {t(approvalAppearance.labelKey)}
+                </Badge>
+              ) : (
+                <Badge variant="outline">{t('not_available')}</Badge>
+              )}
+            </div>
+            <div className="space-y-1 rounded-md border bg-background/70 p-2">
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wide">
+                {t('delivery_status')}
+              </p>
+              {queueAppearance ? (
+                <Badge variant="outline" className={queueAppearance.className}>
+                  <queueAppearance.icon
+                    className={cn(
+                      'mr-1 h-3.5 w-3.5',
+                      queueAppearance.iconClassName
+                    )}
+                  />
+                  {t(queueAppearance.labelKey)}
+                </Badge>
+              ) : (
+                <Badge variant="outline">{t('delivery_not_queued')}</Badge>
+              )}
+            </div>
           </div>
         </div>
         {(canApprovePosts || canShowForceSend) &&
@@ -141,6 +166,7 @@ export function PostDisplay({
                   postId={postEmail.post_id}
                   userId={postEmail.user_id}
                   compact
+                  onCompleted={() => onApprovalCompleted?.(postEmail)}
                 />
               )}
             </div>
@@ -229,6 +255,8 @@ export function PostDisplay({
               </p>
             </div>
           )}
+
+          <DeliveryDiagnostics postEmail={postEmail} />
 
           <Separator />
 

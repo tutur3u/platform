@@ -39,8 +39,8 @@ vi.mock('@/lib/workspace-helper', () => ({
   ) => mocks.normalizeWorkspaceId(...args),
 }));
 
-import { POST as revokePOST } from '@/app/api/ai/temp-auth/revoke/route';
-import { POST as tokenPOST } from '@/app/api/ai/temp-auth/token/route';
+import { POST as revokePOST } from '@/legacy-api-routes/ai/temp-auth/revoke/route';
+import { POST as tokenPOST } from '@/legacy-api-routes/ai/temp-auth/token/route';
 
 function postRequest(body?: unknown) {
   return new Request('http://localhost/api/ai/temp-auth/token', {

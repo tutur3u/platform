@@ -1,0 +1,959 @@
+'use client';
+
+import {
+  Check,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  ExternalLink,
+  FileText,
+  Loader2,
+  MessageSquare,
+  Shield as ShieldIcon,
+  Star,
+  Trophy,
+  X,
+  XIcon,
+} from '@tuturuuu/icons';
+import type { WorkspaceConfig } from '@tuturuuu/types/primitives/WorkspaceConfig';
+import { Badge } from '@tuturuuu/ui/badge';
+import { Button } from '@tuturuuu/ui/button';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@tuturuuu/ui/collapsible';
+import ReportPreview from '@tuturuuu/ui/custom/report-preview';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@tuturuuu/ui/dialog';
+import { DiffViewer } from '@tuturuuu/ui/diff-viewer';
+import { useWorkspaceConfigs } from '@tuturuuu/ui/hooks/use-workspace-config';
+import { ScrollArea } from '@tuturuuu/ui/scroll-area';
+import { Textarea } from '@tuturuuu/ui/textarea';
+// @/constants/configs/reports just re-exports availableConfigs from this source.
+import { availableConfigs } from '@tuturuuu/utils/configs/reports';
+import { cn } from '@tuturuuu/utils/format';
+import { useTranslations } from 'next-intl';
+import { useTheme } from 'next-themes';
+import type { ReactNode } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { Link } from '../../../../lib/platform/next-link-shim';
+import {
+  type ApprovalItem,
+  useLatestApprovedLog,
+  useLatestApprovedPostLog,
+} from '../hooks/use-approvals';
+import { getStatusColorClasses } from '../utils';
+
+interface ApprovalDetailDialogProps {
+  wsId: string;
+  item: ApprovalItem | null;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  formatDate: (value?: string | null) => string;
+  canApprove: boolean;
+  onApprove: (id: string) => void;
+  onUnapprove: (id: string) => void;
+  onReject: (params: { id: string; reason: string }) => void;
+  isApproving: boolean;
+  isUnapproving: boolean;
+  isRejecting: boolean;
+  items?: ApprovalItem[];
+  onNavigateToItem?: (item: ApprovalItem) => void;
+}
+
+export function ApprovalDetailDialog({
+  wsId,
+  item,
+  open,
+  onOpenChange,
+  formatDate,
+  canApprove,
+  onApprove,
+  onUnapprove,
+  onReject,
+  isApproving,
+  isUnapproving,
+  isRejecting,
+  items = [],
+  onNavigateToItem,
+}: ApprovalDetailDialogProps) {
+  const t = useTranslations('approvals');
+  const { resolvedTheme } = useTheme();
+  const [showRejectForm, setShowRejectForm] = useState(false);
+  const [rejectReason, setRejectReason] = useState('');
+
+  // Extract config IDs from availableConfigs for batch fetching (filter out any without id)
+  const configIds = useMemo(
+    () =>
+      availableConfigs
+        .map((config) => config.id)
+        .filter((id): id is string => Boolean(id)),
+    []
+  );
+
+  // Use batch query to fetch workspace configs
+  const configsQuery = useWorkspaceConfigs(wsId, configIds);
+
+  // Transform the fetched config data into WorkspaceConfig[] format
+  const configsData: WorkspaceConfig[] = useMemo(() => {
+    const fetchedConfigs = configsQuery.data;
+    if (!fetchedConfigs) return [];
+
+    // Merge fetched values with availableConfigs defaults
+    return availableConfigs
+      .filter((config): config is typeof config & { id: string } =>
+        Boolean(config.id)
+      )
+      .map((baseConfig) => {
+        const fetchedValue = fetchedConfigs[baseConfig.id];
+        return {
+          ...baseConfig,
+          value: fetchedValue ?? baseConfig.defaultValue,
+        } as WorkspaceConfig;
+      });
+  }, [configsQuery.data]);
+
+  const configMap = useMemo(() => {
+    const map = new Map<string, string>();
+    configsData.forEach((config) => {
+      if (config.id && config.value) {
+        map.set(config.id, config.value);
+      }
+    });
+    return map;
+  }, [configsData]);
+
+  const getConfig = (id: string) => configMap.get(id);
+
+  const parseDynamicText = (text?: string | null): ReactNode => {
+    if (!text) return '';
+    const segments = text.split(/({{.*?}})/g).filter(Boolean);
+    const parsedText = segments.map((segment, index) => {
+      const match = segment.match(/{{(.*?)}}/);
+      if (match) {
+        const key = match?.[1]?.trim() || '';
+        if (key === 'user_name') {
+          const userId = item?.kind === 'reports' ? item.user_id : undefined;
+          const userName =
+            (item?.kind === 'reports' ? item.user_name : undefined) || '...';
+          if (userId) {
+            return (
+              <Link
+                key={key + index}
+                href={`/${wsId}/users/database/${userId}`}
+              >
+                <Badge
+                  variant="secondary"
+                  className="cursor-pointer hover:bg-secondary/80"
+                >
+                  {userName}
+                </Badge>
+              </Link>
+            );
+          }
+          return (
+            <Badge key={key + index} variant="secondary">
+              {userName}
+            </Badge>
+          );
+        }
+        if (key === 'group_name') {
+          const groupId = item?.group_id;
+          const groupName = item?.group_name || '...';
+          if (groupId) {
+            return (
+              <Link key={key + index} href={`/${wsId}/users/groups/${groupId}`}>
+                <Badge
+                  variant="outline"
+                  className="cursor-pointer hover:bg-muted"
+                >
+                  {groupName}
+                </Badge>
+              </Link>
+            );
+          }
+          return (
+            <Badge key={key + index} variant="outline">
+              {groupName}
+            </Badge>
+          );
+        }
+        if (key === 'group_manager_name') {
+          return (
+            <span key={key + index} className="font-semibold">
+              {(item?.kind === 'reports' ? item.creator_name : undefined) ||
+                '...'}
+            </span>
+          );
+        }
+        return (
+          <span
+            key={key + index}
+            className="rounded bg-foreground px-1 py-0.5 font-semibold text-background"
+          >
+            {key}
+          </span>
+        );
+      }
+      return segment;
+    });
+    return parsedText;
+  };
+
+  // Fetch latest approved log using useQuery hook
+  const reportId = item?.kind === 'reports' && open ? item.id : null;
+  const postId = item?.kind === 'posts' && open ? (item.post_id ?? null) : null;
+
+  const { data: previousReportVersion } = useLatestApprovedLog(wsId, reportId);
+  const { data: previousPostVersion } = useLatestApprovedPostLog(wsId, postId);
+
+  useEffect(() => {
+    if (!open) {
+      setShowRejectForm(false);
+      setRejectReason('');
+    }
+  }, [open]);
+
+  const currentIndex = useMemo(
+    () => (item ? items.findIndex((i) => i.id === item.id) : -1),
+    [item, items]
+  );
+  const hasPrev = currentIndex > 0;
+  const hasNext = currentIndex >= 0 && currentIndex < items.length - 1;
+  const positionLabel =
+    items.length > 0 && currentIndex >= 0
+      ? `${currentIndex + 1} / ${items.length}`
+      : null;
+
+  if (!item) return null;
+
+  const status =
+    item.kind === 'reports'
+      ? item.report_approval_status
+      : item.post_approval_status;
+  const isReport = item.kind === 'reports';
+  const previousVersion = isReport
+    ? previousReportVersion
+    : previousPostVersion;
+  const hasPreviousVersion = !!previousVersion;
+  const isCompareMode = hasPreviousVersion;
+  const modifierName = item.modifier_name || t('labels.unknown_user');
+
+  // Helper function to render score display
+  const renderScore = (
+    score: number | null | undefined,
+    isPrevious = false
+  ) => {
+    if (score === null || score === undefined) {
+      return (
+        <span className="text-muted-foreground text-sm">
+          {t('detail.noData')}
+        </span>
+      );
+    }
+    return (
+      <div className="flex items-center gap-2">
+        <span
+          className={cn(
+            'font-bold text-2xl',
+            isPrevious ? 'text-muted-foreground' : 'text-dynamic-blue'
+          )}
+        >
+          {score.toFixed(1)}
+        </span>
+        <span className="text-muted-foreground text-sm">/ 100</span>
+      </div>
+    );
+  };
+
+  // Helper function to render scores array
+  const getScoreColorClass = (
+    score: number | null,
+    isPrevious: boolean
+  ): string => {
+    if (score === null || isPrevious) {
+      return 'bg-muted text-muted-foreground';
+    }
+    if (score >= 80) {
+      return 'bg-dynamic-green/10 text-dynamic-green';
+    }
+    if (score >= 60) {
+      return 'bg-dynamic-orange/10 text-dynamic-orange';
+    }
+    return 'bg-dynamic-red/10 text-dynamic-red';
+  };
+
+  const renderScoresArray = (
+    scores: number[] | null | undefined,
+    isPrevious = false
+  ) => {
+    if (!scores || scores.length === 0) {
+      return (
+        <span className="text-muted-foreground text-sm">
+          {t('detail.noData')}
+        </span>
+      );
+    }
+    return (
+      <div className="grid grid-cols-5 gap-2 sm:grid-cols-8 md:grid-cols-10">
+        {scores.map((score, index) => (
+          <div
+            key={index}
+            className={cn(
+              'flex flex-col items-center justify-center rounded-md p-2 text-xs',
+              getScoreColorClass(score, isPrevious)
+            )}
+          >
+            <span className="font-medium">{score !== null ? score : '-'}</span>
+            <span className="text-[10px] opacity-70">
+              {t('detail.day', { day: index + 1 })}
+            </span>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  // Helper function to render content
+  const renderContent = (
+    content: string | null | undefined,
+    isPrevious = false
+  ) => {
+    return (
+      <pre
+        className={cn(
+          'whitespace-pre-wrap rounded-lg p-4 font-mono text-sm',
+          isPrevious
+            ? 'bg-muted text-muted-foreground'
+            : 'border border-dynamic-blue/20 bg-dynamic-blue/5'
+        )}
+      >
+        {content || t('detail.noContent')}
+      </pre>
+    );
+  };
+
+  // Helper function to render feedback/notes
+  const renderFeedbackOrNotes = (
+    text: string | null | undefined,
+    isPrevious = false
+  ) => {
+    if (!text) {
+      return (
+        <span className="text-muted-foreground text-sm">
+          {t('detail.noData')}
+        </span>
+      );
+    }
+    return (
+      <div
+        className={cn(
+          'rounded-lg border p-4',
+          isPrevious
+            ? 'border-muted bg-muted text-muted-foreground'
+            : 'border-dynamic-orange/20 bg-dynamic-orange/5'
+        )}
+      >
+        <p className="text-sm">{text}</p>
+      </div>
+    );
+  };
+
+  // Current version content component
+  const CurrentVersionContent = () => (
+    <div className="space-y-3">
+      {/* Content Section */}
+      <Collapsible defaultOpen>
+        <CollapsibleTrigger className="flex w-full items-center justify-between rounded-lg bg-muted/50 px-3 py-2 transition-colors hover:bg-muted/80 [&[data-state=open]>svg]:rotate-180">
+          <div className="flex items-center gap-2 font-medium text-sm">
+            <FileText className="h-4 w-4" />
+            {t('detail.content')}
+          </div>
+          <ChevronDown className="h-4 w-4 transition-transform duration-200" />
+        </CollapsibleTrigger>
+        <CollapsibleContent className="pt-2">
+          {isReport ? (
+            <div className="rounded-lg border bg-card p-4">
+              <ReportPreview
+                t={t}
+                lang="en" // Ideally this should be dynamic but useLocale is at top level
+                parseDynamicText={parseDynamicText}
+                getConfig={getConfig}
+                theme={resolvedTheme === 'dark' ? 'dark' : 'light'}
+                data={{
+                  title: item.title || '',
+                  content: item.content || '',
+                  score: (item.score as number | null)?.toFixed(1) || '',
+                  feedback: (item.feedback as string | null) || '',
+                }}
+                notice={
+                  !canApprove ? (
+                    <div className="mb-4 rounded-lg border border-dynamic-orange/30 bg-dynamic-orange/10 p-4">
+                      <div className="flex items-start gap-3">
+                        <ShieldIcon className="mt-0.5 h-5 w-5 text-dynamic-orange" />
+                        <div className="flex-1">
+                          <div className="font-semibold text-dynamic-orange">
+                            {t('detail.pendingApproval')}
+                          </div>
+                          <div className="mt-1 text-dynamic-orange/80 text-sm">
+                            {t('detail.pendingApprovalDescription')}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ) : undefined
+                }
+              />
+            </div>
+          ) : (
+            renderContent(item.content)
+          )}
+        </CollapsibleContent>
+      </Collapsible>
+
+      {/* Report-specific fields */}
+      {isReport ? (
+        <>
+          {/* Score Section */}
+          {'score' in item && (
+            <Collapsible defaultOpen>
+              <CollapsibleTrigger className="flex w-full items-center justify-between rounded-lg bg-muted/50 px-3 py-2 transition-colors hover:bg-muted/80 [&[data-state=open]>svg]:rotate-180">
+                <div className="flex items-center gap-2 font-medium text-sm">
+                  <Trophy className="h-4 w-4" />
+                  {t('detail.score')}
+                </div>
+                <ChevronDown className="h-4 w-4 transition-transform duration-200" />
+              </CollapsibleTrigger>
+              <CollapsibleContent className="pt-2">
+                {renderScore(item.score as number | null)}
+              </CollapsibleContent>
+            </Collapsible>
+          )}
+
+          {/* Scores Array Section */}
+          {'scores' in item && (
+            <Collapsible defaultOpen>
+              <CollapsibleTrigger className="flex w-full items-center justify-between rounded-lg bg-muted/50 px-3 py-2 transition-colors hover:bg-muted/80 [&[data-state=open]>svg]:rotate-180">
+                <div className="flex items-center gap-2 font-medium text-sm">
+                  <Star className="h-4 w-4" />
+                  {t('detail.scores')}
+                </div>
+                <ChevronDown className="h-4 w-4 transition-transform duration-200" />
+              </CollapsibleTrigger>
+              <CollapsibleContent className="pt-2">
+                {renderScoresArray(item.scores as number[] | null)}
+              </CollapsibleContent>
+            </Collapsible>
+          )}
+
+          {/* Feedback Section */}
+          {'feedback' in item && (
+            <Collapsible defaultOpen>
+              <CollapsibleTrigger className="flex w-full items-center justify-between rounded-lg bg-muted/50 px-3 py-2 transition-colors hover:bg-muted/80 [&[data-state=open]>svg]:rotate-180">
+                <div className="flex items-center gap-2 font-medium text-sm">
+                  <MessageSquare className="h-4 w-4" />
+                  {t('detail.feedback')}
+                </div>
+                <ChevronDown className="h-4 w-4 transition-transform duration-200" />
+              </CollapsibleTrigger>
+              <CollapsibleContent className="pt-2">
+                {renderFeedbackOrNotes(item.feedback as string | null)}
+              </CollapsibleContent>
+            </Collapsible>
+          )}
+        </>
+      ) : (
+        /* Post-specific fields */
+        item.notes && (
+          <Collapsible defaultOpen>
+            <CollapsibleTrigger className="flex w-full items-center justify-between rounded-lg bg-muted/50 px-3 py-2 transition-colors hover:bg-muted/80 [&[data-state=open]>svg]:rotate-180">
+              <div className="flex items-center gap-2 font-medium text-sm">
+                <MessageSquare className="h-4 w-4" />
+                {t('detail.notes')}
+              </div>
+              <ChevronDown className="h-4 w-4 transition-transform duration-200" />
+            </CollapsibleTrigger>
+            <CollapsibleContent className="pt-2">
+              {renderFeedbackOrNotes(item.notes as string | null)}
+            </CollapsibleContent>
+          </Collapsible>
+        )
+      )}
+    </div>
+  );
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-h-[90vh] overflow-hidden p-0 md:max-w-6xl">
+        <DialogHeader className="border-b px-8 pt-8 pb-4">
+          <div className="flex items-start justify-between">
+            <div className="space-y-1">
+              <DialogTitle className="font-semibold text-lg leading-none">
+                {item.title || t('labels.untitled')}
+              </DialogTitle>
+              <DialogDescription className="text-muted-foreground text-sm">
+                {isReport
+                  ? t('detail.reportSubtitle')
+                  : t('detail.postSubtitle')}
+              </DialogDescription>
+            </div>
+            <div className="flex items-center gap-2">
+              {items.length > 1 && onNavigateToItem && (
+                <div className="flex items-center gap-1">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      if (hasPrev) onNavigateToItem(items[currentIndex - 1]!);
+                    }}
+                    disabled={!hasPrev || isApproving || isRejecting}
+                    className="h-7 w-7 p-0"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  {positionLabel && (
+                    <span className="min-w-12 text-center text-muted-foreground text-xs tabular-nums">
+                      {positionLabel}
+                    </span>
+                  )}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      if (hasNext) onNavigateToItem(items[currentIndex + 1]!);
+                    }}
+                    disabled={!hasNext || isApproving || isRejecting}
+                    className="h-7 w-7 p-0"
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
+              {isReport && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-7 gap-1"
+                  asChild
+                >
+                  <Link
+                    href={`/${wsId}/users/reports?groupId=${item.group_id ?? ''}&userId=${item.user_id ?? ''}&reportId=${item.id}`}
+                    target="_blank"
+                  >
+                    <ExternalLink className="h-3.5 w-3.5" />
+                    {t('actions.openReport')}
+                  </Link>
+                </Button>
+              )}
+              <span
+                className={cn(
+                  'inline-flex items-center rounded-full border px-2 py-0.5 font-medium text-xs',
+                  getStatusColorClasses(status)
+                )}
+              >
+                {t(
+                  `status.${status.toLowerCase() as 'pending' | 'approved' | 'rejected'}`
+                )}
+              </span>
+            </div>
+          </div>
+          <div className="flex justify-between">
+            <div className="flex items-center gap-4 pt-2 text-muted-foreground text-xs">
+              <span>
+                {t('labels.created_at')} {formatDate(item.created_at)}
+              </span>
+              {item.group_name && (
+                <span className="flex items-center gap-1">
+                  {t('labels.group')}:
+                  {item.group_id ? (
+                    <Link href={`/${wsId}/users/groups/${item.group_id}`}>
+                      <Badge
+                        variant="outline"
+                        className="cursor-pointer hover:bg-muted"
+                      >
+                        {item.group_name}
+                      </Badge>
+                    </Link>
+                  ) : (
+                    <Badge variant="outline">{item.group_name}</Badge>
+                  )}
+                </span>
+              )}
+              {isReport && item.user_name && (
+                <span className="flex items-center gap-1">
+                  {t('labels.user')}:
+                  {item.user_id ? (
+                    <Link href={`/${wsId}/users/database/${item.user_id}`}>
+                      <Badge
+                        variant="secondary"
+                        className="cursor-pointer hover:bg-secondary/80"
+                      >
+                        {item.user_name}
+                      </Badge>
+                    </Link>
+                  ) : (
+                    <Badge variant="secondary">{item.user_name}</Badge>
+                  )}
+                </span>
+              )}
+            </div>
+            {/* Action Buttons in Header */}
+            {canApprove &&
+              (status === 'PENDING' ||
+                (status === 'APPROVED' && item.kind === 'posts')) &&
+              (showRejectForm ? (
+                <div className="flex items-center gap-2">
+                  <Textarea
+                    placeholder={t('detail.rejectionReasonPlaceholder')}
+                    value={rejectReason}
+                    onChange={(e) => setRejectReason(e.target.value)}
+                    className="h-8 min-h-0 w-48 resize-none text-xs"
+                  />
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setShowRejectForm(false);
+                      setRejectReason('');
+                    }}
+                    className="h-8 w-8 p-0"
+                  >
+                    <XIcon className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => {
+                      if (!item) return;
+                      onReject({
+                        id: item.id,
+                        reason: rejectReason.trim(),
+                      });
+                    }}
+                    disabled={isRejecting || !rejectReason.trim()}
+                    className="h-8 gap-1"
+                  >
+                    {isRejecting && (
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                    )}
+                    <X className="h-3 w-3" />
+                    {t('actions.confirmReject')}
+                  </Button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-1">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowRejectForm(true)}
+                    className="h-8 gap-1"
+                  >
+                    <X className="h-3 w-3" />
+                    {t('actions.reject')}
+                  </Button>
+                  {status === 'APPROVED' && item.kind === 'posts' ? (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => onUnapprove(item.id)}
+                      disabled={!item.can_remove_approval || isUnapproving}
+                      className="h-8 gap-1"
+                    >
+                      {isUnapproving && (
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                      )}
+                      <X className="h-3 w-3" />
+                      {t('actions.unapprove')}
+                    </Button>
+                  ) : (
+                    <Button
+                      size="sm"
+                      onClick={() => {
+                        if (!item) return;
+                        onApprove(item.id);
+                      }}
+                      disabled={isApproving}
+                      className="h-8 gap-1 bg-dynamic-green hover:bg-dynamic-green/90"
+                    >
+                      {isApproving && (
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                      )}
+                      <Check className="h-3 w-3" />
+                      {t('actions.approve')}
+                    </Button>
+                  )}
+                </div>
+              ))}
+          </div>
+        </DialogHeader>
+
+        <div className="flex max-h-[calc(90vh-10rem)] flex-col gap-0 overflow-y-auto md:grid md:grid-cols-[1fr,320px]">
+          {/* Left Column - Main Content */}
+          <div className="order-2 space-y-0 lg:order-1">
+            {isCompareMode ? (
+              // Diff comparison for reports with previous version
+              <div className="flex h-[calc(90vh-8rem)] flex-col">
+                <div className="flex items-center justify-between border-border border-b bg-muted/30 px-4 py-3">
+                  <div className="flex items-center gap-2 font-medium text-muted-foreground text-sm">
+                    {t('detail.previousApprovedVersion')}
+                    {previousVersion?.approved_at && (
+                      <span className="font-normal text-muted-foreground text-xs">
+                        ({formatDate(previousVersion.approved_at)})
+                      </span>
+                    )}
+                    <span className="text-foreground/40">→</span>
+                    <span className="text-dynamic-blue">
+                      {t('detail.currentVersion')}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1 text-muted-foreground text-xs">
+                    <span>{t('labels.last_modified_by')}</span>
+                    <span className="font-medium">{modifierName}</span>
+                  </div>
+                </div>
+                <ScrollArea className="flex-1">
+                  <div className="space-y-4 p-4">
+                    {/* Content Diff */}
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2 font-medium text-muted-foreground text-sm">
+                        <FileText className="h-4 w-4" />
+                        {t('detail.content')}
+                      </div>
+                      <DiffViewer
+                        oldValue={previousVersion?.content}
+                        newValue={item.content}
+                        oldLabel={t('detail.previousApprovedVersion')}
+                        newLabel={t('detail.currentVersion')}
+                        granularity="word"
+                        viewMode="unified"
+                        showLineNumbers={false}
+                      />
+                      {previousVersion?.content === (item.content ?? '') &&
+                        renderContent(item.content)}
+                    </div>
+
+                    {/* Report-specific diffs */}
+                    {isReport && (
+                      <>
+                        {'score' in item && (
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-2 font-medium text-muted-foreground text-sm">
+                              <Trophy className="h-4 w-4" />
+                              {t('detail.score')}
+                            </div>
+                            <div className="flex items-center gap-4">
+                              {previousReportVersion?.score != null && (
+                                <>
+                                  {renderScore(
+                                    previousReportVersion.score,
+                                    true
+                                  )}
+                                  <span className="text-muted-foreground">
+                                    →
+                                  </span>
+                                </>
+                              )}
+                              {renderScore(item.score as number | null)}
+                            </div>
+                          </div>
+                        )}
+
+                        {'scores' in item && (
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-2 font-medium text-muted-foreground text-sm">
+                              <Star className="h-4 w-4" />
+                              {t('detail.scores')}
+                            </div>
+                            {renderScoresArray(item.scores as number[] | null)}
+                          </div>
+                        )}
+
+                        {'feedback' in item && (
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-2 font-medium text-muted-foreground text-sm">
+                              <MessageSquare className="h-4 w-4" />
+                              {t('detail.feedback')}
+                            </div>
+                            <DiffViewer
+                              oldValue={previousReportVersion?.feedback}
+                              newValue={item.feedback as string | null}
+                              oldLabel={t('detail.previousApprovedVersion')}
+                              newLabel={t('detail.currentVersion')}
+                              granularity="word"
+                              viewMode="unified"
+                              showLineNumbers={false}
+                            />
+                            {previousReportVersion?.feedback ===
+                              ((item.feedback as string | null) ?? '') &&
+                              renderFeedbackOrNotes(
+                                item.feedback as string | null
+                              )}
+                          </div>
+                        )}
+                      </>
+                    )}
+
+                    {/* Post-specific diffs */}
+                    {!isReport &&
+                      (item.notes || previousPostVersion?.notes) && (
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2 font-medium text-muted-foreground text-sm">
+                            <MessageSquare className="h-4 w-4" />
+                            {t('detail.notes')}
+                          </div>
+                          <DiffViewer
+                            oldValue={previousPostVersion?.notes}
+                            newValue={item.notes as string | null}
+                            oldLabel={t('detail.previousApprovedVersion')}
+                            newLabel={t('detail.currentVersion')}
+                            granularity="word"
+                            viewMode="unified"
+                            showLineNumbers={false}
+                          />
+                          {previousPostVersion?.notes ===
+                            ((item.notes as string | null) ?? '') &&
+                            renderFeedbackOrNotes(item.notes as string | null)}
+                        </div>
+                      )}
+                  </div>
+                </ScrollArea>
+              </div>
+            ) : (
+              // Single view for posts or reports without previous version
+              <div className="flex h-[calc(90vh-8rem)] flex-col">
+                <div className="border-border border-b bg-dynamic-blue/5 px-6 py-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 font-medium text-dynamic-blue text-sm">
+                      {t('detail.currentVersion')}
+                    </div>
+                    <span className="text-muted-foreground text-xs">
+                      {t('detail.pendingApproval')}
+                    </span>
+                  </div>
+                  <div className="mt-1 flex items-center gap-1 text-muted-foreground text-xs">
+                    <span>{t('labels.last_modified_by')}</span>
+                    <span className="font-medium">{modifierName}</span>
+                  </div>
+                </div>
+                <ScrollArea className="flex-1">
+                  <div className="p-6">
+                    <CurrentVersionContent />
+                  </div>
+                </ScrollArea>
+              </div>
+            )}
+          </div>
+          {/* End Left Column */}
+
+          {/* Right Column - Metadata & Status */}
+          <div className="order-1 border-border border-b bg-muted/20 lg:order-2 lg:border-b-0 lg:border-l lg:bg-transparent">
+            <div className="space-y-4 p-4 lg:h-[calc(90vh-8rem)] lg:overflow-y-auto">
+              {/* Metadata Card */}
+              <div className="rounded-lg border border-border bg-card p-4 shadow-sm">
+                <h4 className="mb-3 font-semibold text-sm">
+                  {t('detail.metadata')}
+                </h4>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">
+                      {t('labels.created_at')}
+                    </span>
+                    <span>{formatDate(item.created_at)}</span>
+                  </div>
+                  {isReport && item.user_name && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-muted-foreground">
+                        {t('labels.user')}
+                      </span>
+                      {item.user_id ? (
+                        <Link href={`/${wsId}/users/database/${item.user_id}`}>
+                          <Badge
+                            variant="secondary"
+                            className="cursor-pointer hover:bg-secondary/80"
+                          >
+                            {item.user_name}
+                          </Badge>
+                        </Link>
+                      ) : (
+                        <Badge variant="secondary">{item.user_name}</Badge>
+                      )}
+                    </div>
+                  )}
+                  {item.group_name && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-muted-foreground">
+                        {t('labels.group')}
+                      </span>
+                      {item.group_id ? (
+                        <Link href={`/${wsId}/users/groups/${item.group_id}`}>
+                          <Badge
+                            variant="outline"
+                            className="cursor-pointer hover:bg-muted"
+                          >
+                            {item.group_name}
+                          </Badge>
+                        </Link>
+                      ) : (
+                        <Badge variant="outline">{item.group_name}</Badge>
+                      )}
+                    </div>
+                  )}
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">
+                      {t('labels.last_modified_by')}
+                    </span>
+                    <span>{modifierName}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Status Info */}
+              {item.approved_at || item.rejected_at || item.rejection_reason ? (
+                <div className="rounded-lg border border-border bg-card p-4 shadow-sm">
+                  <h4 className="mb-3 font-semibold text-sm">
+                    {t('detail.statusHistory')}
+                  </h4>
+                  <div className="space-y-2 text-sm">
+                    {item.approved_at && (
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">
+                          {t('labels.approved_at')}
+                        </span>
+                        <span>{formatDate(item.approved_at)}</span>
+                      </div>
+                    )}
+                    {item.rejected_at && (
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">
+                          {t('labels.rejected_at')}
+                        </span>
+                        <span>{formatDate(item.rejected_at)}</span>
+                      </div>
+                    )}
+                    {item.rejection_reason && (
+                      <div className="pt-2">
+                        <span className="text-muted-foreground">
+                          {t('labels.rejection_reason')}:
+                        </span>
+                        <p className="mt-1 rounded bg-dynamic-red/10 px-2 py-1 text-dynamic-red text-xs">
+                          {item.rejection_reason}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ) : null}
+            </div>
+          </div>
+          {/* End Right Column */}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}

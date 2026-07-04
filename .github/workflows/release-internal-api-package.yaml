@@ -53,7 +53,7 @@ jobs:
       actions: write
       contents: read
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - uses: actions/setup-node@v6
         with:
@@ -73,7 +73,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Setup bun
         uses: ./.github/actions/setup-bun-with-retry
@@ -88,7 +88,9 @@ jobs:
         run: bash scripts/ci/run-with-backoff.sh bun install
 
       - name: Build workspace dependencies
-        run: bun run --filter @tuturuuu/types build
+        run: |
+          bun run --filter @tuturuuu/types build
+          bun run --filter @tuturuuu/supabase build
 
       - name: Build package
         working-directory: packages/internal-api
@@ -109,7 +111,7 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Setup bun
         uses: ./.github/actions/setup-bun-with-retry
@@ -144,7 +146,9 @@ jobs:
 
       - name: Build workspace dependencies
         if: steps.version-check.outputs.should_publish == 'true'
-        run: bun run --filter @tuturuuu/types build
+        run: |
+          bun run --filter @tuturuuu/types build
+          bun run --filter @tuturuuu/supabase build
 
       - name: Build package
         if: steps.version-check.outputs.should_publish == 'true'

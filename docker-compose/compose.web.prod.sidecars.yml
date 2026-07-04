@@ -199,6 +199,7 @@ services:
       start_period: 10s
       retries: 3
     init: true
+    restart: unless-stopped
 
   storage-unzip-proxy:
     build:
@@ -219,6 +220,7 @@ services:
       start_period: 5s
       retries: 3
     init: true
+    restart: unless-stopped
 
   chat-realtime:
     build:

@@ -92,10 +92,13 @@ describe('SettingsDialogShell keyboard navigation', () => {
     renderShell();
 
     const dialog = screen.getByRole('dialog');
+    const className = dialog.getAttribute('class') ?? '';
 
     expect(dialog).toHaveClass('h-dvh');
     expect(dialog).toHaveClass('w-screen');
+    expect(dialog).toHaveClass('bg-background');
     expect(dialog).toHaveClass('rounded-none');
+    expect(className).not.toMatch(/animate-in|fade-in|zoom-in|slide-in/);
     expect(
       screen.getAllByRole('button', { name: 'settings.back_to_app' }).length
     ).toBeGreaterThan(0);

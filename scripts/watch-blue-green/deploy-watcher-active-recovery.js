@@ -38,7 +38,14 @@ module.exports = function createActiveRecovery({
     }
 
     const sc = currentBlueGreen.serviceContainers ?? {};
-    if (sc.proxy || sc['web-blue'] || sc['web-green']) {
+    const hasWebLaneContainer = Object.entries(sc).some(
+      ([serviceName, containerId]) =>
+        /^(?:web|tanstack-web)-(?:blue|green)$/u.test(serviceName) &&
+        typeof containerId === 'string' &&
+        containerId.length > 0
+    );
+
+    if (sc.proxy || hasWebLaneContainer) {
       return false;
     }
 
@@ -316,6 +323,7 @@ module.exports = function createActiveRecovery({
         env,
         fsImpl,
         latestCommit,
+        log,
         now,
         paths,
         runCommand: run,

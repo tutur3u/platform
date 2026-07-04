@@ -1,6 +1,8 @@
 import { mkdtemp, readFile, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import type { JSONContent } from '@tiptap/core';
+import { decodeTaskDescriptionYjsState } from '@tuturuuu/utils/task-description-codec';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import packageJson from '../../package.json';
 import {
@@ -11,6 +13,19 @@ import {
   normalizeLabelColor,
   runCli,
 } from './commands';
+
+function findNode(
+  content: JSONContent | undefined,
+  type: string
+): JSONContent | undefined {
+  if (!content) return undefined;
+  if (content.type === type) return content;
+
+  for (const child of content.content ?? []) {
+    const match = findNode(child, type);
+    if (match) return match;
+  }
+}
 
 describe('CLI commands', () => {
   afterEach(() => {
@@ -114,6 +129,7 @@ describe('CLI commands', () => {
       readFile(configPath, 'utf8').then(JSON.parse)
     ).resolves.toEqual({
       baseUrl: 'http://localhost:7803',
+      tasksBaseUrl: 'http://localhost:7809',
     });
   });
 
@@ -129,6 +145,196 @@ describe('CLI commands', () => {
 
     expect(write).toHaveBeenCalledWith(
       expect.stringContaining('"baseUrl": "https://tuturuuu.localhost"')
+    );
+  });
+
+  it('fetches external project delivery previews with workspace override', async () => {
+    await writeTestConfig({
+      baseUrl: 'https://tuturuuu.com',
+      currentWorkspaceId: 'ws-config',
+      session: {
+        accessToken: 'access-token',
+        refreshToken: 'refresh-token',
+      },
+    });
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue(Response.json({ mode: 'preview' }));
+    const write = vi
+      .spyOn(process.stdout, 'write')
+      .mockImplementation(() => true);
+
+    await runCli([
+      'external',
+      'projects',
+      'delivery',
+      '--workspace',
+      'ws-override',
+      '--preview',
+      '--json',
+      '--no-update-check',
+    ]);
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://tuturuuu.com/api/v1/workspaces/ws-override/external-projects/delivery?preview=true',
+      expect.objectContaining({
+        cache: 'no-store',
+      })
+    );
+    expect(write).toHaveBeenCalledWith(expect.stringContaining('"preview"'));
+  });
+
+  it('writes external project snapshot output to a file', async () => {
+    await writeTestConfig({
+      baseUrl: 'https://tuturuuu.com',
+      currentWorkspaceId: 'ws-1',
+      session: {
+        accessToken: 'access-token',
+        refreshToken: 'refresh-token',
+      },
+    });
+    const dir = await mkdtemp(join(tmpdir(), 'tuturuuu-external-out-'));
+    const outputPath = join(dir, 'snapshot.json');
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      Response.json({
+        collections: [{ id: 'characters' }],
+      })
+    );
+    const write = vi
+      .spyOn(process.stdout, 'write')
+      .mockImplementation(() => true);
+
+    await runCli([
+      'external',
+      'projects',
+      'snapshot',
+      '--out',
+      outputPath,
+      '--no-update-check',
+    ]);
+
+    await expect(
+      readFile(outputPath, 'utf8').then(JSON.parse)
+    ).resolves.toEqual({
+      collections: [{ id: 'characters' }],
+    });
+    expect(write).toHaveBeenCalledWith(`Wrote ${outputPath}\n`);
+  });
+
+  it('loads external project manifests for diff commands', async () => {
+    await writeTestConfig({
+      baseUrl: 'https://tuturuuu.com',
+      currentWorkspaceId: 'ws-1',
+      session: {
+        accessToken: 'access-token',
+        refreshToken: 'refresh-token',
+      },
+    });
+    const dir = await mkdtemp(join(tmpdir(), 'tuturuuu-external-manifest-'));
+    const manifestPath = join(dir, 'external-project.json');
+    const manifest = {
+      adapter: 'exocorpse',
+      collections: [{ id: 'characters' }],
+      version: 1,
+    };
+    await writeFile(manifestPath, JSON.stringify(manifest));
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue(Response.json({ changes: [] }));
+    vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
+
+    await runCli([
+      'external',
+      'projects',
+      'diff',
+      '--manifest',
+      manifestPath,
+      '--json',
+      '--no-update-check',
+    ]);
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://tuturuuu.com/api/v1/workspaces/ws-1/external-projects/sync/diff',
+      expect.objectContaining({
+        body: JSON.stringify({ manifest }),
+        cache: 'no-store',
+        method: 'POST',
+      })
+    );
+  });
+
+  it('requires confirmation before external project apply', async () => {
+    await writeTestConfig({
+      baseUrl: 'https://tuturuuu.com',
+      currentWorkspaceId: 'ws-1',
+      session: {
+        accessToken: 'access-token',
+        refreshToken: 'refresh-token',
+      },
+    });
+    const dir = await mkdtemp(join(tmpdir(), 'tuturuuu-external-apply-'));
+    const manifestPath = join(dir, 'external-project.json');
+    await writeFile(manifestPath, '{"adapter":"exocorpse","version":1}');
+    const fetchMock = vi.spyOn(globalThis, 'fetch');
+
+    await expect(
+      runCli([
+        'external',
+        'projects',
+        'apply',
+        '--manifest',
+        manifestPath,
+        '--no-update-check',
+      ])
+    ).rejects.toThrow('APPLY_EXTERNAL_PROJECT_SYNC');
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('passes force through confirmed external project apply commands', async () => {
+    await writeTestConfig({
+      baseUrl: 'https://tuturuuu.com',
+      currentWorkspaceId: 'ws-1',
+      session: {
+        accessToken: 'access-token',
+        refreshToken: 'refresh-token',
+      },
+    });
+    const dir = await mkdtemp(join(tmpdir(), 'tuturuuu-external-force-'));
+    const manifestPath = join(dir, 'external-project.json');
+    const manifest = {
+      adapter: 'exocorpse',
+      collections: [],
+      version: 1,
+    };
+    await writeFile(manifestPath, JSON.stringify(manifest));
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue(Response.json({ applied: true }));
+    vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
+
+    await runCli([
+      'external',
+      'projects',
+      'apply',
+      '--manifest',
+      manifestPath,
+      '--confirm',
+      'APPLY_EXTERNAL_PROJECT_SYNC',
+      '--force',
+      '--json',
+      '--no-update-check',
+    ]);
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://tuturuuu.com/api/v1/workspaces/ws-1/external-projects/sync/apply',
+      expect.objectContaining({
+        body: JSON.stringify({
+          force: true,
+          manifest,
+        }),
+        cache: 'no-store',
+        method: 'POST',
+      })
     );
   });
 
@@ -215,6 +421,391 @@ describe('CLI commands', () => {
     expect(write).toHaveBeenCalledWith(
       expect.stringContaining('"balance": 150')
     );
+  });
+
+  it('runs task search with a positional query through the search API', async () => {
+    await writeTestConfig({
+      baseUrl: 'https://tuturuuu.com',
+      currentWorkspaceId: 'team-ws',
+      session: {
+        accessToken: 'access-token',
+        refreshToken: 'refresh-token',
+      },
+    });
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(
+        Response.json([
+          { id: 'team-ws', name: 'Team', personal: false },
+          { id: 'personal-ws', name: 'Personal', personal: true },
+        ])
+      )
+      .mockResolvedValueOnce(
+        Response.json({
+          tasks: [
+            { id: 'task-2', name: 'Second ranked', similarity: 0.7 },
+            { id: 'task-1', name: 'First ranked', similarity: 0.9 },
+          ],
+        })
+      );
+    const write = vi
+      .spyOn(process.stdout, 'write')
+      .mockImplementation(() => true);
+
+    await runCli([
+      'tasks',
+      'search',
+      'deadline',
+      'review',
+      '--json',
+      '--no-update-check',
+    ]);
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      'https://tasks.tuturuuu.com/api/v1/workspaces/personal-ws/tasks/search',
+      expect.objectContaining({
+        body: JSON.stringify({
+          mode: 'hybrid',
+          query: 'deadline review',
+        }),
+        method: 'POST',
+      })
+    );
+    const output = write.mock.calls.map(([value]) => String(value)).join('');
+    expect(output.indexOf('"id": "task-2"')).toBeLessThan(
+      output.indexOf('"id": "task-1"')
+    );
+  });
+
+  it('maps task search flags to mode match count and threshold', async () => {
+    await writeTestConfig({
+      baseUrl: 'https://tuturuuu.com',
+      currentWorkspaceId: 'personal',
+      session: {
+        accessToken: 'access-token',
+        refreshToken: 'refresh-token',
+      },
+    });
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(
+        Response.json([{ id: 'team-ws', name: 'Team', personal: false }])
+      )
+      .mockResolvedValueOnce(Response.json({ tasks: [] }));
+    vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
+
+    await runCli([
+      'tasks',
+      'search',
+      '--query',
+      'deadline review',
+      '--mode',
+      'semantic',
+      '--limit',
+      '7',
+      '--threshold',
+      '0.4',
+      '--workspace',
+      'team-ws',
+      '--json',
+      '--no-update-check',
+    ]);
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      'https://tasks.tuturuuu.com/api/v1/workspaces/team-ws/tasks/search',
+      expect.objectContaining({
+        body: JSON.stringify({
+          matchCount: 7,
+          matchThreshold: 0.4,
+          mode: 'semantic',
+          query: 'deadline review',
+        }),
+        method: 'POST',
+      })
+    );
+  });
+
+  it('lists remote task templates through the workspace API', async () => {
+    await writeTestConfig({
+      baseUrl: 'https://tuturuuu.com',
+      currentWorkspaceId: 'ws-1',
+      session: {
+        accessToken: 'access-token',
+        refreshToken: 'refresh-token',
+      },
+    });
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      Response.json({
+        templates: [
+          {
+            id: 'template-1',
+            name: 'Bug report',
+            slug: 'bug-report',
+            task_name: 'Investigate bug',
+            visibility: 'workspace',
+          },
+        ],
+      })
+    );
+    const write = vi
+      .spyOn(process.stdout, 'write')
+      .mockImplementation(() => true);
+
+    await runCli([
+      'task-templates',
+      'list',
+      '--visibility',
+      'workspace',
+      '--json',
+      '--no-update-check',
+    ]);
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://tasks.tuturuuu.com/api/v1/workspaces/ws-1/task-templates?includeArchived=false&visibility=workspace',
+      expect.objectContaining({ cache: 'no-store' })
+    );
+    expect(write).toHaveBeenCalledWith(
+      expect.stringContaining('"slug": "bug-report"')
+    );
+  });
+
+  it('creates remote task templates with normalized CLI metadata', async () => {
+    await writeTestConfig({
+      baseUrl: 'https://tuturuuu.com',
+      currentWorkspaceId: 'ws-1',
+      session: {
+        accessToken: 'access-token',
+        refreshToken: 'refresh-token',
+      },
+    });
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      Response.json({
+        template: {
+          id: 'template-1',
+          name: 'Bug report',
+          slug: 'bug-report',
+        },
+      })
+    );
+    vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
+
+    await runCli([
+      'task-templates',
+      'create',
+      '--name',
+      'Bug report',
+      '--key',
+      'bug-report',
+      '--title',
+      'Investigate bug',
+      '--priority',
+      'high',
+      '--labels',
+      'label-1,label-2',
+      '--visibility',
+      'workspace',
+      '--json',
+      '--no-update-check',
+    ]);
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://tasks.tuturuuu.com/api/v1/workspaces/ws-1/task-templates',
+      expect.objectContaining({
+        body: JSON.stringify({
+          key: 'bug-report',
+          label_ids: ['label-1', 'label-2'],
+          name: 'Bug report',
+          priority: 'high',
+          task_name: 'Investigate bug',
+          visibility: 'workspace',
+        }),
+        method: 'POST',
+      })
+    );
+  });
+
+  it('uses remote task templates with list and task-name overrides', async () => {
+    await writeTestConfig({
+      baseUrl: 'https://tuturuuu.com',
+      currentWorkspaceId: 'ws-1',
+      session: {
+        accessToken: 'access-token',
+        refreshToken: 'refresh-token',
+      },
+    });
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      Response.json({
+        task: { id: 'task-1', name: 'Checkout bug' },
+        template: { id: 'template-1', slug: 'bug-report' },
+      })
+    );
+    vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
+
+    await runCli([
+      'task-templates',
+      'use',
+      'bug-report',
+      '--list',
+      'list-1',
+      '--name',
+      'Checkout bug',
+      '--priority',
+      'critical',
+      '--json',
+      '--no-update-check',
+    ]);
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://tasks.tuturuuu.com/api/v1/workspaces/ws-1/task-templates/bug-report/instantiate',
+      expect.objectContaining({
+        body: JSON.stringify({
+          listId: 'list-1',
+          name: 'Checkout bug',
+          priority: 'critical',
+        }),
+        method: 'POST',
+      })
+    );
+  });
+
+  it('creates tasks from local markdown templates with CLI overrides winning', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'tuturuuu-cli-template-command-'));
+    const templatePath = join(dir, 'bug.md');
+    await writeFile(
+      templatePath,
+      `---
+name: Bug report
+task_name: Investigate template bug
+priority: low
+label_ids:
+  - label-1
+---
+
+| Field | Value |
+| --- | --- |
+| Owner | Platform |
+`,
+      'utf8'
+    );
+    await writeTestConfig({
+      baseUrl: 'https://tuturuuu.com',
+      currentListId: 'saved-list',
+      currentWorkspaceId: 'ws-1',
+      session: {
+        accessToken: 'access-token',
+        refreshToken: 'refresh-token',
+      },
+    });
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      Response.json({
+        id: 'task-1',
+        name: 'Override title',
+      })
+    );
+    vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
+
+    await runCli([
+      'tasks',
+      'create',
+      '--template',
+      templatePath,
+      '--name',
+      'Override title',
+      '--list',
+      'override-list',
+      '--priority',
+      'high',
+      '--json',
+      '--no-update-check',
+    ]);
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://tasks.tuturuuu.com/api/v1/workspaces/ws-1/tasks',
+      expect.objectContaining({ method: 'POST' })
+    );
+    const body = JSON.parse(String(fetchMock.mock.calls[0]?.[1]?.body));
+    expect(body).toEqual({
+      assignee_ids: [],
+      description: [
+        '| Field | Value |',
+        '| --- | --- |',
+        '| Owner | Platform |',
+      ].join('\n'),
+      description_yjs_state: expect.any(Array),
+      end_date: null,
+      estimation_points: null,
+      label_ids: ['label-1'],
+      listId: 'override-list',
+      name: 'Override title',
+      priority: 'high',
+      project_ids: [],
+      start_date: null,
+    });
+    expect(
+      findNode(
+        decodeTaskDescriptionYjsState(body.description_yjs_state),
+        'table'
+      )
+    ).toBeDefined();
+  });
+
+  it('imports local markdown task templates with generated table Yjs state', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'tuturuuu-cli-template-import-'));
+    const templatePath = join(dir, 'handoff.md');
+    await writeFile(
+      templatePath,
+      `---
+name: Handoff
+task_name: Prepare handoff
+---
+
+| Field | Value |
+| --- | --- |
+| Owner | Platform |
+`,
+      'utf8'
+    );
+    await writeTestConfig({
+      baseUrl: 'https://tuturuuu.com',
+      currentWorkspaceId: 'ws-1',
+      session: {
+        accessToken: 'access-token',
+        refreshToken: 'refresh-token',
+      },
+    });
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      Response.json({
+        template: {
+          id: 'template-1',
+          name: 'Handoff',
+          slug: 'handoff',
+        },
+      })
+    );
+    vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
+
+    await runCli([
+      'task-templates',
+      'import',
+      templatePath,
+      '--json',
+      '--no-update-check',
+    ]);
+
+    const body = JSON.parse(String(fetchMock.mock.calls[0]?.[1]?.body));
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://tasks.tuturuuu.com/api/v1/workspaces/ws-1/task-templates',
+      expect.objectContaining({ method: 'POST' })
+    );
+    expect(body.description).toContain('| Field | Value |');
+    expect(
+      findNode(
+        decodeTaskDescriptionYjsState(body.description_yjs_state),
+        'table'
+      )
+    ).toBeDefined();
   });
 
   it('creates wallet checkpoints with timezone-normalized checked_at values', async () => {
@@ -1025,11 +1616,32 @@ describe('CLI commands', () => {
 
     expect(write).toHaveBeenCalledWith(
       expect.stringContaining(
-        'Usage: ttr tasks [list|use|get|create|update|delete|move|bulk]'
+        'Usage: ttr tasks [list|search|use|get|create|update|description|delete|move|bulk]'
       )
     );
     expect(write).toHaveBeenCalledWith(
       expect.stringContaining('Task lists are sorted by priority and due date.')
+    );
+  });
+
+  it.each([
+    ['task-templates', '--help'],
+    ['help', 'task-templates'],
+    ['task-templates', 'help'],
+  ])('prints task template group help for %s', async (...args) => {
+    const write = vi
+      .spyOn(process.stdout, 'write')
+      .mockImplementation(() => true);
+
+    await runCli(args);
+
+    expect(write).toHaveBeenCalledWith(
+      expect.stringContaining(
+        'Usage: ttr task-templates [list|show|create|update|delete|use|import|export|save-from-task]'
+      )
+    );
+    expect(write).toHaveBeenCalledWith(
+      expect.stringContaining('.tuturuuu/task-templates')
     );
   });
 
@@ -1051,6 +1663,25 @@ describe('CLI commands', () => {
     );
     expect(write).toHaveBeenCalledWith(
       expect.stringContaining('Finance commands use the selected workspace')
+    );
+  });
+
+  it.each([
+    ['external', '--help'],
+    ['external', 'projects', '--help'],
+    ['help', 'external', 'projects'],
+  ])('prints external project help for %s', async (...args) => {
+    const write = vi
+      .spyOn(process.stdout, 'write')
+      .mockImplementation(() => true);
+
+    await runCli(args);
+
+    expect(write).toHaveBeenCalledWith(
+      expect.stringContaining('ttr external projects')
+    );
+    expect(write).toHaveBeenCalledWith(
+      expect.stringContaining('APPLY_EXTERNAL_PROJECT_SYNC')
     );
   });
 
@@ -1223,6 +1854,93 @@ describe('CLI commands', () => {
     expect(write).toHaveBeenCalledWith(
       expect.stringContaining('ttr tasks create "Add Tuturuuu CLI"')
     );
+    expect(write).toHaveBeenCalledWith(
+      expect.stringContaining('--template <key-or-path>')
+    );
+  });
+
+  it.each([
+    ['tasks', 'description', '--help'],
+    ['help', 'tasks', 'description'],
+    ['tasks', 'help', 'description'],
+  ])('prints scoped description help for %s', async (...args) => {
+    const write = vi
+      .spyOn(process.stdout, 'write')
+      .mockImplementation(() => true);
+
+    await runCli(args);
+
+    expect(write).toHaveBeenCalledWith(
+      expect.stringContaining(
+        'Usage: ttr tasks description [get|set|append|prepend|edit|clear] [task-id] [options]'
+      )
+    );
+    expect(write).toHaveBeenCalledWith(
+      expect.stringContaining(
+        'ttr tasks description set VHP-12 --file notes.md'
+      )
+    );
+  });
+
+  it('prints tiptap help without requiring login', async () => {
+    const write = vi
+      .spyOn(process.stdout, 'write')
+      .mockImplementation(() => true);
+
+    await runCli(['tiptap', '--help']);
+
+    expect(write).toHaveBeenCalledWith(
+      expect.stringContaining(
+        'Usage: ttr tiptap [parse|encode|decode|validate] [options]'
+      )
+    );
+  });
+
+  it('runs local tiptap parsing without reading CLI session config', async () => {
+    vi.stubEnv(
+      'TUTURUUU_CONFIG',
+      '/tmp/tuturuuu-cli-missing-config/config.json'
+    );
+    const write = vi
+      .spyOn(process.stdout, 'write')
+      .mockImplementation(() => true);
+
+    await runCli([
+      'tiptap',
+      'parse',
+      '--text',
+      'Hello **CLI**',
+      '--format',
+      'markdown',
+      '--output',
+      'text',
+    ]);
+
+    expect(write).toHaveBeenCalledWith(expect.stringContaining('Hello CLI'));
+  });
+
+  it('parses markdown tables through the local tiptap command', async () => {
+    vi.stubEnv(
+      'TUTURUUU_CONFIG',
+      '/tmp/tuturuuu-cli-missing-config/config.json'
+    );
+    const write = vi
+      .spyOn(process.stdout, 'write')
+      .mockImplementation(() => true);
+
+    await runCli([
+      'tiptap',
+      'parse',
+      '--text',
+      ['| Field | Value |', '| --- | --- |', '| Owner | Platform |'].join('\n'),
+      '--format',
+      'markdown',
+      '--output',
+      'json',
+    ]);
+
+    const output = write.mock.calls.map(([value]) => String(value)).join('');
+    expect(findNode(JSON.parse(output), 'table')).toBeDefined();
   });
 
   it.each([
@@ -1330,6 +2048,170 @@ describe('CLI commands', () => {
       completed_at: null,
       list_id: 'closed-list-1',
     });
+  });
+
+  it('creates task descriptions from CLI flags', async () => {
+    const taskId = '11111111-1111-4111-8111-111111111111';
+    await writeTestConfig({
+      baseUrl: 'https://tuturuuu.com',
+      currentListId: 'list-1',
+      currentWorkspaceId: 'ws-1',
+      session: {
+        accessToken: 'access-token',
+        refreshToken: 'refresh-token',
+      },
+    });
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      Response.json({
+        task: { id: taskId, name: 'Task with description' },
+      })
+    );
+    vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
+
+    await runCli([
+      'tasks',
+      'create',
+      'Task with description',
+      '--description',
+      'Acceptance criteria',
+      '--json',
+      '--no-update-check',
+    ]);
+
+    const body = JSON.parse(fetchMock.mock.calls[0]?.[1]?.body as string);
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://tasks.tuturuuu.com/api/v1/workspaces/ws-1/tasks',
+      expect.objectContaining({ method: 'POST' })
+    );
+    expect(JSON.parse(body.description).content[0].content[0].text).toBe(
+      'Acceptance criteria'
+    );
+    expect(Array.isArray(body.description_yjs_state)).toBe(true);
+  });
+
+  it('creates task descriptions from markdown files with tables', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'tuturuuu-cli-description-'));
+    const descriptionPath = join(dir, 'table.md');
+    await writeFile(
+      descriptionPath,
+      ['| Field | Value |', '| --- | --- |', '| Owner | Platform |'].join('\n'),
+      'utf8'
+    );
+    await writeTestConfig({
+      baseUrl: 'https://tuturuuu.com',
+      currentListId: 'list-1',
+      currentWorkspaceId: 'ws-1',
+      session: {
+        accessToken: 'access-token',
+        refreshToken: 'refresh-token',
+      },
+    });
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      Response.json({
+        task: { id: 'task-1', name: 'Task with table' },
+      })
+    );
+    vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
+
+    await runCli([
+      'tasks',
+      'create',
+      'Task with table',
+      '--description-file',
+      descriptionPath,
+      '--description-format',
+      'markdown',
+      '--json',
+      '--no-update-check',
+    ]);
+
+    const body = JSON.parse(fetchMock.mock.calls[0]?.[1]?.body as string);
+    expect(findNode(JSON.parse(body.description), 'table')).toBeDefined();
+    expect(
+      findNode(
+        decodeTaskDescriptionYjsState(body.description_yjs_state),
+        'table'
+      )
+    ).toBeDefined();
+  });
+
+  it('updates task descriptions through the dedicated description route', async () => {
+    const taskId = '11111111-1111-4111-8111-111111111111';
+    await writeTestConfig({
+      baseUrl: 'https://tuturuuu.com',
+      currentWorkspaceId: 'ws-1',
+      session: {
+        accessToken: 'access-token',
+        refreshToken: 'refresh-token',
+      },
+    });
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      Response.json({
+        description: null,
+        description_yjs_state: null,
+      })
+    );
+    vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
+
+    await runCli([
+      'tasks',
+      'update',
+      taskId,
+      '--description',
+      'Surgical edit',
+      '--json',
+      '--no-update-check',
+    ]);
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock).toHaveBeenCalledWith(
+      `https://tasks.tuturuuu.com/api/v1/workspaces/ws-1/tasks/${taskId}/description`,
+      expect.objectContaining({ method: 'PATCH' })
+    );
+    const body = JSON.parse(fetchMock.mock.calls[0]?.[1]?.body as string);
+    expect(JSON.parse(body.description).content[0].content[0].text).toBe(
+      'Surgical edit'
+    );
+  });
+
+  it('sets task descriptions through the task description command', async () => {
+    const taskId = '11111111-1111-4111-8111-111111111111';
+    await writeTestConfig({
+      baseUrl: 'https://tuturuuu.com',
+      currentWorkspaceId: 'ws-1',
+      session: {
+        accessToken: 'access-token',
+        refreshToken: 'refresh-token',
+      },
+    });
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      Response.json({
+        description: null,
+        description_yjs_state: null,
+      })
+    );
+    vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
+
+    await runCli([
+      'tasks',
+      'description',
+      'set',
+      taskId,
+      '--text',
+      'Updated from description command',
+      '--json',
+      '--no-update-check',
+    ]);
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock).toHaveBeenCalledWith(
+      `https://tasks.tuturuuu.com/api/v1/workspaces/ws-1/tasks/${taskId}/description`,
+      expect.objectContaining({ method: 'PATCH' })
+    );
+    const body = JSON.parse(fetchMock.mock.calls[0]?.[1]?.body as string);
+    expect(JSON.parse(body.description).content[0].content[0].text).toBe(
+      'Updated from description command'
+    );
   });
 
   it('includes assigned external workspace tasks for the personal task list', async () => {

@@ -104,6 +104,9 @@ export default function UserMonthAttendance({
       return await res.json();
     },
     placeholderData: keepPreviousData,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+    refetchOnWindowFocus: false,
   });
 
   const baseData = {

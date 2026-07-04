@@ -7,20 +7,30 @@ import {
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { getBoardRealtimeChannelName } from '@tuturuuu/ui/hooks/useBoardRealtime.types';
+import { useLayoutEffect, useRef } from 'react';
 import type { ListStatusFilter } from '../../../../shared/board-header';
 import CursorOverlayMultiWrapper from '../../../../shared/cursor-overlay-multi-wrapper';
+import type {
+  SpecialTaskListPin,
+  SpecialTaskListPinState,
+} from '../../../../shared/special-task-list-pins';
 import { BoardColumn } from '../../board-column';
 import type { TaskFilters } from '../../task-filter';
 import { TaskListForm } from '../../task-list-form';
+import { compareTasksByEffectiveSortKey } from '../dnd/task-sort-key';
 import type { DragPreviewPosition } from '../dnd/use-kanban-dnd';
 import { isKanbanColumnCollapsed } from '../kanban-column-collapse';
-import { MAX_SAFE_INTEGER_SORT } from '../kanban-constants';
 import { getKanbanColumnWidth } from './kanban-column-width';
 import {
+  type KanbanDeadlineCollapsedState,
   type KanbanDeadlineLabels,
   KanbanDeadlinePanels,
+  type KanbanDeadlineSection,
 } from './kanban-deadline-panels';
 import type { KanbanDeadlineSections } from './kanban-deadline-tasks';
+
+const KANBAN_COLUMN_GAP = '0.75rem';
+const COLLAPSED_SPECIAL_LIST_WIDTH = '3.5rem';
 
 interface KanbanColumnsProps {
   columns: TaskList[];
@@ -28,6 +38,8 @@ interface KanbanColumnsProps {
   boardId: string;
   workspaceId: string;
   isPersonalWorkspace: boolean;
+  canUseBoardAssignees?: boolean;
+  assigneeMemberSource?: 'workspace' | 'board' | 'workspace-and-board';
   cursorsEnabled?: boolean;
   disableSort: boolean;
   selectedTasks: Set<string>;
@@ -55,6 +67,57 @@ interface KanbanColumnsProps {
   onTaskListCollapsedChange?: (listId: string, collapsed: boolean) => void;
   deadlineLabels?: KanbanDeadlineLabels;
   deadlineSections?: KanbanDeadlineSections;
+  deadlineSectionsLoading?: boolean;
+  deadlineSectionsCollapsed?: KanbanDeadlineCollapsedState;
+  deadlineNow?: number;
+  onDeadlineSectionCollapsedChange?: (
+    section: KanbanDeadlineSection,
+    collapsed: boolean
+  ) => void;
+  specialTaskListPins?: SpecialTaskListPinState;
+  onSpecialTaskListPinnedChange?: (
+    pin: SpecialTaskListPin,
+    pinned: boolean
+  ) => void;
+  readOnly?: boolean;
+}
+
+interface PinnedSpecialListLayout {
+  offsets: Record<string, string>;
+  totalWidth: string;
+}
+
+function toCalcExpression(parts: string[]) {
+  if (parts.length === 0) return '0px';
+  if (parts.length === 1) return parts[0] ?? '0px';
+  return `calc(${parts.join(' + ')})`;
+}
+
+function getSpecialListWidth(collapsed: boolean) {
+  return collapsed
+    ? COLLAPSED_SPECIAL_LIST_WIDTH
+    : 'var(--kanban-column-width)';
+}
+
+function getPinnedSpecialRailWidth(container: HTMLElement) {
+  const elements = Array.from(
+    container.querySelectorAll<HTMLElement>(
+      '[data-kanban-pinned-special="true"]'
+    )
+  );
+
+  if (elements.length === 0) return 0;
+
+  const rects = elements
+    .map((element) => element.getBoundingClientRect())
+    .filter((rect) => rect.width > 0);
+
+  if (rects.length === 0) return 0;
+
+  const left = Math.min(...rects.map((rect) => rect.left));
+  const right = Math.max(...rects.map((rect) => rect.right));
+
+  return Math.max(0, right - left);
 }
 
 export function KanbanColumns({
@@ -63,6 +126,8 @@ export function KanbanColumns({
   boardId,
   workspaceId,
   isPersonalWorkspace,
+  canUseBoardAssignees,
+  assigneeMemberSource,
   cursorsEnabled = true,
   disableSort,
   selectedTasks,
@@ -85,16 +150,122 @@ export function KanbanColumns({
   onTaskListCollapsedChange,
   deadlineLabels,
   deadlineSections,
+  deadlineSectionsLoading,
+  deadlineSectionsCollapsed,
+  deadlineNow,
+  onDeadlineSectionCollapsedChange,
+  specialTaskListPins,
+  onSpecialTaskListPinnedChange,
+  readOnly = false,
 }: KanbanColumnsProps) {
+  const initialScrollAnchoredBoardRef = useRef<string | null>(null);
   const realColumns = columns.filter((column) => !column.is_external_staging);
-  const snapEdgePadding = columns.length > 0 ? '0.5rem' : '0px';
-  const collapsedColumnCount = columns.filter(isKanbanColumnCollapsed).length;
+  const deadlineSectionOrder: KanbanDeadlineSection[] = ['overdue', 'upcoming'];
+  const deadlinePanelsEnabled =
+    !readOnly && Boolean(boardId && deadlineSections && deadlineLabels);
+  const reservedDeadlineSections = deadlinePanelsEnabled
+    ? deadlineSectionOrder
+    : [];
+  const snapEdgePadding =
+    columns.length > 0 || reservedDeadlineSections.length > 0
+      ? '0.5rem'
+      : '0px';
+  const collapsedColumnCount =
+    columns.filter(isKanbanColumnCollapsed).length +
+    reservedDeadlineSections.filter(
+      (section) => deadlineSectionsCollapsed?.[section] === true
+    ).length;
   const dynamicColumnWidth = getKanbanColumnWidth({
-    columnCount: columns.length,
+    columnCount: columns.length + reservedDeadlineSections.length,
     collapsedColumnCount,
     snapEdgePadding,
     fillAvailableWidth: listStatusFilter === 'all',
   });
+  const pinnedSpecialListLayout = (() => {
+    const entries: { key: string; width: string }[] = [];
+
+    if (deadlinePanelsEnabled && specialTaskListPins?.overdue) {
+      entries.push({
+        key: 'deadline:overdue',
+        width: getSpecialListWidth(deadlineSectionsCollapsed?.overdue === true),
+      });
+    }
+
+    if (deadlinePanelsEnabled && specialTaskListPins?.upcoming) {
+      entries.push({
+        key: 'deadline:upcoming',
+        width: getSpecialListWidth(
+          deadlineSectionsCollapsed?.upcoming === true
+        ),
+      });
+    }
+
+    for (const column of columns) {
+      const pinned =
+        column.is_external_staging === true
+          ? specialTaskListPins?.external_tasks === true
+          : column.status === 'closed'
+            ? specialTaskListPins?.closed_tasks === true
+            : false;
+
+      if (!pinned) continue;
+
+      entries.push({
+        key: `column:${column.id}`,
+        width: getSpecialListWidth(isKanbanColumnCollapsed(column)),
+      });
+    }
+
+    const offsets: Record<string, string> = {};
+    const parts: string[] = [];
+
+    entries.forEach((entry, index) => {
+      if (index > 0) parts.push(KANBAN_COLUMN_GAP);
+
+      offsets[entry.key] = toCalcExpression(parts);
+      parts.push(entry.width);
+    });
+
+    return {
+      offsets,
+      totalWidth: toCalcExpression(parts),
+    } satisfies PinnedSpecialListLayout;
+  })();
+  const hasLeftSpecialColumns =
+    reservedDeadlineSections.length > 0 ||
+    columns.some((column) => column.is_external_staging);
+
+  useLayoutEffect(() => {
+    if (!hasLeftSpecialColumns) return;
+    if (initialScrollAnchoredBoardRef.current === boardId) return;
+
+    const container = boardRef.current;
+    if (!container) return;
+
+    const target = container.querySelector<HTMLElement>(
+      '[data-kanban-real-column="true"]'
+    );
+    if (!target) return;
+
+    initialScrollAnchoredBoardRef.current = boardId;
+
+    const anchor = () => {
+      const pinnedRailWidth = getPinnedSpecialRailWidth(container);
+      container.scrollLeft = Math.max(
+        0,
+        target.offsetLeft - pinnedRailWidth - 8
+      );
+    };
+
+    anchor();
+
+    if (typeof window.requestAnimationFrame !== 'function') {
+      return;
+    }
+
+    const frame = window.requestAnimationFrame(anchor);
+    return () => window.cancelAnimationFrame?.(frame);
+  }, [boardId, boardRef, hasLeftSpecialColumns]);
 
   return (
     <div
@@ -105,7 +276,10 @@ export function KanbanColumns({
           '--kanban-snap-left-padding': snapEdgePadding,
           '--kanban-snap-right-padding': snapEdgePadding,
           '--kanban-column-width': dynamicColumnWidth,
-          scrollPaddingLeft: 'var(--kanban-snap-left-padding)',
+          scrollPaddingLeft:
+            pinnedSpecialListLayout.totalWidth === '0px'
+              ? 'var(--kanban-snap-left-padding)'
+              : `calc(var(--kanban-snap-left-padding) + ${pinnedSpecialListLayout.totalWidth})`,
           scrollPaddingRight: 'var(--kanban-snap-right-padding)',
         } as React.CSSProperties
       }
@@ -121,19 +295,36 @@ export function KanbanColumns({
             paddingRight: 'var(--kanban-snap-right-padding)',
           }}
         >
-          {deadlineSections && deadlineLabels && (
+          {deadlinePanelsEnabled && deadlineSections && deadlineLabels && (
             <KanbanDeadlinePanels
               availableLists={realColumns}
               boardId={boardId}
               bulkUpdateCustomDueDate={bulkUpdateCustomDueDate}
               isMultiSelectMode={isMultiSelectMode}
               isPersonalWorkspace={isPersonalWorkspace}
+              canUseBoardAssignees={canUseBoardAssignees}
+              assigneeMemberSource={assigneeMemberSource}
               labels={deadlineLabels}
               onClearSelection={onClearSelection}
+              onSectionCollapsedChange={onDeadlineSectionCollapsedChange}
               onTaskSelect={onTaskSelect}
               onUpdate={onUpdate}
               optimisticUpdateInProgress={optimisticUpdateInProgress}
               sections={deadlineSections}
+              loading={deadlineSectionsLoading}
+              collapsedSections={deadlineSectionsCollapsed}
+              deadlineNow={deadlineNow}
+              pinnedSections={{
+                overdue: specialTaskListPins?.overdue,
+                upcoming: specialTaskListPins?.upcoming,
+              }}
+              stickyOffsets={{
+                overdue: pinnedSpecialListLayout.offsets['deadline:overdue'],
+                upcoming: pinnedSpecialListLayout.offsets['deadline:upcoming'],
+              }}
+              onSectionPinnedChange={(section, pinned) =>
+                onSpecialTaskListPinnedChange?.(section, pinned)
+              }
               selectedTasks={selectedTasks}
               taskLists={columns}
               workspaceId={workspaceId}
@@ -170,14 +361,7 @@ export function KanbanColumns({
 
               // For all other lists, only sort by sort_key if parent hasn't already sorted
               if (!disableSort) {
-                const sortA = a.sort_key ?? MAX_SAFE_INTEGER_SORT;
-                const sortB = b.sort_key ?? MAX_SAFE_INTEGER_SORT;
-                if (sortA !== sortB) return sortA - sortB;
-                if (!a.created_at || !b.created_at) return 0;
-                return (
-                  new Date(a.created_at).getTime() -
-                  new Date(b.created_at).getTime()
-                );
+                return compareTasksByEffectiveSortKey(a, b);
               }
 
               return 0;
@@ -191,6 +375,8 @@ export function KanbanColumns({
                 tasks={listTasks}
                 availableLists={realColumns}
                 isPersonalWorkspace={isPersonalWorkspace}
+                canUseBoardAssignees={canUseBoardAssignees}
+                assigneeMemberSource={assigneeMemberSource}
                 onUpdate={onUpdate}
                 onAddTask={() =>
                   boardId && createTask(boardId, list.id, realColumns, filters)
@@ -210,10 +396,33 @@ export function KanbanColumns({
                 wsId={workspaceId}
                 onExternalTasksCollapsedChange={onExternalTasksCollapsedChange}
                 onTaskListCollapsedChange={onTaskListCollapsedChange}
+                specialStickyOffset={
+                  pinnedSpecialListLayout.offsets[`column:${list.id}`]
+                }
+                specialPinned={
+                  list.is_external_staging
+                    ? specialTaskListPins?.external_tasks === true
+                    : list.status === 'closed'
+                      ? specialTaskListPins?.closed_tasks === true
+                      : false
+                }
+                onSpecialPinnedChange={(pinned) => {
+                  if (list.is_external_staging) {
+                    onSpecialTaskListPinnedChange?.('external_tasks', pinned);
+                    return;
+                  }
+
+                  if (list.status === 'closed') {
+                    onSpecialTaskListPinnedChange?.('closed_tasks', pinned);
+                  }
+                }}
+                readOnly={readOnly}
               />
             );
           })}
-          <TaskListForm boardId={boardId ?? ''} onListCreated={onUpdate} />
+          {!readOnly && (
+            <TaskListForm boardId={boardId ?? ''} onListCreated={onUpdate} />
+          )}
         </div>
       </SortableContext>
 

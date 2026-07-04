@@ -14,6 +14,15 @@ export const HANDLE_WIDTH = 12;
 export const DRAG_ACTIVATION_PX = 6;
 export const COLLAPSED_UNSCHEDULED_PREVIEW_COUNT = 4;
 
+export function getTimelineDayGridBackground(dayWidth: number, opacity = 0.45) {
+  const safeDayWidth = Math.max(1, dayWidth);
+  const lineStart = Math.max(0, safeDayWidth - 1);
+
+  return {
+    backgroundImage: `repeating-linear-gradient(to right, transparent 0, transparent ${lineStart}px, hsl(var(--border) / ${opacity}) ${lineStart}px, hsl(var(--border) / ${opacity}) ${safeDayWidth}px)`,
+  };
+}
+
 export function getDensityConfig(density: Density) {
   switch (density) {
     case 'compact':

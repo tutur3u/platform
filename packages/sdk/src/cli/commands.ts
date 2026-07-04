@@ -1,6 +1,7 @@
 import { spawn } from 'node:child_process';
 import type {
   ListWorkspaceTasksOptions,
+  SearchWorkspaceTasksPayload,
   WorkspaceTaskApiTask,
   WorkspaceTasksResponse,
 } from '@tuturuuu/internal-api/tasks';
@@ -29,9 +30,11 @@ import {
   normalizeHostBaseUrl,
   readCliConfig,
   resolveCliHostBaseUrl,
+  resolveCliTasksBaseUrl,
   writeCliConfig,
 } from './config';
 import { runDevboxCommand } from './devbox';
+import { runExternalProjectsCommand } from './external-projects';
 import { runFinanceCommand } from './finance';
 import { getGlobalHelp, getHelpOutput } from './help';
 import {
@@ -55,6 +58,21 @@ import {
   selectListId,
   selectTaskId,
 } from './selection';
+import {
+  getTaskDescriptionPayloadFromFlags,
+  runTaskDescriptionCommand,
+  shouldUseChunkedTaskDescriptionUpdate,
+  updateTaskDescriptionWithBestTransport,
+} from './task-description';
+import {
+  isLocalTaskTemplateReference,
+  listLocalTaskTemplates,
+  parseLocalTaskTemplateFile,
+  resolveLocalTaskTemplatePath,
+  taskTemplateToMarkdown,
+  writeLocalTaskTemplate,
+} from './task-templates';
+import { runTiptapCommand } from './tiptap';
 import { checkForCliUpdate, isCliUpdateCheckDisabled } from './update';
 
 const doneActions = new Set(['complete', 'completed', 'done', 'mark-done']);
@@ -62,9 +80,15 @@ const closeActions = new Set(['archive', 'close', 'closed', 'mark-closed']);
 const DEFAULT_TASK_PAGE_SIZE = 50;
 const ACTIVE_TASK_LIST_STATUSES = ['not_started', 'active'] as const;
 const DOCUMENT_TASK_LIST_STATUSES = ['documents'] as const;
+const TASK_TEMPLATE_PRIORITIES = ['critical', 'high', 'normal', 'low'] as const;
+const TASK_TEMPLATE_VISIBILITIES = ['private', 'workspace'] as const;
+
+type TaskTemplatePriority = (typeof TASK_TEMPLATE_PRIORITIES)[number];
+type TaskTemplateVisibility = (typeof TASK_TEMPLATE_VISIBILITIES)[number];
 const REVIEW_TASK_LIST_STATUSES = ['review'] as const;
 const DONE_TASK_LIST_STATUSES = ['review', 'done'] as const;
 const CLOSED_TASK_LIST_STATUSES = ['closed'] as const;
+const TASK_SEARCH_MODES = ['text', 'semantic', 'hybrid'] as const;
 const LABEL_COLOR_ALIASES: Record<string, string> = {
   amber: '#D97706',
   blue: '#2563EB',
@@ -90,6 +114,7 @@ type CliTask = WorkspaceTaskApiTask & {
   workspace_id?: string | null;
   workspace_name?: string | null;
 };
+type TaskSearchMode = (typeof TASK_SEARCH_MODES)[number];
 
 interface TaskPaginationSummary {
   hasNextPage: boolean;
@@ -190,6 +215,60 @@ function parseNonNegativeInteger(value: string | undefined) {
   if (!value) return undefined;
   const parsed = Number.parseInt(value, 10);
   return Number.isFinite(parsed) && parsed >= 0 ? parsed : undefined;
+}
+
+function parseTaskSearchMode(flags: Record<string, FlagValue>): TaskSearchMode {
+  const mode = getFlag(flags, 'mode') || 'hybrid';
+  if (TASK_SEARCH_MODES.includes(mode as TaskSearchMode)) {
+    return mode as TaskSearchMode;
+  }
+
+  throw new Error('Invalid task search mode. Use text, semantic, or hybrid.');
+}
+
+function parseTaskSearchPositiveInteger(
+  value: string | undefined,
+  flagName: string
+) {
+  if (!value) return undefined;
+  const parsed = Number(value);
+
+  if (Number.isInteger(parsed) && parsed > 0) return parsed;
+
+  throw new Error(`${flagName} must be a positive integer.`);
+}
+
+function parseTaskSearchThreshold(value: string | undefined) {
+  if (!value) return undefined;
+  const parsed = Number(value);
+
+  if (Number.isFinite(parsed) && parsed >= 0 && parsed <= 1) {
+    return parsed;
+  }
+
+  throw new Error('--threshold must be a number between 0 and 1.');
+}
+
+function parseTaskTemplatePriority(value: string | undefined) {
+  if (!value) return undefined;
+  if (TASK_TEMPLATE_PRIORITIES.includes(value as TaskTemplatePriority)) {
+    return value as TaskTemplatePriority;
+  }
+
+  throw new Error(
+    'Invalid task template priority. Use critical, high, normal, or low.'
+  );
+}
+
+function parseTaskTemplateVisibility(value: string | undefined) {
+  if (!value) return undefined;
+  if (TASK_TEMPLATE_VISIBILITIES.includes(value as TaskTemplateVisibility)) {
+    return value as TaskTemplateVisibility;
+  }
+
+  throw new Error(
+    'Invalid task template visibility. Use private or workspace.'
+  );
 }
 
 function getTaskPagination(flags: Record<string, FlagValue>) {
@@ -319,6 +398,38 @@ function getCliTaskListOptions(
     listStatuses,
     offset: pagination.offset,
     q: getFlag(flags, 'q'),
+  };
+}
+
+function getCliTaskSearchPayload(
+  flags: Record<string, FlagValue>,
+  positionals: string[]
+): SearchWorkspaceTasksPayload {
+  const query =
+    getFlag(flags, 'query') ||
+    getFlag(flags, 'q') ||
+    positionals.slice(2).join(' ');
+  const trimmedQuery = query.trim();
+
+  if (!trimmedQuery) {
+    throw new Error(
+      'Missing search query. Use `ttr tasks search <query>` or --query.'
+    );
+  }
+
+  const matchCount = parseTaskSearchPositiveInteger(
+    getFlag(flags, 'match-count') || getFlag(flags, 'limit'),
+    '--match-count'
+  );
+  const matchThreshold = parseTaskSearchThreshold(
+    getFlag(flags, 'match-threshold') || getFlag(flags, 'threshold')
+  );
+
+  return {
+    ...(matchCount !== undefined ? { matchCount } : {}),
+    ...(matchThreshold !== undefined ? { matchThreshold } : {}),
+    mode: parseTaskSearchMode(flags),
+    query: trimmedQuery,
   };
 }
 
@@ -522,6 +633,41 @@ export async function listTasksForCli(
   };
 }
 
+export async function searchTasksForCli(
+  client: TuturuuuUserClient,
+  _config: CliConfig,
+  workspaceId: string,
+  flags: Record<string, FlagValue>,
+  positionals: string[]
+): Promise<{
+  response: Awaited<ReturnType<TuturuuuUserClient['tasks']['search']>>;
+  workspaceName?: string;
+}> {
+  const payload = getCliTaskSearchPayload(flags, positionals);
+  const workspaces = await client.workspaces.list();
+  const requestedWorkspace = resolveWorkspace(workspaceId, workspaces);
+  const personalWorkspace = workspaces.find((workspace) => workspace.personal);
+  const currentWorkspace =
+    shouldUseDefaultPersonalTaskScope(flags) && personalWorkspace
+      ? personalWorkspace
+      : requestedWorkspace;
+  const effectiveWorkspaceId = currentWorkspace?.id ?? workspaceId;
+  const workspaceName = currentWorkspace?.name || workspaceId;
+  const response = await client.tasks.search(effectiveWorkspaceId, payload);
+
+  return {
+    response: {
+      ...response,
+      tasks: response.tasks.map((task) => ({
+        ...task,
+        workspace_id: effectiveWorkspaceId,
+        workspace_name: workspaceName,
+      })),
+    },
+    workspaceName,
+  };
+}
+
 function getClient(config: CliConfig) {
   if (!config.session?.accessToken || !config.session.refreshToken) {
     throw new Error('Not logged in. Run `ttr login` first.');
@@ -535,6 +681,7 @@ function getClient(config: CliConfig) {
       await writeCliConfig({ ...config, session });
     },
     refreshToken: config.session.refreshToken,
+    tasksBaseUrl: config.tasksBaseUrl ?? resolveCliTasksBaseUrl(config.baseUrl),
   });
 }
 
@@ -569,6 +716,8 @@ async function saveSession(config: CliConfig, token: string) {
       baseUrl: nextConfig.baseUrl,
       expiresAt: session.expiresAt,
       refreshToken: session.refreshToken,
+      tasksBaseUrl:
+        nextConfig.tasksBaseUrl ?? resolveCliTasksBaseUrl(nextConfig.baseUrl),
     }).users
       .profile()
       .then((profile) => profile.email)
@@ -783,6 +932,147 @@ export function getTaskClosePayload(
   return payload;
 }
 
+function getTaskTemplatePayloadFromFlags(
+  flags: Record<string, FlagValue>,
+  fallbackName?: string
+) {
+  const payload = getPayload(flags);
+  const priority = parseTaskTemplatePriority(getFlag(flags, 'priority'));
+  const visibility = parseTaskTemplateVisibility(getFlag(flags, 'visibility'));
+  const name =
+    getFlag(flags, 'name') || getFlag(flags, 'template-name') || fallbackName;
+  const taskName =
+    getFlag(flags, 'title') || getFlag(flags, 'task-name') || fallbackName;
+
+  return {
+    ...payload,
+    ...(getFlag(flags, 'assignees')
+      ? { assignee_ids: parseCsv(getFlag(flags, 'assignees')) }
+      : {}),
+    ...(getFlag(flags, 'board') || getFlag(flags, 'board-id')
+      ? {
+          default_board_id:
+            getFlag(flags, 'board') || getFlag(flags, 'board-id'),
+        }
+      : {}),
+    ...(getFlag(flags, 'description')
+      ? { description: getFlag(flags, 'description') }
+      : {}),
+    ...(getFlag(flags, 'end-date')
+      ? { end_date: getFlag(flags, 'end-date') }
+      : {}),
+    ...(getFlag(flags, 'estimate') || getFlag(flags, 'estimation-points')
+      ? {
+          estimation_points: Number(
+            getFlag(flags, 'estimate') || getFlag(flags, 'estimation-points')
+          ),
+        }
+      : {}),
+    ...(getFlag(flags, 'key') || getFlag(flags, 'slug')
+      ? { key: getFlag(flags, 'key') || getFlag(flags, 'slug') }
+      : {}),
+    ...(getFlag(flags, 'labels')
+      ? { label_ids: parseCsv(getFlag(flags, 'labels')) }
+      : {}),
+    ...(getFlag(flags, 'list') || getFlag(flags, 'list-id')
+      ? { default_list_id: getFlag(flags, 'list') || getFlag(flags, 'list-id') }
+      : {}),
+    ...(name ? { name } : {}),
+    ...(priority ? { priority } : {}),
+    ...(getFlag(flags, 'projects')
+      ? { project_ids: parseCsv(getFlag(flags, 'projects')) }
+      : {}),
+    ...(getFlag(flags, 'start-date')
+      ? { start_date: getFlag(flags, 'start-date') }
+      : {}),
+    ...(taskName ? { task_name: taskName } : {}),
+    ...(visibility ? { visibility } : {}),
+  };
+}
+
+function getTaskTemplateCreateOverrides(
+  flags: Record<string, FlagValue>,
+  listId: string,
+  fallbackName?: string
+) {
+  const payload = getPayload(flags);
+  const priority = parseTaskTemplatePriority(getFlag(flags, 'priority'));
+  return {
+    ...payload,
+    ...(getFlag(flags, 'assignees')
+      ? { assignee_ids: parseCsv(getFlag(flags, 'assignees')) }
+      : {}),
+    ...(getFlag(flags, 'end-date')
+      ? { end_date: getFlag(flags, 'end-date') }
+      : {}),
+    ...(getFlag(flags, 'description')
+      ? { description: getFlag(flags, 'description') }
+      : {}),
+    ...(getFlag(flags, 'estimate') || getFlag(flags, 'estimation-points')
+      ? {
+          estimation_points: Number(
+            getFlag(flags, 'estimate') || getFlag(flags, 'estimation-points')
+          ),
+        }
+      : {}),
+    ...(getFlag(flags, 'labels')
+      ? { label_ids: parseCsv(getFlag(flags, 'labels')) }
+      : {}),
+    listId,
+    ...(getFlag(flags, 'name') || fallbackName
+      ? { name: getFlag(flags, 'name') || fallbackName }
+      : {}),
+    ...(priority ? { priority } : {}),
+    ...(getFlag(flags, 'projects')
+      ? { project_ids: parseCsv(getFlag(flags, 'projects')) }
+      : {}),
+    ...(getFlag(flags, 'start-date')
+      ? { start_date: getFlag(flags, 'start-date') }
+      : {}),
+  };
+}
+
+async function createTaskFromLocalTemplate({
+  client,
+  flags,
+  listId,
+  reference,
+  workspaceId,
+}: {
+  client: TuturuuuUserClient;
+  flags: Record<string, FlagValue>;
+  listId: string;
+  reference: string;
+  workspaceId: string;
+}) {
+  const localTemplate = parseLocalTaskTemplateFile(
+    resolveLocalTaskTemplatePath(reference)
+  );
+  const overrides = getTaskTemplateCreateOverrides(flags, listId);
+  const hasDescriptionOverride =
+    Object.hasOwn(overrides, 'description') ||
+    Object.hasOwn(overrides, 'description_yjs_state');
+  return client.tasks.create(workspaceId, {
+    assignee_ids: localTemplate.payload.assignee_ids ?? [],
+    description: localTemplate.payload.description ?? null,
+    description_yjs_state: hasDescriptionOverride
+      ? null
+      : (localTemplate.payload.description_yjs_state ?? null),
+    end_date: localTemplate.payload.end_date ?? null,
+    estimation_points: localTemplate.payload.estimation_points ?? null,
+    label_ids: localTemplate.payload.label_ids ?? [],
+    name:
+      typeof overrides.name === 'string'
+        ? overrides.name
+        : (localTemplate.payload.task_name ?? localTemplate.payload.name),
+    priority: localTemplate.payload.priority ?? null,
+    project_ids: localTemplate.payload.project_ids ?? [],
+    start_date: localTemplate.payload.start_date ?? null,
+    ...overrides,
+    listId,
+  });
+}
+
 async function getDefaultStatusListId({
   client,
   config,
@@ -947,6 +1237,11 @@ export async function runCli(argv = process.argv.slice(2)) {
     return;
   }
 
+  if (group === 'tiptap') {
+    await runTiptapCommand({ action: rawAction, flags, json });
+    return;
+  }
+
   let config = await readCliConfig();
   if (flags['no-update-check'] !== true && !isCliUpdateCheckDisabled()) {
     const nextConfig = await checkForCliUpdate({
@@ -1091,6 +1386,21 @@ export async function runCli(argv = process.argv.slice(2)) {
   }
 
   const workspaceId = getWorkspaceId(config, flags);
+
+  if (group === 'external') {
+    if (action !== 'projects') {
+      throw new Error('Unknown command. Use `ttr external projects --help`.');
+    }
+
+    await runExternalProjectsCommand({
+      client,
+      flags,
+      json,
+      positionals: positionals.slice(2),
+      workspaceId,
+    });
+    return;
+  }
 
   if (group === 'calendar') {
     await runCalendarCommand({
@@ -1239,7 +1549,199 @@ export async function runCli(argv = process.argv.slice(2)) {
     }
   }
 
+  if (group === 'task-templates') {
+    if (action === 'list') {
+      if (flags.local === true) {
+        const localTemplates = listLocalTaskTemplates().map((template) => ({
+          path: template.path,
+          ...template.payload,
+        }));
+        render(localTemplates, { group, json });
+        return;
+      }
+
+      const payload = await client.tasks.listTemplates(workspaceId, {
+        includeArchived: flags.all === true || flags.archived === true,
+        q: getFlag(flags, 'q'),
+        visibility: getFlag(flags, 'visibility') as never,
+      });
+      render(json ? payload : payload.templates, { group, json });
+      return;
+    }
+
+    if (action === 'show' || action === 'get') {
+      if (!firstId) throw new Error('Missing task template key.');
+
+      if (flags.local === true || isLocalTaskTemplateReference(firstId)) {
+        render(
+          parseLocalTaskTemplateFile(resolveLocalTaskTemplatePath(firstId)),
+          {
+            group,
+            json,
+          }
+        );
+        return;
+      }
+
+      render(await client.tasks.getTemplate(workspaceId, firstId), {
+        group,
+        json,
+      });
+      return;
+    }
+
+    if (action === 'create') {
+      const payload = getTaskTemplatePayloadFromFlags(
+        flags,
+        positionalValue || 'Untitled Template'
+      );
+
+      if (flags.local === true || getFlag(flags, 'file')) {
+        const file =
+          getFlag(flags, 'file') ||
+          resolveLocalTaskTemplatePath(
+            String(
+              getFlag(flags, 'key') || getFlag(flags, 'slug') || payload.name
+            )
+          );
+        const path = writeLocalTaskTemplate(file, payload as never);
+        render({ path, template: payload }, { group, json });
+        return;
+      }
+
+      render(await client.tasks.createTemplate(workspaceId, payload as never), {
+        group,
+        json,
+      });
+      return;
+    }
+
+    if (action === 'update') {
+      if (!firstId) throw new Error('Missing task template key.');
+      render(
+        await client.tasks.updateTemplate(
+          workspaceId,
+          firstId,
+          getTaskTemplatePayloadFromFlags(flags) as never
+        ),
+        { group, json }
+      );
+      return;
+    }
+
+    if (action === 'delete' || action === 'archive') {
+      if (!firstId) throw new Error('Missing task template key.');
+      render(
+        await client.tasks.deleteTemplate(workspaceId, firstId, {
+          permanent: flags.permanent === true,
+        }),
+        { group, json }
+      );
+      return;
+    }
+
+    if (action === 'use') {
+      if (!firstId) throw new Error('Missing task template key or file.');
+      const listSelection = await selectListId(
+        client,
+        config,
+        workspaceId,
+        flags,
+        json
+      );
+      config = listSelection.config;
+
+      if (flags.local === true || isLocalTaskTemplateReference(firstId)) {
+        render(
+          await createTaskFromLocalTemplate({
+            client,
+            flags,
+            listId: listSelection.listId,
+            reference: firstId,
+            workspaceId,
+          }),
+          { group: 'tasks', json }
+        );
+        return;
+      }
+
+      render(
+        await client.tasks.useTemplate(
+          workspaceId,
+          firstId,
+          getTaskTemplateCreateOverrides(
+            flags,
+            listSelection.listId,
+            getFlag(flags, 'name')
+          ) as never
+        ),
+        { group: 'tasks', json }
+      );
+      return;
+    }
+
+    if (action === 'import') {
+      if (!firstId) throw new Error('Missing local task template file.');
+      const localTemplate = parseLocalTaskTemplateFile(
+        resolveLocalTaskTemplatePath(firstId)
+      );
+      render(
+        await client.tasks.createTemplate(workspaceId, {
+          ...localTemplate.payload,
+          ...getTaskTemplatePayloadFromFlags(flags),
+        } as never),
+        { group, json }
+      );
+      return;
+    }
+
+    if (action === 'export') {
+      if (!firstId) throw new Error('Missing task template key.');
+      const { template } = await client.tasks.getTemplate(workspaceId, firstId);
+      const file = getFlag(flags, 'file');
+      if (file) {
+        const path = writeLocalTaskTemplate(file, template);
+        render({ path, template }, { group, json });
+        return;
+      }
+
+      process.stdout.write(taskTemplateToMarkdown(template));
+      return;
+    }
+
+    if (action === 'save-from-task') {
+      const taskId =
+        firstId || getFlag(flags, 'task') || getFlag(flags, 'task-id');
+      if (!taskId) throw new Error('Missing task id.');
+      render(
+        await client.tasks.saveTemplateFromTask(workspaceId, {
+          name: getFlag(flags, 'name') || getFlag(flags, 'template-name'),
+          taskId,
+          visibility: (getFlag(flags, 'visibility') as never) || 'private',
+        }),
+        { group, json }
+      );
+      return;
+    }
+  }
+
   if (group === 'tasks') {
+    if (
+      action === 'description' ||
+      action === 'descriptions' ||
+      action === 'desc'
+    ) {
+      config = await runTaskDescriptionCommand({
+        client,
+        config,
+        flags,
+        json,
+        positionals,
+        workspaceId,
+      });
+      return;
+    }
+
     if (action === 'list') {
       const { response: taskResponse, workspaceName } = await listTasksForCli(
         client,
@@ -1252,6 +1754,25 @@ export async function runCli(argv = process.argv.slice(2)) {
         currentWorkspaceId: workspaceId,
         group,
         json,
+        workspaceName,
+      });
+      return;
+    }
+    if (action === 'search') {
+      const { response: taskResponse, workspaceName } = await searchTasksForCli(
+        client,
+        config,
+        workspaceId,
+        flags,
+        positionals
+      );
+      render(taskResponse, {
+        compact: flags.compact === true,
+        currentWorkspaceId: workspaceId,
+        group,
+        json,
+        preserveTaskOrder: true,
+        showTaskScore: true,
         workspaceName,
       });
       return;
@@ -1300,19 +1821,82 @@ export async function runCli(argv = process.argv.slice(2)) {
         json
       );
       config = listSelection.config;
-      render(
-        await client.tasks.create(workspaceId, {
-          assignee_ids: parseCsv(getFlag(flags, 'assignees')),
-          end_date: getFlag(flags, 'end-date') || null,
-          label_ids: parseCsv(getFlag(flags, 'labels')),
-          listId: listSelection.listId,
-          name: getFlag(flags, 'name') || positionalValue || 'Untitled Task',
-          priority: (getFlag(flags, 'priority') as never) || null,
-          project_ids: parseCsv(getFlag(flags, 'projects')),
-          start_date: getFlag(flags, 'start-date') || null,
-        }),
-        { group, json }
-      );
+      const templateReference = getFlag(flags, 'template');
+      const descriptionPayload =
+        await getTaskDescriptionPayloadFromFlags(flags);
+      const chunkDescriptionAfterCreate =
+        shouldUseChunkedTaskDescriptionUpdate(descriptionPayload);
+
+      if (templateReference) {
+        const createOverrides = {
+          ...getTaskTemplateCreateOverrides(
+            flags,
+            listSelection.listId,
+            positionalValue
+          ),
+          ...(descriptionPayload && !chunkDescriptionAfterCreate
+            ? descriptionPayload
+            : {}),
+        };
+        const response =
+          flags.local === true ||
+          isLocalTaskTemplateReference(templateReference)
+            ? await createTaskFromLocalTemplate({
+                client,
+                flags,
+                listId: listSelection.listId,
+                reference: templateReference,
+                workspaceId,
+              })
+            : await client.tasks.useTemplate(
+                workspaceId,
+                templateReference,
+                createOverrides as never
+              );
+
+        if (
+          descriptionPayload &&
+          (chunkDescriptionAfterCreate ||
+            flags.local === true ||
+            isLocalTaskTemplateReference(templateReference))
+        ) {
+          await updateTaskDescriptionWithBestTransport({
+            client,
+            payload: descriptionPayload,
+            taskId: response.task.id,
+            workspaceId,
+          });
+        }
+
+        render(response, { group, json });
+        return;
+      }
+
+      const createPayload = {
+        assignee_ids: parseCsv(getFlag(flags, 'assignees')),
+        end_date: getFlag(flags, 'end-date') || null,
+        label_ids: parseCsv(getFlag(flags, 'labels')),
+        listId: listSelection.listId,
+        name: getFlag(flags, 'name') || positionalValue || 'Untitled Task',
+        priority: (getFlag(flags, 'priority') as never) || null,
+        project_ids: parseCsv(getFlag(flags, 'projects')),
+        start_date: getFlag(flags, 'start-date') || null,
+        ...(descriptionPayload && !chunkDescriptionAfterCreate
+          ? descriptionPayload
+          : {}),
+      };
+      const response = await client.tasks.create(workspaceId, createPayload);
+
+      if (descriptionPayload && chunkDescriptionAfterCreate) {
+        await updateTaskDescriptionWithBestTransport({
+          client,
+          payload: descriptionPayload,
+          taskId: response.task.id,
+          workspaceId,
+        });
+      }
+
+      render(response, { group, json });
       return;
     }
     if (action === 'update') {
@@ -1325,11 +1909,29 @@ export async function runCli(argv = process.argv.slice(2)) {
         firstId
       );
       config = selection.config;
-      const response = await client.tasks.update(
-        workspaceId,
-        selection.taskId,
-        getTaskUpdatePayload(flags)
-      );
+      const descriptionPayload =
+        await getTaskDescriptionPayloadFromFlags(flags);
+      const taskUpdatePayload = getTaskUpdatePayload(flags);
+      const hasTaskUpdatePayload = Object.keys(taskUpdatePayload).length > 0;
+      let response: unknown;
+
+      if (hasTaskUpdatePayload || !descriptionPayload) {
+        response = await client.tasks.update(
+          workspaceId,
+          selection.taskId,
+          taskUpdatePayload
+        );
+      }
+
+      if (descriptionPayload) {
+        response = await updateTaskDescriptionWithBestTransport({
+          client,
+          payload: descriptionPayload,
+          taskId: selection.taskId,
+          workspaceId,
+        });
+      }
+
       await renderTaskMutationResult({
         client,
         displayKey: getIdentifierDisplayKey(firstId),

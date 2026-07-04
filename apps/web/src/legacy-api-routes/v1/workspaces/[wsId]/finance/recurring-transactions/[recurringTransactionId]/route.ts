@@ -1,0 +1,113 @@
+import { getFinanceRouteContext } from '@tuturuuu/apis/finance/request-access';
+import { NextResponse } from 'next/server';
+import { z } from 'zod';
+import { resolveFinanceRouteAuthContext } from '@/lib/finance-route-auth';
+
+const recurringTransactionSchema = z.object({
+  name: z.string().min(1),
+  description: z.string().nullable().optional(),
+  amount: z.number(),
+  wallet_id: z.string().min(1),
+  category_id: z.string().nullable().optional(),
+  frequency: z.enum(['daily', 'weekly', 'monthly', 'yearly']),
+  start_date: z.string().min(1),
+  end_date: z.string().nullable().optional(),
+});
+
+interface Params {
+  params: Promise<{ wsId: string; recurringTransactionId: string }>;
+}
+
+export async function PUT(request: Request, { params }: Params) {
+  const { wsId, recurringTransactionId } = await params;
+  const access = await getFinanceRouteContext(
+    request,
+    wsId,
+    await resolveFinanceRouteAuthContext(request)
+  );
+
+  if (access.response) {
+    return access.response;
+  }
+
+  const { normalizedWsId, permissions, supabase } = access.context;
+  if (!permissions || permissions.withoutPermission('manage_finance')) {
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 403 });
+  }
+
+  const parsed = recurringTransactionSchema.safeParse(await request.json());
+  if (!parsed.success) {
+    return NextResponse.json(
+      { message: parsed.error.issues[0]?.message ?? 'Invalid request body' },
+      { status: 400 }
+    );
+  }
+
+  const { data, error } = await supabase
+    .from('recurring_transactions')
+    .update(parsed.data)
+    .eq('ws_id', normalizedWsId)
+    .eq('id', recurringTransactionId)
+    .select('*')
+    .maybeSingle();
+
+  if (error) {
+    console.error('Error updating recurring transaction:', error);
+    return NextResponse.json(
+      { message: 'Failed to update recurring transaction' },
+      { status: 500 }
+    );
+  }
+
+  if (!data) {
+    return NextResponse.json(
+      { message: 'Recurring transaction not found' },
+      { status: 404 }
+    );
+  }
+
+  return NextResponse.json(data);
+}
+
+export async function DELETE(request: Request, { params }: Params) {
+  const { wsId, recurringTransactionId } = await params;
+  const access = await getFinanceRouteContext(
+    request,
+    wsId,
+    await resolveFinanceRouteAuthContext(request)
+  );
+
+  if (access.response) {
+    return access.response;
+  }
+
+  const { normalizedWsId, permissions, supabase } = access.context;
+  if (!permissions || permissions.withoutPermission('manage_finance')) {
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 403 });
+  }
+
+  const { data, error } = await supabase
+    .from('recurring_transactions')
+    .delete()
+    .eq('ws_id', normalizedWsId)
+    .eq('id', recurringTransactionId)
+    .select('id')
+    .maybeSingle();
+
+  if (error) {
+    console.error('Error deleting recurring transaction:', error);
+    return NextResponse.json(
+      { message: 'Failed to delete recurring transaction' },
+      { status: 500 }
+    );
+  }
+
+  if (!data) {
+    return NextResponse.json(
+      { message: 'Recurring transaction not found' },
+      { status: 404 }
+    );
+  }
+
+  return NextResponse.json({ success: true });
+}

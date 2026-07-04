@@ -5,7 +5,9 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const {
+  assertBlueGreenCachedImageExists,
   getBlueGreenCacheImageTag,
+  getBlueGreenProdServicesWithProxyOption,
   getBlueGreenServiceName,
   readBlueGreenActiveColor,
   readBlueGreenDeploymentStamp,
@@ -30,19 +32,29 @@ const {
   getComposeCommandArgs,
   getComposeFile,
   getContainerHealthStatus,
+  removeComposeServiceContainersByLabelIfPresent,
+  runComposeUpWithNameConflictRecovery,
   runChecked,
   runCommand,
 } = require('../docker-web/compose.js');
+const {
+  forceRecoverBuildkitAfterFailure,
+} = require('../docker-web/buildkit-builder.js');
+const {
+  isBuildkitResourceProfileFallbackError,
+} = require('../docker-web/resource-profiles.js');
 const deployWatcherRuntime = require('./deploy-watcher-runtime.js');
 const {
   BLUE_GREEN_PROXY_SERVICE,
   PROD_COMPOSE_FILE,
+  WATCHER_BOOTSTRAP_IDLE_RUNTIME_ENV,
   getWatcherComposeEnv,
   loadRuntimeSnapshot,
 } = deployWatcherRuntime;
 const {
   ROOT_DIR,
   WATCH_ARGS_FILE,
+  WATCH_CRON_RUNNER_RECOVERY_REQUEST_FILE,
   WATCH_HISTORY_FILE,
   WATCH_LOCK_FILE,
   WATCH_LOG_FILE,
@@ -74,8 +86,14 @@ const {
   createWatcherLogEntry,
   readWatcherLogEntries,
 } = require('./logs.js');
-const { createGitHubChecksPublisher } = require('./github-checks.js');
-const { sendBuildFailureIncidentEmail } = require('./incident-email.js');
+const {
+  createGitHubChecksPublisher,
+  getGitHubWorkflowValidationForCommit,
+} = require('./github-checks.js');
+const {
+  sendBuildFailureIncidentEmail,
+  sendDockerDaemonRecoveryIncidentEmail,
+} = require('./incident-email.js');
 const {
   DEFAULT_PROJECT_POLL_INTERVAL_MS,
   normalizeProjectBranch,
@@ -261,6 +279,10 @@ const DOCKER_DAEMON_POST_RESTART_COMMANDS_ENV =
   'DOCKER_WEB_WATCHER_DOCKER_POST_RESTART_COMMANDS';
 const DOCKER_DAEMON_POST_RESTART_COMMAND_TIMEOUT_MS_ENV =
   'DOCKER_WEB_WATCHER_DOCKER_POST_RESTART_COMMAND_TIMEOUT_MS';
+const DOCKER_DAEMON_PROBE_TIMEOUT_MS_ENV =
+  'DOCKER_WEB_WATCHER_DOCKER_PROBE_TIMEOUT_MS';
+const DOCKER_LOG_STREAM_RECONNECT_MS_ENV =
+  'DOCKER_WEB_WATCHER_LOG_STREAM_RECONNECT_MS';
 const DOCKER_DAEMON_RECOVERY_SETTINGS_FILE =
   'blue-green-docker-recovery-settings.json';
 const DEFAULT_DOCKER_DAEMON_RECOVERY_POLL_MS = 5_000;
@@ -268,12 +290,32 @@ const DEFAULT_DOCKER_DAEMON_RECOVERY_TIMEOUT_MS = 0;
 const DEFAULT_DOCKER_DAEMON_RESTART_AFTER_MS = 30_000;
 const DEFAULT_DOCKER_DAEMON_RESTART_COOLDOWN_MS = 5 * 60_000;
 const DEFAULT_DOCKER_DAEMON_POST_RESTART_COMMAND_TIMEOUT_MS = 10 * 60_000;
+const DEFAULT_DOCKER_DAEMON_PROBE_TIMEOUT_MS = 10_000;
+const DEFAULT_DOCKER_LOG_STREAM_RECONNECT_MS = 60_000;
 const BLUE_GREEN_WATCHER_SERVICE = 'web-blue-green-watcher';
+const WEB_DOCKER_CONTROL_SERVICE = 'web-docker-control';
+const WEB_CRON_RUNNER_SERVICE = 'web-cron-runner';
+const CLOUDFLARED_SERVICE = 'cloudflared';
+const CRON_RUNNER_STALE_DEPENDENCY_SERVICES = [
+  WEB_CRON_RUNNER_SERVICE,
+  'hive-db-migrate',
+  'hive-postgres',
+];
 const HOST_WORKSPACE_DIR_ENV = 'PLATFORM_HOST_WORKSPACE_DIR';
 const WATCH_PENDING_DEPLOY_ENV = 'WATCHER_PENDING_BLUE_GREEN_DEPLOY';
 const WATCHER_CONTAINER_ENV = 'PLATFORM_BLUE_GREEN_WATCHER_CONTAINER';
 const WATCHER_CONTAINER_REFRESH_MESSAGE =
   'host-supervised watcher service recreation';
+const CRON_RUNNER_RECOVERY_RETRY_MS = 60_000;
+const CRON_RUNNER_HEARTBEAT_STALE_AFTER_MS_ENV =
+  'DOCKER_WEB_WATCHER_CRON_RUNNER_STALE_AFTER_MS';
+const CRON_RUNNER_RECOVERY_WAIT_MS_ENV =
+  'DOCKER_WEB_WATCHER_CRON_RUNNER_RECOVERY_WAIT_MS';
+const CRON_RUNNER_RECOVERY_POLL_MS_ENV =
+  'DOCKER_WEB_WATCHER_CRON_RUNNER_RECOVERY_POLL_MS';
+const DEFAULT_CRON_RUNNER_HEARTBEAT_STALE_AFTER_MS = 120_000;
+const DEFAULT_CRON_RUNNER_RECOVERY_WAIT_MS = 90_000;
+const DEFAULT_CRON_RUNNER_RECOVERY_POLL_MS = 2_000;
 const MIGRATION_PROXY_HANDOFF_TIMEOUT_MS = 3_000;
 const MIGRATION_STAGING_PORT_ENV = {
   DOCKER_WEB_BUILDKIT_PORT: '17914',
@@ -594,6 +636,105 @@ function clearContainerManagedWatcherState({
   fsImpl.rmSync(paths.statusFile, { force: true });
 }
 
+function isComposeMissingContainerDependencyError(error) {
+  const message = error instanceof Error ? error.message : String(error);
+
+  return (
+    /\bNo such container:\s*[0-9a-f]{12,64}\b/iu.test(message) &&
+    /dependency .*failed to start/iu.test(message)
+  );
+}
+
+async function runCronRunnerComposeUpWithStaleDependencyRecovery({
+  env,
+  fsImpl,
+  runCommand: run,
+}) {
+  const composeGlobalArgs = ['--profile', 'redis'];
+  const upArgs = [
+    'up',
+    '--build',
+    '--detach',
+    '--no-recreate',
+    '--remove-orphans',
+    WEB_CRON_RUNNER_SERVICE,
+  ];
+  const args = getComposeCommandArgs(
+    PROD_COMPOSE_FILE,
+    composeGlobalArgs,
+    ...upArgs
+  );
+
+  try {
+    return await runChecked('docker', args, {
+      env,
+      fsImpl,
+      runCommand: run,
+    });
+  } catch (error) {
+    if (!isComposeMissingContainerDependencyError(error)) {
+      throw error;
+    }
+
+    await removeComposeServiceContainersByLabelIfPresent(
+      CRON_RUNNER_STALE_DEPENDENCY_SERVICES,
+      {
+        composeFile: PROD_COMPOSE_FILE,
+        composeGlobalArgs,
+        env,
+        runCommand: run,
+      }
+    );
+
+    return runChecked('docker', args, {
+      env,
+      fsImpl,
+      runCommand: run,
+    });
+  }
+}
+
+async function runCloudflaredComposeUpIfEnabled({
+  env,
+  fsImpl,
+  runCommand: run,
+}) {
+  if (!isTruthyEnvValue(env?.DOCKER_WEB_WITH_CLOUDFLARED)) {
+    return null;
+  }
+
+  const composeGlobalArgs = getSteadyStateRecoveryComposeGlobalArgs(env);
+  const proxyContainerId = await getComposeServiceContainerId(
+    BLUE_GREEN_PROXY_SERVICE,
+    {
+      composeFile: PROD_COMPOSE_FILE,
+      composeGlobalArgs,
+      env,
+      runCommand: run,
+    }
+  );
+
+  if (!proxyContainerId) {
+    return null;
+  }
+
+  return runComposeUpWithNameConflictRecovery({
+    composeFile: PROD_COMPOSE_FILE,
+    composeGlobalArgs,
+    env,
+    fsImpl,
+    runCommand: run,
+    services: [CLOUDFLARED_SERVICE],
+    upArgs: [
+      'up',
+      '--detach',
+      '--no-build',
+      '--remove-orphans',
+      CLOUDFLARED_SERVICE,
+    ],
+  });
+}
+
 async function startBlueGreenWatcherContainer(
   argv,
   {
@@ -606,11 +747,17 @@ async function startBlueGreenWatcherContainer(
 ) {
   parseArgs(argv);
 
-  await runChecked('docker', ['compose', 'version'], {
+  const effectiveEnv = getDockerDaemonRecoverySettingsEnv({
     env,
+    fsImpl,
+    paths: getWatchPaths(rootDir, env),
+  });
+  await runChecked('docker', ['compose', 'version'], {
+    env: effectiveEnv,
     fsImpl,
     runCommand: run,
     stdio: 'ignore',
+    timeoutMs: getDockerDaemonProbeTimeoutMs(effectiveEnv),
   });
 
   const resolvedEnvFilePath = envFilePath ?? path.join(rootDir, '.env.local');
@@ -675,6 +822,37 @@ async function startBlueGreenWatcherContainer(
       runCommand: run,
     }
   );
+
+  await runChecked(
+    'docker',
+    getComposeCommandArgs(
+      PROD_COMPOSE_FILE,
+      ['--profile', 'redis'],
+      'up',
+      '--build',
+      '--detach',
+      '--force-recreate',
+      '--remove-orphans',
+      WEB_DOCKER_CONTROL_SERVICE
+    ),
+    {
+      env: startupComposeEnv,
+      fsImpl,
+      runCommand: run,
+    }
+  );
+
+  await runCronRunnerComposeUpWithStaleDependencyRecovery({
+    env: startupComposeEnv,
+    fsImpl,
+    runCommand: run,
+  });
+
+  await runCloudflaredComposeUpIfEnabled({
+    env: startupComposeEnv,
+    fsImpl,
+    runCommand: run,
+  });
 }
 
 async function startBlueGreenWatcherContainerWithRecovery(argv, options = {}) {
@@ -686,7 +864,7 @@ async function startBlueGreenWatcherContainerWithRecovery(argv, options = {}) {
       await startBlueGreenWatcherContainer(argv, options);
       return;
     } catch (error) {
-      if (!isDockerDaemonUnavailableError(error)) {
+      if (!isDockerDaemonRecoveryError(error)) {
         throw error;
       }
 
@@ -713,8 +891,13 @@ async function getWatcherContainerState({
   rootDir = ROOT_DIR,
   runCommand: run = runCommand,
 } = {}) {
+  const effectiveEnv = getDockerDaemonRecoverySettingsEnv({
+    env,
+    fsImpl,
+    paths: getWatchPaths(rootDir, env),
+  });
   const composeEnv = getWatcherComposeEnv({
-    baseEnv: env,
+    baseEnv: effectiveEnv,
     envFilePath,
     fsImpl,
     rootDir,
@@ -730,9 +913,14 @@ async function getWatcherContainerState({
         env: composeEnv,
         includeStopped: true,
         runCommand: run,
+        timeoutMs: getDockerDaemonProbeTimeoutMs(effectiveEnv),
       }
     );
-  } catch {
+  } catch (error) {
+    if (isDockerDaemonRecoveryError(error)) {
+      return 'unavailable';
+    }
+
     return 'missing';
   }
 
@@ -744,8 +932,13 @@ async function getWatcherContainerState({
     return await getContainerHealthStatus(containerId, {
       env: composeEnv,
       runCommand: run,
+      timeoutMs: getDockerDaemonProbeTimeoutMs(effectiveEnv),
     });
-  } catch {
+  } catch (error) {
+    if (isDockerDaemonRecoveryError(error)) {
+      return 'unavailable';
+    }
+
     return 'unknown';
   }
 }
@@ -777,8 +970,15 @@ async function streamBlueGreenWatcherLogs({
     {
       env: composeEnv,
       fsImpl,
+      timeoutMs: getDockerLogStreamReconnectMs(composeEnv),
     }
   );
+
+  if (result.timedOut) {
+    return {
+      status: 'stream-timeout',
+    };
+  }
 
   if (
     result.signal &&
@@ -828,6 +1028,24 @@ async function runWatcherCommand(argv = process.argv.slice(2), options = {}) {
     }
 
     const state = await getWatcherContainerState(options);
+    if (state === 'unavailable') {
+      const recovered = await waitForDockerDaemonRecovery({
+        env: options.env ?? process.env,
+        fsImpl: options.fsImpl ?? fs,
+        log: options.log ?? console,
+        paths: getWatchPaths(options.rootDir ?? ROOT_DIR, options.env),
+        runCommand: options.runCommand ?? runCommand,
+        sleepImpl: options.sleepImpl ?? sleep,
+      });
+
+      if (!recovered) {
+        return;
+      }
+
+      await startBlueGreenWatcherContainerWithRecovery(argv, options);
+      continue;
+    }
+
     if (state === 'missing' || state === 'dead' || state === 'exited') {
       await startBlueGreenWatcherContainerWithRecovery(argv, options);
       continue;
@@ -843,6 +1061,10 @@ async function runWatcherCommand(argv = process.argv.slice(2), options = {}) {
           result.detail ? `\n${result.detail}` : ''
         }`
       );
+      continue;
+    }
+
+    if (result?.status === 'stream-timeout') {
       continue;
     }
 
@@ -894,6 +1116,489 @@ function clearPendingDeployRequest({
   paths = getWatchPaths(),
 } = {}) {
   fsImpl.rmSync(paths.pendingDeployFile, { force: true });
+}
+
+function normalizeCronRunnerRecoveryRequest(request) {
+  if (!request || typeof request !== 'object' || Array.isArray(request)) {
+    return null;
+  }
+
+  if (
+    request.kind !== 'cron-runner-recovery' ||
+    (request.action !== 'ensure' && request.action !== 'restart') ||
+    typeof request.reason !== 'string' ||
+    typeof request.requestedAt !== 'string' ||
+    typeof request.requestedBy !== 'string'
+  ) {
+    return null;
+  }
+
+  return {
+    ...request,
+    attemptCount:
+      typeof request.attemptCount === 'number' ? request.attemptCount : 0,
+    lastAttemptAt:
+      typeof request.lastAttemptAt === 'number' ? request.lastAttemptAt : null,
+    lastError:
+      typeof request.lastError === 'string' && request.lastError.trim()
+        ? request.lastError.trim()
+        : null,
+  };
+}
+
+function readCronRunnerRecoveryRequest(paths = getWatchPaths(), fsImpl = fs) {
+  if (!fsImpl.existsSync(paths.cronRunnerRecoveryRequestFile)) {
+    return null;
+  }
+
+  try {
+    return normalizeCronRunnerRecoveryRequest(
+      JSON.parse(
+        fsImpl.readFileSync(paths.cronRunnerRecoveryRequestFile, 'utf8')
+      )
+    );
+  } catch {
+    return null;
+  }
+}
+
+function writeCronRunnerRecoveryRequest(
+  request,
+  { fsImpl = fs, paths = getWatchPaths() } = {}
+) {
+  fsImpl.mkdirSync(paths.controlDir, { recursive: true });
+  fsImpl.writeFileSync(
+    paths.cronRunnerRecoveryRequestFile,
+    `${JSON.stringify(request, null, 2)}\n`,
+    'utf8'
+  );
+}
+
+function clearCronRunnerRecoveryRequest({
+  fsImpl = fs,
+  paths = getWatchPaths(),
+} = {}) {
+  fsImpl.rmSync(paths.cronRunnerRecoveryRequestFile, { force: true });
+}
+
+function getCronRunnerStatusFile({
+  env = process.env,
+  rootDir = ROOT_DIR,
+} = {}) {
+  const configuredRuntimeDir =
+    typeof env.PLATFORM_CRON_MONITORING_DIR === 'string' &&
+    env.PLATFORM_CRON_MONITORING_DIR.trim()
+      ? env.PLATFORM_CRON_MONITORING_DIR.trim()
+      : null;
+
+  return path.join(
+    configuredRuntimeDir ?? path.join(rootDir, 'tmp', 'docker-web', 'cron'),
+    'status.json'
+  );
+}
+
+function readCronRunnerHeartbeat({
+  env = process.env,
+  fsImpl = fs,
+  now = Date.now(),
+  rootDir = ROOT_DIR,
+  statusFile = getCronRunnerStatusFile({ env, rootDir }),
+} = {}) {
+  const staleAfterMs = getCronRunnerHeartbeatStaleAfterMs(env);
+
+  if (!fsImpl.existsSync(statusFile)) {
+    return {
+      ageMs: null,
+      reason: 'status snapshot missing',
+      staleAfterMs,
+      status: 'missing',
+      statusFile,
+      updatedAt: null,
+    };
+  }
+
+  let snapshot;
+  try {
+    snapshot = JSON.parse(fsImpl.readFileSync(statusFile, 'utf8'));
+  } catch (error) {
+    return {
+      ageMs: null,
+      error,
+      reason: 'status snapshot invalid',
+      staleAfterMs,
+      status: 'invalid',
+      statusFile,
+      updatedAt: null,
+    };
+  }
+
+  const updatedAt =
+    typeof snapshot?.updatedAt === 'number' &&
+    Number.isFinite(snapshot.updatedAt)
+      ? snapshot.updatedAt
+      : null;
+
+  if (updatedAt == null) {
+    return {
+      ageMs: null,
+      reason: 'status snapshot missing updatedAt',
+      staleAfterMs,
+      status: 'invalid',
+      statusFile,
+      updatedAt: null,
+    };
+  }
+
+  const ageMs = Math.max(0, now - updatedAt);
+
+  if (ageMs <= staleAfterMs) {
+    return {
+      ageMs,
+      reason: null,
+      staleAfterMs,
+      status: 'live',
+      statusFile,
+      updatedAt,
+    };
+  }
+
+  return {
+    ageMs,
+    reason: `status snapshot stale for ${ageMs}ms`,
+    staleAfterMs,
+    status: 'stale',
+    statusFile,
+    updatedAt,
+  };
+}
+
+async function waitForCronRunnerHeartbeat({
+  env = process.env,
+  fsImpl = fs,
+  now = () => Date.now(),
+  rootDir = ROOT_DIR,
+  sleepImpl = sleep,
+  startedAt = Date.now(),
+  timeoutMs = getCronRunnerRecoveryWaitMs(env),
+} = {}) {
+  const pollMs = getCronRunnerRecoveryPollMs(env);
+  const deadline = now() + timeoutMs;
+  let lastHeartbeat = readCronRunnerHeartbeat({
+    env,
+    fsImpl,
+    now: now(),
+    rootDir,
+  });
+
+  while (now() <= deadline) {
+    lastHeartbeat = readCronRunnerHeartbeat({
+      env,
+      fsImpl,
+      now: now(),
+      rootDir,
+    });
+
+    if (
+      lastHeartbeat.status === 'live' &&
+      typeof lastHeartbeat.updatedAt === 'number' &&
+      lastHeartbeat.updatedAt >= startedAt
+    ) {
+      return lastHeartbeat;
+    }
+
+    await sleepImpl(pollMs);
+  }
+
+  return {
+    ...lastHeartbeat,
+    reason:
+      lastHeartbeat.reason ??
+      `status snapshot did not refresh within ${timeoutMs}ms`,
+    status:
+      lastHeartbeat.status === 'live'
+        ? 'stale-after-recovery'
+        : lastHeartbeat.status,
+  };
+}
+
+function getCronRunnerRecoveryReason({ heartbeat, service } = {}) {
+  if (service?.status === 'missing') {
+    return 'cron-runner-container-missing';
+  }
+
+  if (service?.status === 'unhealthy') {
+    return 'cron-runner-container-unhealthy';
+  }
+
+  if (service?.status === 'inspect-failed') {
+    return 'cron-runner-container-inspect-failed';
+  }
+
+  if (heartbeat?.status === 'missing') {
+    return 'cron-runner-heartbeat-missing';
+  }
+
+  if (heartbeat?.status === 'invalid') {
+    return 'cron-runner-heartbeat-invalid';
+  }
+
+  if (heartbeat?.status === 'stale') {
+    return 'cron-runner-heartbeat-stale';
+  }
+
+  if (service?.action === 'start') {
+    return `cron-runner-container-${service.status || 'down'}`;
+  }
+
+  if (service?.action === 'recreate') {
+    return `cron-runner-container-${service.status || 'unhealthy'}`;
+  }
+
+  return null;
+}
+
+function createWatcherCronRunnerRecoveryRequest({ now, reason }) {
+  return {
+    action: 'restart',
+    attemptCount: 0,
+    kind: 'cron-runner-recovery',
+    lastAttemptAt: null,
+    lastError: null,
+    reason,
+    requestedAt: new Date(now).toISOString(),
+    requestedBy: 'blue-green-watcher',
+    requestedByEmail: null,
+  };
+}
+
+async function processCronRunnerRecoveryRequest({
+  env = process.env,
+  fsImpl = fs,
+  log = console,
+  now = Date.now(),
+  paths = getWatchPaths(),
+  rootDir = ROOT_DIR,
+  runCommand: run = runCommand,
+} = {}) {
+  const request = readCronRunnerRecoveryRequest(paths, fsImpl);
+  if (!request) return null;
+
+  if (
+    request.lastAttemptAt &&
+    now - request.lastAttemptAt < CRON_RUNNER_RECOVERY_RETRY_MS
+  ) {
+    return { request, status: 'backoff' };
+  }
+
+  const attemptCount = request.attemptCount + 1;
+  const attemptedRequest = {
+    ...request,
+    attemptCount,
+    lastAttemptAt: now,
+  };
+  writeCronRunnerRecoveryRequest(attemptedRequest, { fsImpl, paths });
+
+  const composeEnv = getWatcherComposeEnv({
+    baseEnv: {
+      ...env,
+      [HOST_WORKSPACE_DIR_ENV]: env[HOST_WORKSPACE_DIR_ENV] || rootDir,
+    },
+    fsImpl,
+    rootDir,
+  });
+  const composeGlobalArgs = getSteadyStateRecoveryComposeGlobalArgs(composeEnv);
+  const result = await run(
+    'docker',
+    getComposeCommandArgs(
+      PROD_COMPOSE_FILE,
+      composeGlobalArgs,
+      'up',
+      '--build',
+      '--detach',
+      request.action === 'restart' ? '--force-recreate' : '--no-recreate',
+      '--remove-orphans',
+      WEB_CRON_RUNNER_SERVICE
+    ),
+    {
+      env: composeEnv,
+      stdio: 'pipe',
+    }
+  );
+
+  if (result.code !== 0) {
+    const lastError =
+      result.stderr?.trim() ||
+      result.stdout?.trim() ||
+      `docker compose exited with code ${result.code}`;
+    const failedRequest = {
+      ...attemptedRequest,
+      lastError,
+    };
+    writeCronRunnerRecoveryRequest(failedRequest, { fsImpl, paths });
+    log.warn?.(`Cron runner recovery failed: ${lastError}`);
+    return { request: failedRequest, status: 'failed' };
+  }
+
+  clearCronRunnerRecoveryRequest({ fsImpl, paths });
+  log.info?.(
+    request.action === 'restart'
+      ? 'Recreated web-cron-runner from operator recovery request.'
+      : 'Ensured web-cron-runner is started from operator recovery request.'
+  );
+  return { request: attemptedRequest, status: 'recovered' };
+}
+
+async function reconcileCronRunnerHealth({
+  env = process.env,
+  envFilePath = WEB_ENV_FILE,
+  fsImpl = fs,
+  log = console,
+  now = () => Date.now(),
+  paths = getWatchPaths(),
+  rootDir = ROOT_DIR,
+  runCommand: run = runCommand,
+  sleepImpl = sleep,
+} = {}) {
+  const checkedAt = now();
+  const pendingRequest = readCronRunnerRecoveryRequest(paths, fsImpl);
+
+  if (pendingRequest) {
+    const recovery = await processCronRunnerRecoveryRequest({
+      env,
+      fsImpl,
+      log,
+      now: checkedAt,
+      paths,
+      rootDir,
+      runCommand: run,
+    });
+
+    if (recovery?.status === 'recovered') {
+      const heartbeat = await waitForCronRunnerHeartbeat({
+        env,
+        fsImpl,
+        now,
+        rootDir,
+        sleepImpl,
+        startedAt: checkedAt,
+      });
+
+      return {
+        heartbeat,
+        recovery,
+        status:
+          heartbeat.status === 'live'
+            ? 'recovered'
+            : 'recovered-awaiting-heartbeat',
+        trigger: 'queued-request',
+      };
+    }
+
+    return {
+      recovery,
+      status: recovery?.status ?? 'pending-request',
+      trigger: 'queued-request',
+    };
+  }
+
+  const composeEnv = getWatcherComposeEnv({
+    baseEnv: env,
+    envFilePath,
+    fsImpl,
+    rootDir,
+  });
+  const heartbeat = readCronRunnerHeartbeat({
+    env: composeEnv,
+    fsImpl,
+    now: checkedAt,
+    rootDir,
+  });
+
+  if (
+    heartbeat.status === 'missing' &&
+    !fsImpl.existsSync(path.dirname(heartbeat.statusFile))
+  ) {
+    return {
+      heartbeat,
+      status: 'unconfigured',
+    };
+  }
+
+  const composeGlobalArgs = getSteadyStateRecoveryComposeGlobalArgs(composeEnv);
+  const service = await inspectComposeServiceForRecovery(
+    WEB_CRON_RUNNER_SERVICE,
+    {
+      composeFile: PROD_COMPOSE_FILE,
+      composeGlobalArgs,
+      env: composeEnv,
+      runCommand: run,
+    }
+  );
+  const reason = getCronRunnerRecoveryReason({ heartbeat, service });
+
+  if (!reason) {
+    return {
+      heartbeat,
+      service,
+      status: 'healthy',
+    };
+  }
+
+  if (service.action === 'pending') {
+    return {
+      heartbeat,
+      service,
+      status: 'pending',
+    };
+  }
+
+  const request = createWatcherCronRunnerRecoveryRequest({
+    now: checkedAt,
+    reason,
+  });
+  writeCronRunnerRecoveryRequest(request, { fsImpl, paths });
+  log.warn?.(`Cron runner health check requested restart: ${reason}.`);
+
+  const recovery = await processCronRunnerRecoveryRequest({
+    env,
+    fsImpl,
+    log,
+    now: checkedAt,
+    paths,
+    rootDir,
+    runCommand: run,
+  });
+
+  if (recovery?.status !== 'recovered') {
+    return {
+      heartbeat,
+      recovery,
+      service,
+      status: recovery?.status ?? 'failed',
+      trigger: 'watcher-health-check',
+    };
+  }
+
+  const recoveredHeartbeat = await waitForCronRunnerHeartbeat({
+    env: composeEnv,
+    fsImpl,
+    now,
+    rootDir,
+    sleepImpl,
+    startedAt: checkedAt,
+  });
+
+  return {
+    heartbeat: recoveredHeartbeat,
+    previousHeartbeat: heartbeat,
+    recovery,
+    service,
+    status:
+      recoveredHeartbeat.status === 'live'
+        ? 'recovered'
+        : 'recovered-awaiting-heartbeat',
+    trigger: 'watcher-health-check',
+  };
 }
 
 function hasPersistedPendingDeployRequest(
@@ -1069,8 +1774,42 @@ function getPositiveIntegerEnv(env, name, fallback) {
   return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
 }
 
+function getCronRunnerHeartbeatStaleAfterMs(env = process.env) {
+  return (
+    getPositiveIntegerEnv(
+      env,
+      CRON_RUNNER_HEARTBEAT_STALE_AFTER_MS_ENV,
+      DEFAULT_CRON_RUNNER_HEARTBEAT_STALE_AFTER_MS
+    ) ?? DEFAULT_CRON_RUNNER_HEARTBEAT_STALE_AFTER_MS
+  );
+}
+
+function getCronRunnerRecoveryWaitMs(env = process.env) {
+  return (
+    getPositiveIntegerEnv(
+      env,
+      CRON_RUNNER_RECOVERY_WAIT_MS_ENV,
+      DEFAULT_CRON_RUNNER_RECOVERY_WAIT_MS
+    ) ?? DEFAULT_CRON_RUNNER_RECOVERY_WAIT_MS
+  );
+}
+
+function getCronRunnerRecoveryPollMs(env = process.env) {
+  return (
+    getPositiveIntegerEnv(
+      env,
+      CRON_RUNNER_RECOVERY_POLL_MS_ENV,
+      DEFAULT_CRON_RUNNER_RECOVERY_POLL_MS
+    ) ?? DEFAULT_CRON_RUNNER_RECOVERY_POLL_MS
+  );
+}
+
 function isTruthyEnv(value) {
   return /^(1|true|yes)$/iu.test(String(value ?? '').trim());
+}
+
+function isFalseyEnv(value) {
+  return /^(0|false|no|off)$/iu.test(String(value ?? '').trim());
 }
 
 function getDockerDaemonRecoveryPollMs(env = process.env) {
@@ -1124,6 +1863,26 @@ function getDockerDaemonPostRestartCommandTimeoutMs(env = process.env) {
       DOCKER_DAEMON_POST_RESTART_COMMAND_TIMEOUT_MS_ENV,
       DEFAULT_DOCKER_DAEMON_POST_RESTART_COMMAND_TIMEOUT_MS
     ) ?? DEFAULT_DOCKER_DAEMON_POST_RESTART_COMMAND_TIMEOUT_MS
+  );
+}
+
+function getDockerDaemonProbeTimeoutMs(env = process.env) {
+  return (
+    getPositiveIntegerEnv(
+      env,
+      DOCKER_DAEMON_PROBE_TIMEOUT_MS_ENV,
+      DEFAULT_DOCKER_DAEMON_PROBE_TIMEOUT_MS
+    ) ?? DEFAULT_DOCKER_DAEMON_PROBE_TIMEOUT_MS
+  );
+}
+
+function getDockerLogStreamReconnectMs(env = process.env) {
+  return (
+    getPositiveIntegerEnv(
+      env,
+      DOCKER_LOG_STREAM_RECONNECT_MS_ENV,
+      DEFAULT_DOCKER_LOG_STREAM_RECONNECT_MS
+    ) ?? DEFAULT_DOCKER_LOG_STREAM_RECONNECT_MS
   );
 }
 
@@ -1350,6 +2109,11 @@ function getDockerDaemonRecoverySettingsEnv({
     DOCKER_DAEMON_POST_RESTART_COMMAND_TIMEOUT_MS_ENV,
     settings.postRestartCommandTimeoutMs
   );
+  writeSettingEnvValue(
+    nextEnv,
+    DOCKER_DAEMON_PROBE_TIMEOUT_MS_ENV,
+    settings.dockerProbeTimeoutMs
+  );
 
   if (settings.dockerRestartDisabled === true) {
     nextEnv[DOCKER_DAEMON_RESTART_DISABLED_ENV] = '1';
@@ -1372,6 +2136,39 @@ function isDockerDaemonUnavailableError(error) {
   return /cannot connect to the docker daemon|connection refused|context canceled|context cancelled|docker daemon is not running|error during connect|is the docker daemon running|request returned (?:internal server error|bad gateway)|server misbehaving|use of closed network connection/u.test(
     message
   );
+}
+
+function isDockerDaemonProbeTimeoutError(error) {
+  if (
+    error &&
+    typeof error === 'object' &&
+    error.name === 'CommandTimeoutError'
+  ) {
+    return true;
+  }
+
+  return /command timed out after [0-9]+ms: docker\b|docker\b.*timed out/iu.test(
+    stripAnsi(getErrorMessage(error))
+  );
+}
+
+function isDockerDaemonRecoveryError(error) {
+  return (
+    isDockerDaemonUnavailableError(error) ||
+    isDockerDaemonProbeTimeoutError(error)
+  );
+}
+
+async function probeDockerDaemon({
+  env = process.env,
+  runCommand: run = runCommand,
+} = {}) {
+  return runChecked('docker', ['info'], {
+    env,
+    runCommand: run,
+    stdio: 'ignore',
+    timeoutMs: getDockerDaemonProbeTimeoutMs(env),
+  });
 }
 
 async function restartDockerDaemon({
@@ -1490,6 +2287,7 @@ async function runDockerDaemonPostRestartCommands({
 }
 
 async function waitForDockerDaemonRecovery({
+  dockerRecoveryIncidentEmailSender = sendDockerDaemonRecoveryIncidentEmail,
   env = process.env,
   fsImpl = fs,
   log = console,
@@ -1514,6 +2312,7 @@ async function waitForDockerDaemonRecovery({
   let daemonRestarted = false;
   let unavailableLogged = false;
   let postRestartCommandsRan = false;
+  let postRestartResult = null;
 
   while (deadline == null || now() <= deadline) {
     effectiveEnv = getDockerDaemonRecoverySettingsEnv({
@@ -1523,10 +2322,9 @@ async function waitForDockerDaemonRecovery({
     });
 
     try {
-      await runChecked('docker', ['info'], {
+      await probeDockerDaemon({
         env: effectiveEnv,
         runCommand: run,
-        stdio: 'ignore',
       });
       if (unavailableLogged) {
         appendDockerRecoveryLogEntry({
@@ -1546,7 +2344,7 @@ async function waitForDockerDaemonRecovery({
       }
       if (daemonRestarted && !postRestartCommandsRan) {
         postRestartCommandsRan = true;
-        const postRestartResult = await runDockerDaemonPostRestartCommands({
+        postRestartResult = await runDockerDaemonPostRestartCommands({
           env: effectiveEnv,
           log,
           runCommand: run,
@@ -1565,20 +2363,83 @@ async function waitForDockerDaemonRecovery({
           paths,
         });
       }
+      if (daemonRestarted) {
+        try {
+          const emailResult = await dockerRecoveryIncidentEmailSender({
+            env: effectiveEnv,
+            fsImpl,
+            incident: {
+              attempts,
+              durationMs: now() - startedAt,
+              incidentId,
+              lastErrorMessage: lastError ? getErrorMessage(lastError) : null,
+              postRestartResult,
+              probeTimeoutMs: getDockerDaemonProbeTimeoutMs(effectiveEnv),
+              recoveredAt: now(),
+              restartCommand: describeDockerDaemonRestartCommand(
+                getDockerDaemonRestartCommand({
+                  env: effectiveEnv,
+                  platform,
+                })
+              ),
+              startedAt,
+            },
+            paths,
+          });
+          appendDockerRecoveryLogEntry({
+            eventType: 'docker-force-restart-email-result',
+            fsImpl,
+            incidentId,
+            level: emailResult.sent ? 'info' : 'warn',
+            message: emailResult.sent
+              ? `Sent Docker force-restart recovery email to ${emailResult.recipients?.length ?? 0} recipient(s).`
+              : `Docker force-restart recovery email skipped: ${emailResult.skipped ?? 'unknown'}.`,
+            metadata: {
+              sent: Boolean(emailResult.sent),
+              skipped: emailResult.skipped ?? null,
+            },
+            now,
+            paths,
+          });
+        } catch (error) {
+          log.warn?.(
+            `Docker force-restart recovery email failed: ${getErrorMessage(error)}`
+          );
+          appendDockerRecoveryLogEntry({
+            eventType: 'docker-force-restart-email-result',
+            fsImpl,
+            incidentId,
+            level: 'warn',
+            message: `Docker force-restart recovery email failed: ${getErrorMessage(error)}`,
+            metadata: {
+              sent: false,
+              skipped: 'send-failed',
+            },
+            now,
+            paths,
+          });
+        }
+      }
       return true;
     } catch (error) {
       lastError = error;
       attempts += 1;
+      const probeTimedOut = isDockerDaemonProbeTimeoutError(error);
       if (!unavailableLogged) {
         unavailableLogged = true;
         appendDockerRecoveryLogEntry({
-          eventType: 'docker-daemon-unavailable',
+          eventType: probeTimedOut
+            ? 'docker-daemon-unresponsive'
+            : 'docker-daemon-unavailable',
           fsImpl,
           incidentId,
           level: 'error',
-          message: `Docker daemon became unavailable: ${getErrorMessage(error)}`,
+          message: probeTimedOut
+            ? `Docker daemon probe timed out: ${getErrorMessage(error)}`
+            : `Docker daemon became unavailable: ${getErrorMessage(error)}`,
           metadata: {
             attempt: attempts,
+            probeTimeoutMs: getDockerDaemonProbeTimeoutMs(effectiveEnv),
             timeoutMs,
           },
           now,
@@ -1592,7 +2453,7 @@ async function waitForDockerDaemonRecovery({
             ? 'without a timeout'
             : `for ${formatDuration(timeoutMs)}`;
         log.warn?.(
-          `Docker daemon is unavailable; waiting ${windowLabel} before restarting the watcher stack: ${getErrorMessage(error)}`
+          `Docker daemon is ${probeTimedOut ? 'unresponsive' : 'unavailable'}; waiting ${windowLabel} before restarting the watcher stack: ${getErrorMessage(error)}`
         );
       }
 
@@ -1617,6 +2478,7 @@ async function waitForDockerDaemonRecovery({
           )}`,
           metadata: {
             attempt: attempts,
+            probeTimeoutMs: getDockerDaemonProbeTimeoutMs(effectiveEnv),
             restartAfterMs,
           },
           now,
@@ -1668,6 +2530,7 @@ async function waitForDockerDaemonRecovery({
     metadata: {
       attempts,
       daemonRestarted,
+      probeTimeoutMs: getDockerDaemonProbeTimeoutMs(effectiveEnv),
       timeoutMs,
     },
     now,
@@ -1689,7 +2552,7 @@ function summarizeDeploymentFailure(error) {
   }
 
   const relevantLines = lines.filter((line) =>
-    /bun has crashed|cannot allocate memory|command failed|crashed while loading native module|error:|exit code|exited \([0-9]+\)|failed to compile|failed to solve|illegal instruction|javascript heap out of memory|no space left|panic|resourceexhausted|segmentation fault|sig(?:ill|kill|term)|terminated by signal|timed out/iu.test(
+    /bun has crashed|cannot allocate memory|command failed|context deadline exceeded|crashed while loading native module|error:|exit code|exited \([0-9]+\)|failed to compile|failed to solve|illegal instruction|javascript heap out of memory|no space left|panic|resourceexhausted|segmentation fault|sig(?:ill|kill|term)|terminated by signal|timed out|waiting for connection/iu.test(
       line
     )
   );
@@ -1880,6 +2743,92 @@ function logRetryLimitOnce(message, commitHash, { fsImpl, log, paths }) {
   log.warn?.(message);
 }
 
+function hasReportedValidationBlockForCommit(commitHash, { fsImpl, paths }) {
+  if (!commitHash) {
+    return false;
+  }
+
+  const lastResult = readWatchStatus(paths, fsImpl)?.lastResult;
+
+  return (
+    lastResult?.status === 'validation-blocked' &&
+    lastResult?.latestCommit?.hash === commitHash
+  );
+}
+
+function logValidationBlockOnce(message, commitHash, { fsImpl, log, paths }) {
+  if (hasReportedValidationBlockForCommit(commitHash, { fsImpl, paths })) {
+    return;
+  }
+
+  log.warn?.(message);
+}
+
+function isCommitValidationBlocked(validation) {
+  return Boolean(validation?.inspectable && validation?.blocked);
+}
+
+function summarizeCommitValidationBlock(validation) {
+  const failedRuns = Array.isArray(validation?.failedRuns)
+    ? validation.failedRuns
+    : [];
+  const names = failedRuns
+    .map((run) => run?.name)
+    .filter((name) => typeof name === 'string' && name.trim().length > 0);
+
+  if (names.length === 0) {
+    return 'GitHub validation failed';
+  }
+
+  return `GitHub validation failed: ${names.slice(0, 3).join(', ')}`;
+}
+
+function createValidationBlockedResult(validation, result = {}) {
+  return {
+    ...result,
+    failedValidationRuns: Array.isArray(validation?.failedRuns)
+      ? validation.failedRuns
+      : [],
+    status: 'validation-blocked',
+    validationStatus: validation?.status ?? null,
+  };
+}
+
+async function getCommitValidationBlock({
+  commit,
+  commitValidationReader,
+  env,
+  fsImpl,
+  log,
+  now,
+  paths,
+  rootDir,
+  runCommand: run,
+}) {
+  if (!commit?.hash || typeof commitValidationReader !== 'function') {
+    return null;
+  }
+
+  try {
+    const validation = await commitValidationReader({
+      commitHash: commit.hash,
+      env,
+      fsImpl,
+      now: typeof now === 'function' ? now() : Date.now(),
+      paths,
+      rootDir,
+      runCommand: run,
+    });
+
+    return isCommitValidationBlocked(validation) ? validation : null;
+  } catch (error) {
+    log.warn?.(
+      `Unable to inspect GitHub validation for ${commit.shortHash ?? commit.hash.slice(0, 12)}; continuing without validation suppression: ${getErrorMessage(error)}`
+    );
+    return null;
+  }
+}
+
 function getActiveDeploymentConflictKey(conflict) {
   const lock = conflict?.lock ?? {};
 
@@ -1961,6 +2910,34 @@ async function cancelActiveDeploymentForWatcherRequest({
     runCommand: run,
     stopWatcherService: false,
   });
+}
+
+async function hasCachedRecoveryImage({
+  cachedImageTag,
+  env,
+  envFilePath = WEB_ENV_FILE,
+  fsImpl,
+  log,
+  rootDir,
+  runCommand: run,
+}) {
+  try {
+    await assertBlueGreenCachedImageExists(cachedImageTag, {
+      env: getWatcherComposeEnv({
+        baseEnv: env,
+        envFilePath,
+        fsImpl,
+        rootDir,
+      }),
+      runCommand: run,
+    });
+    return true;
+  } catch (error) {
+    log.warn?.(
+      `Cached recovery image ${cachedImageTag} is unavailable; falling back to rollback pin: ${getErrorMessage(error)}`
+    );
+    return false;
+  }
 }
 
 function hasReportedActiveDeploymentConflict(conflict, { fsImpl, paths }) {
@@ -2100,6 +3077,7 @@ async function runDetachedCommitFullBlueGreenDeploy({
         },
         fsImpl,
         latestCommit: deployCommit,
+        log,
         now,
         paths,
         runCommand: run,
@@ -2351,13 +3329,398 @@ function getExpectedStandbyColor(activeColor) {
   return null;
 }
 
-function needsActiveRuntimeRecovery(runtimeSnapshot) {
+function needsActiveRuntimeRecovery(
+  runtimeSnapshot,
+  { env = process.env } = {}
+) {
   const currentBlueGreen = runtimeSnapshot?.currentBlueGreen;
 
-  return (
+  if (
     currentBlueGreen?.state === 'degraded' &&
     (!currentBlueGreen.activeColor || !currentBlueGreen.activeServiceRunning)
+  ) {
+    return true;
+  }
+
+  if (currentBlueGreen?.state !== 'idle') {
+    return false;
+  }
+
+  return (
+    isTruthyEnvValue(env?.[WATCHER_BOOTSTRAP_IDLE_RUNTIME_ENV]) &&
+    !getRuntimeDeployment(runtimeSnapshot?.deployments, 'active')
   );
+}
+
+function isTruthyEnvValue(value) {
+  return /^(1|true|yes|on)$/iu.test(String(value ?? '').trim());
+}
+
+function getSteadyStateRecoveryComposeGlobalArgs(env = {}) {
+  const composeGlobalArgs = ['--profile', 'redis'];
+
+  if (isTruthyEnvValue(env?.DOCKER_WEB_WITH_CLOUDFLARED)) {
+    composeGlobalArgs.push('--profile', 'cloudflared');
+  }
+
+  return composeGlobalArgs;
+}
+
+function hasSteadyStateRecoveryAnchor(currentBlueGreen) {
+  if (!currentBlueGreen || currentBlueGreen.state === 'idle') {
+    return false;
+  }
+
+  if (
+    currentBlueGreen.proxyRunning ||
+    currentBlueGreen.activeServiceRunning ||
+    currentBlueGreen.serviceContainers?.proxy
+  ) {
+    return true;
+  }
+
+  return Array.isArray(currentBlueGreen.liveColors)
+    ? currentBlueGreen.liveColors.length > 0
+    : false;
+}
+
+function normalizeComposeServiceStatus(status) {
+  return String(status ?? '')
+    .trim()
+    .toLowerCase();
+}
+
+function getPrimaryContainerId(containerIds) {
+  return (
+    String(containerIds ?? '')
+      .split(/\s+/u)
+      .map((value) => value.trim())
+      .find(Boolean) ?? ''
+  );
+}
+
+function getSteadyStateRecoveryServices({
+  composeEnv,
+  composeGlobalArgs,
+  currentBlueGreen,
+} = {}) {
+  const activeColor = currentBlueGreen?.activeColor;
+
+  if (!activeColor || !hasSteadyStateRecoveryAnchor(currentBlueGreen)) {
+    return [];
+  }
+
+  return [
+    ...new Set(
+      getBlueGreenProdServicesWithProxyOption(
+        { composeGlobalArgs },
+        activeColor,
+        true,
+        composeEnv
+      )
+    ),
+  ];
+}
+
+function getComposeServiceRecoveryAction(serviceState) {
+  const normalizedStatus = normalizeComposeServiceStatus(serviceState?.status);
+
+  if (!serviceState?.containerId) {
+    return 'start';
+  }
+
+  if (normalizedStatus === 'healthy' || normalizedStatus === 'running') {
+    return null;
+  }
+
+  if (normalizedStatus === 'starting' || normalizedStatus === 'restarting') {
+    return 'pending';
+  }
+
+  if (normalizedStatus === 'unhealthy') {
+    return 'recreate';
+  }
+
+  if (
+    ['created', 'dead', 'exited', 'paused', 'removing'].includes(
+      normalizedStatus
+    )
+  ) {
+    return 'start';
+  }
+
+  return 'start';
+}
+
+async function inspectComposeServiceForRecovery(
+  serviceName,
+  {
+    composeFile = PROD_COMPOSE_FILE,
+    composeGlobalArgs = [],
+    env,
+    runCommand: run = runCommand,
+  } = {}
+) {
+  let containerId = '';
+
+  try {
+    containerId = getPrimaryContainerId(
+      await getComposeServiceContainerId(serviceName, {
+        composeFile,
+        composeGlobalArgs,
+        env,
+        includeStopped: true,
+        runCommand: run,
+      })
+    );
+  } catch (error) {
+    return {
+      action: 'start',
+      containerId: '',
+      error,
+      serviceName,
+      status: 'missing',
+    };
+  }
+
+  if (!containerId) {
+    return {
+      action: 'start',
+      containerId: '',
+      serviceName,
+      status: 'missing',
+    };
+  }
+
+  try {
+    const status = await getContainerHealthStatus(containerId, {
+      env,
+      runCommand: run,
+    });
+    const serviceState = {
+      containerId,
+      serviceName,
+      status: normalizeComposeServiceStatus(status),
+    };
+
+    return {
+      ...serviceState,
+      action: getComposeServiceRecoveryAction(serviceState),
+    };
+  } catch (error) {
+    return {
+      action: 'start',
+      containerId,
+      error,
+      serviceName,
+      status: 'inspect-failed',
+    };
+  }
+}
+
+async function waitForRecoveredComposeServiceReady(
+  serviceName,
+  {
+    composeFile = PROD_COMPOSE_FILE,
+    composeGlobalArgs = [],
+    env,
+    pollMs = 2_000,
+    runCommand: run = runCommand,
+    sleepImpl = sleep,
+    timeoutMs = 180_000,
+  } = {}
+) {
+  const deadline = Date.now() + timeoutMs;
+  let lastStatus = 'missing';
+
+  while (Date.now() <= deadline) {
+    const containerId = getPrimaryContainerId(
+      await getComposeServiceContainerId(serviceName, {
+        composeFile,
+        composeGlobalArgs,
+        env,
+        runCommand: run,
+      })
+    );
+
+    if (!containerId) {
+      lastStatus = 'missing';
+    } else {
+      lastStatus = normalizeComposeServiceStatus(
+        await getContainerHealthStatus(containerId, {
+          env,
+          runCommand: run,
+        })
+      );
+
+      if (lastStatus === 'healthy' || lastStatus === 'running') {
+        return {
+          containerId,
+          serviceName,
+          status: lastStatus,
+        };
+      }
+
+      if (['dead', 'exited', 'unhealthy'].includes(lastStatus)) {
+        throw new Error(
+          `${serviceName} did not recover cleanly (status: ${lastStatus}).`
+        );
+      }
+    }
+
+    await sleepImpl(pollMs);
+  }
+
+  throw new Error(
+    `${serviceName} did not become ready within ${timeoutMs}ms (last status: ${lastStatus}).`
+  );
+}
+
+async function recoverDownComposeServices({
+  currentBlueGreen,
+  env,
+  envFilePath = WEB_ENV_FILE,
+  fsImpl = fs,
+  log = console,
+  rootDir = ROOT_DIR,
+  runCommand: run = runCommand,
+  sleepImpl = sleep,
+} = {}) {
+  const composeEnv = getWatcherComposeEnv({
+    baseEnv: env,
+    envFilePath,
+    fsImpl,
+    rootDir,
+  });
+  const composeGlobalArgs = getSteadyStateRecoveryComposeGlobalArgs(composeEnv);
+  const serviceNames = getSteadyStateRecoveryServices({
+    composeEnv,
+    composeGlobalArgs,
+    currentBlueGreen,
+  });
+
+  if (serviceNames.length === 0) {
+    return null;
+  }
+
+  const inspectedServices = await Promise.all(
+    serviceNames.map((serviceName) =>
+      inspectComposeServiceForRecovery(serviceName, {
+        composeFile: PROD_COMPOSE_FILE,
+        composeGlobalArgs,
+        env: composeEnv,
+        runCommand: run,
+      })
+    )
+  );
+  const startServices = inspectedServices
+    .filter((service) => service.action === 'start')
+    .map((service) => service.serviceName);
+  const recreateServices = inspectedServices
+    .filter((service) => service.action === 'recreate')
+    .map((service) => service.serviceName);
+  const pendingServices = inspectedServices
+    .filter((service) => service.action === 'pending')
+    .map((service) => service.serviceName);
+  const recoverySummary = {
+    inspectedServices,
+    pendingServices,
+    recreateServices,
+    startServices,
+  };
+
+  if (startServices.length === 0 && recreateServices.length === 0) {
+    if (pendingServices.length > 0) {
+      log.warn?.(
+        `Docker Compose service recovery is waiting for starting services: ${pendingServices.join(', ')}.`
+      );
+      return {
+        ...recoverySummary,
+        status: 'pending',
+      };
+    }
+
+    return null;
+  }
+
+  try {
+    if (startServices.length > 0) {
+      log.warn?.(
+        `Recovering down Docker Compose services: ${startServices.join(', ')}.`
+      );
+      await runComposeUpWithNameConflictRecovery({
+        composeFile: PROD_COMPOSE_FILE,
+        composeGlobalArgs,
+        env: composeEnv,
+        fsImpl,
+        runCommand: run,
+        services: startServices,
+        upArgs: [
+          'up',
+          '--detach',
+          '--no-build',
+          '--remove-orphans',
+          ...startServices,
+        ],
+      });
+    }
+
+    if (recreateServices.length > 0) {
+      log.warn?.(
+        `Recreating unhealthy Docker Compose services: ${recreateServices.join(', ')}.`
+      );
+      await runComposeUpWithNameConflictRecovery({
+        composeFile: PROD_COMPOSE_FILE,
+        composeGlobalArgs,
+        env: composeEnv,
+        fsImpl,
+        runCommand: run,
+        services: recreateServices,
+        upArgs: [
+          'up',
+          '--detach',
+          '--no-build',
+          '--force-recreate',
+          '--remove-orphans',
+          ...recreateServices,
+        ],
+      });
+    }
+
+    const recoveredServices = [...startServices, ...recreateServices];
+    const readyServices = await Promise.all(
+      recoveredServices.map((serviceName) =>
+        waitForRecoveredComposeServiceReady(serviceName, {
+          composeFile: PROD_COMPOSE_FILE,
+          composeGlobalArgs,
+          env: composeEnv,
+          runCommand: run,
+          sleepImpl,
+        })
+      )
+    );
+
+    log.info?.(
+      `Recovered Docker Compose services: ${recoveredServices.join(', ')}.`
+    );
+
+    return {
+      ...recoverySummary,
+      readyServices,
+      recoveredServices,
+      status: 'recovered',
+    };
+  } catch (error) {
+    log.error?.(
+      `Docker Compose service recovery failed: ${error instanceof Error ? error.message : String(error)}`
+    );
+
+    return {
+      ...recoverySummary,
+      error,
+      status: 'failed',
+    };
+  }
 }
 
 function getStandbyRefreshCandidate(
@@ -2425,12 +3788,82 @@ function formatInstantRolloutRequester(request) {
   );
 }
 
+async function pruneWatcherFailedBuildResidue({
+  env,
+  fsImpl,
+  log = console,
+  runCommand: run = runCommand,
+}) {
+  if (isFalseyEnv(env?.DOCKER_WEB_WATCHER_PRUNE_FAILED_BUILD_RESIDUE)) {
+    return;
+  }
+
+  const builderName = env?.BUILDX_BUILDER ?? env?.DOCKER_WEB_BUILD_BUILDER_NAME;
+  const cleanupCommands = [];
+
+  if (builderName) {
+    cleanupCommands.push([
+      'docker',
+      ['buildx', 'prune', '--builder', builderName, '--all', '--force'],
+    ]);
+  }
+
+  cleanupCommands.push([
+    'docker',
+    ['image', 'prune', '--force', '--filter', 'dangling=true'],
+  ]);
+
+  for (const [command, args] of cleanupCommands) {
+    try {
+      await runChecked(command, args, {
+        env,
+        fsImpl,
+        runCommand: run,
+      });
+    } catch (cleanupError) {
+      log.warn?.(
+        `Failed to prune watcher failed-build residue with ${command} ${args.join(' ')}: ${getErrorMessage(cleanupError)}`
+      );
+    }
+  }
+}
+
+async function recoverWatcherBuildkitAfterChildDeployFailure({
+  composeFile = PROD_COMPOSE_FILE,
+  composeGlobalArgs = ['--profile', 'redis'],
+  env,
+  error,
+  fsImpl,
+  log = console,
+  runCommand: run = runCommand,
+}) {
+  if (!isBuildkitResourceProfileFallbackError(error)) {
+    return;
+  }
+
+  try {
+    await forceRecoverBuildkitAfterFailure({
+      composeFile,
+      composeGlobalArgs,
+      env,
+      fsImpl,
+      reason: 'watcher-child-deploy-failure',
+      runCommand: run,
+    });
+  } catch (recoveryError) {
+    log.warn?.(
+      `Failed to recover BuildKit after child deploy failure: ${getErrorMessage(recoveryError)}`
+    );
+  }
+}
+
 async function runBlueGreenDeploy({
   deploymentKind,
   deployCommand = DEFAULT_DEPLOY_COMMAND,
   env,
   fsImpl = fs,
   latestCommit,
+  log = console,
   now = () => Date.now(),
   paths = getWatchPaths(),
   processImpl = process,
@@ -2469,13 +3902,30 @@ async function runBlueGreenDeploy({
       [SKIP_WATCH_HISTORY_ENV]: '1',
     };
 
-    await runChecked(command, args, {
-      env: deploymentEnv,
-      runCommand: run,
-      stdio: 'pipe',
-      teeOutput: true,
-      timeoutMs,
-    });
+    try {
+      await runChecked(command, args, {
+        env: deploymentEnv,
+        runCommand: run,
+        stdio: 'pipe',
+        teeOutput: true,
+        timeoutMs,
+      });
+    } catch (error) {
+      await pruneWatcherFailedBuildResidue({
+        env: deploymentEnv,
+        fsImpl,
+        log,
+        runCommand: run,
+      });
+      await recoverWatcherBuildkitAfterChildDeployFailure({
+        env: deploymentEnv,
+        error,
+        fsImpl,
+        log,
+        runCommand: run,
+      });
+      throw error;
+    }
   } finally {
     heldLock.release();
   }
@@ -2882,7 +4332,7 @@ async function cacheBlueGreenDeploymentImage({
     fsImpl,
     rootDir,
   });
-  const serviceName = getBlueGreenServiceName(activeColor);
+  const serviceName = getBlueGreenServiceName(activeColor, composeEnv);
   const imageTag = getBlueGreenCacheImageTag(latestCommit.shortHash, {
     composeFile,
     env: composeEnv,
@@ -3051,6 +4501,7 @@ async function runPendingDeployAfterRestart({
     env,
     fsImpl,
     latestCommit,
+    log,
     now,
     paths,
     runCommand: run,
@@ -3339,12 +4790,28 @@ async function runDeploymentRevertRequestIteration(
   }
 
   const pin = createDeploymentPinFromRevertRequest(request, deployment);
-  const cachedImageTag =
+  let cachedImageTag =
     typeof deployment.imageTag === 'string' &&
     deployment.imageTag.length > 0 &&
     (request.imageTag == null || request.imageTag === deployment.imageTag)
       ? deployment.imageTag
       : null;
+
+  if (cachedImageTag) {
+    const cacheAvailable = await hasCachedRecoveryImage({
+      cachedImageTag,
+      env,
+      envFilePath,
+      fsImpl,
+      log,
+      rootDir,
+      runCommand: run,
+    });
+
+    if (!cacheAvailable) {
+      cachedImageTag = null;
+    }
+  }
 
   if (!cachedImageTag) {
     if (activeDeploymentConflict) {
@@ -3674,6 +5141,7 @@ async function runPinnedDeploymentIteration(
       env,
       fsImpl,
       latestCommit,
+      log,
       now,
       paths,
       runCommand: run,
@@ -3810,6 +5278,7 @@ async function runPinnedDeploymentIteration(
 async function runDeployWatchIteration(
   target,
   {
+    commitValidationReader = getGitHubWorkflowValidationForCommit,
     deployCommand = DEFAULT_DEPLOY_COMMAND,
     env,
     envFilePath = WEB_ENV_FILE,
@@ -3823,6 +5292,7 @@ async function runDeployWatchIteration(
     platformProjectReader = readPlatformProject,
     rootDir = ROOT_DIR,
     runCommand: run = runCommand,
+    sleepImpl = sleep,
   } = {}
 ) {
   const checkedAt = now();
@@ -3831,11 +5301,15 @@ async function runDeployWatchIteration(
       env,
       ...payload,
     });
+  let composeServiceRecovery = null;
+  let cronRunnerHealth = null;
   const attachRuntime = async (result, history = null) => {
     const snapshotNow = now();
 
     return {
       ...result,
+      ...(composeServiceRecovery ? { composeServiceRecovery } : {}),
+      ...(cronRunnerHealth ? { cronRunnerHealth } : {}),
       deploymentPin: readDeploymentPin(paths, fsImpl),
       ...(await loadRuntimeSnapshot({
         env,
@@ -3849,6 +5323,53 @@ async function runDeployWatchIteration(
       })),
     };
   };
+  cronRunnerHealth = await reconcileCronRunnerHealth({
+    env,
+    envFilePath,
+    fsImpl,
+    log,
+    now,
+    paths,
+    rootDir,
+    runCommand: run,
+    sleepImpl: sleep,
+  });
+
+  if (cronRunnerHealth?.status === 'recovered') {
+    return attachRuntime({
+      checkedAt,
+      status: 'cron-runner-recovered',
+    });
+  }
+
+  if (cronRunnerHealth?.status === 'recovered-awaiting-heartbeat') {
+    return attachRuntime({
+      checkedAt,
+      status: 'cron-runner-recovered-awaiting-heartbeat',
+    });
+  }
+
+  if (
+    cronRunnerHealth?.status === 'pending' ||
+    cronRunnerHealth?.status === 'backoff'
+  ) {
+    return attachRuntime({
+      checkedAt,
+      status: 'cron-runner-recovery-pending',
+    });
+  }
+
+  if (cronRunnerHealth?.status === 'failed') {
+    return attachRuntime({
+      checkedAt,
+      error: new Error(
+        cronRunnerHealth.recovery?.request?.lastError ??
+          'Cron runner recovery failed.'
+      ),
+      status: 'cron-runner-recovery-failed',
+    });
+  }
+
   const timedOutBuild = await stopTimedOutDeploymentBuildIfNeeded({
     env,
     fsImpl,
@@ -3918,6 +5439,40 @@ async function runDeployWatchIteration(
     );
   }
 
+  const runtimeSnapshotBeforeServiceRecovery = await loadRuntimeSnapshot({
+    env,
+    envFilePath,
+    fsImpl,
+    now: now(),
+    paths,
+    rootDir,
+    runCommand: run,
+  });
+  composeServiceRecovery = await recoverDownComposeServices({
+    currentBlueGreen: runtimeSnapshotBeforeServiceRecovery.currentBlueGreen,
+    env,
+    envFilePath,
+    fsImpl,
+    log,
+    rootDir,
+    runCommand: run,
+  });
+
+  if (composeServiceRecovery?.status === 'pending') {
+    return attachRuntime({
+      checkedAt,
+      status: 'service-recovery-pending',
+    });
+  }
+
+  if (composeServiceRecovery?.status === 'failed') {
+    return attachRuntime({
+      checkedAt,
+      error: composeServiceRecovery.error,
+      status: 'service-recovery-failed',
+    });
+  }
+
   if (deploymentPin) {
     return runPinnedDeploymentIteration(target, deploymentPin, {
       deployCommand,
@@ -3967,6 +5522,7 @@ async function runDeployWatchIteration(
         log,
         now,
         runCommand: run,
+        sleepImpl,
       });
       await removeUntrackedWorktreeFiles({
         cwd: rootDir,
@@ -3975,6 +5531,7 @@ async function runDeployWatchIteration(
         log,
         now,
         runCommand: run,
+        sleepImpl,
       });
     }
 
@@ -3982,8 +5539,12 @@ async function runDeployWatchIteration(
       `Deployment pin is clear. Checking out ${target.branch} and resuming normal upstream sync.`
     );
     await checkoutBranch(target.branch, {
+      cwd: rootDir,
       env,
+      fsImpl,
+      log,
       runCommand: run,
+      sleepImpl,
     });
     currentBranch = await getCurrentBranchName({ env, runCommand: run });
   }
@@ -4020,6 +5581,7 @@ async function runDeployWatchIteration(
           now,
           rootDir,
           runCommand: run,
+          sleepImpl,
         });
 
     if (!syncResult) {
@@ -4030,6 +5592,7 @@ async function runDeployWatchIteration(
         log,
         now,
         runCommand: run,
+        sleepImpl,
       });
     }
 
@@ -4057,6 +5620,26 @@ async function runDeployWatchIteration(
         latestCommit.hash
       );
       const platformProject = await platformProjectReader({ env });
+      let latestCommitValidationBlock;
+      const getLatestCommitValidationBlock = async () => {
+        if (latestCommitValidationBlock !== undefined) {
+          return latestCommitValidationBlock;
+        }
+
+        latestCommitValidationBlock = await getCommitValidationBlock({
+          commit: latestCommit,
+          commitValidationReader,
+          env,
+          fsImpl,
+          log,
+          now,
+          paths,
+          rootDir,
+          runCommand: run,
+        });
+
+        return latestCommitValidationBlock;
+      };
 
       if (platformProject.deploymentStatus === 'queued') {
         if (
@@ -4301,6 +5884,7 @@ async function runDeployWatchIteration(
             env,
             fsImpl,
             latestCommit,
+            log,
             now,
             paths,
             runCommand: run,
@@ -4460,7 +6044,23 @@ async function runDeployWatchIteration(
         status: 'up-to-date',
       });
 
-      if (needsActiveRuntimeRecovery(runtimeSnapshot)) {
+      if (needsActiveRuntimeRecovery(runtimeSnapshot, { env })) {
+        const validationBlock = await getLatestCommitValidationBlock();
+
+        if (validationBlock) {
+          logValidationBlockOnce(
+            `Skipping blue/green runtime recovery for ${latestCommit.shortHash} because ${summarizeCommitValidationBlock(validationBlock)}.`,
+            latestCommit.hash,
+            { fsImpl, log, paths }
+          );
+          return attachRuntime(
+            createValidationBlockedResult(validationBlock, {
+              checkedAt,
+              latestCommit,
+            })
+          );
+        }
+
         if (
           hasReachedDeploymentFailureLimit(deploymentHistory, latestCommit.hash)
         ) {
@@ -4542,6 +6142,23 @@ async function runDeployWatchIteration(
         latestCommit.hash &&
         latestCommit.hash !== latestDeployedCommitHash
       ) {
+        const validationBlock = await getLatestCommitValidationBlock();
+
+        if (validationBlock) {
+          logValidationBlockOnce(
+            `Skipping reconciliation deploy for ${latestCommit.shortHash} because ${summarizeCommitValidationBlock(validationBlock)}.`,
+            latestCommit.hash,
+            { fsImpl, log, paths }
+          );
+          return attachRuntime(
+            createValidationBlockedResult(validationBlock, {
+              checkedAt,
+              latestCommit,
+              reconciledFromCommitHash: latestDeployedCommitHash,
+            })
+          );
+        }
+
         if (
           hasReachedDeploymentFailureLimit(deploymentHistory, latestCommit.hash)
         ) {
@@ -4687,6 +6304,7 @@ async function runDeployWatchIteration(
             env,
             fsImpl,
             latestCommit,
+            log,
             now,
             paths,
             runCommand: run,
@@ -4860,12 +6478,29 @@ async function runDeployWatchIteration(
           now,
           rootDir,
           runCommand: run,
+          sleepImpl,
         });
 
         return {
           ...runtimeSnapshot,
           migration,
         };
+      }
+
+      const validationBlock = await getLatestCommitValidationBlock();
+
+      if (validationBlock) {
+        logValidationBlockOnce(
+          `Skipping standby refresh for ${latestCommit.shortHash} because ${summarizeCommitValidationBlock(validationBlock)}.`,
+          latestCommit.hash,
+          { fsImpl, log, paths }
+        );
+        return attachRuntime(
+          createValidationBlockedResult(validationBlock, {
+            checkedAt,
+            latestCommit,
+          })
+        );
       }
 
       if (
@@ -5172,6 +6807,7 @@ async function runDeployWatchIteration(
           now,
           rootDir,
           runCommand: run,
+          sleepImpl,
         });
       }
 
@@ -5227,6 +6863,36 @@ async function runDeployWatchIteration(
           12
         )} to ${updatedHead.slice(0, 12)}.`
       );
+
+      const validationBlock = await getCommitValidationBlock({
+        commit: latestCommit,
+        commitValidationReader,
+        env,
+        fsImpl,
+        log,
+        now,
+        paths,
+        rootDir,
+        runCommand: run,
+      });
+
+      if (validationBlock) {
+        logValidationBlockOnce(
+          `Skipping deployment for ${latestCommit.shortHash} because ${summarizeCommitValidationBlock(validationBlock)}.`,
+          latestCommit.hash,
+          { fsImpl, log, paths }
+        );
+        return attachRuntime(
+          createValidationBlockedResult(validationBlock, {
+            checkedAt,
+            containerRefreshRequired,
+            latestCommit,
+            newHead: updatedHead,
+            oldHead: localHead,
+            restartRequired,
+          })
+        );
+      }
 
       log.info?.(
         `Installing dependencies from the reviewed frozen lockfile for ${updatedHead.slice(0, 12)}.`
@@ -5583,6 +7249,7 @@ async function runDeployWatchIteration(
           env,
           fsImpl,
           latestCommit,
+          log,
           now,
           paths,
           runCommand: run,
@@ -5791,6 +7458,36 @@ async function runDeployWatchIteration(
       throw error;
     }
 
+    if (
+      removeStaleGitIndexLock({
+        error,
+        fsImpl,
+        log,
+        now,
+        rootDir,
+      })
+    ) {
+      log.warn?.(
+        `Retrying Git poll on ${target.branch} after removing a stale Git lock.`
+      );
+      return runDeployWatchIteration(target, {
+        commitValidationReader,
+        deployCommand,
+        env,
+        envFilePath,
+        fsImpl,
+        log,
+        now,
+        onDeploymentStart,
+        paths,
+        platformProjectDeploymentStatusUpdater,
+        platformProjectReader,
+        processImpl,
+        rootDir,
+        runCommand: run,
+      });
+    }
+
     log.warn?.(
       `Git polling failed on ${target.branch}: ${error instanceof Error ? error.message : String(error)}`
     );
@@ -5815,6 +7512,7 @@ async function runDeployWatchIteration(
 async function runDeployWatchLoop(
   target,
   {
+    commitValidationReader = getGitHubWorkflowValidationForCommit,
     deployCommand = DEFAULT_DEPLOY_COMMAND,
     env,
     envFilePath = WEB_ENV_FILE,
@@ -5908,6 +7606,7 @@ async function runDeployWatchLoop(
     }
 
     const iterationResult = await runDeployWatchIteration(target, {
+      commitValidationReader,
       deployCommand,
       env,
       envFilePath,
@@ -5961,6 +7660,7 @@ async function resolveInitialWatcherTarget({
   paths,
   rootDir = ROOT_DIR,
   runCommand: run,
+  sleepImpl = sleep,
 } = {}) {
   try {
     return await resolveLockedBranchTarget({
@@ -6005,6 +7705,7 @@ async function resolveInitialWatcherTarget({
         fsImpl,
         log,
         runCommand: run,
+        sleepImpl,
       });
       await removeUntrackedWorktreeFiles({
         cwd: rootDir,
@@ -6012,6 +7713,7 @@ async function resolveInitialWatcherTarget({
         fsImpl,
         log,
         runCommand: run,
+        sleepImpl,
       });
     }
 
@@ -6021,7 +7723,10 @@ async function resolveInitialWatcherTarget({
     await checkoutBranch(selectedBranch, {
       cwd: rootDir,
       env,
+      fsImpl,
+      log,
       runCommand: run,
+      sleepImpl,
     });
 
     return {
@@ -6255,54 +7960,7 @@ async function main(argv = process.argv.slice(2), options = {}) {
       paths,
       rootDir,
       runCommand: run,
-    });
-    if (!isWatcherWorktreeResetDisabled(env)) {
-      await forceSyncWatcherWorktree(initialTarget, {
-        env,
-        fsImpl,
-        log: ui,
-        now: options.now ?? (() => Date.now()),
-        rootDir,
-        runCommand: run,
-      });
-    }
-    const projectTarget = await resolvePlatformProjectTarget(initialTarget, {
-      env,
-      listDirtyWorktreePaths,
-      log: ui,
-      runCommand: run,
-    });
-    target = projectTarget.target;
-
-    if (projectTarget.blocked) {
-      ui.warn(projectTarget.message ?? 'Project deployment is blocked.');
-      ui.update({
-        lastResult: {
-          project: projectTarget.project,
-          status: 'blocked',
-        },
-        target,
-      });
-      writeWatchStatus(ui.state, {
-        fsImpl,
-        now: Date.now(),
-        paths,
-        processImpl,
-      });
-
-      return {
-        project: projectTarget.project,
-        status: 'blocked',
-      };
-    }
-    const latestCommit = await getCommitMetadata('HEAD', {
-      env,
-      runCommand: run,
-    });
-
-    ui.update({
-      latestCommit,
-      target,
+      sleepImpl: options.sleepImpl ?? sleep,
     });
     const existingLock = readWatchLock(paths, fsImpl);
 
@@ -6338,7 +7996,41 @@ async function main(argv = process.argv.slice(2), options = {}) {
             `Unable to stop existing watcher PID ${existingLock.pid}.`
           );
         }
+      } else {
+        throw new Error(
+          `Watcher already locked by PID ${existingLock.pid}. Re-run with --resume-if-running to mirror the existing session or --replace-existing to stop it and take over.`
+        );
       }
+    }
+
+    const projectTarget = await resolvePlatformProjectTarget(initialTarget, {
+      env,
+      listDirtyWorktreePaths,
+      log: ui,
+      runCommand: run,
+    });
+    target = projectTarget.target;
+
+    if (projectTarget.blocked) {
+      ui.warn(projectTarget.message ?? 'Project deployment is blocked.');
+      ui.update({
+        lastResult: {
+          project: projectTarget.project,
+          status: 'blocked',
+        },
+        target,
+      });
+      writeWatchStatus(ui.state, {
+        fsImpl,
+        now: Date.now(),
+        paths,
+        processImpl,
+      });
+
+      return {
+        project: projectTarget.project,
+        status: 'blocked',
+      };
     }
 
     try {
@@ -6354,6 +8046,28 @@ async function main(argv = process.argv.slice(2), options = {}) {
 
       throw error;
     }
+
+    if (!isWatcherWorktreeResetDisabled(env)) {
+      await forceSyncWatcherWorktree(target, {
+        env,
+        fsImpl,
+        log: ui,
+        now: options.now ?? (() => Date.now()),
+        rootDir,
+        runCommand: run,
+        sleepImpl: options.sleepImpl ?? sleep,
+      });
+    }
+
+    const latestCommit = await getCommitMetadata('HEAD', {
+      env,
+      runCommand: run,
+    });
+
+    ui.update({
+      latestCommit,
+      target,
+    });
 
     ui.start();
     ui.info(
@@ -6450,6 +8164,19 @@ async function main(argv = process.argv.slice(2), options = {}) {
           deploymentHistory,
           latestCommit.hash
         );
+        const latestCommitValidationBlock = await getCommitValidationBlock({
+          commit: latestCommit,
+          commitValidationReader:
+            options.commitValidationReader ??
+            getGitHubWorkflowValidationForCommit,
+          env,
+          fsImpl,
+          log: ui,
+          now: options.now ?? (() => Date.now()),
+          paths,
+          rootDir,
+          runCommand: run,
+        });
 
         const runRecoveredPendingDeployForCommit = async (
           deployCommit,
@@ -6620,7 +8347,51 @@ async function main(argv = process.argv.slice(2), options = {}) {
           }
         };
 
-        if (
+        if (latestCommitValidationBlock) {
+          const checkedAt =
+            typeof options.now === 'function' ? options.now() : Date.now();
+          const runtimeSnapshot = await loadRuntimeSnapshot({
+            env,
+            envFilePath,
+            fsImpl,
+            now: checkedAt,
+            paths,
+            rootDir,
+            runCommand: run,
+          });
+          const latestDeploymentSummary = getLatestDeploymentSummary(
+            runtimeSnapshot.deployments
+          );
+
+          clearPendingDeployRequest({
+            fsImpl,
+            paths,
+          });
+          logValidationBlockOnce(
+            `Skipping recovered deploy handoff for ${latestCommit.shortHash} because ${summarizeCommitValidationBlock(latestCommitValidationBlock)}.`,
+            latestCommit.hash,
+            { fsImpl, log: ui, paths }
+          );
+          ui.update({
+            currentBlueGreen: runtimeSnapshot.currentBlueGreen,
+            dockerResources: runtimeSnapshot.dockerResources,
+            deployments: runtimeSnapshot.deployments,
+            lastDeployAt: latestDeploymentSummary.lastDeployAt,
+            lastDeployStatus: latestDeploymentSummary.lastDeployStatus,
+            lastResult: createValidationBlockedResult(
+              latestCommitValidationBlock,
+              {
+                checkedAt,
+                latestCommit,
+              }
+            ),
+            nextCheckAt: Date.now() + parsed.intervalMs,
+          });
+
+          if (parsed.once) {
+            return;
+          }
+        } else if (
           hasReachedDeploymentFailureLimit(deploymentHistory, latestCommit.hash)
         ) {
           const parentDeploy =
@@ -6675,6 +8446,8 @@ async function main(argv = process.argv.slice(2), options = {}) {
     }
 
     const result = await runDeployWatchLoop(target, {
+      commitValidationReader:
+        options.commitValidationReader ?? getGitHubWorkflowValidationForCommit,
       deployCommand: options.deployCommand ?? DEFAULT_DEPLOY_COMMAND,
       env,
       envFilePath,
@@ -6828,6 +8601,11 @@ module.exports = {
   DEFAULT_DOCKER_DAEMON_RESTART_AFTER_MS,
   DEFAULT_DOCKER_DAEMON_RESTART_COOLDOWN_MS,
   DEFAULT_DOCKER_DAEMON_POST_RESTART_COMMAND_TIMEOUT_MS,
+  DEFAULT_DOCKER_DAEMON_PROBE_TIMEOUT_MS,
+  DEFAULT_DOCKER_LOG_STREAM_RECONNECT_MS,
+  DEFAULT_CRON_RUNNER_HEARTBEAT_STALE_AFTER_MS,
+  DEFAULT_CRON_RUNNER_RECOVERY_WAIT_MS,
+  DEFAULT_CRON_RUNNER_RECOVERY_POLL_MS,
   DEFAULT_STALE_GIT_INDEX_LOCK_MS,
   DEFAULT_INTERVAL_MS,
   DISPLAY_DEPLOYMENTS,
@@ -6841,6 +8619,8 @@ module.exports = {
   CONTAINER_REFRESH_WATCHED_FILES,
   SELF_WATCHED_FILES,
   WATCH_ARGS_FILE,
+  WATCHER_BOOTSTRAP_IDLE_RUNTIME_ENV,
+  WATCH_CRON_RUNNER_RECOVERY_REQUEST_FILE,
   WATCH_HISTORY_FILE,
   WATCH_LOCK_FILE,
   WATCH_LOG_FILE,
@@ -6849,12 +8629,20 @@ module.exports = {
   WATCH_RUNTIME_DIR,
   WATCH_STATUS_FILE,
   WATCHER_CONTAINER_ENV,
+  WEB_CRON_RUNNER_SERVICE,
+  WEB_DOCKER_CONTROL_SERVICE,
+  CRON_RUNNER_RECOVERY_RETRY_MS,
+  CRON_RUNNER_HEARTBEAT_STALE_AFTER_MS_ENV,
+  CRON_RUNNER_RECOVERY_WAIT_MS_ENV,
+  CRON_RUNNER_RECOVERY_POLL_MS_ENV,
   DOCKER_DAEMON_RESTART_AFTER_MS_ENV,
   DOCKER_DAEMON_RESTART_COMMAND_ENV,
   DOCKER_DAEMON_RESTART_COOLDOWN_MS_ENV,
   DOCKER_DAEMON_RESTART_DISABLED_ENV,
   DOCKER_DAEMON_POST_RESTART_COMMANDS_ENV,
   DOCKER_DAEMON_POST_RESTART_COMMAND_TIMEOUT_MS_ENV,
+  DOCKER_DAEMON_PROBE_TIMEOUT_MS_ENV,
+  DOCKER_LOG_STREAM_RECONNECT_MS_ENV,
   DOCKER_DAEMON_RECOVERY_SETTINGS_FILE,
   acquireWatchLock,
   appendFailedDeploymentHistoryAndNotify,
@@ -6863,6 +8651,7 @@ module.exports = {
   clearInstantRolloutRequest,
   clearWatchStatus,
   clearContainerManagedWatcherState,
+  clearCronRunnerRecoveryRequest,
   clearPendingDeployRequest,
   createWatchUi,
   fetchTrackedBranch,
@@ -6879,6 +8668,7 @@ module.exports = {
   getFailedDeploymentCountForCommit,
   getChangedFilesForBuildScope,
   getLatestSuccessfulDeploymentCommitHash,
+  getComposeServiceRecoveryAction,
   getCommitMetadata,
   getCurrentBranch,
   getMigrationRequest,
@@ -6888,7 +8678,13 @@ module.exports = {
   getDockerDaemonRestartCooldownMs,
   getDockerDaemonPostRestartCommands,
   getDockerDaemonPostRestartCommandTimeoutMs,
+  getDockerDaemonProbeTimeoutMs,
+  getCronRunnerHeartbeatStaleAfterMs,
+  getCronRunnerRecoveryWaitMs,
+  getCronRunnerRecoveryPollMs,
   getDockerDaemonRecoverySettingsEnv,
+  getDockerLogStreamReconnectMs,
+  getCronRunnerStatusFile,
   getRevision,
   getTrackedUpstream,
   getWatcherContainerState,
@@ -6902,11 +8698,14 @@ module.exports = {
   isRecoverableGitCommandError,
   isGitIndexLockError,
   isGitLockError,
+  isDockerDaemonProbeTimeoutError,
+  isDockerDaemonRecoveryError,
   isAncestor,
   isProcessAlive,
   listChangedFilesBetweenRevisions,
   main,
   mirrorExistingWatchSession,
+  needsActiveRuntimeRecovery,
   parseArgs,
   parseContainerConsoleLogEntries,
   parseProxyLogEntries,
@@ -6915,18 +8714,24 @@ module.exports = {
   pullTrackedBranch,
   readDeploymentHistory,
   readDockerDaemonRecoverySettings,
+  readCronRunnerHeartbeat,
+  readCronRunnerRecoveryRequest,
   readInstantRolloutRequest,
   readPendingDeployRequest,
   readWatchArgsFile,
   readWatchLock,
   readWatchStatus,
   releaseWatchLock,
+  recoverDownComposeServices,
+  reconcileCronRunnerHealth,
+  recoverWatcherBuildkitAfterChildDeployFailure,
   restoreTargetBranchIfDetached,
   resolveLockedBranchTarget,
   resolvePlatformProjectTarget,
   runBunFrozenInstall,
   runBlueGreenDeploy,
   runPendingDeployAfterRestart,
+  processCronRunnerRecoveryRequest,
   runDeployWatchIteration,
   runDeploymentRevertRequestIteration,
   runDeployWatchLoop,
@@ -6943,6 +8748,7 @@ module.exports = {
   streamBlueGreenWatcherLogs,
   terminateExistingWatcher,
   waitForDockerDaemonRecovery,
+  waitForCronRunnerHeartbeat,
   createPendingDeploymentEntry,
   createQuietRunCommand,
   hasPersistedPendingDeployRequest,
@@ -6950,6 +8756,7 @@ module.exports = {
   summarizeResult,
   waitForProcessExit,
   writeWatchArgsFile,
+  writeCronRunnerRecoveryRequest,
   writePendingDeployRequest,
   writeWatchStatus,
   writeDeploymentHistory,

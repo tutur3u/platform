@@ -1,6 +1,7 @@
 {
   "command_launcher": {
     "apps": "Ứng dụng",
+    "apps_description": "Mở một ứng dụng Tuturuuu khác từ workspace này.",
     "close": "đóng",
     "current": "Hiện tại",
     "current_app": "Ứng dụng hiện tại",
@@ -15,6 +16,9 @@
     "navigation": "Điều hướng",
     "open": "Mở",
     "open_app": "Mở ứng dụng",
+    "open_here": "Mở tại đây",
+    "open_in_new_tab": "Mở trong tab mới",
+    "open_options": "Tùy chọn mở",
     "open_workspace": "Mở workspace",
     "personal": "Cá nhân",
     "placeholder": "Tìm ứng dụng, workspace và trang...",
@@ -940,6 +944,13 @@
         "visibility": "Hiển thị"
       },
       "commerce": {
+        "attributedRevenue": "Doanh thu ghi nhận",
+        "cancelSquare": "Hủy trên terminal",
+        "earnedAmount": "Số tiền kiếm được",
+        "empty": "Chưa có bản ghi thương mại",
+        "emptyDescriptions": {
+          "revenueShare": "Thu nhập chia doanh thu sẽ xuất hiện tại đây sau khi doanh số đã hoàn tất có dòng tồn kho đủ điều kiện."
+        },
         "items": "{count, plural, one {# mặt hàng} other {# mặt hàng}}",
         "metrics": {
           "completed": "Hoàn tất",
@@ -967,9 +978,16 @@
           "uncosted": "Chưa có chi phí",
           "units": "Số lượng đã bán"
         },
+        "productsLabel": "{count, plural, one {# sản phẩm} other {# sản phẩm}}",
         "release": "Giải phóng",
         "releaseHint": "Giải phóng lượng tồn kho mà phiên giữ chỗ này đang giữ trở lại kho khả dụng và hủy phiên thanh toán. Dùng cho các phiên giữ chỗ bị bỏ dở hoặc treo.",
         "releaseUnavailable": "Chỉ có thể giải phóng các phiên giữ chỗ đang hoạt động. Phiên thanh toán này đã hoàn tất hoặc đã được giải phóng.",
+        "sendSquare": "Gửi tới terminal",
+        "source": {
+          "checkout": "Checkout",
+          "finance": "Hóa đơn"
+        },
+        "splitLabel": "Chia {value}%",
         "status": {
           "completed": "Hoàn tất",
           "expired": "Hết hạn",
@@ -980,11 +998,15 @@
           "checkouts": "Checkout",
           "label": "Chế độ thương mại",
           "promotions": "Khuyến mãi",
+          "revenueShare": "Chia doanh thu",
           "sales": "Bán hàng"
-        }
+        },
+        "unitsLabel": "{count, plural, one {# đơn vị} other {# đơn vị}}"
       },
       "costing": {
+        "addProfitShare": "Thêm chia lợi nhuận",
         "addScenario": "Thêm kịch bản",
+        "artCommission": "Hoa hồng thiết kế (lô)",
         "averageMargin": "Biên trung bình",
         "batchSize": "Cỡ lô",
         "bestScenario": "Kịch bản biên tốt nhất",
@@ -995,6 +1017,13 @@
         "editProfileTitle": "Chỉnh sửa hồ sơ chi phí",
         "emptyDescription": "Nhập CSV từ Google Sheets hoặc tạo kịch bản lô đầu tiên để bắt đầu theo dõi biên lợi nhuận.",
         "emptyTitle": "Chưa có hồ sơ chi phí.",
+        "hints": {
+          "artCommission": "Chi phí thiết kế/hoa hồng một lần cho cả lô.",
+          "other": "Chi phí khác trên mỗi đơn vị.",
+          "packaging": "Chi phí đóng gói mỗi đơn vị.",
+          "shipping": "Chi phí vận chuyển cho cả lô.",
+          "tariff": "Thuế hoặc phí hải quan cho cả lô."
+        },
         "importCsv": "Nhập CSV",
         "importDescription": "Dán CSV xuất từ Google Sheets có các cột danh mục mặt hàng, cỡ lô, chi phí sản xuất, tổng chi phí và giá bán mục tiêu.",
         "importError": "Không thể nhập CSV chi phí.",
@@ -1007,12 +1036,20 @@
         "margin": "Biên lợi nhuận",
         "marginChart": "Biên gộp theo kịch bản",
         "newProfile": "Hồ sơ chi phí mới",
+        "other": "Khác/đơn vị",
+        "packaging": "Đóng gói/đơn vị",
         "previewImport": "Xem trước",
         "profiles": "Hồ sơ",
+        "recipient": "Người nhận",
         "retail": "Giá bán",
         "saveProfile": "Lưu hồ sơ",
         "scenario": "Kịch bản",
+        "scenarioName": "Tên kịch bản",
         "scenarios": "Kịch bản",
+        "sharePercentage": "Tỷ lệ %",
+        "sharesTotal": "Tổng tỷ lệ {total}%",
+        "sharesWarning": "Tổng tỷ lệ {total}% (nên là 100%)",
+        "shipping": "Vận chuyển (lô)",
         "status": {
           "active": "Đang hoạt động",
           "archived": "Đã lưu trữ",
@@ -1021,11 +1058,13 @@
         "steps": {
           "profile": "Hồ sơ",
           "profileDescription": "Đặt tên mặt hàng, chọn danh mục và nhập giá bán mục tiêu.",
+          "profitSharesDescription": "Phân chia lợi nhuận giữa nhân tài, đối tác và nền tảng.",
           "scenarios": "Kịch bản",
           "scenariosDescription": "Thêm cỡ lô và chi phí đơn vị để tính biên lợi nhuận và điểm hòa vốn."
         },
         "summary": "Không gian chi phí",
         "summaryDescription": "Thay thế bảng tính biên lợi nhuận bằng kịch bản lô và giả định chia lợi nhuận có thể tái sử dụng.",
+        "tariff": "Thuế nhập khẩu (lô)",
         "totalCost": "Tổng chi phí/đơn vị",
         "uncategorized": "Chưa phân loại",
         "unitCost": "Chi phí SX/đơn vị",
@@ -1145,16 +1184,22 @@
         "audits": "Sự kiện kiểm toán sẽ xuất hiện sau các thay đổi checkout, tồn kho hoặc thiết lập.",
         "bundles": "Tạo combo rồi gắn sản phẩm thành phần để chuẩn bị listing cho chiến dịch.",
         "checkouts": "Các phiên checkout Polar đã giữ hàng hoặc hoàn tất sẽ xuất hiện tại đây.",
-        "sales": "Doanh số checkout đã hoàn tất và liên kết hóa đơn tài chính sẽ xuất hiện tại đây.",
+        "revenueShare": "Khoản chia doanh thu theo đối tác sẽ xuất hiện sau khi bán hàng hoàn tất.",
+        "sales": "Doanh số checkout và hóa đơn đã hoàn tất sẽ xuất hiện tại đây.",
         "storefronts": "Tạo cửa hàng, tùy chỉnh giao diện rồi xuất bản listing cho người mua."
       },
       "forms": {
         "accentColor": "Màu nhấn",
         "actions": "Thao tác",
+        "addCategoryComponent": "Thêm nhóm danh mục",
         "addComponent": "Thêm thành phần",
+        "addOptionGroup": "Thêm tùy chọn",
         "addSection": "Thêm khu vực",
+        "addStockRow": "Thêm dòng tồn kho",
+        "addVariant": "Thêm biến thể",
         "amount": "Số lượng",
         "analyticsEnabled": "Thu thập phân tích cửa hàng",
+        "applyTemplate": "Áp dụng mẫu",
         "archive": "Lưu trữ",
         "archiveConfirmDescription": "Bản ghi vẫn được giữ cho lịch sử nhưng sẽ bị gỡ khỏi các luồng vận hành đang hoạt động.",
         "archiveConfirmTitle": "Lưu trữ bản ghi này?",
@@ -1177,11 +1222,19 @@
         },
         "cancel": "Hủy",
         "category": "Danh mục",
+        "categoryBundleSummary": "Chọn {required}; miễn phí {free} món rẻ nhất",
+        "categoryCandidateScope": "Phạm vi ứng viên danh mục",
+        "categoryCandidateScopes": {
+          "allStock": "Tất cả tồn kho đủ điều kiện",
+          "publishedListings": "Listing đã xuất bản"
+        },
+        "categoryChoiceMode": "Chế độ chọn theo danh mục",
         "checkoutMode": "Chế độ thanh toán",
         "checkoutModes": {
           "disabled": "Đã tắt",
           "polar": "Polar",
-          "simulated": "Mô phỏng"
+          "simulated": "Mô phỏng",
+          "square_terminal": "Square Terminal"
         },
         "clearImage": "Xóa ảnh",
         "componentCount": "{count, plural, one {# thành phần} other {# thành phần}}",
@@ -1226,6 +1279,7 @@
         "deleting": "Đang xóa...",
         "description": "Mô tả",
         "drivePath": "Đường dẫn Drive",
+        "duplicateStockTargetHint": "Mỗi dòng tồn kho cần một cặp đơn vị và kho riêng.",
         "edit": "Chỉnh sửa",
         "editBundleDescription": "Cập nhật thông tin combo, thành phần có tồn kho, hình ảnh, mức khả dụng và vòng đời.",
         "editBundleTitle": "Chỉnh sửa combo",
@@ -1244,10 +1298,12 @@
         "editStorefrontTitle": "Tùy chỉnh cửa hàng",
         "emptyOptions": "Không có tùy chọn phù hợp.",
         "emptyResource": "Chưa có bản ghi thiết lập.",
+        "emptyStockRows": "Sản phẩm này chưa có dòng tồn kho.",
         "estimatedMargin": "Biên lợi nhuận ước tính",
         "featuredImage": "Ảnh đại diện",
         "featuredImageDescription": "Tải ảnh sản phẩm lên Tuturuuu Drive hoặc dán URL ảnh đã lưu trữ.",
         "financeCategory": "Danh mục tài chính",
+        "fixedStockMode": "Chế độ tồn kho cố định",
         "heroImageDescription": "Dùng ảnh cửa hàng dạng ngang và vẫn ổn khi bị cắt trên di động.",
         "heroImageUrl": "URL ảnh hero",
         "hints": {
@@ -1256,6 +1312,7 @@
           "analyticsEnabled": "Ghi lại lượt truy cập và doanh số để bạn theo dõi hiệu quả của cửa hàng.",
           "batchSize": "Số đơn vị bạn sản xuất hoặc nhập trong một đợt.",
           "category": "Nhóm các sản phẩm tương tự để báo cáo và trưng bày gọn gàng hơn.",
+          "categoryCandidateScope": "Listing đã xuất bản chỉ cho khách chọn hàng đang được bán; tất cả tồn kho cũng cho phép chọn dòng tồn kho đủ điều kiện chưa xuất bản.",
           "checkoutMode": "Cách khách thanh toán — trả online tức thì, hoặc gửi yêu cầu đặt hàng để bạn xác nhận.",
           "cornerStyle": "Độ bo tròn của nút và thẻ trên cửa hàng.",
           "currency": "Loại tiền tệ khách được tính khi thanh toán.",
@@ -1269,7 +1326,10 @@
           "owner": "Người hoặc thương hiệu chịu trách nhiệm cho sản phẩm này.",
           "polarEnvironment": "Cửa hàng thanh toán qua tài khoản Polar nào. Dùng Sandbox để thử nghiệm (không tính phí thật) và Production cho bán hàng thực tế. Kết nối token tương ứng trong trung tâm Polar.",
           "price": "Số tiền khách trả cho một đơn vị.",
+          "pricingMode": "Giá cố định giữ nguyên tổng combo; giá theo món đã chọn cho phép áp dụng khuyến mại như mua 2 tặng 1.",
           "retail": "Giá bạn dự định bán một đơn vị. Dùng để ước tính lợi nhuận.",
+          "revenueSharePartner": "Đối tác hoặc talent được ghi nhận doanh thu từ dòng tồn kho này.",
+          "revenueShareSplitPercent": "Phần trăm doanh thu thực nhận được trả cho đối tác sau chiết khấu combo.",
           "sectionHref": "Liên kết tùy chọn khối này mở khi khách nhấp vào.",
           "sectionStatus": "Khối đã xuất bản hiển thị cho khách. Khối nháp và ẩn thì không.",
           "sectionType": "Khối này hiển thị gì — ảnh bìa, lưới sản phẩm, khuyến mãi, v.v.",
@@ -1324,22 +1384,32 @@
         "next": "Tiếp",
         "noBundleComponents": "Chưa gắn sản phẩm thành phần.",
         "noBundleProducts": "Tạo sản phẩm có tồn kho trước khi thêm thành phần combo.",
+        "noOptionGroups": "Chưa có tùy chọn. Thêm tùy chọn như Kích cỡ hoặc Màu sắc.",
         "noStorefrontsForListings": "Tạo cửa hàng trước khi thêm listing.",
         "note": "Ghi chú",
+        "noTemplates": "Chưa có mẫu nào.",
         "notSet": "Chưa đặt",
+        "noVariants": "Chưa có biến thể. Thêm biến thể cho từng tổ hợp.",
+        "optionGroupName": "Tên tùy chọn",
+        "optionGroups": "Tùy chọn",
+        "optionValues": "Giá trị (phân tách bằng dấu phẩy)",
         "owner": "Chủ sở hữu",
+        "pauseListing": "Tạm dừng",
         "placeholders": {
           "accentColor": "#111827",
           "amount": "120",
+          "applyTemplate": "Áp dụng mẫu",
           "batchSize": "30",
           "bundleDescription": "Combo gồm gì và vì sao khách nên chọn",
           "bundleName": "Combo cuối tuần mở bán",
           "category": "Chọn danh mục",
+          "categoryCandidateScope": "Chọn phạm vi ứng viên",
           "checkoutMode": "Chọn chế độ thanh toán",
           "cornerStyle": "Chọn kiểu bo góc",
           "costingProfileName": "Móc khóa acrylic",
           "currency": "USD",
           "financeCategory": "Liên kết tới một danh mục tài chính",
+          "freeQuantity": "1",
           "imageUrl": "https://example.com/image.webp",
           "layoutStyle": "Chọn bố cục",
           "listingTitle": "Móc khóa phiên bản giới hạn",
@@ -1347,14 +1417,21 @@
           "manufacturer": "Chọn nhà sản xuất",
           "maxPerOrder": "3",
           "minAmount": "24",
+          "optionGroupName": "Kích cỡ",
+          "optionValue": "Chọn giá trị",
+          "optionValues": "S, M, L, XL",
           "owner": "Chọn chủ sở hữu",
           "price": "10.00",
+          "pricingMode": "Chọn chế độ giá",
           "product": "Chọn sản phẩm",
           "productDescription": "Chất liệu, kích thước, lưu ý bảo quản và thông tin cho khách",
           "productName": "Móc khóa acrylic",
           "quantity": "1",
+          "quantityRequired": "3",
           "resourceName": "Tên {resource} mới",
           "retail": "10.00",
+          "revenueSharePartner": "Chọn đối tác chia doanh thu",
+          "revenueShareSplitPercent": "15",
           "saleNote": "Sở thích khách, ghi chú payout hoặc ngữ cảnh fulfillment",
           "sectionDescription": "Đợt mở bán giới hạn, thời gian preorder hoặc nội dung promo cho khách",
           "sectionHref": "https://example.com/campaign",
@@ -1363,17 +1440,20 @@
           "sectionType": "Chọn loại khu vực",
           "slug": "summer-drop",
           "status": "Chọn trạng thái",
+          "stockRow": "Chọn dòng tồn kho",
           "storeDescription": "Mô tả ngắn hiển thị cho khách của cửa hàng",
           "storefront": "Chọn cửa hàng",
           "storeName": "Cửa hàng Sokora",
           "supplier": "Chọn nhà cung cấp",
           "surfaceStyle": "Chọn kiểu bề mặt",
           "target": "Chọn sản phẩm hoặc combo",
+          "templateName": "Kích cỡ quần áo",
           "themePreset": "Chọn chủ đề",
           "totalCost": "1.37",
           "unit": "Chọn đơn vị",
           "unitCost": "0.70",
           "usage": "Nhãn kệ, gói sự kiện hoặc ghi chú chiến dịch",
+          "variantSku": "TEE-BLK-M",
           "visibility": "Chọn hiển thị",
           "warehouse": "Chọn kho"
         },
@@ -1383,12 +1463,24 @@
           "sandbox": "Sandbox (thử nghiệm)"
         },
         "price": "Giá",
+        "pricingMode": "Chế độ giá",
+        "pricingModes": {
+          "fixedPrice": "Giá combo cố định",
+          "selectedItems": "Giá theo món đã chọn"
+        },
         "product": "Sản phẩm",
         "productName": "Tên sản phẩm",
         "profitPerUnit": "Lợi nhuận / đơn vị",
+        "publishListing": "Xuất bản",
         "quantity": "Số lượng",
+        "remove": "Xóa",
         "removeSection": "Xóa khu vực",
+        "removeStockRow": "Xóa dòng",
+        "retail": "Giá bán",
+        "revenueSharePartner": "Đối tác chia sẻ doanh thu",
+        "revenueShareSplitPercent": "% chia sẻ",
         "save": "Lưu",
+        "saveAsTemplate": "Lưu thành mẫu",
         "saveError": "Không thể lưu thay đổi.",
         "saveSuccess": "Đã lưu thay đổi.",
         "saving": "Đang lưu...",
@@ -1440,8 +1532,11 @@
           "storefrontIdentity": "Nhận diện",
           "storefrontIdentityDescription": "Đặt tên cửa hàng, giữ slug và mô tả trải nghiệm người mua."
         },
+        "stockRow": "Dòng tồn kho",
+        "stockRowDescription": "Chọn nơi lưu hàng, cách đếm hàng và số lượng đang có.",
+        "stockRowTitle": "Dòng tồn kho {index}",
         "stockTargetHint": "Chọn đơn vị và kho để lưu các giá trị tồn kho bạn đã nhập.",
-        "stockUnavailableDescription": "Sản phẩm này chưa có dòng tồn kho với kho và đơn vị. Thêm tồn kho ban đầu từ luồng tạo sản phẩm hoặc thiết lập tồn kho trong module Tồn kho.",
+        "stockUnavailableDescription": "Sản phẩm này chưa có dòng tồn kho với kho và đơn vị. Thêm dòng tồn kho tại đây hoặc quản lý kho trong không gian Tồn kho.",
         "storefront": "Cửa hàng",
         "storefrontStatus": {
           "draft": "Nháp",
@@ -1497,6 +1592,7 @@
           "theme": "Giao diện"
         },
         "target": "Đối tượng",
+        "templateName": "Tên mẫu",
         "themePreset": "Chủ đề",
         "themePresets": {
           "boutique": "Boutique",
@@ -1511,6 +1607,12 @@
         "uploadingImage": "Đang tải lên...",
         "uploadToDrive": "Tải lên Drive",
         "usage": "Mục đích dùng",
+        "variantCount": "{count} biến thể",
+        "variantNoStock": "Sản phẩm biến thể chưa có vị trí kho; hãy chọn sản phẩm có tồn kho.",
+        "variants": "Biến thể",
+        "variantsAndOptions": "Biến thể & tùy chọn",
+        "variantSku": "SKU",
+        "variantStockProduct": "Sản phẩm tồn kho",
         "visibility": "Hiển thị",
         "visibilityPrivate": "Riêng tư",
         "visibilityPublic": "Công khai",
@@ -1564,7 +1666,9 @@
         },
         "environmentLabel": "Môi trường",
         "hub": {
+          "activityTab": "Hoạt động",
           "connectedEnvironments": "Môi trường đã kết nối",
+          "connectionTab": "Kết nối",
           "notConnected": "Chưa kết nối",
           "productReady": "Sản phẩm thanh toán",
           "productStatusTitle": "Sản phẩm Polar theo môi trường",
@@ -1575,7 +1679,8 @@
           "syncedCoupons": "Mã giảm giá đã đồng bộ",
           "syncedCouponsDescription": "Mã giảm giá tạo ở đây được tự động đồng bộ sang Polar.",
           "syncedCouponsEmpty": "Chưa có mã giảm giá nào được đồng bộ sang Polar.",
-          "syncedCouponsTitle": "Mã giảm giá đã đồng bộ"
+          "syncedCouponsTitle": "Mã giảm giá đã đồng bộ",
+          "syncHealthTab": "Tình trạng đồng bộ"
         },
         "manage": "Quản lý Polar",
         "notConfigured": "Chưa lưu token",
@@ -1695,6 +1800,59 @@
         "units": "Đơn vị",
         "warehouses": "Kho"
       },
+      "square": {
+        "advancedUrls": "URL nâng cao",
+        "appCredentialsDescription": "Lưu thông tin ứng dụng Square của từng workspace tại đây trước khi bắt đầu OAuth.",
+        "appCredentialsTitle": "Thông tin ứng dụng Square",
+        "applicationIdLabel": "Application ID",
+        "applicationIdPlaceholder": "Application ID Square",
+        "applicationSecretLabel": "Application secret",
+        "applicationSecretPlaceholder": "Application secret Square",
+        "appSecretEnding": "Application secret kết thúc bằng {last4}",
+        "connectOAuth": "Kết nối OAuth",
+        "copyWebhook": "Sao chép URL",
+        "createDeviceCode": "Tạo mã ghép nối",
+        "description": "Kết nối Square, chọn địa điểm và gửi đơn đã giữ hàng tới Square Terminal vật lý.",
+        "deviceCodeError": "Không thể tạo mã thiết bị.",
+        "deviceCodeNamePlaceholder": "Terminal quầy trước",
+        "deviceCodeSuccess": "Đã tạo mã ghép nối.",
+        "deviceLabel": "Terminal mặc định",
+        "devicePlaceholder": "Chọn terminal",
+        "environment": {
+          "production": "Production",
+          "sandbox": "Sandbox"
+        },
+        "environmentLabel": "Môi trường",
+        "locationLabel": "Địa điểm",
+        "locationPlaceholder": "Chọn địa điểm",
+        "notConfigured": "Chưa lưu token Square",
+        "oauthError": "Không thể bắt đầu OAuth Square.",
+        "oauthRedirectLabel": "URL chuyển hướng OAuth",
+        "oauthRedirectPlaceholder": "Mặc định là URL callback OAuth Square của ứng dụng này",
+        "oauthRequiresAppCredentials": "Lưu application ID và secret trước khi kết nối OAuth.",
+        "readiness": "Sẵn sàng: {issues}",
+        "ready": "sẵn sàng",
+        "sandboxDeviceLabel": "ID thiết bị sandbox",
+        "saveAppCredentials": "Lưu thông tin ứng dụng",
+        "saveDefaults": "Lưu mặc định",
+        "saveError": "Không thể lưu cài đặt Square.",
+        "saveManual": "Lưu token thủ công",
+        "saveSuccess": "Đã lưu cài đặt Square.",
+        "saving": "Đang lưu...",
+        "selectedEnvironment": "Đã chọn: {environment}",
+        "terminalDescription": "Dùng thiết bị đã ghép nối trong production. Trong sandbox, dán ID thiết bị terminal sandbox của Square.",
+        "terminalTitle": "Điều hướng terminal",
+        "title": "Square Terminal",
+        "tokenEnding": "Token kết thúc bằng {last4}",
+        "tokenLabel": "Access token",
+        "tokenPlaceholder": "Access token Square",
+        "webhookNotificationLabel": "URL thông báo webhook",
+        "webhookNotificationPlaceholder": "Mặc định là URL webhook Square của workspace",
+        "webhookSignatureLabel": "Khóa chữ ký webhook",
+        "webhookSignaturePlaceholder": "Khóa chữ ký webhook Square",
+        "webhookTitle": "Nhận webhook",
+        "webhookUrlPending": "URL webhook sẽ xuất hiện sau khi tải cài đặt"
+      },
       "states": {
         "errorDescription": "Hãy làm mới chế độ xem này hoặc thử lại sau khi API hoạt động ổn định.",
         "errorTitle": "Không thể tải dữ liệu kho",
@@ -1712,6 +1870,14 @@
         "reserved": "Đã giữ hàng"
       },
       "statusSearch": "Tìm trạng thái",
+      "stockWorkspace": {
+        "tabs": {
+          "stock": "Dòng tồn kho",
+          "warehouses": "Kho"
+        },
+        "warehousesDescription": "Tạo và đổi tên kho cùng đơn vị mà các dòng tồn kho của sản phẩm sử dụng.",
+        "warehousesTitle": "Thiết lập kho"
+      },
       "views": {
         "audits": {
           "description": "Truy vết tồn kho, checkout và tài chính trong một timeline kiểm toán.",
@@ -1776,7 +1942,9 @@
       "browse": "Xem cửa hàng",
       "bundle": "Combo",
       "bundleAvailability": "Tồn combo",
+      "bundleSelectionTitle": "Tạo combo",
       "cart": "Giỏ hàng",
+      "cheapestFreePreview": "Món đủ điều kiện rẻ nhất được miễn phí.",
       "checkout": "Checkout",
       "checkoutDisabled": "Checkout bị tắt trong chế độ xem trước.",
       "checkoutError": "Không thể giữ đơn hàng này.",
@@ -1801,10 +1969,13 @@
       "product": "Sản phẩm",
       "publicStore": "Cửa hàng công khai",
       "quantity": "Số lượng",
+      "requiredItems": "Chọn {count} món",
       "reserve": "Giữ đơn hàng",
       "reservedCopy": "Checkout giữ tồn kho qua Polar. Polar tự tính phí nền tảng và phí Stripe của họ; Tuturuuu chưa thu phí nền tảng ở giai đoạn này.",
       "reserving": "Đang giữ hàng...",
       "retry": "Thử lại",
+      "searchBundleItems": "Tìm món",
+      "selectedItems": "Đã chọn {selected}/{required}",
       "soldOut": "Hết hàng",
       "store": "Cửa hàng",
       "storefrontErrorDescription": "Hãy làm mới cửa hàng hoặc thử lại sau.",
@@ -2442,10 +2613,19 @@
       "workspace_navigation_title": "Mặc định của không gian làm việc"
     },
     "inventory": {
+      "currency_description": "Dùng cho giá tồn kho và được kế thừa bởi cửa hàng và hồ sơ chi phí mới.",
+      "currency_placeholder": "Chọn tiền tệ",
+      "currency_save": "Lưu",
+      "currency_saving": "Đang lưu…",
+      "currency_title": "Tiền tệ mặc định",
+      "currency_update_error": "Không thể cập nhật tiền tệ.",
+      "currency_update_success": "Đã cập nhật tiền tệ.",
       "general": "Chung",
       "general_description": "Thông tin workspace và tùy chọn Inventory",
       "polar": "Thanh toán Polar",
       "polar_description": "Thông tin checkout và môi trường mặc định của workspace",
+      "square": "Square Terminal",
+      "square_description": "OAuth Square, ghép nối terminal và trạng thái webhook",
       "title": "Inventory",
       "workspace_name": "Workspace",
       "workspace_name_description": "Workspace đang vận hành bảng điều khiển Inventory này."
@@ -2910,5 +3090,89 @@
     "description_too_long": "Mô tả không được vượt quá 500 ký tự",
     "name_required": "Vui lòng nhập tên",
     "start_date_required": "Vui lòng chọn ngày bắt đầu"
+  },
+  "ws-task-templates": {
+    "actions": {
+      "archive": "Lưu trữ mẫu",
+      "cancel": "Hủy",
+      "create": "Tạo mẫu",
+      "create_task": "Tạo công việc",
+      "new_template": "Mẫu mới",
+      "save": "Lưu mẫu",
+      "save_from_task": "Lưu từ công việc",
+      "use": "Sử dụng"
+    },
+    "card": {
+      "assignees": "{count} người phụ trách",
+      "labels": "{count} nhãn",
+      "projects": "{count} dự án"
+    },
+    "create": {
+      "description": "Lưu các mặc định công việc có thể tái sử dụng cho công việc lặp lại.",
+      "title": "Tạo mẫu công việc"
+    },
+    "empty": {
+      "description": "Tạo mẫu cho công việc lặp lại, danh sách kiểm tra và bàn giao tiêu chuẩn.",
+      "no_results": "Không có mẫu nào khớp với tìm kiếm.",
+      "title": "Chưa có mẫu công việc"
+    },
+    "fields": {
+      "board": "Bảng",
+      "description": "Mô tả",
+      "description_placeholder": "Mô tả mặc định của công việc",
+      "key": "Khóa",
+      "key_placeholder": "bao-loi",
+      "list": "Danh sách",
+      "override_name": "Ghi đè tiêu đề công việc",
+      "priority": "Độ ưu tiên",
+      "search": "Tìm kiếm",
+      "search_placeholder": "Tìm mẫu công việc",
+      "task_id": "ID công việc",
+      "task_id_placeholder": "UUID công việc",
+      "task_name": "Tiêu đề công việc",
+      "task_name_placeholder": "Điều tra lỗi được báo cáo",
+      "template_name": "Tên mẫu",
+      "template_name_placeholder": "Báo lỗi sprint",
+      "unnamed_board": "Bảng chưa đặt tên",
+      "unnamed_list": "Danh sách chưa đặt tên",
+      "visibility": "Phạm vi hiển thị"
+    },
+    "gallery": {
+      "board_marketplace": "Chợ mẫu bảng",
+      "description": "Tạo mẫu khởi đầu công việc có thể tái sử dụng và giữ mẫu bảng ở cùng một nơi.",
+      "header": "Mẫu công việc"
+    },
+    "priority": {
+      "critical": "Khẩn cấp",
+      "high": "Cao",
+      "low": "Thấp",
+      "none": "Không có ưu tiên",
+      "normal": "Bình thường"
+    },
+    "save_from_task": {
+      "description": "Nhập ID công việc để lưu các trường hiện tại thành mẫu có thể tái sử dụng.",
+      "title": "Lưu công việc thành mẫu"
+    },
+    "tabs": {
+      "boards": "Mẫu bảng",
+      "tasks": "Mẫu công việc"
+    },
+    "toast": {
+      "archived": "Đã lưu trữ mẫu công việc",
+      "created": "Đã tạo mẫu công việc",
+      "failed": "Thao tác mẫu công việc thất bại",
+      "no_template_selected": "Chưa chọn mẫu công việc",
+      "saved_from_task": "Đã lưu mẫu công việc",
+      "task_created": "Đã tạo công việc từ mẫu"
+    },
+    "use": {
+      "description": "Tạo công việc từ {name}.",
+      "description_empty": "Tạo công việc từ mẫu đã chọn.",
+      "title": "Sử dụng mẫu công việc"
+    },
+    "visibility": {
+      "private": "Riêng tư",
+      "workspace": "Không gian làm việc"
+    }
   }
 }

@@ -22,20 +22,22 @@ import {
   OperationsTable,
   type OperationsTableColumn,
 } from './operations-table';
+import { currency } from './operator-format';
 import { EmptyRow } from './operator-shell';
 import {
   getInventoryStockState,
+  numberOrZero,
   stockAmountFromRecords,
 } from './operator-stock';
 import { ProductEditDialog } from './product-row-actions';
 import {
-  formatNumber,
   type ProductBadge,
   ProductBadges,
   ProductIdentity,
   stringField,
   TextStack,
 } from './product-table-cells';
+import { useWorkspaceCurrency } from './workspace-currency';
 
 type OperatorTranslator = (
   key: string,
@@ -44,6 +46,7 @@ type OperatorTranslator = (
 
 type ProductTableRow = {
   badges: ProductBadge[];
+  id: string;
   inventory: Record<string, unknown>;
   isLowStock: boolean;
   product: InventoryProductSummary;
@@ -67,14 +70,17 @@ export function ProductsTable({
   const formsText = useTranslations(
     'inventory.operator.forms'
   ) as OperatorTranslator;
+  const wsCurrency = useWorkspaceCurrency();
   const [editing, setEditing] = useState<InventoryProductSummary | null>(null);
 
   if (rows.length === 0) return <EmptyRow label={t('empty')} />;
 
-  const tableRows = rows.map((product) =>
-    toProductTableRow(product, costingProfiles, t)
-  );
+  const tableRows =
+    view === 'stock'
+      ? rows.flatMap((product) => toStockTableRows(product, costingProfiles, t))
+      : rows.map((product) => toProductTableRow(product, costingProfiles, t));
   const columns = getProductTableColumns({
+    currencyCode: wsCurrency,
     onEdit: setEditing,
     t,
     view,
@@ -90,7 +96,7 @@ export function ProductsTable({
         getRowClassName={(row) =>
           view === 'stock' && row.isLowStock ? 'bg-destructive/5' : undefined
         }
-        getRowId={(row) => row.product.id}
+        getRowId={(row) => row.id}
         minWidth={view === 'stock' ? 'min-w-[860px]' : 'min-w-[920px]'}
         onRowActivate={(row) => setEditing(row.product)}
         rowActivateLabel={(row) => `${formsText('edit')}: ${row.product.name}`}
@@ -114,10 +120,12 @@ export function ProductsTable({
 }
 
 function getProductTableColumns({
+  currencyCode,
   onEdit,
   t,
   view,
 }: {
+  currencyCode: string;
   onEdit: (product: InventoryProductSummary) => void;
   t: OperatorTranslator;
   view: string;
@@ -147,6 +155,7 @@ function getProductTableColumns({
         header: t('columns.item'),
         key: 'item',
         render: ({ product }) => <ProductIdentity product={product} />,
+        sortValue: ({ product }) => product.name,
       },
       {
         className: 'w-[13rem]',
@@ -160,12 +169,19 @@ function getProductTableColumns({
             secondary={stringField(inventory, 'unit_name') ?? product.unit}
           />
         ),
+        sortValue: ({ inventory, product }) =>
+          [
+            stringField(inventory, 'warehouse_name') ?? product.warehouse ?? '',
+            stringField(inventory, 'unit_name') ?? product.unit ?? '',
+          ].join(' '),
       },
       {
         className: 'w-[9rem]',
         header: t('columns.available'),
         key: 'available',
         render: (row) => <StockAmount row={row} />,
+        sortValue: ({ stockState }) =>
+          stockState.isUnlimited ? Number.POSITIVE_INFINITY : stockState.amount,
       },
       {
         className: 'w-[8rem]',
@@ -174,14 +190,18 @@ function getProductTableColumns({
         render: ({ stockState }) => (
           <span className="font-medium">{stockState.minAmount}</span>
         ),
+        sortValue: ({ stockState }) => stockState.minAmount,
       },
       {
         className: 'w-[10rem]',
         header: t('columns.unitPrice'),
         key: 'unit-price',
         render: ({ inventory }) => (
-          <span className="font-medium">{formatNumber(inventory.price)}</span>
+          <span className="font-medium">
+            {currency(numberOrZero(inventory.price), currencyCode)}
+          </span>
         ),
+        sortValue: ({ inventory }) => numberOrZero(inventory.price),
       },
       {
         className: 'w-[12rem]',
@@ -203,6 +223,7 @@ function getProductTableColumns({
       header: t('columns.item'),
       key: 'item',
       render: ({ product }) => <ProductIdentity product={product} />,
+      sortValue: ({ product }) => product.name,
     },
     {
       className: 'w-[14rem]',
@@ -214,6 +235,8 @@ function getProductTableColumns({
           secondary={product.manufacturer}
         />
       ),
+      sortValue: ({ product }) =>
+        [product.category ?? '', product.manufacturer ?? ''].join(' '),
     },
     {
       className: 'w-[14rem]',
@@ -222,6 +245,19 @@ function getProductTableColumns({
       render: ({ product }) => (
         <TextStack primary={product.owner?.name} secondary={product.usage} />
       ),
+      sortValue: ({ product }) =>
+        [product.owner?.name ?? '', product.usage ?? ''].join(' '),
+    },
+    {
+      className: 'w-[10rem]',
+      header: t('columns.unitPrice'),
+      key: 'price',
+      render: ({ inventory }) => (
+        <span className="font-medium">
+          {currency(numberOrZero(inventory.price), currencyCode)}
+        </span>
+      ),
+      sortValue: ({ inventory }) => numberOrZero(inventory.price),
     },
     {
       className: 'w-[18rem]',
@@ -232,6 +268,10 @@ function getProductTableColumns({
           badges={badges.filter((badge) => badge.key !== 'costing')}
         />
       ),
+      sortValue: ({ badges }) =>
+        badges.filter(
+          (badge) => badge.key !== 'costing' && badge.tone === 'missing'
+        ).length,
     },
     {
       className: 'w-[12rem]',
@@ -242,6 +282,12 @@ function getProductTableColumns({
           badges={badges.filter((badge) => badge.key === 'costing')}
         />
       ),
+      sortValue: ({ badges }) =>
+        badges.some(
+          (badge) => badge.key === 'costing' && badge.tone === 'ready'
+        )
+          ? 1
+          : 0,
     },
     actionColumn,
   ];
@@ -250,10 +296,18 @@ function getProductTableColumns({
 function toProductTableRow(
   product: InventoryProductSummary,
   costingProfiles: InventoryCostProfile[],
-  t: OperatorTranslator
+  t: OperatorTranslator,
+  options?: {
+    inventory?: Record<string, unknown>;
+    rowId?: string;
+    stock?: Record<string, unknown>;
+  }
 ): ProductTableRow {
-  const inventory = product.inventory?.[0] ?? {};
-  const amount = stockAmountFromRecords(inventory, product.stock?.[0]);
+  const inventory = options?.inventory ?? product.inventory?.[0] ?? {};
+  const amount = stockAmountFromRecords(
+    inventory,
+    options?.stock ?? product.stock?.[0]
+  );
   const stockState = getInventoryStockState({
     amount,
     minAmount: inventory.min_amount ?? product.min_amount,
@@ -306,11 +360,33 @@ function toProductTableRow(
         tone: hasCosting ? 'ready' : 'missing',
       },
     ],
+    id: options?.rowId ?? product.id,
     inventory,
     isLowStock,
     product,
     stockState,
   };
+}
+
+function toStockTableRows(
+  product: InventoryProductSummary,
+  costingProfiles: InventoryCostProfile[],
+  t: OperatorTranslator
+) {
+  const inventoryRows = product.inventory?.length ? product.inventory : [{}];
+
+  return inventoryRows.map((inventory, index) =>
+    toProductTableRow(product, costingProfiles, t, {
+      inventory,
+      rowId: [
+        product.id,
+        stringField(inventory, 'warehouse_id') ?? 'missing-warehouse',
+        stringField(inventory, 'unit_id') ?? 'missing-unit',
+        index,
+      ].join(':'),
+      stock: product.stock?.[index],
+    })
+  );
 }
 
 function StockAmount({ row }: { row: ProductTableRow }) {

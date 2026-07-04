@@ -66,6 +66,10 @@
       "component": "hive-realtime",
       "package-name": "@tuturuuu/hive-realtime"
     },
+    "apps/infrastructure": {
+      "component": "infra",
+      "package-name": "@tuturuuu/infrastructure"
+    },
     "apps/inventory": {
       "component": "inventory",
       "package-name": "@tuturuuu/inventory"
@@ -73,6 +77,10 @@
     "apps/storefront": {
       "component": "storefront",
       "package-name": "@tuturuuu/storefront"
+    },
+    "apps/tanstack-web": {
+      "component": "tanstack-web",
+      "package-name": "@tuturuuu/tanstack-web"
     },
     "apps/learn": {
       "component": "learn",
@@ -103,9 +111,9 @@
       "component": "playground",
       "package-name": "@tuturuuu/playground"
     },
-    "apps/qr": {
-      "component": "qr",
-      "package-name": "@tuturuuu/qr"
+    "apps/tools": {
+      "component": "tools",
+      "package-name": "@tuturuuu/tools"
     },
     "apps/redis": {
       "component": "redis",
@@ -175,6 +183,10 @@
       "component": "internal-api",
       "package-name": "@tuturuuu/internal-api"
     },
+    "packages/inventory-core": {
+      "component": "inventory-core",
+      "package-name": "@tuturuuu/inventory-core"
+    },
     "packages/masonry": {
       "component": "masonry",
       "package-name": "@tuturuuu/masonry"
@@ -182,6 +194,10 @@
     "packages/microsoft": {
       "component": "microsoft",
       "package-name": "@tuturuuu/microsoft"
+    },
+    "packages/mind-core": {
+      "component": "mind-core",
+      "package-name": "@tuturuuu/mind-core"
     },
     "packages/mind-ui": {
       "component": "mind-ui",

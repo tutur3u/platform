@@ -17,6 +17,8 @@ const {
   clearBlueGreenRuntime,
   DEFAULT_BLUE_GREEN_BUILD_TIMEOUT_MS,
   ensureBlueGreenRuntime,
+  getBlueGreenAllDirectWebServiceNames,
+  getBlueGreenAllWebServiceNames,
   getBlueGreenBuildTimeoutMs,
   getBlueGreenHiveServiceName,
   getBlueGreenPaths,
@@ -48,6 +50,7 @@ const {
   hasComposeProfile,
   hasComposeServiceContainer,
   isComposeServiceHealthy,
+  removeComposeServicesIfPresent,
   runComposeUpWithNameConflictRecovery,
   runChecked,
   runCommand,
@@ -87,6 +90,7 @@ const {
   formatSupabaseOriginReport,
   ensureWebEnvFile,
   getComposeEnvironment,
+  getDockerCloudflaredAutodetect,
   getDockerSupermemoryRuntime,
   getDockerWebSupabaseOriginReport,
   parseEnvFile,
@@ -98,6 +102,12 @@ const {
   cleanupBuildkitAfterBuild,
   ensureBuildkitBuilder,
 } = require('./docker-web/buildkit-builder.js');
+const {
+  applyAdaptiveBuildResourceProfileEnv,
+  createBuildResourceProfileSelection,
+  getBuildResourceConfigForSelection,
+  getBuildResourceProfilePaths,
+} = require('./docker-web/resource-profiles.js');
 const {
   DEPLOYMENT_KIND_ENV,
   DEPLOYMENT_STAGES_FILE_ENV,
@@ -124,6 +134,10 @@ const {
 
 const ROOT_DIR = path.resolve(__dirname, '..');
 const CLOUDFLARED_SERVICE = 'cloudflared';
+const LOG_DRAIN_POSTGRES_SERVICE = 'log-drain-postgres';
+const LOG_DRAIN_REQUIRED_ENV = 'DOCKER_WEB_LOG_DRAIN_REQUIRED';
+const LOG_DRAIN_ENABLED_ENV = 'PLATFORM_LOG_DRAIN_ENABLED';
+const LOG_DRAIN_DIAGNOSTIC_LOG_TAIL = 200;
 const LOW_DOCKER_MEMORY_BUILDKIT_RESTART_THRESHOLD_BYTES =
   10 * 1024 * 1024 * 1024;
 
@@ -349,6 +363,20 @@ function getSupabaseStartCommand(env = {}) {
   };
 }
 
+function applyDefaultBlueGreenNativeBuildEnv(composeEnv, parsed) {
+  if (
+    !usesBlueGreenStrategy(parsed) ||
+    composeEnv.DOCKER_WEB_NATIVE_BUILD != null
+  ) {
+    return composeEnv;
+  }
+
+  return {
+    ...composeEnv,
+    DOCKER_WEB_NATIVE_BUILD: '0',
+  };
+}
+
 function parseArgs(argv) {
   const args = [...argv];
   const action = args.shift() ?? 'up';
@@ -566,6 +594,10 @@ function isTruthyEnv(value) {
   return /^(1|true|yes)$/iu.test(String(value ?? '').trim());
 }
 
+function isFalseyEnv(value) {
+  return /^(0|false|no|off)$/iu.test(String(value ?? '').trim());
+}
+
 async function pruneDockerWebBuildkitCacheAfterWorkflow({
   composeFile,
   composeGlobalArgs = [],
@@ -605,6 +637,28 @@ function ensureCloudflaredProfileFromEnv(parsed, env) {
   }
 }
 
+function getCloudflaredWorkflowEnv({ env, envFilePath, fsImpl, rootDir } = {}) {
+  if (isTruthyEnv(env?.DOCKER_WEB_WITH_CLOUDFLARED)) {
+    return env;
+  }
+
+  const cloudflared = getDockerCloudflaredAutodetect({
+    baseEnv: env,
+    envFilePath,
+    fsImpl,
+    rootDir,
+  });
+
+  if (!cloudflared.enabled) {
+    return env;
+  }
+
+  return {
+    ...env,
+    DOCKER_WEB_WITH_CLOUDFLARED: '1',
+  };
+}
+
 function getInPlaceProdServices(parsed) {
   const services = ['web'];
 
@@ -617,6 +671,338 @@ function getInPlaceProdServices(parsed) {
   }
 
   return services;
+}
+
+function isLogDrainPostgresStartupError(error) {
+  const message = error instanceof Error ? error.message : String(error);
+
+  return (
+    /\blog-drain-postgres\b/iu.test(message) ||
+    /dependency failed to start/iu.test(message)
+  );
+}
+
+function trimDiagnosticOutput(output, maxBytes = 24_000) {
+  if (!output) {
+    return '';
+  }
+
+  if (Buffer.byteLength(output, 'utf8') <= maxBytes) {
+    return output.trimEnd();
+  }
+
+  return `[truncated to last ${maxBytes} bytes]\n${output
+    .slice(-maxBytes)
+    .trimEnd()}`;
+}
+
+function formatDiagnosticCommand(command, args) {
+  return [command, ...args].join(' ');
+}
+
+async function collectLogDrainPostgresCommandDiagnostic({
+  args,
+  command = 'docker',
+  env,
+  label,
+  runCommand: run,
+}) {
+  try {
+    const result = await run(command, args, {
+      env,
+      stdio: 'pipe',
+    });
+    const output = trimDiagnosticOutput(
+      [result.stdout, result.stderr].filter(Boolean).join('\n')
+    );
+    const status =
+      result.code === 0
+        ? ''
+        : ` (exit ${result.code}${result.signal ? `, signal ${result.signal}` : ''})`;
+
+    return [
+      `${label}${status}: ${formatDiagnosticCommand(command, args)}`,
+      output || '(no output)',
+    ].join('\n');
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+
+    return [
+      `${label}: ${formatDiagnosticCommand(command, args)}`,
+      `Unable to collect diagnostic output: ${message}`,
+    ].join('\n');
+  }
+}
+
+async function collectLogDrainPostgresDiagnostics({
+  composeFile,
+  composeGlobalArgs = [],
+  env,
+  runCommand: run = runCommand,
+}) {
+  const sections = [];
+  const composePrefix = getComposeCommandArgs(composeFile, composeGlobalArgs);
+
+  sections.push(
+    await collectLogDrainPostgresCommandDiagnostic({
+      args: [...composePrefix, 'ps', '--all', LOG_DRAIN_POSTGRES_SERVICE],
+      env,
+      label: 'Compose service state',
+      runCommand: run,
+    })
+  );
+
+  const containerId = await getComposeServiceContainerId(
+    LOG_DRAIN_POSTGRES_SERVICE,
+    {
+      composeFile,
+      composeGlobalArgs,
+      env,
+      includeStopped: true,
+      runCommand: run,
+    }
+  ).catch(() => null);
+
+  if (containerId) {
+    sections.push(
+      await collectLogDrainPostgresCommandDiagnostic({
+        args: ['inspect', '-f', '{{json .State}}', containerId],
+        env,
+        label: 'Container state',
+        runCommand: run,
+      })
+    );
+  }
+
+  sections.push(
+    await collectLogDrainPostgresCommandDiagnostic({
+      args: [
+        ...composePrefix,
+        'logs',
+        '--no-color',
+        '--tail',
+        String(LOG_DRAIN_DIAGNOSTIC_LOG_TAIL),
+        LOG_DRAIN_POSTGRES_SERVICE,
+      ],
+      env,
+      label: 'Recent service logs',
+      runCommand: run,
+    })
+  );
+
+  sections.push(
+    await collectLogDrainPostgresCommandDiagnostic({
+      args: [
+        'volume',
+        'ls',
+        '--filter',
+        'label=com.docker.compose.volume=platform-log-drain-postgres',
+        '--format',
+        '{{.Name}}',
+      ],
+      env,
+      label: 'Matching log-drain volumes',
+      runCommand: run,
+    })
+  );
+
+  return sections.filter(Boolean).join('\n\n');
+}
+
+function createLogDrainPostgresDegradedEnvironment(env = {}) {
+  return {
+    ...env,
+    [LOG_DRAIN_ENABLED_ENV]: 'false',
+  };
+}
+
+function createLogDrainPostgresFailureMessage(
+  error,
+  { continuing, diagnostics = '', required = false } = {}
+) {
+  const detail = error instanceof Error ? error.message : String(error);
+  const shouldContinue = continuing ?? !required;
+  const lines = [
+    `${LOG_DRAIN_POSTGRES_SERVICE} failed to start before blue/green promotion.`,
+    'The deploy helper retried once after removing only the service container; no persistent Docker volumes were removed.',
+  ];
+
+  if (shouldContinue) {
+    lines.push(
+      `Continuing this deploy with ${LOG_DRAIN_ENABLED_ENV}=false so the app can promote with log-drain telemetry disabled.`
+    );
+    lines.push(
+      `Set ${LOG_DRAIN_REQUIRED_ENV}=1 to make log-drain-postgres a hard deployment gate.`
+    );
+  } else if (required) {
+    lines.push(
+      `${LOG_DRAIN_REQUIRED_ENV}=1 is set, so log-drain-postgres remains a hard deployment gate.`
+    );
+  } else {
+    lines.push(
+      'The deploy helper could not classify this as a safe log-drain-only startup failure, so deployment is blocked.'
+    );
+  }
+
+  lines.push(
+    `Inspect the service with: docker compose -f docker-compose.web.prod.yml --profile redis logs --tail ${LOG_DRAIN_DIAGNOSTIC_LOG_TAIL} ${LOG_DRAIN_POSTGRES_SERVICE}`,
+    'If the logs mention incompatible database files or data-directory corruption, back up or migrate the Compose volume labeled com.docker.compose.volume=platform-log-drain-postgres before retrying.',
+    'Do not run docker compose down --volumes or docker volume rm for log-drain data unless an operator has explicitly approved a backed-up reset.',
+    `Original failure: ${detail}`
+  );
+
+  if (diagnostics) {
+    lines.push(
+      `Diagnostics collected before ${shouldContinue ? 'continuing' : 'failing'}:\n${diagnostics}`
+    );
+  }
+
+  return lines.join('\n');
+}
+
+async function getComposeServiceStatus(serviceName, options) {
+  const containerId = await getComposeServiceContainerId(serviceName, {
+    ...options,
+    includeStopped: true,
+  });
+
+  if (!containerId) {
+    return null;
+  }
+
+  try {
+    return await getContainerHealthStatus(containerId, options);
+  } catch {
+    return 'unknown';
+  }
+}
+
+async function ensureLogDrainPostgresReady({
+  composeFile,
+  composeGlobalArgs = [],
+  env,
+  fsImpl = fs,
+  healthPollMs,
+  healthTimeoutMs,
+  runCommand: run = runCommand,
+  stderr = process.stderr,
+}) {
+  if (isFalseyEnv(env?.[LOG_DRAIN_ENABLED_ENV])) {
+    return {
+      env: createLogDrainPostgresDegradedEnvironment(env),
+      ready: false,
+      skipped: true,
+    };
+  }
+
+  if (
+    await isComposeServiceHealthy(LOG_DRAIN_POSTGRES_SERVICE, {
+      composeFile,
+      composeGlobalArgs,
+      env,
+      runCommand: run,
+    })
+  ) {
+    return {
+      env,
+      ready: true,
+    };
+  }
+
+  const options = {
+    composeFile,
+    composeGlobalArgs,
+    env,
+    runCommand: run,
+  };
+  const start = async () => {
+    await runComposeUpWithNameConflictRecovery({
+      composeFile,
+      composeGlobalArgs,
+      env,
+      fsImpl,
+      runCommand: run,
+      services: [LOG_DRAIN_POSTGRES_SERVICE],
+      upArgs: [
+        'up',
+        '--detach',
+        '--no-build',
+        '--remove-orphans',
+        LOG_DRAIN_POSTGRES_SERVICE,
+      ],
+    });
+    await waitForComposeServiceHealthy(LOG_DRAIN_POSTGRES_SERVICE, {
+      ...options,
+      ...(healthPollMs === undefined ? {} : { pollMs: healthPollMs }),
+      ...(healthTimeoutMs === undefined ? {} : { timeoutMs: healthTimeoutMs }),
+    });
+  };
+
+  try {
+    await start();
+    return {
+      env,
+      ready: true,
+    };
+  } catch (error) {
+    const status = await getComposeServiceStatus(
+      LOG_DRAIN_POSTGRES_SERVICE,
+      options
+    );
+    const shouldRetry =
+      status === 'dead' ||
+      status === 'exited' ||
+      isLogDrainPostgresStartupError(error);
+
+    if (!shouldRetry) {
+      const diagnostics = await collectLogDrainPostgresDiagnostics(options);
+      throw new Error(
+        createLogDrainPostgresFailureMessage(error, {
+          continuing: false,
+          diagnostics,
+          required: isTruthyEnv(env?.[LOG_DRAIN_REQUIRED_ENV]),
+        })
+      );
+    }
+
+    stderr.write(
+      `[docker-web] ${LOG_DRAIN_POSTGRES_SERVICE} did not become healthy (${status ?? 'unknown'}); removing the service container and retrying once.\n`
+    );
+
+    await removeComposeServicesIfPresent([LOG_DRAIN_POSTGRES_SERVICE], {
+      composeFile,
+      composeGlobalArgs,
+      env,
+      runCommand: run,
+    });
+  }
+
+  try {
+    await start();
+    return {
+      env,
+      ready: true,
+    };
+  } catch (error) {
+    const diagnostics = await collectLogDrainPostgresDiagnostics(options);
+    const required = isTruthyEnv(env?.[LOG_DRAIN_REQUIRED_ENV]);
+    const message = createLogDrainPostgresFailureMessage(error, {
+      diagnostics,
+      required,
+    });
+
+    if (required) {
+      throw new Error(message);
+    }
+
+    stderr.write(`[docker-web] Warning: ${message}\n`);
+
+    return {
+      diagnostics,
+      env: createLogDrainPostgresDegradedEnvironment(env),
+      ready: false,
+    };
+  }
 }
 
 async function promptForActiveDeploymentCancellation(
@@ -710,8 +1096,14 @@ async function runDockerWebWorkflow(parsed, options = {}) {
   const startWatcherContainer =
     options.startWatcherContainer ?? startBlueGreenWatcherContainer;
   const composeFile = getComposeFile(parsed.mode);
-  const env = options.env ?? process.env;
   const envFilePath = options.envFilePath ?? parsed.envFilePath;
+  const rootDir = options.rootDir ?? ROOT_DIR;
+  const env = getCloudflaredWorkflowEnv({
+    env: options.env ?? process.env,
+    envFilePath,
+    fsImpl,
+    rootDir,
+  });
   const processImpl = options.processImpl ?? process;
   const now = options.now ?? (() => Date.now());
   const sleepImpl = options.sleep ?? sleep;
@@ -735,7 +1127,7 @@ async function runDockerWebWorkflow(parsed, options = {}) {
       envFilePath,
       fsImpl,
       preferEnvFilePath: parsed.mode === 'prod',
-      rootDir: options.rootDir,
+      rootDir,
       withCloudflared,
       withRedis,
     });
@@ -757,26 +1149,23 @@ async function runDockerWebWorkflow(parsed, options = {}) {
     );
 
     if (usesBlueGreenStrategy(parsed)) {
-      clearBlueGreenRuntime(
-        getBlueGreenPaths(options.rootDir ?? ROOT_DIR),
-        fsImpl
-      );
+      clearBlueGreenRuntime(getBlueGreenPaths(rootDir), fsImpl);
     }
 
     return;
   }
 
-  ensureWebEnvFile(fsImpl, envFilePath, options.rootDir ?? ROOT_DIR);
+  ensureWebEnvFile(fsImpl, envFilePath, rootDir);
   ensureProductionRedisToken(parsed, env, hasComposeProfile, {
     fsImpl,
-    rootDir: options.rootDir,
+    rootDir,
   });
   let composeEnv = getComposeEnvironment({
     baseEnv: env,
     envFilePath,
     fsImpl,
     preferEnvFilePath: parsed.mode === 'prod',
-    rootDir: options.rootDir,
+    rootDir,
     withCloudflared,
     withRedis,
   });
@@ -785,6 +1174,29 @@ async function runDockerWebWorkflow(parsed, options = {}) {
     runCommand: run,
   });
   composeEnv = applyLowMemoryBuildkitRestartEnv(composeEnv, parsed);
+  composeEnv = applyDefaultBlueGreenNativeBuildEnv(composeEnv, parsed);
+  const buildResourceProfileSelection = usesBlueGreenStrategy(parsed)
+    ? createBuildResourceProfileSelection({
+        cpus: parsed.buildCpus,
+        env: composeEnv,
+        fsImpl,
+        maxParallelism: parsed.buildMaxParallelism,
+        memory: parsed.buildMemory,
+        paths: getBuildResourceProfilePaths(rootDir),
+      })
+    : null;
+  composeEnv = applyAdaptiveBuildResourceProfileEnv(
+    composeEnv,
+    buildResourceProfileSelection
+  );
+  const buildResourceConfig = getBuildResourceConfigForSelection(
+    buildResourceProfileSelection,
+    {
+      cpus: parsed.buildCpus,
+      maxParallelism: parsed.buildMaxParallelism,
+      memory: parsed.buildMemory,
+    }
+  );
 
   if (parsed.mode === 'prod') {
     ensureProductionSupabaseOrigin({
@@ -792,11 +1204,11 @@ async function runDockerWebWorkflow(parsed, options = {}) {
       composeEnv,
       envFilePath,
       fsImpl,
-      rootDir: options.rootDir ?? ROOT_DIR,
+      rootDir,
     });
   }
 
-  const watchPaths = getWatchPaths(options.rootDir ?? ROOT_DIR);
+  const watchPaths = getWatchPaths(rootDir);
   let blueGreenBuildLock = null;
   let deployLockSignalCleanup = null;
   let latestBlueGreenCommit = null;
@@ -821,7 +1233,7 @@ async function runDockerWebWorkflow(parsed, options = {}) {
         parsed,
         paths: watchPaths,
         processImpl,
-        rootDir: options.rootDir ?? ROOT_DIR,
+        rootDir,
         runCommand: run,
       });
     }
@@ -848,16 +1260,16 @@ async function runDockerWebWorkflow(parsed, options = {}) {
     composeEnv = await ensureBuildkitBuilder(
       {
         builderName: parsed.buildBuilderName,
-        cpus: parsed.buildCpus,
-        maxParallelism: parsed.buildMaxParallelism,
-        memory: parsed.buildMemory,
+        cpus: buildResourceConfig.cpus,
+        maxParallelism: buildResourceConfig.maxParallelism,
+        memory: buildResourceConfig.memory,
       },
       {
         composeFile,
         composeGlobalArgs: parsed.composeGlobalArgs,
         env: composeEnv,
         fsImpl,
-        rootDir: options.rootDir,
+        rootDir,
         runCommand: run,
       }
     );
@@ -906,31 +1318,41 @@ async function runDockerWebWorkflow(parsed, options = {}) {
         env,
         runCommand: run,
       }));
-    const workflowEnv = blueGreenBuildLock
-      ? {
-          ...composeEnv,
-          [DEPLOYMENT_BUILD_LOCK_TOKEN_ENV]: blueGreenBuildLock.token,
-          DOCKER_WEB_BUILDKIT_PRUNE_AFTER_BUILD:
-            composeEnv.DOCKER_WEB_BUILDKIT_PRUNE_AFTER_BUILD ?? '0',
-          DOCKER_WEB_BUILDKIT_STOP_AFTER_BUILD:
-            composeEnv.DOCKER_WEB_BUILDKIT_STOP_AFTER_BUILD ?? '1',
-        }
-      : {
-          ...composeEnv,
-          DOCKER_WEB_BUILDKIT_PRUNE_AFTER_BUILD:
-            composeEnv.DOCKER_WEB_BUILDKIT_PRUNE_AFTER_BUILD ?? '0',
-          DOCKER_WEB_BUILDKIT_STOP_AFTER_BUILD:
-            composeEnv.DOCKER_WEB_BUILDKIT_STOP_AFTER_BUILD ?? '1',
-        };
-    const changedFiles = await getBlueGreenDeploymentChangedFiles({
-      env,
-      fsImpl,
-      latestCommit,
-      rootDir: options.rootDir ?? ROOT_DIR,
-      runCommand: run,
-    });
+    const workflowBaseEnv = {
+      ...composeEnv,
+      DOCKER_WEB_BUILDKIT_PRUNE_AFTER_BUILD:
+        composeEnv.DOCKER_WEB_BUILDKIT_PRUNE_AFTER_BUILD ?? '0',
+      DOCKER_WEB_BUILDKIT_STOP_AFTER_BUILD:
+        composeEnv.DOCKER_WEB_BUILDKIT_STOP_AFTER_BUILD ?? '1',
+    };
+    let workflowEnv = workflowBaseEnv;
+    let workflowEnvWithoutLock = workflowBaseEnv;
 
     try {
+      const logDrainPostgresState = await ensureLogDrainPostgresReady({
+        composeFile,
+        composeGlobalArgs: parsed.composeGlobalArgs,
+        env: workflowBaseEnv,
+        fsImpl,
+        healthPollMs: options.healthPollMs,
+        healthTimeoutMs: options.healthTimeoutMs,
+        runCommand: run,
+        stderr: options.stderr ?? process.stderr,
+      });
+      workflowEnvWithoutLock = logDrainPostgresState?.env ?? workflowBaseEnv;
+      workflowEnv = blueGreenBuildLock
+        ? {
+            ...workflowEnvWithoutLock,
+            [DEPLOYMENT_BUILD_LOCK_TOKEN_ENV]: blueGreenBuildLock.token,
+          }
+        : workflowEnvWithoutLock;
+      const changedFiles = await getBlueGreenDeploymentChangedFiles({
+        env,
+        fsImpl,
+        latestCommit,
+        rootDir,
+        runCommand: run,
+      });
       const workflowResult = await runBlueGreenProdWorkflow(parsed, {
         buildStrategy: options.buildStrategy ?? 'bake',
         changedFiles,
@@ -941,7 +1363,7 @@ async function runDockerWebWorkflow(parsed, options = {}) {
         fsImpl,
         latestCommit,
         proxyDrainMs: options.proxyDrainMs,
-        rootDir: options.rootDir,
+        rootDir,
         runCommand: run,
       });
       writeDeploymentStagesHandoff(
@@ -957,7 +1379,7 @@ async function runDockerWebWorkflow(parsed, options = {}) {
 
       if (env[SKIP_WATCH_HISTORY_ENV] !== '1') {
         const deployFinishedAt = Date.now();
-        const blueGreenPaths = getBlueGreenPaths(options.rootDir ?? ROOT_DIR);
+        const blueGreenPaths = getBlueGreenPaths(rootDir);
 
         appendDeploymentHistory(
           {
@@ -974,22 +1396,31 @@ async function runDockerWebWorkflow(parsed, options = {}) {
           },
           {
             fsImpl,
-            paths: getWatchPaths(options.rootDir ?? ROOT_DIR),
+            paths: getWatchPaths(rootDir),
           }
         );
       }
 
       if (env[WATCHER_CONTAINER_ENV] !== '1') {
+        const watcherEnvBase =
+          logDrainPostgresState?.ready === false
+            ? {
+                ...env,
+                [LOG_DRAIN_ENABLED_ENV]:
+                  workflowEnvWithoutLock[LOG_DRAIN_ENABLED_ENV],
+              }
+            : env;
+
         await startWatcherContainer(['--resume-if-running'], {
           env: withCloudflared
             ? {
-                ...env,
+                ...watcherEnvBase,
                 DOCKER_WEB_WITH_CLOUDFLARED: '1',
               }
-            : env,
+            : watcherEnvBase,
           envFilePath,
           fsImpl,
-          rootDir: options.rootDir,
+          rootDir,
           runCommand: run,
         });
       }
@@ -1014,7 +1445,7 @@ async function runDockerWebWorkflow(parsed, options = {}) {
         appendDeploymentHistory(
           {
             activeColor: readBlueGreenActiveColor(
-              getBlueGreenPaths(options.rootDir ?? ROOT_DIR),
+              getBlueGreenPaths(rootDir),
               fsImpl
             ),
             buildDurationMs: Math.max(0, deployFinishedAt - deployStartedAt),
@@ -1031,7 +1462,7 @@ async function runDockerWebWorkflow(parsed, options = {}) {
           },
           {
             fsImpl,
-            paths: getWatchPaths(options.rootDir ?? ROOT_DIR),
+            paths: getWatchPaths(rootDir),
           }
         );
       }
@@ -1058,11 +1489,23 @@ async function runDockerWebWorkflow(parsed, options = {}) {
   }
 
   if (parsed.mode === 'prod') {
+    const logDrainPostgresState = await ensureLogDrainPostgresReady({
+      composeFile,
+      composeGlobalArgs: parsed.composeGlobalArgs,
+      env: composeEnv,
+      fsImpl,
+      healthPollMs: options.healthPollMs,
+      healthTimeoutMs: options.healthTimeoutMs,
+      runCommand: run,
+      stderr: options.stderr ?? process.stderr,
+    });
+    composeEnv = logDrainPostgresState?.env ?? composeEnv;
+
     await stopComposeServicesIfPresent(
       [
         BLUE_GREEN_PROXY_SERVICE,
-        getBlueGreenServiceName('blue'),
-        getBlueGreenServiceName('green'),
+        ...getBlueGreenAllDirectWebServiceNames(),
+        ...getBlueGreenAllWebServiceNames(),
       ],
       {
         composeFile,
@@ -1140,6 +1583,7 @@ module.exports = {
   PROD_COMPOSE_FILE,
   WEB_ENV_FILE,
   clearBlueGreenRuntime,
+  applyDefaultBlueGreenNativeBuildEnv,
   cancelActiveBlueGreenBuild,
   classifySupabaseOrigin,
   describeActiveDeploymentConflict,
@@ -1163,6 +1607,7 @@ module.exports = {
   getComposeServiceContainerId,
   getComposeServiceContainerName,
   getContainerHealthStatus,
+  getBuildResourceProfilePaths,
   getDockerSupermemoryRuntime,
   formatSupabaseOriginReport,
   getChangedFilesBetweenCommits,
@@ -1173,6 +1618,7 @@ module.exports = {
   getPositiveIntegerEnv,
   hasComposeProfile,
   hasComposeServiceContainer,
+  ensureLogDrainPostgresReady,
   isTransientSupabaseResetError,
   isComposeServiceHealthy,
   isBlueGreenColor,

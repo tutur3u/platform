@@ -49,6 +49,16 @@ const DEV_TARGETS = Object.freeze({
     apps: ['finance', 'web'],
     shared: ['@tuturuuu/types', '@tuturuuu/supabase'],
   },
+  infra: {
+    apps: ['infrastructure'],
+    shared: [
+      '@tuturuuu/types',
+      '@tuturuuu/supabase',
+      '@tuturuuu/internal-api',
+      '@tuturuuu/ui',
+      '@tuturuuu/ai',
+    ],
+  },
   hive: {
     apps: ['hive-realtime', 'hive', 'web'],
     shared: ['@tuturuuu/types', '@tuturuuu/supabase'],
@@ -60,6 +70,10 @@ const DEV_TARGETS = Object.freeze({
   storefront: {
     apps: ['storefront', 'web'],
     shared: ['@tuturuuu/types', '@tuturuuu/supabase', '@tuturuuu/internal-api'],
+  },
+  'tanstack-web': {
+    apps: ['tanstack-web'],
+    shared: ['@tuturuuu/types', '@tuturuuu/internal-api', '@tuturuuu/ui'],
   },
   learn: {
     apps: ['learn', 'web'],
@@ -86,8 +100,8 @@ const DEV_TARGETS = Object.freeze({
     apps: ['nova', 'web'],
     shared: ['@tuturuuu/types', '@tuturuuu/supabase'],
   },
-  qr: {
-    apps: ['qr'],
+  tools: {
+    apps: ['tools'],
     shared: ['@tuturuuu/types'],
   },
   rewise: {
@@ -142,7 +156,9 @@ function parseDefaultPort(devAppScript) {
 
   const match =
     devAppScript.match(/(?:^|\s)-p\s+\$\{PORT:-(\d+)\}/u) ??
-    devAppScript.match(/(?:^|\s)-p\s+(\d+)/u);
+    devAppScript.match(/(?:^|\s)-p\s+(\d+)/u) ??
+    devAppScript.match(/(?:^|\s)--port\s+\$\{PORT:-(\d+)\}/u) ??
+    devAppScript.match(/(?:^|\s)--port\s+(\d+)/u);
   const parsed = match?.[1] ? Number.parseInt(match[1], 10) : null;
 
   return parsed && Number.isFinite(parsed) ? parsed : null;
@@ -611,6 +627,7 @@ function createDevPlan(
     catalog,
     env = process.env,
     forceStart = false,
+    includeSharedWatchers = true,
     portlessCaCertPath = null,
     rootDir = ROOT_DIR,
     serviceCatalog = DEV_SERVICES,
@@ -658,7 +675,8 @@ function createDevPlan(
     };
   }
 
-  const sharedFilters = unique(target.shared).filter(Boolean);
+  const targetSharedFilters = unique(target.shared).filter(Boolean);
+  const sharedFilters = includeSharedWatchers ? targetSharedFilters : [];
   const sharedCommand =
     missingAppKeys.length > 0 && sharedFilters.length > 0
       ? {
@@ -723,6 +741,10 @@ function createDevPlan(
     serviceCommands,
     sharedCommand,
     sharedFilters,
+    skippedSharedFilters:
+      missingAppKeys.length > 0 && !includeSharedWatchers
+        ? targetSharedFilters
+        : [],
     missingAppKeys,
     missingServiceKeys,
     skippedAppKeys,
@@ -732,6 +754,7 @@ function createDevPlan(
 
 function parseArgs(argv = process.argv.slice(2)) {
   const [targetName, ...rest] = argv;
+  let includeSharedWatchers = null;
   const turboArgs = [];
   let dryRun = false;
   let forceStart = false;
@@ -739,6 +762,16 @@ function parseArgs(argv = process.argv.slice(2)) {
   for (const arg of rest) {
     if (arg === '--dry-run') {
       dryRun = true;
+      continue;
+    }
+
+    if (arg === '--with-shared-watchers') {
+      includeSharedWatchers = true;
+      continue;
+    }
+
+    if (arg === '--no-shared-watchers') {
+      includeSharedWatchers = false;
       continue;
     }
 
@@ -753,6 +786,7 @@ function parseArgs(argv = process.argv.slice(2)) {
   return {
     dryRun,
     forceStart,
+    includeSharedWatchers,
     targetName,
     turboArgs,
   };
@@ -1027,12 +1061,13 @@ async function spawnDevCommands({
 function printUsage(stdout = process.stdout) {
   stdout.write(
     [
-      'Usage: node scripts/dev-workspaces.js <target> [--force|--no-reuse] [turbo args...]',
+      'Usage: node scripts/dev-workspaces.js <target> [--force|--no-reuse] [--with-shared-watchers|--no-shared-watchers] [turbo args...]',
       '',
       `Targets: ${Object.keys(DEV_TARGETS).sort().join(', ')}`,
       '',
       'By default, already-running Portless routes and default localhost ports are reused.',
       'Use --force or --no-reuse to include already-running app workspaces.',
+      '`dev:web` skips shared package watchers by default; use --with-shared-watchers when editing package source.',
       '',
     ].join('\n')
   );
@@ -1093,11 +1128,14 @@ async function runDevWorkspaces({
   const serviceStates = await resolveServiceStates(
     DEV_TARGETS[parsed.targetName].services ?? []
   );
+  const includeSharedWatchers =
+    parsed.includeSharedWatchers ?? parsed.targetName !== 'web';
   const plan = createDevPlan(parsed.targetName, {
     appStates,
     catalog,
     env,
     forceStart: parsed.forceStart,
+    includeSharedWatchers,
     portlessCaCertPath: getPortlessCaCertPath({ env }),
     rootDir,
     serviceStates,
@@ -1117,6 +1155,12 @@ async function runDevWorkspaces({
   }
   for (const warning of formatAliasCleanupWarnings(appStates)) {
     stderr.write(`${warning}\n`);
+  }
+
+  if (plan.skippedSharedFilters.length > 0) {
+    stdout.write(
+      `Skipping shared package watchers for dev:${parsed.targetName}: ${plan.skippedSharedFilters.join(', ')}. Pass --with-shared-watchers when editing those packages.\n`
+    );
   }
 
   for (const appKey of plan.skippedAppKeys) {

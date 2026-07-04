@@ -9,7 +9,11 @@ vi.mock('@tuturuuu/ui/sonner', () => ({
 // We need to reset module state between tests since the interceptor uses
 // module-scoped `installed` and `rateLimitToastActive` flags
 let installFetchInterceptor: () => void;
+let setRateLimitDetailsHandler: (
+  handler: ((details: unknown) => void) | null
+) => void;
 let setRateLimitMessage: (fn: (seconds: number) => string) => void;
+let setRateLimitWarningMessage: (fn: () => string) => void;
 
 describe('fetch-interceptor', () => {
   let originalFetch: typeof globalThis.fetch;
@@ -24,7 +28,9 @@ describe('fetch-interceptor', () => {
     // Re-import after reset
     const mod = await import('../lib/fetch-interceptor');
     installFetchInterceptor = mod.installFetchInterceptor;
+    setRateLimitDetailsHandler = mod.setRateLimitDetailsHandler;
     setRateLimitMessage = mod.setRateLimitMessage;
+    setRateLimitWarningMessage = mod.setRateLimitWarningMessage;
 
     mockWarning.mockClear();
     vi.useFakeTimers();
@@ -53,6 +59,62 @@ describe('fetch-interceptor', () => {
     expect(response.status).toBe(200);
     expect(mockFetch).toHaveBeenCalledTimes(1);
     expect(mockWarning).not.toHaveBeenCalled();
+  });
+
+  it('should show staff debug warnings on non-429 responses without retrying', async () => {
+    const detailsHandler = vi.fn();
+    const mockResponse = new Response(JSON.stringify({ data: 'ok' }), {
+      headers: {
+        'Retry-After': '9',
+        'X-Proxy-Block-Reason': 'route-rate-limit',
+        'X-RateLimit-Caller-Class': 'authenticated',
+        'X-RateLimit-Client-IP': '203.0.113.10',
+        'X-RateLimit-Debug-Bypass': 'tuturuuu-staff',
+        'X-RateLimit-Original-Status': '429',
+        'X-RateLimit-Policy': 'users-me',
+        'X-RateLimit-User-Email': 'member@tuturuuu.com',
+        'X-RateLimit-User-Id': 'user-123',
+        'X-RateLimit-Warning': 'staff-debug-bypass',
+        'X-RateLimit-Window': 'minute',
+      },
+      status: 200,
+    });
+    const mockFetch = vi.fn().mockResolvedValue(mockResponse);
+    globalThis.fetch = mockFetch;
+
+    setRateLimitDetailsHandler(detailsHandler);
+    setRateLimitWarningMessage(() => 'Staff debug warning');
+    installFetchInterceptor();
+    const response = await globalThis.fetch('/api/v1/users/me/profile');
+
+    expect(response.status).toBe(200);
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+    expect(mockWarning).toHaveBeenCalledTimes(1);
+    expect(mockWarning.mock.calls[0]?.[0]).toBe('Staff debug warning');
+
+    const toastOptions = mockWarning.mock.calls[0]?.[1] as {
+      action?: { onClick?: () => void };
+    };
+    toastOptions.action?.onClick?.();
+
+    expect(detailsHandler).toHaveBeenCalledWith(
+      expect.objectContaining({
+        clientIp: '203.0.113.10',
+        debugBypass: 'tuturuuu-staff',
+        headers: expect.objectContaining({
+          'X-RateLimit-Original-Status': '429',
+          'X-RateLimit-Warning': 'staff-debug-bypass',
+        }),
+        rateLimitStatus: 429,
+        retryAfterSeconds: 9,
+        retryAttempt: 0,
+        status: 200,
+        userEmail: 'member@tuturuuu.com',
+        userId: 'user-123',
+        warning: 'staff-debug-bypass',
+        willRetry: false,
+      })
+    );
   });
 
   it('should retry on 429 and return successful response', async () => {
@@ -100,6 +162,254 @@ describe('fetch-interceptor', () => {
     // The default English message
     expect(mockWarning.mock.calls[0]?.[0]).toContain('rate limited');
     expect(mockWarning.mock.calls[0]?.[0]).toContain('3s');
+    expect(mockWarning.mock.calls[0]?.[1]).toEqual(
+      expect.objectContaining({
+        action: expect.objectContaining({ label: 'View details' }),
+      })
+    );
+  });
+
+  it('should open rate-limit details from the toast action', async () => {
+    const detailsHandler = vi.fn();
+    const rate429 = new Response('', {
+      status: 429,
+      headers: {
+        'Retry-After': '3',
+        'X-RateLimit-Caller-Class': 'authenticated',
+        'X-RateLimit-Policy': 'users-me',
+        'X-RateLimit-Window': 'minute',
+        'X-Request-Id': 'req-123',
+      },
+    });
+    const ok200 = new Response('', { status: 200 });
+    const mockFetch = vi
+      .fn()
+      .mockResolvedValueOnce(rate429)
+      .mockResolvedValueOnce(ok200);
+    globalThis.fetch = mockFetch;
+
+    setRateLimitDetailsHandler(detailsHandler);
+    installFetchInterceptor();
+    const fetchPromise = globalThis.fetch(
+      '/api/v1/users/me/profile?token=secret&tab=settings'
+    );
+
+    await vi.advanceTimersByTimeAsync(3000);
+    await fetchPromise;
+
+    const toastOptions = mockWarning.mock.calls[0]?.[1] as {
+      action?: { onClick?: () => void };
+    };
+    toastOptions.action?.onClick?.();
+
+    expect(detailsHandler).toHaveBeenCalledWith(
+      expect.objectContaining({
+        headers: expect.objectContaining({
+          'X-RateLimit-Caller-Class': 'authenticated',
+          'X-RateLimit-Policy': 'users-me',
+          'X-RateLimit-Window': 'minute',
+          'X-Request-Id': 'req-123',
+        }),
+        method: 'GET',
+        requestPath: '/api/v1/users/me/profile?token=[redacted]&tab=settings',
+        retryAfterSeconds: 3,
+        status: 429,
+        willRetry: true,
+      })
+    );
+    expect(JSON.stringify(detailsHandler.mock.calls[0]?.[0])).not.toContain(
+      'secret'
+    );
+  });
+
+  it('should sanitize request details without copying credentials or body data', async () => {
+    const detailsHandler = vi.fn();
+    const rate429 = new Response('', {
+      status: 429,
+      headers: {
+        'CF-Ray': 'ray-123',
+        'Retry-After': '1',
+        'X-Proxy-Block-Reason': 'route-rate-limit',
+        'X-RateLimit-Limit': '600',
+        'X-RateLimit-Policy': 'users-me',
+        'X-RateLimit-Remaining': '0',
+        'X-RateLimit-Reset': '1893456000',
+        'X-RateLimit-Window': 'minute',
+        'X-Vercel-Id': 'sin1::abc',
+      },
+    });
+    const mockFetch = vi.fn().mockResolvedValueOnce(rate429);
+    globalThis.fetch = mockFetch;
+
+    setRateLimitDetailsHandler(detailsHandler);
+    installFetchInterceptor();
+    const request = new Request(
+      `${window.location.origin}/api/v1/users/me/profile?token=raw-token&code=raw-code&secret_id=raw-secret&password=raw-password&tab=settings`,
+      {
+        body: 'request-body-secret',
+        headers: {
+          authorization: 'Bearer raw-token',
+          cookie: 'session=raw-cookie',
+        },
+        method: 'POST',
+      }
+    );
+    const response = await globalThis.fetch(request);
+
+    expect(response.status).toBe(429);
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+
+    const toastOptions = mockWarning.mock.calls[0]?.[1] as {
+      action?: { onClick?: () => void };
+    };
+    toastOptions.action?.onClick?.();
+
+    expect(detailsHandler).toHaveBeenCalledWith(
+      expect.objectContaining({
+        headers: {
+          'CF-Ray': 'ray-123',
+          'Retry-After': '1',
+          'X-Proxy-Block-Reason': 'route-rate-limit',
+          'X-RateLimit-Limit': '600',
+          'X-RateLimit-Policy': 'users-me',
+          'X-RateLimit-Remaining': '0',
+          'X-RateLimit-Reset': '1893456000',
+          'X-RateLimit-Window': 'minute',
+          'X-Vercel-Id': 'sin1::abc',
+        },
+        method: 'POST',
+        requestPath:
+          '/api/v1/users/me/profile?token=[redacted]&code=[redacted]&secret_id=[redacted]&password=[redacted]&tab=settings',
+        willRetry: false,
+      })
+    );
+
+    const serializedDetails = JSON.stringify(detailsHandler.mock.calls[0]?.[0]);
+    expect(serializedDetails).not.toContain('raw-token');
+    expect(serializedDetails).not.toContain('raw-code');
+    expect(serializedDetails).not.toContain('raw-secret');
+    expect(serializedDetails).not.toContain('raw-password');
+    expect(serializedDetails).not.toContain('raw-cookie');
+    expect(serializedDetails).not.toContain('request-body-secret');
+    expect(serializedDetails).not.toContain('authorization');
+    expect(serializedDetails).not.toContain('cookie');
+  });
+
+  it('should use the translated details action label when configured', async () => {
+    const rate429 = new Response('', {
+      status: 429,
+      headers: { 'Retry-After': '1' },
+    });
+    const mockFetch = vi.fn().mockResolvedValueOnce(rate429);
+    globalThis.fetch = mockFetch;
+
+    const mod = await import('../lib/fetch-interceptor');
+    mod.setRateLimitToastLabels({ viewDetails: 'Xem chi tiết' });
+    installFetchInterceptor();
+    await globalThis.fetch('/api/v1/auth/password-login', {
+      method: 'POST',
+    });
+
+    expect(mockWarning.mock.calls[0]?.[1]).toEqual(
+      expect.objectContaining({
+        action: expect.objectContaining({ label: 'Xem chi tiết' }),
+      })
+    );
+  });
+
+  it('should capture auth rate-limit IP and policy diagnostics', async () => {
+    const detailsHandler = vi.fn();
+    const rate429 = new Response(JSON.stringify({ error: 'Rate limited' }), {
+      status: 429,
+      headers: {
+        'Retry-After': '12',
+        'X-RateLimit-Caller-Class': 'anonymous',
+        'X-RateLimit-Client-IP': '203.0.113.42',
+        'X-RateLimit-Policy': 'otp-send',
+      },
+    });
+    const mockFetch = vi.fn().mockResolvedValueOnce(rate429);
+    globalThis.fetch = mockFetch;
+
+    setRateLimitDetailsHandler(detailsHandler);
+    installFetchInterceptor();
+    await globalThis.fetch('/api/v1/auth/otp/send', {
+      body: JSON.stringify({
+        email: 'person@example.com',
+      }),
+      method: 'POST',
+    });
+
+    const toastOptions = mockWarning.mock.calls[0]?.[1] as {
+      action?: { onClick?: () => void };
+    };
+    toastOptions.action?.onClick?.();
+
+    expect(detailsHandler).toHaveBeenCalledWith(
+      expect.objectContaining({
+        clientIp: '203.0.113.42',
+        headers: expect.objectContaining({
+          'Retry-After': '12',
+          'X-RateLimit-Caller-Class': 'anonymous',
+          'X-RateLimit-Client-IP': '203.0.113.42',
+          'X-RateLimit-Policy': 'otp-send',
+        }),
+        method: 'POST',
+        requestPath: '/api/v1/auth/otp/send',
+        retryAfterSeconds: 12,
+        status: 429,
+        willRetry: false,
+      })
+    );
+  });
+
+  it('opens hard IP block details immediately without retrying', async () => {
+    const detailsHandler = vi.fn();
+    const rate429 = new Response(
+      JSON.stringify({ error: 'Too Many Requests' }),
+      {
+        status: 429,
+        headers: {
+          'CF-Ray': 'ray-456',
+          'Retry-After': '30',
+          'X-Proxy-Block-Reason': 'ip-already-blocked',
+          'X-RateLimit-Client-IP': '203.0.113.88',
+          'X-Request-Id': 'req-hard-block',
+          'X-Vercel-Id': 'sin1::hard-block',
+        },
+      }
+    );
+    const mockFetch = vi.fn().mockResolvedValueOnce(rate429);
+    globalThis.fetch = mockFetch;
+
+    setRateLimitDetailsHandler(detailsHandler);
+    installFetchInterceptor();
+    const response = await globalThis.fetch('/api/v1/auth/otp/send', {
+      method: 'POST',
+    });
+
+    expect(response.status).toBe(429);
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+    expect(mockWarning).not.toHaveBeenCalled();
+    expect(detailsHandler).toHaveBeenCalledWith(
+      expect.objectContaining({
+        blockKind: 'hard_ip_block',
+        clientIp: '203.0.113.88',
+        headers: expect.objectContaining({
+          'CF-Ray': 'ray-456',
+          'Retry-After': '30',
+          'X-Proxy-Block-Reason': 'ip-already-blocked',
+          'X-RateLimit-Client-IP': '203.0.113.88',
+          'X-Request-Id': 'req-hard-block',
+          'X-Vercel-Id': 'sin1::hard-block',
+        }),
+        requestPath: '/api/v1/auth/otp/send',
+        retryAfterSeconds: 30,
+        retryAttempt: 0,
+        status: 429,
+        willRetry: false,
+      })
+    );
   });
 
   it('should stop after MAX_RETRIES (3) and return the 429 response', async () => {
@@ -230,7 +540,7 @@ describe('fetch-interceptor', () => {
     expect(mockWarning).not.toHaveBeenCalled();
   });
 
-  it('should NOT retry non-idempotent same-origin 429 responses', async () => {
+  it('should show a toast but NOT retry non-idempotent same-origin 429 responses', async () => {
     const rate429 = new Response('', {
       status: 429,
       headers: { 'Retry-After': '1' },
@@ -245,7 +555,7 @@ describe('fetch-interceptor', () => {
 
     expect(response.status).toBe(429);
     expect(mockFetch).toHaveBeenCalledTimes(1);
-    expect(mockWarning).not.toHaveBeenCalled();
+    expect(mockWarning).toHaveBeenCalledTimes(1);
   });
 
   it('should retry same-origin relative URL requests', async () => {

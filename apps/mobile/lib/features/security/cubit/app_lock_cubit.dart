@@ -9,31 +9,35 @@ class AppLockState extends Equatable {
   const AppLockState({
     this.enabled = false,
     this.locked = false,
+    this.hasLoaded = false,
     this.status = AppLockStatus.idle,
     this.error,
   });
 
   final bool enabled;
   final bool locked;
+  final bool hasLoaded;
   final AppLockStatus status;
   final String? error;
 
   AppLockState copyWith({
     bool? enabled,
     bool? locked,
+    bool? hasLoaded,
     AppLockStatus? status,
     String? error,
   }) {
     return AppLockState(
       enabled: enabled ?? this.enabled,
       locked: locked ?? this.locked,
+      hasLoaded: hasLoaded ?? this.hasLoaded,
       status: status ?? this.status,
       error: error,
     );
   }
 
   @override
-  List<Object?> get props => [enabled, locked, status, error];
+  List<Object?> get props => [enabled, locked, hasLoaded, status, error];
 }
 
 class AppLockCubit extends Cubit<AppLockState> {
@@ -50,14 +54,20 @@ class AppLockCubit extends Cubit<AppLockState> {
   Future<void> load({bool lockIfEnabled = false}) async {
     emit(state.copyWith(status: AppLockStatus.loading));
     final enabled = await _settingsStore.isEnabled();
-    emit(AppLockState(enabled: enabled, locked: enabled && lockIfEnabled));
+    emit(
+      AppLockState(
+        enabled: enabled,
+        locked: enabled && lockIfEnabled,
+        hasLoaded: true,
+      ),
+    );
   }
 
   Future<void> setEnabled({
     required bool enabled,
     required String reason,
   }) async {
-    if (enabled == state.enabled) {
+    if (state.hasLoaded && enabled == state.enabled) {
       return;
     }
 
@@ -78,11 +88,11 @@ class AppLockCubit extends Cubit<AppLockState> {
     }
 
     await _settingsStore.setEnabled(enabled: enabled);
-    emit(AppLockState(enabled: enabled));
+    emit(AppLockState(enabled: enabled, hasLoaded: true));
   }
 
   void lock() {
-    if (!state.enabled || state.locked) {
+    if (!state.hasLoaded || !state.enabled || state.locked) {
       return;
     }
 
@@ -90,14 +100,18 @@ class AppLockCubit extends Cubit<AppLockState> {
   }
 
   void resetLockState() {
-    if (!state.locked && state.status == AppLockStatus.idle) {
+    if (state == const AppLockState()) {
       return;
     }
 
-    emit(state.copyWith(locked: false, status: AppLockStatus.idle));
+    emit(const AppLockState());
   }
 
   Future<bool> unlock({required String reason}) async {
+    if (!state.hasLoaded) {
+      return false;
+    }
+
     if (!state.enabled) {
       return true;
     }
@@ -113,7 +127,7 @@ class AppLockCubit extends Cubit<AppLockState> {
   }
 
   Future<bool> authenticateForQrLogin({required String reason}) async {
-    if (!state.enabled) {
+    if (!state.hasLoaded || !state.enabled) {
       return false;
     }
 

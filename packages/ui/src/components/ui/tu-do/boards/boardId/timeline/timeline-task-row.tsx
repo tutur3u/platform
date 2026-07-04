@@ -18,7 +18,6 @@ import {
   DropdownMenuSubTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
 import { cn } from '@tuturuuu/utils/format';
-import dayjs from 'dayjs';
 import type { useTranslations } from 'next-intl';
 import type { PointerEvent as ReactPointerEvent } from 'react';
 import { useState } from 'react';
@@ -26,6 +25,7 @@ import { TaskRowActionsMenu } from '../../../shared/task-row-actions-menu';
 import {
   getStatusToneClasses,
   getTaskEyebrow,
+  getTimelineDayGridBackground,
   HANDLE_WIDTH,
 } from './timeline-display';
 import type {
@@ -39,6 +39,9 @@ interface TimelineTaskRowProps {
   lists: TaskList[];
   boardId?: string;
   wsId?: string;
+  isPersonalWorkspace?: boolean;
+  canUseBoardAssignees?: boolean;
+  assigneeMemberSource?: 'workspace' | 'board' | 'workspace-and-board';
   dayWidth: number;
   timelineWidth: number;
   sidebarWidth: number;
@@ -75,6 +78,9 @@ export function TimelineTaskRow({
   lists,
   boardId,
   wsId,
+  isPersonalWorkspace,
+  canUseBoardAssignees,
+  assigneeMemberSource,
   dayWidth,
   timelineWidth,
   sidebarWidth,
@@ -235,6 +241,9 @@ export function TimelineTaskRow({
               boardId={boardId}
               workspaceId={wsId}
               lists={lists}
+              isPersonalWorkspace={isPersonalWorkspace}
+              canUseBoardAssignees={canUseBoardAssignees}
+              assigneeMemberSource={assigneeMemberSource}
               onUpdate={onActionsUpdate ?? (() => undefined)}
               open={actionsMenu.open}
               onOpenChange={(open) =>
@@ -263,30 +272,10 @@ export function TimelineTaskRow({
           style={{ minHeight: rowHeight }}
           onDoubleClick={() => onOpenEditor(item.task)}
         >
-          <div className="pointer-events-none absolute inset-0 flex">
-            {Array.from({
-              length: Math.max(1, Math.ceil(timelineWidth / dayWidth)),
-            }).map((_, index) => {
-              const isToday = todayVisible && index === todayIndex;
-              const date = item.start
-                ? dayjs(item.start).add(index - item.offsetDays, 'day')
-                : null;
-              const isWeekend = date ? [0, 6].includes(date.day()) : false;
-
-              return (
-                <div
-                  key={`${item.task.id}-${index}`}
-                  className={cn(
-                    'h-full border-border/45 border-r',
-                    index === 0 && 'border-l border-l-border/50',
-                    isWeekend && 'bg-muted/[0.12]',
-                    isToday && 'bg-dynamic-blue/[0.035]'
-                  )}
-                  style={{ width: dayWidth }}
-                />
-              );
-            })}
-          </div>
+          <div
+            className="pointer-events-none absolute inset-0 border-border/50 border-l"
+            style={getTimelineDayGridBackground(dayWidth)}
+          />
 
           {todayVisible && (
             <div

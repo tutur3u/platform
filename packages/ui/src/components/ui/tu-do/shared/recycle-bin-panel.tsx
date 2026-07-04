@@ -73,14 +73,24 @@ interface RecycleBinPanelProps {
   };
 }
 
-export function RecycleBinPanel({
-  open,
-  onOpenChange,
+interface RecycleBinContentProps
+  extends Omit<RecycleBinPanelProps, 'open' | 'onOpenChange'> {
+  active?: boolean;
+  className?: string;
+  onParentOpenChange?: (open: boolean) => void;
+  showHeader?: boolean;
+}
+
+export function RecycleBinContent({
+  active = true,
+  className,
+  onParentOpenChange,
+  showHeader = true,
   wsId,
   boardId,
   lists,
   translations,
-}: RecycleBinPanelProps) {
+}: RecycleBinContentProps) {
   // Use provided translations or fall back to English defaults
   const t = useMemo(
     () => ({
@@ -143,7 +153,7 @@ export function RecycleBinPanel({
     boardId,
     wsId,
     {
-      enabled: open,
+      enabled: active,
       staleTime: 60000,
     }
   );
@@ -193,20 +203,20 @@ export function RecycleBinPanel({
     (isOpen: boolean) => {
       setRestoreDialogOpen(isOpen);
       if (isOpen) {
-        onOpenChange(false); // Close Sheet when dialog opens
+        onParentOpenChange?.(false); // Close Sheet when dialog opens
       }
     },
-    [onOpenChange]
+    [onParentOpenChange]
   );
 
   const handleDeleteDialogOpenChange = useCallback(
     (isOpen: boolean) => {
       setDeleteDialogOpen(isOpen);
       if (isOpen) {
-        onOpenChange(false); // Close Sheet when dialog opens
+        onParentOpenChange?.(false); // Close Sheet when dialog opens
       }
     },
-    [onOpenChange]
+    [onParentOpenChange]
   );
 
   const handleRestore = useCallback(async () => {
@@ -254,97 +264,96 @@ export function RecycleBinPanel({
 
   return (
     <>
-      <Sheet open={open} onOpenChange={onOpenChange}>
-        <SheetContent side="right" className="flex w-full flex-col sm:max-w-md">
-          <SheetHeader>
-            <SheetTitle className="flex items-center gap-2">
+      <div className={cn('flex min-h-0 flex-1 flex-col', className)}>
+        {showHeader && (
+          <div className="border-b p-4">
+            <h2 className="flex items-center gap-2 font-semibold text-lg">
               <Trash2 className="h-5 w-5" />
               {t.recycleBin}
-            </SheetTitle>
-            <SheetDescription>{t.recycleBinDescription}</SheetDescription>
-          </SheetHeader>
-
-          <div className="flex flex-1 flex-col overflow-hidden">
-            {/* Header with select all */}
-            {deletedTasks.length > 0 && (
-              <div className="flex items-center gap-3 border-b p-3">
-                <Checkbox
-                  checked={allSelected}
-                  onCheckedChange={handleSelectAll}
-                  aria-label={t.selectAllTasks}
-                />
-                <span className="text-foreground text-sm">
-                  {someSelected
-                    ? t.selectedOfTotal
-                        .replace('{selected}', String(selectedTasks.size))
-                        .replace('{total}', String(deletedTasks.length))
-                    : t.deletedTasksCount.replace(
-                        '{count}',
-                        String(deletedTasks.length)
-                      )}
-                </span>
-              </div>
-            )}
-
-            {/* Task list */}
-            <div className="flex-1 overflow-y-auto p-3">
-              {isLoading ? (
-                <div className="flex items-center justify-center py-12">
-                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-                </div>
-              ) : deletedTasks.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-12 text-center">
-                  <Trash2 className="mb-3 h-12 w-12 text-muted-foreground/50" />
-                  <p className="text-muted-foreground">{t.noDeletedTasks}</p>
-                  <p className="mt-1 text-muted-foreground/70 text-xs">
-                    {t.deletedTasksWillAppearHere}
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {deletedTasks.map((task: Task) => (
-                    <RecycleBinTaskRow
-                      key={task.id}
-                      task={task}
-                      listName={listMap.get(task.list_id)}
-                      isSelected={selectedTasks.has(task.id)}
-                      onSelect={(checked) => handleSelectTask(task.id, checked)}
-                      disabled={isWorking}
-                      translations={t}
-                    />
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Action bar */}
-            {someSelected && (
-              <div className="flex items-center gap-2 border-t px-3 py-4">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="flex-1"
-                  onClick={() => setRestoreDialogOpen(true)}
-                  disabled={isWorking}
-                >
-                  <RotateCcw className="mr-2 h-4 w-4" />
-                  {t.restore} ({selectedTasks.size})
-                </Button>
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  className="flex-1"
-                  onClick={() => setDeleteDialogOpen(true)}
-                  disabled={isWorking}
-                >
-                  <Trash2 className="mr-2 h-4 w-4" />
-                  {t.delete} ({selectedTasks.size})
-                </Button>
-              </div>
-            )}
+            </h2>
+            <p className="mt-1 text-muted-foreground text-sm">
+              {t.recycleBinDescription}
+            </p>
           </div>
-        </SheetContent>
-      </Sheet>
+        )}
+        {/* Header with select all */}
+        {deletedTasks.length > 0 && (
+          <div className="flex items-center gap-3 border-b p-3">
+            <Checkbox
+              checked={allSelected}
+              onCheckedChange={handleSelectAll}
+              aria-label={t.selectAllTasks}
+            />
+            <span className="text-foreground text-sm">
+              {someSelected
+                ? t.selectedOfTotal
+                    .replace('{selected}', String(selectedTasks.size))
+                    .replace('{total}', String(deletedTasks.length))
+                : t.deletedTasksCount.replace(
+                    '{count}',
+                    String(deletedTasks.length)
+                  )}
+            </span>
+          </div>
+        )}
+
+        {/* Task list */}
+        <div className="flex-1 overflow-y-auto p-3">
+          {isLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            </div>
+          ) : deletedTasks.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <Trash2 className="mb-3 h-12 w-12 text-muted-foreground/50" />
+              <p className="text-muted-foreground">{t.noDeletedTasks}</p>
+              <p className="mt-1 text-muted-foreground/70 text-xs">
+                {t.deletedTasksWillAppearHere}
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {deletedTasks.map((task: Task) => (
+                <RecycleBinTaskRow
+                  key={task.id}
+                  task={task}
+                  listName={listMap.get(task.list_id)}
+                  isSelected={selectedTasks.has(task.id)}
+                  onSelect={(checked) => handleSelectTask(task.id, checked)}
+                  disabled={isWorking}
+                  translations={t}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Action bar */}
+        {someSelected && (
+          <div className="flex items-center gap-2 border-t px-3 py-4">
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex-1"
+              onClick={() => handleRestoreDialogOpenChange(true)}
+              disabled={isWorking}
+            >
+              <RotateCcw className="mr-2 h-4 w-4" />
+              {t.restore} ({selectedTasks.size})
+            </Button>
+            <Button
+              variant="destructive"
+              size="sm"
+              className="flex-1"
+              onClick={() => handleDeleteDialogOpenChange(true)}
+              disabled={isWorking}
+            >
+              <Trash2 className="mr-2 h-4 w-4" />
+              {t.delete} ({selectedTasks.size})
+            </Button>
+          </div>
+        )}
+      </div>
 
       {/* Restore Confirmation Dialog */}
       <AlertDialog
@@ -430,6 +439,45 @@ export function RecycleBinPanel({
         </AlertDialogContent>
       </AlertDialog>
     </>
+  );
+}
+
+export function RecycleBinPanel({
+  open,
+  onOpenChange,
+  wsId,
+  boardId,
+  lists,
+  translations,
+}: RecycleBinPanelProps) {
+  const t = {
+    recycleBin: translations?.recycleBin ?? 'Recycle Bin',
+    recycleBinDescription:
+      translations?.recycleBinDescription ??
+      'Restore or permanently delete tasks that were previously removed.',
+  };
+
+  return (
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent side="right" className="flex w-full flex-col sm:max-w-md">
+        <SheetHeader>
+          <SheetTitle className="flex items-center gap-2">
+            <Trash2 className="h-5 w-5" />
+            {t.recycleBin}
+          </SheetTitle>
+          <SheetDescription>{t.recycleBinDescription}</SheetDescription>
+        </SheetHeader>
+        <RecycleBinContent
+          active={open}
+          boardId={boardId}
+          lists={lists}
+          onParentOpenChange={onOpenChange}
+          showHeader={false}
+          translations={translations}
+          wsId={wsId}
+        />
+      </SheetContent>
+    </Sheet>
   );
 }
 

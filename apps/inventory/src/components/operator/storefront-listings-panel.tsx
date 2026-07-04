@@ -1,52 +1,32 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import {
-  Ban,
-  Clock,
-  ListTree,
-  Pencil,
-  Plus,
-  RefreshCw,
-  Save,
-  TriangleAlert,
-} from '@tuturuuu/icons';
+import { Plus } from '@tuturuuu/icons';
 import type {
   InventoryBundle,
-  InventoryListingStatus,
   InventoryProductSummary,
   InventoryStorefront,
 } from '@tuturuuu/internal-api/inventory';
 import {
   createInventoryStorefrontListing,
-  deleteInventoryStorefrontListing,
   listInventoryStorefrontListings,
-  updateInventoryStorefrontListing,
 } from '@tuturuuu/internal-api/inventory';
 import { Button } from '@tuturuuu/ui/button';
 import { Dialog, DialogClose, DialogTrigger } from '@tuturuuu/ui/dialog';
 import { Input } from '@tuturuuu/ui/input';
+import { MoneyInput } from '@tuturuuu/ui/money-input';
 import { toast } from '@tuturuuu/ui/sonner';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@tuturuuu/ui/tooltip';
-import { cn } from '@tuturuuu/utils/format';
-import { useLocale, useTranslations } from 'next-intl';
+import { useTranslations } from 'next-intl';
 import { type FormEvent, useState } from 'react';
 import {
-  FormSection,
   OperatorDialogBody,
   OperatorDialogContent,
   OperatorDialogFooter,
   OperatorDialogHeader,
 } from './operator-dialog-shell';
 import { SelectField, SelectValueField } from './operator-form-fields';
-import { currency } from './operator-format';
-import { LifecyclePanel } from './operator-lifecycle';
 import { EmptyRow, LoadingRows } from './operator-shell';
+import { ListingRow } from './storefront-listing-row';
 
 export function StorefrontListingsPanel({
   bundles,
@@ -67,9 +47,13 @@ export function StorefrontListingsPanel({
   );
   const [targetId, setTargetId] = useState('');
   const [title, setTitle] = useState('');
-  const [price, setPrice] = useState('');
+  // Price is held in integer minor units (cents) — the canonical storage unit.
+  const [price, setPrice] = useState(0);
   const [open, setOpen] = useState(false);
   const activeStorefrontId = storefrontId || storefronts[0]?.id || '';
+  const activeCurrency =
+    storefronts.find((storefront) => storefront.id === activeStorefrontId)
+      ?.currency ?? 'USD';
   const activeProduct = products.find((product) => product.id === targetId);
   const activeInventory = activeProduct?.inventory?.[0] ?? {};
   const listings = useQuery({
@@ -85,7 +69,7 @@ export function StorefrontListingsPanel({
       createInventoryStorefrontListing(wsId, activeStorefrontId, {
         bundleId: listingType === 'bundle' ? targetId : null,
         listingType,
-        price: Number(price || 0),
+        price,
         productId: listingType === 'product' ? targetId : null,
         status: 'draft',
         title,
@@ -101,7 +85,7 @@ export function StorefrontListingsPanel({
     onError: () => toast.error(t('saveError')),
     onSuccess: () => {
       setTitle('');
-      setPrice('');
+      setPrice(0);
       setTargetId('');
       setOpen(false);
       toast.success(t('saveSuccess'));
@@ -200,10 +184,11 @@ export function StorefrontListingsPanel({
                   </label>
                   <label className="grid min-w-0 gap-1 text-sm">
                     <span className="font-medium">{t('price')}</span>
-                    <Input
+                    <MoneyInput
                       className="h-10"
-                      inputMode="numeric"
-                      onChange={(event) => setPrice(event.target.value)}
+                      currency={activeCurrency}
+                      hideHelpers
+                      onChange={setPrice}
                       placeholder={t('placeholders.price')}
                       value={price}
                     />
@@ -236,253 +221,14 @@ export function StorefrontListingsPanel({
         {listings.data?.data.map((listing) => (
           <ListingRow
             key={listing.id}
+            currency={activeCurrency}
             listing={listing}
+            products={products}
             storefrontId={activeStorefrontId}
             wsId={wsId}
           />
         ))}
       </div>
     </section>
-  );
-}
-
-const SYNC_BADGE_META: Record<string, { Icon: typeof Clock; tone: string }> = {
-  disabled: { Icon: Ban, tone: 'text-muted-foreground' },
-  error: { Icon: TriangleAlert, tone: 'text-destructive' },
-  pending: { Icon: Clock, tone: 'text-dynamic-orange' },
-  synced: { Icon: RefreshCw, tone: 'text-dynamic-green' },
-};
-
-function ListingSyncBadge({
-  error,
-  status,
-  syncedAt,
-}: {
-  error?: string | null;
-  status?: string | null;
-  syncedAt?: string | null;
-}) {
-  const t = useTranslations('inventory.operator.polar.sync');
-  const locale = useLocale();
-  const meta = status ? SYNC_BADGE_META[status] : undefined;
-  if (!status || !meta) return null;
-  const Icon = meta.Icon;
-  const formattedSyncedAt =
-    syncedAt &&
-    new Intl.DateTimeFormat(locale, {
-      dateStyle: 'medium',
-      timeStyle: 'short',
-    }).format(new Date(syncedAt));
-  const tip =
-    status === 'error' && error
-      ? error
-      : formattedSyncedAt
-        ? `${t('lastSynced')}: ${formattedSyncedAt}`
-        : t(`status.${status}`);
-
-  return (
-    <TooltipProvider>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <span className="inline-flex h-6 w-fit items-center gap-1 rounded-md border border-border px-2 text-xs">
-            <Icon className={cn('h-3 w-3', meta.tone)} />
-            {t(`status.${status}`)}
-          </span>
-        </TooltipTrigger>
-        <TooltipContent className="max-w-xs">{tip}</TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
-  );
-}
-
-function ListingRow({
-  listing,
-  storefrontId,
-  wsId,
-}: {
-  listing: {
-    id: string;
-    polarLastError?: string | null;
-    polarSyncStatus?: string | null;
-    polarSyncedAt?: string | null;
-    price: number;
-    status: string;
-    title: string;
-  };
-  storefrontId: string;
-  wsId: string;
-}) {
-  return (
-    <div className="grid min-w-0 gap-2 rounded-md border border-border bg-background p-3 text-sm sm:grid-cols-[minmax(0,1fr)_auto_auto_auto] sm:items-center">
-      <div className="min-w-0">
-        <p className="truncate font-medium">{listing.title}</p>
-        <p className="truncate text-muted-foreground text-xs">
-          {listing.status}
-        </p>
-      </div>
-      <ListingSyncBadge
-        error={listing.polarLastError}
-        status={listing.polarSyncStatus}
-        syncedAt={listing.polarSyncedAt}
-      />
-      <span>{currency(listing.price)}</span>
-      <ListingEditorDialog
-        listing={listing}
-        storefrontId={storefrontId}
-        wsId={wsId}
-      />
-    </div>
-  );
-}
-
-function ListingEditorDialog({
-  listing,
-  storefrontId,
-  wsId,
-}: {
-  listing: { id: string; price: number; status: string; title: string };
-  storefrontId: string;
-  wsId: string;
-}) {
-  const t = useTranslations('inventory.operator.forms');
-  const queryClient = useQueryClient();
-  const [open, setOpen] = useState(false);
-  const [title, setTitle] = useState(listing.title);
-  const [price, setPrice] = useState(String(listing.price));
-  const [status, setStatus] = useState(listing.status);
-  const invalidate = () => {
-    queryClient.invalidateQueries({ queryKey: ['inventory', wsId] });
-    queryClient.invalidateQueries({
-      queryKey: ['inventory', wsId, 'storefront-listings', storefrontId],
-    });
-  };
-  const saveMutation = useMutation({
-    mutationFn: () =>
-      updateInventoryStorefrontListing(wsId, storefrontId, listing.id, {
-        price: Number(price || 0),
-        status: status as InventoryListingStatus,
-        title,
-      }),
-    onError: () => toast.error(t('saveError')),
-    onSuccess: () => {
-      toast.success(t('saveSuccess'));
-      invalidate();
-    },
-  });
-  const archiveMutation = useMutation({
-    mutationFn: () =>
-      updateInventoryStorefrontListing(wsId, storefrontId, listing.id, {
-        status: 'archived',
-      }),
-    onError: () => toast.error(t('saveError')),
-    onSuccess: () => {
-      toast.success(t('saveSuccess'));
-      setOpen(false);
-      invalidate();
-    },
-  });
-  const deleteMutation = useMutation({
-    mutationFn: () =>
-      deleteInventoryStorefrontListing(wsId, storefrontId, listing.id),
-    onError: () => toast.error(t('deleteError')),
-    onSuccess: () => {
-      toast.success(t('deleteSuccess'));
-      setOpen(false);
-      invalidate();
-    },
-  });
-
-  return (
-    <Dialog
-      onOpenChange={(nextOpen) => {
-        if (nextOpen) {
-          setTitle(listing.title);
-          setPrice(String(listing.price));
-          setStatus(listing.status);
-        }
-        setOpen(nextOpen);
-      }}
-      open={open}
-    >
-      <DialogTrigger asChild>
-        <Button size="sm" type="button" variant="outline">
-          <Pencil className="h-4 w-4" />
-          {t('edit')}
-        </Button>
-      </DialogTrigger>
-      <OperatorDialogContent size="md">
-        <OperatorDialogHeader
-          description={t('editListingDescription')}
-          title={t('editListingTitle')}
-        />
-        <form
-          className="flex min-h-0 flex-1 flex-col"
-          onSubmit={(event) => {
-            event.preventDefault();
-            if (title) saveMutation.mutate();
-          }}
-        >
-          <OperatorDialogBody className="grid gap-6">
-            <FormSection
-              icon={<ListTree className="h-4 w-4" />}
-              title={t('tabs.details')}
-            >
-              <div className="grid min-w-0 gap-3">
-                <label className="grid min-w-0 gap-1 text-sm">
-                  <span className="font-medium">{t('listingTitle')}</span>
-                  <Input
-                    onChange={(event) => setTitle(event.target.value)}
-                    placeholder={t('placeholders.listingTitle')}
-                    value={title}
-                  />
-                </label>
-                <label className="grid min-w-0 gap-1 text-sm">
-                  <span className="font-medium">{t('price')}</span>
-                  <Input
-                    inputMode="decimal"
-                    onChange={(event) => setPrice(event.target.value)}
-                    placeholder={t('placeholders.price')}
-                    value={price}
-                  />
-                </label>
-                <SelectValueField
-                  allowEmpty={false}
-                  label={t('status')}
-                  onChange={setStatus}
-                  options={[
-                    { label: t('listingStatus.draft'), value: 'draft' },
-                    { label: t('listingStatus.published'), value: 'published' },
-                    { label: t('listingStatus.paused'), value: 'paused' },
-                    { label: t('listingStatus.archived'), value: 'archived' },
-                  ]}
-                  placeholder={t('placeholders.status')}
-                  value={status}
-                />
-              </div>
-            </FormSection>
-            <FormSection title={t('tabs.lifecycle')}>
-              <LifecyclePanel
-                archivePending={archiveMutation.isPending}
-                deletePending={deleteMutation.isPending}
-                onArchive={() => archiveMutation.mutate()}
-                onDelete={() => deleteMutation.mutate()}
-                title={t('lifecycle')}
-              />
-            </FormSection>
-          </OperatorDialogBody>
-          <OperatorDialogFooter>
-            <DialogClose asChild>
-              <Button type="button" variant="ghost">
-                {t('cancel')}
-              </Button>
-            </DialogClose>
-            <Button disabled={!title || saveMutation.isPending} type="submit">
-              <Save className="h-4 w-4" />
-              {saveMutation.isPending ? t('saving') : t('save')}
-            </Button>
-          </OperatorDialogFooter>
-        </form>
-      </OperatorDialogContent>
-    </Dialog>
   );
 }

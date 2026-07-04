@@ -12,6 +12,7 @@ import type {
 } from '@tuturuuu/types';
 import type { WorkspaceSecret } from '@tuturuuu/types/primitives/WorkspaceSecret';
 import type { NextRequest } from 'next/server';
+import { cache } from 'react';
 import {
   PERSONAL_WORKSPACE_SLUG,
   ROOT_WORKSPACE_ID,
@@ -703,7 +704,33 @@ async function resolveWorkspaceIdForPermissions({
   return workspace.id;
 }
 
-export async function getPermissions({
+/**
+ * Resolve the caller's workspace permissions.
+ *
+ * The common Server Component flow (`getPermissions({ wsId })`, no explicit
+ * `user`/`request`) is memoized per request via React `cache()` keyed on the
+ * primitive `wsId`, so multiple callers in the same render tree (e.g. a layout
+ * and its page) share a single permission lookup instead of each running ~3
+ * queries. Flows that pass an explicit `user` or `request` bypass the cache to
+ * avoid any cross-request contamination.
+ */
+export async function getPermissions(args: {
+  user?: AuthenticatedWorkspacePrincipal | null;
+  wsId: string;
+  request?: Request;
+}): Promise<PermissionsResult | null> {
+  if (!args.user && !args.request) {
+    return getPermissionsByWsId(args.wsId);
+  }
+  return getPermissionsImpl(args);
+}
+
+const getPermissionsByWsId = cache(
+  async (wsId: string): Promise<PermissionsResult | null> =>
+    getPermissionsImpl({ wsId })
+);
+
+async function getPermissionsImpl({
   user,
   wsId,
   request,

@@ -7,6 +7,7 @@ import {
   DATABASE_DEFAULT_EXCLUDED_GROUPS_CONFIG_ID,
   DATABASE_DEFAULT_INCLUDED_GROUPS_CONFIG_ID,
   DATABASE_FEATURED_GROUPS_CONFIG_ID,
+  WORKSPACE_USER_PROFILE_LINK_DEFAULT_CONFIG_IDS,
 } from './workspace-config-ids';
 
 export {
@@ -19,11 +20,19 @@ export {
   ENABLE_CMS_GAMES_CONFIG_ID,
   ENABLE_GUEST_SELF_JOIN_FROM_WORKSPACE_USER_EMAIL_CONFIG_ID,
   FINANCE_DEFAULT_RECONCILIATION_CATEGORY_CONFIG_ID,
+  WORKSPACE_USER_PROFILE_LINK_DEFAULT_CONFIG_IDS,
+  WORKSPACE_USER_PROFILE_LINK_DEFAULT_EXPIRATION_CONFIG_ID,
+  WORKSPACE_USER_PROFILE_LINK_DEFAULT_FIELDS_CONFIG_ID,
+  WORKSPACE_USER_PROFILE_LINK_DEFAULT_MAX_USES_CONFIG_ID,
+  WORKSPACE_USER_PROFILE_LINK_DEFAULT_PREFILL_EXISTING_VALUES_CONFIG_ID,
+  WORKSPACE_USER_PROFILE_LINK_DEFAULT_REQUIRE_AUTH_CONFIG_ID,
 } from './workspace-config-ids';
 
 type WorkspaceConfigResponse = {
   value: string | null;
 };
+
+export type WorkspaceConfigsResponse = Record<string, string | null>;
 
 export function parseWorkspaceConfigIdList(
   value: string | null | undefined
@@ -44,6 +53,29 @@ export async function getWorkspaceConfig(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/settings/${encodePathSegment(configId)}`,
     {
       cache: 'no-store',
+    }
+  );
+}
+
+export async function getWorkspaceConfigs(
+  workspaceId: string,
+  configIds: readonly string[],
+  options?: InternalApiClientOptions
+) {
+  const ids = [...new Set(configIds.map((id) => id.trim()).filter(Boolean))];
+
+  if (ids.length === 0) {
+    return {};
+  }
+
+  const client = getInternalApiClient(options);
+  return client.json<WorkspaceConfigsResponse>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/settings/configs`,
+    {
+      cache: 'no-store',
+      query: {
+        ids: ids.join(','),
+      },
     }
   );
 }
@@ -101,6 +133,17 @@ export async function updateWorkspaceConfig(
       },
       body: JSON.stringify({ value }),
     }
+  );
+}
+
+export async function getWorkspaceUserProfileLinkDefaultConfigs(
+  workspaceId: string,
+  options?: InternalApiClientOptions
+) {
+  return getWorkspaceConfigs(
+    workspaceId,
+    WORKSPACE_USER_PROFILE_LINK_DEFAULT_CONFIG_IDS,
+    options
   );
 }
 

@@ -38,6 +38,8 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
+const { checkNamespaceParity } = require('./i18n-namespace-parity');
+const { checkAppSourceKeys } = require('./i18n-source-key-scan');
 
 const ROOT_DIR = process.cwd();
 
@@ -85,10 +87,11 @@ const APP_NAMESPACE_ALLOWLIST = new Map([
 const UNCHECKED_APPS = new Set([
   'apps/apps',
   'apps/chat',
+  'apps/infrastructure',
   'apps/inventory',
   'apps/learn',
   'apps/mail',
-  'apps/qr',
+  'apps/tools',
   'apps/teach',
 ]);
 
@@ -261,6 +264,12 @@ function scanPackageKeys(pkg) {
 }
 
 /**
+ * Build brace pairs with comments and strings skipped. This is not a full TS
+ * parser, but it is enough to bound local translator declarations to their
+ * enclosing block and avoid collapsing repeated `const t = useTranslations(...)`
+ * declarations in one file.
+ */
+/**
  * Resolve a dotted path (namespace + key) in a JSON object.
  * Returns true if the path exists.
  *
@@ -269,7 +278,10 @@ function scanPackageKeys(pkg) {
  *          checks json['task-projects']['edit_dialog']['title']
  */
 function resolveKeyPath(json, namespace, key) {
-  const segments = [...namespace.split('.'), ...key.split('.')];
+  const segments = [
+    ...(namespace ? namespace.split('.') : []),
+    ...key.split('.'),
+  ];
   let current = json;
 
   for (const segment of segments) {
@@ -279,64 +291,6 @@ function resolveKeyPath(json, namespace, key) {
   }
 
   return current !== null && current !== undefined;
-}
-
-/**
- * Collect every leaf key path under a translation subtree into `out`.
- * e.g. { a: 'x', b: { c: 'y' } } with prefix '' yields 'a' and 'b.c'.
- * Non-object inputs (or undefined namespaces) contribute nothing.
- */
-function collectLeafKeyPaths(value, prefix, out) {
-  if (value === null || typeof value !== 'object' || Array.isArray(value)) {
-    if (prefix) out.add(prefix);
-    return;
-  }
-  for (const key of Object.keys(value)) {
-    collectLeafKeyPaths(value[key], prefix ? `${prefix}.${key}` : key, out);
-  }
-}
-
-/**
- * Check that every namespace in each parity group is in sync across the group's
- * apps. Returns an array of { appDir, namespace, missing } failures, where
- * `missing` lists keys present in a peer app but absent from this app.
- */
-function checkNamespaceParity(loadTranslations) {
-  const failures = [];
-
-  for (const group of NAMESPACE_PARITY_GROUPS) {
-    const apps = group.apps.map((appDir) => ({
-      appDir,
-      json: loadTranslations(appDir),
-    }));
-
-    for (const namespace of group.namespaces) {
-      // Union of all leaf keys any app has under this namespace.
-      const union = new Set();
-      for (const { json } of apps) {
-        if (json) collectLeafKeyPaths(json[namespace], '', union);
-      }
-
-      for (const { appDir, json } of apps) {
-        if (!json) {
-          failures.push({
-            appDir,
-            namespace,
-            missing: ['(no messages/en.json)'],
-          });
-          continue;
-        }
-        const missing = [...union]
-          .filter((keyPath) => !resolveKeyPath(json, namespace, keyPath))
-          .sort();
-        if (missing.length > 0) {
-          failures.push({ appDir, namespace, missing });
-        }
-      }
-    }
-  }
-
-  return failures;
 }
 
 /**
@@ -471,7 +425,7 @@ function loadExceptions() {
  * @returns {boolean} true if this key should be skipped
  */
 function isKeyExcepted(keyExceptionSet, namespace, key) {
-  const fullPath = `${namespace}.${key}`;
+  const fullPath = namespace ? `${namespace}.${key}` : key;
 
   // Check exact match: "namespace.key"
   if (keyExceptionSet.has(fullPath)) return true;
@@ -652,6 +606,27 @@ function main() {
 
   // Step 4: App registry drift guard — fail if an app ships shared UI + a
   // message bundle but is registered in neither APPS nor UNCHECKED_APPS.
+  const appSourceFailures = checkAppSourceKeys({
+    exceptions,
+    rootDir: ROOT_DIR,
+  });
+  if (appSourceFailures.length > 0) {
+    hasFailures = true;
+    console.log('Checking app source translation keys...\n');
+    for (const { appDir, missing } of appSourceFailures) {
+      console.log(
+        `  ${appDir}: MISSING ${missing.length} app source translation key${missing.length > 1 ? 's' : ''}`
+      );
+      for (const { namespace, key, files } of missing) {
+        const fullPath = namespace ? `${namespace}.${key}` : key;
+        console.log(`    - ${fullPath} (used in ${[...files].join(', ')})`);
+      }
+    }
+    console.log('');
+  }
+
+  // Step 5: App registry drift guard — fail if an app ships shared UI + a
+  // message bundle but is registered in neither APPS nor UNCHECKED_APPS.
   const unregisteredApps = findUnregisteredApps();
   if (unregisteredApps.length > 0) {
     hasFailures = true;
@@ -665,9 +640,12 @@ function main() {
     console.log('');
   }
 
-  // Step 5: Namespace parity check across apps that render the same shared
+  // Step 6: Namespace parity check across apps that render the same shared
   // (bare-useTranslations) component.
-  const parityFailures = checkNamespaceParity(getAppTranslations);
+  const parityFailures = checkNamespaceParity(
+    NAMESPACE_PARITY_GROUPS,
+    getAppTranslations
+  );
   if (parityFailures.length > 0) {
     hasFailures = true;
     console.log('Checking namespace parity...\n');

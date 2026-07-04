@@ -1,5 +1,154 @@
 # Changelog
 
+## [0.12.0](https://github.com/tutur3u/platform/compare/ui-v0.11.1...ui-v0.12.0) (2026-07-03)
+
+
+### Features
+
+* **inventory:** add revenue share and category bundles ([20b2e1e](https://github.com/tutur3u/platform/commit/20b2e1e5302d1db275766b7b4b92d9bdf69de04a))
+
+## [0.11.1](https://github.com/tutur3u/platform/compare/ui-v0.11.0...ui-v0.11.1) (2026-07-02)
+
+
+### Bug Fixes
+
+* **cli:** preserve markdown tables in task descriptions ([9faf8ba](https://github.com/tutur3u/platform/commit/9faf8ba44b92565a9dfc2949c496654fc1fea9b3))
+* **tasks:** refresh task template placeholders ([0c3c309](https://github.com/tutur3u/platform/commit/0c3c30935f67e3e64d548c8a13584fd597e887b8))
+* **ui:** stabilize task property popover handoff ([8fb2e62](https://github.com/tutur3u/platform/commit/8fb2e62904d34a3ae7894bfbbb66c285fcf1a1bd))
+
+## [0.11.0](https://github.com/tutur3u/platform/compare/ui-v0.10.0...ui-v0.11.0) (2026-06-29)
+
+
+### Features
+
+* **finance:** support prepaid subscription invoice ranges ([fa0f338](https://github.com/tutur3u/platform/commit/fa0f3388dfb3d3ea539a8d8bdc3f100f268542c6))
+* **tasks:** add board header loading skeleton ([73f1242](https://github.com/tutur3u/platform/commit/73f12421a9cd50c035a1c9940e152354b1974f26))
+* **tasks:** add task templates ([8d0700a](https://github.com/tutur3u/platform/commit/8d0700ad255c7b5874bfa065575df6b1cde34063))
+
+
+### Bug Fixes
+
+* **tasks:** pad board header skeleton ([b0c5c0f](https://github.com/tutur3u/platform/commit/b0c5c0fea8871cac2603da6239b980c752b1c9f6))
+* **tasks:** prevent description wipes during yjs hydration ([947f38c](https://github.com/tutur3u/platform/commit/947f38c6474d07b1fac1c44e166638bfc87260c0))
+* **tasks:** restore tracked task descriptions ([f892ae2](https://github.com/tutur3u/platform/commit/f892ae23dfec41c2d25649b97a628d8cdcd1fa5d))
+
+## [0.10.0](https://github.com/tutur3u/platform/compare/ui-v0.9.0...ui-v0.10.0) (2026-06-26)
+
+
+### Features
+
+* **settings:** lazy load searchable settings availability ([78091c0](https://github.com/tutur3u/platform/commit/78091c0acd16609c695be80b7c47f7840a34d74a))
+* **settings:** open settings dialog from sidebar ([f3d223f](https://github.com/tutur3u/platform/commit/f3d223fbe3b4ecc7c37b6f19645f6122ddfdf5b9))
+* **tanstack:** migrate module youtube links ([bcbf192](https://github.com/tutur3u/platform/commit/bcbf1927802283b3447a8851b3208362e0dff822))
+* **tasks:** add task progress tracking ([4cffb0f](https://github.com/tutur3u/platform/commit/4cffb0f041d41e3868481068d64b9e3b85a0011a))
+* **tasks:** stabilize shared board realtime collaboration ([6028caf](https://github.com/tutur3u/platform/commit/6028caf50432fd4dcebdaa5a59284e50972b1aa3))
+
+
+### Bug Fixes
+
+* **settings:** resolve lazy search import for docker build ([8a6dc1b](https://github.com/tutur3u/platform/commit/8a6dc1b39fd675daaa9f9b24c60b975b044db724))
+* **tasks:** align board skeleton and nav highlight ([1f20ad4](https://github.com/tutur3u/platform/commit/1f20ad4c21c607a085de6eb7dff772a077fc0fd1))
+* **tasks:** canonicalize task board entry routes ([6d83864](https://github.com/tutur3u/platform/commit/6d838648e7d817cdfac6ae40f06ce3418a899bf9))
+* **tasks:** default task boards to kanban ([477c12a](https://github.com/tutur3u/platform/commit/477c12aeee7644a28e6266f9c339e7ef5c3228bf))
+* **tasks:** harden board task loading ([459fecf](https://github.com/tutur3u/platform/commit/459fecf66414b83bcb18f98eda9677ec3e220855))
+* **tasks:** improve shared board collaboration ([fa4ca4d](https://github.com/tutur3u/platform/commit/fa4ca4d412c8f8f533ab87639b314fefc70f9107))
+* **tasks:** keep pinned special lists sticky ([83ff72c](https://github.com/tutur3u/platform/commit/83ff72ce9b3fd737db666a6caef96ed2ca026fc2))
+* **tasks:** match board name input surface ([2552733](https://github.com/tutur3u/platform/commit/2552733942f720bb1df0566f27753eb226115f3e))
+* **tasks:** show accessible guest task boards ([3153c48](https://github.com/tutur3u/platform/commit/3153c4814e599905ea3de36b3f63e941d6bc86d9))
+* **tasks:** stabilize task board loading states ([b7f4212](https://github.com/tutur3u/platform/commit/b7f4212981514fdb1f38b83be5baf7a8d2686571))
+* **tasks:** support assignees on shared personal boards ([112a561](https://github.com/tutur3u/platform/commit/112a561f38cd73bf4c928117cb4d2f0b178dc7e4))
+* **tasks:** support board guest assignees ([4e479aa](https://github.com/tutur3u/platform/commit/4e479aac13746a2e7c432be4f36ea87407849472))
+* **teach:** harden lesson save recovery ([d56a010](https://github.com/tutur3u/platform/commit/d56a010db5d22dcfde10fc51fbcf73c7abc62268))
+* **teach:** reconcile lesson editor saves ([6f2cb4f](https://github.com/tutur3u/platform/commit/6f2cb4f38c1f3b68aeadec11215066be4f7fbd78))
+
+## [0.9.0](https://github.com/tutur3u/platform/compare/ui-v0.8.0...ui-v0.9.0) (2026-06-24)
+
+
+### Features
+
+* **calendar:** add configurable two-way sync ([76078d8](https://github.com/tutur3u/platform/commit/76078d865618b4970b430b08f0db7a1a8c30ffcb))
+* **inventory:** surface storefront checkout sales ([c8e813c](https://github.com/tutur3u/platform/commit/c8e813caa23e7e77e94aa94c9f0059b95cd5ba1c))
+* **storefront:** simplify cart and checkout ([a2d17e1](https://github.com/tutur3u/platform/commit/a2d17e1a024e11ffb76cbaa1a99e8f26a5a43aa0))
+* **task-boards:** improve public board sharing UX ([930ceb4](https://github.com/tutur3u/platform/commit/930ceb49ef72fad22e3f412c2ff5648fd6b3c417))
+* **tasks:** add board creation to task picker ([da82857](https://github.com/tutur3u/platform/commit/da828579f57ac65537fc538fb20692783c2b7751))
+* **tasks:** add board-centered tasks entry ([cfb0dd6](https://github.com/tutur3u/platform/commit/cfb0dd689924f91f2b9b848e82c0feab89f62ab0))
+* **tasks:** add deadline column controls ([524c621](https://github.com/tutur3u/platform/commit/524c62117dab6984ff0116e010341694ead6f8b5))
+* **tasks:** add public board sharing ([b5a4a07](https://github.com/tutur3u/platform/commit/b5a4a0796dab947e8dca3970d6aa136a4863dd35))
+* **tasks:** add shareable kanban task plans ([2de4e58](https://github.com/tutur3u/platform/commit/2de4e5819673e11b01cdc1f21c317f33dc196f56))
+* **tasks:** compact kanban planner and share dialog ([381aa91](https://github.com/tutur3u/platform/commit/381aa91433aaed2936b04d34c44f13f364befe21))
+* **tasks:** consolidate board task settings ([b1d720a](https://github.com/tutur3u/platform/commit/b1d720ac865406d6dd0b2477c5ba04e336de9929))
+* **ui:** add theme-aware editor colors ([fde3ae9](https://github.com/tutur3u/platform/commit/fde3ae9930e1573b6a7273c95f90f41767e72c58))
+
+
+### Bug Fixes
+
+* **calendar:** improve synced event rendering ([9bc2bee](https://github.com/tutur3u/platform/commit/9bc2beea78fe21ccd3deb5040b63a1ae4ff39aa7))
+* **calendar:** preserve events across week navigation ([aa60471](https://github.com/tutur3u/platform/commit/aa604715f132f4ed4476dd4df3795f53848c360b))
+* **calendar:** stabilize optimistic event sync ([fda22e1](https://github.com/tutur3u/platform/commit/fda22e1eebec28e04af0b8a2ab22d0f148c0565d))
+* **ci:** address remaining PR check failures ([7eb56d5](https://github.com/tutur3u/platform/commit/7eb56d51d8d14f6e2dd22c2d4c3514a560847333))
+* **tanstack:** harden public shell migration ([849c133](https://github.com/tutur3u/platform/commit/849c1334da613437dc673a8396a373ffc7767583))
+* **task-boards:** align board picker icon styling ([c145770](https://github.com/tutur3u/platform/commit/c145770c0d4cf43a96db9df2fd9f14696e4b84ad))
+* **task-boards:** clean up board header icons ([16673be](https://github.com/tutur3u/platform/commit/16673be22ba40205e09134e6db8225edb7db841a))
+* **tasks:** polish board activity and history diffs ([cdc1c2c](https://github.com/tutur3u/platform/commit/cdc1c2cbdcc283ee30e959435b70f03e84b999de))
+* **tasks:** polish board filters planner and settings loading ([2396419](https://github.com/tutur3u/platform/commit/239641941a08e243d1295231c8e2d1089902897f))
+* **tasks:** polish board header settings and share ux ([fd78ac5](https://github.com/tutur3u/platform/commit/fd78ac5e5632e8897d8e124ec8c5abd26acc820b))
+* **tasks:** polish board toolbar settings and activity ([e1966bb](https://github.com/tutur3u/platform/commit/e1966bb68d4900e4d5d187153f3a8942727f2127))
+* **tasks:** polish board views and loading ([0b60957](https://github.com/tutur3u/platform/commit/0b6095726b6c1aaae4f794ba6cfecde4d46f0db9))
+* **tasks:** polish task board loading and defaults ([7c215d3](https://github.com/tutur3u/platform/commit/7c215d3ea6b0b710247069f8616d4b7b1029147f))
+* **tasks:** refine board settings and toolbar pickers ([bec77e3](https://github.com/tutur3u/platform/commit/bec77e30804bb0ff0657831e564e8dd8efeb8722))
+* **tasks:** refresh kanban special columns ([3317e1d](https://github.com/tutur3u/platform/commit/3317e1d80890afa05a4d10840131b8f2d77910ec))
+* **tasks:** update board header icons ([7f79c06](https://github.com/tutur3u/platform/commit/7f79c06e4a854c1489db30a6265b6aa24583cc86))
+* **ui:** stabilize fullscreen dialog surfaces ([138bc7b](https://github.com/tutur3u/platform/commit/138bc7b7761151007bb097aa15350d72a92dd638))
+* **web:** prevent dashboard runtime loops ([e02ae70](https://github.com/tutur3u/platform/commit/e02ae701e6905a47b7d96d51624b0a301cb1405f))
+
+## [0.8.0](https://github.com/tutur3u/platform/compare/ui-v0.7.0...ui-v0.8.0) (2026-06-17)
+
+
+### Features
+
+* **inventory:** fix Polar checkout currency, add 2-way product sync, cache + redesign storefront ([de2f6fd](https://github.com/tutur3u/platform/commit/de2f6fd6e06ce5242a150a35d3989798f52b9ee9))
+* **inventory:** per-variant SKUs + storefront cart, dialog & instant checkout ([9662b85](https://github.com/tutur3u/platform/commit/9662b8501bcab51033edde79b44991c8ba648a37))
+* **inventory:** store commerce money in minor units and harden Polar sync ([3f7ee1d](https://github.com/tutur3u/platform/commit/3f7ee1da9335732854037e7e79fca9d5d2a381d0))
+* **storefront-ui:** dedicated product page, richer cart, loading skeleton ([d4a67f8](https://github.com/tutur3u/platform/commit/d4a67f8e6097d51aab6ca983245529725fcaba5c))
+* **storefront-ui:** polish checkout layout and order-status page ([ead94ed](https://github.com/tutur3u/platform/commit/ead94edaa2ac6e79f9e56fd9f48d7a098487f2de))
+* **storefront:** dedicated checkout page with buyer details + order-placed success ([258014d](https://github.com/tutur3u/platform/commit/258014d642e7cf99164e92fec44cd32114ecf68d))
+* **storefront:** make the storefront accent color visibly prominent ([f2b5289](https://github.com/tutur3u/platform/commit/f2b5289506fd8e289f4bfb2bb6755cbc10ea2430))
+* **storefront:** polish checkout cart experience ([cfdccfa](https://github.com/tutur3u/platform/commit/cfdccfa089703d9dde4357eeef8e52c00ccf6d4b))
+* **tasks:** add per-board default list for new tasks ([2d1d308](https://github.com/tutur3u/platform/commit/2d1d3082422bdd4813accb258fee79b322ce647b))
+* **web:** consolidate workspace roles into members and redesign access UI ([4a16407](https://github.com/tutur3u/platform/commit/4a164070e1fe020a834ce4fe77ff4ae371e4e366))
+
+
+### Bug Fixes
+
+* **ci:** format storefront files and harden upstash scan wrapper ([4c82444](https://github.com/tutur3u/platform/commit/4c824446725dc280edde3e54f946bf386a52952d))
+* **ci:** sort tailwind classes in storefront product-detail (biome lint) ([809c3b9](https://github.com/tutur3u/platform/commit/809c3b9b1e514fb218b58941c9542c75bd723f2d))
+* **deps:** keep lodash on latest reviewed artifact ([19909b3](https://github.com/tutur3u/platform/commit/19909b334581d3b58cdcd19e9b2fde553f7ad60a))
+* **deps:** pin reviewed lodash artifact ([dfcf585](https://github.com/tutur3u/platform/commit/dfcf585fab9cc0b425cac5d60c5bccc997340be5))
+* **editor:** clear stale upload handlers ([ed34408](https://github.com/tutur3u/platform/commit/ed34408e9e48ee13bf7e69c2a8ba222d75c67253))
+* **epm:** validate summary editor content ([bd87c77](https://github.com/tutur3u/platform/commit/bd87c770690c75a125fe2a727f3ad39aa925b5fd))
+* **finance:** harden transaction enrichment ([eddd93b](https://github.com/tutur3u/platform/commit/eddd93bd11fb451a7fa5da2e4ab2892fad931ab5))
+* **inventory:** block unsafe storefront section links ([870ce76](https://github.com/tutur3u/platform/commit/870ce760237f43ca2a3d1221359c4a06d1bc7653))
+* **storefront-ui:** prevent horizontal overflow and cap cart height ([5825c49](https://github.com/tutur3u/platform/commit/5825c49fb9b77c859cda4ec6bbb6ba382925e519))
+* **storefront-ui:** show an empty-cart state instead of "no listings" in the cart ([00bdb40](https://github.com/tutur3u/platform/commit/00bdb40eb344b17c3727fda1ea0c042508c63901))
+* **tasks:** authorize board page before workspace ([9b1f740](https://github.com/tutur3u/platform/commit/9b1f74096a4a889b7733b6ffe37d4d16f442d974))
+* **tasks:** cap timeline rendering work ([f2722ee](https://github.com/tutur3u/platform/commit/f2722ee0c3778153e1b014280bc1513305c5be7a))
+* **tasks:** gate boards data access ([6daf363](https://github.com/tutur3u/platform/commit/6daf363b1c73593a233371a6cf079a3a4a015daa))
+* **tasks:** ignore stale drag rollbacks ([c60131f](https://github.com/tutur3u/platform/commit/c60131f9f0930c81d3d2ccc6f2f9e918968d4b77))
+* **tasks:** refine document task dialog presentation ([ca10735](https://github.com/tutur3u/platform/commit/ca10735f086a24be065eded03b8bc6e9382e2c5f))
+* **tasks:** secure cursor realtime channels ([a0ec120](https://github.com/tutur3u/platform/commit/a0ec120d912b7998fe43c90b675a09d0d3798dfe))
+* **tasks:** secure realtime task channels ([6d98d16](https://github.com/tutur3u/platform/commit/6d98d16baa9ecf68bdd47ce3ce6dc1ff2e2bca84))
+* **tasks:** secure realtime task channels ([03dc6d6](https://github.com/tutur3u/platform/commit/03dc6d66666d1d3ae422f91cb94285367a8c1071))
+* **tasks:** stop external lane retry loops ([713c327](https://github.com/tutur3u/platform/commit/713c327a613b018e72e376c03324517c6ee673c3))
+* **tu-do:** center compact task edit dialog instead of anchoring to bottom ([67f38aa](https://github.com/tutur3u/platform/commit/67f38aaab1eab4b5340dfe049eed9c1e224c83b1))
+* **tu-do:** preserve newlines and dim compact description preview ([ee01f40](https://github.com/tutur3u/platform/commit/ee01f40ab5ae800bf8aa1c59f19eb4f2bd69c256))
+* **ui:** keep locale decimals in currency input ([3cd2420](https://github.com/tutur3u/platform/commit/3cd242026c3afe51eedabc3ec070093d0a94523f))
+* **web:** stop new-workspace setup from trapping users on "Preparing Workspace" ([3f7ee1d](https://github.com/tutur3u/platform/commit/3f7ee1da9335732854037e7e79fca9d5d2a381d0))
+
+
+### Performance Improvements
+
+* **storefront-ui:** lazy-load product images, eager-load above-the-fold ([6da600e](https://github.com/tutur3u/platform/commit/6da600eec0ce964ac61ae7890cf4574ada6aef3e))
+
 ## [0.7.0](https://github.com/tutur3u/platform/compare/ui-v0.6.2...ui-v0.7.0) (2026-06-15)
 
 

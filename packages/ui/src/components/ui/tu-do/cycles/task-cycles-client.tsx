@@ -47,6 +47,7 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import dayjs from 'dayjs';
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { getTaskApiUrl } from '../../../../lib/tasks-app-url';
 
 type CycleStatus = 'planned' | 'active' | 'completed' | 'cancelled';
 
@@ -128,7 +129,9 @@ export function TaskCyclesClient({
   } = useQuery<TaskCycle[]>({
     queryKey: ['workspace', wsId, 'task-cycles'],
     queryFn: async () => {
-      const response = await fetch(`/api/v1/workspaces/${wsId}/task-cycles`);
+      const response = await fetch(
+        getTaskApiUrl(`/api/v1/workspaces/${wsId}/task-cycles`)
+      );
       if (!response.ok) throw new Error('Failed to fetch cycles');
       return response.json();
     },
@@ -149,17 +152,21 @@ export function TaskCyclesClient({
       start_date?: string | null;
       end_date?: string | null;
     }) => {
-      const response = await fetch(`/api/v1/workspaces/${wsId}/task-cycles`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name,
-          description,
-          status,
-          start_date,
-          end_date,
-        }),
-      });
+      const response = await fetch(
+        getTaskApiUrl(`/api/v1/workspaces/${wsId}/task-cycles`),
+        {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name,
+            description,
+            status,
+            start_date,
+            end_date,
+          }),
+        }
+      );
       if (!response.ok) {
         const data = await response.json();
         throw new Error(data.error || 'Failed to create cycle');
@@ -196,9 +203,10 @@ export function TaskCyclesClient({
       end_date?: string | null;
     }) => {
       const response = await fetch(
-        `/api/v1/workspaces/${wsId}/task-cycles/${id}`,
+        getTaskApiUrl(`/api/v1/workspaces/${wsId}/task-cycles/${id}`),
         {
           method: 'PUT',
+          credentials: 'include',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             name,
@@ -232,9 +240,10 @@ export function TaskCyclesClient({
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
       const response = await fetch(
-        `/api/v1/workspaces/${wsId}/task-cycles/${id}`,
+        getTaskApiUrl(`/api/v1/workspaces/${wsId}/task-cycles/${id}`),
         {
           method: 'DELETE',
+          credentials: 'include',
         }
       );
       if (!response.ok) {

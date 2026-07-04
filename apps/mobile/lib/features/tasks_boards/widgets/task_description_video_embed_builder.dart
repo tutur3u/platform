@@ -35,10 +35,68 @@ class TaskDescriptionVideoEmbedBuilder extends EmbedBuilder {
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
-      child: _TaskDescriptionVideoPlayer(
-        key: ValueKey<String>(resolved),
+      child: TaskDescriptionVideoPreview(
+        key: ValueKey<String>('video-preview:$resolved'),
         url: resolved,
         headers: headers,
+      ),
+    );
+  }
+}
+
+class TaskDescriptionVideoPreview extends StatefulWidget {
+  const TaskDescriptionVideoPreview({
+    required this.url,
+    this.headers,
+    super.key,
+  });
+
+  final String url;
+  final Map<String, String>? headers;
+
+  @override
+  State<TaskDescriptionVideoPreview> createState() =>
+      _TaskDescriptionVideoPreviewState();
+}
+
+class _TaskDescriptionVideoPreviewState
+    extends State<TaskDescriptionVideoPreview> {
+  bool _loadPlayer = false;
+
+  @override
+  Widget build(BuildContext context) {
+    if (_loadPlayer) {
+      return _TaskDescriptionVideoPlayer(
+        key: ValueKey<String>(widget.url),
+        url: widget.url,
+        headers: widget.headers,
+      );
+    }
+
+    final theme = shad.Theme.of(context);
+
+    return Semantics(
+      button: true,
+      label: 'Video',
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () => setState(() => _loadPlayer = true),
+        child: Container(
+          height: 120,
+          decoration: BoxDecoration(
+            color: theme.colorScheme.secondary.withValues(alpha: 0.25),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: theme.colorScheme.border.withValues(alpha: 0.6),
+            ),
+          ),
+          alignment: Alignment.center,
+          child: Icon(
+            Icons.play_circle_outline,
+            size: 40,
+            color: theme.colorScheme.mutedForeground,
+          ),
+        ),
       ),
     );
   }

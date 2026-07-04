@@ -1,24 +1,45 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
+  abortInfrastructureStressTest,
+  clearBlueGreenDeploymentPin,
   clearMobileDeploymentEnvKeyValue,
   clearMobileDeploymentScalarValue,
   clearMobileDeploymentSecret,
   createAIWhitelistDomain,
   createAIWhitelistEmail,
   createChatIntegration,
+  createManagedCronWhitelistedDomain,
   deleteAIWhitelistDomain,
   deleteAIWhitelistEmail,
+  deleteManagedCronWhitelistedDomain,
   deployAiAgentChannel,
   enableGitHubBotWatcherAutoPickup,
   getBlueGreenMonitoringRequestArchive,
+  getBlueGreenMonitoringSnapshot,
+  getBlueGreenMonitoringWatcherLogArchive,
+  getCronMonitoringExecutionArchive,
+  getCronMonitoringSnapshot,
   getGitHubBotState,
+  getInfrastructureStressTestRun,
+  getInfrastructureStressTestSnapshot,
+  getMobileVersionPolicies,
   getObservabilityLogs,
+  getWorkspaceRealtimeAnalytics,
+  getWorkspaceRealtimeAnalyticsSummary,
   issueGitHubBotWatcherClient,
   listAIWhitelistDomains,
   listAIWhitelistEmails,
   listAiAgents,
+  listAiGatewayModelRows,
+  listAiGatewayModelRowsPage,
   listAiGatewayModelsPage,
+  listManagedCronWhitelistedDomains,
   pauseAiAgentChannel,
+  pinBlueGreenDeployment,
+  queueCronRun,
+  queueInfrastructureStressTest,
+  requestBlueGreenInstantRollout,
+  requestCronRunnerRecovery,
   revokeGitHubBotWatcherClient,
   rotateAiAgentChannelSecret,
   saveAiAgent,
@@ -31,6 +52,8 @@ import {
   testGitHubBotConfiguration,
   updateAIWhitelistDomain,
   updateAIWhitelistEmail,
+  updateCronMonitoringControl,
+  updateManagedCronWhitelistedDomain,
 } from './infrastructure';
 
 function createJsonResponse(data: unknown) {
@@ -143,6 +166,178 @@ describe('AI whitelist domain internal API helpers', () => {
   });
 });
 
+describe('managed cron whitelist domain internal API helpers', () => {
+  it('lists domains through the apps/web API with pagination filters', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(createJsonResponse({ count: 0, data: [] }));
+
+    await listManagedCronWhitelistedDomains(
+      { page: 2, pageSize: 20, q: 'example.com' },
+      {
+        baseUrl: 'https://internal.example.com',
+        fetch: fetchMock as unknown as typeof fetch,
+      }
+    );
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://internal.example.com/api/v1/infrastructure/cron/whitelist/domains?page=2&pageSize=20&q=example.com',
+      expect.objectContaining({
+        headers: expect.any(Headers),
+      })
+    );
+  });
+
+  it('creates domains through the apps/web API', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      createJsonResponse({
+        data: {
+          created_at: '2026-06-25T00:00:00Z',
+          description: null,
+          domain: 'hooks.example.com',
+          enabled: true,
+        },
+      })
+    );
+
+    await createManagedCronWhitelistedDomain(
+      {
+        description: null,
+        domain: 'hooks.example.com',
+        enabled: true,
+      },
+      {
+        baseUrl: 'https://internal.example.com',
+        fetch: fetchMock as unknown as typeof fetch,
+      }
+    );
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://internal.example.com/api/v1/infrastructure/cron/whitelist/domains',
+      expect.objectContaining({
+        body: JSON.stringify({
+          description: null,
+          domain: 'hooks.example.com',
+          enabled: true,
+        }),
+        method: 'POST',
+      })
+    );
+  });
+
+  it('updates and deletes domains through encoded apps/web API routes', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(createJsonResponse({ success: true }));
+
+    await updateManagedCronWhitelistedDomain(
+      'hooks.example.com',
+      { enabled: false },
+      {
+        baseUrl: 'https://internal.example.com',
+        fetch: fetchMock as unknown as typeof fetch,
+      }
+    );
+    await deleteManagedCronWhitelistedDomain('hooks.example.com', {
+      baseUrl: 'https://internal.example.com',
+      fetch: fetchMock as unknown as typeof fetch,
+    });
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      'https://internal.example.com/api/v1/infrastructure/cron/whitelist/domain/hooks.example.com',
+      expect.objectContaining({
+        body: JSON.stringify({ enabled: false }),
+        method: 'PUT',
+      })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      'https://internal.example.com/api/v1/infrastructure/cron/whitelist/domain/hooks.example.com',
+      expect.objectContaining({
+        method: 'DELETE',
+      })
+    );
+  });
+});
+
+describe('realtime analytics internal API helpers', () => {
+  it('loads workspace realtime analytics with filters through the infrastructure API', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      createJsonResponse({
+        data: [],
+        metric: 'requests',
+      })
+    );
+
+    await getWorkspaceRealtimeAnalytics(
+      'workspace/id',
+      {
+        channelId: 'room/general',
+        endDate: '2026-06-25T23:59:59.999Z',
+        metric: 'requests',
+        startDate: '2026-06-25T00:00:00.000Z',
+        viewMode: 'hourly',
+        workspaceId: '00000000-0000-0000-0000-000000000001',
+      },
+      {
+        baseUrl: 'https://internal.example.com',
+        fetch: fetchMock as unknown as typeof fetch,
+      }
+    );
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://internal.example.com/api/v1/workspaces/workspace%2Fid/infrastructure/realtime/analytics?channelId=room%2Fgeneral&endDate=2026-06-25T23%3A59%3A59.999Z&metric=requests&startDate=2026-06-25T00%3A00%3A00.000Z&viewMode=hourly&workspaceId=00000000-0000-0000-0000-000000000001',
+      expect.objectContaining({
+        cache: 'no-store',
+        headers: expect.any(Headers),
+      })
+    );
+  });
+
+  it('loads workspace realtime analytics summaries without chart-only filters', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      createJsonResponse({
+        errorBreakdown: [],
+        summary: {
+          avgRequestsPerHour: 0,
+          errorRate: 0,
+          peakHour: null,
+          peakHourCount: 0,
+          totalErrors: 0,
+          totalRequests: 0,
+          uniqueChannels: 0,
+          uniqueUsers: 0,
+          uniqueWorkspaces: 0,
+        },
+        topChannels: [],
+        topUsers: [],
+        topWorkspaces: [],
+      })
+    );
+
+    await getWorkspaceRealtimeAnalyticsSummary(
+      'workspace/id',
+      {
+        endDate: '2026-06-25T23:59:59.999Z',
+        startDate: '2026-06-25T00:00:00.000Z',
+      },
+      {
+        baseUrl: 'https://internal.example.com',
+        fetch: fetchMock as unknown as typeof fetch,
+      }
+    );
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://internal.example.com/api/v1/workspaces/workspace%2Fid/infrastructure/realtime/analytics/summary?endDate=2026-06-25T23%3A59%3A59.999Z&startDate=2026-06-25T00%3A00%3A00.000Z',
+      expect.objectContaining({
+        cache: 'no-store',
+        headers: expect.any(Headers),
+      })
+    );
+  });
+});
+
 describe('AI whitelist email internal API helpers', () => {
   it('lists emails through the apps/web API with pagination filters', async () => {
     const fetchMock = vi
@@ -236,6 +431,38 @@ describe('AI whitelist email internal API helpers', () => {
 });
 
 describe('AI gateway model internal API helpers', () => {
+  it('lists raw model rows for filter options', async () => {
+    const rawModel = {
+      context_window: 1_000_000,
+      description: 'Stable Flash Lite',
+      id: 'google/gemini-3.1-flash-lite',
+      is_enabled: true,
+      name: 'Gemini 3.1 Flash Lite',
+      provider: 'google',
+      tags: ['thinking'],
+      type: 'language',
+    };
+    const fetchMock = vi.fn().mockResolvedValue(createJsonResponse([rawModel]));
+
+    const rows = await listAiGatewayModelRows(
+      {
+        type: 'all',
+      },
+      {
+        baseUrl: 'https://internal.example.com',
+        fetch: fetchMock as unknown as typeof fetch,
+      }
+    );
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://internal.example.com/api/v1/infrastructure/ai/models?type=all',
+      expect.objectContaining({
+        headers: expect.any(Headers),
+      })
+    );
+    expect(rows).toEqual([rawModel]);
+  });
+
   it('lists a searchable paginated model page through the apps/web API', async () => {
     const fetchMock = vi.fn().mockResolvedValue(
       createJsonResponse({
@@ -291,6 +518,87 @@ describe('AI gateway model internal API helpers', () => {
       ],
       pagination: { limit: 25, page: 2, total: 51 },
     });
+  });
+
+  it('lists raw paginated model rows for the public model directory', async () => {
+    const rawModel = {
+      context_window: 1_000_000,
+      description: 'Stable Flash Lite',
+      id: 'google/gemini-3.1-flash-lite',
+      image_gen_price: null,
+      input_price_per_token: 0.0000001,
+      is_enabled: true,
+      max_tokens: 8192,
+      name: 'Gemini 3.1 Flash Lite',
+      output_price_per_token: 0.0000004,
+      provider: 'google',
+      tags: ['thinking'],
+      type: 'language',
+    };
+    const fetchMock = vi.fn().mockResolvedValue(
+      createJsonResponse({
+        data: [rawModel],
+        pagination: { limit: 60, page: 1, total: 1 },
+      })
+    );
+
+    const page = await listAiGatewayModelRowsPage(
+      {
+        limit: 60,
+        page: 1,
+        type: 'all',
+      },
+      {
+        baseUrl: 'https://internal.example.com',
+        fetch: fetchMock as unknown as typeof fetch,
+      }
+    );
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://internal.example.com/api/v1/infrastructure/ai/models?format=paginated&limit=60&page=1&type=all',
+      expect.objectContaining({
+        headers: expect.any(Headers),
+      })
+    );
+    expect(page).toEqual({
+      data: [rawModel],
+      pagination: { limit: 60, page: 1, total: 1 },
+    });
+  });
+});
+
+describe('mobile version internal API helpers', () => {
+  it('loads mobile version policies through the infrastructure API', async () => {
+    const payload = {
+      android: {
+        effectiveVersion: '1.2.0',
+        minimumVersion: '1.0.0',
+        otpEnabled: true,
+        storeUrl: 'https://play.google.com/store/apps/details?id=app',
+      },
+      ios: {
+        effectiveVersion: null,
+        minimumVersion: null,
+        otpEnabled: false,
+        storeUrl: null,
+      },
+      webOtpEnabled: true,
+    };
+    const fetchMock = vi.fn().mockResolvedValue(createJsonResponse(payload));
+
+    const result = await getMobileVersionPolicies({
+      baseUrl: 'https://internal.example.com',
+      fetch: fetchMock as unknown as typeof fetch,
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://internal.example.com/api/v1/infrastructure/mobile-versions',
+      expect.objectContaining({
+        cache: 'no-store',
+        headers: expect.any(Headers),
+      })
+    );
+    expect(result).toEqual(payload);
   });
 });
 
@@ -648,6 +956,42 @@ describe('observability internal API helpers', () => {
     );
   });
 
+  it('loads blue-green monitoring snapshots through the monitoring API', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      createJsonResponse({
+        deployments: [],
+        dockerResources: {
+          containers: [],
+          services: [],
+        },
+        requests: [],
+        watcher: {
+          health: 'live',
+        },
+        watcherLogs: [],
+      })
+    );
+
+    await getBlueGreenMonitoringSnapshot(
+      {
+        requestPreviewLimit: 0,
+        watcherLogLimit: 0,
+      },
+      {
+        baseUrl: 'https://internal.example.com',
+        fetch: fetchMock as unknown as typeof fetch,
+      }
+    );
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://internal.example.com/api/v1/infrastructure/monitoring/blue-green?requestPreviewLimit=0&watcherLogLimit=0',
+      expect.objectContaining({
+        cache: 'no-store',
+        headers: expect.any(Headers),
+      })
+    );
+  });
+
   it('passes blue-green request archive cursor params through the apps/web API', async () => {
     const fetchMock = vi.fn().mockResolvedValue(
       createJsonResponse({
@@ -707,6 +1051,357 @@ describe('observability internal API helpers', () => {
         cache: 'no-store',
         headers: expect.any(Headers),
       })
+    );
+  });
+
+  it('passes blue-green watcher log archive pagination through the apps/web API', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      createJsonResponse({
+        hasNextPage: false,
+        hasPreviousPage: false,
+        items: [],
+        limit: 50,
+        offset: 100,
+        page: 3,
+        pageCount: 1,
+        total: 0,
+        window: {
+          newestAt: null,
+          oldestAt: null,
+        },
+      })
+    );
+
+    await getBlueGreenMonitoringWatcherLogArchive(
+      {
+        page: 3,
+        pageSize: 50,
+      },
+      {
+        baseUrl: 'https://internal.example.com',
+        fetch: fetchMock as unknown as typeof fetch,
+      }
+    );
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://internal.example.com/api/v1/infrastructure/monitoring/blue-green/watcher-logs?page=3&pageSize=50',
+      expect.objectContaining({
+        cache: 'no-store',
+        headers: expect.any(Headers),
+      })
+    );
+  });
+
+  it('requests immediate blue-green standby sync through the apps/web API', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(createJsonResponse({ success: true }));
+
+    await requestBlueGreenInstantRollout({
+      baseUrl: 'https://internal.example.com',
+      fetch: fetchMock as unknown as typeof fetch,
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://internal.example.com/api/v1/infrastructure/monitoring/blue-green/instant-rollout',
+      expect.objectContaining({
+        cache: 'no-store',
+        headers: expect.any(Headers),
+        method: 'POST',
+      })
+    );
+  });
+
+  it('pins and clears blue-green deployments through the apps/web API', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(createJsonResponse({ success: true }));
+
+    await pinBlueGreenDeployment(
+      { commitHash: 'abc123def456' },
+      {
+        baseUrl: 'https://internal.example.com',
+        fetch: fetchMock as unknown as typeof fetch,
+      }
+    );
+    await clearBlueGreenDeploymentPin({
+      baseUrl: 'https://internal.example.com',
+      fetch: fetchMock as unknown as typeof fetch,
+    });
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      'https://internal.example.com/api/v1/infrastructure/monitoring/blue-green/deployment-pin',
+      expect.objectContaining({
+        body: JSON.stringify({ commitHash: 'abc123def456' }),
+        cache: 'no-store',
+        headers: expect.any(Headers),
+        method: 'POST',
+      })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      'https://internal.example.com/api/v1/infrastructure/monitoring/blue-green/deployment-pin',
+      expect.objectContaining({
+        cache: 'no-store',
+        headers: expect.any(Headers),
+        method: 'DELETE',
+      })
+    );
+  });
+
+  it('loads cron monitoring snapshots through the monitoring API', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      createJsonResponse({
+        control: { enabled: true, jobs: {}, updatedAt: null },
+        enabled: true,
+        jobs: [],
+        lastExecution: null,
+        nextRunAt: null,
+        overview: {
+          enabledJobs: 0,
+          failedExecutions: 0,
+          failedJobs: 0,
+          processingRuns: 0,
+          queuedRuns: 0,
+          retainedExecutions: 0,
+          totalJobs: 0,
+        },
+        retainedExecutionCount: 0,
+        runs: [],
+        source: {
+          configAvailable: true,
+          controlAvailable: true,
+          runtimeDirAvailable: true,
+          statusAvailable: true,
+        },
+        status: 'live',
+        updatedAt: null,
+      })
+    );
+
+    await getCronMonitoringSnapshot({
+      baseUrl: 'https://internal.example.com',
+      fetch: fetchMock as unknown as typeof fetch,
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://internal.example.com/api/v1/infrastructure/monitoring/cron',
+      expect.objectContaining({
+        cache: 'no-store',
+        headers: expect.any(Headers),
+      })
+    );
+  });
+
+  it('passes cron execution archive filters through the monitoring API', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      createJsonResponse({
+        hasNextPage: false,
+        hasPreviousPage: false,
+        items: [],
+        limit: 25,
+        offset: 25,
+        page: 2,
+        pageCount: 1,
+        total: 0,
+        window: {
+          newestAt: null,
+          oldestAt: null,
+        },
+      })
+    );
+
+    await getCronMonitoringExecutionArchive(
+      {
+        jobId: 'daily-report',
+        page: 2,
+        pageSize: 25,
+      },
+      {
+        baseUrl: 'https://internal.example.com',
+        fetch: fetchMock as unknown as typeof fetch,
+      }
+    );
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://internal.example.com/api/v1/infrastructure/monitoring/cron/executions?page=2&pageSize=25&jobId=daily-report',
+      expect.objectContaining({
+        cache: 'no-store',
+        headers: expect.any(Headers),
+      })
+    );
+  });
+
+  it('queues cron runs and updates cron controls through JSON mutations', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(createJsonResponse({}));
+
+    await queueCronRun(
+      { jobId: 'daily-report' },
+      {
+        baseUrl: 'https://internal.example.com',
+        fetch: fetchMock as unknown as typeof fetch,
+      }
+    );
+    await updateCronMonitoringControl(
+      { enabled: false, jobId: 'daily-report' },
+      {
+        baseUrl: 'https://internal.example.com',
+        fetch: fetchMock as unknown as typeof fetch,
+      }
+    );
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      'https://internal.example.com/api/v1/infrastructure/monitoring/cron/run',
+      expect.objectContaining({
+        body: JSON.stringify({ jobId: 'daily-report' }),
+        cache: 'no-store',
+        method: 'POST',
+      })
+    );
+    expect(getCalledHeaders(fetchMock).get('Content-Type')).toBe(
+      'application/json'
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      'https://internal.example.com/api/v1/infrastructure/monitoring/cron/control',
+      expect.objectContaining({
+        body: JSON.stringify({ enabled: false, jobId: 'daily-report' }),
+        cache: 'no-store',
+        method: 'PUT',
+      })
+    );
+    expect(getCalledHeaders(fetchMock, 1).get('Content-Type')).toBe(
+      'application/json'
+    );
+  });
+
+  it('queues cron runner recovery through a JSON mutation', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(createJsonResponse({}));
+
+    await requestCronRunnerRecovery(
+      { action: 'restart', reason: 'operator-requested-restart' },
+      {
+        baseUrl: 'https://internal.example.com',
+        fetch: fetchMock as unknown as typeof fetch,
+      }
+    );
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://internal.example.com/api/v1/infrastructure/monitoring/cron/runner-recovery',
+      expect.objectContaining({
+        body: JSON.stringify({
+          action: 'restart',
+          reason: 'operator-requested-restart',
+        }),
+        cache: 'no-store',
+        method: 'POST',
+      })
+    );
+    expect(getCalledHeaders(fetchMock).get('Content-Type')).toBe(
+      'application/json'
+    );
+  });
+
+  it('loads stress-test snapshots through the monitoring API', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      createJsonResponse({
+        activeRun: null,
+        canManage: false,
+        profiles: [],
+        recentRuns: [],
+        targets: [],
+      })
+    );
+
+    await getInfrastructureStressTestSnapshot({
+      baseUrl: 'https://internal.example.com',
+      fetch: fetchMock as unknown as typeof fetch,
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://internal.example.com/api/v1/infrastructure/monitoring/stress-tests',
+      expect.objectContaining({
+        cache: 'no-store',
+        headers: expect.any(Headers),
+      })
+    );
+  });
+
+  it('queues stress tests and reads encoded run details', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(createJsonResponse({}));
+
+    await queueInfrastructureStressTest(
+      {
+        concurrency: 8,
+        durationSeconds: 60,
+        maxRequestsPerSecond: 20,
+        path: '/login',
+        profileId: 'smoke',
+        targetId: 'platform-web',
+      },
+      {
+        baseUrl: 'https://internal.example.com',
+        fetch: fetchMock as unknown as typeof fetch,
+      }
+    );
+    await getInfrastructureStressTestRun('run 1/alpha', {
+      baseUrl: 'https://internal.example.com',
+      fetch: fetchMock as unknown as typeof fetch,
+    });
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      'https://internal.example.com/api/v1/infrastructure/monitoring/stress-tests',
+      expect.objectContaining({
+        body: JSON.stringify({
+          concurrency: 8,
+          durationSeconds: 60,
+          maxRequestsPerSecond: 20,
+          path: '/login',
+          profileId: 'smoke',
+          targetId: 'platform-web',
+        }),
+        cache: 'no-store',
+        method: 'POST',
+      })
+    );
+    expect(getCalledHeaders(fetchMock).get('Content-Type')).toBe(
+      'application/json'
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      'https://internal.example.com/api/v1/infrastructure/monitoring/stress-tests/run%201%2Falpha',
+      expect.objectContaining({
+        cache: 'no-store',
+        headers: expect.any(Headers),
+      })
+    );
+  });
+
+  it('aborts stress tests through encoded run routes', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(createJsonResponse({}));
+
+    await abortInfrastructureStressTest(
+      'run 1/alpha',
+      { reason: 'operator abort' },
+      {
+        baseUrl: 'https://internal.example.com',
+        fetch: fetchMock as unknown as typeof fetch,
+      }
+    );
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://internal.example.com/api/v1/infrastructure/monitoring/stress-tests/run%201%2Falpha/abort',
+      expect.objectContaining({
+        body: JSON.stringify({ reason: 'operator abort' }),
+        cache: 'no-store',
+        method: 'POST',
+      })
+    );
+    expect(getCalledHeaders(fetchMock).get('Content-Type')).toBe(
+      'application/json'
     );
   });
 });

@@ -1,26 +1,40 @@
 'use client';
 
-import { ArrowRight, Minus, Plus, ShoppingCart } from '@tuturuuu/icons';
-import type { InventoryStorefrontListing } from '@tuturuuu/internal-api/inventory';
+import { ArrowRight, Minus, Plus, ShoppingCart, Zap } from '@tuturuuu/icons';
+import type {
+  InventoryListingVariant,
+  InventoryStorefrontListing,
+} from '@tuturuuu/internal-api/inventory';
 import { cn } from '@tuturuuu/utils/format';
+import { useMemo, useState } from 'react';
 import { Badge } from '../badge';
 import { Button } from '../button';
 import { AccentButton } from './accent-button';
 import { StorefrontImagePanel } from './image-panel';
-import type { StorefrontSurfaceLabels } from './types';
-import { formatStorefrontPrice, getStorefrontListingLimit } from './utils';
+import type { StorefrontCartLine, StorefrontSurfaceLabels } from './types';
+import {
+  formatStorefrontPrice,
+  getStorefrontLinePrice,
+  getStorefrontListingLimit,
+  getStorefrontListingVariants,
+  getStorefrontVariantLimit,
+  storefrontCartLineKey,
+} from './utils';
 
 /**
  * Full-bleed product page: a large image alongside a details rail with price,
- * savings, availability, description, and the quantity / add-to-cart controls.
- * Replaces the previous behavior of rendering a single grid card for the
- * product route.
+ * savings, availability, description, option/variant selectors, and the
+ * quantity / add-to-cart / buy-now controls. Shared by both the dedicated
+ * product route and the product detail dialog.
  */
 export function StorefrontProductDetail({
   cartHref,
+  cartLines,
   currency,
+  isSubmitting = false,
   labels,
   listing,
+  onBuyNow,
   onDecrement,
   onIncrement,
   quantity,
@@ -29,22 +43,76 @@ export function StorefrontProductDetail({
   surfaceClassName,
 }: {
   cartHref?: string;
+  cartLines?: StorefrontCartLine[];
   currency: string;
+  isSubmitting?: boolean;
   labels: StorefrontSurfaceLabels;
   listing: InventoryStorefrontListing;
-  onDecrement?: (listingId: string) => void;
-  onIncrement?: (listingId: string, maxQuantity: number) => void;
+  onBuyNow?: (listingId: string, variantId?: string | null) => void;
+  onDecrement?: (listingId: string, variantId?: string | null) => void;
+  onIncrement?: (
+    listingId: string,
+    maxQuantity: number,
+    variantId?: string | null
+  ) => void;
   quantity: number;
   radius: string;
   showInventoryBadges: boolean;
   surfaceClassName: string;
 }) {
-  const limit = getStorefrontListingLimit(listing);
-  const disabled = limit === 0 || quantity >= limit;
+  const options = listing.options ?? [];
+  const variants = useMemo(
+    () => getStorefrontListingVariants(listing),
+    [listing]
+  );
+  const hasVariants = variants.length > 0;
+
+  // Track the selected value per option group (groupId -> valueId).
+  const [selected, setSelected] = useState<Record<string, string>>({});
+
+  const selectedVariant: InventoryListingVariant | undefined = useMemo(() => {
+    if (!hasVariants || options.length === 0) return undefined;
+    return variants.find((variant) =>
+      options.every((group) => {
+        const optionValue = variant.optionValues.find(
+          (value) => value.groupId === group.id
+        );
+        return optionValue && selected[group.id] === optionValue.valueId;
+      })
+    );
+  }, [hasVariants, options, selected, variants]);
+
+  const needsSelection = hasVariants && !selectedVariant;
+  const limit = selectedVariant
+    ? getStorefrontVariantLimit(listing, selectedVariant)
+    : getStorefrontListingLimit(listing);
+  const displayPrice = getStorefrontLinePrice(listing, selectedVariant);
+  const compareAtPrice = selectedVariant
+    ? selectedVariant.compareAtPrice
+    : listing.compareAtPrice;
+  const imageUrl = selectedVariant?.imageUrl ?? listing.imageUrl;
+  const availableQuantity = selectedVariant
+    ? selectedVariant.availableQuantity
+    : listing.availableQuantity;
+
+  const cartQuantity = useMemo(() => {
+    if (!cartLines) return quantity;
+    const key = storefrontCartLineKey(listing.id, selectedVariant?.id);
+    return (
+      cartLines.find(
+        (line) => storefrontCartLineKey(line.listingId, line.variantId) === key
+      )?.quantity ?? 0
+    );
+  }, [cartLines, listing.id, quantity, selectedVariant?.id]);
+
   const canChange = Boolean(onIncrement || onDecrement);
+  const variantId = selectedVariant?.id ?? null;
+  const soldOut = limit === 0;
+  const addDisabled = needsSelection || soldOut || cartQuantity >= limit;
+  const buyNowDisabled = needsSelection || soldOut || isSubmitting;
   const savingsPercent =
-    listing.compareAtPrice && listing.compareAtPrice > listing.price
-      ? Math.round((1 - listing.price / listing.compareAtPrice) * 100)
+    compareAtPrice && compareAtPrice > displayPrice
+      ? Math.round((1 - displayPrice / compareAtPrice) * 100)
       : 0;
 
   return (
@@ -52,7 +120,7 @@ export function StorefrontProductDetail({
       <div className={cn('overflow-hidden', surfaceClassName, radius)}>
         <StorefrontImagePanel
           className="aspect-square"
-          imageUrl={listing.imageUrl}
+          imageUrl={imageUrl}
           label={listing.title}
           priority
         />
@@ -78,22 +146,70 @@ export function StorefrontProductDetail({
         </h2>
 
         <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-          <span className="font-semibold text-2xl tabular-nums">
-            {formatStorefrontPrice(listing.price, currency)}
-          </span>
-          {listing.compareAtPrice ? (
-            <span className="text-lg text-muted-foreground tabular-nums line-through">
-              {formatStorefrontPrice(listing.compareAtPrice, currency)}
+          {needsSelection ? (
+            <span className="text-muted-foreground text-sm">
+              {labels.fromPrice}{' '}
+              <span className="font-semibold text-foreground text-xl tabular-nums">
+                {formatStorefrontPrice(displayPrice, currency)}
+              </span>
             </span>
-          ) : null}
+          ) : (
+            <>
+              <span className="font-semibold text-2xl tabular-nums">
+                {formatStorefrontPrice(displayPrice, currency)}
+              </span>
+              {compareAtPrice ? (
+                <span className="text-lg text-muted-foreground tabular-nums line-through">
+                  {formatStorefrontPrice(compareAtPrice, currency)}
+                </span>
+              ) : null}
+            </>
+          )}
         </div>
 
-        {showInventoryBadges ? (
+        {options.length > 0 ? (
+          <div className="grid gap-4">
+            {options.map((group) => (
+              <div className="grid gap-2" key={group.id}>
+                <span className="font-medium text-sm">{group.name}</span>
+                <div className="flex flex-wrap gap-2">
+                  {group.values.map((value) => {
+                    const isActive = selected[group.id] === value.id;
+                    return (
+                      <button
+                        aria-pressed={isActive}
+                        className={cn(
+                          'inline-flex h-10 items-center justify-center border px-3 font-medium text-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40',
+                          radius,
+                          isActive
+                            ? 'border-[var(--storefront-accent-border,var(--border))] bg-[var(--storefront-accent-soft,var(--muted))] text-[var(--storefront-accent-text,var(--primary))]'
+                            : 'border-border bg-card hover:bg-muted/45'
+                        )}
+                        key={value.id}
+                        onClick={() =>
+                          setSelected((current) => ({
+                            ...current,
+                            [group.id]: value.id,
+                          }))
+                        }
+                        type="button"
+                      >
+                        {value.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : null}
+
+        {showInventoryBadges && !needsSelection ? (
           <p className="text-muted-foreground text-sm">
-            {limit === 0
+            {soldOut
               ? labels.soldOut
-              : typeof listing.availableQuantity === 'number'
-                ? `${listing.availableQuantity} ${labels.available}`
+              : typeof availableQuantity === 'number'
+                ? `${availableQuantity} ${labels.available}`
                 : labels.available}
           </p>
         ) : null}
@@ -104,25 +220,29 @@ export function StorefrontProductDetail({
 
         <div className="mt-auto flex flex-wrap items-center gap-3 border-border border-t pt-5">
           {canChange ? (
-            quantity > 0 ? (
+            needsSelection ? (
+              <Button className={cn('h-11', radius)} disabled type="button">
+                {labels.selectOptions}
+              </Button>
+            ) : cartQuantity > 0 ? (
               <div className="flex items-center gap-1">
                 <Button
                   aria-label={`${labels.quantity} -`}
                   className={cn('h-11 w-11 p-0', radius)}
-                  onClick={() => onDecrement?.(listing.id)}
+                  onClick={() => onDecrement?.(listing.id, variantId)}
                   type="button"
                   variant="outline"
                 >
                   <Minus className="h-4 w-4" />
                 </Button>
                 <span className="min-w-10 text-center font-semibold tabular-nums">
-                  {quantity}
+                  {cartQuantity}
                 </span>
                 <Button
                   aria-label={`${labels.quantity} +`}
                   className={cn('h-11 w-11 p-0', radius)}
-                  disabled={disabled}
-                  onClick={() => onIncrement?.(listing.id, limit)}
+                  disabled={addDisabled}
+                  onClick={() => onIncrement?.(listing.id, limit, variantId)}
                   type="button"
                   variant="outline"
                 >
@@ -131,17 +251,29 @@ export function StorefrontProductDetail({
               </div>
             ) : (
               <AccentButton
-                disabled={disabled}
-                onClick={() => onIncrement?.(listing.id, limit)}
+                disabled={addDisabled}
+                onClick={() => onIncrement?.(listing.id, limit, variantId)}
                 radius={radius}
               >
                 <Plus className="h-4 w-4" />
-                {limit === 0 ? labels.soldOut : labels.add}
+                {soldOut ? labels.soldOut : labels.add}
               </AccentButton>
             )
           ) : null}
 
-          {cartHref && quantity > 0 ? (
+          {onBuyNow ? (
+            <Button
+              className={cn('h-11', radius)}
+              disabled={buyNowDisabled}
+              onClick={() => onBuyNow(listing.id, variantId)}
+              type="button"
+            >
+              <Zap className="size-4 shrink-0" />
+              {labels.buyNow}
+            </Button>
+          ) : null}
+
+          {cartHref && cartQuantity > 0 ? (
             <Button asChild className={cn('h-11', radius)} variant="outline">
               <a href={cartHref}>
                 <ShoppingCart className="size-4 shrink-0" />

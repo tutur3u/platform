@@ -37,8 +37,8 @@ import {
 import { cn } from '@tuturuuu/utils/format';
 import { useBoardConfig } from '@tuturuuu/utils/task-helper';
 import { format } from 'date-fns';
-import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
+import { getTasksAppUrlClient } from '@/lib/tasks-app-url-client';
 import {
   getTaskDefaults,
   isValidDefault,
@@ -62,7 +62,6 @@ export function AddTaskForm({
   setIsLoading: (loading: boolean) => void;
   defaultTaskName?: string;
 }) {
-  const router = useRouter();
   const { weekStartsOn, timezone, timeFormat } = useCalendarPreferences();
 
   // Multi-step state
@@ -106,8 +105,8 @@ export function AddTaskForm({
     queryKey: ['boards-with-lists', wsId],
     queryFn: async () => {
       const response = await fetch(
-        `/api/v1/workspaces/${wsId}/boards-with-lists`,
-        { cache: 'no-store' }
+        getTasksAppUrlClient(`/api/v1/workspaces/${wsId}/boards-with-lists`),
+        { cache: 'no-store', credentials: 'include' }
       );
       if (!response.ok) {
         throw new Error('Failed to fetch boards');
@@ -133,9 +132,10 @@ export function AddTaskForm({
     queryKey: ['workspace_labels', workspaceId],
     queryFn: async () => {
       if (!workspaceId) return [];
-      const response = await fetch(`/api/v1/workspaces/${workspaceId}/labels`, {
-        cache: 'no-store',
-      });
+      const response = await fetch(
+        getTasksAppUrlClient(`/api/v1/workspaces/${workspaceId}/labels`),
+        { cache: 'no-store', credentials: 'include' }
+      );
       if (!response.ok) throw new Error('Failed to fetch labels');
       return response.json(); // API returns array directly
     },
@@ -149,8 +149,10 @@ export function AddTaskForm({
       queryFn: async () => {
         if (!workspaceId) return [];
         const response = await fetch(
-          `/api/v1/workspaces/${workspaceId}/task-projects`,
-          { cache: 'no-store' }
+          getTasksAppUrlClient(
+            `/api/v1/workspaces/${workspaceId}/task-projects`
+          ),
+          { cache: 'no-store', credentials: 'include' }
         );
         if (!response.ok) throw new Error('Failed to fetch projects');
         return response.json(); // API returns array directly
@@ -216,12 +218,16 @@ export function AddTaskForm({
       const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
 
       try {
-        const response = await fetch(`/api/v1/workspaces/${wsId}/tasks`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(data),
-          signal: controller.signal,
-        });
+        const response = await fetch(
+          getTasksAppUrlClient(`/api/v1/workspaces/${wsId}/tasks`),
+          {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data),
+            signal: controller.signal,
+          }
+        );
 
         clearTimeout(timeoutId);
 
@@ -362,8 +368,10 @@ export function AddTaskForm({
 
   const handleViewTask = () => {
     if (lastCreatedTaskId && selectedBoardId) {
-      router.push(
-        `/${wsId}/tasks/boards/${selectedBoardId}?task=${lastCreatedTaskId}`
+      window.location.assign(
+        getTasksAppUrlClient(
+          `/${wsId}/boards/${selectedBoardId}?task=${lastCreatedTaskId}`
+        )
       );
       setOpen(false);
     }
@@ -491,7 +499,7 @@ export function AddTaskForm({
           variant="outline"
           size="sm"
           onClick={() => {
-            router.push(`/${wsId}/tasks/boards`);
+            window.location.assign(getTasksAppUrlClient(`/${wsId}/boards`));
             setOpen(false);
           }}
         >

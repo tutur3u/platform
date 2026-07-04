@@ -7,6 +7,8 @@ const { getCronSyncDiff, syncWebCrons } = require('./web-crons.js');
 const {
   getCronPaths,
   getDueScheduledJobs,
+  listWebContainers,
+  loadCronParser,
   processWatcherRecoveryRequest,
   runCronCycle,
 } = require('./watch-web-crons.js');
@@ -57,6 +59,25 @@ test('syncWebCrons reports drift when vercel crons differ from shared config', (
   }
 });
 
+test('loadCronParser falls back to the packaged cron-runner module path', () => {
+  const tempDir = makeTempDir('web-crons-parser-');
+
+  try {
+    const moduleDir = path.join(tempDir, 'node_modules', 'cron-parser');
+    fs.mkdirSync(moduleDir, { recursive: true });
+    fs.writeFileSync(
+      path.join(moduleDir, 'index.js'),
+      'module.exports = { packagedCronParser: true };\n'
+    );
+
+    assert.deepEqual(loadCronParser(tempDir), {
+      packagedCronParser: true,
+    });
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
 test('getDueScheduledJobs detects UTC schedules after the persisted run marker', () => {
   const now = Date.parse('2026-01-01T00:15:30.000Z');
   const state = {
@@ -73,6 +94,62 @@ test('getDueScheduledJobs detects UTC schedules after the persisted run marker',
 
   assert.equal(due.length, 1);
   assert.equal(due[0].scheduledAt, Date.parse('2026-01-01T00:15:00.000Z'));
+});
+
+test('listWebContainers uses the selected TanStack frontend lanes', async () => {
+  const calls = [];
+  const containers = await listWebContainers({
+    env: {
+      DOCKER_WEB_FRONTEND: 'tanstack',
+      PLATFORM_CRON_DOCKER_TELEMETRY_TIMEOUT_MS: '1234',
+      PATH: 'test-path',
+    },
+    run: async (command, args, options) => {
+      const joined = [command, ...args].join(' ');
+      calls.push({ joined, options });
+
+      if (joined.includes('ps -q tanstack-web-blue')) {
+        return { code: 0, stderr: '', stdout: 'blue-123\n' };
+      }
+
+      if (joined.includes('ps -q tanstack-web-green')) {
+        return { code: 0, stderr: '', stdout: 'green-123\n' };
+      }
+
+      return { code: 1, stderr: 'unexpected command', stdout: '' };
+    },
+  });
+
+  assert.deepEqual(containers, [
+    { containerId: 'blue-123', deploymentColor: 'blue' },
+    { containerId: 'green-123', deploymentColor: 'green' },
+  ]);
+  assert.equal(
+    calls.some(({ joined }) => joined.includes('ps -q web-blue')),
+    false
+  );
+  assert.equal(calls[0].options.env.DOCKER_WEB_FRONTEND, 'tanstack');
+  assert.equal(calls[0].options.timeoutMs, 1234);
+});
+
+test('listWebContainers rejects unknown frontend values before Docker probes', async () => {
+  let commandCount = 0;
+
+  await assert.rejects(
+    () =>
+      listWebContainers({
+        env: {
+          DOCKER_WEB_FRONTEND: 'bogus',
+          PATH: 'test-path',
+        },
+        run: async () => {
+          commandCount += 1;
+          return { code: 0, stderr: '', stdout: '' };
+        },
+      }),
+    /Unsupported Docker web frontend/
+  );
+  assert.equal(commandCount, 0);
 });
 
 test('runCronCycle records an execution with route console logs and advances state once', async () => {
@@ -138,6 +215,147 @@ test('runCronCycle records an execution with route console logs and advances sta
       'Error loading scheduled route'
     );
     assert.equal(second.executions.length, 0);
+  } finally {
+    Date.now = originalNow;
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('runCronCycle refreshes stale next-run metadata without waiting for a due job', async () => {
+  const tempDir = makeTempDir('web-crons-cycle-next-run-');
+  const configPath = path.join(tempDir, 'cron.config.json');
+  const originalNow = Date.now;
+  const paths = getCronPaths({
+    controlDir: path.join(tempDir, 'control'),
+    runtimeDir: path.join(tempDir, 'runtime'),
+  });
+
+  try {
+    writeJson(configPath, createCronConfig());
+    writeJson(paths.stateFile, {
+      lastScheduledAtByJobId: {
+        'test-job': Date.parse('2026-01-01T00:15:00.000Z'),
+      },
+    });
+    writeJson(paths.statusFile, {
+      jobs: [
+        {
+          ...createCronConfig().jobs[0],
+          configuredEnabled: true,
+          controlEnabled: null,
+          enabled: true,
+          failureStreak: 0,
+          lastExecution: null,
+          lastScheduledAt: Date.parse('2025-12-25T00:00:00.000Z'),
+          nextRunAt: Date.parse('2025-12-25T00:15:00.000Z'),
+        },
+      ],
+      nextRunAt: Date.parse('2025-12-25T00:15:00.000Z'),
+      status: 'live',
+      updatedAt: Date.parse('2025-12-25T00:00:00.000Z'),
+    });
+    Date.now = () => Date.parse('2026-01-01T00:15:30.000Z');
+
+    const result = await runCronCycle({
+      configPath,
+      env: { CRON_SECRET: 'secret', INTERNAL_WEB_API_ORIGIN: 'http://web' },
+      fetchImpl: async () => {
+        throw new Error('fetch should not run');
+      },
+      paths,
+      run: async () => ({ code: 0, stderr: '', stdout: '' }),
+    });
+
+    const status = JSON.parse(fs.readFileSync(paths.statusFile, 'utf8'));
+    assert.equal(result.executions.length, 0);
+    assert.equal(status.nextRunAt, Date.parse('2026-01-01T00:30:00.000Z'));
+    assert.equal(
+      status.jobs[0].nextRunAt,
+      Date.parse('2026-01-01T00:30:00.000Z')
+    );
+  } finally {
+    Date.now = originalNow;
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('runCronCycle refreshes cron status while a scheduled execution is in flight', async () => {
+  const tempDir = makeTempDir('web-crons-scheduled-live-');
+  const configPath = path.join(tempDir, 'cron.config.json');
+  const originalNow = Date.now;
+  const paths = getCronPaths({
+    controlDir: path.join(tempDir, 'control'),
+    runtimeDir: path.join(tempDir, 'runtime'),
+  });
+  let resolveFetch;
+
+  try {
+    writeJson(configPath, createCronConfig());
+    writeJson(paths.stateFile, {
+      lastScheduledAtByJobId: {
+        'test-job': Date.parse('2026-01-01T00:00:00.000Z'),
+      },
+    });
+    writeJson(paths.statusFile, {
+      jobs: [
+        {
+          ...createCronConfig().jobs[0],
+          configuredEnabled: true,
+          controlEnabled: null,
+          enabled: true,
+          failureStreak: 0,
+          lastExecution: null,
+          lastScheduledAt: Date.parse('2025-12-25T00:00:00.000Z'),
+          nextRunAt: Date.parse('2025-12-25T00:15:00.000Z'),
+        },
+      ],
+      nextRunAt: Date.parse('2025-12-25T00:15:00.000Z'),
+      status: 'live',
+      updatedAt: Date.parse('2025-12-25T00:00:00.000Z'),
+    });
+    Date.now = () => Date.parse('2026-01-01T00:15:30.000Z');
+
+    const pending = runCronCycle({
+      configPath,
+      env: {
+        CRON_SECRET: 'secret',
+        INTERNAL_WEB_API_ORIGIN: 'http://web',
+        PLATFORM_CRON_STATUS_HEARTBEAT_INTERVAL_MS: '100',
+      },
+      fetchImpl: () =>
+        new Promise((resolve) => {
+          resolveFetch = () =>
+            resolve({
+              ok: true,
+              status: 200,
+              text: async () => 'ok',
+            });
+        }),
+      paths,
+      run: async () => ({ code: 0, stderr: '', stdout: '' }),
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    const statusDuringRun = JSON.parse(
+      fs.readFileSync(paths.statusFile, 'utf8')
+    );
+    assert.equal(statusDuringRun.status, 'live');
+    assert.equal(statusDuringRun.activeExecution.jobId, 'test-job');
+    assert.equal(statusDuringRun.activeExecution.source, 'scheduled');
+    assert.equal(
+      statusDuringRun.nextRunAt,
+      Date.parse('2026-01-01T00:30:00.000Z')
+    );
+    assert.equal(
+      statusDuringRun.jobs[0].nextRunAt,
+      Date.parse('2026-01-01T00:30:00.000Z')
+    );
+
+    resolveFetch();
+    const result = await pending;
+
+    assert.equal(result.executions.length, 1);
   } finally {
     Date.now = originalNow;
     fs.rmSync(tempDir, { force: true, recursive: true });
@@ -308,6 +526,7 @@ test('processWatcherRecoveryRequest recreates the watcher and clears the request
 test('runCronCycle exposes manual run processing status before completion', async () => {
   const tempDir = makeTempDir('web-crons-manual-live-');
   const configPath = path.join(tempDir, 'cron.config.json');
+  const originalNow = Date.now;
   const paths = getCronPaths({
     controlDir: path.join(tempDir, 'control'),
     runtimeDir: path.join(tempDir, 'runtime'),
@@ -321,6 +540,24 @@ test('runCronCycle exposes manual run processing status before completion', asyn
       jobId: 'test-job',
       requestedAt: 1000,
     });
+    writeJson(paths.statusFile, {
+      jobs: [
+        {
+          ...createCronConfig().jobs[0],
+          configuredEnabled: true,
+          controlEnabled: null,
+          enabled: true,
+          failureStreak: 0,
+          lastExecution: null,
+          lastScheduledAt: Date.parse('2025-12-25T00:00:00.000Z'),
+          nextRunAt: Date.parse('2025-12-25T00:15:00.000Z'),
+        },
+      ],
+      nextRunAt: Date.parse('2025-12-25T00:15:00.000Z'),
+      status: 'live',
+      updatedAt: Date.parse('2025-12-25T00:00:00.000Z'),
+    });
+    Date.now = () => Date.parse('2026-01-01T00:15:30.000Z');
 
     const pending = runCronCycle({
       configPath,
@@ -345,6 +582,14 @@ test('runCronCycle exposes manual run processing status before completion', asyn
     );
     assert.equal(statusDuringRun.runs[0].id, 'request-1');
     assert.equal(statusDuringRun.runs[0].status, 'processing');
+    assert.equal(
+      statusDuringRun.nextRunAt,
+      Date.parse('2026-01-01T00:30:00.000Z')
+    );
+    assert.equal(
+      statusDuringRun.jobs[0].nextRunAt,
+      Date.parse('2026-01-01T00:30:00.000Z')
+    );
 
     resolveFetch();
     const result = await pending;
@@ -355,6 +600,7 @@ test('runCronCycle exposes manual run processing status before completion', asyn
     );
     assert.equal(statusAfterRun.runs[0].status, 'success');
   } finally {
+    Date.now = originalNow;
     fs.rmSync(tempDir, { force: true, recursive: true });
   }
 });

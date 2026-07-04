@@ -1281,6 +1281,7 @@
   },
   "command_launcher": {
     "apps": "Apps",
+    "apps_description": "Open another Tuturuuu app from this workspace.",
     "close": "close",
     "current": "Current",
     "current_app": "Current app",
@@ -1295,6 +1296,9 @@
     "navigation": "Navigation",
     "open": "Open",
     "open_app": "Open app",
+    "open_here": "Open here",
+    "open_in_new_tab": "Open in new tab",
+    "open_options": "Open options",
     "open_workspace": "Open workspace",
     "personal": "Personal",
     "placeholder": "Search apps, workspaces, and pages...",
@@ -4726,11 +4730,119 @@
     "name": "Name",
     "size": "Size"
   },
+  "task-progress": {
+    "actions": {
+      "add_entry": "Add entry",
+      "add_goal": "Add goal",
+      "add_leaderboard": "Add leaderboard",
+      "add_metric": "Add metric",
+      "add_team": "Add team",
+      "commit_import": "Commit import",
+      "preview": "Preview"
+    },
+    "empty": {
+      "entries": "No progress entries yet.",
+      "goals": "No active goals yet.",
+      "leaderboards": "No active leaderboards yet.",
+      "stats": "No progress stats yet."
+    },
+    "fields": {
+      "color": "Color",
+      "goal_name": "Goal name",
+      "leaderboard_name": "Leaderboard name",
+      "metric_name": "Metric name",
+      "note": "Note",
+      "tags": "Tags",
+      "target": "Target",
+      "team_name": "Team name",
+      "unit": "Unit",
+      "value": "Value"
+    },
+    "goal_types": {
+      "habit": "Habit",
+      "target": "Target"
+    },
+    "goals": {
+      "create_goal": "Create goal"
+    },
+    "import": {
+      "placeholder": "2026-06-25,500,Words,writing|draft,Chapter draft",
+      "preview_count": "Previewed {count} entries",
+      "title": "Import progress"
+    },
+    "leaderboards": {
+      "create_leaderboard": "Create leaderboard"
+    },
+    "progress": {
+      "log_entry": "Log progress",
+      "recent_entries": "Recent entries"
+    },
+    "schema_unavailable": "Task progress needs the latest database migration before it can load.",
+    "stats": {
+      "daily_progress": "Daily progress"
+    },
+    "summary": {
+      "entries": "Entries",
+      "goals": "Goals",
+      "streak": "Streak",
+      "total": "Total"
+    },
+    "tabs": {
+      "goals": "Goals",
+      "import": "Import",
+      "leaderboards": "Leaderboards",
+      "progress": "Progress",
+      "stats": "Stats"
+    },
+    "toast": {
+      "entry_created": "Progress entry created",
+      "goal_created": "Goal created",
+      "import_committed": "Import committed",
+      "import_failed": "Import failed",
+      "import_previewed": "Import preview ready",
+      "leaderboard_created": "Leaderboard created",
+      "metric_created": "Metric created",
+      "team_created": "Team created"
+    },
+    "views": {
+      "goals": {
+        "description": "Track target and habit-style goals against task progress metrics.",
+        "title": "Task Goals"
+      },
+      "import": {
+        "description": "Preview and commit batches of progress entries.",
+        "title": "Progress Import"
+      },
+      "leaderboards": {
+        "description": "Run private workspace leaderboards and teams for progress metrics.",
+        "title": "Task Leaderboards"
+      },
+      "progress": {
+        "description": "Log flexible progress entries across tasks, projects, and boards.",
+        "title": "Task Progress"
+      },
+      "stats": {
+        "description": "Review totals, active days, streaks, and daily progress.",
+        "title": "Task Stats"
+      }
+    }
+  },
   "tasks": {
     "history": {
       "assignee_added": "Assigned user",
       "assignee_removed": "Removed assignee",
+      "before_clear_version": "Before clear",
+      "compare_version": "Compare",
+      "description_change_title": "Description change",
+      "description_restore_banner_description": "Current content differs from the latest tracked version. Restore it or compare all tracked versions.",
+      "description_restore_banner_title": "A tracked description version is available",
+      "description_restore_failed": "Failed to restore description",
+      "description_restore_success": "Description restored",
+      "description_version_no_preview": "No text preview",
+      "description_versions_description": "Compare tracked description versions and restore the one that should be current.",
+      "description_versions_title": "Description versions",
       "empty": "No history available for this task",
+      "empty_description_value": "Empty or not restorable",
       "error": "Failed to load task history",
       "field_updated": {
         "completed": "Changed completion status",
@@ -4744,10 +4856,22 @@
       },
       "label_added": "Added label",
       "label_removed": "Removed label",
+      "latest_version": "Latest",
+      "no_recoverable_description_versions": "No restorable description versions were found in history.",
+      "previous_description_value": "Previous",
       "project_linked": "Linked project",
       "project_unlinked": "Unlinked project",
+      "restore_from_change": "Restore from this change",
+      "restore_latest_tracked": "Restore latest tracked",
+      "restore_previous_description": "Restore previous",
+      "restore_resulting_description": "Restore resulting",
+      "restore_version": "Restore",
+      "resulting_description_value": "Resulting",
+      "tracked_by_user": "Tracked by",
       "unknown_change": "Made a change",
-      "unknown_user": "Unknown user"
+      "unknown_user": "Unknown user",
+      "view_description_diff": "View diff",
+      "view_description_versions": "View versions"
     }
   },
   "team-tabs": {
@@ -7210,6 +7334,136 @@
     },
     "select_or_create_list": "Select or create a list",
     "singular": "Task board"
+  },
+  "ws-task-plans": {
+    "add_workspace": "Add workspace",
+    "close_planner": "Close planner",
+    "create_draft": "Create draft",
+    "create_plan": "Create plan",
+    "create_task": "Create task",
+    "digest": "Plan digest",
+    "generate_digest": "Generate digest",
+    "intended_workspace": "Intended",
+    "loading": "Loading",
+    "mode_month": "Month",
+    "mode_week": "Week",
+    "mode_year": "Year",
+    "no_items": "No planned tasks",
+    "no_plans": "No plans",
+    "open_planner": "Open planner",
+    "permission_edit": "Edit",
+    "permission_view": "View",
+    "plan_status_draft": "Draft",
+    "plan_switcher_placeholder": "Select plan",
+    "plan_title_placeholder": "Plan title",
+    "planned_date": "Planned date",
+    "planned_tasks": "Planned tasks",
+    "planner": "Planner",
+    "save_plan": "Save plan",
+    "schema_unavailable": "Plans unavailable",
+    "scope_draft": "Draft",
+    "scope_external_workspace": "External workspace",
+    "scope_my_override": "My override",
+    "scope_personal": "Personal",
+    "scope_shared_plan": "Shared plan",
+    "scope_team_source": "Team source",
+    "share_email": "Share email",
+    "share_email_placeholder": "teammate@example.com",
+    "share_plan": "Share plan",
+    "share_saved": "Plan shared",
+    "share_workspace": "Share workspace",
+    "share_workspace_name": "Share {name}",
+    "target_board": "Target board",
+    "target_list": "Target list",
+    "target_workspace": "Target workspace",
+    "task_title_placeholder": "Task title",
+    "untitled_board": "Untitled board",
+    "untitled_task": "Untitled task",
+    "untitled_workspace": "Untitled workspace"
+  },
+  "ws-task-templates": {
+    "actions": {
+      "archive": "Archive template",
+      "cancel": "Cancel",
+      "create": "Create template",
+      "create_task": "Create task",
+      "new_template": "New template",
+      "save": "Save template",
+      "save_from_task": "Save from task",
+      "use": "Use"
+    },
+    "card": {
+      "assignees": "{count} assignees",
+      "labels": "{count} labels",
+      "projects": "{count} projects"
+    },
+    "create": {
+      "description": "Save reusable task defaults for repeated work.",
+      "title": "Create task template"
+    },
+    "empty": {
+      "description": "Create a template for recurring tasks, checklists, and standard handoffs.",
+      "no_results": "No templates match your search.",
+      "title": "No task templates"
+    },
+    "fields": {
+      "board": "Board",
+      "description": "Description",
+      "description_placeholder": "Default task description",
+      "key": "Key",
+      "key_placeholder": "bug-report",
+      "list": "List",
+      "override_name": "Override task title",
+      "priority": "Priority",
+      "search": "Search",
+      "search_placeholder": "Search task templates",
+      "task_id": "Task ID",
+      "task_id_placeholder": "Task UUID",
+      "task_name": "Task title",
+      "task_name_placeholder": "Investigate reported bug",
+      "template_name": "Template name",
+      "template_name_placeholder": "Sprint bug report",
+      "unnamed_board": "Untitled board",
+      "unnamed_list": "Untitled list",
+      "visibility": "Visibility"
+    },
+    "gallery": {
+      "board_marketplace": "Board marketplace",
+      "description": "Create reusable task starters and keep board templates available in one place.",
+      "header": "Task templates"
+    },
+    "priority": {
+      "critical": "Critical",
+      "high": "High",
+      "low": "Low",
+      "none": "No priority",
+      "normal": "Normal"
+    },
+    "save_from_task": {
+      "description": "Enter a task ID to snapshot its current fields into a reusable template.",
+      "title": "Save task as template"
+    },
+    "tabs": {
+      "boards": "Board Templates",
+      "tasks": "Task Templates"
+    },
+    "toast": {
+      "archived": "Task template archived",
+      "created": "Task template created",
+      "failed": "Task template action failed",
+      "no_template_selected": "No task template selected",
+      "saved_from_task": "Task template saved",
+      "task_created": "Task created from template"
+    },
+    "use": {
+      "description": "Create a task from {name}.",
+      "description_empty": "Create a task from the selected template.",
+      "title": "Use task template"
+    },
+    "visibility": {
+      "private": "Private",
+      "workspace": "Workspace"
+    }
   },
   "ws-tasks": {
     "collapse_external_tasks": "Collapse External tasks",

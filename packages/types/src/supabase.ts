@@ -616,30 +616,275 @@ export type Database = {
         };
         Relationships: [];
       };
+      auth_recovery_events: {
+        Row: {
+          actor_user_id: string | null;
+          created_at: string;
+          email: string;
+          event_type: string;
+          id: string;
+          metadata: Json;
+          override_id: string | null;
+          token_id: string | null;
+        };
+        Insert: {
+          actor_user_id?: string | null;
+          created_at?: string;
+          email: string;
+          event_type: string;
+          id?: string;
+          metadata?: Json;
+          override_id?: string | null;
+          token_id?: string | null;
+        };
+        Update: {
+          actor_user_id?: string | null;
+          created_at?: string;
+          email?: string;
+          event_type?: string;
+          id?: string;
+          metadata?: Json;
+          override_id?: string | null;
+          token_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'auth_recovery_events_actor_user_id_fkey';
+            columns: ['actor_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'auth_recovery_events_actor_user_id_fkey';
+            columns: ['actor_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'auth_recovery_events_override_id_fkey';
+            columns: ['override_id'];
+            isOneToOne: false;
+            referencedRelation: 'auth_recovery_overrides';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'auth_recovery_events_token_id_fkey';
+            columns: ['token_id'];
+            isOneToOne: false;
+            referencedRelation: 'auth_recovery_tokens';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      auth_recovery_overrides: {
+        Row: {
+          allow_normal_login: boolean;
+          allow_recovery_email: boolean;
+          created_at: string;
+          created_by: string | null;
+          email: string;
+          expires_at: string;
+          id: string;
+          last_used_at: string | null;
+          metadata: Json;
+          reason: string;
+          revoke_reason: string | null;
+          revoked_at: string | null;
+          revoked_by: string | null;
+          updated_at: string;
+        };
+        Insert: {
+          allow_normal_login?: boolean;
+          allow_recovery_email?: boolean;
+          created_at?: string;
+          created_by?: string | null;
+          email: string;
+          expires_at?: string;
+          id?: string;
+          last_used_at?: string | null;
+          metadata?: Json;
+          reason: string;
+          revoke_reason?: string | null;
+          revoked_at?: string | null;
+          revoked_by?: string | null;
+          updated_at?: string;
+        };
+        Update: {
+          allow_normal_login?: boolean;
+          allow_recovery_email?: boolean;
+          created_at?: string;
+          created_by?: string | null;
+          email?: string;
+          expires_at?: string;
+          id?: string;
+          last_used_at?: string | null;
+          metadata?: Json;
+          reason?: string;
+          revoke_reason?: string | null;
+          revoked_at?: string | null;
+          revoked_by?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'auth_recovery_overrides_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'auth_recovery_overrides_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'auth_recovery_overrides_revoked_by_fkey';
+            columns: ['revoked_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'auth_recovery_overrides_revoked_by_fkey';
+            columns: ['revoked_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+        ];
+      };
+      auth_recovery_tokens: {
+        Row: {
+          code_failed_attempts: number;
+          code_hash: string;
+          code_last_failed_at: string | null;
+          code_last_failed_ip_hash: string | null;
+          code_last_failed_user_agent_hash: string | null;
+          code_locked_at: string | null;
+          code_locked_reason: string | null;
+          consumed_at: string | null;
+          consumed_ip_hash: string | null;
+          consumed_user_agent_hash: string | null;
+          created_at: string;
+          created_by: string | null;
+          email: string;
+          email_audit_id: string | null;
+          expires_at: string;
+          id: string;
+          metadata: Json;
+          override_id: string;
+          sent_at: string | null;
+          token_hash: string;
+        };
+        Insert: {
+          code_failed_attempts?: number;
+          code_hash: string;
+          code_last_failed_at?: string | null;
+          code_last_failed_ip_hash?: string | null;
+          code_last_failed_user_agent_hash?: string | null;
+          code_locked_at?: string | null;
+          code_locked_reason?: string | null;
+          consumed_at?: string | null;
+          consumed_ip_hash?: string | null;
+          consumed_user_agent_hash?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          email: string;
+          email_audit_id?: string | null;
+          expires_at?: string;
+          id?: string;
+          metadata?: Json;
+          override_id: string;
+          sent_at?: string | null;
+          token_hash: string;
+        };
+        Update: {
+          code_failed_attempts?: number;
+          code_hash?: string;
+          code_last_failed_at?: string | null;
+          code_last_failed_ip_hash?: string | null;
+          code_last_failed_user_agent_hash?: string | null;
+          code_locked_at?: string | null;
+          code_locked_reason?: string | null;
+          consumed_at?: string | null;
+          consumed_ip_hash?: string | null;
+          consumed_user_agent_hash?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          email?: string;
+          email_audit_id?: string | null;
+          expires_at?: string;
+          id?: string;
+          metadata?: Json;
+          override_id?: string;
+          sent_at?: string | null;
+          token_hash?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'auth_recovery_tokens_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'auth_recovery_tokens_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'auth_recovery_tokens_override_id_fkey';
+            columns: ['override_id'];
+            isOneToOne: false;
+            referencedRelation: 'auth_recovery_overrides';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       calendar_user_workspace_preferences: {
         Row: {
+          conflict_policy: string;
           created_at: string;
           default_calendar_connection_id: string | null;
+          default_outbound_calendar_connection_id: string | null;
           default_provider: Database['public']['Enums']['calendar_provider'];
           default_workspace_calendar_id: string | null;
+          inbound_sync_enabled: boolean;
+          outbound_sync_enabled: boolean;
           updated_at: string;
           user_id: string;
           ws_id: string;
         };
         Insert: {
+          conflict_policy?: string;
           created_at?: string;
           default_calendar_connection_id?: string | null;
+          default_outbound_calendar_connection_id?: string | null;
           default_provider?: Database['public']['Enums']['calendar_provider'];
           default_workspace_calendar_id?: string | null;
+          inbound_sync_enabled?: boolean;
+          outbound_sync_enabled?: boolean;
           updated_at?: string;
           user_id: string;
           ws_id: string;
         };
         Update: {
+          conflict_policy?: string;
           created_at?: string;
           default_calendar_connection_id?: string | null;
+          default_outbound_calendar_connection_id?: string | null;
           default_provider?: Database['public']['Enums']['calendar_provider'];
           default_workspace_calendar_id?: string | null;
+          inbound_sync_enabled?: boolean;
+          outbound_sync_enabled?: boolean;
           updated_at?: string;
           user_id?: string;
           ws_id?: string;
@@ -3055,6 +3300,50 @@ export type Database = {
           },
         ];
       };
+      inventory_bundle_category_components: {
+        Row: {
+          bundle_id: string;
+          category_id: string;
+          created_at: string | null;
+          discount_strategy: string;
+          free_quantity: number;
+          id: string;
+          quantity_required: number;
+          sort_order: number;
+          updated_at: string | null;
+        };
+        Insert: {
+          bundle_id: string;
+          category_id: string;
+          created_at?: string | null;
+          discount_strategy?: string;
+          free_quantity?: number;
+          id?: string;
+          quantity_required?: number;
+          sort_order?: number;
+          updated_at?: string | null;
+        };
+        Update: {
+          bundle_id?: string;
+          category_id?: string;
+          created_at?: string | null;
+          discount_strategy?: string;
+          free_quantity?: number;
+          id?: string;
+          quantity_required?: number;
+          sort_order?: number;
+          updated_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'inventory_bundle_category_components_bundle_id_fkey';
+            columns: ['bundle_id'];
+            isOneToOne: false;
+            referencedRelation: 'inventory_bundles';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       inventory_bundle_components: {
         Row: {
           bundle_id: string;
@@ -3109,6 +3398,7 @@ export type Database = {
       };
       inventory_bundles: {
         Row: {
+          category_candidate_scope: string;
           created_at: string | null;
           description: string | null;
           id: string;
@@ -3123,6 +3413,7 @@ export type Database = {
           polar_sync_status: string;
           polar_synced_at: string | null;
           price: number;
+          pricing_mode: string;
           slug: string;
           status: string;
           storefront_id: string | null;
@@ -3130,6 +3421,7 @@ export type Database = {
           ws_id: string;
         };
         Insert: {
+          category_candidate_scope?: string;
           created_at?: string | null;
           description?: string | null;
           id?: string;
@@ -3144,6 +3436,7 @@ export type Database = {
           polar_sync_status?: string;
           polar_synced_at?: string | null;
           price?: number;
+          pricing_mode?: string;
           slug: string;
           status?: string;
           storefront_id?: string | null;
@@ -3151,6 +3444,7 @@ export type Database = {
           ws_id: string;
         };
         Update: {
+          category_candidate_scope?: string;
           created_at?: string | null;
           description?: string | null;
           id?: string;
@@ -3165,6 +3459,7 @@ export type Database = {
           polar_sync_status?: string;
           polar_synced_at?: string | null;
           price?: number;
+          pricing_mode?: string;
           slug?: string;
           status?: string;
           storefront_id?: string | null;
@@ -3194,6 +3489,7 @@ export type Database = {
           title: string;
           unit_id: string;
           unit_price: number;
+          variant_id: string | null;
           warehouse_id: string;
         };
         Insert: {
@@ -3208,6 +3504,7 @@ export type Database = {
           title: string;
           unit_id: string;
           unit_price?: number;
+          variant_id?: string | null;
           warehouse_id: string;
         };
         Update: {
@@ -3222,6 +3519,7 @@ export type Database = {
           title?: string;
           unit_id?: string;
           unit_price?: number;
+          variant_id?: string | null;
           warehouse_id?: string;
         };
         Relationships: [
@@ -3254,6 +3552,13 @@ export type Database = {
             referencedColumns: ['id'];
           },
           {
+            foreignKeyName: 'inventory_checkout_lines_variant_id_fkey';
+            columns: ['variant_id'];
+            isOneToOne: false;
+            referencedRelation: 'inventory_storefront_listing_variants';
+            referencedColumns: ['id'];
+          },
+          {
             foreignKeyName: 'inventory_checkout_lines_warehouse_id_fkey';
             columns: ['warehouse_id'];
             isOneToOne: false;
@@ -3264,6 +3569,7 @@ export type Database = {
       };
       inventory_checkout_sessions: {
         Row: {
+          checkout_provider: string | null;
           completed_at: string | null;
           conversion_fee_estimate_amount: number;
           created_at: string | null;
@@ -3288,6 +3594,18 @@ export type Database = {
           polar_status: string | null;
           processing_fee_estimate_amount: number;
           public_token: string;
+          square_device_id: string | null;
+          square_environment: string | null;
+          square_failure_reason: string | null;
+          square_idempotency_key: string | null;
+          square_last_event_id: string | null;
+          square_last_synced_at: string | null;
+          square_location_id: string | null;
+          square_order_id: string | null;
+          square_payment_id: string | null;
+          square_receipt_url: string | null;
+          square_status: string | null;
+          square_terminal_checkout_id: string | null;
           status: string;
           storefront_id: string;
           subtotal_amount: number;
@@ -3296,6 +3614,7 @@ export type Database = {
           ws_id: string;
         };
         Insert: {
+          checkout_provider?: string | null;
           completed_at?: string | null;
           conversion_fee_estimate_amount?: number;
           created_at?: string | null;
@@ -3320,6 +3639,18 @@ export type Database = {
           polar_status?: string | null;
           processing_fee_estimate_amount?: number;
           public_token?: string;
+          square_device_id?: string | null;
+          square_environment?: string | null;
+          square_failure_reason?: string | null;
+          square_idempotency_key?: string | null;
+          square_last_event_id?: string | null;
+          square_last_synced_at?: string | null;
+          square_location_id?: string | null;
+          square_order_id?: string | null;
+          square_payment_id?: string | null;
+          square_receipt_url?: string | null;
+          square_status?: string | null;
+          square_terminal_checkout_id?: string | null;
           status?: string;
           storefront_id: string;
           subtotal_amount?: number;
@@ -3328,6 +3659,7 @@ export type Database = {
           ws_id: string;
         };
         Update: {
+          checkout_provider?: string | null;
           completed_at?: string | null;
           conversion_fee_estimate_amount?: number;
           created_at?: string | null;
@@ -3352,6 +3684,18 @@ export type Database = {
           polar_status?: string | null;
           processing_fee_estimate_amount?: number;
           public_token?: string;
+          square_device_id?: string | null;
+          square_environment?: string | null;
+          square_failure_reason?: string | null;
+          square_idempotency_key?: string | null;
+          square_last_event_id?: string | null;
+          square_last_synced_at?: string | null;
+          square_location_id?: string | null;
+          square_order_id?: string | null;
+          square_payment_id?: string | null;
+          square_receipt_url?: string | null;
+          square_status?: string | null;
+          square_terminal_checkout_id?: string | null;
           status?: string;
           storefront_id?: string;
           subtotal_amount?: number;
@@ -3520,6 +3864,136 @@ export type Database = {
           },
         ];
       };
+      inventory_listing_option_groups: {
+        Row: {
+          created_at: string | null;
+          id: string;
+          listing_id: string;
+          name: string;
+          sort_order: number;
+          ws_id: string;
+        };
+        Insert: {
+          created_at?: string | null;
+          id?: string;
+          listing_id: string;
+          name: string;
+          sort_order?: number;
+          ws_id: string;
+        };
+        Update: {
+          created_at?: string | null;
+          id?: string;
+          listing_id?: string;
+          name?: string;
+          sort_order?: number;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'inventory_listing_option_groups_listing_id_fkey';
+            columns: ['listing_id'];
+            isOneToOne: false;
+            referencedRelation: 'inventory_storefront_listings';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      inventory_listing_option_values: {
+        Row: {
+          created_at: string | null;
+          group_id: string;
+          id: string;
+          label: string;
+          listing_id: string;
+          sort_order: number;
+          ws_id: string;
+        };
+        Insert: {
+          created_at?: string | null;
+          group_id: string;
+          id?: string;
+          label: string;
+          listing_id: string;
+          sort_order?: number;
+          ws_id: string;
+        };
+        Update: {
+          created_at?: string | null;
+          group_id?: string;
+          id?: string;
+          label?: string;
+          listing_id?: string;
+          sort_order?: number;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'inventory_listing_option_values_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
+            referencedRelation: 'inventory_listing_option_groups';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'inventory_listing_option_values_listing_id_fkey';
+            columns: ['listing_id'];
+            isOneToOne: false;
+            referencedRelation: 'inventory_storefront_listings';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      inventory_listing_variant_option_values: {
+        Row: {
+          group_id: string;
+          listing_id: string;
+          value_id: string;
+          variant_id: string;
+        };
+        Insert: {
+          group_id: string;
+          listing_id: string;
+          value_id: string;
+          variant_id: string;
+        };
+        Update: {
+          group_id?: string;
+          listing_id?: string;
+          value_id?: string;
+          variant_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'inventory_listing_variant_option_values_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
+            referencedRelation: 'inventory_listing_option_groups';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'inventory_listing_variant_option_values_listing_id_fkey';
+            columns: ['listing_id'];
+            isOneToOne: false;
+            referencedRelation: 'inventory_storefront_listings';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'inventory_listing_variant_option_values_value_id_fkey';
+            columns: ['value_id'];
+            isOneToOne: false;
+            referencedRelation: 'inventory_listing_option_values';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'inventory_listing_variant_option_values_variant_id_fkey';
+            columns: ['variant_id'];
+            isOneToOne: false;
+            referencedRelation: 'inventory_storefront_listing_variants';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       inventory_manufacturers: {
         Row: {
           created_at: string;
@@ -3540,6 +4014,109 @@ export type Database = {
           id?: string;
           name?: string;
           updated_at?: string;
+          ws_id?: string;
+        };
+        Relationships: [];
+      };
+      inventory_option_template_groups: {
+        Row: {
+          created_at: string | null;
+          id: string;
+          name: string;
+          sort_order: number;
+          template_id: string;
+          ws_id: string;
+        };
+        Insert: {
+          created_at?: string | null;
+          id?: string;
+          name: string;
+          sort_order?: number;
+          template_id: string;
+          ws_id: string;
+        };
+        Update: {
+          created_at?: string | null;
+          id?: string;
+          name?: string;
+          sort_order?: number;
+          template_id?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'inventory_option_template_groups_template_id_fkey';
+            columns: ['template_id'];
+            isOneToOne: false;
+            referencedRelation: 'inventory_option_templates';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      inventory_option_template_values: {
+        Row: {
+          created_at: string | null;
+          group_id: string;
+          id: string;
+          label: string;
+          sort_order: number;
+          value: string | null;
+          ws_id: string;
+        };
+        Insert: {
+          created_at?: string | null;
+          group_id: string;
+          id?: string;
+          label: string;
+          sort_order?: number;
+          value?: string | null;
+          ws_id: string;
+        };
+        Update: {
+          created_at?: string | null;
+          group_id?: string;
+          id?: string;
+          label?: string;
+          sort_order?: number;
+          value?: string | null;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'inventory_option_template_values_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
+            referencedRelation: 'inventory_option_template_groups';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      inventory_option_templates: {
+        Row: {
+          created_at: string | null;
+          description: string | null;
+          id: string;
+          metadata: Json;
+          name: string;
+          updated_at: string | null;
+          ws_id: string;
+        };
+        Insert: {
+          created_at?: string | null;
+          description?: string | null;
+          id?: string;
+          metadata?: Json;
+          name: string;
+          updated_at?: string | null;
+          ws_id: string;
+        };
+        Update: {
+          created_at?: string | null;
+          description?: string | null;
+          id?: string;
+          metadata?: Json;
+          name?: string;
+          updated_at?: string | null;
           ws_id?: string;
         };
         Relationships: [];
@@ -3704,6 +4281,8 @@ export type Database = {
           min_amount: number;
           price: number;
           product_id: string;
+          revenue_share_bps: number;
+          revenue_share_partner_id: string | null;
           unit_id: string;
           warehouse_id: string;
         };
@@ -3713,6 +4292,8 @@ export type Database = {
           min_amount?: number;
           price?: number;
           product_id: string;
+          revenue_share_bps?: number;
+          revenue_share_partner_id?: string | null;
           unit_id: string;
           warehouse_id: string;
         };
@@ -3722,10 +4303,19 @@ export type Database = {
           min_amount?: number;
           price?: number;
           product_id?: string;
+          revenue_share_bps?: number;
+          revenue_share_partner_id?: string | null;
           unit_id?: string;
           warehouse_id?: string;
         };
         Relationships: [
+          {
+            foreignKeyName: 'inventory_products_revenue_share_partner_id_fkey';
+            columns: ['revenue_share_partner_id'];
+            isOneToOne: false;
+            referencedRelation: 'inventory_owners';
+            referencedColumns: ['id'];
+          },
           {
             foreignKeyName: 'inventory_products_unit_id_fkey';
             columns: ['unit_id'];
@@ -3754,6 +4344,7 @@ export type Database = {
           released_at: string | null;
           status: string;
           unit_id: string;
+          variant_id: string | null;
           warehouse_id: string;
         };
         Insert: {
@@ -3767,6 +4358,7 @@ export type Database = {
           released_at?: string | null;
           status?: string;
           unit_id: string;
+          variant_id?: string | null;
           warehouse_id: string;
         };
         Update: {
@@ -3780,6 +4372,7 @@ export type Database = {
           released_at?: string | null;
           status?: string;
           unit_id?: string;
+          variant_id?: string | null;
           warehouse_id?: string;
         };
         Relationships: [
@@ -3802,6 +4395,13 @@ export type Database = {
             columns: ['unit_id'];
             isOneToOne: false;
             referencedRelation: 'inventory_units';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'inventory_reservations_variant_id_fkey';
+            columns: ['variant_id'];
+            isOneToOne: false;
+            referencedRelation: 'inventory_storefront_listing_variants';
             referencedColumns: ['id'];
           },
           {
@@ -3862,6 +4462,258 @@ export type Database = {
             referencedColumns: ['id'];
           },
         ];
+      };
+      inventory_square_app_credentials: {
+        Row: {
+          application_id: string | null;
+          application_secret_encrypted: string | null;
+          application_secret_fingerprint: string | null;
+          application_secret_last4: string | null;
+          created_at: string;
+          created_by: string | null;
+          environment: string;
+          id: string;
+          oauth_redirect_url: string | null;
+          updated_at: string;
+          updated_by: string | null;
+          webhook_notification_url: string | null;
+          ws_id: string;
+        };
+        Insert: {
+          application_id?: string | null;
+          application_secret_encrypted?: string | null;
+          application_secret_fingerprint?: string | null;
+          application_secret_last4?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          environment: string;
+          id?: string;
+          oauth_redirect_url?: string | null;
+          updated_at?: string;
+          updated_by?: string | null;
+          webhook_notification_url?: string | null;
+          ws_id: string;
+        };
+        Update: {
+          application_id?: string | null;
+          application_secret_encrypted?: string | null;
+          application_secret_fingerprint?: string | null;
+          application_secret_last4?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          environment?: string;
+          id?: string;
+          oauth_redirect_url?: string | null;
+          updated_at?: string;
+          updated_by?: string | null;
+          webhook_notification_url?: string | null;
+          ws_id?: string;
+        };
+        Relationships: [];
+      };
+      inventory_square_connections: {
+        Row: {
+          access_token_encrypted: string;
+          access_token_fingerprint: string;
+          access_token_last4: string | null;
+          auth_method: string;
+          created_at: string;
+          created_by: string | null;
+          environment: string;
+          id: string;
+          last_error: string | null;
+          last_validated_at: string | null;
+          merchant_id: string | null;
+          refresh_token_encrypted: string | null;
+          refresh_token_last4: string | null;
+          scopes: string[];
+          status: string;
+          token_expires_at: string | null;
+          updated_at: string;
+          updated_by: string | null;
+          webhook_signature_key_encrypted: string | null;
+          webhook_signature_key_last4: string | null;
+          ws_id: string;
+        };
+        Insert: {
+          access_token_encrypted: string;
+          access_token_fingerprint: string;
+          access_token_last4?: string | null;
+          auth_method?: string;
+          created_at?: string;
+          created_by?: string | null;
+          environment: string;
+          id?: string;
+          last_error?: string | null;
+          last_validated_at?: string | null;
+          merchant_id?: string | null;
+          refresh_token_encrypted?: string | null;
+          refresh_token_last4?: string | null;
+          scopes?: string[];
+          status?: string;
+          token_expires_at?: string | null;
+          updated_at?: string;
+          updated_by?: string | null;
+          webhook_signature_key_encrypted?: string | null;
+          webhook_signature_key_last4?: string | null;
+          ws_id: string;
+        };
+        Update: {
+          access_token_encrypted?: string;
+          access_token_fingerprint?: string;
+          access_token_last4?: string | null;
+          auth_method?: string;
+          created_at?: string;
+          created_by?: string | null;
+          environment?: string;
+          id?: string;
+          last_error?: string | null;
+          last_validated_at?: string | null;
+          merchant_id?: string | null;
+          refresh_token_encrypted?: string | null;
+          refresh_token_last4?: string | null;
+          scopes?: string[];
+          status?: string;
+          token_expires_at?: string | null;
+          updated_at?: string;
+          updated_by?: string | null;
+          webhook_signature_key_encrypted?: string | null;
+          webhook_signature_key_last4?: string | null;
+          ws_id?: string;
+        };
+        Relationships: [];
+      };
+      inventory_square_devices: {
+        Row: {
+          created_at: string;
+          created_by: string | null;
+          device_code_id: string | null;
+          device_id: string | null;
+          device_name: string | null;
+          environment: string;
+          id: string;
+          last_seen_at: string | null;
+          location_id: string | null;
+          metadata: Json;
+          paired_at: string | null;
+          pairing_code: string | null;
+          product_type: string | null;
+          status: string | null;
+          updated_at: string;
+          updated_by: string | null;
+          ws_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          created_by?: string | null;
+          device_code_id?: string | null;
+          device_id?: string | null;
+          device_name?: string | null;
+          environment: string;
+          id?: string;
+          last_seen_at?: string | null;
+          location_id?: string | null;
+          metadata?: Json;
+          paired_at?: string | null;
+          pairing_code?: string | null;
+          product_type?: string | null;
+          status?: string | null;
+          updated_at?: string;
+          updated_by?: string | null;
+          ws_id: string;
+        };
+        Update: {
+          created_at?: string;
+          created_by?: string | null;
+          device_code_id?: string | null;
+          device_id?: string | null;
+          device_name?: string | null;
+          environment?: string;
+          id?: string;
+          last_seen_at?: string | null;
+          location_id?: string | null;
+          metadata?: Json;
+          paired_at?: string | null;
+          pairing_code?: string | null;
+          product_type?: string | null;
+          status?: string | null;
+          updated_at?: string;
+          updated_by?: string | null;
+          ws_id?: string;
+        };
+        Relationships: [];
+      };
+      inventory_square_oauth_states: {
+        Row: {
+          consumed_at: string | null;
+          created_at: string;
+          created_by: string | null;
+          environment: string;
+          expires_at: string;
+          return_to: string | null;
+          state: string;
+          ws_id: string;
+        };
+        Insert: {
+          consumed_at?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          environment: string;
+          expires_at: string;
+          return_to?: string | null;
+          state: string;
+          ws_id: string;
+        };
+        Update: {
+          consumed_at?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          environment?: string;
+          expires_at?: string;
+          return_to?: string | null;
+          state?: string;
+          ws_id?: string;
+        };
+        Relationships: [];
+      };
+      inventory_square_settings: {
+        Row: {
+          created_at: string;
+          device_id: string | null;
+          device_name: string | null;
+          environment: string;
+          location_id: string | null;
+          location_name: string | null;
+          sandbox_device_id: string | null;
+          updated_at: string;
+          updated_by: string | null;
+          ws_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          device_id?: string | null;
+          device_name?: string | null;
+          environment?: string;
+          location_id?: string | null;
+          location_name?: string | null;
+          sandbox_device_id?: string | null;
+          updated_at?: string;
+          updated_by?: string | null;
+          ws_id: string;
+        };
+        Update: {
+          created_at?: string;
+          device_id?: string | null;
+          device_name?: string | null;
+          environment?: string;
+          location_id?: string | null;
+          location_name?: string | null;
+          sandbox_device_id?: string | null;
+          updated_at?: string;
+          updated_by?: string | null;
+          ws_id?: string;
+        };
+        Relationships: [];
       };
       inventory_storefront_events: {
         Row: {
@@ -3930,6 +4782,103 @@ export type Database = {
             columns: ['storefront_id'];
             isOneToOne: false;
             referencedRelation: 'inventory_storefronts';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      inventory_storefront_listing_variants: {
+        Row: {
+          compare_at_price: number | null;
+          created_at: string | null;
+          id: string;
+          image_url: string | null;
+          listing_id: string;
+          metadata: Json;
+          polar_environment: string | null;
+          polar_last_error: string | null;
+          polar_price_id: string | null;
+          polar_product_id: string | null;
+          polar_sync_status: string;
+          polar_synced_at: string | null;
+          price: number | null;
+          product_id: string;
+          sku: string | null;
+          sort_order: number;
+          status: string;
+          title: string | null;
+          unit_id: string;
+          updated_at: string | null;
+          warehouse_id: string;
+          ws_id: string;
+        };
+        Insert: {
+          compare_at_price?: number | null;
+          created_at?: string | null;
+          id?: string;
+          image_url?: string | null;
+          listing_id: string;
+          metadata?: Json;
+          polar_environment?: string | null;
+          polar_last_error?: string | null;
+          polar_price_id?: string | null;
+          polar_product_id?: string | null;
+          polar_sync_status?: string;
+          polar_synced_at?: string | null;
+          price?: number | null;
+          product_id: string;
+          sku?: string | null;
+          sort_order?: number;
+          status?: string;
+          title?: string | null;
+          unit_id: string;
+          updated_at?: string | null;
+          warehouse_id: string;
+          ws_id: string;
+        };
+        Update: {
+          compare_at_price?: number | null;
+          created_at?: string | null;
+          id?: string;
+          image_url?: string | null;
+          listing_id?: string;
+          metadata?: Json;
+          polar_environment?: string | null;
+          polar_last_error?: string | null;
+          polar_price_id?: string | null;
+          polar_product_id?: string | null;
+          polar_sync_status?: string;
+          polar_synced_at?: string | null;
+          price?: number | null;
+          product_id?: string;
+          sku?: string | null;
+          sort_order?: number;
+          status?: string;
+          title?: string | null;
+          unit_id?: string;
+          updated_at?: string | null;
+          warehouse_id?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'inventory_storefront_listing_variants_listing_id_fkey';
+            columns: ['listing_id'];
+            isOneToOne: false;
+            referencedRelation: 'inventory_storefront_listings';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'inventory_storefront_listing_variants_unit_id_fkey';
+            columns: ['unit_id'];
+            isOneToOne: false;
+            referencedRelation: 'inventory_units';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'inventory_storefront_listing_variants_warehouse_id_fkey';
+            columns: ['warehouse_id'];
+            isOneToOne: false;
+            referencedRelation: 'inventory_warehouses';
             referencedColumns: ['id'];
           },
         ];
@@ -5103,6 +6052,36 @@ export type Database = {
             referencedColumns: ['id'];
           },
         ];
+      };
+      managed_cron_whitelisted_domains: {
+        Row: {
+          created_at: string;
+          created_by: string | null;
+          description: string | null;
+          domain: string;
+          enabled: boolean;
+          updated_at: string;
+          updated_by: string | null;
+        };
+        Insert: {
+          created_at?: string;
+          created_by?: string | null;
+          description?: string | null;
+          domain: string;
+          enabled?: boolean;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Update: {
+          created_at?: string;
+          created_by?: string | null;
+          description?: string | null;
+          domain?: string;
+          enabled?: boolean;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Relationships: [];
       };
       meet_stream_events: {
         Row: {
@@ -9211,6 +10190,247 @@ export type Database = {
           },
         ];
       };
+      workspace_user_group_session_files: {
+        Row: {
+          created_at: string;
+          id: string;
+          name: string | null;
+          session_id: string;
+          storage_path: string;
+          ws_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          id?: string;
+          name?: string | null;
+          session_id: string;
+          storage_path: string;
+          ws_id: string;
+        };
+        Update: {
+          created_at?: string;
+          id?: string;
+          name?: string | null;
+          session_id?: string;
+          storage_path?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'workspace_user_group_session_files_session_id_fkey';
+            columns: ['session_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_user_group_sessions';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      workspace_user_group_session_series: {
+        Row: {
+          created_at: string;
+          days_of_week: number[];
+          description: string | null;
+          description_json: Json | null;
+          end_time: string;
+          end_timezone: string;
+          group_id: string;
+          id: string;
+          interval_weeks: number;
+          source: string | null;
+          start_date: string;
+          start_time: string;
+          start_timezone: string;
+          title: string | null;
+          until_date: string | null;
+          updated_at: string;
+          ws_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          days_of_week: number[];
+          description?: string | null;
+          description_json?: Json | null;
+          end_time: string;
+          end_timezone?: string;
+          group_id: string;
+          id?: string;
+          interval_weeks?: number;
+          source?: string | null;
+          start_date: string;
+          start_time: string;
+          start_timezone?: string;
+          title?: string | null;
+          until_date?: string | null;
+          updated_at?: string;
+          ws_id: string;
+        };
+        Update: {
+          created_at?: string;
+          days_of_week?: number[];
+          description?: string | null;
+          description_json?: Json | null;
+          end_time?: string;
+          end_timezone?: string;
+          group_id?: string;
+          id?: string;
+          interval_weeks?: number;
+          source?: string | null;
+          start_date?: string;
+          start_time?: string;
+          start_timezone?: string;
+          title?: string | null;
+          until_date?: string | null;
+          updated_at?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'workspace_user_group_session_series_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
+            referencedRelation: 'posts_dashboard_view';
+            referencedColumns: ['group_id'];
+          },
+        ];
+      };
+      workspace_user_group_session_tag_links: {
+        Row: {
+          created_at: string;
+          session_id: string;
+          tag_id: string;
+          ws_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          session_id: string;
+          tag_id: string;
+          ws_id: string;
+        };
+        Update: {
+          created_at?: string;
+          session_id?: string;
+          tag_id?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'workspace_user_group_session_tag_links_session_id_fkey';
+            columns: ['session_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_user_group_sessions';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_user_group_session_tag_links_tag_id_fkey';
+            columns: ['tag_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_user_group_session_tags';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      workspace_user_group_session_tags: {
+        Row: {
+          color: string | null;
+          created_at: string;
+          id: string;
+          name: string;
+          updated_at: string;
+          ws_id: string;
+        };
+        Insert: {
+          color?: string | null;
+          created_at?: string;
+          id?: string;
+          name: string;
+          updated_at?: string;
+          ws_id: string;
+        };
+        Update: {
+          color?: string | null;
+          created_at?: string;
+          id?: string;
+          name?: string;
+          updated_at?: string;
+          ws_id?: string;
+        };
+        Relationships: [];
+      };
+      workspace_user_group_sessions: {
+        Row: {
+          created_at: string;
+          description: string | null;
+          description_json: Json | null;
+          end_timezone: string;
+          ends_at: string;
+          group_id: string;
+          id: string;
+          recurrence_instance_date: string | null;
+          series_id: string | null;
+          source: string | null;
+          source_legacy_date: string | null;
+          start_timezone: string;
+          starts_at: string;
+          status: string;
+          title: string | null;
+          updated_at: string;
+          ws_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          description?: string | null;
+          description_json?: Json | null;
+          end_timezone?: string;
+          ends_at: string;
+          group_id: string;
+          id?: string;
+          recurrence_instance_date?: string | null;
+          series_id?: string | null;
+          source?: string | null;
+          source_legacy_date?: string | null;
+          start_timezone?: string;
+          starts_at: string;
+          status?: string;
+          title?: string | null;
+          updated_at?: string;
+          ws_id: string;
+        };
+        Update: {
+          created_at?: string;
+          description?: string | null;
+          description_json?: Json | null;
+          end_timezone?: string;
+          ends_at?: string;
+          group_id?: string;
+          id?: string;
+          recurrence_instance_date?: string | null;
+          series_id?: string | null;
+          source?: string | null;
+          source_legacy_date?: string | null;
+          start_timezone?: string;
+          starts_at?: string;
+          status?: string;
+          title?: string | null;
+          updated_at?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'workspace_user_group_sessions_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
+            referencedRelation: 'posts_dashboard_view';
+            referencedColumns: ['group_id'];
+          },
+          {
+            foreignKeyName: 'workspace_user_group_sessions_series_id_fkey';
+            columns: ['series_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_user_group_session_series';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       workspace_wallet_checkpoints: {
         Row: {
           actual_balance: number;
@@ -10009,6 +11229,19 @@ export type Database = {
         Args: { _end_date: string; _max_days: number; _start_date: string };
         Returns: undefined;
       };
+      assign_workspace_user_referral: {
+        Args: {
+          p_actor_user_id: string;
+          p_referred_user_id: string;
+          p_referrer_user_id: string;
+          p_ws_id: string;
+        };
+        Returns: {
+          linked_promotion_id: string;
+          referral_promotion_id: string;
+          status: string;
+        }[];
+      };
       build_rate_limit_dblink_connstr: { Args: never; Returns: string };
       calculate_invoice_values: {
         Args: {
@@ -10057,6 +11290,10 @@ export type Database = {
       can_view_request_comments: {
         Args: { p_request_id: string; p_user_id: string };
         Returns: boolean;
+      };
+      cancel_pending_post_email_queue_for_recipient_email: {
+        Args: { p_email: string; p_reason?: string };
+        Returns: number;
       };
       chat_actor_can_access_conversation: {
         Args: { p_actor_user_id: string; p_conversation_id: string };
@@ -10357,6 +11594,17 @@ export type Database = {
           p_checkout_id: string;
           p_now?: string;
           p_polar_order_id: string;
+          p_ws_id: string;
+        };
+        Returns: string;
+      };
+      complete_inventory_checkout_session_square_payment: {
+        Args: {
+          p_checkout_id: string;
+          p_now?: string;
+          p_square_order_id?: string;
+          p_square_payment_id: string;
+          p_ws_id: string;
         };
         Returns: string;
       };
@@ -10374,6 +11622,21 @@ export type Database = {
           p_search_count?: number;
         };
         Returns: number;
+      };
+      consume_auth_recovery_credential: {
+        Args: {
+          p_code_hash?: string;
+          p_email?: string;
+          p_ip_hash?: string;
+          p_token_hash?: string;
+          p_user_agent_hash?: string;
+        };
+        Returns: {
+          consumed_by: string;
+          email: string;
+          override_id: string;
+          token_id: string;
+        }[];
       };
       count_task_source_filter_lists: {
         Args: {
@@ -10484,6 +11747,10 @@ export type Database = {
           isSetofReturn: true;
         };
       };
+      delete_managed_cron_whitelisted_domain: {
+        Args: { p_domain: string };
+        Returns: undefined;
+      };
       detect_wallet_interest_transactions: {
         Args: { _actor_id: string; _wallet_id: string; _ws_id: string };
         Returns: Json;
@@ -10491,6 +11758,53 @@ export type Database = {
       ensure_user_group_metric_category_ids: {
         Args: { p_category_ids?: string[]; p_ws_id: string };
         Returns: string[];
+      };
+      external_app_managed_cron_executions: {
+        Args: {
+          p_external_app_id: string;
+          p_external_job_key?: string;
+          p_limit?: number;
+          p_offset?: number;
+          p_ws_id: string;
+        };
+        Returns: Json;
+      };
+      external_app_managed_cron_monitoring: {
+        Args: { p_execution_limit?: number };
+        Returns: Json;
+      };
+      external_app_managed_cron_setup: {
+        Args: {
+          p_enabled_secret: string;
+          p_external_app_id: string;
+          p_jobs: Json;
+          p_token_secret: string;
+          p_token_value: string;
+          p_ws_id: string;
+        };
+        Returns: Json;
+      };
+      external_app_managed_cron_status: {
+        Args: {
+          p_enabled_secret?: string;
+          p_expected_job_count?: number;
+          p_external_app_id: string;
+          p_token_secret?: string;
+          p_ws_id: string;
+        };
+        Returns: Json;
+      };
+      external_app_managed_cron_update_job: {
+        Args: {
+          p_enabled?: boolean;
+          p_external_app_id: string;
+          p_external_job_key: string;
+          p_next_run_at?: string;
+          p_schedule?: string;
+          p_schedule_timezone?: string;
+          p_ws_id: string;
+        };
+        Returns: boolean;
       };
       finance_credit_cycle_date: {
         Args: { p_anchor_year: number; p_day: number; p_month_offset: number };
@@ -10508,6 +11822,19 @@ export type Database = {
       form_id_from_share_link: {
         Args: { p_share_link_id: string };
         Returns: string;
+      };
+      get_active_auth_recovery_override: {
+        Args: { p_email: string };
+        Returns: {
+          allow_normal_login: boolean;
+          allow_recovery_email: boolean;
+          created_at: string;
+          created_by: string;
+          email: string;
+          expires_at: string;
+          id: string;
+          last_used_at: string;
+        }[];
       };
       get_ai_memory_settings: {
         Args: { p_product?: string; p_user_id: string; p_ws_id: string };
@@ -10767,6 +12094,43 @@ export type Database = {
           total_count: number;
         }[];
       };
+      get_post_email_queue_age_buckets: {
+        Args: { p_now?: string };
+        Returns: {
+          bucket_key: string;
+          failed: number;
+          processing: number;
+          queued: number;
+          total: number;
+        }[];
+      };
+      get_post_email_queue_failure_reasons: {
+        Args: { p_limit?: number };
+        Returns: {
+          blocked: number;
+          failed: number;
+          last_seen_at: string;
+          reason: string;
+          total: number;
+        }[];
+      };
+      get_post_email_queue_recent_batches: {
+        Args: { p_limit?: number };
+        Returns: {
+          batch_id: string;
+          blocked: number;
+          cancelled: number;
+          claimed: number;
+          duration_seconds: number;
+          failed: number;
+          first_attempt_at: string;
+          last_attempt_at: string;
+          processing: number;
+          queued: number;
+          sent: number;
+          skipped: number;
+        }[];
+      };
       get_post_email_queue_status_summary: {
         Args: { p_ws_id?: string };
         Returns: {
@@ -10780,6 +12144,38 @@ export type Database = {
           total: number;
         }[];
       };
+      get_post_email_queue_throughput: {
+        Args: { p_now?: string };
+        Returns: {
+          failed_last_1h: number;
+          failed_last_24h: number;
+          oldest_queued_at: string;
+          queued_last_1h: number;
+          queued_last_24h: number;
+          sent_last_1h: number;
+          sent_last_24h: number;
+          stale_approved_queued_1h: number;
+          stale_approved_queued_24h: number;
+        }[];
+      };
+      get_post_email_queue_workspace_breakdown: {
+        Args: { p_limit?: number; p_now?: string };
+        Returns: {
+          blocked: number;
+          cancelled: number;
+          failed: number;
+          oldest_queued_at: string;
+          processing: number;
+          queued: number;
+          sent: number;
+          skipped: number;
+          stale_queued_1h: number;
+          stale_queued_24h: number;
+          total: number;
+          workspace_name: string;
+          ws_id: string;
+        }[];
+      };
       get_post_workspace_id: { Args: { p_post_id: string }; Returns: string };
       get_public_inventory_storefront: {
         Args: { p_now?: string; p_storefront_slug: string };
@@ -10788,7 +12184,9 @@ export type Database = {
       get_rate_limit_trust_decision: {
         Args: { p_api_key_id?: string; p_ip?: unknown; p_user_id?: string };
         Returns: {
+          absolute_limits: Json;
           decision_source: string;
+          limit_mode: Database['public']['Enums']['rate_limit_mode'];
           subject_key: string;
           tier: Database['public']['Enums']['abuse_risk_tier'];
           trust_multiplier: number;
@@ -11039,6 +12437,8 @@ export type Database = {
           p_ws_id: string;
         };
         Returns: {
+          approval_approved_at: string;
+          approval_rejected_at: string;
           approval_rejection_reason: string;
           approval_status: Database['public']['Enums']['approval_status'];
           can_remove_approval: boolean;
@@ -11056,9 +12456,15 @@ export type Database = {
           post_id: string;
           post_title: string;
           queue_attempt_count: number;
+          queue_cancelled_at: string;
+          queue_claimed_at: string;
+          queue_created_at: string;
+          queue_last_attempt_at: string;
           queue_last_error: string;
           queue_sent_at: string;
+          queue_skipped_at: string;
           queue_status: string;
+          queue_updated_at: string;
           recipient: string;
           review_stage: string;
           row_key: string;
@@ -11100,6 +12506,8 @@ export type Database = {
           p_ws_id: string;
         };
         Returns: {
+          approval_approved_at: string;
+          approval_rejected_at: string;
           approval_rejection_reason: string;
           approval_status: Database['public']['Enums']['approval_status'];
           can_remove_approval: boolean;
@@ -11117,9 +12525,15 @@ export type Database = {
           post_id: string;
           post_title: string;
           queue_attempt_count: number;
+          queue_cancelled_at: string;
+          queue_claimed_at: string;
+          queue_created_at: string;
+          queue_last_attempt_at: string;
           queue_last_error: string;
           queue_sent_at: string;
+          queue_skipped_at: string;
           queue_status: string;
+          queue_updated_at: string;
           recipient: string;
           review_stage: string;
           row_key: string;
@@ -11170,6 +12584,21 @@ export type Database = {
           undeliverable_count: number;
         }[];
       };
+      inventory_bundle_category_components_json: {
+        Args: {
+          p_bundle_id: string;
+          p_currency?: string;
+          p_include_candidates?: boolean;
+          p_now?: string;
+          p_storefront_id?: string;
+          p_ws_id: string;
+        };
+        Returns: Json;
+      };
+      inventory_bundle_fixed_components_json: {
+        Args: { p_bundle_id: string; p_ws_id: string };
+        Returns: Json;
+      };
       inventory_cost_profile_payload: {
         Args: { p_profile_id: string };
         Returns: Json;
@@ -11187,6 +12616,23 @@ export type Database = {
         };
         Returns: Json;
       };
+      inventory_currency_minor_factor: {
+        Args: { p_currency: string };
+        Returns: number;
+      };
+      inventory_major_to_minor: {
+        Args: { p_amount: number; p_currency?: string };
+        Returns: number;
+      };
+      inventory_stock_available_quantity: {
+        Args: {
+          p_now?: string;
+          p_product_id: string;
+          p_unit_id: string;
+          p_warehouse_id: string;
+        };
+        Returns: number;
+      };
       is_nova_user_email_in_team: {
         Args: { _team_id: string; _user_email: string };
         Returns: boolean;
@@ -11194,6 +12640,12 @@ export type Database = {
       is_nova_user_id_in_team: {
         Args: { _team_id: string; _user_id: string };
         Returns: boolean;
+      };
+      list_enabled_managed_cron_domains: {
+        Args: never;
+        Returns: {
+          domain: string;
+        }[];
       };
       list_inventory_bundles: {
         Args: {
@@ -11234,6 +12686,20 @@ export type Database = {
           total_count: number;
         }[];
       };
+      list_inventory_revenue_share_earnings: {
+        Args: {
+          p_end_at?: string;
+          p_limit?: number;
+          p_offset?: number;
+          p_partner_id?: string;
+          p_start_at?: string;
+          p_ws_id: string;
+        };
+        Returns: {
+          earning: Json;
+          total_count: number;
+        }[];
+      };
       list_inventory_storefront_listings: {
         Args: { p_status?: string; p_storefront_id: string; p_ws_id: string };
         Returns: {
@@ -11253,6 +12719,10 @@ export type Database = {
           storefront: Json;
           total_count: number;
         }[];
+      };
+      list_managed_cron_whitelisted_domains: {
+        Args: { p_limit?: number; p_offset?: number; p_search?: string };
+        Returns: Json;
       };
       list_task_source_filter_ids: {
         Args: {
@@ -11369,6 +12839,75 @@ export type Database = {
           starting_date: string;
           ws_id: string;
         }[];
+      };
+      managed_cron_claim_due_jobs: {
+        Args: {
+          p_limit?: number;
+          p_lock_ttl_seconds?: number;
+          p_runner_id?: string;
+        };
+        Returns: {
+          active: boolean;
+          endpoint_url: string;
+          headers_config: Json;
+          http_method: string;
+          id: string;
+          name: string;
+          retry_count: number;
+          schedule: string;
+          schedule_timezone: string;
+          timeout_ms: number;
+          ws_id: string;
+        }[];
+      };
+      managed_cron_claim_external_job: {
+        Args: {
+          p_external_app_id: string;
+          p_external_job_key: string;
+          p_runner_id: string;
+          p_ws_id: string;
+        };
+        Returns: {
+          active: boolean;
+          endpoint_url: string;
+          headers_config: Json;
+          http_method: string;
+          id: string;
+          name: string;
+          retry_count: number;
+          schedule: string;
+          schedule_timezone: string;
+          timeout_ms: number;
+          ws_id: string;
+        }[];
+      };
+      managed_cron_load_secret_values: {
+        Args: { p_secret_names: string[]; p_ws_id: string };
+        Returns: {
+          name: string;
+          value: string;
+        }[];
+      };
+      managed_cron_record_execution: {
+        Args: {
+          p_duration_ms?: number;
+          p_end_time: string;
+          p_endpoint_url?: string;
+          p_error?: string;
+          p_http_status?: number;
+          p_job_id: string;
+          p_next_run_at?: string;
+          p_response?: string;
+          p_runner_id: string;
+          p_source?: string;
+          p_start_time: string;
+          p_status: string;
+        };
+        Returns: boolean;
+      };
+      materialize_workspace_user_group_session_series: {
+        Args: { p_series_id: string; p_until?: string };
+        Returns: number;
       };
       mind_apply_ai_patch: {
         Args: { p_patch_id: string; p_user_id: string; p_ws_id: string };
@@ -11531,8 +13070,20 @@ export type Database = {
       };
       refresh_posts_dashboard_view: { Args: never; Returns: undefined };
       release_inventory_checkout_session: {
-        Args: { p_checkout_id: string; p_now?: string };
+        Args: { p_checkout_id: string; p_now?: string; p_ws_id: string };
         Returns: undefined;
+      };
+      remove_workspace_user_referral: {
+        Args: {
+          p_actor_user_id: string;
+          p_referred_user_id: string;
+          p_referrer_user_id: string;
+          p_ws_id: string;
+        };
+        Returns: {
+          removed_promotion_id: string;
+          status: string;
+        }[];
       };
       resolve_user_groups_table_timezone: {
         Args: { p_ws_id: string };
@@ -11551,6 +13102,10 @@ export type Database = {
         }[];
       };
       update_expired_sessions: { Args: never; Returns: undefined };
+      update_managed_cron_whitelisted_domain_enabled: {
+        Args: { p_actor_id?: string; p_domain: string; p_enabled: boolean };
+        Returns: undefined;
+      };
       update_time_tracking_request: {
         Args: {
           p_action: string;
@@ -11623,16 +13178,28 @@ export type Database = {
       upsert_inventory_bundle_with_components: {
         Args: {
           p_bundle_id?: string;
+          p_category_candidate_scope?: string;
+          p_category_components?: Json;
           p_components?: Json;
           p_description?: string;
           p_image_url?: string;
           p_max_per_order?: number;
           p_name?: string;
           p_price?: number;
+          p_pricing_mode?: string;
           p_slug?: string;
           p_status?: string;
           p_storefront_id?: string;
           p_ws_id: string;
+        };
+        Returns: Json;
+      };
+      upsert_managed_cron_whitelisted_domain: {
+        Args: {
+          p_actor_id?: string;
+          p_description?: string;
+          p_domain: string;
+          p_enabled?: boolean;
         };
         Returns: Json;
       };
@@ -12115,10 +13682,12 @@ export type Database = {
       };
       abuse_trust_overrides: {
         Row: {
+          absolute_limits: Json | null;
           created_at: string;
           created_by: string | null;
           expires_at: string | null;
           id: string;
+          limit_mode: Database['public']['Enums']['rate_limit_mode'];
           metadata: Json;
           reason: string;
           revoke_reason: string | null;
@@ -12131,10 +13700,12 @@ export type Database = {
           updated_at: string;
         };
         Insert: {
+          absolute_limits?: Json | null;
           created_at?: string;
           created_by?: string | null;
           expires_at?: string | null;
           id?: string;
+          limit_mode?: Database['public']['Enums']['rate_limit_mode'];
           metadata?: Json;
           reason: string;
           revoke_reason?: string | null;
@@ -12147,10 +13718,12 @@ export type Database = {
           updated_at?: string;
         };
         Update: {
+          absolute_limits?: Json | null;
           created_at?: string;
           created_by?: string | null;
           expires_at?: string | null;
           id?: string;
+          limit_mode?: Database['public']['Enums']['rate_limit_mode'];
           metadata?: Json;
           reason?: string;
           revoke_reason?: string | null;
@@ -13209,6 +14782,9 @@ export type Database = {
           id: string;
           is_enabled: boolean;
           provider: string;
+          sync_delete_enabled: boolean;
+          sync_inbound_enabled: boolean;
+          sync_outbound_enabled: boolean;
           updated_at: string;
           workspace_calendar_id: string | null;
           ws_id: string;
@@ -13223,6 +14799,9 @@ export type Database = {
           id?: string;
           is_enabled?: boolean;
           provider?: string;
+          sync_delete_enabled?: boolean;
+          sync_inbound_enabled?: boolean;
+          sync_outbound_enabled?: boolean;
           updated_at?: string;
           workspace_calendar_id?: string | null;
           ws_id: string;
@@ -13237,6 +14816,9 @@ export type Database = {
           id?: string;
           is_enabled?: boolean;
           provider?: string;
+          sync_delete_enabled?: boolean;
+          sync_inbound_enabled?: boolean;
+          sync_outbound_enabled?: boolean;
           updated_at?: string;
           workspace_calendar_id?: string | null;
           ws_id?: string;
@@ -14128,6 +15710,264 @@ export type Database = {
             columns: ['quiz_id'];
             isOneToOne: false;
             referencedRelation: 'workspace_quizzes';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      course_test_attempt_answers: {
+        Row: {
+          answer: Json | null;
+          attempt_id: string;
+          created_at: string;
+          feedback: string | null;
+          id: string;
+          is_correct: boolean | null;
+          quiz_id: string;
+          score_awarded: number | null;
+          selected_option_id: string | null;
+        };
+        Insert: {
+          answer?: Json | null;
+          attempt_id: string;
+          created_at?: string;
+          feedback?: string | null;
+          id?: string;
+          is_correct?: boolean | null;
+          quiz_id: string;
+          score_awarded?: number | null;
+          selected_option_id?: string | null;
+        };
+        Update: {
+          answer?: Json | null;
+          attempt_id?: string;
+          created_at?: string;
+          feedback?: string | null;
+          id?: string;
+          is_correct?: boolean | null;
+          quiz_id?: string;
+          score_awarded?: number | null;
+          selected_option_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'course_test_attempt_answers_attempt_id_fkey';
+            columns: ['attempt_id'];
+            isOneToOne: false;
+            referencedRelation: 'course_test_attempts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'course_test_attempt_answers_quiz_id_fkey';
+            columns: ['quiz_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_quizzes';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'course_test_attempt_answers_selected_option_id_fkey';
+            columns: ['selected_option_id', 'quiz_id'];
+            isOneToOne: false;
+            referencedRelation: 'quiz_options';
+            referencedColumns: ['id', 'quiz_id'];
+          },
+        ];
+      };
+      course_test_attempts: {
+        Row: {
+          created_at: string;
+          id: string;
+          score: number | null;
+          started_at: string;
+          submitted_at: string | null;
+          test_id: string;
+          user_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          id?: string;
+          score?: number | null;
+          started_at?: string;
+          submitted_at?: string | null;
+          test_id: string;
+          user_id: string;
+        };
+        Update: {
+          created_at?: string;
+          id?: string;
+          score?: number | null;
+          started_at?: string;
+          submitted_at?: string | null;
+          test_id?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'course_test_attempts_test_id_fkey';
+            columns: ['test_id'];
+            isOneToOne: false;
+            referencedRelation: 'course_tests';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'course_test_attempts_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'course_test_attempts_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      course_test_modules: {
+        Row: {
+          created_at: string;
+          module_id: string;
+          test_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          module_id: string;
+          test_id: string;
+        };
+        Update: {
+          created_at?: string;
+          module_id?: string;
+          test_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'course_test_modules_module_id_fkey';
+            columns: ['module_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_course_modules';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'course_test_modules_test_id_fkey';
+            columns: ['test_id'];
+            isOneToOne: false;
+            referencedRelation: 'course_tests';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      course_test_quizzes: {
+        Row: {
+          created_at: string;
+          module_id: string;
+          quiz_id: string;
+          test_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          module_id: string;
+          quiz_id: string;
+          test_id: string;
+        };
+        Update: {
+          created_at?: string;
+          module_id?: string;
+          quiz_id?: string;
+          test_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'course_test_quizzes_quiz_id_fkey';
+            columns: ['quiz_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_quizzes';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'course_test_quizzes_test_id_module_id_fkey';
+            columns: ['test_id', 'module_id'];
+            isOneToOne: false;
+            referencedRelation: 'course_test_modules';
+            referencedColumns: ['test_id', 'module_id'];
+          },
+        ];
+      };
+      course_tests: {
+        Row: {
+          course_id: string;
+          created_at: string;
+          description: string | null;
+          duration_in_minutes: number | null;
+          id: string;
+          is_published: boolean;
+          is_score_published: boolean;
+          name: string;
+          start_at: string | null;
+        };
+        Insert: {
+          course_id: string;
+          created_at?: string;
+          description?: string | null;
+          duration_in_minutes?: number | null;
+          id?: string;
+          is_published?: boolean;
+          is_score_published?: boolean;
+          name: string;
+          start_at?: string | null;
+        };
+        Update: {
+          course_id?: string;
+          created_at?: string;
+          description?: string | null;
+          duration_in_minutes?: number | null;
+          id?: string;
+          is_published?: boolean;
+          is_score_published?: boolean;
+          name?: string;
+          start_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'course_tests_course_id_fkey';
+            columns: ['course_id'];
+            isOneToOne: false;
+            referencedRelation: 'group_users_with_post_checks';
+            referencedColumns: ['group_id'];
+          },
+          {
+            foreignKeyName: 'course_tests_course_id_fkey';
+            columns: ['course_id'];
+            isOneToOne: false;
+            referencedRelation: 'group_with_attendance';
+            referencedColumns: ['group_id'];
+          },
+          {
+            foreignKeyName: 'course_tests_course_id_fkey';
+            columns: ['course_id'];
+            isOneToOne: false;
+            referencedRelation: 'user_groups_with_tags';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'course_tests_course_id_fkey';
+            columns: ['course_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_user_groups';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'course_tests_course_id_fkey';
+            columns: ['course_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_user_groups_with_amount';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'course_tests_course_id_fkey';
+            columns: ['course_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_user_groups_with_guest';
             referencedColumns: ['id'];
           },
         ];
@@ -18661,6 +20501,170 @@ export type Database = {
           },
         ];
       };
+      rate_limit_appeals: {
+        Row: {
+          cleared_blocked_ip_id: string | null;
+          client_ip: string;
+          created_at: string;
+          created_rate_limit_rule_id: string | null;
+          creator_id: string;
+          diagnostics: Json;
+          id: string;
+          message: string | null;
+          page_path: string | null;
+          proxy_block_reason: string | null;
+          rate_limit_policy: string | null;
+          rate_limit_window: string | null;
+          request_method: string | null;
+          request_path: string | null;
+          response_status: number | null;
+          retry_after_seconds: number | null;
+          review_note: string | null;
+          reviewed_at: string | null;
+          reviewed_by: string | null;
+          status: string;
+          temporary_relief_expires_at: string | null;
+          temporary_relief_granted_at: string | null;
+          timezone: string | null;
+          turnstile_verified_at: string | null;
+          updated_at: string;
+          user_agent: string | null;
+          user_email: string | null;
+          workspace_id: string | null;
+        };
+        Insert: {
+          cleared_blocked_ip_id?: string | null;
+          client_ip: string;
+          created_at?: string;
+          created_rate_limit_rule_id?: string | null;
+          creator_id: string;
+          diagnostics?: Json;
+          id?: string;
+          message?: string | null;
+          page_path?: string | null;
+          proxy_block_reason?: string | null;
+          rate_limit_policy?: string | null;
+          rate_limit_window?: string | null;
+          request_method?: string | null;
+          request_path?: string | null;
+          response_status?: number | null;
+          retry_after_seconds?: number | null;
+          review_note?: string | null;
+          reviewed_at?: string | null;
+          reviewed_by?: string | null;
+          status?: string;
+          temporary_relief_expires_at?: string | null;
+          temporary_relief_granted_at?: string | null;
+          timezone?: string | null;
+          turnstile_verified_at?: string | null;
+          updated_at?: string;
+          user_agent?: string | null;
+          user_email?: string | null;
+          workspace_id?: string | null;
+        };
+        Update: {
+          cleared_blocked_ip_id?: string | null;
+          client_ip?: string;
+          created_at?: string;
+          created_rate_limit_rule_id?: string | null;
+          creator_id?: string;
+          diagnostics?: Json;
+          id?: string;
+          message?: string | null;
+          page_path?: string | null;
+          proxy_block_reason?: string | null;
+          rate_limit_policy?: string | null;
+          rate_limit_window?: string | null;
+          request_method?: string | null;
+          request_path?: string | null;
+          response_status?: number | null;
+          retry_after_seconds?: number | null;
+          review_note?: string | null;
+          reviewed_at?: string | null;
+          reviewed_by?: string | null;
+          status?: string;
+          temporary_relief_expires_at?: string | null;
+          temporary_relief_granted_at?: string | null;
+          timezone?: string | null;
+          turnstile_verified_at?: string | null;
+          updated_at?: string;
+          user_agent?: string | null;
+          user_email?: string | null;
+          workspace_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'rate_limit_appeals_cleared_blocked_ip_id_fkey';
+            columns: ['cleared_blocked_ip_id'];
+            isOneToOne: false;
+            referencedRelation: 'blocked_ips';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'rate_limit_appeals_created_rate_limit_rule_id_fkey';
+            columns: ['created_rate_limit_rule_id'];
+            isOneToOne: false;
+            referencedRelation: 'abuse_trust_overrides';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'rate_limit_appeals_creator_id_fkey';
+            columns: ['creator_id'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'rate_limit_appeals_creator_id_fkey';
+            columns: ['creator_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'rate_limit_appeals_reviewed_by_fkey';
+            columns: ['reviewed_by'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'rate_limit_appeals_reviewed_by_fkey';
+            columns: ['reviewed_by'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'rate_limit_appeals_workspace_id_fkey';
+            columns: ['workspace_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'rate_limit_appeals_workspace_id_fkey';
+            columns: ['workspace_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['personal_ws_id'];
+          },
+          {
+            foreignKeyName: 'rate_limit_appeals_workspace_id_fkey';
+            columns: ['workspace_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'rate_limit_appeals_workspace_id_fkey';
+            columns: ['workspace_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       realtime_log_aggregations: {
         Row: {
           channel_id: string | null;
@@ -19502,6 +21506,78 @@ export type Database = {
           },
         ];
       };
+      task_board_public_links: {
+        Row: {
+          board_id: string;
+          code: string;
+          created_at: string;
+          created_by_user_id: string;
+          disabled_at: string | null;
+          disabled_by_user_id: string | null;
+          enabled: boolean;
+          id: string;
+          updated_at: string;
+        };
+        Insert: {
+          board_id: string;
+          code?: string;
+          created_at?: string;
+          created_by_user_id: string;
+          disabled_at?: string | null;
+          disabled_by_user_id?: string | null;
+          enabled?: boolean;
+          id?: string;
+          updated_at?: string;
+        };
+        Update: {
+          board_id?: string;
+          code?: string;
+          created_at?: string;
+          created_by_user_id?: string;
+          disabled_at?: string | null;
+          disabled_by_user_id?: string | null;
+          enabled?: boolean;
+          id?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'task_board_public_links_board_id_fkey';
+            columns: ['board_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_boards';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_board_public_links_created_by_user_id_fkey';
+            columns: ['created_by_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_board_public_links_created_by_user_id_fkey';
+            columns: ['created_by_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_board_public_links_disabled_by_user_id_fkey';
+            columns: ['disabled_by_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_board_public_links_disabled_by_user_id_fkey';
+            columns: ['disabled_by_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       task_board_shares: {
         Row: {
           board_id: string;
@@ -20085,6 +22161,241 @@ export type Database = {
           },
         ];
       };
+      task_leaderboard_members: {
+        Row: {
+          created_at: string;
+          display_name: string | null;
+          id: string;
+          joined_by: string;
+          leaderboard_id: string;
+          status: string;
+          team_id: string | null;
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          display_name?: string | null;
+          id?: string;
+          joined_by: string;
+          leaderboard_id: string;
+          status?: string;
+          team_id?: string | null;
+          updated_at?: string;
+          user_id: string;
+        };
+        Update: {
+          created_at?: string;
+          display_name?: string | null;
+          id?: string;
+          joined_by?: string;
+          leaderboard_id?: string;
+          status?: string;
+          team_id?: string | null;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'task_leaderboard_members_joined_by_fkey';
+            columns: ['joined_by'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_leaderboard_members_joined_by_fkey';
+            columns: ['joined_by'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_leaderboard_members_leaderboard_id_fkey';
+            columns: ['leaderboard_id'];
+            isOneToOne: false;
+            referencedRelation: 'task_leaderboards';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_leaderboard_members_team_id_fkey';
+            columns: ['team_id'];
+            isOneToOne: false;
+            referencedRelation: 'task_leaderboard_teams';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_leaderboard_members_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_leaderboard_members_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      task_leaderboard_teams: {
+        Row: {
+          color: string | null;
+          created_at: string;
+          created_by: string;
+          id: string;
+          leaderboard_id: string;
+          name: string;
+          updated_at: string;
+        };
+        Insert: {
+          color?: string | null;
+          created_at?: string;
+          created_by: string;
+          id?: string;
+          leaderboard_id: string;
+          name: string;
+          updated_at?: string;
+        };
+        Update: {
+          color?: string | null;
+          created_at?: string;
+          created_by?: string;
+          id?: string;
+          leaderboard_id?: string;
+          name?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'task_leaderboard_teams_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_leaderboard_teams_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_leaderboard_teams_leaderboard_id_fkey';
+            columns: ['leaderboard_id'];
+            isOneToOne: false;
+            referencedRelation: 'task_leaderboards';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      task_leaderboards: {
+        Row: {
+          archived_at: string | null;
+          created_at: string;
+          created_by: string;
+          description: string | null;
+          id: string;
+          join_code: string;
+          metric_id: string;
+          name: string;
+          period_end: string | null;
+          period_start: string;
+          starred: boolean;
+          status: string;
+          updated_at: string;
+          visibility: string;
+          ws_id: string;
+        };
+        Insert: {
+          archived_at?: string | null;
+          created_at?: string;
+          created_by: string;
+          description?: string | null;
+          id?: string;
+          join_code?: string;
+          metric_id: string;
+          name: string;
+          period_end?: string | null;
+          period_start: string;
+          starred?: boolean;
+          status?: string;
+          updated_at?: string;
+          visibility?: string;
+          ws_id: string;
+        };
+        Update: {
+          archived_at?: string | null;
+          created_at?: string;
+          created_by?: string;
+          description?: string | null;
+          id?: string;
+          join_code?: string;
+          metric_id?: string;
+          name?: string;
+          period_end?: string | null;
+          period_start?: string;
+          starred?: boolean;
+          status?: string;
+          updated_at?: string;
+          visibility?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'task_leaderboards_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_leaderboards_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_leaderboards_metric_id_fkey';
+            columns: ['metric_id'];
+            isOneToOne: false;
+            referencedRelation: 'task_progress_metrics';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_leaderboards_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_leaderboards_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['personal_ws_id'];
+          },
+          {
+            foreignKeyName: 'task_leaderboards_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_leaderboards_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       task_lists: {
         Row: {
           archived: boolean | null;
@@ -20142,6 +22453,913 @@ export type Database = {
             columns: ['creator_id'];
             isOneToOne: false;
             referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      task_plan_items: {
+        Row: {
+          created_at: string;
+          created_by_user_id: string;
+          id: string;
+          notes: string | null;
+          plan_id: string;
+          planned_end: string | null;
+          planned_start: string | null;
+          snapshot_title: string | null;
+          sort_key: number;
+          status: string;
+          target_board_id: string | null;
+          target_list_id: string | null;
+          target_ws_id: string | null;
+          task_id: string | null;
+          updated_at: string;
+        };
+        Insert: {
+          created_at?: string;
+          created_by_user_id: string;
+          id?: string;
+          notes?: string | null;
+          plan_id: string;
+          planned_end?: string | null;
+          planned_start?: string | null;
+          snapshot_title?: string | null;
+          sort_key?: number;
+          status?: string;
+          target_board_id?: string | null;
+          target_list_id?: string | null;
+          target_ws_id?: string | null;
+          task_id?: string | null;
+          updated_at?: string;
+        };
+        Update: {
+          created_at?: string;
+          created_by_user_id?: string;
+          id?: string;
+          notes?: string | null;
+          plan_id?: string;
+          planned_end?: string | null;
+          planned_start?: string | null;
+          snapshot_title?: string | null;
+          sort_key?: number;
+          status?: string;
+          target_board_id?: string | null;
+          target_list_id?: string | null;
+          target_ws_id?: string | null;
+          task_id?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'task_plan_items_created_by_user_id_fkey';
+            columns: ['created_by_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_plan_items_created_by_user_id_fkey';
+            columns: ['created_by_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_plan_items_plan_id_fkey';
+            columns: ['plan_id'];
+            isOneToOne: false;
+            referencedRelation: 'task_plans';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_plan_items_target_board_id_fkey';
+            columns: ['target_board_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_boards';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_plan_items_target_list_id_fkey';
+            columns: ['target_list_id'];
+            isOneToOne: false;
+            referencedRelation: 'task_lists';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_plan_items_target_ws_id_fkey';
+            columns: ['target_ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_plan_items_target_ws_id_fkey';
+            columns: ['target_ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['personal_ws_id'];
+          },
+          {
+            foreignKeyName: 'task_plan_items_target_ws_id_fkey';
+            columns: ['target_ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_plan_items_target_ws_id_fkey';
+            columns: ['target_ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_plan_items_task_id_fkey';
+            columns: ['task_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__tasks';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_plan_items_task_id_fkey';
+            columns: ['task_id'];
+            isOneToOne: false;
+            referencedRelation: 'tasks';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      task_plan_shares: {
+        Row: {
+          created_at: string;
+          id: string;
+          permission: string;
+          plan_id: string;
+          shared_by_user_id: string;
+          shared_with_email: string | null;
+          shared_with_user_id: string | null;
+          shared_with_ws_id: string | null;
+          updated_at: string;
+        };
+        Insert: {
+          created_at?: string;
+          id?: string;
+          permission?: string;
+          plan_id: string;
+          shared_by_user_id: string;
+          shared_with_email?: string | null;
+          shared_with_user_id?: string | null;
+          shared_with_ws_id?: string | null;
+          updated_at?: string;
+        };
+        Update: {
+          created_at?: string;
+          id?: string;
+          permission?: string;
+          plan_id?: string;
+          shared_by_user_id?: string;
+          shared_with_email?: string | null;
+          shared_with_user_id?: string | null;
+          shared_with_ws_id?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'task_plan_shares_plan_id_fkey';
+            columns: ['plan_id'];
+            isOneToOne: false;
+            referencedRelation: 'task_plans';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_plan_shares_shared_by_user_id_fkey';
+            columns: ['shared_by_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_plan_shares_shared_by_user_id_fkey';
+            columns: ['shared_by_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_plan_shares_shared_with_user_id_fkey';
+            columns: ['shared_with_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_plan_shares_shared_with_user_id_fkey';
+            columns: ['shared_with_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_plan_shares_shared_with_ws_id_fkey';
+            columns: ['shared_with_ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_plan_shares_shared_with_ws_id_fkey';
+            columns: ['shared_with_ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['personal_ws_id'];
+          },
+          {
+            foreignKeyName: 'task_plan_shares_shared_with_ws_id_fkey';
+            columns: ['shared_with_ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_plan_shares_shared_with_ws_id_fkey';
+            columns: ['shared_with_ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      task_plan_workspaces: {
+        Row: {
+          added_by_user_id: string;
+          created_at: string;
+          plan_id: string;
+          ws_id: string;
+        };
+        Insert: {
+          added_by_user_id: string;
+          created_at?: string;
+          plan_id: string;
+          ws_id: string;
+        };
+        Update: {
+          added_by_user_id?: string;
+          created_at?: string;
+          plan_id?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'task_plan_workspaces_added_by_user_id_fkey';
+            columns: ['added_by_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_plan_workspaces_added_by_user_id_fkey';
+            columns: ['added_by_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_plan_workspaces_plan_id_fkey';
+            columns: ['plan_id'];
+            isOneToOne: false;
+            referencedRelation: 'task_plans';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_plan_workspaces_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_plan_workspaces_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['personal_ws_id'];
+          },
+          {
+            foreignKeyName: 'task_plan_workspaces_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_plan_workspaces_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      task_plans: {
+        Row: {
+          archived_at: string | null;
+          created_at: string;
+          default_target_board_id: string | null;
+          default_target_list_id: string | null;
+          default_target_ws_id: string | null;
+          id: string;
+          owner_id: string;
+          period_end: string;
+          period_start: string;
+          period_type: string;
+          personal_ws_id: string;
+          status: string;
+          timezone: string;
+          title: string;
+          updated_at: string;
+        };
+        Insert: {
+          archived_at?: string | null;
+          created_at?: string;
+          default_target_board_id?: string | null;
+          default_target_list_id?: string | null;
+          default_target_ws_id?: string | null;
+          id?: string;
+          owner_id: string;
+          period_end: string;
+          period_start: string;
+          period_type: string;
+          personal_ws_id: string;
+          status?: string;
+          timezone?: string;
+          title: string;
+          updated_at?: string;
+        };
+        Update: {
+          archived_at?: string | null;
+          created_at?: string;
+          default_target_board_id?: string | null;
+          default_target_list_id?: string | null;
+          default_target_ws_id?: string | null;
+          id?: string;
+          owner_id?: string;
+          period_end?: string;
+          period_start?: string;
+          period_type?: string;
+          personal_ws_id?: string;
+          status?: string;
+          timezone?: string;
+          title?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'task_plans_default_target_board_id_fkey';
+            columns: ['default_target_board_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_boards';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_plans_default_target_list_id_fkey';
+            columns: ['default_target_list_id'];
+            isOneToOne: false;
+            referencedRelation: 'task_lists';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_plans_default_target_ws_id_fkey';
+            columns: ['default_target_ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_plans_default_target_ws_id_fkey';
+            columns: ['default_target_ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['personal_ws_id'];
+          },
+          {
+            foreignKeyName: 'task_plans_default_target_ws_id_fkey';
+            columns: ['default_target_ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_plans_default_target_ws_id_fkey';
+            columns: ['default_target_ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_plans_owner_id_fkey';
+            columns: ['owner_id'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_plans_owner_id_fkey';
+            columns: ['owner_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_plans_personal_ws_id_fkey';
+            columns: ['personal_ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_plans_personal_ws_id_fkey';
+            columns: ['personal_ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['personal_ws_id'];
+          },
+          {
+            foreignKeyName: 'task_plans_personal_ws_id_fkey';
+            columns: ['personal_ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_plans_personal_ws_id_fkey';
+            columns: ['personal_ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      task_profile_progress_settings: {
+        Row: {
+          created_at: string;
+          display_name: string | null;
+          show_goals: boolean;
+          show_leaderboards: boolean;
+          show_progress: boolean;
+          updated_at: string;
+          user_id: string;
+          visibility: string;
+          ws_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          display_name?: string | null;
+          show_goals?: boolean;
+          show_leaderboards?: boolean;
+          show_progress?: boolean;
+          updated_at?: string;
+          user_id: string;
+          visibility?: string;
+          ws_id: string;
+        };
+        Update: {
+          created_at?: string;
+          display_name?: string | null;
+          show_goals?: boolean;
+          show_leaderboards?: boolean;
+          show_progress?: boolean;
+          updated_at?: string;
+          user_id?: string;
+          visibility?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'task_profile_progress_settings_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_profile_progress_settings_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_profile_progress_settings_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_profile_progress_settings_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['personal_ws_id'];
+          },
+          {
+            foreignKeyName: 'task_profile_progress_settings_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_profile_progress_settings_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      task_progress_entries: {
+        Row: {
+          board_id: string | null;
+          created_at: string;
+          created_by: string;
+          deleted_at: string | null;
+          entry_date: string;
+          id: string;
+          list_id: string | null;
+          metric_id: string;
+          mode: string;
+          note: string | null;
+          project_id: string | null;
+          source_id: string | null;
+          source_type: string;
+          tags: string[];
+          task_id: string | null;
+          updated_at: string;
+          value: number;
+          ws_id: string;
+        };
+        Insert: {
+          board_id?: string | null;
+          created_at?: string;
+          created_by: string;
+          deleted_at?: string | null;
+          entry_date?: string;
+          id?: string;
+          list_id?: string | null;
+          metric_id: string;
+          mode?: string;
+          note?: string | null;
+          project_id?: string | null;
+          source_id?: string | null;
+          source_type?: string;
+          tags?: string[];
+          task_id?: string | null;
+          updated_at?: string;
+          value: number;
+          ws_id: string;
+        };
+        Update: {
+          board_id?: string | null;
+          created_at?: string;
+          created_by?: string;
+          deleted_at?: string | null;
+          entry_date?: string;
+          id?: string;
+          list_id?: string | null;
+          metric_id?: string;
+          mode?: string;
+          note?: string | null;
+          project_id?: string | null;
+          source_id?: string | null;
+          source_type?: string;
+          tags?: string[];
+          task_id?: string | null;
+          updated_at?: string;
+          value?: number;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'task_progress_entries_board_id_fkey';
+            columns: ['board_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_boards';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_progress_entries_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_progress_entries_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_progress_entries_list_id_fkey';
+            columns: ['list_id'];
+            isOneToOne: false;
+            referencedRelation: 'task_lists';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_progress_entries_metric_id_fkey';
+            columns: ['metric_id'];
+            isOneToOne: false;
+            referencedRelation: 'task_progress_metrics';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_progress_entries_project_id_fkey';
+            columns: ['project_id'];
+            isOneToOne: false;
+            referencedRelation: 'task_projects';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_progress_entries_task_id_fkey';
+            columns: ['task_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__tasks';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_progress_entries_task_id_fkey';
+            columns: ['task_id'];
+            isOneToOne: false;
+            referencedRelation: 'tasks';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_progress_entries_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_progress_entries_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['personal_ws_id'];
+          },
+          {
+            foreignKeyName: 'task_progress_entries_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_progress_entries_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      task_progress_goals: {
+        Row: {
+          archived_at: string | null;
+          board_id: string | null;
+          created_at: string;
+          description: string | null;
+          goal_type: string;
+          id: string;
+          metric_id: string;
+          name: string;
+          owner_id: string;
+          period_end: string | null;
+          period_start: string;
+          project_id: string | null;
+          recurrence: string;
+          starred: boolean;
+          status: string;
+          tags: string[];
+          target_value: number;
+          task_id: string | null;
+          updated_at: string;
+          visibility: string;
+          ws_id: string;
+        };
+        Insert: {
+          archived_at?: string | null;
+          board_id?: string | null;
+          created_at?: string;
+          description?: string | null;
+          goal_type?: string;
+          id?: string;
+          metric_id: string;
+          name: string;
+          owner_id: string;
+          period_end?: string | null;
+          period_start: string;
+          project_id?: string | null;
+          recurrence?: string;
+          starred?: boolean;
+          status?: string;
+          tags?: string[];
+          target_value: number;
+          task_id?: string | null;
+          updated_at?: string;
+          visibility?: string;
+          ws_id: string;
+        };
+        Update: {
+          archived_at?: string | null;
+          board_id?: string | null;
+          created_at?: string;
+          description?: string | null;
+          goal_type?: string;
+          id?: string;
+          metric_id?: string;
+          name?: string;
+          owner_id?: string;
+          period_end?: string | null;
+          period_start?: string;
+          project_id?: string | null;
+          recurrence?: string;
+          starred?: boolean;
+          status?: string;
+          tags?: string[];
+          target_value?: number;
+          task_id?: string | null;
+          updated_at?: string;
+          visibility?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'task_progress_goals_board_id_fkey';
+            columns: ['board_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_boards';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_progress_goals_metric_id_fkey';
+            columns: ['metric_id'];
+            isOneToOne: false;
+            referencedRelation: 'task_progress_metrics';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_progress_goals_owner_id_fkey';
+            columns: ['owner_id'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_progress_goals_owner_id_fkey';
+            columns: ['owner_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_progress_goals_project_id_fkey';
+            columns: ['project_id'];
+            isOneToOne: false;
+            referencedRelation: 'task_projects';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_progress_goals_task_id_fkey';
+            columns: ['task_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__tasks';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_progress_goals_task_id_fkey';
+            columns: ['task_id'];
+            isOneToOne: false;
+            referencedRelation: 'tasks';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_progress_goals_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_progress_goals_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['personal_ws_id'];
+          },
+          {
+            foreignKeyName: 'task_progress_goals_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_progress_goals_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      task_progress_metrics: {
+        Row: {
+          aggregation: string;
+          archived_at: string | null;
+          created_at: string;
+          created_by: string | null;
+          description: string | null;
+          id: string;
+          is_default: boolean;
+          name: string;
+          unit_kind: string;
+          unit_label: string;
+          updated_at: string;
+          ws_id: string;
+        };
+        Insert: {
+          aggregation?: string;
+          archived_at?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          description?: string | null;
+          id?: string;
+          is_default?: boolean;
+          name: string;
+          unit_kind?: string;
+          unit_label: string;
+          updated_at?: string;
+          ws_id: string;
+        };
+        Update: {
+          aggregation?: string;
+          archived_at?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          description?: string | null;
+          id?: string;
+          is_default?: boolean;
+          name?: string;
+          unit_kind?: string;
+          unit_label?: string;
+          updated_at?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'task_progress_metrics_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_progress_metrics_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_progress_metrics_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_progress_metrics_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['personal_ws_id'];
+          },
+          {
+            foreignKeyName: 'task_progress_metrics_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_progress_metrics_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
             referencedColumns: ['id'];
           },
         ];
@@ -20795,6 +24013,152 @@ export type Database = {
             columns: ['task_id'];
             isOneToOne: false;
             referencedRelation: 'tasks';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      task_templates: {
+        Row: {
+          archived_at: string | null;
+          assignee_ids: string[];
+          created_at: string;
+          created_by: string;
+          default_board_id: string | null;
+          default_list_id: string | null;
+          description: string | null;
+          description_yjs_state: number[] | null;
+          end_date: string | null;
+          estimation_points: number | null;
+          id: string;
+          label_ids: string[];
+          name: string;
+          priority: Database['public']['Enums']['task_priority'] | null;
+          project_ids: string[];
+          slug: string;
+          source_task_id: string | null;
+          start_date: string | null;
+          task_name: string;
+          updated_at: string;
+          visibility: Database['public']['Enums']['task_template_visibility'];
+          ws_id: string;
+        };
+        Insert: {
+          archived_at?: string | null;
+          assignee_ids?: string[];
+          created_at?: string;
+          created_by?: string;
+          default_board_id?: string | null;
+          default_list_id?: string | null;
+          description?: string | null;
+          description_yjs_state?: number[] | null;
+          end_date?: string | null;
+          estimation_points?: number | null;
+          id?: string;
+          label_ids?: string[];
+          name: string;
+          priority?: Database['public']['Enums']['task_priority'] | null;
+          project_ids?: string[];
+          slug: string;
+          source_task_id?: string | null;
+          start_date?: string | null;
+          task_name: string;
+          updated_at?: string;
+          visibility?: Database['public']['Enums']['task_template_visibility'];
+          ws_id: string;
+        };
+        Update: {
+          archived_at?: string | null;
+          assignee_ids?: string[];
+          created_at?: string;
+          created_by?: string;
+          default_board_id?: string | null;
+          default_list_id?: string | null;
+          description?: string | null;
+          description_yjs_state?: number[] | null;
+          end_date?: string | null;
+          estimation_points?: number | null;
+          id?: string;
+          label_ids?: string[];
+          name?: string;
+          priority?: Database['public']['Enums']['task_priority'] | null;
+          project_ids?: string[];
+          slug?: string;
+          source_task_id?: string | null;
+          start_date?: string | null;
+          task_name?: string;
+          updated_at?: string;
+          visibility?: Database['public']['Enums']['task_template_visibility'];
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'task_templates_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_templates_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_templates_default_board_id_fkey';
+            columns: ['default_board_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_boards';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_templates_default_list_id_fkey';
+            columns: ['default_list_id'];
+            isOneToOne: false;
+            referencedRelation: 'task_lists';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_templates_source_task_id_fkey';
+            columns: ['source_task_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__tasks';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_templates_source_task_id_fkey';
+            columns: ['source_task_id'];
+            isOneToOne: false;
+            referencedRelation: 'tasks';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_templates_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_templates_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['personal_ws_id'];
+          },
+          {
+            foreignKeyName: 'task_templates_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_templates_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
             referencedColumns: ['id'];
           },
         ];
@@ -22443,7 +25807,9 @@ export type Database = {
           created_at: string;
           date: string;
           group_id: string;
+          id: string;
           notes: string;
+          session_id: string | null;
           status: string;
           user_id: string;
         };
@@ -22451,7 +25817,9 @@ export type Database = {
           created_at?: string;
           date: string;
           group_id: string;
+          id?: string;
           notes?: string;
+          session_id?: string | null;
           status: string;
           user_id: string;
         };
@@ -22459,7 +25827,9 @@ export type Database = {
           created_at?: string;
           date?: string;
           group_id?: string;
+          id?: string;
           notes?: string;
+          session_id?: string | null;
           status?: string;
           user_id?: string;
         };
@@ -24375,10 +27745,12 @@ export type Database = {
           end_at: string;
           external_calendar_id: string | null;
           external_event_id: string | null;
+          external_updated_at: string | null;
           google_calendar_id: string | null;
           google_event_id: string | null;
           id: string;
           is_encrypted: boolean;
+          last_synced_at: string | null;
           location: string | null;
           locked: boolean;
           provider: Database['public']['Enums']['calendar_provider'] | null;
@@ -24388,6 +27760,8 @@ export type Database = {
             | null;
           source_calendar_id: string | null;
           start_at: string;
+          sync_error: string | null;
+          sync_status: string;
           task_id: string | null;
           title: string;
           ws_id: string;
@@ -24399,10 +27773,12 @@ export type Database = {
           end_at: string;
           external_calendar_id?: string | null;
           external_event_id?: string | null;
+          external_updated_at?: string | null;
           google_calendar_id?: string | null;
           google_event_id?: string | null;
           id?: string;
           is_encrypted?: boolean;
+          last_synced_at?: string | null;
           location?: string | null;
           locked?: boolean;
           provider?: Database['public']['Enums']['calendar_provider'] | null;
@@ -24412,6 +27788,8 @@ export type Database = {
             | null;
           source_calendar_id?: string | null;
           start_at: string;
+          sync_error?: string | null;
+          sync_status?: string;
           task_id?: string | null;
           title?: string;
           ws_id: string;
@@ -24423,10 +27801,12 @@ export type Database = {
           end_at?: string;
           external_calendar_id?: string | null;
           external_event_id?: string | null;
+          external_updated_at?: string | null;
           google_calendar_id?: string | null;
           google_event_id?: string | null;
           id?: string;
           is_encrypted?: boolean;
+          last_synced_at?: string | null;
           location?: string | null;
           locked?: boolean;
           provider?: Database['public']['Enums']['calendar_provider'] | null;
@@ -24436,6 +27816,8 @@ export type Database = {
             | null;
           source_calendar_id?: string | null;
           start_at?: string;
+          sync_error?: string | null;
+          sync_status?: string;
           task_id?: string | null;
           title?: string;
           ws_id?: string;
@@ -25032,30 +28414,45 @@ export type Database = {
         Row: {
           created_at: string;
           cron_run_id: number | null;
+          duration_ms: number | null;
           end_time: string | null;
+          endpoint_url: string | null;
+          error: string | null;
+          http_status: number | null;
           id: string;
           job_id: string;
           response: string | null;
+          source: string;
           start_time: string | null;
           status: string;
         };
         Insert: {
           created_at?: string;
           cron_run_id?: number | null;
+          duration_ms?: number | null;
           end_time?: string | null;
+          endpoint_url?: string | null;
+          error?: string | null;
+          http_status?: number | null;
           id?: string;
           job_id: string;
           response?: string | null;
+          source?: string;
           start_time?: string | null;
           status: string;
         };
         Update: {
           created_at?: string;
           cron_run_id?: number | null;
+          duration_ms?: number | null;
           end_time?: string | null;
+          endpoint_url?: string | null;
+          error?: string | null;
+          http_status?: number | null;
           id?: string;
           job_id?: string;
           response?: string | null;
+          source?: string;
           start_time?: string | null;
           status?: string;
         };
@@ -25074,30 +28471,72 @@ export type Database = {
           active: boolean;
           created_at: string;
           cron_job_id: number | null;
-          dataset_id: string;
+          dataset_id: string | null;
+          endpoint_url: string | null;
+          external_app_id: string | null;
+          external_job_key: string | null;
+          failure_count: number;
+          headers_config: Json;
+          http_method: string;
           id: string;
+          last_run_at: string | null;
+          last_status: string | null;
+          locked_at: string | null;
+          locked_by: string | null;
           name: string;
+          next_run_at: string | null;
+          retry_count: number;
           schedule: string;
+          schedule_timezone: string;
+          timeout_ms: number;
           ws_id: string;
         };
         Insert: {
           active?: boolean;
           created_at?: string;
           cron_job_id?: number | null;
-          dataset_id: string;
+          dataset_id?: string | null;
+          endpoint_url?: string | null;
+          external_app_id?: string | null;
+          external_job_key?: string | null;
+          failure_count?: number;
+          headers_config?: Json;
+          http_method?: string;
           id?: string;
+          last_run_at?: string | null;
+          last_status?: string | null;
+          locked_at?: string | null;
+          locked_by?: string | null;
           name: string;
+          next_run_at?: string | null;
+          retry_count?: number;
           schedule: string;
+          schedule_timezone?: string;
+          timeout_ms?: number;
           ws_id: string;
         };
         Update: {
           active?: boolean;
           created_at?: string;
           cron_job_id?: number | null;
-          dataset_id?: string;
+          dataset_id?: string | null;
+          endpoint_url?: string | null;
+          external_app_id?: string | null;
+          external_job_key?: string | null;
+          failure_count?: number;
+          headers_config?: Json;
+          http_method?: string;
           id?: string;
+          last_run_at?: string | null;
+          last_status?: string | null;
+          locked_at?: string | null;
+          locked_by?: string | null;
           name?: string;
+          next_run_at?: string | null;
+          retry_count?: number;
           schedule?: string;
+          schedule_timezone?: string;
+          timeout_ms?: number;
           ws_id?: string;
         };
         Relationships: [
@@ -29336,7 +32775,6 @@ export type Database = {
           is_guest: boolean | null;
           name: string;
           notes: string | null;
-          sessions: string[] | null;
           starting_date: string | null;
           ws_id: string;
         };
@@ -29352,7 +32790,6 @@ export type Database = {
           is_guest?: boolean | null;
           name: string;
           notes?: string | null;
-          sessions?: string[] | null;
           starting_date?: string | null;
           ws_id: string;
         };
@@ -29368,7 +32805,6 @@ export type Database = {
           is_guest?: boolean | null;
           name?: string;
           notes?: string | null;
-          sessions?: string[] | null;
           starting_date?: string | null;
           ws_id?: string;
         };
@@ -31220,32 +34656,6 @@ export type Database = {
           tags: Json | null;
           ws_id: string | null;
         };
-        Insert: {
-          archived?: boolean | null;
-          created_at?: string | null;
-          ending_date?: string | null;
-          id?: string | null;
-          name?: string | null;
-          notes?: string | null;
-          sessions?: string[] | null;
-          starting_date?: string | null;
-          tag_count?: never;
-          tags?: never;
-          ws_id?: string | null;
-        };
-        Update: {
-          archived?: boolean | null;
-          created_at?: string | null;
-          ending_date?: string | null;
-          id?: string | null;
-          name?: string | null;
-          notes?: string | null;
-          sessions?: string[] | null;
-          starting_date?: string | null;
-          tag_count?: never;
-          tags?: never;
-          ws_id?: string | null;
-        };
         Relationships: [
           {
             foreignKeyName: 'workspace_user_roles_ws_id_fkey';
@@ -31859,7 +35269,24 @@ export type Database = {
           p_title: string;
           p_unit_id: string;
           p_unit_price: number;
+          p_variant_id?: string;
           p_warehouse_id: string;
+          p_ws_id: string;
+        };
+        Returns: number;
+      };
+      _inventory_reserve_bundle_components: {
+        Args: {
+          p_bundle_id: string;
+          p_checkout_id: string;
+          p_currency: string;
+          p_expires_at: string;
+          p_fixed_price: number;
+          p_line_payload: Json;
+          p_listing_id: string;
+          p_now: string;
+          p_quantity: number;
+          p_storefront_id: string;
           p_ws_id: string;
         };
         Returns: number;
@@ -32033,6 +35460,15 @@ export type Database = {
           ws_name: string;
         }[];
       };
+      admin_list_rate_limit_counters: {
+        Args: { p_bucket_prefix?: string; p_limit?: number };
+        Returns: {
+          bucket: string;
+          current_count: number;
+          window_seconds: number;
+          window_started_at: string;
+        }[];
+      };
       admin_reset_rate_limits: { Args: never; Returns: number };
       admin_update_workspace_user_with_audit_actor: {
         Args: {
@@ -32199,6 +35635,14 @@ export type Database = {
         Args: { p_is_personal: boolean; p_user_id: string; p_ws_id: string };
         Returns: number;
       };
+      can_access_task_plan: {
+        Args: {
+          p_plan_id: string;
+          p_required_permission?: string;
+          p_user_id?: string;
+        };
+        Returns: boolean;
+      };
       can_create_workspace: { Args: { p_user_id: string }; Returns: boolean };
       can_manage_indicator: {
         Args: { p_indicator_id: string };
@@ -32287,6 +35731,17 @@ export type Database = {
           p_checkout_id: string;
           p_now?: string;
           p_polar_order_id: string;
+          p_ws_id: string;
+        };
+        Returns: string;
+      };
+      complete_inventory_checkout_session_square_payment: {
+        Args: {
+          p_checkout_id: string;
+          p_now?: string;
+          p_square_order_id?: string;
+          p_square_payment_id: string;
+          p_ws_id: string;
         };
         Returns: string;
       };
@@ -32341,6 +35796,17 @@ export type Database = {
       count_user_workspaces: { Args: { user_id: string }; Returns: number };
       create_ai_chat: {
         Args: { message: string; model: string; title: string };
+        Returns: string;
+      };
+      create_course_test_with_modules: {
+        Args: {
+          p_course_id: string;
+          p_description?: string;
+          p_duration_in_minutes?: number;
+          p_module_ids: string[];
+          p_name: string;
+          p_start_at?: string;
+        };
         Returns: string;
       };
       create_guest_lead_email: {
@@ -32403,6 +35869,7 @@ export type Database = {
         Args: {
           p_board_id: string;
           p_color?: string;
+          p_creator_id?: string;
           p_name: string;
           p_status: Database['public']['Enums']['task_board_status'];
         };
@@ -33576,7 +37043,9 @@ export type Database = {
           p_user_id?: string;
         };
         Returns: {
+          absolute_limits: Json;
           decision_source: string;
+          limit_mode: Database['public']['Enums']['rate_limit_mode'];
           subject_key: string;
           tier: Database['public']['Enums']['abuse_risk_tier'];
           trust_multiplier: number;
@@ -34704,6 +38173,22 @@ export type Database = {
         Args: { p_board_id: string };
         Returns: boolean;
       };
+      is_task_plan_intended_workspace: {
+        Args: { p_plan_id: string; p_ws_id: string };
+        Returns: boolean;
+      };
+      is_task_plan_personal_workspace: {
+        Args: { p_user_id?: string; p_ws_id: string };
+        Returns: boolean;
+      };
+      is_task_plan_workspace_member: {
+        Args: { p_user_id?: string; p_ws_id: string };
+        Returns: boolean;
+      };
+      is_task_progress_workspace_member: {
+        Args: { p_user_id?: string; p_ws_id: string };
+        Returns: boolean;
+      };
       is_task_sharing_enabled: {
         Args: { p_task_id: string };
         Returns: boolean;
@@ -34759,6 +38244,15 @@ export type Database = {
           email_subject_template: string;
           email_template: string;
           notification_type: string;
+        }[];
+      };
+      list_trusted_subjects_for_cache: {
+        Args: { p_min_multiplier?: number };
+        Returns: {
+          absolute_limits: Json;
+          limit_mode: Database['public']['Enums']['rate_limit_mode'];
+          subject_key: string;
+          trust_multiplier: number;
         }[];
       };
       list_workspace_user_audit_bucket_counts: {
@@ -34853,6 +38347,7 @@ export type Database = {
           match_threshold?: number;
           query_embedding: unknown;
           query_text: string;
+          search_mode?: string;
         };
         Returns: {
           board_id: string;
@@ -35106,7 +38601,7 @@ export type Database = {
         }[];
       };
       release_inventory_checkout_session: {
-        Args: { p_checkout_id: string; p_now?: string };
+        Args: { p_checkout_id: string; p_now?: string; p_ws_id: string };
         Returns: undefined;
       };
       release_metered_embedding_credits: {
@@ -35627,6 +39122,15 @@ export type Database = {
         Args: { events: Json };
         Returns: Json;
       };
+      upsert_course_test_question: {
+        Args: {
+          p_module_id: string;
+          p_quiz: Json;
+          p_test_id: string;
+          p_ws_id: string;
+        };
+        Returns: string;
+      };
       upsert_personal_task_placement: {
         Args: {
           p_next_task_id?: string;
@@ -35779,7 +39283,8 @@ export type Database = {
         | 'api_key'
         | 'ip'
         | 'cidr'
-        | 'user_location';
+        | 'user_location'
+        | 'workspace';
       abuse_risk_tier:
         | 'trusted'
         | 'standard'
@@ -37573,6 +41078,11 @@ export type Database = {
         | 'mail'
         | 'other';
       promotion_type: 'REGULAR' | 'REFERRAL';
+      rate_limit_mode:
+        | 'inherit_multiplier'
+        | 'absolute'
+        | 'unlimited'
+        | 'blocked';
       recording_status:
         | 'recording'
         | 'interrupted'
@@ -37602,6 +41112,7 @@ export type Database = {
       task_relationship_type: 'parent_child' | 'blocks' | 'related';
       task_share_permission: 'view' | 'edit';
       task_share_public_access: 'none' | 'view';
+      task_template_visibility: 'private' | 'workspace';
       time_of_day_preference: 'morning' | 'afternoon' | 'evening' | 'night';
       time_tracking_request_activity_action:
         | 'CREATED'
@@ -38407,6 +41918,7 @@ export const Constants = {
         'ip',
         'cidr',
         'user_location',
+        'workspace',
       ],
       abuse_risk_tier: [
         'trusted',
@@ -40215,6 +43727,12 @@ export const Constants = {
         'other',
       ],
       promotion_type: ['REGULAR', 'REFERRAL'],
+      rate_limit_mode: [
+        'inherit_multiplier',
+        'absolute',
+        'unlimited',
+        'blocked',
+      ],
       recording_status: [
         'recording',
         'interrupted',
@@ -40247,6 +43765,7 @@ export const Constants = {
       task_relationship_type: ['parent_child', 'blocks', 'related'],
       task_share_permission: ['view', 'edit'],
       task_share_public_access: ['none', 'view'],
+      task_template_visibility: ['private', 'workspace'],
       time_of_day_preference: ['morning', 'afternoon', 'evening', 'night'],
       time_tracking_request_activity_action: [
         'CREATED',

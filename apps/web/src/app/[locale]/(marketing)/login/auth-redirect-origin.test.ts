@@ -41,6 +41,47 @@ describe('auth redirect origin', () => {
     ).toBe('https://tuturuuu.com');
   });
 
+  it('canonicalizes the current platform http origin to https', () => {
+    expect(
+      resolveAuthRedirectOrigin({
+        currentOrigin: 'http://tuturuuu.com',
+      })
+    ).toBe('https://tuturuuu.com');
+  });
+
+  it('uses the canonical platform origin for production wildcard subdomains', () => {
+    expect(
+      resolveAuthRedirectOrigin({
+        currentOrigin: 'https://vc.tuturuuu.com',
+        isProduction: true,
+      })
+    ).toBe('https://tuturuuu.com');
+  });
+
+  it('can preserve a managed platform origin for OAuth callbacks', () => {
+    vi.stubEnv('WEB_APP_URL', 'https://tuturuuu.com');
+
+    expect(
+      resolveAuthRedirectOrigin({
+        currentOrigin: 'https://vercel.tuturuuu.com',
+        isProduction: true,
+        preserveCurrentManagedOrigin: true,
+      })
+    ).toBe('https://vercel.tuturuuu.com');
+  });
+
+  it('does not preserve known satellite app origins as platform callbacks', () => {
+    vi.stubEnv('WEB_APP_URL', 'https://tuturuuu.com');
+
+    expect(
+      resolveAuthRedirectOrigin({
+        currentOrigin: 'https://tasks.tuturuuu.com',
+        isProduction: true,
+        preserveCurrentManagedOrigin: true,
+      })
+    ).toBe('https://tuturuuu.com');
+  });
+
   it('ignores configured non-platform app origins', () => {
     vi.stubEnv('NEXT_PUBLIC_APP_URL', 'https://chat.tuturuuu.com');
 
@@ -51,13 +92,14 @@ describe('auth redirect origin', () => {
     ).toBe('http://localhost:7803');
   });
 
-  it('uses forwarded public host headers when the current origin is wildcard', () => {
+  it('ignores forwarded public host headers when the current origin is wildcard', () => {
     expect(
       resolveAuthRedirectOrigin({
         currentOrigin: 'http://0.0.0.0:7803',
+        isProduction: true,
         request: {
           headers: new Headers({
-            'x-forwarded-host': 'tuturuuu.com',
+            'x-forwarded-host': 'evil.test',
             'x-forwarded-proto': 'https',
           }),
         },
@@ -69,12 +111,6 @@ describe('auth redirect origin', () => {
     expect(
       resolveAuthRedirectOrigin({
         currentOrigin: 'https://tuturuuu.localhost:1355',
-        request: {
-          headers: new Headers({
-            'x-forwarded-host': 'tuturuuu.localhost',
-            'x-forwarded-proto': 'https',
-          }),
-        },
       })
     ).toBe('https://tuturuuu.localhost:1355');
   });
@@ -86,12 +122,6 @@ describe('auth redirect origin', () => {
     expect(
       resolveAuthRedirectOrigin({
         currentOrigin: 'https://tuturuuu.localhost',
-        request: {
-          headers: new Headers({
-            'x-forwarded-host': 'tuturuuu.localhost',
-            'x-forwarded-proto': 'https',
-          }),
-        },
       })
     ).toBe('https://tuturuuu.localhost:1355');
   });

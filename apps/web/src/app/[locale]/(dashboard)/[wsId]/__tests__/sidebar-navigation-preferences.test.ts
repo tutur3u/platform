@@ -160,6 +160,36 @@ describe('sidebar navigation preferences', () => {
     expect(result.normalizedConfig.hidden).toEqual(['forms']);
   });
 
+  it('reveals a hidden exact item when a wildcard alias matches', () => {
+    const taskBoardLinks = links.map((link) =>
+      link?.id === 'tasks'
+        ? {
+            ...link,
+            aliases: ['/personal/tasks/boards/*'],
+            matchExact: true,
+          }
+        : link
+    );
+    const result = applySidebarNavigationPreferences(
+      taskBoardLinks,
+      {
+        hidden: ['tasks'],
+      },
+      {
+        pathname: '/personal/tasks/boards/board-1',
+      }
+    );
+
+    const activeHidden = result.links.find((link) => link?.id === 'tasks');
+
+    expect(activeHidden).toMatchObject({
+      id: 'tasks',
+      preferenceHiddenActive: true,
+    });
+    expect(result.archivedLinks.map((link) => link.id)).toEqual(['tasks']);
+    expect(result.normalizedConfig.hidden).toEqual(['tasks']);
+  });
+
   it('keeps a hidden external Mail app link archived on matching local paths', () => {
     const result = applySidebarNavigationPreferences(
       [

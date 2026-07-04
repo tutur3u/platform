@@ -5,6 +5,11 @@ import {
   LOCAL_E2E_SUPABASE_SECRET_KEY,
   LOCAL_E2E_SUPABASE_URL,
 } from './helpers/environment';
+import {
+  readWorkspaceDefaultCurrencyConfig,
+  restoreWorkspaceDefaultCurrencyConfig,
+  setWorkspaceDefaultCurrencyConfig,
+} from './helpers/workspace-currency-config';
 
 const ROOT_WORKSPACE_ID = '00000000-0000-0000-0000-000000000000';
 const SUPABASE_URL =
@@ -257,6 +262,118 @@ test.describe('Workspace debt loans private schema API', () => {
           failOnStatusCode: false,
           headers: serviceHeaders({ schema: 'private' }),
         }
+      );
+    }
+  });
+
+  test('uses workspace default currency when omitted and rejects unsupported explicit currency', async ({
+    request,
+  }) => {
+    const unsupportedDebtName = `Unsupported debt loan ${Date.now()}`;
+    const debtName = `Workspace-default debt loan ${Date.now()}`;
+    const previousConfig = await readWorkspaceDefaultCurrencyConfig(
+      request,
+      ROOT_WORKSPACE_ID
+    );
+    let debtId: string | undefined;
+
+    try {
+      await setWorkspaceDefaultCurrencyConfig(
+        request,
+        ROOT_WORKSPACE_ID,
+        'EUR'
+      );
+
+      const createResponse = await request.post(
+        `/api/v1/workspaces/${ROOT_WORKSPACE_ID}/finance/debts`,
+        {
+          data: {
+            counterparty: 'Workspace default lender',
+            description: 'Created without explicit currency',
+            name: debtName,
+            principal_amount: 12345,
+            start_date: '2030-02-15',
+            type: 'loan',
+          },
+          failOnStatusCode: false,
+        }
+      );
+
+      expect(createResponse.status()).toBe(201);
+      const createdDebt = (await createResponse.json()) as {
+        currency: string;
+        id: string;
+        name: string;
+      };
+      debtId = createdDebt.id;
+      expect(createdDebt).toEqual(
+        expect.objectContaining({
+          currency: 'EUR',
+          id: expect.any(String),
+          name: debtName,
+        })
+      );
+
+      const privateReadResponse = await request.get(
+        `${SUPABASE_URL}/rest/v1/workspace_debt_loans?id=eq.${debtId}&select=id,currency`,
+        {
+          failOnStatusCode: false,
+          headers: serviceHeaders({ schema: 'private' }),
+        }
+      );
+
+      expect(privateReadResponse.status()).toBe(200);
+      await expect(privateReadResponse.json()).resolves.toEqual([
+        {
+          currency: 'EUR',
+          id: debtId,
+        },
+      ]);
+
+      const unsupportedResponse = await request.post(
+        `/api/v1/workspaces/${ROOT_WORKSPACE_ID}/finance/debts`,
+        {
+          data: {
+            currency: 'DOGE',
+            name: unsupportedDebtName,
+            principal_amount: 5000,
+            start_date: '2030-02-16',
+            type: 'debt',
+          },
+          failOnStatusCode: false,
+        }
+      );
+
+      expect(unsupportedResponse.status()).toBe(400);
+      await expect(unsupportedResponse.json()).resolves.toEqual({
+        message: 'Unsupported currency',
+      });
+
+      const unsupportedPrivateReadResponse = await request.get(
+        `${SUPABASE_URL}/rest/v1/workspace_debt_loans?ws_id=eq.${ROOT_WORKSPACE_ID}&name=eq.${encodeURIComponent(unsupportedDebtName)}&select=id`,
+        {
+          failOnStatusCode: false,
+          headers: serviceHeaders({ schema: 'private' }),
+        }
+      );
+
+      expect(unsupportedPrivateReadResponse.status()).toBe(200);
+      await expect(unsupportedPrivateReadResponse.json()).resolves.toEqual([]);
+    } finally {
+      if (debtId) {
+        await request.delete(
+          `${SUPABASE_URL}/rest/v1/workspace_debt_loans?id=eq.${debtId}`,
+          {
+            failOnStatusCode: false,
+            headers: serviceHeaders({ schema: 'private' }),
+          }
+        );
+      }
+
+      await restoreWorkspaceDefaultCurrencyConfig(
+        request,
+        ROOT_WORKSPACE_ID,
+        previousConfig
       );
     }
   });

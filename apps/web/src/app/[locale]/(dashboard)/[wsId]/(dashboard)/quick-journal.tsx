@@ -42,6 +42,7 @@ import utc from 'dayjs/plugin/utc';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { getTasksAppUrlClient } from '@/lib/tasks-app-url-client';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -326,9 +327,10 @@ function QuickJournalContent({ wsId }: QuickJournalContentProps) {
     queryKey: ['workspace', wsId, 'boards-with-lists'],
     queryFn: async () => {
       const response = await fetch(
-        `/api/v1/workspaces/${wsId}/boards-with-lists`,
+        getTasksAppUrlClient(`/api/v1/workspaces/${wsId}/boards-with-lists`),
         {
           method: 'GET',
+          credentials: 'include',
           headers: {
             'Content-Type': 'application/json',
           },
@@ -439,21 +441,25 @@ function QuickJournalContent({ wsId }: QuickJournalContentProps) {
       clientTimezone: timezone,
       clientTimestamp,
     }) => {
-      const response = await fetch(`/api/v1/workspaces/${wsId}/tasks/journal`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          entry: previewText,
-          previewOnly: true,
-          generateDescriptions: shouldGenerateDescriptions,
-          generatePriority: shouldGeneratePriority,
-          generateLabels: shouldGenerateLabels,
-          clientTimezone: timezone,
-          clientTimestamp,
-        }),
-      });
+      const response = await fetch(
+        getTasksAppUrlClient(`/api/v1/workspaces/${wsId}/tasks/journal`),
+        {
+          method: 'POST',
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            entry: previewText,
+            previewOnly: true,
+            generateDescriptions: shouldGenerateDescriptions,
+            generatePriority: shouldGeneratePriority,
+            generateLabels: shouldGenerateLabels,
+            clientTimezone: timezone,
+            clientTimestamp,
+          }),
+        }
+      );
 
       const payload = await response.json().catch(() => null);
 
@@ -510,24 +516,28 @@ function QuickJournalContent({ wsId }: QuickJournalContentProps) {
       clientTimezone: timezone,
       clientTimestamp,
     }) => {
-      const response = await fetch(`/api/v1/workspaces/${wsId}/tasks/journal`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          entry: createText,
-          listId,
-          tasks,
-          generatedWithAI,
-          labelIds,
-          generateDescriptions: shouldGenerateDescriptions,
-          generatePriority: shouldGeneratePriority,
-          generateLabels: shouldGenerateLabels,
-          clientTimezone: timezone,
-          clientTimestamp,
-        }),
-      });
+      const response = await fetch(
+        getTasksAppUrlClient(`/api/v1/workspaces/${wsId}/tasks/journal`),
+        {
+          method: 'POST',
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            entry: createText,
+            listId,
+            tasks,
+            generatedWithAI,
+            labelIds,
+            generateDescriptions: shouldGenerateDescriptions,
+            generatePriority: shouldGeneratePriority,
+            generateLabels: shouldGenerateLabels,
+            clientTimezone: timezone,
+            clientTimestamp,
+          }),
+        }
+      );
 
       const payload = await response.json().catch(() => null);
 
@@ -733,9 +743,13 @@ function QuickJournalContent({ wsId }: QuickJournalContentProps) {
   const { data: workspaceLabels = [], isLoading: labelsLoading } = useQuery({
     queryKey: ['workspace', wsId, 'labels'],
     queryFn: async () => {
-      const response = await fetch(`/api/v1/workspaces/${wsId}/labels`, {
-        cache: 'no-store',
-      });
+      const response = await fetch(
+        getTasksAppUrlClient(`/api/v1/workspaces/${wsId}/labels`),
+        {
+          cache: 'no-store',
+          credentials: 'include',
+        }
+      );
       if (!response.ok) {
         throw new Error(t('errors.fetch_labels'));
       }

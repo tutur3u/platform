@@ -12,6 +12,7 @@ const useWorkspaceLabelsMock = vi.fn();
 const getWorkspaceTaskBoardMock = vi.fn();
 const listWorkspaceTasksMock = vi.fn();
 const useProgressiveBoardLoaderMock = vi.fn();
+const useBoardRealtimeMock = vi.fn();
 const revalidateLoadedListsMock = vi.fn();
 
 vi.mock('@tuturuuu/internal-api/tasks', () => ({
@@ -25,7 +26,10 @@ vi.mock('@tuturuuu/utils/task-helper', () => ({
 }));
 
 vi.mock('@tuturuuu/ui/hooks/useBoardRealtime', () => ({
-  useBoardRealtime: () => ({ broadcast: null }),
+  useBoardRealtime: (...args: unknown[]) => {
+    useBoardRealtimeMock(...args);
+    return { broadcast: null };
+  },
 }));
 
 vi.mock('next/navigation', () => ({
@@ -78,6 +82,7 @@ describe('BoardClient', () => {
         ],
       },
     });
+    useBoardRealtimeMock.mockReset();
     useProgressiveBoardLoaderMock.mockReset();
     revalidateLoadedListsMock.mockReset();
     revalidateLoadedListsMock.mockResolvedValue(undefined);
@@ -115,6 +120,105 @@ describe('BoardClient', () => {
     );
   });
 
+  it('refreshes board task cache without relationship summaries', async () => {
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: {
+          retry: false,
+        },
+      },
+    });
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <BoardClient
+          boardId="board-1"
+          workspace={{ id: 'workspace-uuid', personal: false } as any}
+          currentUserId="user-1"
+        />
+      </QueryClientProvider>
+    );
+
+    expect(await screen.findByTestId('board-views')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(getActiveBoardRefresh()).toBeInstanceOf(Function);
+    });
+
+    await act(async () => {
+      getActiveBoardRefresh()?.();
+    });
+
+    await waitFor(() => {
+      expect(listWorkspaceTasksMock).toHaveBeenCalledWith('board-ws-uuid', {
+        boardId: 'board-1',
+        includeRelationshipSummary: false,
+      });
+    });
+  });
+
+  it('uses the shared task board loading state while the board query resolves', () => {
+    getWorkspaceTaskBoardMock.mockReturnValue(new Promise(() => {}));
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: {
+          retry: false,
+        },
+      },
+    });
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <BoardClient
+          boardId="board-1"
+          workspace={{ id: 'workspace-uuid', personal: false } as any}
+          currentUserId="user-1"
+        />
+      </QueryClientProvider>
+    );
+
+    expect(screen.getByTestId('task-board-loading-state')).toBeInTheDocument();
+    expect(screen.getByTestId('task-board-loading-state')).not.toHaveClass(
+      '-m-4'
+    );
+    expect(screen.getByTestId('kanban-skeleton')).toBeInTheDocument();
+    expect(
+      screen.queryByTestId('task-board-header-skeleton')
+    ).not.toBeInTheDocument();
+    expect(screen.queryByText('Loading board...')).not.toBeInTheDocument();
+  });
+
+  it('can render the shared task board loading state as a full-bleed route root', () => {
+    getWorkspaceTaskBoardMock.mockReturnValue(new Promise(() => {}));
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: {
+          retry: false,
+        },
+      },
+    });
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <BoardClient
+          boardId="board-1"
+          workspace={{ id: 'workspace-uuid', personal: false } as any}
+          currentUserId="user-1"
+          rootLoading
+        />
+      </QueryClientProvider>
+    );
+
+    expect(screen.getByTestId('task-board-loading-state')).toHaveClass(
+      '-m-4',
+      'h-[calc(100dvh+2rem)]',
+      'w-[calc(100%+2rem)]'
+    );
+    expect(
+      screen.getByTestId('task-board-header-skeleton')
+    ).toBeInTheDocument();
+    expect(screen.getByTestId('kanban-skeleton')).toBeInTheDocument();
+  });
+
   it('can revalidate loaded board lists without invalidating visible task caches', async () => {
     const queryClient = new QueryClient({
       defaultOptions: {
@@ -143,6 +247,49 @@ describe('BoardClient', () => {
 
     await act(async () => {
       getActiveBoardRefresh()?.({ invalidateTasks: false });
+    });
+
+    expect(invalidateSpy).not.toHaveBeenCalledWith({
+      queryKey: ['tasks', 'board-1'],
+    });
+    expect(invalidateSpy).not.toHaveBeenCalledWith({
+      queryKey: ['tasks-full', 'board-1'],
+    });
+    expect(revalidateLoadedListsMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('revalidates loaded lists for relation broadcasts without invalidating visible task caches', async () => {
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: {
+          retry: false,
+        },
+      },
+    });
+    const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <BoardClient
+          boardId="board-1"
+          workspace={{ id: 'workspace-uuid', personal: false } as any}
+          currentUserId="user-1"
+        />
+      </QueryClientProvider>
+    );
+
+    expect(await screen.findByTestId('board-views')).toBeInTheDocument();
+
+    const realtimeOptions = useBoardRealtimeMock.mock.calls.find(
+      ([boardId]) => boardId === 'board-1'
+    )?.[1] as
+      | {
+          onTaskRelationsChange?: (taskIds: string[]) => void;
+        }
+      | undefined;
+
+    await act(async () => {
+      realtimeOptions?.onTaskRelationsChange?.(['task-1']);
     });
 
     expect(invalidateSpy).not.toHaveBeenCalledWith({

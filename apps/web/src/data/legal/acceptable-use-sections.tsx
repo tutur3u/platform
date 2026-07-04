@@ -10,7 +10,7 @@ import {
   Mail,
   ShieldAlert,
   UserCheck,
-} from '@tuturuuu/icons';
+} from '@tuturuuu/icons/lucide';
 import type { LegalSection } from '@/components/legal/legal-types';
 
 export const acceptableUseSections: LegalSection[] = [

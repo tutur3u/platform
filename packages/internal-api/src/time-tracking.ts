@@ -3,6 +3,7 @@ import {
   encodePathSegment,
   getInternalApiClient,
   type InternalApiClientOptions,
+  withTaskApiBaseUrl,
 } from './client';
 
 export type WorkspaceBreakType = Tables<'workspace_break_types'>;
@@ -189,7 +190,7 @@ export async function listWorkspaceTimeTrackingTasks(
   workspaceId: string,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withTaskApiBaseUrl(options));
   const payload = await client.json<{ tasks: TimeTrackingWorkspaceTask[] }>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/time-tracking/tasks`,
     {

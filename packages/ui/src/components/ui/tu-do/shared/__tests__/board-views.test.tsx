@@ -17,6 +17,8 @@ import { getBoardConfigKey } from '../board-config-storage';
 import { BoardViews } from '../board-views';
 
 const listWorkspaceTasksMock = vi.hoisted(() => vi.fn());
+const getUserWorkspaceConfigMock = vi.hoisted(() => vi.fn());
+const updateUserWorkspaceConfigMock = vi.hoisted(() => vi.fn());
 const createTaskMock = vi.fn();
 const loadListPageMock = vi.fn();
 let progressivePagination: Record<string, unknown> = {};
@@ -30,6 +32,11 @@ let kanbanBoardProps:
   | undefined;
 let listViewProps:
   | React.ComponentProps<typeof import('../list-view')['ListView']>
+  | undefined;
+let timelineBoardProps:
+  | React.ComponentProps<
+      typeof import('../../boards/boardId/timeline-board')['TimelineBoard']
+    >
   | undefined;
 
 vi.mock('next-intl', () => ({
@@ -54,6 +61,15 @@ vi.mock('@tuturuuu/internal-api/tasks', () => ({
   listWorkspaceTasks: listWorkspaceTasksMock,
 }));
 
+vi.mock('@tuturuuu/internal-api/users', () => ({
+  TASK_BOARD_PINNED_SPECIAL_LISTS_CONFIG_ID: 'TASK_BOARD_PINNED_SPECIAL_LISTS',
+  TASK_LAST_BOARD_VIEW_CONFIG_ID: 'TASK_LAST_BOARD_VIEW',
+  getUserWorkspaceConfig: (...args: unknown[]) =>
+    getUserWorkspaceConfigMock(...args),
+  updateUserWorkspaceConfig: (...args: unknown[]) =>
+    updateUserWorkspaceConfigMock(...args),
+}));
+
 vi.mock('../progressive-loader-context', () => ({
   useProgressiveLoader: () => ({
     loadListPage: loadListPageMock,
@@ -75,7 +91,32 @@ vi.mock('../board-header', () => ({
 }));
 
 vi.mock('../recycle-bin-panel', () => ({
-  RecycleBinPanel: () => null,
+  RecycleBinContent: () => <div data-testid="recycle-bin-view">Recycle</div>,
+}));
+
+vi.mock('../../drafts/drafts-page', () => ({
+  DraftsPage: ({
+    boardId,
+    includeUnassignedForBoard,
+    wsId,
+  }: {
+    boardId?: string;
+    includeUnassignedForBoard?: boolean;
+    wsId: string;
+  }) => (
+    <div
+      data-board-id={boardId}
+      data-include-unassigned={String(includeUnassignedForBoard)}
+      data-testid="drafts-view"
+      data-ws-id={wsId}
+    >
+      Drafts
+    </div>
+  ),
+}));
+
+vi.mock('../../my-tasks/my-tasks-content', () => ({
+  default: () => <div data-testid="my-tasks-view">My Tasks</div>,
 }));
 
 vi.mock('../../boards/boardId/kanban', () => ({
@@ -93,7 +134,10 @@ vi.mock('../list-view', () => ({
 }));
 
 vi.mock('../../boards/boardId/timeline-board', () => ({
-  TimelineBoard: () => <div data-testid="timeline-view">Timeline</div>,
+  TimelineBoard: (props: any) => {
+    timelineBoardProps = props;
+    return <div data-testid="timeline-view">Timeline</div>;
+  },
 }));
 
 const mockBoard = {
@@ -170,6 +214,7 @@ function renderBoardViews(overrides?: {
   board?: Record<string, unknown>;
   idleBottomIsland?: React.ReactNode;
   lists?: TaskList[];
+  props?: Partial<React.ComponentProps<typeof BoardViews>>;
   tasks?: Task[];
   workspace?: { id: string; personal: boolean };
 }) {
@@ -192,6 +237,7 @@ function renderBoardViews(overrides?: {
           workspace={(overrides?.workspace ?? mockWorkspace) as any}
           workspaceLabels={mockWorkspaceLabels}
           idleBottomIsland={overrides?.idleBottomIsland}
+          {...overrides?.props}
         />
       </HotkeysProvider>
     </QueryClientProvider>
@@ -208,12 +254,18 @@ describe('BoardViews', () => {
     boardHeaderProps = undefined;
     kanbanBoardProps = undefined;
     listViewProps = undefined;
+    timelineBoardProps = undefined;
     createTaskMock.mockReset();
     loadListPageMock.mockReset();
     progressivePagination = {};
     listWorkspaceTasksMock.mockReset();
     listWorkspaceTasksMock.mockResolvedValue({ tasks: mockTasks });
+    getUserWorkspaceConfigMock.mockReset();
+    getUserWorkspaceConfigMock.mockResolvedValue({ value: null });
+    updateUserWorkspaceConfigMock.mockReset();
+    updateUserWorkspaceConfigMock.mockResolvedValue({ message: 'ok' });
     window.localStorage.clear();
+    window.history.replaceState({}, '', '/');
   });
 
   it('registers visible hotkey labels for each board view', () => {
@@ -222,11 +274,126 @@ describe('BoardViews', () => {
     expect(boardHeaderProps?.viewHotkeyLabels).toEqual({
       kanban: formatHotkeySequence(['G', 'K']),
       list: formatHotkeySequence(['G', 'L']),
+      my_tasks: formatHotkeySequence(['G', 'M']),
       timeline: formatHotkeySequence(['G', 'T']),
+      drafts: formatHotkeySequence(['G', 'D']),
+      recycle_bin: formatHotkeySequence(['G', 'R']),
     });
   });
 
-  it('switches between kanban, list, and timeline using TanStack hotkey sequences', async () => {
+  it('exposes drafts and recycle bin as editable board modes by default', () => {
+    renderBoardViews();
+
+    expect(boardHeaderProps?.availableViews).toEqual([
+      'kanban',
+      'list',
+      'my_tasks',
+      'timeline',
+      'drafts',
+      'recycle_bin',
+    ]);
+  });
+
+  it('passes explicit read-only public mode through shared board components', () => {
+    renderBoardViews({
+      props: {
+        availableViews: ['kanban', 'list'],
+        publicHeaderPrefix: <span data-testid="public-prefix" />,
+        publicView: true,
+        readOnly: true,
+      },
+    });
+
+    expect(boardHeaderProps).toMatchObject({
+      availableViews: ['kanban', 'list'],
+      publicView: true,
+      readOnly: true,
+    });
+    expect(boardHeaderProps?.titlePrefix).toBeDefined();
+    expect(kanbanBoardProps?.readOnly).toBe(true);
+    expect(listWorkspaceTasksMock).not.toHaveBeenCalled();
+  });
+
+  it('enables assignees for personal boards that have guest access', async () => {
+    renderBoardViews({
+      board: {
+        ...mockBoard,
+        has_guest_access: true,
+      },
+      workspace: { id: 'ws-1', personal: true },
+    });
+
+    expect(kanbanBoardProps?.canUseBoardAssignees).toBe(true);
+    expect(kanbanBoardProps?.assigneeMemberSource).toBe('board');
+
+    await act(async () => {
+      boardHeaderProps?.onViewChange('list');
+    });
+
+    await waitFor(() => {
+      expect(screen.getByTestId('list-view')).toBeInTheDocument();
+    });
+    expect(listViewProps?.canUseBoardAssignees).toBe(true);
+    expect(listViewProps?.assigneeMemberSource).toBe('board');
+
+    await act(async () => {
+      boardHeaderProps?.onViewChange('timeline');
+    });
+
+    await waitFor(() => {
+      expect(screen.getByTestId('timeline-view')).toBeInTheDocument();
+    });
+    expect(timelineBoardProps?.canUseBoardAssignees).toBe(true);
+    expect(timelineBoardProps?.assigneeMemberSource).toBe('board');
+  });
+
+  it('keeps assignees hidden for unshared personal boards', () => {
+    renderBoardViews({
+      workspace: { id: 'ws-1', personal: true },
+    });
+
+    expect(kanbanBoardProps?.canUseBoardAssignees).toBe(false);
+    expect(kanbanBoardProps?.assigneeMemberSource).toBe('workspace');
+  });
+
+  it('merges workspace and board assignee sources for team boards that have guest access', () => {
+    renderBoardViews({
+      board: {
+        ...mockBoard,
+        has_guest_access: true,
+      },
+      workspace: { id: 'ws-1', personal: false },
+    });
+
+    expect(kanbanBoardProps?.canUseBoardAssignees).toBe(true);
+    expect(kanbanBoardProps?.assigneeMemberSource).toBe('workspace-and-board');
+  });
+
+  it('renders board-scoped drafts and recycle bin views from the header mode switcher', async () => {
+    renderBoardViews();
+
+    await act(async () => {
+      boardHeaderProps?.onViewChange('drafts');
+    });
+
+    expect(screen.getByTestId('drafts-view')).toHaveAttribute(
+      'data-board-id',
+      'board-1'
+    );
+    expect(screen.getByTestId('drafts-view')).toHaveAttribute(
+      'data-include-unassigned',
+      'true'
+    );
+
+    await act(async () => {
+      boardHeaderProps?.onViewChange('recycle_bin');
+    });
+
+    expect(screen.getByTestId('recycle-bin-view')).toBeInTheDocument();
+    expect(createTaskMock).not.toHaveBeenCalled();
+  });
+
+  it('switches between all board views using TanStack hotkey sequences', async () => {
     renderBoardViews();
 
     expect(screen.getByTestId('kanban-view')).toBeInTheDocument();
@@ -250,6 +417,43 @@ describe('BoardViews', () => {
 
     await waitFor(() => {
       expect(screen.getByTestId('kanban-view')).toBeInTheDocument();
+    });
+
+    fireEvent.keyDown(document, { key: 'g' });
+    fireEvent.keyDown(document, { key: 'm' });
+
+    await waitFor(() => {
+      expect(screen.getByTestId('my-tasks-view')).toBeInTheDocument();
+    });
+
+    fireEvent.keyDown(document, { key: 'g' });
+    fireEvent.keyDown(document, { key: 'd' });
+
+    await waitFor(() => {
+      expect(screen.getByTestId('drafts-view')).toBeInTheDocument();
+    });
+
+    fireEvent.keyDown(document, { key: 'g' });
+    fireEvent.keyDown(document, { key: 'r' });
+
+    await waitFor(() => {
+      expect(screen.getByTestId('recycle-bin-view')).toBeInTheDocument();
+    });
+  });
+
+  it('saves the selected workspace task view when the header changes view', async () => {
+    renderBoardViews();
+
+    await act(async () => {
+      boardHeaderProps?.onViewChange('list');
+    });
+
+    await waitFor(() => {
+      expect(updateUserWorkspaceConfigMock).toHaveBeenCalledWith(
+        'ws-1',
+        'TASK_LAST_BOARD_VIEW',
+        'list'
+      );
     });
   });
 
@@ -386,7 +590,7 @@ describe('BoardViews', () => {
     );
   });
 
-  it('expands the virtual external task list by default when assigned external tasks exist', () => {
+  it('collapses the virtual external task list by default even when assigned external tasks exist', () => {
     renderBoardViews({
       workspace: {
         ...mockWorkspace,
@@ -409,7 +613,7 @@ describe('BoardViews', () => {
     expect(kanbanBoardProps?.lists[0]).toEqual(
       expect.objectContaining({
         id: 'personal-external-staging:board-1',
-        is_external_collapsed: false,
+        is_external_collapsed: true,
         is_external_staging: true,
       })
     );
@@ -503,6 +707,125 @@ describe('BoardViews', () => {
         expect.objectContaining({
           is_collapsed: true,
           status: 'closed',
+        })
+      );
+    });
+  });
+
+  it('collapses deadline sections by default and persists per board and section', async () => {
+    window.localStorage.setItem(
+      'task-board-deadline-section-collapsed:board-1:overdue',
+      'false'
+    );
+
+    renderBoardViews();
+
+    await waitFor(() => {
+      expect(kanbanBoardProps?.deadlineSectionsCollapsed).toEqual(
+        expect.objectContaining({
+          overdue: false,
+          upcoming: true,
+        })
+      );
+    });
+
+    act(() => {
+      kanbanBoardProps?.onDeadlineSectionCollapsedChange?.('upcoming', false);
+    });
+
+    await waitFor(() => {
+      expect(
+        window.localStorage.getItem(
+          'task-board-deadline-section-collapsed:board-1:upcoming'
+        )
+      ).toBe('false');
+      expect(kanbanBoardProps?.deadlineSectionsCollapsed).toEqual(
+        expect.objectContaining({
+          overdue: false,
+          upcoming: false,
+        })
+      );
+    });
+  });
+
+  it('does not force pinned special task lists to stay expanded', async () => {
+    getUserWorkspaceConfigMock.mockImplementation(
+      (_workspaceId: string, configId: string) =>
+        Promise.resolve({
+          value:
+            configId === 'TASK_BOARD_PINNED_SPECIAL_LISTS'
+              ? JSON.stringify([
+                  'external_tasks',
+                  'closed_tasks',
+                  'overdue',
+                  'upcoming',
+                ])
+              : null,
+        })
+    );
+
+    renderBoardViews({
+      lists: [...mockLists, closedList],
+      workspace: {
+        ...mockWorkspace,
+        personal: true,
+      },
+    });
+
+    await waitFor(() => {
+      expect(kanbanBoardProps?.specialTaskListPins).toEqual(
+        expect.objectContaining({
+          closed_tasks: true,
+          external_tasks: true,
+          overdue: true,
+          upcoming: true,
+        })
+      );
+      expect(kanbanBoardProps?.lists[0]).toEqual(
+        expect.objectContaining({
+          is_external_collapsed: true,
+          is_external_staging: true,
+        })
+      );
+      expect(
+        kanbanBoardProps?.lists.find((list) => list.id === 'list-closed')
+      ).toEqual(
+        expect.objectContaining({
+          is_collapsed: true,
+          status: 'closed',
+        })
+      );
+      expect(kanbanBoardProps?.deadlineSectionsCollapsed).toEqual(
+        expect.objectContaining({
+          overdue: true,
+          upcoming: true,
+        })
+      );
+    });
+
+    act(() => {
+      kanbanBoardProps?.onExternalTasksCollapsedChange?.(false);
+      kanbanBoardProps?.onTaskListCollapsedChange?.('list-closed', false);
+      kanbanBoardProps?.onDeadlineSectionCollapsedChange?.('overdue', false);
+    });
+
+    await waitFor(() => {
+      expect(kanbanBoardProps?.lists[0]).toEqual(
+        expect.objectContaining({
+          is_external_collapsed: false,
+        })
+      );
+      expect(
+        kanbanBoardProps?.lists.find((list) => list.id === 'list-closed')
+      ).toEqual(
+        expect.objectContaining({
+          is_collapsed: false,
+        })
+      );
+      expect(kanbanBoardProps?.deadlineSectionsCollapsed).toEqual(
+        expect.objectContaining({
+          overdue: false,
+          upcoming: true,
         })
       );
     });
@@ -650,6 +973,31 @@ describe('BoardViews', () => {
     });
   });
 
+  it('passes board filter criteria into deadline task query options without global sort', async () => {
+    renderBoardViews();
+
+    act(() => {
+      boardHeaderProps?.onListStatusFilterChange('active');
+      boardHeaderProps?.onFiltersChange({
+        ...boardHeaderProps.filters,
+        labels: [{ color: 'BLUE', id: 'label-1', name: 'Urgent' } as any],
+        searchQuery: 'launch',
+        sortBy: 'name-asc',
+      });
+    });
+
+    await waitFor(() => {
+      expect(kanbanBoardProps?.deadlineTaskQueryOptions).toEqual(
+        expect.objectContaining({
+          labelIds: ['label-1'],
+          listStatuses: ['active'],
+          q: 'launch',
+        })
+      );
+    });
+    expect(kanbanBoardProps?.deadlineTaskQueryOptions?.sortBy).toBeUndefined();
+  });
+
   it('uses server-side search counts to hide task lists without matching tasks', async () => {
     listWorkspaceTasksMock.mockImplementation(async (_workspaceId, options) => {
       if (options?.includeListCounts) {
@@ -784,6 +1132,72 @@ describe('BoardViews', () => {
     await waitFor(() => {
       expect(listWorkspaceTasksMock).toHaveBeenCalledTimes(1);
     });
+  });
+
+  it('uses the route default view instead of stale local My Tasks config', async () => {
+    window.localStorage.setItem(
+      getBoardConfigKey(mockBoard.id),
+      JSON.stringify({
+        currentView: 'my_tasks',
+        filters: {
+          assignees: [],
+          dueDateRange: null,
+          estimationRange: null,
+          includeMyTasks: false,
+          includeUnassigned: false,
+          labels: [],
+          priorities: [],
+          projects: [],
+          sourceBoardIds: [],
+          sourceScope: 'all_visible',
+          sourceWorkspaceIds: [],
+        },
+        listStatusFilter: 'all',
+      })
+    );
+    window.history.replaceState({}, '', '/ws-1/tasks/boards/board-1');
+
+    renderBoardViews({ props: { defaultView: 'kanban' } });
+
+    await waitFor(() => {
+      expect(screen.getByTestId('kanban-view')).toBeInTheDocument();
+    });
+    expect(screen.queryByTestId('my-tasks-view')).not.toBeInTheDocument();
+  });
+
+  it('lets an explicit URL view override the route default view', async () => {
+    window.localStorage.setItem(
+      getBoardConfigKey(mockBoard.id),
+      JSON.stringify({
+        currentView: 'timeline',
+        filters: {
+          assignees: [],
+          dueDateRange: null,
+          estimationRange: null,
+          includeMyTasks: false,
+          includeUnassigned: false,
+          labels: [],
+          priorities: [],
+          projects: [],
+          sourceBoardIds: [],
+          sourceScope: 'all_visible',
+          sourceWorkspaceIds: [],
+        },
+        listStatusFilter: 'all',
+      })
+    );
+    window.history.replaceState(
+      {},
+      '',
+      '/ws-1/tasks/boards/board-1?view=my_tasks'
+    );
+
+    renderBoardViews({ props: { defaultView: 'kanban' } });
+
+    await waitFor(() => {
+      expect(screen.getByTestId('my-tasks-view')).toBeInTheDocument();
+    });
+    expect(screen.queryByTestId('kanban-view')).not.toBeInTheDocument();
   });
 
   it('ignores board hotkeys while typing in an input', async () => {

@@ -278,31 +278,70 @@ function resolveKeystoreInput(args, options = {}) {
   };
 }
 
-function buildKeytoolArgs(input) {
+function isNonEmptyString(value) {
+  return typeof value === 'string' && value.trim().length > 0;
+}
+
+function createKeytoolPasswordFiles(input, fsImpl = fs) {
+  if (input.mode === 'jar') {
+    return {
+      files: {},
+      remove: () => {},
+    };
+  }
+
+  const storePassword = requireString(
+    input.storePassword,
+    'storePassword'
+  ).trim();
+  const keyPassword = isNonEmptyString(input.keyPassword)
+    ? input.keyPassword.trim()
+    : undefined;
+  const tempDir = fsImpl.mkdtempSync(
+    path.join(os.tmpdir(), 'android-self-sign-keytool-')
+  );
+
+  fsImpl.chmodSync(tempDir, 0o700);
+
+  const writePasswordFile = (fileName, value) => {
+    const filePath = path.join(tempDir, fileName);
+    fsImpl.writeFileSync(filePath, `${value}\n`, {
+      encoding: 'utf8',
+      mode: 0o600,
+    });
+    return filePath;
+  };
+
+  return {
+    files: {
+      keyPasswordFile: keyPassword
+        ? writePasswordFile('key-password.txt', keyPassword)
+        : undefined,
+      storePasswordFile: writePasswordFile('store-password.txt', storePassword),
+    },
+    remove: () => {
+      fsImpl.rmSync(tempDir, { force: true, recursive: true });
+    },
+  };
+}
+
+function buildKeytoolArgs(input, passwordFiles = {}) {
   if (input.mode === 'jar') {
     return ['-printcert', '-jarfile', requireString(input.jarFile, 'jarFile')];
   }
 
   const keystore = requireString(input.keystore, 'keystore');
   const alias = requireString(input.alias, 'alias');
+  const storePasswordFile = requireString(
+    passwordFiles.storePasswordFile,
+    'storePasswordFile'
+  );
   const args = ['-list', '-v', '-alias', alias, '-keystore', keystore];
 
-  if (
-    typeof input.storePassword === 'string' &&
-    input.storePassword.trim().length > 0
-  ) {
-    args.push('-storepass', input.storePassword.trim());
-  } else {
-    throw new Error(
-      'storePassword is required for non-interactive keystore inspection'
-    );
-  }
+  args.push('-storepass:file', storePasswordFile);
 
-  if (
-    typeof input.keyPassword === 'string' &&
-    input.keyPassword.trim().length > 0
-  ) {
-    args.push('-keypass', input.keyPassword.trim());
+  if (isNonEmptyString(passwordFiles.keyPasswordFile)) {
+    args.push('-keypass:file', passwordFiles.keyPasswordFile.trim());
   }
 
   return args;
@@ -350,11 +389,18 @@ function inspectAndroidSigningCertificate(args, options = {}) {
     javaHome: args.javaHome,
     keytool: args.keytool,
   });
-  const keytoolArgs = buildKeytoolArgs(input);
+  const passwordFiles = createKeytoolPasswordFiles(input, fsImpl);
+  let output;
 
-  const output = execFileSync(keytoolPath, keytoolArgs, {
-    encoding: 'utf8',
-  });
+  try {
+    const keytoolArgs = buildKeytoolArgs(input, passwordFiles.files);
+    output = execFileSync(keytoolPath, keytoolArgs, {
+      encoding: 'utf8',
+    });
+  } finally {
+    passwordFiles.remove();
+  }
+
   const fingerprints = parseFingerprints(output);
 
   return {
@@ -427,8 +473,10 @@ module.exports = {
   DEFAULT_DEBUG_PASSWORD,
   DEFAULT_REPO_KEY_PROPERTIES_FILE,
   buildKeytoolArgs,
+  createKeytoolPasswordFiles,
   formatHumanOutput,
   inspectAndroidSigningCertificate,
+  isNonEmptyString,
   loadDefaultKeyProperties,
   loadKeyPropertiesFile,
   main,

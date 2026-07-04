@@ -13,11 +13,13 @@ import {
   Tag,
   Target,
   Users,
-} from '@tuturuuu/icons';
-import { Badge } from '@tuturuuu/ui/badge';
-import { Button } from '@tuturuuu/ui/button';
-import { Card } from '@tuturuuu/ui/card';
-import Link from 'next/link';
+} from '@tuturuuu/icons/lucide';
+import {
+  ProductBadge,
+  ProductButton,
+  ProductCard,
+  ProductLinkButton,
+} from '../product-page-primitives';
 
 const features = [
   {
@@ -93,9 +95,7 @@ export default function CRMProductPage() {
     <div className="container mx-auto mt-8 flex max-w-6xl flex-col gap-6 px-3 py-16 lg:gap-14 lg:py-24">
       {/* Hero Section */}
       <div className="mb-16 text-center">
-        <Badge variant="secondary" className="mb-4">
-          Coming Soon
-        </Badge>
+        <ProductBadge className="mb-4">Coming Soon</ProductBadge>
         <h1 className="mb-4 font-bold text-4xl">
           Customer Relationship Management
         </h1>
@@ -105,18 +105,14 @@ export default function CRMProductPage() {
           and make data-driven decisions.
         </p>
         <div className="mt-8 flex justify-center gap-4">
-          <Button size="lg" disabled>
-            Join Waitlist
-          </Button>
-          <Button size="lg" variant="outline" asChild>
-            <Link href="/contact">Contact Sales</Link>
-          </Button>
+          <ProductButton disabled>Join Waitlist</ProductButton>
+          <ProductLinkButton href="/contact">Contact Sales</ProductLinkButton>
         </div>
       </div>
 
       {/* Trust Section */}
       <section className="mb-24">
-        <Card className="border-primary bg-primary/5 p-8">
+        <ProductCard className="border-primary bg-primary/5 p-8">
           <div className="mx-auto flex max-w-4xl flex-col items-center gap-4 text-center">
             <ShieldCheck className="h-12 w-12 text-primary" />
             <h2 className="font-bold text-2xl">Enterprise-Grade Security</h2>
@@ -126,7 +122,7 @@ export default function CRMProductPage() {
               trust.
             </p>
           </div>
-        </Card>
+        </ProductCard>
       </section>
 
       {/* Features Grid */}
@@ -136,13 +132,13 @@ export default function CRMProductPage() {
         </h2>
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {features.map((feature) => (
-            <Card key={feature.title} className="p-6">
+            <ProductCard key={feature.title} className="p-6">
               <div className="mb-4 flex items-center gap-3">
                 <div className="text-primary">{feature.icon}</div>
                 <h3 className="font-semibold text-xl">{feature.title}</h3>
               </div>
               <p className="text-muted-foreground">{feature.description}</p>
-            </Card>
+            </ProductCard>
           ))}
         </div>
       </section>
@@ -152,7 +148,7 @@ export default function CRMProductPage() {
         <h2 className="mb-12 text-center font-bold text-3xl">Use Cases</h2>
         <div className="grid gap-8 md:grid-cols-3">
           {useCases.map((useCase) => (
-            <Card key={useCase.title} className="p-6">
+            <ProductCard key={useCase.title} className="p-6">
               <Building className="mb-4 h-8 w-8 text-primary" />
               <h3 className="mb-4 font-semibold text-xl">{useCase.title}</h3>
               <ul className="space-y-2 text-muted-foreground">
@@ -163,14 +159,14 @@ export default function CRMProductPage() {
                   </li>
                 ))}
               </ul>
-            </Card>
+            </ProductCard>
           ))}
         </div>
       </section>
 
       {/* Analytics Section */}
       <section className="mb-24">
-        <Card className="overflow-hidden">
+        <ProductCard className="overflow-hidden">
           <div className="grid md:grid-cols-2">
             <div className="flex flex-col justify-center gap-4 border-border border-b p-8 md:border-r md:border-b-0">
               <LayoutDashboard className="h-8 w-8 text-primary" />
@@ -189,7 +185,7 @@ export default function CRMProductPage() {
               </p>
             </div>
           </div>
-        </Card>
+        </ProductCard>
       </section>
 
       {/* Additional Features Section */}
@@ -198,22 +194,22 @@ export default function CRMProductPage() {
           Business Growth Tools
         </h2>
         <div className="grid gap-6 md:grid-cols-2">
-          <Card className="p-6">
+          <ProductCard className="p-6">
             <FileText className="mb-4 h-8 w-8 text-primary" />
             <h3 className="mb-2 font-bold text-xl">Smart Documents</h3>
             <p className="text-muted-foreground">
               Generate and manage customer-related documents with intelligent
               templates and automation.
             </p>
-          </Card>
-          <Card className="p-6">
+          </ProductCard>
+          <ProductCard className="p-6">
             <HeartHandshake className="mb-4 h-8 w-8 text-primary" />
             <h3 className="mb-2 font-bold text-xl">Customer Success</h3>
             <p className="text-muted-foreground">
               Build lasting relationships with tools designed to track and
               improve customer satisfaction.
             </p>
-          </Card>
+          </ProductCard>
         </div>
       </section>
     </div>

@@ -2,13 +2,9 @@ import crypto from 'node:crypto';
 import type {
   BlueGreenMonitoringDeployment,
   InfrastructureProject,
-} from '@tuturuuu/internal-api/infrastructure';
+} from '@tuturuuu/internal-api/infrastructure/monitoring';
 import { readBlueGreenMonitoringSnapshot } from './blue-green-monitoring';
-import {
-  ensureLogDrainSchema,
-  getLogDrainSqlClient,
-  serverLogger,
-} from './log-drain';
+import { ensureLogDrainSchema, getLogDrainSqlClient } from './log-drain';
 
 export interface ParsedGitHubRepository {
   owner: string;
@@ -113,6 +109,7 @@ const RESERVED_MANAGED_PROJECT_HOSTNAMES = new Set([
   'staging.tuturuuu.com',
   'tasks.tuturuuu.com',
   'teach.tuturuuu.com',
+  'tools.tuturuuu.com',
   'track.tuturuuu.com',
   'tuturuuu.com',
   'www.tuturuuu.com',
@@ -358,7 +355,7 @@ async function fetchGitHubCommit(
       `https://api.github.com/repos/${repo.owner}/${repo.repo}/commits/${encodeURIComponent(ref)}`
     );
   } catch (error) {
-    serverLogger.warn('Unable to sync GitHub commit metadata', {
+    console.warn('Unable to sync GitHub commit metadata', {
       error: error instanceof Error ? error.message : String(error),
       ref,
       repo: repo.repoUrl,
@@ -509,7 +506,7 @@ async function reconcileQueuedPlatformProjectRows(
       snapshot.deployments
     );
   } catch (error) {
-    serverLogger.warn('Unable to reconcile queued platform project status', {
+    console.warn('Unable to reconcile queued platform project status', {
       error: error instanceof Error ? error.message : String(error),
     });
   }

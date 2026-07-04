@@ -403,13 +403,9 @@ export async function fetchWorkspaceSummaries({
 
     guestWorkspaceById.set(workspaceId, {
       id: workspaceId,
-      name: workspace?.personal
-        ? displayLabel || workspace?.name || 'Personal'
-        : workspace?.name || 'Untitled',
+      name: workspace?.name || (workspace?.personal ? 'Personal' : 'Untitled'),
       personal: workspace?.personal ?? false,
-      avatar_url: workspace?.personal
-        ? userAvatarUrl || workspace?.avatar_url || null
-        : workspace?.avatar_url || null,
+      avatar_url: workspace?.avatar_url || null,
       logo_url: workspace?.logo_url || null,
       created_by_me: workspace?.creator_id === userId,
       tier: resolveWorkspaceTier(workspace ?? {}, productTiersById),

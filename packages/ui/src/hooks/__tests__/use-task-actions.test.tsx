@@ -41,6 +41,8 @@ vi.mock('@tuturuuu/internal-api/tasks', () => ({
 }));
 
 vi.mock('@tuturuuu/utils/task-helper', () => ({
+  isPersonalExternalStagingListId: (listId: string | null) =>
+    listId?.startsWith('personal-external-staging:') ?? false,
   useUpdateTask: vi.fn(),
 }));
 
@@ -1687,6 +1689,52 @@ describe('useTaskActions', () => {
         intensity: 1,
       });
       expect(setMenuOpen).toHaveBeenCalledWith(false);
+    });
+
+    it('moves a personal-workspace task with personal board metadata through the normal task route', async () => {
+      const personalTask = {
+        ...mockTask,
+        personal_board_id: 'board-1',
+        personal_list_id: 'list-1',
+      } as unknown as Task;
+      const targetList = {
+        id: 'list-2',
+        name: 'Later',
+        board_id: 'board-1',
+        status: 'active',
+        created_at: '2025-01-01T00:00:00Z',
+        archived: false,
+        deleted: false,
+        creator_id: 'user-1',
+        color: null,
+        position: 3,
+      } as unknown as TaskList;
+
+      queryClient.setQueryData(['tasks', 'board-1'], [personalTask]);
+
+      const { result } = renderHook(
+        () =>
+          useTaskActions({
+            task: personalTask,
+            boardId: 'board-1',
+            targetCompletionList: mockCompletionList,
+            targetClosedList: mockClosedList,
+            availableLists: [...mockAvailableLists, targetList],
+            onUpdate: vi.fn(),
+            setIsLoading: vi.fn(),
+            setMenuOpen: vi.fn(),
+          }),
+        { wrapper }
+      );
+
+      await act(async () => {
+        await result.current.handleMoveToList('list-2');
+      });
+
+      expect(mockUpdateWorkspaceTask).toHaveBeenCalledWith('ws-1', 'task-1', {
+        list_id: 'list-2',
+      });
+      expect(mockUpsertCurrentUserTaskPersonalPlacement).not.toHaveBeenCalled();
     });
 
     it('moves an external task between personal lists through personal placement only', async () => {

@@ -23,11 +23,15 @@ class _ShellChromeActionsHarness extends StatefulWidget {
 class _ShellChromeActionsHarnessState
     extends State<_ShellChromeActionsHarness> {
   String _matchedLocation = '/requests';
+  String _workspaceId = 'ws-a';
   var _enabled = false;
   var _tapCount = 0;
+  String _lastWorkspaceAction = 'none';
 
   @override
   Widget build(BuildContext context) {
+    final workspaceId = _workspaceId;
+
     return Column(
       children: [
         ShellInjectedActionsHost(matchedLocation: _matchedLocation),
@@ -40,7 +44,10 @@ class _ShellChromeActionsHarnessState
               icon: Icons.filter_alt_outlined,
               tooltip: 'Filter requests',
               enabled: _enabled,
-              onPressed: () => setState(() => _tapCount++),
+              onPressed: () => setState(() {
+                _tapCount++;
+                _lastWorkspaceAction = workspaceId;
+              }),
             ),
           ],
         ),
@@ -53,7 +60,10 @@ class _ShellChromeActionsHarnessState
               icon: Icons.filter_alt_outlined,
               tooltip: 'Filter stats',
               enabled: _enabled,
-              onPressed: () => setState(() => _tapCount++),
+              onPressed: () => setState(() {
+                _tapCount++;
+                _lastWorkspaceAction = workspaceId;
+              }),
             ),
           ],
         ),
@@ -69,7 +79,12 @@ class _ShellChromeActionsHarnessState
           onPressed: () => setState(() => _matchedLocation = '/stats'),
           child: const Text('switch-shared-route'),
         ),
+        TextButton(
+          onPressed: () => setState(() => _workspaceId = 'ws-b'),
+          child: const Text('switch-workspace'),
+        ),
         Text('tap-count:$_tapCount'),
+        Text('last-workspace:$_lastWorkspaceAction'),
       ],
     );
   }
@@ -104,6 +119,32 @@ void main() {
       await tester.tap(find.byIcon(Icons.filter_alt_outlined));
       await tester.pump();
       expect(find.text('tap-count:1'), findsOneWidget);
+    });
+
+    testWidgets('updates callbacks when only captured workspace changes', (
+      tester,
+    ) async {
+      await tester.pumpApp(
+        BlocProvider(
+          create: (_) => ShellChromeActionsCubit(),
+          child: const Material(child: _ShellChromeActionsHarness()),
+        ),
+      );
+      await tester.pump();
+
+      await tester.tap(find.text('enable'));
+      await _pumpFrames(tester);
+
+      await tester.tap(find.byIcon(Icons.filter_alt_outlined));
+      await tester.pump();
+      expect(find.text('last-workspace:ws-a'), findsOneWidget);
+
+      await tester.tap(find.text('switch-workspace'));
+      await _pumpFrames(tester);
+
+      await tester.tap(find.byIcon(Icons.filter_alt_outlined));
+      await tester.pump();
+      expect(find.text('last-workspace:ws-b'), findsOneWidget);
     });
 
     testWidgets('clears actions when route no longer matches', (tester) async {

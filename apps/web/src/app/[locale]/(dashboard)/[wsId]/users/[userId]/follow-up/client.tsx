@@ -309,7 +309,7 @@ export default function FollowUpClient({
     const React = await import('react');
     const LeadGenerationEmailTemplate = (
       await import(
-        '@/app/[locale]/(dashboard)/[wsId]/mail/lead-generation-email-template'
+        '@/components/email/templates/lead-generation-email-template'
       )
     ).default;
 

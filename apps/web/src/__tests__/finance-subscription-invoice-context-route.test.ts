@@ -33,7 +33,7 @@ const repoRoot = process.cwd().endsWith('/apps/web')
 
 const subscriptionContextRoutePath = resolve(
   repoRoot,
-  'apps/web/src/app/api/v1/workspaces/[wsId]/finance/invoices/subscription/context/route.ts'
+  'apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/finance/invoices/subscription/context/route.ts'
 );
 
 function createThenableQuery<T>(response: T) {
@@ -150,11 +150,11 @@ describe('subscription invoice context route', () => {
     });
 
     const { GET } = await import(
-      '@/app/api/v1/workspaces/[wsId]/finance/invoices/subscription/context/route'
+      '@/legacy-api-routes/v1/workspaces/[wsId]/finance/invoices/subscription/context/route'
     );
     const response = await GET(
       new Request(
-        'http://localhost/api/v1/workspaces/ws-1/finance/invoices/subscription/context?userId=user-1&month=2026-06&groupIds=group-1'
+        'http://localhost/api/v1/workspaces/ws-1/finance/invoices/subscription/context?userId=user-1&month=2026-06&monthCount=3&groupIds=group-1'
       ),
       {
         params: Promise.resolve({
@@ -179,6 +179,8 @@ describe('subscription invoice context route', () => {
       'is',
       null
     );
+    expect(attendanceQuery.gte).toHaveBeenCalledWith('date', '2026-06-01');
+    expect(attendanceQuery.lt).toHaveBeenCalledWith('date', '2026-09-01');
     expect(validGroupsQuery.select).toHaveBeenCalledWith(
       'group_id, workspace_user_groups!workspace_user_roles_users_role_id_fkey!inner(ws_id)'
     );

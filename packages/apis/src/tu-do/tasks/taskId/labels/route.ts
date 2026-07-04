@@ -3,6 +3,7 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import type { TaskActorRpcArgs } from '@tuturuuu/types/db';
 import {
@@ -25,6 +26,55 @@ const paramsSchema = z.object({
 const payloadSchema = z.object({
   labelId: z.guid(),
 });
+
+export type TaskLabelRouteAuthContext = {
+  appSession?: boolean;
+  supabase: TypedSupabaseClient;
+  user: SupabaseUser;
+};
+
+type TaskLabelRouteContext = {
+  params: Promise<{ wsId: string; taskId: string }>;
+};
+
+type TaskLabelRequestAuth =
+  | {
+      auth: TaskLabelRouteAuthContext;
+    }
+  | {
+      error: NextResponse;
+    };
+
+async function resolveTaskLabelRequestAuth(
+  request: NextRequest,
+  auth?: TaskLabelRouteAuthContext
+): Promise<TaskLabelRequestAuth> {
+  if (auth) {
+    return {
+      auth: {
+        ...auth,
+        appSession: auth.appSession === true,
+      },
+    };
+  }
+
+  const supabase = await createClient(request);
+  const { user, authError } = await resolveAuthenticatedSessionUser(supabase);
+
+  if (authError || !user) {
+    return {
+      error: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }),
+    };
+  }
+
+  return {
+    auth: {
+      appSession: false,
+      supabase,
+      user,
+    },
+  };
+}
 
 async function parseJsonBody(request: NextRequest) {
   try {
@@ -192,9 +242,10 @@ async function verifyLabelInWorkspace(
   return null;
 }
 
-export async function POST(
+export async function handleTaskLabelRoutePOST(
   request: NextRequest,
-  { params }: { params: Promise<{ wsId: string; taskId: string }> }
+  { params }: TaskLabelRouteContext,
+  authContext?: TaskLabelRouteAuthContext
 ) {
   try {
     const parsedParams = paramsSchema.safeParse(await params);
@@ -205,12 +256,12 @@ export async function POST(
       );
     }
 
-    const supabase = await createClient(request);
-    const { user, authError } = await resolveAuthenticatedSessionUser(supabase);
-
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const resolvedAuth = await resolveTaskLabelRequestAuth(
+      request,
+      authContext
+    );
+    if ('error' in resolvedAuth) return resolvedAuth.error;
+    const { supabase, user } = resolvedAuth.auth;
 
     const wsId = await normalizeWorkspaceId(parsedParams.data.wsId, supabase);
 
@@ -315,9 +366,17 @@ export async function POST(
   }
 }
 
-export async function DELETE(
+export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ wsId: string; taskId: string }> }
+) {
+  return handleTaskLabelRoutePOST(request, { params });
+}
+
+export async function handleTaskLabelRouteDELETE(
+  request: NextRequest,
+  { params }: TaskLabelRouteContext,
+  authContext?: TaskLabelRouteAuthContext
 ) {
   try {
     const parsedParams = paramsSchema.safeParse(await params);
@@ -328,12 +387,12 @@ export async function DELETE(
       );
     }
 
-    const supabase = await createClient(request);
-    const { user, authError } = await resolveAuthenticatedSessionUser(supabase);
-
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const resolvedAuth = await resolveTaskLabelRequestAuth(
+      request,
+      authContext
+    );
+    if ('error' in resolvedAuth) return resolvedAuth.error;
+    const { supabase, user } = resolvedAuth.auth;
 
     const wsId = await normalizeWorkspaceId(parsedParams.data.wsId, supabase);
 
@@ -437,4 +496,11 @@ export async function DELETE(
       { status: 500 }
     );
   }
+}
+
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ wsId: string; taskId: string }> }
+) {
+  return handleTaskLabelRouteDELETE(request, { params });
 }

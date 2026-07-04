@@ -3,7 +3,7 @@ import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
 import { useCallback, useMemo, useState } from 'react';
 import { useImageUpload } from '../../hooks/use-image-upload';
-import type { ExtendedTimeTrackingRequest } from '../page';
+import type { ExtendedTimeTrackingRequest } from '../types';
 import { useUpdateRequest } from './use-request-mutations';
 
 dayjs.extend(utc);

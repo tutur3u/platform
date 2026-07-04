@@ -26,6 +26,7 @@ import { priorityCompare } from '@tuturuuu/utils/task-helper';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { getTasksAppUrlClient } from '@/lib/tasks-app-url-client';
 import { prioritizeTasks, type Task } from '../../utils/task-prioritization';
 
 interface QuickTimeTrackerProps {
@@ -125,8 +126,10 @@ export function QuickTimeTracker({
     queryKey: ['next-task-preview', wsId],
     queryFn: async () => {
       const response = await fetch(
-        `/api/v1/workspaces/${wsId}/tasks?limit=100&forTimeTracking=true`,
-        { cache: 'no-store' }
+        getTasksAppUrlClient(
+          `/api/v1/workspaces/${wsId}/tasks?limit=100&forTimeTracking=true`
+        ),
+        { cache: 'no-store', credentials: 'include' }
       );
       if (!response.ok) throw new Error('Failed to fetch tasks');
       const data = await response.json();
@@ -144,8 +147,8 @@ export function QuickTimeTracker({
     queryKey: ['boards-list', wsId],
     queryFn: async () => {
       const response = await fetch(
-        `/api/v1/workspaces/${wsId}/boards-with-lists`,
-        { cache: 'no-store' }
+        getTasksAppUrlClient(`/api/v1/workspaces/${wsId}/boards-with-lists`),
+        { cache: 'no-store', credentials: 'include' }
       );
       if (!response.ok) throw new Error('Failed to fetch boards');
       const data = await response.json();
@@ -160,8 +163,8 @@ export function QuickTimeTracker({
     queryKey: ['all-tasks', wsId],
     queryFn: async () => {
       const response = await fetch(
-        `/api/v1/workspaces/${wsId}/tasks?limit=200`,
-        { cache: 'no-store' }
+        getTasksAppUrlClient(`/api/v1/workspaces/${wsId}/tasks?limit=200`),
+        { cache: 'no-store', credentials: 'include' }
       );
       if (!response.ok) throw new Error('Failed to fetch tasks');
       const data = await response.json();
@@ -468,9 +471,12 @@ export function QuickTimeTracker({
 
       if (isUnassigned) {
         const assignResponse = await fetch(
-          `/api/v1/workspaces/${wsId}/tasks/${selectedTask.id}/assign`,
+          getTasksAppUrlClient(
+            `/api/v1/workspaces/${wsId}/tasks/${selectedTask.id}/assign`
+          ),
           {
             method: 'POST',
+            credentials: 'include',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ assign: true }),
           }
@@ -532,9 +538,12 @@ export function QuickTimeTracker({
 
       if (isUnassigned) {
         const assignResponse = await fetch(
-          `/api/v1/workspaces/${wsId}/tasks/${nextTask.id}/assign`,
+          getTasksAppUrlClient(
+            `/api/v1/workspaces/${wsId}/tasks/${nextTask.id}/assign`
+          ),
           {
             method: 'POST',
+            credentials: 'include',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ assign: true }),
           }

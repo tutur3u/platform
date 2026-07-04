@@ -11,6 +11,8 @@ import {
   Filter,
   GripVertical,
   Loader2,
+  Pin,
+  PinOff,
   RotateCcw,
 } from '@tuturuuu/icons';
 import type { ExternalTaskSortBy } from '@tuturuuu/internal-api/tasks';
@@ -49,6 +51,7 @@ import {
 } from './kanban/kanban-column-collapse';
 import { ListActions } from './list-actions';
 import { statusIcons } from './status-section';
+import type { TaskCardAssigneeMemberSource } from './task-card/task-card';
 import type { TaskFilters } from './task-filter';
 import { VirtualizedTaskList } from './task-list';
 
@@ -161,6 +164,8 @@ interface BoardColumnProps {
   isMultiSelectMode?: boolean;
   setIsMultiSelectMode?: (value: boolean) => void;
   isPersonalWorkspace?: boolean;
+  canUseBoardAssignees?: boolean;
+  assigneeMemberSource?: TaskCardAssigneeMemberSource;
   onTaskSelect?: (taskId: string, event: React.MouseEvent) => void;
   onClearSelection?: () => void;
   onAddTask?: (list: TaskList) => void;
@@ -174,6 +179,10 @@ interface BoardColumnProps {
   wsId: string;
   onExternalTasksCollapsedChange?: (collapsed: boolean) => void;
   onTaskListCollapsedChange?: (listId: string, collapsed: boolean) => void;
+  specialPinned?: boolean;
+  specialStickyOffset?: string;
+  onSpecialPinnedChange?: (pinned: boolean) => void;
+  readOnly?: boolean;
 }
 
 export function BoardColumn({
@@ -189,6 +198,8 @@ export function BoardColumn({
   isMultiSelectMode,
   setIsMultiSelectMode,
   isPersonalWorkspace,
+  canUseBoardAssignees,
+  assigneeMemberSource,
   onAddTask,
   dragPreviewPosition,
   suppressTaskTransforms,
@@ -200,6 +211,10 @@ export function BoardColumn({
   wsId,
   onExternalTasksCollapsedChange,
   onTaskListCollapsedChange,
+  specialPinned = false,
+  specialStickyOffset,
+  onSpecialPinnedChange,
+  readOnly = false,
 }: BoardColumnProps) {
   const t = useTranslations('common');
   const tTasks = useTranslations('ws-tasks');
@@ -210,7 +225,9 @@ export function BoardColumn({
   const isExternalCollapsed =
     isExternalStaging && column.is_external_collapsed === true;
   const listState = pagination[column.id];
-  const isInitialLoad = !listState || listState.isInitialLoad;
+  const isInitialLoad = readOnly
+    ? false
+    : !listState || listState.isInitialLoad;
   const [externalIncludeDocuments, setExternalIncludeDocuments] =
     useState(false);
   const [externalIncludeDoneClosed, setExternalIncludeDoneClosed] =
@@ -259,9 +276,7 @@ export function BoardColumn({
       loadedExternalOptionsSignatureRef.current = externalOptionsSignature;
       const promise = loadListPage(column.id, page, externalLoadOptions);
 
-      promise.catch(() => {
-        loadedExternalOptionsSignatureRef.current = null;
-      });
+      void promise.catch(() => {});
 
       return promise;
     },
@@ -378,7 +393,7 @@ export function BoardColumn({
     isDragging,
   } = useSortable({
     id: column.id,
-    disabled: isExternalStaging,
+    disabled: readOnly || isExternalStaging,
     data: {
       type: 'Column',
       column: {
@@ -402,6 +417,12 @@ export function BoardColumn({
     transform: CSS.Transform.toString(transform),
     transition,
   };
+  const columnStyle: React.CSSProperties = specialStickyOffset
+    ? {
+        ...style,
+        left: `calc(var(--kanban-snap-left-padding) + ${specialStickyOffset})`,
+      }
+    : style;
 
   const handleUpdate = () => {
     onUpdate?.();
@@ -448,6 +469,9 @@ export function BoardColumn({
     : visibleTasks.length;
   const externalFilterCount =
     (externalIncludeDocuments ? 1 : 0) + (externalIncludeDoneClosed ? 1 : 0);
+  const pinListLabel = specialPinned
+    ? tTasks('unpin_task_list', { name: translateListName(column.name) })
+    : tTasks('pin_task_list', { name: translateListName(column.name) });
 
   // Memoize drag handle for performance
   const DragHandle = useMemo(
@@ -502,10 +526,14 @@ export function BoardColumn({
     return (
       <Card
         ref={composedRef}
-        style={style}
+        style={columnStyle}
+        data-kanban-pinned-special={specialStickyOffset ? 'true' : undefined}
+        data-kanban-column-id={column.id}
+        data-kanban-real-column={isExternalStaging ? undefined : 'true'}
         className={cn(
           'group flex h-full w-14 shrink-0 snap-start flex-col items-center rounded-xl border border-dashed transition-all duration-200',
           'touch-none select-none overflow-hidden hover:shadow-md',
+          specialStickyOffset && 'sticky z-30',
           isExternalCollapsed
             ? 'border-dynamic-cyan/45 bg-dynamic-cyan/[0.035]'
             : colorClass
@@ -551,10 +579,14 @@ export function BoardColumn({
   return (
     <Card
       ref={composedRef}
-      style={style}
+      style={columnStyle}
+      data-kanban-pinned-special={specialStickyOffset ? 'true' : undefined}
+      data-kanban-column-id={column.id}
+      data-kanban-real-column={isExternalStaging ? undefined : 'true'}
       className={cn(
         'group flex h-full w-[var(--kanban-column-width)] shrink-0 snap-start flex-col rounded-xl transition-all duration-200 last:snap-end',
         'touch-none select-none',
+        specialStickyOffset && 'sticky z-30',
         colorClass,
         isDragging &&
           'rotate-1 scale-[1.02] opacity-90 shadow-xl ring-2 ring-primary/20',
@@ -568,7 +600,7 @@ export function BoardColumn({
       )}
     >
       <div className="flex items-center gap-2 rounded-t-xl border-b p-3">
-        {!isExternalStaging && DragHandle}
+        {!readOnly && !isExternalStaging && DragHandle}
         <div className="flex flex-1 items-center gap-2">
           <span className="text-sm">{statusIcon}</span>
           <h3
@@ -579,9 +611,9 @@ export function BoardColumn({
                 : 'cursor-pointer hover:underline'
             )}
             onClick={() => {
-              if (!isExternalStaging) setIsEditOpen(true);
+              if (!readOnly && !isExternalStaging) setIsEditOpen(true);
             }}
-            title={isExternalStaging ? undefined : t('edit_list')}
+            title={readOnly || isExternalStaging ? undefined : t('edit_list')}
           >
             {translateListName(column.name)}
           </h3>
@@ -707,6 +739,26 @@ export function BoardColumn({
                   </DropdownMenuRadioGroup>
                 </DropdownMenuContent>
               </DropdownMenu>
+              {onSpecialPinnedChange ? (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="xs"
+                  className={cn(
+                    'h-7 w-7 p-0 text-dynamic-cyan hover:bg-dynamic-cyan/10',
+                    specialPinned && 'bg-dynamic-cyan/10'
+                  )}
+                  title={pinListLabel}
+                  aria-label={pinListLabel}
+                  onClick={() => onSpecialPinnedChange(!specialPinned)}
+                >
+                  {specialPinned ? (
+                    <PinOff className="h-3.5 w-3.5" />
+                  ) : (
+                    <Pin className="h-3.5 w-3.5" />
+                  )}
+                </Button>
+              ) : null}
               <Button
                 type="button"
                 variant="ghost"
@@ -722,38 +774,63 @@ export function BoardColumn({
           ) : (
             <>
               {isClosedCollapsed || column.status === 'closed' ? (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="xs"
-                  className={cn(
-                    'h-7 w-7 p-0 hover:bg-muted/40',
-                    getListTextColorClass(column.color as SupportedColor)
-                  )}
-                  title={tTasks('collapse_task_list', {
-                    name: translateListName(column.name),
-                  })}
-                  aria-label={tTasks('collapse_task_list', {
-                    name: translateListName(column.name),
-                  })}
-                  onClick={() => onTaskListCollapsedChange?.(column.id, true)}
-                >
-                  <ChevronLeft className="h-3.5 w-3.5" />
-                </Button>
+                <>
+                  {onSpecialPinnedChange ? (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="xs"
+                      className={cn(
+                        'h-7 w-7 p-0 hover:bg-muted/40',
+                        getListTextColorClass(column.color as SupportedColor),
+                        specialPinned && 'bg-muted/40'
+                      )}
+                      title={pinListLabel}
+                      aria-label={pinListLabel}
+                      onClick={() => onSpecialPinnedChange(!specialPinned)}
+                    >
+                      {specialPinned ? (
+                        <PinOff className="h-3.5 w-3.5" />
+                      ) : (
+                        <Pin className="h-3.5 w-3.5" />
+                      )}
+                    </Button>
+                  ) : null}
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="xs"
+                    className={cn(
+                      'h-7 w-7 p-0 hover:bg-muted/40',
+                      getListTextColorClass(column.color as SupportedColor)
+                    )}
+                    title={tTasks('collapse_task_list', {
+                      name: translateListName(column.name),
+                    })}
+                    aria-label={tTasks('collapse_task_list', {
+                      name: translateListName(column.name),
+                    })}
+                    onClick={() => onTaskListCollapsedChange?.(column.id, true)}
+                  >
+                    <ChevronLeft className="h-3.5 w-3.5" />
+                  </Button>
+                </>
               ) : null}
-              <ListActions
-                listId={column.id}
-                listName={column.name}
-                listStatus={column.status}
-                listColor={column.color as SupportedColor}
-                tasks={tasks}
-                boardId={boardId}
-                wsId={wsId}
-                onUpdate={handleUpdate}
-                onSelectAll={handleSelectAll}
-                isEditOpen={isEditOpen}
-                onEditOpenChange={setIsEditOpen}
-              />
+              {!readOnly && (
+                <ListActions
+                  listId={column.id}
+                  listName={column.name}
+                  listStatus={column.status}
+                  listColor={column.color as SupportedColor}
+                  tasks={tasks}
+                  boardId={boardId}
+                  wsId={wsId}
+                  onUpdate={handleUpdate}
+                  onSelectAll={handleSelectAll}
+                  isEditOpen={isEditOpen}
+                  onEditOpenChange={setIsEditOpen}
+                />
+              )}
             </>
           )}
         </div>
@@ -775,6 +852,8 @@ export function BoardColumn({
           isMultiSelectMode={isMultiSelectMode}
           selectedTasks={selectedTasks}
           isPersonalWorkspace={isPersonalWorkspace}
+          canUseBoardAssignees={canUseBoardAssignees}
+          assigneeMemberSource={assigneeMemberSource}
           onTaskSelect={onTaskSelect}
           onClearSelection={onClearSelection}
           dragPreviewPosition={dragPreviewPosition}
@@ -785,10 +864,11 @@ export function BoardColumn({
           onLoadMore={handleLoadMore}
           hasMore={listState?.hasMore ?? false}
           isLoadingMore={listState?.isLoading ?? false}
+          readOnly={readOnly}
         />
       )}
 
-      {!isExternalStaging && (
+      {!readOnly && !isExternalStaging && (
         <div className="rounded-b-xl border-t p-3 backdrop-blur-sm">
           <Button
             variant="ghost"

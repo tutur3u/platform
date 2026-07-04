@@ -3,6 +3,8 @@ import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import type {
   CanonicalExternalProject,
   Database,
+  ExocorpseExternalProjectLoadingCollection,
+  ExocorpseExternalProjectLoadingEntry,
   ExternalProjectAttentionItem,
   ExternalProjectBulkUpdatePayload,
   ExternalProjectCollection,
@@ -386,6 +388,94 @@ function buildYoolaLoadingData(
   };
 }
 
+function buildExocorpseLoadingEntry(
+  entry: ExternalProjectDeliveryCollection['entries'][number]
+): ExocorpseExternalProjectLoadingEntry {
+  return {
+    assets: entry.assets,
+    bodyMarkdown: findMarkdownBlockMarkdown(entry),
+    entryId: entry.id,
+    metadata: asJsonObject(entry.metadata),
+    profileData: asJsonObject(entry.profile_data),
+    slug: entry.slug,
+    status: entry.status,
+    subtitle: entry.subtitle,
+    summary: entry.summary,
+    title: entry.title,
+  };
+}
+
+function buildExocorpseLoadingCollection(
+  collection: ExternalProjectDeliveryCollection
+): ExocorpseExternalProjectLoadingCollection {
+  return {
+    collectionId: collection.id,
+    collectionType: collection.collection_type,
+    description: collection.description,
+    entries: collection.entries.map(buildExocorpseLoadingEntry),
+    slug: collection.slug,
+    title: collection.title,
+  };
+}
+
+function buildExocorpseLoadingData(
+  collections: ExternalProjectDeliveryCollection[]
+): ExternalProjectLoadingData {
+  const collectionsBySlug = Object.fromEntries(
+    collections.map((collection) => [
+      collection.slug,
+      buildExocorpseLoadingCollection(collection),
+    ])
+  );
+  const entries = (slug: string) => collectionsBySlug[slug]?.entries ?? [];
+
+  return {
+    adapter: 'exocorpse',
+    blogPosts: entries('blog-posts'),
+    collections: collectionsBySlug,
+    commissions: {
+      addons: entries('commission-addons'),
+      blacklist: entries('commission-blacklist'),
+      pictures: entries('commission-pictures'),
+      serviceAddons: entries('commission-service-addons'),
+      services: entries('commission-services'),
+      styles: entries('commission-styles'),
+    },
+    heavenSpace: {
+      assets: entries('heaven-space-assets'),
+      passages: entries('heaven-space-passages'),
+      sceneChoices: entries('heaven-space-scene-choices'),
+      scenes: entries('heaven-space-scenes'),
+    },
+    landing: {
+      content: entries('about-content'),
+      faqs: entries('about-faqs'),
+      settings: entries('about')[0] ?? null,
+    },
+    portfolio: {
+      art: entries('portfolio-art'),
+      games: entries('portfolio-games'),
+      writing: entries('portfolio-writing'),
+    },
+    reference: {
+      cofiSamples: entries('cofi-samples'),
+      entityTags: entries('entity-tags'),
+      mediaAssets: entries('media-assets'),
+      moodboards: entries('moodboards'),
+      tags: entries('tags'),
+    },
+    wiki: {
+      characters: entries('characters'),
+      events: entries('events'),
+      factions: entries('factions'),
+      locations: entries('locations'),
+      stories: entries('stories'),
+      timelines: entries('timelines'),
+      worlds: entries('worlds'),
+    },
+  };
+}
+
 function buildExternalProjectLoadingData(
   adapter: WorkspaceExternalProjectBinding['adapter'],
   collections: ExternalProjectDeliveryCollection[]
@@ -396,6 +486,10 @@ function buildExternalProjectLoadingData(
 
   if (adapter === 'yoola') {
     return buildYoolaLoadingData(collections);
+  }
+
+  if (adapter === 'exocorpse') {
+    return buildExocorpseLoadingData(collections);
   }
 
   return {

@@ -52,5 +52,48 @@ void main() {
         'messageId': 'message-3',
       });
     });
+
+    test('ignores invalid local notification payload JSON', () {
+      expect(requestFromLocalNotificationPayload('not-json'), isNull);
+      expect(
+        requestFromLocalNotificationPayload(jsonEncode(['not', 'an object'])),
+        isNull,
+      );
+    });
+
+    test('ignores forged non-string local notification fields', () {
+      final request = requestFromLocalNotificationPayload(
+        jsonEncode({
+          'notificationId': 123,
+          'openTarget': 'task',
+          'wsId': ['ws-1'],
+          'entityId': true,
+          'boardId': {'id': 'board-1'},
+          'conversationId': 456,
+          'messageId': 789,
+        }),
+      );
+
+      expect(request, isNull);
+    });
+
+    test('parses valid local notification payloads', () {
+      final request = requestFromLocalNotificationPayload(
+        jsonEncode({
+          'notificationId': 'notification-4',
+          'openTarget': 'task',
+          'wsId': 'ws-4',
+          'entityId': 'task-4',
+          'boardId': 'board-4',
+        }),
+      );
+
+      expect(request, isNotNull);
+      expect(request!.opensTask, isTrue);
+      expect(request.notificationId, 'notification-4');
+      expect(request.wsId, 'ws-4');
+      expect(request.entityId, 'task-4');
+      expect(request.boardId, 'board-4');
+    });
   });
 }

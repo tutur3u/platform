@@ -1,3 +1,4 @@
+import { createAppCoordinationToken } from '@tuturuuu/auth/app-coordination';
 import {
   APP_SESSION_COOKIE_NAME,
   createAppSessionToken,
@@ -28,8 +29,10 @@ const mockIsIPBlocked = vi.fn().mockResolvedValue(null);
 const mockRecordAuthFailure = vi.fn();
 const mockCascadeBackendRateLimit = vi.fn();
 const mockIsBackendRateLimitError = vi.fn();
+const mockBuildAbuseRiskSubjects = vi.fn();
 
 vi.mock('@tuturuuu/utils/abuse-protection', () => ({
+  buildAbuseRiskSubjects: (input: unknown) => mockBuildAbuseRiskSubjects(input),
   extractIPFromHeaders: (h: unknown) => mockExtractIP(h),
   isIPBlocked: (ip: unknown) => mockIsIPBlocked(ip),
   recordApiAuthFailure: (ip: unknown, endpoint: unknown) =>
@@ -43,6 +46,13 @@ vi.mock('@tuturuuu/utils/abuse-protection/backend-rate-limit', () => ({
   isBackendRateLimitError: (
     ...args: Parameters<typeof mockIsBackendRateLimitError>
   ) => mockIsBackendRateLimitError(...args),
+}));
+
+const mockWriteVerifiedSessionCacheForSubjects = vi.fn();
+
+vi.mock('@tuturuuu/utils/abuse-protection/edge-trust', () => ({
+  writeVerifiedSessionCacheForSubjects: (subjectKeys: unknown) =>
+    mockWriteVerifiedSessionCacheForSubjects(subjectKeys),
 }));
 
 const mockHasAuthenticatedApiSession = vi.fn().mockReturnValue(false);
@@ -96,7 +106,7 @@ vi.mock('@tuturuuu/utils/ai-temp-auth', () => ({
     mockValidateAiTempAuthRequest(request),
 }));
 
-import { CURRENT_USER_APP_SESSION_AUTH } from '../app/api/v1/users/me/session-auth';
+import { CURRENT_USER_APP_SESSION_AUTH } from '../legacy-api-routes/v1/users/me/session-auth';
 // ---------------------------------------------------------------------------
 // Import after mocks are set up
 // ---------------------------------------------------------------------------
@@ -150,6 +160,24 @@ describe('withSessionAuth', () => {
     mockCascadeBackendRateLimit.mockResolvedValue(null);
     mockIsBackendRateLimitError.mockReturnValue(false);
     mockValidateAiTempAuthRequest.mockResolvedValue({ status: 'missing' });
+    mockBuildAbuseRiskSubjects.mockImplementation((input: unknown) => {
+      const { headers, userId } = input as {
+        headers?: Headers;
+        userId?: string;
+      };
+      const subjects = userId
+        ? [{ subject_key: `user:${userId}`, subject_type: 'user' }]
+        : [];
+      const cookie = headers?.get?.('cookie');
+      return cookie?.includes('auth-token') ||
+        cookie?.includes(APP_SESSION_COOKIE_NAME)
+        ? [
+            ...subjects,
+            { subject_key: 'session:session-123', subject_type: 'session' },
+          ]
+        : subjects;
+    });
+    mockWriteVerifiedSessionCacheForSubjects.mockResolvedValue(undefined);
     mockResolveWebAbuseDecision.mockResolvedValue({
       confidenceScore: 10,
       decisionSource: 'default',
@@ -723,6 +751,63 @@ describe('withSessionAuth', () => {
     expect(mockCreateAdminClient).toHaveBeenCalledWith({ noCookie: true });
   });
 
+  it('writes a verified session marker after successful shared session auth', async () => {
+    const request = new Request(
+      'http://localhost:3000/api/v1/workspaces/ws-1/calendar/events/event-1',
+      {
+        headers: {
+          cookie:
+            'sb-resolved-kingfish-21146-auth-token.0=base64-validvalue; theme=dark',
+        },
+        method: 'DELETE',
+      }
+    ) as unknown as NextRequest;
+
+    const result = await resolveSessionAuthContext(request, {
+      allowAppSessionAuth: true,
+    });
+
+    expect(result.ok).toBe(true);
+    expect(mockBuildAbuseRiskSubjects).toHaveBeenCalledWith(
+      expect.objectContaining({
+        headers: request.headers,
+        ipAddress: '192.168.1.1',
+        userId: fakeUser.id,
+      })
+    );
+    expect(mockWriteVerifiedSessionCacheForSubjects).toHaveBeenCalledWith([
+      'session:session-123',
+    ]);
+  });
+
+  it('does not write a verified session marker when shared session auth fails', async () => {
+    mockGetClaims.mockResolvedValue({
+      data: { claims: null },
+      error: new Error('claims unavailable'),
+    });
+    mockGetUser.mockResolvedValue({
+      data: { user: null },
+      error: new Error('Invalid JWT'),
+    });
+    const request = new Request(
+      'http://localhost:3000/api/v1/workspaces/ws-1/calendar/events/event-1',
+      {
+        headers: {
+          cookie:
+            'sb-resolved-kingfish-21146-auth-token.0=expired-value; theme=dark',
+        },
+        method: 'DELETE',
+      }
+    ) as unknown as NextRequest;
+
+    const result = await resolveSessionAuthContext(request, {
+      allowAppSessionAuth: true,
+    });
+
+    expect(result.ok).toBe(false);
+    expect(mockWriteVerifiedSessionCacheForSubjects).not.toHaveBeenCalled();
+  });
+
   it('should bind storage APIs to the Drive app-session audience by default', async () => {
     const { token: financeToken } = createAppSessionToken({
       email: 'agent@example.com',
@@ -944,6 +1029,85 @@ describe('withSessionAuth', () => {
     );
   });
 
+  it('should skip browser step-up challenges for valid CLI app-session auth while keeping rate limits', async () => {
+    const session = createCliAppSession({
+      email: 'agent@example.com',
+      userId: 'app-user-1',
+    });
+    mockEnforceAdaptiveStepUpChallenge.mockResolvedValue(
+      NextResponse.json(
+        { code: 'ABUSE_CHALLENGE_REQUIRED', error: 'Forbidden' },
+        { status: 403 }
+      )
+    );
+    const request = new Request('http://localhost:3000/api/test', {
+      headers: {
+        authorization: `Bearer ${session.access.token}`,
+      },
+      method: 'POST',
+    }) as unknown as NextRequest;
+    const handler = vi.fn().mockReturnValue(NextResponse.json({ ok: true }));
+
+    const wrapped = withSessionAuth(handler, {
+      allowAppSessionAuth: {
+        requiredScope: 'cli:access',
+        targetApp: 'platform',
+      },
+    });
+    const response = await wrapped(request);
+
+    expect(response.status).toBe(200);
+    expect(mockEnforceAdaptiveStepUpChallenge).not.toHaveBeenCalled();
+    expect(mockResolveWebAbuseDecision).toHaveBeenCalledWith(
+      expect.objectContaining({
+        authKind: 'app-session',
+        isRead: false,
+        userId: 'app-user-1',
+      })
+    );
+    expect(mockCheckRateLimit).toHaveBeenCalledWith(
+      'session:user:mutate:app-user-1',
+      expect.objectContaining({ maxRequests: 60 })
+    );
+    expect(handler).toHaveBeenCalledTimes(1);
+  });
+
+  it('should still enforce browser step-up challenges for non-CLI app-session auth', async () => {
+    const { token } = createAppSessionToken({
+      email: 'agent@example.com',
+      targetApp: 'platform',
+      userId: 'app-user-1',
+    });
+    mockEnforceAdaptiveStepUpChallenge.mockResolvedValue(
+      NextResponse.json(
+        { code: 'ABUSE_CHALLENGE_REQUIRED', error: 'Forbidden' },
+        { status: 403 }
+      )
+    );
+    const request = new Request('http://localhost:3000/api/test', {
+      headers: {
+        authorization: `Bearer ${token}`,
+      },
+      method: 'POST',
+    }) as unknown as NextRequest;
+    const handler = vi.fn().mockReturnValue(NextResponse.json({ ok: true }));
+
+    const wrapped = withSessionAuth(handler, {
+      allowAppSessionAuth: { targetApp: 'platform' },
+    });
+    const response = await wrapped(request);
+
+    expect(response.status).toBe(403);
+    expect(mockEnforceAdaptiveStepUpChallenge).toHaveBeenCalledWith(
+      expect.objectContaining({
+        isRead: false,
+        route: '/api/test',
+        userId: 'app-user-1',
+      })
+    );
+    expect(handler).not.toHaveBeenCalled();
+  });
+
   it('should apply configured app-session target and scope to shared auth resolution', async () => {
     const { token } = createAppSessionToken({
       email: 'agent@example.com',
@@ -962,6 +1126,75 @@ describe('withSessionAuth', () => {
         requiredScope: 'cli:access',
         targetApp: 'platform',
       },
+    });
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.response.status).toBe(401);
+    }
+    expect(mockGetUser).not.toHaveBeenCalled();
+    expect(mockCreateAdminClient).not.toHaveBeenCalled();
+  });
+
+  it('should accept scoped external app bearer auth when any configured app-token policy matches', async () => {
+    const { token } = createAppCoordinationToken({
+      email: 'operator@example.com',
+      originApp: 'web',
+      scopes: ['users:profile:write'],
+      targetApp: 'external-app',
+      userId: 'external-user-1',
+    });
+    const request = new Request(
+      'http://localhost:3000/api/v1/users/me/profile',
+      {
+        headers: {
+          authorization: `Bearer ${token}`,
+        },
+        method: 'PATCH',
+      }
+    ) as unknown as NextRequest;
+
+    const result = await resolveSessionAuthContext(request, {
+      allowAppSessionAuth: [
+        CURRENT_USER_APP_SESSION_AUTH,
+        { requiredScope: 'users:profile:write' },
+      ],
+    });
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.user.id).toBe('external-user-1');
+      expect(result.user.email).toBe('operator@example.com');
+      expect(result.supabase).toBe(mockAdminClient);
+    }
+    expect(mockGetUser).not.toHaveBeenCalled();
+    expect(mockCreateClient).not.toHaveBeenCalled();
+    expect(mockCreateAdminClient).toHaveBeenCalledWith({ noCookie: true });
+  });
+
+  it('should reject external app bearer auth when none of the configured app-token policies match', async () => {
+    const { token } = createAppCoordinationToken({
+      email: 'operator@example.com',
+      originApp: 'web',
+      scopes: ['users:profile:read'],
+      targetApp: 'external-app',
+      userId: 'external-user-1',
+    });
+    const request = new Request(
+      'http://localhost:3000/api/v1/users/me/profile',
+      {
+        headers: {
+          authorization: `Bearer ${token}`,
+        },
+        method: 'PATCH',
+      }
+    ) as unknown as NextRequest;
+
+    const result = await resolveSessionAuthContext(request, {
+      allowAppSessionAuth: [
+        CURRENT_USER_APP_SESSION_AUTH,
+        { requiredScope: 'users:profile:write' },
+      ],
     });
 
     expect(result.ok).toBe(false);

@@ -1,0 +1,171 @@
+---
+title: "TanStack/Rust Migration Plan"
+description: "Phased plan for replacing apps/web with apps/tanstack-web and apps/backend."
+updatedAt: "2026-06-27"
+---
+
+This page is the discoverable docs copy of the root migration plan for replacing
+the legacy Next.js platform app with a dedicated TanStack Start frontend and a
+Rust backend.
+
+Use the architecture contract at
+`platform/architecture/tanstack-rust-migration` for route ownership rules and
+implementation patterns. Use the operational runbook at
+`build/devops/tanstack-rust-cutover-runbook` for dual-stack bring-up and final
+cutover evidence. Use this page for sequencing, verification gates, and
+agent-lane planning.
+
+## Current Snapshot
+
+The route manifest at `apps/tanstack-web/migration/route-manifest.json` is the
+source of truth. The latest local snapshot on 2026-07-04 is:
+
+| Status | Count |
+| --- | ---: |
+| `legacy-next` | 755 |
+| `migrated` | 275 |
+| `accepted-removal` | 19 |
+| Total tracked artifacts | 1049 |
+
+Remaining legacy artifacts are concentrated in API/backend ownership:
+
+| Kind | Remaining legacy artifacts |
+| --- | ---: |
+| API | 669 |
+| Cron | 11 |
+| tRPC | 2 |
+| Route handler | 1 |
+| Page | 61 |
+| Layout | 11 |
+
+The production target is:
+
+- `apps/tanstack-web` as the user-facing frontend.
+- `apps/backend` as the Rust-owned API/backend runtime.
+- `apps/web` kept only as a rollback fallback until terminal cutover gates are
+  green.
+
+## First Verification Gap Closure
+
+Before accelerating route waves, keep the verification layer green and visible:
+
+- Expose the dual-stack Docker E2E runner through the root package scripts.
+- Keep `scripts/run-tanstack-e2e-docker.test.js` inside `test:scripts`.
+- Run actual CI coverage for the minimal TanStack/Rust dual-stack compose stack.
+- Run CI compare-mode coverage against a focused public no-auth Playwright
+  smoke before broader cutover rehearsals.
+- Keep the migration plan and cutover runbook discoverable from `apps/docs`.
+
+The root commands are:
+
+```bash
+bun test:e2e:tanstack:docker -- -- --project=chromium
+bun test:e2e:web:docker:compare -- public-marketing-routes.noauth.spec.ts --project=chromium-no-auth
+```
+
+The double separator in the first command is intentional when invoking through
+Bun: the first `--` separates Bun args, and the second is forwarded to the
+TanStack runner so Playwright receives the project flag.
+
+## Backend Waves
+
+Backend migration is the primary bottleneck. Batch Rust routes by domain and
+keep each batch independently revertible:
+
+1. Auth, session, account identity, and current-user profile.
+2. Workspace core, membership, limits, and permissions/navigation prerequisites.
+3. High-density `/api/v1/workspaces/*` domains that unblock authenticated pages.
+4. Cron, tRPC, and remaining low-frequency API compatibility routes.
+
+Each backend wave must update focused Rust tests, route helper abstractions when
+patterns harden, `apps/backend/README.md` when runtime behavior changes, and the
+OpenAPI contract through the coordinator-owned `apps/backend/api/openapi.yaml`.
+
+## Frontend Waves
+
+Frontend work should follow backend readiness rather than reintroduce protected
+raw API calls:
+
+1. Dashboard shell, providers, navigation, auth gate, and workspace permission
+   parity.
+2. Authenticated dashboard pages whose data APIs are Rust-owned.
+3. Module and settings pages in domain batches.
+4. Public/static pages that still have legacy route artifacts.
+5. Decommission-only accepted removals.
+
+Use TanStack Router loaders, `createServerFn`, TanStack Query, and the existing
+`auth-gate`, `workspace`, and `workspace-permission` helpers. Shared UI and the
+TanStack app must call typed internal-api/backend facades, not protected raw
+Supabase reads or raw `/api/*` endpoints.
+
+Every terminal route must be classified as one of:
+
+- static prerender
+- ISR/CDN cache
+- dynamic no-store
+- redirect
+- accepted removal
+
+### 2026-06-25 Frontend Scout Handoff
+
+The first frontend-only scout wave deliberately rejected several compact-looking
+routes because they would otherwise become shell-only migrations. Keep these
+handoffs visible so parallel workers do not repeat the same audit:
+
+| Candidate lane | Current finding | Next unblock |
+| --- | --- | --- |
+| `/:locale/meet` and `/:locale/meet-together` | TanStack public preview shells exist, but legacy also shows authenticated meeting plans and creates plans through Supabase/server-action paths. | Add typed plan list/create APIs through Rust or TanStack server functions, then prove unauthenticated and authenticated parity with focused E2E. |
+| `/:locale/:wsId/users/topic-announcements/import` | Migrated in the TanStack frontend as a dynamic no-store page with fail-closed auth, workspace and feature gates, `manage_users`, send-permission-aware create-and-send controls, client-only XLSX/CSV parsing, editable row validation, and typed internal-api import/send-bulk mutations. | Backend agents still need Rust ownership for `/api/v1/workspaces/:wsId/topic-announcements/import` and `/send-bulk` before full backend cutover. |
+| `/:locale/:wsId/users/groups/:groupId/attendance` | Migrated in the TanStack frontend as a dynamic no-store page with fail-closed auth, workspace and group checks, `check_user_attendance`, `update_user_attendance` save gating, session/date URL state, and typed internal-api attendance/member/config/session facades. | Backend agents still need Rust ownership for the user-group attendance, members, workspace config, and session APIs before full backend cutover. |
+| `/:locale/:wsId/billing` | Rust owns the initial billing read and AI-credit status, now exposed through `getBackendWorkspaceBilling` and `getBackendWorkspaceAiCredits`, but the client still needs payment cancellation, continuation, checkout, seat, credit purchase, invoice, and billing-details actions. | Add typed payment/billing facades for all client mutations, or explicitly split a read-only page from separately tracked disabled actions before marking terminal. |
+| `/:locale/:wsId/usage` | The page wrapper is small, but the content is a broad Supabase/RPC workspace usage dashboard. | Create a usage-summary backend contract or server-function bundle that returns permission-masked stats without direct Supabase reads in TanStack. |
+| `/:locale/:wsId/ai/spark`, `/:locale/:wsId/mira`, `/:locale/:wsId/assistant` | Page files are compact, but the behavior is coupled to AI object APIs, Mira API routes, voice/live API helpers, or assistant providers. | Treat these as dedicated product lanes with typed AI/Mira/assistant facades and focused browser evidence. |
+
+## Coordinator-Owned Artifacts
+
+Only the migration coordinator should edit generated or contract artifacts:
+
+- `apps/tanstack-web/src/routeTree.gen.ts`
+- `apps/tanstack-web/migration/route-manifest.json`
+- `apps/tanstack-web/migration/route-overrides.json`
+- `apps/backend/api/openapi.yaml`
+- `apps/docs/platform/architecture/tanstack-rust-migration.mdx`
+
+Workers should own disjoint route/API/domain lanes and leave coordinator-owned
+files for integration.
+
+## Required Gates
+
+Per backend wave:
+
+- `cargo fmt --check`
+- focused `cargo test --locked <module>`
+- `cargo clippy --locked --all-targets --features native -- -D warnings`
+- OpenAPI contract tests
+- `bun migration:tanstack:check`
+
+Per frontend wave:
+
+- `bun --filter @tuturuuu/tanstack-web type-check`
+- `bun --filter @tuturuuu/tanstack-web test`
+- route-tree generator tests when route files change
+- `bun migration:tanstack:check`
+- TanStack API access checks
+- focused Playwright when route behavior changes
+
+Final cutover requires:
+
+- `bun migration:tanstack:cutover-check`
+- `bun migration:tanstack:gates`
+- dual-stack Docker E2E evidence
+- compare-mode Docker E2E evidence
+- benchmark evidence
+- Cloudflare smoke evidence
+- final `bun check`
+
+## Commit Cadence
+
+Commit after each independently revertible lane or small batch. In a shared
+checkout, claim the commit window immediately before exact-path staging, inspect
+the staged files, commit with a Conventional Commit subject, then release the
+window. Do not run `bun git-sync` or push unless explicitly requested.

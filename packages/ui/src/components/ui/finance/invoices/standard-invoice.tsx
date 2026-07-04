@@ -6,6 +6,7 @@ import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import { Separator } from '@tuturuuu/ui/separator';
 import { toast } from '@tuturuuu/ui/sonner';
+import { resolveSupportedCurrency } from '@tuturuuu/utils/currencies';
 import { shouldLockFinanceWalletSelectionOnCreate } from '@tuturuuu/utils/finance';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
@@ -56,7 +57,7 @@ interface Props {
   printAfterCreate?: boolean;
   downloadImageAfterCreate?: boolean;
   defaultWalletId?: string;
-  defaultCurrency?: 'VND' | 'USD';
+  defaultCurrency?: string;
   canChangeFinanceWallets?: boolean;
   canSetFinanceWalletsOnCreate?: boolean;
   canReadInvoiceProducts?: boolean;
@@ -70,7 +71,7 @@ export function StandardInvoice({
   printAfterCreate = false,
   downloadImageAfterCreate = false,
   defaultWalletId,
-  defaultCurrency = 'USD',
+  defaultCurrency: rawDefaultCurrency = 'USD',
   canChangeFinanceWallets = true,
   canSetFinanceWalletsOnCreate = true,
   canReadInvoiceProducts = true,
@@ -79,6 +80,7 @@ export function StandardInvoice({
 }: Props) {
   const t = useTranslations();
   const router = useRouter();
+  const defaultCurrency = resolveSupportedCurrency(rawDefaultCurrency);
   const { isConfidential: areNumbersHidden } =
     useFinanceConfidentialVisibility();
 

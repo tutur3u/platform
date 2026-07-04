@@ -1,14 +1,22 @@
 ---
 title: "Extensibility, Resilience & Scalability"
-description: "15 reasons why Tuturuuu's event-driven architecture prioritizes extensibility, resilience, and scalability"
-updatedAt: "2025-11-16"
+description: "15 reasons why event-driven architecture prioritizes extensibility, resilience, and scalability"
+updatedAt: "2026-06-21"
 ---
 
-The event-driven architecture is fundamentally designed for evolution, stability, and growth. This document explores **15 key reasons** (5 for each property) why these qualities are prioritized in Tuturuuu's architecture.
+Event-driven architecture is fundamentally designed for evolution, stability, and growth. This document explores **15 key reasons** (5 for each property) why these qualities matter, and shows how Tuturuuu applies the practical subset of these patterns today.
 
 <Info>
 To understand how different architectural patterns compare in terms of these quality attributes, see [Architectural Patterns Comparison](/platform/architecture/system-design/architectural-patterns-comparison).
 </Info>
+
+<Warning>
+**How to read this page.** The patterns below are general event-driven concepts. Tuturuuu is not a Kafka-style microservice mesh: the apps under `apps/` are conventional applications that share a single Supabase Postgres project, and asynchronous/background work runs on **[Trigger.dev v4](/reference/packages/trigger)** (`@trigger.dev/sdk` v4) using the `task()` API, not a self-managed broker with consumer groups or topic partitions. Code samples that use Trigger.dev show the real v4 `task()` shape; samples that describe broker primitives (partitions, DLQ topics, replay windows) are **conceptual pseudo-code** that illustrate the pattern rather than implemented Tuturuuu behavior. Each section calls out which is which.
+</Warning>
+
+<Note>
+**Active migration.** The legacy Next.js app (`apps/web`, port `7803`) is being replaced by `apps/tanstack-web` (TanStack Start) plus `apps/backend` (Rust, port `7820`). See [TanStack Start And Rust Migration](/platform/architecture/tanstack-rust-migration). The quality attributes below survive the migration; only the runtimes hosting them change.
+</Note>
 
 ## Extensibility (5 Reasons)
 
@@ -16,39 +24,37 @@ The event-driven architecture is fundamentally designed for evolution and the se
 
 ### 1. The "Add a Consumer" Pattern (Open/Closed Principle)
 
-To introduce new business functionality, we simply deploy a new microservice that subscribes to existing event streams.
+To introduce new business functionality, you add a new handler that reacts to existing work rather than editing the existing code path. In Tuturuuu that handler is a new Trigger.dev task (and, conceptually in a broker-based system, a new consumer subscribed to an event stream).
 
-**Example:** To add a fraud detection capability, we can deploy a `FraudDetectionService` that subscribes to `PaymentAttempted` and `PaymentFailed` event streams, all without modifying the existing services.
+**Example:** To add a fraud-detection capability, we can introduce a new Trigger.dev task that runs whenever a payment is attempted or fails, without modifying the code that initiates payments. In Trigger.dev v4, a task is a plain `task()` export; an upstream handler triggers it by name (`yourTask.trigger(payload)` / `tasks.trigger(...)`).
 
 ```typescript
-// NEW service - zero changes to existing payment service
-client.defineJob({
-  id: "fraud-detection",
-  name: "Detect fraudulent payments",
-  version: "1.0.0",
-  trigger: eventTrigger({
-    name: ["payment.attempted", "payment.failed"]
-  }),
-  run: async (payload, io) => {
-    const riskScore = await io.runTask("analyze-risk", async () => {
-      return await analyzeFraudRisk(payload);
-    });
+// NEW task - zero changes to the code that initiates payments
+import { task, tasks } from '@trigger.dev/sdk/v3';
+
+export const fraudDetection = task({
+  id: 'fraud-detection',
+  queue: { concurrencyLimit: 10 },
+  run: async (payload: { paymentId: string; amount: number }) => {
+    const riskScore = await analyzeFraudRisk(payload);
 
     if (riskScore > 0.8) {
-      await io.sendEvent("alert-fraud-team", {
-        name: "fraud.suspected",
-        payload: { ...payload, riskScore }
-      });
+      // Fan out to a follow-up task instead of a broker "sendEvent"
+      await tasks.trigger('alert-fraud-team', { ...payload, riskScore });
     }
-  }
+
+    return { paymentId: payload.paymentId, riskScore };
+  },
 });
 ```
 
+The payment flow only adds a single `fraudDetection.trigger(...)` call (or none, if a shared dispatcher already fans out payment events). The existing charge logic is untouched.
+
 **Benefits:**
-- **Zero modification** to payment service
-- **Independent deployment** of fraud detection
+- **Zero modification** to the payment logic
+- **Independent deployment** of the fraud-detection task
 - **No regression risk** to existing functionality
-- **Team autonomy** - fraud team works independently
+- **Team autonomy** - the fraud team works independently
 
 **Clarifying Additions:** This ensures growth does not disrupt existing areas. New capabilities arrive as new components rather than modifications to old ones. This avoids large, risky refactors as the system expands.
 
@@ -58,33 +64,27 @@ client.defineJob({
 
 When a new data source is introduced, like a new type of IoT sensor, we can introduce new event types (e.g., `SensorReadingRecorded`). Existing services will simply ignore these new events, ensuring they are not impacted. New, specialized services can then be built to handle this new stream, allowing the system to grow organically.
 
-**Example:**
+**Example:** in a Trigger.dev v4 model, a "new event type" becomes a new task plus the call site that triggers it. Existing tasks never see the new payload, so they are unaffected.
 
 ```typescript
-// New IoT feature - add new event type
-await trigger.event({
-  name: "iot.sensor.reading",  // NEW event type
-  payload: {
-    sensorId,
-    reading,
-    timestamp,
-    location
-  }
+// New IoT feature - add a NEW task; nothing existing changes
+import { task } from '@trigger.dev/sdk/v3';
+
+export const iotDataProcessor = task({
+  id: 'iot-data-processor',
+  run: async (payload: {
+    sensorId: string;
+    reading: number;
+    timestamp: string;
+    location: string;
+  }) => {
+    return await storeIoTReading(payload);
+  },
 });
 
-// Existing services ignore this event - no impact
-// New service handles it
-client.defineJob({
-  id: "iot-data-processor",
-  name: "Process IoT sensor data",
-  version: "1.0.0",
-  trigger: eventTrigger({ name: "iot.sensor.reading" }),
-  run: async (payload, io) => {
-    await io.runTask("store-reading", async () => {
-      return await storeIoTReading(payload);
-    });
-  }
-});
+// The producer adds one line to fan the new work out:
+//   await iotDataProcessor.trigger({ sensorId, reading, timestamp, location });
+// Existing tasks are never invoked with this payload - no impact.
 ```
 
 **Benefits:**
@@ -134,41 +134,34 @@ const WorkspaceCreatedV2 = z.object({
 
 ---
 
-### 4. Decoupled Data Ownership
+### 4. Modular Data Ownership
 
-Each microservice manages its own database. To support a new feature requiring geospatial data, a `GeolocationService` can be created with a specialized PostGIS database, avoiding a complex migration of a central database and allowing data stores to evolve independently.
+> **Conceptual pattern.** In a full microservice mesh each service owns a private database. **Tuturuuu does not do this today** - all apps share a single Supabase Postgres project, and per-feature isolation is enforced through schema boundaries, table ownership conventions, and RLS rather than separate physical databases. The pattern below shows how decoupled ownership *would* look and is useful when reasoning about future extraction; it is not the current deployment.
 
-**Example:**
+To support a new feature requiring geospatial queries, you can isolate the new data shape behind a dedicated module (its own tables, or its own database extension such as PostGIS) so it evolves independently of unrelated tables.
 
 ```typescript
-// apps/geolocation/ - NEW service with specialized DB
-// Uses PostGIS extension for geospatial queries
-client.defineJob({
-  id: "update-user-location",
-  name: "Update user geolocation data",
-  version: "1.0.0",
-  trigger: eventTrigger({ name: "user.location.updated" }),
-  run: async (payload, io) => {
-    await io.runTask("store-location", async () => {
-      // Stores in separate PostGIS database
-      return await postgis.insert({
-        userId: payload.userId,
-        location: postgis.point(payload.lat, payload.lng),
-        timestamp: new Date()
-      });
-    });
-  }
+// Conceptual: a feature-owned task that writes to its own geospatial tables.
+import { task } from '@trigger.dev/sdk/v3';
+
+export const updateUserLocation = task({
+  id: 'update-user-location',
+  run: async (payload: { userId: string; lat: number; lng: number }) => {
+    // Writes to geolocation-owned tables (e.g. a PostGIS extension),
+    // without touching unrelated schemas.
+    return await storeUserLocation(payload);
+  },
 });
 
-// Other services still use Supabase PostgreSQL
-// No need to migrate entire system to PostGIS
+// In Tuturuuu today this lives in the shared Supabase project; isolation is
+// schema/RLS-based rather than a physically separate database.
 ```
 
-**Benefits:**
-- **Right tool for the job** - choose optimal database per service
+**Benefits (of the pattern):**
+- **Right tool for the job** - choose the optimal storage for each feature
 - **Independent evolution** of data models
-- **No monolithic database** bottleneck
-- **Service isolation** - database failures contained
+- **Bounded blast radius** for schema changes
+- **Module isolation** - feature data evolves without cross-feature migrations
 
 **Clarifying Additions:** Each module grows independently while remaining part of a cohesive whole. UI changes become safer because the blast radius stays limited. This supports consistent long-term UI development.
 
@@ -176,7 +169,7 @@ client.defineJob({
 
 ### 5. Frontend Composability
 
-The modular frontend can be extended with new components that generate new types of interactions. A new `DashboardWidgetComponent` can be added to the UI, which communicates with the API Gateway to translate its requests into new Kafka events, cleanly integrating the feature into the backend.
+The modular frontend can be extended with new components that drive new interactions. A new dashboard widget can call a REST route (`/api/v1/...` in `apps/web`, or a Rust `apps/backend` endpoint in the migrated stack), and that route either responds directly or kicks off background work by triggering a Trigger.dev task. The widget never talks to a broker; it talks to an HTTP endpoint that owns the side effects.
 
 **Example:**
 
@@ -184,51 +177,46 @@ The modular frontend can be extended with new components that generate new types
 // apps/web/src/components/dashboard/NewWidget.tsx
 'use client';
 
-import { useState } from 'react';
-import { api } from '@/lib/api';
+import { useMutation } from '@tanstack/react-query';
 
 export function NewDashboardWidget() {
-  const [data, setData] = useState(null);
-
-  const handleAction = async () => {
-    // Triggers new event in backend
-    await api.widgets.performAction.mutate({
-      widgetId: 'new-widget',
-      action: 'refresh'
-    });
-  };
+  // Use TanStack Query for client mutations - never fetch in useEffect.
+  const refresh = useMutation({
+    mutationFn: () =>
+      fetch('/api/v1/widgets/refresh', {
+        method: 'POST',
+        body: JSON.stringify({ widgetId: 'new-widget' }),
+      }),
+  });
 
   return (
     <div className="widget">
-      <button onClick={handleAction}>Refresh Data</button>
+      <button onClick={() => refresh.mutate()}>Refresh Data</button>
       {/* Widget UI */}
     </div>
   );
 }
 
-// Backend: apps/web/src/app/api/widgets/action/route.ts
-export async function POST(request: Request) {
-  const { widgetId, action } = await request.json();
+// Backend route: apps/web/src/app/api/v1/widgets/refresh/route.ts
+import { tasks } from '@trigger.dev/sdk/v3';
 
-  // Publish NEW event type
-  await trigger.event({
-    name: "dashboard.widget.action",  // NEW event
-    payload: { widgetId, action, userId, timestamp: new Date() }
-  });
+export async function POST(request: Request) {
+  const { widgetId } = await request.json();
+
+  // Kick off background work by triggering a task (no broker publish).
+  await tasks.trigger('refresh-widget', { widgetId });
 
   return Response.json({ success: true });
 }
-
-// Consumers can now process this new event
 ```
 
 **Benefits:**
-- **Frontend-driven innovation** - UI team can add features
-- **Clean integration** via events
-- **Backend extensibility** without tight coupling
+- **Frontend-driven innovation** - the UI team can add features
+- **Clean integration** via stable HTTP routes that own the side effects
+- **Backend extensibility** without tight coupling to the client
 - **Feature experimentation** with low risk
 
-**Clarifying Additions:** Frontends stay insulated from backend restructuring. The gateway becomes the stable interface even as internal services change. This continuity simplifies client-side development.
+**Clarifying Additions:** Frontends stay insulated from backend restructuring. The HTTP route is the stable interface even as the work behind it moves between an inline handler and a background task. This continuity simplifies client-side development and survives the `apps/web` to `apps/tanstack-web` + `apps/backend` migration.
 
 ---
 
@@ -236,30 +224,26 @@ export async function POST(request: Request) {
 
 Resilience is an intrinsic property of this loosely coupled, asynchronous architecture.
 
-### 1. The Broker as a Stability Buffer (Temporal Decoupling)
+### 1. The Queue as a Stability Buffer (Temporal Decoupling)
 
-If a consuming service (e.g., `ReportingService`) goes offline, producer services are unaffected and continue publishing events. The broker safely stores these events until the consumer comes back online and can resume processing, guaranteeing no data loss and isolating failures.
+If downstream processing is slow or temporarily unavailable, the code that triggers it is unaffected: triggering a Trigger.dev task enqueues a run and returns immediately. Trigger.dev persists and retries runs, so work is not lost while a task's worker capacity catches up. The same buffering property holds in a full broker too; in Tuturuuu it is provided by Trigger.dev's managed run queue rather than a self-hosted broker.
 
 **Example:**
 
 ```typescript
-// Producer continues working even if consumer is down
-await trigger.event({
-  name: "report.generated",
-  payload: { reportId, data }
-});
-// Returns immediately - doesn't wait for consumer
+import { task, tasks } from '@trigger.dev/sdk/v3';
 
-// Consumer comes back online after 2 hours of downtime
-client.defineJob({
-  id: "process-reports",
-  trigger: eventTrigger({ name: "report.generated" }),
-  run: async (payload, io) => {
-    // Processes all 120 reports that accumulated during downtime
-    await io.runTask("process-report", async () => {
-      return await processReport(payload);
-    });
-  }
+// The caller continues working even if processing is backed up.
+await tasks.trigger('process-report', { reportId, data });
+// Returns immediately - it does not wait for the run to complete.
+
+// The task drains its backlog at its own sustainable pace.
+export const processReport = task({
+  id: 'process-report',
+  queue: { concurrencyLimit: 5 },
+  run: async (payload: { reportId: string; data: unknown }) => {
+    return await generateReport(payload);
+  },
 });
 ```
 
@@ -294,17 +278,19 @@ async function createWorkspace(data) {
 }
 
 // EVENT-DRIVEN (resilient):
+import { tasks } from '@trigger.dev/sdk/v3';
+
 async function createWorkspace(data) {
   const workspace = await db.createWorkspace(data);
 
-  // Non-blocking - returns immediately
-  await trigger.event({ name: "workspace.created", payload: { ... } });
+  // Non-blocking - enqueues background work and returns immediately
+  await tasks.trigger('workspace-created-followups', { workspaceId: workspace.id });
 
-  return workspace;  // User gets response in <1 second
+  return workspace;  // User gets a response in <1 second
 }
 
-// Consumers process asynchronously
-// If email service is slow, it doesn't affect user experience
+// Tasks run asynchronously.
+// If the email step is slow, it does not affect the user-facing response.
 ```
 
 **Benefits:**
@@ -319,45 +305,40 @@ async function createWorkspace(data) {
 
 ### 3. Idempotent Consumer Design
 
-A core resilience pattern is to design consumers to be idempotent. This means they can safely process the same event multiple times without duplicate side effects. If a consumer crashes after processing an event but before acknowledging it, the broker will redeliver it; idempotency ensures this does not corrupt the system's state.
+A core resilience pattern is to make task handlers idempotent so they can safely run on the same payload more than once without duplicate side effects. Trigger.dev retries failed runs (and supports an `idempotencyKey` on trigger), so a task that crashes after sending an email but before recording it may run again; idempotency ensures that retry does not corrupt state.
 
 **Example:**
 
 ```typescript
-client.defineJob({
-  id: "send-welcome-email",
-  trigger: eventTrigger({ name: "user.registered" }),
-  run: async (payload, io) => {
+import { task } from '@trigger.dev/sdk/v3';
+
+export const sendWelcomeEmail = task({
+  id: 'send-welcome-email',
+  run: async (payload: { userId: string; email: string }) => {
     const { userId, email } = payload;
 
-    // Idempotent: Check if already sent before sending
-    await io.runTask("send-email-idempotently", async () => {
-      const existingEmail = await db.sentEmails.findOne({
-        userId,
-        type: 'welcome'
-      });
-
-      if (existingEmail) {
-        // Already sent - skip (idempotent behavior)
-        return { skipped: true };
-      }
-
-      // Send email
-      await sendEmail({ to: email, template: 'welcome' });
-
-      // Record that we sent it
-      await db.sentEmails.insert({
-        userId,
-        type: 'welcome',
-        sentAt: new Date()
-      });
-
-      return { sent: true };
+    // Idempotent: check if already sent before sending.
+    const existingEmail = await db.sentEmails.findOne({
+      userId,
+      type: 'welcome',
     });
-  }
+
+    if (existingEmail) {
+      // Already sent - skip (idempotent behavior).
+      return { skipped: true };
+    }
+
+    await sendEmail({ to: email, template: 'welcome' });
+
+    await db.sentEmails.insert({ userId, type: 'welcome', sentAt: new Date() });
+
+    return { sent: true };
+  },
 });
 
-// If this job crashes and retries, user doesn't get duplicate emails
+// If this run is retried, the user does not get a duplicate email.
+// Triggering with an idempotencyKey also deduplicates the run itself:
+//   sendWelcomeEmail.trigger(payload, { idempotencyKey: `welcome-${userId}` });
 ```
 
 **Benefits:**
@@ -370,53 +351,44 @@ client.defineJob({
 
 ---
 
-### 4. Dead-Letter Queue (DLQ) for Error Handling
+### 4. Retries and a Dead-Letter Path for Error Handling
 
-For events that consistently fail processing (e.g., due to malformed data), a DLQ pattern is used. After a few retries, the problematic event is moved to a separate "dead-letter" topic for offline analysis, preventing a single "poison pill" message from halting the entire event stream.
+> **Conceptual + partial.** A true dead-letter *queue* (a separate topic the broker auto-routes poison messages to) is a broker primitive Tuturuuu does not run. Trigger.dev v4 *does* provide the durable building blocks: per-task `retry` policies and the ability to hand a permanently failing payload off to a dedicated "dead-letter" follow-up task for offline analysis. The example below uses real v4 `retry` config and models the dead-letter step as an explicit follow-up trigger.
 
-**Example:**
+For payloads that consistently fail (e.g., malformed data), configure bounded retries and route the still-failing payload to a dedicated task instead of letting it block the rest of the workload.
 
 ```typescript
-client.defineJob({
-  id: "process-payment",
-  trigger: eventTrigger({ name: "payment.initiated" }),
-  run: async (payload, io) => {
-    try {
-      await io.runTask("charge-customer", async () => {
-        return await chargePaymentMethod(payload);
-      }, {
-        retry: { maxAttempts: 3 }  // Try 3 times
-      });
-    } catch (error) {
-      // After 3 failures, send to DLQ
-      await io.sendEvent("send-to-dlq", {
-        name: "payment.failed.dlq",
-        payload: {
-          originalEvent: payload,
-          error: error.message,
-          attempts: 3,
-          timestamp: new Date()
-        }
-      });
+import { task, tasks } from '@trigger.dev/sdk/v3';
 
-      // Alert team for manual investigation
-      await io.sendEvent("alert-team", {
-        name: "payment.requires.manual.review",
-        payload: { paymentId: payload.id }
-      });
-    }
-  }
+export const processPayment = task({
+  id: 'process-payment',
+  // Real v4 retry policy: bounded, exponential backoff.
+  retry: { maxAttempts: 3, factor: 2, minTimeoutInMs: 1000 },
+  run: async (payload: { id: string }) => {
+    return await chargePaymentMethod(payload);
+  },
+  // Runs after all retries are exhausted - the "dead-letter" hand-off.
+  handleError: async (payload, error) => {
+    await tasks.trigger('payment-dead-letter', {
+      originalPayload: payload,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
+  },
 });
 
-// Separate job monitors DLQ for patterns
-client.defineJob({
-  id: "analyze-dlq-patterns",
-  trigger: eventTrigger({ name: "*.dlq" }),
-  run: async (payload, io) => {
-    // Analyze common failure patterns for alerts/fixes
-  }
+// Dedicated task that records failures and alerts for manual review.
+export const paymentDeadLetter = task({
+  id: 'payment-dead-letter',
+  run: async (payload: { originalPayload: { id: string }; error: string }) => {
+    await recordFailedPayment(payload);
+    await alertOnCallTeam(payload.originalPayload.id);
+  },
 });
 ```
+
+<Note>
+Confirm the exact `retry` / `handleError` field names against the installed `@trigger.dev/sdk` v4 types before copying this verbatim; the shape above illustrates the pattern, and Tuturuuu's own tasks in `packages/trigger/src` favor catching errors inside `run` and returning a `{ success: false }` result.
+</Note>
 
 **Benefits:**
 - **Poison pill isolation** - one bad message doesn't stop queue
@@ -430,52 +402,43 @@ client.defineJob({
 
 ### 5. Replayability for Disaster Recovery
 
-Because the event broker maintains an immutable log, it enables powerful recovery scenarios. If a service's database is corrupted due to a bug, we can deploy a fix, discard the corrupted state, and "replay" the event stream from a known good point in time to perfectly rebuild the service's state.
+> **Conceptual - not implemented in Tuturuuu.** This is a classic *event-sourcing* property: when an immutable, ordered log of domain events is the source of truth, you can rebuild any derived state by replaying that log from a known-good point. **Tuturuuu is not event-sourced** - state lives in Supabase Postgres tables, recovery relies on Postgres backups/PITR, and Trigger.dev v4 has no "replay this date range of events" trigger like the one previous versions of this page implied. Keep this section as a mental model for derived/cached state, not as an operational runbook.
 
-**Example:**
+**How it would work (event-sourcing concept):**
 
-```typescript
-// DISASTER: User profile service database corrupted
-// 1. Stop the corrupted service
-// 2. Deploy fixed version
-// 3. Drop corrupted database
-// 4. Replay events to rebuild state
-
-client.defineJob({
-  id: "rebuild-user-profiles",
-  name: "Rebuild user profile database",
-  version: "2.0.0",  // Fixed version
-  trigger: eventTrigger({
-    name: ["user.registered", "user.updated", "user.deleted"],
-    replay: {
-      fromDate: "2025-01-01",  // Replay from known good date
-      toDate: "2025-11-16"
-    }
-  }),
-  run: async (payload, io) => {
-    await io.runTask("rebuild-profile", async () => {
-      // Process events to rebuild database state
-      if (payload.name === "user.registered") {
-        await db.users.insert(payload);
-      } else if (payload.name === "user.updated") {
-        await db.users.update(payload.userId, payload);
-      } else if (payload.name === "user.deleted") {
-        await db.users.delete(payload.userId);
-      }
-    });
-  }
-});
-
-// Database perfectly reconstructed from event history
+```text
+DISASTER: a derived read model (e.g. a cache or projection) is corrupted by a bug.
+1. Stop the consumer that builds the read model.
+2. Deploy the fixed projection logic.
+3. Discard the corrupted derived state.
+4. Re-process the durable source events in order to rebuild the read model.
 ```
 
-**Benefits:**
-- **Disaster recovery** without backups
-- **Perfect state reconstruction**
-- **Bug fix validation** by replaying
+```typescript
+// Conceptual rebuild loop - a plain task that re-applies events you have
+// stored durably. There is no built-in Trigger.dev "replay by date" trigger;
+// you supply the events yourself (e.g. from an append-only table).
+import { task } from '@trigger.dev/sdk/v3';
+
+export const rebuildUserProjection = task({
+  id: 'rebuild-user-projection',
+  run: async (payload: { event: UserEvent }) => {
+    const { event } = payload;
+    if (event.type === 'user.registered') await db.users.insert(event);
+    else if (event.type === 'user.updated') await db.users.update(event.userId, event);
+    else if (event.type === 'user.deleted') await db.users.delete(event.userId);
+  },
+});
+```
+
+**Why Tuturuuu relies on backups instead:** without an append-only event log as the system of record, the durable truth is the Postgres tables themselves. Disaster recovery uses Supabase backups and point-in-time recovery rather than log replay.
+
+**Benefits (of the event-sourcing pattern, where adopted):**
+- **State reconstruction** from a durable event log
+- **Bug-fix validation** by re-deriving projections
 - **Audit trail** for compliance
 
-**Clarifying Additions:** The architecture expects components to fail and designs for automatic recovery. Redundant instances reduce the risk of total service loss. The system maintains health without manual intervention.
+**Clarifying Additions:** Treat derived/cached data as rebuildable from a durable source. For Tuturuuu that durable source is Postgres plus its backups; for a true event-sourced subsystem it would be the event log.
 
 ---
 
@@ -483,66 +446,72 @@ client.defineJob({
 
 The event-driven model is inherently designed for high-throughput and elastic scaling.
 
-### 1. Parallel Consumption with Consumer Groups
+### 1. Parallel Processing via Concurrency
 
-To increase processing throughput, we simply add more instances of a consuming microservice. The broker's consumer group protocol automatically balances the workload across all available instances, allowing for massive, near-linear scaling.
+To increase throughput, you raise the task's allowed concurrency and let more runs execute in parallel. In a Kafka-style system this is done with consumer groups; in Tuturuuu it is Trigger.dev's managed concurrency - you define the task once and set a `queue.concurrencyLimit` (and queue-level controls) rather than running and balancing your own consumer instances.
 
 **Example:**
 
 ```typescript
-// Single job definition
-client.defineJob({
-  id: "process-analytics",
-  trigger: eventTrigger({ name: "user.activity" }),
-  run: async (payload, io) => {
-    await io.runTask("aggregate-metrics", async () => {
-      return await aggregateMetrics(payload);
-    });
-  }
+import { task } from '@trigger.dev/sdk/v3';
+
+export const processAnalytics = task({
+  id: 'process-analytics',
+  // Higher concurrency = more parallel runs = more throughput.
+  queue: { concurrencyLimit: 50 },
+  run: async (payload: { userId: string; activity: unknown }) => {
+    return await aggregateMetrics(payload);
+  },
 });
 
-// Scaling configuration:
-// 1 instance: 100 events/min
-// 10 instances: 1,000 events/min (linear scaling)
-// 50 instances: 5,000 events/min
-// Trigger.dev automatically distributes events across instances
+// Trigger.dev schedules many runs of this task in parallel up to the limit,
+// so raising the concurrency limit raises throughput without code changes.
 ```
 
 **Benefits:**
-- **Linear scaling** - 10x instances = 10x throughput
-- **Automatic load balancing**
-- **No code changes** required
-- **Cost-effective** - scale up/down as needed
+- **Throughput scales with concurrency** - raise the limit, process more in parallel
+- **Managed scheduling** - no consumer instances to run or balance yourself
+- **No code changes** required to scale
+- **Cost-effective** - tune concurrency up or down as needed
 
 **Clarifying Additions:** Each service grows according to its actual demand rather than the needs of the system as a whole. This leads to better resource distribution. It prevents unnecessary scaling of unrelated components.
 
 ---
 
-### 2. Data Partitioning for Parallelism
+### 2. Per-Entity Ordering with Parallelism Across Entities
 
-Topics can be partitioned using a business key (e.g., `customerId` or `regionId`). This ensures events for a given entity are processed in order, while events for different entities can be processed fully in parallel.
+A common scaling goal is: process work for a single entity (e.g. one workspace) in order, while processing different entities fully in parallel. Kafka achieves this with topic partitions keyed by a business key; Tuturuuu does not run Kafka topics. The closest Trigger.dev mechanism is a **concurrency key** plus per-queue concurrency limits, which serialize runs that share a key while letting different keys run in parallel.
 
 **Example:**
 
 ```typescript
-// Partition by workspaceId for parallel processing
-await trigger.event({
-  name: "workspace.updated",
-  payload: { workspaceId, data },
-  // Events for same workspace go to same partition (ordered)
-  // Events for different workspaces go to different partitions (parallel)
-  id: workspaceId  // Partition key
+import { task } from '@trigger.dev/sdk/v3';
+
+export const updateWorkspace = task({
+  id: 'update-workspace',
+  // Serialize runs per workspace (one in flight per concurrencyKey),
+  // while different workspaces run in parallel.
+  queue: { concurrencyLimit: 25 },
+  run: async (payload: { workspaceId: string; data: unknown }) => {
+    return await applyWorkspaceUpdate(payload);
+  },
 });
 
-// Result:
-// Workspace A events: Partition 1 (processed in order)
-// Workspace B events: Partition 2 (processed in order, parallel to A)
-// Workspace C events: Partition 3 (processed in order, parallel to A & B)
+// Trigger per workspace so same-workspace runs are ordered:
+//   updateWorkspace.trigger(payload, { concurrencyKey: payload.workspaceId });
+//
+// Workspace A runs: serialized (ordered)
+// Workspace B runs: serialized (ordered), in parallel with A
+// Workspace C runs: serialized (ordered), in parallel with A & B
 ```
 
+<Note>
+This maps the partitioning *concept* onto Trigger.dev v4. Verify the `concurrencyKey` option name against the installed SDK before relying on it; there are no Kafka topics, partitions, or broker ACLs in Tuturuuu.
+</Note>
+
 **Benefits:**
-- **Ordering guarantees** per partition key
-- **Maximum parallelism** across partition keys
+- **Ordering guarantees** per entity (per concurrency key)
+- **Maximum parallelism** across distinct entities
 - **Optimal throughput** with consistency
 - **Scalable architecture**
 
@@ -550,23 +519,31 @@ await trigger.event({
 
 ---
 
-### 3. Independent Service Scaling
+### 3. Independent Scaling per Workload
 
-Each microservice is a separate application. We can scale the `OrderProcessingService` to 50 pods during a sales event while the `UserProfileService` remains at 2 pods, leading to highly efficient and cost-effective resource utilization.
+Different workloads scale on their own axis. In Tuturuuu this shows up two ways: the deployable apps (`apps/web`, the migration target `apps/tanstack-web`, and the Rust `apps/backend`) scale at the deployment layer, and each Trigger.dev task carries its own concurrency budget so a heavy task can run wide while a light one stays narrow - without coupling either to a single shared scale knob.
 
 **Example:**
 
 ```typescript
-// Vercel/infrastructure configuration
-const scalingConfig = {
-  "analytics-service": { min: 10, max: 100 },  // High traffic
-  "email-service": { min: 2, max: 20 },        // Moderate traffic
-  "reporting-service": { min: 1, max: 5 },     // Low traffic
-  "admin-service": { min: 1, max: 2 }          // Minimal traffic
-};
+import { task } from '@trigger.dev/sdk/v3';
 
-// Each service scales independently based on load
-// No need to scale entire monolith
+// Heavy, high-volume work: allow many parallel runs.
+export const processAnalytics = task({
+  id: 'process-analytics',
+  queue: { concurrencyLimit: 100 },
+  run: async (payload) => aggregateMetrics(payload),
+});
+
+// Low-volume, rate-sensitive work: keep it narrow.
+export const sendReport = task({
+  id: 'send-report',
+  queue: { concurrencyLimit: 2 },
+  run: async (payload) => deliverReport(payload),
+});
+
+// Each task scales independently via its own concurrency limit -
+// no need to scale the whole app to speed up one workload.
 ```
 
 **Benefits:**
@@ -579,16 +556,16 @@ const scalingConfig = {
 
 ---
 
-### 4. The Broker as a Load Absorber
+### 4. The Run Queue as a Load Absorber
 
-The event broker can ingest sudden, massive bursts of events. This smooths out the load, allowing consumer services to process the events at their own sustainable pace without being overwhelmed.
+A managed run queue can absorb sudden bursts of triggered work. It smooths out load so tasks process at their own sustainable pace (bounded by concurrency) without being overwhelmed. In Tuturuuu this absorber is the Trigger.dev run queue; the same role would be played by a broker in a Kafka-style system.
 
 **Example:**
 
 ```mermaid
 graph LR
-    A[Traffic Spike<br/>10,000 events/sec] -->|Ingests all| B[Event Broker<br/>Buffers events]
-    B -->|Delivers at<br/>500 events/sec| C[Consumer Service<br/>Processes sustainably]
+    A[Traffic Spike<br/>10,000 triggers/sec] -->|Enqueues all| B[Trigger.dev Run Queue<br/>Buffers runs]
+    B -->|Drains at<br/>concurrency limit| C[Task Workers<br/>Process sustainably]
 
     style B fill:#4f46e5,stroke:#3730a3,color:#fff
 ```
@@ -605,42 +582,37 @@ graph LR
 
 ### 5. CQRS for Optimized Read Performance
 
-The architecture is a natural fit for Command Query Responsibility Segregation (CQRS). "Command" services produce events, and separate "Query" services consume them to build read-optimized data models (in caches like Redis), allowing read-heavy parts of the system to scale independently and deliver low latency.
+An asynchronous, task-based flow is a natural fit for Command Query Responsibility Segregation (CQRS). A "command" writes the authoritative record and then triggers a background task; that task maintains a read-optimized model (for example a denormalized cache), letting read-heavy paths scale independently and deliver low latency.
+
+> **Conceptual.** Tuturuuu does not run a formal CQRS split today; this shows how the pattern maps onto the real `task()` API if you adopt it for a read-heavy surface.
 
 **Example:**
 
 ```typescript
-// COMMAND: Write to database, publish event
-async function updateWorkspace(id, data) {
-  await db.workspaces.update(id, data);
+import { task, tasks } from '@trigger.dev/sdk/v3';
 
-  await trigger.event({
-    name: "workspace.updated",
-    payload: { workspaceId: id, data }
-  });
+// COMMAND: write the authoritative record, then trigger the projection.
+async function updateWorkspace(id: string, data: unknown) {
+  await db.workspaces.update(id, data);
+  await tasks.trigger('update-workspace-cache', { workspaceId: id, data });
 }
 
-// QUERY: Maintain read-optimized cache
-client.defineJob({
-  id: "update-workspace-cache",
-  trigger: eventTrigger({ name: "workspace.updated" }),
-  run: async (payload, io) => {
-    await io.runTask("update-redis-cache", async () => {
-      // Denormalized, optimized for reads
-      await redis.set(
-        `workspace:${payload.workspaceId}`,
-        JSON.stringify({
-          ...payload.data,
-          // Pre-computed fields for fast reads
-          memberCount: await getMemberCount(payload.workspaceId),
-          lastActivity: new Date()
-        })
-      );
-    });
-  }
+// QUERY: maintain a read-optimized cache.
+export const updateWorkspaceCache = task({
+  id: 'update-workspace-cache',
+  run: async (payload: { workspaceId: string; data: Record<string, unknown> }) => {
+    await redis.set(
+      `workspace:${payload.workspaceId}`,
+      JSON.stringify({
+        ...payload.data,
+        memberCount: await getMemberCount(payload.workspaceId),
+        lastActivity: new Date(),
+      })
+    );
+  },
 });
 
-// Reads hit Redis (fast), writes go to Postgres (consistent)
+// Reads hit the cache (fast); writes go to Postgres (consistent).
 ```
 
 **Benefits:**

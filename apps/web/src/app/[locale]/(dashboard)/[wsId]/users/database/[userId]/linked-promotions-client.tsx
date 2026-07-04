@@ -81,6 +81,9 @@ const useWorkspacePromotions = (wsId: string) => {
           use_ratio: p.use_ratio,
         })) as WorkspacePromotion[];
     },
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+    refetchOnWindowFocus: false,
   });
 };
 
@@ -123,6 +126,8 @@ export default function LinkedPromotionsClient({
     },
     initialData: initialPromotions,
     staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+    refetchOnWindowFocus: false,
   });
   const count = (userLinkedPromotionsQuery.data || []).length;
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -147,6 +152,8 @@ export default function LinkedPromotionsClient({
       return await response.json();
     },
     staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+    refetchOnWindowFocus: false,
   });
 
   const referralDiscountMap = useMemo(() => {

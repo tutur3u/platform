@@ -1,15 +1,27 @@
 import {
+  TASK_NAVIGATION_GOALS_CONFIG_ID,
+  TASK_NAVIGATION_IMPORT_CONFIG_ID,
+  TASK_NAVIGATION_LEADERBOARDS_CONFIG_ID,
+  TASK_NAVIGATION_PROGRESS_CONFIG_ID,
+  TASK_NAVIGATION_STATS_CONFIG_ID,
+  TASK_SECONDARY_NAVIGATION_CONFIG_IDS,
+} from '@tuturuuu/internal-api/users';
+import {
   ROOT_WORKSPACE_ID,
   resolveWorkspaceId,
 } from '@tuturuuu/utils/constants';
 import { isExactTuturuuuDotComEmail } from '@tuturuuu/utils/email/client';
 import { notFound } from 'next/navigation';
 import { DEV_MODE } from '@/constants/env';
+import { getCalendarAppOrigin } from '@/lib/calendar-app-url';
 import { createTierRequirement } from '@/lib/feature-tiers';
 import { HABITS_ENABLED_SECRET } from '@/lib/habits/constants';
+import { getHiveAppOrigin } from '@/lib/hive-app-url';
+import { getInventoryAppOrigin } from '@/lib/inventory-app-url';
 import { getMailAppOrigin } from '@/lib/mail-app-url';
-import { MOBILE_DEPLOYMENT_VAULT_PERMISSION } from '@/lib/mobile-deployment/constants';
+import { getMindAppOrigin } from '@/lib/mind-app-url';
 import { getQrAppOrigin } from '@/lib/qr-app-url';
+import { getTasksAppOrigin } from '@/lib/tasks-app-url';
 import { TOPIC_ANNOUNCEMENTS_SECRET } from '@/lib/topic-announcements';
 import {
   createDashboardNavigationIcon,
@@ -34,18 +46,15 @@ async function createNavigationAdminClient(options?: { noCookie?: boolean }) {
 }
 
 async function loadWorkspaceNavigationHelpers() {
-  const {
-    getPermissions,
-    getSecret,
-    getSecrets,
-    verifyWorkspaceMembershipType,
-  } = await import('@tuturuuu/utils/workspace-helper');
+  const workspaceHelperModule = await import(
+    '@tuturuuu/utils/workspace-helper'
+  );
+  const { getPermissions, getSecret, getSecrets } = workspaceHelperModule;
 
   return {
     getPermissions,
     getSecret,
     getSecrets,
-    verifyWorkspaceMembershipType,
   };
 }
 
@@ -68,12 +77,7 @@ export async function WorkspaceNavigationLinks({
       import('next-intl/server'),
       loadWorkspaceNavigationHelpers(),
     ]);
-  const {
-    getPermissions,
-    getSecret,
-    getSecrets,
-    verifyWorkspaceMembershipType,
-  } = workspaceNavigationHelpers;
+  const { getPermissions, getSecret, getSecrets } = workspaceNavigationHelpers;
 
   // Parallelize all independent initial queries
   const [t, user, secrets] = await Promise.all([
@@ -101,31 +105,20 @@ export async function WorkspaceNavigationLinks({
   const qrAppHref = getQrAppOrigin();
   const isMailUser = isExactTuturuuuDotComEmail(user?.email);
   const mailAppHref = `${getMailAppOrigin()}/${personalOrWsId}`;
+  const inventoryAppHref = `${getInventoryAppOrigin()}/${personalOrWsId}`;
+  const calendarAppHref = `${getCalendarAppOrigin()}/${personalOrWsId}`;
+  const mindAppHref = `${getMindAppOrigin()}/${personalOrWsId}`;
+  const hiveAppHref = getHiveAppOrigin();
+  const tasksAppHref = `${getTasksAppOrigin()}/${personalOrWsId}`;
 
   // Parallelize user-dependent queries
   const [
-    rootMembership,
     workspacePermissions,
-    platformUserRole,
     userInvoiceVisibilityConfig,
+    userTaskNavigationConfigs,
     workspaceInvoiceVisibilityConfig,
-    hiveAccessResult,
   ] = await Promise.all([
-    user
-      ? verifyWorkspaceMembershipType({
-          wsId: ROOT_WORKSPACE_ID,
-          userId: user.id,
-          supabase,
-        })
-      : Promise.resolve(null),
     getPermissions({ user, wsId: resolvedWorkspaceId }),
-    user
-      ? supabase
-          .from('platform_user_roles')
-          .select('allow_discord_integrations')
-          .eq('user_id', user.id)
-          .maybeSingle()
-      : Promise.resolve({ data: null }),
     // Get user's invoice visibility preference
     user
       ? supabase
@@ -135,6 +128,13 @@ export async function WorkspaceNavigationLinks({
           .eq('id', 'FINANCE_SHOW_INVOICES')
           .maybeSingle()
       : Promise.resolve({ data: null }),
+    user
+      ? supabase
+          .from('user_configs')
+          .select('id,value')
+          .eq('user_id', user.id)
+          .in('id', [...TASK_SECONDARY_NAVIGATION_CONFIG_IDS])
+      : Promise.resolve({ data: [] }),
     // Get workspace's invoice visibility setting
     supabase
       .from('workspace_configs')
@@ -142,14 +142,6 @@ export async function WorkspaceNavigationLinks({
       .eq('ws_id', resolvedWorkspaceId)
       .eq('id', 'finance_show_invoices')
       .maybeSingle(),
-    user
-      ? Promise.all([
-          createNavigationAdminClient({ noCookie: true }),
-          import('@/lib/hive-page-context'),
-        ]).then(([sbAdmin, { resolveWebHiveAccess }]) =>
-          resolveWebHiveAccess({ userId: user.id, sbAdmin })
-        )
-      : Promise.resolve(null),
   ]);
   if (!workspacePermissions) {
     if (!user) notFound();
@@ -176,43 +168,22 @@ export async function WorkspaceNavigationLinks({
       {
         id: 'tasks',
         title: t('sidebar_tabs.tasks'),
-        href: `/${personalOrWsId}/tasks/boards`,
-        aliases: [`/${personalOrWsId}/tasks/boards`],
+        href: `${tasksAppHref}/tasks`,
+        aliases: [
+          `/${personalOrWsId}/tasks`,
+          `/${personalOrWsId}/tasks/boards`,
+          `/${personalOrWsId}/tasks/boards/*`,
+        ],
         icon: createDashboardNavigationIcon('CheckCircle2', 'h-5 w-5'),
+        external: true,
         experimental: 'beta',
         preferencePlacement: 'root',
         preferenceSectionLabel: sidebarSections.core,
-        children: [
-          {
-            title: t('sidebar_tabs.boards'),
-            href: `/${personalOrWsId}/tasks/boards`,
-            icon: createDashboardNavigationIcon('SquareKanban', 'h-4 w-4'),
-            matchExact: true,
-          },
-        ],
       },
     ] satisfies DashboardNavigationLink[];
   }
 
-  const hasHiveAccess =
-    hiveAccessResult !== null &&
-    !('error' in hiveAccessResult) &&
-    hiveAccessResult.hasAccess;
-
   const { withoutPermission } = workspacePermissions;
-
-  // Get root permissions only if user is a root member
-  const withoutRootPermission = rootMembership?.ok
-    ? ((
-        await getPermissions({
-          user,
-          wsId: ROOT_WORKSPACE_ID,
-        })
-      )?.withoutPermission ?? (() => true))
-    : () => true;
-
-  const allowDiscordIntegrations =
-    platformUserRole.data?.allow_discord_integrations ?? false;
   // Compute effective invoice visibility
   // Default: disabled for personal, enabled for non-personal
   const invoiceWorkspaceDefault = !isPersonal;
@@ -232,6 +203,13 @@ export async function WorkspaceNavigationLinks({
     userInvoiceValue === '__workspace_default__'
       ? workspaceShowInvoices
       : String(userInvoiceValue) === 'true';
+  const enabledTaskNavigationConfigIds = new Set(
+    (userTaskNavigationConfigs.data ?? [])
+      .filter((config) => String(config.value) === 'true')
+      .map((config) => config.id)
+  );
+  const isTaskNavigationEnabled = (configId: string) =>
+    enabledTaskNavigationConfigIds.has(configId);
   const sidebarSections = {
     ai: t('sidebar_sections.ai'),
     core: t('sidebar_sections.core'),
@@ -250,6 +228,79 @@ export async function WorkspaceNavigationLinks({
     withoutPermission('view_user_groups_reports') &&
     withoutPermission('view_user_groups_scores') &&
     withoutPermission('view_user_groups_posts');
+  const taskNavigationDisabled =
+    ENABLE_AI_ONLY || withoutPermission('manage_projects');
+  const secondaryTaskNavigationChildren: DashboardNavigationLink[] = [
+    ...(isTaskNavigationEnabled(TASK_NAVIGATION_PROGRESS_CONFIG_ID)
+      ? [
+          {
+            title: t('task-progress.tabs.progress'),
+            href: `${tasksAppHref}/progress`,
+            icon: createDashboardNavigationIcon('ChartArea', 'h-5 w-5'),
+            disabled: taskNavigationDisabled,
+            external: true,
+          } satisfies DashboardNavigationLink,
+        ]
+      : []),
+    ...(isTaskNavigationEnabled(TASK_NAVIGATION_GOALS_CONFIG_ID)
+      ? [
+          {
+            title: t('task-progress.tabs.goals'),
+            href: `${tasksAppHref}/goals`,
+            icon: createDashboardNavigationIcon('CheckCircle2', 'h-5 w-5'),
+            disabled: taskNavigationDisabled,
+            external: true,
+          } satisfies DashboardNavigationLink,
+        ]
+      : []),
+    ...(isTaskNavigationEnabled(TASK_NAVIGATION_STATS_CONFIG_ID)
+      ? [
+          {
+            title: t('task-progress.tabs.stats'),
+            href: `${tasksAppHref}/stats`,
+            icon: createDashboardNavigationIcon('ChartColumn', 'h-5 w-5'),
+            disabled: taskNavigationDisabled,
+            external: true,
+          } satisfies DashboardNavigationLink,
+        ]
+      : []),
+    ...(isTaskNavigationEnabled(TASK_NAVIGATION_LEADERBOARDS_CONFIG_ID)
+      ? [
+          {
+            title: t('task-progress.tabs.leaderboards'),
+            href: `${tasksAppHref}/leaderboards`,
+            icon: createDashboardNavigationIcon('Users', 'h-5 w-5'),
+            disabled: taskNavigationDisabled,
+            external: true,
+          } satisfies DashboardNavigationLink,
+        ]
+      : []),
+    ...(isTaskNavigationEnabled(TASK_NAVIGATION_IMPORT_CONFIG_ID)
+      ? [
+          {
+            title: t('task-progress.tabs.import'),
+            href: `${tasksAppHref}/import`,
+            icon: createDashboardNavigationIcon('Upload', 'h-5 w-5'),
+            disabled: taskNavigationDisabled,
+            external: true,
+          } satisfies DashboardNavigationLink,
+        ]
+      : []),
+  ];
+  const taskNavigationChildren: (DashboardNavigationLink | null)[] = [
+    {
+      title: t('sidebar_tabs.tasks'),
+      href: `${tasksAppHref}/tasks`,
+      aliases: [`/${personalOrWsId}/tasks/boards/*`],
+      icon: createDashboardNavigationIcon('CheckCircle2', 'h-5 w-5'),
+      disabled: taskNavigationDisabled,
+      external: true,
+      matchExact: true,
+    },
+    ...(secondaryTaskNavigationChildren.length
+      ? [null, ...secondaryTaskNavigationChildren]
+      : []),
+  ];
 
   const navLinks: (DashboardNavigationLink | null)[] = [
     {
@@ -266,85 +317,31 @@ export async function WorkspaceNavigationLinks({
     {
       id: 'tasks',
       title: t('sidebar_tabs.tasks'),
-      href: `/${personalOrWsId}/tasks`,
-      aliases: [`/${personalOrWsId}/tasks`, `/${personalOrWsId}/tasks/drafts`],
+      href: `${tasksAppHref}/tasks`,
+      aliases: [
+        `/${personalOrWsId}/tasks`,
+        `/${personalOrWsId}/tasks/boards`,
+        `/${personalOrWsId}/tasks/progress`,
+        `/${personalOrWsId}/tasks/goals`,
+        `/${personalOrWsId}/tasks/stats`,
+        `/${personalOrWsId}/tasks/leaderboards`,
+        `/${personalOrWsId}/tasks/import`,
+      ],
       icon: createDashboardNavigationIcon('CheckCircle2', 'h-5 w-5'),
-      disabled: ENABLE_AI_ONLY || withoutPermission('manage_projects'),
+      disabled: taskNavigationDisabled,
+      external: true,
       experimental: 'beta',
       preferencePlacement: 'root',
       preferenceSectionLabel: sidebarSections.core,
-      children: [
-        {
-          title: t('sidebar_tabs.tasks'),
-          href: `/${personalOrWsId}/tasks`,
-          icon: createDashboardNavigationIcon('UserStar', 'h-4 w-4'),
-          matchExact: true,
-        },
-        null,
-        // {
-        //   title: t('sidebar_tabs.notes'),
-        //   href: `/${personalOrWsId}/tasks/notes`,
-        //   icon: createDashboardNavigationIcon('NotepadText', 'h-4 w-4'),
-        // },
-        {
-          title: t('sidebar_tabs.drafts'),
-          href: `/${personalOrWsId}/tasks/drafts`,
-          icon: createDashboardNavigationIcon('FileEdit', 'h-4 w-4'),
-        },
-        null,
-        {
-          title: t('sidebar_tabs.boards'),
-          href: `/${personalOrWsId}/tasks/boards`,
-          icon: createDashboardNavigationIcon('SquareKanban', 'h-4 w-4'),
-        },
-        null,
-        {
-          title: t('sidebar_tabs.initiatives'),
-          href: `/${personalOrWsId}/tasks/initiatives`,
-          icon: createDashboardNavigationIcon('Sparkle', 'h-4 w-4'),
-          matchExact: true,
-        },
-        {
-          title: t('sidebar_tabs.projects'),
-          href: `/${personalOrWsId}/tasks/projects`,
-          icon: createDashboardNavigationIcon('Box', 'h-4 w-4'),
-        },
-        null,
-        // {
-        //   title: t('sidebar_tabs.cycles'),
-        //   href: `/${personalOrWsId}/tasks/cycles`,
-        //   icon: createDashboardNavigationIcon('RotateCcw', 'h-4 w-4'),
-        // },
-        {
-          title: t('sidebar_tabs.labels'),
-          href: `/${personalOrWsId}/tasks/labels`,
-          icon: createDashboardNavigationIcon('Tags', 'h-4 w-4'),
-        },
-        {
-          title: t('sidebar_tabs.templates'),
-          href: `/${personalOrWsId}/tasks/templates`,
-          icon: createDashboardNavigationIcon('Bookmark', 'h-4 w-4'),
-        },
-        {
-          title: t('sidebar_tabs.estimates'),
-          icon: createDashboardNavigationIcon('Hexagons3', 'h-4 w-4'),
-          href: `/${personalOrWsId}/tasks/estimates`,
-        },
-        null,
-        {
-          title: t('sidebar_tabs.logs'),
-          href: `/${personalOrWsId}/tasks/logs`,
-          icon: createDashboardNavigationIcon('Logs', 'h-4 w-4'),
-          disabled: withoutPermission('manage_projects'),
-        },
-      ],
+      children: taskNavigationChildren,
     },
     {
       id: 'habits',
       title: t('sidebar_tabs.habits'),
-      href: `/${personalOrWsId}/habits`,
+      href: `${tasksAppHref}/habits`,
       aliases: [`/${personalOrWsId}/habits`, `/${personalOrWsId}/tasks/habits`],
       icon: createDashboardNavigationIcon('Repeat', 'h-5 w-5'),
+      external: true,
       disabled: !ENABLE_HABITS,
       preferenceSectionLabel: sidebarSections.workTools,
     },
@@ -352,8 +349,8 @@ export async function WorkspaceNavigationLinks({
       id: 'calendar',
       title: t('sidebar_tabs.calendar'),
       icon: createDashboardNavigationIcon('Calendar', 'h-5 w-5'),
-      href: `/${personalOrWsId}/calendar`,
-      aliases: [`/${personalOrWsId}/calendar`],
+      href: calendarAppHref,
+      external: true,
       disabled: ENABLE_AI_ONLY || withoutPermission('manage_calendar'),
       preferencePlacement: 'root',
       preferenceSectionLabel: sidebarSections.core,
@@ -593,28 +590,18 @@ export async function WorkspaceNavigationLinks({
           id: 'mind',
           title: t('sidebar_tabs.mind'),
           icon: createDashboardNavigationIcon('BrainCircuit', 'h-5 w-5'),
-          href: `/${personalOrWsId}/mind`,
-          aliases: [
-            `/${personalOrWsId}/mind`,
-            `/${personalOrWsId}/mind/boards`,
-          ],
+          href: mindAppHref,
+          external: true,
           preferenceSectionLabel: sidebarSections.ai,
         },
-        ...(hasHiveAccess
-          ? [
-              {
-                id: 'hive',
-                title: t('sidebar_tabs.hive'),
-                icon: createDashboardNavigationIcon('Blocks', 'h-5 w-5'),
-                href: `/${personalOrWsId}/hive`,
-                aliases: [
-                  `/${personalOrWsId}/hive`,
-                  `/${personalOrWsId}/hive/not-whitelisted`,
-                ],
-                preferenceSectionLabel: sidebarSections.ai,
-              } satisfies DashboardNavigationLink,
-            ]
-          : []),
+        {
+          id: 'hive',
+          title: t('sidebar_tabs.hive'),
+          icon: createDashboardNavigationIcon('Blocks', 'h-5 w-5'),
+          href: hiveAppHref,
+          external: true,
+          preferenceSectionLabel: sidebarSections.ai,
+        },
         {
           id: 'chat',
           title: t('sidebar_tabs.chat'),
@@ -688,6 +675,7 @@ export async function WorkspaceNavigationLinks({
             `/${personalOrWsId}/users/attendance`,
             `/${personalOrWsId}/users/database`,
             `/${personalOrWsId}/users/groups`,
+            `/${personalOrWsId}/users/groups/calendar`,
             `/${personalOrWsId}/users/groups/indicators`,
             `/${personalOrWsId}/users/group-tags`,
             `/${personalOrWsId}/users/feedbacks`,
@@ -734,6 +722,14 @@ export async function WorkspaceNavigationLinks({
               href: `/${personalOrWsId}/users/groups`,
               icon: createDashboardNavigationIcon('Users', 'h-5 w-5'),
               matchExact: true,
+              disabled:
+                withoutPermission('manage_users') &&
+                withoutPermission('view_user_groups'),
+            },
+            {
+              title: t('workspace-users-tabs.group_calendar'),
+              href: `/${personalOrWsId}/users/groups/calendar`,
+              icon: createDashboardNavigationIcon('Calendar', 'h-5 w-5'),
               disabled:
                 withoutPermission('manage_users') &&
                 withoutPermission('view_user_groups'),
@@ -886,71 +882,11 @@ export async function WorkspaceNavigationLinks({
           id: 'inventory',
           title: t('sidebar_tabs.inventory'),
           icon: createDashboardNavigationIcon('Archive', 'h-5 w-5'),
+          href: inventoryAppHref,
+          external: true,
           requiredWorkspaceTier: createTierRequirement('inventory', {
             alwaysShow: true,
           }),
-          children: [
-            {
-              title: t('workspace-inventory-tabs.overview'),
-              href: `/${personalOrWsId}/inventory`,
-              icon: createDashboardNavigationIcon('LayoutDashboard', 'h-5 w-5'),
-              matchExact: true,
-              disabled: withoutPermission('view_inventory'),
-            },
-            null,
-            {
-              title: t('workspace-inventory-tabs.products'),
-              href: `/${personalOrWsId}/inventory/products`,
-              icon: createDashboardNavigationIcon('Package', 'h-5 w-5'),
-              disabled: withoutPermission('view_inventory'),
-            },
-            {
-              title: t('workspace-inventory-tabs.categories'),
-              href: `/${personalOrWsId}/inventory/categories`,
-              icon: createDashboardNavigationIcon('Tags', 'h-5 w-5'),
-              disabled: withoutPermission('view_inventory'),
-            },
-            {
-              title: t('workspace-inventory-tabs.units'),
-              href: `/${personalOrWsId}/inventory/units`,
-              icon: createDashboardNavigationIcon(
-                'RulerDimensionLine',
-                'h-5 w-5'
-              ),
-              disabled: withoutPermission('view_inventory'),
-            },
-            {
-              title: t('workspace-inventory-tabs.manufacturers'),
-              href: `/${personalOrWsId}/inventory/manufacturers`,
-              icon: createDashboardNavigationIcon('Blocks', 'h-5 w-5'),
-              disabled: withoutPermission('view_inventory'),
-            },
-            {
-              title: t('workspace-inventory-tabs.suppliers'),
-              href: `/${personalOrWsId}/inventory/suppliers`,
-              icon: createDashboardNavigationIcon('Truck', 'h-5 w-5'),
-              disabled: withoutPermission('view_inventory'),
-            },
-            {
-              title: t('workspace-inventory-tabs.warehouses'),
-              href: `/${personalOrWsId}/inventory/warehouses`,
-              icon: createDashboardNavigationIcon('Warehouse', 'h-5 w-5'),
-              disabled: withoutPermission('view_inventory'),
-            },
-            {
-              title: t('workspace-inventory-tabs.batches'),
-              href: `/${personalOrWsId}/inventory/batches`,
-              icon: createDashboardNavigationIcon('Boxes', 'h-5 w-5'),
-              disabled: withoutPermission('view_inventory'),
-            },
-            null,
-            {
-              title: t('workspace-inventory-tabs.promotions'),
-              href: `/${personalOrWsId}/inventory/promotions`,
-              icon: createDashboardNavigationIcon('TicketPercent', 'h-5 w-5'),
-              disabled: withoutPermission('view_inventory'),
-            },
-          ],
           disabled: ENABLE_AI_ONLY || withoutPermission('view_inventory'),
           preferenceSectionLabel: sidebarSections.operations,
         },
@@ -1265,386 +1201,31 @@ export async function WorkspaceNavigationLinks({
       id: 'settings',
       title: t('common.settings'),
       icon: createDashboardNavigationIcon('Settings', 'h-5 w-5'),
+      openSettingsDialog: true,
       preferenceLocked: true,
       preferencePlacement: 'root',
       preferenceSectionLabel: sidebarSections.utilities,
       aliases: [
+        `/${personalOrWsId}/settings`,
+        `/${personalOrWsId}/settings/*`,
         `/${personalOrWsId}/members`,
+        `/${personalOrWsId}/members/*`,
         `/${personalOrWsId}/teams`,
+        `/${personalOrWsId}/teams/*`,
         `/${personalOrWsId}/roles`,
-        `/${personalOrWsId}/settings/reports`,
-        `/${personalOrWsId}/settings/notifications`,
+        `/${personalOrWsId}/roles/*`,
         `/${personalOrWsId}/billing`,
+        `/${personalOrWsId}/billing/*`,
         `/${personalOrWsId}/usage`,
+        `/${personalOrWsId}/usage/*`,
         `/${personalOrWsId}/api-keys`,
+        `/${personalOrWsId}/api-keys/*`,
         `/${personalOrWsId}/secrets`,
-        `/${personalOrWsId}/migrations`,
+        `/${personalOrWsId}/secrets/*`,
         `/${personalOrWsId}/integrations`,
-        `/${personalOrWsId}/integrations/discord`,
+        `/${personalOrWsId}/integrations/*`,
+        `/${personalOrWsId}/inquiries`,
       ],
-      children: [
-        {
-          title: t('workspace-settings-layout.workspace'),
-          href: `/${personalOrWsId}/settings`,
-          icon: createDashboardNavigationIcon('Bolt', 'h-5 w-5'),
-          matchExact: true,
-        },
-        null,
-        ...(!isPersonal
-          ? [
-              {
-                // Members & roles are consolidated into the tabbed members page;
-                // the old /roles route redirects to /members?tab=roles.
-                title: t('workspace-settings-layout.members'),
-                href: `/${personalOrWsId}/members`,
-                icon: createDashboardNavigationIcon('Users', 'h-5 w-5'),
-                disabled:
-                  ENABLE_AI_ONLY ||
-                  withoutPermission('manage_workspace_members'),
-              },
-            ]
-          : []),
-        null,
-        {
-          title: t('workspace-settings-layout.reports'),
-          href: `/${personalOrWsId}/settings/reports`,
-          icon: createDashboardNavigationIcon('FileText', 'h-5 w-5'),
-          disabled:
-            ENABLE_AI_ONLY || withoutPermission('manage_user_report_templates'),
-          requireRootMember: true,
-        },
-        {
-          title: t('workspace-settings-layout.notifications'),
-          href: `/${personalOrWsId}/settings/notifications`,
-          icon: createDashboardNavigationIcon('Bell', 'h-5 w-5'),
-        },
-        {
-          title: t('sidebar_tabs.billing'),
-          href: `/${personalOrWsId}/billing`,
-          icon: createDashboardNavigationIcon('CircleDollarSign', 'h-5 w-5'),
-        },
-        {
-          title: t('sidebar_tabs.usage'),
-          href: `/${personalOrWsId}/usage`,
-          icon: createDashboardNavigationIcon('ChartColumnStacked', 'h-5 w-5'),
-        },
-        null,
-        allowDiscordIntegrations
-          ? {
-              title: t('sidebar_tabs.integrations'),
-              icon: createDashboardNavigationIcon('Bot', 'h-5 w-5'),
-              href: `/${personalOrWsId}/integrations`,
-              aliases: [`/${personalOrWsId}/integrations/discord`],
-              children: [
-                {
-                  title: 'Discord',
-                  href: `/${personalOrWsId}/integrations/discord`,
-                  icon: createDashboardNavigationIcon('Bot', 'h-5 w-5'),
-                  disabled: !allowDiscordIntegrations,
-                },
-              ],
-              disabled: !allowDiscordIntegrations,
-            }
-          : null,
-        {
-          title: t('workspace-settings-layout.api_keys'),
-          href: `/${personalOrWsId}/api-keys`,
-          icon: createDashboardNavigationIcon('KeyRound', 'h-5 w-5'),
-          disabled:
-            ENABLE_AI_ONLY ||
-            !hasSecret('ENABLE_API_KEYS', 'true') ||
-            withoutPermission('manage_api_keys'),
-          requireRootMember: true,
-        },
-        {
-          title: t('workspace-settings-layout.secrets'),
-          href: `/${personalOrWsId}/secrets`,
-          icon: createDashboardNavigationIcon('BookKey', 'h-5 w-5'),
-          disabled: withoutRootPermission('manage_workspace_secrets'),
-          requireRootMember: true,
-        },
-        null,
-        {
-          title: t('workspace-settings-layout.infrastructure'),
-          icon: createDashboardNavigationIcon('Blocks', 'h-5 w-5'),
-          disabled: withoutPermission('view_infrastructure'),
-          requireRootWorkspace: true,
-          requireRootMember: true,
-          children: [
-            {
-              title: t('infrastructure-tabs.overview'),
-              href: `/${personalOrWsId}/infrastructure`,
-              icon: createDashboardNavigationIcon('LayoutDashboard', 'h-5 w-5'),
-              matchExact: true,
-            },
-            {
-              title: t('infrastructure-tabs.users'),
-              href: `/${personalOrWsId}/infrastructure/users`,
-              icon: createDashboardNavigationIcon('Users', 'h-5 w-5'),
-            },
-            {
-              title: t('infrastructure-tabs.workspaces'),
-              href: `/${personalOrWsId}/infrastructure/workspaces`,
-              icon: createDashboardNavigationIcon('Blocks', 'h-5 w-5'),
-            },
-            {
-              title: t('infrastructure-tabs.entity_creation_limits'),
-              href: `/${personalOrWsId}/infrastructure/entity-creation-limits`,
-              icon: createDashboardNavigationIcon(
-                'RulerDimensionLine',
-                'h-5 w-5'
-              ),
-              disabled: withoutPermission('manage_workspace_roles'),
-            },
-            {
-              title: t('infrastructure-tabs.mobile_versions'),
-              href: `/${personalOrWsId}/infrastructure/mobile-versions`,
-              icon: createDashboardNavigationIcon('Smartphone', 'h-5 w-5'),
-              disabled: withoutPermission('manage_workspace_roles'),
-            },
-            {
-              title: t('infrastructure-tabs.mobile_deployment'),
-              href: `/${personalOrWsId}/infrastructure/mobile-deployment`,
-              icon: createDashboardNavigationIcon('Upload', 'h-5 w-5'),
-              disabled: withoutPermission(MOBILE_DEPLOYMENT_VAULT_PERMISSION),
-            },
-            {
-              title: t('infrastructure-tabs.github_bot'),
-              href: `/${personalOrWsId}/infrastructure/github-bot`,
-              icon: createDashboardNavigationIcon('Bot', 'h-5 w-5'),
-              disabled: withoutPermission('manage_workspace_secrets'),
-            },
-            {
-              title: t('infrastructure-tabs.external_apps'),
-              href: `/${personalOrWsId}/infrastructure/external-apps`,
-              icon: createDashboardNavigationIcon('KeyRound', 'h-5 w-5'),
-              disabled:
-                withoutPermission('manage_workspace_secrets') &&
-                withoutPermission('manage_workspace_roles'),
-            },
-            {
-              title: t('infrastructure-tabs.app_coordination'),
-              href: `/${personalOrWsId}/infrastructure/app-coordination`,
-              icon: createDashboardNavigationIcon('RefreshCw', 'h-5 w-5'),
-              disabled:
-                withoutPermission('manage_workspace_secrets') &&
-                withoutPermission('manage_workspace_roles'),
-            },
-            {
-              title: t('infrastructure-tabs.ai_agents'),
-              href: `/${personalOrWsId}/infrastructure/ai-agents`,
-              icon: createDashboardNavigationIcon('Bot', 'h-5 w-5'),
-              disabled: withoutPermission('manage_workspace_secrets'),
-            },
-            {
-              title: t('infrastructure-tabs.email_blacklist'),
-              href: `/${personalOrWsId}/infrastructure/email-blacklist`,
-              icon: createDashboardNavigationIcon('MailX', 'h-5 w-5'),
-            },
-            {
-              title: t('infrastructure-tabs.email_audit'),
-              href: `/${personalOrWsId}/infrastructure/email-audit`,
-              icon: createDashboardNavigationIcon('Mails', 'h-5 w-5'),
-            },
-            {
-              title: t('infrastructure-tabs.email_templates'),
-              href: `/${personalOrWsId}/infrastructure/email-templates`,
-              icon: createDashboardNavigationIcon('Mail', 'h-5 w-5'),
-            },
-            {
-              title: t('infrastructure-tabs.post_email_queue'),
-              href: `/${personalOrWsId}/infrastructure/post-email-queue`,
-              icon: createDashboardNavigationIcon('Mails', 'h-5 w-5'),
-            },
-            {
-              title: t('infrastructure-tabs.push_notifications'),
-              href: `/${personalOrWsId}/infrastructure/push-notifications`,
-              icon: createDashboardNavigationIcon('Bell', 'h-5 w-5'),
-            },
-            {
-              title: t('infrastructure-tabs.blocked_ips'),
-              href: `/${personalOrWsId}/infrastructure/blocked-ips`,
-              icon: createDashboardNavigationIcon('ShieldBan', 'h-5 w-5'),
-            },
-            {
-              title: t('infrastructure-tabs.abuse_events'),
-              href: `/${personalOrWsId}/infrastructure/abuse-events`,
-              icon: createDashboardNavigationIcon('ShieldAlert', 'h-5 w-5'),
-            },
-            {
-              title: t('infrastructure-tabs.abuse_intelligence'),
-              href: `/${personalOrWsId}/infrastructure/abuse-intelligence`,
-              icon: createDashboardNavigationIcon('ShieldUser', 'h-5 w-5'),
-            },
-            {
-              title: t('infrastructure-tabs.otp_limits'),
-              href: `/${personalOrWsId}/infrastructure/otp-limits`,
-              icon: createDashboardNavigationIcon('KeyRound', 'h-5 w-5'),
-            },
-            {
-              title: t('infrastructure-tabs.timezones'),
-              href: `/${personalOrWsId}/infrastructure/timezones`,
-              icon: createDashboardNavigationIcon('Clock', 'h-5 w-5'),
-            },
-            {
-              title: t('infrastructure-tabs.ai_whitelisted_emails'),
-              href: `/${personalOrWsId}/infrastructure/ai/whitelist/emails`,
-              icon: createDashboardNavigationIcon('Mail', 'h-5 w-5'),
-            },
-            {
-              title: t('ws-ai-whitelist-domains.plural'),
-              href: `/${personalOrWsId}/infrastructure/ai/whitelist/domains`,
-              icon: createDashboardNavigationIcon('Database', 'h-5 w-5'),
-            },
-            {
-              title: t('infrastructure-tabs.translations'),
-              href: `/${personalOrWsId}/infrastructure/translations`,
-              icon: createDashboardNavigationIcon('Languages', 'h-5 w-5'),
-            },
-            {
-              title: 'Calendar Sync',
-              href: `/${personalOrWsId}/infrastructure/calendar-sync`,
-              icon: createDashboardNavigationIcon('FolderSync', 'h-5 w-5'),
-            },
-            {
-              title: t('infrastructure-tabs.realtime'),
-              href: `/${personalOrWsId}/infrastructure/realtime`,
-              icon: createDashboardNavigationIcon('Radio', 'h-5 w-5'),
-            },
-            {
-              title: t('infrastructure-tabs.devboxes'),
-              href: `/${personalOrWsId}/infrastructure/devboxes`,
-              icon: createDashboardNavigationIcon('Box', 'h-5 w-5'),
-              sectionLabel: t('infrastructure-tabs.operations'),
-            },
-            {
-              title: t('infrastructure-tabs.monitoring'),
-              href: `/${personalOrWsId}/infrastructure/monitoring`,
-              icon: createDashboardNavigationIcon('Cctv', 'h-5 w-5'),
-              sectionLabel: t('infrastructure-tabs.operations'),
-              aliases: [
-                `/${personalOrWsId}/infrastructure/monitoring/cron`,
-                `/${personalOrWsId}/infrastructure/monitoring/deployments`,
-                `/${personalOrWsId}/infrastructure/monitoring/logs`,
-                `/${personalOrWsId}/infrastructure/monitoring/analytics`,
-                `/${personalOrWsId}/infrastructure/monitoring/observability`,
-                `/${personalOrWsId}/infrastructure/monitoring/projects`,
-                `/${personalOrWsId}/infrastructure/monitoring/requests`,
-                `/${personalOrWsId}/infrastructure/monitoring/resources`,
-                `/${personalOrWsId}/infrastructure/monitoring/rollouts`,
-                `/${personalOrWsId}/infrastructure/monitoring/stress-tests`,
-                `/${personalOrWsId}/infrastructure/monitoring/watcher-logs`,
-              ],
-              children: [
-                {
-                  title: t('infrastructure-tabs.monitoring_overview'),
-                  href: `/${personalOrWsId}/infrastructure/monitoring`,
-                  icon: createDashboardNavigationIcon('Cctv', 'h-5 w-5'),
-                  matchExact: true,
-                },
-                {
-                  title: t('infrastructure-tabs.monitoring_cron'),
-                  href: `/${personalOrWsId}/infrastructure/monitoring/cron`,
-                  icon: createDashboardNavigationIcon(
-                    'CalendarClock',
-                    'h-5 w-5'
-                  ),
-                },
-                {
-                  title: t('infrastructure-tabs.monitoring_rollouts'),
-                  href: `/${personalOrWsId}/infrastructure/monitoring/deployments`,
-                  icon: createDashboardNavigationIcon('Box', 'h-5 w-5'),
-                },
-                {
-                  title: t('infrastructure-tabs.monitoring_logs'),
-                  href: `/${personalOrWsId}/infrastructure/monitoring/logs`,
-                  icon: createDashboardNavigationIcon('Logs', 'h-5 w-5'),
-                },
-                {
-                  title: t('infrastructure-tabs.monitoring_analytics'),
-                  href: `/${personalOrWsId}/infrastructure/monitoring/analytics`,
-                  icon: createDashboardNavigationIcon('ChartColumn', 'h-5 w-5'),
-                },
-                {
-                  title: t('infrastructure-tabs.monitoring_observability'),
-                  href: `/${personalOrWsId}/infrastructure/monitoring/observability`,
-                  icon: createDashboardNavigationIcon('Database', 'h-5 w-5'),
-                },
-                {
-                  title: t('infrastructure-tabs.monitoring_projects'),
-                  href: `/${personalOrWsId}/infrastructure/monitoring/projects`,
-                  icon: createDashboardNavigationIcon('Box', 'h-5 w-5'),
-                },
-                {
-                  title: t('infrastructure-tabs.monitoring_requests'),
-                  href: `/${personalOrWsId}/infrastructure/monitoring/requests`,
-                  icon: createDashboardNavigationIcon('Radio', 'h-5 w-5'),
-                },
-                {
-                  title: t('infrastructure-tabs.monitoring_resources'),
-                  href: `/${personalOrWsId}/infrastructure/monitoring/resources`,
-                  icon: createDashboardNavigationIcon('HardDrive', 'h-5 w-5'),
-                },
-                {
-                  title: t('infrastructure-tabs.monitoring_stress_tests'),
-                  href: `/${personalOrWsId}/infrastructure/monitoring/stress-tests`,
-                  icon: createDashboardNavigationIcon('Bolt', 'h-5 w-5'),
-                },
-                {
-                  title: t('infrastructure-tabs.monitoring_watcher_logs'),
-                  href: `/${personalOrWsId}/infrastructure/monitoring/watcher-logs`,
-                  icon: createDashboardNavigationIcon('Logs', 'h-5 w-5'),
-                },
-              ],
-            },
-            {
-              title: t('infrastructure-tabs.ai_credits'),
-              href: `/${personalOrWsId}/infrastructure/ai-credits`,
-              icon: createDashboardNavigationIcon('CreditCard', 'h-5 w-5'),
-            },
-            {
-              title: t('infrastructure-tabs.changelog'),
-              href: `/${personalOrWsId}/infrastructure/changelog`,
-              icon: createDashboardNavigationIcon('Megaphone', 'h-5 w-5'),
-              disabled: withoutPermission('manage_changelog'),
-            },
-          ],
-        },
-        {
-          title: t('workspace-settings-layout.platform_roles'),
-          href: `/${personalOrWsId}/platform/roles`,
-          icon: createDashboardNavigationIcon('ShieldUser', 'h-5 w-5'),
-          disabled:
-            ENABLE_AI_ONLY || withoutPermission('manage_workspace_roles'),
-          requireRootWorkspace: true,
-          requireRootMember: true,
-        },
-        null,
-        {
-          title: 'Platform Billing',
-          href: `/${personalOrWsId}/platform/billing`,
-          icon: createDashboardNavigationIcon('CreditCard', 'h-5 w-5'),
-          disabled:
-            ENABLE_AI_ONLY || withoutPermission('manage_workspace_roles'),
-          requireRootWorkspace: true,
-          requireRootMember: true,
-        },
-        {
-          title: t('workspace-settings-layout.migrations'),
-          href: `/${personalOrWsId}/migrations`,
-          icon: createDashboardNavigationIcon('FolderSync', 'h-5 w-5'),
-          disabled: withoutPermission('manage_external_migrations'),
-          requireRootWorkspace: true,
-          requireRootMember: true,
-        },
-        {
-          title: t('sidebar_tabs.inquiries'),
-          href: `/${personalOrWsId}/inquiries`,
-          icon: createDashboardNavigationIcon('MessageCircleIcon', 'h-5 w-5'),
-          requireRootWorkspace: true,
-          requireRootMember: true,
-        },
-      ].filter(Boolean) as DashboardNavigationLink[],
     },
   ];
 

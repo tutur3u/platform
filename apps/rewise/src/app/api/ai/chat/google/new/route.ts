@@ -8,8 +8,6 @@ import {
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 
-export const preferredRegion = 'sin1';
-
 const POST = createPOST({
   async resolveGatewayAuth(request) {
     const appSessionToken = getAppSessionTokenFromRequest(request);

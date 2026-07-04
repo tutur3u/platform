@@ -2,7 +2,10 @@
 
 import type { Workspace, WorkspaceProductTier } from '@tuturuuu/types';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
-import type { ComponentType, ReactNode } from 'react';
+import { Dialog } from '@tuturuuu/ui/dialog';
+import { useSearchParams } from 'next/navigation';
+import { type ComponentType, type ReactNode, useEffect, useState } from 'react';
+import { SettingsDialogFullscreenSkeleton } from '@/components/settings/settings-dialog-skeleton';
 import { SidebarProvider } from '@/context/sidebar-context';
 import { useLazyClientComponent } from '@/hooks/use-lazy-client-component';
 import type { DashboardNavigationLink } from './navigation-icon-descriptor';
@@ -13,6 +16,11 @@ type DashboardSettingsDialogHostComponent = ComponentType<{
   workspace?: Workspace | null;
   wsId?: string;
 }>;
+
+type DashboardSettingsDialogHostModule = {
+  DashboardSettingsDialogHost: DashboardSettingsDialogHostComponent;
+  preloadDashboardSettingsDialogHostContent?: () => void;
+};
 
 type CalendarPreferencesProviderComponent = ComponentType<{
   children: ReactNode;
@@ -63,10 +71,29 @@ function loadStructure(): Promise<ComponentType<StructureProps>> {
   return import('./structure').then((module) => module.Structure);
 }
 
+let dashboardSettingsDialogHostPromise: Promise<DashboardSettingsDialogHostComponent> | null =
+  null;
+const BOARD_SETTINGS_PRELOAD_EVENT = 'tuturuuu:board-settings-intent';
+const SETTINGS_DIALOG_OPEN_INTENT_EVENT =
+  'tuturuuu:settings-dialog-open-intent';
+
 function loadDashboardSettingsDialogHost(): Promise<DashboardSettingsDialogHostComponent> {
-  return import('./dashboard-settings-dialog-host').then(
-    (module) => module.DashboardSettingsDialogHost
-  );
+  const importDashboardSettingsDialogHost = () =>
+    import('./dashboard-settings-dialog-host');
+
+  dashboardSettingsDialogHostPromise ??=
+    importDashboardSettingsDialogHost().then(
+      (module: DashboardSettingsDialogHostModule) => {
+        module.preloadDashboardSettingsDialogHostContent?.();
+        return module.DashboardSettingsDialogHost;
+      }
+    );
+
+  return dashboardSettingsDialogHostPromise;
+}
+
+function preloadDashboardSettingsDialogHost() {
+  void loadDashboardSettingsDialogHost();
 }
 
 function useDashboardSettingsDialogHost(enabled: boolean) {
@@ -75,6 +102,60 @@ function useDashboardSettingsDialogHost(enabled: boolean) {
 
 function DashboardShellFallback({ children }: { children: ReactNode }) {
   return <div className="min-h-screen bg-background">{children}</div>;
+}
+
+function DashboardSettingsDialogSkeletonGate({
+  enabled,
+  hostReady,
+}: {
+  enabled: boolean;
+  hostReady: boolean;
+}) {
+  const searchParams = useSearchParams();
+  const [intentOpen, setIntentOpen] = useState(false);
+  const settingsRequested = searchParams.get('settingsDialog') === 'open';
+
+  useEffect(() => {
+    if (!enabled) return;
+
+    const handlePreload = () => {
+      preloadDashboardSettingsDialogHost();
+    };
+    const handleOpenIntent = () => {
+      setIntentOpen(true);
+      preloadDashboardSettingsDialogHost();
+    };
+
+    window.addEventListener(BOARD_SETTINGS_PRELOAD_EVENT, handlePreload);
+    window.addEventListener(
+      SETTINGS_DIALOG_OPEN_INTENT_EVENT,
+      handleOpenIntent
+    );
+
+    return () => {
+      window.removeEventListener(BOARD_SETTINGS_PRELOAD_EVENT, handlePreload);
+      window.removeEventListener(
+        SETTINGS_DIALOG_OPEN_INTENT_EVENT,
+        handleOpenIntent
+      );
+    };
+  }, [enabled]);
+
+  useEffect(() => {
+    if (hostReady || settingsRequested) {
+      setIntentOpen(false);
+    }
+  }, [hostReady, settingsRequested]);
+
+  if (!enabled || hostReady || (!settingsRequested && !intentOpen)) {
+    return null;
+  }
+
+  return (
+    <Dialog open>
+      <SettingsDialogFullscreenSkeleton />
+    </Dialog>
+  );
 }
 
 export function DashboardShellClient({
@@ -139,6 +220,10 @@ export function DashboardShellClient({
       initialBehavior={sidebarBehavior}
       initialBehaviorUpdatedAt={sidebarBehaviorUpdatedAt}
     >
+      <DashboardSettingsDialogSkeletonGate
+        enabled={!isGuestWorkspace}
+        hostReady={Boolean(SettingsDialogHost)}
+      />
       {SettingsDialogHost && (
         <SettingsDialogHost wsId={wsId} user={user} workspace={workspace} />
       )}

@@ -46,6 +46,8 @@ const initialState: ProductFormState = {
   name: '',
   ownerId: '',
   price: '',
+  revenueSharePartnerId: '',
+  revenueShareSplitPercent: '',
   unitId: '',
   unlimitedStock: false,
   usage: '',
@@ -68,7 +70,13 @@ export function ProductCreateForm({
   const amountValue = form.amount.trim();
   const minAmountValue = form.minAmount.trim();
   const priceValue = form.price.trim();
-  const hasStockValues = Boolean(amountValue || minAmountValue || priceValue);
+  const splitValue = form.revenueShareSplitPercent.trim();
+  const hasRevenueShareValues = Boolean(
+    form.revenueSharePartnerId || splitValue
+  );
+  const hasStockValues = Boolean(
+    amountValue || minAmountValue || priceValue || hasRevenueShareValues
+  );
   const hasStockTarget = Boolean(form.unitId && form.warehouseId);
   const needsStockTarget = Boolean(form.unlimitedStock || hasStockValues);
   const shouldCreateStockRow = hasStockTarget && needsStockTarget;
@@ -85,6 +93,8 @@ export function ProductCreateForm({
                 amount: form.unlimitedStock ? null : Number(amountValue || 0),
                 min_amount: Number(minAmountValue || 0),
                 price: Number(priceValue || 0),
+                revenue_share_bps: Math.round(Number(splitValue || 0) * 100),
+                revenue_share_partner_id: form.revenueSharePartnerId || null,
                 unit_id: form.unitId,
                 warehouse_id: form.warehouseId,
               },
@@ -389,9 +399,50 @@ export function ProductCreateForm({
                         placeholder={t('placeholders.price')}
                         value={form.price}
                       />
+                      <SelectField
+                        className="lg:col-span-2"
+                        createText={referenceCreateText(
+                          t('revenueSharePartner')
+                        )}
+                        creatingText={referenceCreatingText(
+                          t('revenueSharePartner')
+                        )}
+                        emptyText={t('emptyOptions')}
+                        hint={t('hints.revenueSharePartner')}
+                        label={t('revenueSharePartner')}
+                        onChange={(revenueSharePartnerId) =>
+                          setForm((current) => ({
+                            ...current,
+                            revenueSharePartnerId,
+                          }))
+                        }
+                        onCreate={(name) =>
+                          createReference(() =>
+                            createInventoryOwner(wsId, { name })
+                          )
+                        }
+                        options={options?.owners}
+                        placeholder={t('placeholders.revenueSharePartner')}
+                        searchPlaceholder={referenceSearchText(
+                          t('revenueSharePartner')
+                        )}
+                        value={form.revenueSharePartnerId}
+                      />
+                      <NumberField
+                        hint={t('hints.revenueShareSplitPercent')}
+                        label={t('revenueShareSplitPercent')}
+                        onChange={(revenueShareSplitPercent) =>
+                          setForm((current) => ({
+                            ...current,
+                            revenueShareSplitPercent,
+                          }))
+                        }
+                        placeholder={t('placeholders.revenueShareSplitPercent')}
+                        value={form.revenueShareSplitPercent}
+                      />
                     </div>
                     {needsStockTarget && !hasStockTarget ? (
-                      <p className="text-amber-600 text-xs leading-5 dark:text-amber-500">
+                      <p className="text-dynamic-orange text-xs leading-5">
                         {t('stockTargetHint')}
                       </p>
                     ) : null}

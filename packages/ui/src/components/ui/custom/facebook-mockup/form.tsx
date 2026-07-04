@@ -11,7 +11,7 @@ import {
   Smartphone,
   Sun,
   Tablet,
-} from '@tuturuuu/icons';
+} from '@tuturuuu/icons/lucide';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import { Checkbox } from '@tuturuuu/ui/checkbox';

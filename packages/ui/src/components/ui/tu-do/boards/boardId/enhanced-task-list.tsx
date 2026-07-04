@@ -44,6 +44,7 @@ import { useBoardBroadcast } from '../../shared/board-broadcast-context';
 import { isTaskListNameExistsError } from '../../shared/task-board-errors';
 import { normalizeBoardText } from './board-text-utils';
 import { TaskCard } from './task';
+import type { TaskCardAssigneeMemberSource } from './task-card/task-card';
 
 interface Props {
   list: TaskList;
@@ -54,6 +55,8 @@ interface Props {
   isOverlay?: boolean;
   hideTasksMode?: boolean;
   isPersonalWorkspace?: boolean;
+  canUseBoardAssignees?: boolean;
+  assigneeMemberSource?: TaskCardAssigneeMemberSource;
   onAddTask?: (list: TaskList) => void;
 }
 
@@ -102,6 +105,8 @@ export function EnhancedTaskList({
   isOverlay = false,
   hideTasksMode = false,
   isPersonalWorkspace = false,
+  canUseBoardAssignees,
+  assigneeMemberSource,
   onAddTask,
 }: Props) {
   const t = useTranslations('common');
@@ -479,6 +484,8 @@ export function EnhancedTaskList({
                 taskList={list}
                 boardId={boardId}
                 isPersonalWorkspace={isPersonalWorkspace}
+                canUseBoardAssignees={canUseBoardAssignees}
+                assigneeMemberSource={assigneeMemberSource}
                 onUpdate={onUpdate}
               />
             ))}

@@ -278,6 +278,14 @@ export async function openPasswordStage(
   return passwordInput;
 }
 
+export function getOtpCodeInput(page: Page): Locator {
+  return page
+    .locator('form')
+    .filter({ has: page.getByRole('button', { name: /verify/i }) })
+    .getByRole('textbox')
+    .first();
+}
+
 /**
  * Complete the OTP stage by entering the code from Mailpit.
  * Call this after clicking "Continue with email" when OTP is enabled,
@@ -293,7 +301,7 @@ export async function completeOtpStage(
     throw new Error(`Failed to retrieve OTP code for ${email} from Mailpit`);
   }
 
-  const otpInput = page.getByRole('textbox', { name: /code/i }).first();
+  const otpInput = getOtpCodeInput(page);
   await otpInput.waitFor({ state: 'visible', timeout: 10_000 });
   await otpInput.fill(otpCode);
 

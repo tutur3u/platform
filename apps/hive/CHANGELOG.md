@@ -1,5 +1,51 @@
 # Changelog
 
+## [0.4.1](https://github.com/tutur3u/platform/compare/hive-v0.4.0...hive-v0.4.1) (2026-07-02)
+
+
+### Bug Fixes
+
+* **docker:** stabilize native blue-green deploy ([f41fbed](https://github.com/tutur3u/platform/commit/f41fbedc07a5a5effa3ef1d4226fa11742cb7de4))
+* **infrastructure:** default docker web to native builds ([7d89f00](https://github.com/tutur3u/platform/commit/7d89f004f75ab12eddc3cb92df5a1e6a7255fe0d))
+
+
+### Performance Improvements
+
+* **tooling:** improve service build caches ([1a7a5bf](https://github.com/tutur3u/platform/commit/1a7a5bf55c81450914283efed653a72c7b491c2a))
+
+## [0.4.0](https://github.com/tutur3u/platform/compare/hive-v0.3.1...hive-v0.4.0) (2026-06-29)
+
+
+### Features
+
+* **tasks:** add task templates ([8d0700a](https://github.com/tutur3u/platform/commit/8d0700ad255c7b5874bfa065575df6b1cde34063))
+
+## [0.3.1](https://github.com/tutur3u/platform/compare/hive-v0.3.0...hive-v0.3.1) (2026-06-26)
+
+
+### Bug Fixes
+
+* **ci:** build supabase before internal api ([810a63d](https://github.com/tutur3u/platform/commit/810a63dfdf8c1b173b8ea7e52b96b9d1779377fc))
+
+## [0.3.0](https://github.com/tutur3u/platform/compare/hive-v0.2.4...hive-v0.3.0) (2026-06-24)
+
+
+### Features
+
+* add tanstack rust migration foundation ([da7e58a](https://github.com/tutur3u/platform/commit/da7e58a2a6c7eefff5df74859e991872b5195132))
+
+
+### Bug Fixes
+
+* **ci:** support ts7 native next builds ([b0af764](https://github.com/tutur3u/platform/commit/b0af7640d3035f64301d154f86b080824885e121))
+
+## [0.2.4](https://github.com/tutur3u/platform/compare/hive-v0.2.3...hive-v0.2.4) (2026-06-17)
+
+
+### Bug Fixes
+
+* **hive:** require post for logout ([cd9b8bd](https://github.com/tutur3u/platform/commit/cd9b8bd06f8fc0d50e508fd9cfb91a9ed3c05e20))
+
 ## [0.2.3](https://github.com/tutur3u/platform/compare/hive-v0.2.2...hive-v0.2.3) (2026-06-11)
 
 

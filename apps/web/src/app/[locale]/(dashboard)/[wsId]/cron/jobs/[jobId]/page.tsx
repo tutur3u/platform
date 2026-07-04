@@ -6,7 +6,6 @@ import {
   XCircle,
 } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/server';
-import type { WorkspaceCronExecution, WorkspaceCronJob } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Card,
@@ -15,11 +14,17 @@ import {
   CardHeader,
   CardTitle,
 } from '@tuturuuu/ui/card';
+import moment from 'moment';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { getTranslations } from 'next-intl/server';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { getColumns } from '../../executions/columns';
+import type {
+  ManagedWorkspaceCronExecution,
+  ManagedWorkspaceCronJob,
+} from '../../types';
 
 export const metadata: Metadata = {
   title: 'Job Details',
@@ -48,6 +53,7 @@ export default async function DatasetCronJobDetailsPage({
   searchParams,
 }: Props) {
   const { locale, wsId, jobId } = await params;
+  const t = await getTranslations();
   const job = await getJob(wsId, jobId);
 
   if (!job) notFound();
@@ -65,7 +71,7 @@ export default async function DatasetCronJobDetailsPage({
         return (
           <div className="flex items-center gap-1 text-dynamic-green">
             <CheckCircle className="h-5 w-5" />
-            <span>Active</span>
+            <span>{t('cron-job-data-table.active')}</span>
           </div>
         );
 
@@ -73,7 +79,7 @@ export default async function DatasetCronJobDetailsPage({
         return (
           <div className="flex items-center gap-1 text-dynamic-red">
             <PowerOff className="h-5 w-5" />
-            <span>Inactive</span>
+            <span>{t('cron-job-data-table.inactive')}</span>
           </div>
         );
 
@@ -81,7 +87,7 @@ export default async function DatasetCronJobDetailsPage({
         return (
           <div className="flex items-center gap-1 text-dynamic-blue">
             <Clock className="h-5 w-5" />
-            <span>Running</span>
+            <span>{t('cron-job-data-table.running')}</span>
           </div>
         );
 
@@ -89,7 +95,7 @@ export default async function DatasetCronJobDetailsPage({
         return (
           <div className="flex items-center gap-1 text-dynamic-red">
             <XCircle className="h-5 w-5" />
-            <span>Failed</span>
+            <span>{t('cron-job-data-table.failed')}</span>
           </div>
         );
 
@@ -110,7 +116,11 @@ export default async function DatasetCronJobDetailsPage({
           <div>
             <h1 className="font-bold text-2xl">{job.name}</h1>
             <p className="text-muted-foreground text-sm">
-              {job.schedule} • {job.active ? 'Active' : 'Inactive'}
+              {job.schedule} •{' '}
+              {job.active
+                ? t('cron-job-data-table.active')
+                : t('cron-job-data-table.inactive')}
+              {job.endpoint_url ? ` • ${job.endpoint_url}` : ''}
             </p>
           </div>
         </div>
@@ -120,7 +130,9 @@ export default async function DatasetCronJobDetailsPage({
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="font-medium text-sm">Status</CardTitle>
+              <CardTitle className="font-medium text-sm">
+                {t('cron-job-data-table.status')}
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="font-bold text-2xl">
@@ -131,28 +143,15 @@ export default async function DatasetCronJobDetailsPage({
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="font-medium text-sm">Last Run</CardTitle>
+              <CardTitle className="font-medium text-sm">
+                {t('cron-job-data-table.last_run')}
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="font-bold text-2xl">
-                {/* {job.last_run
-                  ? moment(job.last_run).format('DD/MM/YYYY HH:mm')
-                  : '-'} */}
-                -
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="font-medium text-sm">Next Run</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="font-bold text-2xl">
-                {/* {job.next_run
-                  ? moment(job.next_run).format('DD/MM/YYYY HH:mm')
-                  : '-'} */}
-                -
+                {job.last_run_at
+                  ? moment(job.last_run_at).format('DD/MM/YYYY HH:mm')
+                  : '-'}
               </div>
             </CardContent>
           </Card>
@@ -160,7 +159,22 @@ export default async function DatasetCronJobDetailsPage({
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="font-medium text-sm">
-                Total Executions
+                {t('cron-job-data-table.next_run')}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="font-bold text-2xl">
+                {job.next_run_at
+                  ? moment(job.next_run_at).format('DD/MM/YYYY HH:mm')
+                  : '-'}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="font-medium text-sm">
+                {t('ws-cron-executions.total_executions')}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -171,9 +185,9 @@ export default async function DatasetCronJobDetailsPage({
 
         <Card>
           <CardHeader>
-            <CardTitle>Executions History</CardTitle>
+            <CardTitle>{t('ws-cron-executions.history')}</CardTitle>
             <CardDescription>
-              List of all executions for this cron job
+              {t('ws-cron-executions.history_description')}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -197,7 +211,7 @@ export default async function DatasetCronJobDetailsPage({
 async function getJob(
   wsId: string,
   jobId: string
-): Promise<WorkspaceCronJob | null> {
+): Promise<ManagedWorkspaceCronJob | null> {
   const supabase = await createClient();
   const { data } = await supabase
     .from('workspace_cron_jobs')
@@ -206,7 +220,7 @@ async function getJob(
     .eq('ws_id', wsId)
     .single();
 
-  return data;
+  return data as ManagedWorkspaceCronJob | null;
 }
 
 async function getData(
@@ -223,7 +237,7 @@ async function getData(
 
   const queryBuilder = supabase
     .from('workspace_cron_executions')
-    .select('*')
+    .select('*', { count: 'exact' })
     .eq('job_id', jobId)
     .order('created_at', { ascending: false });
 
@@ -243,7 +257,7 @@ async function getData(
   }
 
   return { data, count } as unknown as {
-    data: WorkspaceCronExecution[];
+    data: ManagedWorkspaceCronExecution[];
     count: number;
   };
 }

@@ -1,5 +1,6 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, waitFor } from '@testing-library/react';
+import type { ComponentProps } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import NewInvoicePage from './new-invoice-page';
 
@@ -62,10 +63,12 @@ function createQueryClient() {
   });
 }
 
-function renderPage() {
+function renderPage(
+  props: Partial<ComponentProps<typeof NewInvoicePage>> = {}
+) {
   return render(
     <QueryClientProvider client={createQueryClient()}>
-      <NewInvoicePage wsId="ws-1" />
+      <NewInvoicePage wsId="ws-1" {...props} />
     </QueryClientProvider>
   );
 }
@@ -80,7 +83,7 @@ describe('NewInvoicePage', () => {
     fetchMock = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({
-        DEFAULT_CURRENCY: 'VND',
+        DEFAULT_CURRENCY: 'SGD',
         DEFAULT_SUBSCRIPTION_CATEGORY_ID: 'category-1',
         default_wallet_id: 'wallet-1',
       }),
@@ -107,7 +110,7 @@ describe('NewInvoicePage', () => {
     await waitFor(() =>
       expect(invoiceMocks.StandardInvoice).toHaveBeenLastCalledWith(
         expect.objectContaining({
-          defaultCurrency: 'VND',
+          defaultCurrency: 'SGD',
           defaultWalletId: 'wallet-1',
         })
       )
@@ -128,8 +131,25 @@ describe('NewInvoicePage', () => {
       expect(invoiceMocks.SubscriptionInvoice).toHaveBeenLastCalledWith(
         expect.objectContaining({
           defaultCategoryId: 'category-1',
-          defaultCurrency: 'VND',
+          defaultCurrency: 'SGD',
           defaultWalletId: 'wallet-1',
+        })
+      )
+    );
+  });
+
+  it('uses the server-provided currency when batched config read is denied', async () => {
+    fetchMock.mockResolvedValueOnce({
+      ok: false,
+      status: 403,
+    });
+
+    renderPage({ defaultCurrency: 'VND' });
+
+    await waitFor(() =>
+      expect(invoiceMocks.StandardInvoice).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          defaultCurrency: 'VND',
         })
       )
     );

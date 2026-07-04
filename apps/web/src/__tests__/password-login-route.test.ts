@@ -46,7 +46,9 @@ describe('password-login route', () => {
       status: 200,
     });
 
-    const { POST } = await import('@/app/api/v1/auth/password-login/route');
+    const { POST } = await import(
+      '@/legacy-api-routes/v1/auth/password-login/route'
+    );
     const response = await POST(
       new NextRequest('http://localhost/api/v1/auth/password-login', {
         method: 'POST',
@@ -80,7 +82,9 @@ describe('password-login route', () => {
   it('returns and logs a diagnostic code for unexpected password service throws', async () => {
     mocks.passwordLogin.mockRejectedValue(new Error('vault unavailable'));
 
-    const { POST } = await import('@/app/api/v1/auth/password-login/route');
+    const { POST } = await import(
+      '@/legacy-api-routes/v1/auth/password-login/route'
+    );
     const response = await POST(
       new NextRequest('http://localhost/api/v1/auth/password-login', {
         method: 'POST',
@@ -107,5 +111,40 @@ describe('password-login route', () => {
         stage: 'password_login',
       })
     );
+  });
+
+  it('returns retry and public IP diagnostics for password login rate limits', async () => {
+    mocks.passwordLogin.mockResolvedValue({
+      body: {
+        error: 'Too many failed attempts. Please try again later.',
+        retryAfter: 35,
+      },
+      status: 429,
+    });
+
+    const { POST } = await import(
+      '@/legacy-api-routes/v1/auth/password-login/route'
+    );
+    const response = await POST(
+      new NextRequest('http://localhost/api/v1/auth/password-login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'cf-connecting-ip': '203.0.113.77',
+        },
+        body: JSON.stringify({
+          client: 'web',
+          email: 'person@example.com',
+          locale: 'en',
+          password: 'password123',
+        }),
+      })
+    );
+
+    expect(response.status).toBe(429);
+    expect(response.headers.get('Retry-After')).toBe('35');
+    expect(response.headers.get('X-RateLimit-Client-IP')).toBe('203.0.113.77');
+    expect(response.headers.get('X-RateLimit-Policy')).toBe('password-login');
+    expect(response.headers.get('X-RateLimit-Caller-Class')).toBe('anonymous');
   });
 });

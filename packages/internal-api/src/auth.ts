@@ -75,6 +75,21 @@ export interface PasswordLoginResponse {
   success?: boolean;
 }
 
+export interface ConsumeAuthRecoveryPayload {
+  code: string;
+  email: string;
+  locale?: string;
+  next?: string | null;
+}
+
+export interface ConsumeAuthRecoveryResponse {
+  diagnosticCode?: string;
+  email?: string;
+  error?: string;
+  redirectTo?: string;
+  success?: boolean;
+}
+
 export type QrLoginChallengeStatus =
   | 'approved'
   | 'consumed'
@@ -228,6 +243,11 @@ export interface WebAccountMutationResponse extends WebAccountsResponse {
   success: boolean;
 }
 
+export interface BrowserSessionLogoutResponse {
+  error?: unknown;
+  success?: boolean;
+}
+
 export interface SaveCurrentWebAccountPayload {
   returnUrl?: string | null;
   route?: string | null;
@@ -344,6 +364,22 @@ export async function passwordLoginWithInternalApi(
   return parseAuthResponse<PasswordLoginResponse>(response);
 }
 
+export async function consumeAuthRecoveryWithInternalApi(
+  payload: ConsumeAuthRecoveryPayload,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  const response = await client.fetch('/api/v1/auth/recovery/consume', {
+    body: JSON.stringify(payload),
+    cache: 'no-store',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    method: 'POST',
+  });
+  return parseAuthResponse<ConsumeAuthRecoveryResponse>(response);
+}
+
 export async function listWebAccountsWithInternalApi(
   options?: InternalApiClientOptions
 ) {
@@ -439,6 +475,17 @@ export async function logoutAllWebAccountsWithInternalApi(
     method: 'POST',
   });
   return parseAuthResponse<WebAccountMutationResponse>(response);
+}
+
+export async function logoutBrowserSessionWithInternalApi(
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  const response = await client.fetch('/api/auth/logout', {
+    cache: 'no-store',
+    method: 'POST',
+  });
+  return parseAuthResponse<BrowserSessionLogoutResponse>(response);
 }
 
 export async function createQrLoginChallengeWithInternalApi(

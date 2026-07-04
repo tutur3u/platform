@@ -156,7 +156,7 @@ describe('dev-session route', () => {
       }),
     });
 
-    const { POST } = await import('@/app/api/auth/dev-session/route');
+    const { POST } = await import('@/legacy-api-routes/auth/dev-session/route');
     const response = await POST(request);
 
     expect(mocks.createClient).toHaveBeenCalledWith(request);
@@ -193,7 +193,7 @@ describe('dev-session route', () => {
       }),
     });
 
-    const { POST } = await import('@/app/api/auth/dev-session/route');
+    const { POST } = await import('@/legacy-api-routes/auth/dev-session/route');
     const response = await POST(request);
 
     expect(onboardingBuilder.upsert).toHaveBeenCalledWith(
@@ -236,7 +236,7 @@ describe('dev-session route', () => {
       }),
     });
 
-    const { POST } = await import('@/app/api/auth/dev-session/route');
+    const { POST } = await import('@/legacy-api-routes/auth/dev-session/route');
     const response = await POST(request);
 
     expect(createUser).toHaveBeenCalledWith({
@@ -269,7 +269,7 @@ describe('dev-session route', () => {
       }),
     });
 
-    const { POST } = await import('@/app/api/auth/dev-session/route');
+    const { POST } = await import('@/legacy-api-routes/auth/dev-session/route');
     const response = await POST(request);
 
     expect(mocks.resetRateLimitMemoryStoreForTests).toHaveBeenCalledTimes(1);
@@ -289,7 +289,7 @@ describe('dev-session route', () => {
       }),
     });
 
-    const { POST } = await import('@/app/api/auth/dev-session/route');
+    const { POST } = await import('@/legacy-api-routes/auth/dev-session/route');
     const response = await POST(request);
 
     expect(response.status).toBe(403);
@@ -313,7 +313,7 @@ describe('dev-session route', () => {
       }),
     });
 
-    const { POST } = await import('@/app/api/auth/dev-session/route');
+    const { POST } = await import('@/legacy-api-routes/auth/dev-session/route');
     const response = await POST(request);
 
     expect(response.status).toBe(403);
@@ -346,7 +346,7 @@ describe('dev-session route', () => {
       }
     );
 
-    const { POST } = await import('@/app/api/auth/dev-session/route');
+    const { POST } = await import('@/legacy-api-routes/auth/dev-session/route');
     const response = await POST(request);
 
     expect(response.status).toBe(200);
@@ -366,6 +366,7 @@ describe('dev-session route', () => {
         headers: {
           'Content-Type': 'application/json',
           host: 'web-blue:7803',
+          'x-real-ip': '172.17.0.1',
           'x-forwarded-host': 'localhost:7803',
           'x-forwarded-proto': 'http',
         },
@@ -376,12 +377,47 @@ describe('dev-session route', () => {
       }
     );
 
-    const { POST } = await import('@/app/api/auth/dev-session/route');
+    const { POST } = await import('@/legacy-api-routes/auth/dev-session/route');
     const response = await POST(request);
 
     expect(response.status).toBe(200);
     expect(mocks.createAdminClient).toHaveBeenCalledTimes(1);
     expect(mocks.createClient).toHaveBeenCalledWith(request);
+  });
+
+  it('rejects forwarded local hosts from non-local proxy peers before admin mutation', async () => {
+    mocks.devMode = false;
+    stubLocalE2EEnv();
+
+    const request = new NextRequest(
+      'http://web-blue:7803/api/auth/dev-session',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          host: 'localhost:7803',
+          'x-forwarded-for': '192.168.1.42',
+          'x-forwarded-host': 'localhost:7803',
+          'x-forwarded-proto': 'http',
+          'x-real-ip': '192.168.1.42',
+        },
+        body: JSON.stringify({
+          email: 'victim@example.com',
+          locale: 'en',
+        }),
+      }
+    );
+
+    const { POST } = await import('@/legacy-api-routes/auth/dev-session/route');
+    const response = await POST(request);
+
+    expect(response.status).toBe(403);
+    await expect(response.json()).resolves.toEqual({
+      error: 'This endpoint is only available in development mode',
+    });
+    expect(mocks.validateEmail).not.toHaveBeenCalled();
+    expect(mocks.createAdminClient).not.toHaveBeenCalled();
+    expect(mocks.createClient).not.toHaveBeenCalled();
   });
 
   it('allows production-mode Portless E2E requests after local TLS termination', async () => {
@@ -410,7 +446,7 @@ describe('dev-session route', () => {
       }
     );
 
-    const { POST } = await import('@/app/api/auth/dev-session/route');
+    const { POST } = await import('@/legacy-api-routes/auth/dev-session/route');
     const response = await POST(request);
 
     expect(response.status).toBe(200);
@@ -444,7 +480,7 @@ describe('dev-session route', () => {
       }
     );
 
-    const { POST } = await import('@/app/api/auth/dev-session/route');
+    const { POST } = await import('@/legacy-api-routes/auth/dev-session/route');
     const response = await POST(request);
 
     expect(response.status).toBe(200);
@@ -477,7 +513,7 @@ describe('dev-session route', () => {
       }),
     });
 
-    const { POST } = await import('@/app/api/auth/dev-session/route');
+    const { POST } = await import('@/legacy-api-routes/auth/dev-session/route');
     const response = await POST(request);
 
     expect(response.status).toBe(200);
@@ -511,7 +547,7 @@ describe('dev-session route', () => {
       }
     );
 
-    const { POST } = await import('@/app/api/auth/dev-session/route');
+    const { POST } = await import('@/legacy-api-routes/auth/dev-session/route');
     const response = await POST(request);
 
     expect(response.status).toBe(200);
@@ -543,7 +579,7 @@ describe('dev-session route', () => {
       }
     );
 
-    const { POST } = await import('@/app/api/auth/dev-session/route');
+    const { POST } = await import('@/legacy-api-routes/auth/dev-session/route');
     const response = await POST(request);
 
     expect(response.status).toBe(200);
@@ -576,7 +612,7 @@ describe('dev-session route', () => {
       }
     );
 
-    const { POST } = await import('@/app/api/auth/dev-session/route');
+    const { POST } = await import('@/legacy-api-routes/auth/dev-session/route');
     const response = await POST(request);
 
     expect(response.status).toBe(200);
@@ -613,7 +649,7 @@ describe('dev-session route', () => {
       }
     );
 
-    const { POST } = await import('@/app/api/auth/dev-session/route');
+    const { POST } = await import('@/legacy-api-routes/auth/dev-session/route');
     const response = await POST(request);
 
     expect(response.status).toBe(200);
@@ -663,7 +699,7 @@ describe('dev-session route', () => {
       }
     );
 
-    const { POST } = await import('@/app/api/auth/dev-session/route');
+    const { POST } = await import('@/legacy-api-routes/auth/dev-session/route');
     const response = await POST(request);
 
     expect(response.status).toBe(200);
@@ -705,7 +741,7 @@ describe('dev-session route', () => {
       }
     );
 
-    const { POST } = await import('@/app/api/auth/dev-session/route');
+    const { POST } = await import('@/legacy-api-routes/auth/dev-session/route');
     const response = await POST(request);
 
     expect(response.status).toBe(200);
@@ -733,7 +769,7 @@ describe('dev-session route', () => {
       }
     );
 
-    const { POST } = await import('@/app/api/auth/dev-session/route');
+    const { POST } = await import('@/legacy-api-routes/auth/dev-session/route');
     const response = await POST(request);
 
     expect(response.status).toBe(403);
@@ -767,7 +803,7 @@ describe('dev-session route', () => {
       }
     );
 
-    const { POST } = await import('@/app/api/auth/dev-session/route');
+    const { POST } = await import('@/legacy-api-routes/auth/dev-session/route');
     const response = await POST(request);
 
     expect(response.status).toBe(403);

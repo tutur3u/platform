@@ -1,0 +1,119 @@
+# docker-compose.tanstack-dual.yml
+#
+# Purpose
+# -------
+# Bring up the NEW migration stack (apps/tanstack-web + apps/backend) together
+# as a self-contained pair for local E2E, benchmarks, and cutover gates. This is
+# intentionally a minimal two-service stack (no log-drain postgres, no edge,
+# no sidecars) so the new TanStack Start frontend and the Rust backend can be
+# exercised in isolation while the apps/web -> apps/tanstack-web migration is in
+# flight.
+#
+# Both services build the compiled "runner" target (production server output),
+# mirroring docker-compose/compose.web.prod.web.yml's x-tanstack-web-service
+# anchor and apps/backend/Dockerfile. This is the right shape for benchmarks and
+# cutover gates because it measures the real shipped artifact, not a dev server.
+#
+# dev:app workspace-context caveat
+# --------------------------------
+# This file does NOT use the hot-reload dev path. The tanstack-web docker dev
+# command (`bun run --filter @tuturuuu/tanstack-web dev:app`, see
+# docker-compose.web.yml) needs the FULL monorepo bind-mounted at /workspace
+# (context: ., volumes: .:/workspace) plus the shared node_modules/dist volumes,
+# because dev:app resolves workspace packages live. The compiled runner target
+# used here bakes the build at image time and ships apps/tanstack-web/dist with
+# a Node runtime adapter, so it needs no workspace mount. If you switch a service
+# below to `target: dev` with the dev:app command, you MUST also add
+# `context: .`, `.:/workspace`, and the package node_modules/dist volumes from
+# docker-compose.web.yml or the dev server will fail to resolve workspace
+# packages.
+#
+# Ports are env-overridable (defaults match scripts/benchmark-web-setups.js and
+# the prod anchors): TANSTACK_WEB_PORT=7824, BACKEND_PORT=7820. Container names
+# are suffixed `-dual` so they never collide with the blue/green deploy
+# containers (web-blue/green, tanstack-web-blue/green from scripts/docker-web.js)
+# or the worker-d / log-drain postgres service.
+#
+# Bring up (build + start, detached):
+#   docker compose -f docker-compose.tanstack-dual.yml up -d --build
+# Validate config without starting anything:
+#   docker compose -f docker-compose.tanstack-dual.yml config
+# Tear down:
+#   docker compose -f docker-compose.tanstack-dual.yml down
+
+x-tanstack-dual-env-file: &tanstack-dual-env-file
+  env_file:
+    - path: ${DOCKER_WEB_COMPOSE_LEGACY_ENV_FILE:-apps/web/.env.local}
+      required: false
+    - path: ${DOCKER_WEB_COMPOSE_ENV_FILE:-.env.local}
+      required: false
+
+services:
+  backend:
+    <<: *tanstack-dual-env-file
+    container_name: backend-dual
+    build:
+      context: .
+      dockerfile: apps/backend/Dockerfile
+    environment:
+      - BACKEND_ENV=${BACKEND_ENV:-development}
+      - BACKEND_INTERNAL_TOKEN=${BACKEND_INTERNAL_TOKEN:-platform-local-backend-token}
+      - PORT=${BACKEND_PORT:-7820}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    # The backend ships a built-in healthcheck subcommand that probes /healthz
+    # (see apps/backend/src/main.rs run_healthcheck + apps/backend/src/lib.rs
+    # "/healthz" route). The runtime image's PORT env drives the probe address.
+    healthcheck:
+      test: ["CMD", "/app/backend", "healthcheck"]
+      interval: 30s
+      timeout: 5s
+      start_period: 5s
+      retries: 3
+    init: true
+    networks:
+      - tanstack-dual
+    ports:
+      - "127.0.0.1:${BACKEND_PORT:-7820}:${BACKEND_PORT:-7820}"
+
+  tanstack-web:
+    <<: *tanstack-dual-env-file
+    container_name: tanstack-web-dual
+    build:
+      context: .
+      dockerfile: apps/tanstack-web/Dockerfile
+      target: runner
+    environment:
+      - BACKEND_INTERNAL_TOKEN=${BACKEND_INTERNAL_TOKEN:-platform-local-backend-token}
+      - BACKEND_INTERNAL_URL=${BACKEND_INTERNAL_URL:-http://backend:7820}
+      - BACKEND_PUBLIC_ORIGIN=${BACKEND_PUBLIC_ORIGIN:-http://backend:7820}
+      - HOST=0.0.0.0
+      - NODE_ENV=${NODE_ENV:-production}
+      - PORT=${TANSTACK_WEB_PORT:-7824}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    # Mirrors the tanstack-web healthcheck from the prod anchor: require the
+    # app's own port to respond and the backend /healthz probe to succeed.
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "docker/healthcheck.mjs",
+        ]
+      interval: 30s
+      timeout: 5s
+      start_period: 10s
+      retries: 3
+    init: true
+    networks:
+      - tanstack-dual
+    ports:
+      - "127.0.0.1:${TANSTACK_WEB_PORT:-7824}:${TANSTACK_WEB_PORT:-7824}"
+    depends_on:
+      backend:
+        condition: service_healthy
+
+networks:
+  tanstack-dual:
+    name: ${COMPOSE_PROJECT_NAME:-tuturuuu}-tanstack-dual

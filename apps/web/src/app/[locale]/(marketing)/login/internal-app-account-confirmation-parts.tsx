@@ -1,20 +1,14 @@
 'use client';
 
-import { RefreshCcw } from '@tuturuuu/icons';
+import { RefreshCcw } from '@tuturuuu/icons/lucide-static';
 import type { WebAccountSummary } from '@tuturuuu/internal-api/auth';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent } from '@tuturuuu/ui/card';
 import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
 import { Separator } from '@tuturuuu/ui/separator';
-import { motion } from 'framer-motion';
 import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
-
-const authContainerTransition = {
-  duration: 0.28,
-  ease: [0.22, 1, 0.36, 1] as const,
-};
 
 export type ProfileState = 'loading' | 'ready' | 'unavailable';
 
@@ -49,12 +43,12 @@ export function getInitials(value: string) {
 
 export function ConfirmationCard({ children }: { children: ReactNode }) {
   return (
-    <motion.div layout transition={authContainerTransition}>
+    <div>
       <Card className="overflow-hidden rounded-3xl border bg-background/95 shadow-2xl">
         <div className="h-1 bg-gradient-to-r from-dynamic-blue via-dynamic-green to-dynamic-red" />
         <CardContent className="space-y-6 p-6 sm:p-8">{children}</CardContent>
       </Card>
-    </motion.div>
+    </div>
   );
 }
 

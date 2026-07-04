@@ -24,6 +24,7 @@ import {
   type RateLimitProfile,
 } from '@tuturuuu/utils/api-proxy-guard';
 import {
+  INTERNAL_WORKSPACE_SLUG,
   PERSONAL_WORKSPACE_SLUG,
   ROOT_WORKSPACE_ID,
   resolveWorkspaceId,
@@ -42,6 +43,13 @@ import { NextResponse } from 'next/server';
 import createIntlMiddleware from 'next-intl/middleware';
 import { BASE_URL, LOCALE_COOKIE_NAME, PUBLIC_PATHS } from './constants/common';
 import { defaultLocale, type Locale, supportedLocales } from './i18n/routing';
+import { getChatAppOrigin } from './lib/chat-app-url';
+import { getDriveAppOrigin } from './lib/drive-app-url';
+import { getFinanceAppOrigin } from './lib/finance-app-url';
+import { getMailAppOrigin } from './lib/mail-app-url';
+import { getQrAppOrigin } from './lib/qr-app-url';
+import { getToolsAppOrigin } from './lib/tools-app-url';
+import { getTrackAppOrigin } from './lib/track-app-url';
 import {
   getWorkspaceRoutePermissionRequirements,
   hasRequiredWorkspaceRoutePermission,
@@ -109,7 +117,7 @@ const BROWSER_STATE_RECOVERY_PATH = '/~recover-browser-state';
 const RESERVED_ROOT_SEGMENT_PREFIX = '~';
 const BLOCKED_ROOT_SEGMENT_PREFIX = '.';
 const EMAIL_ROUTE_WORKSPACE_PATTERN =
-  /^\/api\/v1\/workspaces\/([^/]+)\/(?:mail\/send|users\/[^/]+\/follow-up|user-groups\/[^/]+\/group-checks\/[^/]+\/email)(?:\/|$)/;
+  /^\/api\/v1\/workspaces\/([^/]+)\/(?:users\/[^/]+\/follow-up|user-groups\/[^/]+\/group-checks\/[^/]+\/email)(?:\/|$)/;
 const EMAIL_RATE_LIMIT_OVERRIDE_SECRET_NAMES = [
   'EMAIL_RATE_LIMIT_MINUTE',
   'EMAIL_RATE_LIMIT_HOUR',
@@ -145,7 +153,21 @@ const SUSPICIOUS_QUERY_PARAMS_MAX = parsePositiveIntEnv(
 const SCANNER_PATH_PATTERN =
   /(wp-admin|wp-login\.php|xmlrpc\.php|phpmyadmin|adminer|\.env|\.git|boaform|server-status|cgi-bin|vendor\/phpunit|actuator|jenkins|hudson|\/shell|\/debug)/i;
 const ROOT_DEFAULT_NAVIGATION_CONFIG_ID = 'ROOT_DEFAULT_NAVIGATION';
-const TASKS_OPEN_DEFAULT_BOARD_CONFIG_ID = 'TASKS_OPEN_DEFAULT_BOARD';
+const RATE_LIMIT_DIAGNOSTIC_HEADER_NAMES = [
+  'Retry-After',
+  'X-Proxy-Block-Reason',
+  'X-RateLimit-Caller-Class',
+  'X-RateLimit-Limit',
+  'X-RateLimit-Policy',
+  'X-RateLimit-Remaining',
+  'X-RateLimit-Reset',
+  'X-RateLimit-Window',
+  'X-Request-Id',
+  'X-Vercel-Id',
+  'CF-Ray',
+] as const;
+const STAFF_RATE_LIMIT_WARNING = 'staff-debug-bypass';
+const STAFF_RATE_LIMIT_DEBUG_BYPASS = 'tuturuuu-staff';
 
 type RootNavigationTarget = 'workspace_home' | 'tasks' | 'calendar' | 'finance';
 
@@ -199,6 +221,190 @@ function prependLocalePrefix(path: string, localePrefix: string): string {
   }
 
   return path === '/' ? localePrefix : `${localePrefix}${path}`;
+}
+
+function getLocaleAwarePathname(pathname: string) {
+  const segments = pathname.split('/').filter(Boolean);
+  const firstSegment = segments[0];
+  const locale = supportedLocales.includes((firstSegment ?? '') as Locale)
+    ? (firstSegment as Locale)
+    : null;
+  const pathSegments = locale ? segments.slice(1) : segments;
+  const pathnameWithoutLocale =
+    pathSegments.length > 0 ? `/${pathSegments.join('/')}` : '/';
+
+  return {
+    locale,
+    pathnameWithoutLocale,
+  };
+}
+
+function isInternalTasksEntryPath({
+  hasLocaleInPath,
+  pathSegments,
+}: {
+  hasLocaleInPath: boolean;
+  pathSegments: string[];
+}) {
+  const workspaceIndex = hasLocaleInPath ? 1 : 0;
+  const workspaceSlug = pathSegments[workspaceIndex]?.toLowerCase();
+
+  return (
+    workspaceSlug === INTERNAL_WORKSPACE_SLUG &&
+    pathSegments[workspaceIndex + 1] === 'tasks' &&
+    pathSegments.length === workspaceIndex + 2
+  );
+}
+
+function isAuthProxyPublicPath(pathname: string): boolean {
+  const { locale, pathnameWithoutLocale } = getLocaleAwarePathname(pathname);
+
+  if (locale && pathnameWithoutLocale === '/') {
+    return true;
+  }
+
+  return (
+    pathnameWithoutLocale === '/auth/recovery' ||
+    pathnameWithoutLocale.startsWith('/auth/recovery/')
+  );
+}
+
+function redirectToPath(req: NextRequest, pathname: string) {
+  return NextResponse.redirect(new URL(pathname, req.nextUrl));
+}
+
+function redirectToQrApp(req: NextRequest) {
+  const redirectUrl = new URL(getQrAppOrigin());
+  redirectUrl.search = req.nextUrl.search;
+
+  return NextResponse.redirect(redirectUrl);
+}
+
+function redirectToToolsApp(req: NextRequest, pathname: string) {
+  const redirectUrl = new URL(getToolsAppOrigin());
+  redirectUrl.pathname = pathname;
+  redirectUrl.search = req.nextUrl.search;
+
+  return NextResponse.redirect(redirectUrl);
+}
+
+function handleMailAppRedirectRoute(req: NextRequest): NextResponse | null {
+  return handleWorkspaceSatelliteRedirectRoute(req, {
+    appOrigin: getMailAppOrigin(),
+    routeSegment: 'mail',
+  });
+}
+
+function handleFinanceAppRedirectRoute(req: NextRequest): NextResponse | null {
+  return handleWorkspaceSatelliteRedirectRoute(req, {
+    appOrigin: getFinanceAppOrigin(),
+    routeSegment: 'finance',
+  });
+}
+
+function handleDriveAppRedirectRoute(req: NextRequest): NextResponse | null {
+  return handleWorkspaceSatelliteRedirectRoute(req, {
+    appOrigin: getDriveAppOrigin(),
+    routeSegment: 'drive',
+  });
+}
+
+function handleChatAppRedirectRoute(req: NextRequest): NextResponse | null {
+  return handleWorkspaceSatelliteRedirectRoute(req, {
+    appOrigin: getChatAppOrigin(),
+    routeSegment: 'chat',
+  });
+}
+
+function handleTrackAppRedirectRoute(req: NextRequest): NextResponse | null {
+  return handleWorkspaceSatelliteRedirectRoute(req, {
+    appOrigin: getTrackAppOrigin(),
+    routeSegment: 'time-tracker',
+  });
+}
+
+function handleWorkspaceSatelliteRedirectRoute(
+  req: NextRequest,
+  {
+    appOrigin,
+    routeSegment,
+  }: {
+    appOrigin: string;
+    routeSegment: string;
+  }
+): NextResponse | null {
+  const pathSegments = req.nextUrl.pathname.split('/').filter(Boolean);
+  const hasLocale =
+    pathSegments[0] && supportedLocales.includes(pathSegments[0] as Locale);
+  const workspaceIndex = hasLocale ? 1 : 0;
+  const workspaceSlug = pathSegments[workspaceIndex];
+
+  if (!workspaceSlug || pathSegments[workspaceIndex + 1] !== routeSegment) {
+    return null;
+  }
+
+  const normalizedWorkspaceSlug = workspaceSlug.toLowerCase();
+  const isWorkspaceRoute =
+    normalizedWorkspaceSlug === PERSONAL_WORKSPACE_SLUG ||
+    normalizedWorkspaceSlug === INTERNAL_WORKSPACE_SLUG ||
+    normalizedWorkspaceSlug === ROOT_WORKSPACE_ID.toLowerCase() ||
+    isWorkspaceUuidLiteral(workspaceSlug);
+
+  if (!isWorkspaceRoute) {
+    return null;
+  }
+
+  const suffixSegments = pathSegments.slice(workspaceIndex + 2);
+  const redirectUrl = new URL(appOrigin);
+  redirectUrl.pathname = ['', workspaceSlug, ...suffixSegments].join('/');
+  redirectUrl.search = req.nextUrl.search;
+
+  return NextResponse.redirect(redirectUrl);
+}
+
+function handlePublicMarketingRedirectRoute(
+  req: NextRequest
+): NextResponse | null {
+  const { locale, pathnameWithoutLocale } = getLocaleAwarePathname(
+    req.nextUrl.pathname
+  );
+
+  if (locale === defaultLocale && pathnameWithoutLocale === '/pricing') {
+    return redirectToPath(req, pathnameWithoutLocale);
+  }
+
+  if (pathnameWithoutLocale === '/docs') {
+    return NextResponse.redirect('https://docs.tuturuuu.com');
+  }
+
+  if (pathnameWithoutLocale === '/pricing') {
+    return redirectToPath(req, '/?hash-nav=1#pricing');
+  }
+
+  if (pathnameWithoutLocale === '/products/meet-together') {
+    return redirectToPath(req, '/meet-together');
+  }
+
+  if (pathnameWithoutLocale === '/qr-generator') {
+    return redirectToQrApp(req);
+  }
+
+  if (pathnameWithoutLocale === '/tools/random') {
+    return redirectToToolsApp(req, '/random');
+  }
+
+  if (
+    locale &&
+    (pathnameWithoutLocale === '/calendar/meet-together' ||
+      pathnameWithoutLocale.startsWith('/calendar/meet-together/'))
+  ) {
+    return redirectToPath(
+      req,
+      pathnameWithoutLocale.replace('/calendar/meet-together', '/meet-together')
+    );
+  }
+
+  return null;
 }
 
 function isWorkspaceHomeRedirectCandidate(
@@ -260,75 +466,13 @@ async function resolveRootRedirectPath(
   }
 
   if (parsed.target === 'tasks') {
-    if (parsed.submodule === 'boards') {
-      if (parsed.boardId) {
-        const { data: board, error: boardLookupError } = await sbAdmin
-          .from('workspace_boards')
-          .select('id')
-          .eq('id', parsed.boardId)
-          .eq('ws_id', workspace.id)
-          .is('deleted_at', null)
-          .is('archived_at', null)
-          .maybeSingle();
-
-        if (boardLookupError) {
-          return {
-            path: `/${workspace.id}/tasks/boards`,
-            staleConfigValue: null,
-          };
-        }
-
-        if (board?.id) {
-          return {
-            path: `/${workspace.id}/tasks/boards/${board.id}`,
-            staleConfigValue: null,
-          };
-        }
-
-        return {
-          path: `/${workspace.id}/tasks/boards`,
-          staleConfigValue: JSON.stringify({
-            target: 'tasks',
-            submodule: 'boards',
-          }),
-        };
-      }
-
-      if (workspace.personal) {
-        const { data: openDefaultBoardConfig } = await sbAdmin
-          .from('user_configs')
-          .select('value')
-          .eq('user_id', userId)
-          .eq('id', TASKS_OPEN_DEFAULT_BOARD_CONFIG_ID)
-          .maybeSingle();
-        const shouldOpenDefaultBoard =
-          openDefaultBoardConfig?.value == null ||
-          openDefaultBoardConfig.value === 'true';
-
-        if (shouldOpenDefaultBoard) {
-          const { data: defaultBoard } = await sbAdmin
-            .from('workspace_boards')
-            .select('id')
-            .eq('ws_id', workspace.id)
-            .ilike('name', 'tasks')
-            .is('deleted_at', null)
-            .is('archived_at', null)
-            .limit(1)
-            .maybeSingle();
-
-          if (defaultBoard?.id) {
-            return {
-              path: `/${workspace.id}/tasks/boards/${defaultBoard.id}`,
-              staleConfigValue: null,
-            };
-          }
-        }
-      }
-
-      return { path: `/${workspace.id}/tasks/boards`, staleConfigValue: null };
-    }
-
-    return { path: `/${workspace.id}/tasks`, staleConfigValue: null };
+    return {
+      path: `/${workspace.id}/tasks`,
+      staleConfigValue:
+        parsed.submodule || parsed.boardId
+          ? JSON.stringify({ target: 'tasks' })
+          : null,
+    };
   }
 
   return { path: `/${workspace.id}`, staleConfigValue: null };
@@ -402,6 +546,117 @@ function getBearerToken(headers: Headers) {
   return token || null;
 }
 
+function hasVerifiableSessionCredential(req: NextRequest) {
+  const bearerToken = getBearerToken(req.headers);
+  return (
+    hasSupabaseSessionCookie(req) ||
+    (!!bearerToken && looksLikeSupabaseJwt(bearerToken))
+  );
+}
+
+async function resolveRateLimitDebugIdentity(req: NextRequest): Promise<{
+  isStaff: boolean;
+  userEmail: string | null;
+  userId: string | null;
+} | null> {
+  if (!hasVerifiableSessionCredential(req)) {
+    return null;
+  }
+
+  try {
+    const supabase = await createClient(req);
+    const { user } = await resolveAuthenticatedSessionUser(supabase);
+
+    if (!user) {
+      return null;
+    }
+
+    const userEmail = user.email ?? null;
+    return {
+      isStaff: isExactTuturuuuDotComEmail(userEmail),
+      userEmail,
+      userId: user.id,
+    };
+  } catch {
+    return null;
+  }
+}
+
+function appendRateLimitDebugHeaders(
+  response: NextResponse,
+  {
+    identity,
+    ipAddress,
+  }: {
+    identity: Awaited<ReturnType<typeof resolveRateLimitDebugIdentity>>;
+    ipAddress: string;
+  }
+) {
+  if (ipAddress && ipAddress !== 'unknown') {
+    response.headers.set('X-RateLimit-Client-IP', ipAddress);
+  }
+
+  if (identity?.userId) {
+    response.headers.set('X-RateLimit-User-Id', identity.userId);
+  }
+
+  if (identity?.userEmail) {
+    response.headers.set('X-RateLimit-User-Email', identity.userEmail);
+  }
+}
+
+function buildStaffRateLimitWarningResponse(
+  guardResponse: NextResponse,
+  {
+    identity,
+    ipAddress,
+  }: {
+    identity: NonNullable<
+      Awaited<ReturnType<typeof resolveRateLimitDebugIdentity>>
+    >;
+    ipAddress: string;
+  }
+) {
+  const headers = new Headers();
+  for (const headerName of RATE_LIMIT_DIAGNOSTIC_HEADER_NAMES) {
+    const value = guardResponse.headers.get(headerName);
+    if (value) {
+      headers.set(headerName, value);
+    }
+  }
+
+  headers.set('X-RateLimit-Warning', STAFF_RATE_LIMIT_WARNING);
+  headers.set('X-RateLimit-Debug-Bypass', STAFF_RATE_LIMIT_DEBUG_BYPASS);
+  headers.set('X-RateLimit-Original-Status', `${guardResponse.status}`);
+
+  const response = NextResponse.next({ headers });
+  appendRateLimitDebugHeaders(response, { identity, ipAddress });
+  return response;
+}
+
+async function handleProxyGuardResponse(
+  req: NextRequest,
+  guardResponse: NextResponse
+) {
+  if (guardResponse.status !== 429) {
+    return guardResponse;
+  }
+
+  const ipAddress = extractIPFromRequest(req.headers);
+
+  const identity = await resolveRateLimitDebugIdentity(req);
+  appendRateLimitDebugHeaders(guardResponse, { identity, ipAddress });
+
+  if (identity?.isStaff) {
+    return buildStaffRateLimitWarningResponse(guardResponse, {
+      identity,
+      ipAddress,
+    });
+  }
+
+  return guardResponse;
+}
+
 function isTrustedCliTuturuuuRateLimitBypass(
   _pathname: string,
   headers: Headers
@@ -459,6 +714,20 @@ function hasMalformedAuthorizationHeader(req: NextRequest): boolean {
   return token.length === 0 || /\s/.test(token);
 }
 
+function isLikelyBrowserRequest(req: NextRequest): boolean {
+  const userAgent = (req.headers.get('user-agent') ?? '').toLowerCase();
+  if (/\b(mozilla|chrome|chromium|firefox|safari|edg|opr)\b/u.test(userAgent)) {
+    return true;
+  }
+
+  if (req.headers.has('sec-fetch-mode') || req.headers.has('sec-fetch-dest')) {
+    return true;
+  }
+
+  const accept = req.headers.get('accept') ?? '';
+  return accept.includes('text/html') || accept.includes('text/x-component');
+}
+
 function buildProxyBlockResponse(
   status: 400 | 401 | 429,
   reason:
@@ -466,7 +735,10 @@ function buildProxyBlockResponse(
     | 'malformed-auth-header'
     | 'malformed-supabase-auth-cookie'
     | 'suspicious-anonymous-request',
-  retryAfter?: number
+  options: {
+    ipAddress?: string | null;
+    retryAfter?: number;
+  } = {}
 ) {
   const body =
     status === 429
@@ -479,7 +751,10 @@ function buildProxyBlockResponse(
     status,
     headers: {
       'Cache-Control': 'no-store',
-      ...(retryAfter ? { 'Retry-After': `${retryAfter}` } : {}),
+      ...(options.retryAfter ? { 'Retry-After': `${options.retryAfter}` } : {}),
+      ...(options.ipAddress && options.ipAddress !== 'unknown'
+        ? { 'X-RateLimit-Client-IP': options.ipAddress }
+        : {}),
       'X-Proxy-Block-Reason': reason,
     },
   });
@@ -515,6 +790,16 @@ async function blockMalformedApiAuthCookieRequest(
   }
 
   const ipAddress = extractIPFromRequest(req.headers);
+  if (isLikelyBrowserRequest(req)) {
+    const response = buildProxyBlockResponse(
+      401,
+      'malformed-supabase-auth-cookie',
+      { ipAddress }
+    );
+    applyExpiredCookies(response, malformedCookieNames);
+    return response;
+  }
+
   const existingBlock =
     ipAddress === 'unknown' ? null : await isIPBlockedEdge(ipAddress);
 
@@ -523,11 +808,10 @@ async function blockMalformedApiAuthCookieRequest(
       1,
       Math.ceil((existingBlock.expiresAt.getTime() - Date.now()) / 1000)
     );
-    const response = buildProxyBlockResponse(
-      429,
-      'ip-already-blocked',
-      retryAfter
-    );
+    const response = buildProxyBlockResponse(429, 'ip-already-blocked', {
+      ipAddress,
+      retryAfter,
+    });
     applyExpiredCookies(response, malformedCookieNames);
     return response;
   }
@@ -542,18 +826,18 @@ async function blockMalformedApiAuthCookieRequest(
       1,
       Math.ceil((newBlock.expiresAt.getTime() - Date.now()) / 1000)
     );
-    const response = buildProxyBlockResponse(
-      429,
-      'ip-already-blocked',
-      retryAfter
-    );
+    const response = buildProxyBlockResponse(429, 'ip-already-blocked', {
+      ipAddress,
+      retryAfter,
+    });
     applyExpiredCookies(response, malformedCookieNames);
     return response;
   }
 
   const response = buildProxyBlockResponse(
     401,
-    'malformed-supabase-auth-cookie'
+    'malformed-supabase-auth-cookie',
+    { ipAddress }
   );
   applyExpiredCookies(response, malformedCookieNames);
   return response;
@@ -598,15 +882,6 @@ function getSuspiciousAnonymousApiSignal(req: NextRequest): {
   return null;
 }
 
-function isExpectedHumanAuthRateLimitPath(pathname: string) {
-  return (
-    /^\/api\/v1\/auth\/password-login(?:\/|$)/.test(pathname) ||
-    /^\/api\/v1\/auth\/mobile\/password-login(?:\/|$)/.test(pathname) ||
-    /^\/api\/v1\/auth\/otp\/(?:send|verify)(?:\/|$)/.test(pathname) ||
-    /^\/api\/v1\/auth\/mobile\/(?:send-otp|verify-otp)(?:\/|$)/.test(pathname)
-  );
-}
-
 async function blockSuspiciousAnonymousApiRequest(
   req: NextRequest
 ): Promise<NextResponse | null> {
@@ -624,7 +899,10 @@ async function blockSuspiciousAnonymousApiRequest(
       1,
       Math.ceil((existingBlock.expiresAt.getTime() - Date.now()) / 1000)
     );
-    return buildProxyBlockResponse(429, 'ip-already-blocked', retryAfter);
+    return buildProxyBlockResponse(429, 'ip-already-blocked', {
+      ipAddress,
+      retryAfter,
+    });
   }
 
   const newBlock =
@@ -637,10 +915,13 @@ async function blockSuspiciousAnonymousApiRequest(
       1,
       Math.ceil((newBlock.expiresAt.getTime() - Date.now()) / 1000)
     );
-    return buildProxyBlockResponse(429, 'ip-already-blocked', retryAfter);
+    return buildProxyBlockResponse(429, 'ip-already-blocked', {
+      ipAddress,
+      retryAfter,
+    });
   }
 
-  return buildProxyBlockResponse(signal.status, signal.reason);
+  return buildProxyBlockResponse(signal.status, signal.reason, { ipAddress });
 }
 
 /**
@@ -788,6 +1069,7 @@ function shouldBypassOnboardingCheck(pathname: string): boolean {
 const authProxy = createCentralizedAuthProxy({
   webAppUrl: WEB_APP_URL,
   publicPaths: PUBLIC_PATHS,
+  isPublicPath: isAuthProxyPublicPath,
   skipApiRoutes: true,
 });
 
@@ -939,30 +1221,7 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
       ],
     });
     if (guardResponse) {
-      if (
-        guardResponse.status === 429 &&
-        guardResponse.headers.get('X-Proxy-Block-Reason') ===
-          'route-rate-limit' &&
-        !isExpectedHumanAuthRateLimitPath(req.nextUrl.pathname) &&
-        !isTrustedProxyBypassRequest(req.nextUrl.pathname, req.headers) &&
-        !hasSupabaseSessionCookie(req)
-      ) {
-        const ipAddress = extractIPFromRequest(req.headers);
-        const newBlock =
-          ipAddress === 'unknown'
-            ? null
-            : await recordSuspiciousApiRequestEdge(ipAddress);
-
-        if (newBlock) {
-          const retryAfter = Math.max(
-            1,
-            Math.ceil((newBlock.expiresAt.getTime() - Date.now()) / 1000)
-          );
-          return buildProxyBlockResponse(429, 'ip-already-blocked', retryAfter);
-        }
-      }
-
-      return guardResponse;
+      return handleProxyGuardResponse(req, guardResponse);
     }
 
     return NextResponse.next();
@@ -971,6 +1230,37 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
   const reservedRootRouteResponse = handleReservedRootRoute(req);
   if (reservedRootRouteResponse) {
     return reservedRootRouteResponse;
+  }
+
+  const publicMarketingRedirectResponse =
+    handlePublicMarketingRedirectRoute(req);
+  if (publicMarketingRedirectResponse) {
+    return publicMarketingRedirectResponse;
+  }
+
+  const mailAppRedirectResponse = handleMailAppRedirectRoute(req);
+  if (mailAppRedirectResponse) {
+    return mailAppRedirectResponse;
+  }
+
+  const financeAppRedirectResponse = handleFinanceAppRedirectRoute(req);
+  if (financeAppRedirectResponse) {
+    return financeAppRedirectResponse;
+  }
+
+  const driveAppRedirectResponse = handleDriveAppRedirectRoute(req);
+  if (driveAppRedirectResponse) {
+    return driveAppRedirectResponse;
+  }
+
+  const chatAppRedirectResponse = handleChatAppRedirectRoute(req);
+  if (chatAppRedirectResponse) {
+    return chatAppRedirectResponse;
+  }
+
+  const trackAppRedirectResponse = handleTrackAppRedirectRoute(req);
+  if (trackAppRedirectResponse) {
+    return trackAppRedirectResponse;
   }
 
   // Handle authentication and MFA with the centralized middleware
@@ -1167,6 +1457,17 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
     }
   }
 
+  if (
+    isInternalTasksEntryPath({ hasLocaleInPath, pathSegments }) &&
+    !req.nextUrl.searchParams.has('view')
+  ) {
+    const redirectUrl = new URL(req.nextUrl);
+    redirectUrl.searchParams.set('view', 'kanban');
+    const internalTasksRedirect = NextResponse.redirect(redirectUrl);
+    propagateAuthCookies(authRes, internalTasksRedirect);
+    return internalTasksRedirect;
+  }
+
   // If we found a potential workspace ID, check if it's a personal workspace
   if (potentialWorkspaceId) {
     try {
@@ -1276,7 +1577,8 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
     (isRootPath || isLocaleRootPath || isDashboardRootPath) &&
     !skipWorkspaceRedirect &&
     !isHashNavigation &&
-    !isMultiAccountFlow
+    !isMultiAccountFlow &&
+    hasSupabaseSessionCookie(req)
   ) {
     try {
       const supabase = await createClient();
@@ -1322,11 +1624,8 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
                 },
                 { onConflict: 'user_id,ws_id,id' }
               );
-            } catch (error) {
-              console.error(
-                'Failed to self-heal stale root navigation config in proxy:',
-                error
-              );
+            } catch {
+              // Best-effort cleanup only; root navigation should still redirect.
             }
           }
 

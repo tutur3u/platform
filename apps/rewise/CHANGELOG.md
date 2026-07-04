@@ -1,5 +1,46 @@
 # Changelog
 
+## [0.20.1](https://github.com/tutur3u/platform/compare/rewise-v0.20.0...rewise-v0.20.1) (2026-07-02)
+
+
+### Bug Fixes
+
+* **infrastructure:** default docker web to native builds ([7d89f00](https://github.com/tutur3u/platform/commit/7d89f004f75ab12eddc3cb92df5a1e6a7255fe0d))
+
+## [0.20.0](https://github.com/tutur3u/platform/compare/rewise-v0.19.0...rewise-v0.20.0) (2026-06-29)
+
+
+### Features
+
+* **tasks:** add task templates ([8d0700a](https://github.com/tutur3u/platform/commit/8d0700ad255c7b5874bfa065575df6b1cde34063))
+
+
+### Bug Fixes
+
+* **tasks:** restore tracked task descriptions ([f892ae2](https://github.com/tutur3u/platform/commit/f892ae23dfec41c2d25649b97a628d8cdcd1fa5d))
+
+## [0.19.0](https://github.com/tutur3u/platform/compare/rewise-v0.18.3...rewise-v0.19.0) (2026-06-24)
+
+
+### Features
+
+* **tasks:** add shareable kanban task plans ([2de4e58](https://github.com/tutur3u/platform/commit/2de4e5819673e11b01cdc1f21c317f33dc196f56))
+* **tasks:** consolidate board task settings ([b1d720a](https://github.com/tutur3u/platform/commit/b1d720ac865406d6dd0b2477c5ba04e336de9929))
+
+
+### Bug Fixes
+
+* **ci:** support ts7 native next builds ([b0af764](https://github.com/tutur3u/platform/commit/b0af7640d3035f64301d154f86b080824885e121))
+* **i18n:** sync task planner keys ([fea50fd](https://github.com/tutur3u/platform/commit/fea50fddfb3019d9dfeeb834ec5444f2dbe01554))
+
+## [0.18.3](https://github.com/tutur3u/platform/compare/rewise-v0.18.2...rewise-v0.18.3) (2026-06-17)
+
+
+### Bug Fixes
+
+* **deps:** keep lodash on latest reviewed artifact ([19909b3](https://github.com/tutur3u/platform/commit/19909b334581d3b58cdcd19e9b2fde553f7ad60a))
+* **deps:** pin reviewed lodash artifact ([dfcf585](https://github.com/tutur3u/platform/commit/dfcf585fab9cc0b425cac5d60c5bccc997340be5))
+
 ## [0.18.2](https://github.com/tutur3u/platform/compare/rewise-v0.18.1...rewise-v0.18.2) (2026-06-13)
 
 

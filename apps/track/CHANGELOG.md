@@ -1,5 +1,38 @@
 # Changelog
 
+## [0.7.1](https://github.com/tutur3u/platform/compare/track-v0.7.0...track-v0.7.1) (2026-07-03)
+
+
+### Bug Fixes
+
+* **build:** restore repo check ([4def830](https://github.com/tutur3u/platform/commit/4def830f463ea8a9c31af8e982eab716e9bd5f72))
+
+## [0.7.0](https://github.com/tutur3u/platform/compare/track-v0.6.0...track-v0.7.0) (2026-06-29)
+
+
+### Features
+
+* **tasks:** add task templates ([8d0700a](https://github.com/tutur3u/platform/commit/8d0700ad255c7b5874bfa065575df6b1cde34063))
+
+
+### Bug Fixes
+
+* **tasks:** restore tracked task descriptions ([f892ae2](https://github.com/tutur3u/platform/commit/f892ae23dfec41c2d25649b97a628d8cdcd1fa5d))
+
+## [0.6.0](https://github.com/tutur3u/platform/compare/track-v0.5.2...track-v0.6.0) (2026-06-24)
+
+
+### Features
+
+* **tasks:** add shareable kanban task plans ([2de4e58](https://github.com/tutur3u/platform/commit/2de4e5819673e11b01cdc1f21c317f33dc196f56))
+* **tasks:** consolidate board task settings ([b1d720a](https://github.com/tutur3u/platform/commit/b1d720ac865406d6dd0b2477c5ba04e336de9929))
+
+
+### Bug Fixes
+
+* **ci:** support ts7 native next builds ([b0af764](https://github.com/tutur3u/platform/commit/b0af7640d3035f64301d154f86b080824885e121))
+* **i18n:** sync task planner keys ([fea50fd](https://github.com/tutur3u/platform/commit/fea50fddfb3019d9dfeeb834ec5444f2dbe01554))
+
 ## [0.5.2](https://github.com/tutur3u/platform/compare/track-v0.5.1...track-v0.5.2) (2026-06-13)
 
 

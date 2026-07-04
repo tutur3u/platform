@@ -24,7 +24,9 @@ import UserGroupForm from './form';
 import { UserGroupsTable } from './user-groups-table';
 import {
   applyAttendanceMemberCounts,
+  applyTodayAttendanceSnapshot,
   fetchManagersForGroups,
+  fetchTodayAttendanceForGroups,
   getShouldCountManagersInAttendance,
   getUserGroupMemberships,
 } from './utils';
@@ -248,19 +250,24 @@ async function getInitialData(
 
     let groups = fetchedGroups as UserGroup[];
 
-    // Fetch managers for the fetched groups
+    // Fetch managers and today's attendance for the fetched groups in one batch
+    // each, instead of letting every table row fan out its own client fetches.
     if (groups.length > 0) {
       const groupIds = groups.map((g) => g.id);
-      const [managersByGroup, countManagersInAttendance] = await Promise.all([
-        fetchManagersForGroups(supabase, groupIds),
-        getShouldCountManagersInAttendance(wsId),
-      ]);
+      const today = new Date().toISOString().split('T')[0] ?? '';
+      const [managersByGroup, countManagersInAttendance, attendanceByGroup] =
+        await Promise.all([
+          fetchManagersForGroups(supabase, groupIds),
+          getShouldCountManagersInAttendance(wsId),
+          fetchTodayAttendanceForGroups(sbAdmin, groupIds, today),
+        ]);
 
       groups = applyAttendanceMemberCounts(
         groups,
         managersByGroup,
         countManagersInAttendance
       );
+      groups = applyTodayAttendanceSnapshot(groups, attendanceByGroup, today);
     }
 
     return {

@@ -17,6 +17,7 @@ import { createClient } from '@tuturuuu/supabase/next/client';
 import { cn } from '@tuturuuu/utils/format';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { getTaskApiUrl } from '../../../../lib/tasks-app-url';
 import { Button } from '../../button';
 import {
   Dialog,
@@ -226,9 +227,12 @@ export function SchedulingDialog({
     queryKey: ['task-personal-schedule', task?.id, open],
     enabled: open && !!task?.id,
     queryFn: async () => {
-      const res = await fetch(`/api/v1/users/me/tasks/${task!.id}/schedule`, {
-        cache: 'no-store',
-      });
+      const res = await fetch(
+        getTaskApiUrl(`/api/v1/users/me/tasks/${task!.id}/schedule`),
+        {
+          cache: 'no-store',
+        }
+      );
       if (!res.ok) return null;
       return (await res.json()) as null | {
         task: {

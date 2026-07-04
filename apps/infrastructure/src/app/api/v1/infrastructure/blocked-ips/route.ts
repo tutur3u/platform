@@ -1,0 +1,314 @@
+import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
+import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
+import type { IPBlockStatus } from '@tuturuuu/utils/abuse-protection';
+import {
+  BLOCK_DURATIONS,
+  REDIS_KEYS,
+  unblockIP,
+  WINDOW_MS,
+} from '@tuturuuu/utils/abuse-protection';
+import {
+  MAX_IP_LENGTH,
+  MAX_SEARCH_LENGTH,
+  ROOT_WORKSPACE_ID,
+} from '@tuturuuu/utils/constants';
+import { isExactTuturuuuDotComEmail } from '@tuturuuu/utils/email/client';
+import { getUpstashRestRedisClient } from '@tuturuuu/utils/upstash-rest';
+import { NextResponse } from 'next/server';
+import { z } from 'zod';
+
+const UnblockSchema = z.object({
+  ip_address: z.string().max(MAX_IP_LENGTH).min(1),
+  reason: z.string().max(MAX_SEARCH_LENGTH).optional(),
+});
+
+const BlockIPSchema = z.object({
+  ip_address: z.string().min(1).max(MAX_IP_LENGTH), // Max length for IPv6
+  reason: z.enum([
+    'otp_send',
+    'otp_verify_failed',
+    'mfa_challenge',
+    'mfa_verify_failed',
+    'reauth_send',
+    'reauth_verify_failed',
+    'password_login_failed',
+    'manual',
+  ] as const),
+  block_level: z.number().int().min(0).max(4).default(1), // 0 = permanent
+  notes: z.string().max(MAX_SEARCH_LENGTH).optional(),
+});
+
+// 100 years in seconds for permanent blocks
+const PERMANENT_BLOCK_DURATION = 100 * 365 * 24 * 60 * 60;
+
+type AuthenticatedBlockedIpUser = {
+  email?: string | null;
+  id: string;
+};
+
+async function hasRootWorkspaceMembership(
+  supabase: TypedSupabaseClient,
+  userId: string
+) {
+  const { data: rootWorkspaceUser } = await supabase
+    .from('workspace_user_linked_users')
+    .select('platform_user_id')
+    .eq('platform_user_id', userId)
+    .eq('ws_id', ROOT_WORKSPACE_ID)
+    .single();
+
+  return Boolean(rootWorkspaceUser);
+}
+
+async function canDeleteBlockedIp(
+  supabase: TypedSupabaseClient,
+  user: AuthenticatedBlockedIpUser
+) {
+  if (isExactTuturuuuDotComEmail(user.email)) {
+    return true;
+  }
+
+  return hasRootWorkspaceMembership(supabase, user.id);
+}
+
+export async function GET(req: Request) {
+  const supabase = await createClient();
+
+  // Check if user is authenticated
+  const { user } = await resolveAuthenticatedSessionUser(supabase);
+
+  if (!user) {
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  }
+
+  // Check if user is from root workspace
+  const { data: rootWorkspaceUser } = await supabase
+    .from('workspace_user_linked_users')
+    .select('*')
+    .eq('platform_user_id', user.id)
+    .eq('ws_id', ROOT_WORKSPACE_ID)
+    .single();
+
+  if (!rootWorkspaceUser) {
+    return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
+  }
+
+  // Parse query parameters
+  const url = new URL(req.url);
+  const status = url.searchParams.get('status') || 'active';
+  const page = parseInt(url.searchParams.get('page') || '1', 10);
+  const pageSize = parseInt(url.searchParams.get('pageSize') || '20', 10);
+  const ipFilter = url.searchParams.get('ip');
+
+  // Build query
+  let query = supabase
+    .from('blocked_ips')
+    .select('*, unblocked_by_user:unblocked_by(id, display_name)', {
+      count: 'exact',
+    })
+    .order('blocked_at', { ascending: false });
+
+  // Apply status filter
+  if (status !== 'all') {
+    query = query.eq('status', status as IPBlockStatus);
+  }
+
+  // Apply IP filter
+  if (ipFilter) {
+    query = query.ilike('ip_address', `%${ipFilter}%`);
+  }
+
+  // Apply pagination
+  const start = (page - 1) * pageSize;
+  query = query.range(start, start + pageSize - 1);
+
+  const { data, count, error } = await query;
+
+  if (error) {
+    console.error('Error fetching blocked IPs:', error);
+    return NextResponse.json(
+      { message: 'Error fetching blocked IPs' },
+      { status: 500 }
+    );
+  }
+
+  return NextResponse.json({
+    data,
+    count,
+    page,
+    pageSize,
+    totalPages: count ? Math.ceil(count / pageSize) : 0,
+  });
+}
+
+export async function DELETE(req: Request) {
+  const supabase = await createClient();
+
+  // Check if user is authenticated
+  const { user } = await resolveAuthenticatedSessionUser(supabase);
+
+  if (!user) {
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  }
+
+  const canDelete = await canDeleteBlockedIp(supabase, user);
+
+  if (!canDelete) {
+    return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
+  }
+
+  try {
+    const body = await req.json();
+    const { ip_address, reason } = UnblockSchema.parse(body);
+
+    const success = await unblockIP(ip_address, user.id, reason);
+
+    if (!success) {
+      return NextResponse.json(
+        { message: 'Failed to unblock IP' },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({ message: 'IP unblocked successfully' });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { message: 'Invalid request data', errors: error.issues },
+        { status: 400 }
+      );
+    }
+
+    console.error('Unexpected error:', error);
+    return NextResponse.json(
+      { message: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function POST(req: Request) {
+  const supabase = await createClient();
+
+  // Check if user is authenticated
+  const { user } = await resolveAuthenticatedSessionUser(supabase);
+
+  if (!user) {
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  }
+
+  // Check if user is from root workspace
+  const { data: rootWorkspaceUser } = await supabase
+    .from('workspace_user_linked_users')
+    .select('*')
+    .eq('platform_user_id', user.id)
+    .eq('ws_id', ROOT_WORKSPACE_ID)
+    .single();
+
+  if (!rootWorkspaceUser) {
+    return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
+  }
+
+  try {
+    const body = await req.json();
+    const { ip_address, reason, block_level, notes } =
+      BlockIPSchema.parse(body);
+
+    const sbAdmin = await createAdminClient();
+
+    // Calculate expiration based on block level (0 = permanent)
+    const blockDuration =
+      block_level === 0
+        ? PERMANENT_BLOCK_DURATION
+        : BLOCK_DURATIONS[block_level as 1 | 2 | 3 | 4];
+    const expiresAt = new Date(Date.now() + blockDuration * 1000);
+
+    // Check if IP is already actively blocked
+    const { data: existingBlock } = await sbAdmin
+      .from('blocked_ips')
+      .select('id')
+      .eq('ip_address', ip_address)
+      .eq('status', 'active')
+      .single();
+
+    if (existingBlock) {
+      return NextResponse.json(
+        { message: 'IP is already blocked' },
+        { status: 409 }
+      );
+    }
+
+    // Insert block record
+    const { data: blockRecord, error } = await sbAdmin
+      .from('blocked_ips')
+      .insert({
+        ip_address,
+        reason: reason as never,
+        block_level,
+        expires_at: expiresAt.toISOString(),
+        metadata: {
+          manual: true,
+          blocked_by: user.id,
+          notes: notes || null,
+        },
+      })
+      .select('*')
+      .single();
+
+    if (error) {
+      console.error('Error blocking IP:', error);
+      return NextResponse.json(
+        { message: 'Failed to block IP' },
+        { status: 500 }
+      );
+    }
+
+    // Update Redis cache if available
+    try {
+      const redis = await getUpstashRestRedisClient();
+      if (redis) {
+        await Promise.all([
+          redis.set(
+            REDIS_KEYS.IP_BLOCKED(ip_address),
+            JSON.stringify({
+              id: blockRecord.id,
+              level: block_level,
+              reason,
+              expiresAt: expiresAt.toISOString(),
+              blockedAt: new Date().toISOString(),
+            }),
+            { ex: blockDuration }
+          ),
+          redis.set(REDIS_KEYS.IP_BLOCK_LEVEL(ip_address), block_level, {
+            ex: WINDOW_MS.TWENTY_FOUR_HOURS / 1000,
+          }),
+        ]);
+      }
+    } catch (redisError) {
+      console.warn('Redis cache update failed:', redisError);
+      // Continue - DB is the source of truth
+    }
+
+    return NextResponse.json({
+      message: 'IP blocked successfully',
+      data: blockRecord,
+    });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { message: 'Invalid request data', errors: error.issues },
+        { status: 400 }
+      );
+    }
+
+    console.error('Unexpected error:', error);
+    return NextResponse.json(
+      { message: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}

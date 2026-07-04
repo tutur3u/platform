@@ -11,15 +11,9 @@ type AuthRedirectOriginOptions = {
   currentOrigin?: string | null;
   env?: NodeJS.ProcessEnv;
   isProduction?: boolean;
+  preserveCurrentManagedOrigin?: boolean;
   request?: HeaderCarrier | null;
 };
-
-function firstHeaderValue(value: string | null) {
-  return value
-    ?.split(',')
-    .map((entry) => entry.trim())
-    .find(Boolean);
-}
 
 function firstConfiguredValue(value: string | null | undefined) {
   return value
@@ -164,28 +158,54 @@ function resolveConfiguredWebOrigin(env: NodeJS.ProcessEnv) {
   );
 }
 
-function resolveForwardedOrigin(request: HeaderCarrier | null | undefined) {
-  if (!request) {
+function resolveCurrentPlatformOrigin(
+  currentOrigin: string | null | undefined
+) {
+  const origin = normalizeHttpOrigin(currentOrigin);
+
+  if (!origin) {
     return null;
   }
 
-  const forwardedHost = firstHeaderValue(
-    request.headers.get('x-forwarded-host')
-  );
+  const appDomain = getAppDomainByUrl(origin);
 
-  if (!forwardedHost) {
+  return appDomain?.kind === 'internal' && appDomain.name === 'platform'
+    ? new URL(appDomain.canonicalUrl).origin
+    : null;
+}
+
+function resolveCurrentManagedPlatformOrigin(
+  currentOrigin: string | null | undefined
+) {
+  const origin = normalizeHttpOrigin(currentOrigin);
+
+  if (!origin) {
     return null;
   }
 
-  const forwardedProto = firstHeaderValue(
-    request.headers.get('x-forwarded-proto')
-  );
-  const protocol =
-    forwardedProto === 'http' || forwardedProto === 'https'
-      ? forwardedProto
-      : 'https';
+  const url = new URL(origin);
 
-  return normalizeHttpOrigin(`${protocol}://${forwardedHost}`);
+  if (
+    url.hostname === 'tuturuuu.com' ||
+    !url.hostname.endsWith('.tuturuuu.com')
+  ) {
+    return null;
+  }
+
+  const appDomain = getAppDomainByUrl(origin);
+
+  if (appDomain?.kind === 'external') {
+    return null;
+  }
+
+  if (appDomain?.kind === 'internal' && appDomain.name !== 'platform') {
+    return null;
+  }
+
+  url.protocol = 'https:';
+  url.port = '';
+
+  return url.origin;
 }
 
 function resolveLocalhostFallback(env: NodeJS.ProcessEnv) {
@@ -200,14 +220,17 @@ export function resolveAuthRedirectOrigin({
   currentOrigin,
   env = process.env,
   isProduction = env.NODE_ENV === 'production',
-  request,
+  preserveCurrentManagedOrigin = false,
 }: AuthRedirectOriginOptions = {}) {
   return (
     resolveCurrentPortlessOrigin(currentOrigin) ||
     resolveConfiguredPortlessOrigin(env) ||
+    (preserveCurrentManagedOrigin
+      ? resolveCurrentManagedPlatformOrigin(currentOrigin)
+      : null) ||
     resolveConfiguredWebOrigin(env) ||
-    resolveForwardedOrigin(request) ||
-    normalizeHttpOrigin(currentOrigin) ||
+    resolveCurrentPlatformOrigin(currentOrigin) ||
+    (!isProduction ? normalizeHttpOrigin(currentOrigin) : null) ||
     (isProduction
       ? DEFAULT_PRODUCTION_AUTH_ORIGIN
       : resolveLocalhostFallback(env))

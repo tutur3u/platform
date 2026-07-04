@@ -5,8 +5,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { RequestsView } from './components/requests-view';
-import type { ExtendedTimeTrackingRequest } from './page';
 import { RequestDetailModal } from './request-detail-modal';
+import type { ExtendedTimeTrackingRequest } from './types';
 
 interface RequestsClientProps {
   wsId: string;

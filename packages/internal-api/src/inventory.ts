@@ -196,6 +196,7 @@ export type InventoryStorefrontCornerStyle = 'compact' | 'rounded' | 'soft';
 export type InventoryStorefrontCheckoutMode =
   | 'disabled'
   | 'polar'
+  | 'square_terminal'
   | 'simulated';
 
 export type InventoryStorefrontSectionType =
@@ -226,6 +227,14 @@ export type InventoryListingStatus =
   | 'archived';
 
 export type InventoryBundleStatus = 'draft' | 'active' | 'paused' | 'archived';
+
+export type InventoryBundlePricingMode = 'fixed_price' | 'selected_items';
+
+export type InventoryBundleCategoryCandidateScope =
+  | 'published_listings'
+  | 'all_stock';
+
+export type InventoryBundleCategoryDiscountStrategy = 'none' | 'cheapest_free';
 
 export type InventoryCheckoutStatus =
   | 'reserved'
@@ -318,6 +327,8 @@ export type InventoryStorefrontListing = {
   polarSyncStatus?: InventoryPolarSyncStatus;
   polarSyncedAt?: string | null;
   polarLastError?: string | null;
+  options?: InventoryListingOptionGroup[];
+  variants?: InventoryListingVariant[];
   createdAt: string | null;
   updatedAt: string | null;
 };
@@ -327,6 +338,85 @@ export type InventoryPolarSyncStatus =
   | 'synced'
   | 'error'
   | 'disabled';
+
+export type InventoryVariantStatus = 'active' | 'hidden' | 'archived';
+
+export type InventoryListingOptionValue = {
+  id: string;
+  label: string;
+  sortOrder: number;
+};
+
+export type InventoryListingOptionGroup = {
+  id: string;
+  name: string;
+  sortOrder: number;
+  values: InventoryListingOptionValue[];
+};
+
+export type InventoryListingVariantOptionValue = {
+  groupId: string;
+  valueId: string;
+  label: string;
+};
+
+export type InventoryListingVariant = {
+  id: string;
+  sku: string | null;
+  title: string | null;
+  productId: string;
+  unitId: string;
+  warehouseId: string;
+  /** Resolved price in integer minor units (falls back to the listing price). */
+  price: number;
+  compareAtPrice: number | null;
+  imageUrl: string | null;
+  sortOrder: number;
+  status: InventoryVariantStatus;
+  availableQuantity?: number | null;
+  optionValues: InventoryListingVariantOptionValue[];
+  polarSyncStatus?: InventoryPolarSyncStatus;
+  polarSyncedAt?: string | null;
+  polarLastError?: string | null;
+};
+
+export type InventoryOptionTemplateValue = {
+  id: string;
+  label: string;
+  value: string | null;
+  sortOrder: number;
+};
+
+export type InventoryOptionTemplateGroup = {
+  id: string;
+  name: string;
+  sortOrder: number;
+  values: InventoryOptionTemplateValue[];
+};
+
+export type InventoryOptionTemplate = {
+  id: string;
+  wsId: string;
+  name: string;
+  description: string | null;
+  groups: InventoryOptionTemplateGroup[];
+  createdAt: string | null;
+  updatedAt: string | null;
+};
+
+export type InventoryOptionTemplatePayload = {
+  name: string;
+  description?: string | null;
+  groups: Array<{
+    name: string;
+    sortOrder?: number;
+    values: Array<{
+      label: string;
+      value?: string | null;
+      sortOrder?: number;
+    }>;
+  }>;
+};
 
 export type InventoryBundleComponent = {
   id: string;
@@ -340,6 +430,35 @@ export type InventoryBundleComponent = {
   warehouseName?: string | null;
 };
 
+export type InventoryBundleCategoryCandidate = {
+  selectionKind: 'listing' | 'variant' | 'stock';
+  componentId: string;
+  listingId: string | null;
+  variantId: string | null;
+  productId: string;
+  unitId: string;
+  warehouseId: string;
+  title: string;
+  imageUrl?: string | null;
+  price: number;
+  availableQuantity?: number | null;
+  unitName?: string | null;
+  warehouseName?: string | null;
+};
+
+export type InventoryBundleCategoryComponent = {
+  id: string;
+  bundleId: string;
+  categoryId: string;
+  categoryName?: string | null;
+  quantityRequired: number;
+  freeQuantity: number;
+  discountStrategy: InventoryBundleCategoryDiscountStrategy;
+  sortOrder?: number;
+  candidateScope?: InventoryBundleCategoryCandidateScope;
+  candidates?: InventoryBundleCategoryCandidate[];
+};
+
 export type InventoryBundle = {
   id: string;
   wsId: string;
@@ -349,10 +468,13 @@ export type InventoryBundle = {
   description: string | null;
   imageUrl: string | null;
   price: number;
+  pricingMode: InventoryBundlePricingMode;
+  categoryCandidateScope: InventoryBundleCategoryCandidateScope;
   status: InventoryBundleStatus;
   maxPerOrder: number;
   availableQuantity?: number;
   components: InventoryBundleComponent[];
+  categoryComponents: InventoryBundleCategoryComponent[];
   polarProductId?: string | null;
   polarPriceId?: string | null;
   polarSyncStatus?: InventoryPolarSyncStatus;
@@ -366,6 +488,7 @@ export type InventoryCheckoutLine = {
   id: string;
   listingId: string | null;
   bundleId: string | null;
+  variantId: string | null;
   productId: string;
   unitId: string;
   warehouseId: string;
@@ -380,6 +503,7 @@ export type InventoryCheckoutSession = {
   wsId: string;
   publicToken: string;
   status: InventoryCheckoutStatus;
+  checkoutProvider: InventoryStorefrontCheckoutMode | null;
   customerAuthUid: string | null;
   customerName: string;
   customerEmail: string;
@@ -400,6 +524,16 @@ export type InventoryCheckoutSession = {
   polarOrderId: string | null;
   polarProductId: string | null;
   polarStatus: InventoryPolarCheckoutStatus | null;
+  squareEnvironment: InventorySquareEnvironment | null;
+  squareLocationId: string | null;
+  squareDeviceId: string | null;
+  squareOrderId: string | null;
+  squareTerminalCheckoutId: string | null;
+  squarePaymentId: string | null;
+  squareReceiptUrl: string | null;
+  squareStatus: InventorySquareTerminalCheckoutStatus | null;
+  squareFailureReason: string | null;
+  squareLastSyncedAt: string | null;
   lines: InventoryCheckoutLine[];
 };
 
@@ -429,6 +563,12 @@ export type InventoryPolarIntegration = {
 };
 
 export type InventoryPolarSettings = {
+  /**
+   * Resolved workspace UUID (never the `personal` alias). Use this to build the
+   * public Polar webhook URL — Polar calls it server-to-server with no session,
+   * so an alias like `personal` would be unresolvable and fail verification.
+   */
+  wsId: string;
   testingEnvironment: InventoryPolarEnvironment;
   productionEnvironment: InventoryPolarEnvironment;
   integrations: InventoryPolarIntegration[];
@@ -440,6 +580,131 @@ export type InventoryPolarSettingsPayload = {
   webhookSecret?: string;
   testingEnvironment?: InventoryPolarEnvironment;
   productionEnvironment?: InventoryPolarEnvironment;
+};
+
+export type InventorySquareEnvironment = 'production' | 'sandbox';
+
+export type InventorySquareAuthMethod = 'manual' | 'oauth';
+
+export type InventorySquareConnectionStatus =
+  | 'error'
+  | 'pending'
+  | 'ready'
+  | 'revoked';
+
+export type InventorySquareTerminalCheckoutStatus =
+  | 'cancel_requested'
+  | 'canceled'
+  | 'cancelled'
+  | 'checkout_created'
+  | 'completed'
+  | 'expired'
+  | 'failed'
+  | 'in_progress'
+  | 'paid'
+  | 'pending';
+
+export type InventorySquareReadinessIssue =
+  | 'app_credentials_missing'
+  | 'connection_missing'
+  | 'device_missing'
+  | 'location_missing'
+  | 'scopes_missing'
+  | 'webhook_signature_missing';
+
+export type InventorySquareConnection = {
+  environment: InventorySquareEnvironment;
+  authMethod: InventorySquareAuthMethod;
+  merchantId: string | null;
+  accessTokenLast4: string | null;
+  accessTokenFingerprint: string | null;
+  refreshTokenLast4: string | null;
+  tokenExpiresAt: string | null;
+  scopes: string[];
+  status: InventorySquareConnectionStatus;
+  lastValidatedAt: string | null;
+  lastError: string | null;
+  updatedAt: string | null;
+  webhookSignatureKeyLast4: string | null;
+};
+
+export type InventorySquareAppCredential = {
+  environment: InventorySquareEnvironment;
+  applicationId: string | null;
+  applicationSecretLast4: string | null;
+  applicationSecretFingerprint: string | null;
+  oauthRedirectUrl: string | null;
+  webhookNotificationUrl: string | null;
+  updatedAt: string | null;
+};
+
+export type InventorySquareSettings = {
+  wsId: string;
+  environment: InventorySquareEnvironment;
+  locationId: string | null;
+  locationName: string | null;
+  deviceId: string | null;
+  deviceName: string | null;
+  sandboxDeviceId: string | null;
+  readiness: {
+    ready: boolean;
+    issues: InventorySquareReadinessIssue[];
+  };
+  appCredentials: InventorySquareAppCredential[];
+  connections: InventorySquareConnection[];
+};
+
+export type InventorySquareSettingsPayload = {
+  environment?: InventorySquareEnvironment;
+  accessToken?: string;
+  applicationId?: string;
+  applicationSecret?: string;
+  oauthRedirectUrl?: string | null;
+  webhookNotificationUrl?: string | null;
+  webhookSignatureKey?: string;
+  locationId?: string | null;
+  locationName?: string | null;
+  deviceId?: string | null;
+  deviceName?: string | null;
+  sandboxDeviceId?: string | null;
+};
+
+export type InventorySquareOAuthStartResponse = {
+  authorizeUrl: string;
+};
+
+export type InventorySquareLocation = {
+  id: string;
+  name: string;
+  status: string | null;
+  country: string | null;
+  currency: string | null;
+};
+
+export type InventorySquareDevice = {
+  id: string;
+  name: string;
+  status: string | null;
+  locationId: string | null;
+  productType: string | null;
+  code: string | null;
+  pairedAt: string | null;
+  updatedAt: string | null;
+};
+
+export type InventorySquareDeviceCode = {
+  id: string;
+  code: string;
+  name: string | null;
+  status: string | null;
+  pairBy: string | null;
+  locationId: string | null;
+  productType: string | null;
+};
+
+export type InventorySquareTerminalCheckoutPayload = {
+  checkoutId: string;
+  deviceId?: string;
 };
 
 export type InventoryPolarSyncStatusCounts = {
@@ -501,6 +766,7 @@ export type InventoryDashboardCounts = {
   sales: number;
   costingProfiles: number;
   polarReady: number;
+  squareReady?: number;
   simulatedCheckoutStorefronts: number;
 };
 
@@ -577,6 +843,7 @@ export type InventoryDashboardSnapshot = {
     withoutPublishedListings: number;
     themeGaps: number;
     polarCheckout: number;
+    squareTerminalCheckout?: number;
     simulatedCheckout: number;
     disabledCheckout: number;
   };
@@ -633,6 +900,14 @@ export type InventoryProductInventoryItem = {
   amount: number | null;
   min_amount?: number;
   price: number;
+  revenue_share_partner_id?: string | null;
+  revenue_share_bps?: number;
+  revenue_share_partner?: {
+    id?: string | null;
+    name?: string | null;
+    avatar_url?: string | null;
+    linked_workspace_user_id?: string | null;
+  } | null;
 };
 
 export type InventoryProductPayload = {
@@ -703,14 +978,27 @@ export type InventoryBatchPayload = {
   total_diff?: number;
 };
 
+export type InventorySaleSource = 'checkout_session' | 'finance_invoice';
+
 export type InventorySaleSummary = {
+  category_name?: string | null;
   completed_at: string | null;
   created_at: string | null;
+  creator_name?: string | null;
+  currency?: string | null;
   customer_name: string | null;
   id: string;
   items_count: number;
+  note?: string | null;
+  notice?: string | null;
+  owners?: string[];
   paid_amount: number;
+  polar_order_id?: string | null;
+  public_token?: string | null;
+  square_order_id?: string | null;
+  source: InventorySaleSource;
   total_quantity: number;
+  wallet_name?: string | null;
 };
 
 export type InventorySaleLine = {
@@ -740,6 +1028,32 @@ export type InventorySaleDetail = InventorySaleSummary & {
   creator_name: string | null;
   owners: string[];
   lines: InventorySaleLine[];
+};
+
+export type InventoryRevenueShareEarning = {
+  partnerId: string;
+  partnerName: string;
+  avatarUrl?: string | null;
+  revenueShareBps: number;
+  splitPercent: number;
+  currency: string;
+  attributedRevenue: number;
+  earnedAmount: number;
+  unitsSold: number;
+  salesCount: number;
+  productCount: number;
+  products: string[];
+  firstSaleAt: string | null;
+  lastSaleAt: string | null;
+};
+
+export type InventoryRevenueShareEarningsQuery = {
+  partnerId?: string;
+  q?: string;
+  startAt?: string;
+  endAt?: string;
+  offset?: number;
+  limit?: number;
 };
 
 export type InventorySaleUpdatePayload = {
@@ -844,6 +1158,10 @@ export type InventoryOffsetListQuery = {
   offset?: number;
 };
 
+export type InventoryOrderHistoryQuery = InventoryOffsetListQuery & {
+  storeSlug?: string;
+};
+
 export type InventoryStorefrontPayload = {
   slug: string;
   name: string;
@@ -913,6 +1231,30 @@ export type InventoryStorefrontListingPayload = {
   status?: InventoryListingStatus;
   sortOrder?: number;
   maxPerOrder?: number;
+  /** Copy an option template's groups/values onto this listing before saving. */
+  applyOptionTemplateId?: string | null;
+  options?: Array<{
+    name: string;
+    sortOrder?: number;
+    values: Array<{ label: string; sortOrder?: number }>;
+  }>;
+  variants?: InventoryStorefrontListingVariantPayload[];
+};
+
+export type InventoryStorefrontListingVariantPayload = {
+  id?: string;
+  sku?: string | null;
+  title?: string | null;
+  productId: string;
+  unitId: string;
+  warehouseId: string;
+  price?: number | null;
+  compareAtPrice?: number | null;
+  imageUrl?: string | null;
+  sortOrder?: number;
+  status?: InventoryVariantStatus;
+  /** Maps an option group name to the selected value label for this variant. */
+  optionValueLabels?: Record<string, string>;
 };
 
 export type InventoryBundlePayload = {
@@ -922,6 +1264,8 @@ export type InventoryBundlePayload = {
   description?: string | null;
   imageUrl?: string | null;
   price: number;
+  pricingMode?: InventoryBundlePricingMode;
+  categoryCandidateScope?: InventoryBundleCategoryCandidateScope;
   status?: InventoryBundleStatus;
   maxPerOrder?: number;
   components?: Array<{
@@ -930,7 +1274,32 @@ export type InventoryBundlePayload = {
     warehouseId: string;
     quantity: number;
   }>;
+  categoryComponents?: Array<{
+    categoryId: string;
+    quantityRequired: number;
+    freeQuantity?: number;
+    discountStrategy?: InventoryBundleCategoryDiscountStrategy;
+    sortOrder?: number;
+  }>;
 };
+
+export type InventoryCheckoutBundleSelectionItem = {
+  listingId?: string | null;
+  variantId?: string | null;
+  productId?: string | null;
+  unitId?: string | null;
+  warehouseId?: string | null;
+  quantity?: number;
+};
+
+export type InventoryCheckoutBundleSelection = {
+  componentId?: string;
+  items: InventoryCheckoutBundleSelectionItem[];
+};
+
+export type InventoryCheckoutBundleSelections =
+  | Record<string, InventoryCheckoutBundleSelectionItem[]>
+  | InventoryCheckoutBundleSelection[];
 
 export type InventoryCheckoutCreatePayload = {
   customerName?: string;
@@ -940,7 +1309,9 @@ export type InventoryCheckoutCreatePayload = {
   lines: Array<{
     listingId?: string;
     bundleId?: string;
+    variantId?: string;
     quantity: number;
+    bundleSelections?: InventoryCheckoutBundleSelections;
   }>;
 };
 
@@ -1035,6 +1406,10 @@ export type InventoryCostImportPreviewRow = {
   manufacturingCostPerUnit: number;
   totalCostPerUnit: number | null;
   targetRetailPrice: number;
+  artCommissionCost?: number | null;
+  shippingCost?: number | null;
+  tariffCost?: number | null;
+  packagingCostPerUnit?: number | null;
   talentProfitPerSale?: number | null;
   partnerProfitPerSale?: number | null;
 };
@@ -1106,6 +1481,25 @@ export type InventoryPublicStorefrontResponse = {
 export type InventoryCheckoutResponse = {
   checkout: InventoryCheckoutSession;
   checkoutUrl: string | null;
+  checkoutMode?: InventoryStorefrontCheckoutMode;
+  nextUrl?: string | null;
+};
+
+export type InventoryOrderHistoryItem = {
+  checkout: InventoryCheckoutSession;
+  completedAt: string | null;
+  createdAt: string | null;
+  currency: string;
+  id: string;
+  lines: InventoryCheckoutLine[];
+  polarStatus: InventoryPolarCheckoutStatus | null;
+  squareStatus: InventorySquareTerminalCheckoutStatus | null;
+  publicToken: string;
+  status: InventoryCheckoutStatus;
+  storefrontId: string;
+  storefrontName: string;
+  storefrontSlug: string;
+  totalAmount: number;
 };
 
 function workspaceInventoryPath(wsId: string, suffix: string) {
@@ -1770,7 +2164,7 @@ export function updateInventoryPromotion(
   payload: InventoryPromotionPayload,
   options?: InternalApiClientOptions
 ) {
-  return getInternalApiClient(options).json<{ data: ProductPromotion }>(
+  return getInternalApiClient(options).json<{ message?: string }>(
     workspacePath(wsId, `/promotions/${encodePathSegment(promotionId)}`),
     {
       body: JSON.stringify(payload),
@@ -2213,6 +2607,68 @@ export function deleteInventoryStorefrontListing(
   );
 }
 
+export function listInventoryOptionTemplates(
+  wsId: string,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<{
+    data: InventoryOptionTemplate[];
+  }>(workspaceInventoryPath(wsId, '/option-templates'), {
+    cache: 'no-store',
+  });
+}
+
+export function createInventoryOptionTemplate(
+  wsId: string,
+  payload: InventoryOptionTemplatePayload,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<{ data: InventoryOptionTemplate }>(
+    workspaceInventoryPath(wsId, '/option-templates'),
+    {
+      body: JSON.stringify(payload),
+      headers: jsonHeaders(options?.defaultHeaders),
+      method: 'POST',
+    }
+  );
+}
+
+export function updateInventoryOptionTemplate(
+  wsId: string,
+  templateId: string,
+  payload: Partial<InventoryOptionTemplatePayload>,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<{ data: InventoryOptionTemplate }>(
+    workspaceInventoryPath(
+      wsId,
+      `/option-templates/${encodePathSegment(templateId)}`
+    ),
+    {
+      body: JSON.stringify(payload),
+      headers: jsonHeaders(options?.defaultHeaders),
+      method: 'PATCH',
+    }
+  );
+}
+
+export function deleteInventoryOptionTemplate(
+  wsId: string,
+  templateId: string,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<{ ok: boolean }>(
+    workspaceInventoryPath(
+      wsId,
+      `/option-templates/${encodePathSegment(templateId)}`
+    ),
+    {
+      headers: options?.defaultHeaders,
+      method: 'DELETE',
+    }
+  );
+}
+
 export function listInventoryBundles(
   wsId: string,
   query?: InventoryBundleListQuery,
@@ -2284,6 +2740,19 @@ export function listInventoryCheckouts(
   });
 }
 
+export function listInventoryRevenueShareEarnings(
+  wsId: string,
+  query?: InventoryRevenueShareEarningsQuery,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<
+    InventoryListResponse<InventoryRevenueShareEarning>
+  >(workspaceInventoryPath(wsId, '/revenue-share'), {
+    cache: 'no-store',
+    query: asQuery(query),
+  });
+}
+
 export function releaseInventoryCheckout(
   wsId: string,
   checkoutId: string,
@@ -2298,6 +2767,39 @@ export function releaseInventoryCheckout(
     ),
     {
       headers: options?.defaultHeaders,
+      method: 'POST',
+    }
+  );
+}
+
+export function createInventorySquareTerminalCheckout(
+  wsId: string,
+  payload: InventorySquareTerminalCheckoutPayload,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<{
+    data: InventoryCheckoutSession;
+  }>(workspaceInventoryPath(wsId, '/square/terminal-checkouts'), {
+    body: JSON.stringify(payload),
+    headers: jsonHeaders(options?.defaultHeaders),
+    method: 'POST',
+  });
+}
+
+export function cancelInventorySquareTerminalCheckout(
+  wsId: string,
+  checkoutId: string,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<{
+    data: InventoryCheckoutSession;
+  }>(
+    workspaceInventoryPath(
+      wsId,
+      `/square/terminal-checkouts/${encodePathSegment(checkoutId)}/cancel`
+    ),
+    {
+      headers: jsonHeaders(options?.defaultHeaders),
       method: 'POST',
     }
   );
@@ -2326,6 +2828,81 @@ export function updateInventoryPolarSettings(
       method: 'PUT',
     }
   );
+}
+
+export function getInventorySquareSettings(
+  wsId: string,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<InventorySquareSettings>(
+    workspaceInventoryPath(wsId, '/square-settings'),
+    { cache: 'no-store' }
+  );
+}
+
+export function updateInventorySquareSettings(
+  wsId: string,
+  payload: InventorySquareSettingsPayload,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<InventorySquareSettings>(
+    workspaceInventoryPath(wsId, '/square-settings'),
+    {
+      body: JSON.stringify(payload),
+      headers: jsonHeaders(options?.defaultHeaders),
+      method: 'PUT',
+    }
+  );
+}
+
+export function startInventorySquareOAuth(
+  wsId: string,
+  environment: InventorySquareEnvironment,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<InventorySquareOAuthStartResponse>(
+    workspaceInventoryPath(
+      wsId,
+      `/square/oauth/start?environment=${encodeURIComponent(environment)}`
+    ),
+    { cache: 'no-store', headers: options?.defaultHeaders }
+  );
+}
+
+export function listInventorySquareLocations(
+  wsId: string,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<{
+    data: InventorySquareLocation[];
+  }>(workspaceInventoryPath(wsId, '/square/locations'), {
+    cache: 'no-store',
+  });
+}
+
+export function listInventorySquareDevices(
+  wsId: string,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<{
+    data: InventorySquareDevice[];
+  }>(workspaceInventoryPath(wsId, '/square/devices'), {
+    cache: 'no-store',
+  });
+}
+
+export function createInventorySquareDeviceCode(
+  wsId: string,
+  payload: { locationId?: string; name?: string },
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<{
+    data: InventorySquareDeviceCode;
+  }>(workspaceInventoryPath(wsId, '/square/device-codes'), {
+    body: JSON.stringify(payload),
+    headers: jsonHeaders(options?.defaultHeaders),
+    method: 'POST',
+  });
 }
 
 export function getInventoryStorefrontAnalytics(
@@ -2412,5 +2989,17 @@ export function getInventoryPublicOrder(
     order: InventoryCheckoutSession;
   }>(`/api/v1/inventory/orders/${encodePathSegment(publicToken)}`, {
     cache: 'no-store',
+  });
+}
+
+export function listInventoryOrderHistory(
+  query?: InventoryOrderHistoryQuery,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<
+    InventoryListResponse<InventoryOrderHistoryItem>
+  >('/api/v1/inventory/orders', {
+    cache: 'no-store',
+    query: asQuery(query),
   });
 }

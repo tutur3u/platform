@@ -1,10 +1,26 @@
 ---
 title: "Microservices Patterns"
 description: "Service boundaries, communication patterns, and deployment strategies in Tuturuuu's monorepo architecture"
-updatedAt: "2025-11-16"
+updatedAt: "2026-06-21"
 ---
 
-Tuturuuu uses a **microservices architecture within a monorepo**, combining the organizational benefits of microservices with the developer experience advantages of a monorepo.
+Tuturuuu uses a **monorepo of conventional Next.js App Router apps** that share one
+Supabase project plus a growing set of workspace packages. We describe this as a
+"microservices-within-a-monorepo" style: each app deploys independently and owns a
+product surface, but they are not isolated services with private databases or an
+inter-service token mesh. This page documents the patterns we actually use today,
+and flags where the platform is mid-migration.
+
+<Note>
+  **Active migration.** The legacy `apps/web` Next.js runtime (port `7803`) is being
+  replaced by `apps/tanstack-web` (TanStack Start) for the frontend and
+  `apps/backend` (Rust) for the API layer. See
+  [TanStack Start And Rust Migration](/platform/architecture/tanstack-rust-migration)
+  for the migration contract and
+  `apps/tanstack-web/migration/route-manifest.json` for live route-by-route
+  progress. Treat the tRPC and Next.js REST sections below as the *legacy*
+  `apps/web` path; new read/write endpoints increasingly land in the Rust backend.
+</Note>
 
 ## Service Boundaries
 
@@ -12,16 +28,29 @@ Tuturuuu uses a **microservices architecture within a monorepo**, combining the 
 
 | Service | Location | Purpose | Database | Tech Stack |
 |---------|----------|---------|----------|------------|
-| **web** | `apps/web` | Main platform application | Supabase (PostgreSQL) | Next.js 16, React, tRPC |
-| **rewise** | `apps/rewise` | AI-powered chatbot | Supabase (shared) | Next.js 16, AI SDK |
-| **nova** | `apps/nova` | Prompt engineering platform | Supabase (shared) | Next.js 16, AI SDK |
-| **calendar** | `apps/calendar` | Calendar & scheduling | Supabase (shared) | Next.js 16, React |
-| **finance** | `apps/finance` | Finance management | Supabase (shared) | Next.js 16, React |
-| **tasks** | `apps/tasks` | Task management (hierarchical) | Supabase (shared) | Next.js 16, React |
-| **meet** | `apps/meet` | Meeting management | Supabase (shared) | Next.js 16, React |
-| **shortener** | `apps/shortener` | URL shortener service | Supabase (shared) | Next.js 16 |
+| **web** (legacy) | `apps/web` | Main platform application (port `7803`) | Supabase (PostgreSQL) | Next.js (App Router), React 19 |
+| **tanstack-web** | `apps/tanstack-web` | Replacement frontend for `apps/web` | Supabase (shared) | TanStack Start + Router + Query, Vite, React 19 |
+| **backend** | `apps/backend` | Dedicated Rust API runtime (port `7820`) | Supabase (shared) | Rust (Axum), Cloudflare Workers-ready |
+| **rewise** | `apps/rewise` | AI-powered chatbot | Supabase (shared) | Next.js, AI SDK |
+| **nova** | `apps/nova` | Prompt engineering platform | Supabase (shared) | Next.js, AI SDK |
+| **calendar** | `apps/calendar` | Calendar & scheduling | Supabase (shared) | Next.js, React |
+| **finance** | `apps/finance` | Finance management | Supabase (shared) | Next.js, React |
+| **tasks** | `apps/tasks` | Task management (hierarchical) | Supabase (shared) | Next.js, React |
+| **meet** | `apps/meet` | Meeting management | Supabase (shared) | Next.js, React |
+| **shortener** | `apps/shortener` | URL shortener service | Supabase (shared) | Next.js |
 | **database** | `apps/database` | Database migrations & schema | Supabase | SQL, TypeScript |
 | **discord** | `apps/discord` | Discord bot utilities | None (stateless) | Python |
+
+Additional product apps (`apps/chat`, `apps/drive`, `apps/mail`, `apps/cms`,
+`apps/mind`, `apps/teach`, `apps/track`, `apps/storefront`, and others) follow the
+same conventional Next.js App Router shape and share the same Supabase project.
+
+<Warning>
+  All these apps share **one** Supabase project. There are no per-app distinct
+  Supabase keys, no per-service databases, and no inter-service token system in
+  the codebase today. "Service-specific databases" and an inter-service token
+  mesh are aspirational patterns discussed later, not implemented reality.
+</Warning>
 
 ### Shared Packages
 
@@ -34,9 +63,10 @@ packages/
 ├── supabase/     # Supabase client wrappers
 ├── types/        # Shared TypeScript types (including generated DB types)
 ├── utils/        # Cross-cutting utilities
-├── trigger/      # Background job definitions
-├── payment/      # Payment processing (Polar, Dodo)
-└── ... (15+ shared packages)
+├── trigger/      # Background job definitions (Trigger.dev v4)
+├── payment/      # Payment processing (Polar provider)
+├── internal-api/ # Typed helpers for app REST endpoints
+└── ... (many shared packages)
 ```
 
 ## Monorepo Architecture
@@ -97,36 +127,53 @@ Services declare dependencies on shared packages:
 
 ## Communication Patterns
 
-### 1. Event-Driven (Primary)
+### 1. Background Jobs (Trigger.dev v4)
 
-**When to use:** Asynchronous workflows, background processing, cross-service coordination
+**When to use:** Asynchronous workflows, background processing, scheduled work
 
-**Implementation:** Trigger.dev
+**Implementation:** Trigger.dev v4 (`@trigger.dev/sdk` `^4.4.5`), using the
+`task()` API. Task definitions live in `packages/trigger/src`.
+
+The v2/v3 `client.defineJob` / `eventTrigger` / `io.runTask` APIs do **not** exist
+in this repo. Define a task with `task()` and run it from app code with
+`tasks.trigger(...)` (or `<task>.trigger(...)`):
 
 ```typescript
-// Producer: apps/web
-await trigger.event({
-  name: "workspace.created",
-  payload: { workspaceId, ownerId }
-});
+// packages/trigger/src/schedule-tasks.ts
+import { task } from '@trigger.dev/sdk/v3';
+import { schedulableTasksHelper } from './schedule-tasks-helper';
 
-// Consumer: apps/rewise
-client.defineJob({
-  id: "setup-ai-workspace",
-  trigger: eventTrigger({ name: "workspace.created" }),
-  run: async (payload, io) => {
-    await io.runTask("initialize-ai", async () => {
-      return await initializeAIWorkspace(payload.workspaceId);
-    });
-  }
+export const scheduleTask = task({
+  id: 'schedule-task',
+  queue: { concurrencyLimit: 10 },
+  run: async (payload: { ws_id: string }) => {
+    const result = await schedulableTasksHelper(payload.ws_id);
+    if (!result.success) {
+      throw new Error(result.error || 'Schedule tasks failed');
+    }
+    return { ws_id: payload.ws_id, ...result, success: true };
+  },
 });
 ```
 
+```typescript
+// Producer: trigger the task from app code (e.g. an apps/web API route)
+import { tasks } from '@trigger.dev/sdk/v3';
+import type { scheduleTask } from '@tuturuuu/trigger';
+
+await tasks.trigger<typeof scheduleTask>('schedule-task', {
+  ws_id: workspaceId,
+});
+```
+
+> The import path is `@trigger.dev/sdk/v3` even though the installed SDK is the
+> v4 line — that path is the current entrypoint for the `task()` API.
+
 **Characteristics:**
-- Loose coupling between services
-- Resilient to failures
+- Loose coupling: producers fire-and-forget, tasks run out of band
+- Resilient to failures, with built-in retries and queue concurrency limits
 - Asynchronous processing
-- Event log for replay/debugging
+- Run history and replay in the Trigger.dev dashboard
 
 ### 2. Shared Database (Current)
 
@@ -135,8 +182,11 @@ client.defineJob({
 **Implementation:** Supabase PostgreSQL with RLS
 
 ```typescript
-// Both apps/web and apps/finance access same database
-const supabase = createClient();
+import { createClient } from '@tuturuuu/supabase/next/server';
+
+// Both apps/web and apps/finance access the same Supabase project.
+// createClient() is async — await it.
+const supabase = await createClient();
 
 // Row-Level Security ensures data isolation
 const { data } = await supabase
@@ -158,143 +208,143 @@ const { data } = await supabase
 - ❌ Tight coupling at data layer
 - ❌ Schema changes affect multiple services
 
-### 3. tRPC (Internal API)
+### 3. tRPC (legacy `apps/web`, currently a stub)
 
-**When to use:** Type-safe communication within web application boundaries
-
-**Implementation:** tRPC routers
+**Status:** The tRPC layer in `apps/web/src/trpc` is intentionally a **stub**. The
+router (`apps/web/src/trpc/routers/_app.ts`) exports a single `healthCheck`
+`baseProcedure` to keep the type system wired up:
 
 ```typescript
-// apps/web/src/trpc/routers/workspace.ts
-export const workspaceRouter = createTRPCRouter({
-  create: protectedProcedure
-    .input(CreateWorkspaceSchema)
-    .mutation(async ({ input, ctx }) => {
-      // Implementation
-    }),
+// apps/web/src/trpc/routers/_app.ts (actual contents)
+import { baseProcedure, createTRPCRouter } from '../init';
 
-  list: protectedProcedure
-    .query(async ({ ctx }) => {
-      // Implementation
-    })
+export const appRouter = createTRPCRouter({
+  healthCheck: baseProcedure.query(() => {
+    return { status: 'ok', timestamp: Date.now() };
+  }),
 });
 
-// Consumer (same app)
-const workspaces = api.workspace.list.useQuery();
+export type AppRouter = typeof appRouter;
 ```
 
-**Characteristics:**
-- End-to-end type safety
-- Auto-completion in IDE
-- Minimal boilerplate
-- Client-side caching with React Query
+The real exports are `createTRPCRouter`, `createTRPCContext`, `baseProcedure`, and
+`createCallerFactory`. There is **no** `protectedProcedure`, no auth middleware,
+and no workspace/user/tasks/ai routers — the context is not a product data layer.
+Product data flows through `@tuturuuu/internal-api` helpers and REST
+`/api/v1/*` routes (below), not through tRPC. In `apps/tanstack-web` a guard
+(`check-tanstack-api-access`) forbids `/trpc` calls entirely.
 
-### 4. REST API (External)
+Do not document tRPC as the canonical internal API surface — it is a thin
+compatibility shim that may be removed during the migration.
 
-**When to use:** Public APIs, webhook endpoints, third-party integrations
+### 4. REST API (`/api/v1`, legacy `apps/web`) and the Rust backend
 
-**Implementation:** Next.js API routes
+**When to use:** Public APIs, webhook endpoints, third-party integrations, and
+product read/write endpoints.
+
+**Legacy implementation:** Next.js App Router route handlers under
+`apps/web/src/app/api/v1/*` (e.g. `workspaces`, `inventory`, `nova`, `storage`):
 
 ```typescript
 // apps/web/src/app/api/v1/workspaces/route.ts
+import { createClient } from '@tuturuuu/supabase/next/server';
+
 export async function POST(request: Request) {
+  const supabase = await createClient(); // async — await it
   const body = await request.json();
 
   // Validate, authenticate, execute
-  const workspace = await createWorkspace(body);
+  const workspace = await createWorkspace(supabase, body);
 
   return Response.json({ workspace }, { status: 201 });
 }
 ```
 
+**Migration target:** The Rust backend (`apps/backend`, port `7820`) is
+progressively taking ownership of these endpoints. Route groups live in
+`apps/backend/src/*.rs` (for example `inventory.rs`, `nova.rs`,
+`onboarding_progress.rs`, `aurora.rs`), and the contract is documented in
+`apps/backend/api/openapi.yaml`. Migration progress per endpoint is tracked in
+`apps/tanstack-web/migration/route-manifest.json`.
+
 **Characteristics:**
-- Standard HTTP
-- OpenAPI documentation possible
+- Standard HTTP / JSON
 - Versioned endpoints (`/api/v1/...`)
-- Rate limiting, authentication
+- Rate limiting and authentication
+- OpenAPI documentation for the Rust backend (`apps/backend/api/openapi.yaml`)
 
 ## Service Communication Matrix
 
-| From Service | To Service | Pattern | Protocol | Use Case |
-|--------------|------------|---------|----------|----------|
-| web | rewise | Event-Driven | Trigger.dev | Setup AI for new workspace |
-| web | finance | Shared DB | PostgreSQL | Access financial data |
-| rewise | web | Event-Driven | Trigger.dev | AI chat completion notification |
-| External | web | REST API | HTTP/JSON | Public API access |
-| web (client) | web (server) | tRPC | HTTP/JSON | Internal app communication |
+| From | To | Pattern | Protocol | Use Case |
+|------|----|---------|----------|----------|
+| any app | Supabase | Shared DB | PostgreSQL + RLS | Read/write product data (primary path) |
+| any app | Trigger.dev | Background job | `task()` trigger | Async/scheduled work |
+| External | app | REST API | HTTP/JSON | Public API access (`/api/v1/...`) |
+| tanstack-web | backend | REST | HTTP/JSON | Migrated read/write endpoints (Rust) |
+| app (client) | app (server) | TanStack Query | HTTP/JSON | Client fetching via internal-api helpers |
 | discord | web | Webhook | HTTP/JSON | Discord bot commands |
+
+Most cross-surface coordination is **not** direct service-to-service RPC: apps
+share the Supabase database (guarded by RLS) and hand off long-running work to
+Trigger.dev. This keeps coupling at the data and job layers rather than in a
+service mesh.
 
 ## Deployment Strategies
 
-### Current: Vercel Monorepo Deployment
+### Next.js apps: Vercel
 
-Each app deploys independently to Vercel:
+Each Next.js app deploys independently to Vercel. CI builds the selected app,
+packages prebuilt artifacts, and deploys the production artifact through the
+matching GitHub Actions workflow.
 
-```yaml
-# apps/web/vercel.json
-{
-  "buildCommand": "bun run build",
-  "outputDirectory": ".next",
-  "framework": "nextjs",
-  "installCommand": "bun install"
-}
-
-# apps/rewise/vercel.json
-{
-  "buildCommand": "bun run build",
-  "outputDirectory": ".next",
-  "framework": "nextjs",
-  "installCommand": "bun install"
-}
-```
-
-**CI/CD Pipeline:**
+There is one Vercel workflow per app, named by product surface. For example,
+`vercel-production-platform.yaml` builds `apps/web` on pushes to the `production`
+branch and deploys the prebuilt production artifact:
 
 ```yaml
-# .github/workflows/deploy-web.yml
-name: Deploy Web
+# .github/workflows/vercel-production-platform.yaml (abridged)
+name: Vercel Platform Production Deployment
 on:
   push:
-    branches: [main]
-    paths:
-      - 'apps/web/**'
-      - 'packages/**'
+    branches: [production]
+  workflow_dispatch:
 
 jobs:
-  deploy:
+  Deploy-Production:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: oven-sh/setup-bun@v1
-      - run: bun install
-      - run: bun --filter @tuturuuu/web run build
-      - uses: amondnet/vercel-action@v20
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+      - uses: ./.github/actions/setup-bun-with-retry
+        with:
+          bun-version: 1.3.14
+      - run: bash scripts/ci/run-with-backoff.sh bun install
+      # Pull env, build the Vercel artifact, and deploy the prebuilt output.
+      - run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+      - run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
+      - run: vercel deploy --archive=tgz --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}
 ```
+
+Matching `vercel-preview-*.yaml` workflows run for pull requests. Node engines are
+`>=22` (CI uses Node 24) and Bun is pinned to `1.3.14`.
+
+### Rust backend
+
+`apps/backend` is built and validated by `.github/workflows/rust-backend.yml`.
+It runs as a native container and keeps a Cloudflare Workers Rust entrypoint
+(`apps/backend/wrangler.jsonc`) ready for edge preview deployment, per the
+[migration contract](/platform/architecture/tanstack-rust-migration).
 
 ### Independent Scaling
 
-Each service scales based on its traffic:
-
-```typescript
-// Vercel auto-scaling configuration
-const scalingConfig = {
-  "web": {
-    minInstances: 2,
-    maxInstances: 100,
-    targetCPU: 70
-  },
-  "rewise": {
-    minInstances: 1,
-    maxInstances: 20,
-    targetCPU: 70
-  },
-  "shortener": {
-    minInstances: 1,
-    maxInstances: 5,
-    targetCPU: 70
-  }
-};
-```
+Each app scales independently on its hosting platform (Vercel autoscaling for the
+Next.js apps; container/edge scaling for the Rust backend). The per-app
+`minInstances`/`maxInstances` objects shown in earlier versions of this page were
+illustrative, not a real config file in the repo — scaling is configured in the
+Vercel project settings and the backend's container/edge runtime, not in
+versioned source.
 
 ## Service Boundary Decisions
 
@@ -342,36 +392,37 @@ Alternatives considered:
 - Schema changes affect multiple services
 - Harder to scale independently
 
-### Future: Service-Specific Databases
+### Aspirational: Service-Specific Databases
+
+<Note>
+  This is **not implemented today.** Every app shares one Supabase project. The
+  following is a future option, not current architecture.
+</Note>
 
 **When to consider:**
-- Service needs specialized database (e.g., PostGIS for geolocation)
+- A surface needs a specialized database (e.g., PostGIS for geolocation)
 - Independent scaling requirements for specific data
 - Strong service boundaries needed
 
-**Pattern:**
+**Illustrative pattern (not in the codebase):**
 
 ```typescript
-// apps/finance/ - Own database
-const financeDB = createFinanceClient(); // Separate DB
+import { createClient } from '@tuturuuu/supabase/next/server';
 
-// apps/web/ - Main database
-const mainDB = createClient(); // Shared DB
+// Today: every app uses the shared Supabase project.
+const db = await createClient(); // createClient() is async — await it
 
-// Communication via events
-await trigger.event({
-  name: "transaction.recorded",
-  payload: { /* ... */ }
-});
+// Hypothetical future: a dedicated DB plus a background task to keep
+// derived data in sync, triggered via Trigger.dev's task() API.
+// await tasks.trigger('record-transaction', { /* ... */ });
 ```
 
 ## Package Extraction Strategy
 
 ### When to Extract to Package
 
-From the [Package Extraction Decision Matrix](/AGENTS.md#11-package-extraction-decision-matrix):
-
-**Extract when ≥3 HIGH signals:**
+The repo's root `AGENTS.md` carries the package-extraction decision matrix. As a
+rough heuristic, **extract when ≥3 HIGH signals:**
 
 | Signal | Extract Now (HIGH) |
 |--------|-------------------|
@@ -417,17 +468,23 @@ Test service interactions:
 
 ```typescript
 // apps/web/src/__tests__/integration/workspace-creation.test.ts
+// Tests run under Vitest. There is no event-store to assert against;
+// instead, mock the Trigger.dev task trigger and assert it was invoked.
+import { vi } from 'vitest';
+import { tasks } from '@trigger.dev/sdk/v3';
+
+vi.spyOn(tasks, 'trigger');
+
 describe('Workspace Creation Flow', () => {
-  it('creates workspace and triggers AI setup', async () => {
-    // Create workspace
-    const workspace = await POST('/api/workspaces', {
-      name: 'Test Workspace'
+  it('creates a workspace and schedules follow-up work', async () => {
+    const workspace = await POST('/api/v1/workspaces', {
+      name: 'Test Workspace',
     });
 
-    // Verify event published
-    const events = await getPublishedEvents('workspace.created');
-    expect(events).toHaveLength(1);
-    expect(events[0].payload.workspaceId).toBe(workspace.id);
+    expect(tasks.trigger).toHaveBeenCalledWith(
+      'schedule-task',
+      expect.objectContaining({ ws_id: workspace.id })
+    );
   });
 });
 ```
@@ -469,22 +526,23 @@ export async function GET() {
 }
 ```
 
-### Distributed Tracing
+### Correlation IDs
+
+There is no dedicated `@tuturuuu/logging` or `@tuturuuu/observability` package and
+no event-store; the example below is an illustrative pattern. Runtime server
+code should log diagnostics with the native console method matching severity.
 
 ```typescript
-// Correlation IDs for request tracing
+import { tasks } from '@trigger.dev/sdk/v3';
+
 export async function POST(request: Request) {
-  const correlationId = request.headers.get('x-correlation-id')
-    || generateId();
+  const correlationId =
+    request.headers.get('x-correlation-id') ?? crypto.randomUUID();
 
-  // Pass to event
-  await trigger.event({
-    name: 'workspace.created',
-    payload: { workspaceId, correlationId }
-  });
+  // Hand off async work to a Trigger.dev task, threading the correlation id.
+  await tasks.trigger('schedule-task', { ws_id: workspaceId, correlationId });
 
-  // Pass to logs
-  logger.info('Workspace created', { correlationId, workspaceId });
+  console.log('Queued schedule task', { correlationId, workspaceId });
 }
 ```
 
@@ -492,9 +550,15 @@ export async function POST(request: Request) {
 
 ### Current State → Future State
 
-**Current:** Monorepo with shared database
+**Current:** A monorepo of Next.js apps over one shared Supabase project, with
+background work on Trigger.dev v4.
 
-**Future options:**
+**In progress:** The frontend is migrating from `apps/web` (Next.js) to
+`apps/tanstack-web` (TanStack Start), and the API layer to `apps/backend` (Rust).
+This is the concrete, active migration — see
+[TanStack Start And Rust Migration](/platform/architecture/tanstack-rust-migration).
+
+**Longer-term options (not committed):**
 
 1. **Service-Specific Databases** (when needed)
    - Extract finance data to dedicated DB

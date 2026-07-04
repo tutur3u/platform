@@ -28,12 +28,20 @@
       "name": "finance.tuturuuu",
       "script": "dev:app"
     },
+    "apps/infrastructure": {
+      "name": "infra.tuturuuu",
+      "script": "dev:app"
+    },
     "apps/inventory": {
       "name": "inventory.tuturuuu",
       "script": "dev:app"
     },
     "apps/storefront": {
       "name": "storefront.tuturuuu",
+      "script": "dev:app"
+    },
+    "apps/tanstack-web": {
+      "name": "tanstack.tuturuuu",
       "script": "dev:app"
     },
     "apps/hive": {
@@ -68,8 +76,8 @@
       "name": "playground.tuturuuu",
       "script": "dev:app"
     },
-    "apps/qr": {
-      "name": "qr.tuturuuu",
+    "apps/tools": {
+      "name": "tools.tuturuuu",
       "script": "dev:app"
     },
     "apps/rewise": {

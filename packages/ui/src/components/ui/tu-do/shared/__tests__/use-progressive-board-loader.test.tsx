@@ -71,6 +71,7 @@ describe('useProgressiveBoardLoader', () => {
       limit: 50,
       offset: 0,
       includeCount: true,
+      includeRelationshipSummary: false,
     });
     expect(queryClient.getQueryData<Task[]>(['tasks', 'board-1'])).toEqual([
       {
@@ -160,6 +161,7 @@ describe('useProgressiveBoardLoader', () => {
       externalIncludeDocuments: true,
       externalIncludeDoneClosed: true,
       externalSortBy: 'due-asc',
+      includeRelationshipSummary: false,
     });
 
     vi.mocked(listWorkspaceTasks).mockResolvedValueOnce({
@@ -179,6 +181,7 @@ describe('useProgressiveBoardLoader', () => {
       externalIncludeDocuments: true,
       externalIncludeDoneClosed: true,
       externalSortBy: 'due-asc',
+      includeRelationshipSummary: false,
     });
   });
 

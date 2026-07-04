@@ -2,15 +2,10 @@
 
 import type { Workspace } from '@tuturuuu/types';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
-import dynamic from 'next/dynamic';
-
-const SettingsDialogHost = dynamic(
-  () =>
-    import('../../settings-dialog-host').then(
-      (module) => module.SettingsDialogHost
-    ),
-  { ssr: false }
-);
+import {
+  preloadSettingsDialog,
+  SettingsDialogHost,
+} from '../../settings-dialog-host';
 
 interface DashboardSettingsDialogHostProps {
   user: WorkspaceUser | null;
@@ -24,4 +19,8 @@ export function DashboardSettingsDialogHost({
   wsId,
 }: DashboardSettingsDialogHostProps) {
   return <SettingsDialogHost user={user} workspace={workspace} wsId={wsId} />;
+}
+
+export function preloadDashboardSettingsDialogHostContent() {
+  preloadSettingsDialog();
 }

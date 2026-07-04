@@ -1,7 +1,7 @@
 ---
 title: "GitHub Actions Runbook"
 description: "How the repository’s automation is organized, gated, and operated."
-updatedAt: "2026-06-14"
+updatedAt: "2026-07-04"
 ---
 
 GitHub Actions is the primary automation plane for Tuturuuu.
@@ -50,6 +50,28 @@ Affected Vercel rules:
 `bun.lock`-only changes intentionally run all Vercel app deploys because ownership
 is ambiguous without a manifest or source path.
 
+## Pull Request Close Cancellation
+
+`cancel-pr-runs-on-close.yaml` runs on the `pull_request_target` `closed` event
+and cancels active GitHub Actions runs that still belong to the closed pull
+request. It exists to stop queued or long-running checks after a PR is closed
+without adding `closed` triggers to every CI workflow.
+
+Because `pull_request_target` runs with base-repository privileges, keep this
+workflow narrow:
+
+- Do not checkout or execute pull request head code.
+- Checkout only the trusted default branch, with persisted credentials disabled.
+- Pin GitHub-owned actions to full commit SHAs.
+- Grant only `actions: write` and `contents: read` to the cancellation job.
+- Do not pass repository secrets other than the short-lived `GITHUB_TOKEN`.
+
+The cancellation script lists active runs by the closed PR head SHA. It cancels
+matching PR workflow runs and same-repository branch push runs for the PR branch,
+but never cancels `main` or `production` push runs. Runs in contributor forks are
+outside the base repository token's authority and are not cancelled by this
+workflow.
+
 ## Main Workflow Groups
 
 ### Hosted web build and deployment checks
@@ -57,20 +79,29 @@ is ambiguous without a manifest or source path.
 - `vercel-preview-platform.yaml`
 - `vercel-preview-apps.yaml`
 - `vercel-preview-calendar.yaml`
+- `vercel-preview-chat.yaml`
 - `vercel-preview-cms.yaml`
+- `vercel-preview-drive.yaml`
 - `vercel-preview-finance.yaml`
 - `vercel-preview-inventory.yaml`
+- `vercel-preview-infrastructure.yaml`
+- `vercel-preview-learn.yaml`
 - `vercel-preview-mail.yaml`
 - `vercel-preview-meet.yaml`
+- `vercel-preview-mind.yaml`
 - `vercel-preview-nova.yaml`
 - `vercel-preview-qr.yaml`
 - `vercel-preview-rewise.yaml`
 - `vercel-preview-shortener.yaml`
+- `vercel-preview-storefront.yaml`
 - `vercel-preview-tasks.yaml`
-- `vercel-preview-track.yaml`
-- `vercel-preview-learn.yaml`
 - `vercel-preview-teach.yaml`
-- Matching `vercel-production-*.yaml` workflows for production
+- `vercel-preview-track.yaml`
+- A matching `vercel-production-*.yaml` workflow exists for each app above
+
+This list drifts as satellite apps are added; treat
+`.github/workflows/vercel-preview-*.yaml` and
+`.github/workflows/vercel-production-*.yaml` as the authoritative source.
 
 CMS uses the same Vercel deployment pattern as the other satellite apps:
 
@@ -92,6 +123,14 @@ QR uses the same pattern:
 - production workflow: `vercel-production-qr.yaml`
 - project secret: `VERCEL_QR_PROJECT_ID`
 - environments: `vercel-preview-qr` and `vercel-production-qr`
+
+Infrastructure uses the same deployment pattern:
+
+- preview workflow: `vercel-preview-infrastructure.yaml`
+- production workflow: `vercel-production-infrastructure.yaml`
+- project secret: `VERCEL_INFRASTRUCTURE_PROJECT_ID`
+- environments: `vercel-preview-infrastructure` and
+  `vercel-production-infrastructure`
 
 Mail uses the same deployment pattern:
 
@@ -120,22 +159,21 @@ These workflows:
   `@tuturuuu/types`, `@tuturuuu/supabase`, and `@tuturuuu/internal-api`
 - run `vercel pull`
 - run `vercel build`
-- deploy prebuilt artifacts for satellite apps
-- treat `vercel-preview-platform.yaml` and `vercel-production-platform.yaml`
-  as platform build validation only; on-premise machines own the actual
-  `apps/web` runtime deployment
+- deploy prebuilt artifacts for satellite apps and the hosted platform
+  production workflow
+- treat `vercel-preview-platform.yaml` as platform build validation only;
+  self-hosted machines own their own Docker `apps/web` runtime deployment
 - skip production push work when a newer commit already exists on the target
   branch
-- record a non-blocking GitHub Deployment marker after a successful Vercel
-  build or satellite deploy so the next production push can evaluate every
+- record non-blocking GitHub Deployment markers after successful Vercel preview
+  builds and production deploys so the next production push can evaluate every
   change since the last successful run
 
-The platform preview and production workflows cross-credit successful same-SHA
-build markers. If `vercel-preview-platform.yaml` already recorded a successful
-build marker for a commit, `vercel-production-platform.yaml` can record its own
-successful build marker without reinstalling dependencies or rebuilding, and
-vice versa. This only applies to the platform workflows; satellite Vercel
-workflows still build and deploy independently.
+The platform preview workflow can cross-credit a successful same-SHA production
+platform build marker. Production does not cross-credit preview markers because
+it must build and deploy the prebuilt production artifacts. This only applies to
+the platform workflows; satellite Vercel workflows still build and deploy
+independently.
 
 ### Database automation
 
@@ -154,12 +192,128 @@ exponential backoff.
 ### Docker automation
 
 - `docker-setup-check.yaml`
-- `go-backend.yml`
+- `rust-backend.yml`
 
 `docker-setup-check.yaml` is the workflow to watch whenever Docker files,
-compose files, or Docker helper scripts change. `go-backend.yml` owns the
-`apps/backend` Go service checks: formatting, module download, `go vet`, tests,
-binary build, and Docker image build.
+compose files, or Docker helper scripts change. `rust-backend.yml` owns the
+`apps/backend` Rust service checks and the migration Cloudflare checks:
+formatting, locked dependency fetch, Clippy, tests, Cloudflare Worker target
+validation, smoke reporter unit tests, native binary build, Docker image build,
+`apps/tanstack-web` type-check/test validation, and the TanStack route-tree
+generator/formatter unit test. Keep `scripts/generate-tanstack-route-tree.*`
+in this workflow's path filters so route-tree generation changes run before
+TanStack/Rust deployment handoff.
+
+### TanStack/Rust Cloudflare deployment
+
+`rust-backend.yml` is also the manually dispatched Cloudflare preview deployment
+workflow for the migration pair:
+
+- Rust backend Worker: `apps/backend/wrangler.jsonc`, Worker name
+  `tuturuuu-backend`.
+- TanStack Start Worker: `apps/tanstack-web/wrangler.jsonc`, Worker name
+  `tuturuuu-tanstack-web`.
+
+The workflow stays switchboard-controlled by the `rust-backend.yml` entry in
+`tuturuuu.ts`. Pull request and push runs are validation-only and use
+`contents: read`; they do not require Cloudflare secrets just to type-check,
+test, lint config, build the Rust Worker bundle, or build the backend Docker
+image.
+
+Manual dispatch inputs:
+
+- `deploy_target`: `none`, `backend`, `tanstack-web`, or `all`.
+- `deployment_mode`: `dry-run` or `deploy`. Keep the default `dry-run` for the
+  first run in a new account or environment.
+
+Run `rust-backend.yml` from `main` for Cloudflare deployments. The deployment
+preflight requires the dispatch ref to be `refs/heads/main` and `github.actor`
+to be listed in the comma-delimited `TRUSTED_CLOUDFLARE_DEPLOY_ACTORS`
+repository variable before it loads `CLOUDFLARE_API_TOKEN`. Keep that allowlist
+limited to maintainers who can approve secret-backed Worker deployments.
+Cloudflare deploy credentials must not be exposed to arbitrary branch code;
+review or merge deployment changes before dispatching a secret-backed run.
+
+The deploy jobs are bound to the `cloudflare-workers-preview` GitHub
+Environment. Configure these GitHub values there before expecting deployment
+jobs to run:
+
+| Name                    | GitHub storage             | Purpose                                                                  |
+| ----------------------- | -------------------------- | ------------------------------------------------------------------------ |
+| `CLOUDFLARE_API_TOKEN`  | Environment secret         | Cloudflare API token with Workers Scripts edit access for this account.  |
+| `CLOUDFLARE_ACCOUNT_ID` | Environment variable       | Cloudflare account id used by Wrangler. A same-named secret is accepted only as a fallback. |
+| `BACKEND_WORKER_ORIGIN` | Environment variable       | Deployed Rust backend Worker origin used by the post-deploy smoke gate.  |
+| `TANSTACK_WEB_WORKER_ORIGIN` | Environment variable  | Deployed TanStack Worker origin used by the post-deploy smoke gate.      |
+| `CLOUDFLARE_SMOKE_BACKEND_INTERNAL_TOKEN` | Environment secret | Dedicated smoke token mapped to `BACKEND_INTERNAL_TOKEN` only while running `bun smoke:cloudflare`. |
+
+If either value is missing, the workflow emits a
+`Cloudflare deployment skipped` warning, records setup guidance in the job
+summary, and skips deploy jobs after CI validation has completed. The warning
+names only the missing GitHub Environment keys, not their values. A non-empty
+but invalid or under-scoped token normally surfaces as a Worker secret preflight
+skip or a Wrangler failure before upload.
+
+Worker runtime secrets live in Cloudflare, not GitHub. After the GitHub
+credential preflight passes, a dedicated Worker secret preflight checks the
+selected Workers with `wrangler secret list`.
+It reads only secret names, never secret values. If Wrangler cannot list names,
+or if any required name is
+missing, the workflow emits a warning, writes setup commands to the job summary,
+and skips the selected deploy job instead of failing later inside a deploy
+step. Missing-secret warnings use the `Missing Worker secrets` wording and list
+only secret names plus `bun wrangler secret put ...` commands; they never print
+or infer secret values.
+
+| Worker                   | Required Cloudflare Worker secrets                                                                                                                  |
+| ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `tuturuuu-backend`       | `BACKEND_INTERNAL_TOKEN`, `TUTURUUU_APP_COORDINATION_SECRET`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `CRON_SECRET`, `DISCORD_APP_DEPLOYMENT_URL`, `AURORA_EXTERNAL_URL` |
+| `tuturuuu-tanstack-web`  | `BACKEND_PUBLIC_ORIGIN`, `BACKEND_INTERNAL_TOKEN`                                                                                                   |
+
+Bootstrap missing Worker secrets from a trusted local shell with Wrangler:
+
+```sh
+bun wrangler secret put BACKEND_INTERNAL_TOKEN --config apps/backend/wrangler.jsonc
+bun wrangler secret put TUTURUUU_APP_COORDINATION_SECRET --config apps/backend/wrangler.jsonc
+bun wrangler secret put SUPABASE_URL --config apps/backend/wrangler.jsonc
+bun wrangler secret put SUPABASE_SERVICE_ROLE_KEY --config apps/backend/wrangler.jsonc
+bun wrangler secret put CRON_SECRET --config apps/backend/wrangler.jsonc
+bun wrangler secret put DISCORD_APP_DEPLOYMENT_URL --config apps/backend/wrangler.jsonc
+bun wrangler secret put AURORA_EXTERNAL_URL --config apps/backend/wrangler.jsonc
+bun wrangler secret put BACKEND_PUBLIC_ORIGIN --config apps/tanstack-web/wrangler.jsonc
+bun wrangler secret put BACKEND_INTERNAL_TOKEN --config apps/tanstack-web/wrangler.jsonc
+```
+
+Deploy the backend before the TanStack Worker when `deploy_target` is not `all`.
+The TanStack Worker has a `BACKEND` service binding to `tuturuuu-backend`, so a
+frontend-only deployment assumes the backend Worker and its secrets already
+exist. When `deploy_target=all`, a skipped backend deployment also keeps the
+TanStack deployment skipped, even if the TanStack Worker secrets are present.
+
+`deployment_mode=dry-run` compiles and runs Wrangler checks without uploading,
+but it still uses the same Cloudflare account, token, Worker name, and secret
+name preflights as `deployment_mode=deploy`. Treat a dry-run skip as a setup
+gap, not as a deploy failure. `deployment_mode=deploy` uploads the selected
+Worker version only after those preflights pass.
+
+When `deploy_target=all` and `deployment_mode=deploy`, the
+`post-deploy-smoke` job runs only after both Worker deploy jobs succeed. It
+requires `BACKEND_WORKER_ORIGIN`, `TANSTACK_WEB_WORKER_ORIGIN`, and
+`CLOUDFLARE_SMOKE_BACKEND_INTERNAL_TOKEN`; missing values fail the full deploy
+workflow with a warning, an error, and setup guidance in the step summary
+instead of silently skipping runtime verification. The warning title is
+`Cloudflare smoke inputs missing`, and the error title is
+`Cloudflare smoke verification blocked`. The job runs:
+
+```sh
+bun smoke:cloudflare --output "$CLOUDFLARE_SMOKE_REPORT_PATH"
+```
+
+The JSON report is written under
+`tmp/benchmarks/web-migration/<run-id>-<attempt>/cloudflare-smoke.json`,
+uploaded as the `cloudflare-smoke-<run-id>-<attempt>` workflow artifact, and
+summarized in the GitHub step summary. The report must come from the deployed
+backend and TanStack Worker origins; do not point these variables at local
+Wrangler or Docker origins in the `cloudflare-workers-preview` Environment.
 
 ### Quality and security
 
@@ -198,6 +352,12 @@ provide the branch, tag, or SHA in `preview_ref`, and keep
 secret-backed preview builds. The workflow still checks out and builds the
 requested `preview_ref`, so reviewers should treat that ref as code that can
 execute during install/build.
+
+Cloudflare Worker manual deployments follow the same trust boundary: run
+`rust-backend.yml` from `main`, keep `TRUSTED_CLOUDFLARE_DEPLOY_ACTORS` limited
+to trusted maintainers, and avoid exposing `CLOUDFLARE_API_TOKEN` to unreviewed
+branch code. The workflow checks the protected dispatch ref and actor allowlist
+before loading Cloudflare credentials or running Worker deploy steps.
 
 `vercel-preview-platform.yaml` also runs on protected `main` pushes. Keep that
 exception narrow: `supabase-staging.yaml` is triggered by the platform preview
@@ -300,7 +460,7 @@ needs its own
 The platform production Vercel workflow also runs
 `node scripts/ci/package-release-readiness.js gate-changed-package-versions`
 before installing dependencies. Release-please package bumps therefore publish
-and become visible on npm before the normal production platform build validation
+and become visible on npm before the normal production platform deployment
 continues. The helper intentionally checks only the checked-out latest commit,
 not the whole push event payload, so package changes from earlier commits in a
 multi-commit push are not bound to an unrelated newer SHA. If the latest commit
@@ -310,14 +470,23 @@ production SHA. When related package releases are queued or running, the helper
 sets `packages_ready=false`; the platform build skips successfully instead of
 polling npm until the runner times out. npm publish authority remains isolated to
 package `publish-npm` jobs. A skipped package gate must not count as production
-build validation for database migrations: `supabase-production.yaml` requires
-the successful `vercel-production-platform` build marker for the same SHA before
-it can run production migrations.
+deployment for database migrations: `supabase-production.yaml` requires the
+successful `vercel-production-platform` deployment marker for the same SHA
+before it can run production migrations.
 
 Filtered production Docker installs only include the selected app and the
-dependencies that app needs. Workspace packages with direct `tsgo` build scripts
-must declare `@typescript/native-preview` in their own `devDependencies`; do not
-rely on the root devDependency for production Docker builds.
+dependencies that app needs. Workspace packages with direct `tsc` build scripts
+must declare `typescript` in their own `devDependencies`; do not
+rely on the root devDependency for production Docker builds. Programmatic
+compiler API consumers must stay on the active TypeScript 7 toolchain instead
+of carrying legacy compiler compatibility packages.
+
+Next.js production apps also declare `@typescript/native-preview` in their own
+`devDependencies` while the repo uses the TypeScript 7 native compiler package.
+The TS7 `typescript` package does not ship the legacy
+`typescript/lib/typescript.js` API file that Next checks during build-time
+TypeScript setup; the native-preview marker makes Next use its supported TS7
+native compiler path instead of trying to auto-install classic TypeScript.
 
 ### Newer-commit guards
 
@@ -336,10 +505,11 @@ from skipped intermediate runs still queue the correct Vercel workflow.
   trigger unless manually dispatched.
 - Its deploy step links the staging project and runs
   `supabase db push --include-all`.
-- `supabase-production.yaml` runs after production platform build validation
-  and also re-evaluates after a matching `main` staging migration succeeds. It
-  still checks both the latest production platform build result and a completed
-  successful staging migration for the same commit before running
+- `supabase-production.yaml` runs after production platform deployment and also
+  re-evaluates after a matching `main` staging migration succeeds. It still
+  checks both the latest production platform workflow result, a successful
+  production deployment marker, and a completed successful staging migration for
+  the same commit before running
   `supabase db push --include-all`.
 
 ### Mobile iOS native assets
@@ -367,8 +537,8 @@ the iOS/macOS build workflows use Xcode 16.4, keep `connectivity_plus` pinned to
 ### Mobile store beta deployment
 
 `mobile-deploy-stores.yaml` runs automatically on `production` pushes that touch
-`apps/mobile/**`, the workflow file, `ci-check.yml`, or `tuturuuu.ts`. It is a
-beta-store workflow only:
+`apps/mobile/**`, `scripts/mobile-deployment/**`, the workflow file,
+`ci-check.yml`, or `tuturuuu.ts`. It is a beta-store workflow only:
 
 - Android builds the production flavor AAB from `apps/mobile/.env.github` and
   publishes it to the Google Play `internal` track.
@@ -398,7 +568,7 @@ The workflow is bound to the `mobile-store-beta` GitHub Environment. Keep that
 environment restricted to the `production` branch and store only
 `MOBILE_DEPLOYMENT_CI_TOKEN` there. Mobile signing, Firebase, store API, and
 build-time secrets live in the root workspace mobile deployment vault at
-`/internal/infrastructure/mobile-deployment` and require
+`/internal/mobile-deployment` on the infra app and require
 `manage_mobile_deployment_vault`. Manage non-file values in the vault's
 **Secrets** panel, then use the vault's Verify action before activating the draft. Legacy
 base64 file payload env keys are intentionally blocked; Firebase, signing, and

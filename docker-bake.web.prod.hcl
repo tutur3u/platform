@@ -18,6 +18,18 @@ group "blue-green-web-green" {
   targets = ["web-green"]
 }
 
+group "blue-green-tanstack-web" {
+  targets = ["tanstack-web-blue", "tanstack-web-green"]
+}
+
+group "blue-green-tanstack-web-blue" {
+  targets = ["tanstack-web-blue"]
+}
+
+group "blue-green-tanstack-web-green" {
+  targets = ["tanstack-web-green"]
+}
+
 group "blue-green-hive" {
   targets = ["hive-blue", "hive-green"]
 }
@@ -35,7 +47,7 @@ group "blue-green-hive-realtime" {
 }
 
 group "blue-green-support" {
-  targets = ["backend", "chat-realtime", "meet-realtime", "markitdown", "storage-unzip-proxy", "supermemory", "web-cron-runner"]
+  targets = ["backend", "chat-realtime", "meet-realtime", "markitdown", "storage-unzip-proxy", "supermemory", "web-docker-control", "web-cron-runner"]
 }
 
 target "web-blue" {
@@ -46,6 +58,16 @@ target "web-blue" {
 target "web-green" {
   inherits = ["_platform_local"]
   tags = ["${COMPOSE_PROJECT_NAME}-web-green"]
+}
+
+target "tanstack-web-blue" {
+  inherits = ["_platform_local"]
+  tags = ["${COMPOSE_PROJECT_NAME}-tanstack-web-blue"]
+}
+
+target "tanstack-web-green" {
+  inherits = ["_platform_local"]
+  tags = ["${COMPOSE_PROJECT_NAME}-tanstack-web-green"]
 }
 
 target "hive-blue" {
@@ -91,6 +113,11 @@ target "storage-unzip-proxy" {
 target "supermemory" {
   inherits = ["_platform_local"]
   tags = ["${COMPOSE_PROJECT_NAME}-supermemory"]
+}
+
+target "web-docker-control" {
+  inherits = ["_platform_local"]
+  tags = ["${COMPOSE_PROJECT_NAME}-web-docker-control"]
 }
 
 target "web-cron-runner" {

@@ -1,4 +1,5 @@
 import TaskMarketplacePage from '@tuturuuu/ui/tu-do/templates/marketplace/task-marketplace-page';
+import { connection } from 'next/server';
 
 interface Props {
   params: Promise<{
@@ -7,6 +8,8 @@ interface Props {
 }
 
 export default async function MarketplacePage({ params }: Props) {
+  await connection();
+
   return (
     <TaskMarketplacePage
       params={params}

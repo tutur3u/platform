@@ -1,7 +1,9 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
+  consumeAuthRecoveryWithInternalApi,
   listWebAccountsWithInternalApi,
   logoutAllWebAccountsWithInternalApi,
+  logoutBrowserSessionWithInternalApi,
   passwordLoginWithInternalApi,
   saveCurrentWebAccountWithInternalApi,
   switchWebAccountWithInternalApi,
@@ -82,6 +84,35 @@ describe('auth internal API helpers', () => {
       error: 'Too Many Requests',
       retryAfter: 35,
     });
+  });
+
+  it('submits auth recovery codes through the centralized auth API route', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      createJsonResponse({
+        redirectTo: '/en/onboarding',
+        success: true,
+      })
+    );
+    const payload = {
+      code: '123456',
+      email: 'person@example.com',
+      locale: 'en',
+      next: '/en/personal',
+    };
+
+    await consumeAuthRecoveryWithInternalApi(payload, {
+      baseUrl: 'https://internal.example.com',
+      fetch: fetchMock as unknown as typeof fetch,
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://internal.example.com/api/v1/auth/recovery/consume',
+      expect.objectContaining({
+        body: JSON.stringify(payload),
+        cache: 'no-store',
+        method: 'POST',
+      })
+    );
   });
 
   it('loads web multi-account summaries without caching', async () => {
@@ -185,6 +216,27 @@ describe('auth internal API helpers', () => {
 
     expect(fetchMock).toHaveBeenCalledWith(
       'https://internal.example.com/api/v1/auth/accounts/logout-all',
+      expect.objectContaining({
+        cache: 'no-store',
+        method: 'POST',
+      })
+    );
+  });
+
+  it('logs out the browser session through the legacy session route facade', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      createJsonResponse({
+        success: true,
+      })
+    );
+
+    await logoutBrowserSessionWithInternalApi({
+      baseUrl: 'https://internal.example.com',
+      fetch: fetchMock as unknown as typeof fetch,
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://internal.example.com/api/auth/logout',
       expect.objectContaining({
         cache: 'no-store',
         method: 'POST',

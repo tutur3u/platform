@@ -121,6 +121,88 @@ export function applyAttendanceMemberCounts(
   });
 }
 
+type AttendanceRow = { user_id: string | null; status: string };
+
+/**
+ * Batched fetch of today's attendance rows for every group on the current page,
+ * in a single query. Replaces the per-row client fetch the attendance cell used
+ * to fire, which fanned out to ~2 reads per group and tripped the shared per-IP
+ * edge read limit for centers with many staff behind one office IP.
+ */
+export async function fetchTodayAttendanceForGroups(
+  sbAdmin: SupabaseClient,
+  groupIds: string[],
+  date: string
+): Promise<Record<string, AttendanceRow[]>> {
+  if (groupIds.length === 0 || !date) return {};
+
+  const { data, error } = await sbAdmin
+    .from('user_group_attendance')
+    .select('group_id, user_id, status')
+    .in('group_id', groupIds)
+    .eq('date', date);
+
+  if (error) {
+    console.error('Error fetching group attendance:', error);
+    return {};
+  }
+
+  const byGroup: Record<string, AttendanceRow[]> = {};
+  for (const row of data ?? []) {
+    if (!row.group_id) continue;
+    const bucket = byGroup[row.group_id] ?? [];
+    bucket.push({ user_id: row.user_id ?? null, status: row.status });
+    byGroup[row.group_id] = bucket;
+  }
+
+  return byGroup;
+}
+
+/**
+ * Folds the batched attendance rows into each group as a `today_attendance`
+ * snapshot, mirroring exactly what the old per-row cell computed: managers are
+ * excluded from the counts when they are not counted in attendance, and
+ * `available` is derived from the group's sessions matching today's date.
+ * Must run after {@link applyAttendanceMemberCounts} so `attendance_amount` and
+ * `managers` are populated.
+ */
+export function applyTodayAttendanceSnapshot(
+  groups: UserGroup[],
+  attendanceByGroup: Record<string, AttendanceRow[]>,
+  today: string
+): UserGroup[] {
+  return groups.map((group) => {
+    const amount = group.amount ?? 0;
+    const count = group.attendance_amount ?? amount;
+    const shouldExcludeManagers =
+      group.attendance_amount !== undefined &&
+      group.attendance_amount !== amount;
+    const excludedUserIds = shouldExcludeManagers
+      ? new Set((group.managers ?? []).map((manager) => manager.id))
+      : new Set<string>();
+
+    const rows = (attendanceByGroup[group.id] ?? []).filter(
+      (entry) => !entry.user_id || !excludedUserIds.has(entry.user_id)
+    );
+    const attended = rows.reduce(
+      (acc, entry) => acc + (entry.status === 'PRESENT' ? 1 : 0),
+      0
+    );
+    const absent = rows.reduce(
+      (acc, entry) => acc + (entry.status === 'ABSENT' ? 1 : 0),
+      0
+    );
+    const available = (group.sessions ?? []).some(
+      (session) => typeof session === 'string' && session.startsWith(today)
+    );
+
+    return {
+      ...group,
+      today_attendance: { available, attended, absent, count },
+    };
+  });
+}
+
 export async function fetchManagersForGroups(
   supabase: SupabaseClient,
   groupIds: string[]

@@ -4,56 +4,79 @@ const { spawnSync } = require('node:child_process');
 const path = require('node:path');
 
 const ROOT_DIR = path.resolve(__dirname, '..');
-const allowedFragments = [
-  'apps/web/src/lib/infrastructure/log-drain.ts:',
-  'apps/web/src/app/api/v1/infrastructure/users/fields/types/route.ts:',
+const DEFAULT_SEARCH_ROOTS = ['apps', 'packages'];
+const ALLOWED_FRAGMENTS = [
+  '/lib/infrastructure/log-drain.ts:',
   '.test.',
   '.spec.',
+  '/__tests__/',
 ];
 
-const result = spawnSync(
-  'rg',
-  [
-    '-n',
-    'console\\.',
-    'apps/web/src/app/api/cron',
-    'apps/web/src/app/api/v1/infrastructure',
-    'apps/web/src/lib/infrastructure',
-    '-g',
-    '*.{ts,tsx}',
-  ],
-  {
-    cwd: ROOT_DIR,
-    encoding: 'utf8',
-  }
-);
-
-if (result.status === 1) {
-  process.exit(0);
+function normalizePathSeparators(line) {
+  return line.replace(/\\/g, '/');
 }
 
-if (result.error) {
-  throw result.error;
+function filterServerLoggingPolicyViolations(lines) {
+  return lines
+    .filter(Boolean)
+    .map(normalizePathSeparators)
+    .filter(
+      (line) => !ALLOWED_FRAGMENTS.some((fragment) => line.includes(fragment))
+    );
 }
 
-const normalizePathSeparators = (line) => line.replace(/\\/g, '/');
-
-const violations = result.stdout
-  .split(/\r?\n/)
-  .filter(Boolean)
-  .map(normalizePathSeparators)
-  .filter(
-    (line) => !allowedFragments.some((fragment) => line.includes(fragment))
-  );
-
-if (violations.length > 0) {
-  console.error(
+function collectServerLoggingPolicyViolations({
+  rootDir = ROOT_DIR,
+  searchRoots = DEFAULT_SEARCH_ROOTS,
+  spawn = spawnSync,
+} = {}) {
+  const result = spawn(
+    'rg',
     [
-      'Server-side console.* calls must use the internal log drain.',
-      'Use serverLogger.* from @/lib/infrastructure/log-drain instead.',
-      '',
-      ...violations,
-    ].join('\n')
+      '-n',
+      '\\b(serverLogger|installConsoleLogDrain)\\b',
+      ...searchRoots,
+      '-g',
+      '*.{ts,tsx,js}',
+    ],
+    {
+      cwd: rootDir,
+      encoding: 'utf8',
+    }
   );
-  process.exit(1);
+
+  if (result.status === 1) {
+    return [];
+  }
+
+  if (result.error) {
+    throw result.error;
+  }
+
+  return filterServerLoggingPolicyViolations(result.stdout.split(/\r?\n/));
 }
+
+function main() {
+  const violations = collectServerLoggingPolicyViolations();
+
+  if (violations.length > 0) {
+    console.error(
+      [
+        'Server runtime logs must use native console methods.',
+        'Do not import or call serverLogger or installConsoleLogDrain in runtime code.',
+        '',
+        ...violations,
+      ].join('\n')
+    );
+    process.exit(1);
+  }
+}
+
+if (require.main === module) {
+  main();
+}
+
+module.exports = {
+  collectServerLoggingPolicyViolations,
+  filterServerLoggingPolicyViolations,
+};

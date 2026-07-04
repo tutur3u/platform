@@ -10,6 +10,7 @@ import { FinanceRouteProvider } from '@tuturuuu/ui/finance/finance-route-context
 import { FinanceLayoutControls } from '@tuturuuu/ui/finance/shared/finance-layout-controls';
 import { QuickActions } from '@tuturuuu/ui/finance/shared/quick-actions';
 import { toWorkspaceSlug } from '@tuturuuu/utils/constants';
+import { resolveSupportedCurrency } from '@tuturuuu/utils/currencies';
 import {
   getPermissions,
   getWorkspace,
@@ -69,6 +70,7 @@ export default async function Layout({ children, params }: LayoutProps) {
     getPermissions({ user, wsId }),
     getWorkspaceConfig(wsId, 'DEFAULT_CURRENCY'),
   ]);
+  const resolvedCurrency = resolveSupportedCurrency(currency);
 
   const cookieStore = await cookies();
   const collapsed = cookieStore.get(SIDEBAR_COLLAPSED_COOKIE_NAME);
@@ -141,7 +143,7 @@ export default async function Layout({ children, params }: LayoutProps) {
             <FinanceCommandProvider
               wsId={wsId}
               workspaceSlug={workspaceSlug}
-              currency={currency ?? 'USD'}
+              currency={resolvedCurrency}
               canCreateDebts={
                 permissions?.containsPermission('manage_finance') ?? false
               }

@@ -25,6 +25,50 @@ flows into the workspace finance ledger.
    workspace default wallet. This is idempotent — a sale books at most one
    transaction.
 
+## Money and currency
+
+Inventory commerce money (storefront listing prices, bundle prices,
+`compare_at_price`, checkout session/line amounts, settlement ledger entries,
+and costing figures) is stored in **integer minor units** of the row's
+currency — cents for USD/EUR, but whole units for zero-decimal currencies like
+JPY/VND. This matches how Polar represents amounts, so the product/bundle/
+checkout sync passes the stored value straight through without scaling.
+
+Conversion is centralized in `@tuturuuu/utils/money`:
+
+- `majorToMinor(amount, currency)` / `minorToMajor(minor, currency)` — convert
+  at input/storage and read/display boundaries (currency-aware: USD ×100,
+  JPY/VND ×1).
+- `formatMoneyFromMinor(minor, currency)` — the canonical display formatter.
+- The shared `MoneyInput` (`@tuturuuu/ui/money-input`) takes and emits minor
+  units while editing in localized major units.
+
+Two boundaries convert explicitly:
+
+- The finance ledger (`wallet_transactions.amount`) stores **major** units, so
+  `recordInventorySaleFinanceTransaction` converts the checkout's minor-unit
+  total back to major units when booking revenue.
+- Promotions (`workspace_promotions.value`) remain in major units (shared with
+  finance invoices); `promotions-polar` multiplies by 100 at the Polar boundary.
+
+> Migrating from the previous whole-dollar storage: the
+> `..._inventory_commerce_minor_units` migration multiplies existing inventory
+> commerce amounts by each row's currency factor. Shared tables
+> (`inventory_products`, `workspace_promotions`, finance wallets) are left as-is.
+
+## Bundles and listings ↔ Polar products
+
+Publishing is automatic: creating or updating a listing/bundle schedules a
+best-effort push to Polar (a product with a fixed price per currency). Standalone
+bundles with no storefront publish against the workspace-level Polar integration
+and are priced in USD. Two-way sync:
+
+- **App → Polar:** name, description, and price sync on every write. Archiving a
+  listing/bundle (or deleting it) archives its Polar product so it is no longer
+  buyable; re-publishing un-archives it.
+- **Polar → App:** `product.created/updated` webhooks apply name, description,
+  and price back onto the mapped inventory row.
+
 ## Environment variables
 
 Set these on the web app (reference by name only):

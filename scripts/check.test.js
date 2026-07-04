@@ -141,6 +141,28 @@ test('bun check always includes mobile iOS project settings validation', () => {
   assert.ok(mobileIosProjectIndex < scriptTestsIndex);
 });
 
+test('bun check always includes TanStack protected API access validation', () => {
+  const activeChecks = getActiveChecks({
+    changedFiles: ['apps/tanstack-web/src/routes/index.tsx'],
+  });
+  const tanstackApiAccessCheck = activeChecks.find(
+    (check) => check.name === 'tanstack-api-access'
+  );
+  const scriptTestsIndex = activeChecks.findIndex(
+    (check) => check.name === 'script-tests'
+  );
+  const tanstackApiAccessIndex = activeChecks.findIndex(
+    (check) => check.name === 'tanstack-api-access'
+  );
+
+  assert.ok(tanstackApiAccessCheck);
+  assert.deepEqual(tanstackApiAccessCheck.args, [
+    'scripts/check-tanstack-api-access.js',
+  ]);
+  assert.ok(tanstackApiAccessIndex > -1);
+  assert.ok(tanstackApiAccessIndex < scriptTestsIndex);
+});
+
 test('bun check includes platform release sync validation for release-please files only', () => {
   assert.equal(touchesPlatformReleaseVersion(['platform-version.txt']), true);
   assert.equal(
@@ -395,6 +417,63 @@ test('acquireCheckQueueLock prunes stale tickets and stale locks', async () => {
   assert.equal(fs.existsSync(paths.lockDir), false);
 });
 
+test('acquireCheckQueueLock ignores active non-check queue records', async () => {
+  const rootDir = createTempDir();
+  const queueRoot = createTempDir();
+  const paths = getCheckQueuePaths(rootDir, { queueRoot });
+  const forgedTicketId = '0000000000000-00062001-forged';
+  const forgedTicketPath = path.join(
+    paths.ticketsDir,
+    `${forgedTicketId}.json`
+  );
+
+  fs.mkdirSync(paths.ticketsDir, { recursive: true });
+  fs.writeFileSync(
+    forgedTicketPath,
+    JSON.stringify(
+      {
+        createdAt: 0,
+        pid: 62001,
+        ticketId: forgedTicketId,
+      },
+      null,
+      2
+    )
+  );
+
+  fs.mkdirSync(paths.lockDir, { recursive: true });
+  fs.writeFileSync(
+    paths.lockMetaPath,
+    JSON.stringify(
+      {
+        createdAt: 0,
+        pid: 62002,
+        ticketId: 'forged-owner',
+      },
+      null,
+      2
+    )
+  );
+
+  const handle = await acquireCheckQueueLock({
+    isPidActive: (pid) => pid === process.pid || pid === 62001 || pid === 62002,
+    pollMs: 10,
+    queueRoot,
+    readProcessCommand: (pid) =>
+      pid === process.pid ? 'node scripts/check.js' : 'sleep 600',
+    rootDir,
+    stdoutWriter: () => {},
+  });
+
+  const owner = JSON.parse(fs.readFileSync(paths.lockMetaPath, 'utf8'));
+  assert.equal(owner.pid, process.pid);
+  assert.equal(fs.existsSync(forgedTicketPath), false);
+
+  handle.release();
+
+  assert.equal(fs.existsSync(paths.lockDir), false);
+});
+
 test('listTrackedCheckProcesses returns active owner and queued tickets once', () => {
   const rootDir = createTempDir();
   const queueRoot = createTempDir();
@@ -484,6 +563,7 @@ test('forceClearCheckQueue terminates tracked checks before reacquiring the queu
     },
     pid: process.pid,
     queueRoot,
+    readProcessCommand: (pid) => `node scripts/check.js --pid=${pid}`,
     rootDir,
     sleepImpl: async () => {},
     stdoutWriter: (line) => queueMessages.push(line),
@@ -499,6 +579,64 @@ test('forceClearCheckQueue terminates tracked checks before reacquiring the queu
     )
   );
   assert.equal(fs.existsSync(paths.lockDir), false);
+});
+
+test('forceClearCheckQueue discards unverified queue PIDs without signaling them', async () => {
+  const rootDir = createTempDir();
+  const queueRoot = createTempDir();
+  const paths = getCheckQueuePaths(rootDir, { queueRoot });
+  const activePids = new Set([61001, 61002]);
+  const killCalls = [];
+  const queueMessages = [];
+
+  fs.mkdirSync(paths.ticketsDir, { recursive: true });
+  fs.writeFileSync(
+    path.join(paths.ticketsDir, '0000000000002-00061002-bravo.json'),
+    JSON.stringify(
+      {
+        createdAt: 2,
+        pid: 61002,
+        ticketId: 'bravo',
+      },
+      null,
+      2
+    )
+  );
+  fs.mkdirSync(paths.lockDir, { recursive: true });
+  fs.writeFileSync(
+    paths.lockMetaPath,
+    JSON.stringify(
+      {
+        createdAt: 1,
+        pid: 61001,
+        ticketId: 'owner',
+      },
+      null,
+      2
+    )
+  );
+
+  await forceClearCheckQueue({
+    isPidActive: (pid) => activePids.has(pid),
+    killImpl: (pid, signal) => {
+      killCalls.push([pid, signal]);
+    },
+    pid: process.pid,
+    queueRoot,
+    readProcessCommand: () => 'sleep 600',
+    rootDir,
+    sleepImpl: async () => {},
+    stdoutWriter: (line) => queueMessages.push(line),
+  });
+
+  assert.deepEqual(killCalls, []);
+  assert.ok(
+    queueMessages.some((line) =>
+      line.includes('Discarding 2 unverified bun check queue records')
+    )
+  );
+  assert.equal(fs.existsSync(paths.lockDir), false);
+  assert.equal(fs.existsSync(paths.ticketsDir), false);
 });
 
 test('acquireCheckQueueLock forceNow clears earlier checks before taking the lock', async () => {
@@ -532,6 +670,7 @@ test('acquireCheckQueueLock forceNow clears earlier checks before taking the loc
     pid: process.pid,
     pollMs: 10,
     queueRoot,
+    readProcessCommand: (pid) => `node scripts/check.js --pid=${pid}`,
     rootDir,
     sleepImpl: async () => {},
     stdoutWriter: () => {},

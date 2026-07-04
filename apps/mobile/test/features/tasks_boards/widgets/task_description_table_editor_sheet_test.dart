@@ -385,5 +385,46 @@ void main() {
         expect(row['content'], isA<List<dynamic>>());
       }
     });
+
+    testWidgets('buildEditedTableNode replaces malformed table cells safely', (
+      tester,
+    ) async {
+      final malformedTable = <String, dynamic>{
+        'type': 'table',
+        'attrs': 'not-an-attrs-map',
+        'content': [
+          {
+            'type': 'tableRow',
+            'attrs': 'not-row-attrs',
+            'content': ['not-a-cell'],
+          },
+        ],
+      };
+
+      await tester.pumpApp(
+        Material(
+          child: TaskDescriptionTableEditorSheet(
+            initialTableNode: malformedTable,
+          ),
+        ),
+      );
+      await tester.pump();
+
+      final state = tester.state<TaskDescriptionTableEditorSheetState>(
+        find.byType(TaskDescriptionTableEditorSheet),
+      );
+
+      final builtNode = state.buildEditedTableNode();
+      final rows = (builtNode['content'] as List).cast<Map<String, dynamic>>();
+      final cells = (rows.single['content'] as List)
+          .cast<Map<String, dynamic>>();
+      final cell = cells.single;
+
+      expect(builtNode.containsKey('attrs'), isFalse);
+      expect(rows.single.containsKey('attrs'), isFalse);
+      expect(cell['type'], equals('tableHeader'));
+      expect(cell.containsKey('attrs'), isFalse);
+      expect(cell['content'], isA<List<dynamic>>());
+    });
   });
 }

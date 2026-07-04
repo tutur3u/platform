@@ -15,6 +15,7 @@ import {
 import type { TaskWithScheduling } from '@tuturuuu/types';
 import { cn } from '@tuturuuu/utils/format';
 import { useState } from 'react';
+import { getTaskApiUrl } from '../../../../lib/tasks-app-url';
 import { Badge } from '../../badge';
 import { Button } from '../../button';
 import { Input } from '../../input';
@@ -147,11 +148,14 @@ export function TaskSchedulerPanel({
 
     try {
       const response = await fetch(
-        isPersonalWorkspace
-          ? `/api/v1/users/me/tasks/${task.id}/schedule`
-          : `/api/v1/workspaces/${wsId}/tasks/${task.id}/schedule`,
+        getTaskApiUrl(
+          isPersonalWorkspace
+            ? `/api/v1/users/me/tasks/${task.id}/schedule`
+            : `/api/v1/workspaces/${wsId}/tasks/${task.id}/schedule`
+        ),
         {
           method: 'POST',
+          credentials: 'include',
           headers: { 'Content-Type': 'application/json' },
         }
       );

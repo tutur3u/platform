@@ -209,9 +209,39 @@ function truncateText(value, maxLength) {
   return `${value.slice(0, Math.max(0, maxLength - 3))}...`;
 }
 
+const TERMINAL_ESCAPE_SEQUENCE_PATTERN = new RegExp(
+  [
+    '\\u001B\\][\\s\\S]*?(?:\\u0007|\\u001B\\\\)',
+    '\\u001B[P_^][\\s\\S]*?\\u001B\\\\',
+    '\\u001B\\[[0-?]*[ -/]*[@-~]',
+    '\\u001B[ -/]*[@-~]',
+  ].join('|'),
+  'g'
+);
+
+// biome-ignore lint/complexity/useRegexLiterals: literal form triggers noControlCharactersInRegex here
+const TERMINAL_CONTROL_CHARACTER_PATTERN = new RegExp(
+  '[\\u0000-\\u0008\\u000B\\u000C\\u000E-\\u001F\\u007F-\\u009F]',
+  'g'
+);
+
 function stripAnsi(value) {
-  // biome-ignore lint/complexity/useRegexLiterals: literal form triggers noControlCharactersInRegex here
-  return String(value).replace(new RegExp('\\u001B\\[[0-9;]*m', 'g'), '');
+  return String(value).replace(TERMINAL_ESCAPE_SEQUENCE_PATTERN, '');
+}
+
+function sanitizeDashboardText(value, fallback = '') {
+  const sanitized = stripAnsi(value ?? '')
+    .replace(/[\r\n\t]+/g, ' ')
+    .replace(TERMINAL_CONTROL_CHARACTER_PATTERN, '')
+    .replace(/ {2,}/g, ' ')
+    .trim();
+
+  return sanitized || fallback;
+}
+
+function sanitizeDashboardColor(value, fallback = 'dim') {
+  const color = sanitizeDashboardText(value, fallback);
+  return ANSI[color] ? color : fallback;
 }
 
 function formatRow(label, value) {
@@ -271,7 +301,7 @@ function getResultErrorLines(result) {
 
   return stripAnsi(message)
     .split('\n')
-    .map((line) => line.trim())
+    .map((line) => sanitizeDashboardText(line))
     .filter(Boolean);
 }
 
@@ -284,19 +314,23 @@ function summarizeBlueGreenRuntime(
   }
 
   if (currentBlueGreen.state === 'unknown') {
-    return colorize('yellow', currentBlueGreen.message ?? 'unknown');
+    return colorize(
+      'yellow',
+      sanitizeDashboardText(currentBlueGreen.message, 'unknown')
+    );
   }
 
+  const activeColor = sanitizeDashboardText(
+    currentBlueGreen.activeColor,
+    'unknown'
+  );
   const base =
     currentBlueGreen.state === 'degraded'
       ? colorize(
           'yellow',
-          `degraded${currentBlueGreen.activeColor ? ` (${currentBlueGreen.activeColor})` : ''}`
+          `degraded${currentBlueGreen.activeColor ? ` (${activeColor})` : ''}`
         )
-      : colorize(
-          'green',
-          `serving ${currentBlueGreen.activeColor ?? 'unknown'}`
-        );
+      : colorize('green', `serving ${activeColor}`);
   const details = [];
 
   if (currentBlueGreen.lifetimeMs != null) {
@@ -396,7 +430,10 @@ function summarizeDockerResources(resources) {
   }
 
   if (resources.state === 'unavailable') {
-    return colorize('yellow', resources.message ?? 'unavailable');
+    return colorize(
+      'yellow',
+      sanitizeDashboardText(resources.message, 'unavailable')
+    );
   }
 
   const details = [
@@ -422,7 +459,10 @@ function summarizeDockerContainers(resources, maxContainers = 4) {
   }
 
   if (resources.state === 'unavailable') {
-    return colorize('yellow', resources.message ?? 'unavailable');
+    return colorize(
+      'yellow',
+      sanitizeDashboardText(resources.message, 'unavailable')
+    );
   }
 
   if (!resources?.containers?.length) {
@@ -431,9 +471,12 @@ function summarizeDockerContainers(resources, maxContainers = 4) {
 
   return resources.containers
     .slice(0, maxContainers)
-    .map((container) =>
-      [
-        formatBadge(container.label.toUpperCase(), container.color),
+    .map((container) => {
+      const label = sanitizeDashboardText(container.label, 'container');
+      const color = sanitizeDashboardColor(container.color, 'dim');
+
+      return [
+        formatBadge(label.toUpperCase(), color),
         formatMetric('cpu', formatCpuPercent(container.cpuPercent), 'yellow'),
         formatMetric('mem', formatBytes(container.memoryBytes), 'magenta'),
         formatMetric(
@@ -441,8 +484,8 @@ function summarizeDockerContainers(resources, maxContainers = 4) {
           `${formatBytes(container.rxBytes)} / ${formatBytes(container.txBytes)}`,
           'cyan'
         ),
-      ].join(' ')
-    )
+      ].join(' ');
+    })
     .join(colorize('dim', '  ·  '));
 }
 
@@ -655,20 +698,28 @@ function buildDeploymentTable(
     const statusMeta = getDeploymentStatusMeta(entry);
     const borderColor = getDeploymentBorderColor(entry);
     const timestamp = entry.finishedAt ?? entry.startedAt;
+    const activeColor = sanitizeDashboardText(entry.activeColor);
+    const commitShortHash = sanitizeDashboardText(
+      entry.commitShortHash,
+      'unknown'
+    );
     const heading = formatHeaderLine(
       `${colorize('dim', `[${formatClockTime(timestamp)}]`)} ${emphasize(
         'cyan',
-        entry.commitShortHash ?? 'unknown'
+        commitShortHash
       )}`,
       [
         formatBadge(statusMeta.label, statusMeta.color),
-        entry.activeColor ? formatBadge(entry.activeColor, 'cyan') : null,
+        activeColor ? formatBadge(activeColor, 'cyan') : null,
       ]
         .filter(Boolean)
         .join(' '),
       innerWidth
     );
-    const commitLine = `${entry.commitSubject ?? 'Unknown deployment'}`.trim();
+    const commitLine = sanitizeDashboardText(
+      entry.commitSubject,
+      'Unknown deployment'
+    );
     const metaLine = [
       ...getDeploymentPhaseBadges(entry),
       entry.runtimeState
@@ -757,8 +808,11 @@ function buildDashboardView(state, { now = Date.now(), width = 100 } = {}) {
   const contentWidth = Math.max(72, Math.min(width, 120));
   const separator = colorize('dim', '-'.repeat(contentWidth));
   const latestCommit = state.latestCommit
-    ? `${colorize('green', state.latestCommit.shortHash)} ${truncateText(
-        state.latestCommit.subject,
+    ? `${colorize(
+        'green',
+        sanitizeDashboardText(state.latestCommit.shortHash, 'unknown')
+      )} ${truncateText(
+        sanitizeDashboardText(state.latestCommit.subject, 'Unknown commit'),
         Math.max(24, contentWidth - 32)
       )}`
     : colorize('dim', 'unknown');
@@ -780,7 +834,7 @@ function buildDashboardView(state, { now = Date.now(), width = 100 } = {}) {
                 ? 'yellow'
                 : 'cyan';
 
-          return `${colorize('dim', `[${formatClockTime(event.time)}]`)} ${colorize(levelColor, event.level.toUpperCase().padEnd(5, ' '))} ${truncateText(event.message, Math.max(24, contentWidth - 20))}`;
+          return `${colorize('dim', `[${formatClockTime(event.time)}]`)} ${colorize(levelColor, event.level.toUpperCase().padEnd(5, ' '))} ${truncateText(sanitizeDashboardText(event.message), Math.max(24, contentWidth - 20))}`;
         })
       : [colorize('dim', 'No events yet.')];
   const activePendingDeployment = state.deployments?.[0];
@@ -804,9 +858,12 @@ function buildDashboardView(state, { now = Date.now(), width = 100 } = {}) {
     separator,
     formatRow(
       'Branch',
-      `${colorize('cyan', state.target?.branch ?? 'unknown')} -> ${colorize(
+      `${colorize(
         'cyan',
-        state.target?.upstreamRef ?? 'unknown'
+        sanitizeDashboardText(state.target?.branch, 'unknown')
+      )} -> ${colorize(
+        'cyan',
+        sanitizeDashboardText(state.target?.upstreamRef, 'unknown')
       )}`
     ),
     ...(state.deploymentPin
@@ -815,10 +872,16 @@ function buildDashboardView(state, { now = Date.now(), width = 100 } = {}) {
             'Pinned',
             `${colorize(
               'yellow',
-              state.deploymentPin.commitShortHash ??
-                state.deploymentPin.commitHash.slice(0, 12)
+              sanitizeDashboardText(
+                state.deploymentPin.commitShortHash ??
+                  state.deploymentPin.commitHash.slice(0, 12),
+                'unknown'
+              )
             )} ${truncateText(
-              state.deploymentPin.commitSubject ?? 'Selected deployment',
+              sanitizeDashboardText(
+                state.deploymentPin.commitSubject,
+                'Selected deployment'
+              ),
               Math.max(24, contentWidth - 34)
             )}`
           ),
@@ -884,7 +947,12 @@ function buildDashboardView(state, { now = Date.now(), width = 100 } = {}) {
           )} ${colorize('dim', `(${lastDeployDetails.join(' · ')})`)}`
         : colorize('dim', 'none yet')
     ),
-    formatRow('Lock file', state.lockFile ?? colorize('dim', 'not acquired')),
+    formatRow(
+      'Lock file',
+      state.lockFile
+        ? sanitizeDashboardText(state.lockFile)
+        : colorize('dim', 'not acquired')
+    ),
     '',
     separator,
     colorize('bold', `Top ${DISPLAY_DEPLOYMENTS} Deployments`),

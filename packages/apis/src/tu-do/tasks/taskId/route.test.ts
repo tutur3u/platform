@@ -6,6 +6,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const createAdminClientMock = vi.fn();
 const createClientMock = vi.fn();
 const normalizeWorkspaceIdMock = vi.fn();
+const publishTaskRealtimeMock = vi.fn();
 const verifyWorkspaceMembershipTypeMock = vi.fn();
 
 vi.mock('@tuturuuu/supabase/next/server', () => ({
@@ -29,12 +30,17 @@ vi.mock('@tuturuuu/utils/workspace-helper', async (importOriginal) => {
   };
 });
 
-import { handleTaskDetailRouteGET } from './route';
+vi.mock('../realtime-broadcast', () => ({
+  publishTaskRealtime: (...args: Parameters<typeof publishTaskRealtimeMock>) =>
+    publishTaskRealtimeMock(...args),
+}));
+
+import { handleTaskDetailRouteGET, handleTaskDetailRoutePUT } from './route';
 
 describe('task detail route CLI app-session auth', () => {
   const taskId = '00000000-0000-4000-8000-000000000777';
   const workspaceId = '00000000-0000-4000-8000-000000000123';
-  let adminSupabase: TypedSupabaseClient;
+  let adminSupabase!: TypedSupabaseClient;
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -69,6 +75,9 @@ describe('task detail route CLI app-session auth', () => {
             workspace_boards: {
               id: '00000000-0000-4000-8000-000000000456',
               name: 'Tasks',
+              workspace: {
+                personal: false,
+              },
               ws_id: workspaceId,
             },
           },
@@ -91,7 +100,10 @@ describe('task detail route CLI app-session auth', () => {
       throw new Error(`Unexpected table: ${table}`);
     });
 
-    adminSupabase = { from: fromMock } as unknown as TypedSupabaseClient;
+    adminSupabase = {
+      from: fromMock,
+      rpc: vi.fn().mockResolvedValue({ data: 'PRO', error: null }),
+    } as unknown as TypedSupabaseClient;
     createAdminClientMock.mockResolvedValue(adminSupabase);
   });
 
@@ -134,6 +146,8 @@ describe('task detail route CLI app-session auth', () => {
         board_name: 'Tasks',
         list_name: 'In Progress',
       },
+      taskWorkspacePersonal: false,
+      taskWorkspaceTier: 'PRO',
     });
     expect(createClientMock).not.toHaveBeenCalled();
     expect(normalizeWorkspaceIdMock).toHaveBeenCalledWith(
@@ -144,6 +158,193 @@ describe('task detail route CLI app-session auth', () => {
       expect.objectContaining({
         userId: '00000000-0000-4000-8000-000000000999',
         wsId: workspaceId,
+      })
+    );
+  });
+});
+
+describe('task detail route PUT assignee validation', () => {
+  const boardGuestUserId = '00000000-0000-4000-8000-000000000303';
+  const boardId = '00000000-0000-4000-8000-000000000456';
+  const listId = '00000000-0000-4000-8000-000000000555';
+  const outsideUserId = '00000000-0000-4000-8000-000000000404';
+  const taskId = '00000000-0000-4000-8000-000000000777';
+  const workspaceId = '00000000-0000-4000-8000-000000000123';
+  const workspaceMemberUserId = '00000000-0000-4000-8000-000000000202';
+  let adminSupabase!: TypedSupabaseClient;
+  let updateTaskPayload: unknown;
+
+  function buildTaskRecord(assigneeIds: string[] = []) {
+    return {
+      id: taskId,
+      display_number: 123,
+      name: 'Setup task board',
+      description: null,
+      priority: null,
+      completed: false,
+      completed_at: null,
+      start_date: null,
+      end_date: null,
+      estimation_points: null,
+      sort_key: null,
+      created_at: '2026-05-17T00:00:00.000Z',
+      closed_at: null,
+      deleted_at: null,
+      list_id: listId,
+      task_lists: {
+        id: listId,
+        name: 'To Do',
+        status: 'active',
+        board_id: boardId,
+        workspace_boards: {
+          id: boardId,
+          name: 'Tasks',
+          workspace: {
+            personal: false,
+          },
+          ws_id: workspaceId,
+        },
+      },
+      assignees: assigneeIds.map((id) => ({
+        avatar_url: null,
+        display_name: id === boardGuestUserId ? 'Board Guest' : 'Member',
+        id,
+      })),
+      labels: [],
+      projects: [],
+    };
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+
+    normalizeWorkspaceIdMock.mockResolvedValue(workspaceId);
+    verifyWorkspaceMembershipTypeMock.mockResolvedValue({ ok: true });
+    updateTaskPayload = undefined;
+
+    const taskRows = [
+      buildTaskRecord(),
+      buildTaskRecord([workspaceMemberUserId, boardGuestUserId]),
+    ];
+    const tasksQuery = {
+      eq: vi.fn(() => tasksQuery),
+      maybeSingle: vi.fn(() =>
+        Promise.resolve({ data: taskRows.shift() ?? null, error: null })
+      ),
+    };
+    const workspaceMembersQuery = {
+      eq: vi.fn(() => workspaceMembersQuery),
+      in: vi.fn(() =>
+        Promise.resolve({
+          data: [{ user_id: workspaceMemberUserId }],
+          error: null,
+        })
+      ),
+    };
+    const boardSharesQuery = {
+      eq: vi.fn(() => boardSharesQuery),
+      in: vi.fn(() =>
+        Promise.resolve({
+          data: [{ shared_with_user_id: boardGuestUserId }],
+          error: null,
+        })
+      ),
+    };
+    const fromMock = vi.fn((table: string) => {
+      if (table === 'tasks') {
+        return {
+          select: vi.fn(() => tasksQuery),
+        };
+      }
+
+      if (table === 'workspace_members') {
+        return {
+          select: vi.fn(() => workspaceMembersQuery),
+        };
+      }
+
+      if (table === 'task_board_shares') {
+        return {
+          select: vi.fn(() => boardSharesQuery),
+        };
+      }
+
+      throw new Error(`Unexpected table: ${table}`);
+    });
+    const rpcMock = vi.fn((rpcName: string, payload: unknown) => {
+      if (rpcName !== 'update_task_with_relations') {
+        throw new Error(`Unexpected rpc: ${rpcName}`);
+      }
+
+      updateTaskPayload = payload;
+
+      return {
+        maybeSingle: vi.fn(() =>
+          Promise.resolve({
+            data: { id: taskId, list_id: listId },
+            error: null,
+          })
+        ),
+      };
+    });
+    adminSupabase = {
+      from: fromMock,
+      rpc: rpcMock,
+    } as unknown as TypedSupabaseClient;
+
+    createAdminClientMock.mockResolvedValue(adminSupabase);
+  });
+
+  it('keeps direct board guests as valid task assignees', async () => {
+    const response = await handleTaskDetailRoutePUT(
+      new NextRequest(
+        `http://localhost/api/v1/workspaces/personal/tasks/${taskId}`,
+        {
+          body: JSON.stringify({
+            assignee_ids: [
+              workspaceMemberUserId,
+              boardGuestUserId,
+              outsideUserId,
+            ],
+          }),
+          headers: {
+            'content-type': 'application/json',
+          },
+          method: 'PUT',
+        }
+      ),
+      {
+        params: Promise.resolve({
+          taskId,
+          wsId: 'personal',
+        }),
+      },
+      {
+        supabase: adminSupabase!,
+        user: {
+          aud: 'authenticated',
+          email: 'owner@example.com',
+          id: '00000000-0000-4000-8000-000000000999',
+        } as SupabaseUser,
+      }
+    );
+
+    expect(response.status).toBe(200);
+    expect(updateTaskPayload).toMatchObject({
+      p_assignee_ids: [workspaceMemberUserId, boardGuestUserId],
+      p_replace_assignees: true,
+      p_task_id: taskId,
+    });
+    await expect(response.json()).resolves.toMatchObject({
+      task: {
+        assignee_ids: [workspaceMemberUserId, boardGuestUserId],
+        id: taskId,
+      },
+    });
+    expect(publishTaskRealtimeMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        event: 'task:upsert',
+        taskIds: [taskId],
       })
     );
   });

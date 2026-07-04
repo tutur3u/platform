@@ -28,6 +28,24 @@ type RouteContext = {
   }>;
 };
 
+const TASK_WORKSPACE_API_SEGMENTS = new Set([
+  'boards',
+  'boards-data',
+  'boards-with-lists',
+  'habit-trackers',
+  'habits',
+  'labels',
+  'task-boards',
+  'task-cycles',
+  'task-drafts',
+  'task-initiatives',
+  'task-plans',
+  'task-progress',
+  'task-projects',
+  'task-templates',
+  'tasks',
+]);
+
 const HOP_BY_HOP_HEADERS = new Set([
   'connection',
   'content-length',
@@ -113,8 +131,79 @@ function createForwardedResponseHeaders(headers: Headers) {
   return forwardedHeaders;
 }
 
+function isTaskOwnedApiPath(path: string[]) {
+  if (path[1] === 'task') {
+    return true;
+  }
+
+  if (path[0] === 'admin' && path[1] === 'tasks') {
+    return true;
+  }
+
+  if (path[0] === 'cron' && path[1] === 'tasks') {
+    return true;
+  }
+
+  if (path[0] !== 'v1') {
+    return false;
+  }
+
+  if (path[1] === 'mira' && path[2] === 'tasks') {
+    return true;
+  }
+
+  if (path[1] === 'shared' && path[2]?.startsWith('task')) {
+    return true;
+  }
+
+  if (path[1] === 'task-board-status-templates') {
+    return true;
+  }
+
+  if (path[1] === 'task-projects' && path[2] === 'resolve-workspace') {
+    return true;
+  }
+
+  if (path[1] === 'users') {
+    return (
+      (path[2] === 'me' && path[3]?.startsWith('task')) ||
+      (path[2] === 'me' && path[3] === 'configs') ||
+      (path[2] === 'me' && path[3] === 'workspaces' && path[5] === 'configs') ||
+      path[2] === 'task-settings'
+    );
+  }
+
+  if (path[1] === 'webhooks' && path[2] === 'tasks') {
+    return true;
+  }
+
+  if (path[1] !== 'workspaces') {
+    return false;
+  }
+
+  const workspaceRouteSegment = path[3];
+  if (
+    workspaceRouteSegment &&
+    TASK_WORKSPACE_API_SEGMENTS.has(workspaceRouteSegment)
+  ) {
+    return true;
+  }
+
+  return (
+    (workspaceRouteSegment === 'time-tracking' && path[4] === 'tasks') ||
+    (workspaceRouteSegment === 'notes' && path[5] === 'convert-to-task')
+  );
+}
+
 async function proxyToWebApi(request: NextRequest, context: RouteContext) {
   const { path = [] } = await context.params;
+  if (isTaskOwnedApiPath(path)) {
+    return NextResponse.json(
+      { error: 'Task API route is not mounted in the tasks app' },
+      { status: 404 }
+    );
+  }
+
   const targetUrl = new URL(
     `/api/${path.map((segment) => encodeURIComponent(segment)).join('/')}`,
     WEB_APP_URL

@@ -1,7 +1,16 @@
 import { Ratelimit } from '@upstash/ratelimit';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
-import { extractIPFromRequest, isIPBlockedEdge } from './abuse-protection/edge';
+import {
+  extractIPFromRequest,
+  isIPBlockedEdge,
+  readEdgeAbuseProtectionControls,
+} from './abuse-protection/edge';
+import {
+  type CachedTrustEntry,
+  getCachedTrustEntries,
+  hasCachedIpBlockAppealRelief,
+} from './abuse-protection/edge-trust';
 import { DEV_MODE, MAX_PAYLOAD_SIZE } from './constants';
 import { validateRequestEmojiLimit } from './request-emoji-limit';
 import {
@@ -10,6 +19,45 @@ import {
 } from './upstash-rest';
 
 const isDev = process.env.NODE_ENV !== 'production';
+
+// Quantized trust tiers — the cached multiplier is floored to one of these
+// before scaling read limits, so the limiter prefix (and therefore the Redis
+// sliding-window buckets) stays bounded and stable even as a subject's exact
+// multiplier drifts.
+const TRUST_MULTIPLIER_TIERS = [1, 1.5, 2, 3, 5, 10, 25, 100] as const;
+
+function isEnvFlagEnabled(name: string, defaultOn = true): boolean {
+  const raw = process.env[name];
+  if (raw == null || raw.trim() === '') {
+    return defaultOn;
+  }
+
+  return !/^(0|false|off|no)$/i.test(raw.trim());
+}
+
+/**
+ * Whether trusted accounts/locations get scaled read limits (and verified
+ * sessions get their own per-session bucket) at the edge. Default on; set
+ * `API_PROXY_EDGE_TRUST_ENABLED=0` to disable trust uplift and fall back to
+ * legacy per-IP keying without a deploy.
+ */
+function edgeTrustEnabled(): boolean {
+  return isEnvFlagEnabled('API_PROXY_EDGE_TRUST_ENABLED');
+}
+
+/**
+ * Floors a raw trust multiplier to the nearest quantized tier. Never reduces
+ * below 1 — trust uplift only ever raises read limits.
+ */
+function quantizeTrustMultiplier(multiplier: number): number {
+  let tier = 1;
+  for (const candidate of TRUST_MULTIPLIER_TIERS) {
+    if (multiplier >= candidate) {
+      tier = candidate;
+    }
+  }
+  return tier;
+}
 
 type CallerClass = 'anonymous' | 'authenticated';
 
@@ -64,13 +112,7 @@ type RateLimiter = {
   limit: (identifier: string) => Promise<RateLimitResult>;
 };
 
-type LocalRateLimitState = {
-  count: number;
-  reset: number;
-};
-
 const limiterCache = new Map<string, Limiters>();
-const localLimiterState = new Map<string, LocalRateLimitState>();
 const GENERIC_SUPABASE_AUTH_COOKIE_NAME_PATTERN =
   /^sb-[a-z0-9-]+-auth-token(?:\.\d+)?$/i;
 const UUID_PATH_SEGMENT =
@@ -144,10 +186,22 @@ const DEFAULT_ANONYMOUS_MUTATE_RATE_LIMITS: RateLimitConfig[] = [
   createConfig('day', '1 d', 600, 'API_PROXY_ANON_MUTATE_LIMIT_DAY'),
 ];
 
+const DEFAULT_AUTHENTICATED_READ_RATE_LIMITS: RateLimitConfig[] = [
+  createConfig('minute', '1 m', 600, 'API_PROXY_AUTH_READ_LIMIT_MINUTE'),
+  createConfig('hour', '1 h', 6000, 'API_PROXY_AUTH_READ_LIMIT_HOUR'),
+  createConfig('day', '1 d', 40_000, 'API_PROXY_AUTH_READ_LIMIT_DAY'),
+];
+
 const DEFAULT_MUTATE_RATE_LIMITS: RateLimitConfig[] = [
   { window: 'minute', limit: 60, duration: '1 m' },
   { window: 'hour', limit: 300, duration: '1 h' },
   { window: 'day', limit: 2000, duration: '1 d' },
+];
+
+const USERS_ME_READ_RATE_LIMITS: RateLimitConfig[] = [
+  createConfig('minute', '1 m', 600, 'API_PROXY_USERS_ME_READ_LIMIT_MINUTE'),
+  createConfig('hour', '1 h', 6000, 'API_PROXY_USERS_ME_READ_LIMIT_HOUR'),
+  createConfig('day', '1 d', 40_000, 'API_PROXY_USERS_ME_READ_LIMIT_DAY'),
 ];
 
 const USERS_ME_MUTATE_RATE_LIMITS: RateLimitConfig[] = [
@@ -155,6 +209,15 @@ const USERS_ME_MUTATE_RATE_LIMITS: RateLimitConfig[] = [
   { window: 'hour', limit: 200, duration: '1 h' },
   { window: 'day', limit: 1200, duration: '1 d' },
 ];
+
+const WORKSPACE_DASHBOARD_READ_RATE_LIMITS: RateLimitProfile = {
+  get: [
+    createConfig('minute', '1 m', 600, 'API_PROXY_WORKSPACE_READ_LIMIT_MINUTE'),
+    createConfig('hour', '1 h', 6000, 'API_PROXY_WORKSPACE_READ_LIMIT_HOUR'),
+    createConfig('day', '1 d', 40_000, 'API_PROXY_WORKSPACE_READ_LIMIT_DAY'),
+  ],
+  mutate: DEFAULT_MUTATE_RATE_LIMITS,
+};
 
 const AUTH_RATE_LIMITS: RateLimitProfile = {
   get: NO_READ_RATE_LIMITS,
@@ -189,6 +252,34 @@ const OTP_VERIFY_RATE_LIMITS: RateLimitProfile = {
     createConfig('minute', '1 m', 60, 'API_PROXY_OTP_VERIFY_LIMIT_MINUTE'),
     createConfig('hour', '1 h', 600, 'API_PROXY_OTP_VERIFY_LIMIT_HOUR'),
     createConfig('day', '1 d', 4000, 'API_PROXY_OTP_VERIFY_LIMIT_DAY'),
+  ],
+};
+
+const AUTH_RECOVERY_CODE_RATE_LIMITS: RateLimitProfile = {
+  get: NO_READ_RATE_LIMITS,
+  mutate: [
+    createConfig(
+      'minute',
+      '1 m',
+      10,
+      'API_PROXY_AUTH_RECOVERY_CODE_LIMIT_MINUTE'
+    ),
+    createConfig('hour', '1 h', 50, 'API_PROXY_AUTH_RECOVERY_CODE_LIMIT_HOUR'),
+    createConfig('day', '1 d', 120, 'API_PROXY_AUTH_RECOVERY_CODE_LIMIT_DAY'),
+  ],
+};
+
+const RATE_LIMIT_APPEAL_RATE_LIMITS: RateLimitProfile = {
+  get: NO_READ_RATE_LIMITS,
+  mutate: [
+    createConfig(
+      'minute',
+      '1 m',
+      1,
+      'API_PROXY_RATE_LIMIT_APPEAL_LIMIT_MINUTE'
+    ),
+    createConfig('hour', '1 h', 3, 'API_PROXY_RATE_LIMIT_APPEAL_LIMIT_HOUR'),
+    createConfig('day', '1 d', 10, 'API_PROXY_RATE_LIMIT_APPEAL_LIMIT_DAY'),
   ],
 };
 
@@ -251,11 +342,11 @@ const TASK_BOARD_READ_RATE_LIMITS: RateLimitProfile = {
     createConfig(
       'minute',
       '1 m',
-      300,
+      600,
       'API_PROXY_TASK_BOARD_READ_LIMIT_MINUTE'
     ),
-    createConfig('hour', '1 h', 3000, 'API_PROXY_TASK_BOARD_READ_LIMIT_HOUR'),
-    createConfig('day', '1 d', 20_000, 'API_PROXY_TASK_BOARD_READ_LIMIT_DAY'),
+    createConfig('hour', '1 h', 12_000, 'API_PROXY_TASK_BOARD_READ_LIMIT_HOUR'),
+    createConfig('day', '1 d', 80_000, 'API_PROXY_TASK_BOARD_READ_LIMIT_DAY'),
   ],
   mutate: DEFAULT_MUTATE_RATE_LIMITS,
 };
@@ -267,6 +358,25 @@ const USERS_DATABASE_READ_OVER_POST_RATE_LIMITS: RateLimitProfile = {
     { window: 'hour', limit: 3000, duration: '1 h' },
     { window: 'day', limit: 20_000, duration: '1 d' },
   ],
+};
+
+const USERS_ADMIN_READ_RATE_LIMITS: RateLimitProfile = {
+  get: [
+    createConfig(
+      'minute',
+      '1 m',
+      1200,
+      'API_PROXY_USERS_ADMIN_READ_LIMIT_MINUTE'
+    ),
+    createConfig(
+      'hour',
+      '1 h',
+      12_000,
+      'API_PROXY_USERS_ADMIN_READ_LIMIT_HOUR'
+    ),
+    createConfig('day', '1 d', 80_000, 'API_PROXY_USERS_ADMIN_READ_LIMIT_DAY'),
+  ],
+  mutate: DEFAULT_MUTATE_RATE_LIMITS,
 };
 
 const FINANCE_READ_RATE_LIMITS: RateLimitProfile = {
@@ -319,7 +429,46 @@ function isUsersDatabaseReadOverPost(req: NextRequest) {
   );
 }
 
+function isUsersAdminRead(req: NextRequest) {
+  if (req.method !== 'GET' && req.method !== 'HEAD') {
+    return false;
+  }
+
+  const pathname = req.nextUrl.pathname;
+
+  return (
+    /^\/api\/v1\/workspaces\/[^/]+\/users(?:\/(?:database|groups|feedbacks|attendance\/export|[^/]+\/(?:attendance|emails|referrals|linked-promotions|referral-discounts|user-groups)))?\/?$/u.test(
+      pathname
+    ) ||
+    /^\/api\/v1\/workspaces\/[^/]+\/user-groups\/[^/]+(?:\/(?:attendance|members(?:\/[^/]+(?:\/feedbacks)?)?|posts(?:\/[^/]+(?:\/status)?)?|linked-products|storage|indicators(?:\/.*)?))?\/?$/u.test(
+      pathname
+    )
+  );
+}
+
+function isWorkspaceDashboardRead(req: NextRequest) {
+  if (req.method !== 'GET' && req.method !== 'HEAD') {
+    return false;
+  }
+
+  return /^\/api(?:\/v1)?\/workspaces\/[^/]+(?:\/|$)/u.test(
+    req.nextUrl.pathname
+  );
+}
+
+function isRateLimitAppealSubmission(req: NextRequest) {
+  return (
+    req.method === 'POST' &&
+    /^\/api\/v1\/rate-limit-appeals\/?$/u.test(req.nextUrl.pathname)
+  );
+}
+
 const DEFAULT_ROUTE_POLICIES: ProxyRoutePolicy[] = [
+  {
+    key: 'rate-limit-appeal',
+    matches: isRateLimitAppealSubmission,
+    rateLimits: RATE_LIMIT_APPEAL_RATE_LIMITS,
+  },
   {
     key: 'cron',
     matches: (req) =>
@@ -356,6 +505,12 @@ const DEFAULT_ROUTE_POLICIES: ProxyRoutePolicy[] = [
       /^\/api\/v1\/auth\/otp\/verify(?:\/|$)/.test(req.nextUrl.pathname) ||
       /^\/api\/v1\/auth\/mobile\/verify-otp(?:\/|$)/.test(req.nextUrl.pathname),
     rateLimits: OTP_VERIFY_RATE_LIMITS,
+  },
+  {
+    key: 'auth-recovery-code',
+    matches: (req) =>
+      /^\/api\/v1\/auth\/recovery\/consume(?:\/|$)/.test(req.nextUrl.pathname),
+    rateLimits: AUTH_RECOVERY_CODE_RATE_LIMITS,
   },
   {
     key: 'cross-app-return',
@@ -399,6 +554,16 @@ const DEFAULT_ROUTE_POLICIES: ProxyRoutePolicy[] = [
     rateLimits: FINANCE_READ_RATE_LIMITS,
   },
   {
+    key: 'users-admin-read',
+    matches: isUsersAdminRead,
+    rateLimits: USERS_ADMIN_READ_RATE_LIMITS,
+  },
+  {
+    key: 'workspace-dashboard-read',
+    matches: isWorkspaceDashboardRead,
+    rateLimits: WORKSPACE_DASHBOARD_READ_RATE_LIMITS,
+  },
+  {
     key: 'high-fanout',
     matches: (req) =>
       /^\/api\/v1\/workspaces\/[^/]+\/mail\/send(?:\/|$)/.test(
@@ -424,7 +589,7 @@ const DEFAULT_ROUTE_POLICIES: ProxyRoutePolicy[] = [
     key: 'users-me',
     matches: (req) => req.nextUrl.pathname.startsWith('/api/v1/users/me'),
     rateLimits: {
-      get: NO_READ_RATE_LIMITS,
+      get: USERS_ME_READ_RATE_LIMITS,
       mutate: USERS_ME_MUTATE_RATE_LIMITS,
     },
   },
@@ -526,87 +691,10 @@ function createRedisRateLimitBuckets(
   }));
 }
 
-function rateLimitDurationMs(duration: RateLimitConfig['duration']) {
-  switch (duration) {
-    case '1 m':
-      return 60_000;
-    case '1 h':
-      return 60 * 60_000;
-    case '1 d':
-      return 24 * 60 * 60_000;
-  }
-}
-
-function createLocalRateLimiter(
-  prefix: string,
-  config: RateLimitConfig
-): RateLimiter {
-  const durationMs = rateLimitDurationMs(config.duration);
-
-  return {
-    async limit(identifier: string) {
-      const now = Date.now();
-      const key = `${prefix}:${identifier}`;
-      let state = localLimiterState.get(key);
-
-      if (!state || state.reset <= now) {
-        state = {
-          count: 0,
-          reset: now + durationMs,
-        };
-      }
-
-      if (state.count >= config.limit) {
-        localLimiterState.set(key, state);
-        return {
-          limit: config.limit,
-          remaining: 0,
-          reset: state.reset,
-          success: false,
-        };
-      }
-
-      state.count += 1;
-      localLimiterState.set(key, state);
-
-      return {
-        limit: config.limit,
-        remaining: Math.max(0, config.limit - state.count),
-        reset: state.reset,
-        success: true,
-      };
-    },
-  };
-}
-
-function createLocalRateLimitBuckets(
-  prefixBase: string,
-  kind: 'get' | 'mutate',
-  configs: RateLimitConfig[]
-): RateLimitBucket[] {
-  return configs.map((config) => ({
-    window: config.window,
-    limiter: createLocalRateLimiter(
-      `${prefixBase}:local:${kind}:${config.window}`,
-      config
-    ),
-  }));
-}
-
-function createLocalRateLimiters(
-  prefixBase: string,
-  profile: RateLimitProfile
-): Limiters {
-  return {
-    get: createLocalRateLimitBuckets(prefixBase, 'get', profile.get),
-    mutate: createLocalRateLimitBuckets(prefixBase, 'mutate', profile.mutate),
-  };
-}
-
 async function getRateLimiters(
   prefixBase: string,
   profile: RateLimitProfile
-): Promise<Limiters> {
+): Promise<Limiters | null> {
   const cacheKey = `${prefixBase}:${JSON.stringify(profile)}`;
   const cached = limiterCache.get(cacheKey);
   if (cached) {
@@ -615,9 +703,7 @@ async function getRateLimiters(
 
   const redis = await getUpstashRatelimitRedisClient().catch(() => null);
   if (!redis) {
-    const localLimiters = createLocalRateLimiters(prefixBase, profile);
-    limiterCache.set(cacheKey, localLimiters);
-    return localLimiters;
+    return null;
   }
 
   const limiters = {
@@ -632,16 +718,6 @@ async function getRateLimiters(
 
   limiterCache.set(cacheKey, limiters);
   return limiters;
-}
-
-function replaceWithLocalRateLimiters(
-  cacheKey: string,
-  prefixBase: string,
-  profile: RateLimitProfile
-): Limiters {
-  const localLimiters = createLocalRateLimiters(prefixBase, profile);
-  limiterCache.set(cacheKey, localLimiters);
-  return localLimiters;
 }
 
 function getRoutePolicy(
@@ -767,8 +843,260 @@ export function hasAuthenticatedApiSession(req: NextRequest): boolean {
 }
 
 function getCallerClass(req: NextRequest): CallerClass {
+  // Intentionally always 'anonymous'. Auth headers/cookies are forgeable at the
+  // edge (we can't verify signatures cheaply here), so presence alone must never
+  // grant an elevated proxy budget — real per-user enforcement happens
+  // downstream. Per-session proxy buckets and higher read throughput for
+  // genuinely trusted accounts/locations are granted instead via the
+  // server-written trust cache (see resolveProxyIdentity +
+  // getCachedTrustEntries), which cannot be forged.
   void req;
   return 'anonymous';
+}
+
+/**
+ * Edge-safe stable subject hash. MUST stay byte-identical to
+ * `reputation.ts hashStableSubject` (sha256 hex, sliced to 24 chars) so that
+ * the edge `session:<hash>` subject key matches the DB-side key used by the
+ * trust cache.
+ */
+async function hashStableSubjectEdge(value: string): Promise<string> {
+  const digest = await crypto.subtle.digest(
+    'SHA-256',
+    new TextEncoder().encode(value)
+  );
+  return Array.from(new Uint8Array(digest))
+    .map((byte) => byte.toString(16).padStart(2, '0'))
+    .join('')
+    .slice(0, 24);
+}
+
+export async function buildProxySessionSubjectKey(
+  cookieName: string,
+  cookieValue: string
+): Promise<string> {
+  return `session:${await hashStableSubjectEdge(`${cookieName}:${cookieValue}`)}`;
+}
+
+function parseCookieHeaderEdge(
+  cookieHeader: string | null
+): Array<{ name: string; value: string }> {
+  if (!cookieHeader) {
+    return [];
+  }
+
+  return cookieHeader
+    .split(';')
+    .map((entry) => {
+      const separatorIndex = entry.indexOf('=');
+      if (separatorIndex < 0) {
+        return null;
+      }
+
+      return {
+        name: entry.slice(0, separatorIndex).trim(),
+        value: entry.slice(separatorIndex + 1).trim(),
+      };
+    })
+    .filter(
+      (entry): entry is { name: string; value: string } =>
+        !!entry?.name && !!entry.value
+    );
+}
+
+function getSessionAuthCookie(
+  req: NextRequest
+): { name: string; value: string } | null {
+  const cookies = parseCookieHeaderEdge(req.headers.get('cookie'));
+  return (
+    cookies.find(
+      (cookie) =>
+        cookie.name === 'tuturuuu_app_session' ||
+        GENERIC_SUPABASE_AUTH_COOKIE_NAME_PATTERN.test(cookie.name)
+    ) ?? null
+  );
+}
+
+export async function getProxySessionSubjectKeyFromCookieHeader(
+  cookieHeader: string | null
+): Promise<string | null> {
+  const cookie =
+    parseCookieHeaderEdge(cookieHeader).find(
+      (entry) =>
+        entry.name === 'tuturuuu_app_session' ||
+        GENERIC_SUPABASE_AUTH_COOKIE_NAME_PATTERN.test(entry.name)
+    ) ?? null;
+
+  return cookie ? buildProxySessionSubjectKey(cookie.name, cookie.value) : null;
+}
+
+/**
+ * Mirrors `reputation.ts getCidrSubjectKey` so the edge cidr subject key matches
+ * the DB-side trusted-location key.
+ */
+function getCidrSubjectKeyEdge(ipAddress: string | null): string | null {
+  if (!ipAddress) {
+    return null;
+  }
+
+  const ipv4Parts = ipAddress.split('.');
+  if (
+    ipv4Parts.length === 4 &&
+    ipv4Parts.every((part) => /^\d{1,3}$/.test(part))
+  ) {
+    return `cidr:${ipv4Parts.slice(0, 3).join('.')}.0/24`;
+  }
+
+  const ipv6Parts = ipAddress.split(':').filter(Boolean);
+  if (ipv6Parts.length >= 4) {
+    return `cidr:${ipv6Parts.slice(0, 4).join(':')}::/64`;
+  }
+
+  return null;
+}
+
+export type ProxyIdentity = {
+  /** `ip:<ip>` subject key, or null when the IP is unknown. */
+  ipKey: string | null;
+  /** `cidr:<network>` subject key for trusted-location lookups, or null. */
+  cidrKey: string | null;
+  /** `session:<hash>` subject key for cookie sessions, or null. Matches the
+   * DB-side session subject key so trusted sessions resolve from the cache. */
+  sessionKey: string | null;
+  /** `workspace:<wsId>` subject key parsed from a workspace-scoped API path, or
+   * null. Lets an admin workspace rule uplift reads for the whole workspace. */
+  workspaceKey: string | null;
+};
+
+const WORKSPACE_PATH_PATTERN =
+  /^\/api(?:\/v1)?\/workspaces\/([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})(?:\/|$)/u;
+
+function getWorkspaceSubjectKey(pathname: string): string | null {
+  const match = WORKSPACE_PATH_PATTERN.exec(pathname);
+  return match ? `workspace:${match[1]!.toLowerCase()}` : null;
+}
+
+/**
+ * Resolves the trust/keying subject keys for a request. Limited to
+ * session/cidr/ip (keys an attacker would have to actually possess or share a
+ * network with) plus a workspace key parsed from the path — so trust uplift and
+ * per-session keying can never be granted by a forged credential.
+ */
+async function resolveProxyIdentity(
+  req: NextRequest,
+  ip: string
+): Promise<ProxyIdentity> {
+  const normalizedIp = ip && ip !== 'unknown' ? ip : null;
+  const sessionCookie = getSessionAuthCookie(req);
+  const sessionKey = sessionCookie
+    ? await buildProxySessionSubjectKey(sessionCookie.name, sessionCookie.value)
+    : null;
+
+  return {
+    cidrKey: getCidrSubjectKeyEdge(normalizedIp),
+    ipKey: normalizedIp ? `ip:${normalizedIp}` : null,
+    sessionKey,
+    workspaceKey: getWorkspaceSubjectKey(req.nextUrl.pathname),
+  };
+}
+
+/**
+ * Scales the read (`get`) limits of a profile by a trust multiplier. Mutation
+ * limits are left flat — those are already trust-scaled at the DB and in the
+ * downstream session/API wrappers, so scaling them here would double-apply.
+ */
+function scaleReadLimits(
+  profile: RateLimitProfile,
+  multiplier: number
+): RateLimitProfile {
+  if (multiplier <= 1) {
+    return profile;
+  }
+
+  return {
+    ...profile,
+    get: profile.get.map((config) => ({
+      ...config,
+      limit: Math.max(config.limit, Math.floor(config.limit * multiplier)),
+    })),
+  };
+}
+
+function entryReadFloor(abs: NonNullable<CachedTrustEntry['abs']>): number {
+  return abs.minute ?? abs.hour ?? abs.day ?? 0;
+}
+
+/**
+ * Combines all applicable cached entries (session + location/workspace) into a
+ * single effective read decision. Most-permissive wins: unlimited beats
+ * absolute beats the highest multiplier.
+ */
+function combineTrustEntries(
+  entries: Array<CachedTrustEntry | null | undefined>
+): CachedTrustEntry | null {
+  const active = entries.filter((entry): entry is CachedTrustEntry => !!entry);
+  if (active.length === 0) {
+    return null;
+  }
+
+  if (active.some((entry) => entry.mode === 'unlimited')) {
+    return { m: 1, mode: 'unlimited' };
+  }
+
+  const absolutes = active.filter(
+    (
+      entry
+    ): entry is CachedTrustEntry & {
+      abs: NonNullable<CachedTrustEntry['abs']>;
+    } => entry.mode === 'absolute' && !!entry.abs
+  );
+  if (absolutes.length > 0) {
+    const best = absolutes.reduce((winner, candidate) =>
+      entryReadFloor(candidate.abs) > entryReadFloor(winner.abs)
+        ? candidate
+        : winner
+    );
+    return { abs: best.abs, m: best.m, mode: 'absolute' };
+  }
+
+  return { m: Math.max(...active.map((entry) => entry.m)) };
+}
+
+/**
+ * Applies a combined trust entry to a route profile's READ limits and returns
+ * the scaled profile plus a bucket-prefix suffix that uniquely encodes the
+ * effective limit (so distinct limits never share a Redis sliding window).
+ */
+function applyTrustEntryToReads(
+  profile: RateLimitProfile,
+  entry: CachedTrustEntry | null
+): { profile: RateLimitProfile; suffix: string } {
+  if (!entry) {
+    return { profile, suffix: '' };
+  }
+
+  if (entry.mode === 'unlimited') {
+    // Drop the read cap entirely (no read limiter is constructed for [] get).
+    return { profile: { ...profile, get: [] }, suffix: ':unl' };
+  }
+
+  if (entry.mode === 'absolute' && entry.abs) {
+    const get = profile.get.map((config) => {
+      const absolute = entry.abs?.[config.window];
+      return absolute != null ? { ...config, limit: absolute } : config;
+    });
+    const { minute, hour, day } = entry.abs;
+    return {
+      profile: { ...profile, get },
+      suffix: `:abs-${minute ?? 'x'}-${hour ?? 'x'}-${day ?? 'x'}`,
+    };
+  }
+
+  const tier = quantizeTrustMultiplier(entry.m);
+  if (tier <= 1) {
+    return { profile, suffix: '' };
+  }
+  return { profile: scaleReadLimits(profile, tier), suffix: `:t${tier}` };
 }
 
 function getEffectiveRateLimits(
@@ -776,6 +1104,13 @@ function getEffectiveRateLimits(
   callerClass: CallerClass
 ): RateLimitProfile {
   if (callerClass === 'authenticated') {
+    if (routePolicy.key === 'default') {
+      return {
+        get: DEFAULT_AUTHENTICATED_READ_RATE_LIMITS,
+        mutate: DEFAULT_MUTATE_RATE_LIMITS,
+      };
+    }
+
     return routePolicy.rateLimits;
   }
 
@@ -792,9 +1127,14 @@ function getEffectiveRateLimits(
 function getRateLimitPrefix(
   prefixBase: string,
   routePolicy: ProxyRoutePolicy,
-  callerClass: CallerClass
+  callerClass: CallerClass,
+  trustSuffix = ''
 ): string {
-  return `${prefixBase}:${routePolicy.key}:${callerClass}`;
+  // Only trusted/uplifted traffic gets a suffixed bucket; untrusted traffic
+  // keeps the original prefix so its sliding windows are unaffected. The suffix
+  // must uniquely encode the effective limit (tier or absolute values) so two
+  // different effective limits never share a Redis sliding-window prefix.
+  return `${prefixBase}:${routePolicy.key}:${callerClass}${trustSuffix}`;
 }
 
 export function isTrustedProxyBypassRequest(
@@ -807,7 +1147,6 @@ export function isTrustedProxyBypassRequest(
 
 export function clearApiProxyGuardLimiterCache() {
   limiterCache.clear();
-  localLimiterState.clear();
 }
 
 async function requestBodyExceedsLimit(
@@ -881,56 +1220,128 @@ export async function guardApiProxyRequest(
   ) {
     const callerClass = getCallerClass(req);
     const ip = extractIPFromRequest(req.headers);
+    const identity = await resolveProxyIdentity(req, ip);
+    const routePolicy = getRoutePolicy(req, routePolicies);
+    const abuseProtectionControls = await readEdgeAbuseProtectionControls();
 
-    if (ip !== 'unknown' && callerClass === 'anonymous') {
+    if (abuseProtectionControls.ipBlockingEnabled && ip !== 'unknown') {
       const blockInfo = await isIPBlockedEdge(ip);
       if (blockInfo) {
-        const retryAfter = Math.max(
-          1,
-          Math.ceil((blockInfo.expiresAt.getTime() - Date.now()) / 1000)
-        );
+        const hasTemporaryRelief =
+          routePolicy.key === 'rate-limit-appeal' ||
+          (identity.sessionKey && identity.ipKey
+            ? await hasCachedIpBlockAppealRelief(
+                identity.sessionKey,
+                identity.ipKey
+              )
+            : false);
 
-        return buildRateLimitResponse(429, retryAfter, {
-          'X-Proxy-Block-Reason': 'ip-already-blocked',
-        });
+        if (hasTemporaryRelief) {
+          // Keep processing: appeal submissions and matching temporary relief
+          // still go through the route limiter below.
+        } else {
+          const retryAfter = Math.max(
+            1,
+            Math.ceil((blockInfo.expiresAt.getTime() - Date.now()) / 1000)
+          );
+
+          return buildRateLimitResponse(429, retryAfter, {
+            'X-Proxy-Block-Reason': 'ip-already-blocked',
+          });
+        }
       }
+    }
 
-      const routePolicy = getRoutePolicy(req, routePolicies);
-      const isRead = req.method === 'GET' || req.method === 'HEAD';
-      const rateLimits = getEffectiveRateLimits(routePolicy, callerClass);
+    const isRead = req.method === 'GET' || req.method === 'HEAD';
+
+    // Resolve server-verified session keying for reads and mutations, but apply
+    // trust uplift to read limits only. Account trust (session key) and location
+    // trust (cidr/ip keys) are distinguished so that:
+    //   * a server-verified SESSION (cache entry keyed on the real cookie's
+    //     hash — unforgeable) gets its OWN per-session bucket, so signed-in
+    //     teammates behind one NAT no longer collide; and
+    //   * a trusted LOCATION (office cidr/ip) uplifts the shared per-IP bucket
+    //     for the whole team without any per-request credential.
+    // Untrusted traffic keeps legacy per-IP keying, preserving single-IP abuse
+    // caps. A forged cookie hashes to a key with no cache entry, so it cannot
+    // escape the shared IP bucket.
+    let trustEntry: CachedTrustEntry | null = null;
+    let sessionScoped = false;
+    if (abuseProtectionControls.rateLimitsEnabled && edgeTrustEnabled()) {
+      const lookupKeys = [
+        identity.sessionKey,
+        ...(isRead
+          ? [identity.cidrKey, identity.ipKey, identity.workspaceKey]
+          : []),
+      ].filter((key): key is string => key != null);
+      const entries = await getCachedTrustEntries(lookupKeys);
+
+      const sessionEntry = identity.sessionKey
+        ? entries.get(identity.sessionKey)
+        : undefined;
+      sessionScoped = !!identity.sessionKey && !!sessionEntry;
+
+      if (isRead) {
+        // Location/workspace trust applies to the shared per-IP bucket for the
+        // whole team; session trust applies to the per-session bucket.
+        const locationEntry = combineTrustEntries([
+          identity.cidrKey ? entries.get(identity.cidrKey) : undefined,
+          identity.ipKey ? entries.get(identity.ipKey) : undefined,
+          identity.workspaceKey
+            ? entries.get(identity.workspaceKey)
+            : undefined,
+        ]);
+
+        trustEntry = combineTrustEntries([sessionEntry, locationEntry]);
+      }
+    }
+
+    // Server-verified sessions key per-session; everyone else keys per-IP.
+    const limiterId =
+      sessionScoped && identity.sessionKey
+        ? identity.sessionKey
+        : identity.ipKey;
+
+    if (abuseProtectionControls.rateLimitsEnabled && limiterId) {
+      const effectiveCallerClass: CallerClass = sessionScoped
+        ? 'authenticated'
+        : callerClass;
+      const baseRateLimits = getEffectiveRateLimits(
+        routePolicy,
+        effectiveCallerClass
+      );
+      const { profile: rateLimits, suffix: trustSuffix } = isRead
+        ? applyTrustEntryToReads(baseRateLimits, trustEntry)
+        : { profile: baseRateLimits, suffix: '' };
+
       const limiterPrefix = getRateLimitPrefix(
         options.prefixBase,
         routePolicy,
-        callerClass
+        effectiveCallerClass,
+        trustSuffix
       );
       const limiterCacheKey = `${limiterPrefix}:${JSON.stringify(rateLimits)}`;
       const limiters = await getRateLimiters(limiterPrefix, rateLimits);
-      let activeLimiters = isRead ? limiters.get : limiters.mutate;
+      const activeLimiters = limiters
+        ? isRead
+          ? limiters.get
+          : limiters.mutate
+        : [];
 
       for (let index = 0; index < activeLimiters.length; index += 1) {
         const { limiter, window } = activeLimiters[index]!;
-        let result: RateLimitResult;
+        let result: RateLimitResult | null | undefined;
 
         try {
-          result = await limiter.limit(ip);
+          result = await limiter.limit(limiterId);
         } catch {
-          const fallbackLimiters = replaceWithLocalRateLimiters(
-            limiterCacheKey,
-            limiterPrefix,
-            rateLimits
-          );
-          activeLimiters = isRead
-            ? fallbackLimiters.get
-            : fallbackLimiters.mutate;
-          const fallbackBucket =
-            activeLimiters[index] ??
-            activeLimiters.find((bucket) => bucket.window === window);
+          limiterCache.delete(limiterCacheKey);
+          break;
+        }
 
-          if (!fallbackBucket) {
-            continue;
-          }
-
-          result = await fallbackBucket.limiter.limit(ip);
+        if (!result) {
+          limiterCache.delete(limiterCacheKey);
+          break;
         }
 
         const { success, limit, remaining, reset } = result;
@@ -939,7 +1350,7 @@ export async function guardApiProxyRequest(
           const consumed = limit - remaining;
           const kind = isRead ? 'read' : 'mutate';
           console.log(
-            `[ProxyGuard] ${routePolicy.key}:${kind}:${window} ${consumed}/${limit} | IP: ${ip} | path: ${req.nextUrl.pathname}`
+            `[ProxyGuard] ${routePolicy.key}:${kind}:${window} ${consumed}/${limit} | id: ${limiterId} | path: ${req.nextUrl.pathname}`
           );
         }
 
@@ -954,7 +1365,7 @@ export async function guardApiProxyRequest(
             'X-RateLimit-Limit': `${limit}`,
             'X-RateLimit-Remaining': `${remaining}`,
             'X-RateLimit-Reset': `${Math.ceil(reset / 1000)}`,
-            'X-RateLimit-Caller-Class': callerClass,
+            'X-RateLimit-Caller-Class': effectiveCallerClass,
             'X-RateLimit-Window': window,
             'X-RateLimit-Policy': routePolicy.key,
           });

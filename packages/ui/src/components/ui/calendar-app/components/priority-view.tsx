@@ -23,6 +23,7 @@ import {
 } from '@tuturuuu/icons';
 import {
   listWorkspaceTaskLists,
+  listWorkspaceTasks,
   updateWorkspaceTask,
 } from '@tuturuuu/internal-api/tasks';
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
@@ -31,6 +32,7 @@ import { useRouter } from 'next/navigation';
 import React, { useEffect, useMemo, useState } from 'react';
 import { useDebouncedCallback } from 'use-debounce';
 import { useCalendar } from '../../../../hooks/use-calendar';
+import { getTaskApiUrl } from '../../../../lib/tasks-app-url';
 import { Progress } from '../../progress';
 import { toast } from '../../sonner';
 import type { ExtendedWorkspaceTask } from '../../time-tracker/types';
@@ -40,7 +42,6 @@ import ActionsDropdown from './actions-dropdown';
 import PriorityDropdown from './priority-dropdown';
 import { QuickTaskDialog } from './quick-task-dialog';
 import { SchedulingDialog } from './scheduling-dialog';
-import { getAssignedTasks } from './task-fetcher';
 
 // Priority labels (matching task-properties-section.tsx)
 const PRIORITY_LABELS: Record<TaskPriority, string> = {
@@ -263,9 +264,11 @@ export default function PriorityView({
       const results = await Promise.allSettled(
         tasksToFetchSchedule.map(async (task) => {
           const response = await fetch(
-            isPersonalWorkspace
-              ? `/api/v1/users/me/tasks/${task.id}/schedule`
-              : `/api/v1/workspaces/${task.ws_id ?? wsId}/tasks/${task.id}/schedule`,
+            getTaskApiUrl(
+              isPersonalWorkspace
+                ? `/api/v1/users/me/tasks/${task.id}/schedule`
+                : `/api/v1/workspaces/${task.ws_id ?? wsId}/tasks/${task.id}/schedule`
+            ),
             { cache: 'no-store' }
           );
           if (!response.ok) {
@@ -356,8 +359,15 @@ export default function PriorityView({
     setSearchError(null);
 
     try {
-      const results = await getAssignedTasks(assigneeId, searchQuery.trim());
-      setSearchResults(results);
+      const results = await listWorkspaceTasks(wsId, {
+        assigneeIds: [assigneeId],
+        closed: 'exclude',
+        completed: 'exclude',
+        includeArchivedBoards: true,
+        limit: 50,
+        q: searchQuery.trim(),
+      });
+      setSearchResults(results.tasks as ExtendedWorkspaceTask[]);
     } catch (error) {
       console.error('Error searching tasks:', error);
       setSearchError('Failed to search tasks');
@@ -371,10 +381,15 @@ export default function PriorityView({
     const task = combinedTasks.find((t) => t.id === taskId);
     const taskWsId = task?.ws_id ?? wsId;
 
-    const response = await fetch(`/api/${taskWsId}/task/${taskId}/edit`, {
-      method: 'PATCH',
-      body: JSON.stringify({ priority: newPriority }),
-    });
+    const response = await fetch(
+      getTaskApiUrl(`/api/${taskWsId}/task/${taskId}/edit`),
+      {
+        method: 'PATCH',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ priority: newPriority }),
+      }
+    );
 
     if (!response.ok) {
       throw new Error('Failed to update task priority');

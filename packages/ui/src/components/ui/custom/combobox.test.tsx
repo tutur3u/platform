@@ -138,4 +138,199 @@ describe('Combobox', () => {
 
     expect(onSelect).toHaveBeenCalledTimes(1);
   });
+
+  it('can hide the selected trigger icon while keeping option icons visible', () => {
+    render(
+      <Combobox
+        options={[
+          {
+            label: 'Alpha',
+            value: 'alpha',
+            icon: <span data-testid="alpha-option-icon">A</span>,
+          },
+          { label: 'Beta', value: 'beta' },
+        ]}
+        placeholder="Pick item"
+        selected="alpha"
+        showSelectedIcon={false}
+      />
+    );
+
+    expect(screen.queryByTestId('alpha-option-icon')).not.toBeInTheDocument();
+
+    openCombobox();
+
+    expect(screen.getByTestId('alpha-option-icon')).toBeInTheDocument();
+  });
+
+  it('can use a stable trigger icon while preserving option row icons', () => {
+    render(
+      <Combobox
+        ariaLabel="View picker"
+        hideTriggerLabel
+        options={[
+          {
+            label: 'Kanban',
+            value: 'kanban',
+            icon: <span data-testid="kanban-option-icon">K</span>,
+          },
+        ]}
+        placeholder="Pick view"
+        selected="kanban"
+        showChevron={false}
+        triggerIcon={<span data-testid="stable-view-icon">V</span>}
+        triggerMode="compact"
+      />
+    );
+
+    expect(screen.getByTestId('stable-view-icon')).toBeInTheDocument();
+    expect(screen.queryByTestId('kanban-option-icon')).not.toBeInTheDocument();
+
+    openCombobox();
+
+    expect(screen.getByTestId('kanban-option-icon')).toBeInTheDocument();
+  });
+
+  it('supports compact accessible icon-only triggers with wider popover content', () => {
+    render(
+      <Combobox
+        ariaLabel="Compact picker"
+        contentWidth="md"
+        hideTriggerLabel
+        label={<span>Alpha compact</span>}
+        options={[
+          {
+            label: 'Alpha',
+            value: 'alpha',
+            icon: <span data-testid="alpha-compact-icon">A</span>,
+          },
+        ]}
+        placeholder="Pick item"
+        selected="alpha"
+        showChevron={false}
+        triggerMode="compact"
+      />
+    );
+
+    const trigger = screen.getByRole('combobox', { name: 'Compact picker' });
+    expect(trigger).toHaveClass('aspect-square', 'px-0');
+    expect(screen.queryByText('Alpha compact')).not.toBeInTheDocument();
+    expect(screen.getByTestId('alpha-compact-icon')).toBeInTheDocument();
+
+    fireEvent.click(trigger);
+
+    expect(document.querySelector('[data-slot="popover-content"]')).toHaveClass(
+      'w-80'
+    );
+  });
+
+  it('shows trigger tooltips instantly for compact controls', async () => {
+    render(
+      <Combobox
+        ariaLabel="Compact picker"
+        hideTriggerLabel
+        options={options}
+        placeholder="Pick item"
+        selected="alpha"
+        showChevron={false}
+        triggerMode="compact"
+        triggerTooltip="Current: Alpha"
+      />
+    );
+
+    const trigger = screen.getByRole('combobox', { name: 'Compact picker' });
+    fireEvent.focus(trigger);
+
+    await waitFor(() => {
+      expect(trigger).toHaveAttribute('data-state', 'instant-open');
+    });
+    expect(screen.getAllByText('Current: Alpha').length).toBeGreaterThan(0);
+  });
+
+  it('can keep compact trigger icons monochrome while option rows keep semantic colors', () => {
+    render(
+      <Combobox
+        ariaLabel="Priority picker"
+        colorizeTriggerIcon={false}
+        hideTriggerLabel
+        options={[
+          {
+            color: '#f97316',
+            icon: <span data-testid="priority-icon">P</span>,
+            label: 'High priority',
+            value: 'high',
+          },
+        ]}
+        placeholder="Pick item"
+        selected="high"
+        showChevron={false}
+        triggerMode="compact"
+      />
+    );
+
+    const triggerIcon = screen.getByTestId('priority-icon');
+    expect(triggerIcon).not.toHaveAttribute('style');
+
+    openCombobox();
+
+    const [, optionIcon] = screen.getAllByTestId('priority-icon');
+    expect(optionIcon).toHaveStyle({ color: '#f97316' });
+  });
+
+  it('reports popover open changes when the trigger opens and a single option closes it', async () => {
+    const onChange = vi.fn();
+    const onOpenChange = vi.fn();
+
+    render(
+      <Combobox
+        onChange={onChange}
+        onOpenChange={onOpenChange}
+        options={options}
+        placeholder="Pick item"
+        selected=""
+      />
+    );
+
+    openCombobox();
+
+    expect(onOpenChange).toHaveBeenCalledWith(true);
+
+    fireEvent.click(screen.getByText('Beta'));
+
+    await waitFor(() => {
+      expect(onChange).toHaveBeenCalledWith('beta');
+      expect(onOpenChange).toHaveBeenCalledWith(false);
+    });
+  });
+
+  it('renders grouped options and non-clipped descriptions', () => {
+    render(
+      <Combobox
+        options={[
+          {
+            description: 'Detailed board view with enough room to wrap.',
+            group: 'Views',
+            label: 'Kanban board',
+            value: 'kanban',
+          },
+          {
+            description: 'Sort by due date from earliest to latest.',
+            group: 'Sorting',
+            label: 'Soonest first',
+            value: 'due-date-asc',
+          },
+        ]}
+        placeholder="Pick item"
+        selected="kanban"
+      />
+    );
+
+    openCombobox();
+
+    expect(screen.getByText('Views')).toBeInTheDocument();
+    expect(screen.getByText('Sorting')).toBeInTheDocument();
+    expect(
+      screen.getByText('Detailed board view with enough room to wrap.')
+    ).toHaveClass('whitespace-normal', 'break-words');
+  });
 });

@@ -290,6 +290,12 @@ class AppRegistry {
       labelBuilder: _labelWallets,
     ),
     MiniAppNavItem(
+      id: 'finance_checkpoints',
+      route: Routes.financeCheckpoints,
+      icon: Icons.fact_check_outlined,
+      labelBuilder: _labelFinanceCheckpoints,
+    ),
+    MiniAppNavItem(
       id: 'finance_more',
       route: Routes.categories,
       icon: Icons.tune_rounded,
@@ -622,6 +628,8 @@ class AppRegistry {
       l10n.financeOverviewLabel;
   static String _labelFinanceActivity(AppLocalizations l10n) =>
       l10n.financeActivityLabel;
+  static String _labelFinanceCheckpoints(AppLocalizations l10n) =>
+      l10n.financeCheckpointsShortLabel;
   static String _labelFinanceManage(AppLocalizations l10n) =>
       l10n.financeManageLabel;
   static String _labelWallets(AppLocalizations l10n) => l10n.financeWallets;

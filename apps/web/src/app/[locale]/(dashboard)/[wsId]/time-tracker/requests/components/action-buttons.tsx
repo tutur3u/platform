@@ -10,7 +10,7 @@ import { Button } from '@tuturuuu/ui/button';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
-import type { ExtendedTimeTrackingRequest } from '../page';
+import type { ExtendedTimeTrackingRequest } from '../types';
 
 interface ActionButtonsProps {
   request: ExtendedTimeTrackingRequest;

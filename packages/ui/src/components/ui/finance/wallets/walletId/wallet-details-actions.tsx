@@ -35,6 +35,7 @@ interface WalletDetailsActionsProps {
   canSetFinanceWalletsOnCreate?: boolean;
   canDeleteWallets: boolean;
   isPersonalWorkspace: boolean;
+  defaultCurrency?: string;
   timezone?: string | null;
   permissionRequestUser?: FinancePermissionRequestUser | null;
 }
@@ -51,6 +52,7 @@ export function WalletDetailsActions({
   canSetFinanceWalletsOnCreate,
   canDeleteWallets,
   isPersonalWorkspace,
+  defaultCurrency,
   timezone,
   permissionRequestUser,
 }: WalletDetailsActionsProps) {
@@ -110,6 +112,7 @@ export function WalletDetailsActions({
               <WalletForm
                 wsId={wsId}
                 data={wallet}
+                defaultCurrency={defaultCurrency}
                 isPersonalWorkspace={isPersonalWorkspace}
               />
             }
@@ -210,6 +213,7 @@ export function WalletDetailsActions({
                 canCreateConfidentialTransactions={
                   canCreateConfidentialTransactions
                 }
+                defaultCurrency={defaultCurrency}
                 timezone={timezone}
                 preferInitialWalletSelection={transactionAction !== 'payment'}
                 refreshPageOnFinish

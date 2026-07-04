@@ -163,10 +163,7 @@ export function InquiryDetailModal({
   return (
     <>
       <Dialog open={isOpen} onOpenChange={onClose} modal={true}>
-        <DialogContent
-          showCloseButton={false}
-          className="data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:slide-out-to-bottom-2 data-[state=open]:slide-in-from-bottom-2 inset-0! top-0! left-0! flex h-screen max-h-screen w-screen max-w-none! translate-x-0! translate-y-0! gap-0 rounded-none! border-0 p-0"
-        >
+        <DialogContent showCloseButton={false} presentation="fullscreen">
           {/* Main content area */}
           <div className="flex min-w-0 flex-1 flex-col bg-background">
             {/* Header with Actions */}
@@ -413,7 +410,10 @@ export function InquiryDetailModal({
       {/* Media Viewer Dialog - Enhanced */}
       {selectedMedia && (
         <Dialog open={!!selectedMedia} onOpenChange={closeMediaViewer}>
-          <DialogContent className="h-screen max-h-screen w-screen max-w-none overflow-hidden border-0 bg-black/98 p-0 backdrop-blur-xl">
+          <DialogContent
+            presentation="fullscreen"
+            className="bg-black/98 backdrop-blur-xl"
+          >
             <DialogHeader className="sr-only">
               <DialogTitle>Media Viewer</DialogTitle>
             </DialogHeader>

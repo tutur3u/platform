@@ -1,4 +1,4 @@
-import { ArrowRight } from '@tuturuuu/icons';
+import { ArrowRight } from '@tuturuuu/icons/lucide-static';
 import { Badge } from '@tuturuuu/ui/badge';
 import { cn } from '@tuturuuu/utils/format';
 import Link from 'next/link';

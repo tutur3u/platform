@@ -4,7 +4,7 @@ import {
   LineChart,
   Sparkles,
   Workflow,
-} from '@tuturuuu/icons';
+} from '@tuturuuu/icons/lucide';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Card } from '@tuturuuu/ui/card';
 import { Progress } from '@tuturuuu/ui/progress';

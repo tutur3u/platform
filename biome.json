@@ -1,5 +1,5 @@
 {
-  "$schema": "https://biomejs.dev/schemas/2.5.0/schema.json",
+  "$schema": "https://biomejs.dev/schemas/2.5.1/schema.json",
   "root": true,
   "vcs": {
     "enabled": true,
@@ -16,6 +16,7 @@
       "!**/*.svg",
       "!dist",
       "!**/dist",
+      "!apps/tanstack-web/src/routeTree.gen.ts",
       "!apps/mobile",
       "!.worktrees"
     ]

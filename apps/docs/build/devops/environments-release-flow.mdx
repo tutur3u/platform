@@ -1,7 +1,7 @@
 ---
 title: "Environments & Release Flow"
 description: "How branches map to environments, and what happens between preview, staging, production, and self-hosted deploys."
-updatedAt: "2026-06-12"
+updatedAt: "2026-06-21"
 ---
 
 This page explains how Tuturuuu moves from code to running environments.
@@ -12,7 +12,7 @@ This page explains how Tuturuuu moves from code to running environments.
 | ----------------------------------- | -------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
 | Feature branch push                 | CI only; Vercel preview deployments require trusted manual dispatch from `main` with `preview_ref` | None by default                                                                                                                      |
 | `main` push                         | Platform Vercel preview build validation                                                           | `supabase-staging.yaml` can apply staging migrations after the preview build succeeds                                                |
-| `production` push                   | Platform Vercel production build validation                                                        | `supabase-production.yaml` can apply production migrations after prerequisites pass                                                  |
+| `production` push                   | Platform Vercel production deployment                                                              | `supabase-production.yaml` can apply production migrations after the deployment and staging prerequisites pass                       |
 | `main` push for `apps/discord`      | Discord Modal deployment after Python CI succeeds                                                  | None                                                                                                                                 |
 | Manual `workflow_dispatch`          | Depends on workflow                                                                                | Bypasses normal branch trigger timing, but not the workflow logic; production Supabase migration dispatches must select `production` |
 | Self-hosted server after `git pull` | Docker deploy from current checkout                                                                | Optional blue/green cutover through `bun serve:web:docker:bg`                                                                        |
@@ -36,9 +36,9 @@ This page explains how Tuturuuu moves from code to running environments.
   `apps/web` runtime deployment.
 - Satellite preview deploys remain the normal Vercel validation surface for
   branch work and merged `main` changes.
-- Platform preview and production build validation workflows cross-credit
-  successful same-SHA build markers. If one has already passed for a commit, the
-  other can record success without reinstalling dependencies or rebuilding.
+- Platform preview can reuse a successful same-SHA production platform build
+  marker to avoid redundant preview builds. Production does not reuse preview
+  markers because it must build and deploy the prebuilt production artifacts.
 
 ### Staging Database
 
@@ -56,9 +56,9 @@ This page explains how Tuturuuu moves from code to running environments.
 ### Production
 
 - Satellite production web deploys run through `vercel-production-<app>.yaml`.
-- `apps/web` production build validation is handled by
-  `vercel-production-platform.yaml`; on-premise machines handle the actual
-  runtime deployment.
+- Hosted `apps/web` production deploys run through
+  `vercel-production-platform.yaml`; self-hosted machines still use the Docker
+  release flow below for their own runtime deployment.
 - `apps/apps` production deploys are handled by `vercel-production-apps.yaml`.
 - `apps/qr` production deploys are handled by `vercel-production-qr.yaml`.
 - The production workflow also skips if a newer commit already exists on `production`.
@@ -71,7 +71,11 @@ This page explains how Tuturuuu moves from code to running environments.
 - Browser apps share one platform version from
   `packages/utils/src/platform-release.ts`; do not read visible app versions
   from individual app `package.json` files.
-- The current shared browser app version is `0.1.32`.
+- The shared browser app version is the `TUTURUUU_PLATFORM_VERSION` constant
+  exported from `packages/utils/src/platform-release.ts`. Release Please owns
+  that value (it carries the `x-release-please-version` annotation), so do not
+  pin a literal version in docs or bump it by hand. Read the constant directly
+  when you need the current value.
 - Every Vercel browser app workflow runs
   `bun run --silent scripts/ci/generate-build-metadata.ts` before
   `vercel build`. The generated metadata includes the commit hash, short hash,
@@ -90,12 +94,13 @@ This page explains how Tuturuuu moves from code to running environments.
 `supabase-production.yaml` is stricter than staging:
 
 1. It re-evaluates automatically after either `Vercel Platform Production
-Deployment` completes its build validation on `production` or
+Deployment` completes its production deploy on `production` or
    `Supabase Staging Migration` completes on `main`.
-2. The production platform build validation for the target commit must have
-   concluded successfully on `production` and recorded the successful
-   `vercel-production-platform` build marker for the same SHA. A workflow run
-   that skipped because package releases were still publishing is not enough.
+2. The production platform deployment for the target commit must have concluded
+   successfully on `production` and recorded the successful
+   `vercel-production-platform` deployment marker for the same SHA. A workflow
+   run that skipped because package releases were still publishing is not
+   enough.
 3. The `main` staging migration for the same target commit must have completed
    with a `success` conclusion.
 4. A manual dispatch can still be used when an operator explicitly wants to run
@@ -103,10 +108,10 @@ Deployment` completes its build validation on `production` or
    the same production-deployment and staging-migration SHA checks.
 
 The staging-triggered path is an automatic retry for the case where production
-build validation finishes before staging migration does. The production
+production deploy finishes before staging migration does. The production
 migration job still checks out the verified target commit explicitly before
 running `supabase db push --include-all`. This keeps production schema changes
-behind application build validation, staging validation, and branch promotion
+behind application deployment, staging validation, and branch promotion
 for the same commit.
 
 ## Self-Hosted Web Release Flow
@@ -120,13 +125,41 @@ the checked-out commit:
 Blue/green is the safer path when uptime matters because the new image is built and
 health-checked before the proxy is reloaded.
 
+## Migration Release Path (TanStack + Rust)
+
+`apps/web` (Next.js, port `7803`) is being replaced by `apps/tanstack-web`
+(TanStack Start) plus `apps/backend` (the Rust HTTP core, port `7820`). See
+[the TanStack/Rust migration overview](/platform/architecture/tanstack-rust-migration)
+for the full plan.
+
+While that migration is incomplete, Docker blue/green remains the canonical
+production rollout and rollback mechanism for the live hostname. Cloudflare
+Workers are used as a separate, incremental **preview** surface to prove Worker
+compatibility for `apps/tanstack-web` and `apps/backend` before any cutover:
+
+- Validate the Wrangler deploy configs without contacting Cloudflare with
+  `bun check:cloudflare`.
+- Deploy the Rust backend Worker (`apps/backend/wrangler.jsonc`) and the
+  TanStack Start Worker (`apps/tanstack-web/wrangler.jsonc`) to preview, then
+  smoke both returned origins with `bun smoke:cloudflare`.
+- Do not route the production hostname to preview Workers until the
+  TanStack/Rust route manifest, compare-mode Docker E2E, benchmark report, and
+  cutover gates (`bun migration:tanstack:gates`) all pass.
+- Rollback from the preview path is DNS/routing-based (remove the Cloudflare
+  route or roll back the Worker version); the Docker blue/green `apps/web` stack
+  keeps serving the canonical hostname throughout.
+
+The full Cloudflare preview, secret-bootstrap, smoke, and cutover-gate runbook
+lives in
+[Web Docker Deployment → Cloudflare Preview Path](/build/devops/web-docker-deployment).
+
 ## Team Release Checklist
 
 1. Merge the change set with green CI.
 2. If Docker behavior changed, make sure `docker-setup-check.yaml` is green.
 3. If database migrations changed, confirm the `main`-driven staging path first.
 4. Promote to `production` only after preview and staging behavior is understood.
-5. Confirm the follow-up Supabase workflow after production build validation.
+5. Confirm the follow-up Supabase workflow after production deployment.
 6. For self-hosted rollout, deploy from the intended commit and prefer `bun serve:web:docker:bg`.
 
 ## Rollback Guidance
@@ -142,5 +175,6 @@ health-checked before the proxy is reloaded.
 - Do not manually dispatch production Supabase migration from `main`; the only
   valid `main` path is the automatic staging-migration re-evaluation, and the
   production gate still requires the same commit to have both a successful
-  production platform build and a completed successful `main` staging migration.
+  production platform deployment and a completed successful `main` staging
+  migration.
 - Do not use the in-place Docker path when you specifically need rebuild-before-restart semantics.

@@ -31,12 +31,43 @@ export * from './reputation';
 export * from './types';
 export * from './user-agent';
 
-// In-memory fallback store
-const memoryStore = new Map<string, { count: number; expiresAt: number }>();
+const SHARED_IP_THROTTLE_ONLY_BLOCK_REASONS = new Set<AbuseEventType>([
+  'otp_send',
+  'otp_verify_failed',
+  'mfa_verify_failed',
+  'reauth_verify_failed',
+  'password_login_failed',
+]);
+
+export function isSharedIpThrottleOnlyBlockReason(reason: AbuseEventType) {
+  return SHARED_IP_THROTTLE_ONLY_BLOCK_REASONS.has(reason);
+}
 
 // Redis client singleton (lazy initialized)
 let redisClient: RedisClient | null = null;
 let redisInitialized = false;
+
+function markRedisUnavailable(message: string, ...details: unknown[]): void {
+  if (details.length > 0) {
+    console.warn(message, ...details);
+  } else {
+    console.warn(message);
+  }
+
+  redisClient = null;
+  redisInitialized = true;
+}
+
+function markRedisCommandFailed(message: string, ...details: unknown[]): void {
+  if (details.length > 0) {
+    console.warn(message, ...details);
+  } else {
+    console.warn(message);
+  }
+
+  redisClient = null;
+  redisInitialized = false;
+}
 
 function parsePositiveIntEnv(name: string, fallback: number): number {
   const rawValue = process.env[name];
@@ -73,19 +104,22 @@ async function getRedisClient(): Promise<RedisClient | null> {
 
   try {
     if (!hasUpstashRestEnv()) {
-      console.warn(
-        '[Abuse Protection] Redis not configured - falling back to memory'
+      markRedisUnavailable(
+        '[Abuse Protection] Redis not configured - failing open'
       );
-      redisInitialized = true;
       return null;
     }
 
     redisClient = await getUpstashRestRedisClient();
+    if (!redisClient) {
+      markRedisUnavailable(
+        '[Abuse Protection] Redis client unavailable - failing open'
+      );
+    }
     redisInitialized = true;
     return redisClient;
   } catch (error) {
-    console.warn('[Abuse Protection] Redis unavailable:', error);
-    redisInitialized = true;
+    markRedisUnavailable('[Abuse Protection] Redis unavailable:', error);
     return null;
   }
 }
@@ -179,121 +213,70 @@ function createAbuseLogContext(
 }
 
 /**
- * Increment a counter in Redis or memory with automatic expiration
+ * Increment a Redis counter with automatic expiration.
+ * Fails open when Redis is unavailable so abuse protection never becomes an
+ * app availability dependency.
  */
 async function incrementCounter(
   key: string,
   windowMs: number
 ): Promise<{ count: number; ttl: number }> {
   const redis = await getRedisClient();
+  const neutral = { count: 0, ttl: Math.ceil(windowMs / 1000) };
 
-  if (redis) {
-    try {
-      const count = await redis.incr(key);
-      if (count === 1) {
-        await redis.expire(key, Math.ceil(windowMs / 1000));
-      }
-      const ttl = await redis.ttl(key);
-      return { count, ttl: ttl > 0 ? ttl : Math.ceil(windowMs / 1000) };
-    } catch (error) {
-      console.error('[Abuse Protection] Redis error:', error);
-      // Fall through to memory
+  if (!redis) {
+    return neutral;
+  }
+
+  try {
+    const count = await redis.incr(key);
+    if (count === 1) {
+      await redis.expire(key, Math.ceil(windowMs / 1000));
     }
+    const ttl = await redis.ttl(key);
+    return { count, ttl: ttl > 0 ? ttl : Math.ceil(windowMs / 1000) };
+  } catch (error) {
+    markRedisCommandFailed('[Abuse Protection] Redis counter error:', error);
+    return neutral;
   }
-
-  // Memory fallback
-  const now = Date.now();
-  const existing = memoryStore.get(key);
-
-  if (!existing || now > existing.expiresAt) {
-    memoryStore.set(key, { count: 1, expiresAt: now + windowMs });
-    return { count: 1, ttl: Math.ceil(windowMs / 1000) };
-  }
-
-  existing.count++;
-  return {
-    count: existing.count,
-    ttl: Math.ceil((existing.expiresAt - now) / 1000),
-  };
 }
 
 /**
- * Get counter value from Redis or memory
+ * Get a counter value from Redis.
  */
 async function getCounter(key: string): Promise<number> {
   const redis = await getRedisClient();
 
-  if (redis) {
-    try {
-      const count = await redis.get<number>(key);
-      return count || 0;
-    } catch {
-      // Fall through to memory
-    }
-  }
-
-  const existing = memoryStore.get(key);
-  if (!existing || Date.now() > existing.expiresAt) {
+  if (!redis) {
     return 0;
   }
-  return existing.count;
-}
 
-async function getCounterWithTTL(
-  key: string
-): Promise<{ count: number; ttl: number }> {
-  const redis = await getRedisClient();
-
-  if (redis) {
-    try {
-      const [count, ttl] = await Promise.all([
-        redis.get<number>(key),
-        redis.ttl(key),
-      ]);
-
-      return {
-        count: count || 0,
-        ttl: ttl > 0 ? ttl : 0,
-      };
-    } catch {
-      // Fall through to memory
-    }
+  try {
+    const count = await redis.get<number>(key);
+    return count || 0;
+  } catch (error) {
+    markRedisCommandFailed(
+      '[Abuse Protection] Redis counter read error:',
+      error
+    );
+    return 0;
   }
-
-  const existing = memoryStore.get(key);
-  if (!existing) {
-    return { count: 0, ttl: 0 };
-  }
-
-  const now = Date.now();
-  if (now > existing.expiresAt) {
-    memoryStore.delete(key);
-    return { count: 0, ttl: 0 };
-  }
-
-  return {
-    count: existing.count,
-    ttl: Math.ceil((existing.expiresAt - now) / 1000),
-  };
 }
 
 /**
- * Delete keys from Redis or memory
+ * Delete Redis keys when Redis is available.
  */
 async function deleteKeys(...keys: string[]): Promise<void> {
   const redis = await getRedisClient();
 
-  if (redis) {
-    try {
-      await redis.del(...keys);
-      return;
-    } catch {
-      // Fall through to memory
-    }
+  if (!redis) {
+    return;
   }
 
-  for (const key of keys) {
-    memoryStore.delete(key);
+  try {
+    await redis.del(...keys);
+  } catch (error) {
+    markRedisCommandFailed('[Abuse Protection] Redis delete error:', error);
   }
 }
 
@@ -304,23 +287,17 @@ async function deleteKeysWithCount(...keys: string[]): Promise<number> {
 
   const redis = await getRedisClient();
 
-  if (redis) {
-    try {
-      const deleted = await redis.del(...keys);
-      return typeof deleted === 'number' ? deleted : 0;
-    } catch {
-      // Fall through to memory
-    }
+  if (!redis) {
+    return 0;
   }
 
-  let deleted = 0;
-  for (const key of keys) {
-    if (memoryStore.delete(key)) {
-      deleted++;
-    }
+  try {
+    const deleted = await redis.del(...keys);
+    return typeof deleted === 'number' ? deleted : 0;
+  } catch (error) {
+    markRedisCommandFailed('[Abuse Protection] Redis delete error:', error);
+    return 0;
   }
-
-  return deleted;
 }
 
 /**
@@ -350,30 +327,33 @@ export async function isIPBlocked(
 ): Promise<BlockInfo | null> {
   const redis = await getRedisClient();
 
+  if (!redis) {
+    return null;
+  }
+
   // Check Redis cache first
-  if (redis) {
-    try {
-      const cached = await redis.get<string>(REDIS_KEYS.IP_BLOCKED(ipAddress));
-      if (cached) {
-        const blockInfo =
-          typeof cached === 'string' ? JSON.parse(cached) : cached;
-        if (new Date(blockInfo.expiresAt) > new Date()) {
-          return {
-            id: blockInfo.id,
-            blockLevel: blockInfo.level,
-            reason: blockInfo.reason,
-            expiresAt: new Date(blockInfo.expiresAt),
-            blockedAt: new Date(blockInfo.blockedAt),
-          };
-        }
+  try {
+    const cached = await redis.get<string>(REDIS_KEYS.IP_BLOCKED(ipAddress));
+    if (cached) {
+      const blockInfo =
+        typeof cached === 'string' ? JSON.parse(cached) : cached;
+      if (new Date(blockInfo.expiresAt) > new Date()) {
+        return {
+          id: blockInfo.id,
+          blockLevel: blockInfo.level,
+          reason: blockInfo.reason,
+          expiresAt: new Date(blockInfo.expiresAt),
+          blockedAt: new Date(blockInfo.blockedAt),
+        };
       }
-    } catch (error) {
-      console.error(
-        '[Abuse Protection] Redis cache error:',
-        error,
-        createAbuseLogContext(ipAddress, context)
-      );
     }
+  } catch (error) {
+    markRedisCommandFailed(
+      '[Abuse Protection] Redis cache error:',
+      error,
+      createAbuseLogContext(ipAddress, context)
+    );
+    return null;
   }
 
   // Check database
@@ -402,21 +382,29 @@ export async function isIPBlocked(
     };
 
     // Cache in Redis
-    if (redis && blockInfo.expiresAt > new Date()) {
+    if (blockInfo.expiresAt > new Date()) {
       const ttl = Math.ceil(
         (blockInfo.expiresAt.getTime() - Date.now()) / 1000
       );
-      await redis.set(
-        REDIS_KEYS.IP_BLOCKED(ipAddress),
-        JSON.stringify({
-          id: blockInfo.id,
-          level: blockInfo.blockLevel,
-          reason: blockInfo.reason,
-          expiresAt: blockInfo.expiresAt.toISOString(),
-          blockedAt: blockInfo.blockedAt.toISOString(),
-        }),
-        { ex: ttl }
-      );
+      try {
+        await redis.set(
+          REDIS_KEYS.IP_BLOCKED(ipAddress),
+          JSON.stringify({
+            id: blockInfo.id,
+            level: blockInfo.blockLevel,
+            reason: blockInfo.reason,
+            expiresAt: blockInfo.expiresAt.toISOString(),
+            blockedAt: blockInfo.blockedAt.toISOString(),
+          }),
+          { ex: ttl }
+        );
+      } catch (error) {
+        markRedisCommandFailed(
+          '[Abuse Protection] Redis cache set error:',
+          error
+        );
+        return null;
+      }
     }
 
     return blockInfo;
@@ -434,32 +422,30 @@ export async function blockIP(
   reason: AbuseEventType,
   metadata?: Record<string, unknown>
 ): Promise<void> {
+  if (isSharedIpThrottleOnlyBlockReason(reason)) {
+    return;
+  }
+
   try {
+    const redis = await getRedisClient();
+    if (!redis) return;
+
     const sbAdmin = await getSupabaseAdmin();
     if (!sbAdmin) return;
 
-    const redis = await getRedisClient();
-
     // Get current block level
     let currentLevel = 0;
-    if (redis) {
-      try {
-        const level = await redis.get<number>(
-          REDIS_KEYS.IP_BLOCK_LEVEL(ipAddress)
-        );
-        currentLevel = level || 0;
-      } catch {
-        // Check DB fallback
-        const { data } = await sbAdmin.rpc('get_ip_block_level', {
-          p_ip_address: ipAddress,
-        });
-        currentLevel = (data as number) || 0;
-      }
-    } else {
-      const { data } = await sbAdmin.rpc('get_ip_block_level', {
-        p_ip_address: ipAddress,
-      });
-      currentLevel = (data as number) || 0;
+    try {
+      const level = await redis.get<number>(
+        REDIS_KEYS.IP_BLOCK_LEVEL(ipAddress)
+      );
+      currentLevel = level || 0;
+    } catch (error) {
+      markRedisCommandFailed(
+        '[Abuse Protection] Redis block-level error:',
+        error
+      );
+      return;
     }
 
     // Calculate new block level (max 4)
@@ -492,7 +478,7 @@ export async function blockIP(
     }
 
     // Update Redis cache
-    if (redis) {
+    try {
       await Promise.all([
         redis.set(
           REDIS_KEYS.IP_BLOCKED(ipAddress),
@@ -509,6 +495,11 @@ export async function blockIP(
           ex: WINDOW_MS.TWENTY_FOUR_HOURS / 1000,
         }),
       ]);
+    } catch (error) {
+      markRedisCommandFailed(
+        '[Abuse Protection] Redis block cache error:',
+        error
+      );
     }
 
     console.log(
@@ -902,7 +893,10 @@ export async function resetOtpLimitsForEmail({
 }
 
 /**
- * Check and track OTP send attempts
+ * Check and reserve OTP send attempts.
+ *
+ * Accepted sends consume quota before provider delivery to prevent parallel
+ * requests from all observing the same pre-send counter state.
  */
 export async function checkOTPSendAllowed(
   ipAddress: string,
@@ -928,24 +922,21 @@ export async function checkOTPSendAllowed(
   const dailyKey = REDIS_KEYS.OTP_SEND_DAILY(ipAddress);
 
   const [minuteState, hourlyState, dailyState] = await Promise.all([
-    getCounterWithTTL(minuteKey),
-    getCounterWithTTL(hourlyKey),
-    getCounterWithTTL(dailyKey),
+    incrementCounter(minuteKey, WINDOW_MS.ONE_MINUTE),
+    incrementCounter(hourlyKey, WINDOW_MS.ONE_HOUR),
+    incrementCounter(dailyKey, WINDOW_MS.TWENTY_FOUR_HOURS),
   ]);
   const ipLimits = getOTPSendIpLimits();
 
-  if (minuteState.count >= ipLimits.perMinute) {
-    // Log and potentially block
+  if (minuteState.count > ipLimits.perMinute) {
     void logAbuseEvent(ipAddress, 'otp_send', {
       email,
       success: false,
-      metadata: { trigger: 'minute_limit' },
+      metadata: {
+        trigger: 'minute_limit',
+        hard_block_suppressed: minuteState.count >= ipLimits.perMinute * 2,
+      },
     });
-
-    if (minuteState.count >= ipLimits.perMinute * 2) {
-      // Aggressive abuse - block IP
-      void blockIP(ipAddress, 'otp_send', { trigger: 'rate_limit_exceeded' });
-    }
 
     return {
       allowed: false,
@@ -955,14 +946,15 @@ export async function checkOTPSendAllowed(
     };
   }
 
-  if (hourlyState.count >= ipLimits.perHour) {
+  if (hourlyState.count > ipLimits.perHour) {
     void logAbuseEvent(ipAddress, 'otp_send', {
       email,
       success: false,
-      metadata: { trigger: 'hourly_rate_limit' },
+      metadata: {
+        trigger: 'hourly_rate_limit',
+        hard_block_suppressed: true,
+      },
     });
-
-    void blockIP(ipAddress, 'otp_send', { trigger: 'hourly_rate_limit' });
 
     return {
       allowed: false,
@@ -972,13 +964,15 @@ export async function checkOTPSendAllowed(
     };
   }
 
-  if (dailyState.count >= ipLimits.perDay) {
+  if (dailyState.count > ipLimits.perDay) {
     void logAbuseEvent(ipAddress, 'otp_send', {
       email,
       success: false,
-      metadata: { trigger: 'ip_daily_limit' },
+      metadata: {
+        trigger: 'ip_daily_limit',
+        hard_block_suppressed: true,
+      },
     });
-    void blockIP(ipAddress, 'otp_send', { trigger: 'ip_daily_limit' });
 
     return {
       allowed: false,
@@ -995,14 +989,11 @@ export async function checkOTPSendAllowed(
     const hourlyEmailKey = REDIS_KEYS.OTP_SEND_EMAIL_HOURLY(emailHash);
     const dailyEmailKey = REDIS_KEYS.OTP_SEND_EMAIL_DAILY(emailHash);
 
-    const [cooldownState, hourlyEmailState, dailyEmailState] =
-      await Promise.all([
-        getCounterWithTTL(cooldownKey),
-        getCounterWithTTL(hourlyEmailKey),
-        getCounterWithTTL(dailyEmailKey),
-      ]);
-
-    if (cooldownState.count >= 1) {
+    const cooldownState = await incrementCounter(
+      cooldownKey,
+      ABUSE_THRESHOLDS.OTP_SEND_EMAIL_COOLDOWN_WINDOW_MS
+    );
+    if (cooldownState.count > 1) {
       void logAbuseEvent(ipAddress, 'otp_send', {
         email,
         success: false,
@@ -1017,7 +1008,12 @@ export async function checkOTPSendAllowed(
       };
     }
 
-    if (hourlyEmailState.count >= ABUSE_THRESHOLDS.OTP_SEND_EMAIL_PER_HOUR) {
+    const [hourlyEmailState, dailyEmailState] = await Promise.all([
+      incrementCounter(hourlyEmailKey, WINDOW_MS.ONE_HOUR),
+      incrementCounter(dailyEmailKey, WINDOW_MS.TWENTY_FOUR_HOURS),
+    ]);
+
+    if (hourlyEmailState.count > ABUSE_THRESHOLDS.OTP_SEND_EMAIL_PER_HOUR) {
       void logAbuseEvent(ipAddress, 'otp_send', {
         email,
         success: false,
@@ -1032,7 +1028,7 @@ export async function checkOTPSendAllowed(
       };
     }
 
-    if (dailyEmailState.count >= ABUSE_THRESHOLDS.OTP_SEND_EMAIL_PER_DAY) {
+    if (dailyEmailState.count > ABUSE_THRESHOLDS.OTP_SEND_EMAIL_PER_DAY) {
       void logAbuseEvent(ipAddress, 'otp_send', {
         email,
         success: false,
@@ -1050,10 +1046,7 @@ export async function checkOTPSendAllowed(
 
   return {
     allowed: true,
-    remainingAttempts: Math.max(
-      0,
-      ipLimits.perMinute - (minuteState.count + 1)
-    ),
+    remainingAttempts: Math.max(0, ipLimits.perMinute - minuteState.count),
   };
 }
 
@@ -1061,31 +1054,6 @@ export async function recordOTPSendSuccess(
   ipAddress: string,
   email?: string
 ): Promise<void> {
-  await Promise.all([
-    incrementCounter(REDIS_KEYS.OTP_SEND(ipAddress), WINDOW_MS.ONE_MINUTE),
-    incrementCounter(REDIS_KEYS.OTP_SEND_HOURLY(ipAddress), WINDOW_MS.ONE_HOUR),
-    incrementCounter(
-      REDIS_KEYS.OTP_SEND_DAILY(ipAddress),
-      WINDOW_MS.TWENTY_FOUR_HOURS
-    ),
-    ...(email
-      ? [
-          incrementCounter(
-            REDIS_KEYS.OTP_SEND_EMAIL_COOLDOWN(hashEmail(email)),
-            ABUSE_THRESHOLDS.OTP_SEND_EMAIL_COOLDOWN_WINDOW_MS
-          ),
-          incrementCounter(
-            REDIS_KEYS.OTP_SEND_EMAIL_HOURLY(hashEmail(email)),
-            WINDOW_MS.ONE_HOUR
-          ),
-          incrementCounter(
-            REDIS_KEYS.OTP_SEND_EMAIL_DAILY(hashEmail(email)),
-            WINDOW_MS.TWENTY_FOUR_HOURS
-          ),
-        ]
-      : []),
-  ]);
-
   void logAbuseEvent(ipAddress, 'otp_send', { email, success: true });
 }
 
@@ -1175,16 +1143,35 @@ export async function recordOTPVerifyFailure(
     ),
   ]);
 
-  // Log the failure
-  void logAbuseEvent(ipAddress, 'otp_verify_failed', { email, success: false });
+  void logAbuseEvent(ipAddress, 'otp_verify_failed', {
+    email,
+    success: false,
+    metadata: createHumanAuthRateLimitMetadata(
+      ipCount,
+      ABUSE_THRESHOLDS.OTP_VERIFY_FAILED_MAX
+    ),
+  });
+}
 
-  // Block if threshold exceeded
-  if (ipCount >= ABUSE_THRESHOLDS.OTP_VERIFY_FAILED_MAX) {
-    void blockIP(ipAddress, 'otp_verify_failed', {
-      trigger: 'max_failures_exceeded',
-      failedCount: ipCount,
-    });
+/**
+ * Shared NATs can represent a whole classroom, university, or enterprise.
+ * Human-auth counters still throttle the noisy flow, but they must not write a
+ * global IP block that prevents unrelated people on the same public address
+ * from signing in.
+ */
+function createHumanAuthRateLimitMetadata(
+  failedCount: number,
+  maxFailures: number
+): Record<string, unknown> | undefined {
+  if (failedCount < maxFailures) {
+    return undefined;
   }
+
+  return {
+    trigger: 'max_failures_exceeded',
+    failedCount,
+    hard_block_suppressed: true,
+  };
 }
 
 /**
@@ -1282,14 +1269,13 @@ export async function recordMFAVerifyFailure(ipAddress: string): Promise<void> {
     ABUSE_THRESHOLDS.MFA_VERIFY_FAILED_WINDOW_MS
   );
 
-  void logAbuseEvent(ipAddress, 'mfa_verify_failed', { success: false });
-
-  if (count >= ABUSE_THRESHOLDS.MFA_VERIFY_FAILED_MAX) {
-    void blockIP(ipAddress, 'mfa_verify_failed', {
-      trigger: 'max_failures_exceeded',
-      failedCount: count,
-    });
-  }
+  void logAbuseEvent(ipAddress, 'mfa_verify_failed', {
+    success: false,
+    metadata: createHumanAuthRateLimitMetadata(
+      count,
+      ABUSE_THRESHOLDS.MFA_VERIFY_FAILED_MAX
+    ),
+  });
 }
 
 /**
@@ -1383,11 +1369,13 @@ export async function recordReauthVerifyFailure(
     ABUSE_THRESHOLDS.REAUTH_VERIFY_FAILED_WINDOW_MS
   );
 
-  void logAbuseEvent(ipAddress, 'reauth_verify_failed', { success: false });
-
-  if (count >= ABUSE_THRESHOLDS.REAUTH_VERIFY_FAILED_MAX) {
-    void blockIP(ipAddress, 'reauth_verify_failed');
-  }
+  void logAbuseEvent(ipAddress, 'reauth_verify_failed', {
+    success: false,
+    metadata: createHumanAuthRateLimitMetadata(
+      count,
+      ABUSE_THRESHOLDS.REAUTH_VERIFY_FAILED_MAX
+    ),
+  });
 }
 
 /**
@@ -1492,14 +1480,11 @@ export async function recordPasswordLoginFailure(
   void logAbuseEvent(ipAddress, 'password_login_failed', {
     email: normalizedEmail ?? undefined,
     success: false,
+    metadata: createHumanAuthRateLimitMetadata(
+      count,
+      ABUSE_THRESHOLDS.PASSWORD_LOGIN_FAILED_MAX
+    ),
   });
-
-  if (count >= ABUSE_THRESHOLDS.PASSWORD_LOGIN_FAILED_MAX) {
-    void blockIP(ipAddress, 'password_login_failed', {
-      trigger: 'max_failures_exceeded',
-      failedCount: count,
-    });
-  }
 }
 
 /**

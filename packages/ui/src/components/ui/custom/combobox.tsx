@@ -14,11 +14,13 @@ import {
   CommandSeparator,
 } from '../command';
 import { Popover, PopoverContent, PopoverTrigger } from '../popover';
+import { Tooltip, TooltipContent, TooltipTrigger } from '../tooltip';
 
 export type ComboboxOption = {
   value: string;
   label: string;
   searchValue?: string;
+  group?: string;
   description?: React.ReactNode;
   badge?: React.ReactNode;
   icon?: React.ReactNode;
@@ -41,6 +43,8 @@ export type ComboboxCreateResult = string | ComboboxOption | undefined;
 export type ComboboxOptions = ComboboxOption;
 
 type Mode = 'single' | 'multiple';
+type ComboboxContentWidth = 'trigger' | 'sm' | 'md' | 'lg' | 'auto';
+type ComboboxTriggerMode = 'default' | 'compact';
 
 interface ComboboxProps {
   /** Options to display in the combobox */
@@ -67,6 +71,26 @@ interface ComboboxProps {
   creatingText?: string;
   /** Override label shown on the trigger button */
   label?: React.ReactNode;
+  /** Accessible label for compact/icon-first triggers */
+  ariaLabel?: string;
+  /** Whether to render the selected option icon inside the trigger button */
+  showSelectedIcon?: boolean;
+  /** Icon rendered in the trigger instead of the selected option icon */
+  triggerIcon?: React.ReactNode;
+  /** Whether to render the chevron inside the trigger button */
+  showChevron?: boolean;
+  /** Trigger layout mode */
+  triggerMode?: ComboboxTriggerMode;
+  /** Hide the visible trigger label while preserving the accessible label */
+  hideTriggerLabel?: boolean;
+  /** Tooltip rendered for compact/icon-only triggers */
+  triggerTooltip?: React.ReactNode;
+  /** Whether selected option colors should be applied to the trigger icon/text */
+  colorizeTriggerIcon?: boolean;
+  /** Width preset for the popover content */
+  contentWidth?: ComboboxContentWidth;
+  /** Additional class name for the popover content */
+  contentClassName?: string;
   /** Additional class name for the container */
   className?: string;
   /** Whether the combobox is disabled */
@@ -77,6 +101,8 @@ interface ComboboxProps {
   onCreate?: (value: string) => unknown | Promise<unknown>;
   /** Callback when search input changes */
   onSearchChange?: (value: string) => void;
+  /** Callback when the popover opens or closes */
+  onOpenChange?: (open: boolean) => void;
   /** Whether there are more options to load */
   hasMore?: boolean;
   /** Callback when the options list scrolls near the end */
@@ -107,11 +133,22 @@ export function Combobox({
   createText,
   creatingText,
   label,
+  ariaLabel,
+  showSelectedIcon = true,
+  triggerIcon,
+  showChevron = true,
+  triggerMode = 'default',
+  hideTriggerLabel = false,
+  triggerTooltip,
+  colorizeTriggerIcon = true,
+  contentWidth = 'trigger',
+  contentClassName,
   className,
   disabled,
   useFirstValueAsDefault = false,
   onCreate,
   onSearchChange,
+  onOpenChange,
   hasMore = false,
   onLoadMore,
   loadingMore = false,
@@ -146,12 +183,41 @@ export function Combobox({
     );
   }, [normalizedQuery, options]);
   const canCreate = Boolean(onCreate && normalizedQuery && !hasExactQueryMatch);
+  const groupedOptions = React.useMemo(() => {
+    const groups = new Map<string, ComboboxOption[]>();
+    const ungrouped: ComboboxOption[] = [];
+
+    for (const option of options) {
+      if (!option.group) {
+        ungrouped.push(option);
+        continue;
+      }
+
+      groups.set(option.group, [...(groups.get(option.group) ?? []), option]);
+    }
+
+    return {
+      ungrouped,
+      groups: [...groups.entries()].map(([heading, groupOptions]) => ({
+        heading,
+        options: groupOptions,
+      })),
+    };
+  }, [options]);
 
   React.useEffect(() => {
     if (!open) {
       setQuery('');
     }
   }, [open]);
+
+  const handleOpenChange = React.useCallback(
+    (nextOpen: boolean) => {
+      setOpen(nextOpen);
+      onOpenChange?.(nextOpen);
+    },
+    [onOpenChange]
+  );
 
   const handleListScroll = React.useCallback(
     (event: React.UIEvent<HTMLDivElement>) => {
@@ -214,7 +280,7 @@ export function Combobox({
             disabled={action.disabled}
             onSelect={() => {
               action.onSelect();
-              setOpen(false);
+              handleOpenChange(false);
               setQuery('');
             }}
             className="font-medium text-primary [&_svg]:text-primary"
@@ -226,6 +292,96 @@ export function Combobox({
       </CommandGroup>
     );
   };
+
+  const renderOption = (option: ComboboxOption) => (
+    <CommandItem
+      key={option.value}
+      value={option.searchValue ?? option.label}
+      className={cn(option.muted && 'bg-muted/30')}
+      onSelect={() => {
+        if (onChange) {
+          if (mode === 'multiple' && Array.isArray(selected)) {
+            onChange(
+              selected.includes(option.value)
+                ? selected.filter((item) => item !== option.value)
+                : [...selected, option.value]
+            );
+          } else {
+            onChange(option.value);
+          }
+        }
+        if (mode === 'single') {
+          handleOpenChange(false);
+        }
+      }}
+    >
+      <span className="flex min-w-0 flex-1 items-center gap-2">
+        {option.icon && (
+          <span className="flex shrink-0 items-center justify-center">
+            {React.isValidElement(option.icon)
+              ? React.cloneElement(
+                  option.icon as React.ReactElement<{
+                    style?: React.CSSProperties;
+                  }>,
+                  {
+                    style: option.color
+                      ? {
+                          ...((
+                            option.icon as React.ReactElement<{
+                              style?: React.CSSProperties;
+                            }>
+                          ).props?.style || {}),
+                          color: option.color,
+                        }
+                      : (
+                          option.icon as React.ReactElement<{
+                            style?: React.CSSProperties;
+                          }>
+                        ).props?.style,
+                  }
+                )
+              : option.icon}
+          </span>
+        )}
+        <span className="min-w-0 flex-1">
+          <span className="flex min-w-0 items-start justify-between gap-2">
+            <span
+              className={cn(
+                'min-w-0 flex-1 whitespace-normal break-words',
+                option.muted && 'text-muted-foreground'
+              )}
+              style={option.color ? { color: option.color } : undefined}
+            >
+              {option.label}
+            </span>
+            {option.badge}
+          </span>
+          {option.description ? (
+            <span className="mt-0.5 block whitespace-normal break-words text-muted-foreground text-xs leading-snug">
+              {option.description}
+            </span>
+          ) : null}
+        </span>
+      </span>
+      <Check
+        className={cn(
+          'ml-auto shrink-0',
+          isSelected(option.value) ? 'opacity-100' : 'opacity-0'
+        )}
+      />
+    </CommandItem>
+  );
+
+  const contentWidthClass =
+    contentWidth === 'trigger'
+      ? 'w-(--radix-popover-trigger-width) min-w-[min(16rem,calc(100vw-2rem))]'
+      : contentWidth === 'sm'
+        ? 'w-64'
+        : contentWidth === 'md'
+          ? 'w-80'
+          : contentWidth === 'lg'
+            ? 'w-96'
+            : 'w-auto min-w-[min(16rem,calc(100vw-2rem))]';
 
   const commitCreatedValue = React.useCallback(
     (result: unknown) => {
@@ -264,7 +420,7 @@ export function Combobox({
     try {
       const result = await onCreate(trimmedQuery);
       commitCreatedValue(result);
-      setOpen(false);
+      handleOpenChange(false);
       setQuery('');
     } catch {
       // Keep the popover open so callers can surface their own error UI.
@@ -272,84 +428,117 @@ export function Combobox({
       createInFlightRef.current = false;
       setCreating(false);
     }
-  }, [commitCreatedValue, onCreate, trimmedQuery]);
+  }, [commitCreatedValue, handleOpenChange, onCreate, trimmedQuery]);
+
+  const triggerOptionIcon = triggerIcon ?? selectedOption?.icon;
+
+  const triggerButton = (
+    <Button
+      type="button"
+      variant="outline"
+      role="combobox"
+      aria-label={ariaLabel}
+      aria-expanded={open}
+      className={cn(
+        'min-w-0 overflow-hidden',
+        triggerMode === 'compact'
+          ? 'w-auto justify-center gap-1.5'
+          : 'w-full justify-between',
+        hideTriggerLabel && 'aspect-square px-0',
+        !selectedLabel && 'text-muted-foreground'
+      )}
+      disabled={disabled}
+    >
+      <span
+        className={cn(
+          'flex min-w-0 items-center gap-2',
+          !selectedLabel && 'text-muted-foreground'
+        )}
+      >
+        {showSelectedIcon && triggerOptionIcon && (
+          <span className="flex shrink-0 items-center justify-center">
+            {triggerIcon
+              ? triggerIcon
+              : React.isValidElement(triggerOptionIcon)
+                ? React.cloneElement(
+                    triggerOptionIcon as React.ReactElement<{
+                      style?: React.CSSProperties;
+                    }>,
+                    {
+                      style:
+                        colorizeTriggerIcon && selectedOption?.color
+                          ? {
+                              ...((
+                                triggerOptionIcon as React.ReactElement<{
+                                  style?: React.CSSProperties;
+                                }>
+                              ).props?.style || {}),
+                              color: selectedOption.color,
+                            }
+                          : (
+                              triggerOptionIcon as React.ReactElement<{
+                                style?: React.CSSProperties;
+                              }>
+                            ).props?.style,
+                    }
+                  )
+                : triggerOptionIcon}
+          </span>
+        )}
+        {hideTriggerLabel ? (
+          <span className="sr-only">{selectedLabel ?? placeholder}</span>
+        ) : (
+          <span className="min-w-0 flex-1 truncate text-left">
+            {label ? (
+              label
+            ) : (
+              <span className="flex min-w-0 items-center gap-2">
+                <span
+                  className={cn(
+                    'truncate',
+                    selectedOption?.muted && 'text-muted-foreground'
+                  )}
+                  style={
+                    colorizeTriggerIcon && selectedOption?.color
+                      ? { color: selectedOption.color }
+                      : undefined
+                  }
+                >
+                  {selectedLabel ?? placeholder}
+                </span>
+                {selectedOption?.badge}
+              </span>
+            )}
+          </span>
+        )}
+      </span>
+      {showChevron && (
+        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+      )}
+    </Button>
+  );
+
+  const trigger = triggerTooltip ? (
+    <Tooltip delayDuration={0}>
+      <TooltipTrigger asChild>
+        <PopoverTrigger asChild>{triggerButton}</PopoverTrigger>
+      </TooltipTrigger>
+      <TooltipContent>{triggerTooltip}</TooltipContent>
+    </Tooltip>
+  ) : (
+    <PopoverTrigger asChild>{triggerButton}</PopoverTrigger>
+  );
 
   return (
     <div className={cn('block min-w-0', className)}>
-      <Popover open={open} onOpenChange={setOpen} modal={true}>
-        <PopoverTrigger asChild>
-          <Button
-            type="button"
-            variant="outline"
-            role="combobox"
-            aria-expanded={open}
-            className={cn(
-              'w-full min-w-0 justify-between overflow-hidden',
-              !selectedLabel && 'text-muted-foreground'
-            )}
-            disabled={disabled}
-          >
-            <span
-              className={cn(
-                'flex min-w-0 items-center gap-2',
-                !selectedLabel && 'text-muted-foreground'
-              )}
-            >
-              {selectedOption?.icon && (
-                <span className="flex shrink-0 items-center justify-center">
-                  {React.isValidElement(selectedOption.icon)
-                    ? React.cloneElement(
-                        selectedOption.icon as React.ReactElement<{
-                          style?: React.CSSProperties;
-                        }>,
-                        {
-                          style: selectedOption.color
-                            ? {
-                                ...((
-                                  selectedOption.icon as React.ReactElement<{
-                                    style?: React.CSSProperties;
-                                  }>
-                                ).props?.style || {}),
-                                color: selectedOption.color,
-                              }
-                            : (
-                                selectedOption.icon as React.ReactElement<{
-                                  style?: React.CSSProperties;
-                                }>
-                              ).props?.style,
-                        }
-                      )
-                    : selectedOption.icon}
-                </span>
-              )}
-              <span className="min-w-0 flex-1 truncate text-left">
-                {label ? (
-                  label
-                ) : (
-                  <span className="flex min-w-0 items-center gap-2">
-                    <span
-                      className={cn(
-                        'truncate',
-                        selectedOption?.muted && 'text-muted-foreground'
-                      )}
-                      style={
-                        selectedOption?.color
-                          ? { color: selectedOption.color }
-                          : undefined
-                      }
-                    >
-                      {selectedLabel ?? placeholder}
-                    </span>
-                    {selectedOption?.badge}
-                  </span>
-                )}
-              </span>
-            </span>
-            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-          </Button>
-        </PopoverTrigger>
+      <Popover open={open} onOpenChange={handleOpenChange} modal={true}>
+        {trigger}
         <PopoverContent
-          className="z-9999 w-(--radix-popover-trigger-width) max-w-[calc(100vw-2rem)] p-0"
+          className={cn(
+            'z-9999 max-w-[calc(100vw-2rem)] p-0',
+            contentWidthClass,
+            contentClassName
+          )}
           align="start"
           sideOffset={4}
         >
@@ -411,88 +600,16 @@ export function Combobox({
                   <CommandSeparator />
                 </>
               ) : null}
-              <CommandGroup>
-                {options.map((option) => (
-                  <CommandItem
-                    key={option.value}
-                    value={option.searchValue ?? option.label}
-                    className={cn(option.muted && 'bg-muted/30')}
-                    onSelect={() => {
-                      if (onChange) {
-                        if (mode === 'multiple' && Array.isArray(selected)) {
-                          onChange(
-                            selected.includes(option.value)
-                              ? selected.filter((item) => item !== option.value)
-                              : [...selected, option.value]
-                          );
-                        } else {
-                          onChange(option.value);
-                        }
-                      }
-                      if (mode === 'single') {
-                        setOpen(false);
-                      }
-                    }}
-                  >
-                    <span className="flex min-w-0 flex-1 items-center gap-2">
-                      {option.icon && (
-                        <span className="flex shrink-0 items-center justify-center">
-                          {React.isValidElement(option.icon)
-                            ? React.cloneElement(
-                                option.icon as React.ReactElement<{
-                                  style?: React.CSSProperties;
-                                }>,
-                                {
-                                  style: option.color
-                                    ? {
-                                        ...((
-                                          option.icon as React.ReactElement<{
-                                            style?: React.CSSProperties;
-                                          }>
-                                        ).props?.style || {}),
-                                        color: option.color,
-                                      }
-                                    : (
-                                        option.icon as React.ReactElement<{
-                                          style?: React.CSSProperties;
-                                        }>
-                                      ).props?.style,
-                                }
-                              )
-                            : option.icon}
-                        </span>
-                      )}
-                      <span className="min-w-0 flex-1">
-                        <span className="flex min-w-0 items-start justify-between gap-2">
-                          <span
-                            className={cn(
-                              'truncate',
-                              option.muted && 'text-muted-foreground'
-                            )}
-                            style={
-                              option.color ? { color: option.color } : undefined
-                            }
-                          >
-                            {option.label}
-                          </span>
-                          {option.badge}
-                        </span>
-                        {option.description ? (
-                          <span className="mt-0.5 block truncate text-muted-foreground text-xs">
-                            {option.description}
-                          </span>
-                        ) : null}
-                      </span>
-                    </span>
-                    <Check
-                      className={cn(
-                        'ml-auto shrink-0',
-                        isSelected(option.value) ? 'opacity-100' : 'opacity-0'
-                      )}
-                    />
-                  </CommandItem>
-                ))}
-              </CommandGroup>
+              {groupedOptions.ungrouped.length ? (
+                <CommandGroup>
+                  {groupedOptions.ungrouped.map(renderOption)}
+                </CommandGroup>
+              ) : null}
+              {groupedOptions.groups.map((group) => (
+                <CommandGroup heading={group.heading} key={group.heading}>
+                  {group.options.map(renderOption)}
+                </CommandGroup>
+              ))}
               {actionsPosition === 'bottom' && actions?.length ? (
                 <>
                   <CommandSeparator />

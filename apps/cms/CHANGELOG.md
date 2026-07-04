@@ -1,5 +1,63 @@
 # Changelog
 
+## [0.12.1](https://github.com/tutur3u/platform/compare/cms-v0.12.0...cms-v0.12.1) (2026-07-03)
+
+
+### Bug Fixes
+
+* **build:** restore repo check ([4def830](https://github.com/tutur3u/platform/commit/4def830f463ea8a9c31af8e982eab716e9bd5f72))
+
+## [0.12.0](https://github.com/tutur3u/platform/compare/cms-v0.11.0...cms-v0.12.0) (2026-06-29)
+
+
+### Features
+
+* **tasks:** add task templates ([8d0700a](https://github.com/tutur3u/platform/commit/8d0700ad255c7b5874bfa065575df6b1cde34063))
+
+
+### Bug Fixes
+
+* **tasks:** restore tracked task descriptions ([f892ae2](https://github.com/tutur3u/platform/commit/f892ae23dfec41c2d25649b97a628d8cdcd1fa5d))
+
+## [0.11.0](https://github.com/tutur3u/platform/compare/cms-v0.10.0...cms-v0.11.0) (2026-06-26)
+
+
+### Features
+
+* **cms:** integrate exocorpse external project ([c07081b](https://github.com/tutur3u/platform/commit/c07081b0bd98379eac97c3258b483ad8e39c9b39))
+
+
+### Bug Fixes
+
+* **tasks:** improve shared board collaboration ([fa4ca4d](https://github.com/tutur3u/platform/commit/fa4ca4d412c8f8f533ab87639b314fefc70f9107))
+
+## [0.10.0](https://github.com/tutur3u/platform/compare/cms-v0.9.0...cms-v0.10.0) (2026-06-24)
+
+
+### Features
+
+* **tasks:** add shareable kanban task plans ([2de4e58](https://github.com/tutur3u/platform/commit/2de4e5819673e11b01cdc1f21c317f33dc196f56))
+* **tasks:** consolidate board task settings ([b1d720a](https://github.com/tutur3u/platform/commit/b1d720ac865406d6dd0b2477c5ba04e336de9929))
+
+
+### Bug Fixes
+
+* **ci:** support ts7 native next builds ([b0af764](https://github.com/tutur3u/platform/commit/b0af7640d3035f64301d154f86b080824885e121))
+* **i18n:** add calendar sync status key ([0c0f503](https://github.com/tutur3u/platform/commit/0c0f503af9413925f2de8f90b2f335d36b5de4fd))
+* **i18n:** sync task planner keys ([fea50fd](https://github.com/tutur3u/platform/commit/fea50fddfb3019d9dfeeb834ec5444f2dbe01554))
+
+## [0.9.0](https://github.com/tutur3u/platform/compare/cms-v0.8.0...cms-v0.9.0) (2026-06-17)
+
+
+### Features
+
+* **web:** consolidate workspace roles into members and redesign access UI ([4a16407](https://github.com/tutur3u/platform/commit/4a164070e1fe020a834ce4fe77ff4ae371e4e366))
+
+
+### Bug Fixes
+
+* **cms:** enforce commerce domain permissions ([b8bd090](https://github.com/tutur3u/platform/commit/b8bd09003fb0ee4ab89611112aac61744af57345))
+
 ## [0.8.0](https://github.com/tutur3u/platform/compare/cms-v0.7.0...cms-v0.8.0) (2026-06-15)
 
 

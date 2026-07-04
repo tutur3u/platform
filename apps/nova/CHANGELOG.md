@@ -1,5 +1,46 @@
 # Changelog
 
+## [0.20.1](https://github.com/tutur3u/platform/compare/nova-v0.20.0...nova-v0.20.1) (2026-07-03)
+
+
+### Bug Fixes
+
+* **build:** restore repo check ([4def830](https://github.com/tutur3u/platform/commit/4def830f463ea8a9c31af8e982eab716e9bd5f72))
+
+## [0.20.0](https://github.com/tutur3u/platform/compare/nova-v0.19.0...nova-v0.20.0) (2026-06-29)
+
+
+### Features
+
+* **tasks:** add task templates ([8d0700a](https://github.com/tutur3u/platform/commit/8d0700ad255c7b5874bfa065575df6b1cde34063))
+
+
+### Bug Fixes
+
+* **tasks:** restore tracked task descriptions ([f892ae2](https://github.com/tutur3u/platform/commit/f892ae23dfec41c2d25649b97a628d8cdcd1fa5d))
+
+## [0.19.0](https://github.com/tutur3u/platform/compare/nova-v0.18.3...nova-v0.19.0) (2026-06-24)
+
+
+### Features
+
+* **tasks:** add shareable kanban task plans ([2de4e58](https://github.com/tutur3u/platform/commit/2de4e5819673e11b01cdc1f21c317f33dc196f56))
+
+
+### Bug Fixes
+
+* **ci:** support ts7 native next builds ([b0af764](https://github.com/tutur3u/platform/commit/b0af7640d3035f64301d154f86b080824885e121))
+* **i18n:** sync task planner keys ([fea50fd](https://github.com/tutur3u/platform/commit/fea50fddfb3019d9dfeeb834ec5444f2dbe01554))
+* **tasks:** polish board activity and history diffs ([cdc1c2c](https://github.com/tutur3u/platform/commit/cdc1c2cbdcc283ee30e959435b70f03e84b999de))
+
+## [0.18.3](https://github.com/tutur3u/platform/compare/nova-v0.18.2...nova-v0.18.3) (2026-06-17)
+
+
+### Bug Fixes
+
+* **deps:** keep lodash on latest reviewed artifact ([19909b3](https://github.com/tutur3u/platform/commit/19909b334581d3b58cdcd19e9b2fde553f7ad60a))
+* **deps:** pin reviewed lodash artifact ([dfcf585](https://github.com/tutur3u/platform/commit/dfcf585fab9cc0b425cac5d60c5bccc997340be5))
+
 ## [0.18.2](https://github.com/tutur3u/platform/compare/nova-v0.18.1...nova-v0.18.2) (2026-06-13)
 
 

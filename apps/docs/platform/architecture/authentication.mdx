@@ -1,9 +1,19 @@
 ---
 title: "Authentication Patterns"
 description: "Authentication implementation patterns in the Tuturuuu platform"
+updatedAt: "2026-06-28"
 ---
 
 The Tuturuuu platform uses Supabase Auth for user authentication with support for email/password, OAuth providers, multi-factor authentication (MFA), and cross-app token authentication.
+
+<Note>
+  The server helpers in `@tuturuuu/supabase/next/server` resolve cookies (and an
+  optional `request` argument) asynchronously, so `createClient()` and
+  `createDynamicClient()` are **async** and must be awaited. `createAdminClient()`
+  is synchronous, but its return type allows awaiting, so existing call sites that
+  `await createAdminClient()` still work — never `await createClient()` results
+  without the keyword.
+</Note>
 
 ## Authentication Flow
 
@@ -63,7 +73,7 @@ import { createClient } from "@tuturuuu/supabase/next/server";
 import { redirect } from "next/navigation";
 
 export async function signUp(formData: FormData) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const email = formData.get("email") as string;
   const password = formData.get("password") as string;
@@ -129,7 +139,7 @@ import { createClient } from "@tuturuuu/supabase/next/server";
 import { redirect } from "next/navigation";
 
 export async function signIn(formData: FormData) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const email = formData.get("email") as string;
   const password = formData.get("password") as string;
@@ -155,7 +165,7 @@ export async function signIn(formData: FormData) {
 import { createClient } from "@tuturuuu/supabase/next/server";
 
 export async function signInWithOAuth(provider: "google" | "github") {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider,
@@ -209,6 +219,49 @@ workspace, do not let the cookie value be the sole authority: use a signed,
 expiry-bound state payload that also binds the workspace or account being
 connected, then require the callback cookie and query `state` to match before
 verifying that payload.
+
+### Email-Based Auth Recovery
+
+Infrastructure admins can use **Infrastructure > Auth Recovery** when a
+manually reviewed user cannot complete normal OTP or password sign-in because of
+email-scoped infrastructure blocks, stale Supabase bans, or OTP counters.
+
+The support flow is:
+
+1. Search the email on the Auth Recovery page and inspect diagnostics.
+2. Create a recovery override with a support reason. Overrides default to 7 days.
+3. Keep both **normal login** and **recovery email** enabled unless the case
+   needs only one path.
+4. Use **Send recovery email**. The platform sends the email; admins should not
+   copy tokens or links manually.
+5. The user can click the recovery link or enter the 6-digit code on
+   `/auth/recovery`. Recovery credentials expire after 15 minutes and are
+   single-use.
+6. Revoke the override once the user has recovered access or the case no longer
+   needs support access.
+
+Normal-login overrides bypass only email-scoped infrastructure and OTP/password
+rate-limit blocks. They still enforce malformed request validation, suspicious
+user-agent checks, Turnstile, password correctness, MFA, and active IP blocks
+unless an admin separately clears those IP blocks. When a valid override is used,
+the service also attempts to clear the Supabase auth ban and confirm the email.
+
+Recovery-email sign-in stores token and code hashes in private schema tables and
+audits sends, consumes, rejects, creates, revokes, and Supabase unban/create
+attempts. The recovery session is created with the existing admin
+`generateLink` plus detached `verifyOtp` pattern, then normal auth cookies are
+set. Redirects are limited to sanitized app paths.
+
+Database objects live in:
+
+- `private.auth_recovery_overrides`
+- `private.auth_recovery_tokens`
+- `private.auth_recovery_events`
+
+Use `AUTH_RECOVERY_HASH_SECRET` in production when available. The code falls
+back to existing Supabase server secrets for local development, but do not expose
+those values to clients or support tooling. Do not run `bun sb:push` for this
+change; apply migrations through the normal database release process.
 
 ### Passkeys
 
@@ -299,7 +352,7 @@ import { createClient } from "@tuturuuu/supabase/next/server";
 import { redirect } from "next/navigation";
 
 export async function signOut() {
-  const supabase = createClient();
+  const supabase = await createClient();
   await supabase.auth.signOut();
   redirect("/login");
 }
@@ -354,7 +407,7 @@ those environments.
 import { createClient } from "@tuturuuu/supabase/next/server";
 
 export async function enableMFA() {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   // Enroll in MFA
   const { data, error } = await supabase.auth.mfa.enroll({
@@ -379,7 +432,7 @@ export async function enableMFA() {
 import { createClient } from "@tuturuuu/supabase/next/server";
 
 export async function verifyMFAEnrollment(factorId: string, code: string) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const { data, error } = await supabase.auth.mfa.challengeAndVerify({
     factorId,
@@ -399,7 +452,7 @@ export async function verifyMFAEnrollment(factorId: string, code: string) {
 import { createClient } from "@tuturuuu/supabase/next/server";
 
 export async function signInWithMFA(email: string, password: string) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   // Initial sign in
   const { data: signInData, error: signInError } =
@@ -445,7 +498,7 @@ export async function verifyMFACode(
   challengeId: string,
   code: string,
 ) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const { data, error } = await supabase.auth.mfa.verify({
     factorId,
@@ -481,7 +534,7 @@ not satisfy the current-session binding.
 import { createClient } from "@tuturuuu/supabase/next/server";
 
 export async function getSession() {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const {
     data: { session },
@@ -499,7 +552,7 @@ export async function getSession() {
 import { createClient } from "@tuturuuu/supabase/next/server";
 
 export async function getCurrentUser() {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const {
     data: { user },
@@ -522,7 +575,7 @@ export async function getCurrentUser() {
 import { createClient } from "@tuturuuu/supabase/next/server";
 
 export async function refreshSession() {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const { data, error } = await supabase.auth.refreshSession();
 
@@ -541,7 +594,7 @@ export async function refreshSession() {
 import { createClient } from "@tuturuuu/supabase/next/server";
 
 export async function requestPasswordReset(email: string) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
     redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/reset-password`,
@@ -560,7 +613,7 @@ export async function requestPasswordReset(email: string) {
 import { createClient } from "@tuturuuu/supabase/next/server";
 
 export async function resetPassword(newPassword: string) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const { data, error } = await supabase.auth.updateUser({
     password: newPassword,
@@ -581,7 +634,7 @@ export async function resetPassword(newPassword: string) {
 import { createClient } from "@tuturuuu/supabase/next/server";
 
 export async function resendVerificationEmail() {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const {
     data: { user },
@@ -633,15 +686,30 @@ If either piece is missing, centralized login can stall on the web login spinner
 
 ### Generate Cross-App Token
 
+`generateCrossAppToken(supabase, targetApp, originApp, expirySeconds?)` is the
+real signature. It reads the authenticated user from the passed Supabase client,
+calls the `generate_cross_app_token` RPC, and returns the token string (or
+`null` on failure). The origin app (`'web'`) mints the token; the target app
+(`'shortener'`, `'nova'`, `'rewise'`, etc.) verifies it.
+
 ```typescript
 import { generateCrossAppToken } from "@tuturuuu/auth/cross-app";
+import { createClient } from "@tuturuuu/supabase/next/server";
 
-export async function createShortenerLink(userId: string) {
-  // Generate token that shortener app can verify
-  const token = await generateCrossAppToken(userId, {
-    expiresIn: "1h",
-    app: "shortener",
-  });
+export async function createShortenerLink() {
+  const supabase = await createClient();
+
+  // Generate a token the shortener app can verify (default expiry: 300s).
+  const token = await generateCrossAppToken(
+    supabase,
+    "shortener", // targetApp
+    "web", // originApp
+    3600, // expirySeconds (optional)
+  );
+
+  if (!token) {
+    throw new Error("Failed to generate cross-app token");
+  }
 
   return {
     url: `${process.env.SHORTENER_APP_URL}/create?token=${token}`,
@@ -649,34 +717,63 @@ export async function createShortenerLink(userId: string) {
 }
 ```
 
-### Verify Cross-App Token
+### Validate Cross-App Token
+
+The target app validates the token with
+`validateCrossAppToken(supabase, token, targetApp)`, which calls the
+`validate_cross_app_token_with_session` RPC and returns `{ userId }` (or `null`).
+The target app is responsible for establishing its own session/app-session from
+that `userId`; the token never carries access or refresh tokens.
 
 ```typescript
-import { verifyCrossAppToken } from "@tuturuuu/auth/cross-app";
+import { validateCrossAppToken } from "@tuturuuu/auth/cross-app";
+import { createClient } from "@tuturuuu/supabase/next/server";
 
 export async function handleCrossAppRequest(token: string) {
-  const payload = await verifyCrossAppToken(token);
+  const supabase = await createClient();
 
-  if (!payload) {
+  const result = await validateCrossAppToken(supabase, token, "shortener");
+
+  if (!result) {
     throw new Error("Invalid token");
   }
 
-  // payload contains: { userId, app, exp, iat }
-  return payload;
+  // result contains: { userId }
+  return result;
 }
 ```
 
-## Middleware Authentication
+<Note>
+  `@tuturuuu/auth/cross-app` does **not** export a `verifyCrossAppToken`
+  function. For the browser-side handoff on `/verify-token`, use the exported
+  `verifyRouteToken({ searchParams, token, router })` helper, which POSTs the
+  token to `/api/auth/verify-app-token` and lets the verifier route set the
+  HttpOnly app-session cookie. `revokeAllCrossAppTokens(supabase)` invalidates a
+  user's outstanding tokens.
+</Note>
 
-Protect routes using Next.js middleware:
+## Proxy (Edge Middleware) Authentication
+
+In `apps/web` the edge entry point that protects routes lives in
+`apps/web/src/proxy.ts` (not a `middleware.ts` file). It exports an async
+`proxy(req)` function plus a `config.matcher`, and Next.js is configured to use
+this file as the request middleware. The real implementation delegates the
+heavy lifting to `createCentralizedAuthProxy` from `@tuturuuu/auth/proxy`, then
+layers on onboarding checks, workspace-slug normalization, guest-route guards,
+and locale handling. See [Routing](/platform/architecture/routing) for how the
+proxy coordinates those concerns.
+
+The simplified example below shows the core shape: resolve the user from a
+request-scoped Supabase client and redirect when unauthenticated. Note that
+`createDynamicClient()` is async and must be awaited.
 
 ```typescript
-// middleware.ts
-import { createDynamicClient } from "@tuturuuu/supabase/next/server";
-import { NextRequest, NextResponse } from "next/server";
+// apps/web/src/proxy.ts (simplified)
+import { createClient } from "@tuturuuu/supabase/next/server";
+import { type NextRequest, NextResponse } from "next/server";
 
 export async function proxy(request: NextRequest) {
-  const supabase = createDynamicClient();
+  const supabase = await createClient();
 
   const {
     data: { user },
@@ -700,6 +797,12 @@ export const config = {
 };
 ```
 
+The production proxy resolves the user with
+`resolveAuthenticatedSessionUser(supabase)` and propagates refreshed auth
+cookies onto every redirect via `propagateAuthCookies(authRes, response)`.
+Reuse those helpers instead of re-implementing session resolution and cookie
+forwarding when you extend the proxy.
+
 ## Protected Server Component
 
 ```typescript
@@ -707,7 +810,7 @@ import { createClient } from '@tuturuuu/supabase/next/server';
 import { redirect } from 'next/navigation';
 
 export default async function ProtectedPage() {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const { data: { user } } = await supabase.auth.getUser();
 
@@ -725,28 +828,43 @@ export default async function ProtectedPage() {
 
 ## Client-Side Authentication
 
-### useUser Hook
+<Warning>
+  `@tuturuuu/supabase/next/client` is **deprecated** for CRUD/storage and may
+  throw unless a compatibility flag is set. For browser data access, use
+  `@tuturuuu/internal-api`. For the narrow case where the browser genuinely
+  needs an auth client (reacting to live auth-state changes), use
+  `createAuthClient()` from `@tuturuuu/supabase/next/auth-browser`. Do not fetch
+  product data on the client through raw Supabase clients, and prefer TanStack
+  Query over `useEffect` for any data fetching.
+</Warning>
+
+### useUser Hook (auth-state subscription)
+
+Subscribing to Supabase auth-state changes is a legitimate exception to the
+"no `useEffect` for data fetching" guidance: this hook does not fetch product
+data, it mirrors the live session into React state. Use `createAuthClient` and
+subscribe once.
 
 ```tsx
 "use client";
 
-import { createClient } from "@tuturuuu/supabase/next/client";
-import { useEffect, useState } from "react";
-import type { SupabaseUser } from "@tuturuuu/supabase/next/user";
+import type { User } from "@supabase/supabase-js";
+import { createAuthClient } from "@tuturuuu/supabase/next/auth-browser";
+import { useEffect, useMemo, useState } from "react";
 
 export function useUser() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const supabase = createClient();
+  const supabase = useMemo(() => createAuthClient(), []);
 
   useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
+    // Resolve the current user once on mount.
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setUser(user ?? null);
       setLoading(false);
     });
 
-    // Listen for auth changes
+    // Then keep it in sync with live auth-state changes.
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -754,11 +872,17 @@ export function useUser() {
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [supabase]);
 
   return { user, loading };
 }
 ```
+
+<Note>
+  For authorization decisions, always re-verify the user server-side
+  (`await supabase.auth.getUser()` or the `getClaims`-first pattern above). Client
+  auth state is for UX only — never trust it as the sole gate for protected data.
+</Note>
 
 ### Usage
 
@@ -787,7 +911,7 @@ Link multiple auth providers to same account:
 import { createClient } from "@tuturuuu/supabase/next/server";
 
 export async function linkIdentity(provider: "google" | "github") {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const { data, error } = await supabase.auth.linkIdentity({
     provider,

@@ -67,6 +67,7 @@ export interface TulearnAssignmentSummary {
   };
   is_completed: boolean;
   approval_status?: string | null;
+  is_test?: boolean;
 }
 
 export interface TulearnMarkSummary {
@@ -125,13 +126,53 @@ export interface TulearnCourseModuleSummary {
   };
 }
 
+export interface TulearnCourseTestSummary {
+  id: string;
+  name: string;
+  start_at: string | null;
+  duration_in_minutes: number | null;
+  description: string | null;
+  is_score_published?: boolean;
+  module_ids: string[];
+}
+
 export interface TulearnCourseDetail extends TulearnCourseSummary {
   modules: TulearnCourseModuleSummary[];
+  tests: TulearnCourseTestSummary[];
+}
+
+export interface TulearnTestAttempt {
+  id: string;
+  test_id: string;
+  user_id: string;
+  started_at: string;
+  submitted_at: string | null;
+  score: number | null;
+  created_at: string;
+}
+
+export interface TulearnTestAttemptAnswer {
+  quiz_id: string;
+  selected_option_id: string | null;
+  answer: unknown;
+  is_correct?: boolean;
+  score_awarded?: number;
+  feedback?: string | null;
+}
+
+export interface TulearnTestAttemptResponse {
+  attempt: TulearnTestAttempt | null;
+  quizzes?: TulearnReviewQuiz[];
+  answers?: TulearnTestAttemptAnswer[];
 }
 
 export interface TulearnQuizOption {
   id: string;
   value: string;
+}
+
+export interface TulearnReviewQuizOption extends TulearnQuizOption {
+  is_correct?: boolean | null;
   explanation?: string | null;
 }
 
@@ -142,6 +183,10 @@ export interface TulearnQuiz {
   content: Json | null;
   score: number;
   quiz_options?: TulearnQuizOption[];
+}
+
+export interface TulearnReviewQuiz extends Omit<TulearnQuiz, 'quiz_options'> {
+  quiz_options?: TulearnReviewQuizOption[];
 }
 
 export interface TulearnCourseModuleDetail extends TulearnCourseModuleSummary {
@@ -459,6 +504,87 @@ export async function resetTulearnQuizSubmissions(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/tulearn/courses/${encodePathSegment(courseId)}/modules/${encodePathSegment(moduleId)}`,
     {
       method: 'DELETE',
+      cache: 'no-store',
+      query: studentQuery(studentId),
+    }
+  );
+}
+
+export async function getTulearnTestAttempt(
+  workspaceId: string,
+  courseId: string,
+  testId: string,
+  studentId?: string | null,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<TulearnTestAttemptResponse>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/tulearn/courses/${encodePathSegment(courseId)}/tests/${encodePathSegment(testId)}/attempt`,
+    { cache: 'no-store', query: studentQuery(studentId) }
+  );
+}
+
+export async function startTulearnTest(
+  workspaceId: string,
+  courseId: string,
+  testId: string,
+  studentId?: string | null,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<TulearnTestAttempt>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/tulearn/courses/${encodePathSegment(courseId)}/tests/${encodePathSegment(testId)}/start`,
+    {
+      method: 'POST',
+      cache: 'no-store',
+      query: studentQuery(studentId),
+    }
+  );
+}
+
+export async function saveTulearnTestAnswer(
+  workspaceId: string,
+  courseId: string,
+  testId: string,
+  payload: {
+    attemptId: string;
+    quizId: string;
+    selectedOptionId?: string | null;
+    answer?: unknown;
+  },
+  studentId?: string | null,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ success: boolean }>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/tulearn/courses/${encodePathSegment(courseId)}/tests/${encodePathSegment(testId)}/save-answer`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+      query: studentQuery(studentId),
+    }
+  );
+}
+
+export async function submitTulearnTest(
+  workspaceId: string,
+  courseId: string,
+  testId: string,
+  payload: {
+    attemptId: string;
+  },
+  studentId?: string | null,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ success: boolean; attempt: TulearnTestAttempt }>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/tulearn/courses/${encodePathSegment(courseId)}/tests/${encodePathSegment(testId)}/submit`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
       cache: 'no-store',
       query: studentQuery(studentId),
     }

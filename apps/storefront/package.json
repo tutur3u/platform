@@ -1,9 +1,9 @@
 {
   "name": "@tuturuuu/storefront",
-  "version": "0.5.0",
+  "version": "0.9.0",
   "private": true,
   "scripts": {
-    "type-check": "node ../../scripts/run-tsgo-build.js --build",
+    "type-check": "node ../../scripts/run-tsc-build.js --build",
     "dev": "node ../../scripts/portless-safe-dev.js",
     "dev:app": "node ../../scripts/portless-dev-banner.js -- next dev -p ${PORT:-7822} --turbopack",
     "devx": "bun sb:stop && bun sb:start && bun dev",
@@ -18,7 +18,7 @@
     "script": "dev:app"
   },
   "dependencies": {
-    "@tanstack/react-query": "^5.101.0",
+    "@tanstack/react-query": "^5.101.2",
     "@tuturuuu/auth": "workspace:*",
     "@tuturuuu/icons": "workspace:*",
     "@tuturuuu/internal-api": "workspace:*",
@@ -27,22 +27,22 @@
     "@tuturuuu/ui": "workspace:*",
     "@tuturuuu/utils": "workspace:*",
     "@tuturuuu/vercel": "workspace:*",
-    "next": "^16.2.9",
-    "next-intl": "^4.13.0",
-    "next-themes": "^0.4.6",
-    "nuqs": "^2.8.9",
+    "next": "^16.3.0-preview.5",
+    "next-intl": "^4.13.1",
+    "nuqs": "^2.9.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "zod": "^4.4.3"
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "^4.3.1",
+    "@tailwindcss/postcss": "^4.3.2",
     "@tuturuuu/typescript-config": "workspace:*",
-    "@types/node": "^25.9.3",
+    "@types/node": "^26.0.1",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
+    "@typescript/native-preview": "7.0.0-dev.20260622.1",
     "babel-plugin-react-compiler": "^1.0.0",
-    "postcss": "^8.5.14",
-    "typescript": "^6.0.3"
+    "postcss": "^8.5.16",
+    "typescript": "7.0.1-rc"
   }
 }

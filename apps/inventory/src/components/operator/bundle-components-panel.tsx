@@ -91,8 +91,30 @@ function BundleComponentsDialog({
   const [open, setOpen] = useState(false);
   const [productId, setProductId] = useState('');
   const [quantity, setQuantity] = useState('1');
+  const [stockKey, setStockKey] = useState('');
   const activeProduct = products.find((product) => product.id === productId);
-  const activeInventory = activeProduct?.inventory?.[0] ?? {};
+  const stockOptions =
+    activeProduct?.inventory?.flatMap((inventory, index) => {
+      const key = createStockKey(inventory, index);
+      if (!key) return [];
+      return [
+        {
+          id: key,
+          name: [
+            stringField(inventory, 'warehouse_name') ||
+              stringField(inventory, 'warehouse_id'),
+            stringField(inventory, 'unit_name') ||
+              stringField(inventory, 'unit_id'),
+          ]
+            .filter(Boolean)
+            .join(' / '),
+        },
+      ];
+    }) ?? [];
+  const activeInventory =
+    activeProduct?.inventory?.find(
+      (inventory, index) => createStockKey(inventory, index) === stockKey
+    ) ?? {};
   const mutation = useMutation({
     mutationFn: (components: NonNullable<InventoryBundle['components']>) =>
       updateInventoryBundle(wsId, bundle.id, {
@@ -106,6 +128,7 @@ function BundleComponentsDialog({
     onError: () => toast.error(t('saveError')),
     onSuccess: () => {
       setProductId('');
+      setStockKey('');
       setQuantity('1');
       toast.success(t('saveSuccess'));
       queryClient.invalidateQueries({ queryKey: ['inventory', wsId] });
@@ -158,18 +181,34 @@ function BundleComponentsDialog({
               ]);
             }}
           >
-            <div className="grid min-w-0 gap-2 md:grid-cols-[minmax(0,1fr)_120px_auto]">
+            <div className="grid min-w-0 gap-2 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_120px_auto]">
               <SelectField
                 className="gap-0"
                 emptyText={t('emptyOptions')}
                 label={t('product')}
-                onChange={setProductId}
+                onChange={(nextProductId) => {
+                  setProductId(nextProductId);
+                  setStockKey('');
+                }}
                 options={products}
                 placeholder={t('placeholders.product')}
                 searchPlaceholder={t('searchOptions', {
                   resource: t('product'),
                 })}
                 value={productId}
+              />
+              <SelectField
+                allowEmpty={false}
+                className="gap-0"
+                emptyText={t('emptyStockRows')}
+                label={t('stockRow')}
+                onChange={setStockKey}
+                options={stockOptions}
+                placeholder={t('placeholders.stockRow')}
+                searchPlaceholder={t('searchOptions', {
+                  resource: t('stockRow'),
+                })}
+                value={stockKey}
               />
               <Input
                 inputMode="numeric"
@@ -209,6 +248,7 @@ function BundleComponentsDialog({
                         )
                       )
                     }
+                    aria-label={t('remove')}
                     size="icon"
                     type="button"
                     variant="destructive"
@@ -239,4 +279,10 @@ function BundleComponentsDialog({
 function stringField(record: Record<string, unknown>, key: string) {
   const value = record[key];
   return typeof value === 'string' ? value : '';
+}
+
+function createStockKey(record: Record<string, unknown> | null, index: number) {
+  const unitId = stringField(record ?? {}, 'unit_id');
+  const warehouseId = stringField(record ?? {}, 'warehouse_id');
+  return unitId && warehouseId ? `${warehouseId}:${unitId}:${index}` : '';
 }

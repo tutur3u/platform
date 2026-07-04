@@ -30,8 +30,10 @@ import {
 } from '@tuturuuu/icons';
 import {
   getWorkspaceTask,
+  listWorkspaceTaskBoardViewableMembers,
   listWorkspaceTaskLists,
   listWorkspaceTaskProjects,
+  listWorkspaceTaskProjectsByIds,
   removeCurrentUserTaskPersonalPlacement,
 } from '@tuturuuu/internal-api/tasks';
 import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
@@ -50,7 +52,10 @@ import {
 import { useCalendarPreferences } from '@tuturuuu/ui/hooks/use-calendar-preferences';
 import { useTaskActions } from '@tuturuuu/ui/hooks/use-task-actions';
 import { useUserBooleanConfig } from '@tuturuuu/ui/hooks/use-user-config';
-import { useWorkspaceMembers } from '@tuturuuu/ui/hooks/use-workspace-members';
+import {
+  useWorkspaceMembers,
+  type WorkspaceMember,
+} from '@tuturuuu/ui/hooks/use-workspace-members';
 import {
   HoverCard,
   HoverCardContent,
@@ -69,7 +74,7 @@ import {
 import { isTaskBoardResolvedStatus } from '@tuturuuu/utils/task-list-status';
 import { getDescriptionMetadata } from '@tuturuuu/utils/text-helper';
 import { getTimeFormatPattern } from '@tuturuuu/utils/time-helper';
-import { format, formatDistanceToNow } from 'date-fns';
+import { format, formatDistance } from 'date-fns';
 import { enUS, vi } from 'date-fns/locale';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
@@ -116,6 +121,7 @@ import {
 import { formatSmartDate } from '../../../utils/taskDateUtils';
 import { getPriorityIndicator } from '../../../utils/taskPriorityUtils';
 import { sortByDisplayName } from '../board-text-utils';
+import { invalidateKanbanDeadlineTasks } from '../kanban/data/kanban-deadline-query';
 import {
   TaskAssigneesMenu,
   TaskBlockingMenu,
@@ -148,8 +154,14 @@ import {
   getTaskCardHydratingOpenOptions,
   isExternalTaskSnapshot,
 } from './task-card-open-options';
+import { getTaskCardResourceContext } from './task-card-resource-context';
 import { getTaskCardVisibilityState } from './task-card-visibility';
 import { TaskSchedulingBadge } from './task-scheduling-badge';
+
+export type TaskCardAssigneeMemberSource =
+  | 'workspace'
+  | 'board'
+  | 'workspace-and-board';
 
 export interface TaskCardProps {
   task: Task;
@@ -162,6 +174,8 @@ export interface TaskCardProps {
   isSelected?: boolean;
   isMultiSelectMode?: boolean;
   isPersonalWorkspace?: boolean;
+  canUseBoardAssignees?: boolean;
+  assigneeMemberSource?: TaskCardAssigneeMemberSource;
   onSelect?: (taskId: string, event: React.MouseEvent) => void;
   onClearSelection?: () => void;
   dragDisabled?: boolean;
@@ -170,6 +184,128 @@ export interface TaskCardProps {
   optimisticUpdateInProgress?: Set<string>;
   selectedTasks?: Set<string>; // For bulk operations
   bulkUpdateCustomDueDate?: (date: Date | null) => Promise<void>; // From useBulkOperations
+  deadlineContext?: 'overdue' | 'upcoming';
+  deadlineNow?: number;
+  readOnly?: boolean;
+}
+
+function ReadOnlyTaskCard({ task, taskList }: TaskCardProps) {
+  const t = useTranslations('common');
+  const publicBoardT = useTranslations('ws-task-boards.public');
+  const priorityT = useTranslations('ws-task-boards.dialog.priority');
+  const locale = useLocale();
+  const dateLocale = locale === 'vi' ? vi : enUS;
+  const ticketPrefix = (task as Task & { ticket_prefix?: string | null })
+    .ticket_prefix;
+  const ticketIdentifier =
+    typeof task.display_number === 'number' && task.display_number > 0
+      ? getTicketIdentifier(ticketPrefix, task.display_number)
+      : null;
+  const dueDate = task.end_date
+    ? format(new Date(task.end_date), 'MMM d, yyyy', { locale: dateLocale })
+    : null;
+
+  return (
+    <Card
+      className={cn(
+        'relative overflow-hidden rounded-lg border border-l-4 bg-background p-3 shadow-xs',
+        getCardColorClassesUtil(taskList, task.priority),
+        task.closed_at && 'opacity-60 saturate-50'
+      )}
+      data-task-card-id={task.id}
+      data-task-read-only="true"
+    >
+      <TaskCardIdentifierRow
+        externalSourceLabel=""
+        isMultiSelectMode={false}
+        isPersonalExternalTask={false}
+        isSelected={false}
+        selectTaskLabel={t('select_task', { name: task.name })}
+        taskListStatus={taskList?.status}
+        ticketBadgeClassName={getTicketBadgeColorClasses(
+          taskList,
+          task.priority
+        )}
+        ticketIdentifier={ticketIdentifier}
+        ticketTitle={ticketIdentifier ?? ''}
+      />
+
+      <div className="space-y-2">
+        <h3
+          className={cn(
+            'line-clamp-2 break-words font-medium text-sm leading-5',
+            (task.completed_at || task.closed_at) &&
+              'text-muted-foreground line-through'
+          )}
+        >
+          {task.name}
+        </h3>
+
+        <div className="flex flex-wrap items-center gap-1.5">
+          {task.priority && (
+            <Badge variant="outline" className="h-5 px-1.5 font-normal text-xs">
+              {priorityT(task.priority)}
+            </Badge>
+          )}
+          {dueDate && (
+            <Badge
+              variant="secondary"
+              className="h-5 gap-1 px-1.5 font-normal text-xs"
+            >
+              <Calendar className="h-3 w-3" />
+              {dueDate}
+            </Badge>
+          )}
+          {typeof task.estimation_points === 'number' && (
+            <Badge variant="outline" className="h-5 px-1.5 font-normal text-xs">
+              {publicBoardT('points', { count: task.estimation_points })}
+            </Badge>
+          )}
+        </div>
+
+        {(task.labels?.length ||
+          task.projects?.length ||
+          task.assignees?.length) && (
+          <div className="flex flex-wrap items-center gap-1.5">
+            {task.labels?.map((label) => (
+              <Badge
+                key={label.id}
+                variant="outline"
+                className="h-5 gap-1 px-1.5 font-normal text-xs"
+              >
+                <span
+                  aria-hidden="true"
+                  className="h-2 w-2 rounded-full"
+                  style={{ backgroundColor: label.color }}
+                />
+                {label.name}
+              </Badge>
+            ))}
+            {task.projects?.map((project) => (
+              <Badge
+                key={project.id}
+                variant="outline"
+                className="h-5 gap-1 px-1.5 font-normal text-xs"
+              >
+                <Box className="h-3 w-3" />
+                {project.name}
+              </Badge>
+            ))}
+            {task.assignees?.map((assignee) => (
+              <Badge
+                key={assignee.id}
+                variant="secondary"
+                className="h-5 px-1.5 font-normal text-xs"
+              >
+                {assignee.display_name ||
+                  (assignee.handle ? `@${assignee.handle}` : t('assignee'))}
+              </Badge>
+            ))}
+          </div>
+        )}
+      </div>
+    </Card>
+  );
 }
 
 // Memoized full TaskCard
@@ -184,6 +320,8 @@ function TaskCardInner({
   isSelected = false,
   isMultiSelectMode = false,
   isPersonalWorkspace = false,
+  canUseBoardAssignees,
+  assigneeMemberSource,
   onSelect,
   onClearSelection,
   dragDisabled: dragDisabledProp = false,
@@ -192,6 +330,8 @@ function TaskCardInner({
   optimisticUpdateInProgress,
   selectedTasks,
   bulkUpdateCustomDueDate,
+  deadlineContext,
+  deadlineNow,
 }: TaskCardProps) {
   const { wsId: rawWsId } = useParams();
   const wsId = Array.isArray(rawWsId) ? rawWsId[0] : rawWsId;
@@ -252,7 +392,24 @@ function TaskCardInner({
   // Use React Query hooks for shared data (cached across all task cards)
   const workspaceContextWsId = workspaceId ?? wsId;
   const { data: boardConfig } = useBoardConfig(boardId, workspaceContextWsId);
-  const effectiveWorkspaceId = workspaceId ?? boardConfig?.ws_id ?? wsId;
+  const pageWorkspaceId = workspaceId ?? boardConfig?.ws_id ?? wsId;
+  const {
+    boardViewableMembersBoardId,
+    boardViewableMembersWorkspaceId,
+    effectiveWorkspaceId,
+    initialAvailableLists,
+    isSourceWorkspaceTask,
+    taskBoardId,
+  } = getTaskCardResourceContext({
+    boardId,
+    pageWorkspaceId,
+    propAvailableLists,
+    task,
+  });
+  const taskProjectIds = useMemo(
+    () => task.projects?.map((project) => project.id).filter(Boolean) ?? [],
+    [task.projects]
+  );
   const taskShareWsId = effectiveWorkspaceId;
   const { data: workspaceLabels = [], isLoading: labelsLoading } =
     useWorkspaceLabels(effectiveWorkspaceId);
@@ -293,12 +450,24 @@ function TaskCardInner({
   // Fetch workspace projects
   const { data: workspaceProjects = [], isLoading: projectsLoading } = useQuery(
     {
-      queryKey: ['task_projects', effectiveWorkspaceId],
+      queryKey: [
+        'task_projects',
+        effectiveWorkspaceId,
+        isSourceWorkspaceTask ? taskProjectIds.join(',') : 'all',
+      ],
       queryFn: async () => {
         if (!effectiveWorkspaceId) return [];
+        if (isSourceWorkspaceTask) {
+          return listWorkspaceTaskProjectsByIds(
+            effectiveWorkspaceId,
+            taskProjectIds
+          );
+        }
         return listWorkspaceTaskProjects(effectiveWorkspaceId);
       },
-      enabled: !!effectiveWorkspaceId,
+      enabled:
+        !!effectiveWorkspaceId &&
+        (!isSourceWorkspaceTask || taskProjectIds.length > 0),
       staleTime: 5 * 60 * 1000, // 5 minutes - projects rarely change
     }
   );
@@ -319,12 +488,67 @@ function TaskCardInner({
     isMultiSelectMode,
     onClearSelection,
   });
+  const shouldUseBoardAssignees = canUseBoardAssignees ?? !isPersonalWorkspace;
+  const effectiveAssigneeMemberSource =
+    assigneeMemberSource ?? (isPersonalWorkspace ? 'board' : 'workspace');
+  const shouldLoadWorkspaceMembers =
+    shouldUseBoardAssignees && effectiveAssigneeMemberSource !== 'board';
+  const shouldLoadBoardViewableMembers =
+    shouldUseBoardAssignees && effectiveAssigneeMemberSource !== 'workspace';
 
   // Fetch workspace members
-  const { data: workspaceMembers = [], isLoading: membersLoading } =
-    useWorkspaceMembers(effectiveWorkspaceId, {
-      enabled: !!effectiveWorkspaceId && !isPersonalWorkspace,
-    });
+  const normalMembersQuery = useWorkspaceMembers(effectiveWorkspaceId, {
+    enabled: !!effectiveWorkspaceId && shouldLoadWorkspaceMembers,
+  });
+  const boardViewableMembersQuery = useQuery({
+    queryKey: [
+      'task-board-viewable-members',
+      boardViewableMembersWorkspaceId,
+      boardViewableMembersBoardId,
+    ],
+    queryFn: async (): Promise<WorkspaceMember[]> => {
+      if (!boardViewableMembersWorkspaceId || !boardViewableMembersBoardId) {
+        return [];
+      }
+
+      const payload = await listWorkspaceTaskBoardViewableMembers(
+        boardViewableMembersWorkspaceId,
+        boardViewableMembersBoardId
+      );
+      const members = Array.isArray(payload?.members) ? payload.members : [];
+
+      return members.map((member) => ({
+        id: member.user_id,
+        user_id: member.user_id,
+        workspace_id: boardViewableMembersWorkspaceId,
+        display_name: member.display_name ?? member.email ?? member.user_id,
+        email: member.email ?? undefined,
+        avatar_url: member.avatar_url ?? undefined,
+      }));
+    },
+    enabled:
+      !!boardViewableMembersWorkspaceId &&
+      !!boardViewableMembersBoardId &&
+      shouldLoadBoardViewableMembers,
+    staleTime: 5 * 60 * 1000,
+  });
+  const normalWorkspaceMembers = normalMembersQuery.data ?? [];
+  const boardViewableMembers = boardViewableMembersQuery.data ?? [];
+  const workspaceMembers = useMemo(() => {
+    const seen = new Set<string>();
+    const merged: WorkspaceMember[] = [];
+
+    for (const member of [...normalWorkspaceMembers, ...boardViewableMembers]) {
+      const memberId = member.user_id ?? member.id;
+      if (!memberId || seen.has(memberId)) continue;
+      seen.add(memberId);
+      merged.push(member);
+    }
+
+    return merged;
+  }, [boardViewableMembers, normalWorkspaceMembers]);
+  const membersLoading =
+    normalMembersQuery.isLoading || boardViewableMembersQuery.isLoading;
 
   const relationshipSummary =
     task.relationship_summary ??
@@ -532,15 +756,15 @@ function TaskCardInner({
 
   // Fetch available task lists using React Query (same key as other components)
   const { data: availableLists = [] } = useQuery({
-    queryKey: ['task_lists', boardId],
+    queryKey: ['task_lists', taskBoardId],
     queryFn: async () => {
-      if (!effectiveWorkspaceId) {
+      if (!effectiveWorkspaceId || !taskBoardId) {
         return [];
       }
 
       const { lists } = await listWorkspaceTaskLists(
         effectiveWorkspaceId,
-        boardId,
+        taskBoardId,
         typeof window !== 'undefined'
           ? { baseUrl: window.location.origin }
           : undefined
@@ -548,8 +772,8 @@ function TaskCardInner({
 
       return lists.filter((list) => !list.deleted) as TaskList[];
     },
-    enabled: !propAvailableLists && !!effectiveWorkspaceId, // Only fetch if not provided as prop
-    initialData: propAvailableLists,
+    enabled: !initialAvailableLists && !!effectiveWorkspaceId && !!taskBoardId,
+    initialData: initialAvailableLists,
     staleTime: 60 * 1000, // 1 minute - lists change less frequently
   });
 
@@ -769,7 +993,7 @@ function TaskCardInner({
     opacity: isOverlay ? 1 : isOptimistic ? 0.6 : undefined,
   };
 
-  const now = new Date();
+  const now = useMemo(() => new Date(deadlineNow ?? Date.now()), [deadlineNow]);
   const shouldRenderDueDate = shouldShowTaskDueDate({
     completedAt: task.completed_at,
     closedAt: task.closed_at,
@@ -789,6 +1013,18 @@ function TaskCardInner({
   const isResolvedListStatus = isTaskBoardResolvedStatus(taskList?.status);
   const startDate = task.start_date ? new Date(task.start_date) : null;
   const endDate = task.end_date ? new Date(task.end_date) : null;
+  const upcomingDeadlineCountdown =
+    deadlineContext === 'upcoming' && endDate
+      ? formatDistance(endDate, now, {
+          addSuffix: true,
+          locale: dateLocale,
+        })
+      : null;
+  const upcomingDeadlineExactDate = endDate
+    ? format(endDate, `MMM dd '${t('at')}' ${timePattern}`, {
+        locale: dateLocale,
+      })
+    : null;
   const selectionCheckboxClassName = cn(
     getTaskCardSelectionCheckboxToneClasses(taskList?.color as SupportedColor),
     isOverdue &&
@@ -897,6 +1133,12 @@ function TaskCardInner({
         task,
         boardId,
         availableLists,
+        canUseBoardAssignees: task.source_workspace_id
+          ? true
+          : shouldUseBoardAssignees,
+        assigneeMemberSource: task.source_workspace_id
+          ? 'board'
+          : effectiveAssigneeMemberSource,
         effectiveWorkspaceId,
         isPersonalWorkspace,
       })
@@ -905,6 +1147,8 @@ function TaskCardInner({
     task,
     boardId,
     availableLists,
+    shouldUseBoardAssignees,
+    effectiveAssigneeMemberSource,
     effectiveWorkspaceId,
     isPersonalWorkspace,
     openTaskById,
@@ -938,6 +1182,8 @@ function TaskCardInner({
         openTask(task, boardId, availableLists, false, {
           taskWsId: effectiveWorkspaceId,
           taskWorkspacePersonal: isPersonalWorkspace,
+          canUseBoardAssignees: shouldUseBoardAssignees,
+          assigneeMemberSource: effectiveAssigneeMemberSource,
         });
       }
     },
@@ -945,7 +1191,9 @@ function TaskCardInner({
       task,
       boardId,
       effectiveWorkspaceId,
+      effectiveAssigneeMemberSource,
       isPersonalWorkspace,
+      shouldUseBoardAssignees,
       isPersonalExternalTask,
       isMultiSelectMode,
       availableLists,
@@ -992,7 +1240,13 @@ function TaskCardInner({
   const handleAddSubtask = () => {
     setMenuOpen(false);
     // Open subtask creation dialog - the relationship will be created when the user saves
-    createSubtask(task.id, task.name, boardId, task.list_id, availableLists);
+    createSubtask(
+      task.id,
+      task.name,
+      taskBoardId,
+      task.list_id,
+      availableLists
+    );
   };
 
   const handleMoveToExternalStaging = async () => {
@@ -1025,6 +1279,7 @@ function TaskCardInner({
         )
       );
 
+      void invalidateKanbanDeadlineTasks(queryClient, boardId);
       toast.success(tTasks('moved_to_external_tasks'));
     } catch (error) {
       console.error('Failed to move task to external staging:', error);
@@ -1045,6 +1300,7 @@ function TaskCardInner({
         old?.filter((candidate) => candidate.id !== task.id)
       );
 
+      void invalidateKanbanDeadlineTasks(queryClient, boardId);
       toast.success(tTasks('removed_from_personal_board'));
     } catch (error) {
       console.error('Failed to remove task from personal board:', error);
@@ -2135,8 +2391,8 @@ function TaskCardInner({
                     </>
                   )}
 
-                  {/* Assignee Actions - Show if not personal workspace */}
-                  {!isPersonalWorkspace && (
+                  {/* Assignee Actions */}
+                  {shouldUseBoardAssignees && (
                     <TaskAssigneesMenu
                       taskAssignees={displayAssignees}
                       availableMembers={workspaceMembers}
@@ -2206,7 +2462,7 @@ function TaskCardInner({
             )}
           </div>
           {/* Assignee: left, not cut off */}
-          {!isPersonalWorkspace && (
+          {shouldUseBoardAssignees && (
             <div className="flex flex-none items-start justify-start">
               <AssigneeSelect
                 taskId={task.id}
@@ -2247,30 +2503,46 @@ function TaskCardInner({
                     : 'text-muted-foreground'
                 )}
               >
-                <Calendar className="h-2.5 w-2.5 shrink-0" />
-                <span className="truncate">
-                  {t('due_at', {
-                    date: formatSmartDate(
-                      endDate,
-                      {
-                        today: t('today'),
-                        tomorrow: t('tomorrow'),
-                        yesterday: t('yesterday'),
-                      },
-                      dateLocale
-                    ),
-                  })}
-                </span>
-                {isOverdue && !task.closed_at ? (
-                  <Badge className="ml-1 h-4 bg-dynamic-red px-1 font-semibold text-[9px] text-white tracking-wide">
-                    {t('overdue')}
-                  </Badge>
+                {upcomingDeadlineCountdown && upcomingDeadlineExactDate ? (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span className="inline-flex min-w-0 items-center gap-1 truncate font-medium">
+                        <Timer className="h-2.5 w-2.5" />
+                        <span className="truncate">
+                          {upcomingDeadlineCountdown}
+                        </span>
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent side="top" className="text-xs">
+                      {upcomingDeadlineExactDate}
+                    </TooltipContent>
+                  </Tooltip>
                 ) : (
-                  <span className="ml-1 hidden text-[10px] text-muted-foreground md:inline">
-                    {format(endDate, `MMM dd '${t('at')}' ${timePattern}`, {
-                      locale: dateLocale,
-                    })}
-                  </span>
+                  <>
+                    <Calendar className="h-2.5 w-2.5 shrink-0" />
+                    <span className="truncate">
+                      {t('due_at', {
+                        date: formatSmartDate(
+                          endDate,
+                          {
+                            today: t('today'),
+                            tomorrow: t('tomorrow'),
+                            yesterday: t('yesterday'),
+                          },
+                          dateLocale
+                        ),
+                      })}
+                    </span>
+                    {isOverdue && !task.closed_at ? (
+                      <Badge className="ml-1 h-4 bg-dynamic-red px-1 font-semibold text-[9px] text-white tracking-wide">
+                        {t('overdue')}
+                      </Badge>
+                    ) : (
+                      <span className="ml-1 hidden text-[10px] text-muted-foreground md:inline">
+                        {upcomingDeadlineExactDate}
+                      </span>
+                    )}
+                  </>
                 )}
               </div>
             )}
@@ -2293,7 +2565,7 @@ function TaskCardInner({
                   <CheckCircle2 className="h-2.5 w-2.5 shrink-0" />
                   <span className="truncate">
                     {t('completed')}{' '}
-                    {formatDistanceToNow(new Date(task.completed_at), {
+                    {formatDistance(new Date(task.completed_at), now, {
                       addSuffix: true,
                       locale: dateLocale,
                     })}
@@ -2317,7 +2589,7 @@ function TaskCardInner({
                   <CircleSlash className="h-2.5 w-2.5 shrink-0" />
                   <span className="truncate">
                     {t('closed')}{' '}
-                    {formatDistanceToNow(new Date(task.closed_at), {
+                    {formatDistance(new Date(task.closed_at), now, {
                       addSuffix: true,
                       locale: dateLocale,
                     })}
@@ -2488,7 +2760,7 @@ function TaskCardInner({
         <CreateListDialog
           open={isCreateListDialogOpen}
           onOpenChange={setIsCreateListDialogOpen}
-          boardId={boardId}
+          boardId={taskBoardId}
           wsId={effectiveWorkspaceId}
           initialStatus="active"
           onSuccess={(listId) => {
@@ -2590,4 +2862,12 @@ function TaskCardInner({
   );
 }
 
-export const TaskCard = React.memo(TaskCardInner, areTaskCardPropsEqual);
+function TaskCardComponent(props: TaskCardProps) {
+  if (props.readOnly) {
+    return <ReadOnlyTaskCard {...props} />;
+  }
+
+  return <TaskCardInner {...props} />;
+}
+
+export const TaskCard = React.memo(TaskCardComponent, areTaskCardPropsEqual);

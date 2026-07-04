@@ -14,6 +14,7 @@ import { getActiveTaskUserBroadcast } from '@tuturuuu/ui/hooks/useTaskUserRealti
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { useCallback, useState } from 'react';
+import { getTaskApiUrl } from '../../../../lib/tasks-app-url';
 import { dispatchTaskSoundCue } from '../shared/task-sound-effects';
 import {
   MY_COMPLETED_TASKS_QUERY_KEY,
@@ -243,14 +244,18 @@ export function useTaskContextActions({
         task.overrides?.completed_at ||
         task.overrides?.personally_unassigned
       ) {
-        await fetch(`/api/v1/users/me/tasks/${task.id}/overrides`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            completed_at: null,
-            personally_unassigned: false,
-          }),
-        }).catch(() => {
+        await fetch(
+          getTaskApiUrl(`/api/v1/users/me/tasks/${task.id}/overrides`),
+          {
+            method: 'PUT',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              completed_at: null,
+              personally_unassigned: false,
+            }),
+          }
+        ).catch(() => {
           // Non-critical cleanup
         });
       }
@@ -278,9 +283,10 @@ export function useTaskContextActions({
     setIsLoading(true);
     try {
       const response = await fetch(
-        `/api/v1/users/me/tasks/${task.id}/overrides`,
+        getTaskApiUrl(`/api/v1/users/me/tasks/${task.id}/overrides`),
         {
           method: 'PUT',
+          credentials: 'include',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ personally_unassigned: true }),
         }
@@ -301,9 +307,10 @@ export function useTaskContextActions({
     setIsLoading(true);
     try {
       const response = await fetch(
-        `/api/v1/users/me/tasks/${task.id}/overrides`,
+        getTaskApiUrl(`/api/v1/users/me/tasks/${task.id}/overrides`),
         {
           method: 'PUT',
+          credentials: 'include',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             personally_unassigned: false,

@@ -3,6 +3,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
+const { pathToFileURL } = require('node:url');
 
 const {
   readDockerProdComposeMergedText,
@@ -15,6 +16,8 @@ const {
   getDockerNodeMaxOldSpaceSizeMb,
   getDockerStaticGenerationMaxConcurrency,
   getEffectiveDockerMemoryMb,
+  getNextBuildEnvironment,
+  isNativeWebBuildEnabled,
   mergeNodeOptions,
   parseMemoryToMb,
 } = require('./run-web-docker-next-build.js');
@@ -23,7 +26,9 @@ const {
   BACKEND_DOCKERFILE_PATH,
   CRON_RUNNER_DOCKERFILE_PATH,
   CHAT_REALTIME_DOCKERFILE_PATH,
+  DOCKER_CONTROL_DOCKERFILE_PATH,
   DOCKER_BAKE_WEB_PROD_PATH,
+  DOCKER_SETUP_WORKFLOW_PATH,
   DOCKERIGNORE_PATH,
   HIVE_DB_MIGRATE_SCRIPT_PATH,
   HIVE_DOCKERFILE_PATH,
@@ -34,6 +39,9 @@ const {
   NATIVE_WEB_RUNNER_DOCKERIGNORE_PATH,
   ROOT_DIR,
   SUPERMEMORY_DOCKERFILE_PATH,
+  TANSTACK_DUAL_COMPOSE_FILE_PATH,
+  TANSTACK_WEB_DOCKERFILE_PATH,
+  TANSTACK_WEB_SERVER_PATH,
   WATCHER_DOCKERFILE_PATH,
   WEB_COMPOSE_FILE_PATH,
   WEB_DOCKERFILE_PATH,
@@ -46,6 +54,8 @@ const {
   validateBackendDockerfile,
   validateChatRealtimeDockerfile,
   validateDockerCompose,
+  validateDockerControlDockerfile,
+  validateDockerSetupWorkflow,
   validateDockerBakeFile,
   validateDockerProdCompose,
   validateDockerignore,
@@ -58,6 +68,9 @@ const {
   validateMeetRealtimeDockerfile,
   validateNativeWebRunnerDockerfile,
   validateSupermemoryDockerfile,
+  validateTanstackDualCompose,
+  validateTanstackWebDockerfile,
+  validateTanstackWebServer,
   validateWatcherDockerfile,
 } = require('./check-docker-web.js');
 
@@ -124,6 +137,50 @@ test('validateDockerfile accepts the current web Dockerfile', () => {
   );
 });
 
+test('validateDockerSetupWorkflow keeps TanStack Docker paths covered', () => {
+  const workflowContent = fs.readFileSync(DOCKER_SETUP_WORKFLOW_PATH, 'utf8');
+
+  assert.deepEqual(validateDockerSetupWorkflow(workflowContent), []);
+  assert.match(
+    validateDockerSetupWorkflow(
+      workflowContent
+        .replaceAll('      - "apps/tanstack-web/**"\n', '')
+        .replace(
+          'docker compose -f docker-compose.tanstack-dual.yml config > /tmp/docker-compose.tanstack-dual.yml',
+          ''
+        )
+    ).join('\n'),
+    /apps\/tanstack-web|docker-compose\.tanstack-dual\.yml/
+  );
+  assert.match(
+    validateDockerSetupWorkflow(
+      workflowContent.replace(
+        'docker compose -f docker-compose.web.prod.yml --profile cloudflared config > /tmp/docker-compose.web.prod.cloudflared.yml',
+        ''
+      )
+    ).join('\n'),
+    /cloudflared/
+  );
+  assert.match(
+    validateDockerSetupWorkflow(
+      workflowContent.replace(
+        '--cache-from type=gha,scope=docker-tanstack-web-prod',
+        ''
+      )
+    ).join('\n'),
+    /docker-tanstack-web-prod/
+  );
+  assert.match(
+    validateDockerSetupWorkflow(
+      workflowContent.replace(
+        'Free runner disk before Docker image builds',
+        'Free runner disk after Docker image builds'
+      )
+    ).join('\n'),
+    /free runner disk before Docker image builds/
+  );
+});
+
 test('validateDockerignore accepts the current Docker context excludes', () => {
   const dockerignoreContent = fs.readFileSync(DOCKERIGNORE_PATH, 'utf8');
 
@@ -134,6 +191,140 @@ test('validateBackendDockerfile accepts the current backend Dockerfile', () => {
   const dockerfileContent = fs.readFileSync(BACKEND_DOCKERFILE_PATH, 'utf8');
 
   assert.deepEqual(validateBackendDockerfile(dockerfileContent), []);
+});
+
+test('validateTanstackWebDockerfile accepts the current TanStack Dockerfile', () => {
+  const dockerfileContent = fs.readFileSync(
+    TANSTACK_WEB_DOCKERFILE_PATH,
+    'utf8'
+  );
+
+  assert.deepEqual(validateTanstackWebDockerfile(dockerfileContent), []);
+  assert.match(
+    validateTanstackWebDockerfile(
+      dockerfileContent.replace(
+        'COPY packages/offline/package.json ./packages/offline/package.json\n',
+        ''
+      )
+    ).join('\n'),
+    /apps\/tanstack-web\/Dockerfile deps stage is missing workspace package manifests: packages\/offline\/package\.json/u
+  );
+  assert.match(
+    validateTanstackWebDockerfile(
+      dockerfileContent.replace(
+        'COPY --from=builder /workspace/apps/tanstack-web/docker/server.mjs ./docker/server.mjs\n',
+        ''
+      )
+    ).join('\n'),
+    /docker\/server\.mjs/u
+  );
+  assert.match(
+    validateTanstackWebDockerfile(
+      dockerfileContent.replace(
+        'bun install --frozen-lockfile --filter tutur3u --filter @tuturuuu/tanstack-web',
+        'bun install --frozen-lockfile --filter @tuturuuu/tanstack-web'
+      )
+    ).join('\n'),
+    /filter tutur3u/u
+  );
+  assert.match(
+    validateTanstackWebDockerfile(
+      dockerfileContent.replace(
+        'bun run turbo:local run build:docker -F @tuturuuu/tanstack-web',
+        ''
+      )
+    ).join('\n'),
+    /build:docker -F @tuturuuu\/tanstack-web/u
+  );
+  assert.match(
+    validateTanstackWebDockerfile(
+      dockerfileContent.replace(
+        'HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 CMD ["node", "docker/healthcheck.mjs"]',
+        'HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 CMD ["node", "-e", "true"]'
+      )
+    ).join('\n'),
+    /docker\/healthcheck\.mjs/u
+  );
+});
+
+test('tanstack web healthcheck probes the runner and backend health endpoint', async () => {
+  const healthcheckModule = await import(
+    pathToFileURL(
+      path.join(ROOT_DIR, 'apps', 'tanstack-web', 'docker', 'healthcheck.mjs')
+    ).href
+  );
+  const urls = [];
+
+  await healthcheckModule.runTanStackWebHealthcheck({
+    env: {
+      BACKEND_INTERNAL_URL: 'http://backend:7820',
+      PORT: '9123',
+    },
+    fetchImpl: async (url) => {
+      urls.push(String(url));
+
+      return new Response('', {
+        status: 200,
+      });
+    },
+  });
+
+  assert.deepEqual(urls, [
+    'http://127.0.0.1:9123/__platform/drain-status',
+    'http://backend:7820/healthz',
+  ]);
+});
+
+test('tanstack web healthcheck fails when the backend probe is not ok', async () => {
+  const healthcheckModule = await import(
+    pathToFileURL(
+      path.join(ROOT_DIR, 'apps', 'tanstack-web', 'docker', 'healthcheck.mjs')
+    ).href
+  );
+
+  await assert.rejects(
+    () =>
+      healthcheckModule.runTanStackWebHealthcheck({
+        env: {
+          BACKEND_INTERNAL_URL: 'backend:7820',
+          PORT: '9123',
+        },
+        fetchImpl: async (url) =>
+          new Response('', {
+            status: String(url).endsWith('/healthz') ? 503 : 200,
+          }),
+      }),
+    /Backend healthcheck returned HTTP 503/u
+  );
+});
+
+test('validateTanstackWebServer requires the internal drain-status route', () => {
+  const serverContent = fs.readFileSync(TANSTACK_WEB_SERVER_PATH, 'utf8');
+
+  assert.deepEqual(validateTanstackWebServer(serverContent), []);
+  assert.match(
+    validateTanstackWebServer(
+      serverContent.replace('/__platform/drain-status', '/api/health')
+    ).join('\n'),
+    /__platform\/drain-status/u
+  );
+});
+
+test('validateTanstackWebServer requires resilient server entry resolution', () => {
+  const serverContent = fs.readFileSync(TANSTACK_WEB_SERVER_PATH, 'utf8');
+
+  assert.match(
+    validateTanstackWebServer(
+      serverContent.replace("path.join(serverDir, 'index.js')", '')
+    ).join('\n'),
+    /index\.js/u
+  );
+  assert.match(
+    validateTanstackWebServer(
+      serverContent.replace("path.join(serverDir, 'assets')", '')
+    ).join('\n'),
+    /assets/u
+  );
 });
 
 test('validateDockerignore reports generated app artifacts in the context', () => {
@@ -185,7 +376,7 @@ test('Hive realtime Docker image hoists production dependencies for Bun runtime 
   );
 });
 
-test('Hive Docker image builds workspace dist exports before Next build', () => {
+test('Hive Docker image installs root toolchain and routes the Next build through Turbo', () => {
   const dockerfileContent = fs.readFileSync(HIVE_DOCKERFILE_PATH, 'utf8');
   const packageJson = JSON.parse(
     fs.readFileSync(path.join(ROOT_DIR, 'apps', 'hive', 'package.json'), 'utf8')
@@ -198,7 +389,11 @@ test('Hive Docker image builds workspace dist exports before Next build', () => 
   );
   assert.match(
     dockerfileContent,
-    /node scripts\/run-hive-docker-next-build\.js --env-file \/tmp\/web\.env/u
+    /bun install --frozen-lockfile --filter tutur3u --filter @tuturuuu\/hive/u
+  );
+  assert.match(
+    dockerfileContent,
+    /bun --env-file=\/tmp\/web\.env run turbo:local run build:docker -F @tuturuuu\/hive/u
   );
 });
 
@@ -246,7 +441,8 @@ test('Production Docker images retry filtered Bun installs and clear install cac
   const dockerfiles = [
     {
       content: fs.readFileSync(HIVE_DOCKERFILE_PATH, 'utf8'),
-      installCommand: 'bun install --frozen-lockfile --filter @tuturuuu/hive',
+      installCommand:
+        'bun install --frozen-lockfile --filter tutur3u --filter @tuturuuu/hive',
       validate: validateHiveDockerfile,
     },
     {
@@ -488,6 +684,30 @@ test('Docker web build CPU count leaves room on small Docker allocations', () =>
   );
 });
 
+test('native Docker web build leaves worker counts to Next by default', () => {
+  const env = getNextBuildEnvironment({
+    DOCKER_WEB_BUILD_MEMORY: '64g',
+    DOCKER_WEB_DOCKER_MEMORY_LIMIT: '64g',
+    DOCKER_WEB_NATIVE_BUILD: '1',
+  });
+
+  assert.equal(isNativeWebBuildEnabled(env), true);
+  assert.equal(env.DOCKER_WEB_NEXT_BUILD_CPUS, undefined);
+  assert.equal(env.DOCKER_WEB_STATIC_GENERATION_MAX_CONCURRENCY, undefined);
+  assert.match(env.NODE_OPTIONS, /--max-old-space-size=/u);
+});
+
+test('native Docker web build preserves explicit worker count overrides', () => {
+  const env = getNextBuildEnvironment({
+    DOCKER_WEB_NATIVE_BUILD: '1',
+    DOCKER_WEB_NEXT_BUILD_CPUS: '6',
+    DOCKER_WEB_STATIC_GENERATION_MAX_CONCURRENCY: '5',
+  });
+
+  assert.equal(env.DOCKER_WEB_NEXT_BUILD_CPUS, '6');
+  assert.equal(env.DOCKER_WEB_STATIC_GENERATION_MAX_CONCURRENCY, '5');
+});
+
 test('validateDockerfile reports missing workspace manifest copies', () => {
   const dockerfileContent = fs
     .readFileSync(WEB_DOCKERFILE_PATH, 'utf8')
@@ -574,6 +794,50 @@ test('validateDockerCompose accepts the current compose file', () => {
   assert.deepEqual(validateDockerCompose(composeContent), []);
 });
 
+test('validateTanstackDualCompose accepts the current dual compose file', () => {
+  const composeContent = fs.readFileSync(
+    TANSTACK_DUAL_COMPOSE_FILE_PATH,
+    'utf8'
+  );
+
+  assert.deepEqual(validateTanstackDualCompose(composeContent), []);
+});
+
+test('validateTanstackDualCompose reports missing runner and health gate wiring', () => {
+  const composeContent = fs
+    .readFileSync(TANSTACK_DUAL_COMPOSE_FILE_PATH, 'utf8')
+    .replace('      target: runner', '      target: dev')
+    .replace(
+      '        condition: service_healthy',
+      '        condition: service_started'
+    );
+
+  const errors = validateTanstackDualCompose(composeContent).join('\n');
+
+  assert.match(errors, /target: runner/);
+  assert.match(errors, /condition: service_healthy/);
+});
+
+test('validateTanstackDualCompose requires the Node runner healthcheck', () => {
+  const composeContent = fs
+    .readFileSync(TANSTACK_DUAL_COMPOSE_FILE_PATH, 'utf8')
+    .replace('          "node",', '          "bun",');
+
+  const errors = validateTanstackDualCompose(composeContent).join('\n');
+
+  assert.match(errors, /"node"/);
+});
+
+test('validateTanstackDualCompose requires the shared TanStack healthcheck script', () => {
+  const composeContent = fs
+    .readFileSync(TANSTACK_DUAL_COMPOSE_FILE_PATH, 'utf8')
+    .replace('"docker/healthcheck.mjs"', '"-e"');
+
+  const errors = validateTanstackDualCompose(composeContent).join('\n');
+
+  assert.match(errors, /docker\/healthcheck\.mjs/);
+});
+
 test('validateDockerCompose reports public local Redis port mappings', () => {
   const composeContent = fs
     .readFileSync(WEB_COMPOSE_FILE_PATH, 'utf8')
@@ -589,7 +853,7 @@ test('validateDockerCompose reports public local Redis port mappings', () => {
 test('validateDockerCompose reports missing bind mounts', () => {
   const composeContent = fs
     .readFileSync(WEB_COMPOSE_FILE_PATH, 'utf8')
-    .replace('      - .:/workspace\n', '');
+    .replaceAll('      - .:/workspace\n', '');
 
   const errors = validateDockerCompose(composeContent);
 
@@ -599,7 +863,7 @@ test('validateDockerCompose reports missing bind mounts', () => {
 test('validateDockerCompose reports missing package-local artifact isolation', () => {
   const composeContent = fs
     .readFileSync(WEB_COMPOSE_FILE_PATH, 'utf8')
-    .replace(
+    .replaceAll(
       '      - platform-web-ui-node_modules:/workspace/packages/ui/node_modules\n',
       ''
     );
@@ -619,6 +883,48 @@ test('validateDockerProdCompose accepts the current production compose file', ()
   const composeContent = readDockerProdComposeMergedText(ROOT_DIR);
 
   assert.deepEqual(validateDockerProdCompose(composeContent), []);
+});
+
+test('validateDockerProdCompose requires restart policies on durable production services', () => {
+  const composeContent = readDockerProdComposeMergedText(ROOT_DIR)
+    .replace(
+      '  init: true\n  restart: unless-stopped\n  volumes:',
+      '  init: true\n  volumes:'
+    )
+    .replace(
+      '  init: true\n  restart: unless-stopped\n  depends_on:\n    backend:',
+      '  init: true\n  depends_on:\n    backend:'
+    )
+    .replace(
+      '    restart: unless-stopped\n\n  cloudflared:',
+      '\n  cloudflared:'
+    )
+    .replace(
+      '    restart: unless-stopped\n\n  serverless-redis-http:',
+      '\n  serverless-redis-http:'
+    )
+    .replace(
+      '    restart: unless-stopped\n\n  storage-unzip-proxy:',
+      '\n  storage-unzip-proxy:'
+    )
+    .replace(
+      /^[ ]{2}web-blue-green-watcher:\n(?:(?:[ ]{4,}.+\n)|(?:\s*\n))*/mu,
+      (block) => block.replace('    restart: unless-stopped\n', '')
+    )
+    .replace(
+      /^[ ]{2}web-cron-runner:\n(?:(?:[ ]{4,}.+\n)|(?:\s*\n))*/mu,
+      (block) => block.replace('    restart: unless-stopped\n', '')
+    );
+
+  const errors = validateDockerProdCompose(composeContent).join('\n');
+
+  assert.match(errors, /x-web-service/u);
+  assert.match(errors, /x-tanstack-web-service/u);
+  assert.match(errors, /web-proxy/u);
+  assert.match(errors, /redis/u);
+  assert.match(errors, /markitdown/u);
+  assert.match(errors, /web-blue-green-watcher/u);
+  assert.match(errors, /web-cron-runner/u);
 });
 
 test('validateDockerBakeFile accepts the current production bake file', () => {
@@ -650,6 +956,10 @@ test('validateDockerProdCompose reports missing Docker web build args', () => {
         '{' +
         'DOCKER_WEB_BUILD_MEMORY:-12g' +
         '}',
+      '      DOCKER_WEB_BUILD_MAX_PARALLELISM: $' +
+        '{' +
+        'DOCKER_WEB_BUILD_MAX_PARALLELISM:-1' +
+        '}',
       '      DOCKER_WEB_DOCKER_MEMORY_LIMIT: $' +
         '{' +
         'DOCKER_WEB_DOCKER_MEMORY_LIMIT:-' +
@@ -668,7 +978,11 @@ test('validateDockerProdCompose reports missing Docker web build args', () => {
         '}',
       '      DOCKER_WEB_REACT_COMPILER: $' +
         '{' +
-        'DOCKER_WEB_REACT_COMPILER:-0' +
+        'DOCKER_WEB_REACT_COMPILER:-1' +
+        '}',
+      '      DOCKER_WEB_TURBO_CONCURRENCY: $' +
+        '{' +
+        'DOCKER_WEB_TURBO_CONCURRENCY:-' +
         '}',
       '',
     ].join('\n'),
@@ -678,11 +992,13 @@ test('validateDockerProdCompose reports missing Docker web build args', () => {
   const errors = validateDockerProdCompose(composeContent).join('\n');
 
   assert.match(errors, /DOCKER_WEB_BUILD_MEMORY/);
+  assert.match(errors, /DOCKER_WEB_BUILD_MAX_PARALLELISM/);
   assert.match(errors, /DOCKER_WEB_DOCKER_MEMORY_LIMIT/);
   assert.match(errors, /DOCKER_WEB_NEXT_APP_ONLY/);
   assert.match(errors, /DOCKER_WEB_NEXT_BUILD_ENGINE/);
   assert.match(errors, /DOCKER_WEB_NODE_MAX_OLD_SPACE_SIZE/);
   assert.match(errors, /DOCKER_WEB_REACT_COMPILER/);
+  assert.match(errors, /DOCKER_WEB_TURBO_CONCURRENCY/);
 });
 
 test('validateDockerProdCompose reports missing version badge metadata env wiring', () => {
@@ -696,6 +1012,35 @@ test('validateDockerProdCompose reports missing version badge metadata env wirin
   const errors = validateDockerProdCompose(composeContent).join('\n');
 
   assert.match(errors, /PLATFORM_BUILD_COMMIT_HASH/);
+});
+
+test('validateDockerProdCompose reports missing TanStack backend health dependency', () => {
+  const composeContent = readDockerProdComposeMergedText(ROOT_DIR).replace(
+    [
+      '  depends_on:',
+      '    backend:',
+      '      condition: service_healthy',
+      '',
+    ].join('\n'),
+    ''
+  );
+
+  const errors = validateDockerProdCompose(composeContent).join('\n');
+
+  assert.match(errors, /x-tanstack-web-service/);
+  assert.match(errors, /backend/);
+  assert.match(errors, /service_healthy/);
+});
+
+test('validateDockerProdCompose requires script-backed TanStack healthchecks', () => {
+  const composeContent = readDockerProdComposeMergedText(ROOT_DIR).replace(
+    '"docker/healthcheck.mjs"',
+    '"-e"'
+  );
+
+  const errors = validateDockerProdCompose(composeContent).join('\n');
+
+  assert.match(errors, /docker\/healthcheck\.mjs/u);
 });
 
 test('validateDockerProdCompose rejects public production port mappings and fallback token', () => {
@@ -802,6 +1147,7 @@ test('production watcher service does not keep BuildKit running while idle', () 
   );
   assert.match(watcherServiceBlock, /^\s+- DOCKER_WEB_BUILD_MEMORY$/mu);
   assert.match(watcherServiceBlock, /^\s+- DOCKER_WEB_BUILD_CPUS$/mu);
+  assert.match(watcherServiceBlock, /^\s+- DOCKER_WEB_FRONTEND$/mu);
   assert.match(
     watcherServiceBlock,
     /^\s+- DOCKER_WEB_BUILD_MAX_PARALLELISM$/mu
@@ -825,6 +1171,19 @@ test('validateDockerProdCompose reports missing watcher build env wiring', () =>
   assert.match(errors.join('\n'), /DOCKER_WEB_NEXT_BUILD_CPUS/);
 });
 
+test('validateDockerProdCompose reports missing frontend selector env wiring', () => {
+  const composeContent = readDockerProdComposeMergedText(ROOT_DIR).replaceAll(
+    '      - DOCKER_WEB_FRONTEND\n',
+    ''
+  );
+
+  const errors = validateDockerProdCompose(composeContent);
+
+  assert.match(errors.join('\n'), /DOCKER_WEB_FRONTEND/);
+  assert.match(errors.join('\n'), /web-blue-green-watcher/);
+  assert.match(errors.join('\n'), /web-cron-runner/);
+});
+
 test('validateDockerProdCompose reports missing cron runner wiring', () => {
   const composeContent = readDockerProdComposeMergedText(ROOT_DIR).replace(
     '  web-cron-runner:\n',
@@ -834,6 +1193,34 @@ test('validateDockerProdCompose reports missing cron runner wiring', () => {
   const errors = validateDockerProdCompose(composeContent);
 
   assert.match(errors.join('\n'), /web-cron-runner/);
+});
+
+test('validateDockerProdCompose requires watcher companion healthchecks', () => {
+  const composeContent = readDockerProdComposeMergedText(ROOT_DIR)
+    .replace(
+      /^[ ]{2}web-blue-green-watcher:\n(?:(?:[ ]{4,}.+\n)|(?:\s*\n))*/mu,
+      (block) => block.replace('    healthcheck:', '    x-healthcheck:')
+    )
+    .replace(
+      /^[ ]{2}web-cron-runner:\n(?:(?:[ ]{4,}.+\n)|(?:\s*\n))*/mu,
+      (block) => block.replace('    healthcheck:', '    x-healthcheck:')
+    );
+
+  const errors = validateDockerProdCompose(composeContent).join('\n');
+
+  assert.match(errors, /web-blue-green-watcher.*healthcheck/u);
+  assert.match(errors, /web-cron-runner.*healthcheck/u);
+});
+
+test('validateDockerProdCompose requires cron runner heartbeat healthcheck', () => {
+  const composeContent = readDockerProdComposeMergedText(ROOT_DIR).replace(
+    '/usr/local/bin/cron-runner-entrypoint.js',
+    '/bin/true'
+  );
+
+  const errors = validateDockerProdCompose(composeContent).join('\n');
+
+  assert.match(errors, /cron-runner-entrypoint\.js --healthcheck/u);
 });
 
 test('validateDockerProdCompose reports missing watcher host workspace wiring', () => {
@@ -850,6 +1237,23 @@ test('validateDockerProdCompose reports missing watcher host workspace wiring', 
   assert.match(errors.join('\n'), /PLATFORM_HOST_WORKSPACE_DIR/);
 });
 
+test('validateDockerProdCompose reports missing watcher linked-worktree Git metadata wiring', () => {
+  const composeContent = readDockerProdComposeMergedText(ROOT_DIR)
+    .replaceAll('      - DOCKER_WEB_GIT_COMMON_DIR\n', '')
+    .replaceAll(
+      '      - ${' +
+        'DOCKER_WEB_GIT_COMMON_DIR:-../.git' +
+        '}:${' +
+        'DOCKER_WEB_GIT_COMMON_DIR:-/workspace-git-common' +
+        '}\n',
+      ''
+    );
+
+  const errors = validateDockerProdCompose(composeContent);
+
+  assert.match(errors.join('\n'), /DOCKER_WEB_GIT_COMMON_DIR/);
+});
+
 test('validateDockerProdCompose reports missing watcher project registry wiring', () => {
   const composeContent = readDockerProdComposeMergedText(ROOT_DIR).replaceAll(
     '      - PLATFORM_LOG_DRAIN_DATABASE_URL=postgres://platform_log_drain:platform_log_drain@log-drain-postgres:5432/platform_log_drain\n',
@@ -859,6 +1263,25 @@ test('validateDockerProdCompose reports missing watcher project registry wiring'
   const errors = validateDockerProdCompose(composeContent);
 
   assert.match(errors.join('\n'), /PLATFORM_LOG_DRAIN_DATABASE_URL/);
+});
+
+test('validateDockerProdCompose rejects log-drain dependencies on runtime services', () => {
+  const composeContent = readDockerProdComposeMergedText(ROOT_DIR).replace(
+    '  healthcheck:\n    test:\n      [',
+    [
+      '  depends_on:',
+      '    log-drain-postgres:',
+      '      condition: service_started',
+      '      required: false',
+      '  healthcheck:',
+      '    test:',
+      '      [',
+    ].join('\n')
+  );
+
+  const errors = validateDockerProdCompose(composeContent).join('\n');
+
+  assert.match(errors, /must not depend_on log-drain-postgres/u);
 });
 
 test('validateDockerProdCompose reports missing monitoring runtime mount', () => {
@@ -944,6 +1367,15 @@ test('validateWatcherDockerfile accepts the current watcher Dockerfile', () => {
   assert.deepEqual(validateWatcherDockerfile(dockerfileContent), []);
 });
 
+test('validateDockerControlDockerfile accepts the current Docker control Dockerfile', () => {
+  const dockerfileContent = fs.readFileSync(
+    DOCKER_CONTROL_DOCKERFILE_PATH,
+    'utf8'
+  );
+
+  assert.deepEqual(validateDockerControlDockerfile(dockerfileContent), []);
+});
+
 test('validateCronRunnerDockerfile accepts the current cron runner Dockerfile', () => {
   const dockerfileContent = fs.readFileSync(
     CRON_RUNNER_DOCKERFILE_PATH,
@@ -1015,14 +1447,40 @@ test('validateMarkitdownDockerfile accepts the current MarkItDown Dockerfile', (
   assert.deepEqual(validateMarkitdownDockerfile(dockerfileContent), []);
 });
 
-test('validateHiveDockerfile reports missing workspace package builds', () => {
+test('validateMarkitdownDockerfile requires cache-free uv sync', () => {
+  const dockerfileContent = fs
+    .readFileSync(MARKITDOWN_DOCKERFILE_PATH, 'utf8')
+    .replace(' --no-cache', '');
+
+  const errors = validateMarkitdownDockerfile(dockerfileContent);
+
+  assert.match(errors.join('\n'), /uv sync --locked --no-dev --no-cache/);
+});
+
+test('validateHiveDockerfile reports missing Turbo cache mount', () => {
   const dockerfileContent = fs
     .readFileSync(HIVE_DOCKERFILE_PATH, 'utf8')
-    .replace('  bun run --filter @tuturuuu/supabase build && \\\n', '');
+    .replace(
+      '--mount=type=cache,id=platform-hive-turbo,target=/workspace/.turbo',
+      ''
+    );
 
   const errors = validateHiveDockerfile(dockerfileContent);
 
-  assert.match(errors.join('\n'), /@tuturuuu\/supabase build/);
+  assert.match(errors.join('\n'), /platform-hive-turbo/);
+});
+
+test('validateHiveDockerfile reports missing Turbo build command', () => {
+  const dockerfileContent = fs
+    .readFileSync(HIVE_DOCKERFILE_PATH, 'utf8')
+    .replace(
+      'bun --env-file=/tmp/web.env run turbo:local run build:docker -F @tuturuuu/hive',
+      ''
+    );
+
+  const errors = validateHiveDockerfile(dockerfileContent);
+
+  assert.match(errors.join('\n'), /build:docker -F @tuturuuu\/hive/u);
 });
 
 test('validateWatcherDockerfile reports missing docker cli tooling', () => {
@@ -1051,6 +1509,9 @@ test('checkDockerWebSetup uses rootDir for default docker reads', () => {
   );
 
   try {
+    fs.mkdirSync(path.join(tempDir, '.github', 'workflows'), {
+      recursive: true,
+    });
     fs.mkdirSync(path.join(tempDir, 'apps', 'web', 'docker'), {
       recursive: true,
     });
@@ -1078,6 +1539,12 @@ test('checkDockerWebSetup uses rootDir for default docker reads', () => {
     fs.mkdirSync(path.join(tempDir, 'apps', 'supermemory'), {
       recursive: true,
     });
+    fs.mkdirSync(path.join(tempDir, 'apps', 'tanstack-web'), {
+      recursive: true,
+    });
+    fs.mkdirSync(path.join(tempDir, 'apps', 'tanstack-web', 'docker'), {
+      recursive: true,
+    });
     fs.writeFileSync(
       path.join(tempDir, 'apps', 'web', 'Dockerfile'),
       'FROM scratch AS deps\n'
@@ -1102,6 +1569,10 @@ test('checkDockerWebSetup uses rootDir for default docker reads', () => {
     );
     fs.writeFileSync(
       path.join(tempDir, 'apps', 'web', 'docker', 'cron-runner.Dockerfile'),
+      'FROM scratch\n'
+    );
+    fs.writeFileSync(
+      path.join(tempDir, 'apps', 'web', 'docker', 'docker-control.Dockerfile'),
       'FROM scratch\n'
     );
     fs.writeFileSync(
@@ -1143,6 +1614,14 @@ test('checkDockerWebSetup uses rootDir for default docker reads', () => {
       'FROM scratch\n'
     );
     fs.writeFileSync(
+      path.join(tempDir, 'apps', 'tanstack-web', 'Dockerfile'),
+      'FROM scratch\n'
+    );
+    fs.writeFileSync(
+      path.join(tempDir, 'apps', 'tanstack-web', 'docker', 'server.mjs'),
+      ''
+    );
+    fs.writeFileSync(
       path.join(tempDir, 'docker-compose.web.yml'),
       'services:\n'
     );
@@ -1150,8 +1629,16 @@ test('checkDockerWebSetup uses rootDir for default docker reads', () => {
       path.join(tempDir, 'docker-compose.web.prod.yml'),
       'services:\n'
     );
+    fs.writeFileSync(
+      path.join(tempDir, 'docker-compose.tanstack-dual.yml'),
+      'services:\n'
+    );
     fs.writeFileSync(path.join(tempDir, 'docker-bake.web.prod.hcl'), '');
     fs.writeFileSync(path.join(tempDir, '.dockerignore'), '');
+    fs.writeFileSync(
+      path.join(tempDir, '.github', 'workflows', 'docker-setup-check.yaml'),
+      ''
+    );
 
     const errors = checkDockerWebSetup({
       rootDir: tempDir,

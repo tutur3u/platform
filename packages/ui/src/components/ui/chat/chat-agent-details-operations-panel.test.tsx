@@ -16,7 +16,7 @@ vi.mock('next-intl', () => ({
   useTranslations: () => (key: string) => key,
 }));
 
-vi.mock('@tuturuuu/internal-api/infrastructure', () => ({
+vi.mock('@tuturuuu/internal-api/infrastructure/ai', () => ({
   abortAiAgentZaloPersonalQrLogin: (
     ...args: Parameters<typeof mocks.abortAiAgentZaloPersonalQrLogin>
   ) => mocks.abortAiAgentZaloPersonalQrLogin(...args),

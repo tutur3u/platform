@@ -68,6 +68,7 @@ import { useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import type { ComponentProps, ElementType } from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { getTasksAppUrlClient } from '@/lib/tasks-app-url-client';
 import type {
   ExtendedWorkspaceTask,
   SessionWithRelations,
@@ -1377,7 +1378,7 @@ export function TimerControls({
   const fetchBoards = useCallback(async () => {
     try {
       const response = await apiCall(
-        `/api/v1/workspaces/${wsId}/boards-with-lists`
+        getTasksAppUrlClient(`/api/v1/workspaces/${wsId}/boards-with-lists`)
       );
       setBoards(response.boards || []);
     } catch (error) {
@@ -1516,14 +1517,17 @@ export function TimerControls({
     setIsCreatingTask(true);
 
     try {
-      const response = await apiCall(`/api/v1/workspaces/${wsId}/tasks`, {
-        method: 'POST',
-        body: JSON.stringify({
-          name: newTaskName,
-          description: newTaskDescription || null,
-          listId: selectedListId,
-        }),
-      });
+      const response = await apiCall(
+        getTasksAppUrlClient(`/api/v1/workspaces/${wsId}/tasks`),
+        {
+          method: 'POST',
+          body: JSON.stringify({
+            name: newTaskName,
+            description: newTaskDescription || null,
+            listId: selectedListId,
+          }),
+        }
+      );
 
       const newTask = response.task;
       setSelectedTaskId(newTask.id);
@@ -3796,7 +3800,7 @@ export function TimerControls({
                         <p className="mb-3 text-muted-foreground text-xs">
                           {t('create_tasks_instruction')}
                         </p>
-                        <Link href={`/${wsId}/tasks/boards`}>
+                        <Link href={getTasksAppUrlClient(`/${wsId}/boards`)}>
                           <Button
                             variant="outline"
                             size="sm"

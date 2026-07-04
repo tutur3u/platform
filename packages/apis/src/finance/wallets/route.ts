@@ -1,3 +1,7 @@
+import {
+  isSupportedCurrency,
+  resolveSupportedCurrency,
+} from '@tuturuuu/utils/currencies';
 import { canSetAnyFinanceWalletOnCreate } from '@tuturuuu/utils/finance';
 import { getWorkspaceConfig } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
@@ -345,6 +349,21 @@ export async function POST(
     );
   }
 
+  const requestedCurrency =
+    typeof data.currency === 'string' ? data.currency.trim() : '';
+  if (requestedCurrency && !isSupportedCurrency(requestedCurrency)) {
+    return NextResponse.json(
+      { message: 'Unsupported currency' },
+      { status: 400 }
+    );
+  }
+  const workspaceCurrency = resolveSupportedCurrency(
+    await getWorkspaceConfig(normalizedWsId, 'DEFAULT_CURRENCY')
+  );
+  const walletCurrency = requestedCurrency
+    ? resolveSupportedCurrency(requestedCurrency)
+    : workspaceCurrency;
+
   // Extract only fields that exist in the database schema
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const walletData: { ws_id: string } & Record<string, any> = {
@@ -353,7 +372,7 @@ export async function POST(
   if (data.id) walletData.id = data.id;
   if (data.name) walletData.name = data.name;
   if (data.balance !== undefined) walletData.balance = data.balance;
-  if (data.currency) walletData.currency = data.currency;
+  walletData.currency = walletCurrency;
   if (data.description !== undefined) walletData.description = data.description;
   if (data.icon !== undefined) walletData.icon = data.icon;
   if (data.image_src !== undefined) walletData.image_src = data.image_src;

@@ -98,4 +98,30 @@ describe('filterDashboardNavigationLinks', () => {
     ]);
     expect(visibleLinks[1]).toHaveProperty('requiredWorkspaceTier', undefined);
   });
+
+  it('keeps single-child parents when flattening is disabled', () => {
+    const links: (NavLink | null)[] = [
+      {
+        children: [{ href: '/personal/tasks/boards', title: 'Boards' }],
+        href: '/personal/tasks',
+        title: 'Tasks',
+      },
+    ];
+
+    const visibleLinks = filterDashboardNavigationLinks(links, {
+      currentWsId: 'personal',
+      flattenSingleChild: false,
+      prodMode: true,
+      userEmail: 'member@example.com',
+      workspaceTier: 'FREE',
+    });
+
+    expect(visibleLinks).toEqual([
+      expect.objectContaining({
+        children: [expect.objectContaining({ title: 'Boards' })],
+        href: '/personal/tasks',
+        title: 'Tasks',
+      }),
+    ]);
+  });
 });

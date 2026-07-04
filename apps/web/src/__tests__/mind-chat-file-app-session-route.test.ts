@@ -72,7 +72,7 @@ describe('Mind chat file routes', () => {
   it.each<[string, () => Promise<unknown>, Record<string, unknown>]>([
     [
       'upload-url',
-      () => import('@/app/api/ai/chat/upload-url/route'),
+      () => import('@/legacy-api-routes/ai/chat/upload-url/route'),
       {
         allowAiTempAuth: true,
         ...appSessionAuthOptions,
@@ -81,7 +81,7 @@ describe('Mind chat file routes', () => {
     ],
     [
       'delete-file',
-      () => import('@/app/api/ai/chat/delete-file/route'),
+      () => import('@/legacy-api-routes/ai/chat/delete-file/route'),
       {
         allowAiTempAuth: true,
         ...appSessionAuthOptions,
@@ -90,7 +90,7 @@ describe('Mind chat file routes', () => {
     ],
     [
       'file-urls',
-      () => import('@/app/api/ai/chat/file-urls/route'),
+      () => import('@/legacy-api-routes/ai/chat/file-urls/route'),
       {
         allowAiTempAuth: true,
         ...appSessionAuthOptions,
@@ -135,7 +135,7 @@ describe('Mind chat file routes', () => {
     );
     const context = createRouteContext();
     const { POST } = (await import(
-      '@/app/api/ai/chat/upload-url/route'
+      '@/legacy-api-routes/ai/chat/upload-url/route'
     )) as unknown as {
       POST: ChatFileRoutePost;
     };
@@ -185,7 +185,7 @@ describe('Mind chat file routes', () => {
     );
     const context = createRouteContext();
     const { POST } = (await import(
-      '@/app/api/ai/chat/delete-file/route'
+      '@/legacy-api-routes/ai/chat/delete-file/route'
     )) as unknown as {
       POST: ChatFileRoutePost;
     };
@@ -240,7 +240,7 @@ describe('Mind chat file routes', () => {
     );
     const context = createRouteContext();
     const { POST } = (await import(
-      '@/app/api/ai/chat/file-urls/route'
+      '@/legacy-api-routes/ai/chat/file-urls/route'
     )) as unknown as {
       POST: ChatFileRoutePost;
     };

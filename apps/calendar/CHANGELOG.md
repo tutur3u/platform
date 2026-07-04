@@ -1,5 +1,45 @@
 # Changelog
 
+## [0.8.0](https://github.com/tutur3u/platform/compare/calendar-v0.7.0...calendar-v0.8.0) (2026-07-03)
+
+
+### Features
+
+* **calendar:** migrate calendar module from web to dedicated calendar app ([678b949](https://github.com/tutur3u/platform/commit/678b949096e90d1c9d215fea50d0eb4ba9698a7e))
+
+
+### Bug Fixes
+
+* **build:** restore repo check ([4def830](https://github.com/tutur3u/platform/commit/4def830f463ea8a9c31af8e982eab716e9bd5f72))
+
+## [0.7.0](https://github.com/tutur3u/platform/compare/calendar-v0.6.0...calendar-v0.7.0) (2026-06-29)
+
+
+### Features
+
+* **tasks:** add task templates ([8d0700a](https://github.com/tutur3u/platform/commit/8d0700ad255c7b5874bfa065575df6b1cde34063))
+
+
+### Bug Fixes
+
+* **tasks:** restore tracked task descriptions ([f892ae2](https://github.com/tutur3u/platform/commit/f892ae23dfec41c2d25649b97a628d8cdcd1fa5d))
+
+## [0.6.0](https://github.com/tutur3u/platform/compare/calendar-v0.5.3...calendar-v0.6.0) (2026-06-24)
+
+
+### Features
+
+* **calendar:** add configurable two-way sync ([76078d8](https://github.com/tutur3u/platform/commit/76078d865618b4970b430b08f0db7a1a8c30ffcb))
+* **tasks:** add shareable kanban task plans ([2de4e58](https://github.com/tutur3u/platform/commit/2de4e5819673e11b01cdc1f21c317f33dc196f56))
+* **tasks:** consolidate board task settings ([b1d720a](https://github.com/tutur3u/platform/commit/b1d720ac865406d6dd0b2477c5ba04e336de9929))
+
+
+### Bug Fixes
+
+* **ci:** address remaining PR check failures ([7eb56d5](https://github.com/tutur3u/platform/commit/7eb56d51d8d14f6e2dd22c2d4c3514a560847333))
+* **ci:** support ts7 native next builds ([b0af764](https://github.com/tutur3u/platform/commit/b0af7640d3035f64301d154f86b080824885e121))
+* **i18n:** sync task planner keys ([fea50fd](https://github.com/tutur3u/platform/commit/fea50fddfb3019d9dfeeb834ec5444f2dbe01554))
+
 ## [0.5.3](https://github.com/tutur3u/platform/compare/calendar-v0.5.2...calendar-v0.5.3) (2026-06-15)
 
 

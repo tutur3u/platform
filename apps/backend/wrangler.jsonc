@@ -1,0 +1,34 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "tuturuuu-backend",
+  "main": "build/worker/shim.mjs",
+  "compatibility_date": "2026-06-20",
+  "compatibility_flags": ["nodejs_compat"],
+  "build": {
+    "command": "worker-build --release -- --no-default-features --features worker"
+  },
+  "dev": {
+    "port": 8780,
+    "local_protocol": "http"
+  },
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 0.05
+  },
+  "secrets": {
+    "required": [
+      "BACKEND_INTERNAL_TOKEN",
+      "TUTURUUU_APP_COORDINATION_SECRET",
+      "SUPABASE_URL",
+      "SUPABASE_SERVICE_ROLE_KEY",
+      "CRON_SECRET",
+      "DISCORD_APP_DEPLOYMENT_URL",
+      "AURORA_EXTERNAL_URL",
+      "AURORA_EXTERNAL_WSID"
+    ]
+  },
+  "vars": {
+    "BACKEND_ENV": "preview",
+    "BACKEND_SERVICE_NAME": "backend"
+  }
+}

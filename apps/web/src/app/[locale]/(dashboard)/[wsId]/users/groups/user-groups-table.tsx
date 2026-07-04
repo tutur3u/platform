@@ -5,7 +5,7 @@ import { Loader2, RefreshCw } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { useTranslations } from 'next-intl';
 import { parseAsString, useQueryState } from 'nuqs';
-import { useCallback } from 'react';
+import { useCallback, useRef } from 'react';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { getUserGroupColumns } from './columns';
 import Filters from './filters';
@@ -14,6 +14,7 @@ import {
   type UserGroupsResponse,
   useInfiniteUserGroups,
 } from './hooks';
+import { shouldRefreshUserGroups } from './refresh-utils';
 
 interface Props {
   wsId: string;
@@ -28,6 +29,7 @@ interface Props {
 export function UserGroupsTable({ wsId, initialData, permissions }: Props) {
   const t = useTranslations();
   const queryClient = useQueryClient();
+  const lastRefreshAtRef = useRef<number | null>(null);
 
   const [q, setQ] = useQueryState(
     'q',
@@ -107,6 +109,21 @@ export function UserGroupsTable({ wsId, initialData, permissions }: Props) {
     setIncludeArchived(null);
   }, [setIncludeArchived, setQ, setStatus]);
 
+  const handleRefresh = useCallback(() => {
+    const now = Date.now();
+    if (!shouldRefreshUserGroups(now, lastRefreshAtRef.current)) {
+      return;
+    }
+
+    lastRefreshAtRef.current = now;
+    queryClient.invalidateQueries({
+      queryKey: ['workspace-user-groups', wsId],
+    });
+    queryClient.invalidateQueries({
+      queryKey: ['workspace-user-groups-infinite', wsId],
+    });
+  }, [queryClient, wsId]);
+
   const hasError = Boolean(error);
   const errorMessage = error instanceof Error ? error.message : undefined;
 
@@ -174,14 +191,7 @@ export function UserGroupsTable({ wsId, initialData, permissions }: Props) {
           canUpdateUserGroups: permissions.canUpdate,
           canDeleteUserGroups: permissions.canDelete,
         }}
-        onRefresh={() => {
-          queryClient.invalidateQueries({
-            queryKey: ['workspace-user-groups', wsId],
-          });
-          queryClient.invalidateQueries({
-            queryKey: ['workspace-user-groups-infinite', wsId],
-          });
-        }}
+        onRefresh={handleRefresh}
         defaultVisibility={{
           id: false,
           is_guest: false,

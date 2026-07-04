@@ -293,6 +293,32 @@ set
 where
     id = '00000000-0000-0000-0000-000000000005';
 
+-- Populate a default FREE-tier subscription product so local workspace setup
+-- can provision a free subscription and tier resolution returns FREE. In
+-- production this table is populated by Polar product sync; this seed only
+-- backs local development (Polar is typically disabled locally).
+insert into
+    private.workspace_subscription_products (
+        id,
+        name,
+        description,
+        price,
+        tier,
+        pricing_model,
+        archived
+    )
+values
+    (
+        '00000000-0000-0000-0000-0000000f4ee0',
+        'Free',
+        'Default free tier (local development seed).',
+        0,
+        'FREE',
+        'free',
+        false
+    )
+on conflict (id) do nothing;
+
 -- Populate workspaces
 insert into
     public.workspaces (id, name, handle, creator_id)
@@ -3786,7 +3812,7 @@ begin
         ws_id, storefront_id, event_type, occurred_at
     )
     select v_ws, v_store, e.event_type,
-        now() - (random() * 7 || ' days')::interval
+        now() - (random() * interval '7 days')
     from (
         select 'view' as event_type, generate_series(1, 100)
         union all select 'product_view', generate_series(1, 60)

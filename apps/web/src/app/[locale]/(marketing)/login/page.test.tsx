@@ -6,7 +6,9 @@ import Login from './page';
 const mocks = vi.hoisted(() => ({
   getLocalE2ESupabaseBrowserConfig: vi.fn(),
   isLocalE2EAuthBypassEnabled: vi.fn(),
+  cookieHeader: '',
   loginFormProps: [] as Array<{
+    deferAuthSurfaceUntilSessionCheck?: boolean;
     localE2EAuthBypass?: boolean;
     runtimeSupabaseConfig?: {
       supabasePublishableKey: string;
@@ -41,6 +43,13 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
   createClient: vi.fn(() => ({})),
 }));
 
+vi.mock('next/headers', () => ({
+  headers: vi.fn(async () => ({
+    get: (name: string) =>
+      name.toLowerCase() === 'cookie' ? mocks.cookieHeader : null,
+  })),
+}));
+
 vi.mock('@/constants/common', () => ({
   BASE_URL: 'https://tuturuuu.com',
   DEV_MODE: false,
@@ -54,6 +63,7 @@ vi.mock('@/lib/auth/local-e2e', () => ({
 
 vi.mock('./form', () => ({
   default: (props: {
+    deferAuthSurfaceUntilSessionCheck?: boolean;
     localE2EAuthBypass?: boolean;
     runtimeSupabaseConfig?: {
       supabasePublishableKey: string;
@@ -64,6 +74,9 @@ vi.mock('./form', () => ({
 
     return (
       <div
+        data-defer-auth-surface={String(
+          props.deferAuthSurfaceUntilSessionCheck ?? false
+        )}
         data-local-e2e-auth-bypass={String(props.localE2EAuthBypass ?? false)}
         data-runtime-supabase-url={props.runtimeSupabaseConfig?.supabaseUrl}
         data-testid="login-form"
@@ -164,6 +177,7 @@ describe('Login page', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.loginFormProps = [];
+    mocks.cookieHeader = '';
     mocks.getLocalE2ESupabaseBrowserConfig.mockReturnValue(null);
     mocks.isLocalE2EAuthBypassEnabled.mockReturnValue(false);
     mocks.resolveAuthenticatedSessionUser.mockResolvedValue({ user: null });
@@ -194,6 +208,7 @@ describe('Login page', () => {
       screen.getByRole('heading', { name: 'Welcome Back' })
     ).toBeInTheDocument();
     expect(screen.getByTestId('login-form')).toBeInTheDocument();
+    expect(mocks.resolveAuthenticatedSessionUser).not.toHaveBeenCalled();
   });
 
   it('threads the runtime local E2E auth bypass into the login form', async () => {
@@ -218,6 +233,7 @@ describe('Login page', () => {
       'http://127.0.0.1:8001'
     );
     expect(mocks.loginFormProps).toContainEqual({
+      deferAuthSurfaceUntilSessionCheck: false,
       localE2EAuthBypass: true,
       runtimeSupabaseConfig,
     });
@@ -256,6 +272,7 @@ describe('Login page', () => {
   });
 
   it('redirects authenticated hard loads away from plain login', async () => {
+    mocks.cookieHeader = 'sb-test-auth-token=session';
     mocks.resolveAuthenticatedSessionUser.mockResolvedValue({
       user: { id: 'user-1' },
     });
@@ -271,6 +288,7 @@ describe('Login page', () => {
   });
 
   it('redirects authenticated hard loads to safe local returnUrls', async () => {
+    mocks.cookieHeader = 'sb-test-auth-token=session';
     mocks.resolveAuthenticatedSessionUser.mockResolvedValue({
       user: { id: 'user-1' },
     });
@@ -287,7 +305,28 @@ describe('Login page', () => {
     ).rejects.toThrow('redirect:/en/personal/tasks?view=board');
   });
 
+  it('keeps MFA verification hard loads on the login page for authenticated sessions', async () => {
+    mocks.cookieHeader = 'sb-test-auth-token=session';
+    mocks.resolveAuthenticatedSessionUser.mockResolvedValue({
+      user: { id: 'user-1' },
+    });
+
+    await renderLoginPage({
+      mfa: 'required',
+      nextUrl: '/en/personal/tasks',
+    });
+
+    expect(redirectMock).not.toHaveBeenCalled();
+    expect(mocks.resolveAuthenticatedSessionUser).not.toHaveBeenCalled();
+    expect(screen.getByTestId('login-form')).toBeInTheDocument();
+    expect(screen.getByTestId('login-form')).toHaveAttribute(
+      'data-defer-auth-surface',
+      'false'
+    );
+  });
+
   it('keeps authenticated external returnUrls on the confirmation flow', async () => {
+    mocks.cookieHeader = 'sb-test-auth-token=session';
     mocks.resolveAuthenticatedSessionUser.mockResolvedValue({
       user: { id: 'user-1' },
     });
@@ -299,9 +338,31 @@ describe('Login page', () => {
     expect(redirectMock).not.toHaveBeenCalled();
     expect(screen.getByText('Learn')).toBeInTheDocument();
     expect(screen.getByTestId('login-form')).toBeInTheDocument();
+    expect(screen.getByTestId('login-form')).toHaveAttribute(
+      'data-defer-auth-surface',
+      'true'
+    );
+    expect(mocks.loginFormProps.at(-1)).toMatchObject({
+      deferAuthSurfaceUntilSessionCheck: true,
+    });
+  });
+
+  it('does not defer the login form for unauthenticated external returnUrls', async () => {
+    await renderLoginPage({
+      returnUrl: 'https://partner.example/launch',
+    });
+
+    expect(screen.getByTestId('login-form')).toHaveAttribute(
+      'data-defer-auth-surface',
+      'false'
+    );
+    expect(mocks.loginFormProps.at(-1)).toMatchObject({
+      deferAuthSurfaceUntilSessionCheck: false,
+    });
   });
 
   it('does not redirect authenticated multi-account hard loads', async () => {
+    mocks.cookieHeader = 'sb-test-auth-token=session';
     mocks.resolveAuthenticatedSessionUser.mockResolvedValue({
       user: { id: 'user-1' },
     });

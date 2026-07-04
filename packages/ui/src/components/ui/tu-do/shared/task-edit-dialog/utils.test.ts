@@ -17,12 +17,16 @@ vi.mock('./hooks/task-api', () => ({
 import {
   broadcastTaskDescriptionUpsert,
   buildTaskDescriptionUpdatePayload,
+  canPersistTaskDescriptionSnapshot,
+  createTaskDescriptionPersistenceGuardState,
   getTaskDescriptionPercentLeft,
   getTaskDescriptionPreviewText,
   getTaskDescriptionStorageLength,
+  recordTaskDescriptionEditorSnapshot,
   saveAndVerifyYjsDescriptionToDatabase,
   saveYjsDescriptionToDatabase,
   serializeTaskDescriptionContent,
+  serializeTaskDescriptionPersistenceSnapshot,
   updateTaskDescriptionCaches,
 } from './utils';
 
@@ -36,6 +40,10 @@ describe('task edit dialog utils', () => {
       },
     ],
   };
+  const emptyContent: JSONContent = {
+    type: 'doc',
+    content: [{ type: 'paragraph' }],
+  };
 
   beforeEach(() => {
     vi.resetAllMocks();
@@ -45,6 +53,98 @@ describe('task edit dialog utils', () => {
     expect(serializeTaskDescriptionContent(content)).toBe(
       JSON.stringify(content)
     );
+  });
+
+  it('blocks untrusted empty snapshots from clearing persisted content', () => {
+    const guardState = createTaskDescriptionPersistenceGuardState({
+      persistedDescription: JSON.stringify(content),
+    });
+
+    expect(
+      canPersistTaskDescriptionSnapshot({
+        currentSerializedDescription: null,
+        guardState,
+      })
+    ).toBe(false);
+    expect(
+      canPersistTaskDescriptionSnapshot({
+        currentSerializedDescription:
+          serializeTaskDescriptionPersistenceSnapshot(emptyContent),
+        guardState,
+      })
+    ).toBe(false);
+  });
+
+  it('allows no-op empty saves when the persisted description is already empty', () => {
+    const guardState = createTaskDescriptionPersistenceGuardState({
+      persistedDescription: null,
+    });
+
+    expect(
+      canPersistTaskDescriptionSnapshot({
+        currentSerializedDescription: null,
+        guardState,
+      })
+    ).toBe(true);
+  });
+
+  it('allows confirmed intentional clears after observing non-empty editor content', () => {
+    const initialGuardState = createTaskDescriptionPersistenceGuardState({
+      persistedDescription: JSON.stringify(content),
+    });
+
+    const nonEmptySeenState = recordTaskDescriptionEditorSnapshot(
+      initialGuardState,
+      content
+    );
+    const confirmedClearState = recordTaskDescriptionEditorSnapshot(
+      nonEmptySeenState,
+      null,
+      { canConfirmEmptySnapshot: true }
+    );
+
+    expect(
+      canPersistTaskDescriptionSnapshot({
+        currentSerializedDescription: null,
+        guardState: confirmedClearState,
+      })
+    ).toBe(true);
+  });
+
+  it('does not confirm empty snapshots before editor clears are trusted', () => {
+    const initialGuardState = createTaskDescriptionPersistenceGuardState({
+      persistedDescription: JSON.stringify(content),
+    });
+    const nonEmptySeenState = recordTaskDescriptionEditorSnapshot(
+      initialGuardState,
+      content
+    );
+    const untrustedEmptyState = recordTaskDescriptionEditorSnapshot(
+      nonEmptySeenState,
+      null,
+      { canConfirmEmptySnapshot: false }
+    );
+
+    expect(
+      canPersistTaskDescriptionSnapshot({
+        currentSerializedDescription: null,
+        guardState: untrustedEmptyState,
+      })
+    ).toBe(false);
+  });
+
+  it('allows non-empty saves even when the guard has not observed hydration', () => {
+    const guardState = createTaskDescriptionPersistenceGuardState({
+      persistedDescription: JSON.stringify(content),
+    });
+
+    expect(
+      canPersistTaskDescriptionSnapshot({
+        currentSerializedDescription:
+          serializeTaskDescriptionPersistenceSnapshot(content),
+        guardState,
+      })
+    ).toBe(true);
   });
 
   it('returns zero for empty description storage length', () => {

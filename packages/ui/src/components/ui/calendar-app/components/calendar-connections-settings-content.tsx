@@ -48,6 +48,13 @@ import { Separator } from '../../separator';
 import { Switch } from '../../switch';
 import type { CalendarConnectionsManagerState } from './use-calendar-connections-manager';
 
+function isWritableProviderAccess(accessRole?: string | null) {
+  if (!accessRole) return true;
+  return ['owner', 'writer', 'write', 'editor'].includes(
+    accessRole.toLowerCase()
+  );
+}
+
 export function CalendarConnectionsSettingsContent({
   state,
   className,
@@ -75,13 +82,26 @@ export function CalendarConnectionsSettingsContent({
     setNewCalendarName,
     setShowCreateCalendarDialog,
     showCreateCalendarDialog,
+    syncPreferencesData,
+    syncPreferencesMutation,
     systemCalendars,
     t,
     togglingIds,
     togglingTuturuuuIds,
     toggleAccountExpanded,
     toggleWorkspaceCalendarMutation,
+    updateConnectionSyncSettingsMutation,
   } = state;
+  const externalSyncOptions =
+    syncPreferencesData?.options.filter(
+      (option) => option.provider !== 'tuturuuu'
+    ) ?? [];
+  const syncSettingsUnavailable =
+    syncPreferencesData?.settingsAvailable === false;
+  const syncSettingsDisabled =
+    !syncPreferencesData ||
+    syncSettingsUnavailable ||
+    syncPreferencesMutation.isPending;
 
   return (
     <div className={className ? `space-y-4 ${className}` : 'space-y-4'}>
@@ -126,6 +146,126 @@ export function CalendarConnectionsSettingsContent({
               ))}
             </SelectContent>
           </Select>
+        </div>
+
+        <div className="space-y-3 rounded-md border p-3">
+          <div>
+            <h4 className="font-medium text-sm">
+              {t('two_way_sync') || 'Two-way sync'}
+            </h4>
+            <p className="text-muted-foreground text-xs">
+              {t('two_way_sync_desc') ||
+                'Control how Tuturuuu imports provider changes and mirrors native events outward.'}
+            </p>
+          </div>
+
+          {syncSettingsUnavailable && (
+            <p className="rounded-md bg-muted px-3 py-2 text-muted-foreground text-xs">
+              {t('calendar_sync_settings_unavailable') ||
+                'Sync controls will be available after the latest calendar migration is applied.'}
+            </p>
+          )}
+
+          <div className="space-y-2">
+            <div className="flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <p className="font-medium text-sm">
+                  {t('import_external_changes') || 'Import external changes'}
+                </p>
+                <p className="text-muted-foreground text-xs">
+                  {t('import_external_changes_desc') ||
+                    'Bring Google and Outlook event changes into Tuturuuu.'}
+                </p>
+              </div>
+              <Switch
+                checked={syncPreferencesData?.inboundSyncEnabled ?? true}
+                onCheckedChange={(checked) =>
+                  syncPreferencesMutation.mutate({
+                    inboundSyncEnabled: checked,
+                  })
+                }
+                disabled={syncSettingsDisabled}
+              />
+            </div>
+
+            <div className="flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <p className="font-medium text-sm">
+                  {t('sync_tuturuuu_events_outward') ||
+                    'Sync Tuturuuu events outward'}
+                </p>
+                <p className="text-muted-foreground text-xs">
+                  {t('sync_tuturuuu_events_outward_desc') ||
+                    'Mirror native Tuturuuu event creates and edits to a connected provider calendar.'}
+                </p>
+              </div>
+              <Switch
+                checked={syncPreferencesData?.outboundSyncEnabled ?? false}
+                onCheckedChange={(checked) =>
+                  syncPreferencesMutation.mutate({
+                    outboundSyncEnabled: checked,
+                  })
+                }
+                disabled={
+                  syncSettingsDisabled || externalSyncOptions.length === 0
+                }
+              />
+            </div>
+          </div>
+
+          <Select
+            value={syncPreferencesData?.defaultOutboundConnectionId ?? 'none'}
+            onValueChange={(value) =>
+              syncPreferencesMutation.mutate({
+                defaultOutboundConnectionId: value === 'none' ? null : value,
+              })
+            }
+            disabled={syncSettingsDisabled || externalSyncOptions.length === 0}
+          >
+            <SelectTrigger className="w-full">
+              <SelectValue
+                placeholder={
+                  t('choose_outbound_calendar') || 'Choose outbound calendar'
+                }
+              />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">
+                {t('no_outbound_calendar') || 'No outbound calendar'}
+              </SelectItem>
+              {externalSyncOptions.map((option) => (
+                <SelectItem key={option.id} value={option.connectionId}>
+                  <div className="flex min-w-0 items-center gap-2">
+                    <span
+                      className="h-2.5 w-2.5 shrink-0 rounded-full"
+                      style={{
+                        backgroundColor: option.color ?? undefined,
+                      }}
+                    />
+                    <span className="truncate">{option.label}</span>
+                    <Badge variant="secondary" className="capitalize">
+                      {option.provider}
+                    </Badge>
+                  </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <div className="flex items-center justify-between gap-3 rounded-md bg-muted/40 px-3 py-2">
+            <div className="min-w-0">
+              <p className="font-medium text-xs">
+                {t('conflict_policy') || 'Conflict policy'}
+              </p>
+              <p className="text-muted-foreground text-xs">
+                {t('latest_write_wins_desc') ||
+                  'When both sides changed, the most recently written event wins.'}
+              </p>
+            </div>
+            <Badge variant="outline">
+              {t('latest_write_wins') || 'Latest write wins'}
+            </Badge>
+          </div>
         </div>
 
         {/* Tuturuuu Calendars Section */}
@@ -370,40 +510,106 @@ export function CalendarConnectionsSettingsContent({
                 <Separator />
                 <div className="space-y-2 p-3">
                   {(calendarsByAccount[account.id] || []).length > 0 ? (
-                    (calendarsByAccount[account.id] || []).map((cal) => (
-                      <div
-                        key={cal.id}
-                        className="flex items-center justify-between gap-2 rounded-md px-2 py-1.5 hover:bg-muted/50"
-                      >
-                        <div className="flex min-w-0 flex-1 items-center gap-2">
-                          <div
-                            className="h-3 w-3 shrink-0 rounded-full"
-                            style={{
-                              backgroundColor: cal.color || '#4285f4',
-                            }}
-                          />
-                          <span
-                            className="line-clamp-1 break-all text-sm"
-                            title={cal.calendar_name}
-                          >
-                            {cal.calendar_name}
-                          </span>
+                    (calendarsByAccount[account.id] || []).map((cal) => {
+                      const syncControlsDisabled =
+                        !cal.connectionExists ||
+                        !cal.is_enabled ||
+                        syncSettingsDisabled ||
+                        updateConnectionSyncSettingsMutation.isPending;
+                      const canWriteToProvider = isWritableProviderAccess(
+                        cal.accessRole
+                      );
+
+                      return (
+                        <div
+                          key={cal.id}
+                          className="rounded-md px-2 py-1.5 hover:bg-muted/50"
+                        >
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex min-w-0 flex-1 items-center gap-2">
+                              <div
+                                className="h-3 w-3 shrink-0 rounded-full"
+                                style={{
+                                  backgroundColor: cal.color || '#4285f4',
+                                }}
+                              />
+                              <span
+                                className="line-clamp-1 break-all text-sm"
+                                title={cal.calendar_name}
+                              >
+                                {cal.calendar_name}
+                              </span>
+                            </div>
+                            <Switch
+                              checked={cal.is_enabled}
+                              onCheckedChange={() =>
+                                handleToggle(cal.id, cal.is_enabled, {
+                                  calendar_id: cal.calendar_id,
+                                  calendar_name: cal.calendar_name,
+                                  color: cal.color,
+                                  connectionExists: cal.connectionExists,
+                                  accountId: cal.accountId,
+                                  accessRole: cal.accessRole,
+                                })
+                              }
+                              disabled={togglingIds.has(cal.id)}
+                            />
+                          </div>
+
+                          {cal.connectionExists && (
+                            <div className="mt-2 grid grid-cols-3 gap-2 pl-5">
+                              <label className="flex items-center justify-between gap-2 rounded-md bg-muted/40 px-2 py-1 text-muted-foreground text-xs">
+                                <span>{t('import') || 'Import'}</span>
+                                <Switch
+                                  checked={cal.syncInboundEnabled}
+                                  onCheckedChange={(checked) =>
+                                    updateConnectionSyncSettingsMutation.mutate(
+                                      {
+                                        id: cal.id,
+                                        syncInboundEnabled: checked,
+                                      }
+                                    )
+                                  }
+                                  disabled={syncControlsDisabled}
+                                />
+                              </label>
+                              <label className="flex items-center justify-between gap-2 rounded-md bg-muted/40 px-2 py-1 text-muted-foreground text-xs">
+                                <span>{t('send') || 'Send'}</span>
+                                <Switch
+                                  checked={cal.syncOutboundEnabled}
+                                  onCheckedChange={(checked) =>
+                                    updateConnectionSyncSettingsMutation.mutate(
+                                      {
+                                        id: cal.id,
+                                        syncOutboundEnabled: checked,
+                                      }
+                                    )
+                                  }
+                                  disabled={
+                                    syncControlsDisabled || !canWriteToProvider
+                                  }
+                                />
+                              </label>
+                              <label className="flex items-center justify-between gap-2 rounded-md bg-muted/40 px-2 py-1 text-muted-foreground text-xs">
+                                <span>{t('deletes') || 'Deletes'}</span>
+                                <Switch
+                                  checked={cal.syncDeleteEnabled}
+                                  onCheckedChange={(checked) =>
+                                    updateConnectionSyncSettingsMutation.mutate(
+                                      {
+                                        id: cal.id,
+                                        syncDeleteEnabled: checked,
+                                      }
+                                    )
+                                  }
+                                  disabled={syncControlsDisabled}
+                                />
+                              </label>
+                            </div>
+                          )}
                         </div>
-                        <Switch
-                          checked={cal.is_enabled}
-                          onCheckedChange={() =>
-                            handleToggle(cal.id, cal.is_enabled, {
-                              calendar_id: cal.calendar_id,
-                              calendar_name: cal.calendar_name,
-                              color: cal.color,
-                              connectionExists: cal.connectionExists,
-                              accountId: cal.accountId,
-                            })
-                          }
-                          disabled={togglingIds.has(cal.id)}
-                        />
-                      </div>
-                    ))
+                      );
+                    })
                   ) : (
                     <p className="py-2 text-center text-muted-foreground text-xs">
                       {t('no_calendars_found')}

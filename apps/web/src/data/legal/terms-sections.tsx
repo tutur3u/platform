@@ -12,7 +12,7 @@ import {
   Shield,
   Users,
   UserX,
-} from '@tuturuuu/icons';
+} from '@tuturuuu/icons/lucide';
 import type { LegalSection } from '@/components/legal/legal-types';
 import { ThirdPartyServicesSection } from '@/components/legal/third-party-services-section';
 import { thirdPartyCategories } from './third-party-providers';

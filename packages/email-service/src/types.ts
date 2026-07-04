@@ -81,6 +81,14 @@ export interface SendEmailParams {
   source?: EmailSource;
 }
 
+export interface SendInternalEmailOptions {
+  /**
+   * Skip recipient blacklist checks for audited, admin-approved recovery paths.
+   * This must not be exposed to workspace/user-controlled send routes.
+   */
+  skipRecipientBlacklist?: boolean;
+}
+
 export interface EmailSource {
   name: string;
   email: string;

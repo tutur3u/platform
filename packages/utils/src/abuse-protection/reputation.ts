@@ -23,10 +23,20 @@ export const ABUSE_REPUTATION_SUBJECT_TYPES = [
   'ip',
   'cidr',
   'user_location',
+  'workspace',
 ] as const;
 
 export type AbuseReputationSubjectType =
   (typeof ABUSE_REPUTATION_SUBJECT_TYPES)[number];
+
+export const RATE_LIMIT_MODES = [
+  'inherit_multiplier',
+  'absolute',
+  'unlimited',
+  'blocked',
+] as const;
+
+export type RateLimitMode = (typeof RATE_LIMIT_MODES)[number];
 
 export type AbuseSignalType =
   | 'organic_activity'

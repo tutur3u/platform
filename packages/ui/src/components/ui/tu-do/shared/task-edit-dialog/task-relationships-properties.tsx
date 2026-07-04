@@ -22,6 +22,8 @@ import type {
   TaskRelationshipsPropertiesProps,
 } from './relationships/types/task-relationships.types';
 
+type RelationshipSearchPopoverId = RelationshipTab;
+
 export function TaskRelationshipsProperties({
   wsId,
   taskId,
@@ -58,6 +60,24 @@ export function TaskRelationshipsProperties({
   const [isExpanded, setIsExpanded] = React.useState(false);
   const [activeTab, setActiveTab] = React.useState<RelationshipTab>(
     initialActiveTab ?? 'parent'
+  );
+  const [activeSearchPopover, setActiveSearchPopover] =
+    React.useState<RelationshipSearchPopoverId | null>(null);
+
+  const isSearchPopoverOpen = React.useCallback(
+    (popoverId: RelationshipSearchPopoverId) =>
+      activeSearchPopover === popoverId,
+    [activeSearchPopover]
+  );
+
+  const setSearchPopoverOpen = React.useCallback(
+    (popoverId: RelationshipSearchPopoverId, open: boolean) => {
+      setActiveSearchPopover((currentPopover) => {
+        if (open) return popoverId;
+        return currentPopover === popoverId ? null : currentPopover;
+      });
+    },
+    []
   );
 
   // Tab configuration
@@ -111,7 +131,10 @@ export function TaskRelationshipsProperties({
       {/* Header with toggle button */}
       <button
         type="button"
-        onClick={() => setIsExpanded(!isExpanded)}
+        onClick={() => {
+          setIsExpanded((current) => !current);
+          setActiveSearchPopover(null);
+        }}
         className="flex w-full items-center justify-between px-4 py-3 text-left transition-colors hover:bg-background/40 md:px-8"
       >
         <div className="flex min-w-0 flex-1 items-center gap-2">
@@ -185,7 +208,10 @@ export function TaskRelationshipsProperties({
               <TabButton
                 key={tab.id}
                 active={activeTab === tab.id}
-                onClick={() => setActiveTab(tab.id)}
+                onClick={() => {
+                  setActiveTab(tab.id);
+                  setActiveSearchPopover(null);
+                }}
                 icon={tab.icon}
                 label={tab.label}
                 count={tab.count}
@@ -208,6 +234,10 @@ export function TaskRelationshipsProperties({
                 onRemoveParent={onRemoveParent}
                 onNavigateToTask={onNavigateToTask}
                 onAddParentTask={onAddParentTask}
+                searchOpen={isSearchPopoverOpen('parent')}
+                onSearchOpenChange={(open) =>
+                  setSearchPopoverOpen('parent', open)
+                }
                 disabled={disabled}
               />
             )}
@@ -224,6 +254,10 @@ export function TaskRelationshipsProperties({
                 onAddSubtask={onAddSubtask}
                 onAddExistingAsSubtask={onAddExistingAsSubtask}
                 isSaving={isSaving}
+                searchOpen={isSearchPopoverOpen('subtasks')}
+                onSearchOpenChange={(open) =>
+                  setSearchPopoverOpen('subtasks', open)
+                }
                 disabled={disabled}
               />
             )}
@@ -244,6 +278,10 @@ export function TaskRelationshipsProperties({
                 onNavigateToTask={onNavigateToTask}
                 onAddBlockingTaskDialog={onAddBlockingTaskDialog}
                 onAddBlockedByTaskDialog={onAddBlockedByTaskDialog}
+                searchOpen={isSearchPopoverOpen('dependencies')}
+                onSearchOpenChange={(open) =>
+                  setSearchPopoverOpen('dependencies', open)
+                }
                 disabled={disabled}
               />
             )}
@@ -259,6 +297,10 @@ export function TaskRelationshipsProperties({
                 onRemoveRelated={onRemoveRelatedTask}
                 onNavigateToTask={onNavigateToTask}
                 onAddRelatedTaskDialog={onAddRelatedTaskDialog}
+                searchOpen={isSearchPopoverOpen('related')}
+                onSearchOpenChange={(open) =>
+                  setSearchPopoverOpen('related', open)
+                }
                 disabled={disabled}
               />
             )}

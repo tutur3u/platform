@@ -33,9 +33,9 @@ test('migrated shared hooks no longer import the deprecated Supabase browser cli
     'packages/ui/src/hooks/use-workspace-user.ts',
     'packages/ui/src/hooks/use-workspace-permission.ts',
     'apps/web/src/lib/calendar-preferences-settings-bridge.tsx',
-    'apps/web/src/app/[locale]/(dashboard)/[wsId]/inventory/promotions/settings-form.tsx',
+    'apps/tanstack-web/src/components/inventory/promotions/settings-form.tsx',
     'apps/web/src/app/[locale]/(dashboard)/[wsId]/posts/filters.tsx',
-    'apps/web/src/app/[locale]/(dashboard)/[wsId]/mail/client.tsx',
+    'apps/mail/src/app/[locale]/(dashboard)/[wsId]/mail-client.tsx',
     'apps/web/src/app/[locale]/(dashboard)/[wsId]/(dashboard)/permission-setup-banner.tsx',
     'apps/web/src/app/[locale]/(dashboard)/[wsId]/(dashboard)/components/mira-model-selector/use-mira-model-selector-data.ts',
     'apps/web/src/app/[locale]/(dashboard)/[wsId]/education/quiz-sets/[setId]/linked-modules/linker.tsx',
@@ -80,9 +80,6 @@ test('migrated shared hooks no longer import the deprecated Supabase browser cli
     'apps/track/src/app/[locale]/(dashboard)/[wsId]/components/time-tracker-content.tsx',
     'apps/web/src/app/[locale]/(marketing)/contact/page.tsx',
     'apps/web/src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/inquiries/inquiry-detail-modal.tsx',
-    'apps/web/src/app/[locale]/(dashboard)/[wsId]/calendar/components/task-form.tsx',
-    'apps/web/src/app/[locale]/(dashboard)/[wsId]/calendar/components/task-list-form.tsx',
-    'apps/web/src/app/[locale]/(dashboard)/[wsId]/calendar/components/priority-view.tsx',
     'packages/ui/src/components/ui/calendar-app/components/priority-view.tsx',
     'apps/web/src/app/[locale]/(dashboard)/[wsId]/ai-chat/chat.tsx',
     'apps/rewise/src/app/[locale]/(dashboard)/[wsId]/structure.tsx',
@@ -139,8 +136,12 @@ test('shared satellite logout clears the local app-session cookie before central
 });
 
 test('CLI auth uses Tuturuuu-managed JWTs instead of Supabase Auth sessions', () => {
-  const verifyRoute = read('apps/web/src/app/api/cli/auth/verify/route.ts');
-  const refreshRoute = read('apps/web/src/app/api/cli/auth/refresh/route.ts');
+  const verifyRoute = read(
+    'apps/web/src/legacy-api-routes/cli/auth/verify/route.ts'
+  );
+  const refreshRoute = read(
+    'apps/web/src/legacy-api-routes/cli/auth/refresh/route.ts'
+  );
   const crossAppServer = read('packages/auth/src/cross-app/server.ts');
 
   assert.match(verifyRoute, /sessionKind:\s*'cli-app-session'/);

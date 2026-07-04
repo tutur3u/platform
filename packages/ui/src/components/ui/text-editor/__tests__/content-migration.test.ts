@@ -16,6 +16,29 @@ describe('content-migration', () => {
       expect(migrateInlineImagesToBlock(content)).toEqual(content);
     });
 
+    it('should return malformed non-array content unchanged', () => {
+      const content = {
+        type: 'doc',
+        content: {},
+      } as unknown as JSONContent;
+
+      expect(migrateInlineImagesToBlock(content)).toEqual(content);
+    });
+
+    it('should ignore malformed nested non-array content', () => {
+      const content = {
+        type: 'doc',
+        content: [
+          {
+            type: 'paragraph',
+            content: {},
+          },
+        ],
+      } as unknown as JSONContent;
+
+      expect(migrateInlineImagesToBlock(content)).toEqual(content);
+    });
+
     it('should pass through content with no images', () => {
       const content: JSONContent = {
         type: 'doc',
@@ -659,6 +682,15 @@ describe('content-migration', () => {
 
     it('should return false for content without content array', () => {
       const content: JSONContent = { type: 'doc' };
+      expect(needsMigration(content)).toBe(false);
+    });
+
+    it('should return false for malformed non-array content', () => {
+      const content = {
+        type: 'doc',
+        content: {},
+      } as unknown as JSONContent;
+
       expect(needsMigration(content)).toBe(false);
     });
 

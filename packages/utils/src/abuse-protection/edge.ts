@@ -21,6 +21,38 @@ import type { BlockInfo } from './types';
 let edgeRedisClient: UpstashRestRedisClient | null = null;
 let edgeRedisInitialized = false;
 
+export const EDGE_ABUSE_PROTECTION_CONTROLS_REDIS_KEY =
+  'infrastructure:edge-abuse-protection-controls';
+
+const EDGE_ABUSE_PROTECTION_CONTROLS_CACHE_TTL_MS = 5_000;
+
+export interface EdgeAbuseProtectionControls {
+  ipBlockingEnabled: boolean;
+  rateLimitsEnabled: boolean;
+  updatedAt: string | null;
+  updatedBy: string | null;
+}
+
+export interface EdgeAbuseProtectionControlsPatch {
+  ipBlockingEnabled?: boolean;
+  rateLimitsEnabled?: boolean;
+  updatedAt?: string;
+  updatedBy?: string | null;
+}
+
+export const DEFAULT_EDGE_ABUSE_PROTECTION_CONTROLS: EdgeAbuseProtectionControls =
+  {
+    ipBlockingEnabled: true,
+    rateLimitsEnabled: true,
+    updatedAt: null,
+    updatedBy: null,
+  };
+
+let edgeAbuseProtectionControlsCache: {
+  expiresAt: number;
+  value: EdgeAbuseProtectionControls;
+} | null = null;
+
 function parsePositiveIntEnv(name: string, fallback: number): number {
   const rawValue = process.env[name];
   if (!rawValue) {
@@ -44,6 +76,111 @@ async function getEdgeRedisClient() {
   }
 }
 
+function normalizeEdgeAbuseProtectionControls(
+  value: unknown
+): EdgeAbuseProtectionControls {
+  let parsed = value;
+  if (typeof value === 'string') {
+    try {
+      parsed = JSON.parse(value);
+    } catch {
+      parsed = null;
+    }
+  }
+
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+    return DEFAULT_EDGE_ABUSE_PROTECTION_CONTROLS;
+  }
+
+  const record = parsed as Record<string, unknown>;
+  return {
+    ipBlockingEnabled:
+      typeof record.ipBlockingEnabled === 'boolean'
+        ? record.ipBlockingEnabled
+        : DEFAULT_EDGE_ABUSE_PROTECTION_CONTROLS.ipBlockingEnabled,
+    rateLimitsEnabled:
+      typeof record.rateLimitsEnabled === 'boolean'
+        ? record.rateLimitsEnabled
+        : DEFAULT_EDGE_ABUSE_PROTECTION_CONTROLS.rateLimitsEnabled,
+    updatedAt:
+      typeof record.updatedAt === 'string' && record.updatedAt.trim()
+        ? record.updatedAt
+        : null,
+    updatedBy:
+      typeof record.updatedBy === 'string' && record.updatedBy.trim()
+        ? record.updatedBy
+        : null,
+  };
+}
+
+export function clearEdgeAbuseProtectionControlsCache() {
+  edgeAbuseProtectionControlsCache = null;
+}
+
+export async function readEdgeAbuseProtectionControls(options?: {
+  allowCache?: boolean;
+}): Promise<EdgeAbuseProtectionControls> {
+  const allowCache = options?.allowCache ?? true;
+  const now = Date.now();
+
+  if (
+    allowCache &&
+    edgeAbuseProtectionControlsCache &&
+    edgeAbuseProtectionControlsCache.expiresAt > now
+  ) {
+    return edgeAbuseProtectionControlsCache.value;
+  }
+
+  try {
+    const redis = await getEdgeRedisClient();
+    if (!redis) {
+      return DEFAULT_EDGE_ABUSE_PROTECTION_CONTROLS;
+    }
+
+    const stored = await redis.get<unknown>(
+      EDGE_ABUSE_PROTECTION_CONTROLS_REDIS_KEY
+    );
+    const controls = normalizeEdgeAbuseProtectionControls(stored);
+    edgeAbuseProtectionControlsCache = {
+      expiresAt: now + EDGE_ABUSE_PROTECTION_CONTROLS_CACHE_TTL_MS,
+      value: controls,
+    };
+
+    return controls;
+  } catch {
+    // Fail-open: keep the platform reachable when the controls store is down.
+    return DEFAULT_EDGE_ABUSE_PROTECTION_CONTROLS;
+  }
+}
+
+export async function writeEdgeAbuseProtectionControls(
+  patch: EdgeAbuseProtectionControlsPatch
+): Promise<EdgeAbuseProtectionControls> {
+  const redis = await getEdgeRedisClient();
+  if (!redis) {
+    throw new Error('Edge abuse protection controls store is unavailable');
+  }
+
+  const current = await readEdgeAbuseProtectionControls({ allowCache: false });
+  const next: EdgeAbuseProtectionControls = {
+    ipBlockingEnabled: patch.ipBlockingEnabled ?? current.ipBlockingEnabled,
+    rateLimitsEnabled: patch.rateLimitsEnabled ?? current.rateLimitsEnabled,
+    updatedAt: patch.updatedAt ?? new Date().toISOString(),
+    updatedBy: patch.updatedBy ?? null,
+  };
+
+  await redis.set(
+    EDGE_ABUSE_PROTECTION_CONTROLS_REDIS_KEY,
+    JSON.stringify(next)
+  );
+  edgeAbuseProtectionControlsCache = {
+    expiresAt: Date.now() + EDGE_ABUSE_PROTECTION_CONTROLS_CACHE_TTL_MS,
+    value: next,
+  };
+
+  return next;
+}
+
 /**
  * Check if an IP is blocked using Redis cache only (no DB fallback).
  * Designed for Edge Runtime where speed > completeness.
@@ -53,6 +190,9 @@ export async function isIPBlockedEdge(
   ipAddress: string
 ): Promise<BlockInfo | null> {
   try {
+    const controls = await readEdgeAbuseProtectionControls();
+    if (!controls.ipBlockingEnabled) return null;
+
     const redis = await getEdgeRedisClient();
     if (!redis) return null;
 
@@ -80,6 +220,9 @@ export async function blockIPEdge(
   reason: BlockInfo['reason']
 ): Promise<BlockInfo | null> {
   try {
+    const controls = await readEdgeAbuseProtectionControls();
+    if (!controls.ipBlockingEnabled) return null;
+
     const redis = await getEdgeRedisClient();
     if (!redis) return null;
 

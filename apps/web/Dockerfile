@@ -22,6 +22,7 @@ COPY apps/external/package.json ./apps/external/package.json
 COPY apps/finance/package.json ./apps/finance/package.json
 COPY apps/hive/package.json ./apps/hive/package.json
 COPY apps/hive-realtime/package.json ./apps/hive-realtime/package.json
+COPY apps/infrastructure/package.json ./apps/infrastructure/package.json
 COPY apps/inventory/package.json ./apps/inventory/package.json
 COPY apps/mail/package.json ./apps/mail/package.json
 COPY apps/meet/package.json ./apps/meet/package.json
@@ -29,7 +30,6 @@ COPY apps/mind/package.json ./apps/mind/package.json
 COPY apps/mobile/package.json ./apps/mobile/package.json
 COPY apps/nova/package.json ./apps/nova/package.json
 COPY apps/playground/package.json ./apps/playground/package.json
-COPY apps/qr/package.json ./apps/qr/package.json
 COPY apps/redis/package.json ./apps/redis/package.json
 COPY apps/rewise/package.json ./apps/rewise/package.json
 COPY apps/shortener/package.json ./apps/shortener/package.json
@@ -37,7 +37,9 @@ COPY apps/storage-unzip-proxy/package.json ./apps/storage-unzip-proxy/package.js
 COPY apps/storefront/package.json ./apps/storefront/package.json
 COPY apps/supermemory/package.json ./apps/supermemory/package.json
 COPY apps/tasks/package.json ./apps/tasks/package.json
+COPY apps/tanstack-web/package.json ./apps/tanstack-web/package.json
 COPY apps/teach/package.json ./apps/teach/package.json
+COPY apps/tools/package.json ./apps/tools/package.json
 COPY apps/track/package.json ./apps/track/package.json
 COPY apps/learn/package.json ./apps/learn/package.json
 COPY apps/web/package.json ./apps/web/package.json
@@ -52,8 +54,10 @@ COPY packages/hive-ui/package.json ./packages/hive-ui/package.json
 COPY packages/hooks/package.json ./packages/hooks/package.json
 COPY packages/icons/package.json ./packages/icons/package.json
 COPY packages/internal-api/package.json ./packages/internal-api/package.json
+COPY packages/inventory-core/package.json ./packages/inventory-core/package.json
 COPY packages/masonry/package.json ./packages/masonry/package.json
 COPY packages/microsoft/package.json ./packages/microsoft/package.json
+COPY packages/mind-core/package.json ./packages/mind-core/package.json
 COPY packages/mind-ui/package.json ./packages/mind-ui/package.json
 COPY packages/offline/package.json ./packages/offline/package.json
 COPY packages/payment/package.json ./packages/payment/package.json
@@ -117,11 +121,13 @@ ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
 
 ARG DOCKER_WEB_BUILD_MEMORY=12g
+ARG DOCKER_WEB_BUILD_MAX_PARALLELISM=1
 ARG DOCKER_WEB_DOCKER_MEMORY_LIMIT=
 ARG DOCKER_WEB_NEXT_APP_ONLY=1
 ARG DOCKER_WEB_NEXT_BUILD_ENGINE=turbopack
 ARG DOCKER_WEB_NODE_MAX_OLD_SPACE_SIZE=auto
-ARG DOCKER_WEB_REACT_COMPILER=0
+ARG DOCKER_WEB_REACT_COMPILER=1
+ARG DOCKER_WEB_TURBO_CONCURRENCY=
 ARG PLATFORM_BUILD_BUILT_AT=
 ARG PLATFORM_BUILD_COMMIT_HASH=
 ARG PLATFORM_BUILD_COMMIT_MESSAGE=
@@ -132,11 +138,13 @@ ARG PLATFORM_BUILD_ENVIRONMENT=
 ARG PLATFORM_BUILD_REF_NAME=
 
 ENV DOCKER_WEB_BUILD_MEMORY=${DOCKER_WEB_BUILD_MEMORY}
+ENV DOCKER_WEB_BUILD_MAX_PARALLELISM=${DOCKER_WEB_BUILD_MAX_PARALLELISM}
 ENV DOCKER_WEB_DOCKER_MEMORY_LIMIT=${DOCKER_WEB_DOCKER_MEMORY_LIMIT}
 ENV DOCKER_WEB_NEXT_APP_ONLY=${DOCKER_WEB_NEXT_APP_ONLY}
 ENV DOCKER_WEB_NEXT_BUILD_ENGINE=${DOCKER_WEB_NEXT_BUILD_ENGINE}
 ENV DOCKER_WEB_NODE_MAX_OLD_SPACE_SIZE=${DOCKER_WEB_NODE_MAX_OLD_SPACE_SIZE}
 ENV DOCKER_WEB_REACT_COMPILER=${DOCKER_WEB_REACT_COMPILER}
+ENV DOCKER_WEB_TURBO_CONCURRENCY=${DOCKER_WEB_TURBO_CONCURRENCY}
 ENV PLATFORM_BUILD_BUILT_AT=${PLATFORM_BUILD_BUILT_AT}
 ENV PLATFORM_BUILD_COMMIT_HASH=${PLATFORM_BUILD_COMMIT_HASH}
 ENV PLATFORM_BUILD_COMMIT_MESSAGE=${PLATFORM_BUILD_COMMIT_MESSAGE}
@@ -152,7 +160,16 @@ COPY . .
 
 RUN --mount=type=cache,id=platform-web-turbo,target=/workspace/.turbo \
   --mount=type=cache,id=platform-web-next-cache,target=/workspace/apps/web/.next/cache \
+  --mount=type=secret,id=turbo_api,target=/run/secrets/turbo_api,required=false \
+  --mount=type=secret,id=turbo_remote_cache_signature_key,target=/run/secrets/turbo_remote_cache_signature_key,required=false \
+  --mount=type=secret,id=turbo_team,target=/run/secrets/turbo_team,required=false \
+  --mount=type=secret,id=turbo_token,target=/run/secrets/turbo_token,required=false \
   --mount=type=secret,id=web_env,target=/tmp/web.env \
+  set -eu; \
+  if [ -s /run/secrets/turbo_api ]; then export TURBO_API="$(cat /run/secrets/turbo_api)"; fi; \
+  if [ -s /run/secrets/turbo_remote_cache_signature_key ]; then export TURBO_REMOTE_CACHE_SIGNATURE_KEY="$(cat /run/secrets/turbo_remote_cache_signature_key)"; fi; \
+  if [ -s /run/secrets/turbo_team ]; then export TURBO_TEAM="$(cat /run/secrets/turbo_team)"; fi; \
+  if [ -s /run/secrets/turbo_token ]; then export TURBO_TOKEN="$(cat /run/secrets/turbo_token)"; fi; \
   bun --env-file=/tmp/web.env ./scripts/build-web-docker.js
 
 FROM node:24-bookworm-slim AS runner

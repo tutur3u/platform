@@ -5,7 +5,6 @@ const os = require('node:os');
 const path = require('node:path');
 const {
   DEFAULT_DEV_MAX_OPEN_FILES,
-  DEFAULT_WATCHPACK_POLLING,
   formatPortlessBanner,
   getSharedLocalEnvFilePaths,
   loadSharedLocalEnvDefaults,
@@ -130,7 +129,7 @@ test('prepareCommandForOpenFilesLimit raises descriptor limit on unix dev comman
     prepared.env.TUTURUUU_DEV_MAX_OPEN_FILES,
     DEFAULT_DEV_MAX_OPEN_FILES
   );
-  assert.equal(prepared.env.WATCHPACK_POLLING, DEFAULT_WATCHPACK_POLLING);
+  assert.equal('WATCHPACK_POLLING' in prepared.env, false);
   assert.deepEqual(prepared.args.slice(0, 3), [
     '-c',
     'ulimit -n "$TUTURUUU_DEV_MAX_OPEN_FILES" 2>/dev/null || true; exec "$@"',

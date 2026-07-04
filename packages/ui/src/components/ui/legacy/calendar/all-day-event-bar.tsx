@@ -9,9 +9,9 @@ import isBetween from 'dayjs/plugin/isBetween';
 import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
 import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
 import timezone from 'dayjs/plugin/timezone';
-import Image from 'next/image';
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { MIN_COLUMN_WIDTH } from './config';
+import { CalendarEventProviderIcon } from './event-provider-display';
 import { getLocationType, LocationTimeline } from './location-timeline';
 import { useCalendarSettings } from './settings/settings-context';
 
@@ -68,18 +68,10 @@ interface DragState {
 // 1. Extract EventContent component for shared rendering
 const EventContent = ({ event }: { event: CalendarEvent }) => (
   <>
-    {typeof event.google_event_id === 'string' &&
-      event.google_event_id.trim() !== '' && (
-        <Image
-          src="/media/google-calendar-icon.png"
-          alt="Google Calendar"
-          className="mr-1 inline-block h-[1.25em] w-[1.25em] align-middle opacity-80 dark:opacity-90"
-          title="Synced from Google Calendar"
-          data-testid="google-calendar-logo"
-          width={18}
-          height={18}
-        />
-      )}
+    <CalendarEventProviderIcon
+      event={event}
+      className="mr-1 h-[1.25em] w-[1.25em] opacity-80 dark:opacity-90"
+    />
     <span className="truncate">{event.title}</span>
   </>
 );
@@ -341,27 +333,6 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
       const eventOverlaps =
         eventStart.isBefore(lastVisibleDate.add(1, 'day'), 'day') &&
         eventEnd.isAfter(firstVisibleDate, 'day');
-
-      // Debug logging for multi-day events
-      const eventDurationDays = eventEnd.diff(eventStart, 'day');
-      if (eventDurationDays > 0) {
-        console.log('Multi-day event processing:', {
-          title: event.title,
-          eventStart: eventStart.format('YYYY-MM-DD'),
-          eventEnd: eventEnd.format('YYYY-MM-DD'),
-          durationDays: eventDurationDays,
-          isActuallyMultiDay: eventDurationDays > 1,
-          firstVisibleDate: firstVisibleDate.format('YYYY-MM-DD'),
-          lastVisibleDate: lastVisibleDate.format('YYYY-MM-DD'),
-          eventOverlaps,
-          wouldShowCutOffStart:
-            eventDurationDays > 1 &&
-            eventStart.isBefore(firstVisibleDate, 'day'),
-          wouldShowCutOffEnd:
-            eventDurationDays > 1 &&
-            eventEnd.isAfter(lastVisibleDate.add(1, 'day'), 'day'),
-        });
-      }
 
       if (!eventOverlaps) {
         return; // Skip this event if it doesn't overlap with visible dates
@@ -680,7 +651,13 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
   };
 
   // Calculate dynamic height based on visible events
-  const barHeight = Math.max(1.9, eventLayout.maxVisibleEventsPerDay * 1.75);
+  const locationTopOffset =
+    locationSpans.length > 0 ? LOCATION_TIMELINE_HEIGHT_REM : 0;
+  const regularRowsHeight =
+    eventLayout.maxVisibleEventsPerDay > 0
+      ? eventLayout.maxVisibleEventsPerDay * 1.75
+      : 0;
+  const barHeight = Math.max(1.9, locationTopOffset + regularRowsHeight);
 
   // Enhanced mouse and touch handlers
   const handleEventMouseDown = (e: React.MouseEvent, eventSpan: EventSpan) => {
@@ -839,7 +816,7 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
                     onClick={() => toggleDateExpansion(dateKey)}
                     style={{
                       position: 'absolute',
-                      top: `${MAX_EVENTS_DISPLAY * 1.7}rem`,
+                      top: `${locationTopOffset + MAX_EVENTS_DISPLAY * 1.7}rem`,
                       left: `${(dateIndex * 100) / visibleDates.length}%`,
                       width: `${100 / visibleDates.length}%`,
                       zIndex: 10,
@@ -858,7 +835,7 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
                       onClick={() => toggleDateExpansion(dateKey)}
                       style={{
                         position: 'absolute',
-                        top: `${dateEvents.length * 1.7}rem`,
+                        top: `${locationTopOffset + dateEvents.length * 1.7}rem`,
                         left: `${(dateIndex * 100) / visibleDates.length}%`,
                         width: `${100 / visibleDates.length}%`,
                         zIndex: 10,
@@ -941,8 +918,18 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
             dragState.isDragging && dragState.draggedEvent?.id === event.id;
 
           // Calculate top offset based on location strip presence
-          const topOffset =
-            locationSpans.length > 0 ? LOCATION_TIMELINE_HEIGHT_REM : 0;
+          const topOffset = locationTopOffset;
+          const optimisticStatus = (
+            event as CalendarEvent & {
+              _optimisticStatus?:
+                | 'creating'
+                | 'updating'
+                | 'deleting'
+                | 'error';
+            }
+          )._optimisticStatus;
+          const isPendingMutation =
+            optimisticStatus === 'updating' || optimisticStatus === 'deleting';
 
           return (
             <div
@@ -959,6 +946,8 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
                 bg,
                 border,
                 text,
+                isPendingMutation &&
+                  'opacity-60 outline outline-dashed outline-1 outline-primary/50',
                 // Special styling for cut-off events
                 (isCutOffStart || isCutOffEnd) && 'border-dashed'
               )}

@@ -97,25 +97,33 @@ void main() {
       }
     });
 
-    testWidgets('finance nav uses overview, activity, wallets, manage labels', (
-      tester,
-    ) async {
-      late List<String> labels;
+    testWidgets(
+      'finance nav uses overview, activity, wallets, '
+      'checkpoints, manage labels',
+      (tester) async {
+        late List<String> labels;
 
-      await tester.pumpApp(
-        Builder(
-          builder: (context) {
-            final finance = AppRegistry.moduleById('finance')!;
-            labels = finance.miniAppNavItems
-                .map((item) => item.labelBuilder(context.l10n))
-                .toList(growable: false);
-            return const SizedBox.shrink();
-          },
-        ),
-      );
+        await tester.pumpApp(
+          Builder(
+            builder: (context) {
+              final finance = AppRegistry.moduleById('finance')!;
+              labels = finance.miniAppNavItems
+                  .map((item) => item.labelBuilder(context.l10n))
+                  .toList(growable: false);
+              return const SizedBox.shrink();
+            },
+          ),
+        );
 
-      expect(labels, ['Overview', 'Activity', 'Wallets', 'Manage']);
-    });
+        expect(labels, [
+          'Overview',
+          'Activity',
+          'Wallets',
+          'Checkpoints',
+          'Manage',
+        ]);
+      },
+    );
 
     testWidgets('calendar nav defaults to agenda label', (tester) async {
       late List<String> labels;

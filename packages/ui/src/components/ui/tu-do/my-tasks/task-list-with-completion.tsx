@@ -34,6 +34,7 @@ import {
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { type MouseEvent, useState } from 'react';
+import { getTaskApiUrl } from '../../../../lib/tasks-app-url';
 import { useTasksHref } from '../tasks-route-context';
 import { MyTaskContextMenu } from './my-task-context-menu';
 import { PersonalPlacementDialog } from './personal-placement-dialog';
@@ -128,9 +129,10 @@ export default function TaskListWithCompletion({
       setCompletingTasks((prev) => new Set(prev).add(task.id));
       try {
         const response = await fetch(
-          `/api/v1/users/me/tasks/${task.id}/overrides`,
+          getTaskApiUrl(`/api/v1/users/me/tasks/${task.id}/overrides`),
           {
             method: 'PUT',
+            credentials: 'include',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ personally_unassigned: false }),
           }
@@ -160,9 +162,10 @@ export default function TaskListWithCompletion({
 
       try {
         const response = await fetch(
-          `/api/v1/users/me/tasks/${task.id}/overrides`,
+          getTaskApiUrl(`/api/v1/users/me/tasks/${task.id}/overrides`),
           {
             method: 'PUT',
+            credentials: 'include',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               completed_at: isAlreadyDone ? null : new Date().toISOString(),
@@ -234,14 +237,18 @@ export default function TaskListWithCompletion({
         !isCompleted &&
         (task.overrides?.completed_at || task.overrides?.personally_unassigned)
       ) {
-        await fetch(`/api/v1/users/me/tasks/${task.id}/overrides`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            completed_at: null,
-            personally_unassigned: false,
-          }),
-        }).catch(() => {
+        await fetch(
+          getTaskApiUrl(`/api/v1/users/me/tasks/${task.id}/overrides`),
+          {
+            method: 'PUT',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              completed_at: null,
+              personally_unassigned: false,
+            }),
+          }
+        ).catch(() => {
           // Non-critical cleanup — don't block the completion flow
         });
       }
@@ -275,9 +282,10 @@ export default function TaskListWithCompletion({
 
     try {
       const response = await fetch(
-        `/api/v1/users/me/tasks/${task.id}/overrides`,
+        getTaskApiUrl(`/api/v1/users/me/tasks/${task.id}/overrides`),
         {
           method: 'PUT',
+          credentials: 'include',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ personally_unassigned: true }),
         }

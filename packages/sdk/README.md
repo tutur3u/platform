@@ -74,8 +74,14 @@ ttr lists use
 ttr tasks use
 ttr tasks --board <board-id>
 ttr tasks --compact
+ttr tasks search "deadline review"
+ttr tasks search "deadline review" --mode text
+ttr tasks search "deadline review" --mode semantic
 ttr tasks create "Add Tuturuuu CLI"
 ttr tasks create --list <list-id> --name "Write release notes"
+ttr task-templates create "Bug report" --key bug-report --title "Investigate bug"
+ttr task-templates use bug-report --list <list-id>
+ttr tasks create --template bug-report --list <list-id> --name "Investigate checkout bug"
 ttr tasks done <task-id>
 ttr tasks close <task-id>
 ttr tasks update <task-id> --json-payload '{"completed":true}'
@@ -145,7 +151,11 @@ ttr calendar events --help
 ttr finance --help
 ttr finance transactions --help
 ttr tasks --help
+ttr tasks search --help
 ttr tasks create --help
+ttr task-templates --help
+ttr task-templates import --help
+ttr task-templates export --help
 ttr tasks done --help
 ttr tasks close --help
 ttr tasks update --help
@@ -182,8 +192,18 @@ count and current page/max page. Add `--compact` to task lists when an agent
 only needs the task title, task list name, and per-task workspace name. Task
 lists are ordered by priority and due date, with prettier due dates and
 configured task-list colors in table output. Use `--json` on read commands when
-another agent or script needs machine-readable output. `tasks
-create`, `boards create`, and `lists create` accept a quoted positional name as
+another agent or script needs machine-readable output.
+
+Use `ttr tasks search <query>` for ranked task search. Search defaults to
+`--mode hybrid`, accepts `--mode text` for PostgreSQL full-text search only and
+`--mode semantic` for embedding similarity only, and supports
+`--query`/`--q`, `--limit`/`--match-count`, `--threshold`/`--match-threshold`,
+`--workspace`/`--ws`, `--compact`, and `--json`. Search output preserves API
+relevance order and shows the score when available. Existing list filtering
+with `ttr tasks --q <query>` is unchanged and remains the lightweight list text
+filter.
+
+`tasks create`, `boards create`, and `lists create` accept a quoted positional name as
 a shorthand for `--name`. Task CRUD accepts either the task UUID or the board
 identifier shown in the UI, such as `VHP-12`; prefixed identifiers resolve
 within the selected workspace even when another list is selected. Marking a task
@@ -193,6 +213,32 @@ completed stamps `completed_at` so Tuturuuu moves it to the first
 [task-id]` as the quick shortcut. Use `ttr tasks close [task-id]` to stamp
 `closed_at`; pass `--list <closed-list-id>` to choose a specific closed
 destination.
+
+Task templates are single-task starters, separate from board templates. Workspace
+templates are managed with `ttr task-templates list/show/create/update/delete/use`
+and can be imported from or exported to local markdown files. Local templates
+live under `.tuturuuu/task-templates/*.md`, use YAML frontmatter for fields such
+as `key`, `name`, `task_name`, `priority`, `label_ids`, `assignee_ids`, and
+`project_ids`, and use the markdown body as the task description. Markdown
+descriptions from `--description-format markdown` and local template bodies
+support GFM pipe tables and are stored as TipTap/Yjs table content for the web
+editor. `ttr tasks create --template <key-or-path>` resolves workspace keys or
+local markdown paths; explicit flags such as `--name`, `--list`, `--priority`,
+`--labels`, and `--projects` override template defaults.
+
+```markdown
+---
+key: qa-handoff
+name: QA handoff
+task_name: Verify release handoff
+priority: high
+---
+
+| Field | Value |
+| --- | --- |
+| Owner | Platform |
+| Environment | Staging |
+```
 
 Finance commands cover workspace wallets, transactions, categories, budgets,
 and recurring transactions through the same authenticated internal APIs as the
@@ -256,8 +302,18 @@ Common task examples:
 ttr tasks
 ttr tasks --compact
 ttr tasks --json --no-update-check
+ttr tasks search "deadline review"
+ttr tasks search "deadline review" --mode hybrid --limit 20 --threshold 0.25
+ttr tasks search --query "deadline review" --mode text --json --no-update-check
 ttr tasks create "Add Tuturuuu CLI"
 ttr tasks create --list <list-id> --name "Write release notes"
+ttr task-templates list
+ttr task-templates create "Bug report" --key bug-report --title "Investigate bug" --priority high
+ttr task-templates export bug-report --file .tuturuuu/task-templates/bug-report.md
+ttr task-templates import .tuturuuu/task-templates/bug-report.md
+ttr tiptap parse --text "| Field | Value |\n| --- | --- |\n| Owner | Platform |" --format markdown --output json
+ttr tasks create --template bug-report --list <list-id> --name "Investigate checkout bug"
+ttr tasks create "QA handoff" --description-file table.md --description-format markdown
 ttr tasks done VHP-12
 ttr tasks done <task-id> --list <done-list-id>
 ttr tasks close VHP-12
@@ -522,6 +578,19 @@ await client.epm.deleteEntry(workspaceId, draft.id);
 
 For Yoola-style integrations, set `collection.config.navigation.title` from EPM to drive external navigation labels while keeping the collection title available for operator-facing admin surfaces. `buildEpmNavigationItems(...)` returns enabled collections with the resolved navigation title plus any configured `href`/visibility hints.
 
+CLI operators can read and sync the same workspace surface with the spaced command group:
+
+```bash
+ttr external projects summary --workspace <workspace-id> --json
+ttr external projects delivery --workspace <workspace-id> --preview --out tmp/delivery.json
+ttr external projects snapshot --workspace <workspace-id> --out tmp/snapshot.json
+ttr external projects collections --workspace <workspace-id> --json
+ttr external projects entries --workspace <workspace-id> --collection <collection-id> --json
+ttr external projects setup --workspace <workspace-id> --manifest external-project.json
+ttr external projects diff --workspace <workspace-id> --manifest external-project.json --json
+ttr external projects apply --workspace <workspace-id> --manifest external-project.json --confirm APPLY_EXTERNAL_PROJECT_SYNC
+```
+
 ### Document Operations
 
 #### List Documents
@@ -614,6 +683,17 @@ console.log(studio.collections.length);
 
 const duplicate = await client.epm.duplicateEntry('workspace-id', 'entry-id');
 await client.epm.publishEntry('workspace-id', duplicate.id, 'publish');
+```
+
+For operator workflows, prefer the authenticated `ttr external projects` CLI:
+
+```bash
+ttr external projects summary --workspace <workspace-id> --json
+ttr external projects delivery --workspace <workspace-id> --preview --out tmp/delivery.json
+ttr external projects snapshot --workspace <workspace-id> --out tmp/snapshot.json
+ttr external projects setup --workspace <workspace-id> --manifest external-project.json
+ttr external projects diff --workspace <workspace-id> --manifest external-project.json --json
+ttr external projects apply --workspace <workspace-id> --manifest external-project.json --confirm APPLY_EXTERNAL_PROJECT_SYNC
 ```
 
 ## Error Handling

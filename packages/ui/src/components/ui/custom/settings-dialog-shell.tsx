@@ -53,10 +53,11 @@ import {
   SidebarProvider,
 } from '@tuturuuu/ui/sidebar';
 import { cn } from '@tuturuuu/utils/format';
-import { removeAccents } from '@tuturuuu/utils/text-helper';
 import { useTranslations } from 'next-intl';
 import type { ComponentType, KeyboardEvent, ReactNode } from 'react';
 import { useCallback, useMemo, useRef, useState } from 'react';
+import type { createSettingsSearchEngine } from './settings-dialog-search';
+import { loadSettingsSearchEngine } from './settings-dialog-search-loader';
 
 export interface SettingsNavItem {
   name: string;
@@ -65,6 +66,8 @@ export interface SettingsNavItem {
   description?: string;
   disabled?: boolean;
   keywords?: string[];
+  aliases?: string[];
+  searchLabels?: string[];
 }
 
 export interface SettingsNavGroup {
@@ -92,6 +95,9 @@ export interface SettingsDialogShellProps {
   /** Content to render in the main area */
   children: ReactNode;
 }
+
+type SettingsSearchEngine = ReturnType<typeof createSettingsSearchEngine>;
+type SettingsSearchEngineFactory = typeof createSettingsSearchEngine;
 
 function isEditableShortcutTarget(target: EventTarget | null) {
   if (!(target instanceof HTMLElement)) return false;
@@ -127,12 +133,20 @@ export function SettingsDialogShell({
   const isMobile = useIsMobile();
   const desktopSearchInputRef = useRef<HTMLInputElement>(null);
   const mobileSearchInputRef = useRef<HTMLInputElement>(null);
+  const searchEngineLoadRef = useRef<Promise<void> | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [searchEngineFactory, setSearchEngineFactory] =
+    useState<SettingsSearchEngineFactory | null>(null);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
+  const searchEngine = useMemo<SettingsSearchEngine | null>(
+    () => searchEngineFactory?.(navItems) ?? null,
+    [navItems, searchEngineFactory]
+  );
+
   const allNavItems = useMemo(
-    () => navItems.flatMap((group) => group.items),
-    [navItems]
+    () => searchEngine?.allItems ?? navItems.flatMap((group) => group.items),
+    [navItems, searchEngine]
   );
 
   const activeGroup = navItems.find((group) =>
@@ -144,26 +158,39 @@ export function SettingsDialogShell({
     allNavItems.find((item) => !item.disabled) ||
     allNavItems[0];
 
-  const filteredNavItems = navItems
-    .map((group) => {
-      const normalizedQuery = removeAccents(searchQuery.toLowerCase());
-      const filteredItems = group.items.filter(
-        (item) =>
-          removeAccents(item.label.toLowerCase()).includes(normalizedQuery) ||
-          (item.description &&
-            removeAccents(item.description.toLowerCase()).includes(
-              normalizedQuery
-            )) ||
-          item.keywords?.some((keyword) =>
-            removeAccents(keyword.toLowerCase()).includes(normalizedQuery)
-          )
-      );
-      return { ...group, items: filteredItems };
-    })
-    .filter((group) => group.items.length > 0);
+  const ensureSearchEngine = useCallback(() => {
+    if (searchEngineFactory || searchEngineLoadRef.current) return;
 
-  const filteredEnabledItems = filteredNavItems.flatMap((group) =>
-    group.items.filter((item) => !item.disabled)
+    searchEngineLoadRef.current = loadSettingsSearchEngine()
+      .then((module) => {
+        setSearchEngineFactory(() => module.createSettingsSearchEngine);
+      })
+      .finally(() => {
+        searchEngineLoadRef.current = null;
+      });
+  }, [searchEngineFactory]);
+
+  const filteredNavItems = useMemo(
+    () =>
+      searchQuery ? (searchEngine?.search(searchQuery) ?? navItems) : navItems,
+    [navItems, searchEngine, searchQuery]
+  );
+
+  const filteredEnabledItems = useMemo(
+    () =>
+      searchEngine?.getEnabledItems(searchQuery) ??
+      filteredNavItems.flatMap((group) =>
+        group.items.filter((item) => !item.disabled)
+      ),
+    [filteredNavItems, searchEngine, searchQuery]
+  );
+
+  const updateSearchQuery = useCallback(
+    (value: string) => {
+      if (value) ensureSearchEngine();
+      setSearchQuery(value);
+    },
+    [ensureSearchEngine]
   );
 
   const isGroupExpandedByDefault = (groupLabel: string, index: number) => {
@@ -175,14 +202,16 @@ export function SettingsDialogShell({
   const focusSearch = useCallback(() => {
     if (isMobile) {
       setMobileNavOpen(true);
+      ensureSearchEngine();
       requestAnimationFrame(() => {
         mobileSearchInputRef.current?.focus();
       });
       return;
     }
 
+    ensureSearchEngine();
     desktopSearchInputRef.current?.focus();
-  }, [isMobile]);
+  }, [ensureSearchEngine, isMobile]);
 
   const changeActiveItem = useCallback(
     (targetIndex: number) => {
@@ -273,7 +302,8 @@ export function SettingsDialogShell({
 
   return (
     <DialogContent
-      className="top-0 left-0 flex h-dvh max-h-dvh w-screen max-w-none translate-x-0 translate-y-0 flex-col gap-0 overflow-hidden rounded-none border-0 p-0 shadow-none sm:max-w-none"
+      presentation="fullscreen"
+      className="flex-col"
       onKeyDown={handleKeyboardNavigation}
       showCloseButton={false}
     >
@@ -304,7 +334,8 @@ export function SettingsDialogShell({
                 placeholder={t('settings.search_settings_placeholder')}
                 className="bg-background pl-8"
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => updateSearchQuery(e.target.value)}
+                onFocus={ensureSearchEngine}
               />
             </div>
           </SidebarHeader>
@@ -402,22 +433,28 @@ export function SettingsDialogShell({
                         {t('search.search')}
                       </DrawerDescription>
                     </DrawerHeader>
-                    <Command className="rounded-none border-0">
+                    <Command
+                      className="rounded-none border-0"
+                      shouldFilter={false}
+                    >
                       <CommandInput
                         ref={mobileSearchInputRef}
+                        value={searchQuery}
+                        onFocus={ensureSearchEngine}
+                        onValueChange={updateSearchQuery}
                         placeholder={t('settings.search_settings_placeholder')}
                       />
                       <CommandList className="max-h-[50vh]">
                         <CommandEmpty>
                           {t('common.no_results_found')}
                         </CommandEmpty>
-                        {navItems.map((group) => (
+                        {filteredNavItems.map((group) => (
                           <CommandGroup key={group.label} heading={group.label}>
                             {group.items.map((item) => (
                               <CommandItem
                                 disabled={item.disabled}
                                 key={item.name}
-                                value={`${group.label} ${item.label} ${item.keywords?.join(' ') || ''}`}
+                                value={`${group.label} ${item.label} ${item.description || ''} ${item.keywords?.join(' ') || ''} ${item.aliases?.join(' ') || ''} ${item.searchLabels?.join(' ') || ''}`}
                                 onSelect={() => {
                                   if (item.disabled) return;
                                   onActiveTabChange(item.name);

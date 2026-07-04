@@ -34,6 +34,9 @@ interface TimelineToolbarProps {
   lists: TaskList[];
   boardId?: string;
   wsId?: string;
+  isPersonalWorkspace?: boolean;
+  canUseBoardAssignees?: boolean;
+  assigneeMemberSource?: 'workspace' | 'board' | 'workspace-and-board';
   primaryCreateListId: string | null;
   dayWidth: number;
   setDayWidth: (value: number) => void;
@@ -66,6 +69,9 @@ export function TimelineToolbar({
   lists,
   boardId,
   wsId,
+  isPersonalWorkspace,
+  canUseBoardAssignees,
+  assigneeMemberSource,
   primaryCreateListId,
   dayWidth,
   setDayWidth,
@@ -221,6 +227,9 @@ export function TimelineToolbar({
                                 boardId={boardId}
                                 workspaceId={wsId}
                                 lists={lists}
+                                isPersonalWorkspace={isPersonalWorkspace}
+                                canUseBoardAssignees={canUseBoardAssignees}
+                                assigneeMemberSource={assigneeMemberSource}
                                 onUpdate={onActionsUpdate ?? (() => undefined)}
                                 open={openTaskMenu?.taskId === task.id}
                                 onOpenChange={(open) =>

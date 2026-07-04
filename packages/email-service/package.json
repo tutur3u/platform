@@ -1,6 +1,6 @@
 {
   "name": "@tuturuuu/email-service",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "description": "Centralized email service with rate limiting, spam protection, and audit logging",
   "type": "module",
@@ -13,24 +13,24 @@
     "./providers/ses": "./src/providers/ses.ts"
   },
   "scripts": {
-    "type-check": "tsgo --project tsconfig.typecheck.json",
+    "type-check": "tsc --project tsconfig.typecheck.json",
     "test": "vitest run",
     "test:watch": "vitest"
   },
   "dependencies": {
-    "@aws-sdk/client-ses": "^3.1068.0",
+    "@aws-sdk/client-ses": "^3.1076.0",
     "@tuturuuu/supabase": "workspace:*",
     "@tuturuuu/types": "workspace:*",
     "@tuturuuu/utils": "workspace:*",
     "@upstash/redis": "^1.38.0",
-    "isomorphic-dompurify": "^3.17.0",
-    "juice": "^12.1.0",
+    "isomorphic-dompurify": "^3.18.0",
+    "juice": "^12.1.1",
     "zod": "^4.4.3"
   },
   "devDependencies": {
     "@tuturuuu/typescript-config": "workspace:*",
-    "@types/node": "^25.9.3",
-    "typescript": "^6.0.3",
-    "vitest": "^4.1.8"
+    "@types/node": "^26.0.1",
+    "typescript": "7.0.1-rc",
+    "vitest": "^4.1.9"
   }
 }

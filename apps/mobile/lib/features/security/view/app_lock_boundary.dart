@@ -6,6 +6,7 @@ import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/security/cubit/app_lock_cubit.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class AppLockBoundary extends StatelessWidget {
@@ -25,10 +26,16 @@ class AppLockBoundary extends StatelessWidget {
     );
     final appLockState = context.watch<AppLockCubit>().state;
 
-    if (authStatus != AuthStatus.authenticated ||
-        excluded ||
-        !appLockState.enabled ||
-        !appLockState.locked) {
+    if (authStatus != AuthStatus.authenticated || excluded) {
+      return child;
+    }
+
+    if (!appLockState.hasLoaded ||
+        appLockState.status == AppLockStatus.loading) {
+      return const _AppLockLoadingGate();
+    }
+
+    if (!appLockState.enabled || !appLockState.locked) {
       return child;
     }
 
@@ -117,6 +124,22 @@ class AppLockBoundary extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _AppLockLoadingGate extends StatelessWidget {
+  const _AppLockLoadingGate();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = shad.Theme.of(context);
+
+    return ColoredBox(
+      color: theme.colorScheme.background,
+      child: const SafeArea(
+        child: Center(child: NovaLoadingIndicator()),
+      ),
     );
   }
 }

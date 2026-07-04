@@ -5,7 +5,13 @@ import {
   normalizeWorkspaceId,
   verifyWorkspaceMembershipType,
 } from '@tuturuuu/utils/workspace-helper';
-import { consumeStream, gateway, stepCountIs, streamText } from 'ai';
+import {
+  consumeStream,
+  gateway,
+  type LanguageModelUsage,
+  stepCountIs,
+  streamText,
+} from 'ai';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import type { CreditSource as SharedCreditSource } from '../chat/credit-source';
@@ -31,6 +37,11 @@ import { createMiraStreamTools } from '../tools/mira-tools';
 import { createMindStreamTools, type MindToolCallbacks } from './tools';
 
 type AuthOk = Extract<AiRouteAuthResult, { ok: true }>;
+type MindUsage = Partial<
+  Pick<LanguageModelUsage, 'inputTokens' | 'outputTokens' | 'totalTokens'>
+> & {
+  outputTokenDetails?: Partial<LanguageModelUsage['outputTokenDetails']>;
+};
 
 const MindChatBodySchema = z.object({
   boardId: z.guid().nullable().optional(),
@@ -589,22 +600,34 @@ export function createPOST(callbacks: MindRouteCallbacks) {
         userId: auth.user.id,
         wsId: access.wsId,
       });
+      const telemetryRuntimeContext = {
+        boardId: parsedBody.boardId ?? 'none',
+        clientRunId: parsedBody.clientRunId ?? 'none',
+        creditSource: requestedCreditSource,
+        creditWsId: billingWsId ?? access.wsId,
+        model: resolvedModelId,
+        threadId,
+        thinkingMode: parsedBody.thinkingMode ?? 'fast',
+        writeMode,
+        wsId: access.wsId,
+      };
 
       const result = streamText({
         abortSignal: request.signal,
-        experimental_telemetry: {
+        runtimeContext: telemetryRuntimeContext,
+        telemetry: {
           functionId: 'mind.ai.stream',
           isEnabled: true,
-          metadata: {
-            boardId: parsedBody.boardId ?? 'none',
-            clientRunId: parsedBody.clientRunId ?? 'none',
-            creditSource: requestedCreditSource,
-            creditWsId: billingWsId ?? access.wsId,
-            model: resolvedModelId,
-            threadId,
-            thinkingMode: parsedBody.thinkingMode ?? 'fast',
-            writeMode,
-            wsId: access.wsId,
+          includeRuntimeContext: {
+            boardId: true,
+            clientRunId: true,
+            creditSource: true,
+            creditWsId: true,
+            model: true,
+            threadId: true,
+            thinkingMode: true,
+            writeMode: true,
+            wsId: true,
           },
         },
         maxRetries: 0,
@@ -636,7 +659,7 @@ export function createPOST(callbacks: MindRouteCallbacks) {
           const toolResults = response.steps?.flatMap(
             (step) => step.toolResults ?? []
           );
-          const usage = response.totalUsage ?? response.usage ?? {};
+          const usage: MindUsage = response.totalUsage ?? response.usage ?? {};
           await callbacks.persistMessage({
             boardId: parsedBody.boardId ?? null,
             content: response.text || '',
@@ -653,7 +676,7 @@ export function createPOST(callbacks: MindRouteCallbacks) {
             usage: {
               inputTokens: usage.inputTokens ?? 0,
               outputTokens: usage.outputTokens ?? 0,
-              reasoningTokens: usage.reasoningTokens ?? 0,
+              reasoningTokens: usage.outputTokenDetails?.reasoningTokens ?? 0,
               totalTokens: usage.totalTokens ?? 0,
             },
             userId: auth.user.id,
@@ -664,7 +687,7 @@ export function createPOST(callbacks: MindRouteCallbacks) {
             inputTokens: usage.inputTokens ?? 0,
             modelId: resolvedModelId,
             outputTokens: usage.outputTokens ?? 0,
-            reasoningTokens: usage.reasoningTokens ?? 0,
+            reasoningTokens: usage.outputTokenDetails?.reasoningTokens ?? 0,
             userId: auth.user.id,
             wsId: billingWsId ?? access.wsId,
           });

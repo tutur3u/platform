@@ -16,9 +16,14 @@ export function SubtasksSection({
   onAddSubtask,
   onAddExistingAsSubtask,
   isSaving,
+  searchOpen: controlledSearchOpen,
+  onSearchOpenChange,
   disabled,
 }: SubtasksSectionProps) {
-  const [searchOpen, setSearchOpen] = React.useState(false);
+  const [uncontrolledSearchOpen, setUncontrolledSearchOpen] =
+    React.useState(false);
+  const searchOpen = controlledSearchOpen ?? uncontrolledSearchOpen;
+  const setSearchOpen = onSearchOpenChange ?? setUncontrolledSearchOpen;
 
   const excludeIds = React.useMemo(() => {
     const ids = taskId ? [taskId] : [];

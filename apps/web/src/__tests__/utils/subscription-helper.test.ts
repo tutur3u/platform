@@ -410,11 +410,14 @@ describe('subscription-helper', () => {
 
       expect(result).toEqual({
         status: 'error',
-        message: 'No free tier product found',
+        message: 'Free-tier product lookup failed: No free product',
       });
       expect(mockConsoleError).toHaveBeenCalledWith(
-        expect.stringContaining('No FREE tier product found'),
-        { message: 'No free product' }
+        'Free-tier product lookup failed',
+        expect.objectContaining({
+          message: 'No free product',
+          wsId: 'ws-123',
+        })
       );
     });
 

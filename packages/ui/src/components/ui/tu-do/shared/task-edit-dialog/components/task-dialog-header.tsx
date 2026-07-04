@@ -16,7 +16,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
 import { getTicketIdentifier } from '@tuturuuu/utils/task-helper';
 import { useTranslations } from 'next-intl';
-import type { ReactNode } from 'react';
+import { type ReactNode, useState } from 'react';
 import { TaskViewerAvatarsComponent } from '../../user-presence-avatars';
 import { TaskDialogActions } from '../task-dialog-actions';
 import type {
@@ -268,6 +268,19 @@ export function TaskDialogHeader({
   onScrollToUserCursor,
 }: TaskDialogHeaderProps) {
   const t = useTranslations();
+  const [activeHeaderOverlay, setActiveHeaderOverlay] = useState<
+    'quick-settings' | 'more-menu' | null
+  >(null);
+
+  const setHeaderOverlayOpen = (
+    overlay: 'quick-settings' | 'more-menu',
+    open: boolean
+  ) => {
+    setActiveHeaderOverlay((currentOverlay) => {
+      if (open) return overlay;
+      return currentOverlay === overlay ? null : currentOverlay;
+    });
+  };
 
   // Use custom headerInfo if provided, otherwise generate from task context
   const resolvedHeaderInfo =
@@ -452,7 +465,13 @@ export function TaskDialogHeader({
 
         {/* Quick Settings */}
         {!controlsDisabled && (
-          <QuickSettingsPopover isPersonalWorkspace={isPersonalWorkspace} />
+          <QuickSettingsPopover
+            isPersonalWorkspace={isPersonalWorkspace}
+            open={activeHeaderOverlay === 'quick-settings'}
+            onOpenChange={(open) =>
+              setHeaderOverlayOpen('quick-settings', open)
+            }
+          />
         )}
 
         <TaskDialogActions
@@ -471,6 +490,10 @@ export function TaskDialogHeader({
           onOpenShareDialog={onOpenShareDialog}
           disabled={disabled}
           controlsDisabled={controlsDisabled}
+          moreMenuOpen={activeHeaderOverlay === 'more-menu'}
+          onMoreMenuOpenChange={(open) =>
+            setHeaderOverlayOpen('more-menu', open)
+          }
         />
 
         {/* Hide save button in edit mode when realtime is enabled (either cursors or Yjs sync) */}

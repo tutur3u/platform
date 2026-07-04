@@ -1,0 +1,374 @@
+import '@testing-library/jest-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { BoardSwitcher } from '../board-switcher';
+
+const {
+  createWorkspaceTaskBoardMock,
+  isTaskRememberLastBoardEnabledMock,
+  listCurrentUserTaskBoardsMock,
+  pushMock,
+  rememberLastBoardConfig,
+  updateUserWorkspaceConfigMock,
+  useUserWorkspaceConfigMock,
+} = vi.hoisted(() => ({
+  createWorkspaceTaskBoardMock: vi.fn(),
+  isTaskRememberLastBoardEnabledMock: vi.fn(
+    (value: string | null | undefined) => value !== 'false'
+  ),
+  listCurrentUserTaskBoardsMock: vi.fn(),
+  pushMock: vi.fn(),
+  rememberLastBoardConfig: {
+    value: 'true' as string | null | undefined,
+  },
+  updateUserWorkspaceConfigMock: vi.fn(),
+  useUserWorkspaceConfigMock: vi.fn(),
+}));
+
+let comboboxProps:
+  | {
+      createText?: string;
+      creatingText?: string;
+      onChange: (value: string) => void;
+      onCreate?: (value: string) => Promise<{ label: string; value: string }>;
+      options: Array<{
+        badge?: unknown;
+        description?: string;
+        group?: string;
+        icon?: unknown;
+        label: string;
+        value: string;
+      }>;
+      searchPlaceholder?: string;
+      selected?: string;
+      showSelectedIcon?: boolean;
+    }
+  | undefined;
+
+vi.mock('@tuturuuu/internal-api/tasks', () => ({
+  createWorkspaceTaskBoard: (
+    ...args: Parameters<typeof createWorkspaceTaskBoardMock>
+  ) => createWorkspaceTaskBoardMock(...args),
+  listCurrentUserTaskBoards: (
+    ...args: Parameters<typeof listCurrentUserTaskBoardsMock>
+  ) => listCurrentUserTaskBoardsMock(...args),
+}));
+
+vi.mock('@tuturuuu/internal-api/users', () => ({
+  isTaskRememberLastBoardEnabled: (value: string | null | undefined): boolean =>
+    isTaskRememberLastBoardEnabledMock(value),
+  TASK_DEFAULT_BOARD_ID_CONFIG_ID: 'TASK_DEFAULT_BOARD_ID',
+  TASK_REMEMBER_LAST_BOARD_CONFIG_ID: 'TASK_REMEMBER_LAST_BOARD',
+}));
+
+vi.mock('../../../../../hooks/use-user-workspace-config', () => ({
+  useUpdateUserWorkspaceConfig: () => ({
+    isPending: false,
+    mutate: updateUserWorkspaceConfigMock,
+  }),
+  useUserWorkspaceConfig: (...args: unknown[]) => {
+    useUserWorkspaceConfigMock(...args);
+    return {
+      data: rememberLastBoardConfig.value,
+      isLoading: false,
+    };
+  },
+}));
+
+vi.mock('@tuturuuu/ui/custom/combobox', () => ({
+  Combobox: (props: any) => {
+    comboboxProps = props;
+    return (
+      <div>
+        <button
+          type="button"
+          data-testid="board-combobox"
+          onClick={() => props.onChange('board-2')}
+        >
+          {props.label}
+        </button>
+        <button
+          type="button"
+          data-testid="create-board"
+          onClick={async () => {
+            const result = await props.onCreate?.('Launch Board');
+            const boardId = typeof result === 'string' ? result : result?.value;
+            if (boardId) props.onChange(boardId);
+          }}
+        >
+          Create board
+        </button>
+      </div>
+    );
+  },
+}));
+
+vi.mock('@tuturuuu/ui/sonner', () => ({
+  toast: {
+    error: vi.fn(),
+  },
+}));
+
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({
+    push: pushMock,
+  }),
+}));
+
+vi.mock('../tasks-route-context', () => ({
+  useTasksHref: () => (path: string) => `/tasks${path}`,
+}));
+
+function renderBoardSwitcher() {
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: {
+        retry: false,
+      },
+    },
+  });
+
+  return render(
+    <QueryClientProvider client={queryClient}>
+      <BoardSwitcher
+        board={{
+          id: 'board-1',
+          name: 'Tasks',
+          ticket_prefix: 'T',
+          ws_id: 'ws-1',
+        }}
+        translations={{
+          activeBoards: 'Active boards',
+          archivedBoards: 'Archived boards',
+          deletedBoards: 'Deleted boards',
+          createBoard: 'Create Board',
+          creatingBoard: 'Creating',
+          searchBoards: 'Search boards...',
+          tasks: 'Tasks',
+        }}
+      />
+    </QueryClientProvider>
+  );
+}
+
+describe('BoardSwitcher', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    comboboxProps = undefined;
+    rememberLastBoardConfig.value = 'true';
+    listCurrentUserTaskBoardsMock.mockResolvedValue({
+      boards: [
+        {
+          access_type: 'member',
+          archived_at: null,
+          created_at: '2026-06-01T00:00:00.000Z',
+          deleted_at: null,
+          icon: null,
+          id: 'board-2',
+          name: 'Roadmap',
+          ticket_prefix: null,
+          workspace: {
+            avatar_url: null,
+            id: 'ws-1',
+            logo_url: null,
+            name: 'Current Workspace',
+            personal: false,
+          },
+          ws_id: 'ws-1',
+        },
+      ],
+    });
+  });
+
+  it('uses the shared combobox and navigates when a board is selected', async () => {
+    renderBoardSwitcher();
+
+    expect(screen.getByTestId('board-combobox')).toBeInTheDocument();
+
+    await waitFor(() => {
+      expect(comboboxProps?.options).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            label: 'Roadmap',
+            value: 'board-2',
+          }),
+        ])
+      );
+    });
+
+    expect(comboboxProps).toMatchObject({
+      createText: 'Create Board',
+      creatingText: 'Creating',
+      searchPlaceholder: 'Search boards...',
+      selected: 'board-1',
+    });
+    expect(comboboxProps?.showSelectedIcon).toBeUndefined();
+    expect(comboboxProps?.options.some((option) => option.icon)).toBe(true);
+    const activeBoardOption = comboboxProps?.options.find(
+      (option) => option.value === 'board-2'
+    );
+    expect(activeBoardOption?.badge).toBeUndefined();
+    expect(activeBoardOption?.description).toBeUndefined();
+    expect(activeBoardOption?.group).toBe('Current Workspace');
+
+    fireEvent.click(screen.getByTestId('board-combobox'));
+
+    expect(pushMock).toHaveBeenCalledWith('/ws-1/tasks/boards/board-2');
+    expect(useUserWorkspaceConfigMock).toHaveBeenCalledWith(
+      'ws-1',
+      'TASK_REMEMBER_LAST_BOARD',
+      'true'
+    );
+    expect(isTaskRememberLastBoardEnabledMock).toHaveBeenCalledWith('true');
+    expect(updateUserWorkspaceConfigMock).toHaveBeenCalledWith({
+      configId: 'TASK_DEFAULT_BOARD_ID',
+      value: 'board-2',
+      workspaceId: 'ws-1',
+    });
+  });
+
+  it('orders current workspace boards first and switches across workspaces without updating defaults', async () => {
+    listCurrentUserTaskBoardsMock.mockResolvedValue({
+      boards: [
+        {
+          access_type: 'member',
+          archived_at: null,
+          created_at: '2026-06-01T00:00:00.000Z',
+          deleted_at: null,
+          icon: null,
+          id: 'board-2',
+          name: 'External Roadmap',
+          ticket_prefix: null,
+          workspace: {
+            avatar_url: null,
+            id: 'ws-2',
+            logo_url: null,
+            name: 'Other Workspace',
+            personal: false,
+          },
+          ws_id: 'ws-2',
+        },
+        {
+          access_type: 'member',
+          archived_at: null,
+          created_at: '2026-06-01T00:00:00.000Z',
+          deleted_at: null,
+          icon: null,
+          id: 'board-current-secondary',
+          name: 'Current Roadmap',
+          ticket_prefix: null,
+          workspace: {
+            avatar_url: null,
+            id: 'ws-1',
+            logo_url: null,
+            name: 'Current Workspace',
+            personal: false,
+          },
+          ws_id: 'ws-1',
+        },
+      ],
+    });
+
+    renderBoardSwitcher();
+
+    await waitFor(() => {
+      expect(comboboxProps?.options.map((option) => option.value)).toEqual([
+        'board-1',
+        'board-current-secondary',
+        'board-2',
+      ]);
+    });
+    expect(comboboxProps?.options[2]).toMatchObject({
+      group: 'Other Workspace',
+      label: 'External Roadmap',
+      value: 'board-2',
+    });
+
+    fireEvent.click(screen.getByTestId('board-combobox'));
+
+    expect(pushMock).toHaveBeenCalledWith('/ws-2/tasks/boards/board-2');
+    expect(updateUserWorkspaceConfigMock).not.toHaveBeenCalled();
+  });
+
+  it('navigates without updating the default board when board memory is disabled', async () => {
+    rememberLastBoardConfig.value = 'false';
+    renderBoardSwitcher();
+
+    await waitFor(() => {
+      expect(comboboxProps?.options.length).toBeGreaterThan(0);
+    });
+
+    fireEvent.click(screen.getByTestId('board-combobox'));
+
+    expect(pushMock).toHaveBeenCalledWith('/ws-1/tasks/boards/board-2');
+    expect(updateUserWorkspaceConfigMock).not.toHaveBeenCalled();
+  });
+
+  it('hides board creation for guest-only board access', async () => {
+    listCurrentUserTaskBoardsMock.mockResolvedValue({
+      boards: [
+        {
+          access_type: 'guest',
+          archived_at: null,
+          created_at: '2026-06-01T00:00:00.000Z',
+          deleted_at: null,
+          guest_permission: 'edit',
+          icon: null,
+          id: 'board-1',
+          name: 'Tasks',
+          ticket_prefix: null,
+          workspace: {
+            avatar_url: null,
+            guest_products: ['tasks'],
+            id: 'ws-1',
+            logo_url: null,
+            name: 'Shared Workspace',
+            personal: false,
+          },
+          ws_id: 'ws-1',
+        },
+      ],
+    });
+
+    renderBoardSwitcher();
+
+    await waitFor(() => {
+      expect(comboboxProps?.createText).toBeUndefined();
+      expect(comboboxProps?.creatingText).toBeUndefined();
+      expect(comboboxProps?.onCreate).toBeUndefined();
+    });
+  });
+
+  it('creates a new board from the picker and opens it', async () => {
+    createWorkspaceTaskBoardMock.mockResolvedValue({
+      board: {
+        archived_at: null,
+        created_at: '2026-06-24T00:00:00.000Z',
+        deleted_at: null,
+        icon: null,
+        id: 'board-3',
+        name: 'Launch Board',
+      },
+    });
+
+    renderBoardSwitcher();
+
+    fireEvent.click(screen.getByTestId('create-board'));
+
+    await waitFor(() => {
+      expect(createWorkspaceTaskBoardMock).toHaveBeenCalledWith('ws-1', {
+        name: 'Launch Board',
+      });
+    });
+
+    await waitFor(() => {
+      expect(pushMock).toHaveBeenCalledWith('/ws-1/tasks/boards/board-3');
+    });
+    expect(updateUserWorkspaceConfigMock).toHaveBeenCalledWith({
+      configId: 'TASK_DEFAULT_BOARD_ID',
+      value: 'board-3',
+      workspaceId: 'ws-1',
+    });
+  });
+});

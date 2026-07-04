@@ -29,6 +29,15 @@ Use the commit window plus exact path staging. The commit window serializes Git
 index and commit operations; exact staging keeps unrelated human or agent work
 out of commits.
 
+The window is **per-checkout**: its lock lives in the current working directory,
+so it only serializes commits among agents that share one checkout. A separate
+`git worktree` has its own lock and its own Git index, so the window does not
+coordinate across worktrees — there, isolation comes from each worktree being on
+its own branch. Claim the window for same-checkout commit safety; rely on
+branches and the shared remote to integrate separate worktrees. In a hot shared
+checkout, commit your owned paths promptly in small scoped commits so a
+concurrent rebase or reset cannot discard a large uncommitted set.
+
 Claims default to 10 minutes and may only be 5-10 minutes. Claim only when you
 are ready to stage and commit; release the token as soon as the operation
 finishes or aborts.
@@ -69,6 +78,9 @@ git diff --cached --name-only
 Then pass `--allow-staged` only when the staged set is intentional and must be
 preserved. Never use the commit-window lock as permission to stage unrelated
 paths, overwrite another agent's work, or skip active coordination notes.
+Existing staged files are owned by the staging agent or coordinator until
+explicitly reassigned. If a path is `MM`, review both the staged and unstaged
+portions with the relevant owner before committing.
 
 ## Proof-Gated No-Verify
 
@@ -104,12 +116,16 @@ If commit hooks fail:
 2. Decide whether the failed file belongs to the staged scope.
 3. If it belongs, fix it and rerun the focused validation.
 4. If it does not belong, do not format, stage, or repair it just to make the
-   commit pass. Report the unrelated blocker.
+   commit pass. Release the commit window, report the unrelated blocker, and
+   wait for that lane to hand off or ask the coordinator to integrate it.
 
 A complete proof-gated no-verify packet can justify `--no-verify` before
 running the hook or after a hook failure caused by unrelated repo-wide state.
 Without that packet, use `--no-verify` only when the user explicitly accepts the
 remaining risk after focused validation and blocker context are reported.
+Only the staged-set owner may use this path, and only with exact-path proof for
+the staged set. Other workers' dirty files are not proof that the staged files
+are safe.
 
 Always release the commit window after the commit succeeds or after you decide
 to abort the commit attempt.

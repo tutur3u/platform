@@ -9,6 +9,7 @@ import {
   getFacetedUniqueValues,
   getFilteredRowModel,
   getSortedRowModel,
+  type Row,
   type SortingState,
   useReactTable,
   type VisibilityState,
@@ -26,6 +27,15 @@ import {
 } from '../../table';
 import { DataTablePagination } from './data-table-pagination';
 import { DataTableToolbar } from './data-table-toolbar';
+
+function isInteractiveTarget(target: EventTarget | null) {
+  if (!(target instanceof HTMLElement)) return false;
+  return Boolean(
+    target.closest(
+      'a, button, input, select, textarea, label, [role="menuitem"], [data-no-row-activate]'
+    )
+  );
+}
 
 /**
  * Options for column generator functions.
@@ -79,6 +89,8 @@ export interface DataTableProps<TData, TValue> {
   /** Custom toolbar actions rendered directly (not wrapped in dialogs) */
   toolbarActions?: ReactNode;
   className?: string;
+  tableCardClassName?: string;
+  tableClassName?: string;
   preserveParams?: string[];
   onRefresh?: () => void;
   selectedRowsActions?: (selectedRows: TData[]) => ReactNode;
@@ -87,6 +99,7 @@ export interface DataTableProps<TData, TValue> {
 
   onRowClick?: (row: TData) => void;
   onRowDoubleClick?: (row: TData) => void;
+  getRowId?: (originalRow: TData, index: number, parent?: Row<TData>) => string;
 
   setParams?: (params: {
     page?: number;
@@ -127,11 +140,14 @@ export function DataTable<TData, TValue>({
   toolbarExportContent,
   toolbarActions,
   className,
+  tableCardClassName,
+  tableClassName,
   onRefresh,
   selectedRowsActions,
   onSearch,
   onRowClick,
   onRowDoubleClick,
+  getRowId,
   setParams,
   resetParams,
   columnGenerator,
@@ -169,6 +185,7 @@ export function DataTable<TData, TValue>({
         : undefined,
     enableRowSelection: true,
     autoResetPageIndex: true,
+    getRowId,
     onRowSelectionChange: setRowSelection,
     onSortingChange: enableServerSideSorting
       ? (updaterOrValue) => {
@@ -232,16 +249,23 @@ export function DataTable<TData, TValue>({
           toolbarActions={toolbarActions}
         />
       )}
-      <Card>
-        <Table>
+      <Card className={tableCardClassName}>
+        <Table className={tableClassName}>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header) => {
+                  const meta = header.column.columnDef.meta as
+                    | { className?: string }
+                    | undefined;
+
                   return (
                     <TableHead
                       key={header.id}
-                      className="bg-foreground/5 font-semibold text-foreground/70 first:rounded-tl-xl last:rounded-tr-xl"
+                      className={cn(
+                        'bg-foreground/5 font-semibold text-foreground/70 first:rounded-tl-xl last:rounded-tr-xl',
+                        meta?.className
+                      )}
                     >
                       {header.isPlaceholder
                         ? null
@@ -258,16 +282,42 @@ export function DataTable<TData, TValue>({
           <TableBody>
             {table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => {
+                const isInteractiveRow = Boolean(
+                  onRowClick || onRowDoubleClick
+                );
                 const tableRow = (
                   <TableRow
                     key={`${namespace}-${row.id}`}
                     data-state={row.getIsSelected() && 'selected'}
-                    className="cursor-pointer"
-                    onClick={() => onRowClick?.(row.original)}
-                    onDoubleClick={() => onRowDoubleClick?.(row.original)}
+                    className={cn(isInteractiveRow && 'cursor-pointer')}
+                    onClick={(event) => {
+                      if (isInteractiveTarget(event.target)) return;
+                      onRowClick?.(row.original);
+                    }}
+                    onDoubleClick={(event) => {
+                      if (isInteractiveTarget(event.target)) return;
+                      onRowDoubleClick?.(row.original);
+                    }}
+                    onKeyDown={(event) => {
+                      if (!onRowClick) return;
+                      if (event.key !== 'Enter' && event.key !== ' ') return;
+                      if (isInteractiveTarget(event.target)) return;
+                      event.preventDefault();
+                      onRowClick(row.original);
+                    }}
+                    tabIndex={onRowClick ? 0 : undefined}
                   >
                     {row.getVisibleCells().map((cell) => (
-                      <TableCell key={`${namespace}-${cell.id}`}>
+                      <TableCell
+                        key={`${namespace}-${cell.id}`}
+                        className={
+                          (
+                            cell.column.columnDef.meta as
+                              | { cellClassName?: string }
+                              | undefined
+                          )?.cellClassName
+                        }
+                      >
                         {flexRender(
                           cell.column.columnDef.cell,
                           cell.getContext()
@@ -293,7 +343,7 @@ export function DataTable<TData, TValue>({
                 >
                   {data
                     ? `${t?.('common.no-results')}.`
-                    : `${t?.('common.loading')}...`}
+                    : `${t?.('common.loading')}…`}
                 </TableCell>
               </TableRow>
             )}

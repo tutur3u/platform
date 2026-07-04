@@ -34,6 +34,7 @@ import type {
   SESCredentials,
   SendEmailParams,
   SendEmailResult,
+  SendInternalEmailOptions,
 } from './types';
 import { getWorkspaceEmailRateLimitOverrides } from './workspace-rate-limits';
 
@@ -439,7 +440,10 @@ export class EmailService {
    * Send without rate limiting (for internal/system emails).
    * Still checks blacklist and creates audit records.
    */
-  async sendInternal(params: SendEmailParams): Promise<SendEmailResult> {
+  async sendInternal(
+    params: SendEmailParams,
+    options: SendInternalEmailOptions = {}
+  ): Promise<SendEmailResult> {
     if (!this.supabase) {
       try {
         const { createAdminClient } = await import(
@@ -467,11 +471,11 @@ export class EmailService {
       };
     }
 
-    // Check blacklist only (skip rate limiting)
-    const blacklistResult = await this.blacklistChecker.checkEmails(
-      allRecipients,
-      this.supabase
-    );
+    // Check blacklist only (skip rate limiting), unless an audited internal
+    // recovery flow explicitly opts out for a manually approved recipient.
+    const blacklistResult = options.skipRecipientBlacklist
+      ? { blocked: [] }
+      : await this.blacklistChecker.checkEmails(allRecipients, this.supabase);
 
     const blockedRecipients: BlockedRecipient[] = blacklistResult.blocked.map(
       (b: BlacklistedEmail) => ({

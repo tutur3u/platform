@@ -1,0 +1,733 @@
+import {
+  type AppCoordinationTokenClaims,
+  createAppCoordinationToken,
+  verifyAppCoordinationToken,
+} from '@tuturuuu/auth/app-coordination';
+import type { AppCoordinationSessionPolicy } from '@tuturuuu/auth/app-session-policy';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
+import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
+import { getAppDomainMap } from '@tuturuuu/utils/internal-domains';
+import { getUpstashRestRedisClient } from '@tuturuuu/utils/upstash-rest';
+import { type NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
+import { BASE_URL } from '@/constants/common';
+import {
+  getAllowedAppTokenScopes,
+  verifyExternalAppSecret,
+} from '@/lib/app-coordination/external-apps';
+import { getAppCoordinationSessionPolicy } from '@/lib/app-coordination/session-policy';
+import { authorizeWorkspaceSessionAppTokenExchange } from '@/lib/app-coordination/workspace-session';
+import { authorizeExternalProjectAppTokenExchange } from '@/lib/external-projects/access';
+import { withRequestLogDrain } from '@/lib/infrastructure/log-drain';
+
+const APP_TOKEN_REFRESH_SCOPE = 'app-token:refresh';
+const APP_TOKEN_REFRESH_REPLAY_KEY_PREFIX = 'app-token:refresh:used';
+const WORKSPACE_SESSION_SCOPE = 'workspace:session';
+
+const exchangeSchema = z.object({
+  appId: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .regex(/^[a-z0-9_-]{1,64}$/u)
+    .optional(),
+  appSecret: z.string().min(1).max(200).optional(),
+  requestedScopes: z.array(z.string().min(1).max(80)).max(50).optional(),
+  targetApp: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .regex(/^[a-z0-9_-]{1,64}$/u)
+    .optional(),
+  refreshToken: z.string().min(1).optional(),
+  token: z.string().min(1).optional(),
+  workspaceId: z.string().trim().max(128).optional(),
+});
+
+type CrossAppValidationRow = {
+  session_data?: {
+    email?: unknown;
+  } | null;
+  user_id?: string | null;
+};
+
+type AuthUserIdentity = {
+  email: string | null;
+  metadata: Record<string, unknown> | null;
+};
+
+type UserPrivateDetailsRow = {
+  email?: string | null;
+  full_name?: string | null;
+};
+
+type UserProfileRow = {
+  avatar_url?: string | null;
+  display_name?: string | null;
+  id?: string | null;
+  user_private_details?: UserPrivateDetailsRow | UserPrivateDetailsRow[] | null;
+};
+
+type ExchangeUserProfile = {
+  avatarUrl: string | null;
+  avatar_url: string | null;
+  displayName: string | null;
+  display_name: string | null;
+  email: string | null;
+  fullName: string | null;
+  full_name: string | null;
+  id: string;
+  name: string | null;
+};
+
+type RefreshConsumeResult = 'consumed' | 'grace' | 'replayed' | 'unavailable';
+
+function getValidationRow(value: unknown): CrossAppValidationRow | null {
+  if (Array.isArray(value)) {
+    return getValidationRow(value[0]);
+  }
+
+  if (!value || typeof value !== 'object') {
+    return null;
+  }
+
+  return value as CrossAppValidationRow;
+}
+
+function isConfiguredApp(targetApp: string) {
+  return getAppDomainMap().some((domain) => domain.name === targetApp);
+}
+
+function requiresWorkspaceSessionAuthorization(scopes: string[]) {
+  return scopes.includes(WORKSPACE_SESSION_SCOPE);
+}
+
+function shouldInferWorkspaceSessionScope({
+  allowedWorkspaceIds,
+  requestedScopes,
+  workspaceId,
+}: {
+  allowedWorkspaceIds: string[];
+  requestedScopes: string[];
+  workspaceId?: string;
+}) {
+  const requestedWorkspaceSession = requestedScopes.includes(
+    WORKSPACE_SESSION_SCOPE
+  );
+
+  return (
+    allowedWorkspaceIds.length > 0 &&
+    (requestedWorkspaceSession ||
+      (requestedScopes.length === 0 && Boolean(workspaceId?.trim())))
+  );
+}
+
+function getAllowedAppTokenScopesWithWorkspaceSession({
+  allowedScopes,
+  allowedWorkspaceIds,
+  requestedScopes,
+  workspaceId,
+}: {
+  allowedScopes: string[];
+  allowedWorkspaceIds: string[];
+  requestedScopes: string[];
+  workspaceId?: string;
+}) {
+  const inferWorkspaceSession = shouldInferWorkspaceSessionScope({
+    allowedWorkspaceIds,
+    requestedScopes,
+    workspaceId,
+  });
+  const requestedApiScopes = inferWorkspaceSession
+    ? requestedScopes.filter((scope) => scope !== WORKSPACE_SESSION_SCOPE)
+    : requestedScopes;
+  const scopes = getAllowedAppTokenScopes({
+    allowedScopes,
+    requestedScopes: requestedApiScopes,
+  });
+
+  if (!inferWorkspaceSession) {
+    return scopes;
+  }
+
+  return [...new Set([...scopes, WORKSPACE_SESSION_SCOPE])].sort();
+}
+
+async function resolveExchangeTarget({
+  appId,
+  appSecret,
+  requestedScopes,
+  targetApp,
+  workspaceId,
+}: {
+  appId?: string;
+  appSecret?: string;
+  requestedScopes: string[];
+  targetApp?: string;
+  workspaceId?: string;
+}) {
+  const resolvedTargetApp = targetApp ?? appId;
+
+  if (!resolvedTargetApp) {
+    return {
+      error: 'Missing app coordination target',
+      status: 400,
+    } as const;
+  }
+
+  if (appId) {
+    if (targetApp && targetApp !== appId) {
+      return {
+        error: 'App credential target mismatch',
+        status: 400,
+      } as const;
+    }
+
+    if (!appSecret) {
+      return {
+        error: 'Missing app secret',
+        status: 401,
+      } as const;
+    }
+
+    const verification = await verifyExternalAppSecret({ appId, appSecret });
+
+    if (!verification.ok) {
+      return {
+        error: verification.error,
+        status: 401,
+      } as const;
+    }
+
+    return {
+      allowedWorkspaceIds: verification.app.allowedWorkspaceIds,
+      scopes: getAllowedAppTokenScopesWithWorkspaceSession({
+        allowedScopes: verification.app.allowedScopes,
+        allowedWorkspaceIds: verification.app.allowedWorkspaceIds,
+        requestedScopes,
+        workspaceId,
+      }),
+      targetApp: verification.app.id,
+    } as const;
+  }
+
+  if (!isConfiguredApp(resolvedTargetApp)) {
+    return {
+      error: 'Unknown app coordination target',
+      status: 400,
+    } as const;
+  }
+
+  return {
+    error: 'Missing app credentials',
+    status: 401,
+  } as const;
+}
+
+function cleanString(value: unknown) {
+  return typeof value === 'string' && value.trim() ? value.trim() : null;
+}
+
+function firstCleanString(...values: unknown[]) {
+  for (const value of values) {
+    const cleaned = cleanString(value);
+    if (cleaned) return cleaned;
+  }
+
+  return null;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function getPrivateDetails(
+  value: UserProfileRow['user_private_details']
+): UserPrivateDetailsRow | null {
+  if (Array.isArray(value)) {
+    return value[0] ?? null;
+  }
+
+  return value ?? null;
+}
+
+function getUserProfileRow(value: unknown): UserProfileRow | null {
+  if (!isRecord(value)) {
+    return null;
+  }
+
+  return value as UserProfileRow;
+}
+
+async function getAuthUserIdentity({
+  sbAdmin,
+  sessionData,
+  userId,
+}: {
+  sbAdmin: TypedSupabaseClient;
+  sessionData: CrossAppValidationRow['session_data'];
+  userId: string;
+}): Promise<AuthUserIdentity> {
+  const sessionEmail = cleanString(sessionData?.email);
+  const { data, error } = await sbAdmin.auth.admin.getUserById(userId);
+
+  if (error) {
+    console.warn('Failed to fetch app token auth user profile', {
+      error: error.message,
+      userId,
+    });
+
+    return {
+      email: sessionEmail,
+      metadata: null,
+    };
+  }
+
+  return {
+    email: sessionEmail ?? cleanString(data.user?.email),
+    metadata: isRecord(data.user?.user_metadata)
+      ? data.user.user_metadata
+      : null,
+  };
+}
+
+async function getExchangeUserProfile({
+  authIdentity,
+  sbAdmin,
+  userId,
+}: {
+  authIdentity: AuthUserIdentity;
+  sbAdmin: TypedSupabaseClient;
+  userId: string;
+}): Promise<ExchangeUserProfile> {
+  const { data, error } = await sbAdmin
+    .from('users')
+    .select(
+      'id, display_name, avatar_url, user_private_details(email, full_name)'
+    )
+    .eq('id', userId)
+    .maybeSingle();
+
+  if (error) {
+    console.warn('Failed to fetch app token user profile', {
+      error: error.message,
+      userId,
+    });
+  }
+
+  const userProfile = error ? null : getUserProfileRow(data);
+  const privateDetails = getPrivateDetails(userProfile?.user_private_details);
+  const displayName = firstCleanString(
+    userProfile?.display_name,
+    authIdentity.metadata?.display_name
+  );
+  const fullName = firstCleanString(
+    privateDetails?.full_name,
+    authIdentity.metadata?.full_name
+  );
+  const email = firstCleanString(privateDetails?.email, authIdentity.email);
+  const avatarUrl = firstCleanString(
+    userProfile?.avatar_url,
+    authIdentity.metadata?.avatar_url
+  );
+
+  return {
+    avatarUrl,
+    avatar_url: avatarUrl,
+    displayName,
+    display_name: displayName,
+    email,
+    fullName,
+    full_name: fullName,
+    id: firstCleanString(userProfile?.id) ?? userId,
+    name: firstCleanString(displayName, fullName, email),
+  };
+}
+
+function buildInvitationUrl(request: NextRequest, workspaceId: string) {
+  const path = `/${encodeURIComponent(workspaceId)}`;
+
+  for (const baseUrl of [BASE_URL, request.nextUrl.origin]) {
+    try {
+      return new URL(path, baseUrl).toString();
+    } catch {}
+  }
+
+  return path;
+}
+
+async function createExchangeTokenResponse({
+  email,
+  normalizedWorkspaceId,
+  policy,
+  scopes,
+  targetApp,
+  userProfile,
+  userId,
+}: {
+  email: string | null;
+  normalizedWorkspaceId?: string | null;
+  policy: AppCoordinationSessionPolicy;
+  scopes: string[];
+  targetApp: string;
+  userProfile: ExchangeUserProfile;
+  userId: string;
+}) {
+  const accessToken = createAppCoordinationToken({
+    email,
+    expiresInSeconds: policy.externalAppBearerTtlSeconds,
+    originApp: 'web',
+    scopes,
+    targetApp,
+    userId,
+  });
+  const refreshToken = createAppCoordinationToken({
+    email,
+    expiresInSeconds: policy.internalAppRefreshTtlSeconds,
+    originApp: 'web',
+    scopes: [APP_TOKEN_REFRESH_SCOPE],
+    targetApp,
+    userId,
+  });
+
+  return NextResponse.json({
+    accessToken: accessToken.token,
+    app: {
+      name: accessToken.claims.target_app,
+    },
+    expiresAt: accessToken.expiresAt,
+    expiresIn: accessToken.claims.exp - accessToken.claims.iat,
+    refreshEarlySeconds: policy.internalAppRefreshEarlySeconds,
+    refreshExpiresAt: refreshToken.expiresAt,
+    refreshExpiresIn: refreshToken.claims.exp - refreshToken.claims.iat,
+    refreshToken: refreshToken.token,
+    scopes,
+    tokenType: 'Bearer',
+    user: userProfile,
+    workspaceId: normalizedWorkspaceId,
+  });
+}
+
+async function consumeRefreshTokenWithGrace({
+  exp,
+  graceSeconds,
+  jti,
+  sub,
+}: {
+  exp: number;
+  graceSeconds: number;
+  jti: string;
+  sub: string;
+}): Promise<RefreshConsumeResult> {
+  const nowSeconds = Math.floor(Date.now() / 1000);
+  const ttlSeconds = exp - nowSeconds;
+
+  if (ttlSeconds <= 0 || !jti.trim() || !sub.trim()) {
+    return 'replayed';
+  }
+
+  const redis = await getUpstashRestRedisClient().catch(() => null);
+  if (!redis) {
+    return 'unavailable';
+  }
+
+  const key = `${APP_TOKEN_REFRESH_REPLAY_KEY_PREFIX}:${sub}:${jti}`;
+
+  try {
+    const firstUsedAt = await redis.get<number | string>(key);
+    const firstUsedAtSeconds =
+      typeof firstUsedAt === 'number'
+        ? firstUsedAt
+        : Number.parseInt(firstUsedAt ?? '', 10);
+
+    if (Number.isFinite(firstUsedAtSeconds)) {
+      return firstUsedAtSeconds + graceSeconds >= nowSeconds
+        ? 'grace'
+        : 'replayed';
+    }
+
+    const consumed = await redis.set(key, String(nowSeconds), {
+      ex: ttlSeconds,
+      nx: true,
+    });
+
+    return consumed === 'OK' ? 'consumed' : 'replayed';
+  } catch (error) {
+    console.warn('External app refresh replay check failed', {
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return 'unavailable';
+  }
+}
+
+async function verifyExchangeRefreshToken({
+  replayGraceSeconds,
+  refreshToken,
+  targetApp,
+}: {
+  replayGraceSeconds: number;
+  refreshToken: string;
+  targetApp: string;
+}): Promise<AppCoordinationTokenClaims | null> {
+  let verification: ReturnType<typeof verifyAppCoordinationToken>;
+
+  try {
+    verification = verifyAppCoordinationToken(refreshToken);
+  } catch {
+    return null;
+  }
+
+  if (!verification.ok) {
+    return null;
+  }
+
+  const { claims } = verification;
+
+  if (
+    claims.target_app !== targetApp ||
+    !claims.scopes.includes(APP_TOKEN_REFRESH_SCOPE)
+  ) {
+    return null;
+  }
+
+  const consumeResult = await consumeRefreshTokenWithGrace({
+    exp: claims.exp,
+    graceSeconds: replayGraceSeconds,
+    jti: claims.jti,
+    sub: claims.sub,
+  });
+
+  if (consumeResult === 'replayed') {
+    return null;
+  }
+
+  return claims;
+}
+
+async function exchangeAppToken(request: NextRequest) {
+  const body = await request.json().catch(() => null);
+  const parsed = exchangeSchema.safeParse(body);
+
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: 'Invalid app token exchange payload' },
+      { status: 400 }
+    );
+  }
+
+  const {
+    appId,
+    appSecret,
+    refreshToken,
+    requestedScopes = [],
+    targetApp,
+    token,
+    workspaceId,
+  } = parsed.data;
+
+  if (Boolean(token) === Boolean(refreshToken)) {
+    return NextResponse.json(
+      { error: 'Provide exactly one token or refresh token' },
+      { status: 400 }
+    );
+  }
+
+  let resolvedTarget: Awaited<ReturnType<typeof resolveExchangeTarget>>;
+
+  try {
+    resolvedTarget = await resolveExchangeTarget({
+      appId,
+      appSecret,
+      requestedScopes,
+      targetApp,
+      workspaceId,
+    });
+  } catch (error) {
+    if (error instanceof Error && error.message === 'app_scope_not_allowed') {
+      return NextResponse.json(
+        { error: 'Requested scope is not allowed for this app' },
+        { status: 403 }
+      );
+    }
+
+    throw error;
+  }
+
+  if ('error' in resolvedTarget) {
+    return NextResponse.json(
+      { error: resolvedTarget.error },
+      { status: resolvedTarget.status }
+    );
+  }
+
+  const sbAdmin = (await createAdminClient()) as TypedSupabaseClient;
+  const { policy } = await getAppCoordinationSessionPolicy({ db: sbAdmin });
+  let authIdentity: AuthUserIdentity;
+  let userId: string;
+
+  if (refreshToken) {
+    const refreshClaims = await verifyExchangeRefreshToken({
+      replayGraceSeconds: policy.externalAppRefreshReplayGraceSeconds,
+      refreshToken,
+      targetApp: resolvedTarget.targetApp,
+    });
+
+    if (!refreshClaims) {
+      return NextResponse.json(
+        { error: 'Invalid or expired refresh token' },
+        { status: 401 }
+      );
+    }
+
+    userId = refreshClaims.sub;
+    authIdentity = await getAuthUserIdentity({
+      sbAdmin,
+      sessionData: null,
+      userId,
+    });
+  } else {
+    const crossAppToken = token;
+
+    if (!crossAppToken) {
+      return NextResponse.json(
+        { error: 'Provide exactly one token or refresh token' },
+        { status: 400 }
+      );
+    }
+
+    const supabase = (await createClient(request)) as TypedSupabaseClient;
+    const { data, error } = await supabase.rpc(
+      'validate_cross_app_token_with_session',
+      {
+        p_target_app: resolvedTarget.targetApp,
+        p_token: crossAppToken,
+      }
+    );
+
+    if (error) {
+      console.warn('Failed to validate cross-app token for app exchange', {
+        error: error.message,
+        targetApp: resolvedTarget.targetApp,
+      });
+      return NextResponse.json(
+        { error: 'Invalid or expired token' },
+        { status: 401 }
+      );
+    }
+
+    const validationRow = getValidationRow(data);
+    userId = validationRow?.user_id ?? '';
+
+    if (!userId) {
+      return NextResponse.json(
+        { error: 'Invalid or expired token' },
+        { status: 401 }
+      );
+    }
+
+    authIdentity = await getAuthUserIdentity({
+      sbAdmin,
+      sessionData: validationRow?.session_data ?? null,
+      userId,
+    });
+  }
+
+  const workspaceSessionAuthorization = requiresWorkspaceSessionAuthorization(
+    resolvedTarget.scopes
+  )
+    ? await authorizeWorkspaceSessionAppTokenExchange({
+        admin: sbAdmin,
+        allowedWorkspaceIds: resolvedTarget.allowedWorkspaceIds,
+        authEmail: authIdentity.email,
+        userId,
+        workspaceId,
+      })
+    : null;
+
+  if (workspaceSessionAuthorization && !workspaceSessionAuthorization.ok) {
+    if (workspaceSessionAuthorization.code === 'PENDING_WORKSPACE_INVITE') {
+      const normalizedWorkspaceId =
+        workspaceSessionAuthorization.normalizedWorkspaceId;
+      return NextResponse.json(
+        {
+          code: 'PENDING_WORKSPACE_INVITE',
+          error: workspaceSessionAuthorization.error,
+          invitationUrl: buildInvitationUrl(
+            request,
+            normalizedWorkspaceId ?? workspaceId ?? ''
+          ),
+          workspaceId: normalizedWorkspaceId ?? workspaceId ?? null,
+        },
+        { status: workspaceSessionAuthorization.status }
+      );
+    }
+
+    return NextResponse.json(
+      { error: workspaceSessionAuthorization.error },
+      { status: workspaceSessionAuthorization.status }
+    );
+  }
+
+  const exchangeAuthorization = await authorizeExternalProjectAppTokenExchange({
+    admin: sbAdmin,
+    appId: resolvedTarget.targetApp,
+    authEmail: authIdentity.email,
+    scopes: resolvedTarget.scopes,
+    userId,
+    workspaceId,
+  });
+
+  if (!exchangeAuthorization.ok) {
+    if (exchangeAuthorization.code === 'PENDING_WORKSPACE_INVITE') {
+      const normalizedWorkspaceId = exchangeAuthorization.normalizedWorkspaceId;
+      return NextResponse.json(
+        {
+          code: 'PENDING_WORKSPACE_INVITE',
+          error: exchangeAuthorization.error,
+          invitationUrl: buildInvitationUrl(
+            request,
+            normalizedWorkspaceId ?? workspaceId ?? ''
+          ),
+          workspaceId: normalizedWorkspaceId ?? workspaceId ?? null,
+        },
+        { status: exchangeAuthorization.status }
+      );
+    }
+
+    return NextResponse.json(
+      { error: exchangeAuthorization.error },
+      { status: exchangeAuthorization.status }
+    );
+  }
+
+  const userProfile = await getExchangeUserProfile({
+    authIdentity,
+    sbAdmin,
+    userId,
+  });
+
+  return createExchangeTokenResponse({
+    email: userProfile.email ?? authIdentity.email,
+    normalizedWorkspaceId:
+      exchangeAuthorization.normalizedWorkspaceId ??
+      workspaceSessionAuthorization?.normalizedWorkspaceId,
+    policy,
+    scopes: resolvedTarget.scopes,
+    targetApp: resolvedTarget.targetApp,
+    userProfile,
+    userId,
+  });
+}
+
+export async function POST(request: NextRequest) {
+  return withRequestLogDrain(
+    {
+      request,
+      route: '/api/v1/auth/app-token/exchange',
+    },
+    () => exchangeAppToken(request)
+  );
+}

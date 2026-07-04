@@ -23,6 +23,7 @@ import dayjs from 'dayjs';
 import type { ReactNode } from 'react';
 import { createElement } from 'react';
 import type { Notification, NotificationType } from '@/hooks/useNotifications';
+import { getTasksAppUrlClient } from '@/lib/tasks-app-url-client';
 
 // Translation function type that accepts any string key
 export type TranslationFn = (
@@ -183,7 +184,7 @@ export function getEntityLink(
   const targetWsId = ws_id || currentWsId;
 
   if (entity_type === 'task' && entity_id) {
-    return `/${targetWsId}/tasks/${entity_id}`;
+    return getTasksAppUrlClient(`/${targetWsId}/tasks/${entity_id}`);
   }
 
   if (entity_type === 'workspace' && entity_id) {

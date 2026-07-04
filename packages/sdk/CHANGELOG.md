@@ -1,5 +1,49 @@
 # Changelog
 
+## [0.13.0](https://github.com/tutur3u/platform/compare/sdk-v0.12.1...sdk-v0.13.0) (2026-07-03)
+
+
+### Features
+
+* **sdk:** add external project operator commands ([729ab49](https://github.com/tutur3u/platform/commit/729ab4996b6e7e97efdecae72077986b8a6dcbce))
+
+## [0.12.1](https://github.com/tutur3u/platform/compare/sdk-v0.12.0...sdk-v0.12.1) (2026-07-02)
+
+
+### Bug Fixes
+
+* **cli:** preserve markdown tables in task descriptions ([9faf8ba](https://github.com/tutur3u/platform/commit/9faf8ba44b92565a9dfc2949c496654fc1fea9b3))
+
+## [0.12.0](https://github.com/tutur3u/platform/compare/sdk-v0.11.0...sdk-v0.12.0) (2026-06-29)
+
+
+### Features
+
+* **cli:** add task search ([b8ec86f](https://github.com/tutur3u/platform/commit/b8ec86ffd7bf401d32ac29f7c4db0ee60565b717))
+* **tasks:** add task templates ([8d0700a](https://github.com/tutur3u/platform/commit/8d0700ad255c7b5874bfa065575df6b1cde34063))
+
+
+### Bug Fixes
+
+* **external-apps:** allow signed asset uploads ([0d83b3b](https://github.com/tutur3u/platform/commit/0d83b3b50b235faf5894539a18c955ad0432e0b3))
+
+## [0.11.0](https://github.com/tutur3u/platform/compare/sdk-v0.10.1...sdk-v0.11.0) (2026-06-26)
+
+
+### Features
+
+* **cli:** support task description editing ([c72390b](https://github.com/tutur3u/platform/commit/c72390b909054af596ccbed8af6ded9f266dfdd4))
+* **cms:** integrate exocorpse external project ([c07081b](https://github.com/tutur3u/platform/commit/c07081b0bd98379eac97c3258b483ad8e39c9b39))
+* **epm:** batch external project entry mutations ([59dc436](https://github.com/tutur3u/platform/commit/59dc436c5b7485a5aaf9b82a445dc0bacd2cb1bc))
+
+## [0.10.1](https://github.com/tutur3u/platform/compare/sdk-v0.10.0...sdk-v0.10.1) (2026-06-17)
+
+
+### Bug Fixes
+
+* **cli:** escape table control characters ([73b7c58](https://github.com/tutur3u/platform/commit/73b7c58b7d9c1168ba1ae7651131045726ce082e))
+* **cli:** escape whoami metadata ([6227dd0](https://github.com/tutur3u/platform/commit/6227dd07b7399347d75a7760acfedfbae53cb214))
+
 ## [0.10.0](https://github.com/tutur3u/platform/compare/sdk-v0.9.0...sdk-v0.10.0) (2026-06-11)
 
 

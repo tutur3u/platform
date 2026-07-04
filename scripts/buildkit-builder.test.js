@@ -14,8 +14,13 @@ const {
   getAutoBuildMaxParallelism,
   getAutoBuildMemory,
   getBuildkitPaths,
+  getBuildkitPruneKeepStorage,
+  getBuildkitPruneMode,
+  getBuildkitPruneUntil,
   getBuilderConfigFingerprint,
   getDockerMemoryLimitBytes,
+  getResolvedBuildkitComposeEnv,
+  isBuildxBuilderUsable,
   isTransientBuildkitComposeUpError,
   isBunTarballExtractionError,
   LEGACY_BUILDER_NAMES,
@@ -25,11 +30,31 @@ const {
   parsePositiveNumber,
   pruneBuildkitCacheAfterBuild,
   readBuilderState,
+  recoverBuildkitBunInstallCache,
   renderBuildkitConfig,
   shouldPruneBuildkitAfterBuild,
   shouldStopBuildkitAfterBuild,
   stopBuildkitComposeServiceAfterBuild,
 } = require('./docker-web/buildkit-builder.js');
+const {
+  BUILD_RESOURCE_PROFILES,
+  createBuildResourceProfileSelection,
+  getBudgetedBuildResourceProfile,
+  getBuildResourceProfile,
+  getBuildResourceProfilePaths,
+  getNextAdaptiveBuildResourceProfile,
+  getNextLowerBuildResourceProfile,
+  getPromotedPersistedBuildResourceProfile,
+  hasExplicitBuildResourceCliConfig,
+  hasExplicitBuildResourceEnv,
+  isBuildResourceProfileWithinHardLimit,
+  isBuildkitMemoryExhaustionError,
+  isBuildkitResourceProfileFallbackError,
+  isDefaultBuildResourceCliConfig,
+  persistBuildResourceProfile,
+  readBuildResourceProfileState,
+  shouldUseAdaptiveBuildResourceProfile,
+} = require('./docker-web/resource-profiles.js');
 const { PROD_COMPOSE_FILE } = require('./docker-web/compose.js');
 
 test('parsePositiveNumber accepts positive numeric values and rejects invalid ones', () => {
@@ -50,6 +75,310 @@ test('parsePositiveInteger only accepts positive integers', () => {
 
 test('normalizeBuilderConfig returns null when no throttling config is present', () => {
   assert.equal(normalizeBuilderConfig({}, {}), null);
+});
+
+test('adaptive build resource profiles treat root defaults as automatic caps', () => {
+  assert.equal(
+    isDefaultBuildResourceCliConfig({
+      cpus: '4',
+      maxParallelism: '1',
+      memory: 'auto',
+    }),
+    true
+  );
+  assert.equal(
+    hasExplicitBuildResourceCliConfig({
+      cpus: '4',
+      maxParallelism: '1',
+      memory: 'auto',
+    }),
+    false
+  );
+  assert.equal(
+    hasExplicitBuildResourceCliConfig({
+      cpus: '4',
+      maxParallelism: '2',
+      memory: 'auto',
+    }),
+    true
+  );
+  assert.equal(
+    shouldUseAdaptiveBuildResourceProfile({
+      cpus: '4',
+      env: {},
+      maxParallelism: '1',
+      memory: 'auto',
+    }),
+    true
+  );
+  assert.equal(shouldUseAdaptiveBuildResourceProfile({ env: {} }), false);
+});
+
+test('adaptive build resource profiles opt out for explicit env or CLI caps', () => {
+  assert.equal(
+    hasExplicitBuildResourceEnv({
+      DOCKER_WEB_BUILD_MEMORY: '12g',
+    }),
+    true
+  );
+  assert.equal(
+    shouldUseAdaptiveBuildResourceProfile({
+      cpus: '4',
+      env: {
+        DOCKER_WEB_BUILD_RESOURCE_PROFILE_ADAPTIVE: '0',
+      },
+      maxParallelism: '1',
+      memory: 'auto',
+    }),
+    false
+  );
+  assert.equal(
+    shouldUseAdaptiveBuildResourceProfile({
+      cpus: '2',
+      env: {},
+      maxParallelism: '1',
+      memory: '8g',
+    }),
+    false
+  );
+  assert.equal(
+    shouldUseAdaptiveBuildResourceProfile({
+      cpus: '4',
+      env: {
+        DOCKER_WEB_BUILD_CPUS: '4',
+      },
+      maxParallelism: '1',
+      memory: 'auto',
+    }),
+    false
+  );
+});
+
+test('adaptive build resource profile selection reads and persists runtime state', () => {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'buildkit-profile-'));
+  const paths = getBuildResourceProfilePaths(tempDir);
+
+  try {
+    const lowProfile = BUILD_RESOURCE_PROFILES.find(
+      (profile) => profile.name === 'low'
+    );
+    persistBuildResourceProfile({
+      previousProfileName: 'stable',
+      profile: lowProfile,
+      reason: 'test',
+      stateFile: paths.stateFile,
+    });
+
+    const selection = createBuildResourceProfileSelection({
+      cpus: '4',
+      env: {},
+      maxParallelism: '1',
+      memory: 'auto',
+      paths,
+    });
+
+    assert.equal(selection.enabled, true);
+    assert.equal(selection.profileName, 'low');
+    assert.equal(selection.profile.memory, '10g');
+    assert.equal(selection.stateFile, paths.stateFile);
+    assert.equal(readBuildResourceProfileState(paths).profileName, 'low');
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('adaptive build resource profile selection promotes stale fallback state to hard-limit rescue', () => {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'buildkit-profile-'));
+  const paths = getBuildResourceProfilePaths(tempDir);
+  const env = {
+    DOCKER_WEB_DOCKER_MEMORY_LIMIT: String(12 * 1024 * 1024 * 1024),
+  };
+
+  try {
+    const minimalProfile = getBuildResourceProfile('minimal');
+    persistBuildResourceProfile({
+      previousProfileName: 'serial',
+      profile: minimalProfile,
+      reason: 'buildkit-resource-fallback',
+      stateFile: paths.stateFile,
+    });
+
+    const selection = createBuildResourceProfileSelection({
+      cpus: '4',
+      env,
+      maxParallelism: '1',
+      memory: 'auto',
+      paths,
+    });
+
+    assert.equal(selection.enabled, true);
+    assert.equal(selection.profileName, 'serial');
+    assert.equal(selection.profile.memory, '10g');
+    assert.equal(selection.profile.cpus, '1');
+
+    const state = readBuildResourceProfileState(paths);
+    assert.equal(state.profileName, 'serial');
+    assert.equal(state.previousProfileName, 'minimal');
+    assert.equal(state.reason, 'buildkit-resource-state-promoted');
+
+    assert.equal(
+      getPromotedPersistedBuildResourceProfile({
+        env,
+        profile: getBuildResourceProfile('floor'),
+        state: { reason: 'buildkit-resource-fallback' },
+      })?.name,
+      'serial'
+    );
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('adaptive build resource profile fallback classification is specific to BuildKit infrastructure failures', () => {
+  assert.equal(getNextLowerBuildResourceProfile('default')?.name, 'stable');
+  assert.equal(getNextLowerBuildResourceProfile('floor'), null);
+  assert.equal(
+    isBuildkitResourceProfileFallbackError(
+      new Error(
+        'rpc error: code = Unavailable desc = closing transport due to: connection error: desc = "error reading from server: EOF", received prior goaway: code: NO_ERROR'
+      )
+    ),
+    true
+  );
+  assert.equal(
+    isBuildkitResourceProfileFallbackError(
+      new Error(
+        [
+          '#2 ERROR: context deadline exceeded',
+          '> [internal] waiting for connection:',
+          'ERROR: context deadline exceeded',
+        ].join('\n')
+      )
+    ),
+    true
+  );
+  assert.equal(
+    isBuildkitResourceProfileFallbackError(
+      new Error('Name: tuturuuu\nDriver: remote\nStatus: inactive\n')
+    ),
+    true
+  );
+  assert.equal(
+    isBuildkitResourceProfileFallbackError(
+      new Error('TypeScript error: Property "foo" does not exist')
+    ),
+    false
+  );
+});
+
+test('adaptive build resource profiles can rescue to hard-limit profiles after conservative retries fail', () => {
+  const dockerMemoryLimit = String(11 * 1024 * 1024 * 1024);
+  const env = {
+    DOCKER_WEB_DOCKER_MEMORY_LIMIT: dockerMemoryLimit,
+  };
+  const lowProfile = getBuildResourceProfile('low');
+  const serialProfile = getBuildResourceProfile('serial');
+  const stableProfile = getBuildResourceProfile('stable');
+
+  assert.equal(isBuildResourceProfileWithinHardLimit(lowProfile, env), true);
+  assert.equal(isBuildResourceProfileWithinHardLimit(serialProfile, env), true);
+  assert.equal(
+    isBuildResourceProfileWithinHardLimit(stableProfile, env),
+    false
+  );
+  assert.equal(getBudgetedBuildResourceProfile(lowProfile, env)?.name, 'low');
+  assert.equal(
+    getBudgetedBuildResourceProfile(stableProfile, env)?.name,
+    'default'
+  );
+  assert.equal(
+    getNextAdaptiveBuildResourceProfile({
+      attemptedProfileNames: new Set(['floor', 'default']),
+      currentProfileName: 'default',
+      env,
+    })?.name,
+    'low'
+  );
+  assert.equal(
+    getNextAdaptiveBuildResourceProfile({
+      attemptedProfileNames: new Set(['default', 'stable', 'low']),
+      currentProfileName: 'low',
+      env: {
+        DOCKER_WEB_DOCKER_MEMORY_LIMIT: String(12 * 1024 * 1024 * 1024),
+      },
+      preferHardLimitProfile: true,
+    })?.name,
+    'serial'
+  );
+  assert.equal(
+    getNextAdaptiveBuildResourceProfile({
+      attemptedProfileNames: new Set(['default']),
+      currentProfileName: 'default',
+      env: {
+        DOCKER_WEB_DOCKER_MEMORY_LIMIT: String(12 * 1024 * 1024 * 1024),
+      },
+      preferHardLimitProfile: true,
+    })?.name,
+    'low'
+  );
+  assert.equal(
+    getNextAdaptiveBuildResourceProfile({
+      attemptedProfileNames: new Set(['default']),
+      currentProfileName: 'default',
+      env: {
+        DOCKER_WEB_DOCKER_MEMORY_LIMIT: String(12 * 1024 * 1024 * 1024),
+      },
+      preferHardLimitProfile: false,
+    })?.name,
+    'minimal'
+  );
+  assert.equal(
+    isBuildkitMemoryExhaustionError(
+      new Error('ResourceExhausted: cannot allocate memory')
+    ),
+    true
+  );
+  assert.equal(
+    isBuildkitMemoryExhaustionError(
+      new Error('rpc error: code = Unavailable desc = closing transport')
+    ),
+    false
+  );
+});
+
+test('isBuildxBuilderUsable requires a running remote builder when status is reported', () => {
+  assert.equal(
+    isBuildxBuilderUsable({
+      driver: 'remote',
+      exists: true,
+      status: null,
+    }),
+    true
+  );
+  assert.equal(
+    isBuildxBuilderUsable({
+      driver: 'remote',
+      exists: true,
+      status: 'running',
+    }),
+    true
+  );
+  assert.equal(
+    isBuildxBuilderUsable({
+      driver: 'remote',
+      exists: true,
+      status: 'inactive',
+    }),
+    false
+  );
+  assert.equal(
+    isBuildxBuilderUsable({
+      driver: 'docker-container',
+      exists: true,
+      status: 'running',
+    }),
+    false
+  );
 });
 
 test('normalizeBuilderConfig reads throttling defaults from env', () => {
@@ -87,7 +416,7 @@ test('normalizeBuilderConfig resolves auto throttling from current Docker memory
     getAutoBuildMemory({
       DOCKER_WEB_DOCKER_MEMORY_LIMIT: currentDockerMemory,
     }),
-    '8418m'
+    '6144m'
   );
   assert.equal(
     getAutoBuildCpus({
@@ -105,7 +434,7 @@ test('normalizeBuilderConfig resolves auto throttling from current Docker memory
     getAutoBuildMemory({
       DOCKER_WEB_DOCKER_MEMORY_LIMIT: largeDockerMemory,
     }),
-    '28160m'
+    '21504m'
   );
   assert.deepEqual(
     normalizeBuilderConfig(
@@ -123,7 +452,7 @@ test('normalizeBuilderConfig resolves auto throttling from current Docker memory
       cpus: 1,
       endpoint: `tcp://127.0.0.1:${DEFAULT_BUILDKIT_HOST_PORT}`,
       maxParallelism: 1,
-      memory: '8418m',
+      memory: '6144m',
     }
   );
   assert.deepEqual(
@@ -142,7 +471,37 @@ test('normalizeBuilderConfig resolves auto throttling from current Docker memory
       cpus: 4,
       endpoint: `tcp://127.0.0.1:${DEFAULT_BUILDKIT_HOST_PORT}`,
       maxParallelism: 1,
-      memory: '28160m',
+      memory: '21504m',
+    }
+  );
+});
+
+test('getResolvedBuildkitComposeEnv resolves helper-only auto values for Compose', () => {
+  assert.deepEqual(
+    {
+      DOCKER_WEB_BUILD_CPUS: getResolvedBuildkitComposeEnv({
+        DOCKER_WEB_BUILD_CPUS: 'auto',
+        DOCKER_WEB_BUILD_MAX_PARALLELISM: 'auto',
+        DOCKER_WEB_BUILD_MEMORY: 'auto',
+        DOCKER_WEB_DOCKER_MEMORY_LIMIT: String(28 * 1024 * 1024 * 1024),
+      }).DOCKER_WEB_BUILD_CPUS,
+      DOCKER_WEB_BUILD_MAX_PARALLELISM: getResolvedBuildkitComposeEnv({
+        DOCKER_WEB_BUILD_CPUS: 'auto',
+        DOCKER_WEB_BUILD_MAX_PARALLELISM: 'auto',
+        DOCKER_WEB_BUILD_MEMORY: 'auto',
+        DOCKER_WEB_DOCKER_MEMORY_LIMIT: String(28 * 1024 * 1024 * 1024),
+      }).DOCKER_WEB_BUILD_MAX_PARALLELISM,
+      DOCKER_WEB_BUILD_MEMORY: getResolvedBuildkitComposeEnv({
+        DOCKER_WEB_BUILD_CPUS: 'auto',
+        DOCKER_WEB_BUILD_MAX_PARALLELISM: 'auto',
+        DOCKER_WEB_BUILD_MEMORY: 'auto',
+        DOCKER_WEB_DOCKER_MEMORY_LIMIT: String(28 * 1024 * 1024 * 1024),
+      }).DOCKER_WEB_BUILD_MEMORY,
+    },
+    {
+      DOCKER_WEB_BUILD_CPUS: '4',
+      DOCKER_WEB_BUILD_MAX_PARALLELISM: '2',
+      DOCKER_WEB_BUILD_MEMORY: '21504m',
     }
   );
 });
@@ -214,6 +573,28 @@ test('shouldPruneBuildkitAfterBuild defaults on and accepts explicit opt-out', (
   );
 });
 
+test('getBuildkitPruneMode defaults to bounded and supports legacy switches', () => {
+  assert.equal(getBuildkitPruneMode({}), 'bounded');
+  assert.equal(
+    getBuildkitPruneMode({ DOCKER_WEB_BUILDKIT_PRUNE_MODE: 'all' }),
+    'all'
+  );
+  assert.equal(
+    getBuildkitPruneMode({ DOCKER_WEB_BUILDKIT_PRUNE_MODE: 'off' }),
+    'off'
+  );
+  assert.equal(
+    getBuildkitPruneMode({ DOCKER_WEB_BUILDKIT_PRUNE_AFTER_BUILD: '0' }),
+    'off'
+  );
+  assert.equal(getBuildkitPruneUntil({}), '168h');
+  assert.equal(getBuildkitPruneKeepStorage({}), '50gb');
+  assert.throws(
+    () => getBuildkitPruneMode({ DOCKER_WEB_BUILDKIT_PRUNE_MODE: 'forever' }),
+    /DOCKER_WEB_BUILDKIT_PRUNE_MODE/
+  );
+});
+
 test('shouldStopBuildkitAfterBuild defaults on and accepts explicit opt-out', () => {
   assert.equal(shouldStopBuildkitAfterBuild({}), true);
   assert.equal(
@@ -255,7 +636,7 @@ test('isBunTarballExtractionError detects truncated Bun install failures', () =>
   );
 });
 
-test('pruneBuildkitCacheAfterBuild prunes all cache for the active builder', async () => {
+test('pruneBuildkitCacheAfterBuild prunes bounded cache by default', async () => {
   const calls = [];
 
   const result = await pruneBuildkitCacheAfterBuild({
@@ -273,8 +654,11 @@ test('pruneBuildkitCacheAfterBuild prunes all cache for the active builder', asy
 
   assert.deepEqual(result, {
     builderName: 'platform-test-builder',
+    keepStorage: '50gb',
+    mode: 'bounded',
     pruned: true,
     skipped: false,
+    until: '168h',
   });
   assert.deepEqual(calls, [
     {
@@ -283,12 +667,45 @@ test('pruneBuildkitCacheAfterBuild prunes all cache for the active builder', asy
         'prune',
         '--builder',
         'platform-test-builder',
-        '--all',
         '--force',
+        '--filter',
+        'until=168h',
+        '--keep-storage',
+        '50gb',
       ],
       command: 'docker',
       env: { BUILDX_BUILDER: 'platform-test-builder' },
     },
+  ]);
+});
+
+test('pruneBuildkitCacheAfterBuild can still prune all cache explicitly', async () => {
+  const calls = [];
+
+  const result = await pruneBuildkitCacheAfterBuild({
+    env: {
+      BUILDX_BUILDER: 'platform-test-builder',
+      DOCKER_WEB_BUILDKIT_PRUNE_MODE: 'all',
+    },
+    runCommand: async (command, args) => {
+      calls.push([command, args]);
+      return { code: 0, signal: null, stderr: '', stdout: '' };
+    },
+  });
+
+  assert.equal(result.mode, 'all');
+  assert.deepEqual(calls, [
+    [
+      'docker',
+      [
+        'buildx',
+        'prune',
+        '--builder',
+        'platform-test-builder',
+        '--all',
+        '--force',
+      ],
+    ],
   ]);
 });
 
@@ -305,6 +722,7 @@ test('pruneBuildkitCacheAfterBuild skips when disabled', async () => {
 
   assert.deepEqual(result, {
     builderName: null,
+    mode: 'off',
     pruned: false,
     skipped: true,
   });
@@ -431,6 +849,7 @@ test('cleanupBuildkitAfterBuild skips prune when BuildKit is already stopped', a
   assert.deepEqual(result, {
     prune: {
       builderName: null,
+      mode: 'off',
       pruned: false,
       skipped: true,
     },
@@ -467,6 +886,120 @@ test('cleanupBuildkitAfterBuild skips prune when BuildKit is already stopped', a
       ['compose', '-f', PROD_COMPOSE_FILE, 'rm', '-f', BUILDKIT_SERVICE_NAME],
     ],
   ]);
+});
+
+test('recoverBuildkitBunInstallCache recreates BuildKit when exec cache prune loses transport', async () => {
+  const calls = [];
+
+  const result = await recoverBuildkitBunInstallCache({
+    composeFile: PROD_COMPOSE_FILE,
+    composeGlobalArgs: ['--profile', 'redis'],
+    env: { BUILDX_BUILDER: DEFAULT_BUILDER_NAME, PATH: 'test-path' },
+    runCommand: async (command, args) => {
+      calls.push([command, args]);
+
+      if (
+        args[0] === 'buildx' &&
+        args[1] === 'prune' &&
+        args.includes('type=exec.cachemount')
+      ) {
+        return {
+          code: 1,
+          signal: null,
+          stderr:
+            'rpc error: code = Unavailable desc = closing transport: error reading from server: EOF',
+          stdout: '',
+        };
+      }
+
+      if (args.includes('ps') && args.at(-1) === BUILDKIT_SERVICE_NAME) {
+        return {
+          code: 0,
+          signal: null,
+          stderr: '',
+          stdout: 'buildkit-id\n',
+        };
+      }
+
+      if (args[0] === 'inspect' && args.at(-1) === 'buildkit-id') {
+        return { code: 0, signal: null, stderr: '', stdout: 'healthy\n' };
+      }
+
+      if (command === 'docker') {
+        return { code: 0, signal: null, stderr: '', stdout: '' };
+      }
+
+      throw new Error(`Unexpected command: ${command} ${args.join(' ')}`);
+    },
+  });
+
+  assert.equal(result.builderName, DEFAULT_BUILDER_NAME);
+  assert.equal(result.execCachePruned, false);
+  assert.deepEqual(result.service, {
+    recreated: true,
+    skipped: false,
+  });
+  assert.deepEqual(
+    calls.map(([command, args]) => `${command} ${args.join(' ')}`),
+    [
+      `docker buildx prune --builder ${DEFAULT_BUILDER_NAME} --force --filter type=exec.cachemount`,
+      `docker compose -f ${PROD_COMPOSE_FILE} --profile redis stop --timeout 1 ${BUILDKIT_SERVICE_NAME}`,
+      `docker compose -f ${PROD_COMPOSE_FILE} --profile redis rm -f ${BUILDKIT_SERVICE_NAME}`,
+      `docker compose -f ${PROD_COMPOSE_FILE} --profile redis up --detach --no-build ${BUILDKIT_SERVICE_NAME}`,
+      `docker compose -f ${PROD_COMPOSE_FILE} --profile redis ps -q ${BUILDKIT_SERVICE_NAME}`,
+      'docker inspect -f {{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}} buildkit-id',
+    ]
+  );
+});
+
+test('recoverBuildkitBunInstallCache resolves auto memory before Compose recreate', async () => {
+  const calls = [];
+
+  await recoverBuildkitBunInstallCache({
+    composeFile: PROD_COMPOSE_FILE,
+    composeGlobalArgs: ['--profile', 'redis'],
+    env: {
+      BUILDX_BUILDER: DEFAULT_BUILDER_NAME,
+      DOCKER_WEB_BUILD_CPUS: 'auto',
+      DOCKER_WEB_BUILD_MAX_PARALLELISM: 'auto',
+      DOCKER_WEB_BUILD_MEMORY: 'auto',
+      DOCKER_WEB_DOCKER_MEMORY_LIMIT: String(28 * 1024 * 1024 * 1024),
+      PATH: 'test-path',
+    },
+    runCommand: async (command, args, options = {}) => {
+      calls.push({ args, command, env: options.env });
+
+      if (args.includes('ps') && args.at(-1) === BUILDKIT_SERVICE_NAME) {
+        return {
+          code: 0,
+          signal: null,
+          stderr: '',
+          stdout: 'buildkit-id\n',
+        };
+      }
+
+      if (args[0] === 'inspect' && args.at(-1) === 'buildkit-id') {
+        return { code: 0, signal: null, stderr: '', stdout: 'healthy\n' };
+      }
+
+      return { code: 0, signal: null, stderr: '', stdout: '' };
+    },
+  });
+
+  const composeBuildkitCalls = calls.filter(
+    (call) =>
+      call.command === 'docker' &&
+      call.args[0] === 'compose' &&
+      call.args.includes(BUILDKIT_SERVICE_NAME)
+  );
+
+  assert.ok(composeBuildkitCalls.length > 0);
+
+  for (const call of composeBuildkitCalls) {
+    assert.equal(call.env.DOCKER_WEB_BUILD_MEMORY, '21504m');
+    assert.equal(call.env.DOCKER_WEB_BUILD_CPUS, '4');
+    assert.equal(call.env.DOCKER_WEB_BUILD_MAX_PARALLELISM, '2');
+  }
 });
 
 test('getBuilderConfigFingerprint is stable for the same config', () => {
@@ -718,6 +1251,93 @@ test('ensureBuildkitBuilder reuses an existing builder when the fingerprint matc
   }
 });
 
+test('ensureBuildkitBuilder recreates an inactive remote builder even when the fingerprint matches', async () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'buildkit-builder-inactive-')
+  );
+  const calls = [];
+  const paths = getBuildkitPaths(tempDir);
+  const config = {
+    builderName: DEFAULT_BUILDER_NAME,
+    cpus: 2,
+    endpoint: `tcp://127.0.0.1:${DEFAULT_BUILDKIT_HOST_PORT}`,
+    maxParallelism: 1,
+    memory: '10g',
+  };
+
+  try {
+    fs.mkdirSync(paths.runtimeDir, { recursive: true });
+    fs.writeFileSync(
+      paths.stateFile,
+      JSON.stringify(
+        {
+          builderName: DEFAULT_BUILDER_NAME,
+          fingerprint: getBuilderConfigFingerprint(config),
+        },
+        null,
+        2
+      ),
+      'utf8'
+    );
+
+    const env = await ensureBuildkitBuilder(config, {
+      env: { PATH: 'test-path' },
+      rootDir: tempDir,
+      runCommand: async (command, args, options = {}) => {
+        calls.push({
+          args,
+          command,
+          env: options.env,
+          stdio: options.stdio ?? 'inherit',
+        });
+
+        if (args[0] === 'buildx' && args[1] === 'inspect') {
+          return {
+            code: 0,
+            signal: null,
+            stderr: '',
+            stdout: [
+              `Name: ${DEFAULT_BUILDER_NAME}`,
+              'Driver: remote',
+              'Nodes:',
+              `Name: ${DEFAULT_BUILDER_NAME}0`,
+              `Endpoint: tcp://127.0.0.1:${DEFAULT_BUILDKIT_HOST_PORT}`,
+              'Status: inactive',
+              '',
+            ].join('\n'),
+          };
+        }
+
+        return { code: 0, signal: null, stderr: '', stdout: '' };
+      },
+    });
+
+    assert.equal(env.BUILDX_BUILDER, DEFAULT_BUILDER_NAME);
+    assert.ok(
+      calls.some(
+        (call) =>
+          call.command === 'docker' &&
+          call.args[0] === 'buildx' &&
+          call.args[1] === 'rm' &&
+          call.args.includes(DEFAULT_BUILDER_NAME)
+      )
+    );
+    assert.ok(
+      calls.some(
+        (call) =>
+          call.command === 'docker' &&
+          call.args[0] === 'buildx' &&
+          call.args[1] === 'create' &&
+          call.args.includes('--driver') &&
+          call.args.includes('remote') &&
+          call.args.includes(`tcp://127.0.0.1:${DEFAULT_BUILDKIT_HOST_PORT}`)
+      )
+    );
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
 test('ensureBuildkitBuilder removes legacy docker-container BuildKit containers', async () => {
   const tempDir = fs.mkdtempSync(
     path.join(os.tmpdir(), 'buildkit-builder-legacy-')
@@ -922,6 +1542,30 @@ test('production Docker root scripts keep the default build caps', () => {
     /NEXT_BUILD_ENGINES\.get\(nextBuildEngine\)/
   );
   assert.deepEqual(turboConfig.tasks['build:docker'].dependsOn, ['^build']);
+  assert.ok(
+    turboConfig.globalEnv.includes('HIVE_DOCKER_BUILD'),
+    'turbo.json must pass the Hive Docker standalone flag into the Docker build'
+  );
+  assert.equal(
+    Object.hasOwn(turboConfig, 'globalDependencies'),
+    false,
+    'turbo.json should avoid repo-wide local env file invalidation'
+  );
+  for (const envName of [
+    'DOCKER_WEB_BUILDKIT_PRUNE_KEEP_STORAGE',
+    'DOCKER_WEB_BUILDKIT_PRUNE_MODE',
+    'DOCKER_WEB_BUILDKIT_PRUNE_UNTIL',
+    'E2E_DOCKER_BUILDKIT_PRUNE_MODE',
+    'TURBO_API',
+    'TURBO_REMOTE_CACHE_SIGNATURE_KEY',
+    'TURBO_TEAM',
+    'TURBO_TOKEN',
+  ]) {
+    assert.ok(
+      turboConfig.globalPassThroughEnv.includes(envName),
+      `turbo.json should pass ${envName} through without hashing it`
+    );
+  }
   for (const taskName of ['build', 'build:docker']) {
     const outputs = turboConfig.tasks[taskName].outputs;
     assert.ok(
@@ -942,12 +1586,12 @@ test('production Docker root scripts keep the default build caps', () => {
   assert.match(webNextConfig, /DOCKER_WEB_STATIC_GENERATION_MAX_CONCURRENCY/);
   assert.match(
     webNextConfig,
-    /DOCKER_WEB_STATIC_GENERATION_MAX_CONCURRENCY'[\s\S]*isDockerStandaloneBuild \? 4 : undefined/
+    /DOCKER_WEB_STATIC_GENERATION_MAX_CONCURRENCY'[\s\S]*isDockerStandaloneBuild && !isNativeDockerStandaloneBuild \? 4 : undefined/
   );
   assert.match(webNextConfig, /DOCKER_WEB_NEXT_BUILD_CPUS/);
   assert.match(
     webNextConfig,
-    /DOCKER_WEB_NEXT_BUILD_CPUS'[\s\S]*isDockerStandaloneBuild \? 4 : undefined/
+    /DOCKER_WEB_NEXT_BUILD_CPUS'[\s\S]*isDockerStandaloneBuild && !isNativeDockerStandaloneBuild \? 4 : undefined/
   );
   assert.match(webNextConfig, /staticPageGenerationTimeout/);
   assert.match(webNextConfig, /staticGenerationMaxConcurrency/);

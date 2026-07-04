@@ -13,6 +13,10 @@ import type {
   DebtLoanWithBalance,
 } from '@tuturuuu/types/primitives/DebtLoan';
 import type { Wallet } from '@tuturuuu/types/primitives/Wallet';
+import {
+  getCurrencyLocale,
+  resolveSupportedCurrency,
+} from '@tuturuuu/utils/currencies';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 import { Button } from '../../button';
@@ -37,11 +41,14 @@ interface Props {
     create?: string;
     type?: string;
   };
+  currency?: string;
 }
 
-export function DebtsPage({ wsId, searchParams }: Props) {
+export function DebtsPage({ wsId, searchParams, currency }: Props) {
   const t = useTranslations('ws-debt-loan');
   const queryClient = useQueryClient();
+  const workspaceCurrency = resolveSupportedCurrency(currency);
+  const workspaceCurrencyLocale = getCurrencyLocale(workspaceCurrency);
   const requestedCreateType =
     searchParams?.create === 'loan'
       ? 'loan'
@@ -135,7 +142,12 @@ export function DebtsPage({ wsId, searchParams }: Props) {
           ))}
         </div>
       ) : summary ? (
-        <DebtLoanSummaryCards summary={summary} wsId={wsId} />
+        <DebtLoanSummaryCards
+          summary={summary}
+          wsId={wsId}
+          currency={workspaceCurrency}
+          locale={workspaceCurrencyLocale}
+        />
       ) : null}
 
       <Separator />
@@ -220,6 +232,7 @@ export function DebtsPage({ wsId, searchParams }: Props) {
             wsId={wsId}
             wallets={wallets}
             defaultType={defaultCreateType}
+            defaultCurrency={workspaceCurrency}
             onFinish={handleFormFinish}
             onCancel={() => setIsCreateDialogOpen(false)}
           />

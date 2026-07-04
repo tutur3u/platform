@@ -44,9 +44,60 @@ const authProxy = createCentralizedAuthProxy({
   webAppUrl: TTR_URL,
 });
 const LOCAL_AUTH_API_PREFIX = '/api/auth/';
+const CORS_METHODS = 'GET,POST,PUT,PATCH,DELETE,HEAD,OPTIONS';
+const CORS_HEADERS =
+  'authorization,content-type,x-requested-with,x-sdk-client,x-tuturuuu-client';
+
+function getAllowedFirstPartyOrigin(origin: string | null) {
+  if (!origin) return null;
+
+  try {
+    const url = new URL(origin);
+    const hostname = url.hostname.toLowerCase();
+    const isFirstPartyHost =
+      hostname === 'tuturuuu.com' ||
+      hostname.endsWith('.tuturuuu.com') ||
+      hostname === 'tuturuuu.localhost' ||
+      hostname.endsWith('.tuturuuu.localhost') ||
+      hostname === 'localhost' ||
+      hostname === '127.0.0.1' ||
+      hostname === '::1' ||
+      hostname === '[::1]';
+
+    return isFirstPartyHost ? url.origin : null;
+  } catch {
+    return null;
+  }
+}
+
+function withMailApiCors(request: NextRequest, response: NextResponse) {
+  const allowedOrigin = getAllowedFirstPartyOrigin(
+    request.headers.get('origin')
+  );
+
+  if (!allowedOrigin) {
+    return response;
+  }
+
+  response.headers.set('Access-Control-Allow-Origin', allowedOrigin);
+  response.headers.set('Access-Control-Allow-Credentials', 'true');
+  response.headers.set('Access-Control-Allow-Methods', CORS_METHODS);
+  response.headers.set(
+    'Access-Control-Allow-Headers',
+    request.headers.get('access-control-request-headers') ?? CORS_HEADERS
+  );
+  response.headers.append('Vary', 'Origin');
+  response.headers.append('Vary', 'Access-Control-Request-Headers');
+
+  return response;
+}
 
 export async function proxy(req: NextRequest): Promise<NextResponse> {
   if (req.nextUrl.pathname.startsWith('/api')) {
+    if (req.method === 'OPTIONS') {
+      return withMailApiCors(req, new NextResponse(null, { status: 204 }));
+    }
+
     const isLocalAuthApi = req.nextUrl.pathname.startsWith(
       LOCAL_AUTH_API_PREFIX
     );
@@ -58,9 +109,12 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
         });
 
     if (appSessionRefresh && !appSessionRefresh.ok) {
-      return clearSupabaseAuthCookies(
+      return withMailApiCors(
         req,
-        NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+        clearSupabaseAuthCookies(
+          req,
+          NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+        )
       );
     }
 
@@ -71,12 +125,13 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
       if (appSessionRefresh) {
         propagateAuthCookies(appSessionRefresh.response, guardResponse);
       }
-      return clearSupabaseAuthCookies(req, guardResponse);
+      return withMailApiCors(req, clearSupabaseAuthCookies(req, guardResponse));
     }
 
-    return (
+    return withMailApiCors(
+      req,
       appSessionRefresh?.response ??
-      clearSupabaseAuthCookies(req, NextResponse.next())
+        clearSupabaseAuthCookies(req, NextResponse.next())
     );
   }
 

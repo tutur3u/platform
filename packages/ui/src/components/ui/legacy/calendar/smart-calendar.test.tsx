@@ -7,8 +7,42 @@ import { describe, expect, it, vi } from 'vitest';
 import { SmartCalendar } from './smart-calendar';
 
 vi.mock('@tuturuuu/ui/hooks/use-calendar', () => ({
-  CalendarProvider: ({ children }: { children: ReactNode }) => (
-    <div data-testid="calendar-provider">{children}</div>
+  CalendarProvider: ({
+    children,
+    eventAdapter,
+  }: {
+    children: ReactNode;
+    eventAdapter?: {
+      disableBuiltInEventUi?: boolean;
+      preservePastEventOpacity?: boolean;
+    };
+  }) => (
+    <div
+      data-adapter={eventAdapter ? 'true' : 'false'}
+      data-preserve-past-opacity={
+        eventAdapter?.preservePastEventOpacity ? 'true' : 'false'
+      }
+      data-testid="calendar-provider"
+    >
+      {children}
+    </div>
+  ),
+}));
+
+vi.mock('@tuturuuu/ui/hooks/use-calendar-sync', () => ({
+  CalendarSyncProvider: ({
+    children,
+    externalEvents,
+  }: {
+    children: ReactNode;
+    externalEvents?: unknown[];
+  }) => (
+    <div
+      data-external-events={externalEvents?.length ?? 0}
+      data-testid="calendar-sync-provider"
+    >
+      {children}
+    </div>
   ),
 }));
 
@@ -19,8 +53,17 @@ vi.mock('./settings/settings-context', () => ({
 }));
 
 vi.mock('./calendar-content', () => ({
-  CalendarContent: ({ extras }: { extras?: ReactNode }) => (
-    <div data-testid="calendar-content">
+  CalendarContent: ({
+    disableBuiltInEventUi,
+    extras,
+  }: {
+    disableBuiltInEventUi?: boolean;
+    extras?: ReactNode;
+  }) => (
+    <div
+      data-disable-built-in-ui={disableBuiltInEventUi ? 'true' : 'false'}
+      data-testid="calendar-content"
+    >
       <div data-testid="header-extras">{extras}</div>
     </div>
   ),
@@ -72,5 +115,44 @@ describe('SmartCalendar', () => {
 
     expect(screen.queryByTestId('connections-manager')).toBeNull();
     expect(screen.getByTestId('custom-extra').textContent).toBe('extra');
+  });
+
+  it('passes custom event adapters and external events through the calendar shell', () => {
+    render(
+      <SmartCalendar
+        {...baseProps}
+        workspace={{ id: 'workspace-1' } as Workspace}
+        showConnectionsManager={false}
+        eventAdapter={{
+          disableBuiltInEventUi: true,
+          preservePastEventOpacity: true,
+        }}
+        externalEvents={[
+          {
+            id: 'session-1',
+            title: 'Class',
+            start_at: '2026-06-19T12:00:00.000Z',
+            end_at: '2026-06-19T13:00:00.000Z',
+          },
+        ]}
+      />
+    );
+
+    expect(screen.getByTestId('calendar-sync-provider')).toHaveAttribute(
+      'data-external-events',
+      '1'
+    );
+    expect(screen.getByTestId('calendar-provider')).toHaveAttribute(
+      'data-adapter',
+      'true'
+    );
+    expect(screen.getByTestId('calendar-provider')).toHaveAttribute(
+      'data-preserve-past-opacity',
+      'true'
+    );
+    expect(screen.getByTestId('calendar-content')).toHaveAttribute(
+      'data-disable-built-in-ui',
+      'true'
+    );
   });
 });

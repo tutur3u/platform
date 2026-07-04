@@ -1,6 +1,6 @@
 'use client';
 
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { LoaderCircle, Send } from '@tuturuuu/icons';
 import { forceSendWorkspacePostEmail } from '@tuturuuu/internal-api';
 import { Button } from '@tuturuuu/ui/button';
@@ -28,6 +28,7 @@ export function ForceSendPostButton({
   const t = useTranslations('post-email-data-table');
   const tCommon = useTranslations('common');
   const router = useRouter();
+  const queryClient = useQueryClient();
 
   const mutation = useMutation({
     mutationFn: async () =>
@@ -35,8 +36,11 @@ export function ForceSendPostButton({
         postId,
         userId,
       }),
-    onSuccess: () => {
+    onSuccess: async () => {
       toast.success(t('force_send_success'));
+      await queryClient.invalidateQueries({
+        queryKey: ['workspace-posts', wsId],
+      });
       router.refresh();
       onCompleted?.();
     },

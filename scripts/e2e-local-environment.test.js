@@ -10,12 +10,16 @@ const {
   LOCAL_E2E_CRON_SECRET,
   LOCAL_E2E_DOCKER_SUPABASE_URL,
   LOCAL_E2E_PORTLESS_PORT,
+  LOCAL_E2E_PROXY_READ_LIMITS,
   LOCAL_E2E_SUPERMEMORY_ENABLED,
   LOCAL_E2E_SUPERMEMORY_POSTGRES_PASSWORD,
   LOCAL_E2E_SUPABASE_SECRET_KEY,
   LOCAL_E2E_SUPABASE_URL,
+  LOCAL_E2E_TANSTACK_BASE_URL,
+  LOCAL_E2E_TANSTACK_DIRECT_URL,
   LOCAL_E2E_UPSTASH_REDIS_REST_TOKEN,
   LOCAL_E2E_UPSTASH_REDIS_REST_URL,
+  SAFE_LOCAL_WEB_ORIGINS,
   assertSafeE2EEnvironment,
   createLocalE2EEnvFileContent,
   createLocalE2EProcessEnv,
@@ -94,6 +98,47 @@ test('local E2E app URL uses Tuturuuu localhost for shared-cookie coverage', () 
       NEXT_PUBLIC_SUPABASE_URL: LOCAL_E2E_SUPABASE_URL,
     })
   );
+});
+
+test('local E2E safety allowlist accepts TanStack localhost origins', () => {
+  const helperPath = path.join(
+    __dirname,
+    '..',
+    'apps',
+    'web',
+    'e2e',
+    'helpers',
+    'environment.ts'
+  );
+  const helperSource = fs.readFileSync(helperPath, 'utf8');
+
+  assert.equal(
+    LOCAL_E2E_TANSTACK_BASE_URL,
+    'https://tanstack.tuturuuu.localhost:1355'
+  );
+  assert.equal(LOCAL_E2E_TANSTACK_DIRECT_URL, 'http://127.0.0.1:7824');
+  assert.equal(SAFE_LOCAL_WEB_ORIGINS.has(LOCAL_E2E_TANSTACK_DIRECT_URL), true);
+  assert.equal(
+    SAFE_LOCAL_WEB_ORIGINS.has('https://tanstack.tuturuuu.localhost'),
+    true
+  );
+  assert.doesNotThrow(() =>
+    assertSafeE2EEnvironment({
+      BASE_URL: LOCAL_E2E_TANSTACK_BASE_URL,
+      NEXT_PUBLIC_APP_URL: LOCAL_E2E_TANSTACK_BASE_URL,
+      NEXT_PUBLIC_SUPABASE_URL: LOCAL_E2E_SUPABASE_URL,
+      PORTLESS_URL: LOCAL_E2E_TANSTACK_BASE_URL,
+      WEB_APP_URL: LOCAL_E2E_TANSTACK_BASE_URL,
+    })
+  );
+  assert.doesNotThrow(() =>
+    assertSafeE2EEnvironment({
+      BASE_URL: LOCAL_E2E_TANSTACK_DIRECT_URL,
+      NEXT_PUBLIC_SUPABASE_URL: LOCAL_E2E_SUPABASE_URL,
+    })
+  );
+  assert.match(helperSource, /https:\/\/tanstack\.tuturuuu\.localhost/u);
+  assert.match(helperSource, /http:\/\/127\.0\.0\.1:7824/u);
 });
 
 test('assertSafeE2EEnvironment rejects cloud Supabase URLs', () => {
@@ -181,6 +226,9 @@ test('createLocalE2EEnvFileContent is pinned to local Docker E2E values', () => 
     content,
     new RegExp(`SRH_TOKEN=${LOCAL_E2E_UPSTASH_REDIS_REST_TOKEN}`)
   );
+  for (const [key, value] of Object.entries(LOCAL_E2E_PROXY_READ_LIMITS)) {
+    assert.match(content, new RegExp(`${key}=${value}`));
+  }
   assert.match(
     content,
     new RegExp(
@@ -248,6 +296,9 @@ test('createLocalE2EProcessEnv overrides inherited cloud Supabase env', () => {
   assert.equal(env.UPSTASH_REDIS_REST_URL, LOCAL_E2E_UPSTASH_REDIS_REST_URL);
   assert.equal(env.SRH_TOKEN, LOCAL_E2E_UPSTASH_REDIS_REST_TOKEN);
   assert.equal(env.WEB_APP_URL, LOCAL_E2E_BASE_URL);
+  for (const [key, value] of Object.entries(LOCAL_E2E_PROXY_READ_LIMITS)) {
+    assert.equal(env[key], value);
+  }
 });
 
 test('path helpers produce root and compose-fragment relative env paths', () => {

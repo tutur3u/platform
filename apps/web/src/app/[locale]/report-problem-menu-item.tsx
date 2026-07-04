@@ -1,10 +1,22 @@
 'use client';
 
-import { AlertTriangle } from '@tuturuuu/icons/lucide';
+import { AlertTriangle } from '@tuturuuu/icons/lucide-static';
 import { DropdownMenuItem } from '@tuturuuu/ui/dropdown-menu';
-import { ReportProblemDialog } from '@tuturuuu/ui/report-problem-dialog';
+import dynamic from 'next/dynamic';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+
+const ReportProblemDialog = dynamic<{
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  showTrigger?: boolean;
+}>(
+  () =>
+    import('@tuturuuu/ui/report-problem-dialog').then(
+      (module) => module.ReportProblemDialog
+    ),
+  { ssr: false }
+);
 
 export default function ReportProblemMenuItem() {
   const t = useTranslations('common');
@@ -22,11 +34,13 @@ export default function ReportProblemMenuItem() {
         <AlertTriangle className="h-4 w-4 text-dynamic-yellow" />
         <span>{t('report-problem')}</span>
       </DropdownMenuItem>
-      <ReportProblemDialog
-        open={open}
-        onOpenChange={setOpen}
-        showTrigger={false}
-      />
+      {open && (
+        <ReportProblemDialog
+          open={open}
+          onOpenChange={setOpen}
+          showTrigger={false}
+        />
+      )}
     </>
   );
 }

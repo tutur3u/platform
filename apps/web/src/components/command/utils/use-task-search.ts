@@ -4,6 +4,7 @@ import {
   type WorkspaceTaskSearchResult,
 } from '@tuturuuu/internal-api/tasks';
 import * as React from 'react';
+import { getTasksAppUrlClient } from '@/lib/tasks-app-url-client';
 
 export type TaskSearchResult = WorkspaceTaskSearchResult;
 
@@ -57,9 +58,10 @@ export function useTaskSearch(
       if (!wsId) return [];
 
       const response = await fetch(
-        `/api/v1/workspaces/${wsId}/tasks?limit=20`,
+        getTasksAppUrlClient(`/api/v1/workspaces/${wsId}/tasks?limit=20`),
         {
           cache: 'no-store',
+          credentials: 'include',
         }
       );
 

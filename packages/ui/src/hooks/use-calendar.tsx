@@ -1,4 +1,10 @@
-import { createWorkspaceCalendarEvent } from '@tuturuuu/internal-api';
+import {
+  createWorkspaceCalendarEvent,
+  deleteWorkspaceCalendarEvent,
+  updateWorkspaceCalendarEvent,
+  type WorkspaceCalendarEventCreatePayload,
+  type WorkspaceCalendarEventUpdatePayload,
+} from '@tuturuuu/internal-api';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type {
   Workspace,
@@ -23,6 +29,7 @@ import {
   useRef,
   useState,
 } from 'react';
+import { getTaskApiUrl } from '../lib/tasks-app-url';
 import { useCalendarSync } from './use-calendar-sync';
 
 // Utility function to round time to nearest 15-minute interval
@@ -38,15 +45,26 @@ const roundToNearest15Minutes = (date: Date): Date => {
   return roundedDate;
 };
 
-// Function to create a unique signature for an event based on its content
-const createEventSignature = (event: CalendarEvent): string => {
-  return `${event.title}|${event.description || ''}|${event.start_at}|${event.end_at}`;
-};
-
 type TaskDragData = {
   name?: string;
   priority?: string | null;
   totalDuration?: number;
+};
+
+const createOptimisticEventId = () => {
+  if (
+    typeof crypto !== 'undefined' &&
+    typeof crypto.randomUUID === 'function'
+  ) {
+    return `optimistic-${crypto.randomUUID()}`;
+  }
+
+  return `optimistic-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+};
+
+const noStoreFetchOptions = {
+  fetch: (input: RequestInfo | URL, init?: RequestInit) =>
+    fetch(input, { ...init, cache: 'no-store' }),
 };
 
 function patchWorkspaceCalendarEventCache(
@@ -165,6 +183,10 @@ const CalendarContext = createContext<{
   setHideNonPreviewEvents: (hide: boolean) => void;
   // UX: allow callers (e.g. create button) to influence default tab for *new* events.
   defaultNewEventTab: 'manual' | 'ai';
+  disableBuiltInEventUi: boolean;
+  preservePastEventOpacity: boolean;
+  renderEventContextMenu?: (event: CalendarEvent) => ReactNode;
+  isEventReadOnly: (event: CalendarEvent) => boolean;
   readOnly: boolean;
 }>({
   getEvent: () => undefined,
@@ -218,6 +240,10 @@ const CalendarContext = createContext<{
   hideNonPreviewEvents: false,
   setHideNonPreviewEvents: () => undefined,
   defaultNewEventTab: 'manual',
+  disableBuiltInEventUi: false,
+  preservePastEventOpacity: false,
+  renderEventContextMenu: undefined,
+  isEventReadOnly: () => false,
   readOnly: false,
 });
 
@@ -226,9 +252,30 @@ interface PendingEventUpdate extends Partial<CalendarEvent> {
   _updateId?: string;
   _timestamp: number;
   _eventId: string;
-  _resolve?: (value: CalendarEvent) => void;
-  _reject?: (reason: any) => void;
+  _previousEvent?: CalendarEvent;
+  _resolvers?: Array<{
+    resolve: (value: CalendarEvent) => void;
+    reject: (reason: unknown) => void;
+  }>;
 }
+
+export type CalendarEventAdapter = {
+  disableBuiltInEventUi?: boolean;
+  preservePastEventOpacity?: boolean;
+  renderContextMenu?: (event: CalendarEvent) => ReactNode;
+  isEventReadOnly?: (event: CalendarEvent) => boolean;
+  onCreate?: (
+    event: Omit<CalendarEvent, 'id'>
+  ) => Promise<CalendarEvent | undefined> | CalendarEvent | undefined;
+  onCreateDraft?: (event: CalendarEvent) => void;
+  onDelete?: (eventId: string, event?: CalendarEvent) => Promise<void> | void;
+  onOpen?: (eventId?: string, event?: CalendarEvent) => void;
+  onUpdate?: (
+    eventId: string,
+    updates: Partial<CalendarEvent>,
+    event?: CalendarEvent
+  ) => Promise<CalendarEvent | undefined> | CalendarEvent | undefined;
+};
 
 /**
  * Syncs task total_duration after a calendar event is resized or moved.
@@ -273,11 +320,14 @@ async function syncTaskDurationAfterEventChange(
     let totalScheduledMinutes = resizedEventMinutes;
 
     const scheduleResponse = await fetch(
-      options?.isPersonalCalendar
-        ? `/api/v1/users/me/tasks/${taskId}/schedule`
-        : `/api/v1/workspaces/${calendarWsId}/tasks/${taskId}/schedule`,
+      getTaskApiUrl(
+        options?.isPersonalCalendar
+          ? `/api/v1/users/me/tasks/${taskId}/schedule`
+          : `/api/v1/workspaces/${calendarWsId}/tasks/${taskId}/schedule`
+      ),
       {
         cache: 'no-store',
+        credentials: 'include',
       }
     );
 
@@ -376,6 +426,7 @@ export const CalendarProvider = ({
   useQueryClient,
   children,
   experimentalGoogleToken: _experimentalGoogleToken,
+  eventAdapter,
   readOnly = false,
 }: {
   ws?: Workspace;
@@ -383,6 +434,7 @@ export const CalendarProvider = ({
   useQueryClient: any;
   children: ReactNode;
   experimentalGoogleToken?: WorkspaceCalendarGoogleTokenClient | null;
+  eventAdapter?: CalendarEventAdapter;
   readOnly?: boolean;
 }) => {
   const queryClient = useQueryClient();
@@ -397,7 +449,7 @@ export const CalendarProvider = ({
   const updateQueueRef = useRef<PendingEventUpdate[]>([]);
   const isProcessingQueueRef = useRef<boolean>(false);
 
-  const { events, refresh } = useCalendarSync();
+  const { events, refresh, patchVisibleEvents } = useCalendarSync();
 
   // Modal state
   const [activeEventId, setActiveEventId] = useState<string | null>(null);
@@ -586,7 +638,6 @@ export const CalendarProvider = ({
         console.warn('Calendar is in read-only mode');
         return undefined;
       }
-      if (!ws) throw new Error('No workspace selected');
 
       // Round start and end times to nearest 15-minute interval
       const startDate = roundToNearest15Minutes(new Date(event.start_at));
@@ -594,62 +645,77 @@ export const CalendarProvider = ({
 
       const eventColor = event.color || 'BLUE';
 
-      // Create an event signature to check for duplicates
-      const newEventSignature = `${event.title || ''}|${event.description || ''}|${startDate.toISOString()}|${endDate.toISOString()}`;
-
-      // Check existing events for potential duplicates to prevent race condition
-      const duplicates = events.filter((e: CalendarEvent) => {
-        const existingSignature = createEventSignature(e);
-        return existingSignature === newEventSignature;
-      });
-
-      // If duplicates already exist, return the first one
-      if (duplicates.length > 0) {
-        // Clear any pending new event
+      if (eventAdapter?.onCreate) {
+        const created = await eventAdapter.onCreate({
+          ...event,
+          start_at: startDate.toISOString(),
+          end_at: endDate.toISOString(),
+          color: eventColor as SupportedColor,
+        });
         setPendingNewEvent(null);
-
-        // Return the existing event
-        return duplicates[0];
+        refresh();
+        return created;
       }
 
-      // No duplicates, proceed with creating the event via API (handles E2EE encryption)
-      const response = await fetch(
-        `/api/v1/workspaces/${ws.id}/calendar/events`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            title: event.title || '',
-            description: event.description || '',
-            start_at: startDate.toISOString(),
-            end_at: endDate.toISOString(),
-            color: eventColor as SupportedColor,
-            location: event.location || '',
-            locked: true,
-            source: event.source,
-          }),
-        }
-      );
+      if (!ws) throw new Error('No workspace selected');
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to create event');
-      }
+      const payload: WorkspaceCalendarEventCreatePayload = {
+        title: event.title || '',
+        description: event.description || '',
+        start_at: startDate.toISOString(),
+        end_at: endDate.toISOString(),
+        color: eventColor as SupportedColor,
+        location: event.location || '',
+        locked: true,
+        task_id: (event as CalendarEvent & { task_id?: string | null }).task_id,
+        source: event.source,
+      };
+      const optimisticId = createOptimisticEventId();
+      const optimisticEvent = {
+        ...event,
+        ...payload,
+        id: optimisticId,
+        ws_id: ws.id,
+        color: eventColor as SupportedColor,
+        _optimisticStatus: 'creating' as const,
+      };
 
-      const data = (await response.json()) as CalendarEvent;
+      patchVisibleEvents([optimisticEvent], { status: 'creating' });
 
-      // Refresh the query cache after adding an event
-      refresh();
+      try {
+        const data = await createWorkspaceCalendarEvent(
+          ws.id,
+          payload,
+          noStoreFetchOptions
+        );
 
-      if (data) {
-        // Clear any pending new event
+        patchVisibleEvents([data], { clearIds: [optimisticId] });
+        patchWorkspaceCalendarEventCache(queryClient, ws.id, (existing) => {
+          if (existing.some((item) => item.id === data.id)) {
+            return existing.map((item) =>
+              item.id === data.id
+                ? ({ ...item, ...data } as CalendarEvent)
+                : item
+            );
+          }
+
+          return [...existing, data].sort(
+            (left, right) =>
+              new Date(left.start_at).getTime() -
+              new Date(right.start_at).getTime()
+          );
+        });
+
+        // Refresh the query cache after adding an event
+        refresh();
         setPendingNewEvent(null);
         return data as CalendarEvent;
+      } catch (error) {
+        patchVisibleEvents([], { clearIds: [optimisticId] });
+        throw error;
       }
-
-      return {} as CalendarEvent;
     },
-    [ws, refresh, events, readOnly]
+    [ws, readOnly, eventAdapter, patchVisibleEvents, queryClient, refresh]
   );
 
   const addEmptyEvent = useCallback(
@@ -699,6 +765,12 @@ export const CalendarProvider = ({
         ws_id: ws?.id || '',
       };
 
+      if (eventAdapter) {
+        eventAdapter.onCreateDraft?.(newEvent);
+        eventAdapter.onOpen?.(undefined, newEvent);
+        return newEvent as CalendarEvent;
+      }
+
       // Store the pending new event
       setPendingNewEvent(newEvent);
       setActiveEventId('new');
@@ -709,7 +781,7 @@ export const CalendarProvider = ({
       // Return the pending event object
       return newEvent as CalendarEvent;
     },
-    [ws?.id]
+    [ws?.id, eventAdapter]
   );
 
   const addEmptyEventWithDuration = useCallback(
@@ -732,6 +804,12 @@ export const CalendarProvider = ({
         ws_id: ws?.id || '',
       };
 
+      if (eventAdapter) {
+        eventAdapter.onCreateDraft?.(newEvent);
+        eventAdapter.onOpen?.(undefined, newEvent);
+        return newEvent as CalendarEvent;
+      }
+
       // Store the pending new event
       setPendingNewEvent(newEvent);
       setActiveEventId('new');
@@ -742,7 +820,7 @@ export const CalendarProvider = ({
       // Return the pending event object
       return newEvent as CalendarEvent;
     },
-    [ws?.id]
+    [ws?.id, eventAdapter]
   );
 
   // Process the update queue
@@ -776,33 +854,35 @@ export const CalendarProvider = ({
         _updateId,
         _timestamp,
         _eventId,
-        _resolve,
-        _reject,
+        _previousEvent,
+        _resolvers,
         ...updateData
       } = update;
+      pendingUpdatesRef.current.delete(eventId);
 
       // Check if the event exists before trying to update
-      const existingEvent = events.find((e: CalendarEvent) => e.id === eventId);
+      const existingEvent =
+        _previousEvent ?? events.find((e: CalendarEvent) => e.id === eventId);
       if (!existingEvent) {
         const errorMsg = `Event with ID ${eventId} not found in local events`;
-        if (_reject) {
-          _reject(new Error(errorMsg));
-        }
+        _resolvers?.forEach(({ reject }) => {
+          reject(new Error(errorMsg));
+        });
         return;
       }
 
       // Validate workspace ownership
       if (existingEvent.ws_id !== ws?.id) {
         const errorMsg = `Event ${eventId} does not belong to current workspace (${ws?.id})`;
-        if (_reject) {
-          _reject(new Error(errorMsg));
-        }
+        _resolvers?.forEach(({ reject }) => {
+          reject(new Error(errorMsg));
+        });
         return;
       }
 
       try {
         // Clean up the update data to ensure no undefined values and exclude system fields
-        const cleanUpdateData: Partial<CalendarEvent> = {
+        const cleanUpdateData: WorkspaceCalendarEventUpdatePayload = {
           ...(updateData.title !== undefined && { title: updateData.title }),
           ...(updateData.description !== undefined && {
             description: updateData.description,
@@ -822,25 +902,14 @@ export const CalendarProvider = ({
         // ws is guaranteed to be defined here (validated above at line 732)
         const wsId = ws!.id;
 
-        // Use API endpoint which handles E2EE encryption
-        const response = await fetch(
-          `/api/v1/workspaces/${wsId}/calendar/events/${eventId}`,
-          {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(cleanUpdateData),
-          }
-        );
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || 'Failed to update event');
-        }
-
         // The API response includes task_id from the database which is not in CalendarEvent type
-        const data = (await response.json()) as CalendarEvent & {
-          task_id?: string | null;
-        };
+        const data = (await updateWorkspaceCalendarEvent(
+          wsId,
+          eventId,
+          cleanUpdateData,
+          noStoreFetchOptions
+        )) as CalendarEvent & { task_id?: string | null };
+        const hasNewerPendingUpdate = pendingUpdatesRef.current.has(eventId);
 
         // If event times changed, sync task's total_duration
         if (data) {
@@ -851,6 +920,10 @@ export const CalendarProvider = ({
                 : event
             )
           );
+
+          if (!hasNewerPendingUpdate) {
+            patchVisibleEvents([data]);
+          }
         }
 
         if (data && (cleanUpdateData.start_at || cleanUpdateData.end_at)) {
@@ -875,20 +948,23 @@ export const CalendarProvider = ({
 
         if (data) {
           // Resolve the promise for this update
-          if (_resolve) {
-            _resolve(data as CalendarEvent);
-          }
+          _resolvers?.forEach(({ resolve }) => {
+            resolve(data as CalendarEvent);
+          });
         } else {
-          if (_reject) {
-            _reject(
+          _resolvers?.forEach(({ reject }) => {
+            reject(
               new Error(`Failed to update event ${eventId} - no data returned`)
             );
-          }
+          });
         }
       } catch (err) {
-        if (_reject) {
-          _reject(err);
+        if (!pendingUpdatesRef.current.has(eventId) && _previousEvent) {
+          patchVisibleEvents([_previousEvent]);
         }
+        _resolvers?.forEach(({ reject }) => {
+          reject(err);
+        });
       }
     } finally {
       isProcessingQueueRef.current = false;
@@ -898,7 +974,15 @@ export const CalendarProvider = ({
         setTimeout(processUpdateQueue, 50); // Small delay to prevent blocking
       }
     }
-  }, [refresh, events, ws, queryClient, onTaskScheduled, readOnly]);
+  }, [
+    refresh,
+    events,
+    ws,
+    queryClient,
+    onTaskScheduled,
+    readOnly,
+    patchVisibleEvents,
+  ]);
 
   const updateEvent = useCallback(
     async (eventId: string, eventUpdates: Partial<CalendarEvent>) => {
@@ -906,7 +990,6 @@ export const CalendarProvider = ({
         console.warn('Calendar is in read-only mode');
         return undefined;
       }
-      if (!ws) throw new Error('No workspace selected');
 
       // Clean and validate the event updates - only allow known CalendarEvent fields
       const allowedFields: (keyof CalendarEvent)[] = [
@@ -947,38 +1030,35 @@ export const CalendarProvider = ({
         cleanedUpdates.locked = true;
       }
 
+      if (eventAdapter?.onUpdate || eventAdapter?.onCreate) {
+        if (pendingNewEvent && eventId === 'new') {
+          const result = await addEvent({
+            ...pendingNewEvent,
+            ...cleanedUpdates,
+          } as Omit<CalendarEvent, 'id'>);
+          return result;
+        }
+
+        const existingEvent = events.find(
+          (event: CalendarEvent) => event.id === eventId
+        );
+        const result = await eventAdapter.onUpdate?.(
+          eventId,
+          cleanedUpdates,
+          existingEvent
+        );
+        refresh();
+        return result;
+      }
+
+      if (!ws) throw new Error('No workspace selected');
+
       // If this is a newly created event that hasn't been saved to the database yet
       if (pendingNewEvent && eventId === 'new') {
         const newEventData = {
           ...pendingNewEvent,
           ...cleanedUpdates,
         };
-        // Check for potential duplicates before creating a new event
-        if (cleanedUpdates.title || pendingNewEvent.title) {
-          const startDate = roundToNearest15Minutes(
-            new Date(newEventData.start_at || new Date())
-          );
-          const endDate = roundToNearest15Minutes(
-            new Date(newEventData.end_at || new Date())
-          );
-
-          const newEventSignature = `${newEventData.title || ''}|${newEventData.description || ''}|${startDate.toISOString()}|${endDate.toISOString()}`;
-
-          // Check existing events for potential duplicates
-          const duplicates = events.filter((e: CalendarEvent) => {
-            const existingSignature = createEventSignature(e);
-            return existingSignature === newEventSignature;
-          });
-
-          // If duplicates already exist, return the first one
-          if (duplicates.length > 0) {
-            // Clear any pending new event
-            setPendingNewEvent(null);
-
-            // Return the existing event
-            return duplicates[0];
-          }
-        }
 
         // Create a new event instead of updating
         const result = await addEvent(
@@ -987,26 +1067,55 @@ export const CalendarProvider = ({
         return result;
       }
 
+      const existingEvent = events.find(
+        (event: CalendarEvent) => event.id === eventId
+      );
+      if (!existingEvent) {
+        throw new Error(`Event with ID ${eventId} not found in local events`);
+      }
+
+      patchVisibleEvents(
+        [
+          {
+            ...existingEvent,
+            ...cleanedUpdates,
+            _optimisticStatus: 'updating',
+          } as CalendarEvent & { _optimisticStatus: 'updating' },
+        ],
+        { status: 'updating' }
+      );
+
       // Generate a unique update ID to track this specific update request
       const updateId = `${eventId}-${Date.now()}`;
       const timestamp = Date.now();
 
       // Create a promise that will resolve when the update is actually performed
       return new Promise<CalendarEvent>((resolve, reject) => {
+        const existingPending = pendingUpdatesRef.current.get(eventId);
+        const resolvers = [
+          ...(existingPending?._resolvers ?? []),
+          { resolve, reject },
+        ];
+
         // Create the update object with the promise callbacks
         const updateObject: PendingEventUpdate = {
+          ...(existingPending ?? {}),
           ...cleanedUpdates,
           _updateId: updateId,
           _timestamp: timestamp,
           _eventId: eventId,
-          _resolve: resolve,
-          _reject: reject,
+          _previousEvent: existingPending?._previousEvent ?? existingEvent,
+          _resolvers: resolvers,
         };
 
         // Store the latest update for this event
         pendingUpdatesRef.current.set(eventId, updateObject);
 
-        // Add to the queue
+        // Keep only the newest queued payload per event. Promise callers are
+        // retained in _resolvers and settle from the single coalesced request.
+        updateQueueRef.current = updateQueueRef.current.filter(
+          (queuedUpdate) => queuedUpdate._eventId !== eventId
+        );
         updateQueueRef.current.push(updateObject);
 
         // Clear any existing timer
@@ -1021,7 +1130,17 @@ export const CalendarProvider = ({
         }, 250); // Reduced from 2000ms to 250ms for better responsiveness
       });
     },
-    [ws, processUpdateQueue, pendingNewEvent, addEvent, events, readOnly]
+    [
+      ws,
+      processUpdateQueue,
+      pendingNewEvent,
+      addEvent,
+      events,
+      readOnly,
+      eventAdapter,
+      refresh,
+      patchVisibleEvents,
+    ]
   );
 
   const deleteEvent = useCallback(
@@ -1039,6 +1158,17 @@ export const CalendarProvider = ({
         return;
       }
 
+      if (eventAdapter?.onDelete) {
+        await eventAdapter.onDelete(
+          eventId,
+          events.find((event: CalendarEvent) => event.id === eventId)
+        );
+        refresh();
+        setActiveEventId(null);
+        setPreviewEventId(null);
+        return;
+      }
+
       if (!ws) throw new Error('No workspace selected');
 
       const eventToDelete = events.find(
@@ -1049,22 +1179,37 @@ export const CalendarProvider = ({
         throw new Error('No workspace selected');
       }
 
-      const deleteResponse = await fetch(
-        `/api/v1/workspaces/${ws.id}/calendar/events/${eventId}`,
-        {
-          method: 'DELETE',
-        }
-      );
-
-      if (!deleteResponse.ok) {
-        const errorData = await deleteResponse.json().catch(() => null);
-        throw new Error(errorData?.error || 'Failed to delete event');
+      if (eventToDelete) {
+        patchVisibleEvents(
+          [
+            {
+              ...eventToDelete,
+              _optimisticStatus: 'deleting',
+            } as CalendarEvent & { _optimisticStatus: 'deleting' },
+          ],
+          { status: 'deleting' }
+        );
       }
 
-      const deleteResult = (await deleteResponse.json()) as {
+      let deleteResult: {
         linkedTaskId?: string | null;
         skippedHabitId?: string | null;
       };
+
+      try {
+        deleteResult = await deleteWorkspaceCalendarEvent(
+          ws.id,
+          eventId,
+          noStoreFetchOptions
+        );
+      } catch (error) {
+        if (eventToDelete) {
+          patchVisibleEvents([eventToDelete]);
+        }
+        throw error;
+      }
+
+      patchVisibleEvents([], { removeIds: [eventId] });
 
       const hasLinkedTask =
         !!deleteResult.linkedTaskId || !!eventToDelete?.task_id;
@@ -1093,6 +1238,8 @@ export const CalendarProvider = ({
       queryClient,
       onTaskScheduled,
       readOnly,
+      eventAdapter,
+      patchVisibleEvents,
     ]
   );
 
@@ -1103,6 +1250,36 @@ export const CalendarProvider = ({
   const openEventEditor = useCallback(
     (eventId?: string, options?: { defaultNewEventTab?: 'manual' | 'ai' }) => {
       setPreviewEventId(null);
+
+      if (eventAdapter?.onOpen) {
+        if (eventId) {
+          eventAdapter.onOpen(
+            eventId,
+            events.find((event: CalendarEvent) => event.id === eventId)
+          );
+          return;
+        }
+
+        setDefaultNewEventTab(options?.defaultNewEventTab ?? 'manual');
+
+        const now = roundToNearest15Minutes(new Date());
+        const oneHourLater = new Date(now);
+        oneHourLater.setHours(oneHourLater.getHours() + 1);
+
+        const newEvent: CalendarEvent = {
+          id: 'new',
+          title: '',
+          description: '',
+          start_at: now.toISOString(),
+          end_at: oneHourLater.toISOString(),
+          color: 'BLUE',
+          ws_id: ws?.id || '',
+        };
+
+        eventAdapter.onCreateDraft?.(newEvent);
+        eventAdapter.onOpen(undefined, newEvent);
+        return;
+      }
 
       if (eventId) {
         setActiveEventId(eventId);
@@ -1130,7 +1307,7 @@ export const CalendarProvider = ({
       setActiveEventId('new');
       setModalHidden(false);
     },
-    [ws?.id]
+    [ws?.id, eventAdapter, events]
   );
 
   const openModal = useCallback(
@@ -1139,6 +1316,14 @@ export const CalendarProvider = ({
       _modalType?: 'all-day' | 'event',
       options?: { defaultNewEventTab?: 'manual' | 'ai' }
     ) => {
+      if (eventAdapter?.onOpen && eventId) {
+        eventAdapter.onOpen(
+          eventId,
+          events.find((event: CalendarEvent) => event.id === eventId)
+        );
+        return;
+      }
+
       if (eventId) {
         setPendingNewEvent(null);
         setActiveEventId(null);
@@ -1148,7 +1333,7 @@ export const CalendarProvider = ({
 
       openEventEditor(undefined, options);
     },
-    [openEventEditor]
+    [openEventEditor, eventAdapter, events]
   );
 
   const closeModal = useCallback(() => {
@@ -1511,6 +1696,10 @@ export const CalendarProvider = ({
     hideNonPreviewEvents,
     setHideNonPreviewEvents,
     defaultNewEventTab,
+    disableBuiltInEventUi: eventAdapter?.disableBuiltInEventUi ?? false,
+    preservePastEventOpacity: eventAdapter?.preservePastEventOpacity ?? false,
+    renderEventContextMenu: eventAdapter?.renderContextMenu,
+    isEventReadOnly: eventAdapter?.isEventReadOnly ?? (() => false),
     readOnly,
   };
 

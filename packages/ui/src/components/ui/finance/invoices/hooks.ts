@@ -501,10 +501,18 @@ export const useSubscriptionInvoiceContext = (
   wsId: string,
   userId: string,
   groupIds: string[],
-  month: string
+  month: string,
+  monthCount = 1
 ) => {
   return useQuery({
-    queryKey: ['subscription-invoice-context', wsId, userId, groupIds, month],
+    queryKey: [
+      'subscription-invoice-context',
+      wsId,
+      userId,
+      groupIds,
+      month,
+      monthCount,
+    ],
     queryFn: async () => {
       if (!wsId || !userId || groupIds.length === 0 || !month) {
         return {
@@ -524,6 +532,7 @@ export const useSubscriptionInvoiceContext = (
       return getSubscriptionInvoiceContext(wsId, {
         groupIds,
         month,
+        monthCount,
         userId,
       });
     },

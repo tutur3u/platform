@@ -12,9 +12,9 @@ import { Badge } from '@tuturuuu/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import { toast } from '@tuturuuu/ui/sonner';
 import { cn } from '@tuturuuu/utils/format';
-import { useRouter } from 'next/navigation';
 import { useCallback, useState } from 'react';
 import { useUserBooleanConfig } from '@/hooks/use-user-config';
+import { getTasksAppUrlClient } from '@/lib/tasks-app-url-client';
 import { useCompleteMiraTask, useMiraTasks } from '../../hooks/use-tasks';
 import type { MiraTask } from '../../types/mira';
 import { TasksPanelItem } from './tasks-panel-item';
@@ -96,7 +96,6 @@ function CollapsibleSection({
 }
 
 export function TasksPanel({ wsId, isPersonal, className }: TasksPanelProps) {
-  const router = useRouter();
   const { data: tasksData, isLoading } = useMiraTasks({ wsId, isPersonal });
   const completeMutation = useCompleteMiraTask({ wsId, isPersonal });
   const [completingTaskIds, setCompletingTaskIds] = useState<Set<string>>(
@@ -143,9 +142,11 @@ export function TasksPanel({ wsId, isPersonal, className }: TasksPanelProps) {
 
       // Use the task's workspace or fall back to current workspace
       const targetWsId = task?.ws_id || wsId;
-      router.push(`/${targetWsId}/tasks/${taskId}`);
+      window.location.assign(
+        getTasksAppUrlClient(`/${targetWsId}/tasks/${taskId}`)
+      );
     },
-    [router, tasksData, wsId]
+    [tasksData, wsId]
   );
 
   // Loading state (wait for both tasks and expand config to load)

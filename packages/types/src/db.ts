@@ -925,10 +925,79 @@ export type YoolaExternalProjectLoadingData = {
   singletonSections: Record<string, YoolaExternalProjectSectionLoadingItem>;
 };
 
+export type ExocorpseExternalProjectLoadingEntry = {
+  entryId: string;
+  slug: string;
+  title: string;
+  subtitle: string | null;
+  summary: string | null;
+  status: ExternalProjectEntryStatus;
+  bodyMarkdown: string | null;
+  profileData: Record<string, unknown>;
+  metadata: Record<string, unknown>;
+  assets: ExternalProjectDeliveryAsset[];
+};
+
+export type ExocorpseExternalProjectLoadingCollection = {
+  collectionId: string;
+  slug: string;
+  title: string;
+  collectionType: string;
+  description: string | null;
+  entries: ExocorpseExternalProjectLoadingEntry[];
+};
+
+export type ExocorpseExternalProjectLoadingData = {
+  adapter: 'exocorpse';
+  collections: Record<string, ExocorpseExternalProjectLoadingCollection>;
+  landing: {
+    settings: ExocorpseExternalProjectLoadingEntry | null;
+    content: ExocorpseExternalProjectLoadingEntry[];
+    faqs: ExocorpseExternalProjectLoadingEntry[];
+  };
+  wiki: {
+    stories: ExocorpseExternalProjectLoadingEntry[];
+    worlds: ExocorpseExternalProjectLoadingEntry[];
+    characters: ExocorpseExternalProjectLoadingEntry[];
+    factions: ExocorpseExternalProjectLoadingEntry[];
+    locations: ExocorpseExternalProjectLoadingEntry[];
+    timelines: ExocorpseExternalProjectLoadingEntry[];
+    events: ExocorpseExternalProjectLoadingEntry[];
+  };
+  portfolio: {
+    art: ExocorpseExternalProjectLoadingEntry[];
+    writing: ExocorpseExternalProjectLoadingEntry[];
+    games: ExocorpseExternalProjectLoadingEntry[];
+  };
+  commissions: {
+    services: ExocorpseExternalProjectLoadingEntry[];
+    addons: ExocorpseExternalProjectLoadingEntry[];
+    styles: ExocorpseExternalProjectLoadingEntry[];
+    pictures: ExocorpseExternalProjectLoadingEntry[];
+    serviceAddons: ExocorpseExternalProjectLoadingEntry[];
+    blacklist: ExocorpseExternalProjectLoadingEntry[];
+  };
+  blogPosts: ExocorpseExternalProjectLoadingEntry[];
+  heavenSpace: {
+    passages: ExocorpseExternalProjectLoadingEntry[];
+    assets: ExocorpseExternalProjectLoadingEntry[];
+    scenes: ExocorpseExternalProjectLoadingEntry[];
+    sceneChoices: ExocorpseExternalProjectLoadingEntry[];
+  };
+  reference: {
+    tags: ExocorpseExternalProjectLoadingEntry[];
+    entityTags: ExocorpseExternalProjectLoadingEntry[];
+    moodboards: ExocorpseExternalProjectLoadingEntry[];
+    mediaAssets: ExocorpseExternalProjectLoadingEntry[];
+    cofiSamples: ExocorpseExternalProjectLoadingEntry[];
+  };
+};
+
 export type ExternalProjectLoadingData =
   | YoolaExternalProjectLoadingData
+  | ExocorpseExternalProjectLoadingData
   | {
-      adapter: Exclude<ExternalProjectAdapterKind, 'yoola'>;
+      adapter: Exclude<ExternalProjectAdapterKind, 'yoola' | 'exocorpse'>;
       sections: Record<string, unknown>;
     };
 

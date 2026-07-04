@@ -1,5 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+vi.mock('server-only', () => ({}));
+
 const createAdminClientMock = vi.fn();
 const fetchRequireAttentionUserIdsMock = vi.fn();
 const serverLoggerErrorMock = vi.fn();
@@ -64,7 +68,6 @@ describe('user detail data loaders', () => {
         {
           id: 'group-1',
           name: 'Group 1',
-          sessions: [],
           workspace_user_groups_users: [
             {
               role: 'STUDENT',
@@ -83,9 +86,32 @@ describe('user detail data loaders', () => {
 
       return groupQuery;
     });
+    const privateSessionsQuery = {
+      eq: vi.fn(() => privateSessionsQuery),
+      in: vi.fn(() => privateSessionsQuery),
+      order: vi.fn().mockResolvedValue({
+        data: [
+          {
+            group_id: 'group-1',
+            starts_at: '2026-01-12T00:00:00.000Z',
+          },
+        ],
+        error: null,
+      }),
+      select: vi.fn(() => privateSessionsQuery),
+    };
+    const privateFromMock = vi.fn((table: string) => {
+      if (table !== 'workspace_user_group_sessions') {
+        throw new Error(`Unexpected private table lookup: ${table}`);
+      }
+      return privateSessionsQuery;
+    });
 
     createAdminClientMock.mockResolvedValue({
       from: fromMock,
+      schema: vi.fn(() => ({
+        from: privateFromMock,
+      })),
     });
 
     await expect(
@@ -95,6 +121,7 @@ describe('user detail data loaders', () => {
       data: [
         {
           id: 'group-1',
+          sessions: ['2026-01-12'],
           workspace_user_groups_users: [
             {
               user_id: 'user-1',
@@ -106,7 +133,7 @@ describe('user detail data loaders', () => {
 
     expect(fromMock).toHaveBeenCalledWith('workspace_user_groups');
     expect(groupQuery.select).toHaveBeenCalledWith(
-      'id, name, sessions, starting_date, ending_date, workspace_user_groups_users!workspace_user_roles_users_role_id_fkey!inner(user_id, role)',
+      'id, name, starting_date, ending_date, workspace_user_groups_users!workspace_user_roles_users_role_id_fkey!inner(user_id, role)',
       {
         count: 'exact',
       }
@@ -169,7 +196,7 @@ describe('user detail data loaders', () => {
       id: 'user-1',
     });
 
-    expect(serverLoggerErrorMock).toHaveBeenCalledWith(
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
       'Failed to load user detail require-attention flags',
       expect.objectContaining({
         loader: 'getUserDetailData',
@@ -193,7 +220,7 @@ describe('user detail data loaders', () => {
       })
     ).resolves.toEqual({ count: 0, data: [] });
 
-    expect(serverLoggerErrorMock).toHaveBeenCalledWith(
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
       'Failed to load user detail resource',
       expect.objectContaining({
         resource: 'reports',

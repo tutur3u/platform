@@ -1,11 +1,11 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { Loader2 } from '@tuturuuu/icons';
 import { getWorkspaceTask } from '@tuturuuu/internal-api/tasks';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useEffect } from 'react';
+import { TaskBoardLoadingState } from './task-board-loading-state';
 import { buildWorkspaceTaskUrl } from './task-url';
 
 interface TaskLegacyRouteRecoveryProps {
@@ -61,12 +61,5 @@ export function TaskLegacyRouteRecovery({
     );
   }
 
-  return (
-    <div className="flex min-h-[40vh] items-center justify-center p-6">
-      <div className="flex items-center gap-3 text-muted-foreground">
-        <Loader2 className="h-5 w-5 animate-spin" />
-        <span>{t('loading')}</span>
-      </div>
-    </div>
-  );
+  return <TaskBoardLoadingState />;
 }

@@ -4,7 +4,12 @@ import type {
   Workspace,
   WorkspaceCalendarGoogleTokenClient,
 } from '@tuturuuu/types';
-import { CalendarProvider } from '@tuturuuu/ui/hooks/use-calendar';
+import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
+import {
+  type CalendarEventAdapter,
+  CalendarProvider,
+} from '@tuturuuu/ui/hooks/use-calendar';
+import { CalendarSyncProvider } from '@tuturuuu/ui/hooks/use-calendar-sync';
 import type { CalendarView } from '../../../../hooks/use-view-transition';
 import CalendarConnectionsUnified from '../../calendar-app/components/calendar-connections-unified';
 import { CalendarContent } from './calendar-content';
@@ -28,6 +33,10 @@ export const SmartCalendar = ({
   initialSettings,
   onSaveSettings,
   showConnectionsManager = true,
+  eventAdapter,
+  externalEvents,
+  externalEventsLoading,
+  externalEventsRefresh,
 }: {
   t: any;
   locale: string;
@@ -49,6 +58,10 @@ export const SmartCalendar = ({
   initialSettings?: Partial<CalendarSettings>;
   onSaveSettings?: (settings: CalendarSettings) => Promise<void>;
   showConnectionsManager?: boolean;
+  eventAdapter?: CalendarEventAdapter;
+  externalEvents?: CalendarEvent[];
+  externalEventsLoading?: boolean;
+  externalEventsRefresh?: () => void;
 }) => {
   const handleSaveSettings = async (newSettings: CalendarSettings) => {
     if (onSaveSettings) {
@@ -65,12 +78,13 @@ export const SmartCalendar = ({
       extras
     );
 
-  return (
+  const calendar = (
     <CalendarProvider
       ws={workspace}
       useQuery={useQuery}
       useQueryClient={useQueryClient}
       experimentalGoogleToken={experimentalGoogleToken}
+      eventAdapter={eventAdapter}
       readOnly={disabled}
     >
       <CalendarSettingsProvider
@@ -87,8 +101,24 @@ export const SmartCalendar = ({
           externalState={externalState}
           extras={headerExtras}
           overlay={overlay}
+          disableBuiltInEventUi={eventAdapter?.disableBuiltInEventUi}
         />
       </CalendarSettingsProvider>
     </CalendarProvider>
   );
+
+  if (externalEvents) {
+    return (
+      <CalendarSyncProvider
+        wsId={workspace?.id ?? 'external'}
+        externalEvents={externalEvents}
+        externalEventsLoading={externalEventsLoading}
+        externalRefresh={externalEventsRefresh}
+      >
+        {calendar}
+      </CalendarSyncProvider>
+    );
+  }
+
+  return calendar;
 };

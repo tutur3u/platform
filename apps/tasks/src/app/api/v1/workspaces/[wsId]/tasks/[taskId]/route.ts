@@ -4,80 +4,60 @@ import {
   handleTaskDetailRoutePATCH,
   handleTaskDetailRoutePUT,
 } from '@tuturuuu/apis/tu-do/tasks/taskId/route';
-import {
-  attachSupabaseAuthUser,
-  getAppSessionTokenFromRequest,
-} from '@tuturuuu/auth/app-session';
-import { verifyCliAccessToken } from '@tuturuuu/auth/cli-session';
-import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
-import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
-import type { NextRequest } from 'next/server';
+import { getAppSessionTokenFromRequest } from '@tuturuuu/auth/app-session';
+import { CLI_APP_TARGET_APP } from '@tuturuuu/auth/cli-session';
+import { withSessionAuth } from '@/lib/api-auth';
 
 type Params = { wsId: string; taskId: string };
-type RouteContext = { params: Promise<Params> };
 
-function createCliSessionUser(claims: { email: string | null; sub: string }) {
-  return {
-    aud: 'authenticated',
-    email: claims.email ?? undefined,
-    id: claims.sub,
-  } as SupabaseUser;
+const TASKS_ROUTE_APP_SESSION_AUTH = {
+  targetApp: [CLI_APP_TARGET_APP, 'calendar', 'tasks'],
+} as const;
+
+function createTaskDetailRouteContext(params: Params) {
+  return { params: Promise.resolve(params) };
 }
 
-async function resolveCliTaskDetailAuth(request: Request) {
-  const appSessionToken = getAppSessionTokenFromRequest(request);
-
-  if (!appSessionToken) {
-    return undefined;
-  }
-
-  const verification = verifyCliAccessToken(appSessionToken);
-
-  if (!verification.ok) {
-    return undefined;
-  }
-
-  const sbAdmin = (await createAdminClient({
-    noCookie: true,
-  })) as TypedSupabaseClient;
-  const user = createCliSessionUser(verification.claims);
-
-  return {
-    appSession: true,
-    supabase: attachSupabaseAuthUser(sbAdmin, user),
-    user,
-  };
+function isAppSessionRequest(request: Request) {
+  return Boolean(getAppSessionTokenFromRequest(request));
 }
 
-export async function GET(request: NextRequest, context: RouteContext) {
-  return handleTaskDetailRouteGET(
-    request,
-    context,
-    await resolveCliTaskDetailAuth(request)
-  );
-}
+export const GET = withSessionAuth<Params>(
+  (request, { supabase, user }, params) =>
+    handleTaskDetailRouteGET(request, createTaskDetailRouteContext(params), {
+      appSession: isAppSessionRequest(request),
+      supabase,
+      user,
+    }),
+  { allowAppSessionAuth: TASKS_ROUTE_APP_SESSION_AUTH }
+);
 
-export async function PUT(request: NextRequest, context: RouteContext) {
-  return handleTaskDetailRoutePUT(
-    request,
-    context,
-    await resolveCliTaskDetailAuth(request)
-  );
-}
+export const PUT = withSessionAuth<Params>(
+  (request, { supabase, user }, params) =>
+    handleTaskDetailRoutePUT(request, createTaskDetailRouteContext(params), {
+      appSession: isAppSessionRequest(request),
+      supabase,
+      user,
+    }),
+  { allowAppSessionAuth: TASKS_ROUTE_APP_SESSION_AUTH }
+);
 
-export async function DELETE(request: NextRequest, context: RouteContext) {
-  return handleTaskDetailRouteDELETE(
-    request,
-    context,
-    await resolveCliTaskDetailAuth(request)
-  );
-}
+export const DELETE = withSessionAuth<Params>(
+  (request, { supabase, user }, params) =>
+    handleTaskDetailRouteDELETE(request, createTaskDetailRouteContext(params), {
+      appSession: isAppSessionRequest(request),
+      supabase,
+      user,
+    }),
+  { allowAppSessionAuth: TASKS_ROUTE_APP_SESSION_AUTH }
+);
 
-export async function PATCH(request: NextRequest, context: RouteContext) {
-  return handleTaskDetailRoutePATCH(
-    request,
-    context,
-    await resolveCliTaskDetailAuth(request)
-  );
-}
+export const PATCH = withSessionAuth<Params>(
+  (request, { supabase, user }, params) =>
+    handleTaskDetailRoutePATCH(request, createTaskDetailRouteContext(params), {
+      appSession: isAppSessionRequest(request),
+      supabase,
+      user,
+    }),
+  { allowAppSessionAuth: TASKS_ROUTE_APP_SESSION_AUTH }
+);

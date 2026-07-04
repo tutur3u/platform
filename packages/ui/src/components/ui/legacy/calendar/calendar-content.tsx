@@ -9,6 +9,7 @@ import { cn } from '@tuturuuu/utils/format';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AgendaView } from './agenda-view';
 import { CalendarHeader } from './calendar-header';
+import { CalendarLoadingSkeleton } from './calendar-loading-skeleton';
 import { CalendarViewWithTrail } from './calendar-view-with-trail';
 import { EventModal } from './event-modal';
 import { EventPreviewPopover } from './event-preview-popover';
@@ -102,6 +103,7 @@ export const CalendarContent = ({
   externalState,
   extras,
   overlay,
+  disableBuiltInEventUi,
 }: {
   t: any;
   locale: string;
@@ -118,10 +120,11 @@ export const CalendarContent = ({
   };
   extras?: React.ReactNode;
   overlay?: React.ReactNode;
+  disableBuiltInEventUi?: boolean;
 }) => {
   const { transition } = useViewTransition();
   const { settings } = useCalendarSettings();
-  const { dates, setDates } = useCalendarSync();
+  const { dates, isLoading, setDates } = useCalendarSync();
 
   // Use ref to always have the latest settings without causing dependency cascades
   const settingsRef = useRef(settings);
@@ -191,7 +194,6 @@ export const CalendarContent = ({
       handleSetView('4-days');
       setDates(dates);
     });
-    console.log('enable4DayView', dates);
   }, [date, transition, handleSetView, setDates]);
 
   const enableWeekView = useCallback(() => {
@@ -578,7 +580,7 @@ export const CalendarContent = ({
   return (
     <div
       className={cn(
-        'grid h-full w-full',
+        'grid h-full min-h-0 w-full',
         view === 'month' || view === 'year'
           ? 'grid-rows-[auto_1fr]'
           : 'grid-rows-[auto_auto_1fr]'
@@ -621,7 +623,7 @@ export const CalendarContent = ({
 
       <div
         className={cn(
-          'scrollbar-none relative flex-1 overflow-auto rounded-lg focus:outline-none',
+          'scrollbar-none relative min-h-0 flex-1 overflow-auto rounded-lg focus:outline-none',
           view === 'agenda' ||
             view === 'month' ||
             view === 'year' ||
@@ -632,7 +634,9 @@ export const CalendarContent = ({
           e.currentTarget.focus();
         }}
       >
-        {view === 'month' && dates?.[0] ? (
+        {isLoading ? (
+          <CalendarLoadingSkeleton dates={dates} view={view} />
+        ) : view === 'month' && dates?.[0] ? (
           <MonthCalendar
             date={dates[0]}
             workspace={workspace}
@@ -665,7 +669,7 @@ export const CalendarContent = ({
         )}
       </div>
 
-      {disabled
+      {disabled || disableBuiltInEventUi
         ? null
         : workspace && (
             <>

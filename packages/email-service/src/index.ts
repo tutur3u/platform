@@ -286,7 +286,12 @@ import type { SupabaseClient } from '@tuturuuu/supabase';
 import type { Database } from '@tuturuuu/types';
 
 import { EmailService } from './email-service';
-import type { EmailMetadata, SendEmailParams, SendEmailResult } from './types';
+import type {
+  EmailMetadata,
+  SendEmailParams,
+  SendEmailResult,
+  SendInternalEmailOptions,
+} from './types';
 
 /**
  * Send an email using workspace credentials with full protection.
@@ -344,18 +349,22 @@ export async function sendWorkspaceEmail(
 export async function sendSystemEmail(
   params: Omit<SendEmailParams, 'metadata'> & {
     metadata?: Partial<EmailMetadata>;
-  }
+  },
+  options?: SendInternalEmailOptions
 ): Promise<SendEmailResult> {
   const { ROOT_WORKSPACE_ID } = await import('@tuturuuu/utils/constants');
   const service = await EmailService.fromRootWorkspace();
 
-  return service.sendInternal({
-    ...params,
-    metadata: {
-      wsId: ROOT_WORKSPACE_ID,
-      ...params.metadata,
+  return service.sendInternal(
+    {
+      ...params,
+      metadata: {
+        wsId: ROOT_WORKSPACE_ID,
+        ...params.metadata,
+      },
     },
-  });
+    options
+  );
 }
 
 /**

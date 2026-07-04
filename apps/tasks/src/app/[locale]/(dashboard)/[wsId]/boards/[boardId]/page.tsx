@@ -1,4 +1,6 @@
 import TaskBoardServerPage from '@tuturuuu/ui/tu-do/boards/boardId/task-board-server-page';
+import { connection } from 'next/server';
+import { createElement } from 'react';
 
 interface Props {
   params: Promise<{
@@ -8,5 +10,11 @@ interface Props {
 }
 
 export default async function Page({ params }: Props) {
-  return <TaskBoardServerPage params={params} routePrefix="" />;
+  await connection();
+
+  return createElement(TaskBoardServerPage, {
+    defaultView: 'kanban',
+    params,
+    routePrefix: '',
+  });
 }

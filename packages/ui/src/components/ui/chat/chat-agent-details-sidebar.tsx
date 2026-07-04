@@ -6,7 +6,7 @@ import type { ChatConversation } from '@tuturuuu/internal-api';
 import type {
   AiAgentTestResponse,
   SaveAiAgentPayload,
-} from '@tuturuuu/internal-api/infrastructure';
+} from '@tuturuuu/internal-api/infrastructure/ai';
 import {
   deployAiAgentChannel,
   listAiAgents,
@@ -14,7 +14,7 @@ import {
   rotateAiAgentChannelSecret,
   saveAiAgent,
   testAiAgentChannel,
-} from '@tuturuuu/internal-api/infrastructure';
+} from '@tuturuuu/internal-api/infrastructure/ai';
 import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
 import { Badge } from '../badge';

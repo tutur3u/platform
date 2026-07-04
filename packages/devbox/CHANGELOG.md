@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.1](https://github.com/tutur3u/platform/compare/devbox-v0.3.0...devbox-v0.3.1) (2026-06-17)
+
+
+### Bug Fixes
+
+* **devboxes:** block Docker host escapes ([1299e5f](https://github.com/tutur3u/platform/commit/1299e5f238f539e9f10445926cc0b5ccd40ef925))
+
 ## [0.3.0](https://github.com/tutur3u/platform/compare/devbox-v0.2.1...devbox-v0.3.0) (2026-06-10)
 
 

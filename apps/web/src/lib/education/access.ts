@@ -8,7 +8,6 @@ import {
 } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import type { SessionAuthContext } from '@/lib/api-auth';
-import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { ENABLE_EDUCATION_SECRET } from '@/lib/tulearn/constants';
 
 export const EDUCATION_WORKSPACE_PERMISSION = 'ai_lab' satisfies PermissionId;
@@ -82,7 +81,7 @@ export async function checkEducationWorkspaceAccess({
     .maybeSingle();
 
   if (educationSecretError) {
-    serverLogger.error('Failed to verify education feature flag', {
+    console.error('Failed to verify education feature flag', {
       error: educationSecretError,
       wsId: normalizedWsId,
     });

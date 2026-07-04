@@ -30,6 +30,12 @@ Trust never bypasses active user suspension, active IP blocks, sensitive auth
 route protections, workspace-secret hard overrides, or severe backend abuse
 cascades.
 
+One exception exists for active IP blocks: an authenticated user who passes
+Turnstile through `/api/v1/rate-limit-appeals` can receive a short Redis relief
+key scoped to the same browser session and `ip:<address>`. The relief only lets
+that session continue while admins review the appeal; it does not clear the
+global `blocked_ips` row or help unrelated users behind the same IP.
+
 ## API Abuse IP Blocks
 
 Session-authenticated routes may defer proxy-side `api_abuse` IP blocks only
@@ -38,6 +44,30 @@ long enough to validate route authentication. Do not treat bearer-shaped tokens,
 proof of an authenticated session. If the route auth check fails, return the
 original block response before invoking the handler or recording normal auth
 failure side effects.
+
+## Emergency Protection Controls
+
+Platform admins with root workspace `manage_workspace_roles` can temporarily
+disable edge IP blocking or route rate limits from Infrastructure -> Rate
+Limits. The controls are stored in Redis for the proxy runtime.
+
+Redis-backed protection is intentionally availability-sensitive. When Redis is
+not configured, cannot initialize, or a Redis command fails, `apps/web` fails
+open for route rate limits, abuse counters, and IP-block enforcement. The app
+continues to run authentication, authorization, payload-size checks, Turnstile,
+user suspension, and normal request validation, but it does not enforce stale
+database/manual IP blocks or process-local fallback buckets. Restore Redis to
+restore rate-limit and IP-block enforcement.
+
+- Disabling IP blocking stops enforcement of cached `ip:blocked:<ip>` entries
+  and prevents proxy abuse counters from creating new edge IP blocks. It does
+  not delete `blocked_ips` rows or existing Redis block keys.
+- Disabling route rate limits skips the proxy read/mutate buckets while leaving
+  payload size checks and malformed request validation active.
+
+Use these controls only for incident response or false-positive mitigation.
+Re-enable them after the affected traffic pattern is understood and prefer
+specific trusted workspace, IP, CIDR, or user overrides for durable fixes.
 
 ## Signals
 
@@ -57,12 +87,12 @@ limits.
 ## Backend 429 Cascades
 
 Supabase Auth and PostgREST/backend `429` responses are availability signals,
-not user-scoped abuse proof. Handlers may return `429` to the caller and seed a
-bounded proxy/IP throttle when the client IP is known, but a single backend rate
-limit must not create or extend `user_suspensions` for the authenticated user.
-User suspension requires manual operator action or repeated, user-attributable
-abuse counters, and automated suspensions should be expiry-bound unless a
-separate policy explicitly justifies permanence.
+not user-scoped abuse proof. Handlers return `429` to the caller with
+`Retry-After`, but a single backend rate limit must not create or extend
+`ip:blocked:<ip>`, `blocked_ips`, or `user_suspensions`. User suspension
+requires manual operator action or repeated, user-attributable abuse counters,
+and automated suspensions should be expiry-bound unless a separate policy
+explicitly justifies permanence.
 
 ## Shared-IP Login Traffic
 
@@ -81,9 +111,94 @@ OTP send also has a shared-IP abuse guard with
 `ABUSE_OTP_SEND_IP_LIMIT_MINUTE`, `ABUSE_OTP_SEND_IP_LIMIT_HOUR`, and
 `ABUSE_OTP_SEND_IP_LIMIT_DAY`. Keep the per-email cooldown/hour/day limits in
 place; they are the primary protection against repeated sends to the same
-mailbox. Human auth route `429` responses should return `Retry-After` to the
-caller and must not be converted into `api_abuse` IP blocks by the proxy
-escalation path. Generic anonymous API route-limit hits can still escalate.
+mailbox. Human auth route `429` responses should return `Retry-After`,
+`X-RateLimit-Client-IP`, and `X-RateLimit-Policy` to the caller so the
+rate-limit details dialog can show the server-observed public IP and policy
+without asking the customer to visit a separate IP lookup page. These auth
+`429`s must not be converted into `api_abuse` IP blocks by the proxy escalation
+path. Utility-level OTP send, OTP verify, MFA verify, reauth verify, and
+password-login failure counters also throttle without writing `blocked_ips`
+rows; their abuse events include `hard_block_suppressed` metadata when the old
+hard-block threshold would have been crossed. Generic anonymous API route-limit
+hits, malformed auth-cookie abuse, scanner-like requests, `api_auth_failed`, and
+manual operator blocks can still escalate to hard IP blocks.
+
+## Trusted-Location Read Uplift
+
+High-density centers (many staff behind one office NAT IP) can hit the read-limit
+toast ("Bạn đang bị giới hạn tần suất. Thử lại sau 60 giây…") during normal
+browsing. Untrusted read traffic keys per `ip:<ip>` against the anonymous default
+(`60 / 240 / 1200` per minute/hour/day), so everyone behind the shared IP draws
+from one bucket. A trusted-location override keyed by CIDR scales that bucket at
+the edge (e.g. `60 -> 300/min` at `5x`) and lets trusted sessions key
+per-session. The `subject_key` must match the edge `getCidrSubjectKeyEdge` form
+(`cidr:<a.b.c>.0/24` for IPv4, `cidr:<prefix>::/64` for IPv6).
+
+1. Confirm the center's public IP via Infrastructure -> Abuse Intelligence or by
+   asking the center, then derive the `/24`.
+2. Insert a time-bound override. An operator runs this against production; the
+   platform never auto-pushes production SQL:
+
+```sql
+insert into public.abuse_trust_overrides
+  (subject_type, subject_key, tier, trust_multiplier, limit_mode, reason, expires_at)
+values
+  ('cidr', 'cidr:203.0.113.0/24', 'trusted', 5.00, 'inherit_multiplier',
+   'Trusted center office NAT — many staff, organic read traffic',
+   now() + interval '90 days');
+```
+
+3. The edge trust cache (`EDGE_TRUST_CACHE_TTL_SECONDS`, ~1h) reconciles via
+   `list_trusted_subjects_for_cache()` and the `sync-trust-cache` cron, so the
+   uplift takes effect within the TTL without a deploy. Set
+   `API_PROXY_EDGE_TRUST_ENABLED=0` as a kill switch to fall back to legacy
+   per-IP read limiting.
+
+Fix read amplification in the app first (batch per-row table fetches server-side
+so one page load costs a few reads, not dozens); the location uplift is
+defense-in-depth for genuinely dense, legitimate locations.
+
+## Trusted-Workspace Uplift
+
+Admins can also raise limits for a legitimate high-volume workspace from
+Infrastructure -> Rate Limits by creating a `workspace` subject rule:
+
+- `subject_type`: `workspace`
+- `subject_key`: `workspace:<workspace_uuid>`
+- `tier`: `trusted`
+- `limit_mode`: `inherit_multiplier`
+- `trust_multiplier`: start at `3`
+- `expires_at`: prefer 30-90 days
+
+Workspace rules are enforced at the edge for workspace-scoped API reads and are
+visible in the Rate Limits admin center. They are safer than globally unblocking
+or uplifting a noisy IP when many unrelated organizations may share that public
+address. Keep them time-bound and review live usage before renewing.
+
+## Rate-Limit Appeals
+
+When the details dialog shows `X-Proxy-Block-Reason: ip-already-blocked`, the
+request is being rejected by an active hard IP block. Raising route limits alone
+will not unblock that user. Admins should first inspect Infrastructure ->
+Blocked IPs and Abuse Intelligence, then clear the block if it is a false
+positive.
+
+Legitimate authenticated users can submit a review request from the rate-limit
+details dialog. The submission route is the only route allowed through an active
+IP block, and it still requires:
+
+- an authenticated session cookie
+- a valid Turnstile token
+- bounded sanitized diagnostics from the dialog
+- a low per-user/IP appeal throttle
+
+Submitting an appeal writes `rate_limit_appeals` and grants only temporary
+session+IP relief. From Infrastructure -> Rate Limit Appeals, admins can approve,
+reject, or close the appeal. Approval clears the active IP block and, by
+default, creates a time-bound trusted workspace rule with `3x` multiplier for 30
+days. Admins can edit the workspace ID, multiplier, and expiry before approval,
+or create more specific IP/CIDR/user rules manually from Infrastructure -> Rate
+Limits.
 
 ## Step-Up Challenges
 
@@ -99,11 +214,11 @@ The Playwright rate-limit suite intentionally exhausts budgets and records 429
 signals. Its `resetDbRateLimits()` helper must clear both PostgREST rate-limit
 counters and generated adaptive abuse state (`abuse_activity_signals`,
 `abuse_step_up_challenges`, and `abuse_reputation_subjects`) before each spec.
-The local `dev-session` endpoint also supports `resetRateLimits: true` to clear
-the app process's in-memory rate-limit fallback during E2E setup. Specs that
-intentionally hit authenticated route limits should also use a fresh local
-dev-session account per test/retry so Redis-backed user keys and asynchronous
-adaptive reputation writes cannot bleed into the next case.
+Specs that intentionally hit authenticated route limits should use Redis and a
+fresh local dev-session account per test/retry so Redis-backed user keys and
+asynchronous adaptive reputation writes cannot bleed into the next case. Without
+Redis, `apps/web` rate-limit and IP-block checks fail open and will not produce
+the expected `429` responses.
 
 ## Admin Investigation
 
@@ -125,11 +240,19 @@ When investigating a false positive:
 5. Revoke trust immediately if the subject later shows scripted behavior,
    account takeover indicators, or noisy API-key traffic.
 
-For a live classroom login incident, ask for the center's current public IP and
-check Infrastructure -> Abuse Intelligence for active IP blocks or abuse events
-with `api_abuse` or `password_login_failed`. If the activity is confirmed
-organic, clear the active false-positive block or reset the affected counters;
-do not relax the per-email OTP cooldown or failed-attempt protections.
+For a live classroom login incident, ask the customer to open the rate-limit
+details dialog and share the copied details. Use the `identity.clientIp`,
+`limit.retryAfterSeconds`, and `limit.policy` fields to check Infrastructure ->
+Abuse Intelligence for active IP blocks or abuse events with `api_abuse` or
+`password_login_failed`. If the activity is confirmed organic, clear the active
+false-positive block, reset affected counters, or add a time-bound IP/CIDR trust
+or rate-limit uplift. Do not relax the per-email OTP cooldown or failed-attempt
+protections.
+
+If the copied details include `limit.proxyBlockReason =
+ip-already-blocked`, route-limit tuning is secondary. Clear the active block or
+approve the user's Rate Limit Appeal first, then decide whether the root cause
+needs a trusted workspace, IP/CIDR uplift, or app-level batching fix.
 
 Manual overrides require a reason and are written to the audit signal stream.
 Prefer expiry-bound overrides for trust and watch decisions so stale operational

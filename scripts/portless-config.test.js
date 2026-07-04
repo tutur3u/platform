@@ -88,7 +88,9 @@ test('portless keeps the canonical Tuturuuu app hostnames stable', () => {
   assert.equal(config.apps['apps/apps']?.name, 'apps.tuturuuu');
   assert.equal(config.apps['apps/web']?.name, 'tuturuuu');
   assert.equal(config.apps['apps/drive']?.name, 'drive.tuturuuu');
-  assert.equal(config.apps['apps/qr']?.name, 'qr.tuturuuu');
+  assert.equal(config.apps['apps/tools']?.name, 'tools.tuturuuu');
+  assert.equal(config.apps['apps/infrastructure']?.name, 'infra.tuturuuu');
+  assert.equal(config.apps['apps/tanstack-web']?.name, 'tanstack.tuturuuu');
   assert.equal(config.apps['apps/tasks']?.name, 'tasks.tuturuuu');
   assert.equal(
     config.apps['apps/hive-realtime']?.name,
@@ -110,6 +112,7 @@ test('satellite runtime defaults keep Portless origins in local redirects', () =
     'apps/cms/src/constants/common.ts',
     'apps/drive/src/constants/common.ts',
     'apps/finance/src/constants/common.ts',
+    'apps/infrastructure/src/constants/common.ts',
     'apps/rewise/src/constants/common.ts',
     'apps/tasks/src/constants/common.ts',
     'apps/track/src/constants/common.ts',

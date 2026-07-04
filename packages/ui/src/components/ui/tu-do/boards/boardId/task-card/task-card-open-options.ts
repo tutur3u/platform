@@ -6,6 +6,8 @@ interface TaskCardOpenOptionsInput {
   task: Task;
   boardId: string;
   availableLists?: TaskList[];
+  assigneeMemberSource?: 'workspace' | 'board' | 'workspace-and-board';
+  canUseBoardAssignees?: boolean;
   effectiveWorkspaceId?: string;
   isPersonalWorkspace: boolean;
 }
@@ -96,6 +98,8 @@ export function getTaskCardHydratingOpenOptions({
   task,
   boardId,
   availableLists,
+  assigneeMemberSource,
+  canUseBoardAssignees,
   effectiveWorkspaceId,
   isPersonalWorkspace,
 }: TaskCardOpenOptionsInput) {
@@ -110,6 +114,9 @@ export function getTaskCardHydratingOpenOptions({
     ...task,
     list_id: task.source_list_id ?? task.list_id,
   };
+  const sourceBoardAssigneesEnabled = sourceWorkspaceId
+    ? true
+    : !isPersonalWorkspace;
 
   return {
     initialTask,
@@ -122,6 +129,9 @@ export function getTaskCardHydratingOpenOptions({
           : availableLists,
     taskWsId: sourceWorkspaceId ?? effectiveWorkspaceId,
     taskWorkspacePersonal: sourceWorkspaceId ? false : isPersonalWorkspace,
+    canUseBoardAssignees: canUseBoardAssignees ?? sourceBoardAssigneesEnabled,
+    assigneeMemberSource:
+      assigneeMemberSource ?? (sourceWorkspaceId ? 'board' : undefined),
     initialSharedContext,
   };
 }

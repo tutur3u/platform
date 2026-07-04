@@ -6,6 +6,7 @@ import { WalletTotalCheckDialog } from '@tuturuuu/ui/finance/wallets/checkpoints
 import { WalletForm } from '@tuturuuu/ui/finance/wallets/form';
 import { WalletsDataTable } from '@tuturuuu/ui/finance/wallets/wallets-data-table';
 import { Separator } from '@tuturuuu/ui/separator';
+import { resolveSupportedCurrency } from '@tuturuuu/utils/currencies';
 import {
   getPermissions,
   getWorkspace,
@@ -51,6 +52,7 @@ export default async function WalletsPage({
     ]);
   if (!resolvedPermissions || !resolvedWorkspace) notFound();
   const { containsPermission } = resolvedPermissions;
+  const workspaceCurrency = resolveSupportedCurrency(resolvedCurrency);
 
   const canCreateWallets = containsPermission('create_wallets');
   const canUpdateWallets = containsPermission('update_wallets');
@@ -76,6 +78,7 @@ export default async function WalletsPage({
             <WalletForm
               wsId={wsId}
               defaultType={isCreditCardCreate ? 'CREDIT' : 'STANDARD'}
+              defaultCurrency={workspaceCurrency}
             />
           ) : undefined
         }
@@ -95,7 +98,7 @@ export default async function WalletsPage({
           />
           <WalletTotalCheckDialog
             wsId={wsId}
-            currency={resolvedCurrency ?? 'USD'}
+            currency={workspaceCurrency}
             canUpdateWallets={canUpdateWallets}
             defaultOpen={searchParams.tool === 'all-wallet-check'}
           />
@@ -105,7 +108,7 @@ export default async function WalletsPage({
         wsId={wsId}
         canUpdateWallets={canUpdateWallets}
         canDeleteWallets={canDeleteWallets}
-        currency={resolvedCurrency ?? 'USD'}
+        currency={workspaceCurrency}
         financePrefix={financePrefix}
         isPersonalWorkspace={!!resolvedWorkspace?.personal}
         query={searchParams.q}

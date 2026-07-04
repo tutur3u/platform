@@ -10,3 +10,4 @@ preload = ["./tests/bun-test-redirect.ts"]
 linker = "isolated"
 # Require npm releases to be at least 1 day old before Bun can install them
 minimumReleaseAge = 86400
+minimumReleaseAgeExcludes = ["@polar-sh/checkout"]

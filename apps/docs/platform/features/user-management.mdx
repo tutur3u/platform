@@ -19,6 +19,13 @@ The post email queue now treats provider-accepted delivery as durable once it is
 - The queue worker should only claim rows that it can start in the current processing slice.
 - Avoid front-claiming the whole `sendLimit`; stranded `processing` rows interact badly with stale cleanup and can create duplicate delivery attempts after requeue.
 
+### Operations Dashboard
+
+- The infrastructure Post Email Queue page shows approval/delivery backlog health, age buckets, throughput, sanitized failure categories, workspace breakdowns, and recent batch summaries.
+- Operators should use the page's Run Now action instead of calling the cron endpoint from the browser. The app route keeps `CRON_SECRET` server-side and invokes `/api/cron/process-post-email-queue` with diagnostic output.
+- The cron defaults are tuned for production backlogs: `limit=500` and `sendLimit=200`. Query parameters may still lower those values for focused recovery runs.
+- When a recipient is approved but still shown as queued in the Posts dashboard, inspect the selected-recipient delivery diagnostics before assuming approval failed. Queue age over 1 hour is a warning; queue age over 24 hours should be treated as an incident.
+
 ## Attendance Exports
 
 The workspace attendance page now supports exporting attendance for everyone across a selected date range.

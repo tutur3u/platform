@@ -1,34 +1,13 @@
-import { MindDashboard } from '@tuturuuu/mind-ui/dashboard';
-import type { Metadata } from 'next';
-import { notFound } from 'next/navigation';
-import { getWebMindWorkspaceContext } from '@/lib/mind-workspace-context';
-
-export const metadata: Metadata = {
-  title: 'Mind Board',
-  description: 'Open a Mind board inside your Tuturuuu workspace.',
-};
+import { redirect } from 'next/navigation';
+import { getMindAppOrigin } from '@/lib/mind-app-url';
 
 interface PageProps {
-  params: Promise<{
-    boardId: string;
-    locale: string;
-    wsId: string;
-  }>;
+  params: Promise<{ wsId: string; boardId: string }>;
 }
 
-export default async function MindBoardPage({ params }: PageProps) {
-  const { boardId, wsId } = await params;
-  const context = await getWebMindWorkspaceContext(wsId);
-
-  if (!context) notFound();
-
-  return (
-    <MindDashboard
-      hiveHref={`/${wsId}/hive`}
-      initialBoardId={boardId}
-      mindPrefix="/mind"
-      workspaceSlug={wsId}
-      wsId={context.wsId}
-    />
-  );
+// Mind boards moved to the dedicated mind app (apps/mind). Redirect deep links
+// to preserve existing board URLs.
+export default async function MindBoardRedirectPage({ params }: PageProps) {
+  const { wsId, boardId } = await params;
+  redirect(`${getMindAppOrigin()}/${wsId}/boards/${boardId}`);
 }

@@ -1,7 +1,9 @@
 import {
+  BarChart3,
   Bookmark,
   Box,
   FileEdit,
+  Goal,
   hexagons3,
   Icon,
   Logs,
@@ -10,6 +12,9 @@ import {
   Sparkle,
   SquareKanban,
   Tags,
+  TrendingUp,
+  Trophy,
+  Upload,
   UserStar,
 } from '@tuturuuu/icons';
 import type { NavLink } from '@tuturuuu/ui/custom/navigation';
@@ -86,6 +91,37 @@ export async function getNavigationLinks({
       title: t('sidebar_tabs.estimates'),
       icon: <Icon iconNode={hexagons3} className="h-4 w-4" />,
       href: `/${personalOrWsId}/estimates`,
+    },
+    null,
+    {
+      title: t('sidebar_tabs.progress'),
+      href: `/${personalOrWsId}/progress`,
+      icon: <TrendingUp className="h-4 w-4" />,
+      requireRootMember: true,
+    },
+    {
+      title: t('sidebar_tabs.goals'),
+      href: `/${personalOrWsId}/goals`,
+      icon: <Goal className="h-4 w-4" />,
+      requireRootMember: true,
+    },
+    {
+      title: t('sidebar_tabs.stats'),
+      href: `/${personalOrWsId}/stats`,
+      icon: <BarChart3 className="h-4 w-4" />,
+      requireRootMember: true,
+    },
+    {
+      title: t('sidebar_tabs.leaderboards'),
+      href: `/${personalOrWsId}/leaderboards`,
+      icon: <Trophy className="h-4 w-4" />,
+      requireRootMember: true,
+    },
+    {
+      title: t('common.import'),
+      href: `/${personalOrWsId}/import`,
+      icon: <Upload className="h-4 w-4" />,
+      requireRootMember: true,
     },
     null,
     {

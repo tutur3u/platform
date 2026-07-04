@@ -1,4 +1,5 @@
 import { type EditorState, NodeSelection, type Plugin } from '@tiptap/pm/state';
+import { toast } from '@tuturuuu/ui/sonner';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { __imageExtensionPrivate, CustomImage } from '../image-extension';
 import { MAX_IMAGE_SIZE, MAX_VIDEO_SIZE } from '../media-utils';
@@ -16,7 +17,7 @@ vi.mock('../media-utils', async () => {
 });
 
 // Mock the sonner toast
-vi.mock('../../sonner', () => ({
+vi.mock('@tuturuuu/ui/sonner', () => ({
   toast: {
     error: vi.fn(),
     success: vi.fn(),
@@ -112,6 +113,27 @@ describe('ImageExtension', () => {
       });
 
       expect(extension).toBeDefined();
+    });
+
+    it('should let a delegated getter clear the configured image upload handler', () => {
+      const staleUpload = vi.fn().mockResolvedValue('stale-url');
+
+      expect(
+        __imageExtensionPrivate.resolveUploadHandler({
+          configuredHandler: staleUpload,
+          delegatedGetter: () => undefined,
+        })
+      ).toBeUndefined();
+    });
+
+    it('should fall back to the configured upload handler only without a delegated getter', () => {
+      const upload = vi.fn().mockResolvedValue('url');
+
+      expect(
+        __imageExtensionPrivate.resolveUploadHandler({
+          configuredHandler: upload,
+        })
+      ).toBe(upload);
     });
   });
 
@@ -299,6 +321,52 @@ describe('ImageExtension', () => {
         mockEvent
       );
       expect(result).toBe(false);
+    });
+
+    it('should block pasted images when delegated upload permission is cleared', () => {
+      const staleUpload = vi.fn().mockResolvedValue('stale-url');
+      const extension = CustomImage({
+        onImageUpload: staleUpload,
+        getOnImageUpload: () => undefined,
+      });
+
+      const plugins = extension.config.addProseMirrorPlugins();
+      const pastePlugin = plugins.find(
+        (p: Plugin) => p.props?.handleDOMEvents?.paste !== undefined
+      );
+
+      const imageFile = new File(['image'], 'image.png', {
+        type: 'image/png',
+      });
+      const mockView = {
+        state: { selection: { from: 0, to: 0 } },
+        dispatch: vi.fn(),
+        dom: document.createElement('div'),
+      };
+      const mockEvent = {
+        clipboardData: {
+          items: [
+            {
+              type: 'image/png',
+              getAsFile: () => imageFile,
+            },
+          ],
+        },
+        preventDefault: vi.fn(),
+      } as unknown as ClipboardEvent;
+
+      const result = pastePlugin?.props?.handleDOMEvents?.paste(
+        mockView as any,
+        mockEvent
+      );
+
+      expect(result).toBe(true);
+      expect(mockEvent.preventDefault).toHaveBeenCalled();
+      expect(staleUpload).not.toHaveBeenCalled();
+      expect(toast.error).toHaveBeenCalledWith('Insufficient permissions', {
+        description:
+          'You do not have permission to upload images in this editor.',
+      });
     });
   });
 

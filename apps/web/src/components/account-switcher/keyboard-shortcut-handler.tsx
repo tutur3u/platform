@@ -1,9 +1,17 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 import { type JSX, useEffect, useState } from 'react';
-import { AccountSwitcherModal } from './account-switcher-modal';
 
-export function AccountSwitcherKeyboardShortcut(): JSX.Element {
+const AccountSwitcherModal = dynamic(
+  () =>
+    import('./account-switcher-modal').then(
+      (module) => module.AccountSwitcherModal
+    ),
+  { ssr: false }
+);
+
+export function AccountSwitcherKeyboardShortcut(): JSX.Element | null {
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
@@ -33,6 +41,10 @@ export function AccountSwitcherKeyboardShortcut(): JSX.Element {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
+
+  if (!open) {
+    return null;
+  }
 
   return <AccountSwitcherModal open={open} onOpenChange={setOpen} />;
 }

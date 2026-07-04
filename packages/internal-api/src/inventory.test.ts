@@ -1,12 +1,17 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
+  cancelInventorySquareTerminalCheckout,
   createInventoryBatch,
+  createInventoryBundle,
   createInventoryCheckoutSession,
   createInventoryCostProfile,
   createInventoryMediaUploadUrl,
   createInventoryOwner,
   createInventoryProduct,
   createInventoryProductCategory,
+  createInventoryPromotion,
+  createInventorySquareDeviceCode,
+  createInventorySquareTerminalCheckout,
   createInventoryStorefront,
   createInventorySupplier,
   createInventoryUnit,
@@ -17,6 +22,7 @@ import {
   deleteInventoryOwner,
   deleteInventoryProduct,
   deleteInventoryProductCategory,
+  deleteInventoryPromotion,
   deleteInventorySale,
   deleteInventoryStorefront,
   deleteInventoryStorefrontListing,
@@ -28,13 +34,19 @@ import {
   getInventoryPublicOrder,
   getInventoryPublicStorefront,
   getInventorySale,
+  getInventorySquareSettings,
   importInventoryCostingCsv,
   listInventoryBundles,
   listInventoryCostProfiles,
+  listInventoryPromotions,
+  listInventoryRevenueShareEarnings,
+  listInventorySquareDevices,
+  listInventorySquareLocations,
   listInventoryStorefronts,
   listInventoryUnits,
   recordInventoryStorefrontAnalyticsEvent,
   releaseInventoryCheckout,
+  startInventorySquareOAuth,
   toPolarCurrency,
   updateInventoryBatch,
   updateInventoryCostProfile,
@@ -42,7 +54,9 @@ import {
   updateInventoryProduct,
   updateInventoryProductCategory,
   updateInventoryProductInventory,
+  updateInventoryPromotion,
   updateInventorySale,
+  updateInventorySquareSettings,
   updateInventoryStorefrontListing,
   updateInventorySupplier,
   updateInventoryUnit,
@@ -369,6 +383,59 @@ describe('inventory internal API helpers', () => {
     );
   });
 
+  it('routes promotion helpers through the shared workspace promotion API', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(createJsonResponse({ message: 'success' }));
+    const options = {
+      baseUrl: 'https://internal.example.com',
+      fetch: fetchMock as unknown as typeof fetch,
+    };
+    const payload = {
+      code: 'SAVE',
+      max_uses: null,
+      name: 'Save',
+      unit: 'percentage' as const,
+      value: 10,
+    };
+
+    await listInventoryPromotions('workspace 1', { q: 'Save' }, options);
+    await createInventoryPromotion('workspace 1', payload, options);
+    await expect(
+      updateInventoryPromotion('workspace 1', 'promo/1', payload, options)
+    ).resolves.toEqual({ message: 'success' });
+    await deleteInventoryPromotion('workspace 1', 'promo/1', options);
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      'https://internal.example.com/api/v1/workspaces/workspace%201/promotions?q=Save&inventoryOnly=true&response=paginated',
+      expect.objectContaining({
+        cache: 'no-store',
+      })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      'https://internal.example.com/api/v1/workspaces/workspace%201/promotions',
+      expect.objectContaining({
+        body: JSON.stringify(payload),
+        method: 'POST',
+      })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      3,
+      'https://internal.example.com/api/v1/workspaces/workspace%201/promotions/promo%2F1',
+      expect.objectContaining({
+        body: JSON.stringify(payload),
+        method: 'PUT',
+      })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      4,
+      'https://internal.example.com/api/v1/workspaces/workspace%201/promotions/promo%2F1',
+      expect.objectContaining({ method: 'DELETE' })
+    );
+  });
+
   it('routes batch create, update, and delete through the inventory batch API', async () => {
     const fetchMock = vi.fn().mockResolvedValue(
       createJsonResponse({
@@ -576,7 +643,20 @@ describe('inventory internal API helpers', () => {
     await createInventoryCheckoutSession(
       'shop',
       {
-        lines: [{ listingId: 'listing_1', quantity: 2 }],
+        lines: [
+          {
+            bundleId: 'bundle_1',
+            bundleSelections: {
+              component_1: [
+                { listingId: 'listing_1', quantity: 1 },
+                { listingId: 'listing_2', quantity: 1 },
+                { listingId: 'listing_3', quantity: 1 },
+              ],
+            },
+            listingId: 'bundle_listing_1',
+            quantity: 1,
+          },
+        ],
       },
       {
         baseUrl: 'https://internal.example.com',
@@ -598,7 +678,20 @@ describe('inventory internal API helpers', () => {
       'https://internal.example.com/api/v1/inventory/storefronts/shop/checkouts',
       expect.objectContaining({
         body: JSON.stringify({
-          lines: [{ listingId: 'listing_1', quantity: 2 }],
+          lines: [
+            {
+              bundleId: 'bundle_1',
+              bundleSelections: {
+                component_1: [
+                  { listingId: 'listing_1', quantity: 1 },
+                  { listingId: 'listing_2', quantity: 1 },
+                  { listingId: 'listing_3', quantity: 1 },
+                ],
+              },
+              listingId: 'bundle_listing_1',
+              quantity: 1,
+            },
+          ],
         }),
         method: 'POST',
       })
@@ -606,6 +699,75 @@ describe('inventory internal API helpers', () => {
     expect(fetchMock).toHaveBeenNthCalledWith(
       3,
       'https://internal.example.com/api/v1/inventory/orders/order_token',
+      expect.objectContaining({ headers: expect.any(Headers) })
+    );
+  });
+
+  it('serializes category bundle payloads and revenue-share report queries', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(createJsonResponse({ data: { id: 'bundle_1' } }))
+      .mockResolvedValueOnce(createJsonResponse({ count: 0, data: [] }));
+    const options = {
+      baseUrl: 'https://internal.example.com',
+      fetch: fetchMock as unknown as typeof fetch,
+    };
+
+    await createInventoryBundle(
+      'ws_1',
+      {
+        categoryCandidateScope: 'all_stock',
+        categoryComponents: [
+          {
+            categoryId: 'category_1',
+            discountStrategy: 'cheapest_free',
+            freeQuantity: 1,
+            quantityRequired: 3,
+          },
+        ],
+        name: 'Buy 2 Get 1 Keychains',
+        price: 0,
+        pricingMode: 'selected_items',
+        slug: 'buy-2-get-1-keychains',
+      },
+      options
+    );
+    await listInventoryRevenueShareEarnings(
+      'ws_1',
+      {
+        startAt: '2026-07-01T00:00:00.000Z',
+        endAt: '2026-07-31T23:59:59.999Z',
+        partnerId: 'owner_1',
+        q: 'talent',
+      },
+      options
+    );
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      'https://internal.example.com/api/v1/workspaces/ws_1/inventory/bundles',
+      expect.objectContaining({
+        body: JSON.stringify({
+          categoryCandidateScope: 'all_stock',
+          categoryComponents: [
+            {
+              categoryId: 'category_1',
+              discountStrategy: 'cheapest_free',
+              freeQuantity: 1,
+              quantityRequired: 3,
+            },
+          ],
+          name: 'Buy 2 Get 1 Keychains',
+          price: 0,
+          pricingMode: 'selected_items',
+          slug: 'buy-2-get-1-keychains',
+        }),
+        method: 'POST',
+      })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      'https://internal.example.com/api/v1/workspaces/ws_1/inventory/revenue-share?startAt=2026-07-01T00%3A00%3A00.000Z&endAt=2026-07-31T23%3A59%3A59.999Z&partnerId=owner_1&q=talent',
       expect.objectContaining({ headers: expect.any(Headers) })
     );
   });
@@ -815,6 +977,118 @@ describe('inventory internal API helpers', () => {
           listingId: 'listing_1',
           quantity: 1,
         }),
+        method: 'POST',
+      })
+    );
+  });
+
+  it('routes Square settings and device helpers through workspace inventory APIs', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      createJsonResponse({
+        data: [],
+        readiness: { issues: [], ready: true },
+      })
+    );
+    const options = {
+      baseUrl: 'https://internal.example.com',
+      fetch: fetchMock as unknown as typeof fetch,
+    };
+
+    await getInventorySquareSettings('ws 1', options);
+    await updateInventorySquareSettings(
+      'ws 1',
+      {
+        environment: 'sandbox',
+        locationId: 'loc-1',
+        webhookSignatureKey: 'sig-key',
+      },
+      options
+    );
+    await startInventorySquareOAuth('ws 1', 'production', options);
+    await listInventorySquareLocations('ws 1', options);
+    await listInventorySquareDevices('ws 1', options);
+    await createInventorySquareDeviceCode(
+      'ws 1',
+      { locationId: 'loc-1', name: 'Front counter' },
+      options
+    );
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      'https://internal.example.com/api/v1/workspaces/ws%201/inventory/square-settings',
+      expect.objectContaining({ cache: 'no-store' })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      'https://internal.example.com/api/v1/workspaces/ws%201/inventory/square-settings',
+      expect.objectContaining({
+        body: JSON.stringify({
+          environment: 'sandbox',
+          locationId: 'loc-1',
+          webhookSignatureKey: 'sig-key',
+        }),
+        method: 'PUT',
+      })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      3,
+      'https://internal.example.com/api/v1/workspaces/ws%201/inventory/square/oauth/start?environment=production',
+      expect.objectContaining({ cache: 'no-store' })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      4,
+      'https://internal.example.com/api/v1/workspaces/ws%201/inventory/square/locations',
+      expect.objectContaining({ cache: 'no-store' })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      5,
+      'https://internal.example.com/api/v1/workspaces/ws%201/inventory/square/devices',
+      expect.objectContaining({ cache: 'no-store' })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      6,
+      'https://internal.example.com/api/v1/workspaces/ws%201/inventory/square/device-codes',
+      expect.objectContaining({
+        body: JSON.stringify({ locationId: 'loc-1', name: 'Front counter' }),
+        method: 'POST',
+      })
+    );
+  });
+
+  it('routes Square terminal checkout actions through workspace APIs', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      createJsonResponse({
+        checkout: { id: 'checkout 1' },
+        squareCheckout: { id: 'terminal-checkout-1' },
+      })
+    );
+    const options = {
+      baseUrl: 'https://internal.example.com',
+      fetch: fetchMock as unknown as typeof fetch,
+    };
+
+    await createInventorySquareTerminalCheckout(
+      'ws 1',
+      { checkoutId: 'checkout 1', deviceId: 'device 1' },
+      options
+    );
+    await cancelInventorySquareTerminalCheckout('ws 1', 'checkout 1', options);
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      'https://internal.example.com/api/v1/workspaces/ws%201/inventory/square/terminal-checkouts',
+      expect.objectContaining({
+        body: JSON.stringify({
+          checkoutId: 'checkout 1',
+          deviceId: 'device 1',
+        }),
+        method: 'POST',
+      })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      'https://internal.example.com/api/v1/workspaces/ws%201/inventory/square/terminal-checkouts/checkout%201/cancel',
+      expect.objectContaining({
         method: 'POST',
       })
     );

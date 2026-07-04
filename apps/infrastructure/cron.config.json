@@ -1,0 +1,25 @@
+{
+  "jobs": [
+    {
+      "description": "Sample Docker resource usage for infrastructure observability.",
+      "enabled": true,
+      "id": "infrastructure-sample-resources",
+      "path": "/api/cron/infrastructure/sample-resources",
+      "schedule": "* * * * *"
+    },
+    {
+      "description": "Email operators when Docker daemon crash recovery events are recorded.",
+      "enabled": true,
+      "id": "infrastructure-docker-recovery-alerts",
+      "path": "/api/cron/infrastructure/docker-recovery-alerts",
+      "schedule": "* * * * *"
+    },
+    {
+      "description": "Synchronize infrastructure abuse trust cache entries.",
+      "enabled": true,
+      "id": "infrastructure-sync-trust-cache",
+      "path": "/api/cron/infrastructure/sync-trust-cache",
+      "schedule": "*/10 * * * *"
+    }
+  ]
+}

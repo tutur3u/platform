@@ -1,0 +1,696 @@
+name: TanStack And Rust Cloudflare CI/CD
+
+on:
+  pull_request:
+    paths:
+      - "apps/backend/**"
+      - "apps/tanstack-web/**"
+      - "apps/backend/README.md"
+      - "apps/docs/build/devops/web-docker-deployment.mdx"
+      - "apps/docs/build/devops/github-actions-runbook.mdx"
+      - "apps/docs/build/devops/overview.mdx"
+      - "apps/docs/platform/architecture/tanstack-rust-migration.mdx"
+      - "packages/internal-api/src/backend.ts"
+      - ".github/workflows/rust-backend.yml"
+      - ".github/workflows/ci-check.yml"
+      - "package.json"
+      - "scripts/check-backend.js"
+      - "scripts/check-backend.test.js"
+      - "scripts/check-cloudflare-workers.js"
+      - "scripts/check-cloudflare-workers.test.js"
+      - "scripts/generate-tanstack-route-tree.js"
+      - "scripts/generate-tanstack-route-tree.test.js"
+      - "scripts/rust-cache.js"
+      - "scripts/rust-cache.test.js"
+      - "scripts/smoke-cloudflare-workers.js"
+      - "scripts/smoke-cloudflare-workers.test.js"
+      - "tuturuuu.ts"
+  push:
+    branches: ["main", "production"]
+    paths:
+      - "apps/backend/**"
+      - "apps/tanstack-web/**"
+      - "apps/backend/README.md"
+      - "apps/docs/build/devops/web-docker-deployment.mdx"
+      - "apps/docs/build/devops/github-actions-runbook.mdx"
+      - "apps/docs/build/devops/overview.mdx"
+      - "apps/docs/platform/architecture/tanstack-rust-migration.mdx"
+      - "packages/internal-api/src/backend.ts"
+      - ".github/workflows/rust-backend.yml"
+      - ".github/workflows/ci-check.yml"
+      - "package.json"
+      - "scripts/check-backend.js"
+      - "scripts/check-backend.test.js"
+      - "scripts/check-cloudflare-workers.js"
+      - "scripts/check-cloudflare-workers.test.js"
+      - "scripts/generate-tanstack-route-tree.js"
+      - "scripts/generate-tanstack-route-tree.test.js"
+      - "scripts/rust-cache.js"
+      - "scripts/rust-cache.test.js"
+      - "scripts/smoke-cloudflare-workers.js"
+      - "scripts/smoke-cloudflare-workers.test.js"
+      - "tuturuuu.ts"
+  workflow_dispatch:
+    inputs:
+      deploy_target:
+        description: "Cloudflare deployment target. Use none for CI-only manual reruns."
+        required: true
+        default: none
+        type: choice
+        options:
+          - none
+          - backend
+          - tanstack-web
+          - all
+      deployment_mode:
+        description: "Use dry-run until Cloudflare account, token, and Worker secrets are ready."
+        required: true
+        default: dry-run
+        type: choice
+        options:
+          - dry-run
+          - deploy
+
+permissions:
+  contents: read
+
+jobs:
+  check-ci:
+    uses: ./.github/workflows/ci-check.yml
+    permissions:
+      contents: read
+      deployments: read
+    with:
+      workflow_name: rust-backend.yml
+
+  verify:
+    name: Verify Rust backend
+    needs: [check-ci]
+    if: needs.check-ci.outputs.should_run == 'true'
+    runs-on: ubuntu-latest
+    env:
+      CARGO_BUILD_JOBS: "2"
+      CARGO_HTTP_MULTIPLEXING: "false"
+      CARGO_NET_RETRY: "10"
+      CARGO_PROFILE_TEST_DEBUG: "0"
+    defaults:
+      run:
+        working-directory: ./apps/backend
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+          targets: wasm32-unknown-unknown
+
+      - name: Restore Cargo cache
+        uses: actions/cache@v6
+        with:
+          path: |
+            ~/.cargo/git
+            ~/.cargo/registry
+            ~/.cargo/bin/worker-build
+            apps/backend/target
+          key: rust-backend-${{ runner.os }}-${{ hashFiles('apps/backend/Cargo.lock', 'apps/backend/Cargo.toml') }}
+          restore-keys: |
+            rust-backend-${{ runner.os }}-
+
+      - name: Check Cloudflare deployment config
+        working-directory: .
+        run: node scripts/check-cloudflare-workers.js
+
+      - name: Check Cloudflare smoke reporter
+        working-directory: .
+        run: node --test scripts/smoke-cloudflare-workers.test.js
+
+      - name: Check formatting
+        run: cargo fmt --check
+
+      - name: Download modules
+        run: bash ../../scripts/ci/run-with-backoff.sh cargo fetch --locked
+
+      - name: Clippy
+        run: cargo clippy --locked --all-targets --features native -- -D warnings
+
+      - name: Test
+        run: cargo test --locked
+
+      - name: Check Cloudflare Worker target
+        run: cargo check --locked --target wasm32-unknown-unknown --no-default-features --features worker
+
+      - name: Install worker-build
+        run: bash ../../scripts/ci/run-with-backoff.sh cargo install worker-build --locked
+
+      - name: Build Cloudflare Worker bundle
+        run: worker-build --release -- --no-default-features --features worker
+
+      - name: Build
+        run: cargo build --locked --release --features native --bin backend
+
+  verify-tanstack-web:
+    name: Verify TanStack Start app
+    needs: [check-ci]
+    if: needs.check-ci.outputs.should_run == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      TURBO_API: ${{ vars.TURBO_API }}
+      TURBO_REMOTE_CACHE_SIGNATURE_KEY: ${{ secrets.TURBO_REMOTE_CACHE_SIGNATURE_KEY }}
+      TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
+      TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Setup bun
+        uses: ./.github/actions/setup-bun-with-retry
+        with:
+          bun-version: 1.3.14
+
+      - name: Use Node.js 24
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
+      - name: Install dependencies
+        run: bash scripts/ci/run-with-backoff.sh bun install
+
+      - name: Check Cloudflare deployment config
+        run: node scripts/check-cloudflare-workers.js
+
+      - name: Check TanStack route tree generator
+        run: node --test scripts/generate-tanstack-route-tree.test.js
+
+      - name: Type-check TanStack Start app
+        run: bun type-check:tanstack-web
+
+      - name: Test TanStack Start app
+        run: bun run --filter @tuturuuu/tanstack-web test
+
+  docker:
+    name: Docker Image
+    needs: [check-ci]
+    if: needs.check-ci.outputs.should_run == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Build backend image
+        run: |
+          docker buildx build --load \
+            --cache-from type=gha,scope=rust-backend-image \
+            --cache-to type=gha,scope=rust-backend-image,mode=max \
+            -f apps/backend/Dockerfile .
+
+  cloudflare-deployment-preflight:
+    name: Cloudflare deployment preflight
+    needs: [check-ci, verify, verify-tanstack-web]
+    if: >-
+      github.event_name == 'workflow_dispatch' &&
+      github.ref == 'refs/heads/main' &&
+      contains(format(',{0},', vars.TRUSTED_CLOUDFLARE_DEPLOY_ACTORS), format(',{0},', github.actor)) &&
+      inputs.deploy_target != 'none' &&
+      needs.check-ci.outputs.should_run == 'true'
+    runs-on: ubuntu-latest
+    environment: cloudflare-workers-preview
+    permissions:
+      contents: read
+    outputs:
+      can_deploy: ${{ steps.credentials.outputs.can_deploy }}
+      deploy_backend: ${{ steps.target.outputs.deploy_backend }}
+      deploy_tanstack_web: ${{ steps.target.outputs.deploy_tanstack_web }}
+      deployment_mode: ${{ steps.target.outputs.deployment_mode }}
+    steps:
+      - name: Resolve deployment target
+        id: target
+        shell: bash
+        env:
+          DEPLOYMENT_MODE: ${{ inputs.deployment_mode }}
+          DEPLOY_TARGET: ${{ inputs.deploy_target }}
+        run: |
+          case "$DEPLOY_TARGET" in
+            backend)
+              echo "deploy_backend=true" >> "$GITHUB_OUTPUT"
+              echo "deploy_tanstack_web=false" >> "$GITHUB_OUTPUT"
+              ;;
+            tanstack-web)
+              echo "deploy_backend=false" >> "$GITHUB_OUTPUT"
+              echo "deploy_tanstack_web=true" >> "$GITHUB_OUTPUT"
+              ;;
+            all)
+              echo "deploy_backend=true" >> "$GITHUB_OUTPUT"
+              echo "deploy_tanstack_web=true" >> "$GITHUB_OUTPUT"
+              ;;
+            *)
+              echo "::error title=Invalid deployment target::Use none, backend, tanstack-web, or all."
+              exit 1
+              ;;
+          esac
+
+          echo "deployment_mode=$DEPLOYMENT_MODE" >> "$GITHUB_OUTPUT"
+
+      - name: Check Cloudflare GitHub configuration
+        id: credentials
+        shell: bash
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID || secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          missing=()
+
+          if [ -z "${CLOUDFLARE_API_TOKEN:-}" ]; then
+            missing+=("GitHub secret CLOUDFLARE_API_TOKEN")
+          fi
+
+          if [ -z "${CLOUDFLARE_ACCOUNT_ID:-}" ]; then
+            missing+=("GitHub variable CLOUDFLARE_ACCOUNT_ID")
+          fi
+
+          if [ "${#missing[@]}" -gt 0 ]; then
+            echo "can_deploy=false" >> "$GITHUB_OUTPUT"
+            echo "::warning title=Cloudflare deployment skipped::action_required: ${missing[*]} is not configured in the cloudflare-workers-preview environment. CI validation already ran; deployment jobs will be skipped."
+            {
+              echo "## action_required: Cloudflare deployment credentials missing"
+              echo
+              echo "Configure these values in GitHub repository Settings -> Environments -> cloudflare-workers-preview before rerunning with deployment_mode=deploy:"
+              printf -- "- %s\n" "${missing[@]}"
+              echo
+              echo "Use Environment secrets for secrets and Environment variables for non-secret identifiers."
+              echo "CLOUDFLARE_API_TOKEN must be a Cloudflare API token scoped to this account with Workers Scripts edit access."
+              echo "CLOUDFLARE_ACCOUNT_ID should be stored as a GitHub Environment variable; a secret with the same name is accepted only as a fallback."
+              echo "Worker runtime secrets are stored in Cloudflare, not GitHub. The deploy jobs check them with wrangler secret list before uploading."
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          echo "can_deploy=true" >> "$GITHUB_OUTPUT"
+          {
+            echo "## Cloudflare deployment preflight"
+            echo
+            echo "GitHub Cloudflare credentials are present. Deploy jobs will still verify Cloudflare Worker secret names before uploading."
+            echo "Use deployment_mode=dry-run until the backend and TanStack Workers have all required secrets in Cloudflare."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  cloudflare-worker-secrets-preflight:
+    name: Cloudflare Worker secrets preflight
+    needs: [cloudflare-deployment-preflight]
+    if: needs.cloudflare-deployment-preflight.outputs.can_deploy == 'true'
+    runs-on: ubuntu-latest
+    environment: cloudflare-workers-preview
+    permissions:
+      contents: read
+    outputs:
+      can_deploy_backend: ${{ steps.worker-secrets.outputs.can_deploy_backend }}
+      can_deploy_tanstack_web: ${{ steps.worker-secrets.outputs.can_deploy_tanstack_web }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Setup bun
+        uses: ./.github/actions/setup-bun-with-retry
+        with:
+          bun-version: 1.3.14
+
+      - name: Use Node.js 24
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
+      - name: Install dependencies
+        run: bash scripts/ci/run-with-backoff.sh bun install
+
+      - name: Check Cloudflare deployment config
+        run: node scripts/check-cloudflare-workers.js
+
+      - name: Check selected Worker secrets
+        id: worker-secrets
+        shell: bash
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID || secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          DEPLOY_BACKEND: ${{ needs.cloudflare-deployment-preflight.outputs.deploy_backend }}
+          DEPLOY_TANSTACK_WEB: ${{ needs.cloudflare-deployment-preflight.outputs.deploy_tanstack_web }}
+        run: |
+          set -euo pipefail
+
+          can_deploy_backend=false
+          can_deploy_tanstack_web=false
+
+          check_worker_secrets() {
+            local key="$1"
+            local label="$2"
+            local worker_name="$3"
+            local config_path="$4"
+            local required_json="$5"
+            local secrets_file="$RUNNER_TEMP/${key}-worker-secrets.json"
+            local missing_file="$RUNNER_TEMP/${key}-missing-secrets.txt"
+            local list_failed=false
+
+            case "$config_path" in
+              apps/backend/wrangler.jsonc)
+                bun wrangler secret list --config apps/backend/wrangler.jsonc --format json > "$secrets_file" || list_failed=true
+                ;;
+              apps/tanstack-web/wrangler.jsonc)
+                bun wrangler secret list --config apps/tanstack-web/wrangler.jsonc --format json > "$secrets_file" || list_failed=true
+                ;;
+              *)
+                echo "::error title=Invalid Worker config::Unexpected Worker config path ${config_path}."
+                return 1
+                ;;
+            esac
+
+            if [ "$list_failed" = "true" ]; then
+              echo "::warning title=action_required: ${label} Worker secret preflight unavailable::Wrangler could not list secret names for ${worker_name}. Check CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_API_TOKEN, account access, and that the Worker exists."
+              {
+                echo "## action_required: ${label} Worker secret preflight unavailable"
+                echo
+                echo "Wrangler could not list secret names for \`${worker_name}\` using \`${config_path}\`."
+                echo "Confirm the \`cloudflare-workers-preview\` GitHub Environment has \`CLOUDFLARE_API_TOKEN\` and \`CLOUDFLARE_ACCOUNT_ID\`, the token can read Workers scripts in the account, and the Worker exists in that Cloudflare account."
+                echo "Set GitHub values in repository Settings -> Environments -> cloudflare-workers-preview. Set Worker runtime secrets in Cloudflare with \`bun wrangler secret put <NAME> --config ${config_path}\`."
+              } >> "$GITHUB_STEP_SUMMARY"
+              return 1
+            fi
+
+            node - "$secrets_file" "$required_json" "$missing_file" <<'NODE'
+          const fs = require('node:fs');
+          const [, , secretsFile, requiredJson, missingFile] = process.argv;
+          const actualSecrets = JSON.parse(fs.readFileSync(secretsFile, 'utf8'));
+          const requiredSecrets = JSON.parse(requiredJson);
+          const actualNames = new Set(
+            actualSecrets
+              .map((secret) =>
+                typeof secret === 'string' ? secret : secret?.name
+              )
+              .filter(Boolean)
+          );
+          const missing = requiredSecrets.filter((name) => !actualNames.has(name));
+          fs.writeFileSync(missingFile, missing.join('\n'));
+          NODE
+
+            if [ -s "$missing_file" ]; then
+              local missing_csv
+              missing_csv="$(node -e "const fs = require('node:fs'); console.log(fs.readFileSync(process.argv[1], 'utf8').trim().split(/\\n/u).filter(Boolean).join(', '));" "$missing_file")"
+              echo "::warning title=action_required: Missing ${label} Worker secrets::Cloudflare Worker ${worker_name} is missing: ${missing_csv}. The selected deploy job will be skipped."
+              {
+                echo "## action_required: Missing ${label} Worker secrets"
+                echo
+                echo "Cloudflare Worker \`${worker_name}\` is missing required secret names:"
+                while IFS= read -r secret_name; do
+                  [ -n "$secret_name" ] || continue
+                  echo "- \`${secret_name}\`"
+                done < "$missing_file"
+                echo
+                echo "Configure them in Cloudflare from a trusted shell authenticated to the correct account; Wrangler prompts for values and the workflow never prints secret values:"
+                while IFS= read -r secret_name; do
+                  [ -n "$secret_name" ] || continue
+                  echo "- \`bun wrangler secret put ${secret_name} --config ${config_path}\`"
+                done < "$missing_file"
+              } >> "$GITHUB_STEP_SUMMARY"
+              return 1
+            fi
+
+            {
+              echo "## ${label} Worker secret preflight"
+              echo
+              echo "All required secret names are present for \`${worker_name}\`. Values were not read or printed."
+            } >> "$GITHUB_STEP_SUMMARY"
+          }
+
+          if [ "$DEPLOY_BACKEND" = "true" ]; then
+            if check_worker_secrets \
+              backend \
+              Backend \
+              tuturuuu-backend \
+              apps/backend/wrangler.jsonc \
+              '["BACKEND_INTERNAL_TOKEN","TUTURUUU_APP_COORDINATION_SECRET","SUPABASE_URL","SUPABASE_SERVICE_ROLE_KEY","CRON_SECRET","DISCORD_APP_DEPLOYMENT_URL","AURORA_EXTERNAL_URL"]'; then
+              can_deploy_backend=true
+            fi
+          fi
+
+          if [ "$DEPLOY_TANSTACK_WEB" = "true" ]; then
+            if check_worker_secrets \
+              tanstack-web \
+              "TanStack" \
+              tuturuuu-tanstack-web \
+              apps/tanstack-web/wrangler.jsonc \
+              '["BACKEND_PUBLIC_ORIGIN","BACKEND_INTERNAL_TOKEN"]'; then
+              can_deploy_tanstack_web=true
+            fi
+          fi
+
+          {
+            echo "can_deploy_backend=$can_deploy_backend"
+            echo "can_deploy_tanstack_web=$can_deploy_tanstack_web"
+          } >> "$GITHUB_OUTPUT"
+
+  deploy-backend:
+    name: Deploy Rust backend Worker
+    needs: [cloudflare-deployment-preflight, cloudflare-worker-secrets-preflight]
+    if: needs.cloudflare-deployment-preflight.outputs.can_deploy == 'true' && needs.cloudflare-deployment-preflight.outputs.deploy_backend == 'true' && needs.cloudflare-worker-secrets-preflight.outputs.can_deploy_backend == 'true'
+    runs-on: ubuntu-latest
+    environment: cloudflare-workers-preview
+    permissions:
+      contents: read
+    env:
+      CARGO_HTTP_MULTIPLEXING: "false"
+      CARGO_NET_RETRY: "10"
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Setup bun
+        uses: ./.github/actions/setup-bun-with-retry
+        with:
+          bun-version: 1.3.14
+
+      - name: Use Node.js 24
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
+      - name: Install dependencies
+        run: bash scripts/ci/run-with-backoff.sh bun install
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+          targets: wasm32-unknown-unknown
+
+      - name: Install worker-build
+        run: bash scripts/ci/run-with-backoff.sh cargo install worker-build --locked
+
+      - name: Check Cloudflare deployment config
+        run: node scripts/check-cloudflare-workers.js
+
+      - name: Deploy backend Worker
+        shell: bash
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID || secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          DEPLOYMENT_MODE: ${{ needs.cloudflare-deployment-preflight.outputs.deployment_mode }}
+        run: |
+          set -euo pipefail
+
+          if [ "$DEPLOYMENT_MODE" = "dry-run" ]; then
+            bun wrangler deploy --config apps/backend/wrangler.jsonc --dry-run
+            exit 0
+          fi
+
+          bun wrangler deploy --config apps/backend/wrangler.jsonc
+
+  deploy-tanstack-web:
+    name: Deploy TanStack Start Worker
+    needs: [cloudflare-deployment-preflight, cloudflare-worker-secrets-preflight, deploy-backend]
+    if: always() && needs.cloudflare-deployment-preflight.outputs.can_deploy == 'true' && needs.cloudflare-deployment-preflight.outputs.deploy_tanstack_web == 'true' && needs.cloudflare-worker-secrets-preflight.outputs.can_deploy_tanstack_web == 'true' && (needs.cloudflare-deployment-preflight.outputs.deploy_backend != 'true' || needs.deploy-backend.result == 'success')
+    runs-on: ubuntu-latest
+    environment: cloudflare-workers-preview
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Setup bun
+        uses: ./.github/actions/setup-bun-with-retry
+        with:
+          bun-version: 1.3.14
+
+      - name: Use Node.js 24
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
+      - name: Install dependencies
+        run: bash scripts/ci/run-with-backoff.sh bun install
+
+      - name: Check Cloudflare deployment config
+        run: node scripts/check-cloudflare-workers.js
+
+      - name: Deploy TanStack Start Worker
+        shell: bash
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID || secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          DEPLOYMENT_MODE: ${{ needs.cloudflare-deployment-preflight.outputs.deployment_mode }}
+        run: |
+          set -euo pipefail
+
+          if [ "$DEPLOYMENT_MODE" = "dry-run" ]; then
+            bun --cwd apps/tanstack-web run deploy:cloudflare:dry-run
+            exit 0
+          fi
+
+          bun --cwd apps/tanstack-web run deploy:cloudflare
+
+  post-deploy-smoke:
+    name: Smoke deployed Cloudflare Workers
+    needs: [cloudflare-deployment-preflight, deploy-backend, deploy-tanstack-web]
+    if: always() && needs.cloudflare-deployment-preflight.outputs.deployment_mode == 'deploy' && needs.cloudflare-deployment-preflight.outputs.deploy_backend == 'true' && needs.cloudflare-deployment-preflight.outputs.deploy_tanstack_web == 'true' && needs.deploy-backend.result == 'success' && needs.deploy-tanstack-web.result == 'success'
+    runs-on: ubuntu-latest
+    environment: cloudflare-workers-preview
+    permissions:
+      contents: read
+    env:
+      CLOUDFLARE_SMOKE_REPORT_PATH: tmp/benchmarks/web-migration/${{ github.run_id }}-${{ github.run_attempt }}/cloudflare-smoke.json
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Setup bun
+        uses: ./.github/actions/setup-bun-with-retry
+        with:
+          bun-version: 1.3.14
+
+      - name: Use Node.js 24
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
+      - name: Install dependencies
+        run: bash scripts/ci/run-with-backoff.sh bun install
+
+      - name: Check Cloudflare deployment config
+        run: node scripts/check-cloudflare-workers.js
+
+      - name: Check Cloudflare smoke inputs
+        shell: bash
+        env:
+          BACKEND_WORKER_ORIGIN: ${{ vars.BACKEND_WORKER_ORIGIN }}
+          TANSTACK_WEB_WORKER_ORIGIN: ${{ vars.TANSTACK_WEB_WORKER_ORIGIN }}
+          BACKEND_INTERNAL_TOKEN: ${{ secrets.CLOUDFLARE_SMOKE_BACKEND_INTERNAL_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          missing=()
+
+          if [ -z "${BACKEND_WORKER_ORIGIN:-}" ]; then
+            missing+=("GitHub Environment variable BACKEND_WORKER_ORIGIN")
+          fi
+
+          if [ -z "${TANSTACK_WEB_WORKER_ORIGIN:-}" ]; then
+            missing+=("GitHub Environment variable TANSTACK_WEB_WORKER_ORIGIN")
+          fi
+
+          if [ -z "${BACKEND_INTERNAL_TOKEN:-}" ]; then
+            missing+=("GitHub Environment secret CLOUDFLARE_SMOKE_BACKEND_INTERNAL_TOKEN")
+          fi
+
+          if [ "${#missing[@]}" -gt 0 ]; then
+            printf -v missing_csv "%s, " "${missing[@]}"
+            missing_csv="${missing_csv%, }"
+            echo "::warning title=Cloudflare smoke inputs missing::action_required: ${missing_csv} must be configured in the cloudflare-workers-preview environment."
+            echo "::error title=Cloudflare smoke verification blocked::Full Cloudflare deploys require backend and TanStack Worker origins plus the dedicated smoke token before the post-deploy gate can run."
+            {
+              echo "## action_required: Cloudflare smoke inputs missing"
+              echo
+              echo "A full Cloudflare deploy completed, but the post-deploy smoke gate cannot run until these GitHub Environment values are configured:"
+              printf -- "- %s\n" "${missing[@]}"
+              echo
+              echo "Store \`BACKEND_WORKER_ORIGIN\` and \`TANSTACK_WEB_WORKER_ORIGIN\` as non-secret Environment variables."
+              echo "Store \`CLOUDFLARE_SMOKE_BACKEND_INTERNAL_TOKEN\` as an Environment secret; the workflow maps it to \`BACKEND_INTERNAL_TOKEN\` only for \`bun smoke:cloudflare\`."
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+
+      - name: Run Cloudflare smoke
+        shell: bash
+        env:
+          BACKEND_WORKER_ORIGIN: ${{ vars.BACKEND_WORKER_ORIGIN }}
+          TANSTACK_WEB_WORKER_ORIGIN: ${{ vars.TANSTACK_WEB_WORKER_ORIGIN }}
+          BACKEND_INTERNAL_TOKEN: ${{ secrets.CLOUDFLARE_SMOKE_BACKEND_INTERNAL_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          mkdir -p "$(dirname "$CLOUDFLARE_SMOKE_REPORT_PATH")"
+          bun smoke:cloudflare --output "$CLOUDFLARE_SMOKE_REPORT_PATH"
+
+      - name: Upload Cloudflare smoke report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: cloudflare-smoke-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ env.CLOUDFLARE_SMOKE_REPORT_PATH }}
+          if-no-files-found: warn
+
+      - name: Summarize Cloudflare smoke
+        if: always()
+        shell: bash
+        env:
+          BACKEND_WORKER_ORIGIN: ${{ vars.BACKEND_WORKER_ORIGIN }}
+          TANSTACK_WEB_WORKER_ORIGIN: ${{ vars.TANSTACK_WEB_WORKER_ORIGIN }}
+        run: |
+          set -euo pipefail
+
+          {
+            echo "## Cloudflare post-deploy smoke"
+            echo
+            echo "- Backend origin: \`${BACKEND_WORKER_ORIGIN:-missing}\`"
+            echo "- TanStack origin: \`${TANSTACK_WEB_WORKER_ORIGIN:-missing}\`"
+            echo "- Report path: \`$CLOUDFLARE_SMOKE_REPORT_PATH\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          if [ ! -f "$CLOUDFLARE_SMOKE_REPORT_PATH" ]; then
+            {
+              echo
+              echo "No JSON smoke report was written. Check the smoke input validation and runner logs."
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          node - "$CLOUDFLARE_SMOKE_REPORT_PATH" <<'NODE' >> "$GITHUB_STEP_SUMMARY"
+          const fs = require('node:fs');
+          const reportPath = process.argv[2];
+          const report = JSON.parse(fs.readFileSync(reportPath, 'utf8'));
+
+          console.log('');
+          console.log(`Result: ${report.ok ? 'pass' : 'fail'}`);
+          console.log('');
+          console.log('| Probe | Status | Duration | Detail |');
+          console.log('| --- | --- | ---: | --- |');
+
+          for (const result of report.results ?? []) {
+            const label = String(result.label ?? result.id ?? 'unknown').replaceAll('|', '\\|');
+            const status = result.status ?? 'error';
+            const detail = result.detail
+              ? String(result.detail).replaceAll('|', '\\|')
+              : '-';
+            const duration = Number.isFinite(result.durationMs)
+              ? `${result.durationMs} ms`
+              : '-';
+
+            console.log(
+              `| ${label} | ${result.ok ? 'pass' : 'fail'} (${status}) | ${duration} | ${detail} |`
+            );
+          }
+          NODE

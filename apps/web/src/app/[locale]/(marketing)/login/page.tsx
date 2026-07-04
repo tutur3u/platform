@@ -1,8 +1,7 @@
 import { normalizeClientRedirectPath } from '@tuturuuu/auth/cross-app';
-import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import { createClient } from '@tuturuuu/supabase/next/server';
 import { TUTURUUU_LOCAL_LOGO_URL } from '@tuturuuu/ui/custom/tuturuuu-logo';
 import { getTuturuuuPortlessAppOrigin } from '@tuturuuu/utils/portless';
+import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { BASE_URL, DEV_MODE } from '@/constants/common';
 import {
@@ -53,6 +52,9 @@ const DOMAINS = {
     logo: TUTURUUU_LOCAL_LOGO_URL,
   },
 } as const satisfies Record<string, LoginDomain>;
+
+const SUPABASE_AUTH_COOKIE_HEADER_PATTERN =
+  /(?:^|;\s*)sb-[A-Za-z0-9-]+-auth-token(?:\.\d+)?=/u;
 
 type LoginSearchParams = {
   [key: string]: string | string[] | undefined;
@@ -125,8 +127,24 @@ const getAuthenticatedLoginRedirectPath = (params: LoginSearchParams) => {
   return getSafeLocalRedirectPath(getSingleSearchParam(params.nextUrl)) ?? '/';
 };
 
+const isMfaVerificationRequest = (params: LoginSearchParams) =>
+  getSingleSearchParam(params.mfa) === 'required';
+
 async function hasAuthenticatedSession() {
   try {
+    const headerStore = await headers();
+
+    if (
+      !SUPABASE_AUTH_COOKIE_HEADER_PATTERN.test(headerStore.get('cookie') ?? '')
+    ) {
+      return false;
+    }
+
+    const [{ createClient }, { resolveAuthenticatedSessionUser }] =
+      await Promise.all([
+        import('@tuturuuu/supabase/next/server'),
+        import('@tuturuuu/supabase/next/auth-session-user'),
+      ]);
     const supabase = await createClient();
     const { user } = await resolveAuthenticatedSessionUser(supabase);
 
@@ -152,11 +170,27 @@ export default async function Login({ searchParams }: LoginProps) {
 
   const returnUrl = getSingleSearchParam(params.returnUrl);
   const multiAccount = getSingleSearchParam(params.multiAccount) === 'true';
-  const authenticatedRedirectPath = getAuthenticatedLoginRedirectPath(params);
+  const mfaVerificationRequest = isMfaVerificationRequest(params);
+  const authenticatedRedirectPath = mfaVerificationRequest
+    ? null
+    : getAuthenticatedLoginRedirectPath(params);
+  const shouldCheckAuthenticatedSession =
+    !mfaVerificationRequest &&
+    (Boolean(authenticatedRedirectPath) || Boolean(returnUrl && !multiAccount));
+  const authenticatedSession = shouldCheckAuthenticatedSession
+    ? await hasAuthenticatedSession()
+    : false;
 
-  if (authenticatedRedirectPath && (await hasAuthenticatedSession())) {
+  if (authenticatedRedirectPath && authenticatedSession) {
     redirect(authenticatedRedirectPath);
   }
+
+  const deferAuthSurfaceUntilSessionCheck = Boolean(
+    authenticatedSession &&
+      returnUrl &&
+      !multiAccount &&
+      !getSafeLocalRedirectPath(returnUrl)
+  );
 
   const returnUrlDomain = getReturnUrlDomain(returnUrl);
 
@@ -170,6 +204,7 @@ export default async function Login({ searchParams }: LoginProps) {
   return (
     <LoginContent
       currentDomain={currentDomain ?? null}
+      deferAuthSurfaceUntilSessionCheck={deferAuthSurfaceUntilSessionCheck}
       localE2EAuthBypass={localE2EAuthBypass}
       multiAccount={multiAccount}
       runtimeSupabaseConfig={

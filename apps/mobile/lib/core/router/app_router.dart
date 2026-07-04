@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/core/validation/uuid.dart';
 import 'package:mobile/features/apps/cubit/app_tab_cubit.dart';
 import 'package:mobile/features/apps/registry/app_registry.dart';
 import 'package:mobile/features/apps/view/apps_hub_page.dart';
@@ -19,6 +20,7 @@ import 'package:mobile/features/dashboard/view/dashboard_page.dart';
 import 'package:mobile/features/documents/view/document_detail_page.dart';
 import 'package:mobile/features/documents/view/documents_page.dart';
 import 'package:mobile/features/education/cubit/education_access_cubit.dart';
+import 'package:mobile/features/finance/view/finance_checkpoints_page.dart';
 import 'package:mobile/features/finance/view/transaction_categories_page.dart';
 import 'package:mobile/features/finance/view/transaction_list_page.dart';
 import 'package:mobile/features/finance/view/wallet_detail_page.dart';
@@ -50,6 +52,7 @@ import 'package:mobile/features/tasks_boards/cubit/task_board_detail_cubit.dart'
 import 'package:mobile/features/tasks_boards/view/task_board_detail_page.dart';
 import 'package:mobile/features/tasks_boards/view/task_boards_page.dart';
 import 'package:mobile/features/time_tracker/cubit/time_tracker_state.dart';
+import 'package:mobile/features/time_tracker/utils/history_anchor.dart';
 import 'package:mobile/features/time_tracker/view/time_tracker_page.dart';
 import 'package:mobile/features/time_tracker/view/time_tracker_requests_page.dart';
 import 'package:mobile/features/time_tracker/widgets/stats_tab.dart';
@@ -152,7 +155,7 @@ DateTime? _parseHistoryDate(String? value) {
   if (value == null || value.isEmpty) return null;
   final parsed = DateTime.tryParse(value);
   if (parsed == null) return null;
-  return DateTime(parsed.year, parsed.month, parsed.day);
+  return normalizeTimeTrackerHistoryAnchorDate(parsed);
 }
 
 TaskBoardDetailView? _parseTaskBoardDetailView(String? value) {
@@ -482,6 +485,12 @@ GoRouter createAppRouter(
             builder: (context, state) => const WalletsPage(),
           ),
           GoRoute(
+            path: Routes.financeCheckpoints,
+            builder: (context, state) => FinanceCheckpointsPage(
+              initialWalletId: state.uri.queryParameters['walletId'],
+            ),
+          ),
+          GoRoute(
             path: Routes.walletDetail,
             builder: (context, state) {
               final walletId = state.pathParameters['walletId'];
@@ -546,7 +555,9 @@ GoRouter createAppRouter(
           GoRoute(
             path: Routes.timerRequests,
             builder: (context, state) => TimeTrackerRequestsPage(
-              initialRequestId: state.uri.queryParameters['requestId'],
+              initialRequestId: normalizeUuid(
+                state.uri.queryParameters['requestId'],
+              ),
               initialStatusOverride: state.uri.queryParameters['status'],
             ),
           ),

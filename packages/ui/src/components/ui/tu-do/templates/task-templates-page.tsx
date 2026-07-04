@@ -2,10 +2,10 @@ import { Store } from '@tuturuuu/icons';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { Button } from '@tuturuuu/ui/button';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
-import TemplatesClient from '@tuturuuu/ui/tu-do/templates/client';
+import { TaskTemplatesHub } from '@tuturuuu/ui/tu-do/templates/task-templates-hub';
 import type { BoardTemplate } from '@tuturuuu/ui/tu-do/templates/types';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
-import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
+import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
@@ -121,13 +121,8 @@ export default async function TaskTemplatesPage({
 
   const wsId = workspace.id;
 
-  const permissions = await getPermissions({ wsId });
-  if (!permissions) notFound();
-  const { withoutPermission } = permissions;
-  if (withoutPermission('manage_projects')) redirect(`/${wsId}`);
-
   const { templates } = await getTemplates(wsId, user.id);
-  const t = await getTranslations('ws-board-templates');
+  const t = await getTranslations('ws-task-templates');
 
   const marketplaceUrl = `/${wsId}/${templatesBasePath}/marketplace`;
 
@@ -144,14 +139,14 @@ export default async function TaskTemplatesPage({
           <Link href={marketplaceUrl}>
             <Button variant="outline" size="sm" className="gap-2">
               <Store className="h-4 w-4" />
-              {t('gallery.marketplace')}
+              {t('gallery.board_marketplace')}
             </Button>
           </Link>
         }
       />
-      <TemplatesClient
+      <TaskTemplatesHub
+        boardTemplates={templates}
         wsId={wsId}
-        initialTemplates={templates}
         templatesBasePath={templatesBasePath}
       />
     </div>

@@ -1,5 +1,147 @@
 # Changelog
 
+## [1.14.0](https://github.com/tutur3u/platform/compare/database-v1.13.0...database-v1.14.0) (2026-07-03)
+
+
+### Features
+
+* **inventory:** add revenue share and category bundles ([20b2e1e](https://github.com/tutur3u/platform/commit/20b2e1e5302d1db275766b7b4b92d9bdf69de04a))
+
+
+### Bug Fixes
+
+* **db:** preserve RLS policy semantics ([30519a9](https://github.com/tutur3u/platform/commit/30519a9b54d3e06b077c1768cce5767de0885772))
+* **inventory:** grant service access to category bundle components ([63c3804](https://github.com/tutur3u/platform/commit/63c38047800352641993cbfd695a6bbd2b864017))
+
+
+### Performance Improvements
+
+* **rls:** wrap auth helpers in (select ...) for per-statement evaluation ([#4907](https://github.com/tutur3u/platform/issues/4907)) ([4de00a9](https://github.com/tutur3u/platform/commit/4de00a9b6ae957edd335cd5ba06ed56f79728cc9))
+
+## [1.13.0](https://github.com/tutur3u/platform/compare/database-v1.12.0...database-v1.13.0) (2026-07-02)
+
+
+### Features
+
+* **cron:** add managed cron operations ([24012e6](https://github.com/tutur3u/platform/commit/24012e69771a2be480824aad2916a218afee0d20))
+
+
+### Bug Fixes
+
+* **cron:** recover stale docker runner ([33cbe47](https://github.com/tutur3u/platform/commit/33cbe471741f872cb15e8b9895465b601ac5ace1))
+* **security:** limit auth recovery code attempts ([72d454c](https://github.com/tutur3u/platform/commit/72d454c507b0d4b7e69c7b38ad2099dbb83193b2))
+
+## [1.12.0](https://github.com/tutur3u/platform/compare/database-v1.11.0...database-v1.12.0) (2026-06-29)
+
+
+### Features
+
+* **auth:** add email auth recovery override ([0debe1c](https://github.com/tutur3u/platform/commit/0debe1c71efb30bb51081cc3494a732975be0a86))
+* **cli:** add task search ([b8ec86f](https://github.com/tutur3u/platform/commit/b8ec86ffd7bf401d32ac29f7c4db0ee60565b717))
+* **external-apps:** add managed scheduler cron integration ([431ed1b](https://github.com/tutur3u/platform/commit/431ed1b41682ba41ef190455816e53e06e4d0039))
+* **infrastructure:** add rate-limit appeals ([f1e50e9](https://github.com/tutur3u/platform/commit/f1e50e9fd805dca6c80da8daab60ed24199f24ab))
+* **inventory:** add Square Terminal checkout ([0a3bd76](https://github.com/tutur3u/platform/commit/0a3bd7635cf9836a379d94851e1a303cec848457))
+* **inventory:** store Square credentials per workspace ([e606f23](https://github.com/tutur3u/platform/commit/e606f2341c2684b1ef8a7b72900a056ff7b70469))
+* **posts:** add queue diagnostics and observability ([744dcc9](https://github.com/tutur3u/platform/commit/744dcc95a19b0df466098769f42b9c819a439dcd))
+* **tasks:** add task templates ([8d0700a](https://github.com/tutur3u/platform/commit/8d0700ad255c7b5874bfa065575df6b1cde34063))
+
+
+### Bug Fixes
+
+* **infrastructure:** recover cron runner via docker control ([d1f216d](https://github.com/tutur3u/platform/commit/d1f216d3ef7887dec066494d3f1816f607ce28fc))
+* **inventory:** harden Square Terminal contracts ([547ce87](https://github.com/tutur3u/platform/commit/547ce87fba395493f1b0c0596e1155a6dad5672d))
+
+## [1.11.0](https://github.com/tutur3u/platform/compare/database-v1.10.0...database-v1.11.0) (2026-06-26)
+
+
+### Features
+
+* **settings:** manage internal project bindings ([5347be6](https://github.com/tutur3u/platform/commit/5347be62b3913d29cc1048f76678ba40eacd02da))
+* **tasks:** add task progress tracking ([4cffb0f](https://github.com/tutur3u/platform/commit/4cffb0f041d41e3868481068d64b9e3b85a0011a))
+* **tasks:** stabilize shared board realtime collaboration ([6028caf](https://github.com/tutur3u/platform/commit/6028caf50432fd4dcebdaa5a59284e50972b1aa3))
+* **web:** add managed workspace cron service ([453763e](https://github.com/tutur3u/platform/commit/453763ebce1028e4189f4f1cdf70d8db5a9331c0))
+
+
+### Bug Fixes
+
+* **web:** stop inactive post emails ([3d62e99](https://github.com/tutur3u/platform/commit/3d62e9952c4397b05f0a271386049f17e0045f7d))
+
+## [1.10.0](https://github.com/tutur3u/platform/compare/database-v1.9.0...database-v1.10.0) (2026-06-24)
+
+
+### Features
+
+* add paragrph type ([1a45cbf](https://github.com/tutur3u/platform/commit/1a45cbfaf4d99af39236d837ecdb58f53cb80843))
+* add test apge ([2d62fc8](https://github.com/tutur3u/platform/commit/2d62fc883379ad54e800e8555e40168de5327295))
+* **calendar:** add configurable two-way sync ([76078d8](https://github.com/tutur3u/platform/commit/76078d865618b4970b430b08f0db7a1a8c30ffcb))
+* implement teach test submission review and student question feedback ([11cb373](https://github.com/tutur3u/platform/commit/11cb3736d3c35c18f0ed341f807f5df5a5775c31))
+* implement test score visibility control and add submission review functionality ([2ce0416](https://github.com/tutur3u/platform/commit/2ce0416d6f192f539a859e5b66d7b8333dbe7b63))
+* **tasks:** add public board sharing ([b5a4a07](https://github.com/tutur3u/platform/commit/b5a4a0796dab947e8dca3970d6aa136a4863dd35))
+* **tasks:** add shareable kanban task plans ([2de4e58](https://github.com/tutur3u/platform/commit/2de4e5819673e11b01cdc1f21c317f33dc196f56))
+
+
+### Bug Fixes
+
+* **ci:** refresh migration timestamps ([c2b1f63](https://github.com/tutur3u/platform/commit/c2b1f6360b159ed8ddf25a1956eb19e3303bbd1a))
+* **database:** prevent task plan owner takeover ([e5b925b](https://github.com/tutur3u/platform/commit/e5b925b40ec88aecb789ac8302c3a5c8515c97db))
+* **database:** use signed supabase cli binary ([3f35834](https://github.com/tutur3u/platform/commit/3f35834f638f9c29c3048ab5f5c0ca0331092c77))
+* **inventory:** bind Polar webhook workspace ([0cadc2b](https://github.com/tutur3u/platform/commit/0cadc2bf2df8a6ac6add5459d8d38c92d4e24ee9))
+* **teach:** address assessment generation review ([54cf837](https://github.com/tutur3u/platform/commit/54cf83731bb540d4f6bd6b3acf0c55564ce165d0))
+* **teach:** address follow-up review comments ([8cdb9c0](https://github.com/tutur3u/platform/commit/8cdb9c0385fe0fd374cba3b6a30463ce94f4f340))
+* **teach:** address test review follow-ups ([bfc6c12](https://github.com/tutur3u/platform/commit/bfc6c12eade212bf8775b78cc2853fd8b14601e7))
+
+## [1.9.0](https://github.com/tutur3u/platform/compare/database-v1.8.0...database-v1.9.0) (2026-06-17)
+
+
+### Features
+
+* add tests ([1bd19e0](https://github.com/tutur3u/platform/commit/1bd19e0402a78084095dd523603aca6ee52418fc))
+* create test ([c225f9d](https://github.com/tutur3u/platform/commit/c225f9d636a701397c43249131f35fbb36e284e4))
+* create test page ([618fffa](https://github.com/tutur3u/platform/commit/618fffabeeedfa09d72cd877e2bfd9e806a05090))
+* create test view for student ([40bdd08](https://github.com/tutur3u/platform/commit/40bdd08ca449c7e151b0beae6d27d60fb913fe51))
+* **inventory:** fix Polar checkout currency, add 2-way product sync, cache + redesign storefront ([de2f6fd](https://github.com/tutur3u/platform/commit/de2f6fd6e06ce5242a150a35d3989798f52b9ee9))
+* **inventory:** per-bundle Polar sync badges (parallel to listings) ([670845b](https://github.com/tutur3u/platform/commit/670845babbd2ffa7df3ddc7b608df8e6eb36070c))
+* **inventory:** per-listing Polar sync badges on the Storefront panel ([b7aff6e](https://github.com/tutur3u/platform/commit/b7aff6e702278e0b9f3bce3b8137563c0c7d1aa9))
+* **inventory:** per-storefront Polar environment + clearer checkout errors ([b30c2ed](https://github.com/tutur3u/platform/commit/b30c2eddced0d63ce47c857e8da4578fcf6151d1))
+* **inventory:** per-variant SKUs + storefront cart, dialog & instant checkout ([9662b85](https://github.com/tutur3u/platform/commit/9662b8501bcab51033edde79b44991c8ba648a37))
+* **inventory:** per-workspace Polar webhook ingestion + signature verification ([862b25a](https://github.com/tutur3u/platform/commit/862b25af444a56ef85c6a4e3dab7b91ae71438fe))
+* **inventory:** store commerce money in minor units and harden Polar sync ([3f7ee1d](https://github.com/tutur3u/platform/commit/3f7ee1da9335732854037e7e79fca9d5d2a381d0))
+* **tasks:** add per-board default list for new tasks ([2d1d308](https://github.com/tutur3u/platform/commit/2d1d3082422bdd4813accb258fee79b322ce647b))
+* **users:** add no-auth mode for profile-completion links ([c97daee](https://github.com/tutur3u/platform/commit/c97daee7ee04a6d2585213c510dc3943943257d8))
+* **web:** extend profile completion links ([e8585a3](https://github.com/tutur3u/platform/commit/e8585a390b4cc8ae44cd0a15e667ae0f94a52494))
+* **web:** rate limits admin center ([fe61dc9](https://github.com/tutur3u/platform/commit/fe61dc933615466f6169a3db3a4a1840f705e80b))
+* **web:** trust-gated per-session read limits and trusted-location uplift ([3e64c89](https://github.com/tutur3u/platform/commit/3e64c8929dbe7987ad83900620a25a9559fe1edf))
+
+
+### Bug Fixes
+
+* **database:** resolve audit-log actor for admin-driven post approvals ([85c94e4](https://github.com/tutur3u/platform/commit/85c94e48d7ad5d14651ddf7a146dceb121000ef8))
+* **database:** restore task_history payload limit for large descriptions ([6f62d26](https://github.com/tutur3u/platform/commit/6f62d262abb1b71b7efa64b0843101c7d47ed70e))
+* **database:** restrict habit tracker client writes ([52ffa64](https://github.com/tutur3u/platform/commit/52ffa645cd2585c160ac30fa4c20dcf1c2e86cba))
+* **database:** restrict require attention rpc ([43ad4e8](https://github.com/tutur3u/platform/commit/43ad4e82dfcdd85b2f4fb5e52b5f70fb5ddf9789))
+* **database:** restrict task history inserts ([1218c34](https://github.com/tutur3u/platform/commit/1218c34f671b68559d4c03355fec6d1ca45ffdc3))
+* **database:** secure profile link stats view ([7f994cb](https://github.com/tutur3u/platform/commit/7f994cbf422ea04012dcf30f8419d90580925a16))
+* **database:** validate Supabase project refs ([e783a57](https://github.com/tutur3u/platform/commit/e783a571d05379d4d89c0437b08aaae7a6eff5d0))
+* **e2e:** avoid random interval seed failures ([a61394e](https://github.com/tutur3u/platform/commit/a61394ed9fefa302674629c0539940b1c5646162))
+* **finance:** harden transaction enrichment ([eddd93b](https://github.com/tutur3u/platform/commit/eddd93bd11fb451a7fa5da2e4ab2892fad931ab5))
+* **habits:** constrain latest stats rpc target ([6ab1e78](https://github.com/tutur3u/platform/commit/6ab1e78d1d7f0f3996e74e4b5ee7e1ed79ff7d8f))
+* **inventory:** currency-correct Polar checkout products (fixes non-USD checkout) ([a26adbb](https://github.com/tutur3u/platform/commit/a26adbb20f142e57ec9bf0e50ea27b5f3cea401f))
+* **live:** bound live session scopes ([ef2109c](https://github.com/tutur3u/platform/commit/ef2109ccedaff1c382682e68c5588609b0fdeab7))
+* ording question ([f0c32a4](https://github.com/tutur3u/platform/commit/f0c32a4e3b7634c73b0b7cc9b9b05af83468549a))
+* **tasks:** bound description chunk writes ([1060db8](https://github.com/tutur3u/platform/commit/1060db81f2451de5877281252f85946c25ce125e))
+* **tasks:** preserve task list creator attribution ([1392f5c](https://github.com/tutur3u/platform/commit/1392f5c8f318a3ee3abb0a2328da342bbfd59fd8))
+* **tasks:** secure cursor realtime channels ([a0ec120](https://github.com/tutur3u/platform/commit/a0ec120d912b7998fe43c90b675a09d0d3798dfe))
+* **tasks:** secure realtime task channels ([6d98d16](https://github.com/tutur3u/platform/commit/6d98d16baa9ecf68bdd47ce3ce6dc1ff2e2bca84))
+* **tasks:** secure realtime task channels ([03dc6d6](https://github.com/tutur3u/platform/commit/03dc6d66666d1d3ae422f91cb94285367a8c1071))
+* **time-tracking:** bind session tasks to workspace ([cb36d31](https://github.com/tutur3u/platform/commit/cb36d31e3bac1405c708b9131aa2a1e3525fd3d5))
+* **tulearn:** address course test review feedback ([52800c3](https://github.com/tutur3u/platform/commit/52800c389ddb190dad6d96789f293fd47a2ce118))
+* **tulearn:** define course test rpc after columns ([78da28c](https://github.com/tutur3u/platform/commit/78da28cb3f4c676beaf9de298ae436789c8f9596))
+* **tulearn:** harden course test persistence ([42b9fab](https://github.com/tutur3u/platform/commit/42b9fabc3a7bbc3ae63022e9d524901544c64d0e))
+* **tulearn:** scope course test module reads ([a4c99fa](https://github.com/tutur3u/platform/commit/a4c99fa9da4839d09a9937462e232a0cba53c91a))
+* **tulearn:** secure learner quiz submissions ([94afe79](https://github.com/tutur3u/platform/commit/94afe79e8b5c36bba8bd6d5c423faaf487d412d9))
+* **web:** make free-tier subscription provisioning failures explicit ([e33c71f](https://github.com/tutur3u/platform/commit/e33c71fdc867ddea4e76e9a7e390aae8e1481c4b))
+* **web:** stop new-workspace setup from trapping users on "Preparing Workspace" ([3f7ee1d](https://github.com/tutur3u/platform/commit/3f7ee1da9335732854037e7e79fca9d5d2a381d0))
+
 ## [1.8.0](https://github.com/tutur3u/platform/compare/database-v1.7.0...database-v1.8.0) (2026-06-15)
 
 

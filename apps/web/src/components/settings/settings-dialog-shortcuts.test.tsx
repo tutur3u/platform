@@ -4,11 +4,29 @@ import type { ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { SettingsDialogHost } from '../../app/[locale]/settings-dialog-host';
 import UserNavClient from '../../app/[locale]/user-nav-client';
+import { SettingsDialogFullscreenSkeleton } from './settings-dialog-skeleton';
 import { useSettingsDialogShortcut } from './use-settings-dialog-shortcut';
 
-const { globalCommandLauncherMock, setSettingsQueryMock } = vi.hoisted(() => ({
+const {
+  globalCommandLauncherMock,
+  setSettingsQueryMock,
+  settingsDialogMock,
+  navigationState,
+  settingsQueryState,
+} = vi.hoisted(() => ({
   globalCommandLauncherMock: vi.fn(),
+  navigationState: {
+    params: {} as Record<string, string | string[]>,
+    pathname: '/workspace-1',
+  },
   setSettingsQueryMock: vi.fn(),
+  settingsDialogMock: vi.fn(),
+  settingsQueryState: {
+    settingsBoardId: null as string | null,
+    settingsDialog: null as 'open' | null,
+    settingsLinkedProvider: null as string | null,
+    settingsTab: null as string | null,
+  },
 }));
 
 vi.mock('next-intl', () => ({
@@ -16,20 +34,14 @@ vi.mock('next-intl', () => ({
 }));
 
 vi.mock('next/navigation', () => ({
-  useParams: () => ({}),
+  useParams: () => navigationState.params,
+  usePathname: () => navigationState.pathname,
 }));
 
 vi.mock('nuqs', () => ({
   parseAsString: {},
   parseAsStringLiteral: () => ({}),
-  useQueryStates: () => [
-    {
-      settingsDialog: null,
-      settingsLinkedProvider: null,
-      settingsTab: null,
-    },
-    setSettingsQueryMock,
-  ],
+  useQueryStates: () => [settingsQueryState, setSettingsQueryMock],
 }));
 
 vi.mock('@tanstack/react-query', () => ({
@@ -54,6 +66,21 @@ vi.mock('@tuturuuu/ui/avatar', () => ({
 
 vi.mock('@tuturuuu/ui/dialog', () => ({
   Dialog: ({ children }: { children: ReactNode }) => <div>{children}</div>,
+  DialogContent: ({
+    children,
+    ...props
+  }: {
+    children: ReactNode;
+    [key: string]: unknown;
+  }) => (
+    <div data-testid={props['data-testid'] as string | undefined}>
+      {children}
+    </div>
+  ),
+  DialogDescription: ({ children }: { children: ReactNode }) => (
+    <p>{children}</p>
+  ),
+  DialogTitle: ({ children }: { children: ReactNode }) => <h2>{children}</h2>,
 }));
 
 vi.mock('@tuturuuu/ui/dropdown-menu', () => ({
@@ -126,7 +153,10 @@ vi.mock('@/components/command/utils/use-navigation-data', () => ({
 }));
 
 vi.mock('@/components/settings/settings-dialog', () => ({
-  SettingsDialog: () => <div data-testid="settings-dialog" />,
+  SettingsDialog: (props: Record<string, unknown>) => {
+    settingsDialogMock(props);
+    return <div data-testid="settings-dialog" />;
+  },
 }));
 
 vi.mock('@/context/account-switcher-context', () => ({
@@ -211,6 +241,7 @@ function ShortcutHarness({
 function expectSettingsQueryOpened() {
   expect(setSettingsQueryMock).toHaveBeenCalledWith(
     {
+      settingsBoardId: null,
       settingsDialog: 'open',
       settingsLinkedProvider: null,
       settingsTab: null,
@@ -226,6 +257,12 @@ function expectSettingsQueryOpened() {
 describe('settings dialog shortcut', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    settingsQueryState.settingsBoardId = null;
+    settingsQueryState.settingsDialog = null;
+    settingsQueryState.settingsLinkedProvider = null;
+    settingsQueryState.settingsTab = null;
+    navigationState.params = {};
+    navigationState.pathname = '/workspace-1';
   });
 
   it('opens Settings with Cmd/Ctrl + comma', () => {
@@ -272,12 +309,131 @@ describe('settings dialog shortcut', () => {
     expectSettingsQueryOpened();
   });
 
+  it('opens board settings from the task board route shortcut', () => {
+    navigationState.params = {
+      boardId: 'board-1',
+      wsId: 'workspace-1',
+    };
+    navigationState.pathname = '/workspace-1/tasks/boards/board-1';
+
+    render(
+      <SettingsDialogHost
+        user={user as any}
+        workspace={null}
+        wsId="workspace-1"
+      />
+    );
+
+    fireEvent.keyDown(window, { ctrlKey: true, key: ',' });
+
+    expect(setSettingsQueryMock).toHaveBeenCalledWith(
+      {
+        settingsBoardId: 'board-1',
+        settingsDialog: 'open',
+        settingsLinkedProvider: null,
+        settingsTab: 'task_board',
+      },
+      {
+        history: 'replace',
+        scroll: false,
+        shallow: true,
+      }
+    );
+  });
+
+  it('does not mount the dashboard settings body while the query-backed dialog is closed', async () => {
+    const { queryByTestId } = render(
+      <SettingsDialogHost
+        user={user as any}
+        workspace={null}
+        wsId="workspace-1"
+      />
+    );
+
+    await waitFor(() => {
+      expect(settingsDialogMock).not.toHaveBeenCalled();
+      expect(queryByTestId('settings-dialog')).not.toBeInTheDocument();
+    });
+  });
+
+  it('mounts the dashboard settings body only when the query-backed dialog is open', async () => {
+    settingsQueryState.settingsBoardId = 'board-1';
+    settingsQueryState.settingsDialog = 'open';
+    settingsQueryState.settingsLinkedProvider = 'google';
+    settingsQueryState.settingsTab = 'tasks';
+
+    const workspace = { id: 'workspace-1' };
+    const { getByTestId } = render(
+      <SettingsDialogHost
+        user={user as any}
+        workspace={workspace as any}
+        wsId="workspace-1"
+      />
+    );
+
+    await waitFor(() => {
+      expect(getByTestId('settings-dialog')).toBeInTheDocument();
+      expect(settingsDialogMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          boardId: 'board-1',
+          defaultTab: 'tasks',
+          linkedProvider: 'google',
+          user,
+          workspace,
+          wsId: 'workspace-1',
+        })
+      );
+    });
+  });
+
+  it('resolves a settings open intent from skeleton to the real dialog', async () => {
+    const { getByTestId } = render(
+      <SettingsDialogHost
+        user={user as any}
+        workspace={{ id: 'workspace-1' } as any}
+        wsId="workspace-1"
+      />
+    );
+
+    fireEvent(
+      window,
+      new CustomEvent('tuturuuu:settings-dialog-open-intent', {
+        detail: {
+          settingsBoardId: 'board-1',
+          settingsTab: 'task_board',
+        },
+      })
+    );
+
+    expect(getByTestId('settings-dialog-skeleton')).toBeInTheDocument();
+
+    await waitFor(() => {
+      expect(getByTestId('settings-dialog')).toBeInTheDocument();
+      expect(settingsDialogMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          boardId: 'board-1',
+          defaultTab: 'task_board',
+          wsId: 'workspace-1',
+        })
+      );
+    });
+  });
+
   it('opens the query-backed user nav settings dialog', () => {
     render(<UserNavClient locale="en" user={user as any} />);
 
     fireEvent.keyDown(window, { ctrlKey: true, key: ',' });
 
     expectSettingsQueryOpened();
+  });
+
+  it('renders the fullscreen settings loading skeleton', () => {
+    const { getByTestId, getAllByText } = render(
+      <SettingsDialogFullscreenSkeleton />
+    );
+
+    expect(getByTestId('settings-dialog-skeleton')).toBeInTheDocument();
+    expect(getAllByText('common.settings').length).toBeGreaterThan(0);
   });
 
   it('only mounts one command launcher when the secondary user nav disables it', async () => {

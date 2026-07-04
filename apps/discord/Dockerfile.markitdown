@@ -6,7 +6,7 @@ ENV UV_COMPILE_BYTECODE=1
 ENV UV_LINK_MODE=copy
 
 COPY pyproject.toml uv.lock README.md ./
-RUN uv sync --locked --no-dev
+RUN uv sync --locked --no-dev --no-cache
 
 FROM python:3.13-slim AS runner
 

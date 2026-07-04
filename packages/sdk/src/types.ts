@@ -4,6 +4,7 @@
 
 import type {
   ShareOptions as BaseShareOptions,
+  ExternalProjectEntry,
   ExternalProjectEntryStatus,
   Json,
 } from '@tuturuuu/types';
@@ -29,6 +30,9 @@ export type {
   DeleteResponse,
   Document,
   DocumentResponse,
+  ExocorpseExternalProjectLoadingCollection,
+  ExocorpseExternalProjectLoadingData,
+  ExocorpseExternalProjectLoadingEntry,
   ExternalProjectAdapterKind,
   ExternalProjectAttentionItem,
   ExternalProjectBulkUpdateAction,
@@ -179,6 +183,54 @@ export type EpmCollectionUpdatePayload = Partial<EpmCollectionPayload> & {
 };
 export type EpmBlockUpdatePayload = Partial<EpmBlockPayload>;
 export type EpmAssetUpdatePayload = Partial<EpmAssetPayload>;
+
+export type ExternalProjectEntryBatchAction = 'create' | 'delete' | 'update';
+
+export type ExternalProjectEntryBatchOperation =
+  | {
+      action: 'create';
+      clientOperationId: string;
+      payload: EpmEntryPayload;
+    }
+  | {
+      action: 'update';
+      clientOperationId: string;
+      entryId: string;
+      payload: EpmEntryUpdatePayload;
+    }
+  | {
+      action: 'delete';
+      clientOperationId: string;
+      entryId: string;
+    };
+
+export type ExternalProjectEntryBatchPayload = {
+  operations: ExternalProjectEntryBatchOperation[];
+};
+
+export type ExternalProjectEntryBatchOperationResult =
+  | {
+      action: 'create' | 'update';
+      clientOperationId: string;
+      entry: ExternalProjectEntry;
+      ok: true;
+    }
+  | {
+      action: 'delete';
+      clientOperationId: string;
+      entryId: string;
+      ok: true;
+    }
+  | {
+      action: ExternalProjectEntryBatchAction;
+      clientOperationId: string;
+      error: string;
+      ok: false;
+    };
+
+export type ExternalProjectEntryBatchResult = {
+  results: ExternalProjectEntryBatchOperationResult[];
+};
 
 export {
   createDocumentDataSchema,
