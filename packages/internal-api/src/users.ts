@@ -9,6 +9,7 @@ import {
   encodePathSegment,
   getInternalApiClient,
   type InternalApiClientOptions,
+  withTaskApiBaseUrl,
 } from './client';
 
 export interface CurrentWorkspaceUserLink {
@@ -82,6 +83,19 @@ export function isTaskRememberLastBoardEnabled(
 
 export function serializeTaskRememberLastBoard(enabled: boolean) {
   return enabled ? 'true' : 'false';
+}
+
+function isTaskScopedConfig(configId: string) {
+  return configId.startsWith('TASK_') || configId.startsWith('TASKS_');
+}
+
+function getUserConfigClient(
+  configId: string,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(
+    isTaskScopedConfig(configId) ? withTaskApiBaseUrl(options) : options
+  );
 }
 
 export type RootNavigationTarget =
@@ -350,7 +364,7 @@ export async function getUserConfig(
   configId: string,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getUserConfigClient(configId, options);
   return client.json<UserConfigResponse>(
     `/api/v1/users/me/configs/${encodePathSegment(configId)}`,
     {
@@ -364,7 +378,7 @@ export async function updateUserConfig(
   value: string | null,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getUserConfigClient(configId, options);
   return client.json<{ message: string }>(
     `/api/v1/users/me/configs/${encodePathSegment(configId)}`,
     {
@@ -382,7 +396,7 @@ export async function getUserWorkspaceConfig(
   configId: string,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getUserConfigClient(configId, options);
   return client.json<UserWorkspaceConfigResponse>(
     `/api/v1/users/me/workspaces/${encodePathSegment(workspaceId)}/configs/${encodePathSegment(configId)}`,
     {
@@ -397,7 +411,7 @@ export async function updateUserWorkspaceConfig(
   value: string | null,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getUserConfigClient(configId, options);
   return client.json<{ message: string }>(
     `/api/v1/users/me/workspaces/${encodePathSegment(workspaceId)}/configs/${encodePathSegment(configId)}`,
     {

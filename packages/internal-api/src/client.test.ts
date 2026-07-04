@@ -4,6 +4,7 @@ import {
   InternalApiError,
   resolveInternalApiUrl,
   withForwardedInternalApiAuth,
+  withTaskApiBaseUrl,
 } from './client';
 import { listWorkspaces } from './workspaces';
 
@@ -171,6 +172,30 @@ describe('createInternalApiClient', () => {
       'ABUSE_CHALLENGE_REQUIRED'
     );
     expect((captured as InternalApiError).status).toBe(403);
+  });
+});
+
+describe('withTaskApiBaseUrl', () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    vi.unstubAllGlobals();
+  });
+
+  it('uses the configured tasks API origin for server task calls', () => {
+    vi.stubEnv('TASKS_APP_URL', 'https://tasks.example.com');
+
+    expect(withTaskApiBaseUrl()).toMatchObject({
+      baseUrl: 'https://tasks.example.com',
+    });
+  });
+
+  it('keeps browser calls relative when already on the tasks origin', () => {
+    vi.stubGlobal('location', {
+      hostname: 'tasks.tuturuuu.com',
+      origin: 'https://tasks.tuturuuu.com',
+    });
+
+    expect(withTaskApiBaseUrl()).toEqual({});
   });
 });
 

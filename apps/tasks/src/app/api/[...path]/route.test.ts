@@ -54,4 +54,59 @@ describe('Tasks API proxy', () => {
       'sb-nzamlz-auth-token=;'
     );
   });
+
+  it('does not proxy task-owned user config APIs to Web', async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+
+    const response = await GET(
+      new NextRequest(
+        'https://tasks.tuturuuu.localhost/api/v1/users/me/workspaces/ws-1/configs/TASK_DEFAULT_BOARD_ID'
+      ),
+      {
+        params: Promise.resolve({
+          path: [
+            'v1',
+            'users',
+            'me',
+            'workspaces',
+            'ws-1',
+            'configs',
+            'TASK_DEFAULT_BOARD_ID',
+          ],
+        }),
+      }
+    );
+
+    expect(response.status).toBe(404);
+    await expect(response.json()).resolves.toEqual({
+      error: 'Task API route is not mounted in the tasks app',
+    });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('does not proxy task-owned user preference APIs to Web', async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+
+    const response = await GET(
+      new NextRequest(
+        'https://tasks.tuturuuu.localhost/api/v1/users/me/configs/TASK_DIALOG_DEFAULT_PRESENTATION'
+      ),
+      {
+        params: Promise.resolve({
+          path: [
+            'v1',
+            'users',
+            'me',
+            'configs',
+            'TASK_DIALOG_DEFAULT_PRESENTATION',
+          ],
+        }),
+      }
+    );
+
+    expect(response.status).toBe(404);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
 });

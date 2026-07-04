@@ -213,21 +213,16 @@ export function getConfiguredInternalApiBaseUrl() {
   );
 }
 
-function isTasksAppRuntime() {
-  if (typeof process === 'undefined') {
-    return false;
-  }
+function isTasksBrowserRuntime() {
+  const runtimeLocation =
+    typeof globalThis === 'object' && 'location' in globalThis
+      ? (globalThis.location as { hostname?: string } | undefined)
+      : undefined;
 
-  const packageName = process.env.npm_package_name;
-  if (packageName === '@tuturuuu/tasks') {
-    return true;
-  }
-
-  try {
-    return process.cwd().replace(/\\/gu, '/').endsWith('/apps/tasks');
-  } catch {
-    return false;
-  }
+  const hostname = runtimeLocation?.hostname?.toLowerCase();
+  return (
+    hostname === 'tasks.tuturuuu.com' || hostname === 'tasks.tuturuuu.localhost'
+  );
 }
 
 function isMailAppRuntime() {
@@ -263,7 +258,7 @@ export function getConfiguredTasksApiBaseUrl() {
 export function withTaskApiBaseUrl(
   options: InternalApiClientOptions = {}
 ): InternalApiClientOptions {
-  if (options.baseUrl || isTasksAppRuntime()) {
+  if (options.baseUrl || isTasksBrowserRuntime()) {
     return options;
   }
 

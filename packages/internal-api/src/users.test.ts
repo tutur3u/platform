@@ -1,6 +1,9 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
+  getUserConfig,
+  getUserWorkspaceConfig,
   repairWorkspaceUserPlatformLinks,
+  TASK_DEFAULT_BOARD_ID_CONFIG_ID,
   updateUserConfig,
   updateUserWorkspaceConfig,
 } from './users';
@@ -14,6 +17,10 @@ function createJsonResponse(payload: unknown) {
 }
 
 describe('users internal-api helpers', () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
   it('saves nullable user config payloads through the stable route', async () => {
     const fetchMock = vi.fn().mockResolvedValue(createJsonResponse({}));
 
@@ -29,6 +36,46 @@ describe('users internal-api helpers', () => {
           value: null,
         }),
         method: 'PUT',
+      })
+    );
+  });
+
+  it('routes task-scoped user configs through the tasks API origin', async () => {
+    vi.stubEnv('TASKS_APP_URL', 'https://tasks.example.com');
+    const fetchMock = vi.fn().mockResolvedValue(
+      createJsonResponse({
+        value: 'compact',
+      })
+    );
+
+    await getUserConfig('TASK_DIALOG_DEFAULT_PRESENTATION', {
+      fetch: fetchMock as unknown as typeof fetch,
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://tasks.example.com/api/v1/users/me/configs/TASK_DIALOG_DEFAULT_PRESENTATION',
+      expect.objectContaining({
+        headers: expect.any(Headers),
+      })
+    );
+  });
+
+  it('routes task-scoped workspace configs through the tasks API origin', async () => {
+    vi.stubEnv('TASKS_APP_URL', 'https://tasks.example.com');
+    const fetchMock = vi.fn().mockResolvedValue(
+      createJsonResponse({
+        value: 'board-1',
+      })
+    );
+
+    await getUserWorkspaceConfig('ws-1', TASK_DEFAULT_BOARD_ID_CONFIG_ID, {
+      fetch: fetchMock as unknown as typeof fetch,
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://tasks.example.com/api/v1/users/me/workspaces/ws-1/configs/TASK_DEFAULT_BOARD_ID',
+      expect.objectContaining({
+        headers: expect.any(Headers),
       })
     );
   });

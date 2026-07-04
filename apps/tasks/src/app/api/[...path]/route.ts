@@ -167,6 +167,8 @@ function isTaskOwnedApiPath(path: string[]) {
   if (path[1] === 'users') {
     return (
       (path[2] === 'me' && path[3]?.startsWith('task')) ||
+      (path[2] === 'me' && path[3] === 'configs') ||
+      (path[2] === 'me' && path[3] === 'workspaces' && path[5] === 'configs') ||
       path[2] === 'task-settings'
     );
   }
