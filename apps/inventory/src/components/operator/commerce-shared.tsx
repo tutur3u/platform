@@ -1,19 +1,8 @@
 'use client';
 
-import {
-  Ban,
-  CheckCircle2,
-  Clock,
-  CreditCard,
-  Percent,
-  RotateCcw,
-  ShieldCheck,
-  TicketPercent,
-} from '@tuturuuu/icons';
-import { Button } from '@tuturuuu/ui/button';
+import { Ban, CheckCircle2, Clock, RotateCcw } from '@tuturuuu/icons';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
-import type { InventoryCommerceTab } from './operator-types';
 
 export function StatusBadge({ value }: { value: string }) {
   return (
@@ -77,56 +66,4 @@ export function formatDate(value: string | null, locale: string) {
     dateStyle: 'medium',
     timeStyle: 'short',
   }).format(date);
-}
-
-export function CommerceTabs({
-  onChange,
-  tab,
-}: {
-  onChange: (tab: InventoryCommerceTab) => void;
-  tab: InventoryCommerceTab;
-}) {
-  const t = useTranslations('inventory.operator.commerce.tabs');
-  const tabs: Array<{
-    icon: typeof CreditCard;
-    label: string;
-    value: InventoryCommerceTab;
-  }> = [
-    { icon: CreditCard, label: t('checkouts'), value: 'checkouts' },
-    { icon: ShieldCheck, label: t('sales'), value: 'sales' },
-    { icon: Percent, label: t('revenueShare'), value: 'revenue-share' },
-    { icon: TicketPercent, label: t('promotions'), value: 'promotions' },
-  ];
-
-  return (
-    <div
-      aria-label={t('label')}
-      className="inline-grid grid-cols-2 rounded-lg border border-border bg-muted/25 p-1 sm:grid-cols-4"
-      role="tablist"
-    >
-      {tabs.map((item) => {
-        const Icon = item.icon;
-        const active = item.value === tab;
-
-        return (
-          <Button
-            aria-selected={active}
-            className={`inline-flex h-9 items-center justify-center gap-2 rounded-md px-3 font-medium text-sm transition ${
-              active
-                ? 'bg-background text-foreground shadow-sm'
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
-            key={item.value}
-            onClick={() => onChange(item.value)}
-            role="tab"
-            type="button"
-            variant="ghost"
-          >
-            <Icon className="h-4 w-4" />
-            {item.label}
-          </Button>
-        );
-      })}
-    </div>
-  );
 }
