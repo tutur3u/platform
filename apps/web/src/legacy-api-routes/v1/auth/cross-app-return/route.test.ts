@@ -176,6 +176,21 @@ describe('cross-app return route', () => {
     expect(mocks.createClient).not.toHaveBeenCalled();
   });
 
+  it('resolves bare managed wildcard Tuturuuu origins without creating a token', async () => {
+    const response = await POST(
+      createRequest('https://vercel.tuturuuu.com', {
+        generateToken: false,
+      })
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+      appName: 'vercel.tuturuuu.com',
+      targetApp: 'managed-tuturuuu',
+    });
+    expect(mocks.createClient).not.toHaveBeenCalled();
+  });
+
   it('redirects managed wildcard Tuturuuu returns directly after authentication', async () => {
     const response = await POST(
       createRequest(

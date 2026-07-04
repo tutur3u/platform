@@ -2,10 +2,7 @@
 
 import type { TurnstileInstance } from '@marsidev/react-turnstile';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import {
-  mapUrlToApp,
-  normalizeClientRedirectPath,
-} from '@tuturuuu/auth/cross-app';
+import { normalizeClientRedirectPath } from '@tuturuuu/auth/cross-app';
 import {
   ArrowLeft,
   Eye,
@@ -227,6 +224,29 @@ function buildManagedTuturuuuCurrentReturnUrl() {
   }
 }
 
+function getStaticReturnApp(
+  returnUrl: string | null | undefined,
+  localReturnPath: string | null
+) {
+  if (!returnUrl) {
+    return null;
+  }
+
+  if (localReturnPath) {
+    return 'web';
+  }
+
+  const appDomain = getAppDomainByUrl(returnUrl);
+
+  if (appDomain?.kind === 'internal') {
+    return appDomain.name;
+  }
+
+  return normalizeManagedTuturuuuReturnUrl(returnUrl)
+    ? MANAGED_TUTURUUU_RETURN_APP
+    : null;
+}
+
 type AuthStage = 'identify' | 'otp' | 'password';
 
 interface MobileMfaApprovalChallenge {
@@ -340,10 +360,10 @@ export default function LoginForm({
     () => getSafeLocalReturnPath(returnUrl),
     [returnUrl]
   );
-  const staticReturnApp = useMemo(() => {
-    if (!returnUrl) return null;
-    return localReturnPath ? 'web' : mapUrlToApp(returnUrl);
-  }, [localReturnPath, returnUrl]);
+  const staticReturnApp = useMemo(
+    () => getStaticReturnApp(returnUrl, localReturnPath),
+    [localReturnPath, returnUrl]
+  );
   const shouldResolveReturnApp = Boolean(
     returnUrl && !localReturnPath && !staticReturnApp
   );
@@ -376,7 +396,8 @@ export default function LoginForm({
   const isRegisteredInternalAppReturn =
     staticReturnApp !== null &&
     staticReturnApp !== 'web' &&
-    staticReturnApp !== 'platform';
+    staticReturnApp !== 'platform' &&
+    staticReturnApp !== MANAGED_TUTURUUU_RETURN_APP;
   const requiresReturnAppConfirmation = requiresAccountConfirmationForReturnApp(
     returnApp,
     isRegisteredInternalAppReturn
@@ -811,7 +832,7 @@ export default function LoginForm({
 
     if (returnUrl) {
       const localReturnPath = getSafeLocalReturnPath(returnUrl);
-      const returnApp = localReturnPath ? 'web' : mapUrlToApp(returnUrl);
+      const returnApp = getStaticReturnApp(returnUrl, localReturnPath);
 
       if (returnApp === 'web' || returnApp === 'platform') {
         if (localReturnPath) {
@@ -831,6 +852,27 @@ export default function LoginForm({
         }
 
         window.location.assign(redirectUrl.toString());
+        return;
+      }
+
+      if (returnApp === MANAGED_TUTURUUU_RETURN_APP) {
+        const managedReturnUrl = normalizeManagedTuturuuuReturnUrl(returnUrl);
+
+        if (!managedReturnUrl) {
+          throw new Error('Invalid returnUrl');
+        }
+
+        await supabase.auth.refreshSession();
+
+        const nextUrl = new URL(managedReturnUrl);
+
+        if (nextUrl.origin !== window.location.origin) {
+          window.location.assign(nextUrl.toString());
+        } else {
+          router.push(nextUrl.toString());
+          router.refresh();
+        }
+
         return;
       }
 

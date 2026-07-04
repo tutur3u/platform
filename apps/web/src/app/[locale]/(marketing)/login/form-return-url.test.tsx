@@ -893,32 +893,38 @@ describe('LoginForm returnUrl navigation', () => {
       'https://vc.tuturuuu.com/verify-token?nextUrl=%2Fworkspace%2Fpersonal%2Fplans';
     const directManagedReturnUrl =
       'https://vc.tuturuuu.com/workspace/personal/plans';
-    mocks.resolveCrossAppReturnUrlWithInternalApi.mockResolvedValue({
-      appName: 'vc.tuturuuu.com',
-      targetApp: 'managed-tuturuuu',
-    });
-    mocks.createCrossAppReturnUrlWithInternalApi.mockResolvedValue({
-      returnUrl: directManagedReturnUrl,
-      targetApp: 'managed-tuturuuu',
-    });
 
     const queryClient = renderLoginForm(managedReturnUrl);
 
     await waitFor(() => {
-      expect(mocks.createCrossAppReturnUrlWithInternalApi).toHaveBeenCalledWith(
-        {
-          returnUrl: managedReturnUrl,
-        }
-      );
+      expect(mocks.assign).toHaveBeenCalledWith(directManagedReturnUrl);
     });
 
-    expect(mocks.resolveCrossAppReturnUrlWithInternalApi).toHaveBeenCalledWith({
-      returnUrl: managedReturnUrl,
-    });
+    expect(
+      mocks.resolveCrossAppReturnUrlWithInternalApi
+    ).not.toHaveBeenCalled();
+    expect(mocks.createCrossAppReturnUrlWithInternalApi).not.toHaveBeenCalled();
     expect(mocks.refreshSession).toHaveBeenCalled();
-    expect(mocks.assign).toHaveBeenCalledWith(directManagedReturnUrl);
     expect(
       screen.queryByText('login.confirm_internal_app_account_title')
+    ).not.toBeInTheDocument();
+    queryClient.clear();
+  });
+
+  it('treats unregistered Tuturuuu subdomains as verified managed return URLs', async () => {
+    const queryClient = renderLoginForm('https://vercel.tuturuuu.com');
+
+    await waitFor(() => {
+      expect(mocks.assign).toHaveBeenCalledWith('https://vercel.tuturuuu.com/');
+    });
+
+    expect(
+      mocks.resolveCrossAppReturnUrlWithInternalApi
+    ).not.toHaveBeenCalled();
+    expect(mocks.createCrossAppReturnUrlWithInternalApi).not.toHaveBeenCalled();
+    expect(mocks.refreshSession).toHaveBeenCalled();
+    expect(
+      screen.queryByText('login.invalid_return_url_title')
     ).not.toBeInTheDocument();
     queryClient.clear();
   });
