@@ -18,11 +18,10 @@ import {
 } from './bundle-component-picker';
 import { InventoryImageUploadField } from './inventory-image-upload';
 import {
-  FormSection,
-  OperatorDialogBody,
   OperatorDialogContent,
   OperatorDialogFooter,
   OperatorDialogHeader,
+  OperatorDialogTabs,
 } from './operator-dialog-shell';
 import {
   FieldLabel,
@@ -195,143 +194,155 @@ export function BundleForm({
               if (canSubmit) mutation.mutate();
             }}
           >
-            <OperatorDialogBody className="grid gap-6">
-              {suggestions.length ? (
-                <SmartSuggestions
-                  emptyLabel={t('suggestions.empty')}
-                  suggestions={suggestions}
-                  title={t('suggestions.title')}
-                />
-              ) : null}
-              <FormSection
-                description={t('steps.bundleDetailsDescription')}
-                icon={<Tags className="h-4 w-4" />}
-                title={t('steps.bundleDetails')}
-              >
-                <div className="grid gap-3 md:grid-cols-2">
-                  <TextField
-                    label={t('bundleName')}
-                    onChange={(name) =>
-                      setForm((current) => ({ ...current, name }))
-                    }
-                    placeholder={t('placeholders.bundleName')}
-                    value={form.name}
-                  />
-                  <TextField
-                    hint={t('hints.slug')}
-                    label={t('slug')}
-                    onChange={(slug) =>
-                      setForm((current) => ({ ...current, slug }))
-                    }
-                    placeholder={t('placeholders.slug')}
-                    value={form.slug}
-                  />
-                  <label className="grid min-w-0 gap-1 text-sm">
-                    <FieldLabel hint={t('hints.price')} label={t('price')} />
-                    <MoneyInput
-                      currency="USD"
-                      hideHelpers
-                      onChange={(price) =>
-                        setForm((current) => ({ ...current, price }))
-                      }
-                      placeholder={t('placeholders.price')}
-                      value={form.price}
+            <OperatorDialogTabs
+              tabs={[
+                {
+                  content: (
+                    <div className="grid gap-6">
+                      {suggestions.length ? (
+                        <SmartSuggestions
+                          emptyLabel={t('suggestions.empty')}
+                          suggestions={suggestions}
+                          title={t('suggestions.title')}
+                        />
+                      ) : null}
+                      <div className="grid gap-3 md:grid-cols-2">
+                        <TextField
+                          label={t('bundleName')}
+                          onChange={(name) =>
+                            setForm((current) => ({ ...current, name }))
+                          }
+                          placeholder={t('placeholders.bundleName')}
+                          value={form.name}
+                        />
+                        <TextField
+                          hint={t('hints.slug')}
+                          label={t('slug')}
+                          onChange={(slug) =>
+                            setForm((current) => ({ ...current, slug }))
+                          }
+                          placeholder={t('placeholders.slug')}
+                          value={form.slug}
+                        />
+                        <label className="grid min-w-0 gap-1 text-sm">
+                          <FieldLabel
+                            hint={t('hints.price')}
+                            label={t('price')}
+                          />
+                          <MoneyInput
+                            currency="USD"
+                            hideHelpers
+                            onChange={(price) =>
+                              setForm((current) => ({ ...current, price }))
+                            }
+                            placeholder={t('placeholders.price')}
+                            value={form.price}
+                          />
+                        </label>
+                        <NumberField
+                          hint={t('hints.maxPerOrder')}
+                          label={t('maxPerOrder')}
+                          onChange={(maxPerOrder) =>
+                            setForm((current) => ({ ...current, maxPerOrder }))
+                          }
+                          placeholder={t('placeholders.maxPerOrder')}
+                          value={form.maxPerOrder}
+                        />
+                        <SelectValueField
+                          allowEmpty={false}
+                          hint={t('hints.pricingMode')}
+                          label={t('pricingMode')}
+                          onChange={(pricingMode) =>
+                            setForm((current) => ({ ...current, pricingMode }))
+                          }
+                          options={[
+                            {
+                              label: t('pricingModes.fixedPrice'),
+                              value: 'fixed_price',
+                            },
+                            {
+                              label: t('pricingModes.selectedItems'),
+                              value: 'selected_items',
+                            },
+                          ]}
+                          placeholder={t('placeholders.pricingMode')}
+                          value={form.pricingMode}
+                        />
+                        <SelectValueField
+                          allowEmpty={false}
+                          hint={t('hints.categoryCandidateScope')}
+                          label={t('categoryCandidateScope')}
+                          onChange={(categoryCandidateScope) =>
+                            setForm((current) => ({
+                              ...current,
+                              categoryCandidateScope,
+                            }))
+                          }
+                          options={[
+                            {
+                              label: t(
+                                'categoryCandidateScopes.publishedListings'
+                              ),
+                              value: 'published_listings',
+                            },
+                            {
+                              label: t('categoryCandidateScopes.allStock'),
+                              value: 'all_stock',
+                            },
+                          ]}
+                          placeholder={t('placeholders.categoryCandidateScope')}
+                          value={form.categoryCandidateScope}
+                        />
+                        <TextAreaField
+                          className="md:col-span-2"
+                          label={t('description')}
+                          onChange={(description) =>
+                            setForm((current) => ({ ...current, description }))
+                          }
+                          placeholder={t('placeholders.bundleDescription')}
+                          value={form.description}
+                        />
+                      </div>
+                    </div>
+                  ),
+                  icon: <Tags className="h-4 w-4" />,
+                  label: t('steps.bundleDetails'),
+                  value: 'details',
+                },
+                {
+                  content: (
+                    <BundleComponentPicker
+                      categories={categories}
+                      categoryComponents={categoryComponents}
+                      components={components}
+                      onCategoryComponentsChange={setCategoryComponents}
+                      onChange={setComponents}
+                      products={products}
                     />
-                  </label>
-                  <NumberField
-                    hint={t('hints.maxPerOrder')}
-                    label={t('maxPerOrder')}
-                    onChange={(maxPerOrder) =>
-                      setForm((current) => ({ ...current, maxPerOrder }))
-                    }
-                    placeholder={t('placeholders.maxPerOrder')}
-                    value={form.maxPerOrder}
-                  />
-                  <SelectValueField
-                    allowEmpty={false}
-                    hint={t('hints.pricingMode')}
-                    label={t('pricingMode')}
-                    onChange={(pricingMode) =>
-                      setForm((current) => ({ ...current, pricingMode }))
-                    }
-                    options={[
-                      {
-                        label: t('pricingModes.fixedPrice'),
-                        value: 'fixed_price',
-                      },
-                      {
-                        label: t('pricingModes.selectedItems'),
-                        value: 'selected_items',
-                      },
-                    ]}
-                    placeholder={t('placeholders.pricingMode')}
-                    value={form.pricingMode}
-                  />
-                  <SelectValueField
-                    allowEmpty={false}
-                    hint={t('hints.categoryCandidateScope')}
-                    label={t('categoryCandidateScope')}
-                    onChange={(categoryCandidateScope) =>
-                      setForm((current) => ({
-                        ...current,
-                        categoryCandidateScope,
-                      }))
-                    }
-                    options={[
-                      {
-                        label: t('categoryCandidateScopes.publishedListings'),
-                        value: 'published_listings',
-                      },
-                      {
-                        label: t('categoryCandidateScopes.allStock'),
-                        value: 'all_stock',
-                      },
-                    ]}
-                    placeholder={t('placeholders.categoryCandidateScope')}
-                    value={form.categoryCandidateScope}
-                  />
-                  <TextAreaField
-                    className="md:col-span-2"
-                    label={t('description')}
-                    onChange={(description) =>
-                      setForm((current) => ({ ...current, description }))
-                    }
-                    placeholder={t('placeholders.bundleDescription')}
-                    value={form.description}
-                  />
-                </div>
-              </FormSection>
-              <FormSection
-                description={t('steps.bundleComponentsDescription')}
-                icon={<Boxes className="h-4 w-4" />}
-                title={t('steps.bundleComponents')}
-              >
-                <BundleComponentPicker
-                  categories={categories}
-                  categoryComponents={categoryComponents}
-                  components={components}
-                  onCategoryComponentsChange={setCategoryComponents}
-                  onChange={setComponents}
-                  products={products}
-                />
-              </FormSection>
-              <FormSection
-                description={t('steps.bundleMediaDescription')}
-                icon={<FileImage className="h-4 w-4" />}
-                title={t('steps.bundleMedia')}
-              >
-                <InventoryImageUploadField
-                  description={t('bundleImageDescription')}
-                  label={t('bundleImage')}
-                  onChange={(imageUrl) =>
-                    setForm((current) => ({ ...current, imageUrl }))
-                  }
-                  target="bundle-image"
-                  value={form.imageUrl}
-                  wsId={wsId}
-                />
-              </FormSection>
-            </OperatorDialogBody>
+                  ),
+                  icon: <Boxes className="h-4 w-4" />,
+                  label: t('steps.bundleComponents'),
+                  value: 'components',
+                },
+                {
+                  content: (
+                    <InventoryImageUploadField
+                      description={t('bundleImageDescription')}
+                      label={t('bundleImage')}
+                      onChange={(imageUrl) =>
+                        setForm((current) => ({ ...current, imageUrl }))
+                      }
+                      target="bundle-image"
+                      value={form.imageUrl}
+                      wsId={wsId}
+                    />
+                  ),
+                  icon: <FileImage className="h-4 w-4" />,
+                  label: t('steps.bundleMedia'),
+                  value: 'media',
+                },
+              ]}
+            />
             <OperatorDialogFooter>
               <DialogClose asChild>
                 <Button type="button" variant="ghost">
