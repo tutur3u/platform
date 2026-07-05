@@ -48,11 +48,11 @@ vi.mock('@/lib/teach/api', () => ({
   ) => mocks.requireTeachWorkspaceAccess(...args),
 }));
 
-vi.mock('@/lib/workspace-storage-auto-extract', () => ({
+vi.mock('@tuturuuu/storage-core/workspace-storage-auto-extract', () => ({
   triggerWorkspaceStorageAutoExtract: mocks.triggerWorkspaceStorageAutoExtract,
 }));
 
-vi.mock('@/lib/workspace-storage-provider', () => ({
+vi.mock('@tuturuuu/storage-core/workspace-storage-provider', () => ({
   deleteWorkspaceStorageObjectByPath: vi.fn(),
   listWorkspaceStorageDirectory: vi.fn(),
   uploadWorkspaceStorageFileDirect: mocks.uploadWorkspaceStorageFileDirect,

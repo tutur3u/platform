@@ -28,7 +28,7 @@ vi.mock('@/lib/rate-limit', () => ({
     mocks.checkRateLimit(...args),
 }));
 
-vi.mock('@/lib/workspace-storage-provider', () => ({
+vi.mock('@tuturuuu/storage-core/workspace-storage-provider', () => ({
   WorkspaceStorageError: class WorkspaceStorageError extends Error {
     constructor(
       message: string,

@@ -47,7 +47,7 @@ vi.mock('@/lib/external-projects/store', () => ({
   ) => mocks.updateWorkspaceExternalProjectAsset(...args),
 }));
 
-vi.mock('@/lib/workspace-storage-provider', () => ({
+vi.mock('@tuturuuu/storage-core/workspace-storage-provider', () => ({
   WorkspaceStorageError: mocks.WorkspaceStorageError,
   createWorkspaceStorageSignedReadUrl: (
     ...args: Parameters<typeof mocks.createWorkspaceStorageSignedReadUrl>

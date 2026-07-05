@@ -2,6 +2,7 @@ import {
   listWorkspaceTaskBoards,
   withForwardedInternalApiAuth,
 } from '@tuturuuu/internal-api';
+import { getWorkspaceStorageOverview } from '@tuturuuu/storage-core/workspace-storage-provider';
 import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import {
   createAdminClient,
@@ -12,7 +13,6 @@ import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { headers } from 'next/headers';
 import { notFound } from 'next/navigation';
 import StatisticCard from '@/components/cards/StatisticCard';
-import { getWorkspaceStorageOverview } from '@/lib/workspace-storage-provider';
 
 // ============================================================================
 // Workspace Overview Stats

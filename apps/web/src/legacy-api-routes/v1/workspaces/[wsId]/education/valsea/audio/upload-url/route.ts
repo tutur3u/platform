@@ -1,4 +1,8 @@
 import { randomUUID } from 'node:crypto';
+import {
+  createWorkspaceStorageUploadPayload,
+  WorkspaceStorageError,
+} from '@tuturuuu/storage-core/workspace-storage-provider';
 import { resolveWorkspaceId } from '@tuturuuu/utils/constants';
 import { sanitizeFilename } from '@tuturuuu/utils/storage-path';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
@@ -11,10 +15,6 @@ import {
   VALSEA_AUDIO_DRIVE_PATH,
   VALSEA_AUDIO_EXTENSIONS,
 } from '@/lib/valsea-audio-storage-policy';
-import {
-  createWorkspaceStorageUploadPayload,
-  WorkspaceStorageError,
-} from '@/lib/workspace-storage-provider';
 
 type Params = {
   wsId: string;

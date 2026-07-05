@@ -1,8 +1,8 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   DRIVE_AUTO_EXTRACT_PROXY_TOKEN_SECRET,
   DRIVE_AUTO_EXTRACT_PROXY_URL_SECRET,
-} from '@/lib/workspace-storage-config';
+} from '@tuturuuu/storage-core/workspace-storage-config';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   getSecrets: vi.fn(),

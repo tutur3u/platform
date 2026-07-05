@@ -16,7 +16,7 @@ vi.mock('@tuturuuu/email-service', () => ({
   sendWorkspaceEmail: emailServiceMocks.sendWorkspaceEmail,
 }));
 
-vi.mock('@/lib/workspace-storage-provider', () => ({
+vi.mock('@tuturuuu/storage-core/workspace-storage-provider', () => ({
   downloadWorkspaceStorageObjectForProvider:
     storageMocks.downloadWorkspaceStorageObjectForProvider,
   getWorkspaceStorageObjectMetadataForProvider:

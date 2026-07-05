@@ -9,13 +9,6 @@ import {
   Package,
 } from '@tuturuuu/icons';
 import { migrateWorkspaceStorage } from '@tuturuuu/internal-api';
-import type { WorkspaceSecret } from '@tuturuuu/types/primitives/WorkspaceSecret';
-import { Button } from '@tuturuuu/ui/button';
-import ModifiableDialogTrigger from '@tuturuuu/ui/custom/modifiable-dialog-trigger';
-import { toast } from '@tuturuuu/ui/sonner';
-import { useRouter } from 'next/navigation';
-import { useTranslations } from 'next-intl';
-import { useMemo, useState } from 'react';
 import {
   DRIVE_STORAGE_PROVIDER_SECRET,
   WORKSPACE_STORAGE_AUTO_EXTRACT_SECRET_DEFINITIONS,
@@ -23,7 +16,14 @@ import {
   WORKSPACE_STORAGE_PROVIDER_SECRET_DEFINITIONS,
   WORKSPACE_STORAGE_PROVIDER_SUPABASE,
   type WorkspaceStorageProvider,
-} from '@/lib/workspace-storage-config';
+} from '@tuturuuu/storage-core/workspace-storage-config';
+import type { WorkspaceSecret } from '@tuturuuu/types/primitives/WorkspaceSecret';
+import { Button } from '@tuturuuu/ui/button';
+import ModifiableDialogTrigger from '@tuturuuu/ui/custom/modifiable-dialog-trigger';
+import { toast } from '@tuturuuu/ui/sonner';
+import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
+import { useMemo, useState } from 'react';
 import { formatBytes } from '@/utils/file-helper';
 import SecretForm from './form';
 

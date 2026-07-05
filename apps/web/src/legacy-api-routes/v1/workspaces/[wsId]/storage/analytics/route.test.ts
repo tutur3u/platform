@@ -23,7 +23,7 @@ vi.mock('@tuturuuu/utils/workspace-helper', () => ({
   ) => mocks.normalizeWorkspaceId(...args),
 }));
 
-vi.mock('@/lib/workspace-storage-provider', () => ({
+vi.mock('@tuturuuu/storage-core/workspace-storage-provider', () => ({
   WorkspaceStorageError: class WorkspaceStorageError extends Error {
     constructor(
       message: string,

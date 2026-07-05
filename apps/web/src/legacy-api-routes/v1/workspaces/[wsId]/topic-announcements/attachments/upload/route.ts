@@ -1,12 +1,12 @@
 import { posix } from 'node:path';
-import { sanitizeFilename } from '@tuturuuu/utils/storage-path';
-import { generateRandomUUID } from '@tuturuuu/utils/uuid-helper';
-import { NextResponse } from 'next/server';
 import {
   resolveWorkspaceStorageProvider,
   uploadWorkspaceStorageFileDirect,
   WorkspaceStorageError,
-} from '@/lib/workspace-storage-provider';
+} from '@tuturuuu/storage-core/workspace-storage-provider';
+import { sanitizeFilename } from '@tuturuuu/utils/storage-path';
+import { generateRandomUUID } from '@tuturuuu/utils/uuid-helper';
+import { NextResponse } from 'next/server';
 import {
   resolveTopicAnnouncementsAccess,
   TOPIC_ANNOUNCEMENT_ATTACHMENT_CONTENT_TYPES,

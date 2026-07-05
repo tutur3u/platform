@@ -5,7 +5,7 @@ const storageMocks = vi.hoisted(() => ({
   getWorkspaceStorageObjectMetadataForProvider: vi.fn(),
 }));
 
-vi.mock('@/lib/workspace-storage-provider', () => ({
+vi.mock('@tuturuuu/storage-core/workspace-storage-provider', () => ({
   downloadWorkspaceStorageObjectForProvider:
     storageMocks.downloadWorkspaceStorageObjectForProvider,
   getWorkspaceStorageObjectMetadataForProvider:

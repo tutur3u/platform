@@ -1275,6 +1275,7 @@
         "@tuturuuu/payment": "workspace:*",
         "@tuturuuu/realtime": "workspace:*",
         "@tuturuuu/satellite": "workspace:*",
+        "@tuturuuu/storage-core": "workspace:*",
         "@tuturuuu/supabase": "workspace:*",
         "@tuturuuu/transactional": "workspace:*",
         "@tuturuuu/trigger": "workspace:*",
@@ -1900,6 +1901,24 @@
         "@tuturuuu/utils": "workspace:*",
         "yaml": "^2.9.0",
         "zod": "^4.4.3",
+      },
+      "devDependencies": {
+        "@tuturuuu/typescript-config": "workspace:*",
+        "@types/node": "^26.0.1",
+        "typescript": "7.0.1-rc",
+        "vitest": "^4.1.9",
+      },
+    },
+    "packages/storage-core": {
+      "name": "@tuturuuu/storage-core",
+      "version": "0.1.0",
+      "dependencies": {
+        "@aws-sdk/client-s3": "3.1076.0",
+        "@aws-sdk/s3-request-presigner": "^3.1076.0",
+        "@tuturuuu/supabase": "workspace:*",
+        "@tuturuuu/types": "workspace:*",
+        "@tuturuuu/utils": "workspace:*",
+        "server-only": "^0.0.1",
       },
       "devDependencies": {
         "@tuturuuu/typescript-config": "workspace:*",
@@ -3825,6 +3844,8 @@
     "@tuturuuu/satellite": ["@tuturuuu/satellite@workspace:packages/satellite"],
 
     "@tuturuuu/shortener": ["@tuturuuu/shortener@workspace:apps/shortener"],
+
+    "@tuturuuu/storage-core": ["@tuturuuu/storage-core@workspace:packages/storage-core"],
 
     "@tuturuuu/storage-unzip-proxy": ["@tuturuuu/storage-unzip-proxy@workspace:apps/storage-unzip-proxy"],
 

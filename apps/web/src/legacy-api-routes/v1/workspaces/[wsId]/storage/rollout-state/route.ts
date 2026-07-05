@@ -1,7 +1,7 @@
+import { getWorkspaceStorageRolloutState } from '@tuturuuu/storage-core/workspace-storage-migration';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
-import { getWorkspaceStorageRolloutState } from '@/lib/workspace-storage-migration';
 import {
   logWorkspaceStorageRouteError,
   resolveWorkspaceStorageRouteAuth,

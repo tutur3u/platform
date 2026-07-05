@@ -1,3 +1,7 @@
+import {
+  createWorkspaceStorageSignedReadUrl,
+  WorkspaceStorageError,
+} from '@tuturuuu/storage-core/workspace-storage-provider';
 import { type NextRequest, NextResponse } from 'next/server';
 import { withSessionAuth } from '@/lib/api-auth';
 import {
@@ -6,10 +10,6 @@ import {
   chatRpcErrorResponse,
   resolveChatRouteContext,
 } from '@/lib/chat/private-rpc';
-import {
-  createWorkspaceStorageSignedReadUrl,
-  WorkspaceStorageError,
-} from '@/lib/workspace-storage-provider';
 
 type RouteParams = {
   attachmentId: string;

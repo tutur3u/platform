@@ -3,13 +3,14 @@ import 'server-only';
 import { randomBytes } from 'node:crypto';
 import { hashApiKey, validateApiKeyHash } from '@tuturuuu/auth/api-keys';
 import type { InfrastructureJsonValue } from '@tuturuuu/internal-api/infrastructure/types';
-import type { SupabaseClient } from '@tuturuuu/supabase/types';
-import type { Database, Json } from '@tuturuuu/types';
-import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
+import { buildMobileDeploymentVaultStoragePath } from '@tuturuuu/storage-core/mobile-deployment/storage-policy';
 import {
   downloadWorkspaceStorageObjectForProvider,
   uploadWorkspaceStorageFileDirect,
-} from '@/lib/workspace-storage-provider';
+} from '@tuturuuu/storage-core/workspace-storage-provider';
+import type { SupabaseClient } from '@tuturuuu/supabase/types';
+import type { Database, Json } from '@tuturuuu/types';
+import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import {
   ANDROID_REQUIRED_FILE_KINDS,
   ANDROID_REQUIRED_SCALARS,
@@ -40,7 +41,6 @@ import {
   sha256Hex,
 } from './crypto';
 import type { MobileDeploymentGitHubOidcClaims } from './oidc';
-import { buildMobileDeploymentVaultStoragePath } from './storage-policy';
 import type {
   MobileDeploymentAuditEventRow,
   MobileDeploymentBundle,

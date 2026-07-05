@@ -12,7 +12,7 @@ const mocks = vi.hoisted(() => ({
   resolveWorkspaceStorageRouteAuth: vi.fn(),
 }));
 
-vi.mock('@/lib/workspace-storage-export-links', () => ({
+vi.mock('@tuturuuu/storage-core/workspace-storage-export-links', () => ({
   createWorkspaceStorageExportAssetUrl: (
     ...args: Parameters<typeof mocks.createWorkspaceStorageExportAssetUrl>
   ) => mocks.createWorkspaceStorageExportAssetUrl(...args),
@@ -21,7 +21,7 @@ vi.mock('@/lib/workspace-storage-export-links', () => ({
   ) => mocks.createWorkspaceStorageExportToken(...args),
 }));
 
-vi.mock('@/lib/workspace-storage-provider', () => ({
+vi.mock('@tuturuuu/storage-core/workspace-storage-provider', () => ({
   listWorkspaceStorageRawObjectsForProvider: (
     ...args: Parameters<typeof mocks.listWorkspaceStorageRawObjectsForProvider>
   ) => mocks.listWorkspaceStorageRawObjectsForProvider(...args),

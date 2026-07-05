@@ -1,4 +1,10 @@
 import { posix } from 'node:path';
+import { isReservedMobileDeploymentDrivePath } from '@tuturuuu/storage-core/mobile-deployment/storage-policy';
+import {
+  createWorkspaceStorageFolderObject,
+  deleteWorkspaceStorageFolderByPath,
+  WorkspaceStorageError,
+} from '@tuturuuu/storage-core/workspace-storage-provider';
 import {
   MAX_MEDIUM_TEXT_LENGTH,
   MAX_NAME_LENGTH,
@@ -6,12 +12,6 @@ import {
 import { sanitizeFolderName, sanitizePath } from '@tuturuuu/utils/storage-path';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { isReservedMobileDeploymentDrivePath } from '@/lib/mobile-deployment/storage-policy';
-import {
-  createWorkspaceStorageFolderObject,
-  deleteWorkspaceStorageFolderByPath,
-  WorkspaceStorageError,
-} from '@/lib/workspace-storage-provider';
 import {
   logWorkspaceStorageRouteError,
   resolveWorkspaceStorageRouteAuth,

@@ -1,5 +1,9 @@
 import { authorizeInventoryWorkspace } from '@tuturuuu/inventory-core/commerce/auth';
 import { canManageInventoryCatalog } from '@tuturuuu/inventory-core/permissions';
+import {
+  createWorkspaceStorageUploadPayload,
+  WorkspaceStorageError,
+} from '@tuturuuu/storage-core/workspace-storage-provider';
 import { generateRandomUUID } from '@tuturuuu/utils/uuid-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -8,10 +12,6 @@ import {
   INVENTORY_MEDIA_TARGETS,
   MAX_INVENTORY_IMAGE_BYTES,
 } from '@/lib/inventory-media-storage-policy';
-import {
-  createWorkspaceStorageUploadPayload,
-  WorkspaceStorageError,
-} from '@/lib/workspace-storage-provider';
 
 const uploadUrlSchema = z.object({
   contentType: z.enum(INVENTORY_IMAGE_CONTENT_TYPES),

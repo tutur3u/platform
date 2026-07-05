@@ -87,7 +87,7 @@ vi.mock('@/lib/infrastructure/log-drain', () => ({
   },
 }));
 
-vi.mock('@/lib/workspace-storage-provider', () => ({
+vi.mock('@tuturuuu/storage-core/workspace-storage-provider', () => ({
   downloadWorkspaceStorageObjectForProvider: vi.fn(),
   resolveWorkspaceStorageProvider: vi.fn(),
   uploadWorkspaceStorageFileDirect: vi.fn(),

@@ -1,10 +1,10 @@
+import { WORKSPACE_STORAGE_PROVIDER_OPTIONS } from '@tuturuuu/storage-core/workspace-storage-config';
+import { migrateWorkspaceStorageBetweenProviders } from '@tuturuuu/storage-core/workspace-storage-migration';
+import { WorkspaceStorageError } from '@tuturuuu/storage-core/workspace-storage-provider';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { WORKSPACE_STORAGE_PROVIDER_OPTIONS } from '@/lib/workspace-storage-config';
-import { migrateWorkspaceStorageBetweenProviders } from '@/lib/workspace-storage-migration';
-import { WorkspaceStorageError } from '@/lib/workspace-storage-provider';
 import {
   logWorkspaceStorageRouteError,
   resolveWorkspaceStorageRouteAuth,

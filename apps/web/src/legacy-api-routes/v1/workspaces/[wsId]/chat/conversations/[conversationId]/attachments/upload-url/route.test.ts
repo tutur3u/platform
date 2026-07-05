@@ -39,7 +39,7 @@ vi.mock('@/lib/chat/private-rpc', () => ({
   ) => mocks.resolveChatRouteContext(...args),
 }));
 
-vi.mock('@/lib/workspace-storage-provider', () => ({
+vi.mock('@tuturuuu/storage-core/workspace-storage-provider', () => ({
   createWorkspaceStorageUploadPayload: (
     ...args: Parameters<typeof mocks.createWorkspaceStorageUploadPayload>
   ) => mocks.createWorkspaceStorageUploadPayload(...args),

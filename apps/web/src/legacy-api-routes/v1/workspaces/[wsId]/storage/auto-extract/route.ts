@@ -1,17 +1,17 @@
 import { posix } from 'node:path';
-import { MAX_PAYLOAD_SIZE } from '@tuturuuu/utils/constants';
-import { sanitizePath } from '@tuturuuu/utils/storage-path';
-import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
-import { NextResponse } from 'next/server';
-import { z } from 'zod';
-import { isReservedMobileDeploymentDrivePath } from '@/lib/mobile-deployment/storage-policy';
-import { resolveWorkspaceStorageAutoExtractConfig } from '@/lib/workspace-storage-auto-extract';
+import { isReservedMobileDeploymentDrivePath } from '@tuturuuu/storage-core/mobile-deployment/storage-policy';
+import { resolveWorkspaceStorageAutoExtractConfig } from '@tuturuuu/storage-core/workspace-storage-auto-extract';
 import {
   createWorkspaceStorageFolderObject,
   createWorkspaceStorageUploadPayload,
   uploadWorkspaceStorageFileDirect,
   WorkspaceStorageError,
-} from '@/lib/workspace-storage-provider';
+} from '@tuturuuu/storage-core/workspace-storage-provider';
+import { MAX_PAYLOAD_SIZE } from '@tuturuuu/utils/constants';
+import { sanitizePath } from '@tuturuuu/utils/storage-path';
+import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
+import { NextResponse } from 'next/server';
+import { z } from 'zod';
 
 function getBearerToken(request: Request) {
   const header = request.headers.get('authorization');

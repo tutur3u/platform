@@ -10,11 +10,11 @@ const mocks = vi.hoisted(() => ({
 
 const ROOT_WORKSPACE_ID = '00000000-0000-0000-0000-000000000000';
 
-vi.mock('@/lib/workspace-storage-auto-extract', () => ({
+vi.mock('@tuturuuu/storage-core/workspace-storage-auto-extract', () => ({
   triggerWorkspaceStorageAutoExtract: mocks.triggerWorkspaceStorageAutoExtract,
 }));
 
-vi.mock('@/lib/workspace-storage-provider', () => ({
+vi.mock('@tuturuuu/storage-core/workspace-storage-provider', () => ({
   uploadWorkspaceStorageFileDirect: mocks.uploadWorkspaceStorageFileDirect,
   WorkspaceStorageError: class WorkspaceStorageError extends Error {
     constructor(

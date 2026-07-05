@@ -1,3 +1,14 @@
+import {
+  WORKSPACE_STORAGE_PROVIDER_OPTIONS,
+  WORKSPACE_STORAGE_PROVIDER_R2,
+  WORKSPACE_STORAGE_PROVIDER_SUPABASE,
+  type WorkspaceStorageProvider,
+} from '@tuturuuu/storage-core/workspace-storage-config';
+import {
+  createWorkspaceStorageSignedReadUrl,
+  resolveWorkspaceStorageProvider,
+  WorkspaceStorageError,
+} from '@tuturuuu/storage-core/workspace-storage-provider';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { imageTransformOptionsSchema, type Json } from '@tuturuuu/types';
@@ -16,17 +27,6 @@ import {
   deleteWorkspaceExternalProjectAsset as deleteWorkspaceExternalProjectAssetInStore,
   updateWorkspaceExternalProjectAsset,
 } from '@/lib/external-projects/store';
-import {
-  WORKSPACE_STORAGE_PROVIDER_OPTIONS,
-  WORKSPACE_STORAGE_PROVIDER_R2,
-  WORKSPACE_STORAGE_PROVIDER_SUPABASE,
-  type WorkspaceStorageProvider,
-} from '@/lib/workspace-storage-config';
-import {
-  createWorkspaceStorageSignedReadUrl,
-  resolveWorkspaceStorageProvider,
-  WorkspaceStorageError,
-} from '@/lib/workspace-storage-provider';
 
 function getAssetStorageProvider(metadata: unknown) {
   if (!metadata || typeof metadata !== 'object' || Array.isArray(metadata)) {

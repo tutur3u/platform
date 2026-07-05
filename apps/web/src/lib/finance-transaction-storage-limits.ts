@@ -1,10 +1,10 @@
-import { getFinanceTransactionIdFromStoragePath } from './finance-transaction-storage-access';
 import {
   deleteWorkspaceStorageObjectByPath,
   getWorkspaceStorageObjectMetadataForProvider,
   listWorkspaceStorageRawObjectsForProvider,
   resolveWorkspaceStorageProvider,
-} from './workspace-storage-provider';
+} from '@tuturuuu/storage-core/workspace-storage-provider';
+import { getFinanceTransactionIdFromStoragePath } from './finance-transaction-storage-access';
 
 export const FINANCE_TRANSACTION_ATTACHMENT_MAX_BYTES = 50 * 1024 * 1024;
 export const FINANCE_TRANSACTION_ATTACHMENT_MAX_FILES = 10;

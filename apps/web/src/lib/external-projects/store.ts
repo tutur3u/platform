@@ -1,3 +1,4 @@
+import { deleteWorkspaceStorageObjectByPath } from '@tuturuuu/storage-core/workspace-storage-provider';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import type {
@@ -29,7 +30,6 @@ import type {
   YoolaExternalProjectLoreCapsuleLoadingItem,
   YoolaExternalProjectSectionLoadingItem,
 } from '@tuturuuu/types';
-import { deleteWorkspaceStorageObjectByPath } from '../workspace-storage-provider';
 import {
   EXTERNAL_PROJECT_CANONICAL_ID_SECRET,
   EXTERNAL_PROJECT_ENABLED_SECRET,

@@ -1,4 +1,8 @@
 import { posix } from 'node:path';
+import {
+  downloadWorkspaceStorageObjectForProvider,
+  WorkspaceStorageError,
+} from '@tuturuuu/storage-core/workspace-storage-provider';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { resolveWorkspaceId } from '@tuturuuu/utils/constants';
@@ -13,10 +17,6 @@ import {
   parseWebglPackageArtifactMetadata,
   WEBGL_PACKAGE_ASSET_TYPE,
 } from '@/lib/external-projects/webgl-packages';
-import {
-  downloadWorkspaceStorageObjectForProvider,
-  WorkspaceStorageError,
-} from '@/lib/workspace-storage-provider';
 
 const WEBGL_VIEWPORT_FILL_MARKER = 'data-tuturuuu-webgl-viewport-fill';
 const WEBGL_PACKAGE_SANDBOX_CSP =

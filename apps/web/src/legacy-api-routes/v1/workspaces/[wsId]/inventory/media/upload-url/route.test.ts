@@ -34,7 +34,7 @@ vi.mock('@tuturuuu/inventory-core/permissions', () => ({
   }) => permissions.containsPermission('manage_inventory_catalog'),
 }));
 
-vi.mock('@/lib/workspace-storage-provider', () => ({
+vi.mock('@tuturuuu/storage-core/workspace-storage-provider', () => ({
   createWorkspaceStorageSignedReadUrl: (
     ...args: Parameters<typeof mocks.createWorkspaceStorageSignedReadUrl>
   ) => mocks.createWorkspaceStorageSignedReadUrl(...args),

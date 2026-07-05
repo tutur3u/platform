@@ -3,7 +3,7 @@ import {
   getWorkspaceStorageObjectMetadataForProvider,
   resolveWorkspaceStorageProvider,
   WorkspaceStorageError,
-} from './workspace-storage-provider';
+} from '@tuturuuu/storage-core/workspace-storage-provider';
 
 export const MAX_VALSEA_AUDIO_UPLOAD_BYTES = 10 * 1024 * 1024;
 export const VALSEA_AUDIO_DRIVE_PATH = 'education/valsea/audio';

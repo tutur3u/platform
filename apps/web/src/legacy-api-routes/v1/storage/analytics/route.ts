@@ -5,12 +5,12 @@
  * Retrieves storage usage analytics for the workspace
  */
 
-import { NextResponse } from 'next/server';
-import { createErrorResponse, withApiAuth } from '@/lib/api-middleware';
 import {
   getWorkspaceStorageOverview,
   WorkspaceStorageError,
-} from '@/lib/workspace-storage-provider';
+} from '@tuturuuu/storage-core/workspace-storage-provider';
+import { NextResponse } from 'next/server';
+import { createErrorResponse, withApiAuth } from '@/lib/api-middleware';
 
 export const GET = withApiAuth(
   async (_, { context }) => {

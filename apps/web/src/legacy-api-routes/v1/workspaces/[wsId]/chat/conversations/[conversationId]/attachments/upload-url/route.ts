@@ -1,3 +1,7 @@
+import {
+  createWorkspaceStorageUploadPayload,
+  WorkspaceStorageError,
+} from '@tuturuuu/storage-core/workspace-storage-provider';
 import { sanitizeFilename } from '@tuturuuu/utils/storage-path';
 import { generateRandomUUID } from '@tuturuuu/utils/uuid-helper';
 import { type NextRequest, NextResponse } from 'next/server';
@@ -9,10 +13,6 @@ import {
   chatRpcErrorResponse,
   resolveChatRouteContext,
 } from '@/lib/chat/private-rpc';
-import {
-  createWorkspaceStorageUploadPayload,
-  WorkspaceStorageError,
-} from '@/lib/workspace-storage-provider';
 
 type RouteParams = {
   conversationId: string;

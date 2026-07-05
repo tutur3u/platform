@@ -62,6 +62,7 @@ const nextConfig = createTuturuuuNextConfig({
     '@tuturuuu/hive-ui',
     '@tuturuuu/internal-api',
     '@tuturuuu/inventory-core',
+    '@tuturuuu/storage-core',
     '@tuturuuu/mind-ui',
     '@tuturuuu/offline',
     '@tuturuuu/realtime',

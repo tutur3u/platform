@@ -2,15 +2,15 @@ import 'server-only';
 
 import { posix } from 'node:path';
 import { ENABLE_CMS_GAMES_CONFIG_ID } from '@tuturuuu/internal-api/workspace-configs';
+import {
+  DRIVE_AUTO_EXTRACT_PROXY_TOKEN_SECRET,
+  DRIVE_AUTO_EXTRACT_PROXY_URL_SECRET,
+} from '@tuturuuu/storage-core/workspace-storage-config';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import type { WorkspaceExternalProjectBinding } from '@tuturuuu/types';
 import { sanitizeFilename, sanitizePath } from '@tuturuuu/utils/storage-path';
 import { getSecrets } from '@tuturuuu/utils/workspace-helper';
 import { getWorkspaceConfig } from '@/lib/workspace-helper';
-import {
-  DRIVE_AUTO_EXTRACT_PROXY_TOKEN_SECRET,
-  DRIVE_AUTO_EXTRACT_PROXY_URL_SECRET,
-} from '@/lib/workspace-storage-config';
 
 export type WebglPackageEntryContext = {
   collectionSlug: string;

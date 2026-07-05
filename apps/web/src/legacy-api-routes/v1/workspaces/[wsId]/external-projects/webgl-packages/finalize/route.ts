@@ -1,3 +1,9 @@
+import {
+  createWorkspaceStorageSignedReadUrl,
+  listWorkspaceStorageRawObjectsForProvider,
+  resolveWorkspaceStorageProvider,
+  WorkspaceStorageError,
+} from '@tuturuuu/storage-core/workspace-storage-provider';
 import type { Json } from '@tuturuuu/types';
 import { sanitizePath } from '@tuturuuu/utils/storage-path';
 import { NextResponse } from 'next/server';
@@ -14,12 +20,6 @@ import {
   WEBGL_PACKAGE_ASSET_TYPE,
   WebglPackageError,
 } from '@/lib/external-projects/webgl-packages';
-import {
-  createWorkspaceStorageSignedReadUrl,
-  listWorkspaceStorageRawObjectsForProvider,
-  resolveWorkspaceStorageProvider,
-  WorkspaceStorageError,
-} from '@/lib/workspace-storage-provider';
 import {
   buildWebglPackageUploadPath,
   getWebglPackageEntryContext,
