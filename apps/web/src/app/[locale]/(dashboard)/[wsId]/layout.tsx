@@ -3,6 +3,7 @@ import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { toWorkspaceSlug } from '@tuturuuu/utils/constants';
 import { cookies } from 'next/headers';
 import { notFound, redirect } from 'next/navigation';
+import { connection } from 'next/server';
 import { type ReactNode, Suspense } from 'react';
 import { PROD_MODE } from '@/constants/env';
 import {
@@ -123,6 +124,8 @@ async function loadDashboardShellClient() {
 }
 
 export default async function Layout({ children, params }: LayoutProps) {
+  await connection();
+
   const { wsId: id } = await params;
 
   const { user, workspace } = await getDashboardLayoutData(id);
