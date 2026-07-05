@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.9.0](https://github.com/tutur3u/platform/compare/calendar-v0.8.0...calendar-v0.9.0) (2026-07-05)
+
+
+### Features
+
+* **calendar:** port hours + colors settings into the calendar app ([fe7fa76](https://github.com/tutur3u/platform/commit/fe7fa7668137bcdd5f9f20af9bfa434b3c3037e9))
+* **satellite:** add sidebar apps launcher ([b2f6fcd](https://github.com/tutur3u/platform/commit/b2f6fcd55d7cb5c100e31d36f9f329817ecfe5e9))
+
+
+### Bug Fixes
+
+* **calendar:** document + surface the e2ee master key requirement ([28d9db8](https://github.com/tutur3u/platform/commit/28d9db87357e678645be531cc445682823edf1c8))
+* **calendar:** use GitHub-owned Vercel deploys ([946a8a5](https://github.com/tutur3u/platform/commit/946a8a589b688848d4a3da0ebf19f09e5dd41168))
+
 ## [0.8.0](https://github.com/tutur3u/platform/compare/calendar-v0.7.0...calendar-v0.8.0) (2026-07-03)
 
 

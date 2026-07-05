@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.10.0](https://github.com/tutur3u/platform/compare/tasks-v0.9.1...tasks-v0.10.0) (2026-07-05)
+
+
+### Features
+
+* **satellite:** add sidebar apps launcher ([b2f6fcd](https://github.com/tutur3u/platform/commit/b2f6fcd55d7cb5c100e31d36f9f329817ecfe5e9))
+
+
+### Bug Fixes
+
+* **inventory:** contain operator tables and translations ([5fa064e](https://github.com/tutur3u/platform/commit/5fa064e4c203f7202fc6db4ef2463001e32857a4))
+* **tasks:** authenticate label association routes ([a3350a6](https://github.com/tutur3u/platform/commit/a3350a6deab332ac1754533e5fbaec5f6ecd62f4))
+* **tasks:** harden satellite task route hydration ([9d51a38](https://github.com/tutur3u/platform/commit/9d51a38ad948ebb398bec794f082f2bbf8d466cc))
+* **tasks:** restore personal board entrypoint ([e707bf5](https://github.com/tutur3u/platform/commit/e707bf538925545a06dea83ca8f4f48f5c057461))
+* **tasks:** restore satellite resource access ([ec5e0a8](https://github.com/tutur3u/platform/commit/ec5e0a8d75398047e0151ae2ac3cd9a25a4fd675))
+* **tasks:** route native personal task moves normally ([5bbba3c](https://github.com/tutur3u/platform/commit/5bbba3c3f193e722cc87cdfe2eb2734f61442cd0))
+* **tasks:** serve config APIs from tasks app ([6d12722](https://github.com/tutur3u/platform/commit/6d12722fa54b146d69de0788624327eaa5f3f1a2))
+* **tasks:** tolerate personal count rpc auth gaps ([a31044a](https://github.com/tutur3u/platform/commit/a31044aea13e623d06c50eb086022244a2177e98))
+* **tasks:** use connection for boards route ([15bc262](https://github.com/tutur3u/platform/commit/15bc2623dfe1d236d729bf65b5417fae050b455b))
+* **tasks:** use connection without segment config ([e3e89e0](https://github.com/tutur3u/platform/commit/e3e89e059219f589f11ccb29313f3bda5b0624b2))
+
 ## [0.9.1](https://github.com/tutur3u/platform/compare/tasks-v0.9.0...tasks-v0.9.1) (2026-07-03)
 
 

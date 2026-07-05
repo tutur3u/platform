@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.11.0](https://github.com/tutur3u/platform/compare/finance-v0.10.1...finance-v0.11.0) (2026-07-05)
+
+
+### Features
+
+* **finance:** port the full finance settings into the finance app ([8c20ffd](https://github.com/tutur3u/platform/commit/8c20ffd3d9b4ed17611166cbcda99084f6cdd85e))
+* **satellite:** add sidebar apps launcher ([b2f6fcd](https://github.com/tutur3u/platform/commit/b2f6fcd55d7cb5c100e31d36f9f329817ecfe5e9))
+
+
+### Bug Fixes
+
+* **finance:** add default wallet settings copy ([3ba8a1b](https://github.com/tutur3u/platform/commit/3ba8a1b75a69538b28021ac03e7a5f091f29234c))
+
 ## [0.10.1](https://github.com/tutur3u/platform/compare/finance-v0.10.0...finance-v0.10.1) (2026-07-03)
 
 
