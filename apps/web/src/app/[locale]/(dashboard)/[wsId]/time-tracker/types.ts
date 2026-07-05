@@ -1,8 +1,13 @@
 import type {
+  SessionWithRelations,
   TimeTrackingCategory,
-  TimeTrackingSession,
   WorkspaceTask,
 } from '@tuturuuu/types';
+
+// SessionWithRelations now lives in @tuturuuu/types so the web globals (timer
+// indicator, threshold hooks) can share it after the time-tracker UI moved out.
+// Re-exported here for the (soon-to-be-removed) local time-tracker imports.
+export type { SessionWithRelations };
 
 // Main timer statistics interface
 export interface TimerStats {
@@ -24,12 +29,6 @@ export interface TimerStats {
     duration: number;
     sessions: number;
   }>;
-}
-
-// Session with related data
-export interface SessionWithRelations extends TimeTrackingSession {
-  category: TimeTrackingCategory | null;
-  task: WorkspaceTask | null;
 }
 
 // Goal tracking interface

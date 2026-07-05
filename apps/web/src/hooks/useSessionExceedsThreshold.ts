@@ -1,6 +1,6 @@
+import type { SessionWithRelations } from '@tuturuuu/types';
 import dayjs from 'dayjs';
 import { useMemo } from 'react';
-import type { SessionWithRelations } from '@/app/[locale]/(dashboard)/[wsId]/time-tracker/types';
 
 /**
  * Hook to determine if a running session has exceeded the workspace threshold.
