@@ -8,7 +8,8 @@
       }
     ],
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@tuturuuu/types/*": ["../../packages/types/src/*"]
     },
     "esModuleInterop": true,
     "resolveJsonModule": true
