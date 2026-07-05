@@ -1,13 +1,15 @@
 import { Head, Html, Img, Tailwind } from '@tuturuuu/transactional/react/email';
 import type { UserGroupPost } from '@tuturuuu/types/db';
 import { cn } from '@tuturuuu/utils/format';
+import { formatPostEmailBodyDate } from '@/lib/post-email-queue/date-formatting';
 
 interface Props {
-  post: Pick<UserGroupPost, 'title' | 'content'>;
+  post: Pick<UserGroupPost, 'title' | 'content' | 'created_at'>;
   groupName: string | undefined;
   isHomeworkDone?: boolean;
   username: string | undefined;
   notes: string | undefined;
+  timezone?: string | null;
   unsubscribeUrl?: string;
 }
 
@@ -17,8 +19,20 @@ const PostEmailTemplate = ({
   isHomeworkDone,
   username,
   notes,
+  timezone,
   unsubscribeUrl,
 }: Props) => {
+  const vietnameseReportDate = formatPostEmailBodyDate(
+    post.created_at,
+    'vi',
+    timezone
+  );
+  const englishReportDate = formatPostEmailBodyDate(
+    post.created_at,
+    'en-US',
+    timezone
+  );
+
   return (
     <Html>
       <Head />
@@ -84,13 +98,7 @@ const PostEmailTemplate = ({
                 <span className="font-semibold text-purple-600">
                   {username || '<Chưa có tên>'}
                 </span>{' '}
-                trong ngày{' '}
-                {new Date().toLocaleDateString('vi', {
-                  day: 'numeric',
-                  month: 'long',
-                  year: 'numeric',
-                })}
-                , lớp{' '}
+                trong ngày {vietnameseReportDate}, lớp{' '}
                 <span className="font-semibold underline">{groupName}</span>,
                 với nội dung như sau:
               </p>
@@ -140,13 +148,7 @@ const PostEmailTemplate = ({
                 <span className="font-semibold text-purple-600">
                   {username || '<No name>'}
                 </span>{' '}
-                on{' '}
-                {new Date().toLocaleDateString('en-US', {
-                  day: 'numeric',
-                  month: 'long',
-                  year: 'numeric',
-                })}
-                , class{' '}
+                on {englishReportDate}, class{' '}
                 <span className="font-semibold underline">{groupName}</span>,
                 with the following content:
               </p>

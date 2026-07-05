@@ -201,8 +201,10 @@ function createSbAdminMock({
   failSentEmailInsert = false,
   onQueueUpdate,
   onSendEmail,
+  postCreatedAt,
   queueRows,
   sentEmailRows = [],
+  workspaceTimezone = null,
 }: {
   blockedEmails?: Set<string>;
   checkRows: CheckRow[];
@@ -216,8 +218,10 @@ function createSbAdminMock({
     updatedRows: QueueRow[];
   }) => void;
   onSendEmail?: () => void;
+  postCreatedAt?: string;
   queueRows: QueueRow[];
   sentEmailRows?: SentEmailRow[];
+  workspaceTimezone?: string | null;
 }) {
   const state = {
     checkEmailUpdates: [] as Array<{
@@ -426,7 +430,7 @@ function createSbAdminMock({
               in: vi.fn(async (_field: string, values: string[]) => ({
                 data: values.map((postId) => ({
                   content: 'Post content',
-                  created_at: new Date().toISOString(),
+                  created_at: postCreatedAt ?? new Date().toISOString(),
                   group_id: GROUP_ID,
                   id: postId,
                   title: 'Post title',
@@ -436,6 +440,22 @@ function createSbAdminMock({
                   },
                 })),
                 error: null,
+              })),
+            })),
+          };
+        case 'workspaces':
+          return {
+            select: vi.fn(() => ({
+              eq: vi.fn((_field: string, value: string) => ({
+                maybeSingle: vi.fn(async () => ({
+                  data:
+                    value === WS_ID
+                      ? {
+                          timezone: workspaceTimezone,
+                        }
+                      : null,
+                  error: null,
+                })),
               })),
             })),
           };
@@ -915,5 +935,63 @@ describe('post email batch processing', () => {
     expect(
       buildPostEmailSubject('2026-03-08T00:00:00.000Z', 'Võ Bảo Ngọc 2')
     ).toBe('Easy Center | Báo cáo tiến độ ngày 08/03/2026 của Võ Bảo Ngọc 2');
+  });
+
+  it('formats the post email subject in the workspace timezone', () => {
+    const createdAt = '2026-03-07T18:30:00.000Z';
+
+    expect(
+      buildPostEmailSubject(createdAt, 'Võ Bảo Ngọc 2', 'Asia/Ho_Chi_Minh')
+    ).toBe('Easy Center | Báo cáo tiến độ ngày 08/03/2026 của Võ Bảo Ngọc 2');
+    expect(
+      buildPostEmailSubject(createdAt, 'Võ Bảo Ngọc 2', 'America/New_York')
+    ).toBe('Easy Center | Báo cáo tiến độ ngày 07/03/2026 của Võ Bảo Ngọc 2');
+  });
+
+  it('falls back to Vietnam time when the workspace timezone is missing or invalid', () => {
+    const createdAt = '2026-03-07T18:30:00.000Z';
+
+    expect(buildPostEmailSubject(createdAt, 'Võ Bảo Ngọc 2')).toBe(
+      'Easy Center | Báo cáo tiến độ ngày 08/03/2026 của Võ Bảo Ngọc 2'
+    );
+    expect(
+      buildPostEmailSubject(createdAt, 'Võ Bảo Ngọc 2', 'Invalid/Timezone')
+    ).toBe('Easy Center | Báo cáo tiến độ ngày 08/03/2026 của Võ Bảo Ngọc 2');
+  });
+
+  it('uses the prefetched workspace timezone when sending post emails', async () => {
+    mocks.emailServiceSendMock.mockResolvedValue({
+      messageId: 'provider-1',
+      success: true,
+    });
+
+    const { sbAdmin, state } = createSbAdminMock({
+      checkRows: [
+        createCheckRow({ user_id: USER_ID, userEmail: 'user-1@example.com' }),
+      ],
+      postCreatedAt: '2026-03-07T18:30:00.000Z',
+      queueRows: [createQueueRow({ id: QUEUE_ID, user_id: USER_ID })],
+      workspaceTimezone: 'Asia/Ho_Chi_Minh',
+    });
+
+    const result = await processPostEmailQueueBatch(sbAdmin as never, {
+      concurrency: 1,
+      limit: 1,
+      maxDurationMs: 1_000,
+      sendLimit: 1,
+    });
+
+    expect(result.results).toEqual([{ id: QUEUE_ID, status: 'sent' }]);
+    expect(mocks.emailServiceSendMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        content: expect.objectContaining({
+          subject:
+            'Easy Center | Báo cáo tiến độ ngày 08/03/2026 của Recipient',
+        }),
+      })
+    );
+    expect(state.sentEmailRows[0]?.subject).toBe(
+      'Easy Center | Báo cáo tiến độ ngày 08/03/2026 của Recipient'
+    );
   });
 });
