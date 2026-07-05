@@ -58,5 +58,26 @@ describe('transformTaskRecord', () => {
     expect(transformed.projects).toEqual([
       { id: 'project-1', name: 'Platform', status: 'active' },
     ]);
+    expect(transformed).toMatchObject({
+      is_personal_external: false,
+      is_personal_external_default: false,
+    });
+  });
+
+  it('preserves explicit personal external flags from API responses', () => {
+    const transformed = transformTaskRecord({
+      id: 'task-1',
+      name: 'Task',
+      list_id: 'list-1',
+      display_number: 1,
+      created_at: '2026-01-01T00:00:00.000Z',
+      is_personal_external: true,
+      is_personal_external_default: true,
+    });
+
+    expect(transformed).toMatchObject({
+      is_personal_external: true,
+      is_personal_external_default: true,
+    });
   });
 });

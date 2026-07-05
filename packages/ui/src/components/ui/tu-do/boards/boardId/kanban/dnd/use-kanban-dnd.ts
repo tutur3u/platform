@@ -21,6 +21,7 @@ import {
 } from '@tuturuuu/utils/task-helper';
 import { hasDraggableData } from '@tuturuuu/utils/task-helpers';
 import { useCallback, useRef, useState } from 'react';
+import { isPersonalExternalOverlayTask } from '../../../../../../../lib/task-personal-external';
 import { useBoardBroadcast } from '../../../../shared/board-broadcast-context';
 import { invalidateKanbanDeadlineTasks } from '../data/kanban-deadline-query';
 import { MAX_SAFE_INTEGER_SORT } from '../kanban-constants';
@@ -121,22 +122,8 @@ interface UseKanbanDndProps {
   scrollContainerRef: React.RefObject<HTMLDivElement | null>;
 }
 
-function hasPersonalExternalSourceMetadata(task: Task) {
-  return Boolean(
-    task.source_workspace_id || task.source_board_id || task.source_list_id
-  );
-}
-
 export function usesPersonalPlacement(task: Task) {
-  if (task.is_personal_external === false) {
-    return false;
-  }
-
-  return (
-    task.is_personal_external === true ||
-    isPersonalExternalStagingListId(task.list_id) ||
-    (hasPersonalExternalSourceMetadata(task) && Boolean(task.personal_board_id))
-  );
+  return isPersonalExternalOverlayTask(task);
 }
 
 function getTaskDropPosition(

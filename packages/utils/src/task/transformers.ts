@@ -142,6 +142,8 @@ export function transformTaskRecord(task: any): Task {
 
   return {
     ...task,
+    is_personal_external: task.is_personal_external ?? false,
+    is_personal_external_default: task.is_personal_external_default ?? false,
     assignees: transformAssignees(task.assignees),
     labels: normalizedLabels,
     projects: normalizedProjects,

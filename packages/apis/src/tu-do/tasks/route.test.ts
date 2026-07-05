@@ -1074,8 +1074,15 @@ describe('workspace task route personal external loading', () => {
     expect(response.status).toBe(200);
     const payload = await response.json();
     const taskIds = payload.tasks.map((task: { id: string }) => task.id);
+    const localTask = payload.tasks.find(
+      (task: { id: string }) => task.id === LOCAL_TASK_ID
+    );
 
     expect(taskIds).toEqual([LOCAL_TASK_ID, PLACED_TASK_ID, UNPLACED_TASK_ID]);
+    expect(localTask).toMatchObject({
+      is_personal_external: false,
+      is_personal_external_default: false,
+    });
     expect(new Set(taskIds).size).toBe(taskIds.length);
     expect(payload.count).toBe(3);
     expect(consoleWarnSpy).not.toHaveBeenCalled();

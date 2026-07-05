@@ -86,6 +86,7 @@ import React, {
   useRef,
   useState,
 } from 'react';
+import { isPersonalExternalOverlayTask } from '../../../../../../lib/task-personal-external';
 import {
   enqueueTaskCardRelationshipRequest,
   useTaskCardRelationships,
@@ -891,6 +892,7 @@ function TaskCardInner({
   // Check if task is optimistically added (pending realtime confirmation)
   const isOptimistic = '_isOptimistic' in task && task._isOptimistic === true;
   const isPersonalExternalTask = isExternalTaskSnapshot(task);
+  const isPersonalExternalOverlay = isPersonalExternalOverlayTask(task);
   const sourceBoardUrl =
     task.source_workspace_id && task.source_board_id
       ? `/${task.source_workspace_id}${tasksHref(`/boards/${task.source_board_id}`)}`
@@ -2348,7 +2350,7 @@ function TaskCardInner({
                     />
                   )}
 
-                  {isPersonalExternalTask && (
+                  {isPersonalExternalOverlay && (
                     <>
                       {task.personal_board_id && task.personal_list_id && (
                         <DropdownMenuItem

@@ -151,4 +151,14 @@ describe('getTaskCardHydratingOpenOptions', () => {
     ).toBe(true);
     expect(isExternalTaskSnapshot(task)).toBe(false);
   });
+
+  it('does not treat personal placement metadata alone as an external snapshot', () => {
+    expect(
+      isExternalTaskSnapshot({
+        ...task,
+        personal_board_id: 'board-1',
+        personal_list_id: 'list-1',
+      })
+    ).toBe(false);
+  });
 });

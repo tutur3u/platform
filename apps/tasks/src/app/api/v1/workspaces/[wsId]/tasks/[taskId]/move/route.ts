@@ -170,6 +170,8 @@ function normalizeTask(task: TaskMoveRow) {
         },
       ];
     }),
+    is_personal_external: false,
+    is_personal_external_default: false,
   };
 }
 

@@ -1696,6 +1696,9 @@ describe('useTaskActions', () => {
         ...mockTask,
         personal_board_id: 'board-1',
         personal_list_id: 'list-1',
+        source_workspace_id: 'ws-1',
+        source_board_id: 'board-1',
+        source_list_id: 'list-1',
       } as unknown as Task;
       const targetList = {
         id: 'list-2',

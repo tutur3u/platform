@@ -157,6 +157,8 @@ export function normalizeTask<T extends TaskRecord>(task: T) {
 
   return {
     ...task,
+    is_personal_external: false,
+    is_personal_external_default: false,
     assignees: normalizedAssignees,
     labels: normalizedLabels,
     projects: normalizedProjects,
