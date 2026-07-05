@@ -1123,6 +1123,30 @@ test('environment-scoped Vercel workflows scope project secrets to protected job
   }
 });
 
+test('TanStack production Vercel workflow skips when project secret is absent', () => {
+  const workflowName = 'vercel-production-tanstack-web.yaml';
+  const workflow = fs.readFileSync(
+    path.join(repoRoot, '.github', 'workflows', workflowName),
+    'utf8'
+  );
+  const deployJob = readWorkflowJobBlock(workflowName, 'Build-Production');
+  const guardedStepPattern =
+    /if: steps\.check_commits\.outputs\.skip_build != 'true' && steps\.vercel_config\.outputs\.configured == 'true'/g;
+
+  assert.match(deployJob, /- name: Check Vercel project configuration/);
+  assert.match(deployJob, /\n {8}id: vercel_config\n/);
+  assert.match(
+    deployJob,
+    /VERCEL_PROJECT_ID: \$\{\{ secrets\.VERCEL_TANSTACK_WEB_PROJECT_ID \}\}/
+  );
+  assert.match(deployJob, /configured=false/);
+  assert.match(deployJob, /TanStack Web Vercel deployment skipped/);
+  assert.ok(
+    [...workflow.matchAll(guardedStepPattern)].length >= 5,
+    'Vercel pull/build/marker steps must be skipped when project config is missing'
+  );
+});
+
 test('legacy version bump generator workflows are retired', () => {
   for (const workflowName of [
     'check-and-bump-versions.yaml',

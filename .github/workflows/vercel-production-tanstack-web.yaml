@@ -72,30 +72,43 @@ jobs:
         if: steps.check_commits.outputs.skip_build != 'true'
         run: bash scripts/ci/run-with-backoff.sh bun install --global vercel@latest
 
-      - name: Pull Vercel Environment Information
+      - name: Check Vercel project configuration
+        id: vercel_config
         if: steps.check_commits.outputs.skip_build != 'true'
+        env:
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_TANSTACK_WEB_PROJECT_ID }}
+        run: |
+          if [ -z "${VERCEL_PROJECT_ID:-}" ]; then
+            echo "::notice title=TanStack Web Vercel deployment skipped::VERCEL_TANSTACK_WEB_PROJECT_ID is not configured."
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Pull Vercel Environment Information
+        if: steps.check_commits.outputs.skip_build != 'true' && steps.vercel_config.outputs.configured == 'true'
         env:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_TANSTACK_WEB_PROJECT_ID }}
         run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
 
       - name: Build workspace dependencies
-        if: steps.check_commits.outputs.skip_build != 'true'
+        if: steps.check_commits.outputs.skip_build != 'true' && steps.vercel_config.outputs.configured == 'true'
         run: bun turbo:local run build '--filter=@tuturuuu/tanstack-web^...'
 
       - name: Generate shared build metadata
-        if: steps.check_commits.outputs.skip_build != 'true'
+        if: steps.check_commits.outputs.skip_build != 'true' && steps.vercel_config.outputs.configured == 'true'
         run: bun run --silent scripts/ci/generate-build-metadata.ts
 
       - name: Build Project Artifacts
-        if: steps.check_commits.outputs.skip_build != 'true'
+        if: steps.check_commits.outputs.skip_build != 'true' && steps.vercel_config.outputs.configured == 'true'
         env:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_TANSTACK_WEB_PROJECT_ID }}
         run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
 
       - name: Record successful Vercel build marker
-        if: steps.check_commits.outputs.skip_build != 'true'
+        if: steps.check_commits.outputs.skip_build != 'true' && steps.vercel_config.outputs.configured == 'true'
         continue-on-error: true
         env:
           GITHUB_TOKEN: ${{ github.token }}
