@@ -61,6 +61,7 @@ const ONBOARDING_BYPASS_PATHS = [
   // Auth flows
   '/onboarding',
   '/login',
+  '/add-account',
   '/signup',
   '/auth',
   '/api',

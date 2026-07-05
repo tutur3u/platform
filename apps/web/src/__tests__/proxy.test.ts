@@ -1397,6 +1397,28 @@ describe('web proxy api handling', () => {
     );
   });
 
+  it('lets add-account persist multi-account sessions before onboarding redirects', async () => {
+    mocks.createClient.mockResolvedValue(
+      createAuthenticatedSupabaseClient(
+        {
+          email: 'new-account@example.com',
+          id: 'user-2',
+        },
+        null
+      )
+    );
+
+    const { proxy } = await import('../proxy');
+    const response = await proxy(
+      createSessionRequest(
+        'http://localhost/add-account?returnUrl=%2Fen%2Fpersonal%2Ftasks'
+      )
+    );
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get('location')).toBeNull();
+  });
+
   it('skips forced onboarding for protected routes when an invite is pending', async () => {
     mocks.createClient.mockResolvedValue(
       createAuthenticatedSupabaseClient(
