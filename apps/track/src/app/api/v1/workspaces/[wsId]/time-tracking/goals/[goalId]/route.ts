@@ -2,7 +2,7 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
-import type { Database } from '@tuturuuu/types/supabase';
+import type { Database } from '@tuturuuu/types';
 import {
   normalizeWorkspaceId,
   verifyWorkspaceMembershipType,

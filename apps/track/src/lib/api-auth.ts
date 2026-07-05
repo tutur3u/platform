@@ -9,7 +9,6 @@ import {
   CLI_APP_ACCESS_SCOPE,
   CLI_APP_TARGET_APP,
 } from '@tuturuuu/auth/cli-session';
-import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
 import {
   createAdminClient,
@@ -23,15 +22,12 @@ import {
   isIPBlocked,
   recordApiAuthFailure,
 } from '@tuturuuu/utils/abuse-protection';
-import {
-  cascadeBackendRateLimitToProxyBan,
-  isBackendRateLimitError,
-} from '@tuturuuu/utils/abuse-protection/backend-rate-limit';
 import { writeVerifiedSessionCacheForSubjects } from '@tuturuuu/utils/abuse-protection/edge-trust';
 import { validateAiTempAuthRequest } from '@tuturuuu/utils/ai-temp-auth';
 import { hasAuthenticatedApiSession } from '@tuturuuu/utils/api-proxy-guard';
 import { MAX_PAYLOAD_SIZE } from '@tuturuuu/utils/constants';
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
+import { headers } from 'next/headers';
 import { type NextRequest, NextResponse } from 'next/server';
 import {
   enforceAdaptiveStepUpChallenge,
@@ -102,19 +98,13 @@ export async function authorizeRequest(
     }
   }
 
-  const supabase = (await createClient(request)) as TypedSupabaseClient;
-  const { user, authError } = await resolveAuthenticatedUser(supabase);
+  const auth = await resolveSessionAuthContext(request);
 
-  if (authError || !user) {
-    return {
-      data: null,
-      error: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }),
-    };
+  if (!auth.ok) {
+    return { data: null, error: auth.response };
   }
 
-  writeVerifiedSessionCacheForRequest(request, user.id);
-
-  return { data: { user, supabase }, error: null };
+  return { data: { user: auth.user, supabase: auth.supabase }, error: null };
 }
 
 /**
@@ -123,31 +113,18 @@ export async function authorizeRequest(
 export async function authorize(
   wsId: string
 ): Promise<{ user: SupabaseUser | null; error: NextResponse | null }> {
-  const supabase = (await createClient()) as TypedSupabaseClient;
-  const { user, authError: userError } =
-    await resolveAuthenticatedUser(supabase);
+  const requestHeaders = await headers();
+  const auth = await resolveSessionAuthContext({
+    headers: requestHeaders,
+    url: `/api/v1/workspaces/${wsId}`,
+  });
 
-  if (userError) {
-    return {
-      user: null,
-      error: NextResponse.json(
-        { error: 'Internal server error' },
-        { status: 500 }
-      ),
-    };
-  }
-
-  if (!user) {
-    return {
-      user: null,
-      error: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }),
-    };
-  }
+  if (!auth.ok) return { user: null, error: auth.response };
 
   const membership = await verifyWorkspaceMembershipType({
     wsId,
-    userId: user.id,
-    supabase,
+    userId: auth.user.id,
+    supabase: auth.supabase,
   });
 
   if (membership.error === 'membership_lookup_failed') {
@@ -169,7 +146,7 @@ export async function authorize(
       ),
     };
   }
-  return { user, error: null };
+  return { user: auth.user, error: null };
 }
 
 // ---------------------------------------------------------------------------
@@ -353,17 +330,6 @@ function verifyConfiguredAppSessionRequest(
   return null;
 }
 
-async function resolveAuthenticatedUser(supabase: TypedSupabaseClient) {
-  const resolution = await resolveAuthenticatedSessionUser(supabase);
-  if (resolution.user) {
-    setLogDrainUserContext({
-      userEmail: resolution.user.email,
-      userId: resolution.user.id,
-    });
-  }
-  return resolution;
-}
-
 export type SessionAuthResolution =
   | (SessionAuthContext & {
       ok: true;
@@ -377,13 +343,15 @@ export async function resolveSessionAuthContext(
   request: Pick<NextRequest, 'headers' | 'url'>,
   options?: Pick<SessionAuthOptions, 'allowAppSessionAuth'>
 ): Promise<SessionAuthResolution> {
-  if (options?.allowAppSessionAuth) {
+  const allowAppSessionAuth = options?.allowAppSessionAuth ?? true;
+
+  if (allowAppSessionAuth) {
     const appSessionToken = getAppSessionTokenFromRequest(request);
 
     if (appSessionToken) {
       const appSessionVerification = verifyConfiguredAppSessionRequest(
         request,
-        options.allowAppSessionAuth
+        allowAppSessionAuth
       );
 
       if (!appSessionVerification) {
@@ -419,22 +387,9 @@ export async function resolveSessionAuthContext(
     }
   }
 
-  const supabase = (await createClient(request)) as TypedSupabaseClient;
-  const { user, authError } = await resolveAuthenticatedUser(supabase);
-
-  if (authError || !user) {
-    return {
-      ok: false,
-      response: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }),
-    };
-  }
-
-  writeVerifiedSessionCacheForRequest(request, user.id);
-
   return {
-    ok: true,
-    supabase,
-    user,
+    ok: false,
+    response: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }),
   };
 }
 
@@ -698,8 +653,7 @@ export function withSessionAuth<T = unknown>(
       }
     }
 
-    // 4. Authenticate — use Redis temp auth or app-session JWTs when present,
-    // otherwise revalidate the Supabase session with `getUser()`.
+    // 4. Authenticate with Redis temp auth or app-session JWTs.
     const tempAuth = options?.allowAiTempAuth
       ? await validateAiTempAuthRequest(request)
       : { status: 'missing' as const };
@@ -782,13 +736,15 @@ export function withSessionAuth<T = unknown>(
       return response;
     }
 
-    if (options?.allowAppSessionAuth) {
+    const allowAppSessionAuth = options?.allowAppSessionAuth ?? true;
+
+    if (allowAppSessionAuth) {
       const appSessionToken = getAppSessionTokenFromRequest(request);
 
       if (appSessionToken) {
         const appSessionVerification = verifyConfiguredAppSessionRequest(
           request,
-          options.allowAppSessionAuth
+          allowAppSessionAuth
         );
 
         if (!appSessionVerification) {
@@ -881,107 +837,14 @@ export function withSessionAuth<T = unknown>(
       }
     }
 
-    const supabase = (await createClient(request)) as TypedSupabaseClient;
-    const { user, authError } = await resolveAuthenticatedUser(supabase);
-
-    if (deferredApiAbuseBlock && (authError || !user)) {
+    if (deferredApiAbuseBlock) {
       return buildIpBlockResponse(deferredApiAbuseBlock);
     }
 
-    if (isBackendRateLimitError(authError)) {
-      const blockInfo = await cascadeBackendRateLimitToProxyBan({
-        endpoint,
-        ipAddress,
-        source: 'auth',
-      });
-      const retryAfter = blockInfo
-        ? Math.max(
-            1,
-            Math.ceil((blockInfo.expiresAt.getTime() - Date.now()) / 1000)
-          )
-        : 60;
-
-      return NextResponse.json(
-        { error: 'Too Many Requests', message: 'Rate limit exceeded' },
-        {
-          status: 429,
-          headers: { 'Retry-After': `${retryAfter}` },
-        }
-      );
+    if (ipAddress && ipAddress !== 'unknown') {
+      void recordApiAuthFailure(ipAddress, endpoint);
     }
 
-    if (authError || !user) {
-      // Record auth failure for auto-blocking
-      if (ipAddress && ipAddress !== 'unknown') {
-        void recordApiAuthFailure(ipAddress, endpoint);
-      }
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    // 5. Check user suspension
-    try {
-      const { checkUserSuspension } = await import(
-        '@tuturuuu/utils/abuse-protection/user-suspension'
-      );
-      const suspension = await checkUserSuspension(user.id);
-      if (suspension.suspended) {
-        return NextResponse.json(
-          {
-            error: 'Forbidden',
-            message: suspension.reason ?? 'Account suspended',
-          },
-          { status: 403 }
-        );
-      }
-    } catch {
-      // User suspension module not yet available or failed — fail-open
-    }
-
-    // 6. Resolve route params and call handler
-    const params = routeContext?.params
-      ? await Promise.resolve(routeContext.params)
-      : ({} as T);
-
-    const adaptiveControls = await applyAdaptiveSessionControls({
-      authKind: 'session',
-      endpoint,
-      ipAddress,
-      isRead,
-      rateLimit: options?.rateLimit,
-      request,
-      user,
-    });
-    if (adaptiveControls.response) {
-      return adaptiveControls.response;
-    }
-
-    const response = await handler(request, { user, supabase }, params);
-
-    // 7. Apply Cache-Control for successful GET responses
-    if (
-      options?.cache &&
-      request.method === 'GET' &&
-      response.status >= 200 &&
-      response.status < 300
-    ) {
-      const { maxAge, swr } = options.cache;
-      const directives = [`private`, `max-age=${maxAge}`];
-      if (swr !== undefined) {
-        directives.push(`stale-while-revalidate=${swr}`);
-      }
-      response.headers.set('Cache-Control', directives.join(', '));
-    }
-
-    applyAdaptiveRateLimitHeaders(response, adaptiveControls.headers);
-    recordResponseAbuseSignal({
-      decision: adaptiveControls.decision,
-      ipAddress,
-      method: request.method,
-      response,
-      route: endpoint,
-      userId: user.id,
-    });
-
-    return response;
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   };
 }

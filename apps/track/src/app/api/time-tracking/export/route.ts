@@ -1,94 +1,89 @@
-import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import { createClient } from '@tuturuuu/supabase/next/server';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import type { NextRequest } from 'next/server';
 import { connection, NextResponse } from 'next/server';
+import { withSessionAuth } from '@/lib/api-auth';
 import {
   getGroupedSessionsPaginated,
   type PaginationParams,
 } from '@/lib/time-tracking-helper';
 
-export async function GET(request: NextRequest) {
-  await connection();
+export const GET = withSessionAuth(
+  async (request: NextRequest, { user, supabase }) => {
+    await connection();
 
-  try {
-    const supabase = await createClient();
+    try {
+      // Check if user is root user
+      const isRootUser = user.email?.endsWith('@tuturuuu.com');
+      if (!isRootUser) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      }
 
-    // Check authentication
-    const { user } = await resolveAuthenticatedSessionUser(supabase);
+      // Get query parameters
+      const { searchParams } = new URL(request.url);
+      const wsId = searchParams.get('wsId') || ROOT_WORKSPACE_ID;
 
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+      // Check if workspace is root workspace
+      const isRootWorkspace = wsId === ROOT_WORKSPACE_ID;
+      if (!isRootWorkspace) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      }
 
-    // Check if user is root user
-    const isRootUser = user.email?.endsWith('@tuturuuu.com');
-    if (!isRootUser) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    }
+      // Parse remaining query parameters
+      const period =
+        (searchParams.get('period') as 'day' | 'week' | 'month') || 'day';
+      const page = parseInt(searchParams.get('page') || '1', 10);
+      const limit = parseInt(searchParams.get('limit') || '100', 10);
+      const search = searchParams.get('search') || '';
+      const startDate = searchParams.get('startDate') || '';
+      const endDate = searchParams.get('endDate') || '';
 
-    // Get query parameters
-    const { searchParams } = new URL(request.url);
-    const wsId = searchParams.get('wsId') || ROOT_WORKSPACE_ID;
+      // Validate workspace access
+      const workspaceMember = await verifyWorkspaceMembershipType({
+        wsId: wsId,
+        userId: user.id,
+        supabase: supabase,
+      });
 
-    // Check if workspace is root workspace
-    const isRootWorkspace = wsId === ROOT_WORKSPACE_ID;
-    if (!isRootWorkspace) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    }
+      if (workspaceMember.error === 'membership_lookup_failed') {
+        return NextResponse.json(
+          { error: 'Failed to verify workspace membership' },
+          { status: 500 }
+        );
+      }
 
-    // Parse remaining query parameters
-    const period =
-      (searchParams.get('period') as 'day' | 'week' | 'month') || 'day';
-    const page = parseInt(searchParams.get('page') || '1', 10);
-    const limit = parseInt(searchParams.get('limit') || '100', 10);
-    const search = searchParams.get('search') || '';
-    const startDate = searchParams.get('startDate') || '';
-    const endDate = searchParams.get('endDate') || '';
+      if (!workspaceMember.ok) {
+        return NextResponse.json(
+          { error: 'Workspace access denied' },
+          { status: 403 }
+        );
+      }
 
-    // Validate workspace access
-    const workspaceMember = await verifyWorkspaceMembershipType({
-      wsId: wsId,
-      userId: user.id,
-      supabase: supabase,
-    });
+      // Prepare pagination parameters
+      const params: PaginationParams = {
+        page,
+        limit: Math.min(limit, 1000), // Cap at 1000 records per request
+        search: search || undefined,
+        startDate: startDate || undefined,
+        endDate: endDate || undefined,
+      };
 
-    if (workspaceMember.error === 'membership_lookup_failed') {
+      // Fetch paginated sessions
+      const result = await getGroupedSessionsPaginated(wsId, period, params);
+
+      return NextResponse.json({
+        data: result.data,
+        pagination: result.pagination,
+      });
+    } catch (error) {
+      console.error('Export API error:', error);
       return NextResponse.json(
-        { error: 'Failed to verify workspace membership' },
+        { error: 'Internal server error' },
         { status: 500 }
       );
     }
-
-    if (!workspaceMember.ok) {
-      return NextResponse.json(
-        { error: 'Workspace access denied' },
-        { status: 403 }
-      );
-    }
-
-    // Prepare pagination parameters
-    const params: PaginationParams = {
-      page,
-      limit: Math.min(limit, 1000), // Cap at 1000 records per request
-      search: search || undefined,
-      startDate: startDate || undefined,
-      endDate: endDate || undefined,
-    };
-
-    // Fetch paginated sessions
-    const result = await getGroupedSessionsPaginated(wsId, period, params);
-
-    return NextResponse.json({
-      data: result.data,
-      pagination: result.pagination,
-    });
-  } catch (error) {
-    console.error('Export API error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+  },
+  {
+    allowAppSessionAuth: { targetApp: 'track' },
   }
-}
+);
