@@ -108,6 +108,8 @@ services:
       - platform-web-internal-api-dist:/workspace/packages/internal-api/dist
       - platform-web-inventory-core-node_modules:/workspace/packages/inventory-core/node_modules
       - platform-web-inventory-core-dist:/workspace/packages/inventory-core/dist
+      - platform-web-storage-core-node_modules:/workspace/packages/storage-core/node_modules
+      - platform-web-storage-core-dist:/workspace/packages/storage-core/dist
       - platform-web-masonry-node_modules:/workspace/packages/masonry/node_modules
       - platform-web-masonry-dist:/workspace/packages/masonry/dist
       - platform-web-microsoft-node_modules:/workspace/packages/microsoft/node_modules
@@ -212,6 +214,8 @@ services:
       - platform-web-internal-api-node_modules:/workspace/packages/internal-api/node_modules
       - platform-web-inventory-core-dist:/workspace/packages/inventory-core/dist
       - platform-web-inventory-core-node_modules:/workspace/packages/inventory-core/node_modules
+      - platform-web-storage-core-dist:/workspace/packages/storage-core/dist
+      - platform-web-storage-core-node_modules:/workspace/packages/storage-core/node_modules
       - platform-web-mind-core-dist:/workspace/packages/mind-core/dist
       - platform-web-mind-core-node_modules:/workspace/packages/mind-core/node_modules
       - platform-web-types-dist:/workspace/packages/types/dist
@@ -524,6 +528,8 @@ volumes:
   platform-web-internal-api-dist:
   platform-web-inventory-core-node_modules:
   platform-web-inventory-core-dist:
+  platform-web-storage-core-node_modules:
+  platform-web-storage-core-dist:
   platform-web-masonry-node_modules:
   platform-web-masonry-dist:
   platform-web-microsoft-node_modules:

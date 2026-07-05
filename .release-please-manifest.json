@@ -49,6 +49,7 @@
   "packages/realtime": "0.0.3",
   "packages/satellite": "0.2.1",
   "packages/sdk": "0.13.0",
+  "packages/storage-core": "0.1.0",
   "packages/supabase": "0.4.0",
   "packages/transactional": "1.0.0",
   "packages/trigger": "0.2.0",

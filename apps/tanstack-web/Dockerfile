@@ -54,6 +54,7 @@ COPY packages/hooks/package.json ./packages/hooks/package.json
 COPY packages/icons/package.json ./packages/icons/package.json
 COPY packages/internal-api/package.json ./packages/internal-api/package.json
 COPY packages/inventory-core/package.json ./packages/inventory-core/package.json
+COPY packages/storage-core/package.json ./packages/storage-core/package.json
 COPY packages/masonry/package.json ./packages/masonry/package.json
 COPY packages/microsoft/package.json ./packages/microsoft/package.json
 COPY packages/mind-core/package.json ./packages/mind-core/package.json
