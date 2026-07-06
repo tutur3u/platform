@@ -42,7 +42,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
+import { Tabs, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { cn } from '@tuturuuu/utils/format';
 import type {
   LaunchableApp,
@@ -56,6 +56,7 @@ import {
 } from '@tuturuuu/utils/launchable-apps';
 import { useTranslations } from 'next-intl';
 import type { CSSProperties } from 'react';
+import { useState } from 'react';
 
 interface AppsLauncherDialogProps {
   currentWorkspace?: LaunchableWorkspace | null;
@@ -109,6 +110,7 @@ export function AppsLauncherDialog({
   open,
 }: AppsLauncherDialogProps) {
   const t = useTranslations('command_launcher');
+  const [activeTab, setActiveTab] = useState<AppCategoryTab>('all');
 
   function resolveUrl(app: LaunchableApp) {
     return resolveLaunchableAppUrl({
@@ -139,55 +141,49 @@ export function AppsLauncherDialog({
     return LAUNCHABLE_APPS.filter((app) => app.category === tab);
   }
 
+  const activeApps = getAppsForTab(activeTab);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="grid h-[calc(100dvh-2rem)] max-h-[760px] w-[calc(100vw-2rem)] max-w-[860px] grid-rows-[auto_minmax(0,1fr)] gap-0 overflow-hidden p-0 sm:max-w-[860px]">
-        <DialogHeader className="border-b px-5 py-4 pr-12 text-left">
+      <DialogContent className="flex h-[min(760px,calc(100dvh-2rem))] max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] max-w-[860px] flex-col gap-0 overflow-hidden p-0 sm:max-w-[860px]">
+        <DialogHeader className="shrink-0 border-b px-5 py-4 pr-12 text-left">
           <DialogTitle>{t('apps')}</DialogTitle>
           <DialogDescription>{t('apps_description')}</DialogDescription>
         </DialogHeader>
 
         <Tabs
-          className="h-full min-h-0 gap-0 overflow-hidden"
-          defaultValue="all"
+          className="shrink-0 gap-0 overflow-hidden border-b bg-muted/20 px-3 py-2"
+          onValueChange={(value) => setActiveTab(value as AppCategoryTab)}
+          value={activeTab}
         >
-          <div className="shrink-0 border-b bg-muted/20 px-3 py-2">
-            <TabsList className="h-auto max-w-full justify-start gap-1 overflow-x-auto rounded-md bg-muted/70 p-1">
-              {APP_CATEGORY_TABS.map((tab) => (
-                <TabsTrigger
-                  className="shrink-0 px-3 text-xs"
-                  key={tab}
-                  value={tab}
-                >
-                  {t(`app_categories.${tab}`)}
-                </TabsTrigger>
-              ))}
-            </TabsList>
-          </div>
-
-          {APP_CATEGORY_TABS.map((tab) => {
-            const apps = getAppsForTab(tab);
-
-            return (
-              <TabsContent
-                className="m-0 min-h-0 flex-1 overflow-hidden data-[state=inactive]:hidden"
+          <TabsList className="h-auto max-w-full justify-start gap-1 overflow-x-auto rounded-md bg-muted/70 p-1">
+            {APP_CATEGORY_TABS.map((tab) => (
+              <TabsTrigger
+                className="shrink-0 px-3 text-xs"
                 key={tab}
                 value={tab}
               >
-                <AppsTabPanel
-                  apps={apps}
-                  categoryDescription={t(`app_category_descriptions.${tab}`)}
-                  countLabel={t('apps_count', { count: apps.length })}
-                  currentWorkspace={currentWorkspace}
-                  onOpen={openApp}
-                  openHereLabel={t('open_here')}
-                  openInNewTabLabel={t('open_in_new_tab')}
-                  openOptionsLabel={t('open_options')}
-                />
-              </TabsContent>
-            );
-          })}
+                {t(`app_categories.${tab}`)}
+              </TabsTrigger>
+            ))}
+          </TabsList>
         </Tabs>
+
+        <div
+          className="min-h-0 flex-1 overflow-hidden"
+          data-slot="apps-launcher-body"
+        >
+          <AppsTabPanel
+            apps={activeApps}
+            categoryDescription={t(`app_category_descriptions.${activeTab}`)}
+            countLabel={t('apps_count', { count: activeApps.length })}
+            currentWorkspace={currentWorkspace}
+            onOpen={openApp}
+            openHereLabel={t('open_here')}
+            openInNewTabLabel={t('open_in_new_tab')}
+            openOptionsLabel={t('open_options')}
+          />
+        </div>
       </DialogContent>
     </Dialog>
   );
