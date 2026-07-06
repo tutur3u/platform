@@ -1,14 +1,74 @@
 'use client';
 
+import type {
+  DragMoveEvent,
+  DragOverEvent,
+  DragStartEvent,
+} from '@dnd-kit/core';
 import { useCallback, useEffect, useRef } from 'react';
 
 export const KANBAN_EDGE_AUTO_SCROLL_THRESHOLD = 100;
 const KANBAN_EDGE_AUTO_SCROLL_SPEED = 10;
 const KANBAN_EDGE_AUTO_SCROLL_MAX_SPEED = 30;
 
+type KanbanDragAutoScrollEvent = DragMoveEvent | DragOverEvent | DragStartEvent;
+
 interface HorizontalRect {
   left: number;
   right: number;
+}
+
+function getTouchListClientX(touches: unknown) {
+  if (!touches || typeof touches !== 'object') return null;
+
+  const list = touches as ArrayLike<{ clientX?: unknown }> & {
+    item?: (index: number) => { clientX?: unknown } | null;
+  };
+  const touch = list.item?.(0) ?? list[0];
+
+  return typeof touch?.clientX === 'number' ? touch.clientX : null;
+}
+
+function getPointerEventClientX(event: Event) {
+  if ('clientX' in event && typeof event.clientX === 'number') {
+    return event.clientX;
+  }
+
+  if ('touches' in event) {
+    const touchX = getTouchListClientX(event.touches);
+    if (touchX !== null) return touchX;
+  }
+
+  if ('changedTouches' in event) {
+    return getTouchListClientX(event.changedTouches);
+  }
+
+  return null;
+}
+
+function getDragEventDeltaX(event: KanbanDragAutoScrollEvent) {
+  return 'delta' in event && typeof event.delta?.x === 'number'
+    ? event.delta.x
+    : 0;
+}
+
+function getDragActiveCenterX(event: KanbanDragAutoScrollEvent) {
+  const activeRect =
+    event.active.rect.current.translated ?? event.active.rect.current.initial;
+
+  return activeRect ? activeRect.left + activeRect.width / 2 : null;
+}
+
+export function getKanbanDragAutoScrollPointerX(
+  event: KanbanDragAutoScrollEvent
+) {
+  const pointerStartX = getPointerEventClientX(event.activatorEvent);
+
+  if (pointerStartX !== null) {
+    return pointerStartX + getDragEventDeltaX(event);
+  }
+
+  return getDragActiveCenterX(event);
 }
 
 export function getKanbanEdgeAutoScrollAmount(

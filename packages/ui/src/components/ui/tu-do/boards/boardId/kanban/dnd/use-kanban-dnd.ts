@@ -25,7 +25,7 @@ import { isPersonalExternalOverlayTask } from '../../../../../../../lib/task-per
 import { useBoardBroadcast } from '../../../../shared/board-broadcast-context';
 import { invalidateKanbanDeadlineTasks } from '../data/kanban-deadline-query';
 import { MAX_SAFE_INTEGER_SORT } from '../kanban-constants';
-import { useAutoScroll } from './auto-scroll';
+import { getKanbanDragAutoScrollPointerX, useAutoScroll } from './auto-scroll';
 import { getColumnReorderUpdates } from './column-reorder';
 import { calculateSortKeyWithRetry as createCalculateSortKeyWithRetry } from './kanban-sort-helpers';
 import {
@@ -161,14 +161,6 @@ function getActiveDragRect(
         }
       : null,
   });
-}
-
-function getDragCenterX(event: DragMoveEvent | DragOverEvent | DragStartEvent) {
-  const activeRect =
-    event.active.rect.current.translated ?? event.active.rect.current.initial;
-  if (!activeRect) return null;
-
-  return activeRect.left + activeRect.width / 2;
 }
 
 function getVisibleTaskRectsForList(
@@ -579,7 +571,7 @@ export function useKanbanDnd({
 
   const updateAutoScrollFromDragEvent = useCallback(
     (event: DragMoveEvent | DragOverEvent | DragStartEvent) => {
-      updateAutoScrollPointerX(getDragCenterX(event));
+      updateAutoScrollPointerX(getKanbanDragAutoScrollPointerX(event));
     },
     [updateAutoScrollPointerX]
   );
