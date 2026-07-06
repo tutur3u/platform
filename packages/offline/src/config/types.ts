@@ -1,3 +1,5 @@
+import type { NextConfig } from 'next';
+
 /**
  * @deprecated Use `SerwistRouteConfig` from `@tuturuuu/offline/route` instead.
  * This configuration is for the webpack-based approach which is being replaced
@@ -43,4 +45,12 @@ export interface TurbopackSerwistConfig {
    * 'esbuild-wasm' is always included automatically.
    */
   additionalExternalPackages?: string[];
+
+  /**
+   * Additional Next.js output file tracing includes to merge with the Serwist
+   * route defaults.
+   */
+  outputFileTracingIncludes?: NonNullable<
+    NextConfig['outputFileTracingIncludes']
+  >;
 }
