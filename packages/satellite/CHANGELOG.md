@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.4.0](https://github.com/tutur3u/platform/compare/satellite-v0.3.0...satellite-v0.4.0) (2026-07-06)
+
+
+### Features
+
+* **satellite:** improve apps launcher picker ([a3e92cb](https://github.com/tutur3u/platform/commit/a3e92cb1a54e3cb45bc1697e8e70efd0776d2a23))
+
+
+### Bug Fixes
+
+* **satellite:** constrain apps launcher scroll area ([5bce7a0](https://github.com/tutur3u/platform/commit/5bce7a0dc524d059a5de7d02b646d2e061555032))
+
 ## [0.3.0](https://github.com/tutur3u/platform/compare/satellite-v0.2.1...satellite-v0.3.0) (2026-07-05)
 
 

@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.11.0](https://github.com/tutur3u/platform/compare/tasks-v0.10.0...tasks-v0.11.0) (2026-07-06)
+
+
+### Features
+
+* **satellite:** improve apps launcher picker ([a3e92cb](https://github.com/tutur3u/platform/commit/a3e92cb1a54e3cb45bc1697e8e70efd0776d2a23))
+* **tasks:** add quick-create targeting and edge autoscroll ([f03e932](https://github.com/tutur3u/platform/commit/f03e9324b0cce18e9f9974cc8fe251bb58b686bd))
+
+
+### Bug Fixes
+
+* **tasks:** allow personal board external placements ([89a3fa2](https://github.com/tutur3u/platform/commit/89a3fa20117414c102ad5cdedb126ec0fab981d8))
+* **tasks:** support personal external task moves ([83cee1f](https://github.com/tutur3u/platform/commit/83cee1ffaefe74c22e779268cdcdd8973280eaa0))
+
 ## [0.10.0](https://github.com/tutur3u/platform/compare/tasks-v0.9.1...tasks-v0.10.0) (2026-07-05)
 
 

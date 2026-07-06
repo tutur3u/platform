@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.19.0](https://github.com/tutur3u/platform/compare/platform-v0.18.0...platform-v0.19.0) (2026-07-06)
+
+
+### Features
+
+* **satellite:** improve apps launcher picker ([a3e92cb](https://github.com/tutur3u/platform/commit/a3e92cb1a54e3cb45bc1697e8e70efd0776d2a23))
+* **tasks:** add quick-create targeting and edge autoscroll ([f03e932](https://github.com/tutur3u/platform/commit/f03e9324b0cce18e9f9974cc8fe251bb58b686bd))
+
+
+### Bug Fixes
+
+* **cli:** route finance and calendar APIs to app hosts ([aa5c932](https://github.com/tutur3u/platform/commit/aa5c932871bf6a08f8031884eeaf90ddddd3ba33))
+* **satellite:** constrain apps launcher scroll area ([5bce7a0](https://github.com/tutur3u/platform/commit/5bce7a0dc524d059a5de7d02b646d2e061555032))
+* **tasks:** allow personal board external placements ([89a3fa2](https://github.com/tutur3u/platform/commit/89a3fa20117414c102ad5cdedb126ec0fab981d8))
+* **tasks:** scroll kanban board at drag edges ([1053f6c](https://github.com/tutur3u/platform/commit/1053f6cc6db9788b7e184ed8bc7febdb2adacf97))
+* **tasks:** support personal external task moves ([83cee1f](https://github.com/tutur3u/platform/commit/83cee1ffaefe74c22e779268cdcdd8973280eaa0))
+
 ## [0.18.0](https://github.com/tutur3u/platform/compare/platform-v0.17.0...platform-v0.18.0) (2026-07-05)
 
 

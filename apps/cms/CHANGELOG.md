@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.14.0](https://github.com/tutur3u/platform/compare/cms-v0.13.0...cms-v0.14.0) (2026-07-06)
+
+
+### Features
+
+* **satellite:** improve apps launcher picker ([a3e92cb](https://github.com/tutur3u/platform/commit/a3e92cb1a54e3cb45bc1697e8e70efd0776d2a23))
+* **tasks:** add quick-create targeting and edge autoscroll ([f03e932](https://github.com/tutur3u/platform/commit/f03e9324b0cce18e9f9974cc8fe251bb58b686bd))
+
 ## [0.13.0](https://github.com/tutur3u/platform/compare/cms-v0.12.1...cms-v0.13.0) (2026-07-05)
 
 
