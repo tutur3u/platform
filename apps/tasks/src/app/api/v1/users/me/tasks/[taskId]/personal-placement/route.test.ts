@@ -14,9 +14,10 @@ const NEXT_TASK_ID = '99999999-9999-4999-8999-999999999999';
 const mocks = vi.hoisted(() => {
   const adminRpc = vi.fn();
   const sourceTaskMaybeSingle = vi.fn();
+  const sourceAssignmentMaybeSingle = vi.fn();
   const targetBoardMaybeSingle = vi.fn();
   const targetListMaybeSingle = vi.fn();
-  const placementRpc = vi.fn();
+  const userOverrideMaybeSingle = vi.fn();
 
   const adminClient = {
     rpc: adminRpc,
@@ -53,8 +54,27 @@ const mocks = vi.hoisted(() => {
         };
       }
 
+      if (table === 'task_assignees') {
+        return {
+          select: vi.fn(() => ({
+            eq: vi.fn(() => ({
+              eq: vi.fn(() => ({
+                maybeSingle: sourceAssignmentMaybeSingle,
+              })),
+            })),
+          })),
+        };
+      }
+
       if (table === 'task_user_overrides') {
         return {
+          select: vi.fn(() => ({
+            eq: vi.fn(() => ({
+              eq: vi.fn(() => ({
+                maybeSingle: userOverrideMaybeSingle,
+              })),
+            })),
+          })),
           update: vi.fn(() => ({
             eq: vi.fn(() => ({
               eq: vi.fn(),
@@ -72,10 +92,11 @@ const mocks = vi.hoisted(() => {
   return {
     adminRpc,
     adminClient,
-    placementRpc,
+    sourceAssignmentMaybeSingle,
     sourceTaskMaybeSingle,
     targetBoardMaybeSingle,
     targetListMaybeSingle,
+    userOverrideMaybeSingle,
     verifyWorkspaceMembershipType,
   };
 });
@@ -162,10 +183,11 @@ describe('current-user task personal-placement route', () => {
     vi.resetModules();
     mocks.adminClient.from.mockClear();
     mocks.adminRpc.mockReset();
+    mocks.sourceAssignmentMaybeSingle.mockReset();
     mocks.sourceTaskMaybeSingle.mockReset();
     mocks.targetBoardMaybeSingle.mockReset();
     mocks.targetListMaybeSingle.mockReset();
-    mocks.placementRpc.mockReset();
+    mocks.userOverrideMaybeSingle.mockReset();
     mocks.verifyWorkspaceMembershipType.mockReset();
   });
 
@@ -188,7 +210,7 @@ describe('current-user task personal-placement route', () => {
       },
       error: null,
     });
-    mocks.placementRpc.mockResolvedValue({
+    mocks.adminRpc.mockResolvedValue({
       data: [
         {
           personal_board_id: PERSONAL_BOARD_ID,
@@ -217,13 +239,13 @@ describe('current-user task personal-placement route', () => {
       ),
       {
         user: { id: 'user-1' },
-        supabase: { rpc: mocks.placementRpc },
+        supabase: {},
       },
       { taskId: TASK_ID }
     );
 
     expect(response.status).toBe(200);
-    expect(mocks.placementRpc).toHaveBeenCalledWith(
+    expect(mocks.adminRpc).toHaveBeenCalledWith(
       'upsert_personal_task_placement',
       {
         p_task_id: TASK_ID,
@@ -235,7 +257,6 @@ describe('current-user task personal-placement route', () => {
         p_next_task_id: null,
       }
     );
-    expect(mocks.adminRpc).not.toHaveBeenCalled();
     const payload = await response.json();
     expect(payload.task).toEqual(
       expect.objectContaining({
@@ -275,7 +296,7 @@ describe('current-user task personal-placement route', () => {
       },
       error: null,
     });
-    mocks.placementRpc.mockResolvedValue({
+    mocks.adminRpc.mockResolvedValue({
       data: [
         {
           personal_board_id: PERSONAL_BOARD_ID,
@@ -306,13 +327,13 @@ describe('current-user task personal-placement route', () => {
       ),
       {
         user: { id: 'user-1' },
-        supabase: { rpc: mocks.placementRpc },
+        supabase: {},
       },
       { taskId: TASK_ID }
     );
 
     expect(response.status).toBe(200);
-    expect(mocks.placementRpc).toHaveBeenCalledWith(
+    expect(mocks.adminRpc).toHaveBeenCalledWith(
       'upsert_personal_task_placement',
       {
         p_task_id: TASK_ID,
@@ -324,7 +345,6 @@ describe('current-user task personal-placement route', () => {
         p_next_task_id: NEXT_TASK_ID,
       }
     );
-    expect(mocks.adminRpc).not.toHaveBeenCalled();
     const payload = await response.json();
     expect(payload.task).toEqual(
       expect.objectContaining({
@@ -369,7 +389,7 @@ describe('current-user task personal-placement route', () => {
       },
       error: null,
     });
-    mocks.placementRpc.mockResolvedValue({
+    mocks.adminRpc.mockResolvedValue({
       data: [
         {
           personal_board_id: PERSONAL_BOARD_ID,
@@ -398,13 +418,13 @@ describe('current-user task personal-placement route', () => {
       ),
       {
         user: { id: 'user-1' },
-        supabase: { rpc: mocks.placementRpc },
+        supabase: {},
       },
       { taskId: TASK_ID }
     );
 
     expect(response.status).toBe(200);
-    expect(mocks.placementRpc).toHaveBeenCalledWith(
+    expect(mocks.adminRpc).toHaveBeenCalledWith(
       'upsert_personal_task_placement',
       expect.objectContaining({
         p_task_id: TASK_ID,
@@ -421,6 +441,90 @@ describe('current-user task personal-placement route', () => {
         list_id: PERSONAL_LIST_ID,
         source_board_id: PERSONAL_SOURCE_BOARD_ID,
         source_workspace_id: PERSONAL_WS_ID,
+      })
+    );
+  });
+
+  it('places an assignment-visible external task without source workspace membership', async () => {
+    mocks.sourceTaskMaybeSingle.mockResolvedValue({
+      data: sourceTaskRow(),
+      error: null,
+    });
+    mocks.verifyWorkspaceMembershipType
+      .mockResolvedValueOnce({ ok: false, error: 'membership_missing' })
+      .mockResolvedValueOnce({ ok: true });
+    mocks.sourceAssignmentMaybeSingle.mockResolvedValue({
+      data: { task_id: TASK_ID },
+      error: null,
+    });
+    mocks.userOverrideMaybeSingle.mockResolvedValue({
+      data: null,
+      error: null,
+    });
+    mocks.targetBoardMaybeSingle.mockResolvedValue({
+      data: {
+        id: PERSONAL_BOARD_ID,
+        ws_id: PERSONAL_WS_ID,
+        deleted_at: null,
+        archived_at: null,
+        workspaces: {
+          id: PERSONAL_WS_ID,
+          personal: true,
+        },
+      },
+      error: null,
+    });
+    mocks.targetListMaybeSingle.mockResolvedValue({
+      data: {
+        id: PERSONAL_LIST_ID,
+        board_id: PERSONAL_BOARD_ID,
+        deleted: false,
+      },
+      error: null,
+    });
+    mocks.adminRpc.mockResolvedValue({
+      data: [
+        {
+          personal_board_id: PERSONAL_BOARD_ID,
+          personal_list_id: PERSONAL_LIST_ID,
+          personal_sort_key: 1_500_000,
+          personal_added_at: '2026-05-06T01:00:00.000Z',
+          personal_placed_at: '2026-05-06T02:00:00.000Z',
+        },
+      ],
+      error: null,
+    });
+
+    const { PUT } = await import(
+      '@/app/api/v1/users/me/tasks/[taskId]/personal-placement/route'
+    );
+    const response = await (PUT as PlacementRouteHandler)(
+      new NextRequest(
+        `http://localhost/api/v1/users/me/tasks/${TASK_ID}/personal-placement`,
+        {
+          method: 'PUT',
+          body: JSON.stringify({
+            personal_board_id: PERSONAL_BOARD_ID,
+            personal_list_id: PERSONAL_LIST_ID,
+          }),
+        }
+      ),
+      {
+        user: { id: 'user-1' },
+        supabase: {},
+      },
+      { taskId: TASK_ID }
+    );
+
+    expect(response.status).toBe(200);
+    expect(mocks.sourceAssignmentMaybeSingle).toHaveBeenCalled();
+    expect(mocks.adminRpc).toHaveBeenCalledWith(
+      'upsert_personal_task_placement',
+      expect.objectContaining({
+        p_task_id: TASK_ID,
+        p_user_id: 'user-1',
+        p_personal_board_id: PERSONAL_BOARD_ID,
+        p_personal_list_id: PERSONAL_LIST_ID,
       })
     );
   });
@@ -465,7 +569,7 @@ describe('current-user task personal-placement route', () => {
       ),
       {
         user: { id: 'user-1' },
-        supabase: { rpc: mocks.placementRpc },
+        supabase: {},
       },
       { taskId: TASK_ID }
     );
@@ -475,7 +579,7 @@ describe('current-user task personal-placement route', () => {
       error:
         'Only external workspace tasks or board-external personal tasks can be placed on a personal board',
     });
-    expect(mocks.placementRpc).not.toHaveBeenCalled();
+    expect(mocks.adminRpc).not.toHaveBeenCalled();
   });
 
   it('rejects non-personal destination boards', async () => {
@@ -513,7 +617,7 @@ describe('current-user task personal-placement route', () => {
       ),
       {
         user: { id: 'user-1' },
-        supabase: { rpc: mocks.placementRpc },
+        supabase: {},
       },
       { taskId: TASK_ID }
     );
@@ -522,6 +626,6 @@ describe('current-user task personal-placement route', () => {
     await expect(response.json()).resolves.toEqual({
       error: 'Destination board must be personal',
     });
-    expect(mocks.placementRpc).not.toHaveBeenCalled();
+    expect(mocks.adminRpc).not.toHaveBeenCalled();
   });
 });

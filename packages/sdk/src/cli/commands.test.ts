@@ -2089,6 +2089,134 @@ task_name: Prepare handoff
     expect(Array.isArray(body.description_yjs_state)).toBe(true);
   });
 
+  it('moves personal external tasks through the current-user personal placement endpoint', async () => {
+    const taskId = '11111111-1111-4111-8111-111111111111';
+    await writeTestConfig({
+      baseUrl: 'https://tuturuuu.com',
+      currentWorkspaceId: 'personal',
+      session: {
+        accessToken: 'access-token',
+        refreshToken: 'refresh-token',
+      },
+    });
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(
+        Response.json({
+          task: {
+            id: taskId,
+            is_personal_external: true,
+            source_workspace_id: 'source-ws',
+          },
+          taskWorkspacePersonal: false,
+          taskWorkspaceTier: 'FREE',
+          taskWsId: 'source-ws',
+          availableLists: [],
+        })
+      )
+      .mockResolvedValueOnce(
+        Response.json({
+          task: {
+            id: taskId,
+            is_personal_external: true,
+            personal_board_id: 'personal-board',
+            personal_list_id: 'personal-list',
+          },
+        })
+      );
+    vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
+
+    await runCli([
+      'tasks',
+      'move',
+      taskId,
+      '--target-board',
+      'personal-board',
+      '--list',
+      'personal-list',
+      '--json',
+      '--no-update-check',
+    ]);
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      `https://tasks.tuturuuu.com/api/v1/users/me/tasks/${taskId}`,
+      expect.objectContaining({ cache: 'no-store' })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      `https://tasks.tuturuuu.com/api/v1/users/me/tasks/${taskId}/personal-placement`,
+      expect.objectContaining({
+        body: JSON.stringify({
+          personal_board_id: 'personal-board',
+          personal_list_id: 'personal-list',
+        }),
+        cache: 'no-store',
+        method: 'PUT',
+      })
+    );
+    expect(
+      fetchMock.mock.calls.some(([url]) => String(url).includes('/move'))
+    ).toBe(false);
+  });
+
+  it('keeps native task moves on the workspace move endpoint', async () => {
+    const taskId = '22222222-2222-4222-8222-222222222222';
+    await writeTestConfig({
+      baseUrl: 'https://tuturuuu.com',
+      currentWorkspaceId: 'ws-1',
+      session: {
+        accessToken: 'access-token',
+        refreshToken: 'refresh-token',
+      },
+    });
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(
+        Response.json({
+          task: {
+            id: taskId,
+            name: 'Native task',
+          },
+          taskWorkspacePersonal: false,
+          taskWorkspaceTier: 'FREE',
+          taskWsId: 'ws-1',
+          availableLists: [],
+        })
+      )
+      .mockResolvedValueOnce(
+        Response.json({
+          task: {
+            id: taskId,
+            list_id: 'target-list',
+          },
+        })
+      );
+    vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
+
+    await runCli([
+      'tasks',
+      'move',
+      taskId,
+      '--list',
+      'target-list',
+      '--json',
+      '--no-update-check',
+    ]);
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      `https://tasks.tuturuuu.com/api/v1/workspaces/ws-1/tasks/${taskId}/move`,
+      expect.objectContaining({
+        body: JSON.stringify({
+          list_id: 'target-list',
+        }),
+        cache: 'no-store',
+        method: 'POST',
+      })
+    );
+  });
+
   it('creates task descriptions from markdown files with tables', async () => {
     const dir = await mkdtemp(join(tmpdir(), 'tuturuuu-cli-description-'));
     const descriptionPath = join(dir, 'table.md');

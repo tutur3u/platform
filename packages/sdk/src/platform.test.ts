@@ -362,6 +362,73 @@ describe('TuturuuuUserClient', () => {
     );
   });
 
+  it('manages personal task placements through the authenticated tasks app API', async () => {
+    const fetchMock = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(Response.json({ task: { id: 'task-1' } }))
+      .mockResolvedValueOnce(Response.json({ success: true }));
+
+    const client = new TuturuuuUserClient({
+      accessToken: 'access-token',
+      baseUrl: 'https://tuturuuu.com',
+      fetch: fetchMock,
+    });
+
+    await client.tasks.upsertPersonalPlacement('task-1', {
+      personal_board_id: 'board-1',
+      personal_list_id: 'list-1',
+    });
+    await client.tasks.removePersonalPlacement('task-1');
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      'https://tasks.tuturuuu.com/api/v1/users/me/tasks/task-1/personal-placement',
+      expect.objectContaining({
+        body: JSON.stringify({
+          personal_board_id: 'board-1',
+          personal_list_id: 'list-1',
+        }),
+        cache: 'no-store',
+        method: 'PUT',
+      })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      'https://tasks.tuturuuu.com/api/v1/users/me/tasks/task-1/personal-placement',
+      expect.objectContaining({
+        cache: 'no-store',
+        method: 'DELETE',
+      })
+    );
+    expect(
+      new Headers(fetchMock.mock.calls[0]?.[1]?.headers).get('authorization')
+    ).toBe('Bearer access-token');
+  });
+
+  it('uses configured task app origins for personal placement requests', async () => {
+    const fetchMock = vi
+      .fn<typeof fetch>()
+      .mockResolvedValue(Response.json({ task: { id: 'task-1' } }));
+
+    const client = new TuturuuuUserClient({
+      accessToken: 'access-token',
+      baseUrl: 'http://localhost:7803',
+      fetch: fetchMock,
+    });
+
+    await client.tasks.upsertPersonalPlacement('task-1', {
+      personal_board_id: 'board-1',
+      personal_list_id: null,
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://localhost:7809/api/v1/users/me/tasks/task-1/personal-placement',
+      expect.objectContaining({
+        method: 'PUT',
+      })
+    );
+  });
+
   it('maps platform localhost requests to first-party app ports', async () => {
     const fetchMock = vi
       .fn<typeof fetch>()

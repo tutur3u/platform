@@ -521,6 +521,28 @@ function shouldIncludeAssignedExternalTasks(
   return !hasTaskListScope(flags);
 }
 
+async function isPersonalWorkspaceSelection(
+  client: TuturuuuUserClient,
+  workspaceId: string
+) {
+  if (workspaceId === 'personal') return true;
+  const workspaces = await client.workspaces.list();
+  return resolveWorkspace(workspaceId, workspaces)?.personal === true;
+}
+
+function isPersonalExternalTask(task: WorkspaceTaskApiTask | undefined | null) {
+  if (!task) return false;
+  return (
+    task.is_personal_external === true ||
+    Boolean(
+      task.source_workspace_id ||
+        task.source_board_id ||
+        task.personal_board_id ||
+        task.personal_list_id
+    )
+  );
+}
+
 export async function listTasksForCli(
   client: TuturuuuUserClient,
   _config: CliConfig,
@@ -2058,6 +2080,35 @@ export async function runCli(argv = process.argv.slice(2)) {
         json
       );
       config = listSelection.config;
+      const currentUserTask = await client.tasks
+        .getCurrentUserTask(taskSelection.taskId)
+        .catch(() => null);
+      const shouldUsePersonalPlacement =
+        isPersonalExternalTask(currentUserTask?.task) &&
+        (await isPersonalWorkspaceSelection(client, workspaceId));
+
+      if (shouldUsePersonalPlacement) {
+        const personalBoardId =
+          targetBoardId ||
+          config.currentBoardId ||
+          taskSelection.config.currentBoardId;
+
+        if (!personalBoardId) {
+          throw new Error(
+            'Personal external task moves require a target board. Pass --target-board or select a board first.'
+          );
+        }
+
+        render(
+          await client.tasks.upsertPersonalPlacement(taskSelection.taskId, {
+            personal_board_id: personalBoardId,
+            personal_list_id: listSelection.listId,
+          }),
+          { group, json }
+        );
+        return;
+      }
+
       render(
         await client.tasks.move(workspaceId, taskSelection.taskId, {
           list_id: listSelection.listId,

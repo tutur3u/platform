@@ -27,6 +27,7 @@ import {
   type CreateWorkspaceTaskListPayload,
   type CreateWorkspaceTaskPayload,
   type CreateWorkspaceTaskWithRelationshipPayload,
+  type CurrentUserTaskPersonalPlacementPayload,
   commitWorkspaceTaskDescriptionChunks,
   createWorkspaceLabel,
   createWorkspaceTask,
@@ -38,6 +39,7 @@ import {
   deleteWorkspaceTask,
   deleteWorkspaceTaskBoard,
   deleteWorkspaceTaskRelationship,
+  getCurrentUserTask,
   getWorkspaceBoardsData,
   getWorkspaceTask,
   getWorkspaceTaskBoard,
@@ -55,6 +57,7 @@ import {
   listWorkspaceTaskProjects,
   type MoveWorkspaceTaskPayload,
   moveWorkspaceTask,
+  removeCurrentUserTaskPersonalPlacement,
   removeWorkspaceTaskLabel,
   type SearchWorkspaceTasksPayload,
   type SearchWorkspaceTasksResponse,
@@ -66,6 +69,7 @@ import {
   updateWorkspaceTaskBoard,
   updateWorkspaceTaskDescription,
   updateWorkspaceTaskList,
+  upsertCurrentUserTaskPersonalPlacement,
   type WorkspaceTaskDescriptionChunkFields,
   type WorkspaceTaskDescriptionUpdatePayload,
   type WorkspaceTasksResponse,
@@ -603,6 +607,10 @@ export class TasksClient {
     );
   }
 
+  getCurrentUserTask(taskId: string) {
+    return getCurrentUserTask(taskId, this.client.getTaskClientOptions());
+  }
+
   getTemplate(workspaceId: string, templateKey: string) {
     return getWorkspaceTaskTemplate(
       workspaceId,
@@ -741,6 +749,24 @@ export class TasksClient {
       workspaceId,
       taskId,
       payload,
+      this.client.getTaskClientOptions()
+    );
+  }
+
+  upsertPersonalPlacement(
+    taskId: string,
+    payload: CurrentUserTaskPersonalPlacementPayload
+  ) {
+    return upsertCurrentUserTaskPersonalPlacement(
+      taskId,
+      payload,
+      this.client.getTaskClientOptions()
+    );
+  }
+
+  removePersonalPlacement(taskId: string) {
+    return removeCurrentUserTaskPersonalPlacement(
+      taskId,
       this.client.getTaskClientOptions()
     );
   }
