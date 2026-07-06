@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.10.0](https://github.com/tutur3u/platform/compare/drive-v0.9.1...drive-v0.10.0) (2026-07-05)
+
+
+### Features
+
+* **satellite:** add sidebar apps launcher ([b2f6fcd](https://github.com/tutur3u/platform/commit/b2f6fcd55d7cb5c100e31d36f9f329817ecfe5e9))
+
+
+### Bug Fixes
+
+* **inventory:** contain operator tables and translations ([5fa064e](https://github.com/tutur3u/platform/commit/5fa064e4c203f7202fc6db4ef2463001e32857a4))
+
 ## [0.9.1](https://github.com/tutur3u/platform/compare/drive-v0.9.0...drive-v0.9.1) (2026-07-03)
 
 

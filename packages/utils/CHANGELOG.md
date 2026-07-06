@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.13.0](https://github.com/tutur3u/platform/compare/utils-v0.12.1...utils-v0.13.0) (2026-07-05)
+
+
+### Features
+
+* **tools:** add apps/tools public tools app, remove apps/qr ([204aae8](https://github.com/tutur3u/platform/commit/204aae89a04b4163f2859561f8e832526642e271))
+
+
+### Bug Fixes
+
+* **tasks:** route native personal task moves normally ([5bbba3c](https://github.com/tutur3u/platform/commit/5bbba3c3f193e722cc87cdfe2eb2734f61442cd0))
+* **web:** fail open without redis ([74bfcc7](https://github.com/tutur3u/platform/commit/74bfcc7ea5f188a56f49802c6a48bde0b109e02d))
+
 ## [0.12.1](https://github.com/tutur3u/platform/compare/utils-v0.12.0...utils-v0.12.1) (2026-07-03)
 
 

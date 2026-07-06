@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.8.0](https://github.com/tutur3u/platform/compare/track-v0.7.1...track-v0.8.0) (2026-07-05)
+
+
+### Features
+
+* **satellite:** add sidebar apps launcher ([b2f6fcd](https://github.com/tutur3u/platform/commit/b2f6fcd55d7cb5c100e31d36f9f329817ecfe5e9))
+* **track:** serve the time-tracking API from apps/track ([2e1562c](https://github.com/tutur3u/platform/commit/2e1562cd425c3d5b6f67e1a2ec357c0e0e0b8011))
+
+
+### Bug Fixes
+
+* **track:** require app-session auth for APIs ([15473ee](https://github.com/tutur3u/platform/commit/15473eef36059dc2f5e7e738d47e2b48a0c42c78))
+
 ## [0.7.1](https://github.com/tutur3u/platform/compare/track-v0.7.0...track-v0.7.1) (2026-07-03)
 
 

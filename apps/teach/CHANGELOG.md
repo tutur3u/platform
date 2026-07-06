@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.0](https://github.com/tutur3u/platform/compare/teach-v0.4.1...teach-v0.5.0) (2026-07-05)
+
+
+### Features
+
+* **satellite:** add sidebar apps launcher ([b2f6fcd](https://github.com/tutur3u/platform/commit/b2f6fcd55d7cb5c100e31d36f9f329817ecfe5e9))
+
 ## [0.4.1](https://github.com/tutur3u/platform/compare/teach-v0.4.0...teach-v0.4.1) (2026-07-03)
 
 
