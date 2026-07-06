@@ -26,6 +26,7 @@ const mocks = vi.hoisted(() => ({
   getUserDefaultWorkspace: vi.fn(),
   hasPendingWorkspaceInvitations: vi.fn(),
   isExactTuturuuuDotComEmail: vi.fn(),
+  getTasksAppOrigin: vi.fn(() => 'https://tasks.example.test'),
 }));
 
 vi.mock('@tuturuuu/auth/proxy', () => ({
@@ -106,6 +107,11 @@ vi.mock('../lib/workspace-invitations/status', () => ({
   hasPendingWorkspaceInvitations: (
     ...args: Parameters<typeof mocks.hasPendingWorkspaceInvitations>
   ) => mocks.hasPendingWorkspaceInvitations(...args),
+}));
+
+vi.mock('../lib/tasks-app-url', () => ({
+  getTasksAppOrigin: (...args: Parameters<typeof mocks.getTasksAppOrigin>) =>
+    mocks.getTasksAppOrigin(...args),
 }));
 
 vi.mock('@tuturuuu/utils/email/client', () => ({
@@ -195,6 +201,7 @@ describe('web proxy api handling', () => {
     mocks.verifyWorkspaceMembershipType.mockResolvedValue({ ok: true });
     mocks.getUserDefaultWorkspace.mockResolvedValue(null);
     mocks.hasPendingWorkspaceInvitations.mockResolvedValue(false);
+    mocks.getTasksAppOrigin.mockReturnValue('https://tasks.example.test');
   });
 
   function createSessionRequest(url: string) {
@@ -1279,6 +1286,7 @@ describe('web proxy api handling', () => {
       select: vi.fn().mockReturnThis(),
       eq: vi.fn().mockReturnThis(),
       is: vi.fn().mockReturnThis(),
+      upsert: vi.fn().mockResolvedValue({ error: null }),
       maybeSingle: vi
         .fn()
         .mockResolvedValueOnce({
@@ -1309,7 +1317,51 @@ describe('web proxy api handling', () => {
 
     expect(response.status).toBe(307);
     expect(response.headers.get('location')).toBe(
-      'http://localhost/ws-1/tasks'
+      'https://tasks.example.test/ws-1/tasks'
+    );
+    expect(adminQueryBuilder.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: 'ROOT_DEFAULT_NAVIGATION',
+        user_id: 'user-1',
+        value: JSON.stringify({ target: 'tasks' }),
+        ws_id: 'ws-1',
+      }),
+      { onConflict: 'user_id,ws_id,id' }
+    );
+  });
+
+  it('redirects personal workspace root task preferences to the tasks app', async () => {
+    const adminQueryBuilder = {
+      select: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      maybeSingle: vi.fn().mockResolvedValue({
+        data: {
+          value: JSON.stringify({
+            target: 'tasks',
+          }),
+        },
+      }),
+    };
+
+    const supabaseClient = createAuthenticatedSupabaseClient();
+
+    mocks.createClient.mockResolvedValue(supabaseClient);
+    mocks.createAdminClient.mockResolvedValue({
+      from: vi.fn().mockReturnValue(adminQueryBuilder),
+    });
+    mocks.getUserDefaultWorkspace.mockResolvedValue({
+      id: 'personal-ws-id',
+      personal: true,
+    });
+
+    const { proxy } = await import('../proxy');
+    const response = await proxy(
+      createSessionRequest('http://localhost/?view=kanban')
+    );
+
+    expect(response.status).toBe(307);
+    expect(response.headers.get('location')).toBe(
+      'https://tasks.example.test/personal/tasks?view=kanban'
     );
   });
 
@@ -1528,13 +1580,13 @@ describe('web proxy api handling', () => {
 
     expect(response.status).toBe(307);
     expect(response.headers.get('location')).toBe(
-      'http://localhost/personal/tasks'
+      'https://tasks.example.test/personal/tasks'
     );
     expect(adminFrom).not.toHaveBeenCalledWith('user_configs');
     expect(adminFrom).not.toHaveBeenCalledWith('workspace_boards');
   });
 
-  it('preserves locale when redirecting root to the tasks entry', async () => {
+  it('preserves locale when redirecting root task preferences to the tasks app', async () => {
     const adminQueryBuilder = {
       select: vi.fn().mockReturnThis(),
       eq: vi.fn().mockReturnThis(),
@@ -1567,7 +1619,7 @@ describe('web proxy api handling', () => {
 
     expect(response.status).toBe(307);
     expect(response.headers.get('location')).toBe(
-      'http://localhost/vi/ws-1/tasks'
+      'https://tasks.example.test/vi/ws-1/tasks'
     );
   });
 
@@ -1839,7 +1891,7 @@ describe('web proxy api handling', () => {
 
     expect(response.status).toBe(307);
     expect(response.headers.get('location')).toBe(
-      'http://localhost/ws-1/tasks'
+      'https://tasks.example.test/ws-1/tasks'
     );
     expect(adminUpsert).toHaveBeenCalled();
   });

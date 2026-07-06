@@ -48,6 +48,7 @@ import { getDriveAppOrigin } from './lib/drive-app-url';
 import { getFinanceAppOrigin } from './lib/finance-app-url';
 import { getMailAppOrigin } from './lib/mail-app-url';
 import { getQrAppOrigin } from './lib/qr-app-url';
+import { getTasksAppOrigin } from './lib/tasks-app-url';
 import { getToolsAppOrigin } from './lib/tools-app-url';
 import { getTrackAppOrigin } from './lib/track-app-url';
 import { hasPendingWorkspaceInvitations } from './lib/workspace-invitations/status';
@@ -418,6 +419,11 @@ function isWorkspaceHomeRedirectCandidate(
 
   const pathname = `/${workspaceSlug}`;
   return !PUBLIC_PATHS.includes(pathname);
+}
+
+function isRootTasksRedirectPath(pathname: string) {
+  const pathSegments = pathname.split('/').filter(Boolean);
+  return pathSegments.length === 2 && pathSegments[1] === 'tasks';
 }
 
 async function resolveRootRedirectPath(
@@ -1669,7 +1675,15 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
             }
           }
 
-          const redirectUrl = new URL(localizedCanonicalPath, req.nextUrl);
+          const isTasksRootTarget = isRootTasksRedirectPath(canonicalPath);
+          const redirectUrl = isTasksRootTarget
+            ? new URL(localizedCanonicalPath, getTasksAppOrigin())
+            : new URL(localizedCanonicalPath, req.nextUrl);
+
+          if (isTasksRootTarget) {
+            redirectUrl.search = req.nextUrl.search;
+          }
+
           const wsRedirect = NextResponse.redirect(redirectUrl);
           propagateAuthCookies(authRes, wsRedirect);
           return wsRedirect;
