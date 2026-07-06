@@ -7,7 +7,6 @@ import type { AppCoordinationSessionPolicy } from '@tuturuuu/auth/app-session-po
 import { createPolarClient } from '@tuturuuu/payment/polar/server';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
-import { getUpstashRestRedisClient } from '@tuturuuu/utils/upstash-rest';
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -33,8 +32,7 @@ import {
 import { enforceSeatLimit } from '@/utils/seat-limits';
 
 const APP_TOKEN_REFRESH_SCOPE = 'app-token:refresh';
-const INVITATION_ACTION_REPLAY_KEY_PREFIX =
-  'app-token:invitation-decision:used';
+const INVITATION_ACTION_REPLAY_TABLE = 'app_token_invitation_action_replays';
 const WORKSPACE_SESSION_SCOPE = 'workspace:session';
 
 const decisionSchema = z.object({
@@ -51,6 +49,45 @@ const decisionSchema = z.object({
 });
 
 type AdminDb = TypedSupabaseClient;
+
+type InvitationActionConsumeResult =
+  | 'consumed'
+  | 'expired'
+  | 'replayed'
+  | 'unavailable';
+
+type InvitationActionReplayRow = {
+  action: 'accept' | 'reject';
+  consumed_at: string;
+  expires_at: string;
+  target_app: string;
+  token_jti: string;
+  user_id: string;
+  workspace_id: string;
+};
+
+type SupabaseWriteError = {
+  code?: string | null;
+  message?: string | null;
+};
+
+type InvitationActionReplayTable = {
+  delete: () => {
+    lt: (
+      column: 'expires_at',
+      value: string
+    ) => Promise<{ error: SupabaseWriteError | null }>;
+  };
+  insert: (
+    value: InvitationActionReplayRow
+  ) => Promise<{ error: SupabaseWriteError | null }>;
+};
+
+type PrivateReplaySchema = {
+  from: (
+    table: typeof INVITATION_ACTION_REPLAY_TABLE
+  ) => InvitationActionReplayTable;
+};
 
 type AuthUserIdentity = {
   email: string | null;
@@ -307,36 +344,85 @@ function verifyInvitationActionToken({
   return claims;
 }
 
-async function consumeInvitationActionToken(
-  claims: AppCoordinationTokenClaims
-) {
+async function consumeInvitationActionToken({
+  action,
+  admin,
+  claims,
+  targetApp,
+  workspaceId,
+}: {
+  action: 'accept' | 'reject';
+  admin: AdminDb;
+  claims: AppCoordinationTokenClaims;
+  targetApp: string;
+  workspaceId: string;
+}): Promise<InvitationActionConsumeResult> {
   const nowSeconds = Math.floor(Date.now() / 1000);
   const ttlSeconds = claims.exp - nowSeconds;
 
   if (ttlSeconds <= 0 || !claims.jti.trim() || !claims.sub.trim()) {
-    return false;
+    return 'expired';
   }
 
-  const redis = await getUpstashRestRedisClient().catch(() => null);
-  if (!redis) {
-    return false;
-  }
-
-  const key = `${INVITATION_ACTION_REPLAY_KEY_PREFIX}:${claims.sub}:${claims.jti}`;
+  const now = new Date();
+  const privateDb = admin.schema('private') as unknown as PrivateReplaySchema;
 
   try {
-    const consumed = await redis.set(key, String(nowSeconds), {
-      ex: ttlSeconds,
-      nx: true,
-    });
+    const cleanup = await privateDb
+      .from(INVITATION_ACTION_REPLAY_TABLE)
+      .delete()
+      .lt('expires_at', now.toISOString());
 
-    return consumed === 'OK';
+    if (cleanup.error) {
+      console.warn('Invitation action replay cleanup failed', {
+        code: cleanup.error.code,
+        message: cleanup.error.message,
+      });
+    }
+
+    const { error } = await privateDb
+      .from(INVITATION_ACTION_REPLAY_TABLE)
+      .insert({
+        action,
+        consumed_at: now.toISOString(),
+        expires_at: new Date(claims.exp * 1000).toISOString(),
+        target_app: targetApp,
+        token_jti: claims.jti,
+        user_id: claims.sub,
+        workspace_id: workspaceId,
+      });
+
+    if (!error) {
+      return 'consumed';
+    }
+
+    if (error.code === '23505') {
+      return 'replayed';
+    }
+
+    console.warn('Invitation action replay check failed', {
+      code: error.code,
+      message: error.message,
+    });
+    return 'unavailable';
   } catch (error) {
     console.warn('Invitation action replay check failed', {
       error: error instanceof Error ? error.message : String(error),
     });
-    return false;
+    return 'unavailable';
   }
+}
+
+function invitationDecisionError({
+  code,
+  error,
+  status,
+}: {
+  code: string;
+  error: string;
+  status: number;
+}) {
+  return NextResponse.json({ code, error }, { status });
 }
 
 async function clearPendingInvites({
@@ -531,21 +617,59 @@ async function invitationDecision(request: NextRequest) {
   }
 
   if (!claims) {
-    return NextResponse.json(
-      { error: 'Invalid or expired invitation action token' },
-      { status: 401 }
-    );
+    return invitationDecisionError({
+      code: 'INVITATION_ACTION_TOKEN_INVALID_OR_EXPIRED',
+      error: 'Invalid or expired invitation action token',
+      status: 401,
+    });
   }
 
-  const consumed = await consumeInvitationActionToken(claims);
-  if (!consumed) {
-    return NextResponse.json(
-      { error: 'Invitation action token is expired or already used' },
-      { status: 409 }
-    );
+  let admin: AdminDb;
+  try {
+    admin = (await createAdminClient()) as AdminDb;
+  } catch (error) {
+    console.warn('Invitation action replay store unavailable', {
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return invitationDecisionError({
+      code: 'INVITATION_ACTION_REPLAY_STORE_UNAVAILABLE',
+      error: 'Invitation replay protection is unavailable',
+      status: 503,
+    });
   }
 
-  const admin = (await createAdminClient()) as AdminDb;
+  const consumed = await consumeInvitationActionToken({
+    action,
+    admin,
+    claims,
+    targetApp: appVerification.app.id,
+    workspaceId,
+  });
+
+  if (consumed === 'expired') {
+    return invitationDecisionError({
+      code: 'INVITATION_ACTION_TOKEN_INVALID_OR_EXPIRED',
+      error: 'Invalid or expired invitation action token',
+      status: 401,
+    });
+  }
+
+  if (consumed === 'replayed') {
+    return invitationDecisionError({
+      code: 'INVITATION_ACTION_TOKEN_ALREADY_USED',
+      error: 'Invitation action token is already used',
+      status: 409,
+    });
+  }
+
+  if (consumed === 'unavailable') {
+    return invitationDecisionError({
+      code: 'INVITATION_ACTION_REPLAY_STORE_UNAVAILABLE',
+      error: 'Invitation replay protection is unavailable',
+      status: 503,
+    });
+  }
+
   const inviteStatus = await getWorkspaceInviteStatus(admin, {
     authEmail: claims.email,
     userId: claims.sub,
@@ -553,10 +677,11 @@ async function invitationDecision(request: NextRequest) {
   });
 
   if (inviteStatus.status !== 'pending_invite') {
-    return NextResponse.json(
-      { error: 'Pending invitation not found' },
-      { status: 404 }
-    );
+    return invitationDecisionError({
+      code: 'PENDING_INVITATION_NOT_FOUND',
+      error: 'Pending invitation not found',
+      status: 404,
+    });
   }
 
   if (action === 'reject') {

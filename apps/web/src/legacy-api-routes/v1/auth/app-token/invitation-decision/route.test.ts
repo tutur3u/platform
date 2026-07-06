@@ -1,5 +1,4 @@
 import { createAppCoordinationToken } from '@tuturuuu/auth/app-coordination';
-import { getUpstashRestRedisClient } from '@tuturuuu/utils/upstash-rest';
 import { NextRequest } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
@@ -15,7 +14,6 @@ const mocks = vi.hoisted(() => ({
   getAppCoordinationSessionPolicy: vi.fn(),
   getWorkspaceInviteCandidateEmails: vi.fn(),
   getWorkspaceInviteStatus: vi.fn(),
-  redisSet: vi.fn(),
   revokeSeatFromMember: vi.fn(),
   serverLoggerError: vi.fn(),
   serverLoggerWarn: vi.fn(),
@@ -29,10 +27,6 @@ vi.mock('@tuturuuu/payment/polar/server', () => ({
 
 vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: () => mocks.createAdminClient(),
-}));
-
-vi.mock('@tuturuuu/utils/upstash-rest', () => ({
-  getUpstashRestRedisClient: vi.fn(),
 }));
 
 vi.mock('@tuturuuu/utils/workspace-helper', () => ({
@@ -110,6 +104,10 @@ const workspaceId = '22222222-2222-4222-8222-222222222222';
 function createAdminMock() {
   const tableCalls: string[] = [];
   const inserts: Array<{ table: string; value: unknown }> = [];
+  const privateTableCalls: string[] = [];
+  const replayInserts: Array<{ table: string; value: unknown }> = [];
+  let replayInsertError: { code?: string; message?: string } | null = null;
+  let replayDeleteError: { code?: string; message?: string } | null = null;
 
   function createBuilder(table: string) {
     const builder = {
@@ -155,6 +153,19 @@ function createAdminMock() {
     return builder;
   }
 
+  function createPrivateBuilder(table: string) {
+    const builder = {
+      delete: vi.fn(() => builder),
+      insert: vi.fn((value: unknown) => {
+        replayInserts.push({ table, value });
+        return Promise.resolve({ error: replayInsertError });
+      }),
+      lt: vi.fn(() => Promise.resolve({ error: replayDeleteError })),
+    };
+
+    return builder;
+  }
+
   return {
     admin: {
       auth: {
@@ -178,8 +189,26 @@ function createAdminMock() {
         tableCalls.push(table);
         return createBuilder(table);
       }),
+      schema: vi.fn((schema: string) => ({
+        from: vi.fn((table: string) => {
+          privateTableCalls.push(`${schema}.${table}`);
+          return createPrivateBuilder(table);
+        }),
+      })),
     },
     inserts,
+    privateTableCalls,
+    replayInserts,
+    setReplayDeleteError: (
+      error: { code?: string; message?: string } | null
+    ) => {
+      replayDeleteError = error;
+    },
+    setReplayInsertError: (
+      error: { code?: string; message?: string } | null
+    ) => {
+      replayInsertError = error;
+    },
     tableCalls,
   };
 }
@@ -250,18 +279,6 @@ describe('app token invitation decision route', () => {
       },
       ok: true,
     });
-    mocks.redisSet.mockResolvedValue('OK');
-    vi.mocked(getUpstashRestRedisClient).mockResolvedValue({
-      del: vi.fn(),
-      decr: vi.fn(),
-      expire: vi.fn(),
-      get: vi.fn(),
-      incr: vi.fn(),
-      mget: vi.fn(),
-      scan: vi.fn(),
-      set: mocks.redisSet,
-      ttl: vi.fn(),
-    });
     mocks.getWorkspaceInviteStatus.mockResolvedValue({
       invitation: {
         createdAt: '2026-07-04T00:00:00.000Z',
@@ -303,7 +320,8 @@ describe('app token invitation decision route', () => {
   });
 
   it('accepts a pending invitation, consumes the action token, and returns an app session', async () => {
-    const { admin, inserts, tableCalls } = createAdminMock();
+    const { admin, inserts, privateTableCalls, replayInserts, tableCalls } =
+      createAdminMock();
     mocks.createAdminClient.mockResolvedValue(admin);
 
     const response = await POST(createDecisionRequest());
@@ -323,14 +341,19 @@ describe('app token invitation decision route', () => {
       expect.arrayContaining(['workspace:session', 'users:profile:read'])
     );
     expect(body.invitationActionToken).toBeUndefined();
-    expect(mocks.redisSet).toHaveBeenCalledWith(
-      expect.any(String),
-      expect.any(String),
-      {
-        ex: expect.any(Number),
-        nx: true,
-      }
+    expect(privateTableCalls).toContain(
+      'private.app_token_invitation_action_replays'
     );
+    expect(replayInserts).toContainEqual({
+      table: 'app_token_invitation_action_replays',
+      value: expect.objectContaining({
+        action: 'accept',
+        target_app: appId,
+        token_jti: expect.any(String),
+        user_id: userId,
+        workspace_id: workspaceId,
+      }),
+    });
     expect(inserts).toContainEqual({
       table: 'workspace_members',
       value: {
@@ -370,8 +393,11 @@ describe('app token invitation decision route', () => {
   });
 
   it('fails closed when the one-time action token was already consumed', async () => {
-    mocks.redisSet.mockResolvedValue(null);
-    const { admin } = createAdminMock();
+    const { admin, setReplayInsertError } = createAdminMock();
+    setReplayInsertError({
+      code: '23505',
+      message: 'duplicate key value violates unique constraint',
+    });
     mocks.createAdminClient.mockResolvedValue(admin);
 
     const response = await POST(createDecisionRequest());
@@ -379,9 +405,32 @@ describe('app token invitation decision route', () => {
 
     expect(response.status).toBe(409);
     expect(body).toEqual({
-      error: 'Invitation action token is expired or already used',
+      code: 'INVITATION_ACTION_TOKEN_ALREADY_USED',
+      error: 'Invitation action token is already used',
     });
     expect(mocks.getWorkspaceInviteStatus).not.toHaveBeenCalled();
+  });
+
+  it('fails closed when the replay store is unavailable', async () => {
+    const { admin, setReplayInsertError } = createAdminMock();
+    setReplayInsertError({
+      code: '42P01',
+      message:
+        'relation "private.app_token_invitation_action_replays" does not exist',
+    });
+    mocks.createAdminClient.mockResolvedValue(admin);
+
+    const response = await POST(createDecisionRequest());
+    const body = await response.json();
+
+    expect(response.status).toBe(503);
+    expect(body).toEqual({
+      code: 'INVITATION_ACTION_REPLAY_STORE_UNAVAILABLE',
+      error: 'Invitation replay protection is unavailable',
+    });
+    expect(mocks.getWorkspaceInviteStatus).not.toHaveBeenCalled();
+    expect(JSON.stringify(body)).not.toContain(appSecret);
+    expect(JSON.stringify(body)).not.toContain('select ');
   });
 
   it('rejects decisions for the wrong target app before mutating invitations', async () => {
@@ -399,6 +448,7 @@ describe('app token invitation decision route', () => {
 
     expect(response.status).toBe(401);
     expect(body).toEqual({
+      code: 'INVITATION_ACTION_TOKEN_INVALID_OR_EXPIRED',
       error: 'Invalid or expired invitation action token',
     });
     expect(inserts).toEqual([]);
@@ -415,7 +465,10 @@ describe('app token invitation decision route', () => {
     const body = await response.json();
 
     expect(response.status).toBe(404);
-    expect(body).toEqual({ error: 'Pending invitation not found' });
+    expect(body).toEqual({
+      code: 'PENDING_INVITATION_NOT_FOUND',
+      error: 'Pending invitation not found',
+    });
     expect(JSON.stringify(body)).not.toContain('select ');
     expect(JSON.stringify(body)).not.toContain(appSecret);
   });
