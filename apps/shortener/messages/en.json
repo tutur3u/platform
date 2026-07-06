@@ -1,10 +1,34 @@
 {
   "command_launcher": {
+    "aliases_slot": "Also matches: {aliases}",
+    "app_categories": {
+      "ai": "AI",
+      "all": "All",
+      "content": "Content",
+      "core": "Core",
+      "developer": "Developer",
+      "learning": "Learning",
+      "operations": "Operations",
+      "productivity": "Productivity"
+    },
+    "app_category_descriptions": {
+      "ai": "AI apps for assistants, simulations, and creative thinking.",
+      "all": "Every routable Tuturuuu app available from this launcher.",
+      "content": "Content apps for publishing, files, and delivery.",
+      "core": "Core entrypoints for the Tuturuuu workspace platform.",
+      "developer": "Developer utilities, gateways, and technical tools.",
+      "learning": "Learning apps for courses, practice, and teaching.",
+      "operations": "Operations apps for money, inventory, and commerce.",
+      "productivity": "Productivity apps for schedule, tasks, messages, and meetings."
+    },
     "apps": "Apps",
+    "apps_count": "{count, plural, one {# app} other {# apps}}",
     "apps_description": "Open another Tuturuuu app from this workspace.",
+    "default_destination": "Default app home",
     "open_here": "Open here",
     "open_in_new_tab": "Open in new tab",
-    "open_options": "Open options"
+    "open_options": "Open options",
+    "workspace_destination": "{workspace} workspace"
   },
   "common": {
     "0_usd_per_month": "$0/month",

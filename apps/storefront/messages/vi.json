@@ -4,7 +4,31 @@
     "apps_description": "Mở một ứng dụng Tuturuuu khác từ workspace này.",
     "open_here": "Mở tại đây",
     "open_in_new_tab": "Mở trong tab mới",
-    "open_options": "Tùy chọn mở"
+    "open_options": "Tùy chọn mở",
+    "aliases_slot": "Cũng khớp: {aliases}",
+    "apps_count": "{count, plural, one {# ứng dụng} other {# ứng dụng}}",
+    "app_categories": {
+      "ai": "AI",
+      "all": "Tất cả",
+      "content": "Nội dung",
+      "core": "Cốt lõi",
+      "developer": "Lập trình",
+      "learning": "Học tập",
+      "operations": "Vận hành",
+      "productivity": "Năng suất"
+    },
+    "app_category_descriptions": {
+      "ai": "Ứng dụng AI cho trợ lý, mô phỏng và tư duy sáng tạo.",
+      "all": "Mọi ứng dụng Tuturuuu có route khả dụng từ trình mở này.",
+      "content": "Ứng dụng nội dung cho xuất bản, tệp và phân phối.",
+      "core": "Điểm vào cốt lõi cho nền tảng workspace Tuturuuu.",
+      "developer": "Tiện ích lập trình, gateway và công cụ kỹ thuật.",
+      "learning": "Ứng dụng học tập cho khóa học, luyện tập và giảng dạy.",
+      "operations": "Ứng dụng vận hành cho tài chính, kho hàng và thương mại.",
+      "productivity": "Ứng dụng năng suất cho lịch, tác vụ, tin nhắn và họp."
+    },
+    "default_destination": "Trang mặc định của ứng dụng",
+    "workspace_destination": "Workspace {workspace}"
   },
   "common": {
     "0_usd_per_month": "không có phí hàng tháng",

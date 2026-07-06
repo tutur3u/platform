@@ -25,7 +25,31 @@
     "search_hint": "Type a workspace, app, page, acronym, or close spelling.",
     "select": "select",
     "title": "Command Launcher",
-    "workspaces": "Workspaces"
+    "workspaces": "Workspaces",
+    "aliases_slot": "Also matches: {aliases}",
+    "apps_count": "{count, plural, one {# app} other {# apps}}",
+    "app_categories": {
+      "ai": "AI",
+      "all": "All",
+      "content": "Content",
+      "core": "Core",
+      "developer": "Developer",
+      "learning": "Learning",
+      "operations": "Operations",
+      "productivity": "Productivity"
+    },
+    "app_category_descriptions": {
+      "ai": "AI apps for assistants, simulations, and creative thinking.",
+      "all": "Every routable Tuturuuu app available from this launcher.",
+      "content": "Content apps for publishing, files, and delivery.",
+      "core": "Core entrypoints for the Tuturuuu workspace platform.",
+      "developer": "Developer utilities, gateways, and technical tools.",
+      "learning": "Learning apps for courses, practice, and teaching.",
+      "operations": "Operations apps for money, inventory, and commerce.",
+      "productivity": "Productivity apps for schedule, tasks, messages, and meetings."
+    },
+    "default_destination": "Default app home",
+    "workspace_destination": "{workspace} workspace"
   },
   "common": {
     "affected-product-required": "Affected Product *",

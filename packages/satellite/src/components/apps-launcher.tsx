@@ -42,16 +42,20 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { cn } from '@tuturuuu/utils/format';
 import type {
   LaunchableApp,
+  LaunchableAppCategory,
   LaunchableWorkspace,
 } from '@tuturuuu/utils/launchable-apps';
 import {
+  LAUNCHABLE_APP_CATEGORIES,
   LAUNCHABLE_APPS,
   resolveLaunchableAppUrl,
 } from '@tuturuuu/utils/launchable-apps';
 import { useTranslations } from 'next-intl';
+import type { CSSProperties } from 'react';
 
 interface AppsLauncherDialogProps {
   currentWorkspace?: LaunchableWorkspace | null;
@@ -85,6 +89,20 @@ const APP_ICONS: Partial<Record<LaunchableApp['slug'], LucideIcon>> = {
   track: History,
 };
 
+const APP_CATEGORY_TABS = ['all', ...LAUNCHABLE_APP_CATEGORIES] as const;
+
+type AppCategoryTab = (typeof APP_CATEGORY_TABS)[number];
+
+const CATEGORY_ACCENTS: Record<LaunchableAppCategory, string> = {
+  ai: 'var(--chart-4)',
+  content: 'var(--chart-3)',
+  core: 'var(--primary)',
+  developer: 'var(--chart-1)',
+  learning: 'var(--chart-5)',
+  operations: 'var(--chart-4)',
+  productivity: 'var(--chart-2)',
+};
+
 export function AppsLauncherDialog({
   currentWorkspace,
   onOpenChange,
@@ -116,77 +134,214 @@ export function AppsLauncherDialog({
     window.open(url, '_blank', 'noopener,noreferrer');
   }
 
+  function getAppsForTab(tab: AppCategoryTab) {
+    if (tab === 'all') return LAUNCHABLE_APPS;
+    return LAUNCHABLE_APPS.filter((app) => app.category === tab);
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="grid h-[min(720px,calc(100dvh-2rem))] max-h-[calc(100dvh-2rem)] w-[min(720px,96vw)] grid-rows-[auto_minmax(0,1fr)] gap-0 overflow-hidden p-0 sm:max-w-[min(720px,96vw)]">
-        <DialogHeader className="border-b px-5 py-4 text-left">
+      <DialogContent className="grid h-[min(760px,calc(100dvh-2rem))] max-h-[calc(100dvh-2rem)] w-[min(860px,96vw)] grid-rows-[auto_minmax(0,1fr)] gap-0 overflow-hidden p-0 sm:max-w-[min(860px,96vw)]">
+        <DialogHeader className="border-b px-5 py-4 pr-12 text-left">
           <DialogTitle>{t('apps')}</DialogTitle>
           <DialogDescription>{t('apps_description')}</DialogDescription>
         </DialogHeader>
 
-        <div className="min-h-0 overflow-y-auto p-3">
-          <div className="grid gap-2 sm:grid-cols-2">
-            {LAUNCHABLE_APPS.map((app) => (
-              <AppLauncherItem
-                app={app}
-                key={app.slug}
-                onOpen={openApp}
-                openHereLabel={t('open_here')}
-                openInNewTabLabel={t('open_in_new_tab')}
-                openOptionsLabel={t('open_options')}
-              />
-            ))}
+        <Tabs
+          className="grid min-h-0 grid-rows-[auto_minmax(0,1fr)] gap-0"
+          defaultValue="all"
+        >
+          <div className="border-b bg-muted/20 px-3 py-2">
+            <TabsList className="h-auto max-w-full justify-start gap-1 overflow-x-auto rounded-md bg-muted/70 p-1">
+              {APP_CATEGORY_TABS.map((tab) => (
+                <TabsTrigger
+                  className="shrink-0 px-3 text-xs"
+                  key={tab}
+                  value={tab}
+                >
+                  {t(`app_categories.${tab}`)}
+                </TabsTrigger>
+              ))}
+            </TabsList>
           </div>
-        </div>
+
+          {APP_CATEGORY_TABS.map((tab) => {
+            const apps = getAppsForTab(tab);
+
+            return (
+              <TabsContent
+                className="m-0 min-h-0 overflow-hidden"
+                key={tab}
+                value={tab}
+              >
+                <AppsTabPanel
+                  apps={apps}
+                  categoryDescription={t(`app_category_descriptions.${tab}`)}
+                  countLabel={t('apps_count', { count: apps.length })}
+                  currentWorkspace={currentWorkspace}
+                  onOpen={openApp}
+                  openHereLabel={t('open_here')}
+                  openInNewTabLabel={t('open_in_new_tab')}
+                  openOptionsLabel={t('open_options')}
+                />
+              </TabsContent>
+            );
+          })}
+        </Tabs>
       </DialogContent>
     </Dialog>
   );
 }
 
+function AppsTabPanel({
+  apps,
+  categoryDescription,
+  countLabel,
+  currentWorkspace,
+  onOpen,
+  openHereLabel,
+  openInNewTabLabel,
+  openOptionsLabel,
+}: {
+  apps: readonly LaunchableApp[];
+  categoryDescription: string;
+  countLabel: string;
+  currentWorkspace?: LaunchableWorkspace | null;
+  onOpen: (app: LaunchableApp, target: 'current-tab' | 'new-tab') => void;
+  openHereLabel: string;
+  openInNewTabLabel: string;
+  openOptionsLabel: string;
+}) {
+  return (
+    <div
+      className="h-full min-h-0 overflow-y-auto p-3"
+      data-slot="apps-launcher-scroll"
+    >
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2 px-1 text-muted-foreground text-xs">
+        <span>{categoryDescription}</span>
+        <span className="font-medium">{countLabel}</span>
+      </div>
+      <div className="grid gap-3 sm:grid-cols-2">
+        {apps.map((app) => (
+          <AppLauncherItem
+            app={app}
+            currentWorkspace={currentWorkspace}
+            key={app.slug}
+            onOpen={onOpen}
+            openHereLabel={openHereLabel}
+            openInNewTabLabel={openInNewTabLabel}
+            openOptionsLabel={openOptionsLabel}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function AppLauncherItem({
   app,
+  currentWorkspace,
   onOpen,
   openHereLabel,
   openInNewTabLabel,
   openOptionsLabel,
 }: {
   app: LaunchableApp;
+  currentWorkspace?: LaunchableWorkspace | null;
   onOpen: (app: LaunchableApp, target: 'current-tab' | 'new-tab') => void;
   openHereLabel: string;
   openInNewTabLabel: string;
   openOptionsLabel: string;
 }) {
   const Icon = APP_ICONS[app.slug] ?? Boxes;
+  const t = useTranslations('command_launcher');
+  const accent = CATEGORY_ACCENTS[app.category];
+  const aliases = app.aliases.slice(0, 3).join(', ');
+  const domain = formatAppDomain(app.productionUrl);
+  const destination = app.workspacePathResolver
+    ? t('workspace_destination', {
+        workspace: currentWorkspace?.name?.trim() || t('current_workspace'),
+      })
+    : t('default_destination');
+  const cardStyle = {
+    '--app-accent': accent,
+    background:
+      'linear-gradient(135deg, color-mix(in srgb, var(--app-accent) 14%, var(--card)) 0%, var(--card) 62%)',
+    borderColor: 'color-mix(in srgb, var(--app-accent) 32%, var(--border))',
+  } as CSSProperties;
 
   return (
-    <div className="group grid grid-cols-[minmax(0,1fr)_auto] items-stretch rounded-lg border bg-card text-card-foreground transition hover:bg-accent/60">
+    <div
+      className="group grid grid-cols-[minmax(0,1fr)_auto] items-stretch overflow-hidden rounded-lg border text-card-foreground shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+      data-slot="app-card"
+      style={cardStyle}
+    >
       <button
         aria-label={`${openInNewTabLabel}: ${app.title}`}
-        className="grid min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-3 px-3 py-3 text-left"
+        className="grid min-w-0 grid-cols-[auto_minmax(0,1fr)] items-start gap-3 px-3 py-3 text-left"
         onClick={() => onOpen(app, 'new-tab')}
         type="button"
       >
-        <span className="flex size-9 shrink-0 items-center justify-center rounded-md border bg-muted/70">
+        <span
+          className="mt-0.5 flex size-10 shrink-0 items-center justify-center rounded-md border bg-background/70 shadow-xs"
+          style={{
+            borderColor:
+              'color-mix(in srgb, var(--app-accent) 40%, var(--border))',
+            color: 'var(--app-accent)',
+          }}
+        >
           <Icon className="size-4" />
         </span>
-        <span className="min-w-0">
-          <span className="block truncate font-medium text-sm">
-            {app.title}
+        <span className="min-w-0 space-y-2">
+          <span className="flex min-w-0 items-center gap-2">
+            <span
+              className="block truncate font-semibold text-sm"
+              data-slot="app-card-title"
+            >
+              {app.title}
+            </span>
+            <span
+              className="shrink-0 rounded-full border bg-background/70 px-2 py-0.5 font-medium text-[10px] text-muted-foreground uppercase tracking-normal"
+              data-slot="app-card-category"
+              style={{
+                borderColor:
+                  'color-mix(in srgb, var(--app-accent) 35%, var(--border))',
+              }}
+            >
+              {t(`app_categories.${app.category}`)}
+            </span>
           </span>
-          <span className="block truncate text-muted-foreground text-xs">
-            {app.productionUrl}
+          <span
+            className="block truncate text-muted-foreground text-xs"
+            data-slot="app-card-slot-text"
+          >
+            {t('aliases_slot', { aliases })}
+          </span>
+          <span className="grid min-w-0 gap-1 text-xs">
+            <span
+              className="block truncate font-medium"
+              data-slot="app-card-destination"
+            >
+              {destination}
+            </span>
+            <span
+              className="block truncate text-muted-foreground"
+              data-slot="app-card-domain"
+            >
+              {domain}
+            </span>
           </span>
         </span>
       </button>
 
-      <div className="flex items-center pr-2">
+      <div className="flex items-start pt-2 pr-2">
         <DropdownMenu modal={false}>
           <DropdownMenuTrigger asChild>
             <Button
               aria-label={`${openOptionsLabel}: ${app.title}`}
               className={cn(
                 'size-8 shrink-0 text-muted-foreground opacity-80 transition',
-                'hover:text-foreground group-hover:opacity-100'
+                'hover:bg-background/80 hover:text-foreground group-hover:opacity-100'
               )}
               size="icon"
               type="button"
@@ -209,4 +364,12 @@ function AppLauncherItem({
       </div>
     </div>
   );
+}
+
+function formatAppDomain(url: string) {
+  try {
+    return new URL(url).hostname;
+  } catch {
+    return url;
+  }
 }

@@ -1974,12 +1974,35 @@
     "upload_failed": "Không thể tải tệp lên"
   },
   "command_launcher": {
+    "aliases_slot": "Cũng khớp: {aliases}",
+    "app_categories": {
+      "ai": "AI",
+      "all": "Tất cả",
+      "content": "Nội dung",
+      "core": "Cốt lõi",
+      "developer": "Lập trình",
+      "learning": "Học tập",
+      "operations": "Vận hành",
+      "productivity": "Năng suất"
+    },
+    "app_category_descriptions": {
+      "ai": "Ứng dụng AI cho trợ lý, mô phỏng và tư duy sáng tạo.",
+      "all": "Mọi ứng dụng Tuturuuu có route khả dụng từ trình mở này.",
+      "content": "Ứng dụng nội dung cho xuất bản, tệp và phân phối.",
+      "core": "Điểm vào cốt lõi cho nền tảng workspace Tuturuuu.",
+      "developer": "Tiện ích lập trình, gateway và công cụ kỹ thuật.",
+      "learning": "Ứng dụng học tập cho khóa học, luyện tập và giảng dạy.",
+      "operations": "Ứng dụng vận hành cho tài chính, kho hàng và thương mại.",
+      "productivity": "Ứng dụng năng suất cho lịch, tác vụ, tin nhắn và họp."
+    },
     "apps": "Ứng dụng",
+    "apps_count": "{count, plural, one {# ứng dụng} other {# ứng dụng}}",
     "apps_description": "Mở một ứng dụng Tuturuuu khác từ workspace này.",
     "close": "đóng",
     "current": "Hiện tại",
     "current_app": "Ứng dụng hiện tại",
     "current_workspace": "Workspace hiện tại",
+    "default_destination": "Trang mặc định của ứng dụng",
     "empty": "Không tìm thấy lệnh",
     "empty_description": "Thử workspace, ứng dụng, trang hoặc cách viết gần đúng hơn.",
     "error_workspaces": "Không thể tải workspace",
@@ -1999,6 +2022,7 @@
     "search_hint": "Nhập workspace, ứng dụng, trang, chữ viết tắt hoặc cách viết gần đúng.",
     "select": "chọn",
     "title": "Trình mở lệnh",
+    "workspace_destination": "Workspace {workspace}",
     "workspaces": "Workspace"
   },
   "command_palette": {
