@@ -10,6 +10,9 @@ const PERSONAL_SOURCE_BOARD_ID = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 const PERSONAL_LIST_ID = '77777777-7777-4777-8777-777777777777';
 const PREVIOUS_TASK_ID = '88888888-8888-4888-8888-888888888888';
 const NEXT_TASK_ID = '99999999-9999-4999-8999-999999999999';
+const PRODUCTION_PERSONAL_BOARD_ID = '2ad6c068-c69d-4011-a3c8-46ac45c3cd05';
+const PRODUCTION_PERSONAL_LIST_ID = '16b3fb2f-49ce-4e2b-9d6d-04d9b6f6bc29';
+const PRODUCTION_PREVIOUS_TASK_ID = 'fee133d5-45b3-4561-99ee-2c9b74753e5a';
 
 const mocks = vi.hoisted(() => {
   const adminRpc = vi.fn();
@@ -178,6 +181,50 @@ function sourceTaskRow({
   };
 }
 
+function targetBoardRow({
+  boardId = PERSONAL_BOARD_ID,
+  workspaceId = PERSONAL_WS_ID,
+  personal = true,
+}: {
+  boardId?: string;
+  workspaceId?: string;
+  personal?: boolean;
+} = {}) {
+  return {
+    id: boardId,
+    ws_id: workspaceId,
+    deleted_at: null,
+    archived_at: null,
+    workspaces: {
+      id: workspaceId,
+      personal,
+    },
+  };
+}
+
+function targetListRow({
+  boardId = PERSONAL_BOARD_ID,
+  listId = PERSONAL_LIST_ID,
+  workspaceId = PERSONAL_WS_ID,
+  personal = true,
+}: {
+  boardId?: string;
+  listId?: string;
+  workspaceId?: string;
+  personal?: boolean;
+} = {}) {
+  return {
+    id: listId,
+    board_id: boardId,
+    deleted: false,
+    workspace_boards: targetBoardRow({
+      boardId,
+      workspaceId,
+      personal,
+    }),
+  };
+}
+
 describe('current-user task personal-placement route', () => {
   beforeEach(() => {
     vi.resetModules();
@@ -198,16 +245,7 @@ describe('current-user task personal-placement route', () => {
     });
     mocks.verifyWorkspaceMembershipType.mockResolvedValue({ ok: true });
     mocks.targetBoardMaybeSingle.mockResolvedValue({
-      data: {
-        id: PERSONAL_BOARD_ID,
-        ws_id: PERSONAL_WS_ID,
-        deleted_at: null,
-        archived_at: null,
-        workspaces: {
-          id: PERSONAL_WS_ID,
-          personal: true,
-        },
-      },
+      data: targetBoardRow(),
       error: null,
     });
     mocks.adminRpc.mockResolvedValue({
@@ -275,25 +313,8 @@ describe('current-user task personal-placement route', () => {
       error: null,
     });
     mocks.verifyWorkspaceMembershipType.mockResolvedValue({ ok: true });
-    mocks.targetBoardMaybeSingle.mockResolvedValue({
-      data: {
-        id: PERSONAL_BOARD_ID,
-        ws_id: PERSONAL_WS_ID,
-        deleted_at: null,
-        archived_at: null,
-        workspaces: {
-          id: PERSONAL_WS_ID,
-          personal: true,
-        },
-      },
-      error: null,
-    });
     mocks.targetListMaybeSingle.mockResolvedValue({
-      data: {
-        id: PERSONAL_LIST_ID,
-        board_id: PERSONAL_BOARD_ID,
-        deleted: false,
-      },
+      data: targetListRow(),
       error: null,
     });
     mocks.adminRpc.mockResolvedValue({
@@ -333,6 +354,7 @@ describe('current-user task personal-placement route', () => {
     );
 
     expect(response.status).toBe(200);
+    expect(mocks.targetBoardMaybeSingle).not.toHaveBeenCalled();
     expect(mocks.adminRpc).toHaveBeenCalledWith(
       'upsert_personal_task_placement',
       {
@@ -368,25 +390,8 @@ describe('current-user task personal-placement route', () => {
       error: null,
     });
     mocks.verifyWorkspaceMembershipType.mockResolvedValue({ ok: true });
-    mocks.targetBoardMaybeSingle.mockResolvedValue({
-      data: {
-        id: PERSONAL_BOARD_ID,
-        ws_id: PERSONAL_WS_ID,
-        deleted_at: null,
-        archived_at: null,
-        workspaces: {
-          id: PERSONAL_WS_ID,
-          personal: true,
-        },
-      },
-      error: null,
-    });
     mocks.targetListMaybeSingle.mockResolvedValue({
-      data: {
-        id: PERSONAL_LIST_ID,
-        board_id: PERSONAL_BOARD_ID,
-        deleted: false,
-      },
+      data: targetListRow(),
       error: null,
     });
     mocks.adminRpc.mockResolvedValue({
@@ -461,25 +466,8 @@ describe('current-user task personal-placement route', () => {
       data: null,
       error: null,
     });
-    mocks.targetBoardMaybeSingle.mockResolvedValue({
-      data: {
-        id: PERSONAL_BOARD_ID,
-        ws_id: PERSONAL_WS_ID,
-        deleted_at: null,
-        archived_at: null,
-        workspaces: {
-          id: PERSONAL_WS_ID,
-          personal: true,
-        },
-      },
-      error: null,
-    });
     mocks.targetListMaybeSingle.mockResolvedValue({
-      data: {
-        id: PERSONAL_LIST_ID,
-        board_id: PERSONAL_BOARD_ID,
-        deleted: false,
-      },
+      data: targetListRow(),
       error: null,
     });
     mocks.adminRpc.mockResolvedValue({
@@ -540,16 +528,7 @@ describe('current-user task personal-placement route', () => {
     });
     mocks.verifyWorkspaceMembershipType.mockResolvedValue({ ok: true });
     mocks.targetBoardMaybeSingle.mockResolvedValue({
-      data: {
-        id: PERSONAL_BOARD_ID,
-        ws_id: PERSONAL_WS_ID,
-        deleted_at: null,
-        archived_at: null,
-        workspaces: {
-          id: PERSONAL_WS_ID,
-          personal: true,
-        },
-      },
+      data: targetBoardRow(),
       error: null,
     });
 
@@ -589,16 +568,7 @@ describe('current-user task personal-placement route', () => {
     });
     mocks.verifyWorkspaceMembershipType.mockResolvedValue({ ok: true });
     mocks.targetBoardMaybeSingle.mockResolvedValue({
-      data: {
-        id: PERSONAL_BOARD_ID,
-        ws_id: PERSONAL_WS_ID,
-        deleted_at: null,
-        archived_at: null,
-        workspaces: {
-          id: PERSONAL_WS_ID,
-          personal: false,
-        },
-      },
+      data: targetBoardRow({ personal: false }),
       error: null,
     });
 
@@ -625,6 +595,151 @@ describe('current-user task personal-placement route', () => {
     expect(response.status).toBe(400);
     await expect(response.json()).resolves.toEqual({
       error: 'Destination board must be personal',
+    });
+    expect(mocks.adminRpc).not.toHaveBeenCalled();
+  });
+
+  it('resolves the personal board through the destination list for the production payload shape', async () => {
+    mocks.sourceTaskMaybeSingle.mockResolvedValue({
+      data: sourceTaskRow(),
+      error: null,
+    });
+    mocks.verifyWorkspaceMembershipType.mockResolvedValue({ ok: true });
+    mocks.targetListMaybeSingle.mockResolvedValue({
+      data: targetListRow({
+        boardId: PRODUCTION_PERSONAL_BOARD_ID,
+        listId: PRODUCTION_PERSONAL_LIST_ID,
+      }),
+      error: null,
+    });
+    mocks.adminRpc.mockResolvedValue({
+      data: [
+        {
+          personal_board_id: PRODUCTION_PERSONAL_BOARD_ID,
+          personal_list_id: PRODUCTION_PERSONAL_LIST_ID,
+          personal_sort_key: 2_000_000,
+          personal_added_at: '2026-07-06T01:00:00.000Z',
+          personal_placed_at: '2026-07-06T02:00:00.000Z',
+        },
+      ],
+      error: null,
+    });
+
+    const { PUT } = await import(
+      '@/app/api/v1/users/me/tasks/[taskId]/personal-placement/route'
+    );
+    const response = await (PUT as PlacementRouteHandler)(
+      new NextRequest(
+        `http://localhost/api/v1/users/me/tasks/${TASK_ID}/personal-placement`,
+        {
+          method: 'PUT',
+          body: JSON.stringify({
+            personal_board_id: PRODUCTION_PERSONAL_BOARD_ID,
+            personal_list_id: PRODUCTION_PERSONAL_LIST_ID,
+            personal_sort_key: 2_000_000,
+            previous_task_id: PRODUCTION_PREVIOUS_TASK_ID,
+            next_task_id: null,
+          }),
+        }
+      ),
+      {
+        user: { id: 'user-1' },
+        supabase: {},
+      },
+      { taskId: TASK_ID }
+    );
+
+    expect(response.status).toBe(200);
+    expect(mocks.targetBoardMaybeSingle).not.toHaveBeenCalled();
+    expect(mocks.adminRpc).toHaveBeenCalledWith(
+      'upsert_personal_task_placement',
+      expect.objectContaining({
+        p_personal_board_id: PRODUCTION_PERSONAL_BOARD_ID,
+        p_personal_list_id: PRODUCTION_PERSONAL_LIST_ID,
+        p_personal_sort_key: 2_000_000,
+        p_previous_task_id: PRODUCTION_PREVIOUS_TASK_ID,
+        p_next_task_id: null,
+      })
+    );
+  });
+
+  it('rejects a destination list that belongs to a different board', async () => {
+    mocks.sourceTaskMaybeSingle.mockResolvedValue({
+      data: sourceTaskRow(),
+      error: null,
+    });
+    mocks.verifyWorkspaceMembershipType.mockResolvedValue({ ok: true });
+    mocks.targetListMaybeSingle.mockResolvedValue({
+      data: targetListRow({
+        boardId: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
+        listId: PERSONAL_LIST_ID,
+      }),
+      error: null,
+    });
+
+    const { PUT } = await import(
+      '@/app/api/v1/users/me/tasks/[taskId]/personal-placement/route'
+    );
+    const response = await (PUT as PlacementRouteHandler)(
+      new NextRequest(
+        `http://localhost/api/v1/users/me/tasks/${TASK_ID}/personal-placement`,
+        {
+          method: 'PUT',
+          body: JSON.stringify({
+            personal_board_id: PERSONAL_BOARD_ID,
+            personal_list_id: PERSONAL_LIST_ID,
+          }),
+        }
+      ),
+      {
+        user: { id: 'user-1' },
+        supabase: {},
+      },
+      { taskId: TASK_ID }
+    );
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual({
+      error: 'Personal list does not belong to personal board',
+    });
+    expect(mocks.adminRpc).not.toHaveBeenCalled();
+  });
+
+  it('returns a server error when the personal list lookup fails', async () => {
+    mocks.sourceTaskMaybeSingle.mockResolvedValue({
+      data: sourceTaskRow(),
+      error: null,
+    });
+    mocks.verifyWorkspaceMembershipType.mockResolvedValue({ ok: true });
+    mocks.targetListMaybeSingle.mockResolvedValue({
+      data: null,
+      error: { message: 'database unavailable' },
+    });
+
+    const { PUT } = await import(
+      '@/app/api/v1/users/me/tasks/[taskId]/personal-placement/route'
+    );
+    const response = await (PUT as PlacementRouteHandler)(
+      new NextRequest(
+        `http://localhost/api/v1/users/me/tasks/${TASK_ID}/personal-placement`,
+        {
+          method: 'PUT',
+          body: JSON.stringify({
+            personal_board_id: PERSONAL_BOARD_ID,
+            personal_list_id: PERSONAL_LIST_ID,
+          }),
+        }
+      ),
+      {
+        user: { id: 'user-1' },
+        supabase: {},
+      },
+      { taskId: TASK_ID }
+    );
+
+    expect(response.status).toBe(500);
+    await expect(response.json()).resolves.toEqual({
+      error: 'Failed to load personal list',
     });
     expect(mocks.adminRpc).not.toHaveBeenCalled();
   });

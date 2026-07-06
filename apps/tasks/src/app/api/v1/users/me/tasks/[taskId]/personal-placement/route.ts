@@ -64,6 +64,24 @@ type PlacementRow = {
   personal_placed_at: string | null;
 };
 
+type TargetBoardRow = {
+  id: string;
+  ws_id: string | null;
+  deleted_at: string | null;
+  archived_at: string | null;
+  workspaces?: {
+    id?: string | null;
+    personal?: boolean | null;
+  } | null;
+};
+
+type TargetListRow = {
+  id: string;
+  board_id: string | null;
+  deleted: boolean | null;
+  workspace_boards?: TargetBoardRow | null;
+};
+
 async function hasCurrentUserTaskVisibility(
   sbAdmin: any,
   taskId: string,
@@ -200,6 +218,138 @@ async function loadSourceTask(sbAdmin: any, taskId: string) {
   return { task, response: null };
 }
 
+async function resolvePersonalPlacementTarget(
+  sbAdmin: any,
+  personalBoardId: string,
+  personalListId: string | null
+): Promise<{
+  targetBoard: TargetBoardRow | null;
+  targetListId: string | null;
+  response: NextResponse | null;
+}> {
+  if (personalListId) {
+    const { data: targetList, error: targetListError } = await (sbAdmin as any)
+      .from('task_lists')
+      .select(
+        `
+          id,
+          board_id,
+          deleted,
+          workspace_boards!inner (
+            id,
+            ws_id,
+            deleted_at,
+            archived_at,
+            workspaces!inner (
+              id,
+              personal
+            )
+          )
+        `
+      )
+      .eq('id', personalListId)
+      .maybeSingle();
+
+    if (targetListError) {
+      return {
+        targetBoard: null,
+        targetListId: null,
+        response: NextResponse.json(
+          { error: 'Failed to load personal list' },
+          { status: 500 }
+        ),
+      };
+    }
+
+    const list = targetList as TargetListRow | null;
+
+    if (!list || list.deleted) {
+      return {
+        targetBoard: null,
+        targetListId: null,
+        response: NextResponse.json(
+          { error: 'Personal list not found' },
+          { status: 404 }
+        ),
+      };
+    }
+
+    const targetBoard = list.workspace_boards ?? null;
+
+    if (!targetBoard?.id || !targetBoard.ws_id) {
+      return {
+        targetBoard: null,
+        targetListId: null,
+        response: NextResponse.json(
+          { error: 'Personal board not found' },
+          { status: 404 }
+        ),
+      };
+    }
+
+    if (
+      list.board_id !== personalBoardId ||
+      targetBoard.id !== personalBoardId
+    ) {
+      return {
+        targetBoard: null,
+        targetListId: null,
+        response: NextResponse.json(
+          { error: 'Personal list does not belong to personal board' },
+          { status: 400 }
+        ),
+      };
+    }
+
+    return { targetBoard, targetListId: personalListId, response: null };
+  }
+
+  const { data: targetBoard, error: targetBoardError } = await (sbAdmin as any)
+    .from('workspace_boards')
+    .select(
+      `
+        id,
+        ws_id,
+        deleted_at,
+        archived_at,
+        workspaces!inner (
+          id,
+          personal
+        )
+      `
+    )
+    .eq('id', personalBoardId)
+    .maybeSingle();
+
+  if (targetBoardError) {
+    return {
+      targetBoard: null,
+      targetListId: null,
+      response: NextResponse.json(
+        { error: 'Failed to load personal board' },
+        { status: 500 }
+      ),
+    };
+  }
+
+  if (!targetBoard) {
+    return {
+      targetBoard: null,
+      targetListId: null,
+      response: NextResponse.json(
+        { error: 'Personal board not found' },
+        { status: 404 }
+      ),
+    };
+  }
+
+  return {
+    targetBoard: targetBoard as TargetBoardRow,
+    targetListId: null,
+    response: null,
+  };
+}
+
 export const PUT = withSessionAuth<{ taskId: string }>(
   async (req, { user, supabase }, { taskId }) => {
     if (!validate(taskId)) {
@@ -214,7 +364,7 @@ export const PUT = withSessionAuth<{ taskId: string }>(
       );
     }
 
-    const sbAdmin = await createAdminClient();
+    const sbAdmin = await createAdminClient({ noCookie: true });
     const { task: sourceTask, response } = await loadSourceTask(
       sbAdmin,
       taskId
@@ -261,29 +411,23 @@ export const PUT = withSessionAuth<{ taskId: string }>(
         ? parsed.data.personal_list_id
         : null;
 
-    const { data: targetBoard, error: targetBoardError } = await (
-      sbAdmin as any
-    )
-      .from('workspace_boards')
-      .select(
-        `
-          id,
-          ws_id,
-          deleted_at,
-          archived_at,
-          workspaces!inner (
-            id,
-            personal
-          )
-        `
-      )
-      .eq('id', personal_board_id)
-      .maybeSingle();
+    const {
+      targetBoard,
+      targetListId: resolvedPersonalListId,
+      response: targetResponse,
+    } = await resolvePersonalPlacementTarget(
+      sbAdmin,
+      personal_board_id,
+      personalListId
+    );
 
-    if (targetBoardError || !targetBoard) {
-      return NextResponse.json(
-        { error: 'Personal board not found' },
-        { status: 404 }
+    if (!targetBoard) {
+      return (
+        targetResponse ??
+        NextResponse.json(
+          { error: 'Personal board not found' },
+          { status: 404 }
+        )
       );
     }
 
@@ -344,35 +488,13 @@ export const PUT = withSessionAuth<{ taskId: string }>(
       );
     }
 
-    if (personalListId) {
-      const { data: targetList, error: targetListError } = await (
-        sbAdmin as any
-      )
-        .from('task_lists')
-        .select('id, board_id, deleted')
-        .eq('id', personalListId)
-        .maybeSingle();
-
-      if (
-        targetListError ||
-        !targetList ||
-        targetList.board_id !== personal_board_id ||
-        targetList.deleted
-      ) {
-        return NextResponse.json(
-          { error: 'Personal list not found' },
-          { status: 404 }
-        );
-      }
-    }
-
     const { data: placementRows, error: saveError } = await (
       sbAdmin as any
     ).rpc('upsert_personal_task_placement', {
       p_task_id: taskId,
       p_user_id: user.id,
       p_personal_board_id: personal_board_id,
-      p_personal_list_id: personalListId,
+      p_personal_list_id: resolvedPersonalListId,
       p_personal_sort_key: personal_sort_key ?? null,
       p_previous_task_id: parsed.data.previous_task_id ?? null,
       p_next_task_id: parsed.data.next_task_id ?? null,
@@ -400,7 +522,7 @@ export const DELETE = withSessionAuth<{ taskId: string }>(
       return NextResponse.json({ error: 'Invalid task ID' }, { status: 400 });
     }
 
-    const sbAdmin = await createAdminClient();
+    const sbAdmin = await createAdminClient({ noCookie: true });
     const { task: sourceTask, response } = await loadSourceTask(
       sbAdmin,
       taskId
