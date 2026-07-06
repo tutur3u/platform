@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.9.0](https://github.com/tutur3u/platform/compare/track-v0.8.0...track-v0.9.0) (2026-07-06)
+
+
+### Features
+
+* **satellite:** improve apps launcher picker ([a3e92cb](https://github.com/tutur3u/platform/commit/a3e92cb1a54e3cb45bc1697e8e70efd0776d2a23))
+
 ## [0.8.0](https://github.com/tutur3u/platform/compare/track-v0.7.1...track-v0.8.0) (2026-07-05)
 
 

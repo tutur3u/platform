@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.0](https://github.com/tutur3u/platform/compare/hive-v0.5.0...hive-v0.6.0) (2026-07-06)
+
+
+### Features
+
+* **satellite:** improve apps launcher picker ([a3e92cb](https://github.com/tutur3u/platform/commit/a3e92cb1a54e3cb45bc1697e8e70efd0776d2a23))
+
 ## [0.5.0](https://github.com/tutur3u/platform/compare/hive-v0.4.1...hive-v0.5.0) (2026-07-05)
 
 

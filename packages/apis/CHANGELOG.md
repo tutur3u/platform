@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.2](https://github.com/tutur3u/platform/compare/apis-v0.7.1...apis-v0.7.2) (2026-07-06)
+
+
+### Bug Fixes
+
+* **tasks:** allow personal board external placements ([89a3fa2](https://github.com/tutur3u/platform/commit/89a3fa20117414c102ad5cdedb126ec0fab981d8))
+
 ## [0.7.1](https://github.com/tutur3u/platform/compare/apis-v0.7.0...apis-v0.7.1) (2026-07-05)
 
 
