@@ -253,7 +253,9 @@ export const PUT = withSessionAuth<{ taskId: string }>(
 
     const targetWsId = targetBoard.ws_id as string | null;
     const targetWorkspace = targetBoard.workspaces as
-      { id?: string | null; personal?: boolean | null } | null | undefined;
+      | { id?: string | null; personal?: boolean | null }
+      | null
+      | undefined;
 
     if (
       !targetWsId ||

@@ -201,8 +201,9 @@ describe('current-user task personal-placement route', () => {
       error: null,
     });
 
-    const { PUT } =
-      await import('@/app/api/v1/users/me/tasks/[taskId]/personal-placement/route');
+    const { PUT } = await import(
+      '@/app/api/v1/users/me/tasks/[taskId]/personal-placement/route'
+    );
     const response = await (PUT as PlacementRouteHandler)(
       new NextRequest(
         `http://localhost/api/v1/users/me/tasks/${TASK_ID}/personal-placement`,
@@ -287,8 +288,9 @@ describe('current-user task personal-placement route', () => {
       error: null,
     });
 
-    const { PUT } =
-      await import('@/app/api/v1/users/me/tasks/[taskId]/personal-placement/route');
+    const { PUT } = await import(
+      '@/app/api/v1/users/me/tasks/[taskId]/personal-placement/route'
+    );
     const response = await (PUT as PlacementRouteHandler)(
       new NextRequest(
         `http://localhost/api/v1/users/me/tasks/${TASK_ID}/personal-placement`,
@@ -380,8 +382,9 @@ describe('current-user task personal-placement route', () => {
       error: null,
     });
 
-    const { PUT } =
-      await import('@/app/api/v1/users/me/tasks/[taskId]/personal-placement/route');
+    const { PUT } = await import(
+      '@/app/api/v1/users/me/tasks/[taskId]/personal-placement/route'
+    );
     const response = await (PUT as PlacementRouteHandler)(
       new NextRequest(
         `http://localhost/api/v1/users/me/tasks/${TASK_ID}/personal-placement`,
@@ -446,8 +449,9 @@ describe('current-user task personal-placement route', () => {
       error: null,
     });
 
-    const { PUT } =
-      await import('@/app/api/v1/users/me/tasks/[taskId]/personal-placement/route');
+    const { PUT } = await import(
+      '@/app/api/v1/users/me/tasks/[taskId]/personal-placement/route'
+    );
     const response = await (PUT as PlacementRouteHandler)(
       new NextRequest(
         `http://localhost/api/v1/users/me/tasks/${TASK_ID}/personal-placement`,
@@ -494,8 +498,9 @@ describe('current-user task personal-placement route', () => {
       error: null,
     });
 
-    const { PUT } =
-      await import('@/app/api/v1/users/me/tasks/[taskId]/personal-placement/route');
+    const { PUT } = await import(
+      '@/app/api/v1/users/me/tasks/[taskId]/personal-placement/route'
+    );
     const response = await (PUT as PlacementRouteHandler)(
       new NextRequest(
         `http://localhost/api/v1/users/me/tasks/${TASK_ID}/personal-placement`,
