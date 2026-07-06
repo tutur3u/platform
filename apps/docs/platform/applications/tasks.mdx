@@ -412,6 +412,11 @@ dropping them from the schedule.
 Personal task boards can reference tasks from other workspaces without cloning
 or moving the source task. Assigned tasks from accessible source workspaces
 appear by default in a virtual `External tasks` lane on each personal board.
+Explicit personal-board placements can also reference tasks from another board
+inside the same personal workspace; those cards are external to the destination
+board even though the source workspace is personal. Native tasks from the same
+personal board must still move through the normal workspace task route instead
+of the personal-placement route.
 The tasks API may use the server-side admin client to hydrate candidate source
 tasks, but it must filter those rows through the current user's source
 `workspace_members` rows with `type = 'MEMBER'` before returning personal

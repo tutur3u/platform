@@ -253,9 +253,7 @@ export const PUT = withSessionAuth<{ taskId: string }>(
 
     const targetWsId = targetBoard.ws_id as string | null;
     const targetWorkspace = targetBoard.workspaces as
-      | { id?: string | null; personal?: boolean | null }
-      | null
-      | undefined;
+      { id?: string | null; personal?: boolean | null } | null | undefined;
 
     if (
       !targetWsId ||
@@ -269,11 +267,20 @@ export const PUT = withSessionAuth<{ taskId: string }>(
       );
     }
 
-    if (sourceWsId === targetWsId || sourceBoard?.workspaces?.personal) {
+    const sourceBoardId = sourceBoard?.id ?? null;
+    const sourceWorkspacePersonal = sourceBoard?.workspaces?.personal === true;
+    const isWorkspaceExternalSource =
+      !sourceWorkspacePersonal && sourceWsId !== targetWsId;
+    const isPersonalBoardExternalSource =
+      sourceWorkspacePersonal &&
+      sourceWsId === targetWsId &&
+      sourceBoardId !== personal_board_id;
+
+    if (!isWorkspaceExternalSource && !isPersonalBoardExternalSource) {
       return NextResponse.json(
         {
           error:
-            'Only external workspace tasks can be placed on a personal board',
+            'Only external workspace tasks or board-external personal tasks can be placed on a personal board',
         },
         { status: 400 }
       );
