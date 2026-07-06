@@ -26,7 +26,6 @@ const mocks = vi.hoisted(() => ({
   getUserDefaultWorkspace: vi.fn(),
   hasPendingWorkspaceInvitations: vi.fn(),
   isExactTuturuuuDotComEmail: vi.fn(),
-  getTasksAppOrigin: vi.fn(() => 'https://tasks.example.test'),
 }));
 
 vi.mock('@tuturuuu/auth/proxy', () => ({
@@ -107,11 +106,6 @@ vi.mock('../lib/workspace-invitations/status', () => ({
   hasPendingWorkspaceInvitations: (
     ...args: Parameters<typeof mocks.hasPendingWorkspaceInvitations>
   ) => mocks.hasPendingWorkspaceInvitations(...args),
-}));
-
-vi.mock('../lib/tasks-app-url', () => ({
-  getTasksAppOrigin: (...args: Parameters<typeof mocks.getTasksAppOrigin>) =>
-    mocks.getTasksAppOrigin(...args),
 }));
 
 vi.mock('@tuturuuu/utils/email/client', () => ({
@@ -201,7 +195,6 @@ describe('web proxy api handling', () => {
     mocks.verifyWorkspaceMembershipType.mockResolvedValue({ ok: true });
     mocks.getUserDefaultWorkspace.mockResolvedValue(null);
     mocks.hasPendingWorkspaceInvitations.mockResolvedValue(false);
-    mocks.getTasksAppOrigin.mockReturnValue('https://tasks.example.test');
   });
 
   function createSessionRequest(url: string) {
@@ -1281,32 +1274,10 @@ describe('web proxy api handling', () => {
     expect(response).toBeInstanceOf(NextResponse);
   });
 
-  it('redirects root to the tasks entry when stale board config is present', async () => {
-    const adminQueryBuilder = {
-      select: vi.fn().mockReturnThis(),
-      eq: vi.fn().mockReturnThis(),
-      is: vi.fn().mockReturnThis(),
-      upsert: vi.fn().mockResolvedValue({ error: null }),
-      maybeSingle: vi
-        .fn()
-        .mockResolvedValueOnce({
-          data: {
-            value: JSON.stringify({
-              target: 'tasks',
-              submodule: 'boards',
-              boardId: 'board-1',
-            }),
-          },
-        })
-        .mockResolvedValueOnce({ data: { id: 'board-1' }, error: null }),
-    };
-
+  it('redirects root to the default workspace home without reading task navigation preferences', async () => {
     const supabaseClient = createAuthenticatedSupabaseClient();
 
     mocks.createClient.mockResolvedValue(supabaseClient);
-    mocks.createAdminClient.mockResolvedValue({
-      from: vi.fn().mockReturnValue(adminQueryBuilder),
-    });
     mocks.getUserDefaultWorkspace.mockResolvedValue({
       id: 'ws-1',
       personal: false,
@@ -1316,39 +1287,14 @@ describe('web proxy api handling', () => {
     const response = await proxy(createSessionRequest('http://localhost/'));
 
     expect(response.status).toBe(307);
-    expect(response.headers.get('location')).toBe(
-      'https://tasks.example.test/ws-1/tasks'
-    );
-    expect(adminQueryBuilder.upsert).toHaveBeenCalledWith(
-      expect.objectContaining({
-        id: 'ROOT_DEFAULT_NAVIGATION',
-        user_id: 'user-1',
-        value: JSON.stringify({ target: 'tasks' }),
-        ws_id: 'ws-1',
-      }),
-      { onConflict: 'user_id,ws_id,id' }
-    );
+    expect(response.headers.get('location')).toBe('http://localhost/ws-1');
+    expect(mocks.createAdminClient).not.toHaveBeenCalled();
   });
 
-  it('redirects personal workspace root task preferences to the tasks app', async () => {
-    const adminQueryBuilder = {
-      select: vi.fn().mockReturnThis(),
-      eq: vi.fn().mockReturnThis(),
-      maybeSingle: vi.fn().mockResolvedValue({
-        data: {
-          value: JSON.stringify({
-            target: 'tasks',
-          }),
-        },
-      }),
-    };
-
+  it('redirects personal workspace roots to the web workspace home', async () => {
     const supabaseClient = createAuthenticatedSupabaseClient();
 
     mocks.createClient.mockResolvedValue(supabaseClient);
-    mocks.createAdminClient.mockResolvedValue({
-      from: vi.fn().mockReturnValue(adminQueryBuilder),
-    });
     mocks.getUserDefaultWorkspace.mockResolvedValue({
       id: 'personal-ws-id',
       personal: true,
@@ -1360,9 +1306,8 @@ describe('web proxy api handling', () => {
     );
 
     expect(response.status).toBe(307);
-    expect(response.headers.get('location')).toBe(
-      'https://tasks.example.test/personal/tasks?view=kanban'
-    );
+    expect(response.headers.get('location')).toBe('http://localhost/personal');
+    expect(mocks.createAdminClient).not.toHaveBeenCalled();
   });
 
   it('skips default workspace redirect auth when root requests have no session cookie', async () => {
@@ -1529,7 +1474,7 @@ describe('web proxy api handling', () => {
     );
   });
 
-  it('lets the tasks entry resolve the personal default board preference', async () => {
+  it('ignores task navigation preferences when redirecting personal workspace roots', async () => {
     const workspaceConfigBuilder = {
       select: vi.fn().mockReturnThis(),
       eq: vi.fn().mockReturnThis(),
@@ -1579,36 +1524,14 @@ describe('web proxy api handling', () => {
     const response = await proxy(createSessionRequest('http://localhost/'));
 
     expect(response.status).toBe(307);
-    expect(response.headers.get('location')).toBe(
-      'https://tasks.example.test/personal/tasks'
-    );
+    expect(response.headers.get('location')).toBe('http://localhost/personal');
+    expect(adminFrom).not.toHaveBeenCalledWith('user_workspace_configs');
     expect(adminFrom).not.toHaveBeenCalledWith('user_configs');
     expect(adminFrom).not.toHaveBeenCalledWith('workspace_boards');
   });
 
-  it('preserves locale when redirecting root task preferences to the tasks app', async () => {
-    const adminQueryBuilder = {
-      select: vi.fn().mockReturnThis(),
-      eq: vi.fn().mockReturnThis(),
-      is: vi.fn().mockReturnThis(),
-      maybeSingle: vi
-        .fn()
-        .mockResolvedValueOnce({
-          data: {
-            value: JSON.stringify({
-              target: 'tasks',
-              submodule: 'boards',
-              boardId: 'board-1',
-            }),
-          },
-        })
-        .mockResolvedValueOnce({ data: { id: 'board-1' }, error: null }),
-    };
-
+  it('preserves locale when redirecting root to the default workspace home', async () => {
     mocks.createClient.mockResolvedValue(createAuthenticatedSupabaseClient());
-    mocks.createAdminClient.mockResolvedValue({
-      from: vi.fn().mockReturnValue(adminQueryBuilder),
-    });
     mocks.getUserDefaultWorkspace.mockResolvedValue({
       id: 'ws-1',
       personal: false,
@@ -1618,9 +1541,8 @@ describe('web proxy api handling', () => {
     const response = await proxy(createSessionRequest('http://localhost/vi'));
 
     expect(response.status).toBe(307);
-    expect(response.headers.get('location')).toBe(
-      'https://tasks.example.test/vi/ws-1/tasks'
-    );
+    expect(response.headers.get('location')).toBe('http://localhost/vi/ws-1');
+    expect(mocks.createAdminClient).not.toHaveBeenCalled();
   });
 
   it('preserves locale when redirecting the legacy dashboard alias to workspace home', async () => {
@@ -1838,7 +1760,7 @@ describe('web proxy api handling', () => {
     expect(adminFrom).toHaveBeenCalledWith('workspace_default_permissions');
   });
 
-  it('falls back to tasks boards and self-heals when configured board no longer exists', async () => {
+  it('ignores stale task board navigation when redirecting root to workspace home', async () => {
     const supabaseClient = createAuthenticatedSupabaseClient();
 
     const configSelectBuilder = {
@@ -1890,10 +1812,9 @@ describe('web proxy api handling', () => {
     const response = await proxy(createSessionRequest('http://localhost/'));
 
     expect(response.status).toBe(307);
-    expect(response.headers.get('location')).toBe(
-      'https://tasks.example.test/ws-1/tasks'
-    );
-    expect(adminUpsert).toHaveBeenCalled();
+    expect(response.headers.get('location')).toBe('http://localhost/ws-1');
+    expect(adminClient.from).not.toHaveBeenCalled();
+    expect(adminUpsert).not.toHaveBeenCalled();
   });
 
   it('excludes audio assets from the proxy matcher so public media is served directly', async () => {

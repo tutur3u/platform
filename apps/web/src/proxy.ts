@@ -48,7 +48,6 @@ import { getDriveAppOrigin } from './lib/drive-app-url';
 import { getFinanceAppOrigin } from './lib/finance-app-url';
 import { getMailAppOrigin } from './lib/mail-app-url';
 import { getQrAppOrigin } from './lib/qr-app-url';
-import { getTasksAppOrigin } from './lib/tasks-app-url';
 import { getToolsAppOrigin } from './lib/tools-app-url';
 import { getTrackAppOrigin } from './lib/track-app-url';
 import { hasPendingWorkspaceInvitations } from './lib/workspace-invitations/status';
@@ -155,7 +154,6 @@ const SUSPICIOUS_QUERY_PARAMS_MAX = parsePositiveIntEnv(
 );
 const SCANNER_PATH_PATTERN =
   /(wp-admin|wp-login\.php|xmlrpc\.php|phpmyadmin|adminer|\.env|\.git|boaform|server-status|cgi-bin|vendor\/phpunit|actuator|jenkins|hudson|\/shell|\/debug)/i;
-const ROOT_DEFAULT_NAVIGATION_CONFIG_ID = 'ROOT_DEFAULT_NAVIGATION';
 const RATE_LIMIT_DIAGNOSTIC_HEADER_NAMES = [
   'Retry-After',
   'X-Proxy-Block-Reason',
@@ -172,21 +170,6 @@ const RATE_LIMIT_DIAGNOSTIC_HEADER_NAMES = [
 const STAFF_RATE_LIMIT_WARNING = 'staff-debug-bypass';
 const STAFF_RATE_LIMIT_DEBUG_BYPASS = 'tuturuuu-staff';
 
-type RootNavigationTarget = 'workspace_home' | 'tasks' | 'calendar' | 'finance';
-
-type RootNavigationConfig = {
-  target: RootNavigationTarget;
-  submodule?: string;
-  boardId?: string;
-};
-
-const ROOT_NAVIGATION_TARGETS: readonly RootNavigationTarget[] = [
-  'workspace_home',
-  'tasks',
-  'calendar',
-  'finance',
-];
-
 function parsePositiveIntEnv(name: string, fallback: number): number {
   const rawValue = process.env[name];
   if (!rawValue) {
@@ -195,27 +178,6 @@ function parsePositiveIntEnv(name: string, fallback: number): number {
 
   const parsed = Number.parseInt(rawValue, 10);
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
-}
-
-function isRootNavigationTarget(value: unknown): value is RootNavigationTarget {
-  return ROOT_NAVIGATION_TARGETS.includes(value as RootNavigationTarget);
-}
-
-function parseRootNavigationConfig(value: string | null): RootNavigationConfig {
-  if (!value) {
-    return { target: 'workspace_home' };
-  }
-
-  try {
-    const parsed = JSON.parse(value) as RootNavigationConfig;
-    if (!isRootNavigationTarget(parsed?.target)) {
-      return { target: 'workspace_home' };
-    }
-
-    return parsed;
-  } catch {
-    return { target: 'workspace_home' };
-  }
 }
 
 function prependLocalePrefix(path: string, localePrefix: string): string {
@@ -419,71 +381,6 @@ function isWorkspaceHomeRedirectCandidate(
 
   const pathname = `/${workspaceSlug}`;
   return !PUBLIC_PATHS.includes(pathname);
-}
-
-function isRootTasksRedirectPath(pathname: string) {
-  const pathSegments = pathname.split('/').filter(Boolean);
-  return pathSegments.length === 2 && pathSegments[1] === 'tasks';
-}
-
-async function resolveRootRedirectPath(
-  userId: string,
-  workspace: { id: string; personal?: boolean }
-): Promise<{ path: string; staleConfigValue: string | null }> {
-  const sbAdmin = await createAdminClient();
-  const { data: configRow } = await sbAdmin
-    .from('user_workspace_configs')
-    .select('value')
-    .eq('user_id', userId)
-    .eq('ws_id', workspace.id)
-    .eq('id', ROOT_DEFAULT_NAVIGATION_CONFIG_ID)
-    .maybeSingle();
-
-  const parsed = parseRootNavigationConfig(configRow?.value ?? null);
-
-  if (parsed.target === 'workspace_home') {
-    return { path: `/${workspace.id}`, staleConfigValue: null };
-  }
-
-  if (parsed.target === 'calendar') {
-    return { path: `/${workspace.id}/calendar`, staleConfigValue: null };
-  }
-
-  if (parsed.target === 'finance') {
-    const financeSubmodule = parsed.submodule;
-    if (financeSubmodule === 'transactions') {
-      return {
-        path: `/${workspace.id}/finance/transactions`,
-        staleConfigValue: null,
-      };
-    }
-    if (financeSubmodule === 'wallets') {
-      return {
-        path: `/${workspace.id}/finance/wallets`,
-        staleConfigValue: null,
-      };
-    }
-    if (financeSubmodule === 'invoices') {
-      return {
-        path: `/${workspace.id}/finance/invoices`,
-        staleConfigValue: null,
-      };
-    }
-
-    return { path: `/${workspace.id}/finance`, staleConfigValue: null };
-  }
-
-  if (parsed.target === 'tasks') {
-    return {
-      path: `/${workspace.id}/tasks`,
-      staleConfigValue:
-        parsed.submodule || parsed.boardId
-          ? JSON.stringify({ target: 'tasks' })
-          : null,
-    };
-  }
-
-  return { path: `/${workspace.id}`, staleConfigValue: null };
 }
 
 async function hasWorkspaceEmailRateLimitOverrides(
@@ -1640,50 +1537,13 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
               ? 'internal'
               : defaultWorkspace.id;
 
-          const { path, staleConfigValue } = await resolveRootRedirectPath(
-            user.id,
-            {
-              id: defaultWorkspace.id,
-              personal: defaultWorkspace.personal,
-            }
-          );
-
-          const canonicalPath =
-            target === defaultWorkspace.id
-              ? path
-              : path.replace(`/${defaultWorkspace.id}`, `/${target}`);
+          const canonicalPath = `/${target}`;
           const localizedCanonicalPath = prependLocalePrefix(
             canonicalPath,
             activeLocalePrefix
           );
 
-          if (staleConfigValue !== null) {
-            try {
-              const sbAdmin = await createAdminClient();
-              await sbAdmin.from('user_workspace_configs').upsert(
-                {
-                  id: ROOT_DEFAULT_NAVIGATION_CONFIG_ID,
-                  user_id: user.id,
-                  ws_id: defaultWorkspace.id,
-                  value: staleConfigValue,
-                  updated_at: new Date().toISOString(),
-                },
-                { onConflict: 'user_id,ws_id,id' }
-              );
-            } catch {
-              // Best-effort cleanup only; root navigation should still redirect.
-            }
-          }
-
-          const isTasksRootTarget = isRootTasksRedirectPath(canonicalPath);
-          const redirectUrl = isTasksRootTarget
-            ? new URL(localizedCanonicalPath, getTasksAppOrigin())
-            : new URL(localizedCanonicalPath, req.nextUrl);
-
-          if (isTasksRootTarget) {
-            redirectUrl.search = req.nextUrl.search;
-          }
-
+          const redirectUrl = new URL(localizedCanonicalPath, req.nextUrl);
           const wsRedirect = NextResponse.redirect(redirectUrl);
           propagateAuthCookies(authRes, wsRedirect);
           return wsRedirect;
