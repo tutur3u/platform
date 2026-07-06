@@ -100,7 +100,9 @@ import {
 export interface TuturuuuUserClientConfig {
   accessToken: string;
   baseUrl?: string;
+  calendarBaseUrl?: string;
   expiresAt?: number | null;
+  financeBaseUrl?: string;
   fetch?: typeof fetch;
   onSessionRefresh?: (session: CliSession) => void | Promise<void>;
   refreshToken?: string;
@@ -110,6 +112,8 @@ export interface TuturuuuUserClientConfig {
 const SESSION_REFRESH_SKEW_MS = 60_000;
 const PROTOCOL_RELATIVE_URL_PATTERN = /^\/\//u;
 const TASK_DESCRIPTION_CHUNK_SIZE = 180_000;
+const DEFAULT_CALENDAR_BASE_URL = 'https://calendar.tuturuuu.com';
+const DEFAULT_FINANCE_BASE_URL = 'https://finance.tuturuuu.com';
 const DEFAULT_TASKS_BASE_URL = 'https://tasks.tuturuuu.com';
 
 type CliListWorkspaceTasksOptions = ListWorkspaceTasksOptions & {
@@ -168,27 +172,58 @@ function shouldAttachSdkAuth(input: RequestInfo | URL, baseUrl: string) {
   }
 }
 
-function inferTasksBaseUrl(baseUrl?: string) {
+function inferSatelliteAppBaseUrl(
+  baseUrl: string | undefined,
+  options: {
+    defaultBaseUrl: string;
+    localhostHostname: string;
+    localPort: string;
+  }
+) {
   const platformBaseUrl = normalizeBaseUrl(baseUrl);
   const url = new URL(platformBaseUrl);
 
   if (url.hostname === 'tuturuuu.com') {
-    return DEFAULT_TASKS_BASE_URL;
+    return options.defaultBaseUrl;
   }
 
   if (url.hostname === 'tuturuuu.localhost') {
-    return 'https://tasks.tuturuuu.localhost';
+    return `https://${options.localhostHostname}`;
   }
 
   if (
     ['localhost', '127.0.0.1', '[::1]', '::1'].includes(url.hostname) &&
     url.port === '7803'
   ) {
-    url.port = '7809';
+    url.port = options.localPort;
     return url.origin;
   }
 
-  return DEFAULT_TASKS_BASE_URL;
+  return options.defaultBaseUrl;
+}
+
+function inferCalendarBaseUrl(baseUrl?: string) {
+  return inferSatelliteAppBaseUrl(baseUrl, {
+    defaultBaseUrl: DEFAULT_CALENDAR_BASE_URL,
+    localhostHostname: 'calendar.tuturuuu.localhost',
+    localPort: '7806',
+  });
+}
+
+function inferFinanceBaseUrl(baseUrl?: string) {
+  return inferSatelliteAppBaseUrl(baseUrl, {
+    defaultBaseUrl: DEFAULT_FINANCE_BASE_URL,
+    localhostHostname: 'finance.tuturuuu.localhost',
+    localPort: '7808',
+  });
+}
+
+function inferTasksBaseUrl(baseUrl?: string) {
+  return inferSatelliteAppBaseUrl(baseUrl, {
+    defaultBaseUrl: DEFAULT_TASKS_BASE_URL,
+    localhostHostname: 'tasks.tuturuuu.localhost',
+    localPort: '7809',
+  });
 }
 
 function chunkText(value: string, chunkSize = TASK_DESCRIPTION_CHUNK_SIZE) {
@@ -828,7 +863,9 @@ export class TasksClient {
 export class TuturuuuUserClient {
   private accessToken: string;
   private readonly baseUrl: string;
+  private readonly calendarBaseUrl: string;
   private expiresAt?: number | null;
+  private readonly financeBaseUrl: string;
   private readonly fetchImpl: typeof fetch;
   private readonly onSessionRefresh?: (
     session: CliSession
@@ -848,8 +885,14 @@ export class TuturuuuUserClient {
   constructor(config: TuturuuuUserClientConfig) {
     this.accessToken = config.accessToken;
     this.baseUrl = normalizeBaseUrl(config.baseUrl);
+    this.calendarBaseUrl = normalizeBaseUrl(
+      config.calendarBaseUrl ?? inferCalendarBaseUrl(config.baseUrl)
+    );
     this.tasksBaseUrl = normalizeBaseUrl(
       config.tasksBaseUrl ?? inferTasksBaseUrl(config.baseUrl)
+    );
+    this.financeBaseUrl = normalizeBaseUrl(
+      config.financeBaseUrl ?? inferFinanceBaseUrl(config.baseUrl)
     );
     this.expiresAt = config.expiresAt;
     this.fetchImpl = config.fetch || globalThis.fetch;
@@ -936,6 +979,14 @@ export class TuturuuuUserClient {
 
   getClientOptions(): InternalApiClientOptions {
     return this.createClientOptions(this.baseUrl);
+  }
+
+  getCalendarClientOptions(): InternalApiClientOptions {
+    return this.createClientOptions(this.calendarBaseUrl);
+  }
+
+  getFinanceClientOptions(): InternalApiClientOptions {
+    return this.createClientOptions(this.financeBaseUrl);
   }
 
   getTaskClientOptions(): InternalApiClientOptions {

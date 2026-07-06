@@ -367,7 +367,7 @@ describe('CLI commands', () => {
     ]);
 
     expect(fetchMock).toHaveBeenCalledWith(
-      'https://tuturuuu.com/api/workspaces/ws-1/wallets/wallet-1',
+      'https://finance.tuturuuu.com/api/workspaces/ws-1/wallets/wallet-1',
       expect.objectContaining({
         cache: 'no-store',
       })
@@ -413,7 +413,7 @@ describe('CLI commands', () => {
     ]);
 
     expect(fetchMock).toHaveBeenCalledWith(
-      'https://tuturuuu.com/api/v1/workspaces/ws-1/wallets',
+      'https://finance.tuturuuu.com/api/v1/workspaces/ws-1/wallets',
       expect.objectContaining({
         cache: 'no-store',
       })
@@ -846,7 +846,7 @@ task_name: Prepare handoff
     ]);
 
     expect(fetchMock).toHaveBeenCalledWith(
-      `https://tuturuuu.com/api/workspaces/ws-1/wallets/${walletIdA}/checkpoints`,
+      `https://finance.tuturuuu.com/api/workspaces/ws-1/wallets/${walletIdA}/checkpoints`,
       expect.objectContaining({
         body: JSON.stringify({
           actual_balance: 123.45,
@@ -893,7 +893,7 @@ task_name: Prepare handoff
     ]);
 
     expect(fetchMock).toHaveBeenCalledWith(
-      'https://tuturuuu.com/api/workspaces/ws-1/wallets/checkpoints',
+      'https://finance.tuturuuu.com/api/workspaces/ws-1/wallets/checkpoints',
       expect.objectContaining({
         body: JSON.stringify({
           checked_at: '2026-06-10T17:00:00.000Z',
@@ -1007,17 +1007,17 @@ task_name: Prepare handoff
 
     expect(fetchMock).toHaveBeenNthCalledWith(
       1,
-      `https://tuturuuu.com/api/workspaces/ws-1/wallets/${walletIdA}/checkpoints?limit=10`,
+      `https://finance.tuturuuu.com/api/workspaces/ws-1/wallets/${walletIdA}/checkpoints?limit=10`,
       expect.objectContaining({ cache: 'no-store' })
     );
     expect(fetchMock).toHaveBeenNthCalledWith(
       2,
-      `https://tuturuuu.com/api/workspaces/ws-1/wallets/${walletIdA}/checkpoints`,
+      `https://finance.tuturuuu.com/api/workspaces/ws-1/wallets/${walletIdA}/checkpoints`,
       expect.objectContaining({ cache: 'no-store' })
     );
     expect(fetchMock).toHaveBeenNthCalledWith(
       3,
-      `https://tuturuuu.com/api/workspaces/ws-1/wallets/${walletIdA}/checkpoints/${checkpointId}`,
+      `https://finance.tuturuuu.com/api/workspaces/ws-1/wallets/${walletIdA}/checkpoints/${checkpointId}`,
       expect.objectContaining({
         body: JSON.stringify({ actual_balance: 101 }),
         cache: 'no-store',
@@ -1026,7 +1026,7 @@ task_name: Prepare handoff
     );
     expect(fetchMock).toHaveBeenNthCalledWith(
       4,
-      `https://tuturuuu.com/api/workspaces/ws-1/wallets/${walletIdA}/checkpoints/${checkpointId}`,
+      `https://finance.tuturuuu.com/api/workspaces/ws-1/wallets/${walletIdA}/checkpoints/${checkpointId}`,
       expect.objectContaining({
         cache: 'no-store',
         method: 'DELETE',
@@ -1034,7 +1034,7 @@ task_name: Prepare handoff
     );
     expect(fetchMock).toHaveBeenNthCalledWith(
       5,
-      'https://tuturuuu.com/api/workspaces/ws-1/wallets/checkpoints',
+      'https://finance.tuturuuu.com/api/workspaces/ws-1/wallets/checkpoints',
       expect.objectContaining({ cache: 'no-store' })
     );
   });
@@ -1071,7 +1071,7 @@ task_name: Prepare handoff
 
     const request = fetchMock.mock.calls[0];
     expect(request?.[0]).toBe(
-      'https://tuturuuu.com/api/workspaces/ws-1/transactions'
+      'https://finance.tuturuuu.com/api/workspaces/ws-1/transactions'
     );
     expect(request?.[1]).toEqual(
       expect.objectContaining({
@@ -1120,7 +1120,7 @@ task_name: Prepare handoff
 
     const request = fetchMock.mock.calls[0];
     expect(request?.[0]).toBe(
-      'https://tuturuuu.com/api/workspaces/ws-1/transactions/tx-1'
+      'https://finance.tuturuuu.com/api/workspaces/ws-1/transactions/tx-1'
     );
     expect(request?.[1]).toEqual(
       expect.objectContaining({
@@ -1175,7 +1175,7 @@ task_name: Prepare handoff
     ]);
 
     expect(fetchMock).toHaveBeenCalledWith(
-      'https://tuturuuu.com/api/workspaces/ws-1/transfers',
+      'https://finance.tuturuuu.com/api/workspaces/ws-1/transfers',
       expect.objectContaining({
         body: JSON.stringify({
           origin_wallet_id: 'origin-wallet',
@@ -1223,7 +1223,7 @@ task_name: Prepare handoff
     ]);
 
     expect(fetchMock).toHaveBeenCalledWith(
-      'https://tuturuuu.com/api/workspaces/ws-1/transactions/categories',
+      'https://finance.tuturuuu.com/api/workspaces/ws-1/transactions/categories',
       expect.objectContaining({
         body: JSON.stringify({
           name: 'Travel',
@@ -1265,7 +1265,7 @@ task_name: Prepare handoff
     ]);
 
     expect(fetchMock).toHaveBeenCalledWith(
-      'https://tuturuuu.com/api/workspaces/ws-1/tags',
+      'https://finance.tuturuuu.com/api/workspaces/ws-1/tags',
       expect.objectContaining({
         body: JSON.stringify({
           name: 'Tuturuuu',
@@ -1304,7 +1304,7 @@ task_name: Prepare handoff
     ]);
 
     expect(fetchMock).toHaveBeenCalledWith(
-      'https://tuturuuu.com/api/workspaces/ws-1/tags/tag-1',
+      'https://finance.tuturuuu.com/api/workspaces/ws-1/tags/tag-1',
       expect.objectContaining({
         body: JSON.stringify({
           description: 'Investment platform costs',
@@ -1363,21 +1363,21 @@ task_name: Prepare handoff
 
     expect(fetchMock).toHaveBeenNthCalledWith(
       1,
-      'https://tuturuuu.com/api/workspaces/ws-1/tags',
+      'https://finance.tuturuuu.com/api/workspaces/ws-1/tags',
       expect.objectContaining({
         cache: 'no-store',
       })
     );
     expect(fetchMock).toHaveBeenNthCalledWith(
       2,
-      'https://tuturuuu.com/api/workspaces/ws-1/tags/tag-1',
+      'https://finance.tuturuuu.com/api/workspaces/ws-1/tags/tag-1',
       expect.objectContaining({
         cache: 'no-store',
       })
     );
     expect(fetchMock).toHaveBeenNthCalledWith(
       3,
-      'https://tuturuuu.com/api/workspaces/ws-1/tags/tag-1',
+      'https://finance.tuturuuu.com/api/workspaces/ws-1/tags/tag-1',
       expect.objectContaining({
         cache: 'no-store',
         method: 'DELETE',
@@ -1415,7 +1415,7 @@ task_name: Prepare handoff
     ]);
 
     expect(fetchMock).toHaveBeenCalledWith(
-      'https://tuturuuu.com/api/v1/workspaces/ws-1/calendar/events',
+      'https://calendar.tuturuuu.com/api/v1/workspaces/ws-1/calendar/events',
       expect.objectContaining({
         body: JSON.stringify({
           title: 'Focus block',
@@ -1494,7 +1494,7 @@ task_name: Prepare handoff
     ]);
 
     expect(fetchMock).toHaveBeenCalledWith(
-      'https://tuturuuu.com/api/v1/workspaces/ws-1/calendars/reset',
+      'https://calendar.tuturuuu.com/api/v1/workspaces/ws-1/calendars/reset',
       expect.objectContaining({
         method: 'POST',
       })
@@ -1553,7 +1553,7 @@ task_name: Prepare handoff
     ]);
 
     expect(fetchMock).toHaveBeenCalledWith(
-      'https://tuturuuu.com/api/v1/calendar/connections',
+      'https://calendar.tuturuuu.com/api/v1/calendar/connections',
       expect.objectContaining({
         body: JSON.stringify({
           calendarId: 'primary',

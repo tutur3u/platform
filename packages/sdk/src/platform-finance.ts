@@ -252,7 +252,9 @@ export class FinanceClient {
       query?: InternalApiQuery;
     } = {}
   ) {
-    const apiClient = getInternalApiClient(this.client.getClientOptions());
+    const apiClient = getInternalApiClient(
+      this.client.getFinanceClientOptions()
+    );
     return apiClient.json<T>(path, {
       method: init.method,
       query: init.query,

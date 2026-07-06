@@ -362,6 +362,38 @@ describe('TuturuuuUserClient', () => {
     );
   });
 
+  it('maps platform localhost requests to first-party app ports', async () => {
+    const fetchMock = vi
+      .fn<typeof fetch>()
+      .mockImplementation(async () => Response.json({ count: 0, tasks: [] }));
+
+    const client = new TuturuuuUserClient({
+      accessToken: 'access-token',
+      baseUrl: 'http://localhost:7803',
+      fetch: fetchMock,
+    });
+
+    await client.calendar.listEvents('ws-1', {});
+    await client.finance.listWallets('ws-1');
+    await client.tasks.list('ws-1');
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      'http://localhost:7806/api/v1/workspaces/ws-1/calendar/events',
+      expect.objectContaining({ cache: 'no-store' })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      'http://localhost:7808/api/v1/workspaces/ws-1/wallets',
+      expect.objectContaining({ cache: 'no-store' })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      3,
+      'http://localhost:7809/api/v1/workspaces/ws-1/tasks',
+      expect.objectContaining({ cache: 'no-store' })
+    );
+  });
+
   it('searches tasks through the authenticated task search API', async () => {
     const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(
       Response.json({
@@ -542,7 +574,7 @@ describe('TuturuuuUserClient', () => {
     });
 
     expect(fetchMock).toHaveBeenCalledWith(
-      'https://tuturuuu.com/api/workspaces/ws-1/transactions/tx-1',
+      'https://finance.tuturuuu.com/api/workspaces/ws-1/transactions/tx-1',
       expect.objectContaining({
         body: JSON.stringify({
           amount: 125_000,
@@ -588,14 +620,14 @@ describe('TuturuuuUserClient', () => {
 
     expect(fetchMock).toHaveBeenNthCalledWith(
       1,
-      'https://tuturuuu.com/api/v1/workspaces/ws-1/calendar/events?start_at=2026-06-11T00%3A00%3A00.000Z&end_at=2026-06-12T00%3A00%3A00.000Z',
+      'https://calendar.tuturuuu.com/api/v1/workspaces/ws-1/calendar/events?start_at=2026-06-11T00%3A00%3A00.000Z&end_at=2026-06-12T00%3A00%3A00.000Z',
       expect.objectContaining({
         cache: 'no-store',
       })
     );
     expect(fetchMock).toHaveBeenNthCalledWith(
       2,
-      'https://tuturuuu.com/api/v1/workspaces/ws-1/calendar/events',
+      'https://calendar.tuturuuu.com/api/v1/workspaces/ws-1/calendar/events',
       expect.objectContaining({
         body: JSON.stringify({
           title: 'Focus block',
@@ -607,7 +639,7 @@ describe('TuturuuuUserClient', () => {
     );
     expect(fetchMock).toHaveBeenNthCalledWith(
       3,
-      'https://tuturuuu.com/api/v1/workspaces/ws-1/calendars',
+      'https://calendar.tuturuuu.com/api/v1/workspaces/ws-1/calendars',
       expect.objectContaining({
         body: JSON.stringify({
           name: 'Team',
@@ -618,7 +650,7 @@ describe('TuturuuuUserClient', () => {
     );
     expect(fetchMock).toHaveBeenNthCalledWith(
       4,
-      'https://tuturuuu.com/api/v1/calendar/auth/provider-calendars?wsId=ws-1&accountId=account-1',
+      'https://calendar.tuturuuu.com/api/v1/calendar/auth/provider-calendars?wsId=ws-1&accountId=account-1',
       expect.objectContaining({
         cache: 'no-store',
       })
@@ -653,7 +685,7 @@ describe('TuturuuuUserClient', () => {
     });
 
     expect(fetchMock).toHaveBeenCalledWith(
-      'https://tuturuuu.com/api/workspaces/ws-1/transfers',
+      'https://finance.tuturuuu.com/api/workspaces/ws-1/transfers',
       expect.objectContaining({
         body: JSON.stringify({
           origin_transaction_id: 'origin-tx',
@@ -694,7 +726,7 @@ describe('TuturuuuUserClient', () => {
     });
 
     expect(fetchMock).toHaveBeenCalledWith(
-      'https://tuturuuu.com/api/workspaces/ws-1/transactions/categories',
+      'https://finance.tuturuuu.com/api/workspaces/ws-1/transactions/categories',
       expect.objectContaining({
         body: JSON.stringify({
           name: 'Travel',
@@ -732,17 +764,17 @@ describe('TuturuuuUserClient', () => {
 
     expect(fetchMock).toHaveBeenNthCalledWith(
       1,
-      'https://tuturuuu.com/api/workspaces/ws-1/tags',
+      'https://finance.tuturuuu.com/api/workspaces/ws-1/tags',
       expect.objectContaining({ cache: 'no-store' })
     );
     expect(fetchMock).toHaveBeenNthCalledWith(
       2,
-      'https://tuturuuu.com/api/workspaces/ws-1/tags/tag-1',
+      'https://finance.tuturuuu.com/api/workspaces/ws-1/tags/tag-1',
       expect.objectContaining({ cache: 'no-store' })
     );
     expect(fetchMock).toHaveBeenNthCalledWith(
       3,
-      'https://tuturuuu.com/api/workspaces/ws-1/tags',
+      'https://finance.tuturuuu.com/api/workspaces/ws-1/tags',
       expect.objectContaining({
         body: JSON.stringify({
           name: 'Tuturuuu',
@@ -755,7 +787,7 @@ describe('TuturuuuUserClient', () => {
     );
     expect(fetchMock).toHaveBeenNthCalledWith(
       4,
-      'https://tuturuuu.com/api/workspaces/ws-1/tags/tag-1',
+      'https://finance.tuturuuu.com/api/workspaces/ws-1/tags/tag-1',
       expect.objectContaining({
         body: JSON.stringify({
           description: 'Investment platform costs',
@@ -766,7 +798,7 @@ describe('TuturuuuUserClient', () => {
     );
     expect(fetchMock).toHaveBeenNthCalledWith(
       5,
-      'https://tuturuuu.com/api/workspaces/ws-1/tags/tag-1',
+      'https://finance.tuturuuu.com/api/workspaces/ws-1/tags/tag-1',
       expect.objectContaining({
         cache: 'no-store',
         method: 'DELETE',
@@ -845,17 +877,17 @@ describe('TuturuuuUserClient', () => {
 
     expect(fetchMock).toHaveBeenNthCalledWith(
       1,
-      'https://tuturuuu.com/api/workspaces/ws%201/wallets/checkpoints',
+      'https://finance.tuturuuu.com/api/workspaces/ws%201/wallets/checkpoints',
       expect.objectContaining({ cache: 'no-store' })
     );
     expect(fetchMock).toHaveBeenNthCalledWith(
       2,
-      'https://tuturuuu.com/api/workspaces/ws%201/wallets/wallet%2F1/checkpoints?limit=10',
+      'https://finance.tuturuuu.com/api/workspaces/ws%201/wallets/wallet%2F1/checkpoints?limit=10',
       expect.objectContaining({ cache: 'no-store' })
     );
     expect(fetchMock).toHaveBeenNthCalledWith(
       3,
-      'https://tuturuuu.com/api/workspaces/ws%201/wallets/wallet%2F1/checkpoints',
+      'https://finance.tuturuuu.com/api/workspaces/ws%201/wallets/wallet%2F1/checkpoints',
       expect.objectContaining({
         body: JSON.stringify({
           actual_balance: 100,
@@ -868,12 +900,12 @@ describe('TuturuuuUserClient', () => {
     );
     expect(fetchMock).toHaveBeenNthCalledWith(
       4,
-      'https://tuturuuu.com/api/workspaces/ws%201/wallets/wallet%2F1/checkpoints',
+      'https://finance.tuturuuu.com/api/workspaces/ws%201/wallets/wallet%2F1/checkpoints',
       expect.objectContaining({ cache: 'no-store' })
     );
     expect(fetchMock).toHaveBeenNthCalledWith(
       5,
-      'https://tuturuuu.com/api/workspaces/ws%201/wallets/wallet%2F1/checkpoints/checkpoint%2F1',
+      'https://finance.tuturuuu.com/api/workspaces/ws%201/wallets/wallet%2F1/checkpoints/checkpoint%2F1',
       expect.objectContaining({
         body: JSON.stringify({ actual_balance: 101 }),
         cache: 'no-store',
@@ -882,7 +914,7 @@ describe('TuturuuuUserClient', () => {
     );
     expect(fetchMock).toHaveBeenNthCalledWith(
       6,
-      'https://tuturuuu.com/api/workspaces/ws%201/wallets/wallet%2F1/checkpoints/checkpoint%2F1',
+      'https://finance.tuturuuu.com/api/workspaces/ws%201/wallets/wallet%2F1/checkpoints/checkpoint%2F1',
       expect.objectContaining({
         cache: 'no-store',
         method: 'DELETE',
@@ -890,7 +922,7 @@ describe('TuturuuuUserClient', () => {
     );
     expect(fetchMock).toHaveBeenNthCalledWith(
       7,
-      'https://tuturuuu.com/api/workspaces/ws%201/wallets/checkpoints',
+      'https://finance.tuturuuu.com/api/workspaces/ws%201/wallets/checkpoints',
       expect.objectContaining({
         body: JSON.stringify({
           checked_at: '2026-06-11T00:00:00.000Z',
@@ -922,7 +954,7 @@ describe('TuturuuuUserClient', () => {
     });
 
     expect(fetchMock).toHaveBeenCalledWith(
-      'https://tuturuuu.com/api/workspaces/ws-1/transactions/export?page=2&pageSize=5',
+      'https://finance.tuturuuu.com/api/workspaces/ws-1/transactions/export?page=2&pageSize=5',
       expect.objectContaining({
         cache: 'no-store',
       })
@@ -970,14 +1002,14 @@ describe('TuturuuuUserClient', () => {
 
     expect(fetchMock).toHaveBeenNthCalledWith(
       1,
-      'https://tuturuuu.com/api/v1/workspaces/ws-1/finance/recurring-transactions',
+      'https://finance.tuturuuu.com/api/v1/workspaces/ws-1/finance/recurring-transactions',
       expect.objectContaining({
         cache: 'no-store',
       })
     );
     expect(fetchMock).toHaveBeenNthCalledWith(
       2,
-      'https://tuturuuu.com/api/v1/workspaces/ws-1/finance/recurring-transactions/upcoming?daysAhead=30',
+      'https://finance.tuturuuu.com/api/v1/workspaces/ws-1/finance/recurring-transactions/upcoming?daysAhead=30',
       expect.objectContaining({
         cache: 'no-store',
       })
