@@ -89,15 +89,27 @@ describe('AppsLauncherDialog', () => {
     const dialogContent = document.querySelector(
       '[data-slot="dialog-content"]'
     );
-    expect(dialogContent?.className).toContain(
-      'h-[min(760px,calc(100dvh-2rem))]'
-    );
-    expect(dialogContent?.className).toContain('w-[min(860px,96vw)]');
+    expect(dialogContent?.className).toContain('h-[calc(100dvh-2rem)]');
+    expect(dialogContent?.className).toContain('max-h-[760px]');
+    expect(dialogContent?.className).toContain('w-[calc(100vw-2rem)]');
+    expect(dialogContent?.className).toContain('max-w-[860px]');
     expect(dialogContent?.className).toContain('overflow-hidden');
+
+    const tabsRoot = document.querySelector('[data-slot="tabs"]');
+    expect(tabsRoot?.className).toContain('h-full');
+    expect(tabsRoot?.className).toContain('min-h-0');
+    expect(tabsRoot?.className).toContain('overflow-hidden');
+
+    const tabsContent = document.querySelector('[data-slot="tabs-content"]');
+    expect(tabsContent?.className).toContain('flex-1');
+    expect(tabsContent?.className).toContain('min-h-0');
+    expect(tabsContent?.className).toContain('overflow-hidden');
 
     const scrollRegion = document.querySelector(
       '[data-slot="apps-launcher-scroll"]'
     );
+    expect(scrollRegion?.className).toContain('h-full');
+    expect(scrollRegion?.className).toContain('max-h-full');
     expect(scrollRegion?.className).toContain('min-h-0');
     expect(scrollRegion?.className).toContain('overflow-y-auto');
   });

@@ -141,17 +141,17 @@ export function AppsLauncherDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="grid h-[min(760px,calc(100dvh-2rem))] max-h-[calc(100dvh-2rem)] w-[min(860px,96vw)] grid-rows-[auto_minmax(0,1fr)] gap-0 overflow-hidden p-0 sm:max-w-[min(860px,96vw)]">
+      <DialogContent className="grid h-[calc(100dvh-2rem)] max-h-[760px] w-[calc(100vw-2rem)] max-w-[860px] grid-rows-[auto_minmax(0,1fr)] gap-0 overflow-hidden p-0 sm:max-w-[860px]">
         <DialogHeader className="border-b px-5 py-4 pr-12 text-left">
           <DialogTitle>{t('apps')}</DialogTitle>
           <DialogDescription>{t('apps_description')}</DialogDescription>
         </DialogHeader>
 
         <Tabs
-          className="grid min-h-0 grid-rows-[auto_minmax(0,1fr)] gap-0"
+          className="h-full min-h-0 gap-0 overflow-hidden"
           defaultValue="all"
         >
-          <div className="border-b bg-muted/20 px-3 py-2">
+          <div className="shrink-0 border-b bg-muted/20 px-3 py-2">
             <TabsList className="h-auto max-w-full justify-start gap-1 overflow-x-auto rounded-md bg-muted/70 p-1">
               {APP_CATEGORY_TABS.map((tab) => (
                 <TabsTrigger
@@ -170,7 +170,7 @@ export function AppsLauncherDialog({
 
             return (
               <TabsContent
-                className="m-0 min-h-0 overflow-hidden"
+                className="m-0 min-h-0 flex-1 overflow-hidden data-[state=inactive]:hidden"
                 key={tab}
                 value={tab}
               >
@@ -214,7 +214,7 @@ function AppsTabPanel({
 }) {
   return (
     <div
-      className="h-full min-h-0 overflow-y-auto p-3"
+      className="h-full max-h-full min-h-0 overflow-y-auto overscroll-contain p-3"
       data-slot="apps-launcher-scroll"
     >
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2 px-1 text-muted-foreground text-xs">
