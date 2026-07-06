@@ -411,6 +411,38 @@ describe('app token invitation decision route', () => {
     expect(mocks.getWorkspaceInviteStatus).not.toHaveBeenCalled();
   });
 
+  it('returns an app session for a replayed accept after the invite created membership', async () => {
+    const { admin, inserts, setReplayInsertError } = createAdminMock();
+    setReplayInsertError({
+      code: '23505',
+      message: 'duplicate key value violates unique constraint',
+    });
+    mocks.verifyWorkspaceMembershipType.mockResolvedValue({
+      error: null,
+      ok: true,
+    });
+    mocks.createAdminClient.mockResolvedValue(admin);
+
+    const response = await POST(createDecisionRequest());
+    const body = (await response.json()) as {
+      accessToken?: string;
+      refreshToken?: string;
+      scopes?: string[];
+      workspaceId?: string;
+    };
+
+    expect(response.status).toBe(200);
+    expect(body.workspaceId).toBe(workspaceId);
+    expect(body.accessToken).toEqual(expect.any(String));
+    expect(body.refreshToken).toEqual(expect.any(String));
+    expect(body.scopes).toEqual(
+      expect.arrayContaining(['workspace:session', 'users:profile:read'])
+    );
+    expect(inserts).toEqual([]);
+    expect(mocks.getWorkspaceInviteStatus).not.toHaveBeenCalled();
+    expect(JSON.stringify(body)).not.toContain(appSecret);
+  });
+
   it('fails closed when the replay store is unavailable', async () => {
     const { admin, setReplayInsertError } = createAdminMock();
     setReplayInsertError({

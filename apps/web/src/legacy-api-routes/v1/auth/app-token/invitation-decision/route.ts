@@ -555,6 +555,29 @@ async function acceptInvitation({
   return null;
 }
 
+async function hasExistingWorkspaceMembership({
+  admin,
+  userId,
+  workspaceId,
+}: {
+  admin: AdminDb;
+  userId: string;
+  workspaceId: string;
+}) {
+  const existingMember = await verifyWorkspaceMembershipType({
+    requiredType: 'ANY',
+    supabase: admin,
+    userId,
+    wsId: workspaceId,
+  });
+
+  if (existingMember.error === 'membership_lookup_failed') {
+    return false;
+  }
+
+  return existingMember.ok;
+}
+
 async function rejectInvitation({
   admin,
   authEmail,
@@ -572,6 +595,67 @@ async function rejectInvitation({
   });
 
   await clearPendingInvites({ admin, candidateEmails, userId, workspaceId });
+}
+
+async function createAcceptedInvitationSessionResponse({
+  admin,
+  appId,
+  allowedScopes,
+  allowedWorkspaceIds,
+  claims,
+  requestedScopes,
+  workspaceId,
+}: {
+  admin: AdminDb;
+  appId: string;
+  allowedScopes: string[];
+  allowedWorkspaceIds: string[];
+  claims: AppCoordinationTokenClaims;
+  requestedScopes: string[];
+  workspaceId: string;
+}) {
+  let scopes: string[];
+  try {
+    scopes = getAllowedScopesForDecision({
+      allowedScopes,
+      allowedWorkspaceIds,
+      requestedScopes,
+      workspaceId,
+    });
+  } catch (error) {
+    if (error instanceof Error && error.message === 'app_scope_not_allowed') {
+      return NextResponse.json(
+        { error: 'Requested scope is not allowed for this app' },
+        { status: 403 }
+      );
+    }
+
+    throw error;
+  }
+
+  const { policy } = await getAppCoordinationSessionPolicy({ db: admin });
+  const authIdentity = await getAuthUserIdentity({
+    admin,
+    fallbackEmail: claims.email,
+    userId: claims.sub,
+  });
+  const userProfile = await getExchangeUserProfile({
+    admin,
+    authIdentity,
+    userId: claims.sub,
+  });
+
+  return NextResponse.json(
+    createExchangeTokenBody({
+      email: userProfile.email ?? authIdentity.email,
+      normalizedWorkspaceId: workspaceId,
+      policy,
+      scopes,
+      targetApp: appId,
+      userProfile,
+      userId: claims.sub,
+    })
+  );
 }
 
 async function invitationDecision(request: NextRequest) {
@@ -655,6 +739,25 @@ async function invitationDecision(request: NextRequest) {
   }
 
   if (consumed === 'replayed') {
+    if (
+      action === 'accept' &&
+      (await hasExistingWorkspaceMembership({
+        admin,
+        userId: claims.sub,
+        workspaceId,
+      }))
+    ) {
+      return createAcceptedInvitationSessionResponse({
+        admin,
+        allowedScopes: appVerification.app.allowedScopes,
+        allowedWorkspaceIds: appVerification.app.allowedWorkspaceIds,
+        appId: appVerification.app.id,
+        claims,
+        requestedScopes,
+        workspaceId,
+      });
+    }
+
     return invitationDecisionError({
       code: 'INVITATION_ACTION_TOKEN_ALREADY_USED',
       error: 'Invitation action token is already used',
@@ -704,48 +807,15 @@ async function invitationDecision(request: NextRequest) {
   });
   if (acceptError) return acceptError;
 
-  let scopes: string[];
-  try {
-    scopes = getAllowedScopesForDecision({
-      allowedScopes: appVerification.app.allowedScopes,
-      allowedWorkspaceIds: appVerification.app.allowedWorkspaceIds,
-      requestedScopes,
-      workspaceId,
-    });
-  } catch (error) {
-    if (error instanceof Error && error.message === 'app_scope_not_allowed') {
-      return NextResponse.json(
-        { error: 'Requested scope is not allowed for this app' },
-        { status: 403 }
-      );
-    }
-
-    throw error;
-  }
-
-  const { policy } = await getAppCoordinationSessionPolicy({ db: admin });
-  const authIdentity = await getAuthUserIdentity({
+  return createAcceptedInvitationSessionResponse({
     admin,
-    fallbackEmail: claims.email,
-    userId: claims.sub,
+    allowedScopes: appVerification.app.allowedScopes,
+    allowedWorkspaceIds: appVerification.app.allowedWorkspaceIds,
+    appId: appVerification.app.id,
+    claims,
+    requestedScopes,
+    workspaceId,
   });
-  const userProfile = await getExchangeUserProfile({
-    admin,
-    authIdentity,
-    userId: claims.sub,
-  });
-
-  return NextResponse.json(
-    createExchangeTokenBody({
-      email: userProfile.email ?? authIdentity.email,
-      normalizedWorkspaceId: workspaceId,
-      policy,
-      scopes,
-      targetApp: appVerification.app.id,
-      userProfile,
-      userId: claims.sub,
-    })
-  );
 }
 
 export async function POST(request: NextRequest) {
