@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.10.0](https://github.com/tutur3u/platform/compare/storefront-v0.9.0...storefront-v0.10.0) (2026-07-05)
+
+
+### Features
+
+* **satellite:** add sidebar apps launcher ([b2f6fcd](https://github.com/tutur3u/platform/commit/b2f6fcd55d7cb5c100e31d36f9f329817ecfe5e9))
+
 ## [0.9.0](https://github.com/tutur3u/platform/compare/storefront-v0.8.0...storefront-v0.9.0) (2026-07-03)
 
 

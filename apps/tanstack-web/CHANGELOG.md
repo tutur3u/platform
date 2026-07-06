@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.7.0](https://github.com/tutur3u/platform/compare/tanstack-web-v0.6.0...tanstack-web-v0.7.0) (2026-07-05)
+
+
+### Features
+
+* **hive:** migrate hive module from web to apps/hive (incl. APIs) ([689085a](https://github.com/tutur3u/platform/commit/689085a942da0f589701c074e9278550cce5f4eb))
+* **mind:** migrate mind module from web to apps/mind (incl. APIs) ([bdc5f71](https://github.com/tutur3u/platform/commit/bdc5f71a92c2f67686bb71a4889b9f513d34db79))
+* **tanstack:** add local deploy runbook and build validation ([12ebaf5](https://github.com/tutur3u/platform/commit/12ebaf53d2a5a8844a4d98fa4719cf32e065b53f))
+
+
+### Bug Fixes
+
+* **ci:** finish storage-core workspace integration ([ba786af](https://github.com/tutur3u/platform/commit/ba786af917d02ff65bf7d59e2c198a86f5fbc7ff))
+* **tanstack:** redirect random tool to satellite app ([861f0ab](https://github.com/tutur3u/platform/commit/861f0ab12dc7329442db5c2e3d3bdaccb8c5f1ec))
+* **web:** opt users routes out of prerender ([8c064ee](https://github.com/tutur3u/platform/commit/8c064eee9c08690143f0dc33b2d31918a54dc0c9))
+
 ## [0.6.0](https://github.com/tutur3u/platform/compare/tanstack-web-v0.5.0...tanstack-web-v0.6.0) (2026-07-03)
 
 

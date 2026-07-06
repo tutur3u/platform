@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.4.0](https://github.com/tutur3u/platform/compare/apps-v0.3.1...apps-v0.4.0) (2026-07-05)
+
+
+### Features
+
+* **satellite:** add sidebar apps launcher ([b2f6fcd](https://github.com/tutur3u/platform/commit/b2f6fcd55d7cb5c100e31d36f9f329817ecfe5e9))
+* **tools:** add apps/tools public tools app, remove apps/qr ([204aae8](https://github.com/tutur3u/platform/commit/204aae89a04b4163f2859561f8e832526642e271))
+
 ## [0.3.1](https://github.com/tutur3u/platform/compare/apps-v0.3.0...apps-v0.3.1) (2026-07-03)
 
 
