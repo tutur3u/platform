@@ -1,86 +1,100 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
+
+export const KANBAN_EDGE_AUTO_SCROLL_THRESHOLD = 100;
+const KANBAN_EDGE_AUTO_SCROLL_SPEED = 10;
+const KANBAN_EDGE_AUTO_SCROLL_MAX_SPEED = 30;
+
+interface HorizontalRect {
+  left: number;
+  right: number;
+}
+
+export function getKanbanEdgeAutoScrollAmount(
+  pointerX: number | null,
+  rect: HorizontalRect,
+  options: {
+    maxSpeed?: number;
+    speed?: number;
+    threshold?: number;
+  } = {}
+) {
+  if (pointerX === null) return 0;
+
+  const threshold = options.threshold ?? KANBAN_EDGE_AUTO_SCROLL_THRESHOLD;
+  const speed = options.speed ?? KANBAN_EDGE_AUTO_SCROLL_SPEED;
+  const maxSpeed = options.maxSpeed ?? KANBAN_EDGE_AUTO_SCROLL_MAX_SPEED;
+
+  if (pointerX <= rect.left + threshold) {
+    const distanceFromLeft = Math.max(0, pointerX - rect.left);
+    const intensity = 1 - distanceFromLeft / threshold;
+    return -Math.min(speed + intensity * (maxSpeed - speed), maxSpeed);
+  }
+
+  if (pointerX >= rect.right - threshold) {
+    const distanceFromRight = Math.max(0, rect.right - pointerX);
+    const intensity = 1 - distanceFromRight / threshold;
+    return Math.min(speed + intensity * (maxSpeed - speed), maxSpeed);
+  }
+
+  return 0;
+}
 
 export function useAutoScroll(
-  isDraggingRef: React.MutableRefObject<boolean>,
   scrollContainerRef: React.RefObject<HTMLDivElement | null>
 ) {
   const autoScrollRafRef = useRef<number | null>(null);
+  const isAutoScrollActiveRef = useRef(false);
+  const pointerXRef = useRef<number | null>(null);
 
-  useEffect(() => {
-    const EDGE_THRESHOLD = 100; // Distance from edge to trigger scroll (px)
-    const SCROLL_SPEED = 10; // Base scroll speed (px per frame)
-    const MAX_SCROLL_SPEED = 30; // Maximum scroll speed (px per frame)
+  const stopAutoScroll = useCallback(() => {
+    isAutoScrollActiveRef.current = false;
+    pointerXRef.current = null;
 
-    let currentPointerX = 0;
+    if (autoScrollRafRef.current !== null) {
+      cancelAnimationFrame(autoScrollRafRef.current);
+      autoScrollRafRef.current = null;
+    }
+  }, []);
 
-    function handlePointerMove(event: PointerEvent) {
-      currentPointerX = event.clientX;
+  const autoScroll = useCallback(() => {
+    if (!isAutoScrollActiveRef.current || !scrollContainerRef.current) {
+      autoScrollRafRef.current = null;
+      return;
     }
 
-    function autoScroll() {
-      if (!isDraggingRef.current || !scrollContainerRef.current) {
-        autoScrollRafRef.current = null;
-        return;
-      }
+    const container = scrollContainerRef.current;
+    const scrollAmount = getKanbanEdgeAutoScrollAmount(
+      pointerXRef.current,
+      container.getBoundingClientRect()
+    );
 
-      const container = scrollContainerRef.current;
-      const rect = container.getBoundingClientRect();
+    if (scrollAmount !== 0) {
+      container.scrollLeft += scrollAmount;
+    }
 
-      // Calculate distance from edges
-      const distanceFromLeft = currentPointerX - rect.left;
-      const distanceFromRight = rect.right - currentPointerX;
+    autoScrollRafRef.current = requestAnimationFrame(autoScroll);
+  }, [scrollContainerRef]);
 
-      let scrollAmount = 0;
+  const startAutoScroll = useCallback(() => {
+    isAutoScrollActiveRef.current = true;
 
-      // Scroll left when near left edge
-      if (distanceFromLeft < EDGE_THRESHOLD && distanceFromLeft > 0) {
-        const intensity = 1 - distanceFromLeft / EDGE_THRESHOLD;
-        scrollAmount = -Math.min(
-          SCROLL_SPEED + intensity * (MAX_SCROLL_SPEED - SCROLL_SPEED),
-          MAX_SCROLL_SPEED
-        );
-      }
-      // Scroll right when near right edge
-      else if (distanceFromRight < EDGE_THRESHOLD && distanceFromRight > 0) {
-        const intensity = 1 - distanceFromRight / EDGE_THRESHOLD;
-        scrollAmount = Math.min(
-          SCROLL_SPEED + intensity * (MAX_SCROLL_SPEED - SCROLL_SPEED),
-          MAX_SCROLL_SPEED
-        );
-      }
-
-      // Apply scroll if needed
-      if (scrollAmount !== 0) {
-        container.scrollLeft += scrollAmount;
-      }
-
-      // Continue the animation loop
+    if (autoScrollRafRef.current === null) {
       autoScrollRafRef.current = requestAnimationFrame(autoScroll);
     }
+  }, [autoScroll]);
 
-    // Start auto-scroll loop when dragging starts (triggered by isDraggingRef)
-    window.addEventListener('pointermove', handlePointerMove);
+  const updateAutoScrollPointerX = useCallback((pointerX: number | null) => {
+    pointerXRef.current = pointerX;
+  }, []);
 
-    // Watch for drag start to initialize auto-scroll loop
-    const startAutoScrollLoop = () => {
-      if (isDraggingRef.current && !autoScrollRafRef.current) {
-        autoScrollRafRef.current = requestAnimationFrame(autoScroll);
-      }
-    };
+  useEffect(() => stopAutoScroll, [stopAutoScroll]);
 
-    // Poll for drag start (alternative: trigger from onDragStart)
-    const pollInterval = setInterval(startAutoScrollLoop, 100);
-
-    return () => {
-      window.removeEventListener('pointermove', handlePointerMove);
-      clearInterval(pollInterval);
-      if (autoScrollRafRef.current) {
-        cancelAnimationFrame(autoScrollRafRef.current);
-      }
-    };
-  }, [isDraggingRef, scrollContainerRef]);
-
-  return { autoScrollRafRef };
+  return {
+    autoScrollRafRef,
+    startAutoScroll,
+    stopAutoScroll,
+    updateAutoScrollPointerX,
+  };
 }

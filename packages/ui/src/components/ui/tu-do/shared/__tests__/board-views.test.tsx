@@ -17,7 +17,9 @@ import { getBoardConfigKey } from '../board-config-storage';
 import { BoardViews } from '../board-views';
 
 const listWorkspaceTasksMock = vi.hoisted(() => vi.fn());
+const getUserConfigMock = vi.hoisted(() => vi.fn());
 const getUserWorkspaceConfigMock = vi.hoisted(() => vi.fn());
+const updateUserConfigMock = vi.hoisted(() => vi.fn());
 const updateUserWorkspaceConfigMock = vi.hoisted(() => vi.fn());
 const createTaskMock = vi.fn();
 const loadListPageMock = vi.fn();
@@ -64,8 +66,11 @@ vi.mock('@tuturuuu/internal-api/tasks', () => ({
 vi.mock('@tuturuuu/internal-api/users', () => ({
   TASK_BOARD_PINNED_SPECIAL_LISTS_CONFIG_ID: 'TASK_BOARD_PINNED_SPECIAL_LISTS',
   TASK_LAST_BOARD_VIEW_CONFIG_ID: 'TASK_LAST_BOARD_VIEW',
+  TASK_QUICK_CREATE_TARGET_LIST_CONFIG_ID: 'TASK_QUICK_CREATE_TARGET_LIST',
+  getUserConfig: (...args: unknown[]) => getUserConfigMock(...args),
   getUserWorkspaceConfig: (...args: unknown[]) =>
     getUserWorkspaceConfigMock(...args),
+  updateUserConfig: (...args: unknown[]) => updateUserConfigMock(...args),
   updateUserWorkspaceConfig: (...args: unknown[]) =>
     updateUserWorkspaceConfigMock(...args),
 }));
@@ -260,8 +265,12 @@ describe('BoardViews', () => {
     progressivePagination = {};
     listWorkspaceTasksMock.mockReset();
     listWorkspaceTasksMock.mockResolvedValue({ tasks: mockTasks });
+    getUserConfigMock.mockReset();
+    getUserConfigMock.mockResolvedValue({ value: null });
     getUserWorkspaceConfigMock.mockReset();
     getUserWorkspaceConfigMock.mockResolvedValue({ value: null });
+    updateUserConfigMock.mockReset();
+    updateUserConfigMock.mockResolvedValue({ message: 'ok' });
     updateUserWorkspaceConfigMock.mockReset();
     updateUserWorkspaceConfigMock.mockResolvedValue({ message: 'ok' });
     window.localStorage.clear();
@@ -312,6 +321,7 @@ describe('BoardViews', () => {
     expect(boardHeaderProps?.titlePrefix).toBeDefined();
     expect(kanbanBoardProps?.readOnly).toBe(true);
     expect(listWorkspaceTasksMock).not.toHaveBeenCalled();
+    expect(getUserConfigMock).not.toHaveBeenCalled();
   });
 
   it('enables assignees for personal boards that have guest access', async () => {
@@ -531,6 +541,66 @@ describe('BoardViews', () => {
   it('creates a task in the board default list when configured', () => {
     renderBoardViews({
       board: { ...mockBoard, default_list_id: 'list-2' },
+    });
+
+    fireEvent.keyDown(document, { key: 'c' });
+
+    expect(createTaskMock).toHaveBeenCalledTimes(1);
+    expect(createTaskMock).toHaveBeenCalledWith(
+      'board-1',
+      'list-2',
+      mockLists,
+      expect.objectContaining({ labels: [] })
+    );
+  });
+
+  it('creates a task in the hovered list when the quick-create target prefers hovered lists', async () => {
+    getUserConfigMock.mockResolvedValue({ value: 'hovered_list' });
+    const { queryClient } = renderBoardViews({
+      board: { ...mockBoard, default_list_id: 'list-1' },
+    });
+
+    await waitFor(() => {
+      expect(
+        queryClient.getQueryData([
+          'user-config',
+          'TASK_QUICK_CREATE_TARGET_LIST',
+        ])
+      ).toBe('hovered_list');
+    });
+
+    await act(async () => {
+      kanbanBoardProps?.onHoveredTaskListChange?.('list-2');
+    });
+
+    fireEvent.keyDown(document, { key: 'c' });
+
+    expect(createTaskMock).toHaveBeenCalledTimes(1);
+    expect(createTaskMock).toHaveBeenCalledWith(
+      'board-1',
+      'list-2',
+      mockLists,
+      expect.objectContaining({ labels: [] })
+    );
+  });
+
+  it('falls back to the board default list in hovered-list mode when no hovered list is selectable', async () => {
+    getUserConfigMock.mockResolvedValue({ value: 'hovered_list' });
+    const { queryClient } = renderBoardViews({
+      board: { ...mockBoard, default_list_id: 'list-2' },
+    });
+
+    await waitFor(() => {
+      expect(
+        queryClient.getQueryData([
+          'user-config',
+          'TASK_QUICK_CREATE_TARGET_LIST',
+        ])
+      ).toBe('hovered_list');
+    });
+
+    await act(async () => {
+      kanbanBoardProps?.onHoveredTaskListChange?.('external-list');
     });
 
     fireEvent.keyDown(document, { key: 'c' });

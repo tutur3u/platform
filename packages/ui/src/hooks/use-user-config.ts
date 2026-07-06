@@ -11,14 +11,22 @@ import { getUserConfig, updateUserConfig } from '@tuturuuu/internal-api/users';
  * @param defaultValue - Default value if config doesn't exist
  * @returns Query result with the config value
  */
-export function useUserConfig(configId: string, defaultValue: string = '') {
+export function useUserConfig(
+  configId: string,
+  defaultValue: string = '',
+  options?: {
+    enabled?: boolean;
+    staleTime?: number;
+  }
+) {
   return useQuery({
     queryKey: ['user-config', configId],
     queryFn: async () => {
       const data = await getUserConfig(configId);
       return (data.value as string) ?? defaultValue;
     },
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    enabled: options?.enabled !== false && Boolean(configId),
+    staleTime: options?.staleTime ?? 5 * 60 * 1000, // 5 minutes
   });
 }
 

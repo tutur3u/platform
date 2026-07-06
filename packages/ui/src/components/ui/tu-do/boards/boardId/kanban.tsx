@@ -104,6 +104,7 @@ interface Props {
   onBulkSelectionActiveChange?: (active: boolean) => void;
   canUseBoardAssignees?: boolean;
   assigneeMemberSource?: 'workspace' | 'board' | 'workspace-and-board';
+  onHoveredTaskListChange?: (listId: string | null) => void;
   readOnly?: boolean;
 }
 
@@ -129,6 +130,7 @@ export function KanbanBoard({
   onBulkSelectionActiveChange,
   canUseBoardAssignees,
   assigneeMemberSource,
+  onHoveredTaskListChange,
   readOnly = false,
 }: Props) {
   const tCommon = useTranslations('common');
@@ -150,7 +152,6 @@ export function KanbanBoard({
   const [assigneeSearchQuery, setAssigneeSearchQuery] = useState('');
 
   // Refs
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const taskHeightsRef = useRef<Map<string, number>>(new Map());
   const boardRef = useRef<HTMLDivElement>(null);
 
@@ -412,7 +413,7 @@ export function KanbanBoard({
     ),
     reorderTaskMutation,
     taskHeightsRef,
-    scrollContainerRef,
+    scrollContainerRef: boardRef,
   });
 
   const sensors = useSensors(
@@ -565,6 +566,7 @@ export function KanbanBoard({
             onTaskListCollapsedChange={onTaskListCollapsedChange}
             specialTaskListPins={specialTaskListPins}
             onSpecialTaskListPinnedChange={onSpecialTaskListPinnedChange}
+            onHoveredTaskListChange={onHoveredTaskListChange}
             readOnly={readOnly}
           />
 

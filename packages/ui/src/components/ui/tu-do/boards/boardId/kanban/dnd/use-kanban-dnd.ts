@@ -163,6 +163,14 @@ function getActiveDragRect(
   });
 }
 
+function getDragCenterX(event: DragMoveEvent | DragOverEvent | DragStartEvent) {
+  const activeRect =
+    event.active.rect.current.translated ?? event.active.rect.current.initial;
+  if (!activeRect) return null;
+
+  return activeRect.left + activeRect.width / 2;
+}
+
 function getVisibleTaskRectsForList(
   listId: string,
   originalIndexesByTaskId?: Map<string, number>
@@ -566,8 +574,15 @@ export function useKanbanDnd({
     [wsId]
   );
 
-  // Initialize auto-scroll
-  useAutoScroll(isDraggingRef, scrollContainerRef);
+  const { startAutoScroll, stopAutoScroll, updateAutoScrollPointerX } =
+    useAutoScroll(scrollContainerRef);
+
+  const updateAutoScrollFromDragEvent = useCallback(
+    (event: DragMoveEvent | DragOverEvent | DragStartEvent) => {
+      updateAutoScrollPointerX(getDragCenterX(event));
+    },
+    [updateAutoScrollPointerX]
+  );
 
   const resetDragState = useCallback(
     (clearOptimisticUpdates = false) => {
@@ -582,12 +597,13 @@ export function useKanbanDnd({
       dragSessionMetricsRef.current = null;
       dragStartTaskIndexesByListRef.current.clear();
       isDraggingRef.current = false;
+      stopAutoScroll();
 
       if (clearOptimisticUpdates) {
         setOptimisticUpdateInProgress(new Set());
       }
     },
-    [setDragPreviewPosition]
+    [setDragPreviewPosition, stopAutoScroll]
   );
 
   const markTaskIdsPending = useCallback((taskIds: string[]) => {
@@ -606,6 +622,8 @@ export function useKanbanDnd({
 
   const processTaskDragPreview = useCallback(
     (event: DragMoveEvent) => {
+      updateAutoScrollFromDragEvent(event);
+
       const { active, over } = event;
       const activeType = active.data?.current?.type;
       if (!activeType) return;
@@ -730,6 +748,7 @@ export function useKanbanDnd({
       getDragPreviewForList,
       getDragPreviewForListSurface,
       setDragPreviewPosition,
+      updateAutoScrollFromDragEvent,
       wsId,
     ]
   );
@@ -742,6 +761,8 @@ export function useKanbanDnd({
 
     // Enable auto-scroll
     isDraggingRef.current = true;
+    updateAutoScrollFromDragEvent(event);
+    startAutoScroll();
 
     const { type } = active.data.current;
     if (type === 'Column') {
@@ -750,6 +771,7 @@ export function useKanbanDnd({
     }
     if (type === 'Task') {
       if (!wsId) {
+        resetDragState(true);
         return;
       }
 
