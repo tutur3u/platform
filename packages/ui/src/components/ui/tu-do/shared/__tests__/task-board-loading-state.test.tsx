@@ -8,10 +8,16 @@ describe('TaskBoardLoadingState', () => {
     render(<TaskBoardLoadingState root />);
 
     expect(screen.getByTestId('task-board-loading-state')).toHaveClass(
-      '-m-4',
+      '-mt-4',
+      '-mb-4',
+      '-ml-4',
       'h-[calc(100dvh+2rem)]',
       'w-[calc(100%+2rem)]',
       'bg-transparent'
+    );
+    expect(screen.getByTestId('task-board-loading-state')).not.toHaveClass(
+      '-m-4',
+      '-mr-4'
     );
     expect(screen.getByTestId('kanban-skeleton')).toHaveClass('bg-transparent');
     expect(screen.getByTestId('kanban-skeleton-frame')).toHaveClass(
@@ -34,6 +40,9 @@ describe('TaskBoardLoadingState', () => {
     );
     expect(screen.getByTestId('task-board-loading-state')).not.toHaveClass(
       '-m-4',
+      '-mt-4',
+      '-mb-4',
+      '-ml-4',
       'w-[calc(100%+2rem)]'
     );
     expect(screen.getByTestId('kanban-skeleton-frame')).toHaveClass('p-2');
@@ -46,11 +55,17 @@ describe('TaskBoardLoadingState', () => {
     render(<TaskBoardLoadingState root showHeader />);
 
     expect(screen.getByTestId('task-board-loading-state')).toHaveClass(
-      '-m-4',
+      '-mt-4',
+      '-mb-4',
+      '-ml-4',
       'h-[calc(100dvh+2rem)]',
       'w-[calc(100%+2rem)]',
       'flex',
       'flex-col'
+    );
+    expect(screen.getByTestId('task-board-loading-state')).not.toHaveClass(
+      '-m-4',
+      '-mr-4'
     );
     expect(screen.getByTestId('task-board-header-skeleton')).toHaveAttribute(
       'aria-hidden',
@@ -58,9 +73,18 @@ describe('TaskBoardLoadingState', () => {
     );
     expect(screen.getByTestId('task-board-header-skeleton')).toHaveClass(
       'border-b',
-      'px-2',
+      'pl-2',
+      'pr-0',
       'pt-2',
       'pb-2'
+    );
+    expect(screen.getByTestId('task-board-header-skeleton')).not.toHaveClass(
+      'px-2'
+    );
+    expect(screen.getByTestId('kanban-skeleton-frame')).toHaveClass(
+      'py-2',
+      'pl-2',
+      'pr-0'
     );
     expect(screen.getByTestId('task-board-header-skeleton')).not.toHaveClass(
       '-mt-2'

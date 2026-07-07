@@ -1,5 +1,9 @@
-import { KanbanSkeleton } from '@tuturuuu/ui/tu-do/boards/boardId/kanban/rendering/kanban-skeleton';
+import { TaskBoardLoadingState } from '@tuturuuu/ui/tu-do/shared/task-board-loading-state';
+import { createElement } from 'react';
 
 export default function Loading() {
-  return <KanbanSkeleton />;
+  return createElement(TaskBoardLoadingState, {
+    root: true,
+    showHeader: true,
+  });
 }

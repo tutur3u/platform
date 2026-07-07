@@ -11,6 +11,7 @@ const mocks = vi.hoisted(() => ({
   notesPage: vi.fn(),
   connection: vi.fn(),
   redirect: vi.fn(),
+  taskBoardLoadingState: vi.fn(),
   taskBoardServerPage: vi.fn(),
   toWorkspaceSlug: vi.fn(),
   withForwardedInternalApiAuth: vi.fn(),
@@ -46,6 +47,10 @@ vi.mock('@tuturuuu/ui/tu-do/notes/notes-page', () => ({
 
 vi.mock('@tuturuuu/ui/tu-do/boards/boardId/task-board-server-page', () => ({
   default: mocks.taskBoardServerPage,
+}));
+
+vi.mock('@tuturuuu/ui/tu-do/shared/task-board-loading-state', () => ({
+  TaskBoardLoadingState: mocks.taskBoardLoadingState,
 }));
 
 vi.mock('@tuturuuu/ui/tu-do/boards/workspace-projects-page', () => ({
@@ -183,8 +188,25 @@ describe('tasks app task pages', () => {
         defaultView: 'kanban',
         params,
         routePrefix: '',
+        rootLoading: true,
       },
       type: mocks.taskBoardServerPage,
+    });
+  });
+
+  it('uses the shared full-bleed board loading state for board route loading', async () => {
+    const { default: Loading } = await import(
+      '@/app/[locale]/(dashboard)/[wsId]/boards/[boardId]/loading'
+    );
+
+    const result = Loading();
+
+    expect(result).toMatchObject({
+      props: {
+        root: true,
+        showHeader: true,
+      },
+      type: mocks.taskBoardLoadingState,
     });
   });
 

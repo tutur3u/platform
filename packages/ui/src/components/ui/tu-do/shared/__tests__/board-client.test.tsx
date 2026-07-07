@@ -209,9 +209,15 @@ describe('BoardClient', () => {
     );
 
     expect(screen.getByTestId('task-board-loading-state')).toHaveClass(
-      '-m-4',
+      '-mt-4',
+      '-mb-4',
+      '-ml-4',
       'h-[calc(100dvh+2rem)]',
       'w-[calc(100%+2rem)]'
+    );
+    expect(screen.getByTestId('task-board-loading-state')).not.toHaveClass(
+      '-m-4',
+      '-mr-4'
     );
     expect(
       screen.getByTestId('task-board-header-skeleton')

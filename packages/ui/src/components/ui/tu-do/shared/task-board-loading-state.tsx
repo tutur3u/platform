@@ -13,11 +13,11 @@ const HEADER_ACTIONS = [
   'settings',
 ];
 
-function TaskBoardHeaderSkeleton() {
+function TaskBoardHeaderSkeleton({ root = false }: { root?: boolean }) {
   return (
     <div
       aria-hidden="true"
-      className="border-b px-2 pt-2 pb-2"
+      className={cn('border-b pt-2 pb-2', root ? 'pr-0 pl-2' : 'px-2')}
       data-testid="task-board-header-skeleton"
     >
       <div className="flex flex-wrap items-center justify-between gap-1.5 sm:gap-2">
@@ -57,7 +57,7 @@ export function TaskBoardLoadingState({
       className={cn(
         'overflow-hidden bg-transparent',
         root
-          ? '-m-4 h-[calc(100dvh+2rem)] min-h-[calc(32rem+2rem)] w-[calc(100%+2rem)] min-w-[calc(100%+2rem)]'
+          ? '-mt-4 -mb-4 -ml-4 h-[calc(100dvh+2rem)] min-h-[calc(32rem+2rem)] w-[calc(100%+2rem)] min-w-[calc(100%+2rem)]'
           : 'h-[calc(100dvh-1rem)] min-h-[32rem] w-full',
         showHeader && 'flex flex-col',
         className
@@ -66,7 +66,7 @@ export function TaskBoardLoadingState({
     >
       {showHeader ? (
         <>
-          <TaskBoardHeaderSkeleton />
+          <TaskBoardHeaderSkeleton root={root} />
           <div
             className="min-h-0 flex-1 overflow-hidden"
             data-testid="task-board-loading-body"
