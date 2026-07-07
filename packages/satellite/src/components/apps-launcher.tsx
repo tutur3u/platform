@@ -136,10 +136,16 @@ export function AppsLauncherDialog({
   }
 
   const activeApps = getAppsForTab(activeTab);
+  const dialogStyle = {
+    gridTemplateRows: 'auto auto minmax(0, 1fr)',
+  } as CSSProperties;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="grid h-[min(760px,calc(100dvh-2rem))] max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] max-w-[860px] grid-rows-[auto_auto_minmax(0,1fr)] gap-0 overflow-hidden p-0 sm:max-w-[860px]">
+      <DialogContent
+        className="!top-4 !bottom-4 !translate-y-0 sm:!top-6 sm:!bottom-6 grid h-auto max-h-none w-[calc(100vw-2rem)] max-w-[860px] gap-0 overflow-hidden p-0 sm:max-w-[860px]"
+        style={dialogStyle}
+      >
         <DialogHeader className="shrink-0 border-b px-5 py-4 pr-12 text-left">
           <DialogTitle>{t('apps')}</DialogTitle>
           <DialogDescription>{t('apps_description')}</DialogDescription>
@@ -202,7 +208,7 @@ function AppsTabPanel({
         <span>{categoryDescription}</span>
         <span className="font-medium">{countLabel}</span>
       </div>
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid gap-2 sm:grid-cols-2">
         {apps.map((app) => (
           <AppLauncherItem
             app={app}
@@ -239,41 +245,48 @@ function AppLauncherItem({
 
   return (
     <div
-      className="grid grid-cols-[auto_minmax(0,1fr)_auto_auto] items-center gap-2 overflow-hidden rounded-lg border p-2 text-card-foreground shadow-sm transition hover:shadow-md"
+      className="flex min-h-0 items-center gap-2 overflow-hidden rounded-md border p-2 text-card-foreground shadow-sm transition hover:shadow-md"
       data-slot="app-card"
       style={cardStyle}
     >
-      <span
-        className="flex size-9 shrink-0 items-center justify-center rounded-md border bg-background/70 shadow-xs"
-        style={{
-          borderColor:
-            'color-mix(in srgb, var(--app-accent) 40%, var(--border))',
-          color: 'var(--app-accent)',
-        }}
-      >
-        <Icon className="size-4" />
+      <span className="flex min-w-0 flex-1 items-center gap-2">
+        <span
+          className="flex size-8 shrink-0 items-center justify-center rounded-md border bg-background/70 shadow-xs"
+          style={{
+            borderColor:
+              'color-mix(in srgb, var(--app-accent) 40%, var(--border))',
+            color: 'var(--app-accent)',
+          }}
+        >
+          <Icon className="size-4" />
+        </span>
+
+        <span
+          className="min-w-0 truncate font-semibold text-sm"
+          data-slot="app-card-title"
+        >
+          {app.title}
+        </span>
       </span>
 
       <span
-        className="min-w-0 truncate font-semibold text-sm"
-        data-slot="app-card-title"
+        className="flex shrink-0 items-center gap-1"
+        data-slot="app-card-actions"
       >
-        {app.title}
+        <AppLaunchAction
+          icon={ChevronRight}
+          label={`${openHereLabel}: ${app.title}`}
+          onClick={() => onOpen(app, 'current-tab')}
+          tooltip={openHereLabel}
+          variant="secondary"
+        />
+        <AppLaunchAction
+          icon={ExternalLink}
+          label={`${openInNewTabLabel}: ${app.title}`}
+          onClick={() => onOpen(app, 'new-tab')}
+          tooltip={openInNewTabLabel}
+        />
       </span>
-
-      <AppLaunchAction
-        icon={ChevronRight}
-        label={`${openHereLabel}: ${app.title}`}
-        onClick={() => onOpen(app, 'current-tab')}
-        tooltip={openHereLabel}
-        variant="secondary"
-      />
-      <AppLaunchAction
-        icon={ExternalLink}
-        label={`${openInNewTabLabel}: ${app.title}`}
-        onClick={() => onOpen(app, 'new-tab')}
-        tooltip={openInNewTabLabel}
-      />
     </div>
   );
 }

@@ -95,14 +95,21 @@ describe('AppsLauncherDialog', () => {
     const dialogContent = document.querySelector(
       '[data-slot="dialog-content"]'
     );
-    expect(dialogContent?.className).toContain(
+    expect(dialogContent?.className).not.toContain(
       'h-[min(760px,calc(100dvh-2rem))]'
     );
-    expect(dialogContent?.className).toContain('max-h-[calc(100dvh-2rem)]');
+    expect(dialogContent?.className).not.toContain('max-h-[calc(100dvh-2rem)]');
+    expect(dialogContent?.className).toContain('!top-4');
+    expect(dialogContent?.className).toContain('!bottom-4');
+    expect(dialogContent?.className).toContain('h-auto');
+    expect(dialogContent?.className).toContain('max-h-none');
     expect(dialogContent?.className).toContain('w-[calc(100vw-2rem)]');
     expect(dialogContent?.className).toContain('max-w-[860px]');
-    expect(dialogContent?.className).toContain('grid-rows-');
+    expect(dialogContent?.className).toContain('!translate-y-0');
     expect(dialogContent?.className).toContain('overflow-hidden');
+    expect(dialogContent?.getAttribute('style')).toContain(
+      'grid-template-rows: auto auto minmax(0, 1fr)'
+    );
 
     const tabsRoot = document.querySelector('[data-slot="tabs"]');
     expect(tabsRoot?.className).toContain('shrink-0');
@@ -130,6 +137,16 @@ describe('AppsLauncherDialog', () => {
     expect(screen.getByLabelText('Open here: Finance')).toBeTruthy();
     expect(screen.getByLabelText('Open in new tab: Finance')).toBeTruthy();
     expect(screen.queryByLabelText('Open options: Finance')).toBeNull();
+    const financeCard = screen
+      .getByText('Finance')
+      .closest('[data-slot="app-card"]');
+    expect(financeCard?.className).toContain('flex');
+    expect(financeCard?.className).not.toContain('grid-cols-');
+    const actionGroup = financeCard?.querySelector(
+      '[data-slot="app-card-actions"]'
+    );
+    expect(actionGroup?.className).toContain('flex');
+    expect(actionGroup?.className).toContain('items-center');
     expect(
       screen.queryByText('Also matches: Money, Wallets, Invoices')
     ).toBeNull();
