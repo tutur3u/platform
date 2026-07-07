@@ -196,8 +196,9 @@ export function QuizSubmissionResponseViewer({
 
           const rawOpt = findRawMultipleChoiceOption(quiz, opt);
           const isOptionCorrect =
-            (opt.index !== null && correctIndex === opt.index) ||
-            (rawOpt?.is_correct ?? false);
+            correctIndex !== null
+              ? opt.index !== null && correctIndex === opt.index
+              : (rawOpt?.is_correct ?? false);
 
           let optionStyle = 'border-border bg-background';
           if (isSelected) {
