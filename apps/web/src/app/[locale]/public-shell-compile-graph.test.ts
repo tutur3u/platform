@@ -681,7 +681,8 @@ describe('public shell compile graph', () => {
     }
 
     expect(loginPageSource).not.toContain('searchParams');
-    expect(loginPageSource).toContain("dynamic = 'force-static'");
+    expect(loginPageSource).not.toContain('export const dynamic');
+    expect(loginPageSource).not.toContain('export const revalidate');
   });
 
   it('lazy loads the heavy login form from the cacheable shell', () => {

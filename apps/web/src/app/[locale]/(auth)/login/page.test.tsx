@@ -1,7 +1,7 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { LoginContent } from './login-content';
-import Login, { dynamic, revalidate } from './page';
+import Login, * as pageModule from './page';
 
 const mocks = vi.hoisted(() => ({
   getLocalE2ESupabaseBrowserConfig: vi.fn(),
@@ -135,9 +135,9 @@ describe('Login page', () => {
     setSearchParams();
   });
 
-  it('exports a static route contract', () => {
-    expect(dynamic).toBe('force-static');
-    expect(revalidate).toBe(false);
+  it('does not export cache-incompatible route segment config', () => {
+    expect('dynamic' in pageModule).toBe(false);
+    expect('revalidate' in pageModule).toBe(false);
   });
 
   it('renders the cacheable login shell from a direct hard load', async () => {

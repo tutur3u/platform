@@ -5,9 +5,6 @@ import {
 } from '@/lib/auth/local-e2e';
 import { LoginContent } from './login-content';
 
-export const dynamic = 'force-static';
-export const revalidate = false;
-
 function LoginShellFallback() {
   return <div className="min-h-screen bg-root-background" />;
 }
