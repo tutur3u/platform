@@ -188,6 +188,10 @@ function SubmissionContent({
   );
 }
 
+type SubmissionDetailQuiz = TeachModuleQuizSubmissionDetail['quizzes'][number];
+type SubmissionDetailAnswer =
+  TeachModuleQuizSubmissionDetail['answers'][number];
+
 function QuizResponseCard({
   quiz,
   index,
@@ -198,10 +202,10 @@ function QuizResponseCard({
   moduleId,
   userId,
 }: {
-  quiz: any;
+  quiz: SubmissionDetailQuiz;
   index: number;
-  quizAnswer: any;
-  t: any;
+  quizAnswer: SubmissionDetailAnswer | null;
+  t: ReturnType<typeof useTranslations>;
   wsId: string;
   courseId: string;
   moduleId: string;
@@ -214,8 +218,7 @@ function QuizResponseCard({
   const isCorrectAnswer = quizAnswer?.is_correct === true;
   const isParagraph = quiz.type === 'paragraph';
   const isPendingReview = hasAnswer && quizAnswer?.is_correct === null;
-  const hasKnownObjectiveGrade =
-    quizAnswer?.is_correct === true || quizAnswer?.is_correct === false;
+  const objectiveIsCorrect = quizAnswer?.is_correct;
   const needsManualGrade = isParagraph || isPendingReview;
 
   const displayedAiFeedback = quizAnswer?.ai_feedback || localAiFeedback;
@@ -339,14 +342,14 @@ function QuizResponseCard({
       )}
 
       {/* Non-paragraph questions: simple feedback-only controls */}
-      {!isParagraph && hasAnswer && hasKnownObjectiveGrade && (
+      {!isParagraph && hasAnswer && typeof objectiveIsCorrect === 'boolean' && (
         <FeedbackOnlyControls
           wsId={wsId}
           courseId={courseId}
           moduleId={moduleId}
           userId={userId}
           quizId={quiz.id}
-          isCorrect={quizAnswer.is_correct}
+          isCorrect={objectiveIsCorrect}
           currentFeedback={quizAnswer?.feedback}
         />
       )}

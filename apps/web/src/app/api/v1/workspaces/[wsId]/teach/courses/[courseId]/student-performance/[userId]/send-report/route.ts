@@ -155,6 +155,11 @@ export const POST = withSessionAuth(
         profile.display_name ??
         profile.full_name ??
         (isVi ? 'Học sinh' : 'Student');
+      const escapedCourseName = escapeHtml(course.name);
+      const escapedStudentName = escapeHtml(studentName);
+      const learnerDashboardHref = escapeHtml(
+        `${process.env.NEXT_PUBLIC_APP_URL || 'https://tuturuuu.localhost'}/${encodeURIComponent(wsId)}`
+      );
 
       const emailContent = {
         subject: isVi
@@ -165,11 +170,11 @@ export const POST = withSessionAuth(
           ? 'Tóm tắt tiến trình học tập cá nhân'
           : 'Personal learning progress summary',
         hello: isVi
-          ? `Xin chào <strong>${studentName}</strong>,`
-          : `Hello <strong>${studentName}</strong>,`,
+          ? `Xin chào <strong>${escapedStudentName}</strong>,`
+          : `Hello <strong>${escapedStudentName}</strong>,`,
         intro: isVi
-          ? `Dưới đây là báo cáo kết quả học tập hiện tại của bạn cho khóa học <strong>${course.name}</strong>. Hãy tiếp tục luyện tập và hoàn thành các bài học nhé!`
-          : `Here is your current performance report for <strong>${course.name}</strong>. Keep practicing and reviewing modules to maintain steady progress.`,
+          ? `Dưới đây là báo cáo kết quả học tập hiện tại của bạn cho khóa học <strong>${escapedCourseName}</strong>. Hãy tiếp tục luyện tập và hoàn thành các bài học nhé!`
+          : `Here is your current performance report for <strong>${escapedCourseName}</strong>. Keep practicing and reviewing modules to maintain steady progress.`,
         avgScore: isVi ? 'Điểm trung bình' : 'Avg. Score',
         modulesDone: isVi ? 'Module đã xong' : 'Modules Done',
         quizPractice: isVi ? 'Luyện tập quiz' : 'Quiz Practice',
@@ -194,7 +199,7 @@ export const POST = withSessionAuth(
 <html>
 <head>
   <meta charset="utf-8">
-  <title>${emailContent.subject}</title>
+  <title>${escapeHtml(emailContent.subject)}</title>
   <style>
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, sans-serif;
@@ -314,7 +319,7 @@ export const POST = withSessionAuth(
     <div class="container">
       <div class="header">
         <span class="eyebrow">${emailContent.title}</span>
-        <h1 class="title">${course.name}</h1>
+        <h1 class="title">${escapedCourseName}</h1>
         <div class="subtitle">${emailContent.subtitle}</div>
       </div>
       
@@ -339,7 +344,7 @@ export const POST = withSessionAuth(
       </div>
 
       <div class="btn-container">
-        <a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://tuturuuu.localhost'}/${wsId}" class="btn">
+        <a href="${learnerDashboardHref}" class="btn">
           ${emailContent.cta}
         </a>
       </div>
@@ -387,3 +392,22 @@ export const POST = withSessionAuth(
     rateLimit: { maxRequests: 20, windowMs: 60000 },
   }
 );
+
+function escapeHtml(value: string) {
+  return value.replace(/[&<>"']/g, (char) => {
+    switch (char) {
+      case '&':
+        return '&amp;';
+      case '<':
+        return '&lt;';
+      case '>':
+        return '&gt;';
+      case '"':
+        return '&quot;';
+      case "'":
+        return '&#39;';
+      default:
+        return char;
+    }
+  });
+}

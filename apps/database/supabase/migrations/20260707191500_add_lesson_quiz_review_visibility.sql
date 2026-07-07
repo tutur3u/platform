@@ -7,19 +7,17 @@ alter table "public"."course_module_quiz_submissions"
 alter table "public"."course_module_quiz_submissions"
   add column if not exists "feedback" text;
 
-update "public"."course_module_quiz_submissions" as submissions
-set "is_correct" = null
-from "public"."workspace_quizzes" as quizzes
-where submissions."quiz_id" = quizzes."id"
-  and quizzes."type" = 'paragraph';
-
 create or replace function "private"."ensure_course_module_quiz_submission_grade_state"()
 returns trigger
 language plpgsql
+security definer
+set search_path = public, private
 as $$
 declare
   quiz_type text;
 begin
+  perform pg_advisory_xact_lock(hashtextextended(new."quiz_id"::text, 0));
+
   if new."is_correct" is not null then
     return new;
   end if;
@@ -42,8 +40,12 @@ $$;
 create or replace function "private"."ensure_workspace_quiz_type_grade_state"()
 returns trigger
 language plpgsql
+security definer
+set search_path = public, private
 as $$
 begin
+  perform pg_advisory_xact_lock(hashtextextended(old."id"::text, 0));
+
   if new."type" = 'paragraph' then
     return new;
   end if;
@@ -51,7 +53,7 @@ begin
   if exists (
     select 1
     from "public"."course_module_quiz_submissions" as submissions
-    where submissions."quiz_id" = new."id"
+    where submissions."quiz_id" = old."id"
       and submissions."is_correct" is null
   ) then
     raise exception 'quiz type cannot become objective while submissions have null is_correct'

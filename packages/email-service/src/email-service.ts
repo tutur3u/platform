@@ -38,6 +38,13 @@ import type {
 } from './types';
 import { getWorkspaceEmailRateLimitOverrides } from './workspace-rate-limits';
 
+type WorkspaceEmailCredentials = Pick<
+  Database['public']['Tables']['workspace_email_credentials']['Row'],
+  'access_id' | 'access_key' | 'region' | 'source_email' | 'source_name'
+> & {
+  ws_id?: string | null;
+};
+
 // =============================================================================
 // Email Service Class
 // =============================================================================
@@ -50,11 +57,15 @@ export class EmailService {
   private supabase: SupabaseClient<Database> | null = null;
   private bypassRateLimits: boolean = false;
 
-  private shouldSkipSendingInDevMode(): boolean {
-    const devModeEnabled = DEV_MODE || Boolean(this.config.devMode);
+  private static isDevModeActive(devMode?: boolean): boolean {
+    const devModeEnabled = DEV_MODE || Boolean(devMode);
     const forceProductionEmail = process.env.SEND_PRODUCTION_EMAIL === 'true';
 
     return devModeEnabled && !forceProductionEmail;
+  }
+
+  private shouldSkipSendingInDevMode(): boolean {
+    return EmailService.isDevModeActive(this.config.devMode);
   }
 
   constructor(config: EmailServiceConfig) {
@@ -648,15 +659,11 @@ export class EmailService {
       throw new Error(`Error fetching email credentials: ${error.message}`);
     }
 
-    let credentials = null;
+    let credentials: WorkspaceEmailCredentials | null = null;
     if (dbCredentials) {
       credentials = dbCredentials;
     } else {
-      const devModeEnabled = DEV_MODE || Boolean(options?.devMode);
-      const forceProductionEmail = process.env.SEND_PRODUCTION_EMAIL === 'true';
-      const isDev = devModeEnabled && !forceProductionEmail;
-
-      if (isDev) {
+      if (EmailService.isDevModeActive(options?.devMode)) {
         // Fall back to dummy mock credentials in development so local testing works out-of-the-box
         credentials = {
           ws_id: wsId,

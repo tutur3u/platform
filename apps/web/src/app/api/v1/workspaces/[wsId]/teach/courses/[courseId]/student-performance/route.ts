@@ -24,7 +24,7 @@ export interface StudentPerformanceStat {
   scorePercent: number | null; // null if no answered quizzes
   // Module completion
   totalModules: number;
-  completedModules: number; // modules where student has submitted all quizzes
+  completedModules: number; // modules where student has submitted at least one quiz
   // Activity
   lastActivityAt: string | null;
   // Risk flags

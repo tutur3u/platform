@@ -142,7 +142,8 @@ export function CourseStudentPerformancePanel({
               <p className="mt-0.5 text-muted-foreground text-xs">
                 {data?.students.length ?? 0} {t('students') || 'students'} ·{' '}
                 {data?.totalModules ?? 0} {t('modules') || 'modules'} ·{' '}
-                {data?.totalQuizzes ?? 0} {t('quizTitle') || 'quiz questions'} ·{' '}
+                {data?.totalQuizzes ?? 0}{' '}
+                {t('quizCountLabel') || 'quiz questions'} ·{' '}
                 <span className="italic">
                   {t('quizSubtitle') || 'module quiz practice only'}
                 </span>
@@ -510,7 +511,7 @@ function StudentRow({
             className="text-muted-foreground text-xs"
             title={s.lastActivityAt}
           >
-            {formatRelativeTime(s.lastActivityAt)}
+            {formatRelativeTime(s.lastActivityAt, t)}
           </span>
         ) : (
           <span className="text-muted-foreground text-xs">—</span>
@@ -650,14 +651,18 @@ function SummaryChip({
   );
 }
 
-function formatRelativeTime(iso: string): string {
+function formatRelativeTime(
+  iso: string,
+  t: ReturnType<typeof useTranslations>
+): string {
   const diff = Date.now() - new Date(iso).getTime();
   const mins = Math.floor(diff / 60000);
-  if (mins < 1) return 'Just now';
-  if (mins < 60) return `${mins}m ago`;
+  if (mins < 1) return t('relativeJustNow') || 'Just now';
+  if (mins < 60)
+    return t('relativeMinutesAgo', { count: mins }) || `${mins}m ago`;
   const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs}h ago`;
+  if (hrs < 24) return t('relativeHoursAgo', { count: hrs }) || `${hrs}h ago`;
   const days = Math.floor(hrs / 24);
-  if (days < 7) return `${days}d ago`;
+  if (days < 7) return t('relativeDaysAgo', { count: days }) || `${days}d ago`;
   return new Date(iso).toLocaleDateString();
 }

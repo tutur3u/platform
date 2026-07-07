@@ -169,9 +169,10 @@ export function QuizSubmissionResponseViewer({
             (opt.index !== null &&
               getSelectedIndexAnswer(answer.answer) === opt.index);
 
-          const rawOpt = quiz.quiz_options?.find(
-            (option) => option.id === opt.id
-          );
+          const rawOpt =
+            opt.index !== null
+              ? quiz.quiz_options?.[opt.index]
+              : quiz.quiz_options?.find((option) => option.id === opt.id);
           const isOptionCorrect = rawOpt?.is_correct ?? false;
 
           let optionStyle = 'border-border bg-background';

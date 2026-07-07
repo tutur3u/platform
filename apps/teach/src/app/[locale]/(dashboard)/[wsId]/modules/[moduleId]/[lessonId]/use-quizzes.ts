@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
+  type GenerateQuizFromLessonPayload,
   generateQuizFromLesson,
   getWorkspaceQuizzes,
 } from '@tuturuuu/internal-api';
@@ -21,18 +22,7 @@ export function useQuizzes(wsId: string, lessonId: string) {
 
   const generateMutation = useMutation({
     mutationFn: (
-      payload: {
-        difficulty?: 'easy' | 'medium' | 'hard';
-        questionType?:
-          | 'multiple_choice'
-          | 'true_false'
-          | 'matching'
-          | 'ordering'
-          | 'paragraph'
-          | 'mix';
-        count?: number;
-        context?: string;
-      } = {}
+      payload: Omit<GenerateQuizFromLessonPayload, 'lessonId' | 'testId'> = {}
     ) => generateQuizFromLesson(wsId, { lessonId, ...payload }),
     onSuccess: (res) => {
       if (res.success) {

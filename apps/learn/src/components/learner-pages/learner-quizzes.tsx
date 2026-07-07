@@ -496,7 +496,7 @@ export function LearnerQuizzes({
         {isSubmitted && quizFeedback && (
           <div className="mt-6 space-y-1 border-2 border-dynamic-yellow/30 bg-dynamic-yellow/10 p-4 text-foreground shadow-[3px_3px_0_hsl(var(--dynamic-yellow)/0.2)]">
             <span className="block font-black text-[10px] text-dynamic-yellow uppercase tracking-wider">
-              ✍️ Teacher Feedback
+              {t('courses.teacherFeedback')}
             </span>
             <p className="font-semibold text-sm leading-relaxed">
               {quizFeedback}
@@ -507,7 +507,7 @@ export function LearnerQuizzes({
         {isSubmitted && quizAiFeedback && (
           <div className="mt-6 space-y-1 border-2 border-primary bg-primary/5 p-4 text-foreground shadow-[3px_3px_0_hsl(var(--primary)/0.2)]">
             <span className="block font-black text-[10px] text-primary uppercase tracking-wider">
-              ✨ AI Feedback
+              {t('courses.aiFeedback')}
             </span>
             <p className="font-medium text-sm leading-relaxed">
               {quizAiFeedback}

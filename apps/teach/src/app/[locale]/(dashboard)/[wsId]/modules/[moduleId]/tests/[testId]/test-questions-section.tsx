@@ -3,6 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { BookOpenCheck, Loader2, Plus, Sparkles } from '@tuturuuu/icons';
 import {
+  type GenerateQuizFromLessonPayload,
   generateQuizFromLesson,
   getWorkspaceCourseTestQuestions,
 } from '@tuturuuu/internal-api';
@@ -31,15 +32,10 @@ import { useState } from 'react';
 import ClientQuizzes from '../../[lessonId]/client-quizzes';
 import DynamicQuizForm from '../../[lessonId]/dynamic-form';
 
-type QuestionType =
-  | 'multiple_choice'
-  | 'true_false'
-  | 'matching'
-  | 'ordering'
-  | 'paragraph'
-  | 'mix';
-
-type QuestionDifficulty = 'easy' | 'medium' | 'hard';
+type QuestionType = NonNullable<GenerateQuizFromLessonPayload['questionType']>;
+type QuestionDifficulty = NonNullable<
+  GenerateQuizFromLessonPayload['difficulty']
+>;
 
 interface ModuleQuestionsManagerProps {
   wsId: string;
@@ -91,12 +87,7 @@ function ModuleQuestionsManager({
   // Mutation for AI generation
   const generateMutation = useMutation({
     mutationFn: (
-      payload: {
-        difficulty?: QuestionDifficulty;
-        questionType?: QuestionType;
-        count?: number;
-        context?: string;
-      } = {}
+      payload: Omit<GenerateQuizFromLessonPayload, 'lessonId' | 'testId'> = {}
     ) =>
       generateQuizFromLesson(wsId, { lessonId: moduleId, testId, ...payload }),
     onSuccess: (res) => {

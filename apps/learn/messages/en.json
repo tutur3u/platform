@@ -216,6 +216,7 @@
     "submitTestSuccess": "Test submitted successfully",
     "submittingTest": "Submitting test...",
     "submittingType": "Submission type",
+    "aiFeedback": "AI feedback",
     "teacherFeedback": "Teacher feedback",
     "testAttemptLoading": "Loading your test session...",
     "testDetailsDuration": "Duration",

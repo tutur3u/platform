@@ -1,4 +1,4 @@
-import type { Json } from '@tuturuuu/types';
+import type { Json } from '@tuturuuu/types/db';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';

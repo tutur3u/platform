@@ -164,13 +164,18 @@ export const POST = withSessionAuth(
         // Render HTML
         const studentName =
           profile.display_name ?? profile.full_name ?? 'Học sinh';
+        const escapedCourseName = escapeHtml(course.name);
+        const escapedStudentName = escapeHtml(studentName);
+        const learnerDashboardHref = escapeHtml(
+          `${process.env.NEXT_PUBLIC_APP_URL || 'https://tuturuuu.localhost'}/${encodeURIComponent(wsId)}`
+        );
 
         const emailContent = {
           subject: `[Tuturuuu] Báo cáo học tập - ${course.name}`,
           title: 'Báo cáo học tập',
           subtitle: 'Tóm tắt tiến trình học tập cá nhân',
-          hello: `Xin chào <strong>${studentName}</strong>,`,
-          intro: `Dưới đây là báo cáo kết quả học tập hiện tại của bạn cho khóa học <strong>${course.name}</strong>. Hãy tiếp tục luyện tập và hoàn thành các bài học nhé!`,
+          hello: `Xin chào <strong>${escapedStudentName}</strong>,`,
+          intro: `Dưới đây là báo cáo kết quả học tập hiện tại của bạn cho khóa học <strong>${escapedCourseName}</strong>. Hãy tiếp tục luyện tập và hoàn thành các bài học nhé!`,
           avgScore: 'Điểm trung bình',
           modulesDone: 'Module đã xong',
           quizPractice: 'Luyện tập quiz',
@@ -191,7 +196,7 @@ export const POST = withSessionAuth(
 <html>
 <head>
   <meta charset="utf-8">
-  <title>${emailContent.subject}</title>
+  <title>${escapeHtml(emailContent.subject)}</title>
   <style>
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, sans-serif;
@@ -311,7 +316,7 @@ export const POST = withSessionAuth(
     <div class="container">
       <div class="header">
         <span class="eyebrow">${emailContent.title}</span>
-        <h1 class="title">${course.name}</h1>
+        <h1 class="title">${escapedCourseName}</h1>
         <div class="subtitle">${emailContent.subtitle}</div>
       </div>
       
@@ -336,7 +341,7 @@ export const POST = withSessionAuth(
       </div>
 
       <div class="btn-container">
-        <a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://tuturuuu.localhost'}/${wsId}" class="btn">
+        <a href="${learnerDashboardHref}" class="btn">
           ${emailContent.cta}
         </a>
       </div>
@@ -387,3 +392,22 @@ export const POST = withSessionAuth(
     rateLimit: { maxRequests: 10, windowMs: 60000 },
   }
 );
+
+function escapeHtml(value: string) {
+  return value.replace(/[&<>"']/g, (char) => {
+    switch (char) {
+      case '&':
+        return '&amp;';
+      case '<':
+        return '&lt;';
+      case '>':
+        return '&gt;';
+      case '"':
+        return '&quot;';
+      case "'":
+        return '&#39;';
+      default:
+        return char;
+    }
+  });
+}

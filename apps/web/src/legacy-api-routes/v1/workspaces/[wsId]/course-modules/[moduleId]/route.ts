@@ -49,7 +49,7 @@ const UpdateModuleSchema = z
     is_public: z.boolean().optional(),
     is_published: z.boolean().optional(),
     is_quiz_score_published: z.boolean().optional(),
-    quiz_deadline: z.string().nullable().optional(),
+    quiz_deadline: z.iso.datetime().nullable().optional(),
     module_group_id: z.string().uuid().optional(),
     name: z.string().trim().min(1).max(255).optional(),
     youtube_links: z.array(z.string().trim()).nullable().optional(),

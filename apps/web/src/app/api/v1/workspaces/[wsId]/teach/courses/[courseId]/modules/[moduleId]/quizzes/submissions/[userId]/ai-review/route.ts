@@ -25,6 +25,8 @@ const ReviewResultSchema = z.object({
   suggested_is_correct: z.boolean().nullable(),
 });
 
+const GEMINI_REVIEW_TIMEOUT_MS = 20_000;
+
 type RouteParams = {
   wsId: string;
   courseId: string;
@@ -167,18 +169,31 @@ Instructions:
 3. For multiple choice/true_false/other auto-graded questions: Set suggested_is_correct to null.
 `;
 
-      const { object } = await generateObject({
-        model: google('gemini-2.5-flash'),
-        schema: ReviewResultSchema,
-        prompt,
-      });
+      let reviewResult: z.infer<typeof ReviewResultSchema>;
+      try {
+        const { object } = await generateObject({
+          abortSignal: AbortSignal.timeout(GEMINI_REVIEW_TIMEOUT_MS),
+          model: google('gemini-2.5-flash'),
+          schema: ReviewResultSchema,
+          prompt,
+        });
+        reviewResult = object;
+      } catch (error) {
+        if (isAbortError(error)) {
+          return NextResponse.json(
+            { message: 'AI review timed out' },
+            { status: 504 }
+          );
+        }
+        throw error;
+      }
 
       // Persist the generated AI feedback to the database submission record
       const { data: updatedSubmission, error: updateError } =
         await access.sbAdmin
           .from('course_module_quiz_submissions')
           .update({
-            ai_feedback: object.explanation,
+            ai_feedback: reviewResult.explanation,
           })
           .eq('module_id', moduleId)
           .eq('quiz_id', quizId)
@@ -194,7 +209,7 @@ Instructions:
         );
       }
 
-      return NextResponse.json(object);
+      return NextResponse.json(reviewResult);
     } catch (error) {
       console.error('Failed to perform AI submission review:', error);
       return NextResponse.json(
@@ -208,3 +223,10 @@ Instructions:
     rateLimit: { maxRequests: 60, windowMs: 60000 },
   }
 );
+
+function isAbortError(error: unknown) {
+  return (
+    error instanceof DOMException &&
+    (error.name === 'AbortError' || error.name === 'TimeoutError')
+  );
+}

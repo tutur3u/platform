@@ -160,17 +160,18 @@ export const GET = withSessionAuth(
           (uid) => !submittedUserIds.has(uid)
         ).length;
 
-        // Low scorers: members whose correct rate < 50%
-        const scoreByUser: Record<string, { correct: number; total: number }> =
+        // Low scorers: members whose graded correct rate < 50%
+        const scoreByUser: Record<string, { correct: number; graded: number }> =
           {};
         for (const sub of subs) {
+          if (sub.is_correct === null) continue;
           if (!scoreByUser[sub.user_id])
-            scoreByUser[sub.user_id] = { correct: 0, total: 0 };
-          scoreByUser[sub.user_id]!.total++;
+            scoreByUser[sub.user_id] = { correct: 0, graded: 0 };
+          scoreByUser[sub.user_id]!.graded++;
           if (sub.is_correct === true) scoreByUser[sub.user_id]!.correct++;
         }
         const low_scorers = Object.values(scoreByUser).filter(
-          ({ correct, total }) => total > 0 && correct / total < 0.5
+          ({ correct, graded }) => graded > 0 && correct / graded < 0.5
         ).length;
 
         return {
