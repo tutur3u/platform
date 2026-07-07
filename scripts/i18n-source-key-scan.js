@@ -268,13 +268,13 @@ function checkAppSourceKeys({ exceptions = {}, rootDir }) {
     const appJson = getAppTranslations(rootDir, app.dir);
     if (!appJson) continue;
 
-    const appKeyExceptions = new Set(
-      exceptions.keyExceptions?.[app.name] || []
+    const appSourceKeyExceptions = new Set(
+      exceptions.appSourceKeyExceptions?.[app.name] || []
     );
     const missingKeys = [];
 
     for (const { namespace, key, file } of scanSourceKeys(rootDir, sourceDir)) {
-      if (isKeyExcepted(appKeyExceptions, namespace, key)) continue;
+      if (isKeyExcepted(appSourceKeyExceptions, namespace, key)) continue;
       if (!resolveKeyPath(appJson, namespace, key)) {
         missingKeys.push({ namespace, key, file });
       }

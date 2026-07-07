@@ -190,6 +190,7 @@ describe('workspace settings configs route', () => {
     mocks.workspaceConfigsIn.mockResolvedValueOnce({
       data: [
         { id: 'DEFAULT_CURRENCY', value: 'VND' },
+        { id: 'default_category_id', value: 'category-general' },
         { id: 'default_wallet_id', value: 'wallet-1' },
       ],
       error: null,
@@ -201,7 +202,7 @@ describe('workspace settings configs route', () => {
 
     const response = await GET(
       new NextRequest(
-        'http://localhost/api/v1/workspaces/ws-1/settings/configs?ids=default_wallet_id,DEFAULT_SUBSCRIPTION_CATEGORY_ID,DEFAULT_CURRENCY'
+        'http://localhost/api/v1/workspaces/ws-1/settings/configs?ids=default_wallet_id,default_category_id,DEFAULT_SUBSCRIPTION_CATEGORY_ID,DEFAULT_CURRENCY'
       ),
       {
         params: Promise.resolve({ wsId: 'ws-1' }),
@@ -212,10 +213,12 @@ describe('workspace settings configs route', () => {
     await expect(response.json()).resolves.toEqual({
       DEFAULT_CURRENCY: 'VND',
       DEFAULT_SUBSCRIPTION_CATEGORY_ID: null,
+      default_category_id: 'category-general',
       default_wallet_id: 'wallet-1',
     });
     expect(mocks.workspaceConfigsIn).toHaveBeenCalledWith('id', [
       'default_wallet_id',
+      'default_category_id',
       'DEFAULT_SUBSCRIPTION_CATEGORY_ID',
       'DEFAULT_CURRENCY',
     ]);

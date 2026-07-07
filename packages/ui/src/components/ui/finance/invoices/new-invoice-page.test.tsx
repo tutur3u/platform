@@ -85,6 +85,7 @@ describe('NewInvoicePage', () => {
       json: async () => ({
         DEFAULT_CURRENCY: 'SGD',
         DEFAULT_SUBSCRIPTION_CATEGORY_ID: 'category-1',
+        default_category_id: 'category-general',
         default_wallet_id: 'wallet-1',
       }),
     });
@@ -101,7 +102,7 @@ describe('NewInvoicePage', () => {
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
 
     expect(fetchMock).toHaveBeenCalledWith(
-      '/api/v1/workspaces/ws-1/settings/configs?ids=default_wallet_id,DEFAULT_SUBSCRIPTION_CATEGORY_ID,DEFAULT_CURRENCY',
+      '/api/v1/workspaces/ws-1/settings/configs?ids=default_wallet_id,default_category_id,DEFAULT_SUBSCRIPTION_CATEGORY_ID,DEFAULT_CURRENCY',
       { cache: 'no-store' }
     );
     expect(invoiceMocks.StandardInvoice).toHaveBeenCalled();
@@ -110,6 +111,7 @@ describe('NewInvoicePage', () => {
     await waitFor(() =>
       expect(invoiceMocks.StandardInvoice).toHaveBeenLastCalledWith(
         expect.objectContaining({
+          defaultCategoryId: 'category-general',
           defaultCurrency: 'SGD',
           defaultWalletId: 'wallet-1',
         })
@@ -131,6 +133,31 @@ describe('NewInvoicePage', () => {
       expect(invoiceMocks.SubscriptionInvoice).toHaveBeenLastCalledWith(
         expect.objectContaining({
           defaultCategoryId: 'category-1',
+          defaultCurrency: 'SGD',
+          defaultWalletId: 'wallet-1',
+        })
+      )
+    );
+  });
+
+  it('falls subscription invoice category back to the transaction default', async () => {
+    nuqsState.invoiceType = 'subscription';
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        DEFAULT_CURRENCY: 'SGD',
+        DEFAULT_SUBSCRIPTION_CATEGORY_ID: null,
+        default_category_id: 'category-general',
+        default_wallet_id: 'wallet-1',
+      }),
+    });
+
+    renderPage();
+
+    await waitFor(() =>
+      expect(invoiceMocks.SubscriptionInvoice).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          defaultCategoryId: 'category-general',
           defaultCurrency: 'SGD',
           defaultWalletId: 'wallet-1',
         })
