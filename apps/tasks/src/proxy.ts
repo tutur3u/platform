@@ -1,4 +1,5 @@
 import { match } from '@formatjs/intl-localematcher';
+import { getBearerAppCoordinationToken } from '@tuturuuu/auth/app-coordination';
 import {
   clearSupabaseAuthCookies,
   getAppSessionClaimsFromRequest,
@@ -103,12 +104,14 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
     const isLocalAuthApi = req.nextUrl.pathname.startsWith(
       LOCAL_AUTH_API_PREFIX
     );
-    const appSessionRefresh = isLocalAuthApi
-      ? null
-      : await refreshAppSessionForRequest(req, {
-          sessionMode: 'supabase-first',
-          targetApp: 'tasks',
-        });
+    const hasBearerAppSession = Boolean(getBearerAppCoordinationToken(req));
+    const appSessionRefresh =
+      isLocalAuthApi || hasBearerAppSession
+        ? null
+        : await refreshAppSessionForRequest(req, {
+            sessionMode: 'supabase-first',
+            targetApp: 'tasks',
+          });
 
     if (appSessionRefresh && !appSessionRefresh.ok) {
       return withTaskApiCors(

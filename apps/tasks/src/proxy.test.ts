@@ -129,8 +129,12 @@ describe('Tasks proxy auth mode', () => {
     });
   });
 
-  it('refreshes product APIs in Supabase-first mode', async () => {
-    const request = new NextRequest('https://tasks.tuturuuu.com/api/v1/tasks');
+  it('refreshes Supabase-cookie product APIs in Supabase-first mode', async () => {
+    const request = new NextRequest('https://tasks.tuturuuu.com/api/v1/tasks', {
+      headers: {
+        cookie: 'sb-test-auth-token=shared',
+      },
+    });
 
     const response = await proxy(request);
 
@@ -142,6 +146,39 @@ describe('Tasks proxy auth mode', () => {
     expect(mocks.guardApiProxyRequest).toHaveBeenCalledWith(request, {
       prefixBase: 'proxy:tasks:api',
     });
+  });
+
+  it('lets CLI bearer app-session API requests reach route auth without Tasks refresh', async () => {
+    const request = new NextRequest(
+      'https://tasks.tuturuuu.com/api/v1/workspaces/personal/tasks',
+      {
+        headers: {
+          authorization: 'Bearer ttr_app_access',
+        },
+      }
+    );
+
+    const response = await proxy(request);
+
+    expect(response.headers.get('x-middleware-next')).toBe('1');
+    expect(mocks.refreshAppSessionForRequest).not.toHaveBeenCalled();
+    expect(mocks.guardApiProxyRequest).toHaveBeenCalledWith(request, {
+      prefixBase: 'proxy:tasks:api',
+    });
+  });
+
+  it('rejects failed Supabase-first API refreshes without reaching route auth', async () => {
+    mocks.refreshAppSessionForRequest.mockResolvedValueOnce({
+      error: 'Invalid app session refresh credentials',
+      ok: false,
+    });
+    const request = new NextRequest('https://tasks.tuturuuu.com/api/v1/tasks');
+
+    const response = await proxy(request);
+
+    expect(response.status).toBe(401);
+    await expect(response.json()).resolves.toEqual({ error: 'Unauthorized' });
+    expect(mocks.guardApiProxyRequest).not.toHaveBeenCalled();
   });
 
   it('redirects Supabase-authenticated root requests to personal tasks', async () => {
