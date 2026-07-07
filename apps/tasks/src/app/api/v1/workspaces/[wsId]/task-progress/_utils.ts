@@ -1,7 +1,5 @@
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
+import { CLI_APP_TARGET_APP } from '@tuturuuu/auth/cli-session';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import {
@@ -10,7 +8,7 @@ import {
 } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { resolveAuthenticatedSessionUser } from '@/lib/app-session-user';
+import { resolveSessionAuthContext } from '@/lib/api-auth';
 import {
   DEFAULT_TASK_PROGRESS_METRICS,
   TASK_PROGRESS_ENTRY_SELECT,
@@ -28,6 +26,10 @@ export type TaskProgressRouteAuth = {
   user: SupabaseUser;
   wsId: string;
 };
+
+const TASK_PROGRESS_APP_SESSION_AUTH = {
+  targetApp: [CLI_APP_TARGET_APP, 'tasks'],
+} as const;
 
 export function taskProgressSchemaUnavailableResponse(
   extra?: Record<string, unknown>
@@ -114,19 +116,17 @@ export async function resolveTaskProgressRouteAuth(
   request: NextRequest,
   context: TaskProgressRouteContext
 ): Promise<TaskProgressRouteAuth | NextResponse> {
-  const supabase = (await createClient(request)) as TypedSupabaseClient;
-  const { user, authError } = await resolveAuthenticatedSessionUser(supabase);
-
-  if (authError || !user) {
-    return taskProgressErrorResponse('Unauthorized', 401);
-  }
+  const auth = await resolveSessionAuthContext(request, {
+    allowAppSessionAuth: TASK_PROGRESS_APP_SESSION_AUTH,
+  });
+  if (!auth.ok) return auth.response;
 
   const { wsId: rawWsId } = await context.params;
-  const wsId = await normalizeWorkspaceId(rawWsId, supabase);
+  const wsId = await normalizeWorkspaceId(rawWsId, auth.supabase);
   const memberCheck = await verifyWorkspaceMembershipType({
     wsId,
-    userId: user.id,
-    supabase,
+    userId: auth.user.id,
+    supabase: auth.supabase,
   });
 
   if (memberCheck.error === 'membership_lookup_failed') {
@@ -140,8 +140,10 @@ export async function resolveTaskProgressRouteAuth(
     return taskProgressErrorResponse('Workspace access denied', 403);
   }
 
-  const sbAdmin = (await createAdminClient()) as TypedSupabaseClient;
-  return { sbAdmin, supabase, user, wsId };
+  const sbAdmin = (await createAdminClient({
+    noCookie: true,
+  })) as TypedSupabaseClient;
+  return { sbAdmin, supabase: auth.supabase, user: auth.user, wsId };
 }
 
 export async function ensureDefaultTaskProgressMetrics(

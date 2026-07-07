@@ -151,6 +151,7 @@ export function SettingsDialog({
             label: t('settings.tasks.projects'),
             icon: Box,
             description: t('settings.tasks.projects_description'),
+            hideContentHeader: true,
             keywords: ['Tasks', 'Projects'],
           },
           {
@@ -158,6 +159,7 @@ export function SettingsDialog({
             label: t('settings.tasks.labels'),
             icon: Tags,
             description: t('settings.tasks.labels_description'),
+            hideContentHeader: true,
             keywords: ['Tasks', 'Labels', 'Tags'],
           },
           {
@@ -165,6 +167,7 @@ export function SettingsDialog({
             label: t('settings.tasks.templates'),
             icon: Bookmark,
             description: t('settings.tasks.templates_description'),
+            hideContentHeader: true,
             keywords: ['Tasks', 'Templates'],
           },
           {
@@ -172,6 +175,7 @@ export function SettingsDialog({
             label: t('settings.tasks.initiatives'),
             icon: Sparkle,
             description: t('settings.tasks.initiatives_description'),
+            hideContentHeader: true,
             keywords: ['Tasks', 'Initiatives'],
           },
         ],
@@ -184,6 +188,7 @@ export function SettingsDialog({
             label: t('settings.tasks.estimates'),
             icon: EstimateIcon,
             description: t('settings.tasks.estimates_description'),
+            hideContentHeader: true,
             keywords: ['Tasks', 'Estimates'],
           },
           {
@@ -191,6 +196,7 @@ export function SettingsDialog({
             label: t('settings.tasks.logs'),
             icon: Logs,
             description: t('settings.tasks.logs_description'),
+            hideContentHeader: true,
             keywords: ['Tasks', 'Logs', 'History'],
           },
           {
@@ -198,6 +204,7 @@ export function SettingsDialog({
             label: t('settings.tasks.habits'),
             icon: Repeat,
             description: t('settings.tasks.habits_description'),
+            hideContentHeader: true,
             keywords: ['Tasks', 'Habits'],
           },
           {
@@ -205,6 +212,7 @@ export function SettingsDialog({
             label: t('settings.tasks.notes'),
             icon: NotepadText,
             description: t('settings.tasks.notes_description'),
+            hideContentHeader: true,
             keywords: ['Tasks', 'Notes'],
           },
           {
@@ -212,6 +220,7 @@ export function SettingsDialog({
             label: t('settings.tasks.drafts'),
             icon: FileEdit,
             description: t('settings.tasks.drafts_description'),
+            hideContentHeader: true,
             keywords: ['Tasks', 'Drafts'],
           },
         ],
@@ -224,6 +233,7 @@ export function SettingsDialog({
             label: t('settings.tasks.progress'),
             icon: TrendingUp,
             description: t('settings.tasks.progress_description'),
+            hideContentHeader: true,
             keywords: ['Tasks', 'Progress'],
           },
           {
@@ -231,6 +241,7 @@ export function SettingsDialog({
             label: t('settings.tasks.goals'),
             icon: Goal,
             description: t('settings.tasks.goals_description'),
+            hideContentHeader: true,
             keywords: ['Tasks', 'Goals'],
           },
           {
@@ -238,6 +249,7 @@ export function SettingsDialog({
             label: t('settings.tasks.stats'),
             icon: BarChart3,
             description: t('settings.tasks.stats_description'),
+            hideContentHeader: true,
             keywords: ['Tasks', 'Stats'],
           },
           {
@@ -245,6 +257,7 @@ export function SettingsDialog({
             label: t('settings.tasks.leaderboards'),
             icon: Trophy,
             description: t('settings.tasks.leaderboards_description'),
+            hideContentHeader: true,
             keywords: ['Tasks', 'Leaderboards'],
           },
           {
@@ -252,6 +265,7 @@ export function SettingsDialog({
             label: t('common.import'),
             icon: Upload,
             description: t('settings.tasks.import_description'),
+            hideContentHeader: true,
             keywords: ['Tasks', 'Import'],
           },
         ],

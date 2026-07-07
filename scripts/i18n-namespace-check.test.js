@@ -72,3 +72,50 @@ test('namespace checker reports missing scoped ws-task-boards share keys', (t) =
   assert.match(result.stdout, /apps\/tasks: MISSING 1 translation key/u);
   assert.match(result.stdout, /ws-task-boards\.share\.title/u);
 });
+
+test('namespace checker reports shared settings calendar keys missing from tasks', (t) => {
+  const projectRoot = createProject(t);
+
+  writeFile(
+    projectRoot,
+    'packages/ui/src/lunar-calendar-settings.tsx',
+    `
+      import { useTranslations } from 'next-intl';
+
+      export function LunarCalendarSettings() {
+        const t = useTranslations('settings.calendar');
+        return <span>{t('show_lunar_calendar')}</span>;
+      }
+    `
+  );
+
+  writeSharedUiApp(projectRoot, 'apps/tasks', {
+    settings: {
+      calendar: {
+        title: 'Calendar',
+      },
+    },
+  });
+
+  const result = spawnSync(process.execPath, [checkerPath], {
+    cwd: projectRoot,
+    encoding: 'utf8',
+  });
+
+  assert.notEqual(result.status, 0);
+  assert.match(result.stdout, /apps\/tasks: MISSING 1 translation key/u);
+  assert.match(result.stdout, /settings\.calendar\.show_lunar_calendar/u);
+});
+
+test('tasks calendar settings keys are not hidden by config exceptions', () => {
+  const config = JSON.parse(
+    fs.readFileSync(
+      path.join(__dirname, 'i18n-namespace-check.config.json'),
+      'utf8'
+    )
+  );
+
+  assert.ok(
+    !config.keyExceptions?.['apps/tasks']?.includes('settings.calendar.*')
+  );
+});

@@ -64,6 +64,7 @@ export interface SettingsNavItem {
   label: string;
   icon: ComponentType<{ className?: string }>;
   description?: string;
+  hideContentHeader?: boolean;
   disabled?: boolean;
   keywords?: string[];
   aliases?: string[];
@@ -157,6 +158,7 @@ export function SettingsDialogShell({
     allNavItems.find((item) => item.name === activeTab) ||
     allNavItems.find((item) => !item.disabled) ||
     allNavItems[0];
+  const showContentHeader = !activeItem?.hideContentHeader;
 
   const ensureSearchEngine = useCallback(() => {
     if (searchEngineFactory || searchEngineLoadRef.current) return;
@@ -511,18 +513,22 @@ export function SettingsDialogShell({
           </header>
           <div className="flex flex-1 flex-col gap-4 overflow-y-auto p-6">
             <div className="mx-auto w-full max-w-4xl space-y-6">
-              <div className="space-y-1">
-                <h2 className="font-semibold text-lg tracking-tight">
-                  {activeItem?.label}
-                </h2>
-                <p className="text-muted-foreground text-sm">
-                  {activeItem?.description ||
-                    t('settings.manage_settings', {
-                      label: activeItem?.label?.toLowerCase() ?? '',
-                    })}
-                </p>
-              </div>
-              <Separator />
+              {showContentHeader && (
+                <>
+                  <div className="space-y-1">
+                    <h2 className="font-semibold text-lg tracking-tight">
+                      {activeItem?.label}
+                    </h2>
+                    <p className="text-muted-foreground text-sm">
+                      {activeItem?.description ||
+                        t('settings.manage_settings', {
+                          label: activeItem?.label?.toLowerCase() ?? '',
+                        })}
+                    </p>
+                  </div>
+                  <Separator />
+                </>
+              )}
               {children}
             </div>
           </div>

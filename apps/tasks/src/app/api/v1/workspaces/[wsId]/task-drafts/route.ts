@@ -1,17 +1,18 @@
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
+import { CLI_APP_TARGET_APP } from '@tuturuuu/auth/cli-session';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import {
   MAX_COLOR_LENGTH,
   MAX_LONG_TEXT_LENGTH,
   MAX_TASK_NAME_LENGTH,
 } from '@tuturuuu/utils/constants';
-import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
+import {
+  normalizeWorkspaceId,
+  verifyWorkspaceMembershipType,
+} from '@tuturuuu/utils/workspace-helper';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { resolveAuthenticatedSessionUser } from '@/lib/app-session-user';
+import { withSessionAuth } from '@/lib/api-auth';
 
 // Permissive UUID pattern — the DB uuid[] column enforces strict format
 const uuidString = z
@@ -35,152 +36,139 @@ const createDraftSchema = z.object({
   project_ids: z.array(uuidString).default([]),
 });
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ wsId: string }> }
-) {
-  try {
-    const { wsId } = await params;
-    const supabase = await createClient(request);
-    const sbAdmin = await createAdminClient();
+const TASK_DRAFTS_APP_SESSION_AUTH = {
+  targetApp: [CLI_APP_TARGET_APP, 'tasks'],
+} as const;
 
-    const { user, authError } = await resolveAuthenticatedSessionUser(
-      request,
-      supabase
-    );
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+export const GET = withSessionAuth<{ wsId: string }>(
+  async (request: NextRequest, { supabase, user }, { wsId: rawWsId }) => {
+    try {
+      const wsId = await normalizeWorkspaceId(rawWsId, supabase);
+      const sbAdmin = await createAdminClient();
 
-    const membership = await verifyWorkspaceMembershipType({
-      wsId: wsId,
-      userId: user.id,
-      supabase: supabase,
-    });
+      const membership = await verifyWorkspaceMembershipType({
+        wsId: wsId,
+        userId: user.id,
+        supabase: supabase,
+      });
 
-    if (membership.error === 'membership_lookup_failed') {
+      if (membership.error === 'membership_lookup_failed') {
+        return NextResponse.json(
+          { error: 'Failed to verify workspace access' },
+          { status: 500 }
+        );
+      }
+
+      if (!membership.ok) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      }
+
+      const boardId = request.nextUrl.searchParams.get('boardId');
+      const includeUnassignedForBoard =
+        request.nextUrl.searchParams.get('includeUnassignedForBoard') ===
+        'true';
+
+      let query = sbAdmin
+        .from('task_drafts')
+        .select('*')
+        .eq('ws_id', wsId)
+        .eq('creator_id', user.id);
+
+      if (boardId) {
+        query = includeUnassignedForBoard
+          ? query.or(`board_id.eq.${boardId},board_id.is.null`)
+          : query.eq('board_id', boardId);
+      }
+
+      const { data, error } = await query.order('created_at', {
+        ascending: false,
+      });
+
+      if (error) {
+        console.error('Error fetching drafts:', error);
+        return NextResponse.json(
+          { error: 'Failed to fetch drafts' },
+          { status: 500 }
+        );
+      }
+
+      return NextResponse.json({ data });
+    } catch (error) {
+      console.error('Error in GET /task-drafts:', error);
       return NextResponse.json(
-        { error: 'Failed to verify workspace access' },
+        { error: 'Internal server error' },
         { status: 500 }
       );
     }
+  },
+  { allowAppSessionAuth: TASK_DRAFTS_APP_SESSION_AUTH }
+);
 
-    if (!membership.ok) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    }
+export const POST = withSessionAuth<{ wsId: string }>(
+  async (request: NextRequest, { supabase, user }, { wsId: rawWsId }) => {
+    try {
+      const wsId = await normalizeWorkspaceId(rawWsId, supabase);
+      const sbAdmin = await createAdminClient();
 
-    const boardId = request.nextUrl.searchParams.get('boardId');
-    const includeUnassignedForBoard =
-      request.nextUrl.searchParams.get('includeUnassignedForBoard') === 'true';
+      const membership = await verifyWorkspaceMembershipType({
+        wsId,
+        userId: user.id,
+        supabase,
+      });
 
-    let query = sbAdmin
-      .from('task_drafts')
-      .select('*')
-      .eq('ws_id', wsId)
-      .eq('creator_id', user.id);
+      if (membership.error === 'membership_lookup_failed') {
+        return NextResponse.json(
+          { error: 'Failed to verify workspace access' },
+          { status: 500 }
+        );
+      }
 
-    if (boardId) {
-      query = includeUnassignedForBoard
-        ? query.or(`board_id.eq.${boardId},board_id.is.null`)
-        : query.eq('board_id', boardId);
-    }
+      if (!membership.ok) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      }
 
-    const { data, error } = await query.order('created_at', {
-      ascending: false,
-    });
+      const body = await request.json();
+      const parsed = createDraftSchema.parse(body);
 
-    if (error) {
-      console.error('Error fetching drafts:', error);
+      const { data, error } = await sbAdmin
+        .from('task_drafts')
+        .insert({
+          ws_id: wsId,
+          creator_id: user.id,
+          name: parsed.name,
+          description: parsed.description ?? null,
+          priority: parsed.priority ?? null,
+          board_id: parsed.board_id ?? null,
+          list_id: parsed.list_id ?? null,
+          start_date: parsed.start_date ?? null,
+          end_date: parsed.end_date ?? null,
+          estimation_points: parsed.estimation_points ?? null,
+          label_ids: parsed.label_ids,
+          assignee_ids: parsed.assignee_ids,
+          project_ids: parsed.project_ids,
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error creating draft:', error);
+        return NextResponse.json(
+          { error: 'Failed to create draft' },
+          { status: 500 }
+        );
+      }
+
+      return NextResponse.json({ success: true, data }, { status: 201 });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return NextResponse.json({ error: error.message }, { status: 400 });
+      }
+      console.error('Error in POST /task-drafts:', error);
       return NextResponse.json(
-        { error: 'Failed to fetch drafts' },
+        { error: 'Internal server error' },
         { status: 500 }
       );
     }
-
-    return NextResponse.json({ data });
-  } catch (error) {
-    console.error('Error in GET /task-drafts:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
-  }
-}
-
-export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ wsId: string }> }
-) {
-  try {
-    const { wsId } = await params;
-    const supabase = await createClient(request);
-    const sbAdmin = await createAdminClient();
-
-    const { user, authError } = await resolveAuthenticatedSessionUser(
-      request,
-      supabase
-    );
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const membership = await verifyWorkspaceMembershipType({
-      wsId,
-      userId: user.id,
-      supabase,
-    });
-
-    if (membership.error === 'membership_lookup_failed') {
-      return NextResponse.json(
-        { error: 'Failed to verify workspace access' },
-        { status: 500 }
-      );
-    }
-
-    if (!membership.ok) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    }
-
-    const body = await request.json();
-    const parsed = createDraftSchema.parse(body);
-
-    const { data, error } = await sbAdmin
-      .from('task_drafts')
-      .insert({
-        ws_id: wsId,
-        creator_id: user.id,
-        name: parsed.name,
-        description: parsed.description ?? null,
-        priority: parsed.priority ?? null,
-        board_id: parsed.board_id ?? null,
-        list_id: parsed.list_id ?? null,
-        start_date: parsed.start_date ?? null,
-        end_date: parsed.end_date ?? null,
-        estimation_points: parsed.estimation_points ?? null,
-        label_ids: parsed.label_ids,
-        assignee_ids: parsed.assignee_ids,
-        project_ids: parsed.project_ids,
-      })
-      .select()
-      .single();
-
-    if (error) {
-      console.error('Error creating draft:', error);
-      return NextResponse.json(
-        { error: 'Failed to create draft' },
-        { status: 500 }
-      );
-    }
-
-    return NextResponse.json({ success: true, data }, { status: 201 });
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: error.message }, { status: 400 });
-    }
-    console.error('Error in POST /task-drafts:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
-  }
-}
+  },
+  { allowAppSessionAuth: TASK_DRAFTS_APP_SESSION_AUTH }
+);

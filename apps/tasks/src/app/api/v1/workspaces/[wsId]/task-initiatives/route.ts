@@ -1,7 +1,5 @@
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
+import { CLI_APP_TARGET_APP } from '@tuturuuu/auth/cli-session';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import {
   normalizeWorkspaceId,
   verifyWorkspaceMembershipType,
@@ -9,7 +7,7 @@ import {
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { resolveAuthenticatedSessionUser } from '@/lib/app-session-user';
+import { withSessionAuth } from '@/lib/api-auth';
 
 const initiativeStatusSchema = z.enum([
   'active',
@@ -26,6 +24,10 @@ const createInitiativeSchema = z.object({
   description: z.string().max(1000, 'Description too long').optional(),
   status: initiativeStatusSchema.optional(),
 });
+
+const TASK_INITIATIVES_APP_SESSION_AUTH = {
+  targetApp: [CLI_APP_TARGET_APP, 'tasks'],
+} as const;
 
 type InitiativeRow = {
   id: string;
@@ -65,45 +67,33 @@ const serializeInitiatives = (rows: InitiativeRow[]) =>
       ) ?? [],
   }));
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ wsId: string }> }
-) {
-  try {
-    const { wsId: rawWsId } = await params;
-    const supabase = await createClient(request);
+export const GET = withSessionAuth<{ wsId: string }>(
+  async (_request, { supabase, user }, { wsId: rawWsId }) => {
+    try {
+      const wsId = await normalizeWorkspaceId(rawWsId, supabase);
+      const sbAdmin = await createAdminClient();
 
-    const { user, authError: userError } =
-      await resolveAuthenticatedSessionUser(supabase);
+      const membership = await verifyWorkspaceMembershipType({
+        wsId: wsId,
+        userId: user.id,
+        supabase: supabase,
+      });
 
-    if (userError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+      if (membership.error === 'membership_lookup_failed') {
+        return NextResponse.json(
+          { error: 'Failed to verify workspace access' },
+          { status: 500 }
+        );
+      }
 
-    const wsId = await normalizeWorkspaceId(rawWsId, supabase);
-    const sbAdmin = await createAdminClient();
+      if (!membership.ok) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      }
 
-    const membership = await verifyWorkspaceMembershipType({
-      wsId: wsId,
-      userId: user.id,
-      supabase: supabase,
-    });
-
-    if (membership.error === 'membership_lookup_failed') {
-      return NextResponse.json(
-        { error: 'Failed to verify workspace access' },
-        { status: 500 }
-      );
-    }
-
-    if (!membership.ok) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    }
-
-    const { data: initiatives, error } = await sbAdmin
-      .from('task_initiatives')
-      .select(
-        `
+      const { data: initiatives, error } = await sbAdmin
+        .from('task_initiatives')
+        .select(
+          `
           *,
           creator:users!task_initiatives_creator_id_fkey(
             id,
@@ -119,116 +109,108 @@ export async function GET(
             )
           )
         `
-      )
-      .eq('ws_id', wsId)
-      .order('created_at', { ascending: false });
+        )
+        .eq('ws_id', wsId)
+        .order('created_at', { ascending: false });
 
-    if (error) {
-      console.error('Error fetching task initiatives:', error);
+      if (error) {
+        console.error('Error fetching task initiatives:', error);
+        return NextResponse.json(
+          { error: 'Failed to fetch initiatives' },
+          { status: 500 }
+        );
+      }
+
       return NextResponse.json(
-        { error: 'Failed to fetch initiatives' },
+        serializeInitiatives((initiatives ?? []) as InitiativeRow[])
+      );
+    } catch (error) {
+      console.error(
+        'Error in GET /api/v1/workspaces/[wsId]/task-initiatives:',
+        error
+      );
+      return NextResponse.json(
+        { error: 'Internal server error' },
         { status: 500 }
       );
     }
+  },
+  { allowAppSessionAuth: TASK_INITIATIVES_APP_SESSION_AUTH }
+);
 
-    return NextResponse.json(
-      serializeInitiatives((initiatives ?? []) as InitiativeRow[])
-    );
-  } catch (error) {
-    console.error(
-      'Error in GET /api/v1/workspaces/[wsId]/task-initiatives:',
-      error
-    );
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
-  }
-}
+export const POST = withSessionAuth<{ wsId: string }>(
+  async (request: NextRequest, { supabase, user }, { wsId: rawWsId }) => {
+    try {
+      const wsId = await normalizeWorkspaceId(rawWsId, supabase);
 
-export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ wsId: string }> }
-) {
-  try {
-    const { wsId: rawWsId } = await params;
-    const supabase = await createClient(request);
+      const membership = await verifyWorkspaceMembershipType({
+        wsId,
+        userId: user.id,
+        supabase,
+      });
 
-    const { user, authError: userError } =
-      await resolveAuthenticatedSessionUser(supabase);
+      if (membership.error === 'membership_lookup_failed') {
+        return NextResponse.json(
+          { error: 'Failed to verify workspace access' },
+          { status: 500 }
+        );
+      }
 
-    if (userError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+      if (!membership.ok) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      }
 
-    const wsId = await normalizeWorkspaceId(rawWsId, supabase);
+      const sbAdmin = await createAdminClient();
 
-    const membership = await verifyWorkspaceMembershipType({
-      wsId,
-      userId: user.id,
-      supabase,
-    });
+      const body = await request.json();
+      const { name, description, status } = createInitiativeSchema.parse(body);
 
-    if (membership.error === 'membership_lookup_failed') {
+      const { data: initiative, error } = await sbAdmin
+        .from('task_initiatives')
+        .insert({
+          name,
+          description: description || null,
+          status: status ?? 'active',
+          ws_id: wsId,
+          creator_id: user.id,
+        })
+        .select('*')
+        .single();
+
+      if (error || !initiative) {
+        console.error('Error creating task initiative:', error);
+        return NextResponse.json(
+          { error: 'Failed to create initiative' },
+          { status: 500 }
+        );
+      }
+
       return NextResponse.json(
-        { error: 'Failed to verify workspace access' },
+        {
+          id: initiative.id,
+          name: initiative.name,
+          description: initiative.description,
+          status: initiative.status,
+          created_at: initiative.created_at,
+          creator: null,
+          projectsCount: 0,
+          linkedProjects: [],
+        },
+        { status: 201 }
+      );
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return NextResponse.json({ error: error.message }, { status: 400 });
+      }
+      console.error(
+        'Error in POST /api/v1/workspaces/[wsId]/task-initiatives:',
+        error
+      );
+      return NextResponse.json(
+        { error: 'Internal server error' },
         { status: 500 }
       );
     }
-
-    if (!membership.ok) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    }
-
-    const sbAdmin = await createAdminClient();
-
-    const body = await request.json();
-    const { name, description, status } = createInitiativeSchema.parse(body);
-
-    const { data: initiative, error } = await sbAdmin
-      .from('task_initiatives')
-      .insert({
-        name,
-        description: description || null,
-        status: status ?? 'active',
-        ws_id: wsId,
-        creator_id: user.id,
-      })
-      .select('*')
-      .single();
-
-    if (error || !initiative) {
-      console.error('Error creating task initiative:', error);
-      return NextResponse.json(
-        { error: 'Failed to create initiative' },
-        { status: 500 }
-      );
-    }
-
-    return NextResponse.json(
-      {
-        id: initiative.id,
-        name: initiative.name,
-        description: initiative.description,
-        status: initiative.status,
-        created_at: initiative.created_at,
-        creator: null,
-        projectsCount: 0,
-        linkedProjects: [],
-      },
-      { status: 201 }
-    );
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: error.message }, { status: 400 });
-    }
-    console.error(
-      'Error in POST /api/v1/workspaces/[wsId]/task-initiatives:',
-      error
-    );
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
-  }
-}
+  },
+  { allowAppSessionAuth: TASK_INITIATIVES_APP_SESSION_AUTH }
+);
