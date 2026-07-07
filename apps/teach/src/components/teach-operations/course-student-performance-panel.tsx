@@ -17,12 +17,12 @@ import {
 } from '@tuturuuu/icons';
 import {
   getCourseStudentPerformance,
-  sendStudentPerformanceReport,
-  sendBulkStudentPerformanceReport,
   type StudentPerformanceStat,
+  sendBulkStudentPerformanceReport,
+  sendStudentPerformanceReport,
 } from '@tuturuuu/internal-api';
-import { cn } from '@tuturuuu/utils/format';
 import { toast } from '@tuturuuu/ui/sonner';
+import { cn } from '@tuturuuu/utils/format';
 import { useLocale, useTranslations } from 'next-intl';
 import { useState } from 'react';
 
@@ -102,9 +102,8 @@ export function CourseStudentPerformancePanel({
 
   const summary = data
     ? {
-        atRisk: data.students.filter(
-          (s) => s.hasNotSubmitted || s.isLowScorer
-        ).length,
+        atRisk: data.students.filter((s) => s.hasNotSubmitted || s.isLowScorer)
+          .length,
         avgScore:
           data.students.filter((s) => s.scorePercent !== null).length > 0
             ? Math.round(
@@ -114,10 +113,7 @@ export function CourseStudentPerformancePanel({
                   data.students.filter((s) => s.scorePercent !== null).length
               )
             : null,
-        pending: data.students.reduce(
-          (s, x) => s + x.pendingGradingCount,
-          0
-        ),
+        pending: data.students.reduce((s, x) => s + x.pendingGradingCount, 0),
         notSubmitted: data.students.filter((s) => s.hasNotSubmitted).length,
       }
     : null;
@@ -143,7 +139,9 @@ export function CourseStudentPerformancePanel({
                 {data?.students.length ?? 0} {t('students') || 'students'} ·{' '}
                 {data?.totalModules ?? 0} {t('modules') || 'modules'} ·{' '}
                 {data?.totalQuizzes ?? 0} {t('quizTitle') || 'quiz questions'} ·{' '}
-                <span className="italic">{t('quizSubtitle') || 'module quiz practice only'}</span>
+                <span className="italic">
+                  {t('quizSubtitle') || 'module quiz practice only'}
+                </span>
               </p>
             )}
           </div>
@@ -161,16 +159,14 @@ export function CourseStudentPerformancePanel({
       </button>
 
       {expanded && (
-        <div className="border-border border-t-2 p-5 pt-4 space-y-4">
+        <div className="space-y-4 border-border border-t-2 p-5 pt-4">
           {/* Summary chips */}
           {summary && data && data.students.length > 0 && (
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
               <SummaryChip
                 icon={TrendingUp}
                 label={t('avgScore') || 'Avg. Score'}
-                value={
-                  summary.avgScore !== null ? `${summary.avgScore}%` : '—'
-                }
+                value={summary.avgScore !== null ? `${summary.avgScore}%` : '—'}
                 variant="neutral"
               />
               <SummaryChip
@@ -196,15 +192,15 @@ export function CourseStudentPerformancePanel({
 
           {/* Action Bar */}
           {data && data.students.length > 0 && (
-            <div className="flex items-center justify-between border-b border-border pb-2">
-              <h3 className="font-black text-sm uppercase tracking-wider text-muted-foreground">
+            <div className="flex items-center justify-between border-border border-b pb-2">
+              <h3 className="font-black text-muted-foreground text-sm uppercase tracking-wider">
                 {t('studentsTitle') || 'Students List'}
               </h3>
               <button
                 onClick={handleSendBulkReports}
                 disabled={isBulkSending}
                 className={cn(
-                  "inline-flex items-center gap-1.5 border-2 border-border bg-foreground text-background px-3 py-1.5 font-bold text-xs shadow-[2px_2px_0_var(--border)] transition hover:-translate-y-0.5 disabled:opacity-50"
+                  'inline-flex items-center gap-1.5 border-2 border-border bg-foreground px-3 py-1.5 font-bold text-background text-xs shadow-[2px_2px_0_var(--border)] transition hover:-translate-y-0.5 disabled:opacity-50'
                 )}
                 type="button"
               >
@@ -213,7 +209,9 @@ export function CourseStudentPerformancePanel({
                 ) : (
                   <Mail className="h-3 w-3" />
                 )}
-                {isBulkSending ? (t('sending') || 'Sending...') : (t('sendAllReports') || 'Send All Reports')}
+                {isBulkSending
+                  ? t('sending') || 'Sending...'
+                  : t('sendAllReports') || 'Send All Reports'}
               </button>
             </div>
           )}
@@ -256,7 +254,7 @@ export function CourseStudentPerformancePanel({
               <table className="w-full border-collapse text-sm">
                 <thead>
                   <tr className="border-border border-b-2 text-left">
-                    <th className="pb-2 pr-3 font-black text-xs uppercase tracking-wider">
+                    <th className="pr-3 pb-2 font-black text-xs uppercase tracking-wider">
                       {t('student') || 'Student'}
                     </th>
                     <SortableHeader
@@ -271,7 +269,7 @@ export function CourseStudentPerformancePanel({
                       label={t('progress') || 'Progress'}
                       onClick={() => toggleSort('progress')}
                     />
-                    <th className="pb-2 pr-3 font-black text-xs uppercase tracking-wider">
+                    <th className="pr-3 pb-2 font-black text-xs uppercase tracking-wider">
                       {t('quizTitle') || 'Quiz Practice'}
                     </th>
                     <SortableHeader
@@ -321,7 +319,7 @@ function SortableHeader({
   onClick: () => void;
 }) {
   return (
-    <th className="pb-2 pr-3">
+    <th className="pr-3 pb-2">
       <button
         className={cn(
           'flex items-center gap-1 font-black text-xs uppercase tracking-wider hover:text-foreground',
@@ -377,10 +375,17 @@ function StudentRow({
     setIsSending(true);
 
     try {
-      const res = await sendStudentPerformanceReport(wsId, courseId, s.userId, locale);
+      const res = await sendStudentPerformanceReport(
+        wsId,
+        courseId,
+        s.userId,
+        locale
+      );
       if (res.message === 'success') {
         setIsSuccess(true);
-        toast.success(t('reportSentSuccess') || 'Performance report sent successfully.');
+        toast.success(
+          t('reportSentSuccess') || 'Performance report sent successfully.'
+        );
         setTimeout(() => setIsSuccess(false), 5000); // reset after 5s
       } else {
         toast.error(t('reportSentError') || 'Failed to send report.');
@@ -407,9 +412,9 @@ function StudentRow({
           <span
             className={cn(
               'flex h-7 w-7 shrink-0 items-center justify-center border-2 border-border font-black text-[10px]',
-              rowRisk === 'danger' && 'bg-dynamic-red/20 border-dynamic-red/50',
+              rowRisk === 'danger' && 'border-dynamic-red/50 bg-dynamic-red/20',
               rowRisk === 'warning' &&
-                'bg-dynamic-yellow/20 border-dynamic-yellow/50',
+                'border-dynamic-yellow/50 bg-dynamic-yellow/20',
               rowRisk === 'ok' && 'bg-muted'
             )}
           >
@@ -431,7 +436,7 @@ function StudentRow({
         {s.hasNotSubmitted ? (
           <span className="text-muted-foreground text-xs">—</span>
         ) : s.scorePercent === null ? (
-          <span className="inline-flex items-center gap-1 text-dynamic-yellow text-xs font-bold">
+          <span className="inline-flex items-center gap-1 font-bold text-dynamic-yellow text-xs">
             <Clock className="h-3 w-3" />
             {t('pending') || 'Pending'}
           </span>
@@ -497,7 +502,10 @@ function StudentRow({
       {/* Last active */}
       <td className="py-3 pr-3">
         {s.lastActivityAt ? (
-          <span className="text-muted-foreground text-xs" title={s.lastActivityAt}>
+          <span
+            className="text-muted-foreground text-xs"
+            title={s.lastActivityAt}
+          >
             {formatRelativeTime(s.lastActivityAt)}
           </span>
         ) : (
@@ -509,17 +517,37 @@ function StudentRow({
       <td className="py-3 pr-3">
         <div className="flex flex-wrap gap-1">
           {s.hasNotSubmitted && (
-            <Badge icon={XCircle} label={t('neverSubmitted') || 'Never submitted'} variant="danger" />
+            <Badge
+              icon={XCircle}
+              label={t('neverSubmitted') || 'Never submitted'}
+              variant="danger"
+            />
           )}
           {s.isLowScorer && (
-            <Badge icon={TrendingDown} label={t('lowScore') || 'Low score'} variant="warning" />
+            <Badge
+              icon={TrendingDown}
+              label={t('lowScore') || 'Low score'}
+              variant="warning"
+            />
           )}
-          {s.pendingGradingCount > 0 && !s.hasNotSubmitted && !s.isLowScorer && (
-            <Badge icon={Clock} label={t('awaitingGrade') || 'Awaiting grade'} variant="info" />
-          )}
-          {!s.hasNotSubmitted && !s.isLowScorer && s.pendingGradingCount === 0 && (
-            <Badge icon={CheckCircle2} label={t('onTrack') || 'On track'} variant="ok" />
-          )}
+          {s.pendingGradingCount > 0 &&
+            !s.hasNotSubmitted &&
+            !s.isLowScorer && (
+              <Badge
+                icon={Clock}
+                label={t('awaitingGrade') || 'Awaiting grade'}
+                variant="info"
+              />
+            )}
+          {!s.hasNotSubmitted &&
+            !s.isLowScorer &&
+            s.pendingGradingCount === 0 && (
+              <Badge
+                icon={CheckCircle2}
+                label={t('onTrack') || 'On track'}
+                variant="ok"
+              />
+            )}
         </div>
       </td>
 
@@ -530,8 +558,9 @@ function StudentRow({
             onClick={handleSendReport}
             disabled={isSending}
             className={cn(
-              "inline-flex items-center gap-1.5 border-2 border-border bg-background px-2.5 py-1.5 font-bold text-xs shadow-[2px_2px_0_var(--border)] transition hover:-translate-y-0.5 disabled:opacity-50",
-              isSuccess && "border-dynamic-green text-dynamic-green bg-dynamic-green/5 shadow-none pointer-events-none"
+              'inline-flex items-center gap-1.5 border-2 border-border bg-background px-2.5 py-1.5 font-bold text-xs shadow-[2px_2px_0_var(--border)] transition hover:-translate-y-0.5 disabled:opacity-50',
+              isSuccess &&
+                'pointer-events-none border-dynamic-green bg-dynamic-green/5 text-dynamic-green shadow-none'
             )}
             type="button"
           >
@@ -542,7 +571,7 @@ function StudentRow({
             ) : (
               <Mail className="h-3 w-3" />
             )}
-            {isSuccess ? (t('sent') || 'Sent') : (t('sendReport') || 'Send Report')}
+            {isSuccess ? t('sent') || 'Sent' : t('sendReport') || 'Send Report'}
           </button>
         )}
       </td>
@@ -561,7 +590,8 @@ function Badge({
 }) {
   const styles = {
     danger: 'border-dynamic-red/50 bg-dynamic-red/10 text-dynamic-red',
-    warning: 'border-dynamic-yellow/50 bg-dynamic-yellow/10 text-dynamic-yellow',
+    warning:
+      'border-dynamic-yellow/50 bg-dynamic-yellow/10 text-dynamic-yellow',
     info: 'border-dynamic-cyan/50 bg-dynamic-cyan/10 text-dynamic-cyan',
     ok: 'border-dynamic-green/50 bg-dynamic-green/10 text-dynamic-green',
   };
@@ -597,10 +627,7 @@ function SummaryChip({
   };
   return (
     <div
-      className={cn(
-        'flex items-center gap-3 border-2 p-3',
-        styles[variant]
-      )}
+      className={cn('flex items-center gap-3 border-2 p-3', styles[variant])}
     >
       <Icon
         className={cn(

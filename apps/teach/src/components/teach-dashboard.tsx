@@ -12,9 +12,9 @@ import {
   UsersRound,
 } from '@tuturuuu/icons';
 import type {
+  TeachDashboardStatsResponse,
   TulearnBootstrapResponse,
   TulearnWorkspaceSummary,
-  TeachDashboardStatsResponse,
 } from '@tuturuuu/internal-api';
 import { cn } from '@tuturuuu/utils/format';
 import { getTranslations } from 'next-intl/server';

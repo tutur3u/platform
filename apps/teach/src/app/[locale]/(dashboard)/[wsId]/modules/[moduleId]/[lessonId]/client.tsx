@@ -205,8 +205,6 @@ export function LessonDetailClient({
             {t('attachFiles')}
           </button>
 
-
-
           {/* Published toggle */}
           <button
             className={cn(

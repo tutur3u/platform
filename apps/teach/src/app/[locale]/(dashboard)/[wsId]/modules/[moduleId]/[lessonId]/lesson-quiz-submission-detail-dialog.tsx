@@ -173,7 +173,9 @@ function SubmissionContent({
             key={quiz.id}
             quiz={quiz}
             index={index}
-            quizAnswer={answers.find((answer) => answer.quiz_id === quiz.id) ?? null}
+            quizAnswer={
+              answers.find((answer) => answer.quiz_id === quiz.id) ?? null
+            }
             t={t}
             wsId={wsId}
             courseId={courseId}
@@ -267,9 +269,7 @@ function QuizResponseCard({
           <span className="flex h-7 w-7 shrink-0 items-center justify-center border-2 border-border font-black text-xs shadow-[1px_1px_0_var(--border)]">
             {index + 1}
           </span>
-          <h4 className="font-bold text-sm sm:text-base">
-            {quiz.question}
-          </h4>
+          <h4 className="font-bold text-sm sm:text-base">{quiz.question}</h4>
         </div>
 
         <div className="flex items-center gap-2">
@@ -277,7 +277,7 @@ function QuizResponseCard({
             <button
               onClick={handleAiFeedback}
               disabled={isAiLoading}
-              className="inline-flex items-center gap-1 border border-border bg-background px-2 py-0.5 text-xs font-bold shadow-[1px_1px_0_var(--border)] hover:-translate-y-0.5 disabled:opacity-50 cursor-pointer transition"
+              className="inline-flex cursor-pointer items-center gap-1 border border-border bg-background px-2 py-0.5 font-bold text-xs shadow-[1px_1px_0_var(--border)] transition hover:-translate-y-0.5 disabled:opacity-50"
             >
               {isAiLoading ? (
                 <Loader2 className="h-3 w-3 animate-spin text-primary" />
@@ -313,11 +313,11 @@ function QuizResponseCard({
       </div>
 
       {displayedAiFeedback && (
-        <div className="border-2 border-primary bg-primary/5 p-4 text-xs shadow-[2px_2px_0_var(--border)] space-y-1">
-          <span className="block font-black uppercase text-[10px] tracking-wider text-primary">
+        <div className="space-y-1 border-2 border-primary bg-primary/5 p-4 text-xs shadow-[2px_2px_0_var(--border)]">
+          <span className="block font-black text-[10px] text-primary uppercase tracking-wider">
             \u2728 AI Feedback
           </span>
-          <p className="leading-relaxed font-medium">{displayedAiFeedback}</p>
+          <p className="font-medium leading-relaxed">{displayedAiFeedback}</p>
         </div>
       )}
 
@@ -401,11 +401,18 @@ function FeedbackOnlyControls({
           ],
         }),
         qc.invalidateQueries({
-          queryKey: ['course-module-quiz-submissions', wsId, courseId, moduleId],
+          queryKey: [
+            'course-module-quiz-submissions',
+            wsId,
+            courseId,
+            moduleId,
+          ],
         }),
       ]);
     } catch (err) {
-      toast.error(t('teachModules.feedbackSaveError') || 'Failed to save feedback');
+      toast.error(
+        t('teachModules.feedbackSaveError') || 'Failed to save feedback'
+      );
       console.error(err);
     } finally {
       setIsSaving(false);
@@ -417,7 +424,7 @@ function FeedbackOnlyControls({
       <div className="mt-2">
         <button
           onClick={() => setShowFeedback(true)}
-          className="text-xs font-bold text-muted-foreground underline underline-offset-2 hover:text-foreground transition"
+          className="font-bold text-muted-foreground text-xs underline underline-offset-2 transition hover:text-foreground"
           type="button"
         >
           {t('teachModules.addFeedback') || '+ Add teacher feedback'}
@@ -427,9 +434,9 @@ function FeedbackOnlyControls({
   }
 
   return (
-    <div className="mt-4 border-2 border-border bg-muted/20 p-4 space-y-3 shadow-[2px_2px_0_var(--border)]">
+    <div className="mt-4 space-y-3 border-2 border-border bg-muted/20 p-4 shadow-[2px_2px_0_var(--border)]">
       <div className="space-y-1">
-        <label className="block font-bold text-xs uppercase tracking-widest text-muted-foreground">
+        <label className="block font-bold text-muted-foreground text-xs uppercase tracking-widest">
           {t('teachModules.feedback') || 'Teacher Feedback'}
         </label>
         <textarea
@@ -452,15 +459,13 @@ function FeedbackOnlyControls({
           className="inline-flex items-center gap-1.5 border-2 border-border bg-background px-3 py-1.5 font-bold text-xs shadow-[2px_2px_0_var(--border)] transition hover:-translate-y-0.5 disabled:opacity-50"
           type="button"
         >
-          {isSaving ? (
-            <Loader2 className="h-3 w-3 animate-spin" />
-          ) : null}
+          {isSaving ? <Loader2 className="h-3 w-3 animate-spin" /> : null}
           {t('teachModules.saveFeedback') || 'Save Feedback'}
         </button>
         <button
           onClick={() => setShowFeedback(false)}
           disabled={isSaving}
-          className="text-xs text-muted-foreground hover:text-foreground transition"
+          className="text-muted-foreground text-xs transition hover:text-foreground"
           type="button"
         >
           {t('common.cancel') || 'Cancel'}
@@ -496,7 +501,9 @@ function ParagraphGradeControls({
   const handleGrade = async (isCorrect: boolean, customFeedback?: string) => {
     setIsGrading(true);
     try {
-      const finalFeedback = (customFeedback !== undefined ? customFeedback : feedback).trim();
+      const finalFeedback = (
+        customFeedback !== undefined ? customFeedback : feedback
+      ).trim();
       await gradeWorkspaceCourseModuleQuizSubmission(
         wsId,
         courseId,
@@ -554,7 +561,9 @@ function ParagraphGradeControls({
       if (res.suggested_is_correct !== null) {
         await handleGrade(res.suggested_is_correct, res.explanation);
       } else {
-        toast.info('AI review completed, but no grade suggestion was generated.');
+        toast.info(
+          'AI review completed, but no grade suggestion was generated.'
+        );
       }
     } catch (err) {
       toast.error('Failed to perform AI review');
@@ -565,9 +574,9 @@ function ParagraphGradeControls({
   };
 
   return (
-    <div className="mt-4 border-2 border-border bg-muted/20 p-4 space-y-3 shadow-[2px_2px_0_var(--border)]">
+    <div className="mt-4 space-y-3 border-2 border-border bg-muted/20 p-4 shadow-[2px_2px_0_var(--border)]">
       <div className="space-y-1">
-        <label className="block font-bold text-xs uppercase tracking-widest text-muted-foreground">
+        <label className="block font-bold text-muted-foreground text-xs uppercase tracking-widest">
           {t('teachModules.feedback') || 'Teacher Feedback'}
         </label>
         <textarea
@@ -617,7 +626,7 @@ function ParagraphGradeControls({
         <button
           onClick={handleAiGrade}
           disabled={isGrading || isAiLoading}
-          className="inline-flex items-center gap-1.5 border-2 border-primary bg-primary/5 hover:bg-primary/10 px-3 py-1.5 font-bold text-xs shadow-[2px_2px_0_var(--border)] transition hover:-translate-y-0.5 disabled:opacity-50 cursor-pointer"
+          className="inline-flex cursor-pointer items-center gap-1.5 border-2 border-primary bg-primary/5 px-3 py-1.5 font-bold text-xs shadow-[2px_2px_0_var(--border)] transition hover:-translate-y-0.5 hover:bg-primary/10 disabled:opacity-50"
           type="button"
         >
           {isAiLoading ? (

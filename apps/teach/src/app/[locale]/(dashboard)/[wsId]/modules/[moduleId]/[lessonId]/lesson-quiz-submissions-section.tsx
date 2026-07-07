@@ -1,7 +1,15 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { CheckCircle, Clock, Eye, EyeOff, User, Users, XCircle } from '@tuturuuu/icons';
+import {
+  CheckCircle,
+  Clock,
+  Eye,
+  EyeOff,
+  User,
+  Users,
+  XCircle,
+} from '@tuturuuu/icons';
 import {
   listWorkspaceCourseModuleQuizSubmissions,
   type TeachModuleQuizSubmission,
@@ -100,35 +108,43 @@ export function LessonQuizSubmissionsSection({
         <div className="flex flex-wrap items-center gap-3">
           {/* Quiz Deadline setting */}
           <div className="flex items-center gap-2 border-2 border-border bg-card px-2.5 py-1.5 text-xs shadow-[2px_2px_0_var(--border)]">
-            <span className="font-bold text-muted-foreground">{t('teachModules.quizDeadline') || 'Deadline'}:</span>
+            <span className="font-bold text-muted-foreground">
+              {t('teachModules.quizDeadline') || 'Deadline'}:
+            </span>
             <input
               type="datetime-local"
-              className="bg-transparent border-none outline-none font-bold text-foreground focus:ring-0 p-0 text-xs w-[145px]"
+              className="w-[145px] border-none bg-transparent p-0 font-bold text-foreground text-xs outline-none focus:ring-0"
               value={localDeadline}
               onChange={(e) => setLocalDeadline(e.target.value)}
               disabled={isSaving}
             />
             {localDeadline !== toLocalDateTimeString(quizDeadline) && (
-              <div className="flex items-center gap-1.5 border-l border-border pl-2">
+              <div className="flex items-center gap-1.5 border-border border-l pl-2">
                 <button
                   type="button"
                   disabled={isSaving}
                   onClick={() => {
-                    const parsedDate = localDeadline ? new Date(localDeadline) : null;
+                    const parsedDate = localDeadline
+                      ? new Date(localDeadline)
+                      : null;
                     if (parsedDate && isNaN(parsedDate.getTime())) {
                       return;
                     }
-                    onQuizDeadlineChange?.(parsedDate ? parsedDate.toISOString() : null);
+                    onQuizDeadlineChange?.(
+                      parsedDate ? parsedDate.toISOString() : null
+                    );
                   }}
-                  className="font-black text-dynamic-green hover:underline cursor-pointer disabled:opacity-50"
+                  className="cursor-pointer font-black text-dynamic-green hover:underline disabled:opacity-50"
                 >
                   Save
                 </button>
                 <button
                   type="button"
                   disabled={isSaving}
-                  onClick={() => setLocalDeadline(toLocalDateTimeString(quizDeadline))}
-                  className="text-muted-foreground hover:underline cursor-pointer disabled:opacity-50"
+                  onClick={() =>
+                    setLocalDeadline(toLocalDateTimeString(quizDeadline))
+                  }
+                  className="cursor-pointer text-muted-foreground hover:underline disabled:opacity-50"
                 >
                   Cancel
                 </button>

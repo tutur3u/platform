@@ -8,7 +8,10 @@ import {
   TrendingDown,
   Users,
 } from '@tuturuuu/icons';
-import type { TeachDashboardCourseStat, TeachDashboardStatsResponse } from '@tuturuuu/internal-api';
+import type {
+  TeachDashboardCourseStat,
+  TeachDashboardStatsResponse,
+} from '@tuturuuu/internal-api';
 import { cn } from '@tuturuuu/utils/format';
 import { getTranslations } from 'next-intl/server';
 
@@ -39,7 +42,9 @@ export async function TeachRealtimePanel({
             </span>
             {t('realtimeEyebrow') || 'Real-time Overview'}
           </p>
-          <h2 className="font-black text-3xl">{t('realtimeTitle') || 'Course Status Dashboard'}</h2>
+          <h2 className="font-black text-3xl">
+            {t('realtimeTitle') || 'Course Status Dashboard'}
+          </h2>
           <p className="mt-2 max-w-2xl text-muted-foreground text-sm leading-6">
             {t('realtimeLead') ||
               'Top 5 active courses — students, pending grading, unsubmitted work, and low scorers.'}
@@ -81,9 +86,12 @@ export async function TeachRealtimePanel({
       {/* Course table / cards */}
       {!stats || stats.courses.length === 0 ? (
         <div className="border-2 border-border border-dashed bg-muted/40 p-10 text-center shadow-[4px_4px_0_var(--border)]">
-          <p className="font-black text-xl">{t('emptyGroupsTitle') || 'No active courses'}</p>
+          <p className="font-black text-xl">
+            {t('emptyGroupsTitle') || 'No active courses'}
+          </p>
           <p className="mt-3 text-muted-foreground text-sm">
-            {t('emptyGroupsBody') || 'Create a course group to see real-time stats here.'}
+            {t('emptyGroupsBody') ||
+              'Create a course group to see real-time stats here.'}
           </p>
         </div>
       ) : (
@@ -122,7 +130,9 @@ function AlertBadge({
       'border-dynamic-red bg-dynamic-red/10 text-dynamic-red shadow-[3px_3px_0_hsl(var(--dynamic-red)/0.4)]',
   };
   return (
-    <div className={cn('flex items-center gap-4 border-2 p-4', styles[variant])}>
+    <div
+      className={cn('flex items-center gap-4 border-2 p-4', styles[variant])}
+    >
       <Icon className="h-6 w-6 shrink-0 opacity-80" />
       <div>
         <p className="font-black text-2xl tabular-nums">{count}</p>
@@ -164,7 +174,7 @@ function CourseStatRow({
               {course.name}
             </a>
             {allClear && (
-              <span className="mt-0.5 inline-flex items-center gap-1 text-dynamic-green text-xs font-bold">
+              <span className="mt-0.5 inline-flex items-center gap-1 font-bold text-dynamic-green text-xs">
                 <CheckCircle2 className="h-3.5 w-3.5" />
                 {t('allClear') || 'All clear'}
               </span>
@@ -244,18 +254,26 @@ function StatChip({
 }) {
   const styles = {
     neutral: 'border-border bg-muted/50 text-foreground',
-    warning: 'border-dynamic-yellow/50 bg-dynamic-yellow/10 text-dynamic-yellow',
+    warning:
+      'border-dynamic-yellow/50 bg-dynamic-yellow/10 text-dynamic-yellow',
     info: 'border-dynamic-cyan/50 bg-dynamic-cyan/10 text-dynamic-cyan',
     danger: 'border-dynamic-red/50 bg-dynamic-red/10 text-dynamic-red',
   };
   return (
     <div
-      className={cn('flex items-center gap-1.5 border-2 px-2 py-1.5', styles[variant])}
+      className={cn(
+        'flex items-center gap-1.5 border-2 px-2 py-1.5',
+        styles[variant]
+      )}
     >
       {Icon && <Icon className="h-3.5 w-3.5 shrink-0 opacity-70" />}
       <div>
-        <p className="font-black text-base tabular-nums leading-none">{value}</p>
-        <p className="mt-0.5 truncate text-[10px] font-bold opacity-70">{label}</p>
+        <p className="font-black text-base tabular-nums leading-none">
+          {value}
+        </p>
+        <p className="mt-0.5 truncate font-bold text-[10px] opacity-70">
+          {label}
+        </p>
       </div>
     </div>
   );
