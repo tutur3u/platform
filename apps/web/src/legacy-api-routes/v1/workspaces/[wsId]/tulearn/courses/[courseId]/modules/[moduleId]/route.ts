@@ -4,6 +4,7 @@ import type { Json } from '@tuturuuu/types';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
+import { updateModuleCompletionStatus } from '@/lib/tulearn/completion';
 import {
   asRecord,
   displayText,
@@ -427,6 +428,12 @@ export const POST = withSessionAuth<Params>(
 
       if (insertErr) throw insertErr;
 
+      await updateModuleCompletionStatus(
+        sbAdmin,
+        moduleId,
+        subject.studentPlatformUserId
+      );
+
       return NextResponse.json({
         id: submission.id,
         correct_answer: revealScores ? correctAnswerFeedback : null,
@@ -490,6 +497,12 @@ export const DELETE = withSessionAuth<Params>(
         .eq('user_id', subject.studentPlatformUserId);
 
       if (error) throw error;
+
+      await updateModuleCompletionStatus(
+        sbAdmin,
+        moduleId,
+        subject.studentPlatformUserId
+      );
 
       return NextResponse.json({ success: true });
     } catch (error) {

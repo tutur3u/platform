@@ -182,7 +182,7 @@ export async function getLearnerCourseSummaries({
 
   if (!courseIds.length) return [];
 
-  const [coursesResult, modulesResult, completionsResult] = await Promise.all([
+  const [coursesResult, modulesResult, completionsResult, moduleQuizzesResult] = await Promise.all([
     sbAdmin
       .from('workspace_user_groups')
       .select('id, name, description')
@@ -199,15 +199,27 @@ export async function getLearnerCourseSummaries({
       .select('module_id')
       .eq('user_id', studentPlatformUserId)
       .eq('completion_status', true),
+    sbAdmin
+      .from('workspace_course_modules')
+      .select('id, course_module_quizzes(quiz_id)')
+      .in('group_id', courseIds)
+      .eq('is_published', true),
   ]);
 
   if (coursesResult.error) throw coursesResult.error;
   if (modulesResult.error) throw modulesResult.error;
   if (completionsResult.error) throw completionsResult.error;
+  if (moduleQuizzesResult.error) throw moduleQuizzesResult.error;
 
   const completedModuleIds = new Set(
     (completionsResult.data ?? []).map((row) => row.module_id)
   );
+
+  const quizCountsByModule = new Map<string, number>();
+  for (const row of (moduleQuizzesResult.data ?? []) as any[]) {
+    quizCountsByModule.set(row.id, row.course_module_quizzes?.length ?? 0);
+  }
+
   const modulesByCourse = new Map<string, string[]>();
   for (const module of modulesResult.data ?? []) {
     const modules = modulesByCourse.get(module.group_id) ?? [];
@@ -217,9 +229,11 @@ export async function getLearnerCourseSummaries({
 
   return (coursesResult.data ?? []).map((course) => {
     const moduleIds = modulesByCourse.get(course.id) ?? [];
-    const completedModules = moduleIds.filter((moduleId) =>
-      completedModuleIds.has(moduleId)
-    ).length;
+    const completedModules = moduleIds.filter((moduleId) => {
+      const isCompletedInDb = completedModuleIds.has(moduleId);
+      const totalQuizzes = quizCountsByModule.get(moduleId) ?? 0;
+      return isCompletedInDb || totalQuizzes === 0;
+    }).length;
 
     return {
       id: course.id,
@@ -301,7 +315,7 @@ export async function getLearnerCourseDetail({
 
   const moduleIdList = moduleRows.map((module) => module.id);
   const moduleIds = new Set(moduleIdList);
-  const [completionsResult, flashcards, quizzes, quizSets, testsResult] =
+  const [completionsResult, flashcards, quizzes, quizSets, testsResult, submissionsResult] =
     await Promise.all([
       moduleIdList.length
         ? sbAdmin
@@ -320,9 +334,9 @@ export async function getLearnerCourseDetail({
       moduleIdList.length
         ? sbAdmin
             .from('course_module_quizzes')
-            .select('module_id')
+            .select('module_id, quiz_id')
             .in('module_id', moduleIdList)
-        : emptyModuleIdResult(),
+        : (emptyModuleIdResult() as any),
       moduleIdList.length
         ? sbAdmin
             .from('course_module_quiz_sets')
@@ -337,6 +351,13 @@ export async function getLearnerCourseDetail({
         .eq('course_id', courseId)
         .eq('is_published', true)
         .order('created_at', { ascending: false }),
+      moduleIdList.length
+        ? sbAdmin
+            .from('course_module_quiz_submissions')
+            .select('module_id, quiz_id, is_correct')
+            .eq('user_id', studentPlatformUserId)
+            .in('module_id', moduleIdList)
+        : emptyModuleIdResult(),
     ]);
 
   if (completionsResult.error) throw completionsResult.error;
@@ -344,6 +365,8 @@ export async function getLearnerCourseDetail({
   if (quizzes.error) throw quizzes.error;
   if (quizSets.error) throw quizSets.error;
   if (testsResult.error) throw testsResult.error;
+  if (submissionsResult.error) throw submissionsResult.error;
+
   const completedModuleIds = new Set(
     (completionsResult.data ?? []).map((row) => row.module_id)
   );
@@ -354,7 +377,15 @@ export async function getLearnerCourseDetail({
 
   let priorIncomplete = false;
   const modules: CourseModuleSummary[] = moduleRows.map((module) => {
-      const completed = completedModuleIds.has(module.id);
+      const moduleQuizzes = (quizzes.data ?? []).filter((q: any) => q.module_id === module.id);
+      const correctSubmissions = ((submissionsResult.data ?? []) as any[]).filter(
+        (s) => s.module_id === module.id && s.is_correct === true
+      );
+      const totalQuizCount = moduleQuizzes.length;
+      const correctQuizCount = correctSubmissions.length;
+      const isQuizPassed = totalQuizCount > 0 ? (correctQuizCount / totalQuizCount >= 0.5) : true;
+
+      const completed = completedModuleIds.has(module.id) || isQuizPassed;
       const locked = !module.is_published || priorIncomplete;
       if (!completed && module.is_published) priorIncomplete = true;
 

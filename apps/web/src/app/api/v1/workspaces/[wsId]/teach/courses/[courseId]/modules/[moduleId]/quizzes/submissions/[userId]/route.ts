@@ -2,6 +2,7 @@ import type { Json } from '@tuturuuu/types';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
+import { updateModuleCompletionStatus } from '@/lib/tulearn/completion';
 import {
   requireTeachWorkspaceAccess,
   validateTeachCourse,
@@ -306,6 +307,12 @@ export const POST = withSessionAuth(
         .eq('user_id', userId);
 
       if (updateErr) throw updateErr;
+
+      await updateModuleCompletionStatus(
+        access.sbAdmin,
+        moduleId,
+        userId
+      );
 
       return NextResponse.json({ success: true });
     } catch (error) {
