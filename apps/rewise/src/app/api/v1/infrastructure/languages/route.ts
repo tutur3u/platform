@@ -1,7 +1,17 @@
+import {
+  getSharedAndHostOnlyCookieDeleteOptions,
+  getTuturuuuSharedCookieOptions,
+} from '@tuturuuu/utils/shared-cookie';
 import { cookies as c } from 'next/headers';
 import { NextResponse } from 'next/server';
 import { LOCALE_COOKIE_NAME } from '@/constants/common';
 import { supportedLocales } from '@/i18n/routing';
+
+const LOCALE_COOKIE_OPTIONS = {
+  maxAge: 365 * 24 * 60 * 60,
+  path: '/',
+  sameSite: 'lax',
+} as const;
 
 export async function POST(req: Request) {
   const cookies = await c();
@@ -23,13 +33,22 @@ export async function POST(req: Request) {
       { status: 500 }
     );
 
-  cookies.set(LOCALE_COOKIE_NAME, locale);
+  cookies.set(
+    LOCALE_COOKIE_NAME,
+    locale,
+    getTuturuuuSharedCookieOptions(LOCALE_COOKIE_OPTIONS, req)
+  );
   return NextResponse.json({ message: 'Success' });
 }
 
-export async function DELETE() {
+export async function DELETE(req: Request) {
   const cookies = await c();
 
-  cookies.delete(LOCALE_COOKIE_NAME);
+  for (const options of getSharedAndHostOnlyCookieDeleteOptions(
+    LOCALE_COOKIE_OPTIONS,
+    req
+  )) {
+    cookies.set(LOCALE_COOKIE_NAME, '', options);
+  }
   return NextResponse.json({ message: 'Success' });
 }

@@ -1,4 +1,13 @@
 {
+  "account_switcher": {
+    "accounts": "Accounts",
+    "current_account": "Current Account",
+    "manage_accounts": "Manage Accounts",
+    "please_wait": "Please wait...",
+    "remove_account": "Remove account",
+    "switch_account": "Switch Account",
+    "unknown_user": "Unknown User"
+  },
   "command_launcher": {
     "apps": "Apps",
     "apps_description": "Open another Tuturuuu app from this workspace.",

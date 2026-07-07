@@ -1,6 +1,7 @@
 'use client';
 
 import { SystemLanguageDropdownItem as SharedSystemLanguageDropdownItem } from '@tuturuuu/ui/custom/system-language-dropdown-item';
+import { getSharedAndHostOnlyCookieDeleteOptions } from '@tuturuuu/utils/shared-cookie';
 import { deleteCookie } from 'cookies-next';
 import { LOCALE_COOKIE_NAME } from '../constants/common';
 
@@ -10,7 +11,12 @@ interface Props {
 
 export function SystemLanguageDropdownItem({ selected }: Props) {
   const handleResetLocale = () => {
-    deleteCookie(LOCALE_COOKIE_NAME);
+    for (const options of getSharedAndHostOnlyCookieDeleteOptions({
+      path: '/',
+      sameSite: 'lax',
+    })) {
+      deleteCookie(LOCALE_COOKIE_NAME, options);
+    }
   };
 
   return (

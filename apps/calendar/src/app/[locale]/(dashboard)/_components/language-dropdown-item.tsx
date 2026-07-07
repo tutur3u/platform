@@ -1,6 +1,7 @@
 'use client';
 
 import { LanguageDropdownItem as SharedLanguageDropdownItem } from '@tuturuuu/ui/custom/language-dropdown-item';
+import { getTuturuuuBrowserSharedCookieOptions } from '@tuturuuu/utils/shared-cookie';
 import { setCookie } from 'cookies-next';
 import { LOCALE_COOKIE_NAME } from '@/constants/common';
 
@@ -12,7 +13,15 @@ interface Props {
 
 export function LanguageDropdownItem({ label, locale, selected }: Props) {
   const handleLocaleChange = (newLocale: string) => {
-    setCookie(LOCALE_COOKIE_NAME, newLocale);
+    setCookie(
+      LOCALE_COOKIE_NAME,
+      newLocale,
+      getTuturuuuBrowserSharedCookieOptions({
+        maxAge: 365 * 24 * 60 * 60,
+        path: '/',
+        sameSite: 'lax',
+      })
+    );
   };
 
   return (

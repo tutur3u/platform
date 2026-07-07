@@ -132,6 +132,7 @@ describe('auth internal API helpers', () => {
       'https://internal.example.com/api/v1/auth/accounts',
       expect.objectContaining({
         cache: 'no-store',
+        credentials: 'include',
       })
     );
   });
@@ -159,6 +160,7 @@ describe('auth internal API helpers', () => {
       expect.objectContaining({
         body: JSON.stringify(payload),
         cache: 'no-store',
+        credentials: 'include',
         method: 'POST',
       })
     );
@@ -188,6 +190,7 @@ describe('auth internal API helpers', () => {
     expect(fetchMock).toHaveBeenCalledWith(
       'https://internal.example.com/api/v1/auth/accounts/switch',
       expect.objectContaining({
+        credentials: 'include',
         method: 'POST',
       })
     );
@@ -218,6 +221,7 @@ describe('auth internal API helpers', () => {
       'https://internal.example.com/api/v1/auth/accounts/logout-all',
       expect.objectContaining({
         cache: 'no-store',
+        credentials: 'include',
         method: 'POST',
       })
     );

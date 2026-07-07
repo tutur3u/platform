@@ -11,12 +11,12 @@ import {
   createDeviceSecret,
   decryptSession,
   encryptSession,
+  getAllDeviceCookieClearTargets,
   getDeviceCookieName,
   getDeviceCookieOptions,
-  getExpiredDeviceCookieOptions,
-  getLegacyDeviceCookieClearOptions,
+  getDeviceCookieReadNames,
+  getStaleDeviceCookieClearTargets,
   hashDeviceSecret,
-  LEGACY_WEB_ACCOUNT_DEVICE_COOKIE_NAME,
   parseDeviceCookieValue,
 } from './crypto';
 import {
@@ -134,22 +134,47 @@ function rowToAccountSummary(row: AccountRow): WebAccountSummary {
   };
 }
 
-function clearStaleLegacyDeviceCookies(
+function clearStaleDeviceCookies(
   cookieStore: Awaited<ReturnType<typeof cookies>>,
-  request: Pick<Request, 'headers' | 'url'>,
-  activeCookieName: string
+  request: Pick<Request, 'headers' | 'url'>
 ) {
-  // Only migrate away from the legacy cookie when the active cookie uses the
-  // hardened __Host- name. On localhost dev/E2E the active cookie *is* the
-  // legacy cookie, and the response cookie store is keyed by name, so clearing
-  // it here would clobber the value we just set and drop the device entirely.
-  if (activeCookieName === LEGACY_WEB_ACCOUNT_DEVICE_COOKIE_NAME) {
-    return;
+  for (const target of getStaleDeviceCookieClearTargets(request)) {
+    cookieStore.set(target.name, '', target.options);
   }
+}
 
-  for (const options of getLegacyDeviceCookieClearOptions(request)) {
-    cookieStore.set(LEGACY_WEB_ACCOUNT_DEVICE_COOKIE_NAME, '', options);
-  }
+function getCookieHeaderValues(
+  request: Pick<Request, 'headers' | 'url'>,
+  name: string
+) {
+  const cookieHeader = request.headers.get('cookie');
+
+  if (!cookieHeader) return [];
+
+  return cookieHeader.split(';').flatMap((cookie) => {
+    const [cookieName, ...valueParts] = cookie.trim().split('=');
+    if (cookieName !== name) return [];
+    const value = valueParts.join('=').trim();
+    return value ? [value] : [];
+  });
+}
+
+function getDeviceCredentialCandidates(
+  request: Pick<Request, 'headers' | 'url'>,
+  cookieStore: Awaited<ReturnType<typeof cookies>>
+) {
+  return getDeviceCookieReadNames(request).flatMap((cookieName) => {
+    const headerValues = getCookieHeaderValues(request, cookieName);
+    const values =
+      headerValues.length > 0
+        ? [...headerValues].reverse()
+        : [cookieStore.get(cookieName)?.value].filter(Boolean);
+
+    return values.flatMap((value) => {
+      const credential = parseDeviceCookieValue(value);
+      return credential ? [credential] : [];
+    });
+  });
 }
 
 async function setDeviceCookie(
@@ -158,21 +183,21 @@ async function setDeviceCookie(
 ) {
   const cookieStore = await cookies();
   const cookieName = getDeviceCookieName(request);
+
+  clearStaleDeviceCookies(cookieStore, request);
+
   cookieStore.set(
     cookieName,
     createDeviceCookieValue(device.deviceId, device.secret),
     getDeviceCookieOptions(request)
   );
-
-  clearStaleLegacyDeviceCookies(cookieStore, request, cookieName);
 }
 
 async function clearDeviceCookie(request: Pick<Request, 'headers' | 'url'>) {
   const cookieStore = await cookies();
-  const cookieName = getDeviceCookieName(request);
-  cookieStore.set(cookieName, '', getExpiredDeviceCookieOptions(request));
-
-  clearStaleLegacyDeviceCookies(cookieStore, request, cookieName);
+  for (const target of getAllDeviceCookieClearTargets(request)) {
+    cookieStore.set(target.name, '', target.options);
+  }
 }
 
 async function resolveDevice(
@@ -180,12 +205,10 @@ async function resolveDevice(
   options: { create: boolean }
 ): Promise<WebAccountDevice | null> {
   const cookieStore = await cookies();
-  const credential = parseDeviceCookieValue(
-    cookieStore.get(getDeviceCookieName(request))?.value
-  );
+  const credentials = getDeviceCredentialCandidates(request, cookieStore);
   const db = await getPrivateDb();
 
-  if (credential) {
+  for (const credential of credentials) {
     const { data } = await db
       .from('web_account_devices')
       .select('id, secret_hash, active_user_id, revoked_at')

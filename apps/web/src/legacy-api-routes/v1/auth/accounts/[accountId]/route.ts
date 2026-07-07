@@ -1,10 +1,15 @@
 import { unstable_rethrow } from 'next/navigation';
-import { type NextRequest, NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
 import {
   createAuthDiagnosticCode,
   logAuthDiagnostic,
 } from '@/lib/auth/diagnostics';
 import { removeWebAccount } from '@/lib/auth/multi-account/vault';
+import { accountCorsJson, accountCorsPreflight } from '../cors';
+
+export function OPTIONS(request: NextRequest) {
+  return accountCorsPreflight(request);
+}
 
 export async function DELETE(
   request: NextRequest,
@@ -13,7 +18,7 @@ export async function DELETE(
   const { accountId } = await params;
 
   try {
-    return NextResponse.json(await removeWebAccount(request, accountId));
+    return accountCorsJson(request, await removeWebAccount(request, accountId));
   } catch (error) {
     unstable_rethrow(error);
 
@@ -28,7 +33,8 @@ export async function DELETE(
       stage: 'account_remove',
     });
 
-    return NextResponse.json(
+    return accountCorsJson(
+      request,
       { diagnosticCode, error: 'Failed to remove account' },
       { status: 500 }
     );

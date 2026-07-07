@@ -1,6 +1,7 @@
 'use client';
 
 import { useLocalStorage } from '@tuturuuu/ui/hooks/use-local-storage';
+import { getTuturuuuBrowserSharedCookieOptions } from '@tuturuuu/utils/shared-cookie';
 import { setCookie } from 'cookies-next';
 import {
   type ComponentType,
@@ -39,6 +40,10 @@ export const SIDEBAR_COOKIE_OPTIONS = {
   maxAge: 365 * 24 * 60 * 60,
   path: '/',
 } as const;
+
+export function getSidebarCookieOptions() {
+  return getTuturuuuBrowserSharedCookieOptions(SIDEBAR_COOKIE_OPTIONS);
+}
 
 function parseSidebarBehaviorUpdatedAt(value: string | undefined | null) {
   if (!value) return null;
@@ -136,7 +141,7 @@ export const SidebarProvider = ({
       setCookie(
         SIDEBAR_BEHAVIOR_COOKIE_NAME,
         newBehavior,
-        SIDEBAR_COOKIE_OPTIONS
+        getSidebarCookieOptions()
       );
 
       if (!options.markLocalChange) return;
@@ -146,7 +151,7 @@ export const SidebarProvider = ({
       setCookie(
         SIDEBAR_BEHAVIOR_UPDATED_AT_COOKIE_NAME,
         String(updatedAt),
-        SIDEBAR_COOKIE_OPTIONS
+        getSidebarCookieOptions()
       );
     },
     []

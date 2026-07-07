@@ -1,9 +1,9 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
+  getSidebarCookieOptions,
   SIDEBAR_BEHAVIOR_COOKIE_NAME,
   SIDEBAR_BEHAVIOR_UPDATED_AT_COOKIE_NAME,
-  SIDEBAR_COOKIE_OPTIONS,
   SidebarProvider,
   useSidebar,
 } from '../sidebar-context';
@@ -53,12 +53,12 @@ describe('SidebarProvider', () => {
     expect(mockSetCookie).toHaveBeenCalledWith(
       SIDEBAR_BEHAVIOR_COOKIE_NAME,
       'collapsed',
-      SIDEBAR_COOKIE_OPTIONS
+      getSidebarCookieOptions()
     );
     expect(mockSetCookie).toHaveBeenCalledWith(
       SIDEBAR_BEHAVIOR_UPDATED_AT_COOKIE_NAME,
       '1234567890',
-      SIDEBAR_COOKIE_OPTIONS
+      getSidebarCookieOptions()
     );
   });
 });

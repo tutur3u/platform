@@ -386,6 +386,7 @@ export async function listWebAccountsWithInternalApi(
   const client = getInternalApiClient(options);
   return client.json<WebAccountsResponse>('/api/v1/auth/accounts', {
     cache: 'no-store',
+    credentials: 'include',
   });
 }
 
@@ -397,6 +398,7 @@ export async function saveCurrentWebAccountWithInternalApi(
   const response = await client.fetch('/api/v1/auth/accounts/current', {
     body: JSON.stringify(payload),
     cache: 'no-store',
+    credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
     },
@@ -413,6 +415,7 @@ export async function updateCurrentWebAccountWithInternalApi(
   return client.json<WebAccountsResponse>('/api/v1/auth/accounts/current', {
     body: JSON.stringify(payload),
     cache: 'no-store',
+    credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
     },
@@ -432,6 +435,7 @@ export async function switchWebAccountWithInternalApi(
       accountId,
     }),
     cache: 'no-store',
+    credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
     },
@@ -449,6 +453,7 @@ export async function removeWebAccountWithInternalApi(
     `/api/v1/auth/accounts/${encodePathSegment(accountId)}`,
     {
       cache: 'no-store',
+      credentials: 'include',
       method: 'DELETE',
     }
   );
@@ -461,6 +466,7 @@ export async function logoutCurrentWebAccountWithInternalApi(
   const client = getInternalApiClient(options);
   const response = await client.fetch('/api/v1/auth/accounts/logout', {
     cache: 'no-store',
+    credentials: 'include',
     method: 'POST',
   });
   return parseAuthResponse<WebAccountMutationResponse>(response);
@@ -472,6 +478,7 @@ export async function logoutAllWebAccountsWithInternalApi(
   const client = getInternalApiClient(options);
   const response = await client.fetch('/api/v1/auth/accounts/logout-all', {
     cache: 'no-store',
+    credentials: 'include',
     method: 'POST',
   });
   return parseAuthResponse<WebAccountMutationResponse>(response);

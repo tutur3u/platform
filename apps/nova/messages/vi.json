@@ -1,4 +1,13 @@
 {
+  "account_switcher": {
+    "accounts": "Tài khoản",
+    "current_account": "Tài khoản hiện tại",
+    "manage_accounts": "Quản lý tài khoản",
+    "please_wait": "Vui lòng chờ...",
+    "remove_account": "Xóa tài khoản",
+    "switch_account": "Chuyển tài khoản",
+    "unknown_user": "Người dùng không xác định"
+  },
   "ai_chat": {
     "add_attachments": "Thêm tệp đính kèm",
     "ai_models": "Mô hình AI",

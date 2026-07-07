@@ -16,7 +16,10 @@ import {
   useState,
 } from 'react';
 import { SIDEBAR_COLLAPSED_COOKIE_NAME } from '../constants/common';
-import { SIDEBAR_COOKIE_OPTIONS, useSidebar } from '../context/sidebar-context';
+import {
+  getSidebarCookieOptions,
+  useSidebar,
+} from '../context/sidebar-context';
 import { AppsLauncherDialog } from './apps-launcher';
 import { SidebarStructureContent } from './sidebar-structure-content';
 import {
@@ -173,7 +176,7 @@ export function SidebarStructure({
     setCookie(
       SIDEBAR_COLLAPSED_COOKIE_NAME,
       newCollapsed,
-      SIDEBAR_COOKIE_OPTIONS
+      getSidebarCookieOptions()
     );
 
     if (behavior === 'expanded' && newCollapsed) {
@@ -185,7 +188,7 @@ export function SidebarStructure({
 
   const expandSidebar = useCallback(() => {
     setIsCollapsed(false);
-    setCookie(SIDEBAR_COLLAPSED_COOKIE_NAME, false, SIDEBAR_COOKIE_OPTIONS);
+    setCookie(SIDEBAR_COLLAPSED_COOKIE_NAME, false, getSidebarCookieOptions());
 
     if (behavior !== 'expanded') {
       handleBehaviorChange('expanded');

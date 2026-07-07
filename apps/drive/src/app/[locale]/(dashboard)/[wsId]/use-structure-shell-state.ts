@@ -3,7 +3,7 @@
 import { setCookie } from 'cookies-next';
 import { useCallback, useEffect, useState } from 'react';
 import { SIDEBAR_COLLAPSED_COOKIE_NAME } from '@/constants/common';
-import { SIDEBAR_COOKIE_OPTIONS, useSidebar } from '@/context/sidebar-context';
+import { getSidebarCookieOptions, useSidebar } from '@/context/sidebar-context';
 
 export function useStructureShellState(defaultCollapsed: boolean) {
   const { behavior, handleBehaviorChange } = useSidebar();
@@ -24,7 +24,7 @@ export function useStructureShellState(defaultCollapsed: boolean) {
     setCookie(
       SIDEBAR_COLLAPSED_COOKIE_NAME,
       newCollapsed,
-      SIDEBAR_COOKIE_OPTIONS
+      getSidebarCookieOptions()
     );
 
     if (behavior === 'expanded' && newCollapsed) {
