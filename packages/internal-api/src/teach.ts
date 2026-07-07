@@ -703,3 +703,15 @@ export function sendStudentPerformanceReport(
     { method: 'POST', cache: 'no-store', query }
   );
 }
+
+export function sendBulkStudentPerformanceReport(
+  workspaceId: string,
+  courseId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ message: string; sentCount: number; failedCount: number }>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/teach/courses/${encodePathSegment(courseId)}/student-performance/send-bulk-report`,
+    { method: 'POST', cache: 'no-store' }
+  );
+}

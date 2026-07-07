@@ -1541,6 +1541,7 @@ export {
   type StudentPerformanceStat,
   type CourseStudentPerformanceResponse,
   sendStudentPerformanceReport,
+  sendBulkStudentPerformanceReport,
   updateWorkspaceCourseAttendance,
   updateWorkspaceCourseIndicators,
   updateWorkspaceCourseTest,

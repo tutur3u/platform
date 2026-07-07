@@ -18,6 +18,7 @@ import {
 import {
   getCourseStudentPerformance,
   sendStudentPerformanceReport,
+  sendBulkStudentPerformanceReport,
   type StudentPerformanceStat,
 } from '@tuturuuu/internal-api';
 import { cn } from '@tuturuuu/utils/format';
@@ -38,6 +39,30 @@ export function CourseStudentPerformancePanel({
     'risk' | 'score' | 'progress' | 'activity'
   >('risk');
   const [sortAsc, setSortAsc] = useState(false);
+  const [isBulkSending, setIsBulkSending] = useState(false);
+
+  const handleSendBulkReports = async () => {
+    if (isBulkSending) return;
+    setIsBulkSending(true);
+
+    try {
+      const res = await sendBulkStudentPerformanceReport(wsId, courseId);
+      if (res.message === 'success') {
+        toast.success(
+          t('bulkReportSentSuccess', { count: res.sentCount }) ||
+            `Successfully sent reports to ${res.sentCount} students.`
+        );
+        refetch(); // reload data
+      } else {
+        toast.error(t('bulkReportSentError') || 'Failed to send bulk reports.');
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error(t('bulkReportSentError') || 'Failed to send bulk reports.');
+    } finally {
+      setIsBulkSending(false);
+    }
+  };
 
   const { data, isLoading, isError, refetch, isFetching } = useQuery({
     queryKey: ['course-student-performance', wsId, courseId],
@@ -166,6 +191,30 @@ export function CourseStudentPerformancePanel({
                 value={String(summary.notSubmitted)}
                 variant={summary.notSubmitted > 0 ? 'info' : 'neutral'}
               />
+            </div>
+          )}
+
+          {/* Action Bar */}
+          {data && data.students.length > 0 && (
+            <div className="flex items-center justify-between border-b border-border pb-2">
+              <h3 className="font-black text-sm uppercase tracking-wider text-muted-foreground">
+                {t('studentsTitle') || 'Students List'}
+              </h3>
+              <button
+                onClick={handleSendBulkReports}
+                disabled={isBulkSending}
+                className={cn(
+                  "inline-flex items-center gap-1.5 border-2 border-border bg-foreground text-background px-3 py-1.5 font-bold text-xs shadow-[2px_2px_0_var(--border)] transition hover:-translate-y-0.5 disabled:opacity-50"
+                )}
+                type="button"
+              >
+                {isBulkSending ? (
+                  <RefreshCw className="h-3 w-3 animate-spin" />
+                ) : (
+                  <Mail className="h-3 w-3" />
+                )}
+                {isBulkSending ? (t('sending') || 'Sending...') : (t('sendAllReports') || 'Send All Reports')}
+              </button>
             </div>
           )}
 

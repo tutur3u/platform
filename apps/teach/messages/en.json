@@ -306,7 +306,12 @@
     "sendReport": "Send Report",
     "sent": "Sent",
     "reportSentSuccess": "Performance report sent successfully.",
-    "reportSentError": "Failed to send report."
+    "reportSentError": "Failed to send report.",
+    "studentsTitle": "Students List",
+    "sendAllReports": "Send All Reports",
+    "sending": "Sending...",
+    "bulkReportSentSuccess": "Successfully sent reports to {count} students.",
+    "bulkReportSentError": "Failed to send bulk reports."
   },
   "teachMembers": {
     "remove": "Remove learner",

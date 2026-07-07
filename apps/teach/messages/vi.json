@@ -306,7 +306,12 @@
     "sendReport": "Gửi báo cáo",
     "sent": "Đã gửi",
     "reportSentSuccess": "Gửi báo cáo hiệu suất thành công.",
-    "reportSentError": "Gửi báo cáo thất bại."
+    "reportSentError": "Gửi báo cáo thất bại.",
+    "studentsTitle": "Danh sách học sinh",
+    "sendAllReports": "Gửi tất cả báo cáo",
+    "sending": "Đang gửi...",
+    "bulkReportSentSuccess": "Đã gửi thành công báo cáo đến {count} học sinh.",
+    "bulkReportSentError": "Gửi báo cáo số lượng lớn thất bại."
   },
   "teachMembers": {
     "remove": "Gỡ học viên",
