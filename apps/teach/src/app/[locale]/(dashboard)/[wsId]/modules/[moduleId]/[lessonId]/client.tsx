@@ -65,6 +65,7 @@ export function LessonDetailClient({
     saveName,
     saveYoutubeLinks,
     savePublished,
+    saveQuizScorePublished,
   } = useLessonDetail(wsId, courseId, lessonId);
 
   // ─── Local state ────────────────────────────────────────────────────────────
@@ -518,6 +519,8 @@ export function LessonDetailClient({
           courseId={courseId}
           moduleId={lessonId}
           wsId={wsId}
+          isQuizScorePublished={lesson.is_quiz_score_published}
+          onToggleQuizScorePublished={saveQuizScorePublished}
         />
       </div>
     </main>

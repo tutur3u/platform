@@ -493,6 +493,7 @@ export function updateWorkspaceCourseTestSubmissionFeedback(
 export interface TeachModuleQuizSubmission {
   answeredCount: number;
   correctCount: number;
+  unmarkedCount?: number;
   firstSubmittedAt: string;
   lastSubmittedAt: string;
   totalQuizzes: number;
@@ -517,7 +518,8 @@ export interface TeachModuleQuizSubmissionDetail {
   answers: Array<{
     answer: unknown;
     created_at: string;
-    is_correct: boolean;
+    is_correct: boolean | null;
+    feedback?: string | null;
     quiz_id: string;
     selected_option_id: string | null;
   }>;
@@ -547,6 +549,7 @@ export interface TeachModuleQuizSubmissionDetail {
   summary: {
     answeredCount: number;
     correctCount: number;
+    unmarkedCount?: number;
     firstSubmittedAt: string | null;
     lastSubmittedAt: string | null;
     totalQuizzes: number;
@@ -564,5 +567,31 @@ export function getWorkspaceCourseModuleQuizSubmission(
   return client.json<TeachModuleQuizSubmissionDetail>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/teach/courses/${encodePathSegment(courseId)}/modules/${encodePathSegment(moduleId)}/quizzes/submissions/${encodePathSegment(userId)}`,
     { cache: 'no-store' }
+  );
+}
+
+export function gradeWorkspaceCourseModuleQuizSubmission(
+  workspaceId: string,
+  courseId: string,
+  moduleId: string,
+  userId: string,
+  payload: {
+    quizId: string;
+    isCorrect: boolean;
+    feedback?: string;
+  },
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ success: boolean }>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/teach/courses/${encodePathSegment(courseId)}/modules/${encodePathSegment(moduleId)}/quizzes/submissions/${encodePathSegment(userId)}`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+    }
   );
 }

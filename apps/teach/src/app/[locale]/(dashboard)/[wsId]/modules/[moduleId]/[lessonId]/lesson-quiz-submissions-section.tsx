@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { CheckCircle, Clock, User, Users, XCircle } from '@tuturuuu/icons';
+import { CheckCircle, Clock, Eye, EyeOff, User, Users, XCircle } from '@tuturuuu/icons';
 import {
   listWorkspaceCourseModuleQuizSubmissions,
   type TeachModuleQuizSubmission,
@@ -15,12 +15,16 @@ interface LessonQuizSubmissionsSectionProps {
   courseId: string;
   moduleId: string;
   wsId: string;
+  isQuizScorePublished?: boolean;
+  onToggleQuizScorePublished?: (published: boolean) => void;
 }
 
 export function LessonQuizSubmissionsSection({
   courseId,
   moduleId,
   wsId,
+  isQuizScorePublished = false,
+  onToggleQuizScorePublished,
 }: LessonQuizSubmissionsSectionProps) {
   const locale = useLocale();
   const t = useTranslations();
@@ -58,16 +62,41 @@ export function LessonQuizSubmissionsSection({
 
   return (
     <section className="mt-8 space-y-4 border-2 border-border bg-background p-6 shadow-[5px_5px_0_var(--border)]">
-      <div className="flex items-center gap-2">
-        <Users className="h-5 w-5 text-dynamic-green" />
-        <div>
-          <h2 className="font-black text-lg">
-            {t('teachModules.quizSubmissions')}
-          </h2>
-          <p className="text-muted-foreground text-sm">
-            {t('teachModules.quizSubmissionsDescription')}
-          </p>
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div className="flex items-center gap-2">
+          <Users className="h-5 w-5 text-dynamic-green" />
+          <div>
+            <h2 className="font-black text-lg">
+              {t('teachModules.quizSubmissions')}
+            </h2>
+            <p className="text-muted-foreground text-sm">
+              {t('teachModules.quizSubmissionsDescription')}
+            </p>
+          </div>
         </div>
+
+        <button
+          onClick={() => onToggleQuizScorePublished?.(!isQuizScorePublished)}
+          type="button"
+          className={cn(
+            'inline-flex items-center gap-1.5 border-2 border-border px-3 py-1.5 font-bold text-xs shadow-[2px_2px_0_var(--border)] transition hover:-translate-y-0.5',
+            isQuizScorePublished
+              ? 'bg-dynamic-green/15 text-foreground'
+              : 'bg-muted text-muted-foreground'
+          )}
+        >
+          {isQuizScorePublished ? (
+            <>
+              <Eye className="h-3.5 w-3.5" />
+              {t('teachModules.scoresPublishedToggle') || 'Scores Published'}
+            </>
+          ) : (
+            <>
+              <EyeOff className="h-3.5 w-3.5" />
+              {t('teachModules.scoresHiddenToggle') || 'Scores Hidden'}
+            </>
+          )}
+        </button>
       </div>
 
       {isLoading && (
@@ -179,6 +208,7 @@ function SubmissionRow({
   const isCompleted =
     submission.totalQuizzes > 0 &&
     submission.answeredCount >= submission.totalQuizzes;
+  const hasUnmarked = (submission.unmarkedCount ?? 0) > 0;
   const completionPercent =
     submission.totalQuizzes > 0
       ? Math.round((submission.answeredCount / submission.totalQuizzes) * 100)
@@ -193,10 +223,14 @@ function SubmissionRow({
       <span
         className={cn(
           'flex h-10 w-10 shrink-0 items-center justify-center border-2 border-border',
-          isCompleted ? 'bg-dynamic-green/15' : 'bg-dynamic-yellow/15'
+          isCompleted
+            ? hasUnmarked
+              ? 'bg-dynamic-yellow/15'
+              : 'bg-dynamic-green/15'
+            : 'bg-dynamic-yellow/15'
         )}
       >
-        {isCompleted ? (
+        {isCompleted && !hasUnmarked ? (
           <CheckCircle className="h-5 w-5 text-dynamic-green" />
         ) : (
           <Clock className="h-5 w-5 text-dynamic-yellow" />
@@ -242,8 +276,21 @@ function SubmissionRow({
           </span>
           <XCircle className="ml-1 h-3 w-3 text-destructive" />
           <span className="font-bold text-destructive text-xs">
-            {Math.max(submission.answeredCount - submission.correctCount, 0)}
+            {Math.max(
+              submission.answeredCount -
+                submission.correctCount -
+                (submission.unmarkedCount ?? 0),
+              0
+            )}
           </span>
+          {(submission.unmarkedCount ?? 0) > 0 && (
+            <>
+              <Clock className="ml-1 h-3 w-3 text-dynamic-yellow" />
+              <span className="font-bold text-dynamic-yellow text-xs">
+                {submission.unmarkedCount}
+              </span>
+            </>
+          )}
         </div>
       </div>
 

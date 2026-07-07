@@ -11,14 +11,19 @@ export function QuizCompletionCard({
   onRetry,
   totalCount,
   totalMaxScore,
+  isQuizScorePublished = true,
+  hasUnmarked = false,
 }: {
   correctCount: number;
   earnedScore: number;
   onRetry: () => void;
   totalCount: number;
   totalMaxScore: number;
+  isQuizScorePublished?: boolean;
+  hasUnmarked?: boolean;
 }) {
   const t = useTranslations();
+  const showResults = isQuizScorePublished && !hasUnmarked;
 
   return (
     <BrutalCard className="bg-background p-8 text-center">
@@ -32,20 +37,32 @@ export function QuizCompletionCard({
         {t('courses.quizPracticeCompleteDescription')}
       </p>
 
-      <div className="my-6 border-2 border-border bg-muted/20 p-5 shadow-[4px_4px_0_var(--border)]">
-        <div className="font-black text-3xl text-primary">
-          {t('courses.quizCorrectCount', {
-            correct: correctCount,
-            total: totalCount,
-          })}
+      {showResults ? (
+        <div className="my-6 border-2 border-border bg-muted/20 p-5 shadow-[4px_4px_0_var(--border)]">
+          <div className="font-black text-3xl text-primary">
+            {t('courses.quizCorrectCount', {
+              correct: correctCount,
+              total: totalCount,
+            })}
+          </div>
+          <div className="mt-2 font-bold text-muted-foreground text-sm">
+            {t('courses.quizEarnedPoints', {
+              points: earnedScore,
+              total: totalMaxScore,
+            })}
+          </div>
         </div>
-        <div className="mt-2 font-bold text-muted-foreground text-sm">
-          {t('courses.quizEarnedPoints', {
-            points: earnedScore,
-            total: totalMaxScore,
-          })}
+      ) : (
+        <div className="my-6 border-2 border-border bg-muted/20 p-5 shadow-[4px_4px_0_var(--border)] space-y-1.5">
+          <div className="font-black text-xl text-primary">
+            {t('courses.quizScorePending') || 'Results Pending Teacher Review'}
+          </div>
+          <p className="text-muted-foreground text-xs leading-relaxed max-w-sm mx-auto">
+            {t('courses.quizScorePendingDescription') ||
+              'Your answers have been submitted. Results will be visible once the teacher publishes them.'}
+          </p>
         </div>
-      </div>
+      )}
 
       <Button
         onClick={onRetry}

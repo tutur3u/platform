@@ -117,6 +117,7 @@ export interface TulearnCourseModuleSummary {
   name: string;
   sort_key: number;
   is_published: boolean;
+  is_quiz_score_published?: boolean;
   completed: boolean;
   locked: boolean;
   counts: {
@@ -200,7 +201,7 @@ export interface TulearnCourseModuleDetail extends TulearnCourseModuleSummary {
     quiz_id: string;
     selected_option_id: string | null;
     answer: unknown;
-    is_correct: boolean;
+    is_correct: boolean | null;
   }>;
 }
 

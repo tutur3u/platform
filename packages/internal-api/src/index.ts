@@ -1506,6 +1506,7 @@ export {
   getTeachBootstrap,
   getWorkspaceCourseModuleQuizSubmission,
   getWorkspaceCourseTestSubmission,
+  gradeWorkspaceCourseModuleQuizSubmission,
   listWorkspaceCourseAttendance,
   listWorkspaceCourseAttendanceMonth,
   listWorkspaceCourseIndicators,

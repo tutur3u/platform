@@ -143,6 +143,7 @@ export const GET = withSessionAuth(
         {
           answeredQuizIds: Set<string>;
           correctCount: number;
+          unmarkedCount: number;
           firstSubmittedAt: string;
           lastSubmittedAt: string;
           userId: string;
@@ -154,7 +155,8 @@ export const GET = withSessionAuth(
         if (!existing) {
           grouped.set(row.user_id, {
             answeredQuizIds: new Set([row.quiz_id]),
-            correctCount: row.is_correct ? 1 : 0,
+            correctCount: row.is_correct === true ? 1 : 0,
+            unmarkedCount: row.is_correct === null ? 1 : 0,
             firstSubmittedAt: row.created_at,
             lastSubmittedAt: row.created_at,
             userId: row.user_id,
@@ -163,7 +165,8 @@ export const GET = withSessionAuth(
         }
 
         existing.answeredQuizIds.add(row.quiz_id);
-        if (row.is_correct) existing.correctCount += 1;
+        if (row.is_correct === true) existing.correctCount += 1;
+        if (row.is_correct === null) existing.unmarkedCount += 1;
         existing.lastSubmittedAt = row.created_at;
       }
 
@@ -171,6 +174,7 @@ export const GET = withSessionAuth(
         .map((entry) => ({
           answeredCount: entry.answeredQuizIds.size,
           correctCount: entry.correctCount,
+          unmarkedCount: entry.unmarkedCount,
           firstSubmittedAt: entry.firstSubmittedAt,
           lastSubmittedAt: entry.lastSubmittedAt,
           totalQuizzes,

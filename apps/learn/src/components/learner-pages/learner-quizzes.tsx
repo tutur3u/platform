@@ -30,7 +30,7 @@ import { BrutalCard, useStudentId } from './shared';
 type QuizSubmission = {
   answer: unknown;
   created_at?: string | null;
-  is_correct: boolean;
+  is_correct: boolean | null;
   quiz_id: string;
   selected_option_id: string | null;
 };
@@ -66,10 +66,12 @@ export function LearnerQuizzes({
   quizzes,
   moduleId,
   submissions,
+  isQuizScorePublished = false,
 }: {
   quizzes: Quiz[];
   moduleId: string;
   submissions?: QuizSubmission[];
+  isQuizScorePublished?: boolean;
 }) {
   const t = useTranslations();
   const params = useParams();
@@ -103,6 +105,21 @@ export function LearnerQuizzes({
     Awaited<ReturnType<typeof submitTulearnQuizAnswer>>['correct_answer']
   > | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const [localSubmissions, setLocalSubmissions] = useState<
+    Record<string, { is_correct: boolean | null }>
+  >({});
+
+  const hasUnmarked = useMemo(() => {
+    return quizzes.some((quiz) => {
+      if (quiz.type !== 'paragraph') return false;
+      if (quiz.id in localSubmissions) {
+        return localSubmissions[quiz.id]?.is_correct === null;
+      }
+      const sub = normalizedSubmissions.find((s) => s.quiz_id === quiz.id);
+      return sub && sub.is_correct === null;
+    });
+  }, [quizzes, normalizedSubmissions, localSubmissions]);
 
   const [correctCount, setCorrectCount] = useState(() => {
     return normalizedSubmissions.filter((sub) => sub.is_correct).length;
@@ -215,6 +232,12 @@ export function LearnerQuizzes({
       setIsCorrect(correct);
       setCorrectAnswer(response.correct_answer ?? null);
 
+      const isCorrectValue = currentQuiz.type === 'paragraph' ? null : correct;
+      setLocalSubmissions((prev) => ({
+        ...prev,
+        [currentQuiz.id]: { is_correct: isCorrectValue },
+      }));
+
       if (correct) {
         setCorrectCount((prev) => prev + 1);
         setEarnedScore((prev) => prev + getQuizScore(currentQuiz));
@@ -266,6 +289,7 @@ export function LearnerQuizzes({
       setSelectedAnswer(null);
       setIsSubmitted(false);
       setIsCorrect(null);
+      setLocalSubmissions({});
       setCorrectCount(0);
       setEarnedScore(0);
       setCompleted(false);
@@ -287,6 +311,8 @@ export function LearnerQuizzes({
         totalCount={quizzes.length}
         totalMaxScore={totalMaxScore}
         onRetry={handleRetry}
+        isQuizScorePublished={isQuizScorePublished}
+        hasUnmarked={hasUnmarked}
       />
     );
   }

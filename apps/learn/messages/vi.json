@@ -175,6 +175,8 @@
     "quizCorrectCount": "Chính xác {correct} / {total}",
     "quizCount": "{count} câu hỏi",
     "quizEarnedPoints": "Điểm đạt được: {points} / {total}",
+    "quizScorePending": "Chờ Giáo viên chấm điểm",
+    "quizScorePendingDescription": "Câu trả lời của bạn đã được ghi nhận. Kết quả sẽ hiển thị sau khi giáo viên công bố.",
     "quizExplanation": "Giải thích",
     "quizFalse": "Sai",
     "quizFinishPractice": "Hoàn thành luyện tập",

@@ -17,7 +17,11 @@ const SAVE_DEBOUNCE_MS = 800;
 type LessonUpdatePayload = Partial<
   Pick<
     WorkspaceCourseModule,
-    'content' | 'is_published' | 'name' | 'youtube_links'
+    | 'content'
+    | 'is_published'
+    | 'is_quiz_score_published'
+    | 'name'
+    | 'youtube_links'
   >
 >;
 
@@ -227,6 +231,10 @@ export function useLessonDetail(
     saveMutation.mutate({ is_published });
   }
 
+  function saveQuizScorePublished(is_quiz_score_published: boolean) {
+    saveMutation.mutate({ is_quiz_score_published });
+  }
+
   return {
     lesson,
     isLoading: modulesQuery.isLoading,
@@ -236,5 +244,6 @@ export function useLessonDetail(
     saveName,
     saveYoutubeLinks,
     savePublished,
+    saveQuizScorePublished,
   };
 }

@@ -140,6 +140,17 @@ function submissionAnswer(value: unknown): Json | null {
   return value === undefined ? null : (value as Json);
 }
 
+function revealLearnerResult({
+  isCorrect,
+  revealScores,
+}: {
+  isCorrect: boolean | null;
+  revealScores: boolean;
+}) {
+  if (!revealScores) return null;
+  return isCorrect;
+}
+
 export const GET = withSessionAuth<Params>(
   async (request, { supabase, user }, { courseId, moduleId, wsId }) => {
     try {
@@ -177,9 +188,18 @@ export const GET = withSessionAuth<Params>(
 
       if (subError) throw subError;
 
+      const revealScores = module.is_quiz_score_published === true;
+
       return NextResponse.json({
         ...module,
-        submissions: submissions || [],
+        submissions: (submissions ?? []).map((submission) => ({
+          ...submission,
+          is_correct: revealLearnerResult({
+            isCorrect:
+              submission.is_correct === null ? null : submission.is_correct,
+            revealScores,
+          }),
+        })),
       });
     } catch (error) {
       const accessResponse = tulearnAccessErrorResponse(error);
@@ -266,7 +286,7 @@ export const POST = withSessionAuth<Params>(
       }
 
       let correctAnswerFeedback: Json | null = null;
-      let isCorrect = false;
+      let isCorrect: boolean | null = null;
 
       if (!quiz.type || quiz.type === 'multiple_choice') {
         if (!selectedOptionId) {
@@ -296,7 +316,7 @@ export const POST = withSessionAuth<Params>(
             );
           }
 
-          isCorrect = option.is_correct;
+        isCorrect = option.is_correct;
           correctAnswerFeedback = await multipleChoiceFeedback({
             correctAnswer: null,
             quizId,
@@ -379,6 +399,9 @@ export const POST = withSessionAuth<Params>(
         selectedOptionId && UUID_REGEX.test(selectedOptionId)
       );
 
+      const revealScores =
+        module.is_quiz_score_published === true && quiz.type !== 'paragraph';
+
       const { data: submission, error: insertErr } = await sbAdmin
         .from('course_module_quiz_submissions')
         .upsert(
@@ -399,8 +422,8 @@ export const POST = withSessionAuth<Params>(
 
       return NextResponse.json({
         id: submission.id,
-        correct_answer: correctAnswerFeedback,
-        is_correct: isCorrect,
+        correct_answer: revealScores ? correctAnswerFeedback : null,
+        is_correct: revealLearnerResult({ isCorrect, revealScores }),
       });
     } catch (error) {
       const accessResponse = tulearnAccessErrorResponse(error);

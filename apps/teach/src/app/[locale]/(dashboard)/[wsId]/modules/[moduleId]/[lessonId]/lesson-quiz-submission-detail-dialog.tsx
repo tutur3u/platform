@@ -1,9 +1,10 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
-import { Loader2, X } from '@tuturuuu/icons';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { CheckCircle, Clock, Loader2, X, XCircle } from '@tuturuuu/icons';
 import {
   getWorkspaceCourseModuleQuizSubmission,
+  gradeWorkspaceCourseModuleQuizSubmission,
   type TeachModuleQuizSubmissionDetail,
 } from '@tuturuuu/internal-api';
 import {
@@ -13,8 +14,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
+import { toast } from '@tuturuuu/ui/sonner';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
+import { useState } from 'react';
 import { QuizSubmissionResponseViewer } from '@/components/quiz-submission-response-viewer';
 
 interface LessonQuizSubmissionDetailDialogProps {
@@ -100,7 +103,16 @@ export function LessonQuizSubmissionDetailDialog({
           </div>
         )}
 
-        {data && <SubmissionContent detail={data} t={t} />}
+        {data && (
+          <SubmissionContent
+            detail={data}
+            t={t}
+            wsId={wsId}
+            courseId={courseId}
+            moduleId={moduleId}
+            userId={userId}
+          />
+        )}
       </DialogContent>
     </Dialog>
   );
@@ -109,9 +121,17 @@ export function LessonQuizSubmissionDetailDialog({
 function SubmissionContent({
   detail,
   t,
+  wsId,
+  courseId,
+  moduleId,
+  userId,
 }: {
   detail: TeachModuleQuizSubmissionDetail;
   t: ReturnType<typeof useTranslations>;
+  wsId: string;
+  courseId: string;
+  moduleId: string;
+  userId: string;
 }) {
   const { answers, quizzes, summary } = detail;
   const completion =
@@ -152,17 +172,18 @@ function SubmissionContent({
             answers.find((answer) => answer.quiz_id === quiz.id) ?? null;
           const hasAnswer = Boolean(quizAnswer);
           const isCorrectAnswer = quizAnswer?.is_correct === true;
+          const isPendingReview = hasAnswer && quizAnswer?.is_correct === null;
           const statusLabel = !hasAnswer
             ? t('teachModules.questionStatusNotAnswered')
-            : quiz.type === 'paragraph'
-              ? t('teachModules.questionStatusAnswered')
+            : isPendingReview
+              ? t('teachModules.questionStatusPendingReview') || 'Pending Review'
               : isCorrectAnswer
                 ? t('teachModules.questionStatusCorrect')
                 : t('teachModules.questionStatusIncorrect');
 
           const statusClass = !hasAnswer
             ? 'border-border bg-muted/40 text-muted-foreground'
-            : quiz.type === 'paragraph'
+            : isPendingReview
               ? 'border-dynamic-yellow bg-dynamic-yellow/10 text-dynamic-yellow'
               : isCorrectAnswer
                 ? 'border-dynamic-green bg-dynamic-green/10 text-dynamic-green-foreground'
@@ -206,9 +227,143 @@ function SubmissionContent({
                   t={t}
                 />
               </div>
+
+              {quiz.type === 'paragraph' && hasAnswer && (
+                <ParagraphGradeControls
+                  wsId={wsId}
+                  courseId={courseId}
+                  moduleId={moduleId}
+                  userId={userId}
+                  quizId={quiz.id}
+                  currentIsCorrect={quizAnswer?.is_correct}
+                  currentFeedback={quizAnswer?.feedback}
+                />
+              )}
             </div>
           );
         })}
+      </div>
+    </div>
+  );
+}
+
+function ParagraphGradeControls({
+  wsId,
+  courseId,
+  moduleId,
+  userId,
+  quizId,
+  currentIsCorrect,
+  currentFeedback,
+}: {
+  wsId: string;
+  courseId: string;
+  moduleId: string;
+  userId: string;
+  quizId: string;
+  currentIsCorrect: boolean | null;
+  currentFeedback?: string | null;
+}) {
+  const t = useTranslations();
+  const qc = useQueryClient();
+  const [feedback, setFeedback] = useState(currentFeedback ?? '');
+  const [isGrading, setIsGrading] = useState(false);
+
+  const handleGrade = async (isCorrect: boolean) => {
+    setIsGrading(true);
+    try {
+      await gradeWorkspaceCourseModuleQuizSubmission(
+        wsId,
+        courseId,
+        moduleId,
+        userId,
+        {
+          quizId,
+          isCorrect,
+          feedback: feedback.trim() || undefined,
+        }
+      );
+      toast.success(t('teachModules.gradedSuccess') || 'Graded successfully');
+
+      // Invalidate queries so stats and details refresh
+      await Promise.all([
+        qc.invalidateQueries({
+          queryKey: [
+            'course-module-quiz-submission-detail',
+            wsId,
+            courseId,
+            moduleId,
+            userId,
+          ],
+        }),
+        qc.invalidateQueries({
+          queryKey: [
+            'course-module-quiz-submissions',
+            wsId,
+            courseId,
+            moduleId,
+          ],
+        }),
+      ]);
+    } catch (err) {
+      toast.error(
+        t('teachModules.gradedError') || 'Failed to grade submission'
+      );
+      console.error(err);
+    } finally {
+      setIsGrading(false);
+    }
+  };
+
+  return (
+    <div className="mt-4 border-2 border-border bg-muted/20 p-4 space-y-3 shadow-[2px_2px_0_var(--border)]">
+      <div className="space-y-1">
+        <label className="block font-bold text-xs uppercase tracking-widest text-muted-foreground">
+          {t('teachModules.feedback') || 'Teacher Feedback'}
+        </label>
+        <textarea
+          value={feedback}
+          onChange={(e) => setFeedback(e.target.value)}
+          disabled={isGrading}
+          rows={2}
+          placeholder={
+            t('teachModules.feedbackPlaceholder') ||
+            'Enter feedback for student...'
+          }
+          className="w-full border-2 border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+        />
+      </div>
+
+      <div className="flex items-center gap-3">
+        <button
+          onClick={() => handleGrade(true)}
+          disabled={isGrading}
+          className={cn(
+            'inline-flex items-center gap-1.5 border-2 border-border px-3 py-1.5 font-bold text-xs shadow-[2px_2px_0_var(--border)] transition hover:-translate-y-0.5',
+            currentIsCorrect === true
+              ? 'bg-dynamic-green/20 text-dynamic-green'
+              : 'bg-background hover:bg-muted/30'
+          )}
+          type="button"
+        >
+          <CheckCircle className="h-4 w-4" />
+          {t('teachModules.markCorrect') || 'Mark Correct'}
+        </button>
+
+        <button
+          onClick={() => handleGrade(false)}
+          disabled={isGrading}
+          className={cn(
+            'inline-flex items-center gap-1.5 border-2 border-border px-3 py-1.5 font-bold text-xs shadow-[2px_2px_0_var(--border)] transition hover:-translate-y-0.5',
+            currentIsCorrect === false
+              ? 'bg-destructive/20 text-destructive'
+              : 'bg-background hover:bg-muted/30'
+          )}
+          type="button"
+        >
+          <XCircle className="h-4 w-4" />
+          {t('teachModules.markIncorrect') || 'Mark Incorrect'}
+        </button>
       </div>
     </div>
   );

@@ -16,7 +16,9 @@ interface RouteParams {
 }
 
 type WorkspaceCourseModuleUpdate =
-  Database['public']['Tables']['workspace_course_modules']['Update'];
+  Database['public']['Tables']['workspace_course_modules']['Update'] & {
+    is_quiz_score_published?: boolean;
+  };
 
 const MAX_SORT_KEY_UPDATE_ATTEMPTS = 3;
 
@@ -27,6 +29,7 @@ function summarizeUpdatePayload(updatePayload: WorkspaceCourseModuleUpdate) {
     has_extra_content: 'extra_content' in updatePayload,
     is_public: updatePayload.is_public,
     is_published: updatePayload.is_published,
+    is_quiz_score_published: updatePayload.is_quiz_score_published,
     keys: Object.keys(updatePayload),
     module_group_id: updatePayload.module_group_id ?? null,
     name_length:
@@ -44,6 +47,7 @@ const UpdateModuleSchema = z
     group_id: z.string().uuid().optional(),
     is_public: z.boolean().optional(),
     is_published: z.boolean().optional(),
+    is_quiz_score_published: z.boolean().optional(),
     module_group_id: z.string().uuid().optional(),
     name: z.string().trim().min(1).max(255).optional(),
     youtube_links: z.array(z.string().trim()).nullable().optional(),

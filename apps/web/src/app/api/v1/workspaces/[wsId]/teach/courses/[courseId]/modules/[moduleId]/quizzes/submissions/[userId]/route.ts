@@ -36,7 +36,8 @@ type ModuleQuizJoinRow = {
 type SubmissionAnswer = {
   answer: unknown;
   created_at: string;
-  is_correct: boolean;
+  is_correct: boolean | null;
+  feedback?: string | null;
   quiz_id: string;
   selected_option_id: string | null;
 };
@@ -121,7 +122,7 @@ export const GET = withSessionAuth(
 
       const { data: answers, error: answersErr } = await access.sbAdmin
         .from('course_module_quiz_submissions')
-        .select('quiz_id, selected_option_id, answer, is_correct, created_at')
+        .select('quiz_id, selected_option_id, answer, is_correct, feedback, created_at')
         .eq('module_id', moduleId)
         .eq('user_id', userId)
         .order('created_at', { ascending: true });
@@ -162,6 +163,9 @@ export const GET = withSessionAuth(
       const correctCount = typedAnswers.filter(
         (answer) => answer.is_correct === true
       ).length;
+      const unmarkedCount = typedAnswers.filter(
+        (answer) => answer.is_correct === null
+      ).length;
 
       const student = studentProfile
         ? {
@@ -183,6 +187,7 @@ export const GET = withSessionAuth(
         summary: {
           answeredCount,
           correctCount,
+          unmarkedCount,
           firstSubmittedAt: typedAnswers[0]?.created_at ?? null,
           lastSubmittedAt:
             typedAnswers[typedAnswers.length - 1]?.created_at ?? null,
@@ -193,6 +198,120 @@ export const GET = withSessionAuth(
       console.error('Failed to load module quiz submission detail:', error);
       return NextResponse.json(
         { message: 'Failed to load module quiz submission detail' },
+        { status: 500 }
+      );
+    }
+  },
+  {
+    allowAppSessionAuth: { targetApp: 'teach' },
+    rateLimit: { maxRequests: 120, windowMs: 60000 },
+  }
+);
+
+const GradePayloadSchema = z.object({
+  quizId: z.string().uuid(),
+  isCorrect: z.boolean(),
+  feedback: z.string().optional(),
+});
+
+export const POST = withSessionAuth(
+  async (
+    request,
+    context,
+    params:
+      | { wsId: string; courseId: string; moduleId: string; userId: string }
+      | Promise<{
+          wsId: string;
+          courseId: string;
+          moduleId: string;
+          userId: string;
+        }>
+  ) => {
+    try {
+      const parsedParams = RouteParamsSchema.safeParse(await params);
+      if (!parsedParams.success) {
+        return NextResponse.json(
+          {
+            message: 'Invalid route params',
+            errors: parsedParams.error.issues,
+          },
+          { status: 400 }
+        );
+      }
+
+      const { wsId, courseId, moduleId, userId } = parsedParams.data;
+
+      const access = await requireTeachWorkspaceAccess({
+        context,
+        permission: 'manage_users',
+        wsId,
+      });
+      if (access instanceof NextResponse) return access;
+
+      const course = await validateTeachCourse({
+        courseId,
+        db: access.sbAdmin,
+        wsId: access.normalizedWsId,
+      });
+      if (!course) {
+        return NextResponse.json(
+          { message: 'Course not found' },
+          { status: 404 }
+        );
+      }
+
+      const module = await validateTeachCourseModule({
+        courseId,
+        db: access.sbAdmin,
+        moduleId,
+      });
+      if (!module) {
+        return NextResponse.json(
+          { message: 'Module not found' },
+          { status: 404 }
+        );
+      }
+
+      let body: unknown;
+      try {
+        body = await request.json();
+      } catch {
+        return NextResponse.json(
+          { message: 'Invalid request body' },
+          { status: 400 }
+        );
+      }
+
+      const parsedBody = GradePayloadSchema.safeParse(body);
+      if (!parsedBody.success) {
+        return NextResponse.json(
+          {
+            message: 'Invalid request body',
+            errors: parsedBody.error.issues,
+          },
+          { status: 400 }
+        );
+      }
+
+      const { quizId, isCorrect, feedback } = parsedBody.data;
+
+      const { error: updateErr } = await access.sbAdmin
+        .from('course_module_quiz_submissions')
+        .update({
+          is_correct: isCorrect,
+          feedback: feedback ?? null,
+        })
+        .eq('module_id', moduleId)
+        .eq('quiz_id', quizId)
+        .eq('user_id', userId);
+
+      if (updateErr) throw updateErr;
+
+      return NextResponse.json({ success: true });
+    } catch (error) {
+      console.error('Failed to grade module quiz submission:', error);
+      return NextResponse.json(
+        { message: 'Failed to grade module quiz submission' },
         { status: 500 }
       );
     }
