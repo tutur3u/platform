@@ -55,11 +55,11 @@ export function QuizCompletionCard({
           </div>
         </div>
       ) : (
-        <div className="my-6 border-2 border-border bg-muted/20 p-5 shadow-[4px_4px_0_var(--border)] space-y-1.5">
-          <div className="font-black text-xl text-primary">
+        <div className="my-6 space-y-1.5 border-2 border-border bg-muted/20 p-5 shadow-[4px_4px_0_var(--border)]">
+          <div className="font-black text-primary text-xl">
             {t('courses.quizScorePending') || 'Results Pending Teacher Review'}
           </div>
-          <p className="text-muted-foreground text-xs leading-relaxed max-w-sm mx-auto">
+          <p className="mx-auto max-w-sm text-muted-foreground text-xs leading-relaxed">
             {t('courses.quizScorePendingDescription') ||
               'Your answers have been submitted. Results will be visible once the teacher publishes them.'}
           </p>
@@ -67,7 +67,7 @@ export function QuizCompletionCard({
       )}
 
       {isDeadlinePassed ? (
-        <div className="mt-4 border-2 border-dashed border-destructive bg-destructive/10 p-4 text-center shadow-[3px_3px_0_var(--border)]">
+        <div className="mt-4 border-2 border-destructive border-dashed bg-destructive/10 p-4 text-center shadow-[3px_3px_0_var(--border)]">
           <p className="font-bold text-destructive text-sm">
             {t('courses.quizDeadlinePassedMessage') ||
               'The deadline for this quiz has passed. You can no longer retry.'}

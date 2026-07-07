@@ -7,11 +7,11 @@ import {
   submitTulearnQuizAnswer,
 } from '@tuturuuu/internal-api';
 import { Button } from '@tuturuuu/ui/button';
+import { toast } from '@tuturuuu/ui/sonner';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useState } from 'react';
-import { toast } from '@tuturuuu/ui/sonner';
 import { ChoiceOptions } from './quiz-practice/choice-options';
 import { QuizCompletionCard } from './quiz-practice/completion-card';
 import { StructuredQuizPreview } from './quiz-practice/structured-preview';
@@ -205,7 +205,9 @@ export function LearnerQuizzes({
     if (!canSubmit || isSubmitting) return;
 
     if (isDeadlinePassed) {
-      toast.error(t('courses.quizDeadlinePassedError') || 'The deadline has passed.');
+      toast.error(
+        t('courses.quizDeadlinePassedError') || 'The deadline has passed.'
+      );
       return;
     }
 
@@ -343,13 +345,17 @@ export function LearnerQuizzes({
     );
   }
 
-  const currentSubmission = normalizedSubmissions.find((s) => s.quiz_id === currentQuiz?.id);
-  const quizFeedback = localSubmissions[currentQuiz?.id]?.feedback !== undefined
-    ? localSubmissions[currentQuiz?.id]?.feedback
-    : currentSubmission?.feedback;
-  const quizAiFeedback = localSubmissions[currentQuiz?.id]?.ai_feedback !== undefined
-    ? localSubmissions[currentQuiz?.id]?.ai_feedback
-    : currentSubmission?.ai_feedback;
+  const currentSubmission = normalizedSubmissions.find(
+    (s) => s.quiz_id === currentQuiz?.id
+  );
+  const quizFeedback =
+    localSubmissions[currentQuiz?.id]?.feedback !== undefined
+      ? localSubmissions[currentQuiz?.id]?.feedback
+      : currentSubmission?.feedback;
+  const quizAiFeedback =
+    localSubmissions[currentQuiz?.id]?.ai_feedback !== undefined
+      ? localSubmissions[currentQuiz?.id]?.ai_feedback
+      : currentSubmission?.ai_feedback;
 
   return (
     <div className="space-y-6">
@@ -488,22 +494,22 @@ export function LearnerQuizzes({
         )}
 
         {isSubmitted && quizFeedback && (
-          <div className="mt-6 border-2 border-dynamic-yellow/30 bg-dynamic-yellow/10 p-4 text-foreground shadow-[3px_3px_0_hsl(var(--dynamic-yellow)/0.2)] space-y-1">
-            <span className="block font-black uppercase text-[10px] tracking-wider text-dynamic-yellow">
+          <div className="mt-6 space-y-1 border-2 border-dynamic-yellow/30 bg-dynamic-yellow/10 p-4 text-foreground shadow-[3px_3px_0_hsl(var(--dynamic-yellow)/0.2)]">
+            <span className="block font-black text-[10px] text-dynamic-yellow uppercase tracking-wider">
               ✍️ Teacher Feedback
             </span>
-            <p className="text-sm leading-relaxed font-semibold">
+            <p className="font-semibold text-sm leading-relaxed">
               {quizFeedback}
             </p>
           </div>
         )}
 
         {isSubmitted && quizAiFeedback && (
-          <div className="mt-6 border-2 border-primary bg-primary/5 p-4 text-foreground shadow-[3px_3px_0_hsl(var(--primary)/0.2)] space-y-1">
-            <span className="block font-black uppercase text-[10px] tracking-wider text-primary">
+          <div className="mt-6 space-y-1 border-2 border-primary bg-primary/5 p-4 text-foreground shadow-[3px_3px_0_hsl(var(--primary)/0.2)]">
+            <span className="block font-black text-[10px] text-primary uppercase tracking-wider">
               ✨ AI Feedback
             </span>
-            <p className="text-sm leading-relaxed font-medium">
+            <p className="font-medium text-sm leading-relaxed">
               {quizAiFeedback}
             </p>
           </div>
@@ -513,7 +519,7 @@ export function LearnerQuizzes({
           {!isSubmitted ? (
             <div className="flex flex-col items-end gap-2">
               {isDeadlinePassed && (
-                <span className="text-destructive font-black text-xs uppercase tracking-wider">
+                <span className="font-black text-destructive text-xs uppercase tracking-wider">
                   {t('courses.quizDeadlinePassed') || 'Deadline passed'}
                 </span>
               )}
