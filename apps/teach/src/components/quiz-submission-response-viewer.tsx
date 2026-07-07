@@ -8,10 +8,12 @@ type QuizOption = {
   explanation?: string | null;
   id: string;
   is_correct?: boolean | null;
+  option_index?: number | null;
   value: string | null;
 };
 
 export interface QuizSubmissionViewerQuiz {
+  answer?: unknown;
   content: unknown;
   id: string;
   question: string | null;
@@ -91,6 +93,11 @@ function getSelectedIndexAnswer(value: unknown) {
   return typeof selectedIndex === 'number' ? selectedIndex : null;
 }
 
+function getCorrectIndexAnswer(value: unknown) {
+  const correctIndex = asRecord(value)?.correctIndex;
+  return typeof correctIndex === 'number' ? correctIndex : null;
+}
+
 function getTrueFalseAnswer(value: unknown) {
   if (typeof value === 'boolean') return value;
 
@@ -107,10 +114,15 @@ function getMultipleChoiceOptions(
   quiz: QuizSubmissionViewerQuiz
 ): MultipleChoiceOption[] {
   const contentOptions = getArrayProperty(quiz.content, 'options');
+  const quizOptionsByIndex = new Map(
+    (quiz.quiz_options ?? [])
+      .filter((option) => typeof option.option_index === 'number')
+      .map((option) => [option.option_index as number, option])
+  );
 
   const parsedContentOptions = contentOptions
     .map((option: unknown, index: number) => ({
-      id: `content-${index}`,
+      id: quizOptionsByIndex.get(index)?.id ?? `content-${index}`,
       value: displayText(option),
       index,
     }))
@@ -125,7 +137,7 @@ function getMultipleChoiceOptions(
   return (quiz.quiz_options ?? []).map((option) => ({
     id: option.id,
     value: displayText(option.value),
-    index: null,
+    index: option.option_index ?? null,
   }));
 }
 
@@ -135,6 +147,18 @@ function hasSubmittedAnswer(answer: QuizSubmissionViewerAnswer) {
   }
 
   return answer.answer !== null && answer.answer !== undefined;
+}
+
+function findRawMultipleChoiceOption(
+  quiz: QuizSubmissionViewerQuiz,
+  opt: MultipleChoiceOption
+) {
+  const byId = quiz.quiz_options?.find((option) => option.id === opt.id);
+  if (byId) return byId;
+
+  return opt.index !== null
+    ? quiz.quiz_options?.find((option) => option.option_index === opt.index)
+    : null;
 }
 
 export function QuizSubmissionResponseViewer({
@@ -158,6 +182,7 @@ export function QuizSubmissionResponseViewer({
 
   if (!quiz.type || quiz.type === 'multiple_choice') {
     const options = getMultipleChoiceOptions(quiz);
+    const correctIndex = getCorrectIndexAnswer(quiz.answer);
     return (
       <div className="space-y-2">
         <p className="mb-1 font-bold text-muted-foreground text-xs uppercase tracking-wider">
@@ -169,11 +194,10 @@ export function QuizSubmissionResponseViewer({
             (opt.index !== null &&
               getSelectedIndexAnswer(answer.answer) === opt.index);
 
-          const rawOpt =
-            opt.index !== null
-              ? quiz.quiz_options?.[opt.index]
-              : quiz.quiz_options?.find((option) => option.id === opt.id);
-          const isOptionCorrect = rawOpt?.is_correct ?? false;
+          const rawOpt = findRawMultipleChoiceOption(quiz, opt);
+          const isOptionCorrect =
+            (opt.index !== null && correctIndex === opt.index) ||
+            (rawOpt?.is_correct ?? false);
 
           let optionStyle = 'border-border bg-background';
           if (isSelected) {

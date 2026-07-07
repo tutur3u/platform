@@ -18,6 +18,7 @@ const RouteParamsSchema = z.object({
 });
 
 type SubmissionQuiz = {
+  answer: Json | null;
   content: Json | null;
   id: string;
   question: string | null;
@@ -25,6 +26,7 @@ type SubmissionQuiz = {
     explanation?: string | null;
     id: string;
     is_correct?: boolean | null;
+    option_index?: number | null;
     value: string | null;
   }[];
   score: number | null;
@@ -48,6 +50,44 @@ type SubmissionAnswer = {
 function firstJoined<T>(value: T | T[] | null | undefined): T | null {
   if (Array.isArray(value)) return value[0] ?? null;
   return value ?? null;
+}
+
+function asRecord(value: Json | null): Record<string, unknown> | null {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+  return value as Record<string, unknown>;
+}
+
+function getContentOptionIndexQueues(
+  content: Json | null
+): Map<string, number[]> {
+  const options = asRecord(content)?.options;
+  if (!Array.isArray(options)) return new Map();
+
+  return options.reduce((queues, option, index) => {
+    if (typeof option !== 'string') return queues;
+    const indexes = queues.get(option) ?? [];
+    indexes.push(index);
+    queues.set(option, indexes);
+    return queues;
+  }, new Map<string, number[]>());
+}
+
+function withOptionIndexes(quiz: SubmissionQuiz): SubmissionQuiz {
+  const optionIndexQueues = getContentOptionIndexQueues(quiz.content);
+  if (optionIndexQueues.size === 0) return quiz;
+
+  return {
+    ...quiz,
+    quiz_options: quiz.quiz_options.map((option) => {
+      const indexes = option.value ? optionIndexQueues.get(option.value) : null;
+      const optionIndex = indexes?.shift() ?? null;
+
+      return {
+        ...option,
+        option_index: optionIndex,
+      };
+    }),
+  };
 }
 
 export const GET_inner = async (
@@ -136,7 +176,7 @@ export const GET_inner = async (
       await access.sbAdmin
         .from('course_module_quizzes')
         .select(
-          'workspace_quizzes!inner(id, question, type, content, score, quiz_options(id, value, is_correct, explanation))'
+          'workspace_quizzes!inner(id, question, type, content, answer, score, quiz_options(id, value, is_correct, explanation))'
         )
         .eq('module_id', moduleId)
         .order('created_at', { ascending: true });
@@ -145,7 +185,8 @@ export const GET_inner = async (
 
     const quizzes = ((moduleQuizzes ?? []) as ModuleQuizJoinRow[])
       .map((row) => firstJoined(row.workspace_quizzes))
-      .filter((quiz): quiz is SubmissionQuiz => Boolean(quiz));
+      .filter((quiz): quiz is SubmissionQuiz => Boolean(quiz))
+      .map(withOptionIndexes);
 
     const typedAnswers = answers as SubmissionAnswer[];
     const answeredCount = typedAnswers.length;

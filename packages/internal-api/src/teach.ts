@@ -529,6 +529,7 @@ export interface TeachModuleQuizSubmissionDetail {
     name: string | null;
   } | null;
   quizzes: Array<{
+    answer?: Json | null;
     id: string;
     question: string | null;
     type: string | null;
@@ -539,6 +540,7 @@ export interface TeachModuleQuizSubmissionDetail {
       value: string | null;
       is_correct?: boolean;
       explanation?: string | null;
+      option_index?: number | null;
     }>;
   }>;
   student: {

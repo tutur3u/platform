@@ -512,7 +512,7 @@ function StudentRow({
             className="text-muted-foreground text-xs"
             title={s.lastActivityAt}
           >
-            {formatRelativeTime(s.lastActivityAt, t)}
+            {formatRelativeTime(s.lastActivityAt, t, locale)}
           </span>
         ) : (
           <span className="text-muted-foreground text-xs">—</span>
@@ -654,7 +654,8 @@ function SummaryChip({
 
 function formatRelativeTime(
   iso: string,
-  t: ReturnType<typeof useTranslations>
+  t: ReturnType<typeof useTranslations>,
+  locale: string
 ): string {
   const diff = Date.now() - new Date(iso).getTime();
   const mins = Math.floor(diff / 60000);
@@ -665,5 +666,5 @@ function formatRelativeTime(
   if (hrs < 24) return t('relativeHoursAgo', { count: hrs }) || `${hrs}h ago`;
   const days = Math.floor(hrs / 24);
   if (days < 7) return t('relativeDaysAgo', { count: days }) || `${days}d ago`;
-  return new Date(iso).toLocaleDateString();
+  return new Date(iso).toLocaleDateString(locale);
 }
