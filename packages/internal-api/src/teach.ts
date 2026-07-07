@@ -653,3 +653,38 @@ export function getTeachDashboardStats(
     { cache: 'no-store' }
   );
 }
+
+export interface StudentPerformanceStat {
+  userId: string;
+  displayName: string | null;
+  email: string | null;
+  avatarUrl: string | null;
+  totalQuizzes: number;
+  answeredCount: number;
+  correctCount: number;
+  pendingGradingCount: number;
+  scorePercent: number | null;
+  totalModules: number;
+  completedModules: number;
+  lastActivityAt: string | null;
+  isLowScorer: boolean;
+  hasNotSubmitted: boolean;
+}
+
+export interface CourseStudentPerformanceResponse {
+  students: StudentPerformanceStat[];
+  totalModules: number;
+  totalQuizzes: number;
+}
+
+export function getCourseStudentPerformance(
+  workspaceId: string,
+  courseId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<CourseStudentPerformanceResponse>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/teach/courses/${encodePathSegment(courseId)}/student-performance`,
+    { cache: 'no-store' }
+  );
+}

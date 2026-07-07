@@ -75,7 +75,7 @@ export const GET = withSessionAuth(
 
       // 2. Get member counts per course
       const { data: memberRows } = await access.sbAdmin
-        .from('user_group_members')
+        .from('workspace_user_groups_users')
         .select('group_id, user_id')
         .in('group_id', courseIds);
 
@@ -109,7 +109,18 @@ export const GET = withSessionAuth(
             .in('module_id', allModuleIds)
         : { data: [] };
 
-      // Group submissions by course
+      // Get user links to map platform_user_id (from submissions) to virtual_user_id (from course membership)
+      const { data: userLinks } = await access.sbAdmin
+        .from('workspace_user_linked_users')
+        .select('platform_user_id, virtual_user_id')
+        .eq('ws_id', normalizedWsId);
+
+      const platformToVirtual = new Map<string, string>();
+      for (const link of userLinks ?? []) {
+        platformToVirtual.set(link.platform_user_id, link.virtual_user_id);
+      }
+
+      // Group submissions by course, using virtual user IDs
       const subsByGroup: Record<
         string,
         { user_id: string; is_correct: boolean | null }[]
@@ -118,7 +129,8 @@ export const GET = withSessionAuth(
         const groupId = moduleToGroup[sub.module_id];
         if (!groupId) continue;
         if (!subsByGroup[groupId]) subsByGroup[groupId] = [];
-        subsByGroup[groupId]!.push({ user_id: sub.user_id, is_correct: sub.is_correct });
+        const virtualId = platformToVirtual.get(sub.user_id) ?? sub.user_id;
+        subsByGroup[groupId]!.push({ user_id: virtualId, is_correct: sub.is_correct });
       }
 
       // 5. Compute stats per course
