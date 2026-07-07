@@ -14,12 +14,14 @@ import {
 import type {
   TulearnBootstrapResponse,
   TulearnWorkspaceSummary,
+  TeachDashboardStatsResponse,
 } from '@tuturuuu/internal-api';
 import { cn } from '@tuturuuu/utils/format';
 import { getTranslations } from 'next-intl/server';
 import { TeachDashboardFeatureGrid } from './teach-dashboard-feature-grid';
 import { TeachMetricTile } from './teach-metric-tile';
 import { TeachOperationCard } from './teach-operation-card';
+import { TeachRealtimePanel } from './teach-realtime-panel';
 
 type TeachGroup = {
   attendance_amount?: number;
@@ -49,6 +51,7 @@ const operationsItems = [
 
 export async function TeachDashboard({
   bootstrap,
+  dashboardStats,
   groups,
   moduleCounts,
   totalGroups,
@@ -56,6 +59,7 @@ export async function TeachDashboard({
   wsId,
 }: {
   bootstrap: TulearnBootstrapResponse;
+  dashboardStats: TeachDashboardStatsResponse | null;
   groups: TeachGroup[];
   moduleCounts: Record<string, number>;
   totalGroups: number;
@@ -216,6 +220,8 @@ export async function TeachDashboard({
           ))}
         </aside>
       </section>
+
+      <TeachRealtimePanel stats={dashboardStats} wsId={wsId} />
 
       <section className="mx-auto mt-8 max-w-7xl border-2 border-foreground/70 bg-background p-5 shadow-[8px_8px_0_var(--foreground)] md:p-6">
         <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">

@@ -264,7 +264,18 @@
         "title": "Sequence modules"
       }
     },
-    "workspaceFallback": "Education workspace"
+    "workspaceFallback": "Education workspace",
+    "realtimeEyebrow": "Real-time Overview",
+    "realtimeTitle": "Course Status Dashboard",
+    "realtimeLead": "Top 5 active courses — students, pending grading, unsubmitted work, and low scorers at a glance.",
+    "pendingGrading": "Pending Grading",
+    "notSubmitted": "Not Submitted",
+    "lowScorers": "Low Scorers (<50%)",
+    "allClear": "All clear",
+    "gradeNow": "Grade Now",
+    "viewMetrics": "View Metrics",
+    "openCourse": "Open",
+    "members": "Students"
   },
   "teachMembers": {
     "remove": "Remove learner",

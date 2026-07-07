@@ -623,3 +623,33 @@ export function getWorkspaceCourseModuleQuizSubmissionAiReview(
     }
   );
 }
+
+export interface TeachDashboardCourseStat {
+  id: string;
+  name: string;
+  members_count: number;
+  modules_count: number;
+  pending_grading: number;
+  not_submitted: number;
+  low_scorers: number;
+  starting_date: string | null;
+  ending_date: string | null;
+}
+
+export interface TeachDashboardStatsResponse {
+  courses: TeachDashboardCourseStat[];
+  total_pending_grading: number;
+  total_not_submitted: number;
+  total_low_scorers: number;
+}
+
+export function getTeachDashboardStats(
+  workspaceId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<TeachDashboardStatsResponse>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/teach/dashboard-stats`,
+    { cache: 'no-store' }
+  );
+}

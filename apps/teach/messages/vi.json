@@ -264,7 +264,18 @@
         "title": "Sắp xếp module"
       }
     },
-    "workspaceFallback": "Workspace giáo dục"
+    "workspaceFallback": "Workspace giáo dục",
+    "realtimeEyebrow": "Tổng quan thời gian thực",
+    "realtimeTitle": "Bảng trạng thái khóa học",
+    "realtimeLead": "5 khóa học hoạt động hàng đầu — học sinh, bài chờ chấm, chưa nộp bài và điểm thấp.",
+    "pendingGrading": "Chờ chấm điểm",
+    "notSubmitted": "Chưa nộp bài",
+    "lowScorers": "Điểm thấp (<50%)",
+    "allClear": "Không có vấn đề",
+    "gradeNow": "Chấm ngay",
+    "viewMetrics": "Xem chỉ số",
+    "openCourse": "Mở",
+    "members": "Học sinh"
   },
   "teachMembers": {
     "remove": "Gỡ học viên",

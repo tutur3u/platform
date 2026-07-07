@@ -1534,11 +1534,15 @@ export {
   type TeachTestSubmission,
   type TeachTestSubmissionDetail,
   type TeachWorkspaceUser,
+  getTeachDashboardStats,
+  type TeachDashboardCourseStat,
+  type TeachDashboardStatsResponse,
   updateWorkspaceCourseAttendance,
   updateWorkspaceCourseIndicators,
   updateWorkspaceCourseTest,
   updateWorkspaceCourseTestSubmissionFeedback,
 } from './teach';
+
 export {
   getWorkspaceTemplate,
   getWorkspaceTemplateBackgroundUrl,
