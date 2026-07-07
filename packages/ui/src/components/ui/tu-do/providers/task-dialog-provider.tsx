@@ -70,6 +70,10 @@ interface TaskDialogState {
   taskWorkspaceTier?: WorkspaceProductTier;
   /** Initial board/list context used for immediate partial-task rendering. */
   initialSharedContext?: SharedTaskContext;
+  /** Board that supplied the visible task card before source-task hydration. */
+  visibleBoardId?: string;
+  /** Visible task snapshot before hydration, used to preserve overlay metadata. */
+  visibleTaskSnapshot?: Partial<Task>;
   /** True while an existing task was opened from a partial snapshot and is hydrating. */
   isHydratingTask?: boolean;
   /** True when the latest hydration request failed after the dialog already opened. */
@@ -90,6 +94,8 @@ interface OpenTaskByIdOptions {
   canUseBoardAssignees?: boolean;
   assigneeMemberSource?: TaskAssigneeMemberSource;
   initialSharedContext?: SharedTaskContext;
+  visibleBoardId?: string;
+  visibleTaskSnapshot?: Partial<Task>;
 }
 
 interface TaskDialogContextValue {
@@ -486,6 +492,8 @@ export function TaskDialogProvider({
         assigneeMemberSource: options?.assigneeMemberSource,
         taskWorkspaceTier: options?.taskWorkspaceTier,
         initialSharedContext: options?.initialSharedContext,
+        visibleBoardId: options?.visibleBoardId,
+        visibleTaskSnapshot: options?.visibleTaskSnapshot,
         isHydratingTask: true,
         taskLoadError: false,
         taskHydrationVersion: 0,
@@ -567,6 +575,8 @@ export function TaskDialogProvider({
             options?.canUseBoardAssignees ?? !isTaskWorkspacePersonal,
           assigneeMemberSource: options?.assigneeMemberSource,
           taskWorkspaceTier,
+          visibleBoardId: options?.visibleBoardId,
+          visibleTaskSnapshot: options?.visibleTaskSnapshot,
           isHydratingTask: false,
           taskLoadError: false,
           taskHydrationVersion: 1,

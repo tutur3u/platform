@@ -109,6 +109,7 @@ export function getTaskCardHydratingOpenOptions({
 }: TaskCardOpenOptionsInput) {
   const sourceWorkspaceId = task.source_workspace_id;
   const sourceBoardId = task.source_board_id;
+  const isExternalSnapshot = isExternalTaskSnapshot(task);
   const initialSharedContext = buildInitialSourceContext(
     task,
     sourceWorkspaceId ?? undefined,
@@ -137,5 +138,11 @@ export function getTaskCardHydratingOpenOptions({
     assigneeMemberSource:
       assigneeMemberSource ?? (sourceWorkspaceId ? 'board' : undefined),
     initialSharedContext,
+    ...(isExternalSnapshot
+      ? {
+          visibleBoardId: boardId,
+          visibleTaskSnapshot: task,
+        }
+      : {}),
   };
 }

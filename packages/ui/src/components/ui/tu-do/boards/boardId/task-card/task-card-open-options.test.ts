@@ -102,6 +102,8 @@ describe('getTaskCardHydratingOpenOptions', () => {
         workspaceMembers: [],
         workspaceProjects: [],
       },
+      visibleBoardId: 'personal-board',
+      visibleTaskSnapshot: externalTask,
     });
   });
 
