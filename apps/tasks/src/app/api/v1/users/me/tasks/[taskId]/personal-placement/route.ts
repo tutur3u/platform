@@ -1,4 +1,3 @@
-import { resolveTaskBoardAccess } from '@tuturuuu/apis/tu-do/board-access';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import {
   getPersonalExternalStagingListId,
@@ -469,24 +468,21 @@ export const PUT = withSessionAuth<{ taskId: string }>(
       );
     }
 
-    const targetAccess = await resolveTaskBoardAccess({
-      boardId: personal_board_id,
-      listId: resolvedPersonalListId,
-      requiredPermission: 'edit',
-      sbAdmin: sbAdmin as any,
+    const targetMembership = await verifyWorkspaceMembershipType({
+      requiredType: 'ANY',
       supabase: supabase as any,
-      user,
+      userId: user.id,
       wsId: targetWsId,
     });
 
-    if ('error' in targetAccess) {
-      if (targetAccess.error.status >= 500) {
-        return NextResponse.json(
-          { error: 'Failed to verify destination access' },
-          { status: 500 }
-        );
-      }
+    if (targetMembership.error === 'membership_lookup_failed') {
+      return NextResponse.json(
+        { error: 'Failed to verify destination access' },
+        { status: 500 }
+      );
+    }
 
+    if (!targetMembership.ok) {
       return NextResponse.json(
         { error: 'Personal board not found' },
         { status: 404 }

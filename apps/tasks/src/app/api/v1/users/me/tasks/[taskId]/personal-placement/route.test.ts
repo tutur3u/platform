@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const TASK_ID = '11111111-1111-4111-8111-111111111111';
@@ -21,7 +21,6 @@ const mocks = vi.hoisted(() => {
   const targetBoardMaybeSingle = vi.fn();
   const targetListMaybeSingle = vi.fn();
   const userOverrideMaybeSingle = vi.fn();
-  const resolveTaskBoardAccess = vi.fn();
 
   const adminClient = {
     rpc: adminRpc,
@@ -101,7 +100,6 @@ const mocks = vi.hoisted(() => {
     targetBoardMaybeSingle,
     targetListMaybeSingle,
     userOverrideMaybeSingle,
-    resolveTaskBoardAccess,
     verifyWorkspaceMembershipType,
   };
 });
@@ -126,12 +124,6 @@ vi.mock('@tuturuuu/utils/workspace-helper', () => ({
   verifyWorkspaceMembershipType: (
     ...args: Parameters<typeof mocks.verifyWorkspaceMembershipType>
   ) => mocks.verifyWorkspaceMembershipType(...args),
-}));
-
-vi.mock('@tuturuuu/apis/tu-do/board-access', () => ({
-  resolveTaskBoardAccess: (
-    ...args: Parameters<typeof mocks.resolveTaskBoardAccess>
-  ) => mocks.resolveTaskBoardAccess(...args),
 }));
 
 type PlacementRouteHandler = (
@@ -243,17 +235,7 @@ describe('current-user task personal-placement route', () => {
     mocks.targetBoardMaybeSingle.mockReset();
     mocks.targetListMaybeSingle.mockReset();
     mocks.userOverrideMaybeSingle.mockReset();
-    mocks.resolveTaskBoardAccess.mockReset();
     mocks.verifyWorkspaceMembershipType.mockReset();
-    mocks.resolveTaskBoardAccess.mockResolvedValue({
-      access: { mode: 'member', permission: 'edit' },
-      board: { id: PERSONAL_BOARD_ID, ws_id: PERSONAL_WS_ID },
-      boardId: PERSONAL_BOARD_ID,
-      sbAdmin: mocks.adminClient,
-      supabase: {},
-      user: { id: 'user-1' },
-      wsId: PERSONAL_WS_ID,
-    });
   });
 
   it('stages an accessible external task on a personal board without changing the source list', async () => {
@@ -681,34 +663,20 @@ describe('current-user task personal-placement route', () => {
     );
   });
 
-  it('uses destination board edit access instead of raw workspace membership for the production payload', async () => {
+  it('uses destination personal workspace membership for the production payload', async () => {
     mocks.sourceTaskMaybeSingle.mockResolvedValue({
       data: sourceTaskRow(),
       error: null,
     });
     mocks.verifyWorkspaceMembershipType
       .mockResolvedValueOnce({ ok: true })
-      .mockResolvedValueOnce({ ok: false, error: 'membership_missing' });
+      .mockResolvedValueOnce({ ok: true, membershipType: 'MEMBER' });
     mocks.targetListMaybeSingle.mockResolvedValue({
       data: targetListRow({
         boardId: PRODUCTION_PERSONAL_BOARD_ID,
         listId: PRODUCTION_PERSONAL_LIST_ID,
       }),
       error: null,
-    });
-    mocks.resolveTaskBoardAccess.mockResolvedValue({
-      access: { mode: 'member', permission: 'edit' },
-      board: { id: PRODUCTION_PERSONAL_BOARD_ID, ws_id: PERSONAL_WS_ID },
-      boardId: PRODUCTION_PERSONAL_BOARD_ID,
-      list: {
-        board_id: PRODUCTION_PERSONAL_BOARD_ID,
-        id: PRODUCTION_PERSONAL_LIST_ID,
-      },
-      listId: PRODUCTION_PERSONAL_LIST_ID,
-      sbAdmin: mocks.adminClient,
-      supabase: {},
-      user: { id: 'user-1' },
-      wsId: PERSONAL_WS_ID,
     });
     mocks.adminRpc.mockResolvedValue({
       data: [
@@ -748,18 +716,12 @@ describe('current-user task personal-placement route', () => {
     );
 
     expect(response.status).toBe(200);
-    expect(mocks.resolveTaskBoardAccess).toHaveBeenCalledWith(
-      expect.objectContaining({
-        boardId: PRODUCTION_PERSONAL_BOARD_ID,
-        listId: PRODUCTION_PERSONAL_LIST_ID,
-        requiredPermission: 'edit',
-        sbAdmin: mocks.adminClient,
-        supabase: {},
-        user: { id: 'user-1' },
-        wsId: PERSONAL_WS_ID,
-      })
-    );
-    expect(mocks.verifyWorkspaceMembershipType).toHaveBeenCalledTimes(1);
+    expect(mocks.verifyWorkspaceMembershipType).toHaveBeenNthCalledWith(2, {
+      requiredType: 'ANY',
+      supabase: {},
+      userId: 'user-1',
+      wsId: PERSONAL_WS_ID,
+    });
     expect(mocks.adminRpc).toHaveBeenCalledWith(
       'upsert_personal_task_placement',
       expect.objectContaining({
@@ -772,21 +734,17 @@ describe('current-user task personal-placement route', () => {
     );
   });
 
-  it('returns personal board not found when destination board edit access is denied', async () => {
+  it('returns personal board not found when destination workspace membership is missing', async () => {
     mocks.sourceTaskMaybeSingle.mockResolvedValue({
       data: sourceTaskRow(),
       error: null,
     });
-    mocks.verifyWorkspaceMembershipType.mockResolvedValue({ ok: true });
+    mocks.verifyWorkspaceMembershipType
+      .mockResolvedValueOnce({ ok: true })
+      .mockResolvedValueOnce({ ok: false, error: 'membership_missing' });
     mocks.targetListMaybeSingle.mockResolvedValue({
       data: targetListRow(),
       error: null,
-    });
-    mocks.resolveTaskBoardAccess.mockResolvedValue({
-      error: NextResponse.json(
-        { error: 'Workspace access denied' },
-        { status: 403 }
-      ),
     });
 
     const { PUT } = await import(
@@ -813,6 +771,12 @@ describe('current-user task personal-placement route', () => {
     expect(response.status).toBe(404);
     await expect(response.json()).resolves.toEqual({
       error: 'Personal board not found',
+    });
+    expect(mocks.verifyWorkspaceMembershipType).toHaveBeenNthCalledWith(2, {
+      requiredType: 'ANY',
+      supabase: {},
+      userId: 'user-1',
+      wsId: PERSONAL_WS_ID,
     });
     expect(mocks.adminRpc).not.toHaveBeenCalled();
   });
