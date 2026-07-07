@@ -54,7 +54,7 @@
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "react-hook-form": "^7.80.0",
-    "recharts": "^3.9.1",
+    "recharts": "^3.9.2",
     "uuid": "^14.0.1",
     "zod": "^4.4.3"
   },
