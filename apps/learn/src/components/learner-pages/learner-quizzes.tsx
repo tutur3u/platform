@@ -7,6 +7,7 @@ import {
   submitTulearnQuizAnswer,
 } from '@tuturuuu/internal-api';
 import { Button } from '@tuturuuu/ui/button';
+import { Textarea } from '@tuturuuu/ui/textarea';
 import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useState } from 'react';
@@ -156,10 +157,15 @@ export function LearnerQuizzes({
   const matchingChoices = getMatchingChoices(currentQuiz.content);
   const orderingItems = getStringItems(currentQuiz.content, 'items');
   const currentScore = getQuizScore(currentQuiz);
+  const isParagraphQuiz = currentQuiz.type === 'paragraph';
+  const paragraphAnswer =
+    typeof selectedAnswer === 'string' ? selectedAnswer : '';
   const canSubmit =
     currentQuiz.type === 'matching'
       ? isCompleteMatchingAnswer(selectedAnswer, matchingPairs.length)
-      : selectedAnswer !== null;
+      : isParagraphQuiz
+        ? paragraphAnswer.trim().length > 0
+        : selectedAnswer !== null;
 
   const handleSubmit = async () => {
     if (!canSubmit || isSubmitted || isSubmitting) return;
@@ -185,6 +191,8 @@ export function LearnerQuizzes({
         isMatchingAnswer(selectedAnswer)
       ) {
         answerPayload = selectedAnswer;
+      } else if (currentQuiz.type === 'paragraph') {
+        answerPayload = { text: paragraphAnswer.trim() };
       }
 
       const response = await submitTulearnQuizAnswer(
@@ -344,7 +352,30 @@ export function LearnerQuizzes({
           />
         )}
 
-        {isSubmitted && isCorrect && (
+        {isParagraphQuiz && (
+          <div className="mt-6 space-y-3">
+            <div className="flex gap-2 rounded-sm border-2 border-dynamic-cyan/30 bg-dynamic-cyan/10 p-3 text-dynamic-cyan text-xs">
+              <span className="font-bold">
+                {t('courses.paragraphManualGradingHint')}
+              </span>
+            </div>
+            <div className="space-y-2">
+              <span className="block font-bold text-muted-foreground text-xs uppercase tracking-widest">
+                {t('courses.yourResponse')}
+              </span>
+              <Textarea
+                value={paragraphAnswer}
+                onChange={(event) => setSelectedAnswer(event.target.value)}
+                disabled={isSubmitted}
+                rows={6}
+                placeholder={t('courses.yourResponse')}
+                className="w-full rounded-none border-2 border-border bg-background px-3 py-3 font-bold text-sm leading-7 shadow-[2px_2px_0_var(--border)] focus-visible:ring-0"
+              />
+            </div>
+          </div>
+        )}
+
+        {isSubmitted && !isParagraphQuiz && isCorrect && (
           <div className="mt-6 border-2 border-dynamic-green/30 bg-dynamic-green/10 p-4 text-dynamic-green shadow-[3px_3px_0_hsl(var(--dynamic-green)/0.2)]">
             <div className="flex items-center gap-2 font-black">
               <Check className="h-5 w-5" />
@@ -363,7 +394,19 @@ export function LearnerQuizzes({
           </div>
         )}
 
-        {isSubmitted && !isCorrect && (
+        {isSubmitted && isParagraphQuiz && (
+          <div className="mt-6 border-2 border-dynamic-cyan/30 bg-dynamic-cyan/10 p-4 text-foreground shadow-[3px_3px_0_hsl(var(--dynamic-cyan)/0.2)]">
+            <div className="flex items-center gap-2 font-black">
+              <Check className="h-5 w-5 text-dynamic-cyan" />
+              <span>{t('courses.quizResponseRecorded')}</span>
+            </div>
+            <p className="mt-2 text-foreground/85 text-sm leading-relaxed">
+              {t('courses.paragraphManualGradingHint')}
+            </p>
+          </div>
+        )}
+
+        {isSubmitted && !isParagraphQuiz && !isCorrect && (
           <div className="mt-6 border-2 border-dynamic-red/30 bg-dynamic-red/10 p-4 text-dynamic-red shadow-[3px_3px_0_hsl(var(--dynamic-red)/0.2)]">
             <div className="flex items-center gap-2 font-black">
               <X className="h-5 w-5" />
