@@ -143,6 +143,7 @@ import { TaskNewLabelDialog } from '../task-dialogs/TaskNewLabelDialog';
 import { TaskNewProjectDialog } from '../task-dialogs/TaskNewProjectDialog';
 import { getTaskCardParentBadgeState } from '../task-parent-badge-state';
 import { TaskCardCheckbox } from './TaskCardCheckbox';
+import { shouldRenderTaskCardQuickArchive } from './task-card-archive-visibility';
 import {
   getTaskCardSelectionCheckboxToneClasses,
   TASK_CARD_OVERDUE_CHECKBOX_TONE_CLASSES,
@@ -780,8 +781,12 @@ function TaskCardInner({
 
   // Find the first list with 'done' or 'closed' status
   const getTargetCompletionList = () => {
-    const doneList = availableLists.find((list) => list.status === 'done');
-    const closedList = availableLists.find((list) => list.status === 'closed');
+    const doneList = availableLists.find(
+      (list) => list.status === 'done' && !list.deleted
+    );
+    const closedList = availableLists.find(
+      (list) => list.status === 'closed' && !list.deleted
+    );
     return doneList || closedList || null;
   };
 
@@ -874,7 +879,11 @@ function TaskCardInner({
 
   // Find specifically the closed list
   const getTargetClosedList = () => {
-    return availableLists.find((list) => list.status === 'closed') || null;
+    return (
+      availableLists.find(
+        (list) => list.status === 'closed' && !list.deleted
+      ) || null
+    );
   };
 
   const targetCompletionList = getTargetCompletionList();
@@ -883,8 +892,15 @@ function TaskCardInner({
     targetCompletionList && targetCompletionList.id !== task.list_id;
   const canMoveToClose =
     targetClosedList && targetClosedList.id !== task.list_id;
-  const canQuickArchive =
-    taskList?.status === 'done' && !isOverlay && Boolean(canMoveToClose);
+  const isDocumentList = taskList?.status === 'documents';
+  const canQuickArchive = shouldRenderTaskCardQuickArchive({
+    hasTargetClosedList: Boolean(canMoveToClose),
+    isOverlay: Boolean(isOverlay),
+    taskListStatus: taskList?.status,
+  });
+  const canShowCloseAction =
+    Boolean(canMoveToClose) &&
+    (isDocumentList || targetClosedList?.id !== targetCompletionList?.id);
   const quickArchiveToneClass = taskList?.color
     ? DESTINATION_TONE_COLORS[taskList.color]
     : DESTINATION_TONE_COLORS.GRAY;
@@ -2035,7 +2051,7 @@ function TaskCardInner({
                     e.stopPropagation(); // Prevent triggering task card click
                   }}
                 >
-                  {taskList?.status !== 'documents' && (
+                  {!isDocumentList && (
                     <DropdownMenuItem
                       className="cursor-pointer"
                       disabled={isLoading}
@@ -2051,11 +2067,9 @@ function TaskCardInner({
                       </Link>
                     </DropdownMenuItem>
                   )}
-                  {taskList?.status !== 'documents' && (
-                    <DropdownMenuSeparator />
-                  )}
+                  {!isDocumentList && <DropdownMenuSeparator />}
                   {/* Quick Completion Action */}
-                  {taskList?.status !== 'documents' && canMoveToCompletion && (
+                  {!isDocumentList && canMoveToCompletion && (
                     <DropdownMenuItem
                       onSelect={(e) =>
                         handleMenuItemSelect(
@@ -2074,28 +2088,28 @@ function TaskCardInner({
                   )}
 
                   {/* Mark as Closed Action - Only show if closed list exists and is different from the generic completion */}
-                  {taskList?.status !== 'documents' &&
-                    canMoveToClose &&
-                    targetClosedList?.id !== targetCompletionList?.id && (
-                      <DropdownMenuItem
-                        onSelect={(e) =>
-                          handleMenuItemSelect(
-                            e as unknown as Event,
-                            handleMoveToClose
-                          )
-                        }
-                        className="cursor-pointer"
-                        disabled={isLoading}
-                      >
+                  {canShowCloseAction && (
+                    <DropdownMenuItem
+                      onSelect={(e) =>
+                        handleMenuItemSelect(
+                          e as unknown as Event,
+                          handleMoveToClose
+                        )
+                      }
+                      className="cursor-pointer"
+                      disabled={isLoading}
+                    >
+                      {isDocumentList ? (
+                        <Archive className="h-4 w-4 text-dynamic-purple" />
+                      ) : (
                         <CircleSlash className="h-4 w-4 text-dynamic-purple" />
-                        {t('mark_as_closed')}
-                      </DropdownMenuItem>
-                    )}
+                      )}
+                      {isDocumentList ? t('archive') : t('mark_as_closed')}
+                    </DropdownMenuItem>
+                  )}
 
-                  {taskList?.status !== 'documents' &&
-                    (canMoveToCompletion || canMoveToClose) && (
-                      <DropdownMenuSeparator />
-                    )}
+                  {((!isDocumentList && canMoveToCompletion) ||
+                    canShowCloseAction) && <DropdownMenuSeparator />}
 
                   {/* Priority Menu */}
                   <TaskPriorityMenu

@@ -1,6 +1,7 @@
 'use client';
 
 import {
+  Archive,
   ArrowLeft,
   Copy,
   ExternalLink,
@@ -45,6 +46,8 @@ interface TaskDialogActionsProps {
   onShowDeleteDialog: () => void;
   onClearDraft: () => void;
   onNavigateBack?: () => void;
+  onArchiveTask?: () => void;
+  archiveTaskDisabled?: boolean;
   onOpenShareDialog?: () => void;
   disabled?: boolean;
   controlsDisabled?: boolean;
@@ -65,6 +68,8 @@ export function TaskDialogActions({
   onShowDeleteDialog,
   onClearDraft,
   onNavigateBack,
+  onArchiveTask,
+  archiveTaskDisabled = false,
   onOpenShareDialog,
   disabled = false,
   controlsDisabled = false,
@@ -157,6 +162,18 @@ export function TaskDialogActions({
               <ExternalLink className="mr-2 h-4 w-4" />
               {t('common.copy_link')}
             </DropdownMenuItem>
+            {onArchiveTask && (
+              <DropdownMenuItem
+                disabled={archiveTaskDisabled}
+                onClick={() => {
+                  onArchiveTask();
+                  setIsMoreMenuOpen(false);
+                }}
+              >
+                <Archive className="mr-2 h-4 w-4" />
+                {t('common.archive')}
+              </DropdownMenuItem>
+            )}
             <DropdownMenuSeparator />
             <DropdownMenuItem
               onClick={() => {

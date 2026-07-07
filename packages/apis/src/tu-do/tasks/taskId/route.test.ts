@@ -349,3 +349,222 @@ describe('task detail route PUT assignee validation', () => {
     );
   });
 });
+
+describe('task detail route PUT document archive', () => {
+  const boardId = '00000000-0000-4000-8000-000000000456';
+  const closedListId = '00000000-0000-4000-8000-000000000999';
+  const documentListId = '00000000-0000-4000-8000-000000000555';
+  const taskId = '00000000-0000-4000-8000-000000000777';
+  const workspaceId = '00000000-0000-4000-8000-000000000123';
+  let adminSupabase!: TypedSupabaseClient;
+  let updateTaskPayload: unknown;
+
+  function buildDocumentTaskRecord({
+    closedAt,
+    completed,
+    listId,
+    listName,
+    listStatus,
+  }: {
+    closedAt: string | null;
+    completed: boolean;
+    listId: string;
+    listName: string;
+    listStatus: string;
+  }) {
+    return {
+      id: taskId,
+      display_number: 123,
+      name: 'Archive source document',
+      description: null,
+      priority: null,
+      completed,
+      completed_at: null,
+      start_date: null,
+      end_date: null,
+      estimation_points: null,
+      sort_key: null,
+      created_at: '2026-05-17T00:00:00.000Z',
+      closed_at: closedAt,
+      deleted_at: null,
+      list_id: listId,
+      task_lists: {
+        id: listId,
+        name: listName,
+        status: listStatus,
+        board_id: boardId,
+        workspace_boards: {
+          id: boardId,
+          name: 'Documents',
+          workspace: {
+            personal: false,
+          },
+          ws_id: workspaceId,
+        },
+      },
+      assignees: [],
+      labels: [],
+      projects: [],
+    };
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+
+    normalizeWorkspaceIdMock.mockResolvedValue(workspaceId);
+    verifyWorkspaceMembershipTypeMock.mockResolvedValue({ ok: true });
+    updateTaskPayload = undefined;
+
+    const taskRows = [
+      buildDocumentTaskRecord({
+        closedAt: null,
+        completed: false,
+        listId: documentListId,
+        listName: 'Documents',
+        listStatus: 'documents',
+      }),
+      buildDocumentTaskRecord({
+        closedAt: '2026-07-07T04:30:00.000Z',
+        completed: true,
+        listId: closedListId,
+        listName: 'Closed',
+        listStatus: 'closed',
+      }),
+    ];
+    const tasksQuery = {
+      eq: vi.fn(() => tasksQuery),
+      maybeSingle: vi.fn(() =>
+        Promise.resolve({ data: taskRows.shift() ?? null, error: null })
+      ),
+    };
+    const taskListsQuery = {
+      eq: vi.fn(() => taskListsQuery),
+      maybeSingle: vi.fn(() =>
+        Promise.resolve({
+          data: {
+            id: closedListId,
+            board_id: boardId,
+            status: 'closed',
+            workspace_boards: { ws_id: workspaceId },
+          },
+          error: null,
+        })
+      ),
+    };
+    const linkedEventsQuery = {
+      eq: vi.fn(() => Promise.resolve({ data: [], error: null })),
+    };
+    const schedulingSettingsUpdateQuery = {
+      eq: vi.fn(() => Promise.resolve({ data: null, error: null })),
+    };
+    const fromMock = vi.fn((table: string) => {
+      if (table === 'tasks') {
+        return {
+          select: vi.fn(() => tasksQuery),
+        };
+      }
+
+      if (table === 'task_lists') {
+        return {
+          select: vi.fn(() => taskListsQuery),
+        };
+      }
+
+      if (
+        table === 'workspace_calendar_events' ||
+        table === 'task_calendar_events'
+      ) {
+        return {
+          select: vi.fn(() => linkedEventsQuery),
+        };
+      }
+
+      if (table === 'task_user_scheduling_settings') {
+        return {
+          update: vi.fn(() => schedulingSettingsUpdateQuery),
+        };
+      }
+
+      throw new Error(`Unexpected table: ${table}`);
+    });
+    const rpcMock = vi.fn((rpcName: string, payload: unknown) => {
+      if (rpcName !== 'update_task_with_relations') {
+        throw new Error(`Unexpected rpc: ${rpcName}`);
+      }
+
+      updateTaskPayload = payload;
+
+      return {
+        maybeSingle: vi.fn(() =>
+          Promise.resolve({
+            data: { id: taskId, list_id: closedListId },
+            error: null,
+          })
+        ),
+      };
+    });
+    adminSupabase = {
+      from: fromMock,
+      rpc: rpcMock,
+    } as unknown as TypedSupabaseClient;
+
+    createAdminClientMock.mockResolvedValue(adminSupabase);
+  });
+
+  it('moves a document-list task to the closed list with closed_at set', async () => {
+    const response = await handleTaskDetailRoutePUT(
+      new NextRequest(
+        `http://localhost/api/v1/workspaces/personal/tasks/${taskId}`,
+        {
+          body: JSON.stringify({
+            list_id: closedListId,
+          }),
+          headers: {
+            'content-type': 'application/json',
+          },
+          method: 'PUT',
+        }
+      ),
+      {
+        params: Promise.resolve({
+          taskId,
+          wsId: 'personal',
+        }),
+      },
+      {
+        supabase: adminSupabase,
+        user: {
+          aud: 'authenticated',
+          email: 'owner@example.com',
+          id: '00000000-0000-4000-8000-000000000888',
+        } as SupabaseUser,
+      }
+    );
+
+    expect(response.status).toBe(200);
+    expect(updateTaskPayload).toMatchObject({
+      p_task_id: taskId,
+      p_task_updates: {
+        closed_at: expect.any(String),
+        completed: true,
+        completed_at: null,
+        list_id: closedListId,
+      },
+    });
+    await expect(response.json()).resolves.toMatchObject({
+      task: {
+        closed_at: '2026-07-07T04:30:00.000Z',
+        completed: true,
+        id: taskId,
+        list_id: closedListId,
+        list_name: 'Closed',
+      },
+    });
+    expect(publishTaskRealtimeMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        event: 'task:upsert',
+        taskIds: [taskId],
+      })
+    );
+  });
+});
