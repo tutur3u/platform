@@ -126,6 +126,23 @@ export function usesPersonalPlacement(task: Task) {
   return isPersonalExternalOverlayTask(task);
 }
 
+export function getPersonalPlacementTargetBoardId({
+  boardId,
+  columns,
+  targetListId,
+}: {
+  boardId: string | null;
+  columns: Pick<TaskList, 'board_id' | 'id'>[];
+  targetListId: string;
+}) {
+  const stagingBoardId = getPersonalExternalStagingBoardId(targetListId);
+  if (stagingBoardId) return stagingBoardId;
+
+  return (
+    columns.find((column) => column.id === targetListId)?.board_id ?? boardId
+  );
+}
+
 function getTaskDropPosition(
   event: DragMoveEvent | DragEndEvent,
   pointerY?: number | null,
@@ -442,7 +459,14 @@ export function useKanbanDnd({
       }
 
       const stagingBoardId = getPersonalExternalStagingBoardId(targetListId);
-      const targetBoardId = stagingBoardId ?? boardId;
+      const targetBoardId = getPersonalPlacementTargetBoardId({
+        boardId,
+        columns,
+        targetListId,
+      });
+      if (!targetBoardId) {
+        throw new Error('Board ID is required');
+      }
       const isStagingTarget = stagingBoardId !== null;
       const nextTask = {
         ...task,
@@ -540,7 +564,7 @@ export function useKanbanDnd({
         throw error;
       }
     },
-    [boardId, queryClient]
+    [boardId, columns, queryClient]
   );
 
   // Use the extracted calculateSortKeyWithRetry helper

@@ -1,4 +1,7 @@
+import { resolveTaskBoardAccess } from '@tuturuuu/apis/tu-do/board-access';
+import { CLI_APP_TARGET_APP } from '@tuturuuu/auth/cli-session';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import {
   getPersonalExternalStagingListId,
   isPersonalExternalStagingListId,
@@ -16,6 +19,10 @@ const placementSchema = z.object({
   previous_task_id: z.guid().nullable().optional(),
   next_task_id: z.guid().nullable().optional(),
 });
+
+const PERSONAL_PLACEMENT_APP_SESSION_AUTH = {
+  targetApp: [CLI_APP_TARGET_APP, 'calendar', 'tasks'],
+} as const;
 
 type SourceTaskRow = {
   id: string;
@@ -223,6 +230,7 @@ async function resolvePersonalPlacementTarget(
   personalBoardId: string,
   personalListId: string | null
 ): Promise<{
+  effectivePersonalBoardId: string | null;
   targetBoard: TargetBoardRow | null;
   targetListId: string | null;
   response: NextResponse | null;
@@ -252,6 +260,7 @@ async function resolvePersonalPlacementTarget(
 
     if (targetListError) {
       return {
+        effectivePersonalBoardId: null,
         targetBoard: null,
         targetListId: null,
         response: NextResponse.json(
@@ -265,6 +274,7 @@ async function resolvePersonalPlacementTarget(
 
     if (!list || list.deleted) {
       return {
+        effectivePersonalBoardId: null,
         targetBoard: null,
         targetListId: null,
         response: NextResponse.json(
@@ -278,6 +288,7 @@ async function resolvePersonalPlacementTarget(
 
     if (!targetBoard?.id || !targetBoard.ws_id) {
       return {
+        effectivePersonalBoardId: null,
         targetBoard: null,
         targetListId: null,
         response: NextResponse.json(
@@ -287,21 +298,24 @@ async function resolvePersonalPlacementTarget(
       };
     }
 
-    if (
-      list.board_id !== personalBoardId ||
-      targetBoard.id !== personalBoardId
-    ) {
+    if (list.board_id && list.board_id !== targetBoard.id) {
       return {
+        effectivePersonalBoardId: null,
         targetBoard: null,
         targetListId: null,
         response: NextResponse.json(
-          { error: 'Personal list does not belong to personal board' },
-          { status: 400 }
+          { error: 'Personal board not found' },
+          { status: 404 }
         ),
       };
     }
 
-    return { targetBoard, targetListId: personalListId, response: null };
+    return {
+      effectivePersonalBoardId: targetBoard.id,
+      targetBoard,
+      targetListId: personalListId,
+      response: null,
+    };
   }
 
   const { data: targetBoard, error: targetBoardError } = await (sbAdmin as any)
@@ -323,6 +337,7 @@ async function resolvePersonalPlacementTarget(
 
   if (targetBoardError) {
     return {
+      effectivePersonalBoardId: null,
       targetBoard: null,
       targetListId: null,
       response: NextResponse.json(
@@ -334,6 +349,7 @@ async function resolvePersonalPlacementTarget(
 
   if (!targetBoard) {
     return {
+      effectivePersonalBoardId: null,
       targetBoard: null,
       targetListId: null,
       response: NextResponse.json(
@@ -344,10 +360,71 @@ async function resolvePersonalPlacementTarget(
   }
 
   return {
+    effectivePersonalBoardId: personalBoardId,
     targetBoard: targetBoard as TargetBoardRow,
     targetListId: null,
     response: null,
   };
+}
+
+async function verifyPersonalPlacementDestinationAccess({
+  effectivePersonalBoardId,
+  resolvedPersonalListId,
+  sbAdmin,
+  supabase,
+  targetWsId,
+  user,
+}: {
+  effectivePersonalBoardId: string;
+  resolvedPersonalListId: string | null;
+  sbAdmin: any;
+  supabase: any;
+  targetWsId: string;
+  user: SupabaseUser;
+}) {
+  const targetMembership = await verifyWorkspaceMembershipType({
+    requiredType: 'ANY',
+    wsId: targetWsId,
+    userId: user.id,
+    supabase,
+  });
+
+  if (targetMembership.error === 'membership_lookup_failed') {
+    return NextResponse.json(
+      { error: 'Failed to verify destination access' },
+      { status: 500 }
+    );
+  }
+
+  if (targetMembership.ok) {
+    return null;
+  }
+
+  const targetAccess = await resolveTaskBoardAccess({
+    boardId: effectivePersonalBoardId,
+    listId: resolvedPersonalListId,
+    requiredPermission: 'edit',
+    sbAdmin: sbAdmin as any,
+    supabase,
+    user,
+    wsId: targetWsId,
+  });
+
+  if ('error' in targetAccess) {
+    if (targetAccess.error.status >= 500) {
+      return NextResponse.json(
+        { error: 'Failed to verify destination access' },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json(
+      { error: 'Personal board not found' },
+      { status: 404 }
+    );
+  }
+
+  return null;
 }
 
 export const PUT = withSessionAuth<{ taskId: string }>(
@@ -412,6 +489,7 @@ export const PUT = withSessionAuth<{ taskId: string }>(
         : null;
 
     const {
+      effectivePersonalBoardId,
       targetBoard,
       targetListId: resolvedPersonalListId,
       response: targetResponse,
@@ -428,6 +506,13 @@ export const PUT = withSessionAuth<{ taskId: string }>(
           { error: 'Personal board not found' },
           { status: 404 }
         )
+      );
+    }
+
+    if (!effectivePersonalBoardId) {
+      return NextResponse.json(
+        { error: 'Personal board not found' },
+        { status: 404 }
       );
     }
 
@@ -456,7 +541,7 @@ export const PUT = withSessionAuth<{ taskId: string }>(
     const isPersonalBoardExternalSource =
       sourceWorkspacePersonal &&
       sourceWsId === targetWsId &&
-      sourceBoardId !== personal_board_id;
+      sourceBoardId !== effectivePersonalBoardId;
 
     if (!isWorkspaceExternalSource && !isPersonalBoardExternalSource) {
       return NextResponse.json(
@@ -468,25 +553,18 @@ export const PUT = withSessionAuth<{ taskId: string }>(
       );
     }
 
-    const targetMembership = await verifyWorkspaceMembershipType({
-      requiredType: 'ANY',
-      supabase: supabase as any,
-      userId: user.id,
-      wsId: targetWsId,
-    });
+    const destinationAccessResponse =
+      await verifyPersonalPlacementDestinationAccess({
+        effectivePersonalBoardId,
+        resolvedPersonalListId,
+        sbAdmin,
+        supabase: supabase as any,
+        targetWsId,
+        user,
+      });
 
-    if (targetMembership.error === 'membership_lookup_failed') {
-      return NextResponse.json(
-        { error: 'Failed to verify destination access' },
-        { status: 500 }
-      );
-    }
-
-    if (!targetMembership.ok) {
-      return NextResponse.json(
-        { error: 'Personal board not found' },
-        { status: 404 }
-      );
+    if (destinationAccessResponse) {
+      return destinationAccessResponse;
     }
 
     const { data: placementRows, error: saveError } = await (
@@ -494,7 +572,7 @@ export const PUT = withSessionAuth<{ taskId: string }>(
     ).rpc('upsert_personal_task_placement', {
       p_task_id: taskId,
       p_user_id: user.id,
-      p_personal_board_id: personal_board_id,
+      p_personal_board_id: effectivePersonalBoardId,
       p_personal_list_id: resolvedPersonalListId,
       p_personal_sort_key: personal_sort_key ?? null,
       p_previous_task_id: parsed.data.previous_task_id ?? null,
@@ -514,7 +592,8 @@ export const PUT = withSessionAuth<{ taskId: string }>(
     return NextResponse.json({
       task: buildPlacedTask(sourceTask, savedPlacement as PlacementRow),
     });
-  }
+  },
+  { allowAppSessionAuth: PERSONAL_PLACEMENT_APP_SESSION_AUTH }
 );
 
 export const DELETE = withSessionAuth<{ taskId: string }>(
@@ -575,5 +654,6 @@ export const DELETE = withSessionAuth<{ taskId: string }>(
     }
 
     return NextResponse.json({ success: true });
-  }
+  },
+  { allowAppSessionAuth: PERSONAL_PLACEMENT_APP_SESSION_AUTH }
 );

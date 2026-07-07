@@ -1,4 +1,4 @@
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const TASK_ID = '11111111-1111-4111-8111-111111111111';
@@ -7,6 +7,7 @@ const PERSONAL_WS_ID = '33333333-3333-4333-8333-333333333333';
 const PERSONAL_BOARD_ID = '44444444-4444-4444-8444-444444444444';
 const SOURCE_BOARD_ID = '66666666-6666-4666-8666-666666666666';
 const PERSONAL_SOURCE_BOARD_ID = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+const STALE_PERSONAL_BOARD_ID = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
 const PERSONAL_LIST_ID = '77777777-7777-4777-8777-777777777777';
 const PREVIOUS_TASK_ID = '88888888-8888-4888-8888-888888888888';
 const NEXT_TASK_ID = '99999999-9999-4999-8999-999999999999';
@@ -21,6 +22,8 @@ const mocks = vi.hoisted(() => {
   const targetBoardMaybeSingle = vi.fn();
   const targetListMaybeSingle = vi.fn();
   const userOverrideMaybeSingle = vi.fn();
+  const resolveTaskBoardAccess = vi.fn();
+  const withSessionAuth = vi.fn((handler: unknown) => handler);
 
   const adminClient = {
     rpc: adminRpc,
@@ -100,12 +103,14 @@ const mocks = vi.hoisted(() => {
     targetBoardMaybeSingle,
     targetListMaybeSingle,
     userOverrideMaybeSingle,
+    resolveTaskBoardAccess,
     verifyWorkspaceMembershipType,
+    withSessionAuth,
   };
 });
 
 vi.mock('@/lib/api-auth', () => ({
-  withSessionAuth: (handler: unknown) => handler,
+  withSessionAuth: mocks.withSessionAuth,
 }));
 
 vi.mock('@tuturuuu/supabase/next/server', () => ({
@@ -124,6 +129,12 @@ vi.mock('@tuturuuu/utils/workspace-helper', () => ({
   verifyWorkspaceMembershipType: (
     ...args: Parameters<typeof mocks.verifyWorkspaceMembershipType>
   ) => mocks.verifyWorkspaceMembershipType(...args),
+}));
+
+vi.mock('@tuturuuu/apis/tu-do/board-access', () => ({
+  resolveTaskBoardAccess: (
+    ...args: Parameters<typeof mocks.resolveTaskBoardAccess>
+  ) => mocks.resolveTaskBoardAccess(...args),
 }));
 
 type PlacementRouteHandler = (
@@ -236,6 +247,43 @@ describe('current-user task personal-placement route', () => {
     mocks.targetListMaybeSingle.mockReset();
     mocks.userOverrideMaybeSingle.mockReset();
     mocks.verifyWorkspaceMembershipType.mockReset();
+    mocks.withSessionAuth.mockReset();
+    mocks.withSessionAuth.mockImplementation((handler: unknown) => handler);
+    mocks.resolveTaskBoardAccess.mockReset();
+    mocks.resolveTaskBoardAccess.mockResolvedValue({
+      access: { mode: 'member', permission: 'edit' },
+      board: { id: PERSONAL_BOARD_ID, ws_id: PERSONAL_WS_ID },
+      boardId: PERSONAL_BOARD_ID,
+      sbAdmin: mocks.adminClient,
+      supabase: {},
+      user: { id: 'user-1' },
+      wsId: PERSONAL_WS_ID,
+    });
+  });
+
+  it('allows platform CLI, calendar, and Tasks app-session auth', async () => {
+    await import(
+      '@/app/api/v1/users/me/tasks/[taskId]/personal-placement/route'
+    );
+
+    expect(mocks.withSessionAuth).toHaveBeenNthCalledWith(
+      1,
+      expect.any(Function),
+      {
+        allowAppSessionAuth: {
+          targetApp: ['platform', 'calendar', 'tasks'],
+        },
+      }
+    );
+    expect(mocks.withSessionAuth).toHaveBeenNthCalledWith(
+      2,
+      expect.any(Function),
+      {
+        allowAppSessionAuth: {
+          targetApp: ['platform', 'calendar', 'tasks'],
+        },
+      }
+    );
   });
 
   it('stages an accessible external task on a personal board without changing the source list', async () => {
@@ -355,6 +403,7 @@ describe('current-user task personal-placement route', () => {
 
     expect(response.status).toBe(200);
     expect(mocks.targetBoardMaybeSingle).not.toHaveBeenCalled();
+    expect(mocks.resolveTaskBoardAccess).not.toHaveBeenCalled();
     expect(mocks.adminRpc).toHaveBeenCalledWith(
       'upsert_personal_task_placement',
       {
@@ -651,6 +700,8 @@ describe('current-user task personal-placement route', () => {
 
     expect(response.status).toBe(200);
     expect(mocks.targetBoardMaybeSingle).not.toHaveBeenCalled();
+    expect(mocks.resolveTaskBoardAccess).not.toHaveBeenCalled();
+    expect(mocks.verifyWorkspaceMembershipType).toHaveBeenCalledTimes(2);
     expect(mocks.adminRpc).toHaveBeenCalledWith(
       'upsert_personal_task_placement',
       expect.objectContaining({
@@ -722,6 +773,7 @@ describe('current-user task personal-placement route', () => {
       userId: 'user-1',
       wsId: PERSONAL_WS_ID,
     });
+    expect(mocks.resolveTaskBoardAccess).not.toHaveBeenCalled();
     expect(mocks.adminRpc).toHaveBeenCalledWith(
       'upsert_personal_task_placement',
       expect.objectContaining({
@@ -734,7 +786,98 @@ describe('current-user task personal-placement route', () => {
     );
   });
 
-  it('returns personal board not found when destination workspace membership is missing', async () => {
+  it('falls back to direct board edit access when target workspace membership is absent', async () => {
+    mocks.sourceTaskMaybeSingle.mockResolvedValue({
+      data: sourceTaskRow(),
+      error: null,
+    });
+    mocks.verifyWorkspaceMembershipType
+      .mockResolvedValueOnce({ ok: true })
+      .mockResolvedValueOnce({ ok: false, error: 'membership_missing' });
+    mocks.targetListMaybeSingle.mockResolvedValue({
+      data: targetListRow({
+        boardId: PRODUCTION_PERSONAL_BOARD_ID,
+        listId: PRODUCTION_PERSONAL_LIST_ID,
+      }),
+      error: null,
+    });
+    mocks.resolveTaskBoardAccess.mockResolvedValue({
+      access: { mode: 'member', permission: 'edit' },
+      board: { id: PRODUCTION_PERSONAL_BOARD_ID, ws_id: PERSONAL_WS_ID },
+      boardId: PRODUCTION_PERSONAL_BOARD_ID,
+      list: {
+        board_id: PRODUCTION_PERSONAL_BOARD_ID,
+        id: PRODUCTION_PERSONAL_LIST_ID,
+      },
+      listId: PRODUCTION_PERSONAL_LIST_ID,
+      sbAdmin: mocks.adminClient,
+      supabase: {},
+      user: { id: 'user-1' },
+      wsId: PERSONAL_WS_ID,
+    });
+    mocks.adminRpc.mockResolvedValue({
+      data: [
+        {
+          personal_board_id: PRODUCTION_PERSONAL_BOARD_ID,
+          personal_list_id: PRODUCTION_PERSONAL_LIST_ID,
+          personal_sort_key: 2_000_000,
+          personal_added_at: '2026-07-06T01:00:00.000Z',
+          personal_placed_at: '2026-07-06T02:00:00.000Z',
+        },
+      ],
+      error: null,
+    });
+
+    const { PUT } = await import(
+      '@/app/api/v1/users/me/tasks/[taskId]/personal-placement/route'
+    );
+    const response = await (PUT as PlacementRouteHandler)(
+      new NextRequest(
+        `http://localhost/api/v1/users/me/tasks/${TASK_ID}/personal-placement`,
+        {
+          method: 'PUT',
+          body: JSON.stringify({
+            personal_board_id: PRODUCTION_PERSONAL_BOARD_ID,
+            personal_list_id: PRODUCTION_PERSONAL_LIST_ID,
+            personal_sort_key: 2_000_000,
+            previous_task_id: PRODUCTION_PREVIOUS_TASK_ID,
+            next_task_id: null,
+          }),
+        }
+      ),
+      {
+        user: { id: 'user-1' },
+        supabase: {},
+      },
+      { taskId: TASK_ID }
+    );
+
+    expect(response.status).toBe(200);
+    expect(mocks.resolveTaskBoardAccess).toHaveBeenCalledWith(
+      expect.objectContaining({
+        boardId: PRODUCTION_PERSONAL_BOARD_ID,
+        listId: PRODUCTION_PERSONAL_LIST_ID,
+        requiredPermission: 'edit',
+        sbAdmin: mocks.adminClient,
+        supabase: {},
+        user: { id: 'user-1' },
+        wsId: PERSONAL_WS_ID,
+      })
+    );
+    expect(mocks.verifyWorkspaceMembershipType).toHaveBeenCalledTimes(2);
+    expect(mocks.adminRpc).toHaveBeenCalledWith(
+      'upsert_personal_task_placement',
+      expect.objectContaining({
+        p_personal_board_id: PRODUCTION_PERSONAL_BOARD_ID,
+        p_personal_list_id: PRODUCTION_PERSONAL_LIST_ID,
+        p_personal_sort_key: 2_000_000,
+        p_previous_task_id: PRODUCTION_PREVIOUS_TASK_ID,
+        p_next_task_id: null,
+      })
+    );
+  });
+
+  it('returns personal board not found when destination board edit access is denied', async () => {
     mocks.sourceTaskMaybeSingle.mockResolvedValue({
       data: sourceTaskRow(),
       error: null,
@@ -745,6 +888,12 @@ describe('current-user task personal-placement route', () => {
     mocks.targetListMaybeSingle.mockResolvedValue({
       data: targetListRow(),
       error: null,
+    });
+    mocks.resolveTaskBoardAccess.mockResolvedValue({
+      error: NextResponse.json(
+        { error: 'Workspace access denied' },
+        { status: 403 }
+      ),
     });
 
     const { PUT } = await import(
@@ -778,10 +927,17 @@ describe('current-user task personal-placement route', () => {
       userId: 'user-1',
       wsId: PERSONAL_WS_ID,
     });
+    expect(mocks.resolveTaskBoardAccess).toHaveBeenCalledWith(
+      expect.objectContaining({
+        boardId: PERSONAL_BOARD_ID,
+        listId: PERSONAL_LIST_ID,
+        requiredPermission: 'edit',
+      })
+    );
     expect(mocks.adminRpc).not.toHaveBeenCalled();
   });
 
-  it('rejects a destination list that belongs to a different board', async () => {
+  it('persists the list board when the supplied personal board id is stale', async () => {
     mocks.sourceTaskMaybeSingle.mockResolvedValue({
       data: sourceTaskRow(),
       error: null,
@@ -789,9 +945,79 @@ describe('current-user task personal-placement route', () => {
     mocks.verifyWorkspaceMembershipType.mockResolvedValue({ ok: true });
     mocks.targetListMaybeSingle.mockResolvedValue({
       data: targetListRow({
-        boardId: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
+        boardId: PERSONAL_BOARD_ID,
         listId: PERSONAL_LIST_ID,
       }),
+      error: null,
+    });
+    mocks.adminRpc.mockResolvedValue({
+      data: [
+        {
+          personal_board_id: PERSONAL_BOARD_ID,
+          personal_list_id: PERSONAL_LIST_ID,
+          personal_sort_key: 2_000_000,
+          personal_added_at: '2026-07-06T01:00:00.000Z',
+          personal_placed_at: '2026-07-06T02:00:00.000Z',
+        },
+      ],
+      error: null,
+    });
+
+    const { PUT } = await import(
+      '@/app/api/v1/users/me/tasks/[taskId]/personal-placement/route'
+    );
+    const response = await (PUT as PlacementRouteHandler)(
+      new NextRequest(
+        `http://localhost/api/v1/users/me/tasks/${TASK_ID}/personal-placement`,
+        {
+          method: 'PUT',
+          body: JSON.stringify({
+            personal_board_id: STALE_PERSONAL_BOARD_ID,
+            personal_list_id: PERSONAL_LIST_ID,
+            personal_sort_key: 2_000_000,
+          }),
+        }
+      ),
+      {
+        user: { id: 'user-1' },
+        supabase: {},
+      },
+      { taskId: TASK_ID }
+    );
+
+    expect(response.status).toBe(200);
+    expect(mocks.targetBoardMaybeSingle).not.toHaveBeenCalled();
+    expect(mocks.adminRpc).toHaveBeenCalledWith(
+      'upsert_personal_task_placement',
+      expect.objectContaining({
+        p_personal_board_id: PERSONAL_BOARD_ID,
+        p_personal_list_id: PERSONAL_LIST_ID,
+        p_personal_sort_key: 2_000_000,
+      })
+    );
+
+    const payload = await response.json();
+    expect(payload.task).toEqual(
+      expect.objectContaining({
+        personal_board_id: PERSONAL_BOARD_ID,
+        personal_list_id: PERSONAL_LIST_ID,
+      })
+    );
+  });
+
+  it('returns a server error when target workspace membership lookup fails', async () => {
+    mocks.sourceTaskMaybeSingle.mockResolvedValue({
+      data: sourceTaskRow(),
+      error: null,
+    });
+    mocks.verifyWorkspaceMembershipType
+      .mockResolvedValueOnce({ ok: true })
+      .mockResolvedValueOnce({
+        ok: false,
+        error: 'membership_lookup_failed',
+      });
+    mocks.targetListMaybeSingle.mockResolvedValue({
+      data: targetListRow(),
       error: null,
     });
 
@@ -816,10 +1042,11 @@ describe('current-user task personal-placement route', () => {
       { taskId: TASK_ID }
     );
 
-    expect(response.status).toBe(400);
+    expect(response.status).toBe(500);
     await expect(response.json()).resolves.toEqual({
-      error: 'Personal list does not belong to personal board',
+      error: 'Failed to verify destination access',
     });
+    expect(mocks.resolveTaskBoardAccess).not.toHaveBeenCalled();
     expect(mocks.adminRpc).not.toHaveBeenCalled();
   });
 
