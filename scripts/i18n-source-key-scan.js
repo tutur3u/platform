@@ -149,6 +149,15 @@ function escapeRegExp(value) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
+function isForwardedAsSameNameJsxProp(content, variableName) {
+  const escapedVariableName = escapeRegExp(variableName);
+  const propRegex = new RegExp(
+    `\\b${escapedVariableName}\\s*=\\s*\\{\\s*${escapedVariableName}(?:\\s+as\\b[^}]*)?\\s*\\}`
+  );
+
+  return propRegex.test(content);
+}
+
 function findFirstArgumentEnd(content, start, end) {
   const stack = [];
   let state = 'code';
@@ -411,7 +420,17 @@ function collectTranslationKeyLiterals(expression) {
   return [];
 }
 
-function findTranslatorCalls(content, variableName, start, end) {
+function isPositionInRanges(position, ranges) {
+  return ranges.some(({ end, start }) => start <= position && position < end);
+}
+
+function findTranslatorCalls(
+  content,
+  variableName,
+  start,
+  end,
+  excludedRanges = []
+) {
   const methods = [...TRANSLATOR_METHODS].join('|');
   const callRegex = new RegExp(
     `\\b${escapeRegExp(variableName)}(?:\\.(?:${methods}))?\\(\\s*`,
@@ -423,6 +442,10 @@ function findTranslatorCalls(content, variableName, start, end) {
   let match = callRegex.exec(content);
   while (match !== null) {
     if (match.index >= end) break;
+    if (isPositionInRanges(match.index, excludedRanges)) {
+      match = callRegex.exec(content);
+      continue;
+    }
 
     const argumentStart = callRegex.lastIndex;
     const argumentEnd = findFirstArgumentEnd(content, argumentStart, end);
@@ -446,6 +469,7 @@ function scanSourceKeys(rootDir, sourceDir) {
     const content = fs.readFileSync(filePath, 'utf-8');
     const relPath = path.relative(rootDir, filePath);
     const bracePairs = buildBracePairs(content);
+    const declarations = [];
     TRANSLATOR_DECLARATION_REGEX.lastIndex = 0;
 
     let declarationMatch = TRANSLATOR_DECLARATION_REGEX.exec(content);
@@ -457,17 +481,40 @@ function scanSourceKeys(rootDir, sourceDir) {
         declarationMatch.index,
         content.length
       );
+      declarations.push({
+        index: declarationMatch.index,
+        namespace,
+        scopeEnd,
+        variableName,
+      });
+
+      declarationMatch = TRANSLATOR_DECLARATION_REGEX.exec(content);
+    }
+
+    for (const declaration of declarations) {
+      const isForwardedTranslator = isForwardedAsSameNameJsxProp(
+        content.slice(declaration.index, declaration.scopeEnd),
+        declaration.variableName
+      );
+      const excludedRanges = isForwardedTranslator
+        ? declarations
+            .filter(
+              (other) =>
+                other !== declaration &&
+                other.variableName === declaration.variableName
+            )
+            .map((other) => ({ end: other.scopeEnd, start: other.index }))
+        : [];
 
       for (const key of findTranslatorCalls(
         content,
-        variableName,
-        declarationMatch.index,
-        scopeEnd
+        declaration.variableName,
+        isForwardedTranslator ? 0 : declaration.index,
+        isForwardedTranslator ? content.length : declaration.scopeEnd,
+        excludedRanges
       )) {
-        results.push({ namespace, key, file: relPath });
+        results.push({ namespace: declaration.namespace, key, file: relPath });
       }
-
-      declarationMatch = TRANSLATOR_DECLARATION_REGEX.exec(content);
     }
   }
 

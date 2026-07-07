@@ -110,6 +110,59 @@ test('scanSourceKeys captures static conditional keys without option fallback st
   ]);
 });
 
+test('scanSourceKeys follows same-file translator props passed by name', (t) => {
+  const projectRoot = createProject(t);
+  writeFile(
+    projectRoot,
+    'packages/ui/src/forwarded.tsx',
+    `
+      import { useTranslations } from 'next-intl';
+
+      function GroupRow({ t }: { t: (key: string) => string }) {
+        return (
+          <>
+            {t('ws-invoices.last_payment')}
+            {t('ws-invoices.status_expired')}
+          </>
+        );
+      }
+
+      function StatusBadge() {
+        const t = useTranslations('status');
+        return t('active');
+      }
+
+      export function SubscriptionGroupSelector() {
+        const t = useTranslations();
+        return (
+          <>
+            <GroupRow t={t as (key: string) => string} />
+            <StatusBadge />
+          </>
+        );
+      }
+    `
+  );
+
+  assert.deepEqual(scanSourceKeys(projectRoot, 'packages/ui/src'), [
+    {
+      file: 'packages/ui/src/forwarded.tsx',
+      key: 'active',
+      namespace: 'status',
+    },
+    {
+      file: 'packages/ui/src/forwarded.tsx',
+      key: 'ws-invoices.last_payment',
+      namespace: '',
+    },
+    {
+      file: 'packages/ui/src/forwarded.tsx',
+      key: 'ws-invoices.status_expired',
+      namespace: '',
+    },
+  ]);
+});
+
 test('checkAppSourceKeys does not use shared package key exceptions for local app source', (t) => {
   const projectRoot = createProject(t);
   writeJson(projectRoot, 'apps/finance/messages/en.json', {
