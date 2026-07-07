@@ -50,7 +50,10 @@ export const GET = withSessionAuth(
       const parsedParams = RouteParamsSchema.safeParse(await params);
       if (!parsedParams.success) {
         return NextResponse.json(
-          { message: 'Invalid route params', errors: parsedParams.error.issues },
+          {
+            message: 'Invalid route params',
+            errors: parsedParams.error.issues,
+          },
           { status: 400 }
         );
       }
@@ -72,7 +75,10 @@ export const GET = withSessionAuth(
         wsId: access.normalizedWsId,
       });
       if (!course) {
-        return NextResponse.json({ message: 'Course not found' }, { status: 404 });
+        return NextResponse.json(
+          { message: 'Course not found' },
+          { status: 404 }
+        );
       }
 
       // 1. Get all members of this course (same table as the members API)
@@ -199,8 +205,7 @@ export const GET = withSessionAuth(
 
         return {
           userId: m.user_id,
-          displayName:
-            profile?.display_name ?? profile?.full_name ?? null,
+          displayName: profile?.display_name ?? profile?.full_name ?? null,
           email: profile?.email ?? null,
           avatarUrl: profile?.avatar_url ?? null,
           totalQuizzes: totalQuizzes ?? 0,
@@ -211,8 +216,7 @@ export const GET = withSessionAuth(
           totalModules,
           completedModules,
           lastActivityAt,
-          isLowScorer:
-            scorePercent !== null && scorePercent < 50,
+          isLowScorer: scorePercent !== null && scorePercent < 50,
           hasNotSubmitted: answeredCount === 0,
         };
       });

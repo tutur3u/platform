@@ -1,3 +1,4 @@
+import { createBatch } from '@tuturuuu/email-service';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
@@ -5,7 +6,6 @@ import {
   requireTeachWorkspaceAccess,
   validateTeachCourse,
 } from '@/lib/teach/api';
-import { createBatch } from '@tuturuuu/email-service';
 
 const RouteParamsSchema = z.object({
   courseId: z.guid(),
@@ -24,7 +24,10 @@ export const POST = withSessionAuth(
       const parsedParams = RouteParamsSchema.safeParse(await params);
       if (!parsedParams.success) {
         return NextResponse.json(
-          { message: 'Invalid route params', errors: parsedParams.error.issues },
+          {
+            message: 'Invalid route params',
+            errors: parsedParams.error.issues,
+          },
           { status: 400 }
         );
       }
@@ -47,7 +50,10 @@ export const POST = withSessionAuth(
         wsId: normalizedWsId,
       });
       if (!course) {
-        return NextResponse.json({ message: 'Course not found' }, { status: 404 });
+        return NextResponse.json(
+          { message: 'Course not found' },
+          { status: 404 }
+        );
       }
 
       // 2. Fetch all student profiles
@@ -140,18 +146,25 @@ export const POST = withSessionAuth(
         const subs = subsByUser[member.user_id] ?? [];
         const answeredCount = subs.length;
         const correctCount = subs.filter((s) => s.is_correct === true).length;
-        const pendingGradingCount = subs.filter((s) => s.is_correct === null).length;
+        const pendingGradingCount = subs.filter(
+          (s) => s.is_correct === null
+        ).length;
 
         const gradedCount = answeredCount - pendingGradingCount;
         const scorePercent =
-          gradedCount > 0 ? Math.round((correctCount / gradedCount) * 100) : null;
+          gradedCount > 0
+            ? Math.round((correctCount / gradedCount) * 100)
+            : null;
 
         const modulesWithSubs = new Set(subs.map((s) => s.module_id));
-        const completedModules = moduleIds.filter((mid) => modulesWithSubs.has(mid)).length;
+        const completedModules = moduleIds.filter((mid) =>
+          modulesWithSubs.has(mid)
+        ).length;
 
         // Render HTML
-        const studentName = profile.display_name ?? profile.full_name ?? 'Học sinh';
-        
+        const studentName =
+          profile.display_name ?? profile.full_name ?? 'Học sinh';
+
         const emailContent = {
           subject: `[Tuturuuu] Báo cáo học tập - ${course.name}`,
           title: 'Báo cáo học tập',
@@ -168,7 +181,8 @@ export const POST = withSessionAuth(
           answeredUnit: 'câu',
         };
 
-        const scoreText = scorePercent !== null ? `${scorePercent}%` : emailContent.pending;
+        const scoreText =
+          scorePercent !== null ? `${scorePercent}%` : emailContent.pending;
         const progressText = `${completedModules}/${totalModules} ${emailContent.modulesUnit}`;
         const quizText = `${answeredCount}/${totalQuizzes ?? 0} ${emailContent.answeredUnit}`;
 

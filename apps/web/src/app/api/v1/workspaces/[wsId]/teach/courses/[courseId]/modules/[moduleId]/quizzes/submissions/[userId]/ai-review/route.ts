@@ -33,11 +33,7 @@ type RouteParams = {
 };
 
 export const POST = withSessionAuth(
-  async (
-    request,
-    context,
-    params: RouteParams | Promise<RouteParams>
-  ) => {
+  async (request, context, params: RouteParams | Promise<RouteParams>) => {
     try {
       const resolvedParams = await Promise.resolve(params);
       const parsedParams = RouteParamsSchema.safeParse(resolvedParams);

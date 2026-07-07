@@ -2,12 +2,12 @@ import type { Json } from '@tuturuuu/types';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
-import { updateModuleCompletionStatus } from '@/lib/tulearn/completion';
 import {
   requireTeachWorkspaceAccess,
   validateTeachCourse,
   validateTeachCourseModule,
 } from '@/lib/teach/api';
+import { updateModuleCompletionStatus } from '@/lib/tulearn/completion';
 
 const RouteParamsSchema = z.object({
   courseId: z.guid(),
@@ -123,7 +123,9 @@ export const GET_inner = async (
 
     const { data: answers, error: answersErr } = await access.sbAdmin
       .from('course_module_quiz_submissions')
-      .select('quiz_id, selected_option_id, answer, is_correct, feedback, ai_feedback, created_at')
+      .select(
+        'quiz_id, selected_option_id, answer, is_correct, feedback, ai_feedback, created_at'
+      )
       .eq('module_id', moduleId)
       .eq('user_id', userId)
       .order('created_at', { ascending: true });
@@ -309,11 +311,7 @@ export const POST = withSessionAuth(
 
       if (updateErr) throw updateErr;
 
-      await updateModuleCompletionStatus(
-        access.sbAdmin,
-        moduleId,
-        userId
-      );
+      await updateModuleCompletionStatus(access.sbAdmin, moduleId, userId);
 
       return NextResponse.json({ success: true });
     } catch (error) {

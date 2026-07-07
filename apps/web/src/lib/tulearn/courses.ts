@@ -182,29 +182,30 @@ export async function getLearnerCourseSummaries({
 
   if (!courseIds.length) return [];
 
-  const [coursesResult, modulesResult, completionsResult, moduleQuizzesResult] = await Promise.all([
-    sbAdmin
-      .from('workspace_user_groups')
-      .select('id, name, description')
-      .eq('ws_id', wsId)
-      .in('id', courseIds)
-      .order('name', { ascending: true }),
-    sbAdmin
-      .from('workspace_course_modules')
-      .select('id, group_id')
-      .in('group_id', courseIds)
-      .eq('is_published', true),
-    sbAdmin
-      .from('course_module_completion_status')
-      .select('module_id')
-      .eq('user_id', studentPlatformUserId)
-      .eq('completion_status', true),
-    sbAdmin
-      .from('workspace_course_modules')
-      .select('id, course_module_quizzes(quiz_id)')
-      .in('group_id', courseIds)
-      .eq('is_published', true),
-  ]);
+  const [coursesResult, modulesResult, completionsResult, moduleQuizzesResult] =
+    await Promise.all([
+      sbAdmin
+        .from('workspace_user_groups')
+        .select('id, name, description')
+        .eq('ws_id', wsId)
+        .in('id', courseIds)
+        .order('name', { ascending: true }),
+      sbAdmin
+        .from('workspace_course_modules')
+        .select('id, group_id')
+        .in('group_id', courseIds)
+        .eq('is_published', true),
+      sbAdmin
+        .from('course_module_completion_status')
+        .select('module_id')
+        .eq('user_id', studentPlatformUserId)
+        .eq('completion_status', true),
+      sbAdmin
+        .from('workspace_course_modules')
+        .select('id, course_module_quizzes(quiz_id)')
+        .in('group_id', courseIds)
+        .eq('is_published', true),
+    ]);
 
   if (coursesResult.error) throw coursesResult.error;
   if (modulesResult.error) throw modulesResult.error;
@@ -294,7 +295,9 @@ export async function getLearnerCourseDetail({
       .maybeSingle(),
     sbAdmin
       .from('workspace_course_modules')
-      .select('id, name, sort_key, is_published, is_quiz_score_published, quiz_deadline')
+      .select(
+        'id, name, sort_key, is_published, is_quiz_score_published, quiz_deadline'
+      )
       .eq('group_id', courseId)
       .eq('is_published', true)
       .order('sort_key', { ascending: true }),
@@ -315,50 +318,56 @@ export async function getLearnerCourseDetail({
 
   const moduleIdList = moduleRows.map((module) => module.id);
   const moduleIds = new Set(moduleIdList);
-  const [completionsResult, flashcards, quizzes, quizSets, testsResult, submissionsResult] =
-    await Promise.all([
-      moduleIdList.length
-        ? sbAdmin
-            .from('course_module_completion_status')
-            .select('module_id')
-            .eq('user_id', studentPlatformUserId)
-            .eq('completion_status', true)
-            .in('module_id', moduleIdList)
-        : emptyModuleIdResult(),
-      moduleIdList.length
-        ? sbAdmin
-            .from('course_module_flashcards')
-            .select('module_id')
-            .in('module_id', moduleIdList)
-        : emptyModuleIdResult(),
-      moduleIdList.length
-        ? sbAdmin
-            .from('course_module_quizzes')
-            .select('module_id, quiz_id')
-            .in('module_id', moduleIdList)
-        : (emptyModuleIdResult() as any),
-      moduleIdList.length
-        ? sbAdmin
-            .from('course_module_quiz_sets')
-            .select('module_id')
-            .in('module_id', moduleIdList)
-        : emptyModuleIdResult(),
-      sbAdmin
-        .from('course_tests')
-        .select(
-          'id, name, start_at, duration_in_minutes, description, is_score_published, course_test_modules(module_id)'
-        )
-        .eq('course_id', courseId)
-        .eq('is_published', true)
-        .order('created_at', { ascending: false }),
-      moduleIdList.length
-        ? sbAdmin
-            .from('course_module_quiz_submissions')
-            .select('module_id, quiz_id, is_correct')
-            .eq('user_id', studentPlatformUserId)
-            .in('module_id', moduleIdList)
-        : emptyModuleIdResult(),
-    ]);
+  const [
+    completionsResult,
+    flashcards,
+    quizzes,
+    quizSets,
+    testsResult,
+    submissionsResult,
+  ] = await Promise.all([
+    moduleIdList.length
+      ? sbAdmin
+          .from('course_module_completion_status')
+          .select('module_id')
+          .eq('user_id', studentPlatformUserId)
+          .eq('completion_status', true)
+          .in('module_id', moduleIdList)
+      : emptyModuleIdResult(),
+    moduleIdList.length
+      ? sbAdmin
+          .from('course_module_flashcards')
+          .select('module_id')
+          .in('module_id', moduleIdList)
+      : emptyModuleIdResult(),
+    moduleIdList.length
+      ? sbAdmin
+          .from('course_module_quizzes')
+          .select('module_id, quiz_id')
+          .in('module_id', moduleIdList)
+      : (emptyModuleIdResult() as any),
+    moduleIdList.length
+      ? sbAdmin
+          .from('course_module_quiz_sets')
+          .select('module_id')
+          .in('module_id', moduleIdList)
+      : emptyModuleIdResult(),
+    sbAdmin
+      .from('course_tests')
+      .select(
+        'id, name, start_at, duration_in_minutes, description, is_score_published, course_test_modules(module_id)'
+      )
+      .eq('course_id', courseId)
+      .eq('is_published', true)
+      .order('created_at', { ascending: false }),
+    moduleIdList.length
+      ? sbAdmin
+          .from('course_module_quiz_submissions')
+          .select('module_id, quiz_id, is_correct')
+          .eq('user_id', studentPlatformUserId)
+          .in('module_id', moduleIdList)
+      : emptyModuleIdResult(),
+  ]);
 
   if (completionsResult.error) throw completionsResult.error;
   if (flashcards.error) throw flashcards.error;
@@ -377,34 +386,37 @@ export async function getLearnerCourseDetail({
 
   let priorIncomplete = false;
   const modules: CourseModuleSummary[] = moduleRows.map((module) => {
-      const moduleQuizzes = (quizzes.data ?? []).filter((q: any) => q.module_id === module.id);
-      const correctSubmissions = ((submissionsResult.data ?? []) as any[]).filter(
-        (s) => s.module_id === module.id && s.is_correct === true
-      );
-      const totalQuizCount = moduleQuizzes.length;
-      const correctQuizCount = correctSubmissions.length;
-      const isQuizPassed = totalQuizCount > 0 ? (correctQuizCount / totalQuizCount >= 0.5) : true;
+    const moduleQuizzes = (quizzes.data ?? []).filter(
+      (q: any) => q.module_id === module.id
+    );
+    const correctSubmissions = ((submissionsResult.data ?? []) as any[]).filter(
+      (s) => s.module_id === module.id && s.is_correct === true
+    );
+    const totalQuizCount = moduleQuizzes.length;
+    const correctQuizCount = correctSubmissions.length;
+    const isQuizPassed =
+      totalQuizCount > 0 ? correctQuizCount / totalQuizCount >= 0.5 : true;
 
-      const completed = completedModuleIds.has(module.id) || isQuizPassed;
-      const locked = !module.is_published || priorIncomplete;
-      if (!completed && module.is_published) priorIncomplete = true;
+    const completed = completedModuleIds.has(module.id) || isQuizPassed;
+    const locked = !module.is_published || priorIncomplete;
+    if (!completed && module.is_published) priorIncomplete = true;
 
-      return {
-        id: module.id,
-        is_quiz_score_published: module.is_quiz_score_published === true,
-        quiz_deadline: module.quiz_deadline || null,
-        name: module.name,
-        sort_key: module.sort_key,
-        is_published: module.is_published,
-        completed,
-        locked,
-        counts: {
-          flashcards: flashcardCounts.get(module.id) ?? 0,
-          quizzes: quizCounts.get(module.id) ?? 0,
-          quizSets: quizSetCounts.get(module.id) ?? 0,
-        },
-      };
-    });
+    return {
+      id: module.id,
+      is_quiz_score_published: module.is_quiz_score_published === true,
+      quiz_deadline: module.quiz_deadline || null,
+      name: module.name,
+      sort_key: module.sort_key,
+      is_published: module.is_published,
+      completed,
+      locked,
+      counts: {
+        flashcards: flashcardCounts.get(module.id) ?? 0,
+        quizzes: quizCounts.get(module.id) ?? 0,
+        quizSets: quizSetCounts.get(module.id) ?? 0,
+      },
+    };
+  });
 
   const completedModules = modules.filter((module) => module.completed).length;
 

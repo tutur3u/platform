@@ -1,8 +1,8 @@
 import { google } from '@ai-sdk/google';
-import { generateObject } from 'ai';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import type { Json } from '@tuturuuu/types';
+import { generateObject } from 'ai';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
@@ -184,7 +184,9 @@ export const GET = withSessionAuth<Params>(
       const sbAdmin = await createAdminClient();
       const { data: submissions, error: subError } = await sbAdmin
         .from('course_module_quiz_submissions')
-        .select('quiz_id, selected_option_id, answer, is_correct, feedback, ai_feedback, created_at')
+        .select(
+          'quiz_id, selected_option_id, answer, is_correct, feedback, ai_feedback, created_at'
+        )
         .eq('module_id', moduleId)
         .eq('user_id', subject.studentPlatformUserId)
         .order('created_at', { ascending: true });
@@ -328,7 +330,7 @@ export const POST = withSessionAuth<Params>(
             );
           }
 
-        isCorrect = option.is_correct;
+          isCorrect = option.is_correct;
           correctAnswerFeedback = await multipleChoiceFeedback({
             correctAnswer: null,
             quizId,
@@ -531,7 +533,10 @@ export const DELETE = withSessionAuth<Params>(
         .maybeSingle();
 
       if (moduleErr) throw moduleErr;
-      if (module?.quiz_deadline && new Date() > new Date(module.quiz_deadline)) {
+      if (
+        module?.quiz_deadline &&
+        new Date() > new Date(module.quiz_deadline)
+      ) {
         return NextResponse.json(
           { message: 'The deadline for this quiz has passed.' },
           { status: 403 }

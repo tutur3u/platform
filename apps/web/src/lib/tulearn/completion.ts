@@ -12,7 +12,10 @@ export async function updateModuleCompletionStatus(
     .eq('module_id', moduleId);
 
   if (quizzesErr) {
-    console.error('Failed to fetch module quizzes for completion calculation:', quizzesErr);
+    console.error(
+      'Failed to fetch module quizzes for completion calculation:',
+      quizzesErr
+    );
     return;
   }
 
@@ -24,11 +27,16 @@ export async function updateModuleCompletionStatus(
     .eq('user_id', studentPlatformUserId);
 
   if (subErr) {
-    console.error('Failed to fetch submissions for completion calculation:', subErr);
+    console.error(
+      'Failed to fetch submissions for completion calculation:',
+      subErr
+    );
     return;
   }
 
-  const correctCount = (submissions ?? []).filter((s: any) => s.is_correct === true).length;
+  const correctCount = (submissions ?? []).filter(
+    (s: any) => s.is_correct === true
+  ).length;
   const totalCount = quizzes?.length ?? 0;
 
   // A 50% pass rate is required to consider the module completed.
@@ -47,6 +55,9 @@ export async function updateModuleCompletionStatus(
     );
 
   if (upsertErr) {
-    console.error('Failed to upsert course_module_completion_status:', upsertErr);
+    console.error(
+      'Failed to upsert course_module_completion_status:',
+      upsertErr
+    );
   }
 }

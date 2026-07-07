@@ -36,7 +36,10 @@ export const GET = withSessionAuth(
       const parsedParams = RouteParamsSchema.safeParse(await params);
       if (!parsedParams.success) {
         return NextResponse.json(
-          { message: 'Invalid route params', errors: parsedParams.error.issues },
+          {
+            message: 'Invalid route params',
+            errors: parsedParams.error.issues,
+          },
           { status: 400 }
         );
       }
@@ -130,7 +133,10 @@ export const GET = withSessionAuth(
         if (!groupId) continue;
         if (!subsByGroup[groupId]) subsByGroup[groupId] = [];
         const virtualId = platformToVirtual.get(sub.user_id) ?? sub.user_id;
-        subsByGroup[groupId]!.push({ user_id: virtualId, is_correct: sub.is_correct });
+        subsByGroup[groupId]!.push({
+          user_id: virtualId,
+          is_correct: sub.is_correct,
+        });
       }
 
       // 5. Compute stats per course
@@ -140,7 +146,9 @@ export const GET = withSessionAuth(
         const subs = subsByGroup[course.id] ?? [];
 
         // Pending grading: null is_correct (paragraph waiting for teacher)
-        const pending_grading = subs.filter((s) => s.is_correct === null).length;
+        const pending_grading = subs.filter(
+          (s) => s.is_correct === null
+        ).length;
 
         // Not submitted: members with zero submissions
         const submittedUserIds = new Set(subs.map((s) => s.user_id));
@@ -149,9 +157,11 @@ export const GET = withSessionAuth(
         ).length;
 
         // Low scorers: members whose correct rate < 50%
-        const scoreByUser: Record<string, { correct: number; total: number }> = {};
+        const scoreByUser: Record<string, { correct: number; total: number }> =
+          {};
         for (const sub of subs) {
-          if (!scoreByUser[sub.user_id]) scoreByUser[sub.user_id] = { correct: 0, total: 0 };
+          if (!scoreByUser[sub.user_id])
+            scoreByUser[sub.user_id] = { correct: 0, total: 0 };
           scoreByUser[sub.user_id]!.total++;
           if (sub.is_correct === true) scoreByUser[sub.user_id]!.correct++;
         }
@@ -174,8 +184,14 @@ export const GET = withSessionAuth(
 
       return NextResponse.json({
         courses: courseStats,
-        total_pending_grading: courseStats.reduce((s, c) => s + c.pending_grading, 0),
-        total_not_submitted: courseStats.reduce((s, c) => s + c.not_submitted, 0),
+        total_pending_grading: courseStats.reduce(
+          (s, c) => s + c.pending_grading,
+          0
+        ),
+        total_not_submitted: courseStats.reduce(
+          (s, c) => s + c.not_submitted,
+          0
+        ),
         total_low_scorers: courseStats.reduce((s, c) => s + c.low_scorers, 0),
       } satisfies TeachDashboardStatsResponse);
     } catch (error) {

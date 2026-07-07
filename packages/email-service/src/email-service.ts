@@ -655,7 +655,7 @@ export class EmailService {
       const devModeEnabled = DEV_MODE || Boolean(options?.devMode);
       const forceProductionEmail = process.env.SEND_PRODUCTION_EMAIL === 'true';
       const isDev = devModeEnabled && !forceProductionEmail;
-      
+
       if (isDev) {
         // Fall back to dummy mock credentials in development so local testing works out-of-the-box
         credentials = {

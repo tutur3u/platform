@@ -1,3 +1,4 @@
+import { sendWorkspaceEmail } from '@tuturuuu/email-service';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
@@ -5,7 +6,6 @@ import {
   requireTeachWorkspaceAccess,
   validateTeachCourse,
 } from '@/lib/teach/api';
-import { sendWorkspaceEmail } from '@tuturuuu/email-service';
 
 const RouteParamsSchema = z.object({
   courseId: z.guid(),
@@ -25,7 +25,10 @@ export const POST = withSessionAuth(
       const parsedParams = RouteParamsSchema.safeParse(await params);
       if (!parsedParams.success) {
         return NextResponse.json(
-          { message: 'Invalid route params', errors: parsedParams.error.issues },
+          {
+            message: 'Invalid route params',
+            errors: parsedParams.error.issues,
+          },
           { status: 400 }
         );
       }
@@ -48,7 +51,10 @@ export const POST = withSessionAuth(
         wsId: normalizedWsId,
       });
       if (!course) {
-        return NextResponse.json({ message: 'Course not found' }, { status: 404 });
+        return NextResponse.json(
+          { message: 'Course not found' },
+          { status: 404 }
+        );
       }
 
       // 2. Fetch the student profile
@@ -64,7 +70,10 @@ export const POST = withSessionAuth(
         .maybeSingle();
 
       if (!member) {
-        return NextResponse.json({ message: 'Student not enrolled in this course' }, { status: 404 });
+        return NextResponse.json(
+          { message: 'Student not enrolled in this course' },
+          { status: 404 }
+        );
       }
 
       const profile = (
@@ -127,32 +136,49 @@ export const POST = withSessionAuth(
         : [];
 
       const answeredCount = studentSubs.length;
-      const correctCount = studentSubs.filter((s) => s.is_correct === true).length;
-      const pendingGradingCount = studentSubs.filter((s) => s.is_correct === null).length;
+      const correctCount = studentSubs.filter(
+        (s) => s.is_correct === true
+      ).length;
+      const pendingGradingCount = studentSubs.filter(
+        (s) => s.is_correct === null
+      ).length;
 
       const gradedCount = answeredCount - pendingGradingCount;
       const scorePercent =
         gradedCount > 0 ? Math.round((correctCount / gradedCount) * 100) : null;
 
       const modulesWithSubs = new Set(studentSubs.map((s) => s.module_id));
-      const completedModules = moduleIds.filter((mid) => modulesWithSubs.has(mid)).length;
+      const completedModules = moduleIds.filter((mid) =>
+        modulesWithSubs.has(mid)
+      ).length;
 
       // 5. Render beautiful responsive HTML Email Template with Localization
-      const studentName = profile.display_name ?? profile.full_name ?? (isVi ? 'Học sinh' : 'Student');
-      
+      const studentName =
+        profile.display_name ??
+        profile.full_name ??
+        (isVi ? 'Học sinh' : 'Student');
+
       const emailContent = {
-        subject: isVi ? `[Tuturuuu] Báo cáo học tập - ${course.name}` : `[Tuturuuu] Study Report - ${course.name}`,
+        subject: isVi
+          ? `[Tuturuuu] Báo cáo học tập - ${course.name}`
+          : `[Tuturuuu] Study Report - ${course.name}`,
         title: isVi ? 'Báo cáo học tập' : 'Study Report',
-        subtitle: isVi ? 'Tóm tắt tiến trình học tập cá nhân' : 'Personal learning progress summary',
-        hello: isVi ? `Xin chào <strong>${studentName}</strong>,` : `Hello <strong>${studentName}</strong>,`,
-        intro: isVi 
-          ? `Dưới đây là báo cáo kết quả học tập hiện tại của bạn cho khóa học <strong>${course.name}</strong>. Hãy tiếp tục luyện tập và hoàn thành các bài học nhé!` 
+        subtitle: isVi
+          ? 'Tóm tắt tiến trình học tập cá nhân'
+          : 'Personal learning progress summary',
+        hello: isVi
+          ? `Xin chào <strong>${studentName}</strong>,`
+          : `Hello <strong>${studentName}</strong>,`,
+        intro: isVi
+          ? `Dưới đây là báo cáo kết quả học tập hiện tại của bạn cho khóa học <strong>${course.name}</strong>. Hãy tiếp tục luyện tập và hoàn thành các bài học nhé!`
           : `Here is your current performance report for <strong>${course.name}</strong>. Keep practicing and reviewing modules to maintain steady progress.`,
         avgScore: isVi ? 'Điểm trung bình' : 'Avg. Score',
         modulesDone: isVi ? 'Module đã xong' : 'Modules Done',
         quizPractice: isVi ? 'Luyện tập quiz' : 'Quiz Practice',
-        cta: isVi ? 'Đi tới bảng điều khiển học viên' : 'Go to Learner Dashboard',
-        footer: isVi 
+        cta: isVi
+          ? 'Đi tới bảng điều khiển học viên'
+          : 'Go to Learner Dashboard',
+        footer: isVi
           ? `Báo cáo học tập được gửi tự động từ giảng viên của bạn.<br>Hệ thống giáo dục Tuturuuu &copy; 2026`
           : `This is an automated performance report from your instructor.<br>Tuturuuu Teach Platform &copy; 2026`,
         pending: isVi ? 'Đang chờ' : 'Pending',
@@ -160,7 +186,8 @@ export const POST = withSessionAuth(
         answeredUnit: isVi ? 'câu' : 'answered',
       };
 
-      const scoreText = scorePercent !== null ? `${scorePercent}%` : emailContent.pending;
+      const scoreText =
+        scorePercent !== null ? `${scorePercent}%` : emailContent.pending;
       const progressText = `${completedModules}/${totalModules} ${emailContent.modulesUnit}`;
       const quizText = `${answeredCount}/${totalQuizzes ?? 0} ${emailContent.answeredUnit}`;
 
@@ -338,7 +365,10 @@ export const POST = withSessionAuth(
       });
 
       if (!mailResult.success) {
-        console.error('Failed to send performance report email:', mailResult.error);
+        console.error(
+          'Failed to send performance report email:',
+          mailResult.error
+        );
         return NextResponse.json(
           { message: 'Failed to deliver report email' },
           { status: 500 }
