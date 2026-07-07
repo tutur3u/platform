@@ -201,7 +201,7 @@ export const GET = withSessionAuth(
         }
         const completedModules = moduleIds.filter((mid) => {
           const totalModuleQuizzes = quizzesPerModule[mid] ?? 0;
-          if (totalModuleQuizzes === 0) return false;
+          if (totalModuleQuizzes === 0) return true;
           return (
             (submittedQuizIdsByModule.get(mid)?.size ?? 0) >= totalModuleQuizzes
           );
