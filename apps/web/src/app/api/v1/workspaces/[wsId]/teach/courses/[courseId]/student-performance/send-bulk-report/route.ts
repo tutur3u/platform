@@ -393,8 +393,8 @@ export const POST = withSessionAuth(
   }
 );
 
-function escapeHtml(value: string) {
-  return value.replace(/[&<>"']/g, (char) => {
+function escapeHtml(value: string | null | undefined) {
+  return String(value ?? '').replace(/[&<>"']/g, (char) => {
     switch (char) {
       case '&':
         return '&amp;';

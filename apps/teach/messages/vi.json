@@ -295,7 +295,7 @@
     "pending": "Đang chờ",
     "pendingGrading": "Chờ chấm điểm",
     "progress": "Tiến độ",
-    "quizCountLabel": "câu hỏi",
+    "quizCountLabel": "{count} câu hỏi",
     "quizzes": "Câu hỏi",
     "quizTitle": "Luyện tập câu hỏi",
     "quizSubtitle": "chỉ tính luyện tập quiz module · bài kiểm tra được theo dõi riêng",

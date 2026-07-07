@@ -48,9 +48,10 @@ describe('workspace email rate limit overrides', () => {
           return {
             select: vi.fn(() => ({
               eq: vi.fn(() => ({
-                maybeSingle: vi
-                  .fn()
-                  .mockResolvedValue({ data: credentialRow, error: null }),
+                maybeSingle: vi.fn().mockImplementation(async () => ({
+                  data: credentialRow,
+                  error: null,
+                })),
               })),
             })),
           };

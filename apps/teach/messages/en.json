@@ -295,7 +295,7 @@
     "pending": "Pending",
     "pendingGrading": "Pending Grading",
     "progress": "Progress",
-    "quizCountLabel": "quiz questions",
+    "quizCountLabel": "{count, plural, one {# quiz question} other {# quiz questions}}",
     "quizzes": "Quizzes",
     "quizTitle": "Quiz Practice",
     "quizSubtitle": "module quiz practice · tests tracked separately",

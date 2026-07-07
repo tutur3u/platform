@@ -24,7 +24,7 @@ export interface StudentPerformanceStat {
   scorePercent: number | null; // null if no answered quizzes
   // Module completion
   totalModules: number;
-  completedModules: number; // modules where student has submitted at least one quiz
+  completedModules: number; // modules where student has submitted all quizzes
   // Activity
   lastActivityAt: string | null;
   // Risk flags
@@ -133,7 +133,7 @@ export const GET = withSessionAuth(
       const { data: submissions } = moduleIds.length
         ? await access.sbAdmin
             .from('course_module_quiz_submissions')
-            .select('user_id, module_id, is_correct, created_at')
+            .select('user_id, module_id, quiz_id, is_correct, created_at')
             .in('module_id', moduleIds)
         : { data: [] };
 
@@ -152,6 +152,7 @@ export const GET = withSessionAuth(
       type SubRow = {
         user_id: string;
         module_id: string;
+        quiz_id: string;
         is_correct: boolean | null;
         created_at: string;
       };
@@ -190,11 +191,21 @@ export const GET = withSessionAuth(
               ? null // all pending
               : null;
 
-        // Module completion: student submitted at least 1 quiz per module
-        const modulesWithSubs = new Set(subs.map((s) => s.module_id));
-        const completedModules = moduleIds.filter((mid) =>
-          modulesWithSubs.has(mid)
-        ).length;
+        // Module completion: student submitted every quiz in the module.
+        const submittedQuizIdsByModule = new Map<string, Set<string>>();
+        for (const sub of subs) {
+          if (!submittedQuizIdsByModule.has(sub.module_id)) {
+            submittedQuizIdsByModule.set(sub.module_id, new Set());
+          }
+          submittedQuizIdsByModule.get(sub.module_id)!.add(sub.quiz_id);
+        }
+        const completedModules = moduleIds.filter((mid) => {
+          const totalModuleQuizzes = quizzesPerModule[mid] ?? 0;
+          if (totalModuleQuizzes === 0) return false;
+          return (
+            (submittedQuizIdsByModule.get(mid)?.size ?? 0) >= totalModuleQuizzes
+          );
+        }).length;
 
         const lastActivityAt =
           subs.length > 0

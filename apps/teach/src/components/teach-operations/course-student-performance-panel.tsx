@@ -142,8 +142,9 @@ export function CourseStudentPerformancePanel({
               <p className="mt-0.5 text-muted-foreground text-xs">
                 {data?.students.length ?? 0} {t('students') || 'students'} ·{' '}
                 {data?.totalModules ?? 0} {t('modules') || 'modules'} ·{' '}
-                {data?.totalQuizzes ?? 0}{' '}
-                {t('quizCountLabel') || 'quiz questions'} ·{' '}
+                {t('quizCountLabel', { count: data?.totalQuizzes ?? 0 }) ||
+                  `${data?.totalQuizzes ?? 0} quiz questions`}{' '}
+                ·{' '}
                 <span className="italic">
                   {t('quizSubtitle') || 'module quiz practice only'}
                 </span>
