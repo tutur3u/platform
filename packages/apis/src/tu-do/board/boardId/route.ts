@@ -44,6 +44,18 @@ const TASK_BOARD_NAME_EXISTS_ERROR =
   'A task board with this name already exists';
 const DEFAULT_LIST_COLUMN_UNAVAILABLE_ERROR =
   'Default task list settings are not available until the database migration is applied';
+const DEFAULT_LIST_COLUMNS = [
+  'default_list_id',
+  'default_done_list_id',
+  'default_closed_list_id',
+] as const;
+
+type DefaultListColumn = (typeof DEFAULT_LIST_COLUMNS)[number];
+type BoardUpdatePayload =
+  Database['public']['Tables']['workspace_boards']['Update'] & {
+    default_done_list_id?: string | null;
+    default_closed_list_id?: string | null;
+  };
 
 function isUniqueViolation(error: unknown) {
   return (
@@ -65,8 +77,69 @@ function isDefaultListColumnUnavailable(error: unknown) {
 
   return (
     code === '42703' ||
-    (typeof message === 'string' && message.includes('default_list_id'))
+    (typeof message === 'string' &&
+      DEFAULT_LIST_COLUMNS.some((column) => message.includes(column)))
   );
+}
+
+function getDefaultListValidationMessage(column: DefaultListColumn) {
+  if (column === 'default_done_list_id') {
+    return 'Default done list must belong to this board and use the done status';
+  }
+
+  if (column === 'default_closed_list_id') {
+    return 'Default closed list must belong to this board and use the closed status';
+  }
+
+  return 'Default list does not belong to this board';
+}
+
+function getDefaultListValidationStatus(column: DefaultListColumn) {
+  if (column === 'default_done_list_id') return 'done';
+  if (column === 'default_closed_list_id') return 'closed';
+  return null;
+}
+
+async function validateDefaultListColumn({
+  boardId,
+  column,
+  listId,
+  sbAdmin,
+}: {
+  boardId: string;
+  column: DefaultListColumn;
+  listId: string;
+  sbAdmin: TypedSupabaseClient;
+}) {
+  const expectedStatus = getDefaultListValidationStatus(column);
+  let query = sbAdmin
+    .from('task_lists')
+    .select('id')
+    .eq('id', listId)
+    .eq('board_id', boardId)
+    .eq('deleted', false);
+
+  if (expectedStatus) {
+    query = query.eq('status', expectedStatus);
+  }
+
+  const { data: list, error: listError } = await query.maybeSingle();
+
+  if (listError) {
+    return NextResponse.json(
+      { message: 'Failed to validate default list' },
+      { status: 500 }
+    );
+  }
+
+  if (!list) {
+    return NextResponse.json(
+      { message: getDefaultListValidationMessage(column) },
+      { status: 400 }
+    );
+  }
+
+  return null;
 }
 
 function taskBoardNameExistsResponse() {
@@ -144,17 +217,20 @@ export async function handleBoardRoutePUT(
     icon?: Database['public']['Enums']['platform_icon'] | null;
     ticket_prefix?: string | null;
     default_list_id?: string | null;
+    default_done_list_id?: string | null;
+    default_closed_list_id?: string | null;
     archived?: boolean;
     deleted?: boolean;
     restore?: boolean;
     group_ids?: string[];
   };
-  const hasDefaultListUpdate = Object.hasOwn(data, 'default_list_id');
+  const hasDefaultListUpdate = DEFAULT_LIST_COLUMNS.some((column) =>
+    Object.hasOwn(data, column)
+  );
 
   const { group_ids: _, archived, deleted, restore, ...coreData } = data;
 
-  const updateData: Database['public']['Tables']['workspace_boards']['Update'] =
-    { ...coreData };
+  const updateData: BoardUpdatePayload = { ...coreData };
 
   const now = new Date().toISOString();
   if (archived !== undefined) {
@@ -170,30 +246,20 @@ export async function handleBoardRoutePUT(
   const sbAdmin =
     auth.sbAdmin ?? ((await createAdminClient()) as TypedSupabaseClient);
 
-  // When setting a default list for new tasks, ensure it belongs to this board
-  // and is not deleted. A null value clears the default (revert to first list).
-  if (typeof data.default_list_id === 'string') {
-    const { data: list, error: listError } = await sbAdmin
-      .from('task_lists')
-      .select('id')
-      .eq('id', data.default_list_id)
-      .eq('board_id', parsedBoardId)
-      .eq('deleted', false)
-      .maybeSingle();
+  // Default list columns intentionally have no database foreign keys, so the
+  // API validates board ownership/status before persisting them. Null clears.
+  for (const column of DEFAULT_LIST_COLUMNS) {
+    const listId = data[column];
+    if (typeof listId !== 'string') continue;
 
-    if (listError) {
-      return NextResponse.json(
-        { message: 'Failed to validate default list' },
-        { status: 500 }
-      );
-    }
+    const validationResponse = await validateDefaultListColumn({
+      boardId: parsedBoardId,
+      column,
+      listId,
+      sbAdmin,
+    });
 
-    if (!list) {
-      return NextResponse.json(
-        { message: 'Default list does not belong to this board' },
-        { status: 400 }
-      );
-    }
+    if (validationResponse) return validationResponse;
   }
 
   let { error } = await sbAdmin
@@ -207,7 +273,11 @@ export async function handleBoardRoutePUT(
   // save. A default-list-only update must fail visibly instead of reporting a
   // false success.
   if (error && hasDefaultListUpdate && isDefaultListColumnUnavailable(error)) {
-    const { default_list_id: _droppedDefaultListId, ...rest } = updateData;
+    const rest = { ...updateData };
+    for (const column of DEFAULT_LIST_COLUMNS) {
+      delete rest[column];
+    }
+
     if (Object.keys(rest).length === 0) {
       return NextResponse.json(
         { message: DEFAULT_LIST_COLUMN_UNAVAILABLE_ERROR },

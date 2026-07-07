@@ -152,16 +152,21 @@ export async function moveExternalTaskToPersonalList({
   const now = new Date().toISOString();
   let sourceTargetList: TaskList | null = null;
   const desiredSourceStatus = sourceStatus ?? targetList.status;
+  const terminalStatus =
+    targetList.status === 'done' || targetList.status === 'closed'
+      ? targetList.status
+      : undefined;
   const hasKnownSourceStatusChange = Boolean(
     task.source_list_status && task.source_list_status !== desiredSourceStatus
   );
   const shouldInspectSourceList = Boolean(
-    sourceStatus ||
-      hasKnownSourceStatusChange ||
-      (!task.source_list_status &&
-        task.source_list_id &&
-        sourceWorkspaceId &&
-        sourceBoardId)
+    !terminalStatus &&
+      (sourceStatus ||
+        hasKnownSourceStatusChange ||
+        (!task.source_list_status &&
+          task.source_list_id &&
+          sourceWorkspaceId &&
+          sourceBoardId))
   );
 
   try {
@@ -235,6 +240,7 @@ export async function moveExternalTaskToPersonalList({
         personal_list_id: targetList.id,
         previous_task_id: order.previous_task_id,
         next_task_id: order.next_task_id,
+        terminal_status: terminalStatus,
       }
     );
 

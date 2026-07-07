@@ -37,6 +37,8 @@ const BOARD_BASE_COLUMNS = [
 
 const BOARD_OPTIONAL_COLUMN_DEFAULTS = {
   default_list_id: null,
+  default_done_list_id: null,
+  default_closed_list_id: null,
   estimation_type: null,
   extended_estimation: false,
   allow_zero_estimates: true,
@@ -77,6 +79,8 @@ type BoardDetailRow = {
   archived_at: string | null;
   count_unestimated_issues?: boolean | null;
   created_at: string | null;
+  default_closed_list_id?: string | null;
+  default_done_list_id?: string | null;
   default_list_id?: string | null;
   deleted_at: string | null;
   estimation_type?: string | null;
@@ -227,6 +231,8 @@ export const GET = withSessionAuth<Params>(
       const normalizedBoard = {
         ...board,
         default_list_id: board.default_list_id ?? null,
+        default_done_list_id: board.default_done_list_id ?? null,
+        default_closed_list_id: board.default_closed_list_id ?? null,
         access_type: access.access.mode,
         guest_permission:
           access.access.mode === 'guest' ? access.access.permission : null,

@@ -468,6 +468,11 @@ export function useKanbanDnd({
         throw new Error('Board ID is required');
       }
       const isStagingTarget = stagingBoardId !== null;
+      const targetList = columns.find((column) => column.id === targetListId);
+      const terminalStatus =
+        targetList?.status === 'done' || targetList?.status === 'closed'
+          ? targetList.status
+          : undefined;
       const nextTask = {
         ...task,
         list_id: isStagingTarget
@@ -507,6 +512,7 @@ export function useKanbanDnd({
               personal_sort_key: newSortKey,
               previous_task_id: order?.previousTaskId ?? null,
               next_task_id: order?.nextTaskId ?? null,
+              terminal_status: terminalStatus,
             });
 
         if (isStagingTarget) {

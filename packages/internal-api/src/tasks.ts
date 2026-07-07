@@ -345,6 +345,7 @@ export interface CurrentUserTaskPersonalPlacementPayload {
   personal_sort_key?: number | null;
   previous_task_id?: string | null;
   next_task_id?: string | null;
+  terminal_status?: 'done' | 'closed';
 }
 
 export interface CurrentUserTaskPersonalPlacementResponse {
@@ -521,19 +522,25 @@ export interface WorkspaceTaskListSummary {
   deleted?: boolean;
 }
 
+export interface WorkspaceTaskBoardDefaultListColumns {
+  default_list_id?: string | null;
+  default_done_list_id?: string | null;
+  default_closed_list_id?: string | null;
+}
+
 export type WorkspaceTaskBoardDetail = WorkspaceTaskBoardRow & {
   access_type?: 'member' | 'guest';
   guest_permission?: WorkspaceTaskBoardSharePermission | null;
   has_guest_access?: boolean;
   task_lists?: WorkspaceTaskListSummary[];
-};
+} & WorkspaceTaskBoardDefaultListColumns;
 
 export type WorkspaceTaskBoardWithLists = Pick<
   WorkspaceTaskBoardRow,
   'id' | 'name' | 'created_at'
 > & {
   task_lists: WorkspaceTaskListSummary[];
-};
+} & WorkspaceTaskBoardDefaultListColumns;
 
 export interface ListWorkspaceTaskBoardsOptions {
   q?: string;
@@ -593,6 +600,8 @@ export type UpdateWorkspaceTaskBoardPayload = Pick<
   'name' | 'icon' | 'ticket_prefix' | 'default_list_id'
 > & {
   archived?: boolean;
+  default_done_list_id?: string | null;
+  default_closed_list_id?: string | null;
   group_ids?: string[];
 };
 

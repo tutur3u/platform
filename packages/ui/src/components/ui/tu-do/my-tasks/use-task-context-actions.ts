@@ -7,6 +7,7 @@ import {
   listWorkspaceTaskLists,
   removeWorkspaceTaskLabel,
   updateWorkspaceTask,
+  upsertCurrentUserTaskPersonalPlacement,
 } from '@tuturuuu/internal-api';
 import type { TaskWithRelations } from '@tuturuuu/types';
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
@@ -221,23 +222,40 @@ export function useTaskContextActions({
     if (!taskBoardId || !taskWorkspaceId) return;
     setIsLoading(true);
     try {
-      const { lists } = await listWorkspaceTaskLists(
-        taskWorkspaceId,
-        taskBoardId
-      );
+      const personalPlacement = task.overrides as
+        | (NonNullable<typeof task.overrides> & {
+            personal_board_id?: string | null;
+            personal_list_id?: string | null;
+          })
+        | null;
+      const personalBoardId = personalPlacement?.personal_board_id ?? null;
 
-      const doneList = lists?.find((l) => l.status === 'done');
-      if (!doneList) {
-        toast.error('No done list found');
-        return;
+      if (personalBoardId) {
+        await upsertCurrentUserTaskPersonalPlacement(task.id, {
+          personal_board_id: personalBoardId,
+          personal_list_id: personalPlacement?.personal_list_id ?? null,
+          terminal_status: 'done',
+        });
+        broadcastTaskUpsert({});
+      } else {
+        const { lists } = await listWorkspaceTaskLists(
+          taskWorkspaceId,
+          taskBoardId
+        );
+
+        const doneList = lists?.find((l) => l.status === 'done');
+        if (!doneList) {
+          toast.error('No done list found');
+          return;
+        }
+
+        await updateWorkspaceTask(taskWorkspaceId, task.id, {
+          list_id: doneList.id,
+        });
+        broadcastTaskUpsert({
+          list_id: doneList.id,
+        });
       }
-
-      await updateWorkspaceTask(taskWorkspaceId, task.id, {
-        list_id: doneList.id,
-      });
-      broadcastTaskUpsert({
-        list_id: doneList.id,
-      });
 
       // Clear redundant personal overrides when task is actually done
       if (

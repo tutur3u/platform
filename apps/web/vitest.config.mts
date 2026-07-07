@@ -41,6 +41,13 @@ export default defineConfig({
         ),
       },
       {
+        find: /^@tuturuuu\/types\/primitives\/(.+)$/,
+        replacement: resolve(
+          __dirname,
+          '../../packages/types/src/primitives/$1.ts'
+        ),
+      },
+      {
         find: '@tuturuuu/supabase/next/auth-session-user',
         replacement: resolve(
           __dirname,
