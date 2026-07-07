@@ -1747,8 +1747,9 @@ variables. `apps/web` treats Redis-backed route rate limits, abuse counters, and
 IP blocks as fail-open availability guardrails in this mode: requests continue
 through normal auth, authorization, payload-size, Turnstile, suspension, and
 validation checks, but rate-limit buckets and IP-block enforcement are skipped.
-Security-sensitive one-time state such as CLI refresh-token replay protection
-still fails closed until Redis is restored or the CLI user signs in again.
+Defense-in-depth one-time state such as CLI refresh-token replay protection also
+continues without Redis after JWT validation and user lookup. Confirmed
+Redis-backed replay attempts are still rejected when Redis is available.
 
 Vercel-hosted satellite apps such as CMS, Calendar, Finance, Learn, Teach, and
 Tasks cannot reach Docker-private Redis hosts such as `serverless-redis-http`.
