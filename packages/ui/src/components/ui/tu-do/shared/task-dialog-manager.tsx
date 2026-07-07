@@ -542,6 +542,8 @@ export function TaskDialogManager({ wsId }: { wsId: string }) {
       taskWsId={state.taskWsId}
       task={state.task}
       boardId={state.boardId || ''}
+      visibleBoardId={state.visibleBoardId}
+      visibleTaskSnapshot={state.visibleTaskSnapshot}
       isOpen={state.isOpen}
       availableLists={state.availableLists}
       sharedContext={

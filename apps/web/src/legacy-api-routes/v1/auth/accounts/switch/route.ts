@@ -1,17 +1,22 @@
 import { unstable_rethrow } from 'next/navigation';
-import { type NextRequest, NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
 import { z } from 'zod';
 import {
   createAuthDiagnosticCode,
   logAuthDiagnostic,
 } from '@/lib/auth/diagnostics';
 import { switchWebAccount } from '@/lib/auth/multi-account/vault';
+import { accountCorsJson, accountCorsPreflight } from '../cors';
 
 const switchSchema = z.object({
   accountId: z.string().min(1).max(200),
   currentRoute: z.string().max(2048).nullable().optional(),
   targetRoute: z.string().max(2048).nullable().optional(),
 });
+
+export function OPTIONS(request: NextRequest) {
+  return accountCorsPreflight(request);
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -20,7 +25,8 @@ export async function POST(request: NextRequest) {
     );
 
     if (!parsed.success) {
-      return NextResponse.json(
+      return accountCorsJson(
+        request,
         { error: 'Invalid request body' },
         { status: 400 }
       );
@@ -42,10 +48,16 @@ export async function POST(request: NextRequest) {
         status: 410,
       });
 
-      return NextResponse.json({ ...result, diagnosticCode }, { status: 410 });
+      return accountCorsJson(
+        request,
+        { ...result, diagnosticCode },
+        { status: 410 }
+      );
     }
 
-    return NextResponse.json(result, { status: result.success ? 200 : 410 });
+    return accountCorsJson(request, result, {
+      status: result.success ? 200 : 410,
+    });
   } catch (error) {
     unstable_rethrow(error);
 
@@ -60,7 +72,8 @@ export async function POST(request: NextRequest) {
       stage: 'account_switch',
     });
 
-    return NextResponse.json(
+    return accountCorsJson(
+      request,
       { diagnosticCode, error: 'Failed to switch account' },
       { status: 500 }
     );

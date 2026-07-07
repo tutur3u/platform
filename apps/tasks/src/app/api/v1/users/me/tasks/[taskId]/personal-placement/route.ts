@@ -6,11 +6,18 @@ import {
   getPersonalExternalStagingListId,
   isPersonalExternalStagingListId,
 } from '@tuturuuu/utils/task-helper';
+import {
+  isTaskBoardCompletedStatus,
+  isTaskBoardResolvedStatus,
+  isTaskBoardTerminalStatus,
+} from '@tuturuuu/utils/task-list-status';
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { validate } from 'uuid';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
+
+const TERMINAL_STATUSES = ['done', 'closed'] as const;
 
 const placementSchema = z.object({
   personal_board_id: z.guid(),
@@ -18,6 +25,7 @@ const placementSchema = z.object({
   personal_sort_key: z.number().finite().nullable().optional(),
   previous_task_id: z.guid().nullable().optional(),
   next_task_id: z.guid().nullable().optional(),
+  terminal_status: z.enum(TERMINAL_STATUSES).optional(),
 });
 
 const PERSONAL_PLACEMENT_APP_SESSION_AUTH = {
@@ -85,8 +93,26 @@ type TargetBoardRow = {
 type TargetListRow = {
   id: string;
   board_id: string | null;
+  color?: string | null;
+  created_at?: string | null;
   deleted: boolean | null;
+  name?: string | null;
+  position?: number | null;
+  status?: string | null;
   workspace_boards?: TargetBoardRow | null;
+};
+
+type TerminalStatus = (typeof TERMINAL_STATUSES)[number];
+
+type TerminalListRow = {
+  id: string;
+  board_id: string | null;
+  color: string | null;
+  created_at: string | null;
+  deleted: boolean | null;
+  name: string | null;
+  position: number | null;
+  status: string | null;
 };
 
 async function hasCurrentUserTaskVisibility(
@@ -149,6 +175,250 @@ function buildPlacedTask(sourceTask: SourceTaskRow, placement: PlacementRow) {
     list_id: effectiveListId,
     sort_key: placement.personal_sort_key ?? sourceTask.sort_key,
   };
+}
+
+function getTerminalDefaultColumn(status: TerminalStatus) {
+  return status === 'done' ? 'default_done_list_id' : 'default_closed_list_id';
+}
+
+function isTerminalDefaultColumnUnavailable(
+  error: { code?: string; message?: string } | null | undefined,
+  status: TerminalStatus
+) {
+  if (!error) return false;
+  const column = getTerminalDefaultColumn(status);
+  return (
+    error.code === '42703' ||
+    error.code === 'PGRST204' ||
+    (typeof error.message === 'string' && error.message.includes(column))
+  );
+}
+
+async function loadTerminalDefaultListId(
+  sbAdmin: any,
+  boardId: string,
+  status: TerminalStatus
+) {
+  const column = getTerminalDefaultColumn(status);
+  const { data, error } = await (sbAdmin as any)
+    .from('workspace_boards')
+    .select(column)
+    .eq('id', boardId)
+    .maybeSingle();
+
+  if (error) {
+    if (isTerminalDefaultColumnUnavailable(error, status)) {
+      return { listId: null, response: null };
+    }
+
+    return {
+      listId: null,
+      response: NextResponse.json(
+        { error: 'Failed to load terminal default list' },
+        { status: 500 }
+      ),
+    };
+  }
+
+  const listId = (data as Record<string, string | null> | null)?.[column];
+  return { listId: listId ?? null, response: null };
+}
+
+async function loadTerminalListById({
+  boardId,
+  listId,
+  sbAdmin,
+  status,
+}: {
+  boardId: string;
+  listId: string;
+  sbAdmin: any;
+  status: TerminalStatus;
+}) {
+  const { data, error } = await (sbAdmin as any)
+    .from('task_lists')
+    .select('id, board_id, name, status, color, position, deleted, created_at')
+    .eq('id', listId)
+    .eq('board_id', boardId)
+    .eq('deleted', false)
+    .eq('status', status)
+    .maybeSingle();
+
+  if (error) {
+    return {
+      list: null,
+      response: NextResponse.json(
+        { error: 'Failed to load terminal list' },
+        { status: 500 }
+      ),
+    };
+  }
+
+  return { list: (data as TerminalListRow | null) ?? null, response: null };
+}
+
+async function loadFirstTerminalList({
+  boardId,
+  sbAdmin,
+  status,
+}: {
+  boardId: string;
+  sbAdmin: any;
+  status: TerminalStatus;
+}) {
+  const { data, error } = await (sbAdmin as any)
+    .from('task_lists')
+    .select('id, board_id, name, status, color, position, deleted, created_at')
+    .eq('board_id', boardId)
+    .eq('deleted', false)
+    .eq('status', status)
+    .order('position', { ascending: true, nullsFirst: false })
+    .order('created_at', { ascending: true })
+    .limit(1);
+
+  if (error) {
+    return {
+      list: null,
+      response: NextResponse.json(
+        { error: 'Failed to load terminal list' },
+        { status: 500 }
+      ),
+    };
+  }
+
+  const list = Array.isArray(data) ? data[0] : data;
+  return { list: (list as TerminalListRow | null) ?? null, response: null };
+}
+
+async function resolveTerminalListForBoard({
+  boardId,
+  explicitListId,
+  sbAdmin,
+  status,
+}: {
+  boardId: string;
+  explicitListId?: string | null;
+  sbAdmin: any;
+  status: TerminalStatus;
+}) {
+  if (explicitListId) {
+    const explicit = await loadTerminalListById({
+      boardId,
+      listId: explicitListId,
+      sbAdmin,
+      status,
+    });
+
+    if (explicit.response) return explicit;
+    if (explicit.list) return explicit;
+  }
+
+  const defaultList = await loadTerminalDefaultListId(sbAdmin, boardId, status);
+  if (defaultList.response) {
+    return { list: null, response: defaultList.response };
+  }
+
+  if (defaultList.listId) {
+    const resolvedDefault = await loadTerminalListById({
+      boardId,
+      listId: defaultList.listId,
+      sbAdmin,
+      status,
+    });
+
+    if (resolvedDefault.response) return resolvedDefault;
+    if (resolvedDefault.list) return resolvedDefault;
+  }
+
+  return loadFirstTerminalList({ boardId, sbAdmin, status });
+}
+
+function getTerminalSourceUpdatePayload(
+  sourceTask: SourceTaskRow,
+  targetList: TerminalListRow
+) {
+  const sourceListStatus = sourceTask.task_lists?.status;
+  const targetStatus = targetList.status;
+  const isTargetResolved = isTaskBoardResolvedStatus(targetStatus);
+  const isSourceResolved = isTaskBoardResolvedStatus(sourceListStatus);
+  const isTargetCompleted = isTaskBoardCompletedStatus(targetStatus);
+  const isSourceCompleted = isTaskBoardCompletedStatus(sourceListStatus);
+  const isTargetTerminal = isTaskBoardTerminalStatus(targetStatus);
+  const isSourceTerminal = isTaskBoardTerminalStatus(sourceListStatus);
+  const currentCompletedState = Boolean(sourceTask.completed);
+
+  let nextClosedAt = sourceTask.closed_at;
+  let nextCompletedAt = sourceTask.completed_at;
+  let nextCompleted = currentCompletedState;
+
+  if (targetStatus === 'review') {
+    nextClosedAt = null;
+    nextCompletedAt = null;
+    nextCompleted = false;
+  } else if (isTargetResolved) {
+    const timestamp = new Date().toISOString();
+    if (!isSourceTerminal && isTargetTerminal) {
+      nextClosedAt = timestamp;
+    } else if (isSourceTerminal && !isTargetTerminal) {
+      nextClosedAt = null;
+    }
+    nextCompletedAt = isTargetCompleted
+      ? (sourceTask.completed_at ?? timestamp)
+      : isSourceCompleted
+        ? sourceTask.completed_at
+        : null;
+    nextCompleted = true;
+  } else if (isSourceResolved) {
+    nextClosedAt = null;
+    nextCompletedAt = null;
+    nextCompleted = false;
+  }
+
+  return {
+    closed_at: nextClosedAt,
+    completed: nextCompleted,
+    completed_at: nextCompletedAt,
+    list_id: targetList.id,
+  };
+}
+
+async function updateSourceTaskTerminalStatus({
+  sbAdmin,
+  sourceTask,
+  targetList,
+  taskId,
+  userId,
+}: {
+  sbAdmin: any;
+  sourceTask: SourceTaskRow;
+  targetList: TerminalListRow;
+  taskId: string;
+  userId: string;
+}) {
+  const updateQuery = (sbAdmin as any).rpc('update_task_with_relations', {
+    p_task_id: taskId,
+    p_task_updates: getTerminalSourceUpdatePayload(sourceTask, targetList),
+    p_assignee_ids: undefined,
+    p_replace_assignees: false,
+    p_label_ids: undefined,
+    p_replace_labels: false,
+    p_project_ids: undefined,
+    p_replace_projects: false,
+    p_actor_user_id: userId,
+  });
+  const { data, error } =
+    typeof updateQuery?.maybeSingle === 'function'
+      ? await updateQuery.maybeSingle()
+      : await updateQuery;
+
+  if (error || !data) {
+    return NextResponse.json(
+      { error: 'Failed to update source task' },
+      { status: 500 }
+    );
+  }
+
+  return null;
 }
 
 async function loadSourceTask(sbAdmin: any, taskId: string) {
@@ -481,7 +751,8 @@ export const PUT = withSessionAuth<{ taskId: string }>(
       return NextResponse.json({ error: 'Task not found' }, { status: 404 });
     }
 
-    const { personal_board_id, personal_sort_key } = parsed.data;
+    const { personal_board_id, personal_sort_key, terminal_status } =
+      parsed.data;
     const personalListId =
       parsed.data.personal_list_id &&
       !isPersonalExternalStagingListId(parsed.data.personal_list_id)
@@ -496,7 +767,7 @@ export const PUT = withSessionAuth<{ taskId: string }>(
     } = await resolvePersonalPlacementTarget(
       sbAdmin,
       personal_board_id,
-      personalListId
+      terminal_status ? null : personalListId
     );
 
     if (!targetBoard) {
@@ -553,10 +824,58 @@ export const PUT = withSessionAuth<{ taskId: string }>(
       );
     }
 
+    let finalPersonalListId = resolvedPersonalListId;
+    let sourceTerminalList: TerminalListRow | null = null;
+
+    if (terminal_status) {
+      const personalTerminalList = await resolveTerminalListForBoard({
+        boardId: effectivePersonalBoardId,
+        explicitListId: personalListId,
+        sbAdmin,
+        status: terminal_status,
+      });
+
+      if (personalTerminalList.response) return personalTerminalList.response;
+      if (!personalTerminalList.list) {
+        return NextResponse.json(
+          { error: `Personal board has no ${terminal_status} list` },
+          { status: 400 }
+        );
+      }
+
+      finalPersonalListId = personalTerminalList.list.id;
+
+      if (!sourceBoardId) {
+        return NextResponse.json(
+          { error: 'Source board not found' },
+          { status: 404 }
+        );
+      }
+
+      const resolvedSourceTerminalList = await resolveTerminalListForBoard({
+        boardId: sourceBoardId,
+        sbAdmin,
+        status: terminal_status,
+      });
+
+      if (resolvedSourceTerminalList.response) {
+        return resolvedSourceTerminalList.response;
+      }
+
+      if (!resolvedSourceTerminalList.list) {
+        return NextResponse.json(
+          { error: `Source board has no ${terminal_status} list` },
+          { status: 400 }
+        );
+      }
+
+      sourceTerminalList = resolvedSourceTerminalList.list;
+    }
+
     const destinationAccessResponse =
       await verifyPersonalPlacementDestinationAccess({
         effectivePersonalBoardId,
-        resolvedPersonalListId,
+        resolvedPersonalListId: finalPersonalListId,
         sbAdmin,
         supabase: supabase as any,
         targetWsId,
@@ -567,13 +886,39 @@ export const PUT = withSessionAuth<{ taskId: string }>(
       return destinationAccessResponse;
     }
 
+    let responseSourceTask = sourceTask;
+
+    if (sourceTerminalList) {
+      const sourceUpdateResponse = await updateSourceTaskTerminalStatus({
+        sbAdmin,
+        sourceTask,
+        targetList: sourceTerminalList,
+        taskId,
+        userId: user.id,
+      });
+
+      if (sourceUpdateResponse) return sourceUpdateResponse;
+
+      const { task: reloadedSourceTask, response: reloadResponse } =
+        await loadSourceTask(sbAdmin, taskId);
+
+      if (!reloadedSourceTask) {
+        return (
+          reloadResponse ??
+          NextResponse.json({ error: 'Task not found' }, { status: 404 })
+        );
+      }
+
+      responseSourceTask = reloadedSourceTask;
+    }
+
     const { data: placementRows, error: saveError } = await (
       sbAdmin as any
     ).rpc('upsert_personal_task_placement', {
       p_task_id: taskId,
       p_user_id: user.id,
       p_personal_board_id: effectivePersonalBoardId,
-      p_personal_list_id: resolvedPersonalListId,
+      p_personal_list_id: finalPersonalListId,
       p_personal_sort_key: personal_sort_key ?? null,
       p_previous_task_id: parsed.data.previous_task_id ?? null,
       p_next_task_id: parsed.data.next_task_id ?? null,
@@ -590,7 +935,7 @@ export const PUT = withSessionAuth<{ taskId: string }>(
     }
 
     return NextResponse.json({
-      task: buildPlacedTask(sourceTask, savedPlacement as PlacementRow),
+      task: buildPlacedTask(responseSourceTask, savedPlacement as PlacementRow),
     });
   },
   { allowAppSessionAuth: PERSONAL_PLACEMENT_APP_SESSION_AUTH }

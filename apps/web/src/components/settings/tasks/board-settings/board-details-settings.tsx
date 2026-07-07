@@ -40,13 +40,33 @@ export function BoardDetailsSettings({
   const [defaultListId, setDefaultListId] = useState(
     board.default_list_id ?? NO_DEFAULT_LIST
   );
+  const [defaultDoneListId, setDefaultDoneListId] = useState(
+    board.default_done_list_id ?? NO_DEFAULT_LIST
+  );
+  const [defaultClosedListId, setDefaultClosedListId] = useState(
+    board.default_closed_list_id ?? NO_DEFAULT_LIST
+  );
 
   useEffect(() => {
     setBoardName(board.name ?? '');
     setBoardIcon(board.icon ?? null);
     setTicketPrefix(board.ticket_prefix ?? '');
     setDefaultListId(board.default_list_id ?? NO_DEFAULT_LIST);
-  }, [board.default_list_id, board.icon, board.name, board.ticket_prefix]);
+    setDefaultDoneListId(board.default_done_list_id ?? NO_DEFAULT_LIST);
+    setDefaultClosedListId(board.default_closed_list_id ?? NO_DEFAULT_LIST);
+  }, [
+    board.default_closed_list_id,
+    board.default_done_list_id,
+    board.default_list_id,
+    board.icon,
+    board.name,
+    board.ticket_prefix,
+  ]);
+
+  const activeLists = useMemo(
+    () => (board.task_lists ?? []).filter((list) => !list.deleted),
+    [board.task_lists]
+  );
 
   const listOptions = useMemo(
     () => [
@@ -54,15 +74,47 @@ export function BoardDetailsSettings({
         label: t('settings.tasks.no_default_list'),
         value: NO_DEFAULT_LIST,
       },
-      ...(board.task_lists ?? [])
-        .filter((list) => !list.deleted)
+      ...activeLists.map((list) => ({
+        label:
+          list.name || t('settings.tasks.board_default_list_untitled_list'),
+        value: list.id,
+      })),
+    ],
+    [activeLists, t]
+  );
+
+  const doneListOptions = useMemo(
+    () => [
+      {
+        label: t('settings.tasks.no_default_done_list'),
+        value: NO_DEFAULT_LIST,
+      },
+      ...activeLists
+        .filter((list) => list.status === 'done')
         .map((list) => ({
           label:
             list.name || t('settings.tasks.board_default_list_untitled_list'),
           value: list.id,
         })),
     ],
-    [board.task_lists, t]
+    [activeLists, t]
+  );
+
+  const closedListOptions = useMemo(
+    () => [
+      {
+        label: t('settings.tasks.no_default_closed_list'),
+        value: NO_DEFAULT_LIST,
+      },
+      ...activeLists
+        .filter((list) => list.status === 'closed')
+        .map((list) => ({
+          label:
+            list.name || t('settings.tasks.board_default_list_untitled_list'),
+          value: list.id,
+        })),
+    ],
+    [activeLists, t]
   );
 
   const normalizedBoardName =
@@ -70,11 +122,17 @@ export function BoardDetailsSettings({
   const normalizedTicketPrefix = ticketPrefix.trim().toUpperCase() || null;
   const normalizedDefaultListId =
     defaultListId === NO_DEFAULT_LIST ? null : defaultListId;
+  const normalizedDefaultDoneListId =
+    defaultDoneListId === NO_DEFAULT_LIST ? null : defaultDoneListId;
+  const normalizedDefaultClosedListId =
+    defaultClosedListId === NO_DEFAULT_LIST ? null : defaultClosedListId;
   const isDirty =
     normalizedBoardName !== (board.name || t('ws-task-boards.unnamed_board')) ||
     (boardIcon ?? null) !== (board.icon ?? null) ||
     normalizedTicketPrefix !== (board.ticket_prefix ?? null) ||
-    normalizedDefaultListId !== (board.default_list_id ?? null);
+    normalizedDefaultListId !== (board.default_list_id ?? null) ||
+    normalizedDefaultDoneListId !== (board.default_done_list_id ?? null) ||
+    normalizedDefaultClosedListId !== (board.default_closed_list_id ?? null);
 
   const updateBoardMutation = useMutation({
     mutationFn: () =>
@@ -83,6 +141,8 @@ export function BoardDetailsSettings({
         board.id,
         {
           default_list_id: normalizedDefaultListId,
+          default_done_list_id: normalizedDefaultDoneListId,
+          default_closed_list_id: normalizedDefaultClosedListId,
           icon: boardIcon as WorkspaceTaskBoardDetail['icon'],
           name: normalizedBoardName,
           ticket_prefix: normalizedTicketPrefix,
@@ -190,6 +250,38 @@ export function BoardDetailsSettings({
               placeholder={t('settings.tasks.no_default_list')}
               searchPlaceholder={t('common.search_tasks')}
               selected={defaultListId}
+            />
+          </div>
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+          <div className="space-y-2">
+            <Label>{t('settings.tasks.default_done_list')}</Label>
+            <Combobox
+              contentWidth="md"
+              mode="single"
+              onChange={(value) => {
+                if (typeof value === 'string') setDefaultDoneListId(value);
+              }}
+              options={doneListOptions}
+              placeholder={t('settings.tasks.no_default_done_list')}
+              searchPlaceholder={t('common.search_tasks')}
+              selected={defaultDoneListId}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label>{t('settings.tasks.default_closed_list')}</Label>
+            <Combobox
+              contentWidth="md"
+              mode="single"
+              onChange={(value) => {
+                if (typeof value === 'string') setDefaultClosedListId(value);
+              }}
+              options={closedListOptions}
+              placeholder={t('settings.tasks.no_default_closed_list')}
+              searchPlaceholder={t('common.search_tasks')}
+              selected={defaultClosedListId}
             />
           </div>
         </div>

@@ -79,7 +79,7 @@
   "$keyExceptionsComment": "Key-level exceptions for shared package translation keys that specific apps do not need. Supports wildcards: 'namespace.*' skips all keys under a namespace. Remove entries as apps add the missing keys.",
   "keyExceptions": {
     "apps/web": ["settings.calendar.*", "ws-polls.*"],
-    "apps/tasks": ["settings.calendar.*", "ws-polls.*"],
+    "apps/tasks": ["ws-polls.*"],
     "apps/calendar": [
       "settings.tasks.*",
       "ws-polls.*",

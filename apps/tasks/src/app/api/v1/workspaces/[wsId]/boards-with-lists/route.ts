@@ -61,9 +61,8 @@ export const GET = withSessionAuth<WorkspaceParams>(
         );
       }
 
-      // Fetch boards with their lists. `default_list_id` is selected when
-      // available but we fall back to a select without it so boards still load
-      // if the column has not been migrated yet in this environment.
+      // Fetch boards with their lists. Default-list columns are selected when
+      // available but we fall back so boards still load while rollout settles.
       const withDefaultListQuery = sbAdmin
         .from('workspace_boards')
         .select(
@@ -72,6 +71,8 @@ export const GET = withSessionAuth<WorkspaceParams>(
         name,
         created_at,
         default_list_id,
+        default_done_list_id,
+        default_closed_list_id,
         task_lists (
           id,
           name,
@@ -92,10 +93,16 @@ export const GET = withSessionAuth<WorkspaceParams>(
 
       let boards: Array<Record<string, unknown>> | null = primary.data;
       let error = primary.error;
+      const primaryErrorMessage = error?.message ?? '';
 
       if (
         error &&
-        (error.code === '42703' || error.message?.includes('default_list_id'))
+        (error.code === '42703' ||
+          [
+            'default_list_id',
+            'default_done_list_id',
+            'default_closed_list_id',
+          ].some((column) => primaryErrorMessage.includes(column)))
       ) {
         const fallbackQuery = sbAdmin
           .from('workspace_boards')
@@ -123,7 +130,12 @@ export const GET = withSessionAuth<WorkspaceParams>(
           : fallbackQuery.in('id', guestSummary.boardIds));
         error = fallback.error;
         boards = fallback.data
-          ? fallback.data.map((board) => ({ ...board, default_list_id: null }))
+          ? fallback.data.map((board) => ({
+              ...board,
+              default_list_id: null,
+              default_done_list_id: null,
+              default_closed_list_id: null,
+            }))
           : null;
       }
 

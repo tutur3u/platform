@@ -4,9 +4,10 @@ import {
   updateCurrentUserTaskSchedulingSettings,
 } from '@tuturuuu/internal-api';
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
-import type { CalendarHoursType } from '@tuturuuu/types/primitives/Task';
+import type { CalendarHoursType, Task } from '@tuturuuu/types/primitives/Task';
 import { useToast } from '@tuturuuu/ui/hooks/use-toast';
 import { useCallback, useState } from 'react';
+import { isPersonalExternalOverlayTask } from '../../../../../../lib/task-personal-external';
 import {
   type BoardBroadcastFn,
   getActiveBroadcast,
@@ -33,6 +34,8 @@ export interface UseTaskMutationsProps {
   taskId?: string;
   isCreateMode: boolean;
   boardId: string;
+  visibleBoardId?: string;
+  visibleTaskSnapshot?: Partial<Task>;
   estimationPoints: number | null;
   priority: TaskPriority | null;
   selectedListId?: string;
@@ -66,6 +69,27 @@ export interface UseTaskMutationsReturn {
   schedulingSaving: boolean;
 }
 
+type PropertyPatch = Pick<
+  Partial<Task>,
+  'name' | 'priority' | 'start_date' | 'end_date' | 'estimation_points'
+>;
+
+function hasPersonalExternalVisibleContext({
+  boardId,
+  visibleBoardId,
+  visibleTaskSnapshot,
+}: {
+  boardId: string;
+  visibleBoardId?: string;
+  visibleTaskSnapshot?: Partial<Task>;
+}) {
+  return Boolean(
+    visibleBoardId &&
+      visibleBoardId !== boardId &&
+      isPersonalExternalOverlayTask(visibleTaskSnapshot as Task | undefined)
+  );
+}
+
 /**
  * Custom hook for task database mutations (CRUD operations on task properties)
  * Extracted from task-edit-dialog.tsx to improve maintainability
@@ -75,6 +99,8 @@ export function useTaskMutations({
   taskId,
   isCreateMode,
   boardId,
+  visibleBoardId,
+  visibleTaskSnapshot,
   estimationPoints,
   priority,
   selectedListId,
@@ -94,16 +120,57 @@ export function useTaskMutations({
     contextBroadcast ?? getActiveBroadcast() ?? fallbackBroadcast;
   const [estimationSaving, setEstimationSaving] = useState(false);
   const [schedulingSaving, setSchedulingSaving] = useState(false);
+  const hasPersonalExternalContext = hasPersonalExternalVisibleContext({
+    boardId,
+    visibleBoardId,
+    visibleTaskSnapshot,
+  });
+  const propertyCacheBoardId =
+    hasPersonalExternalContext && visibleBoardId ? visibleBoardId : boardId;
 
   // Helper to trigger refresh after successful mutations
   // Note: The kanban board uses realtime subscriptions directly and doesn't
   // register a refresh callback via the task dialog system, so calling onUpdate
   // here won't conflict with realtime sync on the board page.
   // Also invalidate task-history so the activity section updates immediately.
-  const triggerRefresh = useCallback(() => {
+  const triggerRefresh = useCallback(
+    (options?: { refreshBoard?: boolean }) => {
+      const refreshBoard = options?.refreshBoard ?? true;
+
+      queryClient.invalidateQueries({ queryKey: ['task-history'] });
+      if (refreshBoard) {
+        onUpdate();
+      }
+    },
+    [queryClient, onUpdate]
+  );
+
+  const patchPropertyInVisibleCaches = useCallback(
+    (patch: PropertyPatch) => {
+      if (!taskId) return;
+
+      patchTaskInVisibleCaches({
+        queryClient,
+        boardId: propertyCacheBoardId,
+        taskId,
+        updater: (task) => ({
+          ...task,
+          ...patch,
+          ...(hasPersonalExternalContext
+            ? { _localMutationAt: Date.now() }
+            : {}),
+        }),
+      });
+    },
+    [hasPersonalExternalContext, propertyCacheBoardId, queryClient, taskId]
+  );
+
+  const triggerPropertyRefresh = useCallback(() => {
     queryClient.invalidateQueries({ queryKey: ['task-history'] });
-    onUpdate();
-  }, [queryClient, onUpdate]);
+    if (!hasPersonalExternalContext) {
+      onUpdate();
+    }
+  }, [hasPersonalExternalContext, queryClient, onUpdate]);
 
   const updateEstimation = useCallback(
     async (points: number | null) => {
@@ -113,29 +180,30 @@ export function useTaskMutations({
         return;
       }
       setEstimationSaving(true);
-      const cacheSnapshot = snapshotVisibleTaskCaches(queryClient, boardId, [
-        taskId,
-      ]);
+      const cacheSnapshot = snapshotVisibleTaskCaches(
+        queryClient,
+        propertyCacheBoardId,
+        [taskId]
+      );
 
       // Optimistic update - prevents flicker by updating cache immediately
-      patchTaskInVisibleCaches({
-        queryClient,
-        boardId,
-        taskId,
-        updater: (task) => ({ ...task, estimation_points: points }),
-      });
+      patchPropertyInVisibleCaches({ estimation_points: points });
 
       try {
         const { task } = await updateWorkspaceTask(wsId, taskId, {
           estimation_points: points,
         });
+        const updatedEstimationPoints = task.estimation_points ?? points;
+        patchPropertyInVisibleCaches({
+          estimation_points: updatedEstimationPoints,
+        });
         broadcast?.('task:upsert', {
           task: {
             id: taskId,
-            estimation_points: task.estimation_points ?? points,
+            estimation_points: updatedEstimationPoints,
           },
         });
-        triggerRefresh();
+        triggerPropertyRefresh();
       } catch (e: any) {
         console.error('Failed updating estimation', e);
         // Revert optimistic update on error
@@ -155,10 +223,11 @@ export function useTaskMutations({
       wsId,
       taskId,
       queryClient,
-      boardId,
+      propertyCacheBoardId,
       toast,
       setEstimationPoints,
-      triggerRefresh,
+      patchPropertyInVisibleCaches,
+      triggerPropertyRefresh,
       broadcast,
     ]
   );
@@ -170,29 +239,28 @@ export function useTaskMutations({
       if (isCreateMode || !taskId || taskId === 'new') {
         return;
       }
-      const cacheSnapshot = snapshotVisibleTaskCaches(queryClient, boardId, [
-        taskId,
-      ]);
+      const cacheSnapshot = snapshotVisibleTaskCaches(
+        queryClient,
+        propertyCacheBoardId,
+        [taskId]
+      );
 
       // Optimistic update - prevents flicker
-      patchTaskInVisibleCaches({
-        queryClient,
-        boardId,
-        taskId,
-        updater: (task) => ({ ...task, priority: newPriority }),
-      });
+      patchPropertyInVisibleCaches({ priority: newPriority });
 
       try {
         const { task } = await updateWorkspaceTask(wsId, taskId, {
           priority: newPriority,
         });
+        const updatedPriority = task.priority ?? newPriority;
+        patchPropertyInVisibleCaches({ priority: updatedPriority });
         broadcast?.('task:upsert', {
           task: {
             id: taskId,
-            priority: task.priority ?? newPriority,
+            priority: updatedPriority,
           },
         });
-        triggerRefresh();
+        triggerPropertyRefresh();
       } catch (e: any) {
         console.error('Failed updating priority', e);
         // Revert optimistic update on error
@@ -210,10 +278,11 @@ export function useTaskMutations({
       wsId,
       taskId,
       queryClient,
-      boardId,
+      propertyCacheBoardId,
       toast,
       setPriority,
-      triggerRefresh,
+      patchPropertyInVisibleCaches,
+      triggerPropertyRefresh,
       broadcast,
     ]
   );
@@ -226,29 +295,30 @@ export function useTaskMutations({
       }
 
       const dateString = newDate ? newDate.toISOString() : null;
-      const cacheSnapshot = snapshotVisibleTaskCaches(queryClient, boardId, [
-        taskId,
-      ]);
+      const cacheSnapshot = snapshotVisibleTaskCaches(
+        queryClient,
+        propertyCacheBoardId,
+        [taskId]
+      );
 
       // Optimistic update - prevents flicker
-      patchTaskInVisibleCaches({
-        queryClient,
-        boardId,
-        taskId,
-        updater: (task) => ({ ...task, start_date: dateString ?? undefined }),
-      });
+      patchPropertyInVisibleCaches({ start_date: dateString ?? undefined });
 
       try {
         const { task } = await updateWorkspaceTask(wsId, taskId, {
           start_date: dateString,
         });
+        const updatedStartDate = task.start_date ?? dateString;
+        patchPropertyInVisibleCaches({
+          start_date: updatedStartDate ?? undefined,
+        });
         broadcast?.('task:upsert', {
           task: {
             id: taskId,
-            start_date: task.start_date ?? dateString,
+            start_date: updatedStartDate,
           },
         });
-        triggerRefresh();
+        triggerPropertyRefresh();
       } catch (e: any) {
         console.error('Failed updating start date', e);
         // Revert optimistic update on error
@@ -265,10 +335,11 @@ export function useTaskMutations({
       wsId,
       taskId,
       queryClient,
-      boardId,
+      propertyCacheBoardId,
       toast,
       setStartDate,
-      triggerRefresh,
+      patchPropertyInVisibleCaches,
+      triggerPropertyRefresh,
       broadcast,
     ]
   );
@@ -281,29 +352,28 @@ export function useTaskMutations({
       }
 
       const dateString = newDate ? newDate.toISOString() : null;
-      const cacheSnapshot = snapshotVisibleTaskCaches(queryClient, boardId, [
-        taskId,
-      ]);
+      const cacheSnapshot = snapshotVisibleTaskCaches(
+        queryClient,
+        propertyCacheBoardId,
+        [taskId]
+      );
 
       // Optimistic update - prevents flicker
-      patchTaskInVisibleCaches({
-        queryClient,
-        boardId,
-        taskId,
-        updater: (task) => ({ ...task, end_date: dateString }),
-      });
+      patchPropertyInVisibleCaches({ end_date: dateString });
 
       try {
         const { task } = await updateWorkspaceTask(wsId, taskId, {
           end_date: dateString,
         });
+        const updatedEndDate = task.end_date ?? dateString;
+        patchPropertyInVisibleCaches({ end_date: updatedEndDate });
         broadcast?.('task:upsert', {
           task: {
             id: taskId,
-            end_date: task.end_date ?? dateString,
+            end_date: updatedEndDate,
           },
         });
-        triggerRefresh();
+        triggerPropertyRefresh();
       } catch (e: any) {
         console.error('Failed updating end date', e);
         // Revert optimistic update on error
@@ -320,10 +390,11 @@ export function useTaskMutations({
       wsId,
       taskId,
       queryClient,
-      boardId,
+      propertyCacheBoardId,
       toast,
       setEndDate,
-      triggerRefresh,
+      patchPropertyInVisibleCaches,
+      triggerPropertyRefresh,
       broadcast,
     ]
   );
@@ -411,24 +482,23 @@ export function useTaskMutations({
 
       // Optimistically update the cache instead of invalidating
       // This prevents conflicts with realtime sync
-      const cacheSnapshot = snapshotVisibleTaskCaches(queryClient, boardId, [
-        taskId,
-      ]);
-      patchTaskInVisibleCaches({
+      const cacheSnapshot = snapshotVisibleTaskCaches(
         queryClient,
-        boardId,
-        taskId,
-        updater: (task) => ({ ...task, name: trimmedName }),
-      });
+        propertyCacheBoardId,
+        [taskId]
+      );
+      patchPropertyInVisibleCaches({ name: trimmedName });
 
       try {
         const { task } = await updateWorkspaceTask(wsId, taskId, {
           name: trimmedName,
         });
+        const updatedName = task.name ?? trimmedName;
+        patchPropertyInVisibleCaches({ name: updatedName });
         broadcast?.('task:upsert', {
-          task: { id: taskId, name: task.name ?? trimmedName },
+          task: { id: taskId, name: updatedName },
         });
-        triggerRefresh();
+        triggerPropertyRefresh();
       } catch (e: any) {
         console.error('Failed updating task name', e);
         // Revert optimistic update without refetching visible board caches.
@@ -446,9 +516,10 @@ export function useTaskMutations({
       taskId,
       isCreateMode,
       queryClient,
-      boardId,
+      propertyCacheBoardId,
       toast,
-      triggerRefresh,
+      patchPropertyInVisibleCaches,
+      triggerPropertyRefresh,
       broadcast,
     ]
   );

@@ -1,12 +1,17 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { CLI_APP_TARGET_APP } from '@tuturuuu/auth/cli-session';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { MAX_COLOR_LENGTH, MAX_SEARCH_LENGTH } from '@tuturuuu/utils/constants';
 import {
-  MAX_COLOR_LENGTH,
-  MAX_SEARCH_LENGTH,
-  resolveWorkspaceId,
-} from '@tuturuuu/utils/constants';
-import { NextResponse } from 'next/server';
+  normalizeWorkspaceId,
+  verifyWorkspaceMembershipType,
+} from '@tuturuuu/utils/workspace-helper';
+import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { resolveAuthenticatedSessionUser } from '@/lib/app-session-user';
+import { resolveSessionAuthContext } from '@/lib/api-auth';
+
+const TASK_HISTORY_APP_SESSION_AUTH = {
+  targetApp: [CLI_APP_TARGET_APP, 'tasks'],
+} as const;
 
 const querySchema = z.object({
   page: z
@@ -88,26 +93,203 @@ function formatListHistoryValue({
   };
 }
 
+function firstRelated<T>(value: T | T[] | null | undefined): T | null {
+  if (Array.isArray(value)) return value[0] ?? null;
+  return value ?? null;
+}
+
+type AdminHistoryRow = {
+  id: string;
+  task_id: string | null;
+  changed_by: string | null;
+  changed_at: string;
+  change_type: string | null;
+  field_name: string | null;
+  old_value: unknown;
+  new_value: unknown;
+  metadata: unknown;
+  tasks?: {
+    id: string;
+    name: string | null;
+    deleted_at: string | null;
+    task_lists?: {
+      id: string;
+      name: string | null;
+      workspace_boards?: {
+        id: string;
+        name: string | null;
+        ws_id: string;
+      } | null;
+    } | null;
+  } | null;
+  users?: {
+    id: string;
+    display_name: string | null;
+    avatar_url: string | null;
+  } | null;
+};
+
+async function fetchHistoryViaAdminQuery({
+  board_id,
+  change_type,
+  field_name,
+  from,
+  page,
+  pageSize,
+  search,
+  to,
+  wsId,
+}: {
+  board_id: string | null | undefined;
+  change_type: string | null | undefined;
+  field_name: string | null | undefined;
+  from: string | null | undefined;
+  page: number;
+  pageSize: number;
+  search: string | null | undefined;
+  to: string | null | undefined;
+  wsId: string;
+}) {
+  const sbAdmin = await createAdminClient({ noCookie: true });
+  const offset = Math.max(0, (page - 1) * pageSize);
+  let query = (sbAdmin as any)
+    .from('task_history')
+    .select(
+      `
+        id,
+        task_id,
+        changed_by,
+        changed_at,
+        change_type,
+        field_name,
+        old_value,
+        new_value,
+        metadata,
+        tasks!inner(
+          id,
+          name,
+          deleted_at,
+          task_lists!inner(
+            id,
+            name,
+            workspace_boards!inner(
+              id,
+              name,
+              ws_id
+            )
+          )
+        ),
+        users!task_history_changed_by_fkey(
+          id,
+          display_name,
+          avatar_url
+        )
+      `,
+      { count: 'exact' }
+    )
+    .is('deleted_at', null)
+    .eq('tasks.task_lists.workspace_boards.ws_id', wsId);
+
+  if (board_id) {
+    query = query.eq('tasks.task_lists.workspace_boards.id', board_id);
+  }
+
+  if (change_type) {
+    query = query.eq('change_type', change_type);
+  }
+
+  if (field_name) {
+    query = query.eq('field_name', field_name);
+  }
+
+  if (from) {
+    query = query.gte('changed_at', from);
+  }
+
+  if (to) {
+    query = query.lte('changed_at', to);
+  }
+
+  if (search) {
+    query = query.ilike('tasks.name', `%${search}%`);
+  }
+
+  const { count, data, error } = await query
+    .order('changed_at', { ascending: false })
+    .order('id', { ascending: false })
+    .range(offset, offset + pageSize - 1);
+
+  if (error) {
+    throw error;
+  }
+
+  return {
+    history: ((data ?? []) as AdminHistoryRow[]).map((entry) => {
+      const task = firstRelated(entry.tasks);
+      const list = firstRelated(task?.task_lists);
+      const board = firstRelated(list?.workspace_boards);
+      const user = firstRelated(entry.users);
+
+      return {
+        board_id: board?.id ?? null,
+        board_name: board?.name ?? null,
+        change_type: entry.change_type,
+        changed_at: entry.changed_at,
+        changed_by: entry.changed_by,
+        field_name: entry.field_name,
+        id: entry.id,
+        metadata: entry.metadata,
+        new_value: entry.new_value,
+        old_value: entry.old_value,
+        task_deleted_at: task?.deleted_at ?? null,
+        task_id: entry.task_id,
+        task_name: task?.name ?? 'Unknown Task',
+        task_permanently_deleted: false,
+        total_count: count ?? 0,
+        user_avatar_url: user?.avatar_url ?? null,
+        user_display_name: user?.display_name ?? null,
+        user_id: user?.id ?? entry.changed_by,
+      };
+    }),
+    totalCount: count ?? 0,
+  };
+}
+
 /**
  * GET /api/v1/workspaces/[wsId]/tasks/history
  * Fetches workspace-wide task change history with pagination and filtering
  */
 export async function GET(
-  req: Request,
+  req: NextRequest,
   { params }: { params: Promise<{ wsId: string }> }
 ) {
   try {
-    const supabase = await createClient();
-
-    // Get authenticated user
-    const { user, authError } = await resolveAuthenticatedSessionUser(supabase);
-
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const auth = await resolveSessionAuthContext(req, {
+      allowAppSessionAuth: TASK_HISTORY_APP_SESSION_AUTH,
+    });
+    if (!auth.ok) return auth.response;
 
     const { wsId: rawWsId } = await params;
-    const wsId = resolveWorkspaceId(rawWsId);
+    const wsId = await normalizeWorkspaceId(rawWsId, auth.supabase);
+    const membership = await verifyWorkspaceMembershipType({
+      supabase: auth.supabase,
+      userId: auth.user.id,
+      wsId,
+    });
+
+    if (membership.error === 'membership_lookup_failed') {
+      return NextResponse.json(
+        { error: 'Failed to verify workspace membership' },
+        { status: 500 }
+      );
+    }
+
+    if (!membership.ok) {
+      return NextResponse.json(
+        { error: 'Access denied to workspace' },
+        { status: 403 }
+      );
+    }
 
     // Parse query parameters
     const { searchParams } = new URL(req.url);
@@ -144,7 +326,7 @@ export async function GET(
     } = queryParams.data;
 
     // Call the RPC function for efficient data retrieval
-    const { data: history, error: historyError } = await supabase.rpc(
+    const { data: rpcHistory, error: historyError } = await auth.supabase.rpc(
       'get_workspace_task_history',
       {
         p_ws_id: wsId,
@@ -159,25 +341,34 @@ export async function GET(
       }
     );
 
+    let history = rpcHistory;
+    let totalCount = rpcHistory?.[0]?.total_count ?? 0;
+
     if (historyError) {
       console.error('Error fetching task history:', historyError);
 
-      // Handle specific error messages from the RPC
       if (historyError.message === 'Access denied to workspace') {
+        const fallback = await fetchHistoryViaAdminQuery({
+          board_id,
+          change_type,
+          field_name,
+          from,
+          page,
+          pageSize,
+          search,
+          to,
+          wsId,
+        });
+        history = fallback.history as NonNullable<typeof rpcHistory>;
+        totalCount = fallback.totalCount;
+      } else {
         return NextResponse.json(
-          { error: 'Access denied to workspace' },
-          { status: 403 }
+          { error: 'Failed to fetch task history' },
+          { status: 500 }
         );
       }
-
-      return NextResponse.json(
-        { error: 'Failed to fetch task history' },
-        { status: 500 }
-      );
     }
 
-    // Get total count from first row (or 0 if empty)
-    const totalCount = history?.[0]?.total_count ?? 0;
     const listIds = new Set<string>();
 
     for (const entry of history ?? []) {
@@ -193,7 +384,7 @@ export async function GET(
     const listNamesById = new Map<string, string>();
 
     if (listIds.size > 0) {
-      const { data: lists } = await supabase
+      const { data: lists } = await auth.supabase
         .from('task_lists')
         .select('id, name')
         .in('id', [...listIds]);

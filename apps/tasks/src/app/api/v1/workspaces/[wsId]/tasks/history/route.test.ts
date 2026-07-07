@@ -7,22 +7,33 @@ const oldListId = '11111111-1111-4111-8111-111111111111';
 const newListId = '22222222-2222-4222-8222-222222222222';
 
 const mocks = vi.hoisted(() => ({
-  createClient: vi.fn(),
+  createAdminClient: vi.fn(),
   from: vi.fn(),
   listIn: vi.fn(),
   listSelect: vi.fn(),
-  resolveAuthenticatedSessionUser: vi.fn(),
+  normalizeWorkspaceId: vi.fn(),
+  resolveSessionAuthContext: vi.fn(),
   rpc: vi.fn(),
+  verifyWorkspaceMembershipType: vi.fn(),
 }));
 
-vi.mock('@/lib/app-session-user', () => ({
-  resolveAuthenticatedSessionUser: (
-    ...args: Parameters<typeof mocks.resolveAuthenticatedSessionUser>
-  ) => mocks.resolveAuthenticatedSessionUser(...args),
+vi.mock('@/lib/api-auth', () => ({
+  resolveSessionAuthContext: (
+    ...args: Parameters<typeof mocks.resolveSessionAuthContext>
+  ) => mocks.resolveSessionAuthContext(...args),
 }));
 
 vi.mock('@tuturuuu/supabase/next/server', () => ({
-  createClient: mocks.createClient,
+  createAdminClient: mocks.createAdminClient,
+}));
+
+vi.mock('@tuturuuu/utils/workspace-helper', () => ({
+  normalizeWorkspaceId: (
+    ...args: Parameters<typeof mocks.normalizeWorkspaceId>
+  ) => mocks.normalizeWorkspaceId(...args),
+  verifyWorkspaceMembershipType: (
+    ...args: Parameters<typeof mocks.verifyWorkspaceMembershipType>
+  ) => mocks.verifyWorkspaceMembershipType(...args),
 }));
 
 function createRequest() {
@@ -43,10 +54,6 @@ describe('workspace task history route', () => {
     vi.clearAllMocks();
     vi.spyOn(console, 'error').mockImplementation(() => {});
 
-    mocks.resolveAuthenticatedSessionUser.mockResolvedValue({
-      authError: null,
-      user: { id: 'user-1' },
-    });
     mocks.rpc.mockResolvedValue({
       data: [
         {
@@ -81,9 +88,17 @@ describe('workspace task history route', () => {
     });
     mocks.listSelect.mockReturnValue({ in: mocks.listIn });
     mocks.from.mockReturnValue({ select: mocks.listSelect });
-    mocks.createClient.mockResolvedValue({
-      from: mocks.from,
-      rpc: mocks.rpc,
+    mocks.normalizeWorkspaceId.mockResolvedValue(workspaceId);
+    mocks.verifyWorkspaceMembershipType.mockResolvedValue({
+      ok: true,
+    });
+    mocks.resolveSessionAuthContext.mockResolvedValue({
+      ok: true,
+      supabase: {
+        from: mocks.from,
+        rpc: mocks.rpc,
+      },
+      user: { id: 'user-1' },
     });
   });
 

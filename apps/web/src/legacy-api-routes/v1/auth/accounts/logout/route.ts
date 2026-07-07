@@ -1,14 +1,19 @@
 import { unstable_rethrow } from 'next/navigation';
-import { type NextRequest, NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
 import {
   createAuthDiagnosticCode,
   logAuthDiagnostic,
 } from '@/lib/auth/diagnostics';
 import { logoutCurrentWebAccount } from '@/lib/auth/multi-account/vault';
+import { accountCorsJson, accountCorsPreflight } from '../cors';
+
+export function OPTIONS(request: NextRequest) {
+  return accountCorsPreflight(request);
+}
 
 export async function POST(request: NextRequest) {
   try {
-    return NextResponse.json(await logoutCurrentWebAccount(request));
+    return accountCorsJson(request, await logoutCurrentWebAccount(request));
   } catch (error) {
     unstable_rethrow(error);
 
@@ -23,7 +28,8 @@ export async function POST(request: NextRequest) {
       stage: 'account_logout',
     });
 
-    return NextResponse.json(
+    return accountCorsJson(
+      request,
       { diagnosticCode, error: 'Failed to log out account' },
       { status: 500 }
     );

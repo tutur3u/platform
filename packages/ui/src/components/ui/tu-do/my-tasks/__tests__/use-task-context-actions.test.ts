@@ -15,6 +15,7 @@ const {
   mockT,
   mockToastError,
   mockUpdateWorkspaceTask,
+  mockUpsertCurrentUserTaskPersonalPlacement,
 } = vi.hoisted(() => ({
   mockAddWorkspaceTaskLabel: vi.fn(),
   mockDeleteWorkspaceTask: vi.fn(),
@@ -26,6 +27,7 @@ const {
   mockT: vi.fn((key: string) => key),
   mockToastError: vi.fn(),
   mockUpdateWorkspaceTask: vi.fn(),
+  mockUpsertCurrentUserTaskPersonalPlacement: vi.fn(),
 }));
 
 vi.mock('@tanstack/react-query', () => ({
@@ -45,6 +47,8 @@ vi.mock('@tuturuuu/internal-api', () => ({
   listWorkspaceTaskLists: mockListWorkspaceTaskLists,
   removeWorkspaceTaskLabel: mockRemoveWorkspaceTaskLabel,
   updateWorkspaceTask: mockUpdateWorkspaceTask,
+  upsertCurrentUserTaskPersonalPlacement:
+    mockUpsertCurrentUserTaskPersonalPlacement,
 }));
 
 vi.mock('next-intl', () => ({
@@ -106,6 +110,9 @@ describe('useTaskContextActions', () => {
     });
     mockRemoveWorkspaceTaskLabel.mockResolvedValue({ success: true });
     mockUpdateWorkspaceTask.mockResolvedValue({ task: null });
+    mockUpsertCurrentUserTaskPersonalPlacement.mockResolvedValue({
+      task: { id: 'task-123' },
+    });
   });
 
   it('handleDoneWithMyPart sends PUT with personally_unassigned=true', async () => {
@@ -228,6 +235,53 @@ describe('useTaskContextActions', () => {
         headers: { 'Content-Type': 'application/json' },
       })
     );
+  });
+
+  it('handleComplete uses terminal personal placement for personal external tasks', async () => {
+    const taskWithPersonalPlacement = {
+      ...mockTask,
+      overrides: {
+        task_id: 'task-123',
+        user_id: 'user-1',
+        self_managed: false,
+        completed_at: null,
+        priority_override: null,
+        due_date_override: null,
+        estimation_override: null,
+        personally_unassigned: false,
+        notes: null,
+        personal_board_id: 'personal-board',
+        personal_list_id: 'personal-list',
+        created_at: '2026-01-01T00:00:00Z',
+        updated_at: '2026-01-01T00:00:00Z',
+      },
+    } as TaskWithRelations;
+
+    const { result } = renderHook(() =>
+      useTaskContextActions({
+        task: taskWithPersonalPlacement,
+        userId,
+        onTaskUpdate,
+        onClose,
+      })
+    );
+
+    await act(async () => {
+      await result.current.handleComplete();
+    });
+
+    expect(mockListWorkspaceTaskLists).not.toHaveBeenCalled();
+    expect(mockUpdateWorkspaceTask).not.toHaveBeenCalled();
+    expect(mockUpsertCurrentUserTaskPersonalPlacement).toHaveBeenCalledWith(
+      'task-123',
+      {
+        personal_board_id: 'personal-board',
+        personal_list_id: 'personal-list',
+        terminal_status: 'done',
+      }
+    );
+    expect(onTaskUpdate).toHaveBeenCalled();
+    expect(onClose).toHaveBeenCalled();
   });
 
   it('handleComplete clears overrides when task has personally_unassigned', async () => {

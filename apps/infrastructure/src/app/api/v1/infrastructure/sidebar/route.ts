@@ -1,6 +1,15 @@
+import {
+  getSharedAndHostOnlyCookieDeleteOptions,
+  getTuturuuuSharedCookieOptions,
+} from '@tuturuuu/utils/shared-cookie';
 import { cookies as c } from 'next/headers';
 import { NextResponse } from 'next/server';
 import { SIDEBAR_COLLAPSED_COOKIE_NAME } from '@/constants/common';
+
+const SIDEBAR_COLLAPSED_COOKIE_OPTIONS = {
+  maxAge: 365 * 24 * 60 * 60,
+  path: '/',
+} as const;
 
 export async function POST(req: Request) {
   const cookies = await c();
@@ -14,13 +23,22 @@ export async function POST(req: Request) {
     );
   }
 
-  cookies.set(SIDEBAR_COLLAPSED_COOKIE_NAME, collapsed);
+  cookies.set(
+    SIDEBAR_COLLAPSED_COOKIE_NAME,
+    String(collapsed),
+    getTuturuuuSharedCookieOptions(SIDEBAR_COLLAPSED_COOKIE_OPTIONS, req)
+  );
   return NextResponse.json({ message: 'Success' });
 }
 
-export async function DELETE() {
+export async function DELETE(req: Request) {
   const cookies = await c();
 
-  cookies.delete(SIDEBAR_COLLAPSED_COOKIE_NAME);
+  for (const options of getSharedAndHostOnlyCookieDeleteOptions(
+    SIDEBAR_COLLAPSED_COOKIE_OPTIONS,
+    req
+  )) {
+    cookies.set(SIDEBAR_COLLAPSED_COOKIE_NAME, '', options);
+  }
   return NextResponse.json({ message: 'Success' });
 }

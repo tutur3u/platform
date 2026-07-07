@@ -160,6 +160,8 @@ export interface TaskEditDialogProps {
   taskWsId?: string;
   task?: Task;
   boardId: string;
+  visibleBoardId?: string;
+  visibleTaskSnapshot?: Partial<Task>;
   isOpen: boolean;
   /** Present when opened via /shared/task/[shareCode] */
   shareCode?: string;
@@ -205,6 +207,8 @@ export function TaskEditDialog({
   taskWsId,
   task,
   boardId,
+  visibleBoardId,
+  visibleTaskSnapshot,
   isOpen,
   shareCode,
   sharedPermission,
@@ -1012,6 +1016,8 @@ export function TaskEditDialog({
     taskId: task?.id,
     isCreateMode,
     boardId,
+    visibleBoardId,
+    visibleTaskSnapshot,
     estimationPoints: formState.estimationPoints ?? null,
     priority: formState.priority,
     selectedListId: formState.selectedListId,

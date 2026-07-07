@@ -208,7 +208,12 @@ describe('workspace board internal-api helpers', () => {
     await updateWorkspaceTaskBoard(
       'ws-1',
       'board-1',
-      { name: 'Renamed', ticket_prefix: 'ABC' },
+      {
+        name: 'Renamed',
+        ticket_prefix: 'ABC',
+        default_done_list_id: 'done-list',
+        default_closed_list_id: 'closed-list',
+      },
       options
     );
 
@@ -219,7 +224,12 @@ describe('workspace board internal-api helpers', () => {
       'https://internal.example.com/api/v1/workspaces/ws-1/task-boards/board-1',
       expect.objectContaining({
         method: 'PUT',
-        body: JSON.stringify({ name: 'Renamed', ticket_prefix: 'ABC' }),
+        body: JSON.stringify({
+          name: 'Renamed',
+          ticket_prefix: 'ABC',
+          default_done_list_id: 'done-list',
+          default_closed_list_id: 'closed-list',
+        }),
       })
     );
 
@@ -866,6 +876,7 @@ describe('workspace board internal-api helpers', () => {
         personal_board_id: 'board-1',
         personal_list_id: null,
         personal_sort_key: null,
+        terminal_status: 'done',
       },
       options
     );
@@ -881,6 +892,7 @@ describe('workspace board internal-api helpers', () => {
           personal_board_id: 'board-1',
           personal_list_id: null,
           personal_sort_key: null,
+          terminal_status: 'done',
         }),
         cache: 'no-store',
       })

@@ -4,9 +4,12 @@ import {
   createDeviceCookieValue,
   decryptSession,
   encryptSession,
+  getAllDeviceCookieClearTargets,
   getDeviceCookieName,
   getDeviceCookieOptions,
+  getDeviceCookieReadNames,
   getLegacyDeviceCookieClearOptions,
+  getStaleDeviceCookieClearTargets,
   LEGACY_WEB_ACCOUNT_DEVICE_COOKIE_NAME,
   parseDeviceCookieValue,
   resolveMultiAccountSecret,
@@ -107,7 +110,7 @@ describe('web multi-account crypto', () => {
     ).toBe(null);
   });
 
-  it('uses a host-prefixed device cookie on HTTPS requests', () => {
+  it('uses the shared device cookie on first-party HTTPS requests', () => {
     const request = new Request('http://internal.localhost/login', {
       headers: {
         'x-forwarded-host': 'app.tuturuuu.com',
@@ -115,18 +118,41 @@ describe('web multi-account crypto', () => {
       },
     });
 
-    expect(getDeviceCookieName(request)).toBe(WEB_ACCOUNT_DEVICE_COOKIE_NAME);
+    expect(getDeviceCookieName(request)).toBe(
+      LEGACY_WEB_ACCOUNT_DEVICE_COOKIE_NAME
+    );
+    expect(getDeviceCookieReadNames(request)).toEqual([
+      LEGACY_WEB_ACCOUNT_DEVICE_COOKIE_NAME,
+      WEB_ACCOUNT_DEVICE_COOKIE_NAME,
+    ]);
     expect(getDeviceCookieOptions(request)).toMatchObject({
+      domain: '.tuturuuu.com',
       httpOnly: true,
       path: '/',
       sameSite: 'lax',
       secure: true,
     });
-    expect(getDeviceCookieOptions(request)).not.toHaveProperty('domain');
   });
 
-  it('keeps HTTP development cookies host-only without the host prefix', () => {
+  it('shares HTTP development cookies across tuturuuu.localhost subdomains', () => {
     const request = new Request('http://tuturuuu.localhost/login');
+
+    expect(getDeviceCookieName(request)).toBe(
+      LEGACY_WEB_ACCOUNT_DEVICE_COOKIE_NAME
+    );
+    expect(getDeviceCookieOptions(request)).toMatchObject({
+      httpOnly: true,
+      path: '/',
+      sameSite: 'lax',
+      secure: false,
+    });
+    expect(getDeviceCookieOptions(request)).toMatchObject({
+      domain: '.tuturuuu.localhost',
+    });
+  });
+
+  it('keeps custom local development cookies host-only without the host prefix', () => {
+    const request = new Request('http://localhost:7803/login');
 
     expect(getDeviceCookieName(request)).toBe(
       LEGACY_WEB_ACCOUNT_DEVICE_COOKIE_NAME
@@ -140,10 +166,10 @@ describe('web multi-account crypto', () => {
     expect(getDeviceCookieOptions(request)).not.toHaveProperty('domain');
   });
 
-  it('falls back to a non-secure cookie for HTTPS localhost dev/E2E hosts', () => {
+  it('uses a non-secure shared cookie for HTTPS tuturuuu.localhost dev/E2E hosts', () => {
     // portless serves local dev and E2E over HTTPS with an untrusted cert, so
-    // Chromium drops Secure/__Host- cookies. Localhost-style hosts must use the
-    // legacy non-secure device cookie even when the resolved protocol is HTTPS.
+    // Chromium drops Secure/__Host- cookies. The first-party localhost domain
+    // still needs the shared cookie name/scope, but without Secure.
     const request = new Request('http://internal.localhost/login', {
       headers: {
         'x-forwarded-host': 'tuturuuu.localhost:1355',
@@ -160,10 +186,29 @@ describe('web multi-account crypto', () => {
       sameSite: 'lax',
       secure: false,
     });
+    expect(getDeviceCookieOptions(request)).toMatchObject({
+      domain: '.tuturuuu.localhost',
+    });
+  });
+
+  it('keeps host-prefixed cookies for non-shared HTTPS hosts', () => {
+    const request = new Request('https://accounts.example.com/login');
+
+    expect(getDeviceCookieName(request)).toBe(WEB_ACCOUNT_DEVICE_COOKIE_NAME);
+    expect(getDeviceCookieReadNames(request)).toEqual([
+      WEB_ACCOUNT_DEVICE_COOKIE_NAME,
+      LEGACY_WEB_ACCOUNT_DEVICE_COOKIE_NAME,
+    ]);
+    expect(getDeviceCookieOptions(request)).toMatchObject({
+      httpOnly: true,
+      path: '/',
+      sameSite: 'lax',
+      secure: true,
+    });
     expect(getDeviceCookieOptions(request)).not.toHaveProperty('domain');
   });
 
-  it('expires legacy parent-domain cookies without reusing that scope', () => {
+  it('expires legacy host-only and parent-domain cookies', () => {
     const request = new Request('https://app.tuturuuu.com/login');
 
     expect(getLegacyDeviceCookieClearOptions(request)).toEqual([
@@ -182,5 +227,58 @@ describe('web multi-account crypto', () => {
     expect(getLegacyDeviceCookieClearOptions(request)[0]).not.toHaveProperty(
       'domain'
     );
+  });
+
+  it('clears stale host-only duplicates when writing the shared cookie', () => {
+    const request = new Request('https://app.tuturuuu.com/login');
+
+    expect(getStaleDeviceCookieClearTargets(request)).toEqual([
+      {
+        name: LEGACY_WEB_ACCOUNT_DEVICE_COOKIE_NAME,
+        options: expect.objectContaining({
+          maxAge: 0,
+          path: '/',
+          secure: true,
+        }),
+      },
+      {
+        name: WEB_ACCOUNT_DEVICE_COOKIE_NAME,
+        options: expect.objectContaining({
+          maxAge: 0,
+          path: '/',
+          secure: true,
+        }),
+      },
+    ]);
+    expect(
+      getStaleDeviceCookieClearTargets(request)[0]?.options
+    ).not.toHaveProperty('domain');
+  });
+
+  it('clears active and stale device cookies on shared hosts', () => {
+    const request = new Request('https://app.tuturuuu.com/login');
+
+    expect(getAllDeviceCookieClearTargets(request)).toEqual([
+      {
+        name: LEGACY_WEB_ACCOUNT_DEVICE_COOKIE_NAME,
+        options: expect.objectContaining({
+          domain: '.tuturuuu.com',
+          maxAge: 0,
+        }),
+      },
+      {
+        name: LEGACY_WEB_ACCOUNT_DEVICE_COOKIE_NAME,
+        options: expect.not.objectContaining({
+          domain: expect.any(String),
+        }),
+      },
+      {
+        name: WEB_ACCOUNT_DEVICE_COOKIE_NAME,
+        options: expect.objectContaining({
+          maxAge: 0,
+          secure: true,
+        }),
+      },
+    ]);
   });
 });

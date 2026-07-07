@@ -46,6 +46,7 @@ const navItems: SettingsNavGroup[] = [
       },
       {
         description: 'Forms settings',
+        hideContentHeader: true,
         icon: TestIcon,
         label: 'Forms',
         name: 'forms',
@@ -166,5 +167,16 @@ describe('SettingsDialogShell keyboard navigation', () => {
     fireEvent.keyDown(editableInput, { altKey: true, key: 'ArrowDown' });
 
     expect(screen.getByTestId('active-tab')).toHaveTextContent('profile');
+  });
+
+  it('can hide the shell content header for page-like settings sections', () => {
+    renderShell();
+
+    const dialog = screen.getByRole('dialog');
+    fireEvent.keyDown(dialog, { altKey: true, key: 'End' });
+
+    expect(screen.getByTestId('active-tab')).toHaveTextContent('forms');
+    expect(screen.getAllByText('Forms').length).toBeGreaterThan(0);
+    expect(screen.queryByText('Forms settings')).not.toBeInTheDocument();
   });
 });

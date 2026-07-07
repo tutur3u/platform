@@ -171,6 +171,8 @@ vi.mock('../task-edit-dialog', () => ({
     isHydratingTask,
     taskLoadError,
     task,
+    visibleBoardId,
+    visibleTaskSnapshot,
     onClose,
     onNavigateToTask,
   }: {
@@ -179,6 +181,8 @@ vi.mock('../task-edit-dialog', () => ({
     isHydratingTask?: boolean;
     taskLoadError?: boolean;
     task?: Task;
+    visibleBoardId?: string;
+    visibleTaskSnapshot?: Partial<Task>;
     onClose: () => void;
     onNavigateToTask?: (taskId: string) => Promise<void>;
   }) => {
@@ -197,6 +201,8 @@ vi.mock('../task-edit-dialog', () => ({
         data-hydrating={String(!!isHydratingTask)}
         data-load-error={String(!!taskLoadError)}
         data-open={isOpen}
+        data-visible-board-id={visibleBoardId}
+        data-visible-list-id={visibleTaskSnapshot?.list_id}
       >
         {task && <div data-testid="task-name">{task.name}</div>}
         <button
@@ -684,11 +690,25 @@ describe('TaskDialogManager', () => {
       const { openTaskById } = useTaskDialogContext();
 
       React.useEffect(() => {
+        const visibleExternalSnapshot = {
+          ...mockTask,
+          id: 'external-task-1',
+          name: 'External snapshot',
+          list_id: 'personal-list-1',
+          personal_board_id: 'personal-board-1',
+          personal_list_id: 'personal-list-1',
+          personal_sort_key: 2000,
+          source_workspace_id: 'source-workspace-1',
+          source_board_id: 'external-board-1',
+          source_list_id: 'external-list-1',
+          source_list_name: 'External list',
+          is_personal_external: true,
+        } satisfies Task;
+
         void openTaskById('external-task-1', {
           initialTask: {
-            ...mockTask,
-            id: 'external-task-1',
-            name: 'External snapshot',
+            ...visibleExternalSnapshot,
+            list_id: 'external-list-1',
           },
           boardId: 'external-board-1',
           availableLists: [
@@ -700,6 +720,8 @@ describe('TaskDialogManager', () => {
           ],
           taskWsId: 'source-workspace-1',
           taskWorkspacePersonal: false,
+          visibleBoardId: 'personal-board-1',
+          visibleTaskSnapshot: visibleExternalSnapshot,
         });
       }, [openTaskById]);
 
@@ -719,6 +741,14 @@ describe('TaskDialogManager', () => {
       );
       expect(getByTestId('task-name')).toHaveTextContent('External snapshot');
     });
+    expect(getByTestId('task-edit-dialog')).toHaveAttribute(
+      'data-visible-board-id',
+      'personal-board-1'
+    );
+    expect(getByTestId('task-edit-dialog')).toHaveAttribute(
+      'data-visible-list-id',
+      'personal-list-1'
+    );
     expect(taskDialogRenderStats).toMatchObject({
       mounts: 1,
       unmounts: 0,
@@ -751,6 +781,14 @@ describe('TaskDialogManager', () => {
         'Hydrated external task'
       );
     });
+    expect(getByTestId('task-edit-dialog')).toHaveAttribute(
+      'data-visible-board-id',
+      'personal-board-1'
+    );
+    expect(getByTestId('task-edit-dialog')).toHaveAttribute(
+      'data-visible-list-id',
+      'personal-list-1'
+    );
     expect(taskDialogRenderStats).toMatchObject({
       mounts: 1,
       unmounts: 0,

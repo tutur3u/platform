@@ -26,7 +26,7 @@ import {
 } from 'react';
 import { PROD_MODE } from '@/constants/env';
 import { SIDEBAR_COLLAPSED_COOKIE_NAME } from '@/constants/sidebar';
-import { SIDEBAR_COOKIE_OPTIONS, useSidebar } from '@/context/sidebar-context';
+import { getSidebarCookieOptions, useSidebar } from '@/context/sidebar-context';
 import {
   useRecentSidebarItemsComponent,
   useSidebarActiveTimerComponent,
@@ -727,7 +727,7 @@ export function StructureImpl({
     setCookie(
       SIDEBAR_COLLAPSED_COOKIE_NAME,
       newCollapsed,
-      SIDEBAR_COOKIE_OPTIONS
+      getSidebarCookieOptions()
     );
 
     if (behavior === 'expanded' && newCollapsed) {

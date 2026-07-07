@@ -611,6 +611,36 @@ export type Database = {
         };
         Relationships: [];
       };
+      app_token_invitation_action_replays: {
+        Row: {
+          action: string;
+          consumed_at: string;
+          expires_at: string;
+          target_app: string;
+          token_jti: string;
+          user_id: string;
+          workspace_id: string;
+        };
+        Insert: {
+          action: string;
+          consumed_at?: string;
+          expires_at: string;
+          target_app: string;
+          token_jti: string;
+          user_id: string;
+          workspace_id: string;
+        };
+        Update: {
+          action?: string;
+          consumed_at?: string;
+          expires_at?: string;
+          target_app?: string;
+          token_jti?: string;
+          user_id?: string;
+          workspace_id?: string;
+        };
+        Relationships: [];
+      };
       auth_recovery_events: {
         Row: {
           actor_user_id: string | null;
@@ -1841,6 +1871,7 @@ export type Database = {
           actor_id: string;
           capabilities: Json;
           created_at: string;
+          heartbeat_enabled: boolean;
           id: string;
           last_heartbeat_at: string | null;
           name: string;
@@ -1851,6 +1882,7 @@ export type Database = {
           actor_id: string;
           capabilities?: Json;
           created_at?: string;
+          heartbeat_enabled?: boolean;
           id?: string;
           last_heartbeat_at?: string | null;
           name: string;
@@ -1861,6 +1893,7 @@ export type Database = {
           actor_id?: string;
           capabilities?: Json;
           created_at?: string;
+          heartbeat_enabled?: boolean;
           id?: string;
           last_heartbeat_at?: string | null;
           name?: string;
@@ -27495,6 +27528,8 @@ export type Database = {
           count_unestimated_issues: boolean;
           created_at: string | null;
           creator_id: string | null;
+          default_closed_list_id: string | null;
+          default_done_list_id: string | null;
           default_list_id: string | null;
           deleted_at: string | null;
           estimation_type:
@@ -27515,6 +27550,8 @@ export type Database = {
           count_unestimated_issues?: boolean;
           created_at?: string | null;
           creator_id?: string | null;
+          default_closed_list_id?: string | null;
+          default_done_list_id?: string | null;
           default_list_id?: string | null;
           deleted_at?: string | null;
           estimation_type?:
@@ -27535,6 +27572,8 @@ export type Database = {
           count_unestimated_issues?: boolean;
           created_at?: string | null;
           creator_id?: string | null;
+          default_closed_list_id?: string | null;
+          default_done_list_id?: string | null;
           default_list_id?: string | null;
           deleted_at?: string | null;
           estimation_type?:

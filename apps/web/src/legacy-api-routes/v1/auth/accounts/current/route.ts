@@ -1,5 +1,5 @@
 import { unstable_rethrow } from 'next/navigation';
-import { type NextRequest, NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
 import { z } from 'zod';
 import {
   createAuthDiagnosticCode,
@@ -10,6 +10,7 @@ import {
   saveCurrentWebAccount,
   updateCurrentWebAccount,
 } from '@/lib/auth/multi-account/vault';
+import { accountCorsJson, accountCorsPreflight } from '../cors';
 
 const saveSchema = z.object({
   returnUrl: z.string().max(2048).nullable().optional(),
@@ -21,12 +22,17 @@ const updateSchema = z.object({
   workspaceId: z.string().max(200).nullable().optional(),
 });
 
+export function OPTIONS(request: NextRequest) {
+  return accountCorsPreflight(request);
+}
+
 export async function POST(request: NextRequest) {
   try {
     const parsed = saveSchema.safeParse(await request.json().catch(() => ({})));
 
     if (!parsed.success) {
-      return NextResponse.json(
+      return accountCorsJson(
+        request,
         { error: 'Invalid request body' },
         { status: 400 }
       );
@@ -51,10 +57,16 @@ export async function POST(request: NextRequest) {
         status: 401,
       });
 
-      return NextResponse.json({ ...result, diagnosticCode }, { status: 401 });
+      return accountCorsJson(
+        request,
+        { ...result, diagnosticCode },
+        { status: 401 }
+      );
     }
 
-    return NextResponse.json(result, { status: result.success ? 200 : 401 });
+    return accountCorsJson(request, result, {
+      status: result.success ? 200 : 401,
+    });
   } catch (error) {
     unstable_rethrow(error);
 
@@ -69,7 +81,8 @@ export async function POST(request: NextRequest) {
       stage: 'account_save',
     });
 
-    return NextResponse.json(
+    return accountCorsJson(
+      request,
       { diagnosticCode, error: 'Failed to save current account' },
       { status: 500 }
     );
@@ -83,13 +96,15 @@ export async function PATCH(request: NextRequest) {
     );
 
     if (!parsed.success) {
-      return NextResponse.json(
+      return accountCorsJson(
+        request,
         { error: 'Invalid request body' },
         { status: 400 }
       );
     }
 
-    return NextResponse.json(
+    return accountCorsJson(
+      request,
       await updateCurrentWebAccount(request, parsed.data)
     );
   } catch (error) {
@@ -106,7 +121,8 @@ export async function PATCH(request: NextRequest) {
       stage: 'account_update',
     });
 
-    return NextResponse.json(
+    return accountCorsJson(
+      request,
       { diagnosticCode, error: 'Failed to update account context' },
       { status: 500 }
     );

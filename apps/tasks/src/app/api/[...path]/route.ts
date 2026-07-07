@@ -35,6 +35,7 @@ const TASK_WORKSPACE_API_SEGMENTS = new Set([
   'habit-trackers',
   'habits',
   'labels',
+  'notes',
   'task-boards',
   'task-cycles',
   'task-drafts',
@@ -44,6 +45,7 @@ const TASK_WORKSPACE_API_SEGMENTS = new Set([
   'task-projects',
   'task-templates',
   'tasks',
+  'templates',
 ]);
 
 const HOP_BY_HOP_HEADERS = new Set([
@@ -189,10 +191,7 @@ function isTaskOwnedApiPath(path: string[]) {
     return true;
   }
 
-  return (
-    (workspaceRouteSegment === 'time-tracking' && path[4] === 'tasks') ||
-    (workspaceRouteSegment === 'notes' && path[5] === 'convert-to-task')
-  );
+  return workspaceRouteSegment === 'time-tracking' && path[4] === 'tasks';
 }
 
 async function proxyToWebApi(request: NextRequest, context: RouteContext) {

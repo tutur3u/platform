@@ -161,10 +161,6 @@ export function TaskBoardSettingsPanel({
           wsId={wsId}
         />
       </div>
-      <BoardShareSettingsPanel
-        board={{ id: board.id, name: board.name ?? t('common.untitled') }}
-        wsId={wsId}
-      />
     </div>
   );
 }
@@ -355,6 +351,20 @@ export function TaskShareSettingsPanel({
   wsId?: string;
 }) {
   const t = useTranslations();
+  const { data: board, isLoading } = useQuery({
+    queryKey: ['task-share-settings-board', wsId, boardId],
+    queryFn: async () => {
+      if (!wsId || !boardId) throw new Error('Missing board context');
+      const payload = await getWorkspaceTaskBoard(
+        wsId,
+        boardId,
+        getBrowserInternalApiOptions()
+      );
+      return payload.board;
+    },
+    enabled: Boolean(wsId && boardId),
+    staleTime: 30_000,
+  });
 
   if (!wsId || !boardId) {
     return (
@@ -365,9 +375,11 @@ export function TaskShareSettingsPanel({
     );
   }
 
+  if (isLoading || !board) return <LoadingPanel />;
+
   return (
     <BoardShareSettingsPanel
-      board={{ id: boardId, name: t('settings.tasks.board') }}
+      board={{ id: board.id, name: board.name ?? t('common.untitled') }}
       wsId={wsId}
     />
   );

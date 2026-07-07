@@ -1,16 +1,21 @@
 import { unstable_rethrow } from 'next/navigation';
-import { connection, type NextRequest, NextResponse } from 'next/server';
+import { connection, type NextRequest } from 'next/server';
 import {
   createAuthDiagnosticCode,
   logAuthDiagnostic,
 } from '@/lib/auth/diagnostics';
 import { listWebAccounts } from '@/lib/auth/multi-account/vault';
+import { accountCorsJson, accountCorsPreflight } from './cors';
+
+export function OPTIONS(request: NextRequest) {
+  return accountCorsPreflight(request);
+}
 
 export async function GET(request: NextRequest) {
   await connection();
 
   try {
-    return NextResponse.json(await listWebAccounts(request));
+    return accountCorsJson(request, await listWebAccounts(request));
   } catch (error) {
     unstable_rethrow(error);
 
@@ -25,7 +30,8 @@ export async function GET(request: NextRequest) {
       stage: 'account_list',
     });
 
-    return NextResponse.json(
+    return accountCorsJson(
+      request,
       {
         accounts: [],
         activeAccountId: null,

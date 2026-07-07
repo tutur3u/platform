@@ -1,4 +1,13 @@
 {
+  "account_switcher": {
+    "accounts": "Accounts",
+    "current_account": "Current Account",
+    "manage_accounts": "Manage Accounts",
+    "please_wait": "Please wait...",
+    "remove_account": "Remove account",
+    "switch_account": "Switch Account",
+    "unknown_user": "Unknown User"
+  },
   "chat": {
     "accept_friend": "Accept",
     "add_friend_by_email": "Add friend by email",

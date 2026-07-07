@@ -1,4 +1,13 @@
 {
+  "account_switcher": {
+    "accounts": "Tài khoản",
+    "current_account": "Tài khoản hiện tại",
+    "manage_accounts": "Quản lý tài khoản",
+    "please_wait": "Vui lòng chờ...",
+    "remove_account": "Xóa tài khoản",
+    "switch_account": "Chuyển tài khoản",
+    "unknown_user": "Người dùng không xác định"
+  },
   "command_launcher": {
     "apps": "Ứng dụng",
     "apps_description": "Mở một ứng dụng Tuturuuu khác từ workspace này.",

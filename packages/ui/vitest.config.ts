@@ -30,6 +30,10 @@ export default defineConfig({
         replacement: resolve(__dirname, '../internal-api/src/index.ts'),
       },
       {
+        find: /^@tuturuuu\/types\/primitives\/(.+)$/,
+        replacement: `${resolve(__dirname, '../types/src/primitives')}/$1.ts`,
+      },
+      {
         find: '@tuturuuu/supabase/next/client',
         replacement: resolve(__dirname, '../supabase/src/next/client.ts'),
       },

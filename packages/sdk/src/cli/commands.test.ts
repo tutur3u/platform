@@ -2160,6 +2160,127 @@ task_name: Prepare handoff
     ).toBe(false);
   });
 
+  it('marks personal external tasks done through terminal personal placement', async () => {
+    const taskId = '33333333-3333-4333-8333-333333333333';
+    await writeTestConfig({
+      baseUrl: 'https://tuturuuu.com',
+      currentWorkspaceId: 'personal',
+      session: {
+        accessToken: 'access-token',
+        refreshToken: 'refresh-token',
+      },
+    });
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(
+        Response.json({
+          task: {
+            id: taskId,
+            is_personal_external: true,
+            source_workspace_id: 'source-ws',
+          },
+        })
+      )
+      .mockResolvedValueOnce(
+        Response.json({
+          task: {
+            id: taskId,
+            is_personal_external: true,
+            personal_board_id: 'personal-board',
+            personal_list_id: 'personal-done-list',
+          },
+        })
+      );
+    vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
+
+    await runCli([
+      'tasks',
+      'done',
+      taskId,
+      '--target-board',
+      'personal-board',
+      '--list',
+      'personal-done-list',
+      '--json',
+      '--no-update-check',
+    ]);
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      `https://tasks.tuturuuu.com/api/v1/users/me/tasks/${taskId}/personal-placement`,
+      expect.objectContaining({
+        body: JSON.stringify({
+          personal_board_id: 'personal-board',
+          personal_list_id: 'personal-done-list',
+          terminal_status: 'done',
+        }),
+        cache: 'no-store',
+        method: 'PUT',
+      })
+    );
+    expect(
+      fetchMock.mock.calls.some(([url]) =>
+        String(url).includes(`/workspaces/personal/tasks/${taskId}`)
+      )
+    ).toBe(false);
+  });
+
+  it('closes personal external tasks through terminal personal placement', async () => {
+    const taskId = '44444444-4444-4444-8444-444444444444';
+    await writeTestConfig({
+      baseUrl: 'https://tuturuuu.com',
+      currentBoardId: 'personal-board',
+      currentWorkspaceId: 'personal',
+      session: {
+        accessToken: 'access-token',
+        refreshToken: 'refresh-token',
+      },
+    });
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(
+        Response.json({
+          task: {
+            id: taskId,
+            is_personal_external: true,
+            source_workspace_id: 'source-ws',
+          },
+        })
+      )
+      .mockResolvedValueOnce(
+        Response.json({
+          task: {
+            id: taskId,
+            is_personal_external: true,
+            personal_board_id: 'personal-board',
+            personal_list_id: 'personal-closed-list',
+          },
+        })
+      );
+    vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
+
+    await runCli(['tasks', 'close', taskId, '--json', '--no-update-check']);
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      `https://tasks.tuturuuu.com/api/v1/users/me/tasks/${taskId}/personal-placement`,
+      expect.objectContaining({
+        body: JSON.stringify({
+          personal_board_id: 'personal-board',
+          personal_list_id: null,
+          terminal_status: 'closed',
+        }),
+        cache: 'no-store',
+        method: 'PUT',
+      })
+    );
+    expect(
+      fetchMock.mock.calls.some(([url]) =>
+        String(url).includes(`/workspaces/personal/tasks/${taskId}`)
+      )
+    ).toBe(false);
+  });
+
   it('keeps native task moves on the workspace move endpoint', async () => {
     const taskId = '22222222-2222-4222-8222-222222222222';
     await writeTestConfig({

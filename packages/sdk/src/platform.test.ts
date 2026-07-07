@@ -377,6 +377,7 @@ describe('TuturuuuUserClient', () => {
     await client.tasks.upsertPersonalPlacement('task-1', {
       personal_board_id: 'board-1',
       personal_list_id: 'list-1',
+      terminal_status: 'done',
     });
     await client.tasks.removePersonalPlacement('task-1');
 
@@ -387,6 +388,7 @@ describe('TuturuuuUserClient', () => {
         body: JSON.stringify({
           personal_board_id: 'board-1',
           personal_list_id: 'list-1',
+          terminal_status: 'done',
         }),
         cache: 'no-store',
         method: 'PUT',
