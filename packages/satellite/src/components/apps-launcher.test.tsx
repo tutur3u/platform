@@ -99,13 +99,15 @@ describe('AppsLauncherDialog', () => {
       'h-[min(760px,calc(100dvh-2rem))]'
     );
     expect(dialogContent?.className).not.toContain('max-h-[calc(100dvh-2rem)]');
-    expect(dialogContent?.className).toContain('!top-4');
-    expect(dialogContent?.className).toContain('!bottom-4');
-    expect(dialogContent?.className).toContain('h-auto');
-    expect(dialogContent?.className).toContain('max-h-none');
+    expect(dialogContent?.className).not.toContain('!top-4');
+    expect(dialogContent?.className).not.toContain('!bottom-4');
+    expect(dialogContent?.className).not.toContain('h-auto');
+    expect(dialogContent?.className).toContain('h-[calc(100dvh-2rem)]');
+    expect(dialogContent?.className).toContain('sm:h-[calc(100dvh-3rem)]');
+    expect(dialogContent?.className).toContain('max-h-[760px]');
     expect(dialogContent?.className).toContain('w-[calc(100vw-2rem)]');
-    expect(dialogContent?.className).toContain('max-w-[860px]');
-    expect(dialogContent?.className).toContain('!translate-y-0');
+    expect(dialogContent?.className).toContain('max-w-[1120px]');
+    expect(dialogContent?.className).toContain('xl:max-w-[1240px]');
     expect(dialogContent?.className).toContain('overflow-hidden');
     expect(dialogContent?.getAttribute('style')).toContain(
       'grid-template-rows: auto auto minmax(0, 1fr)'
@@ -128,15 +130,22 @@ describe('AppsLauncherDialog', () => {
     expect(scrollRegion?.className).toContain('max-h-full');
     expect(scrollRegion?.className).toContain('min-h-0');
     expect(scrollRegion?.className).toContain('overflow-y-auto');
+
+    const launcherGrid = document.querySelector(
+      '[data-slot="apps-launcher-grid"]'
+    );
+    expect(launcherGrid?.className).toContain('grid-cols-1');
+    expect(launcherGrid?.className).toContain('sm:grid-cols-2');
+    expect(launcherGrid?.className).toContain('lg:grid-cols-3');
   });
 
   it('renders compact app cards and filters with tabs', async () => {
     renderDialog();
 
     expect(screen.getByText('Finance')).toBeTruthy();
-    expect(screen.getByLabelText('Open here: Finance')).toBeTruthy();
-    expect(screen.getByLabelText('Open in new tab: Finance')).toBeTruthy();
-    expect(screen.queryByLabelText('Open options: Finance')).toBeNull();
+    expect(screen.getByLabelText('Open options: Finance')).toBeTruthy();
+    expect(screen.queryByLabelText('Open here: Finance')).toBeNull();
+    expect(screen.queryByLabelText('Open in new tab: Finance')).toBeNull();
     const financeCard = screen
       .getByText('Finance')
       .closest('[data-slot="app-card"]');
@@ -176,16 +185,18 @@ describe('AppsLauncherDialog', () => {
     );
     expect(screen.getByText('Tools')).toBeTruthy();
     expect(screen.queryByText('Calendar')).toBeNull();
-    expect(screen.getByLabelText('Open here: Tools')).toBeTruthy();
-    expect(screen.getByLabelText('Open in new tab: Tools')).toBeTruthy();
+    expect(screen.getByLabelText('Open options: Tools')).toBeTruthy();
   });
 
-  it('opens apps in a new tab from the primary icon action', () => {
+  it('opens apps in a new tab from the dropdown menu', async () => {
     const open = vi.fn();
     vi.stubGlobal('open', open);
     const { onOpenChange } = renderDialog();
 
-    fireEvent.click(screen.getByLabelText('Open in new tab: Finance'));
+    fireEvent.pointerDown(screen.getByLabelText('Open options: Finance'));
+    fireEvent.click(
+      await screen.findByRole('menuitem', { name: 'Open in new tab' })
+    );
 
     expect(onOpenChange).toHaveBeenCalledWith(false);
     expect(open).toHaveBeenCalledWith(
@@ -195,7 +206,7 @@ describe('AppsLauncherDialog', () => {
     );
   });
 
-  it('opens apps in the current tab from the secondary icon action', () => {
+  it('opens apps in the current tab from the dropdown menu', async () => {
     const assign = vi.fn();
     Object.defineProperty(window, 'location', {
       configurable: true,
@@ -208,7 +219,8 @@ describe('AppsLauncherDialog', () => {
     });
     const { onOpenChange } = renderDialog();
 
-    fireEvent.click(screen.getByLabelText('Open here: Tasks'));
+    fireEvent.pointerDown(screen.getByLabelText('Open options: Tasks'));
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Open here' }));
 
     expect(onOpenChange).toHaveBeenCalledWith(false);
     expect(assign).toHaveBeenCalledWith(

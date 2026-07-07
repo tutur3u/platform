@@ -36,6 +36,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@tuturuuu/ui/dropdown-menu';
 import { Tabs, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import type {
@@ -143,7 +149,7 @@ export function AppsLauncherDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="!top-4 !bottom-4 !translate-y-0 sm:!top-6 sm:!bottom-6 grid h-auto max-h-none w-[calc(100vw-2rem)] max-w-[860px] gap-0 overflow-hidden p-0 sm:max-w-[860px]"
+        className="grid h-[calc(100dvh-2rem)] max-h-[760px] w-[calc(100vw-2rem)] max-w-[1120px] gap-0 overflow-hidden p-0 sm:h-[calc(100dvh-3rem)] sm:max-w-[1120px] xl:max-w-[1240px]"
         style={dialogStyle}
       >
         <DialogHeader className="shrink-0 border-b px-5 py-4 pr-12 text-left">
@@ -177,6 +183,7 @@ export function AppsLauncherDialog({
             onOpen={openApp}
             openHereLabel={t('open_here')}
             openInNewTabLabel={t('open_in_new_tab')}
+            openOptionsLabel={t('open_options')}
           />
         </div>
       </DialogContent>
@@ -191,6 +198,7 @@ function AppsTabPanel({
   onOpen,
   openHereLabel,
   openInNewTabLabel,
+  openOptionsLabel,
 }: {
   apps: readonly LaunchableApp[];
   categoryDescription: string;
@@ -198,6 +206,7 @@ function AppsTabPanel({
   onOpen: (app: LaunchableApp, target: 'current-tab' | 'new-tab') => void;
   openHereLabel: string;
   openInNewTabLabel: string;
+  openOptionsLabel: string;
 }) {
   return (
     <div
@@ -208,7 +217,10 @@ function AppsTabPanel({
         <span>{categoryDescription}</span>
         <span className="font-medium">{countLabel}</span>
       </div>
-      <div className="grid gap-2 sm:grid-cols-2">
+      <div
+        className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3"
+        data-slot="apps-launcher-grid"
+      >
         {apps.map((app) => (
           <AppLauncherItem
             app={app}
@@ -216,6 +228,7 @@ function AppsTabPanel({
             onOpen={onOpen}
             openHereLabel={openHereLabel}
             openInNewTabLabel={openInNewTabLabel}
+            openOptionsLabel={openOptionsLabel}
           />
         ))}
       </div>
@@ -228,11 +241,13 @@ function AppLauncherItem({
   onOpen,
   openHereLabel,
   openInNewTabLabel,
+  openOptionsLabel,
 }: {
   app: LaunchableApp;
   onOpen: (app: LaunchableApp, target: 'current-tab' | 'new-tab') => void;
   openHereLabel: string;
   openInNewTabLabel: string;
+  openOptionsLabel: string;
 }) {
   const Icon = APP_ICONS[app.slug] ?? Boxes;
   const accent = CATEGORY_ACCENTS[app.category];
@@ -273,52 +288,61 @@ function AppLauncherItem({
         className="flex shrink-0 items-center gap-1"
         data-slot="app-card-actions"
       >
-        <AppLaunchAction
-          icon={ChevronRight}
-          label={`${openHereLabel}: ${app.title}`}
-          onClick={() => onOpen(app, 'current-tab')}
-          tooltip={openHereLabel}
-          variant="secondary"
-        />
-        <AppLaunchAction
-          icon={ExternalLink}
-          label={`${openInNewTabLabel}: ${app.title}`}
-          onClick={() => onOpen(app, 'new-tab')}
-          tooltip={openInNewTabLabel}
+        <AppLaunchMenu
+          app={app}
+          onOpen={onOpen}
+          openHereLabel={openHereLabel}
+          openInNewTabLabel={openInNewTabLabel}
+          openOptionsLabel={openOptionsLabel}
         />
       </span>
     </div>
   );
 }
 
-function AppLaunchAction({
-  icon: Icon,
-  label,
-  onClick,
-  tooltip,
-  variant,
+function AppLaunchMenu({
+  app,
+  onOpen,
+  openHereLabel,
+  openInNewTabLabel,
+  openOptionsLabel,
 }: {
-  icon: LucideIcon;
-  label: string;
-  onClick: () => void;
-  tooltip: string;
-  variant?: 'secondary';
+  app: LaunchableApp;
+  onOpen: (app: LaunchableApp, target: 'current-tab' | 'new-tab') => void;
+  openHereLabel: string;
+  openInNewTabLabel: string;
+  openOptionsLabel: string;
 }) {
+  const label = `${openOptionsLabel}: ${app.title}`;
+
   return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <Button
-          aria-label={label}
-          className="size-8 shrink-0"
-          onClick={onClick}
-          size="icon"
-          type="button"
-          variant={variant}
-        >
-          <Icon className="size-4" />
-        </Button>
-      </TooltipTrigger>
-      <TooltipContent>{tooltip}</TooltipContent>
-    </Tooltip>
+    <DropdownMenu modal={false}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <DropdownMenuTrigger asChild>
+            <Button
+              aria-label={label}
+              className="size-8 shrink-0"
+              size="icon"
+              type="button"
+              variant="secondary"
+            >
+              <ChevronRight className="size-4" />
+            </Button>
+          </DropdownMenuTrigger>
+        </TooltipTrigger>
+        <TooltipContent>{openOptionsLabel}</TooltipContent>
+      </Tooltip>
+      <DropdownMenuContent align="end" className="w-44">
+        <DropdownMenuItem onSelect={() => onOpen(app, 'current-tab')}>
+          <ChevronRight className="size-4" />
+          {openHereLabel}
+        </DropdownMenuItem>
+        <DropdownMenuItem onSelect={() => onOpen(app, 'new-tab')}>
+          <ExternalLink className="size-4" />
+          {openInNewTabLabel}
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
