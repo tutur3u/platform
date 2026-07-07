@@ -27,6 +27,7 @@ import { SubscriptionInvoice } from './subscription-invoice';
 
 const INVOICE_DEFAULT_CONFIG_IDS = [
   'default_wallet_id',
+  'default_category_id',
   'DEFAULT_SUBSCRIPTION_CATEGORY_ID',
   'DEFAULT_CURRENCY',
 ] as const;
@@ -75,8 +76,12 @@ export default function NewInvoicePage({
     INVOICE_DEFAULT_CONFIG_IDS
   );
   const defaultWalletId = defaultConfigs.default_wallet_id ?? undefined;
-  const defaultCategoryId =
+  const defaultTransactionCategoryId =
+    defaultConfigs.default_category_id ?? undefined;
+  const defaultSubscriptionCategoryId =
     defaultConfigs.DEFAULT_SUBSCRIPTION_CATEGORY_ID ?? undefined;
+  const defaultCategoryId =
+    defaultSubscriptionCategoryId ?? defaultTransactionCategoryId;
   const defaultCurrency = resolveSupportedCurrency(
     defaultConfigs.DEFAULT_CURRENCY,
     resolveSupportedCurrency(workspaceDefaultCurrency)
@@ -231,6 +236,7 @@ export default function NewInvoicePage({
             <StandardInvoice
               wsId={wsId}
               defaultWalletId={defaultWalletId}
+              defaultCategoryId={defaultTransactionCategoryId}
               defaultCurrency={defaultCurrency}
               canChangeFinanceWallets={canChangeFinanceWallets}
               canSetFinanceWalletsOnCreate={canSetFinanceWalletsOnCreate}

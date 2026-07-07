@@ -42,6 +42,7 @@ const REPORT_RENDER_CONFIG_IDS = new Set(
 
 const INVOICE_CREATION_DEFAULT_CONFIG_IDS = new Set([
   'default_wallet_id',
+  'default_category_id',
   'DEFAULT_SUBSCRIPTION_CATEGORY_ID',
   'DEFAULT_CURRENCY',
 ]);

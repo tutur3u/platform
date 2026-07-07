@@ -24,13 +24,10 @@
  * they actually render.
  *
  * 3. Namespace parity (NAMESPACE_PARITY_GROUPS): for namespaces consumed by a
- *    shared component that calls useTranslations() with NO namespace argument
- *    (a "bare" call), the key-level scan above cannot attribute its t('ns.key')
- *    calls, so missing keys slip through. For those, the apps that render the
- *    component must keep the namespace in parity with each other — every listed
- *    app must contain every key any peer has. This is what catches e.g. the CMS
- *    members page rendering raw "ws-roles.guest_defaults" text because its
- *    bundle lacked keys that apps/web already had.
+ *    shared component or callback that receives a translator from outside the
+ *    scanned source file, the key-level scan cannot attribute the calls. For
+ *    those, the apps that render the component must keep the namespace in parity
+ *    with each other — every listed app must contain every key any peer has.
  *
  * Usage:
  *   node scripts/i18n-namespace-check.js
@@ -39,7 +36,10 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const { checkNamespaceParity } = require('./i18n-namespace-parity');
-const { checkAppSourceKeys } = require('./i18n-source-key-scan');
+const {
+  checkAppSourceKeys,
+  scanSourceKeys,
+} = require('./i18n-source-key-scan');
 
 const ROOT_DIR = process.cwd();
 
@@ -103,6 +103,14 @@ const APP_SHARED_PACKAGE_SCOPES = new Map([
   ['apps/mind', new Set(['packages/mind-ui'])],
 ]);
 
+// Bare root-qualified keys in shared packages need app-level rollout scopes:
+// `useTranslations()` has no namespace signal, and packages/ui is too broad to
+// require every app to carry every root key it contains. Add namespaces here as
+// their consuming apps are confirmed.
+const BARE_ROOT_KEY_APP_SCOPES = new Map([
+  ['ws-invoices', new Set(['apps/finance'])],
+]);
+
 // Namespaces that must stay in parity across the apps that render the shared
 // component using them.
 //
@@ -127,16 +135,6 @@ const NAMESPACE_PARITY_GROUPS = [
 // Regex to match useTranslations('namespace') and getTranslations('namespace')
 const NAMESPACE_REGEX =
   /(?:useTranslations|getTranslations)\(\s*['"]([^'"]+)['"]\s*\)/g;
-
-// Regex to match t('key'), t.rich('key'), t.raw('key'), t.has('key'), t.markup('key')
-// Only matches static string literal keys — skips template literals and variables
-const KEY_REGEX =
-  /\bt(?:\.(?:rich|raw|has|markup))?\(\s*['"]([^'"]+)['"]\s*[,)]/g;
-
-// Regex to detect bare useTranslations() calls (no namespace argument).
-// Files with bare calls use a root-level `t` that overlaps with KEY_REGEX,
-// so we skip key-level checking for those files to avoid false positives.
-const BARE_TRANSLATIONS_REGEX = /(?:useTranslations|getTranslations)\(\s*\)/g;
 
 /**
  * Recursively find all .ts/.tsx/.js/.jsx files in a directory
@@ -211,56 +209,43 @@ function scanPackageNamespaces(pkg) {
 /**
  * Scan a shared package for translation key references.
  *
- * For each source file, extracts:
- *   - The namespace(s) from useTranslations('ns') / getTranslations('ns')
- *   - Static t('key') / t.rich('key') / t.raw('key') / t.has('key') calls
- *
- * When a file has exactly one distinct namespace, all static keys are
- * associated with it. Files with zero namespaces (no useTranslations call),
- * multiple different namespaces, or only bare useTranslations() (no arg)
- * are skipped for key-level checking (namespace-level still applies).
+ * For each source file, extracts static translator calls with the shared source
+ * scanner. Named namespace keys keep the legacy conservative behavior: only
+ * files with exactly one named namespace and no bare translator are checked.
+ * Bare translators are checked only when the key is root-qualified, e.g.
+ * t('ws-invoices.prepaid_months').
  *
  * Returns an array of { namespace, key, file } objects.
  */
 function scanPackageKeys(pkg) {
-  const results = [];
-  const files = findSourceFiles(pkg.dir);
+  const scannedKeys = scanSourceKeys(ROOT_DIR, pkg.dir);
+  const fileStats = new Map();
 
-  for (const filePath of files) {
-    const content = fs.readFileSync(filePath, 'utf-8');
-    const relPath = path.relative(ROOT_DIR, filePath);
-
-    // Skip files that have bare useTranslations() calls (no namespace arg).
-    // These create a root-level `t` whose calls overlap with KEY_REGEX,
-    // leading to false positives when the file also has named namespaces.
-    BARE_TRANSLATIONS_REGEX.lastIndex = 0;
-    if (BARE_TRANSLATIONS_REGEX.test(content)) continue;
-
-    // Collect all distinct namespaces in this file
-    const fileNamespaces = new Set();
-    NAMESPACE_REGEX.lastIndex = 0;
-    let match;
-
-    // biome-ignore lint/suspicious/noAssignInExpressions: <>
-    while ((match = NAMESPACE_REGEX.exec(content)) !== null) {
-      fileNamespaces.add(match[1]);
+  for (const item of scannedKeys) {
+    if (!fileStats.has(item.file)) {
+      fileStats.set(item.file, {
+        hasBareTranslator: false,
+        namedNamespaces: new Set(),
+      });
     }
 
-    // Skip files with 0 or multiple different namespaces
-    if (fileNamespaces.size !== 1) continue;
-
-    const namespace = [...fileNamespaces][0];
-
-    // Collect all static keys
-    KEY_REGEX.lastIndex = 0;
-
-    // biome-ignore lint/suspicious/noAssignInExpressions: <>
-    while ((match = KEY_REGEX.exec(content)) !== null) {
-      results.push({ namespace, key: match[1], file: relPath });
+    const stats = fileStats.get(item.file);
+    if (item.namespace) {
+      stats.namedNamespaces.add(item.namespace);
+    } else {
+      stats.hasBareTranslator = true;
     }
   }
 
-  return results;
+  return scannedKeys.filter((item) => {
+    const stats = fileStats.get(item.file);
+
+    if (!item.namespace) {
+      return item.key.includes('.');
+    }
+
+    return !stats.hasBareTranslator && stats.namedNamespaces.size === 1;
+  });
 }
 
 /**
@@ -527,17 +512,26 @@ function main() {
         if (!keys) continue;
 
         for (const { namespace, key, file } of keys) {
-          const topLevel = getTopLevelNamespace(namespace);
+          const topLevel = getTopLevelNamespace(namespace || key);
 
           // For minimal apps, only validate keys in allowlisted namespaces.
           if (allowlist && !allowlist.has(topLevel)) continue;
 
+          if (!namespace) {
+            const scopedApps = BARE_ROOT_KEY_APP_SCOPES.get(topLevel);
+            if (!scopedApps?.has(app.name)) continue;
+          }
+
           // Skip if namespace is in the ignore list
           if (ignoredNamespaces.has(topLevel)) continue;
 
-          // Skip key check if the entire namespace is missing
-          // (already reported as namespace error)
-          if (!appNamespaces.has(topLevel)) continue;
+          // Named namespace misses are already reported by the namespace-level
+          // check. Bare root-qualified keys have no separate namespace signal,
+          // so report them as missing keys.
+          if (!appNamespaces.has(topLevel)) {
+            if (!namespace) missingKeys.push({ namespace, key, file });
+            continue;
+          }
 
           // Skip if key is in the key exception list
           if (isKeyExcepted(appKeyExceptions, namespace, key)) continue;
@@ -598,7 +592,8 @@ function main() {
 
         for (const { namespace, key, files } of sortedKeys) {
           const fileList = [...files].join(', ');
-          console.log(`    - ${namespace}.${key} (used in ${fileList})`);
+          const fullPath = namespace ? `${namespace}.${key}` : key;
+          console.log(`    - ${fullPath} (used in ${fileList})`);
         }
       }
     }

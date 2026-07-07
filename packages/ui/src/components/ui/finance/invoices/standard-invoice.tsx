@@ -57,6 +57,7 @@ interface Props {
   printAfterCreate?: boolean;
   downloadImageAfterCreate?: boolean;
   defaultWalletId?: string;
+  defaultCategoryId?: string;
   defaultCurrency?: string;
   canChangeFinanceWallets?: boolean;
   canSetFinanceWalletsOnCreate?: boolean;
@@ -71,6 +72,7 @@ export function StandardInvoice({
   printAfterCreate = false,
   downloadImageAfterCreate = false,
   defaultWalletId,
+  defaultCategoryId,
   defaultCurrency: rawDefaultCurrency = 'USD',
   canChangeFinanceWallets = true,
   canSetFinanceWalletsOnCreate = true,
@@ -194,7 +196,9 @@ export function StandardInvoice({
   }, [defaultWalletId]);
   const [selectedPromotionId, setSelectedPromotionId] =
     useState<string>('none');
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string>('');
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string>(
+    defaultCategoryId || ''
+  );
   const [invoiceContent, setInvoiceContent] = useState<string>('');
   const [invoiceNotes, setInvoiceNotes] = useState<string>('');
   const [isCreating, setIsCreating] = useState(false);
@@ -280,7 +284,6 @@ export function StandardInvoice({
     [selectedProducts]
   );
   const hasMixedLinkedFinanceCategories = linkedFinanceCategoryIds.length > 1;
-  const hasSingleLinkedFinanceCategory = linkedFinanceCategoryIds.length === 1;
 
   // Auto-generate invoice content based on selected products
   useEffect(() => {
@@ -318,19 +321,13 @@ export function StandardInvoice({
   }, [selectedUserId]);
 
   useEffect(() => {
-    if (hasSingleLinkedFinanceCategory) {
-      setSelectedCategoryId(linkedFinanceCategoryIds[0] ?? '');
-      return;
-    }
-
-    if (hasMixedLinkedFinanceCategories) {
-      setSelectedCategoryId('');
-    }
-  }, [
-    hasMixedLinkedFinanceCategories,
-    hasSingleLinkedFinanceCategory,
-    linkedFinanceCategoryIds,
-  ]);
+    setSelectedCategoryId(
+      resolveStandardInvoiceCategoryId({
+        defaultCategoryId,
+        linkedFinanceCategoryIds,
+      })
+    );
+  }, [defaultCategoryId, linkedFinanceCategoryIds]);
 
   useBestPromotionSelection({
     enabled: promotionsAllowed,
@@ -422,7 +419,7 @@ export function StandardInvoice({
         resetRounding();
         setSelectedUserId(null);
         setSelectedWalletId(defaultWalletId || '');
-        setSelectedCategoryId('');
+        setSelectedCategoryId(defaultCategoryId || '');
         setCustomerSearch('');
       }
     } catch (error) {
@@ -656,4 +653,24 @@ export function StandardInvoice({
       </div>
     </div>
   );
+}
+
+export function resolveStandardInvoiceCategoryId({
+  defaultCategoryId,
+  linkedFinanceCategoryIds,
+}: {
+  defaultCategoryId?: string;
+  linkedFinanceCategoryIds: string[];
+}) {
+  const uniqueLinkedCategoryIds = [...new Set(linkedFinanceCategoryIds)];
+
+  if (uniqueLinkedCategoryIds.length === 1) {
+    return uniqueLinkedCategoryIds[0] ?? '';
+  }
+
+  if (uniqueLinkedCategoryIds.length > 1) {
+    return '';
+  }
+
+  return defaultCategoryId || '';
 }
