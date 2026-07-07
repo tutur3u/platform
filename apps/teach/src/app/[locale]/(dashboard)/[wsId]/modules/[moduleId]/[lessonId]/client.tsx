@@ -66,6 +66,7 @@ export function LessonDetailClient({
     saveYoutubeLinks,
     savePublished,
     saveQuizScorePublished,
+    saveQuizDeadline,
   } = useLessonDetail(wsId, courseId, lessonId);
 
   // ─── Local state ────────────────────────────────────────────────────────────
@@ -203,6 +204,8 @@ export function LessonDetailClient({
             <Plus className="h-3.5 w-3.5" />
             {t('attachFiles')}
           </button>
+
+
 
           {/* Published toggle */}
           <button
@@ -521,6 +524,8 @@ export function LessonDetailClient({
           wsId={wsId}
           isQuizScorePublished={lesson.is_quiz_score_published}
           onToggleQuizScorePublished={saveQuizScorePublished}
+          quizDeadline={lesson.quiz_deadline}
+          onQuizDeadlineChange={saveQuizDeadline}
         />
       </div>
     </main>

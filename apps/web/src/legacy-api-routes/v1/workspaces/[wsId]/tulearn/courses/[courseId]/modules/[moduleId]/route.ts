@@ -269,6 +269,13 @@ export const POST = withSessionAuth<Params>(
         );
       }
 
+      if (module.quiz_deadline && new Date() > new Date(module.quiz_deadline)) {
+        return NextResponse.json(
+          { message: 'The deadline for this quiz has passed.' },
+          { status: 403 }
+        );
+      }
+
       const { data: moduleQuiz, error: quizErr } = await sbAdmin
         .from('course_module_quizzes')
         .select('workspace_quizzes!inner(id, type, content, answer)')
@@ -461,6 +468,20 @@ export const DELETE = withSessionAuth<Params>(
       }
 
       const sbAdmin = await createAdminClient();
+
+      const { data: module, error: moduleErr } = await sbAdmin
+        .from('workspace_course_modules')
+        .select('quiz_deadline')
+        .eq('id', moduleId)
+        .maybeSingle();
+
+      if (moduleErr) throw moduleErr;
+      if (module?.quiz_deadline && new Date() > new Date(module.quiz_deadline)) {
+        return NextResponse.json(
+          { message: 'The deadline for this quiz has passed.' },
+          { status: 403 }
+        );
+      }
 
       const { error } = await sbAdmin
         .from('course_module_quiz_submissions')

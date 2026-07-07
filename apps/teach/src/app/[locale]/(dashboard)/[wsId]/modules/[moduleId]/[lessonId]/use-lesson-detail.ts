@@ -20,6 +20,7 @@ type LessonUpdatePayload = Partial<
     | 'content'
     | 'is_published'
     | 'is_quiz_score_published'
+    | 'quiz_deadline'
     | 'name'
     | 'youtube_links'
   >
@@ -235,6 +236,10 @@ export function useLessonDetail(
     saveMutation.mutate({ is_quiz_score_published });
   }
 
+  function saveQuizDeadline(quiz_deadline: string | null) {
+    saveMutation.mutate({ quiz_deadline });
+  }
+
   return {
     lesson,
     isLoading: modulesQuery.isLoading,
@@ -245,5 +250,6 @@ export function useLessonDetail(
     saveYoutubeLinks,
     savePublished,
     saveQuizScorePublished,
+    saveQuizDeadline,
   };
 }

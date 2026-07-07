@@ -22,6 +22,7 @@ interface CourseModuleSummary {
   sort_key: number | null;
   is_published: boolean;
   is_quiz_score_published: boolean;
+  quiz_deadline: string | null;
   completed: boolean;
   locked: boolean;
   counts: {
@@ -279,7 +280,7 @@ export async function getLearnerCourseDetail({
       .maybeSingle(),
     sbAdmin
       .from('workspace_course_modules')
-      .select('id, name, sort_key, is_published, is_quiz_score_published')
+      .select('id, name, sort_key, is_published, is_quiz_score_published, quiz_deadline')
       .eq('group_id', courseId)
       .eq('is_published', true)
       .order('sort_key', { ascending: true }),
@@ -293,6 +294,7 @@ export async function getLearnerCourseDetail({
     id: string;
     is_published: boolean;
     is_quiz_score_published?: boolean | null;
+    quiz_deadline?: string | null;
     name: string;
     sort_key: number | null;
   }>;
@@ -359,6 +361,7 @@ export async function getLearnerCourseDetail({
       return {
         id: module.id,
         is_quiz_score_published: module.is_quiz_score_published === true,
+        quiz_deadline: module.quiz_deadline || null,
         name: module.name,
         sort_key: module.sort_key,
         is_published: module.is_published,
@@ -435,7 +438,7 @@ export async function getLearnerModuleDetail({
       sbAdmin
         .from('workspace_course_modules')
         .select(
-          'content, extra_content, youtube_links, is_quiz_score_published'
+          'content, extra_content, youtube_links, is_quiz_score_published, quiz_deadline'
         )
         .eq('id', moduleId)
         .eq('group_id', courseId)
@@ -477,6 +480,9 @@ export async function getLearnerModuleDetail({
     is_quiz_score_published:
       (moduleResult.data as { is_quiz_score_published?: boolean | null })
         .is_quiz_score_published === true,
+    quiz_deadline:
+      (moduleResult.data as { quiz_deadline?: string | null }).quiz_deadline ||
+      null,
     youtube_links: moduleResult.data.youtube_links,
     flashcards: flashcardRows
       .map((row) => firstOf(row.workspace_flashcards))

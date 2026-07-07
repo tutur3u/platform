@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { CheckCircle, Clock, Loader2, X, XCircle } from '@tuturuuu/icons';
+import { CheckCircle, Loader2, X, XCircle } from '@tuturuuu/icons';
 import {
   getWorkspaceCourseModuleQuizSubmission,
   gradeWorkspaceCourseModuleQuizSubmission,
@@ -235,7 +235,7 @@ function SubmissionContent({
                   moduleId={moduleId}
                   userId={userId}
                   quizId={quiz.id}
-                  currentIsCorrect={quizAnswer?.is_correct}
+                  currentIsCorrect={quizAnswer?.is_correct ?? null}
                   currentFeedback={quizAnswer?.feedback}
                 />
               )}

@@ -118,6 +118,7 @@ export interface TulearnCourseModuleSummary {
   sort_key: number;
   is_published: boolean;
   is_quiz_score_published?: boolean;
+  quiz_deadline?: string | null;
   completed: boolean;
   locked: boolean;
   counts: {

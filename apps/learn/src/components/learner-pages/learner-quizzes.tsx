@@ -11,6 +11,7 @@ import { Textarea } from '@tuturuuu/ui/textarea';
 import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useState } from 'react';
+import { toast } from '@tuturuuu/ui/sonner';
 import { ChoiceOptions } from './quiz-practice/choice-options';
 import { QuizCompletionCard } from './quiz-practice/completion-card';
 import { StructuredQuizPreview } from './quiz-practice/structured-preview';
@@ -67,11 +68,13 @@ export function LearnerQuizzes({
   moduleId,
   submissions,
   isQuizScorePublished = false,
+  quizDeadline = null,
 }: {
   quizzes: Quiz[];
   moduleId: string;
   submissions?: QuizSubmission[];
   isQuizScorePublished?: boolean;
+  quizDeadline?: string | null;
 }) {
   const t = useTranslations();
   const params = useParams();
@@ -136,6 +139,11 @@ export function LearnerQuizzes({
     return initialIdx >= quizzes.length && quizzes.length > 0;
   });
 
+  const isDeadlinePassed = useMemo(() => {
+    if (!quizDeadline) return false;
+    return new Date() > new Date(quizDeadline);
+  }, [quizDeadline]);
+
   const currentQuiz = quizzes[currentIdx];
 
   // Initialize selectedAnswer with shuffled list for ordering quizzes
@@ -185,7 +193,12 @@ export function LearnerQuizzes({
         : selectedAnswer !== null;
 
   const handleSubmit = async () => {
-    if (!canSubmit || isSubmitted || isSubmitting) return;
+    if (!canSubmit || isSubmitting) return;
+
+    if (isDeadlinePassed) {
+      toast.error(t('courses.quizDeadlinePassedError') || 'The deadline has passed.');
+      return;
+    }
 
     setIsSubmitting(true);
     try {
@@ -313,6 +326,7 @@ export function LearnerQuizzes({
         onRetry={handleRetry}
         isQuizScorePublished={isQuizScorePublished}
         hasUnmarked={hasUnmarked}
+        isDeadlinePassed={isDeadlinePassed}
       />
     );
   }
@@ -455,15 +469,22 @@ export function LearnerQuizzes({
 
         <div className="mt-6 flex items-center justify-end">
           {!isSubmitted ? (
-            <Button
-              onClick={handleSubmit}
-              disabled={!canSubmit || isSubmitting}
-              className="h-12 border-2 border-border bg-primary font-black text-primary-foreground shadow-[3px_3px_0_var(--border)] hover:-translate-y-0.5 hover:bg-primary/90 hover:shadow-[4px_4px_0_var(--border)] active:translate-y-0 active:shadow-[3px_3px_0_var(--border)] disabled:opacity-50"
-            >
-              {isSubmitting
-                ? t('common.loading')
-                : t('courses.quizSubmitAnswer')}
-            </Button>
+            <div className="flex flex-col items-end gap-2">
+              {isDeadlinePassed && (
+                <span className="text-destructive font-black text-xs uppercase tracking-wider">
+                  {t('courses.quizDeadlinePassed') || 'Deadline passed'}
+                </span>
+              )}
+              <Button
+                onClick={handleSubmit}
+                disabled={!canSubmit || isSubmitting || isDeadlinePassed}
+                className="h-12 border-2 border-border bg-primary font-black text-primary-foreground shadow-[3px_3px_0_var(--border)] hover:-translate-y-0.5 hover:bg-primary/90 hover:shadow-[4px_4px_0_var(--border)] active:translate-y-0 active:shadow-[3px_3px_0_var(--border)] disabled:opacity-50"
+              >
+                {isSubmitting
+                  ? t('common.loading')
+                  : t('courses.quizSubmitAnswer')}
+              </Button>
+            </div>
           ) : (
             <Button
               onClick={handleNext}

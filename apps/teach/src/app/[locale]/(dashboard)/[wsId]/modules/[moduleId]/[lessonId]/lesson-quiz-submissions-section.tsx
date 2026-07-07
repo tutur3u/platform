@@ -11,12 +11,22 @@ import { useLocale, useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { LessonQuizSubmissionDetailDialog } from './lesson-quiz-submission-detail-dialog';
 
+const toLocalDateTimeString = (dateStr: string | null | undefined) => {
+  if (!dateStr) return '';
+  const date = new Date(dateStr);
+  const offset = date.getTimezoneOffset();
+  const localDate = new Date(date.getTime() - offset * 60 * 1000);
+  return localDate.toISOString().slice(0, 16);
+};
+
 interface LessonQuizSubmissionsSectionProps {
   courseId: string;
   moduleId: string;
   wsId: string;
   isQuizScorePublished?: boolean;
   onToggleQuizScorePublished?: (published: boolean) => void;
+  quizDeadline?: string | null;
+  onQuizDeadlineChange?: (deadline: string | null) => void;
 }
 
 export function LessonQuizSubmissionsSection({
@@ -25,6 +35,8 @@ export function LessonQuizSubmissionsSection({
   wsId,
   isQuizScorePublished = false,
   onToggleQuizScorePublished,
+  quizDeadline = null,
+  onQuizDeadlineChange,
 }: LessonQuizSubmissionsSectionProps) {
   const locale = useLocale();
   const t = useTranslations();
@@ -75,28 +87,44 @@ export function LessonQuizSubmissionsSection({
           </div>
         </div>
 
-        <button
-          onClick={() => onToggleQuizScorePublished?.(!isQuizScorePublished)}
-          type="button"
-          className={cn(
-            'inline-flex items-center gap-1.5 border-2 border-border px-3 py-1.5 font-bold text-xs shadow-[2px_2px_0_var(--border)] transition hover:-translate-y-0.5',
-            isQuizScorePublished
-              ? 'bg-dynamic-green/15 text-foreground'
-              : 'bg-muted text-muted-foreground'
-          )}
-        >
-          {isQuizScorePublished ? (
-            <>
-              <Eye className="h-3.5 w-3.5" />
-              {t('teachModules.scoresPublishedToggle') || 'Scores Published'}
-            </>
-          ) : (
-            <>
-              <EyeOff className="h-3.5 w-3.5" />
-              {t('teachModules.scoresHiddenToggle') || 'Scores Hidden'}
-            </>
-          )}
-        </button>
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Quiz Deadline setting */}
+          <div className="flex items-center gap-2 border-2 border-border bg-card px-2.5 py-1.5 text-xs shadow-[2px_2px_0_var(--border)]">
+            <span className="font-bold text-muted-foreground">{t('teachModules.quizDeadline') || 'Deadline'}:</span>
+            <input
+              type="datetime-local"
+              className="bg-transparent border-none outline-none font-bold text-foreground focus:ring-0 p-0 text-xs w-[145px]"
+              value={toLocalDateTimeString(quizDeadline)}
+              onChange={(e) => {
+                const val = e.target.value;
+                onQuizDeadlineChange?.(val ? new Date(val).toISOString() : null);
+              }}
+            />
+          </div>
+
+          <button
+            onClick={() => onToggleQuizScorePublished?.(!isQuizScorePublished)}
+            type="button"
+            className={cn(
+              'inline-flex items-center gap-1.5 border-2 border-border px-3 py-1.5 font-bold text-xs shadow-[2px_2px_0_var(--border)] transition hover:-translate-y-0.5',
+              isQuizScorePublished
+                ? 'bg-dynamic-green/15 text-foreground'
+                : 'bg-muted text-muted-foreground'
+            )}
+          >
+            {isQuizScorePublished ? (
+              <>
+                <Eye className="h-3.5 w-3.5" />
+                {t('teachModules.scoresPublishedToggle') || 'Scores Published'}
+              </>
+            ) : (
+              <>
+                <EyeOff className="h-3.5 w-3.5" />
+                {t('teachModules.scoresHiddenToggle') || 'Scores Hidden'}
+              </>
+            )}
+          </button>
+        </div>
       </div>
 
       {isLoading && (

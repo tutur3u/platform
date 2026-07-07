@@ -13,6 +13,7 @@ export function QuizCompletionCard({
   totalMaxScore,
   isQuizScorePublished = true,
   hasUnmarked = false,
+  isDeadlinePassed = false,
 }: {
   correctCount: number;
   earnedScore: number;
@@ -21,6 +22,7 @@ export function QuizCompletionCard({
   totalMaxScore: number;
   isQuizScorePublished?: boolean;
   hasUnmarked?: boolean;
+  isDeadlinePassed?: boolean;
 }) {
   const t = useTranslations();
   const showResults = isQuizScorePublished && !hasUnmarked;
@@ -64,13 +66,22 @@ export function QuizCompletionCard({
         </div>
       )}
 
-      <Button
-        onClick={onRetry}
-        className="h-12 border-2 border-border bg-primary font-black text-primary-foreground shadow-[3px_3px_0_var(--border)] hover:-translate-y-0.5 hover:bg-primary/90 hover:shadow-[4px_4px_0_var(--border)] active:translate-y-0 active:shadow-[3px_3px_0_var(--border)]"
-      >
-        <RefreshCw className="mr-2 h-4 w-4" />
-        {t('courses.quizRetryPractice')}
-      </Button>
+      {isDeadlinePassed ? (
+        <div className="mt-4 border-2 border-dashed border-destructive bg-destructive/10 p-4 text-center shadow-[3px_3px_0_var(--border)]">
+          <p className="font-bold text-destructive text-sm">
+            {t('courses.quizDeadlinePassedMessage') ||
+              'The deadline for this quiz has passed. You can no longer retry.'}
+          </p>
+        </div>
+      ) : (
+        <Button
+          onClick={onRetry}
+          className="h-12 border-2 border-border bg-primary font-black text-primary-foreground shadow-[3px_3px_0_var(--border)] hover:-translate-y-0.5 hover:bg-primary/90 hover:shadow-[4px_4px_0_var(--border)] active:translate-y-0 active:shadow-[3px_3px_0_var(--border)]"
+        >
+          <RefreshCw className="mr-2 h-4 w-4" />
+          {t('courses.quizRetryPractice')}
+        </Button>
+      )}
     </BrutalCard>
   );
 }
