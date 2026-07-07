@@ -28,9 +28,10 @@ Tasks provides:
 
 ## Satellite Auth And API Ownership
 
-`apps/tasks` is registered internally as the `tasks` app. All app-session
-checks, cross-app token verification, and Web API allowlists must use
-`targetApp: 'tasks'`.
+`apps/tasks` is registered internally as the `tasks` app. App-session checks,
+cross-app token verification, and Web API allowlists should use
+`targetApp: 'tasks'` unless a route explicitly accepts another first-party
+audience such as the CLI's Web-minted `targetApp: 'platform'` task tokens.
 
 `apps/tasks` is also the canonical owner for authenticated task product pages
 and task-owned APIs. Do not add new task UI or task API behavior to `apps/web`.
@@ -53,6 +54,13 @@ preferred.
 Tasks may serve credentialed browser API traffic from first-party Web/platform
 origins, but CORS must stay origin-specific. Do not use wildcard credentialed
 CORS for task APIs.
+
+CLI task commands call the Tasks origin with bearer app-session tokens minted by
+`apps/web`. The Tasks proxy must pass `ttr_app_...` bearer tokens to route-level
+`withSessionAuth` so the route can verify CLI scope, expiry, and target-app
+allowlists. Production `apps/web` and `apps/tasks` must share
+`TUTURUUU_APP_COORDINATION_SECRET`, or the same accepted fallback signing
+secret, or freshly minted CLI tokens will be rejected as `Unauthorized`.
 
 The local `/api/auth/verify-app-token` route must delegate token validation to
 the central Web verifier with `verificationBaseUrl: TTR_URL`. That handoff sets
