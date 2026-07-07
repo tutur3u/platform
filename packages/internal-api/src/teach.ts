@@ -710,7 +710,11 @@ export function sendBulkStudentPerformanceReport(
   options?: InternalApiClientOptions
 ) {
   const client = getInternalApiClient(options);
-  return client.json<{ message: string; sentCount: number; failedCount: number }>(
+  return client.json<{
+    message: string;
+    sentCount: number;
+    failedCount: number;
+  }>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/teach/courses/${encodePathSegment(courseId)}/student-performance/send-bulk-report`,
     { method: 'POST', cache: 'no-store' }
   );
