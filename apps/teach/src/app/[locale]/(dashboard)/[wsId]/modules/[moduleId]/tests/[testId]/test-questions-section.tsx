@@ -39,6 +39,8 @@ type QuestionType =
   | 'paragraph'
   | 'mix';
 
+type QuestionDifficulty = 'easy' | 'medium' | 'hard';
+
 interface ModuleQuestionsManagerProps {
   wsId: string;
   courseId: string;
@@ -61,6 +63,7 @@ function ModuleQuestionsManager({
 
   // AI configuration states
   const [questionType, setQuestionType] = useState<QuestionType>('mix');
+  const [difficulty, setDifficulty] = useState<QuestionDifficulty>('medium');
   const [count, setCount] = useState<number>(5);
   const [teacherContext, setTeacherContext] = useState<string>('');
 
@@ -89,6 +92,7 @@ function ModuleQuestionsManager({
   const generateMutation = useMutation({
     mutationFn: (
       payload: {
+        difficulty?: QuestionDifficulty;
         questionType?: QuestionType;
         count?: number;
         context?: string;
@@ -102,6 +106,7 @@ function ModuleQuestionsManager({
         setShowAiDialog(false);
         // Reset states
         setQuestionType('mix');
+        setDifficulty('medium');
         setCount(5);
         setTeacherContext('');
       } else {
@@ -119,6 +124,7 @@ function ModuleQuestionsManager({
 
   const handleGenerate = () => {
     generateMutation.mutate({
+      difficulty,
       questionType,
       count,
       context: teacherContext,
@@ -265,6 +271,32 @@ function ModuleQuestionsManager({
                   </SelectItem>
                   <SelectItem value="paragraph">
                     {t('ws-quizzes.paragraph')}
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="ai-question-difficulty">
+                {t('ws-quizzes.difficulty')}
+              </Label>
+              <Select
+                value={difficulty}
+                onValueChange={(val: QuestionDifficulty) => setDifficulty(val)}
+                disabled={generateMutation.isPending}
+              >
+                <SelectTrigger id="ai-question-difficulty">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="easy">
+                    {t('ws-quizzes.difficulty_easy')}
+                  </SelectItem>
+                  <SelectItem value="medium">
+                    {t('ws-quizzes.difficulty_medium')}
+                  </SelectItem>
+                  <SelectItem value="hard">
+                    {t('ws-quizzes.difficulty_hard')}
                   </SelectItem>
                 </SelectContent>
               </Select>

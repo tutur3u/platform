@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { GeneratedQuizSchema } from './schema';
+import { GeneratedQuizSchema, GenerateQuizRequestSchema } from './schema';
 
 describe('GeneratedQuizSchema', () => {
   it('requires type-specific fields', () => {
@@ -71,5 +71,26 @@ describe('GeneratedQuizSchema', () => {
         ordering_items: ['First', 'Second'],
       }).success
     ).toBe(true);
+  });
+});
+
+describe('GenerateQuizRequestSchema', () => {
+  it('defaults difficulty to medium when omitted', () => {
+    expect(
+      GenerateQuizRequestSchema.parse({
+        lessonId: '11111111-1111-4111-8111-111111111111',
+        wsId: 'workspace-1',
+      }).difficulty
+    ).toBe('medium');
+  });
+
+  it('rejects unsupported difficulty values', () => {
+    expect(
+      GenerateQuizRequestSchema.safeParse({
+        lessonId: '11111111-1111-4111-8111-111111111111',
+        difficulty: 'expert',
+        wsId: 'workspace-1',
+      }).success
+    ).toBe(false);
   });
 });

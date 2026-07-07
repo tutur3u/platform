@@ -22,6 +22,7 @@ export function useQuizzes(wsId: string, lessonId: string) {
   const generateMutation = useMutation({
     mutationFn: (
       payload: {
+        difficulty?: 'easy' | 'medium' | 'hard';
         questionType?:
           | 'multiple_choice'
           | 'true_false'

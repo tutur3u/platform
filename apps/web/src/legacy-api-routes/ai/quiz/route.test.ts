@@ -247,6 +247,7 @@ describe('quiz generation route', () => {
         inputTokens: 120,
         metadata: expect.objectContaining({
           count: 1,
+          difficulty: 'medium',
           lessonId: LESSON_ID,
           questionType: 'true_false',
           source: 'quiz_generation',
@@ -270,6 +271,20 @@ describe('quiz generation route', () => {
         prompt: expect.stringContaining(
           'multiple_choice, true_false, matching, ordering, paragraph'
         ),
+      })
+    );
+  });
+
+  it('includes the selected difficulty in the quiz generation prompt', async () => {
+    const { POST } = await import('./route');
+    const response = await POST(
+      createQuizRequest({ difficulty: 'hard', questionType: 'mix' })
+    );
+
+    expect(response.status).toBe(200);
+    expect(mocks.generateObject).toHaveBeenCalledWith(
+      expect.objectContaining({
+        prompt: expect.stringContaining('Requested difficulty level: hard.'),
       })
     );
   });

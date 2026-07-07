@@ -39,6 +39,8 @@ type QuestionType =
   | 'paragraph'
   | 'mix';
 
+type QuestionDifficulty = 'easy' | 'medium' | 'hard';
+
 export default function LessonQuizzesSection({ wsId, lessonId }: Props) {
   const t = useTranslations();
   const [creating, setCreating] = useState(false);
@@ -46,6 +48,7 @@ export default function LessonQuizzesSection({ wsId, lessonId }: Props) {
 
   // Dialog configuration states
   const [questionType, setQuestionType] = useState<QuestionType>('mix');
+  const [difficulty, setDifficulty] = useState<QuestionDifficulty>('medium');
   const [count, setCount] = useState<number>(5);
   const [teacherContext, setTeacherContext] = useState<string>('');
 
@@ -55,6 +58,7 @@ export default function LessonQuizzesSection({ wsId, lessonId }: Props) {
   const handleGenerate = () => {
     generateQuiz(
       {
+        difficulty,
         questionType,
         count,
         context: teacherContext,
@@ -65,6 +69,7 @@ export default function LessonQuizzesSection({ wsId, lessonId }: Props) {
           setShowAiDialog(false);
           // Reset dialog states
           setQuestionType('mix');
+          setDifficulty('medium');
           setCount(5);
           setTeacherContext('');
         },
@@ -211,9 +216,37 @@ export default function LessonQuizzesSection({ wsId, lessonId }: Props) {
               </Select>
             </div>
 
+            <div className="space-y-2">
+              <Label htmlFor="ai-question-difficulty">
+                {t('ws-quizzes.difficulty')}
+              </Label>
+              <Select
+                value={difficulty}
+                onValueChange={(val: QuestionDifficulty) => setDifficulty(val)}
+                disabled={isGenerating}
+              >
+                <SelectTrigger id="ai-question-difficulty">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="easy">
+                    {t('ws-quizzes.difficulty_easy')}
+                  </SelectItem>
+                  <SelectItem value="medium">
+                    {t('ws-quizzes.difficulty_medium')}
+                  </SelectItem>
+                  <SelectItem value="hard">
+                    {t('ws-quizzes.difficulty_hard')}
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
             {/* Question Count */}
             <div className="space-y-2">
-              <Label htmlFor="ai-question-count">Number of Questions</Label>
+              <Label htmlFor="ai-question-count">
+                {t('ws-quizzes.question_count')}
+              </Label>
               <Input
                 id="ai-question-count"
                 type="number"
@@ -235,11 +268,11 @@ export default function LessonQuizzesSection({ wsId, lessonId }: Props) {
             {/* Custom context */}
             <div className="space-y-2">
               <Label htmlFor="ai-teacher-context">
-                Additional Context (Optional)
+                {t('ws-quizzes.additional_context_optional')}
               </Label>
               <Textarea
                 id="ai-teacher-context"
-                placeholder="e.g. Focus on coding examples, make it hard, etc."
+                placeholder={t('ws-quizzes.additional_context_placeholder')}
                 value={teacherContext}
                 onChange={(e) => setTeacherContext(e.target.value)}
                 disabled={isGenerating}
