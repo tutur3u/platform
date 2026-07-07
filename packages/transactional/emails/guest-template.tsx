@@ -23,7 +23,7 @@ const TestResultReportEmail = ({
           {/* Header */}
           <div className="text-center">
             <Img
-              src="https://tuturuuu.com/media/logos/easy.png"
+              src="https://tuturuuu.com/media/logos/easy-email.png"
               width="100"
               height="38"
               alt="Easy Logo"

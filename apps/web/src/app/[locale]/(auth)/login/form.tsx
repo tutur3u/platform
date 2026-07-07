@@ -1406,7 +1406,7 @@ export default function LoginForm({
       <SocialLoginButton
         disabled={loading}
         onClick={() => void handleOAuthLogin('google')}
-        icon={<SocialImageLogo src="/media/google-logo.png" alt="Google" />}
+        icon={<SocialImageLogo src="/media/logos/google.svg" alt="Google" />}
       >
         {t('login.continue_with_google')}
       </SocialLoginButton>

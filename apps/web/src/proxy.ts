@@ -169,6 +169,10 @@ const RATE_LIMIT_DIAGNOSTIC_HEADER_NAMES = [
 ] as const;
 const STAFF_RATE_LIMIT_WARNING = 'staff-debug-bypass';
 const STAFF_RATE_LIMIT_DEBUG_BYPASS = 'tuturuuu-staff';
+const CACHEABLE_AUTH_SHELL_PATHS = new Set(['/add-account', '/login']);
+const AUTH_SHELL_BROWSER_CACHE_CONTROL = 'public, max-age=0, must-revalidate';
+const AUTH_SHELL_CDN_CACHE_CONTROL =
+  'public, max-age=86400, stale-while-revalidate=604800';
 
 function parsePositiveIntEnv(name: string, fallback: number): number {
   const rawValue = process.env[name];
@@ -232,6 +236,35 @@ function isAuthProxyPublicPath(pathname: string): boolean {
     pathnameWithoutLocale === '/auth/recovery' ||
     pathnameWithoutLocale.startsWith('/auth/recovery/')
   );
+}
+
+function isCacheableAuthShellPath(pathname: string): boolean {
+  const { pathnameWithoutLocale } = getLocaleAwarePathname(pathname);
+
+  return CACHEABLE_AUTH_SHELL_PATHS.has(pathnameWithoutLocale);
+}
+
+function applyCacheableAuthShellHeaders(response: NextResponse): NextResponse {
+  response.headers.set('Cache-Control', AUTH_SHELL_BROWSER_CACHE_CONTROL);
+  response.headers.set('CDN-Cache-Control', AUTH_SHELL_CDN_CACHE_CONTROL);
+  response.headers.set(
+    'Vercel-CDN-Cache-Control',
+    AUTH_SHELL_CDN_CACHE_CONTROL
+  );
+  response.headers.set('X-Robots-Tag', 'noindex, nofollow');
+
+  return response;
+}
+
+function handleCacheableAuthShellRoute(req: NextRequest): NextResponse | null {
+  if (!isCacheableAuthShellPath(req.nextUrl.pathname)) {
+    return null;
+  }
+
+  const { locale } = getLocaleAwarePathname(req.nextUrl.pathname);
+  const response = locale ? NextResponse.next() : handleLocale({ req });
+
+  return applyCacheableAuthShellHeaders(response);
 }
 
 function redirectToPath(req: NextRequest, pathname: string) {
@@ -1169,6 +1202,11 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
     }
 
     return NextResponse.next();
+  }
+
+  const cacheableAuthShellResponse = handleCacheableAuthShellRoute(req);
+  if (cacheableAuthShellResponse) {
+    return cacheableAuthShellResponse;
   }
 
   const reservedRootRouteResponse = handleReservedRootRoute(req);

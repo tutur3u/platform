@@ -1,9 +1,15 @@
 'use client';
 
+import { normalizeClientRedirectPath } from '@tuturuuu/auth/cross-app';
 import { XIcon } from '@tuturuuu/icons/lucide-static';
+import { TUTURUUU_LOCAL_LOGO_URL } from '@tuturuuu/ui/custom/tuturuuu-logo';
+import { getTuturuuuPortlessAppOrigin } from '@tuturuuu/utils/portless';
+import { useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { Suspense } from 'react';
-import LoginForm from './form';
+import { lazy, Suspense, useEffect, useMemo } from 'react';
+import { DEV_MODE } from '@/constants/env';
+
+const LoginForm = lazy(() => import('./form'));
 
 export type LoginDomain = {
   href: string;
@@ -17,13 +23,87 @@ export type LoginRuntimeSupabaseConfig = {
 };
 
 type LoginContentProps = {
-  currentDomain: LoginDomain | null;
-  deferAuthSurfaceUntilSessionCheck: boolean;
+  authCallbackRedirect?: (url: string) => void;
   localE2EAuthBypass: boolean;
-  multiAccount: boolean;
   runtimeSupabaseConfig: LoginRuntimeSupabaseConfig | null;
-  tuturuuuDomain: LoginDomain;
 };
+
+const DOMAINS = {
+  TUTURUUU: {
+    name: 'Tuturuuu',
+    href: DEV_MODE
+      ? getTuturuuuPortlessAppOrigin('platform')
+      : 'https://tuturuuu.com',
+    logo: TUTURUUU_LOCAL_LOGO_URL,
+  },
+  CHAT: {
+    name: 'Chat',
+    href: DEV_MODE
+      ? getTuturuuuPortlessAppOrigin('chat')
+      : 'https://chat.tuturuuu.com',
+    logo: TUTURUUU_LOCAL_LOGO_URL,
+  },
+  NOVA: {
+    name: 'Nova',
+    href: DEV_MODE
+      ? getTuturuuuPortlessAppOrigin('nova')
+      : 'https://nova.ai.vn',
+    logo: '/media/logos/nova/nova-transparent.png',
+  },
+  LEARN: {
+    name: 'Learn',
+    href: DEV_MODE
+      ? getTuturuuuPortlessAppOrigin('learn')
+      : 'https://learn.tuturuuu.com',
+    logo: TUTURUUU_LOCAL_LOGO_URL,
+  },
+  TEACH: {
+    name: 'Teach',
+    href: DEV_MODE
+      ? getTuturuuuPortlessAppOrigin('teach')
+      : 'https://teach.tuturuuu.com',
+    logo: TUTURUUU_LOCAL_LOGO_URL,
+  },
+  INVENTORY: {
+    name: 'Inventory',
+    href: DEV_MODE
+      ? getTuturuuuPortlessAppOrigin('inventory')
+      : 'https://inventory.tuturuuu.com',
+    logo: TUTURUUU_LOCAL_LOGO_URL,
+  },
+} as const satisfies Record<string, LoginDomain>;
+
+function getReturnUrlDomain(url: string | null) {
+  if (!url) return null;
+
+  try {
+    const urlObj = new URL(url);
+
+    if (!['http:', 'https:'].includes(urlObj.protocol)) {
+      return null;
+    }
+
+    return urlObj.host;
+  } catch {
+    return null;
+  }
+}
+
+function getSafeLocalRedirectPath(value: string | null) {
+  const normalizedPath = normalizeClientRedirectPath(value, '');
+
+  if (!normalizedPath) {
+    return null;
+  }
+
+  try {
+    const parsedPath = new URL(normalizedPath, 'https://tuturuuu.local');
+
+    return parsedPath.pathname.endsWith('/login') ? null : normalizedPath;
+  } catch {
+    return null;
+  }
+}
 
 function LoginDomainLogo({ domain }: { domain: LoginDomain }) {
   return (
@@ -36,15 +116,55 @@ function LoginDomainLogo({ domain }: { domain: LoginDomain }) {
   );
 }
 
+function LoginFormFallback() {
+  return (
+    <div className="animate-pulse rounded-3xl border bg-background/95 p-8 shadow-xl">
+      <div className="space-y-3">
+        <div className="h-5 w-16 rounded bg-muted" />
+        <div className="h-12 w-full rounded-2xl bg-muted" />
+        <div className="h-12 w-full rounded-2xl bg-muted" />
+        <div className="h-12 w-full rounded-2xl bg-muted" />
+        <div className="h-12 w-full rounded-2xl bg-muted" />
+        <div className="h-12 w-full rounded-2xl bg-muted" />
+      </div>
+    </div>
+  );
+}
+
 export function LoginContent({
-  currentDomain,
-  deferAuthSurfaceUntilSessionCheck,
+  authCallbackRedirect,
   localE2EAuthBypass,
-  multiAccount,
   runtimeSupabaseConfig,
-  tuturuuuDomain,
 }: LoginContentProps) {
   const t = useTranslations();
+  const searchParams = useSearchParams();
+  const returnUrl = searchParams.get('returnUrl');
+  const multiAccount = searchParams.get('multiAccount') === 'true';
+  const callbackCode = searchParams.get('code');
+  const callbackSearch = searchParams.toString();
+  const currentDomain = useMemo(() => {
+    const returnUrlDomain = getReturnUrlDomain(returnUrl);
+
+    return returnUrlDomain
+      ? (Object.values(DOMAINS).find((domain) =>
+          domain.href.includes(returnUrlDomain)
+        ) ?? null)
+      : DOMAINS.TUTURUUU;
+  }, [returnUrl]);
+  const deferAuthSurfaceUntilSessionCheck = Boolean(
+    returnUrl && !multiAccount && !getSafeLocalRedirectPath(returnUrl)
+  );
+  const tuturuuuDomain = DOMAINS.TUTURUUU;
+
+  useEffect(() => {
+    if (!callbackCode) {
+      return;
+    }
+
+    const redirect =
+      authCallbackRedirect ?? window.location.replace.bind(window.location);
+    redirect(`/api/auth/callback?${callbackSearch}`);
+  }, [authCallbackRedirect, callbackCode, callbackSearch]);
 
   const renderLogo = (domain: LoginDomain) => (
     <a href={domain.href} className="flex items-center justify-center">
@@ -103,28 +223,19 @@ export function LoginContent({
           </div>
 
           <div className="fade-in-0 slide-in-from-bottom-3 animate-in duration-300 [animation-delay:50ms] [animation-fill-mode:both]">
-            <Suspense
-              fallback={
-                <div className="animate-pulse rounded-3xl border bg-background/95 p-8 shadow-xl">
-                  <div className="space-y-3">
-                    <div className="h-5 w-16 rounded bg-muted" />
-                    <div className="h-12 w-full rounded-2xl bg-muted" />
-                    <div className="h-12 w-full rounded-2xl bg-muted" />
-                    <div className="h-12 w-full rounded-2xl bg-muted" />
-                    <div className="h-12 w-full rounded-2xl bg-muted" />
-                    <div className="h-12 w-full rounded-2xl bg-muted" />
-                  </div>
-                </div>
-              }
-            >
-              <LoginForm
-                deferAuthSurfaceUntilSessionCheck={
-                  deferAuthSurfaceUntilSessionCheck
-                }
-                localE2EAuthBypass={localE2EAuthBypass}
-                runtimeSupabaseConfig={runtimeSupabaseConfig}
-              />
-            </Suspense>
+            {callbackCode ? (
+              <LoginFormFallback />
+            ) : (
+              <Suspense fallback={<LoginFormFallback />}>
+                <LoginForm
+                  deferAuthSurfaceUntilSessionCheck={
+                    deferAuthSurfaceUntilSessionCheck
+                  }
+                  localE2EAuthBypass={localE2EAuthBypass}
+                  runtimeSupabaseConfig={runtimeSupabaseConfig}
+                />
+              </Suspense>
+            )}
           </div>
 
           <div className="fade-in-0 mt-8 animate-in text-center duration-300 [animation-delay:100ms] [animation-fill-mode:both]">

@@ -195,4 +195,65 @@ describe('createSerwistRoute', () => {
       })
     );
   });
+
+  it('should include public assets in precache globs by default', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    const { createSerwistRoute } = await import('../create-serwist-route.js');
+    const { getFileManifestEntries } = await import('@serwist/build');
+
+    const result = createSerwistRoute();
+
+    await result.GET({} as never, {
+      params: Promise.resolve({ path: 'sw.js' }),
+    });
+
+    expect(getFileManifestEntries).toHaveBeenCalledWith(
+      expect.objectContaining({
+        globPatterns: expect.arrayContaining(['public/**/*']),
+      })
+    );
+  });
+
+  it('should allow disabling public asset precache globs', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    const { createSerwistRoute } = await import('../create-serwist-route.js');
+    const { getFileManifestEntries } = await import('@serwist/build');
+
+    const result = createSerwistRoute({ publicPrecachePatterns: false });
+
+    await result.GET({} as never, {
+      params: Promise.resolve({ path: 'sw.js' }),
+    });
+
+    expect(getFileManifestEntries).toHaveBeenCalledWith(
+      expect.objectContaining({
+        globPatterns: expect.not.arrayContaining(['public/**/*']),
+      })
+    );
+  });
+
+  it('should allow custom public asset precache globs', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    const { createSerwistRoute } = await import('../create-serwist-route.js');
+    const { getFileManifestEntries } = await import('@serwist/build');
+
+    const result = createSerwistRoute({
+      publicPrecachePatterns: ['public/fonts/**/*'],
+    });
+
+    await result.GET({} as never, {
+      params: Promise.resolve({ path: 'sw.js' }),
+    });
+
+    expect(getFileManifestEntries).toHaveBeenCalledWith(
+      expect.objectContaining({
+        globPatterns: expect.arrayContaining(['public/fonts/**/*']),
+      })
+    );
+    expect(getFileManifestEntries).toHaveBeenCalledWith(
+      expect.objectContaining({
+        globPatterns: expect.not.arrayContaining(['public/**/*']),
+      })
+    );
+  });
 });

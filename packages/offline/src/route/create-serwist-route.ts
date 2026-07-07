@@ -10,6 +10,7 @@ import { NextResponse } from 'next/server';
 import type { SerwistRouteConfig, SerwistRouteResult } from './types';
 
 const isDev = process.env.NODE_ENV === 'development';
+const DEFAULT_PUBLIC_PRECACHE_PATTERNS = ['public/**/*'] as const;
 const contentTypeMap: Record<string, string> = {
   '.js': 'application/javascript',
   '.map': 'application/json; charset=UTF-8',
@@ -25,11 +26,21 @@ function normalizeDistDir(distDir: string): string {
   return normalized;
 }
 
-function generateGlobPatterns(distDir: string): string[] {
-  return [
+function generateGlobPatterns(
+  distDir: string,
+  publicPrecachePatterns: SerwistRouteConfig['publicPrecachePatterns']
+): string[] {
+  const globPatterns = [
     `${distDir}static/**/*.{js,css,html,ico,apng,png,avif,jpg,jpeg,jfif,pjpeg,pjp,gif,svg,webp,json,webmanifest}`,
-    'public/**/*',
   ];
+
+  if (publicPrecachePatterns !== false) {
+    globPatterns.push(
+      ...(publicPrecachePatterns ?? DEFAULT_PUBLIC_PRECACHE_PATTERNS)
+    );
+  }
+
+  return globPatterns;
 }
 
 /**
@@ -76,6 +87,7 @@ export function createSerwistRoute(
     globDirectory = '.',
     nextConfig = {},
     esbuildOptions = {},
+    publicPrecachePatterns,
   } = config;
 
   // Skip in development if disabled
@@ -122,7 +134,7 @@ export function createSerwistRoute(
         baseDirectory: globDirectory,
       }),
     ],
-    globPatterns: generateGlobPatterns(distDir),
+    globPatterns: generateGlobPatterns(distDir, publicPrecachePatterns),
     globStrict: true,
     disablePrecacheManifest: false,
     maximumFileSizeToCacheInBytes: 2097152,
