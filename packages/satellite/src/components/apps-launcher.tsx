@@ -8,6 +8,7 @@ import {
   Brain,
   Calendar,
   CheckCircle2,
+  ChevronRight,
   Code2,
   ExternalLink,
   FileText,
@@ -18,7 +19,6 @@ import {
   type LucideIcon,
   Mail,
   MessageSquare,
-  MoreHorizontal,
   Package,
   QrCode,
   Server,
@@ -36,14 +36,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@tuturuuu/ui/dropdown-menu';
 import { Tabs, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
-import { cn } from '@tuturuuu/utils/format';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import type {
   LaunchableApp,
   LaunchableAppCategory,
@@ -145,7 +139,7 @@ export function AppsLauncherDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="flex h-[min(760px,calc(100dvh-2rem))] max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] max-w-[860px] flex-col gap-0 overflow-hidden p-0 sm:max-w-[860px]">
+      <DialogContent className="grid h-[min(760px,calc(100dvh-2rem))] max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] max-w-[860px] grid-rows-[auto_auto_minmax(0,1fr)] gap-0 overflow-hidden p-0 sm:max-w-[860px]">
         <DialogHeader className="shrink-0 border-b px-5 py-4 pr-12 text-left">
           <DialogTitle>{t('apps')}</DialogTitle>
           <DialogDescription>{t('apps_description')}</DialogDescription>
@@ -169,19 +163,14 @@ export function AppsLauncherDialog({
           </TabsList>
         </Tabs>
 
-        <div
-          className="min-h-0 flex-1 overflow-hidden"
-          data-slot="apps-launcher-body"
-        >
+        <div className="min-h-0 overflow-hidden" data-slot="apps-launcher-body">
           <AppsTabPanel
             apps={activeApps}
             categoryDescription={t(`app_category_descriptions.${activeTab}`)}
             countLabel={t('apps_count', { count: activeApps.length })}
-            currentWorkspace={currentWorkspace}
             onOpen={openApp}
             openHereLabel={t('open_here')}
             openInNewTabLabel={t('open_in_new_tab')}
-            openOptionsLabel={t('open_options')}
           />
         </div>
       </DialogContent>
@@ -193,20 +182,16 @@ function AppsTabPanel({
   apps,
   categoryDescription,
   countLabel,
-  currentWorkspace,
   onOpen,
   openHereLabel,
   openInNewTabLabel,
-  openOptionsLabel,
 }: {
   apps: readonly LaunchableApp[];
   categoryDescription: string;
   countLabel: string;
-  currentWorkspace?: LaunchableWorkspace | null;
   onOpen: (app: LaunchableApp, target: 'current-tab' | 'new-tab') => void;
   openHereLabel: string;
   openInNewTabLabel: string;
-  openOptionsLabel: string;
 }) {
   return (
     <div
@@ -221,12 +206,10 @@ function AppsTabPanel({
         {apps.map((app) => (
           <AppLauncherItem
             app={app}
-            currentWorkspace={currentWorkspace}
             key={app.slug}
             onOpen={onOpen}
             openHereLabel={openHereLabel}
             openInNewTabLabel={openInNewTabLabel}
-            openOptionsLabel={openOptionsLabel}
           />
         ))}
       </div>
@@ -236,29 +219,17 @@ function AppsTabPanel({
 
 function AppLauncherItem({
   app,
-  currentWorkspace,
   onOpen,
   openHereLabel,
   openInNewTabLabel,
-  openOptionsLabel,
 }: {
   app: LaunchableApp;
-  currentWorkspace?: LaunchableWorkspace | null;
   onOpen: (app: LaunchableApp, target: 'current-tab' | 'new-tab') => void;
   openHereLabel: string;
   openInNewTabLabel: string;
-  openOptionsLabel: string;
 }) {
   const Icon = APP_ICONS[app.slug] ?? Boxes;
-  const t = useTranslations('command_launcher');
   const accent = CATEGORY_ACCENTS[app.category];
-  const aliases = app.aliases.slice(0, 3).join(', ');
-  const domain = formatAppDomain(app.productionUrl);
-  const destination = app.workspacePathResolver
-    ? t('workspace_destination', {
-        workspace: currentWorkspace?.name?.trim() || t('current_workspace'),
-      })
-    : t('default_destination');
   const cardStyle = {
     '--app-accent': accent,
     background:
@@ -268,104 +239,73 @@ function AppLauncherItem({
 
   return (
     <div
-      className="group grid grid-cols-[minmax(0,1fr)_auto] items-stretch overflow-hidden rounded-lg border text-card-foreground shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+      className="grid grid-cols-[auto_minmax(0,1fr)_auto_auto] items-center gap-2 overflow-hidden rounded-lg border p-2 text-card-foreground shadow-sm transition hover:shadow-md"
       data-slot="app-card"
       style={cardStyle}
     >
-      <button
-        aria-label={`${openInNewTabLabel}: ${app.title}`}
-        className="grid min-w-0 grid-cols-[auto_minmax(0,1fr)] items-start gap-3 px-3 py-3 text-left"
-        onClick={() => onOpen(app, 'new-tab')}
-        type="button"
+      <span
+        className="flex size-9 shrink-0 items-center justify-center rounded-md border bg-background/70 shadow-xs"
+        style={{
+          borderColor:
+            'color-mix(in srgb, var(--app-accent) 40%, var(--border))',
+          color: 'var(--app-accent)',
+        }}
       >
-        <span
-          className="mt-0.5 flex size-10 shrink-0 items-center justify-center rounded-md border bg-background/70 shadow-xs"
-          style={{
-            borderColor:
-              'color-mix(in srgb, var(--app-accent) 40%, var(--border))',
-            color: 'var(--app-accent)',
-          }}
-        >
-          <Icon className="size-4" />
-        </span>
-        <span className="min-w-0 space-y-2">
-          <span className="flex min-w-0 items-center gap-2">
-            <span
-              className="block truncate font-semibold text-sm"
-              data-slot="app-card-title"
-            >
-              {app.title}
-            </span>
-            <span
-              className="shrink-0 rounded-full border bg-background/70 px-2 py-0.5 font-medium text-[10px] text-muted-foreground uppercase tracking-normal"
-              data-slot="app-card-category"
-              style={{
-                borderColor:
-                  'color-mix(in srgb, var(--app-accent) 35%, var(--border))',
-              }}
-            >
-              {t(`app_categories.${app.category}`)}
-            </span>
-          </span>
-          <span
-            className="block truncate text-muted-foreground text-xs"
-            data-slot="app-card-slot-text"
-          >
-            {t('aliases_slot', { aliases })}
-          </span>
-          <span className="grid min-w-0 gap-1 text-xs">
-            <span
-              className="block truncate font-medium"
-              data-slot="app-card-destination"
-            >
-              {destination}
-            </span>
-            <span
-              className="block truncate text-muted-foreground"
-              data-slot="app-card-domain"
-            >
-              {domain}
-            </span>
-          </span>
-        </span>
-      </button>
+        <Icon className="size-4" />
+      </span>
 
-      <div className="flex items-start pt-2 pr-2">
-        <DropdownMenu modal={false}>
-          <DropdownMenuTrigger asChild>
-            <Button
-              aria-label={`${openOptionsLabel}: ${app.title}`}
-              className={cn(
-                'size-8 shrink-0 text-muted-foreground opacity-80 transition',
-                'hover:bg-background/80 hover:text-foreground group-hover:opacity-100'
-              )}
-              size="icon"
-              type="button"
-              variant="ghost"
-            >
-              <MoreHorizontal className="size-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-48">
-            <DropdownMenuItem onSelect={() => onOpen(app, 'new-tab')}>
-              <ExternalLink className="size-4" />
-              {openInNewTabLabel}
-            </DropdownMenuItem>
-            <DropdownMenuItem onSelect={() => onOpen(app, 'current-tab')}>
-              <SquareTerminal className="size-4" />
-              {openHereLabel}
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
+      <span
+        className="min-w-0 truncate font-semibold text-sm"
+        data-slot="app-card-title"
+      >
+        {app.title}
+      </span>
+
+      <AppLaunchAction
+        icon={ChevronRight}
+        label={`${openHereLabel}: ${app.title}`}
+        onClick={() => onOpen(app, 'current-tab')}
+        tooltip={openHereLabel}
+        variant="secondary"
+      />
+      <AppLaunchAction
+        icon={ExternalLink}
+        label={`${openInNewTabLabel}: ${app.title}`}
+        onClick={() => onOpen(app, 'new-tab')}
+        tooltip={openInNewTabLabel}
+      />
     </div>
   );
 }
 
-function formatAppDomain(url: string) {
-  try {
-    return new URL(url).hostname;
-  } catch {
-    return url;
-  }
+function AppLaunchAction({
+  icon: Icon,
+  label,
+  onClick,
+  tooltip,
+  variant,
+}: {
+  icon: LucideIcon;
+  label: string;
+  onClick: () => void;
+  tooltip: string;
+  variant?: 'secondary';
+}) {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Button
+          aria-label={label}
+          className="size-8 shrink-0"
+          onClick={onClick}
+          size="icon"
+          type="button"
+          variant={variant}
+        >
+          <Icon className="size-4" />
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent>{tooltip}</TooltipContent>
+    </Tooltip>
+  );
 }

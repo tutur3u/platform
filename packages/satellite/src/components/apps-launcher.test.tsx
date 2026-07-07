@@ -9,6 +9,8 @@ import { NextIntlClientProvider } from 'next-intl';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { AppsLauncherDialog } from './apps-launcher';
 
+const originalLocation = window.location;
+
 const messages = {
   command_launcher: {
     aliases_slot: 'Also matches: {aliases}',
@@ -68,6 +70,10 @@ function renderDialog() {
 afterEach(() => {
   cleanup();
   vi.restoreAllMocks();
+  Object.defineProperty(window, 'location', {
+    configurable: true,
+    value: originalLocation,
+  });
 });
 
 describe('AppsLauncherDialog', () => {
@@ -95,7 +101,7 @@ describe('AppsLauncherDialog', () => {
     expect(dialogContent?.className).toContain('max-h-[calc(100dvh-2rem)]');
     expect(dialogContent?.className).toContain('w-[calc(100vw-2rem)]');
     expect(dialogContent?.className).toContain('max-w-[860px]');
-    expect(dialogContent?.className).toContain('flex-col');
+    expect(dialogContent?.className).toContain('grid-rows-');
     expect(dialogContent?.className).toContain('overflow-hidden');
 
     const tabsRoot = document.querySelector('[data-slot="tabs"]');
@@ -105,7 +111,6 @@ describe('AppsLauncherDialog', () => {
     const launcherBody = document.querySelector(
       '[data-slot="apps-launcher-body"]'
     );
-    expect(launcherBody?.className).toContain('flex-1');
     expect(launcherBody?.className).toContain('min-h-0');
     expect(launcherBody?.className).toContain('overflow-hidden');
 
@@ -118,16 +123,29 @@ describe('AppsLauncherDialog', () => {
     expect(scrollRegion?.className).toContain('overflow-y-auto');
   });
 
-  it('shows categorized card slot text and filters with tabs', async () => {
+  it('renders compact app cards and filters with tabs', async () => {
     renderDialog();
 
+    expect(screen.getByText('Finance')).toBeTruthy();
+    expect(screen.getByLabelText('Open here: Finance')).toBeTruthy();
+    expect(screen.getByLabelText('Open in new tab: Finance')).toBeTruthy();
+    expect(screen.queryByLabelText('Open options: Finance')).toBeNull();
     expect(
-      screen.getByText('Also matches: Money, Wallets, Invoices')
-    ).toBeTruthy();
-    expect(screen.getByText('finance.tuturuuu.com')).toBeTruthy();
+      screen.queryByText('Also matches: Money, Wallets, Invoices')
+    ).toBeNull();
+    expect(screen.queryByText('finance.tuturuuu.com')).toBeNull();
+    expect(screen.queryByText('Personal Space workspace')).toBeNull();
+    expect(screen.queryByText('Default app home')).toBeNull();
     expect(
-      screen.getAllByText('Personal Space workspace').length
-    ).toBeGreaterThan(0);
+      document.querySelector('[data-slot="app-card-category"]')
+    ).toBeNull();
+    expect(
+      document.querySelector('[data-slot="app-card-slot-text"]')
+    ).toBeNull();
+    expect(
+      document.querySelector('[data-slot="app-card-destination"]')
+    ).toBeNull();
+    expect(document.querySelector('[data-slot="app-card-domain"]')).toBeNull();
 
     const developerTab = screen.getByRole('tab', { name: 'Developer' });
     fireEvent.pointerDown(developerTab, { button: 0, ctrlKey: false });
@@ -141,9 +159,11 @@ describe('AppsLauncherDialog', () => {
     );
     expect(screen.getByText('Tools')).toBeTruthy();
     expect(screen.queryByText('Calendar')).toBeNull();
+    expect(screen.getByLabelText('Open here: Tools')).toBeTruthy();
+    expect(screen.getByLabelText('Open in new tab: Tools')).toBeTruthy();
   });
 
-  it('opens app cards in a new tab by default', () => {
+  it('opens apps in a new tab from the primary icon action', () => {
     const open = vi.fn();
     vi.stubGlobal('open', open);
     const { onOpenChange } = renderDialog();
@@ -158,22 +178,24 @@ describe('AppsLauncherDialog', () => {
     );
   });
 
-  it('keeps the compact settings menu available for each app', async () => {
-    const open = vi.fn();
-    vi.stubGlobal('open', open);
-    renderDialog();
+  it('opens apps in the current tab from the secondary icon action', () => {
+    const assign = vi.fn();
+    Object.defineProperty(window, 'location', {
+      configurable: true,
+      value: {
+        ...originalLocation,
+        assign,
+        hostname: 'localhost',
+        origin: 'http://localhost:3000',
+      },
+    });
+    const { onOpenChange } = renderDialog();
 
-    fireEvent.pointerDown(screen.getByLabelText('Open options: Tasks'));
-    fireEvent.click(
-      await screen.findByRole('menuitem', { name: 'Open in new tab' })
-    );
+    fireEvent.click(screen.getByLabelText('Open here: Tasks'));
 
-    await waitFor(() =>
-      expect(open).toHaveBeenCalledWith(
-        'http://localhost:7809/personal/tasks?source=sidebar-apps',
-        '_blank',
-        'noopener,noreferrer'
-      )
+    expect(onOpenChange).toHaveBeenCalledWith(false);
+    expect(assign).toHaveBeenCalledWith(
+      'http://localhost:7809/personal/tasks?source=sidebar-apps'
     );
   });
 });
