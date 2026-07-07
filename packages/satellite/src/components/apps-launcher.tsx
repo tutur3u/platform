@@ -143,14 +143,14 @@ export function AppsLauncherDialog({
 
   const activeApps = getAppsForTab(activeTab);
   const dialogStyle = {
-    '--apps-launcher-height': 'min(760px, calc(100dvh - 2rem))',
-    gridTemplateRows: 'auto auto minmax(0, 1fr)',
+    height: '760px',
+    maxHeight: 'calc(100vh - 2rem)',
   } as CSSProperties;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="grid h-[var(--apps-launcher-height)] w-[calc(100vw-2rem)] max-w-[1120px] gap-0 overflow-hidden p-0 sm:max-w-[1120px] xl:max-w-[1240px]"
+        className="flex w-[calc(100vw-2rem)] max-w-[1120px] flex-col gap-0 overflow-hidden p-0 sm:max-w-[1120px] xl:max-w-[1240px]"
         style={dialogStyle}
       >
         <DialogHeader className="shrink-0 border-b px-5 py-4 pr-12 text-left">
@@ -176,12 +176,13 @@ export function AppsLauncherDialog({
           </TabsList>
         </Tabs>
 
-        <div className="min-h-0 overflow-hidden" data-slot="apps-launcher-body">
+        <div
+          className="min-h-0 flex-1 overflow-hidden"
+          data-slot="apps-launcher-body"
+        >
           <AppsTabPanel
             activeTab={activeTab}
             apps={activeApps}
-            categoryDescription={t(`app_category_descriptions.${activeTab}`)}
-            countLabel={t('apps_count', { count: activeApps.length })}
             getCategoryLabel={(category) => t(`app_categories.${category}`)}
             onOpen={openApp}
             openHereLabel={t('open_here')}
@@ -197,8 +198,6 @@ export function AppsLauncherDialog({
 function AppsTabPanel({
   activeTab,
   apps,
-  categoryDescription,
-  countLabel,
   getCategoryLabel,
   onOpen,
   openHereLabel,
@@ -207,8 +206,6 @@ function AppsTabPanel({
 }: {
   activeTab: AppCategoryTab;
   apps: readonly LaunchableApp[];
-  categoryDescription: string;
-  countLabel: string;
   getCategoryLabel: (category: LaunchableAppCategory) => string;
   onOpen: (app: LaunchableApp, target: 'current-tab' | 'new-tab') => void;
   openHereLabel: string;
@@ -220,12 +217,8 @@ function AppsTabPanel({
       className="flex h-full min-h-0 flex-col"
       data-slot="apps-launcher-panel"
     >
-      <div className="flex shrink-0 flex-wrap items-center justify-between gap-2 px-4 py-3 text-muted-foreground text-xs">
-        <span>{categoryDescription}</span>
-        <span className="font-medium">{countLabel}</span>
-      </div>
       <div
-        className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 pb-3"
+        className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-3"
         data-slot="apps-launcher-scroll"
       >
         {activeTab === 'all' ? (

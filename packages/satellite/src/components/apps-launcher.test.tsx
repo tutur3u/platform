@@ -87,10 +87,11 @@ describe('AppsLauncherDialog', () => {
     expect(screen.getByText('Calendar')).toBeTruthy();
     expect(screen.getByText('Tasks')).toBeTruthy();
     expect(
-      screen.getByText(
+      screen.queryByText(
         'Every routable Tuturuuu app available from this launcher.'
       )
-    ).toBeTruthy();
+    ).toBeNull();
+    expect(screen.queryByText(/\d+ apps/)).toBeNull();
 
     const dialogContent = document.querySelector(
       '[data-slot="dialog-content"]'
@@ -105,18 +106,24 @@ describe('AppsLauncherDialog', () => {
     expect(dialogContent?.className).not.toContain('!top-4');
     expect(dialogContent?.className).not.toContain('!bottom-4');
     expect(dialogContent?.className).not.toContain('h-auto');
-    expect(dialogContent?.className).toContain(
+    expect(dialogContent?.className).not.toContain(
       'h-[var(--apps-launcher-height)]'
     );
+    expect(dialogContent?.className).toContain('flex');
+    expect(dialogContent?.className).toContain('flex-col');
     expect(dialogContent?.className).toContain('w-[calc(100vw-2rem)]');
     expect(dialogContent?.className).toContain('max-w-[1120px]');
     expect(dialogContent?.className).toContain('xl:max-w-[1240px]');
     expect(dialogContent?.className).toContain('overflow-hidden');
-    expect(dialogContent?.getAttribute('style')).toContain(
-      'grid-template-rows: auto auto minmax(0, 1fr)'
+    expect(dialogContent?.getAttribute('style')).not.toContain(
+      '--apps-launcher-height'
     );
+    expect(dialogContent?.getAttribute('style')).not.toContain(
+      'grid-template-rows'
+    );
+    expect(dialogContent?.getAttribute('style')).toContain('height: 760px');
     expect(dialogContent?.getAttribute('style')).toContain(
-      '--apps-launcher-height: min(760px, calc(100dvh - 2rem))'
+      'max-height: calc(100vh - 2rem)'
     );
 
     const tabsRoot = document.querySelector('[data-slot="tabs"]');
@@ -127,6 +134,7 @@ describe('AppsLauncherDialog', () => {
       '[data-slot="apps-launcher-body"]'
     );
     expect(launcherBody?.className).toContain('min-h-0');
+    expect(launcherBody?.className).toContain('flex-1');
     expect(launcherBody?.className).toContain('overflow-hidden');
 
     const launcherPanel = document.querySelector(
@@ -219,13 +227,12 @@ describe('AppsLauncherDialog', () => {
     fireEvent.mouseDown(developerTab, { button: 0, ctrlKey: false });
     fireEvent.click(developerTab);
 
-    await waitFor(() =>
-      expect(
-        screen.getByText('Developer utilities, gateways, and technical tools.')
-      ).toBeTruthy()
-    );
+    await waitFor(() => expect(screen.getByText('Tools')).toBeTruthy());
     expect(screen.getByText('Tools')).toBeTruthy();
     expect(screen.queryByText('Calendar')).toBeNull();
+    expect(
+      screen.queryByText('Developer utilities, gateways, and technical tools.')
+    ).toBeNull();
     expect(screen.getByLabelText('Open options: Tools')).toBeTruthy();
     expect(
       document.querySelector('[data-slot="apps-launcher-sections"]')
