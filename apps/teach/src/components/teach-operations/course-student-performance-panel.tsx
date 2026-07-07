@@ -83,13 +83,17 @@ export function CourseStudentPerformancePanel({
       const db = b.lastActivityAt ?? '';
       return dir * da.localeCompare(db);
     }
-    // risk: no submission → low score → pending → score asc
-    if (a.hasNotSubmitted !== b.hasNotSubmitted)
-      return dir * (a.hasNotSubmitted ? -1 : 1);
-    if (a.isLowScorer !== b.isLowScorer) return dir * (a.isLowScorer ? -1 : 1);
-    if (a.pendingGradingCount !== b.pendingGradingCount)
-      return dir * (b.pendingGradingCount - a.pendingGradingCount);
-    return dir * ((a.scorePercent ?? 101) - (b.scorePercent ?? 101));
+    const riskCompare = () => {
+      // risk: no submission -> low score -> pending -> score asc
+      if (a.hasNotSubmitted !== b.hasNotSubmitted)
+        return a.hasNotSubmitted ? -1 : 1;
+      if (a.isLowScorer !== b.isLowScorer) return a.isLowScorer ? -1 : 1;
+      if (a.pendingGradingCount !== b.pendingGradingCount)
+        return b.pendingGradingCount - a.pendingGradingCount;
+      return (a.scorePercent ?? 101) - (b.scorePercent ?? 101);
+    };
+
+    return sortAsc ? -riskCompare() : riskCompare();
   });
 
   function toggleSort(key: typeof sortKey) {

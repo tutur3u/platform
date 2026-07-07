@@ -140,7 +140,7 @@ export const POST = withSessionAuth(
           email: string | null;
         } | null;
 
-        if (!profile || !profile.email) continue;
+        if (!profile?.email) continue;
 
         // Calculate stats for this student
         const subs = subsByUser[member.user_id] ?? [];
@@ -371,8 +371,8 @@ export const POST = withSessionAuth(
 
       return NextResponse.json({
         message: 'success',
-        sentCount: results.sent,
-        failedCount: results.failed,
+        sentCount: results.totalSent,
+        failedCount: results.totalFailed,
       });
     } catch (error) {
       console.error('Failed to process bulk student email report:', error);

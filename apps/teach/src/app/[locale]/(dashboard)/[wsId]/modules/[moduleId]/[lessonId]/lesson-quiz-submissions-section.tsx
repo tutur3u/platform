@@ -127,7 +127,7 @@ export function LessonQuizSubmissionsSection({
                     const parsedDate = localDeadline
                       ? new Date(localDeadline)
                       : null;
-                    if (parsedDate && isNaN(parsedDate.getTime())) {
+                    if (parsedDate && Number.isNaN(parsedDate.getTime())) {
                       return;
                     }
                     onQuizDeadlineChange?.(

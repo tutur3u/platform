@@ -213,6 +213,8 @@ function QuizResponseCard({
   const hasAnswer = Boolean(quizAnswer);
   const isCorrectAnswer = quizAnswer?.is_correct === true;
   const isPendingReview = hasAnswer && quizAnswer?.is_correct === null;
+  const hasKnownObjectiveGrade =
+    quizAnswer?.is_correct === true || quizAnswer?.is_correct === false;
   const isParagraph = quiz.type === 'paragraph';
 
   const displayedAiFeedback = quizAnswer?.ai_feedback || localAiFeedback;
@@ -275,6 +277,7 @@ function QuizResponseCard({
         <div className="flex items-center gap-2">
           {hasAnswer && !displayedAiFeedback && (
             <button
+              type="button"
               onClick={handleAiFeedback}
               disabled={isAiLoading}
               className="inline-flex cursor-pointer items-center gap-1 border border-border bg-background px-2 py-0.5 font-bold text-xs shadow-[1px_1px_0_var(--border)] transition hover:-translate-y-0.5 disabled:opacity-50"
@@ -335,14 +338,14 @@ function QuizResponseCard({
       )}
 
       {/* Non-paragraph questions: simple feedback-only controls */}
-      {!isParagraph && hasAnswer && (
+      {!isParagraph && hasAnswer && hasKnownObjectiveGrade && (
         <FeedbackOnlyControls
           wsId={wsId}
           courseId={courseId}
           moduleId={moduleId}
           userId={userId}
           quizId={quiz.id}
-          isCorrect={quizAnswer?.is_correct ?? true}
+          isCorrect={quizAnswer.is_correct}
           currentFeedback={quizAnswer?.feedback}
         />
       )}

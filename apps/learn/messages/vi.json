@@ -175,7 +175,7 @@
     "quizCorrectCount": "Chính xác {correct} / {total}",
     "quizCount": "{count} câu hỏi",
     "quizEarnedPoints": "Điểm đạt được: {points} / {total}",
-    "quizScorePending": "Chờ Giáo viên chấm điểm",
+    "quizScorePending": "Chờ giáo viên chấm điểm",
     "quizScorePendingDescription": "Câu trả lời của bạn đã được ghi nhận. Kết quả sẽ hiển thị sau khi giáo viên công bố.",
     "quizDeadlinePassed": "Đã hết hạn",
     "quizDeadlinePassedError": "Hạn chót cho bài trắc nghiệm này đã qua. Đã đóng nhận câu trả lời.",
@@ -375,7 +375,7 @@
       }
     },
     "eyebrow": "Trang giới thiệu Learn",
-    "greeting": "Chào, {user}",
+    "greeting": "Chào {user}",
     "lead": "Learn là ứng dụng dành cho học viên trong workspace giáo dục Tuturuuu. Học viên luyện tập, theo dõi module khóa học, xử lý bài tập và đọc tiến độ mà không vào dashboard giáo viên.",
     "panelBody": "Xác thực vẫn thuộc nền tảng Tuturuuu. Sau khi đăng nhập, Learn mở đúng dashboard workspace cho học viên hiện tại hoặc phụ huynh được liên kết.",
     "panelTitle": "Một tài khoản, học tập tập trung",

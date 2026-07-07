@@ -275,7 +275,9 @@
     "gradeNow": "Chấm ngay",
     "viewMetrics": "Xem chỉ số",
     "openCourse": "Mở",
-    "members": "Học sinh"
+    "members": "Học sinh",
+    "statsUnavailableBody": "Hãy thử lại sau để xem bài chờ chấm, bài chưa nộp và cảnh báo học viên điểm thấp.",
+    "statsUnavailableTitle": "Chưa tải được thống kê khóa học"
   },
   "teachStudentPerformance": {
     "atRisk": "Có rủi ro",
@@ -453,8 +455,6 @@
     "gradedSuccess": "Đánh giá thành công",
     "gradedError": "Đánh giá thất bại",
     "feedback": "Phản hồi của Giáo viên",
-    "feedbackPlaceholder": "Nhập phản hồi cho học sinh...",
-    "feedbackSaved": "Đã lưu phản hồi thành công",
     "feedbackSaveError": "Lưu phản hồi thất bại",
     "addFeedback": "+ Thêm phản hồi của giáo viên",
     "questionStatusNotAnswered": "Chưa trả lời",

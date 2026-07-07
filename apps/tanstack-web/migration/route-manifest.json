@@ -6,12 +6,12 @@
         "acceptedRemoval": 17,
         "key": "api",
         "label": "api",
-        "legacyNext": 670,
+        "legacyNext": 677,
         "migrated": 77,
-        "percentComplete": 12.3,
-        "remaining": 670,
+        "percentComplete": 12.19,
+        "remaining": 677,
         "terminal": 94,
-        "total": 764,
+        "total": 771,
         "unknownStatus": 0
       },
       {
@@ -116,12 +116,12 @@
         "acceptedRemoval": 17,
         "key": "rust-backend",
         "label": "Rust backend",
-        "legacyNext": 684,
+        "legacyNext": 691,
         "migrated": 82,
-        "percentComplete": 12.64,
-        "remaining": 684,
+        "percentComplete": 12.53,
+        "remaining": 691,
         "terminal": 99,
-        "total": 783,
+        "total": 790,
         "unknownStatus": 0
       },
       {
@@ -323,12 +323,12 @@
       "acceptedRemoval": 19,
       "key": "total",
       "label": "All route artifacts",
-      "legacyNext": 757,
+      "legacyNext": 764,
       "migrated": 275,
-      "percentComplete": 27.97,
-      "remaining": 757,
+      "percentComplete": 27.79,
+      "remaining": 764,
       "terminal": 294,
-      "total": 1051,
+      "total": 1058,
       "unknownStatus": 0
     }
   },
@@ -5242,6 +5242,33 @@
       "targetOwner": "rust-backend"
     },
     {
+      "id": "api:/api/v1/workspaces/:wsId/teach/courses/:courseId/modules/:moduleId/quizzes/submissions:apps/web/src/app/api/v1/workspaces/[wsId]/teach/courses/[courseId]/modules/[moduleId]/quizzes/submissions/route.ts",
+      "kind": "api",
+      "methods": ["GET"],
+      "routePath": "/api/v1/workspaces/:wsId/teach/courses/:courseId/modules/:moduleId/quizzes/submissions",
+      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/teach/courses/[courseId]/modules/[moduleId]/quizzes/submissions/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend"
+    },
+    {
+      "id": "api:/api/v1/workspaces/:wsId/teach/courses/:courseId/modules/:moduleId/quizzes/submissions/:userId:apps/web/src/app/api/v1/workspaces/[wsId]/teach/courses/[courseId]/modules/[moduleId]/quizzes/submissions/[userId]/route.ts",
+      "kind": "api",
+      "methods": ["GET", "POST"],
+      "routePath": "/api/v1/workspaces/:wsId/teach/courses/:courseId/modules/:moduleId/quizzes/submissions/:userId",
+      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/teach/courses/[courseId]/modules/[moduleId]/quizzes/submissions/[userId]/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend"
+    },
+    {
+      "id": "api:/api/v1/workspaces/:wsId/teach/courses/:courseId/modules/:moduleId/quizzes/submissions/:userId/ai-review:apps/web/src/app/api/v1/workspaces/[wsId]/teach/courses/[courseId]/modules/[moduleId]/quizzes/submissions/[userId]/ai-review/route.ts",
+      "kind": "api",
+      "methods": ["POST"],
+      "routePath": "/api/v1/workspaces/:wsId/teach/courses/:courseId/modules/:moduleId/quizzes/submissions/:userId/ai-review",
+      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/teach/courses/[courseId]/modules/[moduleId]/quizzes/submissions/[userId]/ai-review/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend"
+    },
+    {
       "id": "api:/api/v1/workspaces/:wsId/teach/courses/:courseId/posts:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/teach/courses/[courseId]/posts/route.ts",
       "kind": "api",
       "methods": ["GET", "POST"],
@@ -5256,6 +5283,33 @@
       "methods": ["GET", "POST"],
       "routePath": "/api/v1/workspaces/:wsId/teach/courses/:courseId/reports",
       "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/teach/courses/[courseId]/reports/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend"
+    },
+    {
+      "id": "api:/api/v1/workspaces/:wsId/teach/courses/:courseId/student-performance:apps/web/src/app/api/v1/workspaces/[wsId]/teach/courses/[courseId]/student-performance/route.ts",
+      "kind": "api",
+      "methods": ["GET"],
+      "routePath": "/api/v1/workspaces/:wsId/teach/courses/:courseId/student-performance",
+      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/teach/courses/[courseId]/student-performance/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend"
+    },
+    {
+      "id": "api:/api/v1/workspaces/:wsId/teach/courses/:courseId/student-performance/:userId/send-report:apps/web/src/app/api/v1/workspaces/[wsId]/teach/courses/[courseId]/student-performance/[userId]/send-report/route.ts",
+      "kind": "api",
+      "methods": ["POST"],
+      "routePath": "/api/v1/workspaces/:wsId/teach/courses/:courseId/student-performance/:userId/send-report",
+      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/teach/courses/[courseId]/student-performance/[userId]/send-report/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend"
+    },
+    {
+      "id": "api:/api/v1/workspaces/:wsId/teach/courses/:courseId/student-performance/send-bulk-report:apps/web/src/app/api/v1/workspaces/[wsId]/teach/courses/[courseId]/student-performance/send-bulk-report/route.ts",
+      "kind": "api",
+      "methods": ["POST"],
+      "routePath": "/api/v1/workspaces/:wsId/teach/courses/:courseId/student-performance/send-bulk-report",
+      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/teach/courses/[courseId]/student-performance/send-bulk-report/route.ts",
       "status": "legacy-next",
       "targetOwner": "rust-backend"
     },
@@ -5292,6 +5346,15 @@
       "methods": ["GET", "PATCH"],
       "routePath": "/api/v1/workspaces/:wsId/teach/courses/:courseId/tests/:testId/submissions/:attemptId",
       "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/teach/courses/[courseId]/tests/[testId]/submissions/[attemptId]/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend"
+    },
+    {
+      "id": "api:/api/v1/workspaces/:wsId/teach/dashboard-stats:apps/web/src/app/api/v1/workspaces/[wsId]/teach/dashboard-stats/route.ts",
+      "kind": "api",
+      "methods": ["GET"],
+      "routePath": "/api/v1/workspaces/:wsId/teach/dashboard-stats",
+      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/teach/dashboard-stats/route.ts",
       "status": "legacy-next",
       "targetOwner": "rust-backend"
     },
@@ -9878,20 +9941,20 @@
     }
   ],
   "summary": {
-    "apiRoutes": 764,
+    "apiRoutes": 771,
     "cronRoutes": 13,
     "layouts": 59,
     "pages": 205,
-    "routeHandlers": 783,
+    "routeHandlers": 790,
     "methodCounts": {
-      "GET": 437,
+      "GET": 441,
       "HEAD": 22,
-      "POST": 379,
+      "POST": 383,
       "PUT": 99,
       "PATCH": 95,
       "DELETE": 150,
       "OPTIONS": 44
     },
-    "total": 1051
+    "total": 1058
   }
 }

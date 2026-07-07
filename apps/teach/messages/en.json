@@ -275,7 +275,9 @@
     "gradeNow": "Grade Now",
     "viewMetrics": "View Metrics",
     "openCourse": "Open",
-    "members": "Students"
+    "members": "Students",
+    "statsUnavailableBody": "Try again shortly to see pending grading, missing submissions, and low-scorer alerts.",
+    "statsUnavailableTitle": "Course stats unavailable"
   },
   "teachStudentPerformance": {
     "atRisk": "At Risk",
@@ -453,8 +455,6 @@
     "gradedSuccess": "Graded successfully",
     "gradedError": "Failed to grade submission",
     "feedback": "Teacher Feedback",
-    "feedbackPlaceholder": "Enter feedback for student...",
-    "feedbackSaved": "Feedback saved successfully",
     "feedbackSaveError": "Failed to save feedback",
     "addFeedback": "+ Add teacher feedback",
     "questionStatusNotAnswered": "Not answered",

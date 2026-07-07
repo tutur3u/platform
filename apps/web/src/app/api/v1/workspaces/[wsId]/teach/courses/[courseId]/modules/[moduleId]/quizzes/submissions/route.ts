@@ -15,7 +15,7 @@ const RouteParamsSchema = z.object({
 
 type ModuleSubmissionRow = {
   created_at: string;
-  is_correct: boolean;
+  is_correct: boolean | null;
   quiz_id: string;
   user_id: string;
 };

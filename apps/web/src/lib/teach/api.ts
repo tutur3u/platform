@@ -20,6 +20,21 @@ export type TeachAccessResult =
     }
   | NextResponse;
 
+export type UserPrivateDetailsEmail =
+  | {
+      email?: string | null;
+    }
+  | {
+      email?: string | null;
+    }[]
+  | null
+  | undefined;
+
+export function extractUserPrivateEmail(value: UserPrivateDetailsEmail) {
+  if (Array.isArray(value)) return value[0]?.email ?? null;
+  return value?.email ?? null;
+}
+
 export async function requireTeachWorkspaceAccess({
   context,
   permission,

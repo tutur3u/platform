@@ -1,5 +1,3 @@
-'use server';
-
 import {
   ArrowRight,
   BookOpenCheck,
@@ -23,6 +21,7 @@ export async function TeachRealtimePanel({
   wsId: string;
 }) {
   const t = await getTranslations('teachDashboard');
+  const coursesHref = getCoursesHref(wsId);
 
   const hasAlerts =
     stats &&
@@ -52,7 +51,7 @@ export async function TeachRealtimePanel({
         </div>
         <a
           className="inline-flex h-10 shrink-0 items-center gap-2 border-2 border-border bg-background px-3 font-black text-xs shadow-[2px_2px_0_var(--border)]"
-          href={`/${wsId}/courses`}
+          href={coursesHref}
         >
           {t('allGroups') || 'All courses'}
           <ArrowRight className="h-3.5 w-3.5" />
@@ -84,7 +83,17 @@ export async function TeachRealtimePanel({
       )}
 
       {/* Course table / cards */}
-      {!stats || stats.courses.length === 0 ? (
+      {!stats ? (
+        <div className="border-2 border-border border-dashed bg-muted/40 p-10 text-center shadow-[4px_4px_0_var(--border)]">
+          <p className="font-black text-xl">
+            {t('statsUnavailableTitle') || 'Course stats unavailable'}
+          </p>
+          <p className="mt-3 text-muted-foreground text-sm">
+            {t('statsUnavailableBody') ||
+              'Try again shortly to see pending grading, missing submissions, and low-scorer alerts.'}
+          </p>
+        </div>
+      ) : stats.courses.length === 0 ? (
         <div className="border-2 border-border border-dashed bg-muted/40 p-10 text-center shadow-[4px_4px_0_var(--border)]">
           <p className="font-black text-xl">
             {t('emptyGroupsTitle') || 'No active courses'}
@@ -157,6 +166,7 @@ function CourseStatRow({
     course.pending_grading === 0 &&
     course.not_submitted === 0 &&
     course.low_scorers === 0;
+  const courseHref = getCourseHref(wsId, course.id);
 
   return (
     <article className="grid gap-4 border-2 border-border bg-background p-4 shadow-[4px_4px_0_var(--border)] sm:grid-cols-[minmax(0,1fr)_auto]">
@@ -169,7 +179,7 @@ function CourseStatRow({
           <div className="min-w-0">
             <a
               className="block truncate font-black text-lg leading-tight hover:underline"
-              href={`/${wsId}/courses/${course.id}`}
+              href={courseHref}
             >
               {course.name}
             </a>
@@ -219,21 +229,27 @@ function CourseStatRow({
       <div className="flex shrink-0 flex-wrap items-center gap-2 sm:flex-col sm:items-end sm:justify-center">
         {course.pending_grading > 0 && (
           <QuickActionLink
-            href={`/${wsId}/courses/${course.id}`}
+            courseId={course.id}
+            destination="course"
             label={t('gradeNow') || 'Grade Now'}
+            wsId={wsId}
             variant="warning"
           />
         )}
         {course.low_scorers > 0 && (
           <QuickActionLink
-            href={`/${wsId}/metrics?course=${course.id}`}
+            courseId={course.id}
+            destination="metrics"
             label={t('viewMetrics') || 'View Metrics'}
+            wsId={wsId}
             variant="danger"
           />
         )}
         <QuickActionLink
-          href={`/${wsId}/courses/${course.id}`}
+          courseId={course.id}
+          destination="course"
           label={t('openCourse') || 'Open'}
+          wsId={wsId}
           variant="default"
         />
       </div>
@@ -280,14 +296,22 @@ function StatChip({
 }
 
 function QuickActionLink({
-  href,
+  courseId,
+  destination,
   label,
   variant,
+  wsId,
 }: {
-  href: string;
+  courseId: string;
+  destination: 'course' | 'metrics';
   label: string;
   variant: 'warning' | 'danger' | 'default';
+  wsId: string;
 }) {
+  const href =
+    destination === 'metrics'
+      ? getCourseMetricsHref(wsId, courseId)
+      : getCourseHref(wsId, courseId);
   const styles = {
     warning:
       'border-dynamic-yellow bg-dynamic-yellow/10 text-dynamic-yellow hover:bg-dynamic-yellow/20',
@@ -307,4 +331,17 @@ function QuickActionLink({
       <ArrowRight className="h-3 w-3" />
     </a>
   );
+}
+
+function getCoursesHref(wsId: string) {
+  return `/${encodeURIComponent(wsId)}/courses`;
+}
+
+function getCourseHref(wsId: string, courseId: string) {
+  return `${getCoursesHref(wsId)}/${encodeURIComponent(courseId)}`;
+}
+
+function getCourseMetricsHref(wsId: string, courseId: string) {
+  const params = new URLSearchParams({ course: courseId });
+  return `/${encodeURIComponent(wsId)}/metrics?${params.toString()}`;
 }

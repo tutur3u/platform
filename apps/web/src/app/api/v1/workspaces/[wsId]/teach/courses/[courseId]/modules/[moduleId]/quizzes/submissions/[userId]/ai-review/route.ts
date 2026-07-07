@@ -51,7 +51,7 @@ export const POST = withSessionAuth(
 
       const access = await requireTeachWorkspaceAccess({
         context,
-        permission: 'view_user_groups',
+        permission: 'manage_users',
         wsId,
       });
       if (access instanceof NextResponse) return access;
@@ -108,6 +108,7 @@ export const POST = withSessionAuth(
         .from('workspace_quizzes')
         .select('question, type, content, answer')
         .eq('id', quizId)
+        .eq('ws_id', access.normalizedWsId)
         .maybeSingle();
 
       if (quizError || !quiz) {
@@ -136,10 +137,12 @@ export const POST = withSessionAuth(
       // 3. Fetch multiple choice options if applicable
       let options: unknown[] = [];
       if (quiz.type === 'multiple_choice') {
-        const { data: quizOptions } = await access.sbAdmin
-          .from('quiz_options')
-          .select('id, value, is_correct, explanation')
-          .eq('quiz_id', quizId);
+        const { data: quizOptions, error: quizOptionsError } =
+          await access.sbAdmin
+            .from('quiz_options')
+            .select('id, value, is_correct, explanation')
+            .eq('quiz_id', quizId);
+        if (quizOptionsError) throw quizOptionsError;
         options = quizOptions ?? [];
       }
 
@@ -171,14 +174,25 @@ Instructions:
       });
 
       // Persist the generated AI feedback to the database submission record
-      await access.sbAdmin
-        .from('course_module_quiz_submissions')
-        .update({
-          ai_feedback: object.explanation,
-        })
-        .eq('module_id', moduleId)
-        .eq('quiz_id', quizId)
-        .eq('user_id', userId);
+      const { data: updatedSubmission, error: updateError } =
+        await access.sbAdmin
+          .from('course_module_quiz_submissions')
+          .update({
+            ai_feedback: object.explanation,
+          })
+          .eq('module_id', moduleId)
+          .eq('quiz_id', quizId)
+          .eq('user_id', userId)
+          .select('id')
+          .maybeSingle();
+
+      if (updateError) throw updateError;
+      if (!updatedSubmission) {
+        return NextResponse.json(
+          { message: 'Student submission not found' },
+          { status: 404 }
+        );
+      }
 
       return NextResponse.json(object);
     } catch (error) {

@@ -57,7 +57,7 @@ export const GET = withSessionAuth(
 
       // 1. Fetch top 5 active courses with member/module counts
       const { data: courses, error: coursesError } = await access.sbAdmin
-        .from('user_groups')
+        .from('workspace_user_groups')
         .select('id, name, starting_date, ending_date')
         .eq('ws_id', normalizedWsId)
         .eq('archived', false)
@@ -77,10 +77,11 @@ export const GET = withSessionAuth(
       const courseIds = courses.map((c) => c.id);
 
       // 2. Get member counts per course
-      const { data: memberRows } = await access.sbAdmin
+      const { data: memberRows, error: memberRowsError } = await access.sbAdmin
         .from('workspace_user_groups_users')
         .select('group_id, user_id')
         .in('group_id', courseIds);
+      if (memberRowsError) throw memberRowsError;
 
       const membersByGroup: Record<string, string[]> = {};
       for (const row of memberRows ?? []) {
@@ -89,10 +90,11 @@ export const GET = withSessionAuth(
       }
 
       // 3. Get module IDs for all these courses
-      const { data: moduleRows } = await access.sbAdmin
+      const { data: moduleRows, error: moduleRowsError } = await access.sbAdmin
         .from('workspace_course_modules')
         .select('id, group_id')
         .in('group_id', courseIds);
+      if (moduleRowsError) throw moduleRowsError;
 
       const modulesByGroup: Record<string, string[]> = {};
       const moduleToGroup: Record<string, string> = {};
@@ -105,18 +107,20 @@ export const GET = withSessionAuth(
       const allModuleIds = (moduleRows ?? []).map((r) => r.id);
 
       // 4. Get quiz submissions for all modules at once
-      const { data: submissions } = allModuleIds.length
+      const { data: submissions, error: submissionsError } = allModuleIds.length
         ? await access.sbAdmin
             .from('course_module_quiz_submissions')
             .select('user_id, is_correct, module_id')
             .in('module_id', allModuleIds)
-        : { data: [] };
+        : { data: [], error: null };
+      if (submissionsError) throw submissionsError;
 
       // Get user links to map platform_user_id (from submissions) to virtual_user_id (from course membership)
-      const { data: userLinks } = await access.sbAdmin
+      const { data: userLinks, error: userLinksError } = await access.sbAdmin
         .from('workspace_user_linked_users')
         .select('platform_user_id, virtual_user_id')
         .eq('ws_id', normalizedWsId);
+      if (userLinksError) throw userLinksError;
 
       const platformToVirtual = new Map<string, string>();
       for (const link of userLinks ?? []) {

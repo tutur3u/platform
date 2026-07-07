@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
 import {
+  extractUserPrivateEmail,
   requireTeachWorkspaceAccess,
   validateTeachCourse,
   validateTeachCourseModule,
@@ -47,21 +48,6 @@ type SubmissionAnswer = {
 function firstJoined<T>(value: T | T[] | null | undefined): T | null {
   if (Array.isArray(value)) return value[0] ?? null;
   return value ?? null;
-}
-
-function extractEmail(
-  value:
-    | {
-        email?: string | null;
-      }
-    | {
-        email?: string | null;
-      }[]
-    | null
-    | undefined
-) {
-  if (Array.isArray(value)) return value[0]?.email ?? null;
-  return value?.email ?? null;
 }
 
 export const GET_inner = async (
@@ -174,7 +160,7 @@ export const GET_inner = async (
       ? {
           avatar_url: studentProfile.avatar_url,
           display_name: studentProfile.display_name,
-          email: extractEmail(studentProfile.user_private_details),
+          email: extractUserPrivateEmail(studentProfile.user_private_details),
           id: studentProfile.id,
         }
       : {
@@ -299,7 +285,7 @@ export const POST = withSessionAuth(
 
       const { quizId, isCorrect, feedback } = parsedBody.data;
 
-      const { error: updateErr } = await access.sbAdmin
+      const { data: updatedSubmission, error: updateErr } = await access.sbAdmin
         .from('course_module_quiz_submissions')
         .update({
           is_correct: isCorrect,
@@ -307,9 +293,17 @@ export const POST = withSessionAuth(
         })
         .eq('module_id', moduleId)
         .eq('quiz_id', quizId)
-        .eq('user_id', userId);
+        .eq('user_id', userId)
+        .select('id')
+        .maybeSingle();
 
       if (updateErr) throw updateErr;
+      if (!updatedSubmission) {
+        return NextResponse.json(
+          { message: 'Student submission not found' },
+          { status: 404 }
+        );
+      }
 
       await updateModuleCompletionStatus(access.sbAdmin, moduleId, userId);
 

@@ -85,15 +85,13 @@ export const POST = withSessionAuth(
         email: string | null;
       } | null;
 
-      if (!profile || !profile.email) {
+      if (!profile?.email) {
         return NextResponse.json(
           { message: 'Student email is not available' },
           { status: 400 }
         );
       }
 
-      const { searchParams } = new URL(_request.url);
-      const locale = searchParams.get('locale') || 'vi';
       const isVi = true; // Always send performance reports in Vietnamese as requested
 
       // 3. Get course modules and quizzes

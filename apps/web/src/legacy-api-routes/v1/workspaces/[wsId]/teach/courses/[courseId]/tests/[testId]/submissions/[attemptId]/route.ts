@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
 import {
+  extractUserPrivateEmail,
   requireTeachWorkspaceAccess,
   validateTeachCourse,
 } from '@/lib/teach/api';
@@ -37,21 +38,6 @@ type SubmissionQuiz = {
 type AnswerScoreRow = {
   score_awarded: number | null;
 };
-
-function extractEmail(
-  value:
-    | {
-        email?: string | null;
-      }
-    | {
-        email?: string | null;
-      }[]
-    | null
-    | undefined
-) {
-  if (Array.isArray(value)) return value[0]?.email ?? null;
-  return value?.email ?? null;
-}
 
 export const GET = withSessionAuth(
   async (
@@ -140,7 +126,7 @@ export const GET = withSessionAuth(
         ? {
             avatar_url: studentProfile.avatar_url,
             display_name: studentProfile.display_name,
-            email: extractEmail(studentProfile.user_private_details),
+            email: extractUserPrivateEmail(studentProfile.user_private_details),
             id: studentProfile.id,
           }
         : null;

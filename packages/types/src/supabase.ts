@@ -15642,30 +15642,36 @@ export type Database = {
       };
       course_module_quiz_submissions: {
         Row: {
+          ai_feedback: string | null;
           answer: Json | null;
           created_at: string;
+          feedback: string | null;
           id: string;
-          is_correct: boolean;
+          is_correct: boolean | null;
           module_id: string;
           quiz_id: string;
           selected_option_id: string | null;
           user_id: string;
         };
         Insert: {
+          ai_feedback?: string | null;
           answer?: Json | null;
           created_at?: string;
+          feedback?: string | null;
           id?: string;
-          is_correct: boolean;
+          is_correct?: boolean | null;
           module_id: string;
           quiz_id: string;
           selected_option_id?: string | null;
           user_id?: string;
         };
         Update: {
+          ai_feedback?: string | null;
           answer?: Json | null;
           created_at?: string;
+          feedback?: string | null;
           id?: string;
-          is_correct?: boolean;
+          is_correct?: boolean | null;
           module_id?: string;
           quiz_id?: string;
           selected_option_id?: string | null;
@@ -28290,8 +28296,10 @@ export type Database = {
           id: string;
           is_public: boolean;
           is_published: boolean;
+          is_quiz_score_published: boolean;
           module_group_id: string;
           name: string;
+          quiz_deadline: string | null;
           sort_key: number;
           youtube_links: string[] | null;
         };
@@ -28303,8 +28311,10 @@ export type Database = {
           id?: string;
           is_public?: boolean;
           is_published?: boolean;
+          is_quiz_score_published?: boolean;
           module_group_id: string;
           name?: string;
+          quiz_deadline?: string | null;
           sort_key: number;
           youtube_links?: string[] | null;
         };
@@ -28316,8 +28326,10 @@ export type Database = {
           id?: string;
           is_public?: boolean;
           is_published?: boolean;
+          is_quiz_score_published?: boolean;
           module_group_id?: string;
           name?: string;
+          quiz_deadline?: string | null;
           sort_key?: number;
           youtube_links?: string[] | null;
         };
