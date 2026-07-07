@@ -143,13 +143,14 @@ export function AppsLauncherDialog({
 
   const activeApps = getAppsForTab(activeTab);
   const dialogStyle = {
+    '--apps-launcher-height': 'min(760px, calc(100dvh - 2rem))',
     gridTemplateRows: 'auto auto minmax(0, 1fr)',
   } as CSSProperties;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="grid h-[calc(100dvh-2rem)] max-h-[760px] w-[calc(100vw-2rem)] max-w-[1120px] gap-0 overflow-hidden p-0 sm:h-[calc(100dvh-3rem)] sm:max-w-[1120px] xl:max-w-[1240px]"
+        className="grid h-[var(--apps-launcher-height)] w-[calc(100vw-2rem)] max-w-[1120px] gap-0 overflow-hidden p-0 sm:max-w-[1120px] xl:max-w-[1240px]"
         style={dialogStyle}
       >
         <DialogHeader className="shrink-0 border-b px-5 py-4 pr-12 text-left">
@@ -177,9 +178,11 @@ export function AppsLauncherDialog({
 
         <div className="min-h-0 overflow-hidden" data-slot="apps-launcher-body">
           <AppsTabPanel
+            activeTab={activeTab}
             apps={activeApps}
             categoryDescription={t(`app_category_descriptions.${activeTab}`)}
             countLabel={t('apps_count', { count: activeApps.length })}
+            getCategoryLabel={(category) => t(`app_categories.${category}`)}
             onOpen={openApp}
             openHereLabel={t('open_here')}
             openInNewTabLabel={t('open_in_new_tab')}
@@ -192,17 +195,21 @@ export function AppsLauncherDialog({
 }
 
 function AppsTabPanel({
+  activeTab,
   apps,
   categoryDescription,
   countLabel,
+  getCategoryLabel,
   onOpen,
   openHereLabel,
   openInNewTabLabel,
   openOptionsLabel,
 }: {
+  activeTab: AppCategoryTab;
   apps: readonly LaunchableApp[];
   categoryDescription: string;
   countLabel: string;
+  getCategoryLabel: (category: LaunchableAppCategory) => string;
   onOpen: (app: LaunchableApp, target: 'current-tab' | 'new-tab') => void;
   openHereLabel: string;
   openInNewTabLabel: string;
@@ -210,28 +217,118 @@ function AppsTabPanel({
 }) {
   return (
     <div
-      className="h-full max-h-full min-h-0 overflow-y-auto overscroll-contain p-3"
-      data-slot="apps-launcher-scroll"
+      className="flex h-full min-h-0 flex-col"
+      data-slot="apps-launcher-panel"
     >
-      <div className="mb-3 flex flex-wrap items-center justify-between gap-2 px-1 text-muted-foreground text-xs">
+      <div className="flex shrink-0 flex-wrap items-center justify-between gap-2 px-4 py-3 text-muted-foreground text-xs">
         <span>{categoryDescription}</span>
         <span className="font-medium">{countLabel}</span>
       </div>
       <div
-        className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3"
-        data-slot="apps-launcher-grid"
+        className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 pb-3"
+        data-slot="apps-launcher-scroll"
       >
-        {apps.map((app) => (
-          <AppLauncherItem
-            app={app}
-            key={app.slug}
+        {activeTab === 'all' ? (
+          <AppsByCategory
+            apps={apps}
+            getCategoryLabel={getCategoryLabel}
             onOpen={onOpen}
             openHereLabel={openHereLabel}
             openInNewTabLabel={openInNewTabLabel}
             openOptionsLabel={openOptionsLabel}
           />
-        ))}
+        ) : (
+          <AppsGrid
+            apps={apps}
+            onOpen={onOpen}
+            openHereLabel={openHereLabel}
+            openInNewTabLabel={openInNewTabLabel}
+            openOptionsLabel={openOptionsLabel}
+          />
+        )}
       </div>
+    </div>
+  );
+}
+
+function AppsByCategory({
+  apps,
+  getCategoryLabel,
+  onOpen,
+  openHereLabel,
+  openInNewTabLabel,
+  openOptionsLabel,
+}: {
+  apps: readonly LaunchableApp[];
+  getCategoryLabel: (category: LaunchableAppCategory) => string;
+  onOpen: (app: LaunchableApp, target: 'current-tab' | 'new-tab') => void;
+  openHereLabel: string;
+  openInNewTabLabel: string;
+  openOptionsLabel: string;
+}) {
+  return (
+    <div className="space-y-4" data-slot="apps-launcher-sections">
+      {LAUNCHABLE_APP_CATEGORIES.map((category) => {
+        const categoryApps = apps.filter((app) => app.category === category);
+
+        if (categoryApps.length === 0) return null;
+
+        const headingId = `apps-launcher-section-${category}`;
+
+        return (
+          <section
+            aria-labelledby={headingId}
+            data-slot="apps-launcher-section"
+            key={category}
+          >
+            <h3
+              className="mb-2 px-1 font-medium text-muted-foreground text-xs"
+              id={headingId}
+            >
+              {getCategoryLabel(category)}
+            </h3>
+            <AppsGrid
+              apps={categoryApps}
+              onOpen={onOpen}
+              openHereLabel={openHereLabel}
+              openInNewTabLabel={openInNewTabLabel}
+              openOptionsLabel={openOptionsLabel}
+            />
+          </section>
+        );
+      })}
+    </div>
+  );
+}
+
+function AppsGrid({
+  apps,
+  onOpen,
+  openHereLabel,
+  openInNewTabLabel,
+  openOptionsLabel,
+}: {
+  apps: readonly LaunchableApp[];
+  onOpen: (app: LaunchableApp, target: 'current-tab' | 'new-tab') => void;
+  openHereLabel: string;
+  openInNewTabLabel: string;
+  openOptionsLabel: string;
+}) {
+  return (
+    <div
+      className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3"
+      data-slot="apps-launcher-grid"
+    >
+      {apps.map((app) => (
+        <AppLauncherItem
+          app={app}
+          key={app.slug}
+          onOpen={onOpen}
+          openHereLabel={openHereLabel}
+          openInNewTabLabel={openInNewTabLabel}
+          openOptionsLabel={openOptionsLabel}
+        />
+      ))}
     </div>
   );
 }

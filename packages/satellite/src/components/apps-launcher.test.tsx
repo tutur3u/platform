@@ -99,18 +99,24 @@ describe('AppsLauncherDialog', () => {
       'h-[min(760px,calc(100dvh-2rem))]'
     );
     expect(dialogContent?.className).not.toContain('max-h-[calc(100dvh-2rem)]');
+    expect(dialogContent?.className).not.toContain('h-[calc(100dvh-2rem)]');
+    expect(dialogContent?.className).not.toContain('sm:h-[calc(100dvh-3rem)]');
+    expect(dialogContent?.className).not.toContain('max-h-[760px]');
     expect(dialogContent?.className).not.toContain('!top-4');
     expect(dialogContent?.className).not.toContain('!bottom-4');
     expect(dialogContent?.className).not.toContain('h-auto');
-    expect(dialogContent?.className).toContain('h-[calc(100dvh-2rem)]');
-    expect(dialogContent?.className).toContain('sm:h-[calc(100dvh-3rem)]');
-    expect(dialogContent?.className).toContain('max-h-[760px]');
+    expect(dialogContent?.className).toContain(
+      'h-[var(--apps-launcher-height)]'
+    );
     expect(dialogContent?.className).toContain('w-[calc(100vw-2rem)]');
     expect(dialogContent?.className).toContain('max-w-[1120px]');
     expect(dialogContent?.className).toContain('xl:max-w-[1240px]');
     expect(dialogContent?.className).toContain('overflow-hidden');
     expect(dialogContent?.getAttribute('style')).toContain(
       'grid-template-rows: auto auto minmax(0, 1fr)'
+    );
+    expect(dialogContent?.getAttribute('style')).toContain(
+      '--apps-launcher-height: min(760px, calc(100dvh - 2rem))'
     );
 
     const tabsRoot = document.querySelector('[data-slot="tabs"]');
@@ -123,12 +129,19 @@ describe('AppsLauncherDialog', () => {
     expect(launcherBody?.className).toContain('min-h-0');
     expect(launcherBody?.className).toContain('overflow-hidden');
 
+    const launcherPanel = document.querySelector(
+      '[data-slot="apps-launcher-panel"]'
+    );
+    expect(launcherPanel?.className).toContain('flex');
+    expect(launcherPanel?.className).toContain('h-full');
+    expect(launcherPanel?.className).toContain('min-h-0');
+    expect(launcherPanel?.className).toContain('flex-col');
+
     const scrollRegion = document.querySelector(
       '[data-slot="apps-launcher-scroll"]'
     );
-    expect(scrollRegion?.className).toContain('h-full');
-    expect(scrollRegion?.className).toContain('max-h-full');
     expect(scrollRegion?.className).toContain('min-h-0');
+    expect(scrollRegion?.className).toContain('flex-1');
     expect(scrollRegion?.className).toContain('overflow-y-auto');
 
     const launcherGrid = document.querySelector(
@@ -137,6 +150,34 @@ describe('AppsLauncherDialog', () => {
     expect(launcherGrid?.className).toContain('grid-cols-1');
     expect(launcherGrid?.className).toContain('sm:grid-cols-2');
     expect(launcherGrid?.className).toContain('lg:grid-cols-3');
+  });
+
+  it('groups the All tab by app category sections', () => {
+    renderDialog();
+
+    const sections = document.querySelectorAll(
+      '[data-slot="apps-launcher-section"]'
+    );
+    expect(sections).toHaveLength(7);
+    expect(
+      document.querySelector('[data-slot="apps-launcher-sections"]')
+    ).toBeTruthy();
+    expect(
+      Array.from(sections).map(
+        (section) => section.querySelector('h3')?.textContent
+      )
+    ).toEqual([
+      'Core',
+      'Productivity',
+      'Content',
+      'Operations',
+      'Learning',
+      'Developer',
+      'AI',
+    ]);
+    expect(
+      sections[0]?.querySelector('[data-slot="app-card-title"]')?.textContent
+    ).toBe('Platform');
   });
 
   it('renders compact app cards and filters with tabs', async () => {
@@ -186,6 +227,12 @@ describe('AppsLauncherDialog', () => {
     expect(screen.getByText('Tools')).toBeTruthy();
     expect(screen.queryByText('Calendar')).toBeNull();
     expect(screen.getByLabelText('Open options: Tools')).toBeTruthy();
+    expect(
+      document.querySelector('[data-slot="apps-launcher-sections"]')
+    ).toBeNull();
+    expect(
+      document.querySelectorAll('[data-slot="apps-launcher-grid"]')
+    ).toHaveLength(1);
   });
 
   it('opens apps in a new tab from the dropdown menu', async () => {
