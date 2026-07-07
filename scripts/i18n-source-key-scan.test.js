@@ -64,6 +64,52 @@ test('scanSourceKeys captures bare and namespaced translators in the same file',
   ]);
 });
 
+test('scanSourceKeys captures static conditional keys without option fallback strings', (t) => {
+  const projectRoot = createProject(t);
+  writeFile(
+    projectRoot,
+    'packages/ui/src/conditional.tsx',
+    `
+      import { useTranslations } from 'next-intl';
+
+      export function Conditional({ isRange }: { isRange: boolean }) {
+        const t = useTranslations();
+        return (
+          <>
+            {t(
+              isRange
+                ? 'ws-invoices.some_groups_unpaid_for_range'
+                : 'ws-invoices.some_groups_unpaid_for_month'
+            )}
+            {t('ws-invoices.combined_attendance_for_month', {
+              count: 2,
+              default: 'Combined fallback should not be reported',
+            })}
+          </>
+        );
+      }
+    `
+  );
+
+  assert.deepEqual(scanSourceKeys(projectRoot, 'packages/ui/src'), [
+    {
+      file: 'packages/ui/src/conditional.tsx',
+      key: 'ws-invoices.some_groups_unpaid_for_range',
+      namespace: '',
+    },
+    {
+      file: 'packages/ui/src/conditional.tsx',
+      key: 'ws-invoices.some_groups_unpaid_for_month',
+      namespace: '',
+    },
+    {
+      file: 'packages/ui/src/conditional.tsx',
+      key: 'ws-invoices.combined_attendance_for_month',
+      namespace: '',
+    },
+  ]);
+});
+
 test('checkAppSourceKeys does not use shared package key exceptions for local app source', (t) => {
   const projectRoot = createProject(t);
   writeJson(projectRoot, 'apps/finance/messages/en.json', {

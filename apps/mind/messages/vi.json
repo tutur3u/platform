@@ -251,6 +251,7 @@
       "draft": "Nháp",
       "empty": "Hỏi Mind để mở rộng đồ thị, hợp nhất kế hoạch trùng lặp, hoặc biến ý tưởng thô thành bản vá có cấu trúc.",
       "errorTitle": "Không thể hoàn tất",
+      "generatedPlanInTools": "Chế độ xem kế hoạch đã tạo nằm bên dưới. Chưa có bản nháp có thể áp dụng.",
       "generatedUi": "Giao diện đã tạo",
       "hideProposal": "Ẩn đề xuất",
       "implement": "Triển khai",
