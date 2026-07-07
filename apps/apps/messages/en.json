@@ -13,6 +13,9 @@
       "cms": {
         "description": "Content operations, schemas, previews, and publishing."
       },
+      "docs": {
+        "description": "Documentation, guides, and platform references."
+      },
       "drive": {
         "description": "Workspace files, folders, sharing, and storage operations."
       },
@@ -74,6 +77,7 @@
       "core": "Core",
       "developer": "Developer",
       "learning": "Learning",
+      "miscellaneous": "Miscellaneous",
       "operations": "Operations",
       "productivity": "Productivity"
     },
@@ -84,6 +88,7 @@
       "core": "The central product and workspace base.",
       "developer": "Tools for integration, testing, and package demos.",
       "learning": "Education apps for learners and teachers.",
+      "miscellaneous": "Docs, utilities, and public shortcuts.",
       "operations": "Business operations and resource management.",
       "productivity": "Daily coordination, planning, and execution."
     },
@@ -104,6 +109,7 @@
       "core": "Core",
       "developer": "Developer",
       "learning": "Learning",
+      "miscellaneous": "Miscellaneous",
       "operations": "Operations",
       "productivity": "Productivity"
     },
@@ -114,6 +120,7 @@
       "core": "Core entrypoints for the Tuturuuu workspace platform.",
       "developer": "Developer utilities, gateways, and technical tools.",
       "learning": "Learning apps for courses, practice, and teaching.",
+      "miscellaneous": "Miscellaneous apps for docs, utilities, and public shortcuts.",
       "operations": "Operations apps for money, inventory, and commerce.",
       "productivity": "Productivity apps for schedule, tasks, messages, and meetings."
     },

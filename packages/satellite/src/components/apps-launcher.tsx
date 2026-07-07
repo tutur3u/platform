@@ -1,7 +1,6 @@
 'use client';
 
 import {
-  Blocks,
   BookOpen,
   BookText,
   Boxes,
@@ -9,7 +8,6 @@ import {
   Calendar,
   CheckCircle2,
   ChevronRight,
-  Code2,
   FileText,
   Folder,
   Globe,
@@ -60,8 +58,8 @@ const APP_ICONS: Partial<Record<LaunchableApp['slug'], LucideIcon>> = {
   calendar: Calendar,
   chat: MessageSquare,
   cms: FileText,
+  docs: BookText,
   drive: Folder,
-  external: Blocks,
   finance: Wallet,
   hive: Server,
   inventory: Package,
@@ -71,7 +69,6 @@ const APP_ICONS: Partial<Record<LaunchableApp['slug'], LucideIcon>> = {
   mind: Brain,
   nova: Sparkles,
   platform: SquareTerminal,
-  playground: Code2,
   rewise: BookOpen,
   shortener: Globe,
   storefront: Store,
@@ -86,13 +83,13 @@ const APP_CATEGORY_TABS = ['all', ...LAUNCHABLE_APP_CATEGORIES] as const;
 type AppCategoryTab = (typeof APP_CATEGORY_TABS)[number];
 
 const CATEGORY_ACCENTS: Record<LaunchableAppCategory, string> = {
-  ai: 'var(--chart-4)',
-  content: 'var(--chart-3)',
-  core: 'var(--primary)',
-  developer: 'var(--chart-1)',
-  learning: 'var(--chart-5)',
-  operations: 'var(--chart-4)',
-  productivity: 'var(--chart-2)',
+  ai: 'hsl(var(--dynamic-cyan))',
+  core: 'hsl(var(--primary))',
+  developer: 'hsl(var(--dynamic-purple))',
+  learning: 'hsl(var(--dynamic-orange))',
+  miscellaneous: 'hsl(var(--dynamic-red))',
+  operations: 'hsl(var(--dynamic-green))',
+  productivity: 'hsl(var(--dynamic-blue))',
 };
 
 export function AppsLauncherDialog({

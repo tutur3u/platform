@@ -1,12 +1,11 @@
 import {
   ArrowUpRight,
-  Blocks,
   BookOpenCheck,
+  BookText,
   BrainCircuit,
   CalendarDays,
   Command,
   FilePenLine,
-  FlaskConical,
   GraduationCap,
   HardDrive,
   Hexagon,
@@ -41,8 +40,8 @@ const APP_ICONS: Record<GatewayAppSlug, LucideIcon> = {
   calendar: CalendarDays,
   chat: MessageSquare,
   cms: FilePenLine,
+  docs: BookText,
   drive: HardDrive,
-  external: Blocks,
   finance: Wallet,
   hive: Hexagon,
   inventory: Package,
@@ -52,7 +51,6 @@ const APP_ICONS: Record<GatewayAppSlug, LucideIcon> = {
   mind: BrainCircuit,
   nova: Sparkles,
   platform: Command,
-  playground: FlaskConical,
   tools: QrCodeIcon,
   rewise: BookOpenCheck,
   shortener: Link2,
@@ -63,12 +61,13 @@ const APP_ICONS: Record<GatewayAppSlug, LucideIcon> = {
 };
 
 const CATEGORY_TONES: Record<AppCategory, string> = {
-  ai: 'border-dynamic-purple/30 bg-dynamic-purple/10 text-dynamic-purple',
-  content: 'border-dynamic-orange/30 bg-dynamic-orange/10 text-dynamic-orange',
+  ai: 'border-dynamic-cyan/30 bg-dynamic-cyan/10 text-dynamic-cyan',
   core: 'border-dynamic-blue/30 bg-dynamic-blue/10 text-dynamic-blue',
-  developer: 'border-dynamic-green/30 bg-dynamic-green/10 text-dynamic-green',
-  learning: 'border-dynamic-yellow/30 bg-dynamic-yellow/10 text-dynamic-yellow',
-  operations: 'border-dynamic-red/30 bg-dynamic-red/10 text-dynamic-red',
+  developer:
+    'border-dynamic-purple/30 bg-dynamic-purple/10 text-dynamic-purple',
+  learning: 'border-dynamic-orange/30 bg-dynamic-orange/10 text-dynamic-orange',
+  miscellaneous: 'border-dynamic-red/30 bg-dynamic-red/10 text-dynamic-red',
+  operations: 'border-dynamic-green/30 bg-dynamic-green/10 text-dynamic-green',
   productivity: 'border-dynamic-blue/30 bg-dynamic-blue/10 text-dynamic-blue',
 };
 

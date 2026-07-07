@@ -20,20 +20,20 @@ const messages = {
     app_categories: {
       ai: 'AI',
       all: 'All',
-      content: 'Content',
       core: 'Core',
       developer: 'Developer',
       learning: 'Learning',
+      miscellaneous: 'Miscellaneous',
       operations: 'Operations',
       productivity: 'Productivity',
     },
     app_category_descriptions: {
       ai: 'AI apps for assistants, simulations, and creative thinking.',
       all: 'Every routable Tuturuuu app available from this launcher.',
-      content: 'Content apps for publishing, files, and delivery.',
       core: 'Core entrypoints for the Tuturuuu workspace platform.',
       developer: 'Developer utilities, gateways, and technical tools.',
       learning: 'Learning apps for courses, practice, and teaching.',
+      miscellaneous: 'Miscellaneous apps for docs, utilities, and shortcuts.',
       operations: 'Operations apps for money, inventory, and commerce.',
       productivity:
         'Productivity apps for schedule, tasks, messages, and meetings.',
@@ -84,6 +84,8 @@ describe('AppsLauncherDialog', () => {
     expect(screen.getByRole('heading', { name: 'Apps' })).toBeTruthy();
     expect(screen.getByRole('tab', { name: 'All' })).toBeTruthy();
     expect(screen.getByRole('tab', { name: 'Productivity' })).toBeTruthy();
+    expect(screen.queryByRole('tab', { name: 'Content' })).toBeNull();
+    expect(screen.getByRole('tab', { name: 'Miscellaneous' })).toBeTruthy();
     expect(screen.getByText('Calendar')).toBeTruthy();
     expect(screen.getByText('Tasks')).toBeTruthy();
     expect(
@@ -177,15 +179,36 @@ describe('AppsLauncherDialog', () => {
     ).toEqual([
       'Core',
       'Productivity',
-      'Content',
       'Operations',
       'Learning',
       'Developer',
       'AI',
+      'Miscellaneous',
     ]);
     expect(
       sections[0]?.querySelector('[data-slot="app-card-title"]')?.textContent
     ).toBe('Platform');
+    expect(screen.queryByText('External')).toBeNull();
+    expect(screen.queryByText('Playground')).toBeNull();
+
+    const getSectionTitles = (label: string) => {
+      const section = Array.from(sections).find(
+        (item) => item.querySelector('h3')?.textContent === label
+      );
+
+      return Array.from(
+        section?.querySelectorAll('[data-slot="app-card-title"]') ?? []
+      ).map((item) => item.textContent);
+    };
+
+    expect(getSectionTitles('Developer')).toContain('Apps');
+    expect(getSectionTitles('Operations')).toContain('CMS');
+    expect(getSectionTitles('AI')).toContain('Rewise');
+    expect(getSectionTitles('Miscellaneous')).toEqual([
+      'Docs',
+      'Tools',
+      'Shortener',
+    ]);
   });
 
   it('renders compact app cards and filters with tabs', async () => {
@@ -239,20 +262,35 @@ describe('AppsLauncherDialog', () => {
     fireEvent.mouseDown(developerTab, { button: 0, ctrlKey: false });
     fireEvent.click(developerTab);
 
-    await waitFor(() => expect(screen.getByText('Tools')).toBeTruthy());
-    expect(screen.getByText('Tools')).toBeTruthy();
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: 'Apps' })).toBeTruthy()
+    );
+    expect(screen.getByRole('button', { name: 'Apps' })).toBeTruthy();
+    expect(screen.queryByText('Tools')).toBeNull();
     expect(screen.queryByText('Calendar')).toBeNull();
     expect(
       screen.queryByText('Developer utilities, gateways, and technical tools.')
     ).toBeNull();
-    expect(screen.getByRole('button', { name: 'Tools' })).toBeTruthy();
-    expect(screen.queryByLabelText('Open options: Tools')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Apps' })).toBeTruthy();
+    expect(screen.queryByLabelText('Open options: Apps')).toBeNull();
     expect(
       document.querySelector('[data-slot="apps-launcher-sections"]')
     ).toBeNull();
     expect(
       document.querySelectorAll('[data-slot="apps-launcher-grid"]')
     ).toHaveLength(1);
+
+    const miscellaneousTab = screen.getByRole('tab', {
+      name: 'Miscellaneous',
+    });
+    fireEvent.pointerDown(miscellaneousTab, { button: 0, ctrlKey: false });
+    fireEvent.mouseDown(miscellaneousTab, { button: 0, ctrlKey: false });
+    fireEvent.click(miscellaneousTab);
+
+    await waitFor(() => expect(screen.getByText('Docs')).toBeTruthy());
+    expect(screen.getByText('Tools')).toBeTruthy();
+    expect(screen.getByText('Shortener')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Apps' })).toBeNull();
   });
 
   it('opens apps in a new tab by default from a card click', () => {

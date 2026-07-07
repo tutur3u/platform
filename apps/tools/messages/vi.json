@@ -8,6 +8,7 @@
       "core": "Cốt lõi",
       "developer": "Lập trình",
       "learning": "Học tập",
+      "miscellaneous": "Khác",
       "operations": "Vận hành",
       "productivity": "Năng suất"
     },
@@ -18,6 +19,7 @@
       "core": "Điểm vào cốt lõi cho nền tảng workspace Tuturuuu.",
       "developer": "Tiện ích lập trình, gateway và công cụ kỹ thuật.",
       "learning": "Ứng dụng học tập cho khóa học, luyện tập và giảng dạy.",
+      "miscellaneous": "Ứng dụng khác cho tài liệu, tiện ích và lối tắt công khai.",
       "operations": "Ứng dụng vận hành cho tài chính, kho hàng và thương mại.",
       "productivity": "Ứng dụng năng suất cho lịch, tác vụ, tin nhắn và họp."
     },

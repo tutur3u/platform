@@ -2077,6 +2077,7 @@
       "core": "Core",
       "developer": "Developer",
       "learning": "Learning",
+      "miscellaneous": "Miscellaneous",
       "operations": "Operations",
       "productivity": "Productivity"
     },
@@ -2087,6 +2088,7 @@
       "core": "Core entrypoints for the Tuturuuu workspace platform.",
       "developer": "Developer utilities, gateways, and technical tools.",
       "learning": "Learning apps for courses, practice, and teaching.",
+      "miscellaneous": "Miscellaneous apps for docs, utilities, and public shortcuts.",
       "operations": "Operations apps for money, inventory, and commerce.",
       "productivity": "Productivity apps for schedule, tasks, messages, and meetings."
     },

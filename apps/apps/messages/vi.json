@@ -13,6 +13,9 @@
       "cms": {
         "description": "Vận hành nội dung, schema, xem trước và xuất bản."
       },
+      "docs": {
+        "description": "Tài liệu, hướng dẫn và tham chiếu nền tảng."
+      },
       "drive": {
         "description": "Tệp, thư mục, chia sẻ và vận hành lưu trữ trong workspace."
       },
@@ -74,6 +77,7 @@
       "core": "Cốt lõi",
       "developer": "Lập trình",
       "learning": "Học tập",
+      "miscellaneous": "Khác",
       "operations": "Vận hành",
       "productivity": "Năng suất"
     },
@@ -84,6 +88,7 @@
       "core": "Nền tảng sản phẩm và workspace trung tâm.",
       "developer": "Công cụ tích hợp, kiểm thử và demo package.",
       "learning": "Ứng dụng giáo dục cho học viên và giáo viên.",
+      "miscellaneous": "Tài liệu, tiện ích và lối tắt công khai.",
       "operations": "Vận hành kinh doanh và quản lý tài nguyên.",
       "productivity": "Điều phối, lập kế hoạch và thực thi hằng ngày."
     },
@@ -104,6 +109,7 @@
       "core": "Cốt lõi",
       "developer": "Lập trình",
       "learning": "Học tập",
+      "miscellaneous": "Khác",
       "operations": "Vận hành",
       "productivity": "Năng suất"
     },
@@ -114,6 +120,7 @@
       "core": "Điểm vào cốt lõi cho nền tảng workspace Tuturuuu.",
       "developer": "Tiện ích lập trình, gateway và công cụ kỹ thuật.",
       "learning": "Ứng dụng học tập cho khóa học, luyện tập và giảng dạy.",
+      "miscellaneous": "Ứng dụng khác cho tài liệu, tiện ích và lối tắt công khai.",
       "operations": "Ứng dụng vận hành cho tài chính, kho hàng và thương mại.",
       "productivity": "Ứng dụng năng suất cho lịch, tác vụ, tin nhắn và họp."
     },

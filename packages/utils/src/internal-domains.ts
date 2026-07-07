@@ -17,6 +17,10 @@ export const PRODUCTION_INTERNAL_APP_DOMAINS = [
     url: 'https://cms.tuturuuu.com',
   },
   {
+    name: 'docs',
+    url: 'https://docs.tuturuuu.com',
+  },
+  {
     name: 'calendar',
     url: 'https://calendar.tuturuuu.com',
   },
@@ -118,6 +122,10 @@ export const PORTLESS_INTERNAL_APP_DOMAINS = [
   {
     name: 'cms',
     url: getTuturuuuPortlessAppOrigin('cms'),
+  },
+  {
+    name: 'docs',
+    url: getTuturuuuPortlessAppOrigin('docs'),
   },
   {
     name: 'calendar',

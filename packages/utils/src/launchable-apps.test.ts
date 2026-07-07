@@ -3,6 +3,8 @@ import {
   getLaunchableApp,
   getLaunchableAppByTitle,
   getLaunchableAppOrigin,
+  LAUNCHABLE_APP_CATEGORIES,
+  LAUNCHABLE_APPS,
   type LaunchableWorkspace,
   resolveLaunchableAppPath,
   resolveLaunchableAppUrl,
@@ -27,6 +29,21 @@ describe('launchable apps', () => {
     expect(getLaunchableAppByTitle('apps gateway')?.slug).toBe('apps');
   });
 
+  it('keeps retired apps out of the catalog and pins category overrides', () => {
+    expect(LAUNCHABLE_APPS.map((app) => app.slug)).not.toContain('external');
+    expect(LAUNCHABLE_APPS.map((app) => app.slug)).not.toContain('playground');
+    expect(LAUNCHABLE_APP_CATEGORIES).not.toContain('content');
+    expect(LAUNCHABLE_APP_CATEGORIES).toContain('miscellaneous');
+    expect(getLaunchableApp('external')).toBeNull();
+    expect(getLaunchableApp('playground')).toBeNull();
+    expect(getLaunchableApp('apps')?.category).toBe('developer');
+    expect(getLaunchableApp('cms')?.category).toBe('operations');
+    expect(getLaunchableApp('rewise')?.category).toBe('ai');
+    expect(getLaunchableApp('docs')?.category).toBe('miscellaneous');
+    expect(getLaunchableApp('tools')?.category).toBe('miscellaneous');
+    expect(getLaunchableApp('shortener')?.category).toBe('miscellaneous');
+  });
+
   it('resolves production, Portless, and local origins', () => {
     const app = getLaunchableApp('calendar');
 
@@ -45,6 +62,15 @@ describe('launchable apps', () => {
     expect(meet).not.toBeNull();
     expect(getLaunchableAppOrigin(meet!, { environment: 'production' })).toBe(
       'https://meet.tuturuuu.com'
+    );
+
+    const docs = getLaunchableApp('docs');
+    expect(docs).not.toBeNull();
+    expect(getLaunchableAppOrigin(docs!, { environment: 'production' })).toBe(
+      'https://docs.tuturuuu.com'
+    );
+    expect(getLaunchableAppOrigin(docs!, { environment: 'portless' })).toBe(
+      'https://docs.tuturuuu.localhost'
     );
   });
 
