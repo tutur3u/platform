@@ -301,7 +301,12 @@
     "status": "Trạng thái",
     "student": "Học sinh",
     "students": "học sinh",
-    "title": "Hiệu suất học sinh"
+    "title": "Hiệu suất học sinh",
+    "actions": "Hành động",
+    "sendReport": "Gửi báo cáo",
+    "sent": "Đã gửi",
+    "reportSentSuccess": "Gửi báo cáo hiệu suất thành công.",
+    "reportSentError": "Gửi báo cáo thất bại."
   },
   "teachMembers": {
     "remove": "Gỡ học viên",

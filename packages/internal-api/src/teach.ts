@@ -688,3 +688,18 @@ export function getCourseStudentPerformance(
     { cache: 'no-store' }
   );
 }
+
+export function sendStudentPerformanceReport(
+  workspaceId: string,
+  courseId: string,
+  userId: string,
+  locale?: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  const query = locale ? { locale } : undefined;
+  return client.json<{ message: string }>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/teach/courses/${encodePathSegment(courseId)}/student-performance/${encodePathSegment(userId)}/send-report`,
+    { method: 'POST', cache: 'no-store', query }
+  );
+}

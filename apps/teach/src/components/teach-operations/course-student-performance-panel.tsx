@@ -8,6 +8,7 @@ import {
   ChevronDown,
   ChevronUp,
   Clock,
+  Mail,
   RefreshCw,
   TrendingDown,
   TrendingUp,
@@ -16,10 +17,12 @@ import {
 } from '@tuturuuu/icons';
 import {
   getCourseStudentPerformance,
+  sendStudentPerformanceReport,
   type StudentPerformanceStat,
 } from '@tuturuuu/internal-api';
 import { cn } from '@tuturuuu/utils/format';
-import { useTranslations } from 'next-intl';
+import { toast } from '@tuturuuu/ui/sonner';
+import { useLocale, useTranslations } from 'next-intl';
 import { useState } from 'react';
 
 export function CourseStudentPerformancePanel({
@@ -231,6 +234,9 @@ export function CourseStudentPerformancePanel({
                     <th className="pb-2 font-black text-xs uppercase tracking-wider">
                       {t('status') || 'Status'}
                     </th>
+                    <th className="pb-2 text-right font-black text-xs uppercase tracking-wider">
+                      {t('actions') || 'Actions'}
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
@@ -240,6 +246,8 @@ export function CourseStudentPerformancePanel({
                       student={s}
                       t={t}
                       totalModules={data?.totalModules ?? 0}
+                      courseId={courseId}
+                      wsId={wsId}
                     />
                   ))}
                 </tbody>
@@ -290,10 +298,14 @@ function StudentRow({
   student: s,
   t,
   totalModules,
+  courseId,
+  wsId,
 }: {
   student: StudentPerformanceStat;
   t: ReturnType<typeof useTranslations<'teachStudentPerformance'>>;
   totalModules: number;
+  courseId: string;
+  wsId: string;
 }) {
   const name = s.displayName ?? s.email ?? s.userId.slice(0, 8);
   const progressPct =
@@ -306,6 +318,31 @@ function StudentRow({
     : s.isLowScorer
       ? 'warning'
       : 'ok';
+
+  const locale = useLocale();
+  const [isSending, setIsSending] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
+
+  const handleSendReport = async () => {
+    if (isSending || isSuccess) return;
+    setIsSending(true);
+
+    try {
+      const res = await sendStudentPerformanceReport(wsId, courseId, s.userId, locale);
+      if (res.message === 'success') {
+        setIsSuccess(true);
+        toast.success(t('reportSentSuccess') || 'Performance report sent successfully.');
+        setTimeout(() => setIsSuccess(false), 5000); // reset after 5s
+      } else {
+        toast.error(t('reportSentError') || 'Failed to send report.');
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error(t('reportSentError') || 'Failed to send report.');
+    } finally {
+      setIsSending(false);
+    }
+  };
 
   return (
     <tr
@@ -420,7 +457,7 @@ function StudentRow({
       </td>
 
       {/* Risk status badges */}
-      <td className="py-3">
+      <td className="py-3 pr-3">
         <div className="flex flex-wrap gap-1">
           {s.hasNotSubmitted && (
             <Badge icon={XCircle} label={t('neverSubmitted') || 'Never submitted'} variant="danger" />
@@ -435,6 +472,30 @@ function StudentRow({
             <Badge icon={CheckCircle2} label={t('onTrack') || 'On track'} variant="ok" />
           )}
         </div>
+      </td>
+
+      {/* Action buttons */}
+      <td className="py-3 text-right">
+        {s.email && (
+          <button
+            onClick={handleSendReport}
+            disabled={isSending}
+            className={cn(
+              "inline-flex items-center gap-1.5 border-2 border-border bg-background px-2.5 py-1.5 font-bold text-xs shadow-[2px_2px_0_var(--border)] transition hover:-translate-y-0.5 disabled:opacity-50",
+              isSuccess && "border-dynamic-green text-dynamic-green bg-dynamic-green/5 shadow-none pointer-events-none"
+            )}
+            type="button"
+          >
+            {isSending ? (
+              <RefreshCw className="h-3 w-3 animate-spin" />
+            ) : isSuccess ? (
+              <CheckCircle2 className="h-3 w-3" />
+            ) : (
+              <Mail className="h-3 w-3" />
+            )}
+            {isSuccess ? (t('sent') || 'Sent') : (t('sendReport') || 'Send Report')}
+          </button>
+        )}
       </td>
     </tr>
   );

@@ -301,7 +301,12 @@
     "status": "Status",
     "student": "Student",
     "students": "students",
-    "title": "Student Performance"
+    "title": "Student Performance",
+    "actions": "Actions",
+    "sendReport": "Send Report",
+    "sent": "Sent",
+    "reportSentSuccess": "Performance report sent successfully.",
+    "reportSentError": "Failed to send report."
   },
   "teachMembers": {
     "remove": "Remove learner",

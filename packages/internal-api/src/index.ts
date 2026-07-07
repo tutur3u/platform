@@ -1540,6 +1540,7 @@ export {
   getCourseStudentPerformance,
   type StudentPerformanceStat,
   type CourseStudentPerformanceResponse,
+  sendStudentPerformanceReport,
   updateWorkspaceCourseAttendance,
   updateWorkspaceCourseIndicators,
   updateWorkspaceCourseTest,

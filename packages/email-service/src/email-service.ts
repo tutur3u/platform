@@ -638,7 +638,7 @@ export class EmailService {
     );
     const sbAdmin = (await createAdminClient()) as SupabaseClient<Database>;
 
-    const { data: credentials, error } = await sbAdmin
+    const { data: dbCredentials, error } = await sbAdmin
       .from('workspace_email_credentials')
       .select('*')
       .eq('ws_id', wsId)
@@ -648,8 +648,27 @@ export class EmailService {
       throw new Error(`Error fetching email credentials: ${error.message}`);
     }
 
-    if (!credentials) {
-      throw new Error(`No email credentials found for workspace ${wsId}`);
+    let credentials = null;
+    if (dbCredentials) {
+      credentials = dbCredentials;
+    } else {
+      const devModeEnabled = DEV_MODE || Boolean(options?.devMode);
+      const forceProductionEmail = process.env.SEND_PRODUCTION_EMAIL === 'true';
+      const isDev = devModeEnabled && !forceProductionEmail;
+      
+      if (isDev) {
+        // Fall back to dummy mock credentials in development so local testing works out-of-the-box
+        credentials = {
+          ws_id: wsId,
+          region: 'us-east-1',
+          access_id: 'mock-access-id',
+          access_key: 'mock-access-key',
+          source_name: 'Tuturuuu Dev',
+          source_email: 'dev@tuturuuu.com',
+        };
+      } else {
+        throw new Error(`No email credentials found for workspace ${wsId}`);
+      }
     }
 
     const workspaceRateLimits = await getWorkspaceEmailRateLimitOverrides(
