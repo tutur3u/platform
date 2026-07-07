@@ -1,3 +1,4 @@
+import { connection } from 'next/server';
 import { Suspense } from 'react';
 import {
   getLocalE2ESupabaseBrowserConfig,
@@ -9,7 +10,9 @@ function LoginShellFallback() {
   return <div className="min-h-screen bg-root-background" />;
 }
 
-export default function Login() {
+export default async function Login() {
+  await connection();
+
   const localE2EAuthBypass = isLocalE2EAuthBypassEnabled();
 
   return (

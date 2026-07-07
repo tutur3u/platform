@@ -4,6 +4,7 @@ import { LoginContent } from './login-content';
 import Login, * as pageModule from './page';
 
 const mocks = vi.hoisted(() => ({
+  connection: vi.fn(),
   getLocalE2ESupabaseBrowserConfig: vi.fn(),
   isLocalE2EAuthBypassEnabled: vi.fn(),
   locationReplace: vi.fn(),
@@ -43,6 +44,11 @@ vi.mock('@/lib/auth/local-e2e', () => ({
   getLocalE2ESupabaseBrowserConfig: () =>
     mocks.getLocalE2ESupabaseBrowserConfig(),
   isLocalE2EAuthBypassEnabled: () => mocks.isLocalE2EAuthBypassEnabled(),
+}));
+
+vi.mock('next/server', () => ({
+  connection: (...args: Parameters<typeof mocks.connection>) =>
+    mocks.connection(...args),
 }));
 
 vi.mock('next/navigation', () => ({
@@ -121,7 +127,7 @@ async function renderLoginPage(
   searchParams: Record<string, string | string[] | undefined> = {}
 ) {
   setSearchParams(searchParams);
-  render(<Login />);
+  render(await Login());
 
   return screen.findByTestId('login-form');
 }
@@ -130,6 +136,7 @@ describe('Login page', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.loginFormProps = [];
+    mocks.connection.mockResolvedValue(undefined);
     mocks.getLocalE2ESupabaseBrowserConfig.mockReturnValue(null);
     mocks.isLocalE2EAuthBypassEnabled.mockReturnValue(false);
     setSearchParams();
@@ -140,9 +147,10 @@ describe('Login page', () => {
     expect('revalidate' in pageModule).toBe(false);
   });
 
-  it('renders the cacheable login shell from a direct hard load', async () => {
+  it('renders the request-bound login shell from a direct hard load', async () => {
     await renderLoginPage();
 
+    expect(mocks.connection).toHaveBeenCalledOnce();
     expect(
       screen.getByRole('heading', { name: 'Welcome Back' })
     ).toBeInTheDocument();
