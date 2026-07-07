@@ -370,6 +370,7 @@
       }
     },
     "eyebrow": "Learner landing",
+    "greeting": "Hi, {user}",
     "lead": "Learn is the learner-facing app for Tuturuuu education workspaces. Students practice, follow course modules, clear assignments, and read progress without entering the teacher dashboard.",
     "panelBody": "Auth stays with the Tuturuuu platform. After sign-in, Learn opens the right workspace dashboard for the current learner or linked parent.",
     "panelTitle": "One account, focused learning",

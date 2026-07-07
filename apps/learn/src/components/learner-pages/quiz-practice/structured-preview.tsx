@@ -117,15 +117,15 @@ export function StructuredQuizPreview({
           {matchingPairs.map((pair, index) => (
             <div
               key={`${pair.left}-${index}`}
-              className="grid gap-3 border-2 border-border bg-muted/20 p-3 text-sm shadow-[2px_2px_0_var(--border)] md:grid-cols-[1fr_1fr] md:items-center"
+              className="grid gap-3 border-2 border-border bg-muted/20 p-3 text-sm shadow-[2px_2px_0_var(--border)] md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] md:items-center"
             >
-              <span className="font-bold">{pair.left}</span>
+              <span className="min-w-0 font-bold">{pair.left}</span>
               <Select
                 disabled={isSubmitted}
                 onValueChange={(value) => handleMatchingChange(index, value)}
                 value={selectedMatchingPairs[index]?.right || undefined}
               >
-                <SelectTrigger className="border-2 border-border bg-background font-bold shadow-[2px_2px_0_var(--border)]">
+                <SelectTrigger className="min-w-0 max-w-full border-2 border-border bg-background font-bold shadow-[2px_2px_0_var(--border)] [&>span]:min-w-0 [&>span]:flex-1 [&>span]:truncate [&>span]:text-left">
                   <SelectValue placeholder={matchingPlaceholder} />
                 </SelectTrigger>
                 <SelectContent>
