@@ -19,6 +19,7 @@ const SUPABASE_URL =
   process.env.NEXT_PUBLIC_SUPABASE_URL ?? LOCAL_E2E_SUPABASE_URL;
 const SUPABASE_SECRET_KEY =
   process.env.SUPABASE_SECRET_KEY ?? LOCAL_E2E_SUPABASE_SECRET_KEY;
+const LOGIN_PATH = `/${DEFAULT_LOCALE}/login`;
 
 function serviceHeaders({ prefer }: { prefer?: string } = {}) {
   return {
@@ -135,7 +136,7 @@ test.describe('Cross-app return confirmation', () => {
       ).toBeVisible();
       await expect(page.getByText('Signed in as')).toBeVisible();
       const currentUrl = new URL(page.url());
-      expect(currentUrl.pathname).toBe('/login');
+      expect(currentUrl.pathname).toBe(LOGIN_PATH);
       expect(currentUrl.searchParams.get('returnUrl')).toBe(returnUrl);
       expect(currentUrl.searchParams.has('token')).toBe(false);
       expect(currentUrl.searchParams.has('targetApp')).toBe(false);
