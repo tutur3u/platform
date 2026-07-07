@@ -38,6 +38,21 @@ type AnswerScoreRow = {
   score_awarded: number | null;
 };
 
+function extractEmail(
+  value:
+    | {
+        email?: string | null;
+      }
+    | {
+        email?: string | null;
+      }[]
+    | null
+    | undefined
+) {
+  if (Array.isArray(value)) return value[0]?.email ?? null;
+  return value?.email ?? null;
+}
+
 export const GET = withSessionAuth(
   async (
     _request,
@@ -115,11 +130,20 @@ export const GET = withSessionAuth(
       }
 
       // Fetch user profile info
-      const { data: student } = await access.sbAdmin
+      const { data: studentProfile } = await access.sbAdmin
         .from('users')
-        .select('id, display_name, email, avatar_url')
+        .select('id, display_name, avatar_url, user_private_details(email)')
         .eq('id', attempt.user_id)
         .maybeSingle();
+
+      const student = studentProfile
+        ? {
+            avatar_url: studentProfile.avatar_url,
+            display_name: studentProfile.display_name,
+            email: extractEmail(studentProfile.user_private_details),
+            id: studentProfile.id,
+          }
+        : null;
 
       // Fetch quizzes linked to this test
       const { data: testQuizzes, error: tqErr } = await access.sbAdmin

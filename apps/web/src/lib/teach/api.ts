@@ -104,6 +104,26 @@ export async function validateTeachCourse({
   return data;
 }
 
+export async function validateTeachCourseModule({
+  courseId,
+  db,
+  moduleId,
+}: {
+  courseId: string;
+  db: TypedSupabaseClient;
+  moduleId: string;
+}) {
+  const { data, error } = await db
+    .from('workspace_course_modules')
+    .select('id, group_id, name')
+    .eq('id', moduleId)
+    .eq('group_id', courseId)
+    .maybeSingle();
+
+  if (error) throw error;
+  return data;
+}
+
 export async function getTeachActorWorkspaceUserId({
   db,
   platformUserId,

@@ -29,6 +29,7 @@ import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { useCallback, useRef, useState } from 'react';
 import { LessonSkeleton, SaveStatus, YoutubeRow } from './lesson-components';
+import { LessonQuizSubmissionsSection } from './lesson-quiz-submissions-section';
 import LessonQuizzesSection from './quizzes-section';
 import { lessonQueryKey, useLessonDetail } from './use-lesson-detail';
 
@@ -513,6 +514,11 @@ export function LessonDetailClient({
         </section>
 
         <LessonQuizzesSection wsId={wsId} lessonId={lessonId} />
+        <LessonQuizSubmissionsSection
+          courseId={courseId}
+          moduleId={lessonId}
+          wsId={wsId}
+        />
       </div>
     </main>
   );

@@ -18,6 +18,7 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
+import { QuizSubmissionResponseViewer } from '@/components/quiz-submission-response-viewer';
 
 interface TestSubmissionDetailDialogProps {
   wsId: string;
@@ -114,15 +115,6 @@ interface SubmissionContentProps {
   detail: TeachTestSubmissionDetail;
   t: ReturnType<typeof useTranslations>;
 }
-
-type SubmissionQuiz = TeachTestSubmissionDetail['quizzes'][number];
-type SubmissionAnswer = TeachTestSubmissionDetail['answers'][number];
-type MatchingPair = { left: string; right: string };
-type MultipleChoiceOption = {
-  id: string;
-  index: number | null;
-  value: string;
-};
 
 function SubmissionContent({
   wsId,
@@ -238,7 +230,11 @@ function SubmissionContent({
 
               {/* Student response render */}
               <div className="border-2 border-border border-dashed bg-muted/10 p-3.5 text-sm">
-                <ResponseViewer quiz={quiz} answer={quizAns} t={t} />
+                <QuizSubmissionResponseViewer
+                  quiz={quiz}
+                  answer={quizAns}
+                  t={t}
+                />
               </div>
 
               {/* Teacher feedback form */}
@@ -260,297 +256,6 @@ function SubmissionContent({
       </div>
     </div>
   );
-}
-
-// Sub-component to render student's responses
-function ResponseViewer({
-  quiz,
-  answer,
-  t,
-}: {
-  quiz: SubmissionQuiz;
-  answer: SubmissionAnswer;
-  t: ReturnType<typeof useTranslations>;
-}) {
-  const getParsedContent = (content: unknown): unknown => {
-    if (typeof content === 'string') {
-      try {
-        return JSON.parse(content);
-      } catch {
-        return null;
-      }
-    }
-    return content;
-  };
-
-  const asRecord = (value: unknown): Record<string, unknown> | null => {
-    const parsedValue = getParsedContent(value);
-    if (
-      !parsedValue ||
-      typeof parsedValue !== 'object' ||
-      Array.isArray(parsedValue)
-    )
-      return null;
-    return parsedValue as Record<string, unknown>;
-  };
-
-  const displayText = (value: unknown): string => {
-    if (typeof value === 'string') return value;
-    if (typeof value === 'number' || typeof value === 'boolean')
-      return String(value);
-    return '';
-  };
-
-  const getArrayProperty = (value: unknown, key: string): unknown[] => {
-    const property = asRecord(value)?.[key];
-    return Array.isArray(property) ? property : [];
-  };
-
-  const getStringItems = (value: unknown, key: string): string[] => {
-    return getArrayProperty(value, key).map(displayText);
-  };
-
-  const getMatchingPairs = (value: unknown): MatchingPair[] => {
-    const parsedValue = getParsedContent(value);
-    const pairs = Array.isArray(parsedValue)
-      ? parsedValue
-      : getArrayProperty(parsedValue, 'pairs');
-    return pairs
-      .map((pair) => {
-        const record = asRecord(pair);
-        return {
-          left: displayText(record?.left),
-          right: displayText(record?.right),
-        };
-      })
-      .filter((pair) => Boolean(pair.left && pair.right));
-  };
-
-  const getSelectedIndexAnswer = (value: unknown) => {
-    const selectedIndex = asRecord(value)?.selectedIndex;
-    return typeof selectedIndex === 'number' ? selectedIndex : null;
-  };
-
-  const getTrueFalseAnswer = (value: unknown) => {
-    if (typeof value === 'boolean') return value;
-
-    const correct = asRecord(value)?.correct;
-    return typeof correct === 'boolean' ? correct : null;
-  };
-
-  const getAnswerOrder = (value: unknown, fallback: string[]) => {
-    if (Array.isArray(value)) return value.map(displayText).filter(Boolean);
-
-    const order = getStringItems(value, 'order');
-    return order.length > 0 ? order : fallback;
-  };
-
-  const getMultipleChoiceOptions = (
-    quiz: SubmissionQuiz
-  ): MultipleChoiceOption[] => {
-    const contentOptions = getArrayProperty(quiz.content, 'options');
-
-    const parsedContentOptions = contentOptions
-      .map((option: unknown, index: number) => ({
-        id: `content-${index}`,
-        value: displayText(option),
-        index,
-      }))
-      .filter((opt: { id: string; value: string; index: number }) =>
-        Boolean(opt.value)
-      );
-
-    if (parsedContentOptions.length > 0) {
-      return parsedContentOptions;
-    }
-
-    return (quiz.quiz_options ?? []).map((option) => ({
-      id: option.id,
-      value: option.value,
-      index: null,
-    }));
-  };
-
-  const isCorrect = answer.is_correct;
-
-  if (!quiz.type || quiz.type === 'multiple_choice') {
-    const options = getMultipleChoiceOptions(quiz);
-    return (
-      <div className="space-y-2">
-        <p className="mb-1 font-bold text-muted-foreground text-xs uppercase tracking-wider">
-          {t('teachModules.studentChoice')}
-        </p>
-        {options.map((opt) => {
-          const isSelected =
-            answer.selected_option_id === opt.id ||
-            (opt.index !== null &&
-              getSelectedIndexAnswer(answer.answer) === opt.index);
-
-          const rawOpt = quiz.quiz_options?.find((o) => o.id === opt.id);
-          const isOptionCorrect = rawOpt?.is_correct ?? false;
-
-          let optionStyle = 'border-border bg-background';
-          if (isSelected) {
-            optionStyle = isCorrect
-              ? 'border-dynamic-green bg-dynamic-green/10 text-dynamic-green-foreground'
-              : 'border-dynamic-red bg-dynamic-red/10 text-dynamic-red-foreground';
-          } else if (isOptionCorrect) {
-            optionStyle =
-              'border-dynamic-green bg-dynamic-green/5 border-dashed text-dynamic-green-foreground';
-          }
-
-          return (
-            <div
-              key={opt.id}
-              className={cn(
-                'flex items-center justify-between border-2 p-3 shadow-[1px_1px_0_var(--border)]',
-                optionStyle
-              )}
-            >
-              <span className="font-bold text-sm">{opt.value}</span>
-              {isSelected && (
-                <span className="font-black text-xs uppercase tracking-wider">
-                  {isCorrect
-                    ? t('teachModules.selectedCorrectAnswer')
-                    : t('teachModules.selectedIncorrectAnswer')}
-                </span>
-              )}
-              {!isSelected && isOptionCorrect && (
-                <span className="font-bold text-muted-foreground text-xs uppercase tracking-wider">
-                  {t('teachModules.correctAnswerLabel')}
-                </span>
-              )}
-            </div>
-          );
-        })}
-      </div>
-    );
-  }
-
-  if (quiz.type === 'true_false') {
-    const studentVal = getTrueFalseAnswer(answer.answer);
-    const options = [
-      { label: t('ws-quizzes.true'), value: true },
-      { label: t('ws-quizzes.false'), value: false },
-    ];
-
-    return (
-      <div className="space-y-2">
-        <p className="mb-1 font-bold text-muted-foreground text-xs uppercase tracking-wider">
-          {t('teachModules.studentAnswer')}
-        </p>
-        <div className="grid grid-cols-2 gap-3">
-          {options.map((opt) => {
-            const isSelected = studentVal === opt.value;
-            let optionStyle = 'border-border bg-background';
-            if (isSelected) {
-              optionStyle = isCorrect
-                ? 'border-dynamic-green bg-dynamic-green/10 text-dynamic-green-foreground'
-                : 'border-dynamic-red bg-dynamic-red/10 text-dynamic-red-foreground';
-            } else if (studentVal !== null && !isSelected && !isCorrect) {
-              optionStyle =
-                'border-dynamic-green bg-dynamic-green/5 border-dashed text-dynamic-green-foreground';
-            }
-
-            return (
-              <div
-                key={String(opt.value)}
-                className={cn(
-                  'flex items-center justify-center border-2 py-3 font-bold text-sm shadow-[1px_1px_0_var(--border)]',
-                  optionStyle
-                )}
-              >
-                {opt.label}
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    );
-  }
-
-  if (quiz.type === 'ordering') {
-    const items = getStringItems(quiz.content, 'items');
-    const submittedOrder = getAnswerOrder(answer.answer, items);
-
-    return (
-      <div className="space-y-2">
-        <p className="mb-1 font-bold text-muted-foreground text-xs uppercase tracking-wider">
-          {t('teachModules.studentOrder')}
-        </p>
-        <div className="space-y-2">
-          {submittedOrder.map((item: string, idx: number) => (
-            <div
-              key={`${item}-${idx}`}
-              className={cn(
-                'flex items-center gap-3 border-2 p-3 text-sm shadow-[1px_1px_0_var(--border)]',
-                isCorrect
-                  ? 'border-dynamic-green bg-dynamic-green/10'
-                  : 'border-dynamic-red bg-dynamic-red/10'
-              )}
-            >
-              <span className="flex h-5 w-5 shrink-0 items-center justify-center border-2 border-border bg-primary font-black text-[10px] text-primary-foreground">
-                {idx + 1}
-              </span>
-              <span className="font-bold">{item}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  }
-
-  if (quiz.type === 'matching') {
-    const pairs = getMatchingPairs(quiz.content);
-    const submittedPairs = getMatchingPairs(answer.answer);
-
-    return (
-      <div className="space-y-2">
-        <p className="mb-1 font-bold text-muted-foreground text-xs uppercase tracking-wider">
-          {t('teachModules.studentMatchings')}
-        </p>
-        <div className="space-y-2">
-          {pairs.map((pair, idx) => {
-            const currentRight =
-              submittedPairs.find((p) => p.left === pair.left)?.right || '—';
-            return (
-              <div
-                key={`${pair.left}-${idx}`}
-                className={cn(
-                  'grid gap-3 border-2 p-3 text-sm shadow-[1px_1px_0_var(--border)] md:grid-cols-[1fr_1fr] md:items-center',
-                  isCorrect
-                    ? 'border-dynamic-green bg-dynamic-green/10'
-                    : 'border-dynamic-red bg-dynamic-red/10'
-                )}
-              >
-                <span className="font-bold">{pair.left}</span>
-                <div className="border-2 border-border bg-background p-2 font-bold text-sm">
-                  {currentRight}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    );
-  }
-
-  if (quiz.type === 'paragraph') {
-    const text = asRecord(answer.answer)?.text;
-    const textValue = typeof text === 'string' && text.trim() ? text : '—';
-    return (
-      <div className="space-y-2">
-        <p className="mb-1 font-bold text-muted-foreground text-xs uppercase tracking-wider">
-          {t('teachModules.studentResponse')}
-        </p>
-        <div className="w-full whitespace-pre-wrap border-2 border-border bg-background p-3 font-bold text-sm">
-          {textValue}
-        </div>
-      </div>
-    );
-  }
-
-  return null;
 }
 
 // Sub-component to manage feedback form state per quiz

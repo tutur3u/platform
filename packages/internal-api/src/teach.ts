@@ -430,13 +430,13 @@ export interface TeachTestSubmissionDetail {
   } | null;
   quizzes: Array<{
     id: string;
-    question: string;
+    question: string | null;
     type: string | null;
     content: Json | null;
     score: number;
     quiz_options?: Array<{
       id: string;
-      value: string;
+      value: string | null;
       is_correct?: boolean;
       explanation?: string | null;
     }>;
@@ -487,5 +487,82 @@ export function updateWorkspaceCourseTestSubmissionFeedback(
       headers: { 'Content-Type': 'application/json' },
       method: 'PATCH',
     }
+  );
+}
+
+export interface TeachModuleQuizSubmission {
+  answeredCount: number;
+  correctCount: number;
+  firstSubmittedAt: string;
+  lastSubmittedAt: string;
+  totalQuizzes: number;
+  userId: string;
+  userName: string;
+}
+
+export function listWorkspaceCourseModuleQuizSubmissions(
+  workspaceId: string,
+  courseId: string,
+  moduleId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ data: TeachModuleQuizSubmission[]; count: number }>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/teach/courses/${encodePathSegment(courseId)}/modules/${encodePathSegment(moduleId)}/quizzes/submissions`,
+    { cache: 'no-store' }
+  );
+}
+
+export interface TeachModuleQuizSubmissionDetail {
+  answers: Array<{
+    answer: unknown;
+    created_at: string;
+    is_correct: boolean;
+    quiz_id: string;
+    selected_option_id: string | null;
+  }>;
+  module: {
+    id: string;
+    name: string | null;
+  } | null;
+  quizzes: Array<{
+    id: string;
+    question: string | null;
+    type: string | null;
+    content: Json | null;
+    score: number;
+    quiz_options?: Array<{
+      id: string;
+      value: string | null;
+      is_correct?: boolean;
+      explanation?: string | null;
+    }>;
+  }>;
+  student: {
+    id: string;
+    display_name: string | null;
+    email: string | null;
+    avatar_url: string | null;
+  } | null;
+  summary: {
+    answeredCount: number;
+    correctCount: number;
+    firstSubmittedAt: string | null;
+    lastSubmittedAt: string | null;
+    totalQuizzes: number;
+  };
+}
+
+export function getWorkspaceCourseModuleQuizSubmission(
+  workspaceId: string,
+  courseId: string,
+  moduleId: string,
+  userId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<TeachModuleQuizSubmissionDetail>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/teach/courses/${encodePathSegment(courseId)}/modules/${encodePathSegment(moduleId)}/quizzes/submissions/${encodePathSegment(userId)}`,
+    { cache: 'no-store' }
   );
 }
