@@ -8,7 +8,7 @@ import {
 } from '@tuturuuu/internal-api';
 import { cn } from '@tuturuuu/utils/format';
 import { useLocale, useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { LessonQuizSubmissionDetailDialog } from './lesson-quiz-submission-detail-dialog';
 
 const toLocalDateTimeString = (dateStr: string | null | undefined) => {
@@ -27,6 +27,7 @@ interface LessonQuizSubmissionsSectionProps {
   onToggleQuizScorePublished?: (published: boolean) => void;
   quizDeadline?: string | null;
   onQuizDeadlineChange?: (deadline: string | null) => void;
+  isSaving?: boolean;
 }
 
 export function LessonQuizSubmissionsSection({
@@ -37,11 +38,20 @@ export function LessonQuizSubmissionsSection({
   onToggleQuizScorePublished,
   quizDeadline = null,
   onQuizDeadlineChange,
+  isSaving = false,
 }: LessonQuizSubmissionsSectionProps) {
   const locale = useLocale();
   const t = useTranslations();
   const [selectedStudentName, setSelectedStudentName] = useState('');
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+
+  const [localDeadline, setLocalDeadline] = useState<string>(() =>
+    toLocalDateTimeString(quizDeadline)
+  );
+
+  useEffect(() => {
+    setLocalDeadline(toLocalDateTimeString(quizDeadline));
+  }, [quizDeadline]);
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ['course-module-quiz-submissions', wsId, courseId, moduleId],
@@ -94,12 +104,36 @@ export function LessonQuizSubmissionsSection({
             <input
               type="datetime-local"
               className="bg-transparent border-none outline-none font-bold text-foreground focus:ring-0 p-0 text-xs w-[145px]"
-              value={toLocalDateTimeString(quizDeadline)}
-              onChange={(e) => {
-                const val = e.target.value;
-                onQuizDeadlineChange?.(val ? new Date(val).toISOString() : null);
-              }}
+              value={localDeadline}
+              onChange={(e) => setLocalDeadline(e.target.value)}
+              disabled={isSaving}
             />
+            {localDeadline !== toLocalDateTimeString(quizDeadline) && (
+              <div className="flex items-center gap-1.5 border-l border-border pl-2">
+                <button
+                  type="button"
+                  disabled={isSaving}
+                  onClick={() => {
+                    const parsedDate = localDeadline ? new Date(localDeadline) : null;
+                    if (parsedDate && isNaN(parsedDate.getTime())) {
+                      return;
+                    }
+                    onQuizDeadlineChange?.(parsedDate ? parsedDate.toISOString() : null);
+                  }}
+                  className="font-black text-dynamic-green hover:underline cursor-pointer disabled:opacity-50"
+                >
+                  Save
+                </button>
+                <button
+                  type="button"
+                  disabled={isSaving}
+                  onClick={() => setLocalDeadline(toLocalDateTimeString(quizDeadline))}
+                  className="text-muted-foreground hover:underline cursor-pointer disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+              </div>
+            )}
           </div>
 
           <button

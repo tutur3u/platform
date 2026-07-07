@@ -30,6 +30,7 @@ function summarizeUpdatePayload(updatePayload: WorkspaceCourseModuleUpdate) {
     is_public: updatePayload.is_public,
     is_published: updatePayload.is_published,
     is_quiz_score_published: updatePayload.is_quiz_score_published,
+    quiz_deadline: updatePayload.quiz_deadline,
     keys: Object.keys(updatePayload),
     module_group_id: updatePayload.module_group_id ?? null,
     name_length:
@@ -48,6 +49,7 @@ const UpdateModuleSchema = z
     is_public: z.boolean().optional(),
     is_published: z.boolean().optional(),
     is_quiz_score_published: z.boolean().optional(),
+    quiz_deadline: z.string().nullable().optional(),
     module_group_id: z.string().uuid().optional(),
     name: z.string().trim().min(1).max(255).optional(),
     youtube_links: z.array(z.string().trim()).nullable().optional(),

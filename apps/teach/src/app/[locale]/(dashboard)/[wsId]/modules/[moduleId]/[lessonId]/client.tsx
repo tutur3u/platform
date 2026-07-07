@@ -526,6 +526,7 @@ export function LessonDetailClient({
           onToggleQuizScorePublished={saveQuizScorePublished}
           quizDeadline={lesson.quiz_deadline}
           onQuizDeadlineChange={saveQuizDeadline}
+          isSaving={isSaving}
         />
       </div>
     </main>
