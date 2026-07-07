@@ -13,7 +13,13 @@ export type FinanceWorkspace = NonNullable<
 
 export interface FinanceWorkspaceContext {
   currency: string;
+  invoiceDefaults: {
+    defaultCategoryId: string | null;
+    defaultSubscriptionCategoryId: string | null;
+    defaultWalletId: string | null;
+  };
   permissions: PermissionsResult;
+  timezone: string | null;
   user: {
     displayName?: string | null;
     email?: string | null;
@@ -21,6 +27,11 @@ export interface FinanceWorkspaceContext {
   };
   workspace: FinanceWorkspace;
   wsId: string;
+}
+
+function normalizeConfigValue(value: string | null | undefined) {
+  const trimmed = value?.trim();
+  return trimmed || null;
 }
 
 export async function getFinanceWorkspace(id: string) {
@@ -58,9 +69,18 @@ export async function getFinanceWorkspaceContext(
     return null;
   }
 
-  const [permissions, currency] = await Promise.all([
+  const [
+    permissions,
+    currency,
+    defaultWalletId,
+    defaultCategoryId,
+    defaultSubscriptionCategoryId,
+  ] = await Promise.all([
     getPermissions({ user, wsId: workspace.id }),
     getWorkspaceConfig(workspace.id, 'DEFAULT_CURRENCY'),
+    getWorkspaceConfig(workspace.id, 'default_wallet_id'),
+    getWorkspaceConfig(workspace.id, 'default_category_id'),
+    getWorkspaceConfig(workspace.id, 'DEFAULT_SUBSCRIPTION_CATEGORY_ID'),
   ]);
 
   if (!permissions) {
@@ -73,7 +93,15 @@ export async function getFinanceWorkspaceContext(
 
   return {
     currency: resolveSupportedCurrency(currency),
+    invoiceDefaults: {
+      defaultCategoryId: normalizeConfigValue(defaultCategoryId),
+      defaultSubscriptionCategoryId: normalizeConfigValue(
+        defaultSubscriptionCategoryId
+      ),
+      defaultWalletId: normalizeConfigValue(defaultWalletId),
+    },
     permissions,
+    timezone: normalizeConfigValue(workspace.timezone),
     user: {
       displayName:
         financeUser.displayName ??

@@ -1,4 +1,30 @@
 import type { Database } from '@tuturuuu/types';
+import {
+  formatMonthLabel,
+  formatMonthValue,
+  getCoverageMonths,
+  getCurrentMonthStartDate,
+  getMonthStartDate,
+  parseLocalCalendarDate,
+} from './civil-month';
+
+export {
+  addMonthsToMonthValue,
+  formatCoverageRangeLabel,
+  formatMonthLabel,
+  formatMonthValue,
+  getCoverageEndMonthValue,
+  getCoverageMonths,
+  getCoverageValidUntilMonthValue,
+  getCurrentBillingDate,
+  getCurrentMonthStartDate,
+  getCurrentMonthValue,
+  getMonthStartDate,
+  MAX_PREPAID_MONTH_COUNT,
+  PREPAID_MONTH_OPTION_HORIZON,
+  parseLocalCalendarDate,
+  resolveBillingTimezone,
+} from './civil-month';
 
 type AttendanceRecord = {
   status: string;
@@ -67,134 +93,25 @@ export const getLinkedFinanceCategorySelection = (
   };
 };
 
-const MONTH_VALUE_PATTERN = /^(\d{4})-(\d{2})$/;
-const DATE_VALUE_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/;
-export const MAX_PREPAID_MONTH_COUNT = 12;
-export const PREPAID_MONTH_OPTION_HORIZON = 12;
-
-export const parseLocalCalendarDate = (
-  value: string | Date | null | undefined
-): Date => {
-  if (!value) {
-    return new Date(Number.NaN);
-  }
-
-  if (value instanceof Date) {
-    return new Date(value.getTime());
-  }
-
-  const monthMatch = MONTH_VALUE_PATTERN.exec(value);
-  if (monthMatch) {
-    const [, year, month] = monthMatch;
-    return new Date(Number(year), Number(month) - 1, 1);
-  }
-
-  const dateMatch = DATE_VALUE_PATTERN.exec(value);
-  if (dateMatch) {
-    const [, year, month, day] = dateMatch;
-    return new Date(Number(year), Number(month) - 1, Number(day));
-  }
-
-  return new Date(value);
-};
-
-export const getMonthStartDate = (
-  value: string | Date | null | undefined
-): Date => {
-  const date = parseLocalCalendarDate(value);
-  if (Number.isNaN(date.getTime())) {
-    return date;
-  }
-
-  return new Date(date.getFullYear(), date.getMonth(), 1);
-};
-
-export const formatMonthValue = (date: Date): string =>
-  `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-
-export const formatMonthLabel = (month: string, locale: string): string => {
-  const date = getMonthStartDate(month);
-  if (Number.isNaN(date.getTime())) {
-    return month;
-  }
-
-  return date.toLocaleDateString(locale, {
-    year: 'numeric',
-    month: 'long',
-  });
-};
-
-export const addMonthsToMonthValue = (
-  month: string,
-  monthOffset: number
-): string => {
-  const date = getMonthStartDate(month);
-  if (Number.isNaN(date.getTime())) return month;
-
-  date.setMonth(date.getMonth() + monthOffset);
-  return formatMonthValue(date);
-};
-
-export const normalizePrepaidMonthCount = (
-  value: number | null | undefined
-): number => {
-  if (!Number.isFinite(value) || !value) return 1;
-
-  return Math.min(MAX_PREPAID_MONTH_COUNT, Math.max(1, Math.trunc(value)));
-};
-
-export const getCoverageMonths = (
-  selectedMonth: string,
-  prepaidMonthCount = 1
-): string[] => {
-  const monthCount = normalizePrepaidMonthCount(prepaidMonthCount);
-  const startMonth = getMonthStartDate(selectedMonth);
-  if (Number.isNaN(startMonth.getTime())) return [];
-
-  return Array.from({ length: monthCount }, (_, index) => {
-    const date = new Date(startMonth);
-    date.setMonth(date.getMonth() + index);
-    return formatMonthValue(date);
-  });
-};
-
-export const getCoverageEndMonthValue = (
-  selectedMonth: string,
-  prepaidMonthCount = 1
-): string => {
-  const coverageMonths = getCoverageMonths(selectedMonth, prepaidMonthCount);
-  return coverageMonths[coverageMonths.length - 1] ?? selectedMonth;
-};
-
-export const getCoverageValidUntilMonthValue = (
-  selectedMonth: string,
-  prepaidMonthCount = 1
-): string => addMonthsToMonthValue(selectedMonth, prepaidMonthCount);
-
-export const formatCoverageRangeLabel = ({
-  locale,
-  prepaidMonthCount,
-  selectedMonth,
+export const resolveSubscriptionInvoiceCategoryId = ({
+  defaultCategoryId,
+  items,
 }: {
-  locale: string;
-  prepaidMonthCount?: number | null;
-  selectedMonth: string;
-}): string => {
-  const coverageMonths = getCoverageMonths(
-    selectedMonth,
-    prepaidMonthCount ?? 1
-  );
-  const firstMonth = coverageMonths[0];
-  const lastMonth = coverageMonths[coverageMonths.length - 1];
+  defaultCategoryId?: string | null;
+  items: FinanceCategoryLinkedItem[];
+}) => {
+  const linkedFinanceCategorySelection =
+    getLinkedFinanceCategorySelection(items);
 
-  if (!firstMonth || !lastMonth || firstMonth === lastMonth) {
-    return formatMonthLabel(selectedMonth, locale);
+  if (linkedFinanceCategorySelection.hasSingleCategory) {
+    return linkedFinanceCategorySelection.categoryId ?? '';
   }
 
-  return `${formatMonthLabel(firstMonth, locale)} - ${formatMonthLabel(
-    lastMonth,
-    locale
-  )}`;
+  if (linkedFinanceCategorySelection.hasMixedCategories) {
+    return '';
+  }
+
+  return defaultCategoryId ?? '';
 };
 
 const getComparableTimestamp = (value: string | null | undefined): number => {
@@ -532,7 +449,6 @@ export const getSessionsUntilMonth = (
   }
 };
 
-/** Date range (earliest start, latest end) for selected groups. */
 export type GroupsDateRange = {
   earliestStart: Date | null;
   latestEnd: Date | null;
@@ -583,17 +499,20 @@ export const getAvailableMonths = (
   latestInvoices: SubscriptionCoverageInvoice[],
   locale: string,
   selectedMonthFallback: string | null = null,
-  futureMonthHorizon = 0
+  futureMonthHorizon = 0,
+  options: {
+    now?: Date;
+    workspaceTimezone?: string | null;
+  } = {}
 ): AvailableMonthOption[] => {
   if (groupIds.length === 0) return [];
   const { earliestStart, latestEnd } = getGroupsDateRange(userGroups, groupIds);
   if (!earliestStart) return [];
 
-  const currentMonthStart = (() => {
-    const date = new Date();
-    date.setDate(1);
-    return date;
-  })();
+  const currentMonthStart = getCurrentMonthStartDate(
+    options.workspaceTimezone,
+    options.now
+  );
   const futureHorizonEnd = new Date(currentMonthStart);
   futureHorizonEnd.setMonth(
     futureHorizonEnd.getMonth() + Math.max(0, futureMonthHorizon)
@@ -648,6 +567,7 @@ export const getBillableQuantityForGroupRange = ({
   now = new Date(),
   prepaidMonthCount = 1,
   selectedMonth,
+  workspaceTimezone,
   useAttendanceBased,
   userAttendance,
   userGroups,
@@ -657,11 +577,12 @@ export const getBillableQuantityForGroupRange = ({
   now?: Date;
   prepaidMonthCount?: number;
   selectedMonth: string;
+  workspaceTimezone?: string | null;
   useAttendanceBased: boolean;
   userAttendance: AttendanceRecord[];
   userGroups: UserGroup[];
 }): number => {
-  const currentMonthStart = getMonthStartDate(now);
+  const currentMonthStart = getCurrentMonthStartDate(workspaceTimezone, now);
   const coverageMonths = getCoverageMonths(selectedMonth, prepaidMonthCount);
 
   return coverageMonths.reduce((total, month) => {
@@ -708,6 +629,7 @@ export const getBillableQuantityMapForGroupsRange = ({
   now,
   prepaidMonthCount = 1,
   selectedMonth,
+  workspaceTimezone,
   useAttendanceBased,
   userAttendance,
   userGroups,
@@ -717,6 +639,7 @@ export const getBillableQuantityMapForGroupsRange = ({
   now?: Date;
   prepaidMonthCount?: number;
   selectedMonth: string;
+  workspaceTimezone?: string | null;
   useAttendanceBased: boolean;
   userAttendance: AttendanceRecord[];
   userGroups: UserGroup[];
@@ -730,6 +653,7 @@ export const getBillableQuantityMapForGroupsRange = ({
         now,
         prepaidMonthCount,
         selectedMonth,
+        workspaceTimezone,
         useAttendanceBased,
         userAttendance,
         userGroups,
@@ -737,11 +661,9 @@ export const getBillableQuantityMapForGroupsRange = ({
     ])
   );
 
-/** Days before valid_until to consider "expiring soon" */
 const EXPIRING_SOON_DAYS = 14;
 
 export type GroupPaymentStatus = 'active' | 'expiringSoon' | 'expired';
-
 export function getGroupPaymentStatus(
   group: WorkspaceUserGroup | null,
   latestInvoice:

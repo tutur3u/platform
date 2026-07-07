@@ -41,7 +41,11 @@ interface Props {
   canReadInvoiceProductStock?: boolean;
   canReadGroupLinkedProducts?: boolean;
   defaultCurrency?: string;
+  initialDefaultCategoryId?: string | null;
+  initialDefaultSubscriptionCategoryId?: string | null;
+  initialDefaultWalletId?: string | null;
   permissionRequestUser?: FinancePermissionRequestUser | null;
+  workspaceTimezone?: string | null;
 }
 
 export default function NewInvoicePage({
@@ -53,7 +57,11 @@ export default function NewInvoicePage({
   canReadInvoiceProductStock = true,
   canReadGroupLinkedProducts = true,
   defaultCurrency: workspaceDefaultCurrency,
+  initialDefaultCategoryId,
+  initialDefaultSubscriptionCategoryId,
+  initialDefaultWalletId,
   permissionRequestUser,
+  workspaceTimezone,
 }: Props) {
   const t = useTranslations();
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -71,10 +79,18 @@ export default function NewInvoicePage({
     },
   });
 
-  const { data: defaultConfigs = {} } = useWorkspaceConfigs(
+  const { data: refreshedDefaultConfigs = {} } = useWorkspaceConfigs(
     wsId,
     INVOICE_DEFAULT_CONFIG_IDS
   );
+  const defaultConfigs = {
+    DEFAULT_CURRENCY: workspaceDefaultCurrency ?? null,
+    DEFAULT_SUBSCRIPTION_CATEGORY_ID:
+      initialDefaultSubscriptionCategoryId ?? null,
+    default_category_id: initialDefaultCategoryId ?? null,
+    default_wallet_id: initialDefaultWalletId ?? null,
+    ...refreshedDefaultConfigs,
+  };
   const defaultWalletId = defaultConfigs.default_wallet_id ?? undefined;
   const defaultTransactionCategoryId =
     defaultConfigs.default_category_id ?? undefined;
@@ -257,6 +273,7 @@ export default function NewInvoicePage({
               defaultWalletId={defaultWalletId}
               defaultCategoryId={defaultCategoryId}
               defaultCurrency={defaultCurrency}
+              workspaceTimezone={workspaceTimezone}
               canChangeFinanceWallets={canChangeFinanceWallets}
               canSetFinanceWalletsOnCreate={canSetFinanceWalletsOnCreate}
               canReadInvoiceProducts={canReadInvoiceProducts}

@@ -10,6 +10,8 @@ use crate::{
 };
 
 const CREATE_INVOICES_PERMISSION: &str = "create_invoices";
+const MAX_PREPAID_MONTH_COUNT: u32 = 12;
+const MONTH_COUNT_ERROR_MESSAGE: &str = "monthCount must be an integer between 1 and 12";
 const SUBSCRIPTION_CONTEXT_ERROR_MESSAGE: &str = "Error fetching subscription invoice context";
 const SUBSCRIPTION_CONTEXT_PATH_PREFIX: &str = "/api/v1/workspaces/";
 const SUBSCRIPTION_CONTEXT_PATH_SUFFIX: &str = "/finance/invoices/subscription/context";
@@ -18,6 +20,7 @@ const SUBSCRIPTION_CONTEXT_PATH_SUFFIX: &str = "/finance/invoices/subscription/c
 struct SubscriptionContextQuery {
     group_ids: Vec<String>,
     month: Option<String>,
+    month_count: Option<String>,
     user_id: Option<String>,
 }
 
@@ -98,7 +101,12 @@ async fn subscription_context_response(
         return empty_subscription_context_response();
     }
 
-    let Some((start_date, next_month_date)) = month_date_range(month) else {
+    let month_count = match resolve_month_count(query.month_count.as_deref()) {
+        Ok(month_count) => month_count,
+        Err(()) => return subscription_context_month_count_error_response(),
+    };
+
+    let Some((start_date, next_month_date)) = month_date_range(month, month_count) else {
         return subscription_context_error_response();
     };
 
@@ -276,11 +284,13 @@ fn subscription_context_query_from_url(request_url: Option<&str>) -> Subscriptio
         return SubscriptionContextQuery {
             group_ids: Vec::new(),
             month: None,
+            month_count: None,
             user_id: None,
         };
     };
     let mut group_ids = Vec::new();
     let mut month = None;
+    let mut month_count = None;
     let mut user_id = None;
 
     for (key, value) in url.query_pairs() {
@@ -292,6 +302,7 @@ fn subscription_context_query_from_url(request_url: Option<&str>) -> Subscriptio
                 }
             }
             "month" => month = non_empty_trimmed(value.as_ref()),
+            "monthCount" if month_count.is_none() => month_count = Some(value.trim().to_owned()),
             "userId" => user_id = non_empty_trimmed(value.as_ref()),
             _ => {}
         }
@@ -300,6 +311,7 @@ fn subscription_context_query_from_url(request_url: Option<&str>) -> Subscriptio
     SubscriptionContextQuery {
         group_ids,
         month,
+        month_count,
         user_id,
     }
 }
@@ -309,7 +321,29 @@ fn non_empty_trimmed(value: &str) -> Option<String> {
     (!value.is_empty()).then(|| value.to_owned())
 }
 
-fn month_date_range(month: &str) -> Option<(String, String)> {
+fn resolve_month_count(value: Option<&str>) -> Result<u32, ()> {
+    let Some(value) = value else {
+        return Ok(1);
+    };
+    let value = value.trim();
+    if value.is_empty() {
+        return Ok(1);
+    }
+
+    let month_count = value.parse::<f64>().map_err(|_| ())?;
+    if !month_count.is_finite() || month_count.fract() != 0.0 {
+        return Err(());
+    }
+
+    let month_count = month_count as i64;
+    if !(1..=i64::from(MAX_PREPAID_MONTH_COUNT)).contains(&month_count) {
+        return Err(());
+    }
+
+    Ok(month_count as u32)
+}
+
+fn month_date_range(month: &str, month_count: u32) -> Option<(String, String)> {
     let (year, month) = month.trim().split_once('-')?;
     let year = year.parse::<i32>().ok()?;
     let month = month.parse::<u32>().ok()?;
@@ -318,11 +352,12 @@ fn month_date_range(month: &str) -> Option<(String, String)> {
         return None;
     }
 
-    let (next_year, next_month) = if month == 12 {
-        (year.checked_add(1)?, 1)
-    } else {
-        (year, month + 1)
-    };
+    let month_index = year
+        .checked_mul(12)?
+        .checked_add(i32::try_from(month.checked_sub(1)?).ok()?)?
+        .checked_add(i32::try_from(month_count).ok()?)?;
+    let next_year = month_index.div_euclid(12);
+    let next_month = u32::try_from(month_index.rem_euclid(12) + 1).ok()?;
 
     Some((
         format!("{year:04}-{month:02}-01"),
@@ -449,5 +484,12 @@ fn subscription_context_error_response() -> BackendResponse {
     no_store_response(json_response(
         500,
         json!({ "message": SUBSCRIPTION_CONTEXT_ERROR_MESSAGE }),
+    ))
+}
+
+fn subscription_context_month_count_error_response() -> BackendResponse {
+    no_store_response(json_response(
+        400,
+        json!({ "message": MONTH_COUNT_ERROR_MESSAGE }),
     ))
 }

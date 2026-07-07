@@ -15,6 +15,7 @@ function getComparableTimestamp(value: string | null | undefined) {
 }
 
 const MAX_PREPAID_MONTH_COUNT = 12;
+const MONTH_VALUE_PATTERN = /^(\d{4})-(\d{2})$/;
 
 function resolveMonthCount(
   value: string | null
@@ -35,6 +36,45 @@ function resolveMonthCount(
   }
 
   return { monthCount };
+}
+
+function formatMonthStartDate(year: number, month: number) {
+  return `${year}-${String(month).padStart(2, '0')}-01`;
+}
+
+function addMonthsToMonthStart(
+  year: number,
+  month: number,
+  monthCount: number
+) {
+  const totalMonthIndex = year * 12 + (month - 1) + monthCount;
+  const nextYear = Math.floor(totalMonthIndex / 12);
+  const nextMonth = (totalMonthIndex % 12) + 1;
+
+  return formatMonthStartDate(nextYear, nextMonth);
+}
+
+function resolveMonthDateRange(month: string, monthCount: number) {
+  const monthMatch = MONTH_VALUE_PATTERN.exec(month);
+  if (!monthMatch) return null;
+
+  const [, yearValue, monthValue] = monthMatch;
+  const year = Number(yearValue);
+  const monthNumber = Number(monthValue);
+
+  if (
+    !Number.isInteger(year) ||
+    !Number.isInteger(monthNumber) ||
+    monthNumber < 1 ||
+    monthNumber > 12
+  ) {
+    return null;
+  }
+
+  return {
+    endDate: addMonthsToMonthStart(year, monthNumber, monthCount),
+    startDate: formatMonthStartDate(year, monthNumber),
+  };
 }
 
 export async function GET(req: Request, { params }: Params) {
@@ -80,9 +120,17 @@ export async function GET(req: Request, { params }: Params) {
     );
   }
 
-  const startOfMonth = new Date(`${month}-01`);
-  const nextMonth = new Date(startOfMonth);
-  nextMonth.setMonth(nextMonth.getMonth() + monthCountResult.monthCount);
+  const monthDateRange = resolveMonthDateRange(
+    month,
+    monthCountResult.monthCount
+  );
+
+  if (!monthDateRange) {
+    return NextResponse.json(
+      { message: 'Error fetching subscription invoice context' },
+      { status: 500 }
+    );
+  }
 
   const { data: validGroups, error: validGroupsError } = await sbAdmin
     .from('workspace_user_groups_users')
@@ -122,8 +170,8 @@ export async function GET(req: Request, { params }: Params) {
       .select('date, status, group_id')
       .in('group_id', validGroupIds)
       .eq('user_id', userId)
-      .gte('date', startOfMonth.toISOString().split('T')[0] || '')
-      .lt('date', nextMonth.toISOString().split('T')[0] || '')
+      .gte('date', monthDateRange.startDate)
+      .lt('date', monthDateRange.endDate)
       .order('date', { ascending: true }),
     sbAdmin
       .from('finance_invoice_user_groups')

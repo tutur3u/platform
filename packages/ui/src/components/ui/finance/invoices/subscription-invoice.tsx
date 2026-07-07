@@ -71,12 +71,14 @@ import {
   getBillableAttendanceRecordsInRange,
   getBillableSessionsForGroupsInRange,
   getCoverageValidUntilMonthValue,
+  getCurrentBillingDate,
+  getCurrentMonthValue,
   getGroupsDateRange,
-  getLinkedFinanceCategorySelection,
   getMonthStartDate,
   getSubscriptionAttendanceDisplayData,
   isSubscriptionRangeFullyPaidForGroups,
   PREPAID_MONTH_OPTION_HORIZON,
+  resolveSubscriptionInvoiceCategoryId,
 } from './utils';
 
 interface Props {
@@ -88,6 +90,7 @@ interface Props {
   defaultWalletId?: string;
   defaultCategoryId?: string;
   defaultCurrency?: string;
+  workspaceTimezone?: string | null;
   canChangeFinanceWallets?: boolean;
   canSetFinanceWalletsOnCreate?: boolean;
   canReadInvoiceProducts?: boolean;
@@ -105,6 +108,7 @@ export function SubscriptionInvoice({
   defaultWalletId,
   defaultCategoryId,
   defaultCurrency: rawDefaultCurrency = 'USD',
+  workspaceTimezone,
   canChangeFinanceWallets = true,
   canSetFinanceWalletsOnCreate = true,
   canReadInvoiceProducts = true,
@@ -133,7 +137,7 @@ export function SubscriptionInvoice({
     })
   );
   const [selectedMonth, setSelectedMonth] = useQueryState('month', {
-    defaultValue: formatMonthValue(new Date()),
+    defaultValue: getCurrentMonthValue(workspaceTimezone),
     shallow: true,
   });
   const [prepaidMonthCount, setPrepaidMonthCount] = useState(1);
@@ -144,6 +148,8 @@ export function SubscriptionInvoice({
     useState<SelectedProductItem[]>([]);
   const hasSelectedGroups = selectedGroupIds.length > 0;
   const hasSelectedProducts = subscriptionSelectedProducts.length > 0;
+  const shouldPreloadPaymentSettings =
+    hasSelectedProducts || Boolean(defaultWalletId || defaultCategoryId);
 
   const updateSearchParam = useCallback(
     (key: string, value: string) => {
@@ -197,10 +203,10 @@ export function SubscriptionInvoice({
     { enabled: hasSelectedProducts }
   );
   const { data: wallets = [] } = useWallets(wsId, {
-    enabled: hasSelectedProducts,
+    enabled: shouldPreloadPaymentSettings,
   });
   const { data: categories = [] } = useCategories(wsId, {
-    enabled: hasSelectedProducts,
+    enabled: shouldPreloadPaymentSettings,
   });
 
   // Blocked groups check
@@ -236,9 +242,7 @@ export function SubscriptionInvoice({
     ) : null;
 
   useEffect(() => {
-    if (defaultWalletId) {
-      setSelectedWalletId(defaultWalletId);
-    }
+    setSelectedWalletId(defaultWalletId || '');
   }, [defaultWalletId]);
 
   const [selectedPromotionId, setSelectedPromotionId] =
@@ -286,9 +290,10 @@ export function SubscriptionInvoice({
         [],
         locale,
         selectedMonth,
-        PREPAID_MONTH_OPTION_HORIZON
+        PREPAID_MONTH_OPTION_HORIZON,
+        { workspaceTimezone }
       ),
-    [locale, selectedGroupIds, selectedMonth, userGroups]
+    [locale, selectedGroupIds, selectedMonth, userGroups, workspaceTimezone]
   );
 
   const effectiveSelectedMonth = useMemo(() => {
@@ -309,7 +314,7 @@ export function SubscriptionInvoice({
       return selectedMonth;
     }
 
-    const now = new Date();
+    const now = getCurrentBillingDate(workspaceTimezone);
     let defaultMonth: Date;
 
     if (!latestEnd || (now >= earliestStart && now <= latestEnd)) {
@@ -321,7 +326,13 @@ export function SubscriptionInvoice({
     }
 
     return formatMonthValue(defaultMonth);
-  }, [availableMonthOptions, selectedGroupIds, selectedMonth, userGroups]);
+  }, [
+    availableMonthOptions,
+    selectedGroupIds,
+    selectedMonth,
+    userGroups,
+    workspaceTimezone,
+  ]);
 
   const {
     data: subscriptionInvoiceContext,
@@ -547,6 +558,7 @@ export function SubscriptionInvoice({
     latestSubscriptionInvoices,
     onSelectedProductsChange: setSubscriptionSelectedProducts,
     prepaidMonthCount,
+    workspaceTimezone,
   });
 
   useSubscriptionInvoiceContent({
@@ -566,21 +578,18 @@ export function SubscriptionInvoice({
   });
 
   const subtotal = useInvoiceSubtotal(subscriptionSelectedProducts);
-  const linkedFinanceCategorySelection = useMemo(
-    () => getLinkedFinanceCategorySelection(subscriptionSelectedProducts),
-    [subscriptionSelectedProducts]
+  const resolvedSubscriptionCategoryId = useMemo(
+    () =>
+      resolveSubscriptionInvoiceCategoryId({
+        defaultCategoryId,
+        items: subscriptionSelectedProducts,
+      }),
+    [defaultCategoryId, subscriptionSelectedProducts]
   );
 
   useEffect(() => {
-    if (linkedFinanceCategorySelection.categoryId) {
-      setSelectedCategoryId(linkedFinanceCategorySelection.categoryId);
-      return;
-    }
-
-    if (linkedFinanceCategorySelection.hasMixedCategories) {
-      setSelectedCategoryId('');
-    }
-  }, [linkedFinanceCategorySelection]);
+    setSelectedCategoryId(resolvedSubscriptionCategoryId);
+  }, [resolvedSubscriptionCategoryId]);
 
   useBestPromotionSelection({
     enabled: true,
@@ -677,7 +686,8 @@ export function SubscriptionInvoice({
         latestSubscriptionInvoices,
         locale,
         effectiveSelectedMonth,
-        PREPAID_MONTH_OPTION_HORIZON
+        PREPAID_MONTH_OPTION_HORIZON,
+        { workspaceTimezone }
       ),
     [
       effectiveSelectedMonth,
@@ -685,6 +695,7 @@ export function SubscriptionInvoice({
       selectedGroupIds,
       latestSubscriptionInvoices,
       locale,
+      workspaceTimezone,
     ]
   );
 
@@ -732,7 +743,7 @@ export function SubscriptionInvoice({
       if (lastValidatedKeyRef.current === monthValidationKey) return;
       lastValidatedKeyRef.current = monthValidationKey;
 
-      const now = new Date();
+      const now = getCurrentBillingDate(workspaceTimezone);
       let defaultMonth: Date;
 
       if (now >= earliestStart && now <= latestEnd) defaultMonth = now;
@@ -754,6 +765,7 @@ export function SubscriptionInvoice({
     selectedMonth,
     updateSearchParam,
     userGroups,
+    workspaceTimezone,
   ]);
 
   const navigateMonth = (direction: 'prev' | 'next') => {

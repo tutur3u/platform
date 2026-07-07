@@ -135,6 +135,31 @@ describe('NewInvoicePage', () => {
           defaultCategoryId: 'category-1',
           defaultCurrency: 'SGD',
           defaultWalletId: 'wallet-1',
+          workspaceTimezone: undefined,
+        })
+      )
+    );
+  });
+
+  it('forwards server-seeded defaults and timezone before config refresh completes', async () => {
+    nuqsState.invoiceType = 'subscription';
+    fetchMock.mockReturnValueOnce(new Promise(() => {}));
+
+    renderPage({
+      defaultCurrency: 'VND',
+      initialDefaultCategoryId: 'category-general-server',
+      initialDefaultSubscriptionCategoryId: 'category-subscription-server',
+      initialDefaultWalletId: 'wallet-server',
+      workspaceTimezone: 'Asia/Ho_Chi_Minh',
+    });
+
+    await waitFor(() =>
+      expect(invoiceMocks.SubscriptionInvoice).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          defaultCategoryId: 'category-subscription-server',
+          defaultCurrency: 'VND',
+          defaultWalletId: 'wallet-server',
+          workspaceTimezone: 'Asia/Ho_Chi_Minh',
         })
       )
     );

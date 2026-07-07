@@ -71,7 +71,13 @@ export default async function WorkspaceNewInvoicePage({ params }: Props) {
           invoiceProductPermissions.canReadGroupLinkedProducts
         }
         defaultCurrency={context.currency}
+        initialDefaultCategoryId={context.invoiceDefaults.defaultCategoryId}
+        initialDefaultSubscriptionCategoryId={
+          context.invoiceDefaults.defaultSubscriptionCategoryId
+        }
+        initialDefaultWalletId={context.invoiceDefaults.defaultWalletId}
         permissionRequestUser={context.user}
+        workspaceTimezone={context.timezone}
       />
     </Suspense>
   );
