@@ -10,7 +10,6 @@ import {
   CheckCircle2,
   ChevronRight,
   Code2,
-  ExternalLink,
   FileText,
   Folder,
   Globe,
@@ -28,7 +27,6 @@ import {
   Store,
   Wallet,
 } from '@tuturuuu/icons';
-import { Button } from '@tuturuuu/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -36,14 +34,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@tuturuuu/ui/dropdown-menu';
 import { Tabs, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import type {
   LaunchableApp,
   LaunchableAppCategory,
@@ -55,7 +46,7 @@ import {
   resolveLaunchableAppUrl,
 } from '@tuturuuu/utils/launchable-apps';
 import { useTranslations } from 'next-intl';
-import type { CSSProperties } from 'react';
+import type { CSSProperties, MouseEvent } from 'react';
 import { useState } from 'react';
 
 interface AppsLauncherDialogProps {
@@ -185,9 +176,6 @@ export function AppsLauncherDialog({
             apps={activeApps}
             getCategoryLabel={(category) => t(`app_categories.${category}`)}
             onOpen={openApp}
-            openHereLabel={t('open_here')}
-            openInNewTabLabel={t('open_in_new_tab')}
-            openOptionsLabel={t('open_options')}
           />
         </div>
       </DialogContent>
@@ -200,17 +188,11 @@ function AppsTabPanel({
   apps,
   getCategoryLabel,
   onOpen,
-  openHereLabel,
-  openInNewTabLabel,
-  openOptionsLabel,
 }: {
   activeTab: AppCategoryTab;
   apps: readonly LaunchableApp[];
   getCategoryLabel: (category: LaunchableAppCategory) => string;
   onOpen: (app: LaunchableApp, target: 'current-tab' | 'new-tab') => void;
-  openHereLabel: string;
-  openInNewTabLabel: string;
-  openOptionsLabel: string;
 }) {
   return (
     <div
@@ -226,18 +208,9 @@ function AppsTabPanel({
             apps={apps}
             getCategoryLabel={getCategoryLabel}
             onOpen={onOpen}
-            openHereLabel={openHereLabel}
-            openInNewTabLabel={openInNewTabLabel}
-            openOptionsLabel={openOptionsLabel}
           />
         ) : (
-          <AppsGrid
-            apps={apps}
-            onOpen={onOpen}
-            openHereLabel={openHereLabel}
-            openInNewTabLabel={openInNewTabLabel}
-            openOptionsLabel={openOptionsLabel}
-          />
+          <AppsGrid apps={apps} onOpen={onOpen} />
         )}
       </div>
     </div>
@@ -248,16 +221,10 @@ function AppsByCategory({
   apps,
   getCategoryLabel,
   onOpen,
-  openHereLabel,
-  openInNewTabLabel,
-  openOptionsLabel,
 }: {
   apps: readonly LaunchableApp[];
   getCategoryLabel: (category: LaunchableAppCategory) => string;
   onOpen: (app: LaunchableApp, target: 'current-tab' | 'new-tab') => void;
-  openHereLabel: string;
-  openInNewTabLabel: string;
-  openOptionsLabel: string;
 }) {
   return (
     <div className="space-y-4" data-slot="apps-launcher-sections">
@@ -280,13 +247,7 @@ function AppsByCategory({
             >
               {getCategoryLabel(category)}
             </h3>
-            <AppsGrid
-              apps={categoryApps}
-              onOpen={onOpen}
-              openHereLabel={openHereLabel}
-              openInNewTabLabel={openInNewTabLabel}
-              openOptionsLabel={openOptionsLabel}
-            />
+            <AppsGrid apps={categoryApps} onOpen={onOpen} />
           </section>
         );
       })}
@@ -297,15 +258,9 @@ function AppsByCategory({
 function AppsGrid({
   apps,
   onOpen,
-  openHereLabel,
-  openInNewTabLabel,
-  openOptionsLabel,
 }: {
   apps: readonly LaunchableApp[];
   onOpen: (app: LaunchableApp, target: 'current-tab' | 'new-tab') => void;
-  openHereLabel: string;
-  openInNewTabLabel: string;
-  openOptionsLabel: string;
 }) {
   return (
     <div
@@ -313,14 +268,7 @@ function AppsGrid({
       data-slot="apps-launcher-grid"
     >
       {apps.map((app) => (
-        <AppLauncherItem
-          app={app}
-          key={app.slug}
-          onOpen={onOpen}
-          openHereLabel={openHereLabel}
-          openInNewTabLabel={openInNewTabLabel}
-          openOptionsLabel={openOptionsLabel}
-        />
+        <AppLauncherItem app={app} key={app.slug} onOpen={onOpen} />
       ))}
     </div>
   );
@@ -329,15 +277,9 @@ function AppsGrid({
 function AppLauncherItem({
   app,
   onOpen,
-  openHereLabel,
-  openInNewTabLabel,
-  openOptionsLabel,
 }: {
   app: LaunchableApp;
   onOpen: (app: LaunchableApp, target: 'current-tab' | 'new-tab') => void;
-  openHereLabel: string;
-  openInNewTabLabel: string;
-  openOptionsLabel: string;
 }) {
   const Icon = APP_ICONS[app.slug] ?? Boxes;
   const accent = CATEGORY_ACCENTS[app.category];
@@ -348,15 +290,22 @@ function AppLauncherItem({
     borderColor: 'color-mix(in srgb, var(--app-accent) 32%, var(--border))',
   } as CSSProperties;
 
+  function handleClick(event: MouseEvent<HTMLButtonElement>) {
+    onOpen(app, event.ctrlKey || event.metaKey ? 'current-tab' : 'new-tab');
+  }
+
   return (
-    <div
-      className="flex min-h-0 items-center gap-2 overflow-hidden rounded-md border p-2 text-card-foreground shadow-sm transition hover:shadow-md"
+    <button
+      aria-label={app.title}
+      className="group flex min-h-0 w-full cursor-pointer items-center gap-2 overflow-hidden rounded-md border p-2 text-left text-card-foreground shadow-sm outline-none transition-[background-color,border-color,box-shadow,transform] duration-200 ease-out hover:-translate-y-0.5 hover:shadow-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background active:translate-y-0 motion-reduce:transition-none motion-reduce:hover:translate-y-0"
       data-slot="app-card"
+      onClick={handleClick}
       style={cardStyle}
+      type="button"
     >
       <span className="flex min-w-0 flex-1 items-center gap-2">
         <span
-          className="flex size-8 shrink-0 items-center justify-center rounded-md border bg-background/70 shadow-xs"
+          className="flex size-8 shrink-0 items-center justify-center rounded-md border bg-background/70 shadow-xs transition-transform duration-200 ease-out group-hover:scale-105 group-focus-visible:scale-105 motion-reduce:transition-none"
           style={{
             borderColor:
               'color-mix(in srgb, var(--app-accent) 40%, var(--border))',
@@ -375,64 +324,12 @@ function AppLauncherItem({
       </span>
 
       <span
-        className="flex shrink-0 items-center gap-1"
-        data-slot="app-card-actions"
+        aria-hidden
+        className="flex size-8 shrink-0 items-center justify-center rounded-md bg-background/60 text-muted-foreground/70 transition-[background-color,color,transform] duration-200 ease-out group-hover:translate-x-0.5 group-hover:bg-background/80 group-hover:text-foreground group-focus-visible:translate-x-0.5 group-focus-visible:bg-background/80 group-focus-visible:text-foreground motion-reduce:transition-none motion-reduce:group-hover:translate-x-0"
+        data-slot="app-card-affordance"
       >
-        <AppLaunchMenu
-          app={app}
-          onOpen={onOpen}
-          openHereLabel={openHereLabel}
-          openInNewTabLabel={openInNewTabLabel}
-          openOptionsLabel={openOptionsLabel}
-        />
+        <ChevronRight className="size-4" />
       </span>
-    </div>
-  );
-}
-
-function AppLaunchMenu({
-  app,
-  onOpen,
-  openHereLabel,
-  openInNewTabLabel,
-  openOptionsLabel,
-}: {
-  app: LaunchableApp;
-  onOpen: (app: LaunchableApp, target: 'current-tab' | 'new-tab') => void;
-  openHereLabel: string;
-  openInNewTabLabel: string;
-  openOptionsLabel: string;
-}) {
-  const label = `${openOptionsLabel}: ${app.title}`;
-
-  return (
-    <DropdownMenu modal={false}>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <DropdownMenuTrigger asChild>
-            <Button
-              aria-label={label}
-              className="size-8 shrink-0"
-              size="icon"
-              type="button"
-              variant="secondary"
-            >
-              <ChevronRight className="size-4" />
-            </Button>
-          </DropdownMenuTrigger>
-        </TooltipTrigger>
-        <TooltipContent>{openOptionsLabel}</TooltipContent>
-      </Tooltip>
-      <DropdownMenuContent align="end" className="w-44">
-        <DropdownMenuItem onSelect={() => onOpen(app, 'current-tab')}>
-          <ChevronRight className="size-4" />
-          {openHereLabel}
-        </DropdownMenuItem>
-        <DropdownMenuItem onSelect={() => onOpen(app, 'new-tab')}>
-          <ExternalLink className="size-4" />
-          {openInNewTabLabel}
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+    </button>
   );
 }

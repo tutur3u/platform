@@ -192,19 +192,31 @@ describe('AppsLauncherDialog', () => {
     renderDialog();
 
     expect(screen.getByText('Finance')).toBeTruthy();
-    expect(screen.getByLabelText('Open options: Finance')).toBeTruthy();
+    expect(screen.queryByLabelText('Open options: Finance')).toBeNull();
     expect(screen.queryByLabelText('Open here: Finance')).toBeNull();
     expect(screen.queryByLabelText('Open in new tab: Finance')).toBeNull();
-    const financeCard = screen
-      .getByText('Finance')
-      .closest('[data-slot="app-card"]');
+    const financeCard = screen.getByRole('button', { name: 'Finance' });
+    expect(financeCard.getAttribute('data-slot')).toBe('app-card');
     expect(financeCard?.className).toContain('flex');
+    expect(financeCard?.className).toContain('cursor-pointer');
+    expect(financeCard?.className).toContain('hover:-translate-y-0.5');
+    expect(financeCard?.className).toContain('focus-visible:ring-2');
+    expect(financeCard?.className).toContain('motion-reduce:transition-none');
     expect(financeCard?.className).not.toContain('grid-cols-');
-    const actionGroup = financeCard?.querySelector(
-      '[data-slot="app-card-actions"]'
+    const affordance = financeCard.querySelector(
+      '[data-slot="app-card-affordance"]'
     );
-    expect(actionGroup?.className).toContain('flex');
-    expect(actionGroup?.className).toContain('items-center');
+    expect(affordance).toBeTruthy();
+    expect(affordance?.getAttribute('aria-hidden')).toBe('true');
+    expect(affordance?.className).toContain('group-hover:translate-x-0.5');
+    expect(
+      financeCard?.querySelector('[data-slot="app-card-actions"]')
+    ).toBeNull();
+    expect(document.querySelector('[data-slot="app-card-actions"]')).toBeNull();
+    expect(screen.queryByRole('menuitem', { name: 'Open here' })).toBeNull();
+    expect(
+      screen.queryByRole('menuitem', { name: 'Open in new tab' })
+    ).toBeNull();
     expect(
       screen.queryByText('Also matches: Money, Wallets, Invoices')
     ).toBeNull();
@@ -233,7 +245,8 @@ describe('AppsLauncherDialog', () => {
     expect(
       screen.queryByText('Developer utilities, gateways, and technical tools.')
     ).toBeNull();
-    expect(screen.getByLabelText('Open options: Tools')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Tools' })).toBeTruthy();
+    expect(screen.queryByLabelText('Open options: Tools')).toBeNull();
     expect(
       document.querySelector('[data-slot="apps-launcher-sections"]')
     ).toBeNull();
@@ -242,15 +255,12 @@ describe('AppsLauncherDialog', () => {
     ).toHaveLength(1);
   });
 
-  it('opens apps in a new tab from the dropdown menu', async () => {
+  it('opens apps in a new tab by default from a card click', () => {
     const open = vi.fn();
     vi.stubGlobal('open', open);
     const { onOpenChange } = renderDialog();
 
-    fireEvent.pointerDown(screen.getByLabelText('Open options: Finance'));
-    fireEvent.click(
-      await screen.findByRole('menuitem', { name: 'Open in new tab' })
-    );
+    fireEvent.click(screen.getByRole('button', { name: 'Finance' }));
 
     expect(onOpenChange).toHaveBeenCalledWith(false);
     expect(open).toHaveBeenCalledWith(
@@ -260,7 +270,7 @@ describe('AppsLauncherDialog', () => {
     );
   });
 
-  it('opens apps in the current tab from the dropdown menu', async () => {
+  it('opens apps in the current tab when Ctrl or Cmd clicking a card', () => {
     const assign = vi.fn();
     Object.defineProperty(window, 'location', {
       configurable: true,
@@ -273,12 +283,21 @@ describe('AppsLauncherDialog', () => {
     });
     const { onOpenChange } = renderDialog();
 
-    fireEvent.pointerDown(screen.getByLabelText('Open options: Tasks'));
-    fireEvent.click(await screen.findByRole('menuitem', { name: 'Open here' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Tasks' }), {
+      ctrlKey: true,
+    });
 
     expect(onOpenChange).toHaveBeenCalledWith(false);
     expect(assign).toHaveBeenCalledWith(
       'http://localhost:7809/personal/tasks?source=sidebar-apps'
+    );
+
+    assign.mockClear();
+    fireEvent.click(screen.getByRole('button', { name: 'Finance' }), {
+      metaKey: true,
+    });
+    expect(assign).toHaveBeenCalledWith(
+      'http://localhost:7808/personal?source=sidebar-apps'
     );
   });
 });
