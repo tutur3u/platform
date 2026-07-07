@@ -4,11 +4,11 @@ import { getTuturuuuPortlessAppOrigin } from './portless';
 export const LAUNCHABLE_APP_CATEGORIES = [
   'core',
   'productivity',
-  'content',
   'operations',
   'learning',
   'developer',
   'ai',
+  'miscellaneous',
 ] as const;
 
 export type LaunchableAppCategory = (typeof LAUNCHABLE_APP_CATEGORIES)[number];
@@ -66,7 +66,7 @@ export const LAUNCHABLE_APPS = [
   {
     aliases: ['App Launcher', 'Gateway', 'Apps Gateway'],
     appRoot: 'apps/apps',
-    category: 'core',
+    category: 'developer',
     defaultPath: '/',
     localhostOrigin: 'http://localhost:7818',
     packageName: '@tuturuuu/apps',
@@ -104,7 +104,7 @@ export const LAUNCHABLE_APPS = [
   {
     aliases: ['Content', 'CMS'],
     appRoot: 'apps/cms',
-    category: 'content',
+    category: 'operations',
     defaultPath: '/personal',
     localhostOrigin: 'http://localhost:7811',
     packageName: '@tuturuuu/cms',
@@ -128,15 +128,15 @@ export const LAUNCHABLE_APPS = [
     workspacePathResolver: workspaceRootPath,
   },
   {
-    aliases: ['External Projects', 'WebGL'],
-    appRoot: 'apps/external',
-    category: 'developer',
+    aliases: ['Documentation', 'Guides', 'Reference'],
+    appRoot: 'apps/docs',
+    category: 'miscellaneous',
     defaultPath: '/',
-    packageName: '@tuturuuu/external',
-    portlessApp: 'external',
-    productionUrl: 'https://external.tuturuuu.com',
-    slug: 'external',
-    title: 'External',
+    packageName: 'apps/docs',
+    portlessApp: 'docs',
+    productionUrl: 'https://docs.tuturuuu.com',
+    slug: 'docs',
+    title: 'Docs',
   },
   {
     aliases: ['Money', 'Wallets', 'Invoices'],
@@ -252,20 +252,9 @@ export const LAUNCHABLE_APPS = [
     title: 'Nova',
   },
   {
-    aliases: ['Labs', 'Sandbox'],
-    appRoot: 'apps/playground',
-    category: 'developer',
-    defaultPath: '/',
-    packageName: '@tuturuuu/playground',
-    portlessApp: 'playground',
-    productionUrl: 'https://playground.tuturuuu.com',
-    slug: 'playground',
-    title: 'Playground',
-  },
-  {
     aliases: ['QR Code', 'Generator', 'Password', 'Random', 'UUID', 'Token'],
     appRoot: 'apps/tools',
-    category: 'developer',
+    category: 'miscellaneous',
     defaultPath: '/',
     localhostOrigin: 'http://localhost:7825',
     packageName: '@tuturuuu/tools',
@@ -277,7 +266,7 @@ export const LAUNCHABLE_APPS = [
   {
     aliases: ['Review', 'Flashcards'],
     appRoot: 'apps/rewise',
-    category: 'learning',
+    category: 'ai',
     defaultPath: '/',
     localhostOrigin: 'http://localhost:7804',
     packageName: '@tuturuuu/rewise',
@@ -289,7 +278,7 @@ export const LAUNCHABLE_APPS = [
   {
     aliases: ['Links', 'URL Shortener'],
     appRoot: 'apps/shortener',
-    category: 'developer',
+    category: 'miscellaneous',
     defaultPath: '/',
     packageName: '@tuturuuu/shortener',
     portlessApp: 'shortener',

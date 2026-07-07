@@ -1288,6 +1288,7 @@
       "core": "Cốt lõi",
       "developer": "Lập trình",
       "learning": "Học tập",
+      "miscellaneous": "Khác",
       "operations": "Vận hành",
       "productivity": "Năng suất"
     },
@@ -1298,6 +1299,7 @@
       "core": "Điểm vào cốt lõi cho nền tảng workspace Tuturuuu.",
       "developer": "Tiện ích lập trình, gateway và công cụ kỹ thuật.",
       "learning": "Ứng dụng học tập cho khóa học, luyện tập và giảng dạy.",
+      "miscellaneous": "Ứng dụng khác cho tài liệu, tiện ích và lối tắt công khai.",
       "operations": "Ứng dụng vận hành cho tài chính, kho hàng và thương mại.",
       "productivity": "Ứng dụng năng suất cho lịch, tác vụ, tin nhắn và họp."
     },
@@ -1536,6 +1538,7 @@
     "grid": "Lưới",
     "grid_view": "Xem dạng lưới",
     "hide_column": "Ẩn cột",
+    "hide_sidebar": "Ẩn thanh bên",
     "hide-all": "Ẩn tất cả",
     "history": "Lịch sử",
     "home": "Trang chủ",
@@ -4367,6 +4370,26 @@
     "title": "Phiên hoạt động",
     "total_sessions": "Tổng phiên",
     "try_again": "Thử lại"
+  },
+  "settings": {
+    "keyboard_shortcuts": {
+      "close_settings": "Đóng cài đặt",
+      "first_section": "Mục đầu tiên",
+      "global": "Toàn cục",
+      "hide_sidebar": "Ẩn thanh bên",
+      "last_section": "Mục cuối cùng",
+      "next_section": "Mục tiếp theo",
+      "open_settings": "Mở cài đặt",
+      "previous_section": "Mục trước",
+      "search_settings": "Tìm kiếm cài đặt",
+      "settings_dialog": "Hộp thoại cài đặt",
+      "toggle_sidebar": "Mở rộng hoặc thu gọn thanh bên"
+    },
+    "preferences": {
+      "keyboard_shortcuts": "Phím tắt bàn phím",
+      "keyboard_shortcuts_description": "Xem các phím tắt cho ứng dụng và thanh bên",
+      "sidebar_hidden": "Ẩn"
+    }
   },
   "settings-account": {
     "account": "Tài khoản",

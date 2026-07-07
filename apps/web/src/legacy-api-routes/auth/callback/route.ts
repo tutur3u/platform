@@ -4,7 +4,7 @@ import { MAX_NAME_LENGTH, MAX_URL_LENGTH } from '@tuturuuu/utils/constants';
 import { getAppDomainByUrl } from '@tuturuuu/utils/internal-domains';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { resolveAuthRedirectOrigin } from '@/app/[locale]/(marketing)/login/auth-redirect-origin';
+import { resolveAuthRedirectOrigin } from '@/app/[locale]/(auth)/login/auth-redirect-origin';
 import { getExternalAppByReturnUrl } from '@/lib/app-coordination/external-apps';
 import {
   createAuthDiagnosticCode,

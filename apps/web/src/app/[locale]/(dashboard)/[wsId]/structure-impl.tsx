@@ -1,6 +1,7 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { AppsLauncherDialog } from '@tuturuuu/satellite';
 import { LogoTitle } from '@tuturuuu/ui/custom/logo-title';
 import type { NavLink } from '@tuturuuu/ui/custom/navigation';
 import { SidebarFooterActions } from '@tuturuuu/ui/custom/sidebar-footer-actions';
@@ -11,6 +12,7 @@ import {
 } from '@tuturuuu/ui/custom/tuturuuu-logo';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { cn } from '@tuturuuu/utils/format';
+import type { LaunchableWorkspace } from '@tuturuuu/utils/launchable-apps';
 import { setCookie } from 'cookies-next';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
@@ -255,10 +257,26 @@ export function StructureImpl({
   const { behavior, handleBehaviorChange } = useSidebar();
   const [initialized, setInitialized] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(defaultCollapsed);
+  const [appsLauncherOpen, setAppsLauncherOpen] = useState(false);
   const SidebarActiveTimer = useSidebarActiveTimerComponent();
   const hydratedLinks = useMemo(
     () => hydrateDashboardNavigationIcons(links),
     [links]
+  );
+  const appsLauncherLink = useMemo<NavLink>(
+    () => ({
+      icon: <DashboardNavigationIcon className="h-4 w-4" name="Boxes" />,
+      id: 'apps-launcher',
+      onClick: () => setAppsLauncherOpen(true),
+      preferenceLocked: true,
+      preferencePlacement: 'root',
+      title: t('command_launcher.apps'),
+    }),
+    [t]
+  );
+  const navigationLinksWithLauncher = useMemo<(NavLink | null)[]>(
+    () => cleanNavigationSeparators([appsLauncherLink, null, ...hydratedLinks]),
+    [appsLauncherLink, hydratedLinks]
   );
   const previousPathnameRef = useRef(pathname);
   const accountNavigationLayoutQueryKey = [
@@ -300,13 +318,13 @@ export function StructureImpl({
   const navigationPreferenceResult = useMemo(
     () =>
       applySidebarNavigationPreferences(
-        hydratedLinks,
+        navigationLinksWithLauncher,
         effectiveNavigationLayout,
         {
           pathname,
         }
       ),
-    [effectiveNavigationLayout, hydratedLinks, pathname]
+    [effectiveNavigationLayout, navigationLinksWithLauncher, pathname]
   );
   const preferenceItemById = useMemo(
     () =>
@@ -353,7 +371,7 @@ export function StructureImpl({
   const createQuickPlacementUpdate = useCallback(
     (id: string, placement: SidebarNavigationPlacement) => {
       const nextConfig = createSidebarNavigationLayoutConfigForPlacement(
-        hydratedLinks,
+        navigationLinksWithLauncher,
         effectiveNavigationLayout,
         id,
         placement
@@ -365,12 +383,12 @@ export function StructureImpl({
         value: serializeSidebarNavigationLayoutConfig(nextConfig),
       };
     },
-    [effectiveNavigationLayout, hydratedLinks]
+    [effectiveNavigationLayout, navigationLinksWithLauncher]
   );
   const createQuickHiddenUpdate = useCallback(
     (id: string, hidden: boolean) => {
       const nextConfig = createSidebarNavigationLayoutConfigForHiddenState(
-        hydratedLinks,
+        navigationLinksWithLauncher,
         effectiveNavigationLayout,
         id,
         hidden
@@ -381,7 +399,7 @@ export function StructureImpl({
         value: serializeSidebarNavigationLayoutConfig(nextConfig),
       };
     },
-    [effectiveNavigationLayout, hydratedLinks]
+    [effectiveNavigationLayout, navigationLinksWithLauncher]
   );
   const preferredLinks = useMemo(() => {
     if (navigationPreferenceResult.archivedLinks.length === 0) {
@@ -555,7 +573,11 @@ export function StructureImpl({
   );
 
   useEffect(() => {
-    if (behavior === 'collapsed' || behavior === 'hover') {
+    if (
+      behavior === 'collapsed' ||
+      behavior === 'hover' ||
+      behavior === 'hidden'
+    ) {
       setIsCollapsed(true);
     } else {
       setIsCollapsed(false);
@@ -722,6 +744,12 @@ export function StructureImpl({
   }, [pathname, preferredLinks, findActiveNavigation]);
 
   const handleToggle = () => {
+    if (behavior === 'hidden') {
+      setIsCollapsed(true);
+      handleBehaviorChange('collapsed');
+      return;
+    }
+
     const newCollapsed = !isCollapsed;
     setIsCollapsed(newCollapsed);
     setCookie(
@@ -978,29 +1006,43 @@ export function StructureImpl({
 
   if (!initialized) return null;
 
+  const currentWorkspace: LaunchableWorkspace = {
+    id: workspace?.id ?? wsId,
+    name: workspace?.name ?? null,
+    personal: workspace?.personal ?? false,
+  };
+
   return (
-    <BaseStructure
-      isCollapsed={isCollapsed}
-      setIsCollapsed={handleToggle}
-      header={header}
-      mobileHeader={mobileHeader}
-      sidebarHeader={sidebarHeader}
-      sidebarContent={sidebarContent}
-      actions={actions}
-      userPopover={userPopover}
-      feedbackButton={
-        <SidebarFooterActions
-          wsId={wsId}
-          isCollapsed={isCollapsed}
-          showUpgrade={!workspace?.tier || workspace.tier === 'FREE'}
-        />
-      }
-      onMouseEnter={onMouseEnter}
-      onMouseLeave={onMouseLeave}
-      hideSizeToggle={behavior === 'hover'}
-      overlayOnExpand={behavior === 'hover'}
-    >
-      {children}
-    </BaseStructure>
+    <>
+      <AppsLauncherDialog
+        currentWorkspace={currentWorkspace}
+        onOpenChange={setAppsLauncherOpen}
+        open={appsLauncherOpen}
+      />
+      <BaseStructure
+        isCollapsed={isCollapsed}
+        setIsCollapsed={handleToggle}
+        header={header}
+        mobileHeader={mobileHeader}
+        sidebarHeader={sidebarHeader}
+        sidebarContent={sidebarContent}
+        actions={actions}
+        userPopover={userPopover}
+        feedbackButton={
+          <SidebarFooterActions
+            wsId={wsId}
+            isCollapsed={isCollapsed}
+            showUpgrade={!workspace?.tier || workspace.tier === 'FREE'}
+          />
+        }
+        onMouseEnter={onMouseEnter}
+        onMouseLeave={onMouseLeave}
+        hideSizeToggle={behavior === 'hover' || behavior === 'hidden'}
+        overlayOnExpand={behavior === 'hover'}
+        sidebarHidden={behavior === 'hidden'}
+      >
+        {children}
+      </BaseStructure>
+    </>
   );
 }

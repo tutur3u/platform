@@ -7735,11 +7735,11 @@
       "targetOwner": "tanstack-start"
     },
     {
-      "id": "layout:/:locale/login:apps/web/src/app/[locale]/(marketing)/login/layout.tsx",
+      "id": "layout:/:locale/login:apps/web/src/app/[locale]/(auth)/login/layout.tsx",
       "kind": "layout",
       "methods": [],
       "routePath": "/:locale/login",
-      "sourceFile": "apps/web/src/app/[locale]/(marketing)/login/layout.tsx",
+      "sourceFile": "apps/web/src/app/[locale]/(auth)/login/layout.tsx",
       "status": "migrated",
       "targetOwner": "tanstack-start"
     },
@@ -9418,11 +9418,11 @@
       "targetOwner": "tanstack-start"
     },
     {
-      "id": "page:/:locale/login:apps/web/src/app/[locale]/(marketing)/login/page.tsx",
+      "id": "page:/:locale/login:apps/web/src/app/[locale]/(auth)/login/page.tsx",
       "kind": "page",
       "methods": [],
       "routePath": "/:locale/login",
-      "sourceFile": "apps/web/src/app/[locale]/(marketing)/login/page.tsx",
+      "sourceFile": "apps/web/src/app/[locale]/(auth)/login/page.tsx",
       "status": "legacy-next",
       "targetOwner": "tanstack-start"
     },

@@ -399,6 +399,7 @@
       "core": "Core",
       "developer": "Developer",
       "learning": "Learning",
+      "miscellaneous": "Miscellaneous",
       "operations": "Operations",
       "productivity": "Productivity"
     },
@@ -409,6 +410,7 @@
       "core": "Core entrypoints for the Tuturuuu workspace platform.",
       "developer": "Developer utilities, gateways, and technical tools.",
       "learning": "Learning apps for courses, practice, and teaching.",
+      "miscellaneous": "Miscellaneous apps for docs, utilities, and public shortcuts.",
       "operations": "Operations apps for money, inventory, and commerce.",
       "productivity": "Productivity apps for schedule, tasks, messages, and meetings."
     },
@@ -461,6 +463,7 @@
     "expanded": "Expanded",
     "feedback": "Feedback",
     "get-started": "Get Started",
+    "hide_sidebar": "Hide sidebar",
     "home": "Home",
     "join_workspace": "Join Workspace",
     "join_workspace_by_slug_description": "Enter the workspace name or link to open its join page.",
@@ -510,6 +513,26 @@
     "no-notifications": "You have no notifications yet.",
     "notifications": "Notifications",
     "view-all": "View All Notifications"
+  },
+  "settings": {
+    "keyboard_shortcuts": {
+      "close_settings": "Close settings",
+      "first_section": "First section",
+      "global": "Global",
+      "hide_sidebar": "Hide sidebar",
+      "last_section": "Last section",
+      "next_section": "Next section",
+      "open_settings": "Open settings",
+      "previous_section": "Previous section",
+      "search_settings": "Search settings",
+      "settings_dialog": "Settings dialog",
+      "toggle_sidebar": "Expand or collapse sidebar"
+    },
+    "preferences": {
+      "keyboard_shortcuts": "Keyboard Shortcuts",
+      "keyboard_shortcuts_description": "Review keyboard shortcuts for app and sidebar actions",
+      "sidebar_hidden": "Hidden"
+    }
   },
   "version-badge": {
     "app": "App",

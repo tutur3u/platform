@@ -50,6 +50,7 @@
       "core": "Core",
       "developer": "Developer",
       "learning": "Learning",
+      "miscellaneous": "Miscellaneous",
       "operations": "Operations",
       "productivity": "Productivity"
     },
@@ -60,6 +61,7 @@
       "core": "Core entrypoints for the Tuturuuu workspace platform.",
       "developer": "Developer utilities, gateways, and technical tools.",
       "learning": "Learning apps for courses, practice, and teaching.",
+      "miscellaneous": "Miscellaneous apps for docs, utilities, and public shortcuts.",
       "operations": "Operations apps for money, inventory, and commerce.",
       "productivity": "Productivity apps for schedule, tasks, messages, and meetings."
     },
@@ -92,6 +94,9 @@
     "title": "Command Launcher",
     "workspace_destination": "{workspace} workspace",
     "workspaces": "Workspaces"
+  },
+  "common": {
+    "hide_sidebar": "Hide sidebar"
   },
   "dashboard": {
     "description": "Build a shared voxel world, configure LLM NPCs, and run manual agent decision experiments.",
@@ -163,6 +168,26 @@
   "metadata": {
     "description": "Voxel-based research editor for simulated agent behavior experiments.",
     "title": "Hive"
+  },
+  "settings": {
+    "keyboard_shortcuts": {
+      "close_settings": "Close settings",
+      "first_section": "First section",
+      "global": "Global",
+      "hide_sidebar": "Hide sidebar",
+      "last_section": "Last section",
+      "next_section": "Next section",
+      "open_settings": "Open settings",
+      "previous_section": "Previous section",
+      "search_settings": "Search settings",
+      "settings_dialog": "Settings dialog",
+      "toggle_sidebar": "Expand or collapse sidebar"
+    },
+    "preferences": {
+      "keyboard_shortcuts": "Keyboard Shortcuts",
+      "keyboard_shortcuts_description": "Review keyboard shortcuts for app and sidebar actions",
+      "sidebar_hidden": "Hidden"
+    }
   },
   "studio": {
     "agent": {

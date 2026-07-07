@@ -67,12 +67,37 @@
     "tuturuuuAccount": "Tài khoản Tuturuuu"
   },
   "command_launcher": {
+    "aliases_slot": "Cũng khớp: {aliases}",
+    "app_categories": {
+      "ai": "AI",
+      "all": "Tất cả",
+      "content": "Nội dung",
+      "core": "Cốt lõi",
+      "developer": "Lập trình",
+      "learning": "Học tập",
+      "miscellaneous": "Khác",
+      "operations": "Vận hành",
+      "productivity": "Năng suất"
+    },
+    "app_category_descriptions": {
+      "ai": "Ứng dụng AI cho trợ lý, mô phỏng và tư duy sáng tạo.",
+      "all": "Mọi ứng dụng Tuturuuu có route khả dụng từ trình mở này.",
+      "content": "Ứng dụng nội dung cho xuất bản, tệp và phân phối.",
+      "core": "Điểm vào cốt lõi cho nền tảng workspace Tuturuuu.",
+      "developer": "Tiện ích lập trình, gateway và công cụ kỹ thuật.",
+      "learning": "Ứng dụng học tập cho khóa học, luyện tập và giảng dạy.",
+      "miscellaneous": "Ứng dụng khác cho tài liệu, tiện ích và lối tắt công khai.",
+      "operations": "Ứng dụng vận hành cho tài chính, kho hàng và thương mại.",
+      "productivity": "Ứng dụng năng suất cho lịch, tác vụ, tin nhắn và họp."
+    },
     "apps": "Ứng dụng",
+    "apps_count": "{count, plural, one {# ứng dụng} other {# ứng dụng}}",
     "apps_description": "Mở một ứng dụng Tuturuuu khác từ workspace này.",
     "close": "đóng",
     "current": "Hiện tại",
     "current_app": "Ứng dụng hiện tại",
     "current_workspace": "Workspace hiện tại",
+    "default_destination": "Trang mặc định của ứng dụng",
     "empty": "Không tìm thấy lệnh",
     "empty_description": "Thử workspace, ứng dụng, trang hoặc cách viết gần đúng hơn.",
     "error_workspaces": "Không thể tải workspace",
@@ -92,37 +117,15 @@
     "search_hint": "Nhập workspace, ứng dụng, trang, chữ viết tắt hoặc cách viết gần đúng.",
     "select": "chọn",
     "title": "Trình mở lệnh",
-    "workspaces": "Workspace",
-    "aliases_slot": "Cũng khớp: {aliases}",
-    "apps_count": "{count, plural, one {# ứng dụng} other {# ứng dụng}}",
-    "app_categories": {
-      "ai": "AI",
-      "all": "Tất cả",
-      "content": "Nội dung",
-      "core": "Cốt lõi",
-      "developer": "Lập trình",
-      "learning": "Học tập",
-      "operations": "Vận hành",
-      "productivity": "Năng suất"
-    },
-    "app_category_descriptions": {
-      "ai": "Ứng dụng AI cho trợ lý, mô phỏng và tư duy sáng tạo.",
-      "all": "Mọi ứng dụng Tuturuuu có route khả dụng từ trình mở này.",
-      "content": "Ứng dụng nội dung cho xuất bản, tệp và phân phối.",
-      "core": "Điểm vào cốt lõi cho nền tảng workspace Tuturuuu.",
-      "developer": "Tiện ích lập trình, gateway và công cụ kỹ thuật.",
-      "learning": "Ứng dụng học tập cho khóa học, luyện tập và giảng dạy.",
-      "operations": "Ứng dụng vận hành cho tài chính, kho hàng và thương mại.",
-      "productivity": "Ứng dụng năng suất cho lịch, tác vụ, tin nhắn và họp."
-    },
-    "default_destination": "Trang mặc định của ứng dụng",
-    "workspace_destination": "Workspace {workspace}"
+    "workspace_destination": "Workspace {workspace}",
+    "workspaces": "Workspace"
   },
   "common": {
     "back": "Quay lại",
     "completed": "Đã hoàn thành",
     "continue": "Tiếp tục",
     "empty": "Chưa có nội dung.",
+    "hide_sidebar": "Ẩn thanh bên",
     "learner": "Học viên",
     "loading": "Đang tải",
     "next": "Tiếp",
@@ -433,10 +436,28 @@
       "light": "Ôn nhẹ"
     },
     "focusMode": "Nhịp học",
+    "keyboard_shortcuts": {
+      "close_settings": "Đóng cài đặt",
+      "first_section": "Mục đầu tiên",
+      "global": "Toàn cục",
+      "hide_sidebar": "Ẩn thanh bên",
+      "last_section": "Mục cuối cùng",
+      "next_section": "Mục tiếp theo",
+      "open_settings": "Mở cài đặt",
+      "previous_section": "Mục trước",
+      "search_settings": "Tìm kiếm cài đặt",
+      "settings_dialog": "Hộp thoại cài đặt",
+      "toggle_sidebar": "Mở rộng hoặc thu gọn thanh bên"
+    },
     "language": "Ngôn ngữ",
     "light": "Sáng",
     "linkedStudents": "Học viên được liên kết",
     "parentMode": "Chế độ phụ huynh",
+    "preferences": {
+      "keyboard_shortcuts": "Phím tắt bàn phím",
+      "keyboard_shortcuts_description": "Xem các phím tắt cho ứng dụng và thanh bên",
+      "sidebar_hidden": "Ẩn"
+    },
     "profile": "Hồ sơ",
     "system": "Hệ thống",
     "theme": "Giao diện",

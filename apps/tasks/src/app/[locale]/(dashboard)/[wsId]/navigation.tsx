@@ -1,4 +1,4 @@
-import { SquareKanban, UserStar } from '@tuturuuu/icons';
+import { UserStar } from '@tuturuuu/icons';
 import type { NavLink } from '@tuturuuu/ui/custom/navigation';
 import { getTranslations } from 'next-intl/server';
 import { createElement } from 'react';
@@ -17,12 +17,11 @@ export async function getNavigationLinks({
       title: t('sidebar_tabs.tasks'),
       href: `/${personalOrWsId}/tasks`,
       icon: createElement(UserStar, { className: 'h-4 w-4' }),
-      matchExact: true,
-    },
-    {
-      title: t('sidebar_tabs.boards'),
-      href: `/${personalOrWsId}/boards`,
-      icon: createElement(SquareKanban, { className: 'h-4 w-4' }),
+      aliases: [
+        `/${personalOrWsId}/tasks/*`,
+        `/${personalOrWsId}/boards`,
+        `/${personalOrWsId}/boards/*`,
+      ],
     },
   ];
 }

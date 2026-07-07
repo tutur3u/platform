@@ -7,6 +7,24 @@ const serwistConfig = getTurbopackConfig();
 const isDockerStandaloneBuild = process.env.DOCKER_WEB_STANDALONE === '1';
 const isNativeDockerStandaloneBuild =
   isDockerStandaloneBuild && process.env.DOCKER_WEB_NATIVE_BUILD === '1';
+const authShellHeaders = [
+  {
+    key: 'Cache-Control',
+    value: 'public, max-age=0, must-revalidate',
+  },
+  {
+    key: 'CDN-Cache-Control',
+    value: 'public, max-age=86400, stale-while-revalidate=604800',
+  },
+  {
+    key: 'Vercel-CDN-Cache-Control',
+    value: 'public, max-age=86400, stale-while-revalidate=604800',
+  },
+  {
+    key: 'X-Robots-Tag',
+    value: 'noindex, nofollow',
+  },
+];
 
 function parsePositiveIntegerEnv(name: string, fallback?: number) {
   const rawValue = process.env[name]?.trim();
@@ -74,6 +92,17 @@ const nextConfig = createTuturuuuNextConfig({
         hostname: 'models.dev',
       },
     ],
+  },
+  async headers() {
+    return [
+      '/login',
+      '/:locale/login',
+      '/add-account',
+      '/:locale/add-account',
+    ].map((source) => ({
+      source,
+      headers: authShellHeaders,
+    }));
   },
 });
 

@@ -1,8 +1,15 @@
 'use client';
 
-import { CalendarDays, Paintbrush, PanelLeft, User } from '@tuturuuu/icons';
+import {
+  CalendarDays,
+  Keyboard,
+  Paintbrush,
+  PanelLeft,
+  User,
+} from '@tuturuuu/icons';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { AppearanceSettings } from '@tuturuuu/ui/custom/settings/appearance-settings';
+import { KeyboardShortcutsSettings } from '@tuturuuu/ui/custom/settings/keyboard-shortcuts-settings';
 import { LunarCalendarSettings } from '@tuturuuu/ui/custom/settings/lunar-calendar-settings';
 import SharedSidebarSettings from '@tuturuuu/ui/custom/settings/sidebar-settings';
 import { SettingsDialogShell } from '@tuturuuu/ui/custom/settings-dialog-shell';
@@ -73,6 +80,13 @@ export function SettingsDialog({
           description: t('settings.preferences.sidebar_description'),
           keywords: ['Sidebar', 'Navigation', 'Menu'],
         },
+        {
+          name: 'keyboard_shortcuts',
+          label: t('settings.preferences.keyboard_shortcuts'),
+          icon: Keyboard,
+          description: t('settings.preferences.keyboard_shortcuts_description'),
+          keywords: ['Keyboard', 'Shortcuts', 'Hotkeys'],
+        },
       ],
     },
   ];
@@ -84,6 +98,7 @@ export function SettingsDialog({
       onActiveTabChange={setActiveTab}
       primaryGroupLabels={[]}
       expandAllAccordions={expandAllAccordions}
+      keyboardNavigation
     >
       {activeTab === 'calendar_general' && (
         <div className="h-full">
@@ -125,6 +140,12 @@ export function SettingsDialog({
       {activeTab === 'sidebar' && (
         <div className="h-full">
           <SharedSidebarSettings useSidebar={useSidebar} />
+        </div>
+      )}
+
+      {activeTab === 'keyboard_shortcuts' && (
+        <div className="h-full">
+          <KeyboardShortcutsSettings />
         </div>
       )}
     </SettingsDialogShell>

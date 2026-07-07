@@ -3981,6 +3981,7 @@
       "core": "Cốt lõi",
       "developer": "Lập trình",
       "learning": "Học tập",
+      "miscellaneous": "Khác",
       "operations": "Vận hành",
       "productivity": "Năng suất"
     },
@@ -3991,6 +3992,7 @@
       "core": "Điểm vào cốt lõi cho nền tảng workspace Tuturuuu.",
       "developer": "Tiện ích lập trình, gateway và công cụ kỹ thuật.",
       "learning": "Ứng dụng học tập cho khóa học, luyện tập và giảng dạy.",
+      "miscellaneous": "Ứng dụng khác cho tài liệu, tiện ích và lối tắt công khai.",
       "operations": "Ứng dụng vận hành cho tài chính, kho hàng và thương mại.",
       "productivity": "Ứng dụng năng suất cho lịch, tác vụ, tin nhắn và họp."
     },
@@ -4410,6 +4412,7 @@
     "hidden": "Ẩn",
     "hidden_labels": "Nhãn đang ẩn:",
     "hide_column": "Ẩn cột",
+    "hide_sidebar": "Ẩn thanh bên",
     "hide-all": "Ẩn tất cả",
     "history": "Lịch sử",
     "home": "Trang chủ",
@@ -12000,15 +12003,17 @@
       "workspace_navigation_title": "Mặc định của không gian làm việc"
     },
     "keyboard_shortcuts": {
-      "close_settings": "Đóng Cài đặt",
-      "first_section": "Phần cài đặt đầu tiên",
+      "close_settings": "Đóng cài đặt",
+      "first_section": "Mục đầu tiên",
       "global": "Toàn cục",
-      "last_section": "Phần cài đặt cuối cùng",
-      "next_section": "Phần cài đặt tiếp theo",
-      "open_settings": "Mở Cài đặt",
-      "previous_section": "Phần cài đặt trước đó",
+      "hide_sidebar": "Ẩn thanh bên",
+      "last_section": "Mục cuối cùng",
+      "next_section": "Mục tiếp theo",
+      "open_settings": "Mở cài đặt",
+      "previous_section": "Mục trước",
       "search_settings": "Tìm kiếm cài đặt",
-      "settings_dialog": "Hộp thoại Cài đặt"
+      "settings_dialog": "Hộp thoại cài đặt",
+      "toggle_sidebar": "Mở rộng hoặc thu gọn thanh bên"
     },
     "loading_workspace": "Đang tải không gian làm việc...",
     "manage_settings": "Quản lý cài đặt {label} của bạn",
@@ -12081,7 +12086,7 @@
       "forms_autosave_description": "Tự động lưu chỉnh sửa biểu mẫu khi bạn làm việc. Bật theo mặc định.",
       "forms_description": "Tùy chọn trình tạo biểu mẫu",
       "keyboard_shortcuts": "Phím tắt bàn phím",
-      "keyboard_shortcuts_description": "Xem các phím tắt để mở và điều hướng Cài đặt",
+      "keyboard_shortcuts_description": "Xem các phím tắt cho ứng dụng và thanh bên",
       "navigation": {
         "default_workspace_help": "Đây là không gian làm việc bạn thấy đầu tiên khi mở ứng dụng.",
         "default_workspace_label": "Không gian làm việc mặc định",
@@ -12126,6 +12131,7 @@
       "sidebar_collapsed": "Thu gọn",
       "sidebar_description": "Quản lý hiển thị và hành vi của thanh bên",
       "sidebar_expanded": "Mở rộng",
+      "sidebar_hidden": "Ẩn",
       "sidebar_hover": "Di chuột",
       "sidebar_layout": {
         "account_scope": "Mặc định tài khoản",

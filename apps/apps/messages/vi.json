@@ -13,6 +13,9 @@
       "cms": {
         "description": "Vận hành nội dung, schema, xem trước và xuất bản."
       },
+      "docs": {
+        "description": "Tài liệu, hướng dẫn và tham chiếu nền tảng."
+      },
       "drive": {
         "description": "Tệp, thư mục, chia sẻ và vận hành lưu trữ trong workspace."
       },
@@ -74,6 +77,7 @@
       "core": "Cốt lõi",
       "developer": "Lập trình",
       "learning": "Học tập",
+      "miscellaneous": "Khác",
       "operations": "Vận hành",
       "productivity": "Năng suất"
     },
@@ -84,6 +88,7 @@
       "core": "Nền tảng sản phẩm và workspace trung tâm.",
       "developer": "Công cụ tích hợp, kiểm thử và demo package.",
       "learning": "Ứng dụng giáo dục cho học viên và giáo viên.",
+      "miscellaneous": "Tài liệu, tiện ích và lối tắt công khai.",
       "operations": "Vận hành kinh doanh và quản lý tài nguyên.",
       "productivity": "Điều phối, lập kế hoạch và thực thi hằng ngày."
     },
@@ -104,6 +109,7 @@
       "core": "Cốt lõi",
       "developer": "Lập trình",
       "learning": "Học tập",
+      "miscellaneous": "Khác",
       "operations": "Vận hành",
       "productivity": "Năng suất"
     },
@@ -114,6 +120,7 @@
       "core": "Điểm vào cốt lõi cho nền tảng workspace Tuturuuu.",
       "developer": "Tiện ích lập trình, gateway và công cụ kỹ thuật.",
       "learning": "Ứng dụng học tập cho khóa học, luyện tập và giảng dạy.",
+      "miscellaneous": "Ứng dụng khác cho tài liệu, tiện ích và lối tắt công khai.",
       "operations": "Ứng dụng vận hành cho tài chính, kho hàng và thương mại.",
       "productivity": "Ứng dụng năng suất cho lịch, tác vụ, tin nhắn và họp."
     },
@@ -146,6 +153,9 @@
     "title": "Trình mở lệnh",
     "workspace_destination": "Workspace {workspace}",
     "workspaces": "Workspace"
+  },
+  "common": {
+    "hide_sidebar": "Ẩn thanh bên"
   },
   "finance": {
     "new_debt": "Khoản nợ mới",
@@ -209,6 +219,26 @@
     "wallet_required": "Vui lòng chọn ví",
     "weekly": "Hàng tuần",
     "yearly": "Hàng năm"
+  },
+  "settings": {
+    "keyboard_shortcuts": {
+      "close_settings": "Đóng cài đặt",
+      "first_section": "Mục đầu tiên",
+      "global": "Toàn cục",
+      "hide_sidebar": "Ẩn thanh bên",
+      "last_section": "Mục cuối cùng",
+      "next_section": "Mục tiếp theo",
+      "open_settings": "Mở cài đặt",
+      "previous_section": "Mục trước",
+      "search_settings": "Tìm kiếm cài đặt",
+      "settings_dialog": "Hộp thoại cài đặt",
+      "toggle_sidebar": "Mở rộng hoặc thu gọn thanh bên"
+    },
+    "preferences": {
+      "keyboard_shortcuts": "Phím tắt bàn phím",
+      "keyboard_shortcuts_description": "Xem các phím tắt cho ứng dụng và thanh bên",
+      "sidebar_hidden": "Ẩn"
+    }
   },
   "version-badge": {
     "app": "Ứng dụng",

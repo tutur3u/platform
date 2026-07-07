@@ -5,14 +5,16 @@ import {
   useUserConfig,
 } from '@tuturuuu/ui/hooks/use-user-config';
 import { useEffect, useRef } from 'react';
-
-type SidebarBehavior = 'expanded' | 'collapsed' | 'hover';
+import type { SidebarBehavior } from './sidebar-context';
 
 const SIDEBAR_BEHAVIOR_CONFIG_KEY = 'SIDEBAR_BEHAVIOR';
 const RECENT_LOCAL_BEHAVIOR_GRACE_MS = 5 * 60 * 1000;
 
 const isValidBehavior = (value: string | undefined): value is SidebarBehavior =>
-  value === 'expanded' || value === 'collapsed' || value === 'hover';
+  value === 'expanded' ||
+  value === 'collapsed' ||
+  value === 'hover' ||
+  value === 'hidden';
 
 interface SidebarRemoteBehaviorBridgeProps {
   behavior: SidebarBehavior;

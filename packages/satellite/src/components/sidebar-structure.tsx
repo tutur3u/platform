@@ -126,7 +126,9 @@ export function SidebarStructure({
   });
 
   useEffect(() => {
-    setIsCollapsed(behavior === 'collapsed' || behavior === 'hover');
+    setIsCollapsed(
+      behavior === 'collapsed' || behavior === 'hover' || behavior === 'hidden'
+    );
   }, [behavior]);
 
   useEffect(() => {
@@ -171,6 +173,12 @@ export function SidebarStructure({
   );
 
   const handleToggle = () => {
+    if (behavior === 'hidden') {
+      setIsCollapsed(true);
+      handleBehaviorChange('collapsed');
+      return;
+    }
+
     const newCollapsed = !isCollapsed;
     setIsCollapsed(newCollapsed);
     setCookie(
@@ -260,7 +268,7 @@ export function SidebarStructure({
           />
         }
         header={null}
-        hideSizeToggle={behavior === 'hover'}
+        hideSizeToggle={behavior === 'hover' || behavior === 'hidden'}
         isCollapsed={isCollapsed}
         mobileHeader={
           <SidebarStructureMobileHeader
@@ -274,6 +282,7 @@ export function SidebarStructure({
         onMouseEnter={onMouseEnter}
         onMouseLeave={onMouseLeave}
         overlayOnExpand={behavior === 'hover'}
+        sidebarHidden={behavior === 'hidden'}
         sidebarCollapsedWidth={sidebarCollapsedWidth}
         sidebarExpandedWidth={sidebarExpandedWidth}
         sidebarHeaderClassName={sidebarHeaderClassName}

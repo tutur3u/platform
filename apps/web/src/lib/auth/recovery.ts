@@ -4,7 +4,7 @@ import {
   extractIPFromHeaders,
   extractUserAgentFromHeaders,
 } from '@tuturuuu/utils/abuse-protection';
-import { resolveAuthRedirectOrigin } from '@/app/[locale]/(marketing)/login/auth-redirect-origin';
+import { resolveAuthRedirectOrigin } from '@/app/[locale]/(auth)/login/auth-redirect-origin';
 import {
   createAuthRecoveryCode,
   createAuthRecoveryToken,

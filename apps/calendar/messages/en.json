@@ -2010,6 +2010,7 @@
       "core": "Core",
       "developer": "Developer",
       "learning": "Learning",
+      "miscellaneous": "Miscellaneous",
       "operations": "Operations",
       "productivity": "Productivity"
     },
@@ -2020,6 +2021,7 @@
       "core": "Core entrypoints for the Tuturuuu workspace platform.",
       "developer": "Developer utilities, gateways, and technical tools.",
       "learning": "Learning apps for courses, practice, and teaching.",
+      "miscellaneous": "Miscellaneous apps for docs, utilities, and public shortcuts.",
       "operations": "Operations apps for money, inventory, and commerce.",
       "productivity": "Productivity apps for schedule, tasks, messages, and meetings."
     },
@@ -2396,6 +2398,7 @@
     "hidden": "Hidden",
     "hidden_labels": "Hidden labels:",
     "hide_column": "Hide column",
+    "hide_sidebar": "Hide sidebar",
     "hide-all": "Hide All",
     "history": "History",
     "home": "Home",
@@ -6629,6 +6632,19 @@
       "workspace_navigation_description": "Set the default page for all workspace members when clicking on Finance.",
       "workspace_navigation_title": "Workspace Default"
     },
+    "keyboard_shortcuts": {
+      "close_settings": "Close settings",
+      "first_section": "First section",
+      "global": "Global",
+      "hide_sidebar": "Hide sidebar",
+      "last_section": "Last section",
+      "next_section": "Next section",
+      "open_settings": "Open settings",
+      "previous_section": "Previous section",
+      "search_settings": "Search settings",
+      "settings_dialog": "Settings dialog",
+      "toggle_sidebar": "Expand or collapse sidebar"
+    },
     "loading_workspace": "Loading workspace...",
     "manage_settings": "Manage your {label} settings",
     "preferences": {
@@ -6636,6 +6652,8 @@
       "appearance_ws_description": "Customize the look and feel of your interface and calendar",
       "expand_settings_accordions": "Expand All Settings Sections",
       "expand_settings_accordions_description": "Always keep all accordion sections in the settings dialog open",
+      "keyboard_shortcuts": "Keyboard Shortcuts",
+      "keyboard_shortcuts_description": "Review keyboard shortcuts for app and sidebar actions",
       "notifications": "Notifications",
       "notifications_ws_description": "Manage your notification preferences including calendar notifications",
       "sidebar": "Sidebar",
@@ -6644,6 +6662,7 @@
       "sidebar_collapsed": "Collapsed",
       "sidebar_description": "Manage sidebar visibility and behavior",
       "sidebar_expanded": "Expanded",
+      "sidebar_hidden": "Hidden",
       "sidebar_hover": "Hover",
       "sidebar_local_override": "Local Override",
       "sidebar_local_override_description": "Use a different sidebar setting for this browser only, instead of your account-wide preference.",
