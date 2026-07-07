@@ -212,10 +212,11 @@ function QuizResponseCard({
   const [isAiLoading, setIsAiLoading] = useState(false);
   const hasAnswer = Boolean(quizAnswer);
   const isCorrectAnswer = quizAnswer?.is_correct === true;
+  const isParagraph = quiz.type === 'paragraph';
   const isPendingReview = hasAnswer && quizAnswer?.is_correct === null;
   const hasKnownObjectiveGrade =
     quizAnswer?.is_correct === true || quizAnswer?.is_correct === false;
-  const isParagraph = quiz.type === 'paragraph';
+  const needsManualGrade = isParagraph || isPendingReview;
 
   const displayedAiFeedback = quizAnswer?.ai_feedback || localAiFeedback;
 
@@ -324,8 +325,8 @@ function QuizResponseCard({
         </div>
       )}
 
-      {/* Paragraph questions: full grading controls with mark correct/incorrect */}
-      {isParagraph && hasAnswer && (
+      {/* Pending-review answers need explicit grade controls before feedback saves. */}
+      {hasAnswer && needsManualGrade && (
         <ParagraphGradeControls
           wsId={wsId}
           courseId={courseId}

@@ -39,6 +39,30 @@ begin
 end;
 $$;
 
+create or replace function "private"."ensure_workspace_quiz_type_grade_state"()
+returns trigger
+language plpgsql
+as $$
+begin
+  if new."type" = 'paragraph' then
+    return new;
+  end if;
+
+  if exists (
+    select 1
+    from "public"."course_module_quiz_submissions" as submissions
+    where submissions."quiz_id" = new."id"
+      and submissions."is_correct" is null
+  ) then
+    raise exception 'quiz type cannot become objective while submissions have null is_correct'
+      using errcode = '23514',
+        constraint = 'workspace_quizzes_type_null_submission_check';
+  end if;
+
+  return new;
+end;
+$$;
+
 drop trigger if exists "course_module_quiz_submissions_grade_state_check"
 on "public"."course_module_quiz_submissions";
 
@@ -47,3 +71,13 @@ before insert or update of "quiz_id", "is_correct"
 on "public"."course_module_quiz_submissions"
 for each row
 execute function "private"."ensure_course_module_quiz_submission_grade_state"();
+
+drop trigger if exists "workspace_quizzes_grade_state_check"
+on "public"."workspace_quizzes";
+
+create trigger "workspace_quizzes_grade_state_check"
+before update of "type"
+on "public"."workspace_quizzes"
+for each row
+when (old."type" is distinct from new."type")
+execute function "private"."ensure_workspace_quiz_type_grade_state"();
