@@ -9,13 +9,7 @@
     "unknown_user": "Người dùng không xác định"
   },
   "command_launcher": {
-    "apps": "Ứng dụng",
-    "apps_description": "Mở một ứng dụng Tuturuuu khác từ workspace này.",
-    "open_here": "Mở tại đây",
-    "open_in_new_tab": "Mở trong tab mới",
-    "open_options": "Tùy chọn mở",
     "aliases_slot": "Cũng khớp: {aliases}",
-    "apps_count": "{count, plural, one {# ứng dụng} other {# ứng dụng}}",
     "app_categories": {
       "ai": "AI",
       "all": "Tất cả",
@@ -36,7 +30,13 @@
       "operations": "Ứng dụng vận hành cho tài chính, kho hàng và thương mại.",
       "productivity": "Ứng dụng năng suất cho lịch, tác vụ, tin nhắn và họp."
     },
+    "apps": "Ứng dụng",
+    "apps_count": "{count, plural, one {# ứng dụng} other {# ứng dụng}}",
+    "apps_description": "Mở một ứng dụng Tuturuuu khác từ workspace này.",
     "default_destination": "Trang mặc định của ứng dụng",
+    "open_here": "Mở tại đây",
+    "open_in_new_tab": "Mở trong tab mới",
+    "open_options": "Tùy chọn mở",
     "workspace_destination": "Workspace {workspace}"
   },
   "common": {
@@ -355,6 +355,7 @@
     "hidden": "Ẩn",
     "hidden_labels": "Nhãn đang ẩn:",
     "hide_column": "Ẩn cột",
+    "hide_sidebar": "Ẩn thanh bên",
     "hide-all": "Ẩn tất cả",
     "history": "Lịch sử",
     "home": "Trang chủ",
@@ -811,6 +812,26 @@
     "years_old": "tuổi",
     "yellow": "Vàng",
     "yesterday": "Hôm qua"
+  },
+  "settings": {
+    "keyboard_shortcuts": {
+      "close_settings": "Đóng cài đặt",
+      "first_section": "Mục đầu tiên",
+      "global": "Toàn cục",
+      "hide_sidebar": "Ẩn thanh bên",
+      "last_section": "Mục cuối cùng",
+      "next_section": "Mục tiếp theo",
+      "open_settings": "Mở cài đặt",
+      "previous_section": "Mục trước",
+      "search_settings": "Tìm kiếm cài đặt",
+      "settings_dialog": "Hộp thoại cài đặt",
+      "toggle_sidebar": "Mở rộng hoặc thu gọn thanh bên"
+    },
+    "preferences": {
+      "keyboard_shortcuts": "Phím tắt bàn phím",
+      "keyboard_shortcuts_description": "Xem các phím tắt cho ứng dụng và thanh bên",
+      "sidebar_hidden": "Ẩn"
+    }
   },
   "storefront": {
     "add": "Thêm",

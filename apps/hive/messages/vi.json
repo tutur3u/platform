@@ -93,6 +93,9 @@
     "workspace_destination": "Workspace {workspace}",
     "workspaces": "Workspace"
   },
+  "common": {
+    "hide_sidebar": "Ẩn thanh bên"
+  },
   "dashboard": {
     "description": "Xây dựng thế giới voxel dùng chung, cấu hình NPC dùng LLM và chạy thí nghiệm quyết định agent thủ công.",
     "title": "Hive"
@@ -163,6 +166,26 @@
   "metadata": {
     "description": "Trình biên tập nghiên cứu dựa trên voxel cho thí nghiệm hành vi agent trong môi trường mô phỏng.",
     "title": "Hive"
+  },
+  "settings": {
+    "keyboard_shortcuts": {
+      "close_settings": "Đóng cài đặt",
+      "first_section": "Mục đầu tiên",
+      "global": "Toàn cục",
+      "hide_sidebar": "Ẩn thanh bên",
+      "last_section": "Mục cuối cùng",
+      "next_section": "Mục tiếp theo",
+      "open_settings": "Mở cài đặt",
+      "previous_section": "Mục trước",
+      "search_settings": "Tìm kiếm cài đặt",
+      "settings_dialog": "Hộp thoại cài đặt",
+      "toggle_sidebar": "Mở rộng hoặc thu gọn thanh bên"
+    },
+    "preferences": {
+      "keyboard_shortcuts": "Phím tắt bàn phím",
+      "keyboard_shortcuts_description": "Xem các phím tắt cho ứng dụng và thanh bên",
+      "sidebar_hidden": "Ẩn"
+    }
   },
   "studio": {
     "agent": {

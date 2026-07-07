@@ -461,6 +461,7 @@
     "expanded": "Mở rộng",
     "feedback": "Phản hồi",
     "get-started": "Bắt đầu ngay",
+    "hide_sidebar": "Ẩn thanh bên",
     "home": "Trang chủ",
     "join_workspace": "Tham gia không gian làm việc",
     "join_workspace_by_slug_description": "Nhập tên hoặc liên kết không gian làm việc để mở trang tham gia.",
@@ -510,6 +511,26 @@
     "no-notifications": "Bạn không có thông báo nào.",
     "notifications": "Thông báo",
     "view-all": "Xem tất cả thông báo"
+  },
+  "settings": {
+    "keyboard_shortcuts": {
+      "close_settings": "Đóng cài đặt",
+      "first_section": "Mục đầu tiên",
+      "global": "Toàn cục",
+      "hide_sidebar": "Ẩn thanh bên",
+      "last_section": "Mục cuối cùng",
+      "next_section": "Mục tiếp theo",
+      "open_settings": "Mở cài đặt",
+      "previous_section": "Mục trước",
+      "search_settings": "Tìm kiếm cài đặt",
+      "settings_dialog": "Hộp thoại cài đặt",
+      "toggle_sidebar": "Mở rộng hoặc thu gọn thanh bên"
+    },
+    "preferences": {
+      "keyboard_shortcuts": "Phím tắt bàn phím",
+      "keyboard_shortcuts_description": "Xem các phím tắt cho ứng dụng và thanh bên",
+      "sidebar_hidden": "Ẩn"
+    }
   },
   "version-badge": {
     "app": "Ứng dụng",

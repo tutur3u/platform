@@ -573,7 +573,11 @@ export function StructureImpl({
   );
 
   useEffect(() => {
-    if (behavior === 'collapsed' || behavior === 'hover') {
+    if (
+      behavior === 'collapsed' ||
+      behavior === 'hover' ||
+      behavior === 'hidden'
+    ) {
       setIsCollapsed(true);
     } else {
       setIsCollapsed(false);
@@ -740,6 +744,12 @@ export function StructureImpl({
   }, [pathname, preferredLinks, findActiveNavigation]);
 
   const handleToggle = () => {
+    if (behavior === 'hidden') {
+      setIsCollapsed(true);
+      handleBehaviorChange('collapsed');
+      return;
+    }
+
     const newCollapsed = !isCollapsed;
     setIsCollapsed(newCollapsed);
     setCookie(
@@ -1027,8 +1037,9 @@ export function StructureImpl({
         }
         onMouseEnter={onMouseEnter}
         onMouseLeave={onMouseLeave}
-        hideSizeToggle={behavior === 'hover'}
+        hideSizeToggle={behavior === 'hover' || behavior === 'hidden'}
         overlayOnExpand={behavior === 'hover'}
+        sidebarHidden={behavior === 'hidden'}
       >
         {children}
       </BaseStructure>

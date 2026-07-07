@@ -20,6 +20,7 @@ export {
   type SidebarBehavior,
   SidebarContext,
   SidebarProvider,
+  useOptionalSidebar,
   useSidebar,
 } from './context/sidebar-context';
 export {

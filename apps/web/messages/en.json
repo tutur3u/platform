@@ -4410,6 +4410,7 @@
     "hidden": "Hidden",
     "hidden_labels": "Hidden labels:",
     "hide_column": "Hide column",
+    "hide_sidebar": "Hide sidebar",
     "hide-all": "Hide All",
     "history": "History",
     "home": "Home",
@@ -12000,15 +12001,17 @@
       "workspace_navigation_title": "Workspace Default"
     },
     "keyboard_shortcuts": {
-      "close_settings": "Close Settings",
-      "first_section": "First settings section",
+      "close_settings": "Close settings",
+      "first_section": "First section",
       "global": "Global",
-      "last_section": "Last settings section",
-      "next_section": "Next settings section",
-      "open_settings": "Open Settings",
-      "previous_section": "Previous settings section",
+      "hide_sidebar": "Hide sidebar",
+      "last_section": "Last section",
+      "next_section": "Next section",
+      "open_settings": "Open settings",
+      "previous_section": "Previous section",
       "search_settings": "Search settings",
-      "settings_dialog": "Settings dialog"
+      "settings_dialog": "Settings dialog",
+      "toggle_sidebar": "Expand or collapse sidebar"
     },
     "loading_workspace": "Loading workspace...",
     "manage_settings": "Manage your {label} settings",
@@ -12081,7 +12084,7 @@
       "forms_autosave_description": "Automatically save form edits as you work. Enabled by default.",
       "forms_description": "Form builder preferences",
       "keyboard_shortcuts": "Keyboard Shortcuts",
-      "keyboard_shortcuts_description": "Review keyboard shortcuts for opening and navigating Settings",
+      "keyboard_shortcuts_description": "Review keyboard shortcuts for app and sidebar actions",
       "navigation": {
         "default_workspace_help": "This is the workspace you see first when you open the app.",
         "default_workspace_label": "Default Workspace",
@@ -12126,6 +12129,7 @@
       "sidebar_collapsed": "Collapsed",
       "sidebar_description": "Manage sidebar visibility and behavior",
       "sidebar_expanded": "Expanded",
+      "sidebar_hidden": "Hidden",
       "sidebar_hover": "Hover",
       "sidebar_layout": {
         "account_scope": "Account default",

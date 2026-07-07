@@ -12,6 +12,7 @@ import {
   hexagons3,
   Icon,
   KanbanSquare,
+  Keyboard,
   Logs,
   NotepadText,
   Paintbrush,
@@ -29,6 +30,7 @@ import { getWorkspace } from '@tuturuuu/internal-api/workspaces';
 import type { Workspace } from '@tuturuuu/types';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { AppearanceSettings } from '@tuturuuu/ui/custom/settings/appearance-settings';
+import { KeyboardShortcutsSettings } from '@tuturuuu/ui/custom/settings/keyboard-shortcuts-settings';
 import { LunarCalendarSettings } from '@tuturuuu/ui/custom/settings/lunar-calendar-settings';
 import SharedSidebarSettings from '@tuturuuu/ui/custom/settings/sidebar-settings';
 import { TaskSettings } from '@tuturuuu/ui/custom/settings/task-settings';
@@ -311,6 +313,15 @@ export function SettingsDialog({
             description: t('settings.preferences.sidebar_description'),
             keywords: ['Sidebar', 'Navigation', 'Menu'],
           },
+          {
+            name: 'keyboard_shortcuts',
+            label: t('settings.preferences.keyboard_shortcuts'),
+            icon: Keyboard,
+            description: t(
+              'settings.preferences.keyboard_shortcuts_description'
+            ),
+            keywords: ['Keyboard', 'Shortcuts', 'Hotkeys'],
+          },
         ],
       },
     ],
@@ -426,6 +437,12 @@ export function SettingsDialog({
       {activeTab === 'sidebar' && (
         <div className="h-full">
           <SharedSidebarSettings useSidebar={useSidebar} />
+        </div>
+      )}
+
+      {activeTab === 'keyboard_shortcuts' && (
+        <div className="h-full">
+          <KeyboardShortcutsSettings />
         </div>
       )}
     </SettingsDialogShell>

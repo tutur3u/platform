@@ -1,7 +1,13 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Gamepad2, Paintbrush, PanelLeft, User } from '@tuturuuu/icons';
+import {
+  Gamepad2,
+  Keyboard,
+  Paintbrush,
+  PanelLeft,
+  User,
+} from '@tuturuuu/icons';
 import {
   ENABLE_CMS_GAMES_CONFIG_ID,
   getOptionalWorkspaceConfig,
@@ -10,6 +16,7 @@ import {
 import { getWorkspace } from '@tuturuuu/internal-api/workspaces';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { AppearanceSettings } from '@tuturuuu/ui/custom/settings/appearance-settings';
+import { KeyboardShortcutsSettings } from '@tuturuuu/ui/custom/settings/keyboard-shortcuts-settings';
 import SharedSidebarSettings from '@tuturuuu/ui/custom/settings/sidebar-settings';
 import { SettingsDialogShell } from '@tuturuuu/ui/custom/settings-dialog-shell';
 import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
@@ -188,6 +195,13 @@ export function SettingsDialog({
           description: t('settings.preferences.sidebar_description'),
           keywords: ['Sidebar', 'Navigation', 'Menu'],
         },
+        {
+          name: 'keyboard_shortcuts',
+          label: t('settings.preferences.keyboard_shortcuts'),
+          icon: Keyboard,
+          description: t('settings.preferences.keyboard_shortcuts_description'),
+          keywords: ['Keyboard', 'Shortcuts', 'Hotkeys'],
+        },
       ],
     },
   ];
@@ -199,6 +213,7 @@ export function SettingsDialog({
       onActiveTabChange={setActiveTab}
       primaryGroupLabels={[cmsLabel]}
       expandAllAccordions={expandAllAccordions}
+      keyboardNavigation
     >
       {activeTab === 'cms_general' && workspace && (
         <div className="h-full">
@@ -260,6 +275,12 @@ export function SettingsDialog({
       {activeTab === 'sidebar' && (
         <div className="h-full">
           <SharedSidebarSettings useSidebar={useSidebar} />
+        </div>
+      )}
+
+      {activeTab === 'keyboard_shortcuts' && (
+        <div className="h-full">
+          <KeyboardShortcutsSettings />
         </div>
       )}
     </SettingsDialogShell>

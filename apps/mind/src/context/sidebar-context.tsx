@@ -8,5 +8,6 @@ export {
   type SidebarBehavior,
   SidebarContext,
   SidebarProvider,
+  useOptionalSidebar,
   useSidebar,
 } from '@tuturuuu/ui/custom/sidebar-context';

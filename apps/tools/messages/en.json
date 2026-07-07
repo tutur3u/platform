@@ -57,6 +57,7 @@
     "download": "Download",
     "foreground": "Foreground",
     "formats": "Formats",
+    "hide_sidebar": "Hide sidebar",
     "optional": "optional",
     "or": "or",
     "qr_generator": "QR Generator",
@@ -221,6 +222,26 @@
       "tokens": "Tokens"
     },
     "title": "Secure random generator"
+  },
+  "settings": {
+    "keyboard_shortcuts": {
+      "close_settings": "Close settings",
+      "first_section": "First section",
+      "global": "Global",
+      "hide_sidebar": "Hide sidebar",
+      "last_section": "Last section",
+      "next_section": "Next section",
+      "open_settings": "Open settings",
+      "previous_section": "Previous section",
+      "search_settings": "Search settings",
+      "settings_dialog": "Settings dialog",
+      "toggle_sidebar": "Expand or collapse sidebar"
+    },
+    "preferences": {
+      "keyboard_shortcuts": "Keyboard Shortcuts",
+      "keyboard_shortcuts_description": "Review keyboard shortcuts for app and sidebar actions",
+      "sidebar_hidden": "Hidden"
+    }
   },
   "toolsPage": {
     "qr_description": "Generate customizable QR codes for links, text, and more.",

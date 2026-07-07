@@ -21,6 +21,7 @@ interface StructureProps {
   children: ReactNode;
   onMouseEnter?: () => void;
   onMouseLeave?: () => void;
+  sidebarHidden?: boolean;
   sidebarCollapsedWidth?: string;
   sidebarExpandedWidth?: string;
   sidebarHeaderClassName?: string;
@@ -42,6 +43,7 @@ export function Structure({
   children,
   onMouseEnter,
   onMouseLeave,
+  sidebarHidden = false,
   sidebarCollapsedWidth = '4rem',
   sidebarExpandedWidth = '16rem',
   sidebarHeaderClassName,
@@ -60,7 +62,7 @@ export function Structure({
     if (typeof window === 'undefined') return;
 
     const isMobile = window.innerWidth < 768; // md breakpoint
-    if (isMobile && !isCollapsed) {
+    if (isMobile && !sidebarHidden && !isCollapsed) {
       const scrollY = window.scrollY;
       document.body.style.position = 'fixed';
       document.body.style.top = `-${scrollY}px`;
@@ -73,31 +75,35 @@ export function Structure({
         window.scrollTo(0, scrollY);
       };
     }
-  }, [isCollapsed]);
+  }, [isCollapsed, sidebarHidden]);
 
   return (
     <>
-      <nav className="safe-top safe-x fixed inset-x-0 top-0 z-30 max-sm:border-b md:hidden">
-        <div className="bg-background/50 p-2 font-semibold backdrop-blur-md md:px-8 lg:px-16 xl:px-32">
-          <div className="relative flex items-center justify-between gap-2 md:gap-4">
-            <div className="flex w-full items-center gap-2">{mobileHeader}</div>
-            <div className="flex w-fit items-center gap-2">
-              {userPopover}
-              <Button
-                size="icon"
-                variant="outline"
-                className="h-auto w-auto flex-none rounded-lg p-2 md:hidden"
-                onClick={() => setIsCollapsed(!isCollapsed)}
-              >
-                <Menu className="h-5 w-5" />
-              </Button>
+      {!sidebarHidden && (
+        <nav className="safe-top safe-x fixed inset-x-0 top-0 z-30 max-sm:border-b md:hidden">
+          <div className="bg-background/50 p-2 font-semibold backdrop-blur-md md:px-8 lg:px-16 xl:px-32">
+            <div className="relative flex items-center justify-between gap-2 md:gap-4">
+              <div className="flex w-full items-center gap-2">
+                {mobileHeader}
+              </div>
+              <div className="flex w-fit items-center gap-2">
+                {userPopover}
+                <Button
+                  size="icon"
+                  variant="outline"
+                  className="h-auto w-auto flex-none rounded-lg p-2 md:hidden"
+                  onClick={() => setIsCollapsed(!isCollapsed)}
+                >
+                  <Menu className="h-5 w-5" />
+                </Button>
+              </div>
             </div>
           </div>
-        </div>
-      </nav>
+        </nav>
+      )}
 
       <TooltipProvider delayDuration={0}>
-        {!isCollapsed && (
+        {!sidebarHidden && !isCollapsed && (
           <button
             type="button"
             className="fixed inset-0 z-40 bg-black/20 backdrop-blur-lg md:hidden"
@@ -105,104 +111,113 @@ export function Structure({
           />
         )}
         <div className="relative w-full">
-          <aside
-            className={cn(
-              'group fixed top-0 right-0 left-auto z-50 flex h-dvh flex-col overflow-hidden border-l backdrop-blur-lg transition-all duration-300 ease-in-out md:left-0 md:z-20 md:border-r md:border-l-0',
-              isCollapsed
-                ? 'w-[var(--sidebar-collapsed-width)] bg-background/50 max-md:w-0'
-                : 'w-[var(--sidebar-expanded-width)] bg-background max-sm:w-full',
-              isCollapsed && 'max-md:translate-x-full',
-              overlayOnExpand && !isCollapsed && 'md:z-40'
-            )}
-            onMouseEnter={onMouseEnter}
-            onMouseLeave={onMouseLeave}
-            style={sidebarStyle}
-          >
-            <div
+          {!sidebarHidden && (
+            <aside
               className={cn(
-                sidebarHeaderHeight
-                  ? 'flex h-[var(--sidebar-header-height)] shrink-0 items-center p-2 md:px-0'
-                  : 'flex min-h-12 items-center p-2 md:px-0',
-                isCollapsed ? 'justify-center' : 'py-1',
-                sidebarHeaderClassName
+                'group fixed top-0 right-0 left-auto z-50 flex h-dvh flex-col overflow-hidden border-l backdrop-blur-lg transition-all duration-300 ease-in-out md:left-0 md:z-20 md:border-r md:border-l-0',
+                isCollapsed
+                  ? 'w-[var(--sidebar-collapsed-width)] bg-background/50 max-md:w-0'
+                  : 'w-[var(--sidebar-expanded-width)] bg-background max-sm:w-full',
+                isCollapsed && 'max-md:translate-x-full',
+                overlayOnExpand && !isCollapsed && 'md:z-40'
               )}
+              onMouseEnter={onMouseEnter}
+              onMouseLeave={onMouseLeave}
+              style={sidebarStyle}
             >
               <div
                 className={cn(
-                  'flex min-h-13 w-full items-center md:px-2',
-                  isCollapsed ? 'justify-center' : ''
+                  sidebarHeaderHeight
+                    ? 'flex h-[var(--sidebar-header-height)] shrink-0 items-center p-2 md:px-0'
+                    : 'flex min-h-12 items-center p-2 md:px-0',
+                  isCollapsed ? 'justify-center' : 'py-1',
+                  sidebarHeaderClassName
                 )}
               >
                 <div
                   className={cn(
-                    'flex w-full items-center gap-2',
-                    isCollapsed ? 'justify-center' : 'justify-between'
+                    'flex min-h-13 w-full items-center md:px-2',
+                    isCollapsed ? 'justify-center' : ''
                   )}
                 >
-                  {sidebarHeader}
-                  {isCollapsed || (
-                    <Button
-                      size="icon"
-                      variant="outline"
-                      className="h-auto w-auto flex-none rounded-lg p-2 md:hidden"
-                      onClick={() => setIsCollapsed(!isCollapsed)}
-                    >
-                      <X className="h-5 w-5" />
-                    </Button>
-                  )}
+                  <div
+                    className={cn(
+                      'flex w-full items-center gap-2',
+                      isCollapsed ? 'justify-center' : 'justify-between'
+                    )}
+                  >
+                    {sidebarHeader}
+                    {isCollapsed || (
+                      <Button
+                        size="icon"
+                        variant="outline"
+                        className="h-auto w-auto flex-none rounded-lg p-2 md:hidden"
+                        onClick={() => setIsCollapsed(!isCollapsed)}
+                      >
+                        <X className="h-5 w-5" />
+                      </Button>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
-            <div className="scrollbar-none flex flex-1 flex-col gap-y-1 overflow-y-auto overflow-x-hidden overscroll-contain">
-              {sidebarContent}
-            </div>
-            {feedbackButton && (
+              <div className="scrollbar-none flex flex-1 flex-col gap-y-1 overflow-y-auto overflow-x-hidden overscroll-contain">
+                {sidebarContent}
+              </div>
+              {feedbackButton && (
+                <div
+                  className={cn(
+                    'flex border-foreground/10 border-t p-2',
+                    isCollapsed ? 'justify-center' : ''
+                  )}
+                >
+                  {feedbackButton}
+                </div>
+              )}
               <div
                 className={cn(
-                  'flex border-foreground/10 border-t p-2',
+                  'mt-auto flex border-foreground/10 border-t p-2',
                   isCollapsed ? 'justify-center' : ''
                 )}
               >
-                {feedbackButton}
+                {isCollapsed ? userPopover : actions}
               </div>
-            )}
-            <div
-              className={cn(
-                'mt-auto flex border-foreground/10 border-t p-2',
-                isCollapsed ? 'justify-center' : ''
-              )}
-            >
-              {isCollapsed ? userPopover : actions}
-            </div>
 
-            {!hideSizeToggle && (
-              <Button
-                size="icon"
-                variant="outline"
-                className="absolute top-1/2 -right-4 z-10 hidden h-auto w-auto -translate-y-1/2 rounded-full border-2 bg-background p-1.5 pl-1.5 opacity-0 transition duration-500 hover:bg-accent group-hover:opacity-100 md:block"
-                onClick={() => setIsCollapsed(!isCollapsed)}
-              >
-                {isCollapsed ? (
-                  <ChevronRight className="mr-2 h-4 w-4" />
-                ) : (
-                  <ChevronLeft className="mr-2 h-4 w-4" />
-                )}
-              </Button>
-            )}
-          </aside>
+              {!hideSizeToggle && (
+                <Button
+                  size="icon"
+                  variant="outline"
+                  className="absolute top-1/2 -right-4 z-10 hidden h-auto w-auto -translate-y-1/2 rounded-full border-2 bg-background p-1.5 pl-1.5 opacity-0 transition duration-500 hover:bg-accent group-hover:opacity-100 md:block"
+                  onClick={() => setIsCollapsed(!isCollapsed)}
+                >
+                  {isCollapsed ? (
+                    <ChevronRight className="mr-2 h-4 w-4" />
+                  ) : (
+                    <ChevronLeft className="mr-2 h-4 w-4" />
+                  )}
+                </Button>
+              )}
+            </aside>
+          )}
           {/* Main content area - overflow-y-auto removed to prevent double scrollbars */}
           {/* Body element now handles page-level scrolling */}
           <main
             className={cn(
               'relative flex h-full min-h-screen flex-col overflow-x-clip overflow-y-visible transition-all duration-300 ease-in-out',
-              isCollapsed || overlayOnExpand
-                ? 'md:pl-[var(--sidebar-collapsed-width)]'
-                : 'md:pl-[var(--sidebar-expanded-width)]'
+              sidebarHidden
+                ? 'md:pl-0'
+                : isCollapsed || overlayOnExpand
+                  ? 'md:pl-[var(--sidebar-collapsed-width)]'
+                  : 'md:pl-[var(--sidebar-expanded-width)]'
             )}
             style={sidebarStyle}
           >
             {header && <div className="mb-4 hidden md:block">{header}</div>}
-            <div className="safe-bottom relative h-full w-full p-2 pt-17 pl-2 md:p-4 md:pt-4">
+            <div
+              className={cn(
+                'safe-bottom relative h-full w-full p-2 md:p-4 md:pt-4',
+                sidebarHidden ? 'pt-2' : 'pt-17 pl-2'
+              )}
+            >
               {children}
             </div>
           </main>

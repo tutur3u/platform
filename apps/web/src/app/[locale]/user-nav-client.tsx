@@ -344,6 +344,16 @@ export default function UserNavClient({
                         <Check className="ml-auto h-4 w-4" />
                       )}
                     </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => sidebar.handleBehaviorChange('hidden')}
+                      disabled={sidebar.behavior === 'hidden'}
+                    >
+                      <PanelLeft className="h-4 w-4 text-dynamic-purple" />
+                      <span>{t('common.hidden')}</span>
+                      {sidebar.behavior === 'hidden' && (
+                        <Check className="ml-auto h-4 w-4" />
+                      )}
+                    </DropdownMenuItem>
                   </DropdownMenuSubContent>
                 </DropdownMenuPortal>
               </DropdownMenuSub>

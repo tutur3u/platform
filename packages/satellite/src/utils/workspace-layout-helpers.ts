@@ -5,13 +5,14 @@ import {
   SIDEBAR_COLLAPSED_COOKIE_NAME,
 } from '../constants/common';
 
-export type SidebarBehavior = 'expanded' | 'collapsed' | 'hover';
+export type SidebarBehavior = 'expanded' | 'collapsed' | 'hover' | 'hidden';
 
 /**
  * Parse and validate the sidebar behavior from cookies.
  */
 export function parseSidebarBehavior(
-  cookies: ReadonlyRequestCookies
+  cookies: ReadonlyRequestCookies,
+  fallback: SidebarBehavior = 'expanded'
 ): SidebarBehavior {
   const behaviorCookie = cookies.get(SIDEBAR_BEHAVIOR_COOKIE_NAME);
   const rawBehavior = behaviorCookie?.value;
@@ -20,10 +21,10 @@ export function parseSidebarBehavior(
     value: string | undefined
   ): value is SidebarBehavior => {
     if (!value) return false;
-    return ['expanded', 'collapsed', 'hover'].includes(value);
+    return ['expanded', 'collapsed', 'hover', 'hidden'].includes(value);
   };
 
-  return isValidBehavior(rawBehavior) ? rawBehavior : 'expanded';
+  return isValidBehavior(rawBehavior) ? rawBehavior : fallback;
 }
 
 /**
@@ -33,7 +34,11 @@ export function getSidebarCollapsedState(
   cookies: ReadonlyRequestCookies,
   sidebarBehavior: SidebarBehavior
 ): boolean {
-  if (sidebarBehavior === 'collapsed' || sidebarBehavior === 'hover') {
+  if (
+    sidebarBehavior === 'collapsed' ||
+    sidebarBehavior === 'hover' ||
+    sidebarBehavior === 'hidden'
+  ) {
     return true;
   }
 

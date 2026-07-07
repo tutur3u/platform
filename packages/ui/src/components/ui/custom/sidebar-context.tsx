@@ -20,7 +20,7 @@ export const SIDEBAR_BEHAVIOR_UPDATED_AT_COOKIE_NAME =
   'sidebar-behavior-updated-at';
 export const SIDEBAR_BEHAVIOR_CONFIG_KEY = 'SIDEBAR_BEHAVIOR';
 
-export type SidebarBehavior = 'expanded' | 'collapsed' | 'hover';
+export type SidebarBehavior = 'expanded' | 'collapsed' | 'hover' | 'hidden';
 
 interface SidebarContextProps {
   behavior: SidebarBehavior;
@@ -77,6 +77,19 @@ type SidebarRemoteBehaviorBridgeComponent = ComponentType<{
   behaviorUpdatedAt: number | null;
   userChangeVersion: number;
 }>;
+
+function isEditableShortcutTarget(target: EventTarget | null) {
+  if (!(target instanceof HTMLElement)) return false;
+
+  if (target.isContentEditable) return true;
+
+  const tagName = target.tagName.toLowerCase();
+  if (tagName === 'input' || tagName === 'textarea' || tagName === 'select') {
+    return true;
+  }
+
+  return Boolean(target.closest('[contenteditable="true"], [role="textbox"]'));
+}
 
 function useSidebarRemoteBehaviorBridge() {
   const [RemoteBehaviorBridge, setRemoteBehaviorBridge] =
@@ -180,6 +193,41 @@ export const SidebarProvider = ({
     [applyBehavior, remoteBehavior, setLocalOverrideRaw]
   );
 
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (
+        event.defaultPrevented ||
+        event.key.toLowerCase() !== 'b' ||
+        !(event.metaKey || event.ctrlKey) ||
+        event.shiftKey ||
+        isEditableShortcutTarget(event.target)
+      ) {
+        return;
+      }
+
+      if (event.altKey) {
+        event.preventDefault();
+        handleBehaviorChange('hidden');
+        return;
+      }
+
+      event.preventDefault();
+      handleBehaviorChange(
+        behavior === 'expanded'
+          ? 'collapsed'
+          : behavior === 'hidden'
+            ? 'collapsed'
+            : 'expanded'
+      );
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [behavior, handleBehaviorChange]);
+
   return (
     <SidebarContext.Provider
       value={{
@@ -213,3 +261,5 @@ export const useSidebar = () => {
   }
   return context;
 };
+
+export const useOptionalSidebar = () => useContext(SidebarContext);

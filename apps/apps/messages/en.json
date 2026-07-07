@@ -147,6 +147,9 @@
     "workspace_destination": "{workspace} workspace",
     "workspaces": "Workspaces"
   },
+  "common": {
+    "hide_sidebar": "Hide sidebar"
+  },
   "finance": {
     "new_debt": "New debt",
     "new_loan": "New loan",
@@ -209,6 +212,26 @@
     "wallet_required": "Wallet is required",
     "weekly": "Weekly",
     "yearly": "Yearly"
+  },
+  "settings": {
+    "keyboard_shortcuts": {
+      "close_settings": "Close settings",
+      "first_section": "First section",
+      "global": "Global",
+      "hide_sidebar": "Hide sidebar",
+      "last_section": "Last section",
+      "next_section": "Next section",
+      "open_settings": "Open settings",
+      "previous_section": "Previous section",
+      "search_settings": "Search settings",
+      "settings_dialog": "Settings dialog",
+      "toggle_sidebar": "Expand or collapse sidebar"
+    },
+    "preferences": {
+      "keyboard_shortcuts": "Keyboard Shortcuts",
+      "keyboard_shortcuts_description": "Review keyboard shortcuts for app and sidebar actions",
+      "sidebar_hidden": "Hidden"
+    }
   },
   "version-badge": {
     "app": "App",

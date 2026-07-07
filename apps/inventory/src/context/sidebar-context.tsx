@@ -5,5 +5,6 @@ export {
   type SidebarBehavior,
   SidebarContext,
   SidebarProvider,
+  useOptionalSidebar,
   useSidebar,
 } from '@tuturuuu/satellite/sidebar-context';

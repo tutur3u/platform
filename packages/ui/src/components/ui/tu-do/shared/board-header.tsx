@@ -15,6 +15,7 @@ import {
   LayoutGrid,
   List,
   Loader2,
+  PanelLeftClose,
   Pencil,
   Play,
   Search,
@@ -29,6 +30,7 @@ import type { WorkspaceTaskBoard } from '@tuturuuu/types';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { Button } from '@tuturuuu/ui/button';
 import { Combobox } from '@tuturuuu/ui/custom/combobox';
+import { useOptionalSidebar } from '@tuturuuu/ui/custom/sidebar-context';
 import { Input } from '@tuturuuu/ui/input';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
@@ -157,6 +159,9 @@ export function BoardHeader({
     !publicView &&
     isPersonalWorkspace &&
     currentView === 'kanban';
+  const sidebar = useOptionalSidebar();
+  const hideSidebarVisible =
+    Boolean(sidebar) && sidebar?.behavior !== 'hidden' && !publicView;
   const hasSharedBoardGuests =
     board.access_type === 'guest' || board.has_guest_access === true;
   const presenceVisible =
@@ -566,6 +571,21 @@ export function BoardHeader({
               onFiltersChange={onFiltersChange}
               onListStatusFilterChange={onListStatusFilterChange}
             />
+          )}
+
+          {hideSidebarVisible && (
+            <ToolbarTooltip label={t('common.hide_sidebar')}>
+              <Button
+                type="button"
+                size="xs"
+                variant="outline"
+                className={toolbarButtonClass}
+                onClick={() => sidebar?.handleBehaviorChange('hidden')}
+                aria-label={t('common.hide_sidebar')}
+              >
+                <PanelLeftClose className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+              </Button>
+            </ToolbarTooltip>
           )}
 
           {/* Smart Focus Button */}
