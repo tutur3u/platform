@@ -1507,6 +1507,7 @@ export {
   getWorkspaceCourseModuleQuizSubmission,
   getWorkspaceCourseTestSubmission,
   gradeWorkspaceCourseModuleQuizSubmission,
+  getWorkspaceCourseModuleQuizSubmissionAiReview,
   listWorkspaceCourseAttendance,
   listWorkspaceCourseAttendanceMonth,
   listWorkspaceCourseIndicators,

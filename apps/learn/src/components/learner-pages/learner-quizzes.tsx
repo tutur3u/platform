@@ -34,6 +34,8 @@ type QuizSubmission = {
   is_correct: boolean | null;
   quiz_id: string;
   selected_option_id: string | null;
+  feedback?: string | null;
+  ai_feedback?: string | null;
 };
 
 function getExplanation(
@@ -110,7 +112,14 @@ export function LearnerQuizzes({
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [localSubmissions, setLocalSubmissions] = useState<
-    Record<string, { is_correct: boolean | null }>
+    Record<
+      string,
+      {
+        is_correct: boolean | null;
+        feedback?: string | null;
+        ai_feedback?: string | null;
+      }
+    >
   >({});
 
   const hasUnmarked = useMemo(() => {
@@ -248,7 +257,10 @@ export function LearnerQuizzes({
       const isCorrectValue = currentQuiz.type === 'paragraph' ? null : correct;
       setLocalSubmissions((prev) => ({
         ...prev,
-        [currentQuiz.id]: { is_correct: isCorrectValue },
+        [currentQuiz.id]: {
+          is_correct: isCorrectValue,
+          ai_feedback: (response as any).ai_feedback ?? null,
+        },
       }));
 
       if (correct) {
@@ -330,6 +342,14 @@ export function LearnerQuizzes({
       />
     );
   }
+
+  const currentSubmission = normalizedSubmissions.find((s) => s.quiz_id === currentQuiz?.id);
+  const quizFeedback = localSubmissions[currentQuiz?.id]?.feedback !== undefined
+    ? localSubmissions[currentQuiz?.id]?.feedback
+    : currentSubmission?.feedback;
+  const quizAiFeedback = localSubmissions[currentQuiz?.id]?.ai_feedback !== undefined
+    ? localSubmissions[currentQuiz?.id]?.ai_feedback
+    : currentSubmission?.ai_feedback;
 
   return (
     <div className="space-y-6">
@@ -464,6 +484,28 @@ export function LearnerQuizzes({
                 </div>
               </div>
             )}
+          </div>
+        )}
+
+        {isSubmitted && quizFeedback && (
+          <div className="mt-6 border-2 border-dynamic-yellow/30 bg-dynamic-yellow/10 p-4 text-foreground shadow-[3px_3px_0_hsl(var(--dynamic-yellow)/0.2)] space-y-1">
+            <span className="block font-black uppercase text-[10px] tracking-wider text-dynamic-yellow">
+              ✍️ Teacher Feedback
+            </span>
+            <p className="text-sm leading-relaxed font-semibold">
+              {quizFeedback}
+            </p>
+          </div>
+        )}
+
+        {isSubmitted && quizAiFeedback && (
+          <div className="mt-6 border-2 border-primary bg-primary/5 p-4 text-foreground shadow-[3px_3px_0_hsl(var(--primary)/0.2)] space-y-1">
+            <span className="block font-black uppercase text-[10px] tracking-wider text-primary">
+              ✨ AI Feedback
+            </span>
+            <p className="text-sm leading-relaxed font-medium">
+              {quizAiFeedback}
+            </p>
           </div>
         )}
 

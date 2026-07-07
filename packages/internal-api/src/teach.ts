@@ -520,6 +520,7 @@ export interface TeachModuleQuizSubmissionDetail {
     created_at: string;
     is_correct: boolean | null;
     feedback?: string | null;
+    ai_feedback?: string | null;
     quiz_id: string;
     selected_option_id: string | null;
   }>;
@@ -585,6 +586,33 @@ export function gradeWorkspaceCourseModuleQuizSubmission(
   const client = getInternalApiClient(options);
   return client.json<{ success: boolean }>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/teach/courses/${encodePathSegment(courseId)}/modules/${encodePathSegment(moduleId)}/quizzes/submissions/${encodePathSegment(userId)}`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+    }
+  );
+}
+
+export function getWorkspaceCourseModuleQuizSubmissionAiReview(
+  workspaceId: string,
+  courseId: string,
+  moduleId: string,
+  userId: string,
+  payload: {
+    quizId: string;
+  },
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{
+    explanation: string;
+    suggested_is_correct: boolean | null;
+  }>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/teach/courses/${encodePathSegment(courseId)}/modules/${encodePathSegment(moduleId)}/quizzes/submissions/${encodePathSegment(userId)}/ai-review`,
     {
       method: 'POST',
       headers: {

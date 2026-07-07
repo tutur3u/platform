@@ -1,3 +1,5 @@
+import { google } from '@ai-sdk/google';
+import { generateObject } from 'ai';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import type { Json } from '@tuturuuu/types';
@@ -182,7 +184,7 @@ export const GET = withSessionAuth<Params>(
       const sbAdmin = await createAdminClient();
       const { data: submissions, error: subError } = await sbAdmin
         .from('course_module_quiz_submissions')
-        .select('quiz_id, selected_option_id, answer, is_correct, created_at')
+        .select('quiz_id, selected_option_id, answer, is_correct, feedback, ai_feedback, created_at')
         .eq('module_id', moduleId)
         .eq('user_id', subject.studentPlatformUserId)
         .order('created_at', { ascending: true });
@@ -200,6 +202,8 @@ export const GET = withSessionAuth<Params>(
               submission.is_correct === null ? null : submission.is_correct,
             revealScores,
           }),
+          feedback: revealScores ? submission.feedback : null,
+          ai_feedback: revealScores ? submission.ai_feedback : null,
         })),
       });
     } catch (error) {
@@ -279,7 +283,7 @@ export const POST = withSessionAuth<Params>(
 
       const { data: moduleQuiz, error: quizErr } = await sbAdmin
         .from('course_module_quizzes')
-        .select('workspace_quizzes!inner(id, type, content, answer)')
+        .select('workspace_quizzes!inner(id, question, type, content, answer)')
         .eq('module_id', moduleId)
         .eq('quiz_id', quizId)
         .maybeSingle();
@@ -410,6 +414,48 @@ export const POST = withSessionAuth<Params>(
       const revealScores =
         module.is_quiz_score_published === true && quiz.type !== 'paragraph';
 
+      let aiFeedback: string | null = null;
+      try {
+        let options: any[] = [];
+        if (quiz.type === 'multiple_choice') {
+          const { data: quizOptions } = await sbAdmin
+            .from('quiz_options')
+            .select('id, value, is_correct, explanation')
+            .eq('quiz_id', quizId);
+          options = quizOptions ?? [];
+        }
+
+        const prompt = `
+You are an expert AI teaching assistant. Your task is to evaluate and explain a student's answer to a quiz question.
+
+Question details:
+- Question: ${quiz.question}
+- Question Type: ${quiz.type}
+- Quiz Options (if multiple choice): ${JSON.stringify(options)}
+- Correct Answer Reference: ${JSON.stringify(quiz.answer)}
+
+Student Submission details:
+- Student's Answer: ${JSON.stringify(answer)}
+- Selected Option ID (if multiple choice): ${selectedOptionId}
+- System Auto-grade Result: ${isCorrect === true ? 'Correct' : isCorrect === false ? 'Incorrect' : 'Pending review'}
+
+Instructions:
+Provide a concise, constructive, and friendly explanation (2-3 sentences max) explaining why the student's answer is correct or incorrect, or helping them understand the correct concept.
+`;
+
+        const { object } = await generateObject({
+          model: google('gemini-2.0-flash'),
+          schema: z.object({
+            explanation: z.string(),
+          }),
+          prompt,
+        });
+
+        aiFeedback = object.explanation;
+      } catch (err) {
+        console.error('Failed to generate AI feedback for submission:', err);
+      }
+
       const { data: submission, error: insertErr } = await sbAdmin
         .from('course_module_quiz_submissions')
         .upsert(
@@ -420,6 +466,7 @@ export const POST = withSessionAuth<Params>(
             selected_option_id: isOptionUuid ? selectedOptionId : null,
             answer: submissionAnswer(answer),
             is_correct: isCorrect,
+            ai_feedback: aiFeedback,
           },
           { onConflict: 'module_id,quiz_id,user_id' }
         )
@@ -438,6 +485,7 @@ export const POST = withSessionAuth<Params>(
         id: submission.id,
         correct_answer: revealScores ? correctAnswerFeedback : null,
         is_correct: revealLearnerResult({ isCorrect, revealScores }),
+        ai_feedback: aiFeedback,
       });
     } catch (error) {
       const accessResponse = tulearnAccessErrorResponse(error);
