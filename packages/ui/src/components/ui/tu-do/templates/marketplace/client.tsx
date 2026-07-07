@@ -42,11 +42,13 @@ type SortOption = 'title-asc' | 'title-desc' | 'created-desc' | 'created-asc';
 interface Props {
   wsId: string;
   templates: BoardTemplate[];
+  onOpenTemplate?: (template: BoardTemplate) => void;
   templatesBasePath?: string;
 }
 
 export default function MarketplaceClient({
   wsId,
+  onOpenTemplate,
   templates,
   templatesBasePath = 'templates',
 }: Props) {
@@ -189,6 +191,7 @@ export default function MarketplaceClient({
               <FeaturedTemplateCard
                 key={template.id}
                 template={template}
+                onOpenTemplate={onOpenTemplate}
                 wsId={wsId}
                 index={idx}
                 templatesBasePath={templatesBasePath}
@@ -220,6 +223,7 @@ export default function MarketplaceClient({
               <MarketplaceTemplateCard
                 key={template.id}
                 template={template}
+                onOpenTemplate={onOpenTemplate}
                 wsId={wsId}
                 templatesBasePath={templatesBasePath}
               />
@@ -233,176 +237,208 @@ export default function MarketplaceClient({
 
 function FeaturedTemplateCard({
   template,
+  onOpenTemplate,
   wsId,
   index,
   templatesBasePath,
 }: {
   template: BoardTemplate;
+  onOpenTemplate?: (template: BoardTemplate) => void;
   wsId: string;
   index: number;
   templatesBasePath: string;
 }) {
-  return (
-    <Link href={`/${wsId}/${templatesBasePath}/${template.id}`}>
-      <Card className="group relative h-full overflow-hidden border-border/50 bg-linear-to-br from-background via-background to-muted/30 transition-all hover:border-primary/50 hover:shadow-xl">
-        <div className="aspect-video w-full overflow-hidden border-b bg-muted/50">
-          {template.backgroundUrl ? (
-            <Image
-              src={template.backgroundUrl}
-              alt={template.name}
-              width={600}
-              height={338}
-              className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-            />
-          ) : (
-            <div className="flex h-full w-full items-center justify-center bg-linear-to-br from-dynamic-blue/5 to-dynamic-purple/5">
-              <KanbanSquare className="h-12 w-12 text-muted-foreground/20" />
+  const card = (
+    <Card className="group relative h-full overflow-hidden border-border/50 bg-linear-to-br from-background via-background to-muted/30 transition-all hover:border-primary/50 hover:shadow-xl">
+      <div className="aspect-video w-full overflow-hidden border-b bg-muted/50">
+        {template.backgroundUrl ? (
+          <Image
+            src={template.backgroundUrl}
+            alt={template.name}
+            width={600}
+            height={338}
+            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+          />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center bg-linear-to-br from-dynamic-blue/5 to-dynamic-purple/5">
+            <KanbanSquare className="h-12 w-12 text-muted-foreground/20" />
+          </div>
+        )}
+      </div>
+
+      {/* Gradient overlay on hover */}
+      <div
+        className={cn(
+          'pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100',
+          index === 0
+            ? 'bg-linear-to-br from-dynamic-purple/5 via-transparent to-dynamic-blue/5'
+            : 'bg-linear-to-br from-dynamic-blue/5 via-transparent to-dynamic-green/5'
+        )}
+      />
+
+      <CardHeader className="relative space-y-4 pb-4">
+        <div className="flex items-center justify-between">
+          <Badge
+            variant="secondary"
+            className={cn(
+              'bg-background/80 font-semibold backdrop-blur-sm',
+              index === 0 ? 'text-dynamic-purple' : 'text-dynamic-blue'
+            )}
+          >
+            ⭐ Featured
+          </Badge>
+          <span className="text-muted-foreground text-xs">
+            {formatDistanceToNow(new Date(template.createdAt), {
+              addSuffix: true,
+            })}
+          </span>
+        </div>
+
+        <div className="space-y-2">
+          <CardTitle className="font-bold text-2xl leading-tight transition-colors group-hover:text-primary">
+            {template.name}
+          </CardTitle>
+          {template.description && (
+            <CardDescription className="line-clamp-3 text-base leading-relaxed">
+              {template.description}
+            </CardDescription>
+          )}
+        </div>
+      </CardHeader>
+
+      <CardContent className="relative">
+        <div className="flex flex-wrap items-center gap-4">
+          <div className="flex items-center gap-2 rounded-full bg-linear-to-r from-dynamic-blue/10 to-dynamic-cyan/10 px-3 py-1.5 text-sm">
+            <KanbanSquare className="h-4 w-4 text-dynamic-blue" />
+            <span className="font-medium">
+              {template.stats.lists}{' '}
+              <span className="text-muted-foreground">lists</span>
+            </span>
+          </div>
+          <div className="flex items-center gap-2 rounded-full bg-linear-to-r from-dynamic-green/10 to-dynamic-teal/10 px-3 py-1.5 text-sm">
+            <ListTodo className="h-4 w-4 text-dynamic-green" />
+            <span className="font-medium">
+              {template.stats.tasks}{' '}
+              <span className="text-muted-foreground">tasks</span>
+            </span>
+          </div>
+          {template.stats.labels > 0 && (
+            <div className="flex items-center gap-2 rounded-full bg-linear-to-r from-dynamic-orange/10 to-dynamic-yellow/10 px-3 py-1.5 text-sm">
+              <Tags className="h-4 w-4 text-dynamic-orange" />
+              <span className="font-medium">
+                {template.stats.labels}{' '}
+                <span className="text-muted-foreground">labels</span>
+              </span>
             </div>
           )}
         </div>
+      </CardContent>
+    </Card>
+  );
 
-        {/* Gradient overlay on hover */}
-        <div
-          className={cn(
-            'pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100',
-            index === 0
-              ? 'bg-linear-to-br from-dynamic-purple/5 via-transparent to-dynamic-blue/5'
-              : 'bg-linear-to-br from-dynamic-blue/5 via-transparent to-dynamic-green/5'
-          )}
-        />
+  if (onOpenTemplate) {
+    return (
+      <button
+        type="button"
+        className="block h-full w-full text-left"
+        onClick={() => onOpenTemplate(template)}
+      >
+        {card}
+      </button>
+    );
+  }
 
-        <CardHeader className="relative space-y-4 pb-4">
-          <div className="flex items-center justify-between">
-            <Badge
-              variant="secondary"
-              className={cn(
-                'bg-background/80 font-semibold backdrop-blur-sm',
-                index === 0 ? 'text-dynamic-purple' : 'text-dynamic-blue'
-              )}
-            >
-              ⭐ Featured
-            </Badge>
+  return (
+    <Link href={`/${wsId}/${templatesBasePath}/${template.id}`}>{card}</Link>
+  );
+}
+
+function MarketplaceTemplateCard({
+  template,
+  onOpenTemplate,
+  wsId,
+  templatesBasePath,
+}: {
+  template: BoardTemplate;
+  onOpenTemplate?: (template: BoardTemplate) => void;
+  wsId: string;
+  templatesBasePath: string;
+}) {
+  const card = (
+    <Card className="group h-full overflow-hidden transition-all duration-200 hover:-translate-y-1 hover:border-primary/50 hover:shadow-lg">
+      <div className="aspect-video w-full overflow-hidden border-b bg-muted/50">
+        {template.backgroundUrl ? (
+          <Image
+            src={template.backgroundUrl}
+            alt={template.name}
+            width={400}
+            height={225}
+            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+          />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center bg-secondary/30">
+            <KanbanSquare className="h-10 w-10 text-muted-foreground/20" />
+          </div>
+        )}
+      </div>
+      <CardHeader className="pb-3">
+        <div className="flex items-start gap-3">
+          <div className="rounded-lg bg-linear-to-br from-dynamic-purple/10 via-dynamic-pink/5 to-dynamic-blue/10 p-2.5 transition-colors group-hover:from-dynamic-purple/20 group-hover:to-dynamic-blue/20">
+            <Bookmark className="h-5 w-5 text-dynamic-purple" />
+          </div>
+          <div className="min-w-0 flex-1 space-y-1">
+            <CardTitle className="line-clamp-2 text-base leading-tight transition-colors group-hover:text-dynamic-blue">
+              {template.name}
+            </CardTitle>
             <span className="text-muted-foreground text-xs">
               {formatDistanceToNow(new Date(template.createdAt), {
                 addSuffix: true,
               })}
             </span>
           </div>
+        </div>
+        {template.description && (
+          <CardDescription className="line-clamp-2 pt-2 text-xs leading-relaxed">
+            {template.description}
+          </CardDescription>
+        )}
+      </CardHeader>
 
-          <div className="space-y-2">
-            <CardTitle className="font-bold text-2xl leading-tight transition-colors group-hover:text-primary">
-              {template.name}
-            </CardTitle>
-            {template.description && (
-              <CardDescription className="line-clamp-3 text-base leading-relaxed">
-                {template.description}
-              </CardDescription>
-            )}
+      <CardContent className="pt-0">
+        <div className="flex flex-wrap items-center gap-3 border-border/50 border-t pt-3 text-muted-foreground text-xs">
+          <div className="flex items-center gap-1.5">
+            <KanbanSquare className="h-3.5 w-3.5 text-dynamic-blue" />
+            <span>{template.stats.lists}</span>
           </div>
-        </CardHeader>
-
-        <CardContent className="relative">
-          <div className="flex flex-wrap items-center gap-4">
-            <div className="flex items-center gap-2 rounded-full bg-linear-to-r from-dynamic-blue/10 to-dynamic-cyan/10 px-3 py-1.5 text-sm">
-              <KanbanSquare className="h-4 w-4 text-dynamic-blue" />
-              <span className="font-medium">
-                {template.stats.lists}{' '}
-                <span className="text-muted-foreground">lists</span>
-              </span>
-            </div>
-            <div className="flex items-center gap-2 rounded-full bg-linear-to-r from-dynamic-green/10 to-dynamic-teal/10 px-3 py-1.5 text-sm">
-              <ListTodo className="h-4 w-4 text-dynamic-green" />
-              <span className="font-medium">
-                {template.stats.tasks}{' '}
-                <span className="text-muted-foreground">tasks</span>
-              </span>
-            </div>
-            {template.stats.labels > 0 && (
-              <div className="flex items-center gap-2 rounded-full bg-linear-to-r from-dynamic-orange/10 to-dynamic-yellow/10 px-3 py-1.5 text-sm">
-                <Tags className="h-4 w-4 text-dynamic-orange" />
-                <span className="font-medium">
-                  {template.stats.labels}{' '}
-                  <span className="text-muted-foreground">labels</span>
-                </span>
-              </div>
-            )}
+          <div className="flex items-center gap-1.5">
+            <ListTodo className="h-3.5 w-3.5 text-dynamic-green" />
+            <span>{template.stats.tasks}</span>
           </div>
-        </CardContent>
-      </Card>
-    </Link>
-  );
-}
-
-function MarketplaceTemplateCard({
-  template,
-  wsId,
-  templatesBasePath,
-}: {
-  template: BoardTemplate;
-  wsId: string;
-  templatesBasePath: string;
-}) {
-  return (
-    <Link href={`/${wsId}/${templatesBasePath}/${template.id}`}>
-      <Card className="group h-full overflow-hidden transition-all duration-200 hover:-translate-y-1 hover:border-primary/50 hover:shadow-lg">
-        <div className="aspect-video w-full overflow-hidden border-b bg-muted/50">
-          {template.backgroundUrl ? (
-            <Image
-              src={template.backgroundUrl}
-              alt={template.name}
-              width={400}
-              height={225}
-              className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-            />
-          ) : (
-            <div className="flex h-full w-full items-center justify-center bg-secondary/30">
-              <KanbanSquare className="h-10 w-10 text-muted-foreground/20" />
+          {template.stats.labels > 0 && (
+            <div className="flex items-center gap-1.5">
+              <Tags className="h-3.5 w-3.5 text-dynamic-orange" />
+              <span>{template.stats.labels}</span>
             </div>
           )}
         </div>
-        <CardHeader className="pb-3">
-          <div className="flex items-start gap-3">
-            <div className="rounded-lg bg-linear-to-br from-dynamic-purple/10 via-dynamic-pink/5 to-dynamic-blue/10 p-2.5 transition-colors group-hover:from-dynamic-purple/20 group-hover:to-dynamic-blue/20">
-              <Bookmark className="h-5 w-5 text-dynamic-purple" />
-            </div>
-            <div className="min-w-0 flex-1 space-y-1">
-              <CardTitle className="line-clamp-2 text-base leading-tight transition-colors group-hover:text-dynamic-blue">
-                {template.name}
-              </CardTitle>
-              <span className="text-muted-foreground text-xs">
-                {formatDistanceToNow(new Date(template.createdAt), {
-                  addSuffix: true,
-                })}
-              </span>
-            </div>
-          </div>
-          {template.description && (
-            <CardDescription className="line-clamp-2 pt-2 text-xs leading-relaxed">
-              {template.description}
-            </CardDescription>
-          )}
-        </CardHeader>
+      </CardContent>
+    </Card>
+  );
 
-        <CardContent className="pt-0">
-          <div className="flex flex-wrap items-center gap-3 border-border/50 border-t pt-3 text-muted-foreground text-xs">
-            <div className="flex items-center gap-1.5">
-              <KanbanSquare className="h-3.5 w-3.5 text-dynamic-blue" />
-              <span>{template.stats.lists}</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <ListTodo className="h-3.5 w-3.5 text-dynamic-green" />
-              <span>{template.stats.tasks}</span>
-            </div>
-            {template.stats.labels > 0 && (
-              <div className="flex items-center gap-1.5">
-                <Tags className="h-3.5 w-3.5 text-dynamic-orange" />
-                <span>{template.stats.labels}</span>
-              </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-    </Link>
+  if (onOpenTemplate) {
+    return (
+      <button
+        type="button"
+        className="block h-full w-full text-left"
+        onClick={() => onOpenTemplate(template)}
+      >
+        {card}
+      </button>
+    );
+  }
+
+  return (
+    <Link href={`/${wsId}/${templatesBasePath}/${template.id}`}>{card}</Link>
   );
 }
 

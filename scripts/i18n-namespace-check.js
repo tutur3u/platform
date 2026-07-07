@@ -109,6 +109,7 @@ const APP_SHARED_PACKAGE_SCOPES = new Map([
 // their consuming apps are confirmed.
 const BARE_ROOT_KEY_APP_SCOPES = new Map([
   ['ws-invoices', new Set(['apps/finance'])],
+  ['ws-task-boards', new Set(['apps/tasks', 'apps/web'])],
 ]);
 
 // Namespaces that must stay in parity across the apps that render the shared

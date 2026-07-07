@@ -3,12 +3,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   getSatelliteAppSessionUser: vi.fn(),
+  getTranslations: vi.fn(),
   getUserWorkspaceConfig: vi.fn(),
   getWorkspace: vi.fn(),
   headers: vi.fn(),
   listWorkspaceBoards: vi.fn(),
   myTasksPage: vi.fn(),
-  notesPage: vi.fn(),
   connection: vi.fn(),
   redirect: vi.fn(),
   taskBoardLoadingState: vi.fn(),
@@ -41,10 +41,6 @@ vi.mock('@tuturuuu/ui/tu-do/my-tasks/my-tasks-page', () => ({
   default: mocks.myTasksPage,
 }));
 
-vi.mock('@tuturuuu/ui/tu-do/notes/notes-page', () => ({
-  default: mocks.notesPage,
-}));
-
 vi.mock('@tuturuuu/ui/tu-do/boards/boardId/task-board-server-page', () => ({
   default: mocks.taskBoardServerPage,
 }));
@@ -72,6 +68,11 @@ vi.mock('next/headers', () => ({
     mocks.headers(...args),
 }));
 
+vi.mock('next-intl/server', () => ({
+  getTranslations: (...args: Parameters<typeof mocks.getTranslations>) =>
+    mocks.getTranslations(...args),
+}));
+
 vi.mock('next/navigation', () => ({
   redirect: (...args: Parameters<typeof mocks.redirect>) =>
     mocks.redirect(...args),
@@ -86,6 +87,7 @@ describe('tasks app task pages', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.getSatelliteAppSessionUser.mockResolvedValue({ id: 'user-1' });
+    mocks.getTranslations.mockResolvedValue((key: string) => key);
     mocks.getUserWorkspaceConfig.mockResolvedValue({ value: 'board-default' });
     mocks.getWorkspace.mockResolvedValue({
       id: 'workspace-1',
@@ -229,18 +231,16 @@ describe('tasks app task pages', () => {
     });
   });
 
-  it('opts the notes route into request-time rendering', async () => {
-    const { default: Page } = await import(
-      '@/app/[locale]/(dashboard)/[wsId]/notes/page'
+  it('keeps Tasks navigation scoped to the main task and board routes', async () => {
+    const { getNavigationLinks } = await import(
+      '@/app/[locale]/(dashboard)/[wsId]/navigation'
     );
 
-    const params = Promise.resolve({ wsId: 'workspace-1' });
-    const result = await Page({ params });
+    const links = await getNavigationLinks({ personalOrWsId: 'workspace-1' });
 
-    expect(mocks.connection).toHaveBeenCalledTimes(1);
-    expect(result).toMatchObject({
-      props: { params },
-      type: mocks.notesPage,
-    });
+    expect(links.map((link) => link?.href)).toEqual([
+      '/workspace-1/tasks',
+      '/workspace-1/boards',
+    ]);
   });
 });

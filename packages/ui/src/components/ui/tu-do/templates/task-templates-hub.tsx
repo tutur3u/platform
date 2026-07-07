@@ -10,6 +10,7 @@ import type { BoardTemplate } from './types';
 
 interface TaskTemplatesHubProps {
   boardTemplates: BoardTemplate[];
+  onOpenBoardTemplate?: (template: BoardTemplate) => void;
   taskTemplates?: WorkspaceTaskTemplate[];
   templatesBasePath?: string;
   wsId: string;
@@ -17,6 +18,7 @@ interface TaskTemplatesHubProps {
 
 export function TaskTemplatesHub({
   boardTemplates,
+  onOpenBoardTemplate,
   taskTemplates = [],
   templatesBasePath = 'templates',
   wsId,
@@ -41,6 +43,7 @@ export function TaskTemplatesHub({
       <TabsContent value="boards">
         <TemplatesClient
           initialTemplates={boardTemplates}
+          onOpenTemplate={onOpenBoardTemplate}
           templatesBasePath={templatesBasePath}
           wsId={wsId}
         />

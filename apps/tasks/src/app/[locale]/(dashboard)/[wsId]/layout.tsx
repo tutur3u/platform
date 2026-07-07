@@ -14,6 +14,7 @@ import { cookies, headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { connection } from 'next/server';
 import { type ReactNode, Suspense } from 'react';
+import { SettingsDialogHost } from '@/components/settings/settings-dialog-host';
 import {
   SIDEBAR_BEHAVIOR_COOKIE_NAME,
   SIDEBAR_COLLAPSED_COOKIE_NAME,
@@ -138,6 +139,11 @@ export default async function Layout({ children, params }: LayoutProps) {
                 isPersonalWorkspace={!!workspace.personal}
                 wsId={wsId}
               >
+                <SettingsDialogHost
+                  user={user}
+                  workspace={workspace}
+                  wsId={wsId}
+                />
                 {children}
               </TaskDialogWrapper>
             </WorkspacePresenceProvider>
