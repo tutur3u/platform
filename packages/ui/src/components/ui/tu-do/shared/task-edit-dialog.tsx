@@ -266,12 +266,9 @@ export function TaskEditDialog({
   const effectiveCollaborationMode =
     collaborationMode && !isHydratingTask && !taskLoadError;
 
-  // Keep this permission query disabled when `disabled` shared-link mode is active
-  // (`enabled` becomes false) so `canManageTaskMedia` stays undefined while
-  // `isCheckingTaskMediaPermission` remains false for read-only visitors. That
-  // allows `imageUploadHandler` to stay unset for shared-link views without
-  // forcing a permission request that could re-enable upload affordances. The
-  // query only runs when `effectiveTaskWsId` exists and `disabled` is false.
+  // Defer task media permission checks until an upload is requested. The dialog
+  // is often opened from satellite app sessions that can edit task fields but
+  // should not make a drive permission request unless the user uploads media.
   const { data: canManageTaskMedia, isPending: isCheckingTaskMediaPermission } =
     useQuery({
       queryKey: [
@@ -286,7 +283,7 @@ export function TaskEditDialog({
         );
         return result.hasPermission;
       },
-      enabled: Boolean(effectiveTaskWsId) && !taskControlsDisabled,
+      enabled: false,
       staleTime: 5 * 60 * 1000,
     });
 
@@ -1412,21 +1409,27 @@ export function TaskEditDialog({
 
       let hasPermission = canManageTaskMedia;
       if (hasPermission === undefined || isCheckingTaskMediaPermission) {
-        hasPermission = await queryClient.fetchQuery({
-          queryKey: [
-            'workspace-permission',
-            effectiveTaskWsId,
-            'manage_drive_tasks_directory',
-          ],
-          queryFn: async () => {
-            const result = await checkWorkspacePermission(
+        try {
+          hasPermission = await queryClient.fetchQuery({
+            queryKey: [
+              'workspace-permission',
               effectiveTaskWsId,
-              'manage_drive_tasks_directory'
-            );
-            return result.hasPermission;
-          },
-          staleTime: 5 * 60 * 1000,
-        });
+              'manage_drive_tasks_directory',
+            ],
+            queryFn: async () => {
+              const result = await checkWorkspacePermission(
+                effectiveTaskWsId,
+                'manage_drive_tasks_directory'
+              );
+              return result.hasPermission;
+            },
+            staleTime: 5 * 60 * 1000,
+          });
+        } catch {
+          throw Object.assign(new Error(t('insufficient_permissions')), {
+            code: 'INSUFFICIENT_PERMISSIONS',
+          });
+        }
       }
 
       if (!hasPermission) {

@@ -3,6 +3,7 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { isTaskPriority } from '@tuturuuu/types/primitives/Priority';
 import type {
@@ -27,6 +28,24 @@ const relationshipMutationSchema = z.object({
   target_task_id: z.guid(),
   type: z.enum(['parent_child', 'blocks', 'related']),
 });
+
+export type TaskRelationshipRouteAuthContext = {
+  appSession?: boolean;
+  supabase: TypedSupabaseClient;
+  user: SupabaseUser;
+};
+
+type TaskRelationshipRouteContext = {
+  params: Promise<{ wsId: string; taskId: string }>;
+};
+
+type TaskRelationshipRequestAuth =
+  | {
+      auth: TaskRelationshipRouteAuthContext;
+    }
+  | {
+      error: NextResponse;
+    };
 
 interface RelationshipTaskRow {
   id: string;
@@ -54,6 +73,37 @@ interface SourceRelationshipRow {
 interface TargetRelationshipRow {
   type: 'parent_child' | 'blocks' | 'related';
   source_task: RelationshipTaskRow | null;
+}
+
+async function resolveTaskRelationshipRequestAuth(
+  request: NextRequest,
+  auth?: TaskRelationshipRouteAuthContext
+): Promise<TaskRelationshipRequestAuth> {
+  if (auth) {
+    return {
+      auth: {
+        ...auth,
+        appSession: auth.appSession === true,
+      },
+    };
+  }
+
+  const supabase = await createClient(request);
+  const { user, authError } = await resolveAuthenticatedSessionUser(supabase);
+
+  if (authError || !user) {
+    return {
+      error: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }),
+    };
+  }
+
+  return {
+    auth: {
+      appSession: false,
+      supabase,
+      user,
+    },
+  };
 }
 
 async function getWorkspaceTaskRow(
@@ -92,9 +142,10 @@ function toTaskInfo(task: RelationshipTaskRow): RelatedTaskInfo {
   };
 }
 
-export async function GET(
+export async function handleTaskRelationshipRouteGET(
   request: NextRequest,
-  { params }: { params: Promise<{ wsId: string; taskId: string }> }
+  { params }: TaskRelationshipRouteContext,
+  authContext?: TaskRelationshipRouteAuthContext
 ) {
   try {
     const parsedParams = paramsSchema.safeParse(await params);
@@ -106,12 +157,12 @@ export async function GET(
       );
     }
 
-    const supabase = await createClient(request);
-    const { user, authError } = await resolveAuthenticatedSessionUser(supabase);
-
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const resolvedAuth = await resolveTaskRelationshipRequestAuth(
+      request,
+      authContext
+    );
+    if ('error' in resolvedAuth) return resolvedAuth.error;
+    const { supabase, user } = resolvedAuth.auth;
 
     const wsId = await normalizeWorkspaceId(parsedParams.data.wsId, supabase);
     const taskId = parsedParams.data.taskId;
@@ -298,9 +349,17 @@ export async function GET(
   }
 }
 
-export async function POST(
+export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ wsId: string; taskId: string }> }
+  { params }: TaskRelationshipRouteContext
+) {
+  return handleTaskRelationshipRouteGET(request, { params });
+}
+
+export async function handleTaskRelationshipRoutePOST(
+  request: NextRequest,
+  { params }: TaskRelationshipRouteContext,
+  authContext?: TaskRelationshipRouteAuthContext
 ) {
   try {
     const parsedParams = paramsSchema.safeParse(await params);
@@ -311,12 +370,12 @@ export async function POST(
       );
     }
 
-    const supabase = await createClient(request);
-    const { user, authError } = await resolveAuthenticatedSessionUser(supabase);
-
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const resolvedAuth = await resolveTaskRelationshipRequestAuth(
+      request,
+      authContext
+    );
+    if ('error' in resolvedAuth) return resolvedAuth.error;
+    const { supabase, user } = resolvedAuth.auth;
 
     const wsId = await normalizeWorkspaceId(parsedParams.data.wsId, supabase);
     const taskId = parsedParams.data.taskId;
@@ -427,9 +486,17 @@ export async function POST(
   }
 }
 
-export async function DELETE(
+export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ wsId: string; taskId: string }> }
+  { params }: TaskRelationshipRouteContext
+) {
+  return handleTaskRelationshipRoutePOST(request, { params });
+}
+
+export async function handleTaskRelationshipRouteDELETE(
+  request: NextRequest,
+  { params }: TaskRelationshipRouteContext,
+  authContext?: TaskRelationshipRouteAuthContext
 ) {
   try {
     const parsedParams = paramsSchema.safeParse(await params);
@@ -440,12 +507,12 @@ export async function DELETE(
       );
     }
 
-    const supabase = await createClient(request);
-    const { user, authError } = await resolveAuthenticatedSessionUser(supabase);
-
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const resolvedAuth = await resolveTaskRelationshipRequestAuth(
+      request,
+      authContext
+    );
+    if ('error' in resolvedAuth) return resolvedAuth.error;
+    const { supabase, user } = resolvedAuth.auth;
 
     const wsId = await normalizeWorkspaceId(parsedParams.data.wsId, supabase);
     const taskId = parsedParams.data.taskId;
@@ -582,4 +649,11 @@ export async function DELETE(
       { status: 500 }
     );
   }
+}
+
+export async function DELETE(
+  request: NextRequest,
+  { params }: TaskRelationshipRouteContext
+) {
+  return handleTaskRelationshipRouteDELETE(request, { params });
 }

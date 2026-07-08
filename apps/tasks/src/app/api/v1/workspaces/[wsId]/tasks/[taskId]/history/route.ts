@@ -84,15 +84,20 @@ export async function GET(
   { params }: { params: Promise<{ wsId: string; taskId: string }> }
 ) {
   try {
-    const supabase = await createClient();
+    const baseSupabase = await createClient();
 
     // Get authenticated user
-    const { user, authError } = await resolveAuthenticatedSessionUser(supabase);
+    const {
+      authError,
+      supabase: authenticatedSupabase,
+      user,
+    } = await resolveAuthenticatedSessionUser(req, baseSupabase);
 
-    if (authError || !user) {
+    if (authError || !authenticatedSupabase || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const supabase = authenticatedSupabase;
     const { wsId: rawWsId, taskId } = await params;
     const wsId = resolveWorkspaceId(rawWsId);
 
