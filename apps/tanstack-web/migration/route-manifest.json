@@ -6,12 +6,12 @@
         "acceptedRemoval": 17,
         "key": "api",
         "label": "api",
-        "legacyNext": 669,
+        "legacyNext": 671,
         "migrated": 77,
-        "percentComplete": 12.32,
-        "remaining": 669,
+        "percentComplete": 12.29,
+        "remaining": 671,
         "terminal": 94,
-        "total": 763,
+        "total": 765,
         "unknownStatus": 0
       },
       {
@@ -116,12 +116,12 @@
         "acceptedRemoval": 17,
         "key": "rust-backend",
         "label": "Rust backend",
-        "legacyNext": 683,
+        "legacyNext": 685,
         "migrated": 82,
-        "percentComplete": 12.66,
-        "remaining": 683,
+        "percentComplete": 12.63,
+        "remaining": 685,
         "terminal": 99,
-        "total": 782,
+        "total": 784,
         "unknownStatus": 0
       },
       {
@@ -323,12 +323,12 @@
       "acceptedRemoval": 19,
       "key": "total",
       "label": "All route artifacts",
-      "legacyNext": 755,
+      "legacyNext": 757,
       "migrated": 275,
-      "percentComplete": 28.03,
-      "remaining": 755,
+      "percentComplete": 27.97,
+      "remaining": 757,
       "terminal": 294,
-      "total": 1049,
+      "total": 1051,
       "unknownStatus": 0
     }
   },
@@ -3848,6 +3848,24 @@
       "methods": ["GET", "POST", "PATCH", "DELETE"],
       "routePath": "/api/v1/workspaces/:wsId/external-projects/storage",
       "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/external-projects/storage/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend"
+    },
+    {
+      "id": "api:/api/v1/workspaces/:wsId/external-projects/submissions:apps/web/src/app/api/v1/workspaces/[wsId]/external-projects/submissions/route.ts",
+      "kind": "api",
+      "methods": ["POST"],
+      "routePath": "/api/v1/workspaces/:wsId/external-projects/submissions",
+      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/external-projects/submissions/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend"
+    },
+    {
+      "id": "api:/api/v1/workspaces/:wsId/external-projects/submissions/:entryId:apps/web/src/app/api/v1/workspaces/[wsId]/external-projects/submissions/[entryId]/route.ts",
+      "kind": "api",
+      "methods": ["PATCH"],
+      "routePath": "/api/v1/workspaces/:wsId/external-projects/submissions/:entryId",
+      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/external-projects/submissions/[entryId]/route.ts",
       "status": "legacy-next",
       "targetOwner": "rust-backend"
     },
@@ -9860,20 +9878,20 @@
     }
   ],
   "summary": {
-    "apiRoutes": 763,
+    "apiRoutes": 765,
     "cronRoutes": 13,
     "layouts": 58,
     "pages": 205,
-    "routeHandlers": 782,
+    "routeHandlers": 784,
     "methodCounts": {
       "GET": 437,
       "HEAD": 22,
-      "POST": 378,
+      "POST": 379,
       "PUT": 99,
-      "PATCH": 95,
+      "PATCH": 96,
       "DELETE": 150,
       "OPTIONS": 38
     },
-    "total": 1049
+    "total": 1051
   }
 }

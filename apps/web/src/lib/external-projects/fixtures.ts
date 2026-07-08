@@ -470,7 +470,8 @@ const richfieldSchema = {
     },
     {
       collection_type: 'milestones',
-      description: 'Company timeline milestones from founding to the present day.',
+      description:
+        'Company timeline milestones from founding to the present day.',
       profileFields: [
         { key: 'year', label: 'Year', type: 'number' },
         { key: 'country', label: 'Country', type: 'string' },
@@ -1671,8 +1672,7 @@ export const externalProjectAdapterFixtures: Record<
   },
   richfield: {
     adapter: 'richfield',
-    sourceReference:
-      '../Richfield/lib/richfield-external-project-manifest.ts',
+    sourceReference: '../Richfield/lib/richfield-external-project-manifest.ts',
     profileData: {
       brand: 'Richfield',
       deliveryPreset: 'richfield-main',
@@ -1754,7 +1754,8 @@ export const externalProjectAdapterFixtures: Record<
       },
       {
         collectionType: 'milestones',
-        description: 'Company timeline milestones from founding to the present day.',
+        description:
+          'Company timeline milestones from founding to the present day.',
         slug: 'milestones',
         sourceId: 'richfield:collection:milestones',
         title: 'Milestones',
@@ -1873,7 +1874,8 @@ export const externalProjectAdapterFixtures: Record<
           {
             assets: [
               {
-                altText: 'The Richfield team in a conga line on the beach at dusk',
+                altText:
+                  'The Richfield team in a conga line on the beach at dusk',
                 assetType: 'image',
                 sourceId: 'richfield:image-library:home-cover-beach:image',
                 sourceUrl: '/photos/people/richfield.webp',
@@ -1898,7 +1900,8 @@ export const externalProjectAdapterFixtures: Record<
           {
             assets: [
               {
-                altText: 'Richfield team portrait in front of the modern campus',
+                altText:
+                  'Richfield team portrait in front of the modern campus',
                 assetType: 'image',
                 sourceId: 'richfield:image-library:about-campus-group:image',
                 sourceUrl: '/photos/people/selected-2026-05-05.webp',
@@ -1949,11 +1952,11 @@ export const externalProjectAdapterFixtures: Record<
           {
             assets: [
               {
-                altText: 'A traditional tap hoa grocery store stocked with packaged goods',
+                altText:
+                  'A traditional tap hoa grocery store stocked with packaged goods',
                 assetType: 'image',
                 sourceId: 'richfield:image-library:distribution-tap-hoa:image',
-                sourceUrl:
-                  '/photos/RF Website/Distribution Channels/General Trade/Tap-hoa-2.webp',
+                sourceUrl: '/photos/distribution/tap-hoa.webp',
               },
             ],
             blocks: [],
@@ -1978,8 +1981,7 @@ export const externalProjectAdapterFixtures: Record<
                 altText: 'Richfield Foods Phu Tuong facility',
                 assetType: 'image',
                 sourceId: 'richfield:image-library:logistics-facility:image',
-                sourceUrl:
-                  '/photos/RF Website/Richfield Foods (Phu Tuong)/DSC_0832.webp',
+                sourceUrl: '/photos/logistics/phu-tuong-facility.webp',
               },
             ],
             blocks: [],
@@ -2026,9 +2028,11 @@ export const externalProjectAdapterFixtures: Record<
           {
             assets: [
               {
-                altText: 'Bill Chua, Chief Executive Officer of Richfield Group.',
+                altText:
+                  'Bill Chua, Chief Executive Officer of Richfield Group.',
                 assetType: 'image',
-                sourceId: 'richfield:image-library:careers-leader-bill-chua:image',
+                sourceId:
+                  'richfield:image-library:careers-leader-bill-chua:image',
                 sourceUrl: '/photos/leadership/bill-chua.webp',
               },
             ],
@@ -2051,7 +2055,8 @@ export const externalProjectAdapterFixtures: Record<
           {
             assets: [
               {
-                altText: 'Richfield team spelling the company name on the beach',
+                altText:
+                  'Richfield team spelling the company name on the beach',
                 assetType: 'image',
                 sourceId: 'richfield:image-library:contact-hero:image',
                 sourceUrl: '/photos/contact-richfield.webp',

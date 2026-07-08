@@ -260,7 +260,8 @@ const CMS_EDITOR_BLUEPRINTS: Partial<
       },
       {
         collectionSlugs: ['milestones'],
-        description: 'Company timeline milestones and brand partnership history.',
+        description:
+          'Company timeline milestones and brand partnership history.',
         id: 'timeline',
         label: 'Timeline',
         navigationLabel: 'Timeline',
@@ -274,8 +275,9 @@ const CMS_EDITOR_BLUEPRINTS: Partial<
         createCollection: {
           collectionType: 'contact-page',
           description:
-            'Public contact page copy, channels, and private visitor messages.',
-          emptyHint: 'Import Richfield content or create contact details first.',
+            'Contact page copy, public channels, and private visitor messages.',
+          emptyHint:
+            'Import Richfield content or create contact details first.',
           entryTitle: 'Contact page',
           slug: 'contact-page',
           title: 'Contact',
@@ -305,8 +307,7 @@ const CMS_EDITOR_BLUEPRINTS: Partial<
         collectionSlugs: ['image-library'],
         createCollection: {
           collectionType: 'image-library',
-          description:
-            'Reusable site images grouped by page and exact placement.',
+          description: 'Reusable site images grouped by page and placement.',
           emptyHint: 'Upload the first Gallery image.',
           entryTitle: 'Image',
           slug: 'image-library',
@@ -318,7 +319,13 @@ const CMS_EDITOR_BLUEPRINTS: Partial<
         navigationLabel: 'Gallery',
       },
     ],
-    landingSlugs: ['brands', 'contact-page', 'contact-channels', 'jobs', 'image-library'],
+    landingSlugs: [
+      'brands',
+      'contact-page',
+      'contact-channels',
+      'jobs',
+      'image-library',
+    ],
   },
   yoola: {
     contentViews: [

@@ -63,11 +63,16 @@ function createOrderedSelectResult<T>(result: T) {
     eq: vi.fn(() => query),
     in: vi.fn(() => query),
     order: vi.fn(() => query),
-    then: (resolve: (value: T) => unknown, reject?: (reason: unknown) => unknown) =>
-      Promise.resolve(result).then(resolve, reject),
   };
 
-  return query;
+  Object.defineProperty(query, 'then', {
+    value: (
+      resolve: (value: T) => unknown,
+      reject?: (reason: unknown) => unknown
+    ) => Promise.resolve(result).then(resolve, reject),
+  });
+
+  return query as typeof query & PromiseLike<T>;
 }
 
 describe('external project store cleanup', () => {
@@ -76,7 +81,7 @@ describe('external project store cleanup', () => {
     mocks.deleteWorkspaceStorageObjectByPath.mockResolvedValue(undefined);
   });
 
-  it('excludes private contact submissions from public delivery payloads', async () => {
+  it('excludes private delivery collections and entries from public delivery payloads', async () => {
     const collections = [
       {
         collection_type: 'brands',
@@ -102,6 +107,20 @@ describe('external project store cleanup', () => {
         is_enabled: true,
         slug: 'contact-submissions',
         title: 'Contact Inbox',
+        updated_at: '2026-01-01T00:00:00Z',
+        updated_by: null,
+        ws_id: 'workspace-1',
+      },
+      {
+        collection_type: 'private-inbox',
+        config: { privateDelivery: true },
+        created_at: '2026-01-01T00:00:00Z',
+        created_by: null,
+        description: null,
+        id: 'collection-private-inbox',
+        is_enabled: true,
+        slug: 'private-inbox',
+        title: 'Private Inbox',
         updated_at: '2026-01-01T00:00:00Z',
         updated_by: null,
         ws_id: 'workspace-1',
@@ -146,6 +165,48 @@ describe('external project store cleanup', () => {
         subtitle: 'visitor@example.com',
         summary: 'Private message',
         title: 'Private Visitor',
+        updated_at: '2026-01-01T00:00:00Z',
+        updated_by: null,
+        ws_id: 'workspace-1',
+      },
+      {
+        collection_id: 'collection-brands',
+        created_at: '2026-01-01T00:00:00Z',
+        created_by: null,
+        id: 'entry-private-brand',
+        metadata: { privateDelivery: true },
+        profile_data: {},
+        published_at: null,
+        scheduled_for: null,
+        slug: 'private-brand',
+        sort_order: 1,
+        source_adapter: null,
+        stable_source_id: null,
+        status: 'published',
+        subtitle: null,
+        summary: 'Private brand',
+        title: 'Private Brand',
+        updated_at: '2026-01-01T00:00:00Z',
+        updated_by: null,
+        ws_id: 'workspace-1',
+      },
+      {
+        collection_id: 'collection-private-inbox',
+        created_at: '2026-01-01T00:00:00Z',
+        created_by: null,
+        id: 'entry-private-inbox',
+        metadata: {},
+        profile_data: {},
+        published_at: null,
+        scheduled_for: null,
+        slug: 'private-inbox-message',
+        sort_order: 0,
+        source_adapter: null,
+        stable_source_id: null,
+        status: 'published',
+        subtitle: null,
+        summary: 'Private inbox message',
+        title: 'Private Inbox Message',
         updated_at: '2026-01-01T00:00:00Z',
         updated_by: null,
         ws_id: 'workspace-1',

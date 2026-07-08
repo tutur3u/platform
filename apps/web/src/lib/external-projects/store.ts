@@ -110,6 +110,12 @@ function asJsonObject(
   return {};
 }
 
+function hasPrivateDeliveryFlag(
+  value: Json | Record<string, unknown> | null | undefined
+) {
+  return asJsonObject(value).privateDelivery === true;
+}
+
 function getCollectionSchemaRecord(
   collection: ExternalProjectCollection | null | undefined
 ) {
@@ -2780,15 +2786,19 @@ export async function buildWorkspaceExternalProjectDeliveryPayload(
     listWorkspaceExternalProjectAssetsByEntryIds(workspaceId, entryIds, admin),
   ]);
 
-  const deliveryCollections = collections.filter(
-    (collection) =>
-      !PRIVATE_EXTERNAL_PROJECT_DELIVERY_COLLECTION_SLUGS.has(collection.slug)
-  );
+  const deliveryCollections = collections.filter((collection) => {
+    if (hasPrivateDeliveryFlag(collection.config)) return false;
+    return !PRIVATE_EXTERNAL_PROJECT_DELIVERY_COLLECTION_SLUGS.has(
+      collection.slug
+    );
+  });
   const deliveryCollectionIds = new Set(
     deliveryCollections.map((collection) => collection.id)
   );
-  const deliveryEntries = entries.filter((entry) =>
-    deliveryCollectionIds.has(entry.collection_id)
+  const deliveryEntries = entries.filter(
+    (entry) =>
+      deliveryCollectionIds.has(entry.collection_id) &&
+      !hasPrivateDeliveryFlag(entry.metadata)
   );
 
   const collectionsPayload = deliveryCollections.map((collection) => ({

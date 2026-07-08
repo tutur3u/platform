@@ -1,13 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import {
+  getCmsEditorBlueprintViews,
+  getCmsLandingCollectionSlugs,
+} from './cms-editor-blueprints';
+import {
   DEFAULT_EXTERNAL_PROJECT_COLLECTIONS,
   EXTERNAL_PROJECT_ADAPTER_OPTIONS,
   EXTERNAL_PROJECT_DISPLAY_NAMES,
 } from './constants';
-import {
-  getCmsEditorBlueprintViews,
-  getCmsLandingCollectionSlugs,
-} from './cms-editor-blueprints';
 
 describe('CMS editor Richfield adapter registration', () => {
   it('registers Richfield as a selectable external project adapter', () => {

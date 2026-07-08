@@ -1,15 +1,11 @@
-import type { Json } from '@tuturuuu/types';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
+import type { ExternalProjectCollection, Json } from '@tuturuuu/types';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { verifyExternalAppSecret } from '@/lib/app-coordination/external-apps';
 import { resolveWorkspaceExternalProjectBinding } from '@/lib/external-projects/access';
-import {
-  createWorkspaceExternalProjectCollection,
-  createWorkspaceExternalProjectEntry,
-  listWorkspaceExternalProjectCollections,
-} from '@/lib/external-projects/store';
+import { createWorkspaceExternalProjectEntry } from '@/lib/external-projects/store';
 
 const CONTACT_SUBMISSIONS_COLLECTION_SLUG = 'contact-submissions';
 
@@ -18,11 +14,11 @@ const submissionSchema = z.object({
   appSecret: z.string().min(1),
   company: z.string().trim().min(1).max(160),
   country: z.string().trim().max(120).optional(),
-  email: z.string().trim().email().max(200),
+  email: z.string().trim().max(200).pipe(z.email()),
   inquiryType: z.string().trim().min(1).max(120),
   message: z.string().trim().min(1).max(2000),
   name: z.string().trim().min(1).max(160),
-  receivedAt: z.string().datetime().optional(),
+  receivedAt: z.iso.datetime().optional(),
 });
 
 async function authorizeRichfieldSubmission({
@@ -65,35 +61,66 @@ async function authorizeRichfieldSubmission({
   return { binding };
 }
 
+function isMalformedJsonError(error: unknown) {
+  return error instanceof SyntaxError;
+}
+
+async function getContactSubmissionsCollection(
+  workspaceId: string,
+  admin: TypedSupabaseClient
+): Promise<ExternalProjectCollection | null> {
+  const { data, error } = await admin
+    .from('workspace_external_project_collections')
+    .select('*')
+    .eq('ws_id', workspaceId)
+    .eq('slug', CONTACT_SUBMISSIONS_COLLECTION_SLUG)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return data;
+}
+
 async function ensureContactSubmissionsCollection(
   workspaceId: string,
   admin: TypedSupabaseClient
 ) {
-  const collections = await listWorkspaceExternalProjectCollections(
-    workspaceId,
-    admin
-  );
-  const existing = collections.find(
-    (collection) => collection.slug === CONTACT_SUBMISSIONS_COLLECTION_SLUG
-  );
+  const existing = await getContactSubmissionsCollection(workspaceId, admin);
 
   if (existing) return existing;
 
-  return createWorkspaceExternalProjectCollection(
-    {
-      actorId: null,
+  const { data, error } = await admin
+    .from('workspace_external_project_collections')
+    .insert({
       collection_type: CONTACT_SUBMISSIONS_COLLECTION_SLUG,
       config: {
         privateDelivery: true,
       } as Json,
+      created_by: null,
       description:
         'Private inbound contact form messages saved for Richfield admins.',
       slug: CONTACT_SUBMISSIONS_COLLECTION_SLUG,
       title: 'Contact Inbox',
-      workspaceId,
-    },
-    admin
-  );
+      updated_by: null,
+      ws_id: workspaceId,
+    })
+    .select('*')
+    .maybeSingle();
+
+  if (error && error.code !== '23505') {
+    throw new Error(error.message);
+  }
+
+  const collection =
+    data ?? (await getContactSubmissionsCollection(workspaceId, admin));
+
+  if (!collection) {
+    throw new Error('Contact submissions collection could not be created');
+  }
+
+  return collection;
 }
 
 function slugifySubmission(value: string) {
@@ -160,6 +187,13 @@ export async function POST(
 
     return NextResponse.json({ entry }, { status: 201 });
   } catch (error) {
+    if (isMalformedJsonError(error)) {
+      return NextResponse.json(
+        { error: 'Invalid JSON payload' },
+        { status: 400 }
+      );
+    }
+
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         { error: 'Invalid payload', details: error.flatten() },

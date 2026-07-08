@@ -1,17 +1,42 @@
-import type { Json } from '@tuturuuu/types';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
+import type { ExternalProjectEntry } from '@tuturuuu/types';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { verifyExternalAppSecret } from '@/lib/app-coordination/external-apps';
 import { resolveWorkspaceExternalProjectBinding } from '@/lib/external-projects/access';
-import { updateWorkspaceExternalProjectEntry } from '@/lib/external-projects/store';
 
 const statusSchema = z.object({
   appId: z.string().trim().toLowerCase().default('richfield'),
   appSecret: z.string().min(1),
   emailNotificationStatus: z.enum(['pending', 'sent', 'failed']),
 });
+
+type RichfieldStatusPayload = z.infer<typeof statusSchema>;
+
+type PrivateRichfieldSubmissionRpcClient = {
+  rpc(
+    functionName: 'update_richfield_contact_submission_status',
+    args: {
+      p_email_notification_status: RichfieldStatusPayload['emailNotificationStatus'];
+      p_entry_id: string;
+      p_ws_id: string;
+    }
+  ): Promise<{
+    data: ExternalProjectEntry[] | null;
+    error: { message: string } | null;
+  }>;
+};
+
+function getPrivateRichfieldSubmissionRpcClient(admin: TypedSupabaseClient) {
+  return admin.schema(
+    'private'
+  ) as unknown as PrivateRichfieldSubmissionRpcClient;
+}
+
+function isMalformedJsonError(error: unknown) {
+  return error instanceof SyntaxError;
+}
 
 async function authorizeRichfieldSubmissionStatus({
   admin,
@@ -71,54 +96,36 @@ export async function PATCH(
 
     if ('response' in access) return access.response;
 
-    const { data: currentEntry, error: currentEntryError } = await admin
-      .from('workspace_external_project_entries')
-      .select('metadata, profile_data')
-      .eq('ws_id', wsId)
-      .eq('id', entryId)
-      .maybeSingle();
-
-    if (currentEntryError) {
-      throw new Error(currentEntryError.message);
-    }
-
-    if (!currentEntry) {
-      return NextResponse.json({ error: 'Submission not found' }, { status: 404 });
-    }
-
-    const currentProfileData =
-      currentEntry.profile_data &&
-      typeof currentEntry.profile_data === 'object' &&
-      !Array.isArray(currentEntry.profile_data)
-        ? (currentEntry.profile_data as Record<string, unknown>)
-        : {};
-    const currentMetadata =
-      currentEntry.metadata &&
-      typeof currentEntry.metadata === 'object' &&
-      !Array.isArray(currentEntry.metadata)
-        ? (currentEntry.metadata as Record<string, unknown>)
-        : {};
-
-    const entry = await updateWorkspaceExternalProjectEntry(
-      entryId,
-      {
-        actorId: null,
-        metadata: {
-          ...currentMetadata,
-          emailNotificationStatus: payload.emailNotificationStatus,
-          privateDelivery: true,
-        } as Json,
-        profile_data: {
-          ...currentProfileData,
-          emailNotificationStatus: payload.emailNotificationStatus,
-        } as Json,
-        workspaceId: wsId,
-      },
+    const { data, error } = await getPrivateRichfieldSubmissionRpcClient(
       admin
-    );
+    ).rpc('update_richfield_contact_submission_status', {
+      p_email_notification_status: payload.emailNotificationStatus,
+      p_entry_id: entryId,
+      p_ws_id: wsId,
+    });
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    const entry = data?.[0];
+
+    if (!entry) {
+      return NextResponse.json(
+        { error: 'Submission not found' },
+        { status: 404 }
+      );
+    }
 
     return NextResponse.json({ entry });
   } catch (error) {
+    if (isMalformedJsonError(error)) {
+      return NextResponse.json(
+        { error: 'Invalid JSON payload' },
+        { status: 400 }
+      );
+    }
+
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         { error: 'Invalid payload', details: error.flatten() },
