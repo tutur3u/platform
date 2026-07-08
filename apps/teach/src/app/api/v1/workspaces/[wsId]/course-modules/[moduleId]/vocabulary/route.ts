@@ -104,14 +104,31 @@ function validateVocabularyEntry(
     };
   }
 
-  if (
-    imageUrl &&
-    (!imageUrl.startsWith('data:image/') || imageUrl.length > 7_200_000)
-  ) {
-    return {
-      error: `Vocabulary item ${index + 1} image must be an uploaded image under 5MB.`,
-      ok: false,
-    };
+  if (imageUrl) {
+    const isDataUri = imageUrl.startsWith('data:image/');
+    const isHttpUri =
+      imageUrl.startsWith('http://') || imageUrl.startsWith('https://');
+
+    if (!isDataUri && !isHttpUri) {
+      return {
+        error: `Vocabulary item ${index + 1} image must be an uploaded image or a valid URL.`,
+        ok: false,
+      };
+    }
+
+    if (isDataUri && imageUrl.length > 7_200_000) {
+      return {
+        error: `Vocabulary item ${index + 1} uploaded image must be under 5MB.`,
+        ok: false,
+      };
+    }
+
+    if (isHttpUri && imageUrl.length > 2000) {
+      return {
+        error: `Vocabulary item ${index + 1} image URL must be 2000 characters or less.`,
+        ok: false,
+      };
+    }
   }
 
   if (!examples || examples.length > 20) {

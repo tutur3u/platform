@@ -110,6 +110,8 @@ export default function LessonVocabularySection({ wsId, lessonId }: Props) {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [suggestions, setSuggestions] = useState<VocabularySuggestion[]>([]);
   const [isFetchingDetails, setIsFetchingDetails] = useState(false);
+  const [searchedImages, setSearchedImages] = useState<Array<{ image: string; thumbnail: string; title: string }>>([]);
+  const [isSearchingImages, setIsSearchingImages] = useState(false);
 
   const exampleLines = draft.examples.length > 0 ? draft.examples : [''];
 
@@ -231,6 +233,7 @@ export default function LessonVocabularySection({ wsId, lessonId }: Props) {
       setEntries(nextEntries);
       setDraft(emptyVocabulary());
       setEditingId(null);
+      setSearchedImages([]);
     } catch (saveError) {
       console.error('Failed to save lesson vocabulary', saveError);
       setError('Could not save vocabulary. Please try again.');
@@ -243,6 +246,7 @@ export default function LessonVocabularySection({ wsId, lessonId }: Props) {
     setDraft(emptyVocabulary());
     setEditingId(null);
     setError(null);
+    setSearchedImages([]);
   }
 
   function updateDraft(field: keyof VocabularyItem, value: string | string[]) {
@@ -250,6 +254,26 @@ export default function LessonVocabularySection({ wsId, lessonId }: Props) {
       ...current,
       [field]: value,
     }));
+  }
+
+  async function searchImageSuggestions(word: string) {
+    const query = word.trim();
+    if (!query) return;
+
+    setIsSearchingImages(true);
+    try {
+      const response = await fetch(
+        `/api/v1/vocabulary/images?q=${encodeURIComponent(query)}`,
+        { credentials: 'include' }
+      );
+      if (!response.ok) throw new Error('Failed to fetch images');
+      const payload = await response.json();
+      setSearchedImages(payload.results ?? []);
+    } catch (err) {
+      console.error('Failed to load image suggestions:', err);
+    } finally {
+      setIsSearchingImages(false);
+    }
   }
 
   async function fetchDictionaryDetails(query: { url?: string; word?: string }) {
@@ -284,6 +308,11 @@ export default function LessonVocabularySection({ wsId, lessonId }: Props) {
           examples: nextExamples,
         };
       });
+
+      const searchWord = details.word || query.word;
+      if (searchWord) {
+        searchImageSuggestions(searchWord);
+      }
     } catch (fetchError) {
       console.error('Failed to load dictionary details', fetchError);
       setError('Could not fetch dictionary details. You can type them manually.');
@@ -389,6 +418,9 @@ export default function LessonVocabularySection({ wsId, lessonId }: Props) {
     setEditingId(entry.id);
     setDraft(entry);
     setError(null);
+    if (entry.word.trim()) {
+      searchImageSuggestions(entry.word.trim());
+    }
   }
 
   return (
@@ -528,6 +560,37 @@ export default function LessonVocabularySection({ wsId, lessonId }: Props) {
                 >
                   Remove image
                 </button>
+              ) : null}
+
+              {/* Related Images Selector */}
+              {isSearchingImages ? (
+                <div className="text-muted-foreground text-xs animate-pulse">Searching related images...</div>
+              ) : searchedImages.length > 0 ? (
+                <div className="space-y-1.5 pt-1">
+                  <span className="text-xs font-semibold text-muted-foreground">Or select a related image:</span>
+                  <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin">
+                    {searchedImages.map((img) => (
+                      <button
+                        key={img.image}
+                        type="button"
+                        onClick={() => updateDraft('imageUrl', img.image)}
+                        className={`relative aspect-square w-16 shrink-0 overflow-hidden border-2 transition-all hover:scale-105 ${
+                          draft.imageUrl === img.image
+                            ? 'border-primary ring-2 ring-primary/20 scale-105 shadow-[2px_2px_0_var(--border)]'
+                            : 'border-border shadow-[1px_1px_0_var(--border)]'
+                        }`}
+                        title={img.title}
+                      >
+                        <img
+                          src={img.thumbnail}
+                          alt={img.title}
+                          className="h-full w-full object-cover"
+                          referrerPolicy="no-referrer"
+                        />
+                      </button>
+                    ))}
+                  </div>
+                </div>
               ) : null}
             </div>
           </div>
