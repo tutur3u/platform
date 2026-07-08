@@ -109,6 +109,7 @@ export default function LessonVocabularySection({ wsId, lessonId }: Props) {
   const [isSuggesting, setIsSuggesting] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [suggestions, setSuggestions] = useState<VocabularySuggestion[]>([]);
+  const [isFetchingDetails, setIsFetchingDetails] = useState(false);
 
   const exampleLines = draft.examples.length > 0 ? draft.examples : [''];
 
@@ -251,9 +252,52 @@ export default function LessonVocabularySection({ wsId, lessonId }: Props) {
     }));
   }
 
+  async function fetchDictionaryDetails(query: { url?: string; word?: string }) {
+    setIsFetchingDetails(true);
+    setError(null);
+    try {
+      const params = new URLSearchParams();
+      if (query.url) params.set('url', query.url);
+      if (query.word) params.set('word', query.word);
+
+      const response = await fetch(`/api/v1/vocabulary/details?${params.toString()}`, {
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch details from dictionary.');
+      }
+
+      const details = await response.json();
+
+      setDraft((current) => {
+        const nextExamples =
+          details.examples && details.examples.length > 0
+            ? details.examples
+            : current.examples;
+
+        return {
+          ...current,
+          word: details.word || current.word,
+          pronunciation: details.pronunciation || current.pronunciation,
+          definition: details.definition || current.definition,
+          examples: nextExamples,
+        };
+      });
+    } catch (fetchError) {
+      console.error('Failed to load dictionary details', fetchError);
+      setError('Could not fetch dictionary details. You can type them manually.');
+    } finally {
+      setIsFetchingDetails(false);
+    }
+  }
+
   function selectSuggestion(suggestion: VocabularySuggestion) {
     updateDraft('word', suggestion.word);
     setShowSuggestions(false);
+    if (suggestion.url) {
+      fetchDictionaryDetails({ url: suggestion.url });
+    }
   }
 
   async function handleImageUpload(file: File | null) {
@@ -366,50 +410,60 @@ export default function LessonVocabularySection({ wsId, lessonId }: Props) {
         <div className="grid gap-4 md:grid-cols-2">
           <div className="space-y-2">
             <Label htmlFor="lesson-vocabulary-word">Word</Label>
-            <div className="relative">
-              <Input
-                autoComplete="off"
-                id="lesson-vocabulary-word"
-                value={draft.word}
-                onBlur={() => {
-                  window.setTimeout(() => setShowSuggestions(false), 150);
-                }}
-                onChange={(event) => {
-                  updateDraft('word', event.target.value);
-                  setShowSuggestions(true);
-                }}
-                onFocus={() => setShowSuggestions(true)}
-                placeholder="Vocabulary word"
-              />
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <Input
+                  autoComplete="off"
+                  id="lesson-vocabulary-word"
+                  value={draft.word}
+                  onBlur={() => {
+                    window.setTimeout(() => setShowSuggestions(false), 150);
+                  }}
+                  onChange={(event) => {
+                    updateDraft('word', event.target.value);
+                    setShowSuggestions(true);
+                  }}
+                  onFocus={() => setShowSuggestions(true)}
+                  placeholder="Vocabulary word"
+                />
 
-              {showSuggestions &&
-              (isSuggesting || suggestions.length > 0) &&
-              draft.word.trim().length >= 2 ? (
-                <div className="absolute z-20 mt-2 max-h-64 w-full overflow-y-auto border-2 border-border bg-card shadow-[4px_4px_0_var(--border)]">
-                  {isSuggesting ? (
-                    <div className="px-3 py-2 text-muted-foreground text-sm">
-                      Loading suggestions...
-                    </div>
-                  ) : (
-                    suggestions.map((suggestion) => (
-                      <button
-                        className="flex w-full items-center justify-between gap-3 border-border border-b px-3 py-2 text-left text-sm last:border-b-0 hover:bg-muted/50"
-                        key={`${suggestion.word}-${suggestion.url}`}
-                        onMouseDown={(event) => event.preventDefault()}
-                        onClick={() => selectSuggestion(suggestion)}
-                        type="button"
-                      >
-                        <span className="font-bold">{suggestion.word}</span>
-                        {suggestion.beta ? (
-                          <span className="text-muted-foreground text-[10px] uppercase">
-                            beta
-                          </span>
-                        ) : null}
-                      </button>
-                    ))
-                  )}
-                </div>
-              ) : null}
+                {showSuggestions &&
+                (isSuggesting || suggestions.length > 0) &&
+                draft.word.trim().length >= 2 ? (
+                  <div className="absolute z-20 mt-2 max-h-64 w-full overflow-y-auto border-2 border-border bg-card shadow-[4px_4px_0_var(--border)]">
+                    {isSuggesting ? (
+                      <div className="px-3 py-2 text-muted-foreground text-sm">
+                        Loading suggestions...
+                      </div>
+                    ) : (
+                      suggestions.map((suggestion) => (
+                        <button
+                          className="flex w-full items-center justify-between gap-3 border-border border-b px-3 py-2 text-left text-sm last:border-b-0 hover:bg-muted/50"
+                          key={`${suggestion.word}-${suggestion.url}`}
+                          onMouseDown={(event) => event.preventDefault()}
+                          onClick={() => selectSuggestion(suggestion)}
+                          type="button"
+                        >
+                          <span className="font-bold">{suggestion.word}</span>
+                          {suggestion.beta ? (
+                            <span className="text-muted-foreground text-[10px] uppercase">
+                              beta
+                            </span>
+                          ) : null}
+                        </button>
+                      ))
+                    )}
+                  </div>
+                ) : null}
+              </div>
+              <button
+                className="border-2 border-border bg-card px-3 py-1.5 font-bold text-sm shadow-[2px_2px_0_var(--border)] disabled:opacity-40 hover:-translate-y-0.5 hover:shadow-[3px_3px_0_var(--border)] transition shrink-0"
+                disabled={isSaving || isFetchingDetails || !draft.word.trim()}
+                onClick={() => fetchDictionaryDetails({ word: draft.word.trim() })}
+                type="button"
+              >
+                {isFetchingDetails ? 'Fetching...' : 'Fetch'}
+              </button>
             </div>
           </div>
 
