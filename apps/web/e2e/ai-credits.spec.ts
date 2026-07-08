@@ -1,5 +1,6 @@
 import type { TestInfo } from '@playwright/test';
 import { expect, test } from '@playwright/test';
+import { authenticateTestUser } from './helpers/auth';
 import { DEFAULT_LOCALE } from './helpers/constants';
 import {
   e2eClientHeaders,
@@ -595,6 +596,8 @@ test.describe('Error Handling', () => {
   test('403 CREDITS_EXHAUSTED shows upgrade toast notification', async ({
     page,
   }) => {
+    await authenticateTestUser(page);
+
     // This is a UI test that verifies the toast appears when credits are exhausted
     // It requires the credits endpoint to return exhausted status
     await page.goto('/en/personal/tasks', { waitUntil: 'commit' });
