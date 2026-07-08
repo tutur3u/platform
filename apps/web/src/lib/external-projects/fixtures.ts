@@ -436,6 +436,178 @@ const kendraSchema = {
   ],
 } satisfies ExternalProjectSyncSchema;
 
+const richfieldSchema = {
+  collections: [
+    {
+      assetTypes: ['image'],
+      collection_type: 'brands',
+      description:
+        'Partner brands in the Richfield portfolio with country, category, and story copy.',
+      profileFields: [
+        { key: 'country', label: 'Country', type: 'string' },
+        { key: 'year', label: 'Year', type: 'number' },
+        {
+          key: 'category',
+          label: 'Category',
+          options: ['Food', 'Beverages', 'Non-Food'],
+          type: 'string',
+        },
+        { key: 'accent', label: 'Accent', type: 'string' },
+        { key: 'feature', label: 'Feature', type: 'boolean' },
+        { key: 'featureCaption', label: 'Feature caption', type: 'string' },
+      ],
+      slug: 'brands',
+      title: 'Brands',
+    },
+    {
+      assetTypes: ['image'],
+      blockTypes: ['markdown', 'quote'],
+      collection_type: 'leadership',
+      description: 'Richfield leadership profiles, bios, and quotes.',
+      profileFields: [{ key: 'role', label: 'Role', type: 'string' }],
+      slug: 'leadership',
+      title: 'Leadership',
+    },
+    {
+      collection_type: 'milestones',
+      description:
+        'Company timeline milestones from founding to the present day.',
+      profileFields: [
+        { key: 'year', label: 'Year', type: 'number' },
+        { key: 'country', label: 'Country', type: 'string' },
+        { key: 'brand', label: 'Brand', type: 'string' },
+        { key: 'aboutOnly', label: 'About only', type: 'boolean' },
+      ],
+      slug: 'milestones',
+      title: 'Milestones',
+    },
+    {
+      assetTypes: ['image'],
+      blockTypes: ['markdown'],
+      collection_type: 'contact-page',
+      description: 'Public contact page hero copy, map details, and imagery.',
+      profileFields: [
+        { key: 'headline', label: 'Headline', type: 'string' },
+        { key: 'intro', label: 'Intro', type: 'markdown' },
+        { key: 'mapQuery', label: 'Map query', type: 'string' },
+        {
+          key: 'backgroundImageSlug',
+          label: 'Background image slug',
+          type: 'string',
+        },
+      ],
+      slug: 'contact-page',
+      title: 'Contact Page',
+    },
+    {
+      collection_type: 'contact-channels',
+      description: 'Public contact methods shown on the contact page.',
+      profileFields: [
+        {
+          key: 'kind',
+          label: 'Kind',
+          options: ['office', 'phone', 'email', 'facebook'],
+          type: 'string',
+        },
+        { key: 'href', label: 'Link', type: 'string' },
+        { key: 'secondary', label: 'Secondary text', type: 'string' },
+        { key: 'cta', label: 'Call to action', type: 'string' },
+        { key: 'external', label: 'External', type: 'boolean' },
+        { key: 'sortOrder', label: 'Sort order', type: 'number' },
+      ],
+      slug: 'contact-channels',
+      title: 'Contact Channels',
+    },
+    {
+      blockTypes: ['markdown'],
+      collection_type: 'contact-submissions',
+      description:
+        'Private inbound contact form messages saved for Richfield admins.',
+      profileFields: [
+        { key: 'name', label: 'Name', type: 'string' },
+        { key: 'company', label: 'Company', type: 'string' },
+        { key: 'country', label: 'Country', type: 'string' },
+        { key: 'email', label: 'Email', type: 'string' },
+        { key: 'inquiryType', label: 'Inquiry type', type: 'string' },
+        { key: 'receivedAt', label: 'Received at', type: 'datetime' },
+        {
+          key: 'submissionStatus',
+          label: 'Submission status',
+          options: ['new', 'reviewed', 'archived'],
+          type: 'string',
+        },
+        {
+          key: 'emailNotificationStatus',
+          label: 'Email notification status',
+          options: ['pending', 'sent', 'failed'],
+          type: 'string',
+        },
+      ],
+      slug: 'contact-submissions',
+      title: 'Contact Inbox',
+    },
+    {
+      collection_type: 'jobs',
+      description: 'Careers vacancies shown on the Richfield careers page.',
+      profileFields: [
+        { key: 'positions', label: 'Positions', type: 'number' },
+        { key: 'location', label: 'Location', type: 'string' },
+        { key: 'deadline', label: 'Deadline', type: 'string' },
+        { key: 'href', label: 'External link', type: 'string' },
+        { key: 'sortOrder', label: 'Sort order', type: 'number' },
+      ],
+      slug: 'jobs',
+      title: 'Jobs',
+    },
+    {
+      assetTypes: ['image'],
+      collection_type: 'image-library',
+      description: 'Reusable Richfield images grouped by page and placement.',
+      profileFields: [
+        {
+          key: 'pageSection',
+          label: 'Page section',
+          options: [
+            'home',
+            'about',
+            'brands',
+            'careers',
+            'contact',
+            'distribution',
+            'logistics',
+            'footer-navigation',
+            'shared',
+          ],
+          type: 'string',
+        },
+        { key: 'placement', label: 'Placement', type: 'string' },
+        { key: 'brand', label: 'Brand', type: 'string' },
+        {
+          key: 'category',
+          label: 'Category',
+          options: ['Food', 'Beverages', 'Non-Food'],
+          type: 'string',
+        },
+        { key: 'productName', label: 'Product name', type: 'string' },
+        { key: 'feature', label: 'Featured tile', type: 'boolean' },
+        {
+          key: 'shelfWeight',
+          label: 'Shelf banner size',
+          options: ['hero', 'wide', 'feature'],
+          type: 'string',
+        },
+        { key: 'usageTags', label: 'Usage tags', type: 'string-array' },
+        { key: 'objectPosition', label: 'Object position', type: 'string' },
+        { key: 'ratio', label: 'Ratio', type: 'number' },
+        { key: 'credit', label: 'Credit', type: 'string' },
+        { key: 'sortOrder', label: 'Sort order', type: 'number' },
+      ],
+      slug: 'image-library',
+      title: 'Gallery',
+    },
+  ],
+} satisfies ExternalProjectSyncSchema;
+
 export const externalProjectAdapterFixtures: Record<
   ExternalProjectAdapterKind,
   ExternalProjectAdapterFixture
@@ -1493,6 +1665,493 @@ export const externalProjectAdapterFixtures: Record<
                 },
               },
             ],
+          },
+        ],
+      },
+    ],
+  },
+  richfield: {
+    adapter: 'richfield',
+    sourceReference: '../Richfield/lib/richfield-external-project-manifest.ts',
+    profileData: {
+      brand: 'Richfield',
+      deliveryPreset: 'richfield-main',
+    },
+    schema: richfieldSchema,
+    collections: [
+      {
+        collectionType: 'brands',
+        description:
+          'Partner brands in the Richfield portfolio with country, category, and story copy.',
+        slug: 'brands',
+        sourceId: 'richfield:collection:brands',
+        title: 'Brands',
+        entries: [
+          {
+            assets: [
+              {
+                altText: 'Mars Wrigley',
+                assetType: 'image',
+                sourceId: 'richfield:brands:mars-wrigley:image',
+                sourceUrl: '/photos/brands/mars-wrigley.webp',
+              },
+            ],
+            blocks: [],
+            profileData: {
+              category: 'Food',
+              country: 'Vietnam',
+              feature: true,
+              year: 1994,
+            },
+            slug: 'mars-wrigley',
+            sourceId: 'richfield:brands:mars-wrigley',
+            status: 'published',
+            subtitle: 'Food',
+            summary:
+              'The partnership that began Richfield distribution in Vietnam.',
+            title: 'Mars Wrigley',
+          },
+        ],
+      },
+      {
+        collectionType: 'leadership',
+        description: 'Richfield leadership profiles, bios, and quotes.',
+        slug: 'leadership',
+        sourceId: 'richfield:collection:leadership',
+        title: 'Leadership',
+        entries: [
+          {
+            assets: [
+              {
+                altText: 'Bill Chua',
+                assetType: 'image',
+                sourceId: 'richfield:leadership:bill-chua:image',
+                sourceUrl: '/photos/people/bill-chua.webp',
+              },
+            ],
+            blocks: [
+              {
+                blockType: 'markdown',
+                content: {
+                  markdown:
+                    'Bill Chua leads Richfield through long-term partnerships and care for people.',
+                },
+                sourceId: 'richfield:leadership:bill-chua:bio',
+                title: 'Bio',
+              },
+            ],
+            profileData: {
+              role: 'Chief Executive Officer',
+            },
+            slug: 'bill-chua',
+            sourceId: 'richfield:leadership:bill-chua',
+            status: 'published',
+            subtitle: 'Chief Executive Officer',
+            summary: 'Second-generation Richfield leader.',
+            title: 'Bill Chua',
+          },
+        ],
+      },
+      {
+        collectionType: 'milestones',
+        description:
+          'Company timeline milestones from founding to the present day.',
+        slug: 'milestones',
+        sourceId: 'richfield:collection:milestones',
+        title: 'Milestones',
+        entries: [
+          {
+            blocks: [],
+            profileData: {
+              aboutOnly: false,
+              brand: 'Mars Wrigley',
+              country: 'Vietnam',
+              year: 1994,
+            },
+            slug: '1994-mars-wrigley',
+            sourceId: 'richfield:milestones:1994-mars-wrigley',
+            status: 'published',
+            subtitle: 'Vietnam',
+            summary:
+              'Mars Wrigley Vietnam selected Richfield as its distributor.',
+            title: 'Mars Wrigley',
+          },
+        ],
+      },
+      {
+        collectionType: 'contact-page',
+        description: 'Public contact page hero copy, map details, and imagery.',
+        slug: 'contact-page',
+        sourceId: 'richfield:collection:contact-page',
+        title: 'Contact Page',
+        entries: [
+          {
+            assets: [
+              {
+                altText: 'Richfield team contact background',
+                assetType: 'image',
+                sourceId: 'richfield:contact-page:main:image',
+                sourceUrl: '/photos/contact-richfield.webp',
+              },
+            ],
+            blocks: [
+              {
+                blockType: 'markdown',
+                content: {
+                  markdown:
+                    'Brand owner exploring Vietnam, partner considering a joint venture, or journalist on deadline: we will write back within two business days.',
+                },
+                sourceId: 'richfield:contact-page:main:intro',
+                title: 'Intro',
+              },
+            ],
+            profileData: {
+              backgroundImageSlug: 'contact-richfield',
+              headline: 'Tell us about your brand.',
+              intro:
+                'Brand owner exploring Vietnam, partner considering a joint venture, or journalist on deadline: we will write back within two business days.',
+              mapQuery: 'Richfield Group Ho Chi Minh City',
+            },
+            slug: 'main',
+            sourceId: 'richfield:contact-page:main',
+            status: 'published',
+            subtitle: 'Contact',
+            summary: 'Public contact page content.',
+            title: 'Contact Page',
+          },
+        ],
+      },
+      {
+        collectionType: 'contact-channels',
+        description: 'Public contact methods shown on the contact page.',
+        slug: 'contact-channels',
+        sourceId: 'richfield:collection:contact-channels',
+        title: 'Contact Channels',
+        entries: [
+          {
+            blocks: [],
+            profileData: {
+              cta: 'Write us',
+              external: false,
+              href: 'mailto:cskh@richfieldvn.com.vn',
+              kind: 'email',
+              secondary: 'Partnerships team',
+              sortOrder: 30,
+            },
+            slug: 'email',
+            sourceId: 'richfield:contact-channels:email',
+            status: 'published',
+            subtitle: 'Partnerships team',
+            summary: 'cskh@richfieldvn.com.vn',
+            title: 'Email',
+          },
+        ],
+      },
+      {
+        collectionType: 'contact-submissions',
+        description:
+          'Private inbound contact form messages saved for Richfield admins.',
+        entries: [],
+        slug: 'contact-submissions',
+        sourceId: 'richfield:collection:contact-submissions',
+        title: 'Contact Inbox',
+      },
+      {
+        collectionType: 'jobs',
+        description: 'Careers vacancies shown on the Richfield careers page.',
+        entries: [],
+        slug: 'jobs',
+        sourceId: 'richfield:collection:jobs',
+        title: 'Jobs',
+      },
+      {
+        collectionType: 'image-library',
+        description: 'Reusable Richfield images grouped by page and placement.',
+        slug: 'image-library',
+        sourceId: 'richfield:collection:image-library',
+        title: 'Gallery',
+        entries: [
+          {
+            assets: [
+              {
+                altText:
+                  'The Richfield team in a conga line on the beach at dusk',
+                assetType: 'image',
+                sourceId: 'richfield:image-library:home-cover-beach:image',
+                sourceUrl: '/photos/people/richfield.webp',
+              },
+            ],
+            blocks: [],
+            profileData: {
+              objectPosition: 'center 45%',
+              pageSection: 'home',
+              placement: 'cover-portrait',
+              ratio: 1.778,
+              sortOrder: 100,
+              usageTags: ['hero', 'cover', 'people'],
+            },
+            slug: 'home-cover-beach',
+            sourceId: 'richfield:image-library:home-cover-beach',
+            status: 'published',
+            subtitle: 'home',
+            summary: 'The Richfield team in a conga line on the beach at dusk.',
+            title: 'Beach conga line',
+          },
+          {
+            assets: [
+              {
+                altText:
+                  'Richfield team portrait in front of the modern campus',
+                assetType: 'image',
+                sourceId: 'richfield:image-library:about-campus-group:image',
+                sourceUrl: '/photos/people/selected-2026-05-05.webp',
+              },
+            ],
+            blocks: [],
+            profileData: {
+              objectPosition: 'center 50%',
+              pageSection: 'about',
+              placement: 'gallery-image',
+              ratio: 1.5,
+              sortOrder: 1000,
+              usageTags: ['story', 'gallery', 'people'],
+            },
+            slug: 'about-campus-group',
+            sourceId: 'richfield:image-library:about-campus-group',
+            status: 'published',
+            subtitle: 'about',
+            summary: 'Richfield team portrait in front of the modern campus.',
+            title: 'Campus Group',
+          },
+          {
+            assets: [
+              {
+                altText: 'Mars Wrigley brand logo',
+                assetType: 'image',
+                sourceId: 'richfield:image-library:brands-mars-wrigley:image',
+                sourceUrl: '/photos/logos/mars-wrigley.webp',
+              },
+            ],
+            blocks: [],
+            profileData: {
+              brand: 'Mars · Wrigley',
+              objectPosition: 'center',
+              pageSection: 'brands',
+              placement: 'brand-logo',
+              ratio: 2,
+              sortOrder: 2000,
+              usageTags: ['logo', 'brand'],
+            },
+            slug: 'brands-mars-wrigley',
+            sourceId: 'richfield:image-library:brands-mars-wrigley',
+            status: 'published',
+            subtitle: 'brands',
+            summary: 'Mars Wrigley brand logo.',
+            title: 'Mars · Wrigley logo',
+          },
+          {
+            assets: [
+              {
+                altText:
+                  'A traditional tap hoa grocery store stocked with packaged goods',
+                assetType: 'image',
+                sourceId: 'richfield:image-library:distribution-tap-hoa:image',
+                sourceUrl: '/photos/distribution/tap-hoa.webp',
+              },
+            ],
+            blocks: [],
+            profileData: {
+              objectPosition: 'center',
+              pageSection: 'distribution',
+              placement: 'channel-image',
+              ratio: 1.333,
+              sortOrder: 6000,
+              usageTags: ['distribution', 'channel'],
+            },
+            slug: 'distribution-tap-hoa',
+            sourceId: 'richfield:image-library:distribution-tap-hoa',
+            status: 'published',
+            subtitle: 'distribution',
+            summary: 'Tap hoa grocery store stocked with packaged goods.',
+            title: 'Tap hoa grocery store',
+          },
+          {
+            assets: [
+              {
+                altText: 'Richfield Foods Phu Tuong facility',
+                assetType: 'image',
+                sourceId: 'richfield:image-library:logistics-facility:image',
+                sourceUrl: '/photos/logistics/phu-tuong-facility.webp',
+              },
+            ],
+            blocks: [],
+            profileData: {
+              objectPosition: 'center',
+              pageSection: 'logistics',
+              placement: 'facility-image',
+              ratio: 1.333,
+              sortOrder: 8000,
+              usageTags: ['logistics', 'hero', 'facility'],
+            },
+            slug: 'logistics-facility',
+            sourceId: 'richfield:image-library:logistics-facility',
+            status: 'published',
+            subtitle: 'logistics',
+            summary: 'Richfield Foods Phu Tuong facility.',
+            title: 'Phu Tuong Facility',
+          },
+          {
+            assets: [
+              {
+                altText: 'Richfield careers team gallery image',
+                assetType: 'image',
+                sourceId: 'richfield:image-library:careers-life-01:image',
+                sourceUrl: '/photos/careers-life/01.webp',
+              },
+            ],
+            blocks: [],
+            profileData: {
+              objectPosition: 'center',
+              pageSection: 'careers',
+              placement: 'gallery-image',
+              ratio: 1.333,
+              sortOrder: 9200,
+              usageTags: ['gallery'],
+            },
+            slug: 'careers-life-01',
+            sourceId: 'richfield:image-library:careers-life-01',
+            status: 'published',
+            subtitle: 'careers',
+            summary: 'Life at Richfield gallery image.',
+            title: 'Careers Life 01',
+          },
+          {
+            assets: [
+              {
+                altText:
+                  'Bill Chua, Chief Executive Officer of Richfield Group.',
+                assetType: 'image',
+                sourceId:
+                  'richfield:image-library:careers-leader-bill-chua:image',
+                sourceUrl: '/photos/leadership/bill-chua.webp',
+              },
+            ],
+            blocks: [],
+            profileData: {
+              objectPosition: 'center',
+              pageSection: 'careers',
+              placement: 'leader-portrait',
+              ratio: 0.667,
+              sortOrder: 9600,
+              usageTags: ['leader', 'portrait'],
+            },
+            slug: 'careers-leader-bill-chua',
+            sourceId: 'richfield:image-library:careers-leader-bill-chua',
+            status: 'published',
+            subtitle: 'careers',
+            summary: 'Bill Chua leadership portrait.',
+            title: 'Bill Chua portrait',
+          },
+          {
+            assets: [
+              {
+                altText:
+                  'Richfield team spelling the company name on the beach',
+                assetType: 'image',
+                sourceId: 'richfield:image-library:contact-hero:image',
+                sourceUrl: '/photos/contact-richfield.webp',
+              },
+            ],
+            blocks: [],
+            profileData: {
+              objectPosition: 'center',
+              pageSection: 'contact',
+              placement: 'contact-hero',
+              ratio: 1.778,
+              sortOrder: 10000,
+              usageTags: ['background', 'contact'],
+            },
+            slug: 'contact-hero',
+            sourceId: 'richfield:image-library:contact-hero',
+            status: 'published',
+            subtitle: 'contact',
+            summary: 'Richfield contact page hero image.',
+            title: 'Contact Hero',
+          },
+          {
+            assets: [
+              {
+                altText: 'Richfield contact background',
+                assetType: 'image',
+                sourceId: 'richfield:image-library:contact-background:image',
+                sourceUrl: '/photos/contact-bg.webp',
+              },
+            ],
+            blocks: [],
+            profileData: {
+              objectPosition: 'center',
+              pageSection: 'contact',
+              placement: 'contact-background',
+              ratio: 1.778,
+              sortOrder: 10010,
+              usageTags: ['background', 'contact'],
+            },
+            slug: 'contact-background',
+            sourceId: 'richfield:image-library:contact-background',
+            status: 'published',
+            subtitle: 'contact',
+            summary: 'Richfield contact page background.',
+            title: 'Contact Background',
+          },
+          {
+            assets: [
+              {
+                altText: 'Richfield Group logo',
+                assetType: 'image',
+                sourceId: 'richfield:image-library:footer-logo:image',
+                sourceUrl: '/photos/logos/richfield.webp',
+              },
+            ],
+            blocks: [],
+            profileData: {
+              objectPosition: 'center',
+              pageSection: 'footer-navigation',
+              placement: 'shared-logo',
+              ratio: 2,
+              sortOrder: 11000,
+              usageTags: ['footer', 'navigation', 'logo'],
+            },
+            slug: 'footer-logo',
+            sourceId: 'richfield:image-library:footer-logo',
+            status: 'published',
+            subtitle: 'footer-navigation',
+            summary: 'Richfield Group logo.',
+            title: 'Richfield Logo',
+          },
+          {
+            assets: [
+              {
+                altText: 'Richfield Group logo',
+                assetType: 'image',
+                sourceId: 'richfield:image-library:shared-logo:image',
+                sourceUrl: '/photos/logos/richfield.webp',
+              },
+            ],
+            blocks: [],
+            profileData: {
+              objectPosition: 'center',
+              pageSection: 'shared',
+              placement: 'shared-logo',
+              ratio: 2,
+              sortOrder: 12000,
+              usageTags: ['shared', 'logo'],
+            },
+            slug: 'shared-logo',
+            sourceId: 'richfield:image-library:shared-logo',
+            status: 'published',
+            subtitle: 'shared',
+            summary: 'Richfield Group logo.',
+            title: 'Richfield Logo',
           },
         ],
       },

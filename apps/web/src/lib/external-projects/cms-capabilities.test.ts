@@ -131,6 +131,43 @@ describe('getExternalProjectCmsEditorCapabilities', () => {
     );
   });
 
+  it('builds Richfield editor views around brands, leadership, and timeline content', () => {
+    const capabilities = getExternalProjectCmsEditorCapabilities({
+      binding: makeBinding({
+        adapter: 'richfield',
+        canonical_project: {
+          ...makeBinding().canonical_project!,
+          adapter: 'richfield',
+          display_name: 'Richfield',
+        },
+      }),
+      collections: [
+        makeCollection('brands', 'Brands'),
+        makeCollection('leadership', 'Leadership'),
+        makeCollection('milestones', 'Milestones'),
+        makeCollection('contact-page', 'Contact'),
+        makeCollection('contact-channels', 'Contact channels'),
+        makeCollection('contact-submissions', 'Contact inbox'),
+        makeCollection('jobs', 'Jobs'),
+        makeCollection('image-library', 'Images'),
+      ],
+      fieldDefinitions: [],
+    });
+
+    expect(capabilities.appLabel).toBe('Richfield');
+    expect(capabilities.collectionViews.map((view) => view.id)).toEqual([
+      'all',
+      'collection:brands',
+      'collection:leadership',
+      'collection:milestones',
+      'collection:contact-page',
+      'collection:contact-channels',
+      'collection:contact-submissions',
+      'collection:jobs',
+      'collection:image-library',
+    ]);
+  });
+
   it('allows canonical metadata to override editor capabilities', () => {
     const capabilities = getExternalProjectCmsEditorCapabilities({
       binding: makeBinding({

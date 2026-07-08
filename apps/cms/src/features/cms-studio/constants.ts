@@ -15,6 +15,7 @@ export const EXTERNAL_PROJECT_ADAPTER_OPTIONS: ExternalProjectAdapterKind[] = [
   'yashie',
   'shiraoki',
   'kendra',
+  'richfield',
 ];
 
 export const EXOCORPSE_EXTERNAL_PROJECT_COLLECTIONS = [
@@ -64,6 +65,16 @@ export const EXOCORPSE_EXTERNAL_PROJECT_COLLECTIONS = [
 export const DEFAULT_EXTERNAL_PROJECT_COLLECTIONS = {
   exocorpse: [...EXOCORPSE_EXTERNAL_PROJECT_COLLECTIONS],
   kendra: ['profile', 'voice-reels', 'credits', 'studio', 'contact'],
+  richfield: [
+    'brands',
+    'leadership',
+    'milestones',
+    'contact-page',
+    'contact-channels',
+    'contact-submissions',
+    'jobs',
+    'image-library',
+  ],
   junly: [
     'research-projects',
     'game-projects',
@@ -112,6 +123,7 @@ export const EXTERNAL_PROJECT_DISPLAY_NAMES = {
   exocorpse: 'Exocorpse',
   junly: 'Junly',
   kendra: 'Kendra',
+  richfield: 'Richfield',
   shu: 'Shu',
   theguyser: 'TheGuyser',
   yashie: 'Yashie',

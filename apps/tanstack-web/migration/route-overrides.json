@@ -805,6 +805,16 @@
         }
       }
     },
+    "api:/api/v1/workspaces/:wsId/external-projects/submissions:apps/web/src/app/api/v1/workspaces/[wsId]/external-projects/submissions/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "Richfield external contact submission creation remains Next-owned migration backlog until the Rust backend ports canonical binding verification, contact-submissions collection creation, private-delivery metadata, and service-role entry insertion behavior."
+    },
+    "api:/api/v1/workspaces/:wsId/external-projects/submissions/:entryId:apps/web/src/app/api/v1/workspaces/[wsId]/external-projects/submissions/[entryId]/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "Richfield external contact submission status updates remain Next-owned migration backlog until the Rust backend ports canonical binding verification, contact-submissions scoping, malformed JSON handling, and the atomic private-schema notification-status update."
+    },
     "api:/api/v1/workspaces/:wsId/external-projects/webgl-packages/upload:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/external-projects/webgl-packages/upload/route.ts": {
       "methods": {
         "OPTIONS": {

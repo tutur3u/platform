@@ -9,12 +9,17 @@ import {
   parseSidebarBehavior,
 } from '@tuturuuu/satellite/workspace-layout-helpers';
 import { RealtimeLogProvider } from '@tuturuuu/supabase/next/realtime-log-provider';
-import { toWorkspaceSlug } from '@tuturuuu/utils/constants';
-import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
+import {
+  ROOT_WORKSPACE_ID,
+  resolveWorkspaceId,
+  toWorkspaceSlug,
+} from '@tuturuuu/utils/constants';
+import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { cookies, headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { type ReactNode, Suspense } from 'react';
 import { SidebarProvider } from '@/context/sidebar-context';
+import { hasRootExternalProjectsAdminPermission } from '@/lib/external-projects/access';
 import NavbarActions from '../../navbar-actions';
 import { UserNav } from '../../user-nav';
 import { getNavigationLinks } from './navigation';
@@ -29,15 +34,43 @@ interface LayoutProps {
 
 export default async function Layout({ children, params }: LayoutProps) {
   const { wsId: id } = await params;
+  const resolvedWorkspaceId = resolveWorkspaceId(id);
   const requestHeaders = await headers();
 
   const user = await getSatelliteAppSessionUser('cms');
   if (!user?.id) redirect('/login');
 
-  const workspace = await getWorkspace(id, { useAdmin: true, user });
+  const isInternalWorkspace = resolvedWorkspaceId === ROOT_WORKSPACE_ID;
+  const workspace = isInternalWorkspace
+    ? {
+        id: ROOT_WORKSPACE_ID,
+        joined: true,
+        personal: false,
+        tier: null,
+      }
+    : await getWorkspace(resolvedWorkspaceId, {
+        useAdmin: true,
+        user,
+      });
 
-  if (!workspace?.joined) {
-    const invitation = await getPendingWorkspaceInvitation(id, requestHeaders);
+  if (isInternalWorkspace) {
+    const rootPermissions = await getPermissions({
+      user,
+      wsId: ROOT_WORKSPACE_ID,
+    });
+
+    if (!hasRootExternalProjectsAdminPermission(rootPermissions)) {
+      redirect('/no-access');
+    }
+  }
+
+  if (!workspace) redirect('/no-access');
+
+  if (!workspace.joined) {
+    const invitation = await getPendingWorkspaceInvitation(
+      resolvedWorkspaceId,
+      requestHeaders
+    );
 
     if (invitation) {
       return (
@@ -50,8 +83,7 @@ export default async function Layout({ children, params }: LayoutProps) {
     }
   }
 
-  if (!workspace) redirect('/onboarding');
-  if (!workspace?.joined) redirect('/');
+  if (!workspace.joined) redirect('/');
 
   const wsId = workspace.id;
   const workspaceSlug = toWorkspaceSlug(wsId, {
