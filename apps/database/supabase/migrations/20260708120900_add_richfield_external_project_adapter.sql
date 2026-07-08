@@ -1,5 +1,5 @@
 ALTER TYPE "public"."external_project_adapter_kind"
-ADD VALUE IF NOT EXISTS 'richfield';
+ADD VALUE IF NOT EXISTS 'richfield' AFTER 'kendra';
 
 GRANT SELECT, INSERT, UPDATE, DELETE
 ON "public"."workspace_external_project_bindings"
@@ -36,8 +36,7 @@ AS $$
       || jsonb_build_object(
         'emailNotificationStatus',
         "p_email_notification_status"
-      ),
-    "updated_by" = NULL
+      )
   FROM "public"."workspace_external_project_collections" AS "collection"
   WHERE "entry"."ws_id" = "p_ws_id"
     AND "entry"."id" = "p_entry_id"
