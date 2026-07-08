@@ -220,8 +220,14 @@ describe('AppsLauncherDialog', () => {
     expect(screen.queryByLabelText('Open options: Finance')).toBeNull();
     expect(screen.queryByLabelText('Open here: Finance')).toBeNull();
     expect(screen.queryByLabelText('Open in new tab: Finance')).toBeNull();
-    const financeCard = screen.getByRole('button', { name: 'Finance' });
+    const financeCard = screen.getByRole('link', { name: 'Finance' });
     expect(financeCard.getAttribute('data-slot')).toBe('app-card');
+    expect(financeCard.tagName).toBe('A');
+    expect(financeCard.getAttribute('href')).toBe(
+      'http://localhost:7808/personal?source=sidebar-apps'
+    );
+    expect(financeCard.getAttribute('target')).toBe('_blank');
+    expect(financeCard.getAttribute('rel')).toBe('noopener noreferrer');
     expect(financeCard?.className).toContain('flex');
     expect(financeCard?.className).toContain('cursor-pointer');
     expect(financeCard?.className).toContain('hover:-translate-y-0.5');
@@ -241,7 +247,7 @@ describe('AppsLauncherDialog', () => {
     expect(affordance?.getAttribute('aria-hidden')).toBe('true');
     expect(affordance?.className).toContain('group-hover:translate-x-0.5');
     expect(affordance?.className).toContain('group-hover:text-dynamic-green');
-    const tasksCard = screen.getByRole('button', { name: 'Tasks' });
+    const tasksCard = screen.getByRole('link', { name: 'Tasks' });
     expect(tasksCard.className).toContain('border-dynamic-blue/30');
     expect(
       financeCard?.querySelector('[data-slot="app-card-actions"]')
@@ -274,13 +280,13 @@ describe('AppsLauncherDialog', () => {
     fireEvent.click(operationsTab);
 
     await waitFor(() =>
-      expect(screen.getByRole('button', { name: 'Apps' })).toBeTruthy()
+      expect(screen.getByRole('link', { name: 'Apps' })).toBeTruthy()
     );
-    expect(screen.getByRole('button', { name: 'Apps' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Finance' })).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Apps' })).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Finance' })).toBeTruthy();
     expect(screen.queryByText('Tools')).toBeNull();
     expect(screen.queryByText('Calendar')).toBeNull();
-    expect(screen.getByRole('button', { name: 'Apps' })).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Apps' })).toBeTruthy();
     expect(screen.queryByLabelText('Open options: Apps')).toBeNull();
     expect(
       document.querySelector('[data-slot="apps-launcher-sections"]')
@@ -299,22 +305,23 @@ describe('AppsLauncherDialog', () => {
     await waitFor(() => expect(screen.getByText('Docs')).toBeTruthy());
     expect(screen.getByText('Tools')).toBeTruthy();
     expect(screen.getByText('Shortener')).toBeTruthy();
-    expect(screen.queryByRole('button', { name: 'Apps' })).toBeNull();
+    expect(screen.queryByRole('link', { name: 'Apps' })).toBeNull();
   });
 
-  it('opens apps in a new tab by default from a card click', () => {
+  it('renders new-tab links by default and closes on card click', () => {
     const open = vi.fn();
     vi.stubGlobal('open', open);
     const { onOpenChange } = renderDialog();
+    const financeCard = screen.getByRole('link', { name: 'Finance' });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Finance' }));
+    expect(financeCard.getAttribute('href')).toBe(
+      'http://localhost:7808/personal?source=sidebar-apps'
+    );
+    expect(financeCard.getAttribute('target')).toBe('_blank');
+    fireEvent.click(financeCard);
 
     expect(onOpenChange).toHaveBeenCalledWith(false);
-    expect(open).toHaveBeenCalledWith(
-      'http://localhost:7808/personal?source=sidebar-apps',
-      '_blank',
-      'noopener,noreferrer'
-    );
+    expect(open).not.toHaveBeenCalled();
   });
 
   it('opens apps in the current tab when Ctrl or Cmd clicking a card', () => {
@@ -330,7 +337,7 @@ describe('AppsLauncherDialog', () => {
     });
     const { onOpenChange } = renderDialog();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Tasks' }), {
+    fireEvent.click(screen.getByRole('link', { name: 'Tasks' }), {
       ctrlKey: true,
     });
 
@@ -340,7 +347,7 @@ describe('AppsLauncherDialog', () => {
     );
 
     assign.mockClear();
-    fireEvent.click(screen.getByRole('button', { name: 'Finance' }), {
+    fireEvent.click(screen.getByRole('link', { name: 'Finance' }), {
       metaKey: true,
     });
     expect(assign).toHaveBeenCalledWith(

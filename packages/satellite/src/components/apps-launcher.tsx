@@ -44,6 +44,7 @@ import {
   LAUNCHABLE_APPS,
   resolveLaunchableAppUrl,
 } from '@tuturuuu/utils/launchable-apps';
+import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import type { CSSProperties, MouseEvent } from 'react';
 import { useState } from 'react';
@@ -143,18 +144,6 @@ export function AppsLauncherDialog({
     });
   }
 
-  function openApp(app: LaunchableApp, target: 'current-tab' | 'new-tab') {
-    const url = resolveUrl(app);
-    onOpenChange(false);
-
-    if (target === 'current-tab') {
-      window.location.assign(url);
-      return;
-    }
-
-    window.open(url, '_blank', 'noopener,noreferrer');
-  }
-
   function getAppsForTab(tab: AppCategoryTab) {
     if (tab === 'all') return LAUNCHABLE_APPS;
     return LAUNCHABLE_APPS.filter((app) => app.category === tab);
@@ -202,8 +191,9 @@ export function AppsLauncherDialog({
           <AppsTabPanel
             activeTab={activeTab}
             apps={activeApps}
+            getAppUrl={resolveUrl}
             getCategoryLabel={(category) => t(`app_categories.${category}`)}
-            onOpen={openApp}
+            onOpen={() => onOpenChange(false)}
           />
         </div>
       </DialogContent>
@@ -214,13 +204,15 @@ export function AppsLauncherDialog({
 function AppsTabPanel({
   activeTab,
   apps,
+  getAppUrl,
   getCategoryLabel,
   onOpen,
 }: {
   activeTab: AppCategoryTab;
   apps: readonly LaunchableApp[];
+  getAppUrl: (app: LaunchableApp) => string;
   getCategoryLabel: (category: LaunchableAppCategory) => string;
-  onOpen: (app: LaunchableApp, target: 'current-tab' | 'new-tab') => void;
+  onOpen: () => void;
 }) {
   return (
     <div
@@ -234,11 +226,12 @@ function AppsTabPanel({
         {activeTab === 'all' ? (
           <AppsByCategory
             apps={apps}
+            getAppUrl={getAppUrl}
             getCategoryLabel={getCategoryLabel}
             onOpen={onOpen}
           />
         ) : (
-          <AppsGrid apps={apps} onOpen={onOpen} />
+          <AppsGrid apps={apps} getAppUrl={getAppUrl} onOpen={onOpen} />
         )}
       </div>
     </div>
@@ -247,12 +240,14 @@ function AppsTabPanel({
 
 function AppsByCategory({
   apps,
+  getAppUrl,
   getCategoryLabel,
   onOpen,
 }: {
   apps: readonly LaunchableApp[];
+  getAppUrl: (app: LaunchableApp) => string;
   getCategoryLabel: (category: LaunchableAppCategory) => string;
-  onOpen: (app: LaunchableApp, target: 'current-tab' | 'new-tab') => void;
+  onOpen: () => void;
 }) {
   return (
     <div className="space-y-4" data-slot="apps-launcher-sections">
@@ -275,7 +270,11 @@ function AppsByCategory({
             >
               {getCategoryLabel(category)}
             </h3>
-            <AppsGrid apps={categoryApps} onOpen={onOpen} />
+            <AppsGrid
+              apps={categoryApps}
+              getAppUrl={getAppUrl}
+              onOpen={onOpen}
+            />
           </section>
         );
       })}
@@ -285,10 +284,12 @@ function AppsByCategory({
 
 function AppsGrid({
   apps,
+  getAppUrl,
   onOpen,
 }: {
   apps: readonly LaunchableApp[];
-  onOpen: (app: LaunchableApp, target: 'current-tab' | 'new-tab') => void;
+  getAppUrl: (app: LaunchableApp) => string;
+  onOpen: () => void;
 }) {
   return (
     <div
@@ -296,7 +297,12 @@ function AppsGrid({
       data-slot="apps-launcher-grid"
     >
       {apps.map((app) => (
-        <AppLauncherItem app={app} key={app.slug} onOpen={onOpen} />
+        <AppLauncherItem
+          app={app}
+          getAppUrl={getAppUrl}
+          key={app.slug}
+          onOpen={onOpen}
+        />
       ))}
     </div>
   );
@@ -304,28 +310,39 @@ function AppsGrid({
 
 function AppLauncherItem({
   app,
+  getAppUrl,
   onOpen,
 }: {
   app: LaunchableApp;
-  onOpen: (app: LaunchableApp, target: 'current-tab' | 'new-tab') => void;
+  getAppUrl: (app: LaunchableApp) => string;
+  onOpen: () => void;
 }) {
   const Icon = APP_ICONS[app.slug] ?? Boxes;
   const tone = CATEGORY_TONES[app.category];
+  const href = getAppUrl(app);
 
-  function handleClick(event: MouseEvent<HTMLButtonElement>) {
-    onOpen(app, event.ctrlKey || event.metaKey ? 'current-tab' : 'new-tab');
+  function handleClick(event: MouseEvent<HTMLAnchorElement>) {
+    onOpen();
+
+    if (event.ctrlKey || event.metaKey) {
+      event.preventDefault();
+      window.location.assign(href);
+    }
   }
 
   return (
-    <button
+    <Link
       aria-label={app.title}
       className={cn(
         'group flex min-h-0 w-full cursor-pointer items-center gap-2 overflow-hidden rounded-md border p-2 text-left text-card-foreground shadow-sm outline-none transition-[background-color,border-color,box-shadow,transform] duration-200 ease-out hover:-translate-y-0.5 hover:shadow-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background active:translate-y-0 motion-reduce:transition-none motion-reduce:hover:translate-y-0',
         tone.card
       )}
       data-slot="app-card"
+      href={href}
       onClick={handleClick}
-      type="button"
+      prefetch={false}
+      rel="noopener noreferrer"
+      target="_blank"
     >
       <span className="flex min-w-0 flex-1 items-center gap-2">
         <span
@@ -356,6 +373,6 @@ function AppLauncherItem({
       >
         <ChevronRight className="size-4" />
       </span>
-    </button>
+    </Link>
   );
 }
