@@ -91,6 +91,37 @@ describe('auth callback route', () => {
     );
   });
 
+  it('adds a safe diagnostic code when OAuth exchange returns an error', async () => {
+    mocks.exchangeCodeForSession.mockResolvedValue({
+      data: { session: null, user: null },
+      error: new Error('invalid callback code'),
+    });
+
+    const { GET } = await import('@/legacy-api-routes/auth/callback/route');
+    const response = await GET(
+      new NextRequest(
+        'http://localhost/api/auth/callback?code=bad-code&multiAccount=true&returnUrl=%2Fen%2Fpersonal%2Ftasks'
+      )
+    );
+
+    const location = new URL(response.headers.get('location') ?? '');
+    expect(location.origin).toBe('http://localhost');
+    expect(location.pathname).toBe('/login');
+    expect(location.searchParams.get('error')).toBe('auth_failed');
+    expect(location.searchParams.get('diagnosticCode')).toBe(
+      'AUTH-OAUTH-ABC123'
+    );
+    expect(location.pathname).not.toBe('/add-account');
+    expect(mocks.logAuthDiagnostic).toHaveBeenCalledWith(
+      expect.objectContaining({
+        authMethod: 'oauth',
+        code: 'AUTH-OAUTH-ABC123',
+        route: '/api/auth/callback',
+        stage: 'oauth_callback_exchange',
+      })
+    );
+  });
+
   it('does not preserve wildcard listener origins for external app confirmation redirects', async () => {
     mocks.getExternalAppByReturnUrl.mockResolvedValue({ id: 'tulearn' });
 

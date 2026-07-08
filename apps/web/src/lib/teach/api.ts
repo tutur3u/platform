@@ -20,6 +20,21 @@ export type TeachAccessResult =
     }
   | NextResponse;
 
+export type UserPrivateDetailsEmail =
+  | {
+      email?: string | null;
+    }
+  | {
+      email?: string | null;
+    }[]
+  | null
+  | undefined;
+
+export function extractUserPrivateEmail(value: UserPrivateDetailsEmail) {
+  if (Array.isArray(value)) return value[0]?.email ?? null;
+  return value?.email ?? null;
+}
+
 export async function requireTeachWorkspaceAccess({
   context,
   permission,
@@ -98,6 +113,26 @@ export async function validateTeachCourse({
     .eq('id', courseId)
     .eq('ws_id', wsId)
     .eq('is_guest', false)
+    .maybeSingle();
+
+  if (error) throw error;
+  return data;
+}
+
+export async function validateTeachCourseModule({
+  courseId,
+  db,
+  moduleId,
+}: {
+  courseId: string;
+  db: TypedSupabaseClient;
+  moduleId: string;
+}) {
+  const { data, error } = await db
+    .from('workspace_course_modules')
+    .select('id, group_id, name')
+    .eq('id', moduleId)
+    .eq('group_id', courseId)
     .maybeSingle();
 
   if (error) throw error;

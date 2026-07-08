@@ -154,7 +154,10 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   if (_code) {
     try {
       // Exchange the code for a session
-      await supabase.auth.exchangeCodeForSession(_code);
+      const exchangeResult = await supabase.auth.exchangeCodeForSession(_code);
+      if (exchangeResult?.error) {
+        throw exchangeResult.error;
+      }
     } catch (error) {
       const diagnosticCode = createAuthDiagnosticCode(
         'oauth_callback_exchange'

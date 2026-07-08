@@ -28,6 +28,7 @@ import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
 import { useCallback, useState } from 'react';
 import { CourseMembersPanel } from '@/components/teach-operations/course-members-panel';
+import { CourseStudentPerformancePanel } from '@/components/teach-operations/course-student-performance-panel';
 import { AiGenerateDialog } from './ai-generate-dialog';
 import { CourseTestDialog } from './course-test-dialog';
 import { EmptyState, LoadingSkeleton } from './module-detail-components';
@@ -225,6 +226,8 @@ export function ModuleDetailClient({
           </div>
 
           <CourseMembersPanel courseId={courseId} wsId={wsId} />
+
+          <CourseStudentPerformancePanel courseId={courseId} wsId={wsId} />
 
           <div className="grid grid-cols-1 gap-6 md:grid-cols-4">
             {/* Left Sidebar: Tests list */}

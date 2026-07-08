@@ -4,6 +4,7 @@ import type { Json } from '@tuturuuu/types';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
+import { updateModuleCompletionStatus } from '@/lib/tulearn/completion';
 import {
   asRecord,
   displayText,
@@ -140,6 +141,17 @@ function submissionAnswer(value: unknown): Json | null {
   return value === undefined ? null : (value as Json);
 }
 
+function revealLearnerResult({
+  isCorrect,
+  revealScores,
+}: {
+  isCorrect: boolean | null;
+  revealScores: boolean;
+}) {
+  if (!revealScores) return null;
+  return isCorrect;
+}
+
 export const GET = withSessionAuth<Params>(
   async (request, { supabase, user }, { courseId, moduleId, wsId }) => {
     try {
@@ -170,16 +182,29 @@ export const GET = withSessionAuth<Params>(
       const sbAdmin = await createAdminClient();
       const { data: submissions, error: subError } = await sbAdmin
         .from('course_module_quiz_submissions')
-        .select('quiz_id, selected_option_id, answer, is_correct, created_at')
+        .select(
+          'quiz_id, selected_option_id, answer, is_correct, feedback, ai_feedback, created_at'
+        )
         .eq('module_id', moduleId)
         .eq('user_id', subject.studentPlatformUserId)
         .order('created_at', { ascending: true });
 
       if (subError) throw subError;
 
+      const revealScores = module.is_quiz_score_published === true;
+
       return NextResponse.json({
         ...module,
-        submissions: submissions || [],
+        submissions: (submissions ?? []).map((submission) => ({
+          ...submission,
+          is_correct: revealLearnerResult({
+            isCorrect:
+              submission.is_correct === null ? null : submission.is_correct,
+            revealScores,
+          }),
+          feedback: revealScores ? submission.feedback : null,
+          ai_feedback: revealScores ? submission.ai_feedback : null,
+        })),
       });
     } catch (error) {
       const accessResponse = tulearnAccessErrorResponse(error);
@@ -249,9 +274,16 @@ export const POST = withSessionAuth<Params>(
         );
       }
 
+      if (module.quiz_deadline && new Date() > new Date(module.quiz_deadline)) {
+        return NextResponse.json(
+          { message: 'The deadline for this quiz has passed.' },
+          { status: 403 }
+        );
+      }
+
       const { data: moduleQuiz, error: quizErr } = await sbAdmin
         .from('course_module_quizzes')
-        .select('workspace_quizzes!inner(id, type, content, answer)')
+        .select('workspace_quizzes!inner(id, question, type, content, answer)')
         .eq('module_id', moduleId)
         .eq('quiz_id', quizId)
         .maybeSingle();
@@ -266,7 +298,7 @@ export const POST = withSessionAuth<Params>(
       }
 
       let correctAnswerFeedback: Json | null = null;
-      let isCorrect = false;
+      let isCorrect: boolean | null = null;
 
       if (!quiz.type || quiz.type === 'multiple_choice') {
         if (!selectedOptionId) {
@@ -379,6 +411,9 @@ export const POST = withSessionAuth<Params>(
         selectedOptionId && UUID_REGEX.test(selectedOptionId)
       );
 
+      const revealScores =
+        module.is_quiz_score_published === true && quiz.type !== 'paragraph';
+
       const { data: submission, error: insertErr } = await sbAdmin
         .from('course_module_quiz_submissions')
         .upsert(
@@ -397,10 +432,17 @@ export const POST = withSessionAuth<Params>(
 
       if (insertErr) throw insertErr;
 
+      await updateModuleCompletionStatus(
+        sbAdmin,
+        moduleId,
+        subject.studentPlatformUserId
+      );
+
       return NextResponse.json({
         id: submission.id,
-        correct_answer: correctAnswerFeedback,
-        is_correct: isCorrect,
+        correct_answer: revealScores ? correctAnswerFeedback : null,
+        is_correct: revealLearnerResult({ isCorrect, revealScores }),
+        ai_feedback: null,
       });
     } catch (error) {
       const accessResponse = tulearnAccessErrorResponse(error);
@@ -439,6 +481,23 @@ export const DELETE = withSessionAuth<Params>(
 
       const sbAdmin = await createAdminClient();
 
+      const { data: module, error: moduleErr } = await sbAdmin
+        .from('workspace_course_modules')
+        .select('quiz_deadline')
+        .eq('id', moduleId)
+        .maybeSingle();
+
+      if (moduleErr) throw moduleErr;
+      if (
+        module?.quiz_deadline &&
+        new Date() > new Date(module.quiz_deadline)
+      ) {
+        return NextResponse.json(
+          { message: 'The deadline for this quiz has passed.' },
+          { status: 403 }
+        );
+      }
+
       const { error } = await sbAdmin
         .from('course_module_quiz_submissions')
         .delete()
@@ -446,6 +505,12 @@ export const DELETE = withSessionAuth<Params>(
         .eq('user_id', subject.studentPlatformUserId);
 
       if (error) throw error;
+
+      await updateModuleCompletionStatus(
+        sbAdmin,
+        moduleId,
+        subject.studentPlatformUserId
+      );
 
       return NextResponse.json({ success: true });
     } catch (error) {

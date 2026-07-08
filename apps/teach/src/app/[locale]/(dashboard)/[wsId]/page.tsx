@@ -1,5 +1,6 @@
 import {
   getTeachBootstrap,
+  getTeachDashboardStats,
   listWorkspaceCourses,
   withForwardedInternalApiAuth,
 } from '@tuturuuu/internal-api';
@@ -35,11 +36,14 @@ export default async function WorkspaceTeachDashboardPage({
     throw new Error('Redirecting to an available Teach workspace');
   }
 
-  const coursesPayload = await listWorkspaceCourses(
-    wsId,
-    { page: 1, pageSize: 8, status: 'active' },
-    authOptions
-  ).catch(() => ({ count: 0, data: [], page: 1, pageSize: 8 }));
+  const [coursesPayload, dashboardStats] = await Promise.all([
+    listWorkspaceCourses(
+      wsId,
+      { page: 1, pageSize: 8, status: 'active' },
+      authOptions
+    ).catch(() => ({ count: 0, data: [], page: 1, pageSize: 8 })),
+    getTeachDashboardStats(wsId, authOptions).catch(() => null),
+  ]);
 
   const groups = coursesPayload.data.map((course) => ({
     attendance_amount: 0,
@@ -54,6 +58,7 @@ export default async function WorkspaceTeachDashboardPage({
   return (
     <TeachDashboard
       bootstrap={bootstrap}
+      dashboardStats={dashboardStats}
       groups={groups}
       moduleCounts={Object.fromEntries(moduleCounts)}
       totalGroups={coursesPayload.count}

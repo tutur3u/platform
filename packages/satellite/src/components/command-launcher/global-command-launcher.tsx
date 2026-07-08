@@ -96,8 +96,10 @@ export type GlobalCommandLauncherLabels = {
   workspaces: string;
 };
 
+type CommandLauncherHostApp = LaunchableAppSlug | 'external';
+
 export type GlobalCommandLauncherProps = {
-  currentApp: LaunchableAppSlug;
+  currentApp: CommandLauncherHostApp;
   currentWorkspaceId?: string | null;
   extraSections?:
     | ReactNode
@@ -166,10 +168,13 @@ const APP_SEARCH_ITEMS: readonly LaunchableApp[] = LAUNCHABLE_APPS.map(
 const REMOTE_WORKSPACE_SEARCH_LIMIT = 50;
 const VISIBLE_WORKSPACE_SEARCH_LIMIT = 20;
 
-const commandLauncherInstanceRegistry = new Map<LaunchableAppSlug, symbol[]>();
+const commandLauncherInstanceRegistry = new Map<
+  CommandLauncherHostApp,
+  symbol[]
+>();
 
 function registerCommandLauncherInstance(
-  currentApp: LaunchableAppSlug,
+  currentApp: CommandLauncherHostApp,
   instanceId: symbol
 ) {
   const instances = commandLauncherInstanceRegistry.get(currentApp) ?? [];
@@ -177,7 +182,7 @@ function registerCommandLauncherInstance(
 }
 
 function unregisterCommandLauncherInstance(
-  currentApp: LaunchableAppSlug,
+  currentApp: CommandLauncherHostApp,
   instanceId: symbol
 ) {
   const nextInstances = (
@@ -193,7 +198,7 @@ function unregisterCommandLauncherInstance(
 }
 
 function isActiveCommandLauncherInstance(
-  currentApp: LaunchableAppSlug,
+  currentApp: CommandLauncherHostApp,
   instanceId: symbol
 ) {
   const instances = commandLauncherInstanceRegistry.get(currentApp) ?? [];

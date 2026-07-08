@@ -668,23 +668,25 @@ describe('public shell compile graph', () => {
     );
   });
 
-  it('keeps the login page free of request-scoped server auth', () => {
+  it('keeps the login page free of server auth and segment config exports', () => {
     for (const modulePath of [
       '@tuturuuu/supabase/next/auth-session-user',
       '@tuturuuu/supabase/next/server',
       'next/headers',
       'next/navigation',
-      'next/server',
     ] as const) {
       expect(loginPageSource).not.toMatch(staticImportPattern(modulePath));
       expect(loginPageSource).not.toContain(`import('${modulePath}')`);
     }
 
+    expect(loginPageSource).toMatch(staticImportPattern('next/server'));
+    expect(loginPageSource).toContain('await connection()');
     expect(loginPageSource).not.toContain('searchParams');
-    expect(loginPageSource).toContain("dynamic = 'force-static'");
+    expect(loginPageSource).not.toContain('export const dynamic');
+    expect(loginPageSource).not.toContain('export const revalidate');
   });
 
-  it('lazy loads the heavy login form from the cacheable shell', () => {
+  it('lazy loads the heavy login form from the request-bound shell', () => {
     expect(loginContentSource).not.toMatch(staticImportPattern('./form'));
     expect(loginContentSource).toContain("lazy(() => import('./form'))");
   });

@@ -1,11 +1,12 @@
 import { isValidElement } from 'react';
 import { describe, expect, it } from 'vitest';
-import LoginLayout, { dynamic, metadata, revalidate } from './layout';
+import LoginLayout, * as layoutModule from './layout';
+import { metadata } from './layout';
 
 describe('login segment layout', () => {
-  it('keeps the login segment static and noindex', () => {
-    expect(dynamic).toBe('force-static');
-    expect(revalidate).toBe(false);
+  it('keeps the login segment noindex without cache-incompatible config', () => {
+    expect('dynamic' in layoutModule).toBe(false);
+    expect('revalidate' in layoutModule).toBe(false);
     expect(metadata.robots).toEqual({
       index: false,
       follow: false,

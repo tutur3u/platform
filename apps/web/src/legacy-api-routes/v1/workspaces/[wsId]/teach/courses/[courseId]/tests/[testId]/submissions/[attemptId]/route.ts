@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
 import {
+  extractUserPrivateEmail,
   requireTeachWorkspaceAccess,
   validateTeachCourse,
 } from '@/lib/teach/api';
@@ -115,11 +116,20 @@ export const GET = withSessionAuth(
       }
 
       // Fetch user profile info
-      const { data: student } = await access.sbAdmin
+      const { data: studentProfile } = await access.sbAdmin
         .from('users')
-        .select('id, display_name, email, avatar_url')
+        .select('id, display_name, avatar_url, user_private_details(email)')
         .eq('id', attempt.user_id)
         .maybeSingle();
+
+      const student = studentProfile
+        ? {
+            avatar_url: studentProfile.avatar_url,
+            display_name: studentProfile.display_name,
+            email: extractUserPrivateEmail(studentProfile.user_private_details),
+            id: studentProfile.id,
+          }
+        : null;
 
       // Fetch quizzes linked to this test
       const { data: testQuizzes, error: tqErr } = await access.sbAdmin
