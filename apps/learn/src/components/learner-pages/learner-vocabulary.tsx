@@ -3,7 +3,7 @@
 import { BookOpen, Check, RotateCcw, Sparkles } from '@tuturuuu/icons';
 import { cn } from '@tuturuuu/utils/format';
 import { useParams } from 'next/navigation';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { ContentCard } from './content-card';
 
 interface VocabularyEntry {
@@ -22,6 +22,24 @@ interface MatchCard {
   id: string;
   label: string;
   side: MatchSide;
+}
+
+interface PronunciationFeedback {
+  score: number | null;
+  summary: string;
+  transcript: string;
+  mistakes?: PronunciationMistake[];
+  issues: string[];
+  tips: string[];
+}
+
+interface PronunciationMistake {
+  endIndex?: number | null;
+  heard: string;
+  issue: string;
+  startIndex?: number | null;
+  suggestion: string;
+  target: string;
 }
 
 function normalizeVocabulary(value: unknown): VocabularyEntry[] {
@@ -91,6 +109,83 @@ function buildCards(vocabulary: VocabularyEntry[]): MatchCard[] {
   );
 }
 
+function blobToBase64(blob: Blob) {
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = typeof reader.result === 'string' ? reader.result : '';
+      resolve(result.includes(',') ? result.split(',')[1] ?? '' : result);
+    };
+    reader.onerror = () =>
+      reject(reader.error ?? new Error('Could not read recording.'));
+    reader.readAsDataURL(blob);
+  });
+}
+
+function escapeRegExp(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function sentenceParts(sentence: string, mistakes: PronunciationMistake[]) {
+  const ranges = mistakes
+    .map((mistake) => ({
+      end: mistake.endIndex,
+      start: mistake.startIndex,
+    }))
+    .filter(
+      (range): range is { end: number; start: number } =>
+        typeof range.start === 'number' &&
+        typeof range.end === 'number' &&
+        range.start >= 0 &&
+        range.end > range.start &&
+        range.end <= sentence.length
+    )
+    .sort((a, b) => a.start - b.start);
+
+  if (ranges.length > 0) {
+    const parts: Array<{ isMistake: boolean; text: string }> = [];
+    let cursor = 0;
+
+    for (const range of ranges) {
+      if (range.start < cursor) continue;
+
+      if (range.start > cursor) {
+        parts.push({
+          isMistake: false,
+          text: sentence.slice(cursor, range.start),
+        });
+      }
+
+      parts.push({
+        isMistake: true,
+        text: sentence.slice(range.start, range.end),
+      });
+      cursor = range.end;
+    }
+
+    if (cursor < sentence.length) {
+      parts.push({ isMistake: false, text: sentence.slice(cursor) });
+    }
+
+    return parts;
+  }
+
+  const targets = mistakes
+    .map((mistake) => mistake.target.trim())
+    .filter(Boolean)
+    .sort((a, b) => b.length - a.length);
+
+  if (targets.length === 0) return [{ isMistake: false, text: sentence }];
+
+  const pattern = new RegExp(`(${targets.map(escapeRegExp).join('|')})`, 'giu');
+  return sentence.split(pattern).filter(Boolean).map((text) => ({
+    isMistake: targets.some(
+      (target) => target.toLowerCase() === text.toLowerCase()
+    ),
+    text,
+  }));
+}
+
 export function LearnerVocabulary({ moduleId }: { moduleId: string }) {
   const params = useParams<{ wsId?: string }>();
   const wsId = params?.wsId;
@@ -104,9 +199,9 @@ export function LearnerVocabulary({ moduleId }: { moduleId: string }) {
   const [playingKey, setPlayingKey] = useState<string | null>(null);
 
   // Quiz/Flashcard State
-  const [practiceMode, setPracticeMode] = useState<'match' | 'quiz' | null>(
-    null
-  );
+  const [practiceMode, setPracticeMode] = useState<
+    'match' | 'pronunciation' | 'quiz' | null
+  >(null);
   const [quizIndex, setQuizIndex] = useState(0);
   const [quizOptions, setQuizOptions] = useState<string[]>([]);
   const [quizSelectedOption, setQuizSelectedOption] = useState<string | null>(
@@ -114,6 +209,20 @@ export function LearnerVocabulary({ moduleId }: { moduleId: string }) {
   );
   const [quizCorrectCount, setQuizCorrectCount] = useState(0);
   const [quizAnswered, setQuizAnswered] = useState(false);
+  const [pronunciationIndex, setPronunciationIndex] = useState(0);
+  const [isRecording, setIsRecording] = useState(false);
+  const [isAnalyzingPronunciation, setIsAnalyzingPronunciation] =
+    useState(false);
+  const [pronunciationError, setPronunciationError] = useState<string | null>(
+    null
+  );
+  const [pronunciationFeedback, setPronunciationFeedback] =
+    useState<PronunciationFeedback | null>(null);
+  const [recordingPreviewUrl, setRecordingPreviewUrl] = useState<string | null>(
+    null
+  );
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
 
   const matchedSet = useMemo(() => new Set(matchedIds), [matchedIds]);
   const finished = cards.length > 0 && matchedIds.length === cards.length;
@@ -176,19 +285,34 @@ export function LearnerVocabulary({ moduleId }: { moduleId: string }) {
     setQuizOptions(options);
   }
 
-  function startPractice(mode: 'match' | 'quiz') {
+  const pronunciationItems = useMemo(
+    () =>
+      vocabulary
+        .map((entry) => ({
+          entry,
+          sentence: entry.examples[0] ?? entry.definition,
+        }))
+        .filter((item) => item.sentence.trim().length > 0),
+    [vocabulary]
+  );
+
+  function startPractice(mode: 'match' | 'pronunciation' | 'quiz') {
     setPracticeMode(mode);
     if (mode === 'match') {
       setCards(buildCards(vocabulary));
       setMatchedIds([]);
       setMismatchIds([]);
       setSelected(null);
-    } else {
+    } else if (mode === 'quiz') {
       setQuizIndex(0);
       setQuizCorrectCount(0);
       setQuizSelectedOption(null);
       setQuizAnswered(false);
       generateQuizOptions(0, vocabulary);
+    } else {
+      setPronunciationIndex(0);
+      setPronunciationFeedback(null);
+      setPronunciationError(null);
     }
     setStarted(true);
   }
@@ -224,6 +348,13 @@ export function LearnerVocabulary({ moduleId }: { moduleId: string }) {
   }
 
   function resetPractice() {
+    mediaRecorderRef.current?.stream
+      .getTracks()
+      .forEach((track) => track.stop());
+    mediaRecorderRef.current = null;
+    if (recordingPreviewUrl) {
+      URL.revokeObjectURL(recordingPreviewUrl);
+    }
     setStarted(false);
     setPracticeMode(null);
     setCards([]);
@@ -234,6 +365,109 @@ export function LearnerVocabulary({ moduleId }: { moduleId: string }) {
     setQuizCorrectCount(0);
     setQuizSelectedOption(null);
     setQuizAnswered(false);
+    setPronunciationIndex(0);
+    setIsRecording(false);
+    setIsAnalyzingPronunciation(false);
+    setPronunciationError(null);
+    setPronunciationFeedback(null);
+    setRecordingPreviewUrl(null);
+  }
+
+  async function analyzePronunciation(blob: Blob, targetText: string) {
+    try {
+      setIsAnalyzingPronunciation(true);
+      setPronunciationError(null);
+      setPronunciationFeedback(null);
+
+      const audioData = await blobToBase64(blob);
+      const response = await fetch('/api/v1/vocabulary/pronunciation', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          audioData,
+          mimeType: blob.type || 'audio/webm',
+          targetText,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Could not analyze pronunciation.');
+      }
+
+      const payload = (await response.json()) as PronunciationFeedback;
+      setPronunciationFeedback({
+        issues: Array.isArray(payload.issues) ? payload.issues : [],
+        mistakes: Array.isArray(payload.mistakes) ? payload.mistakes : [],
+        score: typeof payload.score === 'number' ? payload.score : null,
+        summary: payload.summary || 'Pronunciation checked.',
+        tips: Array.isArray(payload.tips) ? payload.tips : [],
+        transcript: payload.transcript || '',
+      });
+    } catch (error) {
+      console.error('Failed to analyze pronunciation', error);
+      setPronunciationError('Could not analyze your recording. Please try again.');
+    } finally {
+      setIsAnalyzingPronunciation(false);
+    }
+  }
+
+  async function startRecording(targetText: string) {
+    try {
+      setPronunciationError(null);
+      setPronunciationFeedback(null);
+      if (recordingPreviewUrl) {
+        URL.revokeObjectURL(recordingPreviewUrl);
+      }
+      setRecordingPreviewUrl(null);
+      audioChunksRef.current = [];
+
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream);
+
+      recorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
+      };
+
+      recorder.onstop = () => {
+        stream.getTracks().forEach((track) => track.stop());
+        const audioBlob = new Blob(audioChunksRef.current, {
+          type: recorder.mimeType || 'audio/webm',
+        });
+        setRecordingPreviewUrl(URL.createObjectURL(audioBlob));
+        void analyzePronunciation(audioBlob, targetText);
+      };
+
+      mediaRecorderRef.current = recorder;
+      recorder.start();
+      setIsRecording(true);
+    } catch (error) {
+      console.error('Failed to start pronunciation recording', error);
+      setPronunciationError('Please allow microphone access to record.');
+      setIsRecording(false);
+    }
+  }
+
+  function stopRecording() {
+    const recorder = mediaRecorderRef.current;
+    if (recorder && recorder.state !== 'inactive') {
+      recorder.stop();
+    }
+    setIsRecording(false);
+  }
+
+  function nextPronunciationPrompt() {
+    setPronunciationFeedback(null);
+    setPronunciationError(null);
+    if (recordingPreviewUrl) {
+      URL.revokeObjectURL(recordingPreviewUrl);
+    }
+    setRecordingPreviewUrl(null);
+    setPronunciationIndex((current) =>
+      Math.min(current + 1, Math.max(0, pronunciationItems.length - 1))
+    );
   }
 
   function selectCard(card: MatchCard) {
@@ -324,6 +558,13 @@ export function LearnerVocabulary({ moduleId }: { moduleId: string }) {
               >
                 Practice: Quiz
               </button>
+              <button
+                className="inline-flex items-center gap-2 border-2 border-border bg-dynamic-yellow px-4 py-2 font-black text-foreground text-sm shadow-[3px_3px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[4px_4px_0_var(--border)]"
+                onClick={() => startPractice('pronunciation')}
+                type="button"
+              >
+                Practice: Pronunciation
+              </button>
             </div>
           </div>
 
@@ -398,6 +639,276 @@ export function LearnerVocabulary({ moduleId }: { moduleId: string }) {
               </article>
             ))}
           </div>
+        </div>
+      ) : practiceMode === 'pronunciation' ? (
+        <div className="space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <p className="font-bold text-sm">
+              Pronunciation {pronunciationIndex + 1} /{' '}
+              {Math.max(pronunciationItems.length, 1)}
+            </p>
+            <button
+              className="inline-flex items-center gap-2 border-2 border-border bg-background px-3 py-1.5 font-bold text-sm shadow-[2px_2px_0_var(--border)]"
+              onClick={resetPractice}
+              type="button"
+            >
+              <RotateCcw className="h-3.5 w-3.5" />
+              Review words
+            </button>
+          </div>
+
+          {pronunciationItems.length === 0 ? (
+            <div className="border-2 border-border bg-background p-6 text-muted-foreground text-sm shadow-[4px_4px_0_var(--border)]">
+              Add at least one example sentence or definition to practice
+              pronunciation.
+            </div>
+          ) : (
+            (() => {
+              const item = pronunciationItems[pronunciationIndex];
+              if (!item) return null;
+
+              return (
+                <div className="space-y-5 border-2 border-border bg-background p-6 shadow-[4px_4px_0_var(--border)]">
+                  <div className="grid gap-5 md:grid-cols-[14rem_minmax(0,1fr)]">
+                    {item.entry.imageUrl ? (
+                      <img
+                        alt={`${item.entry.word} vocabulary`}
+                        className="aspect-video w-full border-2 border-border object-cover shadow-[3px_3px_0_var(--border)] md:aspect-square"
+                        referrerPolicy="no-referrer"
+                        src={item.entry.imageUrl}
+                      />
+                    ) : (
+                      <div className="flex aspect-video items-center justify-center border-2 border-border border-dashed bg-muted/20 text-muted-foreground text-xs shadow-[3px_3px_0_var(--border)] md:aspect-square">
+                        No image
+                      </div>
+                    )}
+
+                    <div className="space-y-4">
+                      <div>
+                        <p className="font-black text-2xl">
+                          {item.entry.word}
+                        </p>
+                        {item.entry.pronunciation ? (
+                          <p className="text-muted-foreground text-sm">
+                            {item.entry.pronunciation}
+                          </p>
+                        ) : null}
+                      </div>
+
+                      <div className="border-2 border-border bg-card p-4 shadow-[2px_2px_0_var(--border)]">
+                        <p className="mb-2 font-bold text-[10px] text-muted-foreground uppercase tracking-widest">
+                          Read this sentence
+                        </p>
+                        <p className="text-base leading-relaxed">
+                          {item.sentence}
+                        </p>
+                      </div>
+
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          className="border-2 border-border bg-card px-3 py-1.5 font-bold text-sm shadow-[2px_2px_0_var(--border)] disabled:opacity-50"
+                          disabled={playingKey !== null}
+                          onClick={() =>
+                            playSpeech(
+                              item.sentence,
+                              'example',
+                              `${item.entry.id}-pronunciation-target`
+                            )
+                          }
+                          type="button"
+                        >
+                          {playingKey ===
+                          `${item.entry.id}-pronunciation-target`
+                            ? 'Playing...'
+                            : 'Play target'}
+                        </button>
+                        <button
+                          className="border-2 border-border bg-primary px-3 py-1.5 font-bold text-primary-foreground text-sm shadow-[2px_2px_0_var(--border)] disabled:opacity-50"
+                          disabled={isAnalyzingPronunciation}
+                          onClick={() =>
+                            isRecording
+                              ? stopRecording()
+                              : startRecording(item.sentence)
+                          }
+                          type="button"
+                        >
+                          {isRecording ? 'Stop recording' : 'Start recording'}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {isRecording ? (
+                    <p className="border-2 border-dynamic-yellow/50 bg-dynamic-yellow/10 p-3 font-bold text-sm shadow-[2px_2px_0_var(--border)]">
+                      Recording... read the sentence clearly, then stop.
+                    </p>
+                  ) : null}
+
+                  {isAnalyzingPronunciation ? (
+                    <p className="text-muted-foreground text-sm">
+                      Checking pronunciation...
+                    </p>
+                  ) : null}
+
+                  {recordingPreviewUrl ? (
+                    <div className="space-y-2 border-2 border-border bg-card p-4 shadow-[3px_3px_0_var(--border)]">
+                      <p className="font-bold text-xs uppercase tracking-widest">
+                        Your recording
+                      </p>
+                      <audio
+                        className="w-full"
+                        controls
+                        src={recordingPreviewUrl}
+                      />
+                    </div>
+                  ) : null}
+
+                  {pronunciationError ? (
+                    <p className="text-destructive text-sm">
+                      {pronunciationError}
+                    </p>
+                  ) : null}
+
+                  {pronunciationFeedback ? (
+                    <div className="space-y-4 border-2 border-border bg-card p-4 shadow-[3px_3px_0_var(--border)]">
+                      <div className="flex flex-wrap items-center justify-between gap-3">
+                        <div>
+                          <p className="font-black text-base">
+                            Pronunciation feedback
+                          </p>
+                          <p className="text-muted-foreground text-sm">
+                            {pronunciationFeedback.summary}
+                          </p>
+                        </div>
+                        {typeof pronunciationFeedback.score === 'number' ? (
+                          <div className="border-2 border-border bg-background px-3 py-2 text-center shadow-[2px_2px_0_var(--border)]">
+                            <p className="font-black text-xl">
+                              {pronunciationFeedback.score}/100
+                            </p>
+                          </div>
+                        ) : null}
+                      </div>
+
+                      {pronunciationFeedback.transcript ? (
+                        <p className="text-sm">
+                          <span className="font-bold">Heard:</span>{' '}
+                          {pronunciationFeedback.transcript}
+                        </p>
+                      ) : null}
+
+                      {pronunciationFeedback.mistakes?.length ? (
+                        <div className="space-y-3">
+                          <div className="border-2 border-dynamic-yellow/50 bg-dynamic-yellow/10 p-3 shadow-[2px_2px_0_var(--border)]">
+                            <p className="mb-2 font-bold text-xs uppercase tracking-widest">
+                              Sentence map
+                            </p>
+                            <p className="text-base leading-relaxed">
+                              {sentenceParts(
+                                item.sentence,
+                                pronunciationFeedback.mistakes
+                              ).map((part, index) =>
+                                part.isMistake ? (
+                                  <mark
+                                    className="border-2 border-dynamic-yellow bg-dynamic-yellow px-1 font-black text-black shadow-[1px_1px_0_var(--border)]"
+                                    key={`${part.text}-${index}`}
+                                  >
+                                    {part.text}
+                                  </mark>
+                                ) : (
+                                  <span key={`${part.text}-${index}`}>
+                                    {part.text}
+                                  </span>
+                                )
+                              )}
+                            </p>
+                          </div>
+
+                          <div>
+                            <p className="mb-2 font-bold text-xs uppercase tracking-widest">
+                              Parts to practice
+                            </p>
+                            <ul className="space-y-2 text-sm">
+                              {pronunciationFeedback.mistakes.map(
+                                (mistake, index) => (
+                                  <li
+                                    className="border border-border bg-background p-3"
+                                    key={`${mistake.target}-${index}`}
+                                  >
+                                    <p>
+                                      <span className="font-bold">
+                                        Target:
+                                      </span>{' '}
+                                      {mistake.target}
+                                      {mistake.heard ? (
+                                        <>
+                                          {' '}
+                                          <span className="text-muted-foreground">
+                                            sounded like
+                                          </span>{' '}
+                                          {mistake.heard}
+                                        </>
+                                      ) : null}
+                                    </p>
+                                    <p className="mt-1 text-muted-foreground">
+                                      {mistake.issue}
+                                    </p>
+                                    {mistake.suggestion ? (
+                                      <p className="mt-1 font-bold">
+                                        Try: {mistake.suggestion}
+                                      </p>
+                                    ) : null}
+                                  </li>
+                                )
+                              )}
+                            </ul>
+                          </div>
+                        </div>
+                      ) : null}
+
+                      {pronunciationFeedback.issues.length > 0 ? (
+                        <div>
+                          <p className="mb-2 font-bold text-xs uppercase tracking-widest">
+                            What to fix
+                          </p>
+                          <ul className="space-y-1 text-sm">
+                            {pronunciationFeedback.issues.map((issue) => (
+                              <li key={issue}>- {issue}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      ) : null}
+
+                      {pronunciationFeedback.tips.length > 0 ? (
+                        <div>
+                          <p className="mb-2 font-bold text-xs uppercase tracking-widest">
+                            Practice tips
+                          </p>
+                          <ul className="space-y-1 text-sm">
+                            {pronunciationFeedback.tips.map((tip) => (
+                              <li key={tip}>- {tip}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      ) : null}
+                    </div>
+                  ) : null}
+
+                  <div className="flex justify-end">
+                    <button
+                      className="border-2 border-border bg-background px-4 py-2 font-bold text-sm shadow-[2px_2px_0_var(--border)] disabled:opacity-50"
+                      disabled={
+                        pronunciationIndex + 1 >= pronunciationItems.length
+                      }
+                      onClick={nextPronunciationPrompt}
+                      type="button"
+                    >
+                      Next sentence
+                    </button>
+                  </div>
+                </div>
+              );
+            })()
+          )}
         </div>
       ) : practiceMode === 'quiz' ? (
         <div className="space-y-4">
