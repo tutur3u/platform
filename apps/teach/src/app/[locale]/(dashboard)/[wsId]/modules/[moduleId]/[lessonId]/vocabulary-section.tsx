@@ -17,6 +17,7 @@ interface VocabularyItem {
   pronunciation: string;
   definition: string;
   examples: string[];
+  imageUrl: string;
 }
 
 function emptyVocabulary(): VocabularyItem {
@@ -26,6 +27,7 @@ function emptyVocabulary(): VocabularyItem {
     pronunciation: '',
     definition: '',
     examples: [],
+    imageUrl: '',
   };
 }
 
@@ -68,9 +70,27 @@ function normalizeVocabulary(value: unknown): VocabularyItem[] {
             : '',
         definition,
         examples,
+        imageUrl:
+          typeof record.imageUrl === 'string'
+            ? record.imageUrl
+            : typeof record.image_url === 'string'
+              ? record.image_url
+              : '',
       } satisfies VocabularyItem;
     })
     .filter((entry): entry is VocabularyItem => entry !== null);
+}
+
+function readImageAsDataUrl(file: File) {
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === 'string') resolve(reader.result);
+      else reject(new Error('Could not read image.'));
+    };
+    reader.onerror = () => reject(reader.error ?? new Error('Upload failed.'));
+    reader.readAsDataURL(file);
+  });
 }
 
 export default function LessonVocabularySection({ wsId, lessonId }: Props) {
@@ -177,6 +197,28 @@ export default function LessonVocabularySection({ wsId, lessonId }: Props) {
     }));
   }
 
+  async function handleImageUpload(file: File | null) {
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      setError('Please upload an image file.');
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      setError('Vocabulary images must be 5MB or smaller.');
+      return;
+    }
+
+    try {
+      const imageUrl = await readImageAsDataUrl(file);
+      updateDraft('imageUrl', imageUrl);
+      setError(null);
+    } catch {
+      setError('Could not upload the image. Please try another file.');
+    }
+  }
+
   function updateExampleLine(index: number, value: string) {
     setDraft((current) => {
       const examples =
@@ -226,6 +268,7 @@ export default function LessonVocabularySection({ wsId, lessonId }: Props) {
       pronunciation,
       definition,
       examples,
+      imageUrl: draft.imageUrl,
     };
 
     const nextEntries = editingId
@@ -299,6 +342,46 @@ export default function LessonVocabularySection({ wsId, lessonId }: Props) {
         </div>
 
         <div className="space-y-3">
+          <Label htmlFor="lesson-vocabulary-image">Image</Label>
+          <div className="grid gap-3 md:grid-cols-[10rem_minmax(0,1fr)]">
+            <div className="flex aspect-video items-center justify-center overflow-hidden border-2 border-border bg-background shadow-[3px_3px_0_var(--border)]">
+              {draft.imageUrl ? (
+                <img
+                  alt={draft.word ? `${draft.word} vocabulary` : 'Vocabulary'}
+                  className="h-full w-full object-cover"
+                  src={draft.imageUrl}
+                />
+              ) : (
+                <span className="px-3 text-center text-muted-foreground text-xs">
+                  No image
+                </span>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Input
+                accept="image/*"
+                id="lesson-vocabulary-image"
+                onChange={(event) =>
+                  handleImageUpload(event.target.files?.[0] ?? null)
+                }
+                type="file"
+              />
+              {draft.imageUrl ? (
+                <button
+                  className="border-2 border-border bg-card px-3 py-1.5 font-bold text-sm shadow-[2px_2px_0_var(--border)] disabled:opacity-40"
+                  disabled={isSaving}
+                  onClick={() => updateDraft('imageUrl', '')}
+                  type="button"
+                >
+                  Remove image
+                </button>
+              ) : null}
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-3">
           <div className="flex items-center justify-between gap-3">
             <Label htmlFor="lesson-vocabulary-example-0">Examples</Label>
             <button
@@ -359,7 +442,7 @@ export default function LessonVocabularySection({ wsId, lessonId }: Props) {
                 : 'Add vocabulary'}
           </button>
 
-          {(editingId || draft.word || draft.definition || draft.pronunciation || draft.examples.length > 0) && (
+          {(editingId || draft.word || draft.definition || draft.pronunciation || draft.imageUrl || draft.examples.length > 0) && (
             <button
               className="border-2 border-border bg-card px-3 py-1.5 font-bold text-sm shadow-[2px_2px_0_var(--border)] disabled:opacity-40"
               onClick={resetForm}
@@ -386,6 +469,13 @@ export default function LessonVocabularySection({ wsId, lessonId }: Props) {
               className="space-y-4 border-2 border-border bg-card p-5 shadow-[4px_4px_0_var(--border)]"
             >
               <div className="space-y-1">
+                {entry.imageUrl ? (
+                  <img
+                    alt={`${entry.word} vocabulary`}
+                    className="aspect-video w-full border-2 border-border object-cover shadow-[3px_3px_0_var(--border)]"
+                    src={entry.imageUrl}
+                  />
+                ) : null}
                 <h3 className="font-black text-base">{entry.word}</h3>
                 {entry.pronunciation ? (
                   <p className="text-muted-foreground text-sm">

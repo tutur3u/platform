@@ -3,11 +3,11 @@ import {
   createAppSessionUser,
   verifyAppSessionRequest,
 } from '@tuturuuu/auth/app-session';
+import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
 import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
-import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import {
   normalizeWorkspaceId,
@@ -30,6 +30,7 @@ interface VocabularyEntry {
   definition: string;
   examples: string[];
   id: string;
+  imageUrl: string;
   pronunciation: string;
   word: string;
 }
@@ -55,11 +56,19 @@ function normalizeVocabulary(value: unknown): VocabularyEntry[] {
         definition,
         examples: Array.isArray(record.examples)
           ? record.examples
-              .filter((example): example is string => typeof example === 'string')
+              .filter(
+                (example): example is string => typeof example === 'string'
+              )
               .map((example) => example.trim())
               .filter(Boolean)
           : [],
         id,
+        imageUrl:
+          typeof record.imageUrl === 'string'
+            ? record.imageUrl
+            : typeof record.image_url === 'string'
+              ? record.image_url
+              : '',
         pronunciation:
           typeof record.pronunciation === 'string'
             ? record.pronunciation.trim()
@@ -159,6 +168,8 @@ export async function GET(
   }
 
   return NextResponse.json({
-    vocabulary: normalizeVocabulary((data as { vocabulary?: unknown }).vocabulary),
+    vocabulary: normalizeVocabulary(
+      (data as { vocabulary?: unknown }).vocabulary
+    ),
   });
 }

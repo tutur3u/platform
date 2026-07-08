@@ -10,6 +10,7 @@ interface VocabularyEntry {
   definition: string;
   examples: string[];
   id: string;
+  imageUrl: string;
   pronunciation: string;
   word: string;
 }
@@ -49,6 +50,12 @@ function normalizeVocabulary(value: unknown): VocabularyEntry[] {
               .filter(Boolean)
           : [],
         id,
+        imageUrl:
+          typeof record.imageUrl === 'string'
+            ? record.imageUrl
+            : typeof record.image_url === 'string'
+              ? record.image_url
+              : '',
         pronunciation:
           typeof record.pronunciation === 'string'
             ? record.pronunciation.trim()
@@ -92,6 +99,7 @@ export function LearnerVocabulary({ moduleId }: { moduleId: string }) {
   const [selected, setSelected] = useState<MatchCard | null>(null);
   const [matchedIds, setMatchedIds] = useState<string[]>([]);
   const [mismatchIds, setMismatchIds] = useState<string[]>([]);
+  const [playingKey, setPlayingKey] = useState<string | null>(null);
 
   const matchedSet = useMemo(() => new Set(matchedIds), [matchedIds]);
   const finished = cards.length > 0 && matchedIds.length === cards.length;
@@ -145,6 +153,32 @@ export function LearnerVocabulary({ moduleId }: { moduleId: string }) {
     setMismatchIds([]);
     setSelected(null);
     setStarted(true);
+  }
+
+  async function playSpeech(text: string, kind: 'example' | 'word', key: string) {
+    try {
+      setPlayingKey(key);
+      const response = await fetch('/api/v1/vocabulary/speech', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ kind, text }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Could not generate speech.');
+      }
+
+      const audioUrl = URL.createObjectURL(await response.blob());
+      const audio = new Audio(audioUrl);
+      audio.onended = () => URL.revokeObjectURL(audioUrl);
+      audio.onerror = () => URL.revokeObjectURL(audioUrl);
+      await audio.play();
+    } catch (error) {
+      console.error('Failed to play vocabulary speech', error);
+    } finally {
+      setPlayingKey(null);
+    }
   }
 
   function resetPractice() {
@@ -222,6 +256,13 @@ export function LearnerVocabulary({ moduleId }: { moduleId: string }) {
                 className="border-2 border-border bg-background p-4 shadow-[3px_3px_0_var(--border)]"
                 key={entry.id}
               >
+                {entry.imageUrl ? (
+                  <img
+                    alt={`${entry.word} vocabulary`}
+                    className="mb-4 aspect-video w-full border-2 border-border object-cover shadow-[3px_3px_0_var(--border)]"
+                    src={entry.imageUrl}
+                  />
+                ) : null}
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <h3 className="font-black text-base">{entry.word}</h3>
@@ -233,13 +274,42 @@ export function LearnerVocabulary({ moduleId }: { moduleId: string }) {
                   </div>
                   <Sparkles className="h-4 w-4 shrink-0 text-dynamic-yellow" />
                 </div>
+                <button
+                  className="mt-3 border-2 border-border bg-card px-3 py-1.5 font-bold text-xs shadow-[2px_2px_0_var(--border)] disabled:opacity-50"
+                  disabled={playingKey !== null}
+                  onClick={() => playSpeech(entry.word, 'word', `${entry.id}-word`)}
+                  type="button"
+                >
+                  {playingKey === `${entry.id}-word` ? 'Playing...' : 'Play word'}
+                </button>
                 <p className="mt-3 text-sm leading-relaxed">
                   {entry.definition}
                 </p>
                 {entry.examples.length > 0 ? (
-                  <ul className="mt-3 space-y-1 text-muted-foreground text-xs">
+                  <ul className="mt-3 space-y-2 text-muted-foreground text-xs">
                     {entry.examples.map((example) => (
-                      <li key={`${entry.id}-${example}`}>{example}</li>
+                      <li
+                        className="flex flex-wrap items-center gap-2"
+                        key={`${entry.id}-${example}`}
+                      >
+                        <span>{example}</span>
+                        <button
+                          className="border border-border bg-card px-2 py-0.5 font-bold text-[10px] text-foreground shadow-[1px_1px_0_var(--border)] disabled:opacity-50"
+                          disabled={playingKey !== null}
+                          onClick={() =>
+                            playSpeech(
+                              example,
+                              'example',
+                              `${entry.id}-${example}`
+                            )
+                          }
+                          type="button"
+                        >
+                          {playingKey === `${entry.id}-${example}`
+                            ? 'Playing...'
+                            : 'Play example'}
+                        </button>
+                      </li>
                     ))}
                   </ul>
                 ) : null}

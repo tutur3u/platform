@@ -3,11 +3,11 @@ import {
   createAppSessionUser,
   verifyAppSessionRequest,
 } from '@tuturuuu/auth/app-session';
+import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
 import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
-import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import type { Database } from '@tuturuuu/types';
 import {
@@ -32,6 +32,7 @@ interface VocabularyEntry {
   definition: string;
   examples: string[];
   id: string;
+  imageUrl?: string;
   pronunciation: string;
   word: string;
 }
@@ -72,6 +73,7 @@ function validateVocabularyEntry(
     typeof value.pronunciation === 'string' ? value.pronunciation.trim() : '';
   const definition =
     typeof value.definition === 'string' ? value.definition.trim() : '';
+  const imageUrl = typeof value.imageUrl === 'string' ? value.imageUrl : '';
   const examples = Array.isArray(value.examples) ? value.examples : null;
 
   if (!id) {
@@ -98,6 +100,16 @@ function validateVocabularyEntry(
   if (!definition || definition.length > 2000) {
     return {
       error: `Vocabulary item ${index + 1} must have a definition up to 2000 characters.`,
+      ok: false,
+    };
+  }
+
+  if (
+    imageUrl &&
+    (!imageUrl.startsWith('data:image/') || imageUrl.length > 7_200_000)
+  ) {
+    return {
+      error: `Vocabulary item ${index + 1} image must be an uploaded image under 5MB.`,
       ok: false,
     };
   }
@@ -136,6 +148,7 @@ function validateVocabularyEntry(
       definition,
       examples: normalizedExamples,
       id,
+      imageUrl,
       pronunciation,
       word,
     },
@@ -347,7 +360,7 @@ export async function GET(
     const vocabulary = Array.isArray(
       (data as { vocabulary?: unknown } | null)?.vocabulary
     )
-      ? (data as { vocabulary?: VocabularyEntry[] }).vocabulary ?? []
+      ? ((data as { vocabulary?: VocabularyEntry[] }).vocabulary ?? [])
       : [];
 
     return NextResponse.json({ vocabulary });
@@ -410,7 +423,10 @@ async function updateVocabulary(
     }
 
     if (!data) {
-      return NextResponse.json({ message: 'Module not found' }, { status: 404 });
+      return NextResponse.json(
+        { message: 'Module not found' },
+        { status: 404 }
+      );
     }
 
     return NextResponse.json({
