@@ -2,11 +2,9 @@ import { toWorkspaceSlug } from './constants';
 import { getTuturuuuPortlessAppOrigin } from './portless';
 
 export const LAUNCHABLE_APP_CATEGORIES = [
-  'core',
   'productivity',
   'operations',
   'learning',
-  'developer',
   'ai',
   'miscellaneous',
 ] as const;
@@ -53,7 +51,7 @@ export const LAUNCHABLE_APPS = [
   {
     aliases: ['Tuturuuu', 'Dashboard', 'Workspace'],
     appRoot: 'apps/web',
-    category: 'core',
+    category: 'productivity',
     defaultPath: '/',
     localhostOrigin: 'http://localhost:7803',
     packageName: '@tuturuuu/web',
@@ -62,18 +60,6 @@ export const LAUNCHABLE_APPS = [
     slug: 'platform',
     title: 'Platform',
     workspacePathResolver: workspaceRootPath,
-  },
-  {
-    aliases: ['App Launcher', 'Gateway', 'Apps Gateway'],
-    appRoot: 'apps/apps',
-    category: 'developer',
-    defaultPath: '/',
-    localhostOrigin: 'http://localhost:7818',
-    packageName: '@tuturuuu/apps',
-    portlessApp: 'apps',
-    productionUrl: 'https://apps.tuturuuu.com',
-    slug: 'apps',
-    title: 'Apps',
   },
   {
     aliases: ['Schedule', 'Events'],
@@ -187,6 +173,18 @@ export const LAUNCHABLE_APPS = [
     productionUrl: 'https://storefront.tuturuuu.com',
     slug: 'storefront',
     title: 'Storefront',
+  },
+  {
+    aliases: ['App Launcher', 'Gateway', 'Apps Gateway'],
+    appRoot: 'apps/apps',
+    category: 'operations',
+    defaultPath: '/',
+    localhostOrigin: 'http://localhost:7818',
+    packageName: '@tuturuuu/apps',
+    portlessApp: 'apps',
+    productionUrl: 'https://apps.tuturuuu.com',
+    slug: 'apps',
+    title: 'Apps',
   },
   {
     aliases: ['Study', 'Student'],

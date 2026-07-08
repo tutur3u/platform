@@ -33,6 +33,7 @@ import {
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
 import { Tabs, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
+import { cn } from '@tuturuuu/utils/format';
 import type {
   LaunchableApp,
   LaunchableAppCategory,
@@ -82,14 +83,44 @@ const APP_CATEGORY_TABS = ['all', ...LAUNCHABLE_APP_CATEGORIES] as const;
 
 type AppCategoryTab = (typeof APP_CATEGORY_TABS)[number];
 
-const CATEGORY_ACCENTS: Record<LaunchableAppCategory, string> = {
-  ai: 'hsl(var(--dynamic-cyan))',
-  core: 'hsl(var(--primary))',
-  developer: 'hsl(var(--dynamic-purple))',
-  learning: 'hsl(var(--dynamic-orange))',
-  miscellaneous: 'hsl(var(--dynamic-red))',
-  operations: 'hsl(var(--dynamic-green))',
-  productivity: 'hsl(var(--dynamic-blue))',
+const CATEGORY_TONES: Record<
+  LaunchableAppCategory,
+  {
+    affordance: string;
+    card: string;
+    icon: string;
+  }
+> = {
+  ai: {
+    affordance:
+      'group-hover:bg-dynamic-cyan/10 group-hover:text-dynamic-cyan group-focus-visible:bg-dynamic-cyan/10 group-focus-visible:text-dynamic-cyan',
+    card: 'border-dynamic-cyan/30 bg-dynamic-cyan/10 hover:border-dynamic-cyan/50 hover:bg-dynamic-cyan/15',
+    icon: 'border-dynamic-cyan/35 bg-dynamic-cyan/10 text-dynamic-cyan',
+  },
+  learning: {
+    affordance:
+      'group-hover:bg-dynamic-orange/10 group-hover:text-dynamic-orange group-focus-visible:bg-dynamic-orange/10 group-focus-visible:text-dynamic-orange',
+    card: 'border-dynamic-orange/30 bg-dynamic-orange/10 hover:border-dynamic-orange/50 hover:bg-dynamic-orange/15',
+    icon: 'border-dynamic-orange/35 bg-dynamic-orange/10 text-dynamic-orange',
+  },
+  miscellaneous: {
+    affordance:
+      'group-hover:bg-dynamic-red/10 group-hover:text-dynamic-red group-focus-visible:bg-dynamic-red/10 group-focus-visible:text-dynamic-red',
+    card: 'border-dynamic-red/30 bg-dynamic-red/10 hover:border-dynamic-red/50 hover:bg-dynamic-red/15',
+    icon: 'border-dynamic-red/35 bg-dynamic-red/10 text-dynamic-red',
+  },
+  operations: {
+    affordance:
+      'group-hover:bg-dynamic-green/10 group-hover:text-dynamic-green group-focus-visible:bg-dynamic-green/10 group-focus-visible:text-dynamic-green',
+    card: 'border-dynamic-green/30 bg-dynamic-green/10 hover:border-dynamic-green/50 hover:bg-dynamic-green/15',
+    icon: 'border-dynamic-green/35 bg-dynamic-green/10 text-dynamic-green',
+  },
+  productivity: {
+    affordance:
+      'group-hover:bg-dynamic-blue/10 group-hover:text-dynamic-blue group-focus-visible:bg-dynamic-blue/10 group-focus-visible:text-dynamic-blue',
+    card: 'border-dynamic-blue/30 bg-dynamic-blue/10 hover:border-dynamic-blue/50 hover:bg-dynamic-blue/15',
+    icon: 'border-dynamic-blue/35 bg-dynamic-blue/10 text-dynamic-blue',
+  },
 };
 
 export function AppsLauncherDialog({
@@ -279,13 +310,7 @@ function AppLauncherItem({
   onOpen: (app: LaunchableApp, target: 'current-tab' | 'new-tab') => void;
 }) {
   const Icon = APP_ICONS[app.slug] ?? Boxes;
-  const accent = CATEGORY_ACCENTS[app.category];
-  const cardStyle = {
-    '--app-accent': accent,
-    background:
-      'linear-gradient(135deg, color-mix(in srgb, var(--app-accent) 14%, var(--card)) 0%, var(--card) 62%)',
-    borderColor: 'color-mix(in srgb, var(--app-accent) 32%, var(--border))',
-  } as CSSProperties;
+  const tone = CATEGORY_TONES[app.category];
 
   function handleClick(event: MouseEvent<HTMLButtonElement>) {
     onOpen(app, event.ctrlKey || event.metaKey ? 'current-tab' : 'new-tab');
@@ -294,20 +319,21 @@ function AppLauncherItem({
   return (
     <button
       aria-label={app.title}
-      className="group flex min-h-0 w-full cursor-pointer items-center gap-2 overflow-hidden rounded-md border p-2 text-left text-card-foreground shadow-sm outline-none transition-[background-color,border-color,box-shadow,transform] duration-200 ease-out hover:-translate-y-0.5 hover:shadow-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background active:translate-y-0 motion-reduce:transition-none motion-reduce:hover:translate-y-0"
+      className={cn(
+        'group flex min-h-0 w-full cursor-pointer items-center gap-2 overflow-hidden rounded-md border p-2 text-left text-card-foreground shadow-sm outline-none transition-[background-color,border-color,box-shadow,transform] duration-200 ease-out hover:-translate-y-0.5 hover:shadow-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background active:translate-y-0 motion-reduce:transition-none motion-reduce:hover:translate-y-0',
+        tone.card
+      )}
       data-slot="app-card"
       onClick={handleClick}
-      style={cardStyle}
       type="button"
     >
       <span className="flex min-w-0 flex-1 items-center gap-2">
         <span
-          className="flex size-8 shrink-0 items-center justify-center rounded-md border bg-background/70 shadow-xs transition-transform duration-200 ease-out group-hover:scale-105 group-focus-visible:scale-105 motion-reduce:transition-none"
-          style={{
-            borderColor:
-              'color-mix(in srgb, var(--app-accent) 40%, var(--border))',
-            color: 'var(--app-accent)',
-          }}
+          className={cn(
+            'flex size-8 shrink-0 items-center justify-center rounded-md border shadow-xs transition-transform duration-200 ease-out group-hover:scale-105 group-focus-visible:scale-105 motion-reduce:transition-none',
+            tone.icon
+          )}
+          data-slot="app-card-icon"
         >
           <Icon className="size-4" />
         </span>
@@ -322,7 +348,10 @@ function AppLauncherItem({
 
       <span
         aria-hidden
-        className="flex size-8 shrink-0 items-center justify-center rounded-md bg-background/60 text-muted-foreground/70 transition-[background-color,color,transform] duration-200 ease-out group-hover:translate-x-0.5 group-hover:bg-background/80 group-hover:text-foreground group-focus-visible:translate-x-0.5 group-focus-visible:bg-background/80 group-focus-visible:text-foreground motion-reduce:transition-none motion-reduce:group-hover:translate-x-0"
+        className={cn(
+          'flex size-8 shrink-0 items-center justify-center rounded-md bg-background/60 text-muted-foreground/70 transition-[background-color,color,transform] duration-200 ease-out group-hover:translate-x-0.5 group-focus-visible:translate-x-0.5 motion-reduce:transition-none motion-reduce:group-hover:translate-x-0',
+          tone.affordance
+        )}
         data-slot="app-card-affordance"
       >
         <ChevronRight className="size-4" />

@@ -84,7 +84,10 @@ describe('AppsLauncherDialog', () => {
     expect(screen.getByRole('heading', { name: 'Apps' })).toBeTruthy();
     expect(screen.getByRole('tab', { name: 'All' })).toBeTruthy();
     expect(screen.getByRole('tab', { name: 'Productivity' })).toBeTruthy();
+    expect(screen.getByRole('tab', { name: 'Operations' })).toBeTruthy();
+    expect(screen.queryByRole('tab', { name: 'Core' })).toBeNull();
     expect(screen.queryByRole('tab', { name: 'Content' })).toBeNull();
+    expect(screen.queryByRole('tab', { name: 'Developer' })).toBeNull();
     expect(screen.getByRole('tab', { name: 'Miscellaneous' })).toBeTruthy();
     expect(screen.getByText('Calendar')).toBeTruthy();
     expect(screen.getByText('Tasks')).toBeTruthy();
@@ -168,7 +171,7 @@ describe('AppsLauncherDialog', () => {
     const sections = document.querySelectorAll(
       '[data-slot="apps-launcher-section"]'
     );
-    expect(sections).toHaveLength(7);
+    expect(sections).toHaveLength(5);
     expect(
       document.querySelector('[data-slot="apps-launcher-sections"]')
     ).toBeTruthy();
@@ -177,11 +180,9 @@ describe('AppsLauncherDialog', () => {
         (section) => section.querySelector('h3')?.textContent
       )
     ).toEqual([
-      'Core',
       'Productivity',
       'Operations',
       'Learning',
-      'Developer',
       'AI',
       'Miscellaneous',
     ]);
@@ -201,8 +202,9 @@ describe('AppsLauncherDialog', () => {
       ).map((item) => item.textContent);
     };
 
-    expect(getSectionTitles('Developer')).toContain('Apps');
+    expect(getSectionTitles('Productivity')[0]).toBe('Platform');
     expect(getSectionTitles('Operations')).toContain('CMS');
+    expect(getSectionTitles('Operations').at(-1)).toBe('Apps');
     expect(getSectionTitles('AI')).toContain('Rewise');
     expect(getSectionTitles('Miscellaneous')).toEqual([
       'Docs',
@@ -225,13 +227,22 @@ describe('AppsLauncherDialog', () => {
     expect(financeCard?.className).toContain('hover:-translate-y-0.5');
     expect(financeCard?.className).toContain('focus-visible:ring-2');
     expect(financeCard?.className).toContain('motion-reduce:transition-none');
+    expect(financeCard?.className).toContain('border-dynamic-green/30');
+    expect(financeCard?.className).toContain('bg-dynamic-green/10');
     expect(financeCard?.className).not.toContain('grid-cols-');
+    const financeIcon = financeCard.querySelector(
+      '[data-slot="app-card-icon"]'
+    );
+    expect(financeIcon?.className).toContain('text-dynamic-green');
     const affordance = financeCard.querySelector(
       '[data-slot="app-card-affordance"]'
     );
     expect(affordance).toBeTruthy();
     expect(affordance?.getAttribute('aria-hidden')).toBe('true');
     expect(affordance?.className).toContain('group-hover:translate-x-0.5');
+    expect(affordance?.className).toContain('group-hover:text-dynamic-green');
+    const tasksCard = screen.getByRole('button', { name: 'Tasks' });
+    expect(tasksCard.className).toContain('border-dynamic-blue/30');
     expect(
       financeCard?.querySelector('[data-slot="app-card-actions"]')
     ).toBeNull();
@@ -257,20 +268,18 @@ describe('AppsLauncherDialog', () => {
     ).toBeNull();
     expect(document.querySelector('[data-slot="app-card-domain"]')).toBeNull();
 
-    const developerTab = screen.getByRole('tab', { name: 'Developer' });
-    fireEvent.pointerDown(developerTab, { button: 0, ctrlKey: false });
-    fireEvent.mouseDown(developerTab, { button: 0, ctrlKey: false });
-    fireEvent.click(developerTab);
+    const operationsTab = screen.getByRole('tab', { name: 'Operations' });
+    fireEvent.pointerDown(operationsTab, { button: 0, ctrlKey: false });
+    fireEvent.mouseDown(operationsTab, { button: 0, ctrlKey: false });
+    fireEvent.click(operationsTab);
 
     await waitFor(() =>
       expect(screen.getByRole('button', { name: 'Apps' })).toBeTruthy()
     );
     expect(screen.getByRole('button', { name: 'Apps' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Finance' })).toBeTruthy();
     expect(screen.queryByText('Tools')).toBeNull();
     expect(screen.queryByText('Calendar')).toBeNull();
-    expect(
-      screen.queryByText('Developer utilities, gateways, and technical tools.')
-    ).toBeNull();
     expect(screen.getByRole('button', { name: 'Apps' })).toBeTruthy();
     expect(screen.queryByLabelText('Open options: Apps')).toBeNull();
     expect(

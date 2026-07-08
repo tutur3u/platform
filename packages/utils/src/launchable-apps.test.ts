@@ -32,16 +32,29 @@ describe('launchable apps', () => {
   it('keeps retired apps out of the catalog and pins category overrides', () => {
     expect(LAUNCHABLE_APPS.map((app) => app.slug)).not.toContain('external');
     expect(LAUNCHABLE_APPS.map((app) => app.slug)).not.toContain('playground');
+    expect(LAUNCHABLE_APP_CATEGORIES).not.toContain('core');
     expect(LAUNCHABLE_APP_CATEGORIES).not.toContain('content');
+    expect(LAUNCHABLE_APP_CATEGORIES).not.toContain('developer');
     expect(LAUNCHABLE_APP_CATEGORIES).toContain('miscellaneous');
     expect(getLaunchableApp('external')).toBeNull();
     expect(getLaunchableApp('playground')).toBeNull();
-    expect(getLaunchableApp('apps')?.category).toBe('developer');
+    expect(getLaunchableApp('platform')?.category).toBe('productivity');
+    expect(getLaunchableApp('apps')?.category).toBe('operations');
     expect(getLaunchableApp('cms')?.category).toBe('operations');
     expect(getLaunchableApp('rewise')?.category).toBe('ai');
     expect(getLaunchableApp('docs')?.category).toBe('miscellaneous');
     expect(getLaunchableApp('tools')?.category).toBe('miscellaneous');
     expect(getLaunchableApp('shortener')?.category).toBe('miscellaneous');
+    expect(
+      LAUNCHABLE_APPS.filter((app) => app.category === 'productivity').map(
+        (app) => app.slug
+      )[0]
+    ).toBe('platform');
+    expect(
+      LAUNCHABLE_APPS.filter((app) => app.category === 'operations')
+        .map((app) => app.slug)
+        .at(-1)
+    ).toBe('apps');
   });
 
   it('resolves production, Portless, and local origins', () => {

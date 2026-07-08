@@ -62,9 +62,6 @@ const APP_ICONS: Record<GatewayAppSlug, LucideIcon> = {
 
 const CATEGORY_TONES: Record<AppCategory, string> = {
   ai: 'border-dynamic-cyan/30 bg-dynamic-cyan/10 text-dynamic-cyan',
-  core: 'border-dynamic-blue/30 bg-dynamic-blue/10 text-dynamic-blue',
-  developer:
-    'border-dynamic-purple/30 bg-dynamic-purple/10 text-dynamic-purple',
   learning: 'border-dynamic-orange/30 bg-dynamic-orange/10 text-dynamic-orange',
   miscellaneous: 'border-dynamic-red/30 bg-dynamic-red/10 text-dynamic-red',
   operations: 'border-dynamic-green/30 bg-dynamic-green/10 text-dynamic-green',

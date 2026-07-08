@@ -18,7 +18,7 @@ export { viewport } from '@tuturuuu/utils/common/nextjs';
 
 export const metadata: Metadata = {
   description:
-    'Central Tuturuuu app gateway for opening workspace, productivity, learning, and developer apps.',
+    'Central Tuturuuu app gateway for opening workspace, productivity, operations, learning, and AI apps.',
   metadataBase: new URL(BASE_URL),
   title: {
     default: 'Tuturuuu Apps',
