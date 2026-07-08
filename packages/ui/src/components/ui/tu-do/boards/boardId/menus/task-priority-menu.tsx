@@ -104,13 +104,15 @@ export function TaskPriorityMenu({
 
   return (
     <DropdownMenuSub>
-      <DropdownMenuSubTrigger>
-        <div className="h-4 w-4">
+      <DropdownMenuSubTrigger className="min-w-0">
+        <div className="h-4 w-4 shrink-0">
           <Flag className="h-4 w-4 text-dynamic-orange" />
         </div>
-        <div className="flex w-full items-center justify-between">
-          <span>{t.priority}</span>
-          <span className="ml-auto text-muted-foreground text-xs">
+        <div className="flex min-w-0 flex-1 items-center gap-2">
+          <span className="min-w-0 flex-1 truncate whitespace-nowrap">
+            {t.priority}
+          </span>
+          <span className="max-w-20 shrink-0 truncate whitespace-nowrap text-right text-muted-foreground text-xs">
             {currentPriority
               ? priorityLabelTranslated[currentPriority]
               : t.none}

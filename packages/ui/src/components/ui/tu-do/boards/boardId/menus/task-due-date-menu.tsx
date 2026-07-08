@@ -7,9 +7,10 @@ import {
   DropdownMenuSubTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
 import {
-  formatDistanceToNow,
+  differenceInCalendarDays,
   isToday,
   isTomorrow,
+  isValid,
   isYesterday,
 } from 'date-fns';
 import { calculateDaysUntilEndOfWeek } from '../../../utils/weekDateUtils';
@@ -55,6 +56,22 @@ const calculateDaysForPreset = (
   }
 };
 
+const formatCompactRelativeDate = (date: Date, now = new Date()) => {
+  const days = differenceInCalendarDays(date, now);
+  const absoluteDays = Math.abs(days);
+
+  const [value, unit] =
+    absoluteDays < 7
+      ? [absoluteDays, 'd']
+      : absoluteDays < 30
+        ? [Math.max(1, Math.round(absoluteDays / 7)), 'wk']
+        : absoluteDays < 365
+          ? [Math.max(1, Math.round(absoluteDays / 30)), 'mo']
+          : [Math.max(1, Math.round(absoluteDays / 365)), 'y'];
+
+  return days > 0 ? `in ${value}${unit}` : `${value}${unit} ago`;
+};
+
 export function TaskDueDateMenu({
   endDate,
   isLoading,
@@ -82,7 +99,7 @@ export function TaskDueDateMenu({
     if (isToday(date)) return t.today;
     if (isTomorrow(date)) return t.tomorrow;
     if (isYesterday(date)) return t.yesterday;
-    return formatDistanceToNow(date, { addSuffix: true });
+    return formatCompactRelativeDate(date);
   };
 
   const dueDateOptionsTranslated = [
@@ -104,19 +121,23 @@ export function TaskDueDateMenu({
     },
   ];
 
-  const currentDateDisplay = endDate
-    ? formatSmartDateTranslated(new Date(endDate))
-    : t.none;
+  const parsedEndDate = endDate ? new Date(endDate) : null;
+  const currentDateDisplay =
+    parsedEndDate && isValid(parsedEndDate)
+      ? formatSmartDateTranslated(parsedEndDate)
+      : t.none;
 
   return (
     <DropdownMenuSub>
-      <DropdownMenuSubTrigger>
-        <div className="h-4 w-4">
+      <DropdownMenuSubTrigger className="min-w-0">
+        <div className="h-4 w-4 shrink-0">
           <Calendar className="h-4 w-4 text-dynamic-purple" />
         </div>
-        <div className="flex w-full items-center justify-between">
-          <span>{t.dueDate}</span>
-          <span className="ml-auto text-muted-foreground text-xs">
+        <div className="flex min-w-0 flex-1 items-center gap-2">
+          <span className="min-w-0 flex-1 truncate whitespace-nowrap">
+            {t.dueDate}
+          </span>
+          <span className="max-w-20 shrink-0 truncate whitespace-nowrap text-right text-muted-foreground text-xs">
             {currentDateDisplay}
           </span>
         </div>

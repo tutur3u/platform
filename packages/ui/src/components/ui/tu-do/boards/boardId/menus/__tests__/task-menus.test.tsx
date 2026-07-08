@@ -2,7 +2,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const taskSchedulingApiMock = vi.hoisted(() => ({
   getCurrentUserTaskSchedule: vi.fn(),
@@ -67,8 +67,8 @@ vi.mock('@tuturuuu/ui/dropdown-menu', () => ({
   DropdownMenuSub: ({ children }: any) => (
     <div data-testid="dropdown-sub">{children}</div>
   ),
-  DropdownMenuSubTrigger: ({ children }: any) => (
-    <button type="button" data-testid="dropdown-trigger">
+  DropdownMenuSubTrigger: ({ children, className }: any) => (
+    <button type="button" className={className} data-testid="dropdown-trigger">
       {children}
     </button>
   ),
@@ -151,6 +151,10 @@ describe('TaskDueDateMenu', () => {
   const mockOnMenuItemSelect = vi.fn((_, action) => action());
   const mockOnClose = vi.fn();
 
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it('should render due date menu', () => {
     render(
       <TaskDueDateMenu
@@ -199,6 +203,40 @@ describe('TaskDueDateMenu', () => {
     );
 
     expect(screen.getByText('Remove Due Date')).toBeInTheDocument();
+  });
+
+  it('should render compact due date summaries without wrapping the trigger label', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-01-15T12:00:00.000Z'));
+
+    render(
+      <TaskDueDateMenu
+        endDate="2026-03-16T12:00:00.000Z"
+        isLoading={false}
+        onDueDateChange={mockOnDueDateChange}
+        onCustomDateClick={mockOnCustomDateClick}
+        onMenuItemSelect={mockOnMenuItemSelect}
+        onClose={mockOnClose}
+      />
+    );
+
+    const triggerLabel = screen.getByText('Due Date');
+    const compactDate = screen.getByText('in 2mo');
+
+    expect(screen.getByTestId('dropdown-trigger')).toHaveClass('min-w-0');
+    expect(triggerLabel).toHaveClass(
+      'min-w-0',
+      'flex-1',
+      'truncate',
+      'whitespace-nowrap'
+    );
+    expect(compactDate).toHaveClass(
+      'shrink-0',
+      'truncate',
+      'whitespace-nowrap',
+      'text-right'
+    );
+    expect(screen.queryByText('in about 2 months')).not.toBeInTheDocument();
   });
 });
 

@@ -296,12 +296,14 @@ export function TaskSchedulingMenu({
 
   return (
     <DropdownMenuSub open={open} onOpenChange={setOpen}>
-      <DropdownMenuSubTrigger>
-        <CalendarClock className="h-4 w-4 text-dynamic-amber" />
-        <div className="flex w-full items-center justify-between gap-2">
-          <span>{t.schedule}</span>
+      <DropdownMenuSubTrigger className="min-w-0">
+        <CalendarClock className="h-4 w-4 shrink-0 text-dynamic-amber" />
+        <div className="flex min-w-0 flex-1 items-center gap-2">
+          <span className="min-w-0 flex-1 truncate whitespace-nowrap">
+            {t.schedule}
+          </span>
           {formattedDuration && (
-            <span className="ml-auto text-muted-foreground text-xs">
+            <span className="max-w-20 shrink-0 truncate whitespace-nowrap text-right text-muted-foreground text-xs">
               {formattedDuration}
             </span>
           )}
