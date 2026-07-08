@@ -10,9 +10,11 @@ const mocks = vi.hoisted(() => ({
   getPendingWorkspaceInvitation: vi.fn(),
   getPermissions: vi.fn(),
   getSatelliteAppSessionUser: vi.fn(),
+  getSidebarCollapsedState: vi.fn(),
   getSidebarBehaviorUpdatedAt: vi.fn(),
   getWorkspace: vi.fn(),
   hasRootExternalProjectsAdminPermission: vi.fn(),
+  parseSidebarBehavior: vi.fn(),
   redirect: vi.fn(),
 }));
 
@@ -30,9 +32,15 @@ vi.mock('@tuturuuu/satellite/workspace-invitation', () => ({
 }));
 
 vi.mock('@tuturuuu/satellite/workspace-layout-helpers', () => ({
+  getSidebarCollapsedState: (
+    ...args: Parameters<typeof mocks.getSidebarCollapsedState>
+  ) => mocks.getSidebarCollapsedState(...args),
   getSidebarBehaviorUpdatedAt: (
     ...args: Parameters<typeof mocks.getSidebarBehaviorUpdatedAt>
   ) => mocks.getSidebarBehaviorUpdatedAt(...args),
+  parseSidebarBehavior: (
+    ...args: Parameters<typeof mocks.parseSidebarBehavior>
+  ) => mocks.parseSidebarBehavior(...args),
 }));
 
 vi.mock('@tuturuuu/supabase/next/realtime-log-provider', () => ({
@@ -103,7 +111,9 @@ describe('CMS dashboard layout', () => {
     });
     mocks.getPermissions.mockResolvedValue({ containsPermission: vi.fn() });
     mocks.hasRootExternalProjectsAdminPermission.mockReturnValue(true);
+    mocks.getSidebarCollapsedState.mockReturnValue(false);
     mocks.getSidebarBehaviorUpdatedAt.mockReturnValue(null);
+    mocks.parseSidebarBehavior.mockReturnValue('expanded');
     mocks.getWorkspace.mockResolvedValue({
       id: ROOT_WORKSPACE_ID,
       joined: true,
