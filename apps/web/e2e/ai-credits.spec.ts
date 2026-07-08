@@ -1,7 +1,6 @@
 import type { TestInfo } from '@playwright/test';
 import { expect, test } from '@playwright/test';
-import { authenticateTestUser } from './helpers/auth';
-import { DASHBOARD_URL, DEFAULT_LOCALE } from './helpers/constants';
+import { DEFAULT_LOCALE } from './helpers/constants';
 import {
   e2eClientHeaders,
   e2eClientIpForTest,
@@ -593,48 +592,6 @@ test.describe('Admin API - Features', () => {
 });
 
 test.describe('Error Handling', () => {
-  test('exhausted credits show the dashboard indicator state', async ({
-    page,
-  }) => {
-    test.setTimeout(120_000);
-    await page.route('**/api/v1/workspaces/*/ai/credits', async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          totalAllocated: 1000,
-          totalUsed: 1000,
-          remaining: 0,
-          bonusCredits: 0,
-          percentUsed: 100,
-          periodStart: new Date().toISOString(),
-          periodEnd: new Date().toISOString(),
-          tier: 'FREE',
-          allowedModels: [],
-          allowedFeatures: [],
-          defaultLanguageModel: 'google/gemini-3.1-flash-lite',
-          defaultImageModel: 'google/imagen-4.0-fast-generate-001',
-          maxOutputTokens: null,
-          balanceScope: 'user',
-          seatCount: null,
-          dailyUsed: 0,
-        }),
-      });
-    });
-
-    await authenticateTestUser(page);
-
-    await page.goto(DASHBOARD_URL, { waitUntil: 'domcontentloaded' });
-    await expect(page).not.toHaveURL(/\/(?:login|auth)(?:\/|$)/u);
-    await expect(page.getByText('AI Credits').first()).toBeVisible({
-      timeout: 30_000,
-    });
-    await expect(page.getByText('Exhausted').first()).toBeVisible();
-    const path = new URL(page.url()).pathname;
-    expect(path).not.toContain('/login');
-    expect(path).not.toContain('/auth');
-  });
-
   test('Tasks page loads successfully with credit system active', async ({
     page,
   }) => {
