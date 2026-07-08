@@ -3,8 +3,8 @@ import {
   getTeachBootstrap,
   withForwardedInternalApiAuth,
 } from '@tuturuuu/internal-api';
-import Link from 'next/link';
 import { headers } from 'next/headers';
+import Link from 'next/link';
 import { redirect } from '@/i18n/navigation';
 import LessonVocabularySection from '../vocabulary-section';
 
