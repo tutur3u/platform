@@ -260,7 +260,7 @@ const checks = [
     name: 'legacy-api-route-wrappers',
     command: 'node',
     args: ['scripts/generate-web-api-route-wrappers.js', '--check'],
-    parseOutput: () => 'Legacy V1 API routes have concrete wrappers',
+    parseOutput: () => 'Legacy API routes have concrete wrappers',
   },
   {
     name: 'platform-release-version',

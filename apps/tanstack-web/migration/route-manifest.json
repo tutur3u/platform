@@ -6,12 +6,12 @@
         "acceptedRemoval": 17,
         "key": "api",
         "label": "api",
-        "legacyNext": 677,
+        "legacyNext": 660,
         "migrated": 77,
-        "percentComplete": 12.19,
-        "remaining": 677,
+        "percentComplete": 12.47,
+        "remaining": 660,
         "terminal": 94,
-        "total": 771,
+        "total": 754,
         "unknownStatus": 0
       },
       {
@@ -42,24 +42,12 @@
         "acceptedRemoval": 0,
         "key": "cron",
         "label": "cron",
-        "legacyNext": 11,
+        "legacyNext": 10,
         "migrated": 2,
-        "percentComplete": 15.38,
-        "remaining": 11,
+        "percentComplete": 16.67,
+        "remaining": 10,
         "terminal": 2,
-        "total": 13,
-        "unknownStatus": 0
-      },
-      {
-        "acceptedRemoval": 0,
-        "key": "trpc",
-        "label": "trpc",
-        "legacyNext": 2,
-        "migrated": 0,
-        "percentComplete": 0,
-        "remaining": 2,
-        "terminal": 0,
-        "total": 2,
+        "total": 12,
         "unknownStatus": 0
       },
       {
@@ -72,6 +60,18 @@
         "remaining": 1,
         "terminal": 3,
         "total": 4,
+        "unknownStatus": 0
+      },
+      {
+        "acceptedRemoval": 0,
+        "key": "trpc",
+        "label": "trpc",
+        "legacyNext": 1,
+        "migrated": 0,
+        "percentComplete": 0,
+        "remaining": 1,
+        "terminal": 0,
+        "total": 1,
         "unknownStatus": 0
       },
       {
@@ -116,12 +116,12 @@
         "acceptedRemoval": 17,
         "key": "rust-backend",
         "label": "Rust backend",
-        "legacyNext": 691,
+        "legacyNext": 672,
         "migrated": 82,
-        "percentComplete": 12.53,
-        "remaining": 691,
+        "percentComplete": 12.84,
+        "remaining": 672,
         "terminal": 99,
-        "total": 790,
+        "total": 771,
         "unknownStatus": 0
       },
       {
@@ -138,24 +138,6 @@
       }
     ],
     "topLegacyRoutes": [
-      {
-        "kind": "api",
-        "methods": ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-        "routePath": "/api/:wsId/*path?",
-        "sourceFile": "apps/web/src/app/api/[wsId]/[[...path]]/route.ts",
-        "status": "legacy-next",
-        "targetOwner": "rust-backend",
-        "id": "api:/api/:wsId/*path?:apps/web/src/app/api/[wsId]/[[...path]]/route.ts"
-      },
-      {
-        "kind": "api",
-        "methods": ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-        "routePath": "/api/ai/*path?",
-        "sourceFile": "apps/web/src/app/api/ai/[[...path]]/route.ts",
-        "status": "legacy-next",
-        "targetOwner": "rust-backend",
-        "id": "api:/api/ai/*path?:apps/web/src/app/api/ai/[[...path]]/route.ts"
-      },
       {
         "kind": "api",
         "methods": ["POST"],
@@ -317,31 +299,40 @@
         "status": "legacy-next",
         "targetOwner": "rust-backend",
         "id": "api:/api/ai/objects/quizzes:apps/web/src/legacy-api-routes/ai/objects/quizzes/route.ts"
+      },
+      {
+        "kind": "api",
+        "methods": ["POST"],
+        "routePath": "/api/ai/objects/quizzes/explanation",
+        "sourceFile": "apps/web/src/legacy-api-routes/ai/objects/quizzes/explanation/route.ts",
+        "status": "legacy-next",
+        "targetOwner": "rust-backend",
+        "id": "api:/api/ai/objects/quizzes/explanation:apps/web/src/legacy-api-routes/ai/objects/quizzes/explanation/route.ts"
+      },
+      {
+        "kind": "api",
+        "methods": ["POST"],
+        "routePath": "/api/ai/objects/year-plan",
+        "sourceFile": "apps/web/src/legacy-api-routes/ai/objects/year-plan/route.ts",
+        "status": "legacy-next",
+        "targetOwner": "rust-backend",
+        "id": "api:/api/ai/objects/year-plan:apps/web/src/legacy-api-routes/ai/objects/year-plan/route.ts"
       }
     ],
     "totals": {
       "acceptedRemoval": 19,
       "key": "total",
       "label": "All route artifacts",
-      "legacyNext": 764,
+      "legacyNext": 745,
       "migrated": 275,
-      "percentComplete": 27.79,
-      "remaining": 764,
+      "percentComplete": 28.3,
+      "remaining": 745,
       "terminal": 294,
-      "total": 1058,
+      "total": 1039,
       "unknownStatus": 0
     }
   },
   "routes": [
-    {
-      "id": "api:/api/:wsId/*path?:apps/web/src/app/api/[wsId]/[[...path]]/route.ts",
-      "kind": "api",
-      "methods": ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-      "routePath": "/api/:wsId/*path?",
-      "sourceFile": "apps/web/src/app/api/[wsId]/[[...path]]/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
     {
       "id": "api:/api/:wsId/crawlers/domains:apps/web/src/legacy-api-routes/[wsId]/crawlers/domains/route.ts",
       "kind": "api",
@@ -367,15 +358,6 @@
       "routePath": "/api/:wsId/crawlers/uncrawled",
       "sourceFile": "apps/web/src/legacy-api-routes/[wsId]/crawlers/uncrawled/route.ts",
       "status": "migrated",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/ai/*path?:apps/web/src/app/api/ai/[[...path]]/route.ts",
-      "kind": "api",
-      "methods": ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-      "routePath": "/api/ai/*path?",
-      "sourceFile": "apps/web/src/app/api/ai/[[...path]]/route.ts",
-      "status": "legacy-next",
       "targetOwner": "rust-backend"
     },
     {
@@ -595,15 +577,6 @@
       "targetOwner": "rust-backend"
     },
     {
-      "id": "api:/api/auth/*path?:apps/web/src/app/api/auth/[[...path]]/route.ts",
-      "kind": "api",
-      "methods": ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-      "routePath": "/api/auth/*path?",
-      "sourceFile": "apps/web/src/app/api/auth/[[...path]]/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
       "id": "api:/api/auth/callback:apps/web/src/legacy-api-routes/auth/callback/route.ts",
       "kind": "api",
       "methods": ["GET"],
@@ -739,24 +712,6 @@
       "targetOwner": "rust-backend"
     },
     {
-      "id": "api:/api/billing/*path?:apps/web/src/app/api/billing/[[...path]]/route.ts",
-      "kind": "api",
-      "methods": ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-      "routePath": "/api/billing/*path?",
-      "sourceFile": "apps/web/src/app/api/billing/[[...path]]/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/cli/*path?:apps/web/src/app/api/cli/[[...path]]/route.ts",
-      "kind": "api",
-      "methods": ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-      "routePath": "/api/cli/*path?",
-      "sourceFile": "apps/web/src/app/api/cli/[[...path]]/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
       "id": "api:/api/cli/auth/refresh:apps/web/src/legacy-api-routes/cli/auth/refresh/route.ts",
       "kind": "api",
       "methods": ["POST"],
@@ -784,15 +739,6 @@
       "targetOwner": "rust-backend"
     },
     {
-      "id": "api:/api/email/*path?:apps/web/src/app/api/email/[[...path]]/route.ts",
-      "kind": "api",
-      "methods": ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-      "routePath": "/api/email/*path?",
-      "sourceFile": "apps/web/src/app/api/email/[[...path]]/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
       "id": "api:/api/email/unsubscribe:apps/web/src/legacy-api-routes/email/unsubscribe/route.ts",
       "kind": "api",
       "methods": ["GET", "POST"],
@@ -811,15 +757,6 @@
       "targetOwner": "rust-backend"
     },
     {
-      "id": "api:/api/health/*path?:apps/web/src/app/api/health/[[...path]]/route.ts",
-      "kind": "api",
-      "methods": ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-      "routePath": "/api/health/*path?",
-      "sourceFile": "apps/web/src/app/api/health/[[...path]]/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
       "id": "api:/api/invite/:code:apps/web/src/legacy-api-routes/invite/[code]/route.ts",
       "kind": "api",
       "methods": ["GET", "POST"],
@@ -829,38 +766,11 @@
       "targetOwner": "rust-backend"
     },
     {
-      "id": "api:/api/invite/*path?:apps/web/src/app/api/invite/[[...path]]/route.ts",
-      "kind": "api",
-      "methods": ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-      "routePath": "/api/invite/*path?",
-      "sourceFile": "apps/web/src/app/api/invite/[[...path]]/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/notifications/*path?:apps/web/src/app/api/notifications/[[...path]]/route.ts",
-      "kind": "api",
-      "methods": ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-      "routePath": "/api/notifications/*path?",
-      "sourceFile": "apps/web/src/app/api/notifications/[[...path]]/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
       "id": "api:/api/notifications/send-immediate:apps/web/src/legacy-api-routes/notifications/send-immediate/route.ts",
       "kind": "api",
       "methods": ["POST"],
       "routePath": "/api/notifications/send-immediate",
       "sourceFile": "apps/web/src/legacy-api-routes/notifications/send-immediate/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/payment/*path?:apps/web/src/app/api/payment/[[...path]]/route.ts",
-      "kind": "api",
-      "methods": ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-      "routePath": "/api/payment/*path?",
-      "sourceFile": "apps/web/src/app/api/payment/[[...path]]/route.ts",
       "status": "legacy-next",
       "targetOwner": "rust-backend"
     },
@@ -1009,29 +919,11 @@
       "targetOwner": "rust-backend"
     },
     {
-      "id": "api:/api/reports/*path?:apps/web/src/app/api/reports/[[...path]]/route.ts",
-      "kind": "api",
-      "methods": ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-      "routePath": "/api/reports/*path?",
-      "sourceFile": "apps/web/src/app/api/reports/[[...path]]/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
       "id": "api:/api/reports/upload-url:apps/web/src/legacy-api-routes/reports/upload-url/route.ts",
       "kind": "api",
       "methods": ["POST", "DELETE"],
       "routePath": "/api/reports/upload-url",
       "sourceFile": "apps/web/src/legacy-api-routes/reports/upload-url/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/share/*path?:apps/web/src/app/api/share/[[...path]]/route.ts",
-      "kind": "api",
-      "methods": ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-      "routePath": "/api/share/*path?",
-      "sourceFile": "apps/web/src/app/api/share/[[...path]]/route.ts",
       "status": "legacy-next",
       "targetOwner": "rust-backend"
     },
@@ -1054,39 +946,12 @@
       "targetOwner": "rust-backend"
     },
     {
-      "id": "api:/api/sync-logs/*path?:apps/web/src/app/api/sync-logs/[[...path]]/route.ts",
-      "kind": "api",
-      "methods": ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-      "routePath": "/api/sync-logs/*path?",
-      "sourceFile": "apps/web/src/app/api/sync-logs/[[...path]]/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/time-tracking/*path?:apps/web/src/app/api/time-tracking/[[...path]]/route.ts",
-      "kind": "api",
-      "methods": ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-      "routePath": "/api/time-tracking/*path?",
-      "sourceFile": "apps/web/src/app/api/time-tracking/[[...path]]/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
       "id": "api:/api/time-tracking/export:apps/web/src/legacy-api-routes/time-tracking/export/route.ts",
       "kind": "api",
       "methods": ["GET"],
       "routePath": "/api/time-tracking/export",
       "sourceFile": "apps/web/src/legacy-api-routes/time-tracking/export/route.ts",
       "status": "migrated",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/users/*path?:apps/web/src/app/api/users/[[...path]]/route.ts",
-      "kind": "api",
-      "methods": ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-      "routePath": "/api/users/*path?",
-      "sourceFile": "apps/web/src/app/api/users/[[...path]]/route.ts",
-      "status": "legacy-next",
       "targetOwner": "rust-backend"
     },
     {
@@ -6763,15 +6628,6 @@
       "targetOwner": "rust-backend"
     },
     {
-      "id": "api:/api/v2/*path?:apps/web/src/app/api/v2/[[...path]]/route.ts",
-      "kind": "api",
-      "methods": ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-      "routePath": "/api/v2/*path?",
-      "sourceFile": "apps/web/src/app/api/v2/[[...path]]/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
       "id": "api:/api/v2/workspaces/:wsId:apps/web/src/legacy-api-routes/v2/workspaces/[wsId]/route.ts",
       "kind": "api",
       "methods": ["GET"],
@@ -7339,29 +7195,11 @@
       "targetOwner": "rust-backend"
     },
     {
-      "id": "api:/api/workspaces/*path?:apps/web/src/app/api/workspaces/[[...path]]/route.ts",
-      "kind": "api",
-      "methods": ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-      "routePath": "/api/workspaces/*path?",
-      "sourceFile": "apps/web/src/app/api/workspaces/[[...path]]/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
       "id": "api:/api/workspaces/invitations:apps/web/src/legacy-api-routes/workspaces/invitations/route.ts",
       "kind": "api",
       "methods": ["GET"],
       "routePath": "/api/workspaces/invitations",
       "sourceFile": "apps/web/src/legacy-api-routes/workspaces/invitations/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "cron:/api/cron/*path?:apps/web/src/app/api/cron/[[...path]]/route.ts",
-      "kind": "cron",
-      "methods": ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-      "routePath": "/api/cron/*path?",
-      "sourceFile": "apps/web/src/app/api/cron/[[...path]]/route.ts",
       "status": "legacy-next",
       "targetOwner": "rust-backend"
     },
@@ -9929,32 +9767,23 @@
       "sourceFile": "apps/web/src/legacy-api-routes/trpc/[trpc]/route.ts",
       "status": "legacy-next",
       "targetOwner": "rust-backend"
-    },
-    {
-      "id": "trpc:/api/trpc/*path?:apps/web/src/app/api/trpc/[[...path]]/route.ts",
-      "kind": "trpc",
-      "methods": ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-      "routePath": "/api/trpc/*path?",
-      "sourceFile": "apps/web/src/app/api/trpc/[[...path]]/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
     }
   ],
   "summary": {
-    "apiRoutes": 771,
-    "cronRoutes": 13,
+    "apiRoutes": 754,
+    "cronRoutes": 12,
     "layouts": 59,
     "pages": 205,
-    "routeHandlers": 790,
+    "routeHandlers": 771,
     "methodCounts": {
-      "GET": 439,
-      "HEAD": 20,
-      "POST": 382,
-      "PUT": 97,
-      "PATCH": 94,
-      "DELETE": 148,
-      "OPTIONS": 42
+      "GET": 420,
+      "HEAD": 1,
+      "POST": 363,
+      "PUT": 78,
+      "PATCH": 75,
+      "DELETE": 129,
+      "OPTIONS": 23
     },
-    "total": 1058
+    "total": 1039
   }
 }

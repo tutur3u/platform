@@ -18,13 +18,13 @@ function makeFixture() {
   const rootDir = fs.mkdtempSync(
     path.join(os.tmpdir(), 'web-api-route-wrappers-')
   );
-  const legacyV1Dir = path.join(rootDir, 'legacy', 'v1');
-  const appV1Dir = path.join(rootDir, 'app', 'api', 'v1');
+  const legacyApiDir = path.join(rootDir, 'legacy-api-routes');
+  const appApiDir = path.join(rootDir, 'app', 'api');
 
-  fs.mkdirSync(legacyV1Dir, { recursive: true });
-  fs.mkdirSync(appV1Dir, { recursive: true });
+  fs.mkdirSync(legacyApiDir, { recursive: true });
+  fs.mkdirSync(appApiDir, { recursive: true });
 
-  return { appV1Dir, legacyV1Dir, rootDir };
+  return { appApiDir, legacyApiDir, rootDir };
 }
 
 function writeFile(filePath, content) {
@@ -50,7 +50,7 @@ test('wrapperContent imports one legacy route and adds GET-backed HEAD fallback'
     `${GENERATED_MARKER}
 
 import { createLegacyHeadHandler } from '@/legacy-api-routes/head';
-import * as legacyRoute from '@/legacy-api-routes/v1/users/me/profile/route';
+import * as legacyRoute from '@/legacy-api-routes/users/me/profile/route';
 
 export const GET = legacyRoute.GET;
 export const HEAD = createLegacyHeadHandler(legacyRoute.GET);
@@ -60,64 +60,63 @@ export const PATCH = legacyRoute.PATCH;
 });
 
 test('planWrapperChanges creates, updates, deletes stale generated wrappers, and blocks collisions', () => {
-  const { appV1Dir, legacyV1Dir } = makeFixture();
+  const { appApiDir, legacyApiDir } = makeFixture();
   writeFile(
-    path.join(legacyV1Dir, 'users', 'me', 'profile', 'route.ts'),
+    path.join(legacyApiDir, 'users', 'me', 'profile', 'route.ts'),
     'export async function GET() {}\nexport async function POST() {}\n'
   );
 
-  let changes = planWrapperChanges({ appV1Dir, legacyV1Dir });
+  let changes = planWrapperChanges({ appApiDir, legacyApiDir });
   assert.deepEqual(
     changes.map((change) => change.type),
     ['create']
   );
 
-  applyWrapperChanges(changes, { appV1Dir });
-  assert.deepEqual(planWrapperChanges({ appV1Dir, legacyV1Dir }), []);
+  applyWrapperChanges(changes, { appApiDir });
+  assert.deepEqual(planWrapperChanges({ appApiDir, legacyApiDir }), []);
 
   writeFile(
-    path.join(legacyV1Dir, 'users', 'me', 'profile', 'route.ts'),
+    path.join(legacyApiDir, 'users', 'me', 'profile', 'route.ts'),
     'export async function GET() {}\n'
   );
-  writeFile(path.join(appV1Dir, 'stale', 'route.ts'), `${GENERATED_MARKER}\n`);
+  writeFile(path.join(appApiDir, 'stale', 'route.ts'), `${GENERATED_MARKER}\n`);
 
-  changes = planWrapperChanges({ appV1Dir, legacyV1Dir });
+  changes = planWrapperChanges({ appApiDir, legacyApiDir });
   assert.deepEqual(changes.map((change) => change.type).sort(), [
     'delete',
     'update',
   ]);
 
   writeFile(
-    path.join(legacyV1Dir, 'auth', 'password-login', 'route.ts'),
+    path.join(legacyApiDir, 'auth', 'password-login', 'route.ts'),
     'export async function POST() {}\n'
   );
   writeFile(
-    path.join(appV1Dir, 'auth', 'password-login', 'route.ts'),
+    path.join(appApiDir, 'auth', 'password-login', 'route.ts'),
     'export async function POST() {}\n'
   );
 
-  changes = planWrapperChanges({ appV1Dir, legacyV1Dir });
+  changes = planWrapperChanges({ appApiDir, legacyApiDir });
   const collision = changes.find((change) => change.type === 'collision');
   assert.equal(
     collision.path,
-    path.join(appV1Dir, 'auth', 'password-login', 'route.ts')
+    path.join(appApiDir, 'auth', 'password-login', 'route.ts')
   );
 });
 
-test('repo import graph keeps V1 concrete and scoped catch-alls registry-light', () => {
-  const v1CatchAll = path.join(
-    REPO_ROOT,
-    'apps',
-    'web',
-    'src',
-    'app',
-    'api',
-    'v1',
-    '[[...path]]',
-    'route.ts'
-  );
-  assert.equal(fs.existsSync(v1CatchAll), false);
+test('planWrapperChanges skips empty legacy route files with no HTTP methods', () => {
+  const { appApiDir, legacyApiDir } = makeFixture();
+  const emptyWrapperPath = path.join(appApiDir, 'empty', 'route.ts');
 
+  writeFile(path.join(legacyApiDir, 'empty', 'route.ts'), '');
+  writeFile(emptyWrapperPath, `${GENERATED_MARKER}\n`);
+
+  assert.deepEqual(planWrapperChanges({ appApiDir, legacyApiDir }), [
+    { path: emptyWrapperPath, type: 'delete' },
+  ]);
+});
+
+test('repo import graph keeps legacy API routes concrete without catch-all bridges', () => {
   const apiDir = path.join(REPO_ROOT, 'apps', 'web', 'src', 'app', 'api');
   const bridgeFiles = [];
 
@@ -139,13 +138,8 @@ test('repo import graph keeps V1 concrete and scoped catch-alls registry-light',
 
   walk(apiDir);
 
-  const offenders = bridgeFiles
-    .filter((filePath) =>
-      fs
-        .readFileSync(filePath, 'utf8')
-        .includes('@/legacy-api-routes/dispatcher')
-    )
-    .map((filePath) => path.relative(REPO_ROOT, filePath));
-
-  assert.deepEqual(offenders, []);
+  assert.deepEqual(
+    bridgeFiles.map((filePath) => path.relative(REPO_ROOT, filePath)),
+    []
+  );
 });
