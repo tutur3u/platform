@@ -45,7 +45,9 @@ function normalizeVocabulary(value: unknown): VocabularyEntry[] {
         definition,
         examples: Array.isArray(record.examples)
           ? record.examples
-              .filter((example): example is string => typeof example === 'string')
+              .filter(
+                (example): example is string => typeof example === 'string'
+              )
               .map((example) => example.trim())
               .filter(Boolean)
           : [],
@@ -101,6 +103,18 @@ export function LearnerVocabulary({ moduleId }: { moduleId: string }) {
   const [mismatchIds, setMismatchIds] = useState<string[]>([]);
   const [playingKey, setPlayingKey] = useState<string | null>(null);
 
+  // Quiz/Flashcard State
+  const [practiceMode, setPracticeMode] = useState<'match' | 'quiz' | null>(
+    null
+  );
+  const [quizIndex, setQuizIndex] = useState(0);
+  const [quizOptions, setQuizOptions] = useState<string[]>([]);
+  const [quizSelectedOption, setQuizSelectedOption] = useState<string | null>(
+    null
+  );
+  const [quizCorrectCount, setQuizCorrectCount] = useState(0);
+  const [quizAnswered, setQuizAnswered] = useState(false);
+
   const matchedSet = useMemo(() => new Set(matchedIds), [matchedIds]);
   const finished = cards.length > 0 && matchedIds.length === cards.length;
 
@@ -147,15 +161,43 @@ export function LearnerVocabulary({ moduleId }: { moduleId: string }) {
     };
   }, [moduleId, wsId]);
 
-  function startPractice() {
-    setCards(buildCards(vocabulary));
-    setMatchedIds([]);
-    setMismatchIds([]);
-    setSelected(null);
+  function generateQuizOptions(index: number, vocabList: VocabularyEntry[]) {
+    if (vocabList.length === 0 || index >= vocabList.length) return;
+    const currentEntry = vocabList[index];
+    if (!currentEntry) return;
+    const correctWord = currentEntry.word;
+
+    const distractors = vocabList
+      .filter((entry) => entry.id !== currentEntry.id)
+      .map((entry) => entry.word);
+
+    const shuffledDistractors = shuffle(distractors).slice(0, 3);
+    const options = shuffle([correctWord, ...shuffledDistractors]);
+    setQuizOptions(options);
+  }
+
+  function startPractice(mode: 'match' | 'quiz') {
+    setPracticeMode(mode);
+    if (mode === 'match') {
+      setCards(buildCards(vocabulary));
+      setMatchedIds([]);
+      setMismatchIds([]);
+      setSelected(null);
+    } else {
+      setQuizIndex(0);
+      setQuizCorrectCount(0);
+      setQuizSelectedOption(null);
+      setQuizAnswered(false);
+      generateQuizOptions(0, vocabulary);
+    }
     setStarted(true);
   }
 
-  async function playSpeech(text: string, kind: 'example' | 'word', key: string) {
+  async function playSpeech(
+    text: string,
+    kind: 'example' | 'word',
+    key: string
+  ) {
     try {
       setPlayingKey(key);
       const response = await fetch('/api/v1/vocabulary/speech', {
@@ -183,10 +225,15 @@ export function LearnerVocabulary({ moduleId }: { moduleId: string }) {
 
   function resetPractice() {
     setStarted(false);
+    setPracticeMode(null);
     setCards([]);
     setMatchedIds([]);
     setMismatchIds([]);
     setSelected(null);
+    setQuizIndex(0);
+    setQuizCorrectCount(0);
+    setQuizSelectedOption(null);
+    setQuizAnswered(false);
   }
 
   function selectCard(card: MatchCard) {
@@ -218,6 +265,27 @@ export function LearnerVocabulary({ moduleId }: { moduleId: string }) {
     }, 650);
   }
 
+  function selectQuizOption(option: string) {
+    if (quizAnswered) return;
+    setQuizSelectedOption(option);
+    setQuizAnswered(true);
+
+    const currentEntry = vocabulary[quizIndex];
+    if (currentEntry && option === currentEntry.word) {
+      setQuizCorrectCount((c) => c + 1);
+    }
+  }
+
+  function nextQuizQuestion() {
+    const nextIndex = quizIndex + 1;
+    setQuizIndex(nextIndex);
+    setQuizSelectedOption(null);
+    setQuizAnswered(false);
+    if (nextIndex < vocabulary.length) {
+      generateQuizOptions(nextIndex, vocabulary);
+    }
+  }
+
   return (
     <ContentCard
       icon={<BookOpen className="h-4 w-4" />}
@@ -241,13 +309,22 @@ export function LearnerVocabulary({ moduleId }: { moduleId: string }) {
                 Review each word, pronunciation, definition, and example.
               </p>
             </div>
-            <button
-              className="inline-flex items-center gap-2 border-2 border-border bg-primary px-4 py-2 font-black text-primary-foreground text-sm shadow-[3px_3px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[4px_4px_0_var(--border)]"
-              onClick={startPractice}
-              type="button"
-            >
-              Start
-            </button>
+            <div className="flex flex-wrap gap-2">
+              <button
+                className="inline-flex items-center gap-2 border-2 border-border bg-primary px-4 py-2 font-black text-primary-foreground text-sm shadow-[3px_3px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[4px_4px_0_var(--border)]"
+                onClick={() => startPractice('match')}
+                type="button"
+              >
+                Practice: Match
+              </button>
+              <button
+                className="inline-flex items-center gap-2 border-2 border-border bg-dynamic-cyan px-4 py-2 font-black text-foreground text-sm shadow-[3px_3px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[4px_4px_0_var(--border)]"
+                onClick={() => startPractice('quiz')}
+                type="button"
+              >
+                Practice: Quiz
+              </button>
+            </div>
           </div>
 
           <div className="grid gap-3 md:grid-cols-2">
@@ -261,6 +338,7 @@ export function LearnerVocabulary({ moduleId }: { moduleId: string }) {
                     alt={`${entry.word} vocabulary`}
                     className="mb-4 aspect-video w-full border-2 border-border object-cover shadow-[3px_3px_0_var(--border)]"
                     src={entry.imageUrl}
+                    referrerPolicy="no-referrer"
                   />
                 ) : null}
                 <div className="flex items-start justify-between gap-3">
@@ -277,10 +355,14 @@ export function LearnerVocabulary({ moduleId }: { moduleId: string }) {
                 <button
                   className="mt-3 border-2 border-border bg-card px-3 py-1.5 font-bold text-xs shadow-[2px_2px_0_var(--border)] disabled:opacity-50"
                   disabled={playingKey !== null}
-                  onClick={() => playSpeech(entry.word, 'word', `${entry.id}-word`)}
+                  onClick={() =>
+                    playSpeech(entry.word, 'word', `${entry.id}-word`)
+                  }
                   type="button"
                 >
-                  {playingKey === `${entry.id}-word` ? 'Playing...' : 'Play word'}
+                  {playingKey === `${entry.id}-word`
+                    ? 'Playing...'
+                    : 'Play word'}
                 </button>
                 <p className="mt-3 text-sm leading-relaxed">
                   {entry.definition}
@@ -317,7 +399,189 @@ export function LearnerVocabulary({ moduleId }: { moduleId: string }) {
             ))}
           </div>
         </div>
-      ) : (
+      ) : practiceMode === 'quiz' ? (
+        <div className="space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <p className="font-bold text-sm">
+              {quizIndex < vocabulary.length
+                ? `Question ${quizIndex + 1} of ${vocabulary.length}`
+                : 'Quiz Complete!'}
+            </p>
+            <button
+              className="inline-flex items-center gap-2 border-2 border-border bg-background px-3 py-1.5 font-bold text-sm shadow-[2px_2px_0_var(--border)]"
+              onClick={resetPractice}
+              type="button"
+            >
+              <RotateCcw className="h-3.5 w-3.5" />
+              Review words
+            </button>
+          </div>
+
+          {quizIndex < vocabulary.length ? (
+            (() => {
+              const entry = vocabulary[quizIndex];
+              if (!entry) return null;
+              return (
+                <div className="space-y-6 border-2 border-border bg-background p-6 shadow-[4px_4px_0_var(--border)]">
+                  {entry.imageUrl ? (
+                    <div className="mx-auto flex max-w-md justify-center overflow-hidden border-2 border-border bg-muted/20 shadow-[2px_2px_0_var(--border)]">
+                      <img
+                        alt="Quiz Clue"
+                        className="max-h-64 w-full object-contain"
+                        src={entry.imageUrl}
+                        referrerPolicy="no-referrer"
+                      />
+                    </div>
+                  ) : (
+                    <div className="flex h-36 items-center justify-center border-2 border-border border-dashed bg-muted/10 text-muted-foreground text-xs">
+                      No image clue available
+                    </div>
+                  )}
+
+                  <div className="text-center space-y-2">
+                    {entry.pronunciation ? (
+                      <div className="flex flex-wrap items-center justify-center gap-2">
+                        <p className="font-serif text-lg text-muted-foreground tracking-wide">
+                          {entry.pronunciation}
+                        </p>
+                        {quizAnswered && (
+                          <button
+                            className="inline-flex items-center gap-1 rounded border-2 border-border bg-card px-2 py-0.5 font-bold text-xs shadow-[1.5px_1.5px_0_var(--border)] disabled:opacity-50 hover:bg-muted/30"
+                            disabled={playingKey !== null}
+                            onClick={() =>
+                              playSpeech(entry.word, 'word', `${entry.id}-quiz-word`)
+                            }
+                            type="button"
+                          >
+                            {playingKey === `${entry.id}-quiz-word`
+                              ? 'Playing...'
+                              : 'Play voice'}
+                          </button>
+                        )}
+                      </div>
+                    ) : null}
+
+                    <div className="flex flex-wrap items-center justify-center gap-2">
+                      <p className="text-base italic leading-relaxed font-medium">
+                        "{entry.definition}"
+                      </p>
+                      <button
+                        className="inline-flex items-center gap-1 rounded border border-border bg-card px-2 py-0.5 text-xs shadow-[1px_1px_0_var(--border)] disabled:opacity-50 hover:bg-muted/30"
+                        disabled={playingKey !== null}
+                        onClick={() =>
+                          playSpeech(
+                            entry.definition,
+                            'example',
+                            `${entry.id}-quiz-def`
+                          )
+                        }
+                        type="button"
+                      >
+                        {playingKey === `${entry.id}-quiz-def`
+                          ? 'Playing...'
+                          : 'Play clue'}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    {quizOptions.map((option) => {
+                      const isCorrectOption = option === entry.word;
+                      const isSelectedOption = option === quizSelectedOption;
+
+                      let optionStyle =
+                        'border-border bg-background shadow-[3px_3px_0_var(--border)] hover:bg-muted/30';
+                      if (quizAnswered) {
+                        if (isCorrectOption) {
+                          optionStyle =
+                            'border-dynamic-green/70 bg-dynamic-green/10 text-dynamic-green shadow-[3px_3px_0_var(--border)] font-bold';
+                        } else if (isSelectedOption) {
+                          optionStyle =
+                            'border-destructive/70 bg-destructive/10 text-destructive shadow-[3px_3px_0_var(--border)] font-bold';
+                        } else {
+                          optionStyle =
+                            'border-border bg-background/50 opacity-60 shadow-[1px_1px_0_var(--border)]';
+                        }
+                      }
+
+                      return (
+                        <button
+                          key={option}
+                          className={cn(
+                            'min-h-16 border-2 px-4 text-left font-bold text-sm transition-all',
+                            optionStyle
+                          )}
+                          disabled={quizAnswered}
+                          onClick={() => selectQuizOption(option)}
+                          type="button"
+                        >
+                          <span className="mb-1 block text-[10px] text-muted-foreground uppercase tracking-widest">
+                            Choice
+                          </span>
+                          {option}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {quizAnswered && (
+                    <div className="flex justify-end pt-2">
+                      <button
+                        className="inline-flex items-center gap-2 border-2 border-border bg-primary px-5 py-2.5 font-black text-primary-foreground text-sm shadow-[3px_3px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[4px_4px_0_var(--border)]"
+                        onClick={nextQuizQuestion}
+                        type="button"
+                      >
+                        {quizIndex + 1 === vocabulary.length
+                          ? 'View Results'
+                          : 'Next Question'}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              );
+            })()
+          ) : (
+            <div className="space-y-6 border-2 border-border bg-background p-8 text-center shadow-[4px_4px_0_var(--border)]">
+              <div className="space-y-2">
+                <h3 className="font-black text-2xl">Practice Complete!</h3>
+                <p className="text-muted-foreground text-sm">
+                  Here is how you performed on this quiz:
+                </p>
+              </div>
+
+              <div className="inline-block min-w-[200px] border-2 border-border bg-card p-6 shadow-[3px_3px_0_var(--border)]">
+                <p className="mb-1 font-bold text-[10px] text-muted-foreground uppercase tracking-widest">
+                  Score
+                </p>
+                <p className="font-black text-4xl text-primary">
+                  {quizCorrectCount} / {vocabulary.length}
+                </p>
+                <p className="mt-2 text-muted-foreground text-xs">
+                  {Math.round((quizCorrectCount / vocabulary.length) * 100)}%
+                  Correct
+                </p>
+              </div>
+
+              <div className="flex flex-wrap justify-center gap-3 pt-4">
+                <button
+                  className="border-2 border-border bg-primary px-5 py-2.5 font-black text-primary-foreground text-sm shadow-[3px_3px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[4px_4px_0_var(--border)]"
+                  onClick={() => startPractice('quiz')}
+                  type="button"
+                >
+                  Try Again
+                </button>
+                <button
+                  className="border-2 border-border bg-background px-5 py-2.5 font-black text-foreground text-sm shadow-[3px_3px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[4px_4px_0_var(--border)]"
+                  onClick={resetPractice}
+                  type="button"
+                >
+                  Review Words
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      ) : practiceMode === 'match' ? (
         <div className="space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <p className="font-bold text-sm">
@@ -355,21 +619,19 @@ export function LearnerVocabulary({ moduleId }: { moduleId: string }) {
                   onClick={() => selectCard(card)}
                   type="button"
                 >
-                  <span className="mb-2 block text-muted-foreground text-[10px] uppercase tracking-widest">
+                  <span className="mb-2 block text-[10px] text-muted-foreground uppercase tracking-widest">
                     {card.side === 'word' ? 'Word' : 'Definition'}
                   </span>
                   <span className="flex items-start justify-between gap-2">
                     {card.label}
-                    {isMatched ? (
-                      <Check className="h-4 w-4 shrink-0" />
-                    ) : null}
+                    {isMatched ? <Check className="h-4 w-4 shrink-0" /> : null}
                   </span>
                 </button>
               );
             })}
           </div>
         </div>
-      )}
+      ) : null}
     </ContentCard>
   );
 }
