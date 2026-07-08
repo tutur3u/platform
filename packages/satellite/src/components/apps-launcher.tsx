@@ -7,7 +7,6 @@ import {
   Brain,
   Calendar,
   CheckCircle2,
-  ChevronRight,
   FileText,
   Folder,
   Globe,
@@ -87,38 +86,27 @@ type AppCategoryTab = (typeof APP_CATEGORY_TABS)[number];
 const CATEGORY_TONES: Record<
   LaunchableAppCategory,
   {
-    affordance: string;
     card: string;
     icon: string;
   }
 > = {
   ai: {
-    affordance:
-      'group-hover:bg-dynamic-cyan/10 group-hover:text-dynamic-cyan group-focus-visible:bg-dynamic-cyan/10 group-focus-visible:text-dynamic-cyan',
     card: 'border-dynamic-cyan/30 bg-dynamic-cyan/10 hover:border-dynamic-cyan/50 hover:bg-dynamic-cyan/15',
     icon: 'border-dynamic-cyan/35 bg-dynamic-cyan/10 text-dynamic-cyan',
   },
   learning: {
-    affordance:
-      'group-hover:bg-dynamic-orange/10 group-hover:text-dynamic-orange group-focus-visible:bg-dynamic-orange/10 group-focus-visible:text-dynamic-orange',
     card: 'border-dynamic-orange/30 bg-dynamic-orange/10 hover:border-dynamic-orange/50 hover:bg-dynamic-orange/15',
     icon: 'border-dynamic-orange/35 bg-dynamic-orange/10 text-dynamic-orange',
   },
   miscellaneous: {
-    affordance:
-      'group-hover:bg-dynamic-red/10 group-hover:text-dynamic-red group-focus-visible:bg-dynamic-red/10 group-focus-visible:text-dynamic-red',
     card: 'border-dynamic-red/30 bg-dynamic-red/10 hover:border-dynamic-red/50 hover:bg-dynamic-red/15',
     icon: 'border-dynamic-red/35 bg-dynamic-red/10 text-dynamic-red',
   },
   operations: {
-    affordance:
-      'group-hover:bg-dynamic-green/10 group-hover:text-dynamic-green group-focus-visible:bg-dynamic-green/10 group-focus-visible:text-dynamic-green',
     card: 'border-dynamic-green/30 bg-dynamic-green/10 hover:border-dynamic-green/50 hover:bg-dynamic-green/15',
     icon: 'border-dynamic-green/35 bg-dynamic-green/10 text-dynamic-green',
   },
   productivity: {
-    affordance:
-      'group-hover:bg-dynamic-blue/10 group-hover:text-dynamic-blue group-focus-visible:bg-dynamic-blue/10 group-focus-visible:text-dynamic-blue',
     card: 'border-dynamic-blue/30 bg-dynamic-blue/10 hover:border-dynamic-blue/50 hover:bg-dynamic-blue/15',
     icon: 'border-dynamic-blue/35 bg-dynamic-blue/10 text-dynamic-blue',
   },
@@ -153,28 +141,30 @@ export function AppsLauncherDialog({
   const dialogStyle = {
     height: '760px',
     maxHeight: 'calc(100vh - 2rem)',
+    maxWidth: '1440px',
+    width: 'calc(100vw - 2rem)',
   } as CSSProperties;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="flex w-[calc(100vw-2rem)] max-w-[1120px] flex-col gap-0 overflow-hidden p-0 sm:max-w-[1120px] xl:max-w-[1240px]"
+        className="flex max-w-none flex-col gap-0 overflow-hidden p-0 sm:max-w-none"
         style={dialogStyle}
       >
-        <DialogHeader className="shrink-0 border-b px-5 py-4 pr-12 text-left">
+        <DialogHeader className="w-full shrink-0 border-b px-5 py-4 pr-12 text-left">
           <DialogTitle>{t('apps')}</DialogTitle>
           <DialogDescription>{t('apps_description')}</DialogDescription>
         </DialogHeader>
 
         <Tabs
-          className="shrink-0 gap-0 overflow-hidden border-b bg-muted/20 px-3 py-2"
+          className="w-full shrink-0 gap-0 overflow-hidden border-b bg-muted/20 px-3 py-2"
           onValueChange={(value) => setActiveTab(value as AppCategoryTab)}
           value={activeTab}
         >
-          <TabsList className="h-auto max-w-full justify-start gap-1 overflow-x-auto rounded-md bg-muted/70 p-1">
+          <TabsList className="h-auto w-full max-w-full justify-start gap-1 overflow-x-auto rounded-md bg-muted/70 p-1">
             {APP_CATEGORY_TABS.map((tab) => (
               <TabsTrigger
-                className="shrink-0 px-3 text-xs"
+                className="min-w-max flex-1 shrink-0 px-3 text-xs"
                 key={tab}
                 value={tab}
               >
@@ -185,7 +175,7 @@ export function AppsLauncherDialog({
         </Tabs>
 
         <div
-          className="min-h-0 flex-1 overflow-hidden"
+          className="min-h-0 w-full flex-1 overflow-hidden"
           data-slot="apps-launcher-body"
         >
           <AppsTabPanel
@@ -216,11 +206,11 @@ function AppsTabPanel({
 }) {
   return (
     <div
-      className="flex h-full min-h-0 flex-col"
+      className="flex h-full min-h-0 w-full flex-col"
       data-slot="apps-launcher-panel"
     >
       <div
-        className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-3"
+        className="min-h-0 w-full flex-1 overflow-y-auto overscroll-contain p-3"
         data-slot="apps-launcher-scroll"
       >
         {activeTab === 'all' ? (
@@ -250,7 +240,7 @@ function AppsByCategory({
   onOpen: () => void;
 }) {
   return (
-    <div className="space-y-4" data-slot="apps-launcher-sections">
+    <div className="w-full space-y-4" data-slot="apps-launcher-sections">
       {LAUNCHABLE_APP_CATEGORIES.map((category) => {
         const categoryApps = apps.filter((app) => app.category === category);
 
@@ -261,6 +251,7 @@ function AppsByCategory({
         return (
           <section
             aria-labelledby={headingId}
+            className="w-full"
             data-slot="apps-launcher-section"
             key={category}
           >
@@ -293,7 +284,7 @@ function AppsGrid({
 }) {
   return (
     <div
-      className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3"
+      className="grid w-full grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
       data-slot="apps-launcher-grid"
     >
       {apps.map((app) => (
@@ -361,17 +352,6 @@ function AppLauncherItem({
         >
           {app.title}
         </span>
-      </span>
-
-      <span
-        aria-hidden
-        className={cn(
-          'flex size-8 shrink-0 items-center justify-center rounded-md bg-background/60 text-muted-foreground/70 transition-[background-color,color,transform] duration-200 ease-out group-hover:translate-x-0.5 group-focus-visible:translate-x-0.5 motion-reduce:transition-none motion-reduce:group-hover:translate-x-0',
-          tone.affordance
-        )}
-        data-slot="app-card-affordance"
-      >
-        <ChevronRight className="size-4" />
       </span>
     </Link>
   );

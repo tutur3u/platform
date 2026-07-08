@@ -39,7 +39,7 @@ describe('launchable apps', () => {
     expect(getLaunchableApp('external')).toBeNull();
     expect(getLaunchableApp('playground')).toBeNull();
     expect(getLaunchableApp('platform')?.category).toBe('productivity');
-    expect(getLaunchableApp('apps')?.category).toBe('operations');
+    expect(getLaunchableApp('apps')?.category).toBe('miscellaneous');
     expect(getLaunchableApp('cms')?.category).toBe('operations');
     expect(getLaunchableApp('rewise')?.category).toBe('ai');
     expect(getLaunchableApp('docs')?.category).toBe('miscellaneous');
@@ -51,9 +51,14 @@ describe('launchable apps', () => {
       )[0]
     ).toBe('platform');
     expect(
-      LAUNCHABLE_APPS.filter((app) => app.category === 'operations')
-        .map((app) => app.slug)
-        .at(-1)
+      LAUNCHABLE_APPS.filter((app) => app.category === 'operations').map(
+        (app) => app.slug
+      )
+    ).not.toContain('apps');
+    expect(
+      LAUNCHABLE_APPS.filter((app) => app.category === 'miscellaneous').map(
+        (app) => app.slug
+      )[0]
     ).toBe('apps');
   });
 

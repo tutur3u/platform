@@ -116,9 +116,11 @@ describe('AppsLauncherDialog', () => {
     );
     expect(dialogContent?.className).toContain('flex');
     expect(dialogContent?.className).toContain('flex-col');
-    expect(dialogContent?.className).toContain('w-[calc(100vw-2rem)]');
-    expect(dialogContent?.className).toContain('max-w-[1120px]');
-    expect(dialogContent?.className).toContain('xl:max-w-[1240px]');
+    expect(dialogContent?.className).not.toContain('w-[calc(100vw-2rem)]');
+    expect(dialogContent?.className).not.toContain('max-w-[1120px]');
+    expect(dialogContent?.className).not.toContain('xl:max-w-[1240px]');
+    expect(dialogContent?.className).toContain('max-w-none');
+    expect(dialogContent?.className).toContain('sm:max-w-none');
     expect(dialogContent?.className).toContain('overflow-hidden');
     expect(dialogContent?.getAttribute('style')).not.toContain(
       '--apps-launcher-height'
@@ -130,15 +132,31 @@ describe('AppsLauncherDialog', () => {
     expect(dialogContent?.getAttribute('style')).toContain(
       'max-height: calc(100vh - 2rem)'
     );
+    expect(dialogContent?.getAttribute('style')).toContain('max-width: 1440px');
+    expect(dialogContent?.getAttribute('style')).toContain(
+      'width: calc(100vw - 2rem)'
+    );
 
     const tabsRoot = document.querySelector('[data-slot="tabs"]');
+    expect(tabsRoot?.className).toContain('w-full');
     expect(tabsRoot?.className).toContain('shrink-0');
     expect(tabsRoot?.className).toContain('overflow-hidden');
+
+    const tabsList = document.querySelector('[data-slot="tabs-list"]');
+    expect(tabsList?.className).toContain('w-full');
+    expect(tabsList?.className).toContain('max-w-full');
+    expect(tabsList?.className).toContain('overflow-x-auto');
+
+    for (const tab of screen.getAllByRole('tab')) {
+      expect(tab.className).toContain('flex-1');
+      expect(tab.className).toContain('min-w-max');
+    }
 
     const launcherBody = document.querySelector(
       '[data-slot="apps-launcher-body"]'
     );
     expect(launcherBody?.className).toContain('min-h-0');
+    expect(launcherBody?.className).toContain('w-full');
     expect(launcherBody?.className).toContain('flex-1');
     expect(launcherBody?.className).toContain('overflow-hidden');
 
@@ -148,21 +166,25 @@ describe('AppsLauncherDialog', () => {
     expect(launcherPanel?.className).toContain('flex');
     expect(launcherPanel?.className).toContain('h-full');
     expect(launcherPanel?.className).toContain('min-h-0');
+    expect(launcherPanel?.className).toContain('w-full');
     expect(launcherPanel?.className).toContain('flex-col');
 
     const scrollRegion = document.querySelector(
       '[data-slot="apps-launcher-scroll"]'
     );
     expect(scrollRegion?.className).toContain('min-h-0');
+    expect(scrollRegion?.className).toContain('w-full');
     expect(scrollRegion?.className).toContain('flex-1');
     expect(scrollRegion?.className).toContain('overflow-y-auto');
 
     const launcherGrid = document.querySelector(
       '[data-slot="apps-launcher-grid"]'
     );
+    expect(launcherGrid?.className).toContain('w-full');
     expect(launcherGrid?.className).toContain('grid-cols-1');
     expect(launcherGrid?.className).toContain('sm:grid-cols-2');
     expect(launcherGrid?.className).toContain('lg:grid-cols-3');
+    expect(launcherGrid?.className).toContain('xl:grid-cols-4');
   });
 
   it('groups the All tab by app category sections', () => {
@@ -204,9 +226,11 @@ describe('AppsLauncherDialog', () => {
 
     expect(getSectionTitles('Productivity')[0]).toBe('Platform');
     expect(getSectionTitles('Operations')).toContain('CMS');
-    expect(getSectionTitles('Operations').at(-1)).toBe('Apps');
+    expect(getSectionTitles('Operations')).not.toContain('Apps');
+    expect(getSectionTitles('Operations').at(-1)).toBe('Storefront');
     expect(getSectionTitles('AI')).toContain('Rewise');
     expect(getSectionTitles('Miscellaneous')).toEqual([
+      'Apps',
       'Docs',
       'Tools',
       'Shortener',
@@ -240,15 +264,14 @@ describe('AppsLauncherDialog', () => {
       '[data-slot="app-card-icon"]'
     );
     expect(financeIcon?.className).toContain('text-dynamic-green');
-    const affordance = financeCard.querySelector(
-      '[data-slot="app-card-affordance"]'
-    );
-    expect(affordance).toBeTruthy();
-    expect(affordance?.getAttribute('aria-hidden')).toBe('true');
-    expect(affordance?.className).toContain('group-hover:translate-x-0.5');
-    expect(affordance?.className).toContain('group-hover:text-dynamic-green');
+    expect(
+      financeCard.querySelector('[data-slot="app-card-affordance"]')
+    ).toBeNull();
     const tasksCard = screen.getByRole('link', { name: 'Tasks' });
     expect(tasksCard.className).toContain('border-dynamic-blue/30');
+    expect(
+      document.querySelector('[data-slot="app-card-affordance"]')
+    ).toBeNull();
     expect(
       financeCard?.querySelector('[data-slot="app-card-actions"]')
     ).toBeNull();
@@ -280,13 +303,13 @@ describe('AppsLauncherDialog', () => {
     fireEvent.click(operationsTab);
 
     await waitFor(() =>
-      expect(screen.getByRole('link', { name: 'Apps' })).toBeTruthy()
+      expect(screen.getByRole('link', { name: 'Finance' })).toBeTruthy()
     );
-    expect(screen.getByRole('link', { name: 'Apps' })).toBeTruthy();
     expect(screen.getByRole('link', { name: 'Finance' })).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Storefront' })).toBeTruthy();
+    expect(screen.queryByRole('link', { name: 'Apps' })).toBeNull();
     expect(screen.queryByText('Tools')).toBeNull();
     expect(screen.queryByText('Calendar')).toBeNull();
-    expect(screen.getByRole('link', { name: 'Apps' })).toBeTruthy();
     expect(screen.queryByLabelText('Open options: Apps')).toBeNull();
     expect(
       document.querySelector('[data-slot="apps-launcher-sections"]')
@@ -302,10 +325,12 @@ describe('AppsLauncherDialog', () => {
     fireEvent.mouseDown(miscellaneousTab, { button: 0, ctrlKey: false });
     fireEvent.click(miscellaneousTab);
 
-    await waitFor(() => expect(screen.getByText('Docs')).toBeTruthy());
+    await waitFor(() =>
+      expect(screen.getByRole('link', { name: 'Apps' })).toBeTruthy()
+    );
+    expect(screen.getByText('Docs')).toBeTruthy();
     expect(screen.getByText('Tools')).toBeTruthy();
     expect(screen.getByText('Shortener')).toBeTruthy();
-    expect(screen.queryByRole('link', { name: 'Apps' })).toBeNull();
   });
 
   it('renders new-tab links by default and closes on card click', () => {
