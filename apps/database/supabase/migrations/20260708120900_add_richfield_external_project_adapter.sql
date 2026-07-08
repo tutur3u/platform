@@ -17,14 +17,22 @@ SET search_path = public, private
 AS $$
   UPDATE "public"."workspace_external_project_entries" AS "entry"
   SET
-    "metadata" = COALESCE("entry"."metadata", '{}'::jsonb)
+    "metadata" = CASE
+        WHEN jsonb_typeof("entry"."metadata") = 'object'
+          THEN "entry"."metadata"
+        ELSE '{}'::jsonb
+      END
       || jsonb_build_object(
         'emailNotificationStatus',
         "p_email_notification_status",
         'privateDelivery',
         true
       ),
-    "profile_data" = COALESCE("entry"."profile_data", '{}'::jsonb)
+    "profile_data" = CASE
+        WHEN jsonb_typeof("entry"."profile_data") = 'object'
+          THEN "entry"."profile_data"
+        ELSE '{}'::jsonb
+      END
       || jsonb_build_object(
         'emailNotificationStatus',
         "p_email_notification_status"
@@ -46,3 +54,5 @@ FROM PUBLIC;
 GRANT EXECUTE
 ON FUNCTION "private"."update_richfield_contact_submission_status"(uuid, uuid, text)
 TO service_role;
+
+notify pgrst, 'reload schema';
