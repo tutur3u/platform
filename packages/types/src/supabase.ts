@@ -616,6 +616,36 @@ export type Database = {
         };
         Relationships: [];
       };
+      app_token_invitation_action_replays: {
+        Row: {
+          action: string;
+          consumed_at: string;
+          expires_at: string;
+          target_app: string;
+          token_jti: string;
+          user_id: string;
+          workspace_id: string;
+        };
+        Insert: {
+          action: string;
+          consumed_at?: string;
+          expires_at: string;
+          target_app: string;
+          token_jti: string;
+          user_id: string;
+          workspace_id: string;
+        };
+        Update: {
+          action?: string;
+          consumed_at?: string;
+          expires_at?: string;
+          target_app?: string;
+          token_jti?: string;
+          user_id?: string;
+          workspace_id?: string;
+        };
+        Relationships: [];
+      };
       auth_recovery_events: {
         Row: {
           actor_user_id: string | null;
@@ -1846,6 +1876,7 @@ export type Database = {
           actor_id: string;
           capabilities: Json;
           created_at: string;
+          heartbeat_enabled: boolean;
           id: string;
           last_heartbeat_at: string | null;
           name: string;
@@ -1856,6 +1887,7 @@ export type Database = {
           actor_id: string;
           capabilities?: Json;
           created_at?: string;
+          heartbeat_enabled?: boolean;
           id?: string;
           last_heartbeat_at?: string | null;
           name: string;
@@ -1866,6 +1898,7 @@ export type Database = {
           actor_id?: string;
           capabilities?: Json;
           created_at?: string;
+          heartbeat_enabled?: boolean;
           id?: string;
           last_heartbeat_at?: string | null;
           name?: string;
@@ -15614,30 +15647,36 @@ export type Database = {
       };
       course_module_quiz_submissions: {
         Row: {
+          ai_feedback: string | null;
           answer: Json | null;
           created_at: string;
+          feedback: string | null;
           id: string;
-          is_correct: boolean;
+          is_correct: boolean | null;
           module_id: string;
           quiz_id: string;
           selected_option_id: string | null;
           user_id: string;
         };
         Insert: {
+          ai_feedback?: string | null;
           answer?: Json | null;
           created_at?: string;
+          feedback?: string | null;
           id?: string;
-          is_correct: boolean;
+          is_correct?: boolean | null;
           module_id: string;
           quiz_id: string;
           selected_option_id?: string | null;
           user_id?: string;
         };
         Update: {
+          ai_feedback?: string | null;
           answer?: Json | null;
           created_at?: string;
+          feedback?: string | null;
           id?: string;
-          is_correct?: boolean;
+          is_correct?: boolean | null;
           module_id?: string;
           quiz_id?: string;
           selected_option_id?: string | null;
@@ -27500,6 +27539,8 @@ export type Database = {
           count_unestimated_issues: boolean;
           created_at: string | null;
           creator_id: string | null;
+          default_closed_list_id: string | null;
+          default_done_list_id: string | null;
           default_list_id: string | null;
           deleted_at: string | null;
           estimation_type:
@@ -27520,6 +27561,8 @@ export type Database = {
           count_unestimated_issues?: boolean;
           created_at?: string | null;
           creator_id?: string | null;
+          default_closed_list_id?: string | null;
+          default_done_list_id?: string | null;
           default_list_id?: string | null;
           deleted_at?: string | null;
           estimation_type?:
@@ -27540,6 +27583,8 @@ export type Database = {
           count_unestimated_issues?: boolean;
           created_at?: string | null;
           creator_id?: string | null;
+          default_closed_list_id?: string | null;
+          default_done_list_id?: string | null;
           default_list_id?: string | null;
           deleted_at?: string | null;
           estimation_type?:
@@ -28256,8 +28301,10 @@ export type Database = {
           id: string;
           is_public: boolean;
           is_published: boolean;
+          is_quiz_score_published: boolean;
           module_group_id: string;
           name: string;
+          quiz_deadline: string | null;
           sort_key: number;
           youtube_links: string[] | null;
         };
@@ -28269,8 +28316,10 @@ export type Database = {
           id?: string;
           is_public?: boolean;
           is_published?: boolean;
+          is_quiz_score_published?: boolean;
           module_group_id: string;
           name?: string;
+          quiz_deadline?: string | null;
           sort_key: number;
           youtube_links?: string[] | null;
         };
@@ -28282,8 +28331,10 @@ export type Database = {
           id?: string;
           is_public?: boolean;
           is_published?: boolean;
+          is_quiz_score_published?: boolean;
           module_group_id?: string;
           name?: string;
+          quiz_deadline?: string | null;
           sort_key?: number;
           youtube_links?: string[] | null;
         };

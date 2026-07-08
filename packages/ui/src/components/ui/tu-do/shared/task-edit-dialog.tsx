@@ -160,6 +160,8 @@ export interface TaskEditDialogProps {
   taskWsId?: string;
   task?: Task;
   boardId: string;
+  visibleBoardId?: string;
+  visibleTaskSnapshot?: Partial<Task>;
   isOpen: boolean;
   /** Present when opened via /shared/task/[shareCode] */
   shareCode?: string;
@@ -205,6 +207,8 @@ export function TaskEditDialog({
   taskWsId,
   task,
   boardId,
+  visibleBoardId,
+  visibleTaskSnapshot,
   isOpen,
   shareCode,
   sharedPermission,
@@ -1012,6 +1016,8 @@ export function TaskEditDialog({
     taskId: task?.id,
     isCreateMode,
     boardId,
+    visibleBoardId,
+    visibleTaskSnapshot,
     estimationPoints: formState.estimationPoints ?? null,
     priority: formState.priority,
     selectedListId: formState.selectedListId,
@@ -1043,8 +1049,14 @@ export function TaskEditDialog({
     !disabled &&
     !taskLoadError;
   const compactEditActionsDisabled = isLoading || isHydratingTask;
+  const isDocumentTask = currentList?.status === 'documents';
   const canShowCompactStatusActions =
-    canShowCompactEditActions && currentList?.status !== 'documents';
+    canShowCompactEditActions && !isDocumentTask;
+  const canShowArchiveAction =
+    canShowCompactEditActions &&
+    !!closedList &&
+    closedList.id !== formState.selectedListId &&
+    currentList?.status !== 'closed';
   const showCompactDoneAction =
     canShowCompactStatusActions &&
     !!doneList &&
@@ -1056,6 +1068,7 @@ export function TaskEditDialog({
     closedList.id !== formState.selectedListId &&
     closedList.id !== doneList?.id &&
     currentList?.status !== 'closed';
+  const showDocumentArchiveAction = canShowArchiveAction && isDocumentTask;
 
   // Task relationships
   const {
@@ -2417,7 +2430,7 @@ export function TaskEditDialog({
           <TooltipContent side="top">{t('mark_as_done')}</TooltipContent>
         </Tooltip>
       )}
-      {showCompactClosedAction && closedList && (
+      {(showCompactClosedAction || showDocumentArchiveAction) && closedList && (
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
@@ -2717,6 +2730,12 @@ export function TaskEditDialog({
                         ? () => setShowShareDialog(true)
                         : undefined
                     }
+                    onArchiveTask={
+                      showDocumentArchiveAction && closedList
+                        ? () => void updateList(closedList.id)
+                        : undefined
+                    }
+                    archiveTaskDisabled={compactEditActionsDisabled}
                     disabled={disabled}
                     controlsDisabled={taskControlsDisabled}
                     onScrollToUserCursor={

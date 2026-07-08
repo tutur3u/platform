@@ -115,6 +115,42 @@ describe('getTurbopackConfig', () => {
     expect(config.serverExternalPackages).toContain('esbuild-wasm');
   });
 
+  it('should include esbuild-wasm sidecar files in Serwist route tracing', () => {
+    const config = getTurbopackConfig();
+    const serwistIncludes =
+      config.outputFileTracingIncludes?.['/serwist/[path]'];
+
+    expect(serwistIncludes).toEqual(
+      expect.arrayContaining([
+        './node_modules/.bun/esbuild-wasm@*/node_modules/esbuild-wasm/wasm_exec_node.js',
+        './node_modules/.bun/esbuild-wasm@*/node_modules/esbuild-wasm/wasm_exec.js',
+        './node_modules/.bun/esbuild-wasm@*/node_modules/esbuild-wasm/esbuild.wasm',
+        './node_modules/esbuild-wasm/wasm_exec_node.js',
+        './node_modules/esbuild-wasm/wasm_exec.js',
+        './node_modules/esbuild-wasm/esbuild.wasm',
+      ])
+    );
+  });
+
+  it('should merge additional output file tracing includes', () => {
+    const config = getTurbopackConfig({
+      outputFileTracingIncludes: {
+        '/api/custom': ['./custom-runtime-file.js'],
+        '/serwist/[path]': ['./custom-serwist-file.js'],
+      },
+    });
+
+    expect(config.outputFileTracingIncludes?.['/api/custom']).toContain(
+      './custom-runtime-file.js'
+    );
+    expect(config.outputFileTracingIncludes?.['/serwist/[path]']).toEqual(
+      expect.arrayContaining([
+        './node_modules/.bun/esbuild-wasm@*/node_modules/esbuild-wasm/wasm_exec_node.js',
+        './custom-serwist-file.js',
+      ])
+    );
+  });
+
   it('should include additional external packages', () => {
     const config = getTurbopackConfig({
       additionalExternalPackages: ['custom-pkg', 'another-pkg'],

@@ -1,3 +1,4 @@
+import { deleteWorkspaceStorageObjectByPath } from '@tuturuuu/storage-core/workspace-storage-provider';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import type {
   ExternalProjectAsset,
@@ -21,7 +22,6 @@ import type {
   Json,
   WorkspaceExternalProjectBinding,
 } from '@tuturuuu/types';
-import { deleteWorkspaceStorageObjectByPath } from '../workspace-storage-provider';
 import {
   assertExternalProjectStoragePath,
   isExternalProjectStoragePath,

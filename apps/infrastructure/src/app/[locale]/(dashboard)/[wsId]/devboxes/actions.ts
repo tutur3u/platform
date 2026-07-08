@@ -7,7 +7,10 @@ import {
 } from '@tuturuuu/utils/workspace-helper';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
-import { revokeDevboxRunner } from '@/lib/devboxes/admin-store';
+import {
+  revokeDevboxRunner,
+  setDevboxRunnerHeartbeatEnabled,
+} from '@/lib/devboxes/admin-store';
 import { releaseDevboxLease, stopDevboxRun } from '@/lib/devboxes/store';
 
 async function requireDevboxInfrastructureAdmin(wsId: string) {
@@ -38,6 +41,16 @@ export async function releaseDevboxLeaseAction(wsId: string, leaseId: string) {
 export async function revokeDevboxRunnerAction(wsId: string, runnerId: string) {
   await requireDevboxInfrastructureAdmin(wsId);
   await revokeDevboxRunner(runnerId);
+  revalidateDevboxPage(wsId);
+}
+
+export async function setDevboxRunnerHeartbeatEnabledAction(
+  wsId: string,
+  runnerId: string,
+  enabled: boolean
+) {
+  await requireDevboxInfrastructureAdmin(wsId);
+  await setDevboxRunnerHeartbeatEnabled(runnerId, enabled);
   revalidateDevboxPage(wsId);
 }
 

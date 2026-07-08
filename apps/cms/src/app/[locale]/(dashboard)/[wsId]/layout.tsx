@@ -3,7 +3,11 @@ import {
   getPendingWorkspaceInvitation,
   SatelliteWorkspaceInvitationCard,
 } from '@tuturuuu/satellite/workspace-invitation';
-import { getSidebarBehaviorUpdatedAt } from '@tuturuuu/satellite/workspace-layout-helpers';
+import {
+  getSidebarBehaviorUpdatedAt,
+  getSidebarCollapsedState,
+  parseSidebarBehavior,
+} from '@tuturuuu/satellite/workspace-layout-helpers';
 import { RealtimeLogProvider } from '@tuturuuu/supabase/next/realtime-log-provider';
 import {
   ROOT_WORKSPACE_ID,
@@ -14,10 +18,6 @@ import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { cookies, headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { type ReactNode, Suspense } from 'react';
-import {
-  SIDEBAR_BEHAVIOR_COOKIE_NAME,
-  SIDEBAR_COLLAPSED_COOKIE_NAME,
-} from '@/constants/common';
 import { SidebarProvider } from '@/context/sidebar-context';
 import { hasRootExternalProjectsAdminPermission } from '@/lib/external-projects/access';
 import NavbarActions from '../../navbar-actions';
@@ -91,32 +91,12 @@ export default async function Layout({ children, params }: LayoutProps) {
   });
 
   const cookieStore = await cookies();
-  const collapsed = cookieStore.get(SIDEBAR_COLLAPSED_COOKIE_NAME);
-  const behaviorCookie = cookieStore.get(SIDEBAR_BEHAVIOR_COOKIE_NAME);
+  const sidebarBehavior = parseSidebarBehavior(cookieStore);
   const sidebarBehaviorUpdatedAt = getSidebarBehaviorUpdatedAt(cookieStore);
-
-  const rawBehavior = behaviorCookie?.value;
-  const isValidBehavior = (
-    value: string | undefined
-  ): value is 'expanded' | 'collapsed' | 'hover' => {
-    if (!value) return false;
-    return ['expanded', 'collapsed', 'hover'].includes(value);
-  };
-
-  const sidebarBehavior: 'expanded' | 'collapsed' | 'hover' = isValidBehavior(
-    rawBehavior
-  )
-    ? rawBehavior
-    : 'expanded';
-
-  let defaultCollapsed: boolean;
-  if (sidebarBehavior === 'collapsed') {
-    defaultCollapsed = true;
-  } else if (sidebarBehavior === 'hover') {
-    defaultCollapsed = true;
-  } else {
-    defaultCollapsed = collapsed ? JSON.parse(collapsed.value) : false;
-  }
+  const defaultCollapsed = getSidebarCollapsedState(
+    cookieStore,
+    sidebarBehavior
+  );
 
   return (
     <SidebarProvider

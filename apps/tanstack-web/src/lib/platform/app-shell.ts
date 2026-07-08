@@ -20,7 +20,7 @@ const appShellSiteConfig = {
     vi: 'Quản lý công việc của bạn, siêu tốc độ cùng AI.',
   },
   name: 'Tuturuuu',
-  ogImage: 'https://tuturuuu.com/media/logos/og-image.png',
+  ogImage: 'https://tuturuuu.com/media/logos/og-image.jpg',
   url: 'https://tuturuuu.com',
 };
 

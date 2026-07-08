@@ -1,6 +1,7 @@
 import '@testing-library/jest-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { SidebarContext } from '@tuturuuu/ui/custom/sidebar-context';
 import type React from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { BoardHeader } from '../board-header';
@@ -180,7 +181,8 @@ const mockBoard = {
 } as const;
 
 function renderBoardHeader(
-  overrides?: Partial<React.ComponentProps<typeof BoardHeader>>
+  overrides?: Partial<React.ComponentProps<typeof BoardHeader>>,
+  sidebarContext?: React.ContextType<typeof SidebarContext>
 ) {
   const queryClient = new QueryClient({
     defaultOptions: {
@@ -190,7 +192,7 @@ function renderBoardHeader(
     },
   });
 
-  return render(
+  const content = (
     <QueryClientProvider client={queryClient}>
       <BoardHeader
         workspaceId="ws-1"
@@ -221,6 +223,16 @@ function renderBoardHeader(
       />
     </QueryClientProvider>
   );
+
+  return render(
+    sidebarContext ? (
+      <SidebarContext.Provider value={sidebarContext}>
+        {content}
+      </SidebarContext.Provider>
+    ) : (
+      content
+    )
+  );
 }
 
 describe('BoardHeader', () => {
@@ -245,6 +257,79 @@ describe('BoardHeader', () => {
     expect(settingsButton).not.toHaveTextContent(
       'ws-task-boards.actions.board_settings'
     );
+  });
+
+  it('renders a compact hide-sidebar button when sidebar context is available', () => {
+    const handleBehaviorChange = vi.fn();
+
+    renderBoardHeader(undefined, {
+      behavior: 'expanded',
+      handleBehaviorChange,
+      localOverride: false,
+      setBehavior: vi.fn(),
+      setLocalOverride: vi.fn(),
+    });
+
+    const hideButton = screen.getByRole('button', {
+      name: 'common.hide_sidebar',
+    });
+
+    expect(hideButton).toHaveClass('border', 'h-7', 'w-7', 'px-0');
+    fireEvent.click(hideButton);
+    expect(handleBehaviorChange).toHaveBeenCalledWith('hidden');
+  });
+
+  it('does not render the hide-sidebar button without context or when already hidden', () => {
+    const { rerender } = renderBoardHeader();
+
+    expect(
+      screen.queryByRole('button', { name: 'common.hide_sidebar' })
+    ).not.toBeInTheDocument();
+
+    rerender(
+      <SidebarContext.Provider
+        value={{
+          behavior: 'hidden',
+          handleBehaviorChange: vi.fn(),
+          localOverride: false,
+          setBehavior: vi.fn(),
+          setLocalOverride: vi.fn(),
+        }}
+      >
+        <QueryClientProvider client={new QueryClient()}>
+          <BoardHeader
+            workspaceId="ws-1"
+            board={mockBoard}
+            currentView="kanban"
+            filters={{
+              assignees: [],
+              dueDateRange: null,
+              estimationRange: null,
+              includeMyTasks: false,
+              includeUnassigned: false,
+              labels: [],
+              priorities: [],
+              projects: [],
+              sourceBoardIds: [],
+              sourceScope: 'all_visible',
+              sourceWorkspaceIds: [],
+            }}
+            isMultiSelectMode={false}
+            isPersonalWorkspace={false}
+            listStatusFilter="all"
+            onFiltersChange={vi.fn()}
+            onListStatusFilterChange={vi.fn()}
+            onUpdate={vi.fn()}
+            onViewChange={vi.fn()}
+            setIsMultiSelectMode={vi.fn()}
+          />
+        </QueryClientProvider>
+      </SidebarContext.Provider>
+    );
+
+    expect(
+      screen.queryByRole('button', { name: 'common.hide_sidebar' })
+    ).not.toBeInTheDocument();
   });
 
   it('prefetches current board settings before opening the dialog', async () => {

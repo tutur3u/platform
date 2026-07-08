@@ -1,15 +1,15 @@
 import { posix } from 'node:path';
+import {
+  createWorkspaceStorageUploadPayload,
+  uploadWorkspaceStorageFileDirect,
+  WorkspaceStorageError,
+} from '@tuturuuu/storage-core/workspace-storage-provider';
+import { validateWorkspaceStorageUploadMetadata } from '@tuturuuu/storage-core/workspace-storage-upload-policy';
 import { sanitizeFilename, sanitizePath } from '@tuturuuu/utils/storage-path';
 import { generateRandomUUID } from '@tuturuuu/utils/uuid-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { requireWorkspaceExternalProjectAccess } from '@/lib/external-projects/access';
-import {
-  createWorkspaceStorageUploadPayload,
-  uploadWorkspaceStorageFileDirect,
-  WorkspaceStorageError,
-} from '@/lib/workspace-storage-provider';
-import { validateWorkspaceStorageUploadMetadata } from '@/lib/workspace-storage-upload-policy';
 
 const uploadUrlSchema = z.object({
   collectionType: z.string().min(1).max(120),

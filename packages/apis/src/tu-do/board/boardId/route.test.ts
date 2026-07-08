@@ -193,6 +193,72 @@ describe('task board boardId route PUT', () => {
     expect(updateMock).not.toHaveBeenCalled();
   });
 
+  it('rejects a done default list unless it belongs to the board with done status', async () => {
+    taskListMaybeSingleMock.mockResolvedValueOnce({
+      data: null,
+      error: null,
+    });
+
+    const response = await PUT(
+      new NextRequest(
+        'http://localhost/api/v1/workspaces/ws-1/task-boards/00000000-0000-4000-8000-000000000456',
+        {
+          method: 'PUT',
+          body: JSON.stringify({
+            default_done_list_id: 'list-with-wrong-status',
+          }),
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      ),
+      {
+        params: Promise.resolve({
+          wsId: 'ws-1',
+          boardId: '00000000-0000-4000-8000-000000000456',
+        }),
+      }
+    );
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual({
+      message:
+        'Default done list must belong to this board and use the done status',
+    });
+    expect(updateMock).not.toHaveBeenCalled();
+  });
+
+  it('updates terminal default list ids when they validate against matching statuses', async () => {
+    const response = await PUT(
+      new NextRequest(
+        'http://localhost/api/v1/workspaces/ws-1/task-boards/00000000-0000-4000-8000-000000000456',
+        {
+          method: 'PUT',
+          body: JSON.stringify({
+            default_done_list_id: 'done-list',
+            default_closed_list_id: 'closed-list',
+          }),
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      ),
+      {
+        params: Promise.resolve({
+          wsId: 'ws-1',
+          boardId: '00000000-0000-4000-8000-000000000456',
+        }),
+      }
+    );
+
+    expect(response.status).toBe(200);
+    expect(taskListMaybeSingleMock).toHaveBeenCalledTimes(2);
+    expect(updateMock).toHaveBeenCalledWith({
+      default_done_list_id: 'done-list',
+      default_closed_list_id: 'closed-list',
+    });
+  });
+
   it('returns a stable duplicate-name error when renaming to an existing board name', async () => {
     updateEqWorkspaceMock.mockResolvedValueOnce({
       error: {

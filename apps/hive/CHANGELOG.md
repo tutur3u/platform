@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.6.0](https://github.com/tutur3u/platform/compare/hive-v0.5.0...hive-v0.6.0) (2026-07-06)
+
+
+### Features
+
+* **satellite:** improve apps launcher picker ([a3e92cb](https://github.com/tutur3u/platform/commit/a3e92cb1a54e3cb45bc1697e8e70efd0776d2a23))
+
+## [0.5.0](https://github.com/tutur3u/platform/compare/hive-v0.4.1...hive-v0.5.0) (2026-07-05)
+
+
+### Features
+
+* **hive:** migrate hive module from web to apps/hive (incl. APIs) ([689085a](https://github.com/tutur3u/platform/commit/689085a942da0f589701c074e9278550cce5f4eb))
+* **satellite:** add sidebar apps launcher ([b2f6fcd](https://github.com/tutur3u/platform/commit/b2f6fcd55d7cb5c100e31d36f9f329817ecfe5e9))
+
+
+### Bug Fixes
+
+* **ci:** finish storage-core workspace integration ([ba786af](https://github.com/tutur3u/platform/commit/ba786af917d02ff65bf7d59e2c198a86f5fbc7ff))
+
 ## [0.4.1](https://github.com/tutur3u/platform/compare/hive-v0.4.0...hive-v0.4.1) (2026-07-02)
 
 

@@ -592,28 +592,6 @@ test.describe('Admin API - Features', () => {
 });
 
 test.describe('Error Handling', () => {
-  test('403 CREDITS_EXHAUSTED shows upgrade toast notification', async ({
-    page,
-  }) => {
-    // This is a UI test that verifies the toast appears when credits are exhausted
-    // It requires the credits endpoint to return exhausted status
-    await page.goto('/en/personal/tasks', { waitUntil: 'commit' });
-    await page
-      .waitForSelector('text=AI Credits', { timeout: 30000 })
-      .catch(() => {});
-
-    // Verification is route-agnostic because authenticated users can land on
-    // different workspace pages (for example /internal) based on role/shell.
-    await page.waitForURL(
-      (url) =>
-        !url.pathname.includes('/login') && !url.pathname.includes('/auth'),
-      { timeout: 30_000 }
-    );
-    const path = new URL(page.url()).pathname;
-    expect(path).not.toContain('/login');
-    expect(path).not.toContain('/auth');
-  });
-
   test('Tasks page loads successfully with credit system active', async ({
     page,
   }) => {

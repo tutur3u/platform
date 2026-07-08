@@ -1,6 +1,7 @@
 'use client';
 
 import { useLocalStorage } from '@tuturuuu/ui/hooks/use-local-storage';
+import { getTuturuuuBrowserSharedCookieOptions } from '@tuturuuu/utils/shared-cookie';
 import { setCookie } from 'cookies-next';
 import {
   type ComponentType,
@@ -19,7 +20,7 @@ export const SIDEBAR_BEHAVIOR_UPDATED_AT_COOKIE_NAME =
   'sidebar-behavior-updated-at';
 export const SIDEBAR_BEHAVIOR_CONFIG_KEY = 'SIDEBAR_BEHAVIOR';
 
-export type SidebarBehavior = 'expanded' | 'collapsed' | 'hover';
+export type SidebarBehavior = 'expanded' | 'collapsed' | 'hover' | 'hidden';
 
 interface SidebarContextProps {
   behavior: SidebarBehavior;
@@ -39,6 +40,10 @@ export const SIDEBAR_COOKIE_OPTIONS = {
   maxAge: 365 * 24 * 60 * 60,
   path: '/',
 } as const;
+
+export function getSidebarCookieOptions() {
+  return getTuturuuuBrowserSharedCookieOptions(SIDEBAR_COOKIE_OPTIONS);
+}
 
 function parseSidebarBehaviorUpdatedAt(value: string | undefined | null) {
   if (!value) return null;
@@ -72,6 +77,19 @@ type SidebarRemoteBehaviorBridgeComponent = ComponentType<{
   behaviorUpdatedAt: number | null;
   userChangeVersion: number;
 }>;
+
+function isEditableShortcutTarget(target: EventTarget | null) {
+  if (!(target instanceof HTMLElement)) return false;
+
+  if (target.isContentEditable) return true;
+
+  const tagName = target.tagName.toLowerCase();
+  if (tagName === 'input' || tagName === 'textarea' || tagName === 'select') {
+    return true;
+  }
+
+  return Boolean(target.closest('[contenteditable="true"], [role="textbox"]'));
+}
 
 function useSidebarRemoteBehaviorBridge() {
   const [RemoteBehaviorBridge, setRemoteBehaviorBridge] =
@@ -136,7 +154,7 @@ export const SidebarProvider = ({
       setCookie(
         SIDEBAR_BEHAVIOR_COOKIE_NAME,
         newBehavior,
-        SIDEBAR_COOKIE_OPTIONS
+        getSidebarCookieOptions()
       );
 
       if (!options.markLocalChange) return;
@@ -146,7 +164,7 @@ export const SidebarProvider = ({
       setCookie(
         SIDEBAR_BEHAVIOR_UPDATED_AT_COOKIE_NAME,
         String(updatedAt),
-        SIDEBAR_COOKIE_OPTIONS
+        getSidebarCookieOptions()
       );
     },
     []
@@ -174,6 +192,41 @@ export const SidebarProvider = ({
     },
     [applyBehavior, remoteBehavior, setLocalOverrideRaw]
   );
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (
+        event.defaultPrevented ||
+        event.key.toLowerCase() !== 'b' ||
+        !(event.metaKey || event.ctrlKey) ||
+        event.shiftKey ||
+        isEditableShortcutTarget(event.target)
+      ) {
+        return;
+      }
+
+      if (event.altKey) {
+        event.preventDefault();
+        handleBehaviorChange('hidden');
+        return;
+      }
+
+      event.preventDefault();
+      handleBehaviorChange(
+        behavior === 'expanded'
+          ? 'collapsed'
+          : behavior === 'hidden'
+            ? 'collapsed'
+            : 'expanded'
+      );
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [behavior, handleBehaviorChange]);
 
   return (
     <SidebarContext.Provider
@@ -208,3 +261,5 @@ export const useSidebar = () => {
   }
   return context;
 };
+
+export const useOptionalSidebar = () => useContext(SidebarContext);

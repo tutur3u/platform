@@ -28,10 +28,18 @@ describe('workspace email rate limit overrides', () => {
     source_name: 'Ops',
   };
 
+  const originalSendProductionEmail = process.env.SEND_PRODUCTION_EMAIL;
+  let credentialRow: typeof credentials | null;
   let workspaceSecrets: Array<{ name: string; value: string }>;
 
   beforeEach(() => {
     vi.clearAllMocks();
+    if (originalSendProductionEmail === undefined) {
+      delete process.env.SEND_PRODUCTION_EMAIL;
+    } else {
+      process.env.SEND_PRODUCTION_EMAIL = originalSendProductionEmail;
+    }
+    credentialRow = credentials;
     workspaceSecrets = [];
 
     createAdminClientMock.mockResolvedValue({
@@ -40,9 +48,10 @@ describe('workspace email rate limit overrides', () => {
           return {
             select: vi.fn(() => ({
               eq: vi.fn(() => ({
-                maybeSingle: vi
-                  .fn()
-                  .mockResolvedValue({ data: credentials, error: null }),
+                maybeSingle: vi.fn().mockImplementation(async () => ({
+                  data: credentialRow,
+                  error: null,
+                })),
               })),
             })),
           };
@@ -103,5 +112,35 @@ describe('workspace email rate limit overrides', () => {
     expect(config.workspacePerMinute).toBe(120);
     expect(config.invitePerHour).toBe(250);
     expect(config.userPerHour).toBe(777);
+  });
+
+  it('uses development fallback credentials when workspace credentials are missing in dev mode', async () => {
+    credentialRow = null;
+
+    const service = await EmailService.fromWorkspace('ws-1', {
+      devMode: true,
+    });
+    const config = (service as any).config;
+
+    expect(config.credentials.region).toBe('us-east-1');
+    expect(config.credentials.accessKeyId).toBe('mock-access-id');
+    expect(config.defaultSource.email).toBe('dev@tuturuuu.com');
+  });
+
+  it('throws for missing workspace credentials when production email sending is forced', async () => {
+    credentialRow = null;
+    process.env.SEND_PRODUCTION_EMAIL = 'true';
+
+    await expect(
+      EmailService.fromWorkspace('ws-1', { devMode: true })
+    ).rejects.toThrow('No email credentials found for workspace ws-1');
+  });
+
+  it('throws for missing workspace credentials outside dev mode', async () => {
+    credentialRow = null;
+
+    await expect(EmailService.fromWorkspace('ws-1')).rejects.toThrow(
+      'No email credentials found for workspace ws-1'
+    );
   });
 });

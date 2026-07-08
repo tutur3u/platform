@@ -1,5 +1,5 @@
+import { WORKSPACE_STORAGE_SECRET_DEFINITIONS } from '@tuturuuu/storage-core/workspace-storage-config';
 import { TOPIC_ANNOUNCEMENTS_SECRET } from '@/lib/topic-announcements';
-import { WORKSPACE_STORAGE_SECRET_DEFINITIONS } from '@/lib/workspace-storage-config';
 
 export interface SecretDefinition {
   name: string;

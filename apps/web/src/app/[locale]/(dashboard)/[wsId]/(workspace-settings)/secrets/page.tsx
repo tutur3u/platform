@@ -1,3 +1,4 @@
+import { getWorkspaceStorageRolloutState } from '@tuturuuu/storage-core/workspace-storage-migration';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { WorkspaceSecret } from '@tuturuuu/types/primitives/WorkspaceSecret';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
@@ -8,7 +9,6 @@ import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
-import { getWorkspaceStorageRolloutState } from '@/lib/workspace-storage-migration';
 import { secretColumns } from './columns';
 import SecretForm from './form';
 import { StorageRolloutPanel } from './storage-rollout-panel';

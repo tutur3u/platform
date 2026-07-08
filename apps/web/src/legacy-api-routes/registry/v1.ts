@@ -56,6 +56,8 @@ export const v1RouteLoaders = {
     import('../v1/auth/accounts/switch/route'),
   'v1/auth/app-token/exchange/route.ts': () =>
     import('../v1/auth/app-token/exchange/route'),
+  'v1/auth/app-token/invitation-decision/route.ts': () =>
+    import('../v1/auth/app-token/invitation-decision/route'),
   'v1/auth/cross-app-return/route.ts': () =>
     import('../v1/auth/cross-app-return/route'),
   'v1/auth/cross-app-session/refresh/route.ts': () =>

@@ -432,7 +432,7 @@ jobs:
               Backend \
               tuturuuu-backend \
               apps/backend/wrangler.jsonc \
-              '["BACKEND_INTERNAL_TOKEN","TUTURUUU_APP_COORDINATION_SECRET","SUPABASE_URL","SUPABASE_SERVICE_ROLE_KEY","CRON_SECRET","DISCORD_APP_DEPLOYMENT_URL","AURORA_EXTERNAL_URL"]'; then
+              '["BACKEND_INTERNAL_TOKEN","TUTURUUU_APP_COORDINATION_SECRET","SUPABASE_URL","SUPABASE_SERVICE_ROLE_KEY","CRON_SECRET","DISCORD_APP_DEPLOYMENT_URL","AURORA_EXTERNAL_URL","AURORA_EXTERNAL_WSID"]'; then
               can_deploy_backend=true
             fi
           fi

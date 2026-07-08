@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.13.1](https://github.com/tutur3u/platform/compare/sdk-v0.13.0...sdk-v0.13.1) (2026-07-06)
+
+
+### Bug Fixes
+
+* **cli:** route finance and calendar APIs to app hosts ([aa5c932](https://github.com/tutur3u/platform/commit/aa5c932871bf6a08f8031884eeaf90ddddd3ba33))
+* **tasks:** support personal external task moves ([83cee1f](https://github.com/tutur3u/platform/commit/83cee1ffaefe74c22e779268cdcdd8973280eaa0))
+
 ## [0.13.0](https://github.com/tutur3u/platform/compare/sdk-v0.12.1...sdk-v0.13.0) (2026-07-03)
 
 

@@ -29,6 +29,7 @@ import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { useCallback, useRef, useState } from 'react';
 import { LessonSkeleton, SaveStatus, YoutubeRow } from './lesson-components';
+import { LessonQuizSubmissionsSection } from './lesson-quiz-submissions-section';
 import LessonQuizzesSection from './quizzes-section';
 import { lessonQueryKey, useLessonDetail } from './use-lesson-detail';
 
@@ -64,6 +65,8 @@ export function LessonDetailClient({
     saveName,
     saveYoutubeLinks,
     savePublished,
+    saveQuizScorePublished,
+    saveQuizDeadline,
   } = useLessonDetail(wsId, courseId, lessonId);
 
   // ─── Local state ────────────────────────────────────────────────────────────
@@ -513,6 +516,16 @@ export function LessonDetailClient({
         </section>
 
         <LessonQuizzesSection wsId={wsId} lessonId={lessonId} />
+        <LessonQuizSubmissionsSection
+          courseId={courseId}
+          moduleId={lessonId}
+          wsId={wsId}
+          isQuizScorePublished={lesson.is_quiz_score_published}
+          onToggleQuizScorePublished={saveQuizScorePublished}
+          quizDeadline={lesson.quiz_deadline}
+          onQuizDeadlineChange={saveQuizDeadline}
+          isSaving={isSaving}
+        />
       </div>
     </main>
   );

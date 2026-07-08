@@ -1,4 +1,13 @@
 {
+  "account_switcher": {
+    "accounts": "Accounts",
+    "current_account": "Current Account",
+    "manage_accounts": "Manage Accounts",
+    "please_wait": "Please wait...",
+    "remove_account": "Remove account",
+    "switch_account": "Switch Account",
+    "unknown_user": "Unknown User"
+  },
   "ai_chat": {
     "add_attachments": "Add attachments",
     "ai_models": "AI Models",
@@ -557,12 +566,37 @@
     "upload_failed": "Could not upload file"
   },
   "command_launcher": {
+    "aliases_slot": "Also matches: {aliases}",
+    "app_categories": {
+      "ai": "AI",
+      "all": "All",
+      "content": "Content",
+      "core": "Core",
+      "developer": "Developer",
+      "learning": "Learning",
+      "miscellaneous": "Miscellaneous",
+      "operations": "Operations",
+      "productivity": "Productivity"
+    },
+    "app_category_descriptions": {
+      "ai": "AI apps for assistants, simulations, and creative thinking.",
+      "all": "Every routable Tuturuuu app available from this launcher.",
+      "content": "Content apps for publishing, files, and delivery.",
+      "core": "Core entrypoints for the Tuturuuu workspace platform.",
+      "developer": "Developer utilities, gateways, and technical tools.",
+      "learning": "Learning apps for courses, practice, and teaching.",
+      "miscellaneous": "Miscellaneous apps for docs, utilities, and public shortcuts.",
+      "operations": "Operations apps for money, inventory, and commerce.",
+      "productivity": "Productivity apps for schedule, tasks, messages, and meetings."
+    },
     "apps": "Apps",
+    "apps_count": "{count, plural, one {# app} other {# apps}}",
     "apps_description": "Open another Tuturuuu app from this workspace.",
     "close": "close",
     "current": "Current",
     "current_app": "Current app",
     "current_workspace": "Current workspace",
+    "default_destination": "Default app home",
     "empty": "No command found",
     "empty_description": "Try a workspace, app, page, or a closer spelling.",
     "error_workspaces": "Could not load workspaces",
@@ -582,6 +616,7 @@
     "search_hint": "Type a workspace, app, page, acronym, or close spelling.",
     "select": "select",
     "title": "Command Launcher",
+    "workspace_destination": "{workspace} workspace",
     "workspaces": "Workspaces"
   },
   "common": {
@@ -715,6 +750,7 @@
     "github-description": "View our open-source projects on GitHub.",
     "green": "Green",
     "hide_column": "Hide column",
+    "hide_sidebar": "Hide sidebar",
     "hide-all": "Hide All",
     "history": "History",
     "home": "Home",
@@ -2935,6 +2971,26 @@
     "id": "ID",
     "name": "Name",
     "value": "Value"
+  },
+  "settings": {
+    "keyboard_shortcuts": {
+      "close_settings": "Close settings",
+      "first_section": "First section",
+      "global": "Global",
+      "hide_sidebar": "Hide sidebar",
+      "last_section": "Last section",
+      "next_section": "Next section",
+      "open_settings": "Open settings",
+      "previous_section": "Previous section",
+      "search_settings": "Search settings",
+      "settings_dialog": "Settings dialog",
+      "toggle_sidebar": "Expand or collapse sidebar"
+    },
+    "preferences": {
+      "keyboard_shortcuts": "Keyboard Shortcuts",
+      "keyboard_shortcuts_description": "Review keyboard shortcuts for app and sidebar actions",
+      "sidebar_hidden": "Hidden"
+    }
   },
   "settings-account": {
     "account": "Account",

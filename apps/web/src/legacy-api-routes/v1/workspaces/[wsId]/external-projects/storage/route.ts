@@ -1,13 +1,4 @@
 import { posix } from 'node:path';
-import type { StorageObject } from '@tuturuuu/types/primitives/StorageObject';
-import {
-  sanitizeFilename,
-  sanitizeFolderName,
-  sanitizePath,
-} from '@tuturuuu/utils/storage-path';
-import { NextResponse } from 'next/server';
-import { z } from 'zod';
-import { requireWorkspaceExternalProjectAccess } from '@/lib/external-projects/access';
 import {
   createWorkspaceStorageFolderObject,
   createWorkspaceStorageSignedReadUrl,
@@ -17,8 +8,17 @@ import {
   renameWorkspaceStorageEntry,
   uploadWorkspaceStorageFileDirect,
   WorkspaceStorageError,
-} from '@/lib/workspace-storage-provider';
-import { validateWorkspaceStorageUploadMetadata } from '@/lib/workspace-storage-upload-policy';
+} from '@tuturuuu/storage-core/workspace-storage-provider';
+import { validateWorkspaceStorageUploadMetadata } from '@tuturuuu/storage-core/workspace-storage-upload-policy';
+import type { StorageObject } from '@tuturuuu/types/primitives/StorageObject';
+import {
+  sanitizeFilename,
+  sanitizeFolderName,
+  sanitizePath,
+} from '@tuturuuu/utils/storage-path';
+import { NextResponse } from 'next/server';
+import { z } from 'zod';
+import { requireWorkspaceExternalProjectAccess } from '@/lib/external-projects/access';
 
 const SIGNED_READ_URL_TTL_SECONDS = 900;
 

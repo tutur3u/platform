@@ -6,12 +6,12 @@
         "acceptedRemoval": 17,
         "key": "api",
         "label": "api",
-        "legacyNext": 671,
+        "legacyNext": 679,
         "migrated": 77,
-        "percentComplete": 12.29,
-        "remaining": 671,
+        "percentComplete": 12.16,
+        "remaining": 679,
         "terminal": 94,
-        "total": 765,
+        "total": 773,
         "unknownStatus": 0
       },
       {
@@ -30,12 +30,12 @@
         "acceptedRemoval": 0,
         "key": "layout",
         "label": "layout",
-        "legacyNext": 11,
+        "legacyNext": 12,
         "migrated": 47,
-        "percentComplete": 81.03,
-        "remaining": 11,
+        "percentComplete": 79.66,
+        "remaining": 12,
         "terminal": 47,
-        "total": 58,
+        "total": 59,
         "unknownStatus": 0
       },
       {
@@ -116,24 +116,24 @@
         "acceptedRemoval": 17,
         "key": "rust-backend",
         "label": "Rust backend",
-        "legacyNext": 685,
+        "legacyNext": 693,
         "migrated": 82,
-        "percentComplete": 12.63,
-        "remaining": 685,
+        "percentComplete": 12.5,
+        "remaining": 693,
         "terminal": 99,
-        "total": 784,
+        "total": 792,
         "unknownStatus": 0
       },
       {
         "acceptedRemoval": 2,
         "key": "tanstack-start",
         "label": "TanStack Start",
-        "legacyNext": 72,
+        "legacyNext": 73,
         "migrated": 193,
-        "percentComplete": 73.03,
-        "remaining": 72,
+        "percentComplete": 72.76,
+        "remaining": 73,
         "terminal": 195,
-        "total": 267,
+        "total": 268,
         "unknownStatus": 0
       }
     ],
@@ -323,12 +323,12 @@
       "acceptedRemoval": 19,
       "key": "total",
       "label": "All route artifacts",
-      "legacyNext": 757,
+      "legacyNext": 766,
       "migrated": 275,
-      "percentComplete": 27.97,
-      "remaining": 757,
+      "percentComplete": 27.74,
+      "remaining": 766,
       "terminal": 294,
-      "total": 1051,
+      "total": 1060,
       "unknownStatus": 0
     }
   },
@@ -1365,7 +1365,7 @@
     {
       "id": "api:/api/v1/auth/accounts:apps/web/src/legacy-api-routes/v1/auth/accounts/route.ts",
       "kind": "api",
-      "methods": ["GET"],
+      "methods": ["GET", "OPTIONS"],
       "routePath": "/api/v1/auth/accounts",
       "sourceFile": "apps/web/src/legacy-api-routes/v1/auth/accounts/route.ts",
       "status": "legacy-next",
@@ -1374,7 +1374,7 @@
     {
       "id": "api:/api/v1/auth/accounts/:accountId:apps/web/src/legacy-api-routes/v1/auth/accounts/[accountId]/route.ts",
       "kind": "api",
-      "methods": ["DELETE"],
+      "methods": ["DELETE", "OPTIONS"],
       "routePath": "/api/v1/auth/accounts/:accountId",
       "sourceFile": "apps/web/src/legacy-api-routes/v1/auth/accounts/[accountId]/route.ts",
       "status": "legacy-next",
@@ -1383,7 +1383,7 @@
     {
       "id": "api:/api/v1/auth/accounts/current:apps/web/src/legacy-api-routes/v1/auth/accounts/current/route.ts",
       "kind": "api",
-      "methods": ["POST", "PATCH"],
+      "methods": ["POST", "PATCH", "OPTIONS"],
       "routePath": "/api/v1/auth/accounts/current",
       "sourceFile": "apps/web/src/legacy-api-routes/v1/auth/accounts/current/route.ts",
       "status": "legacy-next",
@@ -1392,7 +1392,7 @@
     {
       "id": "api:/api/v1/auth/accounts/logout-all:apps/web/src/legacy-api-routes/v1/auth/accounts/logout-all/route.ts",
       "kind": "api",
-      "methods": ["POST"],
+      "methods": ["POST", "OPTIONS"],
       "routePath": "/api/v1/auth/accounts/logout-all",
       "sourceFile": "apps/web/src/legacy-api-routes/v1/auth/accounts/logout-all/route.ts",
       "status": "legacy-next",
@@ -1401,7 +1401,7 @@
     {
       "id": "api:/api/v1/auth/accounts/logout:apps/web/src/legacy-api-routes/v1/auth/accounts/logout/route.ts",
       "kind": "api",
-      "methods": ["POST"],
+      "methods": ["POST", "OPTIONS"],
       "routePath": "/api/v1/auth/accounts/logout",
       "sourceFile": "apps/web/src/legacy-api-routes/v1/auth/accounts/logout/route.ts",
       "status": "legacy-next",
@@ -1410,7 +1410,7 @@
     {
       "id": "api:/api/v1/auth/accounts/switch:apps/web/src/legacy-api-routes/v1/auth/accounts/switch/route.ts",
       "kind": "api",
-      "methods": ["POST"],
+      "methods": ["POST", "OPTIONS"],
       "routePath": "/api/v1/auth/accounts/switch",
       "sourceFile": "apps/web/src/legacy-api-routes/v1/auth/accounts/switch/route.ts",
       "status": "legacy-next",
@@ -1422,6 +1422,15 @@
       "methods": ["POST"],
       "routePath": "/api/v1/auth/app-token/exchange",
       "sourceFile": "apps/web/src/legacy-api-routes/v1/auth/app-token/exchange/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend"
+    },
+    {
+      "id": "api:/api/v1/auth/app-token/invitation-decision:apps/web/src/legacy-api-routes/v1/auth/app-token/invitation-decision/route.ts",
+      "kind": "api",
+      "methods": ["POST"],
+      "routePath": "/api/v1/auth/app-token/invitation-decision",
+      "sourceFile": "apps/web/src/legacy-api-routes/v1/auth/app-token/invitation-decision/route.ts",
       "status": "legacy-next",
       "targetOwner": "rust-backend"
     },
@@ -5251,6 +5260,33 @@
       "targetOwner": "rust-backend"
     },
     {
+      "id": "api:/api/v1/workspaces/:wsId/teach/courses/:courseId/modules/:moduleId/quizzes/submissions:apps/web/src/app/api/v1/workspaces/[wsId]/teach/courses/[courseId]/modules/[moduleId]/quizzes/submissions/route.ts",
+      "kind": "api",
+      "methods": ["GET"],
+      "routePath": "/api/v1/workspaces/:wsId/teach/courses/:courseId/modules/:moduleId/quizzes/submissions",
+      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/teach/courses/[courseId]/modules/[moduleId]/quizzes/submissions/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend"
+    },
+    {
+      "id": "api:/api/v1/workspaces/:wsId/teach/courses/:courseId/modules/:moduleId/quizzes/submissions/:userId:apps/web/src/app/api/v1/workspaces/[wsId]/teach/courses/[courseId]/modules/[moduleId]/quizzes/submissions/[userId]/route.ts",
+      "kind": "api",
+      "methods": ["GET", "POST"],
+      "routePath": "/api/v1/workspaces/:wsId/teach/courses/:courseId/modules/:moduleId/quizzes/submissions/:userId",
+      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/teach/courses/[courseId]/modules/[moduleId]/quizzes/submissions/[userId]/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend"
+    },
+    {
+      "id": "api:/api/v1/workspaces/:wsId/teach/courses/:courseId/modules/:moduleId/quizzes/submissions/:userId/ai-review:apps/web/src/app/api/v1/workspaces/[wsId]/teach/courses/[courseId]/modules/[moduleId]/quizzes/submissions/[userId]/ai-review/route.ts",
+      "kind": "api",
+      "methods": ["POST"],
+      "routePath": "/api/v1/workspaces/:wsId/teach/courses/:courseId/modules/:moduleId/quizzes/submissions/:userId/ai-review",
+      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/teach/courses/[courseId]/modules/[moduleId]/quizzes/submissions/[userId]/ai-review/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend"
+    },
+    {
       "id": "api:/api/v1/workspaces/:wsId/teach/courses/:courseId/posts:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/teach/courses/[courseId]/posts/route.ts",
       "kind": "api",
       "methods": ["GET", "POST"],
@@ -5265,6 +5301,33 @@
       "methods": ["GET", "POST"],
       "routePath": "/api/v1/workspaces/:wsId/teach/courses/:courseId/reports",
       "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/teach/courses/[courseId]/reports/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend"
+    },
+    {
+      "id": "api:/api/v1/workspaces/:wsId/teach/courses/:courseId/student-performance:apps/web/src/app/api/v1/workspaces/[wsId]/teach/courses/[courseId]/student-performance/route.ts",
+      "kind": "api",
+      "methods": ["GET"],
+      "routePath": "/api/v1/workspaces/:wsId/teach/courses/:courseId/student-performance",
+      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/teach/courses/[courseId]/student-performance/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend"
+    },
+    {
+      "id": "api:/api/v1/workspaces/:wsId/teach/courses/:courseId/student-performance/:userId/send-report:apps/web/src/app/api/v1/workspaces/[wsId]/teach/courses/[courseId]/student-performance/[userId]/send-report/route.ts",
+      "kind": "api",
+      "methods": ["POST"],
+      "routePath": "/api/v1/workspaces/:wsId/teach/courses/:courseId/student-performance/:userId/send-report",
+      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/teach/courses/[courseId]/student-performance/[userId]/send-report/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend"
+    },
+    {
+      "id": "api:/api/v1/workspaces/:wsId/teach/courses/:courseId/student-performance/send-bulk-report:apps/web/src/app/api/v1/workspaces/[wsId]/teach/courses/[courseId]/student-performance/send-bulk-report/route.ts",
+      "kind": "api",
+      "methods": ["POST"],
+      "routePath": "/api/v1/workspaces/:wsId/teach/courses/:courseId/student-performance/send-bulk-report",
+      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/teach/courses/[courseId]/student-performance/send-bulk-report/route.ts",
       "status": "legacy-next",
       "targetOwner": "rust-backend"
     },
@@ -5301,6 +5364,15 @@
       "methods": ["GET", "PATCH"],
       "routePath": "/api/v1/workspaces/:wsId/teach/courses/:courseId/tests/:testId/submissions/:attemptId",
       "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/teach/courses/[courseId]/tests/[testId]/submissions/[attemptId]/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend"
+    },
+    {
+      "id": "api:/api/v1/workspaces/:wsId/teach/dashboard-stats:apps/web/src/app/api/v1/workspaces/[wsId]/teach/dashboard-stats/route.ts",
+      "kind": "api",
+      "methods": ["GET"],
+      "routePath": "/api/v1/workspaces/:wsId/teach/dashboard-stats",
+      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/teach/dashboard-stats/route.ts",
       "status": "legacy-next",
       "targetOwner": "rust-backend"
     },
@@ -7564,6 +7636,15 @@
       "targetOwner": "tanstack-start"
     },
     {
+      "id": "layout:/:locale/:wsId/users:apps/web/src/app/[locale]/(dashboard)/[wsId]/users/layout.tsx",
+      "kind": "layout",
+      "methods": [],
+      "routePath": "/:locale/:wsId/users",
+      "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/users/layout.tsx",
+      "status": "legacy-next",
+      "targetOwner": "tanstack-start"
+    },
+    {
       "id": "layout:/:locale/:wsId/users/groups/:groupId:apps/web/src/app/[locale]/(dashboard)/[wsId]/users/groups/[groupId]/layout.tsx",
       "kind": "layout",
       "methods": [],
@@ -7672,11 +7753,11 @@
       "targetOwner": "tanstack-start"
     },
     {
-      "id": "layout:/:locale/login:apps/web/src/app/[locale]/(marketing)/login/layout.tsx",
+      "id": "layout:/:locale/login:apps/web/src/app/[locale]/(auth)/login/layout.tsx",
       "kind": "layout",
       "methods": [],
       "routePath": "/:locale/login",
-      "sourceFile": "apps/web/src/app/[locale]/(marketing)/login/layout.tsx",
+      "sourceFile": "apps/web/src/app/[locale]/(auth)/login/layout.tsx",
       "status": "migrated",
       "targetOwner": "tanstack-start"
     },
@@ -9355,11 +9436,11 @@
       "targetOwner": "tanstack-start"
     },
     {
-      "id": "page:/:locale/login:apps/web/src/app/[locale]/(marketing)/login/page.tsx",
+      "id": "page:/:locale/login:apps/web/src/app/[locale]/(auth)/login/page.tsx",
       "kind": "page",
       "methods": [],
       "routePath": "/:locale/login",
-      "sourceFile": "apps/web/src/app/[locale]/(marketing)/login/page.tsx",
+      "sourceFile": "apps/web/src/app/[locale]/(auth)/login/page.tsx",
       "status": "legacy-next",
       "targetOwner": "tanstack-start"
     },
@@ -9878,20 +9959,20 @@
     }
   ],
   "summary": {
-    "apiRoutes": 765,
+    "apiRoutes": 773,
     "cronRoutes": 13,
-    "layouts": 58,
+    "layouts": 59,
     "pages": 205,
-    "routeHandlers": 784,
+    "routeHandlers": 792,
     "methodCounts": {
-      "GET": 437,
+      "GET": 441,
       "HEAD": 22,
-      "POST": 379,
+      "POST": 384,
       "PUT": 99,
       "PATCH": 96,
       "DELETE": 150,
-      "OPTIONS": 38
+      "OPTIONS": 44
     },
-    "total": 1051
+    "total": 1060
   }
 }

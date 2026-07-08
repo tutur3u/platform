@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.1](https://github.com/tutur3u/platform/compare/hive-realtime-v0.3.0...hive-realtime-v0.3.1) (2026-07-05)
+
+
+### Bug Fixes
+
+* **ci:** finish storage-core workspace integration ([ba786af](https://github.com/tutur3u/platform/commit/ba786af917d02ff65bf7d59e2c198a86f5fbc7ff))
+
 ## [0.3.0](https://github.com/tutur3u/platform/compare/hive-realtime-v0.2.3...hive-realtime-v0.3.0) (2026-06-24)
 
 

@@ -10,6 +10,7 @@ import {
 } from '@tuturuuu/utils/user-helper';
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
+import { hasPendingWorkspaceInvitations } from '@/lib/workspace-invitations/status';
 import { getOrCreatePolarCustomer } from '@/utils/customer-helper';
 import { createFreeSubscription } from '@/utils/subscription-helper';
 import { getUserOnboardingProgress, hasCompletedOnboarding } from './actions';
@@ -102,6 +103,37 @@ async function hasNonPersonalWorkspaces(userId: string): Promise<boolean> {
   );
 }
 
+async function hasPendingWorkspaceInvitation(user: {
+  email?: string | null;
+  id: string;
+}) {
+  try {
+    const sbAdmin = await createAdminClient({ noCookie: true });
+
+    return hasPendingWorkspaceInvitations(sbAdmin, {
+      authEmail: user.email,
+      userId: user.id,
+    });
+  } catch (error) {
+    console.error(
+      'Onboarding: failed to check pending workspace invitations:',
+      error
+    );
+
+    return false;
+  }
+}
+
+async function redirectToDefaultWorkspace() {
+  const defaultWorkspace = await getUserDefaultWorkspace();
+
+  if (defaultWorkspace?.id) {
+    redirect(`/${defaultWorkspace.id}`);
+  }
+
+  redirect('/personal');
+}
+
 export default async function OnboardingPage({
   searchParams,
 }: OnboardingPageProps) {
@@ -109,6 +141,10 @@ export default async function OnboardingPage({
 
   if (!user) {
     redirect('/login');
+  }
+
+  if (await hasPendingWorkspaceInvitation(user)) {
+    await redirectToDefaultWorkspace();
   }
 
   // Ensure the user's personal workspace has a free subscription.
@@ -121,13 +157,7 @@ export default async function OnboardingPage({
 
   if (completedOnboarding) {
     // If onboarding is complete, redirect to dashboard
-    const defaultWorkspace = await getUserDefaultWorkspace();
-    if (defaultWorkspace?.id) {
-      redirect(`/${defaultWorkspace.id}`);
-    } else {
-      // If no workspace, restart onboarding
-      // This shouldn't happen, but handle gracefully
-    }
+    await redirectToDefaultWorkspace();
   }
 
   const progress = await getUserOnboardingProgress(user.id);

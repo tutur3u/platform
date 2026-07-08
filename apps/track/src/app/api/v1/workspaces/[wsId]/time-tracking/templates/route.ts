@@ -1,0 +1,97 @@
+import { createClient } from '@tuturuuu/supabase/next/server';
+import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
+import { type NextRequest, NextResponse } from 'next/server';
+import { resolveSessionAuthContext } from '@/lib/api-auth';
+
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ wsId: string }> }
+) {
+  try {
+    const { wsId } = await params;
+    let supabase = await createClient();
+
+    // Get authenticated user
+    const auth = await resolveSessionAuthContext(request, {
+      allowAppSessionAuth: true,
+    });
+    if (!auth.ok) return auth.response;
+    const { user } = auth;
+    supabase = auth.supabase;
+
+    // Verify workspace access
+    const memberCheck = await verifyWorkspaceMembershipType({
+      wsId: wsId,
+      userId: user.id,
+      supabase: supabase,
+    });
+
+    if (memberCheck.error === 'membership_lookup_failed') {
+      return NextResponse.json(
+        { error: 'Failed to verify workspace membership' },
+        { status: 500 }
+      );
+    }
+
+    if (!memberCheck.ok) {
+      return NextResponse.json(
+        { error: 'Workspace access denied' },
+        { status: 403 }
+      );
+    }
+
+    // For now, return templates based on recent sessions
+    // In the future, this could be a separate table for saved templates
+    const { data: recentSessions } = await supabase
+      .from('time_tracking_sessions')
+      .select(
+        `
+        title,
+        description,
+        category_id,
+        task_id,
+        category:time_tracking_categories(*),
+        task:tasks(*)
+      `
+      )
+      .eq('ws_id', wsId)
+      .eq('user_id', user.id)
+      .eq('is_running', false)
+      .not('duration_seconds', 'is', null)
+      .order('created_at', { ascending: false })
+      .limit(10);
+
+    // Group by similar sessions to create templates
+    const templateMap = new Map();
+
+    recentSessions?.forEach((session) => {
+      const key = `${session.title}-${session.category_id}-${session.task_id}`;
+      if (templateMap.has(key)) {
+        templateMap.get(key).usage_count++;
+      } else {
+        templateMap.set(key, {
+          title: session.title,
+          description: session.description,
+          category_id: session.category_id,
+          task_id: session.task_id,
+          category: session.category,
+          task: session.task,
+          usage_count: 1,
+        });
+      }
+    });
+
+    // Convert to array and sort by usage
+    const templates = Array.from(templateMap.values())
+      .sort((a, b) => b.usage_count - a.usage_count)
+      .slice(0, 5); // Top 5 templates
+
+    return NextResponse.json({ templates });
+  } catch (error) {
+    console.error('Error fetching time tracking templates:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}

@@ -1,5 +1,5 @@
 import type { TaskProjectLinkedItem } from '@tuturuuu/internal-api/tasks';
-import type { TaskProjectWithRelations } from '@tuturuuu/types';
+import type { TaskProjectWithRelations, Workspace } from '@tuturuuu/types';
 
 export type ProjectStatus =
   | 'backlog'
@@ -30,6 +30,9 @@ export interface TaskProject extends TaskProjectWithRelations {
 export interface TaskProjectsClientProps {
   wsId: string;
   initialProjects: TaskProject[];
+  currentUserId?: string;
+  detailMode?: 'dialog' | 'route';
+  workspace?: Workspace | null;
 }
 
 export interface TaskOption {

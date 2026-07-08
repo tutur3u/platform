@@ -1,5 +1,5 @@
+import { listWorkspaceStorageDirectory } from '@tuturuuu/storage-core/workspace-storage-provider';
 import { cache } from 'react';
-import { listWorkspaceStorageDirectory } from '@/lib/workspace-storage-provider';
 
 /**
  * Storage files for a group, listed server-side. Mirrors the storage route.

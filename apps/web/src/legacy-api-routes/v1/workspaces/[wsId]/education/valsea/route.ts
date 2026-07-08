@@ -9,6 +9,7 @@ import {
   resolvePlanModel,
 } from '@tuturuuu/ai/credits/resolve-plan-model';
 import { withAiMemory } from '@tuturuuu/ai/memory';
+import { createWorkspaceStorageSignedReadUrl } from '@tuturuuu/storage-core/workspace-storage-provider';
 import { resolveWorkspaceId } from '@tuturuuu/utils/constants';
 import { isExactTuturuuuDotComEmail } from '@tuturuuu/utils/email/client';
 import { sanitizePath } from '@tuturuuu/utils/storage-path';
@@ -22,7 +23,6 @@ import {
   MAX_VALSEA_AUDIO_UPLOAD_BYTES,
   validateFinalizedValseaAudioUpload,
 } from '@/lib/valsea-audio-storage-policy';
-import { createWorkspaceStorageSignedReadUrl } from '@/lib/workspace-storage-provider';
 import { gradeVoicePronunciation } from './voice-grading';
 
 type Params = {

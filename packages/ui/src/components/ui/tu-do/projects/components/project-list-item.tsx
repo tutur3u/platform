@@ -30,6 +30,7 @@ interface ProjectListItemProps {
   onDelete: (projectId: string) => void;
   onManageTasks: (project: TaskProject) => void;
   onNavigate: (projectId: string) => void;
+  navigationMode?: 'dialog' | 'route';
   isUpdating: boolean;
   isDeleting: boolean;
   isLinking: boolean;
@@ -43,6 +44,7 @@ export function ProjectListItem({
   onDelete,
   onManageTasks,
   onNavigate,
+  navigationMode = 'route',
   isUpdating,
   isDeleting,
   isLinking,
@@ -61,14 +63,28 @@ export function ProjectListItem({
         <div className="min-w-0 space-y-3">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <NextLink
-                href={`/${wsId}${tasksHref(`/projects/${project.id}`)}`}
-                className="inline-flex max-w-full items-center gap-2 font-semibold text-lg hover:text-dynamic-blue"
-                onClick={(event) => event.stopPropagation()}
-              >
-                <span className="truncate">{project.name}</span>
-                <ExternalLink className="h-4 w-4 shrink-0 opacity-0 transition-opacity group-hover:opacity-100" />
-              </NextLink>
+              {navigationMode === 'route' ? (
+                <NextLink
+                  href={`/${wsId}${tasksHref(`/projects/${project.id}`)}`}
+                  className="inline-flex max-w-full items-center gap-2 font-semibold text-lg hover:text-dynamic-blue"
+                  onClick={(event) => event.stopPropagation()}
+                >
+                  <span className="truncate">{project.name}</span>
+                  <ExternalLink className="h-4 w-4 shrink-0 opacity-0 transition-opacity group-hover:opacity-100" />
+                </NextLink>
+              ) : (
+                <button
+                  type="button"
+                  className="inline-flex max-w-full items-center gap-2 text-left font-semibold text-lg hover:text-dynamic-blue"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    onNavigate(project.id);
+                  }}
+                >
+                  <span className="truncate">{project.name}</span>
+                  <ExternalLink className="h-4 w-4 shrink-0 opacity-0 transition-opacity group-hover:opacity-100" />
+                </button>
+              )}
               <p className="mt-1 line-clamp-2 text-muted-foreground text-sm">
                 {project.description || t('no_description')}
               </p>

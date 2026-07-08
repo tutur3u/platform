@@ -7,7 +7,7 @@ const mocks = vi.hoisted(() => ({
   resolveWorkspaceStorageProvider: vi.fn(),
 }));
 
-vi.mock('./workspace-storage-provider', () => ({
+vi.mock('@tuturuuu/storage-core/workspace-storage-provider', () => ({
   deleteWorkspaceStorageObjectByPath: mocks.deleteWorkspaceStorageObjectByPath,
   getWorkspaceStorageObjectMetadataForProvider:
     mocks.getWorkspaceStorageObjectMetadataForProvider,

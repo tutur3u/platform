@@ -44,7 +44,7 @@ vi.mock('@/lib/infrastructure/log-drain', () => ({
   serverLogger: mocks.serverLogger,
 }));
 
-vi.mock('@/lib/workspace-storage-provider', () => ({
+vi.mock('@tuturuuu/storage-core/workspace-storage-provider', () => ({
   uploadWorkspaceStorageFileDirect: mocks.uploadWorkspaceStorageFileDirect,
   WorkspaceStorageError: class WorkspaceStorageError extends Error {
     constructor(

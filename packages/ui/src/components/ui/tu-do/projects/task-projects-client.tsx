@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useCallback, useMemo, useState } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../../dialog';
 import { useTasksHref } from '../tasks-route-context';
 import {
   ProjectGridCard,
@@ -16,11 +17,15 @@ import {
   ManageTasksDialog,
 } from './dialogs';
 import { useProjectFilters, useTaskProjects } from './hooks';
+import TaskProjectDetailPageClient from './projectId/task-project-detail-page-client';
 import type { TaskProject, TaskProjectsClientProps } from './types';
 
 export function TaskProjectsClient({
+  currentUserId,
+  detailMode = 'route',
   wsId,
   initialProjects,
+  workspace,
 }: TaskProjectsClientProps) {
   const router = useRouter();
   const tasksHref = useTasksHref();
@@ -32,6 +37,9 @@ export function TaskProjectsClient({
     null
   );
   const [managingProject, setManagingProject] = useState<TaskProject | null>(
+    null
+  );
+  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(
     null
   );
 
@@ -74,6 +82,11 @@ export function TaskProjectsClient({
       ),
     [taskProjects.projects]
   );
+  const selectedProject = selectedProjectId
+    ? (taskProjects.projects.find(
+        (project) => project.id === selectedProjectId
+      ) ?? null)
+    : null;
 
   // Handlers
   const handleEditProject = (project: TaskProject) => {
@@ -120,9 +133,14 @@ export function TaskProjectsClient({
 
   const navigateToProject = useCallback(
     (projectId: string) => {
+      if (detailMode === 'dialog' && workspace && currentUserId) {
+        setSelectedProjectId(projectId);
+        return;
+      }
+
       router.push(`/${wsId}${tasksHref(`/projects/${projectId}`)}`);
     },
-    [router, wsId, tasksHref]
+    [currentUserId, detailMode, router, tasksHref, workspace, wsId]
   );
 
   return (
@@ -168,6 +186,7 @@ export function TaskProjectsClient({
               onDelete={taskProjects.deleteProject}
               onManageTasks={handleOpenManageTasks}
               onNavigate={navigateToProject}
+              navigationMode={detailMode}
               isUpdating={taskProjects.isUpdating}
               isDeleting={taskProjects.isDeleting}
               isLinking={taskProjects.isLinking}
@@ -186,6 +205,7 @@ export function TaskProjectsClient({
               onDelete={taskProjects.deleteProject}
               onManageTasks={handleOpenManageTasks}
               onNavigate={navigateToProject}
+              navigationMode={detailMode}
               isUpdating={taskProjects.isUpdating}
               isDeleting={taskProjects.isDeleting}
               isLinking={taskProjects.isLinking}
@@ -221,6 +241,30 @@ export function TaskProjectsClient({
         isLinking={taskProjects.isLinking}
         isUnlinking={taskProjects.isUnlinking}
       />
+
+      <Dialog
+        open={Boolean(selectedProjectId)}
+        onOpenChange={(open) => {
+          if (!open) setSelectedProjectId(null);
+        }}
+      >
+        <DialogContent className="max-h-[90vh] max-w-6xl overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="sr-only">
+              {selectedProject?.name ?? ''}
+            </DialogTitle>
+          </DialogHeader>
+          {selectedProjectId && workspace && currentUserId && (
+            <TaskProjectDetailPageClient
+              currentUserId={currentUserId}
+              embedded
+              projectId={selectedProjectId}
+              workspace={workspace}
+              wsId={wsId}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

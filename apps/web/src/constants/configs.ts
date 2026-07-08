@@ -6,8 +6,8 @@ export const siteConfig = {
   name: 'Tuturuuu',
   url: APP_URL,
   ogImage: DEV_MODE
-    ? `${APP_URL}/media/logos/og-image.png`
-    : 'https://tuturuuu.com/media/logos/og-image.png',
+    ? `${APP_URL}/media/logos/og-image.jpg`
+    : 'https://tuturuuu.com/media/logos/og-image.jpg',
   links: {
     twitter: 'https://twitter.com/tutur3u',
     github: 'https://github.com/tutur3u/platform',

@@ -3,12 +3,16 @@ import {
   getPendingWorkspaceInvitation,
   SatelliteWorkspaceInvitationCard,
 } from '@tuturuuu/satellite/workspace-invitation';
+import {
+  getSidebarBehaviorUpdatedAt,
+  getSidebarCollapsedState,
+  parseSidebarBehavior,
+} from '@tuturuuu/satellite/workspace-layout-helpers';
 import { toWorkspaceSlug } from '@tuturuuu/utils/constants';
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { cookies, headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { type ReactNode, Suspense } from 'react';
-import { SIDEBAR_BEHAVIOR_COOKIE_NAME } from '@/constants/common';
 import { SidebarProvider } from '@/context/sidebar-context';
 import NavbarActions from '../../navbar-actions';
 import { UserNav } from '../../user-nav';
@@ -53,16 +57,18 @@ export default async function Layout({ children, params }: LayoutProps) {
   });
 
   const cookieStore = await cookies();
-  const rawBehavior = cookieStore.get(SIDEBAR_BEHAVIOR_COOKIE_NAME)?.value;
-  const sidebarBehavior =
-    rawBehavior === 'collapsed' || rawBehavior === 'hover'
-      ? rawBehavior
-      : 'expanded';
-  const defaultCollapsed =
-    sidebarBehavior === 'collapsed' || sidebarBehavior === 'hover';
+  const sidebarBehavior = parseSidebarBehavior(cookieStore);
+  const sidebarBehaviorUpdatedAt = getSidebarBehaviorUpdatedAt(cookieStore);
+  const defaultCollapsed = getSidebarCollapsedState(
+    cookieStore,
+    sidebarBehavior
+  );
 
   return (
-    <SidebarProvider initialBehavior={sidebarBehavior}>
+    <SidebarProvider
+      initialBehavior={sidebarBehavior}
+      initialBehaviorUpdatedAt={sidebarBehaviorUpdatedAt}
+    >
       <Structure
         wsId={workspace.id}
         workspace={workspace}

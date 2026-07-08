@@ -2,8 +2,8 @@ import { NextRequest } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { DELETE } from './[accountId]/route';
 import { POST as saveCurrentPOST } from './current/route';
-import { GET } from './route';
-import { POST as switchPOST } from './switch/route';
+import { OPTIONS as accountsOPTIONS, GET } from './route';
+import { OPTIONS as switchOPTIONS, POST as switchPOST } from './switch/route';
 
 const mocks = vi.hoisted(() => ({
   connection: vi.fn(),
@@ -77,10 +77,20 @@ describe('web multi-account API routes', () => {
   });
 
   it('lists account summaries after waiting for a request connection', async () => {
-    const request = new NextRequest('http://localhost/api/v1/auth/accounts');
+    const request = new NextRequest('http://localhost/api/v1/auth/accounts', {
+      headers: {
+        origin: 'https://tasks.tuturuuu.com',
+      },
+    });
     const response = await GET(request);
 
     expect(response.status).toBe(200);
+    expect(response.headers.get('Access-Control-Allow-Origin')).toBe(
+      'https://tasks.tuturuuu.com'
+    );
+    expect(response.headers.get('Access-Control-Allow-Credentials')).toBe(
+      'true'
+    );
     await expect(response.json()).resolves.toEqual({
       accounts: [],
       activeAccountId: null,
@@ -90,6 +100,57 @@ describe('web multi-account API routes', () => {
     expect(mocks.connection.mock.invocationCallOrder[0]!).toBeLessThan(
       mocks.listWebAccounts.mock.invocationCallOrder[0]!
     );
+  });
+
+  it('does not add credentialed account CORS for custom origins', async () => {
+    const response = await GET(
+      new NextRequest('http://localhost/api/v1/auth/accounts', {
+        headers: {
+          origin: 'https://rewise.me',
+        },
+      })
+    );
+
+    expect(response.headers.get('Access-Control-Allow-Origin')).toBe(null);
+    expect(response.headers.get('Access-Control-Allow-Credentials')).toBe(null);
+  });
+
+  it('allows credentialed first-party account API preflight requests', () => {
+    const response = switchOPTIONS(
+      new NextRequest('http://localhost/api/v1/auth/accounts/switch', {
+        headers: {
+          'access-control-request-headers': 'content-type',
+          origin: 'https://tasks.tuturuuu.localhost',
+        },
+        method: 'OPTIONS',
+      })
+    );
+
+    expect(response.status).toBe(204);
+    expect(response.headers.get('Access-Control-Allow-Origin')).toBe(
+      'https://tasks.tuturuuu.localhost'
+    );
+    expect(response.headers.get('Access-Control-Allow-Credentials')).toBe(
+      'true'
+    );
+    expect(response.headers.get('Access-Control-Allow-Headers')).toBe(
+      'content-type'
+    );
+  });
+
+  it('omits account CORS headers from disallowed preflight origins', () => {
+    const response = accountsOPTIONS(
+      new NextRequest('http://localhost/api/v1/auth/accounts', {
+        headers: {
+          origin: 'https://preview.vercel.app',
+        },
+        method: 'OPTIONS',
+      })
+    );
+
+    expect(response.status).toBe(204);
+    expect(response.headers.get('Access-Control-Allow-Origin')).toBe(null);
+    expect(response.headers.get('Access-Control-Allow-Credentials')).toBe(null);
   });
 
   it('rethrows DYNAMIC_SERVER_USAGE signals before diagnostic logging', async () => {

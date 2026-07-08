@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.14.2](https://github.com/tutur3u/platform/compare/database-v1.14.1...database-v1.14.2) (2026-07-06)
+
+
+### Bug Fixes
+
+* **tasks:** allow personal board external placements ([89a3fa2](https://github.com/tutur3u/platform/commit/89a3fa20117414c102ad5cdedb126ec0fab981d8))
+
+## [1.14.1](https://github.com/tutur3u/platform/compare/database-v1.14.0...database-v1.14.1) (2026-07-05)
+
+
+### Bug Fixes
+
+* **devboxes:** gate heartbeat and split v1 dispatch ([34c7a49](https://github.com/tutur3u/platform/commit/34c7a49d015d55a3ba910b3e332be819d4528a59))
+
 ## [1.14.0](https://github.com/tutur3u/platform/compare/database-v1.13.0...database-v1.14.0) (2026-07-03)
 
 

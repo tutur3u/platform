@@ -1,5 +1,6 @@
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
+import { isPersonalExternalOverlayTask } from '../../../../../../lib/task-personal-external';
 import type { SharedTaskContext } from '../../../shared/task-edit-dialog/hooks/use-task-data';
 
 interface TaskCardOpenOptionsInput {
@@ -13,9 +14,12 @@ interface TaskCardOpenOptionsInput {
 }
 
 export function isExternalTaskSnapshot(task: Task) {
+  if (task.is_personal_external === false) {
+    return false;
+  }
+
   return (
-    task.is_personal_external === true ||
-    Boolean(task.personal_board_id) ||
+    isPersonalExternalOverlayTask(task) ||
     Boolean(task.source_workspace_id) ||
     Boolean(task.source_board_id)
   );
@@ -105,6 +109,7 @@ export function getTaskCardHydratingOpenOptions({
 }: TaskCardOpenOptionsInput) {
   const sourceWorkspaceId = task.source_workspace_id;
   const sourceBoardId = task.source_board_id;
+  const isExternalSnapshot = isExternalTaskSnapshot(task);
   const initialSharedContext = buildInitialSourceContext(
     task,
     sourceWorkspaceId ?? undefined,
@@ -133,5 +138,11 @@ export function getTaskCardHydratingOpenOptions({
     assigneeMemberSource:
       assigneeMemberSource ?? (sourceWorkspaceId ? 'board' : undefined),
     initialSharedContext,
+    ...(isExternalSnapshot
+      ? {
+          visibleBoardId: boardId,
+          visibleTaskSnapshot: task,
+        }
+      : {}),
   };
 }

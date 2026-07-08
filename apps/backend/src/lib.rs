@@ -528,6 +528,8 @@ mod workspaces_wsid_settings;
 mod workspaces_wsid_settings_calendar_sync;
 mod workspaces_wsid_settings_configid;
 mod workspaces_wsid_settings_configs;
+#[cfg(test)]
+mod workspaces_wsid_settings_configs_test;
 mod workspaces_wsid_settings_email_audit;
 mod workspaces_wsid_settings_members;
 mod workspaces_wsid_storage_share;

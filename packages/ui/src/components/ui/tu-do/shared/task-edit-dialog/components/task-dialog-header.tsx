@@ -220,6 +220,9 @@ interface TaskDialogHeaderProps {
   isPersonalWorkspace?: boolean;
   /** Callback to open share dialog */
   onOpenShareDialog?: () => void;
+  /** Optional archive action for document-type tasks. */
+  onArchiveTask?: () => void;
+  archiveTaskDisabled?: boolean;
   /** Whether the dialog is in read-only mode */
   disabled?: boolean;
   /** Whether task-dependent actions should be disabled while the task hydrates. */
@@ -263,6 +266,8 @@ export function TaskDialogHeader({
   onNavigateBack,
   isPersonalWorkspace = false,
   onOpenShareDialog,
+  onArchiveTask,
+  archiveTaskDisabled = false,
   disabled = false,
   controlsDisabled = false,
   onScrollToUserCursor,
@@ -487,6 +492,8 @@ export function TaskDialogHeader({
           onShowDeleteDialog={() => setShowDeleteConfirm(true)}
           onClearDraft={clearDraftState}
           onNavigateBack={onNavigateBack}
+          onArchiveTask={onArchiveTask}
+          archiveTaskDisabled={archiveTaskDisabled}
           onOpenShareDialog={onOpenShareDialog}
           disabled={disabled}
           controlsDisabled={controlsDisabled}

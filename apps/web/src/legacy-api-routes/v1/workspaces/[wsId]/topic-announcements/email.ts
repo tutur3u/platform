@@ -5,6 +5,7 @@ import {
   type RateLimitConfig,
   sendWorkspaceEmail,
 } from '@tuturuuu/email-service';
+import { downloadWorkspaceStorageObjectForProvider } from '@tuturuuu/storage-core/workspace-storage-provider';
 import { extractIPFromHeaders } from '@tuturuuu/utils/abuse-protection';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { normalizeTopicAnnouncementAttachmentFileName } from '@/lib/topic-announcement-attachments';
@@ -18,7 +19,6 @@ import {
   generateTopicAnnouncementVerificationToken,
   hashTopicAnnouncementVerificationToken,
 } from '@/lib/topic-announcements-verification';
-import { downloadWorkspaceStorageObjectForProvider } from '@/lib/workspace-storage-provider';
 import {
   getPublicSchemaClient,
   type TopicAnnouncementsSupabaseClient,

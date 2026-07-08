@@ -521,6 +521,28 @@ function shouldIncludeAssignedExternalTasks(
   return !hasTaskListScope(flags);
 }
 
+async function isPersonalWorkspaceSelection(
+  client: TuturuuuUserClient,
+  workspaceId: string
+) {
+  if (workspaceId === 'personal') return true;
+  const workspaces = await client.workspaces.list();
+  return resolveWorkspace(workspaceId, workspaces)?.personal === true;
+}
+
+function isPersonalExternalTask(task: WorkspaceTaskApiTask | undefined | null) {
+  if (!task) return false;
+  return (
+    task.is_personal_external === true ||
+    Boolean(
+      task.source_workspace_id ||
+        task.source_board_id ||
+        task.personal_board_id ||
+        task.personal_list_id
+    )
+  );
+}
+
 export async function listTasksForCli(
   client: TuturuuuUserClient,
   _config: CliConfig,
@@ -1116,6 +1138,67 @@ async function getDefaultStatusListId({
 
   const { lists } = await client.tasks.listLists(workspaceId, boardId);
   return lists.find((list) => list.status === status)?.id;
+}
+
+async function maybeMovePersonalExternalTaskToTerminal({
+  client,
+  config,
+  displayKey,
+  flags,
+  group,
+  json,
+  selection,
+  status,
+  workspaceId,
+}: {
+  client: TuturuuuUserClient;
+  config: CliConfig;
+  displayKey?: string;
+  flags: Record<string, FlagValue>;
+  group: string;
+  json: boolean;
+  selection: { config: CliConfig; taskId: string };
+  status: 'closed' | 'done';
+  workspaceId: string;
+}) {
+  const currentUserTask = await client.tasks
+    .getCurrentUserTask(selection.taskId)
+    .catch(() => null);
+
+  if (
+    !isPersonalExternalTask(currentUserTask?.task) ||
+    !(await isPersonalWorkspaceSelection(client, workspaceId))
+  ) {
+    return false;
+  }
+
+  const personalBoardId =
+    getFlag(flags, 'target-board') ||
+    getFlag(flags, 'board') ||
+    currentUserTask?.task.personal_board_id ||
+    config.currentBoardId ||
+    selection.config.currentBoardId;
+
+  if (!personalBoardId) {
+    throw new Error(
+      'Personal external task terminal moves require a target board. Pass --target-board or select a personal board first.'
+    );
+  }
+
+  const explicitPersonalListId =
+    getFlag(flags, 'list') || getFlag(flags, 'list-id') || null;
+
+  const response = await client.tasks.upsertPersonalPlacement(
+    selection.taskId,
+    {
+      personal_board_id: personalBoardId,
+      personal_list_id: explicitPersonalListId,
+      terminal_status: status,
+    }
+  );
+
+  render(withTaskDisplayKey(response, displayKey), { group, json });
+  return true;
 }
 
 async function renderTaskMutationResult({
@@ -1953,6 +2036,22 @@ export async function runCli(argv = process.argv.slice(2)) {
         firstId
       );
       config = selection.config;
+      if (
+        await maybeMovePersonalExternalTaskToTerminal({
+          client,
+          config,
+          displayKey: getIdentifierDisplayKey(firstId),
+          flags,
+          group,
+          json,
+          selection,
+          status: 'done',
+          workspaceId,
+        })
+      ) {
+        return;
+      }
+
       const doneListId = await getDefaultStatusListId({
         client,
         config,
@@ -1988,6 +2087,22 @@ export async function runCli(argv = process.argv.slice(2)) {
         firstId
       );
       config = selection.config;
+      if (
+        await maybeMovePersonalExternalTaskToTerminal({
+          client,
+          config,
+          displayKey: getIdentifierDisplayKey(firstId),
+          flags,
+          group,
+          json,
+          selection,
+          status: 'closed',
+          workspaceId,
+        })
+      ) {
+        return;
+      }
+
       const closedListId = await getDefaultStatusListId({
         client,
         config,
@@ -2058,6 +2173,35 @@ export async function runCli(argv = process.argv.slice(2)) {
         json
       );
       config = listSelection.config;
+      const currentUserTask = await client.tasks
+        .getCurrentUserTask(taskSelection.taskId)
+        .catch(() => null);
+      const shouldUsePersonalPlacement =
+        isPersonalExternalTask(currentUserTask?.task) &&
+        (await isPersonalWorkspaceSelection(client, workspaceId));
+
+      if (shouldUsePersonalPlacement) {
+        const personalBoardId =
+          targetBoardId ||
+          config.currentBoardId ||
+          taskSelection.config.currentBoardId;
+
+        if (!personalBoardId) {
+          throw new Error(
+            'Personal external task moves require a target board. Pass --target-board or select a board first.'
+          );
+        }
+
+        render(
+          await client.tasks.upsertPersonalPlacement(taskSelection.taskId, {
+            personal_board_id: personalBoardId,
+            personal_list_id: listSelection.listId,
+          }),
+          { group, json }
+        );
+        return;
+      }
+
       render(
         await client.tasks.move(workspaceId, taskSelection.taskId, {
           list_id: listSelection.listId,

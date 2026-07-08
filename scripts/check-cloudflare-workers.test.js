@@ -24,6 +24,7 @@ const {
   validateCloudflareSecretIgnoreRules,
   validateRootPackageJson,
   validateRustBackendWorkflow,
+  validateTanstackWebPackageJson,
   validateTanstackWebTsconfig,
   validateTanstackWebViteConfig,
   validateTanstackWebRouteTree,
@@ -433,6 +434,23 @@ test('Wrangler configs declare required preview secrets by name', () => {
     /DISCORD_APP_DEPLOYMENT_URL/
   );
   assert.match(
+    validateBackendWranglerConfig({
+      ...backendConfig,
+      secrets: {
+        required: [
+          'BACKEND_INTERNAL_TOKEN',
+          'TUTURUUU_APP_COORDINATION_SECRET',
+          'SUPABASE_URL',
+          'SUPABASE_SERVICE_ROLE_KEY',
+          'CRON_SECRET',
+          'DISCORD_APP_DEPLOYMENT_URL',
+          'AURORA_EXTERNAL_URL',
+        ],
+      },
+    }).join('\n'),
+    /AURORA_EXTERNAL_WSID/
+  );
+  assert.match(
     validateTanstackWebWranglerConfig({
       ...tanstackConfig,
       services: [],
@@ -608,17 +626,29 @@ test('TanStack Vite config keeps Cloudflare plugin before TanStack Start', () =>
   assert.match(
     validateTanstackWebViteConfig(
       viteConfig.replace(
-        '...cloudflarePlugins,\n      tanstackStart({',
-        'tanstackStart({\n      ...cloudflarePlugins,'
+        '[...cloudflarePlugins, tanstackStartPlugin]',
+        '[tanstackStartPlugin, ...cloudflarePlugins]'
       )
     ).join('\n'),
     /before tanstackStart/
   );
   assert.match(
     validateTanstackWebViteConfig(
-      viteConfig.replace(/mode\s*===\s*['"]test['"]/u, 'false')
+      viteConfig.replace(/mode\s*===\s*['"]test['"]/gu, 'false')
     ).join('\n'),
     /Vitest mode/
+  );
+  assert.match(
+    validateTanstackWebViteConfig(
+      viteConfig.replace("import { nitro } from 'nitro/vite';", '')
+    ).join('\n'),
+    /nitro/
+  );
+  assert.match(
+    validateTanstackWebViteConfig(
+      viteConfig.replaceAll("runtime === 'vercel'", "runtime === 'node'")
+    ).join('\n'),
+    /TANSTACK_WEB_RUNTIME=vercel/
   );
 });
 
@@ -666,5 +696,16 @@ test('Cloudflare check reads package manifests from expected paths', () => {
   assert.equal(
     typeof tanstackPackageJson.scripts['deploy:cloudflare'],
     'string'
+  );
+  assert.deepEqual(validateTanstackWebPackageJson(tanstackPackageJson), []);
+  assert.match(
+    validateTanstackWebPackageJson({
+      ...tanstackPackageJson,
+      scripts: {
+        ...tanstackPackageJson.scripts,
+        'build:vercel': 'vite build',
+      },
+    }).join('\n'),
+    /build:vercel/
   );
 });

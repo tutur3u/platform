@@ -1,6 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
+import { Loader2 } from '@tuturuuu/icons';
 import {
   getWorkspaceTaskProject,
   getWorkspaceTaskProjectTasks,
@@ -16,8 +17,9 @@ interface Props {
   projectId: string;
   currentUserId: string;
   workspace: Workspace;
-  initialProject: TaskProjectWithRelations;
-  initialProjectData: { tasks: Task[]; documents: Task[]; lists: TaskList[] };
+  embedded?: boolean;
+  initialProject?: TaskProjectWithRelations;
+  initialProjectData?: { tasks: Task[]; documents: Task[]; lists: TaskList[] };
 }
 
 export default function TaskProjectDetailPageClient({
@@ -25,6 +27,7 @@ export default function TaskProjectDetailPageClient({
   projectId,
   currentUserId,
   workspace,
+  embedded = false,
   initialProject,
   initialProjectData,
 }: Props) {
@@ -53,7 +56,11 @@ export default function TaskProjectDetailPageClient({
   }
 
   if (!project || !projectData) {
-    return null;
+    return (
+      <div className="flex min-h-[320px] items-center justify-center">
+        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+      </div>
+    );
   }
 
   const lists: TaskList[] = (projectData.lists ?? []).map((list) => ({
@@ -79,6 +86,7 @@ export default function TaskProjectDetailPageClient({
       documents={projectData.documents ?? []}
       lists={lists}
       currentUserId={currentUserId}
+      embedded={embedded}
       wsId={wsId}
     />
   );

@@ -6,11 +6,14 @@ import {
   getBillableQuantityMapForGroupsRange,
   getBillableSessionsForGroups,
   getCoverageMonths,
+  getCurrentMonthValue,
   getLinkedFinanceCategorySelection,
   getSubscriptionAttendanceDisplayData,
   getSubscriptionCoverageInvoiceForGroup,
   isSubscriptionMonthPaidForGroup,
   isSubscriptionRangeFullyPaidForGroups,
+  resolveBillingTimezone,
+  resolveSubscriptionInvoiceCategoryId,
   type UserGroup,
 } from './utils';
 
@@ -169,6 +172,19 @@ describe('subscription invoice coverage', () => {
     ).toBe(false);
   });
 
+  it('treats timestamp valid_until values as civil invoice months', () => {
+    const latestInvoices = [
+      { group_id: groupId, valid_until: '2026-07-01T00:00:00.000Z' },
+    ];
+
+    expect(
+      isSubscriptionMonthPaidForGroup(groupId, '2026-06', latestInvoices)
+    ).toBe(true);
+    expect(
+      isSubscriptionMonthPaidForGroup(groupId, '2026-07', latestInvoices)
+    ).toBe(false);
+  });
+
   it('treats null and invalid valid_until values as unpaid', () => {
     expect(
       isSubscriptionMonthPaidForGroup(groupId, '2026-05', [
@@ -265,6 +281,50 @@ describe('subscription invoice coverage', () => {
       })
     ).toEqual({ [groupId]: 2 });
   });
+
+  it('uses workspace timezone, not browser timezone, for current-month recommendations', () => {
+    const groups = [
+      {
+        workspace_user_groups: {
+          id: groupId,
+          name: 'Math 7',
+          sessions: ['2026-07-05'],
+          starting_date: '2026-07-01',
+          ending_date: null,
+        } as NonNullable<UserGroup['workspace_user_groups']>,
+      },
+    ] satisfies UserGroup[];
+    const now = new Date('2026-06-30T18:00:00.000Z');
+
+    expect(getCurrentMonthValue('UTC', now)).toBe('2026-06');
+    expect(getCurrentMonthValue('Asia/Ho_Chi_Minh', now)).toBe('2026-07');
+    expect(getCurrentMonthValue('America/Los_Angeles', now)).toBe('2026-06');
+    expect(resolveBillingTimezone('auto')).toBe('UTC');
+    expect(resolveBillingTimezone('Not/A_Timezone')).toBe('UTC');
+
+    expect(
+      getBillableQuantityMapForGroupsRange({
+        groupIds: [groupId],
+        now,
+        selectedMonth: '2026-07',
+        useAttendanceBased: true,
+        userAttendance: [],
+        userGroups: groups,
+        workspaceTimezone: 'Asia/Ho_Chi_Minh',
+      })
+    ).toEqual({ [groupId]: 0 });
+    expect(
+      getBillableQuantityMapForGroupsRange({
+        groupIds: [groupId],
+        now,
+        selectedMonth: '2026-07',
+        useAttendanceBased: true,
+        userAttendance: [],
+        userGroups: groups,
+        workspaceTimezone: 'America/Los_Angeles',
+      })
+    ).toEqual({ [groupId]: 1 });
+  });
 });
 
 describe('linked finance category selection', () => {
@@ -293,5 +353,29 @@ describe('linked finance category selection', () => {
       hasMixedCategories: true,
       hasSingleCategory: false,
     });
+  });
+
+  it('resolves subscription checkout category precedence', () => {
+    expect(
+      resolveSubscriptionInvoiceCategoryId({
+        defaultCategoryId: 'category-default',
+        items: [{ product: { finance_category_id: 'category-linked' } }],
+      })
+    ).toBe('category-linked');
+    expect(
+      resolveSubscriptionInvoiceCategoryId({
+        defaultCategoryId: 'category-default',
+        items: [
+          { product: { finance_category_id: 'category-a' } },
+          { product: { finance_category_id: 'category-b' } },
+        ],
+      })
+    ).toBe('');
+    expect(
+      resolveSubscriptionInvoiceCategoryId({
+        defaultCategoryId: 'category-default',
+        items: [{ product: { finance_category_id: null } }],
+      })
+    ).toBe('category-default');
   });
 });

@@ -687,13 +687,25 @@ async function loadAccessibleWorkspaceIds(
 function filterAccessibleExternalRecords(
   records: TaskRecord[],
   accessibleWorkspaceIds: Set<string>,
-  personalWorkspaceId: string
+  personalWorkspaceId: string,
+  options: {
+    includeBoardExternalPersonal?: boolean;
+    personalBoardId?: string | null;
+  } = {}
 ) {
   return records.filter((task) => {
-    const sourceWsId = getTaskSourceLocation(task).board?.ws_id;
+    const sourceBoard = getTaskSourceLocation(task).board;
+    const sourceWsId = sourceBoard?.ws_id;
+    const isWorkspaceExternal = sourceWsId !== personalWorkspaceId;
+    const isBoardExternalPersonal =
+      options.includeBoardExternalPersonal === true &&
+      sourceWsId === personalWorkspaceId &&
+      Boolean(sourceBoard?.id) &&
+      sourceBoard?.id !== options.personalBoardId;
+
     return (
       !!sourceWsId &&
-      sourceWsId !== personalWorkspaceId &&
+      (isWorkspaceExternal || isBoardExternalPersonal) &&
       accessibleWorkspaceIds.has(sourceWsId)
     );
   });
@@ -2011,7 +2023,11 @@ export async function handleTaskRouteGET(
           filterAccessibleExternalRecords(
             placedRecords,
             accessibleWorkspaceIds,
-            normalizedWorkspaceId
+            normalizedWorkspaceId,
+            {
+              includeBoardExternalPersonal: true,
+              personalBoardId: targetPersonalBoardId,
+            }
           )
             .filter(
               (record) =>

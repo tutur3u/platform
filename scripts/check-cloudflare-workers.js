@@ -84,6 +84,7 @@ const BACKEND_REQUIRED_SECRETS = [
   'CRON_SECRET',
   'DISCORD_APP_DEPLOYMENT_URL',
   'AURORA_EXTERNAL_URL',
+  'AURORA_EXTERNAL_WSID',
 ];
 const TANSTACK_WEB_REQUIRED_SECRETS = [
   'BACKEND_PUBLIC_ORIGIN',
@@ -263,6 +264,7 @@ function validateRustBackendWorkflow(workflowContent) {
     'GITHUB_STEP_SUMMARY',
     'BACKEND_PUBLIC_ORIGIN',
     'SUPABASE_SERVICE_ROLE_KEY',
+    'AURORA_EXTERNAL_WSID',
     'cargo check --locked --target wasm32-unknown-unknown --no-default-features --features worker',
     'cargo install worker-build --locked',
     'worker-build --release -- --no-default-features --features worker',
@@ -411,6 +413,7 @@ function validateServiceBinding(config, label, expectedBinding) {
 function validateTanstackWebPackageJson(packageJson) {
   const errors = [];
   const requiredScripts = {
+    'build:vercel': 'TANSTACK_WEB_RUNTIME=vercel vite build && bun type-check',
     'cf-typegen': 'wrangler types',
     'deploy:cloudflare': 'bun run build && wrangler deploy',
     'deploy:cloudflare:dry-run': 'bun run build && wrangler deploy --dry-run',
@@ -426,6 +429,12 @@ function validateTanstackWebPackageJson(packageJson) {
   if (!packageJson.devDependencies?.wrangler) {
     errors.push(
       'apps/tanstack-web/package.json must include wrangler as a devDependency.'
+    );
+  }
+
+  if (!packageJson.devDependencies?.nitro) {
+    errors.push(
+      'apps/tanstack-web/package.json must include nitro as a devDependency for the opt-in Vercel runtime build.'
     );
   }
 
@@ -489,14 +498,22 @@ function validateTanstackWebViteConfig(viteConfigContent) {
     );
   }
 
+  if (!viteConfigContent.includes("import { nitro } from 'nitro/vite';")) {
+    errors.push(
+      'apps/tanstack-web/vite.config.ts must import nitro from nitro/vite for TANSTACK_WEB_RUNTIME=vercel builds.'
+    );
+  }
+
   const cloudflarePluginIndex = viteConfigContent.indexOf(
     "cloudflare({ viteEnvironment: { name: 'ssr' } })"
   );
-  const cloudflarePluginSpreadIndex = viteConfigContent.indexOf(
-    '...cloudflarePlugins'
-  );
+  const cloudflareBeforeTanstackStart =
+    viteConfigContent.includes('...cloudflarePlugins,\n      tanstackStart(') ||
+    viteConfigContent.includes('[...cloudflarePlugins, tanstackStartPlugin]');
   const vitestModeSkipIndex =
     /mode\s*===\s*['"]test['"]/u.exec(viteConfigContent)?.index ?? -1;
+  const vercelRuntimeIndex = viteConfigContent.indexOf("runtime === 'vercel'");
+  const nitroPluginIndex = viteConfigContent.indexOf('nitro()');
   const tanstackStartIndex =
     /\btanstackStart\s*\(/u.exec(viteConfigContent)?.index ?? -1;
 
@@ -512,17 +529,19 @@ function validateTanstackWebViteConfig(viteConfigContent) {
     );
   }
 
+  if (vercelRuntimeIndex === -1 || nitroPluginIndex === -1) {
+    errors.push(
+      'apps/tanstack-web/vite.config.ts must support TANSTACK_WEB_RUNTIME=vercel by disabling the Cloudflare Vite plugin and registering nitro().'
+    );
+  }
+
   if (tanstackStartIndex === -1) {
     errors.push(
       'apps/tanstack-web/vite.config.ts must register tanstackStart().'
     );
   }
 
-  if (
-    cloudflarePluginSpreadIndex !== -1 &&
-    tanstackStartIndex !== -1 &&
-    cloudflarePluginSpreadIndex > tanstackStartIndex
-  ) {
+  if (!cloudflareBeforeTanstackStart) {
     errors.push(
       'apps/tanstack-web/vite.config.ts must register the Cloudflare Vite plugin before tanstackStart().'
     );

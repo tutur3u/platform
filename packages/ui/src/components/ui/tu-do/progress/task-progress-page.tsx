@@ -40,6 +40,7 @@ export type TaskProgressView =
   | 'import';
 
 interface TaskProgressPageProps {
+  onViewChange?: (view: TaskProgressView) => void;
   routeWsId: string;
   view: TaskProgressView;
   wsId: string;
@@ -87,6 +88,7 @@ function parseImportRows(text: string, metrics: TaskProgressMetric[]) {
 }
 
 export function TaskProgressPage({
+  onViewChange,
   routeWsId,
   view,
   wsId,
@@ -258,18 +260,30 @@ export function TaskProgressPage({
         <div className="flex flex-wrap gap-2">
           {(
             ['progress', 'goals', 'stats', 'leaderboards', 'import'] as const
-          ).map((tab) => (
-            <Button
-              key={tab}
-              asChild
-              size="sm"
-              variant={tab === view ? 'default' : 'outline'}
-            >
-              <Link href={`/${routeWsId}/tasks/${tab}`}>
+          ).map((tab) =>
+            onViewChange ? (
+              <Button
+                key={tab}
+                onClick={() => onViewChange(tab)}
+                size="sm"
+                type="button"
+                variant={tab === view ? 'default' : 'outline'}
+              >
                 {t(`tabs.${tab}`)}
-              </Link>
-            </Button>
-          ))}
+              </Button>
+            ) : (
+              <Button
+                key={tab}
+                asChild
+                size="sm"
+                variant={tab === view ? 'default' : 'outline'}
+              >
+                <Link href={`/${routeWsId}/tasks/${tab}`}>
+                  {t(`tabs.${tab}`)}
+                </Link>
+              </Button>
+            )
+          )}
         </div>
       </div>
 

@@ -54,6 +54,8 @@ import { UseTemplateDialog } from './use-template-dialog';
 interface Props {
   wsId: string;
   template: BoardTemplateWithContent;
+  embedded?: boolean;
+  onClose?: () => void;
   templatesBasePath?: string;
 }
 
@@ -221,6 +223,8 @@ function TaskPreviewCard({ task }: { task: TemplateTask }) {
 
 export default function TemplateDetailClient({
   wsId,
+  embedded = false,
+  onClose,
   template,
   templatesBasePath = 'templates',
 }: Props) {
@@ -248,7 +252,11 @@ export default function TemplateDetailClient({
       }
 
       toast.success(t('detail.delete_success'));
-      router.push(`/${wsId}/${templatesBasePath}`);
+      if (embedded) {
+        onClose?.();
+      } else {
+        router.push(`/${wsId}/${templatesBasePath}`);
+      }
     } catch (error) {
       console.error('Error deleting template:', error);
       toast.error(
@@ -269,6 +277,11 @@ export default function TemplateDetailClient({
     );
 
   const handleBack = () => {
+    if (embedded) {
+      onClose?.();
+      return;
+    }
+
     // Check if there's history to go back to
     if (window.history.length > 1) {
       router.back();
@@ -281,14 +294,16 @@ export default function TemplateDetailClient({
   return (
     <div className="space-y-6">
       {/* Back Button */}
-      <Button
-        onClick={handleBack}
-        variant="link"
-        className="inline-flex items-center gap-2 text-muted-foreground text-sm transition-colors hover:text-foreground"
-      >
-        <ArrowLeft className="h-4 w-4" />
-        {t('detail.back_to_templates')}
-      </Button>
+      {!embedded && (
+        <Button
+          onClick={handleBack}
+          variant="link"
+          className="inline-flex items-center gap-2 text-muted-foreground text-sm transition-colors hover:text-foreground"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          {t('detail.back_to_templates')}
+        </Button>
+      )}
 
       {/* Header */}
       <div className="grid gap-8 lg:grid-cols-3">

@@ -20,6 +20,7 @@ vi.mock('@tuturuuu/utils/task-helper', () => {
 
 import {
   applyTaskDropPreviewToCache,
+  getPersonalPlacementTargetBoardId,
   getProjectedTaskDropOrderFromPreview,
   getTaskDropEndPreviewFromRects,
   getTaskDropPositionFromRects,
@@ -147,8 +148,81 @@ describe('usesPersonalPlacement', () => {
     expect(usesPersonalPlacement(personalTask)).toBe(false);
   });
 
+  it('does not treat an explicitly native personal task as external when source metadata is present', () => {
+    const personalTask = createTask({
+      is_personal_external: false,
+      personal_board_id: 'personal-board',
+      personal_list_id: 'list-1',
+      source_workspace_id: 'personal-workspace',
+      source_board_id: 'personal-board',
+      source_list_id: 'list-1',
+    } as Partial<Task>);
+
+    expect(usesPersonalPlacement(personalTask)).toBe(false);
+  });
+
+  it('does not treat same-board personal metadata as external without an explicit flag', () => {
+    const personalTask = createTask({
+      is_personal_external: undefined,
+      personal_board_id: 'personal-board',
+      personal_list_id: 'list-1',
+      source_workspace_id: 'personal-workspace',
+      source_board_id: 'personal-board',
+      source_list_id: 'list-1',
+    } as Partial<Task>);
+
+    expect(usesPersonalPlacement(personalTask)).toBe(false);
+  });
+
   it('keeps explicit external overlays on the personal-placement path', () => {
     expect(usesPersonalPlacement(createTask())).toBe(true);
+  });
+});
+
+describe('getPersonalPlacementTargetBoardId', () => {
+  it('uses the target list board id for real-list moves', () => {
+    expect(
+      getPersonalPlacementTargetBoardId({
+        boardId: 'fallback-board',
+        columns: [
+          createList({
+            board_id: 'canonical-board',
+            id: 'target-list',
+          } as Partial<TaskList>),
+        ],
+        targetListId: 'target-list',
+      })
+    ).toBe('canonical-board');
+  });
+
+  it('keeps staging board ids from virtual staging lanes', () => {
+    expect(
+      getPersonalPlacementTargetBoardId({
+        boardId: 'fallback-board',
+        columns: [
+          createList({
+            board_id: 'canonical-board',
+            id: 'target-list',
+          } as Partial<TaskList>),
+        ],
+        targetListId: 'personal-external-staging:staging-board',
+      })
+    ).toBe('staging-board');
+  });
+
+  it('falls back to the current board id when list metadata is absent', () => {
+    expect(
+      getPersonalPlacementTargetBoardId({
+        boardId: 'fallback-board',
+        columns: [
+          createList({
+            board_id: 'other-board',
+            id: 'other-list',
+          } as Partial<TaskList>),
+        ],
+        targetListId: 'target-list',
+      })
+    ).toBe('fallback-board');
   });
 });
 

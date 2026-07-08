@@ -1,15 +1,15 @@
 import { posix } from 'node:path';
-import { MAX_PAYLOAD_SIZE } from '@tuturuuu/utils/constants';
-import { sanitizePath } from '@tuturuuu/utils/storage-path';
-import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
-import { NextResponse } from 'next/server';
-import { z } from 'zod';
 import {
   createWorkspaceStorageFolderObject,
   createWorkspaceStorageUploadPayload,
   uploadWorkspaceStorageFileDirect,
   WorkspaceStorageError,
-} from '@/lib/workspace-storage-provider';
+} from '@tuturuuu/storage-core/workspace-storage-provider';
+import { MAX_PAYLOAD_SIZE } from '@tuturuuu/utils/constants';
+import { sanitizePath } from '@tuturuuu/utils/storage-path';
+import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
+import { NextResponse } from 'next/server';
+import { z } from 'zod';
 import { resolveWebglPackageExtractConfig } from '../shared';
 
 const fileUploadPayloadSchema = z.object({

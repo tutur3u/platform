@@ -13,6 +13,7 @@ export type Quiz = {
 export type SelectedAnswer =
   | boolean
   | number
+  | string
   | string[]
   | MatchingPair[]
   | null;

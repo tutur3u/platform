@@ -13,6 +13,9 @@
       "cms": {
         "description": "Content operations, schemas, previews, and publishing."
       },
+      "docs": {
+        "description": "Documentation, guides, and platform references."
+      },
       "drive": {
         "description": "Workspace files, folders, sharing, and storage operations."
       },
@@ -74,6 +77,7 @@
       "core": "Core",
       "developer": "Developer",
       "learning": "Learning",
+      "miscellaneous": "Miscellaneous",
       "operations": "Operations",
       "productivity": "Productivity"
     },
@@ -84,6 +88,7 @@
       "core": "The central product and workspace base.",
       "developer": "Tools for integration, testing, and package demos.",
       "learning": "Education apps for learners and teachers.",
+      "miscellaneous": "Docs, utilities, and public shortcuts.",
       "operations": "Business operations and resource management.",
       "productivity": "Daily coordination, planning, and execution."
     },
@@ -96,12 +101,37 @@
     "title": "One gateway for every Tuturuuu app."
   },
   "command_launcher": {
+    "aliases_slot": "Also matches: {aliases}",
+    "app_categories": {
+      "ai": "AI",
+      "all": "All",
+      "content": "Content",
+      "core": "Core",
+      "developer": "Developer",
+      "learning": "Learning",
+      "miscellaneous": "Miscellaneous",
+      "operations": "Operations",
+      "productivity": "Productivity"
+    },
+    "app_category_descriptions": {
+      "ai": "AI apps for assistants, simulations, and creative thinking.",
+      "all": "Every routable Tuturuuu app available from this launcher.",
+      "content": "Content apps for publishing, files, and delivery.",
+      "core": "Core entrypoints for the Tuturuuu workspace platform.",
+      "developer": "Developer utilities, gateways, and technical tools.",
+      "learning": "Learning apps for courses, practice, and teaching.",
+      "miscellaneous": "Miscellaneous apps for docs, utilities, and public shortcuts.",
+      "operations": "Operations apps for money, inventory, and commerce.",
+      "productivity": "Productivity apps for schedule, tasks, messages, and meetings."
+    },
     "apps": "Apps",
+    "apps_count": "{count, plural, one {# app} other {# apps}}",
     "apps_description": "Open another Tuturuuu app from this workspace.",
     "close": "close",
     "current": "Current",
     "current_app": "Current app",
     "current_workspace": "Current workspace",
+    "default_destination": "Default app home",
     "empty": "No command found",
     "empty_description": "Try a workspace, app, page, or a closer spelling.",
     "error_workspaces": "Could not load workspaces",
@@ -121,7 +151,11 @@
     "search_hint": "Type a workspace, app, page, acronym, or close spelling.",
     "select": "select",
     "title": "Command Launcher",
+    "workspace_destination": "{workspace} workspace",
     "workspaces": "Workspaces"
+  },
+  "common": {
+    "hide_sidebar": "Hide sidebar"
   },
   "finance": {
     "new_debt": "New debt",
@@ -185,6 +219,26 @@
     "wallet_required": "Wallet is required",
     "weekly": "Weekly",
     "yearly": "Yearly"
+  },
+  "settings": {
+    "keyboard_shortcuts": {
+      "close_settings": "Close settings",
+      "first_section": "First section",
+      "global": "Global",
+      "hide_sidebar": "Hide sidebar",
+      "last_section": "Last section",
+      "next_section": "Next section",
+      "open_settings": "Open settings",
+      "previous_section": "Previous section",
+      "search_settings": "Search settings",
+      "settings_dialog": "Settings dialog",
+      "toggle_sidebar": "Expand or collapse sidebar"
+    },
+    "preferences": {
+      "keyboard_shortcuts": "Keyboard Shortcuts",
+      "keyboard_shortcuts_description": "Review keyboard shortcuts for app and sidebar actions",
+      "sidebar_hidden": "Hidden"
+    }
   },
   "version-badge": {
     "app": "App",

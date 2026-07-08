@@ -286,12 +286,9 @@ describe('useTaskActions', () => {
       });
     });
 
-    it('moves an external task to the personal and source done lists when checked', async () => {
+    it('moves an external task to done through terminal personal placement when checked', async () => {
       const completedAt = '2026-05-07T03:00:00.000Z';
       queryClient.setQueryData(['tasks', 'board-1'], [mockExternalTask]);
-      mockListWorkspaceTaskLists.mockResolvedValueOnce({
-        lists: mockSourceLists,
-      });
       mockUpsertCurrentUserTaskPersonalPlacement.mockResolvedValueOnce({
         task: {
           ...mockExternalTask,
@@ -299,14 +296,10 @@ describe('useTaskActions', () => {
           personal_list_id: 'completion-list',
           personal_sort_key: 1_500_000,
           sort_key: 1_500_000,
-        },
-      });
-      mockUpdateWorkspaceTask.mockResolvedValueOnce({
-        task: {
-          ...mockExternalTask,
-          list_id: 'source-done-list',
+          source_list_id: 'source-done-list',
+          source_list_status: 'done',
           completed_at: completedAt,
-          closed_at: null,
+          closed_at: completedAt,
         },
       });
 
@@ -329,10 +322,7 @@ describe('useTaskActions', () => {
         await result.current.handleArchiveToggle();
       });
 
-      expect(mockListWorkspaceTaskLists).toHaveBeenCalledWith(
-        'source-ws',
-        'source-board'
-      );
+      expect(mockListWorkspaceTaskLists).not.toHaveBeenCalled();
       expect(mockUpsertCurrentUserTaskPersonalPlacement).toHaveBeenCalledWith(
         'task-1',
         expect.objectContaining({
@@ -340,15 +330,10 @@ describe('useTaskActions', () => {
           personal_list_id: 'completion-list',
           previous_task_id: null,
           next_task_id: null,
+          terminal_status: 'done',
         })
       );
-      expect(mockUpdateWorkspaceTask).toHaveBeenCalledWith(
-        'source-ws',
-        'task-1',
-        {
-          list_id: 'source-done-list',
-        }
-      );
+      expect(mockUpdateWorkspaceTask).not.toHaveBeenCalled();
       expect(queryClient.getQueryData<Task[]>(['tasks', 'board-1'])).toEqual([
         expect.objectContaining({
           id: 'task-1',
@@ -356,6 +341,7 @@ describe('useTaskActions', () => {
           personal_list_id: 'completion-list',
           source_list_id: 'source-done-list',
           completed_at: completedAt,
+          closed_at: completedAt,
           _localMutationAt: expect.any(Number),
         }),
       ]);
@@ -733,12 +719,9 @@ describe('useTaskActions', () => {
       expect(setMenuOpen).toHaveBeenCalledWith(false);
     });
 
-    it('moves an external task to the personal and source closed lists', async () => {
+    it('moves an external task to closed through terminal personal placement', async () => {
       const closedAt = '2026-05-07T03:30:00.000Z';
       queryClient.setQueryData(['tasks', 'board-1'], [mockExternalTask]);
-      mockListWorkspaceTaskLists.mockResolvedValueOnce({
-        lists: mockSourceLists,
-      });
       mockUpsertCurrentUserTaskPersonalPlacement.mockResolvedValueOnce({
         task: {
           ...mockExternalTask,
@@ -746,12 +729,8 @@ describe('useTaskActions', () => {
           personal_list_id: 'closed-list',
           personal_sort_key: 1_700_000,
           sort_key: 1_700_000,
-        },
-      });
-      mockUpdateWorkspaceTask.mockResolvedValueOnce({
-        task: {
-          ...mockExternalTask,
-          list_id: 'source-closed-list',
+          source_list_id: 'source-closed-list',
+          source_list_status: 'closed',
           completed_at: null,
           closed_at: closedAt,
         },
@@ -781,15 +760,11 @@ describe('useTaskActions', () => {
         expect.objectContaining({
           personal_board_id: 'board-1',
           personal_list_id: 'closed-list',
+          terminal_status: 'closed',
         })
       );
-      expect(mockUpdateWorkspaceTask).toHaveBeenCalledWith(
-        'source-ws',
-        'task-1',
-        {
-          list_id: 'source-closed-list',
-        }
-      );
+      expect(mockListWorkspaceTaskLists).not.toHaveBeenCalled();
+      expect(mockUpdateWorkspaceTask).not.toHaveBeenCalled();
       expect(queryClient.getQueryData<Task[]>(['tasks', 'board-1'])).toEqual([
         expect.objectContaining({
           id: 'task-1',
@@ -1696,6 +1671,9 @@ describe('useTaskActions', () => {
         ...mockTask,
         personal_board_id: 'board-1',
         personal_list_id: 'list-1',
+        source_workspace_id: 'ws-1',
+        source_board_id: 'board-1',
+        source_list_id: 'list-1',
       } as unknown as Task;
       const targetList = {
         id: 'list-2',

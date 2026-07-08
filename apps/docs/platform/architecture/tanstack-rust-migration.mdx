@@ -14,6 +14,10 @@ contracts documented in `apps/backend/api/openapi.yaml`. The backend runs as a
 native container now and keeps a Cloudflare Workers Rust entrypoint ready in
 `apps/backend/wrangler.jsonc` for edge preview deployment.
 
+For exact local run commands and deployment steps across native local, Docker,
+Cloudflare Workers, Vercel, and VPS/Cloudflare Tunnel paths, use
+[TanStack/Rust Local And Deployment](/build/devops/tanstack-rust-local-deploy).
+
 ## Runtime Shape
 
 | Runtime      | Local URL                             | Fallback port | Owner               |
@@ -92,7 +96,7 @@ secret-looking values under `vars`:
 
 | Worker                             | Required preview secrets                                                                                                                               |
 | ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `apps/backend/wrangler.jsonc`      | `BACKEND_INTERNAL_TOKEN`, `TUTURUUU_APP_COORDINATION_SECRET`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `CRON_SECRET`, `DISCORD_APP_DEPLOYMENT_URL`, `AURORA_EXTERNAL_URL` |
+| `apps/backend/wrangler.jsonc`      | `BACKEND_INTERNAL_TOKEN`, `TUTURUUU_APP_COORDINATION_SECRET`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `CRON_SECRET`, `DISCORD_APP_DEPLOYMENT_URL`, `AURORA_EXTERNAL_URL`, `AURORA_EXTERNAL_WSID` |
 | `apps/tanstack-web/wrangler.jsonc` | `BACKEND_PUBLIC_ORIGIN`, `BACKEND_INTERNAL_TOKEN`; `BACKEND` service binding to `tuturuuu-backend`                                                     |
 
 For local Worker previews, put secret values next to the owning Wrangler config
@@ -181,6 +185,7 @@ bun wrangler versions secret put SUPABASE_SERVICE_ROLE_KEY --config apps/backend
 bun wrangler versions secret put CRON_SECRET --config apps/backend/wrangler.jsonc
 bun wrangler versions secret put DISCORD_APP_DEPLOYMENT_URL --config apps/backend/wrangler.jsonc
 bun wrangler versions secret put AURORA_EXTERNAL_URL --config apps/backend/wrangler.jsonc
+bun wrangler versions secret put AURORA_EXTERNAL_WSID --config apps/backend/wrangler.jsonc
 bun wrangler versions deploy --config apps/backend/wrangler.jsonc
 
 bun wrangler versions secret put BACKEND_PUBLIC_ORIGIN --config apps/tanstack-web/wrangler.jsonc
@@ -394,11 +399,11 @@ than leaving them as untriaged `legacy-next` backlog.
 Current inventory:
 
 - `205` pages
-- `58` layouts
-- `784` route handler artifacts
+- `59` layouts
+- `792` route handler artifacts
 - `13` cron handlers
-- `1,051` total tracked route artifacts
-- `275` migrated artifacts, `294` terminal artifacts, and `757` remaining
+- `1,060` total tracked route artifacts
+- `275` migrated artifacts, `294` terminal artifacts, and `766` remaining
   legacy-owned artifacts in the checked manifest
 
 Regenerate it after adding or removing legacy routes:
@@ -962,8 +967,8 @@ For Cloudflare specifically:
 
 - Bind `BACKEND_INTERNAL_TOKEN`, `BACKEND_PUBLIC_ORIGIN`, `SUPABASE_URL`,
   `SUPABASE_SERVICE_ROLE_KEY`, `CRON_SECRET`, and
-  `DISCORD_APP_DEPLOYMENT_URL`, plus `AURORA_EXTERNAL_URL`, with
-  `wrangler secret put`,
+  `DISCORD_APP_DEPLOYMENT_URL`, plus `AURORA_EXTERNAL_URL` and
+  `AURORA_EXTERNAL_WSID`, with `wrangler secret put`,
   `wrangler versions secret put`, or Cloudflare dashboard secret bindings.
   The TanStack Worker reaches the backend Worker through the `BACKEND` service
   binding; configure `BACKEND_INTERNAL_URL` only for non-binding HTTP fallback

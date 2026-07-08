@@ -1,9 +1,9 @@
-import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
-import { describe, expect, it } from 'vitest';
 import {
   countWorkspaceStorageObjects,
   getWorkspaceStorageMetrics,
-} from '@/lib/storage-analytics';
+} from '@tuturuuu/storage-core/storage-analytics';
+import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
+import { describe, expect, it } from 'vitest';
 
 describe('storage analytics', () => {
   const supabase = {

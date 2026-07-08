@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.15.0](https://github.com/tutur3u/platform/compare/internal-api-v0.14.1...internal-api-v0.15.0) (2026-07-06)
+
+
+### Features
+
+* **tasks:** add quick-create targeting and edge autoscroll ([f03e932](https://github.com/tutur3u/platform/commit/f03e9324b0cce18e9f9974cc8fe251bb58b686bd))
+
+## [0.14.1](https://github.com/tutur3u/platform/compare/internal-api-v0.14.0...internal-api-v0.14.1) (2026-07-05)
+
+
+### Bug Fixes
+
+* **tasks:** serve config APIs from tasks app ([6d12722](https://github.com/tutur3u/platform/commit/6d12722fa54b146d69de0788624327eaa5f3f1a2))
+
 ## [0.14.0](https://github.com/tutur3u/platform/compare/internal-api-v0.13.0...internal-api-v0.14.0) (2026-07-03)
 
 

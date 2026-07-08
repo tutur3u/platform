@@ -11,6 +11,7 @@ import {
   refreshAppSessionForRequest,
 } from '@tuturuuu/auth/proxy';
 import { guardApiProxyRequest } from '@tuturuuu/utils/api-proxy-guard';
+import { getTuturuuuSharedCookieOptions } from '@tuturuuu/utils/shared-cookie';
 import Negotiator from 'negotiator';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
@@ -25,6 +26,23 @@ import {
 
 const intlMiddleware = createIntlMiddleware(routing);
 const LOCAL_AUTH_API_PREFIX = '/api/auth/';
+const LOCALE_COOKIE_OPTIONS = {
+  maxAge: 365 * 24 * 60 * 60,
+  path: '/',
+  sameSite: 'lax',
+} as const;
+
+function setLocaleCookie(
+  response: NextResponse,
+  request: NextRequest,
+  locale: string
+) {
+  response.cookies.set(
+    LOCALE_COOKIE_NAME,
+    locale,
+    getTuturuuuSharedCookieOptions(LOCALE_COOKIE_OPTIONS, request)
+  );
+}
 
 function getPreferredLocale(request: NextRequest): Locale {
   const cookieLocale = request.cookies.get(LOCALE_COOKIE_NAME)?.value;
@@ -116,7 +134,7 @@ function getCanonicalLocaleRedirect(request: NextRequest) {
   url.pathname = stripLocale(request.nextUrl.pathname);
 
   const response = NextResponse.redirect(url);
-  response.cookies.set(LOCALE_COOKIE_NAME, pathLocale);
+  setLocaleCookie(response, request, pathLocale);
   return response;
 }
 
@@ -212,7 +230,7 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
     }
 
     const response = intlMiddleware(request);
-    response.cookies.set(LOCALE_COOKIE_NAME, getPreferredLocale(request));
+    setLocaleCookie(response, request, getPreferredLocale(request));
     if (appSessionRefresh.ok) {
       propagateAuthCookies(appSessionRefresh.response, response);
     }
@@ -220,7 +238,7 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
   }
 
   const response = intlMiddleware(request);
-  response.cookies.set(LOCALE_COOKIE_NAME, getPreferredLocale(request));
+  setLocaleCookie(response, request, getPreferredLocale(request));
   return clearSupabaseAuthCookies(request, response);
 }
 

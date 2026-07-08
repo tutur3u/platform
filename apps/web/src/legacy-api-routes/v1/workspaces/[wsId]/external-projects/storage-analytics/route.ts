@@ -1,14 +1,14 @@
 import { posix } from 'node:path';
-import { NextResponse } from 'next/server';
-import { requireWorkspaceExternalProjectAccess } from '@/lib/external-projects/access';
-import { checkRateLimit } from '@/lib/rate-limit';
 import {
   getWorkspaceStorageOverview,
   listWorkspaceStorageRawObjectsForProvider,
   WorkspaceStorageError,
   type WorkspaceStorageOverview,
   type WorkspaceStorageRawObject,
-} from '@/lib/workspace-storage-provider';
+} from '@tuturuuu/storage-core/workspace-storage-provider';
+import { NextResponse } from 'next/server';
+import { requireWorkspaceExternalProjectAccess } from '@/lib/external-projects/access';
+import { checkRateLimit } from '@/lib/rate-limit';
 
 const EXTERNAL_PROJECT_STORAGE_ANALYTICS_OBJECT_LIMIT = 1000;
 const EXTERNAL_PROJECT_STORAGE_ANALYTICS_RATE_LIMIT = {

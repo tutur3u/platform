@@ -14,6 +14,7 @@ import {
   SquareMousePointer,
   User,
 } from '@tuturuuu/icons';
+import { logoutCurrentWebAccountWithInternalApi } from '@tuturuuu/internal-api/auth';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Dialog } from '@tuturuuu/ui/dialog';
@@ -37,6 +38,7 @@ import { getInitials } from '@tuturuuu/utils/name-helper';
 import { useTranslations } from 'next-intl';
 import { type ReactNode, useCallback, useContext, useState } from 'react';
 import { SidebarContext } from '../context/sidebar-context';
+import { SatelliteAccountSwitcherMenu } from './account-switcher-menu';
 import { LanguageWrapper } from './language-wrapper';
 import { SystemLanguageWrapper } from './system-language-wrapper';
 import { ThemeDropdownItems } from './theme-dropdown-items';
@@ -82,6 +84,9 @@ export default function UserNavClient({
       : `http://localhost:${process.env.CENTRAL_PORT || 7803}`);
 
   const handleLogout = async () => {
+    await logoutCurrentWebAccountWithInternalApi({
+      baseUrl: centralUrl,
+    }).catch(() => null);
     await fetch('/api/auth/logout', {
       cache: 'no-store',
       method: 'POST',
@@ -216,6 +221,16 @@ export default function UserNavClient({
                         <Check className="ml-auto h-4 w-4" />
                       )}
                     </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => sidebar.handleBehaviorChange('hidden')}
+                      disabled={sidebar.behavior === 'hidden'}
+                    >
+                      <PanelLeft className="h-4 w-4 text-dynamic-purple" />
+                      <span>{t('common.hidden')}</span>
+                      {sidebar.behavior === 'hidden' && (
+                        <Check className="ml-auto h-4 w-4" />
+                      )}
+                    </DropdownMenuItem>
                   </DropdownMenuSubContent>
                 </DropdownMenuPortal>
               </DropdownMenuSub>
@@ -273,6 +288,14 @@ export default function UserNavClient({
               </DropdownMenuItem>
             )}
           </DropdownMenuGroup>
+          {user && (
+            <>
+              <DropdownMenuSeparator />
+              <DropdownMenuGroup>
+                <SatelliteAccountSwitcherMenu centralUrl={centralUrl} />
+              </DropdownMenuGroup>
+            </>
+          )}
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">
             <LogOut className="h-4 w-4 text-dynamic-red" />

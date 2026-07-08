@@ -1,11 +1,11 @@
-import type { WorkspaceStorageProvider } from './workspace-storage-config';
+import type { WorkspaceStorageProvider } from '@tuturuuu/storage-core/workspace-storage-config';
 import {
   deleteWorkspaceStorageObjectByPath,
   downloadWorkspaceStorageObjectForProvider,
   getWorkspaceStorageObjectMetadataForProvider,
   resolveWorkspaceStorageProvider,
   WorkspaceStorageError,
-} from './workspace-storage-provider';
+} from '@tuturuuu/storage-core/workspace-storage-provider';
 
 export const MAX_INVENTORY_IMAGE_BYTES = 8 * 1024 * 1024;
 export const INVENTORY_IMAGE_CONTENT_TYPES = [

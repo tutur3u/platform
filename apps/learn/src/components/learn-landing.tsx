@@ -20,8 +20,20 @@ const landingCards = [
   { icon: LineChart, key: 'progress' },
 ] as const;
 
-export function LearnLanding({ dashboardHref }: { dashboardHref: string }) {
+export function LearnLanding({
+  dashboardHref,
+  isAuthenticated = false,
+  userName,
+}: {
+  dashboardHref: string;
+  isAuthenticated?: boolean;
+  userName?: string | null;
+}) {
   const t = useTranslations('landing');
+  const commonT = useTranslations('common');
+  const navLabel = isAuthenticated
+    ? t('greeting', { user: userName ?? commonT('learner') })
+    : t('signIn');
 
   return (
     <main className="min-h-screen overflow-hidden bg-root-background text-foreground">
@@ -36,10 +48,10 @@ export function LearnLanding({ dashboardHref }: { dashboardHref: string }) {
           </div>
         </div>
         <Link
-          className="inline-flex h-10 items-center justify-center gap-2 border-2 border-border bg-background px-4 font-black text-sm shadow-[3px_3px_0_var(--border)] transition active:translate-x-1 active:translate-y-1 active:shadow-none"
+          className="inline-flex h-10 max-w-[18rem] items-center justify-center gap-2 border-2 border-border bg-background px-4 font-black text-sm shadow-[3px_3px_0_var(--border)] transition active:translate-x-1 active:translate-y-1 active:shadow-none"
           href={dashboardHref}
         >
-          {t('signIn')}
+          <span className="truncate">{navLabel}</span>
           <ArrowRight className="h-4 w-4" />
         </Link>
       </nav>

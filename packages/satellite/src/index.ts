@@ -1,3 +1,4 @@
+export { SatelliteAccountSwitcherMenu } from './components/account-switcher-menu';
 export { AppsLauncherDialog } from './components/apps-launcher';
 export {
   SidebarStructure,
@@ -12,12 +13,14 @@ export {
   THEME_COOKIE_NAME,
 } from './constants/common';
 export {
+  getSidebarCookieOptions,
   SIDEBAR_BEHAVIOR_COOKIE_NAME as SIDEBAR_BEHAVIOR_COOKIE,
   SIDEBAR_BEHAVIOR_UPDATED_AT_COOKIE_NAME as SIDEBAR_BEHAVIOR_UPDATED_AT_COOKIE,
   SIDEBAR_COOKIE_OPTIONS,
   type SidebarBehavior,
   SidebarContext,
   SidebarProvider,
+  useOptionalSidebar,
   useSidebar,
 } from './context/sidebar-context';
 export {

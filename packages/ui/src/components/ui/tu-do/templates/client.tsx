@@ -52,6 +52,7 @@ import type { BoardTemplate, TemplateFilter } from './types';
 interface Props {
   wsId: string;
   initialTemplates: BoardTemplate[];
+  onOpenTemplate?: (template: BoardTemplate) => void;
   templatesBasePath?: string;
 }
 
@@ -60,6 +61,7 @@ type TemplateSourceBoard = Pick<WorkspaceTaskBoard, 'id' | 'name' | 'ws_id'>;
 export default function TemplatesClient({
   wsId,
   initialTemplates,
+  onOpenTemplate,
   templatesBasePath = 'templates',
 }: Props) {
   const t = useTranslations('ws-board-templates');
@@ -181,6 +183,7 @@ export default function TemplatesClient({
           {filteredTemplates.map((template) => (
             <TemplateCard
               key={template.id}
+              onOpenTemplate={onOpenTemplate}
               template={template}
               wsId={wsId}
               templatesBasePath={templatesBasePath}
@@ -225,12 +228,14 @@ export default function TemplatesClient({
 }
 
 interface TemplateCardProps {
+  onOpenTemplate?: (template: BoardTemplate) => void;
   template: BoardTemplate;
   wsId: string;
   templatesBasePath: string;
 }
 
 function TemplateCard({
+  onOpenTemplate,
   template,
   wsId,
   templatesBasePath,
@@ -248,92 +253,106 @@ function TemplateCard({
 
   const visibilityLabel = t(`visibility.${template.visibility}`);
 
-  return (
-    <Link href={`/${wsId}/${templatesBasePath}/${template.id}`}>
-      <Card className="h-full overflow-hidden transition-all hover:border-primary/50 hover:shadow-md">
-        <div className="aspect-video w-full overflow-hidden border-b bg-muted/30">
-          {template.backgroundUrl ? (
-            <Image
-              src={template.backgroundUrl}
-              alt={template.name}
-              width={400}
-              height={225}
-              className="h-full w-full object-cover transition-transform duration-300 hover:scale-105"
-            />
-          ) : (
-            <div className="flex h-full w-full items-center justify-center">
-              <KanbanSquare className="h-10 w-10 text-muted-foreground/20" />
+  const card = (
+    <Card className="h-full overflow-hidden transition-all hover:border-primary/50 hover:shadow-md">
+      <div className="aspect-video w-full overflow-hidden border-b bg-muted/30">
+        {template.backgroundUrl ? (
+          <Image
+            src={template.backgroundUrl}
+            alt={template.name}
+            width={400}
+            height={225}
+            className="h-full w-full object-cover transition-transform duration-300 hover:scale-105"
+          />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center">
+            <KanbanSquare className="h-10 w-10 text-muted-foreground/20" />
+          </div>
+        )}
+      </div>
+      <CardHeader className="pb-3">
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <div className="rounded-md bg-primary/10 p-2">
+              <Bookmark className="h-4 w-4 text-primary" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <CardTitle className="truncate text-base">
+                {template.name}
+              </CardTitle>
+            </div>
+          </div>
+          <Badge
+            variant="outline"
+            className={cn(
+              'flex shrink-0 items-center gap-1 text-xs',
+              template.visibility === 'private' &&
+                'border-dynamic-orange/30 text-dynamic-orange',
+              template.visibility === 'workspace' &&
+                'border-dynamic-blue/30 text-dynamic-blue',
+              template.visibility === 'public' &&
+                'border-dynamic-green/30 text-dynamic-green'
+            )}
+          >
+            {visibilityIcon}
+            <span className="hidden sm:inline">{visibilityLabel}</span>
+          </Badge>
+        </div>
+        {template.description && (
+          <CardDescription className="line-clamp-2 text-sm">
+            {template.description}
+          </CardDescription>
+        )}
+      </CardHeader>
+      <CardContent className="pt-0">
+        <div className="flex flex-wrap items-center gap-3 text-muted-foreground text-xs">
+          <div className="flex items-center gap-1">
+            <KanbanSquare className="h-3.5 w-3.5" />
+            <span>
+              {template.stats.lists} {t('gallery.lists')}
+            </span>
+          </div>
+          <div className="flex items-center gap-1">
+            <ListTodo className="h-3.5 w-3.5" />
+            <span>
+              {template.stats.tasks} {t('gallery.tasks')}
+            </span>
+          </div>
+          {template.stats.labels > 0 && (
+            <div className="flex items-center gap-1">
+              <Tags className="h-3.5 w-3.5" />
+              <span>
+                {template.stats.labels} {t('gallery.labels')}
+              </span>
             </div>
           )}
         </div>
-        <CardHeader className="pb-3">
-          <div className="flex items-start justify-between gap-2">
-            <div className="flex items-center gap-2">
-              <div className="rounded-md bg-primary/10 p-2">
-                <Bookmark className="h-4 w-4 text-primary" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <CardTitle className="truncate text-base">
-                  {template.name}
-                </CardTitle>
-              </div>
-            </div>
-            <Badge
-              variant="outline"
-              className={cn(
-                'flex shrink-0 items-center gap-1 text-xs',
-                template.visibility === 'private' &&
-                  'border-dynamic-orange/30 text-dynamic-orange',
-                template.visibility === 'workspace' &&
-                  'border-dynamic-blue/30 text-dynamic-blue',
-                template.visibility === 'public' &&
-                  'border-dynamic-green/30 text-dynamic-green'
-              )}
-            >
-              {visibilityIcon}
-              <span className="hidden sm:inline">{visibilityLabel}</span>
-            </Badge>
-          </div>
-          {template.description && (
-            <CardDescription className="line-clamp-2 text-sm">
-              {template.description}
-            </CardDescription>
-          )}
-        </CardHeader>
-        <CardContent className="pt-0">
-          <div className="flex flex-wrap items-center gap-3 text-muted-foreground text-xs">
-            <div className="flex items-center gap-1">
-              <KanbanSquare className="h-3.5 w-3.5" />
-              <span>
-                {template.stats.lists} {t('gallery.lists')}
-              </span>
-            </div>
-            <div className="flex items-center gap-1">
-              <ListTodo className="h-3.5 w-3.5" />
-              <span>
-                {template.stats.tasks} {t('gallery.tasks')}
-              </span>
-            </div>
-            {template.stats.labels > 0 && (
-              <div className="flex items-center gap-1">
-                <Tags className="h-3.5 w-3.5" />
-                <span>
-                  {template.stats.labels} {t('gallery.labels')}
-                </span>
-              </div>
-            )}
-          </div>
-          {template.isOwner && (
-            <Badge
-              variant="secondary"
-              className="mt-3 bg-primary/10 text-primary text-xs"
-            >
-              {t('gallery.owner_badge')}
-            </Badge>
-          )}
-        </CardContent>
-      </Card>
-    </Link>
+        {template.isOwner && (
+          <Badge
+            variant="secondary"
+            className="mt-3 bg-primary/10 text-primary text-xs"
+          >
+            {t('gallery.owner_badge')}
+          </Badge>
+        )}
+      </CardContent>
+    </Card>
+  );
+
+  if (onOpenTemplate) {
+    return (
+      <button
+        type="button"
+        className="block h-full w-full text-left"
+        onClick={() => onOpenTemplate(template)}
+      >
+        {card}
+      </button>
+    );
+  }
+
+  return (
+    <Link href={`/${wsId}/${templatesBasePath}/${template.id}`}>{card}</Link>
   );
 }
 

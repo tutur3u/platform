@@ -2,7 +2,7 @@ import { createCliAppSession } from '@tuturuuu/auth/cli-session';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { getUpstashRestRedisClient } from '@tuturuuu/utils/upstash-rest';
 import { NextRequest } from 'next/server';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { POST } from './route';
 
 vi.mock('@tuturuuu/supabase/next/server', () => ({
@@ -21,10 +21,12 @@ vi.mock('@/lib/app-coordination/session-policy', () => ({
 }));
 
 describe('CLI auth refresh route', () => {
+  let consoleWarn: ReturnType<typeof vi.spyOn>;
   let refreshReplaySet: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
     vi.clearAllMocks();
+    consoleWarn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     vi.stubEnv('TUTURUUU_APP_COORDINATION_SECRET', 'test-secret');
     refreshReplaySet = vi.fn().mockResolvedValue('OK');
     vi.mocked(getUpstashRestRedisClient).mockResolvedValue({
@@ -45,6 +47,10 @@ describe('CLI auth refresh route', () => {
         },
       },
     } as never);
+  });
+
+  afterEach(() => {
+    consoleWarn.mockRestore();
   });
 
   it('refreshes a CLI session from a Tuturuuu refresh JWT', async () => {
@@ -152,7 +158,7 @@ describe('CLI auth refresh route', () => {
     expect(secondResponse.status).toBe(401);
   });
 
-  it('fails closed when refresh-token replay protection is unavailable', async () => {
+  it('continues when refresh-token replay protection is unavailable', async () => {
     vi.mocked(getUpstashRestRedisClient).mockResolvedValueOnce(null);
 
     const oldSession = createCliAppSession({
@@ -167,11 +173,19 @@ describe('CLI auth refresh route', () => {
       })
     );
 
-    expect(response.status).toBe(503);
-    expect(createAdminClient).not.toHaveBeenCalled();
+    expect(response.status).toBe(200);
+    const body = await response.json();
+    expect(body.session.access_token).toMatch(/^ttr_app_/u);
+    expect(body.session.refresh_token).toMatch(/^ttr_app_/u);
+    expect(body.session.access_token).not.toBe(oldSession.access.token);
+    expect(body.session.refresh_token).not.toBe(oldSession.refresh.token);
+    expect(consoleWarn).toHaveBeenCalledWith(
+      'CLI refresh replay protection unavailable; continuing'
+    );
+    expect(createAdminClient).toHaveBeenCalled();
   });
 
-  it('fails closed when refresh-token replay protection errors', async () => {
+  it('continues when refresh-token replay protection errors', async () => {
     refreshReplaySet.mockRejectedValueOnce(new Error('redis unavailable'));
 
     const oldSession = createCliAppSession({
@@ -186,7 +200,15 @@ describe('CLI auth refresh route', () => {
       })
     );
 
-    expect(response.status).toBe(503);
-    expect(createAdminClient).not.toHaveBeenCalled();
+    expect(response.status).toBe(200);
+    const body = await response.json();
+    expect(body.session.access_token).toMatch(/^ttr_app_/u);
+    expect(body.session.refresh_token).toMatch(/^ttr_app_/u);
+    expect(body.session.access_token).not.toBe(oldSession.access.token);
+    expect(body.session.refresh_token).not.toBe(oldSession.refresh.token);
+    expect(consoleWarn).toHaveBeenCalledWith(
+      'CLI refresh replay protection unavailable; continuing'
+    );
+    expect(createAdminClient).toHaveBeenCalled();
   });
 });

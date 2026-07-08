@@ -7,6 +7,11 @@ import {
 } from 'node:crypto';
 import type { SupabaseSession } from '@tuturuuu/supabase/next/user';
 import {
+  getHostOnlyCookieOptions,
+  getTuturuuuSharedCookieOptions,
+  resolveTuturuuuSharedCookieDomain,
+} from '@tuturuuu/utils/shared-cookie';
+import {
   LEGACY_WEB_ACCOUNT_DEVICE_COOKIE_NAME,
   WEB_ACCOUNT_DEVICE_COOKIE_NAME,
 } from './types';
@@ -14,21 +19,6 @@ import {
 const COOKIE_VERSION = 'v1';
 const SESSION_CIPHER_VERSION = 'v1';
 const COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 400;
-const PARENT_DOMAIN_COOKIE_HOSTS = [
-  {
-    domain: '.tuturuuu.com',
-    matches: (hostname: string) =>
-      hostname === 'tuturuuu.com' || hostname.endsWith('.tuturuuu.com'),
-    secure: true,
-  },
-  {
-    domain: '.tuturuuu.localhost',
-    matches: (hostname: string) =>
-      hostname === 'tuturuuu.localhost' ||
-      hostname.endsWith('.tuturuuu.localhost'),
-    secure: false,
-  },
-];
 
 type DeviceCookieOptions = {
   domain?: string;
@@ -238,29 +228,47 @@ function resolveCookieUrl(request: Pick<Request, 'headers' | 'url'>) {
 
 export function getDeviceCookieOptions(
   request: Pick<Request, 'headers' | 'url'>
-) {
+): DeviceCookieOptions {
   const requestUrl = resolveCookieUrl(request);
+  const sharedOptions = getTuturuuuSharedCookieOptions(
+    {
+      httpOnly: true,
+      maxAge: COOKIE_MAX_AGE_SECONDS,
+      path: '/',
+      sameSite: 'lax',
+      secure: isSecureCookieScheme(requestUrl),
+    } satisfies DeviceCookieOptions,
+    request
+  );
 
-  return {
-    httpOnly: true,
-    maxAge: COOKIE_MAX_AGE_SECONDS,
-    path: '/',
-    sameSite: 'lax',
-    secure: isSecureCookieScheme(requestUrl),
-  } satisfies DeviceCookieOptions;
+  return sharedOptions satisfies DeviceCookieOptions;
 }
 
 export function getDeviceCookieName(request: Pick<Request, 'headers' | 'url'>) {
   const requestUrl = resolveCookieUrl(request);
 
-  return isSecureCookieScheme(requestUrl)
-    ? WEB_ACCOUNT_DEVICE_COOKIE_NAME
-    : LEGACY_WEB_ACCOUNT_DEVICE_COOKIE_NAME;
+  return resolveTuturuuuSharedCookieDomain(request)
+    ? LEGACY_WEB_ACCOUNT_DEVICE_COOKIE_NAME
+    : isSecureCookieScheme(requestUrl)
+      ? WEB_ACCOUNT_DEVICE_COOKIE_NAME
+      : LEGACY_WEB_ACCOUNT_DEVICE_COOKIE_NAME;
+}
+
+export function getDeviceCookieReadNames(
+  request: Pick<Request, 'headers' | 'url'>
+) {
+  const primary = getDeviceCookieName(request);
+  const fallback =
+    primary === LEGACY_WEB_ACCOUNT_DEVICE_COOKIE_NAME
+      ? WEB_ACCOUNT_DEVICE_COOKIE_NAME
+      : LEGACY_WEB_ACCOUNT_DEVICE_COOKIE_NAME;
+
+  return [primary, fallback] as const;
 }
 
 export function getExpiredDeviceCookieOptions(
   request: Pick<Request, 'headers' | 'url'>
-) {
+): DeviceCookieOptions {
   return {
     ...getDeviceCookieOptions(request),
     maxAge: 0,
@@ -270,26 +278,86 @@ export function getExpiredDeviceCookieOptions(
 export function getLegacyDeviceCookieClearOptions(
   request: Pick<Request, 'headers' | 'url'>
 ) {
-  const requestUrl = resolveCookieUrl(request);
-  const hostOnlyOptions = {
+  const hostOnlyOptions = getHostOnlyCookieOptions({
     ...getExpiredDeviceCookieOptions(request),
-  } satisfies DeviceCookieOptions;
-  const parentDomain = PARENT_DOMAIN_COOKIE_HOSTS.find((entry) =>
-    entry.matches(requestUrl.hostname)
-  );
+  } satisfies DeviceCookieOptions);
+  const sharedOptions = getExpiredDeviceCookieOptions(request);
 
-  if (!parentDomain) {
+  if (!sharedOptions.domain) {
     return [hostOnlyOptions];
   }
 
+  return [hostOnlyOptions, sharedOptions];
+}
+
+export function getStaleDeviceCookieClearTargets(
+  request: Pick<Request, 'headers' | 'url'>
+) {
+  const activeCookieName = getDeviceCookieName(request);
+  const activeOptions = getDeviceCookieOptions(request);
+  const hostOnlyOptions = getHostOnlyCookieOptions({
+    ...activeOptions,
+    maxAge: 0,
+  } satisfies DeviceCookieOptions);
+  const hostPrefixedClearOptions = {
+    ...hostOnlyOptions,
+    secure: true,
+  } satisfies DeviceCookieOptions;
+
+  if (
+    activeCookieName === LEGACY_WEB_ACCOUNT_DEVICE_COOKIE_NAME &&
+    activeOptions.domain
+  ) {
+    return [
+      {
+        name: LEGACY_WEB_ACCOUNT_DEVICE_COOKIE_NAME,
+        options: hostOnlyOptions,
+      },
+      {
+        name: WEB_ACCOUNT_DEVICE_COOKIE_NAME,
+        options: hostPrefixedClearOptions,
+      },
+    ];
+  }
+
+  if (activeCookieName === WEB_ACCOUNT_DEVICE_COOKIE_NAME) {
+    return getLegacyDeviceCookieClearOptions(request).map((options) => ({
+      name: LEGACY_WEB_ACCOUNT_DEVICE_COOKIE_NAME,
+      options,
+    }));
+  }
+
   return [
-    hostOnlyOptions,
     {
-      ...hostOnlyOptions,
-      domain: parentDomain.domain,
-      secure: parentDomain.secure,
+      name: WEB_ACCOUNT_DEVICE_COOKIE_NAME,
+      options: hostPrefixedClearOptions,
     },
   ];
+}
+
+export function getAllDeviceCookieClearTargets(
+  request: Pick<Request, 'headers' | 'url'>
+) {
+  const activeCookieName = getDeviceCookieName(request);
+  const activeOptions = getExpiredDeviceCookieOptions(request);
+  const targets = [
+    { name: activeCookieName, options: activeOptions },
+    ...getStaleDeviceCookieClearTargets(request),
+  ];
+  const seen = new Set<string>();
+
+  return targets.filter((target) => {
+    const key = [
+      target.name,
+      target.options.domain ?? '',
+      target.options.path,
+      target.options.secure ? 'secure' : 'insecure',
+    ].join('\0');
+
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
 }
 
 export {

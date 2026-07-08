@@ -6,7 +6,10 @@ import { Dialog } from '@tuturuuu/ui/dialog';
 import { useSearchParams } from 'next/navigation';
 import { type ComponentType, type ReactNode, useEffect, useState } from 'react';
 import { SettingsDialogFullscreenSkeleton } from '@/components/settings/settings-dialog-skeleton';
-import { SidebarProvider } from '@/context/sidebar-context';
+import {
+  type SidebarBehavior,
+  SidebarProvider,
+} from '@/context/sidebar-context';
 import { useLazyClientComponent } from '@/hooks/use-lazy-client-component';
 import type { DashboardNavigationLink } from './navigation-icon-descriptor';
 import type { StructureProps } from './structure-types';
@@ -46,7 +49,7 @@ interface DashboardShellClientProps {
   links: (DashboardNavigationLink | null)[];
   personalWorkspacePrompt?: ReactNode;
   showPersonalWorkspaceCollaborationBanner: boolean;
-  sidebarBehavior: 'expanded' | 'collapsed' | 'hover';
+  sidebarBehavior: SidebarBehavior;
   sidebarBehaviorUpdatedAt: number | null;
   tier: WorkspaceProductTier | null;
   user: WorkspaceUser;

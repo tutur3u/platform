@@ -358,6 +358,7 @@ export interface GenerateQuizFromLessonPayload {
   lessonId: string;
   testId?: string;
   context?: string;
+  difficulty?: 'easy' | 'medium' | 'hard';
   questionType?:
     | 'multiple_choice'
     | 'true_false'

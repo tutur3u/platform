@@ -2,7 +2,10 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
-import type { TimeTrackingSession } from '@tuturuuu/types';
+import type {
+  SessionWithRelations,
+  TimeTrackingSession,
+} from '@tuturuuu/types';
 import dayjs from 'dayjs';
 import isoWeek from 'dayjs/plugin/isoWeek';
 import timezone from 'dayjs/plugin/timezone';
@@ -11,7 +14,6 @@ import {
   getSessionDays,
   getSessionDurationInPeriod,
 } from '@/app/[locale]/(dashboard)/[wsId]/time-tracker/components/session-history/session-utils';
-import type { SessionWithRelations } from '@/app/[locale]/(dashboard)/[wsId]/time-tracker/types';
 import 'server-only';
 
 dayjs.extend(utc);

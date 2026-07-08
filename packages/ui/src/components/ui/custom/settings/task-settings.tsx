@@ -7,6 +7,7 @@ import {
   TASK_NAVIGATION_LEADERBOARDS_CONFIG_ID,
   TASK_NAVIGATION_PROGRESS_CONFIG_ID,
   TASK_NAVIGATION_STATS_CONFIG_ID,
+  TASK_QUICK_CREATE_TARGET_LIST_CONFIG_ID,
 } from '@tuturuuu/internal-api/users';
 import type { Workspace } from '@tuturuuu/types';
 import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
@@ -34,6 +35,11 @@ import {
   type TaskDialogPresentation,
 } from '../../tu-do/shared/task-dialog-presentation';
 import { TASKS_SHOW_REVIEW_DUE_DATES_CONFIG_ID } from '../../tu-do/shared/task-due-date-visibility';
+import {
+  DEFAULT_TASK_QUICK_CREATE_TARGET_LIST,
+  normalizeTaskQuickCreateTargetList,
+  type TaskQuickCreateTargetList,
+} from '../../tu-do/shared/task-quick-create-target-list';
 import {
   clampTaskSoundEffectsVolume,
   DEFAULT_TASK_SOUND_EFFECTS_VOLUME,
@@ -142,6 +148,14 @@ export function TaskSettings({ workspace }: TaskSettingsProps) {
   const { data: dialogPresentationRaw, isLoading: dialogPresentationLoading } =
     useUserConfig(TASK_DIALOG_DEFAULT_PRESENTATION_CONFIG_ID, 'compact');
   const updateDialogPresentation = useUpdateUserConfig();
+  const {
+    data: quickCreateTargetListRaw,
+    isLoading: quickCreateTargetListLoading,
+  } = useUserConfig(
+    TASK_QUICK_CREATE_TARGET_LIST_CONFIG_ID,
+    DEFAULT_TASK_QUICK_CREATE_TARGET_LIST
+  );
+  const updateQuickCreateTargetList = useUpdateUserConfig();
 
   const { data: settings, isLoading } = useQuery({
     queryKey: ['user-task-settings'],
@@ -211,6 +225,9 @@ export function TaskSettings({ workspace }: TaskSettingsProps) {
   const dialogPresentation = normalizeTaskDialogPresentation(
     dialogPresentationRaw
   );
+  const quickCreateTargetList = normalizeTaskQuickCreateTargetList(
+    quickCreateTargetListRaw
+  );
 
   const handleDialogPresentationChange = (value: string) => {
     const nextValue: TaskDialogPresentation = normalizeTaskDialogPresentation(
@@ -219,6 +236,15 @@ export function TaskSettings({ workspace }: TaskSettingsProps) {
     );
     updateDialogPresentation.mutate({
       configId: TASK_DIALOG_DEFAULT_PRESENTATION_CONFIG_ID,
+      value: nextValue,
+    });
+  };
+
+  const handleQuickCreateTargetListChange = (value: string) => {
+    const nextValue: TaskQuickCreateTargetList =
+      normalizeTaskQuickCreateTargetList(value);
+    updateQuickCreateTargetList.mutate({
+      configId: TASK_QUICK_CREATE_TARGET_LIST_CONFIG_ID,
       value: nextValue,
     });
   };
@@ -325,6 +351,35 @@ export function TaskSettings({ workspace }: TaskSettingsProps) {
               </SelectItem>
               <SelectItem value="fullscreen">
                 {t('dialog_presentation_immersive')}
+              </SelectItem>
+            </SelectContent>
+          </Select>
+        </SettingItemTab>
+        <Separator />
+        <SettingItemTab
+          title={t('quick_create_target_list')}
+          description={t('quick_create_target_list_description')}
+        >
+          <Select
+            value={quickCreateTargetList}
+            onValueChange={handleQuickCreateTargetListChange}
+            disabled={
+              quickCreateTargetListLoading ||
+              updateQuickCreateTargetList.isPending
+            }
+          >
+            <SelectTrigger
+              aria-label={t('quick_create_target_list')}
+              className="w-44"
+            >
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="default_list">
+                {t('quick_create_target_list_default')}
+              </SelectItem>
+              <SelectItem value="hovered_list">
+                {t('quick_create_target_list_hovered')}
               </SelectItem>
             </SelectContent>
           </Select>

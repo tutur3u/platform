@@ -17,6 +17,7 @@ const SOURCE_LIST_ID = '77777777-7777-4777-8777-777777777777';
 const PLACED_TASK_ID = '88888888-8888-4888-8888-888888888888';
 const UNPLACED_TASK_ID = '99999999-9999-4999-8999-999999999999';
 const LOCAL_TASK_ID = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+const PERSONAL_SOURCE_BOARD_ID = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
 
 const mocks = vi.hoisted(() => {
   const adminQueues = new Map<string, QueryResult[]>();
@@ -214,6 +215,30 @@ function externalTask(id: string) {
   };
 }
 
+function personalBoardExternalTask(id: string) {
+  const task = externalTask(id);
+
+  return {
+    ...task,
+    name: 'Placed board-external personal task',
+    task_lists: {
+      ...task.task_lists,
+      board_id: PERSONAL_SOURCE_BOARD_ID,
+      workspace_boards: {
+        ...task.task_lists.workspace_boards,
+        id: PERSONAL_SOURCE_BOARD_ID,
+        name: 'Personal source board',
+        ws_id: PERSONAL_WS_ID,
+        workspaces: {
+          id: PERSONAL_WS_ID,
+          name: 'Personal workspace',
+          personal: true,
+        },
+      },
+    },
+  };
+}
+
 function boardTask(id: string) {
   const task = externalTask(id);
 
@@ -246,9 +271,9 @@ function queuePersonalWorkspace() {
   });
 }
 
-function queueSourceMembership() {
+function queueSourceMembership(workspaceId = SOURCE_WS_ID) {
   queueResult(mocks.memberQueues, 'workspace_members', {
-    data: [{ ws_id: SOURCE_WS_ID }],
+    data: [{ ws_id: workspaceId }],
     error: null,
   });
 }
@@ -1004,6 +1029,64 @@ describe('workspace task route personal external loading', () => {
     expectSourceMembershipQueriesRequireMemberAccess();
   });
 
+  it('loads placed tasks from another board in the same personal workspace', async () => {
+    queuePersonalWorkspace();
+    queueResult(mocks.adminQueues, 'tasks', {
+      data: [],
+      error: null,
+      count: 0,
+    });
+    queueResult(mocks.adminQueues, 'task_user_overrides', {
+      data: [
+        {
+          task_id: PLACED_TASK_ID,
+          personal_board_id: PERSONAL_BOARD_ID,
+          personal_list_id: PERSONAL_LIST_ID,
+          personal_sort_key: 1_500_000,
+          personal_added_at: '2026-05-07T00:00:00.000Z',
+          personal_placed_at: '2026-05-07T01:00:00.000Z',
+        },
+      ],
+      error: null,
+      count: 1,
+    });
+    queueResult(mocks.adminQueues, 'tasks', {
+      data: [personalBoardExternalTask(PLACED_TASK_ID)],
+      error: null,
+    });
+    queueSourceMembership(PERSONAL_WS_ID);
+    queueEmptyPersonalMetadata();
+    queueResult(mocks.memberQueues, 'task_user_scheduling_settings', {
+      data: [],
+      error: null,
+    });
+
+    const { GET } = await import('./route.js');
+    const response = await GET(
+      new NextRequest(
+        `http://localhost/api/v1/workspaces/personal/tasks?boardId=${PERSONAL_BOARD_ID}&listId=${PERSONAL_LIST_ID}&includeRelationshipSummary=false`
+      ),
+      { params: Promise.resolve({ wsId: 'personal' }) }
+    );
+
+    expect(response.status).toBe(200);
+    const payload = await response.json();
+    expect(payload.tasks).toHaveLength(1);
+    expect(payload.tasks[0]).toEqual(
+      expect.objectContaining({
+        id: PLACED_TASK_ID,
+        list_id: PERSONAL_LIST_ID,
+        personal_board_id: PERSONAL_BOARD_ID,
+        personal_list_id: PERSONAL_LIST_ID,
+        source_board_id: PERSONAL_SOURCE_BOARD_ID,
+        source_workspace_id: PERSONAL_WS_ID,
+        is_personal_external: true,
+        is_personal_external_default: false,
+      })
+    );
+    expectSourceMembershipQueriesRequireMemberAccess();
+  });
+
   it('serves the production app-session personal board due-date query without count RPC noise', async () => {
     const dueLocalTask = {
       ...boardTask(LOCAL_TASK_ID),
@@ -1074,8 +1157,15 @@ describe('workspace task route personal external loading', () => {
     expect(response.status).toBe(200);
     const payload = await response.json();
     const taskIds = payload.tasks.map((task: { id: string }) => task.id);
+    const localTask = payload.tasks.find(
+      (task: { id: string }) => task.id === LOCAL_TASK_ID
+    );
 
     expect(taskIds).toEqual([LOCAL_TASK_ID, PLACED_TASK_ID, UNPLACED_TASK_ID]);
+    expect(localTask).toMatchObject({
+      is_personal_external: false,
+      is_personal_external_default: false,
+    });
     expect(new Set(taskIds).size).toBe(taskIds.length);
     expect(payload.count).toBe(3);
     expect(consoleWarnSpy).not.toHaveBeenCalled();

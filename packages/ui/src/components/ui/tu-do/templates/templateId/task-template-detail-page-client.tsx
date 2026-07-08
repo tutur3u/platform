@@ -14,8 +14,10 @@ interface Props {
   wsId: string;
   templateId: string;
   templatesBasePath: string;
-  initialTemplate: InternalApiWorkspaceTemplate;
-  initialBackgroundUrl: string | null;
+  embedded?: boolean;
+  initialTemplate?: InternalApiWorkspaceTemplate;
+  initialBackgroundUrl?: string | null;
+  onClose?: () => void;
 }
 
 function mapTemplateToDetail(
@@ -74,8 +76,10 @@ export default function TaskTemplateDetailPageClient({
   wsId,
   templateId,
   templatesBasePath,
+  embedded = false,
   initialTemplate,
   initialBackgroundUrl,
+  onClose,
 }: Props) {
   const { data: template, error } = useQuery({
     queryKey: ['workspace-template', wsId, templateId],
@@ -112,6 +116,8 @@ export default function TaskTemplateDetailPageClient({
   return (
     <div>
       <TemplateDetailClient
+        embedded={embedded}
+        onClose={onClose}
         wsId={wsId}
         template={mapTemplateToDetail(template, backgroundUrl ?? null)}
         templatesBasePath={templatesBasePath}

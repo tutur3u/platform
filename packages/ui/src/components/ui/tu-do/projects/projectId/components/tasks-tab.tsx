@@ -38,6 +38,7 @@ interface TasksTabProps {
   setListStatusFilter: (filter: ListStatusFilter) => void;
   setShowLinkTaskDialog: (show: boolean) => void;
   onTaskPartialUpdate: (taskId: string, partial: Partial<Task>) => void;
+  embedded?: boolean;
   isMultiSelectMode: boolean;
   setIsMultiSelectMode: (mode: boolean) => void;
 }
@@ -58,6 +59,7 @@ export function TasksTab({
   setListStatusFilter,
   setShowLinkTaskDialog,
   onTaskPartialUpdate,
+  embedded = false,
   isMultiSelectMode,
   setIsMultiSelectMode,
 }: TasksTabProps) {
@@ -207,7 +209,7 @@ export function TasksTab({
             listStatusFilter={listStatusFilter}
             onListStatusFilterChange={setListStatusFilter}
             isPersonalWorkspace={workspace.personal}
-            backUrl={`/${wsId}${tasksHref('/projects')}`}
+            backUrl={embedded ? undefined : `/${wsId}${tasksHref('/projects')}`}
             hideActions={true}
             isMultiSelectMode={isMultiSelectMode}
             setIsMultiSelectMode={setIsMultiSelectMode}

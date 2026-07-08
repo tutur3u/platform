@@ -367,7 +367,7 @@ describe('CLI commands', () => {
     ]);
 
     expect(fetchMock).toHaveBeenCalledWith(
-      'https://tuturuuu.com/api/workspaces/ws-1/wallets/wallet-1',
+      'https://finance.tuturuuu.com/api/workspaces/ws-1/wallets/wallet-1',
       expect.objectContaining({
         cache: 'no-store',
       })
@@ -413,7 +413,7 @@ describe('CLI commands', () => {
     ]);
 
     expect(fetchMock).toHaveBeenCalledWith(
-      'https://tuturuuu.com/api/v1/workspaces/ws-1/wallets',
+      'https://finance.tuturuuu.com/api/v1/workspaces/ws-1/wallets',
       expect.objectContaining({
         cache: 'no-store',
       })
@@ -846,7 +846,7 @@ task_name: Prepare handoff
     ]);
 
     expect(fetchMock).toHaveBeenCalledWith(
-      `https://tuturuuu.com/api/workspaces/ws-1/wallets/${walletIdA}/checkpoints`,
+      `https://finance.tuturuuu.com/api/workspaces/ws-1/wallets/${walletIdA}/checkpoints`,
       expect.objectContaining({
         body: JSON.stringify({
           actual_balance: 123.45,
@@ -893,7 +893,7 @@ task_name: Prepare handoff
     ]);
 
     expect(fetchMock).toHaveBeenCalledWith(
-      'https://tuturuuu.com/api/workspaces/ws-1/wallets/checkpoints',
+      'https://finance.tuturuuu.com/api/workspaces/ws-1/wallets/checkpoints',
       expect.objectContaining({
         body: JSON.stringify({
           checked_at: '2026-06-10T17:00:00.000Z',
@@ -1007,17 +1007,17 @@ task_name: Prepare handoff
 
     expect(fetchMock).toHaveBeenNthCalledWith(
       1,
-      `https://tuturuuu.com/api/workspaces/ws-1/wallets/${walletIdA}/checkpoints?limit=10`,
+      `https://finance.tuturuuu.com/api/workspaces/ws-1/wallets/${walletIdA}/checkpoints?limit=10`,
       expect.objectContaining({ cache: 'no-store' })
     );
     expect(fetchMock).toHaveBeenNthCalledWith(
       2,
-      `https://tuturuuu.com/api/workspaces/ws-1/wallets/${walletIdA}/checkpoints`,
+      `https://finance.tuturuuu.com/api/workspaces/ws-1/wallets/${walletIdA}/checkpoints`,
       expect.objectContaining({ cache: 'no-store' })
     );
     expect(fetchMock).toHaveBeenNthCalledWith(
       3,
-      `https://tuturuuu.com/api/workspaces/ws-1/wallets/${walletIdA}/checkpoints/${checkpointId}`,
+      `https://finance.tuturuuu.com/api/workspaces/ws-1/wallets/${walletIdA}/checkpoints/${checkpointId}`,
       expect.objectContaining({
         body: JSON.stringify({ actual_balance: 101 }),
         cache: 'no-store',
@@ -1026,7 +1026,7 @@ task_name: Prepare handoff
     );
     expect(fetchMock).toHaveBeenNthCalledWith(
       4,
-      `https://tuturuuu.com/api/workspaces/ws-1/wallets/${walletIdA}/checkpoints/${checkpointId}`,
+      `https://finance.tuturuuu.com/api/workspaces/ws-1/wallets/${walletIdA}/checkpoints/${checkpointId}`,
       expect.objectContaining({
         cache: 'no-store',
         method: 'DELETE',
@@ -1034,7 +1034,7 @@ task_name: Prepare handoff
     );
     expect(fetchMock).toHaveBeenNthCalledWith(
       5,
-      'https://tuturuuu.com/api/workspaces/ws-1/wallets/checkpoints',
+      'https://finance.tuturuuu.com/api/workspaces/ws-1/wallets/checkpoints',
       expect.objectContaining({ cache: 'no-store' })
     );
   });
@@ -1071,7 +1071,7 @@ task_name: Prepare handoff
 
     const request = fetchMock.mock.calls[0];
     expect(request?.[0]).toBe(
-      'https://tuturuuu.com/api/workspaces/ws-1/transactions'
+      'https://finance.tuturuuu.com/api/workspaces/ws-1/transactions'
     );
     expect(request?.[1]).toEqual(
       expect.objectContaining({
@@ -1120,7 +1120,7 @@ task_name: Prepare handoff
 
     const request = fetchMock.mock.calls[0];
     expect(request?.[0]).toBe(
-      'https://tuturuuu.com/api/workspaces/ws-1/transactions/tx-1'
+      'https://finance.tuturuuu.com/api/workspaces/ws-1/transactions/tx-1'
     );
     expect(request?.[1]).toEqual(
       expect.objectContaining({
@@ -1175,7 +1175,7 @@ task_name: Prepare handoff
     ]);
 
     expect(fetchMock).toHaveBeenCalledWith(
-      'https://tuturuuu.com/api/workspaces/ws-1/transfers',
+      'https://finance.tuturuuu.com/api/workspaces/ws-1/transfers',
       expect.objectContaining({
         body: JSON.stringify({
           origin_wallet_id: 'origin-wallet',
@@ -1223,7 +1223,7 @@ task_name: Prepare handoff
     ]);
 
     expect(fetchMock).toHaveBeenCalledWith(
-      'https://tuturuuu.com/api/workspaces/ws-1/transactions/categories',
+      'https://finance.tuturuuu.com/api/workspaces/ws-1/transactions/categories',
       expect.objectContaining({
         body: JSON.stringify({
           name: 'Travel',
@@ -1265,7 +1265,7 @@ task_name: Prepare handoff
     ]);
 
     expect(fetchMock).toHaveBeenCalledWith(
-      'https://tuturuuu.com/api/workspaces/ws-1/tags',
+      'https://finance.tuturuuu.com/api/workspaces/ws-1/tags',
       expect.objectContaining({
         body: JSON.stringify({
           name: 'Tuturuuu',
@@ -1304,7 +1304,7 @@ task_name: Prepare handoff
     ]);
 
     expect(fetchMock).toHaveBeenCalledWith(
-      'https://tuturuuu.com/api/workspaces/ws-1/tags/tag-1',
+      'https://finance.tuturuuu.com/api/workspaces/ws-1/tags/tag-1',
       expect.objectContaining({
         body: JSON.stringify({
           description: 'Investment platform costs',
@@ -1363,21 +1363,21 @@ task_name: Prepare handoff
 
     expect(fetchMock).toHaveBeenNthCalledWith(
       1,
-      'https://tuturuuu.com/api/workspaces/ws-1/tags',
+      'https://finance.tuturuuu.com/api/workspaces/ws-1/tags',
       expect.objectContaining({
         cache: 'no-store',
       })
     );
     expect(fetchMock).toHaveBeenNthCalledWith(
       2,
-      'https://tuturuuu.com/api/workspaces/ws-1/tags/tag-1',
+      'https://finance.tuturuuu.com/api/workspaces/ws-1/tags/tag-1',
       expect.objectContaining({
         cache: 'no-store',
       })
     );
     expect(fetchMock).toHaveBeenNthCalledWith(
       3,
-      'https://tuturuuu.com/api/workspaces/ws-1/tags/tag-1',
+      'https://finance.tuturuuu.com/api/workspaces/ws-1/tags/tag-1',
       expect.objectContaining({
         cache: 'no-store',
         method: 'DELETE',
@@ -1415,7 +1415,7 @@ task_name: Prepare handoff
     ]);
 
     expect(fetchMock).toHaveBeenCalledWith(
-      'https://tuturuuu.com/api/v1/workspaces/ws-1/calendar/events',
+      'https://calendar.tuturuuu.com/api/v1/workspaces/ws-1/calendar/events',
       expect.objectContaining({
         body: JSON.stringify({
           title: 'Focus block',
@@ -1494,7 +1494,7 @@ task_name: Prepare handoff
     ]);
 
     expect(fetchMock).toHaveBeenCalledWith(
-      'https://tuturuuu.com/api/v1/workspaces/ws-1/calendars/reset',
+      'https://calendar.tuturuuu.com/api/v1/workspaces/ws-1/calendars/reset',
       expect.objectContaining({
         method: 'POST',
       })
@@ -1553,7 +1553,7 @@ task_name: Prepare handoff
     ]);
 
     expect(fetchMock).toHaveBeenCalledWith(
-      'https://tuturuuu.com/api/v1/calendar/connections',
+      'https://calendar.tuturuuu.com/api/v1/calendar/connections',
       expect.objectContaining({
         body: JSON.stringify({
           calendarId: 'primary',
@@ -2087,6 +2087,255 @@ task_name: Prepare handoff
       'Acceptance criteria'
     );
     expect(Array.isArray(body.description_yjs_state)).toBe(true);
+  });
+
+  it('moves personal external tasks through the current-user personal placement endpoint', async () => {
+    const taskId = '11111111-1111-4111-8111-111111111111';
+    await writeTestConfig({
+      baseUrl: 'https://tuturuuu.com',
+      currentWorkspaceId: 'personal',
+      session: {
+        accessToken: 'access-token',
+        refreshToken: 'refresh-token',
+      },
+    });
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(
+        Response.json({
+          task: {
+            id: taskId,
+            is_personal_external: true,
+            source_workspace_id: 'source-ws',
+          },
+          taskWorkspacePersonal: false,
+          taskWorkspaceTier: 'FREE',
+          taskWsId: 'source-ws',
+          availableLists: [],
+        })
+      )
+      .mockResolvedValueOnce(
+        Response.json({
+          task: {
+            id: taskId,
+            is_personal_external: true,
+            personal_board_id: 'personal-board',
+            personal_list_id: 'personal-list',
+          },
+        })
+      );
+    vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
+
+    await runCli([
+      'tasks',
+      'move',
+      taskId,
+      '--target-board',
+      'personal-board',
+      '--list',
+      'personal-list',
+      '--json',
+      '--no-update-check',
+    ]);
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      `https://tasks.tuturuuu.com/api/v1/users/me/tasks/${taskId}`,
+      expect.objectContaining({ cache: 'no-store' })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      `https://tasks.tuturuuu.com/api/v1/users/me/tasks/${taskId}/personal-placement`,
+      expect.objectContaining({
+        body: JSON.stringify({
+          personal_board_id: 'personal-board',
+          personal_list_id: 'personal-list',
+        }),
+        cache: 'no-store',
+        method: 'PUT',
+      })
+    );
+    expect(
+      fetchMock.mock.calls.some(([url]) => String(url).includes('/move'))
+    ).toBe(false);
+  });
+
+  it('marks personal external tasks done through terminal personal placement', async () => {
+    const taskId = '33333333-3333-4333-8333-333333333333';
+    await writeTestConfig({
+      baseUrl: 'https://tuturuuu.com',
+      currentWorkspaceId: 'personal',
+      session: {
+        accessToken: 'access-token',
+        refreshToken: 'refresh-token',
+      },
+    });
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(
+        Response.json({
+          task: {
+            id: taskId,
+            is_personal_external: true,
+            source_workspace_id: 'source-ws',
+          },
+        })
+      )
+      .mockResolvedValueOnce(
+        Response.json({
+          task: {
+            id: taskId,
+            is_personal_external: true,
+            personal_board_id: 'personal-board',
+            personal_list_id: 'personal-done-list',
+          },
+        })
+      );
+    vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
+
+    await runCli([
+      'tasks',
+      'done',
+      taskId,
+      '--target-board',
+      'personal-board',
+      '--list',
+      'personal-done-list',
+      '--json',
+      '--no-update-check',
+    ]);
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      `https://tasks.tuturuuu.com/api/v1/users/me/tasks/${taskId}/personal-placement`,
+      expect.objectContaining({
+        body: JSON.stringify({
+          personal_board_id: 'personal-board',
+          personal_list_id: 'personal-done-list',
+          terminal_status: 'done',
+        }),
+        cache: 'no-store',
+        method: 'PUT',
+      })
+    );
+    expect(
+      fetchMock.mock.calls.some(([url]) =>
+        String(url).includes(`/workspaces/personal/tasks/${taskId}`)
+      )
+    ).toBe(false);
+  });
+
+  it('closes personal external tasks through terminal personal placement', async () => {
+    const taskId = '44444444-4444-4444-8444-444444444444';
+    await writeTestConfig({
+      baseUrl: 'https://tuturuuu.com',
+      currentBoardId: 'personal-board',
+      currentWorkspaceId: 'personal',
+      session: {
+        accessToken: 'access-token',
+        refreshToken: 'refresh-token',
+      },
+    });
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(
+        Response.json({
+          task: {
+            id: taskId,
+            is_personal_external: true,
+            source_workspace_id: 'source-ws',
+          },
+        })
+      )
+      .mockResolvedValueOnce(
+        Response.json({
+          task: {
+            id: taskId,
+            is_personal_external: true,
+            personal_board_id: 'personal-board',
+            personal_list_id: 'personal-closed-list',
+          },
+        })
+      );
+    vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
+
+    await runCli(['tasks', 'close', taskId, '--json', '--no-update-check']);
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      `https://tasks.tuturuuu.com/api/v1/users/me/tasks/${taskId}/personal-placement`,
+      expect.objectContaining({
+        body: JSON.stringify({
+          personal_board_id: 'personal-board',
+          personal_list_id: null,
+          terminal_status: 'closed',
+        }),
+        cache: 'no-store',
+        method: 'PUT',
+      })
+    );
+    expect(
+      fetchMock.mock.calls.some(([url]) =>
+        String(url).includes(`/workspaces/personal/tasks/${taskId}`)
+      )
+    ).toBe(false);
+  });
+
+  it('keeps native task moves on the workspace move endpoint', async () => {
+    const taskId = '22222222-2222-4222-8222-222222222222';
+    await writeTestConfig({
+      baseUrl: 'https://tuturuuu.com',
+      currentWorkspaceId: 'ws-1',
+      session: {
+        accessToken: 'access-token',
+        refreshToken: 'refresh-token',
+      },
+    });
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(
+        Response.json({
+          task: {
+            id: taskId,
+            name: 'Native task',
+          },
+          taskWorkspacePersonal: false,
+          taskWorkspaceTier: 'FREE',
+          taskWsId: 'ws-1',
+          availableLists: [],
+        })
+      )
+      .mockResolvedValueOnce(
+        Response.json({
+          task: {
+            id: taskId,
+            list_id: 'target-list',
+          },
+        })
+      );
+    vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
+
+    await runCli([
+      'tasks',
+      'move',
+      taskId,
+      '--list',
+      'target-list',
+      '--json',
+      '--no-update-check',
+    ]);
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      `https://tasks.tuturuuu.com/api/v1/workspaces/ws-1/tasks/${taskId}/move`,
+      expect.objectContaining({
+        body: JSON.stringify({
+          list_id: 'target-list',
+        }),
+        cache: 'no-store',
+        method: 'POST',
+      })
+    );
   });
 
   it('creates task descriptions from markdown files with tables', async () => {

@@ -7,6 +7,8 @@ import {
   submitTulearnQuizAnswer,
 } from '@tuturuuu/internal-api';
 import { Button } from '@tuturuuu/ui/button';
+import { toast } from '@tuturuuu/ui/sonner';
+import { Textarea } from '@tuturuuu/ui/textarea';
 import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useState } from 'react';
@@ -29,9 +31,11 @@ import { BrutalCard, useStudentId } from './shared';
 type QuizSubmission = {
   answer: unknown;
   created_at?: string | null;
-  is_correct: boolean;
+  is_correct: boolean | null;
   quiz_id: string;
   selected_option_id: string | null;
+  feedback?: string | null;
+  ai_feedback?: string | null;
 };
 
 function getExplanation(
@@ -65,10 +69,14 @@ export function LearnerQuizzes({
   quizzes,
   moduleId,
   submissions,
+  isQuizScorePublished = false,
+  quizDeadline = null,
 }: {
   quizzes: Quiz[];
   moduleId: string;
   submissions?: QuizSubmission[];
+  isQuizScorePublished?: boolean;
+  quizDeadline?: string | null;
 }) {
   const t = useTranslations();
   const params = useParams();
@@ -103,6 +111,28 @@ export function LearnerQuizzes({
   > | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const [localSubmissions, setLocalSubmissions] = useState<
+    Record<
+      string,
+      {
+        is_correct: boolean | null;
+        feedback?: string | null;
+        ai_feedback?: string | null;
+      }
+    >
+  >({});
+
+  const hasUnmarked = useMemo(() => {
+    return quizzes.some((quiz) => {
+      if (quiz.type !== 'paragraph') return false;
+      if (quiz.id in localSubmissions) {
+        return localSubmissions[quiz.id]?.is_correct === null;
+      }
+      const sub = normalizedSubmissions.find((s) => s.quiz_id === quiz.id);
+      return sub && sub.is_correct === null;
+    });
+  }, [quizzes, normalizedSubmissions, localSubmissions]);
+
   const [correctCount, setCorrectCount] = useState(() => {
     return normalizedSubmissions.filter((sub) => sub.is_correct).length;
   });
@@ -117,6 +147,11 @@ export function LearnerQuizzes({
   const [completed, setCompleted] = useState(() => {
     return initialIdx >= quizzes.length && quizzes.length > 0;
   });
+
+  const isDeadlinePassed = useMemo(() => {
+    if (!quizDeadline) return false;
+    return new Date() > new Date(quizDeadline);
+  }, [quizDeadline]);
 
   const currentQuiz = quizzes[currentIdx];
 
@@ -156,13 +191,25 @@ export function LearnerQuizzes({
   const matchingChoices = getMatchingChoices(currentQuiz.content);
   const orderingItems = getStringItems(currentQuiz.content, 'items');
   const currentScore = getQuizScore(currentQuiz);
+  const isParagraphQuiz = currentQuiz.type === 'paragraph';
+  const paragraphAnswer =
+    typeof selectedAnswer === 'string' ? selectedAnswer : '';
   const canSubmit =
     currentQuiz.type === 'matching'
       ? isCompleteMatchingAnswer(selectedAnswer, matchingPairs.length)
-      : selectedAnswer !== null;
+      : isParagraphQuiz
+        ? paragraphAnswer.trim().length > 0
+        : selectedAnswer !== null;
 
   const handleSubmit = async () => {
-    if (!canSubmit || isSubmitted || isSubmitting) return;
+    if (!canSubmit || isSubmitting) return;
+
+    if (isDeadlinePassed) {
+      toast.error(
+        t('courses.quizDeadlinePassedError') || 'The deadline has passed.'
+      );
+      return;
+    }
 
     setIsSubmitting(true);
     try {
@@ -185,6 +232,8 @@ export function LearnerQuizzes({
         isMatchingAnswer(selectedAnswer)
       ) {
         answerPayload = selectedAnswer;
+      } else if (currentQuiz.type === 'paragraph') {
+        answerPayload = { text: paragraphAnswer.trim() };
       }
 
       const response = await submitTulearnQuizAnswer(
@@ -206,6 +255,15 @@ export function LearnerQuizzes({
 
       setIsCorrect(correct);
       setCorrectAnswer(response.correct_answer ?? null);
+
+      const isCorrectValue = currentQuiz.type === 'paragraph' ? null : correct;
+      setLocalSubmissions((prev) => ({
+        ...prev,
+        [currentQuiz.id]: {
+          is_correct: isCorrectValue,
+          ai_feedback: (response as any).ai_feedback ?? null,
+        },
+      }));
 
       if (correct) {
         setCorrectCount((prev) => prev + 1);
@@ -258,6 +316,7 @@ export function LearnerQuizzes({
       setSelectedAnswer(null);
       setIsSubmitted(false);
       setIsCorrect(null);
+      setLocalSubmissions({});
       setCorrectCount(0);
       setEarnedScore(0);
       setCompleted(false);
@@ -279,9 +338,24 @@ export function LearnerQuizzes({
         totalCount={quizzes.length}
         totalMaxScore={totalMaxScore}
         onRetry={handleRetry}
+        isQuizScorePublished={isQuizScorePublished}
+        hasUnmarked={hasUnmarked}
+        isDeadlinePassed={isDeadlinePassed}
       />
     );
   }
+
+  const currentSubmission = normalizedSubmissions.find(
+    (s) => s.quiz_id === currentQuiz?.id
+  );
+  const quizFeedback =
+    localSubmissions[currentQuiz?.id]?.feedback !== undefined
+      ? localSubmissions[currentQuiz?.id]?.feedback
+      : currentSubmission?.feedback;
+  const quizAiFeedback =
+    localSubmissions[currentQuiz?.id]?.ai_feedback !== undefined
+      ? localSubmissions[currentQuiz?.id]?.ai_feedback
+      : currentSubmission?.ai_feedback;
 
   return (
     <div className="space-y-6">
@@ -344,7 +418,30 @@ export function LearnerQuizzes({
           />
         )}
 
-        {isSubmitted && isCorrect && (
+        {isParagraphQuiz && (
+          <div className="mt-6 space-y-3">
+            <div className="flex gap-2 rounded-sm border-2 border-dynamic-cyan/30 bg-dynamic-cyan/10 p-3 text-dynamic-cyan text-xs">
+              <span className="font-bold">
+                {t('courses.paragraphManualGradingHint')}
+              </span>
+            </div>
+            <div className="space-y-2">
+              <span className="block font-bold text-muted-foreground text-xs uppercase tracking-widest">
+                {t('courses.yourResponse')}
+              </span>
+              <Textarea
+                value={paragraphAnswer}
+                onChange={(event) => setSelectedAnswer(event.target.value)}
+                disabled={isSubmitted}
+                rows={6}
+                placeholder={t('courses.yourResponse')}
+                className="w-full rounded-none border-2 border-border bg-background px-3 py-3 font-bold text-sm leading-7 shadow-[2px_2px_0_var(--border)] focus-visible:ring-0"
+              />
+            </div>
+          </div>
+        )}
+
+        {isSubmitted && !isParagraphQuiz && isCorrect && (
           <div className="mt-6 border-2 border-dynamic-green/30 bg-dynamic-green/10 p-4 text-dynamic-green shadow-[3px_3px_0_hsl(var(--dynamic-green)/0.2)]">
             <div className="flex items-center gap-2 font-black">
               <Check className="h-5 w-5" />
@@ -363,7 +460,19 @@ export function LearnerQuizzes({
           </div>
         )}
 
-        {isSubmitted && !isCorrect && (
+        {isSubmitted && isParagraphQuiz && (
+          <div className="mt-6 border-2 border-dynamic-cyan/30 bg-dynamic-cyan/10 p-4 text-foreground shadow-[3px_3px_0_hsl(var(--dynamic-cyan)/0.2)]">
+            <div className="flex items-center gap-2 font-black">
+              <Check className="h-5 w-5 text-dynamic-cyan" />
+              <span>{t('courses.quizResponseRecorded')}</span>
+            </div>
+            <p className="mt-2 text-foreground/85 text-sm leading-relaxed">
+              {t('courses.paragraphManualGradingHint')}
+            </p>
+          </div>
+        )}
+
+        {isSubmitted && !isParagraphQuiz && !isCorrect && (
           <div className="mt-6 border-2 border-dynamic-red/30 bg-dynamic-red/10 p-4 text-dynamic-red shadow-[3px_3px_0_hsl(var(--dynamic-red)/0.2)]">
             <div className="flex items-center gap-2 font-black">
               <X className="h-5 w-5" />
@@ -384,17 +493,46 @@ export function LearnerQuizzes({
           </div>
         )}
 
+        {isSubmitted && quizFeedback && (
+          <div className="mt-6 space-y-1 border-2 border-dynamic-yellow/30 bg-dynamic-yellow/10 p-4 text-foreground shadow-[3px_3px_0_hsl(var(--dynamic-yellow)/0.2)]">
+            <span className="block font-black text-[10px] text-dynamic-yellow uppercase tracking-wider">
+              {t('courses.teacherFeedback')}
+            </span>
+            <p className="font-semibold text-sm leading-relaxed">
+              {quizFeedback}
+            </p>
+          </div>
+        )}
+
+        {isSubmitted && quizAiFeedback && (
+          <div className="mt-6 space-y-1 border-2 border-primary bg-primary/5 p-4 text-foreground shadow-[3px_3px_0_hsl(var(--primary)/0.2)]">
+            <span className="block font-black text-[10px] text-primary uppercase tracking-wider">
+              {t('courses.aiFeedback')}
+            </span>
+            <p className="font-medium text-sm leading-relaxed">
+              {quizAiFeedback}
+            </p>
+          </div>
+        )}
+
         <div className="mt-6 flex items-center justify-end">
           {!isSubmitted ? (
-            <Button
-              onClick={handleSubmit}
-              disabled={!canSubmit || isSubmitting}
-              className="h-12 border-2 border-border bg-primary font-black text-primary-foreground shadow-[3px_3px_0_var(--border)] hover:-translate-y-0.5 hover:bg-primary/90 hover:shadow-[4px_4px_0_var(--border)] active:translate-y-0 active:shadow-[3px_3px_0_var(--border)] disabled:opacity-50"
-            >
-              {isSubmitting
-                ? t('common.loading')
-                : t('courses.quizSubmitAnswer')}
-            </Button>
+            <div className="flex flex-col items-end gap-2">
+              {isDeadlinePassed && (
+                <span className="font-black text-destructive text-xs uppercase tracking-wider">
+                  {t('courses.quizDeadlinePassed') || 'Deadline passed'}
+                </span>
+              )}
+              <Button
+                onClick={handleSubmit}
+                disabled={!canSubmit || isSubmitting || isDeadlinePassed}
+                className="h-12 border-2 border-border bg-primary font-black text-primary-foreground shadow-[3px_3px_0_var(--border)] hover:-translate-y-0.5 hover:bg-primary/90 hover:shadow-[4px_4px_0_var(--border)] active:translate-y-0 active:shadow-[3px_3px_0_var(--border)] disabled:opacity-50"
+              >
+                {isSubmitting
+                  ? t('common.loading')
+                  : t('courses.quizSubmitAnswer')}
+              </Button>
+            </div>
           ) : (
             <Button
               onClick={handleNext}

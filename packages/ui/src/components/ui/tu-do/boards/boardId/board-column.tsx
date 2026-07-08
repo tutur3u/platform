@@ -182,6 +182,7 @@ interface BoardColumnProps {
   specialPinned?: boolean;
   specialStickyOffset?: string;
   onSpecialPinnedChange?: (pinned: boolean) => void;
+  onHoverTaskList?: (listId: string) => void;
   readOnly?: boolean;
 }
 
@@ -214,6 +215,7 @@ export function BoardColumn({
   specialPinned = false,
   specialStickyOffset,
   onSpecialPinnedChange,
+  onHoverTaskList,
   readOnly = false,
 }: BoardColumnProps) {
   const t = useTranslations('common');
@@ -530,6 +532,7 @@ export function BoardColumn({
         data-kanban-pinned-special={specialStickyOffset ? 'true' : undefined}
         data-kanban-column-id={column.id}
         data-kanban-real-column={isExternalStaging ? undefined : 'true'}
+        onPointerEnter={() => onHoverTaskList?.(column.id)}
         className={cn(
           'group flex h-full w-14 shrink-0 snap-start flex-col items-center rounded-xl border border-dashed transition-all duration-200',
           'touch-none select-none overflow-hidden hover:shadow-md',
@@ -583,6 +586,7 @@ export function BoardColumn({
       data-kanban-pinned-special={specialStickyOffset ? 'true' : undefined}
       data-kanban-column-id={column.id}
       data-kanban-real-column={isExternalStaging ? undefined : 'true'}
+      onPointerEnter={() => onHoverTaskList?.(column.id)}
       className={cn(
         'group flex h-full w-[var(--kanban-column-width)] shrink-0 snap-start flex-col rounded-xl transition-all duration-200 last:snap-end',
         'touch-none select-none',

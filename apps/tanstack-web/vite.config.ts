@@ -3,6 +3,7 @@ import { cloudflare } from '@cloudflare/vite-plugin';
 import tailwindcss from '@tailwindcss/vite';
 import { tanstackStart } from '@tanstack/react-start/plugin/vite';
 import viteReact from '@vitejs/plugin-react';
+import { nitro } from 'nitro/vite';
 import tsconfigPaths from 'vite-tsconfig-paths';
 import { defineConfig } from 'vitest/config';
 
@@ -99,33 +100,35 @@ function normalizePrerenderPath(path: string) {
 }
 
 export default defineConfig(({ mode }) => {
+  const runtime = process.env.TANSTACK_WEB_RUNTIME;
   const cloudflarePlugins =
     mode === 'test'
       ? []
-      : process.env.TANSTACK_WEB_RUNTIME === 'node'
+      : runtime === 'node' || runtime === 'vercel'
         ? []
         : [cloudflare({ viteEnvironment: { name: 'ssr' } })];
+  const vercelPlugins =
+    mode === 'test' || runtime !== 'vercel' ? [] : [nitro()];
+  const tanstackStartPlugin = tanstackStart({
+    pages: staticPrerenderRoutes.map((path) => ({ path })),
+    prerender: {
+      enabled: true,
+      crawlLinks: true,
+      filter: (page) =>
+        staticPrerenderRouteSet.has(normalizePrerenderPath(page.path)),
+    },
+    router: {
+      quoteStyle: 'single',
+      semicolons: true,
+    },
+  });
+  const runtimePlugins =
+    runtime === 'vercel'
+      ? [tanstackStartPlugin, ...vercelPlugins]
+      : [...cloudflarePlugins, tanstackStartPlugin];
 
   return {
-    plugins: [
-      tsconfigPaths(),
-      ...cloudflarePlugins,
-      tanstackStart({
-        pages: staticPrerenderRoutes.map((path) => ({ path })),
-        prerender: {
-          enabled: true,
-          crawlLinks: true,
-          filter: (page) =>
-            staticPrerenderRouteSet.has(normalizePrerenderPath(page.path)),
-        },
-        router: {
-          quoteStyle: 'single',
-          semicolons: true,
-        },
-      }),
-      viteReact(),
-      tailwindcss(),
-    ],
+    plugins: [tsconfigPaths(), ...runtimePlugins, viteReact(), tailwindcss()],
     resolve: {
       alias: {
         'next/link': nextLinkShim,

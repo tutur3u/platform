@@ -4,9 +4,14 @@ import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import AddAccountPage from '@/app/[locale]/(auth)/add-account/page';
 
 const mockAddAccount = vi.fn();
+const mockConnection = vi.hoisted(() => vi.fn());
 const mockPush = vi.fn();
 const mockSearchParamsGet = vi.fn();
 const mockLocationAssign = vi.fn();
+
+vi.mock('next/server', () => ({
+  connection: mockConnection,
+}));
 
 vi.mock('next/navigation', () => ({
   useRouter: () => ({
@@ -37,6 +42,10 @@ vi.mock('@tuturuuu/icons/lucide', () => ({
   Check: () => <div>Check Icon</div>,
 }));
 
+async function renderAddAccountPage() {
+  render(await AddAccountPage());
+}
+
 describe('AddAccountPage', () => {
   beforeAll(() => {
     Object.defineProperty(window, 'location', {
@@ -50,19 +59,21 @@ describe('AddAccountPage', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    mockConnection.mockResolvedValue(undefined);
     mockSearchParamsGet.mockImplementation((key: string) => {
       if (key === 'returnUrl') return '/en/personal/tasks';
       return null;
     });
   });
 
-  it('renders the loading state while saving the account', () => {
+  it('renders the loading state while saving the account', async () => {
     mockAddAccount.mockImplementation(() => new Promise(() => {}));
 
-    render(<AddAccountPage />);
+    await renderAddAccountPage();
 
     expect(screen.getByText('account_switcher.adding_account')).toBeDefined();
     expect(screen.getByText('account_switcher.please_wait')).toBeDefined();
+    expect(mockConnection).toHaveBeenCalledOnce();
   });
 
   it('saves the current server session and redirects to the server-approved target', async () => {
@@ -71,7 +82,7 @@ describe('AddAccountPage', () => {
       success: true,
     });
 
-    render(<AddAccountPage />);
+    await renderAddAccountPage();
 
     await waitFor(() => {
       expect(mockAddAccount).toHaveBeenCalledWith({
@@ -87,7 +98,7 @@ describe('AddAccountPage', () => {
     mockSearchParamsGet.mockImplementation(() => null);
     mockAddAccount.mockResolvedValue({ success: true });
 
-    render(<AddAccountPage />);
+    await renderAddAccountPage();
 
     await waitFor(() => {
       expect(mockAddAccount).toHaveBeenCalledWith({
@@ -105,7 +116,7 @@ describe('AddAccountPage', () => {
       success: false,
     });
 
-    render(<AddAccountPage />);
+    await renderAddAccountPage();
 
     await waitFor(() => {
       expect(

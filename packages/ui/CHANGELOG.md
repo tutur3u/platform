@@ -1,5 +1,33 @@
 # Changelog
 
+## [0.14.0](https://github.com/tutur3u/platform/compare/ui-v0.13.0...ui-v0.14.0) (2026-07-06)
+
+
+### Features
+
+* **tasks:** add quick-create targeting and edge autoscroll ([f03e932](https://github.com/tutur3u/platform/commit/f03e9324b0cce18e9f9974cc8fe251bb58b686bd))
+
+
+### Bug Fixes
+
+* **tasks:** scroll kanban board at drag edges ([1053f6c](https://github.com/tutur3u/platform/commit/1053f6cc6db9788b7e184ed8bc7febdb2adacf97))
+
+## [0.13.0](https://github.com/tutur3u/platform/compare/ui-v0.12.0...ui-v0.13.0) (2026-07-05)
+
+
+### Features
+
+* **satellite:** open settings on Cmd/Ctrl+, in satellite apps ([841f425](https://github.com/tutur3u/platform/commit/841f42557dd49eb31fd797900b1ec6ade6642dba))
+
+
+### Bug Fixes
+
+* **tasks:** harden satellite task route hydration ([9d51a38](https://github.com/tutur3u/platform/commit/9d51a38ad948ebb398bec794f082f2bbf8d466cc))
+* **tasks:** keep personal board moves on workspace route ([60e29b0](https://github.com/tutur3u/platform/commit/60e29b093314b3b185f3f63a69042a665644ed3d))
+* **tasks:** keep personal moves off placement API ([d8c41d7](https://github.com/tutur3u/platform/commit/d8c41d790f5edbe637b9ce71bbd5040b7fddbfa5))
+* **tasks:** restore satellite resource access ([ec5e0a8](https://github.com/tutur3u/platform/commit/ec5e0a8d75398047e0151ae2ac3cd9a25a4fd675))
+* **tasks:** route native personal task moves normally ([5bbba3c](https://github.com/tutur3u/platform/commit/5bbba3c3f193e722cc87cdfe2eb2734f61442cd0))
+
 ## [0.12.0](https://github.com/tutur3u/platform/compare/ui-v0.11.1...ui-v0.12.0) (2026-07-03)
 
 

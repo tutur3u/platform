@@ -187,4 +187,66 @@ describe('bulk move mutations', () => {
       intensity: 1.2,
     });
   });
+
+  it('bulk-moves selected external tasks to done through terminal personal placement', async () => {
+    const doneList = {
+      ...targetList,
+      id: 'done-list',
+      name: 'Done',
+      status: 'done',
+    } as unknown as TaskList;
+
+    queryClient.setQueryData(['tasks', 'board-1'], [localTask, externalTask]);
+    mockUpsertCurrentUserTaskPersonalPlacement.mockResolvedValueOnce({
+      task: {
+        ...externalTask,
+        list_id: 'done-list',
+        personal_list_id: 'done-list',
+        source_list_id: 'source-done-list',
+        source_list_status: 'done',
+      },
+    });
+
+    const { result } = renderHook(
+      () =>
+        useBulkOperations({
+          queryClient,
+          wsId: 'personal-ws',
+          boardId: 'board-1',
+          selectedTasks: new Set(['local-task', 'external-task']),
+          columns: [sourceList, doneList],
+          workspaceLabels: [],
+          workspaceProjects: [],
+          workspaceMembers: [],
+          setBulkWorking: vi.fn(),
+          clearSelection: vi.fn(),
+          setBulkDeleteOpen: vi.fn(),
+        }),
+      { wrapper }
+    );
+
+    await act(async () => {
+      await result.current.bulkMoveToList('done-list', 'Done');
+    });
+
+    expect(mockBulkWorkspaceTasks).toHaveBeenCalledWith(
+      'personal-ws',
+      {
+        taskIds: ['local-task'],
+        operation: {
+          type: 'move_to_list',
+          listId: 'done-list',
+        },
+      },
+      expect.anything()
+    );
+    expect(mockUpsertCurrentUserTaskPersonalPlacement).toHaveBeenCalledWith(
+      'external-task',
+      expect.objectContaining({
+        personal_board_id: 'board-1',
+        personal_list_id: 'done-list',
+        terminal_status: 'done',
+      })
+    );
+  });
 });

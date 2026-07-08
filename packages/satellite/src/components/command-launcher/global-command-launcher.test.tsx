@@ -122,6 +122,18 @@ describe('GlobalCommandLauncher', () => {
     );
   }, 10_000);
 
+  it('opens from an unlisted external host app without cataloging it', async () => {
+    listWorkspaces.mockResolvedValue(workspaces);
+    renderLauncher({ currentApp: 'external' });
+
+    openGlobalCommandLauncher();
+    await screen.findByPlaceholderText('Search apps, workspaces, and pages...');
+
+    expect(screen.queryByText('External')).toBeNull();
+    expect(screen.getAllByText('Calendar').length).toBeGreaterThan(0);
+    expect(await screen.findByText('Personal')).toBeTruthy();
+  });
+
   it('opens only one same-app launcher from duplicate Ctrl+K listeners', async () => {
     listWorkspaces.mockResolvedValue(workspaces);
     renderLauncher({ duplicateCount: 2 });

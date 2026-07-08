@@ -1,8 +1,8 @@
 import 'server-only';
 
 import { posix } from 'node:path';
+import type { WorkspaceStorageProvider } from '@tuturuuu/storage-core/workspace-storage-config';
 import { sanitizePath } from '@tuturuuu/utils/storage-path';
-import type { WorkspaceStorageProvider } from '../workspace-storage-config';
 
 export const WEBGL_PACKAGE_ASSET_TYPE = 'webgl-package';
 export const WEBGL_PACKAGE_METADATA_KIND = 'webgl-package';

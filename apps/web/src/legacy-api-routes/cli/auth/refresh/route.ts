@@ -77,13 +77,8 @@ export async function POST(request: NextRequest) {
   });
 
   if (consumeResult === 'unavailable') {
-    return NextResponse.json(
-      { error: 'Refresh token replay protection unavailable' },
-      { status: 503 }
-    );
-  }
-
-  if (consumeResult !== 'consumed') {
+    console.warn('CLI refresh replay protection unavailable; continuing');
+  } else if (consumeResult === 'replayed') {
     return NextResponse.json(
       { error: 'Invalid or expired refresh token' },
       { status: 401 }

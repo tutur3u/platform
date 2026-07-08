@@ -88,6 +88,7 @@ export const POST = withSessionAuth(
         testId,
         wsId,
         context: teacherContext,
+        difficulty,
         questionType,
         count,
       } = parsedBody.data;
@@ -138,9 +139,11 @@ export const POST = withSessionAuth(
         questionType === 'mix'
           ? 'Generate a mix of question types (multiple_choice, true_false, matching, ordering, paragraph).'
           : `Generate ONLY questions of type "${questionType}".`;
+      const difficultyInstruction = `Requested difficulty level: ${difficulty}. Keep every generated question aligned with this difficulty.`;
 
       const promptText = `Analyze the following lesson content to create exactly ${count} structured quiz questions.
 ${typeInstruction}
+${difficultyInstruction}
 
 ${teacherContext?.trim() ? `Additional context/instructions: ${teacherContext.trim()}\n` : ''}
 Lesson Information:
@@ -204,6 +207,7 @@ ${lessonInfo}`;
         feature: QUIZ_GENERATION_CREDIT_FEATURE,
         metadata: {
           count,
+          difficulty,
           lessonId,
           questionType,
           source: 'quiz_generation',

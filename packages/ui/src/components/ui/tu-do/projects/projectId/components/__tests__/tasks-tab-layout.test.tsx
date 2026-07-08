@@ -160,4 +160,10 @@ describe('TasksTab layout', () => {
     expect(captured.listViewProps.preserveTaskOrder).toBe(true);
     expect(captured.listViewProps.searchQuery).toBe('project');
   });
+
+  it('omits removed projects route back link in embedded mode', () => {
+    renderTasksTab({ embedded: true });
+
+    expect(captured.boardHeaderProps.backUrl).toBeUndefined();
+  });
 });

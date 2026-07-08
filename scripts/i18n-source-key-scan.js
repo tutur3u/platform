@@ -149,10 +149,291 @@ function escapeRegExp(value) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
-function findTranslatorCalls(content, variableName, start, end) {
+function isForwardedAsSameNameJsxProp(content, variableName) {
+  const escapedVariableName = escapeRegExp(variableName);
+  const propRegex = new RegExp(
+    `\\b${escapedVariableName}\\s*=\\s*\\{\\s*${escapedVariableName}(?:\\s+as\\b[^}]*)?\\s*\\}`
+  );
+
+  return propRegex.test(content);
+}
+
+function findFirstArgumentEnd(content, start, end) {
+  const stack = [];
+  let state = 'code';
+
+  for (let index = start; index < end; index += 1) {
+    const char = content[index];
+    const next = content[index + 1];
+
+    if (state === 'line-comment') {
+      if (char === '\n') state = 'code';
+      continue;
+    }
+
+    if (state === 'block-comment') {
+      if (char === '*' && next === '/') {
+        state = 'code';
+        index += 1;
+      }
+      continue;
+    }
+
+    if (state === 'single-quote') {
+      if (char === '\\') {
+        index += 1;
+      } else if (char === "'") {
+        state = 'code';
+      }
+      continue;
+    }
+
+    if (state === 'double-quote') {
+      if (char === '\\') {
+        index += 1;
+      } else if (char === '"') {
+        state = 'code';
+      }
+      continue;
+    }
+
+    if (state === 'template') {
+      if (char === '\\') {
+        index += 1;
+      } else if (char === '`') {
+        state = 'code';
+      }
+      continue;
+    }
+
+    if (char === '/' && next === '/') {
+      state = 'line-comment';
+      index += 1;
+      continue;
+    }
+
+    if (char === '/' && next === '*') {
+      state = 'block-comment';
+      index += 1;
+      continue;
+    }
+
+    if (char === "'") {
+      state = 'single-quote';
+      continue;
+    }
+
+    if (char === '"') {
+      state = 'double-quote';
+      continue;
+    }
+
+    if (char === '`') {
+      state = 'template';
+      continue;
+    }
+
+    if (char === '(' || char === '[' || char === '{') {
+      stack.push(char);
+      continue;
+    }
+
+    if (char === ')' || char === ']' || char === '}') {
+      if (stack.length === 0) {
+        return char === ')' ? index : end;
+      }
+
+      stack.pop();
+      continue;
+    }
+
+    if (char === ',' && stack.length === 0) {
+      return index;
+    }
+  }
+
+  return end;
+}
+
+function readQuotedString(content, start) {
+  const quote = content[start];
+  let value = '';
+
+  for (let index = start + 1; index < content.length; index += 1) {
+    const char = content[index];
+
+    if (char === '\\') {
+      const next = content[index + 1];
+      if (next !== undefined) {
+        value += next;
+        index += 1;
+      }
+      continue;
+    }
+
+    if (char === quote) {
+      return { end: index, value };
+    }
+
+    value += char;
+  }
+
+  return null;
+}
+
+function splitTopLevelTernary(content) {
+  const stack = [];
+  let state = 'code';
+  let questionIndex = -1;
+  let nestedTernaryDepth = 0;
+
+  for (let index = 0; index < content.length; index += 1) {
+    const char = content[index];
+    const next = content[index + 1];
+
+    if (state === 'line-comment') {
+      if (char === '\n') state = 'code';
+      continue;
+    }
+
+    if (state === 'block-comment') {
+      if (char === '*' && next === '/') {
+        state = 'code';
+        index += 1;
+      }
+      continue;
+    }
+
+    if (state === 'single-quote') {
+      if (char === '\\') {
+        index += 1;
+      } else if (char === "'") {
+        state = 'code';
+      }
+      continue;
+    }
+
+    if (state === 'double-quote') {
+      if (char === '\\') {
+        index += 1;
+      } else if (char === '"') {
+        state = 'code';
+      }
+      continue;
+    }
+
+    if (state === 'template') {
+      if (char === '\\') {
+        index += 1;
+      } else if (char === '`') {
+        state = 'code';
+      }
+      continue;
+    }
+
+    if (char === '/' && next === '/') {
+      state = 'line-comment';
+      index += 1;
+      continue;
+    }
+
+    if (char === '/' && next === '*') {
+      state = 'block-comment';
+      index += 1;
+      continue;
+    }
+
+    if (char === "'") {
+      state = 'single-quote';
+      continue;
+    }
+
+    if (char === '"') {
+      state = 'double-quote';
+      continue;
+    }
+
+    if (char === '`') {
+      state = 'template';
+      continue;
+    }
+
+    if (char === '(' || char === '[' || char === '{') {
+      stack.push(char);
+      continue;
+    }
+
+    if (char === ')' || char === ']' || char === '}') {
+      if (stack.length > 0) stack.pop();
+      continue;
+    }
+
+    if (stack.length > 0) continue;
+
+    if (char === '?' && next !== '.' && next !== '?') {
+      if (questionIndex === -1) {
+        questionIndex = index;
+      } else {
+        nestedTernaryDepth += 1;
+      }
+      continue;
+    }
+
+    if (char === ':' && questionIndex !== -1) {
+      if (nestedTernaryDepth > 0) {
+        nestedTernaryDepth -= 1;
+        continue;
+      }
+
+      return {
+        alternate: content.slice(index + 1),
+        consequent: content.slice(questionIndex + 1, index),
+      };
+    }
+  }
+
+  return null;
+}
+
+function collectTranslationKeyLiterals(expression) {
+  const trimmed = expression.trim();
+  if (!trimmed) return [];
+
+  if (trimmed[0] === "'" || trimmed[0] === '"') {
+    const parsed = readQuotedString(trimmed, 0);
+    if (parsed) {
+      const trailing = trimmed.slice(parsed.end + 1).trim();
+      if (!trailing || /^as\b/.test(trailing)) {
+        return [parsed.value];
+      }
+    }
+  }
+
+  const ternary = splitTopLevelTernary(trimmed);
+  if (ternary) {
+    return [
+      ...collectTranslationKeyLiterals(ternary.consequent),
+      ...collectTranslationKeyLiterals(ternary.alternate),
+    ];
+  }
+
+  return [];
+}
+
+function isPositionInRanges(position, ranges) {
+  return ranges.some(({ end, start }) => start <= position && position < end);
+}
+
+function findTranslatorCalls(
+  content,
+  variableName,
+  start,
+  end,
+  excludedRanges = []
+) {
   const methods = [...TRANSLATOR_METHODS].join('|');
   const callRegex = new RegExp(
-    `\\b${escapeRegExp(variableName)}(?:\\.(?:${methods}))?\\(\\s*(['"])([^'"]+)\\1`,
+    `\\b${escapeRegExp(variableName)}(?:\\.(?:${methods}))?\\(\\s*`,
     'g'
   );
   const keys = [];
@@ -161,7 +442,19 @@ function findTranslatorCalls(content, variableName, start, end) {
   let match = callRegex.exec(content);
   while (match !== null) {
     if (match.index >= end) break;
-    keys.push(match[2]);
+    if (isPositionInRanges(match.index, excludedRanges)) {
+      match = callRegex.exec(content);
+      continue;
+    }
+
+    const argumentStart = callRegex.lastIndex;
+    const argumentEnd = findFirstArgumentEnd(content, argumentStart, end);
+    keys.push(
+      ...collectTranslationKeyLiterals(
+        content.slice(argumentStart, argumentEnd)
+      )
+    );
+
     match = callRegex.exec(content);
   }
 
@@ -176,6 +469,7 @@ function scanSourceKeys(rootDir, sourceDir) {
     const content = fs.readFileSync(filePath, 'utf-8');
     const relPath = path.relative(rootDir, filePath);
     const bracePairs = buildBracePairs(content);
+    const declarations = [];
     TRANSLATOR_DECLARATION_REGEX.lastIndex = 0;
 
     let declarationMatch = TRANSLATOR_DECLARATION_REGEX.exec(content);
@@ -187,17 +481,40 @@ function scanSourceKeys(rootDir, sourceDir) {
         declarationMatch.index,
         content.length
       );
+      declarations.push({
+        index: declarationMatch.index,
+        namespace,
+        scopeEnd,
+        variableName,
+      });
+
+      declarationMatch = TRANSLATOR_DECLARATION_REGEX.exec(content);
+    }
+
+    for (const declaration of declarations) {
+      const isForwardedTranslator = isForwardedAsSameNameJsxProp(
+        content.slice(declaration.index, declaration.scopeEnd),
+        declaration.variableName
+      );
+      const excludedRanges = isForwardedTranslator
+        ? declarations
+            .filter(
+              (other) =>
+                other !== declaration &&
+                other.variableName === declaration.variableName
+            )
+            .map((other) => ({ end: other.scopeEnd, start: other.index }))
+        : [];
 
       for (const key of findTranslatorCalls(
         content,
-        variableName,
-        declarationMatch.index,
-        scopeEnd
+        declaration.variableName,
+        isForwardedTranslator ? 0 : declaration.index,
+        isForwardedTranslator ? content.length : declaration.scopeEnd,
+        excludedRanges
       )) {
-        results.push({ namespace, key, file: relPath });
+        results.push({ namespace: declaration.namespace, key, file: relPath });
       }
-
-      declarationMatch = TRANSLATOR_DECLARATION_REGEX.exec(content);
     }
   }
 
@@ -268,13 +585,13 @@ function checkAppSourceKeys({ exceptions = {}, rootDir }) {
     const appJson = getAppTranslations(rootDir, app.dir);
     if (!appJson) continue;
 
-    const appKeyExceptions = new Set(
-      exceptions.keyExceptions?.[app.name] || []
+    const appSourceKeyExceptions = new Set(
+      exceptions.appSourceKeyExceptions?.[app.name] || []
     );
     const missingKeys = [];
 
     for (const { namespace, key, file } of scanSourceKeys(rootDir, sourceDir)) {
-      if (isKeyExcepted(appKeyExceptions, namespace, key)) continue;
+      if (isKeyExcepted(appSourceKeyExceptions, namespace, key)) continue;
       if (!resolveKeyPath(appJson, namespace, key)) {
         missingKeys.push({ namespace, key, file });
       }

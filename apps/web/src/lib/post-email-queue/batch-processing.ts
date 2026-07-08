@@ -2,7 +2,6 @@ import { render } from '@react-email/render';
 import { EmailService } from '@tuturuuu/email-service';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase';
 import type { Database } from '@tuturuuu/types/db';
-import dayjs from 'dayjs';
 import PostEmailTemplate from '@/components/email/templates/default-email-template';
 import { preloadBlockedEmailCache } from '@/lib/email-blacklist';
 import { createEmailUnsubscribeUrl } from '@/lib/email-unsubscribe';
@@ -10,6 +9,7 @@ import {
   buildPostEmailAgeSkipReason,
   getPostEmailMaxAgeCutoff,
 } from './constants';
+import { formatPostEmailSubjectDate } from './date-formatting';
 import { isWorkspaceUserInactiveForPostEmail } from './eligibility';
 import { getQueueTable } from './queue-core';
 import type {
@@ -47,9 +47,10 @@ function getErrorName(error: unknown): string {
 
 export function buildPostEmailSubject(
   createdAt: string,
-  username: string
+  username: string,
+  workspaceTimezone?: string | null
 ): string {
-  return `Easy Center | Báo cáo tiến độ ngày ${dayjs(createdAt).format('DD/MM/YYYY')} của ${username}`;
+  return `Easy Center | Báo cáo tiến độ ngày ${formatPostEmailSubjectDate(createdAt, workspaceTimezone)} của ${username}`;
 }
 
 function createPostUserKey(postId: string, userId: string): string {
@@ -422,9 +423,20 @@ async function prefetchBatchData(
 
   const emailServices = new Map<string, EmailService>();
   const sourceInfos = new Map<string, BatchSourceInfo>();
+  const workspaceTimezones = new Map<string, string | null>();
 
   for (const wsId of wsIds) {
     emailServices.set(wsId, await EmailService.fromWorkspace(wsId));
+
+    const { data: workspace, error: workspaceError } = await sbAdmin
+      .from('workspaces')
+      .select('timezone')
+      .eq('id', wsId)
+      .maybeSingle();
+    if (workspaceError) throw workspaceError;
+
+    workspaceTimezones.set(wsId, workspace?.timezone ?? null);
+
     const { data, error } = await sbAdmin
       .from('workspace_email_credentials')
       .select('source_name, source_email')
@@ -455,6 +467,7 @@ async function prefetchBatchData(
     existingSentEmails,
     emailServices,
     sourceInfos,
+    workspaceTimezones,
   };
 
   return batchPrefetch;
@@ -625,9 +638,11 @@ async function processEmailWithContext(
     return queueUpdateResult(row, 'failed', updated);
   }
 
+  const workspaceTimezone = prefetch.workspaceTimezones.get(row.ws_id) ?? null;
   const subject = buildPostEmailSubject(
     context.post.created_at,
-    context.recipient.username
+    context.recipient.username,
+    workspaceTimezone
   );
   const unsubscribeUrl = createEmailUnsubscribeUrl(context.recipient.email);
 
@@ -638,6 +653,7 @@ async function processEmailWithContext(
       username: context.recipient.username,
       isHomeworkDone: context.recipient.is_completed ?? undefined,
       notes: context.recipient.notes ?? undefined,
+      timezone: workspaceTimezone,
       unsubscribeUrl,
     })
   );

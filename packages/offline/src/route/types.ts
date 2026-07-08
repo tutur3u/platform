@@ -60,6 +60,13 @@ export interface SerwistRouteConfig {
    * Options forwarded to Serwist's esbuild worker bundle.
    */
   esbuildOptions?: ServiceWorkerEsbuildOptions;
+
+  /**
+   * Public-file glob patterns to include in the precache manifest.
+   * Set to false to avoid precaching public assets.
+   * @default all files under public
+   */
+  publicPrecachePatterns?: readonly string[] | false;
 }
 
 export interface SerwistRouteResult {

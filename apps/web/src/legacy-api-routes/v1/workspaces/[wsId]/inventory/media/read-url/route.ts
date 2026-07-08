@@ -1,16 +1,16 @@
 import { authorizeInventoryWorkspace } from '@tuturuuu/inventory-core/commerce/auth';
 import { canManageInventoryCatalog } from '@tuturuuu/inventory-core/permissions';
+import { WORKSPACE_STORAGE_PROVIDER_OPTIONS } from '@tuturuuu/storage-core/workspace-storage-config';
+import {
+  createWorkspaceStorageSignedReadUrl,
+  WorkspaceStorageError,
+} from '@tuturuuu/storage-core/workspace-storage-provider';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import {
   isInventoryMediaPath,
   validateFinalizedInventoryMediaUpload,
 } from '@/lib/inventory-media-storage-policy';
-import { WORKSPACE_STORAGE_PROVIDER_OPTIONS } from '@/lib/workspace-storage-config';
-import {
-  createWorkspaceStorageSignedReadUrl,
-  WorkspaceStorageError,
-} from '@/lib/workspace-storage-provider';
 
 const inventoryMediaReadUrlSchema = z.object({
   path: z

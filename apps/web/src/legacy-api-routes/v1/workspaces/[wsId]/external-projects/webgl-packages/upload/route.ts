@@ -1,12 +1,12 @@
 import { posix } from 'node:path';
+import {
+  createWorkspaceStorageUploadPayload,
+  WorkspaceStorageError,
+} from '@tuturuuu/storage-core/workspace-storage-provider';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { requireWorkspaceExternalProjectAccess } from '@/lib/external-projects/access';
 import { isWebglZipUpload } from '@/lib/external-projects/webgl-packages';
-import {
-  createWorkspaceStorageUploadPayload,
-  WorkspaceStorageError,
-} from '@/lib/workspace-storage-provider';
 import {
   buildWebglPackageUploadPath,
   getWebglPackageEntryContext,

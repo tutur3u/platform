@@ -32,7 +32,10 @@ import {
 } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { validate as validateUUID } from 'uuid';
-import { getWorkspaceInviteStatus } from '@/lib/workspace-invitations/status';
+import {
+  getWorkspaceInviteStatus,
+  type WorkspaceInvitationRecord,
+} from '@/lib/workspace-invitations/status';
 import {
   DEFAULT_EXTERNAL_PROJECT_COLLECTIONS,
   EXTERNAL_PROJECT_CANONICAL_ID_SECRET,
@@ -466,6 +469,7 @@ type ExternalProjectAppTokenExchangeAuthorization =
   | {
       error: string;
       code?: 'PENDING_WORKSPACE_INVITE';
+      invitation?: WorkspaceInvitationRecord;
       normalizedWorkspaceId?: string;
       ok: false;
       status: 400 | 403 | 404 | 500;
@@ -630,6 +634,7 @@ async function authorizeLinkedWorkspaceMember({
   | {
       code?: 'PENDING_WORKSPACE_INVITE';
       error: string;
+      invitation?: WorkspaceInvitationRecord;
       normalizedWorkspaceId?: string;
       ok: false;
       status: 403 | 500;
@@ -665,6 +670,7 @@ async function authorizeLinkedWorkspaceMember({
       return {
         code: 'PENDING_WORKSPACE_INVITE',
         error: 'Pending workspace invitation',
+        invitation: inviteStatus.invitation,
         normalizedWorkspaceId: workspaceId,
         ok: false,
         status: 403,

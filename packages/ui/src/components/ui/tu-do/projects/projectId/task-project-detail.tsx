@@ -38,6 +38,7 @@ export function TaskProjectDetail({
   documents,
   lists,
   currentUserId,
+  embedded = false,
   wsId,
 }: TaskProjectDetailProps) {
   const router = useRouter();
@@ -334,6 +335,7 @@ export function TaskProjectDetail({
               setListStatusFilter={setListStatusFilter}
               setShowLinkTaskDialog={taskLinking.setShowLinkTaskDialog}
               onTaskPartialUpdate={handleTaskPartialUpdate}
+              embedded={embedded}
               isMultiSelectMode={isMultiSelectMode}
               setIsMultiSelectMode={setIsMultiSelectMode}
             />

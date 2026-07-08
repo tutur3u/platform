@@ -1,6 +1,6 @@
+import { isReservedMobileDeploymentDrivePath } from '@tuturuuu/storage-core/mobile-deployment/storage-policy';
 import type { NextResponse } from 'next/server';
 import { createErrorResponse } from '@/lib/api-middleware';
-import { isReservedMobileDeploymentDrivePath } from '@/lib/mobile-deployment/storage-policy';
 
 export function rejectReservedStoragePath(
   wsId: string,

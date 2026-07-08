@@ -1,6 +1,6 @@
 {
   "name": "@tuturuuu/tanstack-web",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "private": true,
   "sideEffects": false,
   "type": "module",
@@ -10,6 +10,7 @@
     "dev:app": "node ../../scripts/portless-dev-banner.js -- vite dev --host 0.0.0.0 --port ${PORT:-7824}",
     "build": "vite build && bun type-check",
     "build:docker": "vite build && bun type-check",
+    "build:vercel": "TANSTACK_WEB_RUNTIME=vercel vite build && bun type-check",
     "start": "node .output/server/index.mjs",
     "preview": "vite preview --host 0.0.0.0 --port ${PORT:-7824}",
     "preview:cloudflare": "wrangler dev",

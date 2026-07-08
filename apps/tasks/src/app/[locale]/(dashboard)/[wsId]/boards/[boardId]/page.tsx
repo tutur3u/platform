@@ -16,5 +16,6 @@ export default async function Page({ params }: Props) {
     defaultView: 'kanban',
     params,
     routePrefix: '',
+    rootLoading: true,
   });
 }

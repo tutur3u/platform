@@ -19,13 +19,13 @@ const reportProblemMenuItemSource = source(
   'src/app/[locale]/report-problem-menu-item.tsx'
 );
 const loginContentSource = source(
-  'src/app/[locale]/(marketing)/login/login-content.tsx'
+  'src/app/[locale]/(auth)/login/login-content.tsx'
 );
-const loginFormSource = source('src/app/[locale]/(marketing)/login/form.tsx');
-const loginPageSource = source('src/app/[locale]/(marketing)/login/page.tsx');
+const loginFormSource = source('src/app/[locale]/(auth)/login/form.tsx');
+const loginPageSource = source('src/app/[locale]/(auth)/login/page.tsx');
 const logoutPageSource = source('src/app/[locale]/(marketing)/logout/page.tsx');
 const loginConfirmationPartsSource = source(
-  'src/app/[locale]/(marketing)/login/internal-app-account-confirmation-parts.tsx'
+  'src/app/[locale]/(auth)/login/internal-app-account-confirmation-parts.tsx'
 );
 const landingHeroSource = source(
   'src/components/landing/hero/hero-section.tsx'
@@ -668,16 +668,27 @@ describe('public shell compile graph', () => {
     );
   });
 
-  it('loads login server auth only when cookies can contain a session', () => {
+  it('keeps the login page free of server auth and segment config exports', () => {
     for (const modulePath of [
       '@tuturuuu/supabase/next/auth-session-user',
       '@tuturuuu/supabase/next/server',
+      'next/headers',
+      'next/navigation',
     ] as const) {
       expect(loginPageSource).not.toMatch(staticImportPattern(modulePath));
-      expect(loginPageSource).toContain(`import('${modulePath}')`);
+      expect(loginPageSource).not.toContain(`import('${modulePath}')`);
     }
 
-    expect(loginPageSource).toContain("headerStore.get('cookie')");
+    expect(loginPageSource).toMatch(staticImportPattern('next/server'));
+    expect(loginPageSource).toContain('await connection()');
+    expect(loginPageSource).not.toContain('searchParams');
+    expect(loginPageSource).not.toContain('export const dynamic');
+    expect(loginPageSource).not.toContain('export const revalidate');
+  });
+
+  it('lazy loads the heavy login form from the request-bound shell', () => {
+    expect(loginContentSource).not.toMatch(staticImportPattern('./form'));
+    expect(loginContentSource).toContain("lazy(() => import('./form'))");
   });
 
   it('keeps the login shell off Next link and image primitives', () => {

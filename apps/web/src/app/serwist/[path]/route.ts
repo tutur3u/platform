@@ -8,4 +8,7 @@ export const { GET, dynamic, dynamicParams, revalidate, generateStaticParams } =
     offlineFallbackUrl: '/~offline',
     // Enable service worker in development for testing (default: disabled)
     disableInDev: true,
+    // Avoid precaching every public asset on first visit; runtime/static HTTP
+    // caching still serves public files normally.
+    publicPrecachePatterns: false,
   });

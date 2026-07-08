@@ -5,6 +5,11 @@ import {
   resolveGatewayModelId,
 } from '@tuturuuu/ai/credits/model-mapping';
 import type { ChatRealtimeAudience } from '@tuturuuu/realtime/chat';
+import {
+  downloadWorkspaceStorageObjectForProvider,
+  resolveWorkspaceStorageProvider,
+  uploadWorkspaceStorageFileDirect,
+} from '@tuturuuu/storage-core/workspace-storage-provider';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -40,11 +45,6 @@ import {
   getChatRealtimeUserAudience,
   publishChatRealtimeEvent,
 } from '@/lib/chat/realtime';
-import {
-  downloadWorkspaceStorageObjectForProvider,
-  resolveWorkspaceStorageProvider,
-  uploadWorkspaceStorageFileDirect,
-} from '@/lib/workspace-storage-provider';
 
 type RouteParams = {
   conversationId: string;

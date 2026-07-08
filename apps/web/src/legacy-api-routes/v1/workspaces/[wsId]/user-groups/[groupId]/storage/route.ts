@@ -1,4 +1,12 @@
 import { posix } from 'node:path';
+import { triggerWorkspaceStorageAutoExtract } from '@tuturuuu/storage-core/workspace-storage-auto-extract';
+import {
+  deleteWorkspaceStorageObjectByPath,
+  listWorkspaceStorageDirectory,
+  uploadWorkspaceStorageFileDirect,
+  WorkspaceStorageError,
+} from '@tuturuuu/storage-core/workspace-storage-provider';
+import { validateWorkspaceStorageUploadMetadata } from '@tuturuuu/storage-core/workspace-storage-upload-policy';
 import { sanitizeFilename } from '@tuturuuu/utils/storage-path';
 import { generateRandomUUID } from '@tuturuuu/utils/uuid-helper';
 import { NextResponse } from 'next/server';
@@ -6,14 +14,6 @@ import { z } from 'zod';
 import type { SessionAuthContext } from '@/lib/api-auth';
 import { withSessionAuth } from '@/lib/api-auth';
 import { requireTeachWorkspaceAccess } from '@/lib/teach/api';
-import { triggerWorkspaceStorageAutoExtract } from '@/lib/workspace-storage-auto-extract';
-import {
-  deleteWorkspaceStorageObjectByPath,
-  listWorkspaceStorageDirectory,
-  uploadWorkspaceStorageFileDirect,
-  WorkspaceStorageError,
-} from '@/lib/workspace-storage-provider';
-import { validateWorkspaceStorageUploadMetadata } from '@/lib/workspace-storage-upload-policy';
 
 const routeParamsSchema = z.object({
   wsId: z.string().min(1),

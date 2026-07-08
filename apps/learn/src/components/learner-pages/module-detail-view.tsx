@@ -119,6 +119,8 @@ export function ModuleDetailView({
               quizzes={courseModule.quizzes}
               moduleId={courseModule.id}
               submissions={courseModule.submissions}
+              isQuizScorePublished={courseModule.is_quiz_score_published}
+              quizDeadline={courseModule.quiz_deadline}
             />
           ) : (
             <>

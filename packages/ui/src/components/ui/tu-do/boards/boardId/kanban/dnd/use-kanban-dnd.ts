@@ -21,10 +21,11 @@ import {
 } from '@tuturuuu/utils/task-helper';
 import { hasDraggableData } from '@tuturuuu/utils/task-helpers';
 import { useCallback, useRef, useState } from 'react';
+import { isPersonalExternalOverlayTask } from '../../../../../../../lib/task-personal-external';
 import { useBoardBroadcast } from '../../../../shared/board-broadcast-context';
 import { invalidateKanbanDeadlineTasks } from '../data/kanban-deadline-query';
 import { MAX_SAFE_INTEGER_SORT } from '../kanban-constants';
-import { useAutoScroll } from './auto-scroll';
+import { getKanbanDragAutoScrollPointerX, useAutoScroll } from './auto-scroll';
 import { getColumnReorderUpdates } from './column-reorder';
 import { calculateSortKeyWithRetry as createCalculateSortKeyWithRetry } from './kanban-sort-helpers';
 import {
@@ -121,17 +122,24 @@ interface UseKanbanDndProps {
   scrollContainerRef: React.RefObject<HTMLDivElement | null>;
 }
 
-function hasPersonalExternalSourceMetadata(task: Task) {
-  return Boolean(
-    task.source_workspace_id || task.source_board_id || task.source_list_id
-  );
+export function usesPersonalPlacement(task: Task) {
+  return isPersonalExternalOverlayTask(task);
 }
 
-export function usesPersonalPlacement(task: Task) {
+export function getPersonalPlacementTargetBoardId({
+  boardId,
+  columns,
+  targetListId,
+}: {
+  boardId: string | null;
+  columns: Pick<TaskList, 'board_id' | 'id'>[];
+  targetListId: string;
+}) {
+  const stagingBoardId = getPersonalExternalStagingBoardId(targetListId);
+  if (stagingBoardId) return stagingBoardId;
+
   return (
-    task.is_personal_external === true ||
-    isPersonalExternalStagingListId(task.list_id) ||
-    (hasPersonalExternalSourceMetadata(task) && Boolean(task.personal_board_id))
+    columns.find((column) => column.id === targetListId)?.board_id ?? boardId
   );
 }
 
@@ -451,8 +459,20 @@ export function useKanbanDnd({
       }
 
       const stagingBoardId = getPersonalExternalStagingBoardId(targetListId);
-      const targetBoardId = stagingBoardId ?? boardId;
+      const targetBoardId = getPersonalPlacementTargetBoardId({
+        boardId,
+        columns,
+        targetListId,
+      });
+      if (!targetBoardId) {
+        throw new Error('Board ID is required');
+      }
       const isStagingTarget = stagingBoardId !== null;
+      const targetList = columns.find((column) => column.id === targetListId);
+      const terminalStatus =
+        targetList?.status === 'done' || targetList?.status === 'closed'
+          ? targetList.status
+          : undefined;
       const nextTask = {
         ...task,
         list_id: isStagingTarget
@@ -492,6 +512,7 @@ export function useKanbanDnd({
               personal_sort_key: newSortKey,
               previous_task_id: order?.previousTaskId ?? null,
               next_task_id: order?.nextTaskId ?? null,
+              terminal_status: terminalStatus,
             });
 
         if (isStagingTarget) {
@@ -549,7 +570,7 @@ export function useKanbanDnd({
         throw error;
       }
     },
-    [boardId, queryClient]
+    [boardId, columns, queryClient]
   );
 
   // Use the extracted calculateSortKeyWithRetry helper
@@ -575,8 +596,15 @@ export function useKanbanDnd({
     [wsId]
   );
 
-  // Initialize auto-scroll
-  useAutoScroll(isDraggingRef, scrollContainerRef);
+  const { startAutoScroll, stopAutoScroll, updateAutoScrollPointerX } =
+    useAutoScroll(scrollContainerRef);
+
+  const updateAutoScrollFromDragEvent = useCallback(
+    (event: DragMoveEvent | DragOverEvent | DragStartEvent) => {
+      updateAutoScrollPointerX(getKanbanDragAutoScrollPointerX(event));
+    },
+    [updateAutoScrollPointerX]
+  );
 
   const resetDragState = useCallback(
     (clearOptimisticUpdates = false) => {
@@ -591,12 +619,13 @@ export function useKanbanDnd({
       dragSessionMetricsRef.current = null;
       dragStartTaskIndexesByListRef.current.clear();
       isDraggingRef.current = false;
+      stopAutoScroll();
 
       if (clearOptimisticUpdates) {
         setOptimisticUpdateInProgress(new Set());
       }
     },
-    [setDragPreviewPosition]
+    [setDragPreviewPosition, stopAutoScroll]
   );
 
   const markTaskIdsPending = useCallback((taskIds: string[]) => {
@@ -615,6 +644,8 @@ export function useKanbanDnd({
 
   const processTaskDragPreview = useCallback(
     (event: DragMoveEvent) => {
+      updateAutoScrollFromDragEvent(event);
+
       const { active, over } = event;
       const activeType = active.data?.current?.type;
       if (!activeType) return;
@@ -739,6 +770,7 @@ export function useKanbanDnd({
       getDragPreviewForList,
       getDragPreviewForListSurface,
       setDragPreviewPosition,
+      updateAutoScrollFromDragEvent,
       wsId,
     ]
   );
@@ -751,6 +783,8 @@ export function useKanbanDnd({
 
     // Enable auto-scroll
     isDraggingRef.current = true;
+    updateAutoScrollFromDragEvent(event);
+    startAutoScroll();
 
     const { type } = active.data.current;
     if (type === 'Column') {
@@ -759,6 +793,7 @@ export function useKanbanDnd({
     }
     if (type === 'Task') {
       if (!wsId) {
+        resetDragState(true);
         return;
       }
 

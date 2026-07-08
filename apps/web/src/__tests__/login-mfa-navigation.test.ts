@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { completeVerifiedMfaSignIn } from '@/app/[locale]/(marketing)/login/mfa-navigation';
+import { completeVerifiedMfaSignIn } from '@/app/[locale]/(auth)/login/mfa-navigation';
 
 describe('completeVerifiedMfaSignIn', () => {
   afterEach(() => {

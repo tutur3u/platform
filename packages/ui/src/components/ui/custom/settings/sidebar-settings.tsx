@@ -8,13 +8,12 @@ import { RadioGroup, RadioGroupItem } from '@tuturuuu/ui/radio-group';
 import { Separator } from '@tuturuuu/ui/separator';
 import { Switch } from '@tuturuuu/ui/switch';
 import { useTranslations } from 'next-intl';
+import type { SidebarBehavior } from '../sidebar-context';
 
 interface SidebarSettingsProps {
   useSidebar: () => {
-    behavior: 'expanded' | 'collapsed' | 'hover';
-    handleBehaviorChange: (
-      behavior: 'expanded' | 'collapsed' | 'hover'
-    ) => void;
+    behavior: SidebarBehavior;
+    handleBehaviorChange: (behavior: SidebarBehavior) => void;
     localOverride: boolean;
     setLocalOverride: (value: boolean) => void;
   };
@@ -45,9 +44,9 @@ export default function SidebarSettings({ useSidebar }: SidebarSettingsProps) {
         <RadioGroup
           value={behavior}
           onValueChange={(value) =>
-            handleBehaviorChange(value as 'expanded' | 'collapsed' | 'hover')
+            handleBehaviorChange(value as SidebarBehavior)
           }
-          className="grid grid-cols-3 gap-4"
+          className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4"
         >
           <div>
             <RadioGroupItem
@@ -82,6 +81,19 @@ export default function SidebarSettings({ useSidebar }: SidebarSettingsProps) {
               className="flex cursor-pointer flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
             >
               {t('settings.preferences.sidebar_hover')}
+            </Label>
+          </div>
+          <div>
+            <RadioGroupItem
+              value="hidden"
+              id="hidden"
+              className="peer sr-only"
+            />
+            <Label
+              htmlFor="hidden"
+              className="flex cursor-pointer flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
+            >
+              {t('settings.preferences.sidebar_hidden')}
             </Label>
           </div>
         </RadioGroup>

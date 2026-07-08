@@ -79,6 +79,7 @@ interface KanbanColumnsProps {
     pin: SpecialTaskListPin,
     pinned: boolean
   ) => void;
+  onHoveredTaskListChange?: (listId: string | null) => void;
   readOnly?: boolean;
 }
 
@@ -156,6 +157,7 @@ export function KanbanColumns({
   onDeadlineSectionCollapsedChange,
   specialTaskListPins,
   onSpecialTaskListPinnedChange,
+  onHoveredTaskListChange,
   readOnly = false,
 }: KanbanColumnsProps) {
   const initialScrollAnchoredBoardRef = useRef<string | null>(null);
@@ -270,6 +272,7 @@ export function KanbanColumns({
   return (
     <div
       ref={boardRef}
+      onPointerLeave={() => onHoveredTaskListChange?.(null)}
       className="scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent relative flex h-full w-full snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain scroll-smooth"
       style={
         {
@@ -416,6 +419,9 @@ export function KanbanColumns({
                     onSpecialTaskListPinnedChange?.('closed_tasks', pinned);
                   }
                 }}
+                onHoverTaskList={
+                  list.is_external_staging ? undefined : onHoveredTaskListChange
+                }
                 readOnly={readOnly}
               />
             );

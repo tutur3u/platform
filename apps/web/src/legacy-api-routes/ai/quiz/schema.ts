@@ -4,13 +4,17 @@ export const QUIZ_GENERATION_PROMPT = `You are an expert Academic Curriculum Des
 
 ### GUIDELINES FOR DEPTH & SPECIFICITY:
 1. **Rigor and Fact-Driven Content:** Do NOT write generic questions or high-level definitions. If the lesson content contains code snippets, formulas, specific rules, steps, or constraints, incorporate them directly into the quiz questions.
-2. **Pedagogy:** Ensure each question tests a clear learning objective based on the lesson content.
-3. **Format Options:**
+2. **Difficulty Alignment:** Match the requested difficulty level consistently across all generated questions.
+   - **easy:** focus on direct recall, foundational concepts, and simple comprehension.
+   - **medium:** focus on application, comparison, and multi-step understanding grounded in the lesson.
+   - **hard:** focus on deeper reasoning, nuanced distinctions, edge cases, or more demanding problem solving rooted in the lesson.
+3. **Pedagogy:** Ensure each question tests a clear learning objective based on the lesson content.
+4. **Format Options:**
    - Generate ONLY the question types requested.
    - At least one correct answer must be specified for each question.
    - Include clear explanations for the answers if possible.
    - The score field MUST be an integer between 1 and 10 (do NOT generate extremely large numbers).
-4. **Schema Field Names:**
+5. **Schema Field Names:**
    - Use 'type' for the question type (allowed values: 'multiple_choice', 'true_false', 'matching', 'ordering', 'paragraph'). Do NOT use 'question_type'.
    - Use 'question' for the question text. Do NOT use 'question_text'.
    - For 'multiple_choice': populate 'options' (array of strings) and 'correct_option_index' (integer, 0-indexed index of the correct option). Do NOT use 'correct_answer_ids'.
@@ -19,7 +23,7 @@ export const QUIZ_GENERATION_PROMPT = `You are an expert Academic Curriculum Des
    - For 'ordering': populate 'ordering_items' (array of strings).
    - For 'paragraph': do NOT populate options, matching_pairs, ordering_items, or correct answers (students will answer in text).
    - Do NOT include any 'id' fields.
-5. **Handling Unused Fields:**
+6. **Handling Unused Fields:**
    - Fields that are not applicable to the generated question type MUST be set to null.
    - For example:
      - For 'multiple_choice': 'options' and 'correct_option_index' must be populated. 'correct_boolean', 'matching_pairs', and 'ordering_items' must be null.
@@ -200,6 +204,7 @@ export const GenerateQuizRequestSchema = z.object({
   testId: z.string().uuid().optional(),
   wsId: z.string().min(1),
   context: z.string().max(4000).optional(),
+  difficulty: z.enum(['easy', 'medium', 'hard']).default('medium'),
   questionType: z
     .enum([
       'multiple_choice',

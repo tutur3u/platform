@@ -1,6 +1,7 @@
 'use client';
 
 import {
+  Archive,
   CalendarDays,
   ExternalLink,
   MoreHorizontal,
@@ -104,6 +105,7 @@ export function TaskRowActionsMenu({
   const taskList = lists.find((list) => list.id === task.list_id);
   const targetCompletionList = useMemo(() => getCompletionList(lists), [lists]);
   const targetClosedList = useMemo(() => getClosedList(lists), [lists]);
+  const isDocumentList = taskList?.status === 'documents';
   const sourceWorkspaceId = task.source_workspace_id ?? workspaceId;
   const sourceBoardId = task.source_board_id ?? boardId;
   const isCrossWorkspaceExternal =
@@ -204,7 +206,7 @@ export function TaskRowActionsMenu({
             <Pencil className="h-4 w-4" />
             {t('edit')}
           </DropdownMenuItem>
-          {taskList?.status !== 'documents' && (
+          {!isDocumentList && (
             <DropdownMenuItem asChild>
               <Link
                 href={`/${sourceWorkspaceId}/time-tracker/timer?taskSelect=${task.id}`}
@@ -225,7 +227,7 @@ export function TaskRowActionsMenu({
             </DropdownMenuItem>
           )}
           <DropdownMenuSeparator />
-          {taskList?.status !== 'documents' &&
+          {!isDocumentList &&
             canUseCurrentBoardLists &&
             targetCompletionList &&
             targetCompletionList.id !== task.list_id && (
@@ -245,11 +247,11 @@ export function TaskRowActionsMenu({
                   : t('mark_as_closed')}
               </DropdownMenuItem>
             )}
-          {taskList?.status !== 'documents' &&
-            canUseCurrentBoardLists &&
+          {canUseCurrentBoardLists &&
             targetClosedList &&
             targetClosedList.id !== task.list_id &&
-            targetClosedList.id !== targetCompletionList?.id && (
+            (isDocumentList ||
+              targetClosedList.id !== targetCompletionList?.id) && (
               <DropdownMenuItem
                 onSelect={(event) =>
                   handleMenuItemSelect(
@@ -260,8 +262,12 @@ export function TaskRowActionsMenu({
                 className="cursor-pointer"
                 disabled={isLoading}
               >
-                <CalendarDays className="h-4 w-4 text-dynamic-purple" />
-                {t('mark_as_closed')}
+                {isDocumentList ? (
+                  <Archive className="h-4 w-4 text-dynamic-purple" />
+                ) : (
+                  <CalendarDays className="h-4 w-4 text-dynamic-purple" />
+                )}
+                {isDocumentList ? t('archive') : t('mark_as_closed')}
               </DropdownMenuItem>
             )}
           <TaskPriorityMenu
@@ -279,7 +285,7 @@ export function TaskRowActionsMenu({
               low: t('priority_low'),
             }}
           />
-          {taskList?.status !== 'documents' && (
+          {!isDocumentList && (
             <TaskDueDateMenu
               endDate={task.end_date}
               isLoading={isLoading}
@@ -300,7 +306,7 @@ export function TaskRowActionsMenu({
               }}
             />
           )}
-          {taskList?.status !== 'documents' && (
+          {!isDocumentList && (
             <TaskSchedulingMenu
               task={task}
               boardId={boardId}

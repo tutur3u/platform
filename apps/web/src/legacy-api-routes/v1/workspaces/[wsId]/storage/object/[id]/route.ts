@@ -1,9 +1,9 @@
+import { isReservedMobileDeploymentDrivePath } from '@tuturuuu/storage-core/mobile-deployment/storage-policy';
 import { createDynamicAdminClient } from '@tuturuuu/supabase/next/server';
 import { sanitizePath } from '@tuturuuu/utils/storage-path';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { canAccessFinanceTransactionStoragePath } from '@/lib/finance-transaction-storage-access';
-import { isReservedMobileDeploymentDrivePath } from '@/lib/mobile-deployment/storage-policy';
 import {
   FINANCE_TRANSACTION_STORAGE_APP_SESSION_TARGETS,
   logWorkspaceStorageRouteError,

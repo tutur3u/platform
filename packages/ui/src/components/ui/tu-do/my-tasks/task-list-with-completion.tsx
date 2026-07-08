@@ -14,6 +14,7 @@ import {
 import {
   listWorkspaceTaskLists,
   updateWorkspaceTask,
+  upsertCurrentUserTaskPersonalPlacement,
 } from '@tuturuuu/internal-api';
 import type { TaskWithRelations } from '@tuturuuu/types';
 import type { Task as PrimitiveTask } from '@tuturuuu/types/primitives/Task';
@@ -200,8 +201,50 @@ export default function TaskListWithCompletion({
 
     setCompletingTasks((prev) => new Set(prev).add(task.id));
     const snapshot = snapshotCache();
+    const isCompleted = task.list?.status === 'done';
+    const personalPlacement = task.overrides as
+      | (NonNullable<typeof task.overrides> & {
+          personal_board_id?: string | null;
+          personal_list_id?: string | null;
+        })
+      | null;
+    const personalBoardId = personalPlacement?.personal_board_id ?? null;
 
     try {
+      if (personalBoardId && !isCompleted) {
+        removeTaskFromCache(task.id);
+
+        await upsertCurrentUserTaskPersonalPlacement(task.id, {
+          personal_board_id: personalBoardId,
+          personal_list_id: personalPlacement?.personal_list_id ?? null,
+          terminal_status: 'done',
+        });
+
+        if (
+          task.overrides?.completed_at ||
+          task.overrides?.personally_unassigned
+        ) {
+          await fetch(
+            getTaskApiUrl(`/api/v1/users/me/tasks/${task.id}/overrides`),
+            {
+              method: 'PUT',
+              credentials: 'include',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                completed_at: null,
+                personally_unassigned: false,
+              }),
+            }
+          ).catch(() => {
+            // Non-critical cleanup — don't block the completion flow
+          });
+        }
+
+        toast.success(t('task_completed_toast'));
+        onTaskUpdate?.();
+        return;
+      }
+
       // Find the board's done list
       const { lists } = await listWorkspaceTaskLists(
         task.list.board.ws_id,
@@ -221,7 +264,6 @@ export default function TaskListWithCompletion({
         return;
       }
 
-      const isCompleted = task.list?.status === 'done';
       const targetListId = isCompleted ? notStartedList.id : doneList.id;
 
       // Optimistic: remove from view (completion hides task)

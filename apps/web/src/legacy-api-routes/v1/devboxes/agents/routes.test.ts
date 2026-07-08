@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const {
   authorizeDevboxAgentMock,
@@ -28,10 +28,13 @@ vi.mock('@/lib/devboxes/agent-store', () => ({
   shutdownDevboxRunner: shutdownDevboxRunnerMock,
 }));
 
+import { DEVBOX_AGENT_API_ENABLED_ENV } from '@/lib/devboxes/agent-traffic-gate';
 import { POST as events } from './events/route';
 import { POST as heartbeat } from './heartbeat/route';
 import { GET as poll } from './poll/route';
 import { POST as shutdown } from './shutdown/route';
+
+const originalDevboxAgentApiEnabled = process.env[DEVBOX_AGENT_API_ENABLED_ENV];
 
 function createRequest(body?: unknown) {
   return new Request('http://localhost/api/v1/devboxes/agents', {
@@ -42,16 +45,86 @@ function createRequest(body?: unknown) {
   });
 }
 
+function mockAuthorizedRunner(heartbeatEnabled: boolean) {
+  authorizeDevboxAgentMock.mockResolvedValue({
+    ok: true,
+    runner: { heartbeatEnabled, id: 'runner-1' },
+  });
+}
+
+function enableDevboxAgentApi() {
+  process.env[DEVBOX_AGENT_API_ENABLED_ENV] = 'true';
+}
+
 describe('devbox agent routes', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    delete process.env[DEVBOX_AGENT_API_ENABLED_ENV];
+    mockAuthorizedRunner(false);
+  });
+
+  afterAll(() => {
+    if (originalDevboxAgentApiEnabled === undefined) {
+      delete process.env[DEVBOX_AGENT_API_ENABLED_ENV];
+    } else {
+      process.env[DEVBOX_AGENT_API_ENABLED_ENV] = originalDevboxAgentApiEnabled;
+    }
+  });
+
+  it('blocks runner heartbeats by default before authentication', async () => {
+    const response = await heartbeat(createRequest());
+
+    expect(response.status).toBe(403);
+    expect(authorizeDevboxAgentMock).not.toHaveBeenCalled();
+    expect(heartbeatDevboxRunnerMock).not.toHaveBeenCalled();
+    await expect(response.json()).resolves.toEqual({
+      message: `Devbox agent poll and heartbeat are disabled. Set ${DEVBOX_AGENT_API_ENABLED_ENV}=true to enable them.`,
+    });
+  });
+
+  it('blocks runner job polling by default before authentication', async () => {
+    const response = await poll(createRequest());
+
+    expect(response.status).toBe(403);
+    expect(authorizeDevboxAgentMock).not.toHaveBeenCalled();
+    expect(claimNextDevboxRunMock).not.toHaveBeenCalled();
+    await expect(response.json()).resolves.toEqual({
+      message: `Devbox agent poll and heartbeat are disabled. Set ${DEVBOX_AGENT_API_ENABLED_ENV}=true to enable them.`,
+    });
+  });
+
+  it('blocks runner heartbeats until an admin enables them', async () => {
+    enableDevboxAgentApi();
+
+    const response = await heartbeat(createRequest());
+
+    expect(response.status).toBe(403);
+    expect(authorizeDevboxAgentMock).toHaveBeenCalledOnce();
+    expect(heartbeatDevboxRunnerMock).not.toHaveBeenCalled();
+    await expect(response.json()).resolves.toEqual({
+      message: 'Heartbeat disabled for this runner',
+    });
+  });
+
+  it('preserves unauthorized heartbeat responses for invalid runner tokens', async () => {
+    enableDevboxAgentApi();
     authorizeDevboxAgentMock.mockResolvedValue({
-      ok: true,
-      runner: { id: 'runner-1' },
+      ok: false,
+      response: Response.json({ message: 'Unauthorized' }, { status: 401 }),
+    });
+
+    const response = await heartbeat(createRequest());
+
+    expect(response.status).toBe(401);
+    expect(heartbeatDevboxRunnerMock).not.toHaveBeenCalled();
+    await expect(response.json()).resolves.toEqual({
+      message: 'Unauthorized',
     });
   });
 
   it('records runner heartbeats', async () => {
+    enableDevboxAgentApi();
+    mockAuthorizedRunner(true);
     heartbeatDevboxRunnerMock.mockResolvedValue({
       message: 'heartbeat accepted',
     });
@@ -69,6 +142,8 @@ describe('devbox agent routes', () => {
   });
 
   it('records runner heartbeat capabilities', async () => {
+    enableDevboxAgentApi();
+    mockAuthorizedRunner(true);
     heartbeatDevboxRunnerMock.mockResolvedValue({
       message: 'heartbeat accepted',
     });
@@ -95,6 +170,26 @@ describe('devbox agent routes', () => {
     );
   });
 
+  it('rejects invalid runner heartbeat bodies after heartbeat is enabled', async () => {
+    enableDevboxAgentApi();
+    mockAuthorizedRunner(true);
+
+    const response = await heartbeat(
+      createRequest({
+        capabilities: {
+          cli: { name: 'ttr', version: '0.2.0' },
+          unexpected: true,
+        },
+      })
+    );
+
+    expect(response.status).toBe(400);
+    expect(heartbeatDevboxRunnerMock).not.toHaveBeenCalled();
+    await expect(response.json()).resolves.toMatchObject({
+      message: 'Invalid heartbeat body',
+    });
+  });
+
   it('shuts down the authenticated runner', async () => {
     shutdownDevboxRunnerMock.mockResolvedValue({
       message: 'Devbox runner removed from the cluster.',
@@ -112,6 +207,7 @@ describe('devbox agent routes', () => {
   });
 
   it('claims queued jobs for the authenticated runner', async () => {
+    enableDevboxAgentApi();
     claimNextDevboxRunMock.mockResolvedValue({
       command: ['bun', '--version'],
       leaseId: 'lease-1',

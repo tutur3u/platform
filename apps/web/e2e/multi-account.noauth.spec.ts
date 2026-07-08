@@ -15,6 +15,7 @@ const SECOND_USER = {
   id: '00000000-0000-0000-0000-000000000002',
   password: 'password123',
 } as const;
+const LOGIN_PATH = `/${DEFAULT_LOCALE}/login`;
 
 function getSupabaseAuthStorageKey(url: string) {
   return `sb-${new URL(url).hostname.split('.')[0]}-auth-token`;
@@ -124,7 +125,7 @@ async function clearInvalidReturnUrlIfShown(page: Page) {
     await clearReturnUrlButton
       .waitFor({ state: 'hidden', timeout: 10_000 })
       .catch(async () => {
-        await page.goto('/login', { waitUntil: 'domcontentloaded' });
+        await page.goto(LOGIN_PATH, { waitUntil: 'domcontentloaded' });
       });
     await expect(
       page.getByPlaceholder('Enter your email or username')
@@ -241,7 +242,7 @@ async function logoutAll(page: Page) {
   }>(page, '/api/v1/auth/accounts/logout-all');
 
   expect(response.success).toBe(true);
-  await page.goto(response.redirectTo || '/login', {
+  await page.goto(response.redirectTo || LOGIN_PATH, {
     waitUntil: 'domcontentloaded',
   });
 }
@@ -259,7 +260,7 @@ test.describe('Multi-account server vault', () => {
       locale: DEFAULT_LOCALE,
     });
     await page.context().clearCookies();
-    await page.goto('/login', { waitUntil: 'domcontentloaded' });
+    await page.goto(LOGIN_PATH, { waitUntil: 'domcontentloaded' });
     await page.evaluate(() => {
       window.localStorage.clear();
       window.sessionStorage.clear();
@@ -270,7 +271,7 @@ test.describe('Multi-account server vault', () => {
     page,
   }) => {
     await page.goto(
-      `/login?returnUrl=${encodeURIComponent(`/${DEFAULT_LOCALE}/personal/tasks`)}`,
+      `${LOGIN_PATH}?returnUrl=${encodeURIComponent(`/${DEFAULT_LOCALE}/personal/tasks`)}`,
       {
         waitUntil: 'domcontentloaded',
       }
@@ -282,7 +283,7 @@ test.describe('Multi-account server vault', () => {
     });
 
     await page.goto(
-      `/login?code=e2e-oauth-code&multiAccount=true&returnUrl=${encodeURIComponent(`/${DEFAULT_LOCALE}/personal/tasks`)}`,
+      `${LOGIN_PATH}?code=e2e-oauth-code&multiAccount=true&returnUrl=${encodeURIComponent(`/${DEFAULT_LOCALE}/personal/tasks`)}`,
       {
         waitUntil: 'domcontentloaded',
       }
@@ -315,7 +316,7 @@ test.describe('Multi-account server vault', () => {
       await saveCurrentAccount(page);
 
       await page.goto(
-        `/login?multiAccount=true&returnUrl=${encodeURIComponent(`/${DEFAULT_LOCALE}/personal/tasks`)}`,
+        `${LOGIN_PATH}?multiAccount=true&returnUrl=${encodeURIComponent(`/${DEFAULT_LOCALE}/personal/tasks`)}`,
         { waitUntil: 'domcontentloaded' }
       );
       const passwordInput = await openPasswordStage(page, SECOND_USER.email);
@@ -459,9 +460,12 @@ test.describe('Multi-account server vault', () => {
     try {
       await loginWithPassword(page, TEST_USER.email);
 
-      await page.goto(`/login?returnUrl=${encodeURIComponent(returnUrl)}`, {
-        waitUntil: 'domcontentloaded',
-      });
+      await page.goto(
+        `${LOGIN_PATH}?returnUrl=${encodeURIComponent(returnUrl)}`,
+        {
+          waitUntil: 'domcontentloaded',
+        }
+      );
 
       await expect(
         page.getByRole('button', { name: /continue to learn/i })

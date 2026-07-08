@@ -23,6 +23,8 @@ const LEGACY_WEB_ACCOUNT_DEVICE_COOKIE_NAME: &str = "tuturuuu_web_account_device
 
 const COOKIE_VERSION: &str = "v1";
 const DIAGNOSTIC_PREFIX: &str = "AUTH-ACC-LIST";
+const ACCOUNT_CORS_METHODS: &str = "GET, POST, PATCH, DELETE, OPTIONS";
+const ACCOUNT_CORS_HEADERS: &str = "Content-Type";
 
 #[derive(Serialize)]
 struct WebAccountMetadata {
@@ -92,10 +94,14 @@ pub(crate) async fn handle_auth_accounts_route(
         return None;
     }
 
-    Some(match request.method {
-        "GET" => list_web_accounts_response(config, request, outbound).await,
-        method => no_store_response(method_not_allowed(method, "GET")),
-    })
+    Some(with_account_cors(
+        request,
+        match request.method {
+            "GET" => list_web_accounts_response(config, request, outbound).await,
+            "OPTIONS" => crate::empty_response(204),
+            method => no_store_response(method_not_allowed(method, "GET")),
+        },
+    ))
 }
 
 async fn list_web_accounts_response(
@@ -322,21 +328,109 @@ fn device_credential_from_request(
     secret: &str,
 ) -> Option<DeviceCredential> {
     let cookie_header = request.cookie?;
+    let shared_host = request_uses_shared_account_cookie(request);
+    let cookie_names = if shared_host {
+        [
+            LEGACY_WEB_ACCOUNT_DEVICE_COOKIE_NAME,
+            WEB_ACCOUNT_DEVICE_COOKIE_NAME,
+        ]
+    } else {
+        [
+            WEB_ACCOUNT_DEVICE_COOKIE_NAME,
+            LEGACY_WEB_ACCOUNT_DEVICE_COOKIE_NAME,
+        ]
+    };
 
-    // Prefer the hardened `__Host-` cookie; fall back to the legacy cookie.
-    let raw = cookie_value(cookie_header, WEB_ACCOUNT_DEVICE_COOKIE_NAME)
-        .or_else(|| cookie_value(cookie_header, LEGACY_WEB_ACCOUNT_DEVICE_COOKIE_NAME))?;
+    for name in cookie_names {
+        let mut values = cookie_values(cookie_header, name);
 
-    parse_device_cookie_value(&raw, secret)
+        if shared_host && name == LEGACY_WEB_ACCOUNT_DEVICE_COOKIE_NAME {
+            // During migration the browser can send both host-only and
+            // parent-domain cookies with the same name. Cookie headers do not
+            // include domain metadata, so prefer the newest/header-last value.
+            values.reverse();
+        }
+
+        for raw in values {
+            if let Some(credential) = parse_device_cookie_value(&raw, secret) {
+                return Some(credential);
+            }
+        }
+    }
+
+    None
 }
 
-fn cookie_value(cookie_header: &str, name: &str) -> Option<String> {
+fn cookie_values(cookie_header: &str, name: &str) -> Vec<String> {
     cookie_header
         .split(';')
         .filter_map(|cookie| cookie.trim().split_once('='))
-        .find(|(cookie_name, _)| cookie_name.trim() == name)
+        .filter(|(cookie_name, _)| cookie_name.trim() == name)
         .map(|(_, value)| value.trim().to_owned())
         .filter(|value| !value.is_empty())
+        .collect()
+}
+
+fn request_uses_shared_account_cookie(request: BackendRequest<'_>) -> bool {
+    request
+        .origin
+        .or(request.url)
+        .and_then(origin_hostname)
+        .as_deref()
+        .is_some_and(is_tuturuuu_shared_hostname)
+}
+
+fn origin_hostname(value: &str) -> Option<String> {
+    let after_scheme = value.split_once("://").map(|(_, rest)| rest)?;
+    let host_with_port = after_scheme.split('/').next()?.trim();
+    let hostname = host_with_port
+        .split(':')
+        .next()?
+        .trim()
+        .to_ascii_lowercase();
+
+    (!hostname.is_empty()).then_some(hostname)
+}
+
+fn is_tuturuuu_shared_hostname(hostname: &str) -> bool {
+    hostname == "tuturuuu.com"
+        || hostname.ends_with(".tuturuuu.com")
+        || hostname == "tuturuuu.localhost"
+        || hostname.ends_with(".tuturuuu.localhost")
+}
+
+fn with_account_cors(
+    request: BackendRequest<'_>,
+    mut response: BackendResponse,
+) -> BackendResponse {
+    let Some(origin) = request.origin.filter(|origin| {
+        origin_hostname(origin)
+            .as_deref()
+            .is_some_and(is_tuturuuu_shared_hostname)
+    }) else {
+        return response;
+    };
+
+    response
+        .headers
+        .push(("Access-Control-Allow-Origin", origin.to_owned()));
+    response
+        .headers
+        .push(("Access-Control-Allow-Credentials", "true".to_owned()));
+    response.headers.push((
+        "Access-Control-Allow-Methods",
+        ACCOUNT_CORS_METHODS.to_owned(),
+    ));
+    response.headers.push((
+        "Access-Control-Allow-Headers",
+        ACCOUNT_CORS_HEADERS.to_owned(),
+    ));
+    response
+        .headers
+        .push(("Access-Control-Max-Age", "86400".to_owned()));
+    response.headers.push(("Vary", "Origin".to_owned()));
+
+    response
 }
 
 fn parse_device_cookie_value(value: &str, secret: &str) -> Option<DeviceCredential> {
@@ -598,3 +692,6 @@ fn civil_from_days(days: i64) -> (i64, i64, i64) {
     let year = if month <= 2 { year + 1 } else { year };
     (year, month, day)
 }
+
+#[cfg(test)]
+mod tests;

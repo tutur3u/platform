@@ -10,6 +10,7 @@ import {
   refreshAppSessionForRequest,
 } from '@tuturuuu/auth/proxy';
 import { guardApiProxyRequest } from '@tuturuuu/utils/api-proxy-guard';
+import { getTuturuuuSharedCookieOptions } from '@tuturuuu/utils/shared-cookie';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import createIntlMiddleware from 'next-intl/middleware';
@@ -18,6 +19,23 @@ import { type Locale, routing, supportedLocales } from './i18n/routing';
 
 const intlMiddleware = createIntlMiddleware(routing);
 const LOCAL_AUTH_API_PREFIX = '/api/auth/';
+const LOCALE_COOKIE_OPTIONS = {
+  maxAge: 365 * 24 * 60 * 60,
+  path: '/',
+  sameSite: 'lax',
+} as const;
+
+function setLocaleCookie(
+  response: NextResponse,
+  request: NextRequest,
+  locale: string
+) {
+  response.cookies.set(
+    LOCALE_COOKIE_NAME,
+    locale,
+    getTuturuuuSharedCookieOptions(LOCALE_COOKIE_OPTIONS, request)
+  );
+}
 
 function stripLocale(pathname: string) {
   const segments = pathname.split('/').filter(Boolean);
@@ -69,7 +87,7 @@ function getCanonicalLocaleRedirect(request: NextRequest) {
   url.pathname = stripLocale(request.nextUrl.pathname);
 
   const response = NextResponse.redirect(url);
-  response.cookies.set(LOCALE_COOKIE_NAME, pathLocale);
+  setLocaleCookie(response, request, pathLocale);
   return response;
 }
 

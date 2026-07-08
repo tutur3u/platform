@@ -3,6 +3,7 @@ import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { toWorkspaceSlug } from '@tuturuuu/utils/constants';
 import { cookies } from 'next/headers';
 import { notFound, redirect } from 'next/navigation';
+import { connection } from 'next/server';
 import { type ReactNode, Suspense } from 'react';
 import { PROD_MODE } from '@/constants/env';
 import {
@@ -10,6 +11,7 @@ import {
   SIDEBAR_BEHAVIOR_UPDATED_AT_COOKIE_NAME,
   SIDEBAR_COLLAPSED_COOKIE_NAME,
 } from '@/constants/sidebar';
+import type { SidebarBehavior } from '@/context/sidebar-context';
 import { isPolarWorkspaceSetupEnabled } from '@/lib/polar-config';
 import {
   type DashboardLayoutWorkspace,
@@ -123,6 +125,8 @@ async function loadDashboardShellClient() {
 }
 
 export default async function Layout({ children, params }: LayoutProps) {
+  await connection();
+
   const { wsId: id } = await params;
 
   const { user, workspace } = await getDashboardLayoutData(id);
@@ -165,14 +169,12 @@ export default async function Layout({ children, params }: LayoutProps) {
   const rawBehavior = behaviorCookie?.value;
   const isValidBehavior = (
     value: string | undefined
-  ): value is 'expanded' | 'collapsed' | 'hover' => {
+  ): value is SidebarBehavior => {
     if (!value) return false;
-    return ['expanded', 'collapsed', 'hover'].includes(value);
+    return ['expanded', 'collapsed', 'hover', 'hidden'].includes(value);
   };
 
-  const sidebarBehavior: 'expanded' | 'collapsed' | 'hover' = isValidBehavior(
-    rawBehavior
-  )
+  const sidebarBehavior: SidebarBehavior = isValidBehavior(rawBehavior)
     ? rawBehavior
     : 'expanded';
   const parsedBehaviorUpdatedAt = behaviorUpdatedAtCookie?.value
@@ -186,9 +188,11 @@ export default async function Layout({ children, params }: LayoutProps) {
       : null;
 
   let defaultCollapsed: boolean;
-  if (sidebarBehavior === 'collapsed') {
-    defaultCollapsed = true;
-  } else if (sidebarBehavior === 'hover') {
+  if (
+    sidebarBehavior === 'collapsed' ||
+    sidebarBehavior === 'hover' ||
+    sidebarBehavior === 'hidden'
+  ) {
     defaultCollapsed = true;
   } else {
     defaultCollapsed = collapsed ? JSON.parse(collapsed.value) : false;

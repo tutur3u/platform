@@ -1,5 +1,37 @@
 # Changelog
 
+## [0.12.0](https://github.com/tutur3u/platform/compare/inventory-v0.11.0...inventory-v0.12.0) (2026-07-06)
+
+
+### Features
+
+* **satellite:** improve apps launcher picker ([a3e92cb](https://github.com/tutur3u/platform/commit/a3e92cb1a54e3cb45bc1697e8e70efd0776d2a23))
+
+## [0.11.0](https://github.com/tutur3u/platform/compare/inventory-v0.10.0...inventory-v0.11.0) (2026-07-05)
+
+
+### Features
+
+* **inventory:** collapse advanced settings in the integration panels ([8e0967c](https://github.com/tutur3u/platform/commit/8e0967cd319e903eb12f0058f05dcdeb59b9b398))
+* **inventory:** de-crowd the Polar hub with tabs ([9ada335](https://github.com/tutur3u/platform/commit/9ada3359df3e4b1a14dd976785919f04f7ac85ac))
+* **inventory:** make the storefront section builder an accordion ([c9d8012](https://github.com/tutur3u/platform/commit/c9d80129925ced1d336acde16e3fde4a643f220f))
+* **inventory:** move inventory API routes into apps/inventory ([071a72c](https://github.com/tutur3u/platform/commit/071a72cebcdd3d6122363c57b006ee8838efe9c9))
+* **inventory:** revamp the setup page reference-data layout ([598b640](https://github.com/tutur3u/platform/commit/598b640808b57366d22eb2aa0d0db117abf8492f))
+* **inventory:** tab the bundle create form ([58721a5](https://github.com/tutur3u/platform/commit/58721a54f3501ae518d7557203252b27002628ac))
+* **inventory:** tab the costing profile dialog ([7180a20](https://github.com/tutur3u/platform/commit/7180a20876c2b5b42af2876fb3e1689b28a4a01d))
+* **inventory:** tab the storefront create form ([1f11960](https://github.com/tutur3u/platform/commit/1f11960ddad92d0a91b7c6d4e58744e43febb5d0))
+* **inventory:** tab the storefront listing editor ([856ff61](https://github.com/tutur3u/platform/commit/856ff610161b9a80af9606e1307850c8a18e1826))
+* **inventory:** use shared Tabs for the commerce panel ([bf2d48b](https://github.com/tutur3u/platform/commit/bf2d48bc99d86257853ce61b5726112ca93a4dbd))
+* **inventory:** use skeleton loading state in OperatorDataList ([86b1d4e](https://github.com/tutur3u/platform/commit/86b1d4ebbbcfcdee7d26f5ac3927bd40e25264ab))
+* **satellite:** add sidebar apps launcher ([b2f6fcd](https://github.com/tutur3u/platform/commit/b2f6fcd55d7cb5c100e31d36f9f329817ecfe5e9))
+
+
+### Bug Fixes
+
+* **inventory:** align operator UI with design tokens + a11y ([1e035e1](https://github.com/tutur3u/platform/commit/1e035e1cf5a9801ae1235e9833cc51aebfa95601))
+* **inventory:** contain operator tables and translations ([5fa064e](https://github.com/tutur3u/platform/commit/5fa064e4c203f7202fc6db4ef2463001e32857a4))
+* **inventory:** give the OperatorDataList loading region a status role ([acca059](https://github.com/tutur3u/platform/commit/acca059c81499ca8a3b351704555d7c04d8ca503))
+
 ## [0.10.0](https://github.com/tutur3u/platform/compare/inventory-v0.9.0...inventory-v0.10.0) (2026-07-03)
 
 

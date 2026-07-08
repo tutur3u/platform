@@ -1,6 +1,6 @@
 {
   "name": "@tuturuuu/satellite",
-  "version": "0.2.1",
+  "version": "0.4.0",
   "private": true,
   "main": "./src/index.ts",
   "types": "./src/index.ts",
@@ -12,6 +12,7 @@
     "./user-nav": "./src/components/user-nav.tsx",
     "./user-nav-wrapper": "./src/components/user-nav-wrapper.tsx",
     "./user-nav-client": "./src/components/user-nav-client.tsx",
+    "./account-switcher-menu": "./src/components/account-switcher-menu.tsx",
     "./create-user-nav": "./src/components/create-user-nav.tsx",
     "./create-user-nav-client": "./src/components/create-user-nav-client.tsx",
     "./command-launcher": "./src/components/command-launcher/index.ts",

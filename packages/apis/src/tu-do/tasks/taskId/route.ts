@@ -545,6 +545,8 @@ function serializeTask(task: TaskRecord) {
     assignee_ids: uniqueAssigneeIds,
     label_ids: uniqueLabelIds,
     project_ids: uniqueProjectIds,
+    is_personal_external: false,
+    is_personal_external_default: false,
   };
 }
 

@@ -223,6 +223,10 @@
       "component": "sdk",
       "package-name": "tuturuuu"
     },
+    "packages/storage-core": {
+      "component": "storage-core",
+      "package-name": "@tuturuuu/storage-core"
+    },
     "packages/supabase": {
       "component": "supabase",
       "package-name": "@tuturuuu/supabase"

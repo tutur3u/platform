@@ -69,7 +69,7 @@ vi.mock('@/lib/valsea-audio-storage-policy', () => ({
   validateFinalizedValseaAudioUpload: vi.fn(() => ({ ok: true })),
 }));
 
-vi.mock('@/lib/workspace-storage-provider', () => ({
+vi.mock('@tuturuuu/storage-core/workspace-storage-provider', () => ({
   createWorkspaceStorageSignedReadUrl: vi.fn(),
 }));
 

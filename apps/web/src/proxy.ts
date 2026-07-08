@@ -50,6 +50,7 @@ import { getMailAppOrigin } from './lib/mail-app-url';
 import { getQrAppOrigin } from './lib/qr-app-url';
 import { getToolsAppOrigin } from './lib/tools-app-url';
 import { getTrackAppOrigin } from './lib/track-app-url';
+import { hasPendingWorkspaceInvitations } from './lib/workspace-invitations/status';
 import {
   getWorkspaceRoutePermissionRequirements,
   hasRequiredWorkspaceRoutePermission,
@@ -60,6 +61,7 @@ const ONBOARDING_BYPASS_PATHS = [
   // Auth flows
   '/onboarding',
   '/login',
+  '/add-account',
   '/signup',
   '/auth',
   '/api',
@@ -152,7 +154,6 @@ const SUSPICIOUS_QUERY_PARAMS_MAX = parsePositiveIntEnv(
 );
 const SCANNER_PATH_PATTERN =
   /(wp-admin|wp-login\.php|xmlrpc\.php|phpmyadmin|adminer|\.env|\.git|boaform|server-status|cgi-bin|vendor\/phpunit|actuator|jenkins|hudson|\/shell|\/debug)/i;
-const ROOT_DEFAULT_NAVIGATION_CONFIG_ID = 'ROOT_DEFAULT_NAVIGATION';
 const RATE_LIMIT_DIAGNOSTIC_HEADER_NAMES = [
   'Retry-After',
   'X-Proxy-Block-Reason',
@@ -168,21 +169,10 @@ const RATE_LIMIT_DIAGNOSTIC_HEADER_NAMES = [
 ] as const;
 const STAFF_RATE_LIMIT_WARNING = 'staff-debug-bypass';
 const STAFF_RATE_LIMIT_DEBUG_BYPASS = 'tuturuuu-staff';
-
-type RootNavigationTarget = 'workspace_home' | 'tasks' | 'calendar' | 'finance';
-
-type RootNavigationConfig = {
-  target: RootNavigationTarget;
-  submodule?: string;
-  boardId?: string;
-};
-
-const ROOT_NAVIGATION_TARGETS: readonly RootNavigationTarget[] = [
-  'workspace_home',
-  'tasks',
-  'calendar',
-  'finance',
-];
+const CACHEABLE_AUTH_SHELL_PATHS = new Set(['/add-account', '/login']);
+const AUTH_SHELL_BROWSER_CACHE_CONTROL = 'public, max-age=0, must-revalidate';
+const AUTH_SHELL_CDN_CACHE_CONTROL =
+  'public, max-age=86400, stale-while-revalidate=604800';
 
 function parsePositiveIntEnv(name: string, fallback: number): number {
   const rawValue = process.env[name];
@@ -192,27 +182,6 @@ function parsePositiveIntEnv(name: string, fallback: number): number {
 
   const parsed = Number.parseInt(rawValue, 10);
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
-}
-
-function isRootNavigationTarget(value: unknown): value is RootNavigationTarget {
-  return ROOT_NAVIGATION_TARGETS.includes(value as RootNavigationTarget);
-}
-
-function parseRootNavigationConfig(value: string | null): RootNavigationConfig {
-  if (!value) {
-    return { target: 'workspace_home' };
-  }
-
-  try {
-    const parsed = JSON.parse(value) as RootNavigationConfig;
-    if (!isRootNavigationTarget(parsed?.target)) {
-      return { target: 'workspace_home' };
-    }
-
-    return parsed;
-  } catch {
-    return { target: 'workspace_home' };
-  }
 }
 
 function prependLocalePrefix(path: string, localePrefix: string): string {
@@ -267,6 +236,35 @@ function isAuthProxyPublicPath(pathname: string): boolean {
     pathnameWithoutLocale === '/auth/recovery' ||
     pathnameWithoutLocale.startsWith('/auth/recovery/')
   );
+}
+
+function isCacheableAuthShellPath(pathname: string): boolean {
+  const { pathnameWithoutLocale } = getLocaleAwarePathname(pathname);
+
+  return CACHEABLE_AUTH_SHELL_PATHS.has(pathnameWithoutLocale);
+}
+
+function applyCacheableAuthShellHeaders(response: NextResponse): NextResponse {
+  response.headers.set('Cache-Control', AUTH_SHELL_BROWSER_CACHE_CONTROL);
+  response.headers.set('CDN-Cache-Control', AUTH_SHELL_CDN_CACHE_CONTROL);
+  response.headers.set(
+    'Vercel-CDN-Cache-Control',
+    AUTH_SHELL_CDN_CACHE_CONTROL
+  );
+  response.headers.set('X-Robots-Tag', 'noindex, nofollow');
+
+  return response;
+}
+
+function handleCacheableAuthShellRoute(req: NextRequest): NextResponse | null {
+  if (!isCacheableAuthShellPath(req.nextUrl.pathname)) {
+    return null;
+  }
+
+  const { locale } = getLocaleAwarePathname(req.nextUrl.pathname);
+  const response = locale ? NextResponse.next() : handleLocale({ req });
+
+  return applyCacheableAuthShellHeaders(response);
 }
 
 function redirectToPath(req: NextRequest, pathname: string) {
@@ -416,66 +414,6 @@ function isWorkspaceHomeRedirectCandidate(
 
   const pathname = `/${workspaceSlug}`;
   return !PUBLIC_PATHS.includes(pathname);
-}
-
-async function resolveRootRedirectPath(
-  userId: string,
-  workspace: { id: string; personal?: boolean }
-): Promise<{ path: string; staleConfigValue: string | null }> {
-  const sbAdmin = await createAdminClient();
-  const { data: configRow } = await sbAdmin
-    .from('user_workspace_configs')
-    .select('value')
-    .eq('user_id', userId)
-    .eq('ws_id', workspace.id)
-    .eq('id', ROOT_DEFAULT_NAVIGATION_CONFIG_ID)
-    .maybeSingle();
-
-  const parsed = parseRootNavigationConfig(configRow?.value ?? null);
-
-  if (parsed.target === 'workspace_home') {
-    return { path: `/${workspace.id}`, staleConfigValue: null };
-  }
-
-  if (parsed.target === 'calendar') {
-    return { path: `/${workspace.id}/calendar`, staleConfigValue: null };
-  }
-
-  if (parsed.target === 'finance') {
-    const financeSubmodule = parsed.submodule;
-    if (financeSubmodule === 'transactions') {
-      return {
-        path: `/${workspace.id}/finance/transactions`,
-        staleConfigValue: null,
-      };
-    }
-    if (financeSubmodule === 'wallets') {
-      return {
-        path: `/${workspace.id}/finance/wallets`,
-        staleConfigValue: null,
-      };
-    }
-    if (financeSubmodule === 'invoices') {
-      return {
-        path: `/${workspace.id}/finance/invoices`,
-        staleConfigValue: null,
-      };
-    }
-
-    return { path: `/${workspace.id}/finance`, staleConfigValue: null };
-  }
-
-  if (parsed.target === 'tasks') {
-    return {
-      path: `/${workspace.id}/tasks`,
-      staleConfigValue:
-        parsed.submodule || parsed.boardId
-          ? JSON.stringify({ target: 'tasks' })
-          : null,
-    };
-  }
-
-  return { path: `/${workspace.id}`, staleConfigValue: null };
 }
 
 async function hasWorkspaceEmailRateLimitOverrides(
@@ -1024,6 +962,45 @@ async function hasCompletedOnboarding(userId: string): Promise<boolean> {
   }
 }
 
+async function userHasPendingWorkspaceInvitation({
+  email,
+  id,
+}: {
+  email?: string | null;
+  id: string;
+}): Promise<boolean> {
+  try {
+    const sbAdmin = await createAdminClient({ noCookie: true });
+
+    return hasPendingWorkspaceInvitations(sbAdmin, {
+      authEmail: email,
+      userId: id,
+    });
+  } catch (error) {
+    console.error('Error checking pending workspace invitations:', error);
+    return false;
+  }
+}
+
+async function buildDefaultWorkspaceRedirectResponse(
+  req: NextRequest,
+  authRes: NextResponse
+) {
+  const defaultWorkspace = await getUserDefaultWorkspace();
+  const target = defaultWorkspace
+    ? defaultWorkspace.personal
+      ? 'personal'
+      : defaultWorkspace.id === ROOT_WORKSPACE_ID
+        ? 'internal'
+        : defaultWorkspace.id
+    : 'personal';
+  const redirectUrl = new URL(`/${target}`, req.nextUrl);
+  const redirectResponse = NextResponse.redirect(redirectUrl);
+  propagateAuthCookies(authRes, redirectResponse);
+
+  return redirectResponse;
+}
+
 /**
  * Check if the path is the onboarding page
  */
@@ -1227,6 +1204,11 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
     return NextResponse.next();
   }
 
+  const cacheableAuthShellResponse = handleCacheableAuthShellRoute(req);
+  if (cacheableAuthShellResponse) {
+    return cacheableAuthShellResponse;
+  }
+
   const reservedRootRouteResponse = handleReservedRootRoute(req);
   if (reservedRootRouteResponse) {
     return reservedRootRouteResponse;
@@ -1279,26 +1261,13 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
       const { user } = await resolveAuthenticatedSessionUser(supabase);
 
       if (user) {
+        if (await userHasPendingWorkspaceInvitation(user)) {
+          return buildDefaultWorkspaceRedirectResponse(req, authRes);
+        }
+
         const completed = await hasCompletedOnboarding(user.id);
         if (completed) {
-          // Get user's default workspace
-          const defaultWorkspace = await getUserDefaultWorkspace();
-          if (defaultWorkspace) {
-            const target = defaultWorkspace.personal
-              ? 'personal'
-              : defaultWorkspace.id === ROOT_WORKSPACE_ID
-                ? 'internal'
-                : defaultWorkspace.id;
-            const redirectUrl = new URL(`/${target}`, req.nextUrl);
-            const onboardRedirect = NextResponse.redirect(redirectUrl);
-            propagateAuthCookies(authRes, onboardRedirect);
-            return onboardRedirect;
-          }
-          // Fallback to personal if no default workspace
-          const redirectUrl = new URL('/personal', req.nextUrl);
-          const onboardFallback = NextResponse.redirect(redirectUrl);
-          propagateAuthCookies(authRes, onboardFallback);
-          return onboardFallback;
+          return buildDefaultWorkspaceRedirectResponse(req, authRes);
         }
       }
     } catch (error) {
@@ -1319,34 +1288,41 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
 
       if (user) {
         const needsOnboarding = await shouldRedirectToOnboarding(user.id);
+        let pendingInviteSkipsOnboarding = false;
+
         if (needsOnboarding) {
-          const redirectUrl = new URL('/onboarding', req.nextUrl);
+          pendingInviteSkipsOnboarding =
+            await userHasPendingWorkspaceInvitation(user);
 
-          // Preserve returnUrl if coming from external app login flow
-          // This ensures users are redirected back to the external app after onboarding
-          const returnUrl = req.nextUrl.searchParams.get('returnUrl');
-          if (returnUrl) {
-            redirectUrl.searchParams.set('returnUrl', returnUrl);
-          }
+          if (!pendingInviteSkipsOnboarding) {
+            const redirectUrl = new URL('/onboarding', req.nextUrl);
 
-          // Also preserve nextUrl for internal redirects
-          const nextUrl = req.nextUrl.searchParams.get('nextUrl');
-          if (nextUrl) {
-            redirectUrl.searchParams.set('nextUrl', nextUrl);
-          } else {
-            // If no nextUrl param, use the current path + search params as nextUrl
-            // This ensures users who land on a deep link (e.g. /finance/invoices)
-            // get redirected back there after onboarding
-            const currentPath = req.nextUrl.pathname + req.nextUrl.search;
-            // Only set if we're not already on a root/home path to avoid infinite loops or redundancy
-            if (currentPath !== '/' && currentPath !== '/login') {
-              redirectUrl.searchParams.set('nextUrl', currentPath);
+            // Preserve returnUrl if coming from external app login flow
+            // This ensures users are redirected back to the external app after onboarding
+            const returnUrl = req.nextUrl.searchParams.get('returnUrl');
+            if (returnUrl) {
+              redirectUrl.searchParams.set('returnUrl', returnUrl);
             }
-          }
 
-          const needsOnboardRedirect = NextResponse.redirect(redirectUrl);
-          propagateAuthCookies(authRes, needsOnboardRedirect);
-          return needsOnboardRedirect;
+            // Also preserve nextUrl for internal redirects
+            const nextUrl = req.nextUrl.searchParams.get('nextUrl');
+            if (nextUrl) {
+              redirectUrl.searchParams.set('nextUrl', nextUrl);
+            } else {
+              // If no nextUrl param, use the current path + search params as nextUrl
+              // This ensures users who land on a deep link (e.g. /finance/invoices)
+              // get redirected back there after onboarding
+              const currentPath = req.nextUrl.pathname + req.nextUrl.search;
+              // Only set if we're not already on a root/home path to avoid infinite loops or redundancy
+              if (currentPath !== '/' && currentPath !== '/login') {
+                redirectUrl.searchParams.set('nextUrl', currentPath);
+              }
+            }
+
+            const needsOnboardRedirect = NextResponse.redirect(redirectUrl);
+            propagateAuthCookies(authRes, needsOnboardRedirect);
+            return needsOnboardRedirect;
+          }
         }
 
         // User completed onboarding — check if their personal workspace
@@ -1355,21 +1331,26 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
         const alreadyAttempted =
           req.cookies.get('subscription_fix_attempted')?.value === '1';
 
-        if (!alreadyAttempted) {
+        if (!alreadyAttempted && !pendingInviteSkipsOnboarding) {
           const isMissing = await personalWorkspaceMissingSubscription(user.id);
 
           if (isMissing) {
-            const fixUrl = new URL('/onboarding', req.nextUrl);
-            const response = NextResponse.redirect(fixUrl);
-            response.cookies.set('subscription_fix_attempted', '1', {
-              httpOnly: true,
-              secure: process.env.NODE_ENV === 'production',
-              sameSite: 'lax',
-              maxAge: 60 * 60 * 24, // 24 hours
-              path: '/',
-            });
-            propagateAuthCookies(authRes, response);
-            return response;
+            const hasPendingInvite =
+              await userHasPendingWorkspaceInvitation(user);
+
+            if (!hasPendingInvite) {
+              const fixUrl = new URL('/onboarding', req.nextUrl);
+              const response = NextResponse.redirect(fixUrl);
+              response.cookies.set('subscription_fix_attempted', '1', {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production',
+                sameSite: 'lax',
+                maxAge: 60 * 60 * 24, // 24 hours
+                path: '/',
+              });
+              propagateAuthCookies(authRes, response);
+              return response;
+            }
           }
         }
       }
@@ -1594,40 +1575,11 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
               ? 'internal'
               : defaultWorkspace.id;
 
-          const { path, staleConfigValue } = await resolveRootRedirectPath(
-            user.id,
-            {
-              id: defaultWorkspace.id,
-              personal: defaultWorkspace.personal,
-            }
-          );
-
-          const canonicalPath =
-            target === defaultWorkspace.id
-              ? path
-              : path.replace(`/${defaultWorkspace.id}`, `/${target}`);
+          const canonicalPath = `/${target}`;
           const localizedCanonicalPath = prependLocalePrefix(
             canonicalPath,
             activeLocalePrefix
           );
-
-          if (staleConfigValue !== null) {
-            try {
-              const sbAdmin = await createAdminClient();
-              await sbAdmin.from('user_workspace_configs').upsert(
-                {
-                  id: ROOT_DEFAULT_NAVIGATION_CONFIG_ID,
-                  user_id: user.id,
-                  ws_id: defaultWorkspace.id,
-                  value: staleConfigValue,
-                  updated_at: new Date().toISOString(),
-                },
-                { onConflict: 'user_id,ws_id,id' }
-              );
-            } catch {
-              // Best-effort cleanup only; root navigation should still redirect.
-            }
-          }
 
           const redirectUrl = new URL(localizedCanonicalPath, req.nextUrl);
           const wsRedirect = NextResponse.redirect(redirectUrl);

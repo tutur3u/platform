@@ -4,7 +4,7 @@ const mocks = vi.hoisted(() => ({
   deleteWorkspaceStorageObjectByPath: vi.fn(),
 }));
 
-vi.mock('../workspace-storage-provider', () => ({
+vi.mock('@tuturuuu/storage-core/workspace-storage-provider', () => ({
   deleteWorkspaceStorageObjectByPath: (
     ...args: Parameters<typeof mocks.deleteWorkspaceStorageObjectByPath>
   ) => mocks.deleteWorkspaceStorageObjectByPath(...args),

@@ -7,22 +7,14 @@ import {
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskBoardStatus } from '@tuturuuu/types/primitives/TaskBoard';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
-import { isPersonalExternalStagingListId } from '@tuturuuu/utils/task-helper';
 import {
   isTaskBoardCompletedStatus,
   isTaskBoardTerminalStatus,
 } from '@tuturuuu/utils/task-list-status';
+import { isPersonalExternalOverlayTask } from '../lib/task-personal-external';
 
 export function isPersonalExternalTask(task?: Task) {
-  const hasSourceTaskMetadata = Boolean(
-    task?.source_workspace_id || task?.source_board_id || task?.source_list_id
-  );
-
-  return (
-    task?.is_personal_external === true ||
-    Boolean(task?.list_id && isPersonalExternalStagingListId(task.list_id)) ||
-    (hasSourceTaskMetadata && Boolean(task?.personal_board_id))
-  );
+  return isPersonalExternalOverlayTask(task);
 }
 
 function findFirstListByStatus(lists: TaskList[], status: TaskBoardStatus) {
@@ -160,16 +152,21 @@ export async function moveExternalTaskToPersonalList({
   const now = new Date().toISOString();
   let sourceTargetList: TaskList | null = null;
   const desiredSourceStatus = sourceStatus ?? targetList.status;
+  const terminalStatus =
+    targetList.status === 'done' || targetList.status === 'closed'
+      ? targetList.status
+      : undefined;
   const hasKnownSourceStatusChange = Boolean(
     task.source_list_status && task.source_list_status !== desiredSourceStatus
   );
   const shouldInspectSourceList = Boolean(
-    sourceStatus ||
-      hasKnownSourceStatusChange ||
-      (!task.source_list_status &&
-        task.source_list_id &&
-        sourceWorkspaceId &&
-        sourceBoardId)
+    !terminalStatus &&
+      (sourceStatus ||
+        hasKnownSourceStatusChange ||
+        (!task.source_list_status &&
+          task.source_list_id &&
+          sourceWorkspaceId &&
+          sourceBoardId))
   );
 
   try {
@@ -243,6 +240,7 @@ export async function moveExternalTaskToPersonalList({
         personal_list_id: targetList.id,
         previous_task_id: order.previous_task_id,
         next_task_id: order.next_task_id,
+        terminal_status: terminalStatus,
       }
     );
 

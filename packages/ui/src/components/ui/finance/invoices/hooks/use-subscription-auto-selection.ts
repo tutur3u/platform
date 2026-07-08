@@ -38,6 +38,7 @@ interface UseSubscriptionAutoSelectionProps {
   }[];
   onSelectedProductsChange: Dispatch<SetStateAction<SelectedProductItem[]>>;
   prepaidMonthCount?: number;
+  workspaceTimezone?: string | null;
 }
 
 export type UseSubscriptionAutoSelectionResult = undefined;
@@ -162,13 +163,15 @@ const computeGroupAttendanceDaysMap = (
   selectedMonth: string,
   userAttendance: { status: string; date: string; group_id?: string }[],
   useAttendanceBased: boolean,
-  prepaidMonthCount = 1
+  prepaidMonthCount = 1,
+  workspaceTimezone?: string | null
 ) => {
   return getBillableQuantityMapForGroupsRange({
     groupIds: selectedGroupIds,
     latestInvoices: latestSubscriptionInvoices,
     prepaidMonthCount,
     selectedMonth,
+    workspaceTimezone,
     useAttendanceBased,
     userAttendance,
     userGroups,
@@ -229,6 +232,7 @@ export function useSubscriptionAutoSelection({
   latestSubscriptionInvoices,
   onSelectedProductsChange,
   prepaidMonthCount = 1,
+  workspaceTimezone,
 }: UseSubscriptionAutoSelectionProps): UseSubscriptionAutoSelectionResult {
   const t = useTranslations();
   const previousGroupIdRef = useRef<string>('');
@@ -251,7 +255,8 @@ export function useSubscriptionAutoSelection({
         selectedMonth,
         userAttendance,
         useAttendanceBased,
-        prepaidMonthCount
+        prepaidMonthCount,
+        workspaceTimezone
       ),
     [
       sortedSelectedGroupIds,
@@ -261,6 +266,7 @@ export function useSubscriptionAutoSelection({
       userAttendance,
       useAttendanceBased,
       prepaidMonthCount,
+      workspaceTimezone,
     ]
   );
 

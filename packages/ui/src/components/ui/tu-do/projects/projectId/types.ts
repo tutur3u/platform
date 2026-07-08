@@ -24,6 +24,7 @@ export interface TaskProjectDetailProps {
   documents: Task[];
   lists: TaskList[];
   currentUserId: string;
+  embedded?: boolean;
   wsId: string;
 }
 

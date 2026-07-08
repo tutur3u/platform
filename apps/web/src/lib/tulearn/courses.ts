@@ -21,6 +21,8 @@ interface CourseModuleSummary {
   name: string;
   sort_key: number | null;
   is_published: boolean;
+  is_quiz_score_published: boolean;
+  quiz_deadline: string | null;
   completed: boolean;
   locked: boolean;
   counts: {
@@ -180,32 +182,45 @@ export async function getLearnerCourseSummaries({
 
   if (!courseIds.length) return [];
 
-  const [coursesResult, modulesResult, completionsResult] = await Promise.all([
-    sbAdmin
-      .from('workspace_user_groups')
-      .select('id, name, description')
-      .eq('ws_id', wsId)
-      .in('id', courseIds)
-      .order('name', { ascending: true }),
-    sbAdmin
-      .from('workspace_course_modules')
-      .select('id, group_id')
-      .in('group_id', courseIds)
-      .eq('is_published', true),
-    sbAdmin
-      .from('course_module_completion_status')
-      .select('module_id')
-      .eq('user_id', studentPlatformUserId)
-      .eq('completion_status', true),
-  ]);
+  const [coursesResult, modulesResult, completionsResult, moduleQuizzesResult] =
+    await Promise.all([
+      sbAdmin
+        .from('workspace_user_groups')
+        .select('id, name, description')
+        .eq('ws_id', wsId)
+        .in('id', courseIds)
+        .order('name', { ascending: true }),
+      sbAdmin
+        .from('workspace_course_modules')
+        .select('id, group_id')
+        .in('group_id', courseIds)
+        .eq('is_published', true),
+      sbAdmin
+        .from('course_module_completion_status')
+        .select('module_id')
+        .eq('user_id', studentPlatformUserId)
+        .eq('completion_status', true),
+      sbAdmin
+        .from('workspace_course_modules')
+        .select('id, course_module_quizzes(quiz_id)')
+        .in('group_id', courseIds)
+        .eq('is_published', true),
+    ]);
 
   if (coursesResult.error) throw coursesResult.error;
   if (modulesResult.error) throw modulesResult.error;
   if (completionsResult.error) throw completionsResult.error;
+  if (moduleQuizzesResult.error) throw moduleQuizzesResult.error;
 
   const completedModuleIds = new Set(
     (completionsResult.data ?? []).map((row) => row.module_id)
   );
+
+  const quizCountsByModule = new Map<string, number>();
+  for (const row of (moduleQuizzesResult.data ?? []) as any[]) {
+    quizCountsByModule.set(row.id, row.course_module_quizzes?.length ?? 0);
+  }
+
   const modulesByCourse = new Map<string, string[]>();
   for (const module of modulesResult.data ?? []) {
     const modules = modulesByCourse.get(module.group_id) ?? [];
@@ -215,9 +230,11 @@ export async function getLearnerCourseSummaries({
 
   return (coursesResult.data ?? []).map((course) => {
     const moduleIds = modulesByCourse.get(course.id) ?? [];
-    const completedModules = moduleIds.filter((moduleId) =>
-      completedModuleIds.has(moduleId)
-    ).length;
+    const completedModules = moduleIds.filter((moduleId) => {
+      const isCompletedInDb = completedModuleIds.has(moduleId);
+      const totalQuizzes = quizCountsByModule.get(moduleId) ?? 0;
+      return isCompletedInDb || totalQuizzes === 0;
+    }).length;
 
     return {
       id: course.id,
@@ -278,7 +295,9 @@ export async function getLearnerCourseDetail({
       .maybeSingle(),
     sbAdmin
       .from('workspace_course_modules')
-      .select('id, name, sort_key, is_published')
+      .select(
+        'id, name, sort_key, is_published, is_quiz_score_published, quiz_deadline'
+      )
       .eq('group_id', courseId)
       .eq('is_published', true)
       .order('sort_key', { ascending: true }),
@@ -288,51 +307,75 @@ export async function getLearnerCourseDetail({
   if (modulesResult.error) throw modulesResult.error;
   if (!courseResult.data) return null;
 
-  const moduleIdList = (modulesResult.data ?? []).map((module) => module.id);
+  const moduleRows = (modulesResult.data ?? []) as Array<{
+    id: string;
+    is_published: boolean;
+    is_quiz_score_published?: boolean | null;
+    quiz_deadline?: string | null;
+    name: string;
+    sort_key: number | null;
+  }>;
+
+  const moduleIdList = moduleRows.map((module) => module.id);
   const moduleIds = new Set(moduleIdList);
-  const [completionsResult, flashcards, quizzes, quizSets, testsResult] =
-    await Promise.all([
-      moduleIdList.length
-        ? sbAdmin
-            .from('course_module_completion_status')
-            .select('module_id')
-            .eq('user_id', studentPlatformUserId)
-            .eq('completion_status', true)
-            .in('module_id', moduleIdList)
-        : emptyModuleIdResult(),
-      moduleIdList.length
-        ? sbAdmin
-            .from('course_module_flashcards')
-            .select('module_id')
-            .in('module_id', moduleIdList)
-        : emptyModuleIdResult(),
-      moduleIdList.length
-        ? sbAdmin
-            .from('course_module_quizzes')
-            .select('module_id')
-            .in('module_id', moduleIdList)
-        : emptyModuleIdResult(),
-      moduleIdList.length
-        ? sbAdmin
-            .from('course_module_quiz_sets')
-            .select('module_id')
-            .in('module_id', moduleIdList)
-        : emptyModuleIdResult(),
-      sbAdmin
-        .from('course_tests')
-        .select(
-          'id, name, start_at, duration_in_minutes, description, is_score_published, course_test_modules(module_id)'
-        )
-        .eq('course_id', courseId)
-        .eq('is_published', true)
-        .order('created_at', { ascending: false }),
-    ]);
+  const [
+    completionsResult,
+    flashcards,
+    quizzes,
+    quizSets,
+    testsResult,
+    submissionsResult,
+  ] = await Promise.all([
+    moduleIdList.length
+      ? sbAdmin
+          .from('course_module_completion_status')
+          .select('module_id')
+          .eq('user_id', studentPlatformUserId)
+          .eq('completion_status', true)
+          .in('module_id', moduleIdList)
+      : emptyModuleIdResult(),
+    moduleIdList.length
+      ? sbAdmin
+          .from('course_module_flashcards')
+          .select('module_id')
+          .in('module_id', moduleIdList)
+      : emptyModuleIdResult(),
+    moduleIdList.length
+      ? sbAdmin
+          .from('course_module_quizzes')
+          .select('module_id, quiz_id')
+          .in('module_id', moduleIdList)
+      : (emptyModuleIdResult() as any),
+    moduleIdList.length
+      ? sbAdmin
+          .from('course_module_quiz_sets')
+          .select('module_id')
+          .in('module_id', moduleIdList)
+      : emptyModuleIdResult(),
+    sbAdmin
+      .from('course_tests')
+      .select(
+        'id, name, start_at, duration_in_minutes, description, is_score_published, course_test_modules(module_id)'
+      )
+      .eq('course_id', courseId)
+      .eq('is_published', true)
+      .order('created_at', { ascending: false }),
+    moduleIdList.length
+      ? sbAdmin
+          .from('course_module_quiz_submissions')
+          .select('module_id, quiz_id, is_correct')
+          .eq('user_id', studentPlatformUserId)
+          .in('module_id', moduleIdList)
+      : emptyModuleIdResult(),
+  ]);
 
   if (completionsResult.error) throw completionsResult.error;
   if (flashcards.error) throw flashcards.error;
   if (quizzes.error) throw quizzes.error;
   if (quizSets.error) throw quizSets.error;
   if (testsResult.error) throw testsResult.error;
+  if (submissionsResult.error) throw submissionsResult.error;
+
   const completedModuleIds = new Set(
     (completionsResult.data ?? []).map((row) => row.module_id)
   );
@@ -342,27 +385,38 @@ export async function getLearnerCourseDetail({
   const quizSetCounts = countByModule(quizSets.data ?? [], moduleIds);
 
   let priorIncomplete = false;
-  const modules: CourseModuleSummary[] = (modulesResult.data ?? []).map(
-    (module) => {
-      const completed = completedModuleIds.has(module.id);
-      const locked = !module.is_published || priorIncomplete;
-      if (!completed && module.is_published) priorIncomplete = true;
+  const modules: CourseModuleSummary[] = moduleRows.map((module) => {
+    const moduleQuizzes = (quizzes.data ?? []).filter(
+      (q: any) => q.module_id === module.id
+    );
+    const correctSubmissions = ((submissionsResult.data ?? []) as any[]).filter(
+      (s) => s.module_id === module.id && s.is_correct === true
+    );
+    const totalQuizCount = moduleQuizzes.length;
+    const correctQuizCount = correctSubmissions.length;
+    const isQuizPassed =
+      totalQuizCount > 0 ? correctQuizCount / totalQuizCount >= 0.5 : true;
 
-      return {
-        id: module.id,
-        name: module.name,
-        sort_key: module.sort_key,
-        is_published: module.is_published,
-        completed,
-        locked,
-        counts: {
-          flashcards: flashcardCounts.get(module.id) ?? 0,
-          quizzes: quizCounts.get(module.id) ?? 0,
-          quizSets: quizSetCounts.get(module.id) ?? 0,
-        },
-      };
-    }
-  );
+    const completed = completedModuleIds.has(module.id) || isQuizPassed;
+    const locked = !module.is_published || priorIncomplete;
+    if (!completed && module.is_published) priorIncomplete = true;
+
+    return {
+      id: module.id,
+      is_quiz_score_published: module.is_quiz_score_published === true,
+      quiz_deadline: module.quiz_deadline || null,
+      name: module.name,
+      sort_key: module.sort_key,
+      is_published: module.is_published,
+      completed,
+      locked,
+      counts: {
+        flashcards: flashcardCounts.get(module.id) ?? 0,
+        quizzes: quizCounts.get(module.id) ?? 0,
+        quizSets: quizSetCounts.get(module.id) ?? 0,
+      },
+    };
+  });
 
   const completedModules = modules.filter((module) => module.completed).length;
 
@@ -426,7 +480,9 @@ export async function getLearnerModuleDetail({
     await Promise.all([
       sbAdmin
         .from('workspace_course_modules')
-        .select('content, extra_content, youtube_links')
+        .select(
+          'content, extra_content, youtube_links, is_quiz_score_published, quiz_deadline'
+        )
         .eq('id', moduleId)
         .eq('group_id', courseId)
         .maybeSingle(),
@@ -464,6 +520,12 @@ export async function getLearnerModuleDetail({
     ...summary,
     content: moduleResult.data.content,
     extra_content: moduleResult.data.extra_content,
+    is_quiz_score_published:
+      (moduleResult.data as { is_quiz_score_published?: boolean | null })
+        .is_quiz_score_published === true,
+    quiz_deadline:
+      (moduleResult.data as { quiz_deadline?: string | null }).quiz_deadline ||
+      null,
     youtube_links: moduleResult.data.youtube_links,
     flashcards: flashcardRows
       .map((row) => firstOf(row.workspace_flashcards))

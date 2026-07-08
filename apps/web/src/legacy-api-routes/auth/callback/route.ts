@@ -4,7 +4,7 @@ import { MAX_NAME_LENGTH, MAX_URL_LENGTH } from '@tuturuuu/utils/constants';
 import { getAppDomainByUrl } from '@tuturuuu/utils/internal-domains';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { resolveAuthRedirectOrigin } from '@/app/[locale]/(marketing)/login/auth-redirect-origin';
+import { resolveAuthRedirectOrigin } from '@/app/[locale]/(auth)/login/auth-redirect-origin';
 import { getExternalAppByReturnUrl } from '@/lib/app-coordination/external-apps';
 import {
   createAuthDiagnosticCode,
@@ -154,7 +154,10 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   if (_code) {
     try {
       // Exchange the code for a session
-      await supabase.auth.exchangeCodeForSession(_code);
+      const exchangeResult = await supabase.auth.exchangeCodeForSession(_code);
+      if (exchangeResult?.error) {
+        throw exchangeResult.error;
+      }
     } catch (error) {
       const diagnosticCode = createAuthDiagnosticCode(
         'oauth_callback_exchange'

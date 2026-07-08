@@ -1,14 +1,14 @@
 import { randomUUID } from 'node:crypto';
+import {
+  uploadWorkspaceStorageFileDirect,
+  WorkspaceStorageError,
+} from '@tuturuuu/storage-core/workspace-storage-provider';
 import { resolveWorkspaceId } from '@tuturuuu/utils/constants';
 import { sanitizeFilename } from '@tuturuuu/utils/storage-path';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { type AuthorizedRequest, withSessionAuth } from '@/lib/api-auth';
 import { checkEducationWorkspaceAccess } from '@/lib/education/access';
-import {
-  uploadWorkspaceStorageFileDirect,
-  WorkspaceStorageError,
-} from '@/lib/workspace-storage-provider';
 
 type Params = {
   wsId: string;

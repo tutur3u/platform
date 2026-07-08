@@ -6,7 +6,7 @@ const storeMocks = vi.hoisted(() => ({
   upsertWorkspaceExternalProjectFieldDefinitionsFromSchema: vi.fn(),
 }));
 
-vi.mock('../workspace-storage-provider', () => ({
+vi.mock('@tuturuuu/storage-core/workspace-storage-provider', () => ({
   deleteWorkspaceStorageObjectByPath: vi.fn(),
 }));
 

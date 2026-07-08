@@ -233,6 +233,54 @@ async fn finance_subscription_context_returns_attendance_and_latest_paid_invoice
 }
 
 #[tokio::test]
+async fn finance_subscription_context_uses_month_count_for_attendance_bound() {
+    let outbound = RecordingOutboundClient::with_responses(successful_browser_responses(
+        r#"[{"group_id":"group-1"}]"#,
+        r#"[]"#,
+        r#"[]"#,
+    ));
+    let response = handle_backend_request(
+        &backend_config_with_contact_data(),
+        request_with_bearer(
+            "https://tuturuuu.localhost/api/v1/workspaces/ws-1/finance/invoices/subscription/context?userId=user-1&month=2026-06&monthCount=3&groupIds=group-1",
+        ),
+        &outbound,
+    )
+    .await;
+
+    assert_eq!(response.status, 200);
+
+    let calls = outbound.calls();
+    assert_eq!(calls.len(), 6);
+    assert!(calls[4].url.contains("date=gte.2026-06-01"));
+    assert!(calls[4].url.contains("date=lt.2026-09-01"));
+}
+
+#[tokio::test]
+async fn finance_subscription_context_rejects_invalid_month_count() {
+    let outbound = RecordingOutboundClient::with_responses(vec![
+        outbound_response(200, r#"{"id":"user-1"}"#),
+        outbound_response(200, r#"[{"id":"resolved-ws"}]"#),
+        outbound_response(200, "true"),
+    ]);
+    let response = handle_backend_request(
+        &backend_config_with_contact_data(),
+        request_with_bearer(
+            "https://tuturuuu.localhost/api/v1/workspaces/ws-1/finance/invoices/subscription/context?userId=user-1&month=2026-06&monthCount=13&groupIds=group-1",
+        ),
+        &outbound,
+    )
+    .await;
+
+    assert_eq!(response.status, 400);
+    assert_eq!(
+        response.body,
+        json!({ "message": "monthCount must be an integer between 1 and 12" })
+    );
+    assert_eq!(outbound.calls().len(), 3);
+}
+
+#[tokio::test]
 async fn finance_subscription_context_short_circuits_when_query_is_incomplete() {
     let outbound = RecordingOutboundClient::with_responses(vec![
         outbound_response(200, r#"{"id":"user-1"}"#),

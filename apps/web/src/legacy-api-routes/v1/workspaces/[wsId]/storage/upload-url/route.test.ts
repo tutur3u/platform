@@ -26,7 +26,7 @@ vi.mock('@/lib/finance-transaction-storage-limits', () => ({
     mocks.validateFinanceTransactionAttachmentUploadRequest,
 }));
 
-vi.mock('@/lib/workspace-storage-provider', () => ({
+vi.mock('@tuturuuu/storage-core/workspace-storage-provider', () => ({
   createWorkspaceStorageUploadPayload:
     mocks.createWorkspaceStorageUploadPayload,
   WorkspaceStorageError: class WorkspaceStorageError extends Error {

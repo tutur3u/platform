@@ -30,6 +30,7 @@ interface ProjectGridCardProps {
   onDelete: (projectId: string) => void;
   onManageTasks: (project: TaskProject) => void;
   onNavigate: (projectId: string) => void;
+  navigationMode?: 'dialog' | 'route';
   isUpdating: boolean;
   isDeleting: boolean;
   isLinking: boolean;
@@ -43,6 +44,7 @@ export function ProjectGridCard({
   onDelete,
   onManageTasks,
   onNavigate,
+  navigationMode = 'route',
   isUpdating,
   isDeleting,
   isLinking,
@@ -132,15 +134,29 @@ export function ProjectGridCard({
           <Link2 className="h-4 w-4" />
           {t('manage')}
         </Button>
-        <NextLink
-          href={`/${wsId}${tasksHref(`/projects/${project.id}`)}`}
-          onClick={(event) => event.stopPropagation()}
-        >
-          <Button size="sm" className="w-full gap-2">
+        {navigationMode === 'route' ? (
+          <NextLink
+            href={`/${wsId}${tasksHref(`/projects/${project.id}`)}`}
+            onClick={(event) => event.stopPropagation()}
+          >
+            <Button size="sm" className="w-full gap-2">
+              <ExternalLink className="h-4 w-4" />
+              {t('open')}
+            </Button>
+          </NextLink>
+        ) : (
+          <Button
+            size="sm"
+            className="w-full gap-2"
+            onClick={(event) => {
+              event.stopPropagation();
+              onNavigate(project.id);
+            }}
+          >
             <ExternalLink className="h-4 w-4" />
             {t('open')}
           </Button>
-        </NextLink>
+        )}
       </div>
     </Card>
   );

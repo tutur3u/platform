@@ -86,6 +86,8 @@ describe('task board GET', () => {
         ws_id: 'ws-1',
         name: 'Roadmap',
         default_list_id: 'list-2',
+        default_done_list_id: 'done-list',
+        default_closed_list_id: 'closed-list',
         task_lists: [{ id: 'list-1', position: 0, created_at: null }],
       },
       error: null,
@@ -97,11 +99,13 @@ describe('task board GET', () => {
 
     expect(res.status).toBe(200);
     expect(body.board.default_list_id).toBe('list-2');
-    // Only the primary (with default_list_id) select should run.
+    expect(body.board.default_done_list_id).toBe('done-list');
+    expect(body.board.default_closed_list_id).toBe('closed-list');
+    // Only the primary (with default list columns) select should run.
     expect(maybeSingle).toHaveBeenCalledTimes(1);
   });
 
-  it('still loads the board when default_list_id is not migrated yet (rollout-safe)', async () => {
+  it('still loads the board when default list columns are not migrated yet (rollout-safe)', async () => {
     const maybeSingle = vi
       .fn()
       // Primary select referencing default_list_id fails: undefined_column.
@@ -129,6 +133,8 @@ describe('task board GET', () => {
 
     expect(res.status).toBe(200);
     expect(body.board.default_list_id).toBeNull();
+    expect(body.board.default_done_list_id).toBeNull();
+    expect(body.board.default_closed_list_id).toBeNull();
     expect(body.board.name).toBe('Roadmap');
     expect(maybeSingle).toHaveBeenCalledTimes(2);
   });

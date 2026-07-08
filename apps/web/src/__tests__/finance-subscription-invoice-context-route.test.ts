@@ -185,4 +185,40 @@ describe('subscription invoice context route', () => {
       'group_id, workspace_user_groups!workspace_user_roles_users_role_id_fkey!inner(ws_id)'
     );
   });
+
+  it('rejects invalid monthCount before querying subscription context tables', async () => {
+    const sbAdmin = {
+      from: vi.fn(() => {
+        throw new Error('subscription context tables should not be queried');
+      }),
+    };
+
+    mocks.getFinanceRouteContext.mockResolvedValue({
+      context: {
+        normalizedWsId: 'ws-1',
+        permissions: withPermissions(['create_invoices']),
+        sbAdmin,
+      },
+    });
+
+    const { GET } = await import(
+      '@/legacy-api-routes/v1/workspaces/[wsId]/finance/invoices/subscription/context/route'
+    );
+    const response = await GET(
+      new Request(
+        'http://localhost/api/v1/workspaces/ws-1/finance/invoices/subscription/context?userId=user-1&month=2026-06&monthCount=13&groupIds=group-1'
+      ),
+      {
+        params: Promise.resolve({
+          wsId: 'ws-1',
+        }),
+      }
+    );
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual({
+      message: 'monthCount must be an integer between 1 and 12',
+    });
+    expect(sbAdmin.from).not.toHaveBeenCalled();
+  });
 });

@@ -78,7 +78,9 @@ export class CalendarClient {
       query?: InternalApiQuery;
     } = {}
   ) {
-    const apiClient = getInternalApiClient(this.client.getClientOptions());
+    const apiClient = getInternalApiClient(
+      this.client.getCalendarClientOptions()
+    );
     return apiClient.json<T>(path, {
       method: init.method,
       query: init.query,

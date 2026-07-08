@@ -73,6 +73,21 @@ describe('[wsId] structure compile graph', () => {
     );
   });
 
+  it('wires the shared Apps launcher as a locked root sidebar action', () => {
+    expect(structureImplSource).toMatch(
+      staticImportPattern('@tuturuuu/satellite')
+    );
+    expect(structureImplSource).toContain('AppsLauncherDialog');
+    expect(structureImplSource).toContain("id: 'apps-launcher'");
+    expect(structureImplSource).toContain("title: t('command_launcher.apps')");
+    expect(structureImplSource).toContain('preferenceLocked: true');
+    expect(structureImplSource).toContain("preferencePlacement: 'root'");
+    expect(structureImplSource).toContain('navigationLinksWithLauncher');
+    expect(structureImplSource).toContain(
+      'currentWorkspace={currentWorkspace}'
+    );
+  });
+
   it('loads optional sidebar helpers after hydration instead of preloading them through next/dynamic', () => {
     for (const [componentName, modulePath] of [
       ['RecentSidebarItems', './recent-sidebar-items'],

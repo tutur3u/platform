@@ -13,6 +13,7 @@ import {
 import {
   TASK_BOARD_PINNED_SPECIAL_LISTS_CONFIG_ID,
   TASK_LAST_BOARD_VIEW_CONFIG_ID,
+  TASK_QUICK_CREATE_TARGET_LIST_CONFIG_ID,
 } from '@tuturuuu/internal-api/users';
 import type {
   Workspace,
@@ -35,6 +36,7 @@ import {
   useMemo,
   useState,
 } from 'react';
+import { useUserConfig } from '../../../../hooks/use-user-config';
 import {
   useUpdateUserWorkspaceConfig,
   useUserWorkspaceConfig,
@@ -58,6 +60,10 @@ import {
   type SpecialTaskListPin,
   serializeSpecialTaskListPins,
 } from './special-task-list-pins';
+import {
+  DEFAULT_TASK_QUICK_CREATE_TARGET_LIST,
+  normalizeTaskQuickCreateTargetList,
+} from './task-quick-create-target-list';
 
 export type ViewType =
   | 'kanban'
@@ -290,8 +296,19 @@ export function BoardViews({
   const [isMultiSelectMode, setIsMultiSelectMode] = useState(false);
   const [kanbanBulkSelectionActive, setKanbanBulkSelectionActive] =
     useState(false);
+  const [hoveredTaskListId, setHoveredTaskListId] = useState<string | null>(
+    null
+  );
   const { createTask } = useTaskDialog();
   const localTaskState = readOnly || publicView;
+  const { data: quickCreateTargetListRaw } = useUserConfig(
+    TASK_QUICK_CREATE_TARGET_LIST_CONFIG_ID,
+    DEFAULT_TASK_QUICK_CREATE_TARGET_LIST,
+    { enabled: !localTaskState }
+  );
+  const quickCreateTargetList = normalizeTaskQuickCreateTargetList(
+    quickCreateTargetListRaw
+  );
   const boardAssigneesEnabled =
     !workspace.personal ||
     board.access_type === 'guest' ||
@@ -820,6 +837,15 @@ export function BoardViews({
     statusFilteredLists,
   ]);
 
+  useEffect(() => {
+    if (!hoveredTaskListId) return;
+
+    const stillSelectable = filteredLists.some(
+      (list) => list.id === hoveredTaskListId && !list.is_external_staging
+    );
+    if (!stillSelectable) setHoveredTaskListId(null);
+  }, [filteredLists, hoveredTaskListId]);
+
   const sourceTasks = useMemo(() => {
     if (localTaskState) return locallyFilteredTasks;
 
@@ -902,11 +928,14 @@ export function BoardViews({
       const selectableLists = filteredLists.filter(
         (list) => !list.is_external_staging
       );
-      // Prefer the board's configured default list for new tasks, falling back
-      // to the first selectable list when unset or the list is unavailable.
-      const targetList =
+      const defaultTargetList =
         selectableLists.find((list) => list.id === board.default_list_id) ??
         selectableLists[0];
+      const hoveredTargetList =
+        quickCreateTargetList === 'hovered_list'
+          ? selectableLists.find((list) => list.id === hoveredTaskListId)
+          : undefined;
+      const targetList = hoveredTargetList ?? defaultTargetList;
       if (!targetList) return;
       createTask(board.id, targetList.id, selectableLists, filters);
     },
@@ -1022,6 +1051,7 @@ export function BoardViews({
             onBulkSelectionActiveChange={setKanbanBulkSelectionActive}
             canUseBoardAssignees={boardAssigneesEnabled}
             assigneeMemberSource={assigneeMemberSource}
+            onHoveredTaskListChange={setHoveredTaskListId}
             readOnly={readOnly}
           />
         );
