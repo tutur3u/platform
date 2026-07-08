@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
 import { describe, expect, it, vi } from 'vitest';
-import { createLegacyApiDispatcher } from './dispatcher';
+import { createLegacyApiDispatcher } from './dispatch-core';
 import type { LegacyApiRouteContext } from './types';
 
 function request(pathname: string) {

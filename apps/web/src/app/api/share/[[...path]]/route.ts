@@ -1,18 +1,17 @@
 import type { NextRequest } from 'next/server';
 
-import { dispatchLegacyApiRoute } from '@/legacy-api-routes/dispatcher';
+import { createLegacyApiDispatcher } from '@/legacy-api-routes/dispatch-core';
+import { shareRouteLoaders } from '@/legacy-api-routes/registry/share';
 
-export const GET = (request: NextRequest) =>
-  dispatchLegacyApiRoute(request, 'GET');
-export const HEAD = (request: NextRequest) =>
-  dispatchLegacyApiRoute(request, 'HEAD');
-export const POST = (request: NextRequest) =>
-  dispatchLegacyApiRoute(request, 'POST');
-export const PUT = (request: NextRequest) =>
-  dispatchLegacyApiRoute(request, 'PUT');
-export const PATCH = (request: NextRequest) =>
-  dispatchLegacyApiRoute(request, 'PATCH');
-export const DELETE = (request: NextRequest) =>
-  dispatchLegacyApiRoute(request, 'DELETE');
-export const OPTIONS = (request: NextRequest) =>
-  dispatchLegacyApiRoute(request, 'OPTIONS');
+const dispatch = createLegacyApiDispatcher(shareRouteLoaders, {
+  requestPrefixSegments: ['share'],
+  routeFilePrefixSegments: ['share'],
+});
+
+export const GET = (request: NextRequest) => dispatch(request, 'GET');
+export const HEAD = (request: NextRequest) => dispatch(request, 'HEAD');
+export const POST = (request: NextRequest) => dispatch(request, 'POST');
+export const PUT = (request: NextRequest) => dispatch(request, 'PUT');
+export const PATCH = (request: NextRequest) => dispatch(request, 'PATCH');
+export const DELETE = (request: NextRequest) => dispatch(request, 'DELETE');
+export const OPTIONS = (request: NextRequest) => dispatch(request, 'OPTIONS');

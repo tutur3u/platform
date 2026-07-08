@@ -6,12 +6,12 @@
         "acceptedRemoval": 17,
         "key": "api",
         "label": "api",
-        "legacyNext": 679,
+        "legacyNext": 677,
         "migrated": 77,
-        "percentComplete": 12.16,
-        "remaining": 679,
+        "percentComplete": 12.19,
+        "remaining": 677,
         "terminal": 94,
-        "total": 773,
+        "total": 771,
         "unknownStatus": 0
       },
       {
@@ -116,12 +116,12 @@
         "acceptedRemoval": 17,
         "key": "rust-backend",
         "label": "Rust backend",
-        "legacyNext": 693,
+        "legacyNext": 691,
         "migrated": 82,
-        "percentComplete": 12.5,
-        "remaining": 693,
+        "percentComplete": 12.53,
+        "remaining": 691,
         "terminal": 99,
-        "total": 792,
+        "total": 790,
         "unknownStatus": 0
       },
       {
@@ -146,15 +146,6 @@
         "status": "legacy-next",
         "targetOwner": "rust-backend",
         "id": "api:/api/:wsId/*path?:apps/web/src/app/api/[wsId]/[[...path]]/route.ts"
-      },
-      {
-        "kind": "api",
-        "methods": ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-        "routePath": "/api/admin/*path?",
-        "sourceFile": "apps/web/src/app/api/admin/[[...path]]/route.ts",
-        "status": "legacy-next",
-        "targetOwner": "rust-backend",
-        "id": "api:/api/admin/*path?:apps/web/src/app/api/admin/[[...path]]/route.ts"
       },
       {
         "kind": "api",
@@ -317,18 +308,27 @@
         "status": "legacy-next",
         "targetOwner": "rust-backend",
         "id": "api:/api/ai/objects/flashcards:apps/web/src/legacy-api-routes/ai/objects/flashcards/route.ts"
+      },
+      {
+        "kind": "api",
+        "methods": ["POST"],
+        "routePath": "/api/ai/objects/quizzes",
+        "sourceFile": "apps/web/src/legacy-api-routes/ai/objects/quizzes/route.ts",
+        "status": "legacy-next",
+        "targetOwner": "rust-backend",
+        "id": "api:/api/ai/objects/quizzes:apps/web/src/legacy-api-routes/ai/objects/quizzes/route.ts"
       }
     ],
     "totals": {
       "acceptedRemoval": 19,
       "key": "total",
       "label": "All route artifacts",
-      "legacyNext": 766,
+      "legacyNext": 764,
       "migrated": 275,
-      "percentComplete": 27.74,
-      "remaining": 766,
+      "percentComplete": 27.79,
+      "remaining": 764,
       "terminal": 294,
-      "total": 1060,
+      "total": 1058,
       "unknownStatus": 0
     }
   },
@@ -367,15 +367,6 @@
       "routePath": "/api/:wsId/crawlers/uncrawled",
       "sourceFile": "apps/web/src/legacy-api-routes/[wsId]/crawlers/uncrawled/route.ts",
       "status": "migrated",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/admin/*path?:apps/web/src/app/api/admin/[[...path]]/route.ts",
-      "kind": "api",
-      "methods": ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-      "routePath": "/api/admin/*path?",
-      "sourceFile": "apps/web/src/app/api/admin/[[...path]]/route.ts",
-      "status": "legacy-next",
       "targetOwner": "rust-backend"
     },
     {
@@ -1105,15 +1096,6 @@
       "routePath": "/api/users/search",
       "sourceFile": "apps/web/src/legacy-api-routes/users/search/route.ts",
       "status": "accepted-removal",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/*path?:apps/web/src/app/api/v1/[[...path]]/route.ts",
-      "kind": "api",
-      "methods": ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-      "routePath": "/api/v1/*path?",
-      "sourceFile": "apps/web/src/app/api/v1/[[...path]]/route.ts",
-      "status": "legacy-next",
       "targetOwner": "rust-backend"
     },
     {
@@ -9959,20 +9941,20 @@
     }
   ],
   "summary": {
-    "apiRoutes": 773,
+    "apiRoutes": 771,
     "cronRoutes": 13,
     "layouts": 59,
     "pages": 205,
-    "routeHandlers": 792,
+    "routeHandlers": 790,
     "methodCounts": {
-      "GET": 441,
-      "HEAD": 22,
-      "POST": 384,
-      "PUT": 99,
-      "PATCH": 96,
-      "DELETE": 150,
-      "OPTIONS": 44
+      "GET": 439,
+      "HEAD": 20,
+      "POST": 382,
+      "PUT": 97,
+      "PATCH": 94,
+      "DELETE": 148,
+      "OPTIONS": 42
     },
-    "total": 1060
+    "total": 1058
   }
 }
