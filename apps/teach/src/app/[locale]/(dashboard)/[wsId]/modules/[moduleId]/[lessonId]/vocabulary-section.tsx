@@ -20,6 +20,12 @@ interface VocabularyItem {
   imageUrl: string;
 }
 
+interface VocabularySuggestion {
+  beta: boolean;
+  url: string | null;
+  word: string;
+}
+
 function emptyVocabulary(): VocabularyItem {
   return {
     id: '',
@@ -100,6 +106,9 @@ export default function LessonVocabularySection({ wsId, lessonId }: Props) {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isSuggesting, setIsSuggesting] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [suggestions, setSuggestions] = useState<VocabularySuggestion[]>([]);
 
   const exampleLines = draft.examples.length > 0 ? draft.examples : [''];
 
@@ -150,6 +159,51 @@ export default function LessonVocabularySection({ wsId, lessonId }: Props) {
     };
   }, [lessonId, wsId]);
 
+  useEffect(() => {
+    const query = draft.word.trim();
+
+    if (query.length < 2) {
+      setSuggestions([]);
+      setIsSuggesting(false);
+      return;
+    }
+
+    const controller = new AbortController();
+    const timeout = window.setTimeout(async () => {
+      try {
+        setIsSuggesting(true);
+        const response = await fetch(
+          `/api/v1/vocabulary/suggestions?q=${encodeURIComponent(query)}`,
+          {
+            credentials: 'include',
+            signal: controller.signal,
+          }
+        );
+
+        if (!response.ok) throw new Error('Could not load suggestions.');
+
+        const payload = (await response.json()) as {
+          suggestions?: VocabularySuggestion[];
+        };
+        setSuggestions(payload.suggestions ?? []);
+      } catch (suggestionError) {
+        if (!controller.signal.aborted) {
+          console.error('Failed to load vocabulary suggestions', suggestionError);
+          setSuggestions([]);
+        }
+      } finally {
+        if (!controller.signal.aborted) {
+          setIsSuggesting(false);
+        }
+      }
+    }, 250);
+
+    return () => {
+      controller.abort();
+      window.clearTimeout(timeout);
+    };
+  }, [draft.word]);
+
   async function persistVocabulary(nextEntries: VocabularyItem[]) {
     setIsSaving(true);
     setError(null);
@@ -195,6 +249,11 @@ export default function LessonVocabularySection({ wsId, lessonId }: Props) {
       ...current,
       [field]: value,
     }));
+  }
+
+  function selectSuggestion(suggestion: VocabularySuggestion) {
+    updateDraft('word', suggestion.word);
+    setShowSuggestions(false);
   }
 
   async function handleImageUpload(file: File | null) {
@@ -307,12 +366,51 @@ export default function LessonVocabularySection({ wsId, lessonId }: Props) {
         <div className="grid gap-4 md:grid-cols-2">
           <div className="space-y-2">
             <Label htmlFor="lesson-vocabulary-word">Word</Label>
-            <Input
-              id="lesson-vocabulary-word"
-              value={draft.word}
-              onChange={(event) => updateDraft('word', event.target.value)}
-              placeholder="Vocabulary word"
-            />
+            <div className="relative">
+              <Input
+                autoComplete="off"
+                id="lesson-vocabulary-word"
+                value={draft.word}
+                onBlur={() => {
+                  window.setTimeout(() => setShowSuggestions(false), 150);
+                }}
+                onChange={(event) => {
+                  updateDraft('word', event.target.value);
+                  setShowSuggestions(true);
+                }}
+                onFocus={() => setShowSuggestions(true)}
+                placeholder="Vocabulary word"
+              />
+
+              {showSuggestions &&
+              (isSuggesting || suggestions.length > 0) &&
+              draft.word.trim().length >= 2 ? (
+                <div className="absolute z-20 mt-2 max-h-64 w-full overflow-y-auto border-2 border-border bg-card shadow-[4px_4px_0_var(--border)]">
+                  {isSuggesting ? (
+                    <div className="px-3 py-2 text-muted-foreground text-sm">
+                      Loading suggestions...
+                    </div>
+                  ) : (
+                    suggestions.map((suggestion) => (
+                      <button
+                        className="flex w-full items-center justify-between gap-3 border-border border-b px-3 py-2 text-left text-sm last:border-b-0 hover:bg-muted/50"
+                        key={`${suggestion.word}-${suggestion.url}`}
+                        onMouseDown={(event) => event.preventDefault()}
+                        onClick={() => selectSuggestion(suggestion)}
+                        type="button"
+                      >
+                        <span className="font-bold">{suggestion.word}</span>
+                        {suggestion.beta ? (
+                          <span className="text-muted-foreground text-[10px] uppercase">
+                            beta
+                          </span>
+                        ) : null}
+                      </button>
+                    ))
+                  )}
+                </div>
+              ) : null}
+            </div>
           </div>
 
           <div className="space-y-2">
