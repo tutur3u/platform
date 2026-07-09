@@ -24,6 +24,9 @@
     "title": "Bài tập",
     "untitled": "Bài tập chưa có tiêu đề"
   },
+  "vocabulary": {
+    "tab": "Từ vựng"
+  },
   "auth": {
     "bentoLead": "Khóa học, bài tập, báo cáo và điểm số luôn kết nối để mỗi học viên biết bước tiếp theo cần làm.",
     "bentoTitle": "Một lộ trình nhẹ nhàng hơn từ luyện tập đến tiến bộ",

@@ -7,7 +7,7 @@ describe('GET /api/v1/vocabulary/details scraper', () => {
     vi.restoreAllMocks();
   });
 
-  it('returns 400 when both url and word params are missing', async () => {
+  it('returns 400 when word param is missing', async () => {
     const request = new NextRequest(
       'http://localhost/api/v1/vocabulary/details'
     );
@@ -15,22 +15,7 @@ describe('GET /api/v1/vocabulary/details scraper', () => {
     expect(response.status).toBe(400);
 
     const data = await response.json();
-    expect(data.message).toContain(
-      'Either url or word query parameter is required'
-    );
-  });
-
-  it('returns 400 for non-Cambridge dictionary URLs', async () => {
-    const request = new NextRequest(
-      'http://localhost/api/v1/vocabulary/details?url=https://example.com/eat'
-    );
-    const response = await GET(request);
-    expect(response.status).toBe(400);
-
-    const data = await response.json();
-    expect(data.message).toContain(
-      'Only Cambridge Dictionary URLs are allowed'
-    );
+    expect(data.message).toContain('Word query parameter is required');
   });
 
   it('scrapes pronunciation, definition, and examples successfully from mocked HTML', async () => {

@@ -351,11 +351,25 @@ export function LearnerVocabulary({ moduleId }: { moduleId: string }) {
     }
   }
 
-  function resetPractice() {
-    mediaRecorderRef.current?.stream.getTracks().forEach((track) => {
+  function cancelActiveRecording() {
+    const recorder = mediaRecorderRef.current;
+    if (!recorder) return;
+
+    recorder.ondataavailable = null;
+    recorder.onstop = null;
+
+    if (recorder.state !== 'inactive') {
+      recorder.stop();
+    }
+
+    recorder.stream.getTracks().forEach((track) => {
       track.stop();
     });
     mediaRecorderRef.current = null;
+  }
+
+  function resetPractice() {
+    cancelActiveRecording();
     if (recordingPreviewUrl) {
       URL.revokeObjectURL(recordingPreviewUrl);
     }
@@ -467,6 +481,8 @@ export function LearnerVocabulary({ moduleId }: { moduleId: string }) {
   }
 
   function nextPronunciationPrompt() {
+    cancelActiveRecording();
+    setIsRecording(false);
     setPronunciationFeedback(null);
     setPronunciationError(null);
     if (recordingPreviewUrl) {

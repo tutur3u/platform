@@ -1,5 +1,8 @@
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
+import { hasLearnSession } from '../auth';
+
+const GEMINI_TIMEOUT_MS = 15_000;
 
 function parseJsonObject(value: string) {
   const match = value.match(/\{[\s\S]*\}/u);
@@ -87,6 +90,10 @@ function textFromGeminiResponse(value: unknown) {
 }
 
 export async function POST(request: NextRequest) {
+  if (!(await hasLearnSession(request))) {
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  }
+
   const apiKey =
     process.env.GOOGLE_GENERATIVE_AI_API_KEY ?? process.env.GOOGLE_API_KEY;
 
@@ -122,37 +129,74 @@ export async function POST(request: NextRequest) {
   const targetText =
     typeof record.targetText === 'string' ? record.targetText.trim() : '';
 
-  if (!audioData || !targetText || audioData.length > 7_500_000) {
+  if (!audioData || !targetText) {
     return NextResponse.json(
       { message: 'Audio and target text are required.' },
       { status: 400 }
     );
   }
 
-  const response = await fetch(
-    'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent',
-    {
-      body: JSON.stringify({
-        contents: [
-          {
-            parts: [
-              {
-                text: `You are an American English pronunciation coach. The learner was asked to read this exact sentence: "${targetText}". Listen to the audio, transcribe what you heard, identify pronunciation mistakes, and give short actionable tips. Return only JSON with keys: transcript, score, summary, mistakes, issues, tips. Score is 0-100. mistakes must be an array of objects with keys: target, heard, issue, suggestion, startIndex, endIndex. target must be the exact word or phrase from the original sentence that was mispronounced, not a paraphrase. startIndex and endIndex must be zero-based character offsets in the original sentence where target appears; use null only if uncertain. heard should be what it sounded like, or an empty string if uncertain. If pronunciation is good, return an empty mistakes array.`,
-              },
-              {
-                inline_data: {
-                  data: audioData,
-                  mime_type: mimeType,
+  if (targetText.length > 500) {
+    return NextResponse.json(
+      { message: 'Target text must be 500 characters or fewer.' },
+      { status: 400 }
+    );
+  }
+
+  if (audioData.length > 7_500_000) {
+    return NextResponse.json(
+      { message: 'Audio payload is too large.' },
+      { status: 413 }
+    );
+  }
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), GEMINI_TIMEOUT_MS);
+
+  let response: Response;
+  try {
+    response = await fetch(
+      'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent',
+      {
+        body: JSON.stringify({
+          contents: [
+            {
+              parts: [
+                {
+                  text: `You are an American English pronunciation coach. The learner was asked to read this exact sentence: "${targetText}". Listen to the audio, transcribe what you heard, identify pronunciation mistakes, and give short actionable tips. Return only JSON with keys: transcript, score, summary, mistakes, issues, tips. Score is 0-100. mistakes must be an array of objects with keys: target, heard, issue, suggestion, startIndex, endIndex. target must be the exact word or phrase from the original sentence that was mispronounced, not a paraphrase. startIndex and endIndex must be zero-based character offsets in the original sentence where target appears; use null only if uncertain. heard should be what it sounded like, or an empty string if uncertain. If pronunciation is good, return an empty mistakes array.`,
                 },
-              },
-            ],
-          },
-        ],
-      }),
-      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
-      method: 'POST',
-    }
-  );
+                {
+                  inline_data: {
+                    data: audioData,
+                    mime_type: mimeType,
+                  },
+                },
+              ],
+            },
+          ],
+        }),
+        headers: {
+          'Content-Type': 'application/json',
+          'x-goog-api-key': apiKey,
+        },
+        method: 'POST',
+        signal: controller.signal,
+      }
+    );
+  } catch (error) {
+    console.error('Failed to reach pronunciation provider', { error });
+    return NextResponse.json(
+      { message: 'Failed to analyze pronunciation.' },
+      {
+        status:
+          error instanceof DOMException && error.name === 'AbortError'
+            ? 504
+            : 502,
+      }
+    );
+  } finally {
+    clearTimeout(timeout);
+  }
 
   if (!response.ok) {
     const errorText = await response.text();

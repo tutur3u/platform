@@ -24,6 +24,9 @@
     "title": "Assignments",
     "untitled": "Untitled assignment"
   },
+  "vocabulary": {
+    "tab": "Vocabulary"
+  },
   "auth": {
     "bentoLead": "Courses, assignments, reports, and marks stay connected so every learner knows the next useful step.",
     "bentoTitle": "A calmer path from practice to progress",

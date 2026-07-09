@@ -5,30 +5,11 @@ import { NextResponse } from 'next/server';
 const CAMBRIDGE_ORIGIN = 'https://dictionary.cambridge.org';
 
 export async function GET(request: NextRequest) {
-  const urlParam = request.nextUrl.searchParams.get('url')?.trim();
   const wordParam = request.nextUrl.searchParams.get('word')?.trim();
 
   let targetUrl = '';
 
-  if (urlParam) {
-    try {
-      const parsedUrl = new URL(urlParam);
-      if (parsedUrl.origin !== CAMBRIDGE_ORIGIN) {
-        return NextResponse.json(
-          {
-            message: 'Invalid URL. Only Cambridge Dictionary URLs are allowed.',
-          },
-          { status: 400 }
-        );
-      }
-      targetUrl = `${CAMBRIDGE_ORIGIN}${parsedUrl.pathname}${parsedUrl.search}`;
-    } catch {
-      return NextResponse.json(
-        { message: 'Invalid URL format.' },
-        { status: 400 }
-      );
-    }
-  } else if (wordParam) {
+  if (wordParam) {
     if (wordParam.length > 100) {
       return NextResponse.json(
         { message: 'Word is too long.' },
@@ -38,7 +19,7 @@ export async function GET(request: NextRequest) {
     targetUrl = `${CAMBRIDGE_ORIGIN}/dictionary/english/${encodeURIComponent(wordParam)}`;
   } else {
     return NextResponse.json(
-      { message: 'Either url or word query parameter is required.' },
+      { message: 'Word query parameter is required.' },
       { status: 400 }
     );
   }

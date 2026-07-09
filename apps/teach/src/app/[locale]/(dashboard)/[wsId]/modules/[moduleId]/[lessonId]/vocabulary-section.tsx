@@ -281,16 +281,12 @@ export default function LessonVocabularySection({ wsId, lessonId }: Props) {
     }
   }
 
-  async function fetchDictionaryDetails(query: {
-    url?: string;
-    word?: string;
-  }) {
+  async function fetchDictionaryDetails(word: string) {
     setIsFetchingDetails(true);
     setError(null);
     try {
       const params = new URLSearchParams();
-      if (query.url) params.set('url', query.url);
-      if (query.word) params.set('word', query.word);
+      params.set('word', word);
 
       const response = await fetch(
         `/api/v1/vocabulary/details?${params.toString()}`,
@@ -320,7 +316,7 @@ export default function LessonVocabularySection({ wsId, lessonId }: Props) {
         };
       });
 
-      const searchWord = details.word || query.word;
+      const searchWord = details.word || word;
       if (searchWord) {
         searchImageSuggestions(searchWord);
       }
@@ -337,9 +333,7 @@ export default function LessonVocabularySection({ wsId, lessonId }: Props) {
   function selectSuggestion(suggestion: VocabularySuggestion) {
     updateDraft('word', suggestion.word);
     setShowSuggestions(false);
-    if (suggestion.url) {
-      fetchDictionaryDetails({ url: suggestion.url });
-    }
+    fetchDictionaryDetails(suggestion.word);
   }
 
   async function handleImageUpload(file: File | null) {
@@ -504,9 +498,7 @@ export default function LessonVocabularySection({ wsId, lessonId }: Props) {
               <button
                 className="shrink-0 border-2 border-border bg-card px-3 py-1.5 font-bold text-sm shadow-[2px_2px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[3px_3px_0_var(--border)] disabled:opacity-40"
                 disabled={isSaving || isFetchingDetails || !draft.word.trim()}
-                onClick={() =>
-                  fetchDictionaryDetails({ word: draft.word.trim() })
-                }
+                onClick={() => fetchDictionaryDetails(draft.word.trim())}
                 type="button"
               >
                 {isFetchingDetails ? 'Fetching...' : 'Fetch'}
@@ -754,7 +746,7 @@ export default function LessonVocabularySection({ wsId, lessonId }: Props) {
                   Edit
                 </button>
                 <button
-                  className="border-2 border-red-700 bg-red-600 px-3 py-1.5 font-bold text-sm text-white shadow-[2px_2px_0_var(--border)] disabled:opacity-40"
+                  className="border-2 border-destructive bg-destructive px-3 py-1.5 font-bold text-destructive-foreground text-sm shadow-[2px_2px_0_var(--border)] disabled:opacity-40"
                   onClick={() => handleDelete(entry.id)}
                   disabled={isSaving}
                   type="button"

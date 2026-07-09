@@ -3,6 +3,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { getTulearnCourse } from '@tuturuuu/internal-api';
 import { useSearchParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { type PropsWithChildren, useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { LearnerVocabulary } from '@/components/learner-pages/learner-vocabulary';
@@ -12,32 +13,18 @@ interface Props {
   wsId: string;
 }
 
-function findVisibleModuleId(
-  modules: Array<{ id: string; name: string | null }>
-) {
-  const headings = Array.from(document.querySelectorAll('h1, h2, h3'));
+function findVisibleModuleId(modules: Array<{ id: string }>) {
+  const moduleIds = new Set(modules.map((module) => module.id));
+  const detail = document.querySelector<HTMLElement>(
+    '[data-learn-module-detail-id]'
+  );
+  const moduleId = detail?.dataset.learnModuleDetailId;
 
-  for (const module of modules) {
-    const moduleName = module.name?.trim();
-    if (!moduleName) continue;
-
-    const hasVisibleHeading = headings.some(
-      (heading) => heading.textContent?.trim() === moduleName
-    );
-
-    if (hasVisibleHeading) return module.id;
-  }
-
-  return null;
+  return moduleId && moduleIds.has(moduleId) ? moduleId : null;
 }
 
 function findModuleTabsContainer() {
-  const buttons = Array.from(document.querySelectorAll('button'));
-  const contentButton = buttons.find(
-    (button) => button.textContent?.trim() === 'Module content'
-  );
-
-  return contentButton?.parentElement ?? null;
+  return document.querySelector<HTMLElement>('[data-learn-module-tabs]');
 }
 
 function ensureVocabularyPanelHost(tabContainer: HTMLElement) {
@@ -59,6 +46,7 @@ export default function CourseVocabularyShell({
   courseId,
   wsId,
 }: PropsWithChildren<Props>) {
+  const t = useTranslations('vocabulary');
   const searchParams = useSearchParams();
   const studentId = searchParams.get('studentId');
   const [activeModuleId, setActiveModuleId] = useState<string | null>(null);
@@ -87,8 +75,9 @@ export default function CourseVocabularyShell({
     }
 
     function syncActiveModule() {
-      const isModuleDetailOpen =
-        document.body.innerText.includes('Back to modules');
+      const isModuleDetailOpen = Boolean(
+        document.querySelector('[data-learn-module-back]')
+      );
 
       setActiveModuleId(
         isModuleDetailOpen ? findVisibleModuleId(modules) : null
@@ -121,10 +110,11 @@ export default function CourseVocabularyShell({
 
   useEffect(() => {
     function handleClick(event: MouseEvent) {
-      const button = (event.target as HTMLElement | null)?.closest('button');
-      const label = button?.textContent?.trim();
+      const tab = (event.target as HTMLElement | null)?.closest<HTMLElement>(
+        '[data-learn-module-tab]'
+      );
 
-      if (label === 'Module content' || label?.startsWith('Quizzes')) {
+      if (tab?.dataset.learnModuleTab) {
         setIsVocabularyTabActive(false);
       }
     }
@@ -182,7 +172,7 @@ export default function CourseVocabularyShell({
               onClick={() => setIsVocabularyTabActive(true)}
               type="button"
             >
-              Vocabulary
+              {t('tab')}
             </button>,
             tabContainer
           )
@@ -190,7 +180,10 @@ export default function CourseVocabularyShell({
 
       {activeModuleId && panelHost
         ? createPortal(
-            <LearnerVocabulary moduleId={activeModuleId} />,
+            <LearnerVocabulary
+              key={activeModuleId}
+              moduleId={activeModuleId}
+            />,
             panelHost
           )
         : null}

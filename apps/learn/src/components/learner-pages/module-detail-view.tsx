@@ -48,10 +48,11 @@ export function ModuleDetailView({
   const videos = courseModule.youtube_links ?? [];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" data-learn-module-detail-id={courseModule.id}>
       <div className="flex items-center gap-2 text-sm">
         <button
           className="inline-flex items-center gap-1.5 border-2 border-border bg-background px-3 py-1.5 font-bold shadow-[3px_3px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[4px_4px_0_var(--border)]"
+          data-learn-module-back
           onClick={onBack}
           type="button"
         >
@@ -85,27 +86,32 @@ export function ModuleDetailView({
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_16rem]">
         <div className="space-y-5">
           {courseModule.quizzes?.length > 0 && (
-            <div className="flex gap-2 border-border border-b-2 pb-1">
+            <div
+              className="flex gap-2 border-border border-b-2 pb-1"
+              data-learn-module-tabs
+            >
               <button
-                onClick={() => setActiveTab('content')}
                 className={cn(
                   'cursor-pointer border-2 border-border px-4 py-2 font-black text-sm shadow-[2px_2px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[3px_3px_0_var(--border)]',
                   activeTab === 'content'
                     ? 'bg-primary text-primary-foreground'
                     : 'bg-background text-foreground'
                 )}
+                data-learn-module-tab="content"
+                onClick={() => setActiveTab('content')}
                 type="button"
               >
                 {t('courses.moduleContent')}
               </button>
               <button
-                onClick={() => setActiveTab('quizzes')}
                 className={cn(
                   'cursor-pointer border-2 border-border px-4 py-2 font-black text-sm shadow-[2px_2px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[3px_3px_0_var(--border)]',
                   activeTab === 'quizzes'
                     ? 'bg-primary text-primary-foreground'
                     : 'bg-background text-foreground'
                 )}
+                data-learn-module-tab="quizzes"
+                onClick={() => setActiveTab('quizzes')}
                 type="button"
               >
                 {t('courses.quizzes')} ({courseModule.quizzes.length})

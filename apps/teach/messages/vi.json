@@ -1029,6 +1029,10 @@
     "singular": "Khóa học",
     "table_view": "Dạng bảng"
   },
+  "teachVocabulary": {
+    "backToLesson": "Quay lại bài học",
+    "title": "Từ vựng bài học"
+  },
   "ws-flashcards": {
     "back": "Mặt sau",
     "create": "Tạo thẻ từ vựng",

@@ -1,10 +1,12 @@
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
+import { hasLearnSession } from '../auth';
 
 const GOOGLE_TTS_MODEL =
   process.env.GOOGLE_TTS_MODEL ?? 'gemini-3.1-flash-tts-preview';
 const GOOGLE_TTS_VOICE = process.env.GOOGLE_TTS_VOICE ?? 'Puck';
 const SAMPLE_RATE = 24000;
+const GOOGLE_TTS_TIMEOUT_MS = 15_000;
 
 function pcmToWav(pcm: Buffer) {
   const header = Buffer.alloc(44);
@@ -101,6 +103,10 @@ function findBase64AudioData(value: unknown): string | null {
 }
 
 export async function POST(request: NextRequest) {
+  if (!(await hasLearnSession(request))) {
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  }
+
   const apiKey =
     process.env.GOOGLE_GENERATIVE_AI_API_KEY ?? process.env.GOOGLE_API_KEY;
 
@@ -140,24 +146,44 @@ export async function POST(request: NextRequest) {
       ? `Read this vocabulary word in clear American English. Speak only the word: ${text}`
       : `Read this example sentence in clear American English. Speak only the sentence: ${text}`;
 
-  const googleResponse = await fetch(
-    'https://generativelanguage.googleapis.com/v1beta/interactions',
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-goog-api-key': apiKey,
-      },
-      body: JSON.stringify({
-        generation_config: {
-          speech_config: [{ voice: GOOGLE_TTS_VOICE }],
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), GOOGLE_TTS_TIMEOUT_MS);
+
+  let googleResponse: Response;
+  try {
+    googleResponse = await fetch(
+      'https://generativelanguage.googleapis.com/v1beta/interactions',
+      {
+        method: 'POST',
+        signal: controller.signal,
+        headers: {
+          'Content-Type': 'application/json',
+          'x-goog-api-key': apiKey,
         },
-        input: prompt,
-        model: GOOGLE_TTS_MODEL,
-        response_format: { type: 'audio' },
-      }),
-    }
-  );
+        body: JSON.stringify({
+          generation_config: {
+            speech_config: [{ voice: GOOGLE_TTS_VOICE }],
+          },
+          input: prompt,
+          model: GOOGLE_TTS_MODEL,
+          response_format: { type: 'audio' },
+        }),
+      }
+    );
+  } catch (error) {
+    console.error('Failed to reach vocabulary speech provider', { error });
+    return NextResponse.json(
+      { message: 'Failed to generate speech.' },
+      {
+        status:
+          error instanceof DOMException && error.name === 'AbortError'
+            ? 504
+            : 502,
+      }
+    );
+  } finally {
+    clearTimeout(timeout);
+  }
 
   if (!googleResponse.ok) {
     const errorText = await googleResponse.text();

@@ -5,6 +5,7 @@ import {
 } from '@tuturuuu/internal-api';
 import { headers } from 'next/headers';
 import Link from 'next/link';
+import { getTranslations } from 'next-intl/server';
 import { redirect } from '@/i18n/navigation';
 import LessonVocabularySection from '../vocabulary-section';
 
@@ -19,6 +20,7 @@ export default async function CourseLessonVocabularyPage({
   }>;
 }) {
   const { courseId, lessonId, locale, wsId } = await params;
+  const t = await getTranslations('teachVocabulary');
   const requestHeaders = await headers();
   const authOptions = withForwardedInternalApiAuth(requestHeaders);
   const bootstrap = await getTeachBootstrap(authOptions).catch(() => null);
@@ -46,15 +48,15 @@ export default async function CourseLessonVocabularyPage({
         <div className="mb-6 flex flex-wrap items-center gap-3">
           <Link
             className="inline-flex items-center gap-2 border-2 border-border bg-card px-3 py-1.5 font-bold text-sm shadow-[2px_2px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[3px_3px_0_var(--border)]"
-            href={`/${locale}/${wsId}/courses/${courseId}/${lessonId}`}
+            href={`/${wsId}/courses/${courseId}/${lessonId}`}
           >
             <ArrowLeft className="h-4 w-4" />
-            Back to lesson
+            {t('backToLesson')}
           </Link>
 
           <div>
             <p className="text-muted-foreground text-sm">{workspace.name}</p>
-            <h1 className="font-black text-2xl">Lesson Vocabulary</h1>
+            <h1 className="font-black text-2xl">{t('title')}</h1>
           </div>
         </div>
 

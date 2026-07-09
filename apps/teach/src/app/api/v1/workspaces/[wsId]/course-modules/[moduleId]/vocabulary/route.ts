@@ -31,7 +31,7 @@ interface VocabularyEntry {
   definition: string;
   examples: string[];
   id: string;
-  imageUrl?: string;
+  imageUrl: string;
   pronunciation: string;
   word: string;
 }

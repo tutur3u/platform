@@ -1029,6 +1029,10 @@
     "singular": "Course",
     "table_view": "Table view"
   },
+  "teachVocabulary": {
+    "backToLesson": "Back to lesson",
+    "title": "Lesson Vocabulary"
+  },
   "ws-flashcards": {
     "back": "Back",
     "create": "Create flashcard",
