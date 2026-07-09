@@ -1,9 +1,9 @@
 import { getFinanceRouteContext } from '@tuturuuu/apis/finance/request-access';
+import { resolveFinanceRouteAuthContext } from '@tuturuuu/finance-core/route-auth';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { MAX_COLOR_LENGTH } from '@tuturuuu/utils/constants';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { resolveFinanceRouteAuthContext } from '@/lib/finance-route-auth';
 import {
   MAX_FINANCE_DAILY_DATE_RANGE_DAYS,
   MAX_FINANCE_EXTENDED_DATE_RANGE_DAYS,

@@ -10,7 +10,7 @@ vi.mock('@tuturuuu/apis/finance/request-access', () => ({
   getFinanceRouteContext: mocks.getFinanceRouteContext,
 }));
 
-vi.mock('@/lib/finance-route-auth', () => ({
+vi.mock('@tuturuuu/finance-core/route-auth', () => ({
   resolveFinanceRouteAuthContext: mocks.resolveFinanceRouteAuthContext,
 }));
 

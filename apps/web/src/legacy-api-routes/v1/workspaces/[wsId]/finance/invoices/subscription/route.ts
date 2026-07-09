@@ -1,8 +1,8 @@
 import { getFinanceRouteContext } from '@tuturuuu/apis/finance/request-access';
+import { resolveFinanceRouteAuthContext } from '@tuturuuu/finance-core/route-auth';
 import { canUseRequestedFinanceWalletOnCreate } from '@tuturuuu/utils/finance';
 import { getWorkspaceConfig } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
-import { resolveFinanceRouteAuthContext } from '@/lib/finance-route-auth';
 import { isGroupBlockedForSubscriptionInvoices } from '@/utils/workspace-config';
 import {
   type CalculatedValues,

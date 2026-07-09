@@ -25,7 +25,7 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
   ) => mocks.createDynamicAdminClient(...args),
 }));
 
-vi.mock('@/lib/finance-transaction-storage-access', () => ({
+vi.mock('@tuturuuu/finance-core/storage-access', () => ({
   canAccessFinanceTransactionStoragePath: (
     ...args: Parameters<typeof mocks.canAccessFinanceTransactionStoragePath>
   ) => mocks.canAccessFinanceTransactionStoragePath(...args),

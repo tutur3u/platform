@@ -3,12 +3,12 @@ import {
   GET as handleTransactionGET,
   PUT as handleTransactionPUT,
 } from '@tuturuuu/apis/finance/transactions/transactionId/route';
+import { resolveFinanceRouteAuthContext } from '@tuturuuu/finance-core/route-auth';
 import {
   deleteWorkspaceStorageFolderByPath,
   WorkspaceStorageError,
 } from '@tuturuuu/storage-core/workspace-storage-provider';
 import { joinPath } from '@tuturuuu/utils/path-helper';
-import { resolveFinanceRouteAuthContext } from '@/lib/finance-route-auth';
 
 type Params = {
   params: Promise<{

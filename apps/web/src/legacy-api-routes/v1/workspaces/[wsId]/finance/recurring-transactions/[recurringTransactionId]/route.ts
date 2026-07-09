@@ -1,7 +1,7 @@
 import { getFinanceRouteContext } from '@tuturuuu/apis/finance/request-access';
+import { resolveFinanceRouteAuthContext } from '@tuturuuu/finance-core/route-auth';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { resolveFinanceRouteAuthContext } from '@/lib/finance-route-auth';
 
 const recurringTransactionSchema = z.object({
   name: z.string().min(1),

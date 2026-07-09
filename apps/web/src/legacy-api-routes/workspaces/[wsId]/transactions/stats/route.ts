@@ -1,4 +1,5 @@
 import { getFinanceRouteContext } from '@tuturuuu/apis/finance/request-access';
+import { resolveFinanceRouteAuthContext } from '@tuturuuu/finance-core/route-auth';
 import {
   MAX_COLOR_LENGTH,
   MAX_LONG_TEXT_LENGTH,
@@ -6,7 +7,6 @@ import {
 } from '@tuturuuu/utils/constants';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { resolveFinanceRouteAuthContext } from '@/lib/finance-route-auth';
 
 const querySchema = z.object({
   q: z.string().max(MAX_SEARCH_LENGTH).optional().nullable(),

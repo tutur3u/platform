@@ -2,7 +2,7 @@ import {
   GET as handleWalletsGET,
   POST as handleWalletsPOST,
 } from '@tuturuuu/apis/finance/wallets/route';
-import { resolveFinanceRouteAuthContext } from '@/lib/finance-route-auth';
+import { resolveFinanceRouteAuthContext } from '@tuturuuu/finance-core/route-auth';
 
 type Params = { params: Promise<{ wsId: string }> };
 

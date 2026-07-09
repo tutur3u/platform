@@ -2,7 +2,7 @@ import {
   DELETE as handleWalletCheckpointDELETE,
   PATCH as handleWalletCheckpointPATCH,
 } from '@tuturuuu/apis/finance/wallets/walletId/checkpoints/checkpointId/route';
-import { resolveFinanceRouteAuthContext } from '@/lib/finance-route-auth';
+import { resolveFinanceRouteAuthContext } from '@tuturuuu/finance-core/route-auth';
 
 type Params = {
   params: Promise<{ checkpointId: string; walletId: string; wsId: string }>;

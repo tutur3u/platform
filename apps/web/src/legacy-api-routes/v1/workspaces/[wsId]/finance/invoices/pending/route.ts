@@ -1,9 +1,9 @@
 import { getFinanceRouteContext } from '@tuturuuu/apis/finance/request-access';
+import { resolveFinanceRouteAuthContext } from '@tuturuuu/finance-core/route-auth';
 import { normalizeAvatarImageSrc } from '@tuturuuu/utils/avatar-url';
 import { MAX_MEDIUM_TEXT_LENGTH } from '@tuturuuu/utils/constants';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { resolveFinanceRouteAuthContext } from '@/lib/finance-route-auth';
 
 const PendingInvoicesParamsSchema = z.object({
   page: z.coerce.number().int().min(1).default(1),

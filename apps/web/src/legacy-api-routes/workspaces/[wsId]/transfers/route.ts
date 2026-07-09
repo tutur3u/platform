@@ -3,7 +3,7 @@ import {
   POST as handleTransfersPOST,
   PUT as handleTransfersPUT,
 } from '@tuturuuu/apis/finance/transfers/route';
-import { resolveFinanceRouteAuthContext } from '@/lib/finance-route-auth';
+import { resolveFinanceRouteAuthContext } from '@tuturuuu/finance-core/route-auth';
 
 type Params = { params: Promise<{ wsId: string }> };
 

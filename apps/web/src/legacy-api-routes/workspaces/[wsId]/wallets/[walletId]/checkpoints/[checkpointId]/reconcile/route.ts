@@ -1,5 +1,5 @@
 import { POST as handleWalletCheckpointReconciliationPOST } from '@tuturuuu/apis/finance/wallets/walletId/checkpoints/checkpointId/reconcile/route';
-import { resolveFinanceRouteAuthContext } from '@/lib/finance-route-auth';
+import { resolveFinanceRouteAuthContext } from '@tuturuuu/finance-core/route-auth';
 
 type Params = {
   params: Promise<{ checkpointId: string; walletId: string; wsId: string }>;

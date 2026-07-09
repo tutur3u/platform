@@ -1,10 +1,10 @@
+import { canAccessFinanceTransactionStoragePath } from '@tuturuuu/finance-core/storage-access';
+import { validateFinalizedFinanceTransactionAttachment } from '@tuturuuu/finance-core/storage-limits';
 import { isReservedMobileDeploymentDrivePath } from '@tuturuuu/storage-core/mobile-deployment/storage-policy';
 import { triggerWorkspaceStorageAutoExtract } from '@tuturuuu/storage-core/workspace-storage-auto-extract';
 import { sanitizeFilename, sanitizePath } from '@tuturuuu/utils/storage-path';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { canAccessFinanceTransactionStoragePath } from '@/lib/finance-transaction-storage-access';
-import { validateFinalizedFinanceTransactionAttachment } from '@/lib/finance-transaction-storage-limits';
 import type { WorkspaceStorageRouteAuthContext } from '../route-auth';
 import {
   FINANCE_TRANSACTION_STORAGE_APP_SESSION_TARGETS,

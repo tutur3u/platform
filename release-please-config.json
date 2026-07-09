@@ -159,6 +159,10 @@
       "component": "education-core",
       "package-name": "@tuturuuu/education-core"
     },
+    "packages/finance-core": {
+      "component": "finance-core",
+      "package-name": "@tuturuuu/finance-core"
+    },
     "packages/email-service": {
       "component": "email-service",
       "package-name": "@tuturuuu/email-service"

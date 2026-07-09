@@ -113,7 +113,7 @@ describe('finance transaction storage access', () => {
 
   it('ignores paths outside finance transaction storage', async () => {
     const { canAccessFinanceTransactionStoragePath } = await import(
-      './finance-transaction-storage-access'
+      './storage-access'
     );
 
     await expect(
@@ -133,7 +133,7 @@ describe('finance transaction storage access', () => {
 
   it('uses finance transaction visibility for attachment reads', async () => {
     const { canAccessFinanceTransactionStoragePath } = await import(
-      './finance-transaction-storage-access'
+      './storage-access'
     );
 
     await expect(
@@ -165,7 +165,7 @@ describe('finance transaction storage access', () => {
     });
 
     const { canAccessFinanceTransactionStoragePath } = await import(
-      './finance-transaction-storage-access'
+      './storage-access'
     );
 
     await expect(
@@ -183,7 +183,7 @@ describe('finance transaction storage access', () => {
 
   it('allows transaction creators to attach files to their own transaction', async () => {
     const { canAccessFinanceTransactionStoragePath } = await import(
-      './finance-transaction-storage-access'
+      './storage-access'
     );
 
     await expect(
@@ -208,7 +208,7 @@ describe('finance transaction storage access', () => {
     });
 
     const { canAccessFinanceTransactionStoragePath } = await import(
-      './finance-transaction-storage-access'
+      './storage-access'
     );
 
     await expect(

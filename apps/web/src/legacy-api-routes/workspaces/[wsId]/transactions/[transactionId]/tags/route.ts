@@ -1,5 +1,5 @@
 import { GET as handleTransactionTagsGET } from '@tuturuuu/apis/finance/transactions/transactionId/tags/route';
-import { resolveFinanceRouteAuthContext } from '@/lib/finance-route-auth';
+import { resolveFinanceRouteAuthContext } from '@tuturuuu/finance-core/route-auth';
 
 type Params = { params: Promise<{ transactionId: string; wsId: string }> };
 

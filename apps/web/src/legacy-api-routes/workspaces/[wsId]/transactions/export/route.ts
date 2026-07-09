@@ -1,5 +1,5 @@
 import { GET as handleTransactionExportGET } from '@tuturuuu/apis/finance/transactions/export/route';
-import { resolveFinanceRouteAuthContext } from '@/lib/finance-route-auth';
+import { resolveFinanceRouteAuthContext } from '@tuturuuu/finance-core/route-auth';
 
 type Params = { params: Promise<{ wsId: string }> };
 

@@ -1,9 +1,9 @@
 import { getFinanceRouteContext } from '@tuturuuu/apis/finance/request-access';
+import { resolveFinanceRouteAuthContext } from '@tuturuuu/finance-core/route-auth';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 import { headers } from 'next/headers';
 import { NextResponse } from 'next/server';
-import { resolveFinanceRouteAuthContext } from '@/lib/finance-route-auth';
 import { validateWorkspaceApiKey } from '@/lib/workspace-api-key';
 
 interface Params {

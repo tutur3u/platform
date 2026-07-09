@@ -1,11 +1,11 @@
 import { getFinanceRouteContext } from '@tuturuuu/apis/finance/request-access';
+import { resolveFinanceRouteAuthContext } from '@tuturuuu/finance-core/route-auth';
 import type {
   Transaction,
   TransactionPeriod,
   TransactionViewMode,
 } from '@tuturuuu/types/primitives';
 import { NextResponse } from 'next/server';
-import { resolveFinanceRouteAuthContext } from '@/lib/finance-route-auth';
 import { loadTransactionListEnrichment } from '../list-enrichment';
 
 interface Params {

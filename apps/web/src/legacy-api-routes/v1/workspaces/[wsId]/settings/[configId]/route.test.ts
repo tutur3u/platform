@@ -23,7 +23,7 @@ vi.mock('@/lib/external-projects/access', () => ({
   ) => mocks.requireWorkspaceExternalProjectAccess(...args),
 }));
 
-vi.mock('@/lib/finance-route-auth', () => ({
+vi.mock('@tuturuuu/finance-core/route-auth', () => ({
   resolveFinanceRouteAuthContext: (
     ...args: Parameters<typeof mocks.resolveFinanceRouteAuthContext>
   ) => mocks.resolveFinanceRouteAuthContext(...args),

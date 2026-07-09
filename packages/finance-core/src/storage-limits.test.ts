@@ -51,7 +51,7 @@ describe('finance transaction storage limits', () => {
 
   it('ignores non-finance storage paths', async () => {
     const { validateFinanceTransactionAttachmentUploadRequest } = await import(
-      './finance-transaction-storage-limits'
+      './storage-limits'
     );
 
     await expect(
@@ -68,7 +68,7 @@ describe('finance transaction storage limits', () => {
     const {
       FINANCE_TRANSACTION_ATTACHMENT_MAX_BYTES,
       validateFinanceTransactionAttachmentUploadRequest,
-    } = await import('./finance-transaction-storage-limits');
+    } = await import('./storage-limits');
 
     await expect(
       validateFinanceTransactionAttachmentUploadRequest({
@@ -90,7 +90,7 @@ describe('finance transaction storage limits', () => {
     );
 
     const { validateFinanceTransactionAttachmentUploadRequest } = await import(
-      './finance-transaction-storage-limits'
+      './storage-limits'
     );
 
     await expect(
@@ -110,7 +110,7 @@ describe('finance transaction storage limits', () => {
     const {
       FINANCE_TRANSACTION_ATTACHMENT_MAX_BYTES,
       validateFinalizedFinanceTransactionAttachment,
-    } = await import('./finance-transaction-storage-limits');
+    } = await import('./storage-limits');
 
     mocks.getWorkspaceStorageObjectMetadataForProvider.mockResolvedValue({
       contentType: 'application/pdf',
@@ -143,7 +143,7 @@ describe('finance transaction storage limits', () => {
     );
 
     const { validateFinalizedFinanceTransactionAttachment } = await import(
-      './finance-transaction-storage-limits'
+      './storage-limits'
     );
 
     await expect(

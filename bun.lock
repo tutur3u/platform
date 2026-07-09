@@ -1306,6 +1306,7 @@
         "@tuturuuu/devbox": "workspace:*",
         "@tuturuuu/education-core": "workspace:*",
         "@tuturuuu/email-service": "workspace:*",
+        "@tuturuuu/finance-core": "workspace:*",
         "@tuturuuu/google": "workspace:*",
         "@tuturuuu/hive-ui": "workspace:*",
         "@tuturuuu/hooks": "workspace:*",
@@ -1622,6 +1623,27 @@
         "@types/node": "^26.1.0",
         "typescript": "7.0.2",
         "vitest": "^4.1.10",
+      },
+    },
+    "packages/finance-core": {
+      "name": "@tuturuuu/finance-core",
+      "version": "0.1.0",
+      "dependencies": {
+        "@tuturuuu/apis": "workspace:*",
+        "@tuturuuu/auth": "workspace:*",
+        "@tuturuuu/storage-core": "workspace:*",
+        "@tuturuuu/supabase": "workspace:*",
+        "@tuturuuu/types": "workspace:*",
+        "@tuturuuu/utils": "workspace:*",
+        "next": "^16.3.0-preview.5",
+        "server-only": "^0.0.1",
+        "zod": "^4.4.3",
+      },
+      "devDependencies": {
+        "@tuturuuu/typescript-config": "workspace:*",
+        "@types/node": "^26.0.1",
+        "typescript": "7.0.2",
+        "vitest": "^4.1.9",
       },
     },
     "packages/games": {
@@ -3833,6 +3855,8 @@
     "@tuturuuu/external": ["@tuturuuu/external@workspace:apps/external"],
 
     "@tuturuuu/finance": ["@tuturuuu/finance@workspace:apps/finance"],
+
+    "@tuturuuu/finance-core": ["@tuturuuu/finance-core@workspace:packages/finance-core"],
 
     "@tuturuuu/games": ["@tuturuuu/games@workspace:packages/games"],
 

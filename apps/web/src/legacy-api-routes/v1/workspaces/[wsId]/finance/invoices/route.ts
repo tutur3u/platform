@@ -2,6 +2,7 @@ import {
   type FinanceRouteContext,
   getFinanceRouteContext,
 } from '@tuturuuu/apis/finance/request-access';
+import { resolveFinanceRouteAuthContext } from '@tuturuuu/finance-core/route-auth';
 import { getInventoryActorContext } from '@tuturuuu/inventory-core/actor';
 import { createInventoryAuditLog } from '@tuturuuu/inventory-core/audit';
 import { canCreateInventorySales } from '@tuturuuu/inventory-core/permissions';
@@ -20,7 +21,6 @@ import {
 import { getWorkspaceConfig } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { resolveFinanceRouteAuthContext } from '@/lib/finance-route-auth';
 
 const SearchParamsSchema = z.object({
   q: z.string().max(MAX_SEARCH_LENGTH).default(''),

@@ -3,7 +3,7 @@ import {
   GET as handleDebtGET,
   PUT as handleDebtPUT,
 } from '@tuturuuu/apis/finance/debts/[debtId]/route';
-import { resolveFinanceRouteAuthContext } from '@/lib/finance-route-auth';
+import { resolveFinanceRouteAuthContext } from '@tuturuuu/finance-core/route-auth';
 
 type Params = { params: Promise<{ debtId: string; wsId: string }> };
 

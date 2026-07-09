@@ -2,7 +2,7 @@ import {
   GET as handleWalletCheckpointsGET,
   POST as handleWalletCheckpointsPOST,
 } from '@tuturuuu/apis/finance/wallets/checkpoints/route';
-import { resolveFinanceRouteAuthContext } from '@/lib/finance-route-auth';
+import { resolveFinanceRouteAuthContext } from '@tuturuuu/finance-core/route-auth';
 
 type Params = { params: Promise<{ wsId: string }> };
 

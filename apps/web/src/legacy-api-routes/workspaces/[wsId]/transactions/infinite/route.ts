@@ -1,6 +1,6 @@
 import { getFinanceRouteContext } from '@tuturuuu/apis/finance/request-access';
+import { resolveFinanceRouteAuthContext } from '@tuturuuu/finance-core/route-auth';
 import { NextResponse } from 'next/server';
-import { resolveFinanceRouteAuthContext } from '@/lib/finance-route-auth';
 import { loadTransactionListEnrichment } from '../list-enrichment';
 
 interface Params {

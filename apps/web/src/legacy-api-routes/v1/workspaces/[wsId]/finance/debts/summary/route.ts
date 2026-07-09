@@ -1,5 +1,5 @@
 import { GET as handleDebtSummaryGET } from '@tuturuuu/apis/finance/debts/summary/route';
-import { resolveFinanceRouteAuthContext } from '@/lib/finance-route-auth';
+import { resolveFinanceRouteAuthContext } from '@tuturuuu/finance-core/route-auth';
 
 type Params = { params: Promise<{ wsId: string }> };
 

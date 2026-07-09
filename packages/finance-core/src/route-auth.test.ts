@@ -18,7 +18,7 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: (...args: unknown[]) => mocks.createAdminClient(...args),
 }));
 
-import { resolveFinanceRouteAuthContext } from './finance-route-auth';
+import { resolveFinanceRouteAuthContext } from './route-auth';
 
 function createRequestForTarget(targetApp: string) {
   const { token } = createAppSessionToken({
