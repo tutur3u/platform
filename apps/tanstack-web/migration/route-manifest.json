@@ -3,15 +3,15 @@
   "progress": {
     "byKind": [
       {
-        "acceptedRemoval": 14,
+        "acceptedRemoval": 12,
         "key": "api",
         "label": "api",
-        "legacyNext": 543,
-        "migrated": 68,
-        "percentComplete": 13.12,
-        "remaining": 543,
-        "terminal": 82,
-        "total": 625,
+        "legacyNext": 503,
+        "migrated": 66,
+        "percentComplete": 13.43,
+        "remaining": 503,
+        "terminal": 78,
+        "total": 581,
         "unknownStatus": 0
       },
       {
@@ -28,18 +28,6 @@
       },
       {
         "acceptedRemoval": 0,
-        "key": "cron",
-        "label": "cron",
-        "legacyNext": 10,
-        "migrated": 2,
-        "percentComplete": 16.67,
-        "remaining": 10,
-        "terminal": 2,
-        "total": 12,
-        "unknownStatus": 0
-      },
-      {
-        "acceptedRemoval": 0,
         "key": "layout",
         "label": "layout",
         "legacyNext": 9,
@@ -48,6 +36,18 @@
         "remaining": 9,
         "terminal": 47,
         "total": 56,
+        "unknownStatus": 0
+      },
+      {
+        "acceptedRemoval": 0,
+        "key": "cron",
+        "label": "cron",
+        "legacyNext": 9,
+        "migrated": 2,
+        "percentComplete": 18.18,
+        "remaining": 9,
+        "terminal": 2,
+        "total": 11,
         "unknownStatus": 0
       },
       {
@@ -113,15 +113,15 @@
     ],
     "byOwner": [
       {
-        "acceptedRemoval": 14,
+        "acceptedRemoval": 12,
         "key": "rust-backend",
         "label": "Rust backend",
-        "legacyNext": 555,
-        "migrated": 73,
-        "percentComplete": 13.55,
-        "remaining": 555,
-        "terminal": 87,
-        "total": 642,
+        "legacyNext": 514,
+        "migrated": 71,
+        "percentComplete": 13.9,
+        "remaining": 514,
+        "terminal": 83,
+        "total": 597,
         "unknownStatus": 0
       },
       {
@@ -320,15 +320,15 @@
       }
     ],
     "totals": {
-      "acceptedRemoval": 16,
+      "acceptedRemoval": 14,
       "key": "total",
       "label": "All route artifacts",
-      "legacyNext": 621,
-      "migrated": 245,
-      "percentComplete": 29.59,
-      "remaining": 621,
-      "terminal": 261,
-      "total": 882,
+      "legacyNext": 580,
+      "migrated": 243,
+      "percentComplete": 30.7,
+      "remaining": 580,
+      "terminal": 257,
+      "total": 837,
       "unknownStatus": 0
     }
   },
@@ -1865,87 +1865,6 @@
       "routePath": "/api/v1/internal/holidays/bulk",
       "sourceFile": "apps/web/src/legacy-api-routes/v1/internal/holidays/bulk/route.ts",
       "status": "migrated",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/inventory/orders:apps/web/src/legacy-api-routes/v1/inventory/orders/route.ts",
-      "kind": "api",
-      "methods": ["GET"],
-      "routePath": "/api/v1/inventory/orders",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/inventory/orders/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/inventory/orders/:publicToken:apps/web/src/legacy-api-routes/v1/inventory/orders/[publicToken]/route.ts",
-      "kind": "api",
-      "methods": ["GET"],
-      "routePath": "/api/v1/inventory/orders/:publicToken",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/inventory/orders/[publicToken]/route.ts",
-      "status": "migrated",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/inventory/polar/webhook/:wsId:apps/web/src/legacy-api-routes/v1/inventory/polar/webhook/[wsId]/route.ts",
-      "kind": "api",
-      "methods": ["POST"],
-      "routePath": "/api/v1/inventory/polar/webhook/:wsId",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/inventory/polar/webhook/[wsId]/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/inventory/square/oauth/callback:apps/web/src/legacy-api-routes/v1/inventory/square/oauth/callback/route.ts",
-      "kind": "api",
-      "methods": ["GET"],
-      "routePath": "/api/v1/inventory/square/oauth/callback",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/inventory/square/oauth/callback/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/inventory/square/webhook:apps/web/src/legacy-api-routes/v1/inventory/square/webhook/route.ts",
-      "kind": "api",
-      "methods": ["POST"],
-      "routePath": "/api/v1/inventory/square/webhook",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/inventory/square/webhook/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/inventory/square/webhook/:wsId:apps/web/src/legacy-api-routes/v1/inventory/square/webhook/[wsId]/route.ts",
-      "kind": "api",
-      "methods": ["POST"],
-      "routePath": "/api/v1/inventory/square/webhook/:wsId",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/inventory/square/webhook/[wsId]/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/inventory/storefronts/:slug:apps/web/src/legacy-api-routes/v1/inventory/storefronts/[slug]/route.ts",
-      "kind": "api",
-      "methods": ["GET"],
-      "routePath": "/api/v1/inventory/storefronts/:slug",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/inventory/storefronts/[slug]/route.ts",
-      "status": "migrated",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/inventory/storefronts/:slug/analytics/events:apps/web/src/legacy-api-routes/v1/inventory/storefronts/[slug]/analytics/events/route.ts",
-      "kind": "api",
-      "methods": ["POST"],
-      "routePath": "/api/v1/inventory/storefronts/:slug/analytics/events",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/inventory/storefronts/[slug]/analytics/events/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/inventory/storefronts/:slug/checkouts:apps/web/src/legacy-api-routes/v1/inventory/storefronts/[slug]/checkouts/route.ts",
-      "kind": "api",
-      "methods": ["POST"],
-      "routePath": "/api/v1/inventory/storefronts/:slug/checkouts",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/inventory/storefronts/[slug]/checkouts/route.ts",
-      "status": "legacy-next",
       "targetOwner": "rust-backend"
     },
     {
@@ -3811,114 +3730,6 @@
       "targetOwner": "rust-backend"
     },
     {
-      "id": "api:/api/v1/workspaces/:wsId/inventory/access:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/inventory/access/route.ts",
-      "kind": "api",
-      "methods": ["GET"],
-      "routePath": "/api/v1/workspaces/:wsId/inventory/access",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/inventory/access/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/inventory/audit-logs:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/inventory/audit-logs/route.ts",
-      "kind": "api",
-      "methods": ["GET"],
-      "routePath": "/api/v1/workspaces/:wsId/inventory/audit-logs",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/inventory/audit-logs/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/inventory/manufacturers:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/inventory/manufacturers/route.ts",
-      "kind": "api",
-      "methods": ["GET", "POST"],
-      "routePath": "/api/v1/workspaces/:wsId/inventory/manufacturers",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/inventory/manufacturers/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/inventory/media/read-url:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/inventory/media/read-url/route.ts",
-      "kind": "api",
-      "methods": ["POST"],
-      "routePath": "/api/v1/workspaces/:wsId/inventory/media/read-url",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/inventory/media/read-url/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/inventory/media/upload-url:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/inventory/media/upload-url/route.ts",
-      "kind": "api",
-      "methods": ["POST"],
-      "routePath": "/api/v1/workspaces/:wsId/inventory/media/upload-url",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/inventory/media/upload-url/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/inventory/overview:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/inventory/overview/route.ts",
-      "kind": "api",
-      "methods": ["GET"],
-      "routePath": "/api/v1/workspaces/:wsId/inventory/overview",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/inventory/overview/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/inventory/owners:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/inventory/owners/route.ts",
-      "kind": "api",
-      "methods": ["GET", "POST"],
-      "routePath": "/api/v1/workspaces/:wsId/inventory/owners",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/inventory/owners/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/inventory/products:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/inventory/products/route.ts",
-      "kind": "api",
-      "methods": ["GET", "POST"],
-      "routePath": "/api/v1/workspaces/:wsId/inventory/products",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/inventory/products/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/inventory/realtime:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/inventory/realtime/route.ts",
-      "kind": "api",
-      "methods": ["GET"],
-      "routePath": "/api/v1/workspaces/:wsId/inventory/realtime",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/inventory/realtime/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/inventory/sales:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/inventory/sales/route.ts",
-      "kind": "api",
-      "methods": ["GET"],
-      "routePath": "/api/v1/workspaces/:wsId/inventory/sales",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/inventory/sales/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/inventory/sales/:saleId:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/inventory/sales/[saleId]/route.ts",
-      "kind": "api",
-      "methods": ["GET", "PUT", "DELETE"],
-      "routePath": "/api/v1/workspaces/:wsId/inventory/sales/:saleId",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/inventory/sales/[saleId]/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/inventory/sales/by-product:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/inventory/sales/by-product/route.ts",
-      "kind": "api",
-      "methods": ["GET"],
-      "routePath": "/api/v1/workspaces/:wsId/inventory/sales/by-product",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/inventory/sales/by-product/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
       "id": "api:/api/v1/workspaces/:wsId/logo:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/logo/route.ts",
       "kind": "api",
       "methods": ["GET", "PATCH", "DELETE"],
@@ -4149,159 +3960,6 @@
       "methods": ["GET"],
       "routePath": "/api/v1/workspaces/:wsId/posts/status",
       "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/posts/status/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/product-categories:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/product-categories/route.ts",
-      "kind": "api",
-      "methods": ["GET", "POST"],
-      "routePath": "/api/v1/workspaces/:wsId/product-categories",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/product-categories/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/product-categories/:categoryId:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/product-categories/[categoryId]/route.ts",
-      "kind": "api",
-      "methods": ["PUT", "DELETE"],
-      "routePath": "/api/v1/workspaces/:wsId/product-categories/:categoryId",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/product-categories/[categoryId]/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/product-suppliers:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/product-suppliers/route.ts",
-      "kind": "api",
-      "methods": ["GET", "POST"],
-      "routePath": "/api/v1/workspaces/:wsId/product-suppliers",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/product-suppliers/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/product-suppliers/:supplierId:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/product-suppliers/[supplierId]/route.ts",
-      "kind": "api",
-      "methods": ["PUT", "DELETE"],
-      "routePath": "/api/v1/workspaces/:wsId/product-suppliers/:supplierId",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/product-suppliers/[supplierId]/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/product-units:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/product-units/route.ts",
-      "kind": "api",
-      "methods": ["GET", "POST"],
-      "routePath": "/api/v1/workspaces/:wsId/product-units",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/product-units/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/product-units/:unitId:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/product-units/[unitId]/route.ts",
-      "kind": "api",
-      "methods": ["PUT", "DELETE"],
-      "routePath": "/api/v1/workspaces/:wsId/product-units/:unitId",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/product-units/[unitId]/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/product-warehouses:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/product-warehouses/route.ts",
-      "kind": "api",
-      "methods": ["GET", "POST"],
-      "routePath": "/api/v1/workspaces/:wsId/product-warehouses",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/product-warehouses/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/product-warehouses/:warehouseId:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/product-warehouses/[warehouseId]/route.ts",
-      "kind": "api",
-      "methods": ["PUT", "DELETE"],
-      "routePath": "/api/v1/workspaces/:wsId/product-warehouses/:warehouseId",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/product-warehouses/[warehouseId]/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/products:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/products/route.ts",
-      "kind": "api",
-      "methods": ["POST"],
-      "routePath": "/api/v1/workspaces/:wsId/products",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/products/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/products/:productId:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/products/[productId]/route.ts",
-      "kind": "api",
-      "methods": ["GET", "PATCH", "DELETE"],
-      "routePath": "/api/v1/workspaces/:wsId/products/:productId",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/products/[productId]/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/products/:productId/inventory:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/products/[productId]/inventory/route.ts",
-      "kind": "api",
-      "methods": ["GET", "POST", "PATCH", "DELETE"],
-      "routePath": "/api/v1/workspaces/:wsId/products/:productId/inventory",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/products/[productId]/inventory/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/products/count:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/products/count/route.ts",
-      "kind": "api",
-      "methods": ["GET"],
-      "routePath": "/api/v1/workspaces/:wsId/products/count",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/products/count/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/products/options:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/products/options/route.ts",
-      "kind": "api",
-      "methods": ["GET"],
-      "routePath": "/api/v1/workspaces/:wsId/products/options",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/products/options/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/promotions:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/promotions/route.ts",
-      "kind": "api",
-      "methods": ["GET", "POST"],
-      "routePath": "/api/v1/workspaces/:wsId/promotions",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/promotions/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/promotions/:promotionId:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/promotions/[promotionId]/route.ts",
-      "kind": "api",
-      "methods": ["PUT", "DELETE"],
-      "routePath": "/api/v1/workspaces/:wsId/promotions/:promotionId",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/promotions/[promotionId]/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/promotions/count:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/promotions/count/route.ts",
-      "kind": "api",
-      "methods": ["GET"],
-      "routePath": "/api/v1/workspaces/:wsId/promotions/count",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/promotions/count/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/promotions/referral-settings:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/promotions/referral-settings/route.ts",
-      "kind": "api",
-      "methods": ["GET", "PUT"],
-      "routePath": "/api/v1/workspaces/:wsId/promotions/referral-settings",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/promotions/referral-settings/route.ts",
       "status": "legacy-next",
       "targetOwner": "rust-backend"
     },
@@ -5179,24 +4837,6 @@
       "targetOwner": "rust-backend"
     },
     {
-      "id": "api:/api/v1/workspaces/:wsId/user-groups/:groupId/linked-products:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/user-groups/[groupId]/linked-products/route.ts",
-      "kind": "api",
-      "methods": ["GET", "POST"],
-      "routePath": "/api/v1/workspaces/:wsId/user-groups/:groupId/linked-products",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/user-groups/[groupId]/linked-products/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/user-groups/:groupId/linked-products/:productId:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/user-groups/[groupId]/linked-products/[productId]/route.ts",
-      "kind": "api",
-      "methods": ["PATCH", "DELETE"],
-      "routePath": "/api/v1/workspaces/:wsId/user-groups/:groupId/linked-products/:productId",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/user-groups/[groupId]/linked-products/[productId]/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
       "id": "api:/api/v1/workspaces/:wsId/user-groups/:groupId/managers:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/user-groups/[groupId]/managers/route.ts",
       "kind": "api",
       "methods": ["GET"],
@@ -5292,15 +4932,6 @@
       "methods": ["GET"],
       "routePath": "/api/v1/workspaces/:wsId/user-groups/count",
       "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/user-groups/count/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/user-groups/linked-products:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/user-groups/linked-products/route.ts",
-      "kind": "api",
-      "methods": ["GET"],
-      "routePath": "/api/v1/workspaces/:wsId/user-groups/linked-products",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/user-groups/linked-products/route.ts",
       "status": "legacy-next",
       "targetOwner": "rust-backend"
     },
@@ -5418,15 +5049,6 @@
       "methods": ["POST"],
       "routePath": "/api/v1/workspaces/:wsId/users/:userId/follow-up",
       "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/users/[userId]/follow-up/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/users/:userId/linked-promotions:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/users/[userId]/linked-promotions/route.ts",
-      "kind": "api",
-      "methods": ["GET", "POST", "DELETE"],
-      "routePath": "/api/v1/workspaces/:wsId/users/:userId/linked-promotions",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/users/[userId]/linked-promotions/route.ts",
       "status": "legacy-next",
       "targetOwner": "rust-backend"
     },
@@ -5926,24 +5548,6 @@
       "targetOwner": "rust-backend"
     },
     {
-      "id": "api:/api/workspaces/:wsId/products/categories/migrate:apps/web/src/legacy-api-routes/workspaces/[wsId]/products/categories/migrate/route.ts",
-      "kind": "api",
-      "methods": ["PUT"],
-      "routePath": "/api/workspaces/:wsId/products/categories/migrate",
-      "sourceFile": "apps/web/src/legacy-api-routes/workspaces/[wsId]/products/categories/migrate/route.ts",
-      "status": "accepted-removal",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/workspaces/:wsId/products/units/migrate:apps/web/src/legacy-api-routes/workspaces/[wsId]/products/units/migrate/route.ts",
-      "kind": "api",
-      "methods": ["PUT"],
-      "routePath": "/api/workspaces/:wsId/products/units/migrate",
-      "sourceFile": "apps/web/src/legacy-api-routes/workspaces/[wsId]/products/units/migrate/route.ts",
-      "status": "accepted-removal",
-      "targetOwner": "rust-backend"
-    },
-    {
       "id": "api:/api/workspaces/:wsId/secrets:apps/web/src/legacy-api-routes/workspaces/[wsId]/secrets/route.ts",
       "kind": "api",
       "methods": ["GET", "POST"],
@@ -6075,15 +5679,6 @@
       "methods": ["POST"],
       "routePath": "/api/cron/finance/exchange-rates",
       "sourceFile": "apps/web/src/legacy-api-routes/cron/finance/exchange-rates/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "cron:/api/cron/inventory/polar-product-sync:apps/web/src/legacy-api-routes/cron/inventory/polar-product-sync/route.ts",
-      "kind": "cron",
-      "methods": ["GET"],
-      "routePath": "/api/cron/inventory/polar-product-sync",
-      "sourceFile": "apps/web/src/legacy-api-routes/cron/inventory/polar-product-sync/route.ts",
       "status": "legacy-next",
       "targetOwner": "rust-backend"
     },
@@ -8357,20 +7952,20 @@
     }
   ],
   "summary": {
-    "apiRoutes": 625,
-    "cronRoutes": 12,
+    "apiRoutes": 581,
+    "cronRoutes": 11,
     "layouts": 56,
     "pages": 180,
-    "routeHandlers": 642,
+    "routeHandlers": 597,
     "methodCounts": {
-      "GET": 331,
+      "GET": 302,
       "HEAD": 1,
-      "POST": 314,
-      "PUT": 62,
-      "PATCH": 64,
-      "DELETE": 111,
+      "POST": 295,
+      "PUT": 53,
+      "PATCH": 61,
+      "DELETE": 101,
       "OPTIONS": 23
     },
-    "total": 882
+    "total": 837
   }
 }

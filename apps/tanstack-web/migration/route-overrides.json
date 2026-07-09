@@ -266,21 +266,6 @@
       "status": "accepted-removal",
       "targetOwner": "infrastructure-app"
     },
-    "api:/api/v1/inventory/orders/:publicToken:apps/web/src/legacy-api-routes/v1/inventory/orders/[publicToken]/route.ts": {
-      "status": "migrated",
-      "targetOwner": "rust-backend",
-      "note": "Rust backend handle_backend_request handles GET /api/v1/inventory/orders/:publicToken through server-owned private inventory RPCs and private-schema metadata reads, preserving simulated HMAC order tokens, public order reads, private-storefront app-session/browser-session membership checks, private no-store cache headers, and the legacy 404/500 JSON bodies."
-    },
-    "api:/api/v1/inventory/storefronts/:slug:apps/web/src/legacy-api-routes/v1/inventory/storefronts/[slug]/route.ts": {
-      "status": "migrated",
-      "targetOwner": "rust-backend",
-      "note": "Rust backend handle_backend_request handles GET /api/v1/inventory/storefronts/:slug through the server-owned private get_public_inventory_storefront RPC, preserving public storefront cache headers, private-storefront app-session/browser-session membership checks, and the legacy 401/403/404/500 JSON bodies without exposing private inventory tables to browser code."
-    },
-    "api:/api/v1/inventory/storefronts/:slug/checkouts:apps/web/src/legacy-api-routes/v1/inventory/storefronts/[slug]/checkouts/route.ts": {
-      "status": "legacy-next",
-      "targetOwner": "rust-backend",
-      "note": "Next.js still owns public storefront checkout POST. The route now forwards category bundleSelections for selected-items bundles to private.create_inventory_checkout_session, while Rust owns the public storefront GET payload that supplies category components and candidates."
-    },
     "api:/api/v1/topic-announcement-verifications/:token:apps/web/src/legacy-api-routes/v1/topic-announcement-verifications/[token]/route.ts": {
       "status": "migrated",
       "targetOwner": "rust-backend",
@@ -300,16 +285,6 @@
       "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
       "targetOwner": "infrastructure-app"
-    },
-    "api:/api/workspaces/:wsId/products/categories/migrate:apps/web/src/legacy-api-routes/workspaces/[wsId]/products/categories/migrate/route.ts": {
-      "status": "accepted-removal",
-      "targetOwner": "rust-backend",
-      "note": "Rust backend route_request owns terminal decommission for the obsolete PUT product category migration endpoint with the development-only guard and 410 MIGRATION_DISABLED response. The legacy Supabase data write is intentionally not preserved for Cloudflare cutover."
-    },
-    "api:/api/workspaces/:wsId/products/units/migrate:apps/web/src/legacy-api-routes/workspaces/[wsId]/products/units/migrate/route.ts": {
-      "status": "accepted-removal",
-      "targetOwner": "rust-backend",
-      "note": "Rust backend route_request owns terminal decommission for the obsolete PUT product unit migration endpoint with the development-only guard and 410 MIGRATION_DISABLED response. The legacy private inventory data write is intentionally not preserved for Cloudflare cutover."
     },
     "api:/api/workspaces/:wsId/users/indicators/migrate:apps/web/src/legacy-api-routes/workspaces/[wsId]/users/indicators/migrate/route.ts": {
       "status": "accepted-removal",

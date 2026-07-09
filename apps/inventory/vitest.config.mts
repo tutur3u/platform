@@ -7,7 +7,13 @@ export default defineConfig({
   },
   oxc: false,
   resolve: {
-    alias: [{ find: '@', replacement: resolve(__dirname, './src') }],
+    alias: [
+      { find: '@', replacement: resolve(__dirname, './src') },
+      {
+        find: 'server-only',
+        replacement: resolve(__dirname, './src/test/server-only-stub.ts'),
+      },
+    ],
   },
   test: {
     environment: 'jsdom',
