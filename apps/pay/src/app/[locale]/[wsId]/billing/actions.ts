@@ -10,8 +10,8 @@ import {
   createCustomerSession,
   getOrCreatePolarCustomer,
 } from '@tuturuuu/payment-core/customer-helper';
+import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import { createClient } from '@tuturuuu/supabase/next/server';
-import { getCurrentSupabaseUser } from '@tuturuuu/utils/user-helper';
 
 interface ActionResult<T = void> {
   success: boolean;
@@ -78,7 +78,9 @@ export async function getWorkspaceBillingDetails(
   wsId: string
 ): Promise<ActionResult<WorkspaceBillingDetails>> {
   try {
-    const user = await getCurrentSupabaseUser();
+    const { user } = await resolveAuthenticatedSessionUser(
+      await createClient()
+    );
 
     if (!user) {
       return {
@@ -151,7 +153,9 @@ export async function updateWorkspaceBillingDetails(
   payload: UpdateWorkspaceBillingDetailsInput
 ): Promise<ActionResult<WorkspaceBillingDetails>> {
   try {
-    const user = await getCurrentSupabaseUser();
+    const { user } = await resolveAuthenticatedSessionUser(
+      await createClient()
+    );
 
     if (!user) {
       return {
@@ -243,7 +247,9 @@ export async function getWorkspacePaymentMethods(
   wsId: string
 ): Promise<ActionResult<CustomerPaymentMethod[]>> {
   try {
-    const user = await getCurrentSupabaseUser();
+    const { user } = await resolveAuthenticatedSessionUser(
+      await createClient()
+    );
 
     if (!user) {
       return {
@@ -312,7 +318,9 @@ export async function deleteWorkspacePaymentMethod(
   paymentMethodId: string
 ): Promise<ActionResult> {
   try {
-    const user = await getCurrentSupabaseUser();
+    const { user } = await resolveAuthenticatedSessionUser(
+      await createClient()
+    );
 
     if (!user) {
       return {
@@ -373,7 +381,9 @@ export async function updateBillingAddress(
   address: AddressInput
 ): Promise<ActionResult> {
   try {
-    const user = await getCurrentSupabaseUser();
+    const { user } = await resolveAuthenticatedSessionUser(
+      await createClient()
+    );
 
     if (!user) {
       return {
@@ -434,7 +444,9 @@ export async function getWorkspaceCustomerPortalUrl(
   wsId: string
 ): Promise<ActionResult<{ url: string }>> {
   try {
-    const user = await getCurrentSupabaseUser();
+    const { user } = await resolveAuthenticatedSessionUser(
+      await createClient()
+    );
 
     if (!user) {
       return {

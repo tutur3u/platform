@@ -53,6 +53,8 @@ const COMPATIBLE_SESSION_FALLBACK_FILES = new Set([
   'apps/inventory/src/lib/api-auth.ts',
   'apps/learn/src/lib/api-auth.ts',
   'apps/mind/src/lib/api-auth.ts',
+  'apps/pay/src/app/[locale]/[wsId]/billing/actions.ts',
+  'apps/pay/src/app/[locale]/[wsId]/billing/page.tsx',
   'apps/pay/src/app/api/payment/credit-packs/checkouts/route.ts',
   'apps/pay/src/app/api/payment/customer-portal/subscriptions/[subscriptionId]/route.ts',
   'apps/pay/src/app/api/payment/orders/[orderId]/invoice/route.ts',

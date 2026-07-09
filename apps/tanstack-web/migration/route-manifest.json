@@ -19,11 +19,11 @@
         "key": "page",
         "label": "page",
         "legacyNext": 57,
-        "migrated": 121,
-        "percentComplete": 68.33,
+        "migrated": 120,
+        "percentComplete": 68.16,
         "remaining": 57,
-        "terminal": 123,
-        "total": 180,
+        "terminal": 122,
+        "total": 179,
         "unknownStatus": 0
       },
       {
@@ -129,11 +129,11 @@
         "key": "tanstack-start",
         "label": "TanStack Start",
         "legacyNext": 66,
-        "migrated": 172,
-        "percentComplete": 72.5,
+        "migrated": 171,
+        "percentComplete": 72.38,
         "remaining": 66,
-        "terminal": 174,
-        "total": 240,
+        "terminal": 173,
+        "total": 239,
         "unknownStatus": 0
       }
     ],
@@ -324,11 +324,11 @@
       "key": "total",
       "label": "All route artifacts",
       "legacyNext": 562,
-      "migrated": 243,
-      "percentComplete": 31.3,
+      "migrated": 242,
+      "percentComplete": 31.21,
       "remaining": 562,
-      "terminal": 256,
-      "total": 818,
+      "terminal": 255,
+      "total": 817,
       "unknownStatus": 0
     }
   },
@@ -6241,15 +6241,6 @@
       "targetOwner": "tanstack-start"
     },
     {
-      "id": "page:/:locale/:wsId/billing/success:apps/web/src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/billing/success/page.tsx",
-      "kind": "page",
-      "methods": [],
-      "routePath": "/:locale/:wsId/billing/success",
-      "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/billing/success/page.tsx",
-      "status": "migrated",
-      "targetOwner": "tanstack-start"
-    },
-    {
       "id": "page:/:locale/:wsId/calendar:apps/web/src/app/[locale]/(dashboard)/[wsId]/calendar/page.tsx",
       "kind": "page",
       "methods": [],
@@ -7784,7 +7775,7 @@
     "apiRoutes": 565,
     "cronRoutes": 8,
     "layouts": 56,
-    "pages": 180,
+    "pages": 179,
     "routeHandlers": 578,
     "methodCounts": {
       "GET": 295,
@@ -7795,6 +7786,6 @@
       "DELETE": 98,
       "OPTIONS": 23
     },
-    "total": 818
+    "total": 817
   }
 }

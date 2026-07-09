@@ -1,7 +1,7 @@
 import { createPolarClient } from '@tuturuuu/payment/polar/server';
+import WorkspaceWrapper from '@tuturuuu/ui/custom/workspace-wrapper';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import WorkspaceWrapper from '@/components/workspace-wrapper';
 import ClientComponent from './client-component';
 
 export const metadata: Metadata = {

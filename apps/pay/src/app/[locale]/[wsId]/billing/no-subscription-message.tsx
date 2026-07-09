@@ -3,9 +3,9 @@
 import { AlertTriangle, Mail } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
+import { DEV_MODE } from '@tuturuuu/utils/constants';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import { DEV_MODE } from '@/constants/common';
 
 interface NoSubscriptionFoundProps {
   wsId: string;

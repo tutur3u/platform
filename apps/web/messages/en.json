@@ -1731,6 +1731,7 @@
     "learn-more": "Learn More",
     "limited-usage": "Limited usage",
     "loading": "Loading payment details...",
+    "manage-billing-on-pay": "Manage your subscription, seats, invoices, and payment methods on the billing portal.",
     "manage-payment-methods-description": "Manage your payment methods for this workspace",
     "maximum-seats": "Maximum Seats",
     "members": "Members",
@@ -1782,6 +1783,7 @@
       },
       "retry": "Retry Setup"
     },
+    "open-billing": "Open billing",
     "open-customer-portal": "Open Customer Portal",
     "order-history": "Order History",
     "order-history-desc": "No subscription history available.",
