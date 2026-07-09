@@ -91,6 +91,7 @@
     "@tuturuuu/devbox": "workspace:*",
     "@tuturuuu/education-core": "workspace:*",
     "@tuturuuu/email-service": "workspace:*",
+    "@tuturuuu/finance-core": "workspace:*",
     "@tuturuuu/google": "workspace:*",
     "@tuturuuu/hive-ui": "workspace:*",
     "@tuturuuu/hooks": "workspace:*",

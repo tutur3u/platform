@@ -1,9 +1,9 @@
 import { getFinanceRouteContext } from '@tuturuuu/apis/finance/request-access';
+import { resolveFinanceRouteAuthContext } from '@tuturuuu/finance-core/route-auth';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { headers } from 'next/headers';
 import { NextResponse } from 'next/server';
-import { resolveFinanceRouteAuthContext } from '@/lib/finance-route-auth';
 import { listUserGroupSessionDatesByGroupIds } from '@/lib/user-groups/session-schedule';
 import { validateWorkspaceApiKey } from '@/lib/workspace-api-key';
 

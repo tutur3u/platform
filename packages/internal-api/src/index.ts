@@ -360,6 +360,7 @@ export type {
 } from './client';
 export {
   createInternalApiClient,
+  getConfiguredFinanceApiBaseUrl,
   getConfiguredInternalApiBaseUrl,
   getConfiguredLearnApiBaseUrl,
   getConfiguredTeachApiBaseUrl,

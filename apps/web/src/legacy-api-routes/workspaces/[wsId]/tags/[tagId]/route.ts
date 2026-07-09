@@ -3,7 +3,7 @@ import {
   GET as handleTagGET,
   PUT as handleTagPUT,
 } from '@tuturuuu/apis/finance/tags/tagId/route';
-import { resolveFinanceRouteAuthContext } from '@/lib/finance-route-auth';
+import { resolveFinanceRouteAuthContext } from '@tuturuuu/finance-core/route-auth';
 
 type Params = { params: Promise<{ tagId: string; wsId: string }> };
 

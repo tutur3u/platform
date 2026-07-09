@@ -1,4 +1,5 @@
 import { getFinanceRouteContext } from '@tuturuuu/apis/finance/request-access';
+import { resolveFinanceRouteAuthContext } from '@tuturuuu/finance-core/route-auth';
 import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import {
   createAdminClient,
@@ -14,7 +15,6 @@ import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { headers } from 'next/headers';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { resolveFinanceRouteAuthContext } from '@/lib/finance-route-auth';
 import { syncWorkspaceUserGuestMembership } from '@/lib/user-groups/guest-membership';
 import { validateWorkspaceApiKey } from '@/lib/workspace-api-key';
 

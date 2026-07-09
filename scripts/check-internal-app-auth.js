@@ -38,9 +38,16 @@ const REGISTERED_APP_TARGETS = {
 };
 const COMPATIBLE_SESSION_FALLBACK_FILES = new Set([
   'apps/calendar/src/lib/api-auth.ts',
+  'apps/finance/src/app/api/workspaces/[wsId]/transactions/import/money-lover/route.ts',
+  'apps/finance/src/app/api/workspaces/[wsId]/wallets/migrate/route.ts',
   'apps/hive/src/lib/api-auth.ts',
   'apps/hive/src/lib/hive-page-context.ts',
+  'apps/inventory/src/__tests__/products-routes.test.ts',
   'apps/inventory/src/app/api/v1/workspaces/[wsId]/integrations/sepay/shared.ts',
+  'apps/inventory/src/app/api/v1/workspaces/[wsId]/products/count/route.ts',
+  'apps/inventory/src/app/api/v1/workspaces/[wsId]/products/options/route.test.ts',
+  'apps/inventory/src/app/api/v1/workspaces/[wsId]/products/options/route.ts',
+  'apps/inventory/src/app/api/v1/workspaces/[wsId]/products/route.ts',
   'apps/inventory/src/lib/api-auth.ts',
   'apps/learn/src/lib/api-auth.ts',
   'apps/mind/src/lib/api-auth.ts',

@@ -206,7 +206,7 @@ describe('satellite app-session route inventory', () => {
     const productsRoute = readFileSync(
       resolve(
         repoRoot,
-        'apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/inventory/products/route.ts'
+        'apps/inventory/src/app/api/v1/workspaces/[wsId]/inventory/products/route.ts'
       ),
       'utf8'
     );

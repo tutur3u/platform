@@ -1,3 +1,4 @@
+import { canAccessFinanceTransactionStoragePath } from '@tuturuuu/finance-core/storage-access';
 import { isReservedMobileDeploymentDrivePath } from '@tuturuuu/storage-core/mobile-deployment/storage-policy';
 import {
   deleteWorkspaceStorageObjectByPath,
@@ -6,7 +7,6 @@ import {
 import { sanitizePath } from '@tuturuuu/utils/storage-path';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { canAccessFinanceTransactionStoragePath } from '@/lib/finance-transaction-storage-access';
 import {
   FINANCE_TRANSACTION_STORAGE_APP_SESSION_TARGETS,
   logWorkspaceStorageRouteError,

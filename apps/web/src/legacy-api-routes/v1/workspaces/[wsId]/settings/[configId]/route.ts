@@ -1,11 +1,11 @@
 import { getFinanceRouteContext } from '@tuturuuu/apis/finance/request-access';
+import { resolveFinanceRouteAuthContext } from '@tuturuuu/finance-core/route-auth';
 import {
   DATABASE_DEFAULT_INCLUDED_GROUPS_CONFIG_ID,
   ENABLE_CMS_GAMES_CONFIG_ID,
 } from '@tuturuuu/internal-api/workspace-configs';
 import { NextResponse } from 'next/server';
 import { requireWorkspaceExternalProjectAccess } from '@/lib/external-projects/access';
-import { resolveFinanceRouteAuthContext } from '@/lib/finance-route-auth';
 import {
   listWorkspaceDefaultIncludedGroupIds,
   replaceWorkspaceDefaultIncludedGroupIds,

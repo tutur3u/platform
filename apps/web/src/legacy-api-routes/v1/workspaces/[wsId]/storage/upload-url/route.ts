@@ -1,4 +1,6 @@
 import { posix } from 'node:path';
+import { canAccessFinanceTransactionStoragePath } from '@tuturuuu/finance-core/storage-access';
+import { validateFinanceTransactionAttachmentUploadRequest } from '@tuturuuu/finance-core/storage-limits';
 import { isReservedMobileDeploymentDrivePath } from '@tuturuuu/storage-core/mobile-deployment/storage-policy';
 import {
   createWorkspaceStorageUploadPayload,
@@ -9,8 +11,6 @@ import { sanitizeFilename, sanitizePath } from '@tuturuuu/utils/storage-path';
 import { generateRandomUUID } from '@tuturuuu/utils/uuid-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { canAccessFinanceTransactionStoragePath } from '@/lib/finance-transaction-storage-access';
-import { validateFinanceTransactionAttachmentUploadRequest } from '@/lib/finance-transaction-storage-limits';
 import {
   resolveTopicAnnouncementsAccess,
   TOPIC_ANNOUNCEMENT_ATTACHMENT_CONTENT_TYPES,

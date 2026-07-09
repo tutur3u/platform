@@ -266,21 +266,6 @@
       "status": "accepted-removal",
       "targetOwner": "infrastructure-app"
     },
-    "api:/api/v1/inventory/orders/:publicToken:apps/web/src/legacy-api-routes/v1/inventory/orders/[publicToken]/route.ts": {
-      "status": "migrated",
-      "targetOwner": "rust-backend",
-      "note": "Rust backend handle_backend_request handles GET /api/v1/inventory/orders/:publicToken through server-owned private inventory RPCs and private-schema metadata reads, preserving simulated HMAC order tokens, public order reads, private-storefront app-session/browser-session membership checks, private no-store cache headers, and the legacy 404/500 JSON bodies."
-    },
-    "api:/api/v1/inventory/storefronts/:slug:apps/web/src/legacy-api-routes/v1/inventory/storefronts/[slug]/route.ts": {
-      "status": "migrated",
-      "targetOwner": "rust-backend",
-      "note": "Rust backend handle_backend_request handles GET /api/v1/inventory/storefronts/:slug through the server-owned private get_public_inventory_storefront RPC, preserving public storefront cache headers, private-storefront app-session/browser-session membership checks, and the legacy 401/403/404/500 JSON bodies without exposing private inventory tables to browser code."
-    },
-    "api:/api/v1/inventory/storefronts/:slug/checkouts:apps/web/src/legacy-api-routes/v1/inventory/storefronts/[slug]/checkouts/route.ts": {
-      "status": "legacy-next",
-      "targetOwner": "rust-backend",
-      "note": "Next.js still owns public storefront checkout POST. The route now forwards category bundleSelections for selected-items bundles to private.create_inventory_checkout_session, while Rust owns the public storefront GET payload that supplies category components and candidates."
-    },
     "api:/api/v1/topic-announcement-verifications/:token:apps/web/src/legacy-api-routes/v1/topic-announcement-verifications/[token]/route.ts": {
       "status": "migrated",
       "targetOwner": "rust-backend",
@@ -301,21 +286,6 @@
       "status": "accepted-removal",
       "targetOwner": "infrastructure-app"
     },
-    "api:/api/workspaces/:wsId/products/categories/migrate:apps/web/src/legacy-api-routes/workspaces/[wsId]/products/categories/migrate/route.ts": {
-      "status": "accepted-removal",
-      "targetOwner": "rust-backend",
-      "note": "Rust backend route_request owns terminal decommission for the obsolete PUT product category migration endpoint with the development-only guard and 410 MIGRATION_DISABLED response. The legacy Supabase data write is intentionally not preserved for Cloudflare cutover."
-    },
-    "api:/api/workspaces/:wsId/products/units/migrate:apps/web/src/legacy-api-routes/workspaces/[wsId]/products/units/migrate/route.ts": {
-      "status": "accepted-removal",
-      "targetOwner": "rust-backend",
-      "note": "Rust backend route_request owns terminal decommission for the obsolete PUT product unit migration endpoint with the development-only guard and 410 MIGRATION_DISABLED response. The legacy private inventory data write is intentionally not preserved for Cloudflare cutover."
-    },
-    "api:/api/workspaces/:wsId/transactions/categories/migrate:apps/web/src/legacy-api-routes/workspaces/[wsId]/transactions/categories/migrate/route.ts": {
-      "status": "accepted-removal",
-      "targetOwner": "rust-backend",
-      "note": "Rust backend route_request owns terminal decommission for the obsolete PUT transaction category migration endpoint with the development-only guard and 410 MIGRATION_DISABLED response. The legacy Supabase data write is intentionally not preserved for Cloudflare cutover."
-    },
     "api:/api/workspaces/:wsId/users/indicators/migrate:apps/web/src/legacy-api-routes/workspaces/[wsId]/users/indicators/migrate/route.ts": {
       "status": "accepted-removal",
       "targetOwner": "rust-backend",
@@ -325,16 +295,6 @@
       "status": "accepted-removal",
       "targetOwner": "rust-backend",
       "note": "Rust backend route_request owns terminal decommission for the obsolete PUT user indicator group migration endpoint with the development-only guard and 410 MIGRATION_DISABLED response. The legacy private RPC write path is intentionally not preserved for Cloudflare cutover."
-    },
-    "api:/api/workspaces/:wsId/wallets/migrate:apps/web/src/legacy-api-routes/workspaces/[wsId]/wallets/migrate/route.ts": {
-      "status": "accepted-removal",
-      "targetOwner": "rust-backend",
-      "note": "Rust backend route_request owns terminal decommission for the obsolete PUT wallet migration endpoint with the development-only guard and 410 MIGRATION_DISABLED response. The legacy private wallet data write is intentionally not preserved for Cloudflare cutover."
-    },
-    "api:/api/workspaces/:wsId/wallets/transactions/migrate:apps/web/src/legacy-api-routes/workspaces/[wsId]/wallets/transactions/migrate/route.ts": {
-      "status": "accepted-removal",
-      "targetOwner": "rust-backend",
-      "note": "Rust backend route_request owns terminal decommission for the obsolete PUT wallet transaction migration endpoint with the development-only guard and 410 MIGRATION_DISABLED response. The legacy finance data write is intentionally not preserved for Cloudflare cutover."
     },
     "api:/api/v1/workspaces/:wsId/encryption/migrate:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/encryption/migrate/route.ts": {
       "status": "accepted-removal",
@@ -730,36 +690,6 @@
       "status": "migrated",
       "targetOwner": "rust-backend",
       "note": "Rust backend handle_backend_request owns GET /api/v1/workspaces/:wsId/mobile/module-flags by revalidating a normal Supabase browser session or non-app-session Bearer token, rejecting app-session tokens, resolving the legacy internal workspace slug, requiring workspace membership through a caller-token workspace_members read, reading MOBILE_HIDE_EXPERIMENTAL_MODULES and MOBILE_HIDDEN_MODULES from workspace_secrets through the server-owned Supabase REST adapter, preserving JSON-array and comma-separated hidden-module parsing, returning sorted hiddenModuleIds, and keeping the legacy private cache directive plus Unauthorized, workspace-access, membership lookup, and module-flag lookup error bodies."
-    },
-    "api:/api/v1/workspaces/:wsId/finance/budgets/status:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/finance/budgets/status/route.ts": {
-      "status": "migrated",
-      "targetOwner": "rust-backend",
-      "note": "Rust backend handle_backend_request owns GET /api/v1/workspaces/:wsId/finance/budgets/status by accepting finance/platform app-session tokens and CLI app-session tokens before falling back to a normal Supabase browser session or non-app-session Bearer token, normalizing internal, personal, handle, and UUID workspace identifiers, requiring manage_finance through has_workspace_permission, calling get_budget_status with the service-role credential, returning the raw legacy RPC payload, and preserving the legacy Unauthorized, Insufficient permissions, and Error fetching budget status bodies."
-    },
-    "api:/api/workspaces/:wsId/finance/charts/balance:apps/web/src/legacy-api-routes/workspaces/[wsId]/finance/charts/balance/route.ts": {
-      "status": "migrated",
-      "targetOwner": "rust-backend",
-      "note": "Rust backend handle_backend_request owns GET /api/workspaces/:wsId/finance/charts/balance by accepting finance/platform app-session tokens and CLI app-session tokens before falling back to a normal Supabase browser session or non-app-session Bearer token, normalizing internal, personal, handle, and UUID workspace identifiers, requiring view_finance_stats through has_workspace_permission, preserving the legacy required date query plus includeConfidential boolean parsing, calling get_wallet_balance_at_date, returning the legacy { balance, date } payload, and preserving the legacy Unauthorized, Forbidden, invalid query, and balance lookup error bodies."
-    },
-    "api:/api/v1/workspaces/:wsId/finance/debts/summary:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/finance/debts/summary/route.ts": {
-      "status": "migrated",
-      "targetOwner": "rust-backend",
-      "note": "Rust backend handle_backend_request owns GET /api/v1/workspaces/:wsId/finance/debts/summary by accepting finance/platform app-session tokens and CLI app-session tokens before falling back to a normal Supabase browser session or non-app-session Bearer token, normalizing internal, personal, handle, and UUID workspace identifiers, requiring manage_finance through has_workspace_permission, calling private-schema get_debt_loan_summary with _actor_id and _ws_id using the service-role credential, returning the first legacy RPC row or the zero summary, and preserving the legacy Unauthorized, Insufficient permissions, and Error fetching debt/loan summary bodies."
-    },
-    "api:/api/v1/workspaces/:wsId/finance/filter-users:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/finance/filter-users/route.ts": {
-      "status": "migrated",
-      "targetOwner": "rust-backend",
-      "note": "Rust backend handle_backend_request owns GET /api/v1/workspaces/:wsId/finance/filter-users by accepting finance/platform app-session tokens and CLI app-session tokens before falling back to a normal Supabase browser session or non-app-session Bearer token, normalizing internal, personal, handle, and UUID workspace identifiers, requiring view_transactions through has_workspace_permission, preserving the legacy type query branches, reading distinct_transaction_creators and distinct_invoice_creators with service-role auth and explicit ws_id filters, reading workspace_users with caller-token auth for normal Supabase sessions and service-role auth for app sessions, returning the legacy users envelope, and preserving the legacy Unauthorized and branch-specific failure bodies."
-    },
-    "api:/api/v1/workspaces/:wsId/finance/invoices/subscription/context:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/finance/invoices/subscription/context/route.ts": {
-      "status": "migrated",
-      "targetOwner": "rust-backend",
-      "note": "Rust backend handle_backend_request owns GET /api/v1/workspaces/:wsId/finance/invoices/subscription/context by accepting finance/platform app-session tokens and CLI app-session tokens before falling back to a normal Supabase browser session or non-app-session Bearer token, normalizing internal, personal, handle, and UUID workspace identifiers, requiring create_invoices through has_workspace_permission, preserving the legacy missing-query short-circuit, validating monthCount and using it for the civil-month attendance upper bound, validating requested STUDENT groups inside the workspace, reading user_group_attendance and finance_invoice_user_groups with service-role auth and explicit workspace/user/group filters, returning the legacy attendance and latestInvoices envelope, and preserving the legacy Unauthorized, invalid monthCount, and Error fetching subscription invoice context bodies."
-    },
-    "api:/api/v1/workspaces/:wsId/finance/recurring-transactions/upcoming:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/finance/recurring-transactions/upcoming/route.ts": {
-      "status": "migrated",
-      "targetOwner": "rust-backend",
-      "note": "Rust backend handle_backend_request owns GET /api/v1/workspaces/:wsId/finance/recurring-transactions/upcoming by accepting finance/platform app-session tokens and CLI app-session tokens before falling back to a normal Supabase browser session or non-app-session Bearer token, normalizing internal, personal, handle, and UUID workspace identifiers, requiring view_transactions through has_workspace_permission, preserving JavaScript parseInt-style daysAhead parsing with a 30-day fallback, calling get_upcoming_recurring_transactions with caller-token auth for normal Supabase sessions and service-role auth for app sessions, and preserving the legacy upcomingTransactions envelope, 403 Unauthorized body, and Failed to fetch upcoming recurring transactions body. Recurring transaction collection and detail routes remain legacy-owned."
     },
     "api:/api/v1/infrastructure/timezones:apps/web/src/legacy-api-routes/v1/infrastructure/timezones/route.ts": {
       "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",

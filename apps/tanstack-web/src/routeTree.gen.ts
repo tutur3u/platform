@@ -111,7 +111,6 @@ import { Route as LocaleWsIdAiChatRouteImport } from './routes/$locale/$wsId/ai-
 import { Route as LocaleUiComponentsIndexRouteImport } from './routes/$locale/ui/components/index';
 import { Route as LocaleWsIdTasksIndexRouteImport } from './routes/$locale/$wsId/tasks/index';
 import { Route as LocaleWsIdMailIndexRouteImport } from './routes/$locale/$wsId/mail/index';
-import { Route as LocaleWsIdInventoryIndexRouteImport } from './routes/$locale/$wsId/inventory/index';
 import { Route as LocaleUiComponentsComponentIdRouteImport } from './routes/$locale/ui/components/$componentId';
 import { Route as LocaleSharedUserProfileCodeRouteImport } from './routes/$locale/shared/user-profile/$code';
 import { Route as LocaleSharedTaskShareCodeRouteImport } from './routes/$locale/shared/task/$shareCode';
@@ -140,15 +139,6 @@ import { Route as LocaleWsIdPlatformExternalProjectsRouteImport } from './routes
 import { Route as LocaleWsIdMeetPlansRouteImport } from './routes/$locale/$wsId/meet/plans';
 import { Route as LocaleWsIdMeetMeetingsRouteImport } from './routes/$locale/$wsId/meet/meetings';
 import { Route as LocaleWsIdMailSentRouteImport } from './routes/$locale/$wsId/mail/sent';
-import { Route as LocaleWsIdInventoryWarehousesRouteImport } from './routes/$locale/$wsId/inventory/warehouses';
-import { Route as LocaleWsIdInventoryUnitsRouteImport } from './routes/$locale/$wsId/inventory/units';
-import { Route as LocaleWsIdInventorySuppliersRouteImport } from './routes/$locale/$wsId/inventory/suppliers';
-import { Route as LocaleWsIdInventoryStorefrontsRouteImport } from './routes/$locale/$wsId/inventory/storefronts';
-import { Route as LocaleWsIdInventoryPromotionsRouteImport } from './routes/$locale/$wsId/inventory/promotions';
-import { Route as LocaleWsIdInventoryProductsRouteImport } from './routes/$locale/$wsId/inventory/products';
-import { Route as LocaleWsIdInventoryManufacturersRouteImport } from './routes/$locale/$wsId/inventory/manufacturers';
-import { Route as LocaleWsIdInventoryCategoriesRouteImport } from './routes/$locale/$wsId/inventory/categories';
-import { Route as LocaleWsIdInventoryBatchesRouteImport } from './routes/$locale/$wsId/inventory/batches';
 import { Route as LocaleWsIdHiveNotWhitelistedRouteImport } from './routes/$locale/$wsId/hive/not-whitelisted';
 import { Route as LocaleWsIdFinanceWalletsRouteImport } from './routes/$locale/$wsId/finance/wallets';
 import { Route as LocaleWsIdFinanceTransactionsRouteImport } from './routes/$locale/$wsId/finance/transactions';
@@ -183,7 +173,6 @@ import { Route as LocaleWsIdTasksProjectsProjectIdRouteImport } from './routes/$
 import { Route as LocaleWsIdTasksBoardsBoardIdRouteImport } from './routes/$locale/$wsId/tasks/boards/$boardId';
 import { Route as LocaleWsIdMindBoardsBoardIdRouteImport } from './routes/$locale/$wsId/mind/boards/$boardId';
 import { Route as LocaleWsIdMeetMeetingsMeetingIdRouteImport } from './routes/$locale/$wsId/meet/meetings/$meetingId';
-import { Route as LocaleWsIdInventoryProductsProductIdRouteImport } from './routes/$locale/$wsId/inventory/products/$productId';
 import { Route as LocaleWsIdFinanceWalletsWalletIdRouteImport } from './routes/$locale/$wsId/finance/wallets/$walletId';
 import { Route as LocaleWsIdFinanceTransactionsCategoriesRouteImport } from './routes/$locale/$wsId/finance/transactions/categories';
 import { Route as LocaleWsIdFinanceTransactionsTransactionIdRouteImport } from './routes/$locale/$wsId/finance/transactions/$transactionId';
@@ -722,12 +711,6 @@ const LocaleWsIdMailIndexRoute = LocaleWsIdMailIndexRouteImport.update({
   path: '/$wsId/mail/',
   getParentRoute: () => LocaleRouteRoute,
 } as any);
-const LocaleWsIdInventoryIndexRoute =
-  LocaleWsIdInventoryIndexRouteImport.update({
-    id: '/$wsId/inventory/',
-    path: '/$wsId/inventory/',
-    getParentRoute: () => LocaleRouteRoute,
-  } as any);
 const LocaleUiComponentsComponentIdRoute =
   LocaleUiComponentsComponentIdRouteImport.update({
     id: '/ui/components/$componentId',
@@ -884,60 +867,6 @@ const LocaleWsIdMailSentRoute = LocaleWsIdMailSentRouteImport.update({
   path: '/$wsId/mail/sent',
   getParentRoute: () => LocaleRouteRoute,
 } as any);
-const LocaleWsIdInventoryWarehousesRoute =
-  LocaleWsIdInventoryWarehousesRouteImport.update({
-    id: '/$wsId/inventory/warehouses',
-    path: '/$wsId/inventory/warehouses',
-    getParentRoute: () => LocaleRouteRoute,
-  } as any);
-const LocaleWsIdInventoryUnitsRoute =
-  LocaleWsIdInventoryUnitsRouteImport.update({
-    id: '/$wsId/inventory/units',
-    path: '/$wsId/inventory/units',
-    getParentRoute: () => LocaleRouteRoute,
-  } as any);
-const LocaleWsIdInventorySuppliersRoute =
-  LocaleWsIdInventorySuppliersRouteImport.update({
-    id: '/$wsId/inventory/suppliers',
-    path: '/$wsId/inventory/suppliers',
-    getParentRoute: () => LocaleRouteRoute,
-  } as any);
-const LocaleWsIdInventoryStorefrontsRoute =
-  LocaleWsIdInventoryStorefrontsRouteImport.update({
-    id: '/$wsId/inventory/storefronts',
-    path: '/$wsId/inventory/storefronts',
-    getParentRoute: () => LocaleRouteRoute,
-  } as any);
-const LocaleWsIdInventoryPromotionsRoute =
-  LocaleWsIdInventoryPromotionsRouteImport.update({
-    id: '/$wsId/inventory/promotions',
-    path: '/$wsId/inventory/promotions',
-    getParentRoute: () => LocaleRouteRoute,
-  } as any);
-const LocaleWsIdInventoryProductsRoute =
-  LocaleWsIdInventoryProductsRouteImport.update({
-    id: '/$wsId/inventory/products',
-    path: '/$wsId/inventory/products',
-    getParentRoute: () => LocaleRouteRoute,
-  } as any);
-const LocaleWsIdInventoryManufacturersRoute =
-  LocaleWsIdInventoryManufacturersRouteImport.update({
-    id: '/$wsId/inventory/manufacturers',
-    path: '/$wsId/inventory/manufacturers',
-    getParentRoute: () => LocaleRouteRoute,
-  } as any);
-const LocaleWsIdInventoryCategoriesRoute =
-  LocaleWsIdInventoryCategoriesRouteImport.update({
-    id: '/$wsId/inventory/categories',
-    path: '/$wsId/inventory/categories',
-    getParentRoute: () => LocaleRouteRoute,
-  } as any);
-const LocaleWsIdInventoryBatchesRoute =
-  LocaleWsIdInventoryBatchesRouteImport.update({
-    id: '/$wsId/inventory/batches',
-    path: '/$wsId/inventory/batches',
-    getParentRoute: () => LocaleRouteRoute,
-  } as any);
 const LocaleWsIdHiveNotWhitelistedRoute =
   LocaleWsIdHiveNotWhitelistedRouteImport.update({
     id: '/not-whitelisted',
@@ -1138,12 +1067,6 @@ const LocaleWsIdMeetMeetingsMeetingIdRoute =
     path: '/$meetingId',
     getParentRoute: () => LocaleWsIdMeetMeetingsRoute,
   } as any);
-const LocaleWsIdInventoryProductsProductIdRoute =
-  LocaleWsIdInventoryProductsProductIdRouteImport.update({
-    id: '/$productId',
-    path: '/$productId',
-    getParentRoute: () => LocaleWsIdInventoryProductsRoute,
-  } as any);
 const LocaleWsIdFinanceWalletsWalletIdRoute =
   LocaleWsIdFinanceWalletsWalletIdRouteImport.update({
     id: '/$walletId',
@@ -1339,15 +1262,6 @@ export interface FileRoutesByFullPath {
   '/$locale/$wsId/finance/transactions': typeof LocaleWsIdFinanceTransactionsRouteWithChildren;
   '/$locale/$wsId/finance/wallets': typeof LocaleWsIdFinanceWalletsRouteWithChildren;
   '/$locale/$wsId/hive/not-whitelisted': typeof LocaleWsIdHiveNotWhitelistedRoute;
-  '/$locale/$wsId/inventory/batches': typeof LocaleWsIdInventoryBatchesRoute;
-  '/$locale/$wsId/inventory/categories': typeof LocaleWsIdInventoryCategoriesRoute;
-  '/$locale/$wsId/inventory/manufacturers': typeof LocaleWsIdInventoryManufacturersRoute;
-  '/$locale/$wsId/inventory/products': typeof LocaleWsIdInventoryProductsRouteWithChildren;
-  '/$locale/$wsId/inventory/promotions': typeof LocaleWsIdInventoryPromotionsRoute;
-  '/$locale/$wsId/inventory/storefronts': typeof LocaleWsIdInventoryStorefrontsRoute;
-  '/$locale/$wsId/inventory/suppliers': typeof LocaleWsIdInventorySuppliersRoute;
-  '/$locale/$wsId/inventory/units': typeof LocaleWsIdInventoryUnitsRoute;
-  '/$locale/$wsId/inventory/warehouses': typeof LocaleWsIdInventoryWarehousesRoute;
   '/$locale/$wsId/mail/sent': typeof LocaleWsIdMailSentRoute;
   '/$locale/$wsId/meet/meetings': typeof LocaleWsIdMeetMeetingsRouteWithChildren;
   '/$locale/$wsId/meet/plans': typeof LocaleWsIdMeetPlansRoute;
@@ -1376,7 +1290,6 @@ export interface FileRoutesByFullPath {
   '/$locale/shared/task/$shareCode': typeof LocaleSharedTaskShareCodeRoute;
   '/$locale/shared/user-profile/$code': typeof LocaleSharedUserProfileCodeRoute;
   '/$locale/ui/components/$componentId': typeof LocaleUiComponentsComponentIdRoute;
-  '/$locale/$wsId/inventory/': typeof LocaleWsIdInventoryIndexRoute;
   '/$locale/$wsId/mail/': typeof LocaleWsIdMailIndexRoute;
   '/$locale/$wsId/tasks/': typeof LocaleWsIdTasksIndexRoute;
   '/$locale/ui/components/': typeof LocaleUiComponentsIndexRoute;
@@ -1389,7 +1302,6 @@ export interface FileRoutesByFullPath {
   '/$locale/$wsId/finance/transactions/$transactionId': typeof LocaleWsIdFinanceTransactionsTransactionIdRoute;
   '/$locale/$wsId/finance/transactions/categories': typeof LocaleWsIdFinanceTransactionsCategoriesRoute;
   '/$locale/$wsId/finance/wallets/$walletId': typeof LocaleWsIdFinanceWalletsWalletIdRoute;
-  '/$locale/$wsId/inventory/products/$productId': typeof LocaleWsIdInventoryProductsProductIdRoute;
   '/$locale/$wsId/meet/meetings/$meetingId': typeof LocaleWsIdMeetMeetingsMeetingIdRoute;
   '/$locale/$wsId/mind/boards/$boardId': typeof LocaleWsIdMindBoardsBoardIdRoute;
   '/$locale/$wsId/tasks/boards/$boardId': typeof LocaleWsIdTasksBoardsBoardIdRoute;
@@ -1528,15 +1440,6 @@ export interface FileRoutesByTo {
   '/$locale/$wsId/finance/transactions': typeof LocaleWsIdFinanceTransactionsRouteWithChildren;
   '/$locale/$wsId/finance/wallets': typeof LocaleWsIdFinanceWalletsRouteWithChildren;
   '/$locale/$wsId/hive/not-whitelisted': typeof LocaleWsIdHiveNotWhitelistedRoute;
-  '/$locale/$wsId/inventory/batches': typeof LocaleWsIdInventoryBatchesRoute;
-  '/$locale/$wsId/inventory/categories': typeof LocaleWsIdInventoryCategoriesRoute;
-  '/$locale/$wsId/inventory/manufacturers': typeof LocaleWsIdInventoryManufacturersRoute;
-  '/$locale/$wsId/inventory/products': typeof LocaleWsIdInventoryProductsRouteWithChildren;
-  '/$locale/$wsId/inventory/promotions': typeof LocaleWsIdInventoryPromotionsRoute;
-  '/$locale/$wsId/inventory/storefronts': typeof LocaleWsIdInventoryStorefrontsRoute;
-  '/$locale/$wsId/inventory/suppliers': typeof LocaleWsIdInventorySuppliersRoute;
-  '/$locale/$wsId/inventory/units': typeof LocaleWsIdInventoryUnitsRoute;
-  '/$locale/$wsId/inventory/warehouses': typeof LocaleWsIdInventoryWarehousesRoute;
   '/$locale/$wsId/mail/sent': typeof LocaleWsIdMailSentRoute;
   '/$locale/$wsId/meet/meetings': typeof LocaleWsIdMeetMeetingsRouteWithChildren;
   '/$locale/$wsId/meet/plans': typeof LocaleWsIdMeetPlansRoute;
@@ -1565,7 +1468,6 @@ export interface FileRoutesByTo {
   '/$locale/shared/task/$shareCode': typeof LocaleSharedTaskShareCodeRoute;
   '/$locale/shared/user-profile/$code': typeof LocaleSharedUserProfileCodeRoute;
   '/$locale/ui/components/$componentId': typeof LocaleUiComponentsComponentIdRoute;
-  '/$locale/$wsId/inventory': typeof LocaleWsIdInventoryIndexRoute;
   '/$locale/$wsId/mail': typeof LocaleWsIdMailIndexRoute;
   '/$locale/$wsId/tasks': typeof LocaleWsIdTasksIndexRoute;
   '/$locale/ui/components': typeof LocaleUiComponentsIndexRoute;
@@ -1578,7 +1480,6 @@ export interface FileRoutesByTo {
   '/$locale/$wsId/finance/transactions/$transactionId': typeof LocaleWsIdFinanceTransactionsTransactionIdRoute;
   '/$locale/$wsId/finance/transactions/categories': typeof LocaleWsIdFinanceTransactionsCategoriesRoute;
   '/$locale/$wsId/finance/wallets/$walletId': typeof LocaleWsIdFinanceWalletsWalletIdRoute;
-  '/$locale/$wsId/inventory/products/$productId': typeof LocaleWsIdInventoryProductsProductIdRoute;
   '/$locale/$wsId/meet/meetings/$meetingId': typeof LocaleWsIdMeetMeetingsMeetingIdRoute;
   '/$locale/$wsId/mind/boards/$boardId': typeof LocaleWsIdMindBoardsBoardIdRoute;
   '/$locale/$wsId/tasks/boards/$boardId': typeof LocaleWsIdTasksBoardsBoardIdRoute;
@@ -1719,15 +1620,6 @@ export interface FileRoutesById {
   '/$locale/$wsId/finance/transactions': typeof LocaleWsIdFinanceTransactionsRouteWithChildren;
   '/$locale/$wsId/finance/wallets': typeof LocaleWsIdFinanceWalletsRouteWithChildren;
   '/$locale/$wsId/hive/not-whitelisted': typeof LocaleWsIdHiveNotWhitelistedRoute;
-  '/$locale/$wsId/inventory/batches': typeof LocaleWsIdInventoryBatchesRoute;
-  '/$locale/$wsId/inventory/categories': typeof LocaleWsIdInventoryCategoriesRoute;
-  '/$locale/$wsId/inventory/manufacturers': typeof LocaleWsIdInventoryManufacturersRoute;
-  '/$locale/$wsId/inventory/products': typeof LocaleWsIdInventoryProductsRouteWithChildren;
-  '/$locale/$wsId/inventory/promotions': typeof LocaleWsIdInventoryPromotionsRoute;
-  '/$locale/$wsId/inventory/storefronts': typeof LocaleWsIdInventoryStorefrontsRoute;
-  '/$locale/$wsId/inventory/suppliers': typeof LocaleWsIdInventorySuppliersRoute;
-  '/$locale/$wsId/inventory/units': typeof LocaleWsIdInventoryUnitsRoute;
-  '/$locale/$wsId/inventory/warehouses': typeof LocaleWsIdInventoryWarehousesRoute;
   '/$locale/$wsId/mail/sent': typeof LocaleWsIdMailSentRoute;
   '/$locale/$wsId/meet/meetings': typeof LocaleWsIdMeetMeetingsRouteWithChildren;
   '/$locale/$wsId/meet/plans': typeof LocaleWsIdMeetPlansRoute;
@@ -1756,7 +1648,6 @@ export interface FileRoutesById {
   '/$locale/shared/task/$shareCode': typeof LocaleSharedTaskShareCodeRoute;
   '/$locale/shared/user-profile/$code': typeof LocaleSharedUserProfileCodeRoute;
   '/$locale/ui/components/$componentId': typeof LocaleUiComponentsComponentIdRoute;
-  '/$locale/$wsId/inventory/': typeof LocaleWsIdInventoryIndexRoute;
   '/$locale/$wsId/mail/': typeof LocaleWsIdMailIndexRoute;
   '/$locale/$wsId/tasks/': typeof LocaleWsIdTasksIndexRoute;
   '/$locale/ui/components/': typeof LocaleUiComponentsIndexRoute;
@@ -1769,7 +1660,6 @@ export interface FileRoutesById {
   '/$locale/$wsId/finance/transactions/$transactionId': typeof LocaleWsIdFinanceTransactionsTransactionIdRoute;
   '/$locale/$wsId/finance/transactions/categories': typeof LocaleWsIdFinanceTransactionsCategoriesRoute;
   '/$locale/$wsId/finance/wallets/$walletId': typeof LocaleWsIdFinanceWalletsWalletIdRoute;
-  '/$locale/$wsId/inventory/products/$productId': typeof LocaleWsIdInventoryProductsProductIdRoute;
   '/$locale/$wsId/meet/meetings/$meetingId': typeof LocaleWsIdMeetMeetingsMeetingIdRoute;
   '/$locale/$wsId/mind/boards/$boardId': typeof LocaleWsIdMindBoardsBoardIdRoute;
   '/$locale/$wsId/tasks/boards/$boardId': typeof LocaleWsIdTasksBoardsBoardIdRoute;
@@ -1911,15 +1801,6 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/finance/transactions'
     | '/$locale/$wsId/finance/wallets'
     | '/$locale/$wsId/hive/not-whitelisted'
-    | '/$locale/$wsId/inventory/batches'
-    | '/$locale/$wsId/inventory/categories'
-    | '/$locale/$wsId/inventory/manufacturers'
-    | '/$locale/$wsId/inventory/products'
-    | '/$locale/$wsId/inventory/promotions'
-    | '/$locale/$wsId/inventory/storefronts'
-    | '/$locale/$wsId/inventory/suppliers'
-    | '/$locale/$wsId/inventory/units'
-    | '/$locale/$wsId/inventory/warehouses'
     | '/$locale/$wsId/mail/sent'
     | '/$locale/$wsId/meet/meetings'
     | '/$locale/$wsId/meet/plans'
@@ -1948,7 +1829,6 @@ export interface FileRouteTypes {
     | '/$locale/shared/task/$shareCode'
     | '/$locale/shared/user-profile/$code'
     | '/$locale/ui/components/$componentId'
-    | '/$locale/$wsId/inventory/'
     | '/$locale/$wsId/mail/'
     | '/$locale/$wsId/tasks/'
     | '/$locale/ui/components/'
@@ -1961,7 +1841,6 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/finance/transactions/$transactionId'
     | '/$locale/$wsId/finance/transactions/categories'
     | '/$locale/$wsId/finance/wallets/$walletId'
-    | '/$locale/$wsId/inventory/products/$productId'
     | '/$locale/$wsId/meet/meetings/$meetingId'
     | '/$locale/$wsId/mind/boards/$boardId'
     | '/$locale/$wsId/tasks/boards/$boardId'
@@ -2100,15 +1979,6 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/finance/transactions'
     | '/$locale/$wsId/finance/wallets'
     | '/$locale/$wsId/hive/not-whitelisted'
-    | '/$locale/$wsId/inventory/batches'
-    | '/$locale/$wsId/inventory/categories'
-    | '/$locale/$wsId/inventory/manufacturers'
-    | '/$locale/$wsId/inventory/products'
-    | '/$locale/$wsId/inventory/promotions'
-    | '/$locale/$wsId/inventory/storefronts'
-    | '/$locale/$wsId/inventory/suppliers'
-    | '/$locale/$wsId/inventory/units'
-    | '/$locale/$wsId/inventory/warehouses'
     | '/$locale/$wsId/mail/sent'
     | '/$locale/$wsId/meet/meetings'
     | '/$locale/$wsId/meet/plans'
@@ -2137,7 +2007,6 @@ export interface FileRouteTypes {
     | '/$locale/shared/task/$shareCode'
     | '/$locale/shared/user-profile/$code'
     | '/$locale/ui/components/$componentId'
-    | '/$locale/$wsId/inventory'
     | '/$locale/$wsId/mail'
     | '/$locale/$wsId/tasks'
     | '/$locale/ui/components'
@@ -2150,7 +2019,6 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/finance/transactions/$transactionId'
     | '/$locale/$wsId/finance/transactions/categories'
     | '/$locale/$wsId/finance/wallets/$walletId'
-    | '/$locale/$wsId/inventory/products/$productId'
     | '/$locale/$wsId/meet/meetings/$meetingId'
     | '/$locale/$wsId/mind/boards/$boardId'
     | '/$locale/$wsId/tasks/boards/$boardId'
@@ -2290,15 +2158,6 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/finance/transactions'
     | '/$locale/$wsId/finance/wallets'
     | '/$locale/$wsId/hive/not-whitelisted'
-    | '/$locale/$wsId/inventory/batches'
-    | '/$locale/$wsId/inventory/categories'
-    | '/$locale/$wsId/inventory/manufacturers'
-    | '/$locale/$wsId/inventory/products'
-    | '/$locale/$wsId/inventory/promotions'
-    | '/$locale/$wsId/inventory/storefronts'
-    | '/$locale/$wsId/inventory/suppliers'
-    | '/$locale/$wsId/inventory/units'
-    | '/$locale/$wsId/inventory/warehouses'
     | '/$locale/$wsId/mail/sent'
     | '/$locale/$wsId/meet/meetings'
     | '/$locale/$wsId/meet/plans'
@@ -2327,7 +2186,6 @@ export interface FileRouteTypes {
     | '/$locale/shared/task/$shareCode'
     | '/$locale/shared/user-profile/$code'
     | '/$locale/ui/components/$componentId'
-    | '/$locale/$wsId/inventory/'
     | '/$locale/$wsId/mail/'
     | '/$locale/$wsId/tasks/'
     | '/$locale/ui/components/'
@@ -2340,7 +2198,6 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/finance/transactions/$transactionId'
     | '/$locale/$wsId/finance/transactions/categories'
     | '/$locale/$wsId/finance/wallets/$walletId'
-    | '/$locale/$wsId/inventory/products/$productId'
     | '/$locale/$wsId/meet/meetings/$meetingId'
     | '/$locale/$wsId/mind/boards/$boardId'
     | '/$locale/$wsId/tasks/boards/$boardId'
@@ -3091,13 +2948,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LocaleWsIdMailIndexRouteImport;
       parentRoute: typeof LocaleRouteRoute;
     };
-    '/$locale/$wsId/inventory/': {
-      id: '/$locale/$wsId/inventory/';
-      path: '/$wsId/inventory';
-      fullPath: '/$locale/$wsId/inventory/';
-      preLoaderRoute: typeof LocaleWsIdInventoryIndexRouteImport;
-      parentRoute: typeof LocaleRouteRoute;
-    };
     '/$locale/ui/components/$componentId': {
       id: '/$locale/ui/components/$componentId';
       path: '/ui/components/$componentId';
@@ -3292,69 +3142,6 @@ declare module '@tanstack/react-router' {
       path: '/$wsId/mail/sent';
       fullPath: '/$locale/$wsId/mail/sent';
       preLoaderRoute: typeof LocaleWsIdMailSentRouteImport;
-      parentRoute: typeof LocaleRouteRoute;
-    };
-    '/$locale/$wsId/inventory/warehouses': {
-      id: '/$locale/$wsId/inventory/warehouses';
-      path: '/$wsId/inventory/warehouses';
-      fullPath: '/$locale/$wsId/inventory/warehouses';
-      preLoaderRoute: typeof LocaleWsIdInventoryWarehousesRouteImport;
-      parentRoute: typeof LocaleRouteRoute;
-    };
-    '/$locale/$wsId/inventory/units': {
-      id: '/$locale/$wsId/inventory/units';
-      path: '/$wsId/inventory/units';
-      fullPath: '/$locale/$wsId/inventory/units';
-      preLoaderRoute: typeof LocaleWsIdInventoryUnitsRouteImport;
-      parentRoute: typeof LocaleRouteRoute;
-    };
-    '/$locale/$wsId/inventory/suppliers': {
-      id: '/$locale/$wsId/inventory/suppliers';
-      path: '/$wsId/inventory/suppliers';
-      fullPath: '/$locale/$wsId/inventory/suppliers';
-      preLoaderRoute: typeof LocaleWsIdInventorySuppliersRouteImport;
-      parentRoute: typeof LocaleRouteRoute;
-    };
-    '/$locale/$wsId/inventory/storefronts': {
-      id: '/$locale/$wsId/inventory/storefronts';
-      path: '/$wsId/inventory/storefronts';
-      fullPath: '/$locale/$wsId/inventory/storefronts';
-      preLoaderRoute: typeof LocaleWsIdInventoryStorefrontsRouteImport;
-      parentRoute: typeof LocaleRouteRoute;
-    };
-    '/$locale/$wsId/inventory/promotions': {
-      id: '/$locale/$wsId/inventory/promotions';
-      path: '/$wsId/inventory/promotions';
-      fullPath: '/$locale/$wsId/inventory/promotions';
-      preLoaderRoute: typeof LocaleWsIdInventoryPromotionsRouteImport;
-      parentRoute: typeof LocaleRouteRoute;
-    };
-    '/$locale/$wsId/inventory/products': {
-      id: '/$locale/$wsId/inventory/products';
-      path: '/$wsId/inventory/products';
-      fullPath: '/$locale/$wsId/inventory/products';
-      preLoaderRoute: typeof LocaleWsIdInventoryProductsRouteImport;
-      parentRoute: typeof LocaleRouteRoute;
-    };
-    '/$locale/$wsId/inventory/manufacturers': {
-      id: '/$locale/$wsId/inventory/manufacturers';
-      path: '/$wsId/inventory/manufacturers';
-      fullPath: '/$locale/$wsId/inventory/manufacturers';
-      preLoaderRoute: typeof LocaleWsIdInventoryManufacturersRouteImport;
-      parentRoute: typeof LocaleRouteRoute;
-    };
-    '/$locale/$wsId/inventory/categories': {
-      id: '/$locale/$wsId/inventory/categories';
-      path: '/$wsId/inventory/categories';
-      fullPath: '/$locale/$wsId/inventory/categories';
-      preLoaderRoute: typeof LocaleWsIdInventoryCategoriesRouteImport;
-      parentRoute: typeof LocaleRouteRoute;
-    };
-    '/$locale/$wsId/inventory/batches': {
-      id: '/$locale/$wsId/inventory/batches';
-      path: '/$wsId/inventory/batches';
-      fullPath: '/$locale/$wsId/inventory/batches';
-      preLoaderRoute: typeof LocaleWsIdInventoryBatchesRouteImport;
       parentRoute: typeof LocaleRouteRoute;
     };
     '/$locale/$wsId/hive/not-whitelisted': {
@@ -3594,13 +3381,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/$locale/$wsId/meet/meetings/$meetingId';
       preLoaderRoute: typeof LocaleWsIdMeetMeetingsMeetingIdRouteImport;
       parentRoute: typeof LocaleWsIdMeetMeetingsRoute;
-    };
-    '/$locale/$wsId/inventory/products/$productId': {
-      id: '/$locale/$wsId/inventory/products/$productId';
-      path: '/$productId';
-      fullPath: '/$locale/$wsId/inventory/products/$productId';
-      preLoaderRoute: typeof LocaleWsIdInventoryProductsProductIdRouteImport;
-      parentRoute: typeof LocaleWsIdInventoryProductsRoute;
     };
     '/$locale/$wsId/finance/wallets/$walletId': {
       id: '/$locale/$wsId/finance/wallets/$walletId';
@@ -3958,21 +3738,6 @@ const LocaleCalendarMeetTogetherRouteWithChildren =
     LocaleCalendarMeetTogetherRouteChildren,
   );
 
-interface LocaleWsIdInventoryProductsRouteChildren {
-  LocaleWsIdInventoryProductsProductIdRoute: typeof LocaleWsIdInventoryProductsProductIdRoute;
-}
-
-const LocaleWsIdInventoryProductsRouteChildren: LocaleWsIdInventoryProductsRouteChildren =
-  {
-    LocaleWsIdInventoryProductsProductIdRoute:
-      LocaleWsIdInventoryProductsProductIdRoute,
-  };
-
-const LocaleWsIdInventoryProductsRouteWithChildren =
-  LocaleWsIdInventoryProductsRoute._addFileChildren(
-    LocaleWsIdInventoryProductsRouteChildren,
-  );
-
 interface LocaleWsIdTasksProjectsRouteChildren {
   LocaleWsIdTasksProjectsProjectIdRoute: typeof LocaleWsIdTasksProjectsProjectIdRoute;
 }
@@ -4160,15 +3925,6 @@ interface LocaleRouteRouteChildren {
   LocaleVisualizationsHorseRacingRoute: typeof LocaleVisualizationsHorseRacingRoute;
   LocaleUiIndexRoute: typeof LocaleUiIndexRoute;
   LocaleWsIdBillingSuccessRoute: typeof LocaleWsIdBillingSuccessRoute;
-  LocaleWsIdInventoryBatchesRoute: typeof LocaleWsIdInventoryBatchesRoute;
-  LocaleWsIdInventoryCategoriesRoute: typeof LocaleWsIdInventoryCategoriesRoute;
-  LocaleWsIdInventoryManufacturersRoute: typeof LocaleWsIdInventoryManufacturersRoute;
-  LocaleWsIdInventoryProductsRoute: typeof LocaleWsIdInventoryProductsRouteWithChildren;
-  LocaleWsIdInventoryPromotionsRoute: typeof LocaleWsIdInventoryPromotionsRoute;
-  LocaleWsIdInventoryStorefrontsRoute: typeof LocaleWsIdInventoryStorefrontsRoute;
-  LocaleWsIdInventorySuppliersRoute: typeof LocaleWsIdInventorySuppliersRoute;
-  LocaleWsIdInventoryUnitsRoute: typeof LocaleWsIdInventoryUnitsRoute;
-  LocaleWsIdInventoryWarehousesRoute: typeof LocaleWsIdInventoryWarehousesRoute;
   LocaleWsIdMailSentRoute: typeof LocaleWsIdMailSentRoute;
   LocaleWsIdSettingsNotificationsRoute: typeof LocaleWsIdSettingsNotificationsRoute;
   LocaleWsIdSettingsReportsRoute: typeof LocaleWsIdSettingsReportsRoute;
@@ -4193,7 +3949,6 @@ interface LocaleRouteRouteChildren {
   LocaleSharedTaskShareCodeRoute: typeof LocaleSharedTaskShareCodeRoute;
   LocaleSharedUserProfileCodeRoute: typeof LocaleSharedUserProfileCodeRoute;
   LocaleUiComponentsComponentIdRoute: typeof LocaleUiComponentsComponentIdRoute;
-  LocaleWsIdInventoryIndexRoute: typeof LocaleWsIdInventoryIndexRoute;
   LocaleWsIdMailIndexRoute: typeof LocaleWsIdMailIndexRoute;
   LocaleWsIdTasksIndexRoute: typeof LocaleWsIdTasksIndexRoute;
   LocaleUiComponentsIndexRoute: typeof LocaleUiComponentsIndexRoute;
@@ -4297,16 +4052,6 @@ const LocaleRouteRouteChildren: LocaleRouteRouteChildren = {
   LocaleVisualizationsHorseRacingRoute: LocaleVisualizationsHorseRacingRoute,
   LocaleUiIndexRoute: LocaleUiIndexRoute,
   LocaleWsIdBillingSuccessRoute: LocaleWsIdBillingSuccessRoute,
-  LocaleWsIdInventoryBatchesRoute: LocaleWsIdInventoryBatchesRoute,
-  LocaleWsIdInventoryCategoriesRoute: LocaleWsIdInventoryCategoriesRoute,
-  LocaleWsIdInventoryManufacturersRoute: LocaleWsIdInventoryManufacturersRoute,
-  LocaleWsIdInventoryProductsRoute:
-    LocaleWsIdInventoryProductsRouteWithChildren,
-  LocaleWsIdInventoryPromotionsRoute: LocaleWsIdInventoryPromotionsRoute,
-  LocaleWsIdInventoryStorefrontsRoute: LocaleWsIdInventoryStorefrontsRoute,
-  LocaleWsIdInventorySuppliersRoute: LocaleWsIdInventorySuppliersRoute,
-  LocaleWsIdInventoryUnitsRoute: LocaleWsIdInventoryUnitsRoute,
-  LocaleWsIdInventoryWarehousesRoute: LocaleWsIdInventoryWarehousesRoute,
   LocaleWsIdMailSentRoute: LocaleWsIdMailSentRoute,
   LocaleWsIdSettingsNotificationsRoute: LocaleWsIdSettingsNotificationsRoute,
   LocaleWsIdSettingsReportsRoute: LocaleWsIdSettingsReportsRoute,
@@ -4332,7 +4077,6 @@ const LocaleRouteRouteChildren: LocaleRouteRouteChildren = {
   LocaleSharedTaskShareCodeRoute: LocaleSharedTaskShareCodeRoute,
   LocaleSharedUserProfileCodeRoute: LocaleSharedUserProfileCodeRoute,
   LocaleUiComponentsComponentIdRoute: LocaleUiComponentsComponentIdRoute,
-  LocaleWsIdInventoryIndexRoute: LocaleWsIdInventoryIndexRoute,
   LocaleWsIdMailIndexRoute: LocaleWsIdMailIndexRoute,
   LocaleWsIdTasksIndexRoute: LocaleWsIdTasksIndexRoute,
   LocaleUiComponentsIndexRoute: LocaleUiComponentsIndexRoute,
