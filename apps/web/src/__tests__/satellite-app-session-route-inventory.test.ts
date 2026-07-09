@@ -9,9 +9,10 @@ const repoRoot = resolve(
 );
 
 const satelliteRouteRoots = [
-  'apps/web/src/legacy-api-routes/v1/tulearn',
-  'apps/web/src/legacy-api-routes/v1/course',
-  'apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/tulearn',
+  // tulearn + guest course routes now live in apps/learn.
+  'apps/learn/src/app/api/v1/tulearn',
+  'apps/learn/src/app/api/v1/course',
+  'apps/learn/src/app/api/v1/workspaces/[wsId]/tulearn',
   'apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/users/groups',
   'apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/time-tracking',
   // Calendar routes migrated to the dedicated calendar app (apps/calendar).

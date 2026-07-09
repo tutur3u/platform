@@ -4,6 +4,7 @@ import {
   encodePathSegment,
   getInternalApiClient,
   type InternalApiClientOptions,
+  withEducationBootstrapBaseUrl,
 } from './client';
 import type { TulearnBootstrapResponse } from './tulearn';
 
@@ -79,7 +80,7 @@ export interface TeachIndicatorValue {
 }
 
 export function getTeachBootstrap(options?: InternalApiClientOptions) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withEducationBootstrapBaseUrl(options));
   return client.json<TeachBootstrapResponse>('/api/v1/tulearn/bootstrap', {
     cache: 'no-store',
   });
