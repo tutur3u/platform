@@ -410,16 +410,6 @@
       "targetOwner": "rust-backend",
       "note": "Rust backend handle_backend_request verifies app-session auth, hydrates users and user_private_details through the server-owned Supabase REST adapter, and persists display_name, bio, and avatar_url profile updates with same-origin mutation protection for cookie auth. This endpoint is migrated for the app-session contract used by TanStack contact; broader Supabase session revalidation remains tracked under auth migration work."
     },
-    "api:/api/v1/workspaces/:wsId/course-modules:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/course-modules/route.ts": {
-      "status": "migrated",
-      "targetOwner": "rust-backend",
-      "note": "Rust backend handle_backend_request owns GET /api/v1/workspaces/:wsId/course-modules by revalidating a normal Supabase browser session or non-app-session Bearer token, resolving workspace permissions for ai_lab, requiring the ENABLE_EDUCATION workspace secret, reading workspace_course_modules through service-role Supabase REST with exact-count pagination, and preserving the legacy { data, count, page, pageSize } envelope."
-    },
-    "api:/api/v1/workspaces/:wsId/quiz-sets/:setId/linked-modules:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/quiz-sets/[setId]/linked-modules/route.ts": {
-      "status": "migrated",
-      "targetOwner": "rust-backend",
-      "note": "Rust backend handle_backend_request owns GET /api/v1/workspaces/:wsId/quiz-sets/:setId/linked-modules by revalidating a normal Supabase browser session or non-app-session Bearer token, resolving ai_lab workspace permission and ENABLE_EDUCATION, verifying the quiz set belongs to the resolved workspace before service-role linked-module reads, applying legacy page/pageSize/q parsing, and returning the legacy paginated envelope."
-    },
     "loading:/:locale/:wsId/users/groups/:groupId:apps/web/src/app/[locale]/(dashboard)/[wsId]/users/groups/[groupId]/loading.tsx": {
       "status": "migrated",
       "targetOwner": "tanstack-start",
@@ -833,11 +823,6 @@
       "status": "migrated",
       "targetOwner": "rust-backend",
       "note": "Rust backend handle_backend_request handles GET /api/v1/workspaces/:wsId/posts/permissions by preserving the legacy quiet-failure contract: missing auth, inaccessible workspaces, RPC failures, and missing permissions all return HTTP 200 with canApprovePosts=false and canForceSendPosts=false. Authenticated callers are revalidated with Supabase Auth, then the backend calls the server-owned has_workspace_permission RPC for workspace approve_posts and root workspace manage_workspace_roles."
-    },
-    "api:/api/v1/workspaces/:wsId/education/access:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/education/access/route.ts": {
-      "status": "migrated",
-      "targetOwner": "rust-backend",
-      "note": "Rust backend handle_backend_request handles GET /api/v1/workspaces/:wsId/education/access by preserving the legacy access-probe contract: missing or invalid Supabase sessions return 401, while invalid workspaces, missing workspace access, disabled ENABLE_EDUCATION workspace secrets, missing ai_lab permission, permission lookup failures, and secret lookup failures all return HTTP 200 with enabled=false. Enabled workspaces require a normal Supabase browser session or non-app-session Bearer token, getPermissions-compatible workspace permission resolution, and a server-owned workspace_secrets ENABLE_EDUCATION=true read."
     },
     "api:/api/v1/workspaces/:wsId/settings/permissions:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/settings/permissions/route.ts": {
       "status": "migrated",

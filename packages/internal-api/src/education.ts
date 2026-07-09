@@ -7,6 +7,7 @@ import {
   encodePathSegment,
   getInternalApiClient,
   type InternalApiClientOptions,
+  withTeachApiBaseUrl,
 } from './client';
 
 export interface UpsertWorkspaceCoursePayload {
@@ -64,7 +65,7 @@ export async function listWorkspaceCourseModules(
   groupId: string,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withTeachApiBaseUrl(options));
   return client.json<WorkspaceCourseModule[]>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/user-groups/${encodePathSegment(groupId)}/modules`,
     { cache: 'no-store' }
@@ -77,7 +78,7 @@ export async function listWorkspaceCourseModuleGroupModules(
   moduleGroupId: string,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withTeachApiBaseUrl(options));
   return client.json<WorkspaceCourseBuilderModule[]>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/user-groups/${encodePathSegment(groupId)}/module-groups/${encodePathSegment(moduleGroupId)}/modules`,
     { cache: 'no-store' }
@@ -487,7 +488,7 @@ export async function createWorkspaceCourse(
   payload: UpsertWorkspaceCoursePayload,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withTeachApiBaseUrl(options));
   return client.json<{ id: string; message: string }>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/courses`,
     {
@@ -504,7 +505,7 @@ export async function listWorkspaceCourses(
   params: ListWorkspaceCoursesParams = {},
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withTeachApiBaseUrl(options));
   return client.json<ListWorkspaceCoursesResponse>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/courses`,
     {
@@ -523,7 +524,7 @@ export async function getValseaClassroomConfig(
   workspaceId: string,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withTeachApiBaseUrl(options));
   return client.json<ValseaClassroomConfigResponse>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/education/valsea`,
     { cache: 'no-store' }
@@ -535,7 +536,7 @@ export async function generateValseaClassroomScenario(
   payload: ValseaClassroomScenarioPayload = {},
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withTeachApiBaseUrl(options));
   return client.json<ValseaClassroomScenarioResponse>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/education/valsea/scenario`,
     {
@@ -568,7 +569,7 @@ export async function generateWorkspaceQuizOptionExplanation(
   payload: GenerateQuizOptionExplanationPayload,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withTeachApiBaseUrl(options));
   return client.json<GenerateQuizOptionExplanationResponse>(
     '/api/ai/objects/quizzes/explanation',
     {
@@ -587,7 +588,7 @@ export async function synthesizeValseaClassroomSpeech(
   payload: ValseaClassroomSpeechPayload,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withTeachApiBaseUrl(options));
   return client.json<ValseaClassroomSpeechResponse>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/education/valsea/speech`,
     {
@@ -606,7 +607,7 @@ export async function validateValseaClassroomApiKey(
   apiKey: string,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withTeachApiBaseUrl(options));
   return client.json<ValseaClassroomKeyValidationResponse>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/education/valsea/validate-key`,
     {
@@ -702,7 +703,7 @@ export async function generateValseaClassroomArtifact(
   payload: ValseaClassroomPayload,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withTeachApiBaseUrl(options));
   const path = `/api/v1/workspaces/${encodePathSegment(workspaceId)}/education/valsea`;
   const byokHeaders = payload.apiKey
     ? { 'X-Valsea-Api-Key': payload.apiKey }
@@ -754,7 +755,7 @@ export async function updateWorkspaceCourse(
   payload: Partial<UpsertWorkspaceCoursePayload>,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withTeachApiBaseUrl(options));
   return client.json<{ message: string }>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/courses/${encodePathSegment(courseId)}`,
     {
@@ -798,7 +799,7 @@ export async function deleteWorkspaceCourse(
   courseId: string,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withTeachApiBaseUrl(options));
   return client.json<{ message: string }>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/courses/${encodePathSegment(courseId)}`,
     {
@@ -814,7 +815,7 @@ export async function createWorkspaceCourseModule(
   payload: UpsertWorkspaceCourseModulePayload,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withTeachApiBaseUrl(options));
   return client.json<WorkspaceCourseModule>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/user-groups/${encodePathSegment(groupId)}/modules`,
     {
@@ -832,7 +833,7 @@ export async function updateWorkspaceCourseModule(
   payload: Record<string, unknown>,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withTeachApiBaseUrl(options));
   return client.json<{ message: string }>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/course-modules/${encodePathSegment(moduleId)}`,
     {
@@ -858,7 +859,7 @@ export async function reorderWorkspaceCourseModules(
   moduleIds: string[],
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withTeachApiBaseUrl(options));
   return client.json<{ message: string }>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/user-groups/${encodePathSegment(groupId)}/module-order`,
     {
@@ -875,7 +876,7 @@ export async function deleteWorkspaceCourseModule(
   moduleId: string,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withTeachApiBaseUrl(options));
   return client.json<{ message: string }>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/course-modules/${encodePathSegment(moduleId)}`,
     {
@@ -890,7 +891,7 @@ export async function listWorkspaceCourseModuleGroups(
   groupId: string,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withTeachApiBaseUrl(options));
   return client.json<WorkspaceCourseModuleGroup[]>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/user-groups/${encodePathSegment(groupId)}/module-groups`,
     { cache: 'no-store' }
@@ -903,7 +904,7 @@ export async function createWorkspaceCourseModuleGroup(
   payload: UpsertWorkspaceCourseModuleGroupPayload,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withTeachApiBaseUrl(options));
   return client.json<WorkspaceCourseModuleGroup>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/user-groups/${encodePathSegment(groupId)}/module-groups`,
     {
@@ -922,7 +923,7 @@ export async function updateWorkspaceCourseModuleGroup(
   payload: Partial<UpsertWorkspaceCourseModuleGroupPayload>,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withTeachApiBaseUrl(options));
   return client.json<{ message: string }>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/user-groups/${encodePathSegment(groupId)}/module-groups/${encodePathSegment(moduleGroupId)}`,
     {
@@ -940,7 +941,7 @@ export async function deleteWorkspaceCourseModuleGroup(
   moduleGroupId: string,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withTeachApiBaseUrl(options));
   return client.json<{ message: string }>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/user-groups/${encodePathSegment(groupId)}/module-groups/${encodePathSegment(moduleGroupId)}`,
     {
@@ -956,7 +957,7 @@ export async function reorderWorkspaceCourseModuleGroups(
   moduleGroupIds: string[],
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withTeachApiBaseUrl(options));
   return client.json<{ message: string }>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/user-groups/${encodePathSegment(groupId)}/module-groups/order`,
     {
@@ -975,7 +976,7 @@ export async function reorderWorkspaceCourseModulesInModuleGroup(
   moduleIds: string[],
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withTeachApiBaseUrl(options));
   return client.json<{ message: string }>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/user-groups/${encodePathSegment(groupId)}/module-groups/${encodePathSegment(moduleGroupId)}/module-order`,
     {
@@ -993,7 +994,7 @@ export async function linkQuizSetModules(
   moduleIds: string[],
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withTeachApiBaseUrl(options));
   return client.json<{ message: string }>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/quiz-sets/${encodePathSegment(setId)}/modules`,
     {
@@ -1013,7 +1014,7 @@ export async function unlinkQuizSetModule(
   moduleId: string,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withTeachApiBaseUrl(options));
   return client.json<{ message: string }>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/quiz-sets/${encodePathSegment(setId)}/modules/${encodePathSegment(moduleId)}`,
     {
@@ -1028,7 +1029,7 @@ export async function createWorkspaceQuiz(
   payload: CreateWorkspaceQuizPayload,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withTeachApiBaseUrl(options));
   return client.json<{ message: string }>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/quizzes`,
     {
@@ -1046,7 +1047,7 @@ export async function updateWorkspaceQuiz(
   payload: Partial<UpsertWorkspaceQuizPayload>,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withTeachApiBaseUrl(options));
   return client.json<{ message: string }>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/quizzes/${encodePathSegment(quizId)}`,
     {
@@ -1063,7 +1064,7 @@ export async function deleteWorkspaceQuiz(
   quizId: string,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withTeachApiBaseUrl(options));
   return client.json<{ message: string }>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/quizzes/${encodePathSegment(quizId)}`,
     {
@@ -1105,7 +1106,7 @@ export async function getWorkspaceQuizzes(
   params?: ListWorkspaceQuizzesParams,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withTeachApiBaseUrl(options));
   const searchParams = new URLSearchParams();
   if (params?.page) searchParams.set('page', params.page.toString());
   if (params?.pageSize)
@@ -1152,7 +1153,7 @@ export async function getWorkspaceFlashcards(
   params?: ListWorkspaceFlashcardsParams,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withTeachApiBaseUrl(options));
   const searchParams = new URLSearchParams();
   if (params?.page) searchParams.set('page', params.page.toString());
   if (params?.pageSize)
@@ -1198,7 +1199,7 @@ export async function listAllWorkspaceCourseModules(
   params?: ListAllWorkspaceCourseModulesParams,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withTeachApiBaseUrl(options));
   const searchParams = new URLSearchParams();
   if (params?.page) searchParams.set('page', params.page.toString());
   if (params?.pageSize)
@@ -1246,7 +1247,7 @@ export async function getQuizSetLinkedModules(
   params?: ListQuizSetLinkedModulesParams,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withTeachApiBaseUrl(options));
   const searchParams = new URLSearchParams();
   if (params?.page) searchParams.set('page', params.page.toString());
   if (params?.pageSize)
@@ -1281,7 +1282,7 @@ export async function getQuizSetQuizzes(
   params?: ListQuizSetQuizzesParams,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withTeachApiBaseUrl(options));
   const searchParams = new URLSearchParams();
   if (params?.page) searchParams.set('page', params.page.toString());
   if (params?.pageSize)
@@ -1327,7 +1328,7 @@ export async function getCourseModuleQuizSets(
   params?: ListCourseModuleQuizSetsParams,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withTeachApiBaseUrl(options));
   const searchParams = new URLSearchParams();
   if (params?.page) searchParams.set('page', params.page.toString());
   if (params?.pageSize)
@@ -1439,7 +1440,7 @@ export async function getWorkspaceQuizSets(
   params?: ListWorkspaceQuizSetsParams,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withTeachApiBaseUrl(options));
   const searchParams = new URLSearchParams();
   if (params?.page) searchParams.set('page', params.page.toString());
   if (params?.pageSize)
@@ -1523,7 +1524,7 @@ export async function createWorkspaceQuizSet(
   payload: UpsertWorkspaceQuizSetPayload,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withTeachApiBaseUrl(options));
   return client.json<{ message: string }>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/quiz-sets`,
     {
@@ -1541,7 +1542,7 @@ export async function updateWorkspaceQuizSet(
   payload: Partial<UpsertWorkspaceQuizSetPayload>,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withTeachApiBaseUrl(options));
   return client.json<{ message: string }>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/quiz-sets/${encodePathSegment(setId)}`,
     {
@@ -1558,7 +1559,7 @@ export async function deleteWorkspaceQuizSet(
   setId: string,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withTeachApiBaseUrl(options));
   return client.json<{ message: string }>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/quiz-sets/${encodePathSegment(setId)}`,
     {
@@ -1573,7 +1574,7 @@ export async function createWorkspaceFlashcard(
   payload: UpsertWorkspaceFlashcardPayload,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withTeachApiBaseUrl(options));
   return client.json<{ message: string }>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/flashcards`,
     {
@@ -1591,7 +1592,7 @@ export async function updateWorkspaceFlashcard(
   payload: Partial<UpsertWorkspaceFlashcardPayload>,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withTeachApiBaseUrl(options));
   return client.json<{ message: string }>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/flashcards/${encodePathSegment(flashcardId)}`,
     {
@@ -1608,7 +1609,7 @@ export async function deleteWorkspaceFlashcard(
   flashcardId: string,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withTeachApiBaseUrl(options));
   return client.json<{ message: string }>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/flashcards/${encodePathSegment(flashcardId)}`,
     {
@@ -1623,7 +1624,7 @@ export async function listWorkspaceEducationAttempts(
   query: WorkspaceEducationAttemptListQuery = {},
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withTeachApiBaseUrl(options));
   const search = new URLSearchParams();
 
   if (query.page) search.set('page', `${query.page}`);
@@ -1648,7 +1649,7 @@ export async function getWorkspaceEducationAttemptDetail(
   attemptId: string,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withTeachApiBaseUrl(options));
   return client.json<WorkspaceEducationAttemptDetailResponse>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/education/attempts/${encodePathSegment(attemptId)}`,
     {
@@ -1668,7 +1669,7 @@ export async function getWorkspaceCourseTestQuestions(
   params?: ListWorkspaceCourseTestQuestionsParams,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withTeachApiBaseUrl(options));
   const searchParams = new URLSearchParams();
   if (params?.moduleId) searchParams.set('moduleId', params.moduleId);
 
@@ -1691,7 +1692,7 @@ export async function createWorkspaceCourseTestQuestions(
   payload: CreateWorkspaceQuizPayload,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withTeachApiBaseUrl(options));
   return client.json<{ message: string }>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/teach/courses/${encodePathSegment(courseId)}/tests/${encodePathSegment(testId)}/questions`,
     {
@@ -1709,7 +1710,7 @@ export async function deleteWorkspaceStorageObject(
   options?: InternalApiClientOptions
 ) {
   const client = getInternalApiClient(options);
-  return client.json<{ success: true }>(
+  return client.json<{ url: string }>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/storage/object`,
     {
       method: 'DELETE',
