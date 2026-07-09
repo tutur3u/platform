@@ -73,7 +73,11 @@ function findBase64AudioData(value: unknown): string | null {
 
   const inlineData = record.inlineData ?? record.inline_data;
 
-  if (inlineData && typeof inlineData === 'object' && !Array.isArray(inlineData)) {
+  if (
+    inlineData &&
+    typeof inlineData === 'object' &&
+    !Array.isArray(inlineData)
+  ) {
     const data = (inlineData as Record<string, unknown>).data;
     if (typeof data === 'string') return data;
   }

@@ -13,7 +13,9 @@ export async function GET(request: NextRequest) {
       const parsedUrl = new URL(urlParam);
       if (!parsedUrl.hostname.endsWith('dictionary.cambridge.org')) {
         return NextResponse.json(
-          { message: 'Invalid URL. Only Cambridge Dictionary URLs are allowed.' },
+          {
+            message: 'Invalid URL. Only Cambridge Dictionary URLs are allowed.',
+          },
           { status: 400 }
         );
       }
@@ -44,7 +46,8 @@ export async function GET(request: NextRequest) {
       headers: {
         'User-Agent':
           'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+        Accept:
+          'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
         'Accept-Language': 'en-US,en;q=0.5',
       },
     });
@@ -58,7 +61,9 @@ export async function GET(request: NextRequest) {
 
     if (!response.ok) {
       return NextResponse.json(
-        { message: `Failed to fetch from dictionary (status ${response.status}).` },
+        {
+          message: `Failed to fetch from dictionary (status ${response.status}).`,
+        },
         { status: 502 }
       );
     }

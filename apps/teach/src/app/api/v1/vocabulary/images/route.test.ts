@@ -1,6 +1,6 @@
-import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { GET } from './route';
 import { NextRequest } from 'next/server';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { GET } from './route';
 
 describe('GET /api/v1/vocabulary/images scraper', () => {
   beforeEach(() => {
@@ -8,7 +8,9 @@ describe('GET /api/v1/vocabulary/images scraper', () => {
   });
 
   it('returns 400 when query parameter is missing', async () => {
-    const request = new NextRequest('http://localhost/api/v1/vocabulary/images');
+    const request = new NextRequest(
+      'http://localhost/api/v1/vocabulary/images'
+    );
     const response = await GET(request);
     expect(response.status).toBe(400);
 
@@ -91,6 +93,8 @@ describe('GET /api/v1/vocabulary/images scraper', () => {
     expect(response.status).toBe(502);
 
     const data = await response.json();
-    expect(data.message).toContain('Failed to extract token from search engine');
+    expect(data.message).toContain(
+      'Failed to extract token from search engine'
+    );
   });
 });

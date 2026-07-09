@@ -9,7 +9,6 @@ import {
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
-import type { Database } from '@tuturuuu/types';
 import {
   getPermissions,
   normalizeWorkspaceId,
@@ -36,11 +35,6 @@ interface VocabularyEntry {
   pronunciation: string;
   word: string;
 }
-
-type WorkspaceCourseModuleUpdate =
-  Database['public']['Tables']['workspace_course_modules']['Update'] & {
-    vocabulary?: VocabularyEntry[];
-  };
 
 type VocabularyParseResult =
   | {
@@ -415,13 +409,9 @@ async function updateVocabulary(
     );
     if (access instanceof NextResponse) return access;
 
-    const updatePayload: WorkspaceCourseModuleUpdate = {
-      vocabulary: parsed.vocabulary,
-    };
-
     const { data, error } = await access.sbAdmin
       .from('workspace_course_modules')
-      .update(updatePayload)
+      .update({ vocabulary: parsed.vocabulary } as never)
       .eq('id', resolved.moduleId)
       .eq('group_id', access.module.group_id)
       .select('id, vocabulary')

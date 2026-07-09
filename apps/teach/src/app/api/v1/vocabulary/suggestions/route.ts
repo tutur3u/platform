@@ -28,8 +28,9 @@ function normalizeSuggestions(value: unknown) {
         word,
       };
     })
-    .filter((item): item is { beta: boolean; url: string | null; word: string } =>
-      item !== null
+    .filter(
+      (item): item is { beta: boolean; url: string | null; word: string } =>
+        item !== null
     );
 }
 

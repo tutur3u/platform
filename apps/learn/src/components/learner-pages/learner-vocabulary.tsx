@@ -2,6 +2,7 @@
 
 import { BookOpen, Check, RotateCcw, Sparkles } from '@tuturuuu/icons';
 import { cn } from '@tuturuuu/utils/format';
+import Image from 'next/image';
 import { useParams } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ContentCard } from './content-card';
@@ -114,7 +115,7 @@ function blobToBase64(blob: Blob) {
     const reader = new FileReader();
     reader.onload = () => {
       const result = typeof reader.result === 'string' ? reader.result : '';
-      resolve(result.includes(',') ? result.split(',')[1] ?? '' : result);
+      resolve(result.includes(',') ? (result.split(',')[1] ?? '') : result);
     };
     reader.onerror = () =>
       reject(reader.error ?? new Error('Could not read recording.'));
@@ -178,12 +179,15 @@ function sentenceParts(sentence: string, mistakes: PronunciationMistake[]) {
   if (targets.length === 0) return [{ isMistake: false, text: sentence }];
 
   const pattern = new RegExp(`(${targets.map(escapeRegExp).join('|')})`, 'giu');
-  return sentence.split(pattern).filter(Boolean).map((text) => ({
-    isMistake: targets.some(
-      (target) => target.toLowerCase() === text.toLowerCase()
-    ),
-    text,
-  }));
+  return sentence
+    .split(pattern)
+    .filter(Boolean)
+    .map((text) => ({
+      isMistake: targets.some(
+        (target) => target.toLowerCase() === text.toLowerCase()
+      ),
+      text,
+    }));
 }
 
 export function LearnerVocabulary({ moduleId }: { moduleId: string }) {
@@ -348,9 +352,9 @@ export function LearnerVocabulary({ moduleId }: { moduleId: string }) {
   }
 
   function resetPractice() {
-    mediaRecorderRef.current?.stream
-      .getTracks()
-      .forEach((track) => track.stop());
+    mediaRecorderRef.current?.stream.getTracks().forEach((track) => {
+      track.stop();
+    });
     mediaRecorderRef.current = null;
     if (recordingPreviewUrl) {
       URL.revokeObjectURL(recordingPreviewUrl);
@@ -406,7 +410,9 @@ export function LearnerVocabulary({ moduleId }: { moduleId: string }) {
       });
     } catch (error) {
       console.error('Failed to analyze pronunciation', error);
-      setPronunciationError('Could not analyze your recording. Please try again.');
+      setPronunciationError(
+        'Could not analyze your recording. Please try again.'
+      );
     } finally {
       setIsAnalyzingPronunciation(false);
     }
@@ -432,7 +438,9 @@ export function LearnerVocabulary({ moduleId }: { moduleId: string }) {
       };
 
       recorder.onstop = () => {
-        stream.getTracks().forEach((track) => track.stop());
+        stream.getTracks().forEach((track) => {
+          track.stop();
+        });
         const audioBlob = new Blob(audioChunksRef.current, {
           type: recorder.mimeType || 'audio/webm',
         });
@@ -575,11 +583,14 @@ export function LearnerVocabulary({ moduleId }: { moduleId: string }) {
                 key={entry.id}
               >
                 {entry.imageUrl ? (
-                  <img
+                  <Image
                     alt={`${entry.word} vocabulary`}
                     className="mb-4 aspect-video w-full border-2 border-border object-cover shadow-[3px_3px_0_var(--border)]"
-                    src={entry.imageUrl}
+                    height={360}
+                    unoptimized
                     referrerPolicy="no-referrer"
+                    src={entry.imageUrl}
+                    width={640}
                   />
                 ) : null}
                 <div className="flex items-start justify-between gap-3">
@@ -671,11 +682,14 @@ export function LearnerVocabulary({ moduleId }: { moduleId: string }) {
                 <div className="space-y-5 border-2 border-border bg-background p-6 shadow-[4px_4px_0_var(--border)]">
                   <div className="grid gap-5 md:grid-cols-[14rem_minmax(0,1fr)]">
                     {item.entry.imageUrl ? (
-                      <img
+                      <Image
                         alt={`${item.entry.word} vocabulary`}
                         className="aspect-video w-full border-2 border-border object-cover shadow-[3px_3px_0_var(--border)] md:aspect-square"
+                        height={320}
+                        unoptimized
                         referrerPolicy="no-referrer"
                         src={item.entry.imageUrl}
+                        width={320}
                       />
                     ) : (
                       <div className="flex aspect-video items-center justify-center border-2 border-border border-dashed bg-muted/20 text-muted-foreground text-xs shadow-[3px_3px_0_var(--border)] md:aspect-square">
@@ -685,9 +699,7 @@ export function LearnerVocabulary({ moduleId }: { moduleId: string }) {
 
                     <div className="space-y-4">
                       <div>
-                        <p className="font-black text-2xl">
-                          {item.entry.word}
-                        </p>
+                        <p className="font-black text-2xl">{item.entry.word}</p>
                         {item.entry.pronunciation ? (
                           <p className="text-muted-foreground text-sm">
                             {item.entry.pronunciation}
@@ -835,9 +847,7 @@ export function LearnerVocabulary({ moduleId }: { moduleId: string }) {
                                     key={`${mistake.target}-${index}`}
                                   >
                                     <p>
-                                      <span className="font-bold">
-                                        Target:
-                                      </span>{' '}
+                                      <span className="font-bold">Target:</span>{' '}
                                       {mistake.target}
                                       {mistake.heard ? (
                                         <>
@@ -936,11 +946,14 @@ export function LearnerVocabulary({ moduleId }: { moduleId: string }) {
                 <div className="space-y-6 border-2 border-border bg-background p-6 shadow-[4px_4px_0_var(--border)]">
                   {entry.imageUrl ? (
                     <div className="mx-auto flex max-w-md justify-center overflow-hidden border-2 border-border bg-muted/20 shadow-[2px_2px_0_var(--border)]">
-                      <img
+                      <Image
                         alt="Quiz Clue"
                         className="max-h-64 w-full object-contain"
-                        src={entry.imageUrl}
+                        height={320}
+                        unoptimized
                         referrerPolicy="no-referrer"
+                        src={entry.imageUrl}
+                        width={512}
                       />
                     </div>
                   ) : (
@@ -949,7 +962,7 @@ export function LearnerVocabulary({ moduleId }: { moduleId: string }) {
                     </div>
                   )}
 
-                  <div className="text-center space-y-2">
+                  <div className="space-y-2 text-center">
                     {entry.pronunciation ? (
                       <div className="flex flex-wrap items-center justify-center gap-2">
                         <p className="font-serif text-lg text-muted-foreground tracking-wide">
@@ -957,10 +970,14 @@ export function LearnerVocabulary({ moduleId }: { moduleId: string }) {
                         </p>
                         {quizAnswered && (
                           <button
-                            className="inline-flex items-center gap-1 rounded border-2 border-border bg-card px-2 py-0.5 font-bold text-xs shadow-[1.5px_1.5px_0_var(--border)] disabled:opacity-50 hover:bg-muted/30"
+                            className="inline-flex items-center gap-1 rounded border-2 border-border bg-card px-2 py-0.5 font-bold text-xs shadow-[1.5px_1.5px_0_var(--border)] hover:bg-muted/30 disabled:opacity-50"
                             disabled={playingKey !== null}
                             onClick={() =>
-                              playSpeech(entry.word, 'word', `${entry.id}-quiz-word`)
+                              playSpeech(
+                                entry.word,
+                                'word',
+                                `${entry.id}-quiz-word`
+                              )
                             }
                             type="button"
                           >
@@ -973,11 +990,11 @@ export function LearnerVocabulary({ moduleId }: { moduleId: string }) {
                     ) : null}
 
                     <div className="flex flex-wrap items-center justify-center gap-2">
-                      <p className="text-base italic leading-relaxed font-medium">
+                      <p className="font-medium text-base italic leading-relaxed">
                         "{entry.definition}"
                       </p>
                       <button
-                        className="inline-flex items-center gap-1 rounded border border-border bg-card px-2 py-0.5 text-xs shadow-[1px_1px_0_var(--border)] disabled:opacity-50 hover:bg-muted/30"
+                        className="inline-flex items-center gap-1 rounded border border-border bg-card px-2 py-0.5 text-xs shadow-[1px_1px_0_var(--border)] hover:bg-muted/30 disabled:opacity-50"
                         disabled={playingKey !== null}
                         onClick={() =>
                           playSpeech(

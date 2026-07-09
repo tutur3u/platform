@@ -4,6 +4,7 @@ import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { Separator } from '@tuturuuu/ui/separator';
 import { Textarea } from '@tuturuuu/ui/textarea';
+import Image from 'next/image';
 import { useEffect, useState } from 'react';
 
 interface Props {
@@ -45,8 +46,7 @@ function normalizeVocabulary(value: unknown): VocabularyItem[] {
       if (!entry || typeof entry !== 'object') return null;
 
       const record = entry as Record<string, unknown>;
-      const word =
-        typeof record.word === 'string' ? record.word.trim() : '';
+      const word = typeof record.word === 'string' ? record.word.trim() : '';
       const definition =
         typeof record.definition === 'string' ? record.definition.trim() : '';
 
@@ -110,7 +110,9 @@ export default function LessonVocabularySection({ wsId, lessonId }: Props) {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [suggestions, setSuggestions] = useState<VocabularySuggestion[]>([]);
   const [isFetchingDetails, setIsFetchingDetails] = useState(false);
-  const [searchedImages, setSearchedImages] = useState<Array<{ image: string; thumbnail: string; title: string }>>([]);
+  const [searchedImages, setSearchedImages] = useState<
+    Array<{ image: string; thumbnail: string; title: string }>
+  >([]);
   const [isSearchingImages, setIsSearchingImages] = useState(false);
 
   const exampleLines = draft.examples.length > 0 ? draft.examples : [''];
@@ -191,7 +193,10 @@ export default function LessonVocabularySection({ wsId, lessonId }: Props) {
         setSuggestions(payload.suggestions ?? []);
       } catch (suggestionError) {
         if (!controller.signal.aborted) {
-          console.error('Failed to load vocabulary suggestions', suggestionError);
+          console.error(
+            'Failed to load vocabulary suggestions',
+            suggestionError
+          );
           setSuggestions([]);
         }
       } finally {
@@ -276,7 +281,10 @@ export default function LessonVocabularySection({ wsId, lessonId }: Props) {
     }
   }
 
-  async function fetchDictionaryDetails(query: { url?: string; word?: string }) {
+  async function fetchDictionaryDetails(query: {
+    url?: string;
+    word?: string;
+  }) {
     setIsFetchingDetails(true);
     setError(null);
     try {
@@ -284,9 +292,12 @@ export default function LessonVocabularySection({ wsId, lessonId }: Props) {
       if (query.url) params.set('url', query.url);
       if (query.word) params.set('word', query.word);
 
-      const response = await fetch(`/api/v1/vocabulary/details?${params.toString()}`, {
-        credentials: 'include',
-      });
+      const response = await fetch(
+        `/api/v1/vocabulary/details?${params.toString()}`,
+        {
+          credentials: 'include',
+        }
+      );
 
       if (!response.ok) {
         throw new Error('Failed to fetch details from dictionary.');
@@ -315,7 +326,9 @@ export default function LessonVocabularySection({ wsId, lessonId }: Props) {
       }
     } catch (fetchError) {
       console.error('Failed to load dictionary details', fetchError);
-      setError('Could not fetch dictionary details. You can type them manually.');
+      setError(
+        'Could not fetch dictionary details. You can type them manually.'
+      );
     } finally {
       setIsFetchingDetails(false);
     }
@@ -478,7 +491,7 @@ export default function LessonVocabularySection({ wsId, lessonId }: Props) {
                         >
                           <span className="font-bold">{suggestion.word}</span>
                           {suggestion.beta ? (
-                            <span className="text-muted-foreground text-[10px] uppercase">
+                            <span className="text-[10px] text-muted-foreground uppercase">
                               beta
                             </span>
                           ) : null}
@@ -489,9 +502,11 @@ export default function LessonVocabularySection({ wsId, lessonId }: Props) {
                 ) : null}
               </div>
               <button
-                className="border-2 border-border bg-card px-3 py-1.5 font-bold text-sm shadow-[2px_2px_0_var(--border)] disabled:opacity-40 hover:-translate-y-0.5 hover:shadow-[3px_3px_0_var(--border)] transition shrink-0"
+                className="shrink-0 border-2 border-border bg-card px-3 py-1.5 font-bold text-sm shadow-[2px_2px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[3px_3px_0_var(--border)] disabled:opacity-40"
                 disabled={isSaving || isFetchingDetails || !draft.word.trim()}
-                onClick={() => fetchDictionaryDetails({ word: draft.word.trim() })}
+                onClick={() =>
+                  fetchDictionaryDetails({ word: draft.word.trim() })
+                }
                 type="button"
               >
                 {isFetchingDetails ? 'Fetching...' : 'Fetch'}
@@ -530,10 +545,13 @@ export default function LessonVocabularySection({ wsId, lessonId }: Props) {
           <div className="grid gap-3 md:grid-cols-[10rem_minmax(0,1fr)]">
             <div className="flex aspect-video items-center justify-center overflow-hidden border-2 border-border bg-background shadow-[3px_3px_0_var(--border)]">
               {draft.imageUrl ? (
-                <img
+                <Image
                   alt={draft.word ? `${draft.word} vocabulary` : 'Vocabulary'}
                   className="h-full w-full object-cover"
+                  height={180}
+                  unoptimized
                   src={draft.imageUrl}
+                  width={320}
                 />
               ) : (
                 <span className="px-3 text-center text-muted-foreground text-xs">
@@ -564,11 +582,15 @@ export default function LessonVocabularySection({ wsId, lessonId }: Props) {
 
               {/* Related Images Selector */}
               {isSearchingImages ? (
-                <div className="text-muted-foreground text-xs animate-pulse">Searching related images...</div>
+                <div className="animate-pulse text-muted-foreground text-xs">
+                  Searching related images...
+                </div>
               ) : searchedImages.length > 0 ? (
                 <div className="space-y-1.5 pt-1">
-                  <span className="text-xs font-semibold text-muted-foreground">Or select a related image:</span>
-                  <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin">
+                  <span className="font-semibold text-muted-foreground text-xs">
+                    Or select a related image:
+                  </span>
+                  <div className="scrollbar-thin flex gap-2 overflow-x-auto pb-2">
                     {searchedImages.map((img) => (
                       <button
                         key={img.image}
@@ -576,16 +598,19 @@ export default function LessonVocabularySection({ wsId, lessonId }: Props) {
                         onClick={() => updateDraft('imageUrl', img.image)}
                         className={`relative aspect-square w-16 shrink-0 overflow-hidden border-2 transition-all hover:scale-105 ${
                           draft.imageUrl === img.image
-                            ? 'border-primary ring-2 ring-primary/20 scale-105 shadow-[2px_2px_0_var(--border)]'
+                            ? 'scale-105 border-primary shadow-[2px_2px_0_var(--border)] ring-2 ring-primary/20'
                             : 'border-border shadow-[1px_1px_0_var(--border)]'
                         }`}
                         title={img.title}
                       >
-                        <img
-                          src={img.thumbnail}
+                        <Image
                           alt={img.title}
                           className="h-full w-full object-cover"
+                          height={64}
+                          unoptimized
                           referrerPolicy="no-referrer"
+                          src={img.thumbnail}
+                          width={64}
                         />
                       </button>
                     ))}
@@ -624,7 +649,7 @@ export default function LessonVocabularySection({ wsId, lessonId }: Props) {
                   placeholder={`Example ${index + 1}`}
                 />
 
-                {(draft.examples.length > 1 || example) ? (
+                {draft.examples.length > 1 || example ? (
                   <button
                     className="border-2 border-border bg-card px-3 py-1.5 font-bold text-sm shadow-[2px_2px_0_var(--border)] disabled:opacity-40"
                     disabled={isSaving}
@@ -639,9 +664,7 @@ export default function LessonVocabularySection({ wsId, lessonId }: Props) {
           </div>
         </div>
 
-        {error ? (
-          <p className="text-destructive text-sm">{error}</p>
-        ) : null}
+        {error ? <p className="text-destructive text-sm">{error}</p> : null}
 
         <div className="flex flex-wrap items-center gap-2">
           <button
@@ -657,7 +680,12 @@ export default function LessonVocabularySection({ wsId, lessonId }: Props) {
                 : 'Add vocabulary'}
           </button>
 
-          {(editingId || draft.word || draft.definition || draft.pronunciation || draft.imageUrl || draft.examples.length > 0) && (
+          {(editingId ||
+            draft.word ||
+            draft.definition ||
+            draft.pronunciation ||
+            draft.imageUrl ||
+            draft.examples.length > 0) && (
             <button
               className="border-2 border-border bg-card px-3 py-1.5 font-bold text-sm shadow-[2px_2px_0_var(--border)] disabled:opacity-40"
               onClick={resetForm}
@@ -685,10 +713,13 @@ export default function LessonVocabularySection({ wsId, lessonId }: Props) {
             >
               <div className="space-y-1">
                 {entry.imageUrl ? (
-                  <img
+                  <Image
                     alt={`${entry.word} vocabulary`}
                     className="aspect-video w-full border-2 border-border object-cover shadow-[3px_3px_0_var(--border)]"
+                    height={360}
+                    unoptimized
                     src={entry.imageUrl}
+                    width={640}
                   />
                 ) : null}
                 <h3 className="font-black text-base">{entry.word}</h3>

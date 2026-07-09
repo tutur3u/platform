@@ -3,12 +3,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { getTulearnCourse } from '@tuturuuu/internal-api';
 import { useSearchParams } from 'next/navigation';
-import {
-  type PropsWithChildren,
-  useEffect,
-  useMemo,
-  useState,
-} from 'react';
+import { type PropsWithChildren, useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { LearnerVocabulary } from '@/components/learner-pages/learner-vocabulary';
 
@@ -92,9 +87,8 @@ export default function CourseVocabularyShell({
     }
 
     function syncActiveModule() {
-      const isModuleDetailOpen = document.body.innerText.includes(
-        'Back to modules'
-      );
+      const isModuleDetailOpen =
+        document.body.innerText.includes('Back to modules');
 
       setActiveModuleId(
         isModuleDetailOpen ? findVisibleModuleId(modules) : null
@@ -195,7 +189,10 @@ export default function CourseVocabularyShell({
         : null}
 
       {activeModuleId && panelHost
-        ? createPortal(<LearnerVocabulary moduleId={activeModuleId} />, panelHost)
+        ? createPortal(
+            <LearnerVocabulary moduleId={activeModuleId} />,
+            panelHost
+          )
         : null}
     </>
   );

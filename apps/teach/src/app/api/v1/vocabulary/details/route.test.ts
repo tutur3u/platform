@@ -1,6 +1,6 @@
-import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { GET } from './route';
 import { NextRequest } from 'next/server';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { GET } from './route';
 
 describe('GET /api/v1/vocabulary/details scraper', () => {
   beforeEach(() => {
@@ -8,12 +8,16 @@ describe('GET /api/v1/vocabulary/details scraper', () => {
   });
 
   it('returns 400 when both url and word params are missing', async () => {
-    const request = new NextRequest('http://localhost/api/v1/vocabulary/details');
+    const request = new NextRequest(
+      'http://localhost/api/v1/vocabulary/details'
+    );
     const response = await GET(request);
     expect(response.status).toBe(400);
 
     const data = await response.json();
-    expect(data.message).toContain('Either url or word query parameter is required');
+    expect(data.message).toContain(
+      'Either url or word query parameter is required'
+    );
   });
 
   it('returns 400 for non-Cambridge dictionary URLs', async () => {
@@ -24,7 +28,9 @@ describe('GET /api/v1/vocabulary/details scraper', () => {
     expect(response.status).toBe(400);
 
     const data = await response.json();
-    expect(data.message).toContain('Only Cambridge Dictionary URLs are allowed');
+    expect(data.message).toContain(
+      'Only Cambridge Dictionary URLs are allowed'
+    );
   });
 
   it('scrapes pronunciation, definition, and examples successfully from mocked HTML', async () => {

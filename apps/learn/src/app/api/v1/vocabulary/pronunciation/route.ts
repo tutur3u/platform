@@ -40,9 +40,7 @@ function normalizeMistakes(value: unknown) {
       const heard = typeof record.heard === 'string' ? record.heard.trim() : '';
       const issue = typeof record.issue === 'string' ? record.issue.trim() : '';
       const suggestion =
-        typeof record.suggestion === 'string'
-          ? record.suggestion.trim()
-          : '';
+        typeof record.suggestion === 'string' ? record.suggestion.trim() : '';
       const startIndex =
         typeof record.startIndex === 'number' &&
         Number.isInteger(record.startIndex)
@@ -197,7 +195,6 @@ export async function POST(request: NextRequest) {
         ? parsed.summary
         : 'Pronunciation checked.',
     tips: normalizeStringArray(parsed.tips).slice(0, 5),
-    transcript:
-      typeof parsed.transcript === 'string' ? parsed.transcript : '',
+    transcript: typeof parsed.transcript === 'string' ? parsed.transcript : '',
   });
 }
