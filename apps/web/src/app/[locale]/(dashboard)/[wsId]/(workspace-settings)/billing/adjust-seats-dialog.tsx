@@ -2,6 +2,7 @@
 
 import { useMutation } from '@tanstack/react-query';
 import { Loader2, Minus, Plus, Users } from '@tuturuuu/icons';
+import { centToDollar } from '@tuturuuu/payment-core/price-helper';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Dialog,
@@ -16,7 +17,6 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
-import { centToDollar } from '@/utils/price-helper';
 
 interface AdjustSeatsDialogProps {
   open: boolean;

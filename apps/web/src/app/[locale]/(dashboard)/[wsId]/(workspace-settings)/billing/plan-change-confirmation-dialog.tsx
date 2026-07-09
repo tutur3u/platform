@@ -11,6 +11,8 @@ import {
   Users,
   Zap,
 } from '@tuturuuu/icons';
+import { centToDollar } from '@tuturuuu/payment-core/price-helper';
+import type { ProrationPreview } from '@tuturuuu/payment-core/proration';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Dialog,
@@ -26,8 +28,6 @@ import { cn } from '@tuturuuu/utils/format';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useState } from 'react';
-import type { ProrationPreview } from '@/legacy-api-routes/payment/subscriptions/[subscriptionId]/preview/route';
-import { centToDollar } from '@/utils/price-helper';
 
 interface PlanChangeConfirmationDialogProps {
   open: boolean;

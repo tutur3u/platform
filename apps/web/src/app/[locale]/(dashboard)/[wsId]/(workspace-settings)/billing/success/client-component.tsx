@@ -2,11 +2,11 @@
 
 import { ArrowLeft, CheckCircle, CreditCard, Download } from '@tuturuuu/icons';
 import type { Checkout } from '@tuturuuu/payment/polar';
+import { centToDollar } from '@tuturuuu/payment-core/price-helper';
 import { Button } from '@tuturuuu/ui/button';
 import { format } from 'date-fns';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import { centToDollar } from '@/utils/price-helper';
 
 interface PaymentDetails {
   planName?: string;

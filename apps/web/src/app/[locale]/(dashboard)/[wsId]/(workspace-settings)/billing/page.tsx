@@ -1,4 +1,12 @@
 import { createPolarClient } from '@tuturuuu/payment/polar/server';
+import {
+  checkManageSubscriptionPermission,
+  fetchCreditPacks,
+  fetchProducts,
+  fetchSubscription,
+  fetchWorkspaceOrders,
+} from '@tuturuuu/payment-core/billing-helper';
+import { getSeatStatus } from '@tuturuuu/payment-core/seat-limits';
 import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import {
   createAdminClient,
@@ -11,14 +19,6 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { getLocale, getTranslations } from 'next-intl/server';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
-import {
-  checkManageSubscriptionPermission,
-  fetchCreditPacks,
-  fetchProducts,
-  fetchSubscription,
-  fetchWorkspaceOrders,
-} from '@tuturuuu/payment-core/billing-helper';
-import { getSeatStatus } from '@tuturuuu/payment-core/seat-limits';
 import { AiCreditBillingCard } from './ai-credit-billing-card';
 import { BillingClient } from './billing-client';
 import BillingDetailsCard from './billing-details-card';

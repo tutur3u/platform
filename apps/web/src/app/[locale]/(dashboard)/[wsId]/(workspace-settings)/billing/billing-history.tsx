@@ -10,6 +10,7 @@ import {
   RefreshCw,
   XCircle,
 } from '@tuturuuu/icons';
+import { centToDollar } from '@tuturuuu/payment-core/price-helper';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -32,7 +33,6 @@ import { format } from 'date-fns';
 import { enUS, vi } from 'date-fns/locale';
 import { useLocale, useTranslations } from 'next-intl';
 import { useState } from 'react';
-import { centToDollar } from '@/utils/price-helper';
 
 interface OrderItem {
   id: string;

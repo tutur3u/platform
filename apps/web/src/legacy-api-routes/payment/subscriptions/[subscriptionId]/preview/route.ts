@@ -5,34 +5,9 @@ import {
 import { getCurrentSupabaseUser } from '@tuturuuu/utils/user-helper';
 import { type NextRequest, NextResponse } from 'next/server';
 
-export interface ProrationPreview {
-  currentPlan: {
-    id: string;
-    name: string;
-    price: number;
-    billingCycle: string;
-    remainingValue: number;
-    pricingModel: 'fixed' | 'seat_based';
-    seatCount?: number;
-    pricePerSeat?: number;
-  };
-  newPlan: {
-    id: string;
-    name: string;
-    price: number;
-    billingCycle: string;
-    proratedCharge: number;
-    pricingModel: 'fixed' | 'seat_based';
-    seatCount?: number;
-    pricePerSeat?: number;
-  };
-  netAmount: number; // Positive = charge, Negative = credit
-  daysRemaining: number;
-  totalDaysInPeriod: number;
-  isUpgrade: boolean;
-  nextBillingDate: string;
-  billingCycleChanged: boolean; // true when switching between monthly/yearly
-}
+export type { ProrationPreview } from '@tuturuuu/payment-core/proration';
+
+import type { ProrationPreview } from '@tuturuuu/payment-core/proration';
 
 // POST: Calculate proration preview for a plan change
 export async function POST(

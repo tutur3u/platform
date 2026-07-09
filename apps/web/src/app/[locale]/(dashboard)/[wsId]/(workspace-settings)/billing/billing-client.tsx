@@ -15,6 +15,8 @@ import {
   Zap,
 } from '@tuturuuu/icons';
 import type { CustomerSeat, Product } from '@tuturuuu/payment/polar';
+import { centToDollar } from '@tuturuuu/payment-core/price-helper';
+import type { SeatStatus } from '@tuturuuu/payment-core/seat-limits';
 import type { WorkspaceProductTier } from '@tuturuuu/types/db';
 import {
   Accordion,
@@ -29,8 +31,6 @@ import { format } from 'date-fns';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
-import { centToDollar } from '@/utils/price-helper';
-import type { SeatStatus } from '@tuturuuu/payment-core/seat-limits';
 import AdjustSeatsDialog from './adjust-seats-dialog';
 import PlanListDialog from './plan-list-dialog';
 import SubscriptionConfirmationDialog from './subscription-confirmation-dialog';

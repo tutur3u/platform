@@ -14,6 +14,8 @@ import {
   Zap,
 } from '@tuturuuu/icons';
 import type { Product } from '@tuturuuu/payment/polar';
+import { centToDollar } from '@tuturuuu/payment-core/price-helper';
+import type { SeatStatus } from '@tuturuuu/payment-core/seat-limits';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -25,8 +27,6 @@ import {
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
-import { centToDollar } from '@/utils/price-helper';
-import type { SeatStatus } from '@tuturuuu/payment-core/seat-limits';
 import type { Plan } from './billing-client';
 import { PlanChangeConfirmationDialog } from './plan-change-confirmation-dialog';
 import PurchaseLink from './purchase-link';

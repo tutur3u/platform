@@ -13,6 +13,8 @@
     "./polar-product-metadata": "./src/polar-product-metadata.ts",
     "./polar-seat-helper": "./src/polar-seat-helper.ts",
     "./polar-subscription-helper": "./src/polar-subscription-helper.ts",
+    "./price-helper": "./src/price-helper.ts",
+    "./proration": "./src/proration.ts",
     "./seat-limits": "./src/seat-limits.ts",
     "./subscription-constants": "./src/subscription-constants.ts",
     "./subscription-helper": "./src/subscription-helper.ts"
