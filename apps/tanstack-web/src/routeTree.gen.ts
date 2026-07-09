@@ -96,7 +96,6 @@ import { Route as LocaleWsIdMeetRouteImport } from './routes/$locale/$wsId/meet'
 import { Route as LocaleWsIdIntegrationsRouteImport } from './routes/$locale/$wsId/integrations';
 import { Route as LocaleWsIdHiveRouteImport } from './routes/$locale/$wsId/hive';
 import { Route as LocaleWsIdHabitsRouteImport } from './routes/$locale/$wsId/habits';
-import { Route as LocaleWsIdFinanceRouteImport } from './routes/$locale/$wsId/finance';
 import { Route as LocaleWsIdExternalProjectsRouteImport } from './routes/$locale/$wsId/external-projects';
 import { Route as LocaleWsIdEpmRouteImport } from './routes/$locale/$wsId/epm';
 import { Route as LocaleWsIdDriveRouteImport } from './routes/$locale/$wsId/drive';
@@ -140,15 +139,6 @@ import { Route as LocaleWsIdMeetPlansRouteImport } from './routes/$locale/$wsId/
 import { Route as LocaleWsIdMeetMeetingsRouteImport } from './routes/$locale/$wsId/meet/meetings';
 import { Route as LocaleWsIdMailSentRouteImport } from './routes/$locale/$wsId/mail/sent';
 import { Route as LocaleWsIdHiveNotWhitelistedRouteImport } from './routes/$locale/$wsId/hive/not-whitelisted';
-import { Route as LocaleWsIdFinanceWalletsRouteImport } from './routes/$locale/$wsId/finance/wallets';
-import { Route as LocaleWsIdFinanceTransactionsRouteImport } from './routes/$locale/$wsId/finance/transactions';
-import { Route as LocaleWsIdFinanceTagsRouteImport } from './routes/$locale/$wsId/finance/tags';
-import { Route as LocaleWsIdFinanceRecurringRouteImport } from './routes/$locale/$wsId/finance/recurring';
-import { Route as LocaleWsIdFinanceInvoicesRouteImport } from './routes/$locale/$wsId/finance/invoices';
-import { Route as LocaleWsIdFinanceDebtsRouteImport } from './routes/$locale/$wsId/finance/debts';
-import { Route as LocaleWsIdFinanceCategoriesRouteImport } from './routes/$locale/$wsId/finance/categories';
-import { Route as LocaleWsIdFinanceBudgetsRouteImport } from './routes/$locale/$wsId/finance/budgets';
-import { Route as LocaleWsIdFinanceAnalyticsRouteImport } from './routes/$locale/$wsId/finance/analytics';
 import { Route as LocaleWsIdDocumentsDocumentIdRouteImport } from './routes/$locale/$wsId/documents/$documentId';
 import { Route as LocaleWsIdCronJobsRouteImport } from './routes/$locale/$wsId/cron/jobs';
 import { Route as LocaleWsIdCrawlersUncrawledRouteImport } from './routes/$locale/$wsId/crawlers/uncrawled';
@@ -173,12 +163,6 @@ import { Route as LocaleWsIdTasksProjectsProjectIdRouteImport } from './routes/$
 import { Route as LocaleWsIdTasksBoardsBoardIdRouteImport } from './routes/$locale/$wsId/tasks/boards/$boardId';
 import { Route as LocaleWsIdMindBoardsBoardIdRouteImport } from './routes/$locale/$wsId/mind/boards/$boardId';
 import { Route as LocaleWsIdMeetMeetingsMeetingIdRouteImport } from './routes/$locale/$wsId/meet/meetings/$meetingId';
-import { Route as LocaleWsIdFinanceWalletsWalletIdRouteImport } from './routes/$locale/$wsId/finance/wallets/$walletId';
-import { Route as LocaleWsIdFinanceTransactionsCategoriesRouteImport } from './routes/$locale/$wsId/finance/transactions/categories';
-import { Route as LocaleWsIdFinanceTransactionsTransactionIdRouteImport } from './routes/$locale/$wsId/finance/transactions/$transactionId';
-import { Route as LocaleWsIdFinanceInvoicesNewRouteImport } from './routes/$locale/$wsId/finance/invoices/new';
-import { Route as LocaleWsIdFinanceInvoicesInvoiceIdRouteImport } from './routes/$locale/$wsId/finance/invoices/$invoiceId';
-import { Route as LocaleWsIdFinanceDebtsDebtIdRouteImport } from './routes/$locale/$wsId/finance/debts/$debtId';
 import { Route as LocaleWsIdEpmEntriesEntryIdRouteImport } from './routes/$locale/$wsId/epm/entries/$entryId';
 import { Route as LocaleWsIdEpmCollectionsCollectionIdRouteImport } from './routes/$locale/$wsId/epm/collections/$collectionId';
 import { Route as LocaleWsIdAiChatMyChatbotsNewRouteImport } from './routes/$locale/$wsId/ai-chat/my-chatbots/new';
@@ -635,11 +619,6 @@ const LocaleWsIdHabitsRoute = LocaleWsIdHabitsRouteImport.update({
   path: '/$wsId/habits',
   getParentRoute: () => LocaleRouteRoute,
 } as any);
-const LocaleWsIdFinanceRoute = LocaleWsIdFinanceRouteImport.update({
-  id: '/$wsId/finance',
-  path: '/$wsId/finance',
-  getParentRoute: () => LocaleRouteRoute,
-} as any);
 const LocaleWsIdExternalProjectsRoute =
   LocaleWsIdExternalProjectsRouteImport.update({
     id: '/$wsId/external-projects',
@@ -873,58 +852,6 @@ const LocaleWsIdHiveNotWhitelistedRoute =
     path: '/not-whitelisted',
     getParentRoute: () => LocaleWsIdHiveRoute,
   } as any);
-const LocaleWsIdFinanceWalletsRoute =
-  LocaleWsIdFinanceWalletsRouteImport.update({
-    id: '/wallets',
-    path: '/wallets',
-    getParentRoute: () => LocaleWsIdFinanceRoute,
-  } as any);
-const LocaleWsIdFinanceTransactionsRoute =
-  LocaleWsIdFinanceTransactionsRouteImport.update({
-    id: '/transactions',
-    path: '/transactions',
-    getParentRoute: () => LocaleWsIdFinanceRoute,
-  } as any);
-const LocaleWsIdFinanceTagsRoute = LocaleWsIdFinanceTagsRouteImport.update({
-  id: '/tags',
-  path: '/tags',
-  getParentRoute: () => LocaleWsIdFinanceRoute,
-} as any);
-const LocaleWsIdFinanceRecurringRoute =
-  LocaleWsIdFinanceRecurringRouteImport.update({
-    id: '/recurring',
-    path: '/recurring',
-    getParentRoute: () => LocaleWsIdFinanceRoute,
-  } as any);
-const LocaleWsIdFinanceInvoicesRoute =
-  LocaleWsIdFinanceInvoicesRouteImport.update({
-    id: '/invoices',
-    path: '/invoices',
-    getParentRoute: () => LocaleWsIdFinanceRoute,
-  } as any);
-const LocaleWsIdFinanceDebtsRoute = LocaleWsIdFinanceDebtsRouteImport.update({
-  id: '/debts',
-  path: '/debts',
-  getParentRoute: () => LocaleWsIdFinanceRoute,
-} as any);
-const LocaleWsIdFinanceCategoriesRoute =
-  LocaleWsIdFinanceCategoriesRouteImport.update({
-    id: '/categories',
-    path: '/categories',
-    getParentRoute: () => LocaleWsIdFinanceRoute,
-  } as any);
-const LocaleWsIdFinanceBudgetsRoute =
-  LocaleWsIdFinanceBudgetsRouteImport.update({
-    id: '/budgets',
-    path: '/budgets',
-    getParentRoute: () => LocaleWsIdFinanceRoute,
-  } as any);
-const LocaleWsIdFinanceAnalyticsRoute =
-  LocaleWsIdFinanceAnalyticsRouteImport.update({
-    id: '/analytics',
-    path: '/analytics',
-    getParentRoute: () => LocaleWsIdFinanceRoute,
-  } as any);
 const LocaleWsIdDocumentsDocumentIdRoute =
   LocaleWsIdDocumentsDocumentIdRouteImport.update({
     id: '/$documentId',
@@ -1067,42 +994,6 @@ const LocaleWsIdMeetMeetingsMeetingIdRoute =
     path: '/$meetingId',
     getParentRoute: () => LocaleWsIdMeetMeetingsRoute,
   } as any);
-const LocaleWsIdFinanceWalletsWalletIdRoute =
-  LocaleWsIdFinanceWalletsWalletIdRouteImport.update({
-    id: '/$walletId',
-    path: '/$walletId',
-    getParentRoute: () => LocaleWsIdFinanceWalletsRoute,
-  } as any);
-const LocaleWsIdFinanceTransactionsCategoriesRoute =
-  LocaleWsIdFinanceTransactionsCategoriesRouteImport.update({
-    id: '/categories',
-    path: '/categories',
-    getParentRoute: () => LocaleWsIdFinanceTransactionsRoute,
-  } as any);
-const LocaleWsIdFinanceTransactionsTransactionIdRoute =
-  LocaleWsIdFinanceTransactionsTransactionIdRouteImport.update({
-    id: '/$transactionId',
-    path: '/$transactionId',
-    getParentRoute: () => LocaleWsIdFinanceTransactionsRoute,
-  } as any);
-const LocaleWsIdFinanceInvoicesNewRoute =
-  LocaleWsIdFinanceInvoicesNewRouteImport.update({
-    id: '/new',
-    path: '/new',
-    getParentRoute: () => LocaleWsIdFinanceInvoicesRoute,
-  } as any);
-const LocaleWsIdFinanceInvoicesInvoiceIdRoute =
-  LocaleWsIdFinanceInvoicesInvoiceIdRouteImport.update({
-    id: '/$invoiceId',
-    path: '/$invoiceId',
-    getParentRoute: () => LocaleWsIdFinanceInvoicesRoute,
-  } as any);
-const LocaleWsIdFinanceDebtsDebtIdRoute =
-  LocaleWsIdFinanceDebtsDebtIdRouteImport.update({
-    id: '/$debtId',
-    path: '/$debtId',
-    getParentRoute: () => LocaleWsIdFinanceDebtsRoute,
-  } as any);
 const LocaleWsIdEpmEntriesEntryIdRoute =
   LocaleWsIdEpmEntriesEntryIdRouteImport.update({
     id: '/entries/$entryId',
@@ -1191,7 +1082,6 @@ export interface FileRoutesByFullPath {
   '/$locale/$wsId/drive': typeof LocaleWsIdDriveRoute;
   '/$locale/$wsId/epm': typeof LocaleWsIdEpmRouteWithChildren;
   '/$locale/$wsId/external-projects': typeof LocaleWsIdExternalProjectsRoute;
-  '/$locale/$wsId/finance': typeof LocaleWsIdFinanceRouteWithChildren;
   '/$locale/$wsId/habits': typeof LocaleWsIdHabitsRoute;
   '/$locale/$wsId/hive': typeof LocaleWsIdHiveRouteWithChildren;
   '/$locale/$wsId/integrations': typeof LocaleWsIdIntegrationsRoute;
@@ -1252,15 +1142,6 @@ export interface FileRoutesByFullPath {
   '/$locale/$wsId/crawlers/uncrawled': typeof LocaleWsIdCrawlersUncrawledRoute;
   '/$locale/$wsId/cron/jobs': typeof LocaleWsIdCronJobsRoute;
   '/$locale/$wsId/documents/$documentId': typeof LocaleWsIdDocumentsDocumentIdRoute;
-  '/$locale/$wsId/finance/analytics': typeof LocaleWsIdFinanceAnalyticsRoute;
-  '/$locale/$wsId/finance/budgets': typeof LocaleWsIdFinanceBudgetsRoute;
-  '/$locale/$wsId/finance/categories': typeof LocaleWsIdFinanceCategoriesRoute;
-  '/$locale/$wsId/finance/debts': typeof LocaleWsIdFinanceDebtsRouteWithChildren;
-  '/$locale/$wsId/finance/invoices': typeof LocaleWsIdFinanceInvoicesRouteWithChildren;
-  '/$locale/$wsId/finance/recurring': typeof LocaleWsIdFinanceRecurringRoute;
-  '/$locale/$wsId/finance/tags': typeof LocaleWsIdFinanceTagsRoute;
-  '/$locale/$wsId/finance/transactions': typeof LocaleWsIdFinanceTransactionsRouteWithChildren;
-  '/$locale/$wsId/finance/wallets': typeof LocaleWsIdFinanceWalletsRouteWithChildren;
   '/$locale/$wsId/hive/not-whitelisted': typeof LocaleWsIdHiveNotWhitelistedRoute;
   '/$locale/$wsId/mail/sent': typeof LocaleWsIdMailSentRoute;
   '/$locale/$wsId/meet/meetings': typeof LocaleWsIdMeetMeetingsRouteWithChildren;
@@ -1296,12 +1177,6 @@ export interface FileRoutesByFullPath {
   '/$locale/$wsId/ai-chat/my-chatbots/new': typeof LocaleWsIdAiChatMyChatbotsNewRoute;
   '/$locale/$wsId/epm/collections/$collectionId': typeof LocaleWsIdEpmCollectionsCollectionIdRoute;
   '/$locale/$wsId/epm/entries/$entryId': typeof LocaleWsIdEpmEntriesEntryIdRoute;
-  '/$locale/$wsId/finance/debts/$debtId': typeof LocaleWsIdFinanceDebtsDebtIdRoute;
-  '/$locale/$wsId/finance/invoices/$invoiceId': typeof LocaleWsIdFinanceInvoicesInvoiceIdRoute;
-  '/$locale/$wsId/finance/invoices/new': typeof LocaleWsIdFinanceInvoicesNewRoute;
-  '/$locale/$wsId/finance/transactions/$transactionId': typeof LocaleWsIdFinanceTransactionsTransactionIdRoute;
-  '/$locale/$wsId/finance/transactions/categories': typeof LocaleWsIdFinanceTransactionsCategoriesRoute;
-  '/$locale/$wsId/finance/wallets/$walletId': typeof LocaleWsIdFinanceWalletsWalletIdRoute;
   '/$locale/$wsId/meet/meetings/$meetingId': typeof LocaleWsIdMeetMeetingsMeetingIdRoute;
   '/$locale/$wsId/mind/boards/$boardId': typeof LocaleWsIdMindBoardsBoardIdRoute;
   '/$locale/$wsId/tasks/boards/$boardId': typeof LocaleWsIdTasksBoardsBoardIdRoute;
@@ -1369,7 +1244,6 @@ export interface FileRoutesByTo {
   '/$locale/$wsId/drive': typeof LocaleWsIdDriveRoute;
   '/$locale/$wsId/epm': typeof LocaleWsIdEpmRouteWithChildren;
   '/$locale/$wsId/external-projects': typeof LocaleWsIdExternalProjectsRoute;
-  '/$locale/$wsId/finance': typeof LocaleWsIdFinanceRouteWithChildren;
   '/$locale/$wsId/habits': typeof LocaleWsIdHabitsRoute;
   '/$locale/$wsId/hive': typeof LocaleWsIdHiveRouteWithChildren;
   '/$locale/$wsId/integrations': typeof LocaleWsIdIntegrationsRoute;
@@ -1430,15 +1304,6 @@ export interface FileRoutesByTo {
   '/$locale/$wsId/crawlers/uncrawled': typeof LocaleWsIdCrawlersUncrawledRoute;
   '/$locale/$wsId/cron/jobs': typeof LocaleWsIdCronJobsRoute;
   '/$locale/$wsId/documents/$documentId': typeof LocaleWsIdDocumentsDocumentIdRoute;
-  '/$locale/$wsId/finance/analytics': typeof LocaleWsIdFinanceAnalyticsRoute;
-  '/$locale/$wsId/finance/budgets': typeof LocaleWsIdFinanceBudgetsRoute;
-  '/$locale/$wsId/finance/categories': typeof LocaleWsIdFinanceCategoriesRoute;
-  '/$locale/$wsId/finance/debts': typeof LocaleWsIdFinanceDebtsRouteWithChildren;
-  '/$locale/$wsId/finance/invoices': typeof LocaleWsIdFinanceInvoicesRouteWithChildren;
-  '/$locale/$wsId/finance/recurring': typeof LocaleWsIdFinanceRecurringRoute;
-  '/$locale/$wsId/finance/tags': typeof LocaleWsIdFinanceTagsRoute;
-  '/$locale/$wsId/finance/transactions': typeof LocaleWsIdFinanceTransactionsRouteWithChildren;
-  '/$locale/$wsId/finance/wallets': typeof LocaleWsIdFinanceWalletsRouteWithChildren;
   '/$locale/$wsId/hive/not-whitelisted': typeof LocaleWsIdHiveNotWhitelistedRoute;
   '/$locale/$wsId/mail/sent': typeof LocaleWsIdMailSentRoute;
   '/$locale/$wsId/meet/meetings': typeof LocaleWsIdMeetMeetingsRouteWithChildren;
@@ -1474,12 +1339,6 @@ export interface FileRoutesByTo {
   '/$locale/$wsId/ai-chat/my-chatbots/new': typeof LocaleWsIdAiChatMyChatbotsNewRoute;
   '/$locale/$wsId/epm/collections/$collectionId': typeof LocaleWsIdEpmCollectionsCollectionIdRoute;
   '/$locale/$wsId/epm/entries/$entryId': typeof LocaleWsIdEpmEntriesEntryIdRoute;
-  '/$locale/$wsId/finance/debts/$debtId': typeof LocaleWsIdFinanceDebtsDebtIdRoute;
-  '/$locale/$wsId/finance/invoices/$invoiceId': typeof LocaleWsIdFinanceInvoicesInvoiceIdRoute;
-  '/$locale/$wsId/finance/invoices/new': typeof LocaleWsIdFinanceInvoicesNewRoute;
-  '/$locale/$wsId/finance/transactions/$transactionId': typeof LocaleWsIdFinanceTransactionsTransactionIdRoute;
-  '/$locale/$wsId/finance/transactions/categories': typeof LocaleWsIdFinanceTransactionsCategoriesRoute;
-  '/$locale/$wsId/finance/wallets/$walletId': typeof LocaleWsIdFinanceWalletsWalletIdRoute;
   '/$locale/$wsId/meet/meetings/$meetingId': typeof LocaleWsIdMeetMeetingsMeetingIdRoute;
   '/$locale/$wsId/mind/boards/$boardId': typeof LocaleWsIdMindBoardsBoardIdRoute;
   '/$locale/$wsId/tasks/boards/$boardId': typeof LocaleWsIdTasksBoardsBoardIdRoute;
@@ -1549,7 +1408,6 @@ export interface FileRoutesById {
   '/$locale/$wsId/drive': typeof LocaleWsIdDriveRoute;
   '/$locale/$wsId/epm': typeof LocaleWsIdEpmRouteWithChildren;
   '/$locale/$wsId/external-projects': typeof LocaleWsIdExternalProjectsRoute;
-  '/$locale/$wsId/finance': typeof LocaleWsIdFinanceRouteWithChildren;
   '/$locale/$wsId/habits': typeof LocaleWsIdHabitsRoute;
   '/$locale/$wsId/hive': typeof LocaleWsIdHiveRouteWithChildren;
   '/$locale/$wsId/integrations': typeof LocaleWsIdIntegrationsRoute;
@@ -1610,15 +1468,6 @@ export interface FileRoutesById {
   '/$locale/$wsId/crawlers/uncrawled': typeof LocaleWsIdCrawlersUncrawledRoute;
   '/$locale/$wsId/cron/jobs': typeof LocaleWsIdCronJobsRoute;
   '/$locale/$wsId/documents/$documentId': typeof LocaleWsIdDocumentsDocumentIdRoute;
-  '/$locale/$wsId/finance/analytics': typeof LocaleWsIdFinanceAnalyticsRoute;
-  '/$locale/$wsId/finance/budgets': typeof LocaleWsIdFinanceBudgetsRoute;
-  '/$locale/$wsId/finance/categories': typeof LocaleWsIdFinanceCategoriesRoute;
-  '/$locale/$wsId/finance/debts': typeof LocaleWsIdFinanceDebtsRouteWithChildren;
-  '/$locale/$wsId/finance/invoices': typeof LocaleWsIdFinanceInvoicesRouteWithChildren;
-  '/$locale/$wsId/finance/recurring': typeof LocaleWsIdFinanceRecurringRoute;
-  '/$locale/$wsId/finance/tags': typeof LocaleWsIdFinanceTagsRoute;
-  '/$locale/$wsId/finance/transactions': typeof LocaleWsIdFinanceTransactionsRouteWithChildren;
-  '/$locale/$wsId/finance/wallets': typeof LocaleWsIdFinanceWalletsRouteWithChildren;
   '/$locale/$wsId/hive/not-whitelisted': typeof LocaleWsIdHiveNotWhitelistedRoute;
   '/$locale/$wsId/mail/sent': typeof LocaleWsIdMailSentRoute;
   '/$locale/$wsId/meet/meetings': typeof LocaleWsIdMeetMeetingsRouteWithChildren;
@@ -1654,12 +1503,6 @@ export interface FileRoutesById {
   '/$locale/$wsId/ai-chat/my-chatbots/new': typeof LocaleWsIdAiChatMyChatbotsNewRoute;
   '/$locale/$wsId/epm/collections/$collectionId': typeof LocaleWsIdEpmCollectionsCollectionIdRoute;
   '/$locale/$wsId/epm/entries/$entryId': typeof LocaleWsIdEpmEntriesEntryIdRoute;
-  '/$locale/$wsId/finance/debts/$debtId': typeof LocaleWsIdFinanceDebtsDebtIdRoute;
-  '/$locale/$wsId/finance/invoices/$invoiceId': typeof LocaleWsIdFinanceInvoicesInvoiceIdRoute;
-  '/$locale/$wsId/finance/invoices/new': typeof LocaleWsIdFinanceInvoicesNewRoute;
-  '/$locale/$wsId/finance/transactions/$transactionId': typeof LocaleWsIdFinanceTransactionsTransactionIdRoute;
-  '/$locale/$wsId/finance/transactions/categories': typeof LocaleWsIdFinanceTransactionsCategoriesRoute;
-  '/$locale/$wsId/finance/wallets/$walletId': typeof LocaleWsIdFinanceWalletsWalletIdRoute;
   '/$locale/$wsId/meet/meetings/$meetingId': typeof LocaleWsIdMeetMeetingsMeetingIdRoute;
   '/$locale/$wsId/mind/boards/$boardId': typeof LocaleWsIdMindBoardsBoardIdRoute;
   '/$locale/$wsId/tasks/boards/$boardId': typeof LocaleWsIdTasksBoardsBoardIdRoute;
@@ -1730,7 +1573,6 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/drive'
     | '/$locale/$wsId/epm'
     | '/$locale/$wsId/external-projects'
-    | '/$locale/$wsId/finance'
     | '/$locale/$wsId/habits'
     | '/$locale/$wsId/hive'
     | '/$locale/$wsId/integrations'
@@ -1791,15 +1633,6 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/crawlers/uncrawled'
     | '/$locale/$wsId/cron/jobs'
     | '/$locale/$wsId/documents/$documentId'
-    | '/$locale/$wsId/finance/analytics'
-    | '/$locale/$wsId/finance/budgets'
-    | '/$locale/$wsId/finance/categories'
-    | '/$locale/$wsId/finance/debts'
-    | '/$locale/$wsId/finance/invoices'
-    | '/$locale/$wsId/finance/recurring'
-    | '/$locale/$wsId/finance/tags'
-    | '/$locale/$wsId/finance/transactions'
-    | '/$locale/$wsId/finance/wallets'
     | '/$locale/$wsId/hive/not-whitelisted'
     | '/$locale/$wsId/mail/sent'
     | '/$locale/$wsId/meet/meetings'
@@ -1835,12 +1668,6 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/ai-chat/my-chatbots/new'
     | '/$locale/$wsId/epm/collections/$collectionId'
     | '/$locale/$wsId/epm/entries/$entryId'
-    | '/$locale/$wsId/finance/debts/$debtId'
-    | '/$locale/$wsId/finance/invoices/$invoiceId'
-    | '/$locale/$wsId/finance/invoices/new'
-    | '/$locale/$wsId/finance/transactions/$transactionId'
-    | '/$locale/$wsId/finance/transactions/categories'
-    | '/$locale/$wsId/finance/wallets/$walletId'
     | '/$locale/$wsId/meet/meetings/$meetingId'
     | '/$locale/$wsId/mind/boards/$boardId'
     | '/$locale/$wsId/tasks/boards/$boardId'
@@ -1908,7 +1735,6 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/drive'
     | '/$locale/$wsId/epm'
     | '/$locale/$wsId/external-projects'
-    | '/$locale/$wsId/finance'
     | '/$locale/$wsId/habits'
     | '/$locale/$wsId/hive'
     | '/$locale/$wsId/integrations'
@@ -1969,15 +1795,6 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/crawlers/uncrawled'
     | '/$locale/$wsId/cron/jobs'
     | '/$locale/$wsId/documents/$documentId'
-    | '/$locale/$wsId/finance/analytics'
-    | '/$locale/$wsId/finance/budgets'
-    | '/$locale/$wsId/finance/categories'
-    | '/$locale/$wsId/finance/debts'
-    | '/$locale/$wsId/finance/invoices'
-    | '/$locale/$wsId/finance/recurring'
-    | '/$locale/$wsId/finance/tags'
-    | '/$locale/$wsId/finance/transactions'
-    | '/$locale/$wsId/finance/wallets'
     | '/$locale/$wsId/hive/not-whitelisted'
     | '/$locale/$wsId/mail/sent'
     | '/$locale/$wsId/meet/meetings'
@@ -2013,12 +1830,6 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/ai-chat/my-chatbots/new'
     | '/$locale/$wsId/epm/collections/$collectionId'
     | '/$locale/$wsId/epm/entries/$entryId'
-    | '/$locale/$wsId/finance/debts/$debtId'
-    | '/$locale/$wsId/finance/invoices/$invoiceId'
-    | '/$locale/$wsId/finance/invoices/new'
-    | '/$locale/$wsId/finance/transactions/$transactionId'
-    | '/$locale/$wsId/finance/transactions/categories'
-    | '/$locale/$wsId/finance/wallets/$walletId'
     | '/$locale/$wsId/meet/meetings/$meetingId'
     | '/$locale/$wsId/mind/boards/$boardId'
     | '/$locale/$wsId/tasks/boards/$boardId'
@@ -2087,7 +1898,6 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/drive'
     | '/$locale/$wsId/epm'
     | '/$locale/$wsId/external-projects'
-    | '/$locale/$wsId/finance'
     | '/$locale/$wsId/habits'
     | '/$locale/$wsId/hive'
     | '/$locale/$wsId/integrations'
@@ -2148,15 +1958,6 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/crawlers/uncrawled'
     | '/$locale/$wsId/cron/jobs'
     | '/$locale/$wsId/documents/$documentId'
-    | '/$locale/$wsId/finance/analytics'
-    | '/$locale/$wsId/finance/budgets'
-    | '/$locale/$wsId/finance/categories'
-    | '/$locale/$wsId/finance/debts'
-    | '/$locale/$wsId/finance/invoices'
-    | '/$locale/$wsId/finance/recurring'
-    | '/$locale/$wsId/finance/tags'
-    | '/$locale/$wsId/finance/transactions'
-    | '/$locale/$wsId/finance/wallets'
     | '/$locale/$wsId/hive/not-whitelisted'
     | '/$locale/$wsId/mail/sent'
     | '/$locale/$wsId/meet/meetings'
@@ -2192,12 +1993,6 @@ export interface FileRouteTypes {
     | '/$locale/$wsId/ai-chat/my-chatbots/new'
     | '/$locale/$wsId/epm/collections/$collectionId'
     | '/$locale/$wsId/epm/entries/$entryId'
-    | '/$locale/$wsId/finance/debts/$debtId'
-    | '/$locale/$wsId/finance/invoices/$invoiceId'
-    | '/$locale/$wsId/finance/invoices/new'
-    | '/$locale/$wsId/finance/transactions/$transactionId'
-    | '/$locale/$wsId/finance/transactions/categories'
-    | '/$locale/$wsId/finance/wallets/$walletId'
     | '/$locale/$wsId/meet/meetings/$meetingId'
     | '/$locale/$wsId/mind/boards/$boardId'
     | '/$locale/$wsId/tasks/boards/$boardId'
@@ -2843,13 +2638,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LocaleWsIdHabitsRouteImport;
       parentRoute: typeof LocaleRouteRoute;
     };
-    '/$locale/$wsId/finance': {
-      id: '/$locale/$wsId/finance';
-      path: '/$wsId/finance';
-      fullPath: '/$locale/$wsId/finance';
-      preLoaderRoute: typeof LocaleWsIdFinanceRouteImport;
-      parentRoute: typeof LocaleRouteRoute;
-    };
     '/$locale/$wsId/external-projects': {
       id: '/$locale/$wsId/external-projects';
       path: '/$wsId/external-projects';
@@ -3151,69 +2939,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LocaleWsIdHiveNotWhitelistedRouteImport;
       parentRoute: typeof LocaleWsIdHiveRoute;
     };
-    '/$locale/$wsId/finance/wallets': {
-      id: '/$locale/$wsId/finance/wallets';
-      path: '/wallets';
-      fullPath: '/$locale/$wsId/finance/wallets';
-      preLoaderRoute: typeof LocaleWsIdFinanceWalletsRouteImport;
-      parentRoute: typeof LocaleWsIdFinanceRoute;
-    };
-    '/$locale/$wsId/finance/transactions': {
-      id: '/$locale/$wsId/finance/transactions';
-      path: '/transactions';
-      fullPath: '/$locale/$wsId/finance/transactions';
-      preLoaderRoute: typeof LocaleWsIdFinanceTransactionsRouteImport;
-      parentRoute: typeof LocaleWsIdFinanceRoute;
-    };
-    '/$locale/$wsId/finance/tags': {
-      id: '/$locale/$wsId/finance/tags';
-      path: '/tags';
-      fullPath: '/$locale/$wsId/finance/tags';
-      preLoaderRoute: typeof LocaleWsIdFinanceTagsRouteImport;
-      parentRoute: typeof LocaleWsIdFinanceRoute;
-    };
-    '/$locale/$wsId/finance/recurring': {
-      id: '/$locale/$wsId/finance/recurring';
-      path: '/recurring';
-      fullPath: '/$locale/$wsId/finance/recurring';
-      preLoaderRoute: typeof LocaleWsIdFinanceRecurringRouteImport;
-      parentRoute: typeof LocaleWsIdFinanceRoute;
-    };
-    '/$locale/$wsId/finance/invoices': {
-      id: '/$locale/$wsId/finance/invoices';
-      path: '/invoices';
-      fullPath: '/$locale/$wsId/finance/invoices';
-      preLoaderRoute: typeof LocaleWsIdFinanceInvoicesRouteImport;
-      parentRoute: typeof LocaleWsIdFinanceRoute;
-    };
-    '/$locale/$wsId/finance/debts': {
-      id: '/$locale/$wsId/finance/debts';
-      path: '/debts';
-      fullPath: '/$locale/$wsId/finance/debts';
-      preLoaderRoute: typeof LocaleWsIdFinanceDebtsRouteImport;
-      parentRoute: typeof LocaleWsIdFinanceRoute;
-    };
-    '/$locale/$wsId/finance/categories': {
-      id: '/$locale/$wsId/finance/categories';
-      path: '/categories';
-      fullPath: '/$locale/$wsId/finance/categories';
-      preLoaderRoute: typeof LocaleWsIdFinanceCategoriesRouteImport;
-      parentRoute: typeof LocaleWsIdFinanceRoute;
-    };
-    '/$locale/$wsId/finance/budgets': {
-      id: '/$locale/$wsId/finance/budgets';
-      path: '/budgets';
-      fullPath: '/$locale/$wsId/finance/budgets';
-      preLoaderRoute: typeof LocaleWsIdFinanceBudgetsRouteImport;
-      parentRoute: typeof LocaleWsIdFinanceRoute;
-    };
-    '/$locale/$wsId/finance/analytics': {
-      id: '/$locale/$wsId/finance/analytics';
-      path: '/analytics';
-      fullPath: '/$locale/$wsId/finance/analytics';
-      preLoaderRoute: typeof LocaleWsIdFinanceAnalyticsRouteImport;
-      parentRoute: typeof LocaleWsIdFinanceRoute;
-    };
     '/$locale/$wsId/documents/$documentId': {
       id: '/$locale/$wsId/documents/$documentId';
       path: '/$documentId';
@@ -3382,48 +3107,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LocaleWsIdMeetMeetingsMeetingIdRouteImport;
       parentRoute: typeof LocaleWsIdMeetMeetingsRoute;
     };
-    '/$locale/$wsId/finance/wallets/$walletId': {
-      id: '/$locale/$wsId/finance/wallets/$walletId';
-      path: '/$walletId';
-      fullPath: '/$locale/$wsId/finance/wallets/$walletId';
-      preLoaderRoute: typeof LocaleWsIdFinanceWalletsWalletIdRouteImport;
-      parentRoute: typeof LocaleWsIdFinanceWalletsRoute;
-    };
-    '/$locale/$wsId/finance/transactions/categories': {
-      id: '/$locale/$wsId/finance/transactions/categories';
-      path: '/categories';
-      fullPath: '/$locale/$wsId/finance/transactions/categories';
-      preLoaderRoute: typeof LocaleWsIdFinanceTransactionsCategoriesRouteImport;
-      parentRoute: typeof LocaleWsIdFinanceTransactionsRoute;
-    };
-    '/$locale/$wsId/finance/transactions/$transactionId': {
-      id: '/$locale/$wsId/finance/transactions/$transactionId';
-      path: '/$transactionId';
-      fullPath: '/$locale/$wsId/finance/transactions/$transactionId';
-      preLoaderRoute: typeof LocaleWsIdFinanceTransactionsTransactionIdRouteImport;
-      parentRoute: typeof LocaleWsIdFinanceTransactionsRoute;
-    };
-    '/$locale/$wsId/finance/invoices/new': {
-      id: '/$locale/$wsId/finance/invoices/new';
-      path: '/new';
-      fullPath: '/$locale/$wsId/finance/invoices/new';
-      preLoaderRoute: typeof LocaleWsIdFinanceInvoicesNewRouteImport;
-      parentRoute: typeof LocaleWsIdFinanceInvoicesRoute;
-    };
-    '/$locale/$wsId/finance/invoices/$invoiceId': {
-      id: '/$locale/$wsId/finance/invoices/$invoiceId';
-      path: '/$invoiceId';
-      fullPath: '/$locale/$wsId/finance/invoices/$invoiceId';
-      preLoaderRoute: typeof LocaleWsIdFinanceInvoicesInvoiceIdRouteImport;
-      parentRoute: typeof LocaleWsIdFinanceInvoicesRoute;
-    };
-    '/$locale/$wsId/finance/debts/$debtId': {
-      id: '/$locale/$wsId/finance/debts/$debtId';
-      path: '/$debtId';
-      fullPath: '/$locale/$wsId/finance/debts/$debtId';
-      preLoaderRoute: typeof LocaleWsIdFinanceDebtsDebtIdRouteImport;
-      parentRoute: typeof LocaleWsIdFinanceDebtsRoute;
-    };
     '/$locale/$wsId/epm/entries/$entryId': {
       id: '/$locale/$wsId/epm/entries/$entryId';
       path: '/entries/$entryId';
@@ -3567,98 +3250,6 @@ const LocaleWsIdEpmRouteChildren: LocaleWsIdEpmRouteChildren = {
 const LocaleWsIdEpmRouteWithChildren = LocaleWsIdEpmRoute._addFileChildren(
   LocaleWsIdEpmRouteChildren,
 );
-
-interface LocaleWsIdFinanceDebtsRouteChildren {
-  LocaleWsIdFinanceDebtsDebtIdRoute: typeof LocaleWsIdFinanceDebtsDebtIdRoute;
-}
-
-const LocaleWsIdFinanceDebtsRouteChildren: LocaleWsIdFinanceDebtsRouteChildren =
-  {
-    LocaleWsIdFinanceDebtsDebtIdRoute: LocaleWsIdFinanceDebtsDebtIdRoute,
-  };
-
-const LocaleWsIdFinanceDebtsRouteWithChildren =
-  LocaleWsIdFinanceDebtsRoute._addFileChildren(
-    LocaleWsIdFinanceDebtsRouteChildren,
-  );
-
-interface LocaleWsIdFinanceInvoicesRouteChildren {
-  LocaleWsIdFinanceInvoicesInvoiceIdRoute: typeof LocaleWsIdFinanceInvoicesInvoiceIdRoute;
-  LocaleWsIdFinanceInvoicesNewRoute: typeof LocaleWsIdFinanceInvoicesNewRoute;
-}
-
-const LocaleWsIdFinanceInvoicesRouteChildren: LocaleWsIdFinanceInvoicesRouteChildren =
-  {
-    LocaleWsIdFinanceInvoicesInvoiceIdRoute:
-      LocaleWsIdFinanceInvoicesInvoiceIdRoute,
-    LocaleWsIdFinanceInvoicesNewRoute: LocaleWsIdFinanceInvoicesNewRoute,
-  };
-
-const LocaleWsIdFinanceInvoicesRouteWithChildren =
-  LocaleWsIdFinanceInvoicesRoute._addFileChildren(
-    LocaleWsIdFinanceInvoicesRouteChildren,
-  );
-
-interface LocaleWsIdFinanceTransactionsRouteChildren {
-  LocaleWsIdFinanceTransactionsTransactionIdRoute: typeof LocaleWsIdFinanceTransactionsTransactionIdRoute;
-  LocaleWsIdFinanceTransactionsCategoriesRoute: typeof LocaleWsIdFinanceTransactionsCategoriesRoute;
-}
-
-const LocaleWsIdFinanceTransactionsRouteChildren: LocaleWsIdFinanceTransactionsRouteChildren =
-  {
-    LocaleWsIdFinanceTransactionsTransactionIdRoute:
-      LocaleWsIdFinanceTransactionsTransactionIdRoute,
-    LocaleWsIdFinanceTransactionsCategoriesRoute:
-      LocaleWsIdFinanceTransactionsCategoriesRoute,
-  };
-
-const LocaleWsIdFinanceTransactionsRouteWithChildren =
-  LocaleWsIdFinanceTransactionsRoute._addFileChildren(
-    LocaleWsIdFinanceTransactionsRouteChildren,
-  );
-
-interface LocaleWsIdFinanceWalletsRouteChildren {
-  LocaleWsIdFinanceWalletsWalletIdRoute: typeof LocaleWsIdFinanceWalletsWalletIdRoute;
-}
-
-const LocaleWsIdFinanceWalletsRouteChildren: LocaleWsIdFinanceWalletsRouteChildren =
-  {
-    LocaleWsIdFinanceWalletsWalletIdRoute:
-      LocaleWsIdFinanceWalletsWalletIdRoute,
-  };
-
-const LocaleWsIdFinanceWalletsRouteWithChildren =
-  LocaleWsIdFinanceWalletsRoute._addFileChildren(
-    LocaleWsIdFinanceWalletsRouteChildren,
-  );
-
-interface LocaleWsIdFinanceRouteChildren {
-  LocaleWsIdFinanceAnalyticsRoute: typeof LocaleWsIdFinanceAnalyticsRoute;
-  LocaleWsIdFinanceBudgetsRoute: typeof LocaleWsIdFinanceBudgetsRoute;
-  LocaleWsIdFinanceCategoriesRoute: typeof LocaleWsIdFinanceCategoriesRoute;
-  LocaleWsIdFinanceDebtsRoute: typeof LocaleWsIdFinanceDebtsRouteWithChildren;
-  LocaleWsIdFinanceInvoicesRoute: typeof LocaleWsIdFinanceInvoicesRouteWithChildren;
-  LocaleWsIdFinanceRecurringRoute: typeof LocaleWsIdFinanceRecurringRoute;
-  LocaleWsIdFinanceTagsRoute: typeof LocaleWsIdFinanceTagsRoute;
-  LocaleWsIdFinanceTransactionsRoute: typeof LocaleWsIdFinanceTransactionsRouteWithChildren;
-  LocaleWsIdFinanceWalletsRoute: typeof LocaleWsIdFinanceWalletsRouteWithChildren;
-}
-
-const LocaleWsIdFinanceRouteChildren: LocaleWsIdFinanceRouteChildren = {
-  LocaleWsIdFinanceAnalyticsRoute: LocaleWsIdFinanceAnalyticsRoute,
-  LocaleWsIdFinanceBudgetsRoute: LocaleWsIdFinanceBudgetsRoute,
-  LocaleWsIdFinanceCategoriesRoute: LocaleWsIdFinanceCategoriesRoute,
-  LocaleWsIdFinanceDebtsRoute: LocaleWsIdFinanceDebtsRouteWithChildren,
-  LocaleWsIdFinanceInvoicesRoute: LocaleWsIdFinanceInvoicesRouteWithChildren,
-  LocaleWsIdFinanceRecurringRoute: LocaleWsIdFinanceRecurringRoute,
-  LocaleWsIdFinanceTagsRoute: LocaleWsIdFinanceTagsRoute,
-  LocaleWsIdFinanceTransactionsRoute:
-    LocaleWsIdFinanceTransactionsRouteWithChildren,
-  LocaleWsIdFinanceWalletsRoute: LocaleWsIdFinanceWalletsRouteWithChildren,
-};
-
-const LocaleWsIdFinanceRouteWithChildren =
-  LocaleWsIdFinanceRoute._addFileChildren(LocaleWsIdFinanceRouteChildren);
 
 interface LocaleWsIdHiveRouteChildren {
   LocaleWsIdHiveNotWhitelistedRoute: typeof LocaleWsIdHiveNotWhitelistedRoute;
@@ -3872,7 +3463,6 @@ interface LocaleRouteRouteChildren {
   LocaleWsIdDriveRoute: typeof LocaleWsIdDriveRoute;
   LocaleWsIdEpmRoute: typeof LocaleWsIdEpmRouteWithChildren;
   LocaleWsIdExternalProjectsRoute: typeof LocaleWsIdExternalProjectsRoute;
-  LocaleWsIdFinanceRoute: typeof LocaleWsIdFinanceRouteWithChildren;
   LocaleWsIdHabitsRoute: typeof LocaleWsIdHabitsRoute;
   LocaleWsIdHiveRoute: typeof LocaleWsIdHiveRouteWithChildren;
   LocaleWsIdIntegrationsRoute: typeof LocaleWsIdIntegrationsRoute;
@@ -3999,7 +3589,6 @@ const LocaleRouteRouteChildren: LocaleRouteRouteChildren = {
   LocaleWsIdDriveRoute: LocaleWsIdDriveRoute,
   LocaleWsIdEpmRoute: LocaleWsIdEpmRouteWithChildren,
   LocaleWsIdExternalProjectsRoute: LocaleWsIdExternalProjectsRoute,
-  LocaleWsIdFinanceRoute: LocaleWsIdFinanceRouteWithChildren,
   LocaleWsIdHabitsRoute: LocaleWsIdHabitsRoute,
   LocaleWsIdHiveRoute: LocaleWsIdHiveRouteWithChildren,
   LocaleWsIdIntegrationsRoute: LocaleWsIdIntegrationsRoute,

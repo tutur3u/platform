@@ -69,41 +69,6 @@ export function workspaceInfrastructureAppCoordinationRedirectHref(
   ).toString();
 }
 
-export function buildFinanceRedirectHref(
-  workspaceId: string,
-  financePath: string,
-  options: {
-    personal?: boolean;
-    searchParams?: LegacySearchParams | string | URLSearchParams;
-  } = {}
-) {
-  const workspaceSlug = toWorkspaceSlug(workspaceId, {
-    personal: options.personal,
-  });
-  const normalizedFinancePath = financePath.replace(/^\/+|\/+$/g, '');
-  const financeSuffix = normalizedFinancePath
-    ? `/${normalizedFinancePath}`
-    : '';
-  const url = new URL(
-    `/${workspaceSlug}/finance${financeSuffix}`,
-    'https://finance.local'
-  );
-
-  appendSearchParams(url, options.searchParams);
-
-  return `${url.pathname}${url.search}`;
-}
-
-export function buildFinanceTransactionCategoriesRedirectHref(
-  workspaceId: string,
-  options: {
-    personal?: boolean;
-    searchParams?: LegacySearchParams | string | URLSearchParams;
-  } = {}
-) {
-  return buildFinanceRedirectHref(workspaceId, 'categories', options);
-}
-
 export function educationLibraryRedirectHref(
   wsId: string,
   resource: 'flashcards' | 'quiz-sets' | 'quizzes'
