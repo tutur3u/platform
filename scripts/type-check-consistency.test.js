@@ -4,8 +4,8 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const repoRoot = path.resolve(__dirname, '..');
-const expectedTypeScriptVersion = '7.0.1-rc';
-const expectedNativePreviewVersion = '7.0.0-dev.20260622.1';
+const expectedTypeScriptVersion = '7.0.2';
+const expectedNativePreviewVersion = '7.0.0-dev.20260707.2';
 
 function readJson(relativePath) {
   return JSON.parse(fs.readFileSync(path.join(repoRoot, relativePath), 'utf8'));
@@ -107,7 +107,7 @@ test('workspace build and dev scripts do not use legacy tsgo', () => {
   assert.deepEqual(invalidScripts, []);
 });
 
-test('workspace direct tsc scripts own the TypeScript 7 RC binary', () => {
+test('workspace direct tsc scripts own the TypeScript 7 binary', () => {
   const invalidPackages = [];
 
   for (const packageJsonPath of getWorkspacePackageJsonPaths()) {
@@ -140,7 +140,7 @@ test('workspace direct tsc scripts own the TypeScript 7 RC binary', () => {
   assert.deepEqual(invalidPackages, []);
 });
 
-test('workspace TypeScript dependencies use the TypeScript 7 RC', () => {
+test('workspace TypeScript dependencies use TypeScript 7', () => {
   const invalidPackages = [];
 
   for (const packageJsonPath of [

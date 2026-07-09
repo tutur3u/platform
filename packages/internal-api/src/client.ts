@@ -292,6 +292,118 @@ export function withMailApiBaseUrl(
   };
 }
 
+function isCurrentBrowserHostname(...hostnames: string[]) {
+  const runtimeLocation =
+    typeof globalThis === 'object' && 'location' in globalThis
+      ? (globalThis.location as { hostname?: string } | undefined)
+      : undefined;
+
+  const hostname = runtimeLocation?.hostname?.toLowerCase();
+  return hostname !== undefined && hostnames.includes(hostname);
+}
+
+function isCurrentAppServerRuntime(packageName: string, appDir: string) {
+  if (typeof process === 'undefined') {
+    return false;
+  }
+
+  if (process.env.npm_package_name === packageName) {
+    return true;
+  }
+
+  try {
+    return process.cwd().replace(/\\/gu, '/').endsWith(appDir);
+  } catch {
+    return false;
+  }
+}
+
+function isLearnAppRuntime() {
+  return (
+    isCurrentBrowserHostname(
+      'learn.tuturuuu.com',
+      'learn.tuturuuu.localhost'
+    ) || isCurrentAppServerRuntime('@tuturuuu/learn', '/apps/learn')
+  );
+}
+
+function isTeachAppRuntime() {
+  return (
+    isCurrentBrowserHostname(
+      'teach.tuturuuu.com',
+      'teach.tuturuuu.localhost'
+    ) || isCurrentAppServerRuntime('@tuturuuu/teach', '/apps/teach')
+  );
+}
+
+export function getConfiguredLearnApiBaseUrl() {
+  return normalizeBaseUrl(
+    resolveConfiguredOrigin(process.env.LEARN_APP_URL) ||
+      resolveConfiguredOrigin(process.env.NEXT_PUBLIC_LEARN_APP_URL) ||
+      resolveConfiguredOrigin(process.env.TUTURUUU_LEARN_BASE_URL) ||
+      (isProductionDeployment()
+        ? 'https://learn.tuturuuu.com'
+        : 'https://learn.tuturuuu.localhost')
+  );
+}
+
+export function withLearnApiBaseUrl(
+  options: InternalApiClientOptions = {}
+): InternalApiClientOptions {
+  if (options.baseUrl || isLearnAppRuntime()) {
+    return options;
+  }
+
+  return {
+    ...options,
+    baseUrl: getConfiguredLearnApiBaseUrl(),
+  };
+}
+
+export function getConfiguredTeachApiBaseUrl() {
+  return normalizeBaseUrl(
+    resolveConfiguredOrigin(process.env.TEACH_APP_URL) ||
+      resolveConfiguredOrigin(process.env.NEXT_PUBLIC_TEACH_APP_URL) ||
+      resolveConfiguredOrigin(process.env.TUTURUUU_TEACH_BASE_URL) ||
+      (isProductionDeployment()
+        ? 'https://teach.tuturuuu.com'
+        : 'https://teach.tuturuuu.localhost')
+  );
+}
+
+export function withTeachApiBaseUrl(
+  options: InternalApiClientOptions = {}
+): InternalApiClientOptions {
+  if (options.baseUrl || isTeachAppRuntime()) {
+    return options;
+  }
+
+  return {
+    ...options,
+    baseUrl: getConfiguredTeachApiBaseUrl(),
+  };
+}
+
+/**
+ * `/api/v1/tulearn/bootstrap` is owned by apps/learn but is also consumed by
+ * apps/teach. Pin the call to the CALLING app's own origin so its app-session
+ * audience (learn or teach) matches — never cross-pin teach → learn (learn's
+ * proxy would reject a teach-audience session).
+ */
+export function withEducationBootstrapBaseUrl(
+  options: InternalApiClientOptions = {}
+): InternalApiClientOptions {
+  if (options.baseUrl) {
+    return options;
+  }
+
+  if (isTeachAppRuntime()) {
+    return withTeachApiBaseUrl(options);
+  }
+
+  return withLearnApiBaseUrl(options);
+}
+
 export function resolveInternalApiUrl(path: string, baseUrl?: string) {
   const normalizedPath = normalizePath(path);
 
@@ -531,6 +643,20 @@ export function withForwardedInternalApiAuth(
   );
   if (configuredMailBaseUrl) {
     allowedOrigins.add(configuredMailBaseUrl.origin);
+  }
+
+  const configuredLearnBaseUrl = tryParseAbsoluteUrl(
+    getConfiguredLearnApiBaseUrl()
+  );
+  if (configuredLearnBaseUrl) {
+    allowedOrigins.add(configuredLearnBaseUrl.origin);
+  }
+
+  const configuredTeachBaseUrl = tryParseAbsoluteUrl(
+    getConfiguredTeachApiBaseUrl()
+  );
+  if (configuredTeachBaseUrl) {
+    allowedOrigins.add(configuredTeachBaseUrl.origin);
   }
 
   const targetOrigin =

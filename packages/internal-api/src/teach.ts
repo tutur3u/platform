@@ -4,6 +4,8 @@ import {
   encodePathSegment,
   getInternalApiClient,
   type InternalApiClientOptions,
+  withEducationBootstrapBaseUrl,
+  withTeachApiBaseUrl,
 } from './client';
 import type { TulearnBootstrapResponse } from './tulearn';
 
@@ -79,7 +81,7 @@ export interface TeachIndicatorValue {
 }
 
 export function getTeachBootstrap(options?: InternalApiClientOptions) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withEducationBootstrapBaseUrl(options));
   return client.json<TeachBootstrapResponse>('/api/v1/tulearn/bootstrap', {
     cache: 'no-store',
   });
@@ -90,7 +92,7 @@ export function listWorkspaceUsers(
   params: { from?: number; limit?: number; q?: string } = {},
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withTeachApiBaseUrl(options));
   return client.json<{ count: number; data: TeachWorkspaceUser[] }>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/teach/users`,
     { cache: 'no-store', query: params }
@@ -102,7 +104,7 @@ export function listWorkspaceCourseMembers(
   courseId: string,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withTeachApiBaseUrl(options));
   return client.json<{ data: TeachCourseMember[] }>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/teach/courses/${encodePathSegment(courseId)}/members`,
     { cache: 'no-store' }
@@ -115,7 +117,7 @@ export function addWorkspaceCourseMembers(
   payload: { memberIds: string[]; role?: 'STUDENT' | 'TEACHER' },
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withTeachApiBaseUrl(options));
   return client.json<{ message: string }>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/teach/courses/${encodePathSegment(courseId)}/members`,
     {
@@ -133,7 +135,7 @@ export function removeWorkspaceCourseMember(
   userId: string,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withTeachApiBaseUrl(options));
   return client.json<{ message: string }>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/teach/courses/${encodePathSegment(courseId)}/members/${encodePathSegment(userId)}`,
     { cache: 'no-store', method: 'DELETE' }
@@ -146,7 +148,7 @@ export function listWorkspaceCourseAttendance(
   date: string,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withTeachApiBaseUrl(options));
   return client.json<{ data: TeachAttendanceEntry[] }>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/teach/courses/${encodePathSegment(courseId)}/attendance`,
     { cache: 'no-store', query: { date } }
@@ -159,7 +161,7 @@ export function listWorkspaceCourseAttendanceMonth(
   month: string,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withTeachApiBaseUrl(options));
   return client.json<{ days: TeachAttendanceDaySummary[] }>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/teach/courses/${encodePathSegment(courseId)}/attendance`,
     { cache: 'no-store', query: { month } }
@@ -172,7 +174,7 @@ export function updateWorkspaceCourseAttendance(
   entries: TeachAttendanceEntry[],
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withTeachApiBaseUrl(options));
   return client.json<{ message: string }>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/teach/courses/${encodePathSegment(courseId)}/attendance`,
     {
@@ -189,7 +191,7 @@ export function listWorkspaceCoursePosts(
   courseId: string,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withTeachApiBaseUrl(options));
   return client.json<{ data: TeachPost[] }>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/teach/courses/${encodePathSegment(courseId)}/posts`,
     { cache: 'no-store' }
@@ -206,7 +208,7 @@ export function createWorkspaceCoursePost(
   },
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withTeachApiBaseUrl(options));
   return client.json<{ id: string }>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/teach/courses/${encodePathSegment(courseId)}/posts`,
     {
@@ -223,7 +225,7 @@ export function listWorkspaceCourseReports(
   courseId: string,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withTeachApiBaseUrl(options));
   return client.json<{ data: TeachReport[] }>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/teach/courses/${encodePathSegment(courseId)}/reports`,
     { cache: 'no-store' }
@@ -243,7 +245,7 @@ export function createWorkspaceCourseReport(
   },
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withTeachApiBaseUrl(options));
   return client.json<{ id: string }>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/teach/courses/${encodePathSegment(courseId)}/reports`,
     {
@@ -260,7 +262,7 @@ export function listWorkspaceCourseIndicators(
   courseId: string,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withTeachApiBaseUrl(options));
   return client.json<{
     indicators: TeachIndicator[];
     values: TeachIndicatorValue[];
@@ -281,7 +283,7 @@ export function createWorkspaceCourseIndicator(
   },
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withTeachApiBaseUrl(options));
   return client.json<TeachIndicator>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/teach/courses/${encodePathSegment(courseId)}/indicators`,
     {
@@ -299,7 +301,7 @@ export function updateWorkspaceCourseIndicators(
   values: TeachIndicatorValue[],
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withTeachApiBaseUrl(options));
   return client.json<{ message: string }>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/teach/courses/${encodePathSegment(courseId)}/indicators`,
     {
@@ -329,7 +331,7 @@ export function listWorkspaceCourseTests(
   courseId: string,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withTeachApiBaseUrl(options));
   return client.json<{ data: TeachCourseTest[] }>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/teach/courses/${encodePathSegment(courseId)}/tests`,
     { cache: 'no-store' }
@@ -348,7 +350,7 @@ export function createWorkspaceCourseTest(
   },
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withTeachApiBaseUrl(options));
   return client.json<{ id: string }>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/teach/courses/${encodePathSegment(courseId)}/tests`,
     {
@@ -374,7 +376,7 @@ export function updateWorkspaceCourseTest(
   },
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withTeachApiBaseUrl(options));
   return client.json<{ success: boolean }>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/teach/courses/${encodePathSegment(courseId)}/tests`,
     {
@@ -405,7 +407,7 @@ export function listWorkspaceCourseTestSubmissions(
   testId: string,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withTeachApiBaseUrl(options));
   return client.json<{ data: TeachTestSubmission[]; count: number }>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/teach/courses/${encodePathSegment(courseId)}/tests/${encodePathSegment(testId)}/submissions`,
     { cache: 'no-store' }
@@ -458,7 +460,7 @@ export function getWorkspaceCourseTestSubmission(
   attemptId: string,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withTeachApiBaseUrl(options));
   return client.json<TeachTestSubmissionDetail>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/teach/courses/${encodePathSegment(courseId)}/tests/${encodePathSegment(testId)}/submissions/${encodePathSegment(attemptId)}`,
     { cache: 'no-store' }
@@ -478,7 +480,7 @@ export function updateWorkspaceCourseTestSubmissionFeedback(
   },
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withTeachApiBaseUrl(options));
   return client.json<{ success: boolean; answer: unknown }>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/teach/courses/${encodePathSegment(courseId)}/tests/${encodePathSegment(testId)}/submissions/${encodePathSegment(attemptId)}`,
     {
@@ -507,7 +509,7 @@ export function listWorkspaceCourseModuleQuizSubmissions(
   moduleId: string,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withTeachApiBaseUrl(options));
   return client.json<{ data: TeachModuleQuizSubmission[]; count: number }>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/teach/courses/${encodePathSegment(courseId)}/modules/${encodePathSegment(moduleId)}/quizzes/submissions`,
     { cache: 'no-store' }
@@ -566,7 +568,7 @@ export function getWorkspaceCourseModuleQuizSubmission(
   userId: string,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withTeachApiBaseUrl(options));
   return client.json<TeachModuleQuizSubmissionDetail>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/teach/courses/${encodePathSegment(courseId)}/modules/${encodePathSegment(moduleId)}/quizzes/submissions/${encodePathSegment(userId)}`,
     { cache: 'no-store' }
@@ -585,7 +587,7 @@ export function gradeWorkspaceCourseModuleQuizSubmission(
   },
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withTeachApiBaseUrl(options));
   return client.json<{ success: boolean }>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/teach/courses/${encodePathSegment(courseId)}/modules/${encodePathSegment(moduleId)}/quizzes/submissions/${encodePathSegment(userId)}`,
     {
@@ -609,7 +611,7 @@ export function getWorkspaceCourseModuleQuizSubmissionAiReview(
   },
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withTeachApiBaseUrl(options));
   return client.json<{
     explanation: string;
     suggested_is_correct: boolean | null;
@@ -649,7 +651,7 @@ export function getTeachDashboardStats(
   workspaceId: string,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withTeachApiBaseUrl(options));
   return client.json<TeachDashboardStatsResponse>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/teach/dashboard-stats`,
     { cache: 'no-store' }
@@ -684,7 +686,7 @@ export function getCourseStudentPerformance(
   courseId: string,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withTeachApiBaseUrl(options));
   return client.json<CourseStudentPerformanceResponse>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/teach/courses/${encodePathSegment(courseId)}/student-performance`,
     { cache: 'no-store' }
@@ -698,7 +700,7 @@ export function sendStudentPerformanceReport(
   locale?: string,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withTeachApiBaseUrl(options));
   const query = locale ? { locale } : undefined;
   return client.json<{ message: string }>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/teach/courses/${encodePathSegment(courseId)}/student-performance/${encodePathSegment(userId)}/send-report`,
@@ -711,7 +713,7 @@ export function sendBulkStudentPerformanceReport(
   courseId: string,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withTeachApiBaseUrl(options));
   return client.json<{
     message: string;
     sentCount: number;

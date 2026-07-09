@@ -257,6 +257,12 @@ const checks = [
     parseOutput: () => 'TanStack app uses server-owned API facades',
   },
   {
+    name: 'legacy-api-route-wrappers',
+    command: 'node',
+    args: ['scripts/generate-web-api-route-wrappers.js', '--check'],
+    parseOutput: () => 'Legacy API routes have concrete wrappers',
+  },
+  {
     name: 'platform-release-version',
     command: 'node',
     args: ['scripts/sync-platform-release-version.js', '--check'],

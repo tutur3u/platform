@@ -3,8 +3,11 @@ import {
   createInternalApiClient,
   InternalApiError,
   resolveInternalApiUrl,
+  withEducationBootstrapBaseUrl,
   withForwardedInternalApiAuth,
+  withLearnApiBaseUrl,
   withTaskApiBaseUrl,
+  withTeachApiBaseUrl,
 } from './client';
 import { listWorkspaces } from './workspaces';
 
@@ -199,6 +202,84 @@ describe('withTaskApiBaseUrl', () => {
   });
 });
 
+describe('withLearnApiBaseUrl', () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    vi.unstubAllGlobals();
+  });
+
+  it('uses the configured learn API origin for server learn calls', () => {
+    vi.stubEnv('LEARN_APP_URL', 'https://learn.example.com');
+
+    expect(withLearnApiBaseUrl()).toMatchObject({
+      baseUrl: 'https://learn.example.com',
+    });
+  });
+
+  it('keeps browser calls relative when already on the learn origin', () => {
+    vi.stubGlobal('location', {
+      hostname: 'learn.tuturuuu.com',
+      origin: 'https://learn.tuturuuu.com',
+    });
+
+    expect(withLearnApiBaseUrl()).toEqual({});
+  });
+
+  it('keeps server learn calls relative when running inside the learn app', () => {
+    vi.stubEnv('npm_package_name', '@tuturuuu/learn');
+    vi.stubEnv('LEARN_APP_URL', 'https://learn.example.com');
+
+    expect(withLearnApiBaseUrl()).toEqual({});
+  });
+});
+
+describe('withTeachApiBaseUrl', () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    vi.unstubAllGlobals();
+  });
+
+  it('uses the configured teach API origin for server teach calls', () => {
+    vi.stubEnv('TEACH_APP_URL', 'https://teach.example.com');
+
+    expect(withTeachApiBaseUrl()).toMatchObject({
+      baseUrl: 'https://teach.example.com',
+    });
+  });
+
+  it('keeps browser calls relative when already on the teach origin', () => {
+    vi.stubGlobal('location', {
+      hostname: 'teach.tuturuuu.com',
+      origin: 'https://teach.tuturuuu.com',
+    });
+
+    expect(withTeachApiBaseUrl()).toEqual({});
+  });
+});
+
+describe('withEducationBootstrapBaseUrl', () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    vi.unstubAllGlobals();
+  });
+
+  it('resolves bootstrap to the learn origin from a non-education runtime', () => {
+    vi.stubEnv('LEARN_APP_URL', 'https://learn.example.com');
+
+    expect(withEducationBootstrapBaseUrl()).toMatchObject({
+      baseUrl: 'https://learn.example.com',
+    });
+  });
+
+  it('keeps bootstrap relative when running inside the teach app', () => {
+    vi.stubEnv('npm_package_name', '@tuturuuu/teach');
+    vi.stubEnv('LEARN_APP_URL', 'https://learn.example.com');
+    vi.stubEnv('TEACH_APP_URL', 'https://teach.example.com');
+
+    expect(withEducationBootstrapBaseUrl()).toEqual({});
+  });
+});
+
 describe('workspace API helpers', () => {
   it('builds searchable workspace-list URLs while preserving client options', async () => {
     const fetchMock = vi.fn().mockResolvedValue({
@@ -265,6 +346,58 @@ describe('withForwardedInternalApiAuth', () => {
     });
 
     await createInternalApiClient(options).json('/api/v1/hive/servers');
+
+    const [, init] = fetchMock.mock.calls[0];
+    const forwardedCookie = (init.headers as Headers).get('cookie');
+    expect(forwardedCookie).toBe(
+      'tuturuuu_app_session=ttr_app_123; theme=dark'
+    );
+  });
+
+  it('forwards app-session auth to the learn satellite origin', async () => {
+    vi.stubEnv('LEARN_APP_URL', 'https://learn.example.com');
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({ ok: true }),
+    });
+    const headers = new Headers({
+      cookie: 'tuturuuu_app_session=ttr_app_123; theme=dark',
+    });
+    const options = withForwardedInternalApiAuth(headers, {
+      baseUrl: 'https://learn.example.com',
+      fetch: fetchMock as unknown as typeof fetch,
+    });
+
+    await createInternalApiClient(options).json(
+      '/api/v1/workspaces/personal/tulearn/home'
+    );
+
+    const [, init] = fetchMock.mock.calls[0];
+    const forwardedCookie = (init.headers as Headers).get('cookie');
+    expect(forwardedCookie).toBe(
+      'tuturuuu_app_session=ttr_app_123; theme=dark'
+    );
+  });
+
+  it('forwards app-session auth to the teach satellite origin', async () => {
+    vi.stubEnv('TEACH_APP_URL', 'https://teach.example.com');
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({ ok: true }),
+    });
+    const headers = new Headers({
+      cookie: 'tuturuuu_app_session=ttr_app_123; theme=dark',
+    });
+    const options = withForwardedInternalApiAuth(headers, {
+      baseUrl: 'https://teach.example.com',
+      fetch: fetchMock as unknown as typeof fetch,
+    });
+
+    await createInternalApiClient(options).json(
+      '/api/v1/workspaces/personal/teach/dashboard-stats'
+    );
 
     const [, init] = fetchMock.mock.calls[0];
     const forwardedCookie = (init.headers as Headers).get('cookie');

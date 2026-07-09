@@ -10,4 +10,26 @@ preload = ["./tests/bun-test-redirect.ts"]
 linker = "isolated"
 # Require npm releases to be at least 1 day old before Bun can install them
 minimumReleaseAge = 86400
-minimumReleaseAgeExcludes = ["@polar-sh/checkout"]
+minimumReleaseAgeExcludes = [
+  "typescript",
+  "@typescript/typescript-aix-ppc64",
+  "@typescript/typescript-darwin-arm64",
+  "@typescript/typescript-darwin-x64",
+  "@typescript/typescript-freebsd-arm64",
+  "@typescript/typescript-freebsd-x64",
+  "@typescript/typescript-linux-arm",
+  "@typescript/typescript-linux-arm64",
+  "@typescript/typescript-linux-loong64",
+  "@typescript/typescript-linux-mips64el",
+  "@typescript/typescript-linux-ppc64",
+  "@typescript/typescript-linux-riscv64",
+  "@typescript/typescript-linux-s390x",
+  "@typescript/typescript-linux-x64",
+  "@typescript/typescript-netbsd-arm64",
+  "@typescript/typescript-netbsd-x64",
+  "@typescript/typescript-openbsd-arm64",
+  "@typescript/typescript-openbsd-x64",
+  "@typescript/typescript-sunos-x64",
+  "@typescript/typescript-win32-arm64",
+  "@typescript/typescript-win32-x64",
+]

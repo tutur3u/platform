@@ -71,7 +71,51 @@
     "save": "Save",
     "saving": "Saving...",
     "success": "Success",
-    "untitled": "Untitled"
+    "untitled": "Untitled",
+    "accept": "Accept",
+    "actions": "Actions",
+    "all": "All",
+    "apply_filters": "Apply filters",
+    "ascending": "Ascending",
+    "attempt": "Attempt",
+    "clear": "Clear",
+    "context": "Context",
+    "correct": "Correct",
+    "date": "Date",
+    "descending": "Descending",
+    "duration": "Duration",
+    "enter_context": "Enter context",
+    "error": "Error",
+    "error_saving_content": "There was an error saving your content",
+    "explanation": "Explanation",
+    "from": "From",
+    "generate": "Generate",
+    "generate_explanation": "Generate explanation",
+    "generate_with_ai": "Generate with AI",
+    "next": "Next",
+    "no_content_yet": "No content yet",
+    "open": "Open",
+    "order": "Order",
+    "page": "Page",
+    "pending": "Pending",
+    "previous": "Previous",
+    "published": "Published",
+    "question": "Question",
+    "regenerate": "Regenerate",
+    "remove": "Remove",
+    "saved": "All changes saved",
+    "score": "Score",
+    "selected": "selected",
+    "sort": "Sort",
+    "status": "Status",
+    "submitted_at": "Submitted at",
+    "to": "To",
+    "unknown": "Unknown",
+    "unlink": "Unlink",
+    "upload": "Upload",
+    "view": "View",
+    "whats_the_title": "What's the title?",
+    "write_something": "Write something"
   },
   "finance": {
     "new_debt": "New debt",
@@ -691,7 +735,8 @@
       "dashboard": "Dashboard",
       "metrics": "Metrics",
       "reports": "Reports",
-      "settings": "Settings"
+      "settings": "Settings",
+      "education": "Education"
     },
     "workspaceFallback": "Education workspace"
   },
@@ -873,6 +918,143 @@
     "visibility": {
       "private": "Private",
       "workspace": "Workspace"
+    }
+  },
+  "ai_chat": {
+    "incorrect": "incorrect"
+  },
+  "approvals": {
+    "labels": {
+      "user": "User"
+    }
+  },
+  "calendar-sidebar": {
+    "ready": "Ready"
+  },
+  "course-details-tabs": {
+    "extra_reading": "Extra Reading",
+    "module_content": "Module Content",
+    "preview": "Preview",
+    "resources": "Resources",
+    "youtube_links": "YouTube Links"
+  },
+  "quiz-set-data-table": {
+    "linked_modules": "Linked Modules"
+  },
+  "sidebar_tabs": {
+    "education": "Education"
+  },
+  "workspace-education-tabs": {
+    "assessments_ready": "Assessments Ready",
+    "attempt": "Attempt",
+    "attempts": "Attempts",
+    "attempts_description": "Review learner attempts with filters, scores, and answer-level drilldown.",
+    "course_builder": "Course Builder",
+    "courses": "Courses",
+    "drag_reorder_hint": "Drag modules in the left panel to reorder course flow.",
+    "flashcards": "Flashcards",
+    "library": "Library",
+    "library_description": "Manage reusable quizzes, quiz sets, and flashcards for course builders.",
+    "library_flashcards": "Library Flashcards",
+    "library_quiz_sets": "Library Quiz Sets",
+    "library_quizzes": "Library Quizzes",
+    "module_drop_target_hint": "Release to move the module into this group.",
+    "overview_description": "Track course production and teaching-readiness across your workspace.",
+    "publish_checklist": "Publish Checklist",
+    "quizzes": "Quizzes",
+    "teacher_review_queue": "Teacher Review Queue",
+    "valsea": {
+      "audio_recording_failed": "Could not start audio recording.",
+      "audio_recording_unsupported": "This browser does not support live audio recording.",
+      "page_description": "Convert mixed-language classroom speech into clearer notes, translations, semantic cues, learner tone, and teacher next steps.",
+      "sample_1_text": "Teacher ah, I understand the formula but when the question say compare two graphs I blur already. The slope one can lah, but the intercept part I keep mixing up.",
+      "title": "Valsea Classroom Studio"
+    }
+  },
+  "ws-ai-workflows": {
+    "include_module_content": "Include module content",
+    "include_resources": "Include uploaded resources",
+    "include_youtube_links": "Include YouTube links"
+  },
+  "ws-course-modules": {
+    "add_link": "Add link",
+    "add_resource": "Add resource",
+    "add_resource_description": "Add a new resource.",
+    "add_youtube_link_description": "Add a new YouTube link.",
+    "create": "Create module",
+    "create_description": "Create a new module",
+    "create_group": "Create group",
+    "create_group_description": "Create a new module group to organize your course content.",
+    "create_multiple": "Create multiple",
+    "description": "Manage modules in your workspace that are part of a course.",
+    "edit": "Edit module",
+    "edit_description": "Edit an existing module",
+    "edit_group": "Edit group",
+    "group_color": "Color",
+    "group_created": "Group created successfully",
+    "group_deleted": "Group deleted",
+    "group_icon": "Icon",
+    "group_save_error": "Failed to save group",
+    "group_title": "Group title",
+    "group_updated": "Group updated successfully",
+    "groups_reordered": "Groups reordered",
+    "icon_description": "Choose an icon to represent this group.",
+    "module_deleted": "Module deleted",
+    "module_duplicated": "Module duplicated",
+    "module_groups": "Module groups",
+    "module_moved": "Module moved",
+    "modules_reordered": "Modules reordered",
+    "name": "Module name",
+    "no_color": "No color selected",
+    "no_icon": "No icon selected",
+    "plural": "Course Modules",
+    "randomize_color": "Randomize color",
+    "reorder_failed": "Failed to reorder",
+    "resource": "Resource",
+    "resources": "Resources",
+    "search_icons": "Search icons...",
+    "select_icon": "Select an icon",
+    "singular": "Course Module",
+    "youtube_link": "YouTube Link",
+    "youtube_links": "YouTube Links"
+  },
+  "ws-courses": {
+    "card_view": "Card view",
+    "create": "Create course",
+    "create_description": "Create a new course",
+    "delete_confirm_title": "Deleting \"{name}\"",
+    "description": "Manage courses in your workspace that include markdown content, slides, quizzes, and flashcards.",
+    "no_description_provided": "No description provided",
+    "plural": "Courses",
+    "singular": "Course",
+    "table_view": "Table view"
+  },
+  "ws-flashcards": {
+    "back": "Back",
+    "create": "Create flashcard",
+    "create_description": "Create a new flashcard",
+    "description": "Manage flashcards in your workspace that have a front and back side for learning purposes.",
+    "edit": "Edit flashcard",
+    "edit_description": "Edit an existing flashcard",
+    "front": "Front",
+    "generation_accepted": "AI-generated flashcards are accepted!",
+    "generation_error": "An error has occured when generating flashcards.",
+    "plural": "Flashcards",
+    "singular": "Flashcard"
+  },
+  "ws-quiz-sets": {
+    "create": "Create quiz set",
+    "create_description": "Create a new quiz set",
+    "description": "Quiz sets are used to group quizzes together for learning purposes.",
+    "edit": "Edit set",
+    "link-modules": "Link modules",
+    "name": "Set name",
+    "plural": "Quiz Sets",
+    "singular": "Quiz Set"
+  },
+  "ws-task-boards": {
+    "row_actions": {
+      "duplicate": "Duplicate"
     }
   }
 }

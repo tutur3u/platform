@@ -9,9 +9,13 @@ const repoRoot = resolve(
 );
 
 const satelliteRouteRoots = [
-  'apps/web/src/legacy-api-routes/v1/tulearn',
-  'apps/web/src/legacy-api-routes/v1/course',
-  'apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/tulearn',
+  // tulearn + guest course routes now live in apps/learn.
+  'apps/learn/src/app/api/v1/tulearn',
+  'apps/learn/src/app/api/v1/course',
+  'apps/learn/src/app/api/v1/workspaces/[wsId]/tulearn',
+  // teach routes now live in apps/teach (they opt into app-session auth via the
+  // explicit { targetApp: 'teach' } object form, which this inventory's opt-in
+  // regex intentionally does not scan; teach was not covered here previously).
   'apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/users/groups',
   'apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/time-tracking',
   // Calendar routes migrated to the dedicated calendar app (apps/calendar).
@@ -30,8 +34,10 @@ const satelliteRouteRoots = [
 ];
 
 const satelliteAppApiRoots = [
-  'apps/learn/src/app/api',
-  'apps/teach/src/app/api',
+  // apps/learn now owns its migrated tulearn API routes; it is no longer a thin
+  // proxy-only satellite, so it is excluded from the local-API allowlist.
+  // apps/teach now owns its migrated teach/education API routes; it is no longer
+  // a thin proxy-only satellite, so it is excluded from the local-API allowlist.
   'apps/chat/src/app/api',
   // apps/inventory now owns its migrated inventory API routes; it is no longer a
   // thin proxy-only satellite, so it is excluded from the local-API allowlist.

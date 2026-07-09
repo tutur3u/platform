@@ -6,60 +6,48 @@
         "acceptedRemoval": 17,
         "key": "api",
         "label": "api",
-        "legacyNext": 679,
-        "migrated": 77,
-        "percentComplete": 12.16,
-        "remaining": 679,
-        "terminal": 94,
-        "total": 773,
+        "legacyNext": 592,
+        "migrated": 74,
+        "percentComplete": 13.32,
+        "remaining": 592,
+        "terminal": 91,
+        "total": 683,
         "unknownStatus": 0
       },
       {
         "acceptedRemoval": 2,
         "key": "page",
         "label": "page",
-        "legacyNext": 61,
-        "migrated": 142,
-        "percentComplete": 70.24,
-        "remaining": 61,
-        "terminal": 144,
-        "total": 205,
-        "unknownStatus": 0
-      },
-      {
-        "acceptedRemoval": 0,
-        "key": "layout",
-        "label": "layout",
-        "legacyNext": 12,
-        "migrated": 47,
-        "percentComplete": 79.66,
-        "remaining": 12,
-        "terminal": 47,
-        "total": 59,
+        "legacyNext": 57,
+        "migrated": 121,
+        "percentComplete": 68.33,
+        "remaining": 57,
+        "terminal": 123,
+        "total": 180,
         "unknownStatus": 0
       },
       {
         "acceptedRemoval": 0,
         "key": "cron",
         "label": "cron",
-        "legacyNext": 11,
+        "legacyNext": 10,
         "migrated": 2,
-        "percentComplete": 15.38,
-        "remaining": 11,
+        "percentComplete": 16.67,
+        "remaining": 10,
         "terminal": 2,
-        "total": 13,
+        "total": 12,
         "unknownStatus": 0
       },
       {
         "acceptedRemoval": 0,
-        "key": "trpc",
-        "label": "trpc",
-        "legacyNext": 2,
-        "migrated": 0,
-        "percentComplete": 0,
-        "remaining": 2,
-        "terminal": 0,
-        "total": 2,
+        "key": "layout",
+        "label": "layout",
+        "legacyNext": 9,
+        "migrated": 47,
+        "percentComplete": 83.93,
+        "remaining": 9,
+        "terminal": 47,
+        "total": 56,
         "unknownStatus": 0
       },
       {
@@ -72,6 +60,18 @@
         "remaining": 1,
         "terminal": 3,
         "total": 4,
+        "unknownStatus": 0
+      },
+      {
+        "acceptedRemoval": 0,
+        "key": "trpc",
+        "label": "trpc",
+        "legacyNext": 1,
+        "migrated": 0,
+        "percentComplete": 0,
+        "remaining": 1,
+        "terminal": 0,
+        "total": 1,
         "unknownStatus": 0
       },
       {
@@ -116,55 +116,28 @@
         "acceptedRemoval": 17,
         "key": "rust-backend",
         "label": "Rust backend",
-        "legacyNext": 693,
-        "migrated": 82,
-        "percentComplete": 12.5,
-        "remaining": 693,
-        "terminal": 99,
-        "total": 792,
+        "legacyNext": 604,
+        "migrated": 79,
+        "percentComplete": 13.71,
+        "remaining": 604,
+        "terminal": 96,
+        "total": 700,
         "unknownStatus": 0
       },
       {
         "acceptedRemoval": 2,
         "key": "tanstack-start",
         "label": "TanStack Start",
-        "legacyNext": 73,
-        "migrated": 193,
-        "percentComplete": 72.76,
-        "remaining": 73,
-        "terminal": 195,
-        "total": 268,
+        "legacyNext": 66,
+        "migrated": 172,
+        "percentComplete": 72.5,
+        "remaining": 66,
+        "terminal": 174,
+        "total": 240,
         "unknownStatus": 0
       }
     ],
     "topLegacyRoutes": [
-      {
-        "kind": "api",
-        "methods": ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-        "routePath": "/api/:wsId/*path?",
-        "sourceFile": "apps/web/src/app/api/[wsId]/[[...path]]/route.ts",
-        "status": "legacy-next",
-        "targetOwner": "rust-backend",
-        "id": "api:/api/:wsId/*path?:apps/web/src/app/api/[wsId]/[[...path]]/route.ts"
-      },
-      {
-        "kind": "api",
-        "methods": ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-        "routePath": "/api/admin/*path?",
-        "sourceFile": "apps/web/src/app/api/admin/[[...path]]/route.ts",
-        "status": "legacy-next",
-        "targetOwner": "rust-backend",
-        "id": "api:/api/admin/*path?:apps/web/src/app/api/admin/[[...path]]/route.ts"
-      },
-      {
-        "kind": "api",
-        "methods": ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-        "routePath": "/api/ai/*path?",
-        "sourceFile": "apps/web/src/app/api/ai/[[...path]]/route.ts",
-        "status": "legacy-next",
-        "targetOwner": "rust-backend",
-        "id": "api:/api/ai/*path?:apps/web/src/app/api/ai/[[...path]]/route.ts"
-      },
       {
         "kind": "api",
         "methods": ["POST"],
@@ -267,15 +240,6 @@
       {
         "kind": "api",
         "methods": ["POST"],
-        "routePath": "/api/ai/course",
-        "sourceFile": "apps/web/src/legacy-api-routes/ai/course/route.ts",
-        "status": "legacy-next",
-        "targetOwner": "rust-backend",
-        "id": "api:/api/ai/course:apps/web/src/legacy-api-routes/ai/course/route.ts"
-      },
-      {
-        "kind": "api",
-        "methods": ["POST"],
         "routePath": "/api/ai/executions",
         "sourceFile": "apps/web/src/legacy-api-routes/ai/executions/route.ts",
         "status": "legacy-next",
@@ -312,36 +276,63 @@
       {
         "kind": "api",
         "methods": ["POST"],
-        "routePath": "/api/ai/objects/flashcards",
-        "sourceFile": "apps/web/src/legacy-api-routes/ai/objects/flashcards/route.ts",
+        "routePath": "/api/ai/objects/year-plan",
+        "sourceFile": "apps/web/src/legacy-api-routes/ai/objects/year-plan/route.ts",
         "status": "legacy-next",
         "targetOwner": "rust-backend",
-        "id": "api:/api/ai/objects/flashcards:apps/web/src/legacy-api-routes/ai/objects/flashcards/route.ts"
+        "id": "api:/api/ai/objects/year-plan:apps/web/src/legacy-api-routes/ai/objects/year-plan/route.ts"
+      },
+      {
+        "kind": "api",
+        "methods": ["POST"],
+        "routePath": "/api/ai/temp-auth/revoke",
+        "sourceFile": "apps/web/src/legacy-api-routes/ai/temp-auth/revoke/route.ts",
+        "status": "legacy-next",
+        "targetOwner": "rust-backend",
+        "id": "api:/api/ai/temp-auth/revoke:apps/web/src/legacy-api-routes/ai/temp-auth/revoke/route.ts"
+      },
+      {
+        "kind": "api",
+        "methods": ["POST"],
+        "routePath": "/api/ai/temp-auth/token",
+        "sourceFile": "apps/web/src/legacy-api-routes/ai/temp-auth/token/route.ts",
+        "status": "legacy-next",
+        "targetOwner": "rust-backend",
+        "id": "api:/api/ai/temp-auth/token:apps/web/src/legacy-api-routes/ai/temp-auth/token/route.ts"
+      },
+      {
+        "kind": "api",
+        "methods": ["POST"],
+        "routePath": "/api/ai/translate",
+        "sourceFile": "apps/web/src/legacy-api-routes/ai/translate/route.ts",
+        "status": "legacy-next",
+        "targetOwner": "rust-backend",
+        "id": "api:/api/ai/translate:apps/web/src/legacy-api-routes/ai/translate/route.ts"
+      },
+      {
+        "kind": "api",
+        "methods": ["GET"],
+        "routePath": "/api/auth/callback",
+        "sourceFile": "apps/web/src/legacy-api-routes/auth/callback/route.ts",
+        "status": "legacy-next",
+        "targetOwner": "rust-backend",
+        "id": "api:/api/auth/callback:apps/web/src/legacy-api-routes/auth/callback/route.ts"
       }
     ],
     "totals": {
       "acceptedRemoval": 19,
       "key": "total",
       "label": "All route artifacts",
-      "legacyNext": 766,
-      "migrated": 275,
-      "percentComplete": 27.74,
-      "remaining": 766,
-      "terminal": 294,
-      "total": 1060,
+      "legacyNext": 670,
+      "migrated": 251,
+      "percentComplete": 28.72,
+      "remaining": 670,
+      "terminal": 270,
+      "total": 940,
       "unknownStatus": 0
     }
   },
   "routes": [
-    {
-      "id": "api:/api/:wsId/*path?:apps/web/src/app/api/[wsId]/[[...path]]/route.ts",
-      "kind": "api",
-      "methods": ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-      "routePath": "/api/:wsId/*path?",
-      "sourceFile": "apps/web/src/app/api/[wsId]/[[...path]]/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
     {
       "id": "api:/api/:wsId/crawlers/domains:apps/web/src/legacy-api-routes/[wsId]/crawlers/domains/route.ts",
       "kind": "api",
@@ -367,24 +358,6 @@
       "routePath": "/api/:wsId/crawlers/uncrawled",
       "sourceFile": "apps/web/src/legacy-api-routes/[wsId]/crawlers/uncrawled/route.ts",
       "status": "migrated",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/admin/*path?:apps/web/src/app/api/admin/[[...path]]/route.ts",
-      "kind": "api",
-      "methods": ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-      "routePath": "/api/admin/*path?",
-      "sourceFile": "apps/web/src/app/api/admin/[[...path]]/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/ai/*path?:apps/web/src/app/api/ai/[[...path]]/route.ts",
-      "kind": "api",
-      "methods": ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-      "routePath": "/api/ai/*path?",
-      "sourceFile": "apps/web/src/app/api/ai/[[...path]]/route.ts",
-      "status": "legacy-next",
       "targetOwner": "rust-backend"
     },
     {
@@ -487,15 +460,6 @@
       "targetOwner": "rust-backend"
     },
     {
-      "id": "api:/api/ai/course:apps/web/src/legacy-api-routes/ai/course/route.ts",
-      "kind": "api",
-      "methods": ["POST"],
-      "routePath": "/api/ai/course",
-      "sourceFile": "apps/web/src/legacy-api-routes/ai/course/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
       "id": "api:/api/ai/executions:apps/web/src/legacy-api-routes/ai/executions/route.ts",
       "kind": "api",
       "methods": ["POST"],
@@ -532,47 +496,11 @@
       "targetOwner": "rust-backend"
     },
     {
-      "id": "api:/api/ai/objects/flashcards:apps/web/src/legacy-api-routes/ai/objects/flashcards/route.ts",
-      "kind": "api",
-      "methods": ["POST"],
-      "routePath": "/api/ai/objects/flashcards",
-      "sourceFile": "apps/web/src/legacy-api-routes/ai/objects/flashcards/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/ai/objects/quizzes:apps/web/src/legacy-api-routes/ai/objects/quizzes/route.ts",
-      "kind": "api",
-      "methods": ["POST"],
-      "routePath": "/api/ai/objects/quizzes",
-      "sourceFile": "apps/web/src/legacy-api-routes/ai/objects/quizzes/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/ai/objects/quizzes/explanation:apps/web/src/legacy-api-routes/ai/objects/quizzes/explanation/route.ts",
-      "kind": "api",
-      "methods": ["POST"],
-      "routePath": "/api/ai/objects/quizzes/explanation",
-      "sourceFile": "apps/web/src/legacy-api-routes/ai/objects/quizzes/explanation/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
       "id": "api:/api/ai/objects/year-plan:apps/web/src/legacy-api-routes/ai/objects/year-plan/route.ts",
       "kind": "api",
       "methods": ["POST"],
       "routePath": "/api/ai/objects/year-plan",
       "sourceFile": "apps/web/src/legacy-api-routes/ai/objects/year-plan/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/ai/quiz:apps/web/src/legacy-api-routes/ai/quiz/route.ts",
-      "kind": "api",
-      "methods": ["POST"],
-      "routePath": "/api/ai/quiz",
-      "sourceFile": "apps/web/src/legacy-api-routes/ai/quiz/route.ts",
       "status": "legacy-next",
       "targetOwner": "rust-backend"
     },
@@ -600,15 +528,6 @@
       "methods": ["POST"],
       "routePath": "/api/ai/translate",
       "sourceFile": "apps/web/src/legacy-api-routes/ai/translate/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/auth/*path?:apps/web/src/app/api/auth/[[...path]]/route.ts",
-      "kind": "api",
-      "methods": ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-      "routePath": "/api/auth/*path?",
-      "sourceFile": "apps/web/src/app/api/auth/[[...path]]/route.ts",
       "status": "legacy-next",
       "targetOwner": "rust-backend"
     },
@@ -748,24 +667,6 @@
       "targetOwner": "rust-backend"
     },
     {
-      "id": "api:/api/billing/*path?:apps/web/src/app/api/billing/[[...path]]/route.ts",
-      "kind": "api",
-      "methods": ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-      "routePath": "/api/billing/*path?",
-      "sourceFile": "apps/web/src/app/api/billing/[[...path]]/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/cli/*path?:apps/web/src/app/api/cli/[[...path]]/route.ts",
-      "kind": "api",
-      "methods": ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-      "routePath": "/api/cli/*path?",
-      "sourceFile": "apps/web/src/app/api/cli/[[...path]]/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
       "id": "api:/api/cli/auth/refresh:apps/web/src/legacy-api-routes/cli/auth/refresh/route.ts",
       "kind": "api",
       "methods": ["POST"],
@@ -793,15 +694,6 @@
       "targetOwner": "rust-backend"
     },
     {
-      "id": "api:/api/email/*path?:apps/web/src/app/api/email/[[...path]]/route.ts",
-      "kind": "api",
-      "methods": ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-      "routePath": "/api/email/*path?",
-      "sourceFile": "apps/web/src/app/api/email/[[...path]]/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
       "id": "api:/api/email/unsubscribe:apps/web/src/legacy-api-routes/email/unsubscribe/route.ts",
       "kind": "api",
       "methods": ["GET", "POST"],
@@ -820,15 +712,6 @@
       "targetOwner": "rust-backend"
     },
     {
-      "id": "api:/api/health/*path?:apps/web/src/app/api/health/[[...path]]/route.ts",
-      "kind": "api",
-      "methods": ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-      "routePath": "/api/health/*path?",
-      "sourceFile": "apps/web/src/app/api/health/[[...path]]/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
       "id": "api:/api/invite/:code:apps/web/src/legacy-api-routes/invite/[code]/route.ts",
       "kind": "api",
       "methods": ["GET", "POST"],
@@ -838,38 +721,11 @@
       "targetOwner": "rust-backend"
     },
     {
-      "id": "api:/api/invite/*path?:apps/web/src/app/api/invite/[[...path]]/route.ts",
-      "kind": "api",
-      "methods": ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-      "routePath": "/api/invite/*path?",
-      "sourceFile": "apps/web/src/app/api/invite/[[...path]]/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/notifications/*path?:apps/web/src/app/api/notifications/[[...path]]/route.ts",
-      "kind": "api",
-      "methods": ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-      "routePath": "/api/notifications/*path?",
-      "sourceFile": "apps/web/src/app/api/notifications/[[...path]]/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
       "id": "api:/api/notifications/send-immediate:apps/web/src/legacy-api-routes/notifications/send-immediate/route.ts",
       "kind": "api",
       "methods": ["POST"],
       "routePath": "/api/notifications/send-immediate",
       "sourceFile": "apps/web/src/legacy-api-routes/notifications/send-immediate/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/payment/*path?:apps/web/src/app/api/payment/[[...path]]/route.ts",
-      "kind": "api",
-      "methods": ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-      "routePath": "/api/payment/*path?",
-      "sourceFile": "apps/web/src/app/api/payment/[[...path]]/route.ts",
       "status": "legacy-next",
       "targetOwner": "rust-backend"
     },
@@ -1018,29 +874,11 @@
       "targetOwner": "rust-backend"
     },
     {
-      "id": "api:/api/reports/*path?:apps/web/src/app/api/reports/[[...path]]/route.ts",
-      "kind": "api",
-      "methods": ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-      "routePath": "/api/reports/*path?",
-      "sourceFile": "apps/web/src/app/api/reports/[[...path]]/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
       "id": "api:/api/reports/upload-url:apps/web/src/legacy-api-routes/reports/upload-url/route.ts",
       "kind": "api",
       "methods": ["POST", "DELETE"],
       "routePath": "/api/reports/upload-url",
       "sourceFile": "apps/web/src/legacy-api-routes/reports/upload-url/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/share/*path?:apps/web/src/app/api/share/[[...path]]/route.ts",
-      "kind": "api",
-      "methods": ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-      "routePath": "/api/share/*path?",
-      "sourceFile": "apps/web/src/app/api/share/[[...path]]/route.ts",
       "status": "legacy-next",
       "targetOwner": "rust-backend"
     },
@@ -1063,24 +901,6 @@
       "targetOwner": "rust-backend"
     },
     {
-      "id": "api:/api/sync-logs/*path?:apps/web/src/app/api/sync-logs/[[...path]]/route.ts",
-      "kind": "api",
-      "methods": ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-      "routePath": "/api/sync-logs/*path?",
-      "sourceFile": "apps/web/src/app/api/sync-logs/[[...path]]/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/time-tracking/*path?:apps/web/src/app/api/time-tracking/[[...path]]/route.ts",
-      "kind": "api",
-      "methods": ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-      "routePath": "/api/time-tracking/*path?",
-      "sourceFile": "apps/web/src/app/api/time-tracking/[[...path]]/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
       "id": "api:/api/time-tracking/export:apps/web/src/legacy-api-routes/time-tracking/export/route.ts",
       "kind": "api",
       "methods": ["GET"],
@@ -1090,30 +910,12 @@
       "targetOwner": "rust-backend"
     },
     {
-      "id": "api:/api/users/*path?:apps/web/src/app/api/users/[[...path]]/route.ts",
-      "kind": "api",
-      "methods": ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-      "routePath": "/api/users/*path?",
-      "sourceFile": "apps/web/src/app/api/users/[[...path]]/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
       "id": "api:/api/users/search:apps/web/src/legacy-api-routes/users/search/route.ts",
       "kind": "api",
       "methods": ["GET"],
       "routePath": "/api/users/search",
       "sourceFile": "apps/web/src/legacy-api-routes/users/search/route.ts",
       "status": "accepted-removal",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/*path?:apps/web/src/app/api/v1/[[...path]]/route.ts",
-      "kind": "api",
-      "methods": ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-      "routePath": "/api/v1/*path?",
-      "sourceFile": "apps/web/src/app/api/v1/[[...path]]/route.ts",
-      "status": "legacy-next",
       "targetOwner": "rust-backend"
     },
     {
@@ -1794,15 +1596,6 @@
       "routePath": "/api/v1/cms/workspaces",
       "sourceFile": "apps/web/src/legacy-api-routes/v1/cms/workspaces/route.ts",
       "status": "migrated",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/course:apps/web/src/legacy-api-routes/v1/course/route.ts",
-      "kind": "api",
-      "methods": ["GET"],
-      "routePath": "/api/v1/course",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/course/route.ts",
-      "status": "legacy-next",
       "targetOwner": "rust-backend"
     },
     {
@@ -2574,15 +2367,6 @@
       "targetOwner": "rust-backend"
     },
     {
-      "id": "api:/api/v1/tulearn/bootstrap:apps/web/src/legacy-api-routes/v1/tulearn/bootstrap/route.ts",
-      "kind": "api",
-      "methods": ["GET"],
-      "routePath": "/api/v1/tulearn/bootstrap",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/tulearn/bootstrap/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
       "id": "api:/api/v1/user/onboarding-progress:apps/web/src/legacy-api-routes/v1/user/onboarding-progress/route.ts",
       "kind": "api",
       "methods": ["GET", "PATCH"],
@@ -3141,69 +2925,6 @@
       "targetOwner": "rust-backend"
     },
     {
-      "id": "api:/api/v1/workspaces/:wsId/course-modules:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/course-modules/route.ts",
-      "kind": "api",
-      "methods": ["GET"],
-      "routePath": "/api/v1/workspaces/:wsId/course-modules",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/course-modules/route.ts",
-      "status": "migrated",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/course-modules/:moduleId:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/course-modules/[moduleId]/route.ts",
-      "kind": "api",
-      "methods": ["PUT", "DELETE"],
-      "routePath": "/api/v1/workspaces/:wsId/course-modules/:moduleId",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/course-modules/[moduleId]/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/course-modules/:moduleId/quiz-sets:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/course-modules/[moduleId]/quiz-sets/route.ts",
-      "kind": "api",
-      "methods": ["GET"],
-      "routePath": "/api/v1/workspaces/:wsId/course-modules/:moduleId/quiz-sets",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/course-modules/[moduleId]/quiz-sets/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/courses:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/courses/route.ts",
-      "kind": "api",
-      "methods": ["GET", "POST"],
-      "routePath": "/api/v1/workspaces/:wsId/courses",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/courses/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/courses/:courseId:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/courses/[courseId]/route.ts",
-      "kind": "api",
-      "methods": ["PUT", "DELETE"],
-      "routePath": "/api/v1/workspaces/:wsId/courses/:courseId",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/courses/[courseId]/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/courses/:courseId/module-order:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/courses/[courseId]/module-order/route.ts",
-      "kind": "api",
-      "methods": ["PATCH"],
-      "routePath": "/api/v1/workspaces/:wsId/courses/:courseId/module-order",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/courses/[courseId]/module-order/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/courses/:courseId/modules:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/courses/[courseId]/modules/route.ts",
-      "kind": "api",
-      "methods": ["GET", "POST"],
-      "routePath": "/api/v1/workspaces/:wsId/courses/:courseId/modules",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/courses/[courseId]/modules/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
       "id": "api:/api/v1/workspaces/:wsId/crawl:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/crawl/route.ts",
       "kind": "api",
       "methods": ["POST"],
@@ -3380,78 +3101,6 @@
       "methods": ["GET", "PATCH", "DELETE"],
       "routePath": "/api/v1/workspaces/:wsId/documents/:documentId",
       "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/documents/[documentId]/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/education/access:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/education/access/route.ts",
-      "kind": "api",
-      "methods": ["GET"],
-      "routePath": "/api/v1/workspaces/:wsId/education/access",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/education/access/route.ts",
-      "status": "migrated",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/education/attempts:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/education/attempts/route.ts",
-      "kind": "api",
-      "methods": ["GET"],
-      "routePath": "/api/v1/workspaces/:wsId/education/attempts",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/education/attempts/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/education/attempts/:attemptId:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/education/attempts/[attemptId]/route.ts",
-      "kind": "api",
-      "methods": ["GET"],
-      "routePath": "/api/v1/workspaces/:wsId/education/attempts/:attemptId",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/education/attempts/[attemptId]/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/education/valsea:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/education/valsea/route.ts",
-      "kind": "api",
-      "methods": ["GET", "POST"],
-      "routePath": "/api/v1/workspaces/:wsId/education/valsea",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/education/valsea/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/education/valsea/audio/upload-url:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/education/valsea/audio/upload-url/route.ts",
-      "kind": "api",
-      "methods": ["POST"],
-      "routePath": "/api/v1/workspaces/:wsId/education/valsea/audio/upload-url",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/education/valsea/audio/upload-url/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/education/valsea/scenario:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/education/valsea/scenario/route.ts",
-      "kind": "api",
-      "methods": ["POST"],
-      "routePath": "/api/v1/workspaces/:wsId/education/valsea/scenario",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/education/valsea/scenario/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/education/valsea/speech:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/education/valsea/speech/route.ts",
-      "kind": "api",
-      "methods": ["POST"],
-      "routePath": "/api/v1/workspaces/:wsId/education/valsea/speech",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/education/valsea/speech/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/education/valsea/validate-key:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/education/valsea/validate-key/route.ts",
-      "kind": "api",
-      "methods": ["POST"],
-      "routePath": "/api/v1/workspaces/:wsId/education/valsea/validate-key",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/education/valsea/validate-key/route.ts",
       "status": "legacy-next",
       "targetOwner": "rust-backend"
     },
@@ -4153,24 +3802,6 @@
       "targetOwner": "rust-backend"
     },
     {
-      "id": "api:/api/v1/workspaces/:wsId/flashcards:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/flashcards/route.ts",
-      "kind": "api",
-      "methods": ["GET", "POST"],
-      "routePath": "/api/v1/workspaces/:wsId/flashcards",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/flashcards/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/flashcards/:flashcardId:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/flashcards/[flashcardId]/route.ts",
-      "kind": "api",
-      "methods": ["PUT", "DELETE"],
-      "routePath": "/api/v1/workspaces/:wsId/flashcards/:flashcardId",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/flashcards/[flashcardId]/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
       "id": "api:/api/v1/workspaces/:wsId/forms:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/forms/route.ts",
       "kind": "api",
       "methods": ["GET", "POST"],
@@ -4864,78 +4495,6 @@
       "targetOwner": "rust-backend"
     },
     {
-      "id": "api:/api/v1/workspaces/:wsId/quiz-sets:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/quiz-sets/route.ts",
-      "kind": "api",
-      "methods": ["GET", "POST"],
-      "routePath": "/api/v1/workspaces/:wsId/quiz-sets",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/quiz-sets/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/quiz-sets/:setId:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/quiz-sets/[setId]/route.ts",
-      "kind": "api",
-      "methods": ["PUT", "DELETE"],
-      "routePath": "/api/v1/workspaces/:wsId/quiz-sets/:setId",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/quiz-sets/[setId]/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/quiz-sets/:setId/linked-modules:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/quiz-sets/[setId]/linked-modules/route.ts",
-      "kind": "api",
-      "methods": ["GET"],
-      "routePath": "/api/v1/workspaces/:wsId/quiz-sets/:setId/linked-modules",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/quiz-sets/[setId]/linked-modules/route.ts",
-      "status": "migrated",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/quiz-sets/:setId/modules:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/quiz-sets/[setId]/modules/route.ts",
-      "kind": "api",
-      "methods": ["POST"],
-      "routePath": "/api/v1/workspaces/:wsId/quiz-sets/:setId/modules",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/quiz-sets/[setId]/modules/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/quiz-sets/:setId/modules/:moduleId:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/quiz-sets/[setId]/modules/[moduleId]/route.ts",
-      "kind": "api",
-      "methods": ["DELETE"],
-      "routePath": "/api/v1/workspaces/:wsId/quiz-sets/:setId/modules/:moduleId",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/quiz-sets/[setId]/modules/[moduleId]/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/quiz-sets/:setId/quizzes:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/quiz-sets/[setId]/quizzes/route.ts",
-      "kind": "api",
-      "methods": ["GET"],
-      "routePath": "/api/v1/workspaces/:wsId/quiz-sets/:setId/quizzes",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/quiz-sets/[setId]/quizzes/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/quizzes:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/quizzes/route.ts",
-      "kind": "api",
-      "methods": ["GET", "POST"],
-      "routePath": "/api/v1/workspaces/:wsId/quizzes",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/quizzes/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/quizzes/:quizId:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/quizzes/[quizId]/route.ts",
-      "kind": "api",
-      "methods": ["PUT", "DELETE"],
-      "routePath": "/api/v1/workspaces/:wsId/quizzes/:quizId",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/quizzes/[quizId]/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
       "id": "api:/api/v1/workspaces/:wsId/roles:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/roles/route.ts",
       "kind": "api",
       "methods": ["GET", "POST"],
@@ -5220,168 +4779,6 @@
       "methods": ["POST"],
       "routePath": "/api/v1/workspaces/:wsId/storage/upload",
       "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/storage/upload/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/teach/courses/:courseId/attendance:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/teach/courses/[courseId]/attendance/route.ts",
-      "kind": "api",
-      "methods": ["GET", "POST"],
-      "routePath": "/api/v1/workspaces/:wsId/teach/courses/:courseId/attendance",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/teach/courses/[courseId]/attendance/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/teach/courses/:courseId/indicators:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/teach/courses/[courseId]/indicators/route.ts",
-      "kind": "api",
-      "methods": ["GET", "POST", "PATCH"],
-      "routePath": "/api/v1/workspaces/:wsId/teach/courses/:courseId/indicators",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/teach/courses/[courseId]/indicators/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/teach/courses/:courseId/members:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/teach/courses/[courseId]/members/route.ts",
-      "kind": "api",
-      "methods": ["GET", "POST"],
-      "routePath": "/api/v1/workspaces/:wsId/teach/courses/:courseId/members",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/teach/courses/[courseId]/members/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/teach/courses/:courseId/members/:userId:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/teach/courses/[courseId]/members/[userId]/route.ts",
-      "kind": "api",
-      "methods": ["DELETE"],
-      "routePath": "/api/v1/workspaces/:wsId/teach/courses/:courseId/members/:userId",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/teach/courses/[courseId]/members/[userId]/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/teach/courses/:courseId/modules/:moduleId/quizzes/submissions:apps/web/src/app/api/v1/workspaces/[wsId]/teach/courses/[courseId]/modules/[moduleId]/quizzes/submissions/route.ts",
-      "kind": "api",
-      "methods": ["GET"],
-      "routePath": "/api/v1/workspaces/:wsId/teach/courses/:courseId/modules/:moduleId/quizzes/submissions",
-      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/teach/courses/[courseId]/modules/[moduleId]/quizzes/submissions/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/teach/courses/:courseId/modules/:moduleId/quizzes/submissions/:userId:apps/web/src/app/api/v1/workspaces/[wsId]/teach/courses/[courseId]/modules/[moduleId]/quizzes/submissions/[userId]/route.ts",
-      "kind": "api",
-      "methods": ["GET", "POST"],
-      "routePath": "/api/v1/workspaces/:wsId/teach/courses/:courseId/modules/:moduleId/quizzes/submissions/:userId",
-      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/teach/courses/[courseId]/modules/[moduleId]/quizzes/submissions/[userId]/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/teach/courses/:courseId/modules/:moduleId/quizzes/submissions/:userId/ai-review:apps/web/src/app/api/v1/workspaces/[wsId]/teach/courses/[courseId]/modules/[moduleId]/quizzes/submissions/[userId]/ai-review/route.ts",
-      "kind": "api",
-      "methods": ["POST"],
-      "routePath": "/api/v1/workspaces/:wsId/teach/courses/:courseId/modules/:moduleId/quizzes/submissions/:userId/ai-review",
-      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/teach/courses/[courseId]/modules/[moduleId]/quizzes/submissions/[userId]/ai-review/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/teach/courses/:courseId/posts:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/teach/courses/[courseId]/posts/route.ts",
-      "kind": "api",
-      "methods": ["GET", "POST"],
-      "routePath": "/api/v1/workspaces/:wsId/teach/courses/:courseId/posts",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/teach/courses/[courseId]/posts/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/teach/courses/:courseId/reports:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/teach/courses/[courseId]/reports/route.ts",
-      "kind": "api",
-      "methods": ["GET", "POST"],
-      "routePath": "/api/v1/workspaces/:wsId/teach/courses/:courseId/reports",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/teach/courses/[courseId]/reports/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/teach/courses/:courseId/student-performance:apps/web/src/app/api/v1/workspaces/[wsId]/teach/courses/[courseId]/student-performance/route.ts",
-      "kind": "api",
-      "methods": ["GET"],
-      "routePath": "/api/v1/workspaces/:wsId/teach/courses/:courseId/student-performance",
-      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/teach/courses/[courseId]/student-performance/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/teach/courses/:courseId/student-performance/:userId/send-report:apps/web/src/app/api/v1/workspaces/[wsId]/teach/courses/[courseId]/student-performance/[userId]/send-report/route.ts",
-      "kind": "api",
-      "methods": ["POST"],
-      "routePath": "/api/v1/workspaces/:wsId/teach/courses/:courseId/student-performance/:userId/send-report",
-      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/teach/courses/[courseId]/student-performance/[userId]/send-report/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/teach/courses/:courseId/student-performance/send-bulk-report:apps/web/src/app/api/v1/workspaces/[wsId]/teach/courses/[courseId]/student-performance/send-bulk-report/route.ts",
-      "kind": "api",
-      "methods": ["POST"],
-      "routePath": "/api/v1/workspaces/:wsId/teach/courses/:courseId/student-performance/send-bulk-report",
-      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/teach/courses/[courseId]/student-performance/send-bulk-report/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/teach/courses/:courseId/tests:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/teach/courses/[courseId]/tests/route.ts",
-      "kind": "api",
-      "methods": ["GET", "POST", "PATCH"],
-      "routePath": "/api/v1/workspaces/:wsId/teach/courses/:courseId/tests",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/teach/courses/[courseId]/tests/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/teach/courses/:courseId/tests/:testId/questions:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/teach/courses/[courseId]/tests/[testId]/questions/route.ts",
-      "kind": "api",
-      "methods": ["GET", "POST"],
-      "routePath": "/api/v1/workspaces/:wsId/teach/courses/:courseId/tests/:testId/questions",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/teach/courses/[courseId]/tests/[testId]/questions/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/teach/courses/:courseId/tests/:testId/submissions:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/teach/courses/[courseId]/tests/[testId]/submissions/route.ts",
-      "kind": "api",
-      "methods": ["GET"],
-      "routePath": "/api/v1/workspaces/:wsId/teach/courses/:courseId/tests/:testId/submissions",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/teach/courses/[courseId]/tests/[testId]/submissions/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/teach/courses/:courseId/tests/:testId/submissions/:attemptId:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/teach/courses/[courseId]/tests/[testId]/submissions/[attemptId]/route.ts",
-      "kind": "api",
-      "methods": ["GET", "PATCH"],
-      "routePath": "/api/v1/workspaces/:wsId/teach/courses/:courseId/tests/:testId/submissions/:attemptId",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/teach/courses/[courseId]/tests/[testId]/submissions/[attemptId]/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/teach/dashboard-stats:apps/web/src/app/api/v1/workspaces/[wsId]/teach/dashboard-stats/route.ts",
-      "kind": "api",
-      "methods": ["GET"],
-      "routePath": "/api/v1/workspaces/:wsId/teach/dashboard-stats",
-      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/teach/dashboard-stats/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/teach/users:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/teach/users/route.ts",
-      "kind": "api",
-      "methods": ["GET"],
-      "routePath": "/api/v1/workspaces/:wsId/teach/users",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/teach/users/route.ts",
       "status": "legacy-next",
       "targetOwner": "rust-backend"
     },
@@ -5818,132 +5215,6 @@
       "targetOwner": "rust-backend"
     },
     {
-      "id": "api:/api/v1/workspaces/:wsId/tulearn/assignments:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/tulearn/assignments/route.ts",
-      "kind": "api",
-      "methods": ["GET", "PATCH"],
-      "routePath": "/api/v1/workspaces/:wsId/tulearn/assignments",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/tulearn/assignments/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/tulearn/courses:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/tulearn/courses/route.ts",
-      "kind": "api",
-      "methods": ["GET"],
-      "routePath": "/api/v1/workspaces/:wsId/tulearn/courses",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/tulearn/courses/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/tulearn/courses/:courseId:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/tulearn/courses/[courseId]/route.ts",
-      "kind": "api",
-      "methods": ["GET"],
-      "routePath": "/api/v1/workspaces/:wsId/tulearn/courses/:courseId",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/tulearn/courses/[courseId]/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/tulearn/courses/:courseId/modules/:moduleId:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/tulearn/courses/[courseId]/modules/[moduleId]/route.ts",
-      "kind": "api",
-      "methods": ["GET", "POST", "DELETE"],
-      "routePath": "/api/v1/workspaces/:wsId/tulearn/courses/:courseId/modules/:moduleId",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/tulearn/courses/[courseId]/modules/[moduleId]/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/tulearn/courses/:courseId/tests/:testId/attempt:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/tulearn/courses/[courseId]/tests/[testId]/attempt/route.ts",
-      "kind": "api",
-      "methods": ["GET"],
-      "routePath": "/api/v1/workspaces/:wsId/tulearn/courses/:courseId/tests/:testId/attempt",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/tulearn/courses/[courseId]/tests/[testId]/attempt/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/tulearn/courses/:courseId/tests/:testId/save-answer:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/tulearn/courses/[courseId]/tests/[testId]/save-answer/route.ts",
-      "kind": "api",
-      "methods": ["POST"],
-      "routePath": "/api/v1/workspaces/:wsId/tulearn/courses/:courseId/tests/:testId/save-answer",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/tulearn/courses/[courseId]/tests/[testId]/save-answer/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/tulearn/courses/:courseId/tests/:testId/start:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/tulearn/courses/[courseId]/tests/[testId]/start/route.ts",
-      "kind": "api",
-      "methods": ["POST"],
-      "routePath": "/api/v1/workspaces/:wsId/tulearn/courses/:courseId/tests/:testId/start",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/tulearn/courses/[courseId]/tests/[testId]/start/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/tulearn/courses/:courseId/tests/:testId/submit:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/tulearn/courses/[courseId]/tests/[testId]/submit/route.ts",
-      "kind": "api",
-      "methods": ["POST"],
-      "routePath": "/api/v1/workspaces/:wsId/tulearn/courses/:courseId/tests/:testId/submit",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/tulearn/courses/[courseId]/tests/[testId]/submit/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/tulearn/home:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/tulearn/home/route.ts",
-      "kind": "api",
-      "methods": ["GET"],
-      "routePath": "/api/v1/workspaces/:wsId/tulearn/home",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/tulearn/home/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/tulearn/marks:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/tulearn/marks/route.ts",
-      "kind": "api",
-      "methods": ["GET"],
-      "routePath": "/api/v1/workspaces/:wsId/tulearn/marks",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/tulearn/marks/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/tulearn/parent-links:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/tulearn/parent-links/route.ts",
-      "kind": "api",
-      "methods": ["GET", "POST"],
-      "routePath": "/api/v1/workspaces/:wsId/tulearn/parent-links",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/tulearn/parent-links/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/tulearn/parent-links/:linkId:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/tulearn/parent-links/[linkId]/route.ts",
-      "kind": "api",
-      "methods": ["PATCH"],
-      "routePath": "/api/v1/workspaces/:wsId/tulearn/parent-links/:linkId",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/tulearn/parent-links/[linkId]/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/tulearn/practice:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/tulearn/practice/route.ts",
-      "kind": "api",
-      "methods": ["GET", "POST"],
-      "routePath": "/api/v1/workspaces/:wsId/tulearn/practice",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/tulearn/practice/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/tulearn/reports:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/tulearn/reports/route.ts",
-      "kind": "api",
-      "methods": ["GET"],
-      "routePath": "/api/v1/workspaces/:wsId/tulearn/reports",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/tulearn/reports/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
       "id": "api:/api/v1/workspaces/:wsId/tutoring/export:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/tutoring/export/route.ts",
       "kind": "api",
       "methods": ["GET"],
@@ -6156,69 +5427,6 @@
       "methods": ["GET"],
       "routePath": "/api/v1/workspaces/:wsId/user-groups/:groupId/members/:userId/vitals",
       "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/user-groups/[groupId]/members/[userId]/vitals/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/user-groups/:groupId/module-groups:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/user-groups/[groupId]/module-groups/route.ts",
-      "kind": "api",
-      "methods": ["GET", "POST"],
-      "routePath": "/api/v1/workspaces/:wsId/user-groups/:groupId/module-groups",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/user-groups/[groupId]/module-groups/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/user-groups/:groupId/module-groups/:moduleGroupId:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/user-groups/[groupId]/module-groups/[moduleGroupId]/route.ts",
-      "kind": "api",
-      "methods": ["PUT", "DELETE"],
-      "routePath": "/api/v1/workspaces/:wsId/user-groups/:groupId/module-groups/:moduleGroupId",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/user-groups/[groupId]/module-groups/[moduleGroupId]/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/user-groups/:groupId/module-groups/:moduleGroupId/module-order:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/user-groups/[groupId]/module-groups/[moduleGroupId]/module-order/route.ts",
-      "kind": "api",
-      "methods": ["PATCH"],
-      "routePath": "/api/v1/workspaces/:wsId/user-groups/:groupId/module-groups/:moduleGroupId/module-order",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/user-groups/[groupId]/module-groups/[moduleGroupId]/module-order/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/user-groups/:groupId/module-groups/:moduleGroupId/modules:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/user-groups/[groupId]/module-groups/[moduleGroupId]/modules/route.ts",
-      "kind": "api",
-      "methods": ["GET"],
-      "routePath": "/api/v1/workspaces/:wsId/user-groups/:groupId/module-groups/:moduleGroupId/modules",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/user-groups/[groupId]/module-groups/[moduleGroupId]/modules/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/user-groups/:groupId/module-groups/order:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/user-groups/[groupId]/module-groups/order/route.ts",
-      "kind": "api",
-      "methods": ["PATCH"],
-      "routePath": "/api/v1/workspaces/:wsId/user-groups/:groupId/module-groups/order",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/user-groups/[groupId]/module-groups/order/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/user-groups/:groupId/module-order:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/user-groups/[groupId]/module-order/route.ts",
-      "kind": "api",
-      "methods": ["PATCH"],
-      "routePath": "/api/v1/workspaces/:wsId/user-groups/:groupId/module-order",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/user-groups/[groupId]/module-order/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/user-groups/:groupId/modules:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/user-groups/[groupId]/modules/route.ts",
-      "kind": "api",
-      "methods": ["GET", "POST"],
-      "routePath": "/api/v1/workspaces/:wsId/user-groups/:groupId/modules",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/user-groups/[groupId]/modules/route.ts",
       "status": "legacy-next",
       "targetOwner": "rust-backend"
     },
@@ -6777,15 +5985,6 @@
       "methods": ["POST"],
       "routePath": "/api/v1/workspaces/team",
       "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/team/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v2/*path?:apps/web/src/app/api/v2/[[...path]]/route.ts",
-      "kind": "api",
-      "methods": ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-      "routePath": "/api/v2/*path?",
-      "sourceFile": "apps/web/src/app/api/v2/[[...path]]/route.ts",
       "status": "legacy-next",
       "targetOwner": "rust-backend"
     },
@@ -7357,29 +6556,11 @@
       "targetOwner": "rust-backend"
     },
     {
-      "id": "api:/api/workspaces/*path?:apps/web/src/app/api/workspaces/[[...path]]/route.ts",
-      "kind": "api",
-      "methods": ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-      "routePath": "/api/workspaces/*path?",
-      "sourceFile": "apps/web/src/app/api/workspaces/[[...path]]/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
       "id": "api:/api/workspaces/invitations:apps/web/src/legacy-api-routes/workspaces/invitations/route.ts",
       "kind": "api",
       "methods": ["GET"],
       "routePath": "/api/workspaces/invitations",
       "sourceFile": "apps/web/src/legacy-api-routes/workspaces/invitations/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "cron:/api/cron/*path?:apps/web/src/app/api/cron/[[...path]]/route.ts",
-      "kind": "cron",
-      "methods": ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-      "routePath": "/api/cron/*path?",
-      "sourceFile": "apps/web/src/app/api/cron/[[...path]]/route.ts",
       "status": "legacy-next",
       "targetOwner": "rust-backend"
     },
@@ -7588,33 +6769,6 @@
       "routePath": "/:locale/:wsId/documents/:documentId",
       "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/documents/[documentId]/layout.tsx",
       "status": "migrated",
-      "targetOwner": "tanstack-start"
-    },
-    {
-      "id": "layout:/:locale/:wsId/education/courses/:courseId:apps/web/src/app/[locale]/(dashboard)/[wsId]/education/courses/[courseId]/layout.tsx",
-      "kind": "layout",
-      "methods": [],
-      "routePath": "/:locale/:wsId/education/courses/:courseId",
-      "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/education/courses/[courseId]/layout.tsx",
-      "status": "legacy-next",
-      "targetOwner": "tanstack-start"
-    },
-    {
-      "id": "layout:/:locale/:wsId/education/courses/:courseId/modules/:moduleId:apps/web/src/app/[locale]/(dashboard)/[wsId]/education/courses/[courseId]/modules/[moduleId]/layout.tsx",
-      "kind": "layout",
-      "methods": [],
-      "routePath": "/:locale/:wsId/education/courses/:courseId/modules/:moduleId",
-      "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/education/courses/[courseId]/modules/[moduleId]/layout.tsx",
-      "status": "legacy-next",
-      "targetOwner": "tanstack-start"
-    },
-    {
-      "id": "layout:/:locale/:wsId/education/quiz-sets/:setId:apps/web/src/app/[locale]/(dashboard)/[wsId]/education/quiz-sets/[setId]/layout.tsx",
-      "kind": "layout",
-      "methods": [],
-      "routePath": "/:locale/:wsId/education/quiz-sets/:setId",
-      "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/education/quiz-sets/[setId]/layout.tsx",
-      "status": "legacy-next",
       "targetOwner": "tanstack-start"
     },
     {
@@ -8343,231 +7497,6 @@
       "methods": [],
       "routePath": "/:locale/:wsId/documents/:documentId",
       "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/documents/[documentId]/page.tsx",
-      "status": "migrated",
-      "targetOwner": "tanstack-start"
-    },
-    {
-      "id": "page:/:locale/:wsId/education:apps/web/src/app/[locale]/(dashboard)/[wsId]/education/(dashboard)/page.tsx",
-      "kind": "page",
-      "methods": [],
-      "routePath": "/:locale/:wsId/education",
-      "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/education/(dashboard)/page.tsx",
-      "status": "migrated",
-      "targetOwner": "tanstack-start"
-    },
-    {
-      "id": "page:/:locale/:wsId/education/attempts:apps/web/src/app/[locale]/(dashboard)/[wsId]/education/attempts/page.tsx",
-      "kind": "page",
-      "methods": [],
-      "routePath": "/:locale/:wsId/education/attempts",
-      "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/education/attempts/page.tsx",
-      "status": "migrated",
-      "targetOwner": "tanstack-start"
-    },
-    {
-      "id": "page:/:locale/:wsId/education/attempts/:attemptId:apps/web/src/app/[locale]/(dashboard)/[wsId]/education/attempts/[attemptId]/page.tsx",
-      "kind": "page",
-      "methods": [],
-      "routePath": "/:locale/:wsId/education/attempts/:attemptId",
-      "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/education/attempts/[attemptId]/page.tsx",
-      "status": "migrated",
-      "targetOwner": "tanstack-start"
-    },
-    {
-      "id": "page:/:locale/:wsId/education/courses:apps/web/src/app/[locale]/(dashboard)/[wsId]/education/courses/page.tsx",
-      "kind": "page",
-      "methods": [],
-      "routePath": "/:locale/:wsId/education/courses",
-      "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/education/courses/page.tsx",
-      "status": "migrated",
-      "targetOwner": "tanstack-start"
-    },
-    {
-      "id": "page:/:locale/:wsId/education/courses/:courseId:apps/web/src/app/[locale]/(dashboard)/[wsId]/education/courses/[courseId]/page.tsx",
-      "kind": "page",
-      "methods": [],
-      "routePath": "/:locale/:wsId/education/courses/:courseId",
-      "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/education/courses/[courseId]/page.tsx",
-      "status": "migrated",
-      "targetOwner": "tanstack-start"
-    },
-    {
-      "id": "page:/:locale/:wsId/education/courses/:courseId/builder:apps/web/src/app/[locale]/(dashboard)/[wsId]/education/courses/[courseId]/builder/page.tsx",
-      "kind": "page",
-      "methods": [],
-      "routePath": "/:locale/:wsId/education/courses/:courseId/builder",
-      "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/education/courses/[courseId]/builder/page.tsx",
-      "status": "legacy-next",
-      "targetOwner": "tanstack-start"
-    },
-    {
-      "id": "page:/:locale/:wsId/education/courses/:courseId/modules/:moduleId:apps/web/src/app/[locale]/(dashboard)/[wsId]/education/courses/[courseId]/modules/[moduleId]/page.tsx",
-      "kind": "page",
-      "methods": [],
-      "routePath": "/:locale/:wsId/education/courses/:courseId/modules/:moduleId",
-      "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/education/courses/[courseId]/modules/[moduleId]/page.tsx",
-      "status": "legacy-next",
-      "targetOwner": "tanstack-start"
-    },
-    {
-      "id": "page:/:locale/:wsId/education/courses/:courseId/modules/:moduleId/content:apps/web/src/app/[locale]/(dashboard)/[wsId]/education/courses/[courseId]/modules/[moduleId]/content/page.tsx",
-      "kind": "page",
-      "methods": [],
-      "routePath": "/:locale/:wsId/education/courses/:courseId/modules/:moduleId/content",
-      "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/education/courses/[courseId]/modules/[moduleId]/content/page.tsx",
-      "status": "migrated",
-      "targetOwner": "tanstack-start"
-    },
-    {
-      "id": "page:/:locale/:wsId/education/courses/:courseId/modules/:moduleId/extra-content:apps/web/src/app/[locale]/(dashboard)/[wsId]/education/courses/[courseId]/modules/[moduleId]/extra-content/page.tsx",
-      "kind": "page",
-      "methods": [],
-      "routePath": "/:locale/:wsId/education/courses/:courseId/modules/:moduleId/extra-content",
-      "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/education/courses/[courseId]/modules/[moduleId]/extra-content/page.tsx",
-      "status": "migrated",
-      "targetOwner": "tanstack-start"
-    },
-    {
-      "id": "page:/:locale/:wsId/education/courses/:courseId/modules/:moduleId/flashcards:apps/web/src/app/[locale]/(dashboard)/[wsId]/education/courses/[courseId]/modules/[moduleId]/flashcards/page.tsx",
-      "kind": "page",
-      "methods": [],
-      "routePath": "/:locale/:wsId/education/courses/:courseId/modules/:moduleId/flashcards",
-      "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/education/courses/[courseId]/modules/[moduleId]/flashcards/page.tsx",
-      "status": "legacy-next",
-      "targetOwner": "tanstack-start"
-    },
-    {
-      "id": "page:/:locale/:wsId/education/courses/:courseId/modules/:moduleId/quiz-sets:apps/web/src/app/[locale]/(dashboard)/[wsId]/education/courses/[courseId]/modules/[moduleId]/quiz-sets/page.tsx",
-      "kind": "page",
-      "methods": [],
-      "routePath": "/:locale/:wsId/education/courses/:courseId/modules/:moduleId/quiz-sets",
-      "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/education/courses/[courseId]/modules/[moduleId]/quiz-sets/page.tsx",
-      "status": "migrated",
-      "targetOwner": "tanstack-start"
-    },
-    {
-      "id": "page:/:locale/:wsId/education/courses/:courseId/modules/:moduleId/quizzes:apps/web/src/app/[locale]/(dashboard)/[wsId]/education/courses/[courseId]/modules/[moduleId]/quizzes/page.tsx",
-      "kind": "page",
-      "methods": [],
-      "routePath": "/:locale/:wsId/education/courses/:courseId/modules/:moduleId/quizzes",
-      "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/education/courses/[courseId]/modules/[moduleId]/quizzes/page.tsx",
-      "status": "migrated",
-      "targetOwner": "tanstack-start"
-    },
-    {
-      "id": "page:/:locale/:wsId/education/courses/:courseId/modules/:moduleId/quizzes/new:apps/web/src/app/[locale]/(dashboard)/[wsId]/education/courses/[courseId]/modules/[moduleId]/quizzes/new/page.tsx",
-      "kind": "page",
-      "methods": [],
-      "routePath": "/:locale/:wsId/education/courses/:courseId/modules/:moduleId/quizzes/new",
-      "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/education/courses/[courseId]/modules/[moduleId]/quizzes/new/page.tsx",
-      "status": "migrated",
-      "targetOwner": "tanstack-start"
-    },
-    {
-      "id": "page:/:locale/:wsId/education/courses/:courseId/modules/:moduleId/resources:apps/web/src/app/[locale]/(dashboard)/[wsId]/education/courses/[courseId]/modules/[moduleId]/resources/page.tsx",
-      "kind": "page",
-      "methods": [],
-      "routePath": "/:locale/:wsId/education/courses/:courseId/modules/:moduleId/resources",
-      "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/education/courses/[courseId]/modules/[moduleId]/resources/page.tsx",
-      "status": "legacy-next",
-      "targetOwner": "tanstack-start"
-    },
-    {
-      "id": "page:/:locale/:wsId/education/courses/:courseId/modules/:moduleId/youtube-links:apps/web/src/app/[locale]/(dashboard)/[wsId]/education/courses/[courseId]/modules/[moduleId]/youtube-links/page.tsx",
-      "kind": "page",
-      "methods": [],
-      "routePath": "/:locale/:wsId/education/courses/:courseId/modules/:moduleId/youtube-links",
-      "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/education/courses/[courseId]/modules/[moduleId]/youtube-links/page.tsx",
-      "status": "migrated",
-      "targetOwner": "tanstack-start"
-    },
-    {
-      "id": "page:/:locale/:wsId/education/flashcards:apps/web/src/app/[locale]/(dashboard)/[wsId]/education/flashcards/page.tsx",
-      "kind": "page",
-      "methods": [],
-      "routePath": "/:locale/:wsId/education/flashcards",
-      "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/education/flashcards/page.tsx",
-      "status": "migrated",
-      "targetOwner": "tanstack-start"
-    },
-    {
-      "id": "page:/:locale/:wsId/education/library:apps/web/src/app/[locale]/(dashboard)/[wsId]/education/library/page.tsx",
-      "kind": "page",
-      "methods": [],
-      "routePath": "/:locale/:wsId/education/library",
-      "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/education/library/page.tsx",
-      "status": "migrated",
-      "targetOwner": "tanstack-start"
-    },
-    {
-      "id": "page:/:locale/:wsId/education/library/flashcards:apps/web/src/app/[locale]/(dashboard)/[wsId]/education/library/flashcards/page.tsx",
-      "kind": "page",
-      "methods": [],
-      "routePath": "/:locale/:wsId/education/library/flashcards",
-      "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/education/library/flashcards/page.tsx",
-      "status": "migrated",
-      "targetOwner": "tanstack-start"
-    },
-    {
-      "id": "page:/:locale/:wsId/education/library/quiz-sets:apps/web/src/app/[locale]/(dashboard)/[wsId]/education/library/quiz-sets/page.tsx",
-      "kind": "page",
-      "methods": [],
-      "routePath": "/:locale/:wsId/education/library/quiz-sets",
-      "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/education/library/quiz-sets/page.tsx",
-      "status": "migrated",
-      "targetOwner": "tanstack-start"
-    },
-    {
-      "id": "page:/:locale/:wsId/education/library/quizzes:apps/web/src/app/[locale]/(dashboard)/[wsId]/education/library/quizzes/page.tsx",
-      "kind": "page",
-      "methods": [],
-      "routePath": "/:locale/:wsId/education/library/quizzes",
-      "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/education/library/quizzes/page.tsx",
-      "status": "migrated",
-      "targetOwner": "tanstack-start"
-    },
-    {
-      "id": "page:/:locale/:wsId/education/quiz-sets:apps/web/src/app/[locale]/(dashboard)/[wsId]/education/quiz-sets/page.tsx",
-      "kind": "page",
-      "methods": [],
-      "routePath": "/:locale/:wsId/education/quiz-sets",
-      "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/education/quiz-sets/page.tsx",
-      "status": "migrated",
-      "targetOwner": "tanstack-start"
-    },
-    {
-      "id": "page:/:locale/:wsId/education/quiz-sets/:setId:apps/web/src/app/[locale]/(dashboard)/[wsId]/education/quiz-sets/[setId]/page.tsx",
-      "kind": "page",
-      "methods": [],
-      "routePath": "/:locale/:wsId/education/quiz-sets/:setId",
-      "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/education/quiz-sets/[setId]/page.tsx",
-      "status": "migrated",
-      "targetOwner": "tanstack-start"
-    },
-    {
-      "id": "page:/:locale/:wsId/education/quiz-sets/:setId/linked-modules:apps/web/src/app/[locale]/(dashboard)/[wsId]/education/quiz-sets/[setId]/linked-modules/page.tsx",
-      "kind": "page",
-      "methods": [],
-      "routePath": "/:locale/:wsId/education/quiz-sets/:setId/linked-modules",
-      "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/education/quiz-sets/[setId]/linked-modules/page.tsx",
-      "status": "migrated",
-      "targetOwner": "tanstack-start"
-    },
-    {
-      "id": "page:/:locale/:wsId/education/quizzes:apps/web/src/app/[locale]/(dashboard)/[wsId]/education/quizzes/page.tsx",
-      "kind": "page",
-      "methods": [],
-      "routePath": "/:locale/:wsId/education/quizzes",
-      "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/education/quizzes/page.tsx",
-      "status": "migrated",
-      "targetOwner": "tanstack-start"
-    },
-    {
-      "id": "page:/:locale/:wsId/education/valsea:apps/web/src/app/[locale]/(dashboard)/[wsId]/education/valsea/page.tsx",
-      "kind": "page",
-      "methods": [],
-      "routePath": "/:locale/:wsId/education/valsea",
-      "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/education/valsea/page.tsx",
       "status": "migrated",
       "targetOwner": "tanstack-start"
     },
@@ -9947,32 +8876,23 @@
       "sourceFile": "apps/web/src/legacy-api-routes/trpc/[trpc]/route.ts",
       "status": "legacy-next",
       "targetOwner": "rust-backend"
-    },
-    {
-      "id": "trpc:/api/trpc/*path?:apps/web/src/app/api/trpc/[[...path]]/route.ts",
-      "kind": "trpc",
-      "methods": ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-      "routePath": "/api/trpc/*path?",
-      "sourceFile": "apps/web/src/app/api/trpc/[[...path]]/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
     }
   ],
   "summary": {
-    "apiRoutes": 773,
-    "cronRoutes": 13,
-    "layouts": 59,
-    "pages": 205,
-    "routeHandlers": 792,
+    "apiRoutes": 683,
+    "cronRoutes": 12,
+    "layouts": 56,
+    "pages": 180,
+    "routeHandlers": 700,
     "methodCounts": {
-      "GET": 441,
-      "HEAD": 22,
-      "POST": 384,
-      "PUT": 99,
-      "PATCH": 96,
-      "DELETE": 150,
-      "OPTIONS": 44
+      "GET": 378,
+      "HEAD": 1,
+      "POST": 328,
+      "PUT": 72,
+      "PATCH": 66,
+      "DELETE": 120,
+      "OPTIONS": 23
     },
-    "total": 1060
+    "total": 940
   }
 }

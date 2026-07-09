@@ -1,7 +1,7 @@
 ---
 title: "TanStack/Rust Migration Plan"
 description: "Phased plan for replacing apps/web with apps/tanstack-web and apps/backend."
-updatedAt: "2026-07-05"
+updatedAt: "2026-07-09"
 ---
 
 This page is the discoverable docs copy of the root migration plan for replacing
@@ -18,22 +18,22 @@ agent-lane planning.
 ## Current Snapshot
 
 The route manifest at `apps/tanstack-web/migration/route-manifest.json` is the
-source of truth. The latest local snapshot on 2026-07-08 is:
+source of truth. The latest local snapshot on 2026-07-09 is:
 
 | Status | Count |
 | --- | ---: |
-| `legacy-next` | 766 |
-| `migrated` | 275 |
+| `legacy-next` | 670 |
+| `migrated` | 251 |
 | `accepted-removal` | 19 |
-| Total tracked artifacts | 1060 |
+| Total tracked artifacts | 940 |
 
 Remaining legacy artifacts are concentrated in API/backend ownership:
 
 | Kind | Remaining legacy artifacts |
 | --- | ---: |
-| API | 679 |
-| Cron | 11 |
-| tRPC | 2 |
+| API | 592 |
+| Cron | 10 |
+| tRPC | 1 |
 | Route handler | 1 |
 | Page | 61 |
 | Layout | 12 |
