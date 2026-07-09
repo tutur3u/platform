@@ -3,15 +3,15 @@
   "progress": {
     "byKind": [
       {
-        "acceptedRemoval": 17,
+        "acceptedRemoval": 14,
         "key": "api",
         "label": "api",
-        "legacyNext": 592,
-        "migrated": 74,
-        "percentComplete": 13.32,
-        "remaining": 592,
-        "terminal": 91,
-        "total": 683,
+        "legacyNext": 543,
+        "migrated": 68,
+        "percentComplete": 13.12,
+        "remaining": 543,
+        "terminal": 82,
+        "total": 625,
         "unknownStatus": 0
       },
       {
@@ -113,15 +113,15 @@
     ],
     "byOwner": [
       {
-        "acceptedRemoval": 17,
+        "acceptedRemoval": 14,
         "key": "rust-backend",
         "label": "Rust backend",
-        "legacyNext": 604,
-        "migrated": 79,
-        "percentComplete": 13.71,
-        "remaining": 604,
-        "terminal": 96,
-        "total": 700,
+        "legacyNext": 555,
+        "migrated": 73,
+        "percentComplete": 13.55,
+        "remaining": 555,
+        "terminal": 87,
+        "total": 642,
         "unknownStatus": 0
       },
       {
@@ -320,15 +320,15 @@
       }
     ],
     "totals": {
-      "acceptedRemoval": 19,
+      "acceptedRemoval": 16,
       "key": "total",
       "label": "All route artifacts",
-      "legacyNext": 670,
-      "migrated": 251,
-      "percentComplete": 28.72,
-      "remaining": 670,
-      "terminal": 270,
-      "total": 940,
+      "legacyNext": 621,
+      "migrated": 245,
+      "percentComplete": 29.59,
+      "remaining": 621,
+      "terminal": 261,
+      "total": 882,
       "unknownStatus": 0
     }
   },
@@ -3613,195 +3613,6 @@
       "parentId": "api:/api/v1/workspaces/:wsId/external-projects/webgl-packages/upload:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/external-projects/webgl-packages/upload/route.ts"
     },
     {
-      "id": "api:/api/v1/workspaces/:wsId/finance/budgets:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/finance/budgets/route.ts",
-      "kind": "api",
-      "methods": ["GET", "POST"],
-      "routePath": "/api/v1/workspaces/:wsId/finance/budgets",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/finance/budgets/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/finance/budgets/:budgetId:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/finance/budgets/[budgetId]/route.ts",
-      "kind": "api",
-      "methods": ["PATCH", "DELETE"],
-      "routePath": "/api/v1/workspaces/:wsId/finance/budgets/:budgetId",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/finance/budgets/[budgetId]/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/finance/budgets/status:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/finance/budgets/status/route.ts",
-      "kind": "api",
-      "methods": ["GET"],
-      "routePath": "/api/v1/workspaces/:wsId/finance/budgets/status",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/finance/budgets/status/route.ts",
-      "status": "migrated",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/finance/debts:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/finance/debts/route.ts",
-      "kind": "api",
-      "methods": ["GET", "POST"],
-      "routePath": "/api/v1/workspaces/:wsId/finance/debts",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/finance/debts/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/finance/debts/:debtId:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/finance/debts/[debtId]/route.ts",
-      "kind": "api",
-      "methods": ["GET", "PUT", "DELETE"],
-      "routePath": "/api/v1/workspaces/:wsId/finance/debts/:debtId",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/finance/debts/[debtId]/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/finance/debts/summary:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/finance/debts/summary/route.ts",
-      "kind": "api",
-      "methods": ["GET"],
-      "routePath": "/api/v1/workspaces/:wsId/finance/debts/summary",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/finance/debts/summary/route.ts",
-      "status": "migrated",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/finance/filter-users:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/finance/filter-users/route.ts",
-      "kind": "api",
-      "methods": ["GET"],
-      "routePath": "/api/v1/workspaces/:wsId/finance/filter-users",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/finance/filter-users/route.ts",
-      "status": "migrated",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/finance/invoices:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/finance/invoices/route.ts",
-      "kind": "api",
-      "methods": ["GET", "POST"],
-      "routePath": "/api/v1/workspaces/:wsId/finance/invoices",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/finance/invoices/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/finance/invoices/:invoiceId:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/finance/invoices/[invoiceId]/route.ts",
-      "kind": "api",
-      "methods": ["PUT", "DELETE"],
-      "routePath": "/api/v1/workspaces/:wsId/finance/invoices/:invoiceId",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/finance/invoices/[invoiceId]/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/finance/invoices/analytics:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/finance/invoices/analytics/route.ts",
-      "kind": "api",
-      "methods": ["GET"],
-      "routePath": "/api/v1/workspaces/:wsId/finance/invoices/analytics",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/finance/invoices/analytics/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/finance/invoices/count:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/finance/invoices/count/route.ts",
-      "kind": "api",
-      "methods": ["GET"],
-      "routePath": "/api/v1/workspaces/:wsId/finance/invoices/count",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/finance/invoices/count/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/finance/invoices/pending:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/finance/invoices/pending/route.ts",
-      "kind": "api",
-      "methods": ["GET"],
-      "routePath": "/api/v1/workspaces/:wsId/finance/invoices/pending",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/finance/invoices/pending/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/finance/invoices/subscription:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/finance/invoices/subscription/route.ts",
-      "kind": "api",
-      "methods": ["POST"],
-      "routePath": "/api/v1/workspaces/:wsId/finance/invoices/subscription",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/finance/invoices/subscription/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/finance/invoices/subscription/context:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/finance/invoices/subscription/context/route.ts",
-      "kind": "api",
-      "methods": ["GET"],
-      "routePath": "/api/v1/workspaces/:wsId/finance/invoices/subscription/context",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/finance/invoices/subscription/context/route.ts",
-      "status": "migrated",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/finance/recurring-transactions:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/finance/recurring-transactions/route.ts",
-      "kind": "api",
-      "methods": ["GET", "POST"],
-      "routePath": "/api/v1/workspaces/:wsId/finance/recurring-transactions",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/finance/recurring-transactions/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/finance/recurring-transactions/:recurringTransactionId:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/finance/recurring-transactions/[recurringTransactionId]/route.ts",
-      "kind": "api",
-      "methods": ["PUT", "DELETE"],
-      "routePath": "/api/v1/workspaces/:wsId/finance/recurring-transactions/:recurringTransactionId",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/finance/recurring-transactions/[recurringTransactionId]/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/finance/recurring-transactions/upcoming:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/finance/recurring-transactions/upcoming/route.ts",
-      "kind": "api",
-      "methods": ["GET"],
-      "routePath": "/api/v1/workspaces/:wsId/finance/recurring-transactions/upcoming",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/finance/recurring-transactions/upcoming/route.ts",
-      "status": "migrated",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/finance/wallets/expense/count:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/finance/wallets/expense/count/route.ts",
-      "kind": "api",
-      "methods": ["GET"],
-      "routePath": "/api/v1/workspaces/:wsId/finance/wallets/expense/count",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/finance/wallets/expense/count/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/finance/wallets/expense/sum:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/finance/wallets/expense/sum/route.ts",
-      "kind": "api",
-      "methods": ["GET"],
-      "routePath": "/api/v1/workspaces/:wsId/finance/wallets/expense/sum",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/finance/wallets/expense/sum/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/finance/wallets/income/count:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/finance/wallets/income/count/route.ts",
-      "kind": "api",
-      "methods": ["GET"],
-      "routePath": "/api/v1/workspaces/:wsId/finance/wallets/income/count",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/finance/wallets/income/count/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/finance/wallets/income/sum:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/finance/wallets/income/sum/route.ts",
-      "kind": "api",
-      "methods": ["GET"],
-      "routePath": "/api/v1/workspaces/:wsId/finance/wallets/income/sum",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/finance/wallets/income/sum/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
       "id": "api:/api/v1/workspaces/:wsId/forms:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/forms/route.ts",
       "kind": "api",
       "methods": ["GET", "POST"],
@@ -5908,15 +5719,6 @@
       "targetOwner": "rust-backend"
     },
     {
-      "id": "api:/api/v1/workspaces/:wsId/wallets/infinite:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/wallets/infinite/route.ts",
-      "kind": "api",
-      "methods": ["GET"],
-      "routePath": "/api/v1/workspaces/:wsId/wallets/infinite",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/wallets/infinite/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
       "id": "api:/api/v1/workspaces/:wsId/whiteboards:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/whiteboards/route.ts",
       "kind": "api",
       "methods": ["POST"],
@@ -6061,69 +5863,6 @@
       "targetOwner": "rust-backend"
     },
     {
-      "id": "api:/api/workspaces/:wsId/finance/charts/balance-trend:apps/web/src/legacy-api-routes/workspaces/[wsId]/finance/charts/balance-trend/route.ts",
-      "kind": "api",
-      "methods": ["GET"],
-      "routePath": "/api/workspaces/:wsId/finance/charts/balance-trend",
-      "sourceFile": "apps/web/src/legacy-api-routes/workspaces/[wsId]/finance/charts/balance-trend/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/workspaces/:wsId/finance/charts/balance:apps/web/src/legacy-api-routes/workspaces/[wsId]/finance/charts/balance/route.ts",
-      "kind": "api",
-      "methods": ["GET"],
-      "routePath": "/api/workspaces/:wsId/finance/charts/balance",
-      "sourceFile": "apps/web/src/legacy-api-routes/workspaces/[wsId]/finance/charts/balance/route.ts",
-      "status": "migrated",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/workspaces/:wsId/finance/charts/categories:apps/web/src/legacy-api-routes/workspaces/[wsId]/finance/charts/categories/route.ts",
-      "kind": "api",
-      "methods": ["GET"],
-      "routePath": "/api/workspaces/:wsId/finance/charts/categories",
-      "sourceFile": "apps/web/src/legacy-api-routes/workspaces/[wsId]/finance/charts/categories/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/workspaces/:wsId/finance/charts/daily:apps/web/src/legacy-api-routes/workspaces/[wsId]/finance/charts/daily/route.ts",
-      "kind": "api",
-      "methods": ["GET"],
-      "routePath": "/api/workspaces/:wsId/finance/charts/daily",
-      "sourceFile": "apps/web/src/legacy-api-routes/workspaces/[wsId]/finance/charts/daily/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/workspaces/:wsId/finance/charts/income-expense-summary:apps/web/src/legacy-api-routes/workspaces/[wsId]/finance/charts/income-expense-summary/route.ts",
-      "kind": "api",
-      "methods": ["GET"],
-      "routePath": "/api/workspaces/:wsId/finance/charts/income-expense-summary",
-      "sourceFile": "apps/web/src/legacy-api-routes/workspaces/[wsId]/finance/charts/income-expense-summary/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/workspaces/:wsId/finance/charts/monthly:apps/web/src/legacy-api-routes/workspaces/[wsId]/finance/charts/monthly/route.ts",
-      "kind": "api",
-      "methods": ["GET"],
-      "routePath": "/api/workspaces/:wsId/finance/charts/monthly",
-      "sourceFile": "apps/web/src/legacy-api-routes/workspaces/[wsId]/finance/charts/monthly/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/workspaces/:wsId/finance/overview:apps/web/src/legacy-api-routes/workspaces/[wsId]/finance/overview/route.ts",
-      "kind": "api",
-      "methods": ["GET"],
-      "routePath": "/api/workspaces/:wsId/finance/overview",
-      "sourceFile": "apps/web/src/legacy-api-routes/workspaces/[wsId]/finance/overview/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
       "id": "api:/api/workspaces/:wsId/invite-links:apps/web/src/legacy-api-routes/workspaces/[wsId]/invite-links/route.ts",
       "kind": "api",
       "methods": ["GET", "POST"],
@@ -6250,123 +5989,6 @@
       "targetOwner": "rust-backend"
     },
     {
-      "id": "api:/api/workspaces/:wsId/transactions:apps/web/src/legacy-api-routes/workspaces/[wsId]/transactions/route.ts",
-      "kind": "api",
-      "methods": ["GET", "POST"],
-      "routePath": "/api/workspaces/:wsId/transactions",
-      "sourceFile": "apps/web/src/legacy-api-routes/workspaces/[wsId]/transactions/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/workspaces/:wsId/transactions/:transactionId:apps/web/src/legacy-api-routes/workspaces/[wsId]/transactions/[transactionId]/route.ts",
-      "kind": "api",
-      "methods": ["GET", "PUT", "DELETE"],
-      "routePath": "/api/workspaces/:wsId/transactions/:transactionId",
-      "sourceFile": "apps/web/src/legacy-api-routes/workspaces/[wsId]/transactions/[transactionId]/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/workspaces/:wsId/transactions/:transactionId/tags:apps/web/src/legacy-api-routes/workspaces/[wsId]/transactions/[transactionId]/tags/route.ts",
-      "kind": "api",
-      "methods": ["GET"],
-      "routePath": "/api/workspaces/:wsId/transactions/:transactionId/tags",
-      "sourceFile": "apps/web/src/legacy-api-routes/workspaces/[wsId]/transactions/[transactionId]/tags/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/workspaces/:wsId/transactions/categories:apps/web/src/legacy-api-routes/workspaces/[wsId]/transactions/categories/route.ts",
-      "kind": "api",
-      "methods": ["GET", "POST"],
-      "routePath": "/api/workspaces/:wsId/transactions/categories",
-      "sourceFile": "apps/web/src/legacy-api-routes/workspaces/[wsId]/transactions/categories/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/workspaces/:wsId/transactions/categories/:categoryId:apps/web/src/legacy-api-routes/workspaces/[wsId]/transactions/categories/[categoryId]/route.ts",
-      "kind": "api",
-      "methods": ["GET", "PUT", "DELETE"],
-      "routePath": "/api/workspaces/:wsId/transactions/categories/:categoryId",
-      "sourceFile": "apps/web/src/legacy-api-routes/workspaces/[wsId]/transactions/categories/[categoryId]/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/workspaces/:wsId/transactions/categories/migrate:apps/web/src/legacy-api-routes/workspaces/[wsId]/transactions/categories/migrate/route.ts",
-      "kind": "api",
-      "methods": ["PUT"],
-      "routePath": "/api/workspaces/:wsId/transactions/categories/migrate",
-      "sourceFile": "apps/web/src/legacy-api-routes/workspaces/[wsId]/transactions/categories/migrate/route.ts",
-      "status": "accepted-removal",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/workspaces/:wsId/transactions/category-breakdown:apps/web/src/legacy-api-routes/workspaces/[wsId]/transactions/category-breakdown/route.ts",
-      "kind": "api",
-      "methods": ["GET"],
-      "routePath": "/api/workspaces/:wsId/transactions/category-breakdown",
-      "sourceFile": "apps/web/src/legacy-api-routes/workspaces/[wsId]/transactions/category-breakdown/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/workspaces/:wsId/transactions/export:apps/web/src/legacy-api-routes/workspaces/[wsId]/transactions/export/route.ts",
-      "kind": "api",
-      "methods": ["GET"],
-      "routePath": "/api/workspaces/:wsId/transactions/export",
-      "sourceFile": "apps/web/src/legacy-api-routes/workspaces/[wsId]/transactions/export/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/workspaces/:wsId/transactions/import/money-lover:apps/web/src/legacy-api-routes/workspaces/[wsId]/transactions/import/money-lover/route.ts",
-      "kind": "api",
-      "methods": ["POST"],
-      "routePath": "/api/workspaces/:wsId/transactions/import/money-lover",
-      "sourceFile": "apps/web/src/legacy-api-routes/workspaces/[wsId]/transactions/import/money-lover/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/workspaces/:wsId/transactions/infinite:apps/web/src/legacy-api-routes/workspaces/[wsId]/transactions/infinite/route.ts",
-      "kind": "api",
-      "methods": ["GET"],
-      "routePath": "/api/workspaces/:wsId/transactions/infinite",
-      "sourceFile": "apps/web/src/legacy-api-routes/workspaces/[wsId]/transactions/infinite/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/workspaces/:wsId/transactions/periods:apps/web/src/legacy-api-routes/workspaces/[wsId]/transactions/periods/route.ts",
-      "kind": "api",
-      "methods": ["GET"],
-      "routePath": "/api/workspaces/:wsId/transactions/periods",
-      "sourceFile": "apps/web/src/legacy-api-routes/workspaces/[wsId]/transactions/periods/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/workspaces/:wsId/transactions/spending-trends:apps/web/src/legacy-api-routes/workspaces/[wsId]/transactions/spending-trends/route.ts",
-      "kind": "api",
-      "methods": ["GET"],
-      "routePath": "/api/workspaces/:wsId/transactions/spending-trends",
-      "sourceFile": "apps/web/src/legacy-api-routes/workspaces/[wsId]/transactions/spending-trends/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/workspaces/:wsId/transactions/stats:apps/web/src/legacy-api-routes/workspaces/[wsId]/transactions/stats/route.ts",
-      "kind": "api",
-      "methods": ["GET"],
-      "routePath": "/api/workspaces/:wsId/transactions/stats",
-      "sourceFile": "apps/web/src/legacy-api-routes/workspaces/[wsId]/transactions/stats/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
       "id": "api:/api/workspaces/:wsId/transfers:apps/web/src/legacy-api-routes/workspaces/[wsId]/transfers/route.ts",
       "kind": "api",
       "methods": ["POST", "PUT", "PATCH"],
@@ -6408,150 +6030,6 @@
       "methods": ["PUT"],
       "routePath": "/api/workspaces/:wsId/users/indicators/migrate",
       "sourceFile": "apps/web/src/legacy-api-routes/workspaces/[wsId]/users/indicators/migrate/route.ts",
-      "status": "accepted-removal",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/workspaces/:wsId/wallets:apps/web/src/legacy-api-routes/workspaces/[wsId]/wallets/route.ts",
-      "kind": "api",
-      "methods": ["GET", "POST"],
-      "routePath": "/api/workspaces/:wsId/wallets",
-      "sourceFile": "apps/web/src/legacy-api-routes/workspaces/[wsId]/wallets/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/workspaces/:wsId/wallets/:walletId:apps/web/src/legacy-api-routes/workspaces/[wsId]/wallets/[walletId]/route.ts",
-      "kind": "api",
-      "methods": ["GET", "PUT", "DELETE"],
-      "routePath": "/api/workspaces/:wsId/wallets/:walletId",
-      "sourceFile": "apps/web/src/legacy-api-routes/workspaces/[wsId]/wallets/[walletId]/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/workspaces/:wsId/wallets/:walletId/checkpoints:apps/web/src/legacy-api-routes/workspaces/[wsId]/wallets/[walletId]/checkpoints/route.ts",
-      "kind": "api",
-      "methods": ["GET", "POST"],
-      "routePath": "/api/workspaces/:wsId/wallets/:walletId/checkpoints",
-      "sourceFile": "apps/web/src/legacy-api-routes/workspaces/[wsId]/wallets/[walletId]/checkpoints/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/workspaces/:wsId/wallets/:walletId/checkpoints/:checkpointId:apps/web/src/legacy-api-routes/workspaces/[wsId]/wallets/[walletId]/checkpoints/[checkpointId]/route.ts",
-      "kind": "api",
-      "methods": ["PATCH", "DELETE"],
-      "routePath": "/api/workspaces/:wsId/wallets/:walletId/checkpoints/:checkpointId",
-      "sourceFile": "apps/web/src/legacy-api-routes/workspaces/[wsId]/wallets/[walletId]/checkpoints/[checkpointId]/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/workspaces/:wsId/wallets/:walletId/checkpoints/:checkpointId/reconcile:apps/web/src/legacy-api-routes/workspaces/[wsId]/wallets/[walletId]/checkpoints/[checkpointId]/reconcile/route.ts",
-      "kind": "api",
-      "methods": ["POST"],
-      "routePath": "/api/workspaces/:wsId/wallets/:walletId/checkpoints/:checkpointId/reconcile",
-      "sourceFile": "apps/web/src/legacy-api-routes/workspaces/[wsId]/wallets/[walletId]/checkpoints/[checkpointId]/reconcile/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/workspaces/:wsId/wallets/:walletId/credit-summary:apps/web/src/legacy-api-routes/workspaces/[wsId]/wallets/[walletId]/credit-summary/route.ts",
-      "kind": "api",
-      "methods": ["GET"],
-      "routePath": "/api/workspaces/:wsId/wallets/:walletId/credit-summary",
-      "sourceFile": "apps/web/src/legacy-api-routes/workspaces/[wsId]/wallets/[walletId]/credit-summary/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/workspaces/:wsId/wallets/:walletId/interest:apps/web/src/legacy-api-routes/workspaces/[wsId]/wallets/[walletId]/interest/route.ts",
-      "kind": "api",
-      "methods": ["GET", "POST"],
-      "routePath": "/api/workspaces/:wsId/wallets/:walletId/interest",
-      "sourceFile": "apps/web/src/legacy-api-routes/workspaces/[wsId]/wallets/[walletId]/interest/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/workspaces/:wsId/wallets/:walletId/interest/calculate:apps/web/src/legacy-api-routes/workspaces/[wsId]/wallets/[walletId]/interest/calculate/route.ts",
-      "kind": "api",
-      "methods": ["GET"],
-      "routePath": "/api/workspaces/:wsId/wallets/:walletId/interest/calculate",
-      "sourceFile": "apps/web/src/legacy-api-routes/workspaces/[wsId]/wallets/[walletId]/interest/calculate/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/workspaces/:wsId/wallets/:walletId/interest/config:apps/web/src/legacy-api-routes/workspaces/[wsId]/wallets/[walletId]/interest/config/route.ts",
-      "kind": "api",
-      "methods": ["PUT", "DELETE"],
-      "routePath": "/api/workspaces/:wsId/wallets/:walletId/interest/config",
-      "sourceFile": "apps/web/src/legacy-api-routes/workspaces/[wsId]/wallets/[walletId]/interest/config/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/workspaces/:wsId/wallets/:walletId/interest/project:apps/web/src/legacy-api-routes/workspaces/[wsId]/wallets/[walletId]/interest/project/route.ts",
-      "kind": "api",
-      "methods": ["GET"],
-      "routePath": "/api/workspaces/:wsId/wallets/:walletId/interest/project",
-      "sourceFile": "apps/web/src/legacy-api-routes/workspaces/[wsId]/wallets/[walletId]/interest/project/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/workspaces/:wsId/wallets/:walletId/interest/rates:apps/web/src/legacy-api-routes/workspaces/[wsId]/wallets/[walletId]/interest/rates/route.ts",
-      "kind": "api",
-      "methods": ["GET", "POST"],
-      "routePath": "/api/workspaces/:wsId/wallets/:walletId/interest/rates",
-      "sourceFile": "apps/web/src/legacy-api-routes/workspaces/[wsId]/wallets/[walletId]/interest/rates/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/workspaces/:wsId/wallets/checkpoints:apps/web/src/legacy-api-routes/workspaces/[wsId]/wallets/checkpoints/route.ts",
-      "kind": "api",
-      "methods": ["GET", "POST"],
-      "routePath": "/api/workspaces/:wsId/wallets/checkpoints",
-      "sourceFile": "apps/web/src/legacy-api-routes/workspaces/[wsId]/wallets/checkpoints/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/workspaces/:wsId/wallets/checkpoints/history:apps/web/src/legacy-api-routes/workspaces/[wsId]/wallets/checkpoints/history/route.ts",
-      "kind": "api",
-      "methods": ["GET"],
-      "routePath": "/api/workspaces/:wsId/wallets/checkpoints/history",
-      "sourceFile": "apps/web/src/legacy-api-routes/workspaces/[wsId]/wallets/checkpoints/history/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/workspaces/:wsId/wallets/infinite:apps/web/src/legacy-api-routes/workspaces/[wsId]/wallets/infinite/route.ts",
-      "kind": "api",
-      "methods": ["GET"],
-      "routePath": "/api/workspaces/:wsId/wallets/infinite",
-      "sourceFile": "apps/web/src/legacy-api-routes/workspaces/[wsId]/wallets/infinite/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/workspaces/:wsId/wallets/migrate:apps/web/src/legacy-api-routes/workspaces/[wsId]/wallets/migrate/route.ts",
-      "kind": "api",
-      "methods": ["PUT"],
-      "routePath": "/api/workspaces/:wsId/wallets/migrate",
-      "sourceFile": "apps/web/src/legacy-api-routes/workspaces/[wsId]/wallets/migrate/route.ts",
-      "status": "accepted-removal",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/workspaces/:wsId/wallets/transactions/migrate:apps/web/src/legacy-api-routes/workspaces/[wsId]/wallets/transactions/migrate/route.ts",
-      "kind": "api",
-      "methods": ["PUT"],
-      "routePath": "/api/workspaces/:wsId/wallets/transactions/migrate",
-      "sourceFile": "apps/web/src/legacy-api-routes/workspaces/[wsId]/wallets/transactions/migrate/route.ts",
       "status": "accepted-removal",
       "targetOwner": "rust-backend"
     },
@@ -8879,20 +8357,20 @@
     }
   ],
   "summary": {
-    "apiRoutes": 683,
+    "apiRoutes": 625,
     "cronRoutes": 12,
     "layouts": 56,
     "pages": 180,
-    "routeHandlers": 700,
+    "routeHandlers": 642,
     "methodCounts": {
-      "GET": 378,
+      "GET": 331,
       "HEAD": 1,
-      "POST": 328,
-      "PUT": 72,
-      "PATCH": 66,
-      "DELETE": 120,
+      "POST": 314,
+      "PUT": 62,
+      "PATCH": 64,
+      "DELETE": 111,
       "OPTIONS": 23
     },
-    "total": 940
+    "total": 882
   }
 }

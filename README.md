@@ -21,12 +21,12 @@ CLI, documentation, local services, and deployment tooling behind that system.
 <!-- tanstack-rust-migration-progress:start -->
 _Generated from `apps/tanstack-web/migration/route-manifest.json`. Refresh with `bun migration:tanstack:readme` after route ownership changes._
 
-![Overall migration progress](https://img.shields.io/static/v1?color=fb8c00&label=Overall&message=28.72%25+terminal&style=flat-square) ![Rust backend migration progress](https://img.shields.io/static/v1?color=cf222e&label=Rust+backend&message=13.71%25+terminal&style=flat-square) ![TanStack Start migration progress](https://img.shields.io/static/v1?color=1f6feb&label=TanStack+Start&message=72.5%25+terminal&style=flat-square)
+![Overall migration progress](https://img.shields.io/static/v1?color=fb8c00&label=Overall&message=29.59%25+terminal&style=flat-square) ![Rust backend migration progress](https://img.shields.io/static/v1?color=cf222e&label=Rust+backend&message=13.55%25+terminal&style=flat-square) ![TanStack Start migration progress](https://img.shields.io/static/v1?color=1f6feb&label=TanStack+Start&message=72.5%25+terminal&style=flat-square)
 
 | Track | Progress | Terminal | Migrated | Removed | Remaining |
 | --- | --- | ---: | ---: | ---: | ---: |
-| Overall | `[######--------------]` 28.72% | 270 / 940 | 251 | 19 | 670 |
-| Rust backend | `[###-----------------]` 13.71% | 96 / 700 | 79 | 17 | 604 |
+| Overall | `[######--------------]` 29.59% | 261 / 882 | 245 | 16 | 621 |
+| Rust backend | `[###-----------------]` 13.55% | 87 / 642 | 73 | 14 | 555 |
 | TanStack Start | `[###############-----]` 72.5% | 174 / 240 | 172 | 2 | 66 |
 
 <details>
@@ -34,7 +34,7 @@ _Generated from `apps/tanstack-web/migration/route-manifest.json`. Refresh with 
 
 | Kind | Progress | Terminal | Remaining |
 | --- | --- | ---: | ---: |
-| api | `[##--------------]` 13.32% | 91 / 683 | 592 |
+| api | `[##--------------]` 13.12% | 82 / 625 | 543 |
 | page | `[###########-----]` 68.33% | 123 / 180 | 57 |
 | cron | `[###-------------]` 16.67% | 2 / 12 | 10 |
 | layout | `[#############---]` 83.93% | 47 / 56 | 9 |
