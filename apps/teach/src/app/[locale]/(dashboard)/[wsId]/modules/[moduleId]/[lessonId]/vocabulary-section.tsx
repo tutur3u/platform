@@ -299,7 +299,7 @@ export default function LessonVocabularySection({ wsId, lessonId }: Props) {
       );
 
       if (!response.ok) {
-        throw new Error('Failed to fetch details from dictionary.');
+        return;
       }
 
       const details = await response.json();

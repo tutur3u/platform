@@ -3,6 +3,16 @@ import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 
 const CAMBRIDGE_ORIGIN = 'https://dictionary.cambridge.org';
+const CAMBRIDGE_DETAILS_TIMEOUT_MS = 5_000;
+
+function emptyDictionaryDetails(word: string) {
+  return {
+    definition: '',
+    examples: [],
+    pronunciation: '',
+    word,
+  };
+}
 
 export async function GET(request: NextRequest) {
   const wordParam = request.nextUrl.searchParams.get('word')?.trim();
@@ -25,6 +35,12 @@ export async function GET(request: NextRequest) {
   }
 
   try {
+    const controller = new AbortController();
+    const timeout = setTimeout(
+      () => controller.abort(),
+      CAMBRIDGE_DETAILS_TIMEOUT_MS
+    );
+
     const response = await fetch(targetUrl, {
       headers: {
         'User-Agent':
@@ -33,22 +49,19 @@ export async function GET(request: NextRequest) {
           'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
         'Accept-Language': 'en-US,en;q=0.5',
       },
-    });
+      signal: controller.signal,
+    }).finally(() => clearTimeout(timeout));
 
     if (response.status === 404) {
-      return NextResponse.json(
-        { message: 'Word or entry not found.' },
-        { status: 404 }
-      );
+      return NextResponse.json(emptyDictionaryDetails(wordParam));
     }
 
     if (!response.ok) {
-      return NextResponse.json(
-        {
-          message: `Failed to fetch from dictionary (status ${response.status}).`,
-        },
-        { status: 502 }
-      );
+      console.warn('Cambridge details returned a non-OK response', {
+        status: response.status,
+        word: wordParam,
+      });
+      return NextResponse.json(emptyDictionaryDetails(wordParam));
     }
 
     const html = await response.text();
@@ -101,10 +114,10 @@ export async function GET(request: NextRequest) {
       examples: topExamples,
     });
   } catch (error) {
-    console.error('Failed to scrape dictionary details:', error);
-    return NextResponse.json(
-      { message: 'Internal server error while scraping dictionary details.' },
-      { status: 500 }
-    );
+    console.warn('Failed to scrape dictionary details:', {
+      error,
+      word: wordParam,
+    });
+    return NextResponse.json(emptyDictionaryDetails(wordParam));
   }
 }
