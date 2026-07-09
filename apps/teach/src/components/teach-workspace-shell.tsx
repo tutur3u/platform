@@ -5,6 +5,7 @@ import {
   ClipboardList,
   FileText,
   GraduationCap,
+  Library,
   LogOut,
   Settings,
 } from '@tuturuuu/icons';
@@ -24,6 +25,7 @@ const navItems = [
   { href: 'assignments', icon: ClipboardList, key: 'assignments' },
   { href: 'reports', icon: FileText, key: 'reports' },
   { href: 'metrics', icon: BarChart3, key: 'metrics' },
+  { href: 'education', icon: Library, key: 'education' },
   { href: 'settings', icon: Settings, key: 'settings' },
 ] as const;
 

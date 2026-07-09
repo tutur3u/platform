@@ -96,8 +96,6 @@ function getCreateTargetHref(group: ProductGroup): string {
       return `${(
         findItemHref(items, (itemHref) => itemHref.endsWith('/ai-chat')) ?? href
       ).replace(/\/$/, '')}/new`;
-    case 'education':
-      return appendPath(href, '/courses');
     case 'finance':
       return appendPath(href, '/transactions?create=transaction');
     case 'forms':

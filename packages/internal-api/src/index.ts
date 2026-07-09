@@ -361,6 +361,8 @@ export type {
 export {
   createInternalApiClient,
   getConfiguredInternalApiBaseUrl,
+  getConfiguredLearnApiBaseUrl,
+  getConfiguredTeachApiBaseUrl,
   InternalApiError,
   internalApiClient,
   resolveInternalApiUrl,

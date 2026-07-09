@@ -71,7 +71,51 @@
     "save": "Lưu",
     "saving": "Đang lưu...",
     "success": "Thành công",
-    "untitled": "Chưa đặt tên"
+    "untitled": "Chưa đặt tên",
+    "accept": "Chấp nhận",
+    "actions": "hành động",
+    "all": "Tất cả",
+    "apply_filters": "Áp dụng bộ lọc",
+    "ascending": "Tăng dần",
+    "attempt": "Lượt làm",
+    "clear": "Xóa bỏ",
+    "context": "Bối cảnh",
+    "correct": "Chính xác",
+    "date": "Ngày",
+    "descending": "Giảm dần",
+    "duration": "Thời lượng",
+    "enter_context": "Nhập ngữ cảnh",
+    "error": "Lỗi",
+    "error_saving_content": "Lỗi khi lưu nội dung của bạn",
+    "explanation": "Giải thích",
+    "from": "Từ",
+    "generate": "Tạo nội dung",
+    "generate_explanation": "Tạo lời giải thích",
+    "generate_with_ai": "Tạo với AI",
+    "next": "Tiếp theo",
+    "no_content_yet": "Chưa có nội dung",
+    "open": "Mở",
+    "order": "Thứ tự",
+    "page": "Trang",
+    "pending": "Đang chờ",
+    "previous": "Trước đó",
+    "published": "Đã xuất bản",
+    "question": "Câu hỏi",
+    "regenerate": "Tạo lại",
+    "remove": "Xóa",
+    "saved": "Đã lưu tất cả thay đổi",
+    "score": "Điểm",
+    "selected": "đã chọn",
+    "sort": "Sắp xếp",
+    "status": "Trạng thái",
+    "submitted_at": "Thời gian nộp",
+    "to": "Đến",
+    "unknown": "Không xác định",
+    "unlink": "Hủy liên kết",
+    "upload": "Tải lên",
+    "view": "Xem",
+    "whats_the_title": "Tiêu đề là gì?",
+    "write_something": "Hãy viết gì đó..."
   },
   "finance": {
     "new_debt": "Khoản nợ mới",
@@ -691,7 +735,8 @@
       "dashboard": "Dashboard",
       "metrics": "Metrics",
       "reports": "Báo cáo",
-      "settings": "Cài đặt"
+      "settings": "Cài đặt",
+      "education": "Giáo dục"
     },
     "workspaceFallback": "Workspace giáo dục"
   },
@@ -873,6 +918,143 @@
     "visibility": {
       "private": "Riêng tư",
       "workspace": "Không gian làm việc"
+    }
+  },
+  "ai_chat": {
+    "incorrect": "không chính xác"
+  },
+  "approvals": {
+    "labels": {
+      "user": "Người dùng"
+    }
+  },
+  "calendar-sidebar": {
+    "ready": "Sẵn sàng"
+  },
+  "course-details-tabs": {
+    "extra_reading": "Đọc thêm",
+    "module_content": "Nội dung mô-đun",
+    "preview": "Xem trước",
+    "resources": "Tài nguyên",
+    "youtube_links": "Liên kết YouTube"
+  },
+  "quiz-set-data-table": {
+    "linked_modules": "Mô đun liên kết"
+  },
+  "sidebar_tabs": {
+    "education": "Giáo dục"
+  },
+  "workspace-education-tabs": {
+    "assessments_ready": "Đã sẵn sàng đánh giá",
+    "attempt": "Lượt làm",
+    "attempts": "Lượt làm",
+    "attempts_description": "Xem lượt làm của học viên với bộ lọc, điểm số và chi tiết từng câu trả lời.",
+    "course_builder": "Trình xây dựng khóa học",
+    "courses": "Khóa học",
+    "drag_reorder_hint": "Kéo các mô-đun ở cột trái để sắp xếp lại luồng khóa học.",
+    "flashcards": "Thẻ từ vựng",
+    "library": "Thư viện",
+    "library_description": "Quản lý bộ câu hỏi, bộ đề và thẻ ghi nhớ dùng lại cho trình xây dựng khóa học.",
+    "library_flashcards": "Thẻ ghi nhớ thư viện",
+    "library_quiz_sets": "Bộ đề thư viện",
+    "library_quizzes": "Câu hỏi thư viện",
+    "module_drop_target_hint": "Thả để chuyển mô-đun vào nhóm này.",
+    "overview_description": "Theo dõi tiến độ xây dựng khóa học và mức độ sẵn sàng giảng dạy trong workspace.",
+    "publish_checklist": "Danh sách kiểm tra xuất bản",
+    "quizzes": "Câu hỏi trắc nghiệm",
+    "teacher_review_queue": "Hàng đợi giáo viên chấm",
+    "valsea": {
+      "audio_recording_failed": "Không thể bắt đầu ghi âm.",
+      "audio_recording_unsupported": "Trình duyệt này không hỗ trợ ghi âm trực tiếp.",
+      "page_description": "Chuyển lời nói đa ngôn ngữ trong lớp thành ghi chú rõ ràng, bản dịch, tín hiệu ngữ nghĩa, sắc thái học viên và bước tiếp theo cho giáo viên.",
+      "sample_1_text": "Teacher ah, I understand the formula but when the question say compare two graphs I blur already. The slope one can lah, but the intercept part I keep mixing up.",
+      "title": "Valsea Classroom Studio"
+    }
+  },
+  "ws-ai-workflows": {
+    "include_module_content": "Bao gồm nội dung mô-đun",
+    "include_resources": "Bao gồm các tài nguyên tải lên",
+    "include_youtube_links": "Bao gồm các liên kết YouTube"
+  },
+  "ws-course-modules": {
+    "add_link": "Thêm liên kết",
+    "add_resource": "Thêm tài nguyên",
+    "add_resource_description": "Thêm một tài nguyên mới.",
+    "add_youtube_link_description": "Thêm liên kết YouTube mới.",
+    "create": "Tạo mô-đun",
+    "create_description": "Tạo một mô-đun mới",
+    "create_group": "Tạo nhóm",
+    "create_group_description": "Tạo nhóm mô-đun mới để tổ chức nội dung khóa học.",
+    "create_multiple": "Tạo nhiều nhóm",
+    "description": "Quản lý các mô-đun trong khóa học nằm trong không gian làm việc của bạn.",
+    "edit": "Chỉnh sửa mô-đun",
+    "edit_description": "Chỉnh sửa mô-đun hiện có",
+    "edit_group": "Chỉnh sửa nhóm",
+    "group_color": "Màu sắc",
+    "group_created": "Đã tạo nhóm thành công",
+    "group_deleted": "Đã xóa nhóm",
+    "group_icon": "Biểu tượng",
+    "group_save_error": "Lưu nhóm thất bại",
+    "group_title": "Tiêu đề nhóm",
+    "group_updated": "Đã cập nhật nhóm thành công",
+    "groups_reordered": "Đã sắp xếp lại nhóm",
+    "icon_description": "Chọn một biểu tượng để đại diện cho nhóm này.",
+    "module_deleted": "Đã xóa mô-đun",
+    "module_duplicated": "Đã nhân bản mô-đun",
+    "module_groups": "Nhóm mô-đun",
+    "module_moved": "Đã di chuyển mô-đun",
+    "modules_reordered": "Đã sắp xếp lại mô-đun",
+    "name": "Tên mô-đun",
+    "no_color": "Chưa chọn màu",
+    "no_icon": "Chưa chọn biểu tượng",
+    "plural": "Mô-đun khóa học",
+    "randomize_color": "Đổi màu ngẫu nhiên",
+    "reorder_failed": "Sắp xếp lại thất bại",
+    "resource": "Tài nguyên",
+    "resources": "Tài nguyên",
+    "search_icons": "Tìm kiếm biểu tượng...",
+    "select_icon": "Chọn biểu tượng",
+    "singular": "Mô-đun khóa học",
+    "youtube_link": "Liên kết YouTube",
+    "youtube_links": "Liên kết YouTube"
+  },
+  "ws-courses": {
+    "card_view": "Dạng thẻ",
+    "create": "Tạo khóa học",
+    "create_description": "Tạo một khóa học mới",
+    "delete_confirm_title": "Xác nhận xoá \"{name}\"",
+    "description": "Quản lý các khóa học trong không gian làm việc của bạn bao gồm nội dung đánh dấu, trang trình bày, câu hỏi và thẻ ghi chú.",
+    "no_description_provided": "Không có mô tả",
+    "plural": "Khóa học",
+    "singular": "Khóa học",
+    "table_view": "Dạng bảng"
+  },
+  "ws-flashcards": {
+    "back": "Mặt sau",
+    "create": "Tạo thẻ từ vựng",
+    "create_description": "Tạo một thẻ từ vựng mới",
+    "description": "Quản lý thẻ từ vựng trong không gian làm việc của bạn có một mặt trước và mặt sau dành cho mục đích học tập.",
+    "edit": "Chỉnh sửa thẻ từ vựng",
+    "edit_description": "Chỉnh sửa thẻ từ vựng hiện có",
+    "front": "Mặt trước",
+    "generation_accepted": "Thẻ từ do AI tạo đã được chấp nhận!",
+    "generation_error": "Đã xảy ra lỗi khi tạo thẻ từ.",
+    "plural": "Thẻ từ vựng",
+    "singular": "Thẻ từ vựng"
+  },
+  "ws-quiz-sets": {
+    "create": "Tạo bộ trắc nghiệm",
+    "create_description": "Tạo bộ trắc nghiệm mới",
+    "description": "Quản lý các bộ trắc nghiệm trong không gian làm việc của bạn bao gồm các câu hỏi nhiều lựa chọn dành cho mục đích học tập.",
+    "edit": "Chỉnh sửa bộ",
+    "link-modules": "Liên kết mô-đun",
+    "name": "Tên bộ trắc nghiệm",
+    "plural": "Bộ trắc nghiệm",
+    "singular": "Bộ trắc nghiệm"
+  },
+  "ws-task-boards": {
+    "row_actions": {
+      "duplicate": "Nhân bản"
     }
   }
 }

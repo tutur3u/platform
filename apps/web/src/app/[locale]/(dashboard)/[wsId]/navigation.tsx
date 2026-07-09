@@ -222,12 +222,6 @@ export async function WorkspaceNavigationLinks({
     withoutPermission('manage_users') &&
     withoutPermission('view_users_private_info') &&
     withoutPermission('view_users_public_info');
-  const educationDisabled =
-    withoutPermission('manage_users') &&
-    withoutPermission('view_user_groups') &&
-    withoutPermission('view_user_groups_reports') &&
-    withoutPermission('view_user_groups_scores') &&
-    withoutPermission('view_user_groups_posts');
   const taskNavigationDisabled =
     ENABLE_AI_ONLY || withoutPermission('manage_projects');
   const secondaryTaskNavigationChildren: DashboardNavigationLink[] = [
@@ -1128,60 +1122,6 @@ export async function WorkspaceNavigationLinks({
               icon: createDashboardNavigationIcon('Trash', 'h-5 w-5'),
               external: true,
               disabled: !isMailUser,
-            },
-          ],
-        },
-        {
-          id: 'education',
-          title: t('sidebar_tabs.education'),
-          href: `/${personalOrWsId}/education`,
-          icon: createDashboardNavigationIcon('GraduationCap', 'h-5 w-5'),
-          aliases: [
-            `/${personalOrWsId}/education/library`,
-            `/${personalOrWsId}/education/library/quizzes`,
-            `/${personalOrWsId}/education/library/quiz-sets`,
-            `/${personalOrWsId}/education/library/flashcards`,
-            `/${personalOrWsId}/education/valsea`,
-          ],
-          disabled:
-            ENABLE_AI_ONLY ||
-            !hasSecret('ENABLE_EDUCATION', 'true') ||
-            educationDisabled,
-          experimental: 'beta',
-          preferenceSectionLabel: sidebarSections.utilities,
-          children: [
-            {
-              title: t('workspace-education-tabs.overview'),
-              href: `/${personalOrWsId}/education`,
-              icon: createDashboardNavigationIcon('LayoutDashboard', 'h-5 w-5'),
-              matchExact: true,
-            },
-            {
-              title: t('workspace-education-tabs.courses'),
-              href: `/${personalOrWsId}/education/courses`,
-              icon: createDashboardNavigationIcon('BookText', 'h-5 w-5'),
-            },
-            {
-              title: t('workspace-education-tabs.library'),
-              href: `/${personalOrWsId}/education/library`,
-              icon: createDashboardNavigationIcon('LayoutList', 'h-5 w-5'),
-              aliases: [
-                `/${personalOrWsId}/education/library/quizzes`,
-                `/${personalOrWsId}/education/library/quiz-sets`,
-                `/${personalOrWsId}/education/library/flashcards`,
-              ],
-            },
-            {
-              title: t('workspace-education-tabs.attempts'),
-              href: `/${personalOrWsId}/education/attempts`,
-              icon: createDashboardNavigationIcon('ClipboardList', 'h-5 w-5'),
-              disabled: withoutPermission('view_user_groups_reports'),
-            },
-            {
-              title: t('workspace-education-tabs.valsea.title'),
-              href: `/${personalOrWsId}/education/valsea`,
-              icon: createDashboardNavigationIcon('Languages', 'h-5 w-5'),
-              experimental: 'beta',
             },
           ],
         },

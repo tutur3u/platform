@@ -12,6 +12,7 @@ import {
 import {
   deleteWorkspaceUserGroupStorageFile,
   generateWorkspaceCourseModulesFromStorage,
+  getConfiguredTeachApiBaseUrl,
   listWorkspaceUserGroupStorageFiles,
   uploadWorkspaceUserGroupStorageFile,
 } from '@tuturuuu/internal-api';
@@ -119,8 +120,9 @@ export default function GroupStorage({
       toast.success(t('generate_module_success'));
       const firstModuleId = data.createdModules?.[0]?.id;
       if (firstModuleId) {
-        router.push(
-          `/${wsId}/education/courses/${groupId}/modules/${firstModuleId}/content`
+        // The education course builder now lives in apps/teach.
+        window.location.assign(
+          `${getConfiguredTeachApiBaseUrl()}/${wsId}/education/courses/${groupId}/modules/${firstModuleId}/content`
         );
       } else {
         router.refresh();
