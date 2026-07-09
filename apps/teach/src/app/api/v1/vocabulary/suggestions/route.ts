@@ -7,6 +7,8 @@ interface CambridgeSuggestion {
   word?: string;
 }
 
+const CAMBRIDGE_SUGGESTIONS_TIMEOUT_MS = 5_000;
+
 function normalizeSuggestions(value: unknown) {
   if (!Array.isArray(value)) return [];
 
@@ -56,25 +58,43 @@ export async function GET(request: NextRequest) {
     'https://dictionary.cambridge.org'
   );
 
-  const response = await fetch(url, {
-    headers: {
-      accept: 'application/json',
-      'accept-language': 'en-US,en;q=0.9',
-      'user-agent': 'Mozilla/5.0 vocabulary-autocomplete',
-    },
-    next: {
-      revalidate: 60 * 60,
-    },
-  });
+  const controller = new AbortController();
+  const timeout = setTimeout(
+    () => controller.abort(),
+    CAMBRIDGE_SUGGESTIONS_TIMEOUT_MS
+  );
 
-  if (!response.ok) {
-    return NextResponse.json(
-      { message: 'Failed to load vocabulary suggestions.' },
-      { status: 502 }
-    );
+  try {
+    const response = await fetch(url, {
+      headers: {
+        accept: 'application/json',
+        'accept-language': 'en-US,en;q=0.9',
+        'user-agent': 'Mozilla/5.0 vocabulary-autocomplete',
+      },
+      next: {
+        revalidate: 60 * 60,
+      },
+      signal: controller.signal,
+    });
+
+    if (!response.ok) {
+      console.warn('Cambridge suggestions returned a non-OK response', {
+        query,
+        status: response.status,
+      });
+      return NextResponse.json({ suggestions: [] });
+    }
+
+    return NextResponse.json({
+      suggestions: normalizeSuggestions(await response.json()),
+    });
+  } catch (error) {
+    console.warn('Failed to load Cambridge vocabulary suggestions', {
+      error,
+      query,
+    });
+    return NextResponse.json({ suggestions: [] });
+  } finally {
+    clearTimeout(timeout);
   }
-
-  return NextResponse.json({
-    suggestions: normalizeSuggestions(await response.json()),
-  });
 }

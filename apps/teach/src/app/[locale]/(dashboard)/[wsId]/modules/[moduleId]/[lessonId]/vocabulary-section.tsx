@@ -185,7 +185,10 @@ export default function LessonVocabularySection({ wsId, lessonId }: Props) {
           }
         );
 
-        if (!response.ok) throw new Error('Could not load suggestions.');
+        if (!response.ok) {
+          setSuggestions([]);
+          return;
+        }
 
         const payload = (await response.json()) as {
           suggestions?: VocabularySuggestion[];
