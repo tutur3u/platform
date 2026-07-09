@@ -83,8 +83,13 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ suggestions: [] });
     }
 
+    const responseText = await response.text();
+    if (!responseText.trim()) {
+      return NextResponse.json({ suggestions: [] });
+    }
+
     return NextResponse.json({
-      suggestions: normalizeSuggestions(await response.json()),
+      suggestions: normalizeSuggestions(JSON.parse(responseText)),
     });
   } catch (error) {
     console.warn('Failed to load OED vocabulary suggestions', {
