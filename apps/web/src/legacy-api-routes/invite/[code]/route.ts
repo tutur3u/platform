@@ -1,4 +1,9 @@
 import { createPolarClient } from '@tuturuuu/payment/polar/server';
+import {
+  assignSeatToMember,
+  revokeSeatFromMember,
+} from '@tuturuuu/payment-core/polar-seat-helper';
+import { enforceSeatLimit } from '@tuturuuu/payment-core/seat-limits';
 import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import {
   createAdminClient,
@@ -7,11 +12,6 @@ import {
 import { NextResponse } from 'next/server';
 import { resolveWorkspaceBrandingUrlsForNext } from '@/lib/workspace-branding-image-url';
 import { memberTypeFromInviteStatsRow } from '@/lib/workspace-invite-links';
-import {
-  assignSeatToMember,
-  revokeSeatFromMember,
-} from '@tuturuuu/payment-core/polar-seat-helper';
-import { enforceSeatLimit } from '@tuturuuu/payment-core/seat-limits';
 
 interface Params {
   params: Promise<{

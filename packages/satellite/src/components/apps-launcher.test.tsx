@@ -227,7 +227,8 @@ describe('AppsLauncherDialog', () => {
     expect(getSectionTitles('Productivity')[0]).toBe('Platform');
     expect(getSectionTitles('Operations')).toContain('CMS');
     expect(getSectionTitles('Operations')).not.toContain('Apps');
-    expect(getSectionTitles('Operations').at(-1)).toBe('Storefront');
+    expect(getSectionTitles('Operations')).toContain('Storefront');
+    expect(getSectionTitles('Operations')).toContain('Pay');
     expect(getSectionTitles('AI')).toContain('Rewise');
     expect(getSectionTitles('Miscellaneous')).toEqual([
       'Apps',

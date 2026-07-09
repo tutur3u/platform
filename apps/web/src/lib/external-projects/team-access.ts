@@ -1,3 +1,4 @@
+import { getEffectiveAvailableSeats } from '@tuturuuu/payment-core/seat-limits';
 import type {
   Database,
   TablesInsert,
@@ -10,7 +11,6 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getWorkspaceMembers } from '@/lib/workspace-members';
 import { normalizeRoleMembers } from '@/lib/workspace-role-members';
-import { getEffectiveAvailableSeats } from '@tuturuuu/payment-core/seat-limits';
 import {
   hasRootExternalProjectsAdminPermission,
   requireWorkspaceExternalProjectAccess,

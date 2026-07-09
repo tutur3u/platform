@@ -1,3 +1,4 @@
+import { canCreateInvitation } from '@tuturuuu/payment-core/seat-limits';
 import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import {
   createAdminClient,
@@ -10,7 +11,6 @@ import {
 import { nanoid } from 'nanoid';
 import { NextResponse } from 'next/server';
 import * as z from 'zod';
-import { canCreateInvitation } from '@tuturuuu/payment-core/seat-limits';
 
 interface Params {
   params: Promise<{

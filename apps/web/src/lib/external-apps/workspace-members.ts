@@ -2,6 +2,7 @@ import {
   getBearerAppCoordinationToken,
   verifyAppCoordinationToken,
 } from '@tuturuuu/auth/app-coordination';
+import { getEffectiveAvailableSeats } from '@tuturuuu/payment-core/seat-limits';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import type {
@@ -28,7 +29,6 @@ import {
   type EnhancedWorkspaceMember,
   getWorkspaceMembers,
 } from '@/lib/workspace-members';
-import { getEffectiveAvailableSeats } from '@tuturuuu/payment-core/seat-limits';
 
 type AdminDb = TypedSupabaseClient;
 type WorkspaceRolePermissionValue =

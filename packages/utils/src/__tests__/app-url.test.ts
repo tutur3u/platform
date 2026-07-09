@@ -304,6 +304,7 @@ describe('Portless app origin registry', () => {
       'https://meet.tuturuuu.localhost',
       'https://mind.tuturuuu.localhost',
       'https://nova.tuturuuu.localhost',
+      'https://pay.tuturuuu.localhost',
       'https://tuturuuu.localhost',
       'https://playground.tuturuuu.localhost',
       'https://qr.tuturuuu.localhost',

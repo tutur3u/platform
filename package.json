@@ -124,6 +124,7 @@
     "dev:track": "node scripts/dev-workspaces.js track",
     "dev:learn": "node scripts/dev-workspaces.js learn",
     "dev:teach": "node scripts/dev-workspaces.js teach",
+    "dev:pay": "node scripts/dev-workspaces.js pay",
     "dev:edu": "node scripts/dev-workspaces.js edu",
     "dev:hive": "node scripts/dev-workspaces.js hive",
     "dev:mind": "node scripts/dev-workspaces.js mind",

@@ -1,4 +1,6 @@
 import { createPolarClient } from '@tuturuuu/payment/polar/server';
+import { getOrCreatePolarCustomer } from '@tuturuuu/payment-core/customer-helper';
+import { createFreeSubscription } from '@tuturuuu/payment-core/subscription-helper';
 import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import {
   createAdminClient,
@@ -8,8 +10,6 @@ import { MAX_WORKSPACE_NAME_LENGTH } from '@tuturuuu/utils/constants';
 import { checkWorkspaceCreationLimit } from '@tuturuuu/utils/workspace-limits';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { getOrCreatePolarCustomer } from '@tuturuuu/payment-core/customer-helper';
-import { createFreeSubscription } from '@tuturuuu/payment-core/subscription-helper';
 
 const CreateTeamWorkspaceSchema = z.object({
   name: z.string().min(1).max(MAX_WORKSPACE_NAME_LENGTH),
