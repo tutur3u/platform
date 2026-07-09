@@ -8,6 +8,13 @@
       "schedule": "0 16 * * *"
     },
     {
+      "description": "Synchronize payment products from the payment provider.",
+      "enabled": true,
+      "id": "payment-products",
+      "path": "/api/cron/payment/products",
+      "schedule": "0 */12 * * *"
+    },
+    {
       "description": "Process notification batches waiting for delivery.",
       "enabled": true,
       "id": "process-notification-batches",

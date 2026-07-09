@@ -129,6 +129,11 @@
       "targetOwner": "rust-backend",
       "note": "Rust backend route_request owns terminal decommission for the broad legacy all-workspace sync logs API and returns 410 ENDPOINT_REMOVED. Calendar sync monitoring now uses workspace-scoped server-owned data fetching, so the legacy API is intentionally not preserved."
     },
+    "api:/api/payment/migrations/subscriptions/cross-check:apps/web/src/legacy-api-routes/payment/migrations/subscriptions/cross-check/route.ts": {
+      "status": "accepted-removal",
+      "targetOwner": "rust-backend",
+      "note": "Rust backend route_request owns terminal decommission for the old monolithic subscription cross-check route and returns 410 ENDPOINT_REMOVED. The billing maintenance UI uses the phase-1, phase-2, and phase-3 endpoints, which remain legacy-owned until separately migrated."
+    },
     "api:/api/users/search:apps/web/src/legacy-api-routes/users/search/route.ts": {
       "status": "accepted-removal",
       "targetOwner": "rust-backend",
@@ -868,6 +873,11 @@
       "status": "migrated",
       "targetOwner": "tanstack-start",
       "note": "TanStack Start route /$locale/$wsId/ai-chat/my-chatbots/new ports the legacy client-only chatbot form with the same local validation and submit toast behavior, without adding protected data access. Parent dashboard/session ownership remains legacy-owned."
+    },
+    "page:/:locale/:wsId/billing/success:apps/web/src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/billing/success/page.tsx": {
+      "status": "migrated",
+      "targetOwner": "tanstack-start",
+      "note": "TanStack Start route /$locale/$wsId/billing/success preserves the legacy billing checkout success page with fail-closed current-user auth, forwarded-auth workspace resolution, checkoutId validation, not-found mapping for missing Polar checkouts, normalized server-side Polar checkout data, localized success content, and legacy billing/invoice/dashboard links. The payment checkout/read APIs remain separately tracked backend work."
     },
     "page:/:locale/:wsId/meet:apps/web/src/app/[locale]/(dashboard)/[wsId]/meet/page.tsx": {
       "status": "migrated",
