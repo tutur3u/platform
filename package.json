@@ -187,6 +187,7 @@
     "type-check:track": "bun turbo:local run type-check -F @tuturuuu/track",
     "type-check:learn": "bun turbo:local run type-check -F @tuturuuu/learn",
     "type-check:teach": "bun turbo:local run type-check -F @tuturuuu/teach",
+    "type-check:pay": "bun turbo:local run type-check -F @tuturuuu/pay",
     "type-check:hive": "bun turbo:local run type-check -F @tuturuuu/hive -F @tuturuuu/hive-realtime",
     "type-check:mind": "bun turbo:local run type-check -F @tuturuuu/mind",
     "type-check:shortener": "bun turbo:local run type-check -F @tuturuuu/shortener",

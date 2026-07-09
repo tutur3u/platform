@@ -135,6 +135,10 @@
       "component": "teach",
       "package-name": "@tuturuuu/teach"
     },
+    "apps/pay": {
+      "component": "pay",
+      "package-name": "@tuturuuu/pay"
+    },
     "apps/track": {
       "component": "track",
       "package-name": "@tuturuuu/track"

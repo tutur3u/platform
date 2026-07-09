@@ -101,6 +101,10 @@ export const PRODUCTION_INTERNAL_APP_DOMAINS = [
     url: 'https://teach.tuturuuu.com',
   },
   {
+    name: 'pay',
+    url: 'https://pay.tuturuuu.com',
+  },
+  {
     name: 'hive',
     url: 'https://hive.tuturuuu.com',
   },
@@ -200,6 +204,10 @@ export const PORTLESS_INTERNAL_APP_DOMAINS = [
     url: getTuturuuuPortlessAppOrigin('teach'),
   },
   {
+    name: 'pay',
+    url: getTuturuuuPortlessAppOrigin('pay'),
+  },
+  {
     name: 'hive',
     url: getTuturuuuPortlessAppOrigin('hive'),
   },
@@ -293,6 +301,10 @@ export const LOCALHOST_INTERNAL_APP_DOMAINS = [
   {
     name: 'teach',
     url: 'http://localhost:7813',
+  },
+  {
+    name: 'pay',
+    url: 'http://localhost:7826',
   },
   {
     name: 'hive',
