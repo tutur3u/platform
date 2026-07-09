@@ -5,5 +5,11 @@
   },
   "github": {
     "enabled": false
-  }
+  },
+  "crons": [
+    {
+      "path": "/api/cron/payment/products",
+      "schedule": "0 */12 * * *"
+    }
+  ]
 }

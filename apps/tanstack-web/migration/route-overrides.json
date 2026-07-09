@@ -129,11 +129,6 @@
       "targetOwner": "rust-backend",
       "note": "Rust backend route_request owns terminal decommission for the broad legacy all-workspace sync logs API and returns 410 ENDPOINT_REMOVED. Calendar sync monitoring now uses workspace-scoped server-owned data fetching, so the legacy API is intentionally not preserved."
     },
-    "api:/api/payment/migrations/subscriptions/cross-check:apps/web/src/legacy-api-routes/payment/migrations/subscriptions/cross-check/route.ts": {
-      "status": "accepted-removal",
-      "targetOwner": "rust-backend",
-      "note": "Rust backend route_request owns terminal decommission for the old monolithic subscription cross-check route and returns 410 ENDPOINT_REMOVED. The billing maintenance UI uses the phase-1, phase-2, and phase-3 endpoints, which remain legacy-owned until separately migrated."
-    },
     "api:/api/users/search:apps/web/src/legacy-api-routes/users/search/route.ts": {
       "status": "accepted-removal",
       "targetOwner": "rust-backend",

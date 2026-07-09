@@ -53,6 +53,14 @@ const COMPATIBLE_SESSION_FALLBACK_FILES = new Set([
   'apps/inventory/src/lib/api-auth.ts',
   'apps/learn/src/lib/api-auth.ts',
   'apps/mind/src/lib/api-auth.ts',
+  'apps/pay/src/app/api/payment/credit-packs/checkouts/route.ts',
+  'apps/pay/src/app/api/payment/customer-portal/subscriptions/[subscriptionId]/route.ts',
+  'apps/pay/src/app/api/payment/orders/[orderId]/invoice/route.ts',
+  'apps/pay/src/app/api/payment/seats/route.ts',
+  'apps/pay/src/app/api/payment/subscriptions/[subscriptionId]/change/route.ts',
+  'apps/pay/src/app/api/payment/subscriptions/[subscriptionId]/checkouts/route.ts',
+  'apps/pay/src/app/api/payment/subscriptions/[subscriptionId]/preview/route.ts',
+  'apps/pay/src/app/api/v1/workspaces/[wsId]/billing/route.ts',
   'apps/teach/src/lib/api-auth.ts',
 ]);
 const CHECKED_SUPABASE_AUTH_FALLBACK_FILES = new Set([

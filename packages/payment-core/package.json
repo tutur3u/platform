@@ -8,6 +8,7 @@
     ".": "./src/index.ts",
     "./billing-helper": "./src/billing-helper.ts",
     "./customer-helper": "./src/customer-helper.ts",
+    "./migrations-helper": "./src/migrations-helper.ts",
     "./polar-order-helper": "./src/polar-order-helper.ts",
     "./polar-product-helper": "./src/polar-product-helper.ts",
     "./polar-product-metadata": "./src/polar-product-metadata.ts",
