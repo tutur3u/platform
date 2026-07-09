@@ -6,7 +6,7 @@ import {
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { resolveWorkspaceBrandingUrlsForNext } from '@/lib/workspace-branding-image-url';
 import { memberTypeFromInviteStatsRow } from '@/lib/workspace-invite-links';
-import { enforceSeatLimit } from '@/utils/seat-limits';
+import { enforceSeatLimit } from '@tuturuuu/payment-core/seat-limits';
 import type { ValidateInviteResult, Workspace, WorkspaceInfo } from './types';
 
 /**

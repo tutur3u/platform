@@ -7,7 +7,7 @@ import {
 import type { WorkspaceSubscriptionProduct } from '@tuturuuu/types/db';
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
-import { SEAT_ACTIVE_STATUSES } from '@/utils/subscription-constants';
+import { SEAT_ACTIVE_STATUSES } from '@tuturuuu/payment-core/subscription-constants';
 
 /**
  * GET /api/payment/seats?wsId=xxx

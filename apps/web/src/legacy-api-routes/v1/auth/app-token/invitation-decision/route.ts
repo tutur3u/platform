@@ -28,8 +28,8 @@ import {
 import {
   assignSeatToMember,
   revokeSeatFromMember,
-} from '@/utils/polar-seat-helper';
-import { enforceSeatLimit } from '@/utils/seat-limits';
+} from '@tuturuuu/payment-core/polar-seat-helper';
+import { enforceSeatLimit } from '@tuturuuu/payment-core/seat-limits';
 
 const APP_TOKEN_REFRESH_SCOPE = 'app-token:refresh';
 const INVITATION_ACTION_REPLAY_TABLE = 'app_token_invitation_action_replays';

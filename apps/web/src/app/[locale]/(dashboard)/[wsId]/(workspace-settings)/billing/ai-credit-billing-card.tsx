@@ -11,7 +11,7 @@ import { cn } from '@tuturuuu/utils/format';
 import { useLocale, useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
 import { useEffect, useMemo, useState } from 'react';
-import type { CreditPackListItem } from '@/utils/billing-helper';
+import type { CreditPackListItem } from '@tuturuuu/payment-core/billing-helper';
 import { centToDollar } from '@/utils/price-helper';
 
 interface CreditStatusResponse {

@@ -3,11 +3,11 @@ import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
 import type { Database } from '@tuturuuu/types';
 import type { WorkspaceSubscriptionProduct } from '@tuturuuu/types/db';
 import { addDays } from 'date-fns';
-import { syncProductToDatabase } from '@/utils/polar-product-helper';
+import { syncProductToDatabase } from './polar-product-helper';
 import {
   isAiCreditPackProduct,
   parseCreditPackTokens,
-} from '@/utils/polar-product-metadata';
+} from './polar-product-metadata';
 
 const CREDIT_PACK_EXPIRY_DAYS = 60;
 

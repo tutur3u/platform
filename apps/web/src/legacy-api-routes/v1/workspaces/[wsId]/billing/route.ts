@@ -12,8 +12,8 @@ import {
   fetchProducts,
   fetchSubscription,
   fetchWorkspaceOrders,
-} from '@/utils/billing-helper';
-import { getSeatStatus } from '@/utils/seat-limits';
+} from '@tuturuuu/payment-core/billing-helper';
+import { getSeatStatus } from '@tuturuuu/payment-core/seat-limits';
 
 export async function GET(
   _request: Request,

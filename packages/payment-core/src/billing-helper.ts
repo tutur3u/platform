@@ -3,7 +3,7 @@ import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
 import {
   isAiCreditPackProduct,
   parseWorkspaceProductTier,
-} from '@/utils/polar-product-metadata';
+} from './polar-product-metadata';
 
 function privateSchema(supabase: TypedSupabaseClient) {
   return supabase.schema('private');

@@ -5,7 +5,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
 import { withSessionAuth } from '@/lib/api-auth';
-import { revokeSeatFromMember } from '@/utils/polar-seat-helper';
+import { revokeSeatFromMember } from '@tuturuuu/payment-core/polar-seat-helper';
 
 const DeleteAccountSchema = z.object({
   email: z.string().email(),

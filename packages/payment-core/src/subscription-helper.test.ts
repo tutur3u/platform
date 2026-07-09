@@ -6,7 +6,7 @@ import {
   convertWorkspaceIDToExternalID,
   createFreeSubscription,
   hasActiveSubscription,
-} from '../../utils/subscription-helper';
+} from './subscription-helper';
 
 // Mock console methods
 const mockConsoleError = vi

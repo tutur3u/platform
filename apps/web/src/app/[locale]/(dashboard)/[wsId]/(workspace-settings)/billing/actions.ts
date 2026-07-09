@@ -11,7 +11,7 @@ import { getCurrentSupabaseUser } from '@tuturuuu/utils/user-helper';
 import {
   createCustomerSession,
   getOrCreatePolarCustomer,
-} from '@/utils/customer-helper';
+} from '@tuturuuu/payment-core/customer-helper';
 
 interface ActionResult<T = void> {
   success: boolean;

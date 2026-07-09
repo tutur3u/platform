@@ -163,11 +163,11 @@ vi.mock('@tuturuuu/utils/workspace-helper', () => ({
   ),
 }));
 
-vi.mock('@/utils/seat-limits', () => ({
+vi.mock('@tuturuuu/payment-core/seat-limits', () => ({
   enforceSeatLimit: vi.fn(() => Promise.resolve({ allowed: true })),
 }));
 
-vi.mock('@/utils/polar-seat-helper', () => ({
+vi.mock('@tuturuuu/payment-core/polar-seat-helper', () => ({
   assignSeatToMember: vi.fn(() =>
     Promise.resolve({ required: false, success: true })
   ),

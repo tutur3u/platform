@@ -6,8 +6,8 @@ import {
 } from '@tuturuuu/supabase/next/server';
 import { checkWorkspaceCreationLimit } from '@tuturuuu/utils/workspace-limits';
 import { NextResponse } from 'next/server';
-import { getOrCreatePolarCustomer } from '@/utils/customer-helper';
-import { createFreeSubscription } from '@/utils/subscription-helper';
+import { getOrCreatePolarCustomer } from '@tuturuuu/payment-core/customer-helper';
+import { createFreeSubscription } from '@tuturuuu/payment-core/subscription-helper';
 
 export async function POST() {
   const supabase = await createClient();

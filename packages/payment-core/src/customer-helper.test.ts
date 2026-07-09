@@ -4,7 +4,7 @@ import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   createCustomerSession,
   getOrCreatePolarCustomer,
-} from '../../utils/customer-helper';
+} from './customer-helper';
 
 // Mock the dependencies
 vi.mock('@tuturuuu/utils/email/client', () => ({
@@ -13,7 +13,7 @@ vi.mock('@tuturuuu/utils/email/client', () => ({
     .mockImplementation((email: string, wsId: string) => `${email}+${wsId}`),
 }));
 
-vi.mock('../../utils/subscription-helper', () => ({
+vi.mock('./subscription-helper', () => ({
   convertWorkspaceIDToExternalID: vi
     .fn()
     .mockImplementation((wsId: string) => `workspace_${wsId}`),

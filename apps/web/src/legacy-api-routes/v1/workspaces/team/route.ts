@@ -8,8 +8,8 @@ import { MAX_WORKSPACE_NAME_LENGTH } from '@tuturuuu/utils/constants';
 import { checkWorkspaceCreationLimit } from '@tuturuuu/utils/workspace-limits';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { getOrCreatePolarCustomer } from '@/utils/customer-helper';
-import { createFreeSubscription } from '@/utils/subscription-helper';
+import { getOrCreatePolarCustomer } from '@tuturuuu/payment-core/customer-helper';
+import { createFreeSubscription } from '@tuturuuu/payment-core/subscription-helper';
 
 const CreateTeamWorkspaceSchema = z.object({
   name: z.string().min(1).max(MAX_WORKSPACE_NAME_LENGTH),

@@ -10,8 +10,8 @@ import { memberTypeFromInviteStatsRow } from '@/lib/workspace-invite-links';
 import {
   assignSeatToMember,
   revokeSeatFromMember,
-} from '@/utils/polar-seat-helper';
-import { enforceSeatLimit } from '@/utils/seat-limits';
+} from '@tuturuuu/payment-core/polar-seat-helper';
+import { enforceSeatLimit } from '@tuturuuu/payment-core/seat-limits';
 
 interface Params {
   params: Promise<{

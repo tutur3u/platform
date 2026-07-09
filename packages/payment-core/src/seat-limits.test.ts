@@ -4,7 +4,7 @@ import {
   enforceSeatLimit,
   getEffectiveAvailableSeats,
   getSeatStatus,
-} from '../../utils/seat-limits';
+} from './seat-limits';
 
 describe('seat-limits utils', () => {
   const wsId = 'ws-123';

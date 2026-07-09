@@ -1,8 +1,8 @@
 import { createPolarClient } from '@tuturuuu/payment/polar/server';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
-import { getOrCreatePolarCustomer } from '@/utils/customer-helper';
-import { createFreeSubscription } from '@/utils/subscription-helper';
+import { getOrCreatePolarCustomer } from '@tuturuuu/payment-core/customer-helper';
+import { createFreeSubscription } from '@tuturuuu/payment-core/subscription-helper';
 import {
   createNDJSONStream,
   fetchAllRows,

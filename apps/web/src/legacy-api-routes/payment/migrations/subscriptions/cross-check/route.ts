@@ -1,11 +1,11 @@
 import { createPolarClient } from '@tuturuuu/payment/polar/server';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
-import { syncSubscriptionToDatabase } from '@/utils/polar-subscription-helper';
+import { syncSubscriptionToDatabase } from '@tuturuuu/payment-core/polar-subscription-helper';
 import {
   createFreeSubscription,
   hasActiveSubscription,
-} from '@/utils/subscription-helper';
+} from '@tuturuuu/payment-core/subscription-helper';
 import {
   createNDJSONStream,
   fetchAllRows,

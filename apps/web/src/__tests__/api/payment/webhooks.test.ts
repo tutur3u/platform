@@ -1,7 +1,7 @@
 import type { Subscription } from '@tuturuuu/payment/polar';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { syncSubscriptionToDatabase } from '@/utils/polar-subscription-helper';
+import { syncSubscriptionToDatabase } from '@tuturuuu/payment-core/polar-subscription-helper';
 
 type MockProductLookupResult = Promise<{
   data:

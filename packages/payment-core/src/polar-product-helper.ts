@@ -4,7 +4,7 @@ import {
   isAiCreditPackProduct,
   parseCreditPackTokens,
   parseWorkspaceProductTier,
-} from '@/utils/polar-product-metadata';
+} from './polar-product-metadata';
 
 const CREDIT_PACK_EXPIRY_DAYS = 60;
 

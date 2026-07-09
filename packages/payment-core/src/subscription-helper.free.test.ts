@@ -1,14 +1,4 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-
-vi.mock('@/lib/infrastructure/log-drain', () => ({
-  serverLogger: {
-    warn: vi.fn(),
-    error: vi.fn(),
-    info: vi.fn(),
-    debug: vi.fn(),
-  },
-}));
-
 import { createFreeSubscription } from './subscription-helper';
 
 type ChainResult = { data: unknown; error?: unknown };

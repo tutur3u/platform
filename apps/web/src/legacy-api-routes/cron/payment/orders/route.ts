@@ -4,7 +4,7 @@ import { DEV_MODE } from '@tuturuuu/utils/constants';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { withCronLogDrain } from '@/lib/infrastructure/log-drain';
-import { syncOrderToDatabase } from '@/utils/polar-order-helper';
+import { syncOrderToDatabase } from '@tuturuuu/payment-core/polar-order-helper';
 
 /**
  * Cron job to sync orders from Polar.sh to database

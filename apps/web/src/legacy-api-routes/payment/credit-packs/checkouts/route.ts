@@ -7,7 +7,7 @@ import {
 import { type NextRequest, NextResponse } from 'next/server';
 import { BASE_URL } from '@/constants/common';
 import { normalizeWorkspaceId } from '@/lib/workspace-helper';
-import { getOrCreatePolarCustomer } from '@/utils/customer-helper';
+import { getOrCreatePolarCustomer } from '@tuturuuu/payment-core/customer-helper';
 
 export async function POST(request: NextRequest) {
   const baseUrl = BASE_URL;

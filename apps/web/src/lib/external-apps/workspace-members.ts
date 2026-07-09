@@ -28,7 +28,7 @@ import {
   type EnhancedWorkspaceMember,
   getWorkspaceMembers,
 } from '@/lib/workspace-members';
-import { getEffectiveAvailableSeats } from '@/utils/seat-limits';
+import { getEffectiveAvailableSeats } from '@tuturuuu/payment-core/seat-limits';
 
 type AdminDb = TypedSupabaseClient;
 type WorkspaceRolePermissionValue =

@@ -17,8 +17,8 @@ import {
   fetchProducts,
   fetchSubscription,
   fetchWorkspaceOrders,
-} from '@/utils/billing-helper';
-import { getSeatStatus } from '@/utils/seat-limits';
+} from '@tuturuuu/payment-core/billing-helper';
+import { getSeatStatus } from '@tuturuuu/payment-core/seat-limits';
 import { AiCreditBillingCard } from './ai-credit-billing-card';
 import { BillingClient } from './billing-client';
 import BillingDetailsCard from './billing-details-card';

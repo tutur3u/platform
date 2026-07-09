@@ -8,8 +8,8 @@ import {
 import { MAX_WORKSPACE_NAME_LENGTH } from '@tuturuuu/utils/constants';
 import { checkWorkspaceCreationLimit } from '@tuturuuu/utils/workspace-limits';
 import { redirect } from 'next/navigation';
-import { getOrCreatePolarCustomer } from '@/utils/customer-helper';
-import { createFreeSubscription } from '@/utils/subscription-helper';
+import { getOrCreatePolarCustomer } from '@tuturuuu/payment-core/customer-helper';
+import { createFreeSubscription } from '@tuturuuu/payment-core/subscription-helper';
 import type {
   FlowType,
   OnboardingProgress,

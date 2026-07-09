@@ -1,7 +1,7 @@
 import type { Order } from '@tuturuuu/payment/polar';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
 import type { Database } from '@tuturuuu/types';
-import { resolveWorkspaceOrderProduct } from '@/utils/polar-product-helper';
+import { resolveWorkspaceOrderProduct } from './polar-product-helper';
 
 const ORDER_STATUS_MAP = {
   pending: 'pending',

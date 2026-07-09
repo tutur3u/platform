@@ -10,7 +10,7 @@ import {
 import { nanoid } from 'nanoid';
 import { NextResponse } from 'next/server';
 import * as z from 'zod';
-import { canCreateInvitation } from '@/utils/seat-limits';
+import { canCreateInvitation } from '@tuturuuu/payment-core/seat-limits';
 
 interface Params {
   params: Promise<{

@@ -8,9 +8,9 @@ import {
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { cookies } from 'next/headers';
 import { isPolarWorkspaceSetupEnabled } from '@/lib/polar-config';
-import { getOrCreatePolarCustomer } from '@/utils/customer-helper';
-import { syncSubscriptionToDatabase } from '@/utils/polar-subscription-helper';
-import { createFreeSubscription } from '@/utils/subscription-helper';
+import { getOrCreatePolarCustomer } from '@tuturuuu/payment-core/customer-helper';
+import { syncSubscriptionToDatabase } from '@tuturuuu/payment-core/polar-subscription-helper';
+import { createFreeSubscription } from '@tuturuuu/payment-core/subscription-helper';
 import {
   getWorkspaceSetupAttemptCookie,
   WORKSPACE_SETUP_ATTEMPT_COOKIE_MAX_AGE,

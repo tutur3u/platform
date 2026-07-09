@@ -4,7 +4,7 @@ import { DEV_MODE } from '@tuturuuu/utils/constants';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { withCronLogDrain } from '@/lib/infrastructure/log-drain';
-import { syncSubscriptionToDatabase } from '@/utils/polar-subscription-helper';
+import { syncSubscriptionToDatabase } from '@tuturuuu/payment-core/polar-subscription-helper';
 
 /**
  * Cron job to sync subscriptions from Polar.sh to database

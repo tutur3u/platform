@@ -12,8 +12,8 @@ import { withSessionAuth } from '@/lib/api-auth';
 import {
   assignSeatToMember,
   revokeSeatFromMember,
-} from '@/utils/polar-seat-helper';
-import { enforceSeatLimit } from '@/utils/seat-limits';
+} from '@tuturuuu/payment-core/polar-seat-helper';
+import { enforceSeatLimit } from '@tuturuuu/payment-core/seat-limits';
 
 const guestJoinReasonToErrorCodeMap: Record<string, string> = {
   already_member: 'ALREADY_MEMBER',

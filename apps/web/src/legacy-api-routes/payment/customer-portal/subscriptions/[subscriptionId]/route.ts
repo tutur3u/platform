@@ -2,7 +2,7 @@ import { createPolarClient } from '@tuturuuu/payment/polar/server';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { getCurrentSupabaseUser } from '@tuturuuu/utils/user-helper';
 import { type NextRequest, NextResponse } from 'next/server';
-import { createCustomerSession } from '@/utils/customer-helper';
+import { createCustomerSession } from '@tuturuuu/payment-core/customer-helper';
 
 // PATCH: Reactivate subscription (cancel_at_period_end = false)
 export async function PATCH(

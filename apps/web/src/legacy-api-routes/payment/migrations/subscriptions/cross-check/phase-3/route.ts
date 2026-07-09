@@ -5,7 +5,7 @@ import { z } from 'zod';
 import {
   createFreeSubscription,
   hasActiveSubscription,
-} from '@/utils/subscription-helper';
+} from '@tuturuuu/payment-core/subscription-helper';
 import {
   createNDJSONStream,
   upsertSubscriptionError,

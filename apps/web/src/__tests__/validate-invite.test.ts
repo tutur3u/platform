@@ -82,7 +82,7 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
   createClient: vi.fn(() => Promise.resolve(mocks.sessionSupabase)),
 }));
 
-vi.mock('@/utils/seat-limits', () => ({
+vi.mock('@tuturuuu/payment-core/seat-limits', () => ({
   enforceSeatLimit: (...args: Parameters<typeof mocks.enforceSeatLimit>) =>
     mocks.enforceSeatLimit(...args),
 }));

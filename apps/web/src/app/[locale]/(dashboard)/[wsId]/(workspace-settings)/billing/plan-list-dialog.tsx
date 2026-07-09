@@ -26,7 +26,7 @@ import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { centToDollar } from '@/utils/price-helper';
-import type { SeatStatus } from '@/utils/seat-limits';
+import type { SeatStatus } from '@tuturuuu/payment-core/seat-limits';
 import type { Plan } from './billing-client';
 import { PlanChangeConfirmationDialog } from './plan-change-confirmation-dialog';
 import PurchaseLink from './purchase-link';

@@ -104,6 +104,7 @@
     "@tuturuuu/mind-ui": "workspace:*",
     "@tuturuuu/offline": "workspace:*",
     "@tuturuuu/payment": "workspace:*",
+    "@tuturuuu/payment-core": "workspace:*",
     "@tuturuuu/realtime": "workspace:*",
     "@tuturuuu/satellite": "workspace:*",
     "@tuturuuu/storage-core": "workspace:*",

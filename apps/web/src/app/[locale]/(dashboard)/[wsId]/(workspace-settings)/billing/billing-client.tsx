@@ -30,7 +30,7 @@ import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { centToDollar } from '@/utils/price-helper';
-import type { SeatStatus } from '@/utils/seat-limits';
+import type { SeatStatus } from '@tuturuuu/payment-core/seat-limits';
 import AdjustSeatsDialog from './adjust-seats-dialog';
 import PlanListDialog from './plan-list-dialog';
 import SubscriptionConfirmationDialog from './subscription-confirmation-dialog';

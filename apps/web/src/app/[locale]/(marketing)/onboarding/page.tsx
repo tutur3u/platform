@@ -11,8 +11,8 @@ import {
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { hasPendingWorkspaceInvitations } from '@/lib/workspace-invitations/status';
-import { getOrCreatePolarCustomer } from '@/utils/customer-helper';
-import { createFreeSubscription } from '@/utils/subscription-helper';
+import { getOrCreatePolarCustomer } from '@tuturuuu/payment-core/customer-helper';
+import { createFreeSubscription } from '@tuturuuu/payment-core/subscription-helper';
 import { getUserOnboardingProgress, hasCompletedOnboarding } from './actions';
 import OnboardingFlow from './onboarding-flow';
 

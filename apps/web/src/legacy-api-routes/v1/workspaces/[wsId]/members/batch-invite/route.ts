@@ -7,7 +7,7 @@ import { MAX_COLOR_LENGTH, MAX_EMAIL_LENGTH } from '@tuturuuu/utils/constants';
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { getEffectiveAvailableSeats } from '@/utils/seat-limits';
+import { getEffectiveAvailableSeats } from '@tuturuuu/payment-core/seat-limits';
 
 interface Params {
   params: Promise<{
