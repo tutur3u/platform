@@ -1,4 +1,5 @@
 import {
+  getConfiguredLearnApiBaseUrl,
   getTulearnBootstrap,
   InternalApiError,
   withForwardedInternalApiAuth,
@@ -30,7 +31,9 @@ export default async function DashboardEntryPage({
   let bootstrap: Awaited<ReturnType<typeof getTulearnBootstrap>>;
   try {
     bootstrap = await getTulearnBootstrap(
-      withForwardedInternalApiAuth(requestHeaders)
+      withForwardedInternalApiAuth(requestHeaders, {
+        baseUrl: getConfiguredLearnApiBaseUrl(),
+      })
     );
   } catch (error) {
     if (

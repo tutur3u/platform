@@ -20,6 +20,8 @@ import '@tuturuuu/ui/globals.css';
 
 export { viewport } from '@tuturuuu/utils/common/nextjs';
 
+const shouldRenderVercelTelemetry = process.env.NODE_ENV === 'production';
+
 interface Props {
   children: ReactNode;
   params: Promise<{
@@ -64,8 +66,12 @@ export default async function RootLayout({ children, params }: Props) {
         )}
       >
         <SerwistProvider register={false}>
-          <VercelAnalytics />
-          <VercelInsights />
+          {shouldRenderVercelTelemetry && (
+            <>
+              <VercelAnalytics />
+              <VercelInsights />
+            </>
+          )}
           <Suspense>
             <Providers>
               <NextIntlClientProvider>
