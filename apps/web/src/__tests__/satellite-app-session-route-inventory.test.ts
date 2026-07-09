@@ -13,6 +13,9 @@ const satelliteRouteRoots = [
   'apps/learn/src/app/api/v1/tulearn',
   'apps/learn/src/app/api/v1/course',
   'apps/learn/src/app/api/v1/workspaces/[wsId]/tulearn',
+  // teach routes now live in apps/teach (they opt into app-session auth via the
+  // explicit { targetApp: 'teach' } object form, which this inventory's opt-in
+  // regex intentionally does not scan; teach was not covered here previously).
   'apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/users/groups',
   'apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/time-tracking',
   // Calendar routes migrated to the dedicated calendar app (apps/calendar).

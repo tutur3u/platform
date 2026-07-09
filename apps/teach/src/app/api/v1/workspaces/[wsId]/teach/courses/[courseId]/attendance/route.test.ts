@@ -108,9 +108,7 @@ describe('Teach course attendance route', () => {
   });
 
   it('rejects an invalid month even when date is valid', async () => {
-    const { GET } = await import(
-      '@/legacy-api-routes/v1/workspaces/[wsId]/teach/courses/[courseId]/attendance/route'
-    );
+    const { GET } = await import('./route');
 
     const response = await GET(
       requestFor('date=2026-05-17&month=not-a-month'),
@@ -128,9 +126,7 @@ describe('Teach course attendance route', () => {
   });
 
   it('keeps valid monthly attendance aggregation working', async () => {
-    const { GET } = await import(
-      '@/legacy-api-routes/v1/workspaces/[wsId]/teach/courses/[courseId]/attendance/route'
-    );
+    const { GET } = await import('./route');
 
     const response = await GET(requestFor('month=2026-05'), routeContext());
 

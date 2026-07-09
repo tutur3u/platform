@@ -104,9 +104,7 @@ vi.mock('@tuturuuu/education-core/teach/api', () => ({
 }));
 
 async function postCourseTest(moduleIds: string[]) {
-  const { POST } = await import(
-    '@/legacy-api-routes/v1/workspaces/[wsId]/teach/courses/[courseId]/tests/route'
-  );
+  const { POST } = await import('./route');
 
   return POST(
     new NextRequest(
@@ -130,9 +128,7 @@ async function postCourseTest(moduleIds: string[]) {
 }
 
 async function patchCourseTest(payload: Record<string, unknown>) {
-  const { PATCH } = await import(
-    '@/legacy-api-routes/v1/workspaces/[wsId]/teach/courses/[courseId]/tests/route'
-  );
+  const { PATCH } = await import('./route');
 
   return PATCH(
     new NextRequest(

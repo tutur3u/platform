@@ -129,9 +129,7 @@ vi.mock('@tuturuuu/education-core/teach/api', () => ({
 async function patchIndicatorValues(
   values: { indicator_id: string; user_id: string; value: number | null }[]
 ) {
-  const { PATCH } = await import(
-    '@/legacy-api-routes/v1/workspaces/[wsId]/teach/courses/[courseId]/indicators/route'
-  );
+  const { PATCH } = await import('./route');
 
   return PATCH(
     new NextRequest(

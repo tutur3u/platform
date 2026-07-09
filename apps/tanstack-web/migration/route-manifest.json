@@ -6,12 +6,12 @@
         "acceptedRemoval": 17,
         "key": "api",
         "label": "api",
-        "legacyNext": 644,
+        "legacyNext": 626,
         "migrated": 77,
-        "percentComplete": 12.74,
-        "remaining": 644,
+        "percentComplete": 13.06,
+        "remaining": 626,
         "terminal": 94,
-        "total": 738,
+        "total": 720,
         "unknownStatus": 0
       },
       {
@@ -116,12 +116,12 @@
         "acceptedRemoval": 17,
         "key": "rust-backend",
         "label": "Rust backend",
-        "legacyNext": 656,
+        "legacyNext": 638,
         "migrated": 82,
-        "percentComplete": 13.11,
-        "remaining": 656,
+        "percentComplete": 13.43,
+        "remaining": 638,
         "terminal": 99,
-        "total": 755,
+        "total": 737,
         "unknownStatus": 0
       },
       {
@@ -323,12 +323,12 @@
       "acceptedRemoval": 19,
       "key": "total",
       "label": "All route artifacts",
-      "legacyNext": 729,
+      "legacyNext": 711,
       "migrated": 275,
-      "percentComplete": 28.74,
-      "remaining": 729,
+      "percentComplete": 29.25,
+      "remaining": 711,
       "terminal": 294,
-      "total": 1023,
+      "total": 1005,
       "unknownStatus": 0
     }
   },
@@ -5053,168 +5053,6 @@
       "targetOwner": "rust-backend"
     },
     {
-      "id": "api:/api/v1/workspaces/:wsId/teach/courses/:courseId/attendance:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/teach/courses/[courseId]/attendance/route.ts",
-      "kind": "api",
-      "methods": ["GET", "POST"],
-      "routePath": "/api/v1/workspaces/:wsId/teach/courses/:courseId/attendance",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/teach/courses/[courseId]/attendance/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/teach/courses/:courseId/indicators:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/teach/courses/[courseId]/indicators/route.ts",
-      "kind": "api",
-      "methods": ["GET", "POST", "PATCH"],
-      "routePath": "/api/v1/workspaces/:wsId/teach/courses/:courseId/indicators",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/teach/courses/[courseId]/indicators/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/teach/courses/:courseId/members:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/teach/courses/[courseId]/members/route.ts",
-      "kind": "api",
-      "methods": ["GET", "POST"],
-      "routePath": "/api/v1/workspaces/:wsId/teach/courses/:courseId/members",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/teach/courses/[courseId]/members/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/teach/courses/:courseId/members/:userId:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/teach/courses/[courseId]/members/[userId]/route.ts",
-      "kind": "api",
-      "methods": ["DELETE"],
-      "routePath": "/api/v1/workspaces/:wsId/teach/courses/:courseId/members/:userId",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/teach/courses/[courseId]/members/[userId]/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/teach/courses/:courseId/modules/:moduleId/quizzes/submissions:apps/web/src/app/api/v1/workspaces/[wsId]/teach/courses/[courseId]/modules/[moduleId]/quizzes/submissions/route.ts",
-      "kind": "api",
-      "methods": ["GET"],
-      "routePath": "/api/v1/workspaces/:wsId/teach/courses/:courseId/modules/:moduleId/quizzes/submissions",
-      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/teach/courses/[courseId]/modules/[moduleId]/quizzes/submissions/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/teach/courses/:courseId/modules/:moduleId/quizzes/submissions/:userId:apps/web/src/app/api/v1/workspaces/[wsId]/teach/courses/[courseId]/modules/[moduleId]/quizzes/submissions/[userId]/route.ts",
-      "kind": "api",
-      "methods": ["GET", "POST"],
-      "routePath": "/api/v1/workspaces/:wsId/teach/courses/:courseId/modules/:moduleId/quizzes/submissions/:userId",
-      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/teach/courses/[courseId]/modules/[moduleId]/quizzes/submissions/[userId]/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/teach/courses/:courseId/modules/:moduleId/quizzes/submissions/:userId/ai-review:apps/web/src/app/api/v1/workspaces/[wsId]/teach/courses/[courseId]/modules/[moduleId]/quizzes/submissions/[userId]/ai-review/route.ts",
-      "kind": "api",
-      "methods": ["POST"],
-      "routePath": "/api/v1/workspaces/:wsId/teach/courses/:courseId/modules/:moduleId/quizzes/submissions/:userId/ai-review",
-      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/teach/courses/[courseId]/modules/[moduleId]/quizzes/submissions/[userId]/ai-review/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/teach/courses/:courseId/posts:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/teach/courses/[courseId]/posts/route.ts",
-      "kind": "api",
-      "methods": ["GET", "POST"],
-      "routePath": "/api/v1/workspaces/:wsId/teach/courses/:courseId/posts",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/teach/courses/[courseId]/posts/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/teach/courses/:courseId/reports:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/teach/courses/[courseId]/reports/route.ts",
-      "kind": "api",
-      "methods": ["GET", "POST"],
-      "routePath": "/api/v1/workspaces/:wsId/teach/courses/:courseId/reports",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/teach/courses/[courseId]/reports/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/teach/courses/:courseId/student-performance:apps/web/src/app/api/v1/workspaces/[wsId]/teach/courses/[courseId]/student-performance/route.ts",
-      "kind": "api",
-      "methods": ["GET"],
-      "routePath": "/api/v1/workspaces/:wsId/teach/courses/:courseId/student-performance",
-      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/teach/courses/[courseId]/student-performance/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/teach/courses/:courseId/student-performance/:userId/send-report:apps/web/src/app/api/v1/workspaces/[wsId]/teach/courses/[courseId]/student-performance/[userId]/send-report/route.ts",
-      "kind": "api",
-      "methods": ["POST"],
-      "routePath": "/api/v1/workspaces/:wsId/teach/courses/:courseId/student-performance/:userId/send-report",
-      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/teach/courses/[courseId]/student-performance/[userId]/send-report/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/teach/courses/:courseId/student-performance/send-bulk-report:apps/web/src/app/api/v1/workspaces/[wsId]/teach/courses/[courseId]/student-performance/send-bulk-report/route.ts",
-      "kind": "api",
-      "methods": ["POST"],
-      "routePath": "/api/v1/workspaces/:wsId/teach/courses/:courseId/student-performance/send-bulk-report",
-      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/teach/courses/[courseId]/student-performance/send-bulk-report/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/teach/courses/:courseId/tests:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/teach/courses/[courseId]/tests/route.ts",
-      "kind": "api",
-      "methods": ["GET", "POST", "PATCH"],
-      "routePath": "/api/v1/workspaces/:wsId/teach/courses/:courseId/tests",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/teach/courses/[courseId]/tests/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/teach/courses/:courseId/tests/:testId/questions:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/teach/courses/[courseId]/tests/[testId]/questions/route.ts",
-      "kind": "api",
-      "methods": ["GET", "POST"],
-      "routePath": "/api/v1/workspaces/:wsId/teach/courses/:courseId/tests/:testId/questions",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/teach/courses/[courseId]/tests/[testId]/questions/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/teach/courses/:courseId/tests/:testId/submissions:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/teach/courses/[courseId]/tests/[testId]/submissions/route.ts",
-      "kind": "api",
-      "methods": ["GET"],
-      "routePath": "/api/v1/workspaces/:wsId/teach/courses/:courseId/tests/:testId/submissions",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/teach/courses/[courseId]/tests/[testId]/submissions/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/teach/courses/:courseId/tests/:testId/submissions/:attemptId:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/teach/courses/[courseId]/tests/[testId]/submissions/[attemptId]/route.ts",
-      "kind": "api",
-      "methods": ["GET", "PATCH"],
-      "routePath": "/api/v1/workspaces/:wsId/teach/courses/:courseId/tests/:testId/submissions/:attemptId",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/teach/courses/[courseId]/tests/[testId]/submissions/[attemptId]/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/teach/dashboard-stats:apps/web/src/app/api/v1/workspaces/[wsId]/teach/dashboard-stats/route.ts",
-      "kind": "api",
-      "methods": ["GET"],
-      "routePath": "/api/v1/workspaces/:wsId/teach/dashboard-stats",
-      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/teach/dashboard-stats/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/teach/users:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/teach/users/route.ts",
-      "kind": "api",
-      "methods": ["GET"],
-      "routePath": "/api/v1/workspaces/:wsId/teach/users",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/teach/users/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
       "id": "api:/api/v1/workspaces/:wsId/templates:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/templates/route.ts",
       "kind": "api",
       "methods": ["GET"],
@@ -9626,20 +9464,20 @@
     }
   ],
   "summary": {
-    "apiRoutes": 738,
+    "apiRoutes": 720,
     "cronRoutes": 12,
     "layouts": 59,
     "pages": 205,
-    "routeHandlers": 755,
+    "routeHandlers": 737,
     "methodCounts": {
-      "GET": 408,
+      "GET": 394,
       "HEAD": 1,
-      "POST": 357,
+      "POST": 346,
       "PUT": 78,
-      "PATCH": 73,
-      "DELETE": 128,
+      "PATCH": 70,
+      "DELETE": 127,
       "OPTIONS": 23
     },
-    "total": 1023
+    "total": 1005
   }
 }
