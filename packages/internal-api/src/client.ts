@@ -404,6 +404,39 @@ export function withEducationBootstrapBaseUrl(
   return withLearnApiBaseUrl(options);
 }
 
+function isFinanceAppRuntime() {
+  return (
+    isCurrentBrowserHostname(
+      'finance.tuturuuu.com',
+      'finance.tuturuuu.localhost'
+    ) || isCurrentAppServerRuntime('@tuturuuu/finance', '/apps/finance')
+  );
+}
+
+export function getConfiguredFinanceApiBaseUrl() {
+  return normalizeBaseUrl(
+    resolveConfiguredOrigin(process.env.FINANCE_APP_URL) ||
+      resolveConfiguredOrigin(process.env.NEXT_PUBLIC_FINANCE_APP_URL) ||
+      resolveConfiguredOrigin(process.env.TUTURUUU_FINANCE_BASE_URL) ||
+      (isProductionDeployment()
+        ? 'https://finance.tuturuuu.com'
+        : 'https://finance.tuturuuu.localhost')
+  );
+}
+
+export function withFinanceApiBaseUrl(
+  options: InternalApiClientOptions = {}
+): InternalApiClientOptions {
+  if (options.baseUrl || isFinanceAppRuntime()) {
+    return options;
+  }
+
+  return {
+    ...options,
+    baseUrl: getConfiguredFinanceApiBaseUrl(),
+  };
+}
+
 export function resolveInternalApiUrl(path: string, baseUrl?: string) {
   const normalizedPath = normalizePath(path);
 
@@ -657,6 +690,13 @@ export function withForwardedInternalApiAuth(
   );
   if (configuredTeachBaseUrl) {
     allowedOrigins.add(configuredTeachBaseUrl.origin);
+  }
+
+  const configuredFinanceBaseUrl = tryParseAbsoluteUrl(
+    getConfiguredFinanceApiBaseUrl()
+  );
+  if (configuredFinanceBaseUrl) {
+    allowedOrigins.add(configuredFinanceBaseUrl.origin);
   }
 
   const targetOrigin =
