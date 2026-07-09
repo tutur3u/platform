@@ -104,9 +104,9 @@
   },
   "devDependencies": {
     "@tuturuuu/typescript-config": "workspace:*",
-    "@types/node": "^26.0.1",
-    "typescript": "7.0.1-rc",
-    "vitest": "^4.1.9"
+    "@types/node": "^26.1.0",
+    "typescript": "7.0.2",
+    "vitest": "^4.1.10"
   },
   "engines": {
     "node": ">=18.0.0"

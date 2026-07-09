@@ -26,8 +26,8 @@
     "sb:linkpush": "node scripts/run-supabase.js link && node scripts/run-supabase.js db push"
   },
   "devDependencies": {
-    "supabase": "2.109.0",
-    "typescript": "7.0.1-rc"
+    "supabase": "2.109.1",
+    "typescript": "7.0.2"
   },
   "packageManager": "bun@1.3.14"
 }

@@ -38,11 +38,11 @@
     "@tailwindcss/postcss": "^4.3.2",
     "@tuturuuu/typescript-config": "workspace:*",
     "@types/negotiator": "^0.6.4",
-    "@types/node": "^26.0.1",
+    "@types/node": "^26.1.0",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
-    "@typescript/native-preview": "7.0.0-dev.20260622.1",
-    "typescript": "7.0.1-rc"
+    "@typescript/native-preview": "7.0.0-dev.20260707.2",
+    "typescript": "7.0.2"
   },
   "portless": {
     "name": "teach.tuturuuu",
