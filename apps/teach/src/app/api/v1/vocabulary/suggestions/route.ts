@@ -1,13 +1,14 @@
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 
-interface CambridgeSuggestion {
-  beta?: boolean;
-  url?: string;
-  word?: string;
+interface OedSuggestion {
+  label?: string;
+  name?: string;
+  path?: string | null;
 }
 
-const CAMBRIDGE_SUGGESTIONS_TIMEOUT_MS = 5_000;
+const OED_ORIGIN = 'https://www.oed.com';
+const OED_SUGGESTIONS_TIMEOUT_MS = 5_000;
 
 function normalizeSuggestions(value: unknown) {
   if (!Array.isArray(value)) return [];
@@ -18,20 +19,22 @@ function normalizeSuggestions(value: unknown) {
         return null;
       }
 
-      const suggestion = item as CambridgeSuggestion;
-      const word = suggestion.word?.trim();
-      const url = suggestion.url?.trim();
+      const suggestion = item as OedSuggestion;
+      const word = (suggestion.label || suggestion.name || '').trim();
+      const path = suggestion.path?.trim();
 
       if (!word) return null;
 
       return {
-        beta: suggestion.beta === true,
-        url: url ? `https://dictionary.cambridge.org${url}` : null,
+        beta: false,
+        url: path
+          ? new URL(path, OED_ORIGIN).toString()
+          : `${OED_ORIGIN}/search/dictionary/?scope=Entries&q=${encodeURIComponent(word)}`,
         word,
       };
     })
     .filter(
-      (item): item is { beta: boolean; url: string | null; word: string } =>
+      (item): item is { beta: boolean; url: string; word: string } =>
         item !== null
     );
 }
@@ -50,18 +53,13 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const url = new URL('https://dictionary.cambridge.org/autocomplete/amp');
-  url.searchParams.set('dataset', 'english');
+  const url = new URL('/autocomplete/dictionary/', OED_ORIGIN);
   url.searchParams.set('q', query);
-  url.searchParams.set(
-    '__amp_source_origin',
-    'https://dictionary.cambridge.org'
-  );
 
   const controller = new AbortController();
   const timeout = setTimeout(
     () => controller.abort(),
-    CAMBRIDGE_SUGGESTIONS_TIMEOUT_MS
+    OED_SUGGESTIONS_TIMEOUT_MS
   );
 
   try {
@@ -69,7 +67,7 @@ export async function GET(request: NextRequest) {
       headers: {
         accept: 'application/json',
         'accept-language': 'en-US,en;q=0.9',
-        'user-agent': 'Mozilla/5.0 vocabulary-autocomplete',
+        'user-agent': 'Mozilla/5.0 vocabulary-autocomplete-oed',
       },
       next: {
         revalidate: 60 * 60,
@@ -78,7 +76,7 @@ export async function GET(request: NextRequest) {
     });
 
     if (!response.ok) {
-      console.warn('Cambridge suggestions returned a non-OK response', {
+      console.warn('OED suggestions returned a non-OK response', {
         query,
         status: response.status,
       });
@@ -89,7 +87,7 @@ export async function GET(request: NextRequest) {
       suggestions: normalizeSuggestions(await response.json()),
     });
   } catch (error) {
-    console.warn('Failed to load Cambridge vocabulary suggestions', {
+    console.warn('Failed to load OED vocabulary suggestions', {
       error,
       query,
     });

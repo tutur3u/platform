@@ -2,8 +2,8 @@ import * as cheerio from 'cheerio';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 
-const CAMBRIDGE_ORIGIN = 'https://dictionary.cambridge.org';
-const CAMBRIDGE_DETAILS_TIMEOUT_MS = 5_000;
+const OED_ORIGIN = 'https://www.oed.com';
+const OED_DETAILS_TIMEOUT_MS = 5_000;
 
 function emptyDictionaryDetails(word: string) {
   return {
@@ -17,8 +17,6 @@ function emptyDictionaryDetails(word: string) {
 export async function GET(request: NextRequest) {
   const wordParam = request.nextUrl.searchParams.get('word')?.trim();
 
-  let targetUrl = '';
-
   if (wordParam) {
     if (wordParam.length > 100) {
       return NextResponse.json(
@@ -26,7 +24,6 @@ export async function GET(request: NextRequest) {
         { status: 400 }
       );
     }
-    targetUrl = `${CAMBRIDGE_ORIGIN}/dictionary/english/${encodeURIComponent(wordParam)}`;
   } else {
     return NextResponse.json(
       { message: 'Word query parameter is required.' },
@@ -34,17 +31,21 @@ export async function GET(request: NextRequest) {
     );
   }
 
+  const targetUrl = new URL('/search/dictionary/', OED_ORIGIN);
+  targetUrl.searchParams.set('scope', 'Entries');
+  targetUrl.searchParams.set('q', wordParam);
+
   try {
     const controller = new AbortController();
     const timeout = setTimeout(
       () => controller.abort(),
-      CAMBRIDGE_DETAILS_TIMEOUT_MS
+      OED_DETAILS_TIMEOUT_MS
     );
 
     const response = await fetch(targetUrl, {
       headers: {
         'User-Agent':
-          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 vocabulary-oed',
         Accept:
           'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
         'Accept-Language': 'en-US,en;q=0.5',
@@ -57,7 +58,7 @@ export async function GET(request: NextRequest) {
     }
 
     if (!response.ok) {
-      console.warn('Cambridge details returned a non-OK response', {
+      console.warn('OED details returned a non-OK response', {
         status: response.status,
         word: wordParam,
       });
@@ -67,54 +68,41 @@ export async function GET(request: NextRequest) {
     const html = await response.text();
     const $ = cheerio.load(html);
 
-    // 1. Extract Pronunciations
-    const ukIpa = $('.uk.dpron-i .ipa').first().text().trim();
-    const usIpa = $('.us.dpron-i .ipa').first().text().trim();
+    const normalizedQuery = wordParam.toLowerCase();
+    const resultItems = $('.resultsSetItem').toArray();
+    const selected =
+      resultItems.find((item) => {
+        const title = $(item).find('.resultTitle').text().trim().toLowerCase();
+        return title.startsWith(normalizedQuery);
+      }) ?? resultItems[0];
 
-    let pronunciation = '';
-    if (ukIpa && usIpa) {
-      if (ukIpa === usIpa) {
-        pronunciation = `/${ukIpa}/`;
-      } else {
-        pronunciation = `UK: /${ukIpa}/ • US: /${usIpa}/`;
-      }
-    } else if (ukIpa) {
-      pronunciation = `/${ukIpa}/`;
-    } else if (usIpa) {
-      pronunciation = `/${usIpa}/`;
+    if (!selected) {
+      return NextResponse.json(emptyDictionaryDetails(wordParam));
     }
 
-    // 2. Extract Definitions
-    const definitions: string[] = [];
-    $('.def.ddef_d').each((_i, el) => {
-      const text = $(el).text().trim().replace(/:$/, '').trim();
-      if (text) {
-        definitions.push(text);
-      }
-    });
-
-    const definition = definitions[0] ?? '';
-
-    // 3. Extract Examples
-    const examples: string[] = [];
-    $('.examp.dexamp').each((_i, el) => {
-      const text = $(el).text().trim();
-      if (text) {
-        examples.push(text);
-      }
-    });
-
-    // Limit to top 5 examples
-    const topExamples = examples.slice(0, 5);
+    const rawTitle =
+      $(selected).find('.viewEntry').attr('title') ||
+      $(selected).find('.resultTitle').text() ||
+      wordParam;
+    const word = rawTitle
+      .replace(/\s+/gu, ' ')
+      .replace(/,\s*[a-z.]+$/iu, '')
+      .trim();
+    const definition = $(selected)
+      .find('.snippet')
+      .text()
+      .replace(/\s+/gu, ' ')
+      .replace(/\u2026/gu, '...')
+      .trim();
 
     return NextResponse.json({
-      word: wordParam || $('.hw.dhw').first().text().trim() || '',
-      pronunciation,
+      word: word || wordParam,
+      pronunciation: '',
       definition,
-      examples: topExamples,
+      examples: [],
     });
   } catch (error) {
-    console.warn('Failed to scrape dictionary details:', {
+    console.warn('Failed to scrape OED dictionary details:', {
       error,
       word: wordParam,
     });

@@ -18,23 +18,18 @@ describe('GET /api/v1/vocabulary/details scraper', () => {
     expect(data.message).toContain('Word query parameter is required');
   });
 
-  it('scrapes pronunciation, definition, and examples successfully from mocked HTML', async () => {
+  it('scrapes the best OED search result definition successfully from mocked HTML', async () => {
     const mockHtml = `
       <html>
         <body>
-          <span class="headword hdb tw-bw dhw dpos-h_hw"><span class="hw dhw">eat</span></span>
-          <span class="uk dpron-i">
-            <span class="region dreg">uk</span>
-            <span class="pron dpron">/<span class="ipa dipa lpr-2 lpl-1">iːt</span>/</span>
-          </span>
-          <span class="us dpron-i">
-            <span class="region dreg">us</span>
-            <span class="pron dpron">/<span class="ipa dipa lpr-2 lpl-1">iːt</span>/</span>
-          </span>
-          <div class="def-block ddef_block">
-            <div class="def ddef_d db">to put or take food into the mouth:</div>
-            <div class="examp dexamp"><span class="eg deg">Do you eat meat?</span></div>
-            <div class="examp dexamp"><span class="eg deg">I feel like eating.</span></div>
+          <div class="resultsSet">
+            <div class="resultsSetItem">
+              <h3 class="resultTitle" id="eat_v">
+                <span class="hw"><span class="hw">eat, </span><span class="ps">v.</span></span>
+              </h3>
+              <div class="snippet">transitive. To take into the mouth piecemeal, and…</div>
+              <a class="viewEntry resultLink" href="/dictionary/eat_v?tab=meaning_and_use#5936857" title="eat, v.">View entry</a>
+            </div>
           </div>
         </body>
       </html>
@@ -54,26 +49,25 @@ describe('GET /api/v1/vocabulary/details scraper', () => {
 
     const data = await response.json();
     expect(data.word).toBe('eat');
-    expect(data.pronunciation).toBe('/iːt/');
-    expect(data.definition).toBe('to put or take food into the mouth');
-    expect(data.examples).toEqual(['Do you eat meat?', 'I feel like eating.']);
+    expect(data.pronunciation).toBe('');
+    expect(data.definition).toBe(
+      'transitive. To take into the mouth piecemeal, and...'
+    );
+    expect(data.examples).toEqual([]);
   });
 
-  it('formats different UK and US pronunciations correctly', async () => {
+  it('falls back to the first OED search result when no exact title matches', async () => {
     const mockHtml = `
       <html>
         <body>
-          <span class="headword hdb tw-bw dhw dpos-h_hw"><span class="hw dhw">example</span></span>
-          <span class="uk dpron-i">
-            <span class="region dreg">uk</span>
-            <span class="pron dpron">/<span class="ipa dipa lpr-2 lpl-1">ɪɡˈzɑːm.pəl</span>/</span>
-          </span>
-          <span class="us dpron-i">
-            <span class="region dreg">us</span>
-            <span class="pron dpron">/<span class="ipa dipa lpr-2 lpl-1">ɪɡˈzæm.pəl</span>/</span>
-          </span>
-          <div class="def-block ddef_block">
-            <div class="def ddef_d db">something that is representative:</div>
+          <div class="resultsSet">
+            <div class="resultsSetItem">
+              <h3 class="resultTitle" id="oat_n">
+                <span class="hw"><span class="hw">oat, </span><span class="ps">n.</span></span>
+              </h3>
+              <div class="snippet">The cereal which yields this...</div>
+              <a class="viewEntry resultLink" href="/dictionary/oat_n" title="oat, n.">View entry</a>
+            </div>
           </div>
         </body>
       </html>
@@ -92,6 +86,7 @@ describe('GET /api/v1/vocabulary/details scraper', () => {
     expect(response.status).toBe(200);
 
     const data = await response.json();
-    expect(data.pronunciation).toBe('UK: /ɪɡˈzɑːm.pəl/ • US: /ɪɡˈzæm.pəl/');
+    expect(data.word).toBe('oat');
+    expect(data.definition).toBe('The cereal which yields this...');
   });
 });
