@@ -39,6 +39,7 @@ COPY apps/supermemory/package.json ./apps/supermemory/package.json
 COPY apps/tasks/package.json ./apps/tasks/package.json
 COPY apps/tanstack-web/package.json ./apps/tanstack-web/package.json
 COPY apps/teach/package.json ./apps/teach/package.json
+COPY apps/pay/package.json ./apps/pay/package.json
 COPY apps/tools/package.json ./apps/tools/package.json
 COPY apps/track/package.json ./apps/track/package.json
 COPY apps/learn/package.json ./apps/learn/package.json
@@ -49,6 +50,7 @@ COPY packages/auth/package.json ./packages/auth/package.json
 COPY packages/devbox/package.json ./packages/devbox/package.json
 COPY packages/education-core/package.json ./packages/education-core/package.json
 COPY packages/finance-core/package.json ./packages/finance-core/package.json
+COPY packages/payment-core/package.json ./packages/payment-core/package.json
 COPY packages/email-service/package.json ./packages/email-service/package.json
 COPY packages/games/package.json ./packages/games/package.json
 COPY packages/google/package.json ./packages/google/package.json

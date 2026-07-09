@@ -363,6 +363,7 @@ export {
   getConfiguredFinanceApiBaseUrl,
   getConfiguredInternalApiBaseUrl,
   getConfiguredLearnApiBaseUrl,
+  getConfiguredPayApiBaseUrl,
   getConfiguredTeachApiBaseUrl,
   InternalApiError,
   internalApiClient,

@@ -1,4 +1,12 @@
 import { createPolarClient } from '@tuturuuu/payment/polar/server';
+import {
+  checkManageSubscriptionPermission,
+  fetchCreditPacks,
+  fetchProducts,
+  fetchSubscription,
+  fetchWorkspaceOrders,
+} from '@tuturuuu/payment-core/billing-helper';
+import { getSeatStatus } from '@tuturuuu/payment-core/seat-limits';
 import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import {
   createAdminClient,
@@ -8,17 +16,10 @@ import { isPersonalWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { format } from 'date-fns';
 import { enUS, vi } from 'date-fns/locale';
 import type { Metadata } from 'next';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { getLocale, getTranslations } from 'next-intl/server';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
-import {
-  checkManageSubscriptionPermission,
-  fetchCreditPacks,
-  fetchProducts,
-  fetchSubscription,
-  fetchWorkspaceOrders,
-} from '@/utils/billing-helper';
-import { getSeatStatus } from '@/utils/seat-limits';
+import { getPayBillingUrl, isPayRolloutEnabled } from '@/lib/pay-app-url';
 import { AiCreditBillingCard } from './ai-credit-billing-card';
 import { BillingClient } from './billing-client';
 import BillingDetailsCard from './billing-details-card';
@@ -35,6 +36,13 @@ export default async function BillingPage({
 }: {
   params: Promise<{ wsId: string }>;
 }) {
+  // Once the pay app is live, hand billing off to pay.tuturuuu.com. Until then
+  // web keeps serving billing so nothing breaks pre-rollout.
+  if (isPayRolloutEnabled()) {
+    const { wsId } = await params;
+    redirect(getPayBillingUrl(wsId));
+  }
+
   return (
     <WorkspaceWrapper params={params}>
       {async ({ wsId }) => {

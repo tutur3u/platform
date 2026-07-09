@@ -26,15 +26,15 @@ vi.mock('@tuturuuu/utils/workspace-helper', () => ({
 vi.mock('@/lib/polar-config', () => ({
   isPolarWorkspaceSetupEnabled: () => isPolarWorkspaceSetupEnabled(),
 }));
-vi.mock('@/utils/customer-helper', () => ({
+vi.mock('@tuturuuu/payment-core/customer-helper', () => ({
   getOrCreatePolarCustomer: (...args: unknown[]) =>
     getOrCreatePolarCustomer(...args),
 }));
-vi.mock('@/utils/polar-subscription-helper', () => ({
+vi.mock('@tuturuuu/payment-core/polar-subscription-helper', () => ({
   syncSubscriptionToDatabase: (...args: unknown[]) =>
     syncSubscriptionToDatabase(...args),
 }));
-vi.mock('@/utils/subscription-helper', () => ({
+vi.mock('@tuturuuu/payment-core/subscription-helper', () => ({
   createFreeSubscription: (...args: unknown[]) =>
     createFreeSubscription(...args),
 }));

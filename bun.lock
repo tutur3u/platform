@@ -827,6 +827,49 @@
         "vitest": "^4.1.10",
       },
     },
+    "apps/pay": {
+      "name": "@tuturuuu/pay",
+      "version": "0.1.0",
+      "dependencies": {
+        "@formatjs/intl-localematcher": "^0.8.10",
+        "@tanstack/react-query": "^5.101.2",
+        "@tuturuuu/auth": "workspace:*",
+        "@tuturuuu/icons": "workspace:*",
+        "@tuturuuu/internal-api": "workspace:*",
+        "@tuturuuu/inventory-core": "workspace:*",
+        "@tuturuuu/payment": "workspace:*",
+        "@tuturuuu/payment-core": "workspace:*",
+        "@tuturuuu/satellite": "workspace:*",
+        "@tuturuuu/supabase": "workspace:*",
+        "@tuturuuu/types": "workspace:*",
+        "@tuturuuu/ui": "workspace:*",
+        "@tuturuuu/utils": "workspace:*",
+        "date-fns": "^4.4.0",
+        "negotiator": "^1.0.0",
+        "next": "^16.3.0-preview.5",
+        "next-intl": "^4.13.1",
+        "next-themes": "^0.4.6",
+        "react": "^19.2.7",
+        "react-dom": "^19.2.7",
+        "react-hook-form": "^7.81.0",
+        "server-only": "^0.0.1",
+        "zod": "^4.4.3",
+      },
+      "devDependencies": {
+        "@tailwindcss/postcss": "^4.3.2",
+        "@testing-library/react": "^16.3.2",
+        "@tuturuuu/typescript-config": "workspace:*",
+        "@types/negotiator": "^0.6.4",
+        "@types/node": "^26.1.0",
+        "@types/react": "^19.2.17",
+        "@types/react-dom": "^19.2.3",
+        "@typescript/native-preview": "7.0.0-dev.20260707.2",
+        "@vitejs/plugin-react": "^6.0.3",
+        "jsdom": "^29.1.1",
+        "typescript": "7.0.2",
+        "vitest": "^4.1.9",
+      },
+    },
     "apps/playground": {
       "name": "@tuturuuu/playground",
       "version": "0.1.4",
@@ -1329,6 +1372,7 @@
         "@tuturuuu/mind-ui": "workspace:*",
         "@tuturuuu/offline": "workspace:*",
         "@tuturuuu/payment": "workspace:*",
+        "@tuturuuu/payment-core": "workspace:*",
         "@tuturuuu/realtime": "workspace:*",
         "@tuturuuu/satellite": "workspace:*",
         "@tuturuuu/storage-core": "workspace:*",
@@ -1933,6 +1977,23 @@
         "@tuturuuu/typescript-config": "workspace:*",
         "next": "^16.3.0-preview.5",
         "typescript": "7.0.2",
+      },
+    },
+    "packages/payment-core": {
+      "name": "@tuturuuu/payment-core",
+      "version": "0.1.0",
+      "dependencies": {
+        "@tuturuuu/payment": "workspace:*",
+        "@tuturuuu/supabase": "workspace:*",
+        "@tuturuuu/types": "workspace:*",
+        "@tuturuuu/utils": "workspace:*",
+        "date-fns": "^4.4.0",
+      },
+      "devDependencies": {
+        "@tuturuuu/typescript-config": "workspace:*",
+        "@types/node": "^26.0.1",
+        "typescript": "7.0.2",
+        "vitest": "^4.1.9",
       },
     },
     "packages/realtime": {
@@ -3912,7 +3973,11 @@
 
     "@tuturuuu/offline": ["@tuturuuu/offline@workspace:packages/offline"],
 
+    "@tuturuuu/pay": ["@tuturuuu/pay@workspace:apps/pay"],
+
     "@tuturuuu/payment": ["@tuturuuu/payment@workspace:packages/payment"],
+
+    "@tuturuuu/payment-core": ["@tuturuuu/payment-core@workspace:packages/payment-core"],
 
     "@tuturuuu/playground": ["@tuturuuu/playground@workspace:apps/playground"],
 

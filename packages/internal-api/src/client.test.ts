@@ -7,6 +7,7 @@ import {
   withFinanceApiBaseUrl,
   withForwardedInternalApiAuth,
   withLearnApiBaseUrl,
+  withPayApiBaseUrl,
   withTaskApiBaseUrl,
   withTeachApiBaseUrl,
 } from './client';
@@ -286,6 +287,37 @@ describe('withFinanceApiBaseUrl', () => {
     vi.stubEnv('FINANCE_APP_URL', 'https://finance.example.com');
 
     expect(withFinanceApiBaseUrl()).toEqual({});
+  });
+});
+
+describe('withPayApiBaseUrl', () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    vi.unstubAllGlobals();
+  });
+
+  it('uses the configured pay API origin for server pay calls', () => {
+    vi.stubEnv('PAY_APP_URL', 'https://pay.example.com');
+
+    expect(withPayApiBaseUrl()).toMatchObject({
+      baseUrl: 'https://pay.example.com',
+    });
+  });
+
+  it('keeps browser calls relative when already on the pay origin', () => {
+    vi.stubGlobal('location', {
+      hostname: 'pay.tuturuuu.com',
+      origin: 'https://pay.tuturuuu.com',
+    });
+
+    expect(withPayApiBaseUrl()).toEqual({});
+  });
+
+  it('keeps server pay calls relative when running inside the pay app', () => {
+    vi.stubEnv('npm_package_name', '@tuturuuu/pay');
+    vi.stubEnv('PAY_APP_URL', 'https://pay.example.com');
+
+    expect(withPayApiBaseUrl()).toEqual({});
   });
 });
 

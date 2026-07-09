@@ -1,3 +1,4 @@
+import { canCreateInvitation } from '@tuturuuu/payment-core/seat-limits';
 import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import {
   createAdminClient,
@@ -7,7 +8,6 @@ import { MAX_EMAIL_LENGTH } from '@tuturuuu/utils/constants';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { canCreateInvitation } from '@/utils/seat-limits';
 
 interface Params {
   params: Promise<{

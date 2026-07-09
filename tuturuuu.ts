@@ -56,6 +56,7 @@ export const ci = {
   'vercel-preview-mail.yaml': true,
   'vercel-preview-tanstack-web.yaml': true,
   'vercel-preview-teach.yaml': true,
+  'vercel-preview-pay.yaml': true,
   'vercel-preview-track.yaml': true,
   'vercel-production-apps.yaml': true,
   'vercel-production-calendar.yaml': true,
@@ -78,6 +79,7 @@ export const ci = {
   'vercel-production-mail.yaml': true,
   'vercel-production-tanstack-web.yaml': true,
   'vercel-production-teach.yaml': true,
+  'vercel-production-pay.yaml': true,
   'vercel-production-track.yaml': true,
   'mobile-build-ios.yaml': true,
   'mobile-build-android.yaml': true,
@@ -268,6 +270,13 @@ export const vercelWorkflowTargets = [
     packageName: '@tuturuuu/learn',
     previewWorkflow: 'vercel-preview-learn.yaml',
     productionWorkflow: 'vercel-production-learn.yaml',
+  },
+  {
+    app: 'pay',
+    appPath: 'apps/pay',
+    packageName: '@tuturuuu/pay',
+    previewWorkflow: 'vercel-preview-pay.yaml',
+    productionWorkflow: 'vercel-production-pay.yaml',
   },
 ] satisfies VercelWorkflowTarget[];
 

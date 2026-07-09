@@ -23,6 +23,7 @@ export const TUTURUUU_PORTLESS_APP_ORIGINS = {
   meet: `https://meet.${TUTURUUU_PORTLESS_ROOT_HOST}`,
   mind: `https://mind.${TUTURUUU_PORTLESS_ROOT_HOST}`,
   nova: `https://nova.${TUTURUUU_PORTLESS_ROOT_HOST}`,
+  pay: `https://pay.${TUTURUUU_PORTLESS_ROOT_HOST}`,
   platform: TUTURUUU_PORTLESS_ROOT_ORIGIN,
   playground: `https://playground.${TUTURUUU_PORTLESS_ROOT_HOST}`,
   qr: `https://qr.${TUTURUUU_PORTLESS_ROOT_HOST}`,

@@ -1,10 +1,10 @@
 import { createPolarClient } from '@tuturuuu/payment/polar/server';
+import { syncProductToDatabase } from '@tuturuuu/payment-core/polar-product-helper';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { DEV_MODE } from '@tuturuuu/utils/constants';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { withCronLogDrain } from '@/lib/infrastructure/log-drain';
-import { syncProductToDatabase } from '@/utils/polar-product-helper';
 
 /**
  * Cron job to sync products from Polar.sh to database

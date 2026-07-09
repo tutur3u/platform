@@ -1,11 +1,10 @@
 import { createPolarClient } from '@tuturuuu/payment/polar/server';
+import { revokeSeatFromMember } from '@tuturuuu/payment-core/polar-seat-helper';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-
 import { withSessionAuth } from '@/lib/api-auth';
-import { revokeSeatFromMember } from '@/utils/polar-seat-helper';
 
 const DeleteAccountSchema = z.object({
   email: z.string().email(),

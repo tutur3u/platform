@@ -1,4 +1,9 @@
 import { createPolarClient } from '@tuturuuu/payment/polar/server';
+import {
+  assignSeatToMember,
+  revokeSeatFromMember,
+} from '@tuturuuu/payment-core/polar-seat-helper';
+import { enforceSeatLimit } from '@tuturuuu/payment-core/seat-limits';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import {
   isWorkspaceUuidLiteral,
@@ -9,11 +14,6 @@ import {
 import { NextResponse } from 'next/server';
 import { CURRENT_USER_APP_SESSION_AUTH } from '@/legacy-api-routes/v1/users/me/session-auth';
 import { withSessionAuth } from '@/lib/api-auth';
-import {
-  assignSeatToMember,
-  revokeSeatFromMember,
-} from '@/utils/polar-seat-helper';
-import { enforceSeatLimit } from '@/utils/seat-limits';
 
 const guestJoinReasonToErrorCodeMap: Record<string, string> = {
   already_member: 'ALREADY_MEMBER',

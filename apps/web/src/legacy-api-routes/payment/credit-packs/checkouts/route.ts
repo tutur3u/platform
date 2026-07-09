@@ -1,4 +1,5 @@
 import { createPolarClient } from '@tuturuuu/payment/polar/server';
+import { getOrCreatePolarCustomer } from '@tuturuuu/payment-core/customer-helper';
 import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import {
   createAdminClient,
@@ -7,7 +8,6 @@ import {
 import { type NextRequest, NextResponse } from 'next/server';
 import { BASE_URL } from '@/constants/common';
 import { normalizeWorkspaceId } from '@/lib/workspace-helper';
-import { getOrCreatePolarCustomer } from '@/utils/customer-helper';
 
 export async function POST(request: NextRequest) {
   const baseUrl = BASE_URL;

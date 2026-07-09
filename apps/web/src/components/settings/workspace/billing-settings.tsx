@@ -1,7 +1,8 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { Loader2 } from '@tuturuuu/icons';
+import { ExternalLink, Loader2 } from '@tuturuuu/icons';
+import { Button } from '@tuturuuu/ui/button';
 import { format } from 'date-fns';
 import { enUS, vi } from 'date-fns/locale';
 import { useLocale, useTranslations } from 'next-intl';
@@ -10,12 +11,45 @@ import { BillingClient } from '@/app/[locale]/(dashboard)/[wsId]/(workspace-sett
 import BillingDetailsCard from '@/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/billing/billing-details-card';
 import BillingHistory from '@/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/billing/billing-history';
 import NoSubscriptionMessage from '@/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/billing/no-subscription-message';
+import { getPayBillingUrl, isPayRolloutEnabled } from '@/lib/pay-app-url';
 
 interface BillingSettingsProps {
   wsId: string;
 }
 
+// Hook-free dispatcher so the rollout branch does not call hooks conditionally.
 export default function BillingSettings({ wsId }: BillingSettingsProps) {
+  // Once the pay app is live, this settings tab links out to pay instead of
+  // rendering billing inline. Until then web keeps serving billing here.
+  if (isPayRolloutEnabled()) {
+    return <PayBillingLinkOut wsId={wsId} />;
+  }
+
+  return <InlineBillingSettings wsId={wsId} />;
+}
+
+function PayBillingLinkOut({ wsId }: BillingSettingsProps) {
+  const t = useTranslations('billing');
+
+  return (
+    <div className="flex flex-col items-start gap-4 rounded-lg border border-border bg-muted/30 p-6">
+      <div className="space-y-1">
+        <h3 className="font-semibold text-lg">{t('billing')}</h3>
+        <p className="text-muted-foreground text-sm">
+          {t('manage-billing-on-pay')}
+        </p>
+      </div>
+      <Button asChild>
+        <a href={getPayBillingUrl(wsId)} rel="noreferrer">
+          {t('open-billing')}
+          <ExternalLink className="ml-2 h-4 w-4" />
+        </a>
+      </Button>
+    </div>
+  );
+}
+
+function InlineBillingSettings({ wsId }: BillingSettingsProps) {
   const t = useTranslations('billing');
   const locale = useLocale();
 

@@ -41,6 +41,7 @@ const KNOWN_NON_PLATFORM_TUTURUUU_HOSTS = new Set([
   'track.tuturuuu.com',
   'learn.tuturuuu.com',
   'teach.tuturuuu.com',
+  'pay.tuturuuu.com',
   'hive.tuturuuu.com',
   'mind.tuturuuu.com',
 ]);
@@ -65,6 +66,7 @@ const KNOWN_NON_PLATFORM_LOCALHOST_PORTS = new Set([
   '7821',
   '7822',
   '7824',
+  '7826',
 ]);
 
 export class InternalApiError extends Error {
@@ -384,6 +386,37 @@ export function withTeachApiBaseUrl(
   };
 }
 
+function isPayAppRuntime() {
+  return (
+    isCurrentBrowserHostname('pay.tuturuuu.com', 'pay.tuturuuu.localhost') ||
+    isCurrentAppServerRuntime('@tuturuuu/pay', '/apps/pay')
+  );
+}
+
+export function getConfiguredPayApiBaseUrl() {
+  return normalizeBaseUrl(
+    resolveConfiguredOrigin(process.env.PAY_APP_URL) ||
+      resolveConfiguredOrigin(process.env.NEXT_PUBLIC_PAY_APP_URL) ||
+      resolveConfiguredOrigin(process.env.TUTURUUU_PAY_BASE_URL) ||
+      (isProductionDeployment()
+        ? 'https://pay.tuturuuu.com'
+        : 'https://pay.tuturuuu.localhost')
+  );
+}
+
+export function withPayApiBaseUrl(
+  options: InternalApiClientOptions = {}
+): InternalApiClientOptions {
+  if (options.baseUrl || isPayAppRuntime()) {
+    return options;
+  }
+
+  return {
+    ...options,
+    baseUrl: getConfiguredPayApiBaseUrl(),
+  };
+}
+
 /**
  * `/api/v1/tulearn/bootstrap` is owned by apps/learn but is also consumed by
  * apps/teach. Pin the call to the CALLING app's own origin so its app-session
@@ -697,6 +730,13 @@ export function withForwardedInternalApiAuth(
   );
   if (configuredFinanceBaseUrl) {
     allowedOrigins.add(configuredFinanceBaseUrl.origin);
+  }
+
+  const configuredPayBaseUrl = tryParseAbsoluteUrl(
+    getConfiguredPayApiBaseUrl()
+  );
+  if (configuredPayBaseUrl) {
+    allowedOrigins.add(configuredPayBaseUrl.origin);
   }
 
   const targetOrigin =

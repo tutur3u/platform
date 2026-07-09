@@ -55,6 +55,7 @@ const registeredSatelliteApps = [
   'mail',
   'learn',
   'teach',
+  'pay',
   'inventory',
   'chat',
   'mind',
@@ -71,6 +72,7 @@ const registeredSatelliteApps = [
 const coordinatedCookieApps = [
   'learn',
   'teach',
+  'pay',
   'inventory',
   'chat',
   'mind',

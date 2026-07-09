@@ -99,7 +99,7 @@ vi.mock('@/lib/infrastructure/log-drain', () => ({
   },
 }));
 
-vi.mock('@/utils/seat-limits', () => ({
+vi.mock('@tuturuuu/payment-core/seat-limits', () => ({
   canCreateInvitation: (...args: unknown[]) =>
     mocks.canCreateInvitation(...args),
 }));

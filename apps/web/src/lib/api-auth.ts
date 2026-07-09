@@ -205,6 +205,7 @@ const ALL_SATELLITE_APP_SESSION_TARGETS = [
   'mind',
   'mira',
   'nova',
+  'pay',
   'rewise',
   'storefront',
   'tasks',

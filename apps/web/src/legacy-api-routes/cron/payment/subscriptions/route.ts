@@ -1,10 +1,10 @@
 import { createPolarClient } from '@tuturuuu/payment/polar/server';
+import { syncSubscriptionToDatabase } from '@tuturuuu/payment-core/polar-subscription-helper';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { DEV_MODE } from '@tuturuuu/utils/constants';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { withCronLogDrain } from '@/lib/infrastructure/log-drain';
-import { syncSubscriptionToDatabase } from '@/utils/polar-subscription-helper';
 
 /**
  * Cron job to sync subscriptions from Polar.sh to database
