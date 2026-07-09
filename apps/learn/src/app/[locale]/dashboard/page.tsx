@@ -12,6 +12,8 @@ import { headers } from 'next/headers';
 import { NoWorkspaceState } from '@/components/learner-shell';
 import { redirect } from '@/i18n/navigation';
 
+export const instant = false;
+
 export default async function DashboardEntryPage({
   params,
 }: {
