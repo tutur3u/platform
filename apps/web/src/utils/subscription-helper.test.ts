@@ -29,14 +29,28 @@ const WORKSPACE = {
   personal: false,
 };
 
-function makeSupabase(productResult: ChainResult) {
+function makeSupabase(productResults: ChainResult | ChainResult[]) {
+  const results = Array.isArray(productResults)
+    ? productResults
+    : [productResults];
+  let productCallCount = 0;
+
   return {
     from: (table: string) => {
       if (table === 'workspaces') return chain({ data: WORKSPACE });
       return chain({ data: null });
     },
     schema: () => ({
-      from: () => chain(productResult),
+      from: () => {
+        const result =
+          results[Math.min(productCallCount, results.length - 1)] ??
+          results[results.length - 1];
+        if (!result) {
+          throw new Error('makeSupabase requires at least one product result');
+        }
+        productCallCount += 1;
+        return chain(result);
+      },
     }),
   } as never;
 }
@@ -44,7 +58,7 @@ function makeSupabase(productResult: ChainResult) {
 function makePolar(overrides?: { create?: () => Promise<unknown> }) {
   return {
     subscriptions: {
-      create: overrides?.create ?? (async () => ({ id: 'sub-1' })),
+      create: overrides?.create ?? vi.fn(async () => ({ id: 'sub-1' })),
       list: async () => ({ result: { items: [] } }),
     },
   } as never;
@@ -78,17 +92,85 @@ describe('createFreeSubscription free-product guard', () => {
     });
   });
 
+  it('reports a fixed fallback lookup failure distinctly', async () => {
+    const supabase = makeSupabase([
+      { data: null, error: null },
+      { data: null, error: { code: '42501', message: 'permission denied' } },
+    ]);
+
+    const result = await createFreeSubscription(makePolar(), supabase, 'ws1');
+
+    expect(result.status).toBe('error');
+    expect(result).toMatchObject({
+      message: expect.stringContaining('Free-tier product lookup failed'),
+    });
+  });
+
   it('creates the subscription when a free product exists', async () => {
+    const create = vi.fn(async () => ({ id: 'sub-free' }));
     const supabase = makeSupabase({
       data: { id: 'prod-free', price_per_seat: null, pricing_model: 'free' },
       error: null,
     });
+    const polar = makePolar({ create });
 
-    const result = await createFreeSubscription(makePolar(), supabase, 'ws1');
+    const result = await createFreeSubscription(polar, supabase, 'ws1');
 
     expect(result.status).toBe('created');
     if (result.status === 'created') {
-      expect(result.subscription).toMatchObject({ id: 'sub-1' });
+      expect(result.subscription).toMatchObject({ id: 'sub-free' });
     }
+    expect(create).toHaveBeenCalledWith({
+      productId: 'prod-free',
+      externalCustomerId: 'workspace_ws1',
+      metadata: { wsId: 'ws1' },
+    });
+  });
+
+  it('prefers a free product over a zero-price fixed product', async () => {
+    const create = vi.fn(async () => ({ id: 'sub-free' }));
+    const supabase = makeSupabase([
+      {
+        data: { id: 'prod-free', price_per_seat: null, pricing_model: 'free' },
+        error: null,
+      },
+      {
+        data: { id: 'prod-fixed-free', price: 0, pricing_model: 'fixed' },
+        error: null,
+      },
+    ]);
+    const polar = makePolar({ create });
+
+    await createFreeSubscription(polar, supabase, 'ws1');
+
+    expect(create).toHaveBeenCalledWith({
+      productId: 'prod-free',
+      externalCustomerId: 'workspace_ws1',
+      metadata: { wsId: 'ws1' },
+    });
+  });
+
+  it('creates the subscription when only a zero-price fixed product exists', async () => {
+    const create = vi.fn(async () => ({ id: 'sub-fixed-free' }));
+    const supabase = makeSupabase([
+      { data: null, error: null },
+      {
+        data: { id: 'prod-fixed-free', price: 0, pricing_model: 'fixed' },
+        error: null,
+      },
+    ]);
+    const polar = makePolar({ create });
+
+    const result = await createFreeSubscription(polar, supabase, 'ws1');
+
+    expect(result.status).toBe('created');
+    if (result.status === 'created') {
+      expect(result.subscription).toMatchObject({ id: 'sub-fixed-free' });
+    }
+    expect(create).toHaveBeenCalledWith({
+      productId: 'prod-fixed-free',
+      externalCustomerId: 'workspace_ws1',
+      metadata: { wsId: 'ws1' },
+    });
   });
 });

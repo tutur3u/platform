@@ -5,6 +5,9 @@ function privateSchema(supabase: TypedSupabaseClient) {
   return supabase.schema('private');
 }
 
+const FREE_PRODUCT_MISSING_HINT =
+  'Seed an active (archived=false) pricing_model=free row, or an active pricing_model=fixed price=0 row, in private.workspace_subscription_products whose id matches a real Polar zero-cost product.';
+
 export type CreateFreeSubscriptionResult =
   | {
       status: 'created';
@@ -12,6 +15,29 @@ export type CreateFreeSubscriptionResult =
     }
   | { status: 'already_active'; subscription: Subscription }
   | { status: 'error'; message: string };
+
+async function findFreeSubscriptionProduct(supabase: TypedSupabaseClient) {
+  const freeProductResult = await privateSchema(supabase)
+    .from('workspace_subscription_products')
+    .select('*')
+    .eq('archived', false)
+    .eq('pricing_model', 'free')
+    .limit(1)
+    .maybeSingle();
+
+  if (freeProductResult.error || freeProductResult.data) {
+    return freeProductResult;
+  }
+
+  return privateSchema(supabase)
+    .from('workspace_subscription_products')
+    .select('*')
+    .eq('archived', false)
+    .eq('pricing_model', 'fixed')
+    .eq('price', 0)
+    .limit(1)
+    .maybeSingle();
+}
 
 // Helper function to check if a workspace has any active subscriptions
 export async function hasActiveSubscription(
@@ -109,15 +135,8 @@ export async function createFreeSubscription(
     externalCustomerId = `workspace_${wsId}`;
   }
 
-  const { data: freeProduct, error: productError } = await privateSchema(
-    supabase
-  )
-    .from('workspace_subscription_products')
-    .select('*')
-    .eq('archived', false)
-    .eq('pricing_model', 'free')
-    .limit(1)
-    .maybeSingle();
+  const { data: freeProduct, error: productError } =
+    await findFreeSubscriptionProduct(supabase);
 
   // `workspace_subscription_products` lives in the `private` schema and is only
   // readable by `service_role`. Distinguish a lookup/permission failure (e.g.
@@ -139,7 +158,7 @@ export async function createFreeSubscription(
 
   if (!freeProduct) {
     console.error('No active free-tier product configured', {
-      hint: 'Seed an active (archived=false) pricing_model=free row in private.workspace_subscription_products whose id matches a real Polar free product.',
+      hint: FREE_PRODUCT_MISSING_HINT,
       wsId,
     });
     return {
