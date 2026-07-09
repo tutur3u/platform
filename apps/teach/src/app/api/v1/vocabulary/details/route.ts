@@ -2,6 +2,8 @@ import * as cheerio from 'cheerio';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 
+const CAMBRIDGE_ORIGIN = 'https://dictionary.cambridge.org';
+
 export async function GET(request: NextRequest) {
   const urlParam = request.nextUrl.searchParams.get('url')?.trim();
   const wordParam = request.nextUrl.searchParams.get('word')?.trim();
@@ -11,7 +13,7 @@ export async function GET(request: NextRequest) {
   if (urlParam) {
     try {
       const parsedUrl = new URL(urlParam);
-      if (!parsedUrl.hostname.endsWith('dictionary.cambridge.org')) {
+      if (parsedUrl.origin !== CAMBRIDGE_ORIGIN) {
         return NextResponse.json(
           {
             message: 'Invalid URL. Only Cambridge Dictionary URLs are allowed.',
@@ -19,7 +21,7 @@ export async function GET(request: NextRequest) {
           { status: 400 }
         );
       }
-      targetUrl = urlParam;
+      targetUrl = `${CAMBRIDGE_ORIGIN}${parsedUrl.pathname}${parsedUrl.search}`;
     } catch {
       return NextResponse.json(
         { message: 'Invalid URL format.' },
@@ -33,7 +35,7 @@ export async function GET(request: NextRequest) {
         { status: 400 }
       );
     }
-    targetUrl = `https://dictionary.cambridge.org/dictionary/english/${encodeURIComponent(wordParam)}`;
+    targetUrl = `${CAMBRIDGE_ORIGIN}/dictionary/english/${encodeURIComponent(wordParam)}`;
   } else {
     return NextResponse.json(
       { message: 'Either url or word query parameter is required.' },

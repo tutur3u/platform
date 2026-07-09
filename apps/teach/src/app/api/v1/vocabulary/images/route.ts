@@ -1,6 +1,12 @@
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 
+interface DuckDuckGoImageResult {
+  image?: unknown;
+  thumbnail?: unknown;
+  title?: unknown;
+}
+
 export async function GET(request: NextRequest) {
   const query = request.nextUrl.searchParams.get('q')?.trim() ?? '';
 
@@ -70,18 +76,27 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const data = await imagesResponse.json();
+    const data = (await imagesResponse.json()) as { results?: unknown };
 
     if (!data.results || !Array.isArray(data.results)) {
       return NextResponse.json({ results: [] });
     }
 
     const results = data.results
-      .map((item: any) => ({
-        image: item.image,
-        thumbnail: item.thumbnail,
-        title: item.title,
-      }))
+      .map((item) => {
+        const result =
+          item && typeof item === 'object' && !Array.isArray(item)
+            ? (item as DuckDuckGoImageResult)
+            : {};
+
+        return {
+          image: typeof result.image === 'string' ? result.image : '',
+          thumbnail:
+            typeof result.thumbnail === 'string' ? result.thumbnail : '',
+          title: typeof result.title === 'string' ? result.title : '',
+        };
+      })
+      .filter((item) => item.image && item.thumbnail)
       .slice(0, 15);
 
     return NextResponse.json({ results });
