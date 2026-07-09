@@ -1,10 +1,10 @@
-import { NextResponse } from 'next/server';
-import { z } from 'zod';
-import { withSessionAuth } from '@/lib/api-auth';
 import {
   requireTeachWorkspaceAccess,
   validateTeachCourse,
-} from '@/lib/teach/api';
+} from '@tuturuuu/education-core/teach/api';
+import { NextResponse } from 'next/server';
+import { z } from 'zod';
+import { withSessionAuth } from '@/lib/api-auth';
 
 const RouteParamsSchema = z.object({
   courseId: z.guid(),

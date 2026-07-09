@@ -43,7 +43,7 @@ vi.mock('@/lib/api-auth', () => ({
   withSessionAuth: mocks.withSessionAuth,
 }));
 
-vi.mock('@/lib/education/access', () => ({
+vi.mock('@tuturuuu/education-core/education/access', () => ({
   checkEducationWorkspaceAccess: mocks.checkEducationWorkspaceAccess,
 }));
 

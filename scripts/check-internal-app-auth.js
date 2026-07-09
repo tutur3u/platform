@@ -42,7 +42,9 @@ const COMPATIBLE_SESSION_FALLBACK_FILES = new Set([
   'apps/hive/src/lib/hive-page-context.ts',
   'apps/inventory/src/app/api/v1/workspaces/[wsId]/integrations/sepay/shared.ts',
   'apps/inventory/src/lib/api-auth.ts',
+  'apps/learn/src/lib/api-auth.ts',
   'apps/mind/src/lib/api-auth.ts',
+  'apps/teach/src/lib/api-auth.ts',
 ]);
 const CHECKED_SUPABASE_AUTH_FALLBACK_FILES = new Set([
   'apps/hive/src/app/api/v1/hive/_shared.ts',

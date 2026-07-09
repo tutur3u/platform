@@ -1,6 +1,6 @@
+import { getTulearnBootstrap } from '@tuturuuu/education-core/tulearn/service';
 import { NextResponse } from 'next/server';
 import { withSessionAuth } from '@/lib/api-auth';
-import { getTulearnBootstrap } from '@/lib/tulearn/service';
 
 export const GET = withSessionAuth(
   async (_request, { supabase, user }) => {

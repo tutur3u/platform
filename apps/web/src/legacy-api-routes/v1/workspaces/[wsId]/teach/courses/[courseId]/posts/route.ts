@@ -1,4 +1,9 @@
 import {
+  getTeachActorWorkspaceUserId,
+  requireTeachWorkspaceAccess,
+  validateTeachCourse,
+} from '@tuturuuu/education-core/teach/api';
+import {
   MAX_LONG_TEXT_LENGTH,
   MAX_MEDIUM_TEXT_LENGTH,
   MAX_NAME_LENGTH,
@@ -6,11 +11,6 @@ import {
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
-import {
-  getTeachActorWorkspaceUserId,
-  requireTeachWorkspaceAccess,
-  validateTeachCourse,
-} from '@/lib/teach/api';
 
 const RouteParamsSchema = z.object({
   courseId: z.guid(),

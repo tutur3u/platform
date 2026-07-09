@@ -1,4 +1,5 @@
 import { posix } from 'node:path';
+import { requireTeachWorkspaceAccess } from '@tuturuuu/education-core/teach/api';
 import { triggerWorkspaceStorageAutoExtract } from '@tuturuuu/storage-core/workspace-storage-auto-extract';
 import {
   deleteWorkspaceStorageObjectByPath,
@@ -13,7 +14,6 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import type { SessionAuthContext } from '@/lib/api-auth';
 import { withSessionAuth } from '@/lib/api-auth';
-import { requireTeachWorkspaceAccess } from '@/lib/teach/api';
 
 const routeParamsSchema = z.object({
   wsId: z.string().min(1),

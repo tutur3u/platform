@@ -1,22 +1,22 @@
-import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
-import type { Json } from '@tuturuuu/types';
-import { NextResponse } from 'next/server';
-import { z } from 'zod';
-import { withSessionAuth } from '@/lib/api-auth';
-import { updateModuleCompletionStatus } from '@/lib/tulearn/completion';
+import { updateModuleCompletionStatus } from '@tuturuuu/education-core/tulearn/completion';
 import {
   asRecord,
   displayText,
   getMatchingPairs,
   getStringItems,
   type MatchingPair,
-} from '@/lib/tulearn/quiz-content';
+} from '@tuturuuu/education-core/tulearn/quiz-content';
 import {
   getLearnerModuleDetail,
   resolveTulearnSubject,
   tulearnAccessErrorResponse,
-} from '@/lib/tulearn/service';
+} from '@tuturuuu/education-core/tulearn/service';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
+import type { Json } from '@tuturuuu/types';
+import { NextResponse } from 'next/server';
+import { z } from 'zod';
+import { withSessionAuth } from '@/lib/api-auth';
 
 type Params = {
   courseId: string;

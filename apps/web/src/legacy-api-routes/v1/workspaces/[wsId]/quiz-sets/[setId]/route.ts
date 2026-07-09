@@ -1,7 +1,7 @@
+import { requireEducationWorkspaceAccess } from '@tuturuuu/education-core/education/access';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
-import { requireEducationWorkspaceAccess } from '@/lib/education/access';
 
 const RouteParamsSchema = z.object({
   setId: z.guid(),

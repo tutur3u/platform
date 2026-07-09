@@ -9,6 +9,12 @@ import {
   resolvePlanModel,
 } from '@tuturuuu/ai/credits/resolve-plan-model';
 import { withAiMemory } from '@tuturuuu/ai/memory';
+import {
+  isValseaAudioStoragePath,
+  MAX_VALSEA_AUDIO_UPLOAD_BYTES,
+  validateFinalizedValseaAudioUpload,
+} from '@tuturuuu/education-core';
+import { checkEducationWorkspaceAccess } from '@tuturuuu/education-core/education/access';
 import { createWorkspaceStorageSignedReadUrl } from '@tuturuuu/storage-core/workspace-storage-provider';
 import { resolveWorkspaceId } from '@tuturuuu/utils/constants';
 import { isExactTuturuuuDotComEmail } from '@tuturuuu/utils/email/client';
@@ -17,12 +23,6 @@ import { generateObject } from 'ai';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { type AuthorizedRequest, withSessionAuth } from '@/lib/api-auth';
-import { checkEducationWorkspaceAccess } from '@/lib/education/access';
-import {
-  isValseaAudioStoragePath,
-  MAX_VALSEA_AUDIO_UPLOAD_BYTES,
-  validateFinalizedValseaAudioUpload,
-} from '@/lib/valsea-audio-storage-policy';
 import { gradeVoicePronunciation } from './voice-grading';
 
 type Params = {

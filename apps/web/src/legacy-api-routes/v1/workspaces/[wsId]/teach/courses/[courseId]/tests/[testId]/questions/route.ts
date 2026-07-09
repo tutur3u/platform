@@ -1,12 +1,12 @@
-import { NextResponse } from 'next/server';
-import { z } from 'zod';
-import { withSessionAuth } from '@/lib/api-auth';
-import { JsonPayloadSchema } from '@/lib/education/json-payload-schema';
-import { attachPrivateWorkspaceQuizAnswers } from '@/lib/education/private-quiz-answers';
+import { JsonPayloadSchema } from '@tuturuuu/education-core/education/json-payload-schema';
+import { attachPrivateWorkspaceQuizAnswers } from '@tuturuuu/education-core/education/private-quiz-answers';
 import {
   requireTeachWorkspaceAccess,
   validateTeachCourse,
-} from '@/lib/teach/api';
+} from '@tuturuuu/education-core/teach/api';
+import { NextResponse } from 'next/server';
+import { z } from 'zod';
+import { withSessionAuth } from '@/lib/api-auth';
 
 const RouteParamsSchema = z.object({
   courseId: z.guid(),

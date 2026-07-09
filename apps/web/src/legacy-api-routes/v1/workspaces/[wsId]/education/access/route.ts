@@ -1,6 +1,6 @@
+import { checkEducationWorkspaceAccess } from '@tuturuuu/education-core/education/access';
 import { NextResponse } from 'next/server';
 import { withSessionAuth } from '@/lib/api-auth';
-import { checkEducationWorkspaceAccess } from '@/lib/education/access';
 
 interface RouteParams {
   wsId: string;

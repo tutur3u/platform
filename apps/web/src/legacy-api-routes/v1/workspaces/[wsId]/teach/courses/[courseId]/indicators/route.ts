@@ -1,12 +1,12 @@
-import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
-import { NextResponse } from 'next/server';
-import { z } from 'zod';
-import { withSessionAuth } from '@/lib/api-auth';
 import {
   getTeachActorWorkspaceUserId,
   requireTeachWorkspaceAccess,
   validateTeachCourse,
-} from '@/lib/teach/api';
+} from '@tuturuuu/education-core/teach/api';
+import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
+import { NextResponse } from 'next/server';
+import { z } from 'zod';
+import { withSessionAuth } from '@/lib/api-auth';
 
 const RouteParamsSchema = z.object({
   courseId: z.guid(),

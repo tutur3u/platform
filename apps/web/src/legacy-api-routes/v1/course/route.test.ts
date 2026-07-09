@@ -45,7 +45,7 @@ vi.mock('@/lib/infrastructure/log-drain', () => ({
   serverLogger: mocks.serverLogger,
 }));
 
-vi.mock('@/lib/tulearn/service', () => ({
+vi.mock('@tuturuuu/education-core/tulearn/service', () => ({
   getLearnerCourseDetail: (
     ...args: Parameters<typeof mocks.getLearnerCourseDetail>
   ) => mocks.getLearnerCourseDetail(...args),

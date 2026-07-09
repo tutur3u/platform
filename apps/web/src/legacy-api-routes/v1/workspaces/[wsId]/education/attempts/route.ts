@@ -1,9 +1,9 @@
-import { NextResponse } from 'next/server';
-import { withSessionAuth } from '@/lib/api-auth';
 import {
   EDUCATION_ATTEMPTS_WORKSPACE_PERMISSION,
   requireEducationWorkspaceAccess,
-} from '@/lib/education/access';
+} from '@tuturuuu/education-core/education/access';
+import { NextResponse } from 'next/server';
+import { withSessionAuth } from '@/lib/api-auth';
 
 interface RouteParams {
   wsId: string;

@@ -1,4 +1,5 @@
 import { createHash, randomBytes } from 'node:crypto';
+import { hasEducationEnabled } from '@tuturuuu/education-core/tulearn/service';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { TablesInsert } from '@tuturuuu/types/supabase';
 import {
@@ -8,7 +9,6 @@ import {
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
-import { hasEducationEnabled } from '@/lib/tulearn/service';
 
 type Params = {
   wsId: string;

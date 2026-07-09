@@ -7,8 +7,8 @@ import {
   verifyWorkspaceMembershipType,
 } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
-import type { SessionAuthContext } from '@/lib/api-auth';
-import { ENABLE_EDUCATION_SECRET } from '@/lib/tulearn/constants';
+import { ENABLE_EDUCATION_SECRET } from '../tulearn/constants';
+import type { EducationAuthContext } from '../types';
 
 export const EDUCATION_WORKSPACE_PERMISSION = 'ai_lab' satisfies PermissionId;
 export const EDUCATION_ATTEMPTS_WORKSPACE_PERMISSION =
@@ -41,7 +41,7 @@ export async function checkEducationWorkspaceAccess({
   permission = EDUCATION_WORKSPACE_PERMISSION,
   wsId,
 }: {
-  context: SessionAuthContext;
+  context: EducationAuthContext;
   permission?: PermissionId | readonly PermissionId[];
   wsId: string;
 }): Promise<EducationAccessResult> {
@@ -123,7 +123,7 @@ export async function checkEducationWorkspaceAccess({
 }
 
 export async function requireEducationWorkspaceAccess(options: {
-  context: SessionAuthContext;
+  context: EducationAuthContext;
   permission?: PermissionId | readonly PermissionId[];
   wsId: string;
 }) {

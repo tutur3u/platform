@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { checkEducationWorkspaceAccess } from '@tuturuuu/education-core/education/access';
 import {
   uploadWorkspaceStorageFileDirect,
   WorkspaceStorageError,
@@ -8,7 +9,6 @@ import { sanitizeFilename } from '@tuturuuu/utils/storage-path';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { type AuthorizedRequest, withSessionAuth } from '@/lib/api-auth';
-import { checkEducationWorkspaceAccess } from '@/lib/education/access';
 
 type Params = {
   wsId: string;

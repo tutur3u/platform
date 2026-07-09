@@ -1,6 +1,6 @@
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { revalidatePath } from 'next/cache';
-import { defaultLocale, supportedLocales } from '@/i18n/routing';
+import { defaultLocale, supportedLocales } from '../i18n-constants';
 
 type ModuleCourseRow = {
   group_id: string | null;

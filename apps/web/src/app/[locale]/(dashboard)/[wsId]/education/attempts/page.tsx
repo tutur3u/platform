@@ -1,3 +1,4 @@
+import { EDUCATION_ATTEMPTS_WORKSPACE_PERMISSION } from '@tuturuuu/education-core/education/access';
 import { ClipboardList, Filter } from '@tuturuuu/icons';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { Button } from '@tuturuuu/ui/button';
@@ -19,7 +20,6 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
-import { EDUCATION_ATTEMPTS_WORKSPACE_PERMISSION } from '@/lib/education/access';
 import { resolveRouteWorkspace } from '@/lib/resolve-route-workspace';
 
 export const metadata: Metadata = {

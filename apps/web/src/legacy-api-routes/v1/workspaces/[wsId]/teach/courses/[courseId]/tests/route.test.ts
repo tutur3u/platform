@@ -94,7 +94,7 @@ vi.mock('@/lib/infrastructure/log-drain', () => ({
   },
 }));
 
-vi.mock('@/lib/teach/api', () => ({
+vi.mock('@tuturuuu/education-core/teach/api', () => ({
   requireTeachWorkspaceAccess: (
     ...args: Parameters<typeof mocks.requireTeachWorkspaceAccess>
   ) => mocks.requireTeachWorkspaceAccess(...args),

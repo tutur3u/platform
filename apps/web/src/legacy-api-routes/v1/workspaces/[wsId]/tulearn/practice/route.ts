@@ -1,8 +1,3 @@
-import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
-import { NextResponse } from 'next/server';
-import { z } from 'zod';
-import { withSessionAuth } from '@/lib/api-auth';
 import {
   awardTulearnXp,
   getAssignedCourseIds,
@@ -11,7 +6,12 @@ import {
   loseHeart,
   resolveTulearnSubject,
   tulearnAccessErrorResponse,
-} from '@/lib/tulearn/service';
+} from '@tuturuuu/education-core/tulearn/service';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
+import { NextResponse } from 'next/server';
+import { z } from 'zod';
+import { withSessionAuth } from '@/lib/api-auth';
 
 type Params = {
   wsId: string;

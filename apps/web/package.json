@@ -89,6 +89,7 @@
     "@tuturuuu/apis": "workspace:*",
     "@tuturuuu/auth": "workspace:*",
     "@tuturuuu/devbox": "workspace:*",
+    "@tuturuuu/education-core": "workspace:*",
     "@tuturuuu/email-service": "workspace:*",
     "@tuturuuu/google": "workspace:*",
     "@tuturuuu/hive-ui": "workspace:*",

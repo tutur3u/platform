@@ -10,7 +10,7 @@ import {
   verifyWorkspaceMembershipType,
 } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
-import type { SessionAuthContext } from '@/lib/api-auth';
+import type { EducationAuthContext } from '../types';
 
 export type TeachAccessResult =
   | {
@@ -40,7 +40,7 @@ export async function requireTeachWorkspaceAccess({
   permission,
   wsId,
 }: {
-  context: SessionAuthContext;
+  context: EducationAuthContext;
   permission: PermissionId | PermissionId[];
   wsId: string;
 }): Promise<TeachAccessResult> {

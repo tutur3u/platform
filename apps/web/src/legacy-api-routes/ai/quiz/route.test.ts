@@ -69,13 +69,13 @@ vi.mock('@/lib/api-auth', () => ({
     }),
 }));
 
-vi.mock('@/lib/education/private-quiz-answers', () => ({
+vi.mock('@tuturuuu/education-core/education/private-quiz-answers', () => ({
   setPrivateWorkspaceQuizAnswer: (
     ...args: Parameters<typeof mocks.setPrivateWorkspaceQuizAnswer>
   ) => mocks.setPrivateWorkspaceQuizAnswer(...args),
 }));
 
-vi.mock('@/lib/education/revalidate-quiz-paths', () => ({
+vi.mock('@tuturuuu/education-core/education/revalidate-quiz-paths', () => ({
   revalidateCourseModuleQuizPaths: (
     ...args: Parameters<typeof mocks.revalidateCourseModuleQuizPaths>
   ) => mocks.revalidateCourseModuleQuizPaths(...args),
@@ -85,7 +85,7 @@ vi.mock('@/lib/infrastructure/log-drain', () => ({
   serverLogger: mocks.serverLogger,
 }));
 
-vi.mock('@/lib/teach/api', () => ({
+vi.mock('@tuturuuu/education-core/teach/api', () => ({
   requireTeachWorkspaceAccess: (
     ...args: Parameters<typeof mocks.requireTeachWorkspaceAccess>
   ) => mocks.requireTeachWorkspaceAccess(...args),

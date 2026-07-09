@@ -1,3 +1,4 @@
+import { attachPrivateWorkspaceQuizAnswers } from '@tuturuuu/education-core/education/private-quiz-answers';
 import { ListTodo } from '@tuturuuu/icons';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
@@ -6,7 +7,6 @@ import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
-import { attachPrivateWorkspaceQuizAnswers } from '@/lib/education/private-quiz-answers';
 import { resolveRouteWorkspace } from '@/lib/resolve-route-workspace';
 import AIQuizzes from './client-ai';
 import ClientQuizzes from './client-quizzes';

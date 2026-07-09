@@ -52,7 +52,7 @@ vi.mock('@/lib/api-auth', () => ({
   withSessionAuth: mocks.withSessionAuth,
 }));
 
-vi.mock('@/lib/education/access', () => ({
+vi.mock('@tuturuuu/education-core/education/access', () => ({
   checkEducationWorkspaceAccess: mocks.checkEducationWorkspaceAccess,
 }));
 
@@ -63,7 +63,7 @@ vi.mock('@/lib/infrastructure/log-drain', () => ({
   },
 }));
 
-vi.mock('@/lib/valsea-audio-storage-policy', () => ({
+vi.mock('@tuturuuu/education-core', () => ({
   isValseaAudioStoragePath: vi.fn(() => true),
   MAX_VALSEA_AUDIO_UPLOAD_BYTES: 10 * 1024 * 1024,
   validateFinalizedValseaAudioUpload: vi.fn(() => ({ ok: true })),

@@ -114,7 +114,7 @@ vi.mock('@/lib/infrastructure/log-drain', () => ({
   },
 }));
 
-vi.mock('@/lib/teach/api', () => ({
+vi.mock('@tuturuuu/education-core/teach/api', () => ({
   getTeachActorWorkspaceUserId: (
     ...args: Parameters<typeof mocks.getTeachActorWorkspaceUserId>
   ) => mocks.getTeachActorWorkspaceUserId(...args),

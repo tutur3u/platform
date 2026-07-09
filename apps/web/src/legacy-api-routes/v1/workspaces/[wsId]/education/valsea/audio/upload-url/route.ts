@@ -1,5 +1,11 @@
 import { randomUUID } from 'node:crypto';
 import {
+  MAX_VALSEA_AUDIO_UPLOAD_BYTES,
+  VALSEA_AUDIO_DRIVE_PATH,
+  VALSEA_AUDIO_EXTENSIONS,
+} from '@tuturuuu/education-core';
+import { checkEducationWorkspaceAccess } from '@tuturuuu/education-core/education/access';
+import {
   createWorkspaceStorageUploadPayload,
   WorkspaceStorageError,
 } from '@tuturuuu/storage-core/workspace-storage-provider';
@@ -9,12 +15,6 @@ import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { type AuthorizedRequest, withSessionAuth } from '@/lib/api-auth';
-import { checkEducationWorkspaceAccess } from '@/lib/education/access';
-import {
-  MAX_VALSEA_AUDIO_UPLOAD_BYTES,
-  VALSEA_AUDIO_DRIVE_PATH,
-  VALSEA_AUDIO_EXTENSIONS,
-} from '@/lib/valsea-audio-storage-policy';
 
 type Params = {
   wsId: string;

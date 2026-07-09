@@ -1,11 +1,11 @@
+import { JsonPayloadSchema } from '@tuturuuu/education-core/education/json-payload-schema';
+import { setPrivateWorkspaceQuizAnswer } from '@tuturuuu/education-core/education/private-quiz-answers';
+import { revalidateQuizLinkedModulePaths } from '@tuturuuu/education-core/education/revalidate-quiz-paths';
+import { requireTeachWorkspaceAccess } from '@tuturuuu/education-core/teach/api';
 import type { Json } from '@tuturuuu/types';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
-import { JsonPayloadSchema } from '@/lib/education/json-payload-schema';
-import { setPrivateWorkspaceQuizAnswer } from '@/lib/education/private-quiz-answers';
-import { revalidateQuizLinkedModulePaths } from '@/lib/education/revalidate-quiz-paths';
-import { requireTeachWorkspaceAccess } from '@/lib/teach/api';
 
 const RouteParamsSchema = z.object({
   quizId: z.guid(),

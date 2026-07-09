@@ -1,12 +1,12 @@
+import {
+  resolveTulearnSubject,
+  tulearnAccessErrorResponse,
+} from '@tuturuuu/education-core/tulearn/service';
+import { submitTestAttemptInternal } from '@tuturuuu/education-core/tulearn/test-session';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
-import {
-  resolveTulearnSubject,
-  tulearnAccessErrorResponse,
-} from '@/lib/tulearn/service';
-import { submitTestAttemptInternal } from '@/lib/tulearn/test-session';
 
 type Params = {
   courseId: string;

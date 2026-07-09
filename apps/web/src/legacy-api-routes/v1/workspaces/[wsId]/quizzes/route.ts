@@ -1,14 +1,14 @@
+import { JsonPayloadSchema } from '@tuturuuu/education-core/education/json-payload-schema';
+import {
+  attachPrivateWorkspaceQuizAnswers,
+  setPrivateWorkspaceQuizAnswer,
+} from '@tuturuuu/education-core/education/private-quiz-answers';
+import { revalidateCourseModuleQuizPaths } from '@tuturuuu/education-core/education/revalidate-quiz-paths';
+import { requireTeachWorkspaceAccess } from '@tuturuuu/education-core/teach/api';
 import type { Json } from '@tuturuuu/types';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
-import { JsonPayloadSchema } from '@/lib/education/json-payload-schema';
-import {
-  attachPrivateWorkspaceQuizAnswers,
-  setPrivateWorkspaceQuizAnswer,
-} from '@/lib/education/private-quiz-answers';
-import { revalidateCourseModuleQuizPaths } from '@/lib/education/revalidate-quiz-paths';
-import { requireTeachWorkspaceAccess } from '@/lib/teach/api';
 
 const DEFAULT_PAGE_SIZE = 20;
 const MAX_PAGE_SIZE = 100;

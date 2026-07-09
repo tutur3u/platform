@@ -1,4 +1,11 @@
 import {
+  getLearnerCourseDetail,
+  getLearnerCourseSummaries,
+  resolveStudentForPlatformUser,
+  resolveTulearnSubject,
+  tulearnAccessErrorResponse,
+} from '@tuturuuu/education-core/tulearn/service';
+import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
@@ -8,13 +15,6 @@ import type { JSONContent } from '@tuturuuu/types/tiptap';
 import { connection, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { resolveSessionAuthContext } from '@/lib/api-auth';
-import {
-  getLearnerCourseDetail,
-  getLearnerCourseSummaries,
-  resolveStudentForPlatformUser,
-  resolveTulearnSubject,
-  tulearnAccessErrorResponse,
-} from '@/lib/tulearn/service';
 
 const DetailQuerySchema = z.object({
   courseId: z.guid(),

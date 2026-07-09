@@ -155,6 +155,10 @@
       "component": "devbox",
       "package-name": "@tuturuuu/devbox"
     },
+    "packages/education-core": {
+      "component": "education-core",
+      "package-name": "@tuturuuu/education-core"
+    },
     "packages/email-service": {
       "component": "email-service",
       "package-name": "@tuturuuu/email-service"

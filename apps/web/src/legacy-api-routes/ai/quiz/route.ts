@@ -6,14 +6,14 @@ import {
   deductAiCredits,
 } from '@tuturuuu/ai/credits/check-credits';
 import { withAiMemory } from '@tuturuuu/ai/memory';
+import { setPrivateWorkspaceQuizAnswer } from '@tuturuuu/education-core/education/private-quiz-answers';
+import { revalidateCourseModuleQuizPaths } from '@tuturuuu/education-core/education/revalidate-quiz-paths';
+import { requireTeachWorkspaceAccess } from '@tuturuuu/education-core/teach/api';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import type { Json } from '@tuturuuu/types';
 import { generateObject } from 'ai';
 import { NextResponse } from 'next/server';
 import { withSessionAuth } from '@/lib/api-auth';
-import { setPrivateWorkspaceQuizAnswer } from '@/lib/education/private-quiz-answers';
-import { revalidateCourseModuleQuizPaths } from '@/lib/education/revalidate-quiz-paths';
-import { requireTeachWorkspaceAccess } from '@/lib/teach/api';
 import {
   GenerateQuizRequestSchema,
   QUIZ_GENERATION_PROMPT,

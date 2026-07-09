@@ -9,13 +9,13 @@ import {
   resolvePlanModel,
 } from '@tuturuuu/ai/credits/resolve-plan-model';
 import { withAiMemory } from '@tuturuuu/ai/memory';
+import { checkEducationWorkspaceAccess } from '@tuturuuu/education-core/education/access';
 import { resolveWorkspaceId } from '@tuturuuu/utils/constants';
 import { isExactTuturuuuDotComEmail } from '@tuturuuu/utils/email/client';
 import { generateObject } from 'ai';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { type AuthorizedRequest, withSessionAuth } from '@/lib/api-auth';
-import { checkEducationWorkspaceAccess } from '@/lib/education/access';
 
 type Params = {
   wsId: string;

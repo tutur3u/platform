@@ -1,14 +1,14 @@
-import type { Json } from '@tuturuuu/types/db';
-import { NextResponse } from 'next/server';
-import { z } from 'zod';
-import { withSessionAuth } from '@/lib/api-auth';
 import {
   extractUserPrivateEmail,
   requireTeachWorkspaceAccess,
   validateTeachCourse,
   validateTeachCourseModule,
-} from '@/lib/teach/api';
-import { updateModuleCompletionStatus } from '@/lib/tulearn/completion';
+} from '@tuturuuu/education-core/teach/api';
+import { updateModuleCompletionStatus } from '@tuturuuu/education-core/tulearn/completion';
+import type { Json } from '@tuturuuu/types/db';
+import { NextResponse } from 'next/server';
+import { z } from 'zod';
+import { withSessionAuth } from '@/lib/api-auth';
 
 const RouteParamsSchema = z.object({
   courseId: z.guid(),

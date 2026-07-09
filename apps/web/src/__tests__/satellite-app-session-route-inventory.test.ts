@@ -30,8 +30,10 @@ const satelliteRouteRoots = [
 ];
 
 const satelliteAppApiRoots = [
-  'apps/learn/src/app/api',
-  'apps/teach/src/app/api',
+  // apps/learn now owns its migrated tulearn API routes; it is no longer a thin
+  // proxy-only satellite, so it is excluded from the local-API allowlist.
+  // apps/teach now owns its migrated teach/education API routes; it is no longer
+  // a thin proxy-only satellite, so it is excluded from the local-API allowlist.
   'apps/chat/src/app/api',
   // apps/inventory now owns its migrated inventory API routes; it is no longer a
   // thin proxy-only satellite, so it is excluded from the local-API allowlist.

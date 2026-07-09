@@ -1,11 +1,11 @@
+import {
+  requireTeachWorkspaceAccess,
+  validateTeachCourse,
+} from '@tuturuuu/education-core/teach/api';
 import { sendWorkspaceEmail } from '@tuturuuu/email-service';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
-import {
-  requireTeachWorkspaceAccess,
-  validateTeachCourse,
-} from '@/lib/teach/api';
 
 const RouteParamsSchema = z.object({
   courseId: z.guid(),

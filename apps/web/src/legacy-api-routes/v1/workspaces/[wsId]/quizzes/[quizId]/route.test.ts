@@ -104,7 +104,7 @@ vi.mock('next/cache', () => ({
   revalidatePath: vi.fn(),
 }));
 
-vi.mock('@/lib/teach/api', () => ({
+vi.mock('@tuturuuu/education-core/teach/api', () => ({
   requireTeachWorkspaceAccess: (
     ...args: Parameters<typeof mocks.requireTeachWorkspaceAccess>
   ) => mocks.requireTeachWorkspaceAccess(...args),

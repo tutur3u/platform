@@ -1,13 +1,13 @@
 import { google } from '@ai-sdk/google';
-import { generateObject } from 'ai';
-import { NextResponse } from 'next/server';
-import { z } from 'zod';
-import { withSessionAuth } from '@/lib/api-auth';
 import {
   requireTeachWorkspaceAccess,
   validateTeachCourse,
   validateTeachCourseModule,
-} from '@/lib/teach/api';
+} from '@tuturuuu/education-core/teach/api';
+import { generateObject } from 'ai';
+import { NextResponse } from 'next/server';
+import { z } from 'zod';
+import { withSessionAuth } from '@/lib/api-auth';
 
 const RouteParamsSchema = z.object({
   courseId: z.guid(),

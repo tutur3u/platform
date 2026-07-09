@@ -1,6 +1,6 @@
+import { checkEducationWorkspaceAccess } from '@tuturuuu/education-core/education/access';
 import { type NextRequest, NextResponse } from 'next/server';
 import { type AuthorizedRequest, withSessionAuth } from '@/lib/api-auth';
-import { checkEducationWorkspaceAccess } from '@/lib/education/access';
 
 type Params = {
   wsId: string;

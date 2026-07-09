@@ -1,10 +1,10 @@
-import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import { NextResponse } from 'next/server';
-import { withSessionAuth } from '@/lib/api-auth';
 import {
   resolveTulearnSubject,
   tulearnAccessErrorResponse,
-} from '@/lib/tulearn/service';
+} from '@tuturuuu/education-core/tulearn/service';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { NextResponse } from 'next/server';
+import { withSessionAuth } from '@/lib/api-auth';
 
 type Params = {
   courseId: string;

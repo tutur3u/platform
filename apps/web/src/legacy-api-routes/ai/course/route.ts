@@ -1,13 +1,13 @@
 import { google } from '@ai-sdk/google';
 import { withAiMemory } from '@tuturuuu/ai/memory';
 import { executeConvertFileToMarkdown } from '@tuturuuu/ai/tools/executors/markitdown';
+import { requireTeachWorkspaceAccess } from '@tuturuuu/education-core/teach/api';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import type { TablesInsert } from '@tuturuuu/types';
 import { sanitizePath } from '@tuturuuu/utils/storage-path';
 import { generateObject } from 'ai';
 import { NextResponse } from 'next/server';
 import { withSessionAuth } from '@/lib/api-auth';
-import { requireTeachWorkspaceAccess } from '@/lib/teach/api';
 import {
   COURSE_GENERATION_PROMPT,
   CourseGenerationSchema,

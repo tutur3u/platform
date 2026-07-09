@@ -100,7 +100,7 @@ vi.mock('@/lib/api-auth', () => ({
       ),
 }));
 
-vi.mock('@/lib/education/access', () => ({
+vi.mock('@tuturuuu/education-core/education/access', () => ({
   EDUCATION_ATTEMPTS_WORKSPACE_PERMISSION: 'view_user_groups_reports',
   requireEducationWorkspaceAccess: (
     ...args: Parameters<typeof mocks.requireEducationWorkspaceAccess>
