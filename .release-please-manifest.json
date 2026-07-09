@@ -32,6 +32,7 @@
   "packages/apis": "0.7.2",
   "packages/auth": "0.2.4",
   "packages/devbox": "0.3.1",
+  "packages/education-core": "0.1.0",
   "packages/email-service": "0.2.0",
   "packages/games": "0.0.1",
   "packages/google": "0.0.3",

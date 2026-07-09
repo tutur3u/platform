@@ -10,7 +10,6 @@ import {
   CheckCircle2,
   ClipboardList,
   FileText,
-  GraduationCap,
   HardDrive,
   Link,
   Mail,
@@ -34,7 +33,6 @@ type SidebarLayoutItemKey =
   | 'items.dashboard'
   | 'items.documents'
   | 'items.drive'
-  | 'items.education'
   | 'items.finance'
   | 'items.forms'
   | 'items.google_workspace'
@@ -233,13 +231,6 @@ export function createSidebarNavigationItemDefinitions(
       id: 'mail',
       title: t('items.mail'),
       icon: Mail,
-      defaultPlacement: 'more',
-      sectionLabel: sections.utilities,
-    },
-    {
-      id: 'education',
-      title: t('items.education'),
-      icon: GraduationCap,
       defaultPlacement: 'more',
       sectionLabel: sections.utilities,
     },

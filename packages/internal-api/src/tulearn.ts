@@ -4,6 +4,8 @@ import {
   encodePathSegment,
   getInternalApiClient,
   type InternalApiClientOptions,
+  withEducationBootstrapBaseUrl,
+  withLearnApiBaseUrl,
 } from './client';
 
 export type TulearnRole = 'parent' | 'student';
@@ -243,7 +245,7 @@ function studentQuery(studentId?: string | null) {
 }
 
 export async function getTulearnBootstrap(options?: InternalApiClientOptions) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withEducationBootstrapBaseUrl(options));
   return client.json<TulearnBootstrapResponse>('/api/v1/tulearn/bootstrap', {
     cache: 'no-store',
   });
@@ -254,7 +256,7 @@ export async function getTulearnHome(
   studentId?: string | null,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withLearnApiBaseUrl(options));
   return client.json<TulearnHomeResponse>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/tulearn/home`,
     { cache: 'no-store', query: studentQuery(studentId) }
@@ -266,7 +268,7 @@ export async function listTulearnCourses(
   studentId?: string | null,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withLearnApiBaseUrl(options));
   return client.json<{ courses: TulearnCourseSummary[] }>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/tulearn/courses`,
     { cache: 'no-store', query: studentQuery(studentId) }
@@ -279,7 +281,7 @@ export async function getTulearnCourse(
   studentId?: string | null,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withLearnApiBaseUrl(options));
   return client.json<TulearnCourseDetail>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/tulearn/courses/${encodePathSegment(courseId)}`,
     { cache: 'no-store', query: studentQuery(studentId) }
@@ -293,7 +295,7 @@ export async function getTulearnCourseModule(
   studentId?: string | null,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withLearnApiBaseUrl(options));
   return client.json<TulearnCourseModuleDetail>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/tulearn/courses/${encodePathSegment(courseId)}/modules/${encodePathSegment(moduleId)}`,
     { cache: 'no-store', query: studentQuery(studentId) }
@@ -305,7 +307,7 @@ export async function getTulearnPractice(
   studentId?: string | null,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withLearnApiBaseUrl(options));
   return client.json<{ item: TulearnPracticeItem | null }>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/tulearn/practice`,
     { cache: 'no-store', query: studentQuery(studentId) }
@@ -318,7 +320,7 @@ export async function submitTulearnPractice(
   studentId?: string | null,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withLearnApiBaseUrl(options));
   return client.json<TulearnPracticeResult>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/tulearn/practice`,
     {
@@ -336,7 +338,7 @@ export async function listTulearnAssignments(
   studentId?: string | null,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withLearnApiBaseUrl(options));
   return client.json<{ assignments: TulearnAssignmentSummary[] }>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/tulearn/assignments`,
     { cache: 'no-store', query: studentQuery(studentId) }
@@ -349,7 +351,7 @@ export async function completeTulearnAssignment(
   studentId?: string | null,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withLearnApiBaseUrl(options));
   return client.json<{
     assignment: TulearnAssignmentSummary;
     xpAwarded: number;
@@ -370,7 +372,7 @@ export async function listTulearnReports(
   studentId?: string | null,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withLearnApiBaseUrl(options));
   return client.json<{ reports: TulearnReportSummary[] }>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/tulearn/reports`,
     { cache: 'no-store', query: studentQuery(studentId) }
@@ -382,7 +384,7 @@ export async function listTulearnMarks(
   studentId?: string | null,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withLearnApiBaseUrl(options));
   return client.json<{ marks: TulearnMarkSummary[] }>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/tulearn/marks`,
     { cache: 'no-store', query: studentQuery(studentId) }
@@ -393,6 +395,7 @@ export async function updateTulearnProfile(
   payload: UpdateTulearnProfilePayload,
   options?: InternalApiClientOptions
 ) {
+  // /api/v1/users/me/profile stays on apps/web (not part of the tulearn move).
   const client = getInternalApiClient(options);
   return client.json<{ message: string }>('/api/v1/users/me/profile', {
     body: JSON.stringify({ display_name: payload.displayName }),
@@ -429,7 +432,7 @@ export async function getSharedCourseContent(
   courseId: string,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withLearnApiBaseUrl(options));
   return client.json<SharedCourseContentResponse>('/api/v1/course', {
     cache: 'no-store',
     query: { courseId },
@@ -481,7 +484,7 @@ export async function submitTulearnQuizAnswer(
   studentId?: string | null,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withLearnApiBaseUrl(options));
   return client.json<SubmitTulearnQuizAnswerResult>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/tulearn/courses/${encodePathSegment(courseId)}/modules/${encodePathSegment(moduleId)}`,
     {
@@ -501,7 +504,7 @@ export async function resetTulearnQuizSubmissions(
   studentId?: string | null,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withLearnApiBaseUrl(options));
   return client.json<{ success: boolean }>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/tulearn/courses/${encodePathSegment(courseId)}/modules/${encodePathSegment(moduleId)}`,
     {
@@ -519,7 +522,7 @@ export async function getTulearnTestAttempt(
   studentId?: string | null,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withLearnApiBaseUrl(options));
   return client.json<TulearnTestAttemptResponse>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/tulearn/courses/${encodePathSegment(courseId)}/tests/${encodePathSegment(testId)}/attempt`,
     { cache: 'no-store', query: studentQuery(studentId) }
@@ -533,7 +536,7 @@ export async function startTulearnTest(
   studentId?: string | null,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withLearnApiBaseUrl(options));
   return client.json<TulearnTestAttempt>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/tulearn/courses/${encodePathSegment(courseId)}/tests/${encodePathSegment(testId)}/start`,
     {
@@ -557,7 +560,7 @@ export async function saveTulearnTestAnswer(
   studentId?: string | null,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withLearnApiBaseUrl(options));
   return client.json<{ success: boolean }>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/tulearn/courses/${encodePathSegment(courseId)}/tests/${encodePathSegment(testId)}/save-answer`,
     {
@@ -580,7 +583,7 @@ export async function submitTulearnTest(
   studentId?: string | null,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withLearnApiBaseUrl(options));
   return client.json<{ success: boolean; attempt: TulearnTestAttempt }>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/tulearn/courses/${encodePathSegment(courseId)}/tests/${encodePathSegment(testId)}/submit`,
     {

@@ -58,6 +58,11 @@
       "import": "./dist/db.js",
       "require": "./dist/db.js"
     },
+    "./supabase": {
+      "types": "./dist/supabase.d.ts",
+      "import": "./dist/supabase.js",
+      "require": "./dist/supabase.js"
+    },
     "./tiptap": {
       "types": "./dist/tiptap.d.ts",
       "import": "./dist/tiptap.js",

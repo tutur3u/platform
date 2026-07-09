@@ -92,6 +92,8 @@ services:
       - platform-web-auth-dist:/workspace/packages/auth/dist
       - platform-web-devbox-node_modules:/workspace/packages/devbox/node_modules
       - platform-web-devbox-dist:/workspace/packages/devbox/dist
+      - platform-web-education-core-node_modules:/workspace/packages/education-core/node_modules
+      - platform-web-education-core-dist:/workspace/packages/education-core/dist
       - platform-web-email-service-node_modules:/workspace/packages/email-service/node_modules
       - platform-web-email-service-dist:/workspace/packages/email-service/dist
       - platform-web-games-node_modules:/workspace/packages/games/node_modules
@@ -506,6 +508,8 @@ volumes:
   platform-web-auth-dist:
   platform-web-devbox-node_modules:
   platform-web-devbox-dist:
+  platform-web-education-core-node_modules:
+  platform-web-education-core-dist:
   platform-bun-install:
   platform-web-email-service-node_modules:
   platform-web-email-service-dist:
