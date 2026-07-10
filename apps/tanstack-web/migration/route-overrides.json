@@ -1369,21 +1369,6 @@
       "targetOwner": "tanstack-start",
       "note": "Dynamic no-store TanStack Start route /$locale/$wsId/users/topic-announcements/import ports the legacy bulk import leaf with fail-closed auth, full workspace resolution, personal-workspace notFound parity, ENABLE_TOPIC_ANNOUNCEMENTS secret gating, manage_users gating, send_user_group_post_emails-aware create-and-send controls, client-only XLSX template download/first-sheet parsing, custom CSV/header alias parsing, editable spreadsheet grid, row validation/result summaries, and TanStack Query mutations through typed internal-api importTopicAnnouncements and sendTopicAnnouncementsBulk facades. Rust backend ownership of /api/v1/workspaces/:wsId/topic-announcements/import and /send-bulk remains separately tracked."
     },
-    "page:/:locale/:wsId/users/structure:apps/web/src/app/[locale]/(dashboard)/[wsId]/users/structure/page.tsx": {
-      "status": "migrated",
-      "targetOwner": "tanstack-start",
-      "note": "TanStack Start route /$locale/$wsId/users/structure ports the legacy local-state organizational-structure mock page, metadata, localized messages, canvas interactions, and dialogs without adding Supabase or app API access. This marks only the page artifact migrated; parent dashboard layout/session ownership remains legacy-owned."
-    },
-    "page:/:locale/:wsId/users/feedbacks:apps/web/src/app/[locale]/(dashboard)/[wsId]/users/feedbacks/page.tsx": {
-      "status": "migrated",
-      "targetOwner": "tanstack-start",
-      "note": "TanStack Start route /$locale/$wsId/users/feedbacks ports the legacy feedback management page as a dynamic authenticated workspace route with fail-closed current-user auth, full workspace resolution, personal-workspace not-found handling, view_user_groups not-found gating, update_user_groups_scores management context, route metadata, and the shared UserFeedbacksClient backed by internal-api user facades. This marks only the page artifact migrated; feedback data APIs remain separately tracked backend/internal-api migration work."
-    },
-    "page:/:locale/:wsId/users/tutoring:apps/web/src/app/[locale]/(dashboard)/[wsId]/users/tutoring/page.tsx": {
-      "status": "migrated",
-      "targetOwner": "tanstack-start",
-      "note": "TanStack Start route /$locale/$wsId/users/tutoring preserves the legacy tutoring page with fail-closed current-user auth, forwarded-auth full workspace resolution, personal-workspace not-found handling, view_user_groups not-found gating, update_user_groups_scores management context, route metadata, and the shared tutoring client. Tutoring data access stays behind existing internal-api helpers and the backing APIs remain separately tracked Rust migration work."
-    },
     "page:/:locale/:wsId/diet:apps/web/src/app/[locale]/(dashboard)/[wsId]/diet/page.tsx": {
       "status": "migrated",
       "targetOwner": "tanstack-start",
