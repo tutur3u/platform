@@ -1,8 +1,6 @@
 import { redirect } from 'next/navigation';
 import { buildWebDashboardRedirectUrl } from '@/lib/non-migrated-redirect';
 
-export const dynamic = 'force-dynamic';
-
 interface Props {
   params: Promise<{ locale: string; wsId: string; catchAll: string[] }>;
   searchParams: Promise<Record<string, string | string[] | undefined>>;
