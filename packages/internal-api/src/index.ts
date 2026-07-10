@@ -360,6 +360,7 @@ export type {
 } from './client';
 export {
   createInternalApiClient,
+  getConfiguredContactsApiBaseUrl,
   getConfiguredFinanceApiBaseUrl,
   getConfiguredInternalApiBaseUrl,
   getConfiguredLearnApiBaseUrl,
@@ -368,6 +369,7 @@ export {
   InternalApiError,
   internalApiClient,
   resolveInternalApiUrl,
+  withContactsApiBaseUrl,
   withForwardedInternalApiAuth,
   withPayApiBaseUrl,
 } from './client';
