@@ -5,8 +5,6 @@ import {
   buildCmsEntryRedirectHref,
   buildCmsRedirectHref,
   buildDriveRedirectHref,
-  buildFinanceRedirectHref,
-  buildFinanceTransactionCategoriesRedirectHref,
   buildHiveDashboardRedirectHref,
   buildHiveNotWhitelistedRedirectHref,
   buildMailRedirectHref,
@@ -15,6 +13,7 @@ import {
   buildMeetPlansRedirectHref,
   buildMindBoardRedirectHref,
   buildMindRedirectHref,
+  buildPayBillingRedirectHref,
   buildQrGeneratorRedirectHref,
   buildToolsRandomRedirectHref,
   buildVerifyTokenRedirectHref,
@@ -71,80 +70,6 @@ describe('public redirect helpers', () => {
     expect(workspaceInfrastructureAppCoordinationRedirectHref('ws-1')).toBe(
       'https://infra.example.com/ws-1/app-coordination'
     );
-  });
-
-  it('preserves legacy finance transaction categories workspace slugs', () => {
-    expect(buildFinanceTransactionCategoriesRedirectHref('ws-1')).toBe(
-      '/ws-1/finance/categories'
-    );
-    expect(
-      buildFinanceTransactionCategoriesRedirectHref('personal-ws', {
-        personal: true,
-      })
-    ).toBe('/personal/finance/categories');
-    expect(
-      buildFinanceTransactionCategoriesRedirectHref(ROOT_WORKSPACE_ID)
-    ).toBe('/internal/finance/categories');
-  });
-
-  it('preserves legacy finance transaction categories query forwarding', () => {
-    expect(
-      buildFinanceTransactionCategoriesRedirectHref('ws-1', {
-        searchParams: {
-          empty: '',
-          range: 'month',
-          tag: ['food', ''],
-          unset: undefined,
-        },
-      })
-    ).toBe('/ws-1/finance/categories?range=month&tag=food&tag=');
-
-    const searchParams = new URLSearchParams();
-    searchParams.append('wallet', 'wallet 1');
-    searchParams.append('wallet', 'wallet/2');
-    searchParams.append('empty', '');
-
-    expect(
-      buildFinanceTransactionCategoriesRedirectHref('ws-1', {
-        searchParams,
-      })
-    ).toBe('/ws-1/finance/categories?wallet=wallet+1&wallet=wallet%2F2&empty=');
-  });
-
-  it('preserves legacy Finance page redirect paths and query forwarding', () => {
-    expect(buildFinanceRedirectHref('ws-1', '')).toBe('/ws-1/finance');
-    expect(buildFinanceRedirectHref('ws-1', 'analytics')).toBe(
-      '/ws-1/finance/analytics'
-    );
-    expect(buildFinanceRedirectHref(ROOT_WORKSPACE_ID, 'debts/debt-1')).toBe(
-      '/internal/finance/debts/debt-1'
-    );
-    expect(buildFinanceRedirectHref('ws-1', '/budgets/')).toBe(
-      '/ws-1/finance/budgets'
-    );
-    expect(
-      buildFinanceRedirectHref('ws-1', 'transactions', {
-        searchParams: '?create=transfer&mode=transfer',
-      })
-    ).toBe('/ws-1/finance/transactions?create=transfer&mode=transfer');
-    expect(
-      buildFinanceRedirectHref('ws-1', 'wallets', {
-        searchParams: {
-          create: 'credit-card',
-          q: 'cash box',
-          tool: 'import',
-        },
-      })
-    ).toBe('/ws-1/finance/wallets?create=credit-card&q=cash+box&tool=import');
-    expect(
-      buildFinanceRedirectHref(
-        'ws-1',
-        `transactions/${encodeURIComponent('txn/1')}`,
-        {
-          searchParams: '?tab=history',
-        }
-      )
-    ).toBe('/ws-1/finance/transactions/txn%2F1?tab=history');
   });
 
   it('preserves legacy education permanent redirect targets', () => {
@@ -228,6 +153,22 @@ describe('public redirect helpers', () => {
     expect(buildMailRedirectHref('ws-1')).toBe('https://mail.example.com/ws-1');
     expect(buildMailRedirectHref('ws-1', { folder: 'sent' })).toBe(
       'https://mail.example.com/ws-1?folder=sent'
+    );
+  });
+
+  it('hands billing routes to Pay and preserves the raw success query', () => {
+    vi.stubEnv('PAY_APP_URL', 'https://pay.example.com/base/');
+
+    expect(buildPayBillingRedirectHref('workspace / one')).toBe(
+      'https://pay.example.com/workspace%20%2F%20one/billing'
+    );
+    expect(
+      buildPayBillingRedirectHref('ws-1', {
+        searchParams: '?checkoutId=checkout-1&tag=a&tag=b&empty=',
+        success: true,
+      })
+    ).toBe(
+      'https://pay.example.com/ws-1/billing/success?checkoutId=checkout-1&tag=a&tag=b&empty='
     );
   });
 

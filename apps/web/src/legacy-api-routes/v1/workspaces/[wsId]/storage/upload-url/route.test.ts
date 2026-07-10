@@ -16,12 +16,12 @@ vi.mock('@tuturuuu/utils/uuid-helper', () => ({
   generateRandomUUID: mocks.generateRandomUUID,
 }));
 
-vi.mock('@/lib/finance-transaction-storage-access', () => ({
+vi.mock('@tuturuuu/finance-core/storage-access', () => ({
   canAccessFinanceTransactionStoragePath:
     mocks.canAccessFinanceTransactionStoragePath,
 }));
 
-vi.mock('@/lib/finance-transaction-storage-limits', () => ({
+vi.mock('@tuturuuu/finance-core/storage-limits', () => ({
   validateFinanceTransactionAttachmentUploadRequest:
     mocks.validateFinanceTransactionAttachmentUploadRequest,
 }));

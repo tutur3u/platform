@@ -56,6 +56,7 @@ export type ParsedEmailAttachment = {
   disposition: 'attachment' | 'inline';
   filename: string;
   sizeBytes: number;
+  storedObjectId?: string | null;
 };
 
 export type ParsedEmail = {

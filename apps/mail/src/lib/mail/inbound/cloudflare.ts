@@ -1,0 +1,314 @@
+import { createHmac, timingSafeEqual } from 'node:crypto';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { z } from 'zod';
+import { createInboundMessage, ensureMailboxForRecipient } from './ingest';
+import type { AnyRecord, ParsedEmail } from './types';
+
+const addressSchema = z.object({
+  address: z
+    .string()
+    .email()
+    .transform((value) => value.toLowerCase()),
+  displayName: z.string().nullable(),
+});
+
+const storedObjectSchema = z.object({
+  bucketName: z.string().min(1).max(255),
+  contentId: z.string().max(998).optional(),
+  contentType: z.string().min(1).max(255),
+  filename: z.string().max(1024).optional(),
+  objectKey: z.string().min(1).max(2048),
+  objectKind: z.enum(['attachment', 'body', 'raw_mime']),
+  sha256: z.string().regex(/^[a-f0-9]{64}$/u),
+  sizeBytes: z
+    .number()
+    .int()
+    .nonnegative()
+    .max(25 * 1024 * 1024),
+});
+
+const domainCheckSchema = z.object({
+  domain: z.string().trim().toLowerCase().max(253),
+  type: z.literal('domain_check'),
+});
+
+const ingestSchema = z.object({
+  bodyObjects: z.array(storedObjectSchema).max(2).default([]),
+  deliveryId: z.string().regex(/^[a-f0-9]{64}$/u),
+  domain: z.string().trim().toLowerCase().max(253),
+  envelope: z.object({
+    from: z.string().max(998),
+    to: z
+      .string()
+      .email()
+      .transform((value) => value.toLowerCase()),
+  }),
+  parsed: z
+    .object({
+      attachments: z
+        .array(
+          z.object({
+            contentId: z.string().nullable(),
+            contentType: z.string().min(1).max(255),
+            disposition: z.enum(['attachment', 'inline']),
+            filename: z.string().min(1).max(1024),
+            sizeBytes: z.number().int().nonnegative(),
+            storedObject: storedObjectSchema,
+          })
+        )
+        .max(200),
+      bodyHtml: z.string().nullable(),
+      bodyText: z.string().nullable(),
+      cc: z.array(addressSchema).max(200),
+      from: addressSchema.nullable(),
+      headers: z.record(z.string(), z.string()),
+      inReplyTo: z.string().max(4096).nullable(),
+      internetMessageId: z.string().max(4096).nullable(),
+      references: z.array(z.string().max(4096)).max(100),
+      subject: z.string().max(998),
+      to: z.array(addressSchema).max(200),
+    })
+    .optional(),
+  quarantineReason: z.string().max(255).nullable().optional(),
+  rawObject: storedObjectSchema,
+  type: z.literal('ingest'),
+});
+
+export const cloudflareInboundEventSchema = z.discriminatedUnion('type', [
+  domainCheckSchema,
+  ingestSchema,
+]);
+
+function privateTable(client: AnyRecord, table: string) {
+  return client.schema('private').from(table);
+}
+
+export function verifyCloudflareWebhookSignature({
+  body,
+  now = Date.now(),
+  secret,
+  signature,
+  timestamp,
+}: {
+  body: string;
+  now?: number;
+  secret: string;
+  signature: string | null;
+  timestamp: string | null;
+}) {
+  if (!signature || !timestamp || !/^\d+$/u.test(timestamp)) return false;
+  const timestampMs = Number(timestamp) * 1000;
+  if (!Number.isSafeInteger(timestampMs)) return false;
+  if (Math.abs(now - timestampMs) > 5 * 60 * 1000) return false;
+
+  const expected = createHmac('sha256', secret)
+    .update(`${timestamp}.${body}`)
+    .digest('hex');
+  if (!/^[a-f0-9]{64}$/u.test(signature)) return false;
+  return timingSafeEqual(
+    Buffer.from(expected, 'hex'),
+    Buffer.from(signature, 'hex')
+  );
+}
+
+async function getCloudflareDomain(admin: AnyRecord, domain: string) {
+  const { data, error } = await privateTable(admin, 'mail_domains')
+    .select('*')
+    .eq('domain', domain)
+    .maybeSingle();
+  if (error) throw error;
+  return data;
+}
+
+async function upsertStoredObject(
+  admin: AnyRecord,
+  object: z.infer<typeof storedObjectSchema>
+) {
+  const { data, error } = await privateTable(admin, 'mail_stored_objects')
+    .upsert(
+      {
+        bucket_name: object.bucketName,
+        content_id: object.contentId,
+        content_type: object.contentType,
+        filename: object.filename,
+        object_key: object.objectKey,
+        object_kind: object.objectKind,
+        provider: 'r2',
+        sha256: object.sha256,
+        size_bytes: object.sizeBytes,
+      },
+      { onConflict: 'provider,bucket_name,object_key' }
+    )
+    .select('*')
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function handleCloudflareInboundEvent(
+  event: z.infer<typeof cloudflareInboundEventSchema>
+) {
+  const admin = await createAdminClient({ noCookie: true });
+  const domain = await getCloudflareDomain(admin, event.domain);
+  const accepted =
+    domain?.status === 'active' && domain.inbound_provider === 'cloudflare';
+
+  if (event.type === 'domain_check') {
+    return {
+      accepted,
+      reason: accepted
+        ? undefined
+        : 'Unknown or disabled Cloudflare mail domain',
+    };
+  }
+  if (!accepted || !domain?.id) {
+    return { imported: 0, status: 'domain_unavailable' as const };
+  }
+
+  const { data: existingJob, error: existingJobError } = await privateTable(
+    admin,
+    'mail_inbound_jobs'
+  )
+    .select('id, status')
+    .eq('provider', 'cloudflare')
+    .eq('provider_message_id', event.deliveryId)
+    .maybeSingle();
+  if (existingJobError) throw existingJobError;
+  if (existingJob?.status === 'imported') {
+    return { imported: 0, status: 'duplicate' as const };
+  }
+
+  const rawObject = await upsertStoredObject(admin, event.rawObject);
+  const quarantined = Boolean(event.quarantineReason || !event.parsed);
+  const { data: job, error: jobError } = await privateTable(
+    admin,
+    'mail_inbound_jobs'
+  )
+    .upsert(
+      {
+        payload: {
+          bodyObjects: event.bodyObjects,
+          domain: event.domain,
+          envelope: event.envelope,
+          quarantineReason: event.quarantineReason,
+        },
+        provider: 'cloudflare',
+        provider_message_id: event.deliveryId,
+        receipt_recipients: [event.envelope.to],
+        status: quarantined ? 'quarantined' : 'processing',
+        stored_object_id: rawObject.id,
+      },
+      { onConflict: 'provider,provider_message_id' }
+    )
+    .select('*')
+    .single();
+  if (jobError) throw jobError;
+
+  const { data: rawMessage, error: rawError } = await privateTable(
+    admin,
+    'mail_raw_messages'
+  )
+    .upsert(
+      {
+        provider: 'cloudflare',
+        provider_message_id: event.deliveryId,
+        provider_payload: { domain: event.domain, envelope: event.envelope },
+        raw_headers: event.parsed?.headers ?? {},
+        sha256: event.rawObject.sha256,
+        size_bytes: event.rawObject.sizeBytes,
+        status: quarantined ? 'quarantined' : 'imported',
+        stored_object_id: rawObject.id,
+      },
+      { onConflict: 'provider,provider_message_id' }
+    )
+    .select('*')
+    .single();
+  if (rawError) throw rawError;
+
+  if (quarantined || !event.parsed) {
+    await privateTable(admin, 'mail_inbound_jobs')
+      .update({
+        error_message: event.quarantineReason ?? 'Malformed MIME',
+        processed_at: new Date().toISOString(),
+        status: 'quarantined',
+      })
+      .eq('id', job.id);
+    return { imported: 0, status: 'quarantined' as const };
+  }
+
+  const { data: existingMailbox, error: mailboxError } = await privateTable(
+    admin,
+    'mail_mailboxes'
+  )
+    .select('*')
+    .eq('address', event.envelope.to)
+    .eq('domain_id', domain.id)
+    .eq('status', 'active')
+    .maybeSingle();
+  if (mailboxError) throw mailboxError;
+  const mailbox =
+    existingMailbox ??
+    (await ensureMailboxForRecipient(admin, event.envelope.to, domain.id));
+  if (!mailbox) {
+    await privateTable(admin, 'mail_inbound_jobs')
+      .update({
+        error_message: 'No active mailbox matched the Cloudflare recipient',
+        processed_at: new Date().toISOString(),
+        status: 'quarantined',
+      })
+      .eq('id', job.id);
+    return { imported: 0, status: 'quarantined' as const };
+  }
+
+  const attachmentObjects = await Promise.all(
+    event.parsed.attachments.map((attachment) =>
+      upsertStoredObject(admin, attachment.storedObject)
+    )
+  );
+  const parsed: ParsedEmail = {
+    ...event.parsed,
+    attachments: event.parsed.attachments.map((attachment, index) => ({
+      contentId: attachment.contentId,
+      contentType: attachment.contentType,
+      disposition: attachment.disposition,
+      filename: attachment.filename,
+      sizeBytes: attachment.sizeBytes,
+      storedObjectId: attachmentObjects[index]?.id ?? null,
+    })),
+  };
+  const message = await createInboundMessage({
+    admin,
+    mailbox,
+    parsed,
+    provider: 'cloudflare',
+    providerMessageId: event.deliveryId,
+    rawMessageId: rawMessage.id,
+  });
+
+  const relatedObjects = await Promise.all(
+    event.bodyObjects.map((object) => upsertStoredObject(admin, object))
+  );
+  await Promise.all(
+    [rawObject, ...attachmentObjects, ...relatedObjects].map((object) =>
+      privateTable(admin, 'mail_stored_objects')
+        .update({ mailbox_id: mailbox.id, message_id: message.id })
+        .eq('id', object.id)
+    )
+  );
+
+  if (mailbox.auto_draft_enabled) {
+    await privateTable(admin, 'mail_auto_draft_jobs').upsert(
+      {
+        mailbox_id: mailbox.id,
+        message_id: message.id,
+        status: 'queued',
+      },
+      { onConflict: 'mailbox_id,message_id' }
+    );
+  }
+
+  await privateTable(admin, 'mail_inbound_jobs')
+    .update({ processed_at: new Date().toISOString(), status: 'imported' })
+    .eq('id', job.id);
+  return { imported: 1, status: 'imported' as const };
+}

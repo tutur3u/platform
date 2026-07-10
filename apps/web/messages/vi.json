@@ -1731,6 +1731,7 @@
     "learn-more": "Tìm hiểu thêm",
     "limited-usage": "Sử dụng giới hạn",
     "loading": "Đang tải thông tin thanh toán...",
+    "manage-billing-on-pay": "Quản lý gói đăng ký, chỗ ngồi, hóa đơn và phương thức thanh toán trên cổng thanh toán.",
     "manage-payment-methods-description": "Quản lý các phương thức thanh toán cho không gian làm việc này",
     "maximum-seats": "Số ghế tối đa",
     "members": "Thành viên",
@@ -1782,6 +1783,7 @@
       },
       "retry": "Thử Lại"
     },
+    "open-billing": "Mở thanh toán",
     "open-customer-portal": "Cổng Thông Tin Khách Hàng",
     "order-history": "Lịch sử thanh toán",
     "order-history-desc": "Không có lịch sử đăng ký nào.",

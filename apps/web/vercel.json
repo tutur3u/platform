@@ -12,10 +12,6 @@
       "schedule": "0 16 * * *"
     },
     {
-      "path": "/api/cron/payment/products",
-      "schedule": "0 */12 * * *"
-    },
-    {
       "path": "/api/cron/process-notification-batches",
       "schedule": "*/15 * * * *"
     },

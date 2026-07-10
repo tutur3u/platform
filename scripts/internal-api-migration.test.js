@@ -33,7 +33,6 @@ test('migrated shared hooks no longer import the deprecated Supabase browser cli
     'packages/ui/src/hooks/use-workspace-user.ts',
     'packages/ui/src/hooks/use-workspace-permission.ts',
     'apps/web/src/lib/calendar-preferences-settings-bridge.tsx',
-    'apps/tanstack-web/src/components/inventory/promotions/settings-form.tsx',
     'apps/web/src/app/[locale]/(dashboard)/[wsId]/posts/filters.tsx',
     'apps/mail/src/app/[locale]/(dashboard)/[wsId]/mail-client.tsx',
     'apps/web/src/app/[locale]/(dashboard)/[wsId]/(dashboard)/permission-setup-banner.tsx',

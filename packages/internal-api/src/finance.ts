@@ -35,6 +35,7 @@ import {
   getInternalApiClient,
   type InternalApiClientOptions,
   type InternalApiQuery,
+  withFinanceApiBaseUrl,
 } from './client';
 
 export async function listWallets(
@@ -68,7 +69,7 @@ export async function listInfiniteWallets(
   query: InfiniteWalletsQuery = {},
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withFinanceApiBaseUrl(options));
   const apiQuery: InternalApiQuery = {
     limit: query.limit,
     offset: query.offset,
@@ -89,7 +90,7 @@ export async function getWallet(
   walletId: string,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withFinanceApiBaseUrl(options));
   return client.json<Wallet>(
     `/api/workspaces/${encodePathSegment(workspaceId)}/wallets/${encodePathSegment(walletId)}`,
     {
@@ -123,7 +124,7 @@ export async function updateWallet(
   payload: WalletPayload,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withFinanceApiBaseUrl(options));
   return client.json<{ message: string }>(
     `/api/workspaces/${encodePathSegment(workspaceId)}/wallets/${encodePathSegment(walletId)}`,
     {
@@ -142,7 +143,7 @@ export async function deleteWallet(
   walletId: string,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withFinanceApiBaseUrl(options));
   return client.json<{ message: string }>(
     `/api/workspaces/${encodePathSegment(workspaceId)}/wallets/${encodePathSegment(walletId)}`,
     {
@@ -276,7 +277,7 @@ export async function listWalletCheckpoints(
   query?: { limit?: number },
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withFinanceApiBaseUrl(options));
   return client.json<WalletCheckpointListResponse>(
     `/api/workspaces/${encodePathSegment(workspaceId)}/wallets/${encodePathSegment(walletId)}/checkpoints`,
     {
@@ -292,7 +293,7 @@ export async function createWalletCheckpoint(
   payload: WalletCheckpointPayload,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withFinanceApiBaseUrl(options));
   return client.json<WalletCheckpoint>(
     `/api/workspaces/${encodePathSegment(workspaceId)}/wallets/${encodePathSegment(walletId)}/checkpoints`,
     {
@@ -313,7 +314,7 @@ export async function updateWalletCheckpoint(
   payload: Partial<WalletCheckpointPayload>,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withFinanceApiBaseUrl(options));
   return client.json<WalletCheckpoint>(
     `/api/workspaces/${encodePathSegment(workspaceId)}/wallets/${encodePathSegment(walletId)}/checkpoints/${encodePathSegment(checkpointId)}`,
     {
@@ -333,7 +334,7 @@ export async function deleteWalletCheckpoint(
   checkpointId: string,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withFinanceApiBaseUrl(options));
   return client.json<{ message: string }>(
     `/api/workspaces/${encodePathSegment(workspaceId)}/wallets/${encodePathSegment(walletId)}/checkpoints/${encodePathSegment(checkpointId)}`,
     {
@@ -347,7 +348,7 @@ export async function getWalletCheckpointSummary(
   workspaceId: string,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withFinanceApiBaseUrl(options));
   return client.json<WalletCheckpointSummaryResponse>(
     `/api/workspaces/${encodePathSegment(workspaceId)}/wallets/checkpoints`,
     {
@@ -361,7 +362,7 @@ export async function getWalletCheckpointHistory(
   query?: { limit?: number },
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withFinanceApiBaseUrl(options));
   return client.json<WalletCheckpointHistoryResponse>(
     `/api/workspaces/${encodePathSegment(workspaceId)}/wallets/checkpoints/history`,
     {
@@ -378,7 +379,7 @@ export async function createWalletCheckpointReconciliation(
   payload: WalletCheckpointReconciliationPayload,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withFinanceApiBaseUrl(options));
   return client.json<WalletCheckpointReconciliationResponse>(
     `/api/workspaces/${encodePathSegment(workspaceId)}/wallets/${encodePathSegment(walletId)}/checkpoints/${encodePathSegment(checkpointId)}/reconcile`,
     {
@@ -397,7 +398,7 @@ export async function createWalletCheckpointBatch(
   payload: WalletCheckpointBatchPayload,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withFinanceApiBaseUrl(options));
   return client.json<{
     data: WalletCheckpoint[];
     totals_by_currency: WalletCheckpointCurrencyTotal[];
@@ -472,7 +473,7 @@ export async function getWalletCreditSummary(
   walletId: string,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withFinanceApiBaseUrl(options));
   return client.json<WalletCreditSummary>(
     `/api/workspaces/${encodePathSegment(workspaceId)}/wallets/${encodePathSegment(walletId)}/credit-summary`,
     {
@@ -557,7 +558,7 @@ export async function getWalletInterestSummary(
   walletId: string,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withFinanceApiBaseUrl(options));
   return client.json<WalletInterestSummaryResponse>(
     `/api/workspaces/${encodePathSegment(workspaceId)}/wallets/${encodePathSegment(walletId)}/interest`,
     {
@@ -572,7 +573,7 @@ export async function createWalletInterestConfig(
   payload: WalletInterestConfigPayload,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withFinanceApiBaseUrl(options));
   return client.json<WalletInterestConfig>(
     `/api/workspaces/${encodePathSegment(workspaceId)}/wallets/${encodePathSegment(walletId)}/interest`,
     {
@@ -592,7 +593,7 @@ export async function updateWalletInterestConfig(
   payload: WalletInterestConfigUpdatePayload,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withFinanceApiBaseUrl(options));
   return client.json<WalletInterestConfig>(
     `/api/workspaces/${encodePathSegment(workspaceId)}/wallets/${encodePathSegment(walletId)}/interest/config`,
     {
@@ -611,7 +612,7 @@ export async function deleteWalletInterestConfig(
   walletId: string,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withFinanceApiBaseUrl(options));
   return client.json<{ message: string }>(
     `/api/workspaces/${encodePathSegment(workspaceId)}/wallets/${encodePathSegment(walletId)}/interest/config`,
     {
@@ -627,7 +628,7 @@ export async function createWalletInterestRate(
   payload: WalletInterestRatePayload,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withFinanceApiBaseUrl(options));
   return client.json<WalletInterestRate>(
     `/api/workspaces/${encodePathSegment(workspaceId)}/wallets/${encodePathSegment(walletId)}/interest/rates`,
     {
@@ -645,7 +646,7 @@ export async function listBudgets(
   workspaceId: string,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withFinanceApiBaseUrl(options));
   return client.json<FinanceBudget[]>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/finance/budgets`,
     {
@@ -658,7 +659,7 @@ export async function getBudgetStatus(
   workspaceId: string,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withFinanceApiBaseUrl(options));
   return client.json<FinanceBudgetStatus[]>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/finance/budgets/status`,
     {
@@ -1242,7 +1243,7 @@ export async function createBudget(
   payload: FinanceBudgetUpsertPayload,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withFinanceApiBaseUrl(options));
   return client.json<FinanceBudget>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/finance/budgets`,
     {
@@ -1262,7 +1263,7 @@ export async function updateBudget(
   payload: FinanceBudgetUpsertPayload,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withFinanceApiBaseUrl(options));
   return client.json<FinanceBudget>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/finance/budgets/${encodePathSegment(budgetId)}`,
     {
@@ -1281,7 +1282,7 @@ export async function deleteBudget(
   budgetId: string,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withFinanceApiBaseUrl(options));
   return client.json<{ success: true }>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/finance/budgets/${encodePathSegment(budgetId)}`,
     {
@@ -1296,7 +1297,7 @@ export async function listFinanceInvoices(
   query: FinanceInvoicesQuery = {},
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withFinanceApiBaseUrl(options));
   return client.json<FinanceInvoicesResponse>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/finance/invoices${buildFinanceInvoicesSearchParams(query)}`,
     {
@@ -1310,7 +1311,7 @@ export async function createFinanceInvoice(
   payload: CreateFinanceInvoicePayload,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withFinanceApiBaseUrl(options));
   return client.json<FinanceInvoiceMutationResponse>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/finance/invoices`,
     {
@@ -1329,7 +1330,7 @@ export async function getInvoiceAnalytics(
   query: InvoiceAnalyticsQuery = {},
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withFinanceApiBaseUrl(options));
   return client.json<InvoiceAnalyticsResponse>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/finance/invoices/analytics${buildInvoiceAnalyticsSearchParams(query)}`,
     {
@@ -1343,7 +1344,7 @@ export async function createSubscriptionFinanceInvoice(
   payload: CreateSubscriptionFinanceInvoicePayload,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withFinanceApiBaseUrl(options));
   return client.json<FinanceInvoiceMutationResponse>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/finance/invoices/subscription`,
     {
@@ -1363,7 +1364,7 @@ export async function updateFinanceInvoice(
   payload: UpdateFinanceInvoicePayload,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withFinanceApiBaseUrl(options));
   return client.json<{ message: string }>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/finance/invoices/${encodePathSegment(invoiceId)}`,
     {
@@ -1382,7 +1383,7 @@ export async function deleteInvoice(
   invoiceId: string,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withFinanceApiBaseUrl(options));
   return client.json<{ message: string }>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/finance/invoices/${encodePathSegment(invoiceId)}`,
     {
@@ -1397,7 +1398,7 @@ export async function listPendingFinanceInvoices(
   query: PendingFinanceInvoicesQuery = {},
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withFinanceApiBaseUrl(options));
   return client.json<PendingFinanceInvoicesResponse>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/finance/invoices/pending${buildPendingFinanceInvoicesSearchParams(query)}`,
     {
@@ -1411,7 +1412,7 @@ export async function getPendingFinanceInvoicesCurrentMonthCount(
   query: Pick<PendingFinanceInvoicesQuery, 'groupByUser'> = {},
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withFinanceApiBaseUrl(options));
   return client.json<number>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/finance/invoices/pending${buildPendingFinanceInvoicesSearchParams(
       {
@@ -1430,7 +1431,7 @@ export async function getSubscriptionInvoiceContext(
   query: SubscriptionInvoiceContextQuery,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withFinanceApiBaseUrl(options));
   return client.json<SubscriptionInvoiceContextResponse>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/finance/invoices/subscription/context${buildSubscriptionInvoiceContextSearchParams(query)}`,
     {
@@ -1444,7 +1445,7 @@ export async function listDebtLoans(
   query: DebtLoanListQuery = {},
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withFinanceApiBaseUrl(options));
   return client.json<DebtLoanWithBalance[]>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/finance/debts`,
     {
@@ -1458,7 +1459,7 @@ export async function getDebtLoanSummary(
   workspaceId: string,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withFinanceApiBaseUrl(options));
   return client.json<DebtLoanSummary>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/finance/debts/summary`,
     {
@@ -1472,7 +1473,7 @@ export async function getDebtLoan(
   debtLoanId: string,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withFinanceApiBaseUrl(options));
   return client.json<DebtLoanWithBalance>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/finance/debts/${encodePathSegment(debtLoanId)}`,
     {
@@ -1486,7 +1487,7 @@ export async function createDebtLoan(
   payload: DebtLoanFormData,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withFinanceApiBaseUrl(options));
   return client.json<DebtLoanWithBalance>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/finance/debts`,
     {
@@ -1506,7 +1507,7 @@ export async function updateDebtLoan(
   payload: DebtLoanPayload,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withFinanceApiBaseUrl(options));
   return client.json<DebtLoanWithBalance>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/finance/debts/${encodePathSegment(debtLoanId)}`,
     {
@@ -1525,7 +1526,7 @@ export async function deleteDebtLoan(
   debtLoanId: string,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withFinanceApiBaseUrl(options));
   return client.json<{ message: string }>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/finance/debts/${encodePathSegment(debtLoanId)}`,
     {
@@ -1539,7 +1540,7 @@ export async function listTransactionCategories(
   workspaceId: string,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withFinanceApiBaseUrl(options));
   return client.json<TransactionCategoryWithStats[]>(
     `/api/workspaces/${encodePathSegment(workspaceId)}/transactions/categories`,
     {
@@ -1553,7 +1554,7 @@ export async function getTransactionCategory(
   categoryId: string,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withFinanceApiBaseUrl(options));
   return client.json<TransactionCategory>(
     `/api/workspaces/${encodePathSegment(workspaceId)}/transactions/categories/${encodePathSegment(categoryId)}`,
     {
@@ -1567,7 +1568,7 @@ export async function createTransactionCategory(
   payload: TransactionCategoryPayload,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withFinanceApiBaseUrl(options));
   return client.json<{ message: string; data: TransactionCategory }>(
     `/api/workspaces/${encodePathSegment(workspaceId)}/transactions/categories`,
     {
@@ -1587,7 +1588,7 @@ export async function updateTransactionCategory(
   payload: TransactionCategoryPayload,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withFinanceApiBaseUrl(options));
   return client.json<{ message: string }>(
     `/api/workspaces/${encodePathSegment(workspaceId)}/transactions/categories/${encodePathSegment(categoryId)}`,
     {
@@ -1606,7 +1607,7 @@ export async function deleteTransactionCategory(
   categoryId: string,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withFinanceApiBaseUrl(options));
   return client.json<{ message: string }>(
     `/api/workspaces/${encodePathSegment(workspaceId)}/transactions/categories/${encodePathSegment(categoryId)}`,
     {
@@ -1621,7 +1622,7 @@ export async function listTransactions(
   query: ListTransactionsQuery = {},
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withFinanceApiBaseUrl(options));
   return client.json<unknown[]>(
     `/api/workspaces/${encodePathSegment(workspaceId)}/transactions`,
     {
@@ -1636,7 +1637,7 @@ export async function getTransaction(
   transactionId: string,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withFinanceApiBaseUrl(options));
   return client.json<unknown>(
     `/api/workspaces/${encodePathSegment(workspaceId)}/transactions/${encodePathSegment(transactionId)}`,
     {
@@ -1650,7 +1651,7 @@ export async function createTransaction(
   payload: TransactionPayload,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withFinanceApiBaseUrl(options));
   return client.json<{ message: string; transaction_id: string }>(
     `/api/workspaces/${encodePathSegment(workspaceId)}/transactions`,
     {
@@ -1670,7 +1671,7 @@ export async function updateTransaction(
   payload: TransactionPayload,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withFinanceApiBaseUrl(options));
   return client.json<{ message: string }>(
     `/api/workspaces/${encodePathSegment(workspaceId)}/transactions/${encodePathSegment(transactionId)}`,
     {
@@ -1689,7 +1690,7 @@ export async function deleteTransaction(
   transactionId: string,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withFinanceApiBaseUrl(options));
   return client.json<{ message: string }>(
     `/api/workspaces/${encodePathSegment(workspaceId)}/transactions/${encodePathSegment(transactionId)}`,
     {
@@ -1704,7 +1705,7 @@ export async function createTransfer(
   payload: FinanceTransferPayload,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withFinanceApiBaseUrl(options));
   return client.json<FinanceTransferResponse>(
     `/api/workspaces/${encodePathSegment(workspaceId)}/transfers`,
     {
@@ -1723,7 +1724,7 @@ export async function updateTransfer(
   payload: FinanceTransferUpdatePayload,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withFinanceApiBaseUrl(options));
   return client.json<FinanceTransferResponse>(
     `/api/workspaces/${encodePathSegment(workspaceId)}/transfers`,
     {
@@ -1742,7 +1743,7 @@ export async function migrateTransfer(
   payload: FinanceTransferMigratePayload,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withFinanceApiBaseUrl(options));
   return client.json<FinanceTransferResponse>(
     `/api/workspaces/${encodePathSegment(workspaceId)}/transfers`,
     {
@@ -1760,7 +1761,7 @@ export async function listTransactionTags(
   workspaceId: string,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withFinanceApiBaseUrl(options));
   return client.json<TransactionTagRecord[]>(
     `/api/workspaces/${encodePathSegment(workspaceId)}/tags`,
     {
@@ -1774,7 +1775,7 @@ export async function listTransactionTagLinks(
   transactionId: string,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withFinanceApiBaseUrl(options));
   return client.json<TransactionTagLinkRecord[]>(
     `/api/workspaces/${encodePathSegment(workspaceId)}/transactions/${encodePathSegment(transactionId)}/tags`,
     {
@@ -1787,7 +1788,7 @@ export async function listTransactionTagStats(
   workspaceId: string,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withFinanceApiBaseUrl(options));
   return client.json<TransactionTagStatsRecord[]>(
     `/api/workspaces/${encodePathSegment(workspaceId)}/tags/stats`,
     {
@@ -1801,7 +1802,7 @@ export async function createTransactionTag(
   payload: TransactionTagPayload,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withFinanceApiBaseUrl(options));
   return client.json<TransactionTagRecord>(
     `/api/workspaces/${encodePathSegment(workspaceId)}/tags`,
     {
@@ -1821,7 +1822,7 @@ export async function updateTransactionTag(
   payload: TransactionTagPayload,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withFinanceApiBaseUrl(options));
   return client.json<TransactionTagRecord>(
     `/api/workspaces/${encodePathSegment(workspaceId)}/tags/${encodePathSegment(tagId)}`,
     {
@@ -1840,7 +1841,7 @@ export async function deleteTransactionTag(
   tagId: string,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withFinanceApiBaseUrl(options));
   return client.json<{ message?: string }>(
     `/api/workspaces/${encodePathSegment(workspaceId)}/tags/${encodePathSegment(tagId)}`,
     {
@@ -1855,7 +1856,7 @@ export async function listFinanceFilterUsers(
   query: FinanceFilterUsersQuery = {},
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withFinanceApiBaseUrl(options));
   const payload = await client.json<{ users: WorkspaceUser[] }>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/finance/filter-users`,
     {
@@ -1872,7 +1873,7 @@ export async function listTransactionExportRows(
   query: TransactionExportQuery = {},
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withFinanceApiBaseUrl(options));
   const queryString = buildTransactionExportSearchParams(query);
 
   return client.json<{ data: TransactionExportRow[]; count: number }>(
@@ -1888,7 +1889,7 @@ export async function importMoneyLoverTransactions(
   transactions: MoneyLoverTransactionImportRow[],
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withFinanceApiBaseUrl(options));
   const formData = new FormData();
   formData.append('transactions', JSON.stringify(transactions));
 
@@ -1906,7 +1907,7 @@ export async function listRecurringTransactions(
   workspaceId: string,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withFinanceApiBaseUrl(options));
   const payload = await client.json<{
     recurringTransactions: RecurringTransactionRecord[];
   }>(
@@ -1924,7 +1925,7 @@ export async function listUpcomingRecurringTransactions(
   query?: { daysAhead?: number },
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withFinanceApiBaseUrl(options));
   const payload = await client.json<{
     upcomingTransactions: UpcomingRecurringTransactionRecord[];
   }>(
@@ -1943,7 +1944,7 @@ export async function createRecurringTransaction(
   payload: RecurringTransactionPayload,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withFinanceApiBaseUrl(options));
   return client.json<RecurringTransactionRecord>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/finance/recurring-transactions`,
     {
@@ -1963,7 +1964,7 @@ export async function updateRecurringTransaction(
   payload: RecurringTransactionPayload,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withFinanceApiBaseUrl(options));
   return client.json<RecurringTransactionRecord>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/finance/recurring-transactions/${encodePathSegment(recurringTransactionId)}`,
     {
@@ -1982,7 +1983,7 @@ export async function deleteRecurringTransaction(
   recurringTransactionId: string,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withFinanceApiBaseUrl(options));
   return client.json<{ success: true }>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/finance/recurring-transactions/${encodePathSegment(recurringTransactionId)}`,
     {
@@ -1997,7 +1998,7 @@ export async function getFinanceOverviewMetrics(
   query: FinanceOverviewMetricsQuery = {},
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withFinanceApiBaseUrl(options));
   return client.json<FinanceOverviewMetrics>(
     `/api/workspaces/${encodePathSegment(workspaceId)}/finance/overview`,
     {
@@ -2012,7 +2013,7 @@ export async function listFinanceDailyIncomeExpense(
   query: FinanceChartRangeQuery = {},
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withFinanceApiBaseUrl(options));
   const payload = await client.json<{ data: FinanceDailyIncomeExpensePoint[] }>(
     `/api/workspaces/${encodePathSegment(workspaceId)}/finance/charts/daily`,
     {
@@ -2029,7 +2030,7 @@ export async function listFinanceMonthlyIncomeExpense(
   query: FinanceChartRangeQuery = {},
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withFinanceApiBaseUrl(options));
   const payload = await client.json<{
     data: FinanceMonthlyIncomeExpensePoint[];
   }>(
@@ -2048,7 +2049,7 @@ export async function listFinanceIncomeExpenseSummary(
   query: FinanceIncomeExpenseSummaryQuery,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withFinanceApiBaseUrl(options));
   return client.json<FinanceIncomeExpenseSummary>(
     `/api/workspaces/${encodePathSegment(workspaceId)}/finance/charts/income-expense-summary`,
     {
@@ -2063,7 +2064,7 @@ export async function getFinanceBalanceAtDate(
   query: FinanceBalanceAtDateQuery,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withFinanceApiBaseUrl(options));
   return client.json<FinanceBalanceAtDate>(
     `/api/workspaces/${encodePathSegment(workspaceId)}/finance/charts/balance`,
     {
@@ -2078,7 +2079,7 @@ export async function listFinanceBalanceTrend(
   query: FinanceChartRangeQuery = {},
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withFinanceApiBaseUrl(options));
   const payload = await client.json<{ data: FinanceBalanceTrendPoint[] }>(
     `/api/workspaces/${encodePathSegment(workspaceId)}/finance/charts/balance-trend`,
     {
@@ -2095,7 +2096,7 @@ export async function listFinanceCategoryBreakdown(
   query: FinanceCategoryBreakdownQuery = {},
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withFinanceApiBaseUrl(options));
   const payload = await client.json<{ data: FinanceCategoryBreakdownPoint[] }>(
     `/api/workspaces/${encodePathSegment(workspaceId)}/finance/charts/categories`,
     {
@@ -2112,7 +2113,7 @@ export async function getTransactionStats(
   query?: InternalApiQuery,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withFinanceApiBaseUrl(options));
   return client.json<{
     totalTransactions: number;
     totalIncome: number;
@@ -2130,7 +2131,7 @@ export async function getCategoryBreakdown(
   query?: InternalApiQuery,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withFinanceApiBaseUrl(options));
   return client.json<unknown[]>(
     `/api/workspaces/${encodePathSegment(workspaceId)}/transactions/category-breakdown`,
     {
@@ -2145,7 +2146,7 @@ export async function getSpendingTrends(
   query?: InternalApiQuery,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
+  const client = getInternalApiClient(withFinanceApiBaseUrl(options));
   return client.json<Array<{ date: string; amount: number }>>(
     `/api/workspaces/${encodePathSegment(workspaceId)}/transactions/spending-trends`,
     {

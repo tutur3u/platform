@@ -910,6 +910,50 @@ export type InventoryProductInventoryItem = {
   } | null;
 };
 
+export type InventoryStockChangeContext = {
+  beneficiaryId?: string | null;
+  note?: string | null;
+};
+
+export type InventoryStockMovementPerson = {
+  id: string;
+  name: string | null;
+  email: string | null;
+};
+
+export type InventoryStockMovementRelation = {
+  id: string;
+  name: string | null;
+};
+
+export type InventoryStockMovement = {
+  id: string;
+  delta: number;
+  direction: 'added' | 'removed';
+  quantity: number;
+  warehouseId: string;
+  warehouse: InventoryStockMovementRelation | null;
+  unitId: string;
+  unit: InventoryStockMovementRelation | null;
+  operatorId: string;
+  operator: InventoryStockMovementPerson | null;
+  beneficiaryId: string | null;
+  beneficiary: InventoryStockMovementPerson | null;
+  note: string | null;
+  timestamp: string;
+};
+
+export type InventoryStockHistoryResponse = {
+  data: InventoryStockMovement[];
+  pagination: { hasMore: boolean; limit: number; offset: number };
+};
+
+export type InventoryStockBeneficiaryOption = InventoryStockMovementPerson;
+
+export type InventoryStockBeneficiariesResponse = {
+  data: InventoryStockBeneficiaryOption[];
+};
+
 export type InventoryProductPayload = {
   name: string;
   avatar_url?: string | null;
@@ -949,6 +993,7 @@ export type InventoryMediaUploadResult = {
 };
 
 export type InventoryProductInventoryPayload = {
+  changeContext?: InventoryStockChangeContext;
   inventory: InventoryProductInventoryItem[];
 };
 
@@ -1868,6 +1913,34 @@ export function updateInventoryProductInventory(
       headers: jsonHeaders(options?.defaultHeaders),
       method: 'PATCH',
     }
+  );
+}
+
+export function getInventoryProductStockHistory(
+  wsId: string,
+  productId: string,
+  query?: { limit?: number; offset?: number },
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<InventoryStockHistoryResponse>(
+    workspacePath(
+      wsId,
+      `/products/${encodePathSegment(productId)}/inventory/history`
+    ),
+    { cache: 'no-store', query: asQuery(query) }
+  );
+}
+
+export function listInventoryStockBeneficiaries(
+  wsId: string,
+  query?: { limit?: number; q?: string },
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(
+    options
+  ).json<InventoryStockBeneficiariesResponse>(
+    workspaceInventoryPath(wsId, '/stock-beneficiaries'),
+    { cache: 'no-store', query: asQuery(query) }
   );
 }
 

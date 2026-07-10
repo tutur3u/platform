@@ -72,6 +72,14 @@
       "name": "nova.tuturuuu",
       "script": "dev:app"
     },
+    "apps/pay": {
+      "name": "pay.tuturuuu",
+      "script": "dev:app"
+    },
+    "apps/contacts": {
+      "name": "contacts.tuturuuu",
+      "script": "dev:app"
+    },
     "apps/playground": {
       "name": "playground.tuturuuu",
       "script": "dev:app"

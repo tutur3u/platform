@@ -7,6 +7,7 @@ import { Button } from '@tuturuuu/ui/button';
 import { cn } from '@tuturuuu/utils/format';
 import { AnimatePresence, motion } from 'framer-motion';
 import Link from 'next/link';
+import { getPayBillingUrl } from '@/lib/pay-app-url';
 
 // Explicit color mappings for Tailwind to detect at build time
 const colorStyles = {
@@ -275,7 +276,7 @@ export function PricingCard({
               ? '/contact'
               : isFree
                 ? '/onboarding'
-                : '/personal/billing'
+                : getPayBillingUrl('personal')
           }
         >
           {cta}

@@ -904,6 +904,7 @@ describe('withSessionAuth', () => {
         'mind',
         'mira',
         'nova',
+        'pay',
         'rewise',
         'storefront',
         'tasks',

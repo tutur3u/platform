@@ -1,0 +1,16 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "tuturuuu-mail-email-routing",
+  "main": "src/email-worker/index.ts",
+  "compatibility_date": "2026-07-10",
+  "r2_buckets": [
+    {
+      "binding": "MAIL_R2_BUCKET",
+      "bucket_name": "tuturuuu-mail"
+    }
+  ],
+  "vars": {
+    "MAIL_INGEST_URL": "https://mail.tuturuuu.com/api/v1/webhooks/mail/cloudflare",
+    "MAIL_R2_BUCKET_NAME": "tuturuuu-mail"
+  }
+}

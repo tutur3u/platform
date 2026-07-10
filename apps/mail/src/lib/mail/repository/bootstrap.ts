@@ -34,11 +34,29 @@ async function ensurePersonalMailbox(ctx: MailRouteContext) {
   let mailbox = existing;
 
   if (!mailbox) {
+    const domain = email.split('@')[1];
+    const { data: mailDomain, error: domainError } = await privateTable(
+      admin,
+      'mail_domains'
+    )
+      .select('id')
+      .eq('domain', domain)
+      .eq('status', 'active')
+      .maybeSingle();
+
+    if (domainError) {
+      throw new Error(`Failed to load mail domain: ${domainError.message}`);
+    }
+    if (!mailDomain?.id) {
+      throw new Error('No active mail domain is configured for this address');
+    }
+
     const { data: created, error } = await privateTable(admin, 'mail_mailboxes')
       .insert({
         address: email,
         created_by: ctx.user.id,
         display_name: getUserDisplayName(ctx.user),
+        domain_id: mailDomain.id,
         type: 'personal',
       })
       .select('*')

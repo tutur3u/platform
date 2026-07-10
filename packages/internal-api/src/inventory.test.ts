@@ -31,6 +31,7 @@ import {
   deleteInventoryWarehouse,
   getInventoryCostingAnalytics,
   getInventoryOverview,
+  getInventoryProductStockHistory,
   getInventoryPublicOrder,
   getInventoryPublicStorefront,
   getInventorySale,
@@ -42,6 +43,7 @@ import {
   listInventoryRevenueShareEarnings,
   listInventorySquareDevices,
   listInventorySquareLocations,
+  listInventoryStockBeneficiaries,
   listInventoryStorefronts,
   listInventoryUnits,
   recordInventoryStorefrontAnalyticsEvent,
@@ -277,6 +279,7 @@ describe('inventory internal API helpers', () => {
       'ws_1',
       'product 1',
       {
+        changeContext: { beneficiaryId: 'person_1', note: 'Cycle count' },
         inventory: [
           {
             amount: 10,
@@ -313,6 +316,20 @@ describe('inventory internal API helpers', () => {
       3,
       'https://internal.example.com/api/v1/workspaces/ws_1/products/product%201/inventory',
       expect.objectContaining({
+        body: JSON.stringify({
+          changeContext: {
+            beneficiaryId: 'person_1',
+            note: 'Cycle count',
+          },
+          inventory: [
+            {
+              amount: 10,
+              price: 1200,
+              unit_id: 'unit_1',
+              warehouse_id: 'warehouse_1',
+            },
+          ],
+        }),
         method: 'PATCH',
       })
     );
@@ -322,6 +339,42 @@ describe('inventory internal API helpers', () => {
       expect.objectContaining({
         method: 'DELETE',
       })
+    );
+  });
+
+  it('loads stock history and searchable beneficiaries', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      createJsonResponse({
+        data: [],
+        pagination: { hasMore: false, limit: 25, offset: 0 },
+      })
+    );
+    const options = {
+      baseUrl: 'https://internal.example.com',
+      fetch: fetchMock as unknown as typeof fetch,
+    };
+
+    await getInventoryProductStockHistory(
+      'workspace 1',
+      'product 1',
+      { limit: 25, offset: 50 },
+      options
+    );
+    await listInventoryStockBeneficiaries(
+      'workspace 1',
+      { limit: 10, q: 'Ada Lovelace' },
+      options
+    );
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      'https://internal.example.com/api/v1/workspaces/workspace%201/products/product%201/inventory/history?limit=25&offset=50',
+      expect.objectContaining({ cache: 'no-store' })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      'https://internal.example.com/api/v1/workspaces/workspace%201/inventory/stock-beneficiaries?limit=10&q=Ada+Lovelace',
+      expect.objectContaining({ cache: 'no-store' })
     );
   });
 

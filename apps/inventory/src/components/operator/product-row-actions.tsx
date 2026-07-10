@@ -1,7 +1,15 @@
 'use client';
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Boxes, Calculator, Pencil, Save, Tags } from '@tuturuuu/icons';
+import {
+  Boxes,
+  Calculator,
+  History,
+  Loader2,
+  Pencil,
+  Save,
+  Tags,
+} from '@tuturuuu/icons';
 import type {
   InventoryCostProfile,
   InventoryProductFormOptionsResponse,
@@ -16,6 +24,7 @@ import { Button } from '@tuturuuu/ui/button';
 import { Dialog, DialogClose, DialogTrigger } from '@tuturuuu/ui/dialog';
 import { toast } from '@tuturuuu/ui/sonner';
 import { cn } from '@tuturuuu/utils/format';
+import dynamic from 'next/dynamic';
 import { useTranslations } from 'next-intl';
 import { type ReactNode, useMemo, useState } from 'react';
 import { InventoryImageUploadField } from './inventory-image-upload';
@@ -32,8 +41,23 @@ import { bestMarginAcrossProfiles } from './operator-margin';
 import {
   getInitialProductStockRows,
   getProductStockSaveState,
+  type ProductStockChangeContextState,
   ProductStockEditor,
 } from './product-stock-editor';
+
+const ProductStockHistory = dynamic(
+  () =>
+    import('./product-stock-history').then(
+      (module) => module.ProductStockHistory
+    ),
+  {
+    loading: () => (
+      <div className="grid min-h-56 place-items-center text-muted-foreground">
+        <Loader2 className="h-5 w-5 animate-spin" />
+      </div>
+    ),
+  }
+);
 
 export function invalidateProducts(
   queryClient: ReturnType<typeof useQueryClient>,
@@ -79,6 +103,8 @@ export function ProductEditDialog({
     [initialStockRows]
   );
   const [stockRows, setStockRows] = useState(initialStockRows);
+  const [stockChangeContext, setStockChangeContext] =
+    useState<ProductStockChangeContextState>(emptyStockChangeContext);
   const stockSaveState = useMemo(
     () => getProductStockSaveState(stockRows, initialHadStockRows),
     [initialHadStockRows, stockRows]
@@ -106,6 +132,7 @@ export function ProductEditDialog({
   const resetForm = () => {
     setDetails(getInitialDetails(row));
     setStockRows(getInitialProductStockRows(row));
+    setStockChangeContext(emptyStockChangeContext);
   };
 
   const saveMutation = useMutation({
@@ -123,6 +150,13 @@ export function ProductEditDialog({
 
       if (stockSaveState.shouldSave) {
         await updateInventoryProductInventory(wsId, row.id, {
+          changeContext:
+            stockChangeContext.beneficiaryId || stockChangeContext.note.trim()
+              ? {
+                  beneficiaryId: stockChangeContext.beneficiaryId || undefined,
+                  note: stockChangeContext.note,
+                }
+              : undefined,
           inventory: stockSaveState.inventory,
         });
       }
@@ -132,6 +166,9 @@ export function ProductEditDialog({
       toast.success(t('saveSuccess'));
       onOpenChange(false);
       invalidateProducts(queryClient, wsId);
+      queryClient.invalidateQueries({
+        queryKey: ['inventory', wsId, 'product-history', row.id],
+      });
     },
   });
   const archiveMutation = useMutation({
@@ -301,6 +338,8 @@ export function ProductEditDialog({
               {
                 content: (
                   <ProductStockEditor
+                    changeContext={stockChangeContext}
+                    onChangeContext={setStockChangeContext}
                     onRowsChange={setStockRows}
                     options={options}
                     rows={stockRows}
@@ -311,6 +350,12 @@ export function ProductEditDialog({
                 icon: <Boxes className="h-4 w-4" />,
                 label: t('tabs.stock'),
                 value: 'stock',
+              },
+              {
+                content: <ProductStockHistory productId={row.id} wsId={wsId} />,
+                icon: <History className="h-4 w-4" />,
+                label: t('tabs.history'),
+                value: 'history',
               },
               {
                 content: (
@@ -496,3 +541,8 @@ function MarginStat({ label, value }: { label: string; value: string }) {
 function normalizeMatch(value: string) {
   return value.trim().toLocaleLowerCase();
 }
+
+const emptyStockChangeContext: ProductStockChangeContextState = {
+  beneficiaryId: '',
+  note: '',
+};

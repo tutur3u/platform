@@ -174,7 +174,6 @@ pub(crate) const RETIRED_LEGACY_API_ERROR: &str = "ENDPOINT_REMOVED";
 pub(crate) const RETIRED_SHARE_COURSE_MESSAGE: &str =
     "This legacy shared course API has been removed. Use GET /api/v1/course?courseId=... instead.";
 pub(crate) const RETIRED_SYNC_LOGS_MESSAGE: &str = "This legacy all-workspace sync logs API has been removed. Use workspace-scoped calendar sync monitoring instead.";
-pub(crate) const RETIRED_SUBSCRIPTION_CROSS_CHECK_MESSAGE: &str = "This legacy monolithic subscription cross-check API has been removed. Use the phase-specific cross-check endpoints instead.";
 pub(crate) const RETIRED_USER_SEARCH_MESSAGE: &str = "This legacy user search API has been removed. Use a maintained server-owned people search API instead.";
 pub(crate) const RETIRED_TUTURUUU_PROXY_MESSAGE: &str = "This legacy development Tuturuuu API proxy has been removed. Use maintained internal API clients or direct backend routes instead.";
 #[cfg(feature = "native")]

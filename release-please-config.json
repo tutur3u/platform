@@ -135,6 +135,14 @@
       "component": "teach",
       "package-name": "@tuturuuu/teach"
     },
+    "apps/pay": {
+      "component": "pay",
+      "package-name": "@tuturuuu/pay"
+    },
+    "apps/contacts": {
+      "component": "contacts",
+      "package-name": "@tuturuuu/contacts"
+    },
     "apps/track": {
       "component": "track",
       "package-name": "@tuturuuu/track"
@@ -158,6 +166,14 @@
     "packages/education-core": {
       "component": "education-core",
       "package-name": "@tuturuuu/education-core"
+    },
+    "packages/finance-core": {
+      "component": "finance-core",
+      "package-name": "@tuturuuu/finance-core"
+    },
+    "packages/payment-core": {
+      "component": "payment-core",
+      "package-name": "@tuturuuu/payment-core"
     },
     "packages/email-service": {
       "component": "email-service",

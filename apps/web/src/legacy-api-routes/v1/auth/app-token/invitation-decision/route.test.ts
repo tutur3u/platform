@@ -81,7 +81,7 @@ vi.mock('@/lib/workspace-invitations/status', async (importOriginal) => {
   };
 });
 
-vi.mock('@/utils/polar-seat-helper', () => ({
+vi.mock('@tuturuuu/payment-core/polar-seat-helper', () => ({
   assignSeatToMember: (...args: Parameters<typeof mocks.assignSeatToMember>) =>
     mocks.assignSeatToMember(...args),
   revokeSeatFromMember: (
@@ -89,7 +89,7 @@ vi.mock('@/utils/polar-seat-helper', () => ({
   ) => mocks.revokeSeatFromMember(...args),
 }));
 
-vi.mock('@/utils/seat-limits', () => ({
+vi.mock('@tuturuuu/payment-core/seat-limits', () => ({
   enforceSeatLimit: (...args: Parameters<typeof mocks.enforceSeatLimit>) =>
     mocks.enforceSeatLimit(...args),
 }));

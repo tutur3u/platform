@@ -70,12 +70,6 @@ pub fn route_request(config: &BackendConfig, request: BackendRequest<'_>) -> Bac
         (method, path) if is_retired_share_course_path(path) => method_not_allowed(method, "GET"),
         ("GET", "/api/sync-logs") => retired_legacy_api_response(RETIRED_SYNC_LOGS_MESSAGE),
         (method, "/api/sync-logs") => method_not_allowed(method, "GET"),
-        ("POST", "/api/payment/migrations/subscriptions/cross-check") => {
-            retired_legacy_api_response(RETIRED_SUBSCRIPTION_CROSS_CHECK_MESSAGE)
-        }
-        (method, "/api/payment/migrations/subscriptions/cross-check") => {
-            method_not_allowed(method, "POST")
-        }
         ("GET", "/api/users/search") => retired_legacy_api_response(RETIRED_USER_SEARCH_MESSAGE),
         (method, "/api/users/search") => method_not_allowed(method, "GET"),
         ("GET", "/api/v1/proxy/tuturuuu") => {

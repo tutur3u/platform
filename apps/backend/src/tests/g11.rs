@@ -553,11 +553,6 @@ fn retired_legacy_api_routes_return_terminal_removed_responses() {
             RETIRED_SHARE_COURSE_MESSAGE,
         ),
         ("GET", "/api/sync-logs", RETIRED_SYNC_LOGS_MESSAGE),
-        (
-            "POST",
-            "/api/payment/migrations/subscriptions/cross-check",
-            RETIRED_SUBSCRIPTION_CROSS_CHECK_MESSAGE,
-        ),
         ("GET", "/api/users/search", RETIRED_USER_SEARCH_MESSAGE),
         (
             "GET",
@@ -582,11 +577,6 @@ fn retired_legacy_api_routes_reject_unsupported_methods() {
     for (method, path, allow) in [
         ("POST", "/api/share/course/example-course-id", "GET"),
         ("POST", "/api/sync-logs", "GET"),
-        (
-            "GET",
-            "/api/payment/migrations/subscriptions/cross-check",
-            "POST",
-        ),
         ("DELETE", "/api/users/search", "GET"),
         ("POST", "/api/v1/proxy/tuturuuu", "GET"),
     ] {
@@ -613,4 +603,17 @@ fn retired_legacy_api_routes_do_not_match_nested_maintained_paths() {
 
     assert_eq!(response.status, 404);
     assert_eq!(response.body["error"], "not found");
+}
+
+#[test]
+fn removed_platform_payment_cross_check_is_not_owned_by_rust() {
+    for method in ["GET", "POST"] {
+        let response = route_request(
+            &BackendConfig::new("production", "backend"),
+            request(method, "/api/payment/migrations/subscriptions/cross-check"),
+        );
+
+        assert_eq!(response.status, 404, "{method}");
+        assert_eq!(response.body["error"], "not found");
+    }
 }

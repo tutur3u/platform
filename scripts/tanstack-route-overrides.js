@@ -8,6 +8,7 @@ const VALID_ROUTE_STATUSES = new Set([
 const VALID_TARGET_OWNERS = new Set([
   'infrastructure-app',
   'rust-backend',
+  'satellite-app',
   'tanstack-start',
 ]);
 const TERMINAL_ROUTE_STATUSES = new Set(['accepted-removal', 'migrated']);

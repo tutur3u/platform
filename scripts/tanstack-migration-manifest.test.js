@@ -616,6 +616,29 @@ test('route overrides allow documented accepted removals outside web inventory',
   );
 });
 
+test('route overrides allow payment ownership to move to a satellite app', () => {
+  const { appDir, rootDir } = makeTempFixture();
+  const removedRouteId =
+    'api:/api/payment/seats:apps/web/src/legacy-api-routes/payment/seats/route.ts';
+
+  assert.doesNotThrow(() =>
+    inventoryNextAppRoutes({
+      appDir,
+      rootDir,
+      routeOverrides: new Map([
+        [
+          removedRouteId,
+          {
+            note: 'Moved to apps/pay as the canonical payment owner.',
+            status: 'accepted-removal',
+            targetOwner: 'satellite-app',
+          },
+        ],
+      ]),
+    })
+  );
+});
+
 test('route overrides reject unknown method ownership', () => {
   const { appDir, rootDir } = makeTempFixture();
   const routeId = 'api:/api/health:apps/web/src/app/api/health/route.ts';

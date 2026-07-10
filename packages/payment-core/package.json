@@ -1,0 +1,43 @@
+{
+  "name": "@tuturuuu/payment-core",
+  "version": "0.1.0",
+  "private": true,
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./billing-helper": "./src/billing-helper.ts",
+    "./customer-helper": "./src/customer-helper.ts",
+    "./migrations-helper": "./src/migrations-helper.ts",
+    "./polar-order-helper": "./src/polar-order-helper.ts",
+    "./polar-product-helper": "./src/polar-product-helper.ts",
+    "./polar-product-metadata": "./src/polar-product-metadata.ts",
+    "./polar-seat-helper": "./src/polar-seat-helper.ts",
+    "./polar-subscription-helper": "./src/polar-subscription-helper.ts",
+    "./price-helper": "./src/price-helper.ts",
+    "./proration": "./src/proration.ts",
+    "./seat-limits": "./src/seat-limits.ts",
+    "./subscription-constants": "./src/subscription-constants.ts",
+    "./subscription-helper": "./src/subscription-helper.ts"
+  },
+  "license": "MIT",
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "type-check": "tsc --project tsconfig.typecheck.json"
+  },
+  "packageManager": "bun@1.3.14",
+  "dependencies": {
+    "@tuturuuu/payment": "workspace:*",
+    "@tuturuuu/supabase": "workspace:*",
+    "@tuturuuu/types": "workspace:*",
+    "@tuturuuu/utils": "workspace:*",
+    "date-fns": "^4.4.0"
+  },
+  "devDependencies": {
+    "@tuturuuu/typescript-config": "workspace:*",
+    "@types/node": "^26.0.1",
+    "typescript": "7.0.2",
+    "vitest": "^4.1.9"
+  }
+}

@@ -5,6 +5,11 @@ import {
 } from '@tuturuuu/auth/app-coordination';
 import type { AppCoordinationSessionPolicy } from '@tuturuuu/auth/app-session-policy';
 import { createPolarClient } from '@tuturuuu/payment/polar/server';
+import {
+  assignSeatToMember,
+  revokeSeatFromMember,
+} from '@tuturuuu/payment-core/polar-seat-helper';
+import { enforceSeatLimit } from '@tuturuuu/payment-core/seat-limits';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
@@ -25,11 +30,6 @@ import {
   getWorkspaceInviteStatus,
   type WorkspaceInvitationRecord,
 } from '@/lib/workspace-invitations/status';
-import {
-  assignSeatToMember,
-  revokeSeatFromMember,
-} from '@/utils/polar-seat-helper';
-import { enforceSeatLimit } from '@/utils/seat-limits';
 
 const APP_TOKEN_REFRESH_SCOPE = 'app-token:refresh';
 const INVITATION_ACTION_REPLAY_TABLE = 'app_token_invitation_action_replays';

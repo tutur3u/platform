@@ -4,8 +4,10 @@ import {
   InternalApiError,
   resolveInternalApiUrl,
   withEducationBootstrapBaseUrl,
+  withFinanceApiBaseUrl,
   withForwardedInternalApiAuth,
   withLearnApiBaseUrl,
+  withPayApiBaseUrl,
   withTaskApiBaseUrl,
   withTeachApiBaseUrl,
 } from './client';
@@ -257,6 +259,68 @@ describe('withTeachApiBaseUrl', () => {
   });
 });
 
+describe('withFinanceApiBaseUrl', () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    vi.unstubAllGlobals();
+  });
+
+  it('uses the configured finance API origin for server finance calls', () => {
+    vi.stubEnv('FINANCE_APP_URL', 'https://finance.example.com');
+
+    expect(withFinanceApiBaseUrl()).toMatchObject({
+      baseUrl: 'https://finance.example.com',
+    });
+  });
+
+  it('keeps browser calls relative when already on the finance origin', () => {
+    vi.stubGlobal('location', {
+      hostname: 'finance.tuturuuu.com',
+      origin: 'https://finance.tuturuuu.com',
+    });
+
+    expect(withFinanceApiBaseUrl()).toEqual({});
+  });
+
+  it('keeps server finance calls relative when running inside the finance app', () => {
+    vi.stubEnv('npm_package_name', '@tuturuuu/finance');
+    vi.stubEnv('FINANCE_APP_URL', 'https://finance.example.com');
+
+    expect(withFinanceApiBaseUrl()).toEqual({});
+  });
+});
+
+describe('withPayApiBaseUrl', () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    vi.unstubAllGlobals();
+  });
+
+  it('uses the configured pay API origin for server pay calls', () => {
+    vi.stubEnv('PAY_APP_URL', 'https://pay.example.com');
+
+    expect(withPayApiBaseUrl()).toMatchObject({
+      baseUrl: 'https://pay.example.com',
+    });
+  });
+
+  it('keeps browser calls relative when already on the pay origin', () => {
+    vi.stubGlobal('location', {
+      hostname: 'pay.tuturuuu.com',
+      origin: 'https://pay.tuturuuu.com',
+    });
+
+    expect(withPayApiBaseUrl()).toEqual({});
+  });
+
+  it('keeps server pay calls relative when running inside the pay app', () => {
+    vi.stubEnv('npm_package_name', '@tuturuuu/pay');
+    vi.stubEnv('PAY_APP_URL', 'https://pay.example.com');
+
+    expect(withPayApiBaseUrl()).toEqual({});
+  });
+});
+
 describe('withEducationBootstrapBaseUrl', () => {
   afterEach(() => {
     vi.unstubAllEnvs();
@@ -373,6 +437,32 @@ describe('withForwardedInternalApiAuth', () => {
 
     await createInternalApiClient(options).json(
       '/api/v1/workspaces/personal/tulearn/home'
+    );
+
+    const [, init] = fetchMock.mock.calls[0];
+    const forwardedCookie = (init.headers as Headers).get('cookie');
+    expect(forwardedCookie).toBe(
+      'tuturuuu_app_session=ttr_app_123; theme=dark'
+    );
+  });
+
+  it('forwards app-session auth to the finance satellite origin', async () => {
+    vi.stubEnv('FINANCE_APP_URL', 'https://finance.example.com');
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({ ok: true }),
+    });
+    const headers = new Headers({
+      cookie: 'tuturuuu_app_session=ttr_app_123; theme=dark',
+    });
+    const options = withForwardedInternalApiAuth(headers, {
+      baseUrl: 'https://finance.example.com',
+      fetch: fetchMock as unknown as typeof fetch,
+    });
+
+    await createInternalApiClient(options).json(
+      '/api/v1/workspaces/personal/finance/overview'
     );
 
     const [, init] = fetchMock.mock.calls[0];

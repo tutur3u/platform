@@ -1905,26 +1905,6 @@ paths:
                 type: string
                 examples:
                   - GET
-  /api/payment/migrations/subscriptions/cross-check:
-    post:
-      deprecated: true
-      summary: Retired monolithic subscription cross-check API
-      description: Terminal decommission replacement for apps/web/src/app/api/payment/migrations/subscriptions/cross-check/route.ts. Billing maintenance now uses the phase-1, phase-2, and phase-3 cross-check endpoints, so the old monolithic route returns 410.
-      responses:
-        "410":
-          description: Legacy subscription cross-check API was intentionally removed.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/RetiredLegacyApiRoute"
-        "405":
-          description: Unsupported HTTP method.
-          headers:
-            Allow:
-              schema:
-                type: string
-                examples:
-                  - POST
   /api/users/search:
     get:
       deprecated: true

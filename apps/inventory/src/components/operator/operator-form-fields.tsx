@@ -149,6 +149,7 @@ export function TextAreaField({
   className,
   hint,
   label,
+  maxLength,
   onChange,
   placeholder,
   value,
@@ -156,6 +157,7 @@ export function TextAreaField({
   className?: string;
   hint?: string;
   label: string;
+  maxLength?: number;
   onChange: (value: string) => void;
   placeholder: string;
   value: string;
@@ -165,6 +167,7 @@ export function TextAreaField({
       <FieldLabel hint={hint} label={label} />
       <Textarea
         className="min-h-20"
+        maxLength={maxLength}
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
         value={value}
@@ -184,6 +187,7 @@ export function SelectField({
   label,
   onChange,
   onCreate,
+  onSearchChange,
   options = [],
   placeholder,
   searchPlaceholder,
@@ -199,6 +203,7 @@ export function SelectField({
   label: string;
   onChange: (value: string) => void;
   onCreate?: (value: string) => ComboboxCreateResult | Promise<unknown>;
+  onSearchChange?: (value: string) => void;
   options?: { id: string; name?: string | null }[];
   placeholder: string;
   searchPlaceholder?: string;
@@ -272,6 +277,7 @@ export function SelectField({
           onChange(typeof nextValue === 'string' ? nextValue : '')
         }
         onCreate={handleCreate}
+        onSearchChange={onSearchChange}
         options={comboboxOptions}
         placeholder={placeholder}
         searchPlaceholder={searchPlaceholder ?? placeholder}

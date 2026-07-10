@@ -4,22 +4,13 @@ import { getStockChangeAmount } from '@tuturuuu/inventory-core/stock-change';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { NextResponse } from 'next/server';
-import { z } from 'zod';
-
-const InventoryItemSchema = z.object({
-  warehouse_id: z.guid(),
-  unit_id: z.guid(),
-  amount: z.number().nonnegative().nullable(),
-  min_amount: z.number().nonnegative().optional(),
-  price: z.number().nonnegative(),
-  revenue_share_partner_id: z.guid().nullable().optional(),
-  revenue_share_bps: z.number().int().min(0).max(10000).default(0),
-});
-const BodySchema = z.object({
-  inventory: z.array(InventoryItemSchema).default([]),
-});
-type InventoryItem = z.infer<typeof InventoryItemSchema>;
-type InventoryItemKeyTarget = Pick<InventoryItem, 'unit_id' | 'warehouse_id'>;
+import {
+  insertProductStockChanges,
+  normalizeStockChangeContext,
+  stockChangeContextColumns,
+  validateStockChangeBeneficiary,
+} from './change-context';
+import { createInventoryKey, InventoryBodySchema } from './request';
 
 interface Params {
   params: Promise<{
@@ -43,10 +34,6 @@ const getWorkspaceUserId = async (
   return workspaceUser?.virtual_user_id ?? null;
 };
 
-function createInventoryKey(item: InventoryItemKeyTarget) {
-  return `${item.warehouse_id}:${item.unit_id}`;
-}
-
 export async function POST(req: Request, { params }: Params) {
   const { wsId: id, productId } = await params;
   const auth = await authorizeInventoryWorkspace(req, id, {
@@ -66,7 +53,7 @@ export async function POST(req: Request, { params }: Params) {
     );
   }
 
-  const parsed = BodySchema.safeParse(await req.json());
+  const parsed = InventoryBodySchema.safeParse(await req.json());
   if (!parsed.success) {
     return NextResponse.json(
       { message: 'Invalid payload', errors: parsed.error.issues },
@@ -188,14 +175,29 @@ export async function PATCH(req: Request, { params }: Params) {
     );
   }
 
-  const parsed = BodySchema.safeParse(await req.json());
+  const parsed = InventoryBodySchema.safeParse(await req.json());
   if (!parsed.success) {
     return NextResponse.json(
       { message: 'Invalid payload', errors: parsed.error.issues },
       { status: 400 }
     );
   }
-  const { inventory } = parsed.data;
+  const { changeContext, inventory } = parsed.data;
+  const normalizedChangeContext = normalizeStockChangeContext(changeContext);
+  const beneficiaryValidation = await validateStockChangeBeneficiary({
+    beneficiaryId: normalizedChangeContext.beneficiaryId,
+    sbAdmin,
+    wsId,
+  });
+  if (!beneficiaryValidation.ok) {
+    if (beneficiaryValidation.status === 500) {
+      console.error(beneficiaryValidation.message, beneficiaryValidation.error);
+    }
+    return NextResponse.json(
+      { message: beneficiaryValidation.message },
+      { status: beneficiaryValidation.status }
+    );
+  }
 
   const inventoryKeys = new Set<string>();
   for (const item of inventory) {
@@ -274,10 +276,11 @@ export async function PATCH(req: Request, { params }: Params) {
           warehouse_id: item.warehouse_id,
           amount: difference,
           creator_id: workspaceUserId,
+          ...stockChangeContextColumns(normalizedChangeContext),
         }));
 
       if (stockChanges.length > 0) {
-        await sbAdmin.from('product_stock_changes').insert(stockChanges);
+        await insertProductStockChanges(sbAdmin, stockChanges);
       }
     }
 
@@ -351,12 +354,13 @@ export async function PATCH(req: Request, { params }: Params) {
         const difference = getStockChangeAmount(item.amount, null);
 
         if (difference != null) {
-          await sbAdmin.from('product_stock_changes').insert({
+          await insertProductStockChanges(sbAdmin, {
             product_id: productId,
             unit_id: unit_id,
             warehouse_id: warehouse_id,
             amount: difference,
             creator_id: workspaceUserId,
+            ...stockChangeContextColumns(normalizedChangeContext),
           });
         }
       }
@@ -418,10 +422,11 @@ export async function PATCH(req: Request, { params }: Params) {
           warehouse_id: item.warehouse_id,
           amount: difference,
           creator_id: workspaceUserId,
+          ...stockChangeContextColumns(normalizedChangeContext),
         }));
 
       if (stockChanges.length > 0) {
-        await sbAdmin.from('product_stock_changes').insert(stockChanges);
+        await insertProductStockChanges(sbAdmin, stockChanges);
       }
     }
   }
@@ -438,12 +443,13 @@ export async function PATCH(req: Request, { params }: Params) {
         );
 
         if (stockDifference != null) {
-          await sbAdmin.from('product_stock_changes').insert({
+          await insertProductStockChanges(sbAdmin, {
             product_id: productId,
             unit_id: item.unit_id,
             warehouse_id: item.warehouse_id,
             amount: stockDifference,
             creator_id: workspaceUserId,
+            ...stockChangeContextColumns(normalizedChangeContext),
           });
         }
       }

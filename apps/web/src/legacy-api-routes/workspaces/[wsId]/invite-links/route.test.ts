@@ -36,7 +36,7 @@ vi.mock('nanoid', () => ({
   nanoid: (...args: Parameters<typeof mocks.nanoid>) => mocks.nanoid(...args),
 }));
 
-vi.mock('@/utils/seat-limits', () => ({
+vi.mock('@tuturuuu/payment-core/seat-limits', () => ({
   canCreateInvitation: (
     ...args: Parameters<typeof mocks.canCreateInvitation>
   ) => mocks.canCreateInvitation(...args),

@@ -100,6 +100,19 @@ const DEV_TARGETS = Object.freeze({
     apps: ['nova', 'web'],
     shared: ['@tuturuuu/types', '@tuturuuu/supabase'],
   },
+  pay: {
+    apps: ['pay', 'web'],
+    shared: [
+      '@tuturuuu/types',
+      '@tuturuuu/supabase',
+      '@tuturuuu/internal-api',
+      '@tuturuuu/payment',
+    ],
+  },
+  contacts: {
+    apps: ['contacts', 'web'],
+    shared: ['@tuturuuu/types', '@tuturuuu/supabase', '@tuturuuu/internal-api'],
+  },
   tools: {
     apps: ['tools'],
     shared: ['@tuturuuu/types'],

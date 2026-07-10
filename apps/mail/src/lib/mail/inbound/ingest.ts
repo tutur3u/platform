@@ -1,7 +1,6 @@
 import { createHash } from 'node:crypto';
 import { GetObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import { isExactTuturuuuDotComEmail } from '@tuturuuu/utils/email/client';
 import { createSnippet, sanitizeMailHtml, stripHtml } from '../html';
 import { normalizeAddress, parseRawEmail } from './parser';
 import type { AnyRecord, ParsedEmail, SesNotification } from './types';
@@ -42,7 +41,11 @@ function resolveS3Object(notification: SesNotification) {
   return bucket && key ? { bucket, key } : null;
 }
 
-async function ensureMailboxForRecipient(admin: AnyRecord, address: string) {
+export async function ensureMailboxForRecipient(
+  admin: AnyRecord,
+  address: string,
+  domainId: string
+) {
   const normalizedAddress = address.toLowerCase();
   const { data: existing, error: existingError } = await privateTable(
     admin,
@@ -69,6 +72,7 @@ async function ensureMailboxForRecipient(admin: AnyRecord, address: string) {
       created_by: user.id,
       display_name:
         user.full_name ?? user.display_name ?? normalizedAddress.split('@')[0],
+      domain_id: domainId,
       type: 'personal',
     })
     .select('*')
@@ -108,45 +112,107 @@ async function ensureLabel(admin: AnyRecord, mailboxId: string, slug: string) {
   return data;
 }
 
-async function createInboundMessage({
+function normalizedSubject(subject: string) {
+  return subject
+    .replace(/^(re|fw|fwd):\s*/giu, '')
+    .trim()
+    .toLowerCase();
+}
+
+async function resolveInboundThread(
+  admin: AnyRecord,
+  mailboxId: string,
+  parsed: ParsedEmail
+) {
+  const authoritativeIds = [
+    parsed.inReplyTo,
+    ...parsed.references.slice().reverse(),
+  ].filter((value): value is string => Boolean(value));
+
+  if (authoritativeIds.length > 0) {
+    const { data: parent, error } = await privateTable(admin, 'mail_messages')
+      .select('thread_id')
+      .eq('mailbox_id', mailboxId)
+      .in('internet_message_id', authoritativeIds)
+      .not('thread_id', 'is', null)
+      .limit(1)
+      .maybeSingle();
+    if (error) throw error;
+    if (parent?.thread_id) {
+      const { data: thread, error: threadError } = await privateTable(
+        admin,
+        'mail_threads'
+      )
+        .select('*')
+        .eq('id', parent.thread_id)
+        .eq('mailbox_id', mailboxId)
+        .single();
+      if (threadError) throw threadError;
+      return thread;
+    }
+  }
+
+  const isReplySubject = /^(re|fw|fwd):\s*/iu.test(parsed.subject);
+  if (authoritativeIds.length === 0 && isReplySubject) {
+    const cutoff = new Date(
+      Date.now() - 30 * 24 * 60 * 60 * 1000
+    ).toISOString();
+    const { data: fallback, error } = await privateTable(admin, 'mail_threads')
+      .select('*')
+      .eq('mailbox_id', mailboxId)
+      .eq('normalized_subject', normalizedSubject(parsed.subject))
+      .gte('last_message_at', cutoff)
+      .order('last_message_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (error) throw error;
+    if (fallback) return fallback;
+  }
+
+  const { data: created, error } = await privateTable(admin, 'mail_threads')
+    .insert({
+      last_message_at: new Date().toISOString(),
+      mailbox_id: mailboxId,
+      normalized_subject: normalizedSubject(parsed.subject),
+      subject: parsed.subject,
+    })
+    .select('*')
+    .single();
+  if (error) throw error;
+  return created;
+}
+
+export async function createInboundMessage({
   admin,
   mailbox,
   parsed,
+  provider,
+  providerMessageId,
   rawMessageId,
-  sesMessageId,
 }: {
   admin: AnyRecord;
   mailbox: AnyRecord;
   parsed: ParsedEmail;
+  provider: 'cloudflare' | 'ses';
+  providerMessageId: string;
   rawMessageId: string;
-  sesMessageId: string;
 }) {
+  const { data: existingMessage, error: existingMessageError } =
+    await privateTable(admin, 'mail_messages')
+      .select('*')
+      .eq('mailbox_id', mailbox.id)
+      .eq('provider', provider)
+      .eq('provider_message_id', providerMessageId)
+      .maybeSingle();
+  if (existingMessageError) throw existingMessageError;
+  if (existingMessage) return existingMessage;
+
   const sanitizedHtml = parsed.bodyHtml
     ? sanitizeMailHtml(parsed.bodyHtml)
     : null;
   const bodyText =
     parsed.bodyText ?? (sanitizedHtml ? stripHtml(sanitizedHtml) : null);
-  const normalizedSubject = parsed.subject
-    .replace(/^(re|fw|fwd):\s*/giu, '')
-    .trim()
-    .toLowerCase();
-  const { data: thread, error: threadError } = await privateTable(
-    admin,
-    'mail_threads'
-  )
-    .upsert(
-      {
-        last_message_at: new Date().toISOString(),
-        mailbox_id: mailbox.id,
-        normalized_subject: normalizedSubject,
-        subject: parsed.subject,
-      },
-      { onConflict: 'mailbox_id,normalized_subject' }
-    )
-    .select('*')
-    .single();
-
-  if (threadError) throw threadError;
+  const thread = await resolveInboundThread(admin, mailbox.id, parsed);
 
   const { data: message, error: messageError } = await privateTable(
     admin,
@@ -162,7 +228,8 @@ async function createInboundMessage({
       in_reply_to: parsed.inReplyTo,
       internet_message_id: parsed.internetMessageId,
       mailbox_id: mailbox.id,
-      provider_message_id: sesMessageId,
+      provider,
+      provider_message_id: providerMessageId,
       raw_message_id: rawMessageId,
       received_at: new Date().toISOString(),
       references_headers: parsed.references,
@@ -212,6 +279,7 @@ async function createInboundMessage({
         message_id: message.id,
         raw_message_id: rawMessageId,
         size_bytes: attachment.sizeBytes,
+        stored_object_id: attachment.storedObjectId ?? null,
       }))
     );
   }
@@ -224,6 +292,14 @@ async function createInboundMessage({
     },
     { onConflict: 'message_id,label_id' }
   );
+
+  await privateTable(admin, 'mail_threads')
+    .update({
+      last_message_at: new Date().toISOString(),
+      message_count: (thread.message_count ?? 0) + 1,
+      unread_count: (thread.unread_count ?? 0) + 1,
+    })
+    .eq('id', thread.id);
 
   return message;
 }
@@ -335,8 +411,23 @@ export async function ingestSesNotification(notification: SesNotification) {
 
   const matchedMailboxes = [];
   for (const recipient of recipients) {
-    if (!isExactTuturuuuDotComEmail(recipient)) continue;
-    const mailbox = await ensureMailboxForRecipient(admin, recipient);
+    const domainName = recipient.split('@')[1];
+    const { data: domain, error: domainError } = await privateTable(
+      admin,
+      'mail_domains'
+    )
+      .select('id')
+      .eq('domain', domainName)
+      .eq('status', 'active')
+      .eq('inbound_provider', 'ses')
+      .maybeSingle();
+    if (domainError) throw domainError;
+    if (!domain?.id) continue;
+    const mailbox = await ensureMailboxForRecipient(
+      admin,
+      recipient,
+      domain.id
+    );
     if (mailbox) matchedMailboxes.push(mailbox);
   }
 
@@ -362,8 +453,9 @@ export async function ingestSesNotification(notification: SesNotification) {
       admin,
       mailbox,
       parsed,
+      provider: 'ses',
+      providerMessageId,
       rawMessageId: rawMessage.id,
-      sesMessageId: providerMessageId,
     });
   }
 

@@ -69,41 +69,6 @@ export function workspaceInfrastructureAppCoordinationRedirectHref(
   ).toString();
 }
 
-export function buildFinanceRedirectHref(
-  workspaceId: string,
-  financePath: string,
-  options: {
-    personal?: boolean;
-    searchParams?: LegacySearchParams | string | URLSearchParams;
-  } = {}
-) {
-  const workspaceSlug = toWorkspaceSlug(workspaceId, {
-    personal: options.personal,
-  });
-  const normalizedFinancePath = financePath.replace(/^\/+|\/+$/g, '');
-  const financeSuffix = normalizedFinancePath
-    ? `/${normalizedFinancePath}`
-    : '';
-  const url = new URL(
-    `/${workspaceSlug}/finance${financeSuffix}`,
-    'https://finance.local'
-  );
-
-  appendSearchParams(url, options.searchParams);
-
-  return `${url.pathname}${url.search}`;
-}
-
-export function buildFinanceTransactionCategoriesRedirectHref(
-  workspaceId: string,
-  options: {
-    personal?: boolean;
-    searchParams?: LegacySearchParams | string | URLSearchParams;
-  } = {}
-) {
-  return buildFinanceRedirectHref(workspaceId, 'categories', options);
-}
-
 export function educationLibraryRedirectHref(
   wsId: string,
   resource: 'flashcards' | 'quiz-sets' | 'quizzes'
@@ -173,6 +138,17 @@ export function getMailAppOrigin() {
       process.env.NODE_ENV === 'production'
         ? 'https://mail.tuturuuu.com'
         : getLocalInternalAppUrl('mail', 'http://localhost:7820'),
+  });
+}
+
+export function getPayAppOrigin() {
+  return resolveInternalAppUrl({
+    appName: 'pay',
+    candidates: [process.env.PAY_APP_URL, process.env.NEXT_PUBLIC_PAY_APP_URL],
+    fallback:
+      process.env.NODE_ENV === 'production'
+        ? 'https://pay.tuturuuu.com'
+        : getLocalInternalAppUrl('pay', 'http://localhost:7826'),
   });
 }
 
@@ -336,6 +312,26 @@ export function buildMailRedirectHref(
   if (options.folder) {
     url.searchParams.set('folder', options.folder);
   }
+
+  return url.toString();
+}
+
+export function buildPayBillingRedirectHref(
+  workspaceId: string,
+  options: {
+    searchParams?: LegacySearchParams | string | URLSearchParams;
+    success?: boolean;
+  } = {}
+) {
+  const suffix = options.success ? '/success' : '';
+  const url = new URL(
+    `/${encodeURIComponent(workspaceId)}/billing${suffix}`,
+    `${getPayAppOrigin()}/`
+  );
+
+  appendSearchParams(url, options.searchParams, {
+    preserveEmptyStringValues: true,
+  });
 
   return url.toString();
 }

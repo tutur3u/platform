@@ -1,6 +1,6 @@
 'use client';
 
-import { useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Boxes, Plus, Trash2 } from '@tuturuuu/icons';
 import type {
   InventoryProductFormOptionsResponse,
@@ -11,12 +11,20 @@ import {
   createInventoryOwner,
   createInventoryUnit,
   createInventoryWarehouse,
+  listInventoryStockBeneficiaries,
 } from '@tuturuuu/internal-api/inventory';
 import { Button } from '@tuturuuu/ui/button';
+import { useDebounce } from '@tuturuuu/ui/hooks/use-debounce';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
+import { useState } from 'react';
 import { FormSection } from './operator-dialog-shell';
-import { NumberField, SelectField, ToggleField } from './operator-form-fields';
+import {
+  NumberField,
+  SelectField,
+  TextAreaField,
+  ToggleField,
+} from './operator-form-fields';
 import { stockAmountFromRecords } from './operator-stock';
 
 export type ProductStockRowState = {
@@ -38,6 +46,11 @@ export type ProductStockSaveState = {
   incompleteTargets: boolean;
   inventory: InventoryProductInventoryItem[];
   shouldSave: boolean;
+};
+
+export type ProductStockChangeContextState = {
+  beneficiaryId: string;
+  note: string;
 };
 
 export function getInitialProductStockRows(
@@ -104,12 +117,16 @@ export function getProductStockSaveState(
 }
 
 export function ProductStockEditor({
+  changeContext,
+  onChangeContext,
   onRowsChange,
   options,
   rows,
   saveState,
   wsId,
 }: {
+  changeContext: ProductStockChangeContextState;
+  onChangeContext: (context: ProductStockChangeContextState) => void;
   onRowsChange: (rows: ProductStockRowState[]) => void;
   options?: InventoryProductFormOptionsResponse;
   rows: ProductStockRowState[];
@@ -322,7 +339,96 @@ export function ProductStockEditor({
           {t('addStockRow')}
         </Button>
       </div>
+      <FormSection
+        className="rounded-lg border border-border bg-muted/15 p-3"
+        description={t('stockChangeContextDescription')}
+        title={t('stockChangeContext')}
+      >
+        <div className="grid min-w-0 gap-3 lg:grid-cols-2">
+          <StockBeneficiaryField
+            onChange={(beneficiaryId) =>
+              onChangeContext({ ...changeContext, beneficiaryId })
+            }
+            value={changeContext.beneficiaryId}
+            wsId={wsId}
+          />
+          <TextAreaField
+            className="lg:col-span-2"
+            hint={t('hints.stockChangeNote')}
+            label={t('stockChangeNote')}
+            maxLength={500}
+            onChange={(note) => onChangeContext({ ...changeContext, note })}
+            placeholder={t('placeholders.stockChangeNote')}
+            value={changeContext.note}
+          />
+          <p className="text-muted-foreground text-xs lg:col-span-2">
+            {t('stockChangeNoteLimit', { count: changeContext.note.length })}
+          </p>
+        </div>
+      </FormSection>
     </div>
+  );
+}
+
+function StockBeneficiaryField({
+  onChange,
+  value,
+  wsId,
+}: {
+  onChange: (value: string) => void;
+  value: string;
+  wsId: string;
+}) {
+  const t = useTranslations('inventory.operator.forms');
+  const [search, setSearch] = useState('');
+  const [debouncedSearch] = useDebounce(search, 250);
+  const [selectedOption, setSelectedOption] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
+  const beneficiaries = useQuery({
+    queryFn: () =>
+      listInventoryStockBeneficiaries(wsId, {
+        limit: 20,
+        q: debouncedSearch.trim() || undefined,
+      }),
+    queryKey: [
+      'inventory',
+      wsId,
+      'stock-beneficiaries',
+      debouncedSearch.trim(),
+    ],
+  });
+  const options = beneficiaries.data?.data.map((person) => ({
+    id: person.id,
+    name: person.name ?? person.email ?? person.id,
+  }));
+  const mergedOptions = [
+    ...(selectedOption && !options?.some((option) => option.id === value)
+      ? [selectedOption]
+      : []),
+    ...(options ?? []),
+  ];
+
+  return (
+    <SelectField
+      className="lg:col-span-2"
+      emptyText={
+        beneficiaries.isError ? t('beneficiarySearchError') : t('emptyOptions')
+      }
+      hint={t('hints.stockChangeBeneficiary')}
+      label={t('stockChangeBeneficiary')}
+      onChange={(nextValue) => {
+        const option = mergedOptions.find((item) => item.id === nextValue);
+        setSelectedOption(option ?? null);
+        onChange(nextValue);
+      }}
+      onSearchChange={setSearch}
+      options={mergedOptions}
+      placeholder={t('placeholders.stockChangeBeneficiary')}
+      searchPlaceholder={t('searchBeneficiaries')}
+      value={value}
+    />
   );
 }
 

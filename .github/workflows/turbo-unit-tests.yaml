@@ -61,4 +61,8 @@ jobs:
         run: bash scripts/ci/run-with-backoff.sh bun setup
 
       - name: Test
-        run: bun run test
+        # Cap Turbo concurrency so parallel package test suites don't
+        # oversubscribe the runner's CPUs and starve the event loop, which is a
+        # common source of flaky "Test timed out in 5000ms" failures in
+        # otherwise-fast mocked unit tests during repository-wide test runs.
+        run: bun turbo:local run test --concurrency=4

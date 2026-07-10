@@ -71,7 +71,9 @@ and are priced in USD. Two-way sync:
 
 ## Environment variables
 
-Set these on the web app (reference by name only):
+Set these on `apps/pay` (reference by name only). Inventory-only deployments
+that create Polar products also need the access token and sandbox/currency
+configuration in their owning runtime:
 
 | Variable | Purpose |
 | --- | --- |
@@ -97,10 +99,10 @@ organization token under **User Settings → Developer**.
 
 In the Polar dashboard for your org → **Settings → Webhooks → Add Endpoint**:
 
-1. **URL** — your Tuturuuu web origin plus the payment webhook path:
+1. **URL** — the canonical Pay webhook endpoint:
 
    ```
-   https://<your-tuturuuu-domain>/api/payment/webhooks
+   https://pay.tuturuuu.com/api/payment/webhooks
    ```
 
    For local development, expose `localhost` with a tunnel (e.g. `cloudflared`
@@ -116,7 +118,7 @@ In the Polar dashboard for your org → **Settings → Webhooks → Add Endpoint
    - `order.updated`
 
 4. Copy the webhook **secret** Polar generates and set it as
-   `POLAR_WEBHOOK_SECRET` on the web app. Signature verification fails closed if
+   `POLAR_WEBHOOK_SECRET` on `apps/pay`. Signature verification fails closed if
    it does not match.
 
 <Tip>

@@ -360,13 +360,18 @@ export type {
 } from './client';
 export {
   createInternalApiClient,
+  getConfiguredContactsApiBaseUrl,
+  getConfiguredFinanceApiBaseUrl,
   getConfiguredInternalApiBaseUrl,
   getConfiguredLearnApiBaseUrl,
+  getConfiguredPayApiBaseUrl,
   getConfiguredTeachApiBaseUrl,
   InternalApiError,
   internalApiClient,
   resolveInternalApiUrl,
+  withContactsApiBaseUrl,
   withForwardedInternalApiAuth,
+  withPayApiBaseUrl,
 } from './client';
 export {
   createWorkspaceCronJob,
@@ -1048,6 +1053,13 @@ export type {
   InventorySaleSource,
   InventorySaleSummary,
   InventorySaleUpdatePayload,
+  InventoryStockBeneficiariesResponse,
+  InventoryStockBeneficiaryOption,
+  InventoryStockChangeContext,
+  InventoryStockHistoryResponse,
+  InventoryStockMovement,
+  InventoryStockMovementPerson,
+  InventoryStockMovementRelation,
   InventoryStorefront,
   InventoryStorefrontCheckoutMode,
   InventoryStorefrontListing,
@@ -1090,6 +1102,7 @@ export {
   getInventoryCostingAnalytics,
   getInventoryCostProfile,
   getInventoryOverview,
+  getInventoryProductStockHistory,
   getInventoryPublicOrder,
   getInventoryPublicStorefront,
   getInventorySale,
@@ -1105,6 +1118,7 @@ export {
   listInventoryProducts,
   listInventoryRevenueShareEarnings,
   listInventorySales,
+  listInventoryStockBeneficiaries,
   listInventoryStorefrontListings,
   listInventoryStorefronts,
   listInventorySuppliers,
@@ -1189,6 +1203,19 @@ export {
   type WorkspaceNotificationPreferenceUpdate,
 } from './notifications';
 export { getCurrentUserNovaTeam } from './nova';
+export {
+  changePaySubscriptionPlan,
+  createPayCreditPackCheckout,
+  createPaySubscriptionCheckout,
+  getPayOrderInvoiceUrl,
+  getPaySubscriptionChangePreview,
+  getPayWorkspaceAiCreditStatus,
+  getPayWorkspaceBillingSummary,
+  updatePaySubscriptionCancellation,
+  updatePaySubscriptionSeats,
+  type WorkspaceAiCreditStatus,
+  type WorkspaceBillingSummary,
+} from './pay';
 export {
   forceSendWorkspacePostEmail,
   type GetWorkspacePostsQuery,
@@ -1549,7 +1576,6 @@ export {
   updateWorkspaceCourseTest,
   updateWorkspaceCourseTestSubmissionFeedback,
 } from './teach';
-
 export {
   getWorkspaceTemplate,
   getWorkspaceTemplateBackgroundUrl,

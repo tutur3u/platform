@@ -32,10 +32,10 @@ import {
   SelectValue,
 } from '@tuturuuu/ui/select';
 import { toast } from '@tuturuuu/ui/sonner';
-import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import * as z from 'zod';
+import { getPayBillingUrl } from '@/lib/pay-app-url';
 import { workspaceMembersKeys } from './members-queries';
 
 interface Props {
@@ -61,7 +61,6 @@ export default function InviteMemberButton({
   variant,
   disabled,
 }: Props) {
-  const router = useRouter();
   const queryClient = useQueryClient();
   const t = useTranslations('ws-members');
   const tCommon = useTranslations('common');
@@ -100,7 +99,7 @@ export default function InviteMemberButton({
           description: t('seat-limit-reached-description'),
           action: {
             label: t('manage-billing'),
-            onClick: () => router.push(`/${wsId}/billing`),
+            onClick: () => window.location.assign(getPayBillingUrl(wsId)),
           },
           duration: 10000,
         });
