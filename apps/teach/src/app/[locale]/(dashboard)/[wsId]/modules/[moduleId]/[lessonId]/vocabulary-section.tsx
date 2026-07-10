@@ -23,6 +23,7 @@ interface VocabularyItem {
 
 interface VocabularySuggestion {
   beta: boolean;
+  definition?: string;
   url: string | null;
   word: string;
 }
@@ -335,6 +336,9 @@ export default function LessonVocabularySection({ wsId, lessonId }: Props) {
 
   function selectSuggestion(suggestion: VocabularySuggestion) {
     updateDraft('word', suggestion.word);
+    if (suggestion.definition) {
+      updateDraft('definition', suggestion.definition);
+    }
     setShowSuggestions(false);
     fetchDictionaryDetails(suggestion.word);
   }
@@ -486,7 +490,16 @@ export default function LessonVocabularySection({ wsId, lessonId }: Props) {
                           onClick={() => selectSuggestion(suggestion)}
                           type="button"
                         >
-                          <span className="font-bold">{suggestion.word}</span>
+                          <span>
+                            <span className="block font-bold">
+                              {suggestion.word}
+                            </span>
+                            {suggestion.definition ? (
+                              <span className="line-clamp-1 text-muted-foreground text-xs">
+                                {suggestion.definition}
+                              </span>
+                            ) : null}
+                          </span>
                           {suggestion.beta ? (
                             <span className="text-[10px] text-muted-foreground uppercase">
                               beta

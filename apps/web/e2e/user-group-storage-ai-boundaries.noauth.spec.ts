@@ -48,11 +48,13 @@ test.describe('User-group storage AI boundaries', () => {
     assertSafeE2EEnvironment();
   });
 
-  test('requires group view permission before course generation can read group files', async ({
+  test.skip('requires group view permission before course generation can read group files', async ({
     baseURL,
     browser,
     request,
   }, testInfo) => {
+    // The course-generation endpoint is owned by apps/teach now. Its
+    // permission boundary is covered by apps/teach/src/app/api/ai/course.
     const origin = baseURL ?? 'https://tuturuuu.localhost';
     const headers = e2eClientHeaders(e2eClientIpForTest(testInfo, 264));
     const groupId = randomUUID();

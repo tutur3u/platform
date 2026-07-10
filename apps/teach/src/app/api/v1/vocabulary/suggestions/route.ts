@@ -8,11 +8,43 @@ interface OedSuggestion {
   path?: string | null;
 }
 
+interface VocabularySuggestion {
+  beta: boolean;
+  definition?: string;
+  url: string;
+  word: string;
+}
+
 const OED_ORIGIN = 'https://www.oed.com';
 const OED_SUGGESTIONS_TIMEOUT_MS = 5_000;
 
 function suggestionUrl(word: string) {
   return `${OED_ORIGIN}/search/dictionary/?scope=Entries&q=${encodeURIComponent(word)}`;
+}
+
+function normalizeText(value: string) {
+  return value
+    .replace(/\s+/gu, ' ')
+    .replace(/\u2026/gu, '...')
+    .trim();
+}
+
+function safeOedUrl(path: string | undefined, fallbackWord: string) {
+  const trimmedPath = path?.trim();
+
+  if (
+    !trimmedPath ||
+    !trimmedPath.startsWith('/') ||
+    trimmedPath.startsWith('//')
+  ) {
+    return suggestionUrl(fallbackWord);
+  }
+
+  const url = new URL(trimmedPath, OED_ORIGIN);
+
+  return url.origin === OED_ORIGIN
+    ? url.toString()
+    : suggestionUrl(fallbackWord);
 }
 
 function fallbackSuggestion(query: string) {
@@ -23,7 +55,7 @@ function fallbackSuggestion(query: string) {
   };
 }
 
-function normalizeSuggestions(value: unknown) {
+function normalizeSuggestions(value: unknown): VocabularySuggestion[] {
   if (!Array.isArray(value)) return [];
 
   return value
@@ -40,14 +72,11 @@ function normalizeSuggestions(value: unknown) {
 
       return {
         beta: false,
-        url: path ? new URL(path, OED_ORIGIN).toString() : suggestionUrl(word),
+        url: safeOedUrl(path, word),
         word,
       };
     })
-    .filter(
-      (item): item is { beta: boolean; url: string; word: string } =>
-        item !== null
-    );
+    .filter((item): item is VocabularySuggestion => item !== null);
 }
 
 function normalizeOedSearchSuggestions(html: string, query: string) {
@@ -64,20 +93,20 @@ function normalizeOedSearchSuggestions(html: string, query: string) {
         .replace(/\s+/gu, ' ')
         .replace(/,\s*[a-z.]+$/iu, '')
         .trim();
+      const definition = normalizeText($(item).find('.snippet').text());
+      const entryPath = $(item).find('.viewEntry').attr('href');
 
       if (!word || seen.has(word.toLowerCase())) return null;
       seen.add(word.toLowerCase());
 
       return {
         beta: false,
-        url: suggestionUrl(word),
+        ...(definition ? { definition } : {}),
+        url: safeOedUrl(entryPath, word),
         word,
       };
     })
-    .filter(
-      (item): item is { beta: boolean; url: string; word: string } =>
-        item !== null
-    )
+    .filter((item): item is VocabularySuggestion => item !== null)
     .slice(0, 10);
 
   return suggestions.length > 0 ? suggestions : [fallbackSuggestion(query)];

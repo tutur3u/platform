@@ -19,7 +19,7 @@ describe('GET /api/v1/vocabulary/details scraper', () => {
   });
 
   it('scrapes the best OED search result definition successfully from mocked HTML', async () => {
-    const mockHtml = `
+    const searchHtml = `
       <html>
         <body>
           <div class="resultsSet">
@@ -34,12 +34,30 @@ describe('GET /api/v1/vocabulary/details scraper', () => {
         </body>
       </html>
     `;
+    const entryHtml = `
+      <html>
+        <body>
+          <article>
+            <h1><span class="hw">eat</span></h1>
+            <span class="pronunciation">/iːt/</span>
+            <div class="definition">To consume food.</div>
+            <blockquote class="quotationText">We eat dinner together.</blockquote>
+          </article>
+        </body>
+      </html>
+    `;
 
-    vi.spyOn(globalThis, 'fetch').mockResolvedValue({
-      ok: true,
-      status: 200,
-      text: async () => mockHtml,
-    } as Response);
+    vi.spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        text: async () => searchHtml,
+      } as Response)
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        text: async () => entryHtml,
+      } as Response);
 
     const request = new NextRequest(
       'http://localhost/api/v1/vocabulary/details?word=eat'
@@ -49,11 +67,9 @@ describe('GET /api/v1/vocabulary/details scraper', () => {
 
     const data = await response.json();
     expect(data.word).toBe('eat');
-    expect(data.pronunciation).toBe('');
-    expect(data.definition).toBe(
-      'transitive. To take into the mouth piecemeal, and...'
-    );
-    expect(data.examples).toEqual([]);
+    expect(data.pronunciation).toBe('/iːt/');
+    expect(data.definition).toBe('To consume food.');
+    expect(data.examples).toEqual(['We eat dinner together.']);
   });
 
   it('falls back to the first OED search result when no exact title matches', async () => {
