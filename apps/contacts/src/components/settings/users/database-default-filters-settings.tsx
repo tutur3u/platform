@@ -2,6 +2,10 @@
 
 import { Loader2 } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
+import {
+  useUpdateUserConfig,
+  useUserConfig,
+} from '@tuturuuu/ui/hooks/use-user-config';
 import { Label } from '@tuturuuu/ui/label';
 import {
   Select,
@@ -11,9 +15,6 @@ import {
   SelectValue,
 } from '@tuturuuu/ui/select';
 import { toast } from '@tuturuuu/ui/sonner';
-import { useTranslations } from 'next-intl';
-import { useEffect, useState } from 'react';
-import { useUpdateUserConfig, useUserConfig } from '@/hooks/use-user-config';
 import {
   DATABASE_DEFAULT_GROUP_MEMBERSHIP_CONFIG_ID,
   DATABASE_DEFAULT_LINK_STATUS_CONFIG_ID,
@@ -22,7 +23,9 @@ import {
   DEFAULT_DATABASE_GROUP_MEMBERSHIP,
   DEFAULT_DATABASE_LINK_STATUS,
   getDatabaseGroupMembershipTranslationKey,
-} from '@/lib/users-database-filters';
+} from '@tuturuuu/users-core/lib/users-database-filters';
+import { useTranslations } from 'next-intl';
+import { useEffect, useState } from 'react';
 
 export function DatabaseDefaultFiltersSettings() {
   const t = useTranslations('settings.user_management');

@@ -7,9 +7,9 @@ import { Button } from '@tuturuuu/ui/button';
 import { Combobox, type ComboboxOption } from '@tuturuuu/ui/custom/combobox';
 import { useWorkspaceConfig } from '@tuturuuu/ui/hooks/use-workspace-config';
 import { toast } from '@tuturuuu/ui/sonner';
+import { useInfiniteWorkspaceUserGroups } from '@tuturuuu/users-ui/hooks/use-workspace-user-groups';
 import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useState } from 'react';
-import { useInfiniteWorkspaceUserGroups } from '@/hooks/use-workspace-user-groups';
 
 interface Props {
   wsId: string;

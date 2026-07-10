@@ -1,7 +1,7 @@
 'use client';
 
+import { useInfiniteWorkspaceUserGroups } from '@tuturuuu/users-ui/hooks/use-workspace-user-groups';
 import { useEffect, useMemo, useState } from 'react';
-import { useInfiniteWorkspaceUserGroups } from '@/hooks/use-workspace-user-groups';
 import {
   buildGroupComboboxOptions,
   hasSameGroupSelection,

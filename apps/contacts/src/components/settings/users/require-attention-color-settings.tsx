@@ -1,14 +1,14 @@
 'use client';
 
+import { useUpdateUserConfig } from '@tuturuuu/ui/hooks/use-user-config';
 import { Label } from '@tuturuuu/ui/label';
 import { toast } from '@tuturuuu/ui/sonner';
-import { useTranslations } from 'next-intl';
-import { useRequireAttentionColor } from '@/hooks/use-require-attention-color';
-import { useUpdateUserConfig } from '@/hooks/use-user-config';
 import {
   DEFAULT_REQUIRE_ATTENTION_COLOR,
   REQUIRE_ATTENTION_COLOR_CONFIG_ID,
-} from '@/lib/user-feedbacks';
+} from '@tuturuuu/users-core/lib/user-feedbacks';
+import { useRequireAttentionColor } from '@tuturuuu/users-ui/hooks/use-require-attention-color';
+import { useTranslations } from 'next-intl';
 import { ColorPicker } from '../calendar/color-picker';
 
 export function RequireAttentionColorSettings() {

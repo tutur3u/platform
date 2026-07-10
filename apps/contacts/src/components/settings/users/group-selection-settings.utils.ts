@@ -1,5 +1,5 @@
 import type { ComboboxOption } from '@tuturuuu/ui/custom/combobox';
-import type { WorkspaceUserGroup } from '@/hooks/use-workspace-user-groups';
+import type { WorkspaceUserGroup } from '@tuturuuu/users-ui/hooks/use-workspace-user-groups';
 
 export function normalizeGroupSelection(groupIds: string[]) {
   return [...new Set(groupIds.map((id) => id.trim()).filter(Boolean))];
