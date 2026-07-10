@@ -10,7 +10,11 @@ export default defineConfig({
         inline: ['next-intl'],
       },
     },
-    environment: 'jsdom',
+    // These are server-only route tests. Keep their heavy module imports from
+    // competing with each other during repository-wide Turbo test runs.
+    environment: 'node',
+    maxWorkers: 1,
+    testTimeout: 15_000,
   },
   resolve: {
     alias: [{ find: '@', replacement: resolve(__dirname, './src') }],
