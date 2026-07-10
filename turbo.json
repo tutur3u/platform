@@ -42,10 +42,6 @@
     "RUNNER_TEMP",
     "SUPABASE_SERVICE_KEY",
     "SUPABASE_SERVICE_ROLE_KEY",
-    "TURBO_API",
-    "TURBO_REMOTE_CACHE_SIGNATURE_KEY",
-    "TURBO_TEAM",
-    "TURBO_TOKEN",
     "WORKFLOW_NAME"
   ],
   "globalEnv": [
@@ -116,24 +112,80 @@
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
+      "env": [
+        "CENTRAL_PORT",
+        "CI",
+        "NEXT_PUBLIC_*",
+        "PLATFORM_BUILD_BUILT_AT",
+        "PLATFORM_BUILD_COMMIT_HASH",
+        "PLATFORM_BUILD_COMMIT_MESSAGE",
+        "PLATFORM_BUILD_COMMIT_SHORT_HASH",
+        "PLATFORM_BUILD_ENVIRONMENT",
+        "PLATFORM_BUILD_REF_NAME",
+        "VERCEL",
+        "VERCEL_ENV",
+        "VERCEL_URL"
+      ],
+      "passThroughEnv": ["NODE_OPTIONS"],
       "inputs": ["$TURBO_DEFAULT$", ".env*", "$TURBO_ROOT$/.env*"],
       "outputs": [
         ".next/**",
         "!.next/cache/**",
         "!.next/dev/**",
+        ".output/**",
         "dist/**",
-        ".turbo/tsconfig.tsbuildinfo"
+        "*.tsbuildinfo",
+        "dist/*.tsbuildinfo",
+        ".turbo/*.tsbuildinfo",
+        ".turbo/tsc-build-cache-key.json"
       ]
     },
     "build:docker": {
       "dependsOn": ["^build"],
+      "env": [
+        "CENTRAL_PORT",
+        "CI",
+        "DOCKER_WEB_NATIVE_BUILD",
+        "DOCKER_WEB_NEXT_APP_ONLY",
+        "DOCKER_WEB_NEXT_BUILD_ENGINE",
+        "DOCKER_WEB_REACT_COMPILER",
+        "DOCKER_WEB_STANDALONE",
+        "DOCKER_WEB_STATIC_PAGE_GENERATION_TIMEOUT",
+        "NEXT_PUBLIC_*",
+        "PLATFORM_BUILD_BUILT_AT",
+        "PLATFORM_BUILD_COMMIT_HASH",
+        "PLATFORM_BUILD_COMMIT_MESSAGE",
+        "PLATFORM_BUILD_COMMIT_SHORT_HASH",
+        "PLATFORM_BUILD_ENVIRONMENT",
+        "PLATFORM_BUILD_REF_NAME",
+        "VERCEL",
+        "VERCEL_ENV",
+        "VERCEL_URL"
+      ],
+      "passThroughEnv": [
+        "DOCKER_WEB_BUILD_CPUS",
+        "DOCKER_WEB_BUILD_MAX_PARALLELISM",
+        "DOCKER_WEB_BUILD_MEMORY",
+        "DOCKER_WEB_DOCKER_MEMORY_LIMIT",
+        "DOCKER_WEB_NATIVE_BUILD_MEMORY",
+        "DOCKER_WEB_NEXT_BUILD_CPUS",
+        "DOCKER_WEB_NODE_BINARY",
+        "DOCKER_WEB_NODE_MAX_OLD_SPACE_SIZE",
+        "DOCKER_WEB_STATIC_GENERATION_MAX_CONCURRENCY",
+        "DOCKER_WEB_TURBO_CONCURRENCY",
+        "NODE_OPTIONS"
+      ],
       "inputs": ["$TURBO_DEFAULT$", ".env*", "$TURBO_ROOT$/.env*"],
       "outputs": [
         ".next/**",
         "!.next/cache/**",
         "!.next/dev/**",
+        ".output/**",
         "dist/**",
-        ".turbo/tsconfig.tsbuildinfo"
+        "*.tsbuildinfo",
+        "dist/*.tsbuildinfo",
+        ".turbo/*.tsbuildinfo",
+        ".turbo/tsc-build-cache-key.json"
       ]
     },
     "dev": {
@@ -154,8 +206,13 @@
       "cache": false,
       "persistent": true
     },
+    "transit": {
+      "dependsOn": ["^transit"]
+    },
     "test": {
-      "env": ["CHECK_DETAILS"]
+      "dependsOn": ["transit"],
+      "env": ["CHECK_DETAILS", "CI"],
+      "outputs": ["coverage/**"]
     },
     "test:e2e": {
       "cache": false
@@ -172,10 +229,10 @@
         "package.json"
       ],
       "outputs": [
-        "tsconfig.tsbuildinfo",
-        "tsconfig.build.tsbuildinfo",
-        "dist/tsconfig.tsbuildinfo",
-        ".turbo/tsconfig.tsbuildinfo",
+        "*.tsbuildinfo",
+        "dist/*.tsbuildinfo",
+        ".turbo/*.tsbuildinfo",
+        ".turbo/tsc-build-cache-key.json",
         ".next/cache/.tsbuildinfo"
       ]
     },

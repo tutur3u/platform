@@ -1,0 +1,26 @@
+name: Setup Turbo fallback cache
+description: Restore a task-family Turbo cache without exposing remote-cache credentials.
+inputs:
+  family:
+    description: Stable task family used to isolate local Turbo cache entries.
+    required: true
+runs:
+  using: composite
+  steps:
+    - name: Restore and save trusted Turbo fallback cache
+      if: ${{ github.event_name != 'pull_request' && github.actor != 'dependabot[bot]' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}
+      uses: actions/cache@v6
+      with:
+        path: .turbo
+        key: turbo-fallback-v1-${{ runner.os }}-${{ runner.arch }}-${{ inputs.family }}-${{ hashFiles('bun.lock', 'turbo.json') }}-${{ github.sha }}
+        restore-keys: |
+          turbo-fallback-v1-${{ runner.os }}-${{ runner.arch }}-${{ inputs.family }}-${{ hashFiles('bun.lock', 'turbo.json') }}-
+
+    - name: Restore Turbo fallback cache without saving
+      if: ${{ github.event_name == 'pull_request' || github.actor == 'dependabot[bot]' || github.ref != format('refs/heads/{0}', github.event.repository.default_branch) }}
+      uses: actions/cache/restore@v6
+      with:
+        path: .turbo
+        key: turbo-fallback-v1-${{ runner.os }}-${{ runner.arch }}-${{ inputs.family }}-${{ hashFiles('bun.lock', 'turbo.json') }}-${{ github.event.pull_request.base.sha || github.sha }}
+        restore-keys: |
+          turbo-fallback-v1-${{ runner.os }}-${{ runner.arch }}-${{ inputs.family }}-${{ hashFiles('bun.lock', 'turbo.json') }}-

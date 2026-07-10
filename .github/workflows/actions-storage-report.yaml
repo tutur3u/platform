@@ -1,0 +1,46 @@
+name: GitHub Actions Storage Report
+
+on:
+  schedule:
+    - cron: "17 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  check-ci:
+    uses: ./.github/workflows/ci-check.yml
+    permissions:
+      contents: read
+      deployments: read
+    with:
+      workflow_name: actions-storage-report.yaml
+
+  report:
+    name: Report Actions Cache And Artifact Usage
+    needs: [check-ci]
+    if: needs.check-ci.outputs.should_run == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      actions: read
+      contents: read
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v7
+
+      - name: Use Node.js 24
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
+      - name: Report live Actions storage usage
+        env:
+          CACHE_CRITICAL_PERCENT: ${{ vars.ACTIONS_CACHE_CRITICAL_PERCENT || '100' }}
+          CACHE_NOTICE_PERCENT: ${{ vars.ACTIONS_CACHE_NOTICE_PERCENT || '80' }}
+          CACHE_WARNING_PERCENT: ${{ vars.ACTIONS_CACHE_WARNING_PERCENT || '90' }}
+          GITHUB_API_VERSION: "2026-03-10"
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node --experimental-strip-types scripts/ci/actions-storage-report.ts

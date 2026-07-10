@@ -72,20 +72,25 @@ jobs:
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PAY_PROJECT_ID }}
         run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
 
-      - name: Build workspace dependencies
-        if: steps.check_commits.outputs.skip_build != 'true'
-        run: bun turbo:local run build --filter=@tuturuuu/types --filter=@tuturuuu/supabase --filter=@tuturuuu/internal-api
-
       - name: Generate shared build metadata
         if: steps.check_commits.outputs.skip_build != 'true'
+        env:
+          PLATFORM_BUILD_ENVIRONMENT: production
+          PLATFORM_BUILD_REF_NAME: production
         run: bun run --silent scripts/ci/generate-build-metadata.ts
 
       - name: Build Project Artifacts
         if: steps.check_commits.outputs.skip_build != 'true'
         env:
+          NODE_OPTIONS: --max-old-space-size=8192
+          TURBO_CONCURRENCY: "2"
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PAY_PROJECT_ID }}
-        run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
+        uses: ./.github/actions/run-with-turbo-remote-cache
+        with:
+          command: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
+          token: ${{ github.actor != 'dependabot[bot]' && secrets.TURBO_TOKEN || '' }}
+          team: ${{ vars.TURBO_TEAM || secrets.TURBO_TEAM }}
 
       - name: Deploy Project Artifacts to Vercel
         if: steps.check_commits.outputs.skip_build != 'true'

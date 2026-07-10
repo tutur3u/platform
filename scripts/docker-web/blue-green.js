@@ -83,8 +83,6 @@ const PLATFORM_BUILD_METADATA_ENV_NAMES = Object.freeze([
   'PLATFORM_BUILD_COMMIT_HASH',
   'PLATFORM_BUILD_COMMIT_MESSAGE',
   'PLATFORM_BUILD_COMMIT_SHORT_HASH',
-  'PLATFORM_BUILD_DEPLOYMENT_STAMP',
-  'PLATFORM_BUILD_DEPLOYMENT_URL',
   'PLATFORM_BUILD_ENVIRONMENT',
   'PLATFORM_BUILD_REF_NAME',
 ]);
@@ -579,6 +577,7 @@ function normalizeBlueGreenTargetRuntime(value) {
   if (!value || typeof value !== 'object' || Array.isArray(value)) {
     return {
       activeColor: null,
+      committedAt: null,
       commitHash: null,
       commitShortHash: null,
       deploymentStamp: null,
@@ -598,6 +597,8 @@ function normalizeBlueGreenTargetRuntime(value) {
 
   return {
     activeColor,
+    committedAt:
+      typeof value.committedAt === 'string' ? value.committedAt : null,
     commitHash: typeof value.commitHash === 'string' ? value.commitHash : null,
     commitShortHash:
       typeof value.commitShortHash === 'string' ? value.commitShortHash : null,
@@ -874,6 +875,10 @@ function writeBlueGreenSupportBuildCacheSnapshot({
         typeof commit?.hash === 'string' && commit.hash.length > 0
           ? commit.hash
           : null,
+      committedAt:
+        typeof commit?.committedAt === 'string' && commit.committedAt.length > 0
+          ? commit.committedAt
+          : null,
       commitShortHash:
         typeof commit?.shortHash === 'string' && commit.shortHash.length > 0
           ? commit.shortHash
@@ -941,7 +946,7 @@ function resolveLatestCommitValue(commit, primaryKey, fallbackKey) {
 
 function createBlueGreenBuildMetadataEnv({
   baseEnv = {},
-  builtAt = new Date().toISOString(),
+  builtAt = null,
   deploymentStamp,
   environment = 'production',
   latestCommit = null,
@@ -963,6 +968,9 @@ function createBlueGreenBuildMetadataEnv({
     'subject',
     'commitSubject'
   );
+  const sourceTimestamp =
+    cleanEnvString(builtAt) ??
+    resolveLatestCommitValue(latestCommit, 'committedAt', 'sourceTimestamp');
   const resolvedRefName =
     cleanEnvString(refName) ??
     cleanEnvString(latestCommit?.refName) ??
@@ -975,7 +983,7 @@ function createBlueGreenBuildMetadataEnv({
       env.WEB_APP_URL
   );
 
-  setDefaultEnvValue(env, 'PLATFORM_BUILD_BUILT_AT', builtAt);
+  setDefaultEnvValue(env, 'PLATFORM_BUILD_BUILT_AT', sourceTimestamp);
   setDefaultEnvValue(env, 'PLATFORM_BUILD_COMMIT_HASH', commitHash);
   setDefaultEnvValue(env, 'PLATFORM_BUILD_COMMIT_SHORT_HASH', commitShortHash);
   setDefaultEnvValue(env, 'PLATFORM_BUILD_COMMIT_MESSAGE', commitMessage);
@@ -997,6 +1005,26 @@ function getPlatformBuildMetadataBuildArgs(env = {}) {
 
     return value ? ['--build-arg', `${name}=${value}`] : [];
   });
+}
+
+function getDeterministicBlueGreenBuildEnv(env = {}) {
+  const runtimeOnlyNames = [
+    'PLATFORM_BUILD_DEPLOYMENT_STAMP',
+    'PLATFORM_BUILD_DEPLOYMENT_URL',
+    'PLATFORM_DEPLOYMENT_STAMP',
+  ];
+
+  if (!runtimeOnlyNames.some((name) => Object.hasOwn(env, name))) {
+    return env;
+  }
+
+  const buildEnv = { ...env };
+
+  for (const name of runtimeOnlyNames) {
+    delete buildEnv[name];
+  }
+
+  return buildEnv;
 }
 
 function createBlueGreenStage(id, target, overrides = {}) {
@@ -2252,6 +2280,7 @@ async function buildBlueGreenServices({
 }) {
   const timeoutMs = getBlueGreenBuildTimeoutMs(env);
   const buildServiceBatches = getBlueGreenBuildServiceBatches(services, env);
+  const deterministicBuildEnv = getDeterministicBlueGreenBuildEnv(env);
   const useNativeWebBuild = isNativeWebBuildEnabled(env);
   let nativeWebArtifactsBuilt = false;
 
@@ -2421,7 +2450,7 @@ async function buildBlueGreenServices({
   };
 
   const runBuildWithAdaptiveResourceFallback = async () => {
-    let buildEnv = env;
+    let buildEnv = deterministicBuildEnv;
     const attemptedProfileNames = new Set();
 
     const getResolvedBuildMemoryForLog = (attemptEnv) => {
@@ -3748,6 +3777,7 @@ async function runBlueGreenProdWorkflow(parsed, options = {}) {
           'web',
           {
             activeColor: targetColor,
+            committedAt: options.latestCommit?.committedAt ?? null,
             commitHash: options.latestCommit?.hash ?? null,
             commitShortHash: options.latestCommit?.shortHash ?? null,
             deploymentStamp,
@@ -4046,6 +4076,7 @@ async function runBlueGreenProdWorkflow(parsed, options = {}) {
         'web',
         {
           activeColor: targetColor,
+          committedAt: options.latestCommit?.committedAt ?? null,
           commitHash: options.latestCommit?.hash ?? null,
           commitShortHash: options.latestCommit?.shortHash ?? null,
           deploymentStamp,
@@ -4645,6 +4676,7 @@ module.exports = {
   getBlueGreenDirectServiceName,
   getBlueGreenFrontend,
   getBlueGreenFrontendPort,
+  getDeterministicBlueGreenBuildEnv,
   getBlueGreenHiveServiceName,
   getBlueGreenProdServices,
   getBlueGreenProdServicesWithProxyOption,

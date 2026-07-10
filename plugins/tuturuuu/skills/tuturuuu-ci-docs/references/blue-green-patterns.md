@@ -116,6 +116,25 @@ infrastructure dashboard changes.
   builder instead.
 - Do not use the Buildx `docker-container` driver for the platform capped
   builder because it creates containers outside the Compose `platform` group.
+- GitHub-hosted Docker verification and E2E should share service-specific
+  `type=gha` scopes. All shards restore, but only shard 1 on the protected
+  default branch exports a true miss. Use `mode=max` for web, TanStack, and
+  backend images; use `mode=min` or restore-only caching for small leaf images.
+  Bound cache operations, set `ignore-error=true`, and forward Turbo cache
+  identity only through BuildKit secrets. Pull requests and Dependabot builds
+  must not receive the remote token.
+- Manual Buildx and Compose commands need GitHub's cache runtime variables
+  exposed before using `type=gha`. Run the full-SHA-pinned
+  `crazy-max/ghaction-github-runtime` action first; keep
+  `ACTIONS_RUNTIME_TOKEN` and `ACTIONS_RESULTS_URL` ephemeral and never write
+  them to `GITHUB_ENV` yourself. Static CI tests must enforce this step in every
+  affected job.
+- Compose cache wiring is opt-in through
+  `DOCKER_WEB_CACHE_<SERVICE>_{FROM,TO}` for web, TanStack, backend, Hive,
+  Supermemory, MarkItDown, storage unzip, and the chat/Hive/Meet realtime leaf
+  images. Turbo identity enters through
+  `DOCKER_WEB_TURBO_{TEAM,TOKEN}_SECRET_FILE`; unset values use the validated
+  zero-byte `docker-compose/empty-secret` and must remain inert for local runs.
 - Production web serve helpers should default BuildKit memory to
   `--build-memory auto` so the cap follows Docker's configured memory
   allocation with a real reserve for the Docker VM and sibling containers. Keep

@@ -148,14 +148,16 @@ async function getCurrentGitCommitMetadata({
   try {
     const result = await runChecked(
       'git',
-      ['log', '-1', '--format=%H%n%h%n%s'],
+      ['log', '-1', '--format=%H%n%h%n%s%n%cI'],
       {
         env,
         runCommand: run,
         stdio: 'pipe',
       }
     );
-    const [hash, shortHash, subject] = result.stdout.trim().split('\n');
+    const [hash, shortHash, subject, committedAt] = result.stdout
+      .trim()
+      .split('\n');
     let refName = env?.PLATFORM_BUILD_REF_NAME || env?.GITHUB_REF_NAME || null;
 
     if (!refName) {
@@ -177,6 +179,7 @@ async function getCurrentGitCommitMetadata({
     }
 
     return {
+      committedAt: committedAt || null,
       hash: hash || null,
       refName,
       shortHash: shortHash || null,
@@ -184,6 +187,7 @@ async function getCurrentGitCommitMetadata({
     };
   } catch {
     return {
+      committedAt: null,
       hash: null,
       refName: env?.PLATFORM_BUILD_REF_NAME || env?.GITHUB_REF_NAME || null,
       shortHash: null,
@@ -1386,6 +1390,7 @@ async function runDockerWebWorkflow(parsed, options = {}) {
             activatedAt: deployFinishedAt,
             activeColor: readBlueGreenActiveColor(blueGreenPaths, fsImpl),
             buildDurationMs: Math.max(0, deployFinishedAt - deployStartedAt),
+            committedAt: latestCommit.committedAt,
             commitHash: latestCommit.hash,
             commitShortHash: latestCommit.shortHash,
             commitSubject: latestCommit.subject,
@@ -1449,6 +1454,7 @@ async function runDockerWebWorkflow(parsed, options = {}) {
               fsImpl
             ),
             buildDurationMs: Math.max(0, deployFinishedAt - deployStartedAt),
+            committedAt: latestCommit.committedAt,
             commitHash: latestCommit.hash,
             commitShortHash: latestCommit.shortHash,
             commitSubject: latestCommit.subject,
@@ -1610,6 +1616,7 @@ module.exports = {
   getBuildResourceProfilePaths,
   getDockerSupermemoryRuntime,
   formatSupabaseOriginReport,
+  getCurrentGitCommitMetadata,
   getChangedFilesBetweenCommits,
   getErrorText,
   getInPlaceProdServices,

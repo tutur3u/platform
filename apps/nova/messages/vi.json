@@ -3558,7 +3558,7 @@
     "commit_hash": "Mã commit",
     "commit_message": "Nội dung commit",
     "deployment_stamp": "Dấu triển khai",
-    "deployment_time": "Thời gian triển khai",
+    "deployment_time": "Thời điểm mã nguồn",
     "deployment_url": "URL triển khai",
     "description": "Thông tin bản dựng và triển khai của ứng dụng này.",
     "environment": "Môi trường",

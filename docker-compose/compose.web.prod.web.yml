@@ -3,6 +3,10 @@ x-web-service: &web-service
     context: ..
     dockerfile: apps/web/Dockerfile
     target: runner
+    cache_from:
+      - ${DOCKER_WEB_CACHE_WEB_FROM:-}
+    cache_to:
+      - ${DOCKER_WEB_CACHE_WEB_TO:-}
     args:
       DOCKER_WEB_BUILD_MEMORY: ${DOCKER_WEB_BUILD_MEMORY:-12g}
       DOCKER_WEB_BUILD_MAX_PARALLELISM: ${DOCKER_WEB_BUILD_MAX_PARALLELISM:-1}
@@ -22,6 +26,8 @@ x-web-service: &web-service
       PLATFORM_BUILD_REF_NAME: ${PLATFORM_BUILD_REF_NAME:-}
     secrets:
       - web_env
+      - turbo_team
+      - turbo_token
   env_file:
     - path: ${DOCKER_WEB_COMPOSE_LEGACY_ENV_FILE:-../apps/web/.env.local}
       required: false
@@ -102,6 +108,13 @@ x-tanstack-web-service: &tanstack-web-service
     context: ..
     dockerfile: apps/tanstack-web/Dockerfile
     target: runner
+    cache_from:
+      - ${DOCKER_WEB_CACHE_TANSTACK_FROM:-}
+    cache_to:
+      - ${DOCKER_WEB_CACHE_TANSTACK_TO:-}
+    secrets:
+      - turbo_team
+      - turbo_token
   env_file:
     - path: ${DOCKER_WEB_COMPOSE_LEGACY_ENV_FILE:-../apps/web/.env.local}
       required: false

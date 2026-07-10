@@ -1,4 +1,5 @@
 export const ci = {
+  'actions-storage-report.yaml': true,
   'biome-check.yaml': true,
   'branch-name-check.yaml': true,
   'cancel-pr-runs-on-close.yaml': true,
@@ -290,9 +291,12 @@ export const vercelWorkflowTargets = [
 ] satisfies VercelWorkflowTarget[];
 
 const globalVercelAffectingPaths = new Set([
+  '.github/actions/run-with-turbo-remote-cache/action.yml',
+  '.github/actions/setup-bun-with-retry/action.yml',
   '.github/workflows/ci-check.yml',
   'bun.lock',
   'package.json',
+  'scripts/ci/generate-build-metadata.ts',
   'turbo.json',
   'tuturuuu.ts',
 ]);

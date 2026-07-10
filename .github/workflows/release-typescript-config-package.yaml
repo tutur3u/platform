@@ -73,10 +73,6 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      # Use Vercel Remote Caching
-      TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
-      TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
-
       # Configure production Supabase client
       NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.PRODUCTION_SUPABASE_PUBLISHABLE_KEY }}
@@ -158,7 +154,7 @@ jobs:
         working-directory: packages/typescript-config
         run: |
           mkdir -p "$RUNNER_TEMP/tuturuuu-typescript-config-package"
-          npm pack --pack-destination "$RUNNER_TEMP/tuturuuu-typescript-config-package"
+          npm pack --ignore-scripts --pack-destination "$RUNNER_TEMP/tuturuuu-typescript-config-package"
 
       - name: Upload publish artifact
         if: steps.version-check.outputs.should_publish == 'true'
@@ -168,6 +164,7 @@ jobs:
           name: tuturuuu-typescript-config-npm-package
           path: ${{ runner.temp }}/tuturuuu-typescript-config-package/*.tgz
           retention-days: 1
+          compression-level: 0
 
   publish-npm:
     needs: [prepare-publish-npm]

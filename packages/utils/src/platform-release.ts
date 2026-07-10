@@ -3,6 +3,7 @@ import { PLATFORM_BUILD_METADATA } from './generated/platform-build-metadata';
 export const TUTURUUU_PLATFORM_VERSION = '0.19.0'; // x-release-please-version
 
 export type PlatformBuildMetadataInput = {
+  /** ISO timestamp of the source commit used for the build, not deployment time. */
   builtAt?: string | null;
   commitHash?: string | null;
   commitMessage?: string | null;
@@ -14,6 +15,7 @@ export type PlatformBuildMetadataInput = {
 };
 
 export type PlatformBuildMetadata = {
+  /** ISO timestamp of the source commit used for the build, not deployment time. */
   builtAt: string;
   commitHash: string;
   commitMessage: string;

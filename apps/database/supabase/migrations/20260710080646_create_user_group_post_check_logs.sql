@@ -11,7 +11,7 @@
 create table if not exists private.user_group_post_check_logs (
   id uuid primary key default gen_random_uuid(),
   post_id uuid not null
-    references public.user_group_posts (id) on update cascade on delete cascade,
+    references private.user_group_posts (id) on update cascade on delete cascade,
   user_id uuid not null
     references public.workspace_users (id) on update cascade on delete cascade,
   previous_is_completed boolean,

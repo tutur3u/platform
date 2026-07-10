@@ -41,6 +41,10 @@ jobs:
         with:
           distribution: temurin
           java-version: 17
+          cache: gradle
+          cache-dependency-path: |
+            apps/mobile/android/**/*.gradle*
+            apps/mobile/android/gradle/wrapper/gradle-wrapper.properties
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
@@ -48,29 +52,16 @@ jobs:
           flutter-version: "3.44.x"
           channel: stable
           cache: true
+          pub-cache: true
 
       - name: Install dependencies
-        if: steps.cache-build.outputs.cache-hit != 'true'
         run: flutter pub get
 
-      - name: Cache Build
-        id: cache-build
-        uses: actions/cache@v6
-        with:
-          path: |
-            apps/mobile/build
-            apps/mobile/.dart_tool
-          key: ${{ runner.os }}-flutter-android-${{ hashFiles('apps/mobile/**') }}
-          restore-keys: |
-            ${{ runner.os }}-flutter-android-
-
       - name: Create dummy google-services.json
-        if: steps.cache-build.outputs.cache-hit != 'true'
         run: |
           echo '{"project_info":{"project_number":"123","firebase_url":"https://dummy.firebaseio.com","project_id":"dummy-project","storage_bucket":"dummy.appspot.com"},"client":[{"client_info":{"mobilesdk_app_id":"1:123:android:abc","android_client_info":{"package_name":"com.tuturuuu.app.mobile"}},"oauth_client":[],"api_key":[{"current_key":"dummy_key"}],"services":{"appinvite_service":{"other_platform_oauth_client":[]}}},{"client_info":{"mobilesdk_app_id":"1:123:android:def","android_client_info":{"package_name":"com.tuturuuu.app.mobile.dev"}},"oauth_client":[],"api_key":[{"current_key":"dummy_key"}],"services":{"appinvite_service":{"other_platform_oauth_client":[]}}},{"client_info":{"mobilesdk_app_id":"1:123:android:ghi","android_client_info":{"package_name":"com.tuturuuu.app.mobile.stg"}},"oauth_client":[],"api_key":[{"current_key":"dummy_key"}],"services":{"appinvite_service":{"other_platform_oauth_client":[]}}}]}' > android/app/google-services.json
 
       - name: Build APK (development flavor)
-        if: steps.cache-build.outputs.cache-hit != 'true'
         run: flutter build apk --flavor development --target lib/main_development.dart
 
       - name: Upload APK artifact
@@ -78,4 +69,6 @@ jobs:
         with:
           name: android-dev-apk
           path: apps/mobile/build/app/outputs/flutter-apk/app-development-release.apk
+          if-no-files-found: error
           retention-days: 7
+          compression-level: 0

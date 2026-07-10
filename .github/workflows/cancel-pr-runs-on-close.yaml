@@ -19,7 +19,7 @@ jobs:
       deployments: read
 
   cancel-runs:
-    name: Cancel Active Runs
+    name: Cancel Active Runs And Delete PR Caches
     needs: [check-ci]
     if: needs.check-ci.outputs.should_run == 'true'
     runs-on: ubuntu-latest
@@ -40,7 +40,7 @@ jobs:
         with:
           node-version: 24
 
-      - name: Cancel active runs for the closed PR
+      - name: Cancel active runs and delete caches for the closed PR
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: node --experimental-strip-types scripts/ci/cancel-closed-pr-runs.ts

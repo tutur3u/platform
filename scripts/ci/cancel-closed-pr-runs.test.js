@@ -264,3 +264,40 @@ test('fails on unexpected cancellation errors', async () => {
     /GitHub API returned 403/
   );
 });
+
+test('deletes every cache scoped to the closed PR merge ref across pages', async () => {
+  const { cleanupClosedPullRequestCaches } = await modulePromise;
+  const deleted = [];
+  const listCalls = [];
+  const firstPage = Array.from({ length: 100 }, (_, index) => ({
+    id: index + 1,
+    key: `cache-${index + 1}`,
+  }));
+  const client = {
+    async deleteActionsCache(cacheId) {
+      deleted.push(cacheId);
+      return { status: cacheId === 101 ? 404 : 204 };
+    },
+    async listActionsCaches(input) {
+      listCalls.push(input);
+      return input.page === 1 ? firstPage : [{ id: 101, key: 'cache-101' }];
+    },
+  };
+
+  const summary = await cleanupClosedPullRequestCaches({
+    client,
+    event: closedPullRequestEvent(),
+    log: () => {},
+  });
+
+  assert.equal(deleted.length, 101);
+  assert.deepEqual(listCalls, [
+    { page: 1, perPage: 100, ref: 'refs/pull/42/merge' },
+    { page: 2, perPage: 100, ref: 'refs/pull/42/merge' },
+  ]);
+  assert.deepEqual(summary, {
+    considered: 101,
+    deleted: 100,
+    raceSkipped: 1,
+  });
+});

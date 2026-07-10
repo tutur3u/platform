@@ -46,7 +46,10 @@ Use this checklist for `apps/web` version badge and release metadata work.
   - latest successful row matching active color
   - latest successful row
 - Map `commitSubject` to `commitMessage`.
-- Convert millisecond timestamps to ISO strings for `builtAt`.
+- Populate `builtAt` only from explicit source metadata or the checked-out
+  commit's `committedAt` timestamp. Deployment activation, start, finish,
+  promotion, and update timestamps may order runtime candidates, but must not be
+  relabeled as source time.
 - Use the runtime deployment stamp file as the authoritative snapshot stamp
   when explicit env does not provide one.
 - Do not infer deployment URL, ref, or environment from active color or commit

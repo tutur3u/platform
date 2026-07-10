@@ -73,10 +73,6 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      # Use Vercel Remote Caching
-      TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
-      TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
-
       # Configure production Supabase client
       NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.PRODUCTION_SUPABASE_PUBLISHABLE_KEY }}
@@ -102,13 +98,18 @@ jobs:
         run: bash scripts/ci/run-with-backoff.sh bun install
 
       - name: Build workspace dependencies
-        run: |
-          bun run --filter @tuturuuu/types build
-          bun run --filter @tuturuuu/supabase build
+        uses: ./.github/actions/run-with-turbo-remote-cache
+        with:
+          command: bun turbo:local run build --concurrency=4 --filter=@tuturuuu/types --filter=@tuturuuu/supabase
+          token: ${{ github.actor != 'dependabot[bot]' && secrets.TURBO_TOKEN || '' }}
+          team: ${{ vars.TURBO_TEAM || secrets.TURBO_TEAM }}
 
       - name: Run tests
-        working-directory: packages/ui
-        run: bun run test
+        uses: ./.github/actions/run-with-turbo-remote-cache
+        with:
+          command: bun turbo:local run test --concurrency=4 --filter=@tuturuuu/ui
+          token: ${{ github.actor != 'dependabot[bot]' && secrets.TURBO_TOKEN || '' }}
+          team: ${{ vars.TURBO_TEAM || secrets.TURBO_TEAM }}
 
   prepare-publish-npm:
     needs: [build]
@@ -163,7 +164,7 @@ jobs:
         working-directory: packages/ui
         run: |
           mkdir -p "$RUNNER_TEMP/tuturuuu-ui-package"
-          npm pack --pack-destination "$RUNNER_TEMP/tuturuuu-ui-package"
+          npm pack --ignore-scripts --pack-destination "$RUNNER_TEMP/tuturuuu-ui-package"
 
       - name: Upload publish artifact
         if: steps.version-check.outputs.should_publish == 'true'
@@ -173,6 +174,7 @@ jobs:
           name: tuturuuu-ui-npm-package
           path: ${{ runner.temp }}/tuturuuu-ui-package/*.tgz
           retention-days: 1
+          compression-level: 0
 
   publish-npm:
     needs: [prepare-publish-npm]

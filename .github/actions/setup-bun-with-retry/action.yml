@@ -12,6 +12,42 @@ inputs:
 runs:
   using: composite
   steps:
+    - name: Restore and save trusted Bun runtime cache
+      if: ${{ github.event_name != 'pull_request' && github.actor != 'dependabot[bot]' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production') }}
+      uses: actions/cache@v6
+      with:
+        path: ~/.bun/bin/bun
+        key: bun-runtime-v1-${{ runner.os }}-${{ runner.arch }}-${{ inputs.bun-version }}-${{ hashFiles('bun.lock') }}
+        restore-keys: |
+          bun-runtime-v1-${{ runner.os }}-${{ runner.arch }}-${{ inputs.bun-version }}-
+
+    - name: Restore Bun runtime cache without saving
+      if: ${{ github.event_name == 'pull_request' || github.actor == 'dependabot[bot]' || (github.ref != 'refs/heads/main' && github.ref != 'refs/heads/production') }}
+      uses: actions/cache/restore@v6
+      with:
+        path: ~/.bun/bin/bun
+        key: bun-runtime-v1-${{ runner.os }}-${{ runner.arch }}-${{ inputs.bun-version }}-${{ hashFiles('bun.lock') }}
+        restore-keys: |
+          bun-runtime-v1-${{ runner.os }}-${{ runner.arch }}-${{ inputs.bun-version }}-
+
+    - name: Restore and save trusted Bun package cache
+      if: ${{ github.event_name != 'pull_request' && github.actor != 'dependabot[bot]' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production') }}
+      uses: actions/cache@v6
+      with:
+        path: ~/.bun/install/cache
+        key: bun-deps-v1-${{ runner.os }}-${{ runner.arch }}-${{ inputs.bun-version }}-${{ hashFiles('bun.lock') }}
+        restore-keys: |
+          bun-deps-v1-${{ runner.os }}-${{ runner.arch }}-${{ inputs.bun-version }}-
+
+    - name: Restore Bun package cache without saving
+      if: ${{ github.event_name == 'pull_request' || github.actor == 'dependabot[bot]' || (github.ref != 'refs/heads/main' && github.ref != 'refs/heads/production') }}
+      uses: actions/cache/restore@v6
+      with:
+        path: ~/.bun/install/cache
+        key: bun-deps-v1-${{ runner.os }}-${{ runner.arch }}-${{ inputs.bun-version }}-${{ hashFiles('bun.lock') }}
+        restore-keys: |
+          bun-deps-v1-${{ runner.os }}-${{ runner.arch }}-${{ inputs.bun-version }}-
+
     - name: Install Bun with backoff
       shell: bash
       env:

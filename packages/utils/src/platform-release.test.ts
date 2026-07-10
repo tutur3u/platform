@@ -10,7 +10,7 @@ describe('platform release metadata', () => {
     expect(TUTURUUU_PLATFORM_VERSION).toBe('0.19.0'); // x-release-please-version
   });
 
-  it('normalizes generated metadata and derives a short hash', () => {
+  it('preserves the source timestamp in builtAt and derives a short hash', () => {
     expect(
       normalizePlatformBuildMetadata({
         builtAt: '2026-05-27T10:00:00.000Z',

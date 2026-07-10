@@ -25,9 +25,17 @@ jobs:
         total_shards: [4]
 
     env:
-      TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
-      TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
       BASE_URL: https://tuturuuu.localhost:1355
+      DOCKER_WEB_CACHE_BACKEND_FROM: type=gha,scope=docker-backend,timeout=10m
+      DOCKER_WEB_CACHE_CHAT_REALTIME_FROM: type=gha,scope=docker-chat-realtime,timeout=10m
+      DOCKER_WEB_CACHE_HIVE_FROM: type=gha,scope=docker-hive-prod,timeout=10m
+      DOCKER_WEB_CACHE_HIVE_REALTIME_FROM: type=gha,scope=docker-hive-realtime,timeout=10m
+      DOCKER_WEB_CACHE_MARKITDOWN_FROM: type=gha,scope=docker-markitdown,timeout=10m
+      DOCKER_WEB_CACHE_MEET_REALTIME_FROM: type=gha,scope=docker-meet-realtime,timeout=10m
+      DOCKER_WEB_CACHE_STORAGE_UNZIP_FROM: type=gha,scope=docker-storage-unzip-proxy,timeout=10m
+      DOCKER_WEB_CACHE_SUPERMEMORY_FROM: type=gha,scope=docker-supermemory,timeout=10m
+      DOCKER_WEB_CACHE_TANSTACK_FROM: type=gha,scope=docker-tanstack-web-prod,timeout=10m
+      DOCKER_WEB_CACHE_WEB_FROM: type=gha,scope=docker-web-prod,timeout=10m
       DOCKER_WEB_COMPOSE_PROJECT_NAME: ttr-e2e-${{ github.run_id }}-${{ matrix.shard }}
       E2E_SHARD_INDEX: ${{ matrix.shard }}
       E2E_TOTAL_SHARDS: ${{ matrix.total_shards }}
@@ -69,12 +77,12 @@ jobs:
         uses: actions/cache/restore@v6
         with:
           path: /tmp/supabase-docker
-          key: supabase-docker-${{ runner.os }}-${{ steps.supabase-version.outputs.version }}-${{ github.run_id }}-${{ github.run_attempt }}
+          key: supabase-docker-v2-${{ runner.os }}-${{ runner.arch }}-${{ steps.supabase-version.outputs.version }}-images
           restore-keys: |
-            supabase-docker-${{ runner.os }}-${{ steps.supabase-version.outputs.version }}-
+            supabase-docker-v2-${{ runner.os }}-${{ runner.arch }}-${{ steps.supabase-version.outputs.version }}-
 
       - name: Load cached Docker images
-        if: steps.cache-supabase.outputs.cache-hit == 'true'
+        if: steps.cache-supabase.outputs.cache-matched-key != ''
         run: docker load -i /tmp/supabase-docker/images.tar || true
 
       # --- Node / Bun ---
@@ -89,14 +97,47 @@ jobs:
           node-version: 24
           package-manager-cache: false
 
-      - name: Cache turbo build
-        uses: actions/cache@v6
-        with:
-          path: .turbo
-          key: ${{ runner.os }}-turbo-e2e-${{ github.sha }}
-          restore-keys: |
-            ${{ runner.os }}-turbo-e2e-
-            ${{ runner.os }}-turbo-
+      - name: Expose GitHub cache runtime to BuildKit
+        uses: crazy-max/ghaction-github-runtime@04d248b84655b509d8c44dc1d6f990c879747487 # v4.0.0
+
+      - name: Configure trusted BuildKit cache exports
+        if: ${{ github.ref == 'refs/heads/main' && matrix.shard == 1 }}
+        run: |
+          {
+            echo 'DOCKER_WEB_CACHE_BACKEND_TO=type=gha,scope=docker-backend,mode=max,timeout=10m,ignore-error=true'
+            echo 'DOCKER_WEB_CACHE_CHAT_REALTIME_TO=type=gha,scope=docker-chat-realtime,mode=min,timeout=10m,ignore-error=true'
+            echo 'DOCKER_WEB_CACHE_HIVE_TO=type=gha,scope=docker-hive-prod,mode=min,timeout=10m,ignore-error=true'
+            echo 'DOCKER_WEB_CACHE_HIVE_REALTIME_TO=type=gha,scope=docker-hive-realtime,mode=min,timeout=10m,ignore-error=true'
+            echo 'DOCKER_WEB_CACHE_MARKITDOWN_TO=type=gha,scope=docker-markitdown,mode=min,timeout=10m,ignore-error=true'
+            echo 'DOCKER_WEB_CACHE_MEET_REALTIME_TO=type=gha,scope=docker-meet-realtime,mode=min,timeout=10m,ignore-error=true'
+            echo 'DOCKER_WEB_CACHE_STORAGE_UNZIP_TO=type=gha,scope=docker-storage-unzip-proxy,mode=min,timeout=10m,ignore-error=true'
+            echo 'DOCKER_WEB_CACHE_SUPERMEMORY_TO=type=gha,scope=docker-supermemory,mode=min,timeout=10m,ignore-error=true'
+            echo 'DOCKER_WEB_CACHE_TANSTACK_TO=type=gha,scope=docker-tanstack-web-prod,mode=max,timeout=10m,ignore-error=true'
+            echo 'DOCKER_WEB_CACHE_WEB_TO=type=gha,scope=docker-web-prod,mode=max,timeout=10m,ignore-error=true'
+          } >> "$GITHUB_ENV"
+
+      - name: Prepare trusted Turbo BuildKit secrets
+        if: ${{ github.ref == 'refs/heads/main' && github.actor != 'dependabot[bot]' }}
+        env:
+          CACHE_TEAM: ${{ vars.TURBO_TEAM || secrets.TURBO_TEAM }}
+          CACHE_TOKEN: ${{ secrets.TURBO_TOKEN }}
+        run: |
+          if [ -z "${CACHE_TOKEN:-}" ]; then
+            echo "::notice title=Turbo BuildKit cache disabled::TURBO_TOKEN is not configured."
+            exit 0
+          fi
+          if [ -z "${CACHE_TEAM:-}" ]; then
+            echo "::error title=Invalid Turbo BuildKit cache configuration::TURBO_TEAM is required when TURBO_TOKEN is configured."
+            exit 1
+          fi
+
+          umask 077
+          printf '%s' "$CACHE_TEAM" > "$RUNNER_TEMP/turbo-team"
+          printf '%s' "$CACHE_TOKEN" > "$RUNNER_TEMP/turbo-token"
+          {
+            echo "DOCKER_WEB_TURBO_TEAM_SECRET_FILE=$RUNNER_TEMP/turbo-team"
+            echo "DOCKER_WEB_TURBO_TOKEN_SECRET_FILE=$RUNNER_TEMP/turbo-token"
+          } >> "$GITHUB_ENV"
 
       - name: Install dependencies
         run: bash scripts/ci/run-with-backoff.sh bun install
@@ -185,7 +226,7 @@ jobs:
           echo "::endgroup::"
 
       - name: Redact E2E diagnostics artifact
-        if: ${{ !cancelled() }}
+        if: ${{ failure() }}
         run: |
           node <<'NODE'
           const fs = require('node:fs');
@@ -242,7 +283,7 @@ jobs:
 
       - name: Save Supabase Docker images for cache
         id: prepare-supabase-docker-cache
-        if: ${{ always() && matrix.shard == 1 && steps.cache-supabase.outputs.cache-matched-key == '' }}
+        if: ${{ always() && github.ref == 'refs/heads/main' && matrix.shard == 1 && steps.cache-supabase.outputs.cache-matched-key == '' }}
         run: |
           mkdir -p /tmp/supabase-docker
           docker images --format '{{.Repository}}:{{.Tag}}' | grep 'supabase/' | grep -v '<none>' | xargs -r docker save -o /tmp/supabase-docker/images.tar
@@ -258,34 +299,20 @@ jobs:
         uses: actions/cache/save@v6
         with:
           path: /tmp/supabase-docker
-          key: supabase-docker-${{ runner.os }}-${{ steps.supabase-version.outputs.version }}-${{ github.run_id }}-${{ github.run_attempt }}
+          key: supabase-docker-v2-${{ runner.os }}-${{ runner.arch }}-${{ steps.supabase-version.outputs.version }}-images
 
-      # --- Upload artifacts on failure ---
-      - name: Upload E2E diagnostics
+      # --- Upload one consolidated artifact per failed shard ---
+      - name: Upload E2E failure artifact
         uses: actions/upload-artifact@v7
-        if: ${{ !cancelled() }}
+        if: ${{ failure() }}
         with:
-          name: e2e-diagnostics-${{ matrix.shard }}-of-${{ matrix.total_shards }}
-          path: tmp/e2e-diagnostics/
+          name: e2e-failure-${{ matrix.shard }}-of-${{ matrix.total_shards }}
+          path: |
+            tmp/e2e-diagnostics/
+            apps/web/blob-report/
+            apps/web/test-results/
           if-no-files-found: warn
-          retention-days: 14
-
-      - name: Upload Playwright report
-        uses: actions/upload-artifact@v7
-        if: ${{ !cancelled() }}
-        with:
-          name: playwright-report-${{ matrix.shard }}-of-${{ matrix.total_shards }}
-          path: apps/web/blob-report/
-          retention-days: 14
-
-      - name: Upload test results
-        uses: actions/upload-artifact@v7
-        if: ${{ !cancelled() }}
-        with:
-          name: test-results-${{ matrix.shard }}-of-${{ matrix.total_shards }}
-          path: apps/web/test-results/
-          if-no-files-found: ignore
-          retention-days: 14
+          retention-days: 7
 
       # --- Cleanup ---
       - name: Stop Docker web and Supabase
@@ -293,6 +320,10 @@ jobs:
         run: |
           node scripts/docker-web.js down --mode prod --strategy blue-green --env-file tmp/e2e/web.env || true
           bun sb:stop || true
+
+      - name: Remove Turbo BuildKit secret files
+        if: always()
+        run: rm -f "$RUNNER_TEMP/turbo-team" "$RUNNER_TEMP/turbo-token"
 
   migration-e2e:
     name: Migration E2E (${{ matrix.mode }})
@@ -314,9 +345,17 @@ jobs:
             setup_supabase: "true"
 
     env:
-      TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
-      TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
       BASE_URL: https://tuturuuu.localhost:1355
+      DOCKER_WEB_CACHE_BACKEND_FROM: type=gha,scope=docker-backend,timeout=10m
+      DOCKER_WEB_CACHE_CHAT_REALTIME_FROM: type=gha,scope=docker-chat-realtime,timeout=10m
+      DOCKER_WEB_CACHE_HIVE_FROM: type=gha,scope=docker-hive-prod,timeout=10m
+      DOCKER_WEB_CACHE_HIVE_REALTIME_FROM: type=gha,scope=docker-hive-realtime,timeout=10m
+      DOCKER_WEB_CACHE_MARKITDOWN_FROM: type=gha,scope=docker-markitdown,timeout=10m
+      DOCKER_WEB_CACHE_MEET_REALTIME_FROM: type=gha,scope=docker-meet-realtime,timeout=10m
+      DOCKER_WEB_CACHE_STORAGE_UNZIP_FROM: type=gha,scope=docker-storage-unzip-proxy,timeout=10m
+      DOCKER_WEB_CACHE_SUPERMEMORY_FROM: type=gha,scope=docker-supermemory,timeout=10m
+      DOCKER_WEB_CACHE_TANSTACK_FROM: type=gha,scope=docker-tanstack-web-prod,timeout=10m
+      DOCKER_WEB_CACHE_WEB_FROM: type=gha,scope=docker-web-prod,timeout=10m
       COMPOSE_PROJECT_NAME: ttr-migration-e2e-${{ github.run_id }}-${{ matrix.mode }}
       DOCKER_WEB_COMPOSE_PROJECT_NAME: ttr-migration-e2e-${{ github.run_id }}-${{ matrix.mode }}
       E2E_COMPARE_REPORT_PATH: tmp/e2e/web-migration/${{ matrix.mode }}-compare-report.json
@@ -360,14 +399,39 @@ jobs:
           node-version: 24
           package-manager-cache: false
 
-      - name: Cache turbo build
-        uses: actions/cache@v6
-        with:
-          path: .turbo
-          key: ${{ runner.os }}-turbo-migration-e2e-${{ matrix.mode }}-${{ github.sha }}
-          restore-keys: |
-            ${{ runner.os }}-turbo-migration-e2e-${{ matrix.mode }}-
-            ${{ runner.os }}-turbo-
+      - name: Expose GitHub cache runtime to BuildKit
+        uses: crazy-max/ghaction-github-runtime@04d248b84655b509d8c44dc1d6f990c879747487 # v4.0.0
+
+      - name: Configure trusted migration BuildKit cache exports
+        if: ${{ github.ref == 'refs/heads/main' && matrix.mode == 'tanstack-dual-stack' }}
+        run: |
+          {
+            echo 'DOCKER_WEB_CACHE_BACKEND_TO=type=gha,scope=docker-backend,mode=max,timeout=10m,ignore-error=true'
+            echo 'DOCKER_WEB_CACHE_TANSTACK_TO=type=gha,scope=docker-tanstack-web-prod,mode=max,timeout=10m,ignore-error=true'
+          } >> "$GITHUB_ENV"
+
+      - name: Prepare trusted Turbo BuildKit secrets
+        if: ${{ github.ref == 'refs/heads/main' && github.actor != 'dependabot[bot]' }}
+        env:
+          CACHE_TEAM: ${{ vars.TURBO_TEAM || secrets.TURBO_TEAM }}
+          CACHE_TOKEN: ${{ secrets.TURBO_TOKEN }}
+        run: |
+          if [ -z "${CACHE_TOKEN:-}" ]; then
+            echo "::notice title=Turbo BuildKit cache disabled::TURBO_TOKEN is not configured."
+            exit 0
+          fi
+          if [ -z "${CACHE_TEAM:-}" ]; then
+            echo "::error title=Invalid Turbo BuildKit cache configuration::TURBO_TEAM is required when TURBO_TOKEN is configured."
+            exit 1
+          fi
+
+          umask 077
+          printf '%s' "$CACHE_TEAM" > "$RUNNER_TEMP/turbo-team"
+          printf '%s' "$CACHE_TOKEN" > "$RUNNER_TEMP/turbo-token"
+          {
+            echo "DOCKER_WEB_TURBO_TEAM_SECRET_FILE=$RUNNER_TEMP/turbo-team"
+            echo "DOCKER_WEB_TURBO_TOKEN_SECRET_FILE=$RUNNER_TEMP/turbo-token"
+          } >> "$GITHUB_ENV"
 
       - name: Install dependencies
         run: bash scripts/ci/run-with-backoff.sh bun install
@@ -381,7 +445,7 @@ jobs:
 
       - name: Upload migration E2E artifacts
         uses: actions/upload-artifact@v7
-        if: ${{ !cancelled() }}
+        if: ${{ failure() }}
         with:
           name: migration-e2e-${{ matrix.mode }}
           path: |
@@ -389,10 +453,9 @@ jobs:
             apps/tanstack-web/test-results/
             apps/web/blob-report/
             apps/web/test-results/
-            tmp/e2e/
-            tmp/e2e-diagnostics/
+            tmp/e2e/web-migration/*.json
           if-no-files-found: ignore
-          retention-days: 14
+          retention-days: 7
 
       - name: Stop migration E2E stacks
         if: always()
@@ -400,3 +463,7 @@ jobs:
           docker compose -f docker-compose.tanstack-dual.yml down || true
           node scripts/docker-web.js down --mode prod --strategy blue-green --env-file tmp/e2e/web.env || true
           bun sb:stop || true
+
+      - name: Remove Turbo BuildKit secret files
+        if: always()
+        run: rm -f "$RUNNER_TEMP/turbo-team" "$RUNNER_TEMP/turbo-token"

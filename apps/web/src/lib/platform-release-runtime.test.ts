@@ -50,6 +50,7 @@ describe('getWebPlatformReleaseInfo', () => {
       targets: {
         web: {
           activeColor: 'green',
+          committedAt: '2026-05-20T12:00:00.000Z',
           commitHash: 'runtime-commit',
           commitShortHash: 'runtime',
           deploymentStamp: 'runtime-target-stamp',
@@ -60,6 +61,7 @@ describe('getWebPlatformReleaseInfo', () => {
     writeRuntimeFile(runtimeDir, 'watch/blue-green-auto-deploy.history.json', [
       {
         activeColor: 'green',
+        committedAt: '2026-05-20T12:00:00.000Z',
         commitHash: 'runtime-commit',
         commitShortHash: 'runtime',
         commitSubject: 'Runtime deployment',
@@ -95,6 +97,22 @@ describe('getWebPlatformReleaseInfo', () => {
     });
   });
 
+  it('reads the deployment stamp from runtime-only container metadata', () => {
+    const { root } = createRuntimeDir();
+
+    expect(
+      getWebPlatformReleaseInfo('Tuturuuu', {
+        cwd: path.join(root, 'empty'),
+        env: {
+          PLATFORM_DEPLOYMENT_STAMP: 'runtime-only-stamp',
+        },
+      })
+    ).toMatchObject({
+      builtAt: 'local',
+      deploymentStamp: 'runtime-only-stamp',
+    });
+  });
+
   it('fills blank local metadata from the active blue-green runtime snapshot', () => {
     const { runtimeDir } = createRuntimeDir();
 
@@ -104,6 +122,7 @@ describe('getWebPlatformReleaseInfo', () => {
       targets: {
         web: {
           activeColor: 'green',
+          committedAt: '2026-05-20T12:00:00.000Z',
           commitHash: 'green-commit-hash',
           commitShortHash: 'green12',
           deploymentStamp: 'target-stamp',
@@ -115,6 +134,7 @@ describe('getWebPlatformReleaseInfo', () => {
       deployments: [
         {
           activeColor: 'green',
+          committedAt: '2026-05-20T12:00:00.000Z',
           commitHash: 'green-commit-hash',
           commitShortHash: 'green12',
           commitSubject: 'fix(web): ship runtime badge metadata',
@@ -137,7 +157,7 @@ describe('getWebPlatformReleaseInfo', () => {
         },
       })
     ).toMatchObject({
-      builtAt: '2026-05-28T20:28:20.000Z',
+      builtAt: '2026-05-20T12:00:00.000Z',
       commitHash: 'green-commit-hash',
       commitMessage: 'fix(web): ship runtime badge metadata',
       deploymentStamp: 'runtime-stamp',
@@ -152,6 +172,7 @@ describe('getWebPlatformReleaseInfo', () => {
     writeRuntimeFile(runtimeDir, 'watch/blue-green-auto-deploy.history.json', [
       {
         activeColor: 'green',
+        committedAt: '2026-05-21T09:00:00.000Z',
         commitHash: 'newer-green-hash',
         commitShortHash: 'green99',
         commitSubject: 'newer standby refresh',
@@ -160,6 +181,7 @@ describe('getWebPlatformReleaseInfo', () => {
       },
       {
         activeColor: 'blue',
+        committedAt: '2026-05-19T08:00:00.000Z',
         commitHash: 'active-blue-hash',
         commitShortHash: 'blue12',
         commitSubject: 'active blue deployment',
@@ -175,10 +197,73 @@ describe('getWebPlatformReleaseInfo', () => {
         },
       })
     ).toMatchObject({
-      builtAt: '2026-05-28T20:33:20.000Z',
+      builtAt: '2026-05-19T08:00:00.000Z',
       commitHash: 'active-blue-hash',
       commitMessage: 'active blue deployment',
       shortCommitHash: 'blue12',
+    });
+  });
+
+  it('orders deployment rows by deployment time while exposing source time', () => {
+    const { runtimeDir } = createRuntimeDir();
+
+    writeRuntimeFile(runtimeDir, 'prod/active-color', 'blue\n');
+    writeRuntimeFile(runtimeDir, 'watch/blue-green-auto-deploy.history.json', [
+      {
+        activeColor: 'blue',
+        committedAt: '2026-05-01T08:00:00.000Z',
+        commitHash: 'latest-deployment-hash',
+        commitShortHash: 'latest1',
+        finishedAt: 1780000500000,
+        status: 'successful',
+      },
+      {
+        activeColor: 'blue',
+        committedAt: '2026-05-30T08:00:00.000Z',
+        commitHash: 'older-deployment-hash',
+        commitShortHash: 'older12',
+        finishedAt: 1780000400000,
+        status: 'successful',
+      },
+    ]);
+
+    expect(
+      getWebPlatformReleaseInfo('Tuturuuu', {
+        env: {
+          PLATFORM_BLUE_GREEN_MONITORING_DIR: runtimeDir,
+        },
+      })
+    ).toMatchObject({
+      builtAt: '2026-05-01T08:00:00.000Z',
+      commitHash: 'latest-deployment-hash',
+      shortCommitHash: 'latest1',
+    });
+  });
+
+  it('does not relabel deployment timestamps as the source timestamp', () => {
+    const { runtimeDir } = createRuntimeDir();
+
+    writeRuntimeFile(runtimeDir, 'prod/active-color', 'blue\n');
+    writeRuntimeFile(runtimeDir, 'watch/blue-green-auto-deploy.history.json', [
+      {
+        activeColor: 'blue',
+        commitHash: 'legacy-runtime-hash',
+        commitShortHash: 'legacy1',
+        finishedAt: 1780000400000,
+        status: 'successful',
+      },
+    ]);
+
+    expect(
+      getWebPlatformReleaseInfo('Tuturuuu', {
+        env: {
+          PLATFORM_BLUE_GREEN_MONITORING_DIR: runtimeDir,
+        },
+      })
+    ).toMatchObject({
+      builtAt: 'local',
+      commitHash: 'legacy-runtime-hash',
+      shortCommitHash: 'legacy1',
     });
   });
 

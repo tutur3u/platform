@@ -79,11 +79,6 @@ jobs:
     needs: [check-ci]
     if: needs.check-ci.outputs.should_run == 'true'
     runs-on: ubuntu-latest
-    env:
-      TURBO_API: ${{ vars.TURBO_API }}
-      TURBO_REMOTE_CACHE_SIGNATURE_KEY: ${{ secrets.TURBO_REMOTE_CACHE_SIGNATURE_KEY }}
-      TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
-      TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
@@ -121,6 +116,9 @@ jobs:
         with:
           driver-opts: image=moby/buildkit:buildx-stable-1
 
+      - name: Expose GitHub cache runtime to BuildKit
+        uses: crazy-max/ghaction-github-runtime@04d248b84655b509d8c44dc1d6f990c879747487 # v4.0.0
+
       - name: Validate Docker parity checks
         run: node scripts/check-docker-web.js
 
@@ -157,19 +155,25 @@ jobs:
           docker compose -f docker-compose.tanstack-dual.yml config > /tmp/docker-compose.tanstack-dual.yml
 
       - name: Build web dev image
-        run: |
-          turbo_secrets=()
-          if [ -n "${TURBO_API:-}" ]; then turbo_secrets+=(--secret id=turbo_api,env=TURBO_API); fi
-          if [ -n "${TURBO_REMOTE_CACHE_SIGNATURE_KEY:-}" ]; then turbo_secrets+=(--secret id=turbo_remote_cache_signature_key,env=TURBO_REMOTE_CACHE_SIGNATURE_KEY); fi
-          if [ -n "${TURBO_TEAM:-}" ]; then turbo_secrets+=(--secret id=turbo_team,env=TURBO_TEAM); fi
-          if [ -n "${TURBO_TOKEN:-}" ]; then turbo_secrets+=(--secret id=turbo_token,env=TURBO_TOKEN); fi
+        uses: ./.github/actions/run-with-turbo-remote-cache
+        with:
+          token: ${{ (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production') && github.event_name != 'pull_request' && github.actor != 'dependabot[bot]' && secrets.TURBO_TOKEN || '' }}
+          team: ${{ (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production') && github.event_name != 'pull_request' && github.actor != 'dependabot[bot]' && (vars.TURBO_TEAM || secrets.TURBO_TEAM) || '' }}
+          command: |
+            turbo_secrets=()
+            if [ -n "${TURBO_TEAM:-}" ]; then turbo_secrets+=(--secret id=turbo_team,env=TURBO_TEAM); fi
+            if [ -n "${TURBO_TOKEN:-}" ]; then turbo_secrets+=(--secret id=turbo_token,env=TURBO_TOKEN); fi
+            cache_to=()
+            if [[ "$GITHUB_REF" == "refs/heads/main" || "$GITHUB_REF" == "refs/heads/production" ]]; then
+              cache_to+=(--cache-to type=gha,scope=docker-web-dev,mode=max,timeout=10m,ignore-error=true)
+            fi
 
-          docker buildx build --load \
-            --target dev \
-            --cache-from type=gha,scope=docker-web-dev \
-            --cache-to type=gha,scope=docker-web-dev,mode=max \
-            "${turbo_secrets[@]}" \
-            -f apps/web/Dockerfile .
+            docker buildx build --load \
+              --target dev \
+              --cache-from type=gha,scope=docker-web-dev,timeout=10m \
+              "${cache_to[@]}" \
+              "${turbo_secrets[@]}" \
+              -f apps/web/Dockerfile .
 
       - name: Free Docker disk after web dev image
         if: always()
@@ -180,20 +184,26 @@ jobs:
           df -h /
 
       - name: Build web prod image
-        run: |
-          turbo_secrets=()
-          if [ -n "${TURBO_API:-}" ]; then turbo_secrets+=(--secret id=turbo_api,env=TURBO_API); fi
-          if [ -n "${TURBO_REMOTE_CACHE_SIGNATURE_KEY:-}" ]; then turbo_secrets+=(--secret id=turbo_remote_cache_signature_key,env=TURBO_REMOTE_CACHE_SIGNATURE_KEY); fi
-          if [ -n "${TURBO_TEAM:-}" ]; then turbo_secrets+=(--secret id=turbo_team,env=TURBO_TEAM); fi
-          if [ -n "${TURBO_TOKEN:-}" ]; then turbo_secrets+=(--secret id=turbo_token,env=TURBO_TOKEN); fi
+        uses: ./.github/actions/run-with-turbo-remote-cache
+        with:
+          token: ${{ (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production') && github.event_name != 'pull_request' && github.actor != 'dependabot[bot]' && secrets.TURBO_TOKEN || '' }}
+          team: ${{ (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production') && github.event_name != 'pull_request' && github.actor != 'dependabot[bot]' && (vars.TURBO_TEAM || secrets.TURBO_TEAM) || '' }}
+          command: |
+            turbo_secrets=()
+            if [ -n "${TURBO_TEAM:-}" ]; then turbo_secrets+=(--secret id=turbo_team,env=TURBO_TEAM); fi
+            if [ -n "${TURBO_TOKEN:-}" ]; then turbo_secrets+=(--secret id=turbo_token,env=TURBO_TOKEN); fi
+            cache_to=()
+            if [[ "$GITHUB_REF" == "refs/heads/main" || "$GITHUB_REF" == "refs/heads/production" ]]; then
+              cache_to+=(--cache-to type=gha,scope=docker-web-prod,mode=max,timeout=10m,ignore-error=true)
+            fi
 
-          docker buildx build --load \
-            --target runner \
-            --secret id=web_env,src=apps/web/.env.local \
-            --cache-from type=gha,scope=docker-web-prod \
-            --cache-to type=gha,scope=docker-web-prod,mode=max \
-            "${turbo_secrets[@]}" \
-            -f apps/web/Dockerfile .
+            docker buildx build --load \
+              --target runner \
+              --secret id=web_env,src=apps/web/.env.local \
+              --cache-from type=gha,scope=docker-web-prod,timeout=10m \
+              "${cache_to[@]}" \
+              "${turbo_secrets[@]}" \
+              -f apps/web/Dockerfile .
 
       - name: Free Docker disk after web prod image
         if: always()
@@ -204,19 +214,25 @@ jobs:
           df -h /
 
       - name: Build TanStack web prod image
-        run: |
-          turbo_secrets=()
-          if [ -n "${TURBO_API:-}" ]; then turbo_secrets+=(--secret id=turbo_api,env=TURBO_API); fi
-          if [ -n "${TURBO_REMOTE_CACHE_SIGNATURE_KEY:-}" ]; then turbo_secrets+=(--secret id=turbo_remote_cache_signature_key,env=TURBO_REMOTE_CACHE_SIGNATURE_KEY); fi
-          if [ -n "${TURBO_TEAM:-}" ]; then turbo_secrets+=(--secret id=turbo_team,env=TURBO_TEAM); fi
-          if [ -n "${TURBO_TOKEN:-}" ]; then turbo_secrets+=(--secret id=turbo_token,env=TURBO_TOKEN); fi
+        uses: ./.github/actions/run-with-turbo-remote-cache
+        with:
+          token: ${{ (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production') && github.event_name != 'pull_request' && github.actor != 'dependabot[bot]' && secrets.TURBO_TOKEN || '' }}
+          team: ${{ (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production') && github.event_name != 'pull_request' && github.actor != 'dependabot[bot]' && (vars.TURBO_TEAM || secrets.TURBO_TEAM) || '' }}
+          command: |
+            turbo_secrets=()
+            if [ -n "${TURBO_TEAM:-}" ]; then turbo_secrets+=(--secret id=turbo_team,env=TURBO_TEAM); fi
+            if [ -n "${TURBO_TOKEN:-}" ]; then turbo_secrets+=(--secret id=turbo_token,env=TURBO_TOKEN); fi
+            cache_to=()
+            if [[ "$GITHUB_REF" == "refs/heads/main" || "$GITHUB_REF" == "refs/heads/production" ]]; then
+              cache_to+=(--cache-to type=gha,scope=docker-tanstack-web-prod,mode=max,timeout=10m,ignore-error=true)
+            fi
 
-          docker buildx build --load \
-            --target runner \
-            --cache-from type=gha,scope=docker-tanstack-web-prod \
-            --cache-to type=gha,scope=docker-tanstack-web-prod,mode=max \
-            "${turbo_secrets[@]}" \
-            -f apps/tanstack-web/Dockerfile .
+            docker buildx build --load \
+              --target runner \
+              --cache-from type=gha,scope=docker-tanstack-web-prod,timeout=10m \
+              "${cache_to[@]}" \
+              "${turbo_secrets[@]}" \
+              -f apps/tanstack-web/Dockerfile .
 
       - name: Free Docker disk after TanStack web prod image
         if: always()
@@ -228,9 +244,14 @@ jobs:
 
       - name: Build storage unzip proxy image
         run: |
+          cache_to=()
+          if [[ "$GITHUB_REF" == "refs/heads/main" || "$GITHUB_REF" == "refs/heads/production" ]]; then
+            cache_to+=(--cache-to type=gha,scope=docker-storage-unzip-proxy,mode=min,timeout=10m,ignore-error=true)
+          fi
+
           docker buildx build --load \
-            --cache-from type=gha,scope=docker-storage-unzip-proxy \
-            --cache-to type=gha,scope=docker-storage-unzip-proxy,mode=max \
+            --cache-from type=gha,scope=docker-storage-unzip-proxy,timeout=10m \
+            "${cache_to[@]}" \
             -f apps/storage-unzip-proxy/Dockerfile apps/storage-unzip-proxy
 
       - name: Free Docker disk after storage unzip proxy image
@@ -243,7 +264,12 @@ jobs:
 
       - name: Build backend image
         run: |
+          cache_to=()
+          if [[ "$GITHUB_REF" == "refs/heads/main" || "$GITHUB_REF" == "refs/heads/production" ]]; then
+            cache_to+=(--cache-to type=gha,scope=docker-backend,mode=max,timeout=10m,ignore-error=true)
+          fi
+
           docker buildx build --load \
-            --cache-from type=gha,scope=docker-backend \
-            --cache-to type=gha,scope=docker-backend,mode=max \
+            --cache-from type=gha,scope=docker-backend,timeout=10m \
+            "${cache_to[@]}" \
             -f apps/backend/Dockerfile .
