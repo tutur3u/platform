@@ -207,6 +207,19 @@ export async function createInboundMessage({
   if (existingMessageError) throw existingMessageError;
   if (existingMessage) return existingMessage;
 
+  if (parsed.internetMessageId) {
+    const {
+      data: existingInternetMessage,
+      error: existingInternetMessageError,
+    } = await privateTable(admin, 'mail_messages')
+      .select('*')
+      .eq('mailbox_id', mailbox.id)
+      .eq('internet_message_id', parsed.internetMessageId)
+      .maybeSingle();
+    if (existingInternetMessageError) throw existingInternetMessageError;
+    if (existingInternetMessage) return existingInternetMessage;
+  }
+
   const sanitizedHtml = parsed.bodyHtml
     ? sanitizeMailHtml(parsed.bodyHtml)
     : null;

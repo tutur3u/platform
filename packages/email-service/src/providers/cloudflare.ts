@@ -165,8 +165,10 @@ export class CloudflareEmailProvider extends BaseEmailProvider {
         ...(payload.result.delivered ?? []),
         ...(payload.result.queued ?? []),
       ];
+      const providerAccepted =
+        Boolean(payload.result.message_id) || accepted.length > 0;
 
-      if (permanentBounces.length > 0 || accepted.length === 0) {
+      if (permanentBounces.length > 0 || !providerAccepted) {
         return {
           success: false,
           error:

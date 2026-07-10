@@ -4,7 +4,7 @@ create extension if not exists pgtap with schema extensions;
 
 set local search_path = public, extensions;
 
-select plan(34);
+select plan(37);
 
 select ok(to_regclass('private.mail_domains') is not null, 'mail domains live in the private schema');
 select ok(to_regclass('private.mail_stored_objects') is not null, 'mail stored objects live in the private schema');
@@ -232,6 +232,40 @@ select ok(
       and outbound_provider = 'ses'
   ),
   'the Tuturuuu domain preserves SES as both providers after backfill'
+);
+
+select ok(
+  exists (
+    select 1
+    from information_schema.columns
+    where table_schema = 'private'
+      and table_name = 'mail_domains'
+      and column_name = 'canonical_domain_id'
+  ),
+  'mail domains can reference a canonical delivery domain'
+);
+
+select ok(
+  exists (
+    select 1
+    from private.mail_domains as ingress
+    join private.mail_domains as canonical
+      on canonical.id = ingress.canonical_domain_id
+    where ingress.domain = 'ingest.tutur3u.com'
+      and ingress.status = 'active'
+      and ingress.inbound_provider = 'cloudflare'
+      and ingress.outbound_provider = 'ses'
+      and canonical.domain = 'tuturuuu.com'
+  ),
+  'the verified Cloudflare shadow domain maps to the Tuturuuu domain'
+);
+
+select throws_ok(
+  $$ update private.mail_domains
+     set canonical_domain_id = id
+     where domain = 'tuturuuu.com' $$,
+  null,
+  'mail domains cannot reference themselves as canonical'
 );
 
 select lives_ok(

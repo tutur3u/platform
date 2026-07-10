@@ -331,23 +331,23 @@ describe('Email Validation', () => {
       expect(result.success).toBe(true);
     });
 
-    it('rejects unsupported attachment types', () => {
+    it('accepts standard attachment MIME types beyond images and PDFs', () => {
       const result = emailAttachmentSchema.safeParse({
         contentType: 'application/zip',
         data: new Uint8Array([1, 2, 3]),
         filename: 'archive.zip',
       });
 
-      expect(result.success).toBe(false);
+      expect(result.success).toBe(true);
     });
   });
 
   describe('emailContentSchema attachments', () => {
-    it('rejects more than five attachments', () => {
+    it('rejects more than 32 attachments', () => {
       const result = emailContentSchema.safeParse({
         subject: 'Test Subject',
         html: '<p>Hello</p>',
-        attachments: Array.from({ length: 6 }, (_, index) => ({
+        attachments: Array.from({ length: 33 }, (_, index) => ({
           contentType: 'image/png',
           data: new Uint8Array([index]),
           filename: `image-${index}.png`,

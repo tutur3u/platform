@@ -55,32 +55,51 @@ async function replaceRecipients(
 async function ensureThread(
   admin: AnyRecord,
   mailboxId: string,
-  subject: string
+  payload: CreateMailDraftPayload
 ) {
-  const normalizedSubject = subject
+  const normalizedSubject = payload.subject
     .replace(/^(re|fw|fwd):\s*/giu, '')
     .trim()
     .toLowerCase();
-  const { data: existing, error: existingError } = await privateTable(
-    admin,
-    'mail_threads'
-  )
-    .select('*')
-    .eq('mailbox_id', mailboxId)
-    .eq('normalized_subject', normalizedSubject)
-    .maybeSingle();
-
-  if (existingError) {
-    throw new Error(`Failed to load mail thread: ${existingError.message}`);
+  const authoritativeIds = [
+    payload.inReplyTo,
+    ...(payload.references ?? []).slice().reverse(),
+  ].filter((value): value is string => Boolean(value));
+  if (authoritativeIds.length > 0) {
+    const { data: parent, error: parentError } = await privateTable(
+      admin,
+      'mail_messages'
+    )
+      .select('thread_id')
+      .eq('mailbox_id', mailboxId)
+      .in('internet_message_id', authoritativeIds)
+      .not('thread_id', 'is', null)
+      .limit(1)
+      .maybeSingle();
+    if (parentError) {
+      throw new Error(`Failed to load reply thread: ${parentError.message}`);
+    }
+    if (parent?.thread_id) {
+      const { data: thread, error: threadError } = await privateTable(
+        admin,
+        'mail_threads'
+      )
+        .select('*')
+        .eq('id', parent.thread_id)
+        .eq('mailbox_id', mailboxId)
+        .single();
+      if (threadError) {
+        throw new Error(`Failed to load reply thread: ${threadError.message}`);
+      }
+      return thread;
+    }
   }
-
-  if (existing) return existing;
 
   const { data, error } = await privateTable(admin, 'mail_threads')
     .insert({
       mailbox_id: mailboxId,
       normalized_subject: normalizedSubject,
-      subject,
+      subject: payload.subject,
     })
     .select('*')
     .single();
@@ -104,7 +123,7 @@ async function persistMessage(
   const sanitizedHtml = sanitizeMailHtml(bodyHtml);
   const bodyText =
     payload.bodyText?.trim() || createSnippet({ html: sanitizedHtml });
-  const thread = await ensureThread(admin, mailbox.id, payload.subject.trim());
+  const thread = await ensureThread(admin, mailbox.id, payload);
   const { data: message, error } = await privateTable(admin, 'mail_messages')
     .insert({
       body_html: bodyHtml,

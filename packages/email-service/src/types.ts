@@ -29,12 +29,7 @@ export interface EmailAttachment {
   data: Uint8Array;
 }
 
-export type EmailAttachmentContentType =
-  | 'application/pdf'
-  | 'image/gif'
-  | 'image/jpeg'
-  | 'image/png'
-  | 'image/webp';
+export type EmailAttachmentContentType = string;
 
 export interface EmailAttachmentAuditMetadata {
   contentType: EmailAttachmentContentType;

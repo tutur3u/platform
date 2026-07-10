@@ -2,6 +2,7 @@ import { EmailService, sendWorkspaceEmail } from '@tuturuuu/email-service';
 import type { SendMailMessagePayload } from '@tuturuuu/internal-api';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import type { MailRouteContext } from '../types';
+import { loadOutboundAttachments } from './attachments';
 import { requireMailboxAccess } from './bootstrap';
 import { createMailDraft, updateMailDraft } from './drafts';
 import { getMailMessage } from './messages';
@@ -94,19 +95,45 @@ export async function sendMailMessage({
     throw new Error(`Failed to create outbound job: ${jobError.message}`);
   }
 
+  const attachments = await loadOutboundAttachments(
+    access.admin,
+    mailboxId,
+    message.id
+  );
+  const replyHeaders = {
+    ...(payload.inReplyTo ? { 'In-Reply-To': payload.inReplyTo } : {}),
+    ...(payload.references?.length
+      ? { References: payload.references.join(' ') }
+      : {}),
+  };
+  const senderDomain = access.mailbox.address.split('@')[1] ?? 'tuturuuu.com';
+  const sesInternetMessageId = `<${message.id}@${senderDomain}>`;
+  if (outboundProvider === 'ses') {
+    await privateTable(access.admin, 'mail_messages')
+      .update({ internet_message_id: sesInternetMessageId })
+      .eq('id', message.id)
+      .eq('mailbox_id', mailboxId);
+  }
   const sendParams = {
     content: {
-      headers: {
-        ...(payload.inReplyTo ? { 'In-Reply-To': payload.inReplyTo } : {}),
-        ...(payload.references?.length
-          ? { References: payload.references.join(' ') }
-          : {}),
-      },
+      attachments,
+      // Cloudflare controls Message-ID and rejects attempts to set it. SES raw
+      // MIME accepts the deterministic ID, which lets inbound replies resolve
+      // authoritatively without relying on normalized subjects.
+      headers:
+        outboundProvider === 'ses'
+          ? { 'Message-ID': sesInternetMessageId, ...replyHeaders }
+          : replyHeaders,
       html: message.sanitizedHtml || message.bodyHtml || '',
       subject: message.subject,
       text: message.bodyText ?? undefined,
     },
     metadata: {
+      attachments: attachments.map((attachment) => ({
+        contentType: attachment.contentType,
+        fileName: attachment.filename,
+        sizeBytes: attachment.data.byteLength,
+      })),
       entityId: message.id,
       entityType: 'mail_message',
       templateType: 'mail',

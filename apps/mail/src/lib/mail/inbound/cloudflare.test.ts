@@ -1,6 +1,9 @@
 import { createHmac } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
-import { verifyCloudflareWebhookSignature } from './cloudflare';
+import {
+  isCanonicalCloudflareIngress,
+  verifyCloudflareWebhookSignature,
+} from './cloudflare';
 
 describe('verifyCloudflareWebhookSignature', () => {
   it('accepts a current HMAC signature', () => {
@@ -30,6 +33,41 @@ describe('verifyCloudflareWebhookSignature', () => {
         secret: 'secret',
         signature: 'not-a-signature',
         timestamp: '1',
+      })
+    ).toBe(false);
+  });
+});
+
+describe('isCanonicalCloudflareIngress', () => {
+  it('accepts a same-local-part shadow delivery', () => {
+    expect(
+      isCanonicalCloudflareIngress({
+        canonicalDomain: 'tuturuuu.com',
+        canonicalRecipient: 'phucvo@tuturuuu.com',
+        eventDomain: 'tuturuuu.com',
+        ingressDomain: 'ingest.tutur3u.com',
+        observedRecipient: 'phucvo@ingest.tutur3u.com',
+      })
+    ).toBe(true);
+  });
+
+  it('rejects a cross-mailbox or noncanonical event mapping', () => {
+    expect(
+      isCanonicalCloudflareIngress({
+        canonicalDomain: 'tuturuuu.com',
+        canonicalRecipient: 'other@tuturuuu.com',
+        eventDomain: 'tuturuuu.com',
+        ingressDomain: 'ingest.tutur3u.com',
+        observedRecipient: 'phucvo@ingest.tutur3u.com',
+      })
+    ).toBe(false);
+    expect(
+      isCanonicalCloudflareIngress({
+        canonicalDomain: 'tuturuuu.com',
+        canonicalRecipient: 'phucvo@tuturuuu.com',
+        eventDomain: 'ingest.tutur3u.com',
+        ingressDomain: 'ingest.tutur3u.com',
+        observedRecipient: 'phucvo@ingest.tutur3u.com',
       })
     ).toBe(false);
   });

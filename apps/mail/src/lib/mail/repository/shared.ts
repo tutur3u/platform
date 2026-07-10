@@ -12,11 +12,13 @@ export type MailTableName =
   | 'mail_attachments'
   | 'mail_domains'
   | 'mail_events'
+  | 'mail_folders'
   | 'mail_inbound_jobs'
   | 'mail_labels'
   | 'mail_mailbox_members'
   | 'mail_mailboxes'
   | 'mail_message_labels'
+  | 'mail_message_folders'
   | 'mail_message_user_state'
   | 'mail_messages'
   | 'mail_outbound_jobs'
@@ -63,6 +65,7 @@ export function toLabel(row: AnyRecord): MailLabel {
     color: row.color ?? null,
     id: row.id,
     kind: row.kind,
+    mailboxId: row.mailbox_id,
     name: row.name,
     slug: row.slug,
   };

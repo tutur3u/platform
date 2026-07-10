@@ -6,6 +6,7 @@ import { z } from 'zod';
 
 const providerSchema = z.enum(['cloudflare', 'ses']);
 const domainConfigSchema = z.object({
+  canonicalDomainId: z.string().uuid().nullable().optional(),
   cloudflareAccountId: z.string().trim().max(64).nullable().optional(),
   cloudflareRoutingRuleId: z.string().trim().max(64).nullable().optional(),
   cloudflareZoneId: z.string().trim().max(64).nullable().optional(),
@@ -24,6 +25,7 @@ const domainConfigSchema = z.object({
 
 function toDomain(row: Record<string, any>) {
   return {
+    canonicalDomainId: row.canonical_domain_id ?? null,
     cloudflareAccountId: row.cloudflare_account_id ?? null,
     cloudflareRoutingRuleId: row.cloudflare_routing_rule_id ?? null,
     cloudflareZoneId: row.cloudflare_zone_id ?? null,
@@ -80,6 +82,9 @@ export async function PUT(request: Request) {
     .from('mail_domains')
     .upsert(
       {
+        ...(config.canonicalDomainId !== undefined
+          ? { canonical_domain_id: config.canonicalDomainId }
+          : {}),
         cloudflare_account_id: config.cloudflareAccountId,
         cloudflare_routing_rule_id: config.cloudflareRoutingRuleId,
         cloudflare_zone_id: config.cloudflareZoneId,

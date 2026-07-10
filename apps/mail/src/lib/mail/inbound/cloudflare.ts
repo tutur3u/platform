@@ -38,11 +38,17 @@ const ingestSchema = z.object({
   domain: z.string().trim().toLowerCase().max(253),
   envelope: z.object({
     from: z.string().max(998),
+    observedTo: z
+      .string()
+      .email()
+      .transform((value) => value.toLowerCase())
+      .optional(),
     to: z
       .string()
       .email()
       .transform((value) => value.toLowerCase()),
   }),
+  ingressDomain: z.string().trim().toLowerCase().max(253).optional(),
   parsed: z
     .object({
       attachments: z
@@ -120,6 +126,75 @@ async function getCloudflareDomain(admin: AnyRecord, domain: string) {
   return data;
 }
 
+type MailDomain = {
+  canonical_domain_id?: string | null;
+  domain: string;
+  id: string;
+  inbound_provider: string;
+  status: string;
+};
+
+async function resolveCloudflareDomainRoute(
+  admin: AnyRecord,
+  ingressDomainName: string
+) {
+  const ingressDomain = (await getCloudflareDomain(
+    admin,
+    ingressDomainName
+  )) as MailDomain | null;
+  if (
+    ingressDomain?.status !== 'active' ||
+    ingressDomain.inbound_provider !== 'cloudflare'
+  ) {
+    return null;
+  }
+
+  const canonicalDomain = ingressDomain.canonical_domain_id
+    ? ((await privateTable(admin, 'mail_domains')
+        .select('*')
+        .eq('id', ingressDomain.canonical_domain_id)
+        .maybeSingle()) as { data: MailDomain | null; error: unknown })
+    : { data: ingressDomain, error: null };
+  if (canonicalDomain.error) throw canonicalDomain.error;
+  if (canonicalDomain.data?.status !== 'active') return null;
+
+  return { canonicalDomain: canonicalDomain.data, ingressDomain };
+}
+
+function splitRecipient(value: string) {
+  const separator = value.lastIndexOf('@');
+  if (separator <= 0 || separator === value.length - 1) return null;
+  return {
+    domain: value.slice(separator + 1).toLowerCase(),
+    localPart: value.slice(0, separator).toLowerCase(),
+  };
+}
+
+export function isCanonicalCloudflareIngress({
+  canonicalDomain,
+  canonicalRecipient,
+  eventDomain,
+  ingressDomain,
+  observedRecipient,
+}: {
+  canonicalDomain: string;
+  canonicalRecipient: string;
+  eventDomain: string;
+  ingressDomain: string;
+  observedRecipient: string;
+}) {
+  const canonical = splitRecipient(canonicalRecipient);
+  const observed = splitRecipient(observedRecipient);
+  return Boolean(
+    canonical &&
+      observed &&
+      eventDomain === canonicalDomain &&
+      canonical.domain === canonicalDomain &&
+      observed.domain === ingressDomain &&
+      canonical.localPart === observed.localPart
+  );
+}
+
 async function upsertStoredObject(
   admin: AnyRecord,
   object: z.infer<typeof storedObjectSchema>
@@ -149,21 +224,34 @@ export async function handleCloudflareInboundEvent(
   event: z.infer<typeof cloudflareInboundEventSchema>
 ) {
   const admin = await createAdminClient({ noCookie: true });
-  const domain = await getCloudflareDomain(admin, event.domain);
-  const accepted =
-    domain?.status === 'active' && domain.inbound_provider === 'cloudflare';
+  const route = await resolveCloudflareDomainRoute(admin, event.domain);
 
   if (event.type === 'domain_check') {
     return {
-      accepted,
-      reason: accepted
-        ? undefined
-        : 'Unknown or disabled Cloudflare mail domain',
+      accepted: Boolean(route),
+      canonicalDomain: route?.canonicalDomain.domain,
+      reason: route ? undefined : 'Unknown or disabled Cloudflare mail domain',
     };
   }
-  if (!accepted || !domain?.id) {
+  const ingressDomainName = event.ingressDomain ?? event.domain;
+  const ingestRoute =
+    ingressDomainName === event.domain
+      ? route
+      : await resolveCloudflareDomainRoute(admin, ingressDomainName);
+  const observedRecipient = event.envelope.observedTo ?? event.envelope.to;
+  if (
+    !ingestRoute ||
+    !isCanonicalCloudflareIngress({
+      canonicalDomain: ingestRoute.canonicalDomain.domain,
+      canonicalRecipient: event.envelope.to,
+      eventDomain: event.domain,
+      ingressDomain: ingestRoute.ingressDomain.domain,
+      observedRecipient,
+    })
+  ) {
     return { imported: 0, status: 'domain_unavailable' as const };
   }
+  const domain = ingestRoute.canonicalDomain;
 
   const { data: existingJob, error: existingJobError } = await privateTable(
     admin,
@@ -188,8 +276,9 @@ export async function handleCloudflareInboundEvent(
       {
         payload: {
           bodyObjects: event.bodyObjects,
-          domain: event.domain,
+          canonicalDomain: domain.domain,
           envelope: event.envelope,
+          ingressDomain: ingestRoute.ingressDomain.domain,
           quarantineReason: event.quarantineReason,
         },
         provider: 'cloudflare',
@@ -212,7 +301,11 @@ export async function handleCloudflareInboundEvent(
       {
         provider: 'cloudflare',
         provider_message_id: event.deliveryId,
-        provider_payload: { domain: event.domain, envelope: event.envelope },
+        provider_payload: {
+          canonicalDomain: domain.domain,
+          envelope: event.envelope,
+          ingressDomain: ingestRoute.ingressDomain.domain,
+        },
         raw_headers: event.parsed?.headers ?? {},
         sha256: event.rawObject.sha256,
         size_bytes: event.rawObject.sizeBytes,
