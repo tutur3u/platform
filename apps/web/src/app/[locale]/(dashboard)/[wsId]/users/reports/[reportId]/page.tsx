@@ -4,16 +4,16 @@ import type { WorkspaceUserReport } from '@tuturuuu/types';
 import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
 import type { WorkspaceConfig } from '@tuturuuu/types/primitives/WorkspaceConfig';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
+import {
+  getWorkspaceUserArchiveState,
+  sortWorkspaceUsersByArchive,
+} from '@tuturuuu/users-core/reports/user-archive';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { notFound, redirect } from 'next/navigation';
 import { getLocale, getTranslations } from 'next-intl/server';
 import { availableConfigs } from '@/constants/configs/reports';
 import { Filter } from '../../filters';
-import {
-  getWorkspaceUserArchiveState,
-  sortWorkspaceUsersByArchive,
-} from '../user-archive';
 import EditableReportPreview from './editable-report-preview';
 
 type ReportWorkspaceViewRow = WorkspaceUserReport & {

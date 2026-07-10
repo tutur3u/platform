@@ -37,6 +37,10 @@ import {
 } from '@tuturuuu/ui/select';
 import { Skeleton } from '@tuturuuu/ui/skeleton';
 import { toast } from '@tuturuuu/ui/sonner';
+import {
+  getWorkspaceUserArchiveState,
+  sortWorkspaceUsersByArchive,
+} from '@tuturuuu/users-core/reports/user-archive';
 import { cn } from '@tuturuuu/utils/format';
 import { useFormatter, useLocale, useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
@@ -53,10 +57,6 @@ import {
   type ReportStatusCounts,
   ReportStatusIndicator,
 } from '../../../reports/components/report-status-indicator';
-import {
-  getWorkspaceUserArchiveState,
-  sortWorkspaceUsersByArchive,
-} from '../../../reports/user-archive';
 import { BulkReportExporter } from './components/bulk-report-exporter';
 
 // Feature flag for experimental factor functionality

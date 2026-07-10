@@ -20,14 +20,7 @@ export type { UserGroupStatusFilter } from '@tuturuuu/internal-api/user-groups';
  * Type for manager user data from workspace_users table.
  * Used when fetching group managers.
  */
-export type ManagerUser = {
-  id: string;
-  full_name: string | null;
-  avatar_url: string | null;
-  display_name: string | null;
-  email: string | null;
-  hasLinkedPlatformUser: boolean;
-};
+export type { ManagerUser } from '@tuturuuu/users-core/lib/user-groups/manager-user';
 
 const GROUPS_INFINITE_PAGE_SIZE = 50;
 

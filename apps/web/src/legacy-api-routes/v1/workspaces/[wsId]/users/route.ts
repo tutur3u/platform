@@ -6,6 +6,7 @@ import {
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
+import { syncWorkspaceUserGuestMembership } from '@tuturuuu/users-core/lib/user-groups/guest-membership';
 import {
   MAX_LONG_TEXT_LENGTH,
   MAX_MEDIUM_TEXT_LENGTH,
@@ -15,7 +16,6 @@ import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { headers } from 'next/headers';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { syncWorkspaceUserGuestMembership } from '@/lib/user-groups/guest-membership';
 import { validateWorkspaceApiKey } from '@/lib/workspace-api-key';
 
 interface Params {

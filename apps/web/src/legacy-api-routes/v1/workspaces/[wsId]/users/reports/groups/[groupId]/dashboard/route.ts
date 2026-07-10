@@ -1,6 +1,11 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { WorkspaceUserReport } from '@tuturuuu/types';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
+import {
+  fetchManagersForGroups,
+  getUserGroupMemberships,
+} from '@tuturuuu/users-core/lib/user-groups/groups-utils';
+import { sortWorkspaceUsersByArchive } from '@tuturuuu/users-core/reports/user-archive';
 import { MAX_SHORT_TEXT_LENGTH } from '@tuturuuu/utils/constants';
 import {
   getPermissions,
@@ -8,11 +13,6 @@ import {
 } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import {
-  fetchManagersForGroups,
-  getUserGroupMemberships,
-} from '@/app/[locale]/(dashboard)/[wsId]/users/groups/utils';
-import { sortWorkspaceUsersByArchive } from '@/app/[locale]/(dashboard)/[wsId]/users/reports/user-archive';
 import { getPostgrestRateLimitMetadata } from '@/lib/postgrest-rate-limit';
 
 const SearchParamsSchema = z.object({

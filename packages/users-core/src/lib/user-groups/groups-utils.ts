@@ -4,9 +4,9 @@ import { createClient } from '@tuturuuu/supabase/next/server';
 import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
 import { removeAccents } from '@tuturuuu/utils/text-helper';
 import { getCurrentWorkspaceUser } from '@tuturuuu/utils/user-helper';
+import { getWorkspaceConfig } from '@tuturuuu/utils/workspace-helper';
 import { notFound } from 'next/navigation';
-import { getWorkspaceConfig } from '@/lib/workspace-helper';
-import type { ManagerUser } from './hooks';
+import type { ManagerUser } from './manager-user';
 
 export async function getUserGroupMemberships(wsId: string): Promise<string[]> {
   const supabase = await createClient();
