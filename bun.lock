@@ -257,6 +257,7 @@
         "react-dom": "^19.2.7",
         "react-hook-form": "^7.81.0",
         "react-papaparse": "^4.4.0",
+        "recharts": "3.9.2",
         "server-only": "^0.0.1",
         "zod": "^4.4.3",
       },
@@ -2399,6 +2400,9 @@
       "name": "@tuturuuu/users-core",
       "version": "0.1.0",
       "dependencies": {
+        "@tuturuuu/apis": "workspace:*",
+        "@tuturuuu/auth": "workspace:*",
+        "@tuturuuu/finance-core": "workspace:*",
         "@tuturuuu/internal-api": "workspace:*",
         "@tuturuuu/supabase": "workspace:*",
         "@tuturuuu/types": "workspace:*",

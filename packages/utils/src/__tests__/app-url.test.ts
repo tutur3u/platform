@@ -291,6 +291,7 @@ describe('Portless app origin registry', () => {
       'https://calendar.tuturuuu.localhost',
       'https://chat.tuturuuu.localhost',
       'https://cms.tuturuuu.localhost',
+      'https://contacts.tuturuuu.localhost',
       'https://docs.tuturuuu.localhost',
       'https://drive.tuturuuu.localhost',
       'https://external.tuturuuu.localhost',

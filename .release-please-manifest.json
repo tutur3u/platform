@@ -62,6 +62,8 @@
   "packages/types": "0.14.0",
   "packages/typescript-config": "0.1.1",
   "packages/ui": "0.14.0",
+  "packages/users-core": "0.1.0",
+  "packages/users-ui": "0.1.0",
   "packages/utils": "0.13.0",
   "packages/vercel": "0.0.1",
   "packages/workflows": "0.0.1"
