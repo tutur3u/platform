@@ -1423,6 +1423,7 @@
         "@tuturuuu/turnstile": "workspace:*",
         "@tuturuuu/types": "workspace:*",
         "@tuturuuu/ui": "workspace:*",
+        "@tuturuuu/users-core": "workspace:*",
         "@tuturuuu/utils": "workspace:*",
         "@tuturuuu/vercel": "workspace:*",
         "@upstash/qstash": "^2.11.1",
@@ -2381,6 +2382,27 @@
       "peerDependencies": {
         "@tanstack/react-query": "^5.101.2",
         "@tanstack/react-table": "^8.21.3",
+      },
+    },
+    "packages/users-core": {
+      "name": "@tuturuuu/users-core",
+      "version": "0.1.0",
+      "dependencies": {
+        "@tuturuuu/internal-api": "workspace:*",
+        "@tuturuuu/supabase": "workspace:*",
+        "@tuturuuu/types": "workspace:*",
+        "@tuturuuu/utils": "workspace:*",
+        "date-fns": "^4.4.0",
+        "dayjs": "^1.11.13",
+        "next": "^16.3.0-preview.5",
+        "server-only": "^0.0.1",
+        "zod": "^4.4.3",
+      },
+      "devDependencies": {
+        "@tuturuuu/typescript-config": "workspace:*",
+        "@types/node": "^26.1.0",
+        "typescript": "7.0.2",
+        "vitest": "^4.1.9",
       },
     },
     "packages/utils": {
@@ -4065,6 +4087,8 @@
     "@tuturuuu/typescript-config": ["@tuturuuu/typescript-config@workspace:packages/typescript-config"],
 
     "@tuturuuu/ui": ["@tuturuuu/ui@workspace:packages/ui"],
+
+    "@tuturuuu/users-core": ["@tuturuuu/users-core@workspace:packages/users-core"],
 
     "@tuturuuu/utils": ["@tuturuuu/utils@workspace:packages/utils"],
 

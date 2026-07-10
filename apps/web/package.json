@@ -114,6 +114,7 @@
     "@tuturuuu/turnstile": "workspace:*",
     "@tuturuuu/types": "workspace:*",
     "@tuturuuu/ui": "workspace:*",
+    "@tuturuuu/users-core": "workspace:*",
     "@tuturuuu/utils": "workspace:*",
     "@tuturuuu/vercel": "workspace:*",
     "@upstash/qstash": "^2.11.1",
