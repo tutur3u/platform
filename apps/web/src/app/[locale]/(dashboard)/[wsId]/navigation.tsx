@@ -218,10 +218,6 @@ export async function WorkspaceNavigationLinks({
     workTools: t('sidebar_sections.work_tools'),
   };
 
-  const usersDatabaseDisabled =
-    withoutPermission('manage_users') &&
-    withoutPermission('view_users_private_info') &&
-    withoutPermission('view_users_public_info');
   const taskNavigationDisabled =
     ENABLE_AI_ONLY || withoutPermission('manage_projects');
   const secondaryTaskNavigationChildren: DashboardNavigationLink[] = [
@@ -667,7 +663,6 @@ export async function WorkspaceNavigationLinks({
           aliases: [
             `/${personalOrWsId}/users`,
             `/${personalOrWsId}/users/attendance`,
-            `/${personalOrWsId}/users/database`,
             `/${personalOrWsId}/users/groups`,
             `/${personalOrWsId}/users/groups/calendar`,
             `/${personalOrWsId}/users/groups/indicators`,
@@ -704,12 +699,6 @@ export async function WorkspaceNavigationLinks({
               disabled:
                 withoutPermission('manage_users') &&
                 withoutPermission('check_user_attendance'),
-            },
-            {
-              title: t('workspace-users-tabs.database'),
-              href: `/${personalOrWsId}/users/database`,
-              icon: createDashboardNavigationIcon('BookUser', 'h-5 w-5'),
-              disabled: usersDatabaseDisabled,
             },
             {
               title: t('workspace-users-tabs.groups'),

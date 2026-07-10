@@ -1,5 +1,6 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
+import { GROUP_MEMBERSHIP_FILTER_VALUES } from '@tuturuuu/users-core/database/group-membership';
 import { normalizeAvatarImageSrc } from '@tuturuuu/utils/avatar-url';
 import {
   MAX_SEARCH_LENGTH,
@@ -11,7 +12,6 @@ import {
 } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { GROUP_MEMBERSHIP_FILTER_VALUES } from '@/app/[locale]/(dashboard)/[wsId]/users/database/group-membership';
 import { withRequestLogDrain } from '@/lib/infrastructure/log-drain';
 import { buildPostgrestRateLimitResponse } from '@/lib/postgrest-rate-limit';
 import {

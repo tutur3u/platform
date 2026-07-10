@@ -1,7 +1,7 @@
+import { listAuditLogEventsForRange } from '@tuturuuu/users-core/database/audit-log-data';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { listAuditLogEventsForRange } from '@/app/[locale]/(dashboard)/[wsId]/users/database/audit-log-data';
 
 const SearchParamsSchema = z.object({
   start: z.string().min(1),

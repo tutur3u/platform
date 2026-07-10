@@ -12,6 +12,7 @@ export default defineConfig({
     },
     environment: 'jsdom',
     passWithNoTests: true,
+    setupFiles: ['./vitest.setup.ts'],
   },
   resolve: {
     alias: [{ find: '@', replacement: resolve(__dirname, './src') }],
