@@ -1,3 +1,5 @@
+import { existsSync } from 'node:fs';
+import path from 'node:path';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createSerwistConfig } from '../create-serwist-config';
 import { getTurbopackConfig } from '../create-turbopack-config';
@@ -108,6 +110,8 @@ describe('createSerwistConfig', () => {
 });
 
 describe('getTurbopackConfig', () => {
+  const webProjectRoot = path.resolve(__dirname, '../../../../../apps/web');
+
   it('should return config with esbuild-wasm in serverExternalPackages', () => {
     const config = getTurbopackConfig();
 
@@ -116,24 +120,23 @@ describe('getTurbopackConfig', () => {
   });
 
   it('should include esbuild-wasm sidecar files in Serwist route tracing', () => {
-    const config = getTurbopackConfig();
+    const config = getTurbopackConfig({ projectRoot: webProjectRoot });
     const serwistIncludes =
       config.outputFileTracingIncludes?.['/serwist/[path]'];
 
-    expect(serwistIncludes).toEqual(
-      expect.arrayContaining([
-        './node_modules/.bun/esbuild-wasm@*/node_modules/esbuild-wasm/wasm_exec_node.js',
-        './node_modules/.bun/esbuild-wasm@*/node_modules/esbuild-wasm/wasm_exec.js',
-        './node_modules/.bun/esbuild-wasm@*/node_modules/esbuild-wasm/esbuild.wasm',
-        './node_modules/esbuild-wasm/wasm_exec_node.js',
-        './node_modules/esbuild-wasm/wasm_exec.js',
-        './node_modules/esbuild-wasm/esbuild.wasm',
-      ])
-    );
+    expect(serwistIncludes).toBeDefined();
+    expect(
+      serwistIncludes?.map((include) => path.basename(include)).sort()
+    ).toEqual(['esbuild.wasm', 'wasm_exec.js', 'wasm_exec_node.js']);
+
+    for (const include of serwistIncludes ?? []) {
+      expect(existsSync(path.resolve(webProjectRoot, include))).toBe(true);
+    }
   });
 
   it('should merge additional output file tracing includes', () => {
     const config = getTurbopackConfig({
+      projectRoot: webProjectRoot,
       outputFileTracingIncludes: {
         '/api/custom': ['./custom-runtime-file.js'],
         '/serwist/[path]': ['./custom-serwist-file.js'],
@@ -145,7 +148,7 @@ describe('getTurbopackConfig', () => {
     );
     expect(config.outputFileTracingIncludes?.['/serwist/[path]']).toEqual(
       expect.arrayContaining([
-        './node_modules/.bun/esbuild-wasm@*/node_modules/esbuild-wasm/wasm_exec_node.js',
+        expect.stringMatching(/wasm_exec_node\.js$/),
         './custom-serwist-file.js',
       ])
     );

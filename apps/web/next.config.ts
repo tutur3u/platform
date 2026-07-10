@@ -3,7 +3,7 @@ import { createTuturuuuNextConfig } from '@tuturuuu/utils/next-config';
 import createNextIntlPlugin from 'next-intl/plugin';
 
 const withNextIntl = createNextIntlPlugin();
-const serwistConfig = getTurbopackConfig();
+const serwistConfig = getTurbopackConfig({ projectRoot: __dirname });
 const isDockerStandaloneBuild = process.env.DOCKER_WEB_STANDALONE === '1';
 const isNativeDockerStandaloneBuild =
   isDockerStandaloneBuild && process.env.DOCKER_WEB_NATIVE_BUILD === '1';

@@ -41,6 +41,13 @@ export interface SerwistNextConfig {
  */
 export interface TurbopackSerwistConfig {
   /**
+   * Absolute path to the Next.js project root used as the base for output file
+   * tracing includes.
+   * @default process.cwd()
+   */
+  projectRoot?: string;
+
+  /**
    * Additional packages to mark as external for the server.
    * 'esbuild-wasm' is always included automatically.
    */
