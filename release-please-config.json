@@ -139,6 +139,10 @@
       "component": "pay",
       "package-name": "@tuturuuu/pay"
     },
+    "apps/contacts": {
+      "component": "contacts",
+      "package-name": "@tuturuuu/contacts"
+    },
     "apps/track": {
       "component": "track",
       "package-name": "@tuturuuu/track"

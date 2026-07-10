@@ -36,6 +36,7 @@ COPY apps/tasks/package.json ./apps/tasks/package.json
 COPY apps/tanstack-web/package.json ./apps/tanstack-web/package.json
 COPY apps/teach/package.json ./apps/teach/package.json
 COPY apps/pay/package.json ./apps/pay/package.json
+COPY apps/contacts/package.json ./apps/contacts/package.json
 COPY apps/tools/package.json ./apps/tools/package.json
 COPY apps/track/package.json ./apps/track/package.json
 COPY apps/learn/package.json ./apps/learn/package.json
