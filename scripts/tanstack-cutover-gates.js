@@ -204,7 +204,10 @@ function countManifestRoutes(routes) {
 
     if (route.targetOwner === 'rust-backend') {
       counts.backendOwned += 1;
-    } else if (route.targetOwner === 'tanstack-start') {
+    } else if (
+      route.targetOwner === 'tanstack-start' ||
+      route.targetOwner === 'satellite-app'
+    ) {
       counts.frontendOwned += 1;
     } else {
       counts.unmapped += 1;
@@ -222,6 +225,7 @@ function findBackendRouteOwnershipFailures(routes) {
   return routes.filter(
     (route) =>
       BACKEND_ROUTE_KINDS.has(route.kind) &&
+      route.status !== 'accepted-removal' &&
       route.targetOwner !== 'rust-backend'
   );
 }

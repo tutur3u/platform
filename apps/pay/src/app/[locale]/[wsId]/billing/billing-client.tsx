@@ -14,6 +14,7 @@ import {
   X,
   Zap,
 } from '@tuturuuu/icons';
+import { updatePaySubscriptionCancellation } from '@tuturuuu/internal-api';
 import type { CustomerSeat, Product } from '@tuturuuu/payment/polar';
 import { centToDollar } from '@tuturuuu/payment-core/price-helper';
 import type { SeatStatus } from '@tuturuuu/payment-core/seat-limits';
@@ -136,27 +137,13 @@ export function BillingClient({
 
   const handleCancelSubscription = async (subscriptionId: string) => {
     if (!subscriptionId) return;
-    const response = await fetch(
-      `/api/payment/customer-portal/subscriptions/${subscriptionId}`,
-      { method: 'DELETE', headers: { 'Content-Type': 'application/json' } }
-    );
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Failed to cancel subscription');
-    }
+    await updatePaySubscriptionCancellation(subscriptionId, true);
     router.refresh();
   };
 
   const handleContinueSubscription = async (subscriptionId: string) => {
     if (!subscriptionId) return;
-    const response = await fetch(
-      `/api/payment/customer-portal/subscriptions/${subscriptionId}`,
-      { method: 'PATCH', headers: { 'Content-Type': 'application/json' } }
-    );
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Failed to continue subscription');
-    }
+    await updatePaySubscriptionCancellation(subscriptionId, false);
     router.refresh();
   };
 

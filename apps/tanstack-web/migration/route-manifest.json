@@ -3,15 +3,15 @@
   "progress": {
     "byKind": [
       {
-        "acceptedRemoval": 12,
+        "acceptedRemoval": 11,
         "key": "api",
         "label": "api",
-        "legacyNext": 503,
+        "legacyNext": 487,
         "migrated": 66,
-        "percentComplete": 13.43,
-        "remaining": 503,
-        "terminal": 78,
-        "total": 581,
+        "percentComplete": 13.65,
+        "remaining": 487,
+        "terminal": 77,
+        "total": 564,
         "unknownStatus": 0
       },
       {
@@ -42,12 +42,12 @@
         "acceptedRemoval": 0,
         "key": "cron",
         "label": "cron",
-        "legacyNext": 9,
+        "legacyNext": 6,
         "migrated": 2,
-        "percentComplete": 18.18,
-        "remaining": 9,
+        "percentComplete": 25,
+        "remaining": 6,
         "terminal": 2,
-        "total": 11,
+        "total": 8,
         "unknownStatus": 0
       },
       {
@@ -113,15 +113,15 @@
     ],
     "byOwner": [
       {
-        "acceptedRemoval": 12,
+        "acceptedRemoval": 11,
         "key": "rust-backend",
         "label": "Rust backend",
-        "legacyNext": 514,
+        "legacyNext": 495,
         "migrated": 71,
-        "percentComplete": 13.9,
-        "remaining": 514,
-        "terminal": 83,
-        "total": 597,
+        "percentComplete": 14.21,
+        "remaining": 495,
+        "terminal": 82,
+        "total": 577,
         "unknownStatus": 0
       },
       {
@@ -320,15 +320,15 @@
       }
     ],
     "totals": {
-      "acceptedRemoval": 14,
+      "acceptedRemoval": 13,
       "key": "total",
       "label": "All route artifacts",
-      "legacyNext": 580,
+      "legacyNext": 561,
       "migrated": 243,
-      "percentComplete": 30.7,
-      "remaining": 580,
-      "terminal": 257,
-      "total": 837,
+      "percentComplete": 31.33,
+      "remaining": 561,
+      "terminal": 256,
+      "total": 817,
       "unknownStatus": 0
     }
   },
@@ -658,15 +658,6 @@
       "targetOwner": "rust-backend"
     },
     {
-      "id": "api:/api/billing/:wsId/invoice:apps/web/src/legacy-api-routes/billing/[wsId]/invoice/route.ts",
-      "kind": "api",
-      "methods": ["GET"],
-      "routePath": "/api/billing/:wsId/invoice",
-      "sourceFile": "apps/web/src/legacy-api-routes/billing/[wsId]/invoice/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
       "id": "api:/api/cli/auth/refresh:apps/web/src/legacy-api-routes/cli/auth/refresh/route.ts",
       "kind": "api",
       "methods": ["POST"],
@@ -726,141 +717,6 @@
       "methods": ["POST"],
       "routePath": "/api/notifications/send-immediate",
       "sourceFile": "apps/web/src/legacy-api-routes/notifications/send-immediate/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/payment/credit-packs/checkouts:apps/web/src/legacy-api-routes/payment/credit-packs/checkouts/route.ts",
-      "kind": "api",
-      "methods": ["POST"],
-      "routePath": "/api/payment/credit-packs/checkouts",
-      "sourceFile": "apps/web/src/legacy-api-routes/payment/credit-packs/checkouts/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/payment/customer-portal/subscriptions/:subscriptionId:apps/web/src/legacy-api-routes/payment/customer-portal/subscriptions/[subscriptionId]/route.ts",
-      "kind": "api",
-      "methods": ["PATCH", "DELETE"],
-      "routePath": "/api/payment/customer-portal/subscriptions/:subscriptionId",
-      "sourceFile": "apps/web/src/legacy-api-routes/payment/customer-portal/subscriptions/[subscriptionId]/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/payment/migrations/subscriptions:apps/web/src/legacy-api-routes/payment/migrations/subscriptions/route.ts",
-      "kind": "api",
-      "methods": ["POST"],
-      "routePath": "/api/payment/migrations/subscriptions",
-      "sourceFile": "apps/web/src/legacy-api-routes/payment/migrations/subscriptions/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/payment/migrations/subscriptions/cross-check:apps/web/src/legacy-api-routes/payment/migrations/subscriptions/cross-check/route.ts",
-      "kind": "api",
-      "methods": ["POST"],
-      "routePath": "/api/payment/migrations/subscriptions/cross-check",
-      "sourceFile": "apps/web/src/legacy-api-routes/payment/migrations/subscriptions/cross-check/route.ts",
-      "status": "accepted-removal",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/payment/migrations/subscriptions/cross-check/phase-1:apps/web/src/legacy-api-routes/payment/migrations/subscriptions/cross-check/phase-1/route.ts",
-      "kind": "api",
-      "methods": ["POST"],
-      "routePath": "/api/payment/migrations/subscriptions/cross-check/phase-1",
-      "sourceFile": "apps/web/src/legacy-api-routes/payment/migrations/subscriptions/cross-check/phase-1/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/payment/migrations/subscriptions/cross-check/phase-2:apps/web/src/legacy-api-routes/payment/migrations/subscriptions/cross-check/phase-2/route.ts",
-      "kind": "api",
-      "methods": ["POST"],
-      "routePath": "/api/payment/migrations/subscriptions/cross-check/phase-2",
-      "sourceFile": "apps/web/src/legacy-api-routes/payment/migrations/subscriptions/cross-check/phase-2/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/payment/migrations/subscriptions/cross-check/phase-3:apps/web/src/legacy-api-routes/payment/migrations/subscriptions/cross-check/phase-3/route.ts",
-      "kind": "api",
-      "methods": ["POST"],
-      "routePath": "/api/payment/migrations/subscriptions/cross-check/phase-3",
-      "sourceFile": "apps/web/src/legacy-api-routes/payment/migrations/subscriptions/cross-check/phase-3/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/payment/migrations/subscriptions/duplicates:apps/web/src/legacy-api-routes/payment/migrations/subscriptions/duplicates/route.ts",
-      "kind": "api",
-      "methods": ["DELETE"],
-      "routePath": "/api/payment/migrations/subscriptions/duplicates",
-      "sourceFile": "apps/web/src/legacy-api-routes/payment/migrations/subscriptions/duplicates/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/payment/migrations/subscriptions/unexisted-workspaces:apps/web/src/legacy-api-routes/payment/migrations/subscriptions/unexisted-workspaces/route.ts",
-      "kind": "api",
-      "methods": ["DELETE"],
-      "routePath": "/api/payment/migrations/subscriptions/unexisted-workspaces",
-      "sourceFile": "apps/web/src/legacy-api-routes/payment/migrations/subscriptions/unexisted-workspaces/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/payment/orders/:orderId/invoice:apps/web/src/legacy-api-routes/payment/orders/[orderId]/invoice/route.ts",
-      "kind": "api",
-      "methods": ["GET", "POST"],
-      "routePath": "/api/payment/orders/:orderId/invoice",
-      "sourceFile": "apps/web/src/legacy-api-routes/payment/orders/[orderId]/invoice/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/payment/seats:apps/web/src/legacy-api-routes/payment/seats/route.ts",
-      "kind": "api",
-      "methods": ["GET", "POST"],
-      "routePath": "/api/payment/seats",
-      "sourceFile": "apps/web/src/legacy-api-routes/payment/seats/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/payment/subscriptions/:subscriptionId/change:apps/web/src/legacy-api-routes/payment/subscriptions/[subscriptionId]/change/route.ts",
-      "kind": "api",
-      "methods": ["POST"],
-      "routePath": "/api/payment/subscriptions/:subscriptionId/change",
-      "sourceFile": "apps/web/src/legacy-api-routes/payment/subscriptions/[subscriptionId]/change/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/payment/subscriptions/:subscriptionId/checkouts:apps/web/src/legacy-api-routes/payment/subscriptions/[subscriptionId]/checkouts/route.ts",
-      "kind": "api",
-      "methods": ["POST"],
-      "routePath": "/api/payment/subscriptions/:subscriptionId/checkouts",
-      "sourceFile": "apps/web/src/legacy-api-routes/payment/subscriptions/[subscriptionId]/checkouts/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/payment/subscriptions/:subscriptionId/preview:apps/web/src/legacy-api-routes/payment/subscriptions/[subscriptionId]/preview/route.ts",
-      "kind": "api",
-      "methods": ["POST"],
-      "routePath": "/api/payment/subscriptions/:subscriptionId/preview",
-      "sourceFile": "apps/web/src/legacy-api-routes/payment/subscriptions/[subscriptionId]/preview/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/payment/webhooks:apps/web/src/legacy-api-routes/payment/webhooks/route.ts",
-      "kind": "api",
-      "methods": ["POST"],
-      "routePath": "/api/payment/webhooks",
-      "sourceFile": "apps/web/src/legacy-api-routes/payment/webhooks/route.ts",
       "status": "legacy-next",
       "targetOwner": "rust-backend"
     },
@@ -2624,15 +2480,6 @@
       "methods": ["POST"],
       "routePath": "/api/v1/workspaces/:wsId/avatar/upload-url",
       "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/avatar/upload-url/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/billing:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/billing/route.ts",
-      "kind": "api",
-      "methods": ["GET"],
-      "routePath": "/api/v1/workspaces/:wsId/billing",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/billing/route.ts",
       "status": "legacy-next",
       "targetOwner": "rust-backend"
     },
@@ -5683,33 +5530,6 @@
       "targetOwner": "rust-backend"
     },
     {
-      "id": "cron:/api/cron/payment/orders:apps/web/src/legacy-api-routes/cron/payment/orders/route.ts",
-      "kind": "cron",
-      "methods": ["GET"],
-      "routePath": "/api/cron/payment/orders",
-      "sourceFile": "apps/web/src/legacy-api-routes/cron/payment/orders/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "cron:/api/cron/payment/products:apps/web/src/legacy-api-routes/cron/payment/products/route.ts",
-      "kind": "cron",
-      "methods": ["GET"],
-      "routePath": "/api/cron/payment/products",
-      "sourceFile": "apps/web/src/legacy-api-routes/cron/payment/products/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "cron:/api/cron/payment/subscriptions:apps/web/src/legacy-api-routes/cron/payment/subscriptions/route.ts",
-      "kind": "cron",
-      "methods": ["GET"],
-      "routePath": "/api/cron/payment/subscriptions",
-      "sourceFile": "apps/web/src/legacy-api-routes/cron/payment/subscriptions/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
       "id": "cron:/api/cron/process-notification-batches:apps/web/src/legacy-api-routes/cron/process-notification-batches/route.ts",
       "kind": "cron",
       "methods": ["GET"],
@@ -7952,20 +7772,20 @@
     }
   ],
   "summary": {
-    "apiRoutes": 581,
-    "cronRoutes": 11,
+    "apiRoutes": 564,
+    "cronRoutes": 8,
     "layouts": 56,
     "pages": 180,
-    "routeHandlers": 597,
+    "routeHandlers": 577,
     "methodCounts": {
-      "GET": 302,
+      "GET": 295,
       "HEAD": 1,
-      "POST": 295,
+      "POST": 283,
       "PUT": 53,
-      "PATCH": 61,
-      "DELETE": 101,
+      "PATCH": 60,
+      "DELETE": 98,
       "OPTIONS": 23
     },
-    "total": 837
+    "total": 817
   }
 }

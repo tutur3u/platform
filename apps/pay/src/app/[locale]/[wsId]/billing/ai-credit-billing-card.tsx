@@ -2,6 +2,11 @@
 
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { AlertCircle, Clock, Package, RefreshCw, Zap } from '@tuturuuu/icons';
+import {
+  createPayCreditPackCheckout,
+  getPayWorkspaceAiCreditStatus,
+  type WorkspaceAiCreditStatus,
+} from '@tuturuuu/internal-api';
 import { PolarEmbedCheckout } from '@tuturuuu/payment/polar/checkout/embed';
 import type { CreditPackListItem } from '@tuturuuu/payment-core/billing-helper';
 import { centToDollar } from '@tuturuuu/payment-core/price-helper';
@@ -13,26 +18,6 @@ import { cn } from '@tuturuuu/utils/format';
 import { useLocale, useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
 import { useEffect, useMemo, useState } from 'react';
-
-interface CreditStatusResponse {
-  totalAllocated: number;
-  totalUsed: number;
-  remaining: number;
-  bonusCredits: number;
-  percentUsed: number;
-  included: {
-    totalAllocated: number;
-    totalUsed: number;
-    bonusCredits: number;
-    remaining: number;
-  };
-  payg: {
-    totalGranted: number;
-    totalUsed: number;
-    remaining: number;
-    nextExpiry: string | null;
-  };
-}
 
 interface AiCreditBillingCardProps {
   wsId: string;
@@ -59,41 +44,15 @@ export function AiCreditBillingCard({ wsId, packs }: AiCreditBillingCardProps) {
     useState<PolarEmbedCheckout | null>(null);
   const [processingPackId, setProcessingPackId] = useState<string | null>(null);
 
-  const creditsQuery = useQuery<CreditStatusResponse>({
+  const creditsQuery = useQuery<WorkspaceAiCreditStatus>({
     queryKey: ['billing-ai-credits', wsId],
-    queryFn: async () => {
-      const response = await fetch(`/api/v1/workspaces/${wsId}/ai/credits`, {
-        cache: 'no-store',
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch credit status');
-      }
-
-      return response.json();
-    },
+    queryFn: () => getPayWorkspaceAiCreditStatus(wsId),
   });
 
   const purchaseMutation = useMutation({
     mutationFn: async (creditPackId: string) => {
       setProcessingPackId(creditPackId);
-      const response = await fetch('/api/payment/credit-packs/checkouts', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          wsId,
-          creditPackId,
-        }),
-      });
-
-      if (!response.ok) {
-        const payload = await response.json().catch(() => ({}));
-        throw new Error(payload?.error ?? 'Failed to create checkout session');
-      }
-
-      return response.json() as Promise<{ url: string }>;
+      return createPayCreditPackCheckout({ wsId, creditPackId });
     },
     onSuccess: async (payload) => {
       const checkout = await PolarEmbedCheckout.create(payload.url, {

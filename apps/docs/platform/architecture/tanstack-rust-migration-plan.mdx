@@ -18,25 +18,25 @@ agent-lane planning.
 ## Current Snapshot
 
 The route manifest at `apps/tanstack-web/migration/route-manifest.json` is the
-source of truth. The latest local snapshot on 2026-07-09 is:
+source of truth. The latest local snapshot on 2026-07-10 is:
 
 | Status | Count |
 | --- | ---: |
-| `legacy-next` | 580 |
+| `legacy-next` | 561 |
 | `migrated` | 243 |
-| `accepted-removal` | 14 |
-| Total tracked artifacts | 837 |
+| `accepted-removal` | 13 |
+| Total tracked artifacts | 817 |
 
 Remaining legacy artifacts are concentrated in API/backend ownership:
 
 | Kind | Remaining legacy artifacts |
 | --- | ---: |
-| API | 503 |
-| Cron | 10 |
+| API | 487 |
+| Cron | 6 |
 | tRPC | 1 |
 | Route handler | 1 |
-| Page | 61 |
-| Layout | 12 |
+| Page | 57 |
+| Layout | 9 |
 
 The production target is:
 
@@ -117,7 +117,7 @@ handoffs visible so parallel workers do not repeat the same audit:
 | `/:locale/meet` and `/:locale/meet-together` | TanStack public preview shells exist, but legacy also shows authenticated meeting plans and creates plans through Supabase/server-action paths. | Add typed plan list/create APIs through Rust or TanStack server functions, then prove unauthenticated and authenticated parity with focused E2E. |
 | `/:locale/:wsId/users/topic-announcements/import` | Migrated in the TanStack frontend as a dynamic no-store page with fail-closed auth, workspace and feature gates, `manage_users`, send-permission-aware create-and-send controls, client-only XLSX/CSV parsing, editable row validation, and typed internal-api import/send-bulk mutations. | Backend agents still need Rust ownership for `/api/v1/workspaces/:wsId/topic-announcements/import` and `/send-bulk` before full backend cutover. |
 | `/:locale/:wsId/users/groups/:groupId/attendance` | Migrated in the TanStack frontend as a dynamic no-store page with fail-closed auth, workspace and group checks, `check_user_attendance`, `update_user_attendance` save gating, session/date URL state, and typed internal-api attendance/member/config/session facades. | Backend agents still need Rust ownership for the user-group attendance, members, workspace config, and session APIs before full backend cutover. |
-| `/:locale/:wsId/billing` | Rust owns the initial billing read and AI-credit status, now exposed through `getBackendWorkspaceBilling` and `getBackendWorkspaceAiCredits`, but the client still needs payment cancellation, continuation, checkout, seat, credit purchase, invoice, and billing-details actions. | Add typed payment/billing facades for all client mutations, or explicitly split a read-only page from separately tracked disabled actions before marking terminal. |
+| `/:locale/:wsId/billing` | `apps/pay` owns detailed billing, checkout, invoices, credits, subscriptions, webhooks, and payment mutations. `apps/web` retains only a read-only summary loaded from Pay through `packages/internal-api`; all actions link to Pay. | Treat the remaining web summary as an intentional satellite-app handoff. Do not restore payment mutations or detailed billing UI to either platform frontend. |
 | `/:locale/:wsId/usage` | The page wrapper is small, but the content is a broad Supabase/RPC workspace usage dashboard. | Create a usage-summary backend contract or server-function bundle that returns permission-masked stats without direct Supabase reads in TanStack. |
 | `/:locale/:wsId/ai/spark`, `/:locale/:wsId/mira`, `/:locale/:wsId/assistant` | Page files are compact, but the behavior is coupled to AI object APIs, Mira API routes, voice/live API helpers, or assistant providers. | Treat these as dedicated product lanes with typed AI/Mira/assistant facades and focused browser evidence. |
 

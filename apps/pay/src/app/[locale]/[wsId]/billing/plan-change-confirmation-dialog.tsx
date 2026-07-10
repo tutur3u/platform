@@ -11,6 +11,10 @@ import {
   Users,
   Zap,
 } from '@tuturuuu/icons';
+import {
+  changePaySubscriptionPlan,
+  getPaySubscriptionChangePreview,
+} from '@tuturuuu/internal-api';
 import { centToDollar } from '@tuturuuu/payment-core/price-helper';
 import type { ProrationPreview } from '@tuturuuu/payment-core/proration';
 import { Button } from '@tuturuuu/ui/button';
@@ -62,21 +66,10 @@ export function PlanChangeConfirmationDialog({
     setError(null);
 
     try {
-      const response = await fetch(
-        `/api/payment/subscriptions/${subscriptionId}/preview`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ productId: targetPlanId }),
-        }
+      const data = await getPaySubscriptionChangePreview<ProrationPreview>(
+        subscriptionId,
+        targetPlanId
       );
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to fetch proration preview');
-      }
-
-      const data = await response.json();
       setPreview(data);
     } catch (err) {
       console.error('Error fetching preview:', err);
@@ -102,19 +95,7 @@ export function PlanChangeConfirmationDialog({
     setError(null);
 
     try {
-      const response = await fetch(
-        `/api/payment/subscriptions/${subscriptionId}/change`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ productId: targetPlanId }),
-        }
-      );
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to change plan');
-      }
+      await changePaySubscriptionPlan(subscriptionId, targetPlanId);
 
       onOpenChange(false);
       onSuccess?.();

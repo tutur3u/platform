@@ -10,6 +10,7 @@ import {
   RefreshCw,
   XCircle,
 } from '@tuturuuu/icons';
+import { getPayOrderInvoiceUrl } from '@tuturuuu/internal-api';
 import { centToDollar } from '@tuturuuu/payment-core/price-helper';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
@@ -147,26 +148,7 @@ export default function BillingHistory({ orders }: { orders: OrderItem[] }) {
   const handleDownloadInvoice = async (orderId: string) => {
     setGeneratingInvoice(orderId);
     try {
-      // 1. Generate Invoice (POST)
-      const generateRes = await fetch(
-        `/api/payment/orders/${orderId}/invoice`,
-        {
-          method: 'POST',
-        }
-      );
-
-      if (!generateRes.ok) {
-        throw new Error('Failed to generate invoice');
-      }
-
-      // 2. Get Invoice URL (GET)
-      const getRes = await fetch(`/api/payment/orders/${orderId}/invoice`);
-
-      if (!getRes.ok) {
-        throw new Error('Failed to get invoice URL');
-      }
-
-      const invoice = await getRes.json();
+      const invoice = await getPayOrderInvoiceUrl(orderId);
 
       if (invoice?.url) {
         window.open(invoice.url, '_blank');

@@ -1,6 +1,7 @@
 'use client';
 
 import { useMutation } from '@tanstack/react-query';
+import { createPaySubscriptionCheckout } from '@tuturuuu/internal-api';
 import { PolarEmbedCheckout } from '@tuturuuu/payment/polar/checkout/embed';
 import { Button } from '@tuturuuu/ui/button';
 import { useTheme } from 'next-themes';
@@ -34,25 +35,10 @@ export default function PurchaseLink({
   const mutation = useMutation({
     mutationFn: async () => {
       // Create new checkout session for new subscriptions
-      const response = await fetch(
-        `/api/payment/subscriptions/${subscriptionId}/checkouts`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            wsId,
-            productId,
-          }),
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error('Failed to create checkout session');
-      }
-
-      const data = await response.json();
+      const data = await createPaySubscriptionCheckout(subscriptionId!, {
+        wsId,
+        productId: productId!,
+      });
       return { type: 'checkout' as const, data };
     },
     onSuccess: async (result) => {

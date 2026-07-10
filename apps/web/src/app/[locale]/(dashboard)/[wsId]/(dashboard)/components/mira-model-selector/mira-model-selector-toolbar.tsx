@@ -6,6 +6,7 @@ import { Switch } from '@tuturuuu/ui/switch';
 import { cn } from '@tuturuuu/utils/format';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
+import { getPayBillingUrl } from '@/lib/pay-app-url';
 
 interface MiraModelSelectorToolbarProps {
   hideLockedModels: boolean;
@@ -40,7 +41,7 @@ export function MiraModelSelectorToolbar({
               </p>
             </div>
             <Link
-              href={`/${wsId}/billing`}
+              href={getPayBillingUrl(wsId)}
               className={cn(
                 'group flex h-9 shrink-0 items-center justify-center gap-1.5 rounded-lg border border-dynamic-purple/20',
                 'bg-linear-to-r from-dynamic-purple/10 to-dynamic-indigo/8 px-3 font-medium text-dynamic-purple text-sm',

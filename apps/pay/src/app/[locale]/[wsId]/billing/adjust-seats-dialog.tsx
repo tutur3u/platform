@@ -2,6 +2,7 @@
 
 import { useMutation } from '@tanstack/react-query';
 import { Loader2, Minus, Plus, Users } from '@tuturuuu/icons';
+import { updatePaySubscriptionSeats } from '@tuturuuu/internal-api';
 import { centToDollar } from '@tuturuuu/payment-core/price-helper';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -61,22 +62,7 @@ export default function AdjustSeatsDialog({
       wsId: string;
       newSeatCount: number;
     }) => {
-      const response = await fetch('/api/payment/seats', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          wsId,
-          newSeatCount,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to update seats');
-      }
-
-      return data;
+      return updatePaySubscriptionSeats({ wsId, newSeatCount });
     },
     onError: (error, _variables, _context) => {
       console.error('Error updating seats:', error);

@@ -36,6 +36,7 @@ import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import * as z from 'zod';
+import { getPayBillingUrl } from '@/lib/pay-app-url';
 import {
   type InviteLinkDetails,
   type InviteLinkSummary,
@@ -156,7 +157,7 @@ export default function InviteLinksSection({ wsId, canManageMembers }: Props) {
           description: t('ws-invite-links.seat-limit-reached-description'),
           action: {
             label: t('ws-invite-links.manage-billing'),
-            onClick: () => router.push(`/${wsId}/billing`),
+            onClick: () => window.location.assign(getPayBillingUrl(wsId)),
           },
           duration: 10000,
         });

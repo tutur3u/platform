@@ -1,6 +1,7 @@
 const TERMINAL_STATUSES = new Set(['accepted-removal', 'migrated']);
 const OWNER_LABELS = new Map([
   ['rust-backend', 'Rust backend'],
+  ['satellite-app', 'Satellite app'],
   ['tanstack-start', 'TanStack Start'],
 ]);
 const TOP_LEGACY_ROUTE_LIMIT = 20;

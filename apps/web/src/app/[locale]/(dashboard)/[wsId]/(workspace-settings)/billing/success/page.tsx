@@ -1,40 +1,15 @@
-import { createPolarClient } from '@tuturuuu/payment/polar/server';
-import type { Metadata } from 'next';
-import { notFound } from 'next/navigation';
-import WorkspaceWrapper from '@/components/workspace-wrapper';
-import ClientComponent from './client-component';
+import { redirect } from 'next/navigation';
+import { buildPayBillingSuccessUrl } from '@/lib/pay-app-url';
 
-export const metadata: Metadata = {
-  title: 'Success',
-  description: 'Manage Success in the Billing area of your Tuturuuu workspace.',
-};
+type SearchParams = Record<string, string | string[] | undefined>;
 
-export default async function SuccessPage({
+export default async function BillingSuccessPage({
   params,
   searchParams,
 }: {
   params: Promise<{ wsId: string }>;
-  searchParams: Promise<{ [key: string]: string | undefined }>;
+  searchParams: Promise<SearchParams>;
 }) {
-  const { checkoutId } = await searchParams;
-
-  if (!checkoutId) {
-    return notFound();
-  }
-
-  const polar = createPolarClient();
-
-  const checkout = await polar.checkouts.get({ id: checkoutId });
-
-  if (!checkout) {
-    return notFound();
-  }
-
-  return (
-    <WorkspaceWrapper params={params}>
-      {async ({ wsId }) => {
-        return <ClientComponent wsId={wsId} checkout={checkout} />;
-      }}
-    </WorkspaceWrapper>
-  );
+  const [{ wsId }, query] = await Promise.all([params, searchParams]);
+  redirect(buildPayBillingSuccessUrl(wsId, query));
 }

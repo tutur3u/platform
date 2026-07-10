@@ -369,6 +369,7 @@ export {
   internalApiClient,
   resolveInternalApiUrl,
   withForwardedInternalApiAuth,
+  withPayApiBaseUrl,
 } from './client';
 export {
   createWorkspaceCronJob,
@@ -1192,6 +1193,19 @@ export {
 } from './notifications';
 export { getCurrentUserNovaTeam } from './nova';
 export {
+  changePaySubscriptionPlan,
+  createPayCreditPackCheckout,
+  createPaySubscriptionCheckout,
+  getPayOrderInvoiceUrl,
+  getPaySubscriptionChangePreview,
+  getPayWorkspaceAiCreditStatus,
+  getPayWorkspaceBillingSummary,
+  updatePaySubscriptionCancellation,
+  updatePaySubscriptionSeats,
+  type WorkspaceAiCreditStatus,
+  type WorkspaceBillingSummary,
+} from './pay';
+export {
   forceSendWorkspacePostEmail,
   type GetWorkspacePostsQuery,
   type GetWorkspacePostsResponse,
@@ -1551,7 +1565,6 @@ export {
   updateWorkspaceCourseTest,
   updateWorkspaceCourseTestSubmissionFeedback,
 } from './teach';
-
 export {
   getWorkspaceTemplate,
   getWorkspaceTemplateBackgroundUrl,

@@ -1,20 +1,6 @@
 import { resolveInternalAppUrl } from '@tuturuuu/utils/app-url';
 import { getLocalInternalAppUrl } from '@tuturuuu/utils/internal-domains';
 
-/**
- * Rollout gate for the pay.tuturuuu.com billing surface.
- *
- * While this is `false` (the default), web keeps serving billing itself so
- * nothing breaks before the pay app is deployed. Flip
- * `NEXT_PUBLIC_ENABLE_PAY_APP=true` only after apps/pay is live to redirect
- * web's `/billing` route and settings entry point over to pay. Both the
- * default-off value and the flag are readable on the server and the client
- * because it is a `NEXT_PUBLIC_` variable inlined at build time.
- */
-export function isPayRolloutEnabled() {
-  return process.env.NEXT_PUBLIC_ENABLE_PAY_APP === 'true';
-}
-
 export function getPayAppOrigin() {
   return resolveInternalAppUrl({
     appName: 'pay',
@@ -36,5 +22,20 @@ export function getPayAppOrigin() {
  * `/{wsId}/billing` path.
  */
 export function getPayBillingUrl(wsId: string) {
-  return `${getPayAppOrigin()}/${wsId}/billing`;
+  return `${getPayAppOrigin()}/${encodeURIComponent(wsId)}/billing`;
+}
+
+export function buildPayBillingSuccessUrl(
+  wsId: string,
+  searchParams: Record<string, string | string[] | undefined>
+) {
+  const target = new URL(`${getPayBillingUrl(wsId)}/success`);
+
+  for (const [key, value] of Object.entries(searchParams)) {
+    for (const entry of Array.isArray(value) ? value : [value]) {
+      if (entry !== undefined) target.searchParams.append(key, entry);
+    }
+  }
+
+  return target.toString();
 }

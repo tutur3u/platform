@@ -1,3 +1,4 @@
+import { withCronLogDrain } from '@tuturuuu/inventory-core/infrastructure/log-drain';
 import { createPolarClient } from '@tuturuuu/payment/polar/server';
 import { syncSubscriptionToDatabase } from '@tuturuuu/payment-core/polar-subscription-helper';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
@@ -10,7 +11,14 @@ import { NextResponse } from 'next/server';
  * Runs periodically to ensure all subscriptions are up-to-date
  */
 export async function GET(req: NextRequest) {
-  return handleGET(req);
+  return withCronLogDrain(
+    {
+      jobId: 'payment-subscriptions',
+      path: '/api/cron/payment/subscriptions',
+      request: req,
+    },
+    () => handleGET(req)
+  );
 }
 
 async function handleGET(req: NextRequest) {

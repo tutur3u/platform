@@ -141,6 +141,17 @@ export function getMailAppOrigin() {
   });
 }
 
+export function getPayAppOrigin() {
+  return resolveInternalAppUrl({
+    appName: 'pay',
+    candidates: [process.env.PAY_APP_URL, process.env.NEXT_PUBLIC_PAY_APP_URL],
+    fallback:
+      process.env.NODE_ENV === 'production'
+        ? 'https://pay.tuturuuu.com'
+        : getLocalInternalAppUrl('pay', 'http://localhost:7826'),
+  });
+}
+
 export function getToolsAppOrigin() {
   return resolveInternalAppUrl({
     appName: 'tools',
@@ -301,6 +312,26 @@ export function buildMailRedirectHref(
   if (options.folder) {
     url.searchParams.set('folder', options.folder);
   }
+
+  return url.toString();
+}
+
+export function buildPayBillingRedirectHref(
+  workspaceId: string,
+  options: {
+    searchParams?: LegacySearchParams | string | URLSearchParams;
+    success?: boolean;
+  } = {}
+) {
+  const suffix = options.success ? '/success' : '';
+  const url = new URL(
+    `/${encodeURIComponent(workspaceId)}/billing${suffix}`,
+    `${getPayAppOrigin()}/`
+  );
+
+  appendSearchParams(url, options.searchParams, {
+    preserveEmptyStringValues: true,
+  });
 
   return url.toString();
 }

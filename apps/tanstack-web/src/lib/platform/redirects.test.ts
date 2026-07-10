@@ -13,6 +13,7 @@ import {
   buildMeetPlansRedirectHref,
   buildMindBoardRedirectHref,
   buildMindRedirectHref,
+  buildPayBillingRedirectHref,
   buildQrGeneratorRedirectHref,
   buildToolsRandomRedirectHref,
   buildVerifyTokenRedirectHref,
@@ -152,6 +153,22 @@ describe('public redirect helpers', () => {
     expect(buildMailRedirectHref('ws-1')).toBe('https://mail.example.com/ws-1');
     expect(buildMailRedirectHref('ws-1', { folder: 'sent' })).toBe(
       'https://mail.example.com/ws-1?folder=sent'
+    );
+  });
+
+  it('hands billing routes to Pay and preserves the raw success query', () => {
+    vi.stubEnv('PAY_APP_URL', 'https://pay.example.com/base/');
+
+    expect(buildPayBillingRedirectHref('workspace / one')).toBe(
+      'https://pay.example.com/workspace%20%2F%20one/billing'
+    );
+    expect(
+      buildPayBillingRedirectHref('ws-1', {
+        searchParams: '?checkoutId=checkout-1&tag=a&tag=b&empty=',
+        success: true,
+      })
+    ).toBe(
+      'https://pay.example.com/ws-1/billing/success?checkoutId=checkout-1&tag=a&tag=b&empty='
     );
   });
 

@@ -4,6 +4,7 @@
   "private": true,
   "exports": {
     "./commerce/square": "./src/lib/inventory/commerce/square/index.ts",
+    "./infrastructure/log-drain": "./src/lib/infrastructure/log-drain.ts",
     "./*": "./src/lib/inventory/*.ts"
   },
   "license": "MIT",
