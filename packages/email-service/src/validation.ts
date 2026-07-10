@@ -8,7 +8,7 @@ import { z } from 'zod';
 
 import { MAX_RECIPIENTS_PER_EMAIL, MAX_SUBJECT_LENGTH } from './constants';
 
-export const MAX_EMAIL_ATTACHMENTS = 5;
+export const MAX_EMAIL_ATTACHMENTS = 32;
 export const MAX_EMAIL_ATTACHMENT_BYTES = 10 * 1024 * 1024;
 export const EMAIL_ATTACHMENT_CONTENT_TYPES = [
   'application/pdf',
@@ -92,7 +92,11 @@ export const emailAttachmentSchema = z.object({
     .min(1, 'Attachment filename cannot be empty')
     .max(255, 'Attachment filename too long')
     .transform((filename) => filename.trim()),
-  contentType: z.enum(EMAIL_ATTACHMENT_CONTENT_TYPES),
+  contentType: z
+    .string()
+    .min(1)
+    .max(255)
+    .regex(/^[\w!#$&^_.+-]+\/[\w!#$&^_.+-]+$/u, 'Invalid attachment MIME type'),
   data: z.instanceof(Uint8Array),
 });
 
@@ -176,7 +180,7 @@ export const emailMetadataSchema = z.object({
   attachments: z
     .array(
       z.object({
-        contentType: z.enum(EMAIL_ATTACHMENT_CONTENT_TYPES),
+        contentType: z.string().min(1).max(255),
         fileName: z.string().min(1).max(255),
         sizeBytes: z.number().int().positive().max(MAX_EMAIL_ATTACHMENT_BYTES),
       })

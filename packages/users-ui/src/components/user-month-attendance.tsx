@@ -1,0 +1,524 @@
+'use client';
+
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
+import { ChevronLeft, ChevronRight } from '@tuturuuu/icons';
+import type {
+  WorkspaceUser,
+  WorkspaceUserAttendance,
+} from '@tuturuuu/types/primitives/WorkspaceUser';
+import { Badge } from '@tuturuuu/ui/badge';
+import { Button } from '@tuturuuu/ui/button';
+import useSearchParams from '@tuturuuu/ui/hooks/useSearchParams';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@tuturuuu/ui/tooltip';
+import { cn } from '@tuturuuu/utils/format';
+import { format, isAfter, parse, startOfDay } from 'date-fns';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useLocale, useTranslations } from 'next-intl';
+import { Fragment, useEffect, useMemo, useState } from 'react';
+import { useUserStatusLabels } from '../hooks/use-user-status-labels';
+import { AttendanceDialog } from './attendance-dialogue';
+
+export default function UserMonthAttendance({
+  wsId,
+  user: initialUser,
+  noOutline,
+  defaultIncludedGroups,
+}: {
+  wsId: string;
+  user: WorkspaceUser & {
+    href: string;
+    isGuest?: boolean;
+    role?: string;
+    archived?: boolean;
+    archived_until?: string | null;
+    note?: string | null;
+  };
+  defaultIncludedGroups?: string[];
+  noOutline?: boolean;
+}) {
+  const locale = useLocale();
+  const tDetails = useTranslations('ws-user-group-details');
+  const tGuests = useTranslations('meet-together');
+
+  const searchParams = useSearchParams();
+
+  const router = useRouter();
+  const userStatusLabels = useUserStatusLabels(wsId);
+
+  const queryMonth = searchParams.get('month');
+
+  const currentYYYYMM = Array.isArray(queryMonth)
+    ? queryMonth[0] || format(new Date(), 'yyyy-MM')
+    : queryMonth || format(new Date(), 'yyyy-MM');
+
+  const currentMonth = useMemo(
+    () => parse(currentYYYYMM, 'yyyy-MM', new Date()),
+    [currentYYYYMM]
+  );
+
+  const [currentDate, setCurrentDate] = useState(currentMonth);
+
+  useEffect(() => {
+    setCurrentDate(currentMonth);
+  }, [currentMonth]);
+
+  const month = format(new Date(currentDate), 'yyyy-MM');
+
+  const {
+    isPending,
+    isError,
+    data: queryData,
+    refetch,
+  } = useQuery({
+    queryKey: [
+      'workspaces',
+      wsId,
+      'users',
+      initialUser.id,
+      'attendance',
+      {
+        month,
+        groups: defaultIncludedGroups?.slice().sort(),
+      },
+    ],
+    queryFn: async (): Promise<{ attendance: WorkspaceUserAttendance[] }> => {
+      const searchParams = new URLSearchParams({
+        month,
+      });
+      if (defaultIncludedGroups) {
+        for (const g of defaultIncludedGroups)
+          searchParams.append('groupIds', g);
+      }
+
+      const res = await fetch(
+        `/api/v1/workspaces/${wsId}/users/${initialUser.id}/attendance?${searchParams.toString()}`,
+        { cache: 'no-store' }
+      );
+      if (!res.ok) throw new Error('Failed to fetch attendance');
+      return await res.json();
+    },
+    placeholderData: keepPreviousData,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+    refetchOnWindowFocus: false,
+  });
+
+  const baseData = {
+    ...initialUser,
+    attendance: queryData?.attendance || [],
+  };
+
+  const filteredAttendance = useMemo(() => {
+    const attendance = baseData.attendance;
+    if (!defaultIncludedGroups || defaultIncludedGroups.length === 0)
+      return attendance;
+
+    return attendance.filter((entry) => {
+      const groups = entry.groups as
+        | { id: string; name: string }
+        | Array<{ id: string; name: string }>
+        | null
+        | undefined;
+      if (!groups) return false;
+      const arr = Array.isArray(groups) ? groups : [groups];
+      return arr.some((g) => defaultIncludedGroups.includes(g.id));
+    });
+  }, [baseData.attendance, defaultIncludedGroups]);
+
+  const data: WorkspaceUser & {
+    attendance: WorkspaceUserAttendance[];
+    role?: string;
+    archived?: boolean;
+    archived_until?: string | null;
+    note?: string | null;
+    isGuest?: boolean;
+    href?: string;
+  } = {
+    ...baseData,
+    attendance: filteredAttendance,
+  };
+
+  const handlePrev = async () =>
+    setCurrentDate(new Date(currentDate.setMonth(currentDate.getMonth() - 1)));
+
+  const handleNext = async () =>
+    setCurrentDate(new Date(currentDate.setMonth(currentDate.getMonth() + 1)));
+
+  const thisYear = currentDate.getFullYear();
+  const thisMonth = currentDate.toLocaleString(locale, { month: '2-digit' });
+
+  // includes all days of the week, starting from monday to sunday
+  const days = Array.from({ length: 7 }, (_, i) => {
+    const newDay = new Date(currentDate);
+    newDay.setDate(currentDate.getDate() - currentDate.getDay() + i + 1);
+    return newDay.toLocaleString(locale, { weekday: 'narrow' });
+  });
+
+  // includes all days of the month, starting from monday (which could be from the previous month) to sunday (which could be from the next month)
+  const daysInMonth = Array.from({ length: 42 }, (_, i) => {
+    const newDay = new Date(
+      currentDate.getFullYear(),
+      currentDate.getMonth(),
+      1
+    );
+    const dayOfWeek = newDay.getDay();
+    const adjustment = dayOfWeek === 0 ? 6 : dayOfWeek - 1; // adjust for Monday start
+    newDay.setDate(newDay.getDate() - adjustment + i);
+    return newDay;
+  });
+
+  const isCurrentMonth = (date: Date) =>
+    date.getMonth() === currentDate.getMonth() &&
+    date.getFullYear() === currentDate.getFullYear();
+
+  const isDateAttended = (user: Partial<WorkspaceUser>, currentDate: Date) =>
+    user.attendance?.some((attendance) => {
+      const attendanceDate = new Date(attendance.date);
+      return (
+        attendanceDate.getDate() === currentDate.getDate() &&
+        attendanceDate.getMonth() === currentDate.getMonth() &&
+        attendanceDate.getFullYear() === currentDate.getFullYear() &&
+        attendance.status === 'PRESENT'
+      );
+    });
+
+  const isDateAbsent = (user: Partial<WorkspaceUser>, currentDate: Date) =>
+    user.attendance?.some((attendance) => {
+      const attendanceDate = new Date(attendance.date);
+      return (
+        attendanceDate.getDate() === currentDate.getDate() &&
+        attendanceDate.getMonth() === currentDate.getMonth() &&
+        attendanceDate.getFullYear() === currentDate.getFullYear() &&
+        attendance.status === 'ABSENT'
+      );
+    });
+
+  function getAttendanceGroupNames(
+    date: Date,
+    attendanceData: WorkspaceUserAttendance[]
+  ): string[] {
+    if (!attendanceData) return [];
+
+    const filteredAttendance = attendanceData.filter((attendance) => {
+      const attendanceDate = new Date(attendance.date);
+      return (
+        attendanceDate.getDate() === date.getDate() &&
+        attendanceDate.getMonth() === date.getMonth() &&
+        attendanceDate.getFullYear() === date.getFullYear()
+      );
+    });
+
+    const uniqueGroups = filteredAttendance.reduce(
+      (acc, curr) => {
+        Array.isArray(curr.groups)
+          ? curr.groups.forEach((group) => {
+              if (!acc.some((g) => g.id === group.id)) {
+                acc.push(group);
+              }
+            })
+          : curr.groups && acc.push(curr.groups);
+
+        return acc;
+      },
+      [] as { id: string; name: string }[]
+    );
+
+    return uniqueGroups.map((group) => group.name);
+  }
+
+  const differentGroups = data?.attendance
+    ?.reduce((acc: { id: string; name: string }[], attendance) => {
+      if (!attendance.groups) return acc;
+      return acc.concat(attendance.groups);
+    }, [])
+    .filter(
+      (group, idx, arr) => arr.findIndex((g) => g.id === group.id) === idx
+    );
+
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [currentStatus, setCurrentStatus] = useState<
+    'PRESENT' | 'ABSENT' | null
+  >(null);
+
+  const today = startOfDay(new Date());
+
+  const handleDateClick = (date: Date) => {
+    if (!isAfter(date, today)) {
+      setSelectedDate(date);
+
+      // Find the attendance record for the selected date
+      const attendanceRecord = data.attendance?.find((attendance) => {
+        const attendanceDate = new Date(attendance.date);
+        return (
+          attendanceDate.getDate() === date.getDate() &&
+          attendanceDate.getMonth() === date.getMonth() &&
+          attendanceDate.getFullYear() === date.getFullYear()
+        );
+      });
+
+      // Set the current status and group ID if an attendance record exists
+      if (attendanceRecord) {
+        setCurrentStatus(attendanceRecord.status as 'PRESENT' | 'ABSENT');
+      } else {
+        setCurrentStatus(null);
+      }
+
+      setIsDialogOpen(true);
+    }
+  };
+
+  const handleDialogClose = () => {
+    setIsDialogOpen(false);
+    setSelectedDate(null);
+    setCurrentStatus(null);
+  };
+
+  const handleAttendanceUpdated = () => {
+    refetch();
+    router.refresh();
+  };
+
+  return (
+    <div className={cn('rounded-lg', noOutline || 'border p-4')}>
+      <div className="mb-2 flex w-full items-center border-b pb-2">
+        <div className="aspect-square h-12 w-12 flex-none rounded-lg bg-linear-to-br from-green-300 via-blue-500 to-purple-600 dark:from-green-300/70 dark:via-blue-500/70 dark:to-purple-600/70" />
+        <div className="flex w-full items-start justify-between gap-2">
+          <div className="ml-2 flex h-12 w-[calc(100%-3.5rem)] flex-col justify-between">
+            <div className="flex items-center justify-between gap-1">
+              <Link
+                href={data.href || '#'}
+                className={cn(
+                  'line-clamp-1 font-semibold text-zinc-900 hover:underline dark:text-zinc-200',
+                  (data.archived ||
+                    (data.archived_until &&
+                      new Date(data.archived_until) > new Date())) &&
+                    'text-dynamic-red line-through decoration-2 decoration-dynamic-red'
+                )}
+              >
+                {data?.display_name || data?.full_name || data?.email || '-'}
+              </Link>
+              <div className="flex items-center gap-1">
+                {data.role === 'TEACHER' && (
+                  <Badge
+                    variant="default"
+                    className="border-dynamic-green/20 bg-dynamic-green/10 text-dynamic-green"
+                  >
+                    {tDetails('managers')}
+                  </Badge>
+                )}
+                {!!data.isGuest && data.role !== 'TEACHER' && (
+                  <Badge
+                    variant="secondary"
+                    className="border-dynamic-orange/20 bg-dynamic-orange/10 text-dynamic-orange"
+                  >
+                    {tGuests('guests')}
+                  </Badge>
+                )}
+              </div>
+            </div>
+            {(data.archived ||
+              (data.archived_until &&
+                new Date(data.archived_until) > new Date())) && (
+              <div className="mt-1 font-semibold text-dynamic-red text-xs">
+                {data.archived_until &&
+                new Date(data.archived_until) > new Date() ? (
+                  <>
+                    {userStatusLabels.archived_until}:{' '}
+                    {format(new Date(data.archived_until), 'dd/MM/yyyy HH:mm')}
+                  </>
+                ) : (
+                  userStatusLabels.archived
+                )}
+                {data.note && <div>{data.note}</div>}
+              </div>
+            )}
+            <div className="scrollbar-none flex items-center gap-1 overflow-auto">
+              {differentGroups?.map((group, idx) => (
+                <div
+                  key={group.id + idx}
+                  className="flex-none whitespace-nowrap rounded border bg-foreground/5 px-2 py-0.5 font-semibold text-xs dark:bg-foreground/10"
+                >
+                  {group.name}
+                </div>
+              ))}
+            </div>
+          </div>
+          {/* <Button>
+            <CalendarCheck2 className="h-6 w-6" />
+          </Button> */}
+        </div>
+      </div>
+
+      <div>
+        <div className="grid h-full gap-8">
+          <div key={2024} className="flex h-full flex-col">
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-x-4 gap-y-1 font-bold text-xl md:text-2xl">
+              <div className="flex items-center gap-1">
+                {thisYear}
+                <div className="mx-2 h-4 w-px rotate-30 bg-foreground/20" />
+                <span className="font-semibold text-lg md:text-xl">
+                  {thisMonth}
+                </span>
+              </div>
+              <div className="flex items-center gap-1">
+                {data.attendance && (
+                  <div
+                    className={`rounded border bg-foreground/5 px-2 py-0.5 text-xs ${
+                      data.attendance.length === 0 || isPending || isError
+                        ? 'opacity-50'
+                        : ''
+                    }`}
+                  >
+                    <span className="text-green-500 dark:text-green-300">
+                      {
+                        data.attendance.filter(
+                          (attendance) => attendance.status === 'PRESENT'
+                        ).length
+                      }
+                    </span>{' '}
+                    +{' '}
+                    <span className="text-red-500 dark:text-red-300">
+                      {
+                        data.attendance.filter(
+                          (attendance) => attendance.status === 'ABSENT'
+                        ).length
+                      }
+                    </span>{' '}
+                    ={' '}
+                    <span className="text-blue-500 dark:text-blue-300">
+                      {data.attendance.length}
+                    </span>
+                  </div>
+                )}
+
+                <Button size="xs" variant="secondary" onClick={handlePrev}>
+                  <ChevronLeft className="h-6 w-6" />
+                </Button>
+
+                <Button
+                  size="xs"
+                  variant="secondary"
+                  onClick={handleNext}
+                  disabled={
+                    currentDate.getMonth() === new Date().getMonth() &&
+                    currentDate.getFullYear() === new Date().getFullYear()
+                  }
+                >
+                  <ChevronRight className="h-6 w-6" />
+                </Button>
+              </div>
+            </div>
+
+            <div className="relative grid gap-1 text-xs md:gap-2 md:text-base">
+              <div className="grid grid-cols-7 gap-1 md:gap-2">
+                {days.map((day, idx) => (
+                  <div
+                    key={`day-${idx}`}
+                    className="flex flex-none cursor-default justify-center rounded bg-foreground/5 p-2 font-semibold transition duration-300 md:rounded-lg"
+                  >
+                    {day}
+                  </div>
+                ))}
+              </div>
+
+              <div className="grid grid-cols-7 gap-1 md:gap-2">
+                <TooltipProvider delayDuration={0}>
+                  {daysInMonth.map((day, idx) => {
+                    if (isError || !isCurrentMonth(day))
+                      return (
+                        <div
+                          key={`${initialUser.id}-${currentDate.toDateString()}-day-${idx}`}
+                          className="flex flex-none cursor-default justify-center rounded border border-transparent p-2 font-semibold text-foreground/20 transition duration-300 md:rounded-lg"
+                        >
+                          {day.getDate()}
+                        </div>
+                      );
+
+                    if (!isDateAttended(data, day) && !isDateAbsent(data, day))
+                      return (
+                        <button
+                          type="button"
+                          onClick={() => handleDateClick(day)}
+                          key={`${initialUser.id}-${currentDate.toDateString()}-day-${idx}`}
+                          className={cn(
+                            'flex flex-none cursor-default justify-center rounded border bg-foreground/5 p-2 font-semibold text-foreground/40 transition duration-300 hover:cursor-pointer md:rounded-lg dark:bg-foreground/10',
+                            isAfter(day, today) &&
+                              'cursor-not-allowed opacity-50 hover:cursor-not-allowed'
+                          )}
+                        >
+                          {day.getDate()}
+                        </button>
+                      );
+
+                    return (
+                      <Fragment
+                        key={`${initialUser.id}-${currentDate.toDateString()}-day-${idx}`}
+                      >
+                        <Tooltip>
+                          <TooltipTrigger
+                            disabled={isError || !isCurrentMonth(day)}
+                            asChild
+                          >
+                            <button
+                              type="button"
+                              onClick={() => handleDateClick(day)}
+                              className={`flex flex-none cursor-pointer justify-center rounded border p-2 font-semibold transition duration-300 md:rounded-lg ${
+                                isDateAttended(data, day)
+                                  ? 'border-green-500/30 bg-green-500/10 text-green-600 dark:border-green-300/20 dark:bg-green-300/20 dark:text-green-300'
+                                  : isDateAbsent(data, day)
+                                    ? 'border-red-500/30 bg-red-500/10 text-red-600 dark:border-red-300/20 dark:bg-red-300/20 dark:text-red-300'
+                                    : 'bg-foreground/5 text-foreground/40 dark:bg-foreground/10'
+                              }`}
+                            >
+                              {day.getDate()}
+                            </button>
+                          </TooltipTrigger>
+
+                          <TooltipContent>
+                            {/* Display group name for current day */}
+                            {getAttendanceGroupNames(
+                              day,
+                              data.attendance || []
+                            ).map((groupName, idx) => (
+                              <div
+                                key={groupName + idx}
+                                className="flex items-center gap-1"
+                              >
+                                <span className="font-semibold text-xs">
+                                  {groupName}
+                                </span>
+                              </div>
+                            ))}
+                          </TooltipContent>
+                        </Tooltip>
+                      </Fragment>
+                    );
+                  })}
+                </TooltipProvider>
+              </div>
+
+              {selectedDate && (
+                <AttendanceDialog
+                  wsId={wsId}
+                  isOpen={isDialogOpen}
+                  currentStatus={currentStatus}
+                  date={selectedDate}
+                  user={data}
+                  onAttendanceUpdated={handleAttendanceUpdated}
+                  onClose={handleDialogClose}
+                />
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

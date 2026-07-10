@@ -7,11 +7,6 @@ export type Json =
   | Json[];
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: '14.5';
-  };
   private: {
     Tables: {
       ai_agent_external_messages: {
@@ -5303,6 +5298,167 @@ export type Database = {
         };
         Relationships: [];
       };
+      mail_ai_conversations: {
+        Row: {
+          archived_at: string | null;
+          created_at: string;
+          id: string;
+          mailbox_id: string;
+          memory_container_id: string | null;
+          title: string;
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          archived_at?: string | null;
+          created_at?: string;
+          id?: string;
+          mailbox_id: string;
+          memory_container_id?: string | null;
+          title?: string;
+          updated_at?: string;
+          user_id: string;
+        };
+        Update: {
+          archived_at?: string | null;
+          created_at?: string;
+          id?: string;
+          mailbox_id?: string;
+          memory_container_id?: string | null;
+          title?: string;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'mail_ai_conversations_mailbox_id_fkey';
+            columns: ['mailbox_id'];
+            isOneToOne: false;
+            referencedRelation: 'mail_mailboxes';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'mail_ai_conversations_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'mail_ai_conversations_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+        ];
+      };
+      mail_ai_messages: {
+        Row: {
+          content: Json;
+          conversation_id: string;
+          created_at: string;
+          id: string;
+          model_id: string | null;
+          role: string;
+        };
+        Insert: {
+          content?: Json;
+          conversation_id: string;
+          created_at?: string;
+          id?: string;
+          model_id?: string | null;
+          role: string;
+        };
+        Update: {
+          content?: Json;
+          conversation_id?: string;
+          created_at?: string;
+          id?: string;
+          model_id?: string | null;
+          role?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'mail_ai_messages_conversation_id_fkey';
+            columns: ['conversation_id'];
+            isOneToOne: false;
+            referencedRelation: 'mail_ai_conversations';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      mail_ai_tool_executions: {
+        Row: {
+          actor_user_id: string | null;
+          arguments: Json;
+          completed_at: string | null;
+          conversation_id: string | null;
+          created_at: string;
+          id: string;
+          mailbox_id: string;
+          requested_scope: string;
+          result: Json;
+          status: string;
+          tool_name: string;
+        };
+        Insert: {
+          actor_user_id?: string | null;
+          arguments?: Json;
+          completed_at?: string | null;
+          conversation_id?: string | null;
+          created_at?: string;
+          id?: string;
+          mailbox_id: string;
+          requested_scope: string;
+          result?: Json;
+          status: string;
+          tool_name: string;
+        };
+        Update: {
+          actor_user_id?: string | null;
+          arguments?: Json;
+          completed_at?: string | null;
+          conversation_id?: string | null;
+          created_at?: string;
+          id?: string;
+          mailbox_id?: string;
+          requested_scope?: string;
+          result?: Json;
+          status?: string;
+          tool_name?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'mail_ai_tool_executions_actor_user_id_fkey';
+            columns: ['actor_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'mail_ai_tool_executions_actor_user_id_fkey';
+            columns: ['actor_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'mail_ai_tool_executions_conversation_id_fkey';
+            columns: ['conversation_id'];
+            isOneToOne: false;
+            referencedRelation: 'mail_ai_conversations';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'mail_ai_tool_executions_mailbox_id_fkey';
+            columns: ['mailbox_id'];
+            isOneToOne: false;
+            referencedRelation: 'mail_mailboxes';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       mail_attachments: {
         Row: {
           content_id: string | null;
@@ -5318,6 +5474,7 @@ export type Database = {
           size_bytes: number;
           storage_bucket: string | null;
           storage_key: string | null;
+          stored_object_id: string | null;
         };
         Insert: {
           content_id?: string | null;
@@ -5333,6 +5490,7 @@ export type Database = {
           size_bytes?: number;
           storage_bucket?: string | null;
           storage_key?: string | null;
+          stored_object_id?: string | null;
         };
         Update: {
           content_id?: string | null;
@@ -5348,6 +5506,7 @@ export type Database = {
           size_bytes?: number;
           storage_bucket?: string | null;
           storage_key?: string | null;
+          stored_object_id?: string | null;
         };
         Relationships: [
           {
@@ -5363,6 +5522,143 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: 'mail_raw_messages';
             referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'mail_attachments_stored_object_id_fkey';
+            columns: ['stored_object_id'];
+            isOneToOne: false;
+            referencedRelation: 'mail_stored_objects';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      mail_auto_draft_jobs: {
+        Row: {
+          attempts: number;
+          created_at: string;
+          draft_message_id: string | null;
+          id: string;
+          injection_risk: string | null;
+          mailbox_id: string;
+          message_id: string;
+          processed_at: string | null;
+          skip_reason: string | null;
+          status: string;
+          updated_at: string;
+        };
+        Insert: {
+          attempts?: number;
+          created_at?: string;
+          draft_message_id?: string | null;
+          id?: string;
+          injection_risk?: string | null;
+          mailbox_id: string;
+          message_id: string;
+          processed_at?: string | null;
+          skip_reason?: string | null;
+          status?: string;
+          updated_at?: string;
+        };
+        Update: {
+          attempts?: number;
+          created_at?: string;
+          draft_message_id?: string | null;
+          id?: string;
+          injection_risk?: string | null;
+          mailbox_id?: string;
+          message_id?: string;
+          processed_at?: string | null;
+          skip_reason?: string | null;
+          status?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'mail_auto_draft_jobs_draft_message_id_fkey';
+            columns: ['draft_message_id'];
+            isOneToOne: false;
+            referencedRelation: 'mail_messages';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'mail_auto_draft_jobs_mailbox_id_fkey';
+            columns: ['mailbox_id'];
+            isOneToOne: false;
+            referencedRelation: 'mail_mailboxes';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'mail_auto_draft_jobs_message_id_fkey';
+            columns: ['message_id'];
+            isOneToOne: false;
+            referencedRelation: 'mail_messages';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      mail_domains: {
+        Row: {
+          cloudflare_account_id: string | null;
+          cloudflare_routing_rule_id: string | null;
+          cloudflare_zone_id: string | null;
+          created_at: string;
+          created_by: string | null;
+          domain: string;
+          id: string;
+          inbound_provider: string;
+          operational_metadata: Json;
+          outbound_provider: string;
+          status: string;
+          updated_at: string;
+          verification_state: Json;
+          verified_at: string | null;
+        };
+        Insert: {
+          cloudflare_account_id?: string | null;
+          cloudflare_routing_rule_id?: string | null;
+          cloudflare_zone_id?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          domain: string;
+          id?: string;
+          inbound_provider?: string;
+          operational_metadata?: Json;
+          outbound_provider?: string;
+          status?: string;
+          updated_at?: string;
+          verification_state?: Json;
+          verified_at?: string | null;
+        };
+        Update: {
+          cloudflare_account_id?: string | null;
+          cloudflare_routing_rule_id?: string | null;
+          cloudflare_zone_id?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          domain?: string;
+          id?: string;
+          inbound_provider?: string;
+          operational_metadata?: Json;
+          outbound_provider?: string;
+          status?: string;
+          updated_at?: string;
+          verification_state?: Json;
+          verified_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'mail_domains_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'mail_domains_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
           },
         ];
       };
@@ -5425,6 +5721,61 @@ export type Database = {
           },
         ];
       };
+      mail_folders: {
+        Row: {
+          created_at: string;
+          created_by: string | null;
+          id: string;
+          kind: string;
+          mailbox_id: string;
+          name: string;
+          slug: string;
+          updated_at: string;
+        };
+        Insert: {
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          kind?: string;
+          mailbox_id: string;
+          name: string;
+          slug: string;
+          updated_at?: string;
+        };
+        Update: {
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          kind?: string;
+          mailbox_id?: string;
+          name?: string;
+          slug?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'mail_folders_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'mail_folders_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'mail_folders_mailbox_id_fkey';
+            columns: ['mailbox_id'];
+            isOneToOne: false;
+            referencedRelation: 'mail_mailboxes';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       mail_inbound_jobs: {
         Row: {
           attempts: number;
@@ -5440,6 +5791,7 @@ export type Database = {
           s3_key: string | null;
           sns_topic_arn: string | null;
           status: string;
+          stored_object_id: string | null;
           updated_at: string;
         };
         Insert: {
@@ -5456,6 +5808,7 @@ export type Database = {
           s3_key?: string | null;
           sns_topic_arn?: string | null;
           status?: string;
+          stored_object_id?: string | null;
           updated_at?: string;
         };
         Update: {
@@ -5472,9 +5825,18 @@ export type Database = {
           s3_key?: string | null;
           sns_topic_arn?: string | null;
           status?: string;
+          stored_object_id?: string | null;
           updated_at?: string;
         };
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: 'mail_inbound_jobs_stored_object_id_fkey';
+            columns: ['stored_object_id'];
+            isOneToOne: false;
+            referencedRelation: 'mail_stored_objects';
+            referencedColumns: ['id'];
+          },
+        ];
       };
       mail_labels: {
         Row: {
@@ -5603,36 +5965,60 @@ export type Database = {
       mail_mailboxes: {
         Row: {
           address: string;
+          ai_instructions: string;
           archived_at: string | null;
+          auto_draft_enabled: boolean;
+          auto_draft_policy: Json;
           created_at: string;
           created_by: string | null;
           display_name: string;
+          domain_id: string;
           id: string;
           metadata: Json;
+          outbound_provider_override: string | null;
+          sender_name: string;
+          signature_html: string | null;
+          signature_text: string | null;
           status: string;
           type: string;
           updated_at: string;
         };
         Insert: {
           address: string;
+          ai_instructions?: string;
           archived_at?: string | null;
+          auto_draft_enabled?: boolean;
+          auto_draft_policy?: Json;
           created_at?: string;
           created_by?: string | null;
           display_name?: string;
+          domain_id: string;
           id?: string;
           metadata?: Json;
+          outbound_provider_override?: string | null;
+          sender_name?: string;
+          signature_html?: string | null;
+          signature_text?: string | null;
           status?: string;
           type?: string;
           updated_at?: string;
         };
         Update: {
           address?: string;
+          ai_instructions?: string;
           archived_at?: string | null;
+          auto_draft_enabled?: boolean;
+          auto_draft_policy?: Json;
           created_at?: string;
           created_by?: string | null;
           display_name?: string;
+          domain_id?: string;
           id?: string;
           metadata?: Json;
+          outbound_provider_override?: string | null;
+          sender_name?: string;
+          signature_html?: string | null;
+          signature_text?: string | null;
           status?: string;
           type?: string;
           updated_at?: string;
@@ -5651,6 +6037,133 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: 'nova_user_leaderboard';
             referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'mail_mailboxes_domain_id_fkey';
+            columns: ['domain_id'];
+            isOneToOne: false;
+            referencedRelation: 'mail_domains';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      mail_mcp_credential_mailboxes: {
+        Row: {
+          created_at: string;
+          credential_id: string;
+          mailbox_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          credential_id: string;
+          mailbox_id: string;
+        };
+        Update: {
+          created_at?: string;
+          credential_id?: string;
+          mailbox_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'mail_mcp_credential_mailboxes_credential_id_fkey';
+            columns: ['credential_id'];
+            isOneToOne: false;
+            referencedRelation: 'mail_mcp_credentials';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'mail_mcp_credential_mailboxes_mailbox_id_fkey';
+            columns: ['mailbox_id'];
+            isOneToOne: false;
+            referencedRelation: 'mail_mailboxes';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      mail_mcp_credentials: {
+        Row: {
+          created_at: string;
+          created_by: string;
+          expires_at: string | null;
+          id: string;
+          last_used_at: string | null;
+          name: string;
+          revoked_at: string | null;
+          scopes: string[];
+          token_hash: string;
+          token_prefix: string;
+        };
+        Insert: {
+          created_at?: string;
+          created_by: string;
+          expires_at?: string | null;
+          id?: string;
+          last_used_at?: string | null;
+          name: string;
+          revoked_at?: string | null;
+          scopes: string[];
+          token_hash: string;
+          token_prefix: string;
+        };
+        Update: {
+          created_at?: string;
+          created_by?: string;
+          expires_at?: string | null;
+          id?: string;
+          last_used_at?: string | null;
+          name?: string;
+          revoked_at?: string | null;
+          scopes?: string[];
+          token_hash?: string;
+          token_prefix?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'mail_mcp_credentials_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'mail_mcp_credentials_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+        ];
+      };
+      mail_message_folders: {
+        Row: {
+          created_at: string;
+          folder_id: string;
+          message_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          folder_id: string;
+          message_id: string;
+        };
+        Update: {
+          created_at?: string;
+          folder_id?: string;
+          message_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'mail_message_folders_folder_id_fkey';
+            columns: ['folder_id'];
+            isOneToOne: false;
+            referencedRelation: 'mail_folders';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'mail_message_folders_message_id_fkey';
+            columns: ['message_id'];
+            isOneToOne: false;
+            referencedRelation: 'mail_messages';
+            referencedColumns: ['id'];
           },
         ];
       };
@@ -5779,6 +6292,7 @@ export type Database = {
           received_at: string | null;
           references_headers: string[];
           sanitized_html: string | null;
+          search_document: unknown;
           sent_at: string | null;
           size_bytes: number | null;
           snippet: string | null;
@@ -5807,6 +6321,7 @@ export type Database = {
           received_at?: string | null;
           references_headers?: string[];
           sanitized_html?: string | null;
+          search_document?: unknown;
           sent_at?: string | null;
           size_bytes?: number | null;
           snippet?: string | null;
@@ -5835,6 +6350,7 @@ export type Database = {
           received_at?: string | null;
           references_headers?: string[];
           sanitized_html?: string | null;
+          search_document?: unknown;
           sent_at?: string | null;
           size_bytes?: number | null;
           snippet?: string | null;
@@ -5961,6 +6477,7 @@ export type Database = {
           spam_verdict: string | null;
           spf_verdict: string | null;
           status: string;
+          stored_object_id: string | null;
           virus_verdict: string | null;
         };
         Insert: {
@@ -5979,6 +6496,7 @@ export type Database = {
           spam_verdict?: string | null;
           spf_verdict?: string | null;
           status?: string;
+          stored_object_id?: string | null;
           virus_verdict?: string | null;
         };
         Update: {
@@ -5997,9 +6515,18 @@ export type Database = {
           spam_verdict?: string | null;
           spf_verdict?: string | null;
           status?: string;
+          stored_object_id?: string | null;
           virus_verdict?: string | null;
         };
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: 'mail_raw_messages_stored_object_id_fkey';
+            columns: ['stored_object_id'];
+            isOneToOne: false;
+            referencedRelation: 'mail_stored_objects';
+            referencedColumns: ['id'];
+          },
+        ];
       };
       mail_recipients: {
         Row: {
@@ -6029,6 +6556,78 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: 'mail_recipients_message_id_fkey';
+            columns: ['message_id'];
+            isOneToOne: false;
+            referencedRelation: 'mail_messages';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      mail_stored_objects: {
+        Row: {
+          bucket_name: string;
+          content_disposition: string | null;
+          content_id: string | null;
+          content_type: string;
+          created_at: string;
+          deleted_at: string | null;
+          filename: string | null;
+          id: string;
+          mailbox_id: string | null;
+          message_id: string | null;
+          object_key: string;
+          object_kind: string;
+          provider: string;
+          provider_metadata: Json;
+          sha256: string;
+          size_bytes: number;
+        };
+        Insert: {
+          bucket_name: string;
+          content_disposition?: string | null;
+          content_id?: string | null;
+          content_type?: string;
+          created_at?: string;
+          deleted_at?: string | null;
+          filename?: string | null;
+          id?: string;
+          mailbox_id?: string | null;
+          message_id?: string | null;
+          object_key: string;
+          object_kind: string;
+          provider: string;
+          provider_metadata?: Json;
+          sha256: string;
+          size_bytes: number;
+        };
+        Update: {
+          bucket_name?: string;
+          content_disposition?: string | null;
+          content_id?: string | null;
+          content_type?: string;
+          created_at?: string;
+          deleted_at?: string | null;
+          filename?: string | null;
+          id?: string;
+          mailbox_id?: string | null;
+          message_id?: string | null;
+          object_key?: string;
+          object_kind?: string;
+          provider?: string;
+          provider_metadata?: Json;
+          sha256?: string;
+          size_bytes?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'mail_stored_objects_mailbox_id_fkey';
+            columns: ['mailbox_id'];
+            isOneToOne: false;
+            referencedRelation: 'mail_mailboxes';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'mail_stored_objects_message_id_fkey';
             columns: ['message_id'];
             isOneToOne: false;
             referencedRelation: 'mail_messages';
@@ -13138,6 +13737,20 @@ export type Database = {
       update_managed_cron_whitelisted_domain_enabled: {
         Args: { p_actor_id?: string; p_domain: string; p_enabled: boolean };
         Returns: undefined;
+      };
+      update_richfield_contact_submission_status: {
+        Args: {
+          p_email_notification_status: string;
+          p_entry_id: string;
+          p_ws_id: string;
+        };
+        Returns: Database['public']['Tables']['workspace_external_project_entries']['Row'][];
+        SetofOptions: {
+          from: '*';
+          to: 'workspace_external_project_entries';
+          isOneToOne: false;
+          isSetofReturn: true;
+        };
       };
       update_time_tracking_request: {
         Args: {
@@ -20299,6 +20912,7 @@ export type Database = {
           created_at: string;
           creator_id: string;
           id: string;
+          note: string | null;
           product_id: string;
           unit_id: string;
           warehouse_id: string;
@@ -20309,6 +20923,7 @@ export type Database = {
           created_at?: string;
           creator_id: string;
           id?: string;
+          note?: string | null;
           product_id: string;
           unit_id: string;
           warehouse_id: string;
@@ -20319,6 +20934,7 @@ export type Database = {
           created_at?: string;
           creator_id?: string;
           id?: string;
+          note?: string | null;
           product_id?: string;
           unit_id?: string;
           warehouse_id?: string;
@@ -33955,7 +34571,22 @@ export type Database = {
           ts?: string | null;
           ws_id?: never;
         };
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: 'record_version_auth_uid_fkey';
+            columns: ['auth_uid'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'record_version_auth_uid_fkey';
+            columns: ['auth_uid'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+        ];
       };
       calendar_event_participants: {
         Row: {
@@ -41463,6 +42094,101 @@ export type Database = {
           updated_at?: string;
         };
         Relationships: [];
+      };
+      iceberg_namespaces: {
+        Row: {
+          bucket_name: string;
+          catalog_id: string;
+          created_at: string;
+          id: string;
+          metadata: Json;
+          name: string;
+          updated_at: string;
+        };
+        Insert: {
+          bucket_name: string;
+          catalog_id: string;
+          created_at?: string;
+          id?: string;
+          metadata?: Json;
+          name: string;
+          updated_at?: string;
+        };
+        Update: {
+          bucket_name?: string;
+          catalog_id?: string;
+          created_at?: string;
+          id?: string;
+          metadata?: Json;
+          name?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'iceberg_namespaces_catalog_id_fkey';
+            columns: ['catalog_id'];
+            isOneToOne: false;
+            referencedRelation: 'buckets_analytics';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      iceberg_tables: {
+        Row: {
+          bucket_name: string;
+          catalog_id: string;
+          created_at: string;
+          id: string;
+          location: string;
+          name: string;
+          namespace_id: string;
+          remote_table_id: string | null;
+          shard_id: string | null;
+          shard_key: string | null;
+          updated_at: string;
+        };
+        Insert: {
+          bucket_name: string;
+          catalog_id: string;
+          created_at?: string;
+          id?: string;
+          location: string;
+          name: string;
+          namespace_id: string;
+          remote_table_id?: string | null;
+          shard_id?: string | null;
+          shard_key?: string | null;
+          updated_at?: string;
+        };
+        Update: {
+          bucket_name?: string;
+          catalog_id?: string;
+          created_at?: string;
+          id?: string;
+          location?: string;
+          name?: string;
+          namespace_id?: string;
+          remote_table_id?: string | null;
+          shard_id?: string | null;
+          shard_key?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'iceberg_tables_catalog_id_fkey';
+            columns: ['catalog_id'];
+            isOneToOne: false;
+            referencedRelation: 'buckets_analytics';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'iceberg_tables_namespace_id_fkey';
+            columns: ['namespace_id'];
+            isOneToOne: false;
+            referencedRelation: 'iceberg_namespaces';
+            referencedColumns: ['id'];
+          },
+        ];
       };
       migrations: {
         Row: {

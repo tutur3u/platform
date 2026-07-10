@@ -10,6 +10,7 @@ export const TUTURUUU_PORTLESS_APP_ORIGINS = {
   calendar: `https://calendar.${TUTURUUU_PORTLESS_ROOT_HOST}`,
   chat: `https://chat.${TUTURUUU_PORTLESS_ROOT_HOST}`,
   cms: `https://cms.${TUTURUUU_PORTLESS_ROOT_HOST}`,
+  contacts: `https://contacts.${TUTURUUU_PORTLESS_ROOT_HOST}`,
   docs: `https://docs.${TUTURUUU_PORTLESS_ROOT_HOST}`,
   drive: `https://drive.${TUTURUUU_PORTLESS_ROOT_HOST}`,
   external: `https://external.${TUTURUUU_PORTLESS_ROOT_HOST}`,

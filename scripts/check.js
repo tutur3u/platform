@@ -33,6 +33,11 @@ const runAll = process.argv.includes('--run-all');
 const forceNow = process.argv.includes('--force-now');
 const failFast = !runAll;
 const failFastRequiredChecks = new Set(['tests', 'type-check']);
+// Checks that must still run even when a fail-fast required check fails, so
+// fast, independent quality gates (formatting/lint) are never silently skipped
+// just because tests or type-check are red (e.g. an unrelated pre-existing
+// failure). Prevents format/lint regressions from slipping past `bun check`.
+const alwaysRunAfterFailFast = new Set(['biome']);
 const DISCORD_PYTHON_PATH_PREFIX = 'apps/discord/';
 const DISCORD_PYTHON_WORKFLOW_PATH = '.github/workflows/discord-python-ci.yml';
 const PLATFORM_RELEASE_VERSION_PATHS = new Set([
@@ -1246,10 +1251,26 @@ async function main(options = {}) {
 
         if (!pendingRequiredChecks) {
           for (let i = results.length; i < activeChecks.length; i += 1) {
+            const pendingCheck = activeChecks[i];
+
+            // Independent quality gates (formatting/lint) still run so they are
+            // never masked by an unrelated fail-fast failure.
+            if (alwaysRunAfterFailFast.has(pendingCheck.name)) {
+              console.log(
+                `${colors.dim}━━━ ${pendingCheck.name} ━━━${colors.reset}`
+              );
+              const alwaysRunResult = await runCheck(pendingCheck);
+              results.push(alwaysRunResult);
+              if (!alwaysRunResult.success) {
+                console.log('');
+              }
+              continue;
+            }
+
             results.push({
               cancelled: true,
               duration: 0,
-              name: activeChecks[i].name,
+              name: pendingCheck.name,
               status: `Skipped (fail-fast after ${failingCheckName})`,
               stderr: '',
               stdout: '',
@@ -1258,7 +1279,7 @@ async function main(options = {}) {
           }
 
           console.log(
-            `${colors.yellow}${colors.bold}${failingCheckName} failed; skipping remaining checks.${colors.reset}`
+            `${colors.yellow}${colors.bold}${failingCheckName} failed; ran formatting/lint, skipped the remaining checks.${colors.reset}`
           );
           break;
         }

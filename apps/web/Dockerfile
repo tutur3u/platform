@@ -40,6 +40,7 @@ COPY apps/tasks/package.json ./apps/tasks/package.json
 COPY apps/tanstack-web/package.json ./apps/tanstack-web/package.json
 COPY apps/teach/package.json ./apps/teach/package.json
 COPY apps/pay/package.json ./apps/pay/package.json
+COPY apps/contacts/package.json ./apps/contacts/package.json
 COPY apps/tools/package.json ./apps/tools/package.json
 COPY apps/track/package.json ./apps/track/package.json
 COPY apps/learn/package.json ./apps/learn/package.json
@@ -77,6 +78,8 @@ COPY packages/types/package.json ./packages/types/package.json
 COPY packages/typescript-config/package.json ./packages/typescript-config/package.json
 COPY packages/ui/package.json ./packages/ui/package.json
 COPY packages/ui/vendor/xlsx-0.20.3.tgz ./packages/ui/vendor/xlsx-0.20.3.tgz
+COPY packages/users-core/package.json ./packages/users-core/package.json
+COPY packages/users-ui/package.json ./packages/users-ui/package.json
 COPY packages/utils/package.json ./packages/utils/package.json
 COPY packages/vercel/package.json ./packages/vercel/package.json
 COPY packages/workflows/package.json ./packages/workflows/package.json

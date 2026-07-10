@@ -31,6 +31,7 @@ export async function GET(
             | 'trash'
             | null) ?? 'inbox',
         label: searchParams.get('label') ?? undefined,
+        folderId: searchParams.get('folderId') ?? undefined,
         page: Number(searchParams.get('page') ?? 1),
         pageSize: Number(searchParams.get('pageSize') ?? 40),
         query: searchParams.get('query') ?? undefined,

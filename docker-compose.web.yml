@@ -149,6 +149,10 @@ services:
       - platform-web-typescript-config-dist:/workspace/packages/typescript-config/dist
       - platform-web-ui-node_modules:/workspace/packages/ui/node_modules
       - platform-web-ui-dist:/workspace/packages/ui/dist
+      - platform-web-users-core-node_modules:/workspace/packages/users-core/node_modules
+      - platform-web-users-core-dist:/workspace/packages/users-core/dist
+      - platform-web-users-ui-node_modules:/workspace/packages/users-ui/node_modules
+      - platform-web-users-ui-dist:/workspace/packages/users-ui/dist
       - platform-web-utils-node_modules:/workspace/packages/utils/node_modules
       - platform-web-utils-dist:/workspace/packages/utils/dist
       - platform-web-vercel-node_modules:/workspace/packages/vercel/node_modules
@@ -578,6 +582,10 @@ volumes:
   platform-web-typescript-config-dist:
   platform-web-ui-node_modules:
   platform-web-ui-dist:
+  platform-web-users-core-node_modules:
+  platform-web-users-core-dist:
+  platform-web-users-ui-node_modules:
+  platform-web-users-ui-dist:
   platform-web-utils-node_modules:
   platform-web-utils-dist:
   platform-web-vercel-node_modules:

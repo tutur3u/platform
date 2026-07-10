@@ -5,6 +5,7 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import { syncWorkspaceUserGuestMembership } from '@tuturuuu/users-core/lib/user-groups/guest-membership';
 import { normalizeAvatarImageSrc } from '@tuturuuu/utils/avatar-url';
 import {
   MAX_COLOR_LENGTH,
@@ -23,7 +24,6 @@ import {
   isWorkspaceUserInactiveForPostEmail,
   POST_EMAIL_INACTIVE_RECIPIENT_REASON,
 } from '@/lib/post-email-queue';
-import { syncWorkspaceUserGuestMembership } from '@/lib/user-groups/guest-membership';
 import { validateWorkspaceApiKey } from '@/lib/workspace-api-key';
 
 const userUpdateSchema = z.object({

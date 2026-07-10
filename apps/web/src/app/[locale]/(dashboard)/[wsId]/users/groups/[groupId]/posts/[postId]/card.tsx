@@ -1,7 +1,7 @@
 'use client';
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Check, LoaderCircle, Save, X } from '@tuturuuu/icons';
+import { Check, LoaderCircle, RotateCcw, Save, X } from '@tuturuuu/icons';
 import type { UserGroupPost } from '@tuturuuu/types/db';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
@@ -119,6 +119,32 @@ function UserCard({
         throw new Error('Error saving/updating data');
       }
 
+      return response.json();
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: ['group-post-checks', post.id],
+      });
+      router.refresh();
+    },
+  });
+
+  const { mutate: handleClearStatus, isPending: isClearing } = useMutation({
+    mutationFn: async () => {
+      if (!recipient.user_id || !post.id || !post.group_id) {
+        throw new Error('Missing required fields');
+      }
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/user-groups/${post.group_id}/group-checks/${post.id}`,
+        {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ user_id: recipient.user_id }),
+        }
+      );
+      if (!response.ok) {
+        throw new Error('Error clearing status');
+      }
       return response.json();
     },
     onSuccess: async () => {
@@ -277,6 +303,22 @@ function UserCard({
             )}
             {t('common.incomplete')}
           </Button>
+          {hasExistingCheck && (
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => handleClearStatus()}
+              disabled={isSavingStatus || isClearing}
+              title={t('ws_post_details.reset_check_description')}
+            >
+              {isClearing ? (
+                <LoaderCircle className="mr-1 h-4 w-4 animate-spin" />
+              ) : (
+                <RotateCcw className="mr-1 h-4 w-4" />
+              )}
+              {t('ws_post_details.reset_check')}
+            </Button>
+          )}
           {hasExistingCheck && (
             <Button
               size="sm"

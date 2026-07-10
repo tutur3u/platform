@@ -6,24 +6,24 @@
         "acceptedRemoval": 11,
         "key": "api",
         "label": "api",
-        "legacyNext": 487,
+        "legacyNext": 488,
         "migrated": 66,
-        "percentComplete": 13.65,
-        "remaining": 487,
+        "percentComplete": 13.63,
+        "remaining": 488,
         "terminal": 77,
-        "total": 564,
+        "total": 565,
         "unknownStatus": 0
       },
       {
         "acceptedRemoval": 2,
         "key": "page",
         "label": "page",
-        "legacyNext": 57,
-        "migrated": 121,
-        "percentComplete": 68.33,
-        "remaining": 57,
-        "terminal": 123,
-        "total": 180,
+        "legacyNext": 54,
+        "migrated": 118,
+        "percentComplete": 68.97,
+        "remaining": 54,
+        "terminal": 120,
+        "total": 174,
         "unknownStatus": 0
       },
       {
@@ -116,24 +116,24 @@
         "acceptedRemoval": 11,
         "key": "rust-backend",
         "label": "Rust backend",
-        "legacyNext": 495,
+        "legacyNext": 496,
         "migrated": 71,
-        "percentComplete": 14.21,
-        "remaining": 495,
+        "percentComplete": 14.19,
+        "remaining": 496,
         "terminal": 82,
-        "total": 577,
+        "total": 578,
         "unknownStatus": 0
       },
       {
         "acceptedRemoval": 2,
         "key": "tanstack-start",
         "label": "TanStack Start",
-        "legacyNext": 66,
-        "migrated": 172,
-        "percentComplete": 72.5,
-        "remaining": 66,
-        "terminal": 174,
-        "total": 240,
+        "legacyNext": 63,
+        "migrated": 169,
+        "percentComplete": 73.08,
+        "remaining": 63,
+        "terminal": 171,
+        "total": 234,
         "unknownStatus": 0
       }
     ],
@@ -323,12 +323,12 @@
       "acceptedRemoval": 13,
       "key": "total",
       "label": "All route artifacts",
-      "legacyNext": 561,
-      "migrated": 243,
-      "percentComplete": 31.33,
-      "remaining": 561,
-      "terminal": 256,
-      "total": 817,
+      "legacyNext": 559,
+      "migrated": 240,
+      "percentComplete": 31.16,
+      "remaining": 559,
+      "terminal": 253,
+      "total": 812,
       "unknownStatus": 0
     }
   },
@@ -4632,7 +4632,7 @@
     {
       "id": "api:/api/v1/workspaces/:wsId/user-groups/:groupId/group-checks/:postId:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/user-groups/[groupId]/group-checks/[postId]/route.ts",
       "kind": "api",
-      "methods": ["PUT"],
+      "methods": ["PUT", "DELETE"],
       "routePath": "/api/v1/workspaces/:wsId/user-groups/:groupId/group-checks/:postId",
       "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/user-groups/[groupId]/group-checks/[postId]/route.ts",
       "status": "legacy-next",
@@ -4645,6 +4645,15 @@
       "routePath": "/api/v1/workspaces/:wsId/user-groups/:groupId/group-checks/:postId/email",
       "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/user-groups/[groupId]/group-checks/[postId]/email/route.ts",
       "status": "migrated",
+      "targetOwner": "rust-backend"
+    },
+    {
+      "id": "api:/api/v1/workspaces/:wsId/user-groups/:groupId/group-checks/:postId/logs:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/user-groups/[groupId]/group-checks/[postId]/logs/route.ts",
+      "kind": "api",
+      "methods": ["GET"],
+      "routePath": "/api/v1/workspaces/:wsId/user-groups/:groupId/group-checks/:postId/logs",
+      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/user-groups/[groupId]/group-checks/[postId]/logs/route.ts",
+      "status": "legacy-next",
       "targetOwner": "rust-backend"
     },
     {
@@ -6799,33 +6808,6 @@
       "targetOwner": "tanstack-start"
     },
     {
-      "id": "page:/:locale/:wsId/users/database:apps/web/src/app/[locale]/(dashboard)/[wsId]/users/database/page.tsx",
-      "kind": "page",
-      "methods": [],
-      "routePath": "/:locale/:wsId/users/database",
-      "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/users/database/page.tsx",
-      "status": "legacy-next",
-      "targetOwner": "tanstack-start"
-    },
-    {
-      "id": "page:/:locale/:wsId/users/database/:userId:apps/web/src/app/[locale]/(dashboard)/[wsId]/users/database/[userId]/page.tsx",
-      "kind": "page",
-      "methods": [],
-      "routePath": "/:locale/:wsId/users/database/:userId",
-      "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/users/database/[userId]/page.tsx",
-      "status": "legacy-next",
-      "targetOwner": "tanstack-start"
-    },
-    {
-      "id": "page:/:locale/:wsId/users/feedbacks:apps/web/src/app/[locale]/(dashboard)/[wsId]/users/feedbacks/page.tsx",
-      "kind": "page",
-      "methods": [],
-      "routePath": "/:locale/:wsId/users/feedbacks",
-      "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/users/feedbacks/page.tsx",
-      "status": "migrated",
-      "targetOwner": "tanstack-start"
-    },
-    {
       "id": "page:/:locale/:wsId/users/group-tags:apps/web/src/app/[locale]/(dashboard)/[wsId]/users/group-tags/page.tsx",
       "kind": "page",
       "methods": [],
@@ -6943,15 +6925,6 @@
       "targetOwner": "tanstack-start"
     },
     {
-      "id": "page:/:locale/:wsId/users/guest-leads:apps/web/src/app/[locale]/(dashboard)/[wsId]/users/guest-leads/page.tsx",
-      "kind": "page",
-      "methods": [],
-      "routePath": "/:locale/:wsId/users/guest-leads",
-      "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/users/guest-leads/page.tsx",
-      "status": "legacy-next",
-      "targetOwner": "tanstack-start"
-    },
-    {
       "id": "page:/:locale/:wsId/users/reports:apps/web/src/app/[locale]/(dashboard)/[wsId]/users/reports/page.tsx",
       "kind": "page",
       "methods": [],
@@ -6967,15 +6940,6 @@
       "routePath": "/:locale/:wsId/users/reports/:reportId",
       "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/users/reports/[reportId]/page.tsx",
       "status": "legacy-next",
-      "targetOwner": "tanstack-start"
-    },
-    {
-      "id": "page:/:locale/:wsId/users/structure:apps/web/src/app/[locale]/(dashboard)/[wsId]/users/structure/page.tsx",
-      "kind": "page",
-      "methods": [],
-      "routePath": "/:locale/:wsId/users/structure",
-      "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/users/structure/page.tsx",
-      "status": "migrated",
       "targetOwner": "tanstack-start"
     },
     {
@@ -7029,15 +6993,6 @@
       "methods": [],
       "routePath": "/:locale/:wsId/users/topic-announcements/templates",
       "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/users/topic-announcements/templates/page.tsx",
-      "status": "migrated",
-      "targetOwner": "tanstack-start"
-    },
-    {
-      "id": "page:/:locale/:wsId/users/tutoring:apps/web/src/app/[locale]/(dashboard)/[wsId]/users/tutoring/page.tsx",
-      "kind": "page",
-      "methods": [],
-      "routePath": "/:locale/:wsId/users/tutoring",
-      "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/users/tutoring/page.tsx",
       "status": "migrated",
       "targetOwner": "tanstack-start"
     },
@@ -7772,20 +7727,20 @@
     }
   ],
   "summary": {
-    "apiRoutes": 564,
+    "apiRoutes": 565,
     "cronRoutes": 8,
     "layouts": 56,
-    "pages": 180,
-    "routeHandlers": 577,
+    "pages": 174,
+    "routeHandlers": 578,
     "methodCounts": {
-      "GET": 295,
+      "GET": 296,
       "HEAD": 1,
       "POST": 283,
       "PUT": 53,
       "PATCH": 60,
-      "DELETE": 98,
+      "DELETE": 99,
       "OPTIONS": 23
     },
-    "total": 817
+    "total": 812
   }
 }

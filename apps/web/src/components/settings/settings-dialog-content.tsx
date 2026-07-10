@@ -11,11 +11,9 @@ import {
   CalendarContentSettingsPanel,
   CalendarGeneralSettingsPanel,
   CalendarIntegrationsSettingsPanel,
-  DatabaseDefaultFiltersSettings,
   DebtLoanSettings,
   DefaultCurrencySettings,
   ExperimentalFinanceSettings,
-  FeaturedGroupsSettings,
   FinanceNavigationSettings,
   FormsAutosaveSettings,
   InvoiceSettings,
@@ -28,7 +26,6 @@ import {
   ProfileSettingsPanel,
   ReferralSettings,
   ReportDefaultTitleSettings,
-  RequireAttentionColorSettings,
   SecuritySettings,
   SessionSettings,
   SettingsDialogNativeRoutePanels,
@@ -44,7 +41,6 @@ import {
   TimeTrackerRequestsSettings,
   TransactionDefaultsSettings,
   UserStatusSettings,
-  UsersManagementSettings,
   WorkspaceBillingSettings,
   WorkspaceBreakTypesSettings,
   WorkspaceGeneralSettingsPanel,
@@ -55,19 +51,14 @@ import type { SettingsTranslator } from './settings-dialog-nav-types';
 interface SettingsDialogContentProps {
   activeTab: string;
   allowWorkspaceBasicsEdit: boolean;
-  autoAddNewGroupsToDefaultIncludedGroups: boolean;
   boardId?: string;
   calendarConnections?: CalendarConnection[];
   canManageVersionBadge: boolean;
   canManageWorkspaceMembers: boolean;
   canManageWorkspaceRoles: boolean;
   canManageWorkspaceSettings: boolean;
-  defaultExcludedGroupIds: string[];
-  defaultIncludedGroupIds: string[];
-  featuredGroupIds: string[];
   hasBillingPermission: boolean;
   isLoadingWorkspace: boolean;
-  isLoadingWorkspaceCustomConfigs: boolean;
   linkedProvider?: string;
   setActiveTab: (tab: string) => void;
   t: SettingsTranslator;
@@ -80,19 +71,14 @@ interface SettingsDialogContentProps {
 export function SettingsDialogContent({
   activeTab,
   allowWorkspaceBasicsEdit,
-  autoAddNewGroupsToDefaultIncludedGroups,
   boardId,
   calendarConnections,
   canManageVersionBadge,
   canManageWorkspaceMembers,
   canManageWorkspaceRoles,
   canManageWorkspaceSettings,
-  defaultExcludedGroupIds,
-  defaultIncludedGroupIds,
-  featuredGroupIds,
   hasBillingPermission,
   isLoadingWorkspace,
-  isLoadingWorkspaceCustomConfigs,
   linkedProvider,
   setActiveTab,
   t,
@@ -218,34 +204,6 @@ export function SettingsDialogContent({
       {activeTab === 'user_status' && wsId && (
         <div className="h-full">
           <UserStatusSettings wsId={wsId} />
-        </div>
-      )}
-      {activeTab === 'database_filters' && wsId && (
-        <div className="space-y-8">
-          <DatabaseDefaultFiltersSettings />
-          <UsersManagementSettings
-            wsId={wsId}
-            initialIncludedGroupIds={defaultIncludedGroupIds}
-            initialSelectedGroupIds={defaultExcludedGroupIds}
-            initialAutoAddNewGroupsToDefaultIncludedGroups={
-              autoAddNewGroupsToDefaultIncludedGroups
-            }
-            isConfigLoading={isLoadingWorkspaceCustomConfigs}
-          />
-        </div>
-      )}
-      {activeTab === 'featured_groups' && wsId && (
-        <div className="h-full">
-          <FeaturedGroupsSettings
-            wsId={wsId}
-            initialSelectedGroupIds={featuredGroupIds}
-            isConfigLoading={isLoadingWorkspaceCustomConfigs}
-          />
-        </div>
-      )}
-      {activeTab === 'require_attention_color' && (
-        <div className="h-full">
-          <RequireAttentionColorSettings />
         </div>
       )}
       {activeTab === 'approvals' && wsId && (

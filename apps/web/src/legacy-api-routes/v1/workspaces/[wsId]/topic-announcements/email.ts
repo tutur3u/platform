@@ -21,6 +21,7 @@ import {
 } from '@/lib/topic-announcements-verification';
 import {
   getPublicSchemaClient,
+  type TOPIC_ANNOUNCEMENT_ATTACHMENT_CONTENT_TYPES,
   type TopicAnnouncementsSupabaseClient,
   validateTopicAnnouncementAttachmentDraftObjects,
 } from './shared';
@@ -43,7 +44,7 @@ const TOPIC_VERIFICATION_RATE_LIMITS = {
 } satisfies Partial<RateLimitConfig>;
 
 type TopicAnnouncementAttachmentEmailRow = {
-  content_type: EmailAttachment['contentType'];
+  content_type: (typeof TOPIC_ANNOUNCEMENT_ATTACHMENT_CONTENT_TYPES)[number];
   file_name: string;
   size_bytes: number;
   storage_path: string;

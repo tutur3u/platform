@@ -42,6 +42,7 @@ const KNOWN_NON_PLATFORM_TUTURUUU_HOSTS = new Set([
   'learn.tuturuuu.com',
   'teach.tuturuuu.com',
   'pay.tuturuuu.com',
+  'contacts.tuturuuu.com',
   'hive.tuturuuu.com',
   'mind.tuturuuu.com',
 ]);
@@ -67,6 +68,7 @@ const KNOWN_NON_PLATFORM_LOCALHOST_PORTS = new Set([
   '7822',
   '7824',
   '7826',
+  '7827',
 ]);
 
 export class InternalApiError extends Error {
@@ -417,6 +419,39 @@ export function withPayApiBaseUrl(
   };
 }
 
+function isContactsAppRuntime() {
+  return (
+    isCurrentBrowserHostname(
+      'contacts.tuturuuu.com',
+      'contacts.tuturuuu.localhost'
+    ) || isCurrentAppServerRuntime('@tuturuuu/contacts', '/apps/contacts')
+  );
+}
+
+export function getConfiguredContactsApiBaseUrl() {
+  return normalizeBaseUrl(
+    resolveConfiguredOrigin(process.env.CONTACTS_APP_URL) ||
+      resolveConfiguredOrigin(process.env.NEXT_PUBLIC_CONTACTS_APP_URL) ||
+      resolveConfiguredOrigin(process.env.TUTURUUU_CONTACTS_BASE_URL) ||
+      (isProductionDeployment()
+        ? 'https://contacts.tuturuuu.com'
+        : 'https://contacts.tuturuuu.localhost')
+  );
+}
+
+export function withContactsApiBaseUrl(
+  options: InternalApiClientOptions = {}
+): InternalApiClientOptions {
+  if (options.baseUrl || isContactsAppRuntime()) {
+    return options;
+  }
+
+  return {
+    ...options,
+    baseUrl: getConfiguredContactsApiBaseUrl(),
+  };
+}
+
 /**
  * `/api/v1/tulearn/bootstrap` is owned by apps/learn but is also consumed by
  * apps/teach. Pin the call to the CALLING app's own origin so its app-session
@@ -737,6 +772,13 @@ export function withForwardedInternalApiAuth(
   );
   if (configuredPayBaseUrl) {
     allowedOrigins.add(configuredPayBaseUrl.origin);
+  }
+
+  const configuredContactsBaseUrl = tryParseAbsoluteUrl(
+    getConfiguredContactsApiBaseUrl()
+  );
+  if (configuredContactsBaseUrl) {
+    allowedOrigins.add(configuredContactsBaseUrl.origin);
   }
 
   const targetOrigin =

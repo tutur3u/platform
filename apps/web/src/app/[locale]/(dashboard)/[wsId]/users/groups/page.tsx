@@ -6,22 +6,6 @@ import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
 import { Button } from '@tuturuuu/ui/button';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
-import type { Metadata } from 'next';
-import Link from 'next/link';
-import { notFound } from 'next/navigation';
-import { getTranslations } from 'next-intl/server';
-import WorkspaceWrapper from '@/components/workspace-wrapper';
-import {
-  countUserGroupsForTable,
-  listUserGroupsForTable,
-} from '@/lib/user-groups/table-repository';
-import {
-  type UserGroupActivityLogSearchParams,
-  UserGroupActivityLogTable,
-} from './activity-log-table';
-import UserGroupForm from './form';
-import { UserGroupsTable } from './user-groups-table';
 import {
   applyAttendanceMemberCounts,
   applyTodayAttendanceSnapshot,
@@ -29,7 +13,23 @@ import {
   fetchTodayAttendanceForGroups,
   getShouldCountManagersInAttendance,
   getUserGroupMemberships,
-} from './utils';
+} from '@tuturuuu/users-core/lib/user-groups/groups-utils';
+import {
+  countUserGroupsForTable,
+  listUserGroupsForTable,
+} from '@tuturuuu/users-core/lib/user-groups/table-repository';
+import { getPermissions } from '@tuturuuu/utils/workspace-helper';
+import type { Metadata } from 'next';
+import Link from 'next/link';
+import { notFound } from 'next/navigation';
+import { getTranslations } from 'next-intl/server';
+import WorkspaceWrapper from '@/components/workspace-wrapper';
+import {
+  type UserGroupActivityLogSearchParams,
+  UserGroupActivityLogTable,
+} from './activity-log-table';
+import UserGroupForm from './form';
+import { UserGroupsTable } from './user-groups-table';
 
 export const metadata: Metadata = {
   title: 'Groups',

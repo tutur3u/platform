@@ -127,7 +127,11 @@ export {
 // Providers
 // =============================================================================
 
-export { BaseEmailProvider, SESEmailProvider } from './providers/index';
+export {
+  BaseEmailProvider,
+  CloudflareEmailProvider,
+  SESEmailProvider,
+} from './providers/index';
 
 // =============================================================================
 // Protection Modules
@@ -232,6 +236,7 @@ export type {
   BounceEventType,
   BounceRecord,
   BounceType,
+  CloudflareCredentials,
   CreateAuditRecordParams,
   EmailAbuseEventType,
   EmailAttachment,

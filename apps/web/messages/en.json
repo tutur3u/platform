@@ -17516,7 +17516,15 @@
     "approval_locked": "Approval is locked because at least one email has already been sent.",
     "approval_revocable": "Approval can still be removed because no email has been sent yet.",
     "check_all": "Check all",
-    "completed": "Completed"
+    "completed": "Completed",
+    "history": "History",
+    "history_description": "Every completion change for this post, newest first.",
+    "history_empty": "No changes recorded yet.",
+    "reset_check": "Reset",
+    "reset_check_description": "Clear this member back to pending (removes the completion mark)",
+    "status_pending": "Pending",
+    "uncheck_all": "Uncheck all",
+    "uncheck_all_description": "Clear every member back to pending"
   },
   "ws-activities": {
     "added": "Added",

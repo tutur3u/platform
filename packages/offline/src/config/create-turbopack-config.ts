@@ -1,16 +1,37 @@
+import { createRequire } from 'node:module';
+import path from 'node:path';
 import type { NextConfig } from 'next';
 import type { TurbopackSerwistConfig } from './types';
 
-const esbuildWasmTracingIncludes = {
-  '/serwist/[path]': [
-    './node_modules/.bun/esbuild-wasm@*/node_modules/esbuild-wasm/wasm_exec_node.js',
-    './node_modules/.bun/esbuild-wasm@*/node_modules/esbuild-wasm/wasm_exec.js',
-    './node_modules/.bun/esbuild-wasm@*/node_modules/esbuild-wasm/esbuild.wasm',
-    './node_modules/esbuild-wasm/wasm_exec_node.js',
-    './node_modules/esbuild-wasm/wasm_exec.js',
-    './node_modules/esbuild-wasm/esbuild.wasm',
-  ],
-} satisfies NonNullable<NextConfig['outputFileTracingIncludes']>;
+const require = createRequire(__filename);
+const esbuildWasmPackageRoot = path.dirname(
+  require.resolve('esbuild-wasm/package.json')
+);
+const esbuildWasmSidecars = [
+  'wasm_exec_node.js',
+  'wasm_exec.js',
+  'esbuild.wasm',
+] as const;
+
+function getEsbuildWasmTracingIncludes(
+  projectRoot: string
+): NonNullable<NextConfig['outputFileTracingIncludes']> {
+  const relativeSidecarPaths = esbuildWasmSidecars.map((sidecar) => {
+    const relativePath = path.relative(
+      projectRoot,
+      path.join(esbuildWasmPackageRoot, sidecar)
+    );
+    const normalizedPath = relativePath.split(path.sep).join('/');
+
+    return normalizedPath.startsWith('.')
+      ? normalizedPath
+      : `./${normalizedPath}`;
+  });
+
+  return {
+    '/serwist/[path]': relativeSidecarPaths,
+  };
+}
 
 function mergeOutputFileTracingIncludes(
   first: NonNullable<NextConfig['outputFileTracingIncludes']>,
@@ -55,13 +76,17 @@ function mergeOutputFileTracingIncludes(
 export function getTurbopackConfig(
   config: TurbopackSerwistConfig = {}
 ): Partial<NextConfig> {
-  const { additionalExternalPackages = [], outputFileTracingIncludes } = config;
+  const {
+    additionalExternalPackages = [],
+    outputFileTracingIncludes,
+    projectRoot = process.cwd(),
+  } = config;
 
   return {
     // esbuild-wasm is required for on-the-fly service worker compilation
     serverExternalPackages: ['esbuild-wasm', ...additionalExternalPackages],
     outputFileTracingIncludes: mergeOutputFileTracingIncludes(
-      esbuildWasmTracingIncludes,
+      getEsbuildWasmTracingIncludes(path.resolve(projectRoot)),
       outputFileTracingIncludes
     ),
   };

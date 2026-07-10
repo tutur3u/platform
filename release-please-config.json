@@ -139,6 +139,10 @@
       "component": "pay",
       "package-name": "@tuturuuu/pay"
     },
+    "apps/contacts": {
+      "component": "contacts",
+      "package-name": "@tuturuuu/contacts"
+    },
     "apps/track": {
       "component": "track",
       "package-name": "@tuturuuu/track"
@@ -270,6 +274,14 @@
     "packages/ui": {
       "component": "ui",
       "package-name": "@tuturuuu/ui"
+    },
+    "packages/users-core": {
+      "component": "users-core",
+      "package-name": "@tuturuuu/users-core"
+    },
+    "packages/users-ui": {
+      "component": "users-ui",
+      "package-name": "@tuturuuu/users-ui"
     },
     "packages/utils": {
       "component": "utils",

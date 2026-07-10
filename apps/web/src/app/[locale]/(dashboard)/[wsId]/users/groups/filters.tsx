@@ -15,12 +15,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@tuturuuu/ui/select';
-import { useTranslations } from 'next-intl';
-import { parseAsArrayOf, parseAsString, useQueryState } from 'nuqs';
 import {
   useExcludedUserGroups,
   useWorkspaceUserGroups,
-} from '../database/hooks';
+} from '@tuturuuu/users-ui/database/hooks';
+import { useTranslations } from 'next-intl';
+import { parseAsArrayOf, parseAsString, useQueryState } from 'nuqs';
 import { Filter } from '../filters';
 import type { UserGroupStatusFilter } from './hooks';
 

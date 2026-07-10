@@ -895,6 +895,7 @@ describe('withSessionAuth', () => {
         'calendar',
         'chat',
         'cms',
+        'contacts',
         'drive',
         'finance',
         'hive',

@@ -196,6 +196,7 @@ const ALL_SATELLITE_APP_SESSION_TARGETS = [
   'calendar',
   'chat',
   'cms',
+  'contacts',
   'drive',
   'finance',
   'hive',

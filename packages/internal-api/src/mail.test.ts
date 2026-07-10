@@ -1,9 +1,14 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
+  bulkUpdateMailMessages,
+  createMailLabel,
   getMailBootstrap,
+  getMailThread,
+  listMailDomains,
   listMailMessages,
   sendMailMessage,
   updateMailMessageState,
+  upsertMailDomain,
 } from './mail';
 
 function jsonResponse(payload: unknown) {
@@ -111,5 +116,71 @@ describe('mail internal API helpers', () => {
     expect(
       (fetchMock.mock.calls[1]?.[1]?.headers as Headers).get('content-type')
     ).toBe('application/json');
+  });
+
+  it('lists and updates platform mail domains through the mail app', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse({ domains: [] }));
+    const options = {
+      baseUrl: 'https://internal.example.com',
+      fetch: fetchMock as unknown as typeof fetch,
+    };
+
+    await listMailDomains(options);
+    await upsertMailDomain(
+      {
+        cloudflareAccountId: 'account-1',
+        cloudflareRoutingRuleId: null,
+        cloudflareZoneId: 'zone-1',
+        domain: 'mail.example.com',
+        inboundProvider: 'cloudflare',
+        outboundProvider: 'cloudflare',
+        status: 'verifying',
+        verificationState: {},
+      },
+      options
+    );
+
+    expect(fetchMock.mock.calls[0]?.[0]).toBe(
+      'https://internal.example.com/api/v1/mail/domains'
+    );
+    expect(fetchMock.mock.calls[1]?.[1]).toEqual(
+      expect.objectContaining({ method: 'PUT' })
+    );
+  });
+
+  it('addresses threads and mailbox organization through scoped routes', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse({}));
+    const options = {
+      baseUrl: 'https://internal.example.com',
+      fetch: fetchMock as unknown as typeof fetch,
+    };
+
+    await getMailThread('personal', 'mailbox-1', 'thread/one', options);
+    await createMailLabel(
+      'personal',
+      'mailbox-1',
+      { color: 'slate', name: 'Invoices' },
+      options
+    );
+    await bulkUpdateMailMessages(
+      'personal',
+      'mailbox-1',
+      {
+        action: 'add_label',
+        labelId: 'label-1',
+        messageIds: ['message-1'],
+      },
+      options
+    );
+
+    expect(fetchMock.mock.calls[0]?.[0]).toBe(
+      'https://internal.example.com/api/v1/workspaces/personal/mail/mailboxes/mailbox-1/threads/thread%2Fone'
+    );
+    expect(fetchMock.mock.calls[1]?.[1]).toEqual(
+      expect.objectContaining({ method: 'POST' })
+    );
+    expect(fetchMock.mock.calls[2]?.[1]).toEqual(
+      expect.objectContaining({ method: 'PATCH' })
+    );
   });
 });

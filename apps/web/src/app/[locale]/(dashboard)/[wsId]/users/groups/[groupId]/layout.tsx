@@ -12,13 +12,16 @@ import LinkButton from '@tuturuuu/ui/custom/education/modules/link-button';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
 import {
+  getUserGroupMemberships,
+  verifyGroupAccess,
+} from '@tuturuuu/users-core/lib/user-groups/groups-utils';
+import {
   getPermissions,
   normalizeWorkspaceId,
 } from '@tuturuuu/utils/workspace-helper';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import type { ReactNode } from 'react';
-import { getUserGroupMemberships, verifyGroupAccess } from '../utils';
 import GroupShareButton from './group-share-button';
 import SelectGroupGateway from './select-group-gateway';
 

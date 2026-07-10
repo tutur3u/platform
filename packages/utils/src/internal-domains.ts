@@ -105,6 +105,10 @@ export const PRODUCTION_INTERNAL_APP_DOMAINS = [
     url: 'https://pay.tuturuuu.com',
   },
   {
+    name: 'contacts',
+    url: 'https://contacts.tuturuuu.com',
+  },
+  {
     name: 'hive',
     url: 'https://hive.tuturuuu.com',
   },
@@ -208,6 +212,10 @@ export const PORTLESS_INTERNAL_APP_DOMAINS = [
     url: getTuturuuuPortlessAppOrigin('pay'),
   },
   {
+    name: 'contacts',
+    url: getTuturuuuPortlessAppOrigin('contacts'),
+  },
+  {
     name: 'hive',
     url: getTuturuuuPortlessAppOrigin('hive'),
   },
@@ -305,6 +313,10 @@ export const LOCALHOST_INTERNAL_APP_DOMAINS = [
   {
     name: 'pay',
     url: 'http://localhost:7826',
+  },
+  {
+    name: 'contacts',
+    url: 'http://localhost:7827',
   },
   {
     name: 'hive',

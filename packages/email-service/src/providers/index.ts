@@ -5,4 +5,5 @@
  */
 
 export { BaseEmailProvider } from './base';
+export { CloudflareEmailProvider } from './cloudflare';
 export { SESEmailProvider } from './ses';

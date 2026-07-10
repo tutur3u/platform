@@ -9,14 +9,11 @@ vi.mock('@tuturuuu/utils/workspace-helper', () => ({
     getPermissionsMock(...args),
 }));
 
-vi.mock(
-  '@/app/[locale]/(dashboard)/[wsId]/users/database/audit-log-data',
-  () => ({
-    listAuditLogEventsForRange: (
-      ...args: Parameters<typeof listAuditLogEventsForRangeMock>
-    ) => listAuditLogEventsForRangeMock(...args),
-  })
-);
+vi.mock('@tuturuuu/users-core/database/audit-log-data', () => ({
+  listAuditLogEventsForRange: (
+    ...args: Parameters<typeof listAuditLogEventsForRangeMock>
+  ) => listAuditLogEventsForRangeMock(...args),
+}));
 
 import { GET } from './route';
 

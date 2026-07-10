@@ -22,7 +22,7 @@ vi.mock('@tuturuuu/utils/workspace-helper', () => ({
   normalizeWorkspaceId: mocks.normalizeWorkspaceId,
 }));
 
-vi.mock('@/app/[locale]/(dashboard)/[wsId]/users/groups/utils', () => ({
+vi.mock('@tuturuuu/users-core/lib/user-groups/groups-utils', () => ({
   fetchManagersForGroups: vi.fn(),
   getUserGroupMemberships: mocks.getUserGroupMemberships,
 }));

@@ -1,6 +1,6 @@
 'use client';
 
-import { CheckCheck } from '@tuturuuu/icons';
+import { CheckCheck, RotateCcw } from '@tuturuuu/icons';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Button } from '@tuturuuu/ui/button';
 import { useRouter } from 'next/navigation';
@@ -54,15 +54,45 @@ export function CheckAll({
     setLoading(false);
   };
 
+  const handleUncheckAll = async () => {
+    if (loading || !canUpdateUserGroupsPosts) return;
+    setLoading(true);
+
+    const response = await fetch(endpoint, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ user_ids: users.map((user) => user.id) }),
+    });
+
+    if (response.ok) {
+      router.refresh();
+    }
+
+    setLoading(false);
+  };
+
   return (
-    <Button
-      onClick={handleSubmit}
-      disabled={loading || completed || !canUpdateUserGroupsPosts}
-    >
-      <CheckCheck className="mr-1" />
-      {completed
-        ? t('ws_post_details.completed')
-        : t('ws_post_details.check_all')}
-    </Button>
+    <div className="flex flex-wrap gap-2">
+      <Button
+        onClick={handleSubmit}
+        disabled={loading || completed || !canUpdateUserGroupsPosts}
+      >
+        <CheckCheck className="mr-1" />
+        {completed
+          ? t('ws_post_details.completed')
+          : t('ws_post_details.check_all')}
+      </Button>
+      <Button
+        onClick={handleUncheckAll}
+        disabled={loading || !canUpdateUserGroupsPosts}
+        variant="outline"
+        title={t('ws_post_details.uncheck_all_description')}
+      >
+        <RotateCcw className="mr-1" />
+        {t('ws_post_details.uncheck_all')}
+      </Button>
+    </div>
   );
 }

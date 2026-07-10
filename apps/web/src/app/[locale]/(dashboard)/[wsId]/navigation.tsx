@@ -218,10 +218,6 @@ export async function WorkspaceNavigationLinks({
     workTools: t('sidebar_sections.work_tools'),
   };
 
-  const usersDatabaseDisabled =
-    withoutPermission('manage_users') &&
-    withoutPermission('view_users_private_info') &&
-    withoutPermission('view_users_public_info');
   const taskNavigationDisabled =
     ENABLE_AI_ONLY || withoutPermission('manage_projects');
   const secondaryTaskNavigationChildren: DashboardNavigationLink[] = [
@@ -667,22 +663,18 @@ export async function WorkspaceNavigationLinks({
           aliases: [
             `/${personalOrWsId}/users`,
             `/${personalOrWsId}/users/attendance`,
-            `/${personalOrWsId}/users/database`,
             `/${personalOrWsId}/users/groups`,
             `/${personalOrWsId}/users/groups/calendar`,
             `/${personalOrWsId}/users/groups/indicators`,
             `/${personalOrWsId}/users/group-tags`,
-            `/${personalOrWsId}/users/feedbacks`,
             `/${personalOrWsId}/users/topic-announcements`,
             `/${personalOrWsId}/users/topic-announcements/announcements`,
             `/${personalOrWsId}/users/topic-announcements/contacts`,
             `/${personalOrWsId}/users/topic-announcements/delivery`,
             `/${personalOrWsId}/users/topic-announcements/import`,
             `/${personalOrWsId}/users/topic-announcements/templates`,
-            `/${personalOrWsId}/users/tutoring`,
             `/${personalOrWsId}/users/reports`,
             `/${personalOrWsId}/users/approvals`,
-            `/${personalOrWsId}/users/structure`,
           ],
           icon: createDashboardNavigationIcon('Users', 'h-5 w-5'),
           requiredWorkspaceTier: createTierRequirement('users', {
@@ -704,12 +696,6 @@ export async function WorkspaceNavigationLinks({
               disabled:
                 withoutPermission('manage_users') &&
                 withoutPermission('check_user_attendance'),
-            },
-            {
-              title: t('workspace-users-tabs.database'),
-              href: `/${personalOrWsId}/users/database`,
-              icon: createDashboardNavigationIcon('BookUser', 'h-5 w-5'),
-              disabled: usersDatabaseDisabled,
             },
             {
               title: t('workspace-users-tabs.groups'),
@@ -735,21 +721,6 @@ export async function WorkspaceNavigationLinks({
               disabled:
                 withoutPermission('manage_users') &&
                 withoutPermission('view_user_groups'),
-            },
-            {
-              title: t('workspace-users-tabs.feedbacks'),
-              href: `/${personalOrWsId}/users/feedbacks`,
-              icon: createDashboardNavigationIcon(
-                'MessageCircleIcon',
-                'h-5 w-5'
-              ),
-              disabled: withoutPermission('view_user_groups'),
-            },
-            {
-              title: t('workspace-users-tabs.tutoring'),
-              href: `/${personalOrWsId}/users/tutoring`,
-              icon: createDashboardNavigationIcon('BookUser', 'h-5 w-5'),
-              disabled: withoutPermission('view_user_groups'),
             },
             {
               title: t('workspace-users-tabs.topic_announcements'),
@@ -835,26 +806,6 @@ export async function WorkspaceNavigationLinks({
                 (withoutPermission('view_user_groups_posts') &&
                   withoutPermission('approve_posts')),
               experimental: 'beta',
-            },
-            null,
-            {
-              title: t('workspace-users-tabs.guest_leads'),
-              href: `/${personalOrWsId}/users/guest-leads`,
-              icon: createDashboardNavigationIcon('Mails', 'h-5 w-5'),
-              disabled: withoutPermission('create_lead_generations'),
-            },
-            null,
-            {
-              title: t('sidebar_tabs.structure'),
-              aliases: [`/${personalOrWsId}/users/structure`],
-              href: `/${personalOrWsId}/users/structure`,
-              icon: createDashboardNavigationIcon('IdCardLanyard', 'h-5 w-5'),
-              requireRootWorkspace: true,
-              requireRootMember: true,
-              disabled:
-                !DEV_MODE ||
-                ENABLE_AI_ONLY ||
-                withoutPermission('manage_users'),
             },
           ],
           disabled:

@@ -22,6 +22,7 @@ import {
   Sparkles,
   Store,
   Timer,
+  Users,
   Video,
   Wallet,
 } from '@tuturuuu/icons';
@@ -41,6 +42,7 @@ const APP_ICONS: Record<GatewayAppSlug, LucideIcon> = {
   calendar: CalendarDays,
   chat: MessageSquare,
   cms: FilePenLine,
+  contacts: Users,
   docs: BookText,
   drive: HardDrive,
   finance: Wallet,
