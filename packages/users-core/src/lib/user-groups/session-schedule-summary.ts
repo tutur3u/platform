@@ -1,5 +1,5 @@
 import dayjs from 'dayjs';
-import '@/lib/dayjs-setup';
+import '../dayjs-setup';
 
 export interface UserGroupScheduleOccurrence {
   endsAt: string;

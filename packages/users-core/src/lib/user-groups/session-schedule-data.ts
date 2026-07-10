@@ -8,7 +8,7 @@ import type {
 } from '@tuturuuu/internal-api';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import dayjs from 'dayjs';
-import '@/lib/dayjs-setup';
+import '../dayjs-setup';
 import type {
   FileRow,
   GroupRow,
