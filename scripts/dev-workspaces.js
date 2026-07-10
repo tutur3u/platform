@@ -111,11 +111,7 @@ const DEV_TARGETS = Object.freeze({
   },
   contacts: {
     apps: ['contacts', 'web'],
-    shared: [
-      '@tuturuuu/types',
-      '@tuturuuu/supabase',
-      '@tuturuuu/internal-api',
-    ],
+    shared: ['@tuturuuu/types', '@tuturuuu/supabase', '@tuturuuu/internal-api'],
   },
   tools: {
     apps: ['tools'],
