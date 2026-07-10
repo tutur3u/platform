@@ -11,6 +11,7 @@ import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
 import { CheckAll } from './check-all';
+import { PostCheckHistory } from './check-history';
 import {
   getGroupData,
   getPostData,
@@ -148,6 +149,14 @@ export default async function HomeworkCheck({ params, searchParams }: Props) {
               disableSecondaryTrigger={status.completed === status.count}
               showSecondaryTrigger={canUpdateUserGroupsPosts}
             />
+            <div className="mt-2 flex justify-end">
+              <PostCheckHistory
+                groupId={groupId}
+                postId={postId}
+                users={users}
+                wsId={wsId}
+              />
+            </div>
             <Separator className="my-4" />
             <div className="gird-cols-1 grid grid-cols-2 gap-2 lg:grid-cols-4">
               <div className="flex w-full flex-col items-center gap-1 rounded border border-dynamic-purple/15 bg-dynamic-purple/15 p-4 text-dynamic-purple">
