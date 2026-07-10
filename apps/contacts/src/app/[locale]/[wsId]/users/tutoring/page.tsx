@@ -1,7 +1,7 @@
+import WorkspaceWrapper from '@tuturuuu/ui/custom/workspace-wrapper';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import WorkspaceWrapper from '@/components/workspace-wrapper';
 import { TutoringClient } from './tutoring-client';
 
 export const metadata: Metadata = {

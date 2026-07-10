@@ -1,11 +1,11 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { GuestUserLead } from '@tuturuuu/types/primitives/GuestUserLead';
+import { CustomDataTable } from '@tuturuuu/ui/custom/tables/custom-data-table';
+import WorkspaceWrapper from '@tuturuuu/ui/custom/workspace-wrapper';
 import { Separator } from '@tuturuuu/ui/separator';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { CustomDataTable } from '@/components/custom-data-table';
-import WorkspaceWrapper from '@/components/workspace-wrapper';
 import { getGuestLeadColumns } from './columns';
 import { GuestLeadHeader } from './header';
 

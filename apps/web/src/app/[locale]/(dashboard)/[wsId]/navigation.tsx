@@ -667,14 +667,12 @@ export async function WorkspaceNavigationLinks({
             `/${personalOrWsId}/users/groups/calendar`,
             `/${personalOrWsId}/users/groups/indicators`,
             `/${personalOrWsId}/users/group-tags`,
-            `/${personalOrWsId}/users/feedbacks`,
             `/${personalOrWsId}/users/topic-announcements`,
             `/${personalOrWsId}/users/topic-announcements/announcements`,
             `/${personalOrWsId}/users/topic-announcements/contacts`,
             `/${personalOrWsId}/users/topic-announcements/delivery`,
             `/${personalOrWsId}/users/topic-announcements/import`,
             `/${personalOrWsId}/users/topic-announcements/templates`,
-            `/${personalOrWsId}/users/tutoring`,
             `/${personalOrWsId}/users/reports`,
             `/${personalOrWsId}/users/approvals`,
             `/${personalOrWsId}/users/structure`,
@@ -724,21 +722,6 @@ export async function WorkspaceNavigationLinks({
               disabled:
                 withoutPermission('manage_users') &&
                 withoutPermission('view_user_groups'),
-            },
-            {
-              title: t('workspace-users-tabs.feedbacks'),
-              href: `/${personalOrWsId}/users/feedbacks`,
-              icon: createDashboardNavigationIcon(
-                'MessageCircleIcon',
-                'h-5 w-5'
-              ),
-              disabled: withoutPermission('view_user_groups'),
-            },
-            {
-              title: t('workspace-users-tabs.tutoring'),
-              href: `/${personalOrWsId}/users/tutoring`,
-              icon: createDashboardNavigationIcon('BookUser', 'h-5 w-5'),
-              disabled: withoutPermission('view_user_groups'),
             },
             {
               title: t('workspace-users-tabs.topic_announcements'),
@@ -824,13 +807,6 @@ export async function WorkspaceNavigationLinks({
                 (withoutPermission('view_user_groups_posts') &&
                   withoutPermission('approve_posts')),
               experimental: 'beta',
-            },
-            null,
-            {
-              title: t('workspace-users-tabs.guest_leads'),
-              href: `/${personalOrWsId}/users/guest-leads`,
-              icon: createDashboardNavigationIcon('Mails', 'h-5 w-5'),
-              disabled: withoutPermission('create_lead_generations'),
             },
             null,
             {

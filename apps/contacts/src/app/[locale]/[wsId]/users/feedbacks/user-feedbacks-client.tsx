@@ -52,13 +52,13 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { Switch } from '@tuturuuu/ui/switch';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { XLSX } from '@tuturuuu/ui/xlsx';
+import { RequireAttentionName } from '@tuturuuu/users-ui/components/require-attention-name';
+import { useInfiniteWorkspaceUserGroups } from '@tuturuuu/users-ui/hooks/use-workspace-user-groups';
 import { format } from 'date-fns';
 import { useTranslations } from 'next-intl';
 import { parseAsInteger, parseAsString, useQueryState } from 'nuqs';
 import { useMemo, useState } from 'react';
 import { jsonToCSV } from 'react-papaparse';
-import { RequireAttentionName } from '@/components/users/require-attention-name';
-import { useInfiniteWorkspaceUserGroups } from '@/hooks/use-workspace-user-groups';
 
 interface UserFeedbacksClientProps {
   wsId: string;
