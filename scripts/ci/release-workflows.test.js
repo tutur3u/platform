@@ -1163,7 +1163,7 @@ test('environment-scoped Vercel workflows scope project secrets to protected job
     );
     assert.match(
       deployJob,
-      /token: \$\{\{ secrets\.TURBO_TOKEN \}\}/,
+      /token: \$\{\{ github\.actor != 'dependabot\[bot\]' && secrets\.TURBO_TOKEN \|\| '' \}\}/,
       `${workflowName} must pass the remote-cache token only to the wrapper`
     );
     assert.match(
