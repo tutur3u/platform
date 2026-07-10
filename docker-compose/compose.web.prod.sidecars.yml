@@ -3,8 +3,14 @@ x-hive-service: &hive-service
     context: ..
     dockerfile: apps/hive/Dockerfile
     target: runner
+    cache_from:
+      - ${DOCKER_WEB_CACHE_HIVE_FROM:-}
+    cache_to:
+      - ${DOCKER_WEB_CACHE_HIVE_TO:-}
     secrets:
       - web_env
+      - turbo_team
+      - turbo_token
   env_file:
     - path: ${DOCKER_WEB_COMPOSE_LEGACY_ENV_FILE:-../apps/web/.env.local}
       required: false
@@ -127,6 +133,10 @@ services:
     build:
       context: ..
       dockerfile: apps/supermemory/Dockerfile
+      cache_from:
+        - ${DOCKER_WEB_CACHE_SUPERMEMORY_FROM:-}
+      cache_to:
+        - ${DOCKER_WEB_CACHE_SUPERMEMORY_TO:-}
     env_file:
       - path: ${DOCKER_WEB_COMPOSE_LEGACY_ENV_FILE:-../apps/web/.env.local}
         required: false
@@ -159,6 +169,10 @@ services:
     build:
       context: ..
       dockerfile: apps/backend/Dockerfile
+      cache_from:
+        - ${DOCKER_WEB_CACHE_BACKEND_FROM:-}
+      cache_to:
+        - ${DOCKER_WEB_CACHE_BACKEND_TO:-}
     env_file:
       - path: ${DOCKER_WEB_COMPOSE_LEGACY_ENV_FILE:-../apps/web/.env.local}
         required: false
@@ -183,6 +197,10 @@ services:
     build:
       context: ../apps/discord
       dockerfile: Dockerfile.markitdown
+      cache_from:
+        - ${DOCKER_WEB_CACHE_MARKITDOWN_FROM:-}
+      cache_to:
+        - ${DOCKER_WEB_CACHE_MARKITDOWN_TO:-}
     environment:
       - PORT=8000
       - SUPABASE_URL
@@ -204,6 +222,10 @@ services:
   storage-unzip-proxy:
     build:
       context: ../apps/storage-unzip-proxy
+      cache_from:
+        - ${DOCKER_WEB_CACHE_STORAGE_UNZIP_FROM:-}
+      cache_to:
+        - ${DOCKER_WEB_CACHE_STORAGE_UNZIP_TO:-}
     environment:
       - DRIVE_UNZIP_PROXY_SHARED_TOKEN
       - PORT=8788
@@ -226,6 +248,10 @@ services:
     build:
       context: ..
       dockerfile: apps/chat-realtime/Dockerfile
+      cache_from:
+        - ${DOCKER_WEB_CACHE_CHAT_REALTIME_FROM:-}
+      cache_to:
+        - ${DOCKER_WEB_CACHE_CHAT_REALTIME_TO:-}
     env_file:
       - path: ${DOCKER_WEB_COMPOSE_LEGACY_ENV_FILE:-../apps/web/.env.local}
         required: false
@@ -254,6 +280,10 @@ services:
     build:
       context: ..
       dockerfile: apps/hive-realtime/Dockerfile
+      cache_from:
+        - ${DOCKER_WEB_CACHE_HIVE_REALTIME_FROM:-}
+      cache_to:
+        - ${DOCKER_WEB_CACHE_HIVE_REALTIME_TO:-}
     env_file:
       - path: ${DOCKER_WEB_COMPOSE_LEGACY_ENV_FILE:-../apps/web/.env.local}
         required: false
@@ -286,6 +316,10 @@ services:
     build:
       context: ..
       dockerfile: apps/meet-realtime/Dockerfile
+      cache_from:
+        - ${DOCKER_WEB_CACHE_MEET_REALTIME_FROM:-}
+      cache_to:
+        - ${DOCKER_WEB_CACHE_MEET_REALTIME_TO:-}
     env_file:
       - path: ${DOCKER_WEB_COMPOSE_LEGACY_ENV_FILE:-../apps/web/.env.local}
         required: false

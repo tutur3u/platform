@@ -73,10 +73,6 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      # Use Vercel Remote Caching
-      TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
-      TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
-
       # Configure production Supabase client
       NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.PRODUCTION_SUPABASE_PUBLISHABLE_KEY }}
@@ -102,8 +98,11 @@ jobs:
         run: bash scripts/ci/run-with-backoff.sh bun install
 
       - name: Run tests
-        working-directory: packages/ai
-        run: bun run test
+        uses: ./.github/actions/run-with-turbo-remote-cache
+        with:
+          command: bun turbo:local run test --concurrency=4 --filter=@tuturuuu/ai
+          token: ${{ github.actor != 'dependabot[bot]' && secrets.TURBO_TOKEN || '' }}
+          team: ${{ vars.TURBO_TEAM || secrets.TURBO_TEAM }}
 
   prepare-publish-npm:
     needs: [build]
@@ -158,7 +157,7 @@ jobs:
         working-directory: packages/ai
         run: |
           mkdir -p "$RUNNER_TEMP/tuturuuu-ai-package"
-          npm pack --pack-destination "$RUNNER_TEMP/tuturuuu-ai-package"
+          npm pack --ignore-scripts --pack-destination "$RUNNER_TEMP/tuturuuu-ai-package"
 
       - name: Upload publish artifact
         if: steps.version-check.outputs.should_publish == 'true'
@@ -168,6 +167,7 @@ jobs:
           name: tuturuuu-ai-npm-package
           path: ${{ runner.temp }}/tuturuuu-ai-package/*.tgz
           retention-days: 1
+          compression-level: 0
 
   publish-npm:
     needs: [prepare-publish-npm]

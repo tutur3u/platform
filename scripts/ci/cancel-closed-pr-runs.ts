@@ -1,13 +1,20 @@
 import { readFileSync } from 'node:fs';
 import {
+  type ActionsCache,
+  type CacheClient,
   type CancelClient,
   cancelClosedPullRequestRuns,
+  cleanupClosedPullRequestCaches,
   type PullRequestCloseEvent,
   type WorkflowRun,
 } from './cancel-closed-pr-runs-core.ts';
 
 type RestWorkflowRunsResponse = {
   workflow_runs?: WorkflowRun[];
+};
+
+type RestActionsCachesResponse = {
+  actions_caches?: ActionsCache[];
 };
 
 type RequestOptions = {
@@ -67,7 +74,7 @@ export function createRestCancelClient({
   apiBase?: string;
   repository: string;
   token: string;
-}): CancelClient {
+}): CancelClient & CacheClient {
   const repositoryPath = getRepositoryApiPath(repository);
 
   async function request<T>(
@@ -100,6 +107,14 @@ export function createRestCancelClient({
   }
 
   return {
+    async deleteActionsCache(cacheId) {
+      const response = await request<unknown>(
+        `${repositoryPath}/actions/caches/${cacheId}`,
+        { method: 'DELETE' }
+      );
+
+      return { status: response.status };
+    },
     async cancelWorkflowRun(runId) {
       const response = await request<unknown>(
         `${repositoryPath}/actions/runs/${runId}/cancel`,
@@ -107,6 +122,20 @@ export function createRestCancelClient({
       );
 
       return { status: response.status };
+    },
+    async listActionsCaches({ page, perPage, ref }) {
+      const response = await request<RestActionsCachesResponse>(
+        `${repositoryPath}/actions/caches`,
+        {
+          query: {
+            page,
+            per_page: perPage,
+            ref,
+          },
+        }
+      );
+
+      return response.data?.actions_caches ?? [];
     },
     async listWorkflowRuns({ headSha, page, perPage, status }) {
       const response = await request<RestWorkflowRunsResponse>(
@@ -143,16 +172,22 @@ async function main(env = process.env) {
     throw new Error('GITHUB_TOKEN is required.');
   }
 
-  await cancelClosedPullRequestRuns({
-    client: createRestCancelClient({
-      apiBase: env.GITHUB_API_URL,
-      repository,
-      token,
-    }),
-    currentRunId: env.GITHUB_RUN_ID,
-    event: readJsonFile<PullRequestCloseEvent>(eventPath),
+  const client = createRestCancelClient({
+    apiBase: env.GITHUB_API_URL,
     repository,
+    token,
   });
+  const event = readJsonFile<PullRequestCloseEvent>(eventPath);
+
+  await Promise.all([
+    cancelClosedPullRequestRuns({
+      client,
+      currentRunId: env.GITHUB_RUN_ID,
+      event,
+      repository,
+    }),
+    cleanupClosedPullRequestCaches({ client, event }),
+  ]);
 }
 
 if (import.meta.main) {

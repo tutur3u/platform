@@ -104,14 +104,15 @@ jobs:
         run: uv sync --locked
 
       - name: Run tests with pytest
-        run: uv run pytest
+        run: uv run pytest --junitxml=pytest-results.xml
 
-      - name: Upload test results
-        if: always()
+      - name: Upload failed test results
+        if: failure()
         uses: actions/upload-artifact@v7
         with:
-          name: pytest-results
-          path: apps/discord/.pytest_cache
+          name: discord-pytest-results-${{ github.run_id }}-${{ github.run_attempt }}
+          path: apps/discord/pytest-results.xml
+          if-no-files-found: warn
           retention-days: 7
 
   test-coverage:

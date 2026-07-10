@@ -262,6 +262,25 @@ test('bun.lock-only changes run all Vercel app deploys', () => {
   }
 });
 
+test('shared remote-cache and metadata changes run Vercel workflows', () => {
+  const rootDir = createFixtureRoot();
+
+  for (const changedFile of [
+    '.github/actions/run-with-turbo-remote-cache/action.yml',
+    '.github/actions/setup-bun-with-retry/action.yml',
+    'scripts/ci/generate-build-metadata.ts',
+  ]) {
+    assertWorkflowDecision(
+      {
+        changedFiles: [changedFile],
+        rootDir,
+        workflowName: 'vercel-preview-calendar.yaml',
+      },
+      true
+    );
+  }
+});
+
 test('workflow_dispatch bypasses affected gating', () => {
   const rootDir = createFixtureRoot();
 
@@ -540,11 +559,53 @@ test('Bun workflow helpers use bounded exponential backoff', () => {
 
   assert.match(workflow, /run-with-backoff\.sh bun install --frozen-lockfile/);
   assert.match(setupAction, /setup-bun-with-backoff\.sh/);
+  assert.match(setupAction, /uses: actions\/cache@v6/);
+  assert.match(setupAction, /uses: actions\/cache\/restore@v6/);
+  assert.match(
+    setupAction,
+    /bun-runtime-v1-\$\{\{ runner\.os \}\}-\$\{\{ runner\.arch \}\}-\$\{\{ inputs\.bun-version \}\}-\$\{\{ hashFiles\('bun\.lock'\) \}\}/
+  );
+  assert.match(
+    setupAction,
+    /bun-deps-v1-\$\{\{ runner\.os \}\}-\$\{\{ runner\.arch \}\}-\$\{\{ inputs\.bun-version \}\}-\$\{\{ hashFiles\('bun\.lock'\) \}\}/
+  );
+  assert.match(setupAction, /github\.ref == 'refs\/heads\/main'/);
+  assert.match(setupAction, /github\.ref == 'refs\/heads\/production'/);
+  assert.match(setupAction, /github\.event_name == 'pull_request'/);
+  assert.match(setupAction, /github\.actor == 'dependabot\[bot\]'/);
+  assert.doesNotMatch(setupAction, /node_modules/);
   assert.match(setupScript, /BUN_SETUP_MAX_ATTEMPTS/);
+  assert.match(setupScript, /Using cached Bun/);
+  assert.match(setupScript, /installed_version=.*--version/);
   assert.match(setupScript, /delay=\$\(\(delay \* 2\)\)/);
   assert.match(retryScript, /CI_RETRY_MAX_ATTEMPTS/);
   assert.match(retryScript, /bun pm cache rm/);
   assert.match(retryScript, /delay=\$\(\(delay \* 2\)\)/);
+});
+
+test('secretless Turbo fallback caches are task-scoped and trusted-write only', () => {
+  const setupAction = fs.readFileSync(
+    path.join(
+      repoRoot,
+      '.github',
+      'actions',
+      'setup-turbo-fallback-cache',
+      'action.yml'
+    ),
+    'utf8'
+  );
+
+  assert.match(setupAction, /uses: actions\/cache@v6/);
+  assert.match(setupAction, /uses: actions\/cache\/restore@v6/);
+  assert.match(setupAction, /\$\{\{ inputs\.family \}\}/);
+  assert.match(setupAction, /hashFiles\('bun\.lock', 'turbo\.json'\)/);
+  assert.match(setupAction, /runner\.os/);
+  assert.match(setupAction, /runner\.arch/);
+  assert.match(setupAction, /github\.event\.pull_request\.base\.sha/);
+  assert.match(setupAction, /github\.event\.repository\.default_branch/);
+  assert.match(setupAction, /github\.event_name == 'pull_request'/);
+  assert.match(setupAction, /github\.actor == 'dependabot\[bot\]'/);
+  assert.doesNotMatch(setupAction, /TURBO_TOKEN|TURBO_TEAM|node_modules/);
 });
 
 test('TanStack migration E2E workflow keeps dual-stack and compare coverage', () => {
@@ -598,7 +659,7 @@ test('TanStack migration E2E workflow keeps dual-stack and compare coverage', ()
   );
   assert.ok(artifactStep, 'migration-e2e must upload diagnostics artifacts');
   assert.equal(artifactStep.uses, 'actions/upload-artifact@v7');
-  assert.equal(artifactStep.if, githubExpression('!cancelled()'));
+  assert.equal(artifactStep.if, githubExpression('failure()'));
   assert.equal(
     artifactStep.with?.name,
     `migration-e2e-${githubExpression('matrix.mode')}`
@@ -608,8 +669,23 @@ test('TanStack migration E2E workflow keeps dual-stack and compare coverage', ()
     /apps\/tanstack-web\/playwright-report\//
   );
   assert.match(artifactStep.with?.path || '', /apps\/web\/blob-report\//);
-  assert.match(artifactStep.with?.path || '', /tmp\/e2e\//);
+  assert.match(
+    artifactStep.with?.path || '',
+    /tmp\/e2e\/web-migration\/\*\.json/
+  );
   assert.equal(artifactStep.with?.['if-no-files-found'], 'ignore');
+  assert.equal(artifactStep.with?.['retention-days'], 7);
+
+  const cacheExportStep = steps.find(
+    (step) => step.name === 'Configure trusted migration BuildKit cache exports'
+  );
+  assert.ok(cacheExportStep);
+  assert.equal(
+    cacheExportStep.if,
+    githubExpression(
+      "github.ref == 'refs/heads/main' && matrix.mode == 'tanstack-dual-stack'"
+    )
+  );
 
   const cleanupStep = steps.find(
     (step) => step.name === 'Stop migration E2E stacks'

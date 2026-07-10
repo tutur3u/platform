@@ -1,7 +1,7 @@
 ---
 title: 'CI/CD Pipeline Optimization'
 description: 'Centralized affected-path gating and smart caching to minimize unnecessary CI/CD runs.'
-updatedAt: '2026-06-21'
+updatedAt: '2026-07-10'
 ---
 
 <Info>
@@ -117,7 +117,8 @@ order of precedence:
 5. **Affected-path matching (Vercel workflows).** The workflow runs only if at
    least one changed file matches one of:
    - a **global affecting path** (`bun.lock`, `package.json`, `turbo.json`,
-     `tuturuuu.ts`, or `.github/workflows/ci-check.yml`);
+     `tuturuuu.ts`, `.github/workflows/ci-check.yml`, the shared Bun/remote-cache
+     actions, or the deterministic metadata generator);
    - the workflow's **own** workflow file;
    - the target app's directory (e.g. `apps/web/**` for the platform target);
    - any package inside the target app's **workspace dependency closure**. The
@@ -144,31 +145,99 @@ matching then apply automatically.
 }
 ```
 
-**Applied to:** all Vercel app workflows (currently 20 preview + 20 production =
-40 workflows) plus the other gated CI workflows wired through `ci-check.yml`.
+**Applied to:** all Vercel app workflows (currently 24 preview + 24 production =
+48 workflows) plus the other gated CI workflows wired through `ci-check.yml`.
 
 ## Build Caching
 
-Once a workflow decides it must run, the actual build is still accelerated by
-Turborepo's content-based caching. Workspace dependencies are built with
-Turborepo before the app build:
+Once a workflow decides it must run, cacheable JavaScript work is invoked from
+the repository root through
+`.github/actions/run-with-turbo-remote-cache/action.yml`:
 
 ```yaml
-- name: Build workspace dependencies
-  run: bun turbo:local run build --filter=@tuturuuu/types --filter=@tuturuuu/supabase --filter=@tuturuuu/internal-api --filter=@tuturuuu/masonry --filter=@tuturuuu/devbox
+- name: Type check
+  uses: ./.github/actions/run-with-turbo-remote-cache
+  with:
+    command: bun turbo:local run type-check --concurrency=4
+    token: ${{ secrets.TURBO_TOKEN }}
+    team: ${{ vars.TURBO_TEAM || secrets.TURBO_TEAM }}
 ```
 
-Turborepo hashes inputs and reuses cached task outputs (via the remote cache when
-`TURBO_TOKEN`/`TURBO_TEAM` are configured), so unchanged dependency builds resolve
-to cache hits instead of recompiling. This is content-aware: it understands the
-dependency graph rather than relying on file timestamps.
+The composite action exposes credentials only to the wrapped command step. It
+runs locally when both token and team are absent, rejects a token without a
+team, and keeps Turbo's local rebuild behavior available if the remote service
+is unavailable. `TURBO_TOKEN` must never be passed to pull-request or
+Dependabot jobs. Those jobs restore a task-family-scoped `.turbo` fallback from
+GitHub's cache without writing shared entries; trusted default-branch jobs seed
+that fallback.
+
+Turborepo hashes inputs and reuses cached task outputs, so unchanged builds,
+type checks, and tests resolve to cache hits instead of recompiling. The task
+graph includes transit-only dependency nodes for tests: dependency source
+changes invalidate downstream tests without running every dependency's test
+suite. Build outputs include framework output, coverage, and TypeScript
+incremental state where those artifacts are deterministic. Output-affecting
+environment values are hashed, while CPU, heap, and concurrency controls are
+pass-through values.
+
+Every active Vercel project has a checked-in `buildCommand` that invokes its
+full workspace build through root Turbo. The 48 deployment workflows generate
+deterministic source metadata and then wrap `vercel build`; they do not run a
+separate dependency prebuild. This lets an unchanged full app build restore as
+one task while `.vercel/output` remains an in-job handoff to
+`vercel deploy --prebuilt`, not an uploaded artifact or generic cache.
 
 Docker and Rust verification use the same principle at their native cache
-layers. Docker setup jobs build through `docker buildx build --load` with
-GitHub BuildKit cache scopes per image, and the Rust backend workflow restores
-Cargo registry/git/target state before `cargo fetch`, clippy, test, Worker, and
-native build steps. Keep those caches scoped to the service image or Rust crate
-instead of adding a new shared cache store.
+layers. Docker setup and E2E jobs use shared GitHub BuildKit scopes per service;
+all shards restore, while only the first default-branch shard exports. Expensive
+web, TanStack, and backend images use `mode=max`; small leaf images use
+`mode=min` or restore-only caching. Turbo values enter image builds only as
+BuildKit secrets. Rust verify and deploy jobs share one pinned,
+toolchain-aware Cargo cache, with writes restricted to protected branches.
+
+Flutter workflows cache dependencies and native tool state (pub, Gradle, and
+CocoaPods), never final APK, AAB, IPA, archive, or application-bundle outputs.
+Dependency resolution and the platform build always execute so a cache hit
+cannot skip validation. Managed uv and CodeQL caches remain owned by their
+upstream actions rather than being duplicated.
+
+## Runner And Storage Policy
+
+Tuturuuu is a public repository in a GitHub Free organization. Standard hosted
+Linux and Windows jobs are budgeted for 4 CPUs and 16 GB RAM; the organization
+can run 20 jobs concurrently, including at most 5 macOS jobs. CPU-bound Turbo
+checks therefore default to concurrency 4. Memory-heavy Next.js and Docker
+stages limit inner build concurrency to 2 and retain an 8 GB Node heap. Keep
+independent jobs parallel, keep macOS matrices below the platform limit, and do
+not switch to billable larger runners as a cache optimization.
+
+The live repository cache configuration, queried through GitHub's API, is a
+10 GB maximum with 7-day retention. The weekly Actions resource report groups
+cache usage by key prefix and reports informational status at 80%, warning at
+90%, and critical status at 100%. It also reports artifact count, bytes, age,
+and largest workflow families without enforcing a fixed artifact byte cap.
+Steady-state cache usage should stay below 9 GB to leave eviction headroom.
+The July 10 audit observed active usage temporarily above the configured limit;
+that is eviction lag and cache churn, not an additional open-source allowance.
+
+Artifacts are retained only as long as their handoff or diagnostic value
+requires:
+
+- E2E and Playwright diagnostics: one failure-only artifact per shard or
+  migration mode, 7 days.
+- Package-release tarballs: 1 day with compression disabled.
+- Mobile development deliverables: 7 days; production store deliverables: 14
+  days. Pre-compressed bundles are archived first and uploaded without
+  redundant compression.
+- Discord JUnit and Cloudflare smoke diagnostics: failure-only or explicit
+  7-day retention as applicable.
+
+Every artifact upload must declare both retention and missing-file behavior.
+Required release outputs fail when absent; optional diagnostics may warn.
+Closed trusted pull requests delete cache entries scoped to their merge ref.
+Legacy broad Turbo, run-ID Supabase, final Flutter-output, and old Rust cache
+prefixes are removed manually only after their replacements demonstrate hits;
+default-branch CodeQL caches are never part of automated cleanup.
 
 <Note>
   Earlier versions of these workflows ran an inline Turborepo `--dry-run=json`
@@ -306,18 +375,18 @@ on:
 The exact savings depend on the size of the app set and how localized each
 commit is, so treat the following as **illustrative** rather than a fixed figure.
 
-The monorepo currently registers **20 Vercel app targets**, each with a preview
-and a production workflow (**40 Vercel deploy workflows**), out of ~80 total
+The monorepo currently registers **24 active Vercel app targets**, each with a
+preview and a production workflow (**48 Vercel deploy workflows**), out of 91
 workflow files. Without gating, a single-app change would attempt to run every
 target's preview/production deploy. With affected-path gating, a change scoped to
-one app skips the other ~38 Vercel deploys, plus any unrelated CI workflows.
+one app skips the other 46 Vercel deploys, plus any unrelated CI workflows.
 
 For a change that touches only one app:
 
 ```text
-~40 Vercel deploy workflows
+48 Vercel deploy workflows
 - 2 that actually deploy the touched app (preview + production)
-= ~38 deploy workflows skipped at the cheap check-ci gate
+= 46 deploy workflows skipped at the cheap check-ci gate
 ```
 
 Each skipped deploy avoids several minutes of install + build + deploy time and
@@ -378,9 +447,12 @@ Our CI/CD optimization centralizes change detection so each workflow stays thin:
 - A single reusable `ci-check.yml` workflow computes the changed-file set once.
 - `tuturuuu.ts` decides, per workflow, whether the change is relevant — including
   workspace dependency-closure awareness for shared packages.
-- Turborepo caches the actual build once a run is warranted.
+- The remote-cache wrapper keeps Turbo credentials step-scoped and gives
+  secretless jobs a GitHub-backed local fallback.
+- Turborepo caches full app builds, type checks, tests, and release preparation
+  once a run is warranted.
 - The gate fails safe (builds on uncertainty), and `workflow_dispatch` always
   bypasses gating for manual runs.
 
-The result: a one-app change skips the ~38 other Vercel deploys at a cheap gate,
+The result: a one-app change skips the other 46 Vercel deploys at a cheap gate,
 while shared-root changes still correctly fan out everywhere they matter.

@@ -55,6 +55,10 @@ services:
     build:
       context: .
       dockerfile: apps/backend/Dockerfile
+      cache_from:
+        - ${DOCKER_WEB_CACHE_BACKEND_FROM:-}
+      cache_to:
+        - ${DOCKER_WEB_CACHE_BACKEND_TO:-}
     environment:
       - BACKEND_ENV=${BACKEND_ENV:-development}
       - BACKEND_INTERNAL_TOKEN=${BACKEND_INTERNAL_TOKEN:-platform-local-backend-token}
@@ -83,6 +87,13 @@ services:
       context: .
       dockerfile: apps/tanstack-web/Dockerfile
       target: runner
+      cache_from:
+        - ${DOCKER_WEB_CACHE_TANSTACK_FROM:-}
+      cache_to:
+        - ${DOCKER_WEB_CACHE_TANSTACK_TO:-}
+      secrets:
+        - turbo_team
+        - turbo_token
     environment:
       - BACKEND_INTERNAL_TOKEN=${BACKEND_INTERNAL_TOKEN:-platform-local-backend-token}
       - BACKEND_INTERNAL_URL=${BACKEND_INTERNAL_URL:-http://backend:7820}
@@ -117,3 +128,9 @@ services:
 networks:
   tanstack-dual:
     name: ${COMPOSE_PROJECT_NAME:-tuturuuu}-tanstack-dual
+
+secrets:
+  turbo_team:
+    file: ${DOCKER_WEB_TURBO_TEAM_SECRET_FILE:-docker-compose/empty-secret}
+  turbo_token:
+    file: ${DOCKER_WEB_TURBO_TOKEN_SECRET_FILE:-docker-compose/empty-secret}

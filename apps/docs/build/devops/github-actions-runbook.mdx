@@ -1,7 +1,7 @@
 ---
 title: "GitHub Actions Runbook"
 description: "How the repository’s automation is organized, gated, and operated."
-updatedAt: "2026-07-04"
+updatedAt: "2026-07-10"
 ---
 
 GitHub Actions is the primary automation plane for Tuturuuu.
@@ -70,7 +70,9 @@ The cancellation script lists active runs by the closed PR head SHA. It cancels
 matching PR workflow runs and same-repository branch push runs for the PR branch,
 but never cancels `main` or `production` push runs. Runs in contributor forks are
 outside the base repository token's authority and are not cancelled by this
-workflow.
+workflow. The same trusted job paginates through Actions cache entries and
+deletes only entries whose ref equals the closed pull request's merge ref
+(`refs/pull/<number>/merge`). It never deletes default-branch cache entries.
 
 ## Main Workflow Groups
 
@@ -336,15 +338,44 @@ also uses the helper with a two-attempt cap so transient runner interruptions
 such as exit code `130` retry once without masking deterministic test failures.
 Vercel workflows should invoke Turborepo through `bun turbo:local ...` after the
 retried `bun install` so CI uses the pinned repo dependency instead of resolving
-a global or downloaded Turbo binary.
+a global or downloaded Turbo binary. Cacheable builds, type checks, and tests
+must be executed through `.github/actions/run-with-turbo-remote-cache`; trusted
+jobs pass the dedicated repository `TURBO_TOKEN` and `TURBO_TEAM` variable,
+while pull-request and Dependabot jobs leave both inputs empty and use the
+task-family local fallback cache.
 
 Vercel deploy credentials must stay environment-scoped. Do not put
 `${{ secrets.* }}` values in a Vercel workflow-level `env:` block, and do not
-export production Supabase, encryption, provider, or Turborepo remote-cache
-secrets from GitHub Actions. Store app runtime and build-time configuration in
-the Vercel project environment. The regression test
+export production Supabase, encryption, or provider secrets from GitHub
+Actions. Store app runtime and build-time configuration in the Vercel project
+environment. Remote-cache identity is the narrow exception: it is passed only
+to the wrapped `vercel build` step and never written to `GITHUB_ENV` or a
+workflow/job environment. The regression test
 `bun test scripts/ci/release-workflows.test.js` enforces this for every
 `vercel-preview-*.yaml` and `vercel-production-*.yaml` workflow.
+
+### Cache and artifact resources
+
+`actions-storage-report.yaml` runs weekly and can be dispatched manually. It
+is read-only: it queries the repository's live Actions cache policy and current
+cache/artifact inventories, groups cache bytes by key prefix, and summarizes
+artifact count, size, age, and largest workflow families. Cache status is
+informational at 80% of the configured limit, warning at 90%, and critical at
+100%. The report does not assume a fixed artifact byte entitlement and does not
+require an organization billing token.
+
+The July 10, 2026 audit found a 10 GB cache maximum and 7-day retention. Target
+steady-state usage below 9 GB so GitHub does not continuously evict and recreate
+high-reuse entries. Prefer Bun downloads, package-manager data, task-family
+Turbo state, native dependencies, shared Rust state, and service-scoped
+BuildKit layers over final application binaries. Leave managed uv and CodeQL
+caching to their official actions.
+
+All `upload-artifact` steps must set `retention-days` and
+`if-no-files-found`. Optional failure diagnostics may warn; release and deploy
+handoffs must fail when absent. E2E diagnostics are failure-only and retained 7
+days, package tarballs are retained 1 day, development mobile deliverables 7
+days, and production store deliverables 14 days.
 
 Preview deploy credentials must not be exposed to arbitrary branch push code.
 Most preview Vercel workflows are manual-only: run the workflow from `main`,
@@ -416,7 +447,11 @@ declare `repository.type: "git"`,
 `repository.url: "https://github.com/tutur3u/platform"`, and
 `repository.directory` matching the package path. npm validates those fields
 against GitHub Actions provenance and rejects publishes with `E422` when the
-packed manifest has an empty or mismatched repository URL.
+packed manifest has an empty or mismatched repository URL. The tarball handoff
+uses required-file behavior, one-day retention, and compression level 0 because
+`.tgz` is already compressed. Preparation runs any package lifecycle build
+through root Turbo first, then calls `npm pack --ignore-scripts` so `prepack`
+cannot bypass the shared cache wrapper.
 
 Release Please can move an oversized generated pull request body into
 `release-notes.md` on a companion
@@ -515,12 +550,20 @@ from skipped intermediate runs still queue the correct Vercel workflow.
 
 ### Mobile iOS native assets
 
-`mobile-build-ios.yaml` caches CocoaPods and the CocoaPods trunk cache only. Do
-not cache `apps/mobile/.dart_tool` in this workflow: Flutter native asset hook
-outputs can become stale across simulator/device builds and SDK updates. A stale
-`.dart_tool` cache can leave `NativeAssetsManifest.json` referencing
-`objective_c` while `build/native_assets/ios/` is missing the generated
-framework, which fails the simulator build during Xcode's embed phase.
+Mobile workflows cache the Flutter SDK/pub downloads through the Flutter setup
+action. Android workflows also use the toolchain-aware Gradle cache, and iOS or
+macOS workflows cache CocoaPods downloads plus the trunk repository. They do
+not cache `apps/mobile/build`, final APK/AAB/IPA/app bundles, `Pods`, or
+`apps/mobile/.dart_tool`. Flutter native asset hook outputs can become stale
+across simulator/device builds and SDK updates; a stale `.dart_tool` cache can
+leave `NativeAssetsManifest.json` referencing `objective_c` while
+`build/native_assets/ios/` is missing the generated framework.
+
+Every workflow still runs `flutter pub get` and its platform build on every run.
+Development deliverables are retained for 7 days and production store
+deliverables for 14 days. Archive directory-based app bundles before upload,
+disable redundant artifact compression for already-compressed archives and
+mobile packages, and fail if a required deliverable is missing.
 
 The workflow explicitly runs `flutter config --no-enable-swift-package-manager`
 after Flutter setup. Keep the iOS CI path on CocoaPods while `image_cropper` and

@@ -68,6 +68,10 @@ jobs:
         with:
           distribution: temurin
           java-version: 17
+          cache: gradle
+          cache-dependency-path: |
+            apps/mobile/android/**/*.gradle*
+            apps/mobile/android/gradle/wrapper/gradle-wrapper.properties
 
       - name: Setup Flutter
         uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2
@@ -75,6 +79,7 @@ jobs:
           flutter-version: "3.44.x"
           channel: stable
           cache: true
+          pub-cache: true
 
       - name: Fetch Android deployment bundle from Tuturuuu
         shell: bash
@@ -127,7 +132,9 @@ jobs:
         with:
           name: android-production-aab
           path: apps/mobile/build/app/outputs/bundle/productionRelease/app-production-release.aab
+          if-no-files-found: error
           retention-days: 14
+          compression-level: 0
 
       - name: Publish Android App Bundle to Google Play internal
         uses: r0adkll/upload-google-play@e738b9dd8f2476ea806d921b64aacd24f34515a5
@@ -168,6 +175,17 @@ jobs:
           flutter-version: "3.44.x"
           channel: stable
           cache: true
+          pub-cache: true
+
+      - name: Cache CocoaPods downloads
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        with:
+          path: |
+            /Users/runner/Library/Caches/CocoaPods
+            /Users/runner/.cocoapods/repos/trunk
+          key: ${{ runner.os }}-${{ runner.arch }}-flutter-ios-pods-${{ hashFiles('apps/mobile/pubspec.lock', 'apps/mobile/ios/Podfile', 'apps/mobile/ios/Podfile.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ runner.arch }}-flutter-ios-pods-
 
       - name: Fetch iOS deployment bundle from Tuturuuu
         shell: bash
@@ -280,7 +298,9 @@ jobs:
         with:
           name: ios-production-ipa
           path: ${{ steps.ios-ipa.outputs.path }}
+          if-no-files-found: error
           retention-days: 14
+          compression-level: 0
 
       - name: Upload iOS IPA to TestFlight
         shell: bash

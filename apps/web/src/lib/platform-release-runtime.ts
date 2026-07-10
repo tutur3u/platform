@@ -13,6 +13,7 @@ type FsLike = Pick<typeof fs, 'existsSync' | 'readFileSync'>;
 
 type RuntimeCandidate = PlatformBuildMetadataInput & {
   activeColor?: string | null;
+  deploymentOrderAt?: string | null;
   runtimeState?: string | null;
   status?: string | null;
 };
@@ -49,6 +50,7 @@ function getProcessRuntimeEnv(): WebPlatformReleaseRuntimeEnv {
     PLATFORM_BUILD_DEPLOYMENT_URL: process.env.PLATFORM_BUILD_DEPLOYMENT_URL,
     PLATFORM_BUILD_ENVIRONMENT: process.env.PLATFORM_BUILD_ENVIRONMENT,
     PLATFORM_BUILD_REF_NAME: process.env.PLATFORM_BUILD_REF_NAME,
+    PLATFORM_DEPLOYMENT_STAMP: process.env.PLATFORM_DEPLOYMENT_STAMP,
   };
 }
 
@@ -138,7 +140,9 @@ function readExplicitRuntimeMetadata(
     builtAt: cleanString(env.PLATFORM_BUILD_BUILT_AT),
     commitHash: cleanString(env.PLATFORM_BUILD_COMMIT_HASH),
     commitMessage: cleanString(env.PLATFORM_BUILD_COMMIT_MESSAGE),
-    deploymentStamp: cleanString(env.PLATFORM_BUILD_DEPLOYMENT_STAMP),
+    deploymentStamp:
+      cleanString(env.PLATFORM_BUILD_DEPLOYMENT_STAMP) ??
+      cleanString(env.PLATFORM_DEPLOYMENT_STAMP),
     deploymentUrl: normalizeUrl(env.PLATFORM_BUILD_DEPLOYMENT_URL),
     environment: cleanString(env.PLATFORM_BUILD_ENVIRONMENT),
     refName: cleanString(env.PLATFORM_BUILD_REF_NAME),
@@ -159,6 +163,10 @@ function normalizeDeploymentCandidate(value: unknown): RuntimeCandidate | null {
   const commitMessage =
     cleanString(record.commitMessage) ?? cleanString(record.commitSubject);
   const builtAt =
+    toIsoTimestamp(record.committedAt) ??
+    toIsoTimestamp(record.sourceTimestamp) ??
+    toIsoTimestamp(record.builtAt);
+  const deploymentOrderAt =
     toIsoTimestamp(record.activatedAt) ??
     toIsoTimestamp(record.finishedAt) ??
     toIsoTimestamp(record.lastPromotedAt) ??
@@ -181,6 +189,7 @@ function normalizeDeploymentCandidate(value: unknown): RuntimeCandidate | null {
     builtAt,
     commitHash,
     commitMessage,
+    deploymentOrderAt,
     deploymentStamp,
     deploymentUrl: normalizeUrl(record.deploymentUrl),
     environment: cleanString(record.environment),
@@ -205,7 +214,9 @@ function normalizeTargetCandidate(value: unknown): RuntimeCandidate | null {
 }
 
 function getCandidateTimestamp(candidate: RuntimeCandidate) {
-  return candidate.builtAt ? Date.parse(candidate.builtAt) : 0;
+  const timestamp = candidate.deploymentOrderAt ?? candidate.builtAt;
+
+  return timestamp ? Date.parse(timestamp) : 0;
 }
 
 function pickLatestCandidate(candidates: RuntimeCandidate[]) {

@@ -42,32 +42,26 @@ jobs:
                   flutter-version: "3.44.x"
                   channel: stable
                   cache: true
+                  pub-cache: true
 
             - name: Enable Windows desktop
               run: flutter config --enable-windows-desktop
 
             - name: Install dependencies
-              if: steps.cache-build.outputs.cache-hit != 'true'
               run: flutter pub get
 
-            - name: Cache Build
-              id: cache-build
-              uses: actions/cache@v6
-              with:
-                  path: |
-                      apps/mobile/build
-                      apps/mobile/.dart_tool
-                  key: ${{ runner.os }}-flutter-windows-${{ hashFiles('apps/mobile/**') }}
-                  restore-keys: |
-                      ${{ runner.os }}-flutter-windows-
-
             - name: Build Windows
-              if: steps.cache-build.outputs.cache-hit != 'true'
               run: flutter build windows --target lib/main_development.dart
+
+            - name: Archive Windows app bundle
+              shell: pwsh
+              run: Compress-Archive -Path "build/windows/x64/runner/Release/*" -DestinationPath "$env:RUNNER_TEMP/windows-dev-app.zip"
 
             - name: Upload Windows app artifact
               uses: actions/upload-artifact@v7
               with:
                   name: windows-dev-app
-                  path: apps/mobile/build/windows/x64/runner/Release/
+                  path: ${{ runner.temp }}/windows-dev-app.zip
+                  if-no-files-found: error
                   retention-days: 7
+                  compression-level: 0

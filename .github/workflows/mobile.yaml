@@ -47,6 +47,7 @@ jobs:
           flutter-version: "3.44.x"
           channel: stable
           cache: true
+          pub-cache: true
           cache-key: flutter-:os:-:channel:-:version:-:arch:-:hash:-${{ hashFiles('**/pubspec.lock') }}
 
       - name: 📦 Install Dependencies

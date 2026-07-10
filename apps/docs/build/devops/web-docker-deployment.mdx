@@ -1,7 +1,7 @@
 ---
 title: "Web Docker Deployment"
 description: "Run the web app in Docker for development, production, and blue/green self-hosted rollout."
-updatedAt: "2026-07-01"
+updatedAt: "2026-07-10"
 ---
 
 This is the operational guide for the Docker-based `apps/web` runtime and the
@@ -94,6 +94,35 @@ parallel `apps/tanstack-web` migration runtime.
   BuildKit secrets named `turbo_token`, `turbo_team`, `turbo_api`, and
   `turbo_remote_cache_signature_key` only for build `RUN` steps. When those
   secrets are absent, builds fall back to the mounted local cache.
+- GitHub-hosted Docker verification and E2E use service-specific `type=gha`
+  BuildKit scopes so the same backend or frontend layers can be reused across
+  workflows. Every shard may restore. Only shard 1 on the default branch may
+  export a true miss, with a bounded timeout and `ignore-error=true`, preventing
+  parallel shards from competing to save the same scope. Use `mode=max` for the
+  expensive web, TanStack, and backend scopes; use `mode=min` or restore-only
+  caching for small leaf services.
+- Manual `docker buildx` and Compose invocations do not receive the GitHub cache
+  runtime variables automatically. Every CI job that uses `type=gha` outside
+  `docker/build-push-action` must first run the pinned
+  `crazy-max/ghaction-github-runtime` step so `ACTIONS_RUNTIME_TOKEN` and
+  `ACTIONS_RESULTS_URL` are available to BuildKit. Keep the action pinned to a
+  full commit SHA and covered by the CI cache-policy tests.
+- Forward GitHub remote-cache identity to Docker only with BuildKit `--secret`
+  mounts. Never pass Turbo tokens as build arguments, Compose environment baked
+  into an image, labels, or files copied into a layer. Pull requests and
+  Dependabot builds receive no remote token and continue with local BuildKit and
+  Turbo fallback behavior.
+- The production and TanStack-dual Compose files accept restore entries through
+  `DOCKER_WEB_CACHE_<SERVICE>_FROM` and optional exporter entries through the
+  matching `_TO` variable. Supported service tokens are `WEB`, `TANSTACK`,
+  `BACKEND`, `HIVE`, `SUPERMEMORY`, `MARKITDOWN`, `STORAGE_UNZIP`,
+  `CHAT_REALTIME`, `HIVE_REALTIME`, and `MEET_REALTIME`. CI configures shared
+  `type=gha` scopes; local operators normally leave these variables unset.
+- `DOCKER_WEB_TURBO_TEAM_SECRET_FILE` and
+  `DOCKER_WEB_TURBO_TOKEN_SECRET_FILE` point Compose at short-lived files used
+  as BuildKit secrets. With no configured credentials they resolve to the
+  committed zero-byte `docker-compose/empty-secret`, so local and cross-platform
+  Compose parsing remains inert. Never put a token in that placeholder.
 - Rust backend cache cleanup is local maintenance, not a separate cache service.
   `bun rust-cache report` prints current `apps/backend/target` usage,
   `bun rust-cache prune --apply` removes stale or oversized target entries, and
@@ -670,9 +699,16 @@ containers. It infers `PLATFORM_BUILD_COMMIT_HASH`,
 `PLATFORM_BUILD_REF_NAME`, `PLATFORM_BUILD_ENVIRONMENT`,
 `PLATFORM_BUILD_BUILT_AT`, `PLATFORM_BUILD_DEPLOYMENT_URL`, and
 `PLATFORM_BUILD_DEPLOYMENT_STAMP` from the current checkout plus the deployment
-context. The account-gated badge reads those runtime values before falling back
-to generated Vercel/GitHub metadata, so on-prem watcher deployments show the
-served commit instead of `local` / `Unknown`.
+context. `PLATFORM_BUILD_BUILT_AT` is the checked-out commit's source timestamp,
+so rebuilding the same commit and environment produces identical metadata; it
+is not the image-build or rollout time. Deployment stamps and the watcher's
+`startedAt`, `finishedAt`, and `activatedAt` records remain the source of actual
+deployment timing. The build helper strips deployment stamps and deployment
+URLs from Compose, Bake, and native build environments, then supplies them only
+to the runtime container; different rollouts of the same source therefore reuse
+the same Turbo and image layers. The account-gated badge reads those runtime
+values before falling back to generated Vercel/GitHub metadata, so on-prem
+watcher deployments show the served commit instead of `local` / `Unknown`.
 
 If those `PLATFORM_BUILD_*` values are missing or blank in a self-hosted
 runtime, `apps/web` falls back to the mounted blue/green snapshot before using
@@ -684,7 +720,9 @@ generated/local defaults. The resolver reads only lightweight snapshot files:
 development. Selection prefers `targets.web` for the active color, then an
 active deployment row, then the latest successful row for the active color, then
 the latest successful row overall. `commitSubject` becomes the badge commit
-message, millisecond deployment timestamps become ISO deployment times, and the
+message, `committedAt` (or an explicit source timestamp) becomes `builtAt`, and
+deployment timestamps are used only to order deployment candidates. Legacy rows
+without a source timestamp never relabel rollout time as source time. The
 runtime deployment stamp file supplies the displayed deployment stamp. The
 resolver does not invent deployment URL, ref, or environment from color or
 commit data alone.

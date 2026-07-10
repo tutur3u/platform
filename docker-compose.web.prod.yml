@@ -11,6 +11,10 @@ include:
   - path: docker-compose/compose.web.prod.redis.yml
 
 secrets:
+  turbo_team:
+    file: ${DOCKER_WEB_TURBO_TEAM_SECRET_FILE:-docker-compose/empty-secret}
+  turbo_token:
+    file: ${DOCKER_WEB_TURBO_TOKEN_SECRET_FILE:-docker-compose/empty-secret}
   web_env:
     file: ${DOCKER_WEB_ENV_FILE:-apps/web/.env.local}
 

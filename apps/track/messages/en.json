@@ -9749,7 +9749,7 @@
     "commit_hash": "Commit hash",
     "commit_message": "Commit message",
     "deployment_stamp": "Deployment stamp",
-    "deployment_time": "Deployment time",
+    "deployment_time": "Source timestamp",
     "deployment_url": "Deployment URL",
     "description": "Build and deployment details for this app.",
     "environment": "Environment",
