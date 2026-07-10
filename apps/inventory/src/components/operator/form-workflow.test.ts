@@ -132,7 +132,45 @@ describe('Inventory operator form workflows', () => {
     expect(source('bundle-components-panel.tsx')).toContain('DialogTrigger');
     expect(source('product-row-actions.tsx')).toContain("t('tabs.stock')");
     expect(source('product-row-actions.tsx')).toContain('LifecyclePanel');
+    expect(source('product-row-actions.tsx')).toContain("t('tabs.history')");
+    expect(source('product-row-actions.tsx')).toContain(
+      "'product-history', row.id"
+    );
     expect(source('sale-detail-panel.tsx')).toContain('SaleNoteDialog');
+  });
+
+  it('keeps stock history lazy, paginated, and localized', () => {
+    const dialog = source('product-row-actions.tsx');
+    const editor = source('product-stock-editor.tsx');
+    const history = source('product-stock-history.tsx');
+    const historyCard = source('product-stock-history-card.tsx');
+
+    expect(dialog).toContain("import('./product-stock-history')");
+    expect(editor).toContain('listInventoryStockBeneficiaries');
+    expect(editor).toContain('maxLength={500}');
+    expect(history).toContain('useInfiniteQuery');
+    expect(history).toContain('fetchNextPage');
+    expect(historyCard).toContain("t('added')");
+    expect(historyCard).toContain("t('removed')");
+    expect(historyCard).toContain("t('unavailablePerson')");
+
+    for (const locale of ['en', 'vi'] as const) {
+      const tree = messages(locale);
+      for (const path of [
+        'inventory.operator.forms.stockChangeContextDescription',
+        'inventory.operator.forms.tabs.history',
+        'inventory.operator.forms.stockHistory.added',
+        'inventory.operator.forms.stockHistory.removed',
+        'inventory.operator.forms.stockHistory.empty',
+        'inventory.operator.forms.stockHistory.error',
+        'inventory.operator.forms.stockHistory.loadMore',
+        'inventory.operator.forms.stockHistory.unavailablePerson',
+      ]) {
+        expect(valueAtPath(tree, path), `${locale}:${path}`).toBeTypeOf(
+          'string'
+        );
+      }
+    }
   });
 
   it('moves row-level destructive actions into lifecycle dialogs', () => {

@@ -36,6 +36,7 @@ const UNIT_ID = '33333333-3333-4333-8333-333333333333';
 const WAREHOUSE_ID = '44444444-4444-4444-8444-444444444444';
 const NEXT_UNIT_ID = '55555555-5555-4555-8555-555555555555';
 const NEXT_WAREHOUSE_ID = '66666666-6666-4666-8666-666666666666';
+const BENEFICIARY_ID = '77777777-7777-4777-8777-777777777777';
 
 type InventoryRow = {
   amount: number | null;
@@ -47,9 +48,11 @@ type InventoryRow = {
 };
 
 function createInventoryAdminClient({
+  beneficiaryValid = true,
   existingInventory = [],
   workspaceUserId = 'workspace-user-1',
 }: {
+  beneficiaryValid?: boolean;
   existingInventory?: InventoryRow[];
   workspaceUserId?: string | null;
 } = {}) {
@@ -115,9 +118,18 @@ function createInventoryAdminClient({
   const stockChangeQuery = {
     insert: vi.fn(async () => ({ error: null })),
   };
+  const stockBeneficiaryQuery = {
+    eq: vi.fn(() => stockBeneficiaryQuery),
+    maybeSingle: vi.fn(async () => ({
+      data: beneficiaryValid ? { id: BENEFICIARY_ID } : null,
+      error: null,
+    })),
+    select: vi.fn(() => stockBeneficiaryQuery),
+  };
   const from = vi.fn((table: string) => {
     if (table === 'workspace_user_linked_users') return workspaceUserQuery;
     if (table === 'product_stock_changes') return stockChangeQuery;
+    if (table === 'workspace_users') return stockBeneficiaryQuery;
     return productQuery;
   });
 
@@ -132,6 +144,7 @@ function createInventoryAdminClient({
     productQuery,
     schema,
     stockChangeQuery,
+    stockBeneficiaryQuery,
     workspaceUserQuery,
   };
 }
@@ -267,7 +280,9 @@ describe('product inventory route', () => {
     expect(mocks.stockChangeQuery.insert).toHaveBeenCalledWith([
       {
         amount: 7,
+        beneficiary_id: null,
         creator_id: 'workspace-user-1',
+        note: null,
         product_id: PRODUCT_ID,
         unit_id: UNIT_ID,
         warehouse_id: WAREHOUSE_ID,
@@ -339,5 +354,143 @@ describe('product inventory route', () => {
         { column: 'unit_id', operation: 'delete', value: '4444' },
       ])
     );
+  });
+
+  it.each([
+    { expectedDelta: 3, nextAmount: 8 },
+    { expectedDelta: -2, nextAmount: 3 },
+  ])('attaches context to a $expectedDelta quantity movement', async ({
+    expectedDelta,
+    nextAmount,
+  }) => {
+    const mocks = createInventoryAdminClient({
+      existingInventory: [
+        {
+          product_id: PRODUCT_ID,
+          unit_id: UNIT_ID,
+          warehouse_id: WAREHOUSE_ID,
+          amount: 5,
+          min_amount: 1,
+          price: 100,
+        },
+      ],
+    });
+    createAdminClientMock.mockResolvedValue(mocks.client);
+    validateInventoryItemWorkspaceRelationsMock.mockResolvedValue({ ok: true });
+
+    const { PATCH } = await import('./route');
+    const response = await PATCH(
+      new Request('http://localhost/inventory', {
+        method: 'PATCH',
+        body: JSON.stringify({
+          changeContext: {
+            beneficiaryId: BENEFICIARY_ID,
+            note: '  Cycle count adjustment  ',
+          },
+          inventory: [
+            {
+              unit_id: UNIT_ID,
+              warehouse_id: WAREHOUSE_ID,
+              amount: nextAmount,
+              min_amount: 1,
+              price: 100,
+            },
+          ],
+        }),
+      }),
+      { params: Promise.resolve({ productId: PRODUCT_ID, wsId: 'personal' }) }
+    );
+
+    expect(response.status).toBe(200);
+    expect(mocks.stockChangeQuery.insert).toHaveBeenCalledWith({
+      amount: expectedDelta,
+      beneficiary_id: BENEFICIARY_ID,
+      creator_id: 'workspace-user-1',
+      note: 'Cycle count adjustment',
+      product_id: PRODUCT_ID,
+      unit_id: UNIT_ID,
+      warehouse_id: WAREHOUSE_ID,
+    });
+  });
+
+  it('ignores movement context for a price-only change', async () => {
+    const mocks = createInventoryAdminClient({
+      existingInventory: [
+        {
+          product_id: PRODUCT_ID,
+          unit_id: UNIT_ID,
+          warehouse_id: WAREHOUSE_ID,
+          amount: 5,
+          min_amount: 1,
+          price: 100,
+        },
+      ],
+    });
+    createAdminClientMock.mockResolvedValue(mocks.client);
+    validateInventoryItemWorkspaceRelationsMock.mockResolvedValue({ ok: true });
+
+    const { PATCH } = await import('./route');
+    const response = await PATCH(
+      new Request('http://localhost/inventory', {
+        method: 'PATCH',
+        body: JSON.stringify({
+          changeContext: { note: 'Price correction' },
+          inventory: [
+            {
+              unit_id: UNIT_ID,
+              warehouse_id: WAREHOUSE_ID,
+              amount: 5,
+              min_amount: 1,
+              price: 125,
+            },
+          ],
+        }),
+      }),
+      { params: Promise.resolve({ productId: PRODUCT_ID, wsId: 'personal' }) }
+    );
+
+    expect(response.status).toBe(200);
+    expect(mocks.inventoryUpdates).toHaveLength(1);
+    expect(mocks.stockChangeQuery.insert).not.toHaveBeenCalled();
+  });
+
+  it('rejects a beneficiary outside the workspace', async () => {
+    const mocks = createInventoryAdminClient({ beneficiaryValid: false });
+    createAdminClientMock.mockResolvedValue(mocks.client);
+
+    const { PATCH } = await import('./route');
+    const response = await PATCH(
+      new Request('http://localhost/inventory', {
+        method: 'PATCH',
+        body: JSON.stringify({
+          changeContext: { beneficiaryId: BENEFICIARY_ID },
+          inventory: [],
+        }),
+      }),
+      { params: Promise.resolve({ productId: PRODUCT_ID, wsId: 'personal' }) }
+    );
+
+    expect(response.status).toBe(400);
+    expect(mocks.inventoryProductsQuery.delete).not.toHaveBeenCalled();
+  });
+
+  it('rejects movement notes longer than 500 trimmed characters', async () => {
+    const mocks = createInventoryAdminClient();
+    createAdminClientMock.mockResolvedValue(mocks.client);
+
+    const { PATCH } = await import('./route');
+    const response = await PATCH(
+      new Request('http://localhost/inventory', {
+        method: 'PATCH',
+        body: JSON.stringify({
+          changeContext: { note: `  ${'x'.repeat(501)}  ` },
+          inventory: [],
+        }),
+      }),
+      { params: Promise.resolve({ productId: PRODUCT_ID, wsId: 'personal' }) }
+    );
+
+    expect(response.status).toBe(400);
+    expect(mocks.stockBeneficiaryQuery.maybeSingle).not.toHaveBeenCalled();
   });
 });
