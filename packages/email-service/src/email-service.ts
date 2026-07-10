@@ -22,6 +22,7 @@ import {
   updateAuditRecord,
 } from './email-audit';
 import { BlacklistChecker, EmailRateLimiter } from './protection/index';
+import { CloudflareEmailProvider } from './providers/cloudflare';
 import { SESEmailProvider } from './providers/ses';
 import type {
   BlacklistedEmail,
@@ -80,6 +81,12 @@ export class EmailService {
           throw new Error('Invalid credentials type for SES provider');
         }
         this.provider = new SESEmailProvider(config.credentials);
+        break;
+      case 'cloudflare':
+        if (config.credentials.type !== 'cloudflare') {
+          throw new Error('Invalid credentials type for Cloudflare provider');
+        }
+        this.provider = new CloudflareEmailProvider(config.credentials);
         break;
       // Future providers can be added here
       // case 'sendgrid':
@@ -748,9 +755,12 @@ export class EmailService {
       devMode?: boolean;
     }
   ): EmailService {
-    let provider: 'ses' | 'sendgrid' | 'postmark';
+    let provider: 'cloudflare' | 'ses' | 'sendgrid' | 'postmark';
 
     switch (credentials.type) {
+      case 'cloudflare':
+        provider = 'cloudflare';
+        break;
       case 'ses':
         provider = 'ses';
         break;

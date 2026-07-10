@@ -180,9 +180,18 @@ export interface ProviderSendResult {
 // =============================================================================
 
 export type ProviderCredentials =
+  | CloudflareCredentials
   | SESCredentials
   | SendGridCredentials
   | PostmarkCredentials;
+
+export interface CloudflareCredentials {
+  type: 'cloudflare';
+  accountId: string;
+  apiToken: string;
+  /** Optional API origin override for tests and controlled proxies. */
+  apiBaseUrl?: string;
+}
 
 export interface SESCredentials {
   type: 'ses';
@@ -207,7 +216,7 @@ export interface PostmarkCredentials {
 
 export interface EmailServiceConfig {
   /** Email provider to use */
-  provider: 'ses' | 'sendgrid' | 'postmark';
+  provider: 'cloudflare' | 'ses' | 'sendgrid' | 'postmark';
   /** Provider credentials */
   credentials: ProviderCredentials;
   /** Default sender information */

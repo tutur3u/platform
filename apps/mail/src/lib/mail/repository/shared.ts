@@ -10,6 +10,7 @@ import type {
 export type AnyRecord = Record<string, any>;
 export type MailTableName =
   | 'mail_attachments'
+  | 'mail_domains'
   | 'mail_events'
   | 'mail_inbound_jobs'
   | 'mail_labels'
@@ -21,6 +22,7 @@ export type MailTableName =
   | 'mail_outbound_jobs'
   | 'mail_raw_messages'
   | 'mail_recipients'
+  | 'mail_stored_objects'
   | 'mail_threads';
 
 export const SYSTEM_LABELS = [

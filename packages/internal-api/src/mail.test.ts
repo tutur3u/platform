@@ -1,9 +1,11 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
   getMailBootstrap,
+  listMailDomains,
   listMailMessages,
   sendMailMessage,
   updateMailMessageState,
+  upsertMailDomain,
 } from './mail';
 
 function jsonResponse(payload: unknown) {
@@ -111,5 +113,35 @@ describe('mail internal API helpers', () => {
     expect(
       (fetchMock.mock.calls[1]?.[1]?.headers as Headers).get('content-type')
     ).toBe('application/json');
+  });
+
+  it('lists and updates platform mail domains through the mail app', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse({ domains: [] }));
+    const options = {
+      baseUrl: 'https://internal.example.com',
+      fetch: fetchMock as unknown as typeof fetch,
+    };
+
+    await listMailDomains(options);
+    await upsertMailDomain(
+      {
+        cloudflareAccountId: 'account-1',
+        cloudflareRoutingRuleId: null,
+        cloudflareZoneId: 'zone-1',
+        domain: 'mail.example.com',
+        inboundProvider: 'cloudflare',
+        outboundProvider: 'cloudflare',
+        status: 'verifying',
+        verificationState: {},
+      },
+      options
+    );
+
+    expect(fetchMock.mock.calls[0]?.[0]).toBe(
+      'https://internal.example.com/api/v1/mail/domains'
+    );
+    expect(fetchMock.mock.calls[1]?.[1]).toEqual(
+      expect.objectContaining({ method: 'PUT' })
+    );
   });
 });

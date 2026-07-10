@@ -14,6 +14,22 @@ export type MailMailboxStatus =
   | 'archived'
   | 'disabled'
   | 'quarantined';
+export type MailProvider = 'cloudflare' | 'ses';
+
+export interface MailDomain {
+  cloudflareAccountId: string | null;
+  cloudflareRoutingRuleId: string | null;
+  cloudflareZoneId: string | null;
+  domain: string;
+  id: string;
+  inboundProvider: MailProvider;
+  outboundProvider: MailProvider;
+  status: 'active' | 'disabled' | 'pending' | 'quarantined' | 'verifying';
+  verificationState: Record<string, unknown>;
+  verifiedAt: string | null;
+}
+
+export type UpsertMailDomainPayload = Omit<MailDomain, 'id' | 'verifiedAt'>;
 
 export interface MailMailbox {
   address: string;
@@ -167,6 +183,10 @@ function jsonHeaders() {
   return {
     'Content-Type': 'application/json',
   };
+}
+
+function mailPlatformPath(suffix: string) {
+  return `/api/v1/mail${suffix}`;
 }
 
 function normalizeMessagesQuery(params?: ListMailMessagesParams) {
@@ -406,4 +426,26 @@ export async function removeMailMailboxMember(
       method: 'DELETE',
     }
   );
+}
+
+export async function listMailDomains(options?: InternalApiClientOptions) {
+  const client = getInternalApiClient(withMailApiBaseUrl(options));
+  return client.json<{ domains: MailDomain[] }>(mailPlatformPath('/domains'), {
+    cache: 'no-store',
+    credentials: 'include',
+  });
+}
+
+export async function upsertMailDomain(
+  payload: UpsertMailDomainPayload,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(withMailApiBaseUrl(options));
+  return client.json<{ domain: MailDomain }>(mailPlatformPath('/domains'), {
+    body: JSON.stringify(payload),
+    cache: 'no-store',
+    credentials: 'include',
+    headers: jsonHeaders(),
+    method: 'PUT',
+  });
 }

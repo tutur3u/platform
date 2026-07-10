@@ -1,17 +1,34 @@
 ---
 title: Tuturuuu Mail
-description: SES-backed team mailbox app for exact @tuturuuu.com accounts.
+description: Multi-mailbox client with permanent SES and Cloudflare transports.
 ---
 
-`apps/mail` is the standalone Tuturuuu mailbox app. It runs on `https://mail.tuturuuu.com` in production and port `7820` locally, delegates auth to `apps/web`, and only admits exact `@tuturuuu.com` accounts. Addresses such as `@xwf.tuturuuu.com` are intentionally denied.
+`apps/mail` is the standalone Tuturuuu mailbox app. It runs on
+`https://mail.tuturuuu.com` in production and port `7820` locally, delegates
+auth to `apps/web`, and preserves Tuturuuu workspace and mailbox-role checks.
+Platform operators may configure additional managed domains; a mailbox address
+must match its linked `private.mail_domains` row.
 
 ## Architecture
 
-- `apps/mail` owns the mailbox UI and proxies `/api/*` to `apps/web`.
-- `apps/web` owns all protected mail APIs under `/api/v1/workspaces/:wsId/mail/*`.
-- The mailbox mirror is stored in `private.mail_*` tables and is service-role only. App pages and route handlers must authorize exact-domain users and mailbox membership before returning data.
-- Outbound messages use `@tuturuuu/email-service` with the selected mailbox address as the source.
-- Inbound messages use SES Email Receiving with S3 raw-message storage and SNS notifications. The webhook stores an idempotent inbound job, fetches raw MIME from S3, mirrors sanitized bodies and attachment metadata, and quarantines unknown recipients.
+- `apps/mail` owns the mailbox UI and protected app-local APIs under
+  `/api/v1/workspaces/:wsId/mail/*`.
+- The mailbox mirror is stored in service-only `private.mail_*` tables. Browser
+  code never reads those tables directly; routes verify workspace membership
+  and mailbox roles before using an admin client.
+- SES and Cloudflare Email Service are permanent outbound transports. The
+  domain default comes from `mail_domains.outbound_provider`; an optional
+  mailbox override wins. Shared abuse, rate-limit, and audit controls in
+  `@tuturuuu/email-service` still run for both providers.
+- Inbound transport is domain-wide. SES receipt/S3/SNS ingestion remains
+  supported, while Cloudflare Email Routing invokes the Worker at
+  `apps/mail/src/email-worker/index.ts`.
+- Supabase is authoritative for domains, authorization, audit, threads, search,
+  AI state, and MCP credentials. The private R2 bucket contains raw MIME, body
+  objects, and attachment bytes; callers receive authorized short-lived access,
+  never raw keys or R2 credentials.
+- Thread resolution checks `Message-ID`, `In-Reply-To`, and `References` first.
+  Normalized subject is only a recent-reply fallback and is not unique.
 
 Mail consumes `/verify-token` in the proxy before centralized auth handling so
 local Portless handoffs set cookies on `mail.tuturuuu.localhost`. The app keeps
@@ -33,10 +50,68 @@ Do not change DNS from code or migrations. The current public MX for `tuturuuu.c
 
 For local SNS fixture tests, set `MAIL_SES_SNS_SIGNATURE_VERIFICATION=disabled`. Do not use that setting in production.
 
+## Cloudflare onboarding
+
+Cloudflare must already manage DNS for an onboarded domain. Arbitrary-recipient
+sending also requires Email Sending to be enabled for the account. Configure a
+staging domain before changing a production domain.
+
+1. Create a private R2 bucket (the checked-in Worker configuration uses
+   `tuturuuu-mail`) and bind it as `MAIL_R2_BUCKET` in
+   `apps/mail/wrangler.email-routing.jsonc`.
+2. Set `MAIL_R2_BUCKET_NAME` to the same bucket name. Object keys are private
+   implementation details and must not be returned to clients.
+3. Set the Worker secret with
+   `bunx wrangler secret put MAIL_INGEST_SECRET --config apps/mail/wrangler.email-routing.jsonc`.
+4. Configure the same value as `MAIL_CLOUDFLARE_INGEST_SECRET` in the Mail
+   Vercel environment. Signed events include the request body and a timestamp;
+   the API rejects invalid or older-than-five-minute signatures.
+5. Set `MAIL_INGEST_URL` to the deployed Mail endpoint
+   `/api/v1/webhooks/mail/cloudflare`, then deploy with
+   `bunx wrangler deploy --config apps/mail/wrangler.email-routing.jsonc`.
+6. In Cloudflare Email Routing, onboard the domain and route its intended
+   address patterns to `tuturuuu-mail-email-routing`.
+7. Configure the domain row through `GET/PUT /api/v1/mail/domains`. Only root
+   workspace operators may use this endpoint. Move the domain from `verifying`
+   to `active` only after DNS and routing checks pass.
+8. For outbound Cloudflare sends, set `MAIL_CLOUDFLARE_API_TOKEN` with Email
+   Sending permission and either store the managed account ID on the domain or
+   set `MAIL_CLOUDFLARE_ACCOUNT_ID` as the fallback.
+
+The Worker checks domain/provider status before reading and parsing the MIME
+stream, uses `postal-mime`, stores deterministic R2 objects, and submits a signed
+idempotent delivery event. Malformed or spam/virus-signaled deliveries are
+recorded as quarantined. Transient API failures are thrown so Email Routing can
+retry without creating duplicate messages.
+
+Cloudflare currently permits 50 combined `to`/`cc`/`bcc` recipients and a
+normal outbound size of 5 MiB including attachments. Email Routing accepts up
+to 25 MiB inbound. The provider enforces outbound limits before making the API
+request; the Worker rejects inbound events above the routing limit. Reconfirm
+current quotas in the
+[Cloudflare Email Service limits](https://developers.cloudflare.com/email-service/platform/limits/)
+before changing these constants.
+
+## Provider rollout and rollback
+
+Provider selection is independent in each direction. Change only one direction
+at a time on the staging domain, complete inbound delivery, outbound delivery,
+attachment, threading, duplicate retry, and bounce/throttle smoke tests, then
+enable the production domain. A mailbox override may be used for a narrow
+outbound canary.
+
+To roll back outbound delivery, clear the mailbox override and set the domain
+outbound provider to `ses`. To roll back inbound delivery, restore the domain's
+SES MX/receipt-rule configuration first, then set `inbound_provider` to `ses`.
+Do not change the database flag before DNS is serving the intended provider.
+Existing SES jobs, raw S3 metadata, and credentials remain supported throughout
+the rollback.
+
 ## Operations
 
 - Run `bun sb:up` locally after mail schema changes, then `bun sb:typegen`.
-- Keep new mail route access checks in `apps/web`; do not add direct client Supabase reads in `apps/mail`.
+- Keep new mail route access checks in `apps/mail`; do not add direct client
+  Supabase reads.
 - Use `packages/internal-api/src/mail.ts` for client helpers and TanStack Query in the app UI.
 - Unknown inbound recipients are retained as `quarantined` jobs for administrator review instead of being delivered to a user inbox.
 - Keep generated public assets such as `/manifest.webmanifest`, `/sw.js`, and
