@@ -1424,6 +1424,7 @@
         "@tuturuuu/types": "workspace:*",
         "@tuturuuu/ui": "workspace:*",
         "@tuturuuu/users-core": "workspace:*",
+        "@tuturuuu/users-ui": "workspace:*",
         "@tuturuuu/utils": "workspace:*",
         "@tuturuuu/vercel": "workspace:*",
         "@upstash/qstash": "^2.11.1",
@@ -2401,6 +2402,35 @@
       "devDependencies": {
         "@tuturuuu/typescript-config": "workspace:*",
         "@types/node": "^26.1.0",
+        "typescript": "7.0.2",
+        "vitest": "^4.1.9",
+      },
+    },
+    "packages/users-ui": {
+      "name": "@tuturuuu/users-ui",
+      "version": "0.1.0",
+      "dependencies": {
+        "@tanstack/react-query": "^5.101.2",
+        "@tuturuuu/icons": "workspace:*",
+        "@tuturuuu/internal-api": "workspace:*",
+        "@tuturuuu/types": "workspace:*",
+        "@tuturuuu/ui": "workspace:*",
+        "@tuturuuu/users-core": "workspace:*",
+        "@tuturuuu/utils": "workspace:*",
+        "date-fns": "^4.4.0",
+        "next-intl": "^4.13.1",
+        "react": "^19.2.7",
+        "react-dom": "^19.2.7",
+        "react-easy-crop": "^6.1.0",
+      },
+      "devDependencies": {
+        "@testing-library/react": "^16.3.2",
+        "@tuturuuu/typescript-config": "workspace:*",
+        "@types/node": "^26.1.0",
+        "@types/react": "^19.2.17",
+        "@types/react-dom": "^19.2.3",
+        "@vitejs/plugin-react": "^6.0.3",
+        "jsdom": "^29.1.1",
         "typescript": "7.0.2",
         "vitest": "^4.1.9",
       },
@@ -4089,6 +4119,8 @@
     "@tuturuuu/ui": ["@tuturuuu/ui@workspace:packages/ui"],
 
     "@tuturuuu/users-core": ["@tuturuuu/users-core@workspace:packages/users-core"],
+
+    "@tuturuuu/users-ui": ["@tuturuuu/users-ui@workspace:packages/users-ui"],
 
     "@tuturuuu/utils": ["@tuturuuu/utils@workspace:packages/utils"],
 
