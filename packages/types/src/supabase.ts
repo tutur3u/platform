@@ -5598,6 +5598,7 @@ export type Database = {
       };
       mail_domains: {
         Row: {
+          canonical_domain_id: string | null;
           cloudflare_account_id: string | null;
           cloudflare_routing_rule_id: string | null;
           cloudflare_zone_id: string | null;
@@ -5614,6 +5615,7 @@ export type Database = {
           verified_at: string | null;
         };
         Insert: {
+          canonical_domain_id?: string | null;
           cloudflare_account_id?: string | null;
           cloudflare_routing_rule_id?: string | null;
           cloudflare_zone_id?: string | null;
@@ -5630,6 +5632,7 @@ export type Database = {
           verified_at?: string | null;
         };
         Update: {
+          canonical_domain_id?: string | null;
           cloudflare_account_id?: string | null;
           cloudflare_routing_rule_id?: string | null;
           cloudflare_zone_id?: string | null;
@@ -5646,6 +5649,13 @@ export type Database = {
           verified_at?: string | null;
         };
         Relationships: [
+          {
+            foreignKeyName: 'mail_domains_canonical_domain_id_fkey';
+            columns: ['canonical_domain_id'];
+            isOneToOne: false;
+            referencedRelation: 'mail_domains';
+            referencedColumns: ['id'];
+          },
           {
             foreignKeyName: 'mail_domains_created_by_fkey';
             columns: ['created_by'];
@@ -9922,6 +9932,51 @@ export type Database = {
           },
         ];
       };
+      user_group_post_check_logs: {
+        Row: {
+          changed_by: string | null;
+          created_at: string;
+          id: string;
+          new_is_completed: boolean | null;
+          post_id: string;
+          previous_is_completed: boolean | null;
+          user_id: string;
+        };
+        Insert: {
+          changed_by?: string | null;
+          created_at?: string;
+          id?: string;
+          new_is_completed?: boolean | null;
+          post_id: string;
+          previous_is_completed?: boolean | null;
+          user_id: string;
+        };
+        Update: {
+          changed_by?: string | null;
+          created_at?: string;
+          id?: string;
+          new_is_completed?: boolean | null;
+          post_id?: string;
+          previous_is_completed?: boolean | null;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'user_group_post_check_logs_post_id_fkey';
+            columns: ['post_id'];
+            isOneToOne: false;
+            referencedRelation: 'posts_dashboard_view';
+            referencedColumns: ['post_id_full'];
+          },
+          {
+            foreignKeyName: 'user_group_post_check_logs_post_id_fkey';
+            columns: ['post_id'];
+            isOneToOne: false;
+            referencedRelation: 'user_group_posts';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       user_group_post_checks: {
         Row: {
           approval_status: Database['public']['Enums']['approval_status'];
@@ -13721,6 +13776,7 @@ export type Database = {
         Args: { p_ws_id: string };
         Returns: string;
       };
+      restore_cascaded_user_group_attendance: { Args: never; Returns: number };
       safe_parse_inet: { Args: { p_value: string }; Returns: unknown };
       topic_announcement_contact_has_linked_verified_email: {
         Args: { p_contact_id: string };
@@ -26530,13 +26586,6 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: 'workspace_user_groups_with_guest';
             referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'user_group_attendance_member_fkey';
-            columns: ['user_id', 'group_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspace_user_groups_users';
-            referencedColumns: ['user_id', 'group_id'];
           },
           {
             foreignKeyName: 'user_group_attendance_user_id_fkey';
