@@ -115,7 +115,8 @@
     "upload": "Tải lên",
     "view": "Xem",
     "whats_the_title": "Tiêu đề là gì?",
-    "write_something": "Hãy viết gì đó..."
+    "write_something": "Hãy viết gì đó...",
+    "coming_soon": "Sắp ra mắt"
   },
   "finance": {
     "new_debt": "Khoản nợ mới",
@@ -942,7 +943,9 @@
     "linked_modules": "Mô đun liên kết"
   },
   "sidebar_tabs": {
-    "education": "Giáo dục"
+    "education": "Giáo dục",
+    "users": "Người dùng",
+    "structure": "Kết cấu"
   },
   "workspace-education-tabs": {
     "assessments_ready": "Đã sẵn sàng đánh giá",
@@ -1299,5 +1302,33 @@
     "what-happens-next": "Điều gì xảy ra tiếp theo?",
     "yearly-plans": "Hàng năm",
     "yr": "năm"
+  },
+  "workspace-users-tabs": {
+    "active": "Người dùng đang hoạt động",
+    "approvals": "Phê duyệt",
+    "attendance": "Điểm danh",
+    "database": "Danh sách",
+    "feedbacks": "Nhận xét",
+    "fields": "Trường thông tin",
+    "group_calendar": "Lịch nhóm",
+    "group_tags": "Gắn thẻ nhóm",
+    "groups": "Nhóm",
+    "guest_leads": "Khách hàng tiềm năng",
+    "metrics": "Số liệu",
+    "overview": "Tổng quan",
+    "permanently_archived": "Đã lưu trữ vĩnh viễn",
+    "reports": "Báo cáo",
+    "temporarily_archived": "Đã lưu trữ tạm thời",
+    "topic_announcements": "Thông báo chủ đề",
+    "tutoring": "Phụ đạo"
+  },
+  "ws-topic-announcements": {
+    "nav_announcements": "Thông báo",
+    "nav_contacts": "Liên hệ",
+    "nav_delivery": "Gửi đi",
+    "nav_group_send": "Gửi",
+    "nav_group_setup": "Thiết lập",
+    "nav_import": "Nhập dữ liệu",
+    "nav_templates": "Mẫu"
   }
 }

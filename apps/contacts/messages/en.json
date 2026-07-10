@@ -115,7 +115,8 @@
     "upload": "Upload",
     "view": "View",
     "whats_the_title": "What's the title?",
-    "write_something": "Write something"
+    "write_something": "Write something",
+    "coming_soon": "Coming Soon"
   },
   "finance": {
     "new_debt": "New debt",
@@ -942,7 +943,9 @@
     "linked_modules": "Linked Modules"
   },
   "sidebar_tabs": {
-    "education": "Education"
+    "education": "Education",
+    "users": "Users",
+    "structure": "Structure"
   },
   "workspace-education-tabs": {
     "assessments_ready": "Assessments Ready",
@@ -1299,5 +1302,33 @@
     "what-happens-next": "What happens next?",
     "yearly-plans": "Yearly",
     "yr": "yr"
+  },
+  "workspace-users-tabs": {
+    "active": "Active Users",
+    "approvals": "Approvals",
+    "attendance": "Attendance",
+    "database": "Database",
+    "feedbacks": "Feedbacks",
+    "fields": "Fields",
+    "group_calendar": "Group Calendar",
+    "group_tags": "Group Tags",
+    "groups": "Groups",
+    "guest_leads": "Guest Leads",
+    "metrics": "Metrics",
+    "overview": "Overview",
+    "permanently_archived": "Permanently Archived",
+    "reports": "Reports",
+    "temporarily_archived": "Temporarily Archived",
+    "topic_announcements": "Topic Announcements",
+    "tutoring": "Tutoring"
+  },
+  "ws-topic-announcements": {
+    "nav_announcements": "Announcements",
+    "nav_contacts": "Contacts",
+    "nav_delivery": "Delivery",
+    "nav_group_send": "Send",
+    "nav_group_setup": "Setup",
+    "nav_import": "Import",
+    "nav_templates": "Templates"
   }
 }

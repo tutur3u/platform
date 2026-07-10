@@ -36,3 +36,5 @@ export const WEB_APP_URL = resolveInternalAppUrl({
   ],
   fallback: DEFAULT_WEB_APP_URL,
 });
+
+export const TTR_URL = WEB_APP_URL;
