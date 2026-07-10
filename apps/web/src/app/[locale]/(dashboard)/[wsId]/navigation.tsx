@@ -675,7 +675,6 @@ export async function WorkspaceNavigationLinks({
             `/${personalOrWsId}/users/topic-announcements/templates`,
             `/${personalOrWsId}/users/reports`,
             `/${personalOrWsId}/users/approvals`,
-            `/${personalOrWsId}/users/structure`,
           ],
           icon: createDashboardNavigationIcon('Users', 'h-5 w-5'),
           requiredWorkspaceTier: createTierRequirement('users', {
@@ -807,19 +806,6 @@ export async function WorkspaceNavigationLinks({
                 (withoutPermission('view_user_groups_posts') &&
                   withoutPermission('approve_posts')),
               experimental: 'beta',
-            },
-            null,
-            {
-              title: t('sidebar_tabs.structure'),
-              aliases: [`/${personalOrWsId}/users/structure`],
-              href: `/${personalOrWsId}/users/structure`,
-              icon: createDashboardNavigationIcon('IdCardLanyard', 'h-5 w-5'),
-              requireRootWorkspace: true,
-              requireRootMember: true,
-              disabled:
-                !DEV_MODE ||
-                ENABLE_AI_ONLY ||
-                withoutPermission('manage_users'),
             },
           ],
           disabled:
