@@ -49,6 +49,10 @@ import {
 } from './floating-composer';
 import type { MailFolder } from './mail-folders';
 import { getMailFolderHref, mailFolderIcons } from './mail-folders';
+import {
+  DEFAULT_MAIL_PANE_LAYOUT,
+  normalizeMailPaneLayout,
+} from './mail-pane-layout';
 import { MailThreadRow } from './mail-thread-list';
 import { ThreadDetail } from './thread-detail';
 
@@ -87,15 +91,21 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
   const [selectedThreads, setSelectedThreads] = useState<Set<string>>(
     new Set()
   );
-  const [layout, setLayout] = useState([38, 62]);
+  const [layout, setLayout] = useState<[number, number]>([
+    ...DEFAULT_MAIL_PANE_LAYOUT,
+  ]);
   const composeOpen = composeParam === '1';
 
   useEffect(() => {
     const stored = window.localStorage.getItem('tuturuuu-mail-pane-layout');
     if (!stored) return;
     try {
-      const next = JSON.parse(stored) as number[];
-      if (next.length === 2) setLayout(next);
+      const next = normalizeMailPaneLayout(JSON.parse(stored));
+      setLayout(next);
+      window.localStorage.setItem(
+        'tuturuuu-mail-pane-layout',
+        JSON.stringify(next)
+      );
     } catch {
       window.localStorage.removeItem('tuturuuu-mail-pane-layout');
     }
@@ -463,7 +473,7 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
         >
           {listPanel}
         </ResizablePanel>
-        <ResizableHandle withHandle />
+        <ResizableHandle aria-label={t('resize_message_list')} withHandle />
         <ResizablePanel
           defaultSize={layout[1]}
           id="mail-thread-detail"

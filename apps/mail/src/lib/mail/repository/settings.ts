@@ -52,7 +52,7 @@ export async function updateMailboxSettings({
     ...(payload.outboundProviderOverride !== undefined
       ? { outbound_provider_override: payload.outboundProviderOverride }
       : {}),
-    ...(payload.senderName !== undefined
+    ...(payload.senderName !== undefined && access.mailbox.type === 'shared'
       ? { sender_name: payload.senderName }
       : {}),
     ...(payload.signatureHtml !== undefined
@@ -62,6 +62,9 @@ export async function updateMailboxSettings({
       ? { signature_text: payload.signatureText }
       : {}),
   };
+  if (Object.keys(patch).length === 0) {
+    return toSettings(access.mailbox);
+  }
   const { data, error } = await privateTable(access.admin, 'mail_mailboxes')
     .update(patch)
     .eq('id', mailboxId)
@@ -69,5 +72,11 @@ export async function updateMailboxSettings({
     .single();
   if (error)
     throw new Error(`Failed to update mailbox settings: ${error.message}`);
-  return toSettings(data);
+  return {
+    ...toSettings(data),
+    senderName:
+      access.mailbox.type === 'personal'
+        ? access.mailbox.senderName
+        : (data.sender_name ?? ''),
+  };
 }

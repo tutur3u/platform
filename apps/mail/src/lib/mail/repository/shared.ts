@@ -1,10 +1,10 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { resolveInternalMailboxName } from '../identity';
 import type {
   MailLabel,
   MailMailbox,
   MailMailboxRole,
   MailRecipient,
-  MailRouteContext,
 } from '../types';
 
 export type AnyRecord = Record<string, any>;
@@ -49,16 +49,24 @@ export function normalizeAddress(value: string) {
   return value.trim().toLowerCase();
 }
 
-export function toMailbox(row: AnyRecord, role: MailMailboxRole): MailMailbox {
+export function toMailbox(
+  row: AnyRecord,
+  role: MailMailboxRole,
+  personalUserDisplayName?: string | null
+): MailMailbox {
   const domain = row.mail_domain as AnyRecord | undefined;
   const effectiveOutboundProvider =
     row.outbound_provider_override ?? domain?.outbound_provider ?? 'ses';
+  const canonicalPersonalName =
+    row.type === 'personal'
+      ? resolveInternalMailboxName(personalUserDisplayName, row.address)
+      : null;
 
   return {
     address: row.address,
     aiInstructions: row.ai_instructions ?? '',
     autoDraftEnabled: Boolean(row.auto_draft_enabled),
-    displayName: row.display_name || row.address,
+    displayName: canonicalPersonalName || row.display_name || row.address,
     domainId: row.domain_id,
     effectiveOutboundProvider,
     id: row.id,
@@ -71,7 +79,11 @@ export function toMailbox(row: AnyRecord, role: MailMailboxRole): MailMailbox {
       maxRecipients: 50,
     },
     role,
-    senderName: row.sender_name || row.display_name || row.address,
+    senderName:
+      canonicalPersonalName ||
+      row.sender_name ||
+      row.display_name ||
+      row.address,
     signatureHtml: row.signature_html ?? null,
     signatureText: row.signature_text ?? null,
     status: row.status,
@@ -99,8 +111,37 @@ export function toRecipient(row: AnyRecord): MailRecipient {
   };
 }
 
-export function getUserDisplayName(user: MailRouteContext['user']) {
-  return user.email?.split('@')[0] ?? 'Tuturuuu Mail';
+export async function getCanonicalUserDisplayNames(
+  admin: AnyRecord,
+  userIds: string[]
+) {
+  const uniqueUserIds = [...new Set(userIds.filter(Boolean))];
+  if (uniqueUserIds.length === 0) return new Map<string, string>();
+
+  const { data, error } = await admin
+    .from('users')
+    .select('id, display_name')
+    .in('id', uniqueUserIds);
+
+  if (error) {
+    throw new Error(`Failed to load user display names: ${error.message}`);
+  }
+
+  return new Map<string, string>(
+    (data ?? []).flatMap((user: AnyRecord) => {
+      const displayName = user.display_name?.trim();
+      return displayName ? [[user.id, displayName]] : [];
+    })
+  );
+}
+
+export async function getCanonicalUserDisplayName(
+  admin: AnyRecord,
+  userId: string | null | undefined
+) {
+  if (!userId) return null;
+  const names = await getCanonicalUserDisplayNames(admin, [userId]);
+  return names.get(userId) ?? null;
 }
 
 export async function ensureSystemLabels(admin: AnyRecord, mailboxId: string) {

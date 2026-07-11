@@ -52,6 +52,7 @@ export function MailSettingsDialog({
   const [targetMailboxId, setTargetMailboxId] = useState<string | null>(null);
   const [catchAllEnabled, setCatchAllEnabled] = useState(false);
   const [catchAllAutoDraft, setCatchAllAutoDraft] = useState(false);
+  const usesManagedIdentity = mailbox?.type === 'personal';
 
   const settingsQuery = useQuery({
     enabled: open && Boolean(mailbox),
@@ -110,7 +111,7 @@ export function MailSettingsDialog({
           outboundProvider === 'default'
             ? null
             : (outboundProvider as 'cloudflare' | 'ses'),
-        senderName,
+        ...(usesManagedIdentity ? {} : { senderName }),
         signatureHtml: signatureHtml || null,
         signatureText: signatureText || null,
       }),
@@ -163,7 +164,7 @@ export function MailSettingsDialog({
             name: 'delivery',
           },
         ],
-        label: t('mail_settings'),
+        label: t('settings'),
       },
     ],
     [operator, t]
@@ -180,9 +181,16 @@ export function MailSettingsDialog({
         <div className="mx-auto w-full max-w-3xl space-y-6 p-4 md:p-8">
           {tab === 'identity' ? (
             <>
-              <SettingField label={t('sender_name')}>
+              <SettingField
+                description={
+                  usesManagedIdentity ? t('sender_name_managed') : undefined
+                }
+                label={t('sender_name')}
+              >
                 <Input
+                  disabled={usesManagedIdentity}
                   onChange={(event) => setSenderName(event.target.value)}
+                  readOnly={usesManagedIdentity}
                   value={senderName}
                 />
               </SettingField>
@@ -355,15 +363,20 @@ export function MailSettingsDialog({
 
 function SettingField({
   children,
+  description,
   label,
 }: {
   children: React.ReactNode;
+  description?: string;
   label: string;
 }) {
   return (
     <div className="grid gap-2">
       <Label>{label}</Label>
       {children}
+      {description ? (
+        <p className="text-muted-foreground text-xs leading-5">{description}</p>
+      ) : null}
     </div>
   );
 }

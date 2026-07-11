@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import { GetObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { createSnippet, sanitizeMailHtml, stripHtml } from '../html';
+import { resolveInternalMailboxName } from '../identity';
 import { normalizeAddress, parseRawEmail } from './parser';
 import type { AnyRecord, ParsedEmail, SesNotification } from './types';
 
@@ -60,19 +61,23 @@ export async function ensureMailboxForRecipient(
 
   const { data: user } = await admin
     .from('users')
-    .select('id, email, display_name, full_name')
+    .select('id, email, display_name')
     .eq('email', normalizedAddress)
     .maybeSingle();
 
   if (!user?.id) return null;
 
+  const senderName = resolveInternalMailboxName(
+    user.display_name,
+    normalizedAddress
+  );
   const { data: mailbox, error } = await privateTable(admin, 'mail_mailboxes')
     .insert({
       address: normalizedAddress,
       created_by: user.id,
-      display_name:
-        user.full_name ?? user.display_name ?? normalizedAddress.split('@')[0],
+      display_name: senderName,
       domain_id: domainId,
+      sender_name: senderName,
       type: 'personal',
     })
     .select('*')

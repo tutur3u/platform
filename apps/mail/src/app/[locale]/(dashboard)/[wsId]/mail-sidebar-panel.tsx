@@ -107,7 +107,7 @@ export function MailSidebarPanel({
             />
           ))}
         </div>
-        <IconTooltip label={t('mail_settings')}>
+        <IconTooltip label={t('settings')}>
           <Button
             className="size-10"
             onClick={() => setSettingsOpen(true)}
@@ -241,7 +241,7 @@ export function MailSidebarPanel({
           variant="ghost"
         >
           <Settings className="size-4" />
-          {t('mail_settings')}
+          {t('settings')}
         </Button>
       </div>
       <MailSettingsDialog
