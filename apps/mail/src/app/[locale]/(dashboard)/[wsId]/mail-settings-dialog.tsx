@@ -24,9 +24,11 @@ import {
   SelectValue,
 } from '@tuturuuu/ui/select';
 import { Switch } from '@tuturuuu/ui/switch';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useState } from 'react';
+import { MailSignaturePreview } from './mail-signature-preview';
 
 export function MailSettingsDialog({
   mailbox,
@@ -194,19 +196,47 @@ export function MailSettingsDialog({
                   value={senderName}
                 />
               </SettingField>
-              <SettingField label={t('signature')}>
-                <Textarea
-                  className="min-h-28"
-                  onChange={(event) => setSignatureText(event.target.value)}
-                  value={signatureText}
-                />
-              </SettingField>
-              <SettingField label={t('signature_html')}>
-                <Textarea
-                  className="min-h-28 font-mono text-xs"
-                  onChange={(event) => setSignatureHtml(event.target.value)}
-                  value={signatureHtml}
-                />
+              <SettingField
+                description={t('signature_description')}
+                label={t('signature')}
+              >
+                <Tabs defaultValue="plain">
+                  <TabsList className="grid w-full grid-cols-3">
+                    <TabsTrigger value="plain">
+                      {t('signature_plain_text')}
+                    </TabsTrigger>
+                    <TabsTrigger value="html">
+                      {t('signature_html')}
+                    </TabsTrigger>
+                    <TabsTrigger value="preview">
+                      {t('signature_preview')}
+                    </TabsTrigger>
+                  </TabsList>
+                  <TabsContent value="plain">
+                    <Textarea
+                      className="min-h-40 resize-y"
+                      onChange={(event) => setSignatureText(event.target.value)}
+                      placeholder={t('signature_plain_text_placeholder')}
+                      value={signatureText}
+                    />
+                  </TabsContent>
+                  <TabsContent value="html">
+                    <Textarea
+                      className="min-h-40 resize-y font-mono text-xs"
+                      onChange={(event) => setSignatureHtml(event.target.value)}
+                      placeholder={t('signature_html_placeholder')}
+                      value={signatureHtml}
+                    />
+                  </TabsContent>
+                  <TabsContent value="preview">
+                    <MailSignaturePreview
+                      emptyLabel={t('signature_preview_empty')}
+                      html={signatureHtml}
+                      text={signatureText}
+                      title={t('signature_preview_title')}
+                    />
+                  </TabsContent>
+                </Tabs>
               </SettingField>
               <SettingField label={t('outbound_provider')}>
                 <Select

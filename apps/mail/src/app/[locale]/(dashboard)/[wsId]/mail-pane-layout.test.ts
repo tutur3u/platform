@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
   DEFAULT_MAIL_PANE_LAYOUT,
+  getCurrentMailPaneLayout,
   normalizeMailPaneLayout,
+  setCurrentMailPaneLayout,
 } from './mail-pane-layout';
 
 describe('normalizeMailPaneLayout', () => {
@@ -19,5 +21,11 @@ describe('normalizeMailPaneLayout', () => {
     expect(normalizeMailPaneLayout(null)).toEqual(DEFAULT_MAIL_PANE_LAYOUT);
     expect(normalizeMailPaneLayout([50])).toEqual(DEFAULT_MAIL_PANE_LAYOUT);
     expect(normalizeMailPaneLayout([70, 30])).toEqual(DEFAULT_MAIL_PANE_LAYOUT);
+  });
+
+  it('keeps the current layout available across route remounts', () => {
+    setCurrentMailPaneLayout([35, 65]);
+
+    expect(getCurrentMailPaneLayout()).toEqual([35, 65]);
   });
 });

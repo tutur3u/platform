@@ -44,12 +44,12 @@ export function MailThreadRow({
       <Checkbox
         aria-label={t('select_thread')}
         checked={selected}
-        className="absolute top-4 left-3 z-10 opacity-0 transition-opacity group-hover:opacity-100 data-[state=checked]:opacity-100"
+        className="absolute top-4 left-3 z-10 opacity-0 transition-opacity focus-visible:opacity-100 group-hover:opacity-100 data-[state=checked]:opacity-100"
         onCheckedChange={(value) => onSelect(value === true)}
       />
       <button
         aria-current={active ? 'true' : undefined}
-        className="block w-full px-4 py-3 text-left group-hover:pl-10"
+        className="block w-full py-3 pr-4 pl-10 text-left"
         onClick={onClick}
         type="button"
       >

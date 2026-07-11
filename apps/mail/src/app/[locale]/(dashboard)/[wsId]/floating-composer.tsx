@@ -1,14 +1,6 @@
 'use client';
 
-import {
-  Image as ImageIcon,
-  Maximize2,
-  Minimize2,
-  Paperclip,
-  Send,
-  Trash2,
-  X,
-} from '@tuturuuu/icons';
+import { Image as ImageIcon, Paperclip, Send, Trash2 } from '@tuturuuu/icons';
 import {
   copyMailDraftAttachments,
   createMailDraft,
@@ -42,21 +34,18 @@ import {
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { MailComposerAttachments } from './mail-composer-attachments';
 import { MailComposerEditor } from './mail-composer-editor';
+import { MailComposerHeader } from './mail-composer-header';
+import type { ComposeInitialDraft } from './mail-composer-types';
+import {
+  buildComposerInitialBody,
+  type ComposerWarning,
+  getComposerWarnings,
+} from './mail-composer-utils';
 import { RecipientField } from './recipient-field';
 
-export interface ComposeInitialDraft {
-  bcc?: string[];
-  bodyHtml?: string;
-  bodyText?: string;
-  cc?: string[];
-  inReplyTo?: string | null;
-  references?: string[];
-  sourceAttachmentIds?: string[];
-  sourceMessageId?: string;
-  subject?: string;
-  to?: string[];
-}
+export type { ComposeInitialDraft } from './mail-composer-types';
 
 type SaveState = 'failed' | 'idle' | 'offline' | 'saved' | 'saving';
 
@@ -103,9 +92,12 @@ export function FloatingComposer({
   const [minimized, setMinimized] = useState(false);
   const [maximized, setMaximized] = useState(false);
   const [discardOpen, setDiscardOpen] = useState(false);
+  const [sendReviewOpen, setSendReviewOpen] = useState(false);
+  const [sendWarnings, setSendWarnings] = useState<ComposerWarning[]>([]);
   const [saveState, setSaveState] = useState<SaveState>('idle');
   const [dirty, setDirty] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [dragActive, setDragActive] = useState(false);
   const [online, setOnline] = useState(true);
   const [imageUrlToInsert, setImageUrlToInsert] = useState<string | null>(null);
   const [pendingAttachmentCopy, setPendingAttachmentCopy] = useState<{
@@ -119,16 +111,15 @@ export function FloatingComposer({
   );
 
   useEffect(() => {
-    if (!open) return;
-    const signature = defaultMailbox?.signatureHtml ?? '';
-    const initialHtml = initialDraft?.bodyHtml ?? signature;
+    if (!open || !defaultMailbox) return;
+    const initialBody = buildComposerInitialBody(initialDraft, defaultMailbox);
     setMailboxId(defaultMailbox?.id ?? '');
     setTo(initialDraft?.to ?? []);
     setCc(initialDraft?.cc ?? []);
     setBcc(initialDraft?.bcc ?? []);
     setSubject(initialDraft?.subject ?? '');
-    setBodyHtml(initialHtml);
-    setBodyText(initialDraft?.bodyText ?? defaultMailbox?.signatureText ?? '');
+    setBodyHtml(initialBody.html);
+    setBodyText(initialBody.text);
     setDraftId(null);
     draftIdRef.current = null;
     setAttachments([]);
@@ -141,6 +132,8 @@ export function FloatingComposer({
         : null
     );
     setSaveState('idle');
+    setSendReviewOpen(false);
+    setSendWarnings([]);
     setDirty(Boolean(initialDraft));
     setMinimized(false);
   }, [defaultMailbox, initialDraft, open]);
@@ -316,11 +309,28 @@ export function FloatingComposer({
     }
   };
 
-  const send = async () => {
+  const performSend = async () => {
     if (!canSend) return;
     const savedDraftId = await persist();
     await onSend(mailboxId, { ...snapshot, draftId: savedDraftId });
     onOpenChange(false);
+  };
+
+  const requestSend = async () => {
+    if (!canSend) return;
+    const warnings = getComposerWarnings({
+      attachmentCount: attachments.length,
+      bodyHtml,
+      signatureHtml: activeMailbox?.signatureHtml,
+      signatureText: activeMailbox?.signatureText,
+      subject,
+    });
+    if (warnings.length > 0) {
+      setSendWarnings(warnings);
+      setSendReviewOpen(true);
+      return;
+    }
+    await performSend();
   };
 
   const saveAndClose = async () => {
@@ -345,14 +355,26 @@ export function FloatingComposer({
         )}
         onDrop={(event) => {
           event.preventDefault();
+          setDragActive(false);
           if (event.dataTransfer.files.length)
             void uploadFiles(event.dataTransfer.files);
         }}
-        onDragOver={(event) => event.preventDefault()}
+        onDragEnter={(event) => {
+          event.preventDefault();
+          if (event.dataTransfer.types.includes('Files')) setDragActive(true);
+        }}
+        onDragLeave={(event) => {
+          if (!event.currentTarget.contains(event.relatedTarget as Node | null))
+            setDragActive(false);
+        }}
+        onDragOver={(event) => {
+          event.preventDefault();
+          event.dataTransfer.dropEffect = 'copy';
+        }}
         onKeyDown={(event) => {
           if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) {
             event.preventDefault();
-            void send();
+            void requestSend();
           }
           if (event.key === 'Escape') setMinimized(true);
         }}
@@ -367,41 +389,26 @@ export function FloatingComposer({
         }}
         role="dialog"
       >
-        <header className="flex h-14 shrink-0 items-center gap-2 border-dynamic border-b px-3">
-          <div className="min-w-0 flex-1">
-            <div className="truncate font-semibold text-sm">
-              {subject || t('new_message')}
-            </div>
-            <div className="text-[0.68rem] text-muted-foreground">
-              {t(`save_${saveState}`)}
+        {dragActive && !minimized ? (
+          <div className="pointer-events-none absolute inset-3 z-20 flex items-center justify-center rounded-xl border-2 border-foreground/30 border-dashed bg-background/90 backdrop-blur-sm">
+            <div className="rounded-xl bg-foreground/[0.06] px-5 py-3 font-medium text-sm">
+              {t('drop_files_to_attach')}
             </div>
           </div>
-          <Button
-            aria-label={t('minimize')}
-            onClick={() => setMinimized(!minimized)}
-            size="icon"
-            variant="ghost"
-          >
-            <Minimize2 className="size-4" />
-          </Button>
-          <Button
-            aria-label={t('maximize')}
-            className="max-md:hidden"
-            onClick={() => setMaximized(!maximized)}
-            size="icon"
-            variant="ghost"
-          >
-            <Maximize2 className="size-4" />
-          </Button>
-          <Button
-            aria-label={t('close')}
-            onClick={() => void saveAndClose()}
-            size="icon"
-            variant="ghost"
-          >
-            <X className="size-4" />
-          </Button>
-        </header>
+        ) : null}
+        <MailComposerHeader
+          closeLabel={t('close')}
+          maximizeLabel={t('maximize')}
+          minimized={minimized}
+          minimizeLabel={t('minimize')}
+          newMessageLabel={t('new_message')}
+          onClose={() => void saveAndClose()}
+          onMaximize={() => setMaximized(!maximized)}
+          onMinimize={() => setMinimized(!minimized)}
+          restoreLabel={t('restore')}
+          saveLabel={t(`save_${saveState}`)}
+          subject={subject}
+        />
 
         {!minimized ? (
           <>
@@ -484,41 +491,27 @@ export function FloatingComposer({
                 setDirty(true);
               }}
             />
-            {attachments.length > 0 ? (
-              <div className="flex flex-wrap gap-2 border-dynamic border-t px-3 py-2">
-                {attachments.map((attachment) => (
-                  <div
-                    className="flex items-center gap-2 rounded-lg bg-foreground/[0.05] px-2 py-1 text-xs"
-                    key={attachment.id}
-                  >
-                    <Paperclip className="size-3" />
-                    <span className="max-w-44 truncate">
-                      {attachment.filename}
-                    </span>
-                    <button
-                      aria-label={t('remove_attachment')}
-                      onClick={async () => {
-                        if (!draftId) return;
-                        await deleteMailDraftAttachment(
-                          workspaceId,
-                          mailboxId,
-                          draftId,
-                          attachment.id
-                        );
-                        setAttachments((items) =>
-                          items.filter((item) => item.id !== attachment.id)
-                        );
-                      }}
-                      type="button"
-                    >
-                      <X className="size-3" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            ) : null}
+            <MailComposerAttachments
+              attachments={attachments}
+              onRemove={async (attachment) => {
+                if (!draftId) return;
+                await deleteMailDraftAttachment(
+                  workspaceId,
+                  mailboxId,
+                  draftId,
+                  attachment.id
+                );
+                setAttachments((items) =>
+                  items.filter((item) => item.id !== attachment.id)
+                );
+              }}
+              removeLabel={t('remove_attachment')}
+            />
             <footer className="flex items-center gap-2 border-dynamic border-t px-3 py-2.5">
-              <Button disabled={!canSend || sending} onClick={send}>
+              <Button
+                disabled={!canSend || sending}
+                onClick={() => void requestSend()}
+              >
                 <Send className="size-4" /> {sending ? t('sending') : t('send')}
               </Button>
               <label className="inline-flex cursor-pointer">
@@ -592,6 +585,33 @@ export function FloatingComposer({
               }}
             >
               {t('discard')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog onOpenChange={setSendReviewOpen} open={sendReviewOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('review_before_sending')}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t('review_before_sending_description')}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <ul className="space-y-2 rounded-xl bg-foreground/[0.04] p-3 text-sm">
+            {sendWarnings.map((warning) => (
+              <li className="flex gap-2" key={warning}>
+                <span aria-hidden="true" className="text-muted-foreground">
+                  &bull;
+                </span>
+                {t(`warning_${warning}`)}
+              </li>
+            ))}
+          </ul>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t('continue_editing')}</AlertDialogCancel>
+            <AlertDialogAction onClick={() => void performSend()}>
+              {t('send_anyway')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

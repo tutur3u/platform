@@ -130,10 +130,12 @@ export function ThreadDetail({
         <div className="border-dynamic border-b px-4 py-2 md:px-5">
           <TabsList className="h-8 bg-foreground/[0.045]">
             <TabsTrigger value="conversation">{t('conversation')}</TabsTrigger>
-            <TabsTrigger value="attachments">
+            <TabsTrigger
+              disabled={attachments.length === 0}
+              value="attachments"
+            >
               <Paperclip className="size-3.5" />
-              {t('attachments')}{' '}
-              {attachments.length ? `(${attachments.length})` : ''}
+              {t('attachments')} ({attachments.length})
             </TabsTrigger>
           </TabsList>
         </div>

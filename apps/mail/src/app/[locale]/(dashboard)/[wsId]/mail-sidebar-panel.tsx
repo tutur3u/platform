@@ -57,6 +57,12 @@ export function MailSidebarPanel({
   const [settingsOpen, setSettingsOpen] = useState(false);
   const activeMailbox =
     mailboxes.find((mailbox) => mailbox.id === activeMailboxId) ?? null;
+  const customFolders = (organizationQuery.data?.folders ?? []).filter(
+    (folder) => folder.kind === 'custom'
+  );
+  const customLabels = (organizationQuery.data?.labels ?? []).filter(
+    (label) => label.kind === 'custom'
+  );
 
   const selectMailbox = (mailboxId: string) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -139,7 +145,7 @@ export function MailSidebarPanel({
       </div>
       <Accordion
         className="scrollbar-none min-h-0 flex-1 overflow-y-auto px-2"
-        defaultValue={['folders', 'labels', 'mailboxes']}
+        defaultValue={['folders']}
         type="multiple"
       >
         <AccordionItem className="border-0" value="folders">
@@ -170,41 +176,37 @@ export function MailSidebarPanel({
                 </Link>
               ) : null
             )}
-            {(organizationQuery.data?.folders ?? [])
-              .filter((folder) => folder.kind === 'custom')
-              .map((folder) => (
-                <Link
-                  className="flex items-center gap-2 rounded-xl px-2.5 py-2 text-sm hover:bg-accent"
-                  href={`${pathname}?mailbox=${activeMailboxId}&folderId=${folder.id}`}
-                  key={folder.id}
-                >
-                  <Mail className="size-4" />{' '}
-                  <span className="truncate">{folder.name}</span>
-                </Link>
-              ))}
+            {customFolders.map((folder) => (
+              <Link
+                className="flex items-center gap-2 rounded-xl px-2.5 py-2 text-sm hover:bg-accent"
+                href={`${pathname}?mailbox=${activeMailboxId}&folderId=${folder.id}`}
+                key={folder.id}
+              >
+                <Mail className="size-4" />{' '}
+                <span className="truncate">{folder.name}</span>
+              </Link>
+            ))}
           </AccordionContent>
         </AccordionItem>
         <AccordionItem className="border-0" value="labels">
           <AccordionTrigger className="px-2 py-2 text-muted-foreground text-xs uppercase tracking-[0.14em]">
-            {t('labels')}
+            <span className="flex min-w-0 flex-1 items-center justify-between gap-2">
+              <span>{t('labels')}</span>
+              <span className="tabular-nums">({customLabels.length})</span>
+            </span>
           </AccordionTrigger>
           <AccordionContent className="space-y-0.5 pb-2">
-            {(organizationQuery.data?.labels ?? [])
-              .filter((label) => label.kind === 'custom')
-              .map((label) => (
-                <Link
-                  className="flex items-center gap-2 rounded-xl px-2.5 py-2 text-sm hover:bg-accent"
-                  href={`${pathname}?mailbox=${activeMailboxId}&label=${encodeURIComponent(label.slug)}`}
-                  key={label.id}
-                >
-                  <Tag className="size-4" />{' '}
-                  <span className="truncate">{label.name}</span>
-                </Link>
-              ))}
-            {!organizationQuery.isLoading &&
-            !(organizationQuery.data?.labels ?? []).some(
-              (label) => label.kind === 'custom'
-            ) ? (
+            {customLabels.map((label) => (
+              <Link
+                className="flex items-center gap-2 rounded-xl px-2.5 py-2 text-sm hover:bg-accent"
+                href={`${pathname}?mailbox=${activeMailboxId}&label=${encodeURIComponent(label.slug)}`}
+                key={label.id}
+              >
+                <Tag className="size-4" />{' '}
+                <span className="truncate">{label.name}</span>
+              </Link>
+            ))}
+            {!organizationQuery.isLoading && customLabels.length === 0 ? (
               <p className="px-2.5 py-2 text-muted-foreground text-xs">
                 {t('no_custom_labels')}
               </p>
@@ -213,7 +215,10 @@ export function MailSidebarPanel({
         </AccordionItem>
         <AccordionItem className="border-0" value="mailboxes">
           <AccordionTrigger className="px-2 py-2 text-muted-foreground text-xs uppercase tracking-[0.14em]">
-            {t('mailboxes')}
+            <span className="flex min-w-0 flex-1 items-center justify-between gap-2">
+              <span>{t('mailboxes')}</span>
+              <span className="tabular-nums">({mailboxes.length})</span>
+            </span>
           </AccordionTrigger>
           <AccordionContent className="space-y-1 pb-3">
             {bootstrapQuery.isLoading ? (

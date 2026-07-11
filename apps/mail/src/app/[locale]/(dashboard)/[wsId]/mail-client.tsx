@@ -42,7 +42,7 @@ import { cn } from '@tuturuuu/utils/format';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { parseAsString, useQueryState } from 'nuqs';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   type ComposeInitialDraft,
   FloatingComposer,
@@ -50,8 +50,9 @@ import {
 import type { MailFolder } from './mail-folders';
 import { getMailFolderHref, mailFolderIcons } from './mail-folders';
 import {
-  DEFAULT_MAIL_PANE_LAYOUT,
+  getCurrentMailPaneLayout,
   normalizeMailPaneLayout,
+  setCurrentMailPaneLayout,
 } from './mail-pane-layout';
 import { MailThreadRow } from './mail-thread-list';
 import { ThreadDetail } from './thread-detail';
@@ -91,16 +92,21 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
   const [selectedThreads, setSelectedThreads] = useState<Set<string>>(
     new Set()
   );
-  const [layout, setLayout] = useState<[number, number]>([
-    ...DEFAULT_MAIL_PANE_LAYOUT,
-  ]);
+  const [layout, setLayout] = useState<[number, number]>(() =>
+    getCurrentMailPaneLayout()
+  );
+  const layoutReadyRef = useRef(false);
   const composeOpen = composeParam === '1';
 
   useEffect(() => {
     const stored = window.localStorage.getItem('tuturuuu-mail-pane-layout');
-    if (!stored) return;
+    if (!stored) {
+      layoutReadyRef.current = true;
+      return;
+    }
     try {
       const next = normalizeMailPaneLayout(JSON.parse(stored));
+      setCurrentMailPaneLayout(next);
       setLayout(next);
       window.localStorage.setItem(
         'tuturuuu-mail-pane-layout',
@@ -109,6 +115,7 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
     } catch {
       window.localStorage.removeItem('tuturuuu-mail-pane-layout');
     }
+    layoutReadyRef.current = true;
   }, []);
 
   const bootstrapQuery = useQuery({
@@ -456,12 +463,14 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
         direction="horizontal"
         key={layout.join('-')}
         onLayout={(sizes) => {
+          if (!layoutReadyRef.current) return;
           // `layout` controls this group's key so the persisted layout can be
           // applied after hydration. Updating it from the group's own layout
           // notification remounts the group and creates an infinite loop.
+          const next = setCurrentMailPaneLayout(sizes);
           window.localStorage.setItem(
             'tuturuuu-mail-pane-layout',
-            JSON.stringify(sizes)
+            JSON.stringify(next)
           );
         }}
       >

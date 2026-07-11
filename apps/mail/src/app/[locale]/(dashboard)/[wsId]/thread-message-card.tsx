@@ -11,6 +11,7 @@ import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
+import { MailMessagePreview } from './mail-message-preview';
 
 function formatDate(value: string | null) {
   if (!value) return '';
@@ -82,13 +83,14 @@ export function ThreadMessageCard({
             </dl>
           </details>
         </div>
-        <div className="p-4">
+        <div className="min-w-0 max-w-full overflow-hidden p-4">
           {message.sanitizedHtml ? (
-            <iframe
-              className="min-h-80 w-full rounded-xl border border-dynamic bg-background"
-              sandbox=""
-              srcDoc={message.sanitizedHtml}
+            <MailMessagePreview
+              content={message.sanitizedHtml}
+              darkLabel={t('dark_view')}
+              originalLabel={t('original_view')}
               title={message.subject || t('no_subject')}
+              viewLabel={t('message_appearance')}
             />
           ) : (
             <pre className="whitespace-pre-wrap font-sans text-sm leading-6">
