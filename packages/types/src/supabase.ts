@@ -8843,6 +8843,195 @@ export type Database = {
         };
         Relationships: [];
       };
+      payroll_run_items: {
+        Row: {
+          adjustments: Json | null;
+          base_pay: number | null;
+          benefits_total: number | null;
+          bonuses_total: number | null;
+          company_deductions: Json | null;
+          contract_id: string | null;
+          created_at: string | null;
+          deductions_total: number | null;
+          employee_deductions: Json | null;
+          gross_pay: number | null;
+          hourly_pay: number | null;
+          hourly_rate: number | null;
+          id: string;
+          insurance_salary: number | null;
+          net_pay: number | null;
+          notes: string | null;
+          overtime_hours: number | null;
+          overtime_pay: number | null;
+          regular_hours: number | null;
+          run_id: string;
+          updated_at: string | null;
+          user_id: string;
+          ws_id: string;
+        };
+        Insert: {
+          adjustments?: Json | null;
+          base_pay?: number | null;
+          benefits_total?: number | null;
+          bonuses_total?: number | null;
+          company_deductions?: Json | null;
+          contract_id?: string | null;
+          created_at?: string | null;
+          deductions_total?: number | null;
+          employee_deductions?: Json | null;
+          gross_pay?: number | null;
+          hourly_pay?: number | null;
+          hourly_rate?: number | null;
+          id?: string;
+          insurance_salary?: number | null;
+          net_pay?: number | null;
+          notes?: string | null;
+          overtime_hours?: number | null;
+          overtime_pay?: number | null;
+          regular_hours?: number | null;
+          run_id: string;
+          updated_at?: string | null;
+          user_id: string;
+          ws_id: string;
+        };
+        Update: {
+          adjustments?: Json | null;
+          base_pay?: number | null;
+          benefits_total?: number | null;
+          bonuses_total?: number | null;
+          company_deductions?: Json | null;
+          contract_id?: string | null;
+          created_at?: string | null;
+          deductions_total?: number | null;
+          employee_deductions?: Json | null;
+          gross_pay?: number | null;
+          hourly_pay?: number | null;
+          hourly_rate?: number | null;
+          id?: string;
+          insurance_salary?: number | null;
+          net_pay?: number | null;
+          notes?: string | null;
+          overtime_hours?: number | null;
+          overtime_pay?: number | null;
+          regular_hours?: number | null;
+          run_id?: string;
+          updated_at?: string | null;
+          user_id?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'payroll_run_items_run_id_fkey';
+            columns: ['run_id'];
+            isOneToOne: false;
+            referencedRelation: 'payroll_runs';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      payroll_runs: {
+        Row: {
+          approved_at: string | null;
+          approved_by: string | null;
+          created_at: string | null;
+          created_by: string | null;
+          currency: string;
+          finalized_at: string | null;
+          finalized_by: string | null;
+          id: string;
+          name: string;
+          notes: string | null;
+          period_end: string;
+          period_start: string;
+          status: Database['public']['Enums']['payroll_run_status'];
+          total_deductions: number | null;
+          total_gross_amount: number | null;
+          total_net_amount: number | null;
+          ws_id: string;
+        };
+        Insert: {
+          approved_at?: string | null;
+          approved_by?: string | null;
+          created_at?: string | null;
+          created_by?: string | null;
+          currency?: string;
+          finalized_at?: string | null;
+          finalized_by?: string | null;
+          id?: string;
+          name: string;
+          notes?: string | null;
+          period_end: string;
+          period_start: string;
+          status?: Database['public']['Enums']['payroll_run_status'];
+          total_deductions?: number | null;
+          total_gross_amount?: number | null;
+          total_net_amount?: number | null;
+          ws_id: string;
+        };
+        Update: {
+          approved_at?: string | null;
+          approved_by?: string | null;
+          created_at?: string | null;
+          created_by?: string | null;
+          currency?: string;
+          finalized_at?: string | null;
+          finalized_by?: string | null;
+          id?: string;
+          name?: string;
+          notes?: string | null;
+          period_end?: string;
+          period_start?: string;
+          status?: Database['public']['Enums']['payroll_run_status'];
+          total_deductions?: number | null;
+          total_gross_amount?: number | null;
+          total_net_amount?: number | null;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'payroll_runs_approved_by_fkey';
+            columns: ['approved_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'payroll_runs_approved_by_fkey';
+            columns: ['approved_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'payroll_runs_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'payroll_runs_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'payroll_runs_finalized_by_fkey';
+            columns: ['finalized_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'payroll_runs_finalized_by_fkey';
+            columns: ['finalized_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+        ];
+      };
       personal_notes: {
         Row: {
           content: string | null;
@@ -20172,293 +20361,6 @@ export type Database = {
             columns: ['user_id'];
             isOneToOne: true;
             referencedRelation: 'users';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
-      payroll_run_items: {
-        Row: {
-          adjustments: Json | null;
-          base_pay: number | null;
-          benefits_total: number | null;
-          bonuses_total: number | null;
-          company_deductions: Json | null;
-          contract_id: string | null;
-          created_at: string | null;
-          deductions_total: number | null;
-          employee_deductions: Json | null;
-          gross_pay: number | null;
-          hourly_pay: number | null;
-          hourly_rate: number | null;
-          id: string;
-          insurance_salary: number | null;
-          net_pay: number | null;
-          notes: string | null;
-          overtime_hours: number | null;
-          overtime_pay: number | null;
-          regular_hours: number | null;
-          run_id: string;
-          updated_at: string | null;
-          user_id: string;
-          ws_id: string;
-        };
-        Insert: {
-          adjustments?: Json | null;
-          base_pay?: number | null;
-          benefits_total?: number | null;
-          bonuses_total?: number | null;
-          company_deductions?: Json | null;
-          contract_id?: string | null;
-          created_at?: string | null;
-          deductions_total?: number | null;
-          employee_deductions?: Json | null;
-          gross_pay?: number | null;
-          hourly_pay?: number | null;
-          hourly_rate?: number | null;
-          id?: string;
-          insurance_salary?: number | null;
-          net_pay?: number | null;
-          notes?: string | null;
-          overtime_hours?: number | null;
-          overtime_pay?: number | null;
-          regular_hours?: number | null;
-          run_id: string;
-          updated_at?: string | null;
-          user_id: string;
-          ws_id: string;
-        };
-        Update: {
-          adjustments?: Json | null;
-          base_pay?: number | null;
-          benefits_total?: number | null;
-          bonuses_total?: number | null;
-          company_deductions?: Json | null;
-          contract_id?: string | null;
-          created_at?: string | null;
-          deductions_total?: number | null;
-          employee_deductions?: Json | null;
-          gross_pay?: number | null;
-          hourly_pay?: number | null;
-          hourly_rate?: number | null;
-          id?: string;
-          insurance_salary?: number | null;
-          net_pay?: number | null;
-          notes?: string | null;
-          overtime_hours?: number | null;
-          overtime_pay?: number | null;
-          regular_hours?: number | null;
-          run_id?: string;
-          updated_at?: string | null;
-          user_id?: string;
-          ws_id?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'payroll_run_items_contract_id_fkey';
-            columns: ['contract_id'];
-            isOneToOne: false;
-            referencedRelation: 'workforce_contracts';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'payroll_run_items_run_id_fkey';
-            columns: ['run_id'];
-            isOneToOne: false;
-            referencedRelation: 'payroll_runs';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'payroll_run_items_user_id_fkey';
-            columns: ['user_id'];
-            isOneToOne: false;
-            referencedRelation: 'distinct_invoice_creators';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'payroll_run_items_user_id_fkey';
-            columns: ['user_id'];
-            isOneToOne: false;
-            referencedRelation: 'distinct_transaction_creators';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'payroll_run_items_user_id_fkey';
-            columns: ['user_id'];
-            isOneToOne: false;
-            referencedRelation: 'group_user_with_attendance';
-            referencedColumns: ['user_id'];
-          },
-          {
-            foreignKeyName: 'payroll_run_items_user_id_fkey';
-            columns: ['user_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspace_users';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'payroll_run_items_user_id_fkey';
-            columns: ['user_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspace_users_with_groups';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'payroll_run_items_ws_id_fkey';
-            columns: ['ws_id'];
-            isOneToOne: false;
-            referencedRelation: 'entity_limit_source__workspaces';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'payroll_run_items_ws_id_fkey';
-            columns: ['ws_id'];
-            isOneToOne: false;
-            referencedRelation: 'entity_limit_source__workspaces';
-            referencedColumns: ['personal_ws_id'];
-          },
-          {
-            foreignKeyName: 'payroll_run_items_ws_id_fkey';
-            columns: ['ws_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspace_link_counts';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'payroll_run_items_ws_id_fkey';
-            columns: ['ws_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspaces';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
-      payroll_runs: {
-        Row: {
-          approved_at: string | null;
-          approved_by: string | null;
-          created_at: string | null;
-          created_by: string | null;
-          currency: string;
-          finalized_at: string | null;
-          finalized_by: string | null;
-          id: string;
-          name: string;
-          notes: string | null;
-          period_end: string;
-          period_start: string;
-          status: Database['public']['Enums']['payroll_run_status'];
-          total_deductions: number | null;
-          total_gross_amount: number | null;
-          total_net_amount: number | null;
-          ws_id: string;
-        };
-        Insert: {
-          approved_at?: string | null;
-          approved_by?: string | null;
-          created_at?: string | null;
-          created_by?: string | null;
-          currency?: string;
-          finalized_at?: string | null;
-          finalized_by?: string | null;
-          id?: string;
-          name: string;
-          notes?: string | null;
-          period_end: string;
-          period_start: string;
-          status?: Database['public']['Enums']['payroll_run_status'];
-          total_deductions?: number | null;
-          total_gross_amount?: number | null;
-          total_net_amount?: number | null;
-          ws_id: string;
-        };
-        Update: {
-          approved_at?: string | null;
-          approved_by?: string | null;
-          created_at?: string | null;
-          created_by?: string | null;
-          currency?: string;
-          finalized_at?: string | null;
-          finalized_by?: string | null;
-          id?: string;
-          name?: string;
-          notes?: string | null;
-          period_end?: string;
-          period_start?: string;
-          status?: Database['public']['Enums']['payroll_run_status'];
-          total_deductions?: number | null;
-          total_gross_amount?: number | null;
-          total_net_amount?: number | null;
-          ws_id?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'payroll_runs_approved_by_fkey';
-            columns: ['approved_by'];
-            isOneToOne: false;
-            referencedRelation: 'shortened_links_creator_stats';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'payroll_runs_approved_by_fkey';
-            columns: ['approved_by'];
-            isOneToOne: false;
-            referencedRelation: 'users';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'payroll_runs_created_by_fkey';
-            columns: ['created_by'];
-            isOneToOne: false;
-            referencedRelation: 'shortened_links_creator_stats';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'payroll_runs_created_by_fkey';
-            columns: ['created_by'];
-            isOneToOne: false;
-            referencedRelation: 'users';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'payroll_runs_finalized_by_fkey';
-            columns: ['finalized_by'];
-            isOneToOne: false;
-            referencedRelation: 'shortened_links_creator_stats';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'payroll_runs_finalized_by_fkey';
-            columns: ['finalized_by'];
-            isOneToOne: false;
-            referencedRelation: 'users';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'payroll_runs_ws_id_fkey';
-            columns: ['ws_id'];
-            isOneToOne: false;
-            referencedRelation: 'entity_limit_source__workspaces';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'payroll_runs_ws_id_fkey';
-            columns: ['ws_id'];
-            isOneToOne: false;
-            referencedRelation: 'entity_limit_source__workspaces';
-            referencedColumns: ['personal_ws_id'];
-          },
-          {
-            foreignKeyName: 'payroll_runs_ws_id_fkey';
-            columns: ['ws_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspace_link_counts';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'payroll_runs_ws_id_fkey';
-            columns: ['ws_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspaces';
             referencedColumns: ['id'];
           },
         ];

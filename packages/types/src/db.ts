@@ -1690,8 +1690,8 @@ export type PayrollRunStatus =
 export type WorkforceContract = Tables<'workforce_contracts'>;
 export type WorkforceCompensation = Tables<'workforce_compensation'>;
 export type WorkforceBenefit = Tables<'workforce_benefits'>;
-export type PayrollRun = Tables<'payroll_runs'>;
-export type PayrollRunItem = Tables<'payroll_run_items'>;
+export type PayrollRun = PrivateTable<'payroll_runs'>;
+export type PayrollRunItem = PrivateTable<'payroll_run_items'>;
 
 // Extended workforce types with relations
 export type WorkforceContractWithCompensation = WorkforceContract & {

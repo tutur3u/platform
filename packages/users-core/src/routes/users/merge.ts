@@ -92,6 +92,7 @@ const TABLE_COLUMN_PAIRS = [
 const PRIVATE_TABLES = new Set([
   'external_user_monthly_report_logs',
   'external_user_monthly_reports',
+  'payroll_run_items',
   'user_group_post_logs',
   'user_group_posts',
   'workspace_promotions',
