@@ -1,5 +1,6 @@
 import InvoicesPage from '@tuturuuu/ui/finance/invoices/invoice-page';
 import { notFound } from 'next/navigation';
+import { connection } from 'next/server';
 import { Suspense } from 'react';
 import { getFinanceWorkspaceContext } from '@/lib/workspace';
 
@@ -23,6 +24,8 @@ export default async function WorkspaceInvoicesPage({
   params,
   searchParams,
 }: Props) {
+  await connection();
+
   const { wsId: id } = await params;
   const context = await getFinanceWorkspaceContext(id);
   if (!context || context.permissions.withoutPermission('view_invoices')) {

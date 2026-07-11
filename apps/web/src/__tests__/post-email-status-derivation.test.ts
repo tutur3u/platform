@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { normalizePostEmailQueueStatus } from '@/app/[locale]/(dashboard)/[wsId]/posts/status-derivation';
+import { normalizePostEmailQueueStatus } from '@/lib/posts/status-derivation';
 
 describe('normalizePostEmailQueueStatus', () => {
   it('does not treat pending approvals without a queue row as queued', () => {

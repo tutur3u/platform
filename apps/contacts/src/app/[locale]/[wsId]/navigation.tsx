@@ -5,6 +5,7 @@ import {
   ChartColumn,
   CheckCircle2,
   ClipboardList,
+  GalleryVerticalEnd,
   IdCardLanyard,
   LayoutDashboard,
   MailCheck,
@@ -127,6 +128,15 @@ export async function getNavigationLinks({
       disabled:
         withoutPermission('approve_reports') &&
         withoutPermission('approve_posts'),
+    },
+    {
+      title: t('sidebar_tabs.posts'),
+      href: `/${personalOrWsId}/posts`,
+      icon: <GalleryVerticalEnd className="h-4 w-4" />,
+      disabled:
+        withoutPermission('view_user_groups_posts') &&
+        withoutPermission('approve_posts'),
+      experimental: 'beta',
     },
     {
       title: t('workspace-users-tabs.guest_leads'),

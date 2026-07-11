@@ -24,6 +24,7 @@ import {
   meetTogetherProductRedirectHref,
   pricingRedirectHref,
   workspaceChatRedirectHref,
+  workspaceContactsPostsRedirectHref,
   workspaceDashboardRedirectHref,
   workspaceHabitsRedirectHref,
   workspaceInfrastructureAppCoordinationRedirectHref,
@@ -58,7 +59,14 @@ describe('public redirect helpers', () => {
     expect(workspaceUserDatabaseRedirectHref('ws-1')).toBe(
       '/ws-1/users/database'
     );
-    expect(workspaceChatRedirectHref('ws-1')).toBe('/ws-1/chat');
+    vi.stubEnv('CHAT_APP_URL', 'https://chat.example.com');
+    vi.stubEnv('CONTACTS_APP_URL', 'https://contacts.example.com');
+    expect(workspaceChatRedirectHref('ws-1')).toBe(
+      'https://chat.example.com/ws-1'
+    );
+    expect(workspaceContactsPostsRedirectHref('ws-1', '?stage=queued')).toBe(
+      'https://contacts.example.com/ws-1/posts?stage=queued'
+    );
     expect(workspaceDashboardRedirectHref('ws-1')).toBe('/ws-1');
     expect(workspaceHabitsRedirectHref('ws-1')).toBe('/ws-1/habits');
     expect(workspaceMeetPlansRedirectHref('ws-1')).toBe('/ws-1/meet/plans');

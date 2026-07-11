@@ -32,7 +32,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
-import { Tabs, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { cn } from '@tuturuuu/utils/format';
 import type {
   LaunchableApp,
@@ -47,7 +46,6 @@ import {
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import type { CSSProperties, MouseEvent } from 'react';
-import { useState } from 'react';
 
 interface AppsLauncherDialogProps {
   currentWorkspace?: LaunchableWorkspace | null;
@@ -80,10 +78,6 @@ const APP_ICONS: Partial<Record<LaunchableApp['slug'], LucideIcon>> = {
   tools: QrCode,
   track: History,
 };
-
-const APP_CATEGORY_TABS = ['all', ...LAUNCHABLE_APP_CATEGORIES] as const;
-
-type AppCategoryTab = (typeof APP_CATEGORY_TABS)[number];
 
 const CATEGORY_TONES: Record<
   LaunchableAppCategory,
@@ -120,7 +114,32 @@ export function AppsLauncherDialog({
   open,
 }: AppsLauncherDialogProps) {
   const t = useTranslations('command_launcher');
-  const [activeTab, setActiveTab] = useState<AppCategoryTab>('all');
+  const appNames: Record<string, string> = {
+    apps: t('app_names.apps'),
+    calendar: t('app_names.calendar'),
+    chat: t('app_names.chat'),
+    cms: t('app_names.cms'),
+    contacts: t('app_names.contacts'),
+    docs: t('app_names.docs'),
+    drive: t('app_names.drive'),
+    finance: t('app_names.finance'),
+    hive: t('app_names.hive'),
+    inventory: t('app_names.inventory'),
+    learn: t('app_names.learn'),
+    mail: t('app_names.mail'),
+    meet: t('app_names.meet'),
+    mind: t('app_names.mind'),
+    nova: t('app_names.nova'),
+    pay: t('app_names.pay'),
+    platform: t('app_names.platform'),
+    rewise: t('app_names.rewise'),
+    shortener: t('app_names.shortener'),
+    storefront: t('app_names.storefront'),
+    tasks: t('app_names.tasks'),
+    teach: t('app_names.teach'),
+    tools: t('app_names.tools'),
+    track: t('app_names.track'),
+  };
 
   function resolveUrl(app: LaunchableApp) {
     return resolveLaunchableAppUrl({
@@ -134,12 +153,6 @@ export function AppsLauncherDialog({
     });
   }
 
-  function getAppsForTab(tab: AppCategoryTab) {
-    if (tab === 'all') return LAUNCHABLE_APPS;
-    return LAUNCHABLE_APPS.filter((app) => app.category === tab);
-  }
-
-  const activeApps = getAppsForTab(activeTab);
   const dialogStyle = {
     height: '760px',
     maxHeight: 'calc(100vh - 2rem)',
@@ -158,32 +171,14 @@ export function AppsLauncherDialog({
           <DialogDescription>{t('apps_description')}</DialogDescription>
         </DialogHeader>
 
-        <Tabs
-          className="w-full shrink-0 gap-0 overflow-hidden border-b bg-muted/20 px-3 py-2"
-          onValueChange={(value) => setActiveTab(value as AppCategoryTab)}
-          value={activeTab}
-        >
-          <TabsList className="h-auto w-full max-w-full justify-start gap-1 overflow-x-auto rounded-md bg-muted/70 p-1">
-            {APP_CATEGORY_TABS.map((tab) => (
-              <TabsTrigger
-                className="min-w-max flex-1 shrink-0 px-3 text-xs"
-                key={tab}
-                value={tab}
-              >
-                {t(`app_categories.${tab}`)}
-              </TabsTrigger>
-            ))}
-          </TabsList>
-        </Tabs>
-
         <div
           className="min-h-0 w-full flex-1 overflow-hidden"
           data-slot="apps-launcher-body"
         >
           <AppsTabPanel
-            activeTab={activeTab}
-            apps={activeApps}
+            apps={LAUNCHABLE_APPS}
             getAppUrl={resolveUrl}
+            getAppTitle={(app) => appNames[app.slug] ?? app.title}
             getCategoryLabel={(category) => t(`app_categories.${category}`)}
             onOpen={() => onOpenChange(false)}
           />
@@ -194,15 +189,15 @@ export function AppsLauncherDialog({
 }
 
 function AppsTabPanel({
-  activeTab,
   apps,
   getAppUrl,
+  getAppTitle,
   getCategoryLabel,
   onOpen,
 }: {
-  activeTab: AppCategoryTab;
   apps: readonly LaunchableApp[];
   getAppUrl: (app: LaunchableApp) => string;
+  getAppTitle: (app: LaunchableApp) => string;
   getCategoryLabel: (category: LaunchableAppCategory) => string;
   onOpen: () => void;
 }) {
@@ -215,16 +210,13 @@ function AppsTabPanel({
         className="min-h-0 w-full flex-1 overflow-y-auto overscroll-contain p-3"
         data-slot="apps-launcher-scroll"
       >
-        {activeTab === 'all' ? (
-          <AppsByCategory
-            apps={apps}
-            getAppUrl={getAppUrl}
-            getCategoryLabel={getCategoryLabel}
-            onOpen={onOpen}
-          />
-        ) : (
-          <AppsGrid apps={apps} getAppUrl={getAppUrl} onOpen={onOpen} />
-        )}
+        <AppsByCategory
+          apps={apps}
+          getAppTitle={getAppTitle}
+          getAppUrl={getAppUrl}
+          getCategoryLabel={getCategoryLabel}
+          onOpen={onOpen}
+        />
       </div>
     </div>
   );
@@ -232,11 +224,13 @@ function AppsTabPanel({
 
 function AppsByCategory({
   apps,
+  getAppTitle,
   getAppUrl,
   getCategoryLabel,
   onOpen,
 }: {
   apps: readonly LaunchableApp[];
+  getAppTitle: (app: LaunchableApp) => string;
   getAppUrl: (app: LaunchableApp) => string;
   getCategoryLabel: (category: LaunchableAppCategory) => string;
   onOpen: () => void;
@@ -265,6 +259,7 @@ function AppsByCategory({
             </h3>
             <AppsGrid
               apps={categoryApps}
+              getAppTitle={getAppTitle}
               getAppUrl={getAppUrl}
               onOpen={onOpen}
             />
@@ -277,10 +272,12 @@ function AppsByCategory({
 
 function AppsGrid({
   apps,
+  getAppTitle,
   getAppUrl,
   onOpen,
 }: {
   apps: readonly LaunchableApp[];
+  getAppTitle: (app: LaunchableApp) => string;
   getAppUrl: (app: LaunchableApp) => string;
   onOpen: () => void;
 }) {
@@ -292,6 +289,7 @@ function AppsGrid({
       {apps.map((app) => (
         <AppLauncherItem
           app={app}
+          title={getAppTitle(app)}
           getAppUrl={getAppUrl}
           key={app.slug}
           onOpen={onOpen}
@@ -303,10 +301,12 @@ function AppsGrid({
 
 function AppLauncherItem({
   app,
+  title,
   getAppUrl,
   onOpen,
 }: {
   app: LaunchableApp;
+  title: string;
   getAppUrl: (app: LaunchableApp) => string;
   onOpen: () => void;
 }) {
@@ -325,7 +325,7 @@ function AppLauncherItem({
 
   return (
     <Link
-      aria-label={app.title}
+      aria-label={title}
       className={cn(
         'group flex min-h-0 w-full cursor-pointer items-center gap-2 overflow-hidden rounded-md border p-2 text-left text-card-foreground shadow-sm outline-none transition-[background-color,border-color,box-shadow,transform] duration-200 ease-out hover:-translate-y-0.5 hover:shadow-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background active:translate-y-0 motion-reduce:transition-none motion-reduce:hover:translate-y-0',
         tone.card
@@ -352,7 +352,7 @@ function AppLauncherItem({
           className="min-w-0 truncate font-semibold text-sm"
           data-slot="app-card-title"
         >
-          {app.title}
+          {title}
         </span>
       </span>
     </Link>

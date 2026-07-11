@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation';
+import { connection } from 'next/server';
 import { getFinanceWorkspaceContext } from '@/lib/workspace';
 import CategoriesTagsTabs from './categories-tags-tabs';
 
@@ -11,6 +12,8 @@ interface Props {
 export default async function WorkspaceTransactionCategoriesPage({
   params,
 }: Props) {
+  await connection();
+
   const { wsId: id } = await params;
   const context = await getFinanceWorkspaceContext(id);
   if (!context) notFound();

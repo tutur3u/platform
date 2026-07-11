@@ -2,6 +2,7 @@ import {
   Archive,
   BadgeDollarSign,
   Blocks,
+  BookUser,
   Bot,
   BrainCircuit,
   BriefcaseBusiness,
@@ -30,6 +31,7 @@ type SidebarLayoutItemKey =
   | 'items.ai_lab'
   | 'items.calendar'
   | 'items.chat'
+  | 'items.contacts'
   | 'items.dashboard'
   | 'items.documents'
   | 'items.drive'
@@ -94,6 +96,13 @@ export function createSidebarNavigationItemDefinitions(
       id: 'calendar',
       title: t('items.calendar'),
       icon: Calendar,
+      defaultPlacement: 'root',
+      sectionLabel: sections.core,
+    },
+    {
+      id: 'contacts',
+      title: t('items.contacts'),
+      icon: BookUser,
       defaultPlacement: 'root',
       sectionLabel: sections.core,
     },

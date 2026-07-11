@@ -1179,6 +1179,20 @@ describe('web proxy api handling', () => {
         'https://track.tuturuuu.localhost/personal/history?period=week',
       url: 'http://localhost/en/personal/time-tracker/history?period=week',
     },
+    {
+      expectedLocation:
+        'https://meet.tuturuuu.localhost/workspace/personal/meetings/meeting-1',
+      url: 'http://localhost/en/personal/meet/meetings/meeting-1',
+    },
+    {
+      expectedLocation: 'https://contacts.tuturuuu.localhost/personal/users',
+      url: 'http://localhost/en/personal/users',
+    },
+    {
+      expectedLocation:
+        'https://contacts.tuturuuu.localhost/personal/posts?stage=pending_approval',
+      url: 'http://localhost/en/personal/posts?stage=pending_approval',
+    },
   ])('redirects old workspace satellite route $url to its app before auth', async ({
     expectedLocation,
     url,

@@ -37,7 +37,16 @@ export function workspaceUserDatabaseRedirectHref(wsId: string) {
 }
 
 export function workspaceChatRedirectHref(wsId: string) {
-  return `/${wsId}/chat`;
+  return new URL(`/${wsId}`, `${getChatAppOrigin()}/`).toString();
+}
+
+export function workspaceContactsPostsRedirectHref(
+  wsId: string,
+  search?: string | URLSearchParams
+) {
+  const url = new URL(`/${wsId}/posts`, `${getContactsAppOrigin()}/`);
+  appendSearchParams(url, search);
+  return url.toString();
 }
 
 export function workspaceDashboardRedirectHref(wsId: string) {
@@ -177,6 +186,34 @@ export function getMeetAppOrigin() {
       process.env.NODE_ENV === 'production'
         ? 'https://meet.tuturuuu.com'
         : getLocalInternalAppUrl('meet', 'http://localhost:7807'),
+  });
+}
+
+export function getChatAppOrigin() {
+  return resolveInternalAppUrl({
+    appName: 'chat',
+    candidates: [
+      process.env.CHAT_APP_URL,
+      process.env.NEXT_PUBLIC_CHAT_APP_URL,
+    ],
+    fallback:
+      process.env.NODE_ENV === 'production'
+        ? 'https://chat.tuturuuu.com'
+        : getLocalInternalAppUrl('chat', 'http://localhost:7821'),
+  });
+}
+
+export function getContactsAppOrigin() {
+  return resolveInternalAppUrl({
+    appName: 'contacts',
+    candidates: [
+      process.env.CONTACTS_APP_URL,
+      process.env.NEXT_PUBLIC_CONTACTS_APP_URL,
+    ],
+    fallback:
+      process.env.NODE_ENV === 'production'
+        ? 'https://contacts.tuturuuu.com'
+        : getLocalInternalAppUrl('contacts', 'http://localhost:7827'),
   });
 }
 

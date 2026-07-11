@@ -1,5 +1,6 @@
 import RecurringTransactionsPage from '@tuturuuu/ui/finance/recurring/recurring-transactions-page';
 import { notFound } from 'next/navigation';
+import { connection } from 'next/server';
 import { getFinanceWorkspaceContext } from '@/lib/workspace';
 
 interface Props {
@@ -15,6 +16,8 @@ export default async function WorkspaceRecurringPage({
   params,
   searchParams,
 }: Props) {
+  await connection();
+
   const { wsId: id } = await params;
   const context = await getFinanceWorkspaceContext(id);
   if (!context) notFound();

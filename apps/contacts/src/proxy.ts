@@ -121,6 +121,7 @@ const CONTACTS_OWNED_EXACT_ROUTES = new Set(['', 'users']);
 // Add an entry here whenever a module is migrated, or the middleware will bounce
 // the freshly-migrated route straight back to web.
 const CONTACTS_OWNED_ROUTE_PREFIXES = [
+  'posts',
   'workforce',
   'users/approvals',
   'users/attendance',

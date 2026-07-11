@@ -2,6 +2,7 @@ import { withForwardedInternalApiAuth } from '@tuturuuu/internal-api';
 import WalletDetailsPage from '@tuturuuu/ui/finance/wallets/walletId/wallet-details-page';
 import { headers } from 'next/headers';
 import { notFound } from 'next/navigation';
+import { connection } from 'next/server';
 import { getFinanceWorkspaceContext } from '@/lib/workspace';
 
 interface Props {
@@ -21,6 +22,8 @@ export default async function WorkspaceWalletDetailsPage({
   params,
   searchParams,
 }: Props) {
+  await connection();
+
   const { wsId: id, walletId } = await params;
   const context = await getFinanceWorkspaceContext(id);
   if (!context) notFound();

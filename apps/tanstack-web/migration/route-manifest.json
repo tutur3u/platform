@@ -19,11 +19,11 @@
         "key": "page",
         "label": "page",
         "legacyNext": 43,
-        "migrated": 104,
-        "percentComplete": 71.14,
+        "migrated": 99,
+        "percentComplete": 70.14,
         "remaining": 43,
-        "terminal": 106,
-        "total": 149,
+        "terminal": 101,
+        "total": 144,
         "unknownStatus": 0
       },
       {
@@ -117,11 +117,11 @@
         "key": "tanstack-start",
         "label": "TanStack Start",
         "legacyNext": 49,
-        "migrated": 153,
-        "percentComplete": 75.98,
+        "migrated": 148,
+        "percentComplete": 75.38,
         "remaining": 49,
-        "terminal": 155,
-        "total": 204,
+        "terminal": 150,
+        "total": 199,
         "unknownStatus": 0
       }
     ],
@@ -312,11 +312,11 @@
       "key": "total",
       "label": "All route artifacts",
       "legacyNext": 549,
-      "migrated": 224,
-      "percentComplete": 30.15,
+      "migrated": 219,
+      "percentComplete": 29.71,
       "remaining": 549,
-      "terminal": 237,
-      "total": 786,
+      "terminal": 232,
+      "total": 781,
       "unknownStatus": 0
     }
   },
@@ -6517,42 +6517,6 @@
       "targetOwner": "tanstack-start"
     },
     {
-      "id": "page:/:locale/:wsId/meet:apps/web/src/app/[locale]/(dashboard)/[wsId]/meet/page.tsx",
-      "kind": "page",
-      "methods": [],
-      "routePath": "/:locale/:wsId/meet",
-      "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/meet/page.tsx",
-      "status": "migrated",
-      "targetOwner": "tanstack-start"
-    },
-    {
-      "id": "page:/:locale/:wsId/meet/meetings:apps/web/src/app/[locale]/(dashboard)/[wsId]/meet/meetings/page.tsx",
-      "kind": "page",
-      "methods": [],
-      "routePath": "/:locale/:wsId/meet/meetings",
-      "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/meet/meetings/page.tsx",
-      "status": "migrated",
-      "targetOwner": "tanstack-start"
-    },
-    {
-      "id": "page:/:locale/:wsId/meet/meetings/:meetingId:apps/web/src/app/[locale]/(dashboard)/[wsId]/meet/meetings/[meetingId]/page.tsx",
-      "kind": "page",
-      "methods": [],
-      "routePath": "/:locale/:wsId/meet/meetings/:meetingId",
-      "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/meet/meetings/[meetingId]/page.tsx",
-      "status": "migrated",
-      "targetOwner": "tanstack-start"
-    },
-    {
-      "id": "page:/:locale/:wsId/meet/plans:apps/web/src/app/[locale]/(dashboard)/[wsId]/meet/plans/page.tsx",
-      "kind": "page",
-      "methods": [],
-      "routePath": "/:locale/:wsId/meet/plans",
-      "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/meet/plans/page.tsx",
-      "status": "migrated",
-      "targetOwner": "tanstack-start"
-    },
-    {
       "id": "page:/:locale/:wsId/members:apps/web/src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/members/page.tsx",
       "kind": "page",
       "methods": [],
@@ -6639,15 +6603,6 @@
       "methods": [],
       "routePath": "/:locale/:wsId/polls",
       "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/polls/page.tsx",
-      "status": "migrated",
-      "targetOwner": "tanstack-start"
-    },
-    {
-      "id": "page:/:locale/:wsId/posts:apps/web/src/app/[locale]/(dashboard)/[wsId]/posts/page.tsx",
-      "kind": "page",
-      "methods": [],
-      "routePath": "/:locale/:wsId/posts",
-      "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/posts/page.tsx",
       "status": "migrated",
       "targetOwner": "tanstack-start"
     },
@@ -7484,7 +7439,7 @@
     "apiRoutes": 569,
     "cronRoutes": 8,
     "layouts": 53,
-    "pages": 149,
+    "pages": 144,
     "routeHandlers": 582,
     "methodCounts": {
       "GET": 296,
@@ -7495,6 +7450,6 @@
       "DELETE": 100,
       "OPTIONS": 23
     },
-    "total": 786
+    "total": 781
   }
 }

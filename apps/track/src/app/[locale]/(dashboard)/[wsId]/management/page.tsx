@@ -3,6 +3,7 @@ import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { isValidTuturuuuEmail } from '@tuturuuu/utils/email/client';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import { connection } from 'next/server';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
 import {
   getGroupedSessionsPaginated,
@@ -32,6 +33,8 @@ export default async function TimeTrackerManagementPage({
   params,
   searchParams,
 }: Props) {
+  await connection();
+
   return (
     <WorkspaceWrapper params={params}>
       {async ({ wsId }) => {

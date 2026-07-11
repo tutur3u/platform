@@ -1,6 +1,7 @@
 import type { PermissionId } from '@tuturuuu/types';
 import NewInvoicePage from '@tuturuuu/ui/finance/invoices/new-invoice-page';
 import { notFound } from 'next/navigation';
+import { connection } from 'next/server';
 import { Suspense } from 'react';
 import { getFinanceWorkspaceContext } from '@/lib/workspace';
 
@@ -41,6 +42,8 @@ function resolveInvoiceProductPermissions(
 }
 
 export default async function WorkspaceNewInvoicePage({ params }: Props) {
+  await connection();
+
   const { wsId: id } = await params;
   const context = await getFinanceWorkspaceContext(id);
   if (!context) {

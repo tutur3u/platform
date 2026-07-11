@@ -1,16 +1,9 @@
-import { ExternalLink, Video } from '@tuturuuu/icons';
-import { Button } from '@tuturuuu/ui/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@tuturuuu/ui/card';
+import { Card, CardContent, CardHeader } from '@tuturuuu/ui/card';
 import type { Metadata } from 'next';
-import { getTranslations } from 'next-intl/server';
-import { TTR_URL } from '@/constants/common';
+import { connection } from 'next/server';
+import { Suspense } from 'react';
 import { getMeetWorkspaceContext } from '../workspace-context';
+import { MeetingsContent } from './meetings-content';
 
 export const metadata: Metadata = {
   title: 'Meetings',
@@ -18,34 +11,70 @@ export const metadata: Metadata = {
     'Manage Meetings in the Tuturuuu Meet area of your Tuturuuu workspace.',
 };
 
+interface MeetingsPageProps {
+  params: Promise<{
+    wsId: string;
+  }>;
+  searchParams: Promise<{
+    page?: string;
+    pageSize?: string;
+    search?: string;
+  }>;
+}
+
 export default async function MeetingsPage({
   params,
-}: {
-  params: Promise<{ wsId: string }>;
-}) {
+  searchParams,
+}: MeetingsPageProps) {
+  await connection();
+
   const { wsId: id } = await params;
-  const { workspaceSlug } = await getMeetWorkspaceContext(id);
-  const t = await getTranslations('meet_workspace');
+  const { wsId } = await getMeetWorkspaceContext(id);
+
+  const resolvedSearchParams = await searchParams;
+  const page = parseInt(resolvedSearchParams?.page || '1', 10);
+  const pageSize = parseInt(resolvedSearchParams?.pageSize || '10', 10);
+  const search = resolvedSearchParams?.search || '';
 
   return (
-    <div className="mx-auto flex min-h-[calc(100dvh-2rem)] w-full max-w-3xl items-center justify-center p-4">
-      <Card className="w-full border-border/60 bg-background/80 shadow-foreground/5 shadow-sm">
-        <CardHeader>
-          <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-lg bg-dynamic-blue/10 text-dynamic-blue">
-            <Video className="h-5 w-5" />
+    <div className="container mx-auto max-w-7xl p-6">
+      <div className="mb-8">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="font-bold text-3xl tracking-tight">Meetings</h1>
+            <p className="text-muted-foreground">
+              Integrated video conferencing with AI-powered features to make
+              your meetings more productive.
+            </p>
           </div>
-          <CardTitle>{t('meetings_title')}</CardTitle>
-          <CardDescription>{t('meetings_description')}</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Button asChild>
-            <a href={`${TTR_URL}/${workspaceSlug}/meet/meetings`}>
-              {t('open_platform_meetings')}
-              <ExternalLink className="ml-2 h-4 w-4" />
-            </a>
-          </Button>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
+
+      <Suspense
+        fallback={
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <Card key={i} className="animate-pulse">
+                <CardHeader>
+                  <div className="h-4 w-3/4 rounded bg-muted" />
+                  <div className="h-3 w-1/2 rounded bg-muted" />
+                </CardHeader>
+                <CardContent>
+                  <div className="mb-2 h-3 w-full rounded bg-muted" />
+                  <div className="h-3 w-2/3 rounded bg-muted" />
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        }
+      >
+        <MeetingsContent
+          wsId={wsId}
+          page={page}
+          pageSize={pageSize}
+          search={search}
+        />
+      </Suspense>
     </div>
   );
 }

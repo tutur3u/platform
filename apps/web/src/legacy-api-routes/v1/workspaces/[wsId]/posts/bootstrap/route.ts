@@ -2,7 +2,7 @@ import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-se
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
-import { buildDefaultPostsDateRange } from '@/app/[locale]/(dashboard)/[wsId]/posts/search-params.server';
+import { buildDefaultPostsDateRange } from '@/lib/posts/search-params.server';
 
 interface Params {
   params: Promise<{ wsId: string }>;

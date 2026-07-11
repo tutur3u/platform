@@ -1169,6 +1169,19 @@ export {
   type WorkspaceMeetingStreamResponse,
 } from './meet';
 export {
+  createWorkspaceMeeting,
+  deleteWorkspaceMeeting,
+  deleteWorkspaceMeetingRecording,
+  getWorkspaceMeetingRecordingPlayback,
+  getWorkspaceMeetingRecordings,
+  getWorkspaceMeetings,
+  toggleWorkspaceMeetingRecording,
+  transcribeWorkspaceMeetingAudio,
+  updateWorkspaceMeeting,
+  updateWorkspaceMeetingRecording,
+  uploadWorkspaceMeetingRecording,
+} from './meetings';
+export {
   applyMindAiPatch,
   archiveMindBoard,
   type CreateMindBoardPayload,

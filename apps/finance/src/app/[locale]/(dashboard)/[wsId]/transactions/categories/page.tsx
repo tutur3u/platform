@@ -1,5 +1,6 @@
 import { toWorkspaceSlug } from '@tuturuuu/utils/constants';
 import { redirect } from 'next/navigation';
+import { connection } from 'next/server';
 import { getFinanceWorkspaceContext } from '@/lib/workspace';
 
 interface Props {
@@ -13,6 +14,8 @@ export default async function WorkspaceTransactionCategoriesRedirect({
   params,
   searchParams,
 }: Props) {
+  await connection();
+
   const { wsId: id } = await params;
   const context = await getFinanceWorkspaceContext(id);
   const workspaceSlug = context

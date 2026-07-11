@@ -1,5 +1,6 @@
 import TransactionsPage from '@tuturuuu/ui/finance/transactions/transactions-page';
 import { notFound } from 'next/navigation';
+import { connection } from 'next/server';
 import { getFinanceWorkspaceContext } from '@/lib/workspace';
 
 interface Props {
@@ -16,6 +17,8 @@ export default async function WorkspaceTransactionsPage({
   params,
   searchParams,
 }: Props) {
+  await connection();
+
   const { wsId: id } = await params;
   const sp = await searchParams;
   const context = await getFinanceWorkspaceContext(id);

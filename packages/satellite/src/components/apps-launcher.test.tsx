@@ -1,15 +1,16 @@
-import {
-  cleanup,
-  fireEvent,
-  render,
-  screen,
-  waitFor,
-} from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { LAUNCHABLE_APPS } from '@tuturuuu/utils/launchable-apps';
 import { NextIntlClientProvider } from 'next-intl';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { AppsLauncherDialog } from './apps-launcher';
 
 const originalLocation = window.location;
+const appNames = Object.fromEntries(
+  LAUNCHABLE_APPS.map((app) => [
+    app.slug,
+    app.slug === 'platform' ? 'Workspace Platform' : app.title,
+  ])
+);
 
 const messages = {
   command_launcher: {
@@ -17,6 +18,7 @@ const messages = {
     apps: 'Apps',
     apps_description: 'Open another Tuturuuu app from this workspace.',
     apps_count: '{count, plural, one {# app} other {# apps}}',
+    app_names: appNames,
     app_categories: {
       ai: 'AI',
       all: 'All',
@@ -82,13 +84,7 @@ describe('AppsLauncherDialog', () => {
 
     expect(screen.getByRole('dialog')).toBeTruthy();
     expect(screen.getByRole('heading', { name: 'Apps' })).toBeTruthy();
-    expect(screen.getByRole('tab', { name: 'All' })).toBeTruthy();
-    expect(screen.getByRole('tab', { name: 'Productivity' })).toBeTruthy();
-    expect(screen.getByRole('tab', { name: 'Operations' })).toBeTruthy();
-    expect(screen.queryByRole('tab', { name: 'Core' })).toBeNull();
-    expect(screen.queryByRole('tab', { name: 'Content' })).toBeNull();
-    expect(screen.queryByRole('tab', { name: 'Developer' })).toBeNull();
-    expect(screen.getByRole('tab', { name: 'Miscellaneous' })).toBeTruthy();
+    expect(screen.queryByRole('tab')).toBeNull();
     expect(screen.getByText('Calendar')).toBeTruthy();
     expect(screen.getByText('Tasks')).toBeTruthy();
     expect(
@@ -137,21 +133,6 @@ describe('AppsLauncherDialog', () => {
       'width: calc(100vw - 2rem)'
     );
 
-    const tabsRoot = document.querySelector('[data-slot="tabs"]');
-    expect(tabsRoot?.className).toContain('w-full');
-    expect(tabsRoot?.className).toContain('shrink-0');
-    expect(tabsRoot?.className).toContain('overflow-hidden');
-
-    const tabsList = document.querySelector('[data-slot="tabs-list"]');
-    expect(tabsList?.className).toContain('w-full');
-    expect(tabsList?.className).toContain('max-w-full');
-    expect(tabsList?.className).toContain('overflow-x-auto');
-
-    for (const tab of screen.getAllByRole('tab')) {
-      expect(tab.className).toContain('flex-1');
-      expect(tab.className).toContain('min-w-max');
-    }
-
     const launcherBody = document.querySelector(
       '[data-slot="apps-launcher-body"]'
     );
@@ -187,7 +168,7 @@ describe('AppsLauncherDialog', () => {
     expect(launcherGrid?.className).toContain('xl:grid-cols-4');
   });
 
-  it('groups the All tab by app category sections', () => {
+  it('groups apps by localized category sections', () => {
     renderDialog();
 
     const sections = document.querySelectorAll(
@@ -210,7 +191,7 @@ describe('AppsLauncherDialog', () => {
     ]);
     expect(
       sections[0]?.querySelector('[data-slot="app-card-title"]')?.textContent
-    ).toBe('Platform');
+    ).toBe('Workspace Platform');
     expect(screen.queryByText('External')).toBeNull();
     expect(screen.queryByText('Playground')).toBeNull();
 
@@ -224,7 +205,7 @@ describe('AppsLauncherDialog', () => {
       ).map((item) => item.textContent);
     };
 
-    expect(getSectionTitles('Productivity')[0]).toBe('Platform');
+    expect(getSectionTitles('Productivity')[0]).toBe('Workspace Platform');
     expect(getSectionTitles('Operations')).toContain('CMS');
     expect(getSectionTitles('Operations')).not.toContain('Apps');
     expect(getSectionTitles('Operations')).toContain('Storefront');
@@ -238,7 +219,7 @@ describe('AppsLauncherDialog', () => {
     ]);
   });
 
-  it('renders compact app cards and filters with tabs', async () => {
+  it('renders compact app cards without category filter tabs', () => {
     renderDialog();
 
     expect(screen.getByText('Finance')).toBeTruthy();
@@ -298,37 +279,18 @@ describe('AppsLauncherDialog', () => {
     ).toBeNull();
     expect(document.querySelector('[data-slot="app-card-domain"]')).toBeNull();
 
-    const operationsTab = screen.getByRole('tab', { name: 'Operations' });
-    fireEvent.pointerDown(operationsTab, { button: 0, ctrlKey: false });
-    fireEvent.mouseDown(operationsTab, { button: 0, ctrlKey: false });
-    fireEvent.click(operationsTab);
-
-    await waitFor(() =>
-      expect(screen.getByRole('link', { name: 'Finance' })).toBeTruthy()
-    );
     expect(screen.getByRole('link', { name: 'Finance' })).toBeTruthy();
     expect(screen.getByRole('link', { name: 'Storefront' })).toBeTruthy();
-    expect(screen.queryByRole('link', { name: 'Apps' })).toBeNull();
-    expect(screen.queryByText('Tools')).toBeNull();
-    expect(screen.queryByText('Calendar')).toBeNull();
+    expect(screen.getByRole('link', { name: 'Apps' })).toBeTruthy();
+    expect(screen.getByText('Tools')).toBeTruthy();
+    expect(screen.getByText('Calendar')).toBeTruthy();
     expect(screen.queryByLabelText('Open options: Apps')).toBeNull();
     expect(
       document.querySelector('[data-slot="apps-launcher-sections"]')
-    ).toBeNull();
+    ).toBeTruthy();
     expect(
       document.querySelectorAll('[data-slot="apps-launcher-grid"]')
-    ).toHaveLength(1);
-
-    const miscellaneousTab = screen.getByRole('tab', {
-      name: 'Miscellaneous',
-    });
-    fireEvent.pointerDown(miscellaneousTab, { button: 0, ctrlKey: false });
-    fireEvent.mouseDown(miscellaneousTab, { button: 0, ctrlKey: false });
-    fireEvent.click(miscellaneousTab);
-
-    await waitFor(() =>
-      expect(screen.getByRole('link', { name: 'Apps' })).toBeTruthy()
-    );
+    ).toHaveLength(5);
     expect(screen.getByText('Docs')).toBeTruthy();
     expect(screen.getByText('Tools')).toBeTruthy();
     expect(screen.getByText('Shortener')).toBeTruthy();

@@ -1,11 +1,11 @@
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
-import { type NextRequest, NextResponse } from 'next/server';
-import { getPostsPageData } from '@/app/[locale]/(dashboard)/[wsId]/posts/data';
-import { loadPostsSearchParams } from '@/app/[locale]/(dashboard)/[wsId]/posts/search-params.server';
 import type {
   PostEmail,
   PostEmailStatusSummary,
-} from '@/app/[locale]/(dashboard)/[wsId]/posts/types';
+} from '@tuturuuu/users-core/lib/post-types';
+import { getPermissions } from '@tuturuuu/utils/workspace-helper';
+import { type NextRequest, NextResponse } from 'next/server';
+import { getPostsPageData } from '@/lib/posts/data';
+import { loadPostsSearchParams } from '@/lib/posts/search-params.server';
 
 export async function GET(
   req: NextRequest,

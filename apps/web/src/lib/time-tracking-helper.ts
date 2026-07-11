@@ -1,3 +1,4 @@
+import { getSessionDurationInPeriod } from '@tuturuuu/hooks/utils/time-tracker-utils';
 import {
   createAdminClient,
   createClient,
@@ -10,15 +11,31 @@ import dayjs from 'dayjs';
 import isoWeek from 'dayjs/plugin/isoWeek';
 import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
-import {
-  getSessionDays,
-  getSessionDurationInPeriod,
-} from '@/app/[locale]/(dashboard)/[wsId]/time-tracker/components/session-history/session-utils';
 import 'server-only';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
 dayjs.extend(isoWeek);
+
+function getSessionDays(
+  session: SessionWithRelations,
+  userTimezone: string
+): string[] {
+  const sessionStart = dayjs.utc(session.start_time).tz(userTimezone);
+  const sessionEnd = session.end_time
+    ? dayjs.utc(session.end_time).tz(userTimezone)
+    : dayjs().tz(userTimezone);
+  const days: string[] = [];
+  let current = sessionStart.startOf('day');
+  const endDay = sessionEnd.startOf('day');
+
+  while (current.isBefore(endDay) || current.isSame(endDay, 'day')) {
+    days.push(current.format('YYYY-MM-DD'));
+    current = current.add(1, 'day');
+  }
+
+  return days;
+}
 
 // Enhanced pagination interface
 export interface PaginationParams {

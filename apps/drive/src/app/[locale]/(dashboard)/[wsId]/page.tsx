@@ -1,4 +1,5 @@
 import { notFound, redirect } from 'next/navigation';
+import { connection } from 'next/server';
 import {
   getDriveWorkspace,
   getDriveWorkspacePermissions,
@@ -14,6 +15,8 @@ interface WorkspaceDrivePageProps {
 export default async function WorkspaceDrivePage({
   params,
 }: WorkspaceDrivePageProps) {
+  await connection();
+
   const { wsId: id } = await params;
   const workspace = await getDriveWorkspace(id);
 

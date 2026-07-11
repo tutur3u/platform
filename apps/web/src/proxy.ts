@@ -44,9 +44,11 @@ import createIntlMiddleware from 'next-intl/middleware';
 import { BASE_URL, LOCALE_COOKIE_NAME, PUBLIC_PATHS } from './constants/common';
 import { defaultLocale, type Locale, supportedLocales } from './i18n/routing';
 import { getChatAppOrigin } from './lib/chat-app-url';
+import { getContactsAppOrigin } from './lib/contacts-app-url';
 import { getDriveAppOrigin } from './lib/drive-app-url';
 import { getFinanceAppOrigin } from './lib/finance-app-url';
 import { getMailAppOrigin } from './lib/mail-app-url';
+import { getMeetAppOrigin } from './lib/meet-app-url';
 import { getQrAppOrigin } from './lib/qr-app-url';
 import { getToolsAppOrigin } from './lib/tools-app-url';
 import { getTrackAppOrigin } from './lib/track-app-url';
@@ -321,14 +323,42 @@ function handleTrackAppRedirectRoute(req: NextRequest): NextResponse | null {
   });
 }
 
+function handleMeetAppRedirectRoute(req: NextRequest): NextResponse | null {
+  const response = handleWorkspaceSatelliteRedirectRoute(req, {
+    appOrigin: getMeetAppOrigin(),
+    routeSegment: 'meet',
+    workspacePrefix: 'workspace',
+  });
+
+  return response;
+}
+
+function handleContactsAppRedirectRoute(req: NextRequest): NextResponse | null {
+  for (const routeSegment of ['users', 'workforce', 'posts']) {
+    const response = handleWorkspaceSatelliteRedirectRoute(req, {
+      appOrigin: getContactsAppOrigin(),
+      routeSegment,
+      preserveRouteSegment: true,
+    });
+
+    if (response) return response;
+  }
+
+  return null;
+}
+
 function handleWorkspaceSatelliteRedirectRoute(
   req: NextRequest,
   {
     appOrigin,
+    preserveRouteSegment = false,
     routeSegment,
+    workspacePrefix,
   }: {
     appOrigin: string;
+    preserveRouteSegment?: boolean;
     routeSegment: string;
+    workspacePrefix?: string;
   }
 ): NextResponse | null {
   const pathSegments = req.nextUrl.pathname.split('/').filter(Boolean);
@@ -354,7 +384,13 @@ function handleWorkspaceSatelliteRedirectRoute(
 
   const suffixSegments = pathSegments.slice(workspaceIndex + 2);
   const redirectUrl = new URL(appOrigin);
-  redirectUrl.pathname = ['', workspaceSlug, ...suffixSegments].join('/');
+  redirectUrl.pathname = [
+    '',
+    ...(workspacePrefix ? [workspacePrefix] : []),
+    workspaceSlug,
+    ...(preserveRouteSegment ? [routeSegment] : []),
+    ...suffixSegments,
+  ].join('/');
   redirectUrl.search = req.nextUrl.search;
 
   return NextResponse.redirect(redirectUrl);
@@ -1243,6 +1279,16 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
   const trackAppRedirectResponse = handleTrackAppRedirectRoute(req);
   if (trackAppRedirectResponse) {
     return trackAppRedirectResponse;
+  }
+
+  const meetAppRedirectResponse = handleMeetAppRedirectRoute(req);
+  if (meetAppRedirectResponse) {
+    return meetAppRedirectResponse;
+  }
+
+  const contactsAppRedirectResponse = handleContactsAppRedirectRoute(req);
+  if (contactsAppRedirectResponse) {
+    return contactsAppRedirectResponse;
   }
 
   // Handle authentication and MFA with the centralized middleware

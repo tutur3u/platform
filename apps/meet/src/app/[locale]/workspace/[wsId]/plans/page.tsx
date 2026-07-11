@@ -1,5 +1,6 @@
 import { MeetTogetherPage } from '@tuturuuu/ui/legacy/meet/page';
 import type { Metadata } from 'next';
+import { connection } from 'next/server';
 import { Suspense } from 'react';
 import { getMeetWorkspaceContext } from '../workspace-context';
 
@@ -24,6 +25,8 @@ export default async function TumeetPage({
   params,
   searchParams,
 }: TumeetPageProps) {
+  await connection();
+
   const { wsId: id } = await params;
   const { workspace, wsId } = await getMeetWorkspaceContext(id);
 

@@ -14,14 +14,20 @@ import { isExactTuturuuuDotComEmail } from '@tuturuuu/utils/email/client';
 import { notFound } from 'next/navigation';
 import { DEV_MODE } from '@/constants/env';
 import { getCalendarAppOrigin } from '@/lib/calendar-app-url';
+import { getChatAppOrigin } from '@/lib/chat-app-url';
+import { getContactsAppOrigin } from '@/lib/contacts-app-url';
+import { getDriveAppOrigin } from '@/lib/drive-app-url';
 import { createTierRequirement } from '@/lib/feature-tiers';
+import { getFinanceAppOrigin } from '@/lib/finance-app-url';
 import { HABITS_ENABLED_SECRET } from '@/lib/habits/constants';
 import { getHiveAppOrigin } from '@/lib/hive-app-url';
 import { getInventoryAppOrigin } from '@/lib/inventory-app-url';
 import { getMailAppOrigin } from '@/lib/mail-app-url';
+import { getMeetAppOrigin } from '@/lib/meet-app-url';
 import { getMindAppOrigin } from '@/lib/mind-app-url';
 import { getQrAppOrigin } from '@/lib/qr-app-url';
 import { getTasksAppOrigin } from '@/lib/tasks-app-url';
+import { getTrackAppOrigin } from '@/lib/track-app-url';
 import {
   createDashboardNavigationIcon,
   type DashboardNavigationLink,
@@ -102,9 +108,15 @@ export async function WorkspaceNavigationLinks({
   const mailAppHref = `${getMailAppOrigin()}/${personalOrWsId}`;
   const inventoryAppHref = `${getInventoryAppOrigin()}/${personalOrWsId}`;
   const calendarAppHref = `${getCalendarAppOrigin()}/${personalOrWsId}`;
+  const chatAppHref = `${getChatAppOrigin()}/${personalOrWsId}`;
+  const contactsAppHref = `${getContactsAppOrigin()}/${personalOrWsId}`;
+  const driveAppHref = `${getDriveAppOrigin()}/${personalOrWsId}`;
+  const financeAppHref = `${getFinanceAppOrigin()}/${personalOrWsId}`;
+  const meetAppHref = `${getMeetAppOrigin()}/workspace/${personalOrWsId}`;
   const mindAppHref = `${getMindAppOrigin()}/${personalOrWsId}`;
   const hiveAppHref = getHiveAppOrigin();
   const tasksAppHref = `${getTasksAppOrigin()}/${personalOrWsId}`;
+  const trackAppHref = `${getTrackAppOrigin()}/${personalOrWsId}`;
 
   // Parallelize user-dependent queries
   const [
@@ -341,6 +353,18 @@ export async function WorkspaceNavigationLinks({
       preferenceSectionLabel: sidebarSections.core,
     },
     {
+      id: 'contacts',
+      title: t('sidebar_tabs.contacts'),
+      icon: createDashboardNavigationIcon('BookUser', 'h-5 w-5'),
+      href: contactsAppHref,
+      external: true,
+      disabled:
+        withoutPermission('manage_users') &&
+        withoutPermission('view_users_public_info'),
+      preferencePlacement: 'root',
+      preferenceSectionLabel: sidebarSections.core,
+    },
+    {
       id: 'whiteboards',
       title: t('sidebar_tabs.whiteboards'),
       href: `/${personalOrWsId}/whiteboards`,
@@ -353,7 +377,7 @@ export async function WorkspaceNavigationLinks({
     {
       id: 'finance',
       title: t('sidebar_tabs.finance'),
-      href: `/${personalOrWsId}/finance`,
+      href: financeAppHref,
       icon: createDashboardNavigationIcon('BadgeDollarSign', 'h-5 w-5'),
       experimental: 'beta',
       preferencePlacement: 'root',
@@ -372,37 +396,38 @@ export async function WorkspaceNavigationLinks({
         `/${personalOrWsId}/finance/debts`,
         `/${personalOrWsId}/finance/settings`,
       ],
+      external: true,
       children: [
         // ── Finance: Core ──
         {
           title: t('workspace-finance-tabs.overview'),
-          href: `/${personalOrWsId}/finance`,
+          href: financeAppHref,
           icon: createDashboardNavigationIcon('LayoutDashboard', 'h-5 w-5'),
           matchExact: true,
           disabled: withoutPermission('manage_finance'),
         },
         {
           title: t('workspace-finance-tabs.transactions'),
-          href: `/${personalOrWsId}/finance/transactions`,
+          href: `${financeAppHref}/transactions`,
           matchExact: true,
           icon: createDashboardNavigationIcon('Banknote', 'h-5 w-5'),
           disabled: withoutPermission('view_transactions'),
         },
         {
           title: t('workspace-finance-tabs.recurring'),
-          href: `/${personalOrWsId}/finance/recurring`,
+          href: `${financeAppHref}/recurring`,
           icon: createDashboardNavigationIcon('Repeat', 'h-5 w-5'),
           disabled: withoutPermission('view_transactions'),
         },
         {
           title: t('workspace-finance-tabs.wallets'),
-          href: `/${personalOrWsId}/finance/wallets`,
+          href: `${financeAppHref}/wallets`,
           icon: createDashboardNavigationIcon('Wallet', 'h-5 w-5'),
           disabled: withoutPermission('view_transactions'),
         },
         {
           title: t('workspace-finance-tabs.budgets'),
-          href: `/${personalOrWsId}/finance/budgets`,
+          href: `${financeAppHref}/budgets`,
           icon: createDashboardNavigationIcon('ChartColumn', 'h-5 w-5'),
           disabled: withoutPermission('manage_finance'),
         },
@@ -410,7 +435,7 @@ export async function WorkspaceNavigationLinks({
         // ── Finance: Insights ──
         {
           title: t('workspace-finance-tabs.analytics'),
-          href: `/${personalOrWsId}/finance/analytics`,
+          href: `${financeAppHref}/analytics`,
           icon: createDashboardNavigationIcon('ChartArea', 'h-5 w-5'),
           disabled: withoutPermission('manage_finance'),
         },
@@ -418,13 +443,13 @@ export async function WorkspaceNavigationLinks({
         // ── Finance: Records ──
         {
           title: t('workspace-finance-tabs.invoices'),
-          href: `/${personalOrWsId}/finance/invoices`,
+          href: `${financeAppHref}/invoices`,
           icon: createDashboardNavigationIcon('ReceiptText', 'h-5 w-5'),
           disabled: !showInvoices || withoutPermission('view_invoices'),
         },
         {
           title: t('workspace-finance-tabs.debts'),
-          href: `/${personalOrWsId}/finance/debts`,
+          href: `${financeAppHref}/debts`,
           icon: createDashboardNavigationIcon('HandCoins', 'h-5 w-5'),
           disabled: withoutPermission('view_transactions'),
         },
@@ -432,13 +457,13 @@ export async function WorkspaceNavigationLinks({
         // ── Finance: Configuration ──
         {
           title: t('workspace-finance-tabs.categories'),
-          href: `/${personalOrWsId}/finance/categories`,
+          href: `${financeAppHref}/categories`,
           icon: createDashboardNavigationIcon('Group', 'h-5 w-5'),
           disabled: withoutPermission('manage_finance'),
         },
         {
           title: t('workspace-finance-tabs.tags'),
-          href: `/${personalOrWsId}/finance/tags`,
+          href: `${financeAppHref}/tags`,
           icon: createDashboardNavigationIcon('Tags', 'h-5 w-5'),
           disabled: withoutPermission('manage_finance'),
         },
@@ -448,7 +473,7 @@ export async function WorkspaceNavigationLinks({
     {
       id: 'time_tracker',
       title: t('sidebar_tabs.track'),
-      href: `/${personalOrWsId}/time-tracker`,
+      href: trackAppHref,
       icon: createDashboardNavigationIcon('ClockFading', 'h-5 w-5'),
       experimental: 'beta',
       aliases: [
@@ -458,11 +483,12 @@ export async function WorkspaceNavigationLinks({
         `/${personalOrWsId}/time-tracker/management`,
         `/${personalOrWsId}/time-tracker/requests`,
       ],
+      external: true,
       children: [
         // ── Time Tracking ──
         {
           title: t('sidebar_tabs.overview'),
-          href: `/${personalOrWsId}/time-tracker`,
+          href: trackAppHref,
           icon: createDashboardNavigationIcon('LayoutDashboard', 'h-5 w-5'),
           matchExact: true,
           requiredWorkspaceTier: createTierRequirement('time_tracker', {
@@ -471,7 +497,7 @@ export async function WorkspaceNavigationLinks({
         },
         {
           title: t('sidebar_tabs.timer'),
-          href: `/${personalOrWsId}/time-tracker/timer`,
+          href: `${trackAppHref}/timer`,
           icon: createDashboardNavigationIcon('Timer', 'h-5 w-5'),
           requiredWorkspaceTier: createTierRequirement('time_tracker', {
             alwaysShow: true,
@@ -479,7 +505,7 @@ export async function WorkspaceNavigationLinks({
         },
         {
           title: t('sidebar_tabs.history'),
-          href: `/${personalOrWsId}/time-tracker/history`,
+          href: `${trackAppHref}/history`,
           icon: createDashboardNavigationIcon('ClipboardClock', 'h-5 w-5'),
           requiredWorkspaceTier: createTierRequirement('time_tracker', {
             alwaysShow: true,
@@ -488,7 +514,7 @@ export async function WorkspaceNavigationLinks({
         null,
         {
           title: t('sidebar_tabs.time_tracker_management'),
-          href: `/${personalOrWsId}/time-tracker/management`,
+          href: `${trackAppHref}/management`,
           icon: createDashboardNavigationIcon('ChartGantt', 'h-5 w-5'),
           requireRootWorkspace: true,
           requireRootMember: true,
@@ -498,7 +524,7 @@ export async function WorkspaceNavigationLinks({
         },
         {
           title: t('sidebar_tabs.time_tracker_requests'),
-          href: `/${personalOrWsId}/time-tracker/requests`,
+          href: `${trackAppHref}/requests`,
           icon: createDashboardNavigationIcon('ClockCheck', 'h-5 w-5'),
           disabled: isPersonal,
           requiredWorkspaceTier: createTierRequirement('time_tracker', {
@@ -512,13 +538,14 @@ export async function WorkspaceNavigationLinks({
     {
       id: 'drive',
       title: t('sidebar_tabs.drive'),
-      href: `/${personalOrWsId}/drive`,
+      href: driveAppHref,
       icon: createDashboardNavigationIcon('HardDrive', 'h-5 w-5'),
       requiredWorkspaceTier: createTierRequirement('drive', {
         alwaysShow: true,
       }),
       disabled: withoutPermission('manage_drive'),
       experimental: 'beta',
+      external: true,
       preferenceSectionLabel: sidebarSections.workTools,
     },
     null,
@@ -590,9 +617,10 @@ export async function WorkspaceNavigationLinks({
         {
           id: 'chat',
           title: t('sidebar_tabs.chat'),
-          href: `/${personalOrWsId}/chat`,
+          href: chatAppHref,
           icon: createDashboardNavigationIcon('MessageCircleIcon', 'h-5 w-5'),
           aliases: [`/${personalOrWsId}/chat`],
+          external: true,
           disabled: withoutPermission('view_chat'),
           requiredWorkspaceTier: createTierRequirement('chat', {
             alwaysShow: true,
@@ -613,7 +641,8 @@ export async function WorkspaceNavigationLinks({
         {
           id: 'workforce',
           title: t('sidebar_tabs.workforce'),
-          href: `/${personalOrWsId}/workforce`,
+          href: `${contactsAppHref}/workforce`,
+          external: true,
           icon: createDashboardNavigationIcon('BriefcaseBusiness', 'h-5 w-5'),
           requiredWorkspaceTier: createTierRequirement('workforce', {
             alwaysShow: true,
@@ -621,7 +650,7 @@ export async function WorkspaceNavigationLinks({
           children: [
             {
               title: t('workspace-workforce-tabs.directory'),
-              href: `/${personalOrWsId}/workforce`,
+              href: `${contactsAppHref}/workforce`,
               icon: createDashboardNavigationIcon('Users', 'h-5 w-5'),
               matchExact: true,
               disabled:
@@ -630,14 +659,14 @@ export async function WorkspaceNavigationLinks({
             },
             {
               title: t('workspace-workforce-tabs.contracts'),
-              href: `/${personalOrWsId}/workforce/contracts`,
+              href: `${contactsAppHref}/workforce/contracts`,
               icon: createDashboardNavigationIcon('ScrollText', 'h-5 w-5'),
               disabled: withoutPermission('manage_workforce'),
             },
             null,
             {
               title: t('workspace-workforce-tabs.payroll'),
-              href: `/${personalOrWsId}/workforce/payroll`,
+              href: `${contactsAppHref}/workforce/payroll`,
               icon: createDashboardNavigationIcon('HandCoins', 'h-5 w-5'),
               disabled:
                 withoutPermission('view_payroll') &&
@@ -655,7 +684,7 @@ export async function WorkspaceNavigationLinks({
         {
           id: 'posts',
           title: t('sidebar_tabs.posts'),
-          href: `/${personalOrWsId}/posts`,
+          href: `${contactsAppHref}/posts`,
           icon: createDashboardNavigationIcon('GalleryVerticalEnd', 'h-5 w-5'),
           disabled:
             !hasSecret('ENABLE_EMAIL_SENDING', 'true') ||
@@ -663,6 +692,7 @@ export async function WorkspaceNavigationLinks({
             (withoutPermission('view_user_groups_posts') &&
               withoutPermission('approve_posts')),
           experimental: 'beta',
+          external: true,
           preferenceSectionLabel: sidebarSections.operations,
         },
         {
@@ -835,18 +865,19 @@ export async function WorkspaceNavigationLinks({
         {
           id: 'meet',
           title: t('sidebar_tabs.meet'),
-          href: `/${personalOrWsId}/meet`,
+          href: meetAppHref,
           icon: createDashboardNavigationIcon('SquaresIntersect', 'h-5 w-5'),
           preferenceSectionLabel: sidebarSections.utilities,
+          external: true,
           children: [
             {
               title: t('sidebar_tabs.plans'),
-              href: `/${personalOrWsId}/meet/plans`,
+              href: `${meetAppHref}/plans`,
               icon: createDashboardNavigationIcon('VectorSquare', 'h-5 w-5'),
             },
             {
               title: t('sidebar_tabs.meetings'),
-              href: `/${personalOrWsId}/meet/meetings`,
+              href: `${meetAppHref}/meetings`,
               icon: createDashboardNavigationIcon('SquareUserRound', 'h-5 w-5'),
               requireRootWorkspace: true,
               requireRootMember: true,

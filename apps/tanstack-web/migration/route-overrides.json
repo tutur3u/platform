@@ -964,31 +964,6 @@
       "targetOwner": "tanstack-start",
       "note": "TanStack Start route /$locale/$wsId/billing/success is a 307 handoff to the Pay satellite and preserves the raw query string, including duplicate checkout parameters. The detailed success UI and invoice actions are owned exclusively by apps/pay."
     },
-    "page:/:locale/:wsId/meet:apps/web/src/app/[locale]/(dashboard)/[wsId]/meet/page.tsx": {
-      "status": "migrated",
-      "targetOwner": "tanstack-start",
-      "note": "TanStack Start route /$locale/$wsId/meet preserves the legacy 307 redirect to /:wsId/meet/plans. This marks only the page artifact migrated; parent dashboard layout/session ownership remains legacy-owned."
-    },
-    "page:/:locale/:wsId/meet/plans:apps/web/src/app/[locale]/(dashboard)/[wsId]/meet/plans/page.tsx": {
-      "status": "migrated",
-      "targetOwner": "tanstack-start",
-      "note": "TanStack Start route /$locale/$wsId/meet/plans redirects to the standalone Meet app workspace plans route while preserving query parameters. This marks only the page handoff artifact migrated; Meet data APIs and parent dashboard/session ownership remain separately owned."
-    },
-    "page:/:locale/:wsId/meet/meetings:apps/web/src/app/[locale]/(dashboard)/[wsId]/meet/meetings/page.tsx": {
-      "status": "migrated",
-      "targetOwner": "tanstack-start",
-      "note": "TanStack Start route /$locale/$wsId/meet/meetings redirects to the standalone Meet app workspace meetings route while preserving query parameters. This marks only the page handoff artifact migrated; Meet data APIs and parent dashboard/session ownership remain separately owned."
-    },
-    "page:/:locale/:wsId/meet/meetings/:meetingId:apps/web/src/app/[locale]/(dashboard)/[wsId]/meet/meetings/[meetingId]/page.tsx": {
-      "status": "migrated",
-      "targetOwner": "tanstack-start",
-      "note": "TanStack Start route /$locale/$wsId/meet/meetings/$meetingId redirects to the standalone Meet app meeting detail route while preserving query parameters. This marks only the page handoff artifact migrated; Meet data APIs and parent dashboard/session ownership remain separately owned."
-    },
-    "page:/:locale/:wsId/posts:apps/web/src/app/[locale]/(dashboard)/[wsId]/posts/page.tsx": {
-      "status": "migrated",
-      "targetOwner": "tanstack-start",
-      "note": "TanStack Start route /$locale/$wsId/posts ports the legacy authenticated posts page as a dynamic no-store workspace route with fail-closed current-user auth, workspace resolution, pass-through URL search handling for the nuqs client shell, route metadata, and the shared PostsClient backed by internal-api facades including the Rust-owned posts permissions backend route."
-    },
     "page:/:locale/:wsId/roles:apps/web/src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/roles/page.tsx": {
       "status": "migrated",
       "targetOwner": "tanstack-start",

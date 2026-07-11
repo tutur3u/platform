@@ -3,6 +3,7 @@ import FinancePage from '@tuturuuu/ui/finance/finance-page';
 import type { FinanceDashboardSearchParams } from '@tuturuuu/ui/finance/shared/metrics';
 import { headers } from 'next/headers';
 import { notFound } from 'next/navigation';
+import { connection } from 'next/server';
 import { getFinanceWorkspaceContext } from '@/lib/workspace';
 
 interface Props {
@@ -16,6 +17,8 @@ export default async function WorkspaceFinancePage({
   params,
   searchParams,
 }: Props) {
+  await connection();
+
   const { wsId: id } = await params;
   const context = await getFinanceWorkspaceContext(id);
   if (!context) notFound();

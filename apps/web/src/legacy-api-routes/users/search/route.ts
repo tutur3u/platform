@@ -1,7 +1,9 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
-import { NextResponse } from 'next/server';
+import { connection, NextResponse } from 'next/server';
 
 export async function GET(req: Request) {
+  await connection();
+
   const supabase = await createClient();
 
   const requestUrl = new URL(req.url);
