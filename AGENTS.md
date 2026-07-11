@@ -75,6 +75,11 @@ surface you are changing:
 - Inspect active `tmp/agent-coordination/` notes before broad or overlapping
   work. Create a coordination note for dirty worktrees, long-running work,
   overlap, handoffs, or changes to agent/tooling/deployment rules.
+- For every open Tuturuuu pull request, perform review, fixes, validation, and
+  merge preparation in an isolated worktree under `.worktrees/`; do not switch
+  the shared main checkout onto the PR branch. Run `bun setup` immediately after
+  creating the worktree. After the PR is confirmed merged into `main`, remove
+  the completed worktree and delete its local task branch.
 - Before staging, unstaging, committing, amending, rebasing, or user-requested
   commit-and-push work in a shared checkout, claim the Git commit window with
   `bun git-commit-window claim` or wait with `bun git-commit-window wait`.

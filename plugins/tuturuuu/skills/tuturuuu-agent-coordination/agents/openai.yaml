@@ -1,4 +1,4 @@
 interface:
   display_name: "Tuturuuu Agent Coordination"
   short_description: "Coordinate shared checkouts, subagent lanes, worktrees, and commit windows"
-  default_prompt: "Coordinate shared checkout state, split subagent lanes by exact ownership, and keep notes out of commits."
+  default_prompt: "Coordinate isolated PR worktrees, shared checkout state, exact ownership, and safe cleanup after merge."

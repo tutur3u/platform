@@ -32,6 +32,21 @@ uncommitted work; read it when the task spans more than one checkout.
   through harness-internal state another tool cannot see. Name the harness and
   session on your note's `Agent:` line.
 
+## Open Pull Request Worktrees
+
+- Always handle an open Tuturuuu pull request in an isolated worktree under
+  `.worktrees/`, including review-comment fixes, conflict resolution, validation,
+  quiet-window monitoring, and merge preparation. Leave the shared main checkout
+  on its existing branch.
+- Run `bun setup` immediately after creating the PR worktree. If Portless cannot
+  bind port 443 in a non-interactive shell, use the repository-supported setup
+  environment to skip only that interactive Portless step while still completing
+  the rest of `bun setup`.
+- Keep the worktree and its local task branch while the PR is open. After GitHub
+  confirms the PR merge is present on `main`, remove the worktree and delete the
+  local task branch. Never remove an open or unmerged PR worktree as routine
+  cleanup.
+
 ## Coordination Posture
 
 - Run `git status --short` before choosing a write set.

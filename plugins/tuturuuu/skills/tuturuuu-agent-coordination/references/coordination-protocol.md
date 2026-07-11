@@ -58,6 +58,27 @@ shared-checkout notes + window when agents must cooperate in one directory.
   to advance shared branches; never hand-reset a shared branch other agents are
   working on.
 
+## Open Pull Request Lifecycle
+
+Open Tuturuuu pull requests always use an isolated worktree under `.worktrees/`.
+This applies to review, implementation, conflict resolution, validation,
+quiet-window monitoring, and merge preparation. Do not check out an open PR in
+the shared main checkout.
+
+1. Verify `.worktrees` is ignored, fetch the PR head and base, and create a
+   focused local task branch in `.worktrees/<pr-or-task-slug>`.
+2. Run `bun setup` immediately in the new worktree. In a non-interactive shell
+   where Portless would require sudo for port 443, use the supported
+   `SKIP_PORTLESS_SETUP=1 bun setup` path so dependency installation and required
+   workspace builds still complete.
+3. Keep all PR edits, commits, validation, and merge preparation in that
+   worktree. Push the verified local branch to the PR's actual remote head branch.
+4. Keep the worktree and local task branch until GitHub confirms the PR commit is
+   merged into `main`.
+5. After merge confirmation and required main/production follow-through, remove
+   the worktree and delete its local task branch. Prune only stale worktree
+   metadata; do not delete unrelated worktrees or branches.
+
 ## Harness-Agnostic Coordination
 
 This protocol is the same regardless of which harness an agent runs under — Codex,
