@@ -6,12 +6,12 @@
         "acceptedRemoval": 11,
         "key": "api",
         "label": "api",
-        "legacyNext": 492,
+        "legacyNext": 488,
         "migrated": 66,
-        "percentComplete": 13.53,
-        "remaining": 492,
+        "percentComplete": 13.63,
+        "remaining": 488,
         "terminal": 77,
-        "total": 569,
+        "total": 565,
         "unknownStatus": 0
       },
       {
@@ -19,23 +19,23 @@
         "key": "page",
         "label": "page",
         "legacyNext": 52,
-        "migrated": 115,
-        "percentComplete": 69.23,
+        "migrated": 109,
+        "percentComplete": 68.1,
         "remaining": 52,
-        "terminal": 117,
-        "total": 169,
+        "terminal": 111,
+        "total": 163,
         "unknownStatus": 0
       },
       {
         "acceptedRemoval": 0,
         "key": "layout",
         "label": "layout",
-        "legacyNext": 9,
+        "legacyNext": 8,
         "migrated": 47,
-        "percentComplete": 83.93,
-        "remaining": 9,
+        "percentComplete": 85.45,
+        "remaining": 8,
         "terminal": 47,
-        "total": 56,
+        "total": 55,
         "unknownStatus": 0
       },
       {
@@ -116,24 +116,24 @@
         "acceptedRemoval": 11,
         "key": "rust-backend",
         "label": "Rust backend",
-        "legacyNext": 500,
+        "legacyNext": 496,
         "migrated": 71,
-        "percentComplete": 14.09,
-        "remaining": 500,
+        "percentComplete": 14.19,
+        "remaining": 496,
         "terminal": 82,
-        "total": 582,
+        "total": 578,
         "unknownStatus": 0
       },
       {
         "acceptedRemoval": 2,
         "key": "tanstack-start",
         "label": "TanStack Start",
-        "legacyNext": 61,
-        "migrated": 166,
-        "percentComplete": 73.36,
-        "remaining": 61,
-        "terminal": 168,
-        "total": 229,
+        "legacyNext": 60,
+        "migrated": 160,
+        "percentComplete": 72.97,
+        "remaining": 60,
+        "terminal": 162,
+        "total": 222,
         "unknownStatus": 0
       }
     ],
@@ -323,12 +323,12 @@
       "acceptedRemoval": 13,
       "key": "total",
       "label": "All route artifacts",
-      "legacyNext": 561,
-      "migrated": 237,
-      "percentComplete": 30.83,
-      "remaining": 561,
-      "terminal": 250,
-      "total": 811,
+      "legacyNext": 556,
+      "migrated": 231,
+      "percentComplete": 30.5,
+      "remaining": 556,
+      "terminal": 244,
+      "total": 800,
       "unknownStatus": 0
     }
   },
@@ -2948,42 +2948,6 @@
       "methods": ["POST"],
       "routePath": "/api/v1/workspaces/:wsId/external-apps/cron/setup",
       "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/external-apps/cron/setup/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/external-apps/drive:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/external-apps/drive/route.ts",
-      "kind": "api",
-      "methods": ["DELETE"],
-      "routePath": "/api/v1/workspaces/:wsId/external-apps/drive",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/external-apps/drive/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/external-apps/drive/finalize:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/external-apps/drive/finalize/route.ts",
-      "kind": "api",
-      "methods": ["POST"],
-      "routePath": "/api/v1/workspaces/:wsId/external-apps/drive/finalize",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/external-apps/drive/finalize/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/external-apps/drive/read-url:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/external-apps/drive/read-url/route.ts",
-      "kind": "api",
-      "methods": ["POST"],
-      "routePath": "/api/v1/workspaces/:wsId/external-apps/drive/read-url",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/external-apps/drive/read-url/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/workspaces/:wsId/external-apps/drive/upload-url:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/external-apps/drive/upload-url/route.ts",
-      "kind": "api",
-      "methods": ["POST"],
-      "routePath": "/api/v1/workspaces/:wsId/external-apps/drive/upload-url",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/external-apps/drive/upload-url/route.ts",
       "status": "legacy-next",
       "targetOwner": "rust-backend"
     },
@@ -5746,15 +5710,6 @@
       "targetOwner": "tanstack-start"
     },
     {
-      "id": "layout:/:locale/:wsId/users/topic-announcements:apps/web/src/app/[locale]/(dashboard)/[wsId]/users/topic-announcements/layout.tsx",
-      "kind": "layout",
-      "methods": [],
-      "routePath": "/:locale/:wsId/users/topic-announcements",
-      "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/users/topic-announcements/layout.tsx",
-      "status": "legacy-next",
-      "targetOwner": "tanstack-start"
-    },
-    {
       "id": "layout:/:locale/about:apps/web/src/app/[locale]/(marketing)/about/layout.tsx",
       "kind": "layout",
       "methods": [],
@@ -6934,60 +6889,6 @@
       "targetOwner": "tanstack-start"
     },
     {
-      "id": "page:/:locale/:wsId/users/topic-announcements:apps/web/src/app/[locale]/(dashboard)/[wsId]/users/topic-announcements/page.tsx",
-      "kind": "page",
-      "methods": [],
-      "routePath": "/:locale/:wsId/users/topic-announcements",
-      "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/users/topic-announcements/page.tsx",
-      "status": "migrated",
-      "targetOwner": "tanstack-start"
-    },
-    {
-      "id": "page:/:locale/:wsId/users/topic-announcements/announcements:apps/web/src/app/[locale]/(dashboard)/[wsId]/users/topic-announcements/announcements/page.tsx",
-      "kind": "page",
-      "methods": [],
-      "routePath": "/:locale/:wsId/users/topic-announcements/announcements",
-      "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/users/topic-announcements/announcements/page.tsx",
-      "status": "migrated",
-      "targetOwner": "tanstack-start"
-    },
-    {
-      "id": "page:/:locale/:wsId/users/topic-announcements/contacts:apps/web/src/app/[locale]/(dashboard)/[wsId]/users/topic-announcements/contacts/page.tsx",
-      "kind": "page",
-      "methods": [],
-      "routePath": "/:locale/:wsId/users/topic-announcements/contacts",
-      "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/users/topic-announcements/contacts/page.tsx",
-      "status": "migrated",
-      "targetOwner": "tanstack-start"
-    },
-    {
-      "id": "page:/:locale/:wsId/users/topic-announcements/delivery:apps/web/src/app/[locale]/(dashboard)/[wsId]/users/topic-announcements/delivery/page.tsx",
-      "kind": "page",
-      "methods": [],
-      "routePath": "/:locale/:wsId/users/topic-announcements/delivery",
-      "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/users/topic-announcements/delivery/page.tsx",
-      "status": "migrated",
-      "targetOwner": "tanstack-start"
-    },
-    {
-      "id": "page:/:locale/:wsId/users/topic-announcements/import:apps/web/src/app/[locale]/(dashboard)/[wsId]/users/topic-announcements/import/page.tsx",
-      "kind": "page",
-      "methods": [],
-      "routePath": "/:locale/:wsId/users/topic-announcements/import",
-      "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/users/topic-announcements/import/page.tsx",
-      "status": "migrated",
-      "targetOwner": "tanstack-start"
-    },
-    {
-      "id": "page:/:locale/:wsId/users/topic-announcements/templates:apps/web/src/app/[locale]/(dashboard)/[wsId]/users/topic-announcements/templates/page.tsx",
-      "kind": "page",
-      "methods": [],
-      "routePath": "/:locale/:wsId/users/topic-announcements/templates",
-      "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/users/topic-announcements/templates/page.tsx",
-      "status": "migrated",
-      "targetOwner": "tanstack-start"
-    },
-    {
       "id": "page:/:locale/:wsId/whiteboards:apps/web/src/app/[locale]/(dashboard)/[wsId]/whiteboards/page.tsx",
       "kind": "page",
       "methods": [],
@@ -7718,20 +7619,20 @@
     }
   ],
   "summary": {
-    "apiRoutes": 569,
+    "apiRoutes": 565,
     "cronRoutes": 8,
-    "layouts": 56,
-    "pages": 169,
-    "routeHandlers": 582,
+    "layouts": 55,
+    "pages": 163,
+    "routeHandlers": 578,
     "methodCounts": {
       "GET": 296,
       "HEAD": 1,
-      "POST": 286,
+      "POST": 283,
       "PUT": 53,
       "PATCH": 60,
-      "DELETE": 100,
+      "DELETE": 99,
       "OPTIONS": 23
     },
-    "total": 811
+    "total": 800
   }
 }

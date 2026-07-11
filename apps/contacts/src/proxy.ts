@@ -129,6 +129,7 @@ const CONTACTS_OWNED_ROUTE_PREFIXES = [
   'users/group-tags',
   'users/guest-leads',
   'users/structure',
+  'users/topic-announcements',
   'users/tutoring',
   'users/*/follow-up',
 ];

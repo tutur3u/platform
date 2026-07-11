@@ -22,7 +22,6 @@ import { getMailAppOrigin } from '@/lib/mail-app-url';
 import { getMindAppOrigin } from '@/lib/mind-app-url';
 import { getQrAppOrigin } from '@/lib/qr-app-url';
 import { getTasksAppOrigin } from '@/lib/tasks-app-url';
-import { TOPIC_ANNOUNCEMENTS_SECRET } from '@/lib/topic-announcements';
 import {
   createDashboardNavigationIcon,
   type DashboardNavigationLink,
@@ -98,10 +97,6 @@ export async function WorkspaceNavigationLinks({
 
   const ENABLE_AI_ONLY = hasSecret('ENABLE_AI_ONLY', 'true');
   const ENABLE_HABITS = hasSecret(HABITS_ENABLED_SECRET, 'true');
-  const ENABLE_TOPIC_ANNOUNCEMENTS = hasSecret(
-    TOPIC_ANNOUNCEMENTS_SECRET,
-    'true'
-  );
   const qrAppHref = getQrAppOrigin();
   const isMailUser = isExactTuturuuuDotComEmail(user?.email);
   const mailAppHref = `${getMailAppOrigin()}/${personalOrWsId}`;
@@ -665,12 +660,6 @@ export async function WorkspaceNavigationLinks({
             `/${personalOrWsId}/users/groups`,
             `/${personalOrWsId}/users/groups/calendar`,
             `/${personalOrWsId}/users/groups/indicators`,
-            `/${personalOrWsId}/users/topic-announcements`,
-            `/${personalOrWsId}/users/topic-announcements/announcements`,
-            `/${personalOrWsId}/users/topic-announcements/contacts`,
-            `/${personalOrWsId}/users/topic-announcements/delivery`,
-            `/${personalOrWsId}/users/topic-announcements/import`,
-            `/${personalOrWsId}/users/topic-announcements/templates`,
             `/${personalOrWsId}/users/reports`,
           ],
           icon: createDashboardNavigationIcon('Users', 'h-5 w-5'),
@@ -702,56 +691,6 @@ export async function WorkspaceNavigationLinks({
               disabled:
                 withoutPermission('manage_users') &&
                 withoutPermission('view_user_groups'),
-            },
-            {
-              title: t('workspace-users-tabs.topic_announcements'),
-              href: `/${personalOrWsId}/users/topic-announcements`,
-              aliases: [
-                `/${personalOrWsId}/users/topic-announcements`,
-                `/${personalOrWsId}/users/topic-announcements/announcements`,
-                `/${personalOrWsId}/users/topic-announcements/contacts`,
-                `/${personalOrWsId}/users/topic-announcements/delivery`,
-                `/${personalOrWsId}/users/topic-announcements/import`,
-                `/${personalOrWsId}/users/topic-announcements/templates`,
-              ],
-              icon: createDashboardNavigationIcon('Megaphone', 'h-5 w-5'),
-              disabled:
-                !ENABLE_TOPIC_ANNOUNCEMENTS ||
-                withoutPermission('manage_users'),
-              experimental: 'beta',
-              children: [
-                {
-                  title: t('ws-topic-announcements.nav_announcements'),
-                  href: `/${personalOrWsId}/users/topic-announcements/announcements`,
-                  icon: createDashboardNavigationIcon('Megaphone', 'h-5 w-5'),
-                  sectionLabel: t('ws-topic-announcements.nav_group_send'),
-                },
-                {
-                  title: t('ws-topic-announcements.nav_delivery'),
-                  href: `/${personalOrWsId}/users/topic-announcements/delivery`,
-                  icon: createDashboardNavigationIcon('Send', 'h-5 w-5'),
-                },
-                null,
-                {
-                  title: t('ws-topic-announcements.nav_contacts'),
-                  href: `/${personalOrWsId}/users/topic-announcements/contacts`,
-                  icon: createDashboardNavigationIcon('MailCheck', 'h-5 w-5'),
-                  sectionLabel: t('ws-topic-announcements.nav_group_setup'),
-                },
-                {
-                  title: t('ws-topic-announcements.nav_templates'),
-                  href: `/${personalOrWsId}/users/topic-announcements/templates`,
-                  icon: createDashboardNavigationIcon(
-                    'BookOpenCheck',
-                    'h-5 w-5'
-                  ),
-                },
-                {
-                  title: t('ws-topic-announcements.nav_import'),
-                  href: `/${personalOrWsId}/users/topic-announcements/import`,
-                  icon: createDashboardNavigationIcon('Upload', 'h-5 w-5'),
-                },
-              ],
             },
             null,
             {

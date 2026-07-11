@@ -1,3 +1,5 @@
+import WorkspaceWrapper from '@tuturuuu/ui/custom/workspace-wrapper';
+import { TOPIC_ANNOUNCEMENTS_SECRET } from '@tuturuuu/utils/topic-announcements';
 import {
   getPermissions,
   getSecret,
@@ -7,8 +9,6 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { connection } from 'next/server';
 import type { ReactNode } from 'react';
-import WorkspaceWrapper from '@/components/workspace-wrapper';
-import { TOPIC_ANNOUNCEMENTS_SECRET } from '@/lib/topic-announcements';
 import { TopicAnnouncementsShell } from './topic-announcements-shell';
 
 export const metadata: Metadata = {

@@ -2,11 +2,11 @@
 
 import { useQuery } from '@tanstack/react-query';
 import type { CalendarPreferences } from '@tuturuuu/ui/hooks/use-calendar-preferences';
-import { useEffect, useMemo } from 'react';
 import {
   firstDayToNumber,
   resolveCalendarSettings,
-} from './calendar-settings-resolver';
+} from '@tuturuuu/utils/calendar-settings-resolver';
+import { useEffect, useMemo } from 'react';
 
 interface CalendarPreferencesSettingsBridgeProps {
   locale: string;

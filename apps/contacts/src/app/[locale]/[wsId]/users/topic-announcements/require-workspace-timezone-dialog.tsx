@@ -21,10 +21,10 @@ import {
 } from '@tuturuuu/ui/select';
 import { Separator } from '@tuturuuu/ui/separator';
 import { toast } from '@tuturuuu/ui/sonner';
+import { detectLocaleFirstDay } from '@tuturuuu/utils/calendar-settings-resolver';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useState } from 'react';
-import { detectLocaleFirstDay } from '@/lib/calendar-settings-resolver';
 
 function detectBrowserTimezone(): string {
   try {
