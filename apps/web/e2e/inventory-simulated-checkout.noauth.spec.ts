@@ -33,12 +33,15 @@ function serviceHeaders({
   };
 }
 
+// TODO(#4956): Re-home this coverage in the Inventory satellite E2E suite.
+// This web-only Docker suite does not start apps/inventory, so its routes return
+// 404 here.
 test.describe('Inventory public checkout modes', () => {
   test.beforeAll(() => {
     assertSafeE2EEnvironment();
   });
 
-  test('requires login before public storefront checkout attempts', async ({
+  test.skip('requires login before public storefront checkout attempts', async ({
     baseURL,
     request,
   }) => {
@@ -331,7 +334,7 @@ test.describe('Inventory public checkout modes', () => {
     }
   });
 
-  test('returns category bundle candidates according to bundle scope', async ({
+  test.skip('returns category bundle candidates according to bundle scope', async ({
     baseURL,
     request,
   }) => {

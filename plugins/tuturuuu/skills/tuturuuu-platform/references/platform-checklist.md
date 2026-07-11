@@ -4,6 +4,9 @@ Use this checklist before and after code changes in the current Tuturuuu platfor
 
 ## Before Editing
 
+- For an open Tuturuuu pull request, create or reuse its isolated worktree under
+  `.worktrees/` and run `bun setup` there immediately. Do not check out the PR in
+  the shared main checkout.
 - Run `git status --short` and identify dirty or untracked paths that predate
   your work.
 - If `tmp/agent-coordination/` exists, read top-level active notes before
@@ -67,6 +70,9 @@ Use this checklist before and after code changes in the current Tuturuuu platfor
 
 ## Completion
 
+- After an open PR is confirmed merged into `main` and its required sync checks
+  finish, remove its `.worktrees/` checkout and delete the local task branch.
+  Keep both intact while the PR remains open or unmerged.
 - Format touched files with the repo-preferred command.
 - Run focused tests for changed behavior.
 - Run `bun check` for TypeScript, JavaScript, root script, or repo config changes.

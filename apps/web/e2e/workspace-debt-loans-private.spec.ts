@@ -38,12 +38,15 @@ function serviceHeaders({
   };
 }
 
+// TODO(#4956): Re-home this coverage in the Finance satellite E2E suite.
+// This web-only Docker suite does not start apps/finance, so its routes return
+// 404 here.
 test.describe('Workspace debt loans private schema API', () => {
   test.beforeAll(() => {
     assertSafeE2EEnvironment();
   });
 
-  test('manages debt loans through authenticated app APIs', async ({
+  test.skip('manages debt loans through authenticated app APIs', async ({
     request,
   }) => {
     const debtName = `Private debt loan ${Date.now()}`;
@@ -266,7 +269,7 @@ test.describe('Workspace debt loans private schema API', () => {
     }
   });
 
-  test('uses workspace default currency when omitted and rejects unsupported explicit currency', async ({
+  test.skip('uses workspace default currency when omitted and rejects unsupported explicit currency', async ({
     request,
   }) => {
     const unsupportedDebtName = `Unsupported debt loan ${Date.now()}`;

@@ -22,24 +22,28 @@ comments: quiet-window watching, merge, mandatory main-green verification,
 
 ## Required Gates
 
-1. Confirm GitHub auth and rate limits:
+1. Perform all open-PR work in an isolated `.worktrees/` checkout and run
+   `bun setup` immediately after creating it.
+2. Confirm GitHub auth and rate limits:
    - `gh auth status`
    - `gh api rate_limit`
-2. Confirm the PR has zero active unresolved review threads.
-3. Wait for the requested quiet window, defaulting to 30 minutes after the
+3. Confirm the PR has zero active unresolved review threads.
+4. Wait for the requested quiet window, defaulting to 30 minutes after the
    latest PR comment update or review submission.
-4. Wait for PR checks to finish with only `success`, `skipped`, or `neutral`
+5. Wait for PR checks to finish with only `success`, `skipped`, or `neutral`
    conclusions.
-5. Merge the PR, preferring normal merge first. Use admin merge only when the
+6. Merge the PR, preferring normal merge first. Use admin merge only when the
    user requested merge follow-through and GitHub reports a policy-only block
    after the gates above are clean.
-6. Fetch and fast-forward local `main` to `origin/main`.
-7. Verify every `main` workflow for the merge SHA is green. This is a hard gate:
+7. Fetch and fast-forward local `main` to `origin/main`.
+8. Verify every `main` workflow for the merge SHA is green. This is a hard gate:
    do not run `bun git-sync` while any main workflow is queued, in progress, or
    failed.
-8. Run `bun git-sync` only after main is fully green.
-9. Verify local and remote `main` and `production` point to the same SHA.
-10. Verify every `production` workflow for that SHA is green.
+9. Run `bun git-sync` only after main is fully green.
+10. Verify local and remote `main` and `production` point to the same SHA.
+11. Verify every `production` workflow for that SHA is green.
+12. After the merge is confirmed on `main`, remove the PR worktree and delete
+    its local task branch.
 
 ## Watcher Scripts
 
@@ -106,6 +110,9 @@ node <skill-dir>/scripts/watch_branch_runs.mjs --repo tutur3u/platform --branch 
   fix or report the blocker.
 - Keep temporary watcher files under `tmp/` if custom one-off scripts are
   needed; never stage coordination notes or scratch watchers.
+- Keep the PR worktree and local task branch when the PR remains open, a required
+  gate is blocked, or post-merge verification has not established that the merge
+  is present on `main`.
 
 ## Final Report
 

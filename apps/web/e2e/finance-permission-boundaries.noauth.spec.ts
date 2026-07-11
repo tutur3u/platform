@@ -46,12 +46,15 @@ function isoDateWithOffset(days: number) {
   return date.toISOString().slice(0, 10);
 }
 
+// TODO(#4956): Re-home this coverage in the Finance satellite E2E suite.
+// This web-only Docker suite does not start apps/finance, so its routes return
+// 404 here.
 test.describe('Finance permission boundaries', () => {
   test.beforeAll(() => {
     assertSafeE2EEnvironment();
   });
 
-  test('keeps invoice creators away from finance aggregates and confidential wallet amounts', async ({
+  test.skip('keeps invoice creators away from finance aggregates and confidential wallet amounts', async ({
     baseURL,
     browser,
     request,

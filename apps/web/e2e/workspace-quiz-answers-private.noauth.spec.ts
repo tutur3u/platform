@@ -44,11 +44,13 @@ test.describe('Workspace quiz answer privacy', () => {
     assertSafeE2EEnvironment();
   });
 
-  test('stores dynamic answers privately while teacher API can still render them', async ({
+  test.skip('stores dynamic answers privately while teacher API can still render them', async ({
     baseURL,
     browser,
     request,
   }, testInfo) => {
+    // TODO(#4956): Re-home this coverage in the Teach satellite E2E suite.
+    // The endpoint is covered at the route level in apps/teach for now.
     const origin = baseURL ?? 'https://tuturuuu.localhost';
     const headers = e2eClientHeaders(e2eClientIpForTest(testInfo, 344));
     const context = await browser.newContext({

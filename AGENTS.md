@@ -66,7 +66,8 @@ surface you are changing:
 - Do not modify, format, stage, commit, delete, rename, or clean up files you
   did not intentionally touch.
 - Do not use destructive Git or filesystem commands unless the user clearly asks
-  for that operation and the scope is explicit.
+  for that operation and the scope is explicit, except for the narrowly scoped
+  post-merge worktree and local task-branch cleanup mandated below.
 
 ## 3. Mandatory Actions
 
@@ -75,6 +76,11 @@ surface you are changing:
 - Inspect active `tmp/agent-coordination/` notes before broad or overlapping
   work. Create a coordination note for dirty worktrees, long-running work,
   overlap, handoffs, or changes to agent/tooling/deployment rules.
+- For every open Tuturuuu pull request, perform review, fixes, validation, and
+  merge preparation in an isolated worktree under `.worktrees/`; do not switch
+  the shared main checkout onto the PR branch. Run `bun setup` immediately after
+  creating the worktree. After the PR is confirmed merged into `main`, remove
+  the completed worktree and delete its local task branch.
 - Before staging, unstaging, committing, amending, rebasing, or user-requested
   commit-and-push work in a shared checkout, claim the Git commit window with
   `bun git-commit-window claim` or wait with `bun git-commit-window wait`.

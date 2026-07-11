@@ -38,12 +38,15 @@ function serviceHeaders({
   };
 }
 
+// TODO(#4956): Re-home this coverage in the Finance satellite E2E suite.
+// This web-only Docker suite does not start apps/finance, so its routes return
+// 404 here.
 test.describe('Workspace wallets private schema API', () => {
   test.beforeAll(() => {
     assertSafeE2EEnvironment();
   });
 
-  test('manages wallets through authenticated app APIs', async ({
+  test.skip('manages wallets through authenticated app APIs', async ({
     request,
   }) => {
     const walletId = randomUUID();
@@ -164,7 +167,7 @@ test.describe('Workspace wallets private schema API', () => {
     }
   });
 
-  test('uses workspace default currency when omitted and rejects unsupported explicit currency', async ({
+  test.skip('uses workspace default currency when omitted and rejects unsupported explicit currency', async ({
     request,
   }) => {
     const walletId = randomUUID();

@@ -232,6 +232,13 @@ same checkout. The docs-facing protocol lives in the
 [Agent Operating Manual](/overview/agent-operating-manual#shared-worktree-coordination),
 and the agent-facing workflow lives in `$tuturuuu-agent-coordination`.
 
+Open Tuturuuu pull requests are always handled in isolated worktrees under
+`.worktrees/`. Run `bun setup` immediately after creating the PR worktree, keep
+the worktree and local task branch while the PR is open, and remove both only
+after the merge is confirmed on `main` and post-merge verification is complete.
+This lifecycle is documented in the Agent Operating Manual and enforced as a
+cross-cutting rule in `AGENTS.md`.
+
 Use `tmp/agent-coordination/` for lightweight agent-to-agent notes when work may
 overlap, the worktree is dirty, the task is long-running, or the task changes
 agent workflow rules. The directory is ignored by git, so it can hold live
@@ -367,6 +374,10 @@ library.
 - Keep shared-worktree and commit-window coordination guidance aligned across
   `AGENTS.md`, the Agent Operating Manual, `$tuturuuu-agent-coordination`, and
   `$tuturuuu-commit`.
+- Keep the open-PR `.worktrees/` lifecycle, immediate `bun setup`, and
+  post-merge worktree/branch cleanup guidance aligned across `AGENTS.md`, the
+  Agent Operating Manual, `$tuturuuu-agent-coordination`, the platform
+  checklist, and `$tuturuuu-pr-merge-sync`.
 - Keep parallel subagent lane, staged-set ownership, generated-artifact
   ownership, and hook-failure guidance aligned across the Agent Operating
   Manual, `$tuturuuu-agent-coordination`, `$tuturuuu-commit`, and Git

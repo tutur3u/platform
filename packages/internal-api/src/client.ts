@@ -466,10 +466,16 @@ export function withEducationBootstrapBaseUrl(
   }
 
   if (isTeachAppRuntime()) {
-    return withTeachApiBaseUrl(options);
+    return {
+      ...options,
+      baseUrl: getConfiguredTeachApiBaseUrl(),
+    };
   }
 
-  return withLearnApiBaseUrl(options);
+  return {
+    ...options,
+    baseUrl: getConfiguredLearnApiBaseUrl(),
+  };
 }
 
 function isFinanceAppRuntime() {

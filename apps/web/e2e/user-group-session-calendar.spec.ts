@@ -51,10 +51,12 @@ test.describe('User group session calendar', () => {
     assertSafeE2EEnvironment();
   });
 
-  test('renders SmartCalendar overlaps and recurring drag scope prompt', async ({
+  test.skip('renders SmartCalendar overlaps and recurring drag scope prompt', async ({
     page,
     request,
   }) => {
+    // TODO(#4956): Re-home this coverage in the Contacts satellite E2E suite.
+    // This web-only Docker suite does not start apps/contacts.
     const groupId = randomUUID();
     const seriesId = randomUUID();
     const recurringSessionId = randomUUID();
@@ -254,10 +256,12 @@ test.describe('User group session calendar', () => {
     }
   });
 
-  test('auto-reconciles stale recurring metadata in the compact schedule card', async ({
+  test.skip('auto-reconciles stale recurring metadata in the compact schedule card', async ({
     page,
     request,
   }) => {
+    // TODO(#4956): Re-home this coverage in the Contacts satellite E2E suite.
+    // This web-only Docker suite does not start apps/contacts.
     const groupId = randomUUID();
     const seriesId = randomUUID();
     const conflictingSessionId = randomUUID();

@@ -335,12 +335,14 @@ describe('withEducationBootstrapBaseUrl', () => {
     });
   });
 
-  it('keeps bootstrap relative when running inside the teach app', () => {
+  it('resolves bootstrap to the teach origin when running inside the teach app', () => {
     vi.stubEnv('npm_package_name', '@tuturuuu/teach');
     vi.stubEnv('LEARN_APP_URL', 'https://learn.example.com');
     vi.stubEnv('TEACH_APP_URL', 'https://teach.example.com');
 
-    expect(withEducationBootstrapBaseUrl()).toEqual({});
+    expect(withEducationBootstrapBaseUrl()).toMatchObject({
+      baseUrl: 'https://teach.example.com',
+    });
   });
 });
 
