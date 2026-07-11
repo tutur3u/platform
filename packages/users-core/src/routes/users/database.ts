@@ -156,14 +156,15 @@ function parseUsersDatabaseSearchParams(params_obj: Record<string, unknown>) {
 export async function handleUsersDatabaseRequest(
   request: Request,
   { params }: Params,
-  params_obj: Record<string, unknown>
+  params_obj: Record<string, unknown>,
+  user?: { email?: string | null; id: string } | null
 ) {
   try {
     const { wsId: id } = await params;
     const wsId = await normalizeWorkspaceId(id);
 
     // Check permissions
-    const permissions = await getPermissions({ wsId, request });
+    const permissions = await getPermissions({ wsId, request, user });
     if (!permissions) {
       return Response.json({ error: 'Workspace not found' }, { status: 404 });
     }
