@@ -93,16 +93,22 @@ export function MailSidebarPanel({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col border-foreground/10 border-t">
-      <div className="p-2">
-        <Button className="w-full justify-start" onClick={compose}>
+      <div className="p-3">
+        <Button
+          className="h-11 w-full justify-start rounded-xl"
+          onClick={compose}
+        >
           <PenLine className="h-4 w-4" />
           {t('compose')}
         </Button>
       </div>
-      <div className="px-4 pt-4 pb-2">
-        <div className="font-semibold text-muted-foreground text-xs uppercase tracking-wide">
+      <div className="flex items-center justify-between px-4 pt-4 pb-2">
+        <div className="font-semibold text-muted-foreground text-xs uppercase tracking-[0.14em]">
           {t('mailboxes')}
         </div>
+        <span className="rounded-full bg-foreground/5 px-2 py-0.5 font-medium text-[0.7rem] text-muted-foreground tabular-nums">
+          {mailboxes.length}
+        </span>
       </div>
       <div className="scrollbar-none min-h-0 flex-1 space-y-1 overflow-y-auto px-2 pb-3">
         {bootstrapQuery.isLoading ? (
@@ -125,11 +131,6 @@ export function MailSidebarPanel({
           </div>
         )}
       </div>
-      {bootstrapQuery.data?.user.email ? (
-        <div className="border-foreground/10 border-t px-4 py-3 text-muted-foreground text-xs">
-          <div className="truncate">{bootstrapQuery.data.user.email}</div>
-        </div>
-      ) : null}
     </div>
   );
 }
@@ -150,8 +151,9 @@ function MailboxButton({
       type="button"
       aria-current={active ? 'true' : undefined}
       className={cn(
-        'flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm transition hover:bg-accent hover:text-accent-foreground',
-        active && 'bg-accent text-accent-foreground'
+        'flex w-full items-center gap-2.5 rounded-xl border border-transparent px-2.5 py-2.5 text-left text-sm transition hover:bg-accent hover:text-accent-foreground',
+        active &&
+          'border-foreground/10 bg-accent text-accent-foreground shadow-sm'
       )}
       onClick={onClick}
     >

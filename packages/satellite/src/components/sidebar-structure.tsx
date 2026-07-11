@@ -61,7 +61,7 @@ export interface SidebarStructureProps {
     personal?: boolean | null;
     tier?: string | null;
   } | null;
-  workspaceSelect: WorkspaceSelectRenderer;
+  workspaceSelect?: WorkspaceSelectRenderer;
   wsId: string;
   showBrandOnRoot?: boolean;
 }

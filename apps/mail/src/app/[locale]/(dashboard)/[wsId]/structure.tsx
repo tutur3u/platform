@@ -1,22 +1,20 @@
 'use client';
 
-import { Mail } from '@tuturuuu/icons';
 import { SidebarStructure } from '@tuturuuu/satellite/sidebar-structure';
 import type { NavLink } from '@tuturuuu/ui/custom/navigation';
+import { TuturuuLogo } from '@tuturuuu/ui/custom/tuturuuu-logo';
 import { usePathname, useSearchParams } from 'next/navigation';
-import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
 import { useMemo } from 'react';
 import { TTR_URL } from '@/constants/common';
+import { MailBrand } from './mail-brand';
 import { getMailFolderHref, isMailFolder } from './mail-folders';
 import { MailSidebarPanel } from './mail-sidebar-panel';
-import { WorkspaceSelect } from './workspace-select';
 
 interface StructureProps {
   actions: ReactNode;
   children: ReactNode;
   defaultCollapsed: boolean;
-  disableCreateNewWorkspace?: boolean;
   links: (NavLink | null)[];
   personalOrWsId: string;
   userPopover: ReactNode;
@@ -28,16 +26,15 @@ export function Structure({
   actions,
   children,
   defaultCollapsed = false,
-  disableCreateNewWorkspace,
   links,
   personalOrWsId,
   userPopover,
   workspace,
   wsId,
 }: StructureProps) {
-  const t = useTranslations('mail');
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const mailHomeHref = getMailFolderHref(personalOrWsId, 'inbox');
   const enhancedLinks = useMemo(
     () =>
       links.map((link) => {
@@ -82,30 +79,19 @@ export function Structure({
     <SidebarStructure
       actions={actions}
       brand={
-        <>
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-dynamic bg-foreground/5">
-            <Mail className="h-4 w-4" />
-          </span>
-          <span className="min-w-0 flex-1 truncate font-semibold text-base">
-            {t('title')}
-          </span>
-        </>
+        <MailBrand
+          centralHref={TTR_URL}
+          className="flex-1"
+          mailHref={mailHomeHref}
+        />
       }
+      brandHref={TTR_URL}
       collapsedBrand={
-        <span className="flex h-9 w-9 items-center justify-center rounded-md border border-dynamic bg-foreground/5">
-          <Mail className="h-4 w-4" />
-        </span>
+        <TuturuuLogo alt="" className="size-8" height={32} width={32} />
       }
       defaultCollapsed={defaultCollapsed}
       links={enhancedLinks}
-      mobileBrand={
-        <span className="flex min-w-0 items-center gap-2">
-          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-dynamic bg-foreground/5">
-            <Mail className="h-4 w-4" />
-          </span>
-          <span className="truncate font-semibold">{t('title')}</span>
-        </span>
-      }
+      mobileBrand={<MailBrand centralHref={TTR_URL} mailHref={mailHomeHref} />}
       sidebarContentAfter={({ closeOnMobile, isCollapsed }) => (
         <MailSidebarPanel
           closeOnMobile={closeOnMobile}
@@ -114,19 +100,13 @@ export function Structure({
           workspaceId={personalOrWsId}
         />
       )}
-      sidebarExpandedWidth="18.5rem"
+      sidebarExpandedWidth="18rem"
       sidebarHeaderClassName="border-foreground/10 border-b"
+      linkBrand={false}
       upgradeExternal
       upgradeHref={`${TTR_URL}/${wsId}/billing`}
       userPopover={userPopover}
       workspace={workspace}
-      workspaceSelect={({ isCollapsed }) => (
-        <WorkspaceSelect
-          disableCreateNewWorkspace={disableCreateNewWorkspace}
-          hideLeading={isCollapsed}
-          wsId={wsId}
-        />
-      )}
       wsId={wsId}
     >
       {children}

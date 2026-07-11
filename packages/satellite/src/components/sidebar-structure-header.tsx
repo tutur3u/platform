@@ -57,7 +57,7 @@ interface SidebarStructureHeaderProps {
   linkBrand?: boolean;
   showBrandOnRoot?: boolean;
   stackWorkspaceSelect?: boolean;
-  workspaceSelect: WorkspaceSelectRenderer;
+  workspaceSelect?: WorkspaceSelectRenderer;
   wsId: string;
 }
 
@@ -108,18 +108,21 @@ export function SidebarStructureHeader({
         {brandContent}
       </div>
     );
+  const workspaceSelectNode = workspaceSelect ? (
+    <Suspense
+      fallback={
+        <div className="h-10 w-full animate-pulse rounded-lg bg-foreground/5" />
+      }
+    >
+      {workspaceSelect({ isCollapsed })}
+    </Suspense>
+  ) : null;
 
   if (stackWorkspaceSelect) {
     return (
       <div className="flex min-w-0 flex-1 flex-col gap-2 py-1">
         {brandNode}
-        <Suspense
-          fallback={
-            <div className="h-10 w-full animate-pulse rounded-lg bg-foreground/5" />
-          }
-        >
-          {workspaceSelect({ isCollapsed })}
-        </Suspense>
+        {workspaceSelectNode}
       </div>
     );
   }
@@ -127,13 +130,7 @@ export function SidebarStructureHeader({
   return (
     <>
       {brandNode}
-      <Suspense
-        fallback={
-          <div className="h-10 w-full animate-pulse rounded-lg bg-foreground/5" />
-        }
-      >
-        {workspaceSelect({ isCollapsed })}
-      </Suspense>
+      {workspaceSelectNode}
     </>
   );
 }

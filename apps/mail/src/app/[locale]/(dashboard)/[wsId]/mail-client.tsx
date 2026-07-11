@@ -156,21 +156,21 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
   }
 
   return (
-    <main className="flex h-full min-h-0 overflow-hidden bg-background text-foreground lg:grid lg:grid-cols-[minmax(320px,420px)_minmax(0,1fr)]">
+    <main className="flex h-full min-h-0 overflow-hidden bg-root-background text-foreground lg:grid lg:grid-cols-[minmax(340px,430px)_minmax(0,1fr)]">
       <section
         className={cn(
-          'min-h-0 flex-col border-dynamic border-r bg-background',
+          'min-h-0 flex-col border-dynamic border-r bg-background/95 backdrop-blur-sm',
           messageId ? 'hidden lg:flex' : 'flex'
         )}
       >
-        <div className="flex min-h-16 items-center gap-3 border-dynamic border-b px-3">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-dynamic bg-foreground/5">
+        <div className="flex min-h-17 items-center gap-3 border-dynamic border-b px-4">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-dynamic bg-foreground/[0.035] shadow-sm">
             <FolderIcon className="h-4 w-4" />
           </div>
           <div className="min-w-0 flex-1">
             <h1 className="truncate font-semibold text-base">{t(folder)}</h1>
             <p className="truncate text-muted-foreground text-xs">
-              {activeMailbox?.displayName ?? t('mailboxes')}
+              {activeMailbox?.address ?? t('mailboxes')}
             </p>
           </div>
           <Button
@@ -190,11 +190,11 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
           </Button>
         </div>
 
-        <div className="border-dynamic border-b p-3">
+        <div className="border-dynamic border-b p-3.5">
           <div className="relative">
             <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
-              className="pl-9"
+              className="h-10 rounded-xl border-foreground/10 bg-foreground/[0.025] pl-9 shadow-none"
               onChange={(event) => setQuery(event.target.value)}
               placeholder={t('search')}
               value={query}
@@ -220,8 +220,11 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
               ))}
             </div>
           ) : (
-            <div className="flex h-64 items-center justify-center px-8 text-center">
-              <div className="max-w-64 space-y-2">
+            <div className="flex h-72 items-center justify-center px-8 text-center">
+              <div className="max-w-64 space-y-3">
+                <div className="mx-auto flex size-11 items-center justify-center rounded-2xl border border-dynamic bg-foreground/[0.035] shadow-sm">
+                  <FolderIcon className="h-4 w-4 text-muted-foreground" />
+                </div>
                 <div className="font-medium text-sm">{emptyTitle}</div>
                 <p className="text-muted-foreground text-sm">
                   {emptyDescription}
@@ -234,7 +237,7 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
 
       <section
         className={cn(
-          'min-h-0 bg-background',
+          'min-h-0 bg-[radial-gradient(circle_at_50%_42%,color-mix(in_oklab,var(--foreground)_4%,transparent),transparent_34%)]',
           messageId ? 'flex' : 'hidden lg:flex'
         )}
       >
