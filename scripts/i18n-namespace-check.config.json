@@ -76,7 +76,6 @@
     "wallet-checkpoints",
     "ws-board-templates"
   ],
-
   "$keyExceptionsComment": "Key-level exceptions for shared package translation keys that specific apps do not need. Supports wildcards: 'namespace.*' skips all keys under a namespace. Remove entries as apps add the missing keys.",
   "keyExceptions": {
     "apps/web": ["settings.calendar.*", "ws-polls.*"],
@@ -88,7 +87,7 @@
       "ws-tasks.*"
     ],
     "apps/cms": ["settings.calendar.*", "ws-polls.*"],
-    "apps/contacts": ["ws-polls.*"],
+    "apps/contacts": ["finance.spending-by-category", "ws-polls.*"],
     "apps/drive": ["ws-polls.*"],
     "apps/finance": [
       "calendar.*",
