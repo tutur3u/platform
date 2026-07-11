@@ -218,6 +218,29 @@ external-project API route before rendering admin UI or proxying admin API
 calls; if Tuturuuu returns `401`, `403`, or `404`, the app must clear its local
 session and send the user through the central login flow again.
 
+### App-owned Drive attachments
+
+Registered external apps can request `workspace:drive:read` and
+`workspace:drive:write` without granting their members the broad `manage_drive`
+workspace permission. The app must be enabled and linked to the requested
+workspace, and every call still requires the token actor to be a direct
+`MEMBER`. These scopes expose only the external-app Drive boundary:
+
+- `POST /api/v1/workspaces/{wsId}/external-apps/drive/upload-url`
+- `POST /api/v1/workspaces/{wsId}/external-apps/drive/finalize`
+- `POST /api/v1/workspaces/{wsId}/external-apps/drive/read-url`
+- `DELETE /api/v1/workspaces/{wsId}/external-apps/drive`
+
+Chat attachments are isolated under
+`external-apps/{targetApp}/chat/{conversationId}/{attachmentId}/{filename}`.
+The upload route accepts metadata only and returns a short-lived direct-upload
+payload for the workspace's configured Supabase Storage or R2 provider. The app
+must call `finalize` after upload; Tuturuuu reads the actual object metadata,
+deletes mismatched objects, and returns canonical metadata. Signed URLs are
+transient response values and must never be logged or persisted. Use
+`@tuturuuu/internal-api/external-app-drive` for the shared request and direct
+upload helpers.
+
 The centralized login page validates external and internal `returnUrl` targets
 before it renders the normal sign-in form or account-confirmation handoff. If the
 target origin is not registered or cannot be resolved, the page shows a warning

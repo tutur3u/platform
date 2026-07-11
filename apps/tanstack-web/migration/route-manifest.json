@@ -6,12 +6,12 @@
         "acceptedRemoval": 11,
         "key": "api",
         "label": "api",
-        "legacyNext": 488,
+        "legacyNext": 492,
         "migrated": 66,
-        "percentComplete": 13.63,
-        "remaining": 488,
+        "percentComplete": 13.53,
+        "remaining": 492,
         "terminal": 77,
-        "total": 565,
+        "total": 569,
         "unknownStatus": 0
       },
       {
@@ -116,12 +116,12 @@
         "acceptedRemoval": 11,
         "key": "rust-backend",
         "label": "Rust backend",
-        "legacyNext": 496,
+        "legacyNext": 500,
         "migrated": 71,
-        "percentComplete": 14.19,
-        "remaining": 496,
+        "percentComplete": 14.09,
+        "remaining": 500,
         "terminal": 82,
-        "total": 578,
+        "total": 582,
         "unknownStatus": 0
       },
       {
@@ -323,12 +323,12 @@
       "acceptedRemoval": 13,
       "key": "total",
       "label": "All route artifacts",
-      "legacyNext": 557,
+      "legacyNext": 561,
       "migrated": 237,
-      "percentComplete": 30.98,
-      "remaining": 557,
+      "percentComplete": 30.83,
+      "remaining": 561,
       "terminal": 250,
-      "total": 807,
+      "total": 811,
       "unknownStatus": 0
     }
   },
@@ -2948,6 +2948,42 @@
       "methods": ["POST"],
       "routePath": "/api/v1/workspaces/:wsId/external-apps/cron/setup",
       "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/external-apps/cron/setup/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend"
+    },
+    {
+      "id": "api:/api/v1/workspaces/:wsId/external-apps/drive:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/external-apps/drive/route.ts",
+      "kind": "api",
+      "methods": ["DELETE"],
+      "routePath": "/api/v1/workspaces/:wsId/external-apps/drive",
+      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/external-apps/drive/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend"
+    },
+    {
+      "id": "api:/api/v1/workspaces/:wsId/external-apps/drive/finalize:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/external-apps/drive/finalize/route.ts",
+      "kind": "api",
+      "methods": ["POST"],
+      "routePath": "/api/v1/workspaces/:wsId/external-apps/drive/finalize",
+      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/external-apps/drive/finalize/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend"
+    },
+    {
+      "id": "api:/api/v1/workspaces/:wsId/external-apps/drive/read-url:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/external-apps/drive/read-url/route.ts",
+      "kind": "api",
+      "methods": ["POST"],
+      "routePath": "/api/v1/workspaces/:wsId/external-apps/drive/read-url",
+      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/external-apps/drive/read-url/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend"
+    },
+    {
+      "id": "api:/api/v1/workspaces/:wsId/external-apps/drive/upload-url:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/external-apps/drive/upload-url/route.ts",
+      "kind": "api",
+      "methods": ["POST"],
+      "routePath": "/api/v1/workspaces/:wsId/external-apps/drive/upload-url",
+      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/external-apps/drive/upload-url/route.ts",
       "status": "legacy-next",
       "targetOwner": "rust-backend"
     },
@@ -7682,20 +7718,20 @@
     }
   ],
   "summary": {
-    "apiRoutes": 565,
+    "apiRoutes": 569,
     "cronRoutes": 8,
     "layouts": 56,
     "pages": 169,
-    "routeHandlers": 578,
+    "routeHandlers": 582,
     "methodCounts": {
       "GET": 296,
       "HEAD": 1,
-      "POST": 283,
+      "POST": 286,
       "PUT": 53,
       "PATCH": 60,
-      "DELETE": 99,
+      "DELETE": 100,
       "OPTIONS": 23
     },
-    "total": 807
+    "total": 811
   }
 }
