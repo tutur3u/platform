@@ -35,15 +35,19 @@ export function LearnerVocabularyReview({
         </div>
         <div className="flex flex-wrap gap-2">
           <button
-            className="inline-flex items-center gap-2 border-2 border-border bg-primary px-4 py-2 font-black text-primary-foreground text-sm shadow-[3px_3px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[4px_4px_0_var(--border)]"
+            className="inline-flex items-center gap-2 border-2 border-border bg-primary px-4 py-2 font-black text-primary-foreground text-sm shadow-[3px_3px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[4px_4px_0_var(--border)] disabled:cursor-not-allowed disabled:opacity-50"
+            disabled={vocabulary.length < 2}
             onClick={() => startPractice('match')}
+            title={vocabulary.length < 2 ? t('practiceRequiresTwo') : undefined}
             type="button"
           >
             {t('practiceMatch')}
           </button>
           <button
-            className="inline-flex items-center gap-2 border-2 border-border bg-dynamic-cyan px-4 py-2 font-black text-foreground text-sm shadow-[3px_3px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[4px_4px_0_var(--border)]"
+            className="inline-flex items-center gap-2 border-2 border-border bg-dynamic-cyan px-4 py-2 font-black text-foreground text-sm shadow-[3px_3px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[4px_4px_0_var(--border)] disabled:cursor-not-allowed disabled:opacity-50"
+            disabled={vocabulary.length < 2}
             onClick={() => startPractice('quiz')}
+            title={vocabulary.length < 2 ? t('practiceRequiresTwo') : undefined}
             type="button"
           >
             {t('practiceQuiz')}
@@ -87,6 +91,7 @@ export function LearnerVocabularyReview({
               <Sparkles className="h-4 w-4 shrink-0 text-dynamic-yellow" />
             </div>
             <button
+              aria-label={t('playWordLabel', { word: entry.word })}
               className="mt-3 border-2 border-border bg-card px-3 py-1.5 font-bold text-xs shadow-[2px_2px_0_var(--border)] disabled:opacity-50"
               disabled={playingKey !== null}
               onClick={() => playSpeech(entry.word, 'word', `${entry.id}-word`)}
@@ -106,6 +111,10 @@ export function LearnerVocabularyReview({
                     >
                       <span>{example}</span>
                       <button
+                        aria-label={t('playExampleLabel', {
+                          example,
+                          word: entry.word,
+                        })}
                         className="border border-border bg-card px-2 py-0.5 font-bold text-[10px] text-foreground shadow-[1px_1px_0_var(--border)] disabled:opacity-50"
                         disabled={playingKey !== null}
                         onClick={() =>

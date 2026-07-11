@@ -103,11 +103,16 @@ export function buildQuizOptions(index: number, vocabulary: VocabularyEntry[]) {
   const currentEntry = vocabulary[index];
   if (!currentEntry) return [];
 
-  const distractors = shuffle(
-    vocabulary
-      .filter((entry) => entry.id !== currentEntry.id)
-      .map((entry) => entry.word)
-  ).slice(0, 3);
+  const distractors = shuffle([
+    ...new Set(
+      vocabulary
+        .filter(
+          (entry) =>
+            entry.id !== currentEntry.id && entry.word !== currentEntry.word
+        )
+        .map((entry) => entry.word)
+    ),
+  ]).slice(0, 3);
 
   return shuffle([currentEntry.word, ...distractors]);
 }

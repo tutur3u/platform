@@ -2,13 +2,12 @@
 
 import { RotateCcw } from '@tuturuuu/icons';
 import { useTranslations } from 'next-intl';
-import type { ReactNode } from 'react';
 
 export function LearnerVocabularyPracticeHeader({
   label,
   resetPractice,
 }: {
-  label: ReactNode;
+  label: string;
   resetPractice: () => void;
 }) {
   const t = useTranslations('learnerVocabulary');
@@ -31,8 +30,8 @@ export function LearnerVocabularyPracticeHeader({
 export function LearnerVocabularyLoading() {
   return (
     <div className="space-y-3">
-      <div className="h-20 animate-pulse border-2 border-border bg-muted/60 shadow-[3px_3px_0_var(--border)]" />
-      <div className="h-20 animate-pulse border-2 border-border bg-muted/60 shadow-[3px_3px_0_var(--border)]" />
+      <div className="h-20 animate-pulse border-2 border-border bg-muted/60 shadow-[3px_3px_0_var(--border)] motion-reduce:animate-none" />
+      <div className="h-20 animate-pulse border-2 border-border bg-muted/60 shadow-[3px_3px_0_var(--border)] motion-reduce:animate-none" />
     </div>
   );
 }

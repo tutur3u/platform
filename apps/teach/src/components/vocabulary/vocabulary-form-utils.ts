@@ -79,7 +79,7 @@ export function normalizeVocabulary(value: unknown): VocabularyItem[] {
     .filter((entry): entry is VocabularyItem => entry !== null);
 }
 
-export function readImageAsDataUrl(file: File) {
+function blobAsDataUrl(blob: Blob) {
   return new Promise<string>((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => {
@@ -87,6 +87,33 @@ export function readImageAsDataUrl(file: File) {
       else reject(new Error('Could not read image.'));
     };
     reader.onerror = () => reject(reader.error ?? new Error('Upload failed.'));
-    reader.readAsDataURL(file);
+    reader.readAsDataURL(blob);
   });
+}
+
+export async function readImageAsDataUrl(file: File) {
+  try {
+    const bitmap = await createImageBitmap(file);
+    const scale = Math.min(1, 1280 / bitmap.width, 720 / bitmap.height);
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.max(1, Math.round(bitmap.width * scale));
+    canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+    const context = canvas.getContext('2d');
+
+    if (!context) {
+      bitmap.close();
+      return blobAsDataUrl(file);
+    }
+
+    context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+    bitmap.close();
+
+    const resized = await new Promise<Blob | null>((resolve) => {
+      canvas.toBlob(resolve, 'image/webp', 0.82);
+    });
+
+    return blobAsDataUrl(resized ?? file);
+  } catch {
+    return blobAsDataUrl(file);
+  }
 }

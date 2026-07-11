@@ -517,9 +517,9 @@ export default function LessonVocabularySection({
                       <button
                         key={img.image}
                         type="button"
-                        onClick={() => updateDraft('imageUrl', img.image)}
+                        onClick={() => updateDraft('imageUrl', img.thumbnail)}
                         className={`relative aspect-square w-16 shrink-0 overflow-hidden border-2 transition-all hover:scale-105 ${
-                          draft.imageUrl === img.image
+                          draft.imageUrl === img.thumbnail
                             ? 'scale-105 border-primary shadow-[2px_2px_0_var(--border)] ring-2 ring-primary/20'
                             : 'border-border shadow-[1px_1px_0_var(--border)]'
                         }`}

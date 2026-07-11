@@ -101,8 +101,8 @@ export function LearnerVocabularyPronunciationFeedback({
             {t('whatToFix')}
           </p>
           <ul className="space-y-1 text-sm">
-            {feedback.issues.map((issue) => (
-              <li key={issue}>- {issue}</li>
+            {feedback.issues.map((issue, index) => (
+              <li key={`${issue}-${index}`}>- {issue}</li>
             ))}
           </ul>
         </div>
@@ -114,8 +114,8 @@ export function LearnerVocabularyPronunciationFeedback({
             {t('practiceTips')}
           </p>
           <ul className="space-y-1 text-sm">
-            {feedback.tips.map((tip) => (
-              <li key={tip}>- {tip}</li>
+            {feedback.tips.map((tip, index) => (
+              <li key={`${tip}-${index}`}>- {tip}</li>
             ))}
           </ul>
         </div>

@@ -2,6 +2,7 @@ import { ArrowLeft } from '@tuturuuu/icons';
 import {
   getTeachBootstrap,
   getTulearnBootstrap,
+  InternalApiError,
   withForwardedInternalApiAuth,
 } from '@tuturuuu/internal-api';
 import { headers } from 'next/headers';
@@ -32,10 +33,21 @@ export async function LessonVocabularyPage({
   const t = await getTranslations('teachVocabulary');
   const requestHeaders = await headers();
   const authOptions = withForwardedInternalApiAuth(requestHeaders);
-  const bootstrap = await (bootstrapSource === 'teach'
-    ? getTeachBootstrap(authOptions)
-    : getTulearnBootstrap(authOptions)
-  ).catch(() => null);
+  let bootstrap: Awaited<ReturnType<typeof getTeachBootstrap>>;
+  try {
+    bootstrap = await (bootstrapSource === 'teach'
+      ? getTeachBootstrap(authOptions)
+      : getTulearnBootstrap(authOptions));
+  } catch (error) {
+    if (
+      error instanceof InternalApiError &&
+      (error.status === 401 || error.status === 403)
+    ) {
+      return redirect({ href: `/login?next=${loginNext}`, locale });
+    }
+
+    throw error;
+  }
 
   if (!bootstrap) {
     return redirect({ href: `/login?next=${loginNext}`, locale });

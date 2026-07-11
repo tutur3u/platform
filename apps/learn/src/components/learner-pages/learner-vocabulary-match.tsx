@@ -52,6 +52,13 @@ export function LearnerVocabularyMatch({
       </div>
 
       <div className="grid gap-3 md:grid-cols-2">
+        <p aria-live="polite" className="sr-only">
+          {mismatchIds.length > 0
+            ? t('matchMismatch')
+            : finished
+              ? t('allMatched')
+              : ''}
+        </p>
         {cards.map((card) => {
           const isMatched = matchedSet.has(card.id);
           const isSelected = selected?.id === card.id;
@@ -59,6 +66,21 @@ export function LearnerVocabularyMatch({
 
           return (
             <button
+              aria-label={
+                isMatched
+                  ? t('matchedCard', {
+                      label: card.label,
+                      type: card.side === 'word' ? t('word') : t('definition'),
+                    })
+                  : isSelected
+                    ? t('selectedCard', {
+                        label: card.label,
+                        type:
+                          card.side === 'word' ? t('word') : t('definition'),
+                      })
+                    : undefined
+              }
+              aria-pressed={isSelected}
               className={cn(
                 'min-h-24 border-2 border-border bg-background p-4 text-left font-bold text-sm shadow-[3px_3px_0_var(--border)] transition',
                 isSelected && 'bg-dynamic-cyan/15',
