@@ -1,5 +1,32 @@
 # Changelog
 
+## [0.15.0](https://github.com/tutur3u/platform/compare/ui-v0.14.0...ui-v0.15.0) (2026-07-11)
+
+
+### Features
+
+* **contacts:** migrate reports + groups and complete the users cutover ([2ee89cd](https://github.com/tutur3u/platform/commit/2ee89cd2257c2a9824df53d4be99436416d85c13))
+* **tasks:** allow archiving document tasks ([0c51941](https://github.com/tutur3u/platform/commit/0c519414101a3a21b4e33548517eef05143fdf8e))
+* **tasks:** consolidate task settings ([982e0b9](https://github.com/tutur3u/platform/commit/982e0b927358a5d566a5e33e092bd387ec0a7b50))
+* **tasks:** consolidate tasks entry and sidebar controls ([56e80eb](https://github.com/tutur3u/platform/commit/56e80eb5c60d4b4e56f2953c7978038f1ebe9c08))
+
+
+### Bug Fixes
+
+* **auth:** share account preference cookies ([8c1848a](https://github.com/tutur3u/platform/commit/8c1848a941c1b3f91337104c975e4bc0d8f68fc9))
+* **finance:** apply invoice defaults and i18n coverage ([a5a7a26](https://github.com/tutur3u/platform/commit/a5a7a26c5cf9f6479010624ace6a18dbeb87f0dd))
+* **finance:** apply invoice defaults and i18n coverage ([97fabad](https://github.com/tutur3u/platform/commit/97fabad7b0815da7afa009fea6a5d1abb983c040))
+* **finance:** stabilize subscription invoice checkout ([742c163](https://github.com/tutur3u/platform/commit/742c163bc8fa94acf3de03feb4ff3ef026419a4e))
+* **mail:** stabilize layout and managed sender identity ([a22205e](https://github.com/tutur3u/platform/commit/a22205e98a8671ffb628586107de09a7ba8dd1c4))
+* **tasks:** compact due date menu summaries ([473ca52](https://github.com/tutur3u/platform/commit/473ca52acd752b16032d1635120063d250ba9bd0))
+* **tasks:** repair settings data and i18n ([0159488](https://github.com/tutur3u/platform/commit/0159488ae5de1c4d98a7d804d47bf1d479ae60c9))
+* **tasks:** resolve personal placement board from list ([ed52667](https://github.com/tutur3u/platform/commit/ed5266740092e2c5fd2e7be19d5015a63705bea1))
+* **tasks:** resolve personal placement board from list ([14335af](https://github.com/tutur3u/platform/commit/14335af944f77b923be66c871c31f5fea79d61a4))
+* **tasks:** restore task dialog app-session requests ([69f83cb](https://github.com/tutur3u/platform/commit/69f83cb8730eaeb4d39c186bbf8593c73e3deb47))
+* **tasks:** support personal external terminal defaults ([50434cb](https://github.com/tutur3u/platform/commit/50434cb9849a65dd8c77f6b030b27a4bd76125e4))
+* **tasks:** unify board loading skeleton ([eaf2b65](https://github.com/tutur3u/platform/commit/eaf2b65242201573b930d4df4695488d0a669f30))
+* **ui:** preserve personal external task edits ([8e537e3](https://github.com/tutur3u/platform/commit/8e537e3787ad6854c0efe7792e9487647d73854e))
+
 ## [0.14.0](https://github.com/tutur3u/platform/compare/ui-v0.13.0...ui-v0.14.0) (2026-07-06)
 
 

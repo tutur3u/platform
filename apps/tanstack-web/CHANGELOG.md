@@ -1,5 +1,53 @@
 # Changelog
 
+## [0.8.0](https://github.com/tutur3u/platform/compare/tanstack-web-v0.7.0...tanstack-web-v0.8.0) (2026-07-11)
+
+
+### Features
+
+* **cms:** add Richfield external-project adapter ([#4924](https://github.com/tutur3u/platform/issues/4924)) ([b16a5e8](https://github.com/tutur3u/platform/commit/b16a5e8aa427e267c0805c6e7453a4fc58d42a23))
+* **contacts:** migrate reports + groups and complete the users cutover ([2ee89cd](https://github.com/tutur3u/platform/commit/2ee89cd2257c2a9824df53d4be99436416d85c13))
+* **contacts:** migrate users [userId]/follow-up; fix owned-route matcher ([765b87a](https://github.com/tutur3u/platform/commit/765b87a5adb40318296d24b4c56347f27f65c8db))
+* **contacts:** migrate users approvals module, extracting shared parts to packages ([e66ae32](https://github.com/tutur3u/platform/commit/e66ae326f89bec7e43ef9bbd3650dbf2f8b41814))
+* **contacts:** migrate users attendance; add satellite-safe workspace-user link helper ([8f53453](https://github.com/tutur3u/platform/commit/8f534533793af8d25e7c2eca6e0147e459d78bbe))
+* **contacts:** migrate users group-tags module ([bcc61e4](https://github.com/tutur3u/platform/commit/bcc61e4d20730a09505159e0175ac3a0838d54ad))
+* **contacts:** migrate users topic-announcements module ([01e19ab](https://github.com/tutur3u/platform/commit/01e19ab60461ccd94a0374bed74ce6e4d5d38a3b))
+* **contacts:** scaffold contacts.tuturuuu.com satellite shell + monorepo registration ([7e335fc](https://github.com/tutur3u/platform/commit/7e335fc036c4a45ed189095ecd10a43ee002294b))
+* **edu:** add quiz management flow & dashboard improvements ([#4933](https://github.com/tutur3u/platform/issues/4933)) ([9dafc17](https://github.com/tutur3u/platform/commit/9dafc173b1c9e22cfa8731e4383779583f25acbc))
+* **education:** extract shared education libs into @tuturuuu/education-core and ready learn/teach for API hosting ([dd77db3](https://github.com/tutur3u/platform/commit/dd77db3590786cad51ce76c4d18b30240173ef7e))
+* **external-apps:** add scoped drive attachments ([a03d577](https://github.com/tutur3u/platform/commit/a03d5775dffa3ed8c4fc5277f06022955a8c7320))
+* **finance:** extract shared finance route-auth + storage libs into @tuturuuu/finance-core ([79140d2](https://github.com/tutur3u/platform/commit/79140d2ddb5be4b6fb1d52532ff75aaa1aa3ea22))
+* **finance:** move workspace-finance API routes from apps/web to apps/finance ([bafd61e](https://github.com/tutur3u/platform/commit/bafd61e6394fc2bb9a11efb364ad6c88cd755a4b))
+* **inventory:** finish moving inventory API routes to apps/inventory; delete tanstack-web inventory dashboard ([740db08](https://github.com/tutur3u/platform/commit/740db08d5ba43eda8340cc86f55bfab8332261a4))
+* **learn:** move tulearn + guest course API routes from apps/web to apps/learn ([ee1aa7b](https://github.com/tutur3u/platform/commit/ee1aa7b7685403c43aca94f3d97dc64a32374f25))
+* **pay:** complete payment ownership migration ([e79e421](https://github.com/tutur3u/platform/commit/e79e42107fb3ee34e2cae2703ec33570da6ce950))
+* **pay:** dual-run billing behind NEXT_PUBLIC_ENABLE_PAY_APP rollout flag ([3266ec2](https://github.com/tutur3u/platform/commit/3266ec2733d9b7e8cd446f4fb2235e54f7b5a0b0))
+* **pay:** host the billing surface on pay; redirect web /billing ([5162706](https://github.com/tutur3u/platform/commit/5162706bc1de154f8dbfc2ac2aa82b4423fb8a8c))
+* **pay:** move payment + billing API routes into apps/pay ([8a932e9](https://github.com/tutur3u/platform/commit/8a932e917f4a1becaa0564794a643fcd9cff7300))
+* **pay:** scaffold apps/pay satellite (pay.tuturuuu.com, port 7826) ([3d6e45c](https://github.com/tutur3u/platform/commit/3d6e45cca6a315fe67213e438144b73103bae2f5))
+* **posts:** audit log + revert for group-post completion checks ([b38de09](https://github.com/tutur3u/platform/commit/b38de0992c0b17cdd7f7a6021530095d5a323df1))
+* **teach:** move education CRUD, user-group modules, valsea, and AI routes to apps/teach ([6062756](https://github.com/tutur3u/platform/commit/606275693d6647f339042fb140fb8224e9eebdd0))
+* **teach:** move teach instructor API routes from apps/web to apps/teach ([fb2cd39](https://github.com/tutur3u/platform/commit/fb2cd392ff68f89dcc2608e5952554f163e7965f))
+* **teach:** move the education dashboard to apps/teach and retire the web + tanstack copies ([5c80135](https://github.com/tutur3u/platform/commit/5c801350c5ca7229a0a59b7072e2624384187a16))
+
+
+### Bug Fixes
+
+* **auth:** share account preference cookies ([8c1848a](https://github.com/tutur3u/platform/commit/8c1848a941c1b3f91337104c975e4bc0d8f68fc9))
+* **cms:** harden richfield external submissions ([1c1fb47](https://github.com/tutur3u/platform/commit/1c1fb472803bbdd3342b5aeb9cf09c9287b3bf96))
+* **e2e:** prune migrated routes from the tanstack auth-gate list ([92e2862](https://github.com/tutur3u/platform/commit/92e28621a76e13e298904d2219930b0d1ff5e938))
+* **edu:** address quiz review feedback ([ec77bd8](https://github.com/tutur3u/platform/commit/ec77bd83f2e1ec716ea28db83a55930a7ca60df3))
+* **finance:** stabilize subscription invoice checkout ([742c163](https://github.com/tutur3u/platform/commit/742c163bc8fa94acf3de03feb4ff3ef026419a4e))
+* **vocabulary:** stabilize CI and OED lookup ([0d153a7](https://github.com/tutur3u/platform/commit/0d153a74a3cccdc003c90e38fd339e5ec5081ee1))
+
+
+### Performance Improvements
+
+* **ci:** enable repository-wide remote caching ([6250f91](https://github.com/tutur3u/platform/commit/6250f91d745ef987a4fc86c797aedf41542f421b))
+* **web:** make login shell cache friendly ([0fcf4da](https://github.com/tutur3u/platform/commit/0fcf4da565e5e4260032247d6ee710cb6c4b7fcd))
+* **web:** split legacy api route wrappers ([3b1b7f2](https://github.com/tutur3u/platform/commit/3b1b7f295363ce382744c145dbb848a2b5283d4e))
+* **web:** split legacy v1 api routes ([9971e4a](https://github.com/tutur3u/platform/commit/9971e4af0c9d53aa2eb0ff9305252730f737fc35))
+
 ## [0.7.0](https://github.com/tutur3u/platform/compare/tanstack-web-v0.6.0...tanstack-web-v0.7.0) (2026-07-05)
 
 

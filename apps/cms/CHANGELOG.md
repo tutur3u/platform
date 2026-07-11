@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.15.0](https://github.com/tutur3u/platform/compare/cms-v0.14.0...cms-v0.15.0) (2026-07-11)
+
+
+### Features
+
+* **cms:** add Richfield external-project adapter ([#4924](https://github.com/tutur3u/platform/issues/4924)) ([b16a5e8](https://github.com/tutur3u/platform/commit/b16a5e8aa427e267c0805c6e7453a4fc58d42a23))
+* **tasks:** consolidate tasks entry and sidebar controls ([56e80eb](https://github.com/tutur3u/platform/commit/56e80eb5c60d4b4e56f2953c7978038f1ebe9c08))
+
+
+### Bug Fixes
+
+* **auth:** share account preference cookies ([8c1848a](https://github.com/tutur3u/platform/commit/8c1848a941c1b3f91337104c975e4bc0d8f68fc9))
+* **cms:** harden richfield external submissions ([1c1fb47](https://github.com/tutur3u/platform/commit/1c1fb472803bbdd3342b5aeb9cf09c9287b3bf96))
+* update launchable app catalog ([cb31207](https://github.com/tutur3u/platform/commit/cb312076aee227de9a8f99105d681911d14a63ac))
+
+
+### Performance Improvements
+
+* **ci:** enable repository-wide remote caching ([6250f91](https://github.com/tutur3u/platform/commit/6250f91d745ef987a4fc86c797aedf41542f421b))
+
 ## [0.14.0](https://github.com/tutur3u/platform/compare/cms-v0.13.0...cms-v0.14.0) (2026-07-06)
 
 

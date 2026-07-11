@@ -1,5 +1,35 @@
 # Changelog
 
+## [0.12.0](https://github.com/tutur3u/platform/compare/tasks-v0.11.0...tasks-v0.12.0) (2026-07-11)
+
+
+### Features
+
+* **tasks:** consolidate task settings ([982e0b9](https://github.com/tutur3u/platform/commit/982e0b927358a5d566a5e33e092bd387ec0a7b50))
+* **tasks:** consolidate tasks entry and sidebar controls ([56e80eb](https://github.com/tutur3u/platform/commit/56e80eb5c60d4b4e56f2953c7978038f1ebe9c08))
+
+
+### Bug Fixes
+
+* **auth:** share account preference cookies ([8c1848a](https://github.com/tutur3u/platform/commit/8c1848a941c1b3f91337104c975e4bc0d8f68fc9))
+* **tasks:** authorize personal placement targets ([e617cee](https://github.com/tutur3u/platform/commit/e617cee57a817cf09cc31a79fe59f3c90ac671d9))
+* **tasks:** let CLI bearer sessions reach task routes ([c8cd910](https://github.com/tutur3u/platform/commit/c8cd910b24cab9b9ec9bfb3e1236ad493c198509))
+* **tasks:** let CLI bearer sessions reach task routes ([e607186](https://github.com/tutur3u/platform/commit/e6071867a3e9423c07f94ea5435e94321c1b7021))
+* **tasks:** relax personal placement target access ([20dd211](https://github.com/tutur3u/platform/commit/20dd211d19d4abf944dd53f915c75ceb97ef7058))
+* **tasks:** repair settings data and i18n ([0159488](https://github.com/tutur3u/platform/commit/0159488ae5de1c4d98a7d804d47bf1d479ae60c9))
+* **tasks:** resolve personal placement board from list ([ed52667](https://github.com/tutur3u/platform/commit/ed5266740092e2c5fd2e7be19d5015a63705bea1))
+* **tasks:** resolve personal placement board from list ([14335af](https://github.com/tutur3u/platform/commit/14335af944f77b923be66c871c31f5fea79d61a4))
+* **tasks:** restore task dialog app-session requests ([69f83cb](https://github.com/tutur3u/platform/commit/69f83cb8730eaeb4d39c186bbf8593c73e3deb47))
+* **tasks:** support personal external terminal defaults ([50434cb](https://github.com/tutur3u/platform/commit/50434cb9849a65dd8c77f6b030b27a4bd76125e4))
+* **tasks:** tolerate missing task settings row ([d835fe1](https://github.com/tutur3u/platform/commit/d835fe16004c057f53d018ce14ff96bd69fed618))
+* **tasks:** unify board loading skeleton ([eaf2b65](https://github.com/tutur3u/platform/commit/eaf2b65242201573b930d4df4695488d0a669f30))
+* update launchable app catalog ([cb31207](https://github.com/tutur3u/platform/commit/cb312076aee227de9a8f99105d681911d14a63ac))
+
+
+### Performance Improvements
+
+* **ci:** enable repository-wide remote caching ([6250f91](https://github.com/tutur3u/platform/commit/6250f91d745ef987a4fc86c797aedf41542f421b))
+
 ## [0.11.0](https://github.com/tutur3u/platform/compare/tasks-v0.10.0...tasks-v0.11.0) (2026-07-06)
 
 

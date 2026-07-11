@@ -1,5 +1,31 @@
 # Changelog
 
+## [0.5.0](https://github.com/tutur3u/platform/compare/satellite-v0.4.0...satellite-v0.5.0) (2026-07-11)
+
+
+### Features
+
+* **apps:** make launcher cards clickable ([b9cd9bd](https://github.com/tutur3u/platform/commit/b9cd9bd461b1d82f23f9db572c95dbe5020d6fbb))
+* **contacts:** migrate reports + groups and complete the users cutover ([2ee89cd](https://github.com/tutur3u/platform/commit/2ee89cd2257c2a9824df53d4be99436416d85c13))
+* **edu:** add quiz management flow & dashboard improvements ([#4933](https://github.com/tutur3u/platform/issues/4933)) ([9dafc17](https://github.com/tutur3u/platform/commit/9dafc173b1c9e22cfa8731e4383779583f25acbc))
+* **mail:** focus mailbox shell ([4c2604d](https://github.com/tutur3u/platform/commit/4c2604d38e34f9e201902daa2434da1359e5d093))
+* **tasks:** consolidate tasks entry and sidebar controls ([56e80eb](https://github.com/tutur3u/platform/commit/56e80eb5c60d4b4e56f2953c7978038f1ebe9c08))
+
+
+### Bug Fixes
+
+* **auth:** share account preference cookies ([8c1848a](https://github.com/tutur3u/platform/commit/8c1848a941c1b3f91337104c975e4bc0d8f68fc9))
+* restore apps launcher categories ([5c5b571](https://github.com/tutur3u/platform/commit/5c5b571ce920013bcfa5f327c4bb208ea9fbf23e))
+* **satellite:** allow external command launcher host ([527a2e7](https://github.com/tutur3u/platform/commit/527a2e7d5f9f844ae8f8cfb7a20b7b60eb620bde))
+* **satellite:** compact apps picker dialog ([17853c8](https://github.com/tutur3u/platform/commit/17853c8d038b85d56dad5cfd09a1826d6a5caed9))
+* **satellite:** constrain apps picker layout ([7249d1e](https://github.com/tutur3u/platform/commit/7249d1e91dbac56b8e58c84d9cc1cba37830b7d4))
+* **satellite:** group apps launcher catalog ([e1b72dd](https://github.com/tutur3u/platform/commit/e1b72ddc466e422e6e913f1353cd418baaa96bc8))
+* **satellite:** stabilize apps launcher scrolling ([5097e89](https://github.com/tutur3u/platform/commit/5097e89f4621690c6d2ced7613719f16baff0894))
+* **satellite:** use link cards in apps launcher ([70ab897](https://github.com/tutur3u/platform/commit/70ab89727af8289e72e3779bb28ab4cbbc58c90b))
+* **satellite:** widen apps launcher grid ([90e3106](https://github.com/tutur3u/platform/commit/90e31066830f535a7fdd0f7bc249e5bc8b273cfc))
+* **satellite:** widen apps picker dropdown ([f95ebcf](https://github.com/tutur3u/platform/commit/f95ebcf7150eac83184007e75092231331c59421))
+* update launchable app catalog ([cb31207](https://github.com/tutur3u/platform/commit/cb312076aee227de9a8f99105d681911d14a63ac))
+
 ## [0.4.0](https://github.com/tutur3u/platform/compare/satellite-v0.3.0...satellite-v0.4.0) (2026-07-06)
 
 

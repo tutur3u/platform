@@ -1,5 +1,28 @@
 # Changelog
 
+## [0.14.0](https://github.com/tutur3u/platform/compare/utils-v0.13.0...utils-v0.14.0) (2026-07-11)
+
+
+### Features
+
+* **contacts:** migrate users attendance; add satellite-safe workspace-user link helper ([8f53453](https://github.com/tutur3u/platform/commit/8f534533793af8d25e7c2eca6e0147e459d78bbe))
+* **contacts:** migrate users topic-announcements module ([01e19ab](https://github.com/tutur3u/platform/commit/01e19ab60461ccd94a0374bed74ce6e4d5d38a3b))
+* **contacts:** scaffold contacts.tuturuuu.com satellite shell + monorepo registration ([7e335fc](https://github.com/tutur3u/platform/commit/7e335fc036c4a45ed189095ecd10a43ee002294b))
+* **pay:** scaffold apps/pay satellite (pay.tuturuuu.com, port 7826) ([3d6e45c](https://github.com/tutur3u/platform/commit/3d6e45cca6a315fe67213e438144b73103bae2f5))
+
+
+### Bug Fixes
+
+* **auth:** share account preference cookies ([8c1848a](https://github.com/tutur3u/platform/commit/8c1848a941c1b3f91337104c975e4bc0d8f68fc9))
+* restore apps launcher categories ([5c5b571](https://github.com/tutur3u/platform/commit/5c5b571ce920013bcfa5f327c4bb208ea9fbf23e))
+* **satellite:** widen apps launcher grid ([90e3106](https://github.com/tutur3u/platform/commit/90e31066830f535a7fdd0f7bc249e5bc8b273cfc))
+* update launchable app catalog ([cb31207](https://github.com/tutur3u/platform/commit/cb312076aee227de9a8f99105d681911d14a63ac))
+
+
+### Performance Improvements
+
+* **ci:** enable repository-wide remote caching ([6250f91](https://github.com/tutur3u/platform/commit/6250f91d745ef987a4fc86c797aedf41542f421b))
+
 ## [0.13.0](https://github.com/tutur3u/platform/compare/utils-v0.12.1...utils-v0.13.0) (2026-07-05)
 
 
