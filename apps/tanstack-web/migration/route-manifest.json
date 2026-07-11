@@ -19,11 +19,11 @@
         "key": "page",
         "label": "page",
         "legacyNext": 54,
-        "migrated": 118,
-        "percentComplete": 68.97,
+        "migrated": 117,
+        "percentComplete": 68.79,
         "remaining": 54,
-        "terminal": 120,
-        "total": 174,
+        "terminal": 119,
+        "total": 173,
         "unknownStatus": 0
       },
       {
@@ -129,11 +129,11 @@
         "key": "tanstack-start",
         "label": "TanStack Start",
         "legacyNext": 63,
-        "migrated": 169,
-        "percentComplete": 73.08,
+        "migrated": 168,
+        "percentComplete": 72.96,
         "remaining": 63,
-        "terminal": 171,
-        "total": 234,
+        "terminal": 170,
+        "total": 233,
         "unknownStatus": 0
       }
     ],
@@ -324,11 +324,11 @@
       "key": "total",
       "label": "All route artifacts",
       "legacyNext": 559,
-      "migrated": 240,
-      "percentComplete": 31.16,
+      "migrated": 239,
+      "percentComplete": 31.07,
       "remaining": 559,
-      "terminal": 253,
-      "total": 812,
+      "terminal": 252,
+      "total": 811,
       "unknownStatus": 0
     }
   },
@@ -6790,15 +6790,6 @@
       "targetOwner": "tanstack-start"
     },
     {
-      "id": "page:/:locale/:wsId/users/approvals:apps/web/src/app/[locale]/(dashboard)/[wsId]/users/approvals/page.tsx",
-      "kind": "page",
-      "methods": [],
-      "routePath": "/:locale/:wsId/users/approvals",
-      "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/users/approvals/page.tsx",
-      "status": "migrated",
-      "targetOwner": "tanstack-start"
-    },
-    {
       "id": "page:/:locale/:wsId/users/attendance:apps/web/src/app/[locale]/(dashboard)/[wsId]/users/attendance/page.tsx",
       "kind": "page",
       "methods": [],
@@ -7730,7 +7721,7 @@
     "apiRoutes": 565,
     "cronRoutes": 8,
     "layouts": 56,
-    "pages": 174,
+    "pages": 173,
     "routeHandlers": 578,
     "methodCounts": {
       "GET": 296,
@@ -7741,6 +7732,6 @@
       "DELETE": 99,
       "OPTIONS": 23
     },
-    "total": 812
+    "total": 811
   }
 }

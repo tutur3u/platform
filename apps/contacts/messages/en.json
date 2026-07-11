@@ -4,8 +4,90 @@
   },
   "approvals": {
     "labels": {
+      "user": "User",
+      "approved_at": "Approved",
+      "created_at": "Created",
+      "group": "Group",
+      "last_modified_by": "Last modified by",
+      "rejected_at": "Rejected",
+      "rejection_reason": "Reason",
+      "unknown_group": "Unknown group",
+      "unknown_user": "Unknown user",
+      "untitled": "Untitled"
+    },
+    "actions": {
+      "allApproved": "All items approved successfully.",
+      "approve": "Approve",
+      "approveAll": "Approve All ({count})",
+      "approveAllProgress": "Approving {current}/{total}",
+      "approved": "Approval recorded.",
+      "confirmReject": "Confirm Rejection",
+      "openReport": "Open report",
+      "reject": "Reject",
+      "rejected": "Rejection recorded.",
+      "sessionSummary": "This session: {approved} approved, {rejected} rejected",
+      "unapprove": "Remove approval",
+      "unapproved": "Approval removed."
+    },
+    "description": "Review and approve user reports and posts.",
+    "detail": {
+      "content": "Content",
+      "currentVersion": "Current Version",
+      "day": "D{day}",
+      "feedback": "Feedback",
+      "metadata": "Metadata",
+      "noContent": "No content available",
+      "noData": "No data",
+      "notes": "Notes",
+      "pendingApproval": "Pending Approval",
+      "pendingApprovalDescription": "This report is pending approval. Please review the content below.",
+      "postSubtitle": "Group Post",
+      "previousApprovedVersion": "Previous Approved Version",
+      "rejectionReasonPlaceholder": "Enter the reason for rejecting this item...",
+      "reportSubtitle": "Monthly Report",
+      "score": "Overall Score",
+      "scores": "Daily Scores",
+      "statusHistory": "Status History"
+    },
+    "filters": {
+      "allCreators": "All creators",
+      "allGroups": "All groups",
+      "allUsers": "All users",
+      "clearFilters": "Clear filters",
+      "creator": "Creator",
+      "description": "Filter approvals by status and other criteria.",
+      "group": "Group",
+      "status": "Status",
+      "title": "Filters",
       "user": "User"
-    }
+    },
+    "list": {
+      "allCaughtUpMessage": "All pending items have been reviewed. Great job!",
+      "allCaughtUpTitle": "All caught up!",
+      "error": "Failed to load approvals",
+      "itemsPerPage": "Items per page",
+      "loading": "Loading approvals...",
+      "noItemsMessage": "Try adjusting your filters to see more results.",
+      "noItemsTitle": "No approvals found",
+      "showing": "Showing {start}–{end} of {total}"
+    },
+    "personal": {
+      "description": "Switch to a team workspace to review and approve reports or posts.",
+      "title": "Approvals are not available for personal workspaces."
+    },
+    "reject_dialog": {
+      "cancel": "Cancel",
+      "confirm": "Reject",
+      "description": "Provide a reason for rejecting {title}.",
+      "reason": "Rejection reason",
+      "reason_placeholder": "Explain why this item is rejected.",
+      "title": "Reject item"
+    },
+    "tabs": {
+      "posts": "Posts",
+      "reports": "Reports"
+    },
+    "title": "Approvals"
   },
   "audit-log-insights": {
     "activity_description": "Review how user-record changes clustered across the selected period.",
@@ -463,7 +545,8 @@
     "uploaded": "Uploaded",
     "view": "View",
     "whats_the_title": "What's the title?",
-    "write_something": "Write something"
+    "write_something": "Write something",
+    "characters": "characters"
   },
   "course-details-tabs": {
     "extra_reading": "Extra Reading",

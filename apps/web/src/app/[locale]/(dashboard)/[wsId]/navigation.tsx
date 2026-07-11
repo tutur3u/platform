@@ -674,7 +674,6 @@ export async function WorkspaceNavigationLinks({
             `/${personalOrWsId}/users/topic-announcements/import`,
             `/${personalOrWsId}/users/topic-announcements/templates`,
             `/${personalOrWsId}/users/reports`,
-            `/${personalOrWsId}/users/approvals`,
           ],
           icon: createDashboardNavigationIcon('Users', 'h-5 w-5'),
           requiredWorkspaceTier: createTierRequirement('users', {
@@ -778,14 +777,6 @@ export async function WorkspaceNavigationLinks({
               href: `/${personalOrWsId}/users/reports`,
               icon: createDashboardNavigationIcon('ClipboardList', 'h-5 w-5'),
               disabled: withoutPermission('view_user_groups_reports'),
-            },
-            {
-              title: t('workspace-users-tabs.approvals'),
-              href: `/${personalOrWsId}/users/approvals`,
-              icon: createDashboardNavigationIcon('CheckCircle2', 'h-5 w-5'),
-              disabled:
-                withoutPermission('approve_reports') &&
-                withoutPermission('approve_posts'),
             },
             {
               title: t('workspace-users-tabs.metrics'),

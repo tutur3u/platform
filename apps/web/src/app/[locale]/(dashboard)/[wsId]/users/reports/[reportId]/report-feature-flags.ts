@@ -1,4 +1,4 @@
-import type { ApprovalStatus } from '../../approvals/utils';
+import type { ApprovalStatus } from '@tuturuuu/users-core/lib/approvals-utils';
 
 export function isWorkspaceBooleanEnabled(value?: string | null): boolean {
   return value?.trim().toLowerCase() === 'true';

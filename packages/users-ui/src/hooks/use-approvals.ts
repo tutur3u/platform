@@ -8,9 +8,9 @@ import type {
   ReportLogEntry,
 } from '@tuturuuu/types/db';
 import { toast } from '@tuturuuu/ui/sonner';
+import type { ApprovalStatus } from '@tuturuuu/users-core/lib/approvals-utils';
 import { useLocale, useTranslations } from 'next-intl';
 import { useCallback, useMemo, useRef, useState } from 'react';
-import type { ApprovalStatus } from '../utils';
 
 interface UseApprovalsOptions {
   wsId: string;

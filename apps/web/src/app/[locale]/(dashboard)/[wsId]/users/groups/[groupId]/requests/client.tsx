@@ -1,9 +1,9 @@
 'use client';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
+import { ApprovalsView } from '@tuturuuu/users-ui/components/approvals-view';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
-import { ApprovalsView } from '../../../approvals/components/approvals-view';
 
 interface GroupRequestsClientProps {
   wsId: string;

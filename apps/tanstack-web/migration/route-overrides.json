@@ -1074,11 +1074,6 @@
       "targetOwner": "tanstack-start",
       "note": "Accepted replacement/removal: TanStack Start mail leaf routes /$locale/$wsId/mail and /$locale/$wsId/mail/sent are already migrated as 307 handoffs to the standalone Mail app via buildMailRedirectHref. The legacy Next mail layout's workspace/user gate is replaced by the Mail app centralized auth proxy and workspace-normalization boundary, so no route-specific dashboard layout is rendered in the Start runtime. Parent dashboard/session/provider ownership remains separately tracked."
     },
-    "page:/:locale/:wsId/users/approvals:apps/web/src/app/[locale]/(dashboard)/[wsId]/users/approvals/page.tsx": {
-      "status": "migrated",
-      "targetOwner": "tanstack-start",
-      "note": "Dynamic no-store TanStack Start route /$locale/$wsId/users/approvals ports the legacy workspace approvals page with fail-closed current-user auth, full workspace resolution, personal-workspace notice parity, approve_reports/approve_posts not-found gating, preserved status/page/limit/group/user/creator filter state, shared approvals tabs, TanStack Query-backed approval/log reads, and internal-api-backed approve/reject/unapprove mutations. This marks only the frontend page artifact migrated; approvals API ownership remains separately tracked."
-    },
     "page:/:locale/:wsId/users/group-tags:apps/web/src/app/[locale]/(dashboard)/[wsId]/users/group-tags/page.tsx": {
       "status": "migrated",
       "targetOwner": "tanstack-start",

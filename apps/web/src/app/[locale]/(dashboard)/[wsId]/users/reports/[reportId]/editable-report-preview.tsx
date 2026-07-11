@@ -26,6 +26,7 @@ import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { Separator } from '@tuturuuu/ui/separator';
 import { Tabs, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { getWorkspaceUserArchiveState } from '@tuturuuu/users-core/reports/user-archive';
+import { RejectDialog } from '@tuturuuu/users-ui/components/reject-dialog';
 import { cn } from '@tuturuuu/utils/format';
 import { useFormatter, useLocale, useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
@@ -43,7 +44,6 @@ import {
   MAX_MONTHLY_REPORT_TITLE_LENGTH,
 } from '@/features/reports/report-limits';
 import { useConfigMap } from '@/hooks/use-config-map';
-import { RejectDialog } from '../../approvals/components/reject-dialog';
 import UserMonthAttendance from '../../attendance/user-month-attendance';
 import UserFeedbackSection from '../../groups/[groupId]/reports/user-feedback-section';
 import { ReportBasicInfoDialog } from './basic-info-dialog';

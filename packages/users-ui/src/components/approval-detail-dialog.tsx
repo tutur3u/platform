@@ -35,19 +35,19 @@ import { DiffViewer } from '@tuturuuu/ui/diff-viewer';
 import { useWorkspaceConfigs } from '@tuturuuu/ui/hooks/use-workspace-config';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { Textarea } from '@tuturuuu/ui/textarea';
+import { getStatusColorClasses } from '@tuturuuu/users-core/lib/approvals-utils';
+import { availableConfigs } from '@tuturuuu/utils/configs/reports';
 import { cn } from '@tuturuuu/utils/format';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
 import type { ReactNode } from 'react';
 import { useEffect, useMemo, useState } from 'react';
-import { availableConfigs } from '@/constants/configs/reports';
 import {
   type ApprovalItem,
   useLatestApprovedLog,
   useLatestApprovedPostLog,
 } from '../hooks/use-approvals';
-import { getStatusColorClasses } from '../utils';
 
 interface ApprovalDetailDialogProps {
   wsId: string;

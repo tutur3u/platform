@@ -11,8 +11,8 @@ import {
 } from '@tuturuuu/ui/dialog';
 import { Label } from '@tuturuuu/ui/label';
 import { Textarea } from '@tuturuuu/ui/textarea';
+import { MAX_APPROVAL_REJECTION_REASON_LENGTH } from '@tuturuuu/users-core/features/reports/report-limits';
 import { useTranslations } from 'next-intl';
-import { MAX_APPROVAL_REJECTION_REASON_LENGTH } from '@/features/reports/report-limits';
 
 interface RejectDialogProps {
   open: boolean;

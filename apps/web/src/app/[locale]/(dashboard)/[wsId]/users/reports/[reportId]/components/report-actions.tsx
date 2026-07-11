@@ -25,8 +25,8 @@ import {
 } from '@tuturuuu/ui/dropdown-menu';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { Switch } from '@tuturuuu/ui/switch';
+import type { ApprovalStatus } from '@tuturuuu/users-core/lib/approvals-utils';
 import { useTranslations } from 'next-intl';
-import type { ApprovalStatus } from '../../../approvals/utils';
 import type { ExportType } from '../../../reports/[reportId]/hooks/use-report-export';
 
 type ReportTheme = 'auto' | 'light' | 'dark';

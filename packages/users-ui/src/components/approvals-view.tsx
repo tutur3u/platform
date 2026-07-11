@@ -31,13 +31,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@tuturuuu/ui/select';
+import {
+  getStatusColorClasses,
+  STATUS_LABELS,
+} from '@tuturuuu/users-core/lib/approvals-utils';
 import { cn } from '@tuturuuu/utils/format';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useMemo } from 'react';
 import { useApprovals } from '../hooks/use-approvals';
-import { getStatusColorClasses, STATUS_LABELS } from '../utils';
 import { ApprovalDetailDialog } from './approval-detail-dialog';
 
 interface ApprovalsViewProps {

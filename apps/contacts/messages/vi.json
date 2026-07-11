@@ -4,8 +4,90 @@
   },
   "approvals": {
     "labels": {
+      "user": "Người dùng",
+      "approved_at": "Duyệt lúc",
+      "created_at": "Tạo lúc",
+      "group": "Nhóm",
+      "last_modified_by": "Chỉnh sửa gần nhất bởi",
+      "rejected_at": "Từ chối lúc",
+      "rejection_reason": "Lý do",
+      "unknown_group": "Nhóm không xác định",
+      "unknown_user": "Người dùng không xác định",
+      "untitled": "Chưa đặt tiêu đề"
+    },
+    "actions": {
+      "allApproved": "Đã phê duyệt tất cả thành công.",
+      "approve": "Duyệt",
+      "approveAll": "Duyệt tất cả ({count})",
+      "approveAllProgress": "Đang duyệt {current}/{total}",
+      "approved": "Đã ghi nhận phê duyệt.",
+      "confirmReject": "Xác Nhận Từ Chối",
+      "openReport": "Mở báo cáo",
+      "reject": "Từ chối",
+      "rejected": "Đã ghi nhận từ chối.",
+      "sessionSummary": "Phiên này: {approved} đã duyệt, {rejected} đã từ chối",
+      "unapprove": "Gỡ phê duyệt",
+      "unapproved": "Đã gỡ phê duyệt."
+    },
+    "description": "Xem và phê duyệt báo cáo, bài đăng của người dùng.",
+    "detail": {
+      "content": "Nội Dung",
+      "currentVersion": "Phiên Bản Hiện Tại",
+      "day": "N{day}",
+      "feedback": "Nhận Xét",
+      "metadata": "Thông Tin",
+      "noContent": "Không có nội dung",
+      "noData": "Không có dữ liệu",
+      "notes": "Ghi chú",
+      "pendingApproval": "Đang Chờ Phê Duyệt",
+      "pendingApprovalDescription": "Báo cáo này đang chờ phê duyệt. Vui lòng xem nội dung bên dưới.",
+      "postSubtitle": "Bài Đăng Nhóm",
+      "previousApprovedVersion": "Phiên Bản Đã Duyệt Trước Đó",
+      "rejectionReasonPlaceholder": "Nhập lý do từ chối mục này...",
+      "reportSubtitle": "Báo Cáo Tháng",
+      "score": "Điểm Tổng",
+      "scores": "Điểm Hàng Ngày",
+      "statusHistory": "Lịch Sử Trạng Thái"
+    },
+    "filters": {
+      "allCreators": "Tất cả người tạo",
+      "allGroups": "Tất cả nhóm",
+      "allUsers": "Tất cả người dùng",
+      "clearFilters": "Xóa bộ lọc",
+      "creator": "Người tạo",
+      "description": "Lọc phê duyệt theo trạng thái và các tiêu chí khác.",
+      "group": "Nhóm",
+      "status": "Trạng thái",
+      "title": "Bộ lọc",
       "user": "Người dùng"
-    }
+    },
+    "list": {
+      "allCaughtUpMessage": "Tất cả mục đang chờ đã được xử lý. Tốt lắm!",
+      "allCaughtUpTitle": "Đã xử lý hết!",
+      "error": "Không thể tải danh sách phê duyệt",
+      "itemsPerPage": "Số mục mỗi trang",
+      "loading": "Đang tải danh sách phê duyệt...",
+      "noItemsMessage": "Hãy điều chỉnh bộ lọc để xem thêm kết quả.",
+      "noItemsTitle": "Không tìm thấy mục nào",
+      "showing": "Hiển thị {start}–{end} trong {total}"
+    },
+    "personal": {
+      "description": "Chuyển sang workspace nhóm để duyệt báo cáo hoặc bài đăng.",
+      "title": "Không hỗ trợ phê duyệt cho workspace cá nhân."
+    },
+    "reject_dialog": {
+      "cancel": "Hủy",
+      "confirm": "Từ chối",
+      "description": "Vui lòng nêu lý do từ chối {title}.",
+      "reason": "Lý do từ chối",
+      "reason_placeholder": "Giải thích vì sao mục này bị từ chối.",
+      "title": "Từ chối mục"
+    },
+    "tabs": {
+      "posts": "Bài đăng",
+      "reports": "Báo cáo"
+    },
+    "title": "Phê duyệt"
   },
   "audit-log-insights": {
     "activity_description": "Xem các thay đổi hồ sơ người dùng tập trung vào giai đoạn nào trong khoảng thời gian đã chọn.",
@@ -463,7 +545,8 @@
     "uploaded": "Đã tải lên",
     "view": "Xem",
     "whats_the_title": "Tiêu đề là gì?",
-    "write_something": "Hãy viết gì đó..."
+    "write_something": "Hãy viết gì đó...",
+    "characters": "kí tự"
   },
   "course-details-tabs": {
     "extra_reading": "Đọc thêm",
