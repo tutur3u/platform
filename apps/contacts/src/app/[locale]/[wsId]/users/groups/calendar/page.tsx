@@ -1,8 +1,8 @@
-import WorkspaceWrapper from '@tuturuuu/ui/custom/workspace-wrapper';
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { connection } from 'next/server';
+import WorkspaceWrapper from '@/components/workspace-wrapper';
+import { getContactsWorkspacePermissions } from '@/lib/workspace';
 import { UserGroupSessionCalendar } from '../_components/user-group-session-calendar';
 
 export const metadata: Metadata = {
@@ -23,7 +23,7 @@ export default async function UserGroupCalendarPage({ params }: Props) {
   return (
     <WorkspaceWrapper params={params}>
       {async ({ wsId }) => {
-        const permissions = await getPermissions({ wsId });
+        const permissions = await getContactsWorkspacePermissions(wsId);
         if (!permissions) notFound();
 
         const canView =

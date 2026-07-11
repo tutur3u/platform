@@ -1,5 +1,4 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import WorkspaceWrapper from '@tuturuuu/ui/custom/workspace-wrapper';
 import {
   getGroupGuestUserIds,
   getGroupRow,
@@ -7,10 +6,11 @@ import {
 import { listUserGroupSessions } from '@tuturuuu/users-core/lib/user-groups/session-schedule';
 import type { InitialAttendanceProps } from '@tuturuuu/users-ui/components/group-attendance-client';
 import GroupAttendanceClient from '@tuturuuu/users-ui/components/group-attendance-client';
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { connection } from 'next/server';
+import WorkspaceWrapper from '@/components/workspace-wrapper';
+import { getContactsWorkspacePermissions } from '@/lib/workspace';
 
 export const metadata: Metadata = {
   title: 'Attendance',
@@ -36,9 +36,7 @@ export default async function UserGroupAttendancePage({
   return (
     <WorkspaceWrapper params={params}>
       {async ({ wsId, groupId }) => {
-        const permissions = await getPermissions({
-          wsId,
-        });
+        const permissions = await getContactsWorkspacePermissions(wsId);
         if (!permissions) notFound();
         const { containsPermission } = permissions;
         const canCheckUserAttendance = containsPermission(

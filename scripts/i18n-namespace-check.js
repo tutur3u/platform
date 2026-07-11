@@ -114,6 +114,25 @@ const BARE_ROOT_KEY_APP_SCOPES = new Map([
   ['ws-task-boards', new Set(['apps/tasks', 'apps/web'])],
 ]);
 
+// Apps that render the FULL shared dashboard shell (sidebar, user nav,
+// workspace select, settings dialog, upgrade dialog) and therefore must carry
+// every bare root-qualified key the shared packages can request — not just the
+// namespaces enumerated in BARE_ROOT_KEY_APP_SCOPES above.
+//
+// Those shell components all read their strings via a bare `useTranslations()`
+// (see packages/satellite .../user-nav-client.tsx, sidebar-structure-header.tsx
+// and packages/ui .../custom/workspace-select.tsx, settings-dialog-shell.tsx).
+// A bare translator carries no namespace signal, so without an entry here the
+// key-level scan skips those keys for EVERY app — which is how apps/contacts
+// shipped to production missing `common.dashboard`, `common.logout`,
+// `nav-upgrade-dialog.*`, `settings.back_to_app`, and 850+ more: the namespace
+// check passed (contacts had `common`) while the namespace was half-empty, and
+// the misses only surfaced as runtime MISSING_MESSAGE errors.
+//
+// Use `keyExceptions` to opt a full-scope app out of namespaces belonging to
+// product surfaces it does not render.
+const BARE_ROOT_KEY_FULL_SCOPE_APPS = new Set(['apps/contacts']);
+
 // Namespaces that must stay in parity across the apps that render the shared
 // component using them.
 //
@@ -522,11 +541,22 @@ function main() {
 
           if (!namespace) {
             const scopedApps = BARE_ROOT_KEY_APP_SCOPES.get(topLevel);
-            if (!scopedApps?.has(app.name)) continue;
+            if (
+              !scopedApps?.has(app.name) &&
+              !BARE_ROOT_KEY_FULL_SCOPE_APPS.has(app.name)
+            ) {
+              continue;
+            }
           }
 
           // Skip if namespace is in the ignore list
           if (ignoredNamespaces.has(topLevel)) continue;
+
+          // Skip if key is in the key exception list. This runs BEFORE the
+          // namespace-presence check below so that a bare root-qualified key in
+          // a namespace the app deliberately does not ship (e.g. a full-scope
+          // app opting out of another product's surface) can be excepted.
+          if (isKeyExcepted(appKeyExceptions, namespace, key)) continue;
 
           // Named namespace misses are already reported by the namespace-level
           // check. Bare root-qualified keys have no separate namespace signal,
@@ -535,9 +565,6 @@ function main() {
             if (!namespace) missingKeys.push({ namespace, key, file });
             continue;
           }
-
-          // Skip if key is in the key exception list
-          if (isKeyExcepted(appKeyExceptions, namespace, key)) continue;
 
           if (!resolveKeyPath(appJson, namespace, key)) {
             missingKeys.push({ namespace, key, file });

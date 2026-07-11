@@ -1,9 +1,9 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
-import WorkspaceWrapper from '@tuturuuu/ui/custom/workspace-wrapper';
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { connection } from 'next/server';
+import WorkspaceWrapper from '@/components/workspace-wrapper';
+import { getContactsWorkspacePermissions } from '@/lib/workspace';
 import { UserGroupSessionCalendar } from '../../_components/user-group-session-calendar';
 import EditEndDateDialog from './edit-end-date-dialog';
 
@@ -26,7 +26,7 @@ export default async function UserGroupDetailsPage({ params }: Props) {
   return (
     <WorkspaceWrapper params={params}>
       {async ({ wsId, groupId }) => {
-        const permissions = await getPermissions({ wsId });
+        const permissions = await getContactsWorkspacePermissions(wsId);
         if (!permissions) notFound();
         const { containsPermission } = permissions;
         const canUpdateUserGroups = containsPermission('update_user_groups');

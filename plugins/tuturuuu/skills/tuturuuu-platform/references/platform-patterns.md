@@ -189,11 +189,33 @@ Rules:
   Add an entry when you migrate a module, or the middleware bounces the new route
   straight back to web. Beware prefix-vs-exact: a bare `users` entry that
   prefix-matches makes every `/users/*` path look owned.
+- **Actorless workspace calls are the #1 satellite production bug.**
+  `getWorkspace(id)` and `getPermissions({ wsId })` with no actor fall back to a
+  cookie-backed Supabase client — **anonymous** on a satellite domain, where the
+  session is an app-session JWT. The lookup returns null, the page 404s
+  (`Workspace not found: personal`), and the aborted render leaves Supabase
+  fetches in flight that surface as `HANGING_PROMISE_REJECTION`. That digest is a
+  *symptom*: do not go hunting for a stray `after()`/`setTimeout` — there isn't
+  one. Give the app a `src/lib/workspace.ts` that resolves the actor once
+  (`getSatelliteAppSessionUser`) and threads it through
+  `getWorkspace(id, { useAdmin: true, user })` / `getPermissions({ user, wsId })`.
+- **A satellite must not use `@tuturuuu/ui/custom/workspace-wrapper`** — it calls
+  bare `getWorkspace(wsId)` internally, so every page rendering it inherits the
+  bug above (it broke all 20 contacts users pages). Use an app-local wrapper built
+  on the app's `src/lib/workspace.ts`. `check-internal-app-auth` enforces both
+  halves; the actorless rule is per-app via `ACTORLESS_CHECK_APPS`.
 - A satellite that renders broad shared UI must be in the **checked** `APPS` list
   in `scripts/i18n-namespace-check.js`, not `UNCHECKED_APPS`. Scanning only the
   app's own source cannot see namespaces used *inside* `@tuturuuu/ui` /
   `@tuturuuu/satellite`, so a missing one surfaces as a runtime
   `MISSING_MESSAGE` instead of a CI failure.
+- Having the namespace is **not enough — it can be half-empty**. The shell
+  components (`user-nav-client`, `sidebar-structure-header`, `workspace-select`,
+  `settings-dialog-shell`) use a bare `useTranslations()` then `t('common.x')`.
+  With no namespace argument the key scan can only require such keys from apps in
+  `BARE_ROOT_KEY_APP_SCOPES` — `common` was scoped to none, so contacts passed the
+  check while missing 850+ keys and shipped `MISSING_MESSAGE` to production. Apps
+  rendering the full shell belong in `BARE_ROOT_KEY_FULL_SCOPE_APPS`.
 
 ## Moving A Feature Between Apps
 

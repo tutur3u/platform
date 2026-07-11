@@ -6,7 +6,7 @@ const mocks = vi.hoisted(() => ({
   createAdminClient: vi.fn(),
   editableReportPreview: vi.fn(() => null),
   getLocale: vi.fn(() => Promise.resolve('en')),
-  getPermissions: vi.fn(),
+  getContactsWorkspacePermissions: vi.fn(),
   getTranslations: vi.fn(() => Promise.resolve((key: string) => key)),
   notFound: vi.fn(() => {
     throw new Error('not-found');
@@ -18,9 +18,10 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
     mocks.createAdminClient(...args),
 }));
 
-vi.mock('@tuturuuu/utils/workspace-helper', () => ({
-  getPermissions: (...args: Parameters<typeof mocks.getPermissions>) =>
-    mocks.getPermissions(...args),
+vi.mock('@/lib/workspace', () => ({
+  getContactsWorkspacePermissions: (
+    ...args: Parameters<typeof mocks.getContactsWorkspacePermissions>
+  ) => mocks.getContactsWorkspacePermissions(...args),
 }));
 
 vi.mock('next-intl/server', () => ({
@@ -81,7 +82,7 @@ describe('user report detail page permissions', () => {
         'check_user_attendance',
       ].includes(permission)
     );
-    mocks.getPermissions.mockResolvedValue({
+    mocks.getContactsWorkspacePermissions.mockResolvedValue({
       containsPermission: mocks.containsPermission,
     });
 
@@ -147,7 +148,7 @@ describe('user report detail page permissions', () => {
 
     const editor = findElementByType(page, mocks.editableReportPreview);
 
-    expect(mocks.getPermissions).toHaveBeenCalledWith({ wsId: 'ws-1' });
+    expect(mocks.getContactsWorkspacePermissions).toHaveBeenCalledWith('ws-1');
     expect(editor.props).toMatchObject({
       canApproveReports: false,
       canCheckUserAttendance: true,

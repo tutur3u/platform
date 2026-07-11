@@ -2,15 +2,15 @@ import { Check, CheckCheck, CircleHelp, Clock, Send, X } from '@tuturuuu/icons';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Badge } from '@tuturuuu/ui/badge';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
-import WorkspaceWrapper from '@tuturuuu/ui/custom/workspace-wrapper';
 import { Separator } from '@tuturuuu/ui/separator';
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { format } from 'date-fns';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { connection } from 'next/server';
 import { getTranslations } from 'next-intl/server';
+import WorkspaceWrapper from '@/components/workspace-wrapper';
+import { getContactsWorkspacePermissions } from '@/lib/workspace';
 import { CheckAll } from './check-all';
 import { PostCheckHistory } from './check-history';
 import {
@@ -45,7 +45,7 @@ export default async function HomeworkCheck({ params, searchParams }: Props) {
     <WorkspaceWrapper params={params}>
       {async ({ wsId, groupId, postId }) => {
         const t = await getTranslations();
-        const permissions = await getPermissions({ wsId });
+        const permissions = await getContactsWorkspacePermissions(wsId);
         if (!permissions) notFound();
         const { containsPermission } = permissions;
         const canViewUserGroupsPosts = containsPermission(

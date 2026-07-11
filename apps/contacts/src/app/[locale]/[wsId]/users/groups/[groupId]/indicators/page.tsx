@@ -1,6 +1,5 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
-import WorkspaceWrapper from '@tuturuuu/ui/custom/workspace-wrapper';
 import type {
   GroupIndicator,
   MetricCategory,
@@ -10,10 +9,11 @@ import {
   withRequireAttentionFlag,
 } from '@tuturuuu/users-core/lib/require-attention-users';
 import { getGroupRow } from '@tuturuuu/users-core/lib/user-groups/server-data';
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { connection } from 'next/server';
+import WorkspaceWrapper from '@/components/workspace-wrapper';
+import { getContactsWorkspacePermissions } from '@/lib/workspace';
 import GroupIndicatorsManager from './group-indicators-manager';
 
 export const metadata: Metadata = {
@@ -36,9 +36,7 @@ export default async function UserGroupIndicatorsPage({ params }: Props) {
   return (
     <WorkspaceWrapper params={params}>
       {async ({ wsId, groupId }) => {
-        const permissions = await getPermissions({
-          wsId,
-        });
+        const permissions = await getContactsWorkspacePermissions(wsId);
         if (!permissions) notFound();
         const { containsPermission } = permissions;
         const canViewUserGroupsScores = containsPermission(

@@ -1,14 +1,14 @@
 import { History } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
-import WorkspaceWrapper from '@tuturuuu/ui/custom/workspace-wrapper';
 import { Separator } from '@tuturuuu/ui/separator';
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { connection } from 'next/server';
 import { getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
+import WorkspaceWrapper from '@/components/workspace-wrapper';
+import { getContactsWorkspacePermissions } from '@/lib/workspace';
 import {
   type UserGroupActivityLogSearchParams,
   UserGroupActivityLogTable,
@@ -63,7 +63,7 @@ export default async function UserGroupDetailsPage({
       {async ({ wsId, groupId }) => {
         const t = await getTranslations();
         const sp = await searchParams;
-        const permissions = await getPermissions({ wsId });
+        const permissions = await getContactsWorkspacePermissions(wsId);
         if (!permissions) notFound();
         const { containsPermission } = permissions;
 

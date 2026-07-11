@@ -70,11 +70,37 @@ const COMPATIBLE_SESSION_FALLBACK_FILES = new Set([
 const CHECKED_SUPABASE_AUTH_FALLBACK_FILES = new Set([
   'apps/hive/src/app/api/v1/hive/_shared.ts',
 ]);
+// The shared `@tuturuuu/ui/custom/workspace-wrapper` calls `getWorkspace(wsId)`
+// with no `user`, which falls back to a cookie-backed Supabase client. That is
+// correct in apps/web, but a satellite authenticates with a Tuturuuu app-session
+// JWT, so the fallback resolves an ANONYMOUS client: the workspace lookup returns
+// null, the page 404s ("Workspace not found: personal"), and the in-flight
+// Supabase fetches outlive the aborted render as HANGING_PROMISE_REJECTION. This
+// took down the whole apps/contacts users surface in production.
+//
+// A registered app must use an app-local wrapper that threads the app-session
+// user through `getWorkspace(id, { useAdmin: true, user })` — see
+// `apps/contacts/src/{lib/workspace.ts,components/workspace-wrapper.tsx}` and the
+// equivalent `src/lib/workspace.ts` in apps/finance, apps/drive, and apps/calendar.
+//
+// apps/pay is a KNOWN outstanding instance of this bug, allowlisted only so the
+// rule can be enforced for every other app. Its billing pages need the same
+// app-local wrapper treatment.
+const SHARED_WORKSPACE_WRAPPER_ALLOWED_FILES = new Set([
+  'apps/pay/src/app/[locale]/[wsId]/billing/page.tsx',
+  'apps/pay/src/app/[locale]/[wsId]/billing/success/page.tsx',
+]);
 const FORBIDDEN_PATTERNS = [
   {
     allowedFiles: COMPATIBLE_SESSION_FALLBACK_FILES,
     pattern: /@tuturuuu\/supabase\/next\/auth-session-user/u,
     message: 'Use @tuturuuu/auth/app-session instead of Supabase session auth.',
+  },
+  {
+    allowedFiles: SHARED_WORKSPACE_WRAPPER_ALLOWED_FILES,
+    pattern: /@tuturuuu\/ui\/custom\/workspace-wrapper/u,
+    message:
+      'Registered app code must not use the shared WorkspaceWrapper — it resolves the workspace from an anonymous Supabase client on a satellite domain. Use an app-local wrapper that passes the app-session user into getWorkspace.',
   },
   {
     pattern: /@tuturuuu\/utils\/user-helper/u,
@@ -126,6 +152,62 @@ const files = [
 
 const failures = [];
 
+// `getWorkspace(id)` / `getPermissions({ wsId })` called WITHOUT an actor fall
+// back to a cookie-backed Supabase client, which is anonymous on a satellite
+// domain (see SHARED_WORKSPACE_WRAPPER_ALLOWED_FILES above for the full failure
+// mode). A registered app must always pass the app-session `user` (or a
+// `request` for route handlers), normally via its `src/lib/workspace.ts`.
+//
+// Rolled out per-app. apps/contacts is audited and clean; apps/calendar,
+// apps/tasks, apps/track, apps/teach, apps/hive, and apps/inventory each still
+// have actorless call sites and must be audited before they are added here.
+const ACTORLESS_CHECK_APPS = new Set(['contacts']);
+const ACTORLESS_WORKSPACE_CALL = /\bgetWorkspace\(\s*[\w.]+\s*\)/gu;
+const ACTORLESS_PERMISSIONS_CALL = /\bgetPermissions\(\s*\{([\s\S]*?)\}\s*\)/gu;
+
+// Comments routinely quote the very call shapes this rule forbids (including in
+// the helpers written to fix them), so strip them before matching.
+function stripComments(source) {
+  return source
+    .replace(/\/\*[\s\S]*?\*\//gu, '')
+    .replace(/(^|[^:])\/\/.*$/gmu, '$1');
+}
+
+function findActorlessWorkspaceCalls(filePath, rawSource) {
+  const problems = [];
+
+  const app = filePath.split('/')[1];
+  if (!ACTORLESS_CHECK_APPS.has(app)) {
+    return problems;
+  }
+
+  const source = stripComments(rawSource);
+
+  if (!/@tuturuuu\/utils\/workspace-helper/u.test(source)) {
+    return problems;
+  }
+
+  // getWorkspace(id) — a single argument means no { user } / { useAdmin } opts.
+  if (ACTORLESS_WORKSPACE_CALL.test(source)) {
+    problems.push(
+      'getWorkspace() called without an actor. Pass the app-session user: getWorkspace(id, { useAdmin: true, user }).'
+    );
+  }
+  ACTORLESS_WORKSPACE_CALL.lastIndex = 0;
+
+  for (const match of source.matchAll(ACTORLESS_PERMISSIONS_CALL)) {
+    const args = match[1] ?? '';
+    if (!/\buser\b/u.test(args) && !/\brequest\b/u.test(args)) {
+      problems.push(
+        'getPermissions() called without an actor. Pass the app-session user: getPermissions({ user, wsId }).'
+      );
+      break;
+    }
+  }
+
+  return problems;
+}
+
 for (const filePath of files) {
   const source = fs.readFileSync(path.join(ROOT, filePath), 'utf8');
 
@@ -133,6 +215,10 @@ for (const filePath of files) {
     if (pattern.test(source) && !allowedFiles?.has(filePath)) {
       failures.push(`${filePath}: ${message}`);
     }
+  }
+
+  for (const problem of findActorlessWorkspaceCalls(filePath, source)) {
+    failures.push(`${filePath}: ${problem}`);
   }
 }
 

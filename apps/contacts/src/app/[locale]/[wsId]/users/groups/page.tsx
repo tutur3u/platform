@@ -5,7 +5,6 @@ import {
 import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
 import { Button } from '@tuturuuu/ui/button';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
-import WorkspaceWrapper from '@tuturuuu/ui/custom/workspace-wrapper';
 import { Separator } from '@tuturuuu/ui/separator';
 import {
   applyAttendanceMemberCounts,
@@ -19,12 +18,13 @@ import {
   countUserGroupsForTable,
   listUserGroupsForTable,
 } from '@tuturuuu/users-core/lib/user-groups/table-repository';
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { connection } from 'next/server';
 import { getTranslations } from 'next-intl/server';
+import WorkspaceWrapper from '@/components/workspace-wrapper';
+import { getContactsWorkspacePermissions } from '@/lib/workspace';
 import {
   type UserGroupActivityLogSearchParams,
   UserGroupActivityLogTable,
@@ -79,9 +79,8 @@ export default async function WorkspaceUserGroupsPage({
         const sp = await searchParams;
 
         // Check permissions
-        const workspacePermissions = await getPermissions({
-          wsId,
-        });
+        const workspacePermissions =
+          await getContactsWorkspacePermissions(wsId);
         if (!workspacePermissions) notFound();
         const { withoutPermission, containsPermission } = workspacePermissions;
 

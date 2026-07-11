@@ -35,6 +35,12 @@ const WS_ID = 'personal';
 // during the infrastructure app extraction. Keep this list in sync as more
 // routes migrate — it is the regression guard that the fail-closed gate stays
 // wired across the migrated surface.
+//
+// IMPORTANT: a route that moves to a satellite app no longer exists here, so it
+// cannot redirect to this app's login and its entry must be REMOVED. Leaving one
+// behind fails as "Expected anonymous access to ... to redirect to the login
+// route" — which is what `education/*` (now apps/teach) and `inventory/*` (now
+// apps/inventory) did until they were pruned. Satellites gate their own routes.
 const GATED_ROUTES = [
   'ai-chat/chatbots',
   'ai-chat/my-chatbots',
@@ -45,16 +51,6 @@ const GATED_ROUTES = [
   'crawlers',
   'crawlers/uncrawled',
   'habits',
-  'inventory',
-  'inventory/batches',
-  'inventory/categories',
-  'inventory/manufacturers',
-  'inventory/products',
-  'inventory/promotions',
-  'inventory/storefronts',
-  'inventory/suppliers',
-  'inventory/units',
-  'inventory/warehouses',
   'members',
   'memories',
   'pipelines',

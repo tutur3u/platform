@@ -1,10 +1,13 @@
 import { InvoiceUserHistoryAccordion } from '@tuturuuu/ui/finance/invoices/components/invoice-user-history-accordion';
 import UserMonthAttendance from '@tuturuuu/users-ui/components/user-month-attendance';
-import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { connection } from 'next/server';
 import { getTranslations } from 'next-intl/server';
+import {
+  getContactsWorkspace,
+  getContactsWorkspacePermissions,
+} from '@/lib/workspace';
 import { UserFeedbackPanel } from '../user-feedback-panel';
 import {
   getAvailableUsersForReferral,
@@ -49,11 +52,11 @@ export default async function WorkspaceUserDetailsPage({ params }: Props) {
 
   const t = await getTranslations('user-data-table');
   const { wsId: id, userId } = await params;
-  const workspace = await getWorkspace(id);
+  const workspace = await getContactsWorkspace(id);
   if (!workspace) notFound();
   const wsId = workspace.id;
 
-  const permissions = await getPermissions({ wsId });
+  const permissions = await getContactsWorkspacePermissions(wsId);
   if (!permissions) notFound();
   const { containsPermission } = permissions;
 

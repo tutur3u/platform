@@ -1,12 +1,12 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { GuestUserLead } from '@tuturuuu/types/primitives/GuestUserLead';
 import { CustomDataTable } from '@tuturuuu/ui/custom/tables/custom-data-table';
-import WorkspaceWrapper from '@tuturuuu/ui/custom/workspace-wrapper';
 import { Separator } from '@tuturuuu/ui/separator';
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { connection } from 'next/server';
+import WorkspaceWrapper from '@/components/workspace-wrapper';
+import { getContactsWorkspacePermissions } from '@/lib/workspace';
 import { getGuestLeadColumns } from './columns';
 import { GuestLeadHeader } from './header';
 
@@ -36,7 +36,7 @@ export default async function GuestUserLeadsPage({
   return (
     <WorkspaceWrapper params={params}>
       {async ({ wsId }) => {
-        const permissions = await getPermissions({ wsId });
+        const permissions = await getContactsWorkspacePermissions(wsId);
         if (!permissions) notFound();
         const { containsPermission } = permissions;
         const canCreateLeadGenerations = containsPermission(
