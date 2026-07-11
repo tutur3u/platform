@@ -1,11 +1,12 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { UserGroupTag } from '@tuturuuu/types/primitives/UserGroupTag';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
+import { CustomDataTable } from '@tuturuuu/ui/custom/tables/custom-data-table';
+import WorkspaceWrapper from '@tuturuuu/ui/custom/workspace-wrapper';
 import { Separator } from '@tuturuuu/ui/separator';
 import type { Metadata } from 'next';
+import { connection } from 'next/server';
 import { getTranslations } from 'next-intl/server';
-import { CustomDataTable } from '@/components/custom-data-table';
-import WorkspaceWrapper from '@/components/workspace-wrapper';
 import { groupTagColumns } from './columns';
 import GroupTagForm from './form';
 
@@ -30,6 +31,8 @@ export default async function WorkspaceUserGroupTagsPage({
   params,
   searchParams,
 }: Props) {
+  await connection();
+
   return (
     <WorkspaceWrapper params={params}>
       {async ({ wsId }) => {

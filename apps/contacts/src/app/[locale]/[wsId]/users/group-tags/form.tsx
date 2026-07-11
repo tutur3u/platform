@@ -6,6 +6,7 @@ import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
 import type { UserGroupTag } from '@tuturuuu/types/primitives/UserGroupTag';
 import { Button } from '@tuturuuu/ui/button';
 import { ColorPicker } from '@tuturuuu/ui/color-picker';
+import { Filter } from '@tuturuuu/ui/custom/user-filters';
 import {
   Form,
   FormControl,
@@ -22,7 +23,6 @@ import { Separator } from '@tuturuuu/ui/separator';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import * as z from 'zod';
-import { Filter } from '../filters';
 
 interface Props {
   wsId: string;

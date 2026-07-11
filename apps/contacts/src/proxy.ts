@@ -117,6 +117,7 @@ const CONTACTS_OWNED_WORKSPACE_ROUTES = [
   'users/approvals',
   'users/database',
   'users/feedbacks',
+  'users/group-tags',
   'users/guest-leads',
   'users/structure',
   'users/tutoring',

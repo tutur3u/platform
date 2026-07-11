@@ -6,11 +6,11 @@ import { listWorkspaceUserGroups } from '@tuturuuu/internal-api/user-groups';
 import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
 import { Button } from '@tuturuuu/ui/button';
 import SearchBar from '@tuturuuu/ui/custom/search-bar';
+import { Filter } from '@tuturuuu/ui/custom/user-filters';
 import { cn } from '@tuturuuu/utils/format';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
-import { Filter } from '../../../users/filters';
 
 export interface UserGroupFormProps {
   wsId: string;

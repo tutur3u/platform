@@ -6514,5 +6514,24 @@
     "update_label": "Update Label",
     "updating": "Updating...",
     "visible_labels": "Visible labels"
+  },
+  "ws-user-group-tags": {
+    "add_group": "Add groups",
+    "add_group_description": "Add a user group to this tag",
+    "edit": "Edit Tag",
+    "edit_description": "Edit an existing group tag",
+    "color": "Tag Color",
+    "create": "Create Tag",
+    "create_description": "Create a new group tag",
+    "description": "Organize user groups together for easier management.",
+    "linked_user_groups": "Linked User Groups",
+    "name": "Tag Name",
+    "plural": "Group Tags",
+    "singular": "Group Tag"
+  },
+  "ws-user-groups": {
+    "description": "Organize users into groups to meet your needs.",
+    "plural": "User groups",
+    "singular": "User group"
   }
 }

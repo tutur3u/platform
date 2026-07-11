@@ -19,11 +19,11 @@
         "key": "page",
         "label": "page",
         "legacyNext": 54,
-        "migrated": 117,
-        "percentComplete": 68.79,
+        "migrated": 115,
+        "percentComplete": 68.42,
         "remaining": 54,
-        "terminal": 119,
-        "total": 173,
+        "terminal": 117,
+        "total": 171,
         "unknownStatus": 0
       },
       {
@@ -129,11 +129,11 @@
         "key": "tanstack-start",
         "label": "TanStack Start",
         "legacyNext": 63,
-        "migrated": 168,
-        "percentComplete": 72.96,
+        "migrated": 166,
+        "percentComplete": 72.73,
         "remaining": 63,
-        "terminal": 170,
-        "total": 233,
+        "terminal": 168,
+        "total": 231,
         "unknownStatus": 0
       }
     ],
@@ -324,11 +324,11 @@
       "key": "total",
       "label": "All route artifacts",
       "legacyNext": 559,
-      "migrated": 239,
-      "percentComplete": 31.07,
+      "migrated": 237,
+      "percentComplete": 30.9,
       "remaining": 559,
-      "terminal": 252,
-      "total": 811,
+      "terminal": 250,
+      "total": 809,
       "unknownStatus": 0
     }
   },
@@ -6799,24 +6799,6 @@
       "targetOwner": "tanstack-start"
     },
     {
-      "id": "page:/:locale/:wsId/users/group-tags:apps/web/src/app/[locale]/(dashboard)/[wsId]/users/group-tags/page.tsx",
-      "kind": "page",
-      "methods": [],
-      "routePath": "/:locale/:wsId/users/group-tags",
-      "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/users/group-tags/page.tsx",
-      "status": "migrated",
-      "targetOwner": "tanstack-start"
-    },
-    {
-      "id": "page:/:locale/:wsId/users/group-tags/:tagId:apps/web/src/app/[locale]/(dashboard)/[wsId]/users/group-tags/[tagId]/page.tsx",
-      "kind": "page",
-      "methods": [],
-      "routePath": "/:locale/:wsId/users/group-tags/:tagId",
-      "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/users/group-tags/[tagId]/page.tsx",
-      "status": "migrated",
-      "targetOwner": "tanstack-start"
-    },
-    {
       "id": "page:/:locale/:wsId/users/groups:apps/web/src/app/[locale]/(dashboard)/[wsId]/users/groups/page.tsx",
       "kind": "page",
       "methods": [],
@@ -7721,7 +7703,7 @@
     "apiRoutes": 565,
     "cronRoutes": 8,
     "layouts": 56,
-    "pages": 173,
+    "pages": 171,
     "routeHandlers": 578,
     "methodCounts": {
       "GET": 296,
@@ -7732,6 +7714,6 @@
       "DELETE": 99,
       "OPTIONS": 23
     },
-    "total": 811
+    "total": 809
   }
 }

@@ -6514,5 +6514,24 @@
     "update_label": "Cập nhật nhãn",
     "updating": "Đang cập nhật...",
     "visible_labels": "Nhãn đang hiển thị"
+  },
+  "ws-user-group-tags": {
+    "add_group": "Thêm nhóm",
+    "add_group_description": "Thêm nhóm vào gắn thẻ",
+    "edit": "Sửa gắn thẻ",
+    "edit_description": "Sửa gắn thẻ nhóm",
+    "color": "Màu gắn thẻ",
+    "create": "Tạo gắn thẻ",
+    "create_description": "Thêm một gắn thẻ nhóm mới",
+    "description": "Gom các nhóm người dùng lại với nhau để quản lý dễ dàng hơn.",
+    "linked_user_groups": "Nhóm người dùng liên kết",
+    "name": "Tên gắn thẻ",
+    "plural": "Gắn thẻ nhóm",
+    "singular": "Gắn thẻ nhóm"
+  },
+  "ws-user-groups": {
+    "description": "Sắp xếp người dùng thành từng nhóm phù hợp với nhu cầu của bạn.",
+    "plural": "Nhóm người dùng",
+    "singular": "Nhóm người dùng"
   }
 }
