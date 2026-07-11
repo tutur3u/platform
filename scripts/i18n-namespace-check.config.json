@@ -13,6 +13,7 @@
     "ws-board-templates"
   ],
   "apps/cms": ["certificates", "finance-command-center", "wallet-checkpoints"],
+  "apps/contacts": ["certificates"],
   "apps/drive": [
     "certificates",
     "finance-command-center",
@@ -87,6 +88,7 @@
       "ws-tasks.*"
     ],
     "apps/cms": ["settings.calendar.*", "ws-polls.*"],
+    "apps/contacts": ["ws-polls.*"],
     "apps/drive": ["ws-polls.*"],
     "apps/finance": [
       "calendar.*",

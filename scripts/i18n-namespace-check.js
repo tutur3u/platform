@@ -57,6 +57,7 @@ const APPS = [
   { name: 'apps/tasks', dir: 'apps/tasks' },
   { name: 'apps/calendar', dir: 'apps/calendar' },
   { name: 'apps/cms', dir: 'apps/cms' },
+  { name: 'apps/contacts', dir: 'apps/contacts' },
   { name: 'apps/drive', dir: 'apps/drive' },
   { name: 'apps/finance', dir: 'apps/finance' },
   { name: 'apps/hive', dir: 'apps/hive' },
@@ -87,7 +88,6 @@ const APP_NAMESPACE_ALLOWLIST = new Map([
 const UNCHECKED_APPS = new Set([
   'apps/apps',
   'apps/chat',
-  'apps/contacts',
   'apps/infrastructure',
   'apps/inventory',
   'apps/learn',
