@@ -6,11 +6,144 @@ on:
       - production
   workflow_dispatch:
 
+permissions:
+  contents: read
+  deployments: read
+  packages: read
+
+env:
+  E2E_IMAGE_BUNDLE_REPOSITORY: ghcr.io/tutur3u/platform-e2e
+  E2E_IMAGE_BUNDLE_TAG_PREFIX: ${{ github.run_id }}-${{ github.run_attempt }}-${{ github.sha }}
+  E2E_IMAGE_BUNDLE_WAIT_SECONDS: "360"
+
 jobs:
   check-ci:
     uses: ./.github/workflows/ci-check.yml
     with:
       workflow_name: e2e-tests.yaml
+
+  prepare-e2e-images:
+    name: Prepare E2E image bundle
+    needs: [check-ci]
+    if: github.ref != 'refs/heads/production' && needs.check-ci.outputs.should_run == 'true'
+    continue-on-error: true
+    timeout-minutes: 45
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    env:
+      COMPOSE_PROJECT_NAME: ttr-e2e-bundle-${{ github.run_id }}-${{ github.run_attempt }}
+      DOCKER_WEB_CACHE_BACKEND_FROM: type=gha,scope=docker-backend,timeout=10m
+      DOCKER_WEB_CACHE_CHAT_REALTIME_FROM: type=gha,scope=docker-chat-realtime,timeout=10m
+      DOCKER_WEB_CACHE_HIVE_FROM: type=gha,scope=docker-hive-prod,timeout=10m
+      DOCKER_WEB_CACHE_HIVE_REALTIME_FROM: type=gha,scope=docker-hive-realtime,timeout=10m
+      DOCKER_WEB_CACHE_MARKITDOWN_FROM: type=gha,scope=docker-markitdown,timeout=10m
+      DOCKER_WEB_CACHE_MEET_REALTIME_FROM: type=gha,scope=docker-meet-realtime,timeout=10m
+      DOCKER_WEB_CACHE_STORAGE_UNZIP_FROM: type=gha,scope=docker-storage-unzip-proxy,timeout=10m
+      DOCKER_WEB_CACHE_SUPERMEMORY_FROM: type=gha,scope=docker-supermemory,timeout=10m
+      DOCKER_WEB_CACHE_TANSTACK_FROM: type=gha,scope=docker-tanstack-web-prod,timeout=10m
+      DOCKER_WEB_CACHE_WEB_FROM: type=gha,scope=docker-web-prod,timeout=10m
+      DOCKER_WEB_COMPOSE_PROJECT_NAME: ttr-e2e-bundle-${{ github.run_id }}-${{ github.run_attempt }}
+      NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:8001
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v7
+
+      - name: Free runner disk for E2E image bundle
+        run: |
+          df -h /
+          docker system prune -af --volumes || true
+          docker builder prune -af || true
+          sudo rm -rf \
+            /usr/share/dotnet \
+            /usr/local/lib/android \
+            /usr/local/share/boost \
+            /usr/share/swift \
+            /opt/az \
+            /opt/ghc \
+            /opt/google \
+            /opt/hostedtoolcache/CodeQL || true
+          df -h /
+
+      - name: Setup Bun
+        uses: ./.github/actions/setup-bun-with-retry
+        with:
+          bun-version: 1.3.14
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          package-manager-cache: false
+
+      - name: Setup Docker Buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Select Docker Buildx builder
+        run: echo "BUILDX_BUILDER=${{ steps.buildx.outputs.name }}" >> "$GITHUB_ENV"
+
+      - name: Expose GitHub cache runtime to BuildKit
+        uses: crazy-max/ghaction-github-runtime@04d248b84655b509d8c44dc1d6f990c879747487 # v4.0.0
+
+      - name: Configure trusted BuildKit cache exports
+        if: ${{ github.ref == 'refs/heads/main' }}
+        run: |
+          {
+            echo 'DOCKER_WEB_CACHE_CHAT_REALTIME_TO=type=gha,scope=docker-chat-realtime,mode=min,timeout=10m,ignore-error=true'
+            echo 'DOCKER_WEB_CACHE_HIVE_TO=type=gha,scope=docker-hive-prod,mode=min,timeout=10m,ignore-error=true'
+            echo 'DOCKER_WEB_CACHE_HIVE_REALTIME_TO=type=gha,scope=docker-hive-realtime,mode=min,timeout=10m,ignore-error=true'
+            echo 'DOCKER_WEB_CACHE_MARKITDOWN_TO=type=gha,scope=docker-markitdown,mode=min,timeout=10m,ignore-error=true'
+            echo 'DOCKER_WEB_CACHE_MEET_REALTIME_TO=type=gha,scope=docker-meet-realtime,mode=min,timeout=10m,ignore-error=true'
+            echo 'DOCKER_WEB_CACHE_SUPERMEMORY_TO=type=gha,scope=docker-supermemory,mode=min,timeout=10m,ignore-error=true'
+          } >> "$GITHUB_ENV"
+
+      - name: Prepare trusted Turbo BuildKit secrets
+        if: ${{ github.ref == 'refs/heads/main' && github.actor != 'dependabot[bot]' }}
+        env:
+          CACHE_TEAM: ${{ vars.TURBO_TEAM || secrets.TURBO_TEAM }}
+          CACHE_TOKEN: ${{ secrets.TURBO_TOKEN }}
+        run: |
+          if [ -z "${CACHE_TOKEN:-}" ]; then
+            echo "::notice title=Turbo BuildKit cache disabled::TURBO_TOKEN is not configured."
+            exit 0
+          fi
+          if [ -z "${CACHE_TEAM:-}" ]; then
+            echo "::error title=Invalid Turbo BuildKit cache configuration::TURBO_TEAM is required when TURBO_TOKEN is configured."
+            exit 1
+          fi
+
+          umask 077
+          printf '%s' "$CACHE_TEAM" > "$RUNNER_TEMP/turbo-team"
+          printf '%s' "$CACHE_TOKEN" > "$RUNNER_TEMP/turbo-token"
+          {
+            echo "DOCKER_WEB_TURBO_TEAM_SECRET_FILE=$RUNNER_TEMP/turbo-team"
+            echo "DOCKER_WEB_TURBO_TOKEN_SECRET_FILE=$RUNNER_TEMP/turbo-token"
+          } >> "$GITHUB_ENV"
+
+      - name: Install dependencies
+        run: bash scripts/ci/run-with-backoff.sh bun install
+
+      - name: Log in to GHCR for E2E bundle publishing
+        env:
+          GHCR_TOKEN: ${{ github.token }}
+        run: printf '%s' "$GHCR_TOKEN" | docker login ghcr.io --username "${{ github.actor }}" --password-stdin
+
+      - name: Remove abandoned E2E image bundles
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node scripts/ci/e2e-image-bundle.js cleanup --stale-hours 24
+
+      - name: Build and publish E2E image bundle
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node scripts/ci/e2e-image-bundle.js publish
+
+      - name: Remove Turbo BuildKit secret files
+        if: always()
+        run: rm -f "$RUNNER_TEMP/turbo-team" "$RUNNER_TEMP/turbo-token"
 
   e2e:
     name: Playwright E2E (${{ matrix.shard }}/${{ matrix.total_shards }})
@@ -18,6 +151,9 @@ jobs:
     if: github.ref != 'refs/heads/production' && needs.check-ci.outputs.should_run == 'true'
     timeout-minutes: 45
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
     strategy:
       fail-fast: false
       matrix:
@@ -107,18 +243,6 @@ jobs:
       - name: Expose GitHub cache runtime to BuildKit
         uses: crazy-max/ghaction-github-runtime@04d248b84655b509d8c44dc1d6f990c879747487 # v4.0.0
 
-      - name: Configure trusted BuildKit cache exports
-        if: ${{ github.ref == 'refs/heads/main' && matrix.shard == 1 }}
-        run: |
-          {
-            echo 'DOCKER_WEB_CACHE_CHAT_REALTIME_TO=type=gha,scope=docker-chat-realtime,mode=min,timeout=10m,ignore-error=true'
-            echo 'DOCKER_WEB_CACHE_HIVE_TO=type=gha,scope=docker-hive-prod,mode=min,timeout=10m,ignore-error=true'
-            echo 'DOCKER_WEB_CACHE_HIVE_REALTIME_TO=type=gha,scope=docker-hive-realtime,mode=min,timeout=10m,ignore-error=true'
-            echo 'DOCKER_WEB_CACHE_MARKITDOWN_TO=type=gha,scope=docker-markitdown,mode=min,timeout=10m,ignore-error=true'
-            echo 'DOCKER_WEB_CACHE_MEET_REALTIME_TO=type=gha,scope=docker-meet-realtime,mode=min,timeout=10m,ignore-error=true'
-            echo 'DOCKER_WEB_CACHE_SUPERMEMORY_TO=type=gha,scope=docker-supermemory,mode=min,timeout=10m,ignore-error=true'
-          } >> "$GITHUB_ENV"
-
       - name: Prepare trusted Turbo BuildKit secrets
         if: ${{ github.ref == 'refs/heads/main' && github.actor != 'dependabot[bot]' }}
         env:
@@ -148,6 +272,14 @@ jobs:
       - name: Install Playwright browsers
         working-directory: apps/web
         run: bun x playwright install chromium
+
+      - name: Log in to GHCR for E2E bundle reuse
+        env:
+          GHCR_TOKEN: ${{ github.token }}
+        run: printf '%s' "$GHCR_TOKEN" | docker login ghcr.io --username "${{ github.actor }}" --password-stdin
+
+      - name: Reuse prepared E2E image bundle
+        run: node scripts/ci/e2e-image-bundle.js pull
 
       # --- Run E2E tests against Docker web + local Docker Supabase ---
       - name: Run Playwright shard
@@ -334,6 +466,9 @@ jobs:
     if: github.ref != 'refs/heads/production' && needs.check-ci.outputs.should_run == 'true'
     timeout-minutes: 60
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
     strategy:
       fail-fast: false
       matrix:
@@ -442,6 +577,14 @@ jobs:
         working-directory: ${{ matrix.playwright_workdir }}
         run: bun x playwright install chromium
 
+      - name: Log in to GHCR for E2E bundle reuse
+        env:
+          GHCR_TOKEN: ${{ github.token }}
+        run: printf '%s' "$GHCR_TOKEN" | docker login ghcr.io --username "${{ github.actor }}" --password-stdin
+
+      - name: Reuse prepared E2E image bundle
+        run: node scripts/ci/e2e-image-bundle.js pull
+
       - name: Run migration E2E
         run: ${{ matrix.command }}
 
@@ -469,3 +612,21 @@ jobs:
       - name: Remove Turbo BuildKit secret files
         if: always()
         run: rm -f "$RUNNER_TEMP/turbo-team" "$RUNNER_TEMP/turbo-token"
+
+  cleanup-e2e-images:
+    name: Clean up E2E image bundle
+    needs: [check-ci, prepare-e2e-images, e2e, migration-e2e]
+    if: ${{ always() && github.ref != 'refs/heads/production' && needs.check-ci.outputs.should_run == 'true' }}
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v7
+
+      - name: Delete this run's E2E image bundle
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node scripts/ci/e2e-image-bundle.js cleanup --tag-prefix "$E2E_IMAGE_BUNDLE_TAG_PREFIX"

@@ -738,6 +738,78 @@ test('TanStack migration E2E workflow keeps dual-stack and compare coverage', ()
   assert.match(cleanupStep.run || '', /bun sb:stop \|\| true/);
 });
 
+test('E2E image bundle is concurrent, private, bounded, and optional', () => {
+  const workflow = readWorkflowYaml('e2e-tests.yaml');
+  const producer = workflow.jobs?.['prepare-e2e-images'];
+  const e2e = workflow.jobs?.e2e;
+  const migration = workflow.jobs?.['migration-e2e'];
+  const cleanup = workflow.jobs?.['cleanup-e2e-images'];
+
+  assert.ok(producer);
+  assert.ok(e2e);
+  assert.ok(migration);
+  assert.ok(cleanup);
+  assert.deepEqual(producer.needs, ['check-ci']);
+  assert.deepEqual(e2e.needs, ['check-ci']);
+  assert.deepEqual(migration.needs, ['check-ci']);
+  assert.equal(producer['continue-on-error'], true);
+  assert.equal(producer.permissions?.contents, 'read');
+  assert.equal(producer.permissions?.packages, 'write');
+  assert.equal(e2e.permissions?.packages, 'read');
+  assert.equal(migration.permissions?.packages, 'read');
+  assert.equal(cleanup.permissions?.packages, 'write');
+  assert.equal(
+    workflow.env?.E2E_IMAGE_BUNDLE_REPOSITORY,
+    'ghcr.io/tutur3u/platform-e2e'
+  );
+  assert.equal(workflow.env?.E2E_IMAGE_BUNDLE_WAIT_SECONDS, '360');
+  assert.equal(
+    workflow.env?.E2E_IMAGE_BUNDLE_TAG_PREFIX,
+    `${githubExpression('github.run_id')}-${githubExpression(
+      'github.run_attempt'
+    )}-${githubExpression('github.sha')}`
+  );
+
+  for (const job of [e2e, migration]) {
+    assert.ok(
+      job.steps.some(
+        (step) =>
+          step.name === 'Reuse prepared E2E image bundle' &&
+          step.run === 'node scripts/ci/e2e-image-bundle.js pull'
+      )
+    );
+  }
+
+  assert.deepEqual(cleanup.needs, [
+    'check-ci',
+    'prepare-e2e-images',
+    'e2e',
+    'migration-e2e',
+  ]);
+  assert.match(cleanup.if, /always\(\)/u);
+  assert.ok(
+    cleanup.steps.some(
+      (step) =>
+        step.name === "Delete this run's E2E image bundle" &&
+        step.run.includes('cleanup --tag-prefix')
+    )
+  );
+  assert.ok(
+    producer.steps.some(
+      (step) =>
+        step.name === 'Remove abandoned E2E image bundles' &&
+        step.run.endsWith('cleanup --stale-hours 24')
+    )
+  );
+  assert.ok(
+    producer.steps.some(
+      (step) =>
+        step.name === 'Build and publish E2E image bundle' &&
+        step.run === 'node scripts/ci/e2e-image-bundle.js publish'
+    )
+  );
+});
+
 test('Supabase CLI workflows use tokenized retry setup', () => {
   const workflowsDir = path.join(repoRoot, '.github', 'workflows');
   const workflowFiles = fs

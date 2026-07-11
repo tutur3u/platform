@@ -686,6 +686,10 @@ test('E2E workflow frees runner disk before loading cached Docker images', () =>
     path.join(repoRoot, '.github', 'workflows', 'e2e-tests.yaml'),
     'utf8'
   );
+  const bundleJob = readWorkflowJobBlock(
+    'e2e-tests.yaml',
+    'prepare-e2e-images'
+  );
   const e2eJob = readWorkflowJobBlock('e2e-tests.yaml', 'e2e');
   const cleanupIndex = e2eJob.indexOf('Free runner disk for Dockerized E2E');
   const runIndex = e2eJob.indexOf('Run Playwright shard');
@@ -693,7 +697,7 @@ test('E2E workflow frees runner disk before loading cached Docker images', () =>
   const restoreIndex = e2eJob.indexOf('Restore cached Docker images');
   const loadIndex = e2eJob.indexOf('Load cached Docker images');
   const buildxIndex = e2eJob.indexOf('Setup Docker Buildx');
-  const cacheExportIndex = e2eJob.indexOf(
+  const cacheExportIndex = bundleJob.indexOf(
     'Configure trusted BuildKit cache exports'
   );
   const secretIndex = e2eJob.indexOf('Prepare trusted Turbo BuildKit secrets');
@@ -810,22 +814,25 @@ test('E2E workflow frees runner disk before loading cached Docker images', () =>
   assert.match(e2eJob, /DOCKER_WEB_CACHE_WEB_FROM: type=gha/u);
   assert.match(e2eJob, /DOCKER_WEB_CACHE_BACKEND_FROM: type=gha/u);
   assert.match(e2eJob, /DOCKER_WEB_CACHE_TANSTACK_FROM: type=gha/u);
+  assert.match(bundleJob, /DOCKER_WEB_CACHE_WEB_FROM: type=gha/u);
+  assert.match(bundleJob, /DOCKER_WEB_CACHE_BACKEND_FROM: type=gha/u);
+  assert.match(bundleJob, /DOCKER_WEB_CACHE_TANSTACK_FROM: type=gha/u);
   assert.match(e2eJob, /uses: docker\/setup-buildx-action@v4/u);
+  assert.match(bundleJob, /uses: docker\/setup-buildx-action@v4/u);
   assert.match(
     e2eJob,
     /BUILDX_BUILDER=\$\{\{ steps\.buildx\.outputs\.name \}\}/u
   );
-  assert.match(
-    e2eJob,
-    /github\.ref == 'refs\/heads\/main' && matrix\.shard == 1/u
-  );
-  assert.match(e2eJob, /scope=docker-chat-realtime,mode=min/u);
-  assert.match(e2eJob, /scope=docker-hive-prod,mode=min/u);
-  assert.doesNotMatch(e2eJob, /DOCKER_WEB_CACHE_WEB_TO/u);
-  assert.doesNotMatch(e2eJob, /DOCKER_WEB_CACHE_BACKEND_TO/u);
-  assert.doesNotMatch(e2eJob, /DOCKER_WEB_CACHE_TANSTACK_TO/u);
-  assert.doesNotMatch(e2eJob, /DOCKER_WEB_CACHE_STORAGE_UNZIP_TO/u);
+  assert.match(bundleJob, /github\.ref == 'refs\/heads\/main'/u);
+  assert.match(bundleJob, /scope=docker-chat-realtime,mode=min/u);
+  assert.match(bundleJob, /scope=docker-hive-prod,mode=min/u);
+  assert.doesNotMatch(bundleJob, /DOCKER_WEB_CACHE_WEB_TO/u);
+  assert.doesNotMatch(bundleJob, /DOCKER_WEB_CACHE_BACKEND_TO/u);
+  assert.doesNotMatch(bundleJob, /DOCKER_WEB_CACHE_TANSTACK_TO/u);
+  assert.doesNotMatch(bundleJob, /DOCKER_WEB_CACHE_STORAGE_UNZIP_TO/u);
+  assert.doesNotMatch(e2eJob, /DOCKER_WEB_CACHE_[A-Z_]+_TO/u);
   assert.match(e2eJob, /DOCKER_WEB_TURBO_TOKEN_SECRET_FILE/u);
+  assert.match(bundleJob, /DOCKER_WEB_TURBO_TOKEN_SECRET_FILE/u);
   assert.match(e2eJob, /github\.actor != 'dependabot\[bot\]'/u);
   assert.match(
     e2eJob,

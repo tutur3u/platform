@@ -346,6 +346,7 @@ test('manual BuildKit GHA cache jobs expose the pinned runtime context', () => {
 
   for (const [workflowName, jobName] of [
     ['docker-setup-check.yaml', 'verify'],
+    ['e2e-tests.yaml', 'prepare-e2e-images'],
     ['e2e-tests.yaml', 'e2e'],
     ['e2e-tests.yaml', 'migration-e2e'],
     ['rust-backend.yml', 'docker'],
@@ -393,8 +394,8 @@ test('BuildKit cache scopes have one protected default-branch writer', () => {
   const e2e = workflows.get('e2e-tests.yaml');
   assert.equal(
     [...e2e.matchAll(/uses: docker\/setup-buildx-action@v4/gu)].length,
-    2,
-    'both Dockerized E2E job families must use a cache-export-capable builder'
+    3,
+    'the bundle producer and both Dockerized E2E job families must use a cache-export-capable builder'
   );
   assert.equal(
     [
@@ -402,8 +403,8 @@ test('BuildKit cache scopes have one protected default-branch writer', () => {
         /BUILDX_BUILDER=\$\{\{ steps\.buildx\.outputs\.name \}\}/gu
       ),
     ].length,
-    2,
-    'both Dockerized E2E job families must select their Buildx builder for Compose'
+    3,
+    'the bundle producer and both Dockerized E2E job families must select their Buildx builder for Compose'
   );
   assert.doesNotMatch(
     dockerSetup,

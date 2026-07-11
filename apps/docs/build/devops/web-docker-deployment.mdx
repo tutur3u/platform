@@ -519,6 +519,36 @@ Set `E2E_DOCKER_REUSE_WEB_IMAGE_SOURCE=<image>` to reuse a specific web image
 tag, or `E2E_DOCKER_REUSE_WEB_IMAGE_COLOR=blue|green|auto` when the active-color
 file is not the lane you want.
 
+GitHub Actions builds the same image set once per E2E workflow run and shares it
+through the private `ghcr.io/tutur3u/platform-e2e` package. The producer and
+test jobs start after the same CI switchboard check, so shards can restore
+Supabase, Bun, and Playwright while the image bundle is being prepared. The
+producer publishes immutable tags under
+`<run-id>-<run-attempt>-<commit-sha>-<service>` and pushes the `-ready` tag only
+after every planned blue/green and TanStack image exists and the package has
+been verified private. Consumers wait up to
+`E2E_IMAGE_BUNDLE_WAIT_SECONDS` (six minutes by default), pull the complete
+bundle, retag it for their isolated Compose project, and skip web/support image
+builds. Missing, late, or partial bundles emit a notice and retain the existing
+local cache-backed build path.
+
+The workflow exposes only three bundle controls:
+
+- `E2E_IMAGE_BUNDLE_REPOSITORY` is the private two-segment GHCR repository.
+- `E2E_IMAGE_BUNDLE_TAG_PREFIX` identifies one workflow run and attempt.
+- `E2E_IMAGE_BUNDLE_WAIT_SECONDS` bounds how long a consumer may wait before
+  falling back.
+
+The producer uses deterministic E2E-only `PLATFORM_BUILD_*` metadata so commit
+timestamps and messages do not invalidate otherwise reusable build work;
+production release metadata remains unchanged. An `always()` cleanup job
+deletes the exact run prefix after all shards and migration modes finish, and
+the next producer removes abandoned bundle versions older than 24 hours to
+cover canceled workflows. Bundle publication is best-effort, but cleanup is a
+required storage-safety gate. Investigate package visibility, `packages` token
+permissions, or GHCR deletion errors when cleanup fails; do not make the package
+public or replace these images with long-retention Actions artifacts.
+
 On GitHub-hosted runners, the E2E workflow frees disk before restoring or
 loading cached Supabase Docker images. Keep that cleanup ahead of the cache load:
 running `docker system prune -af --volumes` after cached images are loaded would

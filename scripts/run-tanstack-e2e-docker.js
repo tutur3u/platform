@@ -185,10 +185,14 @@ function resolveBaseUrl(options, env = process.env) {
   return `http://127.0.0.1:${getTanStackWebPort(env)}`;
 }
 
-function getComposeUpArgs(options) {
+function shouldBuildImages(options, env = process.env) {
+  return options.build && env.E2E_IMAGE_BUNDLE_READY !== '1';
+}
+
+function getComposeUpArgs(options, env = process.env) {
   const args = ['compose', '-f', options.composeFile, 'up', '-d'];
 
-  if (options.build) {
+  if (shouldBuildImages(options, env)) {
     args.push('--build');
   }
 
@@ -278,7 +282,7 @@ function buildCommandPlan(options, env = process.env) {
           command: 'docker',
         },
     up: {
-      args: getComposeUpArgs(options),
+      args: getComposeUpArgs(options, env),
       command: 'docker',
     },
   };
@@ -572,6 +576,7 @@ module.exports = {
   parseArgs,
   resolveBaseUrl,
   runTanStackE2EDocker,
+  shouldBuildImages,
   spawnCommand,
   waitForContainersHealthy,
 };

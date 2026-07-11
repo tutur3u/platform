@@ -25,6 +25,7 @@ const {
   parseArgs,
   resolveBaseUrl,
   runTanStackE2EDocker,
+  shouldBuildImages,
   waitForContainersHealthy,
 } = require('./run-tanstack-e2e-docker.js');
 
@@ -118,6 +119,20 @@ test('getComposeUpArgs includes --build by default and omits it for --no-build',
   assert.deepEqual(
     getComposeUpArgs({ build: false, composeFile: 'custom.yml' }),
     ['compose', '-f', 'custom.yml', 'up', '-d']
+  );
+  assert.equal(
+    shouldBuildImages(
+      { build: true, composeFile: DEFAULT_COMPOSE_FILE },
+      { E2E_IMAGE_BUNDLE_READY: '1' }
+    ),
+    false
+  );
+  assert.deepEqual(
+    getComposeUpArgs(
+      { build: true, composeFile: DEFAULT_COMPOSE_FILE },
+      { E2E_IMAGE_BUNDLE_READY: '1' }
+    ),
+    ['compose', '-f', DEFAULT_COMPOSE_FILE, 'up', '-d']
   );
 });
 
@@ -245,6 +260,11 @@ test('buildCommandPlan omits --build for --no-build and omits teardown for --kee
 
   const keepUp = buildCommandPlan(parseArgs(['--keep-up']), {});
   assert.equal(keepUp.teardown, null);
+
+  const bundled = buildCommandPlan(parseArgs([]), {
+    E2E_IMAGE_BUNDLE_READY: '1',
+  });
+  assert.doesNotMatch(bundled.up.args.join(' '), /--build/u);
 });
 
 test('buildCommandPlan resolves base-url overrides and the compose file', () => {
