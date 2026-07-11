@@ -38,12 +38,14 @@ function serviceHeaders({
   };
 }
 
+// Debt APIs are owned by apps/finance now. This web-only Docker suite does not
+// start the finance satellite, so exercising those routes here returns 404.
 test.describe('Workspace debt loans private schema API', () => {
   test.beforeAll(() => {
     assertSafeE2EEnvironment();
   });
 
-  test('manages debt loans through authenticated app APIs', async ({
+  test.skip('manages debt loans through authenticated app APIs', async ({
     request,
   }) => {
     const debtName = `Private debt loan ${Date.now()}`;
@@ -266,7 +268,7 @@ test.describe('Workspace debt loans private schema API', () => {
     }
   });
 
-  test('uses workspace default currency when omitted and rejects unsupported explicit currency', async ({
+  test.skip('uses workspace default currency when omitted and rejects unsupported explicit currency', async ({
     request,
   }) => {
     const unsupportedDebtName = `Unsupported debt loan ${Date.now()}`;

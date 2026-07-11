@@ -46,12 +46,14 @@ function isoDateWithOffset(days: number) {
   return date.toISOString().slice(0, 10);
 }
 
+// Finance APIs are owned by apps/finance now. This web-only Docker suite does
+// not start the finance satellite, so exercising those routes here returns 404.
 test.describe('Finance permission boundaries', () => {
   test.beforeAll(() => {
     assertSafeE2EEnvironment();
   });
 
-  test('keeps invoice creators away from finance aggregates and confidential wallet amounts', async ({
+  test.skip('keeps invoice creators away from finance aggregates and confidential wallet amounts', async ({
     baseURL,
     browser,
     request,

@@ -33,12 +33,15 @@ function serviceHeaders({
   };
 }
 
+// Inventory APIs are owned by apps/inventory now. This web-only Docker suite
+// does not start the inventory satellite, so exercising those routes here
+// returns 404.
 test.describe('Inventory public checkout modes', () => {
   test.beforeAll(() => {
     assertSafeE2EEnvironment();
   });
 
-  test('requires login before public storefront checkout attempts', async ({
+  test.skip('requires login before public storefront checkout attempts', async ({
     baseURL,
     request,
   }) => {
@@ -331,7 +334,7 @@ test.describe('Inventory public checkout modes', () => {
     }
   });
 
-  test('returns category bundle candidates according to bundle scope', async ({
+  test.skip('returns category bundle candidates according to bundle scope', async ({
     baseURL,
     request,
   }) => {

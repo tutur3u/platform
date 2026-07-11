@@ -38,12 +38,14 @@ function serviceHeaders({
   };
 }
 
+// Wallet APIs are owned by apps/finance now. This web-only Docker suite does
+// not start the finance satellite, so exercising those routes here returns 404.
 test.describe('Workspace wallets private schema API', () => {
   test.beforeAll(() => {
     assertSafeE2EEnvironment();
   });
 
-  test('manages wallets through authenticated app APIs', async ({
+  test.skip('manages wallets through authenticated app APIs', async ({
     request,
   }) => {
     const walletId = randomUUID();
@@ -164,7 +166,7 @@ test.describe('Workspace wallets private schema API', () => {
     }
   });
 
-  test('uses workspace default currency when omitted and rejects unsupported explicit currency', async ({
+  test.skip('uses workspace default currency when omitted and rejects unsupported explicit currency', async ({
     request,
   }) => {
     const walletId = randomUUID();
