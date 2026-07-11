@@ -175,7 +175,12 @@ export async function sendMailMessage({
             metadata: { ...sendParams.metadata, wsId: workspaceId },
           });
         })()
-      : await sendWorkspaceEmail(workspaceId, sendParams);
+      : await sendWorkspaceEmail(workspaceId, sendParams, {
+          // Managed Mail domains share the platform SES account. The service
+          // still uses workspaceId above for rate limits, audits, and abuse
+          // controls; only the credential lookup is delegated to root.
+          credentialWorkspaceId: ROOT_WORKSPACE_ID,
+        });
 
   const nextStatus = result.success ? 'sent' : 'failed';
   const now = new Date().toISOString();

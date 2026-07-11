@@ -647,6 +647,7 @@ export class EmailService {
   static async fromWorkspace(
     wsId: string,
     options?: {
+      credentialWorkspaceId?: string;
       rateLimits?: Partial<RateLimitConfig>;
       devMode?: boolean;
     }
@@ -656,10 +657,11 @@ export class EmailService {
     );
     const sbAdmin = (await createAdminClient()) as SupabaseClient<Database>;
 
+    const credentialWorkspaceId = options?.credentialWorkspaceId ?? wsId;
     const { data: dbCredentials, error } = await sbAdmin
       .from('workspace_email_credentials')
       .select('*')
-      .eq('ws_id', wsId)
+      .eq('ws_id', credentialWorkspaceId)
       .maybeSingle();
 
     if (error) {
@@ -681,7 +683,9 @@ export class EmailService {
           source_email: 'dev@tuturuuu.com',
         };
       } else {
-        throw new Error(`No email credentials found for workspace ${wsId}`);
+        throw new Error(
+          `No email credentials found for workspace ${credentialWorkspaceId}`
+        );
       }
     }
 
