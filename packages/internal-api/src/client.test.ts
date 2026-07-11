@@ -282,11 +282,13 @@ describe('withFinanceApiBaseUrl', () => {
     expect(withFinanceApiBaseUrl()).toEqual({});
   });
 
-  it('keeps server finance calls relative when running inside the finance app', () => {
+  it('pins server finance calls to the finance origin inside the finance app', () => {
     vi.stubEnv('npm_package_name', '@tuturuuu/finance');
     vi.stubEnv('FINANCE_APP_URL', 'https://finance.example.com');
 
-    expect(withFinanceApiBaseUrl()).toEqual({});
+    expect(withFinanceApiBaseUrl()).toMatchObject({
+      baseUrl: 'https://finance.example.com',
+    });
   });
 });
 

@@ -478,12 +478,10 @@ export function withEducationBootstrapBaseUrl(
   };
 }
 
-function isFinanceAppRuntime() {
-  return (
-    isCurrentBrowserHostname(
-      'finance.tuturuuu.com',
-      'finance.tuturuuu.localhost'
-    ) || isCurrentAppServerRuntime('@tuturuuu/finance', '/apps/finance')
+function isFinanceBrowserRuntime() {
+  return isCurrentBrowserHostname(
+    'finance.tuturuuu.com',
+    'finance.tuturuuu.localhost'
   );
 }
 
@@ -501,7 +499,7 @@ export function getConfiguredFinanceApiBaseUrl() {
 export function withFinanceApiBaseUrl(
   options: InternalApiClientOptions = {}
 ): InternalApiClientOptions {
-  if (options.baseUrl || isFinanceAppRuntime()) {
+  if (options.baseUrl || isFinanceBrowserRuntime()) {
     return options;
   }
 
