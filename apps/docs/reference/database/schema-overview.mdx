@@ -402,13 +402,15 @@ Calendar events with Google Calendar sync support.
 - `google_event_id` (text) - for sync
 - `creator_id` (uuid, FK → workspace_users)
 
-#### `calendar_event_participants`
-Event attendees.
+#### `private.calendar_event_participants`
+Legacy event-attendee projection retained for historical compatibility and
+service-role workflows. Current application code does not query this legacy
+participant model directly.
 
 **Key Fields:**
 - `event_id` (uuid, FK → workspace_calendar_events)
-- `user_id` (uuid, FK → workspace_users)
-- `attending` (boolean)
+- `participant_id` (uuid, FK → users, workspace_users, or workspace_user_groups)
+- `going` (boolean, nullable for participant groups)
 
 #### `calendar_sync_states`
 Tracks synchronization state with Google Calendar.

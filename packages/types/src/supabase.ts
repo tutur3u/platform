@@ -874,6 +874,107 @@ export type Database = {
           },
         ];
       };
+      calendar_event_participant_groups: {
+        Row: {
+          created_at: string | null;
+          event_id: string;
+          group_id: string;
+          notes: string | null;
+          role: string | null;
+        };
+        Insert: {
+          created_at?: string | null;
+          event_id: string;
+          group_id: string;
+          notes?: string | null;
+          role?: string | null;
+        };
+        Update: {
+          created_at?: string | null;
+          event_id?: string;
+          group_id?: string;
+          notes?: string | null;
+          role?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'calendar_event_participant_groups_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
+            referencedRelation: 'posts_dashboard_view';
+            referencedColumns: ['group_id'];
+          },
+        ];
+      };
+      calendar_event_platform_participants: {
+        Row: {
+          created_at: string | null;
+          event_id: string;
+          going: boolean | null;
+          notes: string;
+          role: string | null;
+          user_id: string;
+        };
+        Insert: {
+          created_at?: string | null;
+          event_id: string;
+          going?: boolean | null;
+          notes?: string;
+          role?: string | null;
+          user_id: string;
+        };
+        Update: {
+          created_at?: string | null;
+          event_id?: string;
+          going?: boolean | null;
+          notes?: string;
+          role?: string | null;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'calendar_event_platform_participants_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'calendar_event_platform_participants_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+        ];
+      };
+      calendar_event_virtual_participants: {
+        Row: {
+          created_at: string | null;
+          event_id: string;
+          going: boolean | null;
+          notes: string;
+          role: string | null;
+          user_id: string;
+        };
+        Insert: {
+          created_at?: string | null;
+          event_id: string;
+          going?: boolean | null;
+          notes?: string;
+          role?: string | null;
+          user_id: string;
+        };
+        Update: {
+          created_at?: string | null;
+          event_id?: string;
+          going?: boolean | null;
+          notes?: string;
+          role?: string | null;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
       calendar_user_workspace_preferences: {
         Row: {
           conflict_policy: string;
@@ -11606,6 +11707,18 @@ export type Database = {
       };
     };
     Views: {
+      calendar_event_participants: {
+        Row: {
+          created_at: string | null;
+          display_name: string | null;
+          event_id: string | null;
+          going: boolean | null;
+          handle: string | null;
+          participant_id: string | null;
+          type: string | null;
+        };
+        Relationships: [];
+      };
       external_user_monthly_report_logs_workspace_view: {
         Row: {
           approved_at: string | null;
@@ -15942,199 +16055,6 @@ export type Database = {
           value?: string;
         };
         Relationships: [];
-      };
-      calendar_event_participant_groups: {
-        Row: {
-          created_at: string | null;
-          event_id: string;
-          group_id: string;
-          notes: string | null;
-          role: string | null;
-        };
-        Insert: {
-          created_at?: string | null;
-          event_id: string;
-          group_id: string;
-          notes?: string | null;
-          role?: string | null;
-        };
-        Update: {
-          created_at?: string | null;
-          event_id?: string;
-          group_id?: string;
-          notes?: string | null;
-          role?: string | null;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'calendar_event_participant_groups_event_id_fkey';
-            columns: ['event_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspace_calendar_events';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'calendar_event_participant_groups_group_id_fkey';
-            columns: ['group_id'];
-            isOneToOne: false;
-            referencedRelation: 'group_users_with_post_checks';
-            referencedColumns: ['group_id'];
-          },
-          {
-            foreignKeyName: 'calendar_event_participant_groups_group_id_fkey';
-            columns: ['group_id'];
-            isOneToOne: false;
-            referencedRelation: 'group_with_attendance';
-            referencedColumns: ['group_id'];
-          },
-          {
-            foreignKeyName: 'calendar_event_participant_groups_group_id_fkey';
-            columns: ['group_id'];
-            isOneToOne: false;
-            referencedRelation: 'user_groups_with_tags';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'calendar_event_participant_groups_group_id_fkey';
-            columns: ['group_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspace_user_groups';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'calendar_event_participant_groups_group_id_fkey';
-            columns: ['group_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspace_user_groups_with_amount';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'calendar_event_participant_groups_group_id_fkey';
-            columns: ['group_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspace_user_groups_with_guest';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
-      calendar_event_platform_participants: {
-        Row: {
-          created_at: string | null;
-          event_id: string;
-          going: boolean | null;
-          notes: string;
-          role: string | null;
-          user_id: string;
-        };
-        Insert: {
-          created_at?: string | null;
-          event_id: string;
-          going?: boolean | null;
-          notes?: string;
-          role?: string | null;
-          user_id: string;
-        };
-        Update: {
-          created_at?: string | null;
-          event_id?: string;
-          going?: boolean | null;
-          notes?: string;
-          role?: string | null;
-          user_id?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'calendar_event_platform_participants_event_id_fkey';
-            columns: ['event_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspace_calendar_events';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'calendar_event_platform_participants_user_id_fkey';
-            columns: ['user_id'];
-            isOneToOne: false;
-            referencedRelation: 'shortened_links_creator_stats';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'calendar_event_platform_participants_user_id_fkey';
-            columns: ['user_id'];
-            isOneToOne: false;
-            referencedRelation: 'users';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
-      calendar_event_virtual_participants: {
-        Row: {
-          created_at: string | null;
-          event_id: string;
-          going: boolean | null;
-          notes: string;
-          role: string | null;
-          user_id: string;
-        };
-        Insert: {
-          created_at?: string | null;
-          event_id: string;
-          going?: boolean | null;
-          notes?: string;
-          role?: string | null;
-          user_id: string;
-        };
-        Update: {
-          created_at?: string | null;
-          event_id?: string;
-          going?: boolean | null;
-          notes?: string;
-          role?: string | null;
-          user_id?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'calendar_event_virtual_participants_event_id_fkey';
-            columns: ['event_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspace_calendar_events';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'calendar_event_virtual_participants_user_id_fkey';
-            columns: ['user_id'];
-            isOneToOne: false;
-            referencedRelation: 'distinct_invoice_creators';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'calendar_event_virtual_participants_user_id_fkey';
-            columns: ['user_id'];
-            isOneToOne: false;
-            referencedRelation: 'distinct_transaction_creators';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'calendar_event_virtual_participants_user_id_fkey';
-            columns: ['user_id'];
-            isOneToOne: false;
-            referencedRelation: 'group_user_with_attendance';
-            referencedColumns: ['user_id'];
-          },
-          {
-            foreignKeyName: 'calendar_event_virtual_participants_user_id_fkey';
-            columns: ['user_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspace_users';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'calendar_event_virtual_participants_user_id_fkey';
-            columns: ['user_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspace_users_with_groups';
-            referencedColumns: ['id'];
-          },
-        ];
       };
       calendar_sync_dashboard: {
         Row: {
@@ -34535,18 +34455,6 @@ export type Database = {
             referencedColumns: ['id'];
           },
         ];
-      };
-      calendar_event_participants: {
-        Row: {
-          created_at: string | null;
-          display_name: string | null;
-          event_id: string | null;
-          going: boolean | null;
-          handle: string | null;
-          participant_id: string | null;
-          type: string | null;
-        };
-        Relationships: [];
       };
       distinct_invoice_creators: {
         Row: {
