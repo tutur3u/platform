@@ -1,5 +1,33 @@
 # Changelog
 
+## [0.5.0](https://github.com/tutur3u/platform/compare/mail-v0.4.0...mail-v0.5.0) (2026-07-11)
+
+
+### Features
+
+* **edu:** add vocabulary journey ([#4946](https://github.com/tutur3u/platform/issues/4946)) ([06535d2](https://github.com/tutur3u/platform/commit/06535d2766e46206d311e971f6d37ef351fe667b))
+* **mail:** add advanced mailbox APIs and shadow ingestion ([2543fc5](https://github.com/tutur3u/platform/commit/2543fc5e1fc8ff586692cff07e4eaa42f28d3315))
+* **mail:** add catch-all delivery and revamp client ([8d4cb12](https://github.com/tutur3u/platform/commit/8d4cb128275eb42ccd4e2745c7e02983d46f2c66))
+* **mail:** add Cloudflare-native mail foundation ([7c755b7](https://github.com/tutur3u/platform/commit/7c755b79274146f2c4987450f99678107242e2f7))
+* **mail:** focus mailbox shell ([4c2604d](https://github.com/tutur3u/platform/commit/4c2604d38e34f9e201902daa2434da1359e5d093))
+* **tasks:** consolidate tasks entry and sidebar controls ([56e80eb](https://github.com/tutur3u/platform/commit/56e80eb5c60d4b4e56f2953c7978038f1ebe9c08))
+
+
+### Bug Fixes
+
+* **auth:** share account preference cookies ([8c1848a](https://github.com/tutur3u/platform/commit/8c1848a941c1b3f91337104c975e4bc0d8f68fc9))
+* **mail:** add settings translations ([da50201](https://github.com/tutur3u/platform/commit/da502012a40010ec129ebe2fbef1bcba9f03fd03))
+* **mail:** allow signed provider webhooks ([adbbb87](https://github.com/tutur3u/platform/commit/adbbb875f728233f0a2fcc06a1ce6a717ce5567f))
+* **mail:** restore production inbox rendering ([e03a782](https://github.com/tutur3u/platform/commit/e03a7826cf4cc361b3b1077275b7517db343f35d))
+* **mail:** stabilize layout and managed sender identity ([a22205e](https://github.com/tutur3u/platform/commit/a22205e98a8671ffb628586107de09a7ba8dd1c4))
+* **mail:** use managed SES credentials ([9ffb3a1](https://github.com/tutur3u/platform/commit/9ffb3a183552670d7f334d379db2043f4e4e9078))
+* update launchable app catalog ([cb31207](https://github.com/tutur3u/platform/commit/cb312076aee227de9a8f99105d681911d14a63ac))
+
+
+### Performance Improvements
+
+* **ci:** enable repository-wide remote caching ([6250f91](https://github.com/tutur3u/platform/commit/6250f91d745ef987a4fc86c797aedf41542f421b))
+
 ## [0.4.0](https://github.com/tutur3u/platform/compare/mail-v0.3.0...mail-v0.4.0) (2026-07-06)
 
 

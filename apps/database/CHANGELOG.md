@@ -1,5 +1,39 @@
 # Changelog
 
+## [1.15.0](https://github.com/tutur3u/platform/compare/database-v1.14.2...database-v1.15.0) (2026-07-11)
+
+
+### Features
+
+* add quiz deadline functionality to modules and update database schema and types ([8748efe](https://github.com/tutur3u/platform/commit/8748efe164c004395b08af7054208e2929eca631))
+* **cms:** add Richfield external-project adapter ([#4924](https://github.com/tutur3u/platform/issues/4924)) ([b16a5e8](https://github.com/tutur3u/platform/commit/b16a5e8aa427e267c0805c6e7453a4fc58d42a23))
+* **edu:** add quiz management flow & dashboard improvements ([#4933](https://github.com/tutur3u/platform/issues/4933)) ([9dafc17](https://github.com/tutur3u/platform/commit/9dafc173b1c9e22cfa8731e4383779583f25acbc))
+* **edu:** add vocabulary journey ([#4946](https://github.com/tutur3u/platform/issues/4946)) ([06535d2](https://github.com/tutur3u/platform/commit/06535d2766e46206d311e971f6d37ef351fe667b))
+* implement AI-powered feedback generation for quiz submissions and integrate into the teach interface ([0f5c7cf](https://github.com/tutur3u/platform/commit/0f5c7cf1a1a7a20f7f6e861dc0abb0c30e5c1ea8))
+* implement quiz score visibility toggle and manual review status for learners ([300909c](https://github.com/tutur3u/platform/commit/300909cdbcd15ad79f6a471a3070985a6b382258))
+* implement vocabulary management system for course lessons with database support ([a11daf0](https://github.com/tutur3u/platform/commit/a11daf084e68a5a43a0dccc905a1c05f54bedf92))
+* **inventory:** add product stock history ([b27571e](https://github.com/tutur3u/platform/commit/b27571e575b6ba6a1dba6be0d4a6e0e5037504db))
+* **mail:** add advanced mailbox APIs and shadow ingestion ([2543fc5](https://github.com/tutur3u/platform/commit/2543fc5e1fc8ff586692cff07e4eaa42f28d3315))
+* **mail:** add catch-all delivery and revamp client ([8d4cb12](https://github.com/tutur3u/platform/commit/8d4cb128275eb42ccd4e2745c7e02983d46f2c66))
+* **mail:** add Cloudflare-native mail foundation ([7c755b7](https://github.com/tutur3u/platform/commit/7c755b79274146f2c4987450f99678107242e2f7))
+* **posts:** audit log + revert for group-post completion checks ([b38de09](https://github.com/tutur3u/platform/commit/b38de0992c0b17cdd7f7a6021530095d5a323df1))
+
+
+### Bug Fixes
+
+* **auth:** store invitation action replays in database ([d86b1db](https://github.com/tutur3u/platform/commit/d86b1dbe0602cb556eb0f1dde9af84998d19c2da))
+* **cms:** harden richfield external submissions ([1c1fb47](https://github.com/tutur3u/platform/commit/1c1fb472803bbdd3342b5aeb9cf09c9287b3bf96))
+* **database:** harden richfield submission status rpc ([47df367](https://github.com/tutur3u/platform/commit/47df3672ed4bb2a6c9a6ea8bfcf60be07f207ee7))
+* **database:** reference private.user_group_posts in post-check-logs FK ([15ec4bf](https://github.com/tutur3u/platform/commit/15ec4bf70b5aeb7714fbe0ca562c1a035001d6d1))
+* **database:** refine richfield status migration ([6e78a9d](https://github.com/tutur3u/platform/commit/6e78a9d642126ea9f55f80b5af0da6c542db52e1))
+* **database:** refresh quiz feedback migration timestamp ([cc48f0c](https://github.com/tutur3u/platform/commit/cc48f0cd3a845523314435ef6a77ccdcd99ad94c))
+* **database:** refresh vocabulary migration timestamp ([ced09e5](https://github.com/tutur3u/platform/commit/ced09e56f5cbdf3202d1897470cd6e1e1cd4d082))
+* **edu:** address follow-up review feedback ([f183d8f](https://github.com/tutur3u/platform/commit/f183d8f92b5b5d01e587e56bd8f236064941fcc3))
+* **edu:** address quiz review feedback ([ec77bd8](https://github.com/tutur3u/platform/commit/ec77bd83f2e1ec716ea28db83a55930a7ca60df3))
+* **edu:** enforce quiz review invariants ([992f84e](https://github.com/tutur3u/platform/commit/992f84ef534386ed3ba17de4cf093e7a3e5843ee))
+* **tasks:** support personal external terminal defaults ([50434cb](https://github.com/tutur3u/platform/commit/50434cb9849a65dd8c77f6b030b27a4bd76125e4))
+* **users:** preserve attendance history ([fd16cee](https://github.com/tutur3u/platform/commit/fd16cee91a2d4049091933e78d75cf2e4ee8dfbf))
+
 ## [1.14.2](https://github.com/tutur3u/platform/compare/database-v1.14.1...database-v1.14.2) (2026-07-06)
 
 

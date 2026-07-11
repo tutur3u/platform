@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.13.2](https://github.com/tutur3u/platform/compare/sdk-v0.13.1...sdk-v0.13.2) (2026-07-11)
+
+
+### Bug Fixes
+
+* **tasks:** support personal external terminal defaults ([50434cb](https://github.com/tutur3u/platform/commit/50434cb9849a65dd8c77f6b030b27a4bd76125e4))
+
 ## [0.13.1](https://github.com/tutur3u/platform/compare/sdk-v0.13.0...sdk-v0.13.1) (2026-07-06)
 
 

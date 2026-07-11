@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.8.0](https://github.com/tutur3u/platform/compare/apis-v0.7.2...apis-v0.8.0) (2026-07-11)
+
+
+### Features
+
+* **tasks:** allow archiving document tasks ([0c51941](https://github.com/tutur3u/platform/commit/0c519414101a3a21b4e33548517eef05143fdf8e))
+
+
+### Bug Fixes
+
+* **tasks:** restore task dialog app-session requests ([69f83cb](https://github.com/tutur3u/platform/commit/69f83cb8730eaeb4d39c186bbf8593c73e3deb47))
+* **tasks:** support personal external terminal defaults ([50434cb](https://github.com/tutur3u/platform/commit/50434cb9849a65dd8c77f6b030b27a4bd76125e4))
+
 ## [0.7.2](https://github.com/tutur3u/platform/compare/apis-v0.7.1...apis-v0.7.2) (2026-07-06)
 
 

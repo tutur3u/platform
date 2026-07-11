@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.15.0](https://github.com/tutur3u/platform/compare/types-v0.14.0...types-v0.15.0) (2026-07-11)
+
+
+### Features
+
+* **cms:** add Richfield external-project adapter ([fde0143](https://github.com/tutur3u/platform/commit/fde01431225f8e0f50b16ab30a1a1a66e82cd7f8))
+* **cms:** add Richfield external-project adapter ([#4924](https://github.com/tutur3u/platform/issues/4924)) ([b16a5e8](https://github.com/tutur3u/platform/commit/b16a5e8aa427e267c0805c6e7453a4fc58d42a23))
+* **edu:** add quiz management flow & dashboard improvements ([#4933](https://github.com/tutur3u/platform/issues/4933)) ([9dafc17](https://github.com/tutur3u/platform/commit/9dafc173b1c9e22cfa8731e4383779583f25acbc))
+* **education:** extract shared education libs into @tuturuuu/education-core and ready learn/teach for API hosting ([dd77db3](https://github.com/tutur3u/platform/commit/dd77db3590786cad51ce76c4d18b30240173ef7e))
+* **mail:** add catch-all delivery and revamp client ([8d4cb12](https://github.com/tutur3u/platform/commit/8d4cb128275eb42ccd4e2745c7e02983d46f2c66))
+
+
+### Bug Fixes
+
+* **database:** reference private.user_group_posts in post-check-logs FK ([15ec4bf](https://github.com/tutur3u/platform/commit/15ec4bf70b5aeb7714fbe0ca562c1a035001d6d1))
+* **edu:** address quiz review feedback ([ec77bd8](https://github.com/tutur3u/platform/commit/ec77bd83f2e1ec716ea28db83a55930a7ca60df3))
+* **tasks:** support personal external terminal defaults ([50434cb](https://github.com/tutur3u/platform/commit/50434cb9849a65dd8c77f6b030b27a4bd76125e4))
+
 ## [0.14.0](https://github.com/tutur3u/platform/compare/types-v0.13.1...types-v0.14.0) (2026-07-03)
 
 
