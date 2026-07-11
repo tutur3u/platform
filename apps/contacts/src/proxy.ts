@@ -16,7 +16,7 @@ import Negotiator from 'negotiator';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import createIntlMiddleware from 'next-intl/middleware';
-import { LOCALE_COOKIE_NAME } from './constants/common';
+import { LOCALE_COOKIE_NAME, WEB_APP_URL } from './constants/common';
 import {
   defaultLocale,
   type Locale,
@@ -97,6 +97,55 @@ function getPathLocale(pathname: string) {
   return firstSegment && supportedLocales.includes(firstSegment as Locale)
     ? (firstSegment as Locale)
     : null;
+}
+
+/**
+ * Contacts only ships a subset of the `/[wsId]` dashboard surface; every other
+ * workspace route is still owned by apps/web. Redirect those to web instead of
+ * returning a 404.
+ *
+ * This MUST live in the middleware rather than a `[wsId]/[...catchAll]` page.
+ * A catch-all page route also matches `/api/v1/...` as locale="api", wsId="v1",
+ * and — because Next checks `fallback` rewrites only AFTER dynamic routes — it
+ * would shadow the `/api/:path*` → web proxy and break every proxied API call.
+ * The middleware handles `/api` in an earlier branch, so it is never affected.
+ */
+const CONTACTS_OWNED_WORKSPACE_ROUTES = [
+  '',
+  'workforce',
+  'users',
+  'users/approvals',
+  'users/database',
+  'users/feedbacks',
+  'users/guest-leads',
+  'users/structure',
+  'users/tutoring',
+];
+
+const CONTACTS_NON_WORKSPACE_SEGMENTS = new Set([
+  'dashboard',
+  'login',
+  'verify-token',
+]);
+
+function getNonMigratedWorkspaceRedirect(request: NextRequest) {
+  const segments = stripLocale(request.nextUrl.pathname)
+    .split('/')
+    .filter(Boolean);
+
+  const wsId = segments[0];
+  if (!wsId || CONTACTS_NON_WORKSPACE_SEGMENTS.has(wsId)) return null;
+
+  const subPath = segments.slice(1).join('/');
+  const owned = CONTACTS_OWNED_WORKSPACE_ROUTES.some(
+    (route) =>
+      route === subPath || (route !== '' && subPath.startsWith(`${route}/`))
+  );
+  if (owned) return null;
+
+  return NextResponse.redirect(
+    new URL(`${request.nextUrl.pathname}${request.nextUrl.search}`, WEB_APP_URL)
+  );
 }
 
 function getLoginPath() {
@@ -227,6 +276,14 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
       if (next) url.searchParams.set('next', next);
 
       return clearSupabaseAuthCookies(request, NextResponse.redirect(url));
+    }
+
+    const nonMigratedRedirect = getNonMigratedWorkspaceRedirect(request);
+    if (nonMigratedRedirect) {
+      if (appSessionRefresh.ok) {
+        propagateAuthCookies(appSessionRefresh.response, nonMigratedRedirect);
+      }
+      return clearSupabaseAuthCookies(request, nonMigratedRedirect);
     }
 
     const response = intlMiddleware(request);
