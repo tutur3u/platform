@@ -5,30 +5,12 @@
  * Provides common functionality for HTML sanitization and source formatting.
  */
 
+import sanitizeHtmlContent from 'sanitize-html';
 import type {
   EmailProvider,
   ProviderSendParams,
   ProviderSendResult,
 } from '../types';
-
-type ServerDOMPurify = {
-  sanitize(
-    dirty: string,
-    config?: {
-      ALLOWED_ATTR?: string[];
-      ALLOWED_TAGS?: string[];
-      USE_PROFILES?: {
-        html?: boolean;
-      };
-    }
-  ): string;
-};
-
-const ISOMORPHIC_DOMPURIFY_MODULE = 'isomorphic-dompurify';
-
-async function loadServerDOMPurify(): Promise<ServerDOMPurify> {
-  return (await import(ISOMORPHIC_DOMPURIFY_MODULE)).default as ServerDOMPurify;
-}
 
 /**
  * Abstract base class for email providers.
@@ -60,16 +42,11 @@ export abstract class BaseEmailProvider implements EmailProvider {
    * @returns Sanitized HTML with inlined CSS
    */
   protected async sanitizeHtml(html: string): Promise<string> {
-    // Dynamic imports to avoid bundling issues
-    const [DOMPurify, { default: juice }] = await Promise.all([
-      loadServerDOMPurify(),
-      import('juice'),
-    ]);
+    const { default: juice } = await import('juice');
 
     // Sanitize HTML to remove potentially dangerous content
-    const sanitized = DOMPurify.sanitize(html, {
-      USE_PROFILES: { html: true },
-      ALLOWED_TAGS: [
+    const sanitized = sanitizeHtmlContent(html, {
+      allowedTags: [
         'a',
         'b',
         'blockquote',
@@ -105,23 +82,30 @@ export abstract class BaseEmailProvider implements EmailProvider {
         'body',
         'html',
       ],
-      ALLOWED_ATTR: [
-        'href',
-        'src',
-        'alt',
-        'title',
-        'style',
-        'class',
-        'id',
-        'width',
-        'height',
-        'align',
-        'valign',
-        'bgcolor',
-        'border',
-        'cellpadding',
-        'cellspacing',
-      ],
+      allowedAttributes: {
+        '*': [
+          'href',
+          'src',
+          'alt',
+          'title',
+          'style',
+          'class',
+          'id',
+          'width',
+          'height',
+          'align',
+          'valign',
+          'bgcolor',
+          'border',
+          'cellpadding',
+          'cellspacing',
+        ],
+      },
+      allowedSchemes: ['http', 'https', 'mailto', 'cid'],
+      allowedSchemesByTag: {
+        img: ['http', 'https', 'cid', 'data'],
+      },
+      allowProtocolRelative: false,
     });
 
     // Inline CSS for better email client compatibility

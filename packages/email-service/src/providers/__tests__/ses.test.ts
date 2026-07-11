@@ -18,13 +18,6 @@ vi.mock('@aws-sdk/client-ses', () => {
   };
 });
 
-// Mock isomorphic-dompurify and juice to prevent slow dynamic imports in CI
-vi.mock('isomorphic-dompurify', () => ({
-  default: {
-    sanitize: (html: string) => html,
-  },
-}));
-
 vi.mock('juice', () => ({
   default: (html: string) => html,
 }));
@@ -77,6 +70,34 @@ describe('SESEmailProvider', () => {
           },
           Message: expect.objectContaining({
             Subject: { Data: defaultParams.content.subject, Charset: 'UTF-8' },
+          }),
+        })
+      );
+    });
+
+    it('sanitizes unsafe HTML without loading a browser DOM runtime', async () => {
+      mockSend.mockResolvedValueOnce({
+        MessageId: 'msg-id-sanitized',
+        $metadata: { httpStatusCode: 200 },
+      });
+
+      await provider.send({
+        ...defaultParams,
+        content: {
+          ...defaultParams.content,
+          html: '<p>Hello<script>alert(1)</script><a href="javascript:alert(2)">link</a></p>',
+        },
+      });
+
+      expect(SendEmailCommand).toHaveBeenCalledWith(
+        expect.objectContaining({
+          Message: expect.objectContaining({
+            Body: expect.objectContaining({
+              Html: {
+                Charset: 'UTF-8',
+                Data: '<p>Hello<a>link</a></p>',
+              },
+            }),
           }),
         })
       );
