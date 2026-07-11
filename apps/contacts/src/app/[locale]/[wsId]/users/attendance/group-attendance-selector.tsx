@@ -28,10 +28,10 @@ import { useDebounce } from '@tuturuuu/ui/hooks/use-debounce';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { Separator } from '@tuturuuu/ui/separator';
 import { Skeleton } from '@tuturuuu/ui/skeleton';
+import GroupAttendanceClient from '@tuturuuu/users-ui/components/group-attendance-client';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useState } from 'react';
-import GroupAttendanceClient from '../groups/[groupId]/attendance/client';
 
 type Member = {
   id: string;

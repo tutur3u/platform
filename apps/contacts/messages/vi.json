@@ -621,7 +621,8 @@
     "tomorrow": "Ngày mai",
     "upgrade": "Nâng cấp",
     "yellow": "Vàng",
-    "yesterday": "Hôm qua"
+    "yesterday": "Hôm qua",
+    "no_results_found": "Không tìm thấy kết quả"
   },
   "course-details-tabs": {
     "extra_reading": "Đọc thêm",
@@ -6568,6 +6569,66 @@
   "ws-user-groups": {
     "description": "Sắp xếp người dùng thành từng nhóm phù hợp với nhu cầu của bạn.",
     "plural": "Nhóm người dùng",
-    "singular": "Nhóm người dùng"
+    "singular": "Nhóm người dùng",
+    "search_group_placeholder": "Tìm kiếm nhóm...",
+    "select_group_placeholder": "Chọn một nhóm"
+  },
+  "ws-user-attendance": {
+    "description": "Điểm danh giúp bạn theo dõi tiến độ tham gia của người dùng trong không gian làm việc của bạn.",
+    "export": {
+      "title": "Xuất điểm danh toàn không gian làm việc",
+      "columns": {
+        "date": "Ngày",
+        "email": "Email",
+        "group": "Nhóm",
+        "group_id": "ID nhóm",
+        "notes": "Ghi chú",
+        "status": "Trạng thái",
+        "user_id": "ID người dùng",
+        "user_name": "Người dùng"
+      },
+      "date_hint": "Bản xuất sẽ bao gồm cả ngày bắt đầu lẫn ngày kết thúc.",
+      "description": "Tải xuống các bản ghi điểm danh của toàn bộ người dùng trong không gian làm việc theo khoảng ngày đã chọn.",
+      "end_date": "Ngày kết thúc",
+      "error_title": "Xuất dữ liệu thất bại",
+      "export_button": "Xuất điểm danh",
+      "exporting_button": "Đang chuẩn bị tệp",
+      "file_name_preview_label": "Tên tệp được tạo",
+      "file_type_label": "Loại tệp",
+      "file_types": {
+        "csv": "Tệp CSV",
+        "excel": "Tệp Excel"
+      },
+      "inclusive_badge": "Khoảng ngày bao gồm ngày cuối",
+      "no_records": "Không có bản ghi điểm danh nào trong khoảng thời gian đã chọn.",
+      "progress_rows": "{processed} / {total}",
+      "progress_title": "Đang tạo tệp xuất",
+      "quick_ranges_label": "Mốc thời gian nhanh",
+      "range_days": "{count, plural, =1 {# ngày được chọn} other {# ngày được chọn}}",
+      "recorded_rows_badge": "Chỉ gồm bản ghi đã lưu",
+      "start_date": "Ngày bắt đầu",
+      "status_unknown": "Không xác định",
+      "validation": {
+        "invalid_range": "Ngày bắt đầu phải sớm hơn hoặc trùng ngày kết thúc.",
+        "missing_dates": "Hãy chọn cả ngày bắt đầu và ngày kết thúc."
+      }
+    },
+    "group_scope_badge": "Không gian điểm danh theo nhóm",
+    "members_badge": "{count, plural, =1 {# thành viên} other {# thành viên}}",
+    "plural": "Điểm danh",
+    "selected_group_label": "Đã chọn: {name}",
+    "selector_description": "Tìm một nhóm để xem lại hoặc cập nhật điểm danh theo các ngày học đã lên lịch.",
+    "selector_title": "Duyệt điểm danh theo nhóm",
+    "sessions_badge": "{count, plural, =1 {# buổi học} other {# buổi học}}",
+    "singular": "Điểm danh",
+    "absent": "Vắng mặt",
+    "present": "Có mặt"
+  },
+  "date_range": {
+    "last_7_days": "7 ngày qua",
+    "this_month": "Tháng này"
+  },
+  "ws-user-group-attendance": {
+    "late": "Trễ"
   }
 }

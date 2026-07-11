@@ -621,7 +621,8 @@
     "tomorrow": "Tomorrow",
     "upgrade": "Upgrade",
     "yellow": "Yellow",
-    "yesterday": "Yesterday"
+    "yesterday": "Yesterday",
+    "no_results_found": "No results found"
   },
   "course-details-tabs": {
     "extra_reading": "Extra Reading",
@@ -6568,6 +6569,66 @@
   "ws-user-groups": {
     "description": "Organize users into groups to meet your needs.",
     "plural": "User groups",
-    "singular": "User group"
+    "singular": "User group",
+    "search_group_placeholder": "Search groups...",
+    "select_group_placeholder": "Select a group"
+  },
+  "ws-user-attendance": {
+    "description": "Attendance helps you track the participation progress of users in your workspace.",
+    "export": {
+      "title": "Export workspace attendance",
+      "columns": {
+        "date": "Date",
+        "email": "Email",
+        "group": "Group",
+        "group_id": "Group ID",
+        "notes": "Notes",
+        "status": "Status",
+        "user_id": "User ID",
+        "user_name": "User"
+      },
+      "date_hint": "The export includes both the start and end dates.",
+      "description": "Download recorded attendance for everyone in the workspace between the selected dates.",
+      "end_date": "End date",
+      "error_title": "Export failed",
+      "export_button": "Export attendance",
+      "exporting_button": "Preparing export",
+      "file_name_preview_label": "Generated file name",
+      "file_type_label": "File type",
+      "file_types": {
+        "csv": "CSV file",
+        "excel": "Excel workbook"
+      },
+      "inclusive_badge": "Inclusive range",
+      "no_records": "No attendance records were found for the selected range.",
+      "progress_rows": "{processed} / {total}",
+      "progress_title": "Building export",
+      "quick_ranges_label": "Quick ranges",
+      "range_days": "{count, plural, =1 {# day selected} other {# days selected}}",
+      "recorded_rows_badge": "Recorded rows only",
+      "start_date": "Start date",
+      "status_unknown": "Unknown",
+      "validation": {
+        "invalid_range": "Start date must be before or equal to end date.",
+        "missing_dates": "Select both start and end dates."
+      }
+    },
+    "group_scope_badge": "Group attendance workspace",
+    "members_badge": "{count, plural, =1 {# member} other {# members}}",
+    "plural": "Attendances",
+    "selected_group_label": "Selected: {name}",
+    "selector_description": "Search for a group to review or update attendance on its scheduled days.",
+    "selector_title": "Browse attendance by group",
+    "sessions_badge": "{count, plural, =1 {# session} other {# sessions}}",
+    "singular": "Attendance",
+    "absent": "Absent",
+    "present": "Present"
+  },
+  "date_range": {
+    "last_7_days": "Last 7 days",
+    "this_month": "This Month"
+  },
+  "ws-user-group-attendance": {
+    "late": "Late"
   }
 }

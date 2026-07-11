@@ -1,13 +1,14 @@
+import { getSatelliteAppSessionUser } from '@tuturuuu/satellite/auth';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
+import WorkspaceWrapper from '@tuturuuu/ui/custom/workspace-wrapper';
 import { Separator } from '@tuturuuu/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
-import { getCurrentWorkspaceUser } from '@tuturuuu/utils/user-helper';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
+import { getWorkspaceUserLinkForUser } from '@tuturuuu/utils/workspace-user-link';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { connection } from 'next/server';
 import { getTranslations } from 'next-intl/server';
-import WorkspaceWrapper from '@/components/workspace-wrapper';
 import AttendanceExportCard from './attendance-export-card';
 import GroupAttendanceSelector from './group-attendance-selector';
 
@@ -31,7 +32,14 @@ export default async function WorkspaceUserAttendancePage({ params }: Props) {
     <WorkspaceWrapper params={params}>
       {async ({ wsId }) => {
         const t = await getTranslations();
-        const user = await getCurrentWorkspaceUser(wsId);
+
+        // Satellites resolve the actor from Tuturuuu app-session auth, then look
+        // up the workspace-user link with that id (never via Supabase-backed
+        // user helpers — see the internal-app-auth guard).
+        const actor = await getSatelliteAppSessionUser('contacts');
+        const user = actor?.id
+          ? await getWorkspaceUserLinkForUser(wsId, actor.id)
+          : null;
 
         if (!user) {
           console.error('Failed to fetch current workspace user');

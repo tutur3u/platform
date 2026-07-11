@@ -1,4 +1,6 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import type { InitialAttendanceProps } from '@tuturuuu/users-ui/components/group-attendance-client';
+import GroupAttendanceClient from '@tuturuuu/users-ui/components/group-attendance-client';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
@@ -8,8 +10,6 @@ import {
   getGroupRow,
 } from '@/lib/user-groups/server-data';
 import { listUserGroupSessions } from '@/lib/user-groups/session-schedule';
-import type { InitialAttendanceProps } from './client';
-import GroupAttendanceClient from './client';
 
 export const metadata: Metadata = {
   title: 'Attendance',

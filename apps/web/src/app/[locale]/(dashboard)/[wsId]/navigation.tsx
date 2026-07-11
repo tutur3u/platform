@@ -662,7 +662,6 @@ export async function WorkspaceNavigationLinks({
           title: t('sidebar_tabs.users'),
           aliases: [
             `/${personalOrWsId}/users`,
-            `/${personalOrWsId}/users/attendance`,
             `/${personalOrWsId}/users/groups`,
             `/${personalOrWsId}/users/groups/calendar`,
             `/${personalOrWsId}/users/groups/indicators`,
@@ -687,14 +686,6 @@ export async function WorkspaceNavigationLinks({
               disabled: withoutPermission('manage_users'),
             },
             null,
-            {
-              title: t('workspace-users-tabs.attendance'),
-              href: `/${personalOrWsId}/users/attendance`,
-              icon: createDashboardNavigationIcon('UserCheck', 'h-5 w-5'),
-              disabled:
-                withoutPermission('manage_users') &&
-                withoutPermission('check_user_attendance'),
-            },
             {
               title: t('workspace-users-tabs.groups'),
               href: `/${personalOrWsId}/users/groups`,

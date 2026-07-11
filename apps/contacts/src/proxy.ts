@@ -123,6 +123,7 @@ const CONTACTS_OWNED_EXACT_ROUTES = new Set(['', 'users']);
 const CONTACTS_OWNED_ROUTE_PREFIXES = [
   'workforce',
   'users/approvals',
+  'users/attendance',
   'users/database',
   'users/feedbacks',
   'users/group-tags',
