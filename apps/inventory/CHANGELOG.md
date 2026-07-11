@@ -1,5 +1,48 @@
 # Changelog
 
+## [0.14.0](https://github.com/tutur3u/platform/compare/inventory-v0.13.0...inventory-v0.14.0) (2026-07-11)
+
+
+### Features
+
+* **inventory:** add product stock history ([b27571e](https://github.com/tutur3u/platform/commit/b27571e575b6ba6a1dba6be0d4a6e0e5037504db))
+* **inventory:** add revenue share and category bundles ([20b2e1e](https://github.com/tutur3u/platform/commit/20b2e1e5302d1db275766b7b4b92d9bdf69de04a))
+* **inventory:** add Square Terminal checkout ([0a3bd76](https://github.com/tutur3u/platform/commit/0a3bd7635cf9836a379d94851e1a303cec848457))
+* **inventory:** collapse advanced settings in the integration panels ([8e0967c](https://github.com/tutur3u/platform/commit/8e0967cd319e903eb12f0058f05dcdeb59b9b398))
+* **inventory:** de-crowd the Polar hub with tabs ([9ada335](https://github.com/tutur3u/platform/commit/9ada3359df3e4b1a14dd976785919f04f7ac85ac))
+* **inventory:** finish moving inventory API routes to apps/inventory; delete tanstack-web inventory dashboard ([740db08](https://github.com/tutur3u/platform/commit/740db08d5ba43eda8340cc86f55bfab8332261a4))
+* **inventory:** make the storefront section builder an accordion ([c9d8012](https://github.com/tutur3u/platform/commit/c9d80129925ced1d336acde16e3fde4a643f220f))
+* **inventory:** move inventory API routes into apps/inventory ([071a72c](https://github.com/tutur3u/platform/commit/071a72cebcdd3d6122363c57b006ee8838efe9c9))
+* **inventory:** revamp the setup page reference-data layout ([598b640](https://github.com/tutur3u/platform/commit/598b640808b57366d22eb2aa0d0db117abf8492f))
+* **inventory:** store Square credentials per workspace ([e606f23](https://github.com/tutur3u/platform/commit/e606f2341c2684b1ef8a7b72900a056ff7b70469))
+* **inventory:** tab the bundle create form ([58721a5](https://github.com/tutur3u/platform/commit/58721a54f3501ae518d7557203252b27002628ac))
+* **inventory:** tab the costing profile dialog ([7180a20](https://github.com/tutur3u/platform/commit/7180a20876c2b5b42af2876fb3e1689b28a4a01d))
+* **inventory:** tab the storefront create form ([1f11960](https://github.com/tutur3u/platform/commit/1f11960ddad92d0a91b7c6d4e58744e43febb5d0))
+* **inventory:** tab the storefront listing editor ([856ff61](https://github.com/tutur3u/platform/commit/856ff610161b9a80af9606e1307850c8a18e1826))
+* **inventory:** use shared Tabs for the commerce panel ([bf2d48b](https://github.com/tutur3u/platform/commit/bf2d48bc99d86257853ce61b5726112ca93a4dbd))
+* **inventory:** use skeleton loading state in OperatorDataList ([86b1d4e](https://github.com/tutur3u/platform/commit/86b1d4ebbbcfcdee7d26f5ac3927bd40e25264ab))
+* **satellite:** add sidebar apps launcher ([b2f6fcd](https://github.com/tutur3u/platform/commit/b2f6fcd55d7cb5c100e31d36f9f329817ecfe5e9))
+* **satellite:** improve apps launcher picker ([a3e92cb](https://github.com/tutur3u/platform/commit/a3e92cb1a54e3cb45bc1697e8e70efd0776d2a23))
+* **tasks:** add task templates ([8d0700a](https://github.com/tutur3u/platform/commit/8d0700ad255c7b5874bfa065575df6b1cde34063))
+* **tasks:** consolidate tasks entry and sidebar controls ([56e80eb](https://github.com/tutur3u/platform/commit/56e80eb5c60d4b4e56f2953c7978038f1ebe9c08))
+
+
+### Bug Fixes
+
+* **auth:** share account preference cookies ([8c1848a](https://github.com/tutur3u/platform/commit/8c1848a941c1b3f91337104c975e4bc0d8f68fc9))
+* **build:** restore repo check ([4def830](https://github.com/tutur3u/platform/commit/4def830f463ea8a9c31af8e982eab716e9bd5f72))
+* **inventory:** align operator UI with design tokens + a11y ([1e035e1](https://github.com/tutur3u/platform/commit/1e035e1cf5a9801ae1235e9833cc51aebfa95601))
+* **inventory:** contain operator tables and translations ([5fa064e](https://github.com/tutur3u/platform/commit/5fa064e4c203f7202fc6db4ef2463001e32857a4))
+* **inventory:** give the OperatorDataList loading region a status role ([acca059](https://github.com/tutur3u/platform/commit/acca059c81499ca8a3b351704555d7c04d8ca503))
+* **inventory:** harden Square Terminal contracts ([547ce87](https://github.com/tutur3u/platform/commit/547ce87fba395493f1b0c0596e1155a6dad5672d))
+* update launchable app catalog ([cb31207](https://github.com/tutur3u/platform/commit/cb312076aee227de9a8f99105d681911d14a63ac))
+
+
+### Performance Improvements
+
+* **ci:** enable repository-wide remote caching ([6250f91](https://github.com/tutur3u/platform/commit/6250f91d745ef987a4fc86c797aedf41542f421b))
+* **web:** make login shell cache friendly ([0fcf4da](https://github.com/tutur3u/platform/commit/0fcf4da565e5e4260032247d6ee710cb6c4b7fcd))
+
 ## [0.13.0](https://github.com/tutur3u/platform/compare/inventory-v0.12.0...inventory-v0.13.0) (2026-07-11)
 
 

@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.5.0](https://github.com/tutur3u/platform/compare/hive-realtime-v0.4.0...hive-realtime-v0.5.0) (2026-07-11)
+
+
+### Features
+
+* **contacts:** scaffold contacts.tuturuuu.com satellite shell + monorepo registration ([7e335fc](https://github.com/tutur3u/platform/commit/7e335fc036c4a45ed189095ecd10a43ee002294b))
+* **education:** extract shared education libs into @tuturuuu/education-core and ready learn/teach for API hosting ([dd77db3](https://github.com/tutur3u/platform/commit/dd77db3590786cad51ce76c4d18b30240173ef7e))
+* **finance:** extract shared finance route-auth + storage libs into @tuturuuu/finance-core ([79140d2](https://github.com/tutur3u/platform/commit/79140d2ddb5be4b6fb1d52532ff75aaa1aa3ea22))
+* **pay:** scaffold apps/pay satellite (pay.tuturuuu.com, port 7826) ([3d6e45c](https://github.com/tutur3u/platform/commit/3d6e45cca6a315fe67213e438144b73103bae2f5))
+
+
+### Bug Fixes
+
+* **ci:** finish storage-core workspace integration ([ba786af](https://github.com/tutur3u/platform/commit/ba786af917d02ff65bf7d59e2c198a86f5fbc7ff))
+
 ## [0.4.0](https://github.com/tutur3u/platform/compare/hive-realtime-v0.3.1...hive-realtime-v0.4.0) (2026-07-11)
 
 

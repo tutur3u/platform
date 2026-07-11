@@ -1,5 +1,30 @@
 # Changelog
 
+## [0.6.0](https://github.com/tutur3u/platform/compare/mind-v0.5.0...mind-v0.6.0) (2026-07-11)
+
+
+### Features
+
+* **mind:** migrate mind module from web to apps/mind (incl. APIs) ([bdc5f71](https://github.com/tutur3u/platform/commit/bdc5f71a92c2f67686bb71a4889b9f513d34db79))
+* **satellite:** add sidebar apps launcher ([b2f6fcd](https://github.com/tutur3u/platform/commit/b2f6fcd55d7cb5c100e31d36f9f329817ecfe5e9))
+* **satellite:** improve apps launcher picker ([a3e92cb](https://github.com/tutur3u/platform/commit/a3e92cb1a54e3cb45bc1697e8e70efd0776d2a23))
+* **tasks:** add task templates ([8d0700a](https://github.com/tutur3u/platform/commit/8d0700ad255c7b5874bfa065575df6b1cde34063))
+* **tasks:** consolidate tasks entry and sidebar controls ([56e80eb](https://github.com/tutur3u/platform/commit/56e80eb5c60d4b4e56f2953c7978038f1ebe9c08))
+* **tools:** add apps/tools public tools app, remove apps/qr ([204aae8](https://github.com/tutur3u/platform/commit/204aae89a04b4163f2859561f8e832526642e271))
+
+
+### Bug Fixes
+
+* **auth:** share account preference cookies ([8c1848a](https://github.com/tutur3u/platform/commit/8c1848a941c1b3f91337104c975e4bc0d8f68fc9))
+* **build:** restore repo check ([4def830](https://github.com/tutur3u/platform/commit/4def830f463ea8a9c31af8e982eab716e9bd5f72))
+* **i18n:** catch conditional translation keys ([bb303c5](https://github.com/tutur3u/platform/commit/bb303c5bdb068c073fb1059cb1f62b2bf6d84220))
+* update launchable app catalog ([cb31207](https://github.com/tutur3u/platform/commit/cb312076aee227de9a8f99105d681911d14a63ac))
+
+
+### Performance Improvements
+
+* **ci:** enable repository-wide remote caching ([6250f91](https://github.com/tutur3u/platform/commit/6250f91d745ef987a4fc86c797aedf41542f421b))
+
 ## [0.5.0](https://github.com/tutur3u/platform/compare/mind-v0.4.0...mind-v0.5.0) (2026-07-11)
 
 

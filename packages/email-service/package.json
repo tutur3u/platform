@@ -1,6 +1,6 @@
 {
   "name": "@tuturuuu/email-service",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "private": true,
   "description": "Centralized email service with rate limiting, spam protection, and audit logging",
   "type": "module",

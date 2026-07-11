@@ -1,5 +1,69 @@
 # Changelog
 
+## [1.16.0](https://github.com/tutur3u/platform/compare/database-v1.15.0...database-v1.16.0) (2026-07-11)
+
+
+### Features
+
+* add quiz deadline functionality to modules and update database schema and types ([8748efe](https://github.com/tutur3u/platform/commit/8748efe164c004395b08af7054208e2929eca631))
+* **auth:** add email auth recovery override ([0debe1c](https://github.com/tutur3u/platform/commit/0debe1c71efb30bb51081cc3494a732975be0a86))
+* **cli:** add task search ([b8ec86f](https://github.com/tutur3u/platform/commit/b8ec86ffd7bf401d32ac29f7c4db0ee60565b717))
+* **cms:** add Richfield external-project adapter ([fde0143](https://github.com/tutur3u/platform/commit/fde01431225f8e0f50b16ab30a1a1a66e82cd7f8))
+* **cms:** add Richfield external-project adapter ([#4924](https://github.com/tutur3u/platform/issues/4924)) ([b16a5e8](https://github.com/tutur3u/platform/commit/b16a5e8aa427e267c0805c6e7453a4fc58d42a23))
+* **cron:** add managed cron operations ([24012e6](https://github.com/tutur3u/platform/commit/24012e69771a2be480824aad2916a218afee0d20))
+* **edu:** add quiz management flow & dashboard improvements ([#4933](https://github.com/tutur3u/platform/issues/4933)) ([9dafc17](https://github.com/tutur3u/platform/commit/9dafc173b1c9e22cfa8731e4383779583f25acbc))
+* **edu:** add vocabulary journey ([#4946](https://github.com/tutur3u/platform/issues/4946)) ([06535d2](https://github.com/tutur3u/platform/commit/06535d2766e46206d311e971f6d37ef351fe667b))
+* **external-apps:** add managed scheduler cron integration ([431ed1b](https://github.com/tutur3u/platform/commit/431ed1b41682ba41ef190455816e53e06e4d0039))
+* implement AI-powered feedback generation for quiz submissions and integrate into the teach interface ([0f5c7cf](https://github.com/tutur3u/platform/commit/0f5c7cf1a1a7a20f7f6e861dc0abb0c30e5c1ea8))
+* implement quiz score visibility toggle and manual review status for learners ([300909c](https://github.com/tutur3u/platform/commit/300909cdbcd15ad79f6a471a3070985a6b382258))
+* implement vocabulary management system for course lessons with database support ([a11daf0](https://github.com/tutur3u/platform/commit/a11daf084e68a5a43a0dccc905a1c05f54bedf92))
+* **infrastructure:** add rate-limit appeals ([f1e50e9](https://github.com/tutur3u/platform/commit/f1e50e9fd805dca6c80da8daab60ed24199f24ab))
+* **inventory:** add product stock history ([b27571e](https://github.com/tutur3u/platform/commit/b27571e575b6ba6a1dba6be0d4a6e0e5037504db))
+* **inventory:** add revenue share and category bundles ([20b2e1e](https://github.com/tutur3u/platform/commit/20b2e1e5302d1db275766b7b4b92d9bdf69de04a))
+* **inventory:** add Square Terminal checkout ([0a3bd76](https://github.com/tutur3u/platform/commit/0a3bd7635cf9836a379d94851e1a303cec848457))
+* **inventory:** store Square credentials per workspace ([e606f23](https://github.com/tutur3u/platform/commit/e606f2341c2684b1ef8a7b72900a056ff7b70469))
+* **mail:** add advanced mailbox APIs and shadow ingestion ([2543fc5](https://github.com/tutur3u/platform/commit/2543fc5e1fc8ff586692cff07e4eaa42f28d3315))
+* **mail:** add catch-all delivery and revamp client ([8d4cb12](https://github.com/tutur3u/platform/commit/8d4cb128275eb42ccd4e2745c7e02983d46f2c66))
+* **mail:** add Cloudflare-native mail foundation ([7c755b7](https://github.com/tutur3u/platform/commit/7c755b79274146f2c4987450f99678107242e2f7))
+* **posts:** add queue diagnostics and observability ([744dcc9](https://github.com/tutur3u/platform/commit/744dcc95a19b0df466098769f42b9c819a439dcd))
+* **posts:** audit log + revert for group-post completion checks ([b38de09](https://github.com/tutur3u/platform/commit/b38de0992c0b17cdd7f7a6021530095d5a323df1))
+* **settings:** manage internal project bindings ([5347be6](https://github.com/tutur3u/platform/commit/5347be62b3913d29cc1048f76678ba40eacd02da))
+* **tasks:** add task templates ([8d0700a](https://github.com/tutur3u/platform/commit/8d0700ad255c7b5874bfa065575df6b1cde34063))
+* **tasks:** stabilize shared board realtime collaboration ([6028caf](https://github.com/tutur3u/platform/commit/6028caf50432fd4dcebdaa5a59284e50972b1aa3))
+* **web:** add managed workspace cron service ([453763e](https://github.com/tutur3u/platform/commit/453763ebce1028e4189f4f1cdf70d8db5a9331c0))
+
+
+### Bug Fixes
+
+* **auth:** store invitation action replays in database ([d86b1db](https://github.com/tutur3u/platform/commit/d86b1dbe0602cb556eb0f1dde9af84998d19c2da))
+* **cms:** harden richfield external submissions ([1c1fb47](https://github.com/tutur3u/platform/commit/1c1fb472803bbdd3342b5aeb9cf09c9287b3bf96))
+* **cron:** recover stale docker runner ([33cbe47](https://github.com/tutur3u/platform/commit/33cbe471741f872cb15e8b9895465b601ac5ace1))
+* **database:** harden richfield submission status rpc ([47df367](https://github.com/tutur3u/platform/commit/47df3672ed4bb2a6c9a6ea8bfcf60be07f207ee7))
+* **database:** reference private.user_group_posts in post-check-logs FK ([15ec4bf](https://github.com/tutur3u/platform/commit/15ec4bf70b5aeb7714fbe0ca562c1a035001d6d1))
+* **database:** refine richfield status migration ([6e78a9d](https://github.com/tutur3u/platform/commit/6e78a9d642126ea9f55f80b5af0da6c542db52e1))
+* **database:** refresh quiz feedback migration timestamp ([cc48f0c](https://github.com/tutur3u/platform/commit/cc48f0cd3a845523314435ef6a77ccdcd99ad94c))
+* **database:** refresh vocabulary migration timestamp ([ced09e5](https://github.com/tutur3u/platform/commit/ced09e56f5cbdf3202d1897470cd6e1e1cd4d082))
+* **db:** preserve RLS policy semantics ([30519a9](https://github.com/tutur3u/platform/commit/30519a9b54d3e06b077c1768cce5767de0885772))
+* **db:** refresh RLS migration timestamp ([fad865f](https://github.com/tutur3u/platform/commit/fad865fe288915bedb373728ed92e6ff83b2ef4d))
+* **devboxes:** gate heartbeat and split v1 dispatch ([34c7a49](https://github.com/tutur3u/platform/commit/34c7a49d015d55a3ba910b3e332be819d4528a59))
+* **edu:** address follow-up review feedback ([f183d8f](https://github.com/tutur3u/platform/commit/f183d8f92b5b5d01e587e56bd8f236064941fcc3))
+* **edu:** address quiz review feedback ([ec77bd8](https://github.com/tutur3u/platform/commit/ec77bd83f2e1ec716ea28db83a55930a7ca60df3))
+* **edu:** enforce quiz review invariants ([992f84e](https://github.com/tutur3u/platform/commit/992f84ef534386ed3ba17de4cf093e7a3e5843ee))
+* **infrastructure:** recover cron runner via docker control ([d1f216d](https://github.com/tutur3u/platform/commit/d1f216d3ef7887dec066494d3f1816f607ce28fc))
+* **inventory:** grant service access to category bundle components ([63c3804](https://github.com/tutur3u/platform/commit/63c38047800352641993cbfd695a6bbd2b864017))
+* **inventory:** harden Square Terminal contracts ([547ce87](https://github.com/tutur3u/platform/commit/547ce87fba395493f1b0c0596e1155a6dad5672d))
+* **security:** limit auth recovery code attempts ([72d454c](https://github.com/tutur3u/platform/commit/72d454c507b0d4b7e69c7b38ad2099dbb83193b2))
+* **tasks:** allow personal board external placements ([89a3fa2](https://github.com/tutur3u/platform/commit/89a3fa20117414c102ad5cdedb126ec0fab981d8))
+* **tasks:** support personal external terminal defaults ([50434cb](https://github.com/tutur3u/platform/commit/50434cb9849a65dd8c77f6b030b27a4bd76125e4))
+* **users:** preserve attendance history ([fd16cee](https://github.com/tutur3u/platform/commit/fd16cee91a2d4049091933e78d75cf2e4ee8dfbf))
+
+
+### Performance Improvements
+
+* **rls:** also wrap auth calls nested in EXISTS subqueries (complete the wrap) ([967e745](https://github.com/tutur3u/platform/commit/967e745d517ed4a6d34501c8439cde1384cb9f1d))
+* **rls:** wrap auth calls in (select ...) for per-statement eval ([5011630](https://github.com/tutur3u/platform/commit/5011630261daa40f78bba1278da057edcf839c14))
+* **rls:** wrap auth helpers in (select ...) for per-statement evaluation ([#4907](https://github.com/tutur3u/platform/issues/4907)) ([4de00a9](https://github.com/tutur3u/platform/commit/4de00a9b6ae957edd335cd5ba06ed56f79728cc9))
+
 ## [1.15.0](https://github.com/tutur3u/platform/compare/database-v1.14.2...database-v1.15.0) (2026-07-11)
 
 
