@@ -27,6 +27,7 @@ import { Separator } from '@tuturuuu/ui/separator';
 import { Tabs, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { getWorkspaceUserArchiveState } from '@tuturuuu/users-core/reports/user-archive';
 import { RejectDialog } from '@tuturuuu/users-ui/components/reject-dialog';
+import ScoreDisplay from '@tuturuuu/users-ui/components/score-display';
 import { cn } from '@tuturuuu/utils/format';
 import { useFormatter, useLocale, useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
@@ -62,7 +63,6 @@ import {
   shouldBlockReportExport,
   shouldShowPendingWatermark,
 } from './report-feature-flags';
-import ScoreDisplay from './score-display';
 
 export const UserReportFormSchema = z.object({
   title: z.string().max(MAX_MONTHLY_REPORT_TITLE_LENGTH),

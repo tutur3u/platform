@@ -110,10 +110,18 @@ function getPathLocale(pathname: string) {
  * would shadow the `/api/:path*` → web proxy and break every proxied API call.
  * The middleware handles `/api` in an earlier branch, so it is never affected.
  */
-const CONTACTS_OWNED_WORKSPACE_ROUTES = [
-  '',
+// Exact routes contacts owns. These must NOT prefix-match: `users` is the users
+// index, and treating it as a prefix would mark every /users/* path owned —
+// including non-migrated ones like /users/groups, which would then 404 here
+// instead of redirecting to web.
+const CONTACTS_OWNED_EXACT_ROUTES = new Set(['', 'users']);
+
+// Route roots contacts owns, including anything nested beneath them.
+// `*` matches exactly one dynamic segment (e.g. a userId).
+// Add an entry here whenever a module is migrated, or the middleware will bounce
+// the freshly-migrated route straight back to web.
+const CONTACTS_OWNED_ROUTE_PREFIXES = [
   'workforce',
-  'users',
   'users/approvals',
   'users/database',
   'users/feedbacks',
@@ -121,6 +129,7 @@ const CONTACTS_OWNED_WORKSPACE_ROUTES = [
   'users/guest-leads',
   'users/structure',
   'users/tutoring',
+  'users/*/follow-up',
 ];
 
 const CONTACTS_NON_WORKSPACE_SEGMENTS = new Set([
@@ -128,6 +137,16 @@ const CONTACTS_NON_WORKSPACE_SEGMENTS = new Set([
   'login',
   'verify-token',
 ]);
+
+function matchesRoutePrefix(pattern: string, segments: string[]) {
+  const patternSegments = pattern.split('/');
+  if (segments.length < patternSegments.length) return false;
+
+  return patternSegments.every(
+    (patternSegment, index) =>
+      patternSegment === '*' || patternSegment === segments[index]
+  );
+}
 
 function getNonMigratedWorkspaceRedirect(request: NextRequest) {
   const segments = stripLocale(request.nextUrl.pathname)
@@ -137,12 +156,17 @@ function getNonMigratedWorkspaceRedirect(request: NextRequest) {
   const wsId = segments[0];
   if (!wsId || CONTACTS_NON_WORKSPACE_SEGMENTS.has(wsId)) return null;
 
-  const subPath = segments.slice(1).join('/');
-  const owned = CONTACTS_OWNED_WORKSPACE_ROUTES.some(
-    (route) =>
-      route === subPath || (route !== '' && subPath.startsWith(`${route}/`))
-  );
-  if (owned) return null;
+  const subSegments = segments.slice(1);
+  const subPath = subSegments.join('/');
+
+  if (CONTACTS_OWNED_EXACT_ROUTES.has(subPath)) return null;
+  if (
+    CONTACTS_OWNED_ROUTE_PREFIXES.some((pattern) =>
+      matchesRoutePrefix(pattern, subSegments)
+    )
+  ) {
+    return null;
+  }
 
   return NextResponse.redirect(
     new URL(`${request.nextUrl.pathname}${request.nextUrl.search}`, WEB_APP_URL)

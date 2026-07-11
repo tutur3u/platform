@@ -3,12 +3,12 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import WorkspaceWrapper from '@tuturuuu/ui/custom/workspace-wrapper';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { connection } from 'next/server';
 import { getTranslations } from 'next-intl/server';
-import WorkspaceWrapper from '@/components/workspace-wrapper';
 import FollowUpClient from './client';
 
 export const metadata: Metadata = {

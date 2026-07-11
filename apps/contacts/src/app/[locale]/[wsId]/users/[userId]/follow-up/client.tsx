@@ -12,14 +12,13 @@ import { Input } from '@tuturuuu/ui/input';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Textarea } from '@tuturuuu/ui/textarea';
+import ScoreDisplay from '@tuturuuu/users-ui/components/score-display';
+import UserMonthAttendance from '@tuturuuu/users-ui/components/user-month-attendance';
+import { availableConfigs } from '@tuturuuu/utils/configs/reports';
 import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
 import { useEffect, useMemo, useState } from 'react';
 import * as z from 'zod';
-import { API_URL } from '@/constants/common';
-import { availableConfigs } from '@/constants/configs/reports';
-import UserMonthAttendance from '../../attendance/user-month-attendance';
-import ScoreDisplay from '../../reports/[reportId]/score-display';
 
 const FollowUpSchema = z.object({
   source_name: z.string().min(1),
@@ -374,7 +373,7 @@ export default function FollowUpClient({
 
       // Call the new follow-up API endpoint
       const res = await fetch(
-        `${API_URL}/v1/workspaces/${wsId}/users/${userId}/follow-up`,
+        `/api/v1/workspaces/${wsId}/users/${userId}/follow-up`,
         {
           method: 'POST',
           headers: {

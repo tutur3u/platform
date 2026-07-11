@@ -118,12 +118,9 @@ vi.mock(
   })
 );
 
-vi.mock(
-  '@/app/[locale]/(dashboard)/[wsId]/users/reports/[reportId]/score-display',
-  () => ({
-    default: () => null,
-  })
-);
+vi.mock('@tuturuuu/users-ui/components/score-display', () => ({
+  default: () => null,
+}));
 
 import EditableReportPreview from '@/app/[locale]/(dashboard)/[wsId]/users/reports/[reportId]/editable-report-preview';
 
