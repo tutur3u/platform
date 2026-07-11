@@ -1,13 +1,7 @@
-import {
-  attachSupabaseAuthUser,
-  createAppSessionUser,
-  verifyAppSessionRequest,
-} from '@tuturuuu/auth/app-session';
+import { attachSupabaseAuthUser } from '@tuturuuu/auth/app-session';
+import { getSatelliteAppSessionUser } from '@tuturuuu/satellite/auth';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import {
   normalizeWorkspaceId,
@@ -80,31 +74,15 @@ function normalizeVocabulary(value: unknown): VocabularyEntry[] {
 }
 
 async function resolveSessionContext(
-  request: NextRequest
+  _request: NextRequest
 ): Promise<SessionContext | null> {
-  const appSessionVerification = verifyAppSessionRequest(request, {
-    targetApp: 'learn',
-  });
+  const user = await getSatelliteAppSessionUser('learn');
+  if (!user) return null;
 
-  if (appSessionVerification.ok) {
-    const user = createAppSessionUser(appSessionVerification.claims);
-    const supabase = attachSupabaseAuthUser(
-      (await createAdminClient({
-        noCookie: true,
-      })) as TypedSupabaseClient,
-      user
-    );
-
-    return { supabase, user };
-  }
-
-  const supabase = (await createClient(request)) as TypedSupabaseClient;
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser();
-
-  if (error || !user) return null;
+  const supabase = attachSupabaseAuthUser(
+    (await createAdminClient({ noCookie: true })) as TypedSupabaseClient,
+    user
+  );
 
   return { supabase, user };
 }
@@ -123,6 +101,7 @@ export async function GET(
   const normalizedWsId = await normalizeWorkspaceId(wsId, session.supabase);
 
   const membership = await verifyWorkspaceMembershipType({
+    requiredType: 'ANY',
     supabase: session.supabase,
     userId: session.user.id,
     wsId: normalizedWsId,

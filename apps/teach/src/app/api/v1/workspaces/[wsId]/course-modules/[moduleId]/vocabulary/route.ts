@@ -1,13 +1,7 @@
-import {
-  attachSupabaseAuthUser,
-  createAppSessionUser,
-  verifyAppSessionRequest,
-} from '@tuturuuu/auth/app-session';
+import { attachSupabaseAuthUser } from '@tuturuuu/auth/app-session';
+import { getSatelliteAppSessionUser } from '@tuturuuu/satellite/auth';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import {
   getPermissions,
@@ -35,6 +29,8 @@ interface VocabularyEntry {
   pronunciation: string;
   word: string;
 }
+
+const MAX_AGGREGATE_IMAGE_CHARACTERS = 10_000_000;
 
 type VocabularyParseResult =
   | {
@@ -167,7 +163,7 @@ function validateVocabularyEntry(
   };
 }
 
-function parseVocabularyUpdate(body: unknown): VocabularyParseResult {
+export function parseVocabularyUpdate(body: unknown): VocabularyParseResult {
   if (!isRecord(body)) {
     return {
       errors: ['Request body must be an object.'],
@@ -198,6 +194,8 @@ function parseVocabularyUpdate(body: unknown): VocabularyParseResult {
   }
 
   const vocabulary: VocabularyEntry[] = [];
+  const seenIds = new Set<string>();
+  let aggregateImageCharacters = 0;
 
   for (const [index, item] of body.vocabulary.entries()) {
     const parsedEntry = validateVocabularyEntry(item, index);
@@ -205,6 +203,23 @@ function parseVocabularyUpdate(body: unknown): VocabularyParseResult {
     if (!parsedEntry.ok) {
       return {
         errors: [parsedEntry.error],
+        ok: false,
+      };
+    }
+
+    if (seenIds.has(parsedEntry.entry.id)) {
+      return {
+        errors: [`Vocabulary item ${index + 1} has a duplicate id.`],
+        ok: false,
+      };
+    }
+
+    seenIds.add(parsedEntry.entry.id);
+    aggregateImageCharacters += parsedEntry.entry.imageUrl.length;
+
+    if (aggregateImageCharacters > MAX_AGGREGATE_IMAGE_CHARACTERS) {
+      return {
+        errors: ['Vocabulary images exceed the aggregate 10MB limit.'],
         ok: false,
       };
     }
@@ -219,36 +234,15 @@ function parseVocabularyUpdate(body: unknown): VocabularyParseResult {
 }
 
 async function resolveSessionContext(
-  request: NextRequest
+  _request: NextRequest
 ): Promise<SessionContext | null> {
-  const appSessionVerification = verifyAppSessionRequest(request, {
-    targetApp: 'teach',
-  });
+  const user = await getSatelliteAppSessionUser('teach');
+  if (!user) return null;
 
-  if (appSessionVerification.ok) {
-    const user = createAppSessionUser(appSessionVerification.claims);
-    const supabase = attachSupabaseAuthUser(
-      (await createAdminClient({
-        noCookie: true,
-      })) as TypedSupabaseClient,
-      user
-    );
-
-    return {
-      supabase,
-      user,
-    };
-  }
-
-  const supabase = (await createClient(request)) as TypedSupabaseClient;
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser();
-
-  if (error || !user) {
-    return null;
-  }
+  const supabase = attachSupabaseAuthUser(
+    (await createAdminClient({ noCookie: true })) as TypedSupabaseClient,
+    user
+  );
 
   return {
     supabase,

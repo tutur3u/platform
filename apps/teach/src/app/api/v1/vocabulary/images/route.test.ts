@@ -2,6 +2,10 @@ import { NextRequest } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { GET } from './route';
 
+vi.mock('@/lib/api-auth', () => ({
+  withSessionAuth: (handler: unknown) => handler,
+}));
+
 describe('GET /api/v1/vocabulary/images scraper', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
@@ -16,6 +20,18 @@ describe('GET /api/v1/vocabulary/images scraper', () => {
 
     const data = await response.json();
     expect(data.message).toContain('Query parameter q is required');
+  });
+
+  it('returns 400 when the query exceeds 100 characters', async () => {
+    const request = new NextRequest(
+      `http://localhost/api/v1/vocabulary/images?q=${'a'.repeat(101)}`
+    );
+    const response = await GET(request);
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toMatchObject({
+      message: 'Query must be 100 characters or fewer.',
+    });
   });
 
   it('scrapes and returns image results successfully from mocked DuckDuckGo responses', async () => {
@@ -96,5 +112,22 @@ describe('GET /api/v1/vocabulary/images scraper', () => {
     expect(data.message).toContain(
       'Failed to extract token from search engine'
     );
+  });
+
+  it('returns 502 when the DuckDuckGo search page is unavailable', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
+      ok: false,
+      status: 503,
+    } as Response);
+
+    const request = new NextRequest(
+      'http://localhost/api/v1/vocabulary/images?q=test'
+    );
+    const response = await GET(request);
+
+    expect(response.status).toBe(502);
+    await expect(response.json()).resolves.toMatchObject({
+      message: 'Failed to connect to search engine for token extraction.',
+    });
   });
 });

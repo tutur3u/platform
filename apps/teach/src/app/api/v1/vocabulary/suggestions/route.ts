@@ -1,6 +1,7 @@
 import * as cheerio from 'cheerio';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
+import { withSessionAuth } from '@/lib/api-auth';
 
 interface OedSuggestion {
   label?: string;
@@ -32,11 +33,7 @@ function normalizeText(value: string) {
 function safeOedUrl(path: string | undefined, fallbackWord: string) {
   const trimmedPath = path?.trim();
 
-  if (
-    !trimmedPath ||
-    !trimmedPath.startsWith('/') ||
-    trimmedPath.startsWith('//')
-  ) {
+  if (!trimmedPath?.startsWith('/') || trimmedPath.startsWith('//')) {
     return suggestionUrl(fallbackWord);
   }
 
@@ -136,7 +133,7 @@ async function loadSearchSuggestions(query: string, signal: AbortSignal) {
   return normalizeOedSearchSuggestions(await response.text(), query);
 }
 
-export async function GET(request: NextRequest) {
+async function loadVocabularySuggestions(request: NextRequest) {
   const query = request.nextUrl.searchParams.get('q')?.trim() ?? '';
 
   if (query.length < 2) {
@@ -206,3 +203,9 @@ export async function GET(request: NextRequest) {
     clearTimeout(timeout);
   }
 }
+
+export const GET = withSessionAuth(loadVocabularySuggestions, {
+  allowAppSessionAuth: { targetApp: 'teach' },
+  rateLimit: { maxRequests: 120, windowMs: 60_000 },
+  rateLimitKind: 'read',
+});

@@ -1,5 +1,8 @@
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
+import { withSessionAuth } from '@/lib/api-auth';
+
+const IMAGE_SEARCH_TIMEOUT_MS = 5_000;
 
 interface DuckDuckGoImageResult {
   image?: unknown;
@@ -7,7 +10,7 @@ interface DuckDuckGoImageResult {
   title?: unknown;
 }
 
-export async function GET(request: NextRequest) {
+async function searchImages(request: NextRequest) {
   const query = request.nextUrl.searchParams.get('q')?.trim() ?? '';
 
   if (!query) {
@@ -24,6 +27,9 @@ export async function GET(request: NextRequest) {
     );
   }
 
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), IMAGE_SEARCH_TIMEOUT_MS);
+
   try {
     const userAgent =
       'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
@@ -35,6 +41,8 @@ export async function GET(request: NextRequest) {
         headers: {
           'User-Agent': userAgent,
         },
+        next: { revalidate: 60 * 60 },
+        signal: controller.signal,
       }
     );
 
@@ -66,6 +74,8 @@ export async function GET(request: NextRequest) {
           Accept: 'application/json',
           Referer: 'https://duckduckgo.com/',
         },
+        next: { revalidate: 60 * 60 },
+        signal: controller.signal,
       }
     );
 
@@ -103,8 +113,26 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('Failed to search images:', error);
     return NextResponse.json(
-      { message: 'Internal server error while searching images.' },
-      { status: 500 }
+      {
+        message:
+          error instanceof DOMException && error.name === 'AbortError'
+            ? 'Image search provider timed out.'
+            : 'Internal server error while searching images.',
+      },
+      {
+        status:
+          error instanceof DOMException && error.name === 'AbortError'
+            ? 504
+            : 500,
+      }
     );
+  } finally {
+    clearTimeout(timeout);
   }
 }
+
+export const GET = withSessionAuth(searchImages, {
+  allowAppSessionAuth: { targetApp: 'teach' },
+  rateLimit: { maxRequests: 30, windowMs: 60_000 },
+  rateLimitKind: 'read',
+});

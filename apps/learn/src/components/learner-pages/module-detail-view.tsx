@@ -85,24 +85,24 @@ export function ModuleDetailView({
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_16rem]">
         <div className="space-y-5">
-          {courseModule.quizzes?.length > 0 && (
-            <div
-              className="flex gap-2 border-border border-b-2 pb-1"
-              data-learn-module-tabs
+          <div
+            className="flex gap-2 border-border border-b-2 pb-1"
+            data-learn-module-tabs
+          >
+            <button
+              className={cn(
+                'cursor-pointer border-2 border-border px-4 py-2 font-black text-sm shadow-[2px_2px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[3px_3px_0_var(--border)]',
+                activeTab === 'content'
+                  ? 'bg-primary text-primary-foreground'
+                  : 'bg-background text-foreground'
+              )}
+              data-learn-module-tab="content"
+              onClick={() => setActiveTab('content')}
+              type="button"
             >
-              <button
-                className={cn(
-                  'cursor-pointer border-2 border-border px-4 py-2 font-black text-sm shadow-[2px_2px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[3px_3px_0_var(--border)]',
-                  activeTab === 'content'
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-background text-foreground'
-                )}
-                data-learn-module-tab="content"
-                onClick={() => setActiveTab('content')}
-                type="button"
-              >
-                {t('courses.moduleContent')}
-              </button>
+              {t('courses.moduleContent')}
+            </button>
+            {courseModule.quizzes?.length > 0 && (
               <button
                 className={cn(
                   'cursor-pointer border-2 border-border px-4 py-2 font-black text-sm shadow-[2px_2px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[3px_3px_0_var(--border)]',
@@ -116,8 +116,8 @@ export function ModuleDetailView({
               >
                 {t('courses.quizzes')} ({courseModule.quizzes.length})
               </button>
-            </div>
-          )}
+            )}
+          </div>
 
           {activeTab === 'quizzes' && courseModule.quizzes?.length > 0 ? (
             <LearnerQuizzes

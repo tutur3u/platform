@@ -1,6 +1,6 @@
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
-import { hasLearnSession } from '../auth';
+import { withSessionAuth } from '@/lib/api-auth';
 
 const GOOGLE_TTS_MODEL =
   process.env.GOOGLE_TTS_MODEL ?? 'gemini-3.1-flash-tts-preview';
@@ -102,11 +102,7 @@ function findBase64AudioData(value: unknown): string | null {
   return null;
 }
 
-export async function POST(request: NextRequest) {
-  if (!(await hasLearnSession(request))) {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-  }
-
+async function generateSpeech(request: NextRequest) {
   const apiKey =
     process.env.GOOGLE_GENERATIVE_AI_API_KEY ?? process.env.GOOGLE_API_KEY;
 
@@ -223,3 +219,10 @@ export async function POST(request: NextRequest) {
     },
   });
 }
+
+export const POST = withSessionAuth(generateSpeech, {
+  allowAppSessionAuth: { targetApp: 'learn' },
+  maxPayloadSize: 16_384,
+  rateLimit: { maxRequests: 20, windowMs: 60_000 },
+  rateLimitKind: 'read',
+});

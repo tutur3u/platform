@@ -2,6 +2,10 @@ import { NextRequest } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { GET } from './route';
 
+vi.mock('@/lib/api-auth', () => ({
+  withSessionAuth: (handler: unknown) => handler,
+}));
+
 describe('GET /api/v1/vocabulary/details scraper', () => {
   beforeEach(() => {
     vi.restoreAllMocks();

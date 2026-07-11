@@ -1,6 +1,6 @@
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
-import { hasLearnSession } from '../auth';
+import { withSessionAuth } from '@/lib/api-auth';
 
 const GEMINI_TIMEOUT_MS = 15_000;
 
@@ -89,11 +89,7 @@ function textFromGeminiResponse(value: unknown) {
   );
 }
 
-export async function POST(request: NextRequest) {
-  if (!(await hasLearnSession(request))) {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-  }
-
+async function analyzePronunciation(request: NextRequest) {
   const apiKey =
     process.env.GOOGLE_GENERATIVE_AI_API_KEY ?? process.env.GOOGLE_API_KEY;
 
@@ -242,3 +238,10 @@ export async function POST(request: NextRequest) {
     transcript: typeof parsed.transcript === 'string' ? parsed.transcript : '',
   });
 }
+
+export const POST = withSessionAuth(analyzePronunciation, {
+  allowAppSessionAuth: { targetApp: 'learn' },
+  maxPayloadSize: 8_000_000,
+  rateLimit: { maxRequests: 10, windowMs: 60_000 },
+  rateLimitKind: 'read',
+});

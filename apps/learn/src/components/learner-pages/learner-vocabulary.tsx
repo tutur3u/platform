@@ -1,196 +1,33 @@
 'use client';
 
-import { BookOpen, Check, RotateCcw, Sparkles } from '@tuturuuu/icons';
+import { BookOpen } from '@tuturuuu/icons';
 import { cn } from '@tuturuuu/utils/format';
 import Image from 'next/image';
 import { useParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ContentCard } from './content-card';
-
-interface VocabularyEntry {
-  definition: string;
-  examples: string[];
-  id: string;
-  imageUrl: string;
-  pronunciation: string;
-  word: string;
-}
-
-type MatchSide = 'definition' | 'word';
-
-interface MatchCard {
-  entryId: string;
-  id: string;
-  label: string;
-  side: MatchSide;
-}
-
-interface PronunciationFeedback {
-  score: number | null;
-  summary: string;
-  transcript: string;
-  mistakes?: PronunciationMistake[];
-  issues: string[];
-  tips: string[];
-}
-
-interface PronunciationMistake {
-  endIndex?: number | null;
-  heard: string;
-  issue: string;
-  startIndex?: number | null;
-  suggestion: string;
-  target: string;
-}
-
-function normalizeVocabulary(value: unknown): VocabularyEntry[] {
-  if (!Array.isArray(value)) return [];
-
-  return value
-    .map((entry) => {
-      if (!entry || typeof entry !== 'object' || Array.isArray(entry)) {
-        return null;
-      }
-
-      const record = entry as Record<string, unknown>;
-      const id = typeof record.id === 'string' ? record.id.trim() : '';
-      const word = typeof record.word === 'string' ? record.word.trim() : '';
-      const definition =
-        typeof record.definition === 'string' ? record.definition.trim() : '';
-
-      if (!id || !word || !definition) return null;
-
-      return {
-        definition,
-        examples: Array.isArray(record.examples)
-          ? record.examples
-              .filter(
-                (example): example is string => typeof example === 'string'
-              )
-              .map((example) => example.trim())
-              .filter(Boolean)
-          : [],
-        id,
-        imageUrl:
-          typeof record.imageUrl === 'string'
-            ? record.imageUrl
-            : typeof record.image_url === 'string'
-              ? record.image_url
-              : '',
-        pronunciation:
-          typeof record.pronunciation === 'string'
-            ? record.pronunciation.trim()
-            : '',
-        word,
-      };
-    })
-    .filter((entry): entry is VocabularyEntry => entry !== null);
-}
-
-function shuffle<T>(items: T[]) {
-  return [...items].sort(() => Math.random() - 0.5);
-}
-
-function buildCards(vocabulary: VocabularyEntry[]): MatchCard[] {
-  return shuffle(
-    vocabulary.flatMap((entry) => [
-      {
-        entryId: entry.id,
-        id: `${entry.id}-word`,
-        label: entry.word,
-        side: 'word' as const,
-      },
-      {
-        entryId: entry.id,
-        id: `${entry.id}-definition`,
-        label: entry.definition,
-        side: 'definition' as const,
-      },
-    ])
-  );
-}
-
-function blobToBase64(blob: Blob) {
-  return new Promise<string>((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      const result = typeof reader.result === 'string' ? reader.result : '';
-      resolve(result.includes(',') ? (result.split(',')[1] ?? '') : result);
-    };
-    reader.onerror = () =>
-      reject(reader.error ?? new Error('Could not read recording.'));
-    reader.readAsDataURL(blob);
-  });
-}
-
-function escapeRegExp(value: string) {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
-
-function sentenceParts(sentence: string, mistakes: PronunciationMistake[]) {
-  const ranges = mistakes
-    .map((mistake) => ({
-      end: mistake.endIndex,
-      start: mistake.startIndex,
-    }))
-    .filter(
-      (range): range is { end: number; start: number } =>
-        typeof range.start === 'number' &&
-        typeof range.end === 'number' &&
-        range.start >= 0 &&
-        range.end > range.start &&
-        range.end <= sentence.length
-    )
-    .sort((a, b) => a.start - b.start);
-
-  if (ranges.length > 0) {
-    const parts: Array<{ isMistake: boolean; text: string }> = [];
-    let cursor = 0;
-
-    for (const range of ranges) {
-      if (range.start < cursor) continue;
-
-      if (range.start > cursor) {
-        parts.push({
-          isMistake: false,
-          text: sentence.slice(cursor, range.start),
-        });
-      }
-
-      parts.push({
-        isMistake: true,
-        text: sentence.slice(range.start, range.end),
-      });
-      cursor = range.end;
-    }
-
-    if (cursor < sentence.length) {
-      parts.push({ isMistake: false, text: sentence.slice(cursor) });
-    }
-
-    return parts;
-  }
-
-  const targets = mistakes
-    .map((mistake) => mistake.target.trim())
-    .filter(Boolean)
-    .sort((a, b) => b.length - a.length);
-
-  if (targets.length === 0) return [{ isMistake: false, text: sentence }];
-
-  const pattern = new RegExp(`(${targets.map(escapeRegExp).join('|')})`, 'giu');
-  return sentence
-    .split(pattern)
-    .filter(Boolean)
-    .map((text) => ({
-      isMistake: targets.some(
-        (target) => target.toLowerCase() === text.toLowerCase()
-      ),
-      text,
-    }));
-}
+import { LearnerVocabularyMatch } from './learner-vocabulary-match';
+import {
+  LearnerVocabularyLoading,
+  LearnerVocabularyPracticeHeader,
+} from './learner-vocabulary-practice-header';
+import { LearnerVocabularyPronunciationFeedback } from './learner-vocabulary-pronunciation-feedback';
+import { LearnerVocabularyQuizResults } from './learner-vocabulary-quiz-results';
+import { LearnerVocabularyReview } from './learner-vocabulary-review';
+import {
+  blobToBase64,
+  buildCards,
+  buildQuizOptions,
+  type MatchCard,
+  normalizeVocabulary,
+  type PronunciationFeedback,
+  type VocabularyEntry,
+} from './learner-vocabulary-utils';
+import { useVocabularySpeech } from './use-vocabulary-speech';
 
 export function LearnerVocabulary({ moduleId }: { moduleId: string }) {
+  const t = useTranslations('learnerVocabulary');
   const params = useParams<{ wsId?: string }>();
   const wsId = params?.wsId;
   const [vocabulary, setVocabulary] = useState<VocabularyEntry[]>([]);
@@ -200,7 +37,7 @@ export function LearnerVocabulary({ moduleId }: { moduleId: string }) {
   const [selected, setSelected] = useState<MatchCard | null>(null);
   const [matchedIds, setMatchedIds] = useState<string[]>([]);
   const [mismatchIds, setMismatchIds] = useState<string[]>([]);
-  const [playingKey, setPlayingKey] = useState<string | null>(null);
+  const { playSpeech, playingKey } = useVocabularySpeech();
 
   // Quiz/Flashcard State
   const [practiceMode, setPracticeMode] = useState<
@@ -227,6 +64,7 @@ export function LearnerVocabulary({ moduleId }: { moduleId: string }) {
   );
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
+  const recordingPreviewUrlRef = useRef<string | null>(null);
 
   const matchedSet = useMemo(() => new Set(matchedIds), [matchedIds]);
   const finished = cards.length > 0 && matchedIds.length === cards.length;
@@ -274,21 +112,6 @@ export function LearnerVocabulary({ moduleId }: { moduleId: string }) {
     };
   }, [moduleId, wsId]);
 
-  function generateQuizOptions(index: number, vocabList: VocabularyEntry[]) {
-    if (vocabList.length === 0 || index >= vocabList.length) return;
-    const currentEntry = vocabList[index];
-    if (!currentEntry) return;
-    const correctWord = currentEntry.word;
-
-    const distractors = vocabList
-      .filter((entry) => entry.id !== currentEntry.id)
-      .map((entry) => entry.word);
-
-    const shuffledDistractors = shuffle(distractors).slice(0, 3);
-    const options = shuffle([correctWord, ...shuffledDistractors]);
-    setQuizOptions(options);
-  }
-
   const pronunciationItems = useMemo(
     () =>
       vocabulary
@@ -312,43 +135,13 @@ export function LearnerVocabulary({ moduleId }: { moduleId: string }) {
       setQuizCorrectCount(0);
       setQuizSelectedOption(null);
       setQuizAnswered(false);
-      generateQuizOptions(0, vocabulary);
+      setQuizOptions(buildQuizOptions(0, vocabulary));
     } else {
       setPronunciationIndex(0);
       setPronunciationFeedback(null);
       setPronunciationError(null);
     }
     setStarted(true);
-  }
-
-  async function playSpeech(
-    text: string,
-    kind: 'example' | 'word',
-    key: string
-  ) {
-    try {
-      setPlayingKey(key);
-      const response = await fetch('/api/v1/vocabulary/speech', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ kind, text }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Could not generate speech.');
-      }
-
-      const audioUrl = URL.createObjectURL(await response.blob());
-      const audio = new Audio(audioUrl);
-      audio.onended = () => URL.revokeObjectURL(audioUrl);
-      audio.onerror = () => URL.revokeObjectURL(audioUrl);
-      await audio.play();
-    } catch (error) {
-      console.error('Failed to play vocabulary speech', error);
-    } finally {
-      setPlayingKey(null);
-    }
   }
 
   function cancelActiveRecording() {
@@ -418,15 +211,13 @@ export function LearnerVocabulary({ moduleId }: { moduleId: string }) {
         issues: Array.isArray(payload.issues) ? payload.issues : [],
         mistakes: Array.isArray(payload.mistakes) ? payload.mistakes : [],
         score: typeof payload.score === 'number' ? payload.score : null,
-        summary: payload.summary || 'Pronunciation checked.',
+        summary: payload.summary || t('pronunciationChecked'),
         tips: Array.isArray(payload.tips) ? payload.tips : [],
         transcript: payload.transcript || '',
       });
     } catch (error) {
       console.error('Failed to analyze pronunciation', error);
-      setPronunciationError(
-        'Could not analyze your recording. Please try again.'
-      );
+      setPronunciationError(t('analysisFailed'));
     } finally {
       setIsAnalyzingPronunciation(false);
     }
@@ -467,7 +258,7 @@ export function LearnerVocabulary({ moduleId }: { moduleId: string }) {
       setIsRecording(true);
     } catch (error) {
       console.error('Failed to start pronunciation recording', error);
-      setPronunciationError('Please allow microphone access to record.');
+      setPronunciationError(t('microphoneRequired'));
       setIsRecording(false);
     }
   }
@@ -479,6 +270,27 @@ export function LearnerVocabulary({ moduleId }: { moduleId: string }) {
     }
     setIsRecording(false);
   }
+
+  useEffect(() => {
+    recordingPreviewUrlRef.current = recordingPreviewUrl;
+  }, [recordingPreviewUrl]);
+
+  useEffect(() => {
+    return () => {
+      const recorder = mediaRecorderRef.current;
+      if (recorder && recorder.state !== 'inactive') {
+        recorder.stop();
+      }
+      recorder?.stream.getTracks().forEach((track) => {
+        track.stop();
+      });
+
+      const previewUrl = recordingPreviewUrlRef.current;
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl);
+      }
+    };
+  }, []);
 
   function nextPronunciationPrompt() {
     cancelActiveRecording();
@@ -540,154 +352,39 @@ export function LearnerVocabulary({ moduleId }: { moduleId: string }) {
     setQuizSelectedOption(null);
     setQuizAnswered(false);
     if (nextIndex < vocabulary.length) {
-      generateQuizOptions(nextIndex, vocabulary);
+      setQuizOptions(buildQuizOptions(nextIndex, vocabulary));
     }
   }
 
   return (
     <ContentCard
       icon={<BookOpen className="h-4 w-4" />}
-      title={`Vocabulary (${vocabulary.length})`}
+      title={t('title', { count: vocabulary.length })}
     >
       {isLoading ? (
-        <div className="space-y-3">
-          <div className="h-20 animate-pulse border-2 border-border bg-muted/60 shadow-[3px_3px_0_var(--border)]" />
-          <div className="h-20 animate-pulse border-2 border-border bg-muted/60 shadow-[3px_3px_0_var(--border)]" />
-        </div>
+        <LearnerVocabularyLoading />
       ) : vocabulary.length === 0 ? (
-        <p className="text-muted-foreground text-sm">
-          No vocabulary has been added for this module yet.
-        </p>
+        <p className="text-muted-foreground text-sm">{t('empty')}</p>
       ) : !started ? (
-        <div className="space-y-4">
-          <div className="flex flex-wrap items-center justify-between gap-3 border-2 border-border bg-background p-4 shadow-[3px_3px_0_var(--border)]">
-            <div>
-              <p className="font-black text-base">Learn the words first</p>
-              <p className="text-muted-foreground text-sm">
-                Review each word, pronunciation, definition, and example.
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <button
-                className="inline-flex items-center gap-2 border-2 border-border bg-primary px-4 py-2 font-black text-primary-foreground text-sm shadow-[3px_3px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[4px_4px_0_var(--border)]"
-                onClick={() => startPractice('match')}
-                type="button"
-              >
-                Practice: Match
-              </button>
-              <button
-                className="inline-flex items-center gap-2 border-2 border-border bg-dynamic-cyan px-4 py-2 font-black text-foreground text-sm shadow-[3px_3px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[4px_4px_0_var(--border)]"
-                onClick={() => startPractice('quiz')}
-                type="button"
-              >
-                Practice: Quiz
-              </button>
-              <button
-                className="inline-flex items-center gap-2 border-2 border-border bg-dynamic-yellow px-4 py-2 font-black text-foreground text-sm shadow-[3px_3px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[4px_4px_0_var(--border)]"
-                onClick={() => startPractice('pronunciation')}
-                type="button"
-              >
-                Practice: Pronunciation
-              </button>
-            </div>
-          </div>
-
-          <div className="grid gap-3 md:grid-cols-2">
-            {vocabulary.map((entry) => (
-              <article
-                className="border-2 border-border bg-background p-4 shadow-[3px_3px_0_var(--border)]"
-                key={entry.id}
-              >
-                {entry.imageUrl ? (
-                  <Image
-                    alt={`${entry.word} vocabulary`}
-                    className="mb-4 aspect-video w-full border-2 border-border object-cover shadow-[3px_3px_0_var(--border)]"
-                    height={360}
-                    unoptimized
-                    referrerPolicy="no-referrer"
-                    src={entry.imageUrl}
-                    width={640}
-                  />
-                ) : null}
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <h3 className="font-black text-base">{entry.word}</h3>
-                    {entry.pronunciation ? (
-                      <p className="text-muted-foreground text-xs">
-                        {entry.pronunciation}
-                      </p>
-                    ) : null}
-                  </div>
-                  <Sparkles className="h-4 w-4 shrink-0 text-dynamic-yellow" />
-                </div>
-                <button
-                  className="mt-3 border-2 border-border bg-card px-3 py-1.5 font-bold text-xs shadow-[2px_2px_0_var(--border)] disabled:opacity-50"
-                  disabled={playingKey !== null}
-                  onClick={() =>
-                    playSpeech(entry.word, 'word', `${entry.id}-word`)
-                  }
-                  type="button"
-                >
-                  {playingKey === `${entry.id}-word`
-                    ? 'Playing...'
-                    : 'Play word'}
-                </button>
-                <p className="mt-3 text-sm leading-relaxed">
-                  {entry.definition}
-                </p>
-                {entry.examples.length > 0 ? (
-                  <ul className="mt-3 space-y-2 text-muted-foreground text-xs">
-                    {entry.examples.map((example) => (
-                      <li
-                        className="flex flex-wrap items-center gap-2"
-                        key={`${entry.id}-${example}`}
-                      >
-                        <span>{example}</span>
-                        <button
-                          className="border border-border bg-card px-2 py-0.5 font-bold text-[10px] text-foreground shadow-[1px_1px_0_var(--border)] disabled:opacity-50"
-                          disabled={playingKey !== null}
-                          onClick={() =>
-                            playSpeech(
-                              example,
-                              'example',
-                              `${entry.id}-${example}`
-                            )
-                          }
-                          type="button"
-                        >
-                          {playingKey === `${entry.id}-${example}`
-                            ? 'Playing...'
-                            : 'Play example'}
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                ) : null}
-              </article>
-            ))}
-          </div>
-        </div>
+        <LearnerVocabularyReview
+          playSpeech={playSpeech}
+          playingKey={playingKey}
+          startPractice={startPractice}
+          vocabulary={vocabulary}
+        />
       ) : practiceMode === 'pronunciation' ? (
         <div className="space-y-4">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <p className="font-bold text-sm">
-              Pronunciation {pronunciationIndex + 1} /{' '}
-              {Math.max(pronunciationItems.length, 1)}
-            </p>
-            <button
-              className="inline-flex items-center gap-2 border-2 border-border bg-background px-3 py-1.5 font-bold text-sm shadow-[2px_2px_0_var(--border)]"
-              onClick={resetPractice}
-              type="button"
-            >
-              <RotateCcw className="h-3.5 w-3.5" />
-              Review words
-            </button>
-          </div>
+          <LearnerVocabularyPracticeHeader
+            label={t('pronunciationProgress', {
+              current: pronunciationIndex + 1,
+              total: Math.max(pronunciationItems.length, 1),
+            })}
+            resetPractice={resetPractice}
+          />
 
           {pronunciationItems.length === 0 ? (
             <div className="border-2 border-border bg-background p-6 text-muted-foreground text-sm shadow-[4px_4px_0_var(--border)]">
-              Add at least one example sentence or definition to practice
-              pronunciation.
+              {t('pronunciationEmpty')}
             </div>
           ) : (
             (() => {
@@ -699,7 +396,7 @@ export function LearnerVocabulary({ moduleId }: { moduleId: string }) {
                   <div className="grid gap-5 md:grid-cols-[14rem_minmax(0,1fr)]">
                     {item.entry.imageUrl ? (
                       <Image
-                        alt={`${item.entry.word} vocabulary`}
+                        alt={t('imageAlt', { word: item.entry.word })}
                         className="aspect-video w-full border-2 border-border object-cover shadow-[3px_3px_0_var(--border)] md:aspect-square"
                         height={320}
                         unoptimized
@@ -709,7 +406,7 @@ export function LearnerVocabulary({ moduleId }: { moduleId: string }) {
                       />
                     ) : (
                       <div className="flex aspect-video items-center justify-center border-2 border-border border-dashed bg-muted/20 text-muted-foreground text-xs shadow-[3px_3px_0_var(--border)] md:aspect-square">
-                        No image
+                        {t('noImage')}
                       </div>
                     )}
 
@@ -725,7 +422,7 @@ export function LearnerVocabulary({ moduleId }: { moduleId: string }) {
 
                       <div className="border-2 border-border bg-card p-4 shadow-[2px_2px_0_var(--border)]">
                         <p className="mb-2 font-bold text-[10px] text-muted-foreground uppercase tracking-widest">
-                          Read this sentence
+                          {t('readSentence')}
                         </p>
                         <p className="text-base leading-relaxed">
                           {item.sentence}
@@ -747,8 +444,8 @@ export function LearnerVocabulary({ moduleId }: { moduleId: string }) {
                         >
                           {playingKey ===
                           `${item.entry.id}-pronunciation-target`
-                            ? 'Playing...'
-                            : 'Play target'}
+                            ? t('playing')
+                            : t('playTarget')}
                         </button>
                         <button
                           className="border-2 border-border bg-primary px-3 py-1.5 font-bold text-primary-foreground text-sm shadow-[2px_2px_0_var(--border)] disabled:opacity-50"
@@ -760,7 +457,9 @@ export function LearnerVocabulary({ moduleId }: { moduleId: string }) {
                           }
                           type="button"
                         >
-                          {isRecording ? 'Stop recording' : 'Start recording'}
+                          {isRecording
+                            ? t('stopRecording')
+                            : t('startRecording')}
                         </button>
                       </div>
                     </div>
@@ -768,20 +467,20 @@ export function LearnerVocabulary({ moduleId }: { moduleId: string }) {
 
                   {isRecording ? (
                     <p className="border-2 border-dynamic-yellow/50 bg-dynamic-yellow/10 p-3 font-bold text-sm shadow-[2px_2px_0_var(--border)]">
-                      Recording... read the sentence clearly, then stop.
+                      {t('recording')}
                     </p>
                   ) : null}
 
                   {isAnalyzingPronunciation ? (
                     <p className="text-muted-foreground text-sm">
-                      Checking pronunciation...
+                      {t('checkingPronunciation')}
                     </p>
                   ) : null}
 
                   {recordingPreviewUrl ? (
                     <div className="space-y-2 border-2 border-border bg-card p-4 shadow-[3px_3px_0_var(--border)]">
                       <p className="font-bold text-xs uppercase tracking-widest">
-                        Your recording
+                        {t('yourRecording')}
                       </p>
                       <audio
                         className="w-full"
@@ -798,125 +497,10 @@ export function LearnerVocabulary({ moduleId }: { moduleId: string }) {
                   ) : null}
 
                   {pronunciationFeedback ? (
-                    <div className="space-y-4 border-2 border-border bg-card p-4 shadow-[3px_3px_0_var(--border)]">
-                      <div className="flex flex-wrap items-center justify-between gap-3">
-                        <div>
-                          <p className="font-black text-base">
-                            Pronunciation feedback
-                          </p>
-                          <p className="text-muted-foreground text-sm">
-                            {pronunciationFeedback.summary}
-                          </p>
-                        </div>
-                        {typeof pronunciationFeedback.score === 'number' ? (
-                          <div className="border-2 border-border bg-background px-3 py-2 text-center shadow-[2px_2px_0_var(--border)]">
-                            <p className="font-black text-xl">
-                              {pronunciationFeedback.score}/100
-                            </p>
-                          </div>
-                        ) : null}
-                      </div>
-
-                      {pronunciationFeedback.transcript ? (
-                        <p className="text-sm">
-                          <span className="font-bold">Heard:</span>{' '}
-                          {pronunciationFeedback.transcript}
-                        </p>
-                      ) : null}
-
-                      {pronunciationFeedback.mistakes?.length ? (
-                        <div className="space-y-3">
-                          <div className="border-2 border-dynamic-yellow/50 bg-dynamic-yellow/10 p-3 shadow-[2px_2px_0_var(--border)]">
-                            <p className="mb-2 font-bold text-xs uppercase tracking-widest">
-                              Sentence map
-                            </p>
-                            <p className="text-base leading-relaxed">
-                              {sentenceParts(
-                                item.sentence,
-                                pronunciationFeedback.mistakes
-                              ).map((part, index) =>
-                                part.isMistake ? (
-                                  <mark
-                                    className="border-2 border-dynamic-yellow bg-dynamic-yellow px-1 font-black text-black shadow-[1px_1px_0_var(--border)]"
-                                    key={`${part.text}-${index}`}
-                                  >
-                                    {part.text}
-                                  </mark>
-                                ) : (
-                                  <span key={`${part.text}-${index}`}>
-                                    {part.text}
-                                  </span>
-                                )
-                              )}
-                            </p>
-                          </div>
-
-                          <div>
-                            <p className="mb-2 font-bold text-xs uppercase tracking-widest">
-                              Parts to practice
-                            </p>
-                            <ul className="space-y-2 text-sm">
-                              {pronunciationFeedback.mistakes.map(
-                                (mistake, index) => (
-                                  <li
-                                    className="border border-border bg-background p-3"
-                                    key={`${mistake.target}-${index}`}
-                                  >
-                                    <p>
-                                      <span className="font-bold">Target:</span>{' '}
-                                      {mistake.target}
-                                      {mistake.heard ? (
-                                        <>
-                                          {' '}
-                                          <span className="text-muted-foreground">
-                                            sounded like
-                                          </span>{' '}
-                                          {mistake.heard}
-                                        </>
-                                      ) : null}
-                                    </p>
-                                    <p className="mt-1 text-muted-foreground">
-                                      {mistake.issue}
-                                    </p>
-                                    {mistake.suggestion ? (
-                                      <p className="mt-1 font-bold">
-                                        Try: {mistake.suggestion}
-                                      </p>
-                                    ) : null}
-                                  </li>
-                                )
-                              )}
-                            </ul>
-                          </div>
-                        </div>
-                      ) : null}
-
-                      {pronunciationFeedback.issues.length > 0 ? (
-                        <div>
-                          <p className="mb-2 font-bold text-xs uppercase tracking-widest">
-                            What to fix
-                          </p>
-                          <ul className="space-y-1 text-sm">
-                            {pronunciationFeedback.issues.map((issue) => (
-                              <li key={issue}>- {issue}</li>
-                            ))}
-                          </ul>
-                        </div>
-                      ) : null}
-
-                      {pronunciationFeedback.tips.length > 0 ? (
-                        <div>
-                          <p className="mb-2 font-bold text-xs uppercase tracking-widest">
-                            Practice tips
-                          </p>
-                          <ul className="space-y-1 text-sm">
-                            {pronunciationFeedback.tips.map((tip) => (
-                              <li key={tip}>- {tip}</li>
-                            ))}
-                          </ul>
-                        </div>
-                      ) : null}
-                    </div>
+                    <LearnerVocabularyPronunciationFeedback
+                      feedback={pronunciationFeedback}
+                      sentence={item.sentence}
+                    />
                   ) : null}
 
                   <div className="flex justify-end">
@@ -928,7 +512,7 @@ export function LearnerVocabulary({ moduleId }: { moduleId: string }) {
                       onClick={nextPronunciationPrompt}
                       type="button"
                     >
-                      Next sentence
+                      {t('nextSentence')}
                     </button>
                   </div>
                 </div>
@@ -938,21 +522,17 @@ export function LearnerVocabulary({ moduleId }: { moduleId: string }) {
         </div>
       ) : practiceMode === 'quiz' ? (
         <div className="space-y-4">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <p className="font-bold text-sm">
-              {quizIndex < vocabulary.length
-                ? `Question ${quizIndex + 1} of ${vocabulary.length}`
-                : 'Quiz Complete!'}
-            </p>
-            <button
-              className="inline-flex items-center gap-2 border-2 border-border bg-background px-3 py-1.5 font-bold text-sm shadow-[2px_2px_0_var(--border)]"
-              onClick={resetPractice}
-              type="button"
-            >
-              <RotateCcw className="h-3.5 w-3.5" />
-              Review words
-            </button>
-          </div>
+          <LearnerVocabularyPracticeHeader
+            label={
+              quizIndex < vocabulary.length
+                ? t('questionProgress', {
+                    current: quizIndex + 1,
+                    total: vocabulary.length,
+                  })
+                : t('quizComplete')
+            }
+            resetPractice={resetPractice}
+          />
 
           {quizIndex < vocabulary.length ? (
             (() => {
@@ -963,7 +543,7 @@ export function LearnerVocabulary({ moduleId }: { moduleId: string }) {
                   {entry.imageUrl ? (
                     <div className="mx-auto flex max-w-md justify-center overflow-hidden border-2 border-border bg-muted/20 shadow-[2px_2px_0_var(--border)]">
                       <Image
-                        alt="Quiz Clue"
+                        alt={t('quizClueAlt')}
                         className="max-h-64 w-full object-contain"
                         height={320}
                         unoptimized
@@ -974,7 +554,7 @@ export function LearnerVocabulary({ moduleId }: { moduleId: string }) {
                     </div>
                   ) : (
                     <div className="flex h-36 items-center justify-center border-2 border-border border-dashed bg-muted/10 text-muted-foreground text-xs">
-                      No image clue available
+                      {t('noImageClue')}
                     </div>
                   )}
 
@@ -998,8 +578,8 @@ export function LearnerVocabulary({ moduleId }: { moduleId: string }) {
                             type="button"
                           >
                             {playingKey === `${entry.id}-quiz-word`
-                              ? 'Playing...'
-                              : 'Play voice'}
+                              ? t('playing')
+                              : t('playVoice')}
                           </button>
                         )}
                       </div>
@@ -1022,8 +602,8 @@ export function LearnerVocabulary({ moduleId }: { moduleId: string }) {
                         type="button"
                       >
                         {playingKey === `${entry.id}-quiz-def`
-                          ? 'Playing...'
-                          : 'Play clue'}
+                          ? t('playing')
+                          : t('playClue')}
                       </button>
                     </div>
                   </div>
@@ -1060,7 +640,7 @@ export function LearnerVocabulary({ moduleId }: { moduleId: string }) {
                           type="button"
                         >
                           <span className="mb-1 block text-[10px] text-muted-foreground uppercase tracking-widest">
-                            Choice
+                            {t('choice')}
                           </span>
                           {option}
                         </button>
@@ -1076,8 +656,8 @@ export function LearnerVocabulary({ moduleId }: { moduleId: string }) {
                         type="button"
                       >
                         {quizIndex + 1 === vocabulary.length
-                          ? 'View Results'
-                          : 'Next Question'}
+                          ? t('viewResults')
+                          : t('nextQuestion')}
                       </button>
                     </div>
                   )}
@@ -1085,96 +665,26 @@ export function LearnerVocabulary({ moduleId }: { moduleId: string }) {
               );
             })()
           ) : (
-            <div className="space-y-6 border-2 border-border bg-background p-8 text-center shadow-[4px_4px_0_var(--border)]">
-              <div className="space-y-2">
-                <h3 className="font-black text-2xl">Practice Complete!</h3>
-                <p className="text-muted-foreground text-sm">
-                  Here is how you performed on this quiz:
-                </p>
-              </div>
-
-              <div className="inline-block min-w-[200px] border-2 border-border bg-card p-6 shadow-[3px_3px_0_var(--border)]">
-                <p className="mb-1 font-bold text-[10px] text-muted-foreground uppercase tracking-widest">
-                  Score
-                </p>
-                <p className="font-black text-4xl text-primary">
-                  {quizCorrectCount} / {vocabulary.length}
-                </p>
-                <p className="mt-2 text-muted-foreground text-xs">
-                  {Math.round((quizCorrectCount / vocabulary.length) * 100)}%
-                  Correct
-                </p>
-              </div>
-
-              <div className="flex flex-wrap justify-center gap-3 pt-4">
-                <button
-                  className="border-2 border-border bg-primary px-5 py-2.5 font-black text-primary-foreground text-sm shadow-[3px_3px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[4px_4px_0_var(--border)]"
-                  onClick={() => startPractice('quiz')}
-                  type="button"
-                >
-                  Try Again
-                </button>
-                <button
-                  className="border-2 border-border bg-background px-5 py-2.5 font-black text-foreground text-sm shadow-[3px_3px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[4px_4px_0_var(--border)]"
-                  onClick={resetPractice}
-                  type="button"
-                >
-                  Review Words
-                </button>
-              </div>
-            </div>
+            <LearnerVocabularyQuizResults
+              correctCount={quizCorrectCount}
+              resetPractice={resetPractice}
+              restartQuiz={() => startPractice('quiz')}
+              total={vocabulary.length}
+            />
           )}
         </div>
       ) : practiceMode === 'match' ? (
-        <div className="space-y-4">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <p className="font-bold text-sm">
-              {finished
-                ? 'All matched!'
-                : `${matchedIds.length / 2} / ${vocabulary.length} matched`}
-            </p>
-            <button
-              className="inline-flex items-center gap-2 border-2 border-border bg-background px-3 py-1.5 font-bold text-sm shadow-[2px_2px_0_var(--border)]"
-              onClick={resetPractice}
-              type="button"
-            >
-              <RotateCcw className="h-3.5 w-3.5" />
-              Review words
-            </button>
-          </div>
-
-          <div className="grid gap-3 md:grid-cols-2">
-            {cards.map((card) => {
-              const isMatched = matchedSet.has(card.id);
-              const isSelected = selected?.id === card.id;
-              const isMismatch = mismatchIds.includes(card.id);
-
-              return (
-                <button
-                  className={cn(
-                    'min-h-24 border-2 border-border bg-background p-4 text-left font-bold text-sm shadow-[3px_3px_0_var(--border)] transition',
-                    isSelected && 'bg-dynamic-cyan/15',
-                    isMismatch && 'bg-destructive/10',
-                    isMatched &&
-                      'border-dynamic-green/70 bg-dynamic-green/10 text-dynamic-green'
-                  )}
-                  disabled={isMatched}
-                  key={card.id}
-                  onClick={() => selectCard(card)}
-                  type="button"
-                >
-                  <span className="mb-2 block text-[10px] text-muted-foreground uppercase tracking-widest">
-                    {card.side === 'word' ? 'Word' : 'Definition'}
-                  </span>
-                  <span className="flex items-start justify-between gap-2">
-                    {card.label}
-                    {isMatched ? <Check className="h-4 w-4 shrink-0" /> : null}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
+        <LearnerVocabularyMatch
+          cards={cards}
+          finished={finished}
+          matchedIds={matchedIds}
+          matchedSet={matchedSet}
+          mismatchIds={mismatchIds}
+          resetPractice={resetPractice}
+          selectCard={selectCard}
+          selected={selected}
+          vocabularyCount={vocabulary.length}
+        />
       ) : null}
     </ContentCard>
   );

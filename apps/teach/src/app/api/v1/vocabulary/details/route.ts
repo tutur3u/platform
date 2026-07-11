@@ -1,6 +1,7 @@
 import * as cheerio from 'cheerio';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
+import { withSessionAuth } from '@/lib/api-auth';
 
 const OED_ORIGIN = 'https://www.oed.com';
 const OED_DETAILS_TIMEOUT_MS = 5_000;
@@ -32,11 +33,7 @@ function sanitizeHeadword(value: string, fallback: string) {
 function safeOedUrl(path: string | undefined) {
   const trimmedPath = path?.trim();
 
-  if (
-    !trimmedPath ||
-    !trimmedPath.startsWith('/') ||
-    trimmedPath.startsWith('//')
-  ) {
+  if (!trimmedPath?.startsWith('/') || trimmedPath.startsWith('//')) {
     return null;
   }
 
@@ -114,7 +111,7 @@ function extractEntryDetails(html: string, fallbackWord: string) {
   };
 }
 
-export async function GET(request: NextRequest) {
+async function loadVocabularyDetails(request: NextRequest) {
   const wordParam = request.nextUrl.searchParams.get('word')?.trim();
 
   if (wordParam) {
@@ -209,3 +206,9 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(emptyDictionaryDetails(wordParam));
   }
 }
+
+export const GET = withSessionAuth(loadVocabularyDetails, {
+  allowAppSessionAuth: { targetApp: 'teach' },
+  rateLimit: { maxRequests: 60, windowMs: 60_000 },
+  rateLimitKind: 'read',
+});

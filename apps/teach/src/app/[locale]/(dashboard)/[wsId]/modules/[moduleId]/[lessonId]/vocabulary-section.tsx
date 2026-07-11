@@ -5,102 +5,23 @@ import { Label } from '@tuturuuu/ui/label';
 import { Separator } from '@tuturuuu/ui/separator';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import Image from 'next/image';
+import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
+import {
+  emptyVocabulary,
+  normalizeVocabulary,
+  readImageAsDataUrl,
+  type VocabularyItem,
+  type VocabularySectionProps,
+  type VocabularySuggestion,
+} from '@/components/vocabulary/vocabulary-form-utils';
+import { VocabularySectionIntro } from '@/components/vocabulary/vocabulary-section-intro';
 
-interface Props {
-  wsId: string;
-  lessonId: string;
-}
-
-interface VocabularyItem {
-  id: string;
-  word: string;
-  pronunciation: string;
-  definition: string;
-  examples: string[];
-  imageUrl: string;
-}
-
-interface VocabularySuggestion {
-  beta: boolean;
-  definition?: string;
-  url: string | null;
-  word: string;
-}
-
-function emptyVocabulary(): VocabularyItem {
-  return {
-    id: '',
-    word: '',
-    pronunciation: '',
-    definition: '',
-    examples: [],
-    imageUrl: '',
-  };
-}
-
-function normalizeVocabulary(value: unknown): VocabularyItem[] {
-  if (!Array.isArray(value)) return [];
-
-  return value
-    .map((entry) => {
-      if (!entry || typeof entry !== 'object') return null;
-
-      const record = entry as Record<string, unknown>;
-      const word = typeof record.word === 'string' ? record.word.trim() : '';
-      const definition =
-        typeof record.definition === 'string' ? record.definition.trim() : '';
-
-      if (!word || !definition) return null;
-
-      const examples = Array.isArray(record.examples)
-        ? record.examples
-            .filter((example): example is string => typeof example === 'string')
-            .map((example) => example.trim())
-            .filter(Boolean)
-        : typeof record.examples === 'string'
-          ? record.examples
-              .split('\n')
-              .map((example) => example.trim())
-              .filter(Boolean)
-          : [];
-
-      return {
-        id:
-          typeof record.id === 'string' && record.id.trim().length > 0
-            ? record.id
-            : crypto.randomUUID(),
-        word,
-        pronunciation:
-          typeof record.pronunciation === 'string'
-            ? record.pronunciation.trim()
-            : '',
-        definition,
-        examples,
-        imageUrl:
-          typeof record.imageUrl === 'string'
-            ? record.imageUrl
-            : typeof record.image_url === 'string'
-              ? record.image_url
-              : '',
-      } satisfies VocabularyItem;
-    })
-    .filter((entry): entry is VocabularyItem => entry !== null);
-}
-
-function readImageAsDataUrl(file: File) {
-  return new Promise<string>((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (typeof reader.result === 'string') resolve(reader.result);
-      else reject(new Error('Could not read image.'));
-    };
-    reader.onerror = () => reject(reader.error ?? new Error('Upload failed.'));
-    reader.readAsDataURL(file);
-  });
-}
-
-export default function LessonVocabularySection({ wsId, lessonId }: Props) {
+export default function LessonVocabularySection({
+  wsId,
+  moduleId,
+}: VocabularySectionProps) {
+  const t = useTranslations('teachVocabulary');
   const [entries, setEntries] = useState<VocabularyItem[]>([]);
   const [draft, setDraft] = useState<VocabularyItem>(emptyVocabulary());
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -127,7 +48,7 @@ export default function LessonVocabularySection({ wsId, lessonId }: Props) {
         setError(null);
 
         const response = await fetch(
-          `/api/v1/workspaces/${wsId}/course-modules/${lessonId}/vocabulary`,
+          `/api/v1/workspaces/${wsId}/course-modules/${moduleId}/vocabulary`,
           {
             credentials: 'include',
           }
@@ -150,7 +71,7 @@ export default function LessonVocabularySection({ wsId, lessonId }: Props) {
         if (cancelled) return;
 
         console.error('Failed to load lesson vocabulary', loadError);
-        setError('Could not load vocabulary yet.');
+        setError(t('loadFailed'));
       } finally {
         if (!cancelled) {
           setIsLoading(false);
@@ -163,7 +84,7 @@ export default function LessonVocabularySection({ wsId, lessonId }: Props) {
     return () => {
       cancelled = true;
     };
-  }, [lessonId, wsId]);
+  }, [moduleId, t, wsId]);
 
   useEffect(() => {
     const query = draft.word.trim();
@@ -222,7 +143,7 @@ export default function LessonVocabularySection({ wsId, lessonId }: Props) {
 
     try {
       const response = await fetch(
-        `/api/v1/workspaces/${wsId}/course-modules/${lessonId}/vocabulary`,
+        `/api/v1/workspaces/${wsId}/course-modules/${moduleId}/vocabulary`,
         {
           method: 'PATCH',
           headers: {
@@ -245,7 +166,7 @@ export default function LessonVocabularySection({ wsId, lessonId }: Props) {
       setSearchedImages([]);
     } catch (saveError) {
       console.error('Failed to save lesson vocabulary', saveError);
-      setError('Could not save vocabulary. Please try again.');
+      setError(t('saveFailed'));
     } finally {
       setIsSaving(false);
     }
@@ -326,9 +247,7 @@ export default function LessonVocabularySection({ wsId, lessonId }: Props) {
       }
     } catch (fetchError) {
       console.error('Failed to load dictionary details', fetchError);
-      setError(
-        'Could not fetch dictionary details. You can type them manually.'
-      );
+      setError(t('detailsFailed'));
     } finally {
       setIsFetchingDetails(false);
     }
@@ -347,12 +266,12 @@ export default function LessonVocabularySection({ wsId, lessonId }: Props) {
     if (!file) return;
 
     if (!file.type.startsWith('image/')) {
-      setError('Please upload an image file.');
+      setError(t('imageFileRequired'));
       return;
     }
 
     if (file.size > 5 * 1024 * 1024) {
-      setError('Vocabulary images must be 5MB or smaller.');
+      setError(t('imageTooLarge'));
       return;
     }
 
@@ -361,7 +280,7 @@ export default function LessonVocabularySection({ wsId, lessonId }: Props) {
       updateDraft('imageUrl', imageUrl);
       setError(null);
     } catch {
-      setError('Could not upload the image. Please try another file.');
+      setError(t('imageUploadFailed'));
     }
   }
 
@@ -404,7 +323,7 @@ export default function LessonVocabularySection({ wsId, lessonId }: Props) {
       .filter(Boolean);
 
     if (!word || !definition) {
-      setError('Word and definition are required.');
+      setError(t('requiredFields'));
       return;
     }
 
@@ -440,14 +359,7 @@ export default function LessonVocabularySection({ wsId, lessonId }: Props) {
   return (
     <section className="mt-8 space-y-4 border-2 border-border bg-background p-6 shadow-[5px_5px_0_var(--border)]">
       <div className="flex items-center justify-between gap-4">
-        <div>
-          <h2 className="font-black text-lg">
-            Vocabulary Bank ({entries.length})
-          </h2>
-          <p className="text-muted-foreground text-sm">
-            Add lesson vocabulary with pronunciation, meaning, and examples.
-          </p>
-        </div>
+        <VocabularySectionIntro count={entries.length} />
       </div>
 
       <Separator className="border-border border-b-2" />
@@ -455,7 +367,7 @@ export default function LessonVocabularySection({ wsId, lessonId }: Props) {
       <div className="space-y-4 border-2 border-border bg-card p-5 shadow-[4px_4px_0_var(--border)]">
         <div className="grid gap-4 md:grid-cols-2">
           <div className="space-y-2">
-            <Label htmlFor="lesson-vocabulary-word">Word</Label>
+            <Label htmlFor="lesson-vocabulary-word">{t('word')}</Label>
             <div className="flex gap-2">
               <div className="relative flex-1">
                 <Input
@@ -470,7 +382,7 @@ export default function LessonVocabularySection({ wsId, lessonId }: Props) {
                     setShowSuggestions(true);
                   }}
                   onFocus={() => setShowSuggestions(true)}
-                  placeholder="Vocabulary word"
+                  placeholder={t('wordPlaceholder')}
                 />
 
                 {showSuggestions &&
@@ -479,7 +391,7 @@ export default function LessonVocabularySection({ wsId, lessonId }: Props) {
                   <div className="absolute z-20 mt-2 max-h-64 w-full overflow-y-auto border-2 border-border bg-card shadow-[4px_4px_0_var(--border)]">
                     {isSuggesting ? (
                       <div className="px-3 py-2 text-muted-foreground text-sm">
-                        Loading suggestions...
+                        {t('loadingSuggestions')}
                       </div>
                     ) : (
                       suggestions.map((suggestion) => (
@@ -502,7 +414,7 @@ export default function LessonVocabularySection({ wsId, lessonId }: Props) {
                           </span>
                           {suggestion.beta ? (
                             <span className="text-[10px] text-muted-foreground uppercase">
-                              beta
+                              {t('beta')}
                             </span>
                           ) : null}
                         </button>
@@ -517,14 +429,14 @@ export default function LessonVocabularySection({ wsId, lessonId }: Props) {
                 onClick={() => fetchDictionaryDetails(draft.word.trim())}
                 type="button"
               >
-                {isFetchingDetails ? 'Fetching...' : 'Fetch'}
+                {isFetchingDetails ? t('fetching') : t('fetch')}
               </button>
             </div>
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="lesson-vocabulary-pronunciation">
-              Pronunciation
+              {t('pronunciation')}
             </Label>
             <Input
               id="lesson-vocabulary-pronunciation"
@@ -532,29 +444,31 @@ export default function LessonVocabularySection({ wsId, lessonId }: Props) {
               onChange={(event) =>
                 updateDraft('pronunciation', event.target.value)
               }
-              placeholder="e.g. /ˈvɒk.ə.bjə.ler.i/"
+              placeholder={t('pronunciationPlaceholder')}
             />
           </div>
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="lesson-vocabulary-definition">Definition</Label>
+          <Label htmlFor="lesson-vocabulary-definition">
+            {t('definition')}
+          </Label>
           <Textarea
             id="lesson-vocabulary-definition"
             value={draft.definition}
             onChange={(event) => updateDraft('definition', event.target.value)}
-            placeholder="Meaning or teacher explanation"
+            placeholder={t('definitionPlaceholder')}
             rows={3}
           />
         </div>
 
         <div className="space-y-3">
-          <Label htmlFor="lesson-vocabulary-image">Image</Label>
+          <Label htmlFor="lesson-vocabulary-image">{t('image')}</Label>
           <div className="grid gap-3 md:grid-cols-[10rem_minmax(0,1fr)]">
             <div className="flex aspect-video items-center justify-center overflow-hidden border-2 border-border bg-background shadow-[3px_3px_0_var(--border)]">
               {draft.imageUrl ? (
                 <Image
-                  alt={draft.word ? `${draft.word} vocabulary` : 'Vocabulary'}
+                  alt={t('imageAlt', { word: draft.word || t('word') })}
                   className="h-full w-full object-cover"
                   height={180}
                   unoptimized
@@ -563,7 +477,7 @@ export default function LessonVocabularySection({ wsId, lessonId }: Props) {
                 />
               ) : (
                 <span className="px-3 text-center text-muted-foreground text-xs">
-                  No image
+                  {t('noImage')}
                 </span>
               )}
             </div>
@@ -584,19 +498,19 @@ export default function LessonVocabularySection({ wsId, lessonId }: Props) {
                   onClick={() => updateDraft('imageUrl', '')}
                   type="button"
                 >
-                  Remove image
+                  {t('removeImage')}
                 </button>
               ) : null}
 
               {/* Related Images Selector */}
               {isSearchingImages ? (
                 <div className="animate-pulse text-muted-foreground text-xs">
-                  Searching related images...
+                  {t('searchingImages')}
                 </div>
               ) : searchedImages.length > 0 ? (
                 <div className="space-y-1.5 pt-1">
                   <span className="font-semibold text-muted-foreground text-xs">
-                    Or select a related image:
+                    {t('selectRelatedImage')}
                   </span>
                   <div className="scrollbar-thin flex gap-2 overflow-x-auto pb-2">
                     {searchedImages.map((img) => (
@@ -631,14 +545,14 @@ export default function LessonVocabularySection({ wsId, lessonId }: Props) {
 
         <div className="space-y-3">
           <div className="flex items-center justify-between gap-3">
-            <Label htmlFor="lesson-vocabulary-example-0">Examples</Label>
+            <Label htmlFor="lesson-vocabulary-example-0">{t('examples')}</Label>
             <button
               className="border-2 border-border bg-card px-3 py-1.5 font-bold text-sm shadow-[2px_2px_0_var(--border)] disabled:opacity-40"
               disabled={isSaving || draft.examples.length >= 20}
               onClick={addExampleLine}
               type="button"
             >
-              + Add example
+              {t('addExample')}
             </button>
           </div>
 
@@ -654,7 +568,7 @@ export default function LessonVocabularySection({ wsId, lessonId }: Props) {
                   onChange={(event) =>
                     updateExampleLine(index, event.target.value)
                   }
-                  placeholder={`Example ${index + 1}`}
+                  placeholder={t('examplePlaceholder', { number: index + 1 })}
                 />
 
                 {draft.examples.length > 1 || example ? (
@@ -664,7 +578,7 @@ export default function LessonVocabularySection({ wsId, lessonId }: Props) {
                     onClick={() => removeExampleLine(index)}
                     type="button"
                   >
-                    Remove
+                    {t('remove')}
                   </button>
                 ) : null}
               </div>
@@ -682,10 +596,10 @@ export default function LessonVocabularySection({ wsId, lessonId }: Props) {
             type="button"
           >
             {isSaving
-              ? 'Saving...'
+              ? t('saving')
               : editingId
-                ? 'Save changes'
-                : 'Add vocabulary'}
+                ? t('saveChanges')
+                : t('addVocabulary')}
           </button>
 
           {(editingId ||
@@ -700,18 +614,16 @@ export default function LessonVocabularySection({ wsId, lessonId }: Props) {
               disabled={isSaving}
               type="button"
             >
-              Cancel
+              {t('cancel')}
             </button>
           )}
         </div>
       </div>
 
       {isLoading ? (
-        <p className="text-muted-foreground text-sm">Loading vocabulary...</p>
+        <p className="text-muted-foreground text-sm">{t('loading')}</p>
       ) : entries.length === 0 ? (
-        <p className="text-muted-foreground text-sm">
-          No vocabulary added for this lesson yet.
-        </p>
+        <p className="text-muted-foreground text-sm">{t('empty')}</p>
       ) : (
         <div className="grid gap-4 md:grid-cols-2">
           {entries.map((entry) => (
@@ -722,7 +634,7 @@ export default function LessonVocabularySection({ wsId, lessonId }: Props) {
               <div className="space-y-1">
                 {entry.imageUrl ? (
                   <Image
-                    alt={`${entry.word} vocabulary`}
+                    alt={t('imageAlt', { word: entry.word })}
                     className="aspect-video w-full border-2 border-border object-cover shadow-[3px_3px_0_var(--border)]"
                     height={360}
                     unoptimized
@@ -743,11 +655,11 @@ export default function LessonVocabularySection({ wsId, lessonId }: Props) {
               {entry.examples.length > 0 ? (
                 <div className="space-y-2">
                   <p className="font-bold text-xs uppercase tracking-wide">
-                    Examples
+                    {t('examples')}
                   </p>
                   <ul className="space-y-1 text-sm">
-                    {entry.examples.map((example) => (
-                      <li key={`${entry.id}-${example}`}>• {example}</li>
+                    {entry.examples.map((example, index) => (
+                      <li key={`${entry.id}-example-${index}`}>• {example}</li>
                     ))}
                   </ul>
                 </div>
@@ -759,7 +671,7 @@ export default function LessonVocabularySection({ wsId, lessonId }: Props) {
                   onClick={() => handleEdit(entry)}
                   type="button"
                 >
-                  Edit
+                  {t('edit')}
                 </button>
                 <button
                   className="border-2 border-destructive bg-destructive px-3 py-1.5 font-bold text-destructive-foreground text-sm shadow-[2px_2px_0_var(--border)] disabled:opacity-40"
@@ -767,7 +679,7 @@ export default function LessonVocabularySection({ wsId, lessonId }: Props) {
                   disabled={isSaving}
                   type="button"
                 >
-                  Delete
+                  {t('delete')}
                 </button>
               </div>
             </article>

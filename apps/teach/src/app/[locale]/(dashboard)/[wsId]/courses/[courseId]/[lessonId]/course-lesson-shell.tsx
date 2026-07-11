@@ -23,7 +23,7 @@ export default function CourseLessonShell({
 
       {showInlineVocabulary ? (
         <div className="mx-auto max-w-6xl px-4 pb-10 sm:px-6">
-          <LessonVocabularySection wsId={wsId} lessonId={lessonId} />
+          <LessonVocabularySection wsId={wsId} moduleId={lessonId} />
         </div>
       ) : null}
     </>

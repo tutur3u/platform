@@ -20,7 +20,7 @@ import '@tuturuuu/ui/globals.css';
 
 export { viewport } from '@tuturuuu/utils/common/nextjs';
 
-const shouldRenderVercelTelemetry = process.env.NODE_ENV === 'production';
+const shouldRenderVercelTelemetry = process.env.VERCEL_ENV === 'production';
 
 interface Props {
   children: ReactNode;
