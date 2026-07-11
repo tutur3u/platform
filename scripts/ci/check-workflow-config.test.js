@@ -708,12 +708,18 @@ test('TanStack migration E2E workflow keeps dual-stack and compare coverage', ()
   const cacheExportStep = steps.find(
     (step) => step.name === 'Configure trusted migration BuildKit cache exports'
   );
-  assert.ok(cacheExportStep);
   assert.equal(
-    cacheExportStep.if,
-    githubExpression(
-      "github.ref == 'refs/heads/main' && matrix.mode == 'tanstack-dual-stack'"
-    )
+    cacheExportStep,
+    undefined,
+    'migration E2E must restore shared BuildKit scopes without racing their owners'
+  );
+  assert.equal(
+    job.env?.DOCKER_WEB_CACHE_BACKEND_FROM,
+    'type=gha,scope=docker-backend,timeout=10m'
+  );
+  assert.equal(
+    job.env?.DOCKER_WEB_CACHE_TANSTACK_FROM,
+    'type=gha,scope=docker-tanstack-web-prod,timeout=10m'
   );
 
   const cleanupStep = steps.find(

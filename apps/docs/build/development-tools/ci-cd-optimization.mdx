@@ -194,11 +194,13 @@ one task while `.vercel/output` remains an in-job handoff to
 `vercel deploy --prebuilt`, not an uploaded artifact or generic cache.
 
 Docker and Rust verification use the same principle at their native cache
-layers. Docker setup and E2E jobs use shared GitHub BuildKit scopes per service;
-all shards restore, while only the first default-branch shard exports. Expensive
-web, TanStack, and backend images use `mode=max`; small leaf images use
-`mode=min` or restore-only caching. Turbo values enter image builds only as
-BuildKit secrets. Rust verify and deploy jobs share one pinned,
+layers. Each shared GitHub BuildKit scope has one trusted `main` writer: Docker
+setup owns web, TanStack, and storage scopes; Rust CI owns the backend scope;
+and E2E shard 1 owns the small leaf-service scopes. Production, other shards,
+and migration E2E restore without exporting. Expensive web, TanStack, and
+backend images use `mode=max`; validation-only development and small leaf
+images use `mode=min` or restore-only caching. Turbo values enter image builds
+only as BuildKit secrets. Rust verify and deploy jobs share one pinned,
 toolchain-aware Cargo cache, with writes restricted to protected branches.
 
 Flutter workflows cache dependencies and native tool state (pub, Gradle, and

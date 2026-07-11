@@ -773,7 +773,6 @@ function validateDockerSetupWorkflow(workflowContent) {
     '--cache-from type=gha,scope=docker-tanstack-web-prod',
     '--cache-to type=gha,scope=docker-tanstack-web-prod,mode=max',
     '--cache-from type=gha,scope=docker-backend',
-    '--cache-to type=gha,scope=docker-backend,mode=max',
     'uses: ./.github/actions/run-with-turbo-remote-cache',
     'crazy-max/ghaction-github-runtime@04d248b84655b509d8c44dc1d6f990c879747487',
     "github.actor != 'dependabot[bot]'",
@@ -794,6 +793,12 @@ function validateDockerSetupWorkflow(workflowContent) {
         `.github/workflows/docker-setup-check.yaml must include ${snippet} in both pull_request and push path filters.`
       );
     }
+  }
+
+  if (workflowContent.includes('--cache-to type=gha,scope=docker-backend')) {
+    errors.push(
+      '.github/workflows/docker-setup-check.yaml must leave the docker-backend cache restore-only; Rust CI owns that scope.'
+    );
   }
 
   for (const snippet of requiredSnippets) {

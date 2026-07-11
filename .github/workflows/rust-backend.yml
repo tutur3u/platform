@@ -213,7 +213,7 @@ jobs:
       - name: Build backend image
         run: |
           cache_to=()
-          if [[ "$GITHUB_REF" == "refs/heads/main" || "$GITHUB_REF" == "refs/heads/production" ]]; then
+          if [[ "$GITHUB_REF" == "refs/heads/main" ]]; then
             cache_to+=(--cache-to type=gha,scope=docker-backend,mode=max,timeout=10m,ignore-error=true)
           fi
 

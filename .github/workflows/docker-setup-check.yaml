@@ -164,8 +164,8 @@ jobs:
             if [ -n "${TURBO_TEAM:-}" ]; then turbo_secrets+=(--secret id=turbo_team,env=TURBO_TEAM); fi
             if [ -n "${TURBO_TOKEN:-}" ]; then turbo_secrets+=(--secret id=turbo_token,env=TURBO_TOKEN); fi
             cache_to=()
-            if [[ "$GITHUB_REF" == "refs/heads/main" || "$GITHUB_REF" == "refs/heads/production" ]]; then
-              cache_to+=(--cache-to type=gha,scope=docker-web-dev,mode=max,timeout=10m,ignore-error=true)
+            if [[ "$GITHUB_REF" == "refs/heads/main" ]]; then
+              cache_to+=(--cache-to type=gha,scope=docker-web-dev,mode=min,timeout=10m,ignore-error=true)
             fi
 
             docker buildx build --load \
@@ -193,7 +193,7 @@ jobs:
             if [ -n "${TURBO_TEAM:-}" ]; then turbo_secrets+=(--secret id=turbo_team,env=TURBO_TEAM); fi
             if [ -n "${TURBO_TOKEN:-}" ]; then turbo_secrets+=(--secret id=turbo_token,env=TURBO_TOKEN); fi
             cache_to=()
-            if [[ "$GITHUB_REF" == "refs/heads/main" || "$GITHUB_REF" == "refs/heads/production" ]]; then
+            if [[ "$GITHUB_REF" == "refs/heads/main" ]]; then
               cache_to+=(--cache-to type=gha,scope=docker-web-prod,mode=max,timeout=10m,ignore-error=true)
             fi
 
@@ -223,7 +223,7 @@ jobs:
             if [ -n "${TURBO_TEAM:-}" ]; then turbo_secrets+=(--secret id=turbo_team,env=TURBO_TEAM); fi
             if [ -n "${TURBO_TOKEN:-}" ]; then turbo_secrets+=(--secret id=turbo_token,env=TURBO_TOKEN); fi
             cache_to=()
-            if [[ "$GITHUB_REF" == "refs/heads/main" || "$GITHUB_REF" == "refs/heads/production" ]]; then
+            if [[ "$GITHUB_REF" == "refs/heads/main" ]]; then
               cache_to+=(--cache-to type=gha,scope=docker-tanstack-web-prod,mode=max,timeout=10m,ignore-error=true)
             fi
 
@@ -245,7 +245,7 @@ jobs:
       - name: Build storage unzip proxy image
         run: |
           cache_to=()
-          if [[ "$GITHUB_REF" == "refs/heads/main" || "$GITHUB_REF" == "refs/heads/production" ]]; then
+          if [[ "$GITHUB_REF" == "refs/heads/main" ]]; then
             cache_to+=(--cache-to type=gha,scope=docker-storage-unzip-proxy,mode=min,timeout=10m,ignore-error=true)
           fi
 
@@ -264,12 +264,6 @@ jobs:
 
       - name: Build backend image
         run: |
-          cache_to=()
-          if [[ "$GITHUB_REF" == "refs/heads/main" || "$GITHUB_REF" == "refs/heads/production" ]]; then
-            cache_to+=(--cache-to type=gha,scope=docker-backend,mode=max,timeout=10m,ignore-error=true)
-          fi
-
           docker buildx build --load \
             --cache-from type=gha,scope=docker-backend,timeout=10m \
-            "${cache_to[@]}" \
             -f apps/backend/Dockerfile .

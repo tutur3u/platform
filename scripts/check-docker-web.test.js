@@ -175,6 +175,15 @@ test('validateDockerSetupWorkflow keeps TanStack Docker paths covered', () => {
   assert.match(
     validateDockerSetupWorkflow(
       workflowContent.replace(
+        '--cache-from type=gha,scope=docker-backend,timeout=10m',
+        '--cache-from type=gha,scope=docker-backend,timeout=10m --cache-to type=gha,scope=docker-backend,mode=max'
+      )
+    ).join('\n'),
+    /Rust CI owns that scope/
+  );
+  assert.match(
+    validateDockerSetupWorkflow(
+      workflowContent.replace(
         'Free runner disk before Docker image builds',
         'Free runner disk after Docker image builds'
       )

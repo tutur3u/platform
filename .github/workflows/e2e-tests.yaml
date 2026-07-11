@@ -104,16 +104,12 @@ jobs:
         if: ${{ github.ref == 'refs/heads/main' && matrix.shard == 1 }}
         run: |
           {
-            echo 'DOCKER_WEB_CACHE_BACKEND_TO=type=gha,scope=docker-backend,mode=max,timeout=10m,ignore-error=true'
             echo 'DOCKER_WEB_CACHE_CHAT_REALTIME_TO=type=gha,scope=docker-chat-realtime,mode=min,timeout=10m,ignore-error=true'
             echo 'DOCKER_WEB_CACHE_HIVE_TO=type=gha,scope=docker-hive-prod,mode=min,timeout=10m,ignore-error=true'
             echo 'DOCKER_WEB_CACHE_HIVE_REALTIME_TO=type=gha,scope=docker-hive-realtime,mode=min,timeout=10m,ignore-error=true'
             echo 'DOCKER_WEB_CACHE_MARKITDOWN_TO=type=gha,scope=docker-markitdown,mode=min,timeout=10m,ignore-error=true'
             echo 'DOCKER_WEB_CACHE_MEET_REALTIME_TO=type=gha,scope=docker-meet-realtime,mode=min,timeout=10m,ignore-error=true'
-            echo 'DOCKER_WEB_CACHE_STORAGE_UNZIP_TO=type=gha,scope=docker-storage-unzip-proxy,mode=min,timeout=10m,ignore-error=true'
             echo 'DOCKER_WEB_CACHE_SUPERMEMORY_TO=type=gha,scope=docker-supermemory,mode=min,timeout=10m,ignore-error=true'
-            echo 'DOCKER_WEB_CACHE_TANSTACK_TO=type=gha,scope=docker-tanstack-web-prod,mode=max,timeout=10m,ignore-error=true'
-            echo 'DOCKER_WEB_CACHE_WEB_TO=type=gha,scope=docker-web-prod,mode=max,timeout=10m,ignore-error=true'
           } >> "$GITHUB_ENV"
 
       - name: Prepare trusted Turbo BuildKit secrets
@@ -401,14 +397,6 @@ jobs:
 
       - name: Expose GitHub cache runtime to BuildKit
         uses: crazy-max/ghaction-github-runtime@04d248b84655b509d8c44dc1d6f990c879747487 # v4.0.0
-
-      - name: Configure trusted migration BuildKit cache exports
-        if: ${{ github.ref == 'refs/heads/main' && matrix.mode == 'tanstack-dual-stack' }}
-        run: |
-          {
-            echo 'DOCKER_WEB_CACHE_BACKEND_TO=type=gha,scope=docker-backend,mode=max,timeout=10m,ignore-error=true'
-            echo 'DOCKER_WEB_CACHE_TANSTACK_TO=type=gha,scope=docker-tanstack-web-prod,mode=max,timeout=10m,ignore-error=true'
-          } >> "$GITHUB_ENV"
 
       - name: Prepare trusted Turbo BuildKit secrets
         if: ${{ github.ref == 'refs/heads/main' && github.actor != 'dependabot[bot]' }}

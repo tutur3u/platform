@@ -255,13 +255,15 @@ formatting behavior, or repo-wide verification.
 - If local type-check passes but CI fails from stale incremental state, rerun
   with forced cache invalidation before changing unrelated code.
 - Docker verification workflows should use `docker buildx build --load` plus
-  shared `type=gha` cache scopes per service image. All E2E shards restore; only
-  shard 1 on the protected default branch exports. Use `mode=max` for expensive
-  web, TanStack, and backend scopes, and `mode=min` or restore-only caching for
-  leaf images. Bound cache operations and tolerate cache-service errors. Pass
-  Turbo remote-cache values as optional BuildKit secrets for build `RUN` steps;
-  never bake those values into image layers, args, labels, or committed env
-  files.
+  shared `type=gha` cache scopes per service image. Give every scope one trusted
+  `main` writer: Docker setup owns web, TanStack, development-web, and storage;
+  Rust CI owns backend; E2E shard 1 owns leaf sidecars. Production, other E2E
+  shards, and migration E2E restore only. Use `mode=max` for expensive web,
+  TanStack, and backend scopes, and `mode=min` or restore-only caching for the
+  validation-only development image and leaf images. Bound cache operations
+  and tolerate cache-service errors. Pass Turbo remote-cache values as optional
+  BuildKit secrets for build `RUN` steps; never bake those values into image
+  layers, args, labels, or committed env files.
 - Workspace packages with direct `tsc` build scripts must declare
   `typescript` in their own `devDependencies`. Filtered Docker
   installs such as the Hive production image do not install root-only dev tools,

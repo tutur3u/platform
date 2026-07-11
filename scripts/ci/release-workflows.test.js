@@ -808,9 +808,12 @@ test('E2E workflow frees runner disk before loading cached Docker images', () =>
     e2eJob,
     /github\.ref == 'refs\/heads\/main' && matrix\.shard == 1/u
   );
-  assert.match(e2eJob, /scope=docker-web-prod,mode=max/u);
-  assert.match(e2eJob, /scope=docker-backend,mode=max/u);
   assert.match(e2eJob, /scope=docker-chat-realtime,mode=min/u);
+  assert.match(e2eJob, /scope=docker-hive-prod,mode=min/u);
+  assert.doesNotMatch(e2eJob, /DOCKER_WEB_CACHE_WEB_TO/u);
+  assert.doesNotMatch(e2eJob, /DOCKER_WEB_CACHE_BACKEND_TO/u);
+  assert.doesNotMatch(e2eJob, /DOCKER_WEB_CACHE_TANSTACK_TO/u);
+  assert.doesNotMatch(e2eJob, /DOCKER_WEB_CACHE_STORAGE_UNZIP_TO/u);
   assert.match(e2eJob, /DOCKER_WEB_TURBO_TOKEN_SECRET_FILE/u);
   assert.match(e2eJob, /github\.actor != 'dependabot\[bot\]'/u);
   assert.match(
@@ -904,12 +907,13 @@ test('E2E workflow runs TanStack migration dual-stack and compare smoke jobs', (
   assert.match(migrationJob, /if-no-files-found: ignore/u);
   assert.match(migrationJob, /retention-days: 7/u);
   assert.match(migrationJob, /if: \$\{\{ failure\(\) \}\}/u);
-  assert.match(
+  assert.match(migrationJob, /DOCKER_WEB_CACHE_BACKEND_FROM: type=gha/u);
+  assert.match(migrationJob, /DOCKER_WEB_CACHE_TANSTACK_FROM: type=gha/u);
+  assert.doesNotMatch(
     migrationJob,
-    /github\.ref == 'refs\/heads\/main' && matrix\.mode == 'tanstack-dual-stack'/u
+    /Configure trusted BuildKit cache exports/u
   );
-  assert.match(migrationJob, /scope=docker-backend,mode=max/u);
-  assert.match(migrationJob, /scope=docker-tanstack-web-prod,mode=max/u);
+  assert.doesNotMatch(migrationJob, /DOCKER_WEB_CACHE_[A-Z_]+_TO/u);
   assert.match(
     migrationJob,
     /docker compose -f docker-compose\.tanstack-dual\.yml down \|\| true/u

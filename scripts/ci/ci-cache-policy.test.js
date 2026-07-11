@@ -356,6 +356,60 @@ test('manual BuildKit GHA cache jobs expose the pinned runtime context', () => {
   }
 });
 
+test('BuildKit cache scopes have one protected default-branch writer', () => {
+  const workflows = new Map(
+    ['docker-setup-check.yaml', 'e2e-tests.yaml', 'rust-backend.yml'].map(
+      (workflowName) => [workflowName, readWorkflow(workflowName)]
+    )
+  );
+  const scopeOwners = new Map([
+    ['docker-web-dev', 'docker-setup-check.yaml'],
+    ['docker-web-prod', 'docker-setup-check.yaml'],
+    ['docker-tanstack-web-prod', 'docker-setup-check.yaml'],
+    ['docker-storage-unzip-proxy', 'docker-setup-check.yaml'],
+    ['docker-backend', 'rust-backend.yml'],
+    ['docker-chat-realtime', 'e2e-tests.yaml'],
+    ['docker-hive-prod', 'e2e-tests.yaml'],
+    ['docker-hive-realtime', 'e2e-tests.yaml'],
+    ['docker-markitdown', 'e2e-tests.yaml'],
+    ['docker-meet-realtime', 'e2e-tests.yaml'],
+    ['docker-supermemory', 'e2e-tests.yaml'],
+  ]);
+
+  for (const [scope, expectedOwner] of scopeOwners) {
+    const exportPattern = new RegExp(
+      `(?:--cache-to |DOCKER_WEB_CACHE_[A-Z_]+_TO=)type=gha,scope=${scope},`,
+      'gu'
+    );
+    const owners = [...workflows].flatMap(([workflowName, source]) =>
+      [...source.matchAll(exportPattern)].map(() => workflowName)
+    );
+
+    assert.deepEqual(owners, [expectedOwner], `${scope} must have one writer`);
+  }
+
+  const dockerSetup = workflows.get('docker-setup-check.yaml');
+  const rustBackend = workflows.get('rust-backend.yml');
+  const e2e = workflows.get('e2e-tests.yaml');
+  assert.doesNotMatch(
+    dockerSetup,
+    /\[\[ "\$GITHUB_REF" == "refs\/heads\/main" \|\| "\$GITHUB_REF" == "refs\/heads\/production" \]\]/u
+  );
+  assert.doesNotMatch(
+    rustBackend,
+    /\[\[ "\$GITHUB_REF" == "refs\/heads\/main" \|\| "\$GITHUB_REF" == "refs\/heads\/production" \]\]/u
+  );
+  assert.match(
+    dockerSetup,
+    /scope=docker-web-dev,mode=min/u,
+    'the validation-only dev image should not export intermediate layers'
+  );
+  assert.doesNotMatch(
+    e2e,
+    /Configure trusted migration BuildKit cache exports/u
+  );
+});
+
 test('every uploaded artifact declares retention and missing-file behavior', () => {
   for (const workflowName of listWorkflowFiles()) {
     for (const step of readStepBlocks(readWorkflow(workflowName))) {
