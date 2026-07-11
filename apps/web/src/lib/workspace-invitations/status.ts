@@ -90,10 +90,37 @@ function toWorkspaceSummary(
 
 async function normalizeDirectWorkspaceId(
   admin: TypedSupabaseClient,
-  workspaceId: string
+  workspaceId: string,
+  userId: string
 ) {
   if (isWorkspaceUuidLiteral(workspaceId)) {
     return workspaceId;
+  }
+
+  if (workspaceId.trim().toLowerCase() === 'personal') {
+    const { data: memberships, error: membershipsError } = await admin
+      .from('workspace_members')
+      .select('ws_id')
+      .eq('user_id', userId);
+
+    if (membershipsError) throw membershipsError;
+
+    const workspaceIds = (memberships ?? []).map(({ ws_id }) => ws_id);
+    if (workspaceIds.length === 0) {
+      throw new Error('Personal workspace not found');
+    }
+
+    const { data: workspace, error: workspaceError } = await admin
+      .from('workspaces')
+      .select('id')
+      .eq('personal', true)
+      .in('id', workspaceIds)
+      .maybeSingle();
+
+    if (workspaceError) throw workspaceError;
+    if (!workspace) throw new Error('Personal workspace not found');
+
+    return workspace.id;
   }
 
   return normalizeWorkspaceId(workspaceId, admin);
@@ -275,7 +302,8 @@ export async function getWorkspaceInviteStatus(
 ): Promise<WorkspaceInviteStatusResult> {
   const normalizedWorkspaceId = await normalizeDirectWorkspaceId(
     admin,
-    workspaceId
+    workspaceId,
+    userId
   );
   const [candidateEmails, memberWorkspaceIds, directInvites] =
     await Promise.all([

@@ -255,6 +255,33 @@ describe('workspace invitation status helpers', () => {
     expect(result.status).toBe('member');
   });
 
+  it('resolves the personal workspace alias with the authenticated user id', async () => {
+    const admin = createAdminClientMock({
+      members: [{ user_id: userId, ws_id: workspaceId }],
+      workspaces: [
+        {
+          avatar_url: null,
+          handle: null,
+          id: workspaceId,
+          logo_url: null,
+          name: 'Personal Workspace',
+          personal: true,
+        },
+      ],
+    });
+
+    const result = await getWorkspaceInviteStatus(admin as never, {
+      authEmail: 'user@example.com',
+      userId,
+      workspaceId: 'personal',
+    });
+
+    expect(result).toMatchObject({
+      status: 'member',
+      workspace: { id: workspaceId, personal: true },
+    });
+  });
+
   it('returns none when there is no membership or pending invite', async () => {
     const admin = createAdminClientMock({ privateEmail: null });
 
