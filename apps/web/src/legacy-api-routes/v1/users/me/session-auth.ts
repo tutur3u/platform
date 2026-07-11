@@ -10,6 +10,7 @@ const CURRENT_USER_APP_SESSION_TARGETS = [
   'inventory',
   'learn',
   'mail',
+  'meet',
   'mind',
   'mira',
   'nova',
