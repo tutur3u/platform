@@ -1,5 +1,37 @@
 # Changelog
 
+## [0.14.0](https://github.com/tutur3u/platform/compare/finance-v0.13.0...finance-v0.14.0) (2026-07-11)
+
+
+### Features
+
+* **finance:** move workspace-finance API routes from apps/web to apps/finance ([bafd61e](https://github.com/tutur3u/platform/commit/bafd61e6394fc2bb9a11efb364ad6c88cd755a4b))
+* **finance:** port the full finance settings into the finance app ([8c20ffd](https://github.com/tutur3u/platform/commit/8c20ffd3d9b4ed17611166cbcda99084f6cdd85e))
+* **finance:** ready apps/finance to host finance API routes ([37c0150](https://github.com/tutur3u/platform/commit/37c0150a5e5821afaefe9aa5a732994673eb9e03))
+* **satellite:** add sidebar apps launcher ([b2f6fcd](https://github.com/tutur3u/platform/commit/b2f6fcd55d7cb5c100e31d36f9f329817ecfe5e9))
+* **satellite:** improve apps launcher picker ([a3e92cb](https://github.com/tutur3u/platform/commit/a3e92cb1a54e3cb45bc1697e8e70efd0776d2a23))
+* **tasks:** add task templates ([8d0700a](https://github.com/tutur3u/platform/commit/8d0700ad255c7b5874bfa065575df6b1cde34063))
+* **tasks:** consolidate tasks entry and sidebar controls ([56e80eb](https://github.com/tutur3u/platform/commit/56e80eb5c60d4b4e56f2953c7978038f1ebe9c08))
+
+
+### Bug Fixes
+
+* **auth:** share account preference cookies ([8c1848a](https://github.com/tutur3u/platform/commit/8c1848a941c1b3f91337104c975e4bc0d8f68fc9))
+* **build:** restore repo check ([4def830](https://github.com/tutur3u/platform/commit/4def830f463ea8a9c31af8e982eab716e9bd5f72))
+* **finance:** add default wallet settings copy ([3ba8a1b](https://github.com/tutur3u/platform/commit/3ba8a1b75a69538b28021ac03e7a5f091f29234c))
+* **finance:** apply invoice defaults and i18n coverage ([a5a7a26](https://github.com/tutur3u/platform/commit/a5a7a26c5cf9f6479010624ace6a18dbeb87f0dd))
+* **finance:** apply invoice defaults and i18n coverage ([97fabad](https://github.com/tutur3u/platform/commit/97fabad7b0815da7afa009fea6a5d1abb983c040))
+* **finance:** stabilize subscription invoice checkout ([742c163](https://github.com/tutur3u/platform/commit/742c163bc8fa94acf3de03feb4ff3ef026419a4e))
+* **i18n:** catch conditional translation keys ([bb303c5](https://github.com/tutur3u/platform/commit/bb303c5bdb068c073fb1059cb1f62b2bf6d84220))
+* **i18n:** catch forwarded translator keys ([cd67f48](https://github.com/tutur3u/platform/commit/cd67f48af3a9fe55073c006527387db1f17bfdad))
+* **tasks:** restore tracked task descriptions ([f892ae2](https://github.com/tutur3u/platform/commit/f892ae23dfec41c2d25649b97a628d8cdcd1fa5d))
+* update launchable app catalog ([cb31207](https://github.com/tutur3u/platform/commit/cb312076aee227de9a8f99105d681911d14a63ac))
+
+
+### Performance Improvements
+
+* **ci:** enable repository-wide remote caching ([6250f91](https://github.com/tutur3u/platform/commit/6250f91d745ef987a4fc86c797aedf41542f421b))
+
 ## [0.13.0](https://github.com/tutur3u/platform/compare/finance-v0.12.0...finance-v0.13.0) (2026-07-11)
 
 

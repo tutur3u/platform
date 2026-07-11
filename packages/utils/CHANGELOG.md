@@ -1,5 +1,38 @@
 # Changelog
 
+## [0.15.0](https://github.com/tutur3u/platform/compare/utils-v0.14.0...utils-v0.15.0) (2026-07-11)
+
+
+### Features
+
+* **contacts:** migrate users attendance; add satellite-safe workspace-user link helper ([8f53453](https://github.com/tutur3u/platform/commit/8f534533793af8d25e7c2eca6e0147e459d78bbe))
+* **contacts:** migrate users topic-announcements module ([01e19ab](https://github.com/tutur3u/platform/commit/01e19ab60461ccd94a0374bed74ce6e4d5d38a3b))
+* **contacts:** scaffold contacts.tuturuuu.com satellite shell + monorepo registration ([7e335fc](https://github.com/tutur3u/platform/commit/7e335fc036c4a45ed189095ecd10a43ee002294b))
+* **infrastructure:** add abuse protection controls ([0e09692](https://github.com/tutur3u/platform/commit/0e09692a553cb10fbbb521e921951c2a6863281d))
+* **infrastructure:** add rate-limit appeals ([f1e50e9](https://github.com/tutur3u/platform/commit/f1e50e9fd805dca6c80da8daab60ed24199f24ab))
+* **pay:** scaffold apps/pay satellite (pay.tuturuuu.com, port 7826) ([3d6e45c](https://github.com/tutur3u/platform/commit/3d6e45cca6a315fe67213e438144b73103bae2f5))
+* **tools:** add apps/tools public tools app, remove apps/qr ([204aae8](https://github.com/tutur3u/platform/commit/204aae89a04b4163f2859561f8e832526642e271))
+
+
+### Bug Fixes
+
+* **auth:** share account preference cookies ([8c1848a](https://github.com/tutur3u/platform/commit/8c1848a941c1b3f91337104c975e4bc0d8f68fc9))
+* **ci:** keep cache components enabled in production ([75e6e2b](https://github.com/tutur3u/platform/commit/75e6e2bbbf6fa432bc496ee95b75ade5f8847f9f))
+* **cli:** preserve markdown tables in task descriptions ([9faf8ba](https://github.com/tutur3u/platform/commit/9faf8ba44b92565a9dfc2949c496654fc1fea9b3))
+* **infrastructure:** default docker web to native builds ([7d89f00](https://github.com/tutur3u/platform/commit/7d89f004f75ab12eddc3cb92df5a1e6a7255fe0d))
+* **infrastructure:** restore canonical auth host access ([9f6715f](https://github.com/tutur3u/platform/commit/9f6715fb1c5a89598556cba33b16938b76995fc6))
+* restore apps launcher categories ([5c5b571](https://github.com/tutur3u/platform/commit/5c5b571ce920013bcfa5f327c4bb208ea9fbf23e))
+* **satellite:** widen apps launcher grid ([90e3106](https://github.com/tutur3u/platform/commit/90e31066830f535a7fdd0f7bc249e5bc8b273cfc))
+* **security:** limit auth recovery code attempts ([72d454c](https://github.com/tutur3u/platform/commit/72d454c507b0d4b7e69c7b38ad2099dbb83193b2))
+* **tasks:** route native personal task moves normally ([5bbba3c](https://github.com/tutur3u/platform/commit/5bbba3c3f193e722cc87cdfe2eb2734f61442cd0))
+* update launchable app catalog ([cb31207](https://github.com/tutur3u/platform/commit/cb312076aee227de9a8f99105d681911d14a63ac))
+* **web:** fail open without redis ([74bfcc7](https://github.com/tutur3u/platform/commit/74bfcc7ea5f188a56f49802c6a48bde0b109e02d))
+
+
+### Performance Improvements
+
+* **ci:** enable repository-wide remote caching ([6250f91](https://github.com/tutur3u/platform/commit/6250f91d745ef987a4fc86c797aedf41542f421b))
+
 ## [0.14.0](https://github.com/tutur3u/platform/compare/utils-v0.13.0...utils-v0.14.0) (2026-07-11)
 
 

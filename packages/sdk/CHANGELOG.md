@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.14.0](https://github.com/tutur3u/platform/compare/sdk-v0.13.2...sdk-v0.14.0) (2026-07-11)
+
+
+### Features
+
+* **cli:** add task search ([b8ec86f](https://github.com/tutur3u/platform/commit/b8ec86ffd7bf401d32ac29f7c4db0ee60565b717))
+* **sdk:** add external project operator commands ([729ab49](https://github.com/tutur3u/platform/commit/729ab4996b6e7e97efdecae72077986b8a6dcbce))
+* **tasks:** add task templates ([8d0700a](https://github.com/tutur3u/platform/commit/8d0700ad255c7b5874bfa065575df6b1cde34063))
+
+
+### Bug Fixes
+
+* **cli:** preserve markdown tables in task descriptions ([9faf8ba](https://github.com/tutur3u/platform/commit/9faf8ba44b92565a9dfc2949c496654fc1fea9b3))
+* **cli:** route finance and calendar APIs to app hosts ([aa5c932](https://github.com/tutur3u/platform/commit/aa5c932871bf6a08f8031884eeaf90ddddd3ba33))
+* **external-apps:** allow signed asset uploads ([0d83b3b](https://github.com/tutur3u/platform/commit/0d83b3b50b235faf5894539a18c955ad0432e0b3))
+* **tasks:** support personal external task moves ([83cee1f](https://github.com/tutur3u/platform/commit/83cee1ffaefe74c22e779268cdcdd8973280eaa0))
+* **tasks:** support personal external terminal defaults ([50434cb](https://github.com/tutur3u/platform/commit/50434cb9849a65dd8c77f6b030b27a4bd76125e4))
+
 ## [0.13.2](https://github.com/tutur3u/platform/compare/sdk-v0.13.1...sdk-v0.13.2) (2026-07-11)
 
 
