@@ -71,7 +71,6 @@ test.describe('Post email queue production scale', () => {
   });
 
   test('keeps approved queued posts observable without treating them as pending approval', async ({
-    page,
     request,
   }) => {
     test.setTimeout(240_000);
@@ -143,19 +142,9 @@ test.describe('Post email queue production scale', () => {
         )
       ).toBe(false);
 
-      await page.goto(
-        `/en/${fixture.workspaceId}/posts?${postsQuery({
-          approvalStatus: 'APPROVED',
-          queueStatus: 'queued',
-        })}`,
-        { waitUntil: 'domcontentloaded' }
-      );
-
-      await expect(page.getByRole('heading', { name: /Posts/i })).toBeVisible();
-      await expect(page.getByText('Queued for delivery').first()).toBeVisible();
-      await expect(page.getByText('Delivery Diagnostics')).toBeVisible();
-      await expect(page.getByText('Review Stage')).toBeVisible();
-      await expect(page.getByText('Delivery Status').first()).toBeVisible();
+      // TODO(#4956): Re-home the Posts UI assertions in a Contacts satellite
+      // E2E suite. This web-only stack still owns the API and cron coverage,
+      // but /posts now redirects to contacts.tuturuuu.localhost.
 
       const cronResponse = await request.get(
         '/api/cron/process-post-email-queue?debug=1&limit=200&sendLimit=200',

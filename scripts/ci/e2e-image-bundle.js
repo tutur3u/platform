@@ -7,7 +7,10 @@ const {
   buildBlueGreenServices,
   getBlueGreenDeploymentBuildServices,
 } = require('../docker-web/blue-green.js');
-const { PROD_COMPOSE_FILE } = require('../docker-web/compose.js');
+const {
+  PROD_COMPOSE_FILE,
+  runCommand: runDockerCommand,
+} = require('../docker-web/compose.js');
 const { createLocalE2EProcessEnv } = require('../e2e-local-environment.js');
 const {
   DEFAULT_ENV_FILE,
@@ -317,6 +320,7 @@ async function createRunScopedImage(
 async function publishBundle(
   options,
   {
+    buildRun = runDockerCommand,
     buildServices = buildBlueGreenServices,
     cleanup = cleanupBundle,
     env = process.env,
@@ -341,7 +345,7 @@ async function publishBundle(
     composeGlobalArgs: ['--project-name', options.producerProject],
     env: buildEnv,
     rootDir: ROOT_DIR,
-    runCommand: run,
+    runCommand: buildRun,
     services: manifest.map((entry) => entry.service),
   });
 

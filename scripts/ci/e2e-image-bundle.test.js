@@ -131,6 +131,13 @@ test('bundle build env pins metadata without changing production helpers', () =>
 
 test('publish builds the planned services once and pushes the ready marker last', async () => {
   const calls = [];
+  const buildResult = {
+    code: 0,
+    signal: null,
+    stderr: '',
+    stdout: '',
+    timedOut: false,
+  };
   let buildOptions;
   let visibilityRepository;
 
@@ -141,6 +148,7 @@ test('publish builds the planned services once and pushes the ready marker last'
       tagPrefix: TAG_PREFIX,
     },
     {
+      buildRun: async () => buildResult,
       buildServices: async (options) => {
         buildOptions = options;
       },
@@ -153,6 +161,10 @@ test('publish builds the planned services once and pushes the ready marker last'
   );
 
   assert.deepEqual(buildOptions.services, getBundleServices({}));
+  assert.equal(
+    await buildOptions.runCommand('docker', ['version']),
+    buildResult
+  );
   assert.equal(visibilityRepository, REPOSITORY);
   assert.deepEqual(calls.at(-1), [
     'docker',
