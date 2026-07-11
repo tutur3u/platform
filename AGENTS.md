@@ -66,7 +66,8 @@ surface you are changing:
 - Do not modify, format, stage, commit, delete, rename, or clean up files you
   did not intentionally touch.
 - Do not use destructive Git or filesystem commands unless the user clearly asks
-  for that operation and the scope is explicit.
+  for that operation and the scope is explicit, except for the narrowly scoped
+  post-merge worktree and local task-branch cleanup mandated below.
 
 ## 3. Mandatory Actions
 
