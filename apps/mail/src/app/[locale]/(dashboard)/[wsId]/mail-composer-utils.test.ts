@@ -1,6 +1,7 @@
 import type { MailMailbox } from '@tuturuuu/internal-api';
 import { describe, expect, it } from 'vitest';
 import {
+  applyAiDraftToBody,
   buildComposerInitialBody,
   getComposerWarnings,
 } from './mail-composer-utils';
@@ -30,6 +31,20 @@ describe('buildComposerInitialBody', () => {
     expect(body.html.indexOf('data-mail-signature')).toBeLessThan(
       body.html.indexOf('<blockquote>')
     );
+  });
+});
+
+describe('applyAiDraftToBody', () => {
+  it('preserves the editable signature and quoted thread context', () => {
+    const existing =
+      '<p>Old draft</p><div data-mail-signature="true"><p>--</p><p>Phúc</p></div><blockquote><p>Earlier</p></blockquote>';
+
+    const result = applyAiDraftToBody(existing, 'New draft\n\nThank you.');
+
+    expect(result).toContain('<p>New draft</p>');
+    expect(result).toContain('data-mail-signature="true"');
+    expect(result).toContain('<blockquote><p>Earlier</p></blockquote>');
+    expect(result).not.toContain('Old draft');
   });
 });
 

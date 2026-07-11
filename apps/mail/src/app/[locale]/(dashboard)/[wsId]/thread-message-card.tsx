@@ -43,10 +43,28 @@ export function ThreadMessageCard({
       <AccordionTrigger className="px-4 py-3 hover:no-underline" showChevron>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <span className="truncate font-semibold">{displayName}</span>
+            <span className="min-w-0 truncate font-semibold">
+              {displayName}
+              {message.fromName ? (
+                <span className="ml-1.5 font-normal text-muted-foreground">
+                  &lt;{message.fromAddress}&gt;
+                </span>
+              ) : null}
+            </span>
             {message.deliveryRoute === 'catch_all' ? (
               <Badge variant="outline">{t('catch_all')}</Badge>
             ) : null}
+            {message.labels.map((label) => (
+              <Badge className="gap-1.5" key={label.id} variant="secondary">
+                <span
+                  className="size-1.5 rounded-full bg-foreground/30"
+                  style={
+                    label.color ? { backgroundColor: label.color } : undefined
+                  }
+                />
+                {label.name}
+              </Badge>
+            ))}
             <span className="ml-auto shrink-0 text-muted-foreground text-xs">
               {formatDate(message.receivedAt ?? message.sentAt)}
             </span>
@@ -63,13 +81,19 @@ export function ThreadMessageCard({
               {t('message_details')}
             </summary>
             <dl className="mt-3 grid gap-2 rounded-xl bg-foreground/[0.035] p-3 text-xs">
-              <Detail label={t('from')} value={message.fromAddress} />
               <Detail
-                label={t('to')}
-                value={message.recipients
-                  .filter((recipient) => recipient.kind === 'to')
-                  .map((recipient) => recipient.address)
-                  .join(', ')}
+                label={t('from')}
+                value={
+                  message.fromName
+                    ? `${message.fromName} <${message.fromAddress}>`
+                    : message.fromAddress
+                }
+              />
+              <Detail label={t('to')} value={formatRecipients(message, 'to')} />
+              <Detail label={t('cc')} value={formatRecipients(message, 'cc')} />
+              <Detail
+                label={t('bcc')}
+                value={formatRecipients(message, 'bcc')}
               />
               {message.observedRecipient ? (
                 <Detail
@@ -123,6 +147,20 @@ export function ThreadMessageCard({
       </AccordionContent>
     </AccordionItem>
   );
+}
+
+function formatRecipients(
+  message: MailMessageDetail,
+  kind: 'bcc' | 'cc' | 'to'
+) {
+  return message.recipients
+    .filter((recipient) => recipient.kind === kind)
+    .map((recipient) =>
+      recipient.displayName
+        ? `${recipient.displayName} <${recipient.address}>`
+        : recipient.address
+    )
+    .join(', ');
 }
 
 function Detail({ label, value }: { label: string; value: string }) {

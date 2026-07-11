@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { mailDraftPayloadSchema, sendMailPayloadSchema } from './schemas';
+import {
+  generateMailAiDraftSchema,
+  mailDraftPayloadSchema,
+  sendMailPayloadSchema,
+  suggestMailLabelsSchema,
+} from './schemas';
 
 describe('mail composition schemas', () => {
   it('allows recipient-free autosaved drafts', () => {
@@ -19,5 +24,27 @@ describe('mail composition schemas', () => {
         to: [],
       }).success
     ).toBe(true);
+  });
+
+  it('retains validated recipient display names separately from addresses', () => {
+    const payload = mailDraftPayloadSchema.parse({
+      recipientDisplayNames: { 'phucvo@tuturuuu.com': 'Võ Hoàng Phúc' },
+      subject: 'Hello',
+      to: ['phucvo@tuturuuu.com'],
+    });
+
+    expect(payload.recipientDisplayNames).toEqual({
+      'phucvo@tuturuuu.com': 'Võ Hoàng Phúc',
+    });
+  });
+
+  it('requires explicit instructions for AI drafts and threads for classification', () => {
+    expect(
+      generateMailAiDraftSchema.safeParse({ instructions: '', mode: 'draft' })
+        .success
+    ).toBe(false);
+    expect(
+      suggestMailLabelsSchema.safeParse({ action: 'classify' }).success
+    ).toBe(false);
   });
 });

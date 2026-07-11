@@ -94,7 +94,11 @@ export function toMailbox(
 
 export function toLabel(row: AnyRecord): MailLabel {
   return {
+    aiAutoApply: Boolean(row.ai_auto_apply),
+    aiEnabled: Boolean(row.ai_enabled),
+    aiInstructions: row.ai_instructions ?? '',
     color: row.color ?? null,
+    description: row.description ?? '',
     id: row.id,
     kind: row.kind,
     mailboxId: row.mailbox_id,

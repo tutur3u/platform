@@ -3,6 +3,7 @@ import type {
   ListMailThreadsParams,
   UpdateMailMessageStatePayload,
 } from '@tuturuuu/internal-api';
+import { resolveMailThreadSubject } from '../thread-subject';
 import type {
   MailRouteContext,
   MailThread,
@@ -65,6 +66,24 @@ export async function listMailThreads({
     threadScan: true,
     userId: ctx.user.id,
   });
+  const rowIds = rows.map((row: AnyRecord) => row.id as string);
+  const { data: recipientRows, error: recipientError } = rowIds.length
+    ? await privateTable(access.admin, 'mail_recipients')
+        .select('address, display_name, kind, message_id')
+        .in('message_id', rowIds)
+        .in('kind', ['to', 'cc'])
+    : { data: [], error: null };
+  if (recipientError) {
+    throw new Error(
+      `Failed to load thread participants: ${recipientError.message}`
+    );
+  }
+  const recipientsByMessage = new Map<string, AnyRecord[]>();
+  for (const recipient of recipientRows ?? []) {
+    const current = recipientsByMessage.get(recipient.message_id) ?? [];
+    current.push(recipient);
+    recipientsByMessage.set(recipient.message_id, current);
+  }
   const latestByThread = new Map<string, AnyRecord>();
   const participantsByThread = new Map<
     string,
@@ -79,12 +98,22 @@ export async function listMailThreads({
     const participants =
       participantsByThread.get(threadId) ??
       new Map<string, { address: string; displayName: string | null }>();
-    const address = String(row.from_address ?? '').toLowerCase();
-    if (address && !participants.has(address)) {
-      participants.set(address, {
-        address,
-        displayName: row.from_name ?? null,
-      });
+    const candidates =
+      row.direction === 'outbound'
+        ? (recipientsByMessage.get(row.id) ?? []).map((recipient) => ({
+            address: String(recipient.address ?? '').toLowerCase(),
+            displayName: recipient.display_name ?? null,
+          }))
+        : [
+            {
+              address: String(row.from_address ?? '').toLowerCase(),
+              displayName: row.from_name ?? null,
+            },
+          ];
+    for (const candidate of candidates) {
+      if (candidate.address && !participants.has(candidate.address)) {
+        participants.set(candidate.address, candidate);
+      }
     }
     participantsByThread.set(threadId, participants);
   }
@@ -109,7 +138,7 @@ export async function listMailThreads({
     getLabelsByMessageId(access.admin, messageIds),
   ]);
   if (error) throw new Error(`Failed to list mail threads: ${error.message}`);
-  const threadById = new Map(
+  const threadById = new Map<string, AnyRecord>(
     (threads ?? []).map((thread: AnyRecord) => [thread.id as string, thread])
   );
   const summaries: MailThreadSummary[] = threadIds.flatMap((threadId) => {
@@ -126,6 +155,7 @@ export async function listMailThreads({
         latestSnippet: message.snippet ?? message.body_text ?? null,
         participants: [...(participantsByThread.get(threadId)?.values() ?? [])],
         starred: Boolean(state?.starred_at),
+        subject: resolveMailThreadSubject(thread.subject, message.subject),
       },
     ];
   });
@@ -190,13 +220,20 @@ export async function getMailThread({
   if (error)
     throw new Error(`Failed to load thread messages: ${error.message}`);
 
+  const hydratedMessages = await Promise.all(
+    (rows ?? []).map((row: AnyRecord) =>
+      hydrateMailMessage({ admin: access.admin, ctx, row })
+    )
+  );
+  const newestSubject = hydratedMessages.at(-1)?.subject;
+  const hydratedThread = toThread(thread);
+
   return {
-    messages: await Promise.all(
-      (rows ?? []).map((row: AnyRecord) =>
-        hydrateMailMessage({ admin: access.admin, ctx, row })
-      )
-    ),
-    thread: toThread(thread),
+    messages: hydratedMessages,
+    thread: {
+      ...hydratedThread,
+      subject: resolveMailThreadSubject(hydratedThread.subject, newestSubject),
+    },
   };
 }
 

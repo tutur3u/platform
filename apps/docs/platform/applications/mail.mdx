@@ -266,6 +266,35 @@ the rollback.
 
 ## Operations
 
+### Smart labels and AI-assisted drafting
+
+Apply the `mail_smart_labels` migration before deploying the matching settings
+UI. It adds a description, mailbox-scoped AI instructions, an enable flag, and
+an auto-apply flag to each private custom label. The migration is additive and
+defaults every AI option to disabled. Label CRUD remains limited to mailbox
+owners and admins; senders may apply configured labels but cannot redefine the
+taxonomy.
+
+Mail exposes AI drafting and smart-label classification only through
+mailbox-authorized app routes and `packages/internal-api`. Drafting supports new
+messages, rewrites, and follow-ups with bounded thread context. Message content
+is treated as untrusted reference material so instructions embedded in an
+email cannot override the system prompt. Generated text is returned to the
+composer as an editable draft; the AI route has no send, schedule, or transport
+tool.
+
+Smart-label suggestions help owners/admins create a taxonomy from recent
+mailbox patterns. Classification accepts explicit thread IDs, validates every
+thread and label against the active mailbox, and applies labels only after an
+authorized user invokes the workflow. `ai_auto_apply` records whether a label
+may be applied by an authorized automatic workflow; it does not grant AI any
+additional mailbox role or send capability.
+
+The `repair_mail_thread_subjects` migration backfills blank legacy thread
+subjects from the newest meaningful message. Runtime thread hydration also
+falls back to the newest message so sent mail remains accurate when application
+deployment precedes the migration.
+
 - Run `bun sb:up` locally after mail schema changes, then `bun sb:typegen`.
 - Keep new mail route access checks in `apps/mail`; do not add direct client
   Supabase reads.

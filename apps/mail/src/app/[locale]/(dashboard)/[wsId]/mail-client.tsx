@@ -18,6 +18,7 @@ import {
 } from '@tuturuuu/icons';
 import {
   bulkUpdateMailThreads,
+  deleteMailDraft,
   getMailBootstrap,
   getMailThread,
   listMailThreads,
@@ -43,12 +44,11 @@ import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { parseAsString, useQueryState } from 'nuqs';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import {
-  type ComposeInitialDraft,
-  FloatingComposer,
-} from './floating-composer';
+import { FloatingComposer } from './floating-composer';
+import type { ComposeInitialDraft } from './mail-composer-types';
 import type { MailFolder } from './mail-folders';
 import { getMailFolderHref, mailFolderIcons } from './mail-folders';
+import { MailLabelMenu } from './mail-label-menu';
 import {
   getCurrentMailPaneLayout,
   normalizeMailPaneLayout,
@@ -204,6 +204,18 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
       if (action === 'archive' || action === 'trash') await setThreadId(null);
     },
   });
+  const deleteDraftMutation = useMutation({
+    mutationFn: (draftId: string) =>
+      deleteMailDraft(workspaceId, activeMailboxId ?? '', draftId),
+    onSuccess: async () => {
+      await invalidateMailbox();
+      await setThreadId(null);
+    },
+    onError: (error) =>
+      toast.error(
+        error instanceof Error ? error.message : t('delete_draft_failed')
+      ),
+  });
   const bulkMutation = useMutation({
     mutationFn: (action: 'archive' | 'mark_read' | 'trash') =>
       bulkUpdateMailThreads(workspaceId, activeMailboxId ?? '', {
@@ -240,30 +252,55 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
     openCompose({
       bodyHtml: quote(message),
       inReplyTo: message.internetMessageId,
+      recipientDisplayNames: message.fromName
+        ? { [message.fromAddress.toLowerCase()]: message.fromName }
+        : {},
       references: replyReferences(message),
       subject: replySubject(message.subject),
+      threadId: message.threadId ?? undefined,
       to: [message.fromAddress],
     });
   const handleReplyAll = (message: MailMessageDetail) => {
     const excluded = new Set(
       mailboxes.map((mailbox) => mailbox.address.toLowerCase())
     );
-    const addresses = [
-      message.fromAddress,
+    const candidates = [
+      {
+        address: message.fromAddress,
+        displayName: message.fromName,
+      },
       ...message.recipients
         .filter(
           (recipient) => recipient.kind === 'to' || recipient.kind === 'cc'
         )
-        .map((recipient) => recipient.address),
-    ].filter((address) => !excluded.has(address.toLowerCase()));
-    const unique = [...new Set(addresses)];
+        .map((recipient) => ({
+          address: recipient.address,
+          displayName: recipient.displayName,
+        })),
+    ].filter(({ address }) => !excluded.has(address.toLowerCase()));
+    const unique = [
+      ...new Map(
+        candidates.map((recipient) => [
+          recipient.address.toLowerCase(),
+          recipient,
+        ])
+      ).values(),
+    ];
     openCompose({
       bodyHtml: quote(message),
-      cc: unique.slice(1),
+      cc: unique.slice(1).map((recipient) => recipient.address),
       inReplyTo: message.internetMessageId,
+      recipientDisplayNames: Object.fromEntries(
+        unique.flatMap((recipient) =>
+          recipient.displayName
+            ? [[recipient.address.toLowerCase(), recipient.displayName]]
+            : []
+        )
+      ),
       references: replyReferences(message),
       subject: replySubject(message.subject),
-      to: unique.slice(0, 1),
+      threadId: message.threadId ?? undefined,
+      to: unique.slice(0, 1).map((recipient) => recipient.address),
     });
   };
   const handleForward = (message: MailMessageDetail) =>
@@ -274,6 +311,7 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
       ),
       sourceMessageId: message.id,
       subject: forwardSubject(message.subject),
+      threadId: message.threadId ?? undefined,
       to: [],
     });
 
@@ -362,6 +400,14 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
             >
               <Archive className="size-4" />
             </Button>
+            {activeMailboxId ? (
+              <MailLabelMenu
+                mailboxId={activeMailboxId}
+                onChanged={invalidateMailbox}
+                threadIds={[...selectedThreads]}
+                workspaceId={workspaceId}
+              />
+            ) : null}
             <Button
               aria-label={t('trash')}
               onClick={() => bulkMutation.mutate('trash')}
@@ -435,7 +481,18 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
   const detailPanel = (
     <section className="flex h-full min-h-0 bg-[radial-gradient(circle_at_45%_22%,color-mix(in_oklab,var(--foreground)_4%,transparent),transparent_34%)]">
       <ThreadDetail
-        actionPending={stateMutation.isPending}
+        actionPending={stateMutation.isPending || deleteDraftMutation.isPending}
+        isDraft={folder === 'drafts'}
+        labelActions={
+          activeMailboxId && threadId ? (
+            <MailLabelMenu
+              mailboxId={activeMailboxId}
+              onChanged={invalidateMailbox}
+              threadIds={[threadId]}
+              workspaceId={workspaceId}
+            />
+          ) : null
+        }
         loading={detailQuery.isLoading}
         onArchive={() => stateMutation.mutate('archive')}
         onBack={() => setThreadId(null)}
@@ -447,7 +504,14 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
             detailQuery.data?.messages.at(-1)?.starred ? 'unstar' : 'star'
           )
         }
-        onTrash={() => stateMutation.mutate('trash')}
+        onTrash={() => {
+          const draft = detailQuery.data?.messages.find(
+            (message) => message.status === 'draft'
+          );
+          if (folder === 'drafts' && draft)
+            deleteDraftMutation.mutate(draft.id);
+          else stateMutation.mutate('trash');
+        }}
         thread={detailQuery.data ?? null}
       />
     </section>

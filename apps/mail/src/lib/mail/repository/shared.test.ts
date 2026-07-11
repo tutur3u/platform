@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { toMailbox } from './shared';
+import { toLabel, toMailbox } from './shared';
 
 describe('toMailbox', () => {
   const baseMailbox = {
@@ -35,5 +35,25 @@ describe('toMailbox', () => {
 
     expect(mailbox.displayName).toBe('Legacy mailbox name');
     expect(mailbox.senderName).toBe('Custom sender override');
+  });
+});
+
+describe('toLabel', () => {
+  it('defaults additive smart-label fields safely before migration rollout', () => {
+    expect(
+      toLabel({
+        color: null,
+        id: 'label-id',
+        kind: 'custom',
+        mailbox_id: 'mailbox-id',
+        name: 'Invoices',
+        slug: 'invoices',
+      })
+    ).toMatchObject({
+      aiAutoApply: false,
+      aiEnabled: false,
+      aiInstructions: '',
+      description: '',
+    });
   });
 });

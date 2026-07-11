@@ -5866,9 +5866,13 @@ export type Database = {
       };
       mail_labels: {
         Row: {
+          ai_auto_apply: boolean;
+          ai_enabled: boolean;
+          ai_instructions: string;
           color: string | null;
           created_at: string;
           created_by: string | null;
+          description: string;
           id: string;
           kind: string;
           mailbox_id: string;
@@ -5877,9 +5881,13 @@ export type Database = {
           updated_at: string;
         };
         Insert: {
+          ai_auto_apply?: boolean;
+          ai_enabled?: boolean;
+          ai_instructions?: string;
           color?: string | null;
           created_at?: string;
           created_by?: string | null;
+          description?: string;
           id?: string;
           kind?: string;
           mailbox_id: string;
@@ -5888,9 +5896,13 @@ export type Database = {
           updated_at?: string;
         };
         Update: {
+          ai_auto_apply?: boolean;
+          ai_enabled?: boolean;
+          ai_instructions?: string;
           color?: string | null;
           created_at?: string;
           created_by?: string | null;
+          description?: string;
           id?: string;
           kind?: string;
           mailbox_id?: string;
@@ -29009,6 +29021,7 @@ export type Database = {
           name: string;
           quiz_deadline: string | null;
           sort_key: number;
+          vocabulary: Json;
           youtube_links: string[] | null;
         };
         Insert: {
@@ -29024,6 +29037,7 @@ export type Database = {
           name?: string;
           quiz_deadline?: string | null;
           sort_key: number;
+          vocabulary?: Json;
           youtube_links?: string[] | null;
         };
         Update: {
@@ -29039,6 +29053,7 @@ export type Database = {
           name?: string;
           quiz_deadline?: string | null;
           sort_key?: number;
+          vocabulary?: Json;
           youtube_links?: string[] | null;
         };
         Relationships: [

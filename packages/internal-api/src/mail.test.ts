@@ -4,6 +4,7 @@ import {
   bulkUpdateMailThreads,
   copyMailDraftAttachments,
   createMailLabel,
+  generateMailAiDraft,
   getMailBootstrap,
   getMailCatchAllConfiguration,
   getMailMailboxSettings,
@@ -12,6 +13,7 @@ import {
   listMailMessages,
   listMailThreads,
   sendMailMessage,
+  suggestMailLabels,
   updateMailCatchAllConfiguration,
   updateMailMailboxSettings,
   updateMailMessageState,
@@ -261,6 +263,38 @@ describe('mail internal API helpers', () => {
 
     expect(fetchMock).toHaveBeenCalledWith(
       'https://internal.example.com/api/v1/workspaces/personal/mail/mailboxes/mailbox-1/drafts/draft-1/attachments',
+      expect.objectContaining({ method: 'POST' })
+    );
+  });
+
+  it('uses mailbox-scoped AI draft and labeling routes', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse({}));
+    const options = {
+      baseUrl: 'https://internal.example.com',
+      fetch: fetchMock as unknown as typeof fetch,
+    };
+
+    await generateMailAiDraft(
+      'personal',
+      'mailbox-1',
+      { instructions: 'Follow up politely', mode: 'follow_up' },
+      options
+    );
+    await suggestMailLabels(
+      'personal',
+      'mailbox-1',
+      { action: 'classify', threadIds: ['thread-1'] },
+      options
+    );
+
+    expect(fetchMock.mock.calls.map((call) => call[0])).toEqual([
+      'https://internal.example.com/api/v1/workspaces/personal/mail/mailboxes/mailbox-1/ai/draft',
+      'https://internal.example.com/api/v1/workspaces/personal/mail/mailboxes/mailbox-1/ai/labels',
+    ]);
+    expect(fetchMock.mock.calls[0]?.[1]).toEqual(
+      expect.objectContaining({ method: 'POST' })
+    );
+    expect(fetchMock.mock.calls[1]?.[1]).toEqual(
       expect.objectContaining({ method: 'POST' })
     );
   });

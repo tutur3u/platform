@@ -91,10 +91,16 @@ export function MailThreadRow({
           <div className="mt-2 flex flex-wrap gap-1">
             {thread.labels.slice(0, 3).map((label) => (
               <Badge
-                className="text-[0.68rem]"
+                className="gap-1.5 text-[0.68rem]"
                 key={label.id}
                 variant="secondary"
               >
+                <span
+                  className="size-1.5 rounded-full bg-foreground/30"
+                  style={
+                    label.color ? { backgroundColor: label.color } : undefined
+                  }
+                />
                 {label.name}
               </Badge>
             ))}

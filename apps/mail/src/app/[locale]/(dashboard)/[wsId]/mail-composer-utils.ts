@@ -6,6 +6,17 @@ export type ComposerWarning =
   | 'empty_subject'
   | 'missing_attachment';
 
+export function getSendableMailboxes(mailboxes: MailMailbox[]) {
+  return mailboxes.filter((mailbox) =>
+    ['admin', 'owner', 'sender'].includes(mailbox.role)
+  );
+}
+
+export function formatMailBytes(bytes: number) {
+  if (bytes < 1024 * 1024) return `${Math.ceil(bytes / 1024)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
 function escapeHtml(value: string) {
   return value
     .replaceAll('&', '&amp;')
@@ -21,6 +32,21 @@ function textToHtml(value: string) {
     .map((paragraph) => escapeHtml(paragraph).replaceAll('\n', '<br>'))
     .map((paragraph) => `<p>${paragraph}</p>`)
     .join('');
+}
+
+export function applyAiDraftToBody(bodyHtml: string, content: string) {
+  const generatedHtml = textToHtml(content.trim());
+  const signatureIndex = bodyHtml.search(
+    /<div\b[^>]*data-mail-signature=["']true["'][^>]*>/iu
+  );
+  const quoteIndex = bodyHtml.search(/<blockquote\b/iu);
+  const suffixIndexes = [signatureIndex, quoteIndex].filter(
+    (index) => index >= 0
+  );
+  const suffixIndex = suffixIndexes.length ? Math.min(...suffixIndexes) : -1;
+  return suffixIndex >= 0
+    ? `${generatedHtml}${bodyHtml.slice(suffixIndex)}`
+    : generatedHtml;
 }
 
 function stripHtml(value: string) {

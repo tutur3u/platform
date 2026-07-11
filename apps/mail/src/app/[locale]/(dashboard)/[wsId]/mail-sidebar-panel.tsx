@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { Loader2, Mail, PenLine, Settings, Tag, Users } from '@tuturuuu/icons';
+import { Loader2, Mail, PenLine, Settings, Users } from '@tuturuuu/icons';
 import {
   getMailBootstrap,
   getMailboxOrganization,
@@ -202,7 +202,12 @@ export function MailSidebarPanel({
                 href={`${pathname}?mailbox=${activeMailboxId}&label=${encodeURIComponent(label.slug)}`}
                 key={label.id}
               >
-                <Tag className="size-4" />{' '}
+                <span
+                  className="size-2.5 shrink-0 rounded-full bg-foreground/30"
+                  style={
+                    label.color ? { backgroundColor: label.color } : undefined
+                  }
+                />
                 <span className="truncate">{label.name}</span>
               </Link>
             ))}

@@ -1,4 +1,5 @@
 import type {
+  CreateMailOrganizationPayload,
   MailLabel as InternalMailLabel,
   MailAttachment,
   MailBootstrapResponse,
@@ -11,10 +12,12 @@ import type {
   MailRecipient,
   MailThreadSummary,
   UpdateMailMailboxSettingsPayload,
+  UpdateMailOrganizationPayload,
 } from '@tuturuuu/internal-api';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 
 export type {
+  CreateMailOrganizationPayload,
   MailAttachment,
   MailBootstrapResponse,
   MailMailbox,
@@ -26,6 +29,7 @@ export type {
   MailRecipient,
   MailThreadSummary,
   UpdateMailMailboxSettingsPayload,
+  UpdateMailOrganizationPayload,
 };
 
 export type MailLabel = InternalMailLabel & { mailboxId: string };
@@ -50,14 +54,6 @@ export type BulkUpdateMailPayload = {
   folderId?: string;
   labelId?: string;
   messageIds: string[];
-};
-export type CreateMailOrganizationPayload = {
-  color?: string | null;
-  name: string;
-};
-export type UpdateMailOrganizationPayload = {
-  color?: string | null;
-  name?: string;
 };
 export type MailThread = {
   id: string;

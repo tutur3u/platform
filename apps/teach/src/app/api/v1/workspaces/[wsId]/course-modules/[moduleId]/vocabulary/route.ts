@@ -365,7 +365,8 @@ export async function GET(
     const vocabulary = Array.isArray(
       (data as { vocabulary?: unknown } | null)?.vocabulary
     )
-      ? ((data as { vocabulary?: VocabularyEntry[] }).vocabulary ?? [])
+      ? ((data as unknown as { vocabulary?: VocabularyEntry[] }).vocabulary ??
+        [])
       : [];
 
     return NextResponse.json({ vocabulary });
@@ -432,7 +433,7 @@ async function updateVocabulary(
 
     return NextResponse.json({
       vocabulary:
-        (data as { vocabulary?: VocabularyEntry[] }).vocabulary ??
+        (data as unknown as { vocabulary?: VocabularyEntry[] }).vocabulary ??
         parsed.vocabulary,
     });
   });

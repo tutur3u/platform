@@ -11,6 +11,8 @@ import type {
   BulkUpdateMailThreadsPayload,
   CreateMailDraftPayload,
   CreateMailOrganizationPayload,
+  GenerateMailAiDraftPayload,
+  GenerateMailAiDraftResponse,
   ListMailMessagesParams,
   ListMailThreadsParams,
   MailAttachment,
@@ -27,6 +29,8 @@ import type {
   MailThreadDetail,
   MailThreadsResponse,
   SendMailMessagePayload,
+  SuggestMailLabelsPayload,
+  SuggestMailLabelsResponse,
   UpdateMailCatchAllPayload,
   UpdateMailDraftPayload,
   UpdateMailMailboxSettingsPayload,
@@ -273,6 +277,44 @@ export async function deleteMailDraft(
       cache: 'no-store',
       credentials: 'include',
       method: 'DELETE',
+    }
+  );
+}
+
+export async function generateMailAiDraft(
+  workspaceId: string,
+  mailboxId: string,
+  payload: GenerateMailAiDraftPayload,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(withMailApiBaseUrl(options));
+  return client.json<GenerateMailAiDraftResponse>(
+    mailboxPath(workspaceId, mailboxId, '/ai/draft'),
+    {
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+      credentials: 'include',
+      headers: jsonHeaders(),
+      method: 'POST',
+    }
+  );
+}
+
+export async function suggestMailLabels(
+  workspaceId: string,
+  mailboxId: string,
+  payload: SuggestMailLabelsPayload,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(withMailApiBaseUrl(options));
+  return client.json<SuggestMailLabelsResponse>(
+    mailboxPath(workspaceId, mailboxId, '/ai/labels'),
+    {
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+      credentials: 'include',
+      headers: jsonHeaders(),
+      method: 'POST',
     }
   );
 }

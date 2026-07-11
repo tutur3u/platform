@@ -19,6 +19,16 @@ function slugify(value: string) {
     .slice(0, 80);
 }
 
+function isSmartLabelSchemaMissing(error: AnyRecord | null) {
+  const message = String(error?.message ?? '').toLowerCase();
+  return (
+    error?.code === 'PGRST204' ||
+    ['ai_auto_apply', 'ai_enabled', 'ai_instructions', 'description'].some(
+      (column) => message.includes(column)
+    )
+  );
+}
+
 function toFolder(row: AnyRecord): MailFolderDefinition {
   return {
     id: row.id,
@@ -76,17 +86,30 @@ export async function createMailboxLabel({
   if (!access) return null;
   const slug = slugify(payload.name);
   if (!slug) throw new Error('Label name must contain letters or numbers');
-  const { data, error } = await privateTable(access.admin, 'mail_labels')
+  const basePayload = {
+    color: payload.color ?? null,
+    created_by: ctx.user.id,
+    kind: 'custom',
+    mailbox_id: mailboxId,
+    name: payload.name,
+    slug,
+  };
+  let { data, error } = await privateTable(access.admin, 'mail_labels')
     .insert({
-      color: payload.color ?? null,
-      created_by: ctx.user.id,
-      kind: 'custom',
-      mailbox_id: mailboxId,
-      name: payload.name,
-      slug,
+      ...basePayload,
+      ai_auto_apply: payload.aiAutoApply ?? false,
+      ai_enabled: payload.aiEnabled ?? false,
+      ai_instructions: payload.aiInstructions ?? '',
+      description: payload.description ?? '',
     })
     .select('*')
     .single();
+  if (error && isSmartLabelSchemaMissing(error)) {
+    ({ data, error } = await privateTable(access.admin, 'mail_labels')
+      .insert(basePayload)
+      .select('*')
+      .single());
+  }
   if (error) throw new Error(`Failed to create label: ${error.message}`);
   return toLabel(data);
 }
@@ -104,18 +127,47 @@ export async function updateMailboxLabel({
 }): Promise<MailLabel | null> {
   const access = await requireMailboxAccess(ctx, mailboxId, ['owner', 'admin']);
   if (!access) return null;
-  const patch: AnyRecord = { color: payload.color };
+  const patch: AnyRecord = {};
+  if (payload.aiAutoApply !== undefined)
+    patch.ai_auto_apply = payload.aiAutoApply;
+  if (payload.aiEnabled !== undefined) patch.ai_enabled = payload.aiEnabled;
+  if (payload.aiInstructions !== undefined)
+    patch.ai_instructions = payload.aiInstructions;
+  if (payload.color !== undefined) patch.color = payload.color;
+  if (payload.description !== undefined)
+    patch.description = payload.description;
   if (payload.name) {
     patch.name = payload.name;
     patch.slug = slugify(payload.name);
   }
-  const { data, error } = await privateTable(access.admin, 'mail_labels')
+  let { data, error } = await privateTable(access.admin, 'mail_labels')
     .update(patch)
     .eq('id', labelId)
     .eq('mailbox_id', mailboxId)
     .eq('kind', 'custom')
     .select('*')
     .maybeSingle();
+  if (error && isSmartLabelSchemaMissing(error)) {
+    const legacyPatch = Object.fromEntries(
+      Object.entries(patch).filter(
+        ([key]) =>
+          ![
+            'ai_auto_apply',
+            'ai_enabled',
+            'ai_instructions',
+            'description',
+          ].includes(key)
+      )
+    );
+    if (Object.keys(legacyPatch).length === 0) return null;
+    ({ data, error } = await privateTable(access.admin, 'mail_labels')
+      .update(legacyPatch)
+      .eq('id', labelId)
+      .eq('mailbox_id', mailboxId)
+      .eq('kind', 'custom')
+      .select('*')
+      .maybeSingle());
+  }
   if (error) throw new Error(`Failed to update label: ${error.message}`);
   return data ? toLabel(data) : null;
 }

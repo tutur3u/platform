@@ -9,22 +9,24 @@ import { getMailMessage } from './messages';
 import { type AnyRecord, normalizeAddress, privateTable } from './shared';
 
 function getRecipientRows(messageId: string, payload: CreateMailDraftPayload) {
+  const displayNames = new Map(
+    Object.entries(payload.recipientDisplayNames ?? {}).map(
+      ([address, name]) => [normalizeAddress(address), name.trim()]
+    )
+  );
+  const toRow = (address: string, kind: 'bcc' | 'cc' | 'to') => {
+    const normalizedAddress = normalizeAddress(address);
+    return {
+      address: normalizedAddress,
+      display_name: displayNames.get(normalizedAddress) || null,
+      kind,
+      message_id: messageId,
+    };
+  };
   return [
-    ...payload.to.map((address) => ({
-      address: normalizeAddress(address),
-      kind: 'to',
-      message_id: messageId,
-    })),
-    ...(payload.cc ?? []).map((address) => ({
-      address: normalizeAddress(address),
-      kind: 'cc',
-      message_id: messageId,
-    })),
-    ...(payload.bcc ?? []).map((address) => ({
-      address: normalizeAddress(address),
-      kind: 'bcc',
-      message_id: messageId,
-    })),
+    ...payload.to.map((address) => toRow(address, 'to')),
+    ...(payload.cc ?? []).map((address) => toRow(address, 'cc')),
+    ...(payload.bcc ?? []).map((address) => toRow(address, 'bcc')),
   ];
 }
 
@@ -243,6 +245,30 @@ export async function updateMailDraft({
     throw new Error(`Failed to update draft: ${error.message}`);
   }
 
+  const isNewConversation =
+    !current.in_reply_to &&
+    (!Array.isArray(current.references_headers) ||
+      current.references_headers.length === 0);
+  if (isNewConversation && current.thread_id) {
+    const subject = nextPayload.subject.trim();
+    const { error: threadError } = await privateTable(
+      access.admin,
+      'mail_threads'
+    )
+      .update({
+        normalized_subject: subject
+          .replace(/^(re|fw|fwd):\s*/giu, '')
+          .trim()
+          .toLowerCase(),
+        subject,
+      })
+      .eq('id', current.thread_id)
+      .eq('mailbox_id', mailboxId);
+    if (threadError) {
+      throw new Error(`Failed to update draft thread: ${threadError.message}`);
+    }
+  }
+
   await replaceRecipients(access.admin, draftId, nextPayload);
 
   return getMailMessage({ ctx, mailboxId, messageId: draftId });
@@ -264,15 +290,16 @@ export async function deleteMailDraft({
   ]);
   if (!access) return false;
 
-  const { error } = await privateTable(access.admin, 'mail_messages')
+  const { data, error } = await privateTable(access.admin, 'mail_messages')
     .delete()
     .eq('id', draftId)
     .eq('mailbox_id', mailboxId)
-    .eq('status', 'draft');
+    .eq('status', 'draft')
+    .select('id');
 
   if (error) {
     throw new Error(`Failed to delete draft: ${error.message}`);
   }
 
-  return true;
+  return Boolean(data?.length);
 }

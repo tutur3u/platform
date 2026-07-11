@@ -1,7 +1,7 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Bot, Mail, Route, Users } from '@tuturuuu/icons';
+import { Bot, Mail, Route, Tag, Users } from '@tuturuuu/icons';
 import {
   getMailCatchAllConfiguration,
   getMailMailboxSettings,
@@ -28,6 +28,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useState } from 'react';
+import { MailLabelSettings } from './mail-label-settings';
 import { MailSignaturePreview } from './mail-signature-preview';
 
 export function MailSettingsDialog({
@@ -136,6 +137,22 @@ export function MailSettingsDialog({
   });
 
   const operator = Boolean(domainsQuery.data?.domains);
+  const settings = settingsQuery.data?.settings;
+  const settingsDirty = Boolean(
+    settings &&
+      (senderName !== settings.senderName ||
+        signatureText !== (settings.signatureText ?? '') ||
+        signatureHtml !== (settings.signatureHtml ?? '') ||
+        outboundProvider !== (settings.outboundProviderOverride ?? 'default') ||
+        aiInstructions !== settings.aiInstructions ||
+        autoDraftEnabled !== settings.autoDraftEnabled)
+  );
+  const catchAllDirty = Boolean(
+    catchAllQuery.data &&
+      (targetMailboxId !== catchAllQuery.data.targetMailboxId ||
+        catchAllEnabled !== catchAllQuery.data.enabled ||
+        catchAllAutoDraft !== catchAllQuery.data.autoDraftEnabled)
+  );
   const navItems = useMemo(
     () => [
       {
@@ -153,6 +170,12 @@ export function MailSettingsDialog({
             name: 'automation',
           },
           {
+            description: t('labels_settings_description'),
+            icon: Tag,
+            label: t('labels'),
+            name: 'labels',
+          },
+          {
             description: t('members_description'),
             icon: Users,
             label: t('members'),
@@ -166,7 +189,7 @@ export function MailSettingsDialog({
             name: 'delivery',
           },
         ],
-        label: t('settings'),
+        label: t('title'),
       },
     ],
     [operator, t]
@@ -190,6 +213,7 @@ export function MailSettingsDialog({
                 label={t('sender_name')}
               >
                 <Input
+                  className="outline-none focus-visible:outline-none focus-visible:ring-0"
                   disabled={usesManagedIdentity}
                   onChange={(event) => setSenderName(event.target.value)}
                   readOnly={usesManagedIdentity}
@@ -214,7 +238,7 @@ export function MailSettingsDialog({
                   </TabsList>
                   <TabsContent value="plain">
                     <Textarea
-                      className="min-h-40 resize-y"
+                      className="min-h-40 resize-y outline-none focus-visible:outline-none focus-visible:ring-0"
                       onChange={(event) => setSignatureText(event.target.value)}
                       placeholder={t('signature_plain_text_placeholder')}
                       value={signatureText}
@@ -222,7 +246,7 @@ export function MailSettingsDialog({
                   </TabsContent>
                   <TabsContent value="html">
                     <Textarea
-                      className="min-h-40 resize-y font-mono text-xs"
+                      className="min-h-40 resize-y font-mono text-xs outline-none focus-visible:outline-none focus-visible:ring-0"
                       onChange={(event) => setSignatureHtml(event.target.value)}
                       placeholder={t('signature_html_placeholder')}
                       value={signatureHtml}
@@ -257,10 +281,10 @@ export function MailSettingsDialog({
               </SettingField>
               <div className="flex justify-end">
                 <Button
-                  disabled={saveSettings.isPending}
+                  disabled={saveSettings.isPending || !settingsDirty}
                   onClick={() => saveSettings.mutate()}
                 >
-                  {t('save_settings')}
+                  {t('save')}
                 </Button>
               </div>
             </>
@@ -269,7 +293,7 @@ export function MailSettingsDialog({
             <>
               <SettingField label={t('ai_instructions')}>
                 <Textarea
-                  className="min-h-44"
+                  className="min-h-44 outline-none focus-visible:outline-none focus-visible:ring-0"
                   onChange={(event) => setAiInstructions(event.target.value)}
                   value={aiInstructions}
                 />
@@ -285,13 +309,20 @@ export function MailSettingsDialog({
               </p>
               <div className="flex justify-end">
                 <Button
-                  disabled={saveSettings.isPending}
+                  disabled={saveSettings.isPending || !settingsDirty}
                   onClick={() => saveSettings.mutate()}
                 >
-                  {t('save_settings')}
+                  {t('save')}
                 </Button>
               </div>
             </>
+          ) : null}
+          {tab === 'labels' && mailbox ? (
+            <MailLabelSettings
+              canManage={mailbox.role === 'owner' || mailbox.role === 'admin'}
+              mailboxId={mailbox.id}
+              workspaceId={workspaceId}
+            />
           ) : null}
           {tab === 'members' ? (
             <div className="divide-y divide-dynamic overflow-hidden rounded-2xl border border-dynamic">
@@ -376,11 +407,12 @@ export function MailSettingsDialog({
                 <Button
                   disabled={
                     saveCatchAll.isPending ||
+                    !catchAllDirty ||
                     (catchAllEnabled && !targetMailboxId)
                   }
                   onClick={() => saveCatchAll.mutate()}
                 >
-                  {t('save_delivery')}
+                  {t('save')}
                 </Button>
               </div>
             </>

@@ -14,14 +14,27 @@ import type {
   MailThreadDetail,
 } from '@tuturuuu/internal-api';
 import { Accordion } from '@tuturuuu/ui/accordion';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@tuturuuu/ui/alert-dialog';
 import { Button } from '@tuturuuu/ui/button';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { useTranslations } from 'next-intl';
+import { type ReactNode, useState } from 'react';
 import { ThreadMessageCard } from './thread-message-card';
 
 export function ThreadDetail({
   actionPending,
+  isDraft,
+  labelActions,
   loading,
   onArchive,
   onBack,
@@ -33,6 +46,8 @@ export function ThreadDetail({
   thread,
 }: {
   actionPending: boolean;
+  isDraft: boolean;
+  labelActions?: ReactNode;
   loading: boolean;
   onArchive: () => void;
   onBack: () => void;
@@ -44,6 +59,7 @@ export function ThreadDetail({
   thread: MailThreadDetail | null;
 }) {
   const t = useTranslations('mail');
+  const [deleteDraftOpen, setDeleteDraftOpen] = useState(false);
 
   if (loading) {
     return (
@@ -95,6 +111,7 @@ export function ThreadDetail({
             </p>
           </div>
           <div className="flex items-center gap-1">
+            {labelActions}
             <Button
               aria-label={t('star')}
               disabled={actionPending}
@@ -114,9 +131,9 @@ export function ThreadDetail({
               <Archive className="size-4" />
             </Button>
             <Button
-              aria-label={t('trash')}
+              aria-label={isDraft ? t('delete_draft') : t('trash')}
               disabled={actionPending}
-              onClick={onTrash}
+              onClick={() => (isDraft ? setDeleteDraftOpen(true) : onTrash())}
               size="icon"
               variant="ghost"
             >
@@ -180,6 +197,22 @@ export function ThreadDetail({
           </ScrollArea>
         </TabsContent>
       </Tabs>
+      <AlertDialog onOpenChange={setDeleteDraftOpen} open={deleteDraftOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('delete_draft')}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t('delete_draft_description')}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
+            <AlertDialogAction onClick={onTrash}>
+              {t('delete')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

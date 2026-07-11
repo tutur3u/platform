@@ -4,20 +4,25 @@ import { X } from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Input } from '@tuturuuu/ui/input';
 import { cn } from '@tuturuuu/utils/format';
-import { useState } from 'react';
-
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/u;
+import { type ReactNode, useState } from 'react';
+import { parseRecipientInput } from './recipient-utils';
 
 export function RecipientField({
   disabledAddresses = [],
+  displayNames = {},
   label,
+  actions,
   onChange,
+  onDisplayNamesChange,
   removeLabel,
   recipients,
 }: {
   disabledAddresses?: string[];
+  displayNames?: Record<string, string>;
   label: string;
+  actions?: ReactNode;
   onChange: (recipients: string[]) => void;
+  onDisplayNamesChange?: (displayNames: Record<string, string>) => void;
   removeLabel: (address: string) => string;
   recipients: string[];
 }) {
@@ -25,23 +30,30 @@ export function RecipientField({
   const [invalid, setInvalid] = useState(false);
 
   const commit = () => {
-    const candidates = input
-      .split(/[;,\s]+/u)
-      .map((value) => value.trim().toLowerCase())
-      .filter(Boolean);
-    if (candidates.length === 0) return;
-    if (candidates.some((value) => !EMAIL_PATTERN.test(value))) {
+    const parsed = parseRecipientInput(input);
+    if (parsed.length === 0) return;
+    if (parsed.some((recipient) => !recipient.valid)) {
       setInvalid(true);
       return;
     }
     const excluded = new Set(
       disabledAddresses.map((value) => value.toLowerCase())
     );
+    const candidates = parsed.map((recipient) => recipient.address);
     onChange([
       ...new Set(
         [...recipients, ...candidates].filter((value) => !excluded.has(value))
       ),
     ]);
+    onDisplayNamesChange?.(
+      Object.fromEntries(
+        parsed.flatMap((recipient) =>
+          recipient.displayName
+            ? [[recipient.address, recipient.displayName] as const]
+            : []
+        )
+      )
+    );
     setInput('');
     setInvalid(false);
   };
@@ -61,7 +73,11 @@ export function RecipientField({
             key={recipient}
             variant="secondary"
           >
-            {recipient}
+            <span className="max-w-56 truncate">
+              {displayNames[recipient.toLowerCase()]
+                ? `${displayNames[recipient.toLowerCase()]} <${recipient}>`
+                : recipient}
+            </span>
             <button
               aria-label={removeLabel(recipient)}
               className="rounded-sm opacity-60 hover:opacity-100"
@@ -76,7 +92,7 @@ export function RecipientField({
         ))}
         <Input
           aria-invalid={invalid}
-          className="h-8 min-w-40 flex-1 border-0 bg-transparent px-1 shadow-none focus-visible:ring-0"
+          className="h-8 min-w-32 flex-1 border-0 bg-transparent px-1 shadow-none outline-none focus-visible:outline-none focus-visible:ring-0"
           onBlur={commit}
           onChange={(event) => {
             setInput(event.target.value);
@@ -93,6 +109,9 @@ export function RecipientField({
           }}
           value={input}
         />
+        {actions ? (
+          <div className="flex shrink-0 items-center gap-1">{actions}</div>
+        ) : null}
       </div>
     </div>
   );

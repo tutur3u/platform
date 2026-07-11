@@ -17,6 +17,9 @@ export const mailDraftPayloadSchema = z.object({
   cc: z.array(emailAddressSchema).max(100).optional(),
   inReplyTo: z.string().max(1024).nullable().optional(),
   references: z.array(z.string().max(1024)).max(50).optional(),
+  recipientDisplayNames: z
+    .record(emailAddressSchema, z.string().trim().min(1).max(320))
+    .optional(),
   subject: z.string().trim().max(998).default(''),
   to: z.array(emailAddressSchema).max(100).default([]),
 });
@@ -127,10 +130,51 @@ export const mailThreadBulkPayloadSchema = z
     }
   });
 
-export const createMailOrganizationSchema = z.object({
+const mailOrganizationFields = z.object({
+  aiAutoApply: z.boolean().optional(),
+  aiEnabled: z.boolean().optional(),
+  aiInstructions: z.string().trim().max(4000).optional(),
   color: z.string().trim().max(64).nullable().optional(),
+  description: z.string().trim().max(500).optional(),
   name: z.string().trim().min(1).max(80),
 });
 
-export const updateMailOrganizationSchema =
-  createMailOrganizationSchema.partial();
+export const createMailOrganizationSchema = mailOrganizationFields.refine(
+  (value) => !value.aiAutoApply || value.aiEnabled,
+  {
+    message: 'AI auto-apply requires AI labeling to be enabled',
+    path: ['aiAutoApply'],
+  }
+);
+
+export const updateMailOrganizationSchema = mailOrganizationFields
+  .partial()
+  .refine((value) => value.aiEnabled !== false || !value.aiAutoApply, {
+    message: 'AI auto-apply requires AI labeling to be enabled',
+    path: ['aiAutoApply'],
+  });
+
+export const generateMailAiDraftSchema = z.object({
+  bodyHtml: z.string().max(200_000).optional(),
+  bodyText: z.string().max(100_000).optional(),
+  instructions: z.string().trim().min(1).max(4000),
+  mode: z.enum(['draft', 'follow_up', 'rewrite']),
+  recipients: z.array(emailAddressSchema).max(50).optional(),
+  subject: z.string().max(998).optional(),
+  threadId: z.string().uuid().optional(),
+});
+
+export const suggestMailLabelsSchema = z
+  .object({
+    action: z.enum(['classify', 'suggest_labels']),
+    apply: z.boolean().optional(),
+    instructions: z.string().trim().max(4000).optional(),
+    threadIds: z.array(z.string().uuid()).max(50).optional(),
+  })
+  .refine(
+    (value) => value.action !== 'classify' || Boolean(value.threadIds?.length),
+    {
+      message: 'threadIds are required for classification',
+      path: ['threadIds'],
+    }
+  );

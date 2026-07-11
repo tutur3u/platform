@@ -77,7 +77,11 @@ export interface MailMailboxSettings {
 export type UpdateMailMailboxSettingsPayload = Partial<MailMailboxSettings>;
 
 export interface MailLabel {
+  aiAutoApply: boolean;
+  aiEnabled: boolean;
+  aiInstructions: string;
   color: string | null;
+  description: string;
   id: string;
   kind: 'custom' | 'system';
   mailboxId: string;
@@ -208,6 +212,7 @@ export interface CreateMailDraftPayload {
   cc?: string[];
   inReplyTo?: string | null;
   references?: string[];
+  recipientDisplayNames?: Record<string, string>;
   subject: string;
   to: string[];
 }
@@ -254,13 +259,59 @@ export interface BulkUpdateMailThreadsPayload {
 }
 
 export interface CreateMailOrganizationPayload {
+  aiAutoApply?: boolean;
+  aiEnabled?: boolean;
+  aiInstructions?: string;
   color?: string | null;
+  description?: string;
   name: string;
 }
 
 export interface UpdateMailOrganizationPayload {
+  aiAutoApply?: boolean;
+  aiEnabled?: boolean;
+  aiInstructions?: string;
   color?: string | null;
+  description?: string;
   name?: string;
+}
+
+export type MailAiDraftMode = 'draft' | 'follow_up' | 'rewrite';
+
+export interface GenerateMailAiDraftPayload {
+  bodyHtml?: string;
+  bodyText?: string;
+  instructions: string;
+  mode: MailAiDraftMode;
+  recipients?: string[];
+  subject?: string;
+  threadId?: string;
+}
+
+export interface GenerateMailAiDraftResponse {
+  content: string;
+  subject: string;
+  suggestions: string[];
+  tone: 'casual' | 'formal' | 'friendly' | 'professional';
+}
+
+export interface SuggestMailLabelsPayload {
+  action: 'classify' | 'suggest_labels';
+  apply?: boolean;
+  instructions?: string;
+  threadIds?: string[];
+}
+
+export interface SuggestedMailLabel {
+  aiInstructions: string;
+  description: string;
+  name: string;
+}
+
+export interface SuggestMailLabelsResponse {
+  applied: number;
+  assignments: Array<{ labelIds: string[]; threadId: string }>;
+  suggestions: SuggestedMailLabel[];
 }
 
 export interface MailMailboxMember {

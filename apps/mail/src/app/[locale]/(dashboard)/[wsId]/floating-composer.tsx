@@ -34,20 +34,23 @@ import {
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { MailComposerAi } from './mail-composer-ai';
 import { MailComposerAttachments } from './mail-composer-attachments';
 import { MailComposerEditor } from './mail-composer-editor';
 import { MailComposerHeader } from './mail-composer-header';
-import type { ComposeInitialDraft } from './mail-composer-types';
+import type {
+  ComposeInitialDraft,
+  MailComposerSaveState,
+} from './mail-composer-types';
 import {
+  applyAiDraftToBody,
   buildComposerInitialBody,
   type ComposerWarning,
+  formatMailBytes,
   getComposerWarnings,
+  getSendableMailboxes,
 } from './mail-composer-utils';
 import { RecipientField } from './recipient-field';
-
-export type { ComposeInitialDraft } from './mail-composer-types';
-
-type SaveState = 'failed' | 'idle' | 'offline' | 'saved' | 'saving';
 
 export function FloatingComposer({
   initialDraft,
@@ -69,13 +72,7 @@ export function FloatingComposer({
   workspaceId: string;
 }) {
   const t = useTranslations('mail');
-  const sendableMailboxes = useMemo(
-    () =>
-      mailboxes.filter((mailbox) =>
-        ['admin', 'owner', 'sender'].includes(mailbox.role)
-      ),
-    [mailboxes]
-  );
+  const sendableMailboxes = getSendableMailboxes(mailboxes);
   const defaultMailbox =
     sendableMailboxes.find((mailbox) => mailbox.id === selectedMailboxId) ??
     sendableMailboxes[0];
@@ -83,18 +80,22 @@ export function FloatingComposer({
   const [to, setTo] = useState<string[]>([]);
   const [cc, setCc] = useState<string[]>([]);
   const [bcc, setBcc] = useState<string[]>([]);
+  const [recipientDisplayNames, setRecipientDisplayNames] = useState<
+    Record<string, string>
+  >({});
   const [subject, setSubject] = useState('');
   const [bodyHtml, setBodyHtml] = useState('');
   const [bodyText, setBodyText] = useState('');
   const [draftId, setDraftId] = useState<string | null>(null);
   const [attachments, setAttachments] = useState<MailAttachment[]>([]);
-  const [showCopies, setShowCopies] = useState(false);
+  const [showCc, setShowCc] = useState(false);
+  const [showBcc, setShowBcc] = useState(false);
   const [minimized, setMinimized] = useState(false);
   const [maximized, setMaximized] = useState(false);
   const [discardOpen, setDiscardOpen] = useState(false);
   const [sendReviewOpen, setSendReviewOpen] = useState(false);
   const [sendWarnings, setSendWarnings] = useState<ComposerWarning[]>([]);
-  const [saveState, setSaveState] = useState<SaveState>('idle');
+  const [saveState, setSaveState] = useState<MailComposerSaveState>('idle');
   const [dirty, setDirty] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [dragActive, setDragActive] = useState(false);
@@ -105,6 +106,7 @@ export function FloatingComposer({
     sourceMessageId: string;
   } | null>(null);
   const draftIdRef = useRef<string | null>(null);
+  const dirtyVersionRef = useRef(0);
   const saveChainRef = useRef<Promise<string | null>>(Promise.resolve(null));
   const activeMailbox = sendableMailboxes.find(
     (mailbox) => mailbox.id === mailboxId
@@ -117,6 +119,9 @@ export function FloatingComposer({
     setTo(initialDraft?.to ?? []);
     setCc(initialDraft?.cc ?? []);
     setBcc(initialDraft?.bcc ?? []);
+    setShowCc(Boolean(initialDraft?.cc?.length));
+    setShowBcc(Boolean(initialDraft?.bcc?.length));
+    setRecipientDisplayNames(initialDraft?.recipientDisplayNames ?? {});
     setSubject(initialDraft?.subject ?? '');
     setBodyHtml(initialBody.html);
     setBodyText(initialBody.text);
@@ -135,6 +140,7 @@ export function FloatingComposer({
     setSendReviewOpen(false);
     setSendWarnings([]);
     setDirty(Boolean(initialDraft));
+    dirtyVersionRef.current = initialDraft ? 1 : 0;
     setMinimized(false);
   }, [defaultMailbox, initialDraft, open]);
 
@@ -157,6 +163,7 @@ export function FloatingComposer({
       cc,
       inReplyTo: initialDraft?.inReplyTo,
       references: initialDraft?.references,
+      recipientDisplayNames,
       subject,
       to,
     }),
@@ -167,6 +174,7 @@ export function FloatingComposer({
       cc,
       initialDraft?.inReplyTo,
       initialDraft?.references,
+      recipientDisplayNames,
       subject,
       to,
     ]
@@ -181,6 +189,7 @@ export function FloatingComposer({
         return Promise.resolve(draftIdRef.current);
       }
       setSaveState('saving');
+      const savingVersion = dirtyVersionRef.current;
       saveChainRef.current = saveChainRef.current
         .catch(() => draftIdRef.current)
         .then(async () => {
@@ -196,6 +205,7 @@ export function FloatingComposer({
           draftIdRef.current = response.message.id;
           setDraftId(response.message.id);
           setSaveState('saved');
+          if (dirtyVersionRef.current === savingVersion) setDirty(false);
           return response.message.id;
         })
         .catch(() => {
@@ -206,6 +216,11 @@ export function FloatingComposer({
     },
     [dirty, mailboxId, online, snapshot, workspaceId]
   );
+
+  const markDirty = () => {
+    dirtyVersionRef.current += 1;
+    setDirty(true);
+  };
 
   useEffect(() => {
     if (!open || !dirty || !mailboxId) return;
@@ -276,11 +291,11 @@ export function FloatingComposer({
     setDraftId(null);
     setAttachments([]);
     setMailboxId(nextMailboxId);
-    setDirty(true);
+    markDirty();
   };
 
   const uploadFiles = async (files: FileList | File[], inline = false) => {
-    setDirty(true);
+    markDirty();
     const savedDraftId = await persist(snapshot, true);
     if (!savedDraftId) return;
     setUploading(true);
@@ -399,15 +414,23 @@ export function FloatingComposer({
         <MailComposerHeader
           closeLabel={t('close')}
           maximizeLabel={t('maximize')}
+          maximized={maximized}
           minimized={minimized}
           minimizeLabel={t('minimize')}
           newMessageLabel={t('new_message')}
           onClose={() => void saveAndClose()}
-          onMaximize={() => setMaximized(!maximized)}
-          onMinimize={() => setMinimized(!minimized)}
+          onMaximize={() => {
+            setMinimized(false);
+            setMaximized(!maximized);
+          }}
+          onMinimize={() => {
+            setMaximized(false);
+            setMinimized(!minimized);
+          }}
           restoreLabel={t('restore')}
           saveLabel={t(`save_${saveState}`)}
           subject={subject}
+          windowOptionsLabel={t('composer_window_options')}
         />
 
         {!minimized ? (
@@ -431,52 +454,88 @@ export function FloatingComposer({
               </Select>
             </div>
             <RecipientField
+              actions={
+                <>
+                  <Button
+                    className="h-7 px-2 text-xs"
+                    onClick={() => setShowCc((current) => !current)}
+                    type="button"
+                    variant={showCc ? 'secondary' : 'ghost'}
+                  >
+                    {t('cc')}
+                  </Button>
+                  <Button
+                    className="h-7 px-2 text-xs"
+                    onClick={() => setShowBcc((current) => !current)}
+                    type="button"
+                    variant={showBcc ? 'secondary' : 'ghost'}
+                  >
+                    {t('bcc')}
+                  </Button>
+                </>
+              }
               disabledAddresses={[...cc, ...bcc]}
+              displayNames={recipientDisplayNames}
               label={t('to')}
               onChange={(value) => {
                 setTo(value);
-                setDirty(true);
+                markDirty();
+              }}
+              onDisplayNamesChange={(names) => {
+                setRecipientDisplayNames((current) => ({
+                  ...current,
+                  ...names,
+                }));
+                markDirty();
               }}
               recipients={to}
               removeLabel={(address) => t('remove_recipient', { address })}
             />
-            {showCopies ? (
-              <>
-                <RecipientField
-                  disabledAddresses={[...to, ...bcc]}
-                  label={t('cc')}
-                  onChange={(value) => {
-                    setCc(value);
-                    setDirty(true);
-                  }}
-                  recipients={cc}
-                  removeLabel={(address) => t('remove_recipient', { address })}
-                />
-                <RecipientField
-                  disabledAddresses={[...to, ...cc]}
-                  label={t('bcc')}
-                  onChange={(value) => {
-                    setBcc(value);
-                    setDirty(true);
-                  }}
-                  recipients={bcc}
-                  removeLabel={(address) => t('remove_recipient', { address })}
-                />
-              </>
-            ) : (
-              <button
-                className="self-end px-4 py-1 text-muted-foreground text-xs hover:text-foreground"
-                onClick={() => setShowCopies(true)}
-                type="button"
-              >
-                {t('add_cc_bcc')}
-              </button>
-            )}
+            {showCc ? (
+              <RecipientField
+                disabledAddresses={[...to, ...bcc]}
+                displayNames={recipientDisplayNames}
+                label={t('cc')}
+                onChange={(value) => {
+                  setCc(value);
+                  markDirty();
+                }}
+                onDisplayNamesChange={(names) => {
+                  setRecipientDisplayNames((current) => ({
+                    ...current,
+                    ...names,
+                  }));
+                  markDirty();
+                }}
+                recipients={cc}
+                removeLabel={(address) => t('remove_recipient', { address })}
+              />
+            ) : null}
+            {showBcc ? (
+              <RecipientField
+                disabledAddresses={[...to, ...cc]}
+                displayNames={recipientDisplayNames}
+                label={t('bcc')}
+                onChange={(value) => {
+                  setBcc(value);
+                  markDirty();
+                }}
+                onDisplayNamesChange={(names) => {
+                  setRecipientDisplayNames((current) => ({
+                    ...current,
+                    ...names,
+                  }));
+                  markDirty();
+                }}
+                recipients={bcc}
+                removeLabel={(address) => t('remove_recipient', { address })}
+              />
+            ) : null}
             <Input
-              className="h-11 rounded-none border-x-0 border-t-0 px-4 font-medium shadow-none focus-visible:ring-0"
+              className="h-11 rounded-none border-x-0 border-t-0 px-4 font-semibold shadow-none outline-none focus-visible:outline-none focus-visible:ring-0"
               onChange={(event) => {
                 setSubject(event.target.value);
-                setDirty(true);
+                markDirty();
               }}
               placeholder={t('subject')}
               value={subject}
@@ -488,7 +547,7 @@ export function FloatingComposer({
               onChange={(value) => {
                 setBodyHtml(value.html);
                 setBodyText(value.text);
-                setDirty(true);
+                markDirty();
               }}
             />
             <MailComposerAttachments
@@ -514,6 +573,21 @@ export function FloatingComposer({
               >
                 <Send className="size-4" /> {sending ? t('sending') : t('send')}
               </Button>
+              <MailComposerAi
+                bodyHtml={bodyHtml}
+                bodyText={bodyText}
+                mailboxId={mailboxId}
+                onApply={(result) => {
+                  setSubject(result.subject);
+                  setBodyHtml(applyAiDraftToBody(bodyHtml, result.content));
+                  setBodyText(result.content);
+                  markDirty();
+                }}
+                recipients={combinedRecipients}
+                subject={subject}
+                threadId={initialDraft?.threadId}
+                workspaceId={workspaceId}
+              />
               <label className="inline-flex cursor-pointer">
                 <input
                   aria-label={t('attach_files')}
@@ -550,7 +624,8 @@ export function FloatingComposer({
               </label>
               <span className="ml-auto text-muted-foreground text-xs tabular-nums">
                 {combinedRecipients.length}/{recipientLimit} ·{' '}
-                {formatBytes(estimatedBytes)}/{formatBytes(messageLimit)}
+                {formatMailBytes(estimatedBytes)}/
+                {formatMailBytes(messageLimit)}
                 {uploading ? ` · ${t('uploading')}` : ''}
               </span>
               <Button
@@ -618,9 +693,4 @@ export function FloatingComposer({
       </AlertDialog>
     </>
   );
-}
-
-function formatBytes(bytes: number) {
-  if (bytes < 1024 * 1024) return `${Math.ceil(bytes / 1024)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }

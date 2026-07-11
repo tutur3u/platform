@@ -4,7 +4,7 @@ create extension if not exists pgtap with schema extensions;
 
 set local search_path = public, extensions;
 
-select plan(43);
+select plan(46);
 
 select ok(to_regclass('private.mail_domains') is not null, 'mail domains live in the private schema');
 select ok(to_regclass('private.mail_stored_objects') is not null, 'mail stored objects live in the private schema');
@@ -193,6 +193,31 @@ create temporary table test_mailbox as
 select id
 from private.mail_mailboxes
 where address = 'ops-mail-test@tuturuuu.com';
+
+select ok(
+  (
+    select count(*) = 4
+    from information_schema.columns
+    where table_schema = 'private'
+      and table_name = 'mail_labels'
+      and column_name in ('description', 'ai_enabled', 'ai_auto_apply', 'ai_instructions')
+  ),
+  'mail labels expose durable smart-classification configuration'
+);
+
+select lives_ok(
+  $$ insert into private.mail_labels(mailbox_id, name, slug, kind)
+     select id, 'Invoices', 'invoices', 'custom' from test_mailbox $$,
+  'custom labels remain compatible with default-disabled AI settings'
+);
+
+select throws_ok(
+  $$ update private.mail_labels
+     set ai_auto_apply = true, ai_enabled = false
+     where mailbox_id = (select id from test_mailbox) and slug = 'invoices' $$,
+  null,
+  'AI label auto-apply requires smart classification to be enabled'
+);
 
 select lives_ok(
   $$ insert into private.mail_mailbox_members(mailbox_id, user_id, role)
