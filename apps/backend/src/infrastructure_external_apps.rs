@@ -349,10 +349,8 @@ fn normalize_origin(value: &str) -> Option<String> {
 fn parse_origin(value: &str) -> Option<String> {
     let (scheme, rest) = if let Some(rest) = value.strip_prefix("https://") {
         ("https", rest)
-    } else if let Some(rest) = value.strip_prefix("http://") {
-        ("http", rest)
     } else {
-        return None;
+        ("http", value.strip_prefix("http://")?)
     };
 
     // Authority ends at the first '/', '?' or '#'.

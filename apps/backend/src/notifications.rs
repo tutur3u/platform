@@ -184,9 +184,7 @@ fn parse_query(request_url: Option<&str>) -> Result<NotificationQuery, ()> {
             .map(|(_, v)| v.into_owned())
     };
 
-    let non_blank = |key: &str| -> Option<String> {
-        param(key).and_then(|v| if v.is_empty() { None } else { Some(v) })
-    };
+    let non_blank = |key: &str| -> Option<String> { param(key).filter(|v| !v.is_empty()) };
 
     // wsId: optional GUID
     let ws_id = match non_blank("wsId") {
