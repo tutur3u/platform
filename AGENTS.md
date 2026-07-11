@@ -44,6 +44,22 @@ surface you are changing:
   package manager command for the owning workspace.
 - Do not use native browser dialogs, emojis in UI code, hard-coded hue classes,
   client-side raw app API fetches, or `useEffect` for data fetching.
+- Do not add `export const dynamic` / `export const revalidate` route segment
+  configs. Every Next app runs with `cacheComponents` enabled, which rejects them
+  at build time. Opt an authed page or Supabase-backed GET route handler into
+  request-time rendering with `await connection()` instead (see
+  `$tuturuuu-platform` → Cache Components).
+- Do not resolve actors in a registered satellite app with
+  `@tuturuuu/utils/user-helper` (`getCurrentUser`, `getCurrentWorkspaceUser`) —
+  those read Supabase auth directly. Use `getSatelliteAppSessionUser('<app>')`
+  and pass the id into an injectable helper (e.g.
+  `@tuturuuu/utils/workspace-user-link`). `bun check` enforces this via the
+  `internal-app-auth` guard.
+- Do not add a catch-all page (`[...slug]`) under `[locale]/[wsId]` in a
+  satellite that proxies `/api/*` to web. Next checks `fallback` rewrites only
+  AFTER dynamic routes, so the catch-all swallows `/api/v1/...` as
+  `locale="api"`, `wsId="v1"` and breaks every proxied API call. Put
+  non-migrated-route redirects in the app's `proxy.ts` middleware instead.
 - Use native `console.*` for server runtime logs, preserving severity
   (`console.error`, `console.warn`, etc.). Do not add `serverLogger` runtime
   imports or automatic console log-drain installation.
@@ -110,6 +126,11 @@ surface you are changing:
 - For TypeScript, JavaScript, root script, or repo config changes, finish with
   `bun check` unless an unrelated pre-existing blocker prevents it. Run focused
   tests first.
+- `bun check` does NOT compile Next apps or run migrations, so it cannot see
+  `cacheComponents` violations, unresolved dynamic/side-effect imports, or a
+  broken FK in a new migration. When you change an app's routes, pages, or
+  dependencies, also run that app's real `bun run build`; when you add a
+  migration, apply it locally (`bun sb:reset`/`sb:up`) before trusting it.
 - For new or substantially edited TypeScript server/service orchestration,
   prefer `@tuturuuu/utils/effect` when typed expected errors, dependency
   services, retry/scheduling, or controlled concurrency make the flow safer.
@@ -126,6 +147,12 @@ surface you are changing:
   `AGENTS.md`.
 - `apps/tanstack-web`: TanStack Start frontend migration target that consumes the
   Rust backend through Start server functions / `packages/internal-api` facades.
+- `apps/contacts`: `contacts.tuturuuu.com` satellite (port `7827`) that now owns
+  the entire `workspace_users` CRM surface (`/[wsId]/users/*` + `workforce`).
+  `apps/web` no longer has a users section. Shared logic lives in
+  `@tuturuuu/users-core` (server) and `@tuturuuu/users-ui` (client); routes it
+  does not own are listed in `CONTACTS_OWNED_ROUTE_PREFIXES` (`src/proxy.ts`) and
+  everything else under `/[wsId]` redirects to web.
 - `apps/mobile`: Flutter mobile app.
 - `apps/database`: Supabase migrations, configuration, reset scripts, and tests.
 - `apps/docs`: Mintlify docs and operational runbooks.
