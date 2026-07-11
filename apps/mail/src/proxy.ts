@@ -44,6 +44,10 @@ const authProxy = createCentralizedAuthProxy({
   webAppUrl: TTR_URL,
 });
 const LOCAL_AUTH_API_PREFIX = '/api/auth/';
+const SIGNED_PROVIDER_WEBHOOK_PATHS = new Set([
+  '/api/v1/webhooks/mail/cloudflare',
+  '/api/v1/webhooks/mail/ses',
+]);
 const CORS_METHODS = 'GET,POST,PUT,PATCH,DELETE,HEAD,OPTIONS';
 const CORS_HEADERS =
   'authorization,content-type,x-requested-with,x-sdk-client,x-tuturuuu-client';
@@ -96,6 +100,10 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
   if (req.nextUrl.pathname.startsWith('/api')) {
     if (req.method === 'OPTIONS') {
       return withMailApiCors(req, new NextResponse(null, { status: 204 }));
+    }
+
+    if (SIGNED_PROVIDER_WEBHOOK_PATHS.has(req.nextUrl.pathname)) {
+      return NextResponse.next();
     }
 
     const isLocalAuthApi = req.nextUrl.pathname.startsWith(
