@@ -1,11 +1,11 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
-import WorkspaceWrapper from '@tuturuuu/ui/custom/workspace-wrapper';
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { connection } from 'next/server';
 import { getTranslations } from 'next-intl/server';
+import WorkspaceWrapper from '@/components/workspace-wrapper';
+import { getContactsWorkspacePermissions } from '@/lib/workspace';
 import GroupReportsClient from './client';
 
 export const metadata: Metadata = {
@@ -28,9 +28,7 @@ export default async function UserGroupDetailsPage({ params }: Props) {
     <WorkspaceWrapper params={params}>
       {async ({ wsId, groupId }) => {
         const t = await getTranslations();
-        const permissions = await getPermissions({
-          wsId,
-        });
+        const permissions = await getContactsWorkspacePermissions(wsId);
         if (!permissions) notFound();
         const { containsPermission } = permissions;
         const canViewUserGroupsReports = containsPermission(

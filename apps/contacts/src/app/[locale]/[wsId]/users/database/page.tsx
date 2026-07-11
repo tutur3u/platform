@@ -1,13 +1,16 @@
 import { MessageSquarePlus, UserPlus } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import ModifiableDialogTrigger from '@tuturuuu/ui/custom/modifiable-dialog-trigger';
-import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { connection } from 'next/server';
 import { getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
+import {
+  getContactsWorkspace,
+  getContactsWorkspacePermissions,
+} from '@/lib/workspace';
 import { AuditLogTable } from './audit-log-table';
 import { DuplicateUsersDialog } from './components/duplicate-users-dialog';
 import { ProfileLinksManager } from './components/profile-links-manager';
@@ -87,11 +90,11 @@ export default async function WorkspaceUsersPage({
   const sp = await searchParams;
   const activeTab = resolveDatabaseTab(sp.tab);
 
-  const workspace = await getWorkspace(id);
+  const workspace = await getContactsWorkspace(id);
   if (!workspace) notFound();
   const wsId = workspace.id;
 
-  const workspacePermissions = await getPermissions({ wsId });
+  const workspacePermissions = await getContactsWorkspacePermissions(wsId);
   if (!workspacePermissions) notFound();
   const { containsPermission } = workspacePermissions;
 

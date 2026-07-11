@@ -15,14 +15,12 @@ import {
   getUserGroupMemberships,
   verifyGroupAccess,
 } from '@tuturuuu/users-core/lib/user-groups/groups-utils';
-import {
-  getPermissions,
-  normalizeWorkspaceId,
-} from '@tuturuuu/utils/workspace-helper';
+import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 import { notFound } from 'next/navigation';
 import { connection } from 'next/server';
 import { getTranslations } from 'next-intl/server';
 import type { ReactNode } from 'react';
+import { getContactsWorkspacePermissions } from '@/lib/workspace';
 import GroupShareButton from './group-share-button';
 import SelectGroupGateway from './select-group-gateway';
 
@@ -41,7 +39,7 @@ export default async function Layout({ children, params }: LayoutProps) {
   const { wsId: id, groupId } = await params;
   const wsId = await normalizeWorkspaceId(id);
 
-  const permissions = await getPermissions({ wsId });
+  const permissions = await getContactsWorkspacePermissions(wsId);
   if (!permissions) notFound();
   const { containsPermission } = permissions;
   const hasManageUsersPermission = containsPermission('manage_users');

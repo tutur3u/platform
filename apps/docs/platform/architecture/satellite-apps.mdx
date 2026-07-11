@@ -92,6 +92,54 @@ const user = actor?.id
 `@tuturuuu/utils/workspace-user-link` helper, so there is one implementation and
 web behavior is unchanged.
 
+### The actorless-call trap
+
+<Warning>
+`getWorkspace(id)` and `getPermissions({ wsId })` called **without** an actor fall
+back to a cookie-backed Supabase client. In a satellite that client is
+**anonymous** — the session is an app-session JWT, not a Supabase auth cookie.
+</Warning>
+
+The lookup then returns `null`, the page 404s, and — because the render aborts
+with Supabase fetches still in flight — those fetches outlive it and surface as:
+
+```text
+Workspace not found: personal
+Error: During prerendering, fetch() rejects when the prerender is complete
+digest: 'HANGING_PROMISE_REJECTION'
+```
+
+The second error is a *symptom*, not the cause. Chasing the "hanging fetch" leads
+nowhere — there is no stray `setTimeout`/`after()` anywhere in the tree. The cause
+is the missing actor.
+
+This is also why **a satellite must not use the shared
+`@tuturuuu/ui/custom/workspace-wrapper`**: it calls bare `getWorkspace(wsId)`
+internally, so every page rendering it inherits the bug. That took down the whole
+`apps/contacts` users surface (20 pages) in production.
+
+Give each satellite a `src/lib/workspace.ts` that resolves the actor once and
+threads it through, plus an app-local wrapper that uses it:
+
+```ts
+export async function getContactsWorkspace(id: string) {
+  const user = await getSatelliteAppSessionUser('contacts');
+  if (!user?.id) return null;
+  return getWorkspace(id, { useAdmin: true, user });
+}
+
+export async function getContactsWorkspacePermissions(wsId: string) {
+  const user = await getSatelliteAppSessionUser('contacts');
+  if (!user?.id) return null;
+  return getPermissions({ user, wsId });
+}
+```
+
+`scripts/check-internal-app-auth.js` enforces both halves (no shared wrapper, no
+actorless call). The actorless rule is rolled out per app via
+`ACTORLESS_CHECK_APPS`; apps/calendar, apps/tasks, apps/track, apps/teach,
+apps/hive, apps/inventory, and apps/pay still have unaudited call sites.
+
 ## API proxying — and the catch-all trap
 
 A satellite's `next.config.ts` has a **fallback** rewrite sending any unmatched
@@ -133,6 +181,27 @@ Scanning only the app's own source cannot see namespaces used *inside*
 `@tuturuuu/ui` or `@tuturuuu/satellite`. Miss one and it surfaces as a runtime
 `MISSING_MESSAGE` in production rather than a CI failure — which is exactly how
 contacts shipped without the `notifications` namespace.
+
+<Warning>
+Having the namespace is not enough — the namespace can be **half-empty**.
+</Warning>
+
+The shell components (`user-nav-client`, `sidebar-structure-header`,
+`workspace-select`, `settings-dialog-shell`) read their strings through a **bare**
+`useTranslations()` and then call `t('common.dashboard')`. A bare translator
+carries no namespace argument, so the key-level scan cannot attribute those keys
+to a namespace: it only requires them from apps listed in
+`BARE_ROOT_KEY_APP_SCOPES`. Since `common` was scoped to nobody, the keys were
+required of **no app at all**.
+
+Contacts therefore passed the namespace check (it *had* `common`) while missing
+850+ keys inside it, and shipped `MISSING_MESSAGE: common.dashboard`,
+`common.logout`, `nav-upgrade-dialog.*`, and `settings.back_to_app` to production.
+
+An app that renders the full dashboard shell belongs in
+`BARE_ROOT_KEY_FULL_SCOPE_APPS`, which requires every bare root-qualified key the
+shared packages can request. Use `keyExceptions` to opt out of product surfaces
+the app does not render.
 
 ## Moving a feature from web to a satellite
 

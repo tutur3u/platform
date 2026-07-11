@@ -1,10 +1,10 @@
 import { Info } from '@tuturuuu/icons';
-import WorkspaceWrapper from '@tuturuuu/ui/custom/workspace-wrapper';
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { connection } from 'next/server';
 import { getTranslations } from 'next-intl/server';
+import WorkspaceWrapper from '@/components/workspace-wrapper';
+import { getContactsWorkspacePermissions } from '@/lib/workspace';
 import { ApprovalsClient } from './approvals-client';
 
 export const metadata: Metadata = {
@@ -52,7 +52,7 @@ export default async function UserApprovalsPage({ params }: PageProps) {
           );
         }
 
-        const permissions = await getPermissions({ wsId });
+        const permissions = await getContactsWorkspacePermissions(wsId);
         if (!permissions) notFound();
         const { containsPermission } = permissions;
         const canApproveReports = containsPermission('approve_reports');

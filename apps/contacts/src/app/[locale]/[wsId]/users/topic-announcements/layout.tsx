@@ -1,14 +1,11 @@
-import WorkspaceWrapper from '@tuturuuu/ui/custom/workspace-wrapper';
 import { TOPIC_ANNOUNCEMENTS_SECRET } from '@tuturuuu/utils/topic-announcements';
-import {
-  getPermissions,
-  getSecret,
-  getSecrets,
-} from '@tuturuuu/utils/workspace-helper';
+import { getSecret, getSecrets } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { connection } from 'next/server';
 import type { ReactNode } from 'react';
+import WorkspaceWrapper from '@/components/workspace-wrapper';
+import { getContactsWorkspacePermissions } from '@/lib/workspace';
 import { TopicAnnouncementsShell } from './topic-announcements-shell';
 
 export const metadata: Metadata = {
@@ -33,7 +30,7 @@ export default async function TopicAnnouncementsLayout({
         if (isPersonal) notFound();
 
         const [permissions, secrets] = await Promise.all([
-          getPermissions({ wsId }),
+          getContactsWorkspacePermissions(wsId),
           getSecrets({ forceAdmin: true, wsId }),
         ]);
         const enabled =

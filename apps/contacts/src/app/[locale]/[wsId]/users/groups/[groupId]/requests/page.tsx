@@ -1,7 +1,7 @@
-import WorkspaceWrapper from '@tuturuuu/ui/custom/workspace-wrapper';
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { notFound } from 'next/navigation';
 import { connection } from 'next/server';
+import WorkspaceWrapper from '@/components/workspace-wrapper';
+import { getContactsWorkspacePermissions } from '@/lib/workspace';
 import { GroupRequestsClient } from './client';
 
 export default async function GroupRequestsPage({
@@ -18,7 +18,7 @@ export default async function GroupRequestsPage({
   return (
     <WorkspaceWrapper params={params}>
       {async ({ wsId, groupId }) => {
-        const permissions = await getPermissions({ wsId });
+        const permissions = await getContactsWorkspacePermissions(wsId);
         if (!permissions) notFound();
         const { containsPermission } = permissions;
         const canApproveReports = containsPermission('approve_reports');

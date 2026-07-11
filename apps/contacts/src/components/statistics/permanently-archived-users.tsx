@@ -1,8 +1,8 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import StatisticCard from '@tuturuuu/ui/custom/statistic-card';
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
+import { getContactsWorkspacePermissions } from '@/lib/workspace';
 
 export default async function PermanentlyArchivedUsersStatistics({
   wsId,
@@ -12,9 +12,7 @@ export default async function PermanentlyArchivedUsersStatistics({
 }) {
   const t = await getTranslations();
   const enabled = true;
-  const permissions = await getPermissions({
-    wsId,
-  });
+  const permissions = await getContactsWorkspacePermissions(wsId);
   if (!permissions) notFound();
   const { containsPermission } = permissions;
 

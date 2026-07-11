@@ -1,5 +1,4 @@
 import LoadingStatisticCard from '@tuturuuu/ui/custom/loading-statistic-card';
-import WorkspaceWrapper from '@tuturuuu/ui/custom/workspace-wrapper';
 import type { Metadata } from 'next';
 import { connection } from 'next/server';
 import { Suspense } from 'react';
@@ -11,6 +10,7 @@ import {
   UserGroupTagsStatistics,
   UserReportsStatistics,
 } from '@/components/statistics';
+import WorkspaceWrapper from '@/components/workspace-wrapper';
 
 export const metadata: Metadata = {
   title: 'Users',

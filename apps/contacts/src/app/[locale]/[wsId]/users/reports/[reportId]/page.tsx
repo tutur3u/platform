@@ -10,11 +10,11 @@ import {
   sortWorkspaceUsersByArchive,
 } from '@tuturuuu/users-core/reports/user-archive';
 import { availableConfigs } from '@tuturuuu/utils/configs/reports';
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { notFound, redirect } from 'next/navigation';
 import { connection } from 'next/server';
 import { getLocale, getTranslations } from 'next-intl/server';
+import { getContactsWorkspacePermissions } from '@/lib/workspace';
 import EditableReportPreview from './editable-report-preview';
 
 type ReportWorkspaceViewRow = WorkspaceUserReport & {
@@ -58,7 +58,7 @@ export default async function WorkspaceUserDetailsPage({
   const locale = await getLocale();
   const { wsId, reportId } = await params;
   const { groupId, userId } = await searchParams;
-  const permissions = await getPermissions({ wsId });
+  const permissions = await getContactsWorkspacePermissions(wsId);
 
   if (!permissions?.containsPermission('view_user_groups_reports')) {
     notFound();

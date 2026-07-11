@@ -1,8 +1,8 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import StatisticCard from '@tuturuuu/ui/custom/statistic-card';
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
+import { getContactsWorkspacePermissions } from '@/lib/workspace';
 
 export default async function UserGroupTagsStatistics({
   wsId,
@@ -25,9 +25,7 @@ export default async function UserGroupTagsStatistics({
         .eq('ws_id', wsId)
     : { count: 0 };
 
-  const permissions = await getPermissions({
-    wsId,
-  });
+  const permissions = await getContactsWorkspacePermissions(wsId);
   if (!permissions) notFound();
   const { containsPermission } = permissions;
 
