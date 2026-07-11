@@ -1,5 +1,56 @@
 # Changelog
 
+## [0.16.0](https://github.com/tutur3u/platform/compare/ui-v0.15.0...ui-v0.16.0) (2026-07-11)
+
+
+### Features
+
+* **contacts:** migrate reports + groups and complete the users cutover ([2ee89cd](https://github.com/tutur3u/platform/commit/2ee89cd2257c2a9824df53d4be99436416d85c13))
+* **finance:** support prepaid subscription invoice ranges ([fa0f338](https://github.com/tutur3u/platform/commit/fa0f3388dfb3d3ea539a8d8bdc3f100f268542c6))
+* **inventory:** add revenue share and category bundles ([20b2e1e](https://github.com/tutur3u/platform/commit/20b2e1e5302d1db275766b7b4b92d9bdf69de04a))
+* **satellite:** open settings on Cmd/Ctrl+, in satellite apps ([841f425](https://github.com/tutur3u/platform/commit/841f42557dd49eb31fd797900b1ec6ade6642dba))
+* **settings:** lazy load searchable settings availability ([78091c0](https://github.com/tutur3u/platform/commit/78091c0acd16609c695be80b7c47f7840a34d74a))
+* **settings:** open settings dialog from sidebar ([f3d223f](https://github.com/tutur3u/platform/commit/f3d223fbe3b4ecc7c37b6f19645f6122ddfdf5b9))
+* **tasks:** add board header loading skeleton ([73f1242](https://github.com/tutur3u/platform/commit/73f12421a9cd50c035a1c9940e152354b1974f26))
+* **tasks:** add quick-create targeting and edge autoscroll ([f03e932](https://github.com/tutur3u/platform/commit/f03e9324b0cce18e9f9974cc8fe251bb58b686bd))
+* **tasks:** add task templates ([8d0700a](https://github.com/tutur3u/platform/commit/8d0700ad255c7b5874bfa065575df6b1cde34063))
+* **tasks:** allow archiving document tasks ([0c51941](https://github.com/tutur3u/platform/commit/0c519414101a3a21b4e33548517eef05143fdf8e))
+* **tasks:** consolidate task settings ([982e0b9](https://github.com/tutur3u/platform/commit/982e0b927358a5d566a5e33e092bd387ec0a7b50))
+* **tasks:** consolidate tasks entry and sidebar controls ([56e80eb](https://github.com/tutur3u/platform/commit/56e80eb5c60d4b4e56f2953c7978038f1ebe9c08))
+* **tasks:** stabilize shared board realtime collaboration ([6028caf](https://github.com/tutur3u/platform/commit/6028caf50432fd4dcebdaa5a59284e50972b1aa3))
+
+
+### Bug Fixes
+
+* **auth:** share account preference cookies ([8c1848a](https://github.com/tutur3u/platform/commit/8c1848a941c1b3f91337104c975e4bc0d8f68fc9))
+* **cli:** preserve markdown tables in task descriptions ([9faf8ba](https://github.com/tutur3u/platform/commit/9faf8ba44b92565a9dfc2949c496654fc1fea9b3))
+* **finance:** apply invoice defaults and i18n coverage ([a5a7a26](https://github.com/tutur3u/platform/commit/a5a7a26c5cf9f6479010624ace6a18dbeb87f0dd))
+* **finance:** apply invoice defaults and i18n coverage ([97fabad](https://github.com/tutur3u/platform/commit/97fabad7b0815da7afa009fea6a5d1abb983c040))
+* **finance:** stabilize subscription invoice checkout ([742c163](https://github.com/tutur3u/platform/commit/742c163bc8fa94acf3de03feb4ff3ef026419a4e))
+* **mail:** stabilize layout and managed sender identity ([a22205e](https://github.com/tutur3u/platform/commit/a22205e98a8671ffb628586107de09a7ba8dd1c4))
+* **settings:** resolve lazy search import for docker build ([8a6dc1b](https://github.com/tutur3u/platform/commit/8a6dc1b39fd675daaa9f9b24c60b975b044db724))
+* **tasks:** compact due date menu summaries ([473ca52](https://github.com/tutur3u/platform/commit/473ca52acd752b16032d1635120063d250ba9bd0))
+* **tasks:** default task boards to kanban ([477c12a](https://github.com/tutur3u/platform/commit/477c12aeee7644a28e6266f9c339e7ef5c3228bf))
+* **tasks:** harden satellite task route hydration ([9d51a38](https://github.com/tutur3u/platform/commit/9d51a38ad948ebb398bec794f082f2bbf8d466cc))
+* **tasks:** keep personal board moves on workspace route ([60e29b0](https://github.com/tutur3u/platform/commit/60e29b093314b3b185f3f63a69042a665644ed3d))
+* **tasks:** keep personal moves off placement API ([d8c41d7](https://github.com/tutur3u/platform/commit/d8c41d790f5edbe637b9ce71bbd5040b7fddbfa5))
+* **tasks:** match board name input surface ([2552733](https://github.com/tutur3u/platform/commit/2552733942f720bb1df0566f27753eb226115f3e))
+* **tasks:** pad board header skeleton ([b0c5c0f](https://github.com/tutur3u/platform/commit/b0c5c0fea8871cac2603da6239b980c752b1c9f6))
+* **tasks:** prevent description wipes during yjs hydration ([947f38c](https://github.com/tutur3u/platform/commit/947f38c6474d07b1fac1c44e166638bfc87260c0))
+* **tasks:** refresh task template placeholders ([0c3c309](https://github.com/tutur3u/platform/commit/0c3c30935f67e3e64d548c8a13584fd597e887b8))
+* **tasks:** repair settings data and i18n ([0159488](https://github.com/tutur3u/platform/commit/0159488ae5de1c4d98a7d804d47bf1d479ae60c9))
+* **tasks:** resolve personal placement board from list ([ed52667](https://github.com/tutur3u/platform/commit/ed5266740092e2c5fd2e7be19d5015a63705bea1))
+* **tasks:** resolve personal placement board from list ([14335af](https://github.com/tutur3u/platform/commit/14335af944f77b923be66c871c31f5fea79d61a4))
+* **tasks:** restore satellite resource access ([ec5e0a8](https://github.com/tutur3u/platform/commit/ec5e0a8d75398047e0151ae2ac3cd9a25a4fd675))
+* **tasks:** restore task dialog app-session requests ([69f83cb](https://github.com/tutur3u/platform/commit/69f83cb8730eaeb4d39c186bbf8593c73e3deb47))
+* **tasks:** restore tracked task descriptions ([f892ae2](https://github.com/tutur3u/platform/commit/f892ae23dfec41c2d25649b97a628d8cdcd1fa5d))
+* **tasks:** route native personal task moves normally ([5bbba3c](https://github.com/tutur3u/platform/commit/5bbba3c3f193e722cc87cdfe2eb2734f61442cd0))
+* **tasks:** scroll kanban board at drag edges ([1053f6c](https://github.com/tutur3u/platform/commit/1053f6cc6db9788b7e184ed8bc7febdb2adacf97))
+* **tasks:** support personal external terminal defaults ([50434cb](https://github.com/tutur3u/platform/commit/50434cb9849a65dd8c77f6b030b27a4bd76125e4))
+* **tasks:** unify board loading skeleton ([eaf2b65](https://github.com/tutur3u/platform/commit/eaf2b65242201573b930d4df4695488d0a669f30))
+* **ui:** preserve personal external task edits ([8e537e3](https://github.com/tutur3u/platform/commit/8e537e3787ad6854c0efe7792e9487647d73854e))
+* **ui:** stabilize task property popover handoff ([8fb2e62](https://github.com/tutur3u/platform/commit/8fb2e62904d34a3ae7894bfbbb66c285fcf1a1bd))
+
 ## [0.15.0](https://github.com/tutur3u/platform/compare/ui-v0.14.0...ui-v0.15.0) (2026-07-11)
 
 

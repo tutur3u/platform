@@ -1,5 +1,42 @@
 # Changelog
 
+## [0.7.0](https://github.com/tutur3u/platform/compare/infra-v0.6.0...infra-v0.7.0) (2026-07-11)
+
+
+### Features
+
+* **infrastructure:** add satellite shell parity ([d2fcaf3](https://github.com/tutur3u/platform/commit/d2fcaf35a8c2dd2ccb6b14961287c3d518c02a26))
+* **inventory:** add revenue share and category bundles ([20b2e1e](https://github.com/tutur3u/platform/commit/20b2e1e5302d1db275766b7b4b92d9bdf69de04a))
+* **satellite:** add sidebar apps launcher ([b2f6fcd](https://github.com/tutur3u/platform/commit/b2f6fcd55d7cb5c100e31d36f9f329817ecfe5e9))
+* **satellite:** improve apps launcher picker ([a3e92cb](https://github.com/tutur3u/platform/commit/a3e92cb1a54e3cb45bc1697e8e70efd0776d2a23))
+* **tasks:** add quick-create targeting and edge autoscroll ([f03e932](https://github.com/tutur3u/platform/commit/f03e9324b0cce18e9f9974cc8fe251bb58b686bd))
+* **tasks:** consolidate tasks entry and sidebar controls ([56e80eb](https://github.com/tutur3u/platform/commit/56e80eb5c60d4b4e56f2953c7978038f1ebe9c08))
+
+
+### Bug Fixes
+
+* **apps:** opt authed pages and GET routes into request-time rendering under cacheComponents ([9496ec3](https://github.com/tutur3u/platform/commit/9496ec37deaa3bfd6796a5fd0506f8d942d26c0e))
+* **auth:** share account preference cookies ([8c1848a](https://github.com/tutur3u/platform/commit/8c1848a941c1b3f91337104c975e4bc0d8f68fc9))
+* **build:** restore repo check ([4def830](https://github.com/tutur3u/platform/commit/4def830f463ea8a9c31af8e982eab716e9bd5f72))
+* **ci:** allow duplicated aws smithy clients ([c29829e](https://github.com/tutur3u/platform/commit/c29829ef65ede187bc55350c52c42354da30d161))
+* **ci:** normalize aws presign types ([860e209](https://github.com/tutur3u/platform/commit/860e209d5f986eca5bffc1378e82201284206a86))
+* **devboxes:** gate heartbeat and split v1 dispatch ([34c7a49](https://github.com/tutur3u/platform/commit/34c7a49d015d55a3ba910b3e332be819d4528a59))
+* **infrastructure:** harden internal dashboard access ([81e8f8b](https://github.com/tutur3u/platform/commit/81e8f8b2d411bbf43a2b5418ea69593ea32418c5))
+* **infrastructure:** land root workspace on internal ([b3f63c2](https://github.com/tutur3u/platform/commit/b3f63c2e27dab7c5746f58e306d521f1e581b849))
+* **infrastructure:** provide intl context in locale layout ([39ebbba](https://github.com/tutur3u/platform/commit/39ebbba5d2962ca1675b75d7a9e9a598c65418fb))
+* **infrastructure:** replace workspace picker with logo link ([0e998eb](https://github.com/tutur3u/platform/commit/0e998eb7650cecad1d5042b59fb46af18f578160))
+* **infrastructure:** restore canonical auth host access ([9f6715f](https://github.com/tutur3u/platform/commit/9f6715fb1c5a89598556cba33b16938b76995fc6))
+* **infrastructure:** show dashboard error details ([70de0b7](https://github.com/tutur3u/platform/commit/70de0b7f7682805e71faa6ead445c5a62077789d))
+* **infrastructure:** stop protected locale redirect loop ([d8843b5](https://github.com/tutur3u/platform/commit/d8843b593fffb577070dc2037b4636de2f7b1e6e))
+* **mail:** localize post email dates ([9be736d](https://github.com/tutur3u/platform/commit/9be736dcb5d4594996bdba800aa385334ddf37e4))
+* update launchable app catalog ([cb31207](https://github.com/tutur3u/platform/commit/cb312076aee227de9a8f99105d681911d14a63ac))
+
+
+### Performance Improvements
+
+* **ci:** enable repository-wide remote caching ([6250f91](https://github.com/tutur3u/platform/commit/6250f91d745ef987a4fc86c797aedf41542f421b))
+* **web:** make login shell cache friendly ([0fcf4da](https://github.com/tutur3u/platform/commit/0fcf4da565e5e4260032247d6ee710cb6c4b7fcd))
+
 ## [0.6.0](https://github.com/tutur3u/platform/compare/infra-v0.5.0...infra-v0.6.0) (2026-07-11)
 
 

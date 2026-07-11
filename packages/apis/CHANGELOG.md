@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.9.0](https://github.com/tutur3u/platform/compare/apis-v0.8.0...apis-v0.9.0) (2026-07-11)
+
+
+### Features
+
+* **tasks:** allow archiving document tasks ([0c51941](https://github.com/tutur3u/platform/commit/0c519414101a3a21b4e33548517eef05143fdf8e))
+
+
+### Bug Fixes
+
+* **tasks:** allow personal board external placements ([89a3fa2](https://github.com/tutur3u/platform/commit/89a3fa20117414c102ad5cdedb126ec0fab981d8))
+* **tasks:** authenticate label association routes ([a3350a6](https://github.com/tutur3u/platform/commit/a3350a6deab332ac1754533e5fbaec5f6ecd62f4))
+* **tasks:** harden satellite task route hydration ([9d51a38](https://github.com/tutur3u/platform/commit/9d51a38ad948ebb398bec794f082f2bbf8d466cc))
+* **tasks:** log personal task route failures ([d2b7f64](https://github.com/tutur3u/platform/commit/d2b7f6475e3d81ce785f7b5695d85cb3b63f5046))
+* **tasks:** restore personal board entrypoint ([e707bf5](https://github.com/tutur3u/platform/commit/e707bf538925545a06dea83ca8f4f48f5c057461))
+* **tasks:** restore satellite resource access ([ec5e0a8](https://github.com/tutur3u/platform/commit/ec5e0a8d75398047e0151ae2ac3cd9a25a4fd675))
+* **tasks:** restore task dialog app-session requests ([69f83cb](https://github.com/tutur3u/platform/commit/69f83cb8730eaeb4d39c186bbf8593c73e3deb47))
+* **tasks:** route native personal task moves normally ([5bbba3c](https://github.com/tutur3u/platform/commit/5bbba3c3f193e722cc87cdfe2eb2734f61442cd0))
+* **tasks:** support personal external terminal defaults ([50434cb](https://github.com/tutur3u/platform/commit/50434cb9849a65dd8c77f6b030b27a4bd76125e4))
+* **tasks:** tolerate personal count rpc auth gaps ([a31044a](https://github.com/tutur3u/platform/commit/a31044aea13e623d06c50eb086022244a2177e98))
+
 ## [0.8.0](https://github.com/tutur3u/platform/compare/apis-v0.7.2...apis-v0.8.0) (2026-07-11)
 
 

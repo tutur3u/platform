@@ -1,5 +1,51 @@
 # Changelog
 
+## [0.8.0](https://github.com/tutur3u/platform/compare/learn-v0.7.0...learn-v0.8.0) (2026-07-11)
+
+
+### Features
+
+* add quiz deadline functionality to modules and update database schema and types ([8748efe](https://github.com/tutur3u/platform/commit/8748efe164c004395b08af7054208e2929eca631))
+* add quiz mode to vocabulary practice with multiple-choice questions ([db8fe9e](https://github.com/tutur3u/platform/commit/db8fe9eb65c3e02b064fc8103a93bf7479141db1))
+* add text-to-speech API endpoint and integrate speech synthesis into vocabulary learning components ([4f452e7](https://github.com/tutur3u/platform/commit/4f452e70322ea7165731f02a0daa712aa05d24f5))
+* add vocabulary tab to course modules with dynamic UI injection and API endpoint ([8f3ba0e](https://github.com/tutur3u/platform/commit/8f3ba0e2cae1ae1857eebb64f5dca394f2b5bd9e))
+* **edu:** add quiz management flow & dashboard improvements ([#4933](https://github.com/tutur3u/platform/issues/4933)) ([9dafc17](https://github.com/tutur3u/platform/commit/9dafc173b1c9e22cfa8731e4383779583f25acbc))
+* **edu:** add vocabulary journey ([#4946](https://github.com/tutur3u/platform/issues/4946)) ([06535d2](https://github.com/tutur3u/platform/commit/06535d2766e46206d311e971f6d37ef351fe667b))
+* **education:** extract shared education libs into @tuturuuu/education-core and ready learn/teach for API hosting ([dd77db3](https://github.com/tutur3u/platform/commit/dd77db3590786cad51ce76c4d18b30240173ef7e))
+* implement AI-powered feedback generation for quiz submissions and integrate into the teach interface ([0f5c7cf](https://github.com/tutur3u/platform/commit/0f5c7cf1a1a7a20f7f6e861dc0abb0c30e5c1ea8))
+* implement pronunciation practice mode with audio recording and analysis API integration ([248bf3d](https://github.com/tutur3u/platform/commit/248bf3db24571cf7dd2b6a7ddc655d3ac8297323))
+* implement quiz score visibility toggle and manual review status for learners ([300909c](https://github.com/tutur3u/platform/commit/300909cdbcd15ad79f6a471a3070985a6b382258))
+* imrpove matching question UI ([d085214](https://github.com/tutur3u/platform/commit/d0852145b63b750ee9802e1610dd61c55fa2a387))
+* **learn:** move tulearn + guest course API routes from apps/web to apps/learn ([ee1aa7b](https://github.com/tutur3u/platform/commit/ee1aa7b7685403c43aca94f3d97dc64a32374f25))
+* **satellite:** add sidebar apps launcher ([b2f6fcd](https://github.com/tutur3u/platform/commit/b2f6fcd55d7cb5c100e31d36f9f329817ecfe5e9))
+* **satellite:** improve apps launcher picker ([a3e92cb](https://github.com/tutur3u/platform/commit/a3e92cb1a54e3cb45bc1697e8e70efd0776d2a23))
+* **tasks:** add task templates ([8d0700a](https://github.com/tutur3u/platform/commit/8d0700ad255c7b5874bfa065575df6b1cde34063))
+* **tasks:** consolidate tasks entry and sidebar controls ([56e80eb](https://github.com/tutur3u/platform/commit/56e80eb5c60d4b4e56f2953c7978038f1ebe9c08))
+
+
+### Bug Fixes
+
+* **auth:** share account preference cookies ([8c1848a](https://github.com/tutur3u/platform/commit/8c1848a941c1b3f91337104c975e4bc0d8f68fc9))
+* **build:** restore repo check ([4def830](https://github.com/tutur3u/platform/commit/4def830f463ea8a9c31af8e982eab716e9bd5f72))
+* **edu:** address follow-up review feedback ([f183d8f](https://github.com/tutur3u/platform/commit/f183d8f92b5b5d01e587e56bd8f236064941fcc3))
+* **edu:** address follow-up vocabulary review ([c21565f](https://github.com/tutur3u/platform/commit/c21565f28eb2872d342b65fe7332f9ce7227fa20))
+* **edu:** address quiz review feedback ([ec77bd8](https://github.com/tutur3u/platform/commit/ec77bd83f2e1ec716ea28db83a55930a7ca60df3))
+* **edu:** address vocabulary review comments ([815699a](https://github.com/tutur3u/platform/commit/815699ae30b54f59525078f9ef23b9e7fbd2aed5))
+* **edu:** harden vocabulary api checks ([1819c15](https://github.com/tutur3u/platform/commit/1819c150bda15648354e1fe09df7a6aae47ff896))
+* **edu:** resolve vocabulary journey review feedback ([46e4180](https://github.com/tutur3u/platform/commit/46e4180994add3417b84779433a5cd2f21737bf7))
+* **edu:** satisfy vocabulary ci checks ([61b011e](https://github.com/tutur3u/platform/commit/61b011e865ba8a2345662e5450e9f4f4c90c3a59))
+* **inventory:** contain operator tables and translations ([5fa064e](https://github.com/tutur3u/platform/commit/5fa064e4c203f7202fc6db4ef2463001e32857a4))
+* **learn:** allow blocking dashboard entry ([e01b16b](https://github.com/tutur3u/platform/commit/e01b16b841616633428ad037aae7f1dc2e68861a))
+* **learn:** clarify vocabulary practice requirement ([44b5000](https://github.com/tutur3u/platform/commit/44b5000ec3f8dc4c78688e174e36bac0b4ac6b16))
+* **learn:** stabilize dashboard dev entry ([e6ced1e](https://github.com/tutur3u/platform/commit/e6ced1ed08e03bc2f91a2c746575adf95b8c7ce8))
+* paragraph question without text box ([aac0439](https://github.com/tutur3u/platform/commit/aac0439a0a7418d5e4b683f78a55ecf4e3b682d0))
+* update launchable app catalog ([cb31207](https://github.com/tutur3u/platform/commit/cb312076aee227de9a8f99105d681911d14a63ac))
+
+
+### Performance Improvements
+
+* **ci:** enable repository-wide remote caching ([6250f91](https://github.com/tutur3u/platform/commit/6250f91d745ef987a4fc86c797aedf41542f421b))
+
 ## [0.7.0](https://github.com/tutur3u/platform/compare/learn-v0.6.0...learn-v0.7.0) (2026-07-11)
 
 

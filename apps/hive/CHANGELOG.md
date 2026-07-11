@@ -1,5 +1,36 @@
 # Changelog
 
+## [0.8.0](https://github.com/tutur3u/platform/compare/hive-v0.7.0...hive-v0.8.0) (2026-07-11)
+
+
+### Features
+
+* **contacts:** scaffold contacts.tuturuuu.com satellite shell + monorepo registration ([7e335fc](https://github.com/tutur3u/platform/commit/7e335fc036c4a45ed189095ecd10a43ee002294b))
+* **education:** extract shared education libs into @tuturuuu/education-core and ready learn/teach for API hosting ([dd77db3](https://github.com/tutur3u/platform/commit/dd77db3590786cad51ce76c4d18b30240173ef7e))
+* **finance:** extract shared finance route-auth + storage libs into @tuturuuu/finance-core ([79140d2](https://github.com/tutur3u/platform/commit/79140d2ddb5be4b6fb1d52532ff75aaa1aa3ea22))
+* **hive:** migrate hive module from web to apps/hive (incl. APIs) ([689085a](https://github.com/tutur3u/platform/commit/689085a942da0f589701c074e9278550cce5f4eb))
+* **pay:** scaffold apps/pay satellite (pay.tuturuuu.com, port 7826) ([3d6e45c](https://github.com/tutur3u/platform/commit/3d6e45cca6a315fe67213e438144b73103bae2f5))
+* **satellite:** add sidebar apps launcher ([b2f6fcd](https://github.com/tutur3u/platform/commit/b2f6fcd55d7cb5c100e31d36f9f329817ecfe5e9))
+* **satellite:** improve apps launcher picker ([a3e92cb](https://github.com/tutur3u/platform/commit/a3e92cb1a54e3cb45bc1697e8e70efd0776d2a23))
+* **tasks:** add task templates ([8d0700a](https://github.com/tutur3u/platform/commit/8d0700ad255c7b5874bfa065575df6b1cde34063))
+* **tasks:** consolidate tasks entry and sidebar controls ([56e80eb](https://github.com/tutur3u/platform/commit/56e80eb5c60d4b4e56f2953c7978038f1ebe9c08))
+
+
+### Bug Fixes
+
+* **auth:** share account preference cookies ([8c1848a](https://github.com/tutur3u/platform/commit/8c1848a941c1b3f91337104c975e4bc0d8f68fc9))
+* **build:** restore repo check ([4def830](https://github.com/tutur3u/platform/commit/4def830f463ea8a9c31af8e982eab716e9bd5f72))
+* **ci:** finish storage-core workspace integration ([ba786af](https://github.com/tutur3u/platform/commit/ba786af917d02ff65bf7d59e2c198a86f5fbc7ff))
+* **docker:** stabilize native blue-green deploy ([f41fbed](https://github.com/tutur3u/platform/commit/f41fbedc07a5a5effa3ef1d4226fa11742cb7de4))
+* **infrastructure:** default docker web to native builds ([7d89f00](https://github.com/tutur3u/platform/commit/7d89f004f75ab12eddc3cb92df5a1e6a7255fe0d))
+* update launchable app catalog ([cb31207](https://github.com/tutur3u/platform/commit/cb312076aee227de9a8f99105d681911d14a63ac))
+
+
+### Performance Improvements
+
+* **ci:** enable repository-wide remote caching ([6250f91](https://github.com/tutur3u/platform/commit/6250f91d745ef987a4fc86c797aedf41542f421b))
+* **tooling:** improve service build caches ([1a7a5bf](https://github.com/tutur3u/platform/commit/1a7a5bf55c81450914283efed653a72c7b491c2a))
+
 ## [0.7.0](https://github.com/tutur3u/platform/compare/hive-v0.6.0...hive-v0.7.0) (2026-07-11)
 
 
