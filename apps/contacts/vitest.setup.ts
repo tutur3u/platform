@@ -1,6 +1,15 @@
 import '@testing-library/jest-dom/vitest';
 import { cleanup } from '@testing-library/react';
-import { afterEach } from 'vitest';
+import { afterEach, vi } from 'vitest';
+
+// Authed pages opt into request-time rendering with `connection()` (required
+// under cacheComponents so Next never prerenders them without cookies). Unit
+// tests invoke the pages directly, outside a request scope, where `connection()`
+// throws — stub it while keeping every other next/server export.
+vi.mock('next/server', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('next/server')>()),
+  connection: vi.fn().mockResolvedValue(undefined),
+}));
 
 // Automatically cleanup after each test to prevent React 19 scheduler issues
 afterEach(() => {

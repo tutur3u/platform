@@ -14,12 +14,12 @@ import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { Separator } from '@tuturuuu/ui/separator';
+import { PostApprovalActions } from '@tuturuuu/users-ui/components/post-approval-actions';
 import { cn } from '@tuturuuu/utils/format';
 import dayjs from 'dayjs';
 import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
 import { useEffect } from 'react';
-import { PostApprovalActions } from '@/components/post-approval-actions';
 import { DeliveryDiagnostics } from './delivery-diagnostics';
 import { ForceSendPostButton } from './force-send-button';
 import {

@@ -18,24 +18,24 @@
         "acceptedRemoval": 2,
         "key": "page",
         "label": "page",
-        "legacyNext": 52,
-        "migrated": 109,
-        "percentComplete": 68.1,
-        "remaining": 52,
-        "terminal": 111,
-        "total": 163,
+        "legacyNext": 43,
+        "migrated": 104,
+        "percentComplete": 71.14,
+        "remaining": 43,
+        "terminal": 106,
+        "total": 149,
         "unknownStatus": 0
       },
       {
         "acceptedRemoval": 0,
         "key": "layout",
         "label": "layout",
-        "legacyNext": 8,
+        "legacyNext": 6,
         "migrated": 47,
-        "percentComplete": 85.45,
-        "remaining": 8,
+        "percentComplete": 88.68,
+        "remaining": 6,
         "terminal": 47,
-        "total": 55,
+        "total": 53,
         "unknownStatus": 0
       },
       {
@@ -72,18 +72,6 @@
         "remaining": 1,
         "terminal": 0,
         "total": 1,
-        "unknownStatus": 0
-      },
-      {
-        "acceptedRemoval": 0,
-        "key": "loading",
-        "label": "loading",
-        "legacyNext": 0,
-        "migrated": 2,
-        "percentComplete": 100,
-        "remaining": 0,
-        "terminal": 2,
-        "total": 2,
         "unknownStatus": 0
       },
       {
@@ -128,12 +116,12 @@
         "acceptedRemoval": 2,
         "key": "tanstack-start",
         "label": "TanStack Start",
-        "legacyNext": 60,
-        "migrated": 160,
-        "percentComplete": 72.97,
-        "remaining": 60,
-        "terminal": 162,
-        "total": 222,
+        "legacyNext": 49,
+        "migrated": 153,
+        "percentComplete": 75.98,
+        "remaining": 49,
+        "terminal": 155,
+        "total": 204,
         "unknownStatus": 0
       }
     ],
@@ -323,12 +311,12 @@
       "acceptedRemoval": 13,
       "key": "total",
       "label": "All route artifacts",
-      "legacyNext": 556,
-      "migrated": 231,
-      "percentComplete": 30.5,
-      "remaining": 556,
-      "terminal": 244,
-      "total": 800,
+      "legacyNext": 545,
+      "migrated": 224,
+      "percentComplete": 30.31,
+      "remaining": 545,
+      "terminal": 237,
+      "total": 782,
       "unknownStatus": 0
     }
   },
@@ -5692,24 +5680,6 @@
       "targetOwner": "tanstack-start"
     },
     {
-      "id": "layout:/:locale/:wsId/users:apps/web/src/app/[locale]/(dashboard)/[wsId]/users/layout.tsx",
-      "kind": "layout",
-      "methods": [],
-      "routePath": "/:locale/:wsId/users",
-      "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/users/layout.tsx",
-      "status": "legacy-next",
-      "targetOwner": "tanstack-start"
-    },
-    {
-      "id": "layout:/:locale/:wsId/users/groups/:groupId:apps/web/src/app/[locale]/(dashboard)/[wsId]/users/groups/[groupId]/layout.tsx",
-      "kind": "layout",
-      "methods": [],
-      "routePath": "/:locale/:wsId/users/groups/:groupId",
-      "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/users/groups/[groupId]/layout.tsx",
-      "status": "legacy-next",
-      "targetOwner": "tanstack-start"
-    },
-    {
       "id": "layout:/:locale/about:apps/web/src/app/[locale]/(marketing)/about/layout.tsx",
       "kind": "layout",
       "methods": [],
@@ -6075,24 +6045,6 @@
       "methods": [],
       "routePath": "/~offline",
       "sourceFile": "apps/web/src/app/~offline/layout.tsx",
-      "status": "migrated",
-      "targetOwner": "tanstack-start"
-    },
-    {
-      "id": "loading:/:locale/:wsId/users/groups/:groupId:apps/web/src/app/[locale]/(dashboard)/[wsId]/users/groups/[groupId]/loading.tsx",
-      "kind": "loading",
-      "methods": [],
-      "routePath": "/:locale/:wsId/users/groups/:groupId",
-      "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/users/groups/[groupId]/loading.tsx",
-      "status": "migrated",
-      "targetOwner": "tanstack-start"
-    },
-    {
-      "id": "loading:/:locale/:wsId/users/reports/:reportId:apps/web/src/app/[locale]/(dashboard)/[wsId]/users/reports/[reportId]/loading.tsx",
-      "kind": "loading",
-      "methods": [],
-      "routePath": "/:locale/:wsId/users/reports/:reportId",
-      "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/users/reports/[reportId]/loading.tsx",
       "status": "migrated",
       "targetOwner": "tanstack-start"
     },
@@ -6763,132 +6715,6 @@
       "targetOwner": "tanstack-start"
     },
     {
-      "id": "page:/:locale/:wsId/users:apps/web/src/app/[locale]/(dashboard)/[wsId]/users/(dashboard)/page.tsx",
-      "kind": "page",
-      "methods": [],
-      "routePath": "/:locale/:wsId/users",
-      "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/users/(dashboard)/page.tsx",
-      "status": "legacy-next",
-      "targetOwner": "tanstack-start"
-    },
-    {
-      "id": "page:/:locale/:wsId/users/groups:apps/web/src/app/[locale]/(dashboard)/[wsId]/users/groups/page.tsx",
-      "kind": "page",
-      "methods": [],
-      "routePath": "/:locale/:wsId/users/groups",
-      "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/users/groups/page.tsx",
-      "status": "legacy-next",
-      "targetOwner": "tanstack-start"
-    },
-    {
-      "id": "page:/:locale/:wsId/users/groups/:groupId:apps/web/src/app/[locale]/(dashboard)/[wsId]/users/groups/[groupId]/page.tsx",
-      "kind": "page",
-      "methods": [],
-      "routePath": "/:locale/:wsId/users/groups/:groupId",
-      "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/users/groups/[groupId]/page.tsx",
-      "status": "legacy-next",
-      "targetOwner": "tanstack-start"
-    },
-    {
-      "id": "page:/:locale/:wsId/users/groups/:groupId/attendance:apps/web/src/app/[locale]/(dashboard)/[wsId]/users/groups/[groupId]/attendance/page.tsx",
-      "kind": "page",
-      "methods": [],
-      "routePath": "/:locale/:wsId/users/groups/:groupId/attendance",
-      "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/users/groups/[groupId]/attendance/page.tsx",
-      "status": "migrated",
-      "targetOwner": "tanstack-start"
-    },
-    {
-      "id": "page:/:locale/:wsId/users/groups/:groupId/content:apps/web/src/app/[locale]/(dashboard)/[wsId]/users/groups/[groupId]/content/page.tsx",
-      "kind": "page",
-      "methods": [],
-      "routePath": "/:locale/:wsId/users/groups/:groupId/content",
-      "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/users/groups/[groupId]/content/page.tsx",
-      "status": "legacy-next",
-      "targetOwner": "tanstack-start"
-    },
-    {
-      "id": "page:/:locale/:wsId/users/groups/:groupId/indicators:apps/web/src/app/[locale]/(dashboard)/[wsId]/users/groups/[groupId]/indicators/page.tsx",
-      "kind": "page",
-      "methods": [],
-      "routePath": "/:locale/:wsId/users/groups/:groupId/indicators",
-      "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/users/groups/[groupId]/indicators/page.tsx",
-      "status": "legacy-next",
-      "targetOwner": "tanstack-start"
-    },
-    {
-      "id": "page:/:locale/:wsId/users/groups/:groupId/posts/:postId:apps/web/src/app/[locale]/(dashboard)/[wsId]/users/groups/[groupId]/posts/[postId]/page.tsx",
-      "kind": "page",
-      "methods": [],
-      "routePath": "/:locale/:wsId/users/groups/:groupId/posts/:postId",
-      "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/users/groups/[groupId]/posts/[postId]/page.tsx",
-      "status": "legacy-next",
-      "targetOwner": "tanstack-start"
-    },
-    {
-      "id": "page:/:locale/:wsId/users/groups/:groupId/reports:apps/web/src/app/[locale]/(dashboard)/[wsId]/users/groups/[groupId]/reports/page.tsx",
-      "kind": "page",
-      "methods": [],
-      "routePath": "/:locale/:wsId/users/groups/:groupId/reports",
-      "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/users/groups/[groupId]/reports/page.tsx",
-      "status": "legacy-next",
-      "targetOwner": "tanstack-start"
-    },
-    {
-      "id": "page:/:locale/:wsId/users/groups/:groupId/requests:apps/web/src/app/[locale]/(dashboard)/[wsId]/users/groups/[groupId]/requests/page.tsx",
-      "kind": "page",
-      "methods": [],
-      "routePath": "/:locale/:wsId/users/groups/:groupId/requests",
-      "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/users/groups/[groupId]/requests/page.tsx",
-      "status": "migrated",
-      "targetOwner": "tanstack-start"
-    },
-    {
-      "id": "page:/:locale/:wsId/users/groups/:groupId/schedule:apps/web/src/app/[locale]/(dashboard)/[wsId]/users/groups/[groupId]/schedule/page.tsx",
-      "kind": "page",
-      "methods": [],
-      "routePath": "/:locale/:wsId/users/groups/:groupId/schedule",
-      "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/users/groups/[groupId]/schedule/page.tsx",
-      "status": "migrated",
-      "targetOwner": "tanstack-start"
-    },
-    {
-      "id": "page:/:locale/:wsId/users/groups/calendar:apps/web/src/app/[locale]/(dashboard)/[wsId]/users/groups/calendar/page.tsx",
-      "kind": "page",
-      "methods": [],
-      "routePath": "/:locale/:wsId/users/groups/calendar",
-      "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/users/groups/calendar/page.tsx",
-      "status": "migrated",
-      "targetOwner": "tanstack-start"
-    },
-    {
-      "id": "page:/:locale/:wsId/users/groups/indicators:apps/web/src/app/[locale]/(dashboard)/[wsId]/users/groups/indicators/page.tsx",
-      "kind": "page",
-      "methods": [],
-      "routePath": "/:locale/:wsId/users/groups/indicators",
-      "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/users/groups/indicators/page.tsx",
-      "status": "legacy-next",
-      "targetOwner": "tanstack-start"
-    },
-    {
-      "id": "page:/:locale/:wsId/users/reports:apps/web/src/app/[locale]/(dashboard)/[wsId]/users/reports/page.tsx",
-      "kind": "page",
-      "methods": [],
-      "routePath": "/:locale/:wsId/users/reports",
-      "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/users/reports/page.tsx",
-      "status": "legacy-next",
-      "targetOwner": "tanstack-start"
-    },
-    {
-      "id": "page:/:locale/:wsId/users/reports/:reportId:apps/web/src/app/[locale]/(dashboard)/[wsId]/users/reports/[reportId]/page.tsx",
-      "kind": "page",
-      "methods": [],
-      "routePath": "/:locale/:wsId/users/reports/:reportId",
-      "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/users/reports/[reportId]/page.tsx",
-      "status": "legacy-next",
-      "targetOwner": "tanstack-start"
-    },
-    {
       "id": "page:/:locale/:wsId/whiteboards:apps/web/src/app/[locale]/(dashboard)/[wsId]/whiteboards/page.tsx",
       "kind": "page",
       "methods": [],
@@ -7533,7 +7359,7 @@
       "methods": [],
       "routePath": "/:locale/users/:handle",
       "sourceFile": "apps/web/src/app/[locale]/(marketing)/users/[handle]/page.tsx",
-      "status": "migrated",
+      "status": "legacy-next",
       "targetOwner": "tanstack-start"
     },
     {
@@ -7621,8 +7447,8 @@
   "summary": {
     "apiRoutes": 565,
     "cronRoutes": 8,
-    "layouts": 55,
-    "pages": 163,
+    "layouts": 53,
+    "pages": 149,
     "routeHandlers": 578,
     "methodCounts": {
       "GET": 296,
@@ -7633,6 +7459,6 @@
       "DELETE": 99,
       "OPTIONS": 23
     },
-    "total": 800
+    "total": 782
   }
 }

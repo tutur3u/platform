@@ -1,10 +1,10 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import type { GroupPostStatusSummaryRow } from '@tuturuuu/users-core/lib/group-post-recipient-types';
 import {
   getPermissions,
   normalizeWorkspaceId,
 } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
-import type { GroupPostStatusSummaryRow } from '@/app/[locale]/(dashboard)/[wsId]/users/groups/[groupId]/posts/[postId]/types';
 
 interface Params {
   params: Promise<{

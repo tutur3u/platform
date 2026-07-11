@@ -1,4 +1,5 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { getGroupMembersPage } from '@tuturuuu/users-core/lib/user-groups/server-data';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -8,7 +9,6 @@ import {
   resolveRequestActorAuthUid,
   resolveUserGroupRouteWorkspaceId,
 } from '@/lib/user-groups/route-helpers';
-import { getGroupMembersPage } from '@/lib/user-groups/server-data';
 
 const UpsertGroupMembersSchema = z.object({
   memberIds: z.array(z.string().uuid()).min(1),

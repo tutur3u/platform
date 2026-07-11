@@ -1,7 +1,7 @@
+import { listUserGroupActivityEventsForRange } from '@tuturuuu/users-core/lib/user-group-activity/data';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { listUserGroupActivityEventsForRange } from '@/lib/user-group-activity/data';
 
 const SearchParamsSchema = z.object({
   start: z.string().datetime(),

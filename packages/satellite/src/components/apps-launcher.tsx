@@ -3,6 +3,7 @@
 import {
   BookOpen,
   BookText,
+  BookUser,
   Boxes,
   Brain,
   Calendar,
@@ -59,6 +60,7 @@ const APP_ICONS: Partial<Record<LaunchableApp['slug'], LucideIcon>> = {
   calendar: Calendar,
   chat: MessageSquare,
   cms: FileText,
+  contacts: BookUser,
   docs: BookText,
   drive: Folder,
   finance: Wallet,

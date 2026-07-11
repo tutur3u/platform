@@ -653,86 +653,16 @@ export async function WorkspaceNavigationLinks({
           preferenceSectionLabel: sidebarSections.operations,
         },
         {
-          id: 'users',
-          title: t('sidebar_tabs.users'),
-          aliases: [
-            `/${personalOrWsId}/users`,
-            `/${personalOrWsId}/users/groups`,
-            `/${personalOrWsId}/users/groups/calendar`,
-            `/${personalOrWsId}/users/groups/indicators`,
-            `/${personalOrWsId}/users/reports`,
-          ],
-          icon: createDashboardNavigationIcon('Users', 'h-5 w-5'),
-          requiredWorkspaceTier: createTierRequirement('users', {
-            alwaysShow: true,
-          }),
-          children: [
-            {
-              title: t('workspace-users-tabs.overview'),
-              href: `/${personalOrWsId}/users`,
-              icon: createDashboardNavigationIcon('LayoutDashboard', 'h-5 w-5'),
-              matchExact: true,
-              disabled: withoutPermission('manage_users'),
-            },
-            null,
-            {
-              title: t('workspace-users-tabs.groups'),
-              href: `/${personalOrWsId}/users/groups`,
-              icon: createDashboardNavigationIcon('Users', 'h-5 w-5'),
-              matchExact: true,
-              disabled:
-                withoutPermission('manage_users') &&
-                withoutPermission('view_user_groups'),
-            },
-            {
-              title: t('workspace-users-tabs.group_calendar'),
-              href: `/${personalOrWsId}/users/groups/calendar`,
-              icon: createDashboardNavigationIcon('Calendar', 'h-5 w-5'),
-              disabled:
-                withoutPermission('manage_users') &&
-                withoutPermission('view_user_groups'),
-            },
-            null,
-            {
-              title: t('workspace-users-tabs.reports'),
-              href: `/${personalOrWsId}/users/reports`,
-              icon: createDashboardNavigationIcon('ClipboardList', 'h-5 w-5'),
-              disabled: withoutPermission('view_user_groups_reports'),
-            },
-            {
-              title: t('workspace-users-tabs.metrics'),
-              href: `/${personalOrWsId}/users/groups/indicators`,
-              icon: createDashboardNavigationIcon('ChartColumn', 'h-5 w-5'),
-              disabled: withoutPermission('view_user_groups_scores'),
-            },
-            {
-              title: t('sidebar_tabs.posts'),
-              href: `/${personalOrWsId}/posts`,
-              icon: createDashboardNavigationIcon(
-                'GalleryVerticalEnd',
-                'h-5 w-5'
-              ),
-              disabled:
-                !hasSecret('ENABLE_EMAIL_SENDING', 'true') ||
-                (!DEV_MODE && ENABLE_AI_ONLY) ||
-                (withoutPermission('view_user_groups_posts') &&
-                  withoutPermission('approve_posts')),
-              experimental: 'beta',
-            },
-          ],
+          id: 'posts',
+          title: t('sidebar_tabs.posts'),
+          href: `/${personalOrWsId}/posts`,
+          icon: createDashboardNavigationIcon('GalleryVerticalEnd', 'h-5 w-5'),
           disabled:
-            ENABLE_AI_ONLY ||
-            (withoutPermission('manage_users') &&
-              withoutPermission('check_user_attendance') &&
-              withoutPermission('view_users_private_info') &&
-              withoutPermission('view_users_public_info') &&
-              withoutPermission('view_user_groups') &&
-              withoutPermission('view_user_groups_reports') &&
-              withoutPermission('view_user_groups_scores') &&
-              withoutPermission('view_user_groups_posts') &&
-              withoutPermission('create_lead_generations') &&
-              withoutPermission('approve_reports') &&
+            !hasSecret('ENABLE_EMAIL_SENDING', 'true') ||
+            (!DEV_MODE && ENABLE_AI_ONLY) ||
+            (withoutPermission('view_user_groups_posts') &&
               withoutPermission('approve_posts')),
+          experimental: 'beta',
           preferenceSectionLabel: sidebarSections.operations,
         },
         {
