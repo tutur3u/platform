@@ -171,6 +171,12 @@ Dependabot jobs. Those jobs restore a task-family-scoped `.turbo` fallback from
 GitHub's cache without writing shared entries; trusted default-branch jobs seed
 that fallback.
 
+The shared Bun runtime and package-download caches follow the same ownership
+rule: only trusted `main` jobs save entries. Production, pull-request,
+Dependabot, and other branch jobs restore the default-branch cache without
+creating branch-scoped duplicates. This is especially important for Bun's
+package cache, which can approach 1 GB for the full monorepo lockfile.
+
 Turborepo hashes inputs and reuses cached task outputs, so unchanged builds,
 type checks, and tests resolve to cache hits instead of recompiling. The task
 graph includes transit-only dependency nodes for tests: dependency source

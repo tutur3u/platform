@@ -215,6 +215,11 @@ formatting behavior, or repo-wide verification.
   with temporary secret fallback. Pull requests and Dependabot receive neither
   token nor team and use a task-family `.turbo` cache that only protected
   default-branch jobs may save.
+- Only trusted `main` jobs may save the shared Bun runtime and package-download
+  caches. Production, pull-request, Dependabot, and other branch jobs restore
+  the default-branch entries without creating branch-scoped duplicates; this
+  prevents each lockfile generation from consuming another roughly 1 GB on
+  `production`.
 - Hash output-affecting build, Vercel, Docker, and public runtime variables in
   Turbo. CPU, heap, and concurrency controls are pass-through values. Use a
   transit-only dependency task when downstream tests must invalidate on

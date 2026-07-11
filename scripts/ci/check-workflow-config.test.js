@@ -38,6 +38,14 @@ function githubExpression(expression) {
   return `${String.fromCharCode(36)}{{ ${expression} }}`;
 }
 
+function readCompositeStep(action, name) {
+  const marker = `    - name: ${name}\n`;
+  const start = action.indexOf(marker);
+  assert.notEqual(start, -1, `missing composite step: ${name}`);
+  const next = action.indexOf('\n    - name:', start + marker.length);
+  return action.slice(start, next === -1 ? undefined : next);
+}
+
 test('docs-only changes skip all Vercel deploy workflows', () => {
   const rootDir = createFixtureRoot();
 
@@ -556,6 +564,22 @@ test('Bun workflow helpers use bounded exponential backoff', () => {
     path.join(repoRoot, 'scripts', 'ci', 'run-with-backoff.sh'),
     'utf8'
   );
+  const runtimeSaveStep = readCompositeStep(
+    setupAction,
+    'Restore and save trusted Bun runtime cache'
+  );
+  const runtimeRestoreStep = readCompositeStep(
+    setupAction,
+    'Restore Bun runtime cache without saving'
+  );
+  const packageSaveStep = readCompositeStep(
+    setupAction,
+    'Restore and save trusted Bun package cache'
+  );
+  const packageRestoreStep = readCompositeStep(
+    setupAction,
+    'Restore Bun package cache without saving'
+  );
 
   assert.match(workflow, /run-with-backoff\.sh bun install --frozen-lockfile/);
   assert.match(setupAction, /setup-bun-with-backoff\.sh/);
@@ -569,10 +593,15 @@ test('Bun workflow helpers use bounded exponential backoff', () => {
     setupAction,
     /bun-deps-v1-\$\{\{ runner\.os \}\}-\$\{\{ runner\.arch \}\}-\$\{\{ inputs\.bun-version \}\}-\$\{\{ hashFiles\('bun\.lock'\) \}\}/
   );
-  assert.match(setupAction, /github\.ref == 'refs\/heads\/main'/);
-  assert.match(setupAction, /github\.ref == 'refs\/heads\/production'/);
-  assert.match(setupAction, /github\.event_name == 'pull_request'/);
-  assert.match(setupAction, /github\.actor == 'dependabot\[bot\]'/);
+  for (const saveStep of [runtimeSaveStep, packageSaveStep]) {
+    assert.match(saveStep, /github\.ref == 'refs\/heads\/main'/);
+    assert.doesNotMatch(saveStep, /refs\/heads\/production/);
+  }
+  for (const restoreStep of [runtimeRestoreStep, packageRestoreStep]) {
+    assert.match(restoreStep, /github\.ref != 'refs\/heads\/main'/);
+    assert.match(restoreStep, /github\.event_name == 'pull_request'/);
+    assert.match(restoreStep, /github\.actor == 'dependabot\[bot\]'/);
+  }
   assert.doesNotMatch(setupAction, /node_modules/);
   assert.match(setupScript, /BUN_SETUP_MAX_ATTEMPTS/);
   assert.match(setupScript, /Using cached Bun/);
