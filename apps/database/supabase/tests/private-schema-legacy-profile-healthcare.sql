@@ -129,7 +129,7 @@ select ok(
     select 1
     from pg_constraint
     where conname = 'healthcare_checkups_diagnosis_id_fkey'
-      and conrelid = 'public.healthcare_checkups'::regclass
+      and conrelid = 'private.healthcare_checkups'::regclass
       and confrelid = 'private.healthcare_diagnoses'::regclass
   ),
   'healthcare checkups still reference private healthcare diagnoses'

@@ -2964,6 +2964,135 @@ export type Database = {
           },
         ];
       };
+      healthcare_checkup_vital_groups: {
+        Row: {
+          checkup_id: string;
+          created_at: string | null;
+          group_id: string;
+        };
+        Insert: {
+          checkup_id: string;
+          created_at?: string | null;
+          group_id: string;
+        };
+        Update: {
+          checkup_id?: string;
+          created_at?: string | null;
+          group_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'healthcare_checkup_vital_groups_checkup_id_fkey';
+            columns: ['checkup_id'];
+            isOneToOne: false;
+            referencedRelation: 'healthcare_checkups';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'healthcare_checkup_vital_groups_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
+            referencedRelation: 'user_group_metric_categories';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      healthcare_checkup_vitals: {
+        Row: {
+          checkup_id: string;
+          created_at: string | null;
+          value: number | null;
+          vital_id: string;
+        };
+        Insert: {
+          checkup_id: string;
+          created_at?: string | null;
+          value?: number | null;
+          vital_id: string;
+        };
+        Update: {
+          checkup_id?: string;
+          created_at?: string | null;
+          value?: number | null;
+          vital_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'healthcare_checkup_vitals_checkup_id_fkey';
+            columns: ['checkup_id'];
+            isOneToOne: false;
+            referencedRelation: 'healthcare_checkups';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      healthcare_checkups: {
+        Row: {
+          checked: boolean;
+          checkup_at: string;
+          completed_at: string | null;
+          created_at: string | null;
+          creator_id: string;
+          diagnosis_id: string | null;
+          id: string;
+          next_checked: boolean | null;
+          next_checkup_at: string | null;
+          note: string | null;
+          patient_id: string;
+          ws_id: string;
+        };
+        Insert: {
+          checked?: boolean;
+          checkup_at?: string;
+          completed_at?: string | null;
+          created_at?: string | null;
+          creator_id: string;
+          diagnosis_id?: string | null;
+          id?: string;
+          next_checked?: boolean | null;
+          next_checkup_at?: string | null;
+          note?: string | null;
+          patient_id: string;
+          ws_id: string;
+        };
+        Update: {
+          checked?: boolean;
+          checkup_at?: string;
+          completed_at?: string | null;
+          created_at?: string | null;
+          creator_id?: string;
+          diagnosis_id?: string | null;
+          id?: string;
+          next_checked?: boolean | null;
+          next_checkup_at?: string | null;
+          note?: string | null;
+          patient_id?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'healthcare_checkups_creator_id_fkey';
+            columns: ['creator_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'healthcare_checkups_creator_id_fkey';
+            columns: ['creator_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'healthcare_checkups_diagnosis_id_fkey';
+            columns: ['diagnosis_id'];
+            isOneToOne: false;
+            referencedRelation: 'healthcare_diagnoses';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       healthcare_diagnoses: {
         Row: {
           created_at: string | null;
@@ -18082,191 +18211,6 @@ export type Database = {
             columns: ['creator_id'];
             isOneToOne: false;
             referencedRelation: 'users';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
-      healthcare_checkup_vital_groups: {
-        Row: {
-          checkup_id: string;
-          created_at: string | null;
-          group_id: string;
-        };
-        Insert: {
-          checkup_id: string;
-          created_at?: string | null;
-          group_id: string;
-        };
-        Update: {
-          checkup_id?: string;
-          created_at?: string | null;
-          group_id?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'healthcare_checkup_vital_groups_checkup_id_fkey';
-            columns: ['checkup_id'];
-            isOneToOne: false;
-            referencedRelation: 'healthcare_checkups';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
-      healthcare_checkup_vitals: {
-        Row: {
-          checkup_id: string;
-          created_at: string | null;
-          value: number | null;
-          vital_id: string;
-        };
-        Insert: {
-          checkup_id: string;
-          created_at?: string | null;
-          value?: number | null;
-          vital_id: string;
-        };
-        Update: {
-          checkup_id?: string;
-          created_at?: string | null;
-          value?: number | null;
-          vital_id?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'healthcare_checkup_vitals_checkup_id_fkey';
-            columns: ['checkup_id'];
-            isOneToOne: false;
-            referencedRelation: 'healthcare_checkups';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'healthcare_checkup_vitals_vital_id_fkey';
-            columns: ['vital_id'];
-            isOneToOne: false;
-            referencedRelation: 'user_group_metrics';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
-      healthcare_checkups: {
-        Row: {
-          checked: boolean;
-          checkup_at: string;
-          completed_at: string | null;
-          created_at: string | null;
-          creator_id: string;
-          diagnosis_id: string | null;
-          id: string;
-          next_checked: boolean | null;
-          next_checkup_at: string | null;
-          note: string | null;
-          patient_id: string;
-          ws_id: string;
-        };
-        Insert: {
-          checked?: boolean;
-          checkup_at?: string;
-          completed_at?: string | null;
-          created_at?: string | null;
-          creator_id: string;
-          diagnosis_id?: string | null;
-          id?: string;
-          next_checked?: boolean | null;
-          next_checkup_at?: string | null;
-          note?: string | null;
-          patient_id: string;
-          ws_id: string;
-        };
-        Update: {
-          checked?: boolean;
-          checkup_at?: string;
-          completed_at?: string | null;
-          created_at?: string | null;
-          creator_id?: string;
-          diagnosis_id?: string | null;
-          id?: string;
-          next_checked?: boolean | null;
-          next_checkup_at?: string | null;
-          note?: string | null;
-          patient_id?: string;
-          ws_id?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'healthcare_checkups_creator_id_fkey';
-            columns: ['creator_id'];
-            isOneToOne: false;
-            referencedRelation: 'shortened_links_creator_stats';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'healthcare_checkups_creator_id_fkey';
-            columns: ['creator_id'];
-            isOneToOne: false;
-            referencedRelation: 'users';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'healthcare_checkups_patient_id_fkey';
-            columns: ['patient_id'];
-            isOneToOne: false;
-            referencedRelation: 'distinct_invoice_creators';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'healthcare_checkups_patient_id_fkey';
-            columns: ['patient_id'];
-            isOneToOne: false;
-            referencedRelation: 'distinct_transaction_creators';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'healthcare_checkups_patient_id_fkey';
-            columns: ['patient_id'];
-            isOneToOne: false;
-            referencedRelation: 'group_user_with_attendance';
-            referencedColumns: ['user_id'];
-          },
-          {
-            foreignKeyName: 'healthcare_checkups_patient_id_fkey';
-            columns: ['patient_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspace_users';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'healthcare_checkups_patient_id_fkey';
-            columns: ['patient_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspace_users_with_groups';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'healthcare_checkups_ws_id_fkey';
-            columns: ['ws_id'];
-            isOneToOne: false;
-            referencedRelation: 'entity_limit_source__workspaces';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'healthcare_checkups_ws_id_fkey';
-            columns: ['ws_id'];
-            isOneToOne: false;
-            referencedRelation: 'entity_limit_source__workspaces';
-            referencedColumns: ['personal_ws_id'];
-          },
-          {
-            foreignKeyName: 'healthcare_checkups_ws_id_fkey';
-            columns: ['ws_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspace_link_counts';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'healthcare_checkups_ws_id_fkey';
-            columns: ['ws_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspaces';
             referencedColumns: ['id'];
           },
         ];
@@ -37279,7 +37223,7 @@ export type Database = {
         }[];
       };
       get_healthcare_checkups_count: {
-        Args: { ws_id: string };
+        Args: { p_ws_id: string };
         Returns: number;
       };
       get_healthcare_diagnoses_count: {
