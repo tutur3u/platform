@@ -46,8 +46,9 @@ function isoDateWithOffset(days: number) {
   return date.toISOString().slice(0, 10);
 }
 
-// Finance APIs are owned by apps/finance now. This web-only Docker suite does
-// not start the finance satellite, so exercising those routes here returns 404.
+// TODO(#4956): Re-home this coverage in the Finance satellite E2E suite.
+// This web-only Docker suite does not start apps/finance, so its routes return
+// 404 here.
 test.describe('Finance permission boundaries', () => {
   test.beforeAll(() => {
     assertSafeE2EEnvironment();

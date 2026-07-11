@@ -53,8 +53,8 @@ test.describe('User-group storage AI boundaries', () => {
     browser,
     request,
   }, testInfo) => {
-    // The course-generation endpoint is owned by apps/teach now. Its
-    // permission boundary is covered by apps/teach/src/app/api/ai/course.
+    // TODO(#4956): Re-home this coverage in the Teach satellite E2E suite.
+    // The endpoint is covered at the route level in apps/teach for now.
     const origin = baseURL ?? 'https://tuturuuu.localhost';
     const headers = e2eClientHeaders(e2eClientIpForTest(testInfo, 264));
     const groupId = randomUUID();

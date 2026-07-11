@@ -33,9 +33,9 @@ function serviceHeaders({
   };
 }
 
-// Inventory APIs are owned by apps/inventory now. This web-only Docker suite
-// does not start the inventory satellite, so exercising those routes here
-// returns 404.
+// TODO(#4956): Re-home this coverage in the Inventory satellite E2E suite.
+// This web-only Docker suite does not start apps/inventory, so its routes return
+// 404 here.
 test.describe('Inventory public checkout modes', () => {
   test.beforeAll(() => {
     assertSafeE2EEnvironment();

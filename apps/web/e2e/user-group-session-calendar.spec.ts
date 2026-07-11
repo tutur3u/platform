@@ -55,8 +55,8 @@ test.describe('User group session calendar', () => {
     page,
     request,
   }) => {
-    // The user-group calendar page is owned by apps/contacts now. This
-    // web-only Docker suite does not start the contacts satellite.
+    // TODO(#4956): Re-home this coverage in the Contacts satellite E2E suite.
+    // This web-only Docker suite does not start apps/contacts.
     const groupId = randomUUID();
     const seriesId = randomUUID();
     const recurringSessionId = randomUUID();
@@ -260,8 +260,8 @@ test.describe('User group session calendar', () => {
     page,
     request,
   }) => {
-    // The user-group schedule page is owned by apps/contacts now. This
-    // web-only Docker suite does not start the contacts satellite.
+    // TODO(#4956): Re-home this coverage in the Contacts satellite E2E suite.
+    // This web-only Docker suite does not start apps/contacts.
     const groupId = randomUUID();
     const seriesId = randomUUID();
     const conflictingSessionId = randomUUID();

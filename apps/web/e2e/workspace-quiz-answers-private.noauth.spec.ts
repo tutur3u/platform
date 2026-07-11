@@ -49,8 +49,8 @@ test.describe('Workspace quiz answer privacy', () => {
     browser,
     request,
   }, testInfo) => {
-    // The quiz API is owned by apps/teach now. Its private-answer behavior is
-    // covered by apps/teach/src/app/api/v1/workspaces/[wsId]/quizzes.
+    // TODO(#4956): Re-home this coverage in the Teach satellite E2E suite.
+    // The endpoint is covered at the route level in apps/teach for now.
     const origin = baseURL ?? 'https://tuturuuu.localhost';
     const headers = e2eClientHeaders(e2eClientIpForTest(testInfo, 344));
     const context = await browser.newContext({
