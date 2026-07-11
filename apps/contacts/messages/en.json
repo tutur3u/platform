@@ -1371,6 +1371,7 @@
     "report-problem-description": "Help us improve by reporting issues you've encountered. Your feedback is valuable to us.",
     "report-submitted-success": "Report submitted successfully! Thank you for your feedback.",
     "reset": "Reset",
+    "result(s)": "result(s)",
     "retry": "Retry",
     "root": "Root",
     "row(s)": "row(s)",
@@ -1478,6 +1479,7 @@
     "workspace_slug_placeholder": "your-team",
     "workspaces": "Workspaces",
     "write_something": "Write something",
+    "years_old": "years old",
     "yellow": "Yellow",
     "yesterday": "Yesterday"
   },
@@ -8126,6 +8128,7 @@
     "current_value_image_set": "Photo uploaded",
     "details_toggle": "Details",
     "empty": "No profile links yet.",
+    "field_avatar_url": "Profile photo",
     "field_birthday": "Birthday",
     "field_display_name": "Display name",
     "field_email": "Email",
