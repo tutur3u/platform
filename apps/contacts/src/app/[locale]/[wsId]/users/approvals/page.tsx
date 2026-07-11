@@ -3,6 +3,7 @@ import WorkspaceWrapper from '@tuturuuu/ui/custom/workspace-wrapper';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import { connection } from 'next/server';
 import { getTranslations } from 'next-intl/server';
 import { ApprovalsClient } from './approvals-client';
 
@@ -19,6 +20,8 @@ interface PageProps {
 }
 
 export default async function UserApprovalsPage({ params }: PageProps) {
+  await connection();
+
   return (
     <WorkspaceWrapper params={params}>
       {async ({ wsId, isPersonal }) => {

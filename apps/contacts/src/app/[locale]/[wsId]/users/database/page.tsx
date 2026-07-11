@@ -5,6 +5,7 @@ import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { connection } from 'next/server';
 import { getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
 import { AuditLogTable } from './audit-log-table';
@@ -79,6 +80,8 @@ export default async function WorkspaceUsersPage({
   params,
   searchParams,
 }: Props) {
+  await connection();
+
   const t = await getTranslations();
   const { locale, wsId: id } = await params;
   const sp = await searchParams;

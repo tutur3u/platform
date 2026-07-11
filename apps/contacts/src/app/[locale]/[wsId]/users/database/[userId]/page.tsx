@@ -3,6 +3,7 @@ import UserMonthAttendance from '@tuturuuu/users-ui/components/user-month-attend
 import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import { connection } from 'next/server';
 import { getTranslations } from 'next-intl/server';
 import { UserFeedbackPanel } from '../user-feedback-panel';
 import {
@@ -44,6 +45,8 @@ interface Props {
 }
 
 export default async function WorkspaceUserDetailsPage({ params }: Props) {
+  await connection();
+
   const t = await getTranslations('user-data-table');
   const { wsId: id, userId } = await params;
   const workspace = await getWorkspace(id);

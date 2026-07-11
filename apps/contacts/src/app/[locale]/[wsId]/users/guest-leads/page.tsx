@@ -6,6 +6,7 @@ import { Separator } from '@tuturuuu/ui/separator';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import { connection } from 'next/server';
 import { getGuestLeadColumns } from './columns';
 import { GuestLeadHeader } from './header';
 
@@ -30,6 +31,8 @@ export default async function GuestUserLeadsPage({
   params,
   searchParams,
 }: Props) {
+  await connection();
+
   return (
     <WorkspaceWrapper params={params}>
       {async ({ wsId }) => {

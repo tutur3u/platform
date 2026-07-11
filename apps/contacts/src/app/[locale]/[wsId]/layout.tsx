@@ -12,6 +12,7 @@ import { toWorkspaceSlug } from '@tuturuuu/utils/constants';
 import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { cookies, headers } from 'next/headers';
 import { redirect } from 'next/navigation';
+import { connection } from 'next/server';
 import { type ReactNode, Suspense } from 'react';
 import { SidebarProvider } from '@/context/sidebar-context';
 import NavbarActions from '../navbar-actions';
@@ -27,6 +28,8 @@ interface LayoutProps {
 }
 
 export default async function Layout({ children, params }: LayoutProps) {
+  await connection();
+
   const { wsId: id } = await params;
   const requestHeaders = await headers();
   const user = await getSatelliteAppSessionUser('contacts');

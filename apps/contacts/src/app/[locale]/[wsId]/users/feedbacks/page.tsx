@@ -2,6 +2,7 @@ import WorkspaceWrapper from '@tuturuuu/ui/custom/workspace-wrapper';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import { connection } from 'next/server';
 import { UserFeedbacksClient } from './user-feedbacks-client';
 
 export const metadata: Metadata = {
@@ -17,6 +18,8 @@ interface PageProps {
 }
 
 export default async function UserFeedbacksPage({ params }: PageProps) {
+  await connection();
+
   return (
     <WorkspaceWrapper params={params}>
       {async ({ wsId, isPersonal }) => {
