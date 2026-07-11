@@ -692,6 +692,7 @@ test('E2E workflow frees runner disk before loading cached Docker images', () =>
   const diagnosticsIndex = e2eJob.indexOf('Collect Dockerized E2E diagnostics');
   const restoreIndex = e2eJob.indexOf('Restore cached Docker images');
   const loadIndex = e2eJob.indexOf('Load cached Docker images');
+  const buildxIndex = e2eJob.indexOf('Setup Docker Buildx');
   const cacheExportIndex = e2eJob.indexOf(
     'Configure trusted BuildKit cache exports'
   );
@@ -722,6 +723,7 @@ test('E2E workflow frees runner disk before loading cached Docker images', () =>
   assert.notEqual(diagnosticsIndex, -1);
   assert.notEqual(restoreIndex, -1);
   assert.notEqual(loadIndex, -1);
+  assert.notEqual(buildxIndex, -1);
   assert.notEqual(cacheExportIndex, -1);
   assert.notEqual(secretIndex, -1);
   assert.notEqual(diagnosticsUploadIndex, -1);
@@ -747,6 +749,10 @@ test('E2E workflow frees runner disk before loading cached Docker images', () =>
   assert.ok(
     cleanupIndex < loadIndex,
     'runner disk cleanup must happen before loading Supabase Docker images'
+  );
+  assert.ok(
+    buildxIndex < runIndex,
+    'Buildx must be selected before Docker Compose starts the E2E stack'
   );
   assert.ok(
     runIndex < diagnosticsIndex,
@@ -804,6 +810,11 @@ test('E2E workflow frees runner disk before loading cached Docker images', () =>
   assert.match(e2eJob, /DOCKER_WEB_CACHE_WEB_FROM: type=gha/u);
   assert.match(e2eJob, /DOCKER_WEB_CACHE_BACKEND_FROM: type=gha/u);
   assert.match(e2eJob, /DOCKER_WEB_CACHE_TANSTACK_FROM: type=gha/u);
+  assert.match(e2eJob, /uses: docker\/setup-buildx-action@v4/u);
+  assert.match(
+    e2eJob,
+    /BUILDX_BUILDER=\$\{\{ steps\.buildx\.outputs\.name \}\}/u
+  );
   assert.match(
     e2eJob,
     /github\.ref == 'refs\/heads\/main' && matrix\.shard == 1/u
@@ -863,6 +874,7 @@ test('E2E workflow runs TanStack migration dual-stack and compare smoke jobs', (
     'Free runner disk for Dockerized migration E2E'
   );
   const installIndex = migrationJob.indexOf('Install dependencies');
+  const buildxIndex = migrationJob.indexOf('Setup Docker Buildx');
   const runIndex = migrationJob.indexOf('Run migration E2E');
   const uploadIndex = migrationJob.indexOf('Upload migration E2E artifacts');
   const stopIndex = migrationJob.indexOf('Stop migration E2E stacks');
@@ -909,6 +921,11 @@ test('E2E workflow runs TanStack migration dual-stack and compare smoke jobs', (
   assert.match(migrationJob, /if: \$\{\{ failure\(\) \}\}/u);
   assert.match(migrationJob, /DOCKER_WEB_CACHE_BACKEND_FROM: type=gha/u);
   assert.match(migrationJob, /DOCKER_WEB_CACHE_TANSTACK_FROM: type=gha/u);
+  assert.match(migrationJob, /uses: docker\/setup-buildx-action@v4/u);
+  assert.match(
+    migrationJob,
+    /BUILDX_BUILDER=\$\{\{ steps\.buildx\.outputs\.name \}\}/u
+  );
   assert.doesNotMatch(
     migrationJob,
     /Configure trusted BuildKit cache exports/u
@@ -925,10 +942,12 @@ test('E2E workflow runs TanStack migration dual-stack and compare smoke jobs', (
   assert.match(migrationJob, /bun sb:stop \|\| true/u);
   assert.notEqual(cleanupIndex, -1);
   assert.notEqual(installIndex, -1);
+  assert.notEqual(buildxIndex, -1);
   assert.notEqual(runIndex, -1);
   assert.notEqual(uploadIndex, -1);
   assert.notEqual(stopIndex, -1);
   assert.ok(cleanupIndex < installIndex);
+  assert.ok(buildxIndex < runIndex);
   assert.ok(installIndex < runIndex);
   assert.ok(runIndex < uploadIndex);
   assert.ok(runIndex < stopIndex);

@@ -261,9 +261,11 @@ formatting behavior, or repo-wide verification.
   shards, and migration E2E restore only. Use `mode=max` for expensive web,
   TanStack, and backend scopes, and `mode=min` or restore-only caching for the
   validation-only development image and leaf images. Bound cache operations
-  and tolerate cache-service errors. Pass Turbo remote-cache values as optional
-  BuildKit secrets for build `RUN` steps; never bake those values into image
-  layers, args, labels, or committed env files.
+  and tolerate cache-service errors. Docker Compose jobs must explicitly select
+  a `docker-container` Buildx builder before using the GHA cache backend; the
+  default `docker` driver rejects cache export. Pass Turbo remote-cache values
+  as optional BuildKit secrets for build `RUN` steps; never bake those values
+  into image layers, args, labels, or committed env files.
 - Workspace packages with direct `tsc` build scripts must declare
   `typescript` in their own `devDependencies`. Filtered Docker
   installs such as the Hive production image do not install root-only dev tools,
