@@ -81,6 +81,7 @@
     "expanded": "Mở rộng",
     "feedback": "Phản hồi",
     "get-started": "Bắt đầu ngay",
+    "hidden": "Ẩn",
     "hide_sidebar": "Ẩn thanh bên",
     "home": "Trang chủ",
     "join_workspace": "Tham gia không gian làm việc",
@@ -253,6 +254,7 @@
     "view-all": "Xem tất cả thông báo"
   },
   "settings": {
+    "back_to_app": "Quay lại ứng dụng",
     "keyboard_shortcuts": {
       "close_settings": "Đóng cài đặt",
       "first_section": "Mục đầu tiên",
@@ -270,7 +272,8 @@
       "keyboard_shortcuts": "Phím tắt bàn phím",
       "keyboard_shortcuts_description": "Xem các phím tắt cho ứng dụng và thanh bên",
       "sidebar_hidden": "Ẩn"
-    }
+    },
+    "search_settings_placeholder": "Tìm cài đặt..."
   },
   "version-badge": {
     "app": "Ứng dụng",

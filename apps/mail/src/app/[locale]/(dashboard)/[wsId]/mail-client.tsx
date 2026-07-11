@@ -446,7 +446,9 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
         direction="horizontal"
         key={layout.join('-')}
         onLayout={(sizes) => {
-          setLayout(sizes);
+          // `layout` controls this group's key so the persisted layout can be
+          // applied after hydration. Updating it from the group's own layout
+          // notification remounts the group and creates an infinite loop.
           window.localStorage.setItem(
             'tuturuuu-mail-pane-layout',
             JSON.stringify(sizes)

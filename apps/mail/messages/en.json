@@ -81,6 +81,7 @@
     "expanded": "Expanded",
     "feedback": "Feedback",
     "get-started": "Get Started",
+    "hidden": "Hidden",
     "hide_sidebar": "Hide sidebar",
     "home": "Home",
     "join_workspace": "Join Workspace",
@@ -253,6 +254,7 @@
     "view-all": "View All Notifications"
   },
   "settings": {
+    "back_to_app": "Back to app",
     "keyboard_shortcuts": {
       "close_settings": "Close settings",
       "first_section": "First section",
@@ -270,7 +272,8 @@
       "keyboard_shortcuts": "Keyboard Shortcuts",
       "keyboard_shortcuts_description": "Review keyboard shortcuts for app and sidebar actions",
       "sidebar_hidden": "Hidden"
-    }
+    },
+    "search_settings_placeholder": "Search settings..."
   },
   "version-badge": {
     "app": "App",
