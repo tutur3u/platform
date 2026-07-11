@@ -275,6 +275,14 @@
       "component": "ui",
       "package-name": "@tuturuuu/ui"
     },
+    "packages/users-core": {
+      "component": "users-core",
+      "package-name": "@tuturuuu/users-core"
+    },
+    "packages/users-ui": {
+      "component": "users-ui",
+      "package-name": "@tuturuuu/users-ui"
+    },
     "packages/utils": {
       "component": "utils",
       "package-name": "@tuturuuu/utils"

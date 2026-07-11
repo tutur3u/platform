@@ -73,10 +73,6 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      # Use Vercel Remote Caching
-      TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
-      TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
-
       # Configure production Supabase client
       NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.PRODUCTION_SUPABASE_PUBLISHABLE_KEY }}
@@ -102,8 +98,11 @@ jobs:
         run: bash scripts/ci/run-with-backoff.sh bun install
 
       - name: Build package
-        working-directory: packages/types
-        run: bun run build
+        uses: ./.github/actions/run-with-turbo-remote-cache
+        with:
+          command: bun turbo:local run build --concurrency=4 --filter=@tuturuuu/types
+          token: ${{ github.actor != 'dependabot[bot]' && secrets.TURBO_TOKEN || '' }}
+          team: ${{ vars.TURBO_TEAM || secrets.TURBO_TEAM }}
 
   prepare-publish-npm:
     needs: [build]
@@ -151,8 +150,11 @@ jobs:
 
       - name: Build package
         if: steps.version-check.outputs.should_publish == 'true'
-        working-directory: packages/types
-        run: bun run build
+        uses: ./.github/actions/run-with-turbo-remote-cache
+        with:
+          command: bun turbo:local run build --concurrency=4 --filter=@tuturuuu/types
+          token: ${{ github.actor != 'dependabot[bot]' && secrets.TURBO_TOKEN || '' }}
+          team: ${{ vars.TURBO_TEAM || secrets.TURBO_TEAM }}
 
       - name: Prepare npm package manifest
         if: steps.version-check.outputs.should_publish == 'true'
@@ -163,7 +165,7 @@ jobs:
         working-directory: packages/types
         run: |
           mkdir -p "$RUNNER_TEMP/tuturuuu-types-package"
-          npm pack --pack-destination "$RUNNER_TEMP/tuturuuu-types-package"
+          npm pack --ignore-scripts --pack-destination "$RUNNER_TEMP/tuturuuu-types-package"
 
       - name: Upload publish artifact
         if: steps.version-check.outputs.should_publish == 'true'
@@ -173,6 +175,7 @@ jobs:
           name: tuturuuu-types-npm-package
           path: ${{ runner.temp }}/tuturuuu-types-package/*.tgz
           retention-days: 1
+          compression-level: 0
 
   publish-npm:
     needs: [prepare-publish-npm]

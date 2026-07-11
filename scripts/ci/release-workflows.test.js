@@ -117,10 +117,31 @@ test('Vercel workflows generate shared build metadata before building', () => {
       workflow,
       /bun run --silent scripts\/ci\/generate-build-metadata\.ts/
     );
+    assert.match(
+      workflow,
+      /PLATFORM_BUILD_ENVIRONMENT: (?:preview|production)/
+    );
+    assert.match(workflow, /PLATFORM_BUILD_REF_NAME:/);
+    assert.match(
+      workflow,
+      /uses: \.\/\.github\/actions\/run-with-turbo-remote-cache/
+    );
+    assert.match(workflow, /NODE_OPTIONS: --max-old-space-size=8192/);
+    assert.match(workflow, /TURBO_CONCURRENCY: "2"/);
+    assert.doesNotMatch(workflow, /Build workspace dependencies/);
   }
 });
 
-test('Platform Vercel workflows build local devbox dependency before Vercel build', () => {
+test('Platform Vercel workflows rely on the checked-in full-app Turbo build', () => {
+  const platformVercelConfig = JSON.parse(
+    fs.readFileSync(path.join(repoRoot, 'apps', 'web', 'vercel.json'), 'utf8')
+  );
+
+  assert.equal(
+    platformVercelConfig.buildCommand,
+    'cd ../.. && bun turbo:local run build --filter=@tuturuuu/web'
+  );
+
   for (const workflowName of [
     'vercel-preview-platform.yaml',
     'vercel-production-platform.yaml',
@@ -129,20 +150,17 @@ test('Platform Vercel workflows build local devbox dependency before Vercel buil
       workflowName,
       getVercelRunJobName(workflowName)
     );
-    const dependencyBuildIndex = deployJob.indexOf(
-      'Build workspace dependencies'
-    );
     const vercelBuildIndex = deployJob.indexOf('Build Project Artifacts');
     const installIndex = deployJob.indexOf('Install dependencies');
 
     assert.notEqual(installIndex, -1);
-    assert.notEqual(dependencyBuildIndex, -1);
     assert.notEqual(vercelBuildIndex, -1);
-    assert.ok(
-      dependencyBuildIndex < vercelBuildIndex,
-      `${workflowName} must build workspace dependencies before Vercel build`
+    assert.doesNotMatch(deployJob, /Build workspace dependencies/);
+    assert.match(
+      deployJob,
+      /uses: \.\/\.github\/actions\/run-with-turbo-remote-cache/
     );
-    assert.match(deployJob, /--filter=@tuturuuu\/devbox/);
+    assert.match(deployJob, /command: vercel build/);
 
     if (workflowName === 'vercel-preview-platform.yaml') {
       const equivalentBuildIndex = deployJob.indexOf(
@@ -318,9 +336,17 @@ test('Codecov workflow runs workspace package tests with coverage', () => {
 
   assert.match(
     testJob,
-    /run: bash scripts\/ci\/run-with-backoff\.sh bun turbo:local run test -- --coverage/u
+    /uses: \.\/\.github\/actions\/run-with-turbo-remote-cache/u
   );
+  assert.match(
+    testJob,
+    /command: bash scripts\/ci\/run-with-backoff\.sh bun turbo:local run test --concurrency=4 -- --coverage/u
+  );
+  assert.match(testJob, /family: coverage/u);
+  assert.match(testJob, /github\.event_name != 'pull_request'/u);
+  assert.match(testJob, /github\.actor != 'dependabot\[bot\]'/u);
   assert.match(testJob, /CI_RETRY_MAX_ATTEMPTS: "2"/u);
+  assert.doesNotMatch(testJob, /^\s+run:.*turbo:local run test/mu);
   assert.doesNotMatch(workflow, /run: bun vitest run --coverage/u);
 });
 
@@ -666,12 +692,15 @@ test('E2E workflow frees runner disk before loading cached Docker images', () =>
   const diagnosticsIndex = e2eJob.indexOf('Collect Dockerized E2E diagnostics');
   const restoreIndex = e2eJob.indexOf('Restore cached Docker images');
   const loadIndex = e2eJob.indexOf('Load cached Docker images');
-  const diagnosticsUploadIndex = e2eJob.indexOf('Upload E2E diagnostics');
+  const buildxIndex = e2eJob.indexOf('Setup Docker Buildx');
+  const cacheExportIndex = e2eJob.indexOf(
+    'Configure trusted BuildKit cache exports'
+  );
+  const secretIndex = e2eJob.indexOf('Prepare trusted Turbo BuildKit secrets');
+  const diagnosticsUploadIndex = e2eJob.indexOf('Upload E2E failure artifact');
   const diagnosticsRedactionIndex = e2eJob.indexOf(
     'Redact E2E diagnostics artifact'
   );
-  const uploadIndex = e2eJob.indexOf('Upload Playwright report');
-  const testResultsUploadIndex = e2eJob.indexOf('Upload test results');
 
   assert.match(
     workflow,
@@ -694,10 +723,11 @@ test('E2E workflow frees runner disk before loading cached Docker images', () =>
   assert.notEqual(diagnosticsIndex, -1);
   assert.notEqual(restoreIndex, -1);
   assert.notEqual(loadIndex, -1);
+  assert.notEqual(buildxIndex, -1);
+  assert.notEqual(cacheExportIndex, -1);
+  assert.notEqual(secretIndex, -1);
   assert.notEqual(diagnosticsUploadIndex, -1);
   assert.notEqual(diagnosticsRedactionIndex, -1);
-  assert.notEqual(uploadIndex, -1);
-  assert.notEqual(testResultsUploadIndex, -1);
   assert.doesNotMatch(
     e2eJob,
     /name: Start Portless shared localhost proxy/u,
@@ -721,12 +751,12 @@ test('E2E workflow frees runner disk before loading cached Docker images', () =>
     'runner disk cleanup must happen before loading Supabase Docker images'
   );
   assert.ok(
-    runIndex < diagnosticsIndex,
-    'E2E diagnostics must run after the shard command can fail'
+    buildxIndex < runIndex,
+    'Buildx must be selected before Docker Compose starts the E2E stack'
   );
   assert.ok(
-    diagnosticsIndex < uploadIndex,
-    'E2E diagnostics must print before artifact upload/cleanup steps'
+    runIndex < diagnosticsIndex,
+    'E2E diagnostics must run after the shard command can fail'
   );
   assert.ok(
     diagnosticsIndex < diagnosticsUploadIndex,
@@ -740,10 +770,6 @@ test('E2E workflow frees runner disk before loading cached Docker images', () =>
     diagnosticsRedactionIndex < diagnosticsUploadIndex,
     'E2E diagnostics must be redacted before artifact upload'
   );
-  assert.ok(
-    diagnosticsUploadIndex < uploadIndex,
-    'E2E diagnostics artifact should upload before Playwright-only artifacts'
-  );
   assert.match(e2eJob, /docker system prune -af --volumes/u);
   assert.match(e2eJob, /docker builder prune -af/u);
   assert.match(e2eJob, /\/usr\/share\/dotnet/u);
@@ -755,13 +781,22 @@ test('E2E workflow frees runner disk before loading cached Docker images', () =>
   assert.match(e2eJob, /if: \$\{\{ failure\(\) \}\}/u);
   assert.match(
     e2eJob,
-    /key: supabase-docker-\$\{\{ runner\.os \}\}-\$\{\{ steps\.supabase-version\.outputs\.version \}\}-\$\{\{ github\.run_id \}\}-\$\{\{ github\.run_attempt \}\}/u,
-    'Supabase Docker cache saves need a per-run key to avoid cross-run save conflicts'
+    /key: supabase-docker-v2-\$\{\{ runner\.os \}\}-\$\{\{ runner\.arch \}\}-\$\{\{ steps\.supabase-version\.outputs\.version \}\}-images/u,
+    'Supabase Docker cache keys must be stable for the platform and CLI version'
   );
   assert.match(
     e2eJob,
-    /restore-keys: \|\n {12}supabase-docker-\$\{\{ runner\.os \}\}-\$\{\{ steps\.supabase-version\.outputs\.version \}\}-/u
+    /restore-keys: \|\n {12}supabase-docker-v2-\$\{\{ runner\.os \}\}-\$\{\{ runner\.arch \}\}-\$\{\{ steps\.supabase-version\.outputs\.version \}\}-/u
   );
+  assert.match(
+    e2eJob,
+    /steps\.cache-supabase\.outputs\.cache-matched-key != ''/u
+  );
+  assert.match(
+    e2eJob,
+    /github\.ref == 'refs\/heads\/main' && matrix\.shard == 1 && steps\.cache-supabase\.outputs\.cache-matched-key == ''/u
+  );
+  assert.doesNotMatch(e2eJob, /github\.(?:run_id|run_attempt).*supabase/u);
   assert.match(
     e2eJob,
     /id: prepare-supabase-docker-cache/u,
@@ -772,6 +807,26 @@ test('E2E workflow frees runner disk before loading cached Docker images', () =>
     e2eJob,
     /steps\.prepare-supabase-docker-cache\.outputs\.cache-ready == 'true'/u
   );
+  assert.match(e2eJob, /DOCKER_WEB_CACHE_WEB_FROM: type=gha/u);
+  assert.match(e2eJob, /DOCKER_WEB_CACHE_BACKEND_FROM: type=gha/u);
+  assert.match(e2eJob, /DOCKER_WEB_CACHE_TANSTACK_FROM: type=gha/u);
+  assert.match(e2eJob, /uses: docker\/setup-buildx-action@v4/u);
+  assert.match(
+    e2eJob,
+    /BUILDX_BUILDER=\$\{\{ steps\.buildx\.outputs\.name \}\}/u
+  );
+  assert.match(
+    e2eJob,
+    /github\.ref == 'refs\/heads\/main' && matrix\.shard == 1/u
+  );
+  assert.match(e2eJob, /scope=docker-chat-realtime,mode=min/u);
+  assert.match(e2eJob, /scope=docker-hive-prod,mode=min/u);
+  assert.doesNotMatch(e2eJob, /DOCKER_WEB_CACHE_WEB_TO/u);
+  assert.doesNotMatch(e2eJob, /DOCKER_WEB_CACHE_BACKEND_TO/u);
+  assert.doesNotMatch(e2eJob, /DOCKER_WEB_CACHE_TANSTACK_TO/u);
+  assert.doesNotMatch(e2eJob, /DOCKER_WEB_CACHE_STORAGE_UNZIP_TO/u);
+  assert.match(e2eJob, /DOCKER_WEB_TURBO_TOKEN_SECRET_FILE/u);
+  assert.match(e2eJob, /github\.actor != 'dependabot\[bot\]'/u);
   assert.match(
     e2eJob,
     /docker ps -a --filter "label=com\.docker\.compose\.project=\$\{DOCKER_WEB_COMPOSE_PROJECT_NAME\}"/u
@@ -798,15 +853,15 @@ test('E2E workflow frees runner disk before loading cached Docker images', () =>
   assert.match(e2eJob, /walkFiles\(diagnosticsDir\)/u);
   assert.match(
     e2eJob,
-    /name: e2e-diagnostics-\$\{\{ matrix\.shard \}\}-of-\$\{\{ matrix\.total_shards \}\}/u
+    /name: e2e-failure-\$\{\{ matrix\.shard \}\}-of-\$\{\{ matrix\.total_shards \}\}/u
   );
-  assert.match(e2eJob, /path: tmp\/e2e-diagnostics\//u);
+  assert.match(e2eJob, /tmp\/e2e-diagnostics\//u);
+  assert.match(e2eJob, /apps\/web\/blob-report\//u);
+  assert.match(e2eJob, /apps\/web\/test-results\//u);
   assert.match(e2eJob, /if-no-files-found: warn/u);
-  assert.match(
-    e2eJob,
-    /name: test-results-\$\{\{ matrix\.shard \}\}-of-\$\{\{ matrix\.total_shards \}\}[\s\S]*?path: apps\/web\/test-results\/\n {10}if-no-files-found: ignore/u,
-    'successful shards may not create Playwright test-results artifacts'
-  );
+  assert.match(e2eJob, /retention-days: 7/u);
+  assert.doesNotMatch(e2eJob, /name: playwright-report-/u);
+  assert.doesNotMatch(e2eJob, /name: test-results-/u);
 });
 
 test('E2E workflow runs TanStack migration dual-stack and compare smoke jobs', () => {
@@ -819,6 +874,7 @@ test('E2E workflow runs TanStack migration dual-stack and compare smoke jobs', (
     'Free runner disk for Dockerized migration E2E'
   );
   const installIndex = migrationJob.indexOf('Install dependencies');
+  const buildxIndex = migrationJob.indexOf('Setup Docker Buildx');
   const runIndex = migrationJob.indexOf('Run migration E2E');
   const uploadIndex = migrationJob.indexOf('Upload migration E2E artifacts');
   const stopIndex = migrationJob.indexOf('Stop migration E2E stacks');
@@ -859,8 +915,22 @@ test('E2E workflow runs TanStack migration dual-stack and compare smoke jobs', (
     migrationJob,
     /path: \|\n {12}apps\/tanstack-web\/playwright-report\//u
   );
-  assert.match(migrationJob, /tmp\/e2e\//u);
+  assert.match(migrationJob, /tmp\/e2e\/web-migration\/\*\.json/u);
   assert.match(migrationJob, /if-no-files-found: ignore/u);
+  assert.match(migrationJob, /retention-days: 7/u);
+  assert.match(migrationJob, /if: \$\{\{ failure\(\) \}\}/u);
+  assert.match(migrationJob, /DOCKER_WEB_CACHE_BACKEND_FROM: type=gha/u);
+  assert.match(migrationJob, /DOCKER_WEB_CACHE_TANSTACK_FROM: type=gha/u);
+  assert.match(migrationJob, /uses: docker\/setup-buildx-action@v4/u);
+  assert.match(
+    migrationJob,
+    /BUILDX_BUILDER=\$\{\{ steps\.buildx\.outputs\.name \}\}/u
+  );
+  assert.doesNotMatch(
+    migrationJob,
+    /Configure trusted BuildKit cache exports/u
+  );
+  assert.doesNotMatch(migrationJob, /DOCKER_WEB_CACHE_[A-Z_]+_TO/u);
   assert.match(
     migrationJob,
     /docker compose -f docker-compose\.tanstack-dual\.yml down \|\| true/u
@@ -872,10 +942,12 @@ test('E2E workflow runs TanStack migration dual-stack and compare smoke jobs', (
   assert.match(migrationJob, /bun sb:stop \|\| true/u);
   assert.notEqual(cleanupIndex, -1);
   assert.notEqual(installIndex, -1);
+  assert.notEqual(buildxIndex, -1);
   assert.notEqual(runIndex, -1);
   assert.notEqual(uploadIndex, -1);
   assert.notEqual(stopIndex, -1);
   assert.ok(cleanupIndex < installIndex);
+  assert.ok(buildxIndex < runIndex);
   assert.ok(installIndex < runIndex);
   assert.ok(runIndex < uploadIndex);
   assert.ok(runIndex < stopIndex);
@@ -978,6 +1050,7 @@ test('environment-scoped Vercel workflows scope project secrets to protected job
     calendar: 'VERCEL_CALENDAR_PROJECT_ID',
     chat: 'VERCEL_CHAT_PROJECT_ID',
     cms: 'VERCEL_CMS_PROJECT_ID',
+    contacts: 'VERCEL_CONTACTS_PROJECT_ID',
     drive: 'VERCEL_DRIVE_PROJECT_ID',
     finance: 'VERCEL_FINANCE_PROJECT_ID',
     inventory: 'VERCEL_INVENTORY_PROJECT_ID',
@@ -988,6 +1061,7 @@ test('environment-scoped Vercel workflows scope project secrets to protected job
     meet: 'VERCEL_TUMEET_PROJECT_ID',
     mind: 'VERCEL_MIND_PROJECT_ID',
     nova: 'VERCEL_NOVA_PROJECT_ID',
+    pay: 'VERCEL_PAY_PROJECT_ID',
     platform: 'VERCEL_PLATFORM_PROJECT_ID',
     qr: 'VERCEL_QR_PROJECT_ID',
     rewise: 'VERCEL_REWISE_PROJECT_ID',
@@ -1005,8 +1079,6 @@ test('environment-scoped Vercel workflows scope project secrets to protected job
     'PRODUCTION_SUPABASE_PUBLISHABLE_KEY',
     'PRODUCTION_SUPABASE_SECRET_KEY',
     'PRODUCTION_SUPABASE_URL',
-    'TURBO_TEAM',
-    'TURBO_TOKEN',
   ];
 
   for (const workflowName of vercelWorkflows) {
@@ -1112,6 +1184,21 @@ test('environment-scoped Vercel workflows scope project secrets to protected job
         `VERCEL_PROJECT_ID: \\$\\{\\{ secrets\\.${projectSecret} \\}\\}`
       )
     );
+    assert.match(
+      deployJob,
+      /token: \$\{\{ github\.actor != 'dependabot\[bot\]' && secrets\.TURBO_TOKEN \|\| '' \}\}/,
+      `${workflowName} must pass the remote-cache token only to the wrapper`
+    );
+    assert.match(
+      deployJob,
+      /team: \$\{\{ vars\.TURBO_TEAM \|\| secrets\.TURBO_TEAM \}\}/,
+      `${workflowName} must prefer the repository team variable`
+    );
+    assert.doesNotMatch(
+      workflow,
+      /^ {0,8}TURBO_(?:TOKEN|TEAM|API|REMOTE_CACHE_SIGNATURE_KEY):/mu,
+      `${workflowName} must not put remote-cache credentials at workflow or job scope`
+    );
 
     for (const secretName of forbiddenWorkflowSecrets) {
       assert.doesNotMatch(
@@ -1142,7 +1229,7 @@ test('TanStack production Vercel workflow skips when project secret is absent', 
   assert.match(deployJob, /configured=false/);
   assert.match(deployJob, /TanStack Web Vercel deployment skipped/);
   assert.ok(
-    [...workflow.matchAll(guardedStepPattern)].length >= 5,
+    [...workflow.matchAll(guardedStepPattern)].length >= 4,
     'Vercel pull/build/marker steps must be skipped when project config is missing'
   );
 });
@@ -1545,11 +1632,13 @@ test('package publish workflows release from production version bumps', () => {
       prepareJob,
       /npm view "\$\{PACKAGE_NAME\}@\$\{PACKAGE_VERSION\}" version/
     );
-    assert.match(prepareJob, /npm pack --pack-destination/);
+    assert.match(prepareJob, /npm pack --ignore-scripts --pack-destination/);
     const prepareManifestIndex = prepareJob.indexOf(
       `node scripts/ci/prepare-npm-package-manifest.js ${packagePath}`
     );
-    const packIndex = prepareJob.indexOf('npm pack --pack-destination');
+    const packIndex = prepareJob.indexOf(
+      'npm pack --ignore-scripts --pack-destination'
+    );
 
     assert.notEqual(
       prepareManifestIndex,
@@ -1591,7 +1680,8 @@ test('package trusted publishing keeps OIDC isolated to artifact publish jobs', 
     artifactDir,
     artifactName,
     environment,
-    requiredBuildPatterns,
+    packageName,
+    packagePath,
     workflowName,
   } of packageReleaseWorkflows) {
     const workflow = fs.readFileSync(
@@ -1608,31 +1698,17 @@ test('package trusted publishing keeps OIDC isolated to artifact publish jobs', 
     assert.doesNotMatch(workflow, /github\.event\.pull_request/);
     assert.doesNotMatch(workflow, /pull_request\.title/);
 
-    for (const pattern of requiredBuildPatterns) {
-      assert.match(buildJob, pattern);
-    }
-
-    for (const [jobName, jobBlock] of [
-      ['build', buildJob],
-      ['prepare-publish-npm', prepareJob],
-    ]) {
-      const supabaseBuildIndex = jobBlock.indexOf(
-        'bun run --filter @tuturuuu/supabase build'
+    if (packagePath === 'packages/typescript-config') {
+      assert.match(buildJob, /Validate package metadata/);
+    } else {
+      assert.match(
+        buildJob,
+        /uses: \.\/\.github\/actions\/run-with-turbo-remote-cache/
       );
-      const internalApiBuildIndex = jobBlock.indexOf(
-        'bun run --filter @tuturuuu/internal-api build'
-      );
-
-      if (internalApiBuildIndex === -1) continue;
-
-      assert.notEqual(
-        supabaseBuildIndex,
-        -1,
-        `${workflowName} ${jobName} must build @tuturuuu/supabase before @tuturuuu/internal-api`
-      );
-      assert.ok(
-        supabaseBuildIndex < internalApiBuildIndex,
-        `${workflowName} ${jobName} must build @tuturuuu/supabase before @tuturuuu/internal-api`
+      assert.match(buildJob, /--concurrency=4/);
+      assert.match(
+        buildJob,
+        new RegExp(`--filter=${packageName.replace('/', '\\/')}`)
       );
     }
 

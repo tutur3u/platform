@@ -465,16 +465,6 @@
       "targetOwner": "rust-backend",
       "note": "Rust backend handle_backend_request verifies app-session auth, hydrates users and user_private_details through the server-owned Supabase REST adapter, and persists display_name, bio, and avatar_url profile updates with same-origin mutation protection for cookie auth. This endpoint is migrated for the app-session contract used by TanStack contact; broader Supabase session revalidation remains tracked under auth migration work."
     },
-    "loading:/:locale/:wsId/users/groups/:groupId:apps/web/src/app/[locale]/(dashboard)/[wsId]/users/groups/[groupId]/loading.tsx": {
-      "status": "migrated",
-      "targetOwner": "tanstack-start",
-      "note": "TanStack Start route /$locale/$wsId/users/groups/$groupId renders a copied local equivalent of the legacy GroupOverviewSkeleton using shared Skeleton primitives. This marks only loading.tsx migrated; the group detail page/data/auth route remains legacy-owned."
-    },
-    "loading:/:locale/:wsId/users/reports/:reportId:apps/web/src/app/[locale]/(dashboard)/[wsId]/users/reports/[reportId]/loading.tsx": {
-      "status": "migrated",
-      "targetOwner": "tanstack-start",
-      "note": "TanStack Start route /$locale/$wsId/users/reports/$reportId renders the legacy dashed loading panel with Loader2 and localized common.loading text from the TanStack message bundle. This marks only loading.tsx migrated; the report detail page/data/auth route remains legacy-owned."
-    },
     "api:/api/v1/auth/password-login:apps/web/src/legacy-api-routes/v1/auth/password-login/route.ts": {
       "methods": {
         "OPTIONS": {
@@ -1074,41 +1064,6 @@
       "targetOwner": "tanstack-start",
       "note": "Accepted replacement/removal: TanStack Start mail leaf routes /$locale/$wsId/mail and /$locale/$wsId/mail/sent are already migrated as 307 handoffs to the standalone Mail app via buildMailRedirectHref. The legacy Next mail layout's workspace/user gate is replaced by the Mail app centralized auth proxy and workspace-normalization boundary, so no route-specific dashboard layout is rendered in the Start runtime. Parent dashboard/session/provider ownership remains separately tracked."
     },
-    "page:/:locale/:wsId/users/approvals:apps/web/src/app/[locale]/(dashboard)/[wsId]/users/approvals/page.tsx": {
-      "status": "migrated",
-      "targetOwner": "tanstack-start",
-      "note": "Dynamic no-store TanStack Start route /$locale/$wsId/users/approvals ports the legacy workspace approvals page with fail-closed current-user auth, full workspace resolution, personal-workspace notice parity, approve_reports/approve_posts not-found gating, preserved status/page/limit/group/user/creator filter state, shared approvals tabs, TanStack Query-backed approval/log reads, and internal-api-backed approve/reject/unapprove mutations. This marks only the frontend page artifact migrated; approvals API ownership remains separately tracked."
-    },
-    "page:/:locale/:wsId/users/group-tags:apps/web/src/app/[locale]/(dashboard)/[wsId]/users/group-tags/page.tsx": {
-      "status": "migrated",
-      "targetOwner": "tanstack-start",
-      "note": "Dynamic no-store TanStack Start route /$locale/$wsId/users/group-tags ports the legacy workspace user group tags table with fail-closed current-user auth, workspace resolution, pass-through q/page/pageSize search state, forwarded internal-api auth for group-tag reads, internal-api-backed create/update/delete forms and row actions, localized FeatureSummary content, and canonical locale-prefixed detail hrefs. This marks only the frontend page artifact migrated; group-tag detail page and API route ownership remain separately tracked."
-    },
-    "page:/:locale/:wsId/users/group-tags/:tagId:apps/web/src/app/[locale]/(dashboard)/[wsId]/users/group-tags/[tagId]/page.tsx": {
-      "status": "migrated",
-      "targetOwner": "tanstack-start",
-      "note": "Dynamic no-store TanStack Start route /$locale/$wsId/users/group-tags/$tagId ports the legacy group-tag detail page with fail-closed current-user auth, workspace resolution, pass-through q/page/pageSize search state, forwarded internal-api auth for tag detail and linked user-group reads, TanStack Query-backed linked-group add/remove actions, localized FeatureSummary content, and locale-prefixed group detail hrefs. This marks only the frontend page artifact migrated; group-tag API route ownership remains separately tracked for the backend Rust wave."
-    },
-    "page:/:locale/:wsId/users/groups/calendar:apps/web/src/app/[locale]/(dashboard)/[wsId]/users/groups/calendar/page.tsx": {
-      "status": "migrated",
-      "targetOwner": "tanstack-start",
-      "note": "Dynamic no-store TanStack Start route /$locale/$wsId/users/groups/calendar ports the legacy group calendar page with fail-closed current-user auth, workspace resolution, manage_users/view_user_groups not-found gating, update_user_groups schedule permission state, and the shared UserGroupSessionCalendar using internal-api-backed session reads and mutations. This marks only the frontend page artifact migrated; user-group session APIs remain separately tracked."
-    },
-    "page:/:locale/:wsId/users/groups/:groupId/attendance:apps/web/src/app/[locale]/(dashboard)/[wsId]/users/groups/[groupId]/attendance/page.tsx": {
-      "status": "migrated",
-      "targetOwner": "tanstack-start",
-      "note": "Dynamic no-store TanStack Start route /$locale/$wsId/users/groups/$groupId/attendance ports the legacy group attendance page with fail-closed current-user auth, workspace resolution, check_user_attendance not-found gating, forwarded internal-api group/session/member/config/attendance hydration, session/date URL state, update_user_attendance save gating, and TanStack Query-backed attendance reads/saves through the typed user-group attendance facade. This marks only the frontend page artifact migrated; user-group attendance/member/config/session API ownership remains separately tracked for the backend Rust wave."
-    },
-    "page:/:locale/:wsId/users/groups/:groupId/requests:apps/web/src/app/[locale]/(dashboard)/[wsId]/users/groups/[groupId]/requests/page.tsx": {
-      "status": "migrated",
-      "targetOwner": "tanstack-start",
-      "note": "Dynamic no-store TanStack Start route /$locale/$wsId/users/groups/$groupId/requests ports the legacy group approval requests page with fail-closed current-user auth, workspace resolution, approve_reports/approve_posts not-found gating, shared GroupRequestsClient tabs, TanStack Query-backed approval list state, and internal-api-backed approve/reject/unapprove mutations. This marks only the frontend page artifact migrated; the parent group detail page and approvals API ownership remain separately tracked."
-    },
-    "page:/:locale/:wsId/users/groups/:groupId/schedule:apps/web/src/app/[locale]/(dashboard)/[wsId]/users/groups/[groupId]/schedule/page.tsx": {
-      "status": "migrated",
-      "targetOwner": "tanstack-start",
-      "note": "Dynamic no-store TanStack Start route /$locale/$wsId/users/groups/$groupId/schedule ports the legacy group schedule page with fail-closed current-user auth, workspace resolution, forwarded internal-api group lookup, update_user_groups schedule permission state, shared EditEndDateDialog, and the shared UserGroupSessionCalendar. This marks only the frontend page artifact migrated; the parent group detail page and user-group schedule APIs remain separately tracked."
-    },
     "page:/:locale/:wsId/hive:apps/web/src/app/[locale]/(dashboard)/[wsId]/hive/page.tsx": {
       "status": "migrated",
       "targetOwner": "tanstack-start",
@@ -1338,51 +1293,6 @@
       "status": "migrated",
       "targetOwner": "tanstack-start",
       "note": "TanStack Start route /$locale/$wsId/changelog ports the legacy authenticated dashboard changelog leaf as a dynamic no-store workspace route with fail-closed auth, workspace resolution, TanStack Query hydration, and changelog data loaded through the Rust-owned /api/v1/infrastructure/changelog backend facade instead of direct Supabase reads."
-    },
-    "page:/:locale/:wsId/users/topic-announcements:apps/web/src/app/[locale]/(dashboard)/[wsId]/users/topic-announcements/page.tsx": {
-      "status": "migrated",
-      "targetOwner": "tanstack-start",
-      "note": "TanStack Start route /$locale/$wsId/users/topic-announcements preserves the legacy exact-parent 307 redirect to /:wsId/users/topic-announcements/announcements while allowing migrated child tabs such as /templates to render. This marks only the page artifact migrated; parent dashboard layout/session ownership remains legacy-owned."
-    },
-    "page:/:locale/:wsId/users/topic-announcements/announcements:apps/web/src/app/[locale]/(dashboard)/[wsId]/users/topic-announcements/announcements/page.tsx": {
-      "status": "migrated",
-      "targetOwner": "tanstack-start",
-      "note": "Dynamic no-store TanStack Start route /$locale/$wsId/users/topic-announcements/announcements ports the legacy announcements composer and table as a self-contained dashboard leaf with fail-closed auth, full workspace resolution, personal-workspace notFound parity, ENABLE_TOPIC_ANNOUNCEMENTS secret gating, manage_users gating, send_user_group_post_emails-aware create/send/schedule flows, TanStack Query hydration, attachment upload, live email preview, save-as-template, and typed internal-api topic-announcement contracts."
-    },
-    "page:/:locale/:wsId/users/topic-announcements/templates:apps/web/src/app/[locale]/(dashboard)/[wsId]/users/topic-announcements/templates/page.tsx": {
-      "status": "migrated",
-      "targetOwner": "tanstack-start",
-      "note": "Dynamic no-store TanStack Start route /$locale/$wsId/users/topic-announcements/templates ports the legacy templates tab as a self-contained dashboard leaf with fail-closed auth, full workspace resolution, personal-workspace notFound parity, ENABLE_TOPIC_ANNOUNCEMENTS secret gating, manage_users gating, TanStack Query hydration, and create/update/delete template actions through typed internal-api facades."
-    },
-    "page:/:locale/:wsId/users/topic-announcements/contacts:apps/web/src/app/[locale]/(dashboard)/[wsId]/users/topic-announcements/contacts/page.tsx": {
-      "status": "migrated",
-      "targetOwner": "tanstack-start",
-      "note": "Dynamic no-store TanStack Start route /$locale/$wsId/users/topic-announcements/contacts ports the legacy contacts tab as a self-contained dashboard leaf with fail-closed auth, full workspace resolution, personal-workspace notFound parity, ENABLE_TOPIC_ANNOUNCEMENTS secret gating, manage_users gating, TanStack Query hydration, and list/create/delete/verify contact actions through typed internal-api facades. Verification controls are hidden unless the caller has send_user_group_post_emails."
-    },
-    "page:/:locale/:wsId/users/topic-announcements/delivery:apps/web/src/app/[locale]/(dashboard)/[wsId]/users/topic-announcements/delivery/page.tsx": {
-      "status": "migrated",
-      "targetOwner": "tanstack-start",
-      "note": "Dynamic no-store TanStack Start route /$locale/$wsId/users/topic-announcements/delivery ports the legacy read-only delivery history tab with fail-closed auth, full workspace resolution, personal-workspace notFound parity, ENABLE_TOPIC_ANNOUNCEMENTS secret gating, manage_users gating, forwarded-auth listTopicAnnouncements status=sent hydration, calendar timezone normalization, TanStack Query refreshes, sent-only defensive filtering, recipient summary chips, and empty-state compose handoff. Delivery does not require send_user_group_post_emails."
-    },
-    "page:/:locale/:wsId/users/topic-announcements/import:apps/web/src/app/[locale]/(dashboard)/[wsId]/users/topic-announcements/import/page.tsx": {
-      "status": "migrated",
-      "targetOwner": "tanstack-start",
-      "note": "Dynamic no-store TanStack Start route /$locale/$wsId/users/topic-announcements/import ports the legacy bulk import leaf with fail-closed auth, full workspace resolution, personal-workspace notFound parity, ENABLE_TOPIC_ANNOUNCEMENTS secret gating, manage_users gating, send_user_group_post_emails-aware create-and-send controls, client-only XLSX template download/first-sheet parsing, custom CSV/header alias parsing, editable spreadsheet grid, row validation/result summaries, and TanStack Query mutations through typed internal-api importTopicAnnouncements and sendTopicAnnouncementsBulk facades. Rust backend ownership of /api/v1/workspaces/:wsId/topic-announcements/import and /send-bulk remains separately tracked."
-    },
-    "page:/:locale/:wsId/users/structure:apps/web/src/app/[locale]/(dashboard)/[wsId]/users/structure/page.tsx": {
-      "status": "migrated",
-      "targetOwner": "tanstack-start",
-      "note": "TanStack Start route /$locale/$wsId/users/structure ports the legacy local-state organizational-structure mock page, metadata, localized messages, canvas interactions, and dialogs without adding Supabase or app API access. This marks only the page artifact migrated; parent dashboard layout/session ownership remains legacy-owned."
-    },
-    "page:/:locale/:wsId/users/feedbacks:apps/web/src/app/[locale]/(dashboard)/[wsId]/users/feedbacks/page.tsx": {
-      "status": "migrated",
-      "targetOwner": "tanstack-start",
-      "note": "TanStack Start route /$locale/$wsId/users/feedbacks ports the legacy feedback management page as a dynamic authenticated workspace route with fail-closed current-user auth, full workspace resolution, personal-workspace not-found handling, view_user_groups not-found gating, update_user_groups_scores management context, route metadata, and the shared UserFeedbacksClient backed by internal-api user facades. This marks only the page artifact migrated; feedback data APIs remain separately tracked backend/internal-api migration work."
-    },
-    "page:/:locale/:wsId/users/tutoring:apps/web/src/app/[locale]/(dashboard)/[wsId]/users/tutoring/page.tsx": {
-      "status": "migrated",
-      "targetOwner": "tanstack-start",
-      "note": "TanStack Start route /$locale/$wsId/users/tutoring preserves the legacy tutoring page with fail-closed current-user auth, forwarded-auth full workspace resolution, personal-workspace not-found handling, view_user_groups not-found gating, update_user_groups_scores management context, route metadata, and the shared tutoring client. Tutoring data access stays behind existing internal-api helpers and the backing APIs remain separately tracked Rust migration work."
     },
     "page:/:locale/:wsId/diet:apps/web/src/app/[locale]/(dashboard)/[wsId]/diet/page.tsx": {
       "status": "migrated",
@@ -2246,11 +2156,6 @@
       "status": "migrated",
       "targetOwner": "tanstack-start",
       "note": "TanStack Start owns the public shared user-profile fill page at /:locale/shared/user-profile/:code. The route ports the legacy profile-link loader, noindex head metadata, fail-closed auth redirect for requires_auth links, unavailable shell for 404/410 links, localized form shell, TanStack Query mutations through packages/internal-api facades, and allowlist-scoped prefill behavior. Submit/avatar API endpoints remain separate Rust-backend migration work."
-    },
-    "page:/:locale/users/:handle:apps/web/src/app/[locale]/(marketing)/users/[handle]/page.tsx": {
-      "status": "migrated",
-      "targetOwner": "tanstack-start",
-      "note": "TanStack Start route /$locale/users/$handle ports the legacy auth-gated community profile page. The loader runs the shared fail-closed current-user auth gate before any profile lookup, redirects anonymous visitors to the locale login route with nextUrl, sets private no-store route headers, reads only the legacy public profile fields for the requested handle through a caller-scoped internal-api users-server facade that preserves Supabase RLS, renders the profile header with TanStack-safe image/avatar primitives, and has explicit no-auth Playwright coverage. A dedicated Rust/backend reader remains a follow-up backend migration boundary."
     },
     "api:/api/v1/workspaces/:wsId/settings/calendar-sync:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/settings/calendar-sync/route.ts": {
       "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",

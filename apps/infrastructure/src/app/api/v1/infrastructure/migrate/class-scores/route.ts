@@ -1,5 +1,5 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import { NextResponse } from 'next/server';
+import { connection, NextResponse } from 'next/server';
 import {
   batchUpsert,
   createMigrationResponse,
@@ -8,6 +8,8 @@ import {
 
 // user_indicators doesn't have ws_id - query via user_id -> workspace_users
 export async function GET(req: Request) {
+  await connection();
+
   const devModeError = requireDevMode();
   if (devModeError) return devModeError;
 

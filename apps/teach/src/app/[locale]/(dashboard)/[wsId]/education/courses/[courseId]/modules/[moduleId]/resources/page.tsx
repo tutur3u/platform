@@ -6,6 +6,7 @@ import { StorageObjectForm } from '@tuturuuu/ui/custom/education/modules/resourc
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
 import type { Metadata } from 'next';
+import { connection } from 'next/server';
 import { getTranslations } from 'next-intl/server';
 import { resolveRouteWorkspace } from '@/lib/resolve-route-workspace';
 
@@ -24,6 +25,8 @@ interface Props {
 }
 
 export default async function ModuleResourcesPage({ params }: Props) {
+  await connection();
+
   const t = await getTranslations();
 
   const { wsId: routeWsId, courseId, moduleId } = await params;

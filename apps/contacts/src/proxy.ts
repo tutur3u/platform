@@ -16,7 +16,7 @@ import Negotiator from 'negotiator';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import createIntlMiddleware from 'next-intl/middleware';
-import { LOCALE_COOKIE_NAME } from './constants/common';
+import { LOCALE_COOKIE_NAME, WEB_APP_URL } from './constants/common';
 import {
   defaultLocale,
   type Locale,
@@ -97,6 +97,84 @@ function getPathLocale(pathname: string) {
   return firstSegment && supportedLocales.includes(firstSegment as Locale)
     ? (firstSegment as Locale)
     : null;
+}
+
+/**
+ * Contacts only ships a subset of the `/[wsId]` dashboard surface; every other
+ * workspace route is still owned by apps/web. Redirect those to web instead of
+ * returning a 404.
+ *
+ * This MUST live in the middleware rather than a `[wsId]/[...catchAll]` page.
+ * A catch-all page route also matches `/api/v1/...` as locale="api", wsId="v1",
+ * and — because Next checks `fallback` rewrites only AFTER dynamic routes — it
+ * would shadow the `/api/:path*` → web proxy and break every proxied API call.
+ * The middleware handles `/api` in an earlier branch, so it is never affected.
+ */
+// Exact routes contacts owns. These must NOT prefix-match: `users` is the users
+// index, and treating it as a prefix would mark every /users/* path owned —
+// including non-migrated ones like /users/groups, which would then 404 here
+// instead of redirecting to web.
+const CONTACTS_OWNED_EXACT_ROUTES = new Set(['', 'users']);
+
+// Route roots contacts owns, including anything nested beneath them.
+// `*` matches exactly one dynamic segment (e.g. a userId).
+// Add an entry here whenever a module is migrated, or the middleware will bounce
+// the freshly-migrated route straight back to web.
+const CONTACTS_OWNED_ROUTE_PREFIXES = [
+  'workforce',
+  'users/approvals',
+  'users/attendance',
+  'users/database',
+  'users/feedbacks',
+  'users/group-tags',
+  'users/groups',
+  'users/guest-leads',
+  'users/reports',
+  'users/structure',
+  'users/topic-announcements',
+  'users/tutoring',
+  'users/*/follow-up',
+];
+
+const CONTACTS_NON_WORKSPACE_SEGMENTS = new Set([
+  'dashboard',
+  'login',
+  'verify-token',
+]);
+
+function matchesRoutePrefix(pattern: string, segments: string[]) {
+  const patternSegments = pattern.split('/');
+  if (segments.length < patternSegments.length) return false;
+
+  return patternSegments.every(
+    (patternSegment, index) =>
+      patternSegment === '*' || patternSegment === segments[index]
+  );
+}
+
+function getNonMigratedWorkspaceRedirect(request: NextRequest) {
+  const segments = stripLocale(request.nextUrl.pathname)
+    .split('/')
+    .filter(Boolean);
+
+  const wsId = segments[0];
+  if (!wsId || CONTACTS_NON_WORKSPACE_SEGMENTS.has(wsId)) return null;
+
+  const subSegments = segments.slice(1);
+  const subPath = subSegments.join('/');
+
+  if (CONTACTS_OWNED_EXACT_ROUTES.has(subPath)) return null;
+  if (
+    CONTACTS_OWNED_ROUTE_PREFIXES.some((pattern) =>
+      matchesRoutePrefix(pattern, subSegments)
+    )
+  ) {
+    return null;
+  }
+
+  return NextResponse.redirect(
+    new URL(`${request.nextUrl.pathname}${request.nextUrl.search}`, WEB_APP_URL)
+  );
 }
 
 function getLoginPath() {
@@ -227,6 +305,14 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
       if (next) url.searchParams.set('next', next);
 
       return clearSupabaseAuthCookies(request, NextResponse.redirect(url));
+    }
+
+    const nonMigratedRedirect = getNonMigratedWorkspaceRedirect(request);
+    if (nonMigratedRedirect) {
+      if (appSessionRefresh.ok) {
+        propagateAuthCookies(appSessionRefresh.response, nonMigratedRedirect);
+      }
+      return clearSupabaseAuthCookies(request, nonMigratedRedirect);
     }
 
     const response = intlMiddleware(request);

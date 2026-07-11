@@ -1556,14 +1556,34 @@ test('production Docker root scripts keep the default build caps', () => {
     'DOCKER_WEB_BUILDKIT_PRUNE_MODE',
     'DOCKER_WEB_BUILDKIT_PRUNE_UNTIL',
     'E2E_DOCKER_BUILDKIT_PRUNE_MODE',
+  ]) {
+    assert.ok(
+      turboConfig.globalPassThroughEnv.includes(envName),
+      `turbo.json should pass ${envName} through without hashing it`
+    );
+  }
+  for (const envName of [
     'TURBO_API',
     'TURBO_REMOTE_CACHE_SIGNATURE_KEY',
     'TURBO_TEAM',
     'TURBO_TOKEN',
   ]) {
     assert.ok(
-      turboConfig.globalPassThroughEnv.includes(envName),
-      `turbo.json should pass ${envName} through without hashing it`
+      !turboConfig.globalPassThroughEnv.includes(envName),
+      `turbo.json must keep ${envName} outside task hashing configuration`
+    );
+  }
+  for (const envName of [
+    'DOCKER_WEB_BUILD_CPUS',
+    'DOCKER_WEB_BUILD_MAX_PARALLELISM',
+    'DOCKER_WEB_BUILD_MEMORY',
+    'DOCKER_WEB_NODE_MAX_OLD_SPACE_SIZE',
+    'DOCKER_WEB_TURBO_CONCURRENCY',
+    'NODE_OPTIONS',
+  ]) {
+    assert.ok(
+      turboConfig.tasks['build:docker'].passThroughEnv.includes(envName),
+      `build:docker should pass ${envName} without changing output hashes`
     );
   }
   for (const taskName of ['build', 'build:docker']) {
@@ -1579,6 +1599,10 @@ test('production Docker root scripts keep the default build caps', () => {
     assert.ok(
       outputs.includes('!.next/dev/**'),
       `${taskName} should not archive local Next dev server state`
+    );
+    assert.ok(
+      outputs.includes('.output/**'),
+      `${taskName} should cache TanStack build output`
     );
   }
   assert.match(buildWebDockerScript, /build:web:docker/);

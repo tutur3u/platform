@@ -1,8 +1,8 @@
-import { describe, expect, it } from 'vitest';
 import {
   matchesUserGroupSearch,
   normalizeUserGroupSearchText,
-} from '@/app/[locale]/(dashboard)/[wsId]/users/groups/utils';
+} from '@tuturuuu/users-core/lib/user-groups/groups-utils';
+import { describe, expect, it } from 'vitest';
 
 describe('group search utils', () => {
   it('normalizes Vietnamese accents and whitespace', () => {

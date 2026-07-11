@@ -1,6 +1,15 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
+import {
+  applyAttendanceMemberCounts,
+  fetchManagersForGroups,
+  getShouldCountManagersInAttendance,
+} from '@tuturuuu/users-core/lib/user-groups/groups-utils';
+import {
+  countUserGroupsForTable,
+  listUserGroupsForTable,
+} from '@tuturuuu/users-core/lib/user-groups/table-repository';
 import { MAX_SEARCH_LENGTH } from '@tuturuuu/utils/constants';
 import {
   getPermissions,
@@ -8,17 +17,8 @@ import {
 } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import {
-  applyAttendanceMemberCounts,
-  fetchManagersForGroups,
-  getShouldCountManagersInAttendance,
-} from '@/app/[locale]/(dashboard)/[wsId]/users/groups/utils';
 import { resolveSessionAuthContext } from '@/lib/api-auth';
 import { buildPostgrestRateLimitResponse } from '@/lib/postgrest-rate-limit';
-import {
-  countUserGroupsForTable,
-  listUserGroupsForTable,
-} from '@/lib/user-groups/table-repository';
 
 function normalizeListParam(value: string | undefined) {
   if (!value) return [];

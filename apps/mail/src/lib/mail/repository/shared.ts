@@ -1,10 +1,10 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { resolveInternalMailboxName } from '../identity';
 import type {
   MailLabel,
   MailMailbox,
   MailMailboxRole,
   MailRecipient,
-  MailRouteContext,
 } from '../types';
 
 export type AnyRecord = Record<string, any>;
@@ -12,11 +12,13 @@ export type MailTableName =
   | 'mail_attachments'
   | 'mail_domains'
   | 'mail_events'
+  | 'mail_folders'
   | 'mail_inbound_jobs'
   | 'mail_labels'
   | 'mail_mailbox_members'
   | 'mail_mailboxes'
   | 'mail_message_labels'
+  | 'mail_message_folders'
   | 'mail_message_user_state'
   | 'mail_messages'
   | 'mail_outbound_jobs'
@@ -47,14 +49,46 @@ export function normalizeAddress(value: string) {
   return value.trim().toLowerCase();
 }
 
-export function toMailbox(row: AnyRecord, role: MailMailboxRole): MailMailbox {
+export function toMailbox(
+  row: AnyRecord,
+  role: MailMailboxRole,
+  personalUserDisplayName?: string | null
+): MailMailbox {
+  const domain = row.mail_domain as AnyRecord | undefined;
+  const effectiveOutboundProvider =
+    row.outbound_provider_override ?? domain?.outbound_provider ?? 'ses';
+  const canonicalPersonalName =
+    row.type === 'personal'
+      ? resolveInternalMailboxName(personalUserDisplayName, row.address)
+      : null;
+
   return {
     address: row.address,
-    displayName: row.display_name || row.address,
+    aiInstructions: row.ai_instructions ?? '',
+    autoDraftEnabled: Boolean(row.auto_draft_enabled),
+    displayName: canonicalPersonalName || row.display_name || row.address,
+    domainId: row.domain_id,
+    effectiveOutboundProvider,
     id: row.id,
+    outboundProviderOverride: row.outbound_provider_override ?? null,
+    providerLimits: {
+      maxMessageBytes:
+        effectiveOutboundProvider === 'cloudflare'
+          ? 5 * 1024 * 1024
+          : 10 * 1024 * 1024,
+      maxRecipients: 50,
+    },
     role,
+    senderName:
+      canonicalPersonalName ||
+      row.sender_name ||
+      row.display_name ||
+      row.address,
+    signatureHtml: row.signature_html ?? null,
+    signatureText: row.signature_text ?? null,
     status: row.status,
     type: row.type,
+    unreadCount: Number(row.unread_count ?? 0),
   };
 }
 
@@ -63,6 +97,7 @@ export function toLabel(row: AnyRecord): MailLabel {
     color: row.color ?? null,
     id: row.id,
     kind: row.kind,
+    mailboxId: row.mailbox_id,
     name: row.name,
     slug: row.slug,
   };
@@ -76,8 +111,37 @@ export function toRecipient(row: AnyRecord): MailRecipient {
   };
 }
 
-export function getUserDisplayName(user: MailRouteContext['user']) {
-  return user.email?.split('@')[0] ?? 'Tuturuuu Mail';
+export async function getCanonicalUserDisplayNames(
+  admin: AnyRecord,
+  userIds: string[]
+) {
+  const uniqueUserIds = [...new Set(userIds.filter(Boolean))];
+  if (uniqueUserIds.length === 0) return new Map<string, string>();
+
+  const { data, error } = await admin
+    .from('users')
+    .select('id, display_name')
+    .in('id', uniqueUserIds);
+
+  if (error) {
+    throw new Error(`Failed to load user display names: ${error.message}`);
+  }
+
+  return new Map<string, string>(
+    (data ?? []).flatMap((user: AnyRecord) => {
+      const displayName = user.display_name?.trim();
+      return displayName ? [[user.id, displayName]] : [];
+    })
+  );
+}
+
+export async function getCanonicalUserDisplayName(
+  admin: AnyRecord,
+  userId: string | null | undefined
+) {
+  if (!userId) return null;
+  const names = await getCanonicalUserDisplayNames(admin, [userId]);
+  return names.get(userId) ?? null;
 }
 
 export async function ensureSystemLabels(admin: AnyRecord, mailboxId: string) {

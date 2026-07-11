@@ -15,7 +15,6 @@ import {
   Share2,
   Shield,
   Sparkles,
-  Star,
   Tags,
   User,
   Users,
@@ -202,29 +201,6 @@ export function buildCoreSettingsNavGroups({
   groups.push({
     label: t('settings.user_management.title'),
     items: [
-      {
-        name: 'database_filters',
-        label: t('settings.user_management.database_filters'),
-        icon: Users,
-        description: t('settings.user_management.database_filters_description'),
-        keywords: ['Users', 'Database', 'Filters', 'Groups', 'Excluded'],
-      },
-      {
-        name: 'featured_groups',
-        label: t('settings.user_management.featured_groups'),
-        icon: Star,
-        description: t('settings.user_management.featured_groups_description'),
-        keywords: ['Featured', 'Groups', 'Quick', 'Filter', 'Pinned'],
-      },
-      {
-        name: 'require_attention_color',
-        label: t('settings.user_management.require_attention_color'),
-        icon: Paintbrush,
-        description: t(
-          'settings.user_management.require_attention_color_description'
-        ),
-        keywords: ['Users', 'Feedback', 'Attention', 'Color'],
-      },
       {
         name: 'approvals',
         label: t('settings.approvals.title'),

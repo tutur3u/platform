@@ -3,6 +3,7 @@ import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { notFound, redirect } from 'next/navigation';
+import { connection } from 'next/server';
 import DiscordIntegrationDashboard from './discord-integration-dashboard';
 
 export const metadata: Metadata = {
@@ -18,6 +19,8 @@ interface Props {
 }
 
 export default async function DiscordIntegrationPage({ params }: Props) {
+  await connection();
+
   const { wsId: id } = await params;
 
   const workspace = await getWorkspace(id);

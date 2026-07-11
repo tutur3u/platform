@@ -2,7 +2,7 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { LimitRow } from '@tuturuuu/types/db';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { enforceRootWorkspaceAdmin } from '@tuturuuu/utils/workspace-helper';
-import { NextResponse } from 'next/server';
+import { connection, NextResponse } from 'next/server';
 import {
   type AvailableTableRow,
   buildTableGroups,
@@ -33,6 +33,8 @@ async function getAvailableTables(): Promise<AvailableTableRow[]> {
 }
 
 export async function GET() {
+  await connection();
+
   await enforceRootWorkspaceAdmin(ROOT_WORKSPACE_ID);
 
   const [rows, availableTables] = await Promise.all([

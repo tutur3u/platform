@@ -1,11 +1,14 @@
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { notFound } from 'next/navigation';
+import { connection } from 'next/server';
 import enMessages from '@/../messages/en.json';
 import viMessages from '@/../messages/vi.json';
 import TranslationsComparison from './translations-comparison';
 
 export default async function TranslationsPage() {
+  await connection();
+
   const permissions = await getPermissions({
     wsId: ROOT_WORKSPACE_ID,
   });

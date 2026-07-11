@@ -42,6 +42,7 @@ jobs:
           flutter-version: "3.44.x"
           channel: stable
           cache: true
+          pub-cache: true
 
       - name: Disable Flutter Swift Package Manager
         run: flutter config --no-enable-swift-package-manager
@@ -50,12 +51,11 @@ jobs:
         uses: actions/cache@v6
         with:
           path: |
-            apps/mobile/ios/Pods
             /Users/runner/Library/Caches/CocoaPods
             /Users/runner/.cocoapods/repos/trunk
-          key: ${{ runner.os }}-flutter-ios-pods-${{ hashFiles('apps/mobile/pubspec.lock', 'apps/mobile/ios/Podfile', 'apps/mobile/ios/Podfile.lock') }}
+          key: ${{ runner.os }}-${{ runner.arch }}-flutter-ios-pods-${{ hashFiles('apps/mobile/pubspec.lock', 'apps/mobile/ios/Podfile', 'apps/mobile/ios/Podfile.lock') }}
           restore-keys: |
-            ${{ runner.os }}-flutter-ios-pods-
+            ${{ runner.os }}-${{ runner.arch }}-flutter-ios-pods-
 
       - name: Install dependencies
         run: flutter pub get
@@ -119,9 +119,14 @@ jobs:
       - name: Build iOS (development flavor, simulator)
         run: flutter build ios --flavor development --target lib/main_development.dart --simulator -d ${{ env.SIMULATOR_UDID }}
 
+      - name: Archive iOS app bundle
+        run: ditto -c -k --sequesterRsrc --keepParent build/ios/iphonesimulator/Runner.app "$RUNNER_TEMP/ios-dev-app.zip"
+
       - name: Upload iOS app artifact
         uses: actions/upload-artifact@v7
         with:
           name: ios-dev-app
-          path: apps/mobile/build/ios/iphonesimulator/Runner.app
+          path: ${{ runner.temp }}/ios-dev-app.zip
+          if-no-files-found: error
           retention-days: 7
+          compression-level: 0

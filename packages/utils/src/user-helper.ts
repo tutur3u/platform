@@ -1,13 +1,8 @@
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
+import { createClient } from '@tuturuuu/supabase/next/server';
 import type { User, UserPrivateDetails } from '@tuturuuu/types';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
-
-import { resolveWorkspaceId } from './constants';
-import { verifyWorkspaceMembershipType } from './workspace-helper';
+import { getWorkspaceUserLinkForUser } from './workspace-user-link';
 
 async function resolveCurrentUserId(
   supabase: TypedSupabaseClient
@@ -71,98 +66,14 @@ export async function getCurrentWorkspaceUser(
   wsId: string,
   options: GetCurrentWorkspaceUserOptions = {}
 ): Promise<WorkspaceUserLink | null> {
-  const { autoRepair = true } = options;
-
   const supabase = await createClient();
   const userId = await resolveCurrentUserId(supabase as TypedSupabaseClient);
   if (!userId) return null;
 
-  const resolvedWsId = resolveWorkspaceId(wsId);
-
-  // First attempt to get the workspace user link
-  const { data: workspaceUser } = await supabase
-    .from('workspace_user_linked_users')
-    .select(
-      'platform_user_id, virtual_user_id, ws_id, created_at, workspace_users!virtual_user_id(*)'
-    )
-    .eq('platform_user_id', userId)
-    .eq('ws_id', resolvedWsId)
-    .limit(1)
-    .maybeSingle();
-
-  // If found, return it
-  if (workspaceUser) {
-    const linkedData = workspaceUser.workspace_users;
-    return {
-      platform_user_id: workspaceUser.platform_user_id,
-      virtual_user_id: workspaceUser.virtual_user_id,
-      ws_id: workspaceUser.ws_id,
-      created_at: workspaceUser.created_at,
-      ...(linkedData ? { workspace_users: linkedData as WorkspaceUser } : {}),
-    };
-  }
-
-  // If not found and auto-repair is disabled, return null
-  if (!autoRepair) return null;
-
-  const membership = await verifyWorkspaceMembershipType({
-    wsId: resolvedWsId,
-    userId,
-    supabase,
-    requiredType: 'MEMBER',
-  });
-
-  if (!membership.ok) return null;
-
-  // Try to repair the missing link using the RPC function
-  try {
-    const sbAdmin = await createAdminClient();
-    // Note: ensure_workspace_user_link is defined in migration 20260112060000
-    // Using type assertion since RPC types are generated after migration is applied
-    // IMPORTANT: Must use .bind() to preserve the Supabase client's `this` context
-    const rpc = sbAdmin.rpc.bind(sbAdmin) as unknown as (
-      fn: string,
-      args: Record<string, unknown>
-    ) => Promise<{ error: Error | null }>;
-    const { error: repairError } = await rpc('ensure_workspace_user_link', {
-      target_user_id: userId,
-      target_ws_id: resolvedWsId,
-    });
-
-    if (repairError) {
-      console.error(
-        '[getCurrentWorkspaceUser] Failed to auto-repair workspace user link:',
-        repairError
-      );
-      return null;
-    }
-
-    // Fetch the newly created link
-    const { data: repairedUser } = await supabase
-      .from('workspace_user_linked_users')
-      .select(
-        'platform_user_id, virtual_user_id, ws_id, created_at, workspace_users!virtual_user_id(*)'
-      )
-      .eq('platform_user_id', userId)
-      .eq('ws_id', resolvedWsId)
-      .limit(1)
-      .maybeSingle();
-
-    if (repairedUser) {
-      const linkedData = repairedUser.workspace_users;
-      return {
-        platform_user_id: repairedUser.platform_user_id,
-        virtual_user_id: repairedUser.virtual_user_id,
-        ws_id: repairedUser.ws_id,
-        created_at: repairedUser.created_at,
-        ...(linkedData ? { workspace_users: linkedData as WorkspaceUser } : {}),
-      };
-    }
-  } catch (err) {
-    console.error('[getCurrentWorkspaceUser] Error during auto-repair:', err);
-  }
-
-  return null;
+  // The link lookup + auto-repair lives in workspace-user-link so satellite apps
+  // can reuse it with an app-session actor: the internal-app-auth guard forbids
+  // registered apps from importing this module (it resolves actors via Supabase).
+  return getWorkspaceUserLinkForUser(wsId, userId, options);
 }
 
 export async function getCurrentUser() {

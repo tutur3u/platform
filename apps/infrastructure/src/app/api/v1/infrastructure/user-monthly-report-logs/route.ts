@@ -1,8 +1,10 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import { NextResponse } from 'next/server';
+import { connection, NextResponse } from 'next/server';
 import { authorizeInfrastructureMigrationExport } from '../migration-export-auth';
 
 export async function GET(req: Request) {
+  await connection();
+
   const { searchParams } = new URL(req.url);
   const wsId = searchParams.get('ws_id');
   const limit = searchParams.get('limit') || '1000';

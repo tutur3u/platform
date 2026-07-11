@@ -22,7 +22,6 @@ import { getMailAppOrigin } from '@/lib/mail-app-url';
 import { getMindAppOrigin } from '@/lib/mind-app-url';
 import { getQrAppOrigin } from '@/lib/qr-app-url';
 import { getTasksAppOrigin } from '@/lib/tasks-app-url';
-import { TOPIC_ANNOUNCEMENTS_SECRET } from '@/lib/topic-announcements';
 import {
   createDashboardNavigationIcon,
   type DashboardNavigationLink,
@@ -98,10 +97,6 @@ export async function WorkspaceNavigationLinks({
 
   const ENABLE_AI_ONLY = hasSecret('ENABLE_AI_ONLY', 'true');
   const ENABLE_HABITS = hasSecret(HABITS_ENABLED_SECRET, 'true');
-  const ENABLE_TOPIC_ANNOUNCEMENTS = hasSecret(
-    TOPIC_ANNOUNCEMENTS_SECRET,
-    'true'
-  );
   const qrAppHref = getQrAppOrigin();
   const isMailUser = isExactTuturuuuDotComEmail(user?.email);
   const mailAppHref = `${getMailAppOrigin()}/${personalOrWsId}`;
@@ -218,10 +213,6 @@ export async function WorkspaceNavigationLinks({
     workTools: t('sidebar_sections.work_tools'),
   };
 
-  const usersDatabaseDisabled =
-    withoutPermission('manage_users') &&
-    withoutPermission('view_users_private_info') &&
-    withoutPermission('view_users_public_info');
   const taskNavigationDisabled =
     ENABLE_AI_ONLY || withoutPermission('manage_projects');
   const secondaryTaskNavigationChildren: DashboardNavigationLink[] = [
@@ -662,214 +653,16 @@ export async function WorkspaceNavigationLinks({
           preferenceSectionLabel: sidebarSections.operations,
         },
         {
-          id: 'users',
-          title: t('sidebar_tabs.users'),
-          aliases: [
-            `/${personalOrWsId}/users`,
-            `/${personalOrWsId}/users/attendance`,
-            `/${personalOrWsId}/users/database`,
-            `/${personalOrWsId}/users/groups`,
-            `/${personalOrWsId}/users/groups/calendar`,
-            `/${personalOrWsId}/users/groups/indicators`,
-            `/${personalOrWsId}/users/group-tags`,
-            `/${personalOrWsId}/users/feedbacks`,
-            `/${personalOrWsId}/users/topic-announcements`,
-            `/${personalOrWsId}/users/topic-announcements/announcements`,
-            `/${personalOrWsId}/users/topic-announcements/contacts`,
-            `/${personalOrWsId}/users/topic-announcements/delivery`,
-            `/${personalOrWsId}/users/topic-announcements/import`,
-            `/${personalOrWsId}/users/topic-announcements/templates`,
-            `/${personalOrWsId}/users/tutoring`,
-            `/${personalOrWsId}/users/reports`,
-            `/${personalOrWsId}/users/approvals`,
-            `/${personalOrWsId}/users/structure`,
-          ],
-          icon: createDashboardNavigationIcon('Users', 'h-5 w-5'),
-          requiredWorkspaceTier: createTierRequirement('users', {
-            alwaysShow: true,
-          }),
-          children: [
-            {
-              title: t('workspace-users-tabs.overview'),
-              href: `/${personalOrWsId}/users`,
-              icon: createDashboardNavigationIcon('LayoutDashboard', 'h-5 w-5'),
-              matchExact: true,
-              disabled: withoutPermission('manage_users'),
-            },
-            null,
-            {
-              title: t('workspace-users-tabs.attendance'),
-              href: `/${personalOrWsId}/users/attendance`,
-              icon: createDashboardNavigationIcon('UserCheck', 'h-5 w-5'),
-              disabled:
-                withoutPermission('manage_users') &&
-                withoutPermission('check_user_attendance'),
-            },
-            {
-              title: t('workspace-users-tabs.database'),
-              href: `/${personalOrWsId}/users/database`,
-              icon: createDashboardNavigationIcon('BookUser', 'h-5 w-5'),
-              disabled: usersDatabaseDisabled,
-            },
-            {
-              title: t('workspace-users-tabs.groups'),
-              href: `/${personalOrWsId}/users/groups`,
-              icon: createDashboardNavigationIcon('Users', 'h-5 w-5'),
-              matchExact: true,
-              disabled:
-                withoutPermission('manage_users') &&
-                withoutPermission('view_user_groups'),
-            },
-            {
-              title: t('workspace-users-tabs.group_calendar'),
-              href: `/${personalOrWsId}/users/groups/calendar`,
-              icon: createDashboardNavigationIcon('Calendar', 'h-5 w-5'),
-              disabled:
-                withoutPermission('manage_users') &&
-                withoutPermission('view_user_groups'),
-            },
-            {
-              title: t('workspace-users-tabs.group_tags'),
-              href: `/${personalOrWsId}/users/group-tags`,
-              icon: createDashboardNavigationIcon('Tags', 'h-5 w-5'),
-              disabled:
-                withoutPermission('manage_users') &&
-                withoutPermission('view_user_groups'),
-            },
-            {
-              title: t('workspace-users-tabs.feedbacks'),
-              href: `/${personalOrWsId}/users/feedbacks`,
-              icon: createDashboardNavigationIcon(
-                'MessageCircleIcon',
-                'h-5 w-5'
-              ),
-              disabled: withoutPermission('view_user_groups'),
-            },
-            {
-              title: t('workspace-users-tabs.tutoring'),
-              href: `/${personalOrWsId}/users/tutoring`,
-              icon: createDashboardNavigationIcon('BookUser', 'h-5 w-5'),
-              disabled: withoutPermission('view_user_groups'),
-            },
-            {
-              title: t('workspace-users-tabs.topic_announcements'),
-              href: `/${personalOrWsId}/users/topic-announcements`,
-              aliases: [
-                `/${personalOrWsId}/users/topic-announcements`,
-                `/${personalOrWsId}/users/topic-announcements/announcements`,
-                `/${personalOrWsId}/users/topic-announcements/contacts`,
-                `/${personalOrWsId}/users/topic-announcements/delivery`,
-                `/${personalOrWsId}/users/topic-announcements/import`,
-                `/${personalOrWsId}/users/topic-announcements/templates`,
-              ],
-              icon: createDashboardNavigationIcon('Megaphone', 'h-5 w-5'),
-              disabled:
-                !ENABLE_TOPIC_ANNOUNCEMENTS ||
-                withoutPermission('manage_users'),
-              experimental: 'beta',
-              children: [
-                {
-                  title: t('ws-topic-announcements.nav_announcements'),
-                  href: `/${personalOrWsId}/users/topic-announcements/announcements`,
-                  icon: createDashboardNavigationIcon('Megaphone', 'h-5 w-5'),
-                  sectionLabel: t('ws-topic-announcements.nav_group_send'),
-                },
-                {
-                  title: t('ws-topic-announcements.nav_delivery'),
-                  href: `/${personalOrWsId}/users/topic-announcements/delivery`,
-                  icon: createDashboardNavigationIcon('Send', 'h-5 w-5'),
-                },
-                null,
-                {
-                  title: t('ws-topic-announcements.nav_contacts'),
-                  href: `/${personalOrWsId}/users/topic-announcements/contacts`,
-                  icon: createDashboardNavigationIcon('MailCheck', 'h-5 w-5'),
-                  sectionLabel: t('ws-topic-announcements.nav_group_setup'),
-                },
-                {
-                  title: t('ws-topic-announcements.nav_templates'),
-                  href: `/${personalOrWsId}/users/topic-announcements/templates`,
-                  icon: createDashboardNavigationIcon(
-                    'BookOpenCheck',
-                    'h-5 w-5'
-                  ),
-                },
-                {
-                  title: t('ws-topic-announcements.nav_import'),
-                  href: `/${personalOrWsId}/users/topic-announcements/import`,
-                  icon: createDashboardNavigationIcon('Upload', 'h-5 w-5'),
-                },
-              ],
-            },
-            null,
-            {
-              title: t('workspace-users-tabs.reports'),
-              href: `/${personalOrWsId}/users/reports`,
-              icon: createDashboardNavigationIcon('ClipboardList', 'h-5 w-5'),
-              disabled: withoutPermission('view_user_groups_reports'),
-            },
-            {
-              title: t('workspace-users-tabs.approvals'),
-              href: `/${personalOrWsId}/users/approvals`,
-              icon: createDashboardNavigationIcon('CheckCircle2', 'h-5 w-5'),
-              disabled:
-                withoutPermission('approve_reports') &&
-                withoutPermission('approve_posts'),
-            },
-            {
-              title: t('workspace-users-tabs.metrics'),
-              href: `/${personalOrWsId}/users/groups/indicators`,
-              icon: createDashboardNavigationIcon('ChartColumn', 'h-5 w-5'),
-              disabled: withoutPermission('view_user_groups_scores'),
-            },
-            {
-              title: t('sidebar_tabs.posts'),
-              href: `/${personalOrWsId}/posts`,
-              icon: createDashboardNavigationIcon(
-                'GalleryVerticalEnd',
-                'h-5 w-5'
-              ),
-              disabled:
-                !hasSecret('ENABLE_EMAIL_SENDING', 'true') ||
-                (!DEV_MODE && ENABLE_AI_ONLY) ||
-                (withoutPermission('view_user_groups_posts') &&
-                  withoutPermission('approve_posts')),
-              experimental: 'beta',
-            },
-            null,
-            {
-              title: t('workspace-users-tabs.guest_leads'),
-              href: `/${personalOrWsId}/users/guest-leads`,
-              icon: createDashboardNavigationIcon('Mails', 'h-5 w-5'),
-              disabled: withoutPermission('create_lead_generations'),
-            },
-            null,
-            {
-              title: t('sidebar_tabs.structure'),
-              aliases: [`/${personalOrWsId}/users/structure`],
-              href: `/${personalOrWsId}/users/structure`,
-              icon: createDashboardNavigationIcon('IdCardLanyard', 'h-5 w-5'),
-              requireRootWorkspace: true,
-              requireRootMember: true,
-              disabled:
-                !DEV_MODE ||
-                ENABLE_AI_ONLY ||
-                withoutPermission('manage_users'),
-            },
-          ],
+          id: 'posts',
+          title: t('sidebar_tabs.posts'),
+          href: `/${personalOrWsId}/posts`,
+          icon: createDashboardNavigationIcon('GalleryVerticalEnd', 'h-5 w-5'),
           disabled:
-            ENABLE_AI_ONLY ||
-            (withoutPermission('manage_users') &&
-              withoutPermission('check_user_attendance') &&
-              withoutPermission('view_users_private_info') &&
-              withoutPermission('view_users_public_info') &&
-              withoutPermission('view_user_groups') &&
-              withoutPermission('view_user_groups_reports') &&
-              withoutPermission('view_user_groups_scores') &&
-              withoutPermission('view_user_groups_posts') &&
-              withoutPermission('create_lead_generations') &&
-              withoutPermission('approve_reports') &&
+            !hasSecret('ENABLE_EMAIL_SENDING', 'true') ||
+            (!DEV_MODE && ENABLE_AI_ONLY) ||
+            (withoutPermission('view_user_groups_posts') &&
               withoutPermission('approve_posts')),
+          experimental: 'beta',
           preferenceSectionLabel: sidebarSections.operations,
         },
         {

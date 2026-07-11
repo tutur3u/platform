@@ -18,6 +18,7 @@ touching shared files.
 Map the request to the smallest owning surface:
 
 - `apps/web`: Next.js App Router platform UI and API routes.
+- `apps/contacts`: `contacts.tuturuuu.com` satellite that owns the whole `workspace_users` CRM surface (`/[wsId]/users/*`, `workforce`); `apps/web` has no users section. Shared logic is in `@tuturuuu/users-core` (server) / `@tuturuuu/users-ui` (client).
 - `apps/mobile`: Flutter mobile app.
 - `apps/database`: Supabase migrations, config, reset scripts, and pgTAP.
 - `apps/docs`: Mintlify docs and team-facing operational guidance.
@@ -30,6 +31,10 @@ Prefer existing patterns over new abstractions. Search with `rg` before introduc
 - Do not run `bun dev`, `bun run build`, `bun build`, `bun sb:push`, or `bun sb:linkpush` unless the user explicitly requests it.
 - Do not manually edit `package.json` to add dependencies. Use the package manager command for the owning workspace.
 - Do not use native browser dialogs, hard-coded Tailwind color classes, emojis in UI code, client-side raw `fetch('/api/...')`, or `useEffect` for data fetching.
+- Do not add `export const dynamic` / `export const revalidate`. Every Next app has `cacheComponents` enabled and rejects them at build time. Opt authed pages and Supabase-backed GET route handlers into request-time rendering with `await connection()` — otherwise they prerender with no cookies and fail at runtime. See `references/platform-patterns.md` → Cache Components.
+- In a registered satellite, resolve the actor with `getSatelliteAppSessionUser('<app>')`, never `@tuturuuu/utils/user-helper` (`getCurrentUser` / `getCurrentWorkspaceUser`). The `internal-app-auth` guard in `bun check` enforces this.
+- Never add a catch-all page (`[...slug]`) under `[locale]/[wsId]` in a satellite that proxies `/api/*` to web — it shadows the API proxy. Put non-migrated-route redirects in `proxy.ts` middleware.
+- `bun check` does not compile Next apps. After changing an app's routes, pages, or deps, also run that app's real `bun run build`.
 - Use TanStack Query for client fetching and mutation. Put shared app API access behind `packages/internal-api/src/*`.
 - For schema changes, apply local migrations before typegen when possible, then run `bun sb:typegen`. Prefer DB types from `@tuturuuu/types/db`.
 - For route additions, update the relevant `navigation.tsx` aliases, children, icons, and permissions.

@@ -6,6 +6,7 @@ import { normalizeAuthRedirectPath } from '@tuturuuu/auth/proxy';
 import { getSatelliteAppSession } from '@tuturuuu/satellite/auth';
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
+import { connection } from 'next/server';
 import { BASE_URL, WEB_APP_URL } from '@/constants/common';
 
 function normalizeNextPath(value: string | string[] | undefined) {
@@ -18,6 +19,8 @@ export default async function LoginPage({
 }: {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
+  await connection();
+
   const params = await searchParams;
   const nextPath = normalizeNextPath(params.next);
   const shouldRefreshCrossAppSession = params.refresh === '1';

@@ -95,12 +95,15 @@ function buildTextPart({
 
 function buildAttachmentPart(boundary: string, attachment: EmailAttachment) {
   const filename = sanitizeFilename(attachment.filename);
+  const inline = attachment.disposition === 'inline' && attachment.contentId;
+  const contentId = attachment.contentId?.replace(/^<|>$/gu, '');
 
   return [
     `--${boundary}`,
     `Content-Type: ${attachment.contentType}`,
     'Content-Transfer-Encoding: base64',
-    `Content-Disposition: attachment; filename="${filename}"`,
+    `Content-Disposition: ${inline ? 'inline' : 'attachment'}; filename="${filename}"`,
+    ...(inline && contentId ? [`Content-ID: <${contentId}>`] : []),
     '',
     chunkBase64(encodeBase64(attachment.data)),
   ].join('\r\n');

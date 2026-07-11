@@ -1,7 +1,7 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import type { MetricCategory } from '@tuturuuu/users-core/lib/group-indicators-types';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
-import type { MetricCategory } from '@/app/[locale]/(dashboard)/[wsId]/users/groups/[groupId]/indicators/types';
 import {
   hasUserGroupInWorkspace,
   resolveRequestActorAuthUid,

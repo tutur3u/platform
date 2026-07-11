@@ -251,8 +251,10 @@ Mind has dedicated Vercel workflows:
 Store `VERCEL_TOKEN`, `VERCEL_ORG_ID`, and `VERCEL_MIND_PROJECT_ID` in the
 workflow environments `vercel-preview-mind` and `vercel-production-mind`.
 Deployment should rely on Vercel project environment variables pulled by
-`vercel pull`; do not add provider AI keys, production Supabase service keys,
-`TURBO_TOKEN`, or `TURBO_TEAM` at workflow scope.
+`vercel pull`; do not add provider AI keys or production Supabase service keys
+to GitHub Actions. The repository-level `TURBO_TOKEN` and `TURBO_TEAM` variable
+are passed only to the wrapped `vercel build` step, never at workflow/job scope
+and never to pull-request or Dependabot code.
 
 ## Verification
 

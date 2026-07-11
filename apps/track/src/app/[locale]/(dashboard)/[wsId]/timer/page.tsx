@@ -1,6 +1,7 @@
 import { getSatelliteAppSessionUser } from '@tuturuuu/satellite/auth';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import { connection } from 'next/server';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
 import { getTimeTrackingData } from '@/lib/time-tracking-helper';
 import TimeTrackerWrapper from '../components/time-tracker-wrapper';
@@ -20,6 +21,8 @@ interface Props {
 }
 
 export default async function TimeTrackerPage({ params }: Props) {
+  await connection();
+
   return (
     <WorkspaceWrapper params={params}>
       {async ({ workspace, wsId }) => {

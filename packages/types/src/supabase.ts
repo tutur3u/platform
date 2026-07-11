@@ -5598,6 +5598,10 @@ export type Database = {
       };
       mail_domains: {
         Row: {
+          canonical_domain_id: string | null;
+          catch_all_auto_draft_enabled: boolean;
+          catch_all_enabled: boolean;
+          catch_all_mailbox_id: string | null;
           cloudflare_account_id: string | null;
           cloudflare_routing_rule_id: string | null;
           cloudflare_zone_id: string | null;
@@ -5614,6 +5618,10 @@ export type Database = {
           verified_at: string | null;
         };
         Insert: {
+          canonical_domain_id?: string | null;
+          catch_all_auto_draft_enabled?: boolean;
+          catch_all_enabled?: boolean;
+          catch_all_mailbox_id?: string | null;
           cloudflare_account_id?: string | null;
           cloudflare_routing_rule_id?: string | null;
           cloudflare_zone_id?: string | null;
@@ -5630,6 +5638,10 @@ export type Database = {
           verified_at?: string | null;
         };
         Update: {
+          canonical_domain_id?: string | null;
+          catch_all_auto_draft_enabled?: boolean;
+          catch_all_enabled?: boolean;
+          catch_all_mailbox_id?: string | null;
           cloudflare_account_id?: string | null;
           cloudflare_routing_rule_id?: string | null;
           cloudflare_zone_id?: string | null;
@@ -5646,6 +5658,20 @@ export type Database = {
           verified_at?: string | null;
         };
         Relationships: [
+          {
+            foreignKeyName: 'mail_domains_canonical_domain_id_fkey';
+            columns: ['canonical_domain_id'];
+            isOneToOne: false;
+            referencedRelation: 'mail_domains';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'mail_domains_catch_all_mailbox_id_fkey';
+            columns: ['catch_all_mailbox_id'];
+            isOneToOne: false;
+            referencedRelation: 'mail_mailboxes';
+            referencedColumns: ['id'];
+          },
           {
             foreignKeyName: 'mail_domains_created_by_fkey';
             columns: ['created_by'];
@@ -6277,15 +6303,20 @@ export type Database = {
           body_text: string | null;
           created_at: string;
           created_by: string | null;
+          delivery_route: string | null;
           direction: string;
+          envelope_from: string | null;
+          envelope_to: string | null;
           from_address: string;
           from_name: string | null;
           has_attachments: boolean;
           id: string;
           in_reply_to: string | null;
+          ingress_domain_id: string | null;
           internet_message_id: string | null;
           mailbox_id: string;
           metadata: Json;
+          observed_recipient: string | null;
           provider: string;
           provider_message_id: string | null;
           raw_message_id: string | null;
@@ -6306,15 +6337,20 @@ export type Database = {
           body_text?: string | null;
           created_at?: string;
           created_by?: string | null;
+          delivery_route?: string | null;
           direction: string;
+          envelope_from?: string | null;
+          envelope_to?: string | null;
           from_address: string;
           from_name?: string | null;
           has_attachments?: boolean;
           id?: string;
           in_reply_to?: string | null;
+          ingress_domain_id?: string | null;
           internet_message_id?: string | null;
           mailbox_id: string;
           metadata?: Json;
+          observed_recipient?: string | null;
           provider?: string;
           provider_message_id?: string | null;
           raw_message_id?: string | null;
@@ -6335,15 +6371,20 @@ export type Database = {
           body_text?: string | null;
           created_at?: string;
           created_by?: string | null;
+          delivery_route?: string | null;
           direction?: string;
+          envelope_from?: string | null;
+          envelope_to?: string | null;
           from_address?: string;
           from_name?: string | null;
           has_attachments?: boolean;
           id?: string;
           in_reply_to?: string | null;
+          ingress_domain_id?: string | null;
           internet_message_id?: string | null;
           mailbox_id?: string;
           metadata?: Json;
+          observed_recipient?: string | null;
           provider?: string;
           provider_message_id?: string | null;
           raw_message_id?: string | null;
@@ -6373,6 +6414,13 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: 'nova_user_leaderboard';
             referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'mail_messages_ingress_domain_id_fkey';
+            columns: ['ingress_domain_id'];
+            isOneToOne: false;
+            referencedRelation: 'mail_domains';
+            referencedColumns: ['id'];
           },
           {
             foreignKeyName: 'mail_messages_mailbox_id_fkey';
@@ -9918,6 +9966,51 @@ export type Database = {
             columns: ['category_id'];
             isOneToOne: false;
             referencedRelation: 'user_group_metric_categories';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      user_group_post_check_logs: {
+        Row: {
+          changed_by: string | null;
+          created_at: string;
+          id: string;
+          new_is_completed: boolean | null;
+          post_id: string;
+          previous_is_completed: boolean | null;
+          user_id: string;
+        };
+        Insert: {
+          changed_by?: string | null;
+          created_at?: string;
+          id?: string;
+          new_is_completed?: boolean | null;
+          post_id: string;
+          previous_is_completed?: boolean | null;
+          user_id: string;
+        };
+        Update: {
+          changed_by?: string | null;
+          created_at?: string;
+          id?: string;
+          new_is_completed?: boolean | null;
+          post_id?: string;
+          previous_is_completed?: boolean | null;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'user_group_post_check_logs_post_id_fkey';
+            columns: ['post_id'];
+            isOneToOne: false;
+            referencedRelation: 'posts_dashboard_view';
+            referencedColumns: ['post_id_full'];
+          },
+          {
+            foreignKeyName: 'user_group_post_check_logs_post_id_fkey';
+            columns: ['post_id'];
+            isOneToOne: false;
+            referencedRelation: 'user_group_posts';
             referencedColumns: ['id'];
           },
         ];
@@ -13721,6 +13814,7 @@ export type Database = {
         Args: { p_ws_id: string };
         Returns: string;
       };
+      restore_cascaded_user_group_attendance: { Args: never; Returns: number };
       safe_parse_inet: { Args: { p_value: string }; Returns: unknown };
       topic_announcement_contact_has_linked_verified_email: {
         Args: { p_contact_id: string };
@@ -26530,13 +26624,6 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: 'workspace_user_groups_with_guest';
             referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'user_group_attendance_member_fkey';
-            columns: ['user_id', 'group_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspace_user_groups_users';
-            referencedColumns: ['user_id', 'group_id'];
           },
           {
             foreignKeyName: 'user_group_attendance_user_id_fkey';

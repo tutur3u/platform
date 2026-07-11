@@ -2,6 +2,7 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { AIChat } from '@tuturuuu/types';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import { connection } from 'next/server';
 import type { ReactNode } from 'react';
 import { siteConfig } from '@/constants/configs';
 
@@ -89,5 +90,7 @@ export default async function AIChatDetailsLayout({
 }: {
   children: ReactNode;
 }) {
+  await connection();
+
   return children;
 }

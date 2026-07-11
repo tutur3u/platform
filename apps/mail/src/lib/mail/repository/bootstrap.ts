@@ -1,3 +1,4 @@
+import { resolveInternalMailboxName } from '../identity';
 import type {
   MailBootstrapResponse,
   MailMailbox,
@@ -8,7 +9,8 @@ import {
   type AnyRecord,
   ensureSystemLabels,
   getAdminClient,
-  getUserDisplayName,
+  getCanonicalUserDisplayName,
+  getCanonicalUserDisplayNames,
   normalizeAddress,
   privateTable,
   toLabel,
@@ -18,6 +20,10 @@ import {
 async function ensurePersonalMailbox(ctx: MailRouteContext) {
   const admin = await getAdminClient();
   const email = normalizeAddress(ctx.user.email ?? '');
+  const canonicalName = resolveInternalMailboxName(
+    await getCanonicalUserDisplayName(admin, ctx.user.id),
+    email
+  );
 
   const { data: existing, error: existingError } = await privateTable(
     admin,
@@ -32,6 +38,33 @@ async function ensurePersonalMailbox(ctx: MailRouteContext) {
   }
 
   let mailbox = existing;
+
+  if (
+    mailbox?.type === 'personal' &&
+    (mailbox.created_by !== ctx.user.id ||
+      mailbox.display_name !== canonicalName ||
+      mailbox.sender_name !== canonicalName)
+  ) {
+    const { data: synchronized, error } = await privateTable(
+      admin,
+      'mail_mailboxes'
+    )
+      .update({
+        created_by: ctx.user.id,
+        display_name: canonicalName,
+        sender_name: canonicalName,
+      })
+      .eq('id', mailbox.id)
+      .select('*')
+      .single();
+
+    if (error) {
+      throw new Error(
+        `Failed to synchronize mailbox identity: ${error.message}`
+      );
+    }
+    mailbox = synchronized;
+  }
 
   if (!mailbox) {
     const domain = email.split('@')[1];
@@ -55,8 +88,9 @@ async function ensurePersonalMailbox(ctx: MailRouteContext) {
       .insert({
         address: email,
         created_by: ctx.user.id,
-        display_name: getUserDisplayName(ctx.user),
+        display_name: canonicalName,
         domain_id: mailDomain.id,
+        sender_name: canonicalName,
         type: 'personal',
       })
       .select('*')
@@ -124,7 +158,9 @@ export async function getMailBootstrap(
     admin,
     'mail_mailboxes'
   )
-    .select('*')
+    .select(
+      '*, mail_domain:mail_domains!mail_mailboxes_domain_id_fkey(outbound_provider)'
+    )
     .in('id', mailboxIds)
     .neq('status', 'archived')
     .order('type', { ascending: true })
@@ -137,8 +173,40 @@ export async function getMailBootstrap(
   const roleByMailboxId = new Map<string, MailMailboxRole>(
     (memberRows ?? []).map((row: AnyRecord) => [row.mailbox_id, row.role])
   );
-  const mailboxes: MailMailbox[] = (mailboxRows ?? []).map((row: AnyRecord) =>
-    toMailbox(row, roleByMailboxId.get(row.id) ?? 'viewer')
+  const { data: threadRows, error: threadError } = await privateTable(
+    admin,
+    'mail_threads'
+  )
+    .select('mailbox_id,unread_count')
+    .in('mailbox_id', mailboxIds);
+  if (threadError) {
+    throw new Error(
+      `Failed to load mailbox unread counts: ${threadError.message}`
+    );
+  }
+  const unreadByMailbox = new Map<string, number>();
+  for (const thread of threadRows ?? []) {
+    unreadByMailbox.set(
+      thread.mailbox_id,
+      (unreadByMailbox.get(thread.mailbox_id) ?? 0) +
+        Number(thread.unread_count ?? 0)
+    );
+  }
+  const personalDisplayNames = await getCanonicalUserDisplayNames(
+    admin,
+    (mailboxRows ?? [])
+      .filter((row: AnyRecord) => row.type === 'personal')
+      .map((row: AnyRecord) => row.created_by)
+  );
+  const mailboxes: MailMailbox[] = (mailboxRows ?? []).map(
+    (row: AnyRecord) => ({
+      ...toMailbox(
+        row,
+        roleByMailboxId.get(row.id) ?? 'viewer',
+        personalDisplayNames.get(row.created_by)
+      ),
+      unreadCount: unreadByMailbox.get(row.id) ?? 0,
+    })
   );
   const labels = await listLabels(
     admin,
@@ -197,7 +265,9 @@ export async function requireMailboxAccess(
     admin,
     'mail_mailboxes'
   )
-    .select('*')
+    .select(
+      '*, mail_domain:mail_domains!mail_mailboxes_domain_id_fkey(outbound_provider)'
+    )
     .eq('id', mailboxId)
     .maybeSingle();
 
@@ -210,10 +280,14 @@ export async function requireMailboxAccess(
   }
 
   await ensureSystemLabels(admin, mailboxId);
+  const personalDisplayName =
+    mailbox.type === 'personal'
+      ? await getCanonicalUserDisplayName(admin, mailbox.created_by)
+      : null;
 
   return {
     admin,
-    mailbox: toMailbox(mailbox, member.role),
+    mailbox: toMailbox(mailbox, member.role, personalDisplayName),
     role: member.role as MailMailboxRole,
   };
 }

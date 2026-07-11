@@ -59,8 +59,12 @@ staging domain before changing a production domain.
 1. Create a private R2 bucket (the checked-in Worker configuration uses
    `tuturuuu-mail`) and bind it as `MAIL_R2_BUCKET` in
    `apps/mail/wrangler.email-routing.jsonc`.
-2. Set `MAIL_R2_BUCKET_NAME` to the same bucket name. Object keys are private
-   implementation details and must not be returned to clients.
+2. Configure the Mail app server with `MAIL_R2_ACCOUNT_ID`,
+   `MAIL_R2_ACCESS_KEY_ID`, `MAIL_R2_SECRET_ACCESS_KEY`, and
+   `MAIL_R2_BUCKET_NAME`. The bucket name must match the Worker binding.
+   `MAIL_R2_ENDPOINT` is only needed for an R2-compatible development or test
+   endpoint. Object keys are private implementation details and must not be
+   returned to clients. See `apps/mail/.env.example` for the complete contract.
 3. Set the Worker secret with
    `bunx wrangler secret put MAIL_INGEST_SECRET --config apps/mail/wrangler.email-routing.jsonc`.
 4. Configure the same value as `MAIL_CLOUDFLARE_INGEST_SECRET` in the Mail
@@ -84,6 +88,28 @@ idempotent delivery event. Malformed or spam/virus-signaled deliveries are
 recorded as quarantined. Transient API failures are thrown so Email Routing can
 retry without creating duplicate messages.
 
+Cloudflare controls the outbound `Message-ID` header and rejects clients that
+set it. Mail therefore sends only `In-Reply-To` and `References` through the
+Cloudflare API. SES raw MIME sends retain a deterministic `Message-ID`. Store
+Cloudflare's returned provider identifier separately; do not substitute it for
+an RFC message identifier unless the provider explicitly returns one in that
+format.
+
+## Mailbox API foundation
+
+Mailbox routes require workspace membership and a mailbox role on every
+request. The API provides chronological thread retrieval and thread-level state
+changes, label and custom-folder CRUD, bulk message mutations, and private
+attachment upload/download/delete routes. Attachment downloads stream through
+an authorized route with byte-range support; clients never receive an R2 object
+key.
+
+Message listing accepts the structured search operators `from:`, `to:`,
+`cc:`, `bcc:`, `subject:`, `is:`, `has:attachment`, `before:`, `after:`, and
+`label:`. Quote values containing spaces. Structured filters are combined with
+remaining free text and mailbox/folder state filters. Client applications
+should call these routes through `packages/internal-api/src/mail.ts`.
+
 Cloudflare currently permits 50 combined `to`/`cc`/`bcc` recipients and a
 normal outbound size of 5 MiB including attachments. Email Routing accepts up
 to 25 MiB inbound. The provider enforces outbound limits before making the API
@@ -91,6 +117,137 @@ request; the Worker rejects inbound events above the routing limit. Reconfirm
 current quotas in the
 [Cloudflare Email Service limits](https://developers.cloudflare.com/email-service/platform/limits/)
 before changing these constants.
+
+The managed staging baseline uses `tutur3u.com` for Email Routing and Email
+Sending and the private `tuturuuu-mail` R2 bucket. Do not attach a routing rule
+to the inbound Worker until the Mail deployment has the matching ingestion
+secret and Supabase has an enabled `ingest.tutur3u.com` domain row linked to
+the canonical `tuturuuu.com` row. Email Sending and R2 can be verified
+independently before that inbound cutover.
+
+## Google Workspace shadow-ingestion migration
+
+Do not onboard `tuturuuu.com` into Cloudflare Email Routing while Google
+Workspace still owns its apex MX records. Email Routing is enabled at the zone
+level before Cloudflare allows routing subdomains, so onboarding the production
+zone would replace and lock the Google MX records too early. Use the already
+onboarded staging zone as the shadow bridge instead:
+
+- Cloudflare Email Routing is enabled for `ingest.tutur3u.com`; its routing DNS
+  records are managed and locked by Cloudflare.
+- A temporary exact-address routing rule may forward a pilot shadow address to
+  a verified test inbox. Replace this action with the deployed ingestion Worker
+  before starting a parity run.
+- Google Workspace has a recipient-address-map setting named
+  `Cloudflare shadow ingestion pilot`. Keep it disabled between tests. It must
+  map each selected `@tuturuuu.com` address to the same local part at
+  `@ingest.tutur3u.com`, retain the original Gmail destination, and add
+  `X-Gm-Original-To`.
+- The public `tuturuuu.com` MX records remain Google-only throughout the shadow
+  phase. Never publish Google and Cloudflare MX records together as a substitute
+  for dual delivery.
+
+### Activation gates
+
+Complete all of these before changing the temporary Cloudflare forwarding rule
+to the ingestion Worker or enabling the Google pilot:
+
+1. Canonicalize a trusted shadow recipient such as
+   `user@ingest.tutur3u.com` to `user@tuturuuu.com`. Preserve both addresses in
+   the ingestion event and accept `X-Gm-Original-To` only on the configured
+   shadow domain.
+2. Configure the same HMAC secret as `MAIL_INGEST_SECRET` on the Worker and
+   `MAIL_CLOUDFLARE_INGEST_SECRET` on the Mail deployment.
+3. Deploy the Worker with the private `tuturuuu-mail` R2 binding and confirm a
+   signed domain check and ingestion event reach the Mail webhook.
+4. Ensure Supabase has enabled domain metadata for the shadow and canonical
+   domains, including their explicit relationship. Do not infer an arbitrary
+   production domain from an inbound subdomain.
+5. Prove direct shadow delivery, raw MIME storage, body and attachment storage,
+   quarantine behavior, and duplicate retry before enabling Google delivery.
+
+The additive `add_mail_domain_canonical_relationship` migration installs this
+exact staging relationship. Apply it through the normal database release path;
+do not push it ad hoc from a workstation. The Worker derives the canonical
+recipient only after a signed domain check, and the webhook independently
+validates the ingress domain, canonical domain, observed recipient, and local
+part. Duplicate transport deliveries with the same mailbox and RFC
+`Message-ID` reuse the existing message instead of incrementing thread counts.
+
+### Rollout plan
+
+1. **Single-address pilot:** point one exact Cloudflare shadow rule at the
+   Worker, enable only the matching Google address-map entry, and send external
+   and internal test messages. The original Gmail delivery must remain enabled.
+2. **Shadow parity:** expand the explicit map to the active user, group, and
+   alias inventory. Run for at least three days and preferably seven. Compare
+   Google Email Log Search with Supabase ingestion records by authoritative
+   `Message-ID`, recipient, timestamp, raw MIME hash, attachment count, and
+   quarantine result.
+3. **Cutover readiness:** require no unexplained missing messages, idempotent
+   duplicate handling, correct canonical recipients, attachment parity, and an
+   alertable ingestion-latency baseline. Snapshot the Google MX records and
+   lower or verify their DNS TTL at least 24 hours before the change.
+4. **Apex cutover:** during a low-traffic window, onboard `tuturuuu.com` in
+   Cloudflare and route its intended addresses to the same Worker. Keep Google
+   Workspace and the shadow address map available for at least seven days so
+   senders using cached Google MX records still feed the Cloudflare ingestion
+   path.
+5. **Stabilization:** remove the temporary test forwarding destination only
+   after the Worker route is verified. Retire the Google shadow map after the
+   cached-MX window and parity checks are complete; migrate outbound transport
+   separately.
+
+### Rollback
+
+Restore the saved Google MX records first and wait for DNS confirmation. Keep
+the Google shadow map and Cloudflare staging subdomain available during
+rollback so messages delivered through either cached MX path still reach the
+same idempotent ingestion boundary. Change the Supabase inbound-provider flag
+only after DNS is serving the intended provider. A rollback must not delete R2
+objects, mail metadata, Google accounts, or the disabled pilot configuration.
+
+The initial transport smoke test used distinct subjects for Google outbound and
+Google-to-Cloudflare shadow delivery. Google delivered the original inbound
+message to the Workspace inbox, and Cloudflare recorded the mapped shadow copy
+as forwarded. After the test, the Google pilot setting was returned to its
+disabled state.
+
+## Catch-all delivery
+
+Catch-all routing is platform-operated because it affects an entire inbound
+domain. The destination is relational metadata on `private.mail_domains`, not a
+workspace secret: `catch_all_mailbox_id` must reference an active mailbox on the
+canonical domain, and `catch_all_enabled` defaults to `false`. Automatic drafts
+for catch-all deliveries have a separate opt-in and remain disabled unless a
+platform operator explicitly enables them.
+
+Activate the bridge in this order:
+
+1. Apply the additive `mail_catch_all_delivery` migration through the normal
+   database release process and deploy the matching Mail app and Email Routing
+   Worker.
+2. Open Mail settings as a root workspace operator, select
+   `ingest.tutur3u.com`, choose the destination mailbox, and enable the logical
+   catch-all route. The initial pilot destination is
+   `phucvo@tuturuuu.com` when that mailbox exists.
+3. In Cloudflare Email Routing, select the already-onboarded
+   `ingest.tutur3u.com` subdomain and set its catch-all action to the
+   `tuturuuu-mail-email-routing` Worker. Keep explicit rules enabled; they take
+   precedence over catch-all.
+4. Send a unique random local part directly to the ingress subdomain. Confirm
+   the original recipient is visible in Mail, raw MIME and attachments are in
+   R2, and a retry does not create another message.
+5. In Google Admin, add a rule named `Tuturuuu Mail catch-all bridge` for
+   inbound **Unrecognized/Catch-all** recipients only. Replace only the
+   recipient domain with `ingest.tutur3u.com`, add `X-Gm-Original-To`, and leave
+   Users and Groups unchecked. This keeps recognized Google Workspace delivery
+   unchanged while preserving the unknown local part for Mail.
+
+Do not enable Cloudflare Email Routing on the `tuturuuu.com` apex while Google
+owns its MX records. To roll back, disable the Google unrecognized-recipient
+rule first, disable the Cloudflare subdomain catch-all second, and disable the
+logical Mail route last. Do not delete ingested metadata or R2 objects.
 
 ## Provider rollout and rollback
 

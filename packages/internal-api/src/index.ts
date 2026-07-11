@@ -507,6 +507,18 @@ export {
   validateValseaClassroomApiKey,
 } from './education';
 export {
+  createExternalAppDriveReadUrl,
+  createExternalAppDriveUploadUrl,
+  deleteExternalAppDriveObject,
+  type ExternalAppDriveObject,
+  type ExternalAppDriveProvider,
+  type ExternalAppDriveReadPayload,
+  type ExternalAppDriveUploadPayload,
+  type ExternalAppDriveUploadRequest,
+  finalizeExternalAppDriveUpload,
+  uploadExternalAppDriveFile,
+} from './external-app-drive';
+export {
   addWorkspaceExternalProjectRoleMembers,
   createWorkspaceExternalProjectRole,
   deleteWorkspaceExternalProjectRole,

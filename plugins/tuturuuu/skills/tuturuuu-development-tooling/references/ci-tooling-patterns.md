@@ -201,17 +201,52 @@ formatting behavior, or repo-wide verification.
   conclusion, production database migration gates must require the successful
   `vercel-production-platform` deployment marker for the same SHA before
   running `supabase db push`.
-  Platform Vercel workflows must build local `@tuturuuu/devbox` artifacts before
-  `vercel build` because `apps/web` imports that workspace package. Platform
-  preview remains build validation only and may cross-credit successful same-SHA
-  production build markers. Platform production must build and deploy prebuilt
-  artifacts, then record both build and deployment markers. Satellite Vercel
-  workflows still deploy prebuilt artifacts independently.
+  Every active Vercel project must keep its root-Turbo `buildCommand` checked in.
+  Generate deterministic source metadata first, then run `vercel build` through
+  `.github/actions/run-with-turbo-remote-cache`; do not add a separate workspace
+  dependency prebuild. Platform preview remains build validation only and may
+  cross-credit successful same-SHA production build markers. Platform
+  production must build and deploy prebuilt artifacts, then record both build
+  and deployment markers. Satellite Vercel workflows still deploy prebuilt
+  artifacts independently.
+- Keep remote-cache values out of workflow/job environments and `GITHUB_ENV`.
+  Pass them only to the composite wrapper's command step. Repository
+  `TURBO_TOKEN` is for trusted jobs only; `TURBO_TEAM` is a repository variable
+  with temporary secret fallback. Pull requests and Dependabot receive neither
+  token nor team and use a task-family `.turbo` cache that only protected
+  default-branch jobs may save.
+- Only trusted `main` jobs may save the shared Bun runtime and package-download
+  caches. Production, pull-request, Dependabot, and other branch jobs restore
+  the default-branch entries without creating branch-scoped duplicates; this
+  prevents each lockfile generation from consuming another roughly 1 GB on
+  `production`.
+- Hash output-affecting build, Vercel, Docker, and public runtime variables in
+  Turbo. CPU, heap, and concurrency controls are pass-through values. Use a
+  transit-only dependency task when downstream tests must invalidate on
+  dependency source changes without executing dependency test suites.
+- Artifact uploads must declare both retention and missing-file behavior.
+  Consolidate failure diagnostics per shard or mode, keep package handoff
+  tarballs for one day without redundant compression, and cache native
+  dependencies instead of final Flutter deliverables.
+- Standard public GitHub-hosted Linux/Windows jobs should budget for 4 CPUs and
+  16 GB RAM. Default CPU-bound Turbo checks to concurrency 4; cap memory-heavy
+  Next/Docker inner builds at 2 with an 8 GB Node heap. Keep independent jobs
+  parallel within the organization-wide 20-job ceiling and no more than 5
+  concurrent macOS jobs. Do not move cache optimization onto billable larger
+  runners.
+- Keep `actions-storage-report.yaml` read-only. Query the live repository cache
+  maximum and retention, report prefix usage at 80/90/100 percent thresholds,
+  and summarize artifact count/bytes/age without treating current public-repo
+  storage discounts as an unlimited entitlement. Aim below 9 GB steady-state
+  inside the currently configured 10 GB cache limit, and never automatically
+  delete default-branch CodeQL caches.
 - Package release workflows must use npm trusted publishing. Keep
   `id-token: write` isolated to the final `publish-npm` job, publish a downloaded and
   verified tarball with `npm publish --ignore-scripts`, and do not reintroduce
   `NPM_TOKEN`, checkout, Bun setup, dependency install, or package builds in the
-  publish job.
+  publish job. Run required lifecycle builds through the remote-cache wrapper in
+  the preparation job, then use `npm pack --ignore-scripts` so `prepack` cannot
+  silently rebuild outside Turbo.
 - Workflow-published package manifests must include provenance-compatible
   `repository` metadata: `type: "git"`,
   `url: "https://github.com/tutur3u/platform"`, and `directory` equal to the
@@ -220,9 +255,17 @@ formatting behavior, or repo-wide verification.
 - If local type-check passes but CI fails from stale incremental state, rerun
   with forced cache invalidation before changing unrelated code.
 - Docker verification workflows should use `docker buildx build --load` plus
-  `type=gha` cache scopes per service image. Pass Turbo remote-cache values as
-  optional BuildKit secrets for build `RUN` steps; never bake those values into
-  image layers, args, labels, or committed env files.
+  shared `type=gha` cache scopes per service image. Give every scope one trusted
+  `main` writer: Docker setup owns web, TanStack, development-web, and storage;
+  Rust CI owns backend; E2E shard 1 owns leaf sidecars. Production, other E2E
+  shards, and migration E2E restore only. Use `mode=max` for expensive web,
+  TanStack, and backend scopes, and `mode=min` or restore-only caching for the
+  validation-only development image and leaf images. Bound cache operations
+  and tolerate cache-service errors. Docker Compose jobs must explicitly select
+  a `docker-container` Buildx builder before using the GHA cache backend; the
+  default `docker` driver rejects cache export. Pass Turbo remote-cache values
+  as optional BuildKit secrets for build `RUN` steps; never bake those values
+  into image layers, args, labels, or committed env files.
 - Workspace packages with direct `tsc` build scripts must declare
   `typescript` in their own `devDependencies`. Filtered Docker
   installs such as the Hive production image do not install root-only dev tools,

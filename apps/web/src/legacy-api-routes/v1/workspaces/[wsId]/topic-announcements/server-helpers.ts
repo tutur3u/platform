@@ -3,6 +3,7 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import { TOPIC_ANNOUNCEMENTS_SECRET } from '@tuturuuu/utils/topic-announcements';
 import {
   getPermissions,
   getSecret,
@@ -11,7 +12,6 @@ import {
 } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { normalizeTopicAnnouncementAttachmentFileName } from '@/lib/topic-announcement-attachments';
-import { TOPIC_ANNOUNCEMENTS_SECRET } from '@/lib/topic-announcements';
 import { getContactVerificationStatuses } from './email';
 
 export type TopicAnnouncementsSupabaseClient = any;

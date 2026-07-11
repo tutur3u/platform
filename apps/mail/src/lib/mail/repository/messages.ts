@@ -1,12 +1,14 @@
 import type {
   ListMailMessagesParams,
+  MailLabel,
   MailMessageDetail,
-} from '@tuturuuu/internal-api';
-import type { MailLabel, MailRouteContext } from '../types';
+  MailRouteContext,
+} from '../types';
 import { requireMailboxAccess } from './bootstrap';
+import { queryMailMessageRows } from './search';
 import { type AnyRecord, privateTable, toLabel, toRecipient } from './shared';
 
-async function getStatesByMessageId(
+export async function getStatesByMessageId(
   admin: AnyRecord,
   messageIds: string[],
   userId: string
@@ -27,7 +29,10 @@ async function getStatesByMessageId(
   );
 }
 
-async function getLabelsByMessageId(admin: AnyRecord, messageIds: string[]) {
+export async function getLabelsByMessageId(
+  admin: AnyRecord,
+  messageIds: string[]
+) {
   if (messageIds.length === 0) return new Map<string, MailLabel[]>();
 
   const { data: links, error: linkError } = await privateTable(
@@ -74,7 +79,7 @@ async function getLabelsByMessageId(admin: AnyRecord, messageIds: string[]) {
   return labelsByMessage;
 }
 
-function rowToSummary({
+export function rowToSummary({
   labels,
   row,
   state,
@@ -103,32 +108,6 @@ function rowToSummary({
   };
 }
 
-function filterFolder(
-  rows: AnyRecord[],
-  states: Map<string, AnyRecord>,
-  folder: ListMailMessagesParams['folder']
-) {
-  return rows.filter((row) => {
-    const state = states.get(row.id);
-
-    if (folder === 'drafts') return row.status === 'draft';
-    if (folder === 'sent')
-      return row.direction === 'outbound' && row.status !== 'draft';
-    if (folder === 'starred') return Boolean(state?.starred_at);
-    if (folder === 'archive') return Boolean(state?.archived_at);
-    if (folder === 'spam') return row.status === 'quarantined';
-    if (folder === 'trash')
-      return Boolean(state?.trashed_at) || row.status === 'quarantined';
-
-    return (
-      row.status !== 'draft' &&
-      !state?.archived_at &&
-      !state?.trashed_at &&
-      row.direction === 'inbound'
-    );
-  });
-}
-
 export async function listMailMessages({
   ctx,
   mailboxId,
@@ -143,26 +122,13 @@ export async function listMailMessages({
 
   const page = Math.max(1, params.page ?? 1);
   const pageSize = Math.min(Math.max(1, params.pageSize ?? 40), 100);
-  let query = privateTable(access.admin, 'mail_messages')
-    .select('*')
-    .eq('mailbox_id', mailboxId)
-    .order('created_at', { ascending: false })
-    .limit(500);
-
-  if (params.query?.trim()) {
-    const search = params.query.trim().replaceAll('%', '\\%');
-    query = query.or(
-      `subject.ilike.%${search}%,from_address.ilike.%${search}%,snippet.ilike.%${search}%`
-    );
-  }
-
-  const { data: rows, error } = await query;
-
-  if (error) {
-    throw new Error(`Failed to list mail messages: ${error.message}`);
-  }
-
-  const messageIds = (rows ?? []).map((row: AnyRecord) => row.id);
+  const { rows, total } = await queryMailMessageRows({
+    admin: access.admin,
+    mailboxId,
+    params,
+    userId: ctx.user.id,
+  });
+  const messageIds = rows.map((row: AnyRecord) => row.id);
   const states = await getStatesByMessageId(
     access.admin,
     messageIds,
@@ -172,12 +138,8 @@ export async function listMailMessages({
     access.admin,
     messageIds
   );
-  const filteredRows = filterFolder(rows ?? [], states, params.folder);
-  const start = (page - 1) * pageSize;
-  const pageRows = filteredRows.slice(start, start + pageSize);
-
   return {
-    messages: pageRows.map((row: AnyRecord) =>
+    messages: rows.map((row: AnyRecord) =>
       rowToSummary({
         labels: labelsByMessageId.get(row.id) ?? [],
         row,
@@ -187,7 +149,7 @@ export async function listMailMessages({
     pagination: {
       page,
       pageSize,
-      total: filteredRows.length,
+      total,
     },
   };
 }
@@ -216,12 +178,27 @@ export async function getMailMessage({
 
   if (!row) return null;
 
+  return hydrateMailMessage({ admin: access.admin, ctx, row });
+}
+
+export async function hydrateMailMessage({
+  admin,
+  ctx,
+  row,
+}: {
+  admin: AnyRecord;
+  ctx: MailRouteContext;
+  row: AnyRecord;
+}): Promise<MailMessageDetail> {
+  const messageId = row.id as string;
+  const mailboxId = row.mailbox_id as string;
+
   const [states, labelsByMessageId, recipients, attachments] =
     await Promise.all([
-      getStatesByMessageId(access.admin, [messageId], ctx.user.id),
-      getLabelsByMessageId(access.admin, [messageId]),
-      listRecipients(access.admin, messageId),
-      listAttachments(access.admin, ctx.normalizedWsId, mailboxId, messageId),
+      getStatesByMessageId(admin, [messageId], ctx.user.id),
+      getLabelsByMessageId(admin, [messageId]),
+      listRecipients(admin, messageId),
+      listAttachments(admin, ctx.normalizedWsId, mailboxId, messageId),
     ]);
 
   const summary = rowToSummary({
@@ -234,9 +211,45 @@ export async function getMailMessage({
     ...summary,
     attachments,
     bodyHtml: row.body_html ?? null,
+    deliveryRoute: row.delivery_route ?? null,
+    envelopeFrom: row.envelope_from ?? null,
+    envelopeTo: row.envelope_to ?? null,
+    inReplyTo: row.in_reply_to ?? null,
+    internetMessageId: row.internet_message_id ?? null,
+    observedRecipient: row.observed_recipient ?? null,
     recipients,
+    references: row.references_headers ?? [],
+    safeHeaders: await getSafeHeaders(admin, row.raw_message_id),
     sanitizedHtml: row.sanitized_html ?? null,
   };
+}
+
+async function getSafeHeaders(admin: AnyRecord, rawMessageId?: string | null) {
+  if (!rawMessageId) return {};
+  const { data, error } = await privateTable(admin, 'mail_raw_messages')
+    .select('raw_headers')
+    .eq('id', rawMessageId)
+    .maybeSingle();
+  if (error)
+    throw new Error(`Failed to load message headers: ${error.message}`);
+  const headers = (data?.raw_headers ?? {}) as Record<string, unknown>;
+  const allowed = new Set([
+    'date',
+    'from',
+    'in-reply-to',
+    'message-id',
+    'reply-to',
+    'subject',
+    'to',
+  ]);
+  return Object.fromEntries(
+    Object.entries(headers)
+      .filter(
+        ([key, value]) =>
+          allowed.has(key.toLowerCase()) && typeof value === 'string'
+      )
+      .map(([key, value]) => [key, value as string])
+  );
 }
 
 async function listRecipients(admin: AnyRecord, messageId: string) {
@@ -273,9 +286,10 @@ async function listAttachments(
     disposition: row.disposition,
     filename: row.filename,
     id: row.id,
-    protectedUrl: row.storage_bucket
-      ? `/api/v1/workspaces/${wsId}/mail/mailboxes/${mailboxId}/messages/${messageId}/attachments/${row.id}`
-      : null,
+    protectedUrl:
+      row.storage_bucket || row.stored_object_id
+        ? `/api/v1/workspaces/${wsId}/mail/mailboxes/${mailboxId}/messages/${messageId}/attachments/${row.id}`
+        : null,
     sizeBytes: Number(row.size_bytes ?? 0),
   }));
 }

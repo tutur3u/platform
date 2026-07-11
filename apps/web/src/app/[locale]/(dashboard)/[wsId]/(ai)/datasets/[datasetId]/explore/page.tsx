@@ -2,6 +2,7 @@ import { createClient } from '@tuturuuu/supabase/next/server';
 import { Card, CardContent } from '@tuturuuu/ui/card';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import { connection } from 'next/server';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
 import { DataExplorer } from './data-explorer';
 
@@ -18,6 +19,8 @@ interface Props {
 }
 
 export default async function ExploreDatasetPage({ params }: Props) {
+  await connection();
+
   return (
     <WorkspaceWrapper params={params}>
       {async ({ wsId, datasetId }) => {

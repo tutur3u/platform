@@ -88,18 +88,25 @@ jobs:
         run: bash scripts/ci/run-with-backoff.sh bun install
 
       - name: Build workspace dependencies
-        run: |
-          bun run --filter @tuturuuu/types build
-          bun run --filter @tuturuuu/supabase build
-          bun run --filter @tuturuuu/internal-api build
+        uses: ./.github/actions/run-with-turbo-remote-cache
+        with:
+          command: bun turbo:local run build --concurrency=4 --filter=@tuturuuu/types --filter=@tuturuuu/supabase --filter=@tuturuuu/internal-api
+          token: ${{ github.actor != 'dependabot[bot]' && secrets.TURBO_TOKEN || '' }}
+          team: ${{ vars.TURBO_TEAM || secrets.TURBO_TEAM }}
 
       - name: Run type-check
-        working-directory: packages/utils
-        run: bun run type-check
+        uses: ./.github/actions/run-with-turbo-remote-cache
+        with:
+          command: bun turbo:local run type-check --concurrency=4 --filter=@tuturuuu/utils
+          token: ${{ github.actor != 'dependabot[bot]' && secrets.TURBO_TOKEN || '' }}
+          team: ${{ vars.TURBO_TEAM || secrets.TURBO_TEAM }}
 
       - name: Run tests
-        working-directory: packages/utils
-        run: bun run test
+        uses: ./.github/actions/run-with-turbo-remote-cache
+        with:
+          command: bun turbo:local run test --concurrency=4 --filter=@tuturuuu/utils
+          token: ${{ github.actor != 'dependabot[bot]' && secrets.TURBO_TOKEN || '' }}
+          team: ${{ vars.TURBO_TEAM || secrets.TURBO_TEAM }}
 
   prepare-publish-npm:
     needs: [build]
@@ -154,7 +161,7 @@ jobs:
         working-directory: packages/utils
         run: |
           mkdir -p "$RUNNER_TEMP/tuturuuu-utils-package"
-          npm pack --pack-destination "$RUNNER_TEMP/tuturuuu-utils-package"
+          npm pack --ignore-scripts --pack-destination "$RUNNER_TEMP/tuturuuu-utils-package"
 
       - name: Upload publish artifact
         if: steps.version-check.outputs.should_publish == 'true'
@@ -164,6 +171,7 @@ jobs:
           name: tuturuuu-utils-npm-package
           path: ${{ runner.temp }}/tuturuuu-utils-package/*.tgz
           retention-days: 1
+          compression-level: 0
 
   publish-npm:
     needs: [prepare-publish-npm]

@@ -1,5 +1,5 @@
+import { TOPIC_ANNOUNCEMENTS_SECRET } from '@tuturuuu/utils/topic-announcements';
 import { describe, expect, it } from 'vitest';
-import { TOPIC_ANNOUNCEMENTS_SECRET } from '@/lib/topic-announcements';
 import { KNOWN_SECRETS } from './constants';
 import {
   getSecretNameOptions,

@@ -1,8 +1,8 @@
-import { describe, expect, it } from 'vitest';
 import {
   type ApprovalStatus,
   getStatusColorClasses,
-} from '@/app/[locale]/(dashboard)/[wsId]/users/approvals/utils';
+} from '@tuturuuu/users-core/lib/approvals-utils';
+import { describe, expect, it } from 'vitest';
 
 describe('approvals utils', () => {
   it.each([

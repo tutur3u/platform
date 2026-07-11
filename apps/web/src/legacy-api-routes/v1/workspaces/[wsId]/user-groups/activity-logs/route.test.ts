@@ -9,7 +9,7 @@ vi.mock('@tuturuuu/utils/workspace-helper', () => ({
     getPermissionsMock(...args),
 }));
 
-vi.mock('@/lib/user-group-activity/data', () => ({
+vi.mock('@tuturuuu/users-core/lib/user-group-activity/data', () => ({
   listUserGroupActivityEventsForRange: (
     ...args: Parameters<typeof listUserGroupActivityEventsForRangeMock>
   ) => listUserGroupActivityEventsForRangeMock(...args),

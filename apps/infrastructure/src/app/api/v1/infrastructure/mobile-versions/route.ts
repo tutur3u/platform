@@ -6,7 +6,7 @@ import {
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { NextRequest } from 'next/server';
-import { NextResponse } from 'next/server';
+import { connection, NextResponse } from 'next/server';
 import { z } from 'zod';
 import {
   getMobileVersionPolicies,
@@ -57,6 +57,8 @@ async function authorizePlatformAdmin(request: Request) {
 }
 
 export async function GET(request: NextRequest) {
+  await connection();
+
   const authorization = await authorizePlatformAdmin(request);
   if (!authorization.ok) {
     return authorization.response;

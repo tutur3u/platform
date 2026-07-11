@@ -2,6 +2,7 @@ import { EmailService, sendWorkspaceEmail } from '@tuturuuu/email-service';
 import type { SendMailMessagePayload } from '@tuturuuu/internal-api';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import type { MailRouteContext } from '../types';
+import { loadOutboundAttachments } from './attachments';
 import { requireMailboxAccess } from './bootstrap';
 import { createMailDraft, updateMailDraft } from './drafts';
 import { getMailMessage } from './messages';
@@ -94,19 +95,58 @@ export async function sendMailMessage({
     throw new Error(`Failed to create outbound job: ${jobError.message}`);
   }
 
+  const attachments = await loadOutboundAttachments(
+    access.admin,
+    mailboxId,
+    message.id
+  );
+  const outboundHtml = attachments.reduce(
+    (html, attachment) =>
+      attachment.disposition === 'inline' && attachment.contentId
+        ? html.replaceAll(
+            new RegExp(
+              `(?:https?:\\/\\/[^"']+)?\\/attachments\\/${attachment.id}(?=["'])`,
+              'gu'
+            ),
+            `cid:${attachment.contentId}`
+          )
+        : html,
+    message.sanitizedHtml || message.bodyHtml || ''
+  );
+  const replyHeaders = {
+    ...(payload.inReplyTo ? { 'In-Reply-To': payload.inReplyTo } : {}),
+    ...(payload.references?.length
+      ? { References: payload.references.join(' ') }
+      : {}),
+  };
+  const senderDomain = access.mailbox.address.split('@')[1] ?? 'tuturuuu.com';
+  const sesInternetMessageId = `<${message.id}@${senderDomain}>`;
+  if (outboundProvider === 'ses') {
+    await privateTable(access.admin, 'mail_messages')
+      .update({ internet_message_id: sesInternetMessageId })
+      .eq('id', message.id)
+      .eq('mailbox_id', mailboxId);
+  }
   const sendParams = {
     content: {
-      headers: {
-        ...(payload.inReplyTo ? { 'In-Reply-To': payload.inReplyTo } : {}),
-        ...(payload.references?.length
-          ? { References: payload.references.join(' ') }
-          : {}),
-      },
-      html: message.sanitizedHtml || message.bodyHtml || '',
+      attachments,
+      // Cloudflare controls Message-ID and rejects attempts to set it. SES raw
+      // MIME accepts the deterministic ID, which lets inbound replies resolve
+      // authoritatively without relying on normalized subjects.
+      headers:
+        outboundProvider === 'ses'
+          ? { 'Message-ID': sesInternetMessageId, ...replyHeaders }
+          : replyHeaders,
+      html: outboundHtml,
       subject: message.subject,
       text: message.bodyText ?? undefined,
     },
     metadata: {
+      attachments: attachments.map((attachment) => ({
+        contentType: attachment.contentType,
+        fileName: attachment.filename,
+        sizeBytes: attachment.data.byteLength,
+      })),
       entityId: message.id,
       entityType: 'mail_message',
       templateType: 'mail',
@@ -119,7 +159,10 @@ export async function sendMailMessage({
     },
     source: {
       email: access.mailbox.address,
-      name: access.mailbox.displayName || access.mailbox.address,
+      name:
+        access.mailbox.senderName ||
+        access.mailbox.displayName ||
+        access.mailbox.address,
     },
   };
   const workspaceId = ctx.normalizedWsId || ROOT_WORKSPACE_ID;
@@ -148,7 +191,12 @@ export async function sendMailMessage({
             metadata: { ...sendParams.metadata, wsId: workspaceId },
           });
         })()
-      : await sendWorkspaceEmail(workspaceId, sendParams);
+      : await sendWorkspaceEmail(workspaceId, sendParams, {
+          // Managed Mail domains share the platform SES account. The service
+          // still uses workspaceId above for rate limits, audits, and abuse
+          // controls; only the credential lookup is delegated to root.
+          credentialWorkspaceId: ROOT_WORKSPACE_ID,
+        });
 
   const nextStatus = result.success ? 'sent' : 'failed';
   const now = new Date().toISOString();

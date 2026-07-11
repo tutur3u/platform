@@ -8,7 +8,6 @@ const cronMonitoringTraceIncludes = {
 };
 
 const nextConfig = createTuturuuuNextConfig({
-  cacheComponents: false,
   outputFileTracingIncludes: cronMonitoringTraceIncludes,
   partialPrefetching: false,
   transpilePackages: [

@@ -3,6 +3,7 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
 import type { Metadata } from 'next';
+import { connection } from 'next/server';
 import { getTranslations } from 'next-intl/server';
 import { resolveRouteWorkspace } from '@/lib/resolve-route-workspace';
 import FlashcardForm from '../../../../../flashcards/form';
@@ -24,6 +25,8 @@ interface Props {
 }
 
 export default async function ModuleFlashcardsPage({ params }: Props) {
+  await connection();
+
   const { wsId: routeWsId, moduleId } = await params;
   const { resolvedWsId } = await resolveRouteWorkspace(routeWsId);
   const t = await getTranslations();

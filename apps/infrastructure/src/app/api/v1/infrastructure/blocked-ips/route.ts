@@ -18,7 +18,7 @@ import {
 } from '@tuturuuu/utils/constants';
 import { isExactTuturuuuDotComEmail } from '@tuturuuu/utils/email/client';
 import { getUpstashRestRedisClient } from '@tuturuuu/utils/upstash-rest';
-import { NextResponse } from 'next/server';
+import { connection, NextResponse } from 'next/server';
 import { z } from 'zod';
 
 const UnblockSchema = z.object({
@@ -76,6 +76,8 @@ async function canDeleteBlockedIp(
 }
 
 export async function GET(req: Request) {
+  await connection();
+
   const supabase = await createClient();
 
   // Check if user is authenticated

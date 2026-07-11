@@ -1,5 +1,6 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { notFound } from 'next/navigation';
+import { connection } from 'next/server';
 import { getTranslations } from 'next-intl/server';
 import type React from 'react';
 import { Navigation, type NavLink } from '@/components/navigation';
@@ -16,6 +17,8 @@ export default async function DatasetDetailsLayout({
   children,
   params,
 }: LayoutProps) {
+  await connection();
+
   const { wsId, datasetId } = await params;
   const t = await getTranslations();
 

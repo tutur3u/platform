@@ -1,7 +1,7 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
-import { NextResponse } from 'next/server';
+import { connection, NextResponse } from 'next/server';
 import { getFirebaseMessagingConfigurationStatus } from '@/lib/notifications/firebase-admin';
 
 type PushDeviceCoverage = Record<
@@ -79,6 +79,8 @@ async function countRows(
 }
 
 export async function GET(request: Request) {
+  await connection();
+
   const authorization = await authorizePushDashboard(request);
   if (!authorization.ok) return authorization.response;
 

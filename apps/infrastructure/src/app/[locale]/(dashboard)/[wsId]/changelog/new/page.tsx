@@ -5,6 +5,7 @@ import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
+import { connection } from 'next/server';
 import { ChangelogForm } from '../changelog-form';
 
 export const metadata: Metadata = {
@@ -19,6 +20,8 @@ interface Props {
 }
 
 export default async function NewChangelogPage({ params }: Props) {
+  await connection();
+
   const { wsId } = await params;
 
   const permissions = await getPermissions({ wsId });

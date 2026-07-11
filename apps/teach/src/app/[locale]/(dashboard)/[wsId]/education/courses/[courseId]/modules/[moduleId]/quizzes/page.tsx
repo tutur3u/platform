@@ -6,6 +6,7 @@ import { Separator } from '@tuturuuu/ui/separator';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import { connection } from 'next/server';
 import { getTranslations } from 'next-intl/server';
 import { resolveRouteWorkspace } from '@/lib/resolve-route-workspace';
 import AIQuizzes from './client-ai';
@@ -25,6 +26,8 @@ interface Props {
 }
 
 export default async function ModuleQuizzesPage({ params }: Props) {
+  await connection();
+
   const { wsId: routeWsId, courseId, moduleId } = await params;
   const { resolvedWsId } = await resolveRouteWorkspace(routeWsId);
   const t = await getTranslations();

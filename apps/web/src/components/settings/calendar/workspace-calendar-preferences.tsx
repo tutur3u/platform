@@ -14,13 +14,13 @@ import {
 } from '@tuturuuu/ui/select';
 import { Separator } from '@tuturuuu/ui/separator';
 import { toast } from '@tuturuuu/ui/sonner';
-import { useTranslations } from 'next-intl';
 import {
   detectLocaleFirstDay,
   detectSystemTimezone,
   resolveFirstDayOfWeek,
   resolveTimezone,
-} from '@/lib/calendar-settings-resolver';
+} from '@tuturuuu/utils/calendar-settings-resolver';
+import { useTranslations } from 'next-intl';
 
 type WorkspaceCalendarPreferencesProps = {
   wsId: string;

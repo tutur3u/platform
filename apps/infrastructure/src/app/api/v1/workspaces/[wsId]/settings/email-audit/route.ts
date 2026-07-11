@@ -1,6 +1,6 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
-import { NextResponse } from 'next/server';
+import { connection, NextResponse } from 'next/server';
 
 interface Params {
   params: Promise<{
@@ -30,6 +30,8 @@ async function getEmailStats(wsId: string) {
 }
 
 export async function GET(_request: Request, { params }: Params) {
+  await connection();
+
   const { wsId } = await params;
   const permissions = await getPermissions({ wsId });
 

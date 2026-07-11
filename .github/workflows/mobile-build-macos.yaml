@@ -42,28 +42,25 @@ jobs:
           flutter-version: "3.44.x"
           channel: stable
           cache: true
+          pub-cache: true
 
       - name: Enable macOS desktop
         run: flutter config --enable-macos-desktop
 
       - name: Install dependencies
-        if: steps.cache-build.outputs.cache-hit != 'true'
         run: flutter pub get
 
-      - name: Cache Build
-        id: cache-build
+      - name: Cache CocoaPods downloads
         uses: actions/cache@v6
         with:
           path: |
-            apps/mobile/build
-            apps/mobile/.dart_tool
-            apps/mobile/macos/Pods
-          key: ${{ runner.os }}-flutter-macos-${{ hashFiles('apps/mobile/**') }}
+            /Users/runner/Library/Caches/CocoaPods
+            /Users/runner/.cocoapods/repos/trunk
+          key: ${{ runner.os }}-${{ runner.arch }}-flutter-macos-pods-${{ hashFiles('apps/mobile/pubspec.lock', 'apps/mobile/macos/Podfile', 'apps/mobile/macos/Podfile.lock') }}
           restore-keys: |
-            ${{ runner.os }}-flutter-macos-
+            ${{ runner.os }}-${{ runner.arch }}-flutter-macos-pods-
 
       - name: Create dummy GoogleService-Info.plist
-        if: steps.cache-build.outputs.cache-hit != 'true'
         run: |
           mkdir -p macos/Runner
           cat << 'EOF' > macos/Runner/GoogleService-Info.plist
@@ -104,12 +101,19 @@ jobs:
           EOF
 
       - name: Build macOS
-        if: steps.cache-build.outputs.cache-hit != 'true'
         run: flutter build macos --flavor development --target lib/main_development.dart
+
+      - name: Archive macOS app bundle
+        run: |
+          app_path="$(find build/macos/Build/Products/Release -maxdepth 1 -type d -name '*.app' -print -quit)"
+          test -n "$app_path"
+          ditto -c -k --sequesterRsrc --keepParent "$app_path" "$RUNNER_TEMP/macos-dev-app.zip"
 
       - name: Upload macOS app artifact
         uses: actions/upload-artifact@v7
         with:
           name: macos-dev-app
-          path: apps/mobile/build/macos/Build/Products/Release/
+          path: ${{ runner.temp }}/macos-dev-app.zip
+          if-no-files-found: error
           retention-days: 7
+          compression-level: 0

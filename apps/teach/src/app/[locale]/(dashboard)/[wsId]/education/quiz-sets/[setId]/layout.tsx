@@ -5,6 +5,7 @@ import LinkButton from '@tuturuuu/ui/custom/education/modules/link-button';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
 import { notFound } from 'next/navigation';
+import { connection } from 'next/server';
 import { getTranslations } from 'next-intl/server';
 import type { ReactNode } from 'react';
 
@@ -21,6 +22,8 @@ export default async function QuizSetDetailsLayout({
   children,
   params,
 }: Props) {
+  await connection();
+
   const t = await getTranslations();
   const { wsId, setId } = await params;
   const commonHref = `/${wsId}/education/quiz-sets/${setId}`;

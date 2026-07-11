@@ -1,8 +1,16 @@
-import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import { MAX_URL_LENGTH } from '@tuturuuu/utils/constants';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import {
+  getExistingPostCheckStates,
+  recordPostCheckChanges,
+} from '@/lib/post-check-audit';
 import { enqueueApprovedPostEmails } from '@/lib/post-email-queue';
 import { resolvePostEmailEnqueueAccess } from '@/lib/post-email-queue/enqueue-access';
 
@@ -12,6 +20,16 @@ interface Params {
     groupId: string;
     postId: string;
   }>;
+}
+
+async function resolveActorId(): Promise<string | null> {
+  try {
+    const supabase = await createClient();
+    const { user } = await resolveAuthenticatedSessionUser(supabase);
+    return user?.id ?? null;
+  } catch {
+    return null;
+  }
 }
 
 export async function PUT(req: Request, { params }: Params) {
@@ -76,17 +94,22 @@ export async function PUT(req: Request, { params }: Params) {
   const validatedData = parse.data;
 
   if (multiple) {
+    const items = validatedData as Array<{
+      user_id: string;
+      is_completed: boolean;
+      notes?: string | null;
+    }>;
+    const previousStates = await getExistingPostCheckStates(
+      sbAdmin,
+      postId,
+      items.map((item) => item.user_id)
+    );
+
     const { error } = await sbAdmin
       .schema('private')
       .from('user_group_post_checks')
       .upsert(
-        (
-          validatedData as Array<{
-            user_id: string;
-            is_completed: boolean;
-            notes?: string | null;
-          }>
-        ).map((item) => ({
+        items.map((item) => ({
           post_id: postId,
           user_id: item.user_id,
           notes: item.notes ?? null,
@@ -110,16 +133,22 @@ export async function PUT(req: Request, { params }: Params) {
       );
     }
 
+    await recordPostCheckChanges(sbAdmin, {
+      postId,
+      changedBy: await resolveActorId(),
+      changes: items.map((item) => ({
+        user_id: item.user_id,
+        previous_is_completed: previousStates.get(item.user_id) ?? null,
+        new_is_completed: item.is_completed,
+      })),
+    });
+
     if (postEmailEnqueueAccess.allowed) {
       await enqueueApprovedPostEmails(sbAdmin, {
         wsId,
         postId,
         groupId,
-        userIds: (
-          validatedData as Array<{
-            user_id: string;
-          }>
-        ).map((item) => item.user_id),
+        userIds: items.map((item) => item.user_id),
       });
     }
 
@@ -130,6 +159,9 @@ export async function PUT(req: Request, { params }: Params) {
       is_completed: boolean;
       notes?: string | null;
     };
+    const previousStates = await getExistingPostCheckStates(sbAdmin, postId, [
+      singleData.user_id,
+    ]);
 
     const { error } = await sbAdmin
       .schema('private')
@@ -158,6 +190,18 @@ export async function PUT(req: Request, { params }: Params) {
       );
     }
 
+    await recordPostCheckChanges(sbAdmin, {
+      postId,
+      changedBy: await resolveActorId(),
+      changes: [
+        {
+          user_id: singleData.user_id,
+          previous_is_completed: previousStates.get(singleData.user_id) ?? null,
+          new_is_completed: singleData.is_completed,
+        },
+      ],
+    });
+
     if (postEmailEnqueueAccess.allowed) {
       await enqueueApprovedPostEmails(sbAdmin, {
         wsId,
@@ -169,4 +213,86 @@ export async function PUT(req: Request, { params }: Params) {
 
     return NextResponse.json({ message: 'Data updated successfully' });
   }
+}
+
+/**
+ * Clears completion checks back to pending (removes the rows). Accepts a single
+ * `user_id` or an array of them, records the transition to `null` in the audit
+ * log, and is how the UI undoes an accidental "check all" or reverts an entry.
+ */
+export async function DELETE(req: Request, { params }: Params) {
+  const sbAdmin = await createAdminClient();
+  const data = await req.json().catch(() => null);
+  const { wsId, groupId, postId } = await params;
+
+  const permissions = await getPermissions({ wsId, request: req });
+  if (!permissions) {
+    return Response.json({ error: 'Not found' }, { status: 404 });
+  }
+  if (permissions.withoutPermission('update_user_groups_posts')) {
+    return NextResponse.json(
+      { message: 'Insufficient permissions to update user group posts' },
+      { status: 403 }
+    );
+  }
+
+  const Schema = z.object({
+    user_ids: z.array(z.guid()).min(1),
+  });
+  const parsed = Schema.safeParse(
+    Array.isArray(data?.user_ids) ? data : { user_ids: [data?.user_id] }
+  );
+  if (!parsed.success) {
+    return NextResponse.json({ message: 'Invalid payload' }, { status: 400 });
+  }
+  const userIds = parsed.data.user_ids;
+
+  // Ensure the post belongs to this workspace and group.
+  const { data: post } = await sbAdmin
+    .schema('private')
+    .from('user_group_posts')
+    .select('id, group_id, workspace_user_groups!inner(ws_id)')
+    .eq('id', postId)
+    .eq('workspace_user_groups.ws_id', wsId)
+    .eq('group_id', groupId)
+    .maybeSingle();
+  if (!post) {
+    return NextResponse.json({ message: 'Post not found' }, { status: 404 });
+  }
+
+  const previousStates = await getExistingPostCheckStates(
+    sbAdmin,
+    postId,
+    userIds
+  );
+
+  const { error } = await sbAdmin
+    .schema('private')
+    .from('user_group_post_checks')
+    .delete()
+    .eq('post_id', postId)
+    .in('user_id', userIds);
+
+  if (error) {
+    console.error(
+      `[DELETE /api/v1/workspaces/${wsId}/user-groups/${groupId}/group-checks/${postId}] Error clearing checks:`,
+      error.message || error
+    );
+    return NextResponse.json(
+      { message: 'Error clearing user_group_post_checks' },
+      { status: 500 }
+    );
+  }
+
+  await recordPostCheckChanges(sbAdmin, {
+    postId,
+    changedBy: await resolveActorId(),
+    changes: userIds.map((user_id) => ({
+      user_id,
+      previous_is_completed: previousStates.get(user_id) ?? null,
+      new_is_completed: null,
+    })),
+  });
+
+  return NextResponse.json({ message: 'Checks cleared successfully' });
 }

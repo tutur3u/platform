@@ -42,6 +42,10 @@ Do not invent deployment URL, ref, or environment from active color, commit
 hash, or deployment stamp alone. Use those fields only when an explicit env,
 runtime row, status snapshot, or generated metadata provides them.
 
+`builtAt` means the checked-out source commit timestamp. Do not populate it
+from deployment start, finish, activation, promotion, or wall-clock time. Keep
+those deployment timestamps in GitHub/Vercel records and blue/green history.
+
 ## Implementation Checklist
 
 Read `references/web-release-checklist.md` when implementing or reviewing

@@ -4,7 +4,7 @@ create extension if not exists pgtap with schema extensions;
 
 set local search_path = public, extensions;
 
-select plan(34);
+select plan(43);
 
 select ok(to_regclass('private.mail_domains') is not null, 'mail domains live in the private schema');
 select ok(to_regclass('private.mail_stored_objects') is not null, 'mail stored objects live in the private schema');
@@ -234,6 +234,101 @@ select ok(
   'the Tuturuuu domain preserves SES as both providers after backfill'
 );
 
+select ok(
+  exists (
+    select 1
+    from information_schema.columns
+    where table_schema = 'private'
+      and table_name = 'mail_domains'
+      and column_name = 'canonical_domain_id'
+  ),
+  'mail domains can reference a canonical delivery domain'
+);
+
+select ok(
+  exists (
+    select 1
+    from private.mail_domains as ingress
+    join private.mail_domains as canonical
+      on canonical.id = ingress.canonical_domain_id
+    where ingress.domain = 'ingest.tutur3u.com'
+      and ingress.status = 'active'
+      and ingress.inbound_provider = 'cloudflare'
+      and ingress.outbound_provider = 'ses'
+      and canonical.domain = 'tuturuuu.com'
+  ),
+  'the verified Cloudflare shadow domain maps to the Tuturuuu domain'
+);
+
+select ok(
+  (select count(*) = 3 from information_schema.columns
+   where table_schema = 'private' and table_name = 'mail_domains'
+     and column_name in ('catch_all_enabled', 'catch_all_mailbox_id', 'catch_all_auto_draft_enabled'))
+  and
+  (select count(*) = 5 from information_schema.columns
+   where table_schema = 'private' and table_name = 'mail_messages'
+     and column_name in ('delivery_route', 'envelope_from', 'envelope_to', 'observed_recipient', 'ingress_domain_id')),
+  'mail catch-all configuration and delivery provenance columns exist'
+);
+
+select ok(
+  not (select catch_all_enabled from private.mail_domains where domain = 'ingest.tutur3u.com'),
+  'catch-all routing remains disabled after migration'
+);
+
+select throws_ok(
+  $$ update private.mail_domains
+     set catch_all_enabled = true, catch_all_mailbox_id = null
+     where domain = 'ingest.tutur3u.com' $$,
+  null,
+  'enabled catch-all routing requires a target mailbox'
+);
+
+select lives_ok(
+  $$ update private.mail_domains
+     set catch_all_enabled = true,
+         catch_all_mailbox_id = (select id from test_mailbox)
+     where domain = 'ingest.tutur3u.com' $$,
+  'an active canonical-domain mailbox can receive catch-all mail'
+);
+
+select throws_ok(
+  $$ update private.mail_mailboxes
+     set status = 'disabled'
+     where id = (select id from test_mailbox) $$,
+  null,
+  'an active catch-all mailbox cannot be disabled'
+);
+
+update private.mail_domains
+set catch_all_enabled = false,
+    catch_all_auto_draft_enabled = false
+where domain = 'ingest.tutur3u.com';
+
+update private.mail_mailboxes
+set status = 'disabled'
+where id = (select id from test_mailbox);
+
+select throws_ok(
+  $$ update private.mail_domains
+     set catch_all_mailbox_id = (select id from test_mailbox)
+     where domain = 'ingest.tutur3u.com' $$,
+  null,
+  'a disabled mailbox cannot remain configured as a catch-all target'
+);
+
+update private.mail_mailboxes
+set status = 'active'
+where id = (select id from test_mailbox);
+
+select throws_ok(
+  $$ update private.mail_domains
+     set canonical_domain_id = id
+     where domain = 'tuturuuu.com' $$,
+  null,
+  'mail domains cannot reference themselves as canonical'
+);
+
 select lives_ok(
   $$ insert into private.mail_threads(mailbox_id, subject, normalized_subject)
      select id, 'Status', 'status' from test_mailbox;
@@ -254,17 +349,19 @@ insert into private.mail_domains(domain, status, inbound_provider, outbound_prov
 values ('example-mail.test', 'active', 'cloudflare', 'cloudflare');
 
 select lives_ok(
-  $$ insert into private.mail_mailboxes(address, domain_id, type)
-     select 'shared@example-mail.test', id, 'shared'
+  $$ insert into private.mail_mailboxes(id, address, domain_id, type)
+     select '00000000-0000-0000-0000-000000000002'::uuid,
+       'shared@example-mail.test', id, 'shared'
      from private.mail_domains where domain = 'example-mail.test' $$,
   'mailboxes may use an explicitly configured non-Tuturuuu domain'
 );
 
 select throws_ok(
-  $$ insert into private.mail_domains(domain, inbound_provider, outbound_provider)
-     values ('invalid-provider.test', 'smtp', 'ses') $$,
+  $$ update private.mail_domains
+     set catch_all_mailbox_id = '00000000-0000-0000-0000-000000000002'::uuid
+     where domain = 'ingest.tutur3u.com' $$,
   null,
-  'mail domains reject unsupported inbound providers'
+  'catch-all targets must belong to the canonical domain'
 );
 
 select * from finish();

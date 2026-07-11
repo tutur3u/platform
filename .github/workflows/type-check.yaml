@@ -26,6 +26,11 @@ jobs:
         with:
           bun-version: 1.3.14
 
+      - name: Restore Turbo fallback cache
+        uses: ./.github/actions/setup-turbo-fallback-cache
+        with:
+          family: type-check
+
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
@@ -35,7 +40,15 @@ jobs:
         run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
 
       - name: Build workspace dependencies
-        run: bun run build -F @tuturuuu/types -F @tuturuuu/supabase -F @tuturuuu/internal-api -F @tuturuuu/masonry
+        uses: ./.github/actions/run-with-turbo-remote-cache
+        with:
+          command: bun turbo:local run build --concurrency=4 --filter=@tuturuuu/types --filter=@tuturuuu/supabase --filter=@tuturuuu/internal-api --filter=@tuturuuu/masonry
+          token: ${{ github.event_name != 'pull_request' && github.actor != 'dependabot[bot]' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production') && secrets.TURBO_TOKEN || '' }}
+          team: ${{ github.event_name != 'pull_request' && github.actor != 'dependabot[bot]' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production') && (vars.TURBO_TEAM || secrets.TURBO_TEAM) || '' }}
 
       - name: Run type check
-        run: bun run type-check
+        uses: ./.github/actions/run-with-turbo-remote-cache
+        with:
+          command: bun turbo:local run type-check --concurrency=4
+          token: ${{ github.event_name != 'pull_request' && github.actor != 'dependabot[bot]' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production') && secrets.TURBO_TOKEN || '' }}
+          team: ${{ github.event_name != 'pull_request' && github.actor != 'dependabot[bot]' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production') && (vars.TURBO_TEAM || secrets.TURBO_TEAM) || '' }}

@@ -45,6 +45,87 @@ describe('CloudflareEmailProvider', () => {
     );
   });
 
+  it('preserves inline attachment disposition and content IDs', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          errors: [],
+          result: { delivered: ['person@example.com'], queued: [] },
+          success: true,
+        }),
+        { status: 200 }
+      )
+    );
+
+    await new CloudflareEmailProvider(credentials).send({
+      ...params(),
+      content: {
+        ...params().content,
+        attachments: [
+          {
+            contentId: 'hero@tuturuuu.mail',
+            contentType: 'image/png',
+            data: new Uint8Array([1, 2, 3]),
+            disposition: 'inline',
+            filename: 'hero.png',
+          },
+        ],
+      },
+    });
+
+    const body = JSON.parse(String(fetchMock.mock.calls[0]?.[1]?.body));
+    expect(body.attachments[0]).toMatchObject({
+      content_id: 'hero@tuturuuu.mail',
+      disposition: 'inline',
+    });
+  });
+
+  it('accepts a successful response with a message ID and empty delivery arrays', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          errors: [],
+          result: {
+            delivered: [],
+            message_id: '<message-1@example.org>',
+            permanent_bounces: [],
+            queued: [],
+          },
+          success: true,
+        }),
+        { status: 200 }
+      )
+    );
+
+    const result = await new CloudflareEmailProvider(credentials).send(
+      params()
+    );
+
+    expect(result).toMatchObject({
+      messageId: '<message-1@example.org>',
+      success: true,
+    });
+  });
+
+  it('rejects an empty successful response without a message ID', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          errors: [],
+          result: { delivered: [], queued: [] },
+          success: true,
+        }),
+        { status: 200 }
+      )
+    );
+
+    const result = await new CloudflareEmailProvider(credentials).send(
+      params()
+    );
+
+    expect(result).toMatchObject({ success: false });
+  });
+
   it('rejects more than 50 combined recipients before calling Cloudflare', async () => {
     const fetchMock = vi.spyOn(globalThis, 'fetch');
     const result = await new CloudflareEmailProvider(credentials).send({

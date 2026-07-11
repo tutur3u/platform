@@ -1,0 +1,81 @@
+name: Run with Turbo Remote Cache
+description: Run a command with step-scoped Turborepo remote-cache credentials.
+
+inputs:
+  command:
+    description: Shell command to execute.
+    required: true
+  token:
+    description: Turborepo remote-cache access token. An empty value uses local caching only.
+    required: false
+    default: ''
+  team:
+    description: Turborepo remote-cache team slug.
+    required: false
+    default: ''
+  api:
+    description: Optional custom Turborepo remote-cache API URL.
+    required: false
+    default: ''
+  signature-key:
+    description: Optional Turborepo remote-cache artifact signature key.
+    required: false
+    default: ''
+
+runs:
+  using: composite
+  steps:
+    - name: Run command
+      shell: bash
+      env:
+        TURBO_CACHE_COMMAND: ${{ inputs.command }}
+        TURBO_CACHE_INPUT_API: ${{ inputs.api }}
+        TURBO_CACHE_INPUT_SIGNATURE_KEY: ${{ inputs['signature-key'] }}
+        TURBO_CACHE_INPUT_TEAM: ${{ inputs.team }}
+        TURBO_CACHE_INPUT_TOKEN: ${{ inputs.token }}
+      run: |
+        set -euo pipefail
+
+        if [[ -z "${TURBO_CACHE_COMMAND//[[:space:]]/}" ]]; then
+          echo "::error title=Invalid Turbo cache command::The command input must not be empty."
+          exit 1
+        fi
+
+        run_command() {
+          bash --noprofile --norc -e -o pipefail -c "$TURBO_CACHE_COMMAND"
+        }
+
+        if [[ -z "$TURBO_CACHE_INPUT_TOKEN" ]]; then
+          unset TURBO_API
+          unset TURBO_REMOTE_CACHE_SIGNATURE_KEY
+          unset TURBO_TEAM
+          unset TURBO_TOKEN
+          echo "::notice title=Turbo remote cache disabled::No token was provided; using local caching only."
+          run_command
+          exit 0
+        fi
+
+        if [[ -z "$TURBO_CACHE_INPUT_TEAM" ]]; then
+          echo "::error title=Invalid Turbo remote cache configuration::A team is required when a token is provided."
+          exit 1
+        fi
+
+        echo "::add-mask::$TURBO_CACHE_INPUT_TOKEN"
+        export TURBO_TOKEN="$TURBO_CACHE_INPUT_TOKEN"
+        export TURBO_TEAM="$TURBO_CACHE_INPUT_TEAM"
+
+        if [[ -n "$TURBO_CACHE_INPUT_API" ]]; then
+          export TURBO_API="$TURBO_CACHE_INPUT_API"
+        else
+          unset TURBO_API
+        fi
+
+        if [[ -n "$TURBO_CACHE_INPUT_SIGNATURE_KEY" ]]; then
+          echo "::add-mask::$TURBO_CACHE_INPUT_SIGNATURE_KEY"
+          export TURBO_REMOTE_CACHE_SIGNATURE_KEY="$TURBO_CACHE_INPUT_SIGNATURE_KEY"
+        else
+          unset TURBO_REMOTE_CACHE_SIGNATURE_KEY
+        fi
+
+        echo "::notice title=Turbo remote cache enabled::Using the configured remote cache team."
+        run_command

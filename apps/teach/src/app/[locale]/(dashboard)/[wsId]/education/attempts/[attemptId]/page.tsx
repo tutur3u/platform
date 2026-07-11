@@ -9,6 +9,7 @@ import { EducationPageHeader } from '@tuturuuu/ui/custom/education/shell/educati
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { connection } from 'next/server';
 import { getTranslations } from 'next-intl/server';
 import { resolveRouteWorkspace } from '@/lib/resolve-route-workspace';
 
@@ -25,6 +26,8 @@ interface Props {
 }
 
 export default async function AttemptDetailsPage({ params }: Props) {
+  await connection();
+
   const t = await getTranslations();
   const { attemptId, wsId: routeWsId } = await params;
   const { resolvedWsId } = await resolveRouteWorkspace(routeWsId);

@@ -18,6 +18,7 @@ import { format } from 'date-fns';
 import { enUS, vi } from 'date-fns/locale';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import { connection } from 'next/server';
 import { getLocale, getTranslations } from 'next-intl/server';
 import { AiCreditBillingCard } from './ai-credit-billing-card';
 import { BillingClient } from './billing-client';
@@ -35,6 +36,8 @@ export default async function BillingPage({
 }: {
   params: Promise<{ wsId: string }>;
 }) {
+  await connection();
+
   return (
     <WorkspaceWrapper params={params}>
       {async ({ wsId }) => {

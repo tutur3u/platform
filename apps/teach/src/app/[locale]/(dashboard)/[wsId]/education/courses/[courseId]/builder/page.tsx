@@ -1,6 +1,7 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import { connection } from 'next/server';
 import { resolveRouteWorkspace } from '@/lib/resolve-route-workspace';
 import { CourseBuilderClient } from './course-builder-client';
 
@@ -18,6 +19,8 @@ interface Props {
 }
 
 export default async function CourseBuilderPage({ params }: Props) {
+  await connection();
+
   const { wsId: routeWsId, courseId } = await params;
   const { resolvedWsId } = await resolveRouteWorkspace(routeWsId);
   const sbAdmin = await createAdminClient();

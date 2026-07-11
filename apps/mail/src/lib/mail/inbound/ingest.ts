@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import { GetObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { createSnippet, sanitizeMailHtml, stripHtml } from '../html';
+import { resolveInternalMailboxName } from '../identity';
 import { normalizeAddress, parseRawEmail } from './parser';
 import type { AnyRecord, ParsedEmail, SesNotification } from './types';
 
@@ -60,19 +61,23 @@ export async function ensureMailboxForRecipient(
 
   const { data: user } = await admin
     .from('users')
-    .select('id, email, display_name, full_name')
+    .select('id, email, display_name')
     .eq('email', normalizedAddress)
     .maybeSingle();
 
   if (!user?.id) return null;
 
+  const senderName = resolveInternalMailboxName(
+    user.display_name,
+    normalizedAddress
+  );
   const { data: mailbox, error } = await privateTable(admin, 'mail_mailboxes')
     .insert({
       address: normalizedAddress,
       created_by: user.id,
-      display_name:
-        user.full_name ?? user.display_name ?? normalizedAddress.split('@')[0],
+      display_name: senderName,
       domain_id: domainId,
+      sender_name: senderName,
       type: 'personal',
     })
     .select('*')
@@ -91,6 +96,69 @@ export async function ensureMailboxForRecipient(
   );
 
   return mailbox;
+}
+
+export async function resolveInboundMailbox({
+  admin,
+  canonicalDomainId,
+  canonicalRecipient,
+  ingressDomainId = canonicalDomainId,
+  provisionInternalUser = true,
+}: {
+  admin: AnyRecord;
+  canonicalDomainId: string;
+  canonicalRecipient: string;
+  ingressDomainId?: string;
+  provisionInternalUser?: boolean;
+}) {
+  const normalizedRecipient = normalizeAddress(canonicalRecipient);
+  const { data: exact, error: exactError } = await privateTable(
+    admin,
+    'mail_mailboxes'
+  )
+    .select('*')
+    .eq('address', normalizedRecipient)
+    .eq('domain_id', canonicalDomainId)
+    .eq('status', 'active')
+    .maybeSingle();
+  if (exactError) throw exactError;
+  if (exact) return { mailbox: exact, route: 'exact' as const };
+
+  if (provisionInternalUser) {
+    const provisioned = await ensureMailboxForRecipient(
+      admin,
+      normalizedRecipient,
+      canonicalDomainId
+    );
+    if (provisioned) return { mailbox: provisioned, route: 'exact' as const };
+  }
+
+  const { data: ingressDomain, error: domainError } = await privateTable(
+    admin,
+    'mail_domains'
+  )
+    .select('catch_all_enabled,catch_all_mailbox_id')
+    .eq('id', ingressDomainId)
+    .maybeSingle();
+  if (domainError) throw domainError;
+  if (
+    !ingressDomain?.catch_all_enabled ||
+    !ingressDomain.catch_all_mailbox_id
+  ) {
+    return null;
+  }
+
+  const { data: fallback, error: fallbackError } = await privateTable(
+    admin,
+    'mail_mailboxes'
+  )
+    .select('*')
+    .eq('id', ingressDomain.catch_all_mailbox_id)
+    .eq('domain_id', canonicalDomainId)
+    .eq('status', 'active')
+    .maybeSingle();
+  if (fallbackError) throw fallbackError;
+  return fallback ? { mailbox: fallback, route: 'catch_all' as const } : null;
 }
 
 async function ensureLabel(admin: AnyRecord, mailboxId: string, slug: string) {
@@ -184,6 +252,7 @@ async function resolveInboundThread(
 
 export async function createInboundMessage({
   admin,
+  delivery,
   mailbox,
   parsed,
   provider,
@@ -191,6 +260,13 @@ export async function createInboundMessage({
   rawMessageId,
 }: {
   admin: AnyRecord;
+  delivery?: {
+    envelopeFrom?: string | null;
+    envelopeTo: string;
+    ingressDomainId: string;
+    observedRecipient: string;
+    route: 'catch_all' | 'exact';
+  };
   mailbox: AnyRecord;
   parsed: ParsedEmail;
   provider: 'cloudflare' | 'ses';
@@ -207,6 +283,19 @@ export async function createInboundMessage({
   if (existingMessageError) throw existingMessageError;
   if (existingMessage) return existingMessage;
 
+  if (parsed.internetMessageId) {
+    const {
+      data: existingInternetMessage,
+      error: existingInternetMessageError,
+    } = await privateTable(admin, 'mail_messages')
+      .select('*')
+      .eq('mailbox_id', mailbox.id)
+      .eq('internet_message_id', parsed.internetMessageId)
+      .maybeSingle();
+    if (existingInternetMessageError) throw existingInternetMessageError;
+    if (existingInternetMessage) return existingInternetMessage;
+  }
+
   const sanitizedHtml = parsed.bodyHtml
     ? sanitizeMailHtml(parsed.bodyHtml)
     : null;
@@ -222,14 +311,19 @@ export async function createInboundMessage({
       body_html: parsed.bodyHtml,
       body_text: bodyText,
       direction: 'inbound',
+      delivery_route: delivery?.route ?? 'exact',
+      envelope_from: delivery?.envelopeFrom ?? parsed.from?.address ?? null,
+      envelope_to: delivery?.envelopeTo ?? null,
       from_address: parsed.from?.address ?? 'unknown@example.invalid',
       from_name: parsed.from?.displayName,
       has_attachments: parsed.attachments.length > 0,
       in_reply_to: parsed.inReplyTo,
+      ingress_domain_id: delivery?.ingressDomainId ?? null,
       internet_message_id: parsed.internetMessageId,
       mailbox_id: mailbox.id,
       provider,
       provider_message_id: providerMessageId,
+      observed_recipient: delivery?.observedRecipient ?? null,
       raw_message_id: rawMessageId,
       received_at: new Date().toISOString(),
       references_headers: parsed.references,
@@ -416,19 +510,25 @@ export async function ingestSesNotification(notification: SesNotification) {
       admin,
       'mail_domains'
     )
-      .select('id')
+      .select('catch_all_auto_draft_enabled,id')
       .eq('domain', domainName)
       .eq('status', 'active')
       .eq('inbound_provider', 'ses')
       .maybeSingle();
     if (domainError) throw domainError;
     if (!domain?.id) continue;
-    const mailbox = await ensureMailboxForRecipient(
+    const resolved = await resolveInboundMailbox({
       admin,
-      recipient,
-      domain.id
-    );
-    if (mailbox) matchedMailboxes.push(mailbox);
+      canonicalDomainId: domain.id,
+      canonicalRecipient: recipient,
+    });
+    if (resolved)
+      matchedMailboxes.push({
+        ...resolved,
+        catchAllAutoDraftEnabled: Boolean(domain.catch_all_auto_draft_enabled),
+        domainId: domain.id,
+        recipient,
+      });
   }
 
   if (matchedMailboxes.length === 0) {
@@ -448,15 +548,35 @@ export async function ingestSesNotification(notification: SesNotification) {
     return { imported: 0, status: 'quarantined' as const };
   }
 
-  for (const mailbox of matchedMailboxes) {
-    await createInboundMessage({
+  for (const match of matchedMailboxes) {
+    const message = await createInboundMessage({
       admin,
-      mailbox,
+      delivery: {
+        envelopeFrom: notification.mail?.source ?? parsed.from?.address ?? null,
+        envelopeTo: match.recipient,
+        ingressDomainId: match.domainId,
+        observedRecipient: match.recipient,
+        route: match.route,
+      },
+      mailbox: match.mailbox,
       parsed,
       provider: 'ses',
       providerMessageId,
       rawMessageId: rawMessage.id,
     });
+    const allowAutoDraft =
+      match.mailbox.auto_draft_enabled &&
+      (match.route === 'exact' || match.catchAllAutoDraftEnabled);
+    if (allowAutoDraft) {
+      await privateTable(admin, 'mail_auto_draft_jobs').upsert(
+        {
+          mailbox_id: match.mailbox.id,
+          message_id: message.id,
+          status: 'queued',
+        },
+        { onConflict: 'mailbox_id,message_id' }
+      );
+    }
   }
 
   await privateTable(admin, 'mail_inbound_jobs')

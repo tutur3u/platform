@@ -11,6 +11,7 @@ import {
 import { Separator } from '@tuturuuu/ui/separator';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import { connection } from 'next/server';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
 import { ClearDataDialog } from './clear-data-dialog';
 import { DeleteDatasetDialog } from './delete-dataset-dialog';
@@ -30,6 +31,8 @@ interface Props {
 }
 
 export default async function DatasetSettingsPage({ params }: Props) {
+  await connection();
+
   return (
     <WorkspaceWrapper params={params}>
       {async ({ wsId, datasetId }) => {

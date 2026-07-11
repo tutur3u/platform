@@ -24,17 +24,14 @@ export interface EmailContent {
 }
 
 export interface EmailAttachment {
+  contentId?: string;
   filename: string;
   contentType: EmailAttachmentContentType;
   data: Uint8Array;
+  disposition?: 'attachment' | 'inline';
 }
 
-export type EmailAttachmentContentType =
-  | 'application/pdf'
-  | 'image/gif'
-  | 'image/jpeg'
-  | 'image/png'
-  | 'image/webp';
+export type EmailAttachmentContentType = string;
 
 export interface EmailAttachmentAuditMetadata {
   contentType: EmailAttachmentContentType;

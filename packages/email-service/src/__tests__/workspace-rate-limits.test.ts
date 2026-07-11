@@ -30,6 +30,8 @@ describe('workspace email rate limit overrides', () => {
 
   const originalSendProductionEmail = process.env.SEND_PRODUCTION_EMAIL;
   let credentialRow: typeof credentials | null;
+  let credentialWorkspaceIds: string[];
+  let rateLimitWorkspaceIds: string[];
   let workspaceSecrets: Array<{ name: string; value: string }>;
 
   beforeEach(() => {
@@ -40,6 +42,8 @@ describe('workspace email rate limit overrides', () => {
       process.env.SEND_PRODUCTION_EMAIL = originalSendProductionEmail;
     }
     credentialRow = credentials;
+    credentialWorkspaceIds = [];
+    rateLimitWorkspaceIds = [];
     workspaceSecrets = [];
 
     createAdminClientMock.mockResolvedValue({
@@ -47,12 +51,15 @@ describe('workspace email rate limit overrides', () => {
         if (table === 'workspace_email_credentials') {
           return {
             select: vi.fn(() => ({
-              eq: vi.fn(() => ({
-                maybeSingle: vi.fn().mockImplementation(async () => ({
-                  data: credentialRow,
-                  error: null,
-                })),
-              })),
+              eq: vi.fn((_column: string, wsId: string) => {
+                credentialWorkspaceIds.push(wsId);
+                return {
+                  maybeSingle: vi.fn().mockImplementation(async () => ({
+                    data: credentialRow,
+                    error: null,
+                  })),
+                };
+              }),
             })),
           };
         }
@@ -60,11 +67,14 @@ describe('workspace email rate limit overrides', () => {
         if (table === 'workspace_secrets') {
           return {
             select: vi.fn(() => ({
-              eq: vi.fn(() => ({
-                in: vi
-                  .fn()
-                  .mockResolvedValue({ data: workspaceSecrets, error: null }),
-              })),
+              eq: vi.fn((_column: string, wsId: string) => {
+                rateLimitWorkspaceIds.push(wsId);
+                return {
+                  in: vi
+                    .fn()
+                    .mockResolvedValue({ data: workspaceSecrets, error: null }),
+                };
+              }),
             })),
           };
         }
@@ -112,6 +122,15 @@ describe('workspace email rate limit overrides', () => {
     expect(config.workspacePerMinute).toBe(120);
     expect(config.invitePerHour).toBe(250);
     expect(config.userPerHour).toBe(777);
+  });
+
+  it('can use platform credentials while retaining mailbox workspace rate limits', async () => {
+    await EmailService.fromWorkspace('mailbox-workspace', {
+      credentialWorkspaceId: 'platform-workspace',
+    });
+
+    expect(credentialWorkspaceIds).toEqual(['platform-workspace']);
+    expect(rateLimitWorkspaceIds).toEqual(['mailbox-workspace']);
   });
 
   it('uses development fallback credentials when workspace credentials are missing in dev mode', async () => {

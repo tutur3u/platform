@@ -12,6 +12,11 @@ export default defineConfig({
     },
     environment: 'jsdom',
     passWithNoTests: true,
+    setupFiles: ['./vitest.setup.ts'],
+    // The multi-step announcement/report form tests drive a lot of UI and take
+    // ~9s; the 5s default flakes when turbo runs suites concurrently. Matches
+    // the timeout other app suites already use (hive 15s, tasks/infra 30s).
+    testTimeout: 30_000,
   },
   resolve: {
     alias: [{ find: '@', replacement: resolve(__dirname, './src') }],

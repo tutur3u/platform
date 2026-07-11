@@ -138,6 +138,93 @@ shared-package changes.
   is rejected by `scripts/check-tanstack-api-access.js` — wire an internal-api
   facade instead, or leave the route for the backend wave that builds the reader.
 
+## Cache Components (every Next app)
+
+`createTuturuuuNextConfig` enables `cacheComponents` (PPR) for every app —
+`isTuturuuuNextCacheComponentsEnabled()` returns `true` unconditionally, and no
+app opts out. Two consequences bite hard:
+
+- `export const dynamic` / `export const revalidate` are **rejected at build
+  time**. `await connection()` is the only opt-in to request-time rendering.
+- Supabase-js issues `fetch()` under the hood, so **every server-component query
+  is a fetch**. A page with no dynamic signal gets prerendered, and that
+  prerender runs with **no cookies** — so `getWorkspace` finds no principal
+  ("Workspace not found: personal") and the in-flight fetch is aborted
+  ("During prerendering, fetch() rejects when the prerender is complete"). This
+  took down contacts in production.
+
+Rules:
+
+- Add `await connection()` as the first statement of any authed page/layout that
+  touches Supabase, `getPermissions`, `getWorkspace`, or the app session. A
+  dynamic layout does **not** make its child pages dynamic — each page needs it.
+- `cacheComponents` also prerenders **GET route handlers**. A Supabase-backed GET
+  route with no dynamic signal is statically generated and its response baked in
+  at build. Add `await connection()` there too; every API route should report
+  `ƒ (Dynamic)` in the build output.
+- Prefer the PPR shape where it fits: a static shell with the dynamic part in
+  `<Suspense>` and `await connection()` *inside* the suspended component
+  (`apps/meet/[planId]` is the reference).
+- Unit tests invoke pages/handlers outside a request scope, where `connection()`
+  throws. Stub it in the app's vitest setup, keeping the real module:
+  `vi.mock('next/server', async (o) => ({ ...(await o()), connection: vi.fn() }))`.
+- `bun check` cannot see any of this. Run the app's real `bun run build`.
+
+## Satellite Apps (contacts, pay, tasks, …)
+
+- **Actor resolution**: registered satellites must use
+  `getSatelliteAppSessionUser('<app>')`, never `@tuturuuu/utils/user-helper`
+  (`getCurrentUser` / `getCurrentWorkspaceUser` read Supabase auth directly). When
+  a shared helper needs the actor, give it an injectable `userId` rather than
+  letting it resolve one — `@tuturuuu/utils/workspace-user-link` is the pattern
+  (`getCurrentWorkspaceUser` delegates to it, so web is unchanged). The
+  `internal-app-auth` guard in `bun check` enforces this.
+- **Never** add a catch-all page under `[locale]/[wsId]`. Next checks `fallback`
+  rewrites only AFTER dynamic routes, so `[wsId]/[...slug]` matches
+  `/api/v1/workspaces/...` as `locale="api"`, `wsId="v1"` and shadows the
+  `/api/:path*` → web proxy — every proxied API call 404s with
+  `workspaceId: 'v1'`. Put non-migrated-route redirects in `proxy.ts` middleware,
+  which returns early for `/api` and therefore cannot shadow the proxy.
+- Route ownership is an explicit list (contacts: `CONTACTS_OWNED_ROUTE_PREFIXES`).
+  Add an entry when you migrate a module, or the middleware bounces the new route
+  straight back to web. Beware prefix-vs-exact: a bare `users` entry that
+  prefix-matches makes every `/users/*` path look owned.
+- A satellite that renders broad shared UI must be in the **checked** `APPS` list
+  in `scripts/i18n-namespace-check.js`, not `UNCHECKED_APPS`. Scanning only the
+  app's own source cannot see namespaces used *inside* `@tuturuuu/ui` /
+  `@tuturuuu/satellite`, so a missing one surfaces as a runtime
+  `MISSING_MESSAGE` instead of a CI failure.
+
+## Moving A Feature Between Apps
+
+Resolve imports to **absolute paths** before moving anything — a `from '@/'` grep
+is not enough, and every trap below cost a broken build or a failed test:
+
+- **Relative-sibling** imports (`../../x`) are invisible to a `@/` grep.
+- **Dynamic** imports — `await import('@/...')` has no `from` clause.
+- **Side-effect** imports — `import '@/lib/dayjs-setup'` has no `from` clause.
+- **npm deps of the extracted file** must be added to the *target package*
+  (`nuqs`, `react`, `@tuturuuu/storage-core` all bit us).
+- **`vi.mock` paths silently break**: a web test that mocks
+  `@/lib/require-attention-users` stops intercepting once the extracted module
+  imports the users-core copy directly, so the real module runs unmocked.
+
+Then classify each external dependency:
+
+- Already a re-export shim of a package → rewrite to the package.
+- Used only by the moving module → move it along (a satellite maps `@/` to its
+  own `src`, so the specifier often needs no change at all).
+- Still used by the origin app → extract to `@tuturuuu/users-core` (server) or
+  `@tuturuuu/users-ui` (client) and point both apps at it. Keep a re-export shim
+  in the origin app when many files import it; repoint directly when few do.
+- Mutually coupled modules (reports ↔ groups) must move **together**; preserving
+  their relative layout keeps every cross-import valid unchanged.
+
+Finish with: `connection()` on data pages, the owned-routes list, the origin app's
+nav entry, i18n backfill, the tanstack page-override + manifest + doc counts, then
+`bun check` **and** a real `next build`. Deleting pages from `apps/web` leaves
+`apps/web/.next/types/validator.ts` stale — `rm -rf apps/web/.next`.
+
 ## Migration Debt Avoidance (web + backend + tanstack-web)
 
 The `apps/web` → `apps/backend` (Rust) + `apps/web` → `apps/tanstack-web` switch

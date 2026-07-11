@@ -322,9 +322,12 @@ export async function sendWorkspaceEmail(
   wsId: string,
   params: Omit<SendEmailParams, 'metadata'> & {
     metadata?: Partial<EmailMetadata>;
-  }
+  },
+  options?: { credentialWorkspaceId?: string }
 ): Promise<SendEmailResult> {
-  const service = await EmailService.fromWorkspace(wsId);
+  const service = await EmailService.fromWorkspace(wsId, {
+    credentialWorkspaceId: options?.credentialWorkspaceId,
+  });
 
   return service.send({
     ...params,

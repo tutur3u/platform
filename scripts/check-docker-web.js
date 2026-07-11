@@ -60,6 +60,11 @@ const HIVE_DB_MIGRATE_SCRIPT_PATH = path.join(
   'migrate-forward.sh'
 );
 const DOCKERIGNORE_PATH = path.join(ROOT_DIR, '.dockerignore');
+const EMPTY_BUILDKIT_SECRET_PATH = path.join(
+  ROOT_DIR,
+  'docker-compose',
+  'empty-secret'
+);
 const WATCHER_DOCKERFILE_PATH = path.join(
   ROOT_DIR,
   'apps',
@@ -739,6 +744,16 @@ function validateDockerignore(dockerignoreContent) {
   return errors;
 }
 
+function validateEmptyBuildkitSecret(emptySecretContent) {
+  if (emptySecretContent == null) {
+    return ['docker-compose/empty-secret is missing.'];
+  }
+
+  return emptySecretContent.length === 0
+    ? []
+    : ['docker-compose/empty-secret must remain exactly zero bytes.'];
+}
+
 function validateDockerSetupWorkflow(workflowContent) {
   const errors = [];
   const requiredPathFilterSnippets = [
@@ -758,9 +773,11 @@ function validateDockerSetupWorkflow(workflowContent) {
     '--cache-from type=gha,scope=docker-tanstack-web-prod',
     '--cache-to type=gha,scope=docker-tanstack-web-prod,mode=max',
     '--cache-from type=gha,scope=docker-backend',
-    '--cache-to type=gha,scope=docker-backend,mode=max',
-    '--secret id=turbo_api,env=TURBO_API',
-    '--secret id=turbo_remote_cache_signature_key,env=TURBO_REMOTE_CACHE_SIGNATURE_KEY',
+    'uses: ./.github/actions/run-with-turbo-remote-cache',
+    'crazy-max/ghaction-github-runtime@04d248b84655b509d8c44dc1d6f990c879747487',
+    "github.actor != 'dependabot[bot]'",
+    "github.ref == 'refs/heads/main'",
+    'timeout=10m,ignore-error=true',
     '--secret id=turbo_team,env=TURBO_TEAM',
     '--secret id=turbo_token,env=TURBO_TOKEN',
     '-f apps/tanstack-web/Dockerfile .',
@@ -776,6 +793,12 @@ function validateDockerSetupWorkflow(workflowContent) {
         `.github/workflows/docker-setup-check.yaml must include ${snippet} in both pull_request and push path filters.`
       );
     }
+  }
+
+  if (workflowContent.includes('--cache-to type=gha,scope=docker-backend')) {
+    errors.push(
+      '.github/workflows/docker-setup-check.yaml must leave the docker-backend cache restore-only; Rust CI owns that scope.'
+    );
   }
 
   for (const snippet of requiredSnippets) {
@@ -940,6 +963,8 @@ function validateTanstackDualCompose(composeContent) {
     '  backend:',
     '    container_name: backend-dual',
     '      dockerfile: apps/backend/Dockerfile',
+    'DOCKER_WEB_CACHE_BACKEND_FROM:-',
+    'DOCKER_WEB_CACHE_BACKEND_TO:-',
     '      - BACKEND_INTERNAL_TOKEN=${' +
       'BACKEND_INTERNAL_TOKEN:-platform-local-backend-token' +
       '}',
@@ -954,6 +979,12 @@ function validateTanstackDualCompose(composeContent) {
     '    container_name: tanstack-web-dual',
     '      dockerfile: apps/tanstack-web/Dockerfile',
     '      target: runner',
+    'DOCKER_WEB_CACHE_TANSTACK_FROM:-',
+    'DOCKER_WEB_CACHE_TANSTACK_TO:-',
+    'DOCKER_WEB_TURBO_TEAM_SECRET_FILE:-docker-compose/empty-secret',
+    'DOCKER_WEB_TURBO_TOKEN_SECRET_FILE:-docker-compose/empty-secret',
+    '      - turbo_team',
+    '      - turbo_token',
     '      - BACKEND_INTERNAL_TOKEN=${' +
       'BACKEND_INTERNAL_TOKEN:-platform-local-backend-token' +
       '}',
@@ -1068,13 +1099,38 @@ function validateDockerProdCompose(composeContent) {
     '  storage-unzip-proxy:',
     '  web-proxy:',
     '      dockerfile: Dockerfile.markitdown',
-    '    dockerfile: apps/hive/Dockerfile\n    target: runner\n    secrets:\n      - web_env',
+    '    dockerfile: apps/hive/Dockerfile',
+    '      - web_env',
+    '      - turbo_team',
+    '      - turbo_token',
     '      dockerfile: apps/backend/Dockerfile',
     '    dockerfile: apps/tanstack-web/Dockerfile',
     '      dockerfile: apps/chat-realtime/Dockerfile',
     '      dockerfile: apps/hive-realtime/Dockerfile',
     '      dockerfile: apps/meet-realtime/Dockerfile',
     '      dockerfile: apps/supermemory/Dockerfile',
+    'DOCKER_WEB_CACHE_WEB_FROM:-',
+    'DOCKER_WEB_CACHE_WEB_TO:-',
+    'DOCKER_WEB_CACHE_TANSTACK_FROM:-',
+    'DOCKER_WEB_CACHE_TANSTACK_TO:-',
+    'DOCKER_WEB_CACHE_HIVE_FROM:-',
+    'DOCKER_WEB_CACHE_HIVE_TO:-',
+    'DOCKER_WEB_CACHE_BACKEND_FROM:-',
+    'DOCKER_WEB_CACHE_BACKEND_TO:-',
+    'DOCKER_WEB_CACHE_SUPERMEMORY_FROM:-',
+    'DOCKER_WEB_CACHE_SUPERMEMORY_TO:-',
+    'DOCKER_WEB_CACHE_MARKITDOWN_FROM:-',
+    'DOCKER_WEB_CACHE_MARKITDOWN_TO:-',
+    'DOCKER_WEB_CACHE_STORAGE_UNZIP_FROM:-',
+    'DOCKER_WEB_CACHE_STORAGE_UNZIP_TO:-',
+    'DOCKER_WEB_CACHE_CHAT_REALTIME_FROM:-',
+    'DOCKER_WEB_CACHE_CHAT_REALTIME_TO:-',
+    'DOCKER_WEB_CACHE_HIVE_REALTIME_FROM:-',
+    'DOCKER_WEB_CACHE_HIVE_REALTIME_TO:-',
+    'DOCKER_WEB_CACHE_MEET_REALTIME_FROM:-',
+    'DOCKER_WEB_CACHE_MEET_REALTIME_TO:-',
+    'DOCKER_WEB_TURBO_TEAM_SECRET_FILE:-docker-compose/empty-secret',
+    'DOCKER_WEB_TURBO_TOKEN_SECRET_FILE:-docker-compose/empty-secret',
     '    - BACKEND_PUBLIC_ORIGIN=$' +
       '{BACKEND_PUBLIC_ORIGIN:-http://backend:7820}',
     '    - PORT=7824',
@@ -2229,6 +2285,14 @@ function checkDockerWebSetup({
     path.join(rootDir, '.dockerignore'),
     'utf8'
   ),
+  emptyBuildkitSecretContent = fsImpl.existsSync(
+    path.join(rootDir, 'docker-compose', 'empty-secret')
+  )
+    ? fsImpl.readFileSync(
+        path.join(rootDir, 'docker-compose', 'empty-secret'),
+        'utf8'
+      )
+    : null,
   markitdownDockerfileContent = fsImpl.readFileSync(
     path.join(rootDir, 'apps', 'discord', 'Dockerfile.markitdown'),
     'utf8'
@@ -2278,6 +2342,7 @@ function checkDockerWebSetup({
     ...validateDockerProdCompose(prodComposeContent),
     ...validateDockerBakeFile(dockerBakeContent),
     ...validateDockerignore(dockerignoreContent),
+    ...validateEmptyBuildkitSecret(emptyBuildkitSecretContent),
     ...validateWatcherDockerfile(watcherDockerfileContent),
     ...validateDockerControlDockerfile(dockerControlDockerfileContent),
     ...validateCronRunnerDockerfile(cronRunnerDockerfileContent),
@@ -2347,6 +2412,7 @@ module.exports = {
   NATIVE_WEB_RUNNER_DOCKERFILE_PATH,
   NATIVE_WEB_RUNNER_DOCKERIGNORE_PATH,
   DOCKERIGNORE_PATH,
+  EMPTY_BUILDKIT_SECRET_PATH,
   DOCKER_BAKE_WEB_PROD_PATH,
   WATCHER_DOCKERFILE_PATH,
   WEB_COMPOSE_FILE_PATH,
@@ -2369,6 +2435,7 @@ module.exports = {
   validateDockerBakeFile,
   validateDockerProdCompose,
   validateDockerignore,
+  validateEmptyBuildkitSecret,
   validateDockerfile,
   validateCronRunnerDockerfile,
   validateDockerControlDockerfile,

@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { connection } from 'next/server';
 import { getTranslations } from 'next-intl/server';
 import { AnalyticsCards } from './analytics-cards';
 import { AnalyticsHeader } from './analytics-header';
@@ -57,6 +58,8 @@ interface AnalyticsData {
 }
 
 export default async function LinkAnalyticsPage({ params }: Props) {
+  await connection();
+
   const { wsId, linkId } = await params;
   const t = await getTranslations();
 

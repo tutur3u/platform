@@ -29,7 +29,7 @@ vi.mock('@tuturuuu/utils/workspace-helper', () => ({
   ) => mocks.normalizeWorkspaceId(...args),
 }));
 
-vi.mock('@/app/[locale]/(dashboard)/[wsId]/users/groups/utils', () => ({
+vi.mock('@tuturuuu/users-core/lib/user-groups/groups-utils', () => ({
   applyAttendanceMemberCounts: (
     ...args: Parameters<typeof mocks.applyAttendanceMemberCounts>
   ) => mocks.applyAttendanceMemberCounts(...args),
@@ -51,7 +51,7 @@ vi.mock('@/lib/infrastructure/log-drain', () => ({
   serverLogger: mocks.serverLogger,
 }));
 
-vi.mock('@/lib/user-groups/table-repository', () => ({
+vi.mock('@tuturuuu/users-core/lib/user-groups/table-repository', () => ({
   countUserGroupsForTable: (
     ...args: Parameters<typeof mocks.countUserGroupsForTable>
   ) => mocks.countUserGroupsForTable(...args),

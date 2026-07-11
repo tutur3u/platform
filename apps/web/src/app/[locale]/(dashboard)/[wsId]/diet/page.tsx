@@ -2,6 +2,7 @@ import { GradientHeadline } from '@tuturuuu/ui/custom/gradient-headline';
 import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { notFound, redirect } from 'next/navigation';
+import { connection } from 'next/server';
 import { getTranslations } from 'next-intl/server';
 
 export const metadata: Metadata = {
@@ -16,6 +17,8 @@ interface PageProps {
 }
 
 export default async function CalendarPage({ params }: PageProps) {
+  await connection();
+
   const t = await getTranslations('common');
   const { wsId } = await params;
   const workspace = await getWorkspace(wsId);

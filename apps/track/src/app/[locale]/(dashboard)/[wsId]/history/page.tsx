@@ -6,6 +6,7 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import { connection } from 'next/server';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
 import { SessionHistory } from '../components/session-history';
 
@@ -20,6 +21,8 @@ export default async function TimeTrackerHistoryPage({
 }: {
   params: Promise<{ wsId: string }>;
 }) {
+  await connection();
+
   return (
     <WorkspaceWrapper params={params}>
       {async ({ wsId, workspace, isPersonal }) => {

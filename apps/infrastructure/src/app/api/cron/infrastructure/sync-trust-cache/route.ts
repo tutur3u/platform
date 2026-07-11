@@ -3,7 +3,7 @@ import {
   type CachedTrustEntry,
   setCachedTrustEntry,
 } from '@tuturuuu/utils/abuse-protection/edge-trust';
-import { type NextRequest, NextResponse } from 'next/server';
+import { connection, type NextRequest, NextResponse } from 'next/server';
 import { withCronLogDrain } from '@/lib/infrastructure/log-drain';
 
 const JOB_ID = 'infrastructure-sync-trust-cache';
@@ -15,6 +15,8 @@ const RECONCILE_TTL_SECONDS = 2 * 60 * 60; // 2 hours
 const WRITE_CONCURRENCY = 32;
 
 export async function GET(request: NextRequest) {
+  await connection();
+
   return withCronLogDrain({ jobId: JOB_ID, path: PATH, request }, () =>
     handleGET(request)
   );

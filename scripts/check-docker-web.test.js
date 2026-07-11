@@ -30,6 +30,7 @@ const {
   DOCKER_BAKE_WEB_PROD_PATH,
   DOCKER_SETUP_WORKFLOW_PATH,
   DOCKERIGNORE_PATH,
+  EMPTY_BUILDKIT_SECRET_PATH,
   HIVE_DB_MIGRATE_SCRIPT_PATH,
   HIVE_DOCKERFILE_PATH,
   HIVE_REALTIME_DOCKERFILE_PATH,
@@ -59,6 +60,7 @@ const {
   validateDockerBakeFile,
   validateDockerProdCompose,
   validateDockerignore,
+  validateEmptyBuildkitSecret,
   validateDockerfile,
   validateCronRunnerDockerfile,
   validateHiveDockerfile,
@@ -173,6 +175,15 @@ test('validateDockerSetupWorkflow keeps TanStack Docker paths covered', () => {
   assert.match(
     validateDockerSetupWorkflow(
       workflowContent.replace(
+        '--cache-from type=gha,scope=docker-backend,timeout=10m',
+        '--cache-from type=gha,scope=docker-backend,timeout=10m --cache-to type=gha,scope=docker-backend,mode=max'
+      )
+    ).join('\n'),
+    /Rust CI owns that scope/
+  );
+  assert.match(
+    validateDockerSetupWorkflow(
+      workflowContent.replace(
         'Free runner disk before Docker image builds',
         'Free runner disk after Docker image builds'
       )
@@ -185,6 +196,19 @@ test('validateDockerignore accepts the current Docker context excludes', () => {
   const dockerignoreContent = fs.readFileSync(DOCKERIGNORE_PATH, 'utf8');
 
   assert.deepEqual(validateDockerignore(dockerignoreContent), []);
+});
+
+test('portable BuildKit secret placeholder remains exactly empty', () => {
+  const emptySecretContent = fs.readFileSync(
+    EMPTY_BUILDKIT_SECRET_PATH,
+    'utf8'
+  );
+
+  assert.deepEqual(validateEmptyBuildkitSecret(emptySecretContent), []);
+  assert.match(
+    validateEmptyBuildkitSecret('placeholder').join('\n'),
+    /must remain exactly zero bytes/
+  );
 });
 
 test('validateBackendDockerfile accepts the current backend Dockerfile', () => {
@@ -803,6 +827,20 @@ test('validateTanstackDualCompose accepts the current dual compose file', () => 
   assert.deepEqual(validateTanstackDualCompose(composeContent), []);
 });
 
+test('validateTanstackDualCompose requires E2E cache and Turbo secret wiring', () => {
+  const composeContent = fs
+    .readFileSync(TANSTACK_DUAL_COMPOSE_FILE_PATH, 'utf8')
+    .replace('DOCKER_WEB_CACHE_BACKEND_FROM', 'REMOVED_BACKEND_CACHE_FROM')
+    .replace('DOCKER_WEB_CACHE_TANSTACK_TO', 'REMOVED_TANSTACK_CACHE_TO')
+    .replace('DOCKER_WEB_TURBO_TOKEN_SECRET_FILE', 'REMOVED_TURBO_TOKEN_FILE');
+
+  const errors = validateTanstackDualCompose(composeContent).join('\n');
+
+  assert.match(errors, /DOCKER_WEB_CACHE_BACKEND_FROM/);
+  assert.match(errors, /DOCKER_WEB_CACHE_TANSTACK_TO/);
+  assert.match(errors, /DOCKER_WEB_TURBO_TOKEN_SECRET_FILE/);
+});
+
 test('validateTanstackDualCompose reports missing runner and health gate wiring', () => {
   const composeContent = fs
     .readFileSync(TANSTACK_DUAL_COMPOSE_FILE_PATH, 'utf8')
@@ -883,6 +921,22 @@ test('validateDockerProdCompose accepts the current production compose file', ()
   const composeContent = readDockerProdComposeMergedText(ROOT_DIR);
 
   assert.deepEqual(validateDockerProdCompose(composeContent), []);
+});
+
+test('validateDockerProdCompose requires inert per-service E2E cache wiring', () => {
+  const composeContent = readDockerProdComposeMergedText(ROOT_DIR)
+    .replace('DOCKER_WEB_CACHE_WEB_FROM', 'REMOVED_WEB_CACHE_FROM')
+    .replace('DOCKER_WEB_CACHE_BACKEND_TO', 'REMOVED_BACKEND_CACHE_TO')
+    .replace(
+      'DOCKER_WEB_CACHE_STORAGE_UNZIP_FROM',
+      'REMOVED_STORAGE_UNZIP_CACHE_FROM'
+    );
+
+  const errors = validateDockerProdCompose(composeContent).join('\n');
+
+  assert.match(errors, /DOCKER_WEB_CACHE_WEB_FROM/);
+  assert.match(errors, /DOCKER_WEB_CACHE_BACKEND_TO/);
+  assert.match(errors, /DOCKER_WEB_CACHE_STORAGE_UNZIP_FROM/);
 });
 
 test('validateDockerProdCompose requires restart policies on durable production services', () => {

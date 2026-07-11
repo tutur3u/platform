@@ -1,6 +1,13 @@
 import { isValidElement } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+// The page opts into request-time rendering via `connection()` (required under
+// cacheComponents). Unit tests invoke it outside a request scope, so stub it.
+vi.mock('next/server', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('next/server')>()),
+  connection: vi.fn().mockResolvedValue(undefined),
+}));
+
 const mocks = vi.hoisted(() => ({
   getCurrentUser: vi.fn(),
   getPermissions: vi.fn(),

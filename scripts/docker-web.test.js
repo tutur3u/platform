@@ -35,6 +35,7 @@ const {
   applyDefaultBlueGreenNativeBuildEnv,
   formatSupabaseOriginReport,
   getActiveDeploymentConflict,
+  getCurrentGitCommitMetadata,
   getBlueGreenBuildTimeoutMs,
   getBlueGreenDeploymentChangedFiles,
   getBlueGreenHiveServiceName,
@@ -59,9 +60,11 @@ const {
 } = require('./docker-web.js');
 const {
   buildBlueGreenServices,
+  createBlueGreenBuildMetadataEnv,
   getBlueGreenDirectServiceName,
   getBlueGreenFrontend,
   getBlueGreenFrontendPort,
+  getDeterministicBlueGreenBuildEnv,
   getBlueGreenServiceName,
   getBlueGreenBuildxBakeArgs,
   getBlueGreenComposeMigration,
@@ -127,6 +130,83 @@ const LOCAL_SUPABASE_TEST_ENV = {
   [DOCKER_WEB_ALLOW_LOCAL_SUPABASE_ENV]: '1',
   PATH: 'test-path',
 };
+
+test('getCurrentGitCommitMetadata includes the checked-out commit timestamp', async () => {
+  const calls = [];
+  const metadata = await getCurrentGitCommitMetadata({
+    env: { PLATFORM_BUILD_REF_NAME: 'production' },
+    runCommand: async (command, args) => {
+      calls.push([command, args]);
+
+      return createCommandResult(
+        'abc123def456\nabc123d\nperf(ci): reuse build output\n2026-07-10T07:15:30+00:00\n'
+      );
+    },
+  });
+
+  assert.deepEqual(metadata, {
+    committedAt: '2026-07-10T07:15:30+00:00',
+    hash: 'abc123def456',
+    refName: 'production',
+    shortHash: 'abc123d',
+    subject: 'perf(ci): reuse build output',
+  });
+  assert.deepEqual(calls, [['git', ['log', '-1', '--format=%H%n%h%n%s%n%cI']]]);
+});
+
+test('blue-green build metadata is reproducible across deployment records', () => {
+  const latestCommit = {
+    committedAt: '2026-07-10T07:15:30+00:00',
+    hash: 'abc123def456',
+    refName: 'production',
+    shortHash: 'abc123d',
+    subject: 'perf(ci): reuse build output',
+  };
+  const options = {
+    baseEnv: {
+      PLATFORM_BUILD_DEPLOYMENT_URL: 'https://deploy-one.tuturuuu.com',
+      WEB_APP_URL: 'tuturuuu.com',
+    },
+    deploymentStamp: 'deploy-2026-07-10T07-30-00Z',
+    latestCommit,
+  };
+
+  const firstRuntime = createBlueGreenBuildMetadataEnv(options);
+  const secondRuntime = createBlueGreenBuildMetadataEnv({
+    ...options,
+    baseEnv: {
+      ...options.baseEnv,
+      PLATFORM_BUILD_DEPLOYMENT_URL: 'https://deploy-two.tuturuuu.com',
+    },
+    deploymentStamp: 'deploy-2026-07-10T08-30-00Z',
+  });
+  const firstBuild = getDeterministicBlueGreenBuildEnv(firstRuntime);
+  const secondBuild = getDeterministicBlueGreenBuildEnv(secondRuntime);
+
+  assert.deepEqual(firstBuild, secondBuild);
+  assert.equal(firstBuild.PLATFORM_BUILD_BUILT_AT, latestCommit.committedAt);
+  assert.equal(firstBuild.PLATFORM_BUILD_DEPLOYMENT_STAMP, undefined);
+  assert.equal(firstBuild.PLATFORM_BUILD_DEPLOYMENT_URL, undefined);
+  assert.equal(
+    firstRuntime.PLATFORM_BUILD_DEPLOYMENT_STAMP,
+    'deploy-2026-07-10T07-30-00Z'
+  );
+  assert.equal(
+    secondRuntime.PLATFORM_BUILD_DEPLOYMENT_STAMP,
+    'deploy-2026-07-10T08-30-00Z'
+  );
+
+  const overridden = createBlueGreenBuildMetadataEnv({
+    ...options,
+    baseEnv: {
+      PLATFORM_BUILD_BUILT_AT: '2026-01-01T00:00:00.000Z',
+      WEB_APP_URL: 'tuturuuu.com',
+    },
+    builtAt: '2026-02-01T00:00:00.000Z',
+  });
+
+  assert.equal(overridden.PLATFORM_BUILD_BUILT_AT, '2026-01-01T00:00:00.000Z');
+});
 
 test('build-web-docker caps inner Turbo concurrency from Docker build profile env', () => {
   assert.equal(resolveDockerWebTurboConcurrency({}), 1);
@@ -3832,10 +3912,6 @@ test('buildBlueGreenServices can package host-built web artifacts', async () => 
           '--build-arg',
           'PLATFORM_BUILD_COMMIT_SHORT_HASH=native',
           '--build-arg',
-          'PLATFORM_BUILD_DEPLOYMENT_STAMP=2026-05-28T06-00-00Z',
-          '--build-arg',
-          'PLATFORM_BUILD_DEPLOYMENT_URL=https://tuturuuu.com',
-          '--build-arg',
           'PLATFORM_BUILD_ENVIRONMENT=production',
           '--build-arg',
           'PLATFORM_BUILD_REF_NAME=production',
@@ -3865,9 +3941,13 @@ test('buildBlueGreenServices can package host-built web artifacts', async () => 
     undefined
   );
   assert.equal(calls[0][3].PLATFORM_BUILD_COMMIT_HASH, 'native-commit');
+  assert.equal(calls[0][3].PLATFORM_BUILD_DEPLOYMENT_STAMP, undefined);
+  assert.equal(calls[0][3].PLATFORM_BUILD_DEPLOYMENT_URL, undefined);
   assert.equal(calls[1][3].BUILDX_BUILDER, undefined);
   assert.equal(calls[1][3].BUILDKIT_HOST, undefined);
   assert.equal(calls[1][3].DOCKER_WEB_BUILD_BUILDER_NAME, undefined);
+  assert.equal(calls[1][3].PLATFORM_BUILD_DEPLOYMENT_STAMP, undefined);
+  assert.equal(calls[1][3].PLATFORM_BUILD_DEPLOYMENT_URL, undefined);
   assert.equal(env.BUILDX_BUILDER, DEFAULT_BUILDER_NAME);
   assert.equal(env.BUILDKIT_HOST, 'tcp://remote-buildkit.example:1234');
   assert.equal(env.DOCKER_WEB_BUILD_BUILDER_NAME, 'fallback-builder');
@@ -6308,17 +6388,12 @@ test('runBlueGreenProdWorkflow does not promote web before Hive migration succee
         );
         assert.equal(options.env.PLATFORM_BUILD_REF_NAME, 'production');
         assert.equal(options.env.PLATFORM_BUILD_ENVIRONMENT, 'production');
+        assert.equal(options.env.PLATFORM_BUILD_DEPLOYMENT_URL, undefined);
+        assert.equal(options.env.PLATFORM_BUILD_DEPLOYMENT_STAMP, undefined);
+        assert.equal(options.env.PLATFORM_DEPLOYMENT_STAMP, undefined);
         assert.equal(
-          options.env.PLATFORM_BUILD_DEPLOYMENT_URL,
-          'https://tuturuuu.com'
-        );
-        assert.equal(
-          options.env.PLATFORM_BUILD_DEPLOYMENT_STAMP,
-          options.env.PLATFORM_DEPLOYMENT_STAMP
-        );
-        assert.match(
           options.env.PLATFORM_BUILD_BUILT_AT,
-          /^\d{4}-\d{2}-\d{2}T/u
+          '2026-05-20T12:34:56.000Z'
         );
       }
 
@@ -6330,6 +6405,14 @@ test('runBlueGreenProdWorkflow does not promote web before Hive migration succee
     }
 
     if (args.includes('up') && args.includes('web-green')) {
+      assert.equal(
+        options.env.PLATFORM_BUILD_DEPLOYMENT_URL,
+        'https://tuturuuu.com'
+      );
+      assert.equal(
+        options.env.PLATFORM_BUILD_DEPLOYMENT_STAMP,
+        options.env.PLATFORM_DEPLOYMENT_STAMP
+      );
       webStarted = true;
       return resultFor('');
     }
@@ -6392,6 +6475,7 @@ test('runBlueGreenProdWorkflow does not promote web before Hive migration succee
             },
             envFilePath,
             latestCommit: {
+              committedAt: '2026-05-20T12:34:56.000Z',
               hash: 'commit-green',
               refName: 'production',
               shortHash: 'green',
@@ -6421,6 +6505,10 @@ test('runBlueGreenProdWorkflow does not promote web before Hive migration succee
     const targetState = readBlueGreenTargetState(paths);
     assert.equal(readBlueGreenActiveColor(paths), 'blue');
     assert.equal(targetState.targets.web.activeColor, 'green');
+    assert.equal(
+      targetState.targets.web.committedAt,
+      '2026-05-20T12:34:56.000Z'
+    );
     assert.equal(targetState.targets.web.health, 'staged');
     assert.equal(
       calls.some(

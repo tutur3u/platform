@@ -3,3 +3,4 @@
 import * as legacyRoute from '@/legacy-api-routes/v1/workspaces/[wsId]/user-groups/[groupId]/group-checks/[postId]/route';
 
 export const PUT = legacyRoute.PUT;
+export const DELETE = legacyRoute.DELETE;

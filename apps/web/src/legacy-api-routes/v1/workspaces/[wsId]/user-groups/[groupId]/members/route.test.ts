@@ -32,7 +32,7 @@ vi.mock('@/lib/infrastructure/log-drain', () => ({
   },
 }));
 
-vi.mock('@/lib/require-attention-users', () => ({
+vi.mock('@tuturuuu/users-core/lib/require-attention-users', () => ({
   fetchRequireAttentionUserIds: (
     ...args: Parameters<typeof mocks.fetchRequireAttentionUserIds>
   ) => mocks.fetchRequireAttentionUserIds(...args),

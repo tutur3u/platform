@@ -3,6 +3,7 @@ import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
 import { CourseHeader } from '@tuturuuu/ui/custom/education/courses/course-header';
 import { Separator } from '@tuturuuu/ui/separator';
 import { notFound } from 'next/navigation';
+import { connection } from 'next/server';
 import type { ReactNode } from 'react';
 import { resolveRouteWorkspace } from '@/lib/resolve-route-workspace';
 
@@ -16,6 +17,8 @@ interface Props {
 }
 
 export default async function CourseDetailsLayout({ children, params }: Props) {
+  await connection();
+
   const { wsId: routeWsId, courseId } = await params;
   const { resolvedWsId } = await resolveRouteWorkspace(routeWsId);
   const data = await getData(resolvedWsId, courseId);

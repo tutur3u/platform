@@ -95,9 +95,21 @@ test('Rust backend workflow validates the Cloudflare Worker target', () => {
   );
   assert.match(
     validateRustBackendWorkflow(
-      workflow.replace('bun type-check:tanstack-web', '')
+      workflow.replace(
+        'command: bun turbo:local run type-check --filter=@tuturuuu/tanstack-web --concurrency=4',
+        ''
+      )
     ).join('\n'),
     /type-check/
+  );
+  assert.match(
+    validateRustBackendWorkflow(
+      workflow.replace(
+        'command: bun turbo:local run test --filter=@tuturuuu/tanstack-web --concurrency=4',
+        ''
+      )
+    ).join('\n'),
+    /run test/
   );
   assert.match(
     validateRustBackendWorkflow(
@@ -107,7 +119,7 @@ test('Rust backend workflow validates the Cloudflare Worker target', () => {
   );
   assert.match(
     validateRustBackendWorkflow(
-      workflow.replace("github.ref == 'refs/heads/main'", '')
+      workflow.replaceAll("github.ref == 'refs/heads/main'", '')
     ).join('\n'),
     /refs\/heads\/main/
   );

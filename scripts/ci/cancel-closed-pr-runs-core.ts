@@ -30,6 +30,12 @@ export type WorkflowRun = {
   status?: string;
 };
 
+export type ActionsCache = {
+  id: number;
+  key?: string;
+  ref?: string;
+};
+
 export type PullRequestCloseEvent = {
   action?: string;
   pull_request?: {
@@ -52,11 +58,26 @@ export type CancelClient = {
   }): Promise<WorkflowRun[]>;
 };
 
+export type CacheClient = {
+  deleteActionsCache(cacheId: number): Promise<{ status: number }>;
+  listActionsCaches(input: {
+    page: number;
+    perPage: number;
+    ref: string;
+  }): Promise<ActionsCache[]>;
+};
+
 export type CancelSummary = {
   cancelled: number;
   considered: number;
   raceSkipped: number;
   skipped: number;
+};
+
+export type CacheCleanupSummary = {
+  considered: number;
+  deleted: number;
+  raceSkipped: number;
 };
 
 type ClosedPullRequestContext = {
@@ -73,6 +94,12 @@ type CancellationInput = {
   log?: (message: string) => void;
   repository: string;
   statuses?: readonly ActiveRunStatus[];
+};
+
+type CacheCleanupInput = {
+  client: CacheClient;
+  event: PullRequestCloseEvent;
+  log?: (message: string) => void;
 };
 
 function parsePositiveInteger(
@@ -245,6 +272,81 @@ function isCancellationRace(status: number): boolean {
 
 function isSuccessfulCancellation(status: number): boolean {
   return status >= 200 && status < 300;
+}
+
+async function listPullRequestCaches({
+  client,
+  ref,
+}: {
+  client: CacheClient;
+  ref: string;
+}): Promise<ActionsCache[]> {
+  const caches = new Map<number, ActionsCache>();
+
+  for (let page = 1; ; page += 1) {
+    const pageCaches = await client.listActionsCaches({
+      page,
+      perPage: 100,
+      ref,
+    });
+
+    for (const cache of pageCaches) {
+      caches.set(cache.id, cache);
+    }
+
+    if (pageCaches.length < 100) {
+      break;
+    }
+  }
+
+  return [...caches.values()].sort((a, b) => a.id - b.id);
+}
+
+export async function cleanupClosedPullRequestCaches({
+  client,
+  event,
+  log = console.log,
+}: CacheCleanupInput): Promise<CacheCleanupSummary> {
+  const pullRequest = getClosedPullRequestContext(event);
+
+  if (!pullRequest) {
+    log('Event is not a closed pull request with complete head metadata.');
+    return { considered: 0, deleted: 0, raceSkipped: 0 };
+  }
+
+  const ref = `refs/pull/${pullRequest.number}/merge`;
+  const caches = await listPullRequestCaches({ client, ref });
+  const summary: CacheCleanupSummary = {
+    considered: caches.length,
+    deleted: 0,
+    raceSkipped: 0,
+  };
+
+  for (const cache of caches) {
+    const response = await client.deleteActionsCache(cache.id);
+
+    if (isSuccessfulCancellation(response.status)) {
+      summary.deleted += 1;
+      log(`Deleted Actions cache ${cache.id}: ${cache.key ?? '(unnamed)'}`);
+      continue;
+    }
+
+    if (response.status === 404) {
+      summary.raceSkipped += 1;
+      log(`Skipped Actions cache ${cache.id}; it was already deleted.`);
+      continue;
+    }
+
+    throw new Error(
+      `Failed to delete Actions cache ${cache.id}: GitHub API returned ${response.status}.`
+    );
+  }
+
+  log(
+    `Closed PR #${pullRequest.number}: considered ${summary.considered} caches for ${ref}, deleted ${summary.deleted}, race-skipped ${summary.raceSkipped}.`
+  );
+
+  return summary;
 }
 
 export async function cancelClosedPullRequestRuns({

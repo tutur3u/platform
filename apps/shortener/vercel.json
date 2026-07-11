@@ -1,5 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "cd ../.. && bun turbo:local run build --filter=@tuturuuu/shortener",
   "git": {
     "deploymentEnabled": false
   },

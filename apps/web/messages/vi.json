@@ -16477,7 +16477,7 @@
     "commit_hash": "Mã commit",
     "commit_message": "Nội dung commit",
     "deployment_stamp": "Dấu triển khai",
-    "deployment_time": "Thời gian triển khai",
+    "deployment_time": "Thời điểm mã nguồn",
     "deployment_url": "URL triển khai",
     "description": "Thông tin bản dựng và triển khai của ứng dụng này.",
     "environment": "Môi trường",
@@ -17516,7 +17516,15 @@
     "approval_locked": "Không thể gỡ phê duyệt vì đã có ít nhất một email được gửi.",
     "approval_revocable": "Có thể gỡ phê duyệt vì chưa có email nào được gửi.",
     "check_all": "Đã kiểm tra tất cả",
-    "completed": "Hoàn thành"
+    "completed": "Hoàn thành",
+    "history": "Lịch sử",
+    "history_description": "Mọi thay đổi hoàn thành của bài đăng này, mới nhất trước.",
+    "history_empty": "Chưa ghi nhận thay đổi nào.",
+    "reset_check": "Đặt lại",
+    "reset_check_description": "Đưa thành viên này về trạng thái chưa xử lý (xóa dấu hoàn thành)",
+    "status_pending": "Chưa xử lý",
+    "uncheck_all": "Bỏ đánh dấu tất cả",
+    "uncheck_all_description": "Đưa tất cả thành viên về trạng thái chưa xử lý"
   },
   "ws-activities": {
     "added": "Đã thêm",

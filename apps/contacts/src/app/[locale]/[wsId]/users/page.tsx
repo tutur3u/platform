@@ -1,27 +1,62 @@
-import { Users } from '@tuturuuu/icons';
-import { getTranslations } from 'next-intl/server';
+import LoadingStatisticCard from '@tuturuuu/ui/custom/loading-statistic-card';
+import WorkspaceWrapper from '@tuturuuu/ui/custom/workspace-wrapper';
+import type { Metadata } from 'next';
+import { connection } from 'next/server';
+import { Suspense } from 'react';
+import {
+  ActiveUsersStatistics,
+  PermanentlyArchivedUsersStatistics,
+  TemporarilyArchivedUsersStatistics,
+  UserGroupsStatistics,
+  UserGroupTagsStatistics,
+  UserReportsStatistics,
+} from '@/components/statistics';
 
-export default async function UsersOverviewPage() {
-  const t = await getTranslations();
+export const metadata: Metadata = {
+  title: 'Users',
+  description: 'Manage Users in your Tuturuuu workspace.',
+};
+
+interface Props {
+  params: Promise<{
+    wsId: string;
+  }>;
+}
+
+export default async function WorkspaceUsersPage({ params }: Props) {
+  await connection();
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex items-center gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-dynamic-blue/10 text-dynamic-blue">
-          <Users className="h-5 w-5" />
+    <WorkspaceWrapper params={params}>
+      {({ wsId }) => (
+        <div className="flex min-h-full w-full flex-col">
+          <div className="grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <Suspense fallback={<LoadingStatisticCard />}>
+              <ActiveUsersStatistics wsId={wsId} redirect />
+            </Suspense>
+
+            <Suspense fallback={<LoadingStatisticCard />}>
+              <PermanentlyArchivedUsersStatistics wsId={wsId} redirect />
+            </Suspense>
+
+            <Suspense fallback={<LoadingStatisticCard />}>
+              <TemporarilyArchivedUsersStatistics wsId={wsId} redirect />
+            </Suspense>
+
+            <Suspense fallback={<LoadingStatisticCard />}>
+              <UserGroupsStatistics wsId={wsId} redirect />
+            </Suspense>
+
+            <Suspense fallback={<LoadingStatisticCard />}>
+              <UserGroupTagsStatistics wsId={wsId} redirect />
+            </Suspense>
+
+            <Suspense fallback={<LoadingStatisticCard />}>
+              <UserReportsStatistics wsId={wsId} redirect />
+            </Suspense>
+          </div>
         </div>
-        <div>
-          <h1 className="font-semibold text-2xl">
-            {t('workspace-users-tabs.overview')}
-          </h1>
-          <p className="text-muted-foreground text-sm">
-            {t('sidebar_tabs.users')}
-          </p>
-        </div>
-      </div>
-      <div className="rounded-lg border border-border border-dashed bg-background p-8 text-center text-muted-foreground">
-        {t('common.coming_soon')}
-      </div>
-    </div>
+      )}
+    </WorkspaceWrapper>
   );
 }

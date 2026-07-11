@@ -9,6 +9,7 @@ import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent } from '@tuturuuu/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import Link from 'next/link';
+import { connection } from 'next/server';
 import { requireNovaAppSessionUser } from '@/lib/app-session';
 import ProblemComponent from '../../../../shared/problem-component';
 import PromptComponent from '../../../../shared/prompt-component';
@@ -26,6 +27,8 @@ interface Props {
 }
 
 export default async function Page({ params }: Props) {
+  await connection();
+
   const { problemId } = await params;
   const problem = await getProblem(problemId);
   const submissions = await getSubmissions(problemId);

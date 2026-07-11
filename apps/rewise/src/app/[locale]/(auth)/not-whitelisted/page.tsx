@@ -1,9 +1,12 @@
 import { getSatelliteAppSessionUser } from '@tuturuuu/satellite/auth';
 import { redirect } from 'next/navigation';
+import { connection } from 'next/server';
 import { getTranslations } from 'next-intl/server';
 import { isCurrentUserAIWhitelisted } from '@/lib/ai-whitelist';
 
 export default async function NotWhitelistedPage() {
+  await connection();
+
   const t = await getTranslations();
 
   const user = await getSatelliteAppSessionUser('rewise');

@@ -5,7 +5,7 @@ import {
   DOMAIN_BLACKLIST_REGEX,
   EMAIL_BLACKLIST_REGEX,
 } from '@tuturuuu/utils/email/validation';
-import { NextResponse } from 'next/server';
+import { connection, NextResponse } from 'next/server';
 import { z } from 'zod';
 
 const CreateEmailBlacklistSchema = z.object({
@@ -15,6 +15,8 @@ const CreateEmailBlacklistSchema = z.object({
 });
 
 export async function GET(_req: Request) {
+  await connection();
+
   const supabase = await createClient();
 
   // Check if user is authenticated and from root workspace

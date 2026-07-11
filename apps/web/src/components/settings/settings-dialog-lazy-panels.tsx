@@ -50,22 +50,6 @@ const LazyTaskGeneralSettingsPanel = lazy(() =>
 const LazyAttendanceDisplaySettings = lazy(
   () => import('./attendance/attendance-display-settings')
 );
-const LazyDatabaseDefaultFiltersSettings = lazy(() =>
-  import('./users/database-default-filters-settings').then((module) => ({
-    default: module.DatabaseDefaultFiltersSettings,
-  }))
-);
-const LazyFeaturedGroupsSettings = lazy(
-  () => import('./users/featured-groups-settings')
-);
-const LazyRequireAttentionColorSettings = lazy(() =>
-  import('./users/require-attention-color-settings').then((module) => ({
-    default: module.RequireAttentionColorSettings,
-  }))
-);
-const LazyUsersManagementSettings = lazy(
-  () => import('./users/users-management-settings')
-);
 const LazyUserStatusSettings = lazy(
   () => import('./workspace/user-status-settings')
 );
@@ -190,18 +174,12 @@ export const AttendanceDisplaySettings = withPanelSuspense(
   LazyAttendanceDisplaySettings
 );
 export const BoardSettingsPanel = withPanelSuspense(LazyBoardSettingsPanel);
-export const DatabaseDefaultFiltersSettings = withPanelSuspense(
-  LazyDatabaseDefaultFiltersSettings
-);
 export const DebtLoanSettings = withPanelSuspense(LazyDebtLoanSettings);
 export const DefaultCurrencySettings = withPanelSuspense(
   LazyDefaultCurrencySettings
 );
 export const ExperimentalFinanceSettings = withPanelSuspense(
   LazyExperimentalFinanceSettings
-);
-export const FeaturedGroupsSettings = withPanelSuspense(
-  LazyFeaturedGroupsSettings
 );
 export const FormsAutosaveSettings = withPanelSuspense(
   LazyFormsAutosaveSettings
@@ -232,9 +210,6 @@ export const ReportDefaultTitleSettings = withPanelSuspense(
 export const SettingsDialogNativeRoutePanels = withPanelSuspense(
   LazySettingsDialogNativeRoutePanels
 );
-export const RequireAttentionColorSettings = withPanelSuspense(
-  LazyRequireAttentionColorSettings
-);
 export const SecuritySettings = withPanelSuspense(LazySecuritySettings);
 export const SessionSettings = withPanelSuspense(LazySessionSettings);
 export const TaskGeneralSettingsPanel = withPanelSuspense(
@@ -263,9 +238,6 @@ export const TimeTrackerRequestsSettings = withPanelSuspense(
 );
 export const TransactionDefaultsSettings = withPanelSuspense(
   LazyTransactionDefaultsSettings
-);
-export const UsersManagementSettings = withPanelSuspense(
-  LazyUsersManagementSettings
 );
 export const UserStatusSettings = withPanelSuspense(LazyUserStatusSettings);
 export const WorkspaceBillingSettings = withPanelSuspense(

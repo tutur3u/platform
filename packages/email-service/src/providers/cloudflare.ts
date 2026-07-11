@@ -27,12 +27,18 @@ type CloudflareSendResponse = {
 };
 
 function encodeAttachment(attachment: EmailAttachment) {
-  return {
+  const base = {
     content: Buffer.from(attachment.data).toString('base64'),
-    disposition: 'attachment' as const,
     filename: attachment.filename,
     type: attachment.contentType,
   };
+  return attachment.disposition === 'inline' && attachment.contentId
+    ? {
+        ...base,
+        content_id: attachment.contentId,
+        disposition: 'inline' as const,
+      }
+    : { ...base, disposition: 'attachment' as const };
 }
 
 function utf8Size(value: string) {
@@ -165,8 +171,10 @@ export class CloudflareEmailProvider extends BaseEmailProvider {
         ...(payload.result.delivered ?? []),
         ...(payload.result.queued ?? []),
       ];
+      const providerAccepted =
+        Boolean(payload.result.message_id) || accepted.length > 0;
 
-      if (permanentBounces.length > 0 || accepted.length === 0) {
+      if (permanentBounces.length > 0 || !providerAccepted) {
         return {
           success: false,
           error:

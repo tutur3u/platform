@@ -46,6 +46,60 @@ type StoredObject = {
   sizeBytes: number;
 };
 
+type RecipientParts = {
+  domain: string;
+  localPart: string;
+};
+
+function splitRecipient(value: string): RecipientParts | null {
+  const normalized = value.trim().toLowerCase();
+  const separator = normalized.lastIndexOf('@');
+  if (separator <= 0 || separator === normalized.length - 1) return null;
+  return {
+    domain: normalized.slice(separator + 1),
+    localPart: normalized.slice(0, separator),
+  };
+}
+
+function extractHeaderAddress(value: string) {
+  const normalized = value.trim().toLowerCase();
+  const angleAddress = normalized.match(/<([^<>]+)>/u)?.[1];
+  return angleAddress ?? normalized;
+}
+
+export function resolveCanonicalRecipient({
+  canonicalDomain,
+  observedRecipient,
+  originalRecipient,
+}: {
+  canonicalDomain: string;
+  observedRecipient: string;
+  originalRecipient?: string | null;
+}): { recipient?: string; reason?: string } {
+  const observed = splitRecipient(observedRecipient);
+  const normalizedCanonicalDomain = canonicalDomain.trim().toLowerCase();
+  if (!observed || !normalizedCanonicalDomain) {
+    return { reason: 'Invalid recipient mapping' };
+  }
+
+  if (observed.domain === normalizedCanonicalDomain) {
+    return { recipient: `${observed.localPart}@${normalizedCanonicalDomain}` };
+  }
+
+  if (originalRecipient) {
+    const original = splitRecipient(extractHeaderAddress(originalRecipient));
+    if (
+      !original ||
+      original.domain !== normalizedCanonicalDomain ||
+      original.localPart !== observed.localPart
+    ) {
+      return { reason: 'Original recipient does not match the shadow route' };
+    }
+  }
+
+  return { recipient: `${observed.localPart}@${normalizedCanonicalDomain}` };
+}
+
 function hex(bytes: ArrayBuffer) {
   return Array.from(new Uint8Array(bytes), (byte) =>
     byte.toString(16).padStart(2, '0')
@@ -200,9 +254,9 @@ function hasQuarantineSignal(headers: Headers) {
 
 export default {
   async email(message: EmailMessage, env: Env): Promise<void> {
-    const recipient = message.to.trim().toLowerCase();
-    const domain = recipient.split('@')[1];
-    if (!domain) {
+    const observedRecipient = message.to.trim().toLowerCase();
+    const ingressDomain = splitRecipient(observedRecipient)?.domain;
+    if (!ingressDomain) {
       message.setReject('Invalid recipient');
       return;
     }
@@ -213,12 +267,32 @@ export default {
 
     const domainCheck = await signedPost<{
       accepted: boolean;
+      canonicalDomain?: string;
       reason?: string;
-    }>(env, { domain, type: 'domain_check' });
-    if (!domainCheck.accepted) {
+      route?: 'catch_all' | 'exact';
+    }>(env, {
+      domain: ingressDomain,
+      recipient: observedRecipient,
+      type: 'domain_check',
+    });
+    if (!domainCheck.accepted || !domainCheck.canonicalDomain) {
       message.setReject(domainCheck.reason ?? 'Mail domain is unavailable');
       return;
     }
+
+    const resolvedRecipient = resolveCanonicalRecipient({
+      canonicalDomain: domainCheck.canonicalDomain,
+      observedRecipient,
+      originalRecipient: message.headers.get('x-gm-original-to'),
+    });
+    if (!resolvedRecipient.recipient) {
+      message.setReject(
+        resolvedRecipient.reason ?? 'Invalid recipient mapping'
+      );
+      return;
+    }
+    const recipient = resolvedRecipient.recipient;
+    const domain = domainCheck.canonicalDomain;
 
     const raw = await new Response(message.raw).arrayBuffer();
     const rawSha = await sha256(raw);
@@ -245,7 +319,12 @@ export default {
       await signedPost(env, {
         deliveryId,
         domain,
-        envelope: { from: message.from, to: recipient },
+        envelope: {
+          from: message.from,
+          observedTo: observedRecipient,
+          to: recipient,
+        },
+        ingressDomain,
         quarantineReason: 'malformed_mime',
         rawObject,
         type: 'ingest',
@@ -311,7 +390,12 @@ export default {
       bodyObjects,
       deliveryId,
       domain,
-      envelope: { from: message.from, to: recipient },
+      envelope: {
+        from: message.from,
+        observedTo: observedRecipient,
+        to: recipient,
+      },
+      ingressDomain,
       parsed: {
         attachments,
         bodyHtml: parsed.html ?? null,

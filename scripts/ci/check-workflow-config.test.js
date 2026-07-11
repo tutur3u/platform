@@ -38,6 +38,14 @@ function githubExpression(expression) {
   return `${String.fromCharCode(36)}{{ ${expression} }}`;
 }
 
+function readCompositeStep(action, name) {
+  const marker = `    - name: ${name}\n`;
+  const start = action.indexOf(marker);
+  assert.notEqual(start, -1, `missing composite step: ${name}`);
+  const next = action.indexOf('\n    - name:', start + marker.length);
+  return action.slice(start, next === -1 ? undefined : next);
+}
+
 test('docs-only changes skip all Vercel deploy workflows', () => {
   const rootDir = createFixtureRoot();
 
@@ -256,6 +264,25 @@ test('bun.lock-only changes run all Vercel app deploys', () => {
         changedFiles: ['bun.lock'],
         rootDir,
         workflowName,
+      },
+      true
+    );
+  }
+});
+
+test('shared remote-cache and metadata changes run Vercel workflows', () => {
+  const rootDir = createFixtureRoot();
+
+  for (const changedFile of [
+    '.github/actions/run-with-turbo-remote-cache/action.yml',
+    '.github/actions/setup-bun-with-retry/action.yml',
+    'scripts/ci/generate-build-metadata.ts',
+  ]) {
+    assertWorkflowDecision(
+      {
+        changedFiles: [changedFile],
+        rootDir,
+        workflowName: 'vercel-preview-calendar.yaml',
       },
       true
     );
@@ -537,14 +564,77 @@ test('Bun workflow helpers use bounded exponential backoff', () => {
     path.join(repoRoot, 'scripts', 'ci', 'run-with-backoff.sh'),
     'utf8'
   );
+  const runtimeSaveStep = readCompositeStep(
+    setupAction,
+    'Restore and save trusted Bun runtime cache'
+  );
+  const runtimeRestoreStep = readCompositeStep(
+    setupAction,
+    'Restore Bun runtime cache without saving'
+  );
+  const packageSaveStep = readCompositeStep(
+    setupAction,
+    'Restore and save trusted Bun package cache'
+  );
+  const packageRestoreStep = readCompositeStep(
+    setupAction,
+    'Restore Bun package cache without saving'
+  );
 
   assert.match(workflow, /run-with-backoff\.sh bun install --frozen-lockfile/);
   assert.match(setupAction, /setup-bun-with-backoff\.sh/);
+  assert.match(setupAction, /uses: actions\/cache@v6/);
+  assert.match(setupAction, /uses: actions\/cache\/restore@v6/);
+  assert.match(
+    setupAction,
+    /bun-runtime-v1-\$\{\{ runner\.os \}\}-\$\{\{ runner\.arch \}\}-\$\{\{ inputs\.bun-version \}\}-\$\{\{ hashFiles\('bun\.lock'\) \}\}/
+  );
+  assert.match(
+    setupAction,
+    /bun-deps-v1-\$\{\{ runner\.os \}\}-\$\{\{ runner\.arch \}\}-\$\{\{ inputs\.bun-version \}\}-\$\{\{ hashFiles\('bun\.lock'\) \}\}/
+  );
+  for (const saveStep of [runtimeSaveStep, packageSaveStep]) {
+    assert.match(saveStep, /github\.ref == 'refs\/heads\/main'/);
+    assert.doesNotMatch(saveStep, /refs\/heads\/production/);
+  }
+  for (const restoreStep of [runtimeRestoreStep, packageRestoreStep]) {
+    assert.match(restoreStep, /github\.ref != 'refs\/heads\/main'/);
+    assert.match(restoreStep, /github\.event_name == 'pull_request'/);
+    assert.match(restoreStep, /github\.actor == 'dependabot\[bot\]'/);
+  }
+  assert.doesNotMatch(setupAction, /node_modules/);
   assert.match(setupScript, /BUN_SETUP_MAX_ATTEMPTS/);
+  assert.match(setupScript, /Using cached Bun/);
+  assert.match(setupScript, /installed_version=.*--version/);
   assert.match(setupScript, /delay=\$\(\(delay \* 2\)\)/);
   assert.match(retryScript, /CI_RETRY_MAX_ATTEMPTS/);
   assert.match(retryScript, /bun pm cache rm/);
   assert.match(retryScript, /delay=\$\(\(delay \* 2\)\)/);
+});
+
+test('secretless Turbo fallback caches are task-scoped and trusted-write only', () => {
+  const setupAction = fs.readFileSync(
+    path.join(
+      repoRoot,
+      '.github',
+      'actions',
+      'setup-turbo-fallback-cache',
+      'action.yml'
+    ),
+    'utf8'
+  );
+
+  assert.match(setupAction, /uses: actions\/cache@v6/);
+  assert.match(setupAction, /uses: actions\/cache\/restore@v6/);
+  assert.match(setupAction, /\$\{\{ inputs\.family \}\}/);
+  assert.match(setupAction, /hashFiles\('bun\.lock', 'turbo\.json'\)/);
+  assert.match(setupAction, /runner\.os/);
+  assert.match(setupAction, /runner\.arch/);
+  assert.match(setupAction, /github\.event\.pull_request\.base\.sha/);
+  assert.match(setupAction, /github\.event\.repository\.default_branch/);
+  assert.match(setupAction, /github\.event_name == 'pull_request'/);
+  assert.match(setupAction, /github\.actor == 'dependabot\[bot\]'/);
+  assert.doesNotMatch(setupAction, /TURBO_TOKEN|TURBO_TEAM|node_modules/);
 });
 
 test('TanStack migration E2E workflow keeps dual-stack and compare coverage', () => {
@@ -598,7 +688,7 @@ test('TanStack migration E2E workflow keeps dual-stack and compare coverage', ()
   );
   assert.ok(artifactStep, 'migration-e2e must upload diagnostics artifacts');
   assert.equal(artifactStep.uses, 'actions/upload-artifact@v7');
-  assert.equal(artifactStep.if, githubExpression('!cancelled()'));
+  assert.equal(artifactStep.if, githubExpression('failure()'));
   assert.equal(
     artifactStep.with?.name,
     `migration-e2e-${githubExpression('matrix.mode')}`
@@ -608,8 +698,29 @@ test('TanStack migration E2E workflow keeps dual-stack and compare coverage', ()
     /apps\/tanstack-web\/playwright-report\//
   );
   assert.match(artifactStep.with?.path || '', /apps\/web\/blob-report\//);
-  assert.match(artifactStep.with?.path || '', /tmp\/e2e\//);
+  assert.match(
+    artifactStep.with?.path || '',
+    /tmp\/e2e\/web-migration\/\*\.json/
+  );
   assert.equal(artifactStep.with?.['if-no-files-found'], 'ignore');
+  assert.equal(artifactStep.with?.['retention-days'], 7);
+
+  const cacheExportStep = steps.find(
+    (step) => step.name === 'Configure trusted migration BuildKit cache exports'
+  );
+  assert.equal(
+    cacheExportStep,
+    undefined,
+    'migration E2E must restore shared BuildKit scopes without racing their owners'
+  );
+  assert.equal(
+    job.env?.DOCKER_WEB_CACHE_BACKEND_FROM,
+    'type=gha,scope=docker-backend,timeout=10m'
+  );
+  assert.equal(
+    job.env?.DOCKER_WEB_CACHE_TANSTACK_FROM,
+    'type=gha,scope=docker-tanstack-web-prod,timeout=10m'
+  );
 
   const cleanupStep = steps.find(
     (step) => step.name === 'Stop migration E2E stacks'

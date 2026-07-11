@@ -1,0 +1,222 @@
+'use client';
+
+import { useQueryClient } from '@tanstack/react-query';
+import { Loader2, RefreshCw } from '@tuturuuu/icons';
+import { Button } from '@tuturuuu/ui/button';
+import { CustomDataTable } from '@tuturuuu/ui/custom/tables/custom-data-table';
+import { useTranslations } from 'next-intl';
+import { parseAsString, useQueryState } from 'nuqs';
+import { useCallback, useRef } from 'react';
+import { getUserGroupColumns } from './columns';
+import Filters from './filters';
+import {
+  type UserGroupStatusFilter,
+  type UserGroupsResponse,
+  useInfiniteUserGroups,
+} from './hooks';
+import { shouldRefreshUserGroups } from './refresh-utils';
+
+interface Props {
+  wsId: string;
+  initialData: UserGroupsResponse;
+  permissions: {
+    canCreate: boolean;
+    canUpdate: boolean;
+    canDelete: boolean;
+  };
+}
+
+export function UserGroupsTable({ wsId, initialData, permissions }: Props) {
+  const t = useTranslations();
+  const queryClient = useQueryClient();
+  const lastRefreshAtRef = useRef<number | null>(null);
+
+  const [q, setQ] = useQueryState(
+    'q',
+    parseAsString.withDefault('').withOptions({
+      shallow: true,
+      throttleMs: 300,
+    })
+  );
+  const [status, setStatus] = useQueryState(
+    'status',
+    parseAsString.withDefault('active').withOptions({
+      clearOnDefault: true,
+      shallow: true,
+    })
+  );
+
+  const statusFilter: UserGroupStatusFilter =
+    status === 'all' || status === 'archived' ? status : 'active';
+
+  const [, setIncludeArchived] = useQueryState(
+    'includeArchived',
+    parseAsString.withOptions({
+      shallow: true,
+    })
+  );
+
+  const setStatusFilter = useCallback(
+    (value: UserGroupStatusFilter) => {
+      setStatus(value === 'active' ? null : value);
+      setIncludeArchived(null);
+    },
+    [setIncludeArchived, setStatus]
+  );
+
+  const {
+    groups: fetchedGroups,
+    count,
+    isLoading,
+    isFetching,
+    isPlaceholderData,
+    isFetchingNextPage,
+    hasNextPage,
+    fetchNextPage,
+    error,
+    refetch,
+  } = useInfiniteUserGroups(
+    wsId,
+    {
+      q,
+      status: statusFilter,
+    },
+    {
+      initialData: !q && statusFilter === 'active' ? initialData : undefined,
+    }
+  );
+
+  const groups = fetchedGroups.length
+    ? fetchedGroups.map((g) => ({
+        ...g,
+        ws_id: wsId,
+        href: `/${wsId}/users/groups/${g.id}`,
+      }))
+    : isLoading
+      ? undefined
+      : [];
+
+  const handleSearch = useCallback(
+    (query: string) => {
+      setQ(query || null);
+    },
+    [setQ]
+  );
+
+  const handleResetParams = useCallback(() => {
+    setQ(null);
+    setStatus(null);
+    setIncludeArchived(null);
+  }, [setIncludeArchived, setQ, setStatus]);
+
+  const handleRefresh = useCallback(() => {
+    const now = Date.now();
+    if (!shouldRefreshUserGroups(now, lastRefreshAtRef.current)) {
+      return;
+    }
+
+    lastRefreshAtRef.current = now;
+    queryClient.invalidateQueries({
+      queryKey: ['workspace-user-groups', wsId],
+    });
+    queryClient.invalidateQueries({
+      queryKey: ['workspace-user-groups-infinite', wsId],
+    });
+  }, [queryClient, wsId]);
+
+  const hasError = Boolean(error);
+  const errorMessage = error instanceof Error ? error.message : undefined;
+
+  if (hasError) {
+    return (
+      <div className="flex flex-col items-center justify-center gap-4 py-16">
+        <p className="text-destructive">
+          {errorMessage || 'Error loading user groups. Please try again.'}
+        </p>
+        <Button
+          onClick={() => refetch()}
+          disabled={isFetching}
+          aria-label="Retry loading user groups"
+        >
+          {isFetching ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              {t('common.loading')}
+            </>
+          ) : (
+            <>
+              <RefreshCw className="mr-2 h-4 w-4" />
+              {t('common.retry')}
+            </>
+          )}
+        </Button>
+      </div>
+    );
+  }
+
+  const showLoadingOverlay =
+    (isFetching || isPlaceholderData) && !isLoading && !isFetchingNextPage;
+
+  return (
+    <div className="relative">
+      {showLoadingOverlay && (
+        <div className="absolute inset-0 z-10 flex items-center justify-center rounded-lg bg-background/50 backdrop-blur-[1px]">
+          <div className="flex items-center gap-2 rounded-md border bg-background/90 px-4 py-2 shadow-lg">
+            <Loader2 className="h-5 w-5 animate-spin text-primary" />
+            <span className="text-muted-foreground text-sm">
+              {t('common.loading')}
+            </span>
+          </div>
+        </div>
+      )}
+
+      <CustomDataTable
+        data={groups}
+        columnGenerator={getUserGroupColumns}
+        namespace="user-group-data-table"
+        count={count}
+        filters={
+          <Filters
+            wsId={wsId}
+            status={statusFilter}
+            onStatusChange={setStatusFilter}
+          />
+        }
+        onSearch={handleSearch}
+        resetParams={handleResetParams}
+        isFiltered={!!q || statusFilter !== 'active'}
+        hidePagination
+        extraData={{
+          canCreateUserGroups: permissions.canCreate,
+          canUpdateUserGroups: permissions.canUpdate,
+          canDeleteUserGroups: permissions.canDelete,
+        }}
+        onRefresh={handleRefresh}
+        defaultVisibility={{
+          id: false,
+          is_guest: false,
+          locked: false,
+          created_at: false,
+        }}
+      />
+      {(hasNextPage || isFetchingNextPage) && (
+        <div className="mt-4 flex justify-center">
+          <Button
+            variant="outline"
+            onClick={() => void fetchNextPage()}
+            disabled={isFetchingNextPage}
+          >
+            {isFetchingNextPage ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                {t('common.loading')}
+              </>
+            ) : (
+              t('common.load_more')
+            )}
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+}

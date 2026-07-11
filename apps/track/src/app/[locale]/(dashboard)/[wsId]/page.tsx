@@ -3,6 +3,7 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { Card, CardContent } from '@tuturuuu/ui/card';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import { connection } from 'next/server';
 import { getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
@@ -131,6 +132,8 @@ export default async function TimeTrackerPage({
 }: {
   params: Promise<{ locale: string; wsId: string }>;
 }) {
+  await connection();
+
   return (
     <WorkspaceWrapper params={params}>
       {async ({ workspace, wsId, locale, isPersonal }) => {

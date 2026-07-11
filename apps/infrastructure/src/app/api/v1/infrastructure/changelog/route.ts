@@ -4,7 +4,7 @@ import {
   MAX_NAME_LENGTH,
   MAX_SEARCH_LENGTH,
 } from '@tuturuuu/utils/constants';
-import { NextResponse } from 'next/server';
+import { connection, NextResponse } from 'next/server';
 import { z } from 'zod';
 import {
   authorizedChangelogUser,
@@ -33,6 +33,8 @@ const CreateChangelogSchema = z.object({
 });
 
 export async function GET(req: Request) {
+  await connection();
+
   const supabase = await createClient();
   const { searchParams } = new URL(req.url);
 

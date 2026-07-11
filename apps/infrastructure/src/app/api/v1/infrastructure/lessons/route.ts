@@ -1,9 +1,11 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
-import { NextResponse } from 'next/server';
+import { connection, NextResponse } from 'next/server';
 
 export async function GET(req: Request) {
+  await connection();
+
   const permissions = await getPermissions({
     request: req,
     wsId: ROOT_WORKSPACE_ID,

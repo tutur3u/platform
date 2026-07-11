@@ -1,5 +1,6 @@
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { notFound, redirect } from 'next/navigation';
+import { connection } from 'next/server';
 import { getTranslations } from 'next-intl/server';
 import type React from 'react';
 import { Navigation, type NavLink } from '@/components/navigation';
@@ -12,6 +13,8 @@ interface LayoutProps {
 }
 
 export default async function Layout({ children, params }: LayoutProps) {
+  await connection();
+
   const t = await getTranslations();
   const { wsId } = await params;
 

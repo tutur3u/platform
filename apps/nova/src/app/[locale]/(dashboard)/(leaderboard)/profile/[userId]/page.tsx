@@ -2,6 +2,7 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { generateFunName } from '@tuturuuu/utils/name-helper';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import { connection } from 'next/server';
 import { getLocale } from 'next-intl/server';
 import UserProfileClient, { type ProfileData } from './client';
 
@@ -58,6 +59,8 @@ export default async function UserProfilePage({
 }: {
   params: Promise<{ userId: string }>;
 }) {
+  await connection();
+
   const { userId: rawUserId } = await params;
 
   const locale = await getLocale();

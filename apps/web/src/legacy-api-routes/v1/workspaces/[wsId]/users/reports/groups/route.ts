@@ -1,5 +1,10 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import {
+  escapeLikeWildcards,
+  fetchManagersForGroups,
+  getUserGroupMemberships,
+} from '@tuturuuu/users-core/lib/user-groups/groups-utils';
+import {
   MAX_SEARCH_LENGTH,
   MAX_SHORT_TEXT_LENGTH,
 } from '@tuturuuu/utils/constants';
@@ -9,11 +14,6 @@ import {
 } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import {
-  escapeLikeWildcards,
-  fetchManagersForGroups,
-  getUserGroupMemberships,
-} from '@/app/[locale]/(dashboard)/[wsId]/users/groups/utils';
 import { buildPostgrestRateLimitResponse } from '@/lib/postgrest-rate-limit';
 
 const SearchParamsSchema = z.object({

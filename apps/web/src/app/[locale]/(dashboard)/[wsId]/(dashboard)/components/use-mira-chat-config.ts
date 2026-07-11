@@ -8,9 +8,9 @@ import {
 } from '@tuturuuu/ai/credits/model-mapping';
 import type { AIModelUI } from '@tuturuuu/types';
 import { useAiCredits } from '@tuturuuu/ui/hooks/use-ai-credits';
+import { resolveTimezone } from '@tuturuuu/utils/calendar-settings-resolver';
 import { normalizeWorkspaceContextId } from '@tuturuuu/utils/constants';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { resolveTimezone } from '@/lib/calendar-settings-resolver';
 import {
   CREDIT_SOURCE_STORAGE_KEY_PREFIX,
   type CreditSource,

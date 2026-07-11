@@ -5,6 +5,7 @@ import { Separator } from '@tuturuuu/ui/separator';
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import { connection } from 'next/server';
 import { getTranslations } from 'next-intl/server';
 import WhiteboardsList, { type Whiteboard } from './client';
 import CreateWhiteboardDialog from './createWhiteboardDialog';
@@ -21,6 +22,8 @@ interface WhiteboardsPageProps {
 export default async function WhiteboardsPage({
   params,
 }: WhiteboardsPageProps) {
+  await connection();
+
   const { wsId } = await params;
   const workspace = await getWorkspace(wsId);
 

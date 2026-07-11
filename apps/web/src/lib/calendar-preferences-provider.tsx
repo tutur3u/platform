@@ -4,13 +4,13 @@ import {
   type CalendarPreferences,
   CalendarPreferencesProvider as UICalendarPreferencesProvider,
 } from '@tuturuuu/ui/hooks/use-calendar-preferences';
-import { useLocale } from 'next-intl';
-import type { ComponentType, ReactNode } from 'react';
-import { useCallback, useEffect, useState } from 'react';
 import {
   firstDayToNumber,
   resolveCalendarSettings,
-} from './calendar-settings-resolver';
+} from '@tuturuuu/utils/calendar-settings-resolver';
+import { useLocale } from 'next-intl';
+import type { ComponentType, ReactNode } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 interface CalendarPreferencesProviderProps {
   children: ReactNode;

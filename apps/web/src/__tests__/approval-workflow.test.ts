@@ -1,14 +1,14 @@
 import { readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
-import { permissions } from '@tuturuuu/utils/permissions';
-import { describe, expect, it } from 'vitest';
 import {
   APPROVAL_STATUS,
   type ApprovalStatus,
   canRemoveApproval,
-} from '@/app/[locale]/(dashboard)/[wsId]/users/approvals/utils';
+} from '@tuturuuu/users-core/lib/approvals-utils';
+import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
+import { permissions } from '@tuturuuu/utils/permissions';
+import { describe, expect, it } from 'vitest';
 
 const repoRoot = resolve(
   dirname(fileURLToPath(import.meta.url)),

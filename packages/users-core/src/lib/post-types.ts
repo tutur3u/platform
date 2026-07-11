@@ -1,0 +1,139 @@
+import { POST_EMAIL_QUEUE_STATUSES } from './post-email-queue-statuses';
+
+export type PostEmailQueueStatus = (typeof POST_EMAIL_QUEUE_STATUSES)[number];
+
+export function isPostEmailQueueStatus(
+  value?: string
+): value is PostEmailQueueStatus {
+  return POST_EMAIL_QUEUE_STATUSES.includes(value as PostEmailQueueStatus);
+}
+
+export const POST_APPROVAL_STATUSES = [
+  'PENDING',
+  'APPROVED',
+  'REJECTED',
+  'SKIPPED',
+] as const;
+
+export const POST_REVIEW_STAGES = [
+  'missing_check',
+  'pending_approval',
+  'approved_awaiting_delivery',
+  'undeliverable',
+  'queued',
+  'processing',
+  'sent',
+  'delivery_failed',
+  'skipped',
+  'rejected',
+] as const;
+
+export const DEFAULT_POST_REVIEW_STAGE = 'pending_approval' as const;
+
+export type PostApprovalStatus = (typeof POST_APPROVAL_STATUSES)[number];
+export type PostReviewStage = (typeof POST_REVIEW_STAGES)[number];
+export type PostDeliveryIssueReason =
+  | 'missing_email'
+  | 'missing_sender_platform_user'
+  | 'blacklisted_email_or_domain';
+
+export function isPostApprovalStatus(
+  value?: string
+): value is PostApprovalStatus {
+  return POST_APPROVAL_STATUSES.includes(value as PostApprovalStatus);
+}
+
+export function isPostReviewStage(value?: string): value is PostReviewStage {
+  return POST_REVIEW_STAGES.includes(value as PostReviewStage);
+}
+
+export interface RawPostsSearchParams {
+  page?: string | string[];
+  pageSize?: string | string[];
+  start?: string | string[];
+  end?: string | string[];
+  includedGroups?: string | string[];
+  excludedGroups?: string | string[];
+  userId?: string | string[];
+  stage?: string | string[];
+  queueStatus?: string | string[];
+  approvalStatus?: string | string[];
+  showAll?: string | string[];
+  cursor?: string | string[];
+}
+
+export interface PostsSearchParams {
+  page?: number | null;
+  pageSize?: number | null;
+  start?: string | null;
+  end?: string | null;
+  includedGroups?: string[] | null;
+  excludedGroups?: string[] | null;
+  userId?: string | null;
+  stage?: PostReviewStage | null;
+  queueStatus?: PostEmailQueueStatus | null;
+  approvalStatus?: PostApprovalStatus | null;
+  showAll?: boolean | null;
+  cursor?: string | null;
+}
+
+export interface PostEmailStatusSummary {
+  total: number;
+  stages: Record<PostReviewStage, number>;
+  approvals: {
+    pending: number;
+    approved: number;
+    rejected: number;
+    skipped: number;
+  };
+  queue: {
+    queued: number;
+    processing: number;
+    sent: number;
+    failed: number;
+    blocked: number;
+    cancelled: number;
+    skipped: number;
+  };
+}
+
+export interface PostEmail {
+  id?: string | null;
+  subject?: string | null;
+  user_id?: string | null;
+  user_display_name?: string | null;
+  user_full_name?: string | null;
+  user_phone?: string | null;
+  user_avatar_url?: string | null;
+  recipient?: string | null;
+  email?: string | null;
+  email_id?: string | null;
+  group_id?: string | null;
+  group_name?: string | null;
+  post_id?: string | null;
+  post_title?: string | null;
+  post_content?: string | null;
+  is_completed?: boolean | null;
+  has_check?: boolean;
+  ws_id?: string | null;
+  notes?: string | null;
+  post_created_at?: string | null;
+  created_at?: Date | null;
+  stage: PostReviewStage;
+  queue_status?: PostEmailQueueStatus;
+  queue_attempt_count?: number;
+  queue_last_error?: string | null;
+  queue_created_at?: string | null;
+  queue_updated_at?: string | null;
+  queue_last_attempt_at?: string | null;
+  queue_claimed_at?: string | null;
+  queue_cancelled_at?: string | null;
+  queue_sent_at?: string | null;
+  queue_skipped_at?: string | null;
+  delivery_issue_reason?: PostDeliveryIssueReason | null;
+  approval_status?: PostApprovalStatus;
+  approval_rejection_reason?: string | null;
+  approval_approved_at?: string | null;
+  approval_rejected_at?: string | null;
+  can_remove_approval?: boolean;
+}

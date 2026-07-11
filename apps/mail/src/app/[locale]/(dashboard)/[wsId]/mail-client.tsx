@@ -1,37 +1,76 @@
 'use client';
 
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Loader2, RefreshCw, Search } from '@tuturuuu/icons';
 import {
+  useInfiniteQuery,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query';
+import {
+  Archive,
+  CheckCheck,
+  Info,
+  Loader2,
+  RefreshCw,
+  Search,
+  Trash2,
+  X,
+} from '@tuturuuu/icons';
+import {
+  bulkUpdateMailThreads,
   getMailBootstrap,
-  getMailMessage,
-  listMailMessages,
+  getMailThread,
+  listMailThreads,
   type MailMessageDetail,
+  type MailThreadsResponse,
   type SendMailMessagePayload,
   sendMailMessage,
-  updateMailMessageState,
+  updateMailThreadState,
 } from '@tuturuuu/internal-api';
+import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Input } from '@tuturuuu/ui/input';
+import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
+import {
+  ResizableHandle,
+  ResizablePanel,
+  ResizablePanelGroup,
+} from '@tuturuuu/ui/resizable';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { toast } from '@tuturuuu/ui/sonner';
 import { cn } from '@tuturuuu/utils/format';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { parseAsString, useQueryState } from 'nuqs';
-import { useState } from 'react';
-import { ComposeDialog, type ComposeInitialDraft } from './compose-dialog';
+import { useEffect, useMemo, useState } from 'react';
+import {
+  type ComposeInitialDraft,
+  FloatingComposer,
+} from './floating-composer';
 import type { MailFolder } from './mail-folders';
 import { getMailFolderHref, mailFolderIcons } from './mail-folders';
-import { MessageRow } from './mail-list';
-import { MessageDetail } from './message-detail';
+import {
+  DEFAULT_MAIL_PANE_LAYOUT,
+  normalizeMailPaneLayout,
+} from './mail-pane-layout';
+import { MailThreadRow } from './mail-thread-list';
+import { ThreadDetail } from './thread-detail';
 
 interface MailAppClientProps {
   folder: MailFolder;
   workspaceId: string;
 }
 
-type MailStateAction = Parameters<typeof updateMailMessageState>[3]['action'];
+type ThreadAction = Parameters<typeof updateMailThreadState>[3]['action'];
+
+function escapeHtml(value: string) {
+  return value
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#039;');
+}
 
 export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
   const t = useTranslations('mail');
@@ -39,7 +78,9 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
   const queryClient = useQueryClient();
   const [mailboxId] = useQueryState('mailbox');
   const [query, setQuery] = useQueryState('q', parseAsString.withDefault(''));
-  const [messageId, setMessageId] = useQueryState('message');
+  const [label] = useQueryState('label');
+  const [folderId] = useQueryState('folderId');
+  const [threadId, setThreadId] = useQueryState('thread');
   const [composeParam, setComposeParam] = useQueryState(
     'compose',
     parseAsString.withDefault('')
@@ -47,7 +88,28 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
   const [composeDraft, setComposeDraft] = useState<ComposeInitialDraft | null>(
     null
   );
+  const [selectedThreads, setSelectedThreads] = useState<Set<string>>(
+    new Set()
+  );
+  const [layout, setLayout] = useState<[number, number]>([
+    ...DEFAULT_MAIL_PANE_LAYOUT,
+  ]);
   const composeOpen = composeParam === '1';
+
+  useEffect(() => {
+    const stored = window.localStorage.getItem('tuturuuu-mail-pane-layout');
+    if (!stored) return;
+    try {
+      const next = normalizeMailPaneLayout(JSON.parse(stored));
+      setLayout(next);
+      window.localStorage.setItem(
+        'tuturuuu-mail-pane-layout',
+        JSON.stringify(next)
+      );
+    } catch {
+      window.localStorage.removeItem('tuturuuu-mail-pane-layout');
+    }
+  }, []);
 
   const bootstrapQuery = useQuery({
     queryFn: () => getMailBootstrap(workspaceId),
@@ -59,22 +121,41 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
   const activeMailboxId = activeMailbox?.id ?? null;
   const FolderIcon = mailFolderIcons[folder];
 
-  const messagesQuery = useQuery({
+  const threadsQuery = useInfiniteQuery({
     enabled: Boolean(activeMailboxId),
-    queryFn: () =>
-      listMailMessages(workspaceId, activeMailboxId ?? '', {
+    getNextPageParam: (lastPage: MailThreadsResponse) => {
+      const loadedThrough =
+        lastPage.pagination.page * lastPage.pagination.pageSize;
+      return loadedThrough < lastPage.pagination.total
+        ? lastPage.pagination.page + 1
+        : undefined;
+    },
+    initialPageParam: 1,
+    queryFn: ({ pageParam }): Promise<MailThreadsResponse> =>
+      listMailThreads(workspaceId, activeMailboxId ?? '', {
         folder,
-        pageSize: 60,
+        folderId: folderId ?? undefined,
+        label: label ?? undefined,
+        page: pageParam,
+        pageSize: 40,
         query: query || undefined,
       }),
-    queryKey: ['mail', workspaceId, activeMailboxId, 'messages', folder, query],
+    queryKey: [
+      'mail',
+      workspaceId,
+      activeMailboxId,
+      'threads',
+      folder,
+      folderId,
+      label,
+      query,
+    ],
   });
-
   const detailQuery = useQuery({
-    enabled: Boolean(activeMailboxId && messageId),
+    enabled: Boolean(activeMailboxId && threadId),
     queryFn: () =>
-      getMailMessage(workspaceId, activeMailboxId ?? '', messageId ?? ''),
-    queryKey: ['mail', workspaceId, activeMailboxId, 'message', messageId],
+      getMailThread(workspaceId, activeMailboxId ?? '', threadId ?? ''),
+    queryKey: ['mail', workspaceId, activeMailboxId, 'thread', threadId],
   });
 
   const invalidateMailbox = async () => {
@@ -85,194 +166,351 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
 
   const sendMutation = useMutation({
     mutationFn: ({
-      mailboxId,
+      nextMailboxId,
       payload,
     }: {
-      mailboxId: string;
+      nextMailboxId: string;
       payload: SendMailMessagePayload;
-    }) => sendMailMessage(workspaceId, mailboxId, payload),
-    onError: (error) => {
-      toast.error(error instanceof Error ? error.message : t('send_failed'));
-    },
+    }) => sendMailMessage(workspaceId, nextMailboxId, payload),
+    onError: (error) =>
+      toast.error(error instanceof Error ? error.message : t('send_failed')),
     onSuccess: async ({ message }, variables) => {
       await invalidateMailbox();
-      if (folder !== 'sent') {
-        const nextParams = new URLSearchParams();
-        nextParams.set('mailbox', variables.mailboxId);
-        nextParams.set('message', message.id);
-        router.replace(
-          `${getMailFolderHref(workspaceId, 'sent')}?${nextParams.toString()}`
-        );
-      } else {
-        await setMessageId(message.id);
-      }
+      const nextParams = new URLSearchParams();
+      nextParams.set('mailbox', variables.nextMailboxId);
+      if (message.threadId) nextParams.set('thread', message.threadId);
+      router.replace(`${getMailFolderHref(workspaceId, 'sent')}?${nextParams}`);
       toast.success(t('sent'));
     },
   });
 
   const stateMutation = useMutation({
-    mutationFn: (action: MailStateAction) =>
-      updateMailMessageState(
+    mutationFn: (action: ThreadAction) =>
+      updateMailThreadState(
         workspaceId,
         activeMailboxId ?? '',
-        messageId ?? '',
+        threadId ?? '',
         { action }
       ),
     onSuccess: async (_data, action) => {
       await invalidateMailbox();
-      await queryClient.invalidateQueries({
-        queryKey: ['mail', workspaceId, activeMailboxId, 'message', messageId],
-      });
-
-      if (action === 'archive' || action === 'trash') {
-        await setMessageId(null);
-      }
+      if (action === 'archive' || action === 'trash') await setThreadId(null);
+    },
+  });
+  const bulkMutation = useMutation({
+    mutationFn: (action: 'archive' | 'mark_read' | 'trash') =>
+      bulkUpdateMailThreads(workspaceId, activeMailboxId ?? '', {
+        action,
+        threadIds: [...selectedThreads],
+      }),
+    onSuccess: async () => {
+      setSelectedThreads(new Set());
+      await invalidateMailbox();
     },
   });
 
-  const messages = messagesQuery.data?.messages ?? [];
-  const emptyTitle = query.trim() ? t('no_search_results') : t('empty');
-  const emptyDescription = query.trim()
-    ? t('no_search_results_description')
-    : t('empty_folder_description');
+  const threads =
+    threadsQuery.data?.pages.flatMap((page) => page.threads) ?? [];
+  const filterChips = useMemo(
+    () =>
+      query.match(
+        /(?:from|to|cc|bcc|subject|is|before|after|label|has):(?:"[^"]+"|\S+)/gu
+      ) ?? [],
+    [query]
+  );
 
-  function handleComposeOpenChange(open: boolean) {
-    if (!open) setComposeDraft(null);
-    void setComposeParam(open ? '1' : null);
-  }
-
-  function handleReply(message: MailMessageDetail) {
-    setComposeDraft({
-      subject: formatReplySubject(message.subject),
-      to: message.fromAddress,
-    });
+  const openCompose = (draft: ComposeInitialDraft | null) => {
+    setComposeDraft(draft);
     void setComposeParam('1');
-  }
-
-  function handleToggleRead() {
-    stateMutation.mutate(
-      detailQuery.data?.unread ? 'mark_read' : 'mark_unread'
+  };
+  const replyReferences = (message: MailMessageDetail) => [
+    ...message.references,
+    ...(message.internetMessageId ? [message.internetMessageId] : []),
+  ];
+  const quote = (message: MailMessageDetail) =>
+    `<p><br></p><blockquote><p>${escapeHtml(t('quoted_message', { sender: message.fromName || message.fromAddress }))}</p>${message.sanitizedHtml || `<p>${escapeHtml(message.bodyText ?? '').replaceAll('\n', '<br>')}</p>`}</blockquote>`;
+  const handleReply = (message: MailMessageDetail) =>
+    openCompose({
+      bodyHtml: quote(message),
+      inReplyTo: message.internetMessageId,
+      references: replyReferences(message),
+      subject: replySubject(message.subject),
+      to: [message.fromAddress],
+    });
+  const handleReplyAll = (message: MailMessageDetail) => {
+    const excluded = new Set(
+      mailboxes.map((mailbox) => mailbox.address.toLowerCase())
     );
-  }
+    const addresses = [
+      message.fromAddress,
+      ...message.recipients
+        .filter(
+          (recipient) => recipient.kind === 'to' || recipient.kind === 'cc'
+        )
+        .map((recipient) => recipient.address),
+    ].filter((address) => !excluded.has(address.toLowerCase()));
+    const unique = [...new Set(addresses)];
+    openCompose({
+      bodyHtml: quote(message),
+      cc: unique.slice(1),
+      inReplyTo: message.internetMessageId,
+      references: replyReferences(message),
+      subject: replySubject(message.subject),
+      to: unique.slice(0, 1),
+    });
+  };
+  const handleForward = (message: MailMessageDetail) =>
+    openCompose({
+      bodyHtml: quote(message),
+      sourceAttachmentIds: message.attachments.map(
+        (attachment) => attachment.id
+      ),
+      sourceMessageId: message.id,
+      subject: forwardSubject(message.subject),
+      to: [],
+    });
+
+  const listPanel = (
+    <section className="flex h-full min-h-0 flex-col bg-background/95">
+      <div className="flex min-h-17 items-center gap-3 border-dynamic border-b px-4">
+        <div className="flex size-10 items-center justify-center rounded-2xl border border-dynamic bg-foreground/[0.035]">
+          <FolderIcon className="size-4" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <h1 className="truncate font-semibold">{t(folder)}</h1>
+          <p className="truncate text-muted-foreground text-xs">
+            {activeMailbox?.address}
+          </p>
+        </div>
+        <Button
+          aria-label={t('refresh')}
+          disabled={threadsQuery.isFetching}
+          onClick={() => threadsQuery.refetch()}
+          size="icon"
+          variant="ghost"
+        >
+          <RefreshCw
+            className={cn('size-4', threadsQuery.isFetching && 'animate-spin')}
+          />
+        </Button>
+      </div>
+      <div className="space-y-2 border-dynamic border-b p-3">
+        <div className="relative">
+          <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            className="h-10 rounded-xl bg-foreground/[0.025] pr-10 pl-9"
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder={t('search')}
+            value={query}
+          />
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                aria-label={t('search_help')}
+                className="absolute top-1/2 right-1 -translate-y-1/2"
+                size="icon"
+                variant="ghost"
+              >
+                <Info className="size-4" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent align="end" className="w-80 text-sm">
+              <div className="font-medium">{t('advanced_search')}</div>
+              <p className="mt-1 text-muted-foreground text-xs leading-5">
+                {t('search_help_description')}
+              </p>
+              <code className="mt-3 block rounded-lg bg-foreground/[0.05] p-2 text-xs">
+                from:alex@example.com has:attachment after:2026-07-01
+              </code>
+            </PopoverContent>
+          </Popover>
+        </div>
+        {filterChips.length > 0 ? (
+          <div className="flex flex-wrap gap-1.5">
+            {filterChips.map((chip) => (
+              <Badge key={chip} variant="secondary">
+                {chip}
+              </Badge>
+            ))}
+          </div>
+        ) : null}
+        {selectedThreads.size > 0 ? (
+          <div className="flex items-center gap-1 rounded-xl bg-foreground/[0.04] p-1">
+            <span className="px-2 text-xs tabular-nums">
+              {t('selected_count', { count: selectedThreads.size })}
+            </span>
+            <Button
+              aria-label={t('mark_read')}
+              onClick={() => bulkMutation.mutate('mark_read')}
+              size="icon"
+              variant="ghost"
+            >
+              <CheckCheck className="size-4" />
+            </Button>
+            <Button
+              aria-label={t('archive')}
+              onClick={() => bulkMutation.mutate('archive')}
+              size="icon"
+              variant="ghost"
+            >
+              <Archive className="size-4" />
+            </Button>
+            <Button
+              aria-label={t('trash')}
+              onClick={() => bulkMutation.mutate('trash')}
+              size="icon"
+              variant="ghost"
+            >
+              <Trash2 className="size-4" />
+            </Button>
+            <Button
+              aria-label={t('clear_selection')}
+              className="ml-auto"
+              onClick={() => setSelectedThreads(new Set())}
+              size="icon"
+              variant="ghost"
+            >
+              <X className="size-4" />
+            </Button>
+          </div>
+        ) : null}
+      </div>
+      <ScrollArea className="min-h-0 flex-1">
+        {bootstrapQuery.isLoading || threadsQuery.isLoading ? (
+          <div className="flex h-48 items-center justify-center text-muted-foreground text-sm">
+            <Loader2 className="mr-2 size-4 animate-spin" />
+            {t('loading')}
+          </div>
+        ) : threads.length ? (
+          <div className="divide-y divide-dynamic">
+            {threads.map((thread) => (
+              <MailThreadRow
+                active={thread.id === threadId}
+                key={thread.id}
+                onClick={() => setThreadId(thread.id)}
+                onSelect={(selected) =>
+                  setSelectedThreads((current) => {
+                    const next = new Set(current);
+                    if (selected) next.add(thread.id);
+                    else next.delete(thread.id);
+                    return next;
+                  })
+                }
+                selected={selectedThreads.has(thread.id)}
+                thread={thread}
+              />
+            ))}
+            {threadsQuery.hasNextPage ? (
+              <div className="flex justify-center p-3">
+                <Button
+                  disabled={threadsQuery.isFetchingNextPage}
+                  onClick={() => threadsQuery.fetchNextPage()}
+                  size="sm"
+                  variant="ghost"
+                >
+                  {threadsQuery.isFetchingNextPage ? (
+                    <Loader2 className="size-4 animate-spin" />
+                  ) : null}
+                  {t('load_more')}
+                </Button>
+              </div>
+            ) : null}
+          </div>
+        ) : (
+          <div className="flex h-72 items-center justify-center px-8 text-center text-muted-foreground text-sm">
+            {query ? t('no_search_results') : t('empty_folder_description')}
+          </div>
+        )}
+      </ScrollArea>
+    </section>
+  );
+
+  const detailPanel = (
+    <section className="flex h-full min-h-0 bg-[radial-gradient(circle_at_45%_22%,color-mix(in_oklab,var(--foreground)_4%,transparent),transparent_34%)]">
+      <ThreadDetail
+        actionPending={stateMutation.isPending}
+        loading={detailQuery.isLoading}
+        onArchive={() => stateMutation.mutate('archive')}
+        onBack={() => setThreadId(null)}
+        onForward={handleForward}
+        onReply={handleReply}
+        onReplyAll={handleReplyAll}
+        onStar={() =>
+          stateMutation.mutate(
+            detailQuery.data?.messages.at(-1)?.starred ? 'unstar' : 'star'
+          )
+        }
+        onTrash={() => stateMutation.mutate('trash')}
+        thread={detailQuery.data ?? null}
+      />
+    </section>
+  );
 
   return (
-    <main className="flex h-full min-h-0 overflow-hidden bg-background text-foreground lg:grid lg:grid-cols-[minmax(320px,420px)_minmax(0,1fr)]">
-      <section
-        className={cn(
-          'min-h-0 flex-col border-dynamic border-r bg-background',
-          messageId ? 'hidden lg:flex' : 'flex'
-        )}
+    <main className="h-full min-h-0 overflow-hidden bg-root-background text-foreground">
+      <div className="h-full lg:hidden">
+        {threadId ? detailPanel : listPanel}
+      </div>
+      <ResizablePanelGroup
+        className="hidden lg:flex"
+        direction="horizontal"
+        key={layout.join('-')}
+        onLayout={(sizes) => {
+          // `layout` controls this group's key so the persisted layout can be
+          // applied after hydration. Updating it from the group's own layout
+          // notification remounts the group and creates an infinite loop.
+          window.localStorage.setItem(
+            'tuturuuu-mail-pane-layout',
+            JSON.stringify(sizes)
+          );
+        }}
       >
-        <div className="flex min-h-16 items-center gap-3 border-dynamic border-b px-3">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-dynamic bg-foreground/5">
-            <FolderIcon className="h-4 w-4" />
-          </div>
-          <div className="min-w-0 flex-1">
-            <h1 className="truncate font-semibold text-base">{t(folder)}</h1>
-            <p className="truncate text-muted-foreground text-xs">
-              {activeMailbox?.displayName ?? t('mailboxes')}
-            </p>
-          </div>
-          <Button
-            aria-label={t('refresh')}
-            disabled={messagesQuery.isFetching}
-            onClick={() => messagesQuery.refetch()}
-            size="icon"
-            type="button"
-            variant="ghost"
-          >
-            <RefreshCw
-              className={cn(
-                'h-4 w-4',
-                messagesQuery.isFetching && 'animate-spin'
-              )}
-            />
-          </Button>
-        </div>
-
-        <div className="border-dynamic border-b p-3">
-          <div className="relative">
-            <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              className="pl-9"
-              onChange={(event) => setQuery(event.target.value)}
-              placeholder={t('search')}
-              value={query}
-            />
-          </div>
-        </div>
-
-        <ScrollArea className="min-h-0 flex-1">
-          {bootstrapQuery.isLoading || messagesQuery.isLoading ? (
-            <div className="flex h-48 items-center justify-center text-muted-foreground text-sm">
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              {t('loading')}
-            </div>
-          ) : messages.length > 0 ? (
-            <div className="divide-y divide-dynamic">
-              {messages.map((message) => (
-                <MessageRow
-                  active={message.id === messageId}
-                  key={message.id}
-                  message={message}
-                  onClick={() => setMessageId(message.id)}
-                />
-              ))}
-            </div>
-          ) : (
-            <div className="flex h-64 items-center justify-center px-8 text-center">
-              <div className="max-w-64 space-y-2">
-                <div className="font-medium text-sm">{emptyTitle}</div>
-                <p className="text-muted-foreground text-sm">
-                  {emptyDescription}
-                </p>
-              </div>
-            </div>
-          )}
-        </ScrollArea>
-      </section>
-
-      <section
-        className={cn(
-          'min-h-0 bg-background',
-          messageId ? 'flex' : 'hidden lg:flex'
-        )}
-      >
-        <MessageDetail
-          actionPending={stateMutation.isPending}
-          loading={detailQuery.isLoading}
-          message={detailQuery.data ?? null}
-          onArchive={() => stateMutation.mutate('archive')}
-          onBack={() => setMessageId(null)}
-          onReply={handleReply}
-          onStar={() =>
-            stateMutation.mutate(detailQuery.data?.starred ? 'unstar' : 'star')
-          }
-          onToggleRead={handleToggleRead}
-          onTrash={() => stateMutation.mutate('trash')}
-          showBack={Boolean(messageId)}
-        />
-      </section>
-
-      <ComposeDialog
+        <ResizablePanel
+          defaultSize={layout[0]}
+          id="mail-thread-list"
+          maxSize={48}
+          minSize={28}
+        >
+          {listPanel}
+        </ResizablePanel>
+        <ResizableHandle aria-label={t('resize_message_list')} withHandle />
+        <ResizablePanel
+          defaultSize={layout[1]}
+          id="mail-thread-detail"
+          minSize={45}
+        >
+          {detailPanel}
+        </ResizablePanel>
+      </ResizablePanelGroup>
+      <FloatingComposer
         initialDraft={composeDraft}
         mailboxes={mailboxes}
-        onOpenChange={handleComposeOpenChange}
-        onSend={async (nextMailboxId, payload) => {
-          await sendMutation.mutateAsync({
-            mailboxId: nextMailboxId,
-            payload,
-          });
+        onOpenChange={(nextOpen) => {
+          if (!nextOpen) setComposeDraft(null);
+          void setComposeParam(nextOpen ? '1' : null);
         }}
+        onSend={(nextMailboxId, payload) =>
+          sendMutation
+            .mutateAsync({ nextMailboxId, payload })
+            .then(() => undefined)
+        }
         open={composeOpen}
         selectedMailboxId={activeMailboxId}
         sending={sendMutation.isPending}
+        workspaceId={workspaceId}
       />
     </main>
   );
 }
 
-function formatReplySubject(subject: string) {
-  if (/^re:/iu.test(subject.trim())) return subject;
-  return `Re: ${subject || ''}`.trim();
+function replySubject(subject: string) {
+  return /^re:/iu.test(subject.trim())
+    ? subject
+    : `Re: ${subject || ''}`.trim();
+}
+
+function forwardSubject(subject: string) {
+  return /^(fw|fwd):/iu.test(subject.trim())
+    ? subject
+    : `Fwd: ${subject || ''}`.trim();
 }

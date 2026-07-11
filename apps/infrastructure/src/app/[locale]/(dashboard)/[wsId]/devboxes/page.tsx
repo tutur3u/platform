@@ -14,6 +14,7 @@ import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
+import { connection } from 'next/server';
 import { getTranslations } from 'next-intl/server';
 import { listDevboxControlSnapshot } from '@/lib/devboxes/admin-store';
 import { enforceInfrastructureRootWorkspace } from '../enforce-infrastructure-root';
@@ -46,6 +47,8 @@ function compactCommand(command: string[]) {
 }
 
 export default async function InfrastructureDevboxesPage({ params }: Props) {
+  await connection();
+
   const { wsId } = await params;
   await enforceInfrastructureRootWorkspace(wsId);
 

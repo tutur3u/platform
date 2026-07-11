@@ -1,4 +1,5 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { connection } from 'next/server';
 import {
   batchFetch,
   batchUpsert,
@@ -41,6 +42,8 @@ async function getExistingPostIds(postIds: string[]): Promise<Set<string>> {
 }
 
 export async function GET(req: Request) {
+  await connection();
+
   const devModeError = requireDevMode();
   if (devModeError) return devModeError;
 

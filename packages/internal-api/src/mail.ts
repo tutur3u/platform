@@ -6,167 +6,37 @@ import {
   type InternalApiQueryValue,
   withMailApiBaseUrl,
 } from './client';
+import type {
+  BulkUpdateMailPayload,
+  BulkUpdateMailThreadsPayload,
+  CreateMailDraftPayload,
+  CreateMailOrganizationPayload,
+  ListMailMessagesParams,
+  ListMailThreadsParams,
+  MailAttachment,
+  MailBootstrapResponse,
+  MailCatchAllConfiguration,
+  MailDomain,
+  MailFolderDefinition,
+  MailLabel,
+  MailMailboxMember,
+  MailMailboxSettings,
+  MailMessageDetail,
+  MailMessagesResponse,
+  MailMutationResponse,
+  MailThreadDetail,
+  MailThreadsResponse,
+  SendMailMessagePayload,
+  UpdateMailCatchAllPayload,
+  UpdateMailDraftPayload,
+  UpdateMailMailboxSettingsPayload,
+  UpdateMailMessageStatePayload,
+  UpdateMailOrganizationPayload,
+  UpsertMailDomainPayload,
+  UpsertMailMailboxMemberPayload,
+} from './mail-types';
 
-export type MailMailboxRole = 'admin' | 'owner' | 'sender' | 'viewer';
-export type MailMailboxType = 'personal' | 'shared';
-export type MailMailboxStatus =
-  | 'active'
-  | 'archived'
-  | 'disabled'
-  | 'quarantined';
-export type MailProvider = 'cloudflare' | 'ses';
-
-export interface MailDomain {
-  cloudflareAccountId: string | null;
-  cloudflareRoutingRuleId: string | null;
-  cloudflareZoneId: string | null;
-  domain: string;
-  id: string;
-  inboundProvider: MailProvider;
-  outboundProvider: MailProvider;
-  status: 'active' | 'disabled' | 'pending' | 'quarantined' | 'verifying';
-  verificationState: Record<string, unknown>;
-  verifiedAt: string | null;
-}
-
-export type UpsertMailDomainPayload = Omit<MailDomain, 'id' | 'verifiedAt'>;
-
-export interface MailMailbox {
-  address: string;
-  displayName: string;
-  id: string;
-  role: MailMailboxRole;
-  status: MailMailboxStatus;
-  type: MailMailboxType;
-}
-
-export interface MailLabel {
-  color: string | null;
-  id: string;
-  kind: 'custom' | 'system';
-  name: string;
-  slug: string;
-}
-
-export interface MailRecipient {
-  address: string;
-  displayName: string | null;
-  kind: 'bcc' | 'cc' | 'from' | 'reply_to' | 'to';
-}
-
-export interface MailAttachment {
-  contentId: string | null;
-  contentType: string;
-  disposition: 'attachment' | 'inline';
-  filename: string;
-  id: string;
-  protectedUrl: string | null;
-  sizeBytes: number;
-}
-
-export interface MailMessageSummary {
-  bodyText: string | null;
-  createdAt: string;
-  fromAddress: string;
-  fromName: string | null;
-  hasAttachments: boolean;
-  id: string;
-  labels: MailLabel[];
-  mailboxId: string;
-  receivedAt: string | null;
-  sentAt: string | null;
-  snippet: string | null;
-  starred: boolean;
-  status: string;
-  subject: string;
-  threadId: string | null;
-  unread: boolean;
-}
-
-export interface MailMessageDetail extends MailMessageSummary {
-  bodyHtml: string | null;
-  sanitizedHtml: string | null;
-  attachments: MailAttachment[];
-  recipients: MailRecipient[];
-}
-
-export interface MailBootstrapResponse {
-  mailboxes: MailMailbox[];
-  labels: MailLabel[];
-  user: {
-    email: string;
-    id: string;
-  };
-}
-
-export interface ListMailMessagesParams {
-  folder?:
-    | 'archive'
-    | 'drafts'
-    | 'inbox'
-    | 'sent'
-    | 'spam'
-    | 'starred'
-    | 'trash';
-  label?: string;
-  page?: number;
-  pageSize?: number;
-  query?: string;
-}
-
-export interface MailMessagesResponse {
-  messages: MailMessageSummary[];
-  pagination: {
-    page: number;
-    pageSize: number;
-    total: number;
-  };
-}
-
-export interface CreateMailDraftPayload {
-  bodyHtml?: string | null;
-  bodyText?: string | null;
-  bcc?: string[];
-  cc?: string[];
-  inReplyTo?: string | null;
-  references?: string[];
-  subject: string;
-  to: string[];
-}
-
-export type UpdateMailDraftPayload = Partial<CreateMailDraftPayload>;
-
-export interface SendMailMessagePayload extends CreateMailDraftPayload {
-  draftId?: string | null;
-}
-
-export interface MailMutationResponse {
-  message: MailMessageDetail;
-}
-
-export interface UpdateMailMessageStatePayload {
-  action:
-    | 'archive'
-    | 'mark_read'
-    | 'mark_unread'
-    | 'restore'
-    | 'star'
-    | 'trash'
-    | 'unstar';
-}
-
-export interface MailMailboxMember {
-  createdAt: string;
-  email: string | null;
-  fullName: string | null;
-  role: MailMailboxRole;
-  userId: string;
-}
-
-export interface UpsertMailMailboxMemberPayload {
-  role: MailMailboxRole;
-  userId: string;
-}
+export * from './mail-types';
 
 function workspaceMailPath(workspaceId: string, suffix = '') {
   return `/api/v1/workspaces/${encodePathSegment(workspaceId)}/mail${suffix}`;
@@ -246,6 +116,23 @@ export async function listMailMessages(
   );
 }
 
+export async function listMailThreads(
+  workspaceId: string,
+  mailboxId: string,
+  params?: ListMailThreadsParams,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(withMailApiBaseUrl(options));
+  return client.json<MailThreadsResponse>(
+    mailboxPath(workspaceId, mailboxId, '/threads'),
+    {
+      cache: 'no-store',
+      credentials: 'include',
+      query: normalizeMessagesQuery(params),
+    }
+  );
+}
+
 export async function getMailMessage(
   workspaceId: string,
   mailboxId: string,
@@ -262,6 +149,66 @@ export async function getMailMessage(
     {
       cache: 'no-store',
       credentials: 'include',
+    }
+  );
+}
+
+export async function getMailThread(
+  workspaceId: string,
+  mailboxId: string,
+  threadId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(withMailApiBaseUrl(options));
+  return client.json<MailThreadDetail>(
+    mailboxPath(
+      workspaceId,
+      mailboxId,
+      `/threads/${encodePathSegment(threadId)}`
+    ),
+    { cache: 'no-store', credentials: 'include' }
+  );
+}
+
+export async function updateMailThreadState(
+  workspaceId: string,
+  mailboxId: string,
+  threadId: string,
+  payload: UpdateMailMessageStatePayload,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(withMailApiBaseUrl(options));
+  return client.json<MailThreadDetail>(
+    mailboxPath(
+      workspaceId,
+      mailboxId,
+      `/threads/${encodePathSegment(threadId)}`
+    ),
+    {
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+      credentials: 'include',
+      headers: jsonHeaders(),
+      method: 'PATCH',
+    }
+  );
+}
+
+export async function bulkUpdateMailThreads(
+  workspaceId: string,
+  mailboxId: string,
+  payload: BulkUpdateMailThreadsPayload,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(withMailApiBaseUrl(options));
+  return client.json<{ updated: number }>(
+    mailboxPath(workspaceId, mailboxId, '/threads/bulk'),
+    {
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+      credentials: 'include',
+      headers: jsonHeaders(),
+      method: 'POST',
     }
   );
 }
@@ -330,6 +277,113 @@ export async function deleteMailDraft(
   );
 }
 
+export async function uploadMailDraftAttachment(
+  workspaceId: string,
+  mailboxId: string,
+  draftId: string,
+  file: Blob,
+  filename: string,
+  metadata?: {
+    contentId?: string | null;
+    disposition?: 'attachment' | 'inline';
+  },
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(withMailApiBaseUrl(options));
+  const body = new FormData();
+  body.append('file', file, filename);
+  if (metadata?.contentId) body.append('contentId', metadata.contentId);
+  if (metadata?.disposition) body.append('disposition', metadata.disposition);
+  return client.json<{ attachment: MailAttachment }>(
+    mailboxPath(
+      workspaceId,
+      mailboxId,
+      `/drafts/${encodePathSegment(draftId)}/attachments`
+    ),
+    {
+      body,
+      cache: 'no-store',
+      credentials: 'include',
+      method: 'POST',
+    }
+  );
+}
+
+export async function copyMailDraftAttachments(
+  workspaceId: string,
+  mailboxId: string,
+  draftId: string,
+  payload: { attachmentIds: string[]; sourceMessageId: string },
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(withMailApiBaseUrl(options));
+  return client.json<{ attachments: MailAttachment[] }>(
+    mailboxPath(
+      workspaceId,
+      mailboxId,
+      `/drafts/${encodePathSegment(draftId)}/attachments`
+    ),
+    {
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+      credentials: 'include',
+      headers: jsonHeaders(),
+      method: 'POST',
+    }
+  );
+}
+
+export async function deleteMailDraftAttachment(
+  workspaceId: string,
+  mailboxId: string,
+  draftId: string,
+  attachmentId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(withMailApiBaseUrl(options));
+  return client.json<void>(
+    mailboxPath(
+      workspaceId,
+      mailboxId,
+      `/drafts/${encodePathSegment(draftId)}/attachments/${encodePathSegment(
+        attachmentId
+      )}`
+    ),
+    { cache: 'no-store', credentials: 'include', method: 'DELETE' }
+  );
+}
+
+export async function getMailMailboxSettings(
+  workspaceId: string,
+  mailboxId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(withMailApiBaseUrl(options));
+  return client.json<{ settings: MailMailboxSettings }>(
+    mailboxPath(workspaceId, mailboxId, '/settings'),
+    { cache: 'no-store', credentials: 'include' }
+  );
+}
+
+export async function updateMailMailboxSettings(
+  workspaceId: string,
+  mailboxId: string,
+  payload: UpdateMailMailboxSettingsPayload,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(withMailApiBaseUrl(options));
+  return client.json<{ settings: MailMailboxSettings }>(
+    mailboxPath(workspaceId, mailboxId, '/settings'),
+    {
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+      credentials: 'include',
+      headers: jsonHeaders(),
+      method: 'PATCH',
+    }
+  );
+}
+
 export async function sendMailMessage(
   workspaceId: string,
   mailboxId: string,
@@ -370,6 +424,157 @@ export async function updateMailMessageState(
       headers: jsonHeaders(),
       method: 'PATCH',
     }
+  );
+}
+
+export async function bulkUpdateMailMessages(
+  workspaceId: string,
+  mailboxId: string,
+  payload: BulkUpdateMailPayload,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(withMailApiBaseUrl(options));
+  return client.json<{ updated: number }>(
+    mailboxPath(workspaceId, mailboxId, '/messages/bulk'),
+    {
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+      credentials: 'include',
+      headers: jsonHeaders(),
+      method: 'PATCH',
+    }
+  );
+}
+
+export async function getMailboxOrganization(
+  workspaceId: string,
+  mailboxId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(withMailApiBaseUrl(options));
+  return client.json<{ folders: MailFolderDefinition[]; labels: MailLabel[] }>(
+    mailboxPath(workspaceId, mailboxId, '/organization'),
+    { cache: 'no-store', credentials: 'include' }
+  );
+}
+
+export async function createMailLabel(
+  workspaceId: string,
+  mailboxId: string,
+  payload: CreateMailOrganizationPayload,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(withMailApiBaseUrl(options));
+  return client.json<{ label: MailLabel }>(
+    mailboxPath(workspaceId, mailboxId, '/labels'),
+    {
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+      credentials: 'include',
+      headers: jsonHeaders(),
+      method: 'POST',
+    }
+  );
+}
+
+export async function updateMailLabel(
+  workspaceId: string,
+  mailboxId: string,
+  labelId: string,
+  payload: UpdateMailOrganizationPayload,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(withMailApiBaseUrl(options));
+  return client.json<{ label: MailLabel }>(
+    mailboxPath(
+      workspaceId,
+      mailboxId,
+      `/labels/${encodePathSegment(labelId)}`
+    ),
+    {
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+      credentials: 'include',
+      headers: jsonHeaders(),
+      method: 'PATCH',
+    }
+  );
+}
+
+export async function deleteMailLabel(
+  workspaceId: string,
+  mailboxId: string,
+  labelId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(withMailApiBaseUrl(options));
+  return client.json<void>(
+    mailboxPath(
+      workspaceId,
+      mailboxId,
+      `/labels/${encodePathSegment(labelId)}`
+    ),
+    { cache: 'no-store', credentials: 'include', method: 'DELETE' }
+  );
+}
+
+export async function createMailFolder(
+  workspaceId: string,
+  mailboxId: string,
+  payload: CreateMailOrganizationPayload,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(withMailApiBaseUrl(options));
+  return client.json<{ folder: MailFolderDefinition }>(
+    mailboxPath(workspaceId, mailboxId, '/folders'),
+    {
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+      credentials: 'include',
+      headers: jsonHeaders(),
+      method: 'POST',
+    }
+  );
+}
+
+export async function updateMailFolder(
+  workspaceId: string,
+  mailboxId: string,
+  folderId: string,
+  payload: UpdateMailOrganizationPayload,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(withMailApiBaseUrl(options));
+  return client.json<{ folder: MailFolderDefinition }>(
+    mailboxPath(
+      workspaceId,
+      mailboxId,
+      `/folders/${encodePathSegment(folderId)}`
+    ),
+    {
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+      credentials: 'include',
+      headers: jsonHeaders(),
+      method: 'PATCH',
+    }
+  );
+}
+
+export async function deleteMailFolder(
+  workspaceId: string,
+  mailboxId: string,
+  folderId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(withMailApiBaseUrl(options));
+  return client.json<void>(
+    mailboxPath(
+      workspaceId,
+      mailboxId,
+      `/folders/${encodePathSegment(folderId)}`
+    ),
+    { cache: 'no-store', credentials: 'include', method: 'DELETE' }
   );
 }
 
@@ -448,4 +653,33 @@ export async function upsertMailDomain(
     headers: jsonHeaders(),
     method: 'PUT',
   });
+}
+
+export async function getMailCatchAllConfiguration(
+  domainId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(withMailApiBaseUrl(options));
+  return client.json<MailCatchAllConfiguration>(
+    mailPlatformPath(`/domains/${encodePathSegment(domainId)}/catch-all`),
+    { cache: 'no-store', credentials: 'include' }
+  );
+}
+
+export async function updateMailCatchAllConfiguration(
+  domainId: string,
+  payload: UpdateMailCatchAllPayload,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(withMailApiBaseUrl(options));
+  return client.json<MailCatchAllConfiguration>(
+    mailPlatformPath(`/domains/${encodePathSegment(domainId)}/catch-all`),
+    {
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+      credentials: 'include',
+      headers: jsonHeaders(),
+      method: 'PATCH',
+    }
+  );
 }

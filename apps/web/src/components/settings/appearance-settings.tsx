@@ -14,14 +14,14 @@ import {
 } from '@tuturuuu/ui/select';
 import { Separator } from '@tuturuuu/ui/separator';
 import { toast } from '@tuturuuu/ui/sonner';
+import {
+  detectLocaleTimeFormat,
+  detectSystemTimezone,
+} from '@tuturuuu/utils/calendar-settings-resolver';
 import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
 import { useTransition } from 'react';
-import {
-  detectLocaleTimeFormat,
-  detectSystemTimezone,
-} from '@/lib/calendar-settings-resolver';
 
 export default function AppearanceSettings({
   canManageVersionBadge = false,

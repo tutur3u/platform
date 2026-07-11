@@ -16,6 +16,7 @@ import { ModuleToggles } from '@tuturuuu/ui/custom/education/modules/module-togg
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
 import { notFound } from 'next/navigation';
+import { connection } from 'next/server';
 import { getTranslations } from 'next-intl/server';
 import type { ReactNode } from 'react';
 import { resolveRouteWorkspace } from '@/lib/resolve-route-workspace';
@@ -31,6 +32,8 @@ interface Props {
 }
 
 export default async function CourseDetailsLayout({ children, params }: Props) {
+  await connection();
+
   const t = await getTranslations();
   const { wsId: routeWsId, courseId, moduleId } = await params;
   const { resolvedWsId } = await resolveRouteWorkspace(routeWsId);

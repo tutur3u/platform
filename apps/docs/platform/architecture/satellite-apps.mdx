@@ -1,0 +1,193 @@
+---
+title: 'Satellite Apps'
+description: 'How satellite apps (contacts, pay, tasks, …) authenticate, proxy their APIs, render under Cache Components, and take ownership of a feature from apps/web.'
+---
+
+## What a satellite is
+
+`apps/web` is the central platform app. A **satellite** is a separate Next app on
+its own subdomain that owns one slice of the product and shares the session with
+web through cross-app auth.
+
+`apps/contacts` (`contacts.tuturuuu.com`, port `7827`) is the largest example: it
+owns the entire `workspace_users` CRM surface (`/[wsId]/users/*` plus
+`workforce`). `apps/web` no longer has a users section at all.
+
+Shared logic lives in packages so both apps run one implementation:
+
+| Package | Contents |
+| --- | --- |
+| `@tuturuuu/users-core` | Server logic: route handlers, user-group server data, activity normalization, report/post types |
+| `@tuturuuu/users-ui` | Client logic: hooks and components (approvals view, attendance client, score display, …) |
+| `@tuturuuu/ui`, `@tuturuuu/utils` | Genuinely generic pieces (statistic cards, workspace-user link, calendar settings) |
+
+## Cache Components: `connection()`, not `dynamic`
+
+<Warning>
+Every Next app runs with `cacheComponents` (PPR) enabled.
+`export const dynamic` and `export const revalidate` are **rejected at build
+time** — `await connection()` is the only way to opt into request-time rendering.
+</Warning>
+
+This matters more than it looks. Supabase-js issues `fetch()` under the hood, so
+**every server-component query is a fetch**. A page with no dynamic signal gets
+prerendered — and the prerender runs with **no cookies**:
+
+```text
+Workspace not found: personal
+[WorkspaceHelper] Failed to fetch workspace
+Error: During prerendering, fetch() rejects when the prerender is complete
+```
+
+That is a real production failure mode (it broke `contacts/users/database`).
+
+**Rules**
+
+- Add `await connection()` as the first statement of any authed page or layout
+  that touches Supabase, `getPermissions`, `getWorkspace`, or the app session.
+  A dynamic *layout* does **not** make its child pages dynamic — each page needs
+  its own call.
+- `cacheComponents` also prerenders **GET route handlers**. A Supabase-backed GET
+  route with no dynamic signal is statically generated and its response is baked
+  in at build time. Add `await connection()` there too; every API route should
+  report `ƒ (Dynamic)` in the build output.
+- Where it fits, prefer the true PPR shape: a static shell with the dynamic part
+  inside `<Suspense>` and `await connection()` **inside** the suspended
+  component. `apps/meet/[planId]` is the reference.
+- Unit tests call pages and handlers outside a request scope, where
+  `connection()` throws. Stub it in the app's vitest setup while keeping every
+  other export:
+
+```ts
+vi.mock('next/server', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('next/server')>()),
+  connection: vi.fn().mockResolvedValue(undefined),
+}));
+```
+
+<Note>
+`bun check` does not compile Next apps, so it cannot see any of this. Always run
+the app's real `bun run build` when you change its routes, pages, or deps.
+</Note>
+
+## Auth: resolve the actor from the app session
+
+A registered satellite must resolve the acting user from Tuturuuu app-session
+auth — never from `@tuturuuu/utils/user-helper`, whose `getCurrentUser` /
+`getCurrentWorkspaceUser` read Supabase auth directly. The `internal-app-auth`
+guard in `bun check` enforces this.
+
+When a shared helper needs the actor, give it an **injectable** `userId` instead
+of letting it resolve one:
+
+```ts
+// satellite page
+const actor = await getSatelliteAppSessionUser('contacts');
+const user = actor?.id
+  ? await getWorkspaceUserLinkForUser(wsId, actor.id)
+  : null;
+```
+
+`getCurrentWorkspaceUser` (web) now delegates to that same
+`@tuturuuu/utils/workspace-user-link` helper, so there is one implementation and
+web behavior is unchanged.
+
+## API proxying — and the catch-all trap
+
+A satellite's `next.config.ts` has a **fallback** rewrite sending any unmatched
+`/api/:path*` to web. That is how contacts reaches endpoints it does not own.
+
+<Warning>
+Never add a catch-all page (`[...slug]`) under `[locale]/[wsId]` in a satellite
+that proxies `/api/*`.
+</Warning>
+
+Next checks `fallback` rewrites **only after dynamic routes**. So
+`[locale]/[wsId]/[...catchAll]` happily matches
+`/api/v1/workspaces/personal/settings` as `locale="api"`, `wsId="v1"` — shadowing
+the proxy. The `[wsId]` layout then calls `getWorkspace('v1')` and every proxied
+API call 404s:
+
+```text
+[WorkspaceHelper] Failed to fetch workspace: { workspaceId: 'v1', … }
+```
+
+Put non-migrated-route redirects in the app's `proxy.ts` middleware instead. It
+handles `/api` in an earlier branch, so it structurally cannot shadow the proxy.
+Contacts lists what it owns in `CONTACTS_OWNED_ROUTE_PREFIXES`; anything else
+under `/[wsId]` redirects to web with path and query preserved.
+
+<Note>
+Add an entry to that list whenever you migrate a module, or the middleware will
+bounce the freshly-migrated route straight back to web. Mind prefix-vs-exact
+matching: a bare `users` entry that prefix-matches makes every `/users/*` path
+look owned, so non-migrated routes 404 instead of redirecting.
+</Note>
+
+## Translations
+
+A satellite that renders broad shared UI must be in the **checked** `APPS` list
+in `scripts/i18n-namespace-check.js`, not `UNCHECKED_APPS`.
+
+Scanning only the app's own source cannot see namespaces used *inside*
+`@tuturuuu/ui` or `@tuturuuu/satellite`. Miss one and it surfaces as a runtime
+`MISSING_MESSAGE` in production rather than a CI failure — which is exactly how
+contacts shipped without the `notifications` namespace.
+
+## Moving a feature from web to a satellite
+
+Resolve every import to an **absolute path** before moving anything. A
+`from '@/'` grep is not sufficient; each of these traps cost a broken build or a
+failing test:
+
+- **Relative-sibling** imports (`../../x`) — invisible to a `@/` grep.
+- **Dynamic** imports — `await import('@/…')` has no `from` clause.
+- **Side-effect** imports — `import '@/lib/dayjs-setup'` has no `from` clause.
+- **npm deps of the extracted file** must be added to the *target package*.
+- **`vi.mock` paths** silently break: a test mocking `@/lib/x` stops intercepting
+  once the extracted module imports the package copy directly, so the real module
+  runs unmocked.
+
+Then classify each external dependency:
+
+<Steps>
+  <Step title="Already a re-export shim">
+    Rewrite the import straight to the package it re-exports.
+  </Step>
+  <Step title="Used only by the moving module">
+    Move it along. A satellite maps `@/` to its own `src`, so the specifier often
+    needs no change at all.
+  </Step>
+  <Step title="Still used by the origin app">
+    Extract it to `@tuturuuu/users-core` (server) or `@tuturuuu/users-ui`
+    (client) and point both apps at it. Keep a re-export shim in the origin app
+    when many files import it; repoint directly when only a few do.
+  </Step>
+  <Step title="Mutually coupled modules">
+    Move them **together**. Preserving their relative layout keeps every
+    cross-import valid with no rewrites at all.
+  </Step>
+</Steps>
+
+Finish with: `connection()` on data pages, the owned-routes list, removing the
+origin app's nav entry, an i18n backfill, the TanStack page-override + manifest +
+doc counts, then `bun check` **and** a real `next build`.
+
+<Note>
+Deleting pages from `apps/web` leaves `apps/web/.next/types/validator.ts` stale,
+so type-check fails on paths that no longer exist. `rm -rf apps/web/.next`.
+</Note>
+
+## Debugging a satellite in production
+
+The Vercel CLI is the fastest path to a root cause:
+
+```bash
+bun add -g vercel
+vercel ls contacts --scope tuturuuu
+vercel logs <deployment-url> --scope tuturuuu --json
+```
+
+Both contacts incidents above were diagnosed straight from those logs — the
+`workspaceId: 'v1'` in a `WorkspaceHelper` error is what exposed the catch-all
+shadowing the API proxy.

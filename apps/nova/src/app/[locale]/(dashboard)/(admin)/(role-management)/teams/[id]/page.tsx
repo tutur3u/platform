@@ -4,6 +4,7 @@ import { Button } from '@tuturuuu/ui/button';
 import { Separator } from '@tuturuuu/ui/separator';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { connection } from 'next/server';
 import { getTranslations } from 'next-intl/server';
 import {
   requireNovaAppSessionUser,
@@ -19,6 +20,8 @@ interface Props {
 }
 
 export default async function TeamDetailsPage({ params }: Props) {
+  await connection();
+
   const t = await getTranslations();
   const { id } = await params;
 

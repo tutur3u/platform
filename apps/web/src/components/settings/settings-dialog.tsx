@@ -1,17 +1,9 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import {
-  DATABASE_AUTO_ADD_NEW_GROUPS_TO_DEFAULT_INCLUDED_GROUPS_CONFIG_ID,
-  DATABASE_DEFAULT_EXCLUDED_GROUPS_CONFIG_ID,
-  DATABASE_DEFAULT_INCLUDED_GROUPS_CONFIG_ID,
-  DATABASE_FEATURED_GROUPS_CONFIG_ID,
-  parseWorkspaceConfigIdList,
-} from '@tuturuuu/internal-api/workspace-configs';
 import type { CalendarConnection, Workspace } from '@tuturuuu/types';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { SettingsDialogShell } from '@tuturuuu/ui/custom/settings-dialog-shell';
-import { useWorkspaceConfigs } from '@tuturuuu/ui/hooks/use-workspace-config';
 import { isExactTuturuuuDotComEmail } from '@tuturuuu/utils/email/client';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
@@ -68,20 +60,6 @@ export function SettingsDialog({
 
   const normalizedDefaultTab = normalizeSettingsTab(defaultTab);
   const [activeTab, setActiveTab] = useState(normalizedDefaultTab);
-  const {
-    data: workspaceCustomConfigs = {},
-    isLoading: isLoadingWorkspaceCustomConfigs,
-  } = useWorkspaceConfigs(
-    wsId ?? '',
-    wsId
-      ? [
-          DATABASE_AUTO_ADD_NEW_GROUPS_TO_DEFAULT_INCLUDED_GROUPS_CONFIG_ID,
-          DATABASE_DEFAULT_EXCLUDED_GROUPS_CONFIG_ID,
-          DATABASE_DEFAULT_INCLUDED_GROUPS_CONFIG_ID,
-          DATABASE_FEATURED_GROUPS_CONFIG_ID,
-        ]
-      : []
-  );
 
   const { value: expandAllAccordions } = useUserBooleanConfig(
     'EXPAND_SETTINGS_ACCORDIONS',
@@ -125,19 +103,6 @@ export function SettingsDialog({
     workspacePermissions,
   });
   const canManageVersionBadge = isExactTuturuuuDotComEmail(user?.email);
-  const autoAddNewGroupsToDefaultIncludedGroups =
-    workspaceCustomConfigs[
-      DATABASE_AUTO_ADD_NEW_GROUPS_TO_DEFAULT_INCLUDED_GROUPS_CONFIG_ID
-    ] === 'true';
-  const defaultExcludedGroupIds = parseWorkspaceConfigIdList(
-    workspaceCustomConfigs[DATABASE_DEFAULT_EXCLUDED_GROUPS_CONFIG_ID]
-  );
-  const defaultIncludedGroupIds = parseWorkspaceConfigIdList(
-    workspaceCustomConfigs[DATABASE_DEFAULT_INCLUDED_GROUPS_CONFIG_ID]
-  );
-  const featuredGroupIds = parseWorkspaceConfigIdList(
-    workspaceCustomConfigs[DATABASE_FEATURED_GROUPS_CONFIG_ID]
-  );
 
   useEffect(() => {
     setActiveTab(normalizedDefaultTab);
@@ -214,21 +179,14 @@ export function SettingsDialog({
       <SettingsDialogContent
         activeTab={activeTab}
         allowWorkspaceBasicsEdit={availability.allowWorkspaceBasicsEdit}
-        autoAddNewGroupsToDefaultIncludedGroups={
-          autoAddNewGroupsToDefaultIncludedGroups
-        }
         boardId={boardId}
         calendarConnections={calendarConnections}
         canManageVersionBadge={canManageVersionBadge}
         canManageWorkspaceMembers={availability.canManageWorkspaceMembers}
         canManageWorkspaceRoles={availability.canManageWorkspaceRoles}
         canManageWorkspaceSettings={availability.canManageWorkspaceSettings}
-        defaultExcludedGroupIds={defaultExcludedGroupIds}
-        defaultIncludedGroupIds={defaultIncludedGroupIds}
-        featuredGroupIds={featuredGroupIds}
         hasBillingPermission={availability.hasBillingPermission}
         isLoadingWorkspace={isLoadingWorkspace}
-        isLoadingWorkspaceCustomConfigs={isLoadingWorkspaceCustomConfigs}
         linkedProvider={linkedProvider}
         setActiveTab={setActiveTab}
         t={t}

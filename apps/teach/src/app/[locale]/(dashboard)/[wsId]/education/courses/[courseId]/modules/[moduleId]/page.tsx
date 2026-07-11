@@ -16,6 +16,7 @@ import { YoutubeEmbed } from '@tuturuuu/ui/custom/education/modules/youtube/embe
 import { Separator } from '@tuturuuu/ui/separator';
 import { RichTextEditor } from '@tuturuuu/ui/text-editor/editor';
 import type { Metadata } from 'next';
+import { connection } from 'next/server';
 import { getTranslations } from 'next-intl/server';
 import { resolveRouteWorkspace } from '@/lib/resolve-route-workspace';
 import { extractYoutubeId } from '@/utils/url-helper';
@@ -38,6 +39,8 @@ interface Props {
 }
 
 export default async function UserGroupDetailsPage({ params }: Props) {
+  await connection();
+
   const t = await getTranslations();
   const { wsId: routeWsId, courseId, moduleId } = await params;
   const { resolvedWsId } = await resolveRouteWorkspace(routeWsId);

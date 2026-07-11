@@ -6,6 +6,7 @@ import { fetchUserWorkspaceCalendarGoogleTokenForClient } from '@tuturuuu/utils/
 import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { notFound, redirect } from 'next/navigation';
+import { connection } from 'next/server';
 
 export const metadata: Metadata = {
   title: 'Calendar',
@@ -20,6 +21,8 @@ interface PageProps {
 }
 
 export default async function CalendarPage({ params }: PageProps) {
+  await connection();
+
   const { wsId, locale } = await params;
   const user = await getSatelliteAppSessionUser('calendar');
 

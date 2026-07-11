@@ -1,6 +1,6 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { NextRequest } from 'next/server';
-import { NextResponse } from 'next/server';
+import { connection, NextResponse } from 'next/server';
 
 const PUBLIC_MODEL_COLUMNS = [
   'cache_read_price_per_token',
@@ -50,6 +50,8 @@ function parseIds(value: string | null) {
 }
 
 export async function GET(request: NextRequest) {
+  await connection();
+
   const sbAdmin = await createAdminClient();
   const privateDb = sbAdmin.schema('private');
   const searchParams = request.nextUrl.searchParams;
