@@ -1,5 +1,6 @@
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { redirect } from 'next/navigation';
+import { connection } from 'next/server';
 import type React from 'react';
 
 interface LayoutProps {
@@ -10,6 +11,8 @@ interface LayoutProps {
 }
 
 export default async function MiraLayout({ children, params }: LayoutProps) {
+  await connection();
+
   const { wsId: id } = await params;
   const workspace = await getWorkspace(id);
 

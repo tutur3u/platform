@@ -20,6 +20,7 @@ import {
   normalizeWorkspaceId,
 } from '@tuturuuu/utils/workspace-helper';
 import { notFound } from 'next/navigation';
+import { connection } from 'next/server';
 import { getTranslations } from 'next-intl/server';
 import type { ReactNode } from 'react';
 import GroupShareButton from './group-share-button';
@@ -35,6 +36,8 @@ interface LayoutProps {
 }
 
 export default async function Layout({ children, params }: LayoutProps) {
+  await connection();
+
   const { wsId: id, groupId } = await params;
   const wsId = await normalizeWorkspaceId(id);
 

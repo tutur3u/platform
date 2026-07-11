@@ -3,6 +3,7 @@ import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import { connection } from 'next/server';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
 import {
   fetchRequireAttentionUserIds,
@@ -27,6 +28,8 @@ interface Props {
 }
 
 export default async function UserGroupIndicatorsPage({ params }: Props) {
+  await connection();
+
   return (
     <WorkspaceWrapper params={params}>
       {async ({ wsId, groupId }) => {

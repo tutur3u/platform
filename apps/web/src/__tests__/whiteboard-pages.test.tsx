@@ -1,5 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+// The pages opt into request-time rendering via `connection()` (required under
+// cacheComponents). Unit tests invoke them outside a request scope, so stub it.
+vi.mock('next/server', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('next/server')>()),
+  connection: vi.fn().mockResolvedValue(undefined),
+}));
+
 const mocks = vi.hoisted(() => ({
   createAdminClient: vi.fn(),
   getTranslations: vi.fn(),

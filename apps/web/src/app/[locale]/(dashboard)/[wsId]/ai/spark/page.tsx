@@ -2,6 +2,7 @@ import { GradientHeadline } from '@tuturuuu/ui/custom/gradient-headline';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
+import { connection } from 'next/server';
 import { getTranslations } from 'next-intl/server';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
 import { isAIWhitelistEmailEnabled } from '@/lib/ai-whitelist/email-repository';
@@ -17,6 +18,8 @@ export default async function SparkPage({
 }: {
   params: Promise<{ wsId: string }>;
 }) {
+  await connection();
+
   const t = await getTranslations('common');
   const user = await getCurrentUser();
 

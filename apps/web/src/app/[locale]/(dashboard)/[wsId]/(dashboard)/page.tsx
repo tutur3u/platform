@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import { connection } from 'next/server';
 import { Suspense } from 'react';
 import MiraDashboardClient from './components/mira-dashboard-client';
 
@@ -104,6 +105,8 @@ interface Props {
 }
 
 export default async function WorkspaceHomePage({ params }: Props) {
+  await connection();
+
   const { wsId: routeWsId } = await params;
   const { currentUser, workspace } = await resolveDashboardWorkspace(routeWsId);
 

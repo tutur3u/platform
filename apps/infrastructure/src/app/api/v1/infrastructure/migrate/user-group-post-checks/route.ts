@@ -1,4 +1,5 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { connection } from 'next/server';
 import {
   batchFetchViaFk,
   batchUpsert,
@@ -8,6 +9,8 @@ import {
 } from '../batch-upsert';
 
 export async function GET(req: Request) {
+  await connection();
+
   const devModeError = requireDevMode();
   if (devModeError) return devModeError;
 

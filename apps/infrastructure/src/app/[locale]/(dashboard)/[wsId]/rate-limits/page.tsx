@@ -6,6 +6,7 @@ import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
+import { connection } from 'next/server';
 import { getTranslations } from 'next-intl/server';
 import { enforceInfrastructureRootWorkspace } from '../enforce-infrastructure-root';
 import { RateLimitsClient } from './rate-limits-client';
@@ -23,6 +24,8 @@ interface Props {
 }
 
 export default async function InfrastructureRateLimitsPage({ params }: Props) {
+  await connection();
+
   const { wsId } = await params;
   await enforceInfrastructureRootWorkspace(wsId);
 

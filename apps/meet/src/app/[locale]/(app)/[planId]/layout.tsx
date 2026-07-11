@@ -1,6 +1,7 @@
 import { getSatelliteAppSessionUser } from '@tuturuuu/satellite/auth';
 import { getPlan } from '@tuturuuu/utils/plan-helpers';
 import type { Metadata } from 'next';
+import { connection } from 'next/server';
 import type { ReactNode } from 'react';
 import { siteConfig } from '@/constants/configs';
 
@@ -68,5 +69,7 @@ export default async function MeetTogetherLayout({
 }: {
   children: ReactNode;
 }) {
+  await connection();
+
   return children;
 }

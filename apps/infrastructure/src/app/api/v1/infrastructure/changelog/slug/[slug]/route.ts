@@ -1,5 +1,5 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
-import { NextResponse } from 'next/server';
+import { connection, NextResponse } from 'next/server';
 
 interface Params {
   params: Promise<{
@@ -8,6 +8,8 @@ interface Params {
 }
 
 export async function GET(_: Request, { params }: Params) {
+  await connection();
+
   const supabase = await createClient();
   const { slug } = await params;
 

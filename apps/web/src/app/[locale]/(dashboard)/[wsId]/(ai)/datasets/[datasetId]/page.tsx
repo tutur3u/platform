@@ -11,6 +11,7 @@ import {
 import moment from 'moment';
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { connection } from 'next/server';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
 import { DuplicateHandler } from './components/duplicate-handler';
 import { DatasetCrawler } from './explore/dataset-crawler';
@@ -31,6 +32,8 @@ interface Props {
 }
 
 export default async function DatasetDetailsPage({ params }: Props) {
+  await connection();
+
   return (
     <WorkspaceWrapper params={params}>
       {async ({ wsId, datasetId }) => {

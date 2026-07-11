@@ -13,6 +13,7 @@ import {
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { connection } from 'next/server';
 import { getTranslations } from 'next-intl/server';
 import AdminTaskEmbeddings from './admin-task-embeddings';
 import WorkspaceAvatarSettings from './avatar';
@@ -35,6 +36,8 @@ interface Props {
 }
 
 export default async function WorkspaceSettingsPage({ params }: Props) {
+  await connection();
+
   const t = await getTranslations();
   const { wsId: id } = await params;
 

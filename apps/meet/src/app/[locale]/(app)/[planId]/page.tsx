@@ -1,5 +1,6 @@
 import { getSatelliteAppSessionUser } from '@tuturuuu/satellite/auth';
 import MeetTogetherPlanDetailsPage from '@tuturuuu/ui/legacy/meet/planId/page';
+import { connection } from 'next/server';
 import { Suspense } from 'react';
 import { BASE_URL } from '@/constants/common';
 
@@ -10,6 +11,8 @@ interface PlanPageProps {
 }
 
 async function PlanPageContent({ params }: PlanPageProps) {
+  await connection();
+
   const user = await getSatelliteAppSessionUser('meet');
 
   return (

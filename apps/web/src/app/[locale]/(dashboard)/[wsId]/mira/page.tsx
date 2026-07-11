@@ -1,6 +1,7 @@
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
+import { connection } from 'next/server';
 import { Suspense } from 'react';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
 import MiraClient from './client';
@@ -16,6 +17,8 @@ export default async function MiraPage({
 }: {
   params: Promise<{ wsId: string }>;
 }) {
+  await connection();
+
   const user = await getCurrentUser();
   if (!user) redirect('/login');
 

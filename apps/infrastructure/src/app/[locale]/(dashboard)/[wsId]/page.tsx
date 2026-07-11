@@ -2,6 +2,7 @@ import { Activity, Building2, Lock, TrendingUp, Users } from '@tuturuuu/icons';
 import { Separator } from '@tuturuuu/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import type { Metadata } from 'next';
+import { connection } from 'next/server';
 import { getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
 import AuditLogInsightsComponent from './_components/audit-log-insights';
@@ -49,6 +50,8 @@ interface Props {
 }
 
 export default async function InfrastructureOverviewPage({ params }: Props) {
+  await connection();
+
   const { wsId } = await params;
   await enforceInfrastructureRootWorkspace(wsId);
 

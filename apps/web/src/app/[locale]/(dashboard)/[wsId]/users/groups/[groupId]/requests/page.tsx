@@ -1,5 +1,6 @@
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { notFound } from 'next/navigation';
+import { connection } from 'next/server';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
 import { GroupRequestsClient } from './client';
 
@@ -12,6 +13,8 @@ export default async function GroupRequestsPage({
     groupId: string;
   }>;
 }) {
+  await connection();
+
   return (
     <WorkspaceWrapper params={params}>
       {async ({ wsId, groupId }) => {

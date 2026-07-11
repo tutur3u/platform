@@ -2,6 +2,7 @@ import { createClient } from '@tuturuuu/supabase/next/server';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import { connection } from 'next/server';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
 import { UserGroupSessionCalendar } from '../../_components/user-group-session-calendar';
 import EditEndDateDialog from './edit-end-date-dialog';
@@ -20,6 +21,8 @@ interface Props {
 }
 
 export default async function UserGroupDetailsPage({ params }: Props) {
+  await connection();
+
   return (
     <WorkspaceWrapper params={params}>
       {async ({ wsId, groupId }) => {

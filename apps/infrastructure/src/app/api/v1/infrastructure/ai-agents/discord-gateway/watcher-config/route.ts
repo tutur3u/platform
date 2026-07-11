@@ -3,7 +3,7 @@ import { timingSafeEqual } from 'node:crypto';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
-import { type NextRequest, NextResponse } from 'next/server';
+import { connection, type NextRequest, NextResponse } from 'next/server';
 import { getRootSecretValue, listAiAgents } from '@/lib/ai-agents/registry';
 import { withRequestLogDrain } from '@/lib/infrastructure/log-drain';
 
@@ -101,6 +101,8 @@ async function handleGet(request: NextRequest) {
 }
 
 export async function GET(request: NextRequest) {
+  await connection();
+
   return withRequestLogDrain(
     {
       request,

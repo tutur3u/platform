@@ -1,6 +1,6 @@
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import { NextResponse } from 'next/server';
+import { connection, NextResponse } from 'next/server';
 import {
   batchUpsert,
   createMigrationResponse,
@@ -8,6 +8,8 @@ import {
 } from '../batch-upsert';
 
 export async function GET(req: Request) {
+  await connection();
+
   const devModeError = requireDevMode();
   if (devModeError) return devModeError;
 

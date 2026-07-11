@@ -2,6 +2,7 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { LimitRow } from '@tuturuuu/types/db';
 import { enforceRootWorkspaceAdmin } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
+import { connection } from 'next/server';
 import { getTranslations } from 'next-intl/server';
 import EntityCreationLimitsClient from './client';
 import { type AvailableTableRow, buildTableGroups } from './types';
@@ -41,6 +42,8 @@ interface Props {
 }
 
 export default async function EntityCreationLimitsPage({ params }: Props) {
+  await connection();
+
   const { wsId } = await params;
   await enforceRootWorkspaceAdmin(wsId, {
     redirectTo: `/${wsId}/settings`,

@@ -1,7 +1,7 @@
 import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { MAX_SEARCH_LENGTH } from '@tuturuuu/utils/constants';
-import { NextResponse } from 'next/server';
+import { connection, NextResponse } from 'next/server';
 import { z } from 'zod';
 
 const UpdateEmailBlacklistSchema = z.object({
@@ -37,6 +37,8 @@ async function checkRootWorkspaceAccess(supabase: any) {
 }
 
 export async function GET(_: Request, { params }: Params) {
+  await connection();
+
   const supabase = await createClient();
   const { entryId } = await params;
 

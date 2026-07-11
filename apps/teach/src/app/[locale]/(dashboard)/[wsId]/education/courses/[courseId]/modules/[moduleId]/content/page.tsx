@@ -4,6 +4,7 @@ import type { JSONContent } from '@tuturuuu/types/tiptap';
 import { Button } from '@tuturuuu/ui/button';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import type { Metadata } from 'next';
+import { connection } from 'next/server';
 import { getTranslations } from 'next-intl/server';
 import { resolveRouteWorkspace } from '@/lib/resolve-route-workspace';
 import { ModuleContentEditor } from './content-editor';
@@ -22,6 +23,8 @@ interface Props {
 }
 
 export default async function ModuleContentPage({ params }: Props) {
+  await connection();
+
   const { wsId: routeWsId, courseId, moduleId } = await params;
   const { resolvedWsId } = await resolveRouteWorkspace(routeWsId);
   const t = await getTranslations();

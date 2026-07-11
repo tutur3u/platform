@@ -4,6 +4,7 @@ import { getCurrentWorkspaceUser } from '@tuturuuu/utils/user-helper';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import { connection } from 'next/server';
 import { getTranslations } from 'next-intl/server';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
 import GroupReportsSelector from './group-reports-selector';
@@ -21,6 +22,8 @@ interface Props {
 }
 
 export default async function WorkspaceUserReportsPage({ params }: Props) {
+  await connection();
+
   return (
     <WorkspaceWrapper params={params}>
       {async ({ wsId }) => {

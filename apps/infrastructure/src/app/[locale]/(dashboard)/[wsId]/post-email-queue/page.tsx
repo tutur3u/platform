@@ -7,6 +7,7 @@ import { cn } from '@tuturuuu/utils/format';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import { connection } from 'next/server';
 import { getTranslations } from 'next-intl/server';
 import {
   getPostEmailQueueObservability,
@@ -374,6 +375,8 @@ function QueueDashboard({
 }
 
 export default async function PostEmailQueuePage({ params }: Props) {
+  await connection();
+
   const { wsId } = await params;
   const t = await getTranslations();
 

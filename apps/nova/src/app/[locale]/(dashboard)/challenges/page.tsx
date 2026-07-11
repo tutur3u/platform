@@ -3,6 +3,7 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import type { NovaExtendedChallenge } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
+import { connection } from 'next/server';
 import { getTranslations } from 'next-intl/server';
 import {
   requireNovaAppSessionUser,
@@ -12,6 +13,8 @@ import ChallengesList from './ChallengesList';
 import CreateChallengeDialog from './createChallengeDialog';
 
 export default async function Page() {
+  await connection();
+
   const t = await getTranslations('nova');
 
   const user = await requireNovaAppSessionUser();

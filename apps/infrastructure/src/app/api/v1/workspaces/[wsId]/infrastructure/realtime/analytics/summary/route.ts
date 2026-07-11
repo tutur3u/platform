@@ -1,6 +1,6 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { MAX_NAME_LENGTH } from '@tuturuuu/utils/constants';
-import { type NextRequest, NextResponse } from 'next/server';
+import { connection, type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 
 const QueryParamsSchema = z.object({
@@ -32,6 +32,8 @@ interface TopConsumer {
 }
 
 export async function GET(req: NextRequest) {
+  await connection();
+
   try {
     // Parse and validate query parameters
     const searchParams = req.nextUrl.searchParams;

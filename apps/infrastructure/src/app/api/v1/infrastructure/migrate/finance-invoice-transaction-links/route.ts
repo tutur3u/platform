@@ -1,6 +1,6 @@
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import { NextResponse } from 'next/server';
+import { connection, NextResponse } from 'next/server';
 import { requireDevMode } from '../batch-upsert';
 
 // This module relinks finance_invoices.transaction_id after both
@@ -8,6 +8,8 @@ import { requireDevMode } from '../batch-upsert';
 // It runs as a post-processing step to restore FK relationships.
 
 export async function GET(req: Request) {
+  await connection();
+
   const devModeError = requireDevMode();
   if (devModeError) return devModeError;
 

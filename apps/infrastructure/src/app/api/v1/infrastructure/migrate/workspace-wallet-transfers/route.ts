@@ -1,5 +1,5 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import { NextResponse } from 'next/server';
+import { connection, NextResponse } from 'next/server';
 import {
   batchUpsert,
   createMigrationResponse,
@@ -8,6 +8,8 @@ import {
 
 // workspace_wallet_transfers doesn't have ws_id - query via transaction_id -> wallet_id -> workspace_wallets
 export async function GET(req: Request) {
+  await connection();
+
   const devModeError = requireDevMode();
   if (devModeError) return devModeError;
 

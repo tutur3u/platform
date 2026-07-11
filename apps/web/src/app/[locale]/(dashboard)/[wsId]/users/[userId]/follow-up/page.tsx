@@ -6,6 +6,7 @@ import {
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import { connection } from 'next/server';
 import { getTranslations } from 'next-intl/server';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
 import FollowUpClient from './client';
@@ -25,6 +26,8 @@ interface Props {
 }
 
 export default async function GuestLeadFollowUpPage({ params }: Props) {
+  await connection();
+
   return (
     <WorkspaceWrapper params={params}>
       {async ({ wsId, userId }) => {

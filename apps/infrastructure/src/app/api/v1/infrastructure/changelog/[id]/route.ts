@@ -4,7 +4,7 @@ import {
   MAX_NAME_LENGTH,
   MAX_SEARCH_LENGTH,
 } from '@tuturuuu/utils/constants';
-import { NextResponse } from 'next/server';
+import { connection, NextResponse } from 'next/server';
 import { z } from 'zod';
 import {
   changelogPermissionDeniedResponse,
@@ -42,6 +42,8 @@ interface Params {
 }
 
 export async function GET(_: Request, { params }: Params) {
+  await connection();
+
   const supabase = await createClient();
   const { id } = await params;
 

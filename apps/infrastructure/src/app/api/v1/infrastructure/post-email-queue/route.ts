@@ -1,9 +1,11 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import { type NextRequest, NextResponse } from 'next/server';
+import { connection, type NextRequest, NextResponse } from 'next/server';
 import { getPostEmailQueueObservability } from '@/lib/post-email-queue/observability';
 import { requirePostEmailQueueRootAdmin } from './auth';
 
 export async function GET(request: NextRequest) {
+  await connection();
+
   const auth = await requirePostEmailQueueRootAdmin(request);
   if (auth.error) return auth.error;
 

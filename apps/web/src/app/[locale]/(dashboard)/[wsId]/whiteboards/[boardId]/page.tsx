@@ -2,6 +2,7 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import { connection } from 'next/server';
 import {
   isExcalidrawSnapshot,
   parseStoredWhiteboardSnapshot,
@@ -19,6 +20,8 @@ interface WhiteboardPageProps {
 }
 
 export default async function WhiteboardPage({ params }: WhiteboardPageProps) {
+  await connection();
+
   const { wsId, boardId } = await params;
   const workspace = await getWorkspace(wsId);
 

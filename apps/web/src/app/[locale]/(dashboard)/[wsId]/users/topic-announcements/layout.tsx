@@ -5,6 +5,7 @@ import {
 } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import { connection } from 'next/server';
 import type { ReactNode } from 'react';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
 import { TOPIC_ANNOUNCEMENTS_SECRET } from '@/lib/topic-announcements';
@@ -24,6 +25,8 @@ export default async function TopicAnnouncementsLayout({
   children,
   params,
 }: LayoutProps) {
+  await connection();
+
   return (
     <WorkspaceWrapper params={params}>
       {async ({ wsId, isPersonal }) => {

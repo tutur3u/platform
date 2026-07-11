@@ -1,6 +1,6 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { extractIPFromHeaders } from '@tuturuuu/utils/abuse-protection';
-import { NextResponse } from 'next/server';
+import { connection, NextResponse } from 'next/server';
 import {
   MOBILE_DEPLOYMENT_ENVIRONMENT,
   MOBILE_DEPLOYMENT_PLATFORMS,
@@ -39,6 +39,8 @@ function parsePlatform(value: string | null): MobileDeploymentPlatform | null {
 }
 
 export async function GET(request: Request) {
+  await connection();
+
   const url = new URL(request.url);
   const environment = url.searchParams.get('environment');
   const platform = parsePlatform(url.searchParams.get('platform'));

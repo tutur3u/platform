@@ -10,6 +10,7 @@ import {
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
+import { connection } from 'next/server';
 import { getTranslations } from 'next-intl/server';
 import { getFirebaseMessagingConfigurationStatus } from '@/lib/notifications/firebase-admin';
 import { enforceInfrastructureRootWorkspace } from '../enforce-infrastructure-root';
@@ -345,6 +346,8 @@ function getDefaultAppFlavor(coverage: PushDeviceCoverage) {
 export default async function InfrastructurePushNotificationsPage({
   params,
 }: Props) {
+  await connection();
+
   const { locale, wsId } = await params;
   await enforceInfrastructureRootWorkspace(wsId);
 

@@ -2,6 +2,7 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { WorkspaceDocument } from '@tuturuuu/types';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { notFound, redirect } from 'next/navigation';
+import { connection } from 'next/server';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
 import { DocumentEditor } from './document-editor';
 
@@ -34,6 +35,8 @@ async function getDocument(
 }
 
 export default async function DocumentDetailsPage({ params }: Props) {
+  await connection();
+
   return (
     <WorkspaceWrapper params={params}>
       {async ({ wsId, documentId }) => {

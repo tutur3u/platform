@@ -4,6 +4,7 @@ import {
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import type { Metadata } from 'next';
+import { connection } from 'next/server';
 import { CrawlerContent } from './crawler-content';
 
 export const metadata: Metadata = {
@@ -21,6 +22,8 @@ interface Props {
 }
 
 export default async function DatasetDetailsPage({ params }: Props) {
+  await connection();
+
   const { wsId, crawlerId } = await params;
   const supabase = await createClient();
 

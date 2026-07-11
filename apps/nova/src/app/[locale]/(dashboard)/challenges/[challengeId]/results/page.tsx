@@ -1,6 +1,7 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { calculatePercentage } from '@tuturuuu/utils/nova/scores/calculate';
 import { redirect } from 'next/navigation';
+import { connection } from 'next/server';
 import { requireNovaAppSessionUser } from '@/lib/app-session';
 import ResultClient from './client';
 
@@ -9,6 +10,8 @@ interface Props {
 }
 
 export default async function Page({ params }: Props) {
+  await connection();
+
   const { challengeId } = await params;
 
   const sbAdmin = await createAdminClient({ noCookie: true });

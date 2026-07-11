@@ -1,6 +1,7 @@
 import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { notFound } from 'next/navigation';
+import { connection } from 'next/server';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
 import { FormStudio } from '@/features/forms/form-studio';
 
@@ -9,6 +10,8 @@ interface PageProps {
 }
 
 export default async function NewFormPage({ params }: PageProps) {
+  await connection();
+
   const resolvedParams = await params;
 
   return (

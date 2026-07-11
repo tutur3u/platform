@@ -16,6 +16,7 @@ import { Card } from '@tuturuuu/ui/card';
 import { Separator } from '@tuturuuu/ui/separator';
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { connection } from 'next/server';
 
 export const metadata: Metadata = {
   title: 'Changelog',
@@ -91,6 +92,8 @@ function formatDate(dateString: string): string {
 }
 
 export default async function DashboardChangelogPage({ params }: Props) {
+  await connection();
+
   await params; // Await params for Next.js dynamic route handling
   const changelogs = await getChangelogs();
 

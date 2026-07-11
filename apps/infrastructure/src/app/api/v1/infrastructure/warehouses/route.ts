@@ -1,8 +1,10 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import { NextResponse } from 'next/server';
+import { connection, NextResponse } from 'next/server';
 import { authorizeInfrastructureInventoryRead } from '../inventory-read-auth';
 
 export async function GET(req: Request) {
+  await connection();
+
   const { searchParams } = new URL(req.url);
   const rawWsId = searchParams.get('ws_id');
   const limit = searchParams.get('limit') || '1000';

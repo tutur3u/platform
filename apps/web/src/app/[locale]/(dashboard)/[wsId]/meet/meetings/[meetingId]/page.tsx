@@ -14,6 +14,7 @@ import { format } from 'date-fns';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
+import { connection } from 'next/server';
 import { MeetingActions } from './meeting-actions';
 import { RecordingSessionsOverview } from './recording-sessions-overview';
 
@@ -33,6 +34,8 @@ interface MeetingDetailPageProps {
 export default async function MeetingDetailPage({
   params,
 }: MeetingDetailPageProps) {
+  await connection();
+
   const { wsId, meetingId } = await params;
   const user = await getCurrentUser();
 
