@@ -642,11 +642,9 @@ test('TanStack migration E2E workflow keeps dual-stack and compare coverage', ()
   const job = workflow.jobs?.['migration-e2e'];
 
   assert.ok(job, 'e2e-tests.yaml must define the migration-e2e job');
-  assert.deepEqual(job.needs, ['check-ci']);
-  assert.equal(
-    job.if,
-    "github.ref != 'refs/heads/production' && needs.check-ci.outputs.should_run == 'true'"
-  );
+  assert.deepEqual(job.needs, ['check-ci', 'prepare-e2e-images']);
+  assert.match(job.if, /always\(\)/u);
+  assert.match(job.if, /needs\.check-ci\.outputs\.should_run == 'true'/u);
   assert.equal(job['timeout-minutes'], 60);
   assert.equal(job.strategy?.['fail-fast'], false);
 
@@ -738,7 +736,7 @@ test('TanStack migration E2E workflow keeps dual-stack and compare coverage', ()
   assert.match(cleanupStep.run || '', /bun sb:stop \|\| true/);
 });
 
-test('E2E image bundle is concurrent, private, bounded, and optional', () => {
+test('E2E image bundle completes before private, bounded, optional consumers', () => {
   const workflow = readWorkflowYaml('e2e-tests.yaml');
   const producer = workflow.jobs?.['prepare-e2e-images'];
   const e2e = workflow.jobs?.e2e;
@@ -750,8 +748,10 @@ test('E2E image bundle is concurrent, private, bounded, and optional', () => {
   assert.ok(migration);
   assert.ok(cleanup);
   assert.deepEqual(producer.needs, ['check-ci']);
-  assert.deepEqual(e2e.needs, ['check-ci']);
-  assert.deepEqual(migration.needs, ['check-ci']);
+  assert.deepEqual(e2e.needs, ['check-ci', 'prepare-e2e-images']);
+  assert.deepEqual(migration.needs, ['check-ci', 'prepare-e2e-images']);
+  assert.match(e2e.if, /always\(\)/u);
+  assert.match(migration.if, /always\(\)/u);
   assert.equal(producer['continue-on-error'], true);
   assert.equal(producer.permissions?.contents, 'read');
   assert.equal(producer.permissions?.packages, 'write');
@@ -762,7 +762,7 @@ test('E2E image bundle is concurrent, private, bounded, and optional', () => {
     workflow.env?.E2E_IMAGE_BUNDLE_REPOSITORY,
     'ghcr.io/tutur3u/platform-e2e'
   );
-  assert.equal(workflow.env?.E2E_IMAGE_BUNDLE_WAIT_SECONDS, '360');
+  assert.equal(workflow.env?.E2E_IMAGE_BUNDLE_WAIT_SECONDS, '10');
   assert.equal(
     workflow.env?.E2E_IMAGE_BUNDLE_TAG_PREFIX,
     `${githubExpression('github.run_id')}-${githubExpression(

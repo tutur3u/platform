@@ -14,7 +14,7 @@ permissions:
 env:
   E2E_IMAGE_BUNDLE_REPOSITORY: ghcr.io/tutur3u/platform-e2e
   E2E_IMAGE_BUNDLE_TAG_PREFIX: ${{ github.run_id }}-${{ github.run_attempt }}-${{ github.sha }}
-  E2E_IMAGE_BUNDLE_WAIT_SECONDS: "360"
+  E2E_IMAGE_BUNDLE_WAIT_SECONDS: "10"
 
 jobs:
   check-ci:
@@ -147,8 +147,8 @@ jobs:
 
   e2e:
     name: Playwright E2E (${{ matrix.shard }}/${{ matrix.total_shards }})
-    needs: [check-ci]
-    if: github.ref != 'refs/heads/production' && needs.check-ci.outputs.should_run == 'true'
+    needs: [check-ci, prepare-e2e-images]
+    if: ${{ always() && github.ref != 'refs/heads/production' && needs.check-ci.outputs.should_run == 'true' }}
     timeout-minutes: 45
     runs-on: ubuntu-latest
     permissions:
@@ -462,8 +462,8 @@ jobs:
 
   migration-e2e:
     name: Migration E2E (${{ matrix.mode }})
-    needs: [check-ci]
-    if: github.ref != 'refs/heads/production' && needs.check-ci.outputs.should_run == 'true'
+    needs: [check-ci, prepare-e2e-images]
+    if: ${{ always() && github.ref != 'refs/heads/production' && needs.check-ci.outputs.should_run == 'true' }}
     timeout-minutes: 60
     runs-on: ubuntu-latest
     permissions:

@@ -887,7 +887,8 @@ test('E2E workflow runs TanStack migration dual-stack and compare smoke jobs', (
   const stopIndex = migrationJob.indexOf('Stop migration E2E stacks');
 
   assert.match(workflow, /\n {2}workflow_dispatch:\n/u);
-  assert.match(migrationJob, /needs: \[check-ci\]/u);
+  assert.match(migrationJob, /needs: \[check-ci, prepare-e2e-images\]/u);
+  assert.match(migrationJob, /if: \$\{\{ always\(\)/u);
   assert.match(
     migrationJob,
     /github\.ref != 'refs\/heads\/production' && needs\.check-ci\.outputs\.should_run == 'true'/u

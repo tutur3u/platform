@@ -520,17 +520,19 @@ tag, or `E2E_DOCKER_REUSE_WEB_IMAGE_COLOR=blue|green|auto` when the active-color
 file is not the lane you want.
 
 GitHub Actions builds the same image set once per E2E workflow run and shares it
-through the private `ghcr.io/tutur3u/platform-e2e` package. The producer and
-test jobs start after the same CI switchboard check, so shards can restore
-Supabase, Bun, and Playwright while the image bundle is being prepared. The
-producer publishes immutable tags under
+through the private `ghcr.io/tutur3u/platform-e2e` package. The producer starts
+after the CI switchboard check, and the Playwright and migration matrices wait
+for that job to finish before GitHub allocates their runners. The producer
+publishes immutable tags under
 `<run-id>-<run-attempt>-<commit-sha>-<service>` and pushes the `-ready` tag only
 after every planned blue/green and TanStack image exists and the package has
 been verified private. Consumers wait up to
-`E2E_IMAGE_BUNDLE_WAIT_SECONDS` (six minutes by default), pull the complete
+`E2E_IMAGE_BUNDLE_WAIT_SECONDS` (ten seconds by default), pull the complete
 bundle, retag it for their isolated Compose project, and skip web/support image
-builds. Missing, late, or partial bundles emit a notice and retain the existing
-local cache-backed build path.
+builds. Consumer jobs use `always()` at the job boundary, so a failed
+best-effort producer still starts the existing local cache-backed build path.
+Missing or partial bundles emit a notice and fall back without leaving matrix
+runners idle for minutes.
 
 The workflow exposes only three bundle controls:
 
