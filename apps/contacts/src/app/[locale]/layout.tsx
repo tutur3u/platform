@@ -9,6 +9,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { NextIntlClientProvider } from 'next-intl';
 import { setRequestLocale } from 'next-intl/server';
+import { NuqsAdapter } from 'nuqs/adapters/next/app';
 import { type ReactNode, Suspense } from 'react';
 import { ContactsQueryProvider } from '@/components/contacts-query-provider';
 import { ContactsThemeProvider } from '@/components/contacts-theme-provider';
@@ -63,14 +64,16 @@ export default async function RootLayout({ children, params }: Props) {
       >
         <Suspense fallback={null}>
           <NextIntlClientProvider>
-            <ContactsThemeProvider>
-              <ContactsQueryProvider>
-                {children}
-                <Suspense fallback={null}>
-                  <SatelliteVersionBadge appName="Contacts" />
-                </Suspense>
-              </ContactsQueryProvider>
-            </ContactsThemeProvider>
+            <NuqsAdapter>
+              <ContactsThemeProvider>
+                <ContactsQueryProvider>
+                  {children}
+                  <Suspense fallback={null}>
+                    <SatelliteVersionBadge appName="Contacts" />
+                  </Suspense>
+                </ContactsQueryProvider>
+              </ContactsThemeProvider>
+            </NuqsAdapter>
           </NextIntlClientProvider>
         </Suspense>
         <TailwindIndicator />
