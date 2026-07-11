@@ -24,9 +24,11 @@ export interface EmailContent {
 }
 
 export interface EmailAttachment {
+  contentId?: string;
   filename: string;
   contentType: EmailAttachmentContentType;
   data: Uint8Array;
+  disposition?: 'attachment' | 'inline';
 }
 
 export type EmailAttachmentContentType = string;

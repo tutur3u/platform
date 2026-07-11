@@ -5,9 +5,12 @@ import type {
   MailMailbox,
   MailMailboxMember,
   MailMailboxRole,
+  MailMailboxSettings,
   MailMessageDetail,
   MailMessageSummary,
   MailRecipient,
+  MailThreadSummary,
+  UpdateMailMailboxSettingsPayload,
 } from '@tuturuuu/internal-api';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 
@@ -17,9 +20,12 @@ export type {
   MailMailbox,
   MailMailboxMember,
   MailMailboxRole,
+  MailMailboxSettings,
   MailMessageDetail,
   MailMessageSummary,
   MailRecipient,
+  MailThreadSummary,
+  UpdateMailMailboxSettingsPayload,
 };
 
 export type MailLabel = InternalMailLabel & { mailboxId: string };

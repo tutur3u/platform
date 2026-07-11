@@ -269,7 +269,12 @@ export default {
       accepted: boolean;
       canonicalDomain?: string;
       reason?: string;
-    }>(env, { domain: ingressDomain, type: 'domain_check' });
+      route?: 'catch_all' | 'exact';
+    }>(env, {
+      domain: ingressDomain,
+      recipient: observedRecipient,
+      type: 'domain_check',
+    });
     if (!domainCheck.accepted || !domainCheck.canonicalDomain) {
       message.setReject(domainCheck.reason ?? 'Mail domain is unavailable');
       return;

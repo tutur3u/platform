@@ -88,15 +88,19 @@ export async function getAuthorizedAttachment({
 
 export async function uploadDraftAttachment({
   bytes,
+  contentId,
   contentType,
   ctx,
+  disposition = 'attachment',
   draftId,
   filename,
   mailboxId,
 }: {
   bytes: Uint8Array;
+  contentId?: string | null;
   contentType: string;
   ctx: MailRouteContext;
+  disposition?: 'attachment' | 'inline';
   draftId: string;
   filename: string;
   mailboxId: string;
@@ -109,6 +113,9 @@ export async function uploadDraftAttachment({
   if (!access) return null;
   if (bytes.byteLength === 0 || bytes.byteLength > MAX_MAIL_ATTACHMENT_BYTES) {
     throw new Error('Attachment size is outside the allowed range');
+  }
+  if (contentId && !/^[a-z0-9.!#$%&'*+/=?^_`{|}~@-]+$/iu.test(contentId)) {
+    throw new Error('Attachment content ID is invalid');
   }
   const { data: draft, error: draftError } = await privateTable(
     access.admin,
@@ -180,8 +187,9 @@ export async function uploadDraftAttachment({
       'mail_attachments'
     )
       .insert({
+        content_id: contentId ?? null,
         content_type: contentType,
-        disposition: 'attachment',
+        disposition,
         filename,
         message_id: draftId,
         size_bytes: bytes.byteLength,
@@ -214,6 +222,45 @@ export async function uploadDraftAttachment({
     }
     throw error;
   }
+}
+
+export async function copyAttachmentsToDraft({
+  attachmentIds,
+  ctx,
+  draftId,
+  mailboxId,
+  sourceMessageId,
+}: {
+  attachmentIds: string[];
+  ctx: MailRouteContext;
+  draftId: string;
+  mailboxId: string;
+  sourceMessageId: string;
+}) {
+  const copied = [];
+  for (const attachmentId of attachmentIds) {
+    const source = await getAuthorizedAttachment({
+      attachmentId,
+      ctx,
+      mailboxId,
+      messageId: sourceMessageId,
+    });
+    if (!source) throw new Error('Source attachment was not found');
+    copied.push(
+      await uploadDraftAttachment({
+        bytes: await readMailStoredObject(source.location),
+        contentId: null,
+        contentType:
+          source.attachment.content_type || 'application/octet-stream',
+        ctx,
+        disposition: 'attachment',
+        draftId,
+        filename: source.attachment.filename,
+        mailboxId,
+      })
+    );
+  }
+  return copied;
 }
 
 export async function deleteDraftAttachment({
@@ -272,7 +319,7 @@ export async function loadOutboundAttachments(
   admin: AnyRecord,
   mailboxId: string,
   messageId: string
-): Promise<EmailAttachment[]> {
+): Promise<Array<EmailAttachment & { id: string }>> {
   const { data, error } = await privateTable(admin, 'mail_attachments')
     .select('*')
     .eq('message_id', messageId)
@@ -309,9 +356,12 @@ export async function loadOutboundAttachments(
         throw new Error('Attachment does not have stored bytes');
       }
       return {
+        contentId: attachment.content_id ?? undefined,
         contentType: attachment.content_type,
         data: await readMailStoredObject(location),
+        disposition: attachment.disposition ?? 'attachment',
         filename: attachment.filename,
+        id: attachment.id,
       };
     })
   );

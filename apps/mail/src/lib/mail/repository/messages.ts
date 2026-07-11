@@ -8,7 +8,7 @@ import { requireMailboxAccess } from './bootstrap';
 import { queryMailMessageRows } from './search';
 import { type AnyRecord, privateTable, toLabel, toRecipient } from './shared';
 
-async function getStatesByMessageId(
+export async function getStatesByMessageId(
   admin: AnyRecord,
   messageIds: string[],
   userId: string
@@ -29,7 +29,10 @@ async function getStatesByMessageId(
   );
 }
 
-async function getLabelsByMessageId(admin: AnyRecord, messageIds: string[]) {
+export async function getLabelsByMessageId(
+  admin: AnyRecord,
+  messageIds: string[]
+) {
   if (messageIds.length === 0) return new Map<string, MailLabel[]>();
 
   const { data: links, error: linkError } = await privateTable(
@@ -76,7 +79,7 @@ async function getLabelsByMessageId(admin: AnyRecord, messageIds: string[]) {
   return labelsByMessage;
 }
 
-function rowToSummary({
+export function rowToSummary({
   labels,
   row,
   state,
@@ -208,9 +211,45 @@ export async function hydrateMailMessage({
     ...summary,
     attachments,
     bodyHtml: row.body_html ?? null,
+    deliveryRoute: row.delivery_route ?? null,
+    envelopeFrom: row.envelope_from ?? null,
+    envelopeTo: row.envelope_to ?? null,
+    inReplyTo: row.in_reply_to ?? null,
+    internetMessageId: row.internet_message_id ?? null,
+    observedRecipient: row.observed_recipient ?? null,
     recipients,
+    references: row.references_headers ?? [],
+    safeHeaders: await getSafeHeaders(admin, row.raw_message_id),
     sanitizedHtml: row.sanitized_html ?? null,
   };
+}
+
+async function getSafeHeaders(admin: AnyRecord, rawMessageId?: string | null) {
+  if (!rawMessageId) return {};
+  const { data, error } = await privateTable(admin, 'mail_raw_messages')
+    .select('raw_headers')
+    .eq('id', rawMessageId)
+    .maybeSingle();
+  if (error)
+    throw new Error(`Failed to load message headers: ${error.message}`);
+  const headers = (data?.raw_headers ?? {}) as Record<string, unknown>;
+  const allowed = new Set([
+    'date',
+    'from',
+    'in-reply-to',
+    'message-id',
+    'reply-to',
+    'subject',
+    'to',
+  ]);
+  return Object.fromEntries(
+    Object.entries(headers)
+      .filter(
+        ([key, value]) =>
+          allowed.has(key.toLowerCase()) && typeof value === 'string'
+      )
+      .map(([key, value]) => [key, value as string])
+  );
 }
 
 async function listRecipients(admin: AnyRecord, messageId: string) {

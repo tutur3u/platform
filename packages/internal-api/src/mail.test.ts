@@ -1,12 +1,19 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
   bulkUpdateMailMessages,
+  bulkUpdateMailThreads,
+  copyMailDraftAttachments,
   createMailLabel,
   getMailBootstrap,
+  getMailCatchAllConfiguration,
+  getMailMailboxSettings,
   getMailThread,
   listMailDomains,
   listMailMessages,
+  listMailThreads,
   sendMailMessage,
+  updateMailCatchAllConfiguration,
+  updateMailMailboxSettings,
   updateMailMessageState,
   upsertMailDomain,
 } from './mail';
@@ -181,6 +188,80 @@ describe('mail internal API helpers', () => {
     );
     expect(fetchMock.mock.calls[2]?.[1]).toEqual(
       expect.objectContaining({ method: 'PATCH' })
+    );
+  });
+
+  it('uses dedicated thread, mailbox-settings, and catch-all routes', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse({}));
+    const options = {
+      baseUrl: 'https://internal.example.com',
+      fetch: fetchMock as unknown as typeof fetch,
+    };
+
+    await listMailThreads(
+      'personal',
+      'mailbox-1',
+      { folder: 'inbox' },
+      options
+    );
+    await bulkUpdateMailThreads(
+      'personal',
+      'mailbox-1',
+      { action: 'archive', threadIds: ['thread-1'] },
+      options
+    );
+    await getMailMailboxSettings('personal', 'mailbox-1', options);
+    await updateMailMailboxSettings(
+      'personal',
+      'mailbox-1',
+      { senderName: 'Tuturuuu Mail' },
+      options
+    );
+    await getMailCatchAllConfiguration('domain/one', options);
+    await updateMailCatchAllConfiguration(
+      'domain/one',
+      {
+        autoDraftEnabled: false,
+        enabled: true,
+        targetMailboxId: '00000000-0000-0000-0000-000000000001',
+      },
+      options
+    );
+
+    expect(fetchMock.mock.calls.map((call) => call[0])).toEqual([
+      'https://internal.example.com/api/v1/workspaces/personal/mail/mailboxes/mailbox-1/threads?folder=inbox',
+      'https://internal.example.com/api/v1/workspaces/personal/mail/mailboxes/mailbox-1/threads/bulk',
+      'https://internal.example.com/api/v1/workspaces/personal/mail/mailboxes/mailbox-1/settings',
+      'https://internal.example.com/api/v1/workspaces/personal/mail/mailboxes/mailbox-1/settings',
+      'https://internal.example.com/api/v1/mail/domains/domain%2Fone/catch-all',
+      'https://internal.example.com/api/v1/mail/domains/domain%2Fone/catch-all',
+    ]);
+    expect(fetchMock.mock.calls[1]?.[1]).toEqual(
+      expect.objectContaining({ method: 'POST' })
+    );
+    expect(fetchMock.mock.calls[3]?.[1]).toEqual(
+      expect.objectContaining({ method: 'PATCH' })
+    );
+  });
+
+  it('copies selected source attachments into a scoped draft', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(jsonResponse({ attachments: [] }));
+    await copyMailDraftAttachments(
+      'personal',
+      'mailbox-1',
+      'draft-1',
+      { attachmentIds: ['attachment-1'], sourceMessageId: 'message-1' },
+      {
+        baseUrl: 'https://internal.example.com',
+        fetch: fetchMock as unknown as typeof fetch,
+      }
+    );
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://internal.example.com/api/v1/workspaces/personal/mail/mailboxes/mailbox-1/drafts/draft-1/attachments',
+      expect.objectContaining({ method: 'POST' })
     );
   });
 });

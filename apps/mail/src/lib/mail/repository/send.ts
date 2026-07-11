@@ -100,6 +100,19 @@ export async function sendMailMessage({
     mailboxId,
     message.id
   );
+  const outboundHtml = attachments.reduce(
+    (html, attachment) =>
+      attachment.disposition === 'inline' && attachment.contentId
+        ? html.replaceAll(
+            new RegExp(
+              `(?:https?:\\/\\/[^"']+)?\\/attachments\\/${attachment.id}(?=["'])`,
+              'gu'
+            ),
+            `cid:${attachment.contentId}`
+          )
+        : html,
+    message.sanitizedHtml || message.bodyHtml || ''
+  );
   const replyHeaders = {
     ...(payload.inReplyTo ? { 'In-Reply-To': payload.inReplyTo } : {}),
     ...(payload.references?.length
@@ -124,7 +137,7 @@ export async function sendMailMessage({
         outboundProvider === 'ses'
           ? { 'Message-ID': sesInternetMessageId, ...replyHeaders }
           : replyHeaders,
-      html: message.sanitizedHtml || message.bodyHtml || '',
+      html: outboundHtml,
       subject: message.subject,
       text: message.bodyText ?? undefined,
     },
@@ -146,7 +159,10 @@ export async function sendMailMessage({
     },
     source: {
       email: access.mailbox.address,
-      name: access.mailbox.displayName || access.mailbox.address,
+      name:
+        access.mailbox.senderName ||
+        access.mailbox.displayName ||
+        access.mailbox.address,
     },
   };
   const workspaceId = ctx.normalizedWsId || ROOT_WORKSPACE_ID;

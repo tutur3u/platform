@@ -212,6 +212,40 @@ describe('SESEmailProvider', () => {
       expect(rawMessage).toContain('JVBERg==');
     });
 
+    it('emits content IDs for inline MIME attachments', async () => {
+      mockSend.mockResolvedValueOnce({
+        MessageId: 'inline-msg-id',
+        $metadata: { httpStatusCode: 200 },
+      });
+
+      await provider.send({
+        ...defaultParams,
+        content: {
+          ...defaultParams.content,
+          attachments: [
+            {
+              contentId: 'hero@tuturuuu.mail',
+              contentType: 'image/png',
+              data: new Uint8Array([1, 2, 3]),
+              disposition: 'inline',
+              filename: 'hero.png',
+            },
+          ],
+        },
+      });
+
+      const sendRawEmailMock = SendRawEmailCommand as unknown as ReturnType<
+        typeof vi.fn
+      >;
+      const rawMessage = new TextDecoder().decode(
+        sendRawEmailMock.mock.calls.at(-1)?.[0].RawMessage.Data
+      );
+      expect(rawMessage).toContain(
+        'Content-Disposition: inline; filename="hero.png"'
+      );
+      expect(rawMessage).toContain('Content-ID: <hero@tuturuuu.mail>');
+    });
+
     it('uses raw MIME delivery when threading headers are present', async () => {
       mockSend.mockResolvedValueOnce({
         MessageId: 'raw-msg-id-456',

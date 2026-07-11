@@ -94,15 +94,19 @@ export async function queryMailMessageRows({
   admin,
   mailboxId,
   params,
+  threadScan = false,
   userId,
 }: {
   admin: AnyRecord;
   mailboxId: string;
   params: ListMailMessagesParams;
+  threadScan?: boolean;
   userId: string;
 }): Promise<SearchResult> {
   const page = Math.max(1, params.page ?? 1);
-  const pageSize = Math.min(Math.max(1, params.pageSize ?? 40), 100);
+  const pageSize = threadScan
+    ? 5000
+    : Math.min(Math.max(1, params.pageSize ?? 40), 100);
   const parsed = parseMailSearch(params.query);
   const { data: stateRows, error: stateError } = await privateTable(
     admin,
@@ -211,7 +215,7 @@ export async function queryMailMessageRows({
     });
   }
 
-  const start = (page - 1) * pageSize;
+  const start = threadScan ? 0 : (page - 1) * pageSize;
   const { data, error, count } = await query
     .order('created_at', { ascending: false })
     .range(start, start + pageSize - 1);

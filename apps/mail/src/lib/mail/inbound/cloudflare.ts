@@ -1,7 +1,7 @@
 import { createHmac, timingSafeEqual } from 'node:crypto';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { z } from 'zod';
-import { createInboundMessage, ensureMailboxForRecipient } from './ingest';
+import { createInboundMessage, resolveInboundMailbox } from './ingest';
 import type { AnyRecord, ParsedEmail } from './types';
 
 const addressSchema = z.object({
@@ -29,6 +29,11 @@ const storedObjectSchema = z.object({
 
 const domainCheckSchema = z.object({
   domain: z.string().trim().toLowerCase().max(253),
+  recipient: z
+    .string()
+    .email()
+    .transform((value) => value.toLowerCase())
+    .optional(),
   type: z.literal('domain_check'),
 });
 
@@ -128,6 +133,7 @@ async function getCloudflareDomain(admin: AnyRecord, domain: string) {
 
 type MailDomain = {
   canonical_domain_id?: string | null;
+  catch_all_auto_draft_enabled?: boolean;
   domain: string;
   id: string;
   inbound_provider: string;
@@ -227,10 +233,30 @@ export async function handleCloudflareInboundEvent(
   const route = await resolveCloudflareDomainRoute(admin, event.domain);
 
   if (event.type === 'domain_check') {
+    const recipient = event.recipient ? splitRecipient(event.recipient) : null;
+    const canonicalRecipient =
+      route && recipient
+        ? `${recipient.localPart}@${route.canonicalDomain.domain}`
+        : null;
+    const resolved =
+      route && canonicalRecipient
+        ? await resolveInboundMailbox({
+            admin,
+            canonicalDomainId: route.canonicalDomain.id,
+            canonicalRecipient,
+            ingressDomainId: route.ingressDomain.id,
+            provisionInternalUser: false,
+          })
+        : null;
     return {
-      accepted: Boolean(route),
+      accepted: Boolean(route && (!event.recipient || resolved)),
       canonicalDomain: route?.canonicalDomain.domain,
-      reason: route ? undefined : 'Unknown or disabled Cloudflare mail domain',
+      reason: route
+        ? event.recipient && !resolved
+          ? 'No active mailbox route matched this recipient'
+          : undefined
+        : 'Unknown or disabled Cloudflare mail domain',
+      route: resolved?.route,
     };
   }
   const ingressDomainName = event.ingressDomain ?? event.domain;
@@ -329,20 +355,13 @@ export async function handleCloudflareInboundEvent(
     return { imported: 0, status: 'quarantined' as const };
   }
 
-  const { data: existingMailbox, error: mailboxError } = await privateTable(
+  const resolvedMailbox = await resolveInboundMailbox({
     admin,
-    'mail_mailboxes'
-  )
-    .select('*')
-    .eq('address', event.envelope.to)
-    .eq('domain_id', domain.id)
-    .eq('status', 'active')
-    .maybeSingle();
-  if (mailboxError) throw mailboxError;
-  const mailbox =
-    existingMailbox ??
-    (await ensureMailboxForRecipient(admin, event.envelope.to, domain.id));
-  if (!mailbox) {
+    canonicalDomainId: domain.id,
+    canonicalRecipient: event.envelope.to,
+    ingressDomainId: ingestRoute.ingressDomain.id,
+  });
+  if (!resolvedMailbox) {
     await privateTable(admin, 'mail_inbound_jobs')
       .update({
         error_message: 'No active mailbox matched the Cloudflare recipient',
@@ -371,7 +390,14 @@ export async function handleCloudflareInboundEvent(
   };
   const message = await createInboundMessage({
     admin,
-    mailbox,
+    delivery: {
+      envelopeFrom: event.envelope.from,
+      envelopeTo: event.envelope.to,
+      ingressDomainId: ingestRoute.ingressDomain.id,
+      observedRecipient,
+      route: resolvedMailbox.route,
+    },
+    mailbox: resolvedMailbox.mailbox,
     parsed,
     provider: 'cloudflare',
     providerMessageId: event.deliveryId,
@@ -384,15 +410,22 @@ export async function handleCloudflareInboundEvent(
   await Promise.all(
     [rawObject, ...attachmentObjects, ...relatedObjects].map((object) =>
       privateTable(admin, 'mail_stored_objects')
-        .update({ mailbox_id: mailbox.id, message_id: message.id })
+        .update({
+          mailbox_id: resolvedMailbox.mailbox.id,
+          message_id: message.id,
+        })
         .eq('id', object.id)
     )
   );
 
-  if (mailbox.auto_draft_enabled) {
+  const allowAutoDraft =
+    resolvedMailbox.mailbox.auto_draft_enabled &&
+    (resolvedMailbox.route === 'exact' ||
+      ingestRoute.ingressDomain.catch_all_auto_draft_enabled);
+  if (allowAutoDraft) {
     await privateTable(admin, 'mail_auto_draft_jobs').upsert(
       {
-        mailbox_id: mailbox.id,
+        mailbox_id: resolvedMailbox.mailbox.id,
         message_id: message.id,
         status: 'queued',
       },

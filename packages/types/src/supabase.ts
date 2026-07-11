@@ -5599,6 +5599,9 @@ export type Database = {
       mail_domains: {
         Row: {
           canonical_domain_id: string | null;
+          catch_all_auto_draft_enabled: boolean;
+          catch_all_enabled: boolean;
+          catch_all_mailbox_id: string | null;
           cloudflare_account_id: string | null;
           cloudflare_routing_rule_id: string | null;
           cloudflare_zone_id: string | null;
@@ -5616,6 +5619,9 @@ export type Database = {
         };
         Insert: {
           canonical_domain_id?: string | null;
+          catch_all_auto_draft_enabled?: boolean;
+          catch_all_enabled?: boolean;
+          catch_all_mailbox_id?: string | null;
           cloudflare_account_id?: string | null;
           cloudflare_routing_rule_id?: string | null;
           cloudflare_zone_id?: string | null;
@@ -5633,6 +5639,9 @@ export type Database = {
         };
         Update: {
           canonical_domain_id?: string | null;
+          catch_all_auto_draft_enabled?: boolean;
+          catch_all_enabled?: boolean;
+          catch_all_mailbox_id?: string | null;
           cloudflare_account_id?: string | null;
           cloudflare_routing_rule_id?: string | null;
           cloudflare_zone_id?: string | null;
@@ -5654,6 +5663,13 @@ export type Database = {
             columns: ['canonical_domain_id'];
             isOneToOne: false;
             referencedRelation: 'mail_domains';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'mail_domains_catch_all_mailbox_id_fkey';
+            columns: ['catch_all_mailbox_id'];
+            isOneToOne: false;
+            referencedRelation: 'mail_mailboxes';
             referencedColumns: ['id'];
           },
           {
@@ -6287,15 +6303,20 @@ export type Database = {
           body_text: string | null;
           created_at: string;
           created_by: string | null;
+          delivery_route: string | null;
           direction: string;
+          envelope_from: string | null;
+          envelope_to: string | null;
           from_address: string;
           from_name: string | null;
           has_attachments: boolean;
           id: string;
           in_reply_to: string | null;
+          ingress_domain_id: string | null;
           internet_message_id: string | null;
           mailbox_id: string;
           metadata: Json;
+          observed_recipient: string | null;
           provider: string;
           provider_message_id: string | null;
           raw_message_id: string | null;
@@ -6316,15 +6337,20 @@ export type Database = {
           body_text?: string | null;
           created_at?: string;
           created_by?: string | null;
+          delivery_route?: string | null;
           direction: string;
+          envelope_from?: string | null;
+          envelope_to?: string | null;
           from_address: string;
           from_name?: string | null;
           has_attachments?: boolean;
           id?: string;
           in_reply_to?: string | null;
+          ingress_domain_id?: string | null;
           internet_message_id?: string | null;
           mailbox_id: string;
           metadata?: Json;
+          observed_recipient?: string | null;
           provider?: string;
           provider_message_id?: string | null;
           raw_message_id?: string | null;
@@ -6345,15 +6371,20 @@ export type Database = {
           body_text?: string | null;
           created_at?: string;
           created_by?: string | null;
+          delivery_route?: string | null;
           direction?: string;
+          envelope_from?: string | null;
+          envelope_to?: string | null;
           from_address?: string;
           from_name?: string | null;
           has_attachments?: boolean;
           id?: string;
           in_reply_to?: string | null;
+          ingress_domain_id?: string | null;
           internet_message_id?: string | null;
           mailbox_id?: string;
           metadata?: Json;
+          observed_recipient?: string | null;
           provider?: string;
           provider_message_id?: string | null;
           raw_message_id?: string | null;
@@ -6383,6 +6414,13 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: 'nova_user_leaderboard';
             referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'mail_messages_ingress_domain_id_fkey';
+            columns: ['ingress_domain_id'];
+            isOneToOne: false;
+            referencedRelation: 'mail_domains';
+            referencedColumns: ['id'];
           },
           {
             foreignKeyName: 'mail_messages_mailbox_id_fkey';

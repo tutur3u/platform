@@ -124,7 +124,9 @@ export async function getMailBootstrap(
     admin,
     'mail_mailboxes'
   )
-    .select('*')
+    .select(
+      '*, mail_domain:mail_domains!mail_mailboxes_domain_id_fkey(outbound_provider)'
+    )
     .in('id', mailboxIds)
     .neq('status', 'archived')
     .order('type', { ascending: true })
@@ -137,8 +139,30 @@ export async function getMailBootstrap(
   const roleByMailboxId = new Map<string, MailMailboxRole>(
     (memberRows ?? []).map((row: AnyRecord) => [row.mailbox_id, row.role])
   );
-  const mailboxes: MailMailbox[] = (mailboxRows ?? []).map((row: AnyRecord) =>
-    toMailbox(row, roleByMailboxId.get(row.id) ?? 'viewer')
+  const { data: threadRows, error: threadError } = await privateTable(
+    admin,
+    'mail_threads'
+  )
+    .select('mailbox_id,unread_count')
+    .in('mailbox_id', mailboxIds);
+  if (threadError) {
+    throw new Error(
+      `Failed to load mailbox unread counts: ${threadError.message}`
+    );
+  }
+  const unreadByMailbox = new Map<string, number>();
+  for (const thread of threadRows ?? []) {
+    unreadByMailbox.set(
+      thread.mailbox_id,
+      (unreadByMailbox.get(thread.mailbox_id) ?? 0) +
+        Number(thread.unread_count ?? 0)
+    );
+  }
+  const mailboxes: MailMailbox[] = (mailboxRows ?? []).map(
+    (row: AnyRecord) => ({
+      ...toMailbox(row, roleByMailboxId.get(row.id) ?? 'viewer'),
+      unreadCount: unreadByMailbox.get(row.id) ?? 0,
+    })
   );
   const labels = await listLabels(
     admin,
@@ -197,7 +221,9 @@ export async function requireMailboxAccess(
     admin,
     'mail_mailboxes'
   )
-    .select('*')
+    .select(
+      '*, mail_domain:mail_domains!mail_mailboxes_domain_id_fkey(outbound_provider)'
+    )
     .eq('id', mailboxId)
     .maybeSingle();
 

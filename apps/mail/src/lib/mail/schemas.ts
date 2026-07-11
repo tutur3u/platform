@@ -18,13 +18,28 @@ export const mailDraftPayloadSchema = z.object({
   inReplyTo: z.string().max(1024).nullable().optional(),
   references: z.array(z.string().max(1024)).max(50).optional(),
   subject: z.string().trim().max(998).default(''),
-  to: z.array(emailAddressSchema).min(1).max(100),
+  to: z.array(emailAddressSchema).max(100).default([]),
 });
 
 export const mailDraftPatchPayloadSchema = mailDraftPayloadSchema.partial();
 
-export const sendMailPayloadSchema = mailDraftPayloadSchema.extend({
-  draftId: z.string().uuid().nullable().optional(),
+export const sendMailPayloadSchema = mailDraftPayloadSchema
+  .extend({
+    draftId: z.string().uuid().nullable().optional(),
+  })
+  .refine(
+    (value) =>
+      value.to.length + (value.cc?.length ?? 0) + (value.bcc?.length ?? 0) > 0,
+    { message: 'At least one recipient is required', path: ['to'] }
+  );
+
+export const updateMailMailboxSettingsSchema = z.object({
+  aiInstructions: z.string().max(20_000).optional(),
+  autoDraftEnabled: z.boolean().optional(),
+  outboundProviderOverride: z.enum(['cloudflare', 'ses']).nullable().optional(),
+  senderName: z.string().trim().max(160).optional(),
+  signatureHtml: z.string().max(100_000).nullable().optional(),
+  signatureText: z.string().max(50_000).nullable().optional(),
 });
 
 export const updateMailStatePayloadSchema = z.object({
@@ -79,6 +94,35 @@ export const mailBulkPayloadSchema = z
         code: 'custom',
         message: 'folderId is required',
         path: ['folderId'],
+      });
+    }
+  });
+
+export const mailThreadBulkPayloadSchema = z
+  .object({
+    action: z.enum([
+      'add_label',
+      'archive',
+      'mark_read',
+      'mark_unread',
+      'remove_label',
+      'restore',
+      'star',
+      'trash',
+      'unstar',
+    ]),
+    labelId: z.string().uuid().optional(),
+    threadIds: z.array(z.string().uuid()).min(1).max(100),
+  })
+  .superRefine((value, ctx) => {
+    if (
+      (value.action === 'add_label' || value.action === 'remove_label') &&
+      !value.labelId
+    ) {
+      ctx.addIssue({
+        code: 'custom',
+        message: 'labelId is required',
+        path: ['labelId'],
       });
     }
   });

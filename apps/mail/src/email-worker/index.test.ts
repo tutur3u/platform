@@ -110,6 +110,7 @@ describe('Cloudflare Email Routing Worker', () => {
     expect(message.setReject).not.toHaveBeenCalled();
     expect(requests[0]).toEqual({
       domain: 'ingest.tutur3u.com',
+      recipient: 'phucvo@ingest.tutur3u.com',
       type: 'domain_check',
     });
     expect(requests[1]).toMatchObject({

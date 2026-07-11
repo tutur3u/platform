@@ -1,28 +1,41 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { Loader2, Mail, PenLine, Users } from '@tuturuuu/icons';
-import { getMailBootstrap, type MailMailbox } from '@tuturuuu/internal-api';
+import { Loader2, Mail, PenLine, Settings, Tag, Users } from '@tuturuuu/icons';
+import {
+  getMailBootstrap,
+  getMailboxOrganization,
+  type MailMailbox,
+} from '@tuturuuu/internal-api';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@tuturuuu/ui/accordion';
 import { Button } from '@tuturuuu/ui/button';
+import type { NavLink } from '@tuturuuu/ui/custom/navigation';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
+import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import type { ReactNode } from 'react';
-
-interface MailSidebarPanelProps {
-  closeOnMobile?: () => void;
-  isCollapsed: boolean;
-  onCompose: () => void;
-  workspaceId: string;
-}
+import { type ReactNode, useState } from 'react';
+import { MailSettingsDialog } from './mail-settings-dialog';
 
 export function MailSidebarPanel({
   closeOnMobile,
+  folderLinks,
   isCollapsed,
   onCompose,
   workspaceId,
-}: MailSidebarPanelProps) {
+}: {
+  closeOnMobile?: () => void;
+  folderLinks: (NavLink | null)[];
+  isCollapsed: boolean;
+  onCompose: () => void;
+  workspaceId: string;
+}) {
   const t = useTranslations('mail');
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -36,57 +49,80 @@ export function MailSidebarPanel({
     mailboxes.find((mailbox) => mailbox.id === selectedMailboxId)?.id ??
     mailboxes[0]?.id ??
     null;
+  const organizationQuery = useQuery({
+    enabled: Boolean(activeMailboxId),
+    queryFn: () => getMailboxOrganization(workspaceId, activeMailboxId ?? ''),
+    queryKey: ['mail', workspaceId, activeMailboxId, 'organization'],
+  });
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const activeMailbox =
+    mailboxes.find((mailbox) => mailbox.id === activeMailboxId) ?? null;
 
-  function selectMailbox(mailboxId: string) {
-    const nextParams = new URLSearchParams(searchParams.toString());
-    nextParams.set('mailbox', mailboxId);
-    nextParams.delete('message');
-    const nextQuery = nextParams.toString();
-
-    window.history.replaceState(
-      null,
-      '',
-      nextQuery ? `${pathname}?${nextQuery}` : pathname
-    );
+  const selectMailbox = (mailboxId: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('mailbox', mailboxId);
+    params.delete('thread');
+    window.history.replaceState(null, '', `${pathname}?${params}`);
     closeOnMobile?.();
-  }
-
-  function compose() {
+  };
+  const compose = () => {
     onCompose();
     closeOnMobile?.();
-  }
+  };
 
   if (isCollapsed) {
     return (
       <div className="flex min-h-0 flex-1 flex-col items-center gap-1 border-foreground/10 border-t px-2 py-3">
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              aria-label={t('compose')}
-              className="aspect-square size-10 max-h-10 min-h-10 min-w-10 max-w-10 shrink-0 rounded-md p-0"
-              onClick={compose}
-              type="button"
-            >
-              <PenLine className="h-4 w-4" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent side="right">{t('compose')}</TooltipContent>
-        </Tooltip>
+        <IconTooltip label={t('compose')}>
+          <Button className="size-10" onClick={compose} size="icon">
+            <PenLine className="size-4" />
+          </Button>
+        </IconTooltip>
         <div className="my-1 h-px w-8 bg-border" />
-        {bootstrapQuery.isLoading ? (
-          <Loader2 className="mt-2 h-4 w-4 animate-spin text-muted-foreground" />
-        ) : (
-          <div className="scrollbar-none flex min-h-0 flex-1 flex-col items-center gap-1 overflow-y-auto">
-            {mailboxes.map((mailbox) => (
-              <CollapsedMailboxButton
-                active={mailbox.id === activeMailboxId}
-                key={mailbox.id}
-                mailbox={mailbox}
-                onClick={() => selectMailbox(mailbox.id)}
-              />
-            ))}
-          </div>
-        )}
+        {folderLinks.filter(Boolean).map((link) => {
+          if (!link) return null;
+          return (
+            <IconTooltip key={link.id} label={String(link.title)}>
+              <Button
+                asChild
+                className="size-10"
+                size="icon"
+                variant={
+                  pathname === link.href?.split('?')[0] ? 'secondary' : 'ghost'
+                }
+              >
+                <Link href={link.href ?? '#'}>{link.icon}</Link>
+              </Button>
+            </IconTooltip>
+          );
+        })}
+        <div className="my-1 h-px w-8 bg-border" />
+        <div className="scrollbar-none flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto">
+          {mailboxes.map((mailbox) => (
+            <CollapsedMailboxButton
+              active={mailbox.id === activeMailboxId}
+              key={mailbox.id}
+              mailbox={mailbox}
+              onClick={() => selectMailbox(mailbox.id)}
+            />
+          ))}
+        </div>
+        <IconTooltip label={t('mail_settings')}>
+          <Button
+            className="size-10"
+            onClick={() => setSettingsOpen(true)}
+            size="icon"
+            variant="ghost"
+          >
+            <Settings className="size-4" />
+          </Button>
+        </IconTooltip>
+        <MailSettingsDialog
+          mailbox={activeMailbox}
+          onOpenChange={setSettingsOpen}
+          open={settingsOpen}
+          workspaceId={workspaceId}
+        />
       </div>
     );
   }
@@ -98,39 +134,122 @@ export function MailSidebarPanel({
           className="h-11 w-full justify-start rounded-xl"
           onClick={compose}
         >
-          <PenLine className="h-4 w-4" />
-          {t('compose')}
+          <PenLine className="size-4" /> {t('compose')}
         </Button>
       </div>
-      <div className="flex items-center justify-between px-4 pt-4 pb-2">
-        <div className="font-semibold text-muted-foreground text-xs uppercase tracking-[0.14em]">
-          {t('mailboxes')}
-        </div>
-        <span className="rounded-full bg-foreground/5 px-2 py-0.5 font-medium text-[0.7rem] text-muted-foreground tabular-nums">
-          {mailboxes.length}
-        </span>
+      <Accordion
+        className="scrollbar-none min-h-0 flex-1 overflow-y-auto px-2"
+        defaultValue={['folders', 'labels', 'mailboxes']}
+        type="multiple"
+      >
+        <AccordionItem className="border-0" value="folders">
+          <AccordionTrigger className="px-2 py-2 text-muted-foreground text-xs uppercase tracking-[0.14em]">
+            {t('folders')}
+          </AccordionTrigger>
+          <AccordionContent className="space-y-0.5 pb-2">
+            {folderLinks.filter(Boolean).map((link) =>
+              link ? (
+                <Link
+                  className={cn(
+                    'flex items-center gap-2 rounded-xl px-2.5 py-2 text-sm transition hover:bg-accent',
+                    pathname === link.href?.split('?')[0] &&
+                      'bg-accent font-medium'
+                  )}
+                  href={link.href ?? '#'}
+                  key={link.id}
+                  onClick={closeOnMobile}
+                >
+                  {link.icon}
+                  <span className="min-w-0 flex-1">{link.title}</span>
+                  {link.id === 'mail.folder.inbox' &&
+                  activeMailbox?.unreadCount ? (
+                    <span className="rounded-full bg-foreground px-2 py-0.5 text-background text-xs tabular-nums">
+                      {activeMailbox.unreadCount}
+                    </span>
+                  ) : null}
+                </Link>
+              ) : null
+            )}
+            {(organizationQuery.data?.folders ?? [])
+              .filter((folder) => folder.kind === 'custom')
+              .map((folder) => (
+                <Link
+                  className="flex items-center gap-2 rounded-xl px-2.5 py-2 text-sm hover:bg-accent"
+                  href={`${pathname}?mailbox=${activeMailboxId}&folderId=${folder.id}`}
+                  key={folder.id}
+                >
+                  <Mail className="size-4" />{' '}
+                  <span className="truncate">{folder.name}</span>
+                </Link>
+              ))}
+          </AccordionContent>
+        </AccordionItem>
+        <AccordionItem className="border-0" value="labels">
+          <AccordionTrigger className="px-2 py-2 text-muted-foreground text-xs uppercase tracking-[0.14em]">
+            {t('labels')}
+          </AccordionTrigger>
+          <AccordionContent className="space-y-0.5 pb-2">
+            {(organizationQuery.data?.labels ?? [])
+              .filter((label) => label.kind === 'custom')
+              .map((label) => (
+                <Link
+                  className="flex items-center gap-2 rounded-xl px-2.5 py-2 text-sm hover:bg-accent"
+                  href={`${pathname}?mailbox=${activeMailboxId}&label=${encodeURIComponent(label.slug)}`}
+                  key={label.id}
+                >
+                  <Tag className="size-4" />{' '}
+                  <span className="truncate">{label.name}</span>
+                </Link>
+              ))}
+            {!organizationQuery.isLoading &&
+            !(organizationQuery.data?.labels ?? []).some(
+              (label) => label.kind === 'custom'
+            ) ? (
+              <p className="px-2.5 py-2 text-muted-foreground text-xs">
+                {t('no_custom_labels')}
+              </p>
+            ) : null}
+          </AccordionContent>
+        </AccordionItem>
+        <AccordionItem className="border-0" value="mailboxes">
+          <AccordionTrigger className="px-2 py-2 text-muted-foreground text-xs uppercase tracking-[0.14em]">
+            {t('mailboxes')}
+          </AccordionTrigger>
+          <AccordionContent className="space-y-1 pb-3">
+            {bootstrapQuery.isLoading ? (
+              <div className="flex items-center gap-2 px-2 py-3 text-muted-foreground text-sm">
+                <Loader2 className="size-4 animate-spin" />
+                {t('loading')}
+              </div>
+            ) : (
+              mailboxes.map((mailbox) => (
+                <MailboxButton
+                  active={mailbox.id === activeMailboxId}
+                  key={mailbox.id}
+                  mailbox={mailbox}
+                  onClick={() => selectMailbox(mailbox.id)}
+                />
+              ))
+            )}
+          </AccordionContent>
+        </AccordionItem>
+      </Accordion>
+      <div className="border-dynamic border-t p-2">
+        <Button
+          className="w-full justify-start"
+          onClick={() => setSettingsOpen(true)}
+          variant="ghost"
+        >
+          <Settings className="size-4" />
+          {t('mail_settings')}
+        </Button>
       </div>
-      <div className="scrollbar-none min-h-0 flex-1 space-y-1 overflow-y-auto px-2 pb-3">
-        {bootstrapQuery.isLoading ? (
-          <div className="flex items-center gap-2 px-2 py-3 text-muted-foreground text-sm">
-            <Loader2 className="h-4 w-4 animate-spin" />
-            {t('loading')}
-          </div>
-        ) : mailboxes.length > 0 ? (
-          mailboxes.map((mailbox) => (
-            <MailboxButton
-              active={mailbox.id === activeMailboxId}
-              key={mailbox.id}
-              mailbox={mailbox}
-              onClick={() => selectMailbox(mailbox.id)}
-            />
-          ))
-        ) : (
-          <div className="px-2 py-3 text-muted-foreground text-sm">
-            {t('no_mailboxes')}
-          </div>
-        )}
-      </div>
+      <MailSettingsDialog
+        mailbox={activeMailbox}
+        onOpenChange={setSettingsOpen}
+        open={settingsOpen}
+        workspaceId={workspaceId}
+      />
     </div>
   );
 }
@@ -145,19 +264,17 @@ function MailboxButton({
   onClick: () => void;
 }) {
   const Icon = mailbox.type === 'shared' ? Users : Mail;
-
   return (
     <button
-      type="button"
       aria-current={active ? 'true' : undefined}
       className={cn(
-        'flex w-full items-center gap-2.5 rounded-xl border border-transparent px-2.5 py-2.5 text-left text-sm transition hover:bg-accent hover:text-accent-foreground',
-        active &&
-          'border-foreground/10 bg-accent text-accent-foreground shadow-sm'
+        'flex w-full items-center gap-2.5 rounded-xl border border-transparent px-2.5 py-2.5 text-left text-sm transition hover:bg-accent',
+        active && 'border-foreground/10 bg-accent shadow-sm'
       )}
       onClick={onClick}
+      type="button"
     >
-      <Icon className="h-4 w-4 shrink-0" />
+      <Icon className="size-4 shrink-0" />
       <span className="min-w-0 flex-1">
         <span className="block truncate font-medium">
           {mailbox.displayName}
@@ -166,6 +283,11 @@ function MailboxButton({
           {mailbox.address}
         </span>
       </span>
+      {mailbox.unreadCount > 0 ? (
+        <span className="rounded-full bg-foreground px-2 py-0.5 text-background text-xs tabular-nums">
+          {mailbox.unreadCount}
+        </span>
+      ) : null}
     </button>
   );
 }
@@ -180,33 +302,35 @@ function CollapsedMailboxButton({
   onClick: () => void;
 }) {
   return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <Button
-          aria-label={mailbox.displayName}
-          className={cn(
-            'aspect-square size-10 max-h-10 min-h-10 min-w-10 max-w-10 shrink-0 rounded-md p-0 font-semibold text-xs',
-            active
-              ? 'bg-foreground text-background hover:bg-foreground/90'
-              : 'bg-background hover:bg-accent'
-          )}
-          onClick={onClick}
-          type="button"
-          variant="ghost"
-        >
-          {getMailboxInitial(mailbox.displayName || mailbox.address)}
-        </Button>
-      </TooltipTrigger>
-      <TooltipContent side="right">
-        <div className="space-y-0.5">
-          <div>{mailbox.displayName}</div>
-          <div className="text-muted-foreground text-xs">{mailbox.address}</div>
-        </div>
-      </TooltipContent>
-    </Tooltip>
+    <IconTooltip label={`${mailbox.displayName} · ${mailbox.address}`}>
+      <Button
+        className={cn(
+          'size-10 font-semibold text-xs',
+          active && 'bg-foreground text-background'
+        )}
+        onClick={onClick}
+        size="icon"
+        variant="ghost"
+      >
+        {mailbox.displayName.trim().charAt(0).toUpperCase() || (
+          <Mail className="size-4" />
+        )}
+      </Button>
+    </IconTooltip>
   );
 }
 
-function getMailboxInitial(value: string): ReactNode {
-  return value.trim().charAt(0).toUpperCase() || <Mail className="h-4 w-4" />;
+function IconTooltip({
+  children,
+  label,
+}: {
+  children: ReactNode;
+  label: string;
+}) {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>{children}</TooltipTrigger>
+      <TooltipContent side="right">{label}</TooltipContent>
+    </Tooltip>
+  );
 }

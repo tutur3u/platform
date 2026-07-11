@@ -6,216 +6,37 @@ import {
   type InternalApiQueryValue,
   withMailApiBaseUrl,
 } from './client';
+import type {
+  BulkUpdateMailPayload,
+  BulkUpdateMailThreadsPayload,
+  CreateMailDraftPayload,
+  CreateMailOrganizationPayload,
+  ListMailMessagesParams,
+  ListMailThreadsParams,
+  MailAttachment,
+  MailBootstrapResponse,
+  MailCatchAllConfiguration,
+  MailDomain,
+  MailFolderDefinition,
+  MailLabel,
+  MailMailboxMember,
+  MailMailboxSettings,
+  MailMessageDetail,
+  MailMessagesResponse,
+  MailMutationResponse,
+  MailThreadDetail,
+  MailThreadsResponse,
+  SendMailMessagePayload,
+  UpdateMailCatchAllPayload,
+  UpdateMailDraftPayload,
+  UpdateMailMailboxSettingsPayload,
+  UpdateMailMessageStatePayload,
+  UpdateMailOrganizationPayload,
+  UpsertMailDomainPayload,
+  UpsertMailMailboxMemberPayload,
+} from './mail-types';
 
-export type MailMailboxRole = 'admin' | 'owner' | 'sender' | 'viewer';
-export type MailMailboxType = 'personal' | 'shared';
-export type MailMailboxStatus =
-  | 'active'
-  | 'archived'
-  | 'disabled'
-  | 'quarantined';
-export type MailProvider = 'cloudflare' | 'ses';
-
-export interface MailDomain {
-  cloudflareAccountId: string | null;
-  cloudflareRoutingRuleId: string | null;
-  cloudflareZoneId: string | null;
-  domain: string;
-  id: string;
-  inboundProvider: MailProvider;
-  outboundProvider: MailProvider;
-  status: 'active' | 'disabled' | 'pending' | 'quarantined' | 'verifying';
-  verificationState: Record<string, unknown>;
-  verifiedAt: string | null;
-}
-
-export type UpsertMailDomainPayload = Omit<MailDomain, 'id' | 'verifiedAt'>;
-
-export interface MailMailbox {
-  address: string;
-  displayName: string;
-  id: string;
-  role: MailMailboxRole;
-  status: MailMailboxStatus;
-  type: MailMailboxType;
-}
-
-export interface MailLabel {
-  color: string | null;
-  id: string;
-  kind: 'custom' | 'system';
-  mailboxId: string;
-  name: string;
-  slug: string;
-}
-
-export interface MailFolderDefinition {
-  id: string;
-  kind: 'custom' | 'system';
-  mailboxId: string;
-  name: string;
-  slug: string;
-}
-
-export interface MailRecipient {
-  address: string;
-  displayName: string | null;
-  kind: 'bcc' | 'cc' | 'from' | 'reply_to' | 'to';
-}
-
-export interface MailAttachment {
-  contentId: string | null;
-  contentType: string;
-  disposition: 'attachment' | 'inline';
-  filename: string;
-  id: string;
-  protectedUrl: string | null;
-  sizeBytes: number;
-}
-
-export interface MailMessageSummary {
-  bodyText: string | null;
-  createdAt: string;
-  fromAddress: string;
-  fromName: string | null;
-  hasAttachments: boolean;
-  id: string;
-  labels: MailLabel[];
-  mailboxId: string;
-  receivedAt: string | null;
-  sentAt: string | null;
-  snippet: string | null;
-  starred: boolean;
-  status: string;
-  subject: string;
-  threadId: string | null;
-  unread: boolean;
-}
-
-export interface MailMessageDetail extends MailMessageSummary {
-  bodyHtml: string | null;
-  sanitizedHtml: string | null;
-  attachments: MailAttachment[];
-  recipients: MailRecipient[];
-}
-
-export interface MailThread {
-  id: string;
-  lastMessageAt: string | null;
-  mailboxId: string;
-  messageCount: number;
-  status: 'active' | 'archived' | 'spam' | 'trash';
-  subject: string;
-  unreadCount: number;
-}
-
-export interface MailThreadDetail {
-  messages: MailMessageDetail[];
-  thread: MailThread;
-}
-
-export interface MailBootstrapResponse {
-  mailboxes: MailMailbox[];
-  labels: MailLabel[];
-  user: {
-    email: string;
-    id: string;
-  };
-}
-
-export interface ListMailMessagesParams {
-  folder?:
-    | 'archive'
-    | 'drafts'
-    | 'inbox'
-    | 'sent'
-    | 'spam'
-    | 'starred'
-    | 'trash';
-  label?: string;
-  folderId?: string;
-  page?: number;
-  pageSize?: number;
-  query?: string;
-}
-
-export interface MailMessagesResponse {
-  messages: MailMessageSummary[];
-  pagination: {
-    page: number;
-    pageSize: number;
-    total: number;
-  };
-}
-
-export interface CreateMailDraftPayload {
-  bodyHtml?: string | null;
-  bodyText?: string | null;
-  bcc?: string[];
-  cc?: string[];
-  inReplyTo?: string | null;
-  references?: string[];
-  subject: string;
-  to: string[];
-}
-
-export type UpdateMailDraftPayload = Partial<CreateMailDraftPayload>;
-
-export interface SendMailMessagePayload extends CreateMailDraftPayload {
-  draftId?: string | null;
-}
-
-export interface MailMutationResponse {
-  message: MailMessageDetail;
-}
-
-export interface UpdateMailMessageStatePayload {
-  action:
-    | 'archive'
-    | 'mark_read'
-    | 'mark_unread'
-    | 'restore'
-    | 'star'
-    | 'trash'
-    | 'unstar';
-}
-
-export type MailBulkAction =
-  | UpdateMailMessageStatePayload['action']
-  | 'add_label'
-  | 'clear_folder'
-  | 'move_to_folder'
-  | 'remove_label';
-
-export interface BulkUpdateMailPayload {
-  action: MailBulkAction;
-  folderId?: string;
-  labelId?: string;
-  messageIds: string[];
-}
-
-export interface CreateMailOrganizationPayload {
-  color?: string | null;
-  name: string;
-}
-
-export interface UpdateMailOrganizationPayload {
-  color?: string | null;
-  name?: string;
-}
-
-export interface MailMailboxMember {
-  createdAt: string;
-  email: string | null;
-  fullName: string | null;
-  role: MailMailboxRole;
-  userId: string;
-}
-
-export interface UpsertMailMailboxMemberPayload {
-  role: MailMailboxRole;
-  userId: string;
-}
+export * from './mail-types';
 
 function workspaceMailPath(workspaceId: string, suffix = '') {
   return `/api/v1/workspaces/${encodePathSegment(workspaceId)}/mail${suffix}`;
@@ -295,6 +116,23 @@ export async function listMailMessages(
   );
 }
 
+export async function listMailThreads(
+  workspaceId: string,
+  mailboxId: string,
+  params?: ListMailThreadsParams,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(withMailApiBaseUrl(options));
+  return client.json<MailThreadsResponse>(
+    mailboxPath(workspaceId, mailboxId, '/threads'),
+    {
+      cache: 'no-store',
+      credentials: 'include',
+      query: normalizeMessagesQuery(params),
+    }
+  );
+}
+
 export async function getMailMessage(
   workspaceId: string,
   mailboxId: string,
@@ -352,6 +190,25 @@ export async function updateMailThreadState(
       credentials: 'include',
       headers: jsonHeaders(),
       method: 'PATCH',
+    }
+  );
+}
+
+export async function bulkUpdateMailThreads(
+  workspaceId: string,
+  mailboxId: string,
+  payload: BulkUpdateMailThreadsPayload,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(withMailApiBaseUrl(options));
+  return client.json<{ updated: number }>(
+    mailboxPath(workspaceId, mailboxId, '/threads/bulk'),
+    {
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+      credentials: 'include',
+      headers: jsonHeaders(),
+      method: 'POST',
     }
   );
 }
@@ -426,11 +283,17 @@ export async function uploadMailDraftAttachment(
   draftId: string,
   file: Blob,
   filename: string,
+  metadata?: {
+    contentId?: string | null;
+    disposition?: 'attachment' | 'inline';
+  },
   options?: InternalApiClientOptions
 ) {
   const client = getInternalApiClient(withMailApiBaseUrl(options));
   const body = new FormData();
   body.append('file', file, filename);
+  if (metadata?.contentId) body.append('contentId', metadata.contentId);
+  if (metadata?.disposition) body.append('disposition', metadata.disposition);
   return client.json<{ attachment: MailAttachment }>(
     mailboxPath(
       workspaceId,
@@ -441,6 +304,30 @@ export async function uploadMailDraftAttachment(
       body,
       cache: 'no-store',
       credentials: 'include',
+      method: 'POST',
+    }
+  );
+}
+
+export async function copyMailDraftAttachments(
+  workspaceId: string,
+  mailboxId: string,
+  draftId: string,
+  payload: { attachmentIds: string[]; sourceMessageId: string },
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(withMailApiBaseUrl(options));
+  return client.json<{ attachments: MailAttachment[] }>(
+    mailboxPath(
+      workspaceId,
+      mailboxId,
+      `/drafts/${encodePathSegment(draftId)}/attachments`
+    ),
+    {
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+      credentials: 'include',
+      headers: jsonHeaders(),
       method: 'POST',
     }
   );
@@ -463,6 +350,37 @@ export async function deleteMailDraftAttachment(
       )}`
     ),
     { cache: 'no-store', credentials: 'include', method: 'DELETE' }
+  );
+}
+
+export async function getMailMailboxSettings(
+  workspaceId: string,
+  mailboxId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(withMailApiBaseUrl(options));
+  return client.json<{ settings: MailMailboxSettings }>(
+    mailboxPath(workspaceId, mailboxId, '/settings'),
+    { cache: 'no-store', credentials: 'include' }
+  );
+}
+
+export async function updateMailMailboxSettings(
+  workspaceId: string,
+  mailboxId: string,
+  payload: UpdateMailMailboxSettingsPayload,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(withMailApiBaseUrl(options));
+  return client.json<{ settings: MailMailboxSettings }>(
+    mailboxPath(workspaceId, mailboxId, '/settings'),
+    {
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+      credentials: 'include',
+      headers: jsonHeaders(),
+      method: 'PATCH',
+    }
   );
 }
 
@@ -735,4 +653,33 @@ export async function upsertMailDomain(
     headers: jsonHeaders(),
     method: 'PUT',
   });
+}
+
+export async function getMailCatchAllConfiguration(
+  domainId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(withMailApiBaseUrl(options));
+  return client.json<MailCatchAllConfiguration>(
+    mailPlatformPath(`/domains/${encodePathSegment(domainId)}/catch-all`),
+    { cache: 'no-store', credentials: 'include' }
+  );
+}
+
+export async function updateMailCatchAllConfiguration(
+  domainId: string,
+  payload: UpdateMailCatchAllPayload,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(withMailApiBaseUrl(options));
+  return client.json<MailCatchAllConfiguration>(
+    mailPlatformPath(`/domains/${encodePathSegment(domainId)}/catch-all`),
+    {
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+      credentials: 'include',
+      headers: jsonHeaders(),
+      method: 'PATCH',
+    }
+  );
 }

@@ -90,11 +90,12 @@ export function Structure({
         <TuturuuLogo alt="" className="size-8" height={32} width={32} />
       }
       defaultCollapsed={defaultCollapsed}
-      links={enhancedLinks}
+      links={[]}
       mobileBrand={<MailBrand centralHref={TTR_URL} mailHref={mailHomeHref} />}
       sidebarContentAfter={({ closeOnMobile, isCollapsed }) => (
         <MailSidebarPanel
           closeOnMobile={closeOnMobile}
+          folderLinks={enhancedLinks}
           isCollapsed={isCollapsed}
           onCompose={openCompose}
           workspaceId={personalOrWsId}

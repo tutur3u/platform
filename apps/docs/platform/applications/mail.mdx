@@ -213,6 +213,42 @@ message to the Workspace inbox, and Cloudflare recorded the mapped shadow copy
 as forwarded. After the test, the Google pilot setting was returned to its
 disabled state.
 
+## Catch-all delivery
+
+Catch-all routing is platform-operated because it affects an entire inbound
+domain. The destination is relational metadata on `private.mail_domains`, not a
+workspace secret: `catch_all_mailbox_id` must reference an active mailbox on the
+canonical domain, and `catch_all_enabled` defaults to `false`. Automatic drafts
+for catch-all deliveries have a separate opt-in and remain disabled unless a
+platform operator explicitly enables them.
+
+Activate the bridge in this order:
+
+1. Apply the additive `mail_catch_all_delivery` migration through the normal
+   database release process and deploy the matching Mail app and Email Routing
+   Worker.
+2. Open Mail settings as a root workspace operator, select
+   `ingest.tutur3u.com`, choose the destination mailbox, and enable the logical
+   catch-all route. The initial pilot destination is
+   `phucvo@tuturuuu.com` when that mailbox exists.
+3. In Cloudflare Email Routing, select the already-onboarded
+   `ingest.tutur3u.com` subdomain and set its catch-all action to the
+   `tuturuuu-mail-email-routing` Worker. Keep explicit rules enabled; they take
+   precedence over catch-all.
+4. Send a unique random local part directly to the ingress subdomain. Confirm
+   the original recipient is visible in Mail, raw MIME and attachments are in
+   R2, and a retry does not create another message.
+5. In Google Admin, add a rule named `Tuturuuu Mail catch-all bridge` for
+   inbound **Unrecognized/Catch-all** recipients only. Replace only the
+   recipient domain with `ingest.tutur3u.com`, add `X-Gm-Original-To`, and leave
+   Users and Groups unchecked. This keeps recognized Google Workspace delivery
+   unchanged while preserving the unknown local part for Mail.
+
+Do not enable Cloudflare Email Routing on the `tuturuuu.com` apex while Google
+owns its MX records. To roll back, disable the Google unrecognized-recipient
+rule first, disable the Cloudflare subdomain catch-all second, and disable the
+logical Mail route last. Do not delete ingested metadata or R2 objects.
+
 ## Provider rollout and rollback
 
 Provider selection is independent in each direction. Change only one direction

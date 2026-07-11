@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { createInboundMessage } from './ingest';
+import { createInboundMessage, resolveInboundMailbox } from './ingest';
 import type { ParsedEmail } from './types';
 
 describe('createInboundMessage', () => {
@@ -71,5 +71,88 @@ describe('createInboundMessage', () => {
       '<same-message@example.com>',
     ]);
     expect(insert).not.toHaveBeenCalled();
+  });
+});
+
+describe('resolveInboundMailbox', () => {
+  function adminWithRows(rows: Record<string, Record<string, unknown>[]>) {
+    return {
+      schema: () => ({
+        from: (table: string) => {
+          const filters: Array<[string, unknown]> = [];
+          const builder = {
+            eq(column: string, value: unknown) {
+              filters.push([column, value]);
+              return builder;
+            },
+            async maybeSingle() {
+              const row = (rows[table] ?? []).find((candidate) =>
+                filters.every(([column, value]) => candidate[column] === value)
+              );
+              return { data: row ?? null, error: null };
+            },
+            select() {
+              return builder;
+            },
+          };
+          return builder;
+        },
+      }),
+    };
+  }
+
+  it('gives an active exact mailbox precedence over catch-all', async () => {
+    const result = await resolveInboundMailbox({
+      admin: adminWithRows({
+        mail_domains: [
+          {
+            catch_all_enabled: true,
+            catch_all_mailbox_id: 'fallback',
+            id: 'ingress',
+          },
+        ],
+        mail_mailboxes: [
+          {
+            address: 'known@example.com',
+            domain_id: 'canonical',
+            id: 'exact',
+            status: 'active',
+          },
+          { domain_id: 'canonical', id: 'fallback', status: 'active' },
+        ],
+      }),
+      canonicalDomainId: 'canonical',
+      canonicalRecipient: 'known@example.com',
+      ingressDomainId: 'ingress',
+      provisionInternalUser: false,
+    });
+
+    expect(result).toMatchObject({ mailbox: { id: 'exact' }, route: 'exact' });
+  });
+
+  it('uses only an enabled active canonical catch-all target', async () => {
+    const result = await resolveInboundMailbox({
+      admin: adminWithRows({
+        mail_domains: [
+          {
+            catch_all_enabled: true,
+            catch_all_mailbox_id: 'fallback',
+            id: 'ingress',
+          },
+        ],
+        mail_mailboxes: [
+          { domain_id: 'canonical', id: 'fallback', status: 'active' },
+        ],
+      }),
+      canonicalDomainId: 'canonical',
+      canonicalRecipient: 'unknown@example.com',
+      ingressDomainId: 'ingress',
+      provisionInternalUser: false,
+    });
+
+    expect(result).toMatchObject({
+      mailbox: { id: 'fallback' },
+      route: 'catch_all',
+    });
   });
 });

@@ -1,4 +1,5 @@
 export {
+  copyAttachmentsToDraft,
   deleteDraftAttachment,
   getAuthorizedAttachment,
   loadOutboundAttachments,
@@ -30,8 +31,14 @@ export {
   updateMailboxLabel,
 } from './repository/organization';
 export { sendMailMessage } from './repository/send';
+export {
+  getMailboxSettings,
+  updateMailboxSettings,
+} from './repository/settings';
 export { updateMailMessageState } from './repository/state';
 export {
+  bulkUpdateMailThreads,
   getMailThread,
+  listMailThreads,
   updateMailThreadState,
 } from './repository/threads';

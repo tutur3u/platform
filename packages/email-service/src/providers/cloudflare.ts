@@ -27,12 +27,18 @@ type CloudflareSendResponse = {
 };
 
 function encodeAttachment(attachment: EmailAttachment) {
-  return {
+  const base = {
     content: Buffer.from(attachment.data).toString('base64'),
-    disposition: 'attachment' as const,
     filename: attachment.filename,
     type: attachment.contentType,
   };
+  return attachment.disposition === 'inline' && attachment.contentId
+    ? {
+        ...base,
+        content_id: attachment.contentId,
+        disposition: 'inline' as const,
+      }
+    : { ...base, disposition: 'attachment' as const };
 }
 
 function utf8Size(value: string) {

@@ -50,13 +50,33 @@ export function normalizeAddress(value: string) {
 }
 
 export function toMailbox(row: AnyRecord, role: MailMailboxRole): MailMailbox {
+  const domain = row.mail_domain as AnyRecord | undefined;
+  const effectiveOutboundProvider =
+    row.outbound_provider_override ?? domain?.outbound_provider ?? 'ses';
+
   return {
     address: row.address,
+    aiInstructions: row.ai_instructions ?? '',
+    autoDraftEnabled: Boolean(row.auto_draft_enabled),
     displayName: row.display_name || row.address,
+    domainId: row.domain_id,
+    effectiveOutboundProvider,
     id: row.id,
+    outboundProviderOverride: row.outbound_provider_override ?? null,
+    providerLimits: {
+      maxMessageBytes:
+        effectiveOutboundProvider === 'cloudflare'
+          ? 5 * 1024 * 1024
+          : 10 * 1024 * 1024,
+      maxRecipients: 50,
+    },
     role,
+    senderName: row.sender_name || row.display_name || row.address,
+    signatureHtml: row.signature_html ?? null,
+    signatureText: row.signature_text ?? null,
     status: row.status,
     type: row.type,
+    unreadCount: Number(row.unread_count ?? 0),
   };
 }
 
