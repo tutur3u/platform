@@ -874,8 +874,9 @@ function buildExistingEntryMaps(studio: RawStudioData) {
     const collection = collectionById.get(entry.collection_id);
     const collectionSlug = collection?.slug ?? entry.collection_id;
     byCollectionSlug.set(`${collectionSlug}/${entry.slug}`, entry);
-    if (entry.stable_source_id) {
-      byStableKey.set(entry.stable_source_id, entry);
+    const stableSourceId = entry.stable_source_id?.trim();
+    if (stableSourceId) {
+      byStableKey.set(stableSourceId, entry);
     }
   }
 
