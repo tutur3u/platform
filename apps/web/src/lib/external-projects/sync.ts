@@ -387,9 +387,14 @@ export function buildExternalProjectSyncDiff(
   const matchedSnapshotEntries = new Set<ExternalProjectSyncEntry>();
 
   for (const [entryKey, entry] of manifestEntries) {
+    const slugMatch = snapshotEntriesByCollectionSlug.get(
+      collectionSlugEntryKey(entry)
+    );
     const current =
       snapshotEntries.get(entryKey) ??
-      snapshotEntriesByCollectionSlug.get(collectionSlugEntryKey(entry));
+      (slugMatch && !manifestEntries.has(stableEntryKey(slugMatch))
+        ? slugMatch
+        : undefined);
 
     if (current) {
       matchedSnapshotEntries.add(current);
@@ -1247,6 +1252,9 @@ export async function applyWorkspaceExternalProjectSyncManifest(
 
   const existingEntries = buildExistingEntryMaps(studio);
   const appliedEntryIds = new Set<string>();
+  const manifestEntryKeys = new Set(
+    manifest.content.entries.map((entry) => stableEntryKey(entry))
+  );
   const existingBlocksByEntryId = new Map<string, RawExternalProjectBlock[]>();
   const existingAssetsByEntryId = new Map<string, RawExternalProjectAsset[]>();
   const existingBlockById = new Map(
@@ -1277,9 +1285,17 @@ export async function applyWorkspaceExternalProjectSyncManifest(
 
   for (const entry of manifest.content.entries) {
     const entryKey = stableEntryKey(entry);
+    const slugMatch = existingEntries.byCollectionSlug.get(
+      collectionSlugEntryKey(entry)
+    );
     const existing =
       existingEntries.byStableKey.get(entryKey) ??
-      existingEntries.byCollectionSlug.get(collectionSlugEntryKey(entry));
+      (slugMatch &&
+      !appliedEntryIds.has(slugMatch.id) &&
+      (!slugMatch.stable_source_id ||
+        !manifestEntryKeys.has(slugMatch.stable_source_id))
+        ? slugMatch
+        : undefined);
 
     if (entry.delete) {
       if (existing && force) {

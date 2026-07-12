@@ -197,6 +197,81 @@ describe('external project sync diff', () => {
     ]);
   });
 
+  it('does not let a new stable id claim a row addressed elsewhere in the manifest', () => {
+    const snapshot: ExternalProjectSyncSnapshot = {
+      adapter: 'exocorpse',
+      canonicalProjectId: 'exocorpse-main',
+      content: {
+        entries: [
+          {
+            collectionSlug: 'characters',
+            id: 'entry-a',
+            slug: 'old-slug',
+            stableSourceId: 'exocorpse:character:a',
+            status: 'published',
+            title: 'Character A',
+          },
+        ],
+      },
+      generatedAt: '2026-07-13T00:00:00.000Z',
+      schema: {
+        collections: [
+          {
+            collection_type: 'characters',
+            slug: 'characters',
+            title: 'Characters',
+          },
+        ],
+      },
+      version: 1,
+      workspaceId: 'ws-1',
+    };
+    const manifest = normalizeExternalProjectSyncManifest({
+      adapter: 'exocorpse',
+      content: {
+        entries: [
+          {
+            collectionSlug: 'characters',
+            slug: 'new-slug',
+            stableSourceId: 'exocorpse:character:a',
+            status: 'published',
+            title: 'Character A',
+          },
+          {
+            collectionSlug: 'characters',
+            slug: 'old-slug',
+            stableSourceId: 'exocorpse:character:b',
+            status: 'published',
+            title: 'Character B',
+          },
+        ],
+      },
+      schema: snapshot.schema,
+      version: 1,
+    });
+
+    const diff = buildExternalProjectSyncDiff(snapshot, manifest);
+
+    expect(diff.summary).toMatchObject({
+      archive: 0,
+      create: 1,
+      update: 1,
+    });
+    expect(diff.operations).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          action: 'update',
+          manifestKey: 'exocorpse:character:a',
+          platformId: 'entry-a',
+        }),
+        expect.objectContaining({
+          action: 'create',
+          manifestKey: 'exocorpse:character:b',
+        }),
+      ])
+    );
+  });
+
   it('marks explicit delete operations as destructive and force-gated', () => {
     const snapshot: ExternalProjectSyncSnapshot = {
       adapter: 'yoola',
