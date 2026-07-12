@@ -6,7 +6,9 @@ import type {
   Database,
   ExocorpseExternalProjectLoadingCollection,
   ExocorpseExternalProjectLoadingEntry,
+  ExternalProjectAsset,
   ExternalProjectAttentionItem,
+  ExternalProjectBlock,
   ExternalProjectBulkUpdatePayload,
   ExternalProjectCollection,
   ExternalProjectDeliveryCollection,
@@ -276,6 +278,39 @@ const EPM_IMAGE_PREVIEW_TRANSFORM = {
 
 const EXTERNAL_PROJECT_ID_QUERY_BATCH_SIZE = 100;
 const EXTERNAL_PROJECT_QUERY_CONCURRENCY = 4;
+const EXTERNAL_PROJECT_QUERY_PAGE_SIZE = 1000;
+
+type ExternalProjectPageResult<T> = {
+  data: T[] | null;
+  error: { message: string } | null;
+};
+
+async function fetchAllExternalProjectRows<T>(
+  loadPage: (
+    from: number,
+    to: number
+  ) => PromiseLike<ExternalProjectPageResult<T>>
+) {
+  const rows: T[] = [];
+
+  for (let from = 0; ; from += EXTERNAL_PROJECT_QUERY_PAGE_SIZE) {
+    const { data, error } = await loadPage(
+      from,
+      from + EXTERNAL_PROJECT_QUERY_PAGE_SIZE - 1
+    );
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    const page = data ?? [];
+    rows.push(...page);
+
+    if (page.length < EXTERNAL_PROJECT_QUERY_PAGE_SIZE) {
+      return rows;
+    }
+  }
+}
 
 function chunkExternalProjectIds(ids: string[]) {
   const batches: string[][] = [];
@@ -552,20 +587,17 @@ async function listWorkspaceExternalProjectBlocksByEntryIds(
     const results = await Promise.all(
       entryIdBatches
         .slice(index, index + EXTERNAL_PROJECT_QUERY_CONCURRENCY)
-        .map(async (entryIdBatch) => {
-          const { data, error } = await db
-            .from('workspace_external_project_blocks')
-            .select('*')
-            .eq('ws_id', workspaceId)
-            .in('entry_id', entryIdBatch)
-            .order('sort_order', { ascending: true });
-
-          if (error) {
-            throw new Error(error.message);
-          }
-
-          return data ?? [];
-        })
+        .map((entryIdBatch) =>
+          fetchAllExternalProjectRows<ExternalProjectBlock>((from, to) =>
+            db
+              .from('workspace_external_project_blocks')
+              .select('*')
+              .eq('ws_id', workspaceId)
+              .in('entry_id', entryIdBatch)
+              .order('sort_order', { ascending: true })
+              .range(from, to)
+          )
+        )
     );
 
     blocks.push(...results.flat());
@@ -594,20 +626,17 @@ async function listWorkspaceExternalProjectAssetsByEntryIds(
     const results = await Promise.all(
       entryIdBatches
         .slice(index, index + EXTERNAL_PROJECT_QUERY_CONCURRENCY)
-        .map(async (entryIdBatch) => {
-          const { data, error } = await db
-            .from('workspace_external_project_assets')
-            .select('*')
-            .eq('ws_id', workspaceId)
-            .in('entry_id', entryIdBatch)
-            .order('sort_order', { ascending: true });
-
-          if (error) {
-            throw new Error(error.message);
-          }
-
-          return data ?? [];
-        })
+        .map((entryIdBatch) =>
+          fetchAllExternalProjectRows<ExternalProjectAsset>((from, to) =>
+            db
+              .from('workspace_external_project_assets')
+              .select('*')
+              .eq('ws_id', workspaceId)
+              .in('entry_id', entryIdBatch)
+              .order('sort_order', { ascending: true })
+              .range(from, to)
+          )
+        )
     );
 
     assets.push(...results.flat());
@@ -750,17 +779,14 @@ export async function listWorkspaceExternalProjectCollections(
   db?: AdminDb
 ) {
   const admin = db ?? ((await createAdminClient()) as TypedSupabaseClient);
-  const { data, error } = await admin
-    .from('workspace_external_project_collections')
-    .select('*')
-    .eq('ws_id', workspaceId)
-    .order('title', { ascending: true });
-
-  if (error) {
-    throw new Error(error.message);
-  }
-
-  return data;
+  return fetchAllExternalProjectRows<ExternalProjectCollection>((from, to) =>
+    admin
+      .from('workspace_external_project_collections')
+      .select('*')
+      .eq('ws_id', workspaceId)
+      .order('title', { ascending: true })
+      .range(from, to)
+  );
 }
 
 export async function listWorkspaceExternalProjectFieldDefinitions(
@@ -772,31 +798,29 @@ export async function listWorkspaceExternalProjectFieldDefinitions(
   db?: AdminDb
 ) {
   const admin = db ?? ((await createAdminClient()) as TypedSupabaseClient);
-  let query = admin
-    .from('workspace_external_project_field_definitions')
-    .select('*')
-    .eq('ws_id', workspaceId)
-    .order('sort_order', { ascending: true })
-    .order('created_at', { ascending: true });
+  return fetchAllExternalProjectRows<ExternalProjectFieldDefinition>(
+    (from, to) => {
+      let query = admin
+        .from('workspace_external_project_field_definitions')
+        .select('*')
+        .eq('ws_id', workspaceId)
+        .order('sort_order', { ascending: true })
+        .order('created_at', { ascending: true });
 
-  if (Object.hasOwn(options, 'collectionId')) {
-    query =
-      options.collectionId === null
-        ? query.is('collection_id', null)
-        : query.eq('collection_id', options.collectionId as string);
-  }
+      if (Object.hasOwn(options, 'collectionId')) {
+        query =
+          options.collectionId === null
+            ? query.is('collection_id', null)
+            : query.eq('collection_id', options.collectionId as string);
+      }
 
-  if (!options.includeDisabled) {
-    query = query.eq('is_enabled', true);
-  }
+      if (!options.includeDisabled) {
+        query = query.eq('is_enabled', true);
+      }
 
-  const { data, error } = await query;
-
-  if (error) {
-    throw new Error(error.message);
-  }
-
-  return data ?? [];
+      return query.range(from, to);
+    }
+  );
 }
 
 export async function listWorkspaceExternalProjectEntries(
@@ -808,28 +832,24 @@ export async function listWorkspaceExternalProjectEntries(
   db?: AdminDb
 ) {
   const admin = db ?? ((await createAdminClient()) as TypedSupabaseClient);
-  let query = admin
-    .from('workspace_external_project_entries')
-    .select('*')
-    .eq('ws_id', workspaceId)
-    .order('sort_order', { ascending: true })
-    .order('created_at', { ascending: true });
+  return fetchAllExternalProjectRows<ExternalProjectEntry>((from, to) => {
+    let query = admin
+      .from('workspace_external_project_entries')
+      .select('*')
+      .eq('ws_id', workspaceId)
+      .order('sort_order', { ascending: true })
+      .order('created_at', { ascending: true });
 
-  if (options.collectionId) {
-    query = query.eq('collection_id', options.collectionId);
-  }
+    if (options.collectionId) {
+      query = query.eq('collection_id', options.collectionId);
+    }
 
-  if (!options.includeDrafts) {
-    query = query.eq('status', 'published');
-  }
+    if (!options.includeDrafts) {
+      query = query.eq('status', 'published');
+    }
 
-  const { data, error } = await query;
-
-  if (error) {
-    throw new Error(error.message);
-  }
-
-  return data;
+    return query.range(from, to);
+  });
 }
 
 export async function getWorkspaceExternalProjectStudioData(
