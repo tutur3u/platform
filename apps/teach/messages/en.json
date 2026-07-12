@@ -472,6 +472,8 @@
     "feedbackPlaceholder": "Add your feedback here...",
     "feedbackSaved": "Feedback saved successfully",
     "feedbackSaveError": "Failed to save feedback",
+    "aiFeedbackGenerated": "AI feedback generated successfully",
+    "aiFeedbackError": "Failed to generate AI feedback",
     "gradedError": "Failed to grade submission",
     "gradedSuccess": "Graded successfully",
     "hideScores": "Hide Scores",

@@ -472,6 +472,8 @@
     "feedbackPlaceholder": "Nhập phản hồi của bạn tại đây...",
     "feedbackSaved": "Đã lưu phản hồi thành công",
     "feedbackSaveError": "Lưu phản hồi thất bại",
+    "aiFeedbackGenerated": "Đã tạo nhận xét AI thành công",
+    "aiFeedbackError": "Không thể tạo nhận xét AI",
     "gradedError": "Đánh giá thất bại",
     "gradedSuccess": "Đánh giá thành công",
     "hideScores": "Ẩn điểm",

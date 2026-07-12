@@ -134,6 +134,45 @@ function SubmissionContent({
   const correctAnswers = answers.filter((a) => a.is_correct === true).length;
   const incorrectAnswers = answers.filter((a) => a.is_correct === false).length;
 
+  const [aiFeedbacks, setAiFeedbacks] = useState<Record<string, string>>({});
+  const [loadingAi, setLoadingAi] = useState<Record<string, boolean>>({});
+
+  const generateAiFeedback = async (quiz: any, quizAns: any) => {
+    if (loadingAi[quiz.id]) return;
+    setLoadingAi((prev) => ({ ...prev, [quiz.id]: true }));
+    try {
+      const response = await fetch('/api/ai/feedback', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          question: quiz.question,
+          type: quiz.type,
+          quizOptions: quiz.quiz_options || quiz.content?.options,
+          correctAnswer: quiz.answer,
+          studentAnswer: quizAns.answer || quizAns.selected_option_id,
+          isCorrect: quizAns.is_correct,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to generate AI feedback');
+      }
+
+      const result = await response.json();
+      if (result.feedback) {
+        setAiFeedbacks((prev) => ({ ...prev, [quiz.id]: result.feedback }));
+        toast.success(t('teachModules.aiFeedbackGenerated') || 'AI feedback generated!');
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error(t('teachModules.aiFeedbackError') || 'Failed to generate AI feedback');
+    } finally {
+      setLoadingAi((prev) => ({ ...prev, [quiz.id]: false }));
+    }
+  };
+
   return (
     <div className="mt-4 space-y-6">
       {/* Stats summary row */}
@@ -194,7 +233,8 @@ function SubmissionContent({
           return (
             <div
               key={quiz.id}
-              className="space-y-4 border-2 border-border bg-background p-5 shadow-[4px_4px_0_var(--border)]"
+              onClick={() => generateAiFeedback(quiz, quizAns)}
+              className="group space-y-4 border-2 border-border bg-background p-5 shadow-[4px_4px_0_var(--border)] cursor-pointer hover:border-primary transition duration-200"
             >
               {/* Question header */}
               <div className="flex flex-wrap items-center justify-between gap-3 border-border border-b-2 border-dashed pb-3">
@@ -229,7 +269,10 @@ function SubmissionContent({
               </div>
 
               {/* Student response render */}
-              <div className="border-2 border-border border-dashed bg-muted/10 p-3.5 text-sm">
+              <div
+                onClick={(e) => e.stopPropagation()}
+                className="border-2 border-border border-dashed bg-muted/10 p-3.5 text-sm cursor-default"
+              >
                 <QuizSubmissionResponseViewer
                   quiz={quiz}
                   answer={quizAns}
@@ -238,18 +281,23 @@ function SubmissionContent({
               </div>
 
               {/* Teacher feedback form */}
-              <FeedbackForm
-                wsId={wsId}
-                courseId={courseId}
-                testId={testId}
-                attemptId={attemptId}
-                quizId={quiz.id}
-                initialScoreAwarded={quizAns.score_awarded ?? 0}
-                initialFeedback={quizAns.feedback || ''}
-                isParagraph={quiz.type === 'paragraph'}
-                maxScore={quiz.score}
-                t={t}
-              />
+              <div onClick={(e) => e.stopPropagation()} className="cursor-default">
+                <FeedbackForm
+                  wsId={wsId}
+                  courseId={courseId}
+                  testId={testId}
+                  attemptId={attemptId}
+                  quizId={quiz.id}
+                  initialScoreAwarded={quizAns.score_awarded ?? 0}
+                  initialFeedback={quizAns.feedback || ''}
+                  isParagraph={quiz.type === 'paragraph'}
+                  maxScore={quiz.score}
+                  t={t}
+                  aiFeedback={aiFeedbacks[quiz.id]}
+                  isAiLoading={loadingAi[quiz.id]}
+                  onGenerateAi={() => generateAiFeedback(quiz, quizAns)}
+                />
+              </div>
             </div>
           );
         })}
@@ -270,6 +318,9 @@ function FeedbackForm({
   isParagraph,
   maxScore,
   t,
+  aiFeedback,
+  isAiLoading,
+  onGenerateAi,
 }: {
   wsId: string;
   courseId: string;
@@ -281,6 +332,9 @@ function FeedbackForm({
   isParagraph: boolean;
   maxScore: number | null;
   t: ReturnType<typeof useTranslations>;
+  aiFeedback?: string;
+  isAiLoading?: boolean;
+  onGenerateAi?: () => void;
 }) {
   const qc = useQueryClient();
   const [feedback, setFeedback] = useState(initialFeedback);
@@ -290,6 +344,12 @@ function FeedbackForm({
     setFeedback(initialFeedback);
     setScoreAwarded(String(initialScoreAwarded));
   }, [initialFeedback, initialScoreAwarded]);
+
+  useEffect(() => {
+    if (aiFeedback) {
+      setFeedback(aiFeedback);
+    }
+  }, [aiFeedback]);
 
   const parseManualScore = () => {
     const parsed = scoreAwarded.trim() ? Number(scoreAwarded) : 0;
@@ -357,9 +417,23 @@ function FeedbackForm({
 
   return (
     <div className="space-y-2 border-border border-t pt-2">
-      <label className="block font-black text-muted-foreground text-xs uppercase tracking-wider">
-        {t('teachModules.questionFeedback')}
-      </label>
+      <div className="flex items-center justify-between">
+        <label className="block font-black text-muted-foreground text-xs uppercase tracking-wider">
+          {t('teachModules.questionFeedback')}
+        </label>
+        <button
+          type="button"
+          onClick={onGenerateAi}
+          disabled={isAiLoading || feedbackMutation.isPending}
+          className="inline-flex cursor-pointer items-center gap-1 border border-border bg-background px-2 py-0.5 font-bold text-xs shadow-[1px_1px_0_var(--border)] transition hover:-translate-y-0.5 disabled:opacity-50 text-foreground"
+        >
+          {isAiLoading ? (
+            <Loader2 className="h-3 w-3 animate-spin text-primary" />
+          ) : (
+            '\u2728 Generate AI Feedback'
+          )}
+        </button>
+      </div>
       {isParagraph && (
         <div className="max-w-xs space-y-1">
           <label
@@ -388,12 +462,12 @@ function FeedbackForm({
           onChange={(e) => setFeedback(e.target.value)}
           placeholder={t('teachModules.feedbackPlaceholder')}
           className="w-full resize-none border-2 border-border bg-background px-3 py-2 text-sm shadow-[2px_2px_0_var(--border)] outline-none focus:border-primary"
-          disabled={feedbackMutation.isPending}
+          disabled={feedbackMutation.isPending || isAiLoading}
         />
         <button
           type="button"
           onClick={() => feedbackMutation.mutate()}
-          disabled={feedbackMutation.isPending || !isChanged}
+          disabled={feedbackMutation.isPending || !isChanged || isAiLoading}
           className={cn(
             'inline-flex w-full shrink-0 cursor-pointer items-center justify-center gap-2 border-2 border-border px-4 py-2.5 font-bold text-sm shadow-[2px_2px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[3px_3px_0_var(--border)] active:translate-y-0 active:shadow-[1px_1px_0_var(--border)] disabled:opacity-50 sm:w-auto',
             isFeedbackChanged
