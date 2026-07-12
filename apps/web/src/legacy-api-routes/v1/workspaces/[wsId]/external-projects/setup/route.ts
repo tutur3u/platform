@@ -6,7 +6,11 @@ import {
   requireWorkspaceExternalProjectSetupAccess,
 } from '@/lib/external-projects/access';
 import { withRequestLogDrain } from '@/lib/infrastructure/log-drain';
-import { syncManifestSchema } from '../sync/shared';
+import {
+  readSyncJsonRequest,
+  SyncManifestRequestBodyError,
+  syncManifestSchema,
+} from '../sync/shared';
 
 interface Params {
   params: Promise<{
@@ -37,7 +41,9 @@ async function setupExternalProjectStudio(
   if (!access.ok) return access.response;
 
   try {
-    const payload = setupRequestSchema.parse(await request.json());
+    const payload = setupRequestSchema.parse(
+      await readSyncJsonRequest(request)
+    );
     const manifest = payload.manifest;
     const adapter = payload.adapter ?? manifest?.adapter;
 
@@ -64,11 +70,15 @@ async function setupExternalProjectStudio(
       autoSetup: true,
     });
   } catch (error) {
-    if (error instanceof z.ZodError) {
+    if (
+      error instanceof z.ZodError ||
+      error instanceof SyncManifestRequestBodyError
+    ) {
       return NextResponse.json(
         {
           error: 'Invalid external project setup payload',
-          details: error.flatten(),
+          details:
+            error instanceof z.ZodError ? error.flatten() : error.message,
         },
         { status: 400 }
       );

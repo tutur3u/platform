@@ -6,7 +6,10 @@ import {
   getWorkspaceExternalProjectSyncSnapshot,
 } from '@/lib/external-projects/sync';
 import { withRequestLogDrain } from '@/lib/infrastructure/log-drain';
-import { parseSyncManifestRequest } from '../shared';
+import {
+  readSyncManifestRequest,
+  SyncManifestRequestBodyError,
+} from '../shared';
 
 interface Params {
   params: Promise<{
@@ -24,7 +27,7 @@ async function diffManifest(request: NextRequest, { params }: Params) {
   if (!access.ok) return access.response;
 
   try {
-    const { manifest } = parseSyncManifestRequest(await request.json());
+    const { manifest } = await readSyncManifestRequest(request);
     const snapshot = await getWorkspaceExternalProjectSyncSnapshot(
       {
         binding: access.binding,
@@ -35,11 +38,15 @@ async function diffManifest(request: NextRequest, { params }: Params) {
 
     return NextResponse.json(buildExternalProjectSyncDiff(snapshot, manifest));
   } catch (error) {
-    if (error instanceof z.ZodError) {
+    if (
+      error instanceof z.ZodError ||
+      error instanceof SyncManifestRequestBodyError
+    ) {
       return NextResponse.json(
         {
           error: 'Invalid external project sync manifest',
-          details: error.flatten(),
+          details:
+            error instanceof z.ZodError ? error.flatten() : error.message,
         },
         { status: 400 }
       );

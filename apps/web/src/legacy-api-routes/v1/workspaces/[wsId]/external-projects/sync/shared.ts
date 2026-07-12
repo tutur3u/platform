@@ -1,3 +1,4 @@
+import { gunzipSync } from 'node:zlib';
 import type { ExternalProjectSyncManifest } from '@tuturuuu/types';
 import { z } from 'zod';
 import { EXTERNAL_PROJECT_ADAPTER_OPTIONS } from '@/lib/external-projects/constants';
@@ -114,6 +115,36 @@ export const syncManifestRequestSchema = z.object({
   manifest: syncManifestSchema,
 });
 
+const MAX_SYNC_MANIFEST_BYTES = 16 * 1024 * 1024;
+const MAX_COMPRESSED_SYNC_MANIFEST_BYTES = 4 * 1024 * 1024;
+
+export class SyncManifestRequestBodyError extends Error {}
+
+async function readRequestBytes(request: Request, limit: number) {
+  const contentLength = Number(request.headers.get('content-length'));
+  if (Number.isFinite(contentLength) && contentLength > limit) {
+    throw new SyncManifestRequestBodyError('Oversized sync manifest');
+  }
+
+  const reader = request.body?.getReader();
+  if (!reader) return Buffer.alloc(0);
+
+  const chunks: Uint8Array[] = [];
+  let totalBytes = 0;
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    totalBytes += value.byteLength;
+    if (totalBytes > limit) {
+      await reader.cancel();
+      throw new SyncManifestRequestBodyError('Oversized sync manifest');
+    }
+    chunks.push(value);
+  }
+
+  return Buffer.concat(chunks, totalBytes);
+}
+
 export function parseSyncManifestRequest(value: unknown): {
   force?: boolean;
   manifest: ExternalProjectSyncManifest;
@@ -124,4 +155,46 @@ export function parseSyncManifestRequest(value: unknown): {
     force: parsed.force,
     manifest: parsed.manifest as ExternalProjectSyncManifest,
   };
+}
+
+export async function readSyncManifestRequest(request: Request): Promise<{
+  force?: boolean;
+  manifest: ExternalProjectSyncManifest;
+}> {
+  return parseSyncManifestRequest(await readSyncJsonRequest(request));
+}
+
+export async function readSyncJsonRequest(request: Request): Promise<unknown> {
+  const contentEncoding =
+    request.headers.get('content-encoding')?.trim().toLowerCase() ?? 'identity';
+
+  if (contentEncoding !== 'identity' && contentEncoding !== 'gzip') {
+    throw new SyncManifestRequestBodyError(
+      `Unsupported Content-Encoding: ${contentEncoding}`
+    );
+  }
+
+  let decoded: Buffer;
+  try {
+    const encoded = await readRequestBytes(
+      request,
+      contentEncoding === 'gzip'
+        ? MAX_COMPRESSED_SYNC_MANIFEST_BYTES
+        : MAX_SYNC_MANIFEST_BYTES
+    );
+    decoded =
+      contentEncoding === 'gzip'
+        ? gunzipSync(encoded, { maxOutputLength: MAX_SYNC_MANIFEST_BYTES })
+        : encoded;
+  } catch {
+    throw new SyncManifestRequestBodyError(
+      'Invalid or oversized sync manifest'
+    );
+  }
+
+  try {
+    return JSON.parse(decoded.toString('utf8'));
+  } catch {
+    throw new SyncManifestRequestBodyError('Invalid JSON sync manifest');
+  }
 }
