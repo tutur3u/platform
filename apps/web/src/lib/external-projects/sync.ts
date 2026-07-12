@@ -1292,12 +1292,13 @@ export async function applyWorkspaceExternalProjectSyncManifest(
     const slugMatch = existingEntries.byCollectionSlug.get(
       collectionSlugEntryKey(entry)
     );
+    const slugMatchStableSourceId = slugMatch?.stable_source_id?.trim();
     const existing =
       existingEntries.byStableKey.get(entryKey) ??
       (slugMatch &&
       !appliedEntryIds.has(slugMatch.id) &&
-      (!slugMatch.stable_source_id ||
-        !manifestEntryKeys.has(slugMatch.stable_source_id))
+      (!slugMatchStableSourceId ||
+        !manifestEntryKeys.has(slugMatchStableSourceId))
         ? slugMatch
         : undefined);
 
