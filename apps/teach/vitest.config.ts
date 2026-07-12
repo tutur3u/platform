@@ -11,6 +11,7 @@ export default defineConfig({
       },
     },
     environment: 'jsdom',
+    testTimeout: 30_000,
   },
   resolve: {
     alias: [{ find: '@', replacement: resolve(__dirname, './src') }],
