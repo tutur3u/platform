@@ -275,6 +275,7 @@ const EPM_IMAGE_PREVIEW_TRANSFORM = {
 } satisfies ImageTransformOptions;
 
 const EXTERNAL_PROJECT_ID_QUERY_BATCH_SIZE = 100;
+const EXTERNAL_PROJECT_QUERY_CONCURRENCY = 4;
 
 function chunkExternalProjectIds(ids: string[]) {
   const batches: string[][] = [];
@@ -541,20 +542,33 @@ async function listWorkspaceExternalProjectBlocksByEntryIds(
   }
 
   const blocks = [];
+  const entryIdBatches = chunkExternalProjectIds(entryIds);
 
-  for (const entryIdBatch of chunkExternalProjectIds(entryIds)) {
-    const { data, error } = await db
-      .from('workspace_external_project_blocks')
-      .select('*')
-      .eq('ws_id', workspaceId)
-      .in('entry_id', entryIdBatch)
-      .order('sort_order', { ascending: true });
+  for (
+    let index = 0;
+    index < entryIdBatches.length;
+    index += EXTERNAL_PROJECT_QUERY_CONCURRENCY
+  ) {
+    const results = await Promise.all(
+      entryIdBatches
+        .slice(index, index + EXTERNAL_PROJECT_QUERY_CONCURRENCY)
+        .map(async (entryIdBatch) => {
+          const { data, error } = await db
+            .from('workspace_external_project_blocks')
+            .select('*')
+            .eq('ws_id', workspaceId)
+            .in('entry_id', entryIdBatch)
+            .order('sort_order', { ascending: true });
 
-    if (error) {
-      throw new Error(error.message);
-    }
+          if (error) {
+            throw new Error(error.message);
+          }
 
-    blocks.push(...(data ?? []));
+          return data ?? [];
+        })
+    );
+
+    blocks.push(...results.flat());
   }
 
   return blocks;
@@ -570,20 +584,33 @@ async function listWorkspaceExternalProjectAssetsByEntryIds(
   }
 
   const assets = [];
+  const entryIdBatches = chunkExternalProjectIds(entryIds);
 
-  for (const entryIdBatch of chunkExternalProjectIds(entryIds)) {
-    const { data, error } = await db
-      .from('workspace_external_project_assets')
-      .select('*')
-      .eq('ws_id', workspaceId)
-      .in('entry_id', entryIdBatch)
-      .order('sort_order', { ascending: true });
+  for (
+    let index = 0;
+    index < entryIdBatches.length;
+    index += EXTERNAL_PROJECT_QUERY_CONCURRENCY
+  ) {
+    const results = await Promise.all(
+      entryIdBatches
+        .slice(index, index + EXTERNAL_PROJECT_QUERY_CONCURRENCY)
+        .map(async (entryIdBatch) => {
+          const { data, error } = await db
+            .from('workspace_external_project_assets')
+            .select('*')
+            .eq('ws_id', workspaceId)
+            .in('entry_id', entryIdBatch)
+            .order('sort_order', { ascending: true });
 
-    if (error) {
-      throw new Error(error.message);
-    }
+          if (error) {
+            throw new Error(error.message);
+          }
 
-    assets.push(...(data ?? []));
+          return data ?? [];
+        })
+    );
+
+    assets.push(...results.flat());
   }
 
   return assets;
