@@ -1,3 +1,4 @@
+import { gunzipSync } from 'node:zlib';
 import type { ExternalProjectSyncManifest } from '@tuturuuu/types';
 import { z } from 'zod';
 import { EXTERNAL_PROJECT_ADAPTER_OPTIONS } from '@/lib/external-projects/constants';
@@ -114,6 +115,10 @@ export const syncManifestRequestSchema = z.object({
   manifest: syncManifestSchema,
 });
 
+const MAX_SYNC_MANIFEST_BYTES = 16 * 1024 * 1024;
+
+export class SyncManifestRequestBodyError extends Error {}
+
 export function parseSyncManifestRequest(value: unknown): {
   force?: boolean;
   manifest: ExternalProjectSyncManifest;
@@ -124,4 +129,42 @@ export function parseSyncManifestRequest(value: unknown): {
     force: parsed.force,
     manifest: parsed.manifest as ExternalProjectSyncManifest,
   };
+}
+
+export async function readSyncManifestRequest(request: Request): Promise<{
+  force?: boolean;
+  manifest: ExternalProjectSyncManifest;
+}> {
+  const contentEncoding =
+    request.headers.get('content-encoding')?.trim().toLowerCase() ?? 'identity';
+
+  if (contentEncoding === 'identity') {
+    return parseSyncManifestRequest(await request.json());
+  }
+
+  if (contentEncoding !== 'gzip') {
+    throw new SyncManifestRequestBodyError(
+      `Unsupported Content-Encoding: ${contentEncoding}`
+    );
+  }
+
+  let decompressed: Buffer;
+  try {
+    decompressed = gunzipSync(Buffer.from(await request.arrayBuffer()), {
+      maxOutputLength: MAX_SYNC_MANIFEST_BYTES,
+    });
+  } catch {
+    throw new SyncManifestRequestBodyError(
+      'Invalid or oversized gzip sync manifest'
+    );
+  }
+
+  let payload: unknown;
+  try {
+    payload = JSON.parse(decompressed.toString('utf8'));
+  } catch {
+    throw new SyncManifestRequestBodyError('Invalid JSON sync manifest');
+  }
+
+  return parseSyncManifestRequest(payload);
 }
