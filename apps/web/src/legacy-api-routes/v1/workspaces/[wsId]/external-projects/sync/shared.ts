@@ -139,7 +139,13 @@ export async function readSyncManifestRequest(request: Request): Promise<{
     request.headers.get('content-encoding')?.trim().toLowerCase() ?? 'identity';
 
   if (contentEncoding === 'identity') {
-    return parseSyncManifestRequest(await request.json());
+    let payload: unknown;
+    try {
+      payload = await request.json();
+    } catch {
+      throw new SyncManifestRequestBodyError('Invalid JSON sync manifest');
+    }
+    return parseSyncManifestRequest(payload);
   }
 
   if (contentEncoding !== 'gzip') {
