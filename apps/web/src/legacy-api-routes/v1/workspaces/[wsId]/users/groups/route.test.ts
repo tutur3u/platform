@@ -10,7 +10,7 @@ const mocks = vi.hoisted(() => ({
   listUserGroupsForTable: vi.fn(),
   countUserGroupsForTable: vi.fn(),
   normalizeWorkspaceId: vi.fn(),
-  resolveSessionAuthContext: vi.fn(),
+  resolveRequestActorAuthUid: vi.fn(),
   serverLogger: {
     error: vi.fn(),
   },
@@ -21,10 +21,17 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
     mocks.createAdminClient(...args),
 }));
 
-vi.mock('@tuturuuu/utils/workspace-helper', () => ({
-  getPermissions: (...args: Parameters<typeof mocks.getPermissions>) =>
-    mocks.getPermissions(...args),
-  normalizeWorkspaceId: (
+vi.mock('@tuturuuu/users-core/lib/user-groups/route-auth', () => ({
+  getUserGroupRoutePermissions: (
+    ...args: Parameters<typeof mocks.getPermissions>
+  ) => mocks.getPermissions(...args),
+}));
+
+vi.mock('@tuturuuu/users-core/lib/user-groups/route-helpers', () => ({
+  resolveRequestActorAuthUid: (
+    ...args: Parameters<typeof mocks.resolveRequestActorAuthUid>
+  ) => mocks.resolveRequestActorAuthUid(...args),
+  resolveUserGroupRouteWorkspaceId: (
     ...args: Parameters<typeof mocks.normalizeWorkspaceId>
   ) => mocks.normalizeWorkspaceId(...args),
 }));
@@ -39,12 +46,6 @@ vi.mock('@tuturuuu/users-core/lib/user-groups/groups-utils', () => ({
   getShouldCountManagersInAttendance: (
     ...args: Parameters<typeof mocks.getShouldCountManagersInAttendance>
   ) => mocks.getShouldCountManagersInAttendance(...args),
-}));
-
-vi.mock('@/lib/api-auth', () => ({
-  resolveSessionAuthContext: (
-    ...args: Parameters<typeof mocks.resolveSessionAuthContext>
-  ) => mocks.resolveSessionAuthContext(...args),
 }));
 
 vi.mock('@/lib/infrastructure/log-drain', () => ({
@@ -126,11 +127,7 @@ describe('workspace user groups route app-session auth', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.normalizeWorkspaceId.mockResolvedValue('ws-1');
-    mocks.resolveSessionAuthContext.mockResolvedValue({
-      ok: true,
-      supabase: { from: vi.fn() },
-      user: { email: 'teacher@example.com', id: 'teacher-1' },
-    });
+    mocks.resolveRequestActorAuthUid.mockResolvedValue('teacher-1');
     mocks.fetchManagersForGroups.mockResolvedValue({});
     mocks.getShouldCountManagersInAttendance.mockResolvedValue(false);
     mocks.applyAttendanceMemberCounts.mockImplementation((groups) => groups);
@@ -164,14 +161,8 @@ describe('workspace user groups route app-session auth', () => {
       data: [{ id: 'group-1', name: 'Physics' }],
     });
     expect(response.status).toBe(200);
-    expect(mocks.resolveSessionAuthContext).toHaveBeenCalledWith(request, {
-      allowAppSessionAuth: true,
-    });
-    expect(mocks.getPermissions).toHaveBeenCalledWith({
-      request,
-      user: expect.objectContaining({ id: 'teacher-1' }),
-      wsId: 'ws-1',
-    });
+    expect(mocks.resolveRequestActorAuthUid).toHaveBeenCalledWith(request);
+    expect(mocks.getPermissions).toHaveBeenCalledWith('ws-1', request);
     expect(mocks.listUserGroupsForTable).toHaveBeenCalledWith({
       accessibleGroupIds: null,
       client: admin,

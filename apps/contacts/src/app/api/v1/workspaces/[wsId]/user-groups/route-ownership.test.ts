@@ -3,6 +3,9 @@ import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 const contactsOwnedRouteFiles = [
+  '../users/groups/route.ts',
+  '../users/groups/possible-excluded/route.ts',
+  '../users/groups/featured-counts/route.ts',
   '../group-tags/route.ts',
   '../group-tags/[tagId]/route.ts',
   '../group-tags/[tagId]/user-groups/route.ts',

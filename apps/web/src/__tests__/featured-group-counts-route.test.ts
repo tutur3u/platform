@@ -16,9 +16,14 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: vi.fn(() => Promise.resolve(mocks.adminSupabase)),
 }));
 
-vi.mock('@tuturuuu/utils/workspace-helper', () => ({
-  getPermissions: (...args: Parameters<typeof mocks.getPermissions>) =>
-    mocks.getPermissions(...args),
+vi.mock('@tuturuuu/users-core/lib/user-groups/route-auth', () => ({
+  getUserGroupRoutePermissions: (
+    ...args: Parameters<typeof mocks.getPermissions>
+  ) => mocks.getPermissions(...args),
+}));
+
+vi.mock('@tuturuuu/users-core/lib/user-groups/route-helpers', () => ({
+  resolveUserGroupRouteWorkspaceId: (wsId: string) => wsId,
 }));
 
 describe('featured group counts route', () => {
@@ -27,6 +32,7 @@ describe('featured group counts route', () => {
     vi.clearAllMocks();
     mocks.getPermissions.mockResolvedValue({
       containsPermission: vi.fn(),
+      withoutPermission: vi.fn(() => false),
     });
   });
 
