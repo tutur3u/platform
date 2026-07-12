@@ -73,6 +73,7 @@ const {
   getBlueGreenWebServiceImageTag,
   getHostTotalMemoryBuildValue,
   getNativeWebBuildMemory,
+  getNativeWebTurboRemoteCacheEnv,
   getNativeWebRunnerDockerBuildEnv,
   hasComposeServiceExpectedImage,
   hasBlueGreenProxyHostPortBindings,
@@ -3832,6 +3833,43 @@ test('native web build memory follows host memory when unset', () => {
       osImpl
     ),
     '32g'
+  );
+});
+
+test('native web builds load Turbo remote cache credentials from secret files', () => {
+  const secrets = new Map([
+    ['/run/secrets/turbo-team', ' trusted-team\n'],
+    ['/run/secrets/turbo-token', 'trusted-token\n'],
+  ]);
+  const fsImpl = {
+    readFileSync(filePath) {
+      if (secrets.has(filePath)) return secrets.get(filePath);
+
+      const error = new Error(`Missing ${filePath}`);
+      error.code = 'ENOENT';
+      throw error;
+    },
+  };
+
+  assert.deepEqual(
+    getNativeWebTurboRemoteCacheEnv(
+      {
+        DOCKER_WEB_TURBO_TEAM_SECRET_FILE: '/run/secrets/turbo-team',
+        DOCKER_WEB_TURBO_TOKEN_SECRET_FILE: '/run/secrets/turbo-token',
+      },
+      fsImpl
+    ),
+    { TURBO_TEAM: 'trusted-team', TURBO_TOKEN: 'trusted-token' }
+  );
+  assert.deepEqual(
+    getNativeWebTurboRemoteCacheEnv(
+      {
+        DOCKER_WEB_TURBO_TEAM_SECRET_FILE: '/run/secrets/turbo-team',
+        DOCKER_WEB_TURBO_TOKEN_SECRET_FILE: '/run/secrets/missing-token',
+      },
+      fsImpl
+    ),
+    {}
   );
 });
 

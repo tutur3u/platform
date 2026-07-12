@@ -15,6 +15,7 @@ env:
   E2E_IMAGE_BUNDLE_REPOSITORY: ghcr.io/tutur3u/platform-e2e
   E2E_IMAGE_BUNDLE_TAG_PREFIX: ${{ github.run_id }}-${{ github.run_attempt }}-${{ github.sha }}
   E2E_IMAGE_BUNDLE_WAIT_SECONDS: "10"
+  E2E_DOCKER_SUPABASE_RESET: "0"
 
 jobs:
   check-ci:

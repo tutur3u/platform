@@ -543,13 +543,40 @@ The workflow exposes only three bundle controls:
 
 The producer uses deterministic E2E-only `PLATFORM_BUILD_*` metadata so commit
 timestamps and messages do not invalidate otherwise reusable build work;
-production release metadata remains unchanged. An `always()` cleanup job
-deletes the exact run prefix after all shards and migration modes finish, and
-the next producer removes abandoned bundle versions older than 24 hours to
-cover canceled workflows. Bundle publication is best-effort, but cleanup is a
-required storage-safety gate. Investigate package visibility, `packages` token
-permissions, or GHCR deletion errors when cleanup fails; do not make the package
-public or replace these images with long-retention Actions artifacts.
+production release metadata remains unchanged. Published images also carry the
+official `org.opencontainers.image.source` label so GHCR links the package to
+this repository and grants its workflow token package administration. The
+privacy check retries briefly while GitHub's package metadata catches up. An
+`always()` cleanup job deletes the exact run prefix after all shards and
+migration modes finish, and the next producer removes abandoned bundle versions
+older than 24 hours to cover canceled workflows. Before publishing run-scoped
+tags, the producer creates a permanent `sentinel` image version when one does
+not already exist. Later runs reuse it instead of producing untagged sentinel
+versions. GHCR rejects deleting a package's final tagged version individually,
+so the sentinel lets
+exact-prefix cleanup remove every run tag without deleting the package or
+touching another concurrent workflow. Bootstrap cleanup preserves one final
+version when no sentinel exists yet; the next successful publish creates the
+sentinel so a later stale sweep can remove it. Bundle publication is
+best-effort, but cleanup is a required storage-safety gate. Investigate package
+visibility, `packages` token permissions, or GHCR deletion errors when cleanup
+fails; do not make the package public or replace these images with
+long-retention Actions artifacts.
+
+Trusted `main` producers also expose the Turbo team and token secret files to
+the native web artifact child process. This lets both Docker/BuildKit stages and
+the host-side Next build reuse Turborepo remote cache entries. The values remain
+file-scoped until that child starts, are not passed as Docker build arguments,
+and are never persisted in an image layer. Pull requests and other untrusted
+runs continue without remote-cache credentials.
+
+Each GitHub-hosted E2E runner starts from an empty Supabase volume. In CI,
+`E2E_DOCKER_SUPABASE_RESET=0` therefore asks the runner to start Supabase once
+and trust that initial bootstrap, which already applies migrations and seed
+data. This avoids immediately repeating the same reset while preserving a
+separate database stack for every shard and migration mode. Local E2E keeps the
+safer reset-by-default behavior because a developer may already have mutable
+Supabase volumes.
 
 On GitHub-hosted runners, the E2E workflow frees disk before restoring or
 loading cached Supabase Docker images. Keep that cleanup ahead of the cache load:

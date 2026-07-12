@@ -120,6 +120,15 @@ test('getDockerWebUpArgs starts production blue-green Docker with reset local Su
   );
 });
 
+test('getDockerWebUpArgs can trust a fresh CI Supabase bootstrap', () => {
+  const args = getDockerWebUpArgs('tmp/e2e/web.env', {
+    E2E_DOCKER_SUPABASE_RESET: '0',
+  });
+
+  assert.ok(args.includes('--with-supabase'));
+  assert.equal(args.includes('--reset-supabase'), false);
+});
+
 test('getDockerWebUpArgs reuses a detected local Redis bridge', () => {
   assert.deepEqual(
     getDockerWebUpArgs('tmp/e2e/web.env', {

@@ -126,7 +126,9 @@ function getDockerWebUpArgs(envFilePath, env = process.env) {
     'prod',
     '--strategy',
     'blue-green',
-    '--reset-supabase',
+    ...(env.E2E_DOCKER_SUPABASE_RESET === '0'
+      ? ['--with-supabase']
+      : ['--reset-supabase']),
     ...(isReusingLocalRedis(env) ? ['--without-redis'] : []),
     '--build-memory',
     env.E2E_DOCKER_BUILD_MEMORY ?? 'auto',

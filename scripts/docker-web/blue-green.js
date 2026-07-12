@@ -2295,6 +2295,7 @@ async function buildBlueGreenServices({
     if (!nativeWebArtifactsBuilt) {
       await buildNativeWebArtifacts({
         env: buildEnv,
+        fsImpl,
         osImpl,
         rootDir,
         runCommand: run,
@@ -2855,8 +2856,33 @@ function resolveNativeWebBuildEnvFile(env = {}, rootDir = ROOT_DIR) {
     : path.join(rootDir, envFilePath);
 }
 
+function readOptionalNativeWebBuildSecret(filePath, fsImpl = fs) {
+  if (!filePath) return null;
+
+  try {
+    return fsImpl.readFileSync(filePath, 'utf8').trim() || null;
+  } catch (error) {
+    if (error?.code === 'ENOENT') return null;
+    throw error;
+  }
+}
+
+function getNativeWebTurboRemoteCacheEnv(env = {}, fsImpl = fs) {
+  const team = readOptionalNativeWebBuildSecret(
+    env.DOCKER_WEB_TURBO_TEAM_SECRET_FILE,
+    fsImpl
+  );
+  const token = readOptionalNativeWebBuildSecret(
+    env.DOCKER_WEB_TURBO_TOKEN_SECRET_FILE,
+    fsImpl
+  );
+
+  return team && token ? { TURBO_TEAM: team, TURBO_TOKEN: token } : {};
+}
+
 async function buildNativeWebArtifacts({
   env = {},
+  fsImpl = fs,
   osImpl = os,
   rootDir = ROOT_DIR,
   runCommand: run = runCommand,
@@ -2872,6 +2898,7 @@ async function buildNativeWebArtifacts({
     cwd: rootDir,
     env: {
       ...env,
+      ...getNativeWebTurboRemoteCacheEnv(env, fsImpl),
       CI: env.CI ?? '1',
       DOCKER_WEB_BUILD_MEMORY: getNativeWebBuildMemory(env, osImpl),
       DOCKER_WEB_DOCKER_MEMORY_LIMIT: env.DOCKER_WEB_NATIVE_BUILD_MEMORY ?? '',
@@ -4697,6 +4724,7 @@ module.exports = {
   getHostTotalMemoryBuildValue,
   getNextBlueGreenColor,
   getNativeWebBuildMemory,
+  getNativeWebTurboRemoteCacheEnv,
   getNativeWebRunnerDockerBuildEnv,
   isBlueGreenColor,
   isNativeWebBuildEnabled,

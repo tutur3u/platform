@@ -35,6 +35,9 @@ const {
 const ROOT_DIR = path.resolve(__dirname, '..', '..');
 const DEFAULT_WAIT_SECONDS = 360;
 const DEFAULT_POLL_MS = 10_000;
+const SENTINEL_TAG = 'sentinel';
+const SOURCE_REPOSITORY_LABEL =
+  'LABEL org.opencontainers.image.source=https://github.com/tutur3u/platform';
 const STABLE_BUILD_METADATA = Object.freeze({
   PLATFORM_BUILD_BUILT_AT: '2000-01-01T00:00:00.000Z',
   PLATFORM_BUILD_COMMIT_HASH: '0000000000000000000000000000000000000000',
@@ -307,6 +310,8 @@ async function createRunScopedImage(
         'commit',
         '--change',
         `LABEL io.tuturuuu.e2e-image-bundle=${tagPrefix}-${entry.service}`,
+        '--change',
+        SOURCE_REPOSITORY_LABEL,
         containerName,
         entry.remote,
       ],
@@ -322,8 +327,8 @@ async function publishBundle(
   {
     buildRun = runDockerCommand,
     buildServices = buildBlueGreenServices,
-    cleanup = cleanupBundle,
     env = process.env,
+    remoteImageExists = imageExists,
     run = runCommand,
     verifyVisibility = verifyPackageVisibility,
   } = {}
@@ -349,6 +354,25 @@ async function publishBundle(
     services: manifest.map((entry) => entry.service),
   });
 
+  const sentinelImage = `${options.repository}:${SENTINEL_TAG}`;
+  if (!(await remoteImageExists(sentinelImage, { env: buildEnv }))) {
+    await createRunScopedImage(
+      {
+        remote: sentinelImage,
+        service: SENTINEL_TAG,
+        source: manifest[0].source,
+      },
+      {
+        env: buildEnv,
+        producerProject: options.producerProject,
+        run,
+        tagPrefix: SENTINEL_TAG,
+      }
+    );
+    await run('docker', ['push', sentinelImage], { env: buildEnv });
+  }
+  await verifyVisibility(options.repository, env);
+
   for (const entry of manifest) {
     await createRunScopedImage(entry, {
       env: buildEnv,
@@ -357,19 +381,6 @@ async function publishBundle(
       tagPrefix: options.tagPrefix,
     });
     await run('docker', ['push', entry.remote], { env: buildEnv });
-  }
-
-  try {
-    await verifyVisibility(options.repository, env);
-  } catch (error) {
-    await cleanup(
-      {
-        repository: options.repository,
-        tagPrefix: options.tagPrefix,
-      },
-      { env }
-    );
-    throw error;
   }
 
   const readyImage = getReadyImage(options.repository, options.tagPrefix);
@@ -518,7 +529,9 @@ module.exports = {
   DEFAULT_REPOSITORY,
   DEFAULT_STALE_HOURS,
   DEFAULT_WAIT_SECONDS,
+  SENTINEL_TAG,
   STABLE_BUILD_METADATA,
+  SOURCE_REPOSITORY_LABEL,
   appendGitHubEnv,
   cleanupBundle,
   createBundleBuildEnv,

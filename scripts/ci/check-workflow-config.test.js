@@ -763,6 +763,7 @@ test('E2E image bundle completes before private, bounded, optional consumers', (
     'ghcr.io/tutur3u/platform-e2e'
   );
   assert.equal(workflow.env?.E2E_IMAGE_BUNDLE_WAIT_SECONDS, '10');
+  assert.equal(workflow.env?.E2E_DOCKER_SUPABASE_RESET, '0');
   assert.equal(
     workflow.env?.E2E_IMAGE_BUNDLE_TAG_PREFIX,
     `${githubExpression('github.run_id')}-${githubExpression(

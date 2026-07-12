@@ -5,7 +5,9 @@ const path = require('node:path');
 const test = require('node:test');
 
 const {
+  SENTINEL_TAG,
   STABLE_BUILD_METADATA,
+  SOURCE_REPOSITORY_LABEL,
   cleanupBundle,
   createBundleBuildEnv,
   createBundleManifest,
@@ -153,6 +155,7 @@ test('publish builds the planned services once and pushes the ready marker last'
         buildOptions = options;
       },
       env: {},
+      remoteImageExists: async () => false,
       run: async (command, args) => calls.push([command, args]),
       verifyVisibility: async (repository) => {
         visibilityRepository = repository;
@@ -172,16 +175,26 @@ test('publish builds the planned services once and pushes the ready marker last'
   ]);
   assert.equal(
     calls.filter(([, args]) => args[0] === 'push').length,
-    getBundleServices({}).length + 1
+    getBundleServices({}).length + 2
   );
   assert.equal(
     calls.filter(([, args]) => args[0] === 'commit').length,
-    getBundleServices({}).length
+    getBundleServices({}).length + 1
   );
   assert.equal(
     calls.filter(([, args]) => args[0] === 'rm').length,
-    getBundleServices({}).length
+    getBundleServices({}).length + 1
   );
+  const sentinelPushIndex = calls.findIndex(
+    ([, args]) =>
+      args[0] === 'push' && args[1] === `${REPOSITORY}:${SENTINEL_TAG}`
+  );
+  const firstBundlePushIndex = calls.findIndex(
+    ([, args]) =>
+      args[0] === 'push' && args[1].startsWith(`${REPOSITORY}:${TAG_PREFIX}-`)
+  );
+  assert.ok(sentinelPushIndex >= 0);
+  assert.ok(firstBundlePushIndex > sentinelPushIndex);
 });
 
 test('run-scoped image derivation reuses layers but isolates the manifest', async () => {
@@ -210,6 +223,8 @@ test('run-scoped image derivation reuses layers but isolates the manifest', asyn
         'commit',
         '--change',
         `LABEL io.tuturuuu.e2e-image-bundle=${TAG_PREFIX}-backend`,
+        '--change',
+        SOURCE_REPOSITORY_LABEL,
         'producer-backend-bundle',
         `${REPOSITORY}:${TAG_PREFIX}-backend`,
       ],
@@ -218,9 +233,8 @@ test('run-scoped image derivation reuses layers but isolates the manifest', asyn
   ]);
 });
 
-test('publish removes the run-scoped versions when package visibility is unsafe', async () => {
-  let cleanupOptions;
-
+test('publish stops before run-scoped pushes when package visibility is unsafe', async () => {
+  const calls = [];
   await assert.rejects(
     () =>
       publishBundle(
@@ -231,11 +245,9 @@ test('publish removes the run-scoped versions when package visibility is unsafe'
         },
         {
           buildServices: async () => {},
-          cleanup: async (options) => {
-            cleanupOptions = options;
-          },
           env: {},
-          run: async () => {},
+          remoteImageExists: async () => false,
+          run: async (_command, args) => calls.push(args),
           verifyVisibility: async () => {
             throw new Error('public package');
           },
@@ -243,10 +255,47 @@ test('publish removes the run-scoped versions when package visibility is unsafe'
       ),
     /public package/u
   );
-  assert.deepEqual(cleanupOptions, {
-    repository: REPOSITORY,
-    tagPrefix: TAG_PREFIX,
-  });
+  assert.ok(
+    calls.some(
+      (args) =>
+        args[0] === 'push' && args[1] === `${REPOSITORY}:${SENTINEL_TAG}`
+    )
+  );
+  assert.equal(
+    calls.some(
+      (args) =>
+        args[0] === 'push' && args[1].startsWith(`${REPOSITORY}:${TAG_PREFIX}-`)
+    ),
+    false
+  );
+});
+
+test('publish reuses the permanent sentinel without creating stale versions', async () => {
+  const calls = [];
+
+  await publishBundle(
+    {
+      producerProject: 'producer',
+      repository: REPOSITORY,
+      tagPrefix: TAG_PREFIX,
+    },
+    {
+      buildServices: async () => {},
+      env: {},
+      remoteImageExists: async (image) => image.endsWith(`:${SENTINEL_TAG}`),
+      run: async (_command, args) => calls.push(args),
+      verifyVisibility: async () => {},
+    }
+  );
+
+  assert.equal(
+    calls.some((args) => args.includes(`${REPOSITORY}:${SENTINEL_TAG}`)),
+    false
+  );
+  assert.equal(
+    calls.filter((args) => args[0] === 'push').length,
+    getBundleServices({}).length + 1
+  );
 });
 
 test('waitForReadyImage polls until the immutable ready tag exists', async () => {
@@ -347,6 +396,22 @@ test('package visibility must be private', async () => {
   );
 });
 
+test('package visibility waits for GitHub metadata propagation', async () => {
+  let attempts = 0;
+
+  await verifyPackageVisibility(
+    REPOSITORY,
+    {},
+    async () => {
+      attempts += 1;
+      return attempts < 3 ? null : { visibility: 'private' };
+    },
+    { sleep: async () => {} }
+  );
+
+  assert.equal(attempts, 3);
+});
+
 test('cleanup selection is exact-prefix or bounded stale E2E versions only', () => {
   const versions = [
     {
@@ -417,4 +482,33 @@ test('cleanup deletes only selected versions and deletion retries transient erro
     sleep: async () => {},
   });
   assert.equal(attempts, 3);
+});
+
+test('cleanup preserves one version when no sentinel exists yet', async () => {
+  const removed = [];
+  const selected = await cleanupBundle(
+    {
+      repository: REPOSITORY,
+      tagPrefix: TAG_PREFIX,
+    },
+    {
+      listVersions: async () => [
+        {
+          id: 10,
+          metadata: { container: { tags: [`${TAG_PREFIX}-ready`] } },
+        },
+        {
+          id: 11,
+          metadata: { container: { tags: [`${TAG_PREFIX}-backend`] } },
+        },
+      ],
+      removeVersion: async (_repository, id) => removed.push(id),
+    }
+  );
+
+  assert.deepEqual(removed, [10]);
+  assert.deepEqual(
+    selected.map((version) => version.id),
+    [10, 11]
+  );
 });
