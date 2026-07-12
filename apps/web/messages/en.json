@@ -2347,7 +2347,6 @@
             "docker_control_not_live": "Docker control is not live",
             "last_execution_failed": "Latest cron execution failed for {jobId}",
             "managed_external_overdue": "{count} managed cron jobs are overdue",
-            "managed_parent_failed": "Managed-cron parent job failed",
             "recovery_request_stalled": "Cron runner recovery request is stalled",
             "runner_not_live": "Cron runner heartbeat is not live",
             "watcher_not_live": "Blue/green watcher heartbeat is not live"

@@ -1338,7 +1338,6 @@ export interface CronMonitoringDiagnostic {
     | 'docker_control_not_live'
     | 'last_execution_failed'
     | 'managed_external_overdue'
-    | 'managed_parent_failed'
     | 'recovery_request_stalled'
     | 'runner_not_live'
     | 'watcher_not_live';

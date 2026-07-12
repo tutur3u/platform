@@ -42,12 +42,12 @@
         "acceptedRemoval": 0,
         "key": "cron",
         "label": "cron",
-        "legacyNext": 6,
+        "legacyNext": 5,
         "migrated": 2,
-        "percentComplete": 25,
-        "remaining": 6,
+        "percentComplete": 28.57,
+        "remaining": 5,
         "terminal": 2,
-        "total": 8,
+        "total": 7,
         "unknownStatus": 0
       },
       {
@@ -104,12 +104,12 @@
         "acceptedRemoval": 11,
         "key": "rust-backend",
         "label": "Rust backend",
-        "legacyNext": 500,
+        "legacyNext": 499,
         "migrated": 71,
-        "percentComplete": 14.09,
-        "remaining": 500,
+        "percentComplete": 14.11,
+        "remaining": 499,
         "terminal": 82,
-        "total": 582,
+        "total": 581,
         "unknownStatus": 0
       },
       {
@@ -311,12 +311,12 @@
       "acceptedRemoval": 13,
       "key": "total",
       "label": "All route artifacts",
-      "legacyNext": 549,
+      "legacyNext": 548,
       "migrated": 219,
-      "percentComplete": 29.71,
-      "remaining": 549,
+      "percentComplete": 29.74,
+      "remaining": 548,
       "terminal": 232,
-      "total": 781,
+      "total": 780,
       "unknownStatus": 0
     }
   },
@@ -5590,15 +5590,6 @@
       "targetOwner": "rust-backend"
     },
     {
-      "id": "cron:/api/cron/workspaces/managed-jobs:apps/web/src/legacy-api-routes/cron/workspaces/managed-jobs/route.ts",
-      "kind": "cron",
-      "methods": ["GET"],
-      "routePath": "/api/cron/workspaces/managed-jobs",
-      "sourceFile": "apps/web/src/legacy-api-routes/cron/workspaces/managed-jobs/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
       "id": "error:/:locale:apps/web/src/app/[locale]/error.tsx",
       "kind": "error",
       "methods": [],
@@ -7437,12 +7428,12 @@
   ],
   "summary": {
     "apiRoutes": 569,
-    "cronRoutes": 8,
+    "cronRoutes": 7,
     "layouts": 53,
     "pages": 144,
-    "routeHandlers": 582,
+    "routeHandlers": 581,
     "methodCounts": {
-      "GET": 296,
+      "GET": 295,
       "HEAD": 1,
       "POST": 286,
       "PUT": 53,
@@ -7450,6 +7441,6 @@
       "DELETE": 100,
       "OPTIONS": 23
     },
-    "total": 781
+    "total": 780
   }
 }

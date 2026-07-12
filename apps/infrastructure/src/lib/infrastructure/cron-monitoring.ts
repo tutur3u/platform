@@ -632,28 +632,6 @@ function buildCronMonitoringDiagnostics({
     });
   }
 
-  const managedParentJob = snapshot.jobs.find(
-    (job) => job.id === 'managed-workspace-cron-jobs'
-  );
-  if (
-    managedParentJob &&
-    ((managedParentJob.failureStreak ?? 0) > 0 ||
-      (managedParentJob.lastExecution &&
-        managedParentJob.lastExecution.status !== 'success'))
-  ) {
-    diagnostics.push({
-      code: 'managed_parent_failed',
-      count: managedParentJob.failureStreak,
-      detail: trimDiagnosticDetail(
-        managedParentJob.lastExecution?.error ??
-          managedParentJob.lastExecution?.response
-      ),
-      jobId: managedParentJob.id,
-      severity: 'error',
-      timestamp: managedParentJob.lastExecution?.startedAt ?? null,
-    });
-  }
-
   const overdueManagedJobs =
     managedExternalCron?.apps.flatMap((app) =>
       app.jobs.filter((job) => job.isOverdue)

@@ -1,13 +1,6 @@
 {
   "jobs": [
     {
-      "description": "Send the daily Discord workspace report.",
-      "enabled": true,
-      "id": "discord-daily-report",
-      "path": "/api/cron/discord/daily-report",
-      "schedule": "0 16 * * *"
-    },
-    {
       "description": "Process notification batches waiting for delivery.",
       "enabled": true,
       "id": "process-notification-batches",
@@ -48,13 +41,6 @@
       "id": "tasks-deadline-reminders",
       "path": "/api/cron/tasks/deadline-reminders",
       "schedule": "0 */4 * * *"
-    },
-    {
-      "description": "Run due Tuturuuu-managed workspace endpoint cron jobs.",
-      "enabled": true,
-      "id": "managed-workspace-cron-jobs",
-      "path": "/api/cron/workspaces/managed-jobs",
-      "schedule": "* * * * *"
     },
     {
       "description": "Advance enabled Hive farming, NPC needs, ledgers, and autonomous simulation ticks.",
