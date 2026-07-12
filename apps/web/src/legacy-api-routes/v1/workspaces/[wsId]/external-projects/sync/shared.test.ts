@@ -54,6 +54,21 @@ describe('readSyncManifestRequest', () => {
     );
   });
 
+  it('rejects an oversized compressed request before buffering it', async () => {
+    const request = new Request('https://example.com/sync', {
+      body: gzipSync(JSON.stringify({ manifest })),
+      headers: {
+        'Content-Encoding': 'gzip',
+        'Content-Length': String(4 * 1024 * 1024 + 1),
+      },
+      method: 'POST',
+    });
+
+    await expect(readSyncManifestRequest(request)).rejects.toBeInstanceOf(
+      SyncManifestRequestBodyError
+    );
+  });
+
   it.each([
     {
       body: Buffer.from('not-gzip'),
