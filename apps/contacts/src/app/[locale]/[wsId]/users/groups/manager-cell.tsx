@@ -5,6 +5,7 @@ import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
+import { ManagerLinkDialog } from './manager-link-dialog';
 
 type Manager = NonNullable<UserGroup['managers']>[number];
 
@@ -17,8 +18,10 @@ interface ManagerCellLabels {
 }
 
 interface ManagerCellProps {
+  canLink?: boolean;
   labels: ManagerCellLabels;
   managers?: UserGroup['managers'];
+  wsId: string;
 }
 
 function getManagerName(manager: Manager) {
@@ -60,43 +63,61 @@ function getLinkedSummary(managers: Manager[], labels: ManagerCellLabels) {
   };
 }
 
-function ManagerIdentity({ manager }: { manager: Manager }) {
+function ManagerIdentity({
+  canLink,
+  manager,
+  wsId,
+}: {
+  canLink?: boolean;
+  manager: Manager;
+  wsId: string;
+}) {
   const isLinked = manager.hasLinkedPlatformUser;
 
   return (
-    <div className="flex min-w-0 items-center gap-2">
-      <Avatar className="h-8 w-8">
-        <AvatarImage src={manager.avatar_url || undefined} />
-        <AvatarFallback>{getManagerFallback(manager)}</AvatarFallback>
-      </Avatar>
-      <div className="flex min-w-0 flex-col">
-        <div className="flex min-w-0 items-center gap-1.5">
-          <span className="truncate font-medium text-sm">
-            {getManagerName(manager)}
-          </span>
-          {isLinked ? (
-            <Link2 className="h-3.5 w-3.5 shrink-0 text-dynamic-green" />
-          ) : (
-            <Link2Off className="h-3.5 w-3.5 shrink-0 text-dynamic-red" />
+    <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex min-w-0 items-center gap-2">
+        <Avatar className="h-8 w-8">
+          <AvatarImage src={manager.avatar_url || undefined} />
+          <AvatarFallback>{getManagerFallback(manager)}</AvatarFallback>
+        </Avatar>
+        <div className="flex min-w-0 flex-col">
+          <div className="flex min-w-0 items-center gap-1.5">
+            <span className="truncate font-medium text-sm">
+              {getManagerName(manager)}
+            </span>
+            {isLinked ? (
+              <Link2 className="h-3.5 w-3.5 shrink-0 text-dynamic-green" />
+            ) : (
+              <Link2Off className="h-3.5 w-3.5 shrink-0 text-dynamic-red" />
+            )}
+          </div>
+          {manager.email && (
+            <span className="truncate text-muted-foreground text-xs">
+              {manager.email}
+            </span>
           )}
         </div>
-        {manager.email && (
-          <span className="truncate text-muted-foreground text-xs">
-            {manager.email}
-          </span>
-        )}
       </div>
+      {!isLinked && canLink ? (
+        <ManagerLinkDialog manager={manager} wsId={wsId} />
+      ) : null}
     </div>
   );
 }
 
-export function ManagerCell({ labels, managers }: ManagerCellProps) {
+export function ManagerCell({
+  canLink,
+  labels,
+  managers,
+  wsId,
+}: ManagerCellProps) {
   if (!managers?.length) return <div>-</div>;
 
   if (managers.length === 1) {
     const manager = managers[0];
     if (!manager) return <div>-</div>;
-    return <ManagerIdentity manager={manager} />;
+    return <ManagerIdentity canLink={canLink} manager={manager} wsId={wsId} />;
   }
 
   const summary = getLinkedSummary(managers, labels);
@@ -134,7 +155,12 @@ export function ManagerCell({ labels, managers }: ManagerCellProps) {
           </div>
           <div className="grid gap-2">
             {managers.map((manager) => (
-              <ManagerIdentity key={manager.id} manager={manager} />
+              <ManagerIdentity
+                key={manager.id}
+                canLink={canLink}
+                manager={manager}
+                wsId={wsId}
+              />
             ))}
           </div>
         </div>

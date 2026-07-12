@@ -892,6 +892,48 @@ export async function repairWorkspaceUserPlatformLinks(
   );
 }
 
+export interface WorkspaceUserLinkCandidate {
+  avatarUrl: string | null;
+  displayName: string | null;
+  email: string | null;
+  id: string;
+  isEmailMatch: boolean;
+  linkedVirtualUserId: string | null;
+}
+
+export async function listWorkspaceUserLinkCandidates(
+  workspaceId: string,
+  virtualUserId: string,
+  query = '',
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ data: WorkspaceUserLinkCandidate[] }>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/users/links/manual`,
+    {
+      cache: 'no-store',
+      query: { q: query, virtualUserId },
+    }
+  );
+}
+
+export async function linkWorkspaceUserPlatformProfile(
+  workspaceId: string,
+  payload: { platformUserId: string; virtualUserId: string },
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ alreadyLinked: boolean; success: true }>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/users/links/manual`,
+    {
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+      headers: { 'Content-Type': 'application/json' },
+      method: 'POST',
+    }
+  );
+}
+
 // ---------------------------------------------------------------------------
 // External profile-completion links
 // ---------------------------------------------------------------------------

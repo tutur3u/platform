@@ -131,12 +131,12 @@ export function UserGroupsTable({ wsId, initialData, permissions }: Props) {
     return (
       <div className="flex flex-col items-center justify-center gap-4 py-16">
         <p className="text-destructive">
-          {errorMessage || 'Error loading user groups. Please try again.'}
+          {errorMessage || t('user-group-data-table.load_error')}
         </p>
         <Button
           onClick={() => refetch()}
           disabled={isFetching}
-          aria-label="Retry loading user groups"
+          aria-label={t('user-group-data-table.retry_loading')}
         >
           {isFetching ? (
             <>
@@ -190,6 +190,7 @@ export function UserGroupsTable({ wsId, initialData, permissions }: Props) {
           canCreateUserGroups: permissions.canCreate,
           canUpdateUserGroups: permissions.canUpdate,
           canDeleteUserGroups: permissions.canDelete,
+          wsId,
         }}
         onRefresh={handleRefresh}
         defaultVisibility={{

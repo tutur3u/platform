@@ -5,6 +5,7 @@ import {
   getNotificationAccessContext,
 } from '@tuturuuu/users-core/lib/notifications/access';
 import { resolveNotificationRouteUser } from '@tuturuuu/users-core/lib/notifications/route-auth';
+import { unstable_rethrow } from 'next/navigation';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
@@ -80,6 +81,7 @@ export async function GET(request: Request) {
 
     return NextResponse.json({ count: count ?? 0 });
   } catch (error) {
+    unstable_rethrow(error);
     console.error('Error in unread notification count API', { error });
     return NextResponse.json(
       { error: 'Internal server error' },

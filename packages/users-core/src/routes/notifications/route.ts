@@ -5,6 +5,7 @@ import {
   getNotificationAccessContext,
 } from '@tuturuuu/users-core/lib/notifications/access';
 import { resolveNotificationRouteUser } from '@tuturuuu/users-core/lib/notifications/route-auth';
+import { unstable_rethrow } from 'next/navigation';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
@@ -168,6 +169,7 @@ export async function GET(request: Request) {
       offset,
     });
   } catch (error) {
+    unstable_rethrow(error);
     console.error('Error in notifications API', { error });
     return NextResponse.json(
       { error: 'Internal server error' },
@@ -218,6 +220,7 @@ export async function PATCH(request: Request) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
+    unstable_rethrow(error);
     console.error('Error in bulk notifications update', { error });
     return NextResponse.json(
       { error: 'Internal server error' },

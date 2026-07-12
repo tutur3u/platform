@@ -22,6 +22,7 @@ export const getUserGroupColumns = ({
     canDeleteUserGroups?: boolean;
     canUpdateUserGroups?: boolean;
     canCreateUserGroups?: boolean;
+    wsId?: string;
   };
 }): ColumnDef<UserGroup>[] => [
   {
@@ -81,7 +82,9 @@ export const getUserGroupColumns = ({
 
       return (
         <ManagerCell
+          canLink={extraData?.canUpdateUserGroups}
           managers={managers}
+          wsId={extraData?.wsId ?? row.original.ws_id}
           labels={{
             linkedAll: t(`${namespace}.managers_linked_all`),
             linkedCount: t(`${namespace}.linked_managers`, {

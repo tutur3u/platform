@@ -5,6 +5,7 @@ import {
   getNotificationAccessContext,
 } from '@tuturuuu/users-core/lib/notifications/access';
 import { resolveNotificationRouteUser } from '@tuturuuu/users-core/lib/notifications/route-auth';
+import { unstable_rethrow } from 'next/navigation';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
@@ -62,6 +63,7 @@ export async function PATCH(request: Request, { params }: Params) {
     }
     return NextResponse.json({ success: true });
   } catch (error) {
+    unstable_rethrow(error);
     console.error('Error in notification update', { error });
     return NextResponse.json(
       { error: 'Internal server error' },
@@ -101,6 +103,7 @@ export async function DELETE(request: Request, { params }: Params) {
     }
     return NextResponse.json({ success: true });
   } catch (error) {
+    unstable_rethrow(error);
     console.error('Error in notification deletion', { error });
     return NextResponse.json(
       { error: 'Internal server error' },

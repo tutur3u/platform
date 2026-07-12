@@ -6,6 +6,7 @@ const contactsOwnedRouteFiles = [
   '../users/groups/route.ts',
   '../users/groups/possible-excluded/route.ts',
   '../users/groups/featured-counts/route.ts',
+  '../users/links/manual/route.ts',
   '../group-tags/route.ts',
   '../group-tags/[tagId]/route.ts',
   '../group-tags/[tagId]/user-groups/route.ts',
@@ -17,6 +18,8 @@ const contactsOwnedRouteFiles = [
   '[groupId]/indicators/[indicatorId]/route.ts',
   '[groupId]/indicators/categories/route.ts',
   '[groupId]/indicators/categories/[categoryId]/route.ts',
+  '[groupId]/linked-products/route.ts',
+  '[groupId]/linked-products/[productId]/route.ts',
   '[groupId]/members/route.ts',
   'activity-logs/route.ts',
   'sessions/route.ts',
@@ -24,6 +27,7 @@ const contactsOwnedRouteFiles = [
   'sessions/[sessionId]/reconcile/route.ts',
   'sessions/group-summaries/route.ts',
   'sessions/occurrences/route.ts',
+  '../products/options/route.ts',
 ] as const;
 
 describe('Contacts user-group API ownership', () => {

@@ -5,6 +5,7 @@ import {
   getNotificationAccessContext,
 } from '@tuturuuu/users-core/lib/notifications/access';
 import { resolveNotificationRouteUser } from '@tuturuuu/users-core/lib/notifications/route-auth';
+import { unstable_rethrow } from 'next/navigation';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
@@ -83,6 +84,7 @@ export async function PATCH(
 
     return NextResponse.json({ success: true, data: updatedData });
   } catch (error) {
+    unstable_rethrow(error);
     console.error('Error in notification metadata update', { error });
     return NextResponse.json(
       { error: 'Internal server error' },

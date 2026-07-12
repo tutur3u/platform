@@ -4,6 +4,7 @@ import {
 } from '@tuturuuu/auth/app-session';
 import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import { createClient } from '@tuturuuu/supabase/next/server';
+import { connection } from 'next/server';
 
 const NOTIFICATION_APP_SESSION_TARGETS = [
   'contacts',
@@ -12,6 +13,8 @@ const NOTIFICATION_APP_SESSION_TARGETS = [
 ] as const;
 
 export async function resolveNotificationRouteUser(request: Request) {
+  await connection();
+
   const verification = verifyAppSessionRequest(request, {
     targetApp: NOTIFICATION_APP_SESSION_TARGETS,
   });

@@ -27,6 +27,7 @@ describe('ManagerCell', () => {
       <ManagerCell
         labels={labels}
         managers={[manager('A', true), manager('B', true)]}
+        wsId="ws-1"
       />
     );
 
@@ -41,6 +42,7 @@ describe('ManagerCell', () => {
       <ManagerCell
         labels={{ ...labels, linkedCount: '0/2 linked' }}
         managers={[manager('A', false), manager('B', false)]}
+        wsId="ws-1"
       />
     );
 
@@ -55,6 +57,7 @@ describe('ManagerCell', () => {
       <ManagerCell
         labels={{ ...labels, linkedCount: '1/2 linked' }}
         managers={[manager('A', true), manager('B', false)]}
+        wsId="ws-1"
       />
     );
 

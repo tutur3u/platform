@@ -2424,6 +2424,7 @@
         "@tuturuuu/auth": "workspace:*",
         "@tuturuuu/finance-core": "workspace:*",
         "@tuturuuu/internal-api": "workspace:*",
+        "@tuturuuu/inventory-core": "workspace:*",
         "@tuturuuu/storage-core": "workspace:*",
         "@tuturuuu/supabase": "workspace:*",
         "@tuturuuu/types": "workspace:*",

@@ -1,10 +1,15 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
+  connection: vi.fn(),
   createAppSessionUser: vi.fn(),
   createClient: vi.fn(),
   resolveAuthenticatedSessionUser: vi.fn(),
   verifyAppSessionRequest: vi.fn(),
+}));
+
+vi.mock('next/server', () => ({
+  connection: mocks.connection,
 }));
 
 vi.mock('@tuturuuu/auth/app-session', () => ({
@@ -37,6 +42,7 @@ describe('notification route auth', () => {
     mocks.createAppSessionUser.mockReturnValue(user);
 
     await expect(resolveNotificationRouteUser(request)).resolves.toBe(user);
+    expect(mocks.connection).toHaveBeenCalledOnce();
     expect(mocks.verifyAppSessionRequest).toHaveBeenCalledWith(request, {
       targetApp: ['contacts', 'platform', 'teach'],
     });

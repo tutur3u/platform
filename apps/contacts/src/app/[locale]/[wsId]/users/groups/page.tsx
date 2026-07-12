@@ -88,9 +88,11 @@ export default async function WorkspaceUserGroupsPage({
           return (
             <div className="flex h-96 items-center justify-center">
               <div className="text-center">
-                <h2 className="font-semibold text-lg">Access Denied</h2>
+                <h2 className="font-semibold text-lg">
+                  {t('user-group-data-table.access_denied_title')}
+                </h2>
                 <p className="text-muted-foreground">
-                  You don't have permission to view user groups.
+                  {t('user-group-data-table.access_denied_description')}
                 </p>
               </div>
             </div>

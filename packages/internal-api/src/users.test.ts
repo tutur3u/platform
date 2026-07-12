@@ -2,6 +2,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   getUserConfig,
   getUserWorkspaceConfig,
+  linkWorkspaceUserPlatformProfile,
+  listWorkspaceUserLinkCandidates,
   repairWorkspaceUserPlatformLinks,
   TASK_DEFAULT_BOARD_ID_CONFIG_ID,
   updateUserConfig,
@@ -131,6 +133,50 @@ describe('users internal-api helpers', () => {
           workspaceUserId: 'user-1',
         }),
         cache: 'no-store',
+        method: 'POST',
+      })
+    );
+  });
+
+  it('lists manual profile-link candidates through the local workspace route', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(createJsonResponse({ data: [] }));
+
+    await listWorkspaceUserLinkCandidates('ws-1', 'virtual-1', 'tuyet', {
+      baseUrl: 'https://internal.example.com',
+      fetch: fetchMock as unknown as typeof fetch,
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://internal.example.com/api/v1/workspaces/ws-1/users/links/manual?q=tuyet&virtualUserId=virtual-1',
+      expect.objectContaining({ cache: 'no-store' })
+    );
+  });
+
+  it('links a virtual profile to an explicit workspace account', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(
+        createJsonResponse({ alreadyLinked: false, success: true })
+      );
+
+    await linkWorkspaceUserPlatformProfile(
+      'ws-1',
+      { platformUserId: 'platform-1', virtualUserId: 'virtual-1' },
+      {
+        baseUrl: 'https://internal.example.com',
+        fetch: fetchMock as unknown as typeof fetch,
+      }
+    );
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://internal.example.com/api/v1/workspaces/ws-1/users/links/manual',
+      expect.objectContaining({
+        body: JSON.stringify({
+          platformUserId: 'platform-1',
+          virtualUserId: 'virtual-1',
+        }),
         method: 'POST',
       })
     );
