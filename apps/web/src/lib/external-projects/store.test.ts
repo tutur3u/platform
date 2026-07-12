@@ -63,6 +63,7 @@ function createOrderedSelectResult<T>(result: T) {
     eq: vi.fn(() => query),
     in: vi.fn(() => query),
     order: vi.fn(() => query),
+    range: vi.fn(() => query),
   };
 
   Object.defineProperty(query, 'then', {
@@ -128,6 +129,7 @@ describe('external project store cleanup', () => {
             }),
             limit: vi.fn(() => query),
             order: vi.fn(() => query),
+            range: vi.fn(() => query),
           };
 
           Object.defineProperty(query, 'then', {
@@ -183,6 +185,56 @@ describe('external project store cleanup', () => {
       entryIds.slice(0, 100),
       entryIds.slice(100, 200),
       entryIds.slice(200),
+    ]);
+  });
+
+  it('loads every entry page when a workspace exceeds the row limit', async () => {
+    const entries = Array.from({ length: 1185 }, (_, index) => ({
+      id: `entry-${index}`,
+      slug: `entry-${index}`,
+    }));
+    const ranges: Array<[number, number]> = [];
+    const db = {
+      from: vi.fn(() => ({
+        select: vi.fn(() => {
+          let selectedRange: [number, number] = [0, 999];
+          const query = {
+            eq: vi.fn(() => query),
+            order: vi.fn(() => query),
+            range: vi.fn((from: number, to: number) => {
+              selectedRange = [from, to];
+              ranges.push(selectedRange);
+              return query;
+            }),
+          };
+
+          Object.defineProperty(query, 'then', {
+            value: (
+              resolve: (value: { data: unknown[]; error: null }) => unknown,
+              reject?: (reason: unknown) => unknown
+            ) =>
+              Promise.resolve({
+                data: entries.slice(selectedRange[0], selectedRange[1] + 1),
+                error: null,
+              }).then(resolve, reject),
+          });
+
+          return query;
+        }),
+      })),
+    };
+
+    const { listWorkspaceExternalProjectEntries } = await import('./store');
+    const result = await listWorkspaceExternalProjectEntries(
+      'workspace-1',
+      { includeDrafts: true },
+      db as never
+    );
+
+    expect(result).toHaveLength(1185);
+    expect(ranges).toEqual([
+      [0, 999],
+      [1000, 1999],
     ]);
   });
 
