@@ -11,17 +11,20 @@ describe('GET /api/v1/vocabulary/suggestions', () => {
     vi.restoreAllMocks();
   });
 
-  it('keeps OED autocomplete URLs on the OED origin', async () => {
+  it('keeps Laban autocomplete URLs on the Laban origin', async () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValue({
       ok: true,
       status: 200,
       text: async () =>
-        JSON.stringify([
-          {
-            label: 'eat',
-            path: 'https://evil.example/dictionary/eat',
-          },
-        ]),
+        JSON.stringify({
+          suggestions: [
+            {
+              select: 'eat',
+              link: 'https://evil.example/dictionary/eat',
+              data: '<span class="fl">eat</span> <span class="fr">/iːt/</span><p>ăn, dùng bữa</p>',
+            },
+          ],
+        }),
     } as Response);
 
     const request = new NextRequest(
@@ -34,36 +37,29 @@ describe('GET /api/v1/vocabulary/suggestions', () => {
     expect(data.suggestions).toEqual([
       {
         beta: false,
-        url: 'https://www.oed.com/search/dictionary/?scope=Entries&q=eat',
+        definition: 'ăn, dùng bữa',
+        pronunciation: '/iːt/',
+        url: 'https://dict.laban.vn/find?type=1&query=eat',
         word: 'eat',
       },
     ]);
   });
 
-  it('returns definitions from OED search fallback rows', async () => {
-    vi.spyOn(globalThis, 'fetch')
-      .mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        text: async () => '',
-      } as Response)
-      .mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        text: async () => `
-          <html>
-            <body>
-              <div class="resultsSetItem">
-                <h3 class="resultTitle">eat, v.</h3>
-                <div class="snippet">To take food into the mouth…</div>
-                <a class="viewEntry" href="/dictionary/eat_v" title="eat, v.">
-                  View entry
-                </a>
-              </div>
-            </body>
-          </html>
-        `,
-      } as Response);
+  it('returns normalized autocomplete suggestions from Laban response', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      status: 200,
+      text: async () =>
+        JSON.stringify({
+          suggestions: [
+            {
+              select: 'eat',
+              link: '/find?type=1&query=eat',
+              data: '<span class="fl">eat</span> <span class="fr">/iːt/</span><p>ăn, dùng bữa</p>',
+            },
+          ],
+        }),
+    } as Response);
 
     const request = new NextRequest(
       'http://localhost/api/v1/vocabulary/suggestions?q=eat'
@@ -75,8 +71,9 @@ describe('GET /api/v1/vocabulary/suggestions', () => {
     expect(data.suggestions).toEqual([
       {
         beta: false,
-        definition: 'To take food into the mouth...',
-        url: 'https://www.oed.com/dictionary/eat_v',
+        definition: 'ăn, dùng bữa',
+        pronunciation: '/iːt/',
+        url: 'https://dict.laban.vn/find?type=1&query=eat',
         word: 'eat',
       },
     ]);
