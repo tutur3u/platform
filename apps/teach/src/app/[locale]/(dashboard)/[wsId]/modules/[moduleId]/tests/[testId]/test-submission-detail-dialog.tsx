@@ -238,7 +238,7 @@ function SubmissionContent({
             <div
               key={quiz.id}
               onClick={() => generateAiFeedback(quiz, quizAns)}
-              className="group space-y-4 border-2 border-border bg-background p-5 shadow-[4px_4px_0_var(--border)] cursor-pointer hover:border-primary transition duration-200"
+              className="group cursor-pointer space-y-4 border-2 border-border bg-background p-5 shadow-[4px_4px_0_var(--border)] transition duration-200 hover:border-primary"
             >
               {/* Question header */}
               <div className="flex flex-wrap items-center justify-between gap-3 border-border border-b-2 border-dashed pb-3">
@@ -275,7 +275,7 @@ function SubmissionContent({
               {/* Student response render */}
               <div
                 onClick={(e) => e.stopPropagation()}
-                className="border-2 border-border border-dashed bg-muted/10 p-3.5 text-sm cursor-default"
+                className="cursor-default border-2 border-border border-dashed bg-muted/10 p-3.5 text-sm"
               >
                 <QuizSubmissionResponseViewer
                   quiz={quiz}
@@ -432,7 +432,7 @@ function FeedbackForm({
           type="button"
           onClick={onGenerateAi}
           disabled={isAiLoading || feedbackMutation.isPending}
-          className="inline-flex cursor-pointer items-center gap-1 border border-border bg-background px-2 py-0.5 font-bold text-xs shadow-[1px_1px_0_var(--border)] transition hover:-translate-y-0.5 disabled:opacity-50 text-foreground"
+          className="inline-flex cursor-pointer items-center gap-1 border border-border bg-background px-2 py-0.5 font-bold text-foreground text-xs shadow-[1px_1px_0_var(--border)] transition hover:-translate-y-0.5 disabled:opacity-50"
         >
           {isAiLoading ? (
             <Loader2 className="h-3 w-3 animate-spin text-primary" />
