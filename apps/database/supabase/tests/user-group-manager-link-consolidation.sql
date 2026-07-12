@@ -4,7 +4,7 @@ create extension if not exists pgtap with schema extensions;
 
 set local search_path = public, private, extensions;
 
-select plan(7);
+select plan(10);
 
 select has_function(
   'private',
@@ -18,6 +18,13 @@ select has_trigger(
   'workspace_user_groups_users',
   'consolidate_user_group_manager_link',
   'manager memberships trigger automatic link consolidation'
+);
+
+select has_trigger(
+  'public',
+  'workspace_members',
+  'consolidate_user_group_manager_links_on_membership',
+  'workspace membership triggers pending manager link consolidation'
 );
 
 select ok(
@@ -34,14 +41,16 @@ values
   ('00000000-0000-0000-0000-000000032001', 'Manager Link Owner'),
   ('00000000-0000-0000-0000-000000032002', 'Unique Manager'),
   ('00000000-0000-0000-0000-000000032003', 'Ambiguous Manager A'),
-  ('00000000-0000-0000-0000-000000032004', 'Ambiguous Manager B')
+  ('00000000-0000-0000-0000-000000032004', 'Ambiguous Manager B'),
+  ('00000000-0000-0000-0000-000000032005', 'Late Manager Member')
 on conflict (id) do nothing;
 
 insert into public.user_private_details (user_id, email)
 values
   ('00000000-0000-0000-0000-000000032002', ' unique.manager@example.com '),
   ('00000000-0000-0000-0000-000000032003', 'shared.manager@example.com'),
-  ('00000000-0000-0000-0000-000000032004', ' SHARED.MANAGER@example.com ')
+  ('00000000-0000-0000-0000-000000032004', ' SHARED.MANAGER@example.com '),
+  ('00000000-0000-0000-0000-000000032005', 'late.manager@example.com')
 on conflict (user_id) do update set email = excluded.email;
 
 insert into public.workspaces (id, name, personal, creator_id)
@@ -86,6 +95,12 @@ values
     '00000000-0000-0000-0000-000000032010',
     'Ambiguous Manager Group',
     false
+  ),
+  (
+    '00000000-0000-0000-0000-000000032103',
+    '00000000-0000-0000-0000-000000032010',
+    'Late Member Manager Group',
+    false
   )
 on conflict (id) do nothing;
 
@@ -102,6 +117,12 @@ values
     '00000000-0000-0000-0000-000000032010',
     'Ambiguous Manager Profile',
     'shared.manager@example.com'
+  ),
+  (
+    '00000000-0000-0000-0000-000000032203',
+    '00000000-0000-0000-0000-000000032010',
+    'Late Member Manager Profile',
+    'LATE.MANAGER@example.com'
   )
 on conflict (id) do nothing;
 
@@ -152,6 +173,39 @@ select is(
   ),
   0,
   'ambiguous matching platform members are not linked automatically'
+);
+
+insert into public.workspace_user_groups_users (group_id, user_id, role)
+values (
+  '00000000-0000-0000-0000-000000032103',
+  '00000000-0000-0000-0000-000000032203',
+  'TEACHER'
+);
+
+select is(
+  (
+    select count(*)::integer
+    from public.workspace_user_linked_users
+    where virtual_user_id = '00000000-0000-0000-0000-000000032203'
+  ),
+  0,
+  'manager without workspace membership remains safely unlinked'
+);
+
+insert into public.workspace_members (ws_id, user_id)
+values (
+  '00000000-0000-0000-0000-000000032010',
+  '00000000-0000-0000-0000-000000032005'
+);
+
+select is(
+  (
+    select platform_user_id
+    from public.workspace_user_linked_users
+    where virtual_user_id = '00000000-0000-0000-0000-000000032203'
+  ),
+  '00000000-0000-0000-0000-000000032005'::uuid,
+  'adding the matching workspace member completes the manager link automatically'
 );
 
 select is(
