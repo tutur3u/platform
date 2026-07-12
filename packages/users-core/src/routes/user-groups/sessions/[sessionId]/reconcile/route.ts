@@ -1,10 +1,10 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { getUserGroupRoutePermissions } from '@tuturuuu/users-core/lib/user-groups/route-auth';
 import { resolveUserGroupRouteWorkspaceId } from '@tuturuuu/users-core/lib/user-groups/route-helpers';
 import {
   previewDetachedUserGroupSessionReconciliation,
   reconcileDetachedUserGroupSession,
 } from '@tuturuuu/users-core/lib/user-groups/session-schedule';
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 
 interface Params {
@@ -21,7 +21,7 @@ async function authorizeScheduleUpdate(
   wsId: string
 ): Promise<{ normalizedWsId: string } | { response: NextResponse }> {
   const normalizedWsId = await resolveUserGroupRouteWorkspaceId(wsId, req);
-  const permissions = await getPermissions({ request: req, wsId });
+  const permissions = await getUserGroupRoutePermissions(wsId, req);
 
   if (!permissions) {
     return {

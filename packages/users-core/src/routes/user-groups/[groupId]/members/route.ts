@@ -1,12 +1,12 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { revalidateUserGroupCache } from '@tuturuuu/users-core/lib/user-groups/revalidate';
+import { getUserGroupRoutePermissions } from '@tuturuuu/users-core/lib/user-groups/route-auth';
 import {
   hasUserGroupInWorkspace,
   resolveRequestActorAuthUid,
   resolveUserGroupRouteWorkspaceId,
 } from '@tuturuuu/users-core/lib/user-groups/route-helpers';
 import { getGroupMembersPage } from '@tuturuuu/users-core/lib/user-groups/server-data';
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
@@ -30,7 +30,7 @@ export async function GET(req: Request, { params }: Params) {
   const limit = Number.parseInt(searchParams.get('limit') ?? '10', 10);
 
   // Check permissions
-  const permissions = await getPermissions({ wsId, request: req });
+  const permissions = await getUserGroupRoutePermissions(wsId, req);
   if (!permissions) {
     return Response.json({ error: 'Not found' }, { status: 404 });
   }
@@ -88,7 +88,7 @@ export async function POST(req: Request, { params }: Params) {
   const normalizedWsId = await resolveUserGroupRouteWorkspaceId(wsId, req);
 
   // Check permissions
-  const permissions = await getPermissions({ wsId, request: req });
+  const permissions = await getUserGroupRoutePermissions(wsId, req);
   if (!permissions) {
     return Response.json({ error: 'Not found' }, { status: 404 });
   }

@@ -1,11 +1,11 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { MetricCategory } from '@tuturuuu/users-core/lib/group-indicators-types';
+import { getUserGroupRoutePermissions } from '@tuturuuu/users-core/lib/user-groups/route-auth';
 import {
   hasUserGroupInWorkspace,
   resolveRequestActorAuthUid,
   resolveUserGroupRouteWorkspaceId,
 } from '@tuturuuu/users-core/lib/user-groups/route-helpers';
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 
 interface Params {
@@ -54,7 +54,7 @@ export async function GET(req: Request, { params }: Params) {
   const normalizedWsId = await resolveUserGroupRouteWorkspaceId(wsId, req);
 
   // Check permissions
-  const permissions = await getPermissions({ wsId, request: req });
+  const permissions = await getUserGroupRoutePermissions(wsId, req);
   if (!permissions) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
@@ -205,7 +205,7 @@ export async function POST(req: Request, { params }: Params) {
   const normalizedWsId = await resolveUserGroupRouteWorkspaceId(wsId, req);
 
   // Check permissions
-  const permissions = await getPermissions({ wsId, request: req });
+  const permissions = await getUserGroupRoutePermissions(wsId, req);
   if (!permissions) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
@@ -269,7 +269,7 @@ export async function PATCH(req: Request, { params }: Params) {
   const normalizedWsId = await resolveUserGroupRouteWorkspaceId(wsId, req);
 
   // Check permissions
-  const permissions = await getPermissions({ wsId, request: req });
+  const permissions = await getUserGroupRoutePermissions(wsId, req);
   if (!permissions) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }

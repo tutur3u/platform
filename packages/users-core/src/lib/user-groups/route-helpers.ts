@@ -6,6 +6,7 @@ import {
   resolveWorkspaceId,
 } from '@tuturuuu/utils/constants';
 import type { NextRequest } from 'next/server';
+import { resolveUserGroupAppSessionUser } from './route-auth';
 
 export async function resolveUserGroupRouteWorkspaceId(
   wsId: string,
@@ -22,6 +23,9 @@ export async function resolveUserGroupRouteWorkspaceId(
 }
 
 export async function resolveRequestActorAuthUid(request: Request) {
+  const appSessionUser = resolveUserGroupAppSessionUser(request);
+  if (appSessionUser) return appSessionUser.id;
+
   const supabase = await createClient(request);
   const { user } = await resolveAuthenticatedSessionUser(supabase);
 

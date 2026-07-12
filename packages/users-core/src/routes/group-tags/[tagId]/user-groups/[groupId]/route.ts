@@ -1,5 +1,5 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
+import { getUserGroupRoutePermissions } from '@tuturuuu/users-core/lib/user-groups/route-auth';
 import { NextResponse } from 'next/server';
 
 interface Params {
@@ -13,7 +13,7 @@ interface Params {
 export async function DELETE(req: Request, { params }: Params) {
   const { groupId, tagId, wsId } = await params;
 
-  const permissions = await getPermissions({ wsId, request: req });
+  const permissions = await getUserGroupRoutePermissions(wsId, req);
   if (!permissions) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }

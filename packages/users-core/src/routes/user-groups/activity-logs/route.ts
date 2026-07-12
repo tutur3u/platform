@@ -1,5 +1,5 @@
 import { listUserGroupActivityEventsForRange } from '@tuturuuu/users-core/lib/user-group-activity/data';
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
+import { getUserGroupRoutePermissions } from '@tuturuuu/users-core/lib/user-groups/route-auth';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
@@ -35,7 +35,7 @@ export async function GET(req: Request, { params }: Params) {
     );
   }
 
-  const permissions = await getPermissions({ wsId, request: req });
+  const permissions = await getUserGroupRoutePermissions(wsId, req);
   if (!permissions) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }

@@ -1,5 +1,6 @@
 import { DATABASE_AUTO_ADD_NEW_GROUPS_TO_DEFAULT_INCLUDED_GROUPS_CONFIG_ID } from '@tuturuuu/internal-api/workspace-configs';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { getUserGroupRoutePermissions } from '@tuturuuu/users-core/lib/user-groups/route-auth';
 import {
   resolveRequestActorAuthUid,
   resolveUserGroupRouteWorkspaceId,
@@ -9,7 +10,6 @@ import {
   MAX_MEDIUM_TEXT_LENGTH,
   MAX_NAME_LENGTH,
 } from '@tuturuuu/utils/constants';
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
@@ -46,7 +46,7 @@ export async function GET(req: Request, { params }: Params) {
   const normalizedWsId = await resolveUserGroupRouteWorkspaceId(wsId, req);
 
   // Check permissions
-  const permissions = await getPermissions({ wsId, request: req });
+  const permissions = await getUserGroupRoutePermissions(wsId, req);
   if (!permissions) {
     return Response.json({ error: 'Not found' }, { status: 404 });
   }
@@ -81,7 +81,7 @@ export async function POST(req: Request, { params }: Params) {
   const normalizedWsId = await resolveUserGroupRouteWorkspaceId(wsId, req);
 
   // Check permissions
-  const permissions = await getPermissions({ wsId, request: req });
+  const permissions = await getUserGroupRoutePermissions(wsId, req);
   if (!permissions) {
     return Response.json({ error: 'Not found' }, { status: 404 });
   }

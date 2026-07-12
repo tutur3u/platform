@@ -1,7 +1,7 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { getUserGroupRoutePermissions } from '@tuturuuu/users-core/lib/user-groups/route-auth';
 import { resolveUserGroupRouteWorkspaceId } from '@tuturuuu/users-core/lib/user-groups/route-helpers';
 import { listUserGroupScheduleGroupSummaries } from '@tuturuuu/users-core/lib/user-groups/session-schedule';
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
@@ -36,7 +36,7 @@ export async function GET(req: Request, { params }: Params) {
   const { wsId } = await params;
   const normalizedWsId = await resolveUserGroupRouteWorkspaceId(wsId, req);
 
-  const permissions = await getPermissions({ request: req, wsId });
+  const permissions = await getUserGroupRoutePermissions(wsId, req);
   if (!permissions) {
     return NextResponse.json({ message: 'Not found' }, { status: 404 });
   }

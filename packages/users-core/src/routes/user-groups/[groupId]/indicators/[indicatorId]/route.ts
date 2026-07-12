@@ -1,9 +1,9 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { getUserGroupRoutePermissions } from '@tuturuuu/users-core/lib/user-groups/route-auth';
 import {
   resolveRequestActorAuthUid,
   resolveUserGroupRouteWorkspaceId,
 } from '@tuturuuu/users-core/lib/user-groups/route-helpers';
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 
 interface Params {
@@ -19,7 +19,7 @@ export async function PUT(req: Request, { params }: Params) {
   const normalizedWsId = await resolveUserGroupRouteWorkspaceId(wsId, req);
 
   // Check permissions
-  const permissions = await getPermissions({ wsId, request: req });
+  const permissions = await getUserGroupRoutePermissions(wsId, req);
   if (!permissions) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
@@ -80,7 +80,7 @@ export async function DELETE(req: Request, { params }: Params) {
   const normalizedWsId = await resolveUserGroupRouteWorkspaceId(wsId, req);
 
   // Check permissions
-  const permissions = await getPermissions({ wsId, request: req });
+  const permissions = await getUserGroupRoutePermissions(wsId, req);
   if (!permissions) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }

@@ -1,4 +1,5 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { getUserGroupRoutePermissions } from '@tuturuuu/users-core/lib/user-groups/route-auth';
 import { NextResponse } from 'next/server';
 
 interface Params {
@@ -11,8 +12,18 @@ const DEFAULT_PAGE_SIZE = 10;
 const MAX_PAGE_SIZE = 100;
 
 export async function GET(request: Request, { params }: Params) {
-  const supabase = await createClient();
   const { wsId: id } = await params;
+  const permissions = await getUserGroupRoutePermissions(id, request);
+  if (!permissions) {
+    return NextResponse.json({ message: 'Not found' }, { status: 404 });
+  }
+  if (permissions.withoutPermission('view_user_groups')) {
+    return NextResponse.json(
+      { message: 'Insufficient permissions to view user group tags' },
+      { status: 403 }
+    );
+  }
+  const supabase = await createAdminClient({ noCookie: true });
 
   const url = new URL(request.url);
   const q = url.searchParams.get('q')?.trim();
@@ -70,8 +81,18 @@ export async function GET(request: Request, { params }: Params) {
 }
 
 export async function POST(req: Request, { params }: Params) {
-  const supabase = await createClient();
   const { wsId: id } = await params;
+  const permissions = await getUserGroupRoutePermissions(id, req);
+  if (!permissions) {
+    return NextResponse.json({ message: 'Not found' }, { status: 404 });
+  }
+  if (permissions.withoutPermission('create_user_groups')) {
+    return NextResponse.json(
+      { message: 'Insufficient permissions to create user group tags' },
+      { status: 403 }
+    );
+  }
+  const supabase = await createAdminClient({ noCookie: true });
 
   const data = (await req.json()) as {
     name: string;
