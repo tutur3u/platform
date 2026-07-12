@@ -143,10 +143,38 @@ function normalizeCollectionSchema(
     collection_type: value.collection_type,
     config: asRecord(value.config),
     description: value.description ?? null,
-    metadataFields: value.metadataFields ?? [],
-    profileFields: value.profileFields ?? [],
+    metadataFields: (value.metadataFields ?? []).map(normalizeSyncField),
+    profileFields: (value.profileFields ?? []).map(normalizeSyncField),
     slug: value.slug,
     title: value.title,
+  };
+}
+
+function normalizeSyncField(
+  value: ExternalProjectSyncField
+): ExternalProjectSyncField {
+  return {
+    ...(value.defaultValue === undefined
+      ? {}
+      : { defaultValue: value.defaultValue }),
+    description: value.description ?? null,
+    key: value.key,
+    label: value.label ?? null,
+    options: value.options ?? [],
+    required: value.required ?? false,
+    type: value.type,
+  };
+}
+
+function normalizeSyncSchema(
+  value: ExternalProjectSyncSchema | undefined
+): ExternalProjectSyncSchema {
+  return {
+    collections: (value?.collections ?? [])
+      .map(normalizeCollectionSchema)
+      .sort((left, right) => left.slug.localeCompare(right.slug)),
+    metadataFields: (value?.metadataFields ?? []).map(normalizeSyncField),
+    profileFields: (value?.profileFields ?? []).map(normalizeSyncField),
   };
 }
 
@@ -188,13 +216,7 @@ export function normalizeExternalProjectSyncManifest(
         title: entry.title,
       })),
     },
-    schema: {
-      collections: (value.schema?.collections ?? []).map(
-        normalizeCollectionSchema
-      ),
-      metadataFields: value.schema?.metadataFields ?? [],
-      profileFields: value.schema?.profileFields ?? [],
-    },
+    schema: normalizeSyncSchema(value.schema),
     version: 1,
   };
 }
@@ -311,14 +333,7 @@ export function buildExternalProjectSyncDiff(
 ): ExternalProjectSyncDiff {
   const manifest = normalizeExternalProjectSyncManifest(manifestInput);
   const operations: ExternalProjectSyncOperation[] = [];
-  const snapshotSchema = {
-    ...snapshot.schema,
-    collections: (snapshot.schema?.collections ?? []).map(
-      normalizeCollectionSchema
-    ),
-    metadataFields: snapshot.schema?.metadataFields ?? [],
-    profileFields: snapshot.schema?.profileFields ?? [],
-  } satisfies ExternalProjectSyncSchema;
+  const snapshotSchema = normalizeSyncSchema(snapshot.schema);
 
   if (valuesDiffer(snapshotSchema, manifest.schema)) {
     const removedFieldKeys = getRemovedSchemaFieldKeys(

@@ -12,6 +12,64 @@ import {
 } from './sync';
 
 describe('external project sync diff', () => {
+  it('treats stored schema ordering and expanded field defaults as equivalent', () => {
+    const snapshot: ExternalProjectSyncSnapshot = {
+      adapter: 'exocorpse',
+      canonicalProjectId: 'exocorpse-main',
+      content: { entries: [] },
+      generatedAt: '2026-07-13T00:00:00.000Z',
+      schema: {
+        collections: [
+          {
+            collection_type: 'worlds',
+            slug: 'worlds',
+            title: 'Worlds',
+          },
+          {
+            collection_type: 'characters',
+            slug: 'characters',
+            title: 'Characters',
+          },
+        ],
+        profileFields: [
+          {
+            description: null,
+            key: 'brand',
+            label: 'Brand',
+            options: [],
+            required: false,
+            type: 'string',
+          },
+        ],
+      },
+      version: 1,
+      workspaceId: 'ws-1',
+    };
+    const manifest = normalizeExternalProjectSyncManifest({
+      adapter: 'exocorpse',
+      content: { entries: [] },
+      schema: {
+        collections: [...snapshot.schema.collections].reverse(),
+        profileFields: [
+          {
+            key: 'brand',
+            label: 'Brand',
+            type: 'string',
+          },
+        ],
+      },
+      version: 1,
+    });
+
+    expect(buildExternalProjectSyncDiff(snapshot, manifest).summary).toEqual({
+      archive: 0,
+      create: 0,
+      delete: 0,
+      noop: 0,
+      update: 0,
+    });
+  });
+
   it('creates, updates, and archives content without hard deletes by default', () => {
     const snapshot: ExternalProjectSyncSnapshot = {
       adapter: 'yoola',
