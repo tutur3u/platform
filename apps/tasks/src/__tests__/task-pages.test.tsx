@@ -311,20 +311,29 @@ describe('tasks app task pages', () => {
     }
   });
 
-  it('keeps Tasks navigation as the only task-board entry with board aliases', async () => {
+  it('keeps task boards consolidated and exposes progress as a first-class destination', async () => {
     const { getNavigationLinks } = await import(
       '@/app/[locale]/(dashboard)/[wsId]/navigation'
     );
 
     const links = await getNavigationLinks({ personalOrWsId: 'workspace-1' });
 
-    expect(links).toHaveLength(1);
+    expect(links).toHaveLength(2);
     expect(links[0]).toMatchObject({
       href: '/workspace-1/tasks',
       aliases: [
         '/workspace-1/tasks/*',
         '/workspace-1/boards',
         '/workspace-1/boards/*',
+      ],
+    });
+    expect(links[1]).toMatchObject({
+      href: '/workspace-1/progress',
+      aliases: ['/workspace-1/progress/*'],
+      children: [
+        { href: '/workspace-1/progress/goals' },
+        { href: '/workspace-1/progress/stats' },
+        { href: '/workspace-1/progress/leaderboards' },
       ],
     });
   });

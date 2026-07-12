@@ -19,7 +19,7 @@ function MetricSelect({
 }) {
   return (
     <select
-      className="h-10 rounded-md border bg-background px-3 text-sm"
+      className="h-11 w-full rounded-xl border bg-background px-3 text-sm shadow-sm outline-none focus:border-dynamic-blue focus:ring-2 focus:ring-dynamic-blue/15"
       defaultValue={selectedMetric?.id}
       name="metric_id"
       required
@@ -55,8 +55,8 @@ export function LeaderboardsPanel(props: {
   } = props;
 
   return (
-    <div className="grid gap-4 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
-      <Card>
+    <div className="grid gap-4 xl:grid-cols-[minmax(20rem,0.75fr)_minmax(0,1.25fr)]">
+      <Card className="h-fit xl:sticky xl:top-6">
         <CardHeader>
           <CardTitle>{t('leaderboards.create_leaderboard')}</CardTitle>
         </CardHeader>
