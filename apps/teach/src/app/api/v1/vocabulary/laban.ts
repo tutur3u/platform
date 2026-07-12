@@ -70,7 +70,9 @@ function safeLabanUrl(path: string | undefined | null, fallbackWord: string) {
 
   const url = new URL(trimmedPath, LABAN_ORIGIN);
 
-  return url.origin === LABAN_ORIGIN ? url.toString() : labanFindUrl(fallbackWord);
+  return url.origin === LABAN_ORIGIN
+    ? url.toString()
+    : labanFindUrl(fallbackWord);
 }
 
 function extractSuggestionPreview(
@@ -110,7 +112,10 @@ export function normalizeLabanSuggestions(payload: unknown) {
       const word =
         fallbackWord ||
         normalizeText(
-          cheerio.load(suggestion.data ?? '')('.fl').first().text()
+          cheerio
+            .load(suggestion.data ?? '')('.fl')
+            .first()
+            .text()
         );
 
       if (!word) return null;

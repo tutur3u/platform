@@ -163,11 +163,15 @@ function SubmissionContent({
       const result = await response.json();
       if (result.feedback) {
         setAiFeedbacks((prev) => ({ ...prev, [quiz.id]: result.feedback }));
-        toast.success(t('teachModules.aiFeedbackGenerated') || 'AI feedback generated!');
+        toast.success(
+          t('teachModules.aiFeedbackGenerated') || 'AI feedback generated!'
+        );
       }
     } catch (error) {
       console.error(error);
-      toast.error(t('teachModules.aiFeedbackError') || 'Failed to generate AI feedback');
+      toast.error(
+        t('teachModules.aiFeedbackError') || 'Failed to generate AI feedback'
+      );
     } finally {
       setLoadingAi((prev) => ({ ...prev, [quiz.id]: false }));
     }
@@ -281,7 +285,10 @@ function SubmissionContent({
               </div>
 
               {/* Teacher feedback form */}
-              <div onClick={(e) => e.stopPropagation()} className="cursor-default">
+              <div
+                onClick={(e) => e.stopPropagation()}
+                className="cursor-default"
+              >
                 <FeedbackForm
                   wsId={wsId}
                   courseId={courseId}

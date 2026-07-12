@@ -28,7 +28,10 @@ export const POST = withSessionAuth(
       try {
         rawBody = await request.json();
       } catch {
-        return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
+        return NextResponse.json(
+          { error: 'Invalid request body' },
+          { status: 400 }
+        );
       }
 
       const parsedBody = RequestBodySchema.safeParse(rawBody);
@@ -39,7 +42,14 @@ export const POST = withSessionAuth(
         );
       }
 
-      const { question, type, quizOptions, correctAnswer, studentAnswer, isCorrect } = parsedBody.data;
+      const {
+        question,
+        type,
+        quizOptions,
+        correctAnswer,
+        studentAnswer,
+        isCorrect,
+      } = parsedBody.data;
 
       const prompt = `
 You are an expert AI teaching assistant. Your task is to evaluate and explain a student's answer to a quiz question to help them learn.
@@ -68,7 +78,10 @@ Provide a concise, constructive, and friendly explanation (2-3 sentences max) in
     } catch (error) {
       console.error('Failed to generate AI feedback:', error);
       return NextResponse.json(
-        { error: 'Internal Server Error', message: error instanceof Error ? error.message : String(error) },
+        {
+          error: 'Internal Server Error',
+          message: error instanceof Error ? error.message : String(error),
+        },
         { status: 500 }
       );
     }
