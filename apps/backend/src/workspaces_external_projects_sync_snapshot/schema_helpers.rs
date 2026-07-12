@@ -37,11 +37,51 @@ fn normalize_collection_schema(value: &Value) -> Value {
         "collection_type": value.get("collection_type").cloned().unwrap_or(Value::Null),
         "config": as_record_value(value.get("config")),
         "description": value.get("description").cloned().unwrap_or(Value::Null),
-        "metadataFields": array_or_empty(value.get("metadataFields")),
-        "profileFields": array_or_empty(value.get("profileFields")),
+        "metadataFields": normalize_sync_fields(value.get("metadataFields")),
+        "profileFields": normalize_sync_fields(value.get("profileFields")),
         "slug": value.get("slug").cloned().unwrap_or(Value::Null),
         "title": value.get("title").cloned().unwrap_or(Value::Null),
     })
+}
+
+fn normalize_sync_fields(value: Option<&Value>) -> Value {
+    Value::Array(
+        value
+            .and_then(Value::as_array)
+            .map(|fields| fields.iter().map(normalize_sync_field).collect())
+            .unwrap_or_default(),
+    )
+}
+
+fn normalize_sync_field(value: &Value) -> Value {
+    let mut field = Map::new();
+    if let Some(default_value) = value.get("defaultValue")
+        && !default_value.is_null()
+    {
+        field.insert("defaultValue".to_owned(), default_value.clone());
+    }
+    field.insert(
+        "description".to_owned(),
+        value.get("description").cloned().unwrap_or(Value::Null),
+    );
+    field.insert(
+        "key".to_owned(),
+        value.get("key").cloned().unwrap_or(Value::Null),
+    );
+    field.insert(
+        "label".to_owned(),
+        value.get("label").cloned().unwrap_or(Value::Null),
+    );
+    field.insert("options".to_owned(), array_or_empty(value.get("options")));
+    field.insert(
+        "required".to_owned(),
+        value.get("required").cloned().unwrap_or(Value::Bool(false)),
+    );
+    field.insert(
+        "type".to_owned(),
+        value.get("type").cloned().unwrap_or(Value::Null),
+    );
+    Value::Object(field)
 }
 
 /// getCollectionSchema:
@@ -252,4 +292,37 @@ pub(super) fn with_field_definitions_from_database(
     schema_map.insert("profileFields".to_owned(), profile_value);
 
     Value::Object(schema_map)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn normalizes_omitted_collection_field_defaults() {
+        let schema = normalize_collection_schema(&json!({
+            "collection_type": "characters",
+            "metadataFields": [],
+            "profileFields": [{
+                "defaultValue": null,
+                "key": "brand",
+                "label": "Brand",
+                "type": "string"
+            }],
+            "slug": "characters",
+            "title": "Characters"
+        }));
+
+        assert_eq!(
+            schema.get("profileFields"),
+            Some(&json!([{
+                "description": null,
+                "key": "brand",
+                "label": "Brand",
+                "options": [],
+                "required": false,
+                "type": "string"
+            }]))
+        );
+    }
 }

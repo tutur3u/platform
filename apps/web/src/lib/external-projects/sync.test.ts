@@ -52,6 +52,7 @@ describe('external project sync diff', () => {
         collections: [...snapshot.schema.collections].reverse(),
         profileFields: [
           {
+            defaultValue: null,
             key: 'brand',
             label: 'Brand',
             type: 'string',

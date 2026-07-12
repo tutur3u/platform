@@ -154,9 +154,7 @@ function normalizeSyncField(
   value: ExternalProjectSyncField
 ): ExternalProjectSyncField {
   return {
-    ...(value.defaultValue === undefined
-      ? {}
-      : { defaultValue: value.defaultValue }),
+    ...(value.defaultValue == null ? {} : { defaultValue: value.defaultValue }),
     description: value.description ?? null,
     key: value.key,
     label: value.label ?? null,
