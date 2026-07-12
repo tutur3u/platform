@@ -28,6 +28,9 @@ const contactsOwnedRouteFiles = [
   'sessions/group-summaries/route.ts',
   'sessions/occurrences/route.ts',
   '../products/options/route.ts',
+  '../settings/configs/route.ts',
+  '../settings/[configId]/route.ts',
+  '../../../users/me/profile/route.ts',
 ] as const;
 
 describe('Contacts user-group API ownership', () => {
