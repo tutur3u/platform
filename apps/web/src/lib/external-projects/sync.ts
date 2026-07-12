@@ -116,6 +116,12 @@ function stableEntryKey(
   );
 }
 
+function collectionSlugEntryKey(
+  entry: Pick<ExternalProjectSyncEntry, 'collectionSlug' | 'slug'>
+) {
+  return `${entry.collectionSlug}/${entry.slug}`;
+}
+
 function stableBlockKey(entryKey: string, block: ExternalProjectSyncBlock) {
   return (
     block.stableSourceId?.trim() || `${entryKey}/blocks/${block.sortOrder ?? 0}`
@@ -369,12 +375,35 @@ export function buildExternalProjectSyncDiff(
   const snapshotEntries = new Map(
     snapshot.content.entries.map((entry) => [stableEntryKey(entry), entry])
   );
+  const snapshotEntriesByCollectionSlug = new Map(
+    snapshot.content.entries.map((entry) => [
+      collectionSlugEntryKey(entry),
+      entry,
+    ])
+  );
   const manifestEntries = new Map(
     manifest.content.entries.map((entry) => [stableEntryKey(entry), entry])
   );
+  const matchedSnapshotEntries = new Set<ExternalProjectSyncEntry>();
 
   for (const [entryKey, entry] of manifestEntries) {
-    const current = snapshotEntries.get(entryKey);
+    const slugMatch = snapshotEntriesByCollectionSlug.get(
+      collectionSlugEntryKey(entry)
+    );
+    const current =
+      snapshotEntries.get(entryKey) ??
+      (slugMatch && !manifestEntries.has(stableEntryKey(slugMatch))
+        ? slugMatch
+        : undefined);
+
+    if (current) {
+      if (matchedSnapshotEntries.has(current)) {
+        throw new Error(
+          `Multiple manifest entries resolve to ${collectionSlugEntryKey(entry)}`
+        );
+      }
+      matchedSnapshotEntries.add(current);
+    }
 
     if (entry.delete) {
       if (current) {
@@ -436,7 +465,11 @@ export function buildExternalProjectSyncDiff(
   }
 
   for (const [entryKey, current] of snapshotEntries) {
-    if (manifestEntries.has(entryKey) || current.status === 'archived') {
+    if (
+      matchedSnapshotEntries.has(current) ||
+      manifestEntries.has(entryKey) ||
+      current.status === 'archived'
+    ) {
       continue;
     }
 
@@ -839,17 +872,18 @@ function buildExistingEntryMaps(studio: RawStudioData) {
   const collectionById = new Map(
     studio.collections.map((collection) => [collection.id, collection])
   );
-  const byKey = new Map<string, RawExternalProjectEntry>();
+  const byStableKey = new Map<string, RawExternalProjectEntry>();
+  const byCollectionSlug = new Map<string, RawExternalProjectEntry>();
 
   for (const entry of studio.entries) {
     const collection = collectionById.get(entry.collection_id);
-    const key =
-      entry.stable_source_id ??
-      `${collection?.slug ?? entry.collection_id}/${entry.slug}`;
-    byKey.set(key, entry);
+    const collectionSlug = collection?.slug ?? entry.collection_id;
+    byCollectionSlug.set(`${collectionSlug}/${entry.slug}`, entry);
+    const stableSourceId = entry.stable_source_id?.trim();
+    byStableKey.set(stableSourceId || `${collectionSlug}/${entry.slug}`, entry);
   }
 
-  return byKey;
+  return { byCollectionSlug, byStableKey };
 }
 
 async function upsertEntry({
@@ -1221,7 +1255,10 @@ export async function applyWorkspaceExternalProjectSyncManifest(
   );
 
   const existingEntries = buildExistingEntryMaps(studio);
-  const appliedEntryKeys = new Set<string>();
+  const appliedEntryIds = new Set<string>();
+  const manifestEntryKeys = new Set(
+    manifest.content.entries.map((entry) => stableEntryKey(entry))
+  );
   const existingBlocksByEntryId = new Map<string, RawExternalProjectBlock[]>();
   const existingAssetsByEntryId = new Map<string, RawExternalProjectAsset[]>();
   const existingBlockById = new Map(
@@ -1252,7 +1289,18 @@ export async function applyWorkspaceExternalProjectSyncManifest(
 
   for (const entry of manifest.content.entries) {
     const entryKey = stableEntryKey(entry);
-    const existing = existingEntries.get(entryKey);
+    const slugMatch = existingEntries.byCollectionSlug.get(
+      collectionSlugEntryKey(entry)
+    );
+    const slugMatchStableSourceId = slugMatch?.stable_source_id?.trim();
+    const existing =
+      existingEntries.byStableKey.get(entryKey) ??
+      (slugMatch &&
+      !appliedEntryIds.has(slugMatch.id) &&
+      (!slugMatchStableSourceId ||
+        !manifestEntryKeys.has(slugMatchStableSourceId))
+        ? slugMatch
+        : undefined);
 
     if (entry.delete) {
       if (existing && force) {
@@ -1262,7 +1310,9 @@ export async function applyWorkspaceExternalProjectSyncManifest(
           workspaceId,
         });
       }
-      appliedEntryKeys.add(entryKey);
+      if (existing) {
+        appliedEntryIds.add(existing.id);
+      }
       continue;
     }
 
@@ -1280,6 +1330,7 @@ export async function applyWorkspaceExternalProjectSyncManifest(
       existing,
       workspaceId,
     });
+    appliedEntryIds.add(syncedEntry.id);
     const existingBlocksForEntry =
       existingBlocksByEntryId.get(syncedEntry.id) ?? [];
     const existingAssetsForEntry =
@@ -1309,11 +1360,10 @@ export async function applyWorkspaceExternalProjectSyncManifest(
       existingBlocks: existingBlocksForEntry,
       workspaceId,
     });
-    appliedEntryKeys.add(entryKey);
   }
 
-  for (const [entryKey, existing] of existingEntries) {
-    if (appliedEntryKeys.has(entryKey) || existing.status === 'archived') {
+  for (const existing of studio.entries) {
+    if (appliedEntryIds.has(existing.id) || existing.status === 'archived') {
       continue;
     }
 

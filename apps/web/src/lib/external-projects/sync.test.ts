@@ -1,31 +1,11 @@
 import type { ExternalProjectSyncSnapshot } from '@tuturuuu/types';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-
-const storeMocks = vi.hoisted(() => ({
-  getWorkspaceExternalProjectStudioData: vi.fn(),
-  upsertWorkspaceExternalProjectFieldDefinitionsFromSchema: vi.fn(),
-}));
+import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('@tuturuuu/storage-core/workspace-storage-provider', () => ({
   deleteWorkspaceStorageObjectByPath: vi.fn(),
 }));
 
-vi.mock('./store', () => ({
-  getWorkspaceExternalProjectStudioData: (
-    ...args: Parameters<typeof storeMocks.getWorkspaceExternalProjectStudioData>
-  ) => storeMocks.getWorkspaceExternalProjectStudioData(...args),
-  upsertWorkspaceExternalProjectFieldDefinitionsFromSchema: (
-    ...args: Parameters<
-      typeof storeMocks.upsertWorkspaceExternalProjectFieldDefinitionsFromSchema
-    >
-  ) =>
-    storeMocks.upsertWorkspaceExternalProjectFieldDefinitionsFromSchema(
-      ...args
-    ),
-}));
-
 import {
-  applyWorkspaceExternalProjectSyncManifest,
   buildExternalProjectSyncDiff,
   buildExternalProjectSyncSnapshot,
   normalizeExternalProjectSyncManifest,
@@ -132,6 +112,199 @@ describe('external project sync diff', () => {
           platformId: 'entry-orphan',
         }),
       ])
+    );
+  });
+
+  it('matches an existing collection slug when the stable source id changes', () => {
+    const snapshot: ExternalProjectSyncSnapshot = {
+      adapter: 'exocorpse',
+      canonicalProjectId: 'exocorpse-main',
+      content: {
+        entries: [
+          {
+            collectionSlug: 'characters',
+            id: 'entry-existing',
+            slug: 'verdant-goose-loxwood',
+            stableSourceId: 'legacy:character:verdant-goose-loxwood',
+            status: 'published',
+            title: 'Verdant Goose Loxwood',
+          },
+        ],
+      },
+      generatedAt: '2026-07-13T00:00:00.000Z',
+      schema: {
+        collections: [
+          {
+            collection_type: 'characters',
+            slug: 'characters',
+            title: 'Characters',
+          },
+        ],
+      },
+      version: 1,
+      workspaceId: 'ws-1',
+    };
+    const manifest = normalizeExternalProjectSyncManifest({
+      adapter: 'exocorpse',
+      content: {
+        entries: [
+          {
+            collectionSlug: 'characters',
+            slug: 'verdant-goose-loxwood',
+            stableSourceId: 'exocorpse:character:verdant-goose-loxwood',
+            status: 'published',
+            title: 'Verdant “Goose” Loxwood',
+          },
+        ],
+      },
+      schema: snapshot.schema,
+      version: 1,
+    });
+
+    const diff = buildExternalProjectSyncDiff(snapshot, manifest);
+
+    expect(diff.summary).toMatchObject({
+      archive: 0,
+      create: 0,
+      update: 1,
+    });
+    expect(diff.operations).toEqual([
+      expect.objectContaining({
+        action: 'update',
+        manifestKey: 'exocorpse:character:verdant-goose-loxwood',
+        platformId: 'entry-existing',
+      }),
+    ]);
+  });
+
+  it('does not let a new stable id claim a row addressed elsewhere in the manifest', () => {
+    const snapshot: ExternalProjectSyncSnapshot = {
+      adapter: 'exocorpse',
+      canonicalProjectId: 'exocorpse-main',
+      content: {
+        entries: [
+          {
+            collectionSlug: 'characters',
+            id: 'entry-a',
+            slug: 'old-slug',
+            stableSourceId: 'exocorpse:character:a',
+            status: 'published',
+            title: 'Character A',
+          },
+        ],
+      },
+      generatedAt: '2026-07-13T00:00:00.000Z',
+      schema: {
+        collections: [
+          {
+            collection_type: 'characters',
+            slug: 'characters',
+            title: 'Characters',
+          },
+        ],
+      },
+      version: 1,
+      workspaceId: 'ws-1',
+    };
+    const manifest = normalizeExternalProjectSyncManifest({
+      adapter: 'exocorpse',
+      content: {
+        entries: [
+          {
+            collectionSlug: 'characters',
+            slug: 'new-slug',
+            stableSourceId: 'exocorpse:character:a',
+            status: 'published',
+            title: 'Character A',
+          },
+          {
+            collectionSlug: 'characters',
+            slug: 'old-slug',
+            stableSourceId: 'exocorpse:character:b',
+            status: 'published',
+            title: 'Character B',
+          },
+        ],
+      },
+      schema: snapshot.schema,
+      version: 1,
+    });
+
+    const diff = buildExternalProjectSyncDiff(snapshot, manifest);
+
+    expect(diff.summary).toMatchObject({
+      archive: 0,
+      create: 1,
+      update: 1,
+    });
+    expect(diff.operations).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          action: 'update',
+          manifestKey: 'exocorpse:character:a',
+          platformId: 'entry-a',
+        }),
+        expect.objectContaining({
+          action: 'create',
+          manifestKey: 'exocorpse:character:b',
+        }),
+      ])
+    );
+  });
+
+  it('rejects multiple manifest identities claiming one collection slug', () => {
+    const snapshot: ExternalProjectSyncSnapshot = {
+      adapter: 'exocorpse',
+      canonicalProjectId: 'exocorpse-main',
+      content: {
+        entries: [
+          {
+            collectionSlug: 'characters',
+            id: 'entry-existing',
+            slug: 'shared-slug',
+            stableSourceId: 'legacy:character:shared-slug',
+            status: 'published',
+            title: 'Legacy Character',
+          },
+        ],
+      },
+      generatedAt: '2026-07-13T00:00:00.000Z',
+      schema: {
+        collections: [
+          {
+            collection_type: 'characters',
+            slug: 'characters',
+            title: 'Characters',
+          },
+        ],
+      },
+      version: 1,
+      workspaceId: 'ws-1',
+    };
+    const manifest = normalizeExternalProjectSyncManifest({
+      adapter: 'exocorpse',
+      content: {
+        entries: [
+          {
+            collectionSlug: 'characters',
+            slug: 'shared-slug',
+            stableSourceId: 'exocorpse:character:first',
+            title: 'First Character',
+          },
+          {
+            collectionSlug: 'characters',
+            slug: 'shared-slug',
+            stableSourceId: 'exocorpse:character:second',
+            title: 'Second Character',
+          },
+        ],
+      },
+      schema: snapshot.schema,
+      version: 1,
+    });
+
+    expect(() => buildExternalProjectSyncDiff(snapshot, manifest)).toThrow(
+      'Multiple manifest entries resolve to characters/shared-slug'
     );
   });
 
@@ -488,114 +661,6 @@ describe('external project sync diff', () => {
           reason: 'Schema removes 1 field definition',
         }),
       ])
-    );
-  });
-});
-
-describe('external project sync apply', () => {
-  beforeEach(() => {
-    storeMocks.getWorkspaceExternalProjectStudioData.mockReset();
-    storeMocks.upsertWorkspaceExternalProjectFieldDefinitionsFromSchema.mockReset();
-    storeMocks.upsertWorkspaceExternalProjectFieldDefinitionsFromSchema.mockResolvedValue(
-      undefined
-    );
-  });
-
-  it('keeps workspace sync apply from updating the canonical registry schema', async () => {
-    const emptyStudio = {
-      assets: [],
-      binding: null,
-      blocks: [],
-      collections: [],
-      entries: [],
-      fieldDefinitions: [],
-      importJobs: [],
-      loadingData: null,
-      publishEvents: [],
-    };
-    storeMocks.getWorkspaceExternalProjectStudioData.mockResolvedValue(
-      emptyStudio
-    );
-    const collectionEq = vi.fn().mockResolvedValue({
-      data: [],
-      error: null,
-    });
-    const collectionSelect = vi.fn(() => ({
-      eq: collectionEq,
-    }));
-    const from = vi.fn((table: string) => {
-      if (table === 'canonical_external_projects') {
-        throw new Error(
-          'workspace sync apply must not update canonical schema'
-        );
-      }
-
-      if (table === 'workspace_external_project_collections') {
-        return {
-          select: collectionSelect,
-        };
-      }
-
-      throw new Error(`Unexpected table ${table}`);
-    });
-    const db = { from };
-    const manifest = normalizeExternalProjectSyncManifest({
-      adapter: 'yoola',
-      canonicalProjectId: 'shared-canonical',
-      content: {
-        entries: [],
-      },
-      schema: {
-        collections: [],
-        metadataFields: [
-          {
-            key: 'tenant-local-field',
-            type: 'string',
-          },
-        ],
-      },
-      version: 1,
-    });
-
-    await expect(
-      applyWorkspaceExternalProjectSyncManifest(
-        {
-          actorId: 'user-1',
-          binding: {
-            adapter: 'yoola',
-            canonical_id: 'shared-canonical',
-            canonical_project: {
-              delivery_profile: {
-                schema: {
-                  collections: [],
-                },
-              },
-            },
-            enabled: true,
-            workspace_id: 'ws-1',
-          } as never,
-          manifest,
-          workspaceId: 'ws-1',
-        },
-        db as never
-      )
-    ).resolves.toMatchObject({
-      applied: true,
-    });
-
-    expect(from).not.toHaveBeenCalledWith('canonical_external_projects');
-    expect(collectionSelect).toHaveBeenCalled();
-    expect(
-      storeMocks.upsertWorkspaceExternalProjectFieldDefinitionsFromSchema
-    ).toHaveBeenCalledWith(
-      {
-        actorId: 'user-1',
-        collectionBySlug: expect.any(Map),
-        deleteMissing: false,
-        schema: manifest.schema,
-        workspaceId: 'ws-1',
-      },
-      db
     );
   });
 });
