@@ -27,7 +27,7 @@ export function LearnerShell({
   return (
     <div className="min-h-screen overflow-x-hidden bg-root-background">
       <LearnerNavDock selectedStudentId={selectedStudentId} wsId={wsId} />
-      <main className="min-h-screen pb-44 md:pb-8 md:pl-32">
+      <main className="min-h-screen pb-28 md:pb-8 md:pl-32">
         <LearnerHeader
           bootstrap={bootstrap}
           selectedStudentId={selectedStudentId}

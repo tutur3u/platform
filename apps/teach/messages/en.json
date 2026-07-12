@@ -736,6 +736,7 @@
     "workspaceFallback": "Education workspace"
   },
   "teachShell": {
+    "navigationLabel": "Teacher workspace navigation",
     "logout": "Log out",
     "nav": {
       "assignments": "Assignments",

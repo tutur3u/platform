@@ -736,6 +736,7 @@
     "workspaceFallback": "Workspace giáo dục"
   },
   "teachShell": {
+    "navigationLabel": "Điều hướng không gian giảng dạy",
     "logout": "Đăng xuất",
     "nav": {
       "assignments": "Bài tập",
