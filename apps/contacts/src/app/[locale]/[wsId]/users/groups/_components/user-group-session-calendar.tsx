@@ -911,35 +911,51 @@ export function UserGroupSessionCalendar({
       />
 
       <div className="min-h-0 flex-1 overflow-hidden">
-        <SmartCalendar
-          t={calendarT}
-          locale={locale}
-          workspace={{ id: wsId } as Workspace}
-          useQuery={useQuery}
-          useQueryClient={useQueryClient}
-          disabled={!canUpdateSchedule}
-          eventAdapter={eventAdapter}
-          externalEvents={calendarDensity.calendarEvents}
-          externalEventsLoading={sessionsQuery.isLoading}
-          externalEventsRefresh={() => {
-            void sessionsQuery.refetch();
-          }}
-          initialSettings={calendarInitialSettings}
-          externalState={{
-            date: calendarDate,
-            setDate: setCalendarDate,
-            view: calendarView,
-            setView: setCalendarView,
-            availableViews: [
-              { value: 'day', label: calendarT('day') },
-              { value: '4-days', label: calendarT('4-days') },
-              { value: 'week', label: calendarT('week') },
-              { value: 'month', label: calendarT('month') },
-              { value: 'agenda', label: calendarT('agenda') },
-            ],
-          }}
-          showConnectionsManager={false}
-        />
+        {sessionsQuery.isError ? (
+          <div
+            className="flex h-full min-h-96 flex-col items-center justify-center gap-3 rounded-xl border border-dynamic-red/30 bg-dynamic-red/5 p-6 text-center"
+            role="alert"
+          >
+            <p className="font-medium">{t('failed_to_load_calendar')}</p>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => void sessionsQuery.refetch()}
+            >
+              {commonT('retry')}
+            </Button>
+          </div>
+        ) : (
+          <SmartCalendar
+            t={calendarT}
+            locale={locale}
+            workspace={{ id: wsId } as Workspace}
+            useQuery={useQuery}
+            useQueryClient={useQueryClient}
+            disabled={!canUpdateSchedule}
+            eventAdapter={eventAdapter}
+            externalEvents={calendarDensity.calendarEvents}
+            externalEventsLoading={sessionsQuery.isLoading}
+            externalEventsRefresh={() => {
+              void sessionsQuery.refetch();
+            }}
+            initialSettings={calendarInitialSettings}
+            externalState={{
+              date: calendarDate,
+              setDate: setCalendarDate,
+              view: calendarView,
+              setView: setCalendarView,
+              availableViews: [
+                { value: 'day', label: calendarT('day') },
+                { value: '4-days', label: calendarT('4-days') },
+                { value: 'week', label: calendarT('week') },
+                { value: 'month', label: calendarT('month') },
+                { value: 'agenda', label: calendarT('agenda') },
+              ],
+            }}
+            showConnectionsManager={false}
+          />
+        )}
       </div>
 
       <GroupedSessionTimeblockDialog

@@ -888,6 +888,21 @@ describe('withSessionAuth', () => {
     ).toEqual({ targetApp: ['contacts', 'teach'] });
     expect(
       getDefaultAppSessionVerificationOptions(
+        'http://localhost:3000/api/v1/workspaces/ws-1/user-groups/sessions'
+      )
+    ).toEqual({ targetApp: ['contacts', 'teach'] });
+    expect(
+      getDefaultAppSessionVerificationOptions(
+        'http://localhost:3000/api/v1/workspaces/ws-1/user-groups/group-1/indicators'
+      )
+    ).toEqual({ targetApp: ['contacts', 'teach'] });
+    expect(
+      getDefaultAppSessionVerificationOptions(
+        'http://localhost:3000/api/v1/workspaces/ws-1/user-groups/group-1/modules'
+      )
+    ).toEqual({ targetApp: 'teach' });
+    expect(
+      getDefaultAppSessionVerificationOptions(
         'http://localhost:3000/api/v1/workspaces/ws-1/storage/list'
       )
     ).toEqual({ targetApp: 'drive' });

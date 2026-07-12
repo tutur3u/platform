@@ -93,7 +93,7 @@ export default function GroupIndicatorsSelector({
         `/api/v1/workspaces/${wsId}/user-groups/${selectedGroupId}`,
         { cache: 'no-store' }
       );
-      if (!res.ok) return null;
+      if (!res.ok) throw new Error('Failed to fetch selected group');
       const { data } = await res.json();
       return data;
     },
@@ -159,7 +159,14 @@ export default function GroupIndicatorsSelector({
 
   const users = usersQuery.data || [];
 
-  const isLoadingData = indicatorsDataQuery.isLoading || usersQuery.isLoading;
+  const isLoadingData =
+    selectedGroupQuery.isLoading ||
+    indicatorsDataQuery.isLoading ||
+    usersQuery.isLoading;
+  const hasLoadError =
+    selectedGroupQuery.isError ||
+    indicatorsDataQuery.isError ||
+    usersQuery.isError;
 
   return (
     <div className="space-y-6">
@@ -223,10 +230,32 @@ export default function GroupIndicatorsSelector({
       </div>
 
       {/* Indicators Manager */}
-      {selectedGroupId && selectedGroup && (
+      {selectedGroupId && (
         <>
           <Separator />
-          {isLoadingData ? (
+          {hasLoadError ? (
+            <div
+              className="flex min-h-48 flex-col items-center justify-center gap-3 rounded-lg border border-dynamic-red/30 bg-dynamic-red/5 p-6 text-center"
+              role="alert"
+            >
+              <p className="font-medium">
+                {t('ws-user-group-indicators.failed_to_load_data')}
+              </p>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  void Promise.all([
+                    selectedGroupQuery.refetch(),
+                    indicatorsDataQuery.refetch(),
+                    usersQuery.refetch(),
+                  ]);
+                }}
+              >
+                {tc('retry')}
+              </Button>
+            </div>
+          ) : isLoadingData || !selectedGroup ? (
             <div className="space-y-4">
               <Skeleton className="h-8 w-48" />
               <Skeleton className="h-64 w-full" />

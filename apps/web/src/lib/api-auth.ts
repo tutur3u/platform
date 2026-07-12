@@ -289,6 +289,10 @@ const APP_SESSION_ROUTE_AUDIENCE_RULES: readonly {
       /^\/api\/v1\/workspaces\/[^/]+\/user-groups\/[^/]+\/(?:module-groups|module-order|modules)(?:\/|$)/u,
     targetApp: 'teach',
   },
+  {
+    pattern: /^\/api\/v1\/workspaces\/[^/]+\/user-groups(?:\/|$)/u,
+    targetApp: ['contacts', 'teach'],
+  },
 ];
 
 function getPathnameFromRequestUrl(url: string) {
