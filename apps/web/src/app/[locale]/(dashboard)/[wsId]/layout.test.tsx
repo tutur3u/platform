@@ -29,6 +29,14 @@ vi.mock('@/constants/env', () => ({
   PROD_MODE: false,
 }));
 
+vi.mock('@/constants/configs', () => ({
+  siteConfig: { name: 'Tuturuuu' },
+}));
+
+vi.mock('@/components/version-badge-gate', () => ({
+  VersionBadgeGate: () => null,
+}));
+
 import Layout from './layout';
 
 describe('[wsId] dashboard layout', () => {

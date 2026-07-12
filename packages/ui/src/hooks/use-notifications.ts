@@ -90,6 +90,8 @@ interface NotificationSubscriptionEntry {
   supabase: SupabaseClient;
 }
 
+export const UNREAD_COUNT_FALLBACK_INTERVAL_MS = 5 * 60 * 1000;
+
 const notificationSubscriptionRegistry = new Map<
   string,
   NotificationSubscriptionEntry
@@ -265,11 +267,13 @@ export function useInfiniteNotifications({
   unreadOnly = false,
   readOnly = false,
   pageSize = 20,
+  enabled = true,
 }: {
   wsId?: string;
   unreadOnly?: boolean;
   readOnly?: boolean;
   pageSize?: number;
+  enabled?: boolean;
 }) {
   return useInfiniteQuery({
     queryKey: [
@@ -299,6 +303,7 @@ export function useInfiniteNotifications({
       } satisfies NotificationsPage;
     },
     initialPageParam: 0,
+    enabled,
     getNextPageParam: (lastPage) => {
       const nextOffset = lastPage.offset + lastPage.limit;
       return nextOffset < lastPage.count ? nextOffset : undefined;
@@ -312,7 +317,7 @@ export function useInfiniteNotifications({
  * Hook to get unread notification count.
  * If wsId is provided, scopes to that workspace. Otherwise returns total unread count.
  */
-export function useUnreadCount(wsId?: string) {
+export function useUnreadCount(wsId?: string, options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: ['notifications', 'unread-count', wsId || 'all'],
     queryFn: async () => {
@@ -328,7 +333,14 @@ export function useUnreadCount(wsId?: string) {
       const data = await response.json();
       return data.count as number;
     },
-    refetchInterval: 30000,
+    enabled: options?.enabled ?? true,
+    staleTime: 60_000,
+    // Realtime invalidation is the primary update path. Keep a low-frequency
+    // refresh as a safety net for disconnected or suspended browser sessions.
+    refetchInterval: UNREAD_COUNT_FALLBACK_INTERVAL_MS,
+    refetchIntervalInBackground: false,
+    refetchOnReconnect: true,
+    refetchOnWindowFocus: true,
   });
 }
 

@@ -110,19 +110,23 @@ export default function NotificationPopoverClient({
     : undefined;
 
   // Accurate unread count from dedicated endpoint
-  const { data: unreadCount = 0 } = useUnreadCount(wsIdForFiltering);
+  const { data: unreadCount = 0 } = useUnreadCount(wsIdForFiltering, {
+    enabled: Boolean(userId),
+  });
 
   // Infinite scroll for inbox (unread) and archive (read)
   const inboxQuery = useInfiniteNotifications({
     wsId: wsIdForFiltering,
     unreadOnly: true,
     pageSize: 15,
+    enabled: Boolean(userId) && open && activeTab === 'inbox',
   });
 
   const archiveQuery = useInfiniteNotifications({
     wsId: wsIdForFiltering,
     readOnly: true,
     pageSize: 15,
+    enabled: Boolean(userId) && open && activeTab === 'archive',
   });
 
   const markAllAsRead = useMarkAllAsRead();

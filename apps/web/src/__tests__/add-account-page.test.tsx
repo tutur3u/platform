@@ -4,14 +4,9 @@ import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import AddAccountPage from '@/app/[locale]/(auth)/add-account/page';
 
 const mockAddAccount = vi.fn();
-const mockConnection = vi.hoisted(() => vi.fn());
 const mockPush = vi.fn();
 const mockSearchParamsGet = vi.fn();
 const mockLocationAssign = vi.fn();
-
-vi.mock('next/server', () => ({
-  connection: mockConnection,
-}));
 
 vi.mock('next/navigation', () => ({
   useRouter: () => ({
@@ -59,7 +54,6 @@ describe('AddAccountPage', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    mockConnection.mockResolvedValue(undefined);
     mockSearchParamsGet.mockImplementation((key: string) => {
       if (key === 'returnUrl') return '/en/personal/tasks';
       return null;
@@ -73,7 +67,6 @@ describe('AddAccountPage', () => {
 
     expect(screen.getByText('account_switcher.adding_account')).toBeDefined();
     expect(screen.getByText('account_switcher.please_wait')).toBeDefined();
-    expect(mockConnection).toHaveBeenCalledOnce();
   });
 
   it('saves the current server session and redirects to the server-approved target', async () => {

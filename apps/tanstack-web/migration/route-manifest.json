@@ -64,6 +64,18 @@
       },
       {
         "acceptedRemoval": 0,
+        "key": "loading",
+        "label": "loading",
+        "legacyNext": 1,
+        "migrated": 0,
+        "percentComplete": 0,
+        "remaining": 1,
+        "terminal": 0,
+        "total": 1,
+        "unknownStatus": 0
+      },
+      {
+        "acceptedRemoval": 0,
         "key": "trpc",
         "label": "trpc",
         "legacyNext": 1,
@@ -116,12 +128,12 @@
         "acceptedRemoval": 2,
         "key": "tanstack-start",
         "label": "TanStack Start",
-        "legacyNext": 49,
+        "legacyNext": 50,
         "migrated": 148,
-        "percentComplete": 75.38,
-        "remaining": 49,
+        "percentComplete": 75,
+        "remaining": 50,
         "terminal": 150,
-        "total": 199,
+        "total": 200,
         "unknownStatus": 0
       }
     ],
@@ -311,12 +323,12 @@
       "acceptedRemoval": 13,
       "key": "total",
       "label": "All route artifacts",
-      "legacyNext": 548,
+      "legacyNext": 549,
       "migrated": 219,
-      "percentComplete": 29.74,
-      "remaining": 548,
+      "percentComplete": 29.71,
+      "remaining": 549,
       "terminal": 232,
-      "total": 780,
+      "total": 781,
       "unknownStatus": 0
     }
   },
@@ -6076,6 +6088,15 @@
       "targetOwner": "tanstack-start"
     },
     {
+      "id": "loading:/:locale:apps/web/src/app/[locale]/(dashboard)/loading.tsx",
+      "kind": "loading",
+      "methods": [],
+      "routePath": "/:locale",
+      "sourceFile": "apps/web/src/app/[locale]/(dashboard)/loading.tsx",
+      "status": "legacy-next",
+      "targetOwner": "tanstack-start"
+    },
+    {
       "id": "not-found:/:locale:apps/web/src/app/[locale]/not-found.tsx",
       "kind": "not-found",
       "methods": [],
@@ -7441,6 +7462,6 @@
       "DELETE": 100,
       "OPTIONS": 23
     },
-    "total": 780
+    "total": 781
   }
 }

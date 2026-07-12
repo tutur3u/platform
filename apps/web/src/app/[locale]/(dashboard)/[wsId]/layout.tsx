@@ -5,6 +5,8 @@ import { cookies } from 'next/headers';
 import { notFound, redirect } from 'next/navigation';
 import { connection } from 'next/server';
 import { type ReactNode, Suspense } from 'react';
+import { VersionBadgeGate } from '@/components/version-badge-gate';
+import { siteConfig } from '@/constants/configs';
 import { PROD_MODE } from '@/constants/env';
 import {
   SIDEBAR_BEHAVIOR_COOKIE_NAME,
@@ -356,6 +358,9 @@ export default async function Layout({ children, params }: LayoutProps) {
       }
     >
       {children}
+      <Suspense fallback={null}>
+        <VersionBadgeGate appName={siteConfig.name} userEmail={user.email} />
+      </Suspense>
     </DashboardShellClient>
   );
 }
