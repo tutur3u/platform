@@ -595,6 +595,7 @@ async function listWorkspaceExternalProjectBlocksByEntryIds(
               .eq('ws_id', workspaceId)
               .in('entry_id', entryIdBatch)
               .order('sort_order', { ascending: true })
+              .order('id', { ascending: true })
               .range(from, to)
           )
         )
@@ -634,6 +635,7 @@ async function listWorkspaceExternalProjectAssetsByEntryIds(
               .eq('ws_id', workspaceId)
               .in('entry_id', entryIdBatch)
               .order('sort_order', { ascending: true })
+              .order('id', { ascending: true })
               .range(from, to)
           )
         )
@@ -785,6 +787,7 @@ export async function listWorkspaceExternalProjectCollections(
       .select('*')
       .eq('ws_id', workspaceId)
       .order('title', { ascending: true })
+      .order('id', { ascending: true })
       .range(from, to)
   );
 }
@@ -805,7 +808,8 @@ export async function listWorkspaceExternalProjectFieldDefinitions(
         .select('*')
         .eq('ws_id', workspaceId)
         .order('sort_order', { ascending: true })
-        .order('created_at', { ascending: true });
+        .order('created_at', { ascending: true })
+        .order('id', { ascending: true });
 
       if (Object.hasOwn(options, 'collectionId')) {
         query =
@@ -838,7 +842,8 @@ export async function listWorkspaceExternalProjectEntries(
       .select('*')
       .eq('ws_id', workspaceId)
       .order('sort_order', { ascending: true })
-      .order('created_at', { ascending: true });
+      .order('created_at', { ascending: true })
+      .order('id', { ascending: true });
 
     if (options.collectionId) {
       query = query.eq('collection_id', options.collectionId);
