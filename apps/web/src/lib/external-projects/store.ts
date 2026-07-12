@@ -274,6 +274,25 @@ const EPM_IMAGE_PREVIEW_TRANSFORM = {
   resize: 'cover',
 } satisfies ImageTransformOptions;
 
+const EXTERNAL_PROJECT_ID_QUERY_BATCH_SIZE = 100;
+const EXTERNAL_PROJECT_QUERY_CONCURRENCY = 4;
+
+function chunkExternalProjectIds(ids: string[]) {
+  const batches: string[][] = [];
+
+  for (
+    let index = 0;
+    index < ids.length;
+    index += EXTERNAL_PROJECT_ID_QUERY_BATCH_SIZE
+  ) {
+    batches.push(
+      ids.slice(index, index + EXTERNAL_PROJECT_ID_QUERY_BATCH_SIZE)
+    );
+  }
+
+  return batches;
+}
+
 function buildYoolaLoadingData(
   collections: ExternalProjectDeliveryCollection[]
 ): ExternalProjectLoadingData {
@@ -522,18 +541,37 @@ async function listWorkspaceExternalProjectBlocksByEntryIds(
     return [];
   }
 
-  const { data, error } = await db
-    .from('workspace_external_project_blocks')
-    .select('*')
-    .eq('ws_id', workspaceId)
-    .in('entry_id', entryIds)
-    .order('sort_order', { ascending: true });
+  const blocks = [];
+  const entryIdBatches = chunkExternalProjectIds(entryIds);
 
-  if (error) {
-    throw new Error(error.message);
+  for (
+    let index = 0;
+    index < entryIdBatches.length;
+    index += EXTERNAL_PROJECT_QUERY_CONCURRENCY
+  ) {
+    const results = await Promise.all(
+      entryIdBatches
+        .slice(index, index + EXTERNAL_PROJECT_QUERY_CONCURRENCY)
+        .map(async (entryIdBatch) => {
+          const { data, error } = await db
+            .from('workspace_external_project_blocks')
+            .select('*')
+            .eq('ws_id', workspaceId)
+            .in('entry_id', entryIdBatch)
+            .order('sort_order', { ascending: true });
+
+          if (error) {
+            throw new Error(error.message);
+          }
+
+          return data ?? [];
+        })
+    );
+
+    blocks.push(...results.flat());
   }
 
-  return data ?? [];
+  return blocks;
 }
 
 async function listWorkspaceExternalProjectAssetsByEntryIds(
@@ -545,18 +583,37 @@ async function listWorkspaceExternalProjectAssetsByEntryIds(
     return [];
   }
 
-  const { data, error } = await db
-    .from('workspace_external_project_assets')
-    .select('*')
-    .eq('ws_id', workspaceId)
-    .in('entry_id', entryIds)
-    .order('sort_order', { ascending: true });
+  const assets = [];
+  const entryIdBatches = chunkExternalProjectIds(entryIds);
 
-  if (error) {
-    throw new Error(error.message);
+  for (
+    let index = 0;
+    index < entryIdBatches.length;
+    index += EXTERNAL_PROJECT_QUERY_CONCURRENCY
+  ) {
+    const results = await Promise.all(
+      entryIdBatches
+        .slice(index, index + EXTERNAL_PROJECT_QUERY_CONCURRENCY)
+        .map(async (entryIdBatch) => {
+          const { data, error } = await db
+            .from('workspace_external_project_assets')
+            .select('*')
+            .eq('ws_id', workspaceId)
+            .in('entry_id', entryIdBatch)
+            .order('sort_order', { ascending: true });
+
+          if (error) {
+            throw new Error(error.message);
+          }
+
+          return data ?? [];
+        })
+    );
+
+    assets.push(...results.flat());
   }
 
-  return data ?? [];
+  return assets;
 }
 
 export async function listCanonicalExternalProjects(db?: AdminDb) {
