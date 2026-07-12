@@ -919,11 +919,20 @@ export async function listWorkspaceUserLinkCandidates(
 
 export async function linkWorkspaceUserPlatformProfile(
   workspaceId: string,
-  payload: { platformUserId: string; virtualUserId: string },
+  payload: {
+    groupId?: string;
+    platformUserId: string;
+    virtualUserId: string;
+  },
   options?: InternalApiClientOptions
 ) {
   const client = getInternalApiClient(options);
-  return client.json<{ alreadyLinked: boolean; success: true }>(
+  return client.json<{
+    alreadyLinked: boolean;
+    consolidated?: boolean;
+    success: true;
+    targetVirtualUserId?: string;
+  }>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/users/links/manual`,
     {
       body: JSON.stringify(payload),

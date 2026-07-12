@@ -2,11 +2,22 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link2, Loader2, Search } from '@tuturuuu/icons';
+import type { WorkspaceUserLinkCandidate } from '@tuturuuu/internal-api/users';
 import {
   linkWorkspaceUserPlatformProfile,
   listWorkspaceUserLinkCandidates,
 } from '@tuturuuu/internal-api/users';
 import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@tuturuuu/ui/alert-dialog';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
@@ -32,9 +43,11 @@ function label(manager: Manager) {
 }
 
 export function ManagerLinkDialog({
+  groupId,
   manager,
   wsId,
 }: {
+  groupId: string;
   manager: Manager;
   wsId: string;
 }) {
@@ -42,6 +55,8 @@ export function ManagerLinkDialog({
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
+  const [candidateToConfirm, setCandidateToConfirm] =
+    useState<WorkspaceUserLinkCandidate | null>(null);
   const deferredQuery = useDeferredValue(query);
   const candidatesQuery = useQuery({
     queryKey: [
@@ -57,6 +72,7 @@ export function ManagerLinkDialog({
   const linkMutation = useMutation({
     mutationFn: (platformUserId: string) =>
       linkWorkspaceUserPlatformProfile(wsId, {
+        groupId,
         platformUserId,
         virtualUserId: manager.id,
       }),
@@ -70,6 +86,7 @@ export function ManagerLinkDialog({
         }),
       ]);
       toast.success(t('manager_link_success'));
+      setCandidateToConfirm(null);
       setOpen(false);
     },
     onError: (error) =>
@@ -129,7 +146,10 @@ export function ManagerLinkDialog({
             </p>
           ) : (
             candidates.map((candidate) => {
-              const unavailable = Boolean(candidate.linkedVirtualUserId);
+              const usesExistingProfile = Boolean(
+                candidate.linkedVirtualUserId &&
+                  candidate.linkedVirtualUserId !== manager.id
+              );
               return (
                 <div
                   key={candidate.id}
@@ -154,7 +174,7 @@ export function ManagerLinkDialog({
                             {t('manager_link_email_match')}
                           </Badge>
                         ) : null}
-                        {unavailable ? (
+                        {usesExistingProfile ? (
                           <Badge variant="outline">
                             {t('manager_link_already_used')}
                           </Badge>
@@ -169,19 +189,76 @@ export function ManagerLinkDialog({
                   </div>
                   <Button
                     size="sm"
-                    disabled={unavailable || linkMutation.isPending}
-                    onClick={() => linkMutation.mutate(candidate.id)}
+                    disabled={linkMutation.isPending}
+                    onClick={() => setCandidateToConfirm(candidate)}
                   >
                     {linkMutation.isPending ? (
                       <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
                     ) : null}
-                    {t('manager_link_confirm')}
+                    {usesExistingProfile
+                      ? t('manager_link_consolidate')
+                      : t('manager_link_confirm')}
                   </Button>
                 </div>
               );
             })
           )}
         </div>
+        <AlertDialog
+          open={candidateToConfirm !== null}
+          onOpenChange={(nextOpen) => {
+            if (!nextOpen && !linkMutation.isPending) {
+              setCandidateToConfirm(null);
+            }
+          }}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>
+                {t('manager_link_confirm_title')}
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                {candidateToConfirm?.linkedVirtualUserId
+                  ? t('manager_link_consolidate_description', {
+                      account:
+                        candidateToConfirm.displayName ||
+                        candidateToConfirm.email ||
+                        candidateToConfirm.id,
+                      manager: label(manager),
+                    })
+                  : t('manager_link_confirm_description', {
+                      account:
+                        candidateToConfirm?.displayName ||
+                        candidateToConfirm?.email ||
+                        candidateToConfirm?.id ||
+                        '',
+                      manager: label(manager),
+                    })}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={linkMutation.isPending}>
+                {t('manager_link_cancel')}
+              </AlertDialogCancel>
+              <AlertDialogAction
+                disabled={!candidateToConfirm || linkMutation.isPending}
+                onClick={(event) => {
+                  event.preventDefault();
+                  if (candidateToConfirm) {
+                    linkMutation.mutate(candidateToConfirm.id);
+                  }
+                }}
+              >
+                {linkMutation.isPending ? (
+                  <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+                ) : null}
+                {candidateToConfirm?.linkedVirtualUserId
+                  ? t('manager_link_consolidate')
+                  : t('manager_link_confirm')}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </DialogContent>
     </Dialog>
   );

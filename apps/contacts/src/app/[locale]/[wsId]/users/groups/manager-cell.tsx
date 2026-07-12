@@ -19,6 +19,7 @@ interface ManagerCellLabels {
 
 interface ManagerCellProps {
   canLink?: boolean;
+  groupId: string;
   labels: ManagerCellLabels;
   managers?: UserGroup['managers'];
   wsId: string;
@@ -65,10 +66,12 @@ function getLinkedSummary(managers: Manager[], labels: ManagerCellLabels) {
 
 function ManagerIdentity({
   canLink,
+  groupId,
   manager,
   wsId,
 }: {
   canLink?: boolean;
+  groupId: string;
   manager: Manager;
   wsId: string;
 }) {
@@ -100,7 +103,7 @@ function ManagerIdentity({
         </div>
       </div>
       {!isLinked && canLink ? (
-        <ManagerLinkDialog manager={manager} wsId={wsId} />
+        <ManagerLinkDialog groupId={groupId} manager={manager} wsId={wsId} />
       ) : null}
     </div>
   );
@@ -108,6 +111,7 @@ function ManagerIdentity({
 
 export function ManagerCell({
   canLink,
+  groupId,
   labels,
   managers,
   wsId,
@@ -117,7 +121,14 @@ export function ManagerCell({
   if (managers.length === 1) {
     const manager = managers[0];
     if (!manager) return <div>-</div>;
-    return <ManagerIdentity canLink={canLink} manager={manager} wsId={wsId} />;
+    return (
+      <ManagerIdentity
+        canLink={canLink}
+        groupId={groupId}
+        manager={manager}
+        wsId={wsId}
+      />
+    );
   }
 
   const summary = getLinkedSummary(managers, labels);
@@ -158,6 +169,7 @@ export function ManagerCell({
               <ManagerIdentity
                 key={manager.id}
                 canLink={canLink}
+                groupId={groupId}
                 manager={manager}
                 wsId={wsId}
               />

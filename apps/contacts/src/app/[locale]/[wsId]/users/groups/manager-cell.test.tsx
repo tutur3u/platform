@@ -25,6 +25,7 @@ describe('ManagerCell', () => {
   it('shows a green linked icon when all grouped managers are linked', () => {
     const { container } = render(
       <ManagerCell
+        groupId="group-1"
         labels={labels}
         managers={[manager('A', true), manager('B', true)]}
         wsId="ws-1"
@@ -40,6 +41,7 @@ describe('ManagerCell', () => {
   it('shows a red unlinked icon when no grouped managers are linked', () => {
     const { container } = render(
       <ManagerCell
+        groupId="group-1"
         labels={{ ...labels, linkedCount: '0/2 linked' }}
         managers={[manager('A', false), manager('B', false)]}
         wsId="ws-1"
@@ -55,6 +57,7 @@ describe('ManagerCell', () => {
   it('shows an amber linked icon when only some grouped managers are linked', () => {
     const { container } = render(
       <ManagerCell
+        groupId="group-1"
         labels={{ ...labels, linkedCount: '1/2 linked' }}
         managers={[manager('A', true), manager('B', false)]}
         wsId="ws-1"

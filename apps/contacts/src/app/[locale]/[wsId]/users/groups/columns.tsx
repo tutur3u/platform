@@ -83,6 +83,7 @@ export const getUserGroupColumns = ({
       return (
         <ManagerCell
           canLink={extraData?.canUpdateUserGroups}
+          groupId={row.original.id}
           managers={managers}
           wsId={extraData?.wsId ?? row.original.ws_id}
           labels={{

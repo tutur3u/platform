@@ -163,7 +163,11 @@ describe('users internal-api helpers', () => {
 
     await linkWorkspaceUserPlatformProfile(
       'ws-1',
-      { platformUserId: 'platform-1', virtualUserId: 'virtual-1' },
+      {
+        groupId: 'group-1',
+        platformUserId: 'platform-1',
+        virtualUserId: 'virtual-1',
+      },
       {
         baseUrl: 'https://internal.example.com',
         fetch: fetchMock as unknown as typeof fetch,
@@ -174,6 +178,7 @@ describe('users internal-api helpers', () => {
       'https://internal.example.com/api/v1/workspaces/ws-1/users/links/manual',
       expect.objectContaining({
         body: JSON.stringify({
+          groupId: 'group-1',
           platformUserId: 'platform-1',
           virtualUserId: 'virtual-1',
         }),

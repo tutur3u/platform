@@ -10,6 +10,7 @@ const querySchema = z.object({
 });
 
 const linkSchema = z.object({
+  groupId: z.guid().optional(),
   platformUserId: z.guid(),
   virtualUserId: z.guid(),
 });
@@ -168,7 +169,7 @@ export async function POST(request: Request, { params }: Params) {
     if ('response' in access) return access.response;
 
     const { admin, wsId } = access;
-    const { platformUserId, virtualUserId } = parsed.data;
+    const { groupId, platformUserId, virtualUserId } = parsed.data;
     const [{ data: virtualUser }, { data: member }] = await Promise.all([
       admin
         .from('workspace_users')
@@ -207,6 +208,94 @@ export async function POST(request: Request, { params }: Params) {
     if (exactLink) {
       return NextResponse.json({ alreadyLinked: true, success: true });
     }
+    const platformLink = existingLinks?.find(
+      (link) => link.platform_user_id === platformUserId
+    );
+    const virtualLink = existingLinks?.find(
+      (link) => link.virtual_user_id === virtualUserId
+    );
+
+    if (platformLink && !virtualLink && groupId) {
+      const targetVirtualUserId = platformLink.virtual_user_id;
+      const [
+        { data: group },
+        { data: sourceMembership },
+        { data: targetMembership },
+        { data: targetVirtualUser },
+      ] = await Promise.all([
+        admin
+          .from('workspace_user_groups')
+          .select('id')
+          .eq('id', groupId)
+          .eq('ws_id', wsId)
+          .maybeSingle(),
+        admin
+          .from('workspace_user_groups_users')
+          .select('group_id, role, user_id')
+          .eq('group_id', groupId)
+          .eq('user_id', virtualUserId)
+          .eq('role', 'TEACHER')
+          .maybeSingle(),
+        admin
+          .from('workspace_user_groups_users')
+          .select('group_id, role, user_id')
+          .eq('group_id', groupId)
+          .eq('user_id', targetVirtualUserId)
+          .maybeSingle(),
+        admin
+          .from('workspace_users')
+          .select('id')
+          .eq('id', targetVirtualUserId)
+          .eq('ws_id', wsId)
+          .maybeSingle(),
+      ]);
+
+      if (!group || !sourceMembership || !targetVirtualUser) {
+        return NextResponse.json(
+          { error: 'Manager assignment is no longer available' },
+          { status: 409 }
+        );
+      }
+
+      const { error: upsertError } = await admin
+        .from('workspace_user_groups_users')
+        .upsert(
+          { group_id: groupId, role: 'TEACHER', user_id: targetVirtualUserId },
+          { onConflict: 'group_id,user_id' }
+        );
+      if (upsertError) throw upsertError;
+
+      const { error: deleteError } = await admin
+        .from('workspace_user_groups_users')
+        .delete()
+        .eq('group_id', groupId)
+        .eq('user_id', virtualUserId)
+        .eq('role', 'TEACHER');
+      if (deleteError) {
+        if (targetMembership) {
+          await admin
+            .from('workspace_user_groups_users')
+            .update({ role: targetMembership.role })
+            .eq('group_id', groupId)
+            .eq('user_id', targetVirtualUserId);
+        } else {
+          await admin
+            .from('workspace_user_groups_users')
+            .delete()
+            .eq('group_id', groupId)
+            .eq('user_id', targetVirtualUserId);
+        }
+        throw deleteError;
+      }
+
+      return NextResponse.json({
+        alreadyLinked: false,
+        consolidated: true,
+        success: true,
+        targetVirtualUserId,
+      });
+    }
+
     if ((existingLinks?.length ?? 0) > 0) {
       return NextResponse.json(
         { error: 'One of these profiles is already linked' },
