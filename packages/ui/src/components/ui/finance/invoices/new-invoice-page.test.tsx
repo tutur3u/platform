@@ -11,6 +11,7 @@ const invoiceMocks = vi.hoisted(() => ({
 
 const nuqsState = vi.hoisted(() => ({
   invoiceType: 'standard' as 'standard' | 'subscription',
+  values: new Map<string, number | null>(),
 }));
 
 vi.mock('next-intl', () => ({
@@ -23,7 +24,11 @@ vi.mock('nuqs', () => ({
       return [nuqsState.invoiceType, vi.fn()];
     }
 
-    if (key === 'amount') {
+    if (nuqsState.values.has(key)) {
+      return [nuqsState.values.get(key), vi.fn()];
+    }
+
+    if (['amount', 'billable_quantity', 'suggested_total'].includes(key)) {
       return [null, vi.fn()];
     }
 
@@ -80,6 +85,7 @@ describe('NewInvoicePage', () => {
     invoiceMocks.StandardInvoice.mockClear();
     invoiceMocks.SubscriptionInvoice.mockClear();
     nuqsState.invoiceType = 'standard';
+    nuqsState.values.clear();
     fetchMock = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({
@@ -137,6 +143,36 @@ describe('NewInvoicePage', () => {
           defaultWalletId: 'wallet-1',
           workspaceTimezone: undefined,
         })
+      )
+    );
+  });
+
+  it('forwards a pending invoice quantity and suggested monetary total', async () => {
+    nuqsState.invoiceType = 'subscription';
+    nuqsState.values.set('billable_quantity', 3);
+    nuqsState.values.set('suggested_total', 1_500_000);
+
+    renderPage();
+
+    await waitFor(() =>
+      expect(invoiceMocks.SubscriptionInvoice).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          prefillQuantity: 3,
+          suggestedTotal: 1_500_000,
+        })
+      )
+    );
+  });
+
+  it('keeps legacy amount links working as a quantity fallback', async () => {
+    nuqsState.invoiceType = 'subscription';
+    nuqsState.values.set('amount', 4);
+
+    renderPage();
+
+    await waitFor(() =>
+      expect(invoiceMocks.SubscriptionInvoice).toHaveBeenLastCalledWith(
+        expect.objectContaining({ prefillQuantity: 4 })
       )
     );
   });

@@ -444,11 +444,11 @@ export default function GroupAttendanceClient({
     onSuccess: async () => {
       setPendingMap(new Map());
       await queryClient.invalidateQueries({ queryKey: attendanceKey });
-      toast.success('Attendance updated successfully');
+      toast.success(tAtt('save_success'));
     },
     onError: (e) => {
       console.error('Error saving attendance:', e);
-      toast.error('Failed to update attendance');
+      toast.error(tAtt('save_error'));
     },
   });
 
@@ -459,7 +459,7 @@ export default function GroupAttendanceClient({
 
   const handleSave = async () => {
     if (pendingMap.size === 0) {
-      toast.info('No changes to save');
+      toast.info(tAtt('no_changes'));
       return;
     }
     const payload: Array<{
@@ -837,7 +837,7 @@ export default function GroupAttendanceClient({
             </div>
           </CardContent>
         </Card>
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
           {isLoadingAttendance
             ? Array.from({ length: 4 }).map((_, i) => (
                 <div
@@ -897,10 +897,10 @@ export default function GroupAttendanceClient({
                           </AvatarFallback>
                         </Avatar>
                         <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-2">
+                          <div className="flex min-w-0 flex-wrap items-center gap-2">
                             <div
                               className={cn(
-                                'font-semibold text-base',
+                                'min-w-0 break-words font-semibold text-base',
                                 (m.archived ||
                                   (m.archived_until &&
                                     new Date(m.archived_until) > new Date())) &&
@@ -999,7 +999,7 @@ export default function GroupAttendanceClient({
                             aria-pressed={entry.status === 'PRESENT'}
                             variant="ghost"
                             className={cn(
-                              'h-auto flex-col gap-1 border-2 py-3 transition-all',
+                              'h-auto min-w-0 flex-col gap-1 border-2 px-2 py-3 transition-all',
                               entry.status !== 'NONE' &&
                                 entry.status !== 'PRESENT' &&
                                 'opacity-20 grayscale hover:opacity-100 hover:grayscale-0',
@@ -1010,7 +1010,7 @@ export default function GroupAttendanceClient({
                             onClick={() => toggleStatus(m.id, 'PRESENT')}
                           >
                             <Check className="h-5 w-5" />
-                            <span className="font-semibold text-xs">
+                            <span className="max-w-full truncate font-semibold text-xs">
                               {tAtt('present')}
                             </span>
                           </Button>
@@ -1020,7 +1020,7 @@ export default function GroupAttendanceClient({
                             aria-pressed={entry.status === 'ABSENT'}
                             variant="ghost"
                             className={cn(
-                              'h-auto flex-col gap-1 border-2 py-3 transition-all',
+                              'h-auto min-w-0 flex-col gap-1 border-2 px-2 py-3 transition-all',
                               entry.status !== 'NONE' &&
                                 entry.status !== 'ABSENT' &&
                                 'opacity-20 grayscale hover:opacity-100 hover:grayscale-0',
@@ -1031,7 +1031,7 @@ export default function GroupAttendanceClient({
                             onClick={() => toggleStatus(m.id, 'ABSENT')}
                           >
                             <UserX className="h-5 w-5" />
-                            <span className="font-semibold text-xs">
+                            <span className="max-w-full truncate font-semibold text-xs">
                               {tAtt('absent')}
                             </span>
                           </Button>
@@ -1041,7 +1041,7 @@ export default function GroupAttendanceClient({
                             aria-pressed={entry.status === 'LATE'}
                             variant="ghost"
                             className={cn(
-                              'h-auto flex-col gap-1 border-2 py-3 transition-all',
+                              'h-auto min-w-0 flex-col gap-1 border-2 px-2 py-3 transition-all',
                               entry.status !== 'NONE' &&
                                 entry.status !== 'LATE' &&
                                 'opacity-20 grayscale hover:opacity-100 hover:grayscale-0',
@@ -1052,7 +1052,7 @@ export default function GroupAttendanceClient({
                             onClick={() => toggleStatus(m.id, 'LATE')}
                           >
                             <Clock className="h-5 w-5" />
-                            <span className="font-semibold text-xs">
+                            <span className="max-w-full truncate font-semibold text-xs">
                               {tAtt('late')}
                             </span>
                           </Button>
@@ -1077,13 +1077,16 @@ export default function GroupAttendanceClient({
                     </div>
                     <div className="border-foreground/10 border-t" />
                     <div className="flex flex-col gap-2">
-                      <Label htmlFor="notes" className="font-medium text-sm">
+                      <Label
+                        htmlFor={`attendance-notes-${m.id}`}
+                        className="font-medium text-sm"
+                      >
                         {tAtt('notes_placeholder')}
                       </Label>
                       <Textarea
                         disabled={!canUpdateAttendance}
-                        id="notes"
-                        name="notes"
+                        id={`attendance-notes-${m.id}`}
+                        name={`attendance-notes-${m.id}`}
                         value={entry.note || ''}
                         onChange={(e) => {
                           setLocalAttendance(m.id, {
@@ -1100,7 +1103,7 @@ export default function GroupAttendanceClient({
                         }}
                         className="min-h-10 resize-none bg-card transition-all"
                         rows={1}
-                        placeholder="Add notes..."
+                        placeholder={tAtt('notes_placeholder')}
                       />
                     </div>
                   </div>

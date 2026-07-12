@@ -37,6 +37,7 @@ import {
 } from './components/invoice-products-permission-warning';
 import { SubscriptionAttendanceSummary } from './components/subscription-attendance-summary';
 import { SubscriptionGroupSelector } from './components/subscription-group-selector';
+import { SubscriptionInvoiceProposal } from './components/subscription-invoice-proposal';
 import { SubscriptionPrepaidControls } from './components/subscription-prepaid-controls';
 import { CreatePromotionDialog } from './create-promotion-dialog';
 import type { AvailablePromotion } from './hooks';
@@ -83,7 +84,8 @@ import {
 
 interface Props {
   wsId: string;
-  prefillAmount?: number | null; // Total attendance days to prefill product quantities
+  prefillQuantity?: number | null;
+  suggestedTotal?: number | null;
   createMultipleInvoices: boolean;
   printAfterCreate?: boolean;
   downloadImageAfterCreate?: boolean;
@@ -101,7 +103,8 @@ interface Props {
 
 export function SubscriptionInvoice({
   wsId,
-  prefillAmount,
+  prefillQuantity,
+  suggestedTotal,
   createMultipleInvoices,
   printAfterCreate = false,
   downloadImageAfterCreate = false,
@@ -549,7 +552,7 @@ export function SubscriptionInvoice({
     enabled: true,
     selectedGroupIds,
     selectedMonth: effectiveSelectedMonth,
-    prefillAmount,
+    prefillAmount: prefillQuantity,
     groupProducts,
     products,
     userGroups,
@@ -1032,6 +1035,16 @@ export function SubscriptionInvoice({
           <InvoiceBlockedState type="subscription" />
         ) : (
           <>
+            {suggestedTotal != null && (
+              <SubscriptionInvoiceProposal
+                billableQuantity={prefillQuantity}
+                currency={defaultCurrency}
+                currentTotal={subscriptionRoundedTotal}
+                hasSelectedProducts={hasSelectedProducts}
+                suggestedTotal={suggestedTotal}
+              />
+            )}
+
             {selectedGroupIds.length > 0 && effectiveSelectedMonth && (
               <SubscriptionAttendanceSummary
                 selectedGroupIds={selectedGroupIds}

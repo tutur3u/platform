@@ -2,7 +2,7 @@ create extension if not exists pgtap with schema extensions;
 
 begin;
 
-select plan(9);
+select plan(10);
 
 select ok(
   has_function_privilege(
@@ -84,6 +84,17 @@ select ok(
     'execute'
   ),
   'anon cannot call grouped pending invoice row RPC directly'
+);
+
+select lives_ok(
+  $$
+    select set_config('request.jwt.claim.role', 'service_role', true);
+    select * from public.get_pending_invoices_base(
+      '00000000-0000-0000-0000-000000000001'::uuid,
+      true
+    );
+  $$,
+  'service-role server routes can call the pending invoice base RPC after route authorization'
 );
 
 select * from finish();

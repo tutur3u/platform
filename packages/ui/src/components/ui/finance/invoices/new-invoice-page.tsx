@@ -72,10 +72,22 @@ export default function NewInvoicePage({
     serialize: (value) => value,
   });
 
-  const [prefillAmount] = useQueryState('amount', {
+  const [billableQuantity] = useQueryState('billable_quantity', {
     parse: (value) => {
       const parsed = Number(value);
       return Number.isFinite(parsed) ? parsed : null;
+    },
+  });
+  const [legacyPrefillAmount] = useQueryState('amount', {
+    parse: (value) => {
+      const parsed = Number(value);
+      return Number.isFinite(parsed) ? parsed : null;
+    },
+  });
+  const [suggestedTotal] = useQueryState('suggested_total', {
+    parse: (value) => {
+      const parsed = Number(value);
+      return Number.isFinite(parsed) && parsed >= 0 ? parsed : null;
     },
   });
 
@@ -269,7 +281,8 @@ export default function NewInvoicePage({
           {invoiceType === 'subscription' ? (
             <SubscriptionInvoice
               wsId={wsId}
-              prefillAmount={prefillAmount}
+              prefillQuantity={billableQuantity ?? legacyPrefillAmount}
+              suggestedTotal={suggestedTotal}
               defaultWalletId={defaultWalletId}
               defaultCategoryId={defaultCategoryId}
               defaultCurrency={defaultCurrency}

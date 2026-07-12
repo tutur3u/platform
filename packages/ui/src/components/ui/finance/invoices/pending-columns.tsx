@@ -21,6 +21,40 @@ type PendingInvoiceRow = PendingInvoice & {
   group_names?: string[];
 };
 
+export function buildPendingInvoiceCreateUrl({
+  attendanceDays,
+  financePrefix,
+  groupIds,
+  month,
+  potentialTotal,
+  useAttendanceBased,
+  userId,
+  wsId,
+}: {
+  attendanceDays: number;
+  financePrefix: string;
+  groupIds: string[];
+  month: string;
+  potentialTotal: number;
+  useAttendanceBased: boolean;
+  userId: string;
+  wsId: string;
+}) {
+  const searchParams = new URLSearchParams({
+    type: 'subscription',
+    user_id: userId,
+  });
+
+  if (month) searchParams.set('month', month);
+  if (useAttendanceBased) {
+    searchParams.set('billable_quantity', String(attendanceDays));
+  }
+  searchParams.set('suggested_total', String(potentialTotal));
+  if (groupIds.length > 0) searchParams.set('group_ids', groupIds.join(','));
+
+  return `/${wsId}${financePrefix}/invoices/new?${searchParams.toString()}`;
+}
+
 function PendingInvoicePotentialTotalCell({
   amount,
   currency,
@@ -268,6 +302,7 @@ export const pendingInvoiceColumns = (
         ).filter((id: string) => Boolean(id));
         const monthsOwed = row.getValue<string[]>('months_owed');
         const attendanceDays = row.getValue<number>('attendance_days');
+        const potentialTotal = row.getValue<number>('potential_total') || 0;
 
         // Get the LAST (most recent) unpaid month from the array
         const lastUnpaidMonth =
@@ -277,20 +312,16 @@ export const pendingInvoiceColumns = (
 
         if (!wsId) return null;
 
-        const searchParams = new URLSearchParams();
-        searchParams.set('type', 'subscription');
-        searchParams.set('user_id', userId);
-        if (lastUnpaidMonth) {
-          searchParams.set('month', lastUnpaidMonth);
-        }
-        if (useAttendanceBased) {
-          searchParams.set('amount', String(attendanceDays));
-        }
-        if (groupIds.length > 0) {
-          searchParams.set('group_ids', groupIds.join(','));
-        }
-
-        const createInvoiceUrl = `/${wsId}${financePrefix}/invoices/new?${searchParams.toString()}`;
+        const createInvoiceUrl = buildPendingInvoiceCreateUrl({
+          attendanceDays,
+          financePrefix,
+          groupIds,
+          month: lastUnpaidMonth ?? '',
+          potentialTotal,
+          useAttendanceBased,
+          userId,
+          wsId,
+        });
 
         return (
           <div className="flex items-center gap-2">

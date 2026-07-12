@@ -60,7 +60,7 @@ export async function GET(request: Request, { params }: Params) {
       return access.response;
     }
 
-    const { normalizedWsId: wsId, permissions, supabase } = access.context;
+    const { normalizedWsId: wsId, permissions, sbAdmin } = access.context;
 
     const { containsPermission } = permissions;
     if (!containsPermission('view_invoices')) {
@@ -105,7 +105,7 @@ export async function GET(request: Request, { params }: Params) {
         ? 'get_pending_invoices_grouped_by_user_count'
         : 'get_pending_invoices_count';
 
-      const { data: count, error: countError } = await supabase.rpc(rpcName, {
+      const { data: count, error: countError } = await sbAdmin.rpc(rpcName, {
         p_ws_id: wsId,
         p_query: q || undefined,
         p_user_ids: userIds.length > 0 ? userIds : undefined,
@@ -122,7 +122,7 @@ export async function GET(request: Request, { params }: Params) {
     const offset = (page - 1) * pageSize;
     const limit = currentMonthOnly ? 10000 : pageSize;
 
-    const { data, error } = await supabase.rpc(rpcName, {
+    const { data, error } = await sbAdmin.rpc(rpcName, {
       p_ws_id: wsId,
       p_limit: limit,
       p_offset: currentMonthOnly ? 0 : offset,
@@ -153,7 +153,7 @@ export async function GET(request: Request, { params }: Params) {
       ? 'get_pending_invoices_grouped_by_user_count'
       : 'get_pending_invoices_count';
 
-    const { data: totalCount, error: totalCountError } = await supabase.rpc(
+    const { data: totalCount, error: totalCountError } = await sbAdmin.rpc(
       countRpcName,
       {
         p_ws_id: wsId,
