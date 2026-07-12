@@ -12791,6 +12791,10 @@ export type Database = {
         };
         Returns: number;
       };
+      consolidate_user_group_manager_link: {
+        Args: { p_workspace_user_id: string; p_ws_id: string };
+        Returns: string;
+      };
       consume_auth_recovery_credential: {
         Args: {
           p_code_hash?: string;

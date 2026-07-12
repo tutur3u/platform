@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const createAdminClientMock = vi.fn();
 const getPermissionsMock = vi.fn();
 const normalizeWorkspaceIdMock = vi.fn();
+const resolveSessionAuthContextMock = vi.fn();
 const serverLoggerErrorMock = vi.fn();
 
 vi.mock('@tuturuuu/supabase/next/server', () => ({
@@ -17,6 +18,12 @@ vi.mock('@tuturuuu/utils/workspace-helper', () => ({
   normalizeWorkspaceId: (
     ...args: Parameters<typeof normalizeWorkspaceIdMock>
   ) => normalizeWorkspaceIdMock(...args),
+}));
+
+vi.mock('@/lib/api-auth', () => ({
+  resolveSessionAuthContext: (
+    ...args: Parameters<typeof resolveSessionAuthContextMock>
+  ) => resolveSessionAuthContextMock(...args),
 }));
 
 vi.mock('@/lib/infrastructure/log-drain', () => ({
@@ -300,6 +307,14 @@ describe('workspace user platform link repair route', () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
+    resolveSessionAuthContextMock.mockResolvedValue({
+      ok: true,
+      supabase: { auth: 'app-session' },
+      user: {
+        email: 'manager@example.com',
+        id: PLATFORM_USER_ID,
+      },
+    });
     normalizeWorkspaceIdMock.mockImplementation(async (wsId: string) => wsId);
     getPermissionsMock.mockResolvedValue({
       containsPermission: (permission: string) =>
@@ -358,6 +373,21 @@ describe('workspace user platform link repair route', () => {
     const json = await response.json();
 
     expect(response.status).toBe(200);
+    expect(resolveSessionAuthContextMock).toHaveBeenCalledWith(
+      expect.any(NextRequest),
+      { allowAppSessionAuth: true }
+    );
+    expect(normalizeWorkspaceIdMock).toHaveBeenCalledWith(
+      WS_ID,
+      expect.objectContaining({ auth: 'app-session' })
+    );
+    expect(getPermissionsMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        request: expect.any(NextRequest),
+        user: expect.objectContaining({ id: PLATFORM_USER_ID }),
+        wsId: WS_ID,
+      })
+    );
     expect(admin.insertedLinks).toEqual([
       {
         platform_user_id: PLATFORM_USER_ID,

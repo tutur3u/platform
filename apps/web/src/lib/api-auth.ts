@@ -278,11 +278,11 @@ const APP_SESSION_ROUTE_AUDIENCE_RULES: readonly {
   },
   {
     pattern: /^\/api\/v1\/workspaces\/[^/]+\/users\/groups(?:\/|$)/u,
-    targetApp: 'teach',
+    targetApp: ['contacts', 'teach'],
   },
   {
     pattern: /^\/api\/v1\/workspaces\/[^/]+\/users(?:\/|$)/u,
-    targetApp: 'teach',
+    targetApp: ['contacts', 'teach'],
   },
   {
     pattern:

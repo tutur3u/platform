@@ -5,6 +5,7 @@ import {
 } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { resolveSessionAuthContext } from '@/lib/api-auth';
 
 const RepairRequestSchema = z
   .object({
@@ -100,7 +101,12 @@ interface Params {
 export async function POST(request: Request, { params }: Params) {
   try {
     const { wsId: rawWsId } = await params;
-    const wsId = await normalizeWorkspaceId(rawWsId);
+    const auth = await resolveSessionAuthContext(request, {
+      allowAppSessionAuth: true,
+    });
+    if (!auth.ok) return auth.response;
+
+    const wsId = await normalizeWorkspaceId(rawWsId, auth.supabase);
     const body = await request.json().catch(() => ({}));
     const parsedBody = RepairRequestSchema.safeParse(body);
 
@@ -111,7 +117,11 @@ export async function POST(request: Request, { params }: Params) {
       );
     }
 
-    const permissions = await getPermissions({ wsId, request });
+    const permissions = await getPermissions({
+      wsId,
+      request,
+      user: auth.user,
+    });
     if (!permissions) {
       return NextResponse.json(
         { message: 'Workspace not found' },

@@ -880,7 +880,12 @@ describe('withSessionAuth', () => {
       getDefaultAppSessionVerificationOptions(
         'http://localhost:3000/api/v1/workspaces/ws-1/users/groups'
       )
-    ).toEqual({ targetApp: 'teach' });
+    ).toEqual({ targetApp: ['contacts', 'teach'] });
+    expect(
+      getDefaultAppSessionVerificationOptions(
+        'http://localhost:3000/api/v1/workspaces/ws-1/users/links/repair'
+      )
+    ).toEqual({ targetApp: ['contacts', 'teach'] });
     expect(
       getDefaultAppSessionVerificationOptions(
         'http://localhost:3000/api/v1/workspaces/ws-1/storage/list'
