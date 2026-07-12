@@ -46,7 +46,7 @@ vi.mock('@/lib/infrastructure/log-drain', () => ({
   },
 }));
 
-vi.mock('@/lib/user-groups/route-helpers', () => ({
+vi.mock('@tuturuuu/users-core/lib/user-groups/route-helpers', () => ({
   resolveRequestActorAuthUid: vi.fn(async () => ACTOR_AUTH_UID),
   resolveUserGroupRouteWorkspaceId: vi.fn(async () => WORKSPACE_ID),
 }));

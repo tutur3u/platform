@@ -9,7 +9,7 @@ vi.mock('@tuturuuu/utils/workspace-helper', () => ({
     getPermissionsMock(...args),
 }));
 
-vi.mock('@/lib/user-groups/route-helpers', () => ({
+vi.mock('@tuturuuu/users-core/lib/user-groups/route-helpers', () => ({
   resolveRequestActorAuthUid: vi.fn(),
   resolveUserGroupRouteWorkspaceId: (
     ...args: Parameters<typeof resolveUserGroupRouteWorkspaceIdMock>
@@ -20,11 +20,11 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: vi.fn(),
 }));
 
-vi.mock('@/lib/user-groups/revalidate', () => ({
+vi.mock('@tuturuuu/users-core/lib/user-groups/revalidate', () => ({
   revalidateUserGroupCache: vi.fn(),
 }));
 
-vi.mock('@/lib/user-groups/session-schedule', () => ({
+vi.mock('@tuturuuu/users-core/lib/user-groups/session-schedule', () => ({
   listUserGroupSessionDates: vi.fn(),
 }));
 

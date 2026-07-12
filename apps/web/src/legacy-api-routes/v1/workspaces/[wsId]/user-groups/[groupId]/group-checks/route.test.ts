@@ -34,7 +34,7 @@ vi.mock('@/lib/post-email-queue', () => ({
   enqueueApprovedPostEmails: vi.fn(),
 }));
 
-vi.mock('@/lib/user-groups/route-helpers', () => ({
+vi.mock('@tuturuuu/users-core/lib/user-groups/route-helpers', () => ({
   hasUserGroupPostInWorkspace: hasUserGroupPostInWorkspaceMock,
 }));
 

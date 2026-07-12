@@ -17,13 +17,13 @@ vi.mock('@tuturuuu/utils/workspace-helper', () => ({
     getPermissionsMock(...args),
 }));
 
-vi.mock('@/lib/user-groups/route-helpers', () => ({
+vi.mock('@tuturuuu/users-core/lib/user-groups/route-helpers', () => ({
   resolveUserGroupRouteWorkspaceId: (
     ...args: Parameters<typeof resolveUserGroupRouteWorkspaceIdMock>
   ) => resolveUserGroupRouteWorkspaceIdMock(...args),
 }));
 
-vi.mock('@/lib/user-groups/session-schedule', () => ({
+vi.mock('@tuturuuu/users-core/lib/user-groups/session-schedule', () => ({
   createUserGroupSession: (
     ...args: Parameters<typeof createUserGroupSessionMock>
   ) => createUserGroupSessionMock(...args),

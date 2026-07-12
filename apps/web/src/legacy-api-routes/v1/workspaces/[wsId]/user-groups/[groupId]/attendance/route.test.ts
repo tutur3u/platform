@@ -22,7 +22,7 @@ vi.mock('@/lib/infrastructure/log-drain', () => ({
   },
 }));
 
-vi.mock('@/lib/user-groups/route-helpers', () => ({
+vi.mock('@tuturuuu/users-core/lib/user-groups/route-helpers', () => ({
   hasUserGroupInWorkspace: vi.fn(),
   resolveRequestActorAuthUid: (
     ...args: Parameters<typeof resolveRequestActorAuthUidMock>

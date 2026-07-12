@@ -41,7 +41,7 @@ vi.mock('@tuturuuu/users-core/lib/require-attention-users', () => ({
   ) => mocks.withRequireAttentionFlag(...args),
 }));
 
-vi.mock('@/lib/user-groups/route-helpers', () => ({
+vi.mock('@tuturuuu/users-core/lib/user-groups/route-helpers', () => ({
   hasUserGroupInWorkspace: (
     ...args: Parameters<typeof mocks.hasUserGroupInWorkspace>
   ) => mocks.hasUserGroupInWorkspace(...args),
