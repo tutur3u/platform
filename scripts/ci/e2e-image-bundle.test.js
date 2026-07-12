@@ -5,6 +5,8 @@ const path = require('node:path');
 const test = require('node:test');
 
 const {
+  CACHE_TAG_PREFIX,
+  DEFAULT_PUBLISH_CONCURRENCY,
   SENTINEL_TAG,
   STABLE_BUILD_METADATA,
   SOURCE_REPOSITORY_LABEL,
@@ -14,12 +16,14 @@ const {
   createRunScopedImage,
   deletePackageVersion,
   getBundleServices,
+  getCacheImage,
   getConsumerTargets,
   getReadyImage,
   parseArgs,
   parsePackageRepository,
   publishBundle,
   pullBundle,
+  runWithConcurrency,
   selectPackageVersions,
   validateProjectName,
   validateRepository,
@@ -175,7 +179,7 @@ test('publish builds the planned services once and pushes the ready marker last'
   ]);
   assert.equal(
     calls.filter(([, args]) => args[0] === 'push').length,
-    getBundleServices({}).length + 2
+    getBundleServices({}).length * 2 + 2
   );
   assert.equal(
     calls.filter(([, args]) => args[0] === 'commit').length,
@@ -195,6 +199,55 @@ test('publish builds the planned services once and pushes the ready marker last'
   );
   assert.ok(sentinelPushIndex >= 0);
   assert.ok(firstBundlePushIndex > sentinelPushIndex);
+  for (const service of getBundleServices({})) {
+    const cachePushIndex = calls.findIndex(
+      ([, args]) =>
+        args[0] === 'push' &&
+        args[1] === `${REPOSITORY}:${CACHE_TAG_PREFIX}${service}`
+    );
+    const runPushIndex = calls.findIndex(
+      ([, args]) =>
+        args[0] === 'push' &&
+        args[1] === `${REPOSITORY}:${TAG_PREFIX}-${service}`
+    );
+    assert.ok(cachePushIndex >= 0);
+    assert.ok(runPushIndex > cachePushIndex);
+  }
+  assert.deepEqual(calls.at(-2), [
+    'docker',
+    [
+      'tag',
+      `${REPOSITORY}:${TAG_PREFIX}-backend`,
+      `${REPOSITORY}:${TAG_PREFIX}-ready`,
+    ],
+  ]);
+});
+
+test('cache image tags are stable and reject unsafe service names', () => {
+  assert.equal(
+    getCacheImage(REPOSITORY, 'tanstack-web-blue'),
+    `${REPOSITORY}:cache-tanstack-web-blue`
+  );
+  assert.equal(DEFAULT_PUBLISH_CONCURRENCY, 3);
+  assert.throws(() => getCacheImage(REPOSITORY, '../unsafe'));
+});
+
+test('bundle operations enforce bounded concurrency', async () => {
+  let active = 0;
+  let maximum = 0;
+
+  await runWithConcurrency(
+    Array.from({ length: 9 }, (_, index) => index),
+    DEFAULT_PUBLISH_CONCURRENCY,
+    async () => {
+      active += 1;
+      maximum = Math.max(maximum, active);
+      await new Promise((resolve) => setImmediate(resolve));
+      active -= 1;
+    }
+  );
+
+  assert.equal(maximum, DEFAULT_PUBLISH_CONCURRENCY);
 });
 
 test('run-scoped image derivation reuses layers but isolates the manifest', async () => {
@@ -294,7 +347,7 @@ test('publish reuses the permanent sentinel without creating stale versions', as
   );
   assert.equal(
     calls.filter((args) => args[0] === 'push').length,
-    getBundleServices({}).length + 1
+    getBundleServices({}).length * 2 + 1
   );
 });
 
@@ -425,8 +478,18 @@ test('cleanup selection is exact-prefix or bounded stale E2E versions only', () 
       metadata: { container: { tags: ['production'] } },
     },
     {
+      created_at: '2026-07-10T00:00:00Z',
+      id: 4,
+      metadata: { container: { tags: ['cache-backend'] } },
+    },
+    {
       created_at: '2026-07-12T00:00:00Z',
       id: 3,
+      metadata: { container: { tags: [] } },
+    },
+    {
+      created_at: '2026-07-10T00:00:00Z',
+      id: 5,
       metadata: { container: { tags: [] } },
     },
   ];
@@ -442,7 +505,7 @@ test('cleanup selection is exact-prefix or bounded stale E2E versions only', () 
       now: Date.parse('2026-07-12T12:00:00Z'),
       staleHours: 24,
     }).map((version) => version.id),
-    [1]
+    [1, 5]
   );
 });
 

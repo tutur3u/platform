@@ -563,6 +563,16 @@ visibility, `packages` token permissions, or GHCR deletion errors when cleanup
 fails; do not make the package public or replace these images with
 long-retention Actions artifacts.
 
+The producer also maintains one mutable `cache-<service>` tag per planned image.
+These tags anchor the latest runnable layers in private GHCR after run-scoped
+tags are deleted, so the next commit does not have to upload unchanged final
+image layers again. Superseded cache versions become untagged and remain covered
+by the 24-hour stale sweep. Cache images are pushed with bounded concurrency,
+then each immutable run tag is published from the same local image; the ready
+marker remains last, so consumers never observe a partial bundle. These
+registry-layer anchors complement Turbo and BuildKit caches without adding
+Actions cache entries or artifact storage.
+
 Trusted `main` producers also expose the Turbo team and token secret files to
 the native web artifact child process. This lets both Docker/BuildKit stages and
 the host-side Next build reuse Turborepo remote cache entries. The values remain

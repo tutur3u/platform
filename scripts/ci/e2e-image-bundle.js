@@ -35,6 +35,8 @@ const {
 const ROOT_DIR = path.resolve(__dirname, '..', '..');
 const DEFAULT_WAIT_SECONDS = 360;
 const DEFAULT_POLL_MS = 10_000;
+const DEFAULT_PUBLISH_CONCURRENCY = 3;
+const CACHE_TAG_PREFIX = 'cache-';
 const SENTINEL_TAG = 'sentinel';
 const SOURCE_REPOSITORY_LABEL =
   'LABEL org.opencontainers.image.source=https://github.com/tutur3u/platform';
@@ -252,6 +254,14 @@ function getReadyImage(repository, tagPrefix) {
   return getRemoteImage(repository, tagPrefix, 'ready');
 }
 
+function getCacheImage(repository, service) {
+  if (!/^[a-z0-9][a-z0-9.-]*$/u.test(service)) {
+    throw new Error(`Invalid E2E image cache service: ${service}`);
+  }
+
+  return `${repository}:${CACHE_TAG_PREFIX}${service}`;
+}
+
 function createBundleBuildEnv({
   baseEnv = process.env,
   envFilePath = DEFAULT_ENV_FILE,
@@ -373,18 +383,26 @@ async function publishBundle(
   }
   await verifyVisibility(options.repository, env);
 
-  for (const entry of manifest) {
-    await createRunScopedImage(entry, {
-      env: buildEnv,
-      producerProject: options.producerProject,
-      run,
-      tagPrefix: options.tagPrefix,
-    });
-    await run('docker', ['push', entry.remote], { env: buildEnv });
-  }
+  await runWithConcurrency(
+    manifest,
+    DEFAULT_PUBLISH_CONCURRENCY,
+    async (entry) => {
+      const cacheImage = getCacheImage(options.repository, entry.service);
+      await run('docker', ['tag', entry.source, cacheImage], { env: buildEnv });
+      await run('docker', ['push', cacheImage], { env: buildEnv });
+
+      await createRunScopedImage(entry, {
+        env: buildEnv,
+        producerProject: options.producerProject,
+        run,
+        tagPrefix: options.tagPrefix,
+      });
+      await run('docker', ['push', entry.remote], { env: buildEnv });
+    }
+  );
 
   const readyImage = getReadyImage(options.repository, options.tagPrefix);
-  await run('docker', ['tag', manifest[0].source, readyImage], {
+  await run('docker', ['tag', manifest[0].remote, readyImage], {
     env: buildEnv,
   });
   await run('docker', ['push', readyImage], { env: buildEnv });
@@ -526,6 +544,8 @@ if (require.main === module) {
 
 module.exports = {
   BUNDLE_TAG_PATTERN,
+  CACHE_TAG_PREFIX,
+  DEFAULT_PUBLISH_CONCURRENCY,
   DEFAULT_REPOSITORY,
   DEFAULT_STALE_HOURS,
   DEFAULT_WAIT_SECONDS,
@@ -539,6 +559,7 @@ module.exports = {
   createRunScopedImage,
   deletePackageVersion,
   getBundleServices,
+  getCacheImage,
   getConsumerTargets,
   getReadyImage,
   githubRequest,
