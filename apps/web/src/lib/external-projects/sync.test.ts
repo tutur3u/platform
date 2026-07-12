@@ -135,6 +135,68 @@ describe('external project sync diff', () => {
     );
   });
 
+  it('matches an existing collection slug when the stable source id changes', () => {
+    const snapshot: ExternalProjectSyncSnapshot = {
+      adapter: 'exocorpse',
+      canonicalProjectId: 'exocorpse-main',
+      content: {
+        entries: [
+          {
+            collectionSlug: 'characters',
+            id: 'entry-existing',
+            slug: 'verdant-goose-loxwood',
+            stableSourceId: 'legacy:character:verdant-goose-loxwood',
+            status: 'published',
+            title: 'Verdant Goose Loxwood',
+          },
+        ],
+      },
+      generatedAt: '2026-07-13T00:00:00.000Z',
+      schema: {
+        collections: [
+          {
+            collection_type: 'characters',
+            slug: 'characters',
+            title: 'Characters',
+          },
+        ],
+      },
+      version: 1,
+      workspaceId: 'ws-1',
+    };
+    const manifest = normalizeExternalProjectSyncManifest({
+      adapter: 'exocorpse',
+      content: {
+        entries: [
+          {
+            collectionSlug: 'characters',
+            slug: 'verdant-goose-loxwood',
+            stableSourceId: 'exocorpse:character:verdant-goose-loxwood',
+            status: 'published',
+            title: 'Verdant “Goose” Loxwood',
+          },
+        ],
+      },
+      schema: snapshot.schema,
+      version: 1,
+    });
+
+    const diff = buildExternalProjectSyncDiff(snapshot, manifest);
+
+    expect(diff.summary).toMatchObject({
+      archive: 0,
+      create: 0,
+      update: 1,
+    });
+    expect(diff.operations).toEqual([
+      expect.objectContaining({
+        action: 'update',
+        manifestKey: 'exocorpse:character:verdant-goose-loxwood',
+        platformId: 'entry-existing',
+      }),
+    ]);
+  });
+
   it('marks explicit delete operations as destructive and force-gated', () => {
     const snapshot: ExternalProjectSyncSnapshot = {
       adapter: 'yoola',
@@ -596,6 +658,148 @@ describe('external project sync apply', () => {
         workspaceId: 'ws-1',
       },
       db
+    );
+  });
+
+  it('claims a matching collection slug without archiving the updated entry', async () => {
+    const collection = {
+      collection_type: 'characters',
+      config: {},
+      description: null,
+      id: 'collection-1',
+      is_enabled: true,
+      slug: 'characters',
+      title: 'Characters',
+    };
+    const existingEntry = {
+      collection_id: collection.id,
+      id: 'entry-existing',
+      metadata: {},
+      profile_data: {},
+      published_at: null,
+      scheduled_for: null,
+      slug: 'verdant-goose-loxwood',
+      stable_source_id: 'legacy:character:verdant-goose-loxwood',
+      status: 'published',
+      subtitle: null,
+      summary: null,
+      title: 'Verdant Goose Loxwood',
+    };
+    const studio = {
+      assets: [],
+      binding: null,
+      blocks: [],
+      collections: [collection],
+      entries: [existingEntry],
+      fieldDefinitions: [],
+      importJobs: [],
+      loadingData: null,
+      publishEvents: [],
+    };
+    storeMocks.getWorkspaceExternalProjectStudioData.mockResolvedValue(studio);
+
+    const entryUpdate = vi.fn();
+    const createUpdateQuery = (
+      table: string,
+      values: Record<string, unknown>
+    ) => {
+      const query = {
+        eq: vi.fn(() => query),
+        select: vi.fn(() => query),
+        single: vi.fn(async () => ({
+          data:
+            table === 'workspace_external_project_collections'
+              ? collection
+              : { ...existingEntry, ...values },
+          error: null,
+        })),
+      };
+
+      Object.defineProperty(query, 'then', {
+        value: (
+          resolve: (value: { data: null; error: null }) => unknown,
+          reject?: (reason: unknown) => unknown
+        ) => Promise.resolve({ data: null, error: null }).then(resolve, reject),
+      });
+
+      return query;
+    };
+    const from = vi.fn((table: string) => {
+      if (table === 'workspace_external_project_collections') {
+        return {
+          select: vi.fn(() => ({
+            eq: vi.fn().mockResolvedValue({
+              data: [collection],
+              error: null,
+            }),
+          })),
+          update: vi.fn((values: Record<string, unknown>) =>
+            createUpdateQuery(table, values)
+          ),
+        };
+      }
+
+      if (table === 'workspace_external_project_entries') {
+        return {
+          update: entryUpdate.mockImplementation(
+            (values: Record<string, unknown>) =>
+              createUpdateQuery(table, values)
+          ),
+        };
+      }
+
+      throw new Error(`Unexpected table ${table}`);
+    });
+    const manifest = normalizeExternalProjectSyncManifest({
+      adapter: 'exocorpse',
+      content: {
+        entries: [
+          {
+            collectionSlug: 'characters',
+            slug: existingEntry.slug,
+            stableSourceId: 'exocorpse:character:verdant-goose-loxwood',
+            status: 'published',
+            title: 'Verdant “Goose” Loxwood',
+          },
+        ],
+      },
+      schema: {
+        collections: [
+          {
+            collection_type: 'characters',
+            slug: 'characters',
+            title: 'Characters',
+          },
+        ],
+      },
+      version: 1,
+    });
+
+    await expect(
+      applyWorkspaceExternalProjectSyncManifest(
+        {
+          actorId: 'user-1',
+          binding: {
+            adapter: 'exocorpse',
+            canonical_id: 'exocorpse-main',
+            canonical_project: {
+              delivery_profile: { schema: manifest.schema },
+            },
+            enabled: true,
+            workspace_id: 'ws-1',
+          } as never,
+          manifest,
+          workspaceId: 'ws-1',
+        },
+        { from } as never
+      )
+    ).resolves.toMatchObject({ applied: true });
+
+    expect(entryUpdate).toHaveBeenCalledTimes(1);
+    expect(entryUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        stable_source_id: 'exocorpse:character:verdant-goose-loxwood',
+      })
     );
   });
 });
