@@ -135,7 +135,22 @@ describe('external project sync apply', () => {
     );
   });
 
-  it('claims a matching collection slug without archiving the updated entry', async () => {
+  it.each([
+    {
+      existingSlug: 'verdant-goose-loxwood',
+      existingStableId: 'legacy:character:verdant-goose-loxwood',
+      manifestSlug: 'verdant-goose-loxwood',
+      manifestStableId: 'exocorpse:character:verdant-goose-loxwood',
+      name: 'claims a matching collection slug without archiving the updated entry',
+    },
+    {
+      existingSlug: 'old-slug',
+      existingStableId: null,
+      manifestSlug: 'new-slug',
+      manifestStableId: 'characters/old-slug',
+      name: 'preserves the fallback identity of a legacy row without a stable id',
+    },
+  ])('$name', async (testCase) => {
     const collection = {
       collection_type: 'characters',
       config: {},
@@ -152,8 +167,8 @@ describe('external project sync apply', () => {
       profile_data: {},
       published_at: null,
       scheduled_for: null,
-      slug: 'verdant-goose-loxwood',
-      stable_source_id: 'legacy:character:verdant-goose-loxwood',
+      slug: testCase.existingSlug,
+      stable_source_id: testCase.existingStableId,
       status: 'published',
       subtitle: null,
       summary: null,
@@ -230,8 +245,8 @@ describe('external project sync apply', () => {
         entries: [
           {
             collectionSlug: 'characters',
-            slug: existingEntry.slug,
-            stableSourceId: 'exocorpse:character:verdant-goose-loxwood',
+            slug: testCase.manifestSlug,
+            stableSourceId: testCase.manifestStableId,
             status: 'published',
             title: 'Verdant “Goose” Loxwood',
           },
@@ -272,7 +287,7 @@ describe('external project sync apply', () => {
     expect(entryUpdate).toHaveBeenCalledTimes(1);
     expect(entryUpdate).toHaveBeenCalledWith(
       expect.objectContaining({
-        stable_source_id: 'exocorpse:character:verdant-goose-loxwood',
+        stable_source_id: testCase.manifestStableId,
       })
     );
   });

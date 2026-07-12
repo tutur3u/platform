@@ -397,6 +397,11 @@ export function buildExternalProjectSyncDiff(
         : undefined);
 
     if (current) {
+      if (matchedSnapshotEntries.has(current)) {
+        throw new Error(
+          `Multiple manifest entries resolve to ${collectionSlugEntryKey(entry)}`
+        );
+      }
       matchedSnapshotEntries.add(current);
     }
 
@@ -875,9 +880,7 @@ function buildExistingEntryMaps(studio: RawStudioData) {
     const collectionSlug = collection?.slug ?? entry.collection_id;
     byCollectionSlug.set(`${collectionSlug}/${entry.slug}`, entry);
     const stableSourceId = entry.stable_source_id?.trim();
-    if (stableSourceId) {
-      byStableKey.set(stableSourceId, entry);
-    }
+    byStableKey.set(stableSourceId || `${collectionSlug}/${entry.slug}`, entry);
   }
 
   return { byCollectionSlug, byStableKey };

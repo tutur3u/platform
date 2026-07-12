@@ -252,6 +252,62 @@ describe('external project sync diff', () => {
     );
   });
 
+  it('rejects multiple manifest identities claiming one collection slug', () => {
+    const snapshot: ExternalProjectSyncSnapshot = {
+      adapter: 'exocorpse',
+      canonicalProjectId: 'exocorpse-main',
+      content: {
+        entries: [
+          {
+            collectionSlug: 'characters',
+            id: 'entry-existing',
+            slug: 'shared-slug',
+            stableSourceId: 'legacy:character:shared-slug',
+            status: 'published',
+            title: 'Legacy Character',
+          },
+        ],
+      },
+      generatedAt: '2026-07-13T00:00:00.000Z',
+      schema: {
+        collections: [
+          {
+            collection_type: 'characters',
+            slug: 'characters',
+            title: 'Characters',
+          },
+        ],
+      },
+      version: 1,
+      workspaceId: 'ws-1',
+    };
+    const manifest = normalizeExternalProjectSyncManifest({
+      adapter: 'exocorpse',
+      content: {
+        entries: [
+          {
+            collectionSlug: 'characters',
+            slug: 'shared-slug',
+            stableSourceId: 'exocorpse:character:first',
+            title: 'First Character',
+          },
+          {
+            collectionSlug: 'characters',
+            slug: 'shared-slug',
+            stableSourceId: 'exocorpse:character:second',
+            title: 'Second Character',
+          },
+        ],
+      },
+      schema: snapshot.schema,
+      version: 1,
+    });
+
+    expect(() => buildExternalProjectSyncDiff(snapshot, manifest)).toThrow(
+      'Multiple manifest entries resolve to characters/shared-slug'
+    );
+  });
+
   it('marks explicit delete operations as destructive and force-gated', () => {
     const snapshot: ExternalProjectSyncSnapshot = {
       adapter: 'yoola',
