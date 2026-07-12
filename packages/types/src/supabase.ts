@@ -37493,6 +37493,20 @@ export type Database = {
           user_name: string;
         }[];
       };
+      get_pending_invoices_base_guarded: {
+        Args: { p_use_attendance_based?: boolean; p_ws_id: string };
+        Returns: {
+          attendance_days: number;
+          billable_days: number;
+          group_id: string;
+          group_name: string;
+          month: string;
+          sessions: string[];
+          user_avatar_url: string;
+          user_id: string;
+          user_name: string;
+        }[];
+      };
       get_pending_invoices_count: {
         Args: { p_query?: string; p_user_ids?: string[]; p_ws_id: string };
         Returns: number;
