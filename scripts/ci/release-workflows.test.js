@@ -1683,7 +1683,7 @@ test('package publish workflows release from production version bumps', () => {
   }
 });
 
-test('package trusted publishing keeps OIDC isolated to artifact publish jobs', () => {
+test('package trusted publishing avoids secret-redacted metadata outputs', () => {
   for (const {
     artifactDir,
     artifactName,
@@ -1720,10 +1720,14 @@ test('package trusted publishing keeps OIDC isolated to artifact publish jobs', 
       );
     }
 
-    assert.match(
+    // The Turbo team slug can also appear inside a scoped npm package name.
+    // GitHub then treats that job output as secret-bearing and drops it, so the
+    // OIDC job must use the repository-verified static package name instead.
+    assert.doesNotMatch(
       prepareJob,
       /package_name: \$\{\{ steps\.version-check\.outputs\.package_name \}\}/
     );
+    assert.doesNotMatch(prepareJob, /echo "package_name=/);
     assert.match(
       prepareJob,
       /package_version: \$\{\{ steps\.version-check\.outputs\.package_version \}\}/
@@ -1747,6 +1751,14 @@ test('package trusted publishing keeps OIDC isolated to artifact publish jobs', 
     assert.match(publishJob, new RegExp(`path: ${artifactDir}`));
     assert.match(publishJob, /Check npm trusted publishing support/);
     assert.match(publishJob, /Verify package artifact/);
+    assert.match(
+      publishJob,
+      new RegExp(`EXPECTED_PACKAGE_NAME: "${packageName.replace('/', '\\/')}"`)
+    );
+    assert.doesNotMatch(
+      publishJob,
+      /needs\.prepare-publish-npm\.outputs\.package_name/
+    );
     assert.match(
       publishJob,
       /echo "path=\.\/\$\{PACKAGE_TARBALL\}" >> "\$GITHUB_OUTPUT"/
