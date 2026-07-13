@@ -77,7 +77,7 @@
     "@tiptap/extension-table": "3.27.3",
     "@tiptap/extension-table-cell": "3.27.3",
     "@tiptap/extension-table-header": "3.27.3",
-    "@tiptap/extension-table-row": "3.27.3",
+    "@tiptap/extension-table-row": "3.27.4",
     "@tiptap/extension-text-align": "3.27.3",
     "@tiptap/extension-text-style": "3.27.3",
     "@tiptap/extension-youtube": "3.27.3",
