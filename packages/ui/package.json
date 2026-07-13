@@ -73,7 +73,7 @@
     "@tiptap/extension-placeholder": "3.27.3",
     "@tiptap/extension-strike": "3.27.3",
     "@tiptap/extension-subscript": "3.27.3",
-    "@tiptap/extension-superscript": "3.27.3",
+    "@tiptap/extension-superscript": "3.27.4",
     "@tiptap/extension-table": "3.27.3",
     "@tiptap/extension-table-cell": "3.27.3",
     "@tiptap/extension-table-header": "3.27.3",
