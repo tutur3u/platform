@@ -41,7 +41,7 @@ describe('GET /api/v1/vocabulary/details scraper', () => {
       </html>
     `;
 
-    vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
       ok: true,
       status: 200,
       text: async () => mockHtml,
@@ -52,6 +52,17 @@ describe('GET /api/v1/vocabulary/details scraper', () => {
     );
     const response = await GET(request);
     expect(response.status).toBe(200);
+
+    const [requestedUrl, requestInit] = fetchMock.mock.calls[0] ?? [];
+    expect(requestedUrl).toBeInstanceOf(URL);
+    expect(String(requestedUrl)).toBe(
+      'https://dict.laban.vn/find?type=1&query=eat'
+    );
+    expect(requestInit).toEqual(
+      expect.objectContaining({
+        signal: expect.any(AbortSignal),
+      })
+    );
 
     const data = await response.json();
     expect(data.word).toBe('eat');

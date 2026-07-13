@@ -5,8 +5,20 @@ import {
   fetchLaban,
   LABAN_ORIGIN,
   LABAN_TIMEOUT_MS,
+  labanFindUrl,
   normalizeLabanSuggestions,
+  type VocabularySuggestion,
 } from '../laban';
+
+function fallbackSuggestion(query: string): VocabularySuggestion[] {
+  return [
+    {
+      beta: false,
+      url: labanFindUrl(query),
+      word: query,
+    },
+  ];
+}
 
 async function loadVocabularySuggestions(request: NextRequest) {
   const query = request.nextUrl.searchParams.get('q')?.trim() ?? '';
@@ -38,23 +50,25 @@ async function loadVocabularySuggestions(request: NextRequest) {
         query,
         status: response.status,
       });
-      return NextResponse.json({ suggestions: [] });
+      return NextResponse.json({ suggestions: fallbackSuggestion(query) });
     }
 
     const responseText = await response.text();
     if (!responseText.trim()) {
-      return NextResponse.json({ suggestions: [] });
+      return NextResponse.json({ suggestions: fallbackSuggestion(query) });
     }
 
+    const suggestions = normalizeLabanSuggestions(JSON.parse(responseText));
     return NextResponse.json({
-      suggestions: normalizeLabanSuggestions(JSON.parse(responseText)),
+      suggestions:
+        suggestions.length > 0 ? suggestions : fallbackSuggestion(query),
     });
   } catch (error) {
     console.warn('Failed to load Laban vocabulary suggestions', {
       error,
       query,
     });
-    return NextResponse.json({ suggestions: [] });
+    return NextResponse.json({ suggestions: fallbackSuggestion(query) });
   } finally {
     clearTimeout(timeout);
   }

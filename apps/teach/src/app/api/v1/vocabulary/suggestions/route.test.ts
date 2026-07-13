@@ -78,4 +78,72 @@ describe('GET /api/v1/vocabulary/suggestions', () => {
       },
     ]);
   });
+
+  it('keeps valid items when another autocomplete item is malformed', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      status: 200,
+      text: async () =>
+        JSON.stringify({
+          suggestions: [
+            {
+              select: { unexpected: true },
+              link: 'http://[',
+              data: 42,
+            },
+            {
+              select: 'eat',
+              link: '/find?type=1&query=eat',
+              data: '<span class="fl">eat</span><p>ăn</p>',
+            },
+          ],
+        }),
+    } as Response);
+
+    const response = await GET(
+      new NextRequest('http://localhost/api/v1/vocabulary/suggestions?q=eat')
+    );
+
+    await expect(response.json()).resolves.toEqual({
+      suggestions: [
+        {
+          beta: false,
+          definition: 'ăn',
+          url: 'https://dict.laban.vn/find?type=1&query=eat',
+          word: 'eat',
+        },
+      ],
+    });
+  });
+
+  it.each([
+    {
+      label: 'upstream request fails',
+      response: { ok: false, status: 503 } as Response,
+    },
+    {
+      label: 'upstream response is empty',
+      response: {
+        ok: true,
+        status: 200,
+        text: async () => '',
+      } as Response,
+    },
+  ])('returns a bounded find fallback when $label', async ({ response }) => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(response);
+
+    const result = await GET(
+      new NextRequest('http://localhost/api/v1/vocabulary/suggestions?q=eat')
+    );
+
+    await expect(result.json()).resolves.toEqual({
+      suggestions: [
+        {
+          beta: false,
+          url: 'https://dict.laban.vn/find?type=1&query=eat',
+          word: 'eat',
+        },
+      ],
+    });
+  });
 });

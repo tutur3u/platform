@@ -15,12 +15,6 @@ export interface VocabularySuggestion {
   word: string;
 }
 
-interface LabanAutocompleteSuggestion {
-  data?: string;
-  link?: string | null;
-  select?: string;
-}
-
 export const LABAN_ORIGIN = 'https://dict.laban.vn';
 export const LABAN_TIMEOUT_MS = 5_000;
 type NextFetchRequestInit = RequestInit & {
@@ -53,8 +47,8 @@ export function labanFindUrl(word: string) {
   return url.toString();
 }
 
-function safeLabanUrl(path: string | undefined | null, fallbackWord: string) {
-  const trimmedPath = path?.trim();
+function safeLabanUrl(path: unknown, fallbackWord: string) {
+  const trimmedPath = typeof path === 'string' ? path.trim() : '';
 
   if (!trimmedPath || trimmedPath.startsWith('//')) {
     return labanFindUrl(fallbackWord);
@@ -68,11 +62,15 @@ function safeLabanUrl(path: string | undefined | null, fallbackWord: string) {
     return labanFindUrl(fallbackWord);
   }
 
-  const url = new URL(trimmedPath, LABAN_ORIGIN);
+  try {
+    const url = new URL(trimmedPath, LABAN_ORIGIN);
 
-  return url.origin === LABAN_ORIGIN
-    ? url.toString()
-    : labanFindUrl(fallbackWord);
+    return url.origin === LABAN_ORIGIN
+      ? url.toString()
+      : labanFindUrl(fallbackWord);
+  } catch {
+    return labanFindUrl(fallbackWord);
+  }
 }
 
 function extractSuggestionPreview(
@@ -104,19 +102,16 @@ export function normalizeLabanSuggestions(payload: unknown) {
         return null;
       }
 
-      const suggestion = item as LabanAutocompleteSuggestion;
-      const preview = suggestion.data
-        ? extractSuggestionPreview(suggestion.data)
+      const suggestion = item as Record<string, unknown>;
+      const data = typeof suggestion.data === 'string' ? suggestion.data : '';
+      const select =
+        typeof suggestion.select === 'string' ? suggestion.select : '';
+      const preview = data
+        ? extractSuggestionPreview(data)
         : { definition: undefined, pronunciation: '' };
-      const fallbackWord = normalizeText(suggestion.select ?? '');
+      const fallbackWord = normalizeText(select);
       const word =
-        fallbackWord ||
-        normalizeText(
-          cheerio
-            .load(suggestion.data ?? '')('.fl')
-            .first()
-            .text()
-        );
+        fallbackWord || normalizeText(cheerio.load(data)('.fl').first().text());
 
       if (!word) return null;
 

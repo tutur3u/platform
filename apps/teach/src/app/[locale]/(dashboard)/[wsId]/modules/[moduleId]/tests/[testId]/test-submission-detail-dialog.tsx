@@ -3,6 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Loader2, X } from '@tuturuuu/icons';
 import {
+  generateWorkspaceCourseTestSubmissionFeedback,
   getWorkspaceCourseTestSubmission,
   type TeachTestSubmissionDetail,
   updateWorkspaceCourseTestSubmissionFeedback,
@@ -135,47 +136,23 @@ function SubmissionContent({
   const incorrectAnswers = answers.filter((a) => a.is_correct === false).length;
 
   const [aiFeedbacks, setAiFeedbacks] = useState<Record<string, string>>({});
-  const [loadingAi, setLoadingAi] = useState<Record<string, boolean>>({});
-
-  const generateAiFeedback = async (quiz: any, quizAns: any) => {
-    if (loadingAi[quiz.id]) return;
-    setLoadingAi((prev) => ({ ...prev, [quiz.id]: true }));
-    try {
-      const response = await fetch('/api/ai/feedback', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          question: quiz.question,
-          type: quiz.type,
-          quizOptions: quiz.quiz_options || quiz.content?.options,
-          correctAnswer: quiz.answer,
-          studentAnswer: quizAns.answer || quizAns.selected_option_id,
-          isCorrect: quizAns.is_correct,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to generate AI feedback');
-      }
-
-      const result = await response.json();
-      if (result.feedback) {
-        setAiFeedbacks((prev) => ({ ...prev, [quiz.id]: result.feedback }));
-        toast.success(
-          t('teachModules.aiFeedbackGenerated') || 'AI feedback generated!'
-        );
-      }
-    } catch (error) {
-      console.error(error);
-      toast.error(
-        t('teachModules.aiFeedbackError') || 'Failed to generate AI feedback'
-      );
-    } finally {
-      setLoadingAi((prev) => ({ ...prev, [quiz.id]: false }));
-    }
-  };
+  const aiFeedbackMutation = useMutation({
+    mutationFn: (quizId: string) =>
+      generateWorkspaceCourseTestSubmissionFeedback(
+        wsId,
+        courseId,
+        testId,
+        attemptId,
+        { quizId }
+      ),
+    onSuccess: (result, quizId) => {
+      setAiFeedbacks((prev) => ({ ...prev, [quizId]: result.feedback }));
+      toast.success(t('teachModules.aiFeedbackGenerated'));
+    },
+    onError: () => {
+      toast.error(t('teachModules.aiFeedbackError'));
+    },
+  });
 
   return (
     <div className="mt-4 space-y-6">
@@ -237,8 +214,7 @@ function SubmissionContent({
           return (
             <div
               key={quiz.id}
-              onClick={() => generateAiFeedback(quiz, quizAns)}
-              className="group cursor-pointer space-y-4 border-2 border-border bg-background p-5 shadow-[4px_4px_0_var(--border)] transition duration-200 hover:border-primary"
+              className="space-y-4 border-2 border-border bg-background p-5 shadow-[4px_4px_0_var(--border)]"
             >
               {/* Question header */}
               <div className="flex flex-wrap items-center justify-between gap-3 border-border border-b-2 border-dashed pb-3">
@@ -301,8 +277,11 @@ function SubmissionContent({
                   maxScore={quiz.score}
                   t={t}
                   aiFeedback={aiFeedbacks[quiz.id]}
-                  isAiLoading={loadingAi[quiz.id]}
-                  onGenerateAi={() => generateAiFeedback(quiz, quizAns)}
+                  isAiLoading={
+                    aiFeedbackMutation.isPending &&
+                    aiFeedbackMutation.variables === quiz.id
+                  }
+                  onGenerateAi={() => aiFeedbackMutation.mutate(quiz.id)}
                 />
               </div>
             </div>
