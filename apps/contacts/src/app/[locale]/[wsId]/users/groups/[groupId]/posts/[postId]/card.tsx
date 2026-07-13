@@ -2,11 +2,17 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Check, LoaderCircle, RotateCcw, Save, X } from '@tuturuuu/icons';
+import {
+  clearUserGroupPostChecks,
+  createUserGroupPostCheck,
+  updateUserGroupPostChecks,
+} from '@tuturuuu/internal-api/posts';
 import type { UserGroupPost } from '@tuturuuu/types/db';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card } from '@tuturuuu/ui/card';
+import { toast } from '@tuturuuu/ui/sonner';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import type { GroupPostRecipientRow } from '@tuturuuu/users-core/lib/group-post-recipient-types';
 import type {
@@ -91,41 +97,34 @@ function UserCard({
         throw new Error('Missing required fields');
       }
 
-      const endpoint = hasExistingCheck
-        ? `/api/v1/workspaces/${wsId}/user-groups/${post.group_id}/group-checks/${post.id}`
-        : `/api/v1/workspaces/${wsId}/user-groups/${post.group_id}/group-checks`;
-      const payload = hasExistingCheck
-        ? {
-            user_id: recipient.user_id,
-            is_completed: isCompleted,
-            notes: notes ?? recipient.notes ?? '',
-          }
-        : {
-            post_id: post.id,
-            user_id: recipient.user_id,
-            is_completed: isCompleted,
-            notes: notes ?? '',
-          };
-
-      const response = await fetch(endpoint, {
-        method: hasExistingCheck ? 'PUT' : 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-      });
-
-      if (!response.ok) {
-        throw new Error('Error saving/updating data');
+      if (hasExistingCheck) {
+        return updateUserGroupPostChecks(wsId, post.group_id, post.id, {
+          is_completed: isCompleted,
+          notes: notes ?? recipient.notes ?? '',
+          user_id: recipient.user_id,
+        });
       }
 
-      return response.json();
+      return createUserGroupPostCheck(wsId, post.group_id, {
+        is_completed: isCompleted,
+        notes: notes ?? '',
+        post_id: post.id,
+        user_id: recipient.user_id,
+      });
     },
     onSuccess: async () => {
+      toast.success(t('ws_post_details.status_save_success'));
       await queryClient.invalidateQueries({
         queryKey: ['group-post-checks', post.id],
       });
       router.refresh();
+    },
+    onError: (error) => {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : t('ws_post_details.status_save_error')
+      );
     },
   });
 
@@ -134,24 +133,23 @@ function UserCard({
       if (!recipient.user_id || !post.id || !post.group_id) {
         throw new Error('Missing required fields');
       }
-      const response = await fetch(
-        `/api/v1/workspaces/${wsId}/user-groups/${post.group_id}/group-checks/${post.id}`,
-        {
-          method: 'DELETE',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ user_id: recipient.user_id }),
-        }
-      );
-      if (!response.ok) {
-        throw new Error('Error clearing status');
-      }
-      return response.json();
+      return clearUserGroupPostChecks(wsId, post.group_id, post.id, [
+        recipient.user_id,
+      ]);
     },
     onSuccess: async () => {
+      toast.success(t('ws_post_details.reset_check_success'));
       await queryClient.invalidateQueries({
         queryKey: ['group-post-checks', post.id],
       });
       router.refresh();
+    },
+    onError: (error) => {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : t('ws_post_details.reset_check_error')
+      );
     },
   });
 
@@ -277,7 +275,7 @@ function UserCard({
                 isCompleted: true,
               })
             }
-            disabled={isSavingStatus}
+            disabled={isSavingStatus || isClearing}
           >
             {isSavingStatus ? (
               <LoaderCircle className="mr-1 h-4 w-4 animate-spin" />
@@ -294,7 +292,7 @@ function UserCard({
                 isCompleted: false,
               })
             }
-            disabled={isSavingStatus}
+            disabled={isSavingStatus || isClearing}
           >
             {isSavingStatus ? (
               <LoaderCircle className="mr-1 h-4 w-4 animate-spin" />

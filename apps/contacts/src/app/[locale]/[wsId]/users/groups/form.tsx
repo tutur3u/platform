@@ -2,6 +2,10 @@
 
 import { useQueryClient } from '@tanstack/react-query';
 import { CalendarIcon } from '@tuturuuu/icons';
+import {
+  createWorkspaceUserGroup,
+  updateWorkspaceUserGroup,
+} from '@tuturuuu/internal-api/user-groups';
 import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
 import { Button } from '@tuturuuu/ui/button';
 import { Calendar } from '@tuturuuu/ui/calendar';
@@ -107,32 +111,28 @@ export default function UserGroupForm({
 
   const onSubmit = async (data: z.infer<typeof FormSchema>) => {
     try {
-      const res = await fetch(
-        data.id
-          ? `/api/v1/workspaces/${wsId}/user-groups/${data.id}`
-          : `/api/v1/workspaces/${wsId}/user-groups`,
-        {
-          method: data.id ? 'PUT' : 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(data),
-        }
-      );
+      const payload = {
+        name: data.name,
+        is_guest: data.is_guest,
+        starting_date: data.starting_date?.toISOString() ?? null,
+        ending_date: data.ending_date?.toISOString() ?? null,
+        notes: data.notes,
+      };
 
-      if (res.ok) {
-        onFinish?.(data);
-        queryClient.invalidateQueries({
-          queryKey: ['workspace-user-groups', wsId],
-        });
-        queryClient.invalidateQueries({
-          queryKey: ['workspace-user-groups-infinite', wsId],
-        });
-        router.refresh();
+      if (data.id) {
+        await updateWorkspaceUserGroup(wsId, data.id, payload);
       } else {
-        const errorData = await res.json();
-        toast.error(errorData.message);
+        await createWorkspaceUserGroup(wsId, payload);
       }
+
+      onFinish?.(data);
+      queryClient.invalidateQueries({
+        queryKey: ['workspace-user-groups', wsId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['workspace-user-groups-infinite', wsId],
+      });
+      router.refresh();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : String(error));
     }

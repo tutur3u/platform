@@ -31,6 +31,10 @@ const contactsOwnedRouteFiles = [
   '[groupId]/posts/route.ts',
   '[groupId]/posts/[postId]/route.ts',
   '[groupId]/posts/[postId]/status/route.ts',
+  '[groupId]/group-checks/route.ts',
+  '[groupId]/group-checks/[postId]/route.ts',
+  '[groupId]/group-checks/[postId]/logs/route.ts',
+  '[groupId]/group-checks/[postId]/email/route.ts',
   'activity-logs/route.ts',
   'sessions/route.ts',
   'sessions/[sessionId]/route.ts',
@@ -65,10 +69,18 @@ describe('Contacts user-group API ownership', () => {
   });
 
   it.each([
+    ['route.ts', ['GET', 'POST']],
+    ['[groupId]/route.ts', ['GET', 'PUT', 'DELETE']],
+    ['[groupId]/members/route.ts', ['GET', 'POST']],
+    ['[groupId]/members/[userId]/route.ts', ['DELETE']],
     ['[groupId]/posts/route.ts', ['GET', 'POST']],
     ['[groupId]/posts/[postId]/route.ts', ['PUT', 'DELETE']],
     ['[groupId]/posts/[postId]/status/route.ts', ['GET']],
-  ] as const)('exports the expected post methods from %s', (relativePath, methods) => {
+    ['[groupId]/group-checks/route.ts', ['GET', 'POST']],
+    ['[groupId]/group-checks/[postId]/route.ts', ['PUT', 'DELETE']],
+    ['[groupId]/group-checks/[postId]/logs/route.ts', ['GET']],
+    ['[groupId]/group-checks/[postId]/email/route.ts', ['POST']],
+  ] as const)('exports the expected CRUD methods from %s', (relativePath, methods) => {
     const routePath = resolve(import.meta.dirname, relativePath);
     const source = readFileSync(routePath, 'utf8');
 

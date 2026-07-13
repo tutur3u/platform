@@ -5899,15 +5899,22 @@
     "tutoring": "Phụ đạo"
   },
   "ws_post_details": {
+    "bulk_update_error": "Không thể cập nhật trạng thái hoàn thành. Vui lòng thử lại.",
     "check_all": "Đã kiểm tra tất cả",
+    "check_all_success": "Đã đánh dấu tất cả thành viên là hoàn thành",
     "completed": "Hoàn thành",
     "history": "Lịch sử",
     "history_description": "Mọi thay đổi hoàn thành của bài đăng này, mới nhất trước.",
     "history_empty": "Chưa ghi nhận thay đổi nào.",
     "reset_check": "Đặt lại",
     "reset_check_description": "Đưa thành viên này về trạng thái chưa xử lý (xóa dấu hoàn thành)",
+    "reset_check_error": "Không thể đặt lại trạng thái hoàn thành. Vui lòng thử lại.",
+    "reset_check_success": "Đã đặt lại trạng thái hoàn thành",
+    "status_save_error": "Không thể lưu trạng thái hoàn thành. Vui lòng thử lại.",
+    "status_save_success": "Đã lưu trạng thái hoàn thành",
     "uncheck_all": "Bỏ đánh dấu tất cả",
-    "uncheck_all_description": "Đưa tất cả thành viên về trạng thái chưa xử lý"
+    "uncheck_all_description": "Đưa tất cả thành viên về trạng thái chưa xử lý",
+    "uncheck_all_success": "Đã đưa tất cả thành viên về trạng thái chưa xử lý"
   },
   "ws-ai-workflows": {
     "include_module_content": "Bao gồm nội dung mô-đun",

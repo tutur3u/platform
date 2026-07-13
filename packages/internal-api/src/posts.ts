@@ -9,6 +9,104 @@ export interface ForceSendWorkspacePostEmailPayload {
   userId: string;
 }
 
+export interface UserGroupPostCheckPayload {
+  user_id: string;
+  is_completed: boolean;
+  notes?: string | null;
+}
+
+export interface CreateUserGroupPostCheckPayload
+  extends UserGroupPostCheckPayload {
+  post_id: string;
+}
+
+export interface UserGroupPostCheckLogEntry {
+  id: string;
+  post_id: string;
+  user_id: string;
+  previous_is_completed: boolean | null;
+  new_is_completed: boolean | null;
+  changed_by: string | null;
+  created_at: string;
+}
+
+function userGroupPostChecksPath(
+  workspaceId: string,
+  groupId: string,
+  postId?: string
+) {
+  const collectionPath = `/api/v1/workspaces/${encodePathSegment(workspaceId)}/user-groups/${encodePathSegment(groupId)}/group-checks`;
+  return postId
+    ? `${collectionPath}/${encodePathSegment(postId)}`
+    : collectionPath;
+}
+
+export function createUserGroupPostCheck(
+  workspaceId: string,
+  groupId: string,
+  payload: CreateUserGroupPostCheckPayload,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<{ message: string }>(
+    userGroupPostChecksPath(workspaceId, groupId),
+    {
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+      headers: { 'Content-Type': 'application/json' },
+      method: 'POST',
+    }
+  );
+}
+
+export function updateUserGroupPostChecks(
+  workspaceId: string,
+  groupId: string,
+  postId: string,
+  payload: UserGroupPostCheckPayload | UserGroupPostCheckPayload[],
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<{ message: string }>(
+    userGroupPostChecksPath(workspaceId, groupId, postId),
+    {
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+      headers: { 'Content-Type': 'application/json' },
+      method: 'PUT',
+    }
+  );
+}
+
+export function clearUserGroupPostChecks(
+  workspaceId: string,
+  groupId: string,
+  postId: string,
+  userIds: string[],
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<{ message: string }>(
+    userGroupPostChecksPath(workspaceId, groupId, postId),
+    {
+      body: JSON.stringify({ user_ids: userIds }),
+      cache: 'no-store',
+      headers: { 'Content-Type': 'application/json' },
+      method: 'DELETE',
+    }
+  );
+}
+
+export function listUserGroupPostCheckLogs(
+  workspaceId: string,
+  groupId: string,
+  postId: string,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<{
+    logs: UserGroupPostCheckLogEntry[];
+  }>(`${userGroupPostChecksPath(workspaceId, groupId, postId)}/logs`, {
+    cache: 'no-store',
+  });
+}
+
 export interface GetWorkspacePostsQuery {
   page?: number;
   pageSize?: number;

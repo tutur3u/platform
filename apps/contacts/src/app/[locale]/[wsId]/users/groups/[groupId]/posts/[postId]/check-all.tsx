@@ -1,11 +1,16 @@
 'use client';
 
+import { useMutation } from '@tanstack/react-query';
 import { CheckCheck, RotateCcw } from '@tuturuuu/icons';
+import {
+  clearUserGroupPostChecks,
+  updateUserGroupPostChecks,
+} from '@tuturuuu/internal-api/posts';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Button } from '@tuturuuu/ui/button';
+import { toast } from '@tuturuuu/ui/sonner';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
 
 export function CheckAll({
   wsId,
@@ -25,58 +30,49 @@ export function CheckAll({
   const t = useTranslations();
   const router = useRouter();
 
-  const [loading, setLoading] = useState(false);
-
-  const endpoint = `/api/v1/workspaces/${wsId}/user-groups/${groupId}/group-checks/${postId}`;
-
-  const handleSubmit = async () => {
-    if (loading || !canUpdateUserGroupsPosts) return;
-    setLoading(true);
-
-    const response = await fetch(endpoint, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(
-        users.map((user) => ({
-          post_id: postId,
-          user_id: user.id,
-          is_completed: true,
-        }))
-      ),
-    });
-
-    if (response.ok) {
+  const mutation = useMutation({
+    mutationFn: (action: 'check' | 'clear') =>
+      action === 'check'
+        ? updateUserGroupPostChecks(
+            wsId,
+            groupId,
+            postId,
+            users.map((user) => ({
+              is_completed: true,
+              user_id: user.id,
+            }))
+          )
+        : clearUserGroupPostChecks(
+            wsId,
+            groupId,
+            postId,
+            users.map((user) => user.id)
+          ),
+    onSuccess: (_, action) => {
+      toast.success(
+        t(
+          action === 'check'
+            ? 'ws_post_details.check_all_success'
+            : 'ws_post_details.uncheck_all_success'
+        )
+      );
       router.refresh();
-    }
+    },
+    onError: (error) => {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : t('ws_post_details.bulk_update_error')
+      );
+    },
+  });
 
-    setLoading(false);
-  };
-
-  const handleUncheckAll = async () => {
-    if (loading || !canUpdateUserGroupsPosts) return;
-    setLoading(true);
-
-    const response = await fetch(endpoint, {
-      method: 'DELETE',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ user_ids: users.map((user) => user.id) }),
-    });
-
-    if (response.ok) {
-      router.refresh();
-    }
-
-    setLoading(false);
-  };
+  const loading = mutation.isPending;
 
   return (
     <div className="flex flex-wrap gap-2">
       <Button
-        onClick={handleSubmit}
+        onClick={() => mutation.mutate('check')}
         disabled={loading || completed || !canUpdateUserGroupsPosts}
       >
         <CheckCheck className="mr-1" />
@@ -85,7 +81,7 @@ export function CheckAll({
           : t('ws_post_details.check_all')}
       </Button>
       <Button
-        onClick={handleUncheckAll}
+        onClick={() => mutation.mutate('clear')}
         disabled={loading || !canUpdateUserGroupsPosts}
         variant="outline"
         title={t('ws_post_details.uncheck_all_description')}

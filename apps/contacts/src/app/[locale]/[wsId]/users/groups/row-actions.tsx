@@ -11,6 +11,10 @@ import {
   RotateCcw,
   Trash2,
 } from '@tuturuuu/icons';
+import {
+  deleteWorkspaceUserGroup,
+  updateWorkspaceUserGroup,
+} from '@tuturuuu/internal-api/user-groups';
 import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
 import {
   AlertDialog,
@@ -66,30 +70,20 @@ export function UserGroupRowActions({
   };
 
   const toggleArchiveUserGroup = async () => {
+    if (!data.id || !data.ws_id) return;
     setIsArchiving(true);
 
     try {
-      const res = await fetch(
-        `/api/v1/workspaces/${data.ws_id}/user-groups/${data.id}`,
-        {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ archived: !data.archived }),
-        }
+      await updateWorkspaceUserGroup(data.ws_id, data.id, {
+        archived: !data.archived,
+      });
+      toast.success(
+        data.archived
+          ? t('ws-user-groups.unarchive_success')
+          : t('ws-user-groups.archive_success')
       );
-
-      if (res.ok) {
-        toast.success(
-          data.archived
-            ? t('ws-user-groups.unarchive_success')
-            : t('ws-user-groups.archive_success')
-        );
-        invalidateGroupQueries();
-        router.refresh();
-      } else {
-        const responseData = await res.json();
-        toast.error(responseData.message);
-      }
+      invalidateGroupQueries();
+      router.refresh();
     } catch (error) {
       console.error(error);
       toast.error(t('common.error'));
@@ -99,25 +93,15 @@ export function UserGroupRowActions({
   };
 
   const deleteUserGroup = async () => {
+    if (!data.id || !data.ws_id) return;
     setIsDeleting(true);
 
     try {
-      const res = await fetch(
-        `/api/v1/workspaces/${data.ws_id}/user-groups/${data.id}`,
-        {
-          method: 'DELETE',
-        }
-      );
-
-      if (res.ok) {
-        toast.success(t('ws-user-groups.delete_success'));
-        setShowDeleteDialog(false);
-        invalidateGroupQueries();
-        router.refresh();
-      } else {
-        const data = await res.json();
-        toast.error(data.message);
-      }
+      await deleteWorkspaceUserGroup(data.ws_id, data.id);
+      toast.success(t('ws-user-groups.delete_success'));
+      setShowDeleteDialog(false);
+      invalidateGroupQueries();
+      router.refresh();
     } catch (error) {
       console.error(error);
       toast.error(t('common.error'));

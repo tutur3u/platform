@@ -2,6 +2,12 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { User, X } from '@tuturuuu/icons';
+import {
+  listWorkspaceUserGroupMembers,
+  removeWorkspaceUserGroupMember,
+  upsertWorkspaceUserGroupMembers,
+} from '@tuturuuu/internal-api';
+import { listWorkspaceBasicUsers } from '@tuturuuu/internal-api/users';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
@@ -31,16 +37,13 @@ export default function GroupMemberForm({
   const workspaceMembersQuery = useQuery({
     queryKey: ['workspaces', wsId, 'user-groups', 'members', { query }],
     queryFn: async (): Promise<{ data: WorkspaceUser[]; count: number }> => {
-      const searchParams = new URLSearchParams({
+      return listWorkspaceBasicUsers(wsId, {
+        limit: 100,
         q: query,
-        limit: '100',
-      });
-      const res = await fetch(
-        `/api/v1/workspaces/${wsId}/users?${searchParams.toString()}`,
-        { cache: 'no-store' }
-      );
-      if (!res.ok) throw new Error('Failed to fetch workspace users');
-      return await res.json();
+      }) as Promise<{
+        count: number;
+        data: WorkspaceUser[];
+      }>;
     },
   });
 
@@ -55,15 +58,13 @@ export default function GroupMemberForm({
       { query },
     ],
     queryFn: async (): Promise<{ data: WorkspaceUser[]; count: number }> => {
-      const searchParams = new URLSearchParams({
-        limit: '100',
+      const payload = await listWorkspaceUserGroupMembers(wsId, groupId, {
+        limit: 100,
       });
-      const res = await fetch(
-        `/api/v1/workspaces/${wsId}/user-groups/${groupId}/members?${searchParams.toString()}`,
-        { cache: 'no-store' }
-      );
-      if (!res.ok) throw new Error('Failed to fetch group members');
-      return await res.json();
+      return {
+        count: payload.count ?? payload.data.length,
+        data: payload.data as WorkspaceUser[],
+      };
     },
     enabled: !!groupId,
   });
@@ -72,35 +73,15 @@ export default function GroupMemberForm({
   const groupUsers = groupMembersQuery.data?.data || [];
 
   const handleNewMembers = async (memberIds: string[]) => {
-    const res = await fetch(
-      `/api/v1/workspaces/${wsId}/user-groups/${groupId}/members`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ memberIds }),
-      }
-    );
-
-    if (res.ok) {
-      groupMembersQuery.refetch();
-      router.refresh();
-    }
+    await upsertWorkspaceUserGroupMembers(wsId, groupId, { memberIds });
+    groupMembersQuery.refetch();
+    router.refresh();
   };
 
   const handleRemoveMember = async (memberId: string) => {
-    const res = await fetch(
-      `/api/v1/workspaces/${wsId}/user-groups/${groupId}/members/${memberId}`,
-      {
-        method: 'DELETE',
-      }
-    );
-
-    if (res.ok) {
-      groupMembersQuery.refetch();
-      router.refresh();
-    }
+    await removeWorkspaceUserGroupMember(wsId, groupId, memberId);
+    groupMembersQuery.refetch();
+    router.refresh();
   };
 
   return (

@@ -3,12 +3,14 @@ import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Badge } from '@tuturuuu/ui/badge';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
+import { Skeleton } from '@tuturuuu/ui/skeleton';
 import { format } from 'date-fns';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { connection } from 'next/server';
 import { getTranslations } from 'next-intl/server';
+import { Suspense } from 'react';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
 import { getContactsWorkspacePermissions } from '@/lib/workspace';
 import { CheckAll } from './check-all';
@@ -38,7 +40,15 @@ interface Props {
   searchParams: Promise<SearchParams>;
 }
 
-export default async function HomeworkCheck({ params, searchParams }: Props) {
+export default function HomeworkCheck(props: Props) {
+  return (
+    <Suspense fallback={<PostDetailsSkeleton />}>
+      <HomeworkCheckContent {...props} />
+    </Suspense>
+  );
+}
+
+async function HomeworkCheckContent({ params, searchParams }: Props) {
   await connection();
 
   return (
@@ -248,5 +258,31 @@ export default async function HomeworkCheck({ params, searchParams }: Props) {
         );
       }}
     </WorkspaceWrapper>
+  );
+}
+
+function PostDetailsSkeleton() {
+  return (
+    <div className="space-y-4" aria-busy="true">
+      <div className="space-y-3 rounded-lg border p-4">
+        <Skeleton className="h-8 w-2/3 max-w-xl" />
+        <Skeleton className="h-5 w-full max-w-2xl" />
+        <div className="flex gap-2">
+          <Skeleton className="h-6 w-24" />
+          <Skeleton className="h-6 w-24" />
+          <Skeleton className="h-6 w-24" />
+        </div>
+      </div>
+      <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
+        {Array.from({ length: 4 }, (_, index) => (
+          <Skeleton key={index} className="h-28 rounded-lg" />
+        ))}
+      </div>
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+        {Array.from({ length: 4 }, (_, index) => (
+          <Skeleton key={index} className="h-48 rounded-lg" />
+        ))}
+      </div>
+    </div>
   );
 }

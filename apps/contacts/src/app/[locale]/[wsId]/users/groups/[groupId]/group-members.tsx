@@ -2,6 +2,10 @@
 
 import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import { ChevronDown, Filter, Users } from '@tuturuuu/icons';
+import {
+  listWorkspaceUserGroupMembers,
+  removeWorkspaceUserGroupMember,
+} from '@tuturuuu/internal-api';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Dialog,
@@ -62,21 +66,12 @@ export default function GroupMembers({
       ],
       queryFn: async ({ pageParam }) => {
         const from = typeof pageParam === 'number' ? pageParam : 0;
-        const response = await fetch(
-          `/api/v1/workspaces/${wsId}/user-groups/${groupId}/members?offset=${from}&limit=${pageSize}`,
-          { cache: 'no-store' }
-        );
+        const payload = await listWorkspaceUserGroupMembers(wsId, groupId, {
+          limit: pageSize,
+          offset: from,
+        });
 
-        if (!response.ok) {
-          throw new Error('Failed to fetch group members');
-        }
-
-        const payload = (await response.json()) as {
-          data?: GroupMember[];
-          next?: number;
-        };
-
-        return { items: payload.data ?? [], next: payload.next } as {
+        return { items: payload.data as GroupMember[], next: payload.next } as {
           items: GroupMember[];
           next?: number;
         };
@@ -155,15 +150,7 @@ export default function GroupMembers({
     if (!removeTarget) return;
     try {
       setRemoving(true);
-      const response = await fetch(
-        `/api/v1/workspaces/${wsId}/user-groups/${groupId}/members/${removeTarget.id}`,
-        { method: 'DELETE' }
-      );
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || 'Failed to remove group member');
-      }
+      await removeWorkspaceUserGroupMember(wsId, groupId, removeTarget.id);
       toast.success(t('common.removed'));
       setRemoveTarget(null);
       await queryClient.invalidateQueries({

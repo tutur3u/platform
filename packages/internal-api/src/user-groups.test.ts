@@ -1,6 +1,13 @@
 import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
-import { describe, expect, it } from 'vitest';
-import { getNextWorkspaceUserGroupsPageParam } from './user-groups';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import {
+  createWorkspaceUserGroup,
+  deleteWorkspaceUserGroup,
+  getNextWorkspaceUserGroupsPageParam,
+  removeWorkspaceUserGroupMember,
+  updateWorkspaceUserGroup,
+  upsertWorkspaceUserGroupMembers,
+} from './user-groups';
 
 function createGroups(count: number): UserGroup[] {
   return Array.from({ length: count }, (_, index) => ({
@@ -78,5 +85,95 @@ describe('workspace user groups pagination', () => {
         ]
       )
     ).toBeUndefined();
+  });
+});
+
+describe('workspace user group mutations', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  function createOptions() {
+    const fetchMock = vi
+      .fn()
+      .mockImplementation(() =>
+        Promise.resolve(Response.json({ message: 'success' }, { status: 200 }))
+      );
+    return {
+      fetchMock,
+      options: {
+        baseUrl: 'https://contacts.example.com',
+        fetch: fetchMock as unknown as typeof fetch,
+      },
+    };
+  }
+
+  it('targets the Contacts-owned collection for group creation', async () => {
+    const { fetchMock, options } = createOptions();
+
+    await createWorkspaceUserGroup(
+      'workspace/one',
+      { name: 'Guest group', is_guest: true },
+      options
+    );
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://contacts.example.com/api/v1/workspaces/workspace%2Fone/user-groups',
+      expect.objectContaining({
+        body: JSON.stringify({ name: 'Guest group', is_guest: true }),
+        method: 'POST',
+      })
+    );
+  });
+
+  it('uses encoded group routes for update and delete', async () => {
+    const { fetchMock, options } = createOptions();
+
+    await updateWorkspaceUserGroup(
+      'workspace-1',
+      'group/one',
+      { archived: true },
+      options
+    );
+    await deleteWorkspaceUserGroup('workspace-1', 'group/one', options);
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      'https://contacts.example.com/api/v1/workspaces/workspace-1/user-groups/group%2Fone',
+      expect.objectContaining({ method: 'PUT' })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      'https://contacts.example.com/api/v1/workspaces/workspace-1/user-groups/group%2Fone',
+      expect.objectContaining({ method: 'DELETE' })
+    );
+  });
+
+  it('uses the group roster routes for member add and remove', async () => {
+    const { fetchMock, options } = createOptions();
+
+    await upsertWorkspaceUserGroupMembers(
+      'workspace-1',
+      'group-1',
+      { memberIds: ['user-1'], role: 'TEACHER' },
+      options
+    );
+    await removeWorkspaceUserGroupMember(
+      'workspace-1',
+      'group-1',
+      'user/one',
+      options
+    );
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      'https://contacts.example.com/api/v1/workspaces/workspace-1/user-groups/group-1/members',
+      expect.objectContaining({ method: 'POST' })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      'https://contacts.example.com/api/v1/workspaces/workspace-1/user-groups/group-1/members/user%2Fone',
+      expect.objectContaining({ method: 'DELETE' })
+    );
   });
 });

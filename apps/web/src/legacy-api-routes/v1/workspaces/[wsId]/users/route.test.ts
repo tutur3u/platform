@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const createAdminClientMock = vi.fn();
 const createClientMock = vi.fn();
 const getPermissionsMock = vi.fn();
+const normalizeWorkspaceIdMock = vi.fn();
 const adminRpcMock = vi.fn();
 const guestGroupUpsertMock = vi.fn();
 const guestGroupsResultMock = vi.fn();
@@ -18,6 +19,9 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
 vi.mock('@tuturuuu/utils/workspace-helper', () => ({
   getPermissions: (...args: Parameters<typeof getPermissionsMock>) =>
     getPermissionsMock(...args),
+  normalizeWorkspaceId: (
+    ...args: Parameters<typeof normalizeWorkspaceIdMock>
+  ) => normalizeWorkspaceIdMock(...args),
 }));
 
 vi.mock('@/lib/workspace-api-key', () => ({
@@ -46,6 +50,7 @@ describe('workspace users create route audit actor forwarding', () => {
     getPermissionsMock.mockResolvedValue({
       containsPermission: (permission: string) => permission === 'create_users',
     });
+    normalizeWorkspaceIdMock.mockResolvedValue('ws-1');
     adminRpcMock.mockResolvedValue({
       data: {
         id: 'created-user-1',
@@ -107,8 +112,11 @@ describe('workspace users create route audit actor forwarding', () => {
     });
 
     expect(getPermissionsMock).toHaveBeenCalledWith({
-      wsId: 'ws-1',
       request,
+      user: {
+        id: 'actor-auth-1',
+      },
+      wsId: 'ws-1',
     });
     expect(createClientMock).toHaveBeenCalledWith(request);
     expect(adminRpcMock).toHaveBeenCalledWith(

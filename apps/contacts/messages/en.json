@@ -5899,15 +5899,22 @@
     "tutoring": "Tutoring"
   },
   "ws_post_details": {
+    "bulk_update_error": "Could not update completion statuses. Please try again.",
     "check_all": "Check all",
+    "check_all_success": "Marked all members as completed",
     "completed": "Completed",
     "history": "History",
     "history_description": "Every completion change for this post, newest first.",
     "history_empty": "No changes recorded yet.",
     "reset_check": "Reset",
     "reset_check_description": "Clear this member back to pending (removes the completion mark)",
+    "reset_check_error": "Could not reset the completion status. Please try again.",
+    "reset_check_success": "Completion status reset",
+    "status_save_error": "Could not save the completion status. Please try again.",
+    "status_save_success": "Completion status saved",
     "uncheck_all": "Uncheck all",
-    "uncheck_all_description": "Clear every member back to pending"
+    "uncheck_all_description": "Clear every member back to pending",
+    "uncheck_all_success": "Reset all members to pending"
   },
   "ws-ai-workflows": {
     "include_module_content": "Include module content",

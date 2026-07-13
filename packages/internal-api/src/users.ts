@@ -265,6 +265,30 @@ export interface ListWorkspaceBasicUsersResponse {
   data: WorkspaceBasicUserRecord[];
 }
 
+export interface WorkspaceUserMutationPayload {
+  id?: string;
+  full_name?: string | null;
+  display_name?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  gender?: string | null;
+  birthday?: string | null;
+  ethnicity?: string | null;
+  guardian?: string | null;
+  national_id?: string | null;
+  address?: string | null;
+  avatar_url?: string | null;
+  note?: string | null;
+  is_guest?: boolean;
+  archived?: boolean;
+  archived_until?: string | null;
+}
+
+export interface WorkspaceUserMutationResponse {
+  message: string;
+  warning?: string;
+}
+
 export interface WorkspaceReferralUserRecord extends WorkspaceBasicUserRecord {
   has_require_attention_feedback?: boolean;
   phone?: string | null;
@@ -676,6 +700,41 @@ export async function getWorkspaceUser(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/users/${encodePathSegment(userId)}`,
     {
       cache: 'no-store',
+    }
+  );
+}
+
+export async function createWorkspaceUser(
+  workspaceId: string,
+  payload: WorkspaceUserMutationPayload,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<WorkspaceUserMutationResponse>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/users`,
+    {
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+      headers: { 'Content-Type': 'application/json' },
+      method: 'POST',
+    }
+  );
+}
+
+export async function updateWorkspaceUser(
+  workspaceId: string,
+  userId: string,
+  payload: WorkspaceUserMutationPayload,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<WorkspaceUserMutationResponse>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/users/${encodePathSegment(userId)}`,
+    {
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+      headers: { 'Content-Type': 'application/json' },
+      method: 'PUT',
     }
   );
 }

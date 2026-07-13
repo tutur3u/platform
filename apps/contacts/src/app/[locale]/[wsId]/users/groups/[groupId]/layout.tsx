@@ -11,6 +11,7 @@ import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
 import LinkButton from '@tuturuuu/ui/custom/education/modules/link-button';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
+import { Skeleton } from '@tuturuuu/ui/skeleton';
 import {
   getUserGroupMemberships,
   verifyGroupAccess,
@@ -19,7 +20,7 @@ import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 import { notFound } from 'next/navigation';
 import { connection } from 'next/server';
 import { getTranslations } from 'next-intl/server';
-import type { ReactNode } from 'react';
+import { type ReactNode, Suspense } from 'react';
 import { getContactsWorkspacePermissions } from '@/lib/workspace';
 import GroupShareButton from './group-share-button';
 import SelectGroupGateway from './select-group-gateway';
@@ -33,7 +34,15 @@ interface LayoutProps {
   }>;
 }
 
-export default async function Layout({ children, params }: LayoutProps) {
+export default function Layout(props: LayoutProps) {
+  return (
+    <Suspense fallback={<GroupLayoutSkeleton />}>
+      <GroupLayoutContent {...props} />
+    </Suspense>
+  );
+}
+
+async function GroupLayoutContent({ children, params }: LayoutProps) {
   await connection();
 
   const { wsId: id, groupId } = await params;
@@ -146,6 +155,23 @@ export default async function Layout({ children, params }: LayoutProps) {
       <Separator className="my-4" />
       {children}
     </>
+  );
+}
+
+function GroupLayoutSkeleton() {
+  return (
+    <div className="space-y-4" aria-busy="true">
+      <div className="space-y-3 rounded-lg border p-4">
+        <Skeleton className="h-8 w-2/3 max-w-lg" />
+        <div className="flex flex-wrap gap-2">
+          {Array.from({ length: 5 }, (_, index) => (
+            <Skeleton key={index} className="h-9 w-28" />
+          ))}
+        </div>
+      </div>
+      <Separator />
+      <Skeleton className="h-80 w-full rounded-lg" />
+    </div>
   );
 }
 

@@ -2,6 +2,8 @@
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { ChevronDown, Loader2, Search, UserPlus, X } from '@tuturuuu/icons';
+import { upsertWorkspaceUserGroupMembers } from '@tuturuuu/internal-api/user-groups';
+import { listWorkspaceBasicUsers } from '@tuturuuu/internal-api/users';
 import {
   Accordion,
   AccordionContent,
@@ -80,26 +82,11 @@ export default function GroupMemberActions({
     queryKey: ['workspace-users-search', wsId, debouncedSearch, activeAction],
     queryFn: async () => {
       if (!activeAction) return [];
-      const search = new URLSearchParams({
-        limit: '50',
+      const payload = await listWorkspaceBasicUsers(wsId, {
+        limit: 50,
+        q: debouncedSearch || undefined,
       });
-      if (debouncedSearch) {
-        search.set('q', debouncedSearch);
-      }
-
-      const response = await fetch(
-        `/api/v1/workspaces/${wsId}/users?${search.toString()}`,
-        { cache: 'no-store' }
-      );
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch workspace users');
-      }
-
-      const payload = (await response.json()) as {
-        data?: WorkspaceUserLite[];
-      };
-      return payload.data ?? [];
+      return payload.data as WorkspaceUserLite[];
     },
     enabled: !!activeAction,
     placeholderData: (previousData) => previousData,
@@ -158,46 +145,20 @@ export default function GroupMemberActions({
           toast.info(t('common.no-selection'));
           return;
         }
-        const response = await fetch(
-          `/api/v1/workspaces/${wsId}/user-groups/${groupId}/members`,
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              memberIds: selectedIds,
-              role: 'STUDENT',
-            }),
-          }
-        );
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
-          throw new Error(errorData.message || 'Failed to add group members');
-        }
+        await upsertWorkspaceUserGroupMembers(wsId, groupId, {
+          memberIds: selectedIds,
+          role: 'STUDENT',
+        });
         toast.success(t('ws-user-group-details.members_added'));
       } else if (activeAction === 'add_managers') {
         if (selectedIds.length === 0) {
           toast.info(t('common.no-selection'));
           return;
         }
-        const response = await fetch(
-          `/api/v1/workspaces/${wsId}/user-groups/${groupId}/members`,
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              memberIds: selectedIds,
-              role: 'TEACHER',
-            }),
-          }
-        );
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
-          throw new Error(errorData.message || 'Failed to add group managers');
-        }
+        await upsertWorkspaceUserGroupMembers(wsId, groupId, {
+          memberIds: selectedIds,
+          role: 'TEACHER',
+        });
         toast.success(t('ws-user-group-details.managers_added'));
       }
       await queryClient.invalidateQueries({

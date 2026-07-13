@@ -2,6 +2,11 @@
 
 import { useQueryClient } from '@tanstack/react-query';
 import { Info, Loader2, UserIcon } from '@tuturuuu/icons';
+import {
+  createWorkspaceUser,
+  updateWorkspaceUser,
+  type WorkspaceUserMutationPayload,
+} from '@tuturuuu/internal-api/users';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
@@ -324,57 +329,29 @@ export default function UserForm({
         avatarUrl = await uploadImageToSupabase(file, wsId);
       }
 
-      const res = await fetch(
-        formData.id
-          ? `/api/v1/workspaces/${wsId}/users/${formData.id}`
-          : `/api/v1/workspaces/${wsId}/users`,
-        {
-          method: formData.id ? 'PUT' : 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            ...formData,
-            avatar_url: avatarUrl,
-            birthday: formData.birthday
-              ? dayjs(formData.birthday).format('YYYY/MM/DD')
-              : null,
-            archived_until: formData.archived_until
-              ? dayjs(formData.archived_until).format('YYYY/MM/DD HH:mm:ss')
-              : undefined,
-          }),
-        }
-      );
+      const payload: WorkspaceUserMutationPayload = {
+        ...formData,
+        avatar_url: avatarUrl,
+        birthday: formData.birthday
+          ? dayjs(formData.birthday).format('YYYY/MM/DD')
+          : null,
+        archived_until: formData.archived_until
+          ? dayjs(formData.archived_until).format('YYYY/MM/DD HH:mm:ss')
+          : undefined,
+      };
+      const response = formData.id
+        ? await updateWorkspaceUser(wsId, formData.id, payload)
+        : await createWorkspaceUser(wsId, payload);
 
-      if (res.ok) {
-        // Surface any server-side warnings (e.g., failed guest linking)
-        try {
-          const body = await res.json();
-          if (body?.warning) {
-            toast.warning(body.warning);
-          }
-        } catch {}
-        onFinish?.(formData);
-        onSuccess?.();
-        if (!onSuccess) {
-          queryClient.invalidateQueries({
-            queryKey: ['workspace-users', wsId],
-          });
-        }
-      } else {
-        const resData = await res.json();
-        const errorMessage =
-          resData.message ||
-          t(formData.id ? 'ws-users.failed_edit' : 'ws-users.failed_create');
-        onError?.(errorMessage);
-        if (!onError) {
-          toast.error(
-            t(formData.id ? 'ws-users.failed_edit' : 'ws-users.failed_create'),
-            {
-              description: errorMessage,
-            }
-          );
-        }
+      if (response.warning) {
+        toast.warning(response.warning);
+      }
+      onFinish?.(formData);
+      onSuccess?.();
+      if (!onSuccess) {
+        queryClient.invalidateQueries({
+          queryKey: ['workspace-users', wsId],
+        });
       }
     } catch (error) {
       const errorMessage =

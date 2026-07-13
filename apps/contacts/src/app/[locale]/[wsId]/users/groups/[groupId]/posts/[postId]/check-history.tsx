@@ -2,6 +2,10 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { History, LoaderCircle } from '@tuturuuu/icons';
+import {
+  listUserGroupPostCheckLogs,
+  type UserGroupPostCheckLogEntry,
+} from '@tuturuuu/internal-api/posts';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
@@ -16,15 +20,6 @@ import {
 import { useTranslations } from 'next-intl';
 
 type CheckState = boolean | null;
-
-interface PostCheckLogEntry {
-  id: string;
-  user_id: string;
-  previous_is_completed: CheckState;
-  new_is_completed: CheckState;
-  changed_by: string | null;
-  created_at: string;
-}
 
 function stateLabel(t: ReturnType<typeof useTranslations>, state: CheckState) {
   if (state === null) return t('ws_post_details.status_pending');
@@ -58,15 +53,10 @@ export function PostCheckHistory({
 
   const { data, isLoading, refetch, isFetching } = useQuery({
     queryKey: ['group-post-check-logs', postId],
-    queryFn: async () => {
-      const response = await fetch(
-        `/api/v1/workspaces/${wsId}/user-groups/${groupId}/group-checks/${postId}/logs`,
-        { cache: 'no-store' }
-      );
-      if (!response.ok) throw new Error('Failed to load history');
-      const json = (await response.json()) as { logs: PostCheckLogEntry[] };
-      return json.logs;
-    },
+    queryFn: () =>
+      listUserGroupPostCheckLogs(wsId, groupId, postId).then(
+        (response) => response.logs as UserGroupPostCheckLogEntry[]
+      ),
     enabled: false,
   });
 

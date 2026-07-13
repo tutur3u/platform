@@ -6,17 +6,10 @@ import {
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
-import {
-  MAX_LONG_TEXT_LENGTH,
-  MAX_MEDIUM_TEXT_LENGTH,
-  MAX_NAME_LENGTH,
-} from '@tuturuuu/utils/constants';
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { headers } from 'next/headers';
 import { type NextRequest, NextResponse } from 'next/server';
-import { z } from 'zod';
-import { syncWorkspaceUserGuestMembership } from '../../lib/user-groups/guest-membership';
 import { validateWorkspaceApiKey } from '../../lib/workspace-api-key';
+import { handleCreateWorkspaceUserRequest } from './workspace-user-create';
 
 interface Params {
   params: Promise<{
@@ -73,21 +66,6 @@ function applyPagination({
 
   query.range(safeFrom, safeFrom + safeLimit - 1);
 }
-
-const CreateUserSchema = z.object({
-  full_name: z.string().max(MAX_LONG_TEXT_LENGTH).optional(),
-  display_name: z.string().max(MAX_NAME_LENGTH).optional(),
-  email: z.email().optional(),
-  phone: z.string().max(MAX_LONG_TEXT_LENGTH).optional(),
-  gender: z.string().max(MAX_LONG_TEXT_LENGTH).optional(),
-  birthday: z.string().max(MAX_LONG_TEXT_LENGTH).nullable().optional(), // ISO string format expected
-  ethnicity: z.string().max(MAX_LONG_TEXT_LENGTH).optional(),
-  guardian: z.string().max(MAX_LONG_TEXT_LENGTH).optional(),
-  national_id: z.string().max(MAX_LONG_TEXT_LENGTH).optional(),
-  address: z.string().max(MAX_LONG_TEXT_LENGTH).optional(),
-  note: z.string().max(MAX_MEDIUM_TEXT_LENGTH).optional(),
-  is_guest: z.boolean().optional(),
-});
 
 export async function GET(req: NextRequest, { params }: Params) {
   const { wsId } = await params;
@@ -177,80 +155,12 @@ async function getDataFromSession(
   return NextResponse.json({ data: data || [], count: count ?? 0 });
 }
 
-export async function POST(req: Request, { params }: Params) {
-  const { wsId } = await params;
-  // Check permissions
-  const permissions = await getPermissions({ wsId, request: req });
-  if (!permissions) {
-    return Response.json({ error: 'Not found' }, { status: 404 });
-  }
-  const { containsPermission } = permissions;
-  if (!containsPermission('create_users')) {
-    return NextResponse.json(
-      { message: 'Insufficient permissions to create users' },
-      { status: 403 }
-    );
-  }
-
-  // Validate request body
-  const rawData = await req.json();
-  const validationResult = CreateUserSchema.safeParse(rawData);
-
-  if (!validationResult.success) {
-    return NextResponse.json(
-      {
-        message: 'Invalid request body',
-        errors: validationResult.error.issues.map((issue) => ({
-          field: issue.path.join('.'),
-          message: issue.message,
-        })),
-      },
-      { status: 400 }
-    );
-  }
-
-  const data = validationResult.data;
-
+export async function POST(req: Request, context: Params) {
   const supabase = await createClient(req);
-  const sbAdmin = await createAdminClient();
   const { user: actorUser } = await resolveAuthenticatedSessionUser(supabase);
-  // Separate control flags from user payload
-  // Do NOT allow archived or archived_until during creation
-  const { is_guest, ...userPayload } = data ?? {};
-
-  const { data: createdUser, error } = await sbAdmin.rpc(
-    'admin_create_workspace_user_with_audit_actor',
-    {
-      p_ws_id: wsId,
-      p_payload: userPayload,
-      p_actor_auth_uid: actorUser?.id ?? undefined,
-    }
-  );
-
-  if (error) {
-    console.error('Error creating workspace user:', error);
-    return NextResponse.json(
-      { message: 'Error creating workspace user' },
-      { status: 500 }
-    );
+  if (!actorUser?.id) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  let warning: string | undefined;
-  if (is_guest && createdUser?.id) {
-    warning = await syncWorkspaceUserGuestMembership({
-      isGuest: true,
-      sbAdmin,
-      userId: createdUser.id,
-      warningMessages: {
-        linkFailed: 'User created, but failed to link to guest group.',
-        noGuestGroups:
-          'User created, but no guest group found in this workspace.',
-        resolveFailed:
-          'User created, but no guest group found in this workspace.',
-      },
-      wsId,
-    });
-  }
-
-  return NextResponse.json({ message: 'success', warning });
+  return handleCreateWorkspaceUserRequest(req, context, actorUser);
 }

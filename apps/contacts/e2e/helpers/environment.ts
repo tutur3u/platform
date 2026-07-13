@@ -1,9 +1,9 @@
-const LOCAL_CONTACTS_URL = 'http://127.0.0.1:7827';
+const LOCAL_CONTACTS_URL = 'http://localhost:7827';
 const LOCAL_SUPABASE_URL = 'http://127.0.0.1:8001';
 
 const SAFE_CONTACTS_ORIGINS = new Set([
   LOCAL_CONTACTS_URL,
-  'http://localhost:7827',
+  'http://127.0.0.1:7827',
   'https://contacts.tuturuuu.localhost',
   'https://contacts.tuturuuu.localhost:1355',
 ]);

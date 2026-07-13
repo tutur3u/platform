@@ -1,6 +1,10 @@
 import { randomUUID } from 'node:crypto';
 import { expect, test } from '@playwright/test';
-import { createAppSessionToken } from '@tuturuuu/auth/app-session';
+import {
+  APP_SESSION_COOKIE_NAME,
+  createAppSessionToken,
+  WEB_APP_SESSION_COOKIE_NAME,
+} from '@tuturuuu/auth/app-session';
 import { assertSafeContactsE2EEnvironment } from './helpers/environment';
 
 const ROOT_WORKSPACE_ID = '00000000-0000-0000-0000-000000000000';
@@ -34,7 +38,7 @@ function serviceHeaders(schema: 'private' | 'public' = 'public') {
 }
 
 test.describe('Contacts group posts API', () => {
-  const { supabaseUrl } = assertSafeContactsE2EEnvironment();
+  const { contactsUrl, supabaseUrl } = assertSafeContactsE2EEnvironment();
 
   test('rejects an unauthenticated daily report creation', async ({
     request,
@@ -51,7 +55,8 @@ test.describe('Contacts group posts API', () => {
     await expect(response.json()).resolves.toEqual({ error: 'Unauthorized' });
   });
 
-  test('creates, lists, updates, reads status, and deletes a daily report', async ({
+  test('creates a report and persists completed, incomplete, and reset states from the UI', async ({
+    page,
     request,
   }) => {
     const workspaceId = randomUUID();
@@ -122,6 +127,20 @@ test.describe('Contacts group posts API', () => {
       );
       expect(fixtureResponse.status()).toBe(201);
 
+      const groupMemberResponse = await request.post(
+        `${supabaseUrl}/rest/v1/workspace_user_groups_users`,
+        {
+          data: {
+            group_id: groupId,
+            role: 'STUDENT',
+            user_id: virtualUserId,
+          },
+          failOnStatusCode: false,
+          headers: serviceHeaders(),
+        }
+      );
+      expect(groupMemberResponse.status()).toBe(201);
+
       const createResponse = await request.post(
         `/api/v1/workspaces/${workspaceId}/user-groups/${groupId}/posts`,
         {
@@ -170,6 +189,130 @@ test.describe('Contacts group posts API', () => {
         })
       );
 
+      await page.context().addCookies([
+        {
+          httpOnly: true,
+          name: APP_SESSION_COOKIE_NAME,
+          sameSite: 'Lax',
+          url: contactsUrl,
+          value: token,
+        },
+        {
+          httpOnly: true,
+          name: WEB_APP_SESSION_COOKIE_NAME,
+          sameSite: 'Lax',
+          url: contactsUrl,
+          value: token,
+        },
+      ]);
+      await page.context().setExtraHTTPHeaders(appHeaders);
+      await page.goto(
+        `/${workspaceId}/users/groups/${groupId}/posts/${postId}`
+      );
+      await expect(
+        page.getByRole('heading', { exact: true, level: 2, name: title })
+      ).toBeVisible();
+
+      const recipientCard = () =>
+        page
+          .locator('[data-slot="card"]')
+          .filter({ hasText: 'Contacts E2E Actor' });
+      await expect(recipientCard()).toHaveCount(1);
+
+      const createCheckResponse = page.waitForResponse(
+        (response) =>
+          response.request().method() === 'POST' &&
+          response
+            .url()
+            .endsWith(
+              `/api/v1/workspaces/${workspaceId}/user-groups/${groupId}/group-checks`
+            )
+      );
+      await recipientCard()
+        .getByRole('button', { exact: true, name: 'Completed' })
+        .click();
+      expect((await createCheckResponse).status()).toBe(200);
+      await expect(page.getByText('Completion status saved')).toBeVisible();
+
+      const readChecks = async () => {
+        const response = await request.get(
+          `/api/v1/workspaces/${workspaceId}/user-groups/${groupId}/group-checks?postId=${postId}`,
+          { failOnStatusCode: false, headers: appHeaders }
+        );
+        expect(response.status()).toBe(200);
+        return (await response.json()) as Array<{
+          is_completed: boolean;
+          user_id: string;
+        }>;
+      };
+
+      await expect
+        .poll(async () => (await readChecks())[0]?.is_completed)
+        .toBe(true);
+      await expect(
+        recipientCard().getByRole('button', { exact: true, name: 'Reset' })
+      ).toBeVisible();
+
+      const updateCheckResponse = page.waitForResponse(
+        (response) =>
+          response.request().method() === 'PUT' &&
+          response
+            .url()
+            .endsWith(
+              `/api/v1/workspaces/${workspaceId}/user-groups/${groupId}/group-checks/${postId}`
+            )
+      );
+      await recipientCard()
+        .getByRole('button', { exact: true, name: 'Incomplete' })
+        .click();
+      expect((await updateCheckResponse).status()).toBe(200);
+      await expect
+        .poll(async () => (await readChecks())[0]?.is_completed)
+        .toBe(false);
+
+      const historyResponse = await request.get(
+        `/api/v1/workspaces/${workspaceId}/user-groups/${groupId}/group-checks/${postId}/logs`,
+        { failOnStatusCode: false, headers: appHeaders }
+      );
+      expect(historyResponse.status()).toBe(200);
+      const history = (await historyResponse.json()) as {
+        logs: Array<{
+          new_is_completed: boolean | null;
+          previous_is_completed: boolean | null;
+          user_id: string;
+        }>;
+      };
+      expect(history.logs).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            new_is_completed: true,
+            previous_is_completed: null,
+            user_id: virtualUserId,
+          }),
+          expect.objectContaining({
+            new_is_completed: false,
+            previous_is_completed: true,
+            user_id: virtualUserId,
+          }),
+        ])
+      );
+
+      const resetCheckResponse = page.waitForResponse(
+        (response) =>
+          response.request().method() === 'DELETE' &&
+          response
+            .url()
+            .endsWith(
+              `/api/v1/workspaces/${workspaceId}/user-groups/${groupId}/group-checks/${postId}`
+            )
+      );
+      await recipientCard()
+        .getByRole('button', { exact: true, name: 'Reset' })
+        .click();
+      expect((await resetCheckResponse).status()).toBe(200);
+      await expect.poll(async () => (await readChecks()).length).toBe(0);
+      await expect(page.getByText('Completion status reset')).toBeVisible();
+
       const deleteResponse = await request.delete(
         `/api/v1/workspaces/${workspaceId}/user-groups/${groupId}/posts/${postId}`,
         { failOnStatusCode: false, headers: appHeaders }
@@ -186,6 +329,10 @@ test.describe('Contacts group posts API', () => {
           }
         );
       }
+      await request.delete(
+        `${supabaseUrl}/rest/v1/workspace_user_groups_users?group_id=eq.${groupId}`,
+        { failOnStatusCode: false, headers: serviceHeaders() }
+      );
       await request.delete(
         `${supabaseUrl}/rest/v1/workspace_user_groups?id=eq.${groupId}`,
         { failOnStatusCode: false, headers: serviceHeaders() }

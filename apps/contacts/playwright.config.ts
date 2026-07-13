@@ -7,7 +7,7 @@ if (existsSync(rootEnvFile)) {
   process.loadEnvFile(rootEnvFile);
 }
 
-const baseURL = process.env.CONTACTS_E2E_BASE_URL ?? 'http://127.0.0.1:7827';
+const baseURL = process.env.CONTACTS_E2E_BASE_URL ?? 'http://localhost:7827';
 
 export default defineConfig({
   testDir: './e2e',

@@ -27,7 +27,15 @@ interface LayoutProps {
   children: ReactNode;
 }
 
-export default async function Layout({ children, params }: LayoutProps) {
+export default function Layout(props: LayoutProps) {
+  return (
+    <Suspense fallback={<WorkspaceLayoutSkeleton />}>
+      <WorkspaceLayoutContent {...props} />
+    </Suspense>
+  );
+}
+
+async function WorkspaceLayoutContent({ children, params }: LayoutProps) {
   await connection();
 
   const { wsId: id } = await params;
@@ -108,5 +116,27 @@ export default async function Layout({ children, params }: LayoutProps) {
         {children}
       </Structure>
     </SidebarProvider>
+  );
+}
+
+function WorkspaceLayoutSkeleton() {
+  return (
+    <div className="grid min-h-screen grid-cols-[4rem_1fr] md:grid-cols-[18rem_1fr]">
+      <div className="border-r bg-foreground/[0.02] p-3" aria-hidden="true">
+        <div className="h-10 animate-pulse rounded-lg bg-foreground/10" />
+        <div className="mt-6 space-y-3">
+          {Array.from({ length: 8 }, (_, index) => (
+            <div
+              key={index}
+              className="h-9 animate-pulse rounded-lg bg-foreground/5"
+            />
+          ))}
+        </div>
+      </div>
+      <div className="space-y-4 p-4" aria-busy="true">
+        <div className="h-14 animate-pulse rounded-lg bg-foreground/5" />
+        <div className="h-80 animate-pulse rounded-lg bg-foreground/5" />
+      </div>
+    </div>
   );
 }

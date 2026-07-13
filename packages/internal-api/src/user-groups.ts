@@ -158,16 +158,60 @@ export async function listWorkspaceUserGroupsByIds(
 
 export interface UpdateWorkspaceUserGroupPayload {
   name?: string;
+  is_guest?: boolean | null;
   starting_date?: string | null;
   ending_date?: string | null;
   notes?: string | null;
+  description?: string | null;
   archived?: boolean;
+  is_course_published?: boolean;
 }
 
 export type UpdateWorkspaceUserGroupResponse = {
   data?: UserGroup;
   message?: string;
 };
+
+export interface CreateWorkspaceUserGroupPayload {
+  name: string;
+  is_guest?: boolean;
+  starting_date?: string | null;
+  ending_date?: string | null;
+  notes?: string;
+}
+
+export interface UpsertWorkspaceUserGroupMembersPayload {
+  memberIds: string[];
+  role?: 'STUDENT' | 'TEACHER';
+}
+
+export type WorkspaceUserGroupMutationResponse = {
+  message: string;
+};
+
+function workspaceUserGroupPath(workspaceId: string, groupId?: string) {
+  const collectionPath = `/api/v1/workspaces/${encodePathSegment(workspaceId)}/user-groups`;
+  return groupId
+    ? `${collectionPath}/${encodePathSegment(groupId)}`
+    : collectionPath;
+}
+
+export function createWorkspaceUserGroup(
+  workspaceId: string,
+  payload: CreateWorkspaceUserGroupPayload,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<WorkspaceUserGroupMutationResponse>(
+    workspaceUserGroupPath(workspaceId),
+    {
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+      headers: { 'Content-Type': 'application/json' },
+      method: 'POST',
+    }
+  );
+}
 
 /**
  * Partial update of a workspace user group via
@@ -183,7 +227,7 @@ export function updateWorkspaceUserGroup(
 ) {
   const client = getInternalApiClient(options);
   return client.json<UpdateWorkspaceUserGroupResponse>(
-    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/user-groups/${encodePathSegment(groupId)}`,
+    workspaceUserGroupPath(workspaceId, groupId),
     {
       cache: 'no-store',
       method: 'PUT',
@@ -192,6 +236,49 @@ export function updateWorkspaceUserGroup(
       },
       body: JSON.stringify(payload),
     }
+  );
+}
+
+export function deleteWorkspaceUserGroup(
+  workspaceId: string,
+  groupId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<WorkspaceUserGroupMutationResponse>(
+    workspaceUserGroupPath(workspaceId, groupId),
+    { cache: 'no-store', method: 'DELETE' }
+  );
+}
+
+export function upsertWorkspaceUserGroupMembers(
+  workspaceId: string,
+  groupId: string,
+  payload: UpsertWorkspaceUserGroupMembersPayload,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<WorkspaceUserGroupMutationResponse>(
+    `${workspaceUserGroupPath(workspaceId, groupId)}/members`,
+    {
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+      headers: { 'Content-Type': 'application/json' },
+      method: 'POST',
+    }
+  );
+}
+
+export function removeWorkspaceUserGroupMember(
+  workspaceId: string,
+  groupId: string,
+  userId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<WorkspaceUserGroupMutationResponse>(
+    `${workspaceUserGroupPath(workspaceId, groupId)}/members/${encodePathSegment(userId)}`,
+    { cache: 'no-store', method: 'DELETE' }
   );
 }
 
