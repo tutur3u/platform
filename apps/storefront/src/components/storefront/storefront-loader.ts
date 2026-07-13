@@ -4,9 +4,12 @@ import {
   demoPublicStorefront,
 } from './storefront-fixture';
 
-export async function getOptionalInventoryPublicStorefront(storeSlug: string) {
+export async function getOptionalInventoryPublicStorefront(
+  storeSlug: string,
+  options?: Parameters<typeof getInventoryPublicStorefront>[1]
+) {
   try {
-    return await getInventoryPublicStorefront(storeSlug);
+    return await getInventoryPublicStorefront(storeSlug, options);
   } catch (error) {
     if (!isNotFoundError(error)) throw error;
     if (storeSlug === DEMO_STOREFRONT_SLUG) return demoPublicStorefront;

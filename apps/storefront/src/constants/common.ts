@@ -14,6 +14,7 @@ export {
 
 export const PORT = process.env.PORT || 7822;
 export const CENTRAL_PORT = process.env.CENTRAL_PORT || 7803;
+export const INVENTORY_PORT = process.env.INVENTORY_PORT || 7815;
 
 const DEFAULT_STOREFRONT_APP_URL =
   process.env.NODE_ENV === 'production'
@@ -24,6 +25,11 @@ const DEFAULT_WEB_APP_URL =
   process.env.NODE_ENV === 'production'
     ? 'https://tuturuuu.com'
     : getLocalInternalAppUrl('platform', `http://localhost:${CENTRAL_PORT}`);
+
+const DEFAULT_INVENTORY_APP_URL =
+  process.env.NODE_ENV === 'production'
+    ? 'https://inventory.tuturuuu.com'
+    : getLocalInternalAppUrl('inventory', `http://localhost:${INVENTORY_PORT}`);
 
 export const STOREFRONT_APP_URL = resolveInternalAppUrl({
   appName: 'storefront',
@@ -38,6 +44,15 @@ export const STOREFRONT_APP_URL = resolveInternalAppUrl({
 
 export const BASE_URL = STOREFRONT_APP_URL;
 export const API_URL = process.env.API_URL || `${BASE_URL}/api`;
+
+export const INVENTORY_APP_URL = resolveInternalAppUrl({
+  appName: 'inventory',
+  candidates: [
+    process.env.INVENTORY_APP_URL,
+    process.env.NEXT_PUBLIC_INVENTORY_APP_URL,
+  ],
+  fallback: DEFAULT_INVENTORY_APP_URL,
+});
 
 export const WEB_APP_URL = resolveInternalAppUrl({
   appName: 'platform',

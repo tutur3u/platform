@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   createDemoCheckoutResponse,
@@ -53,8 +55,32 @@ describe('getOptionalInventoryPublicStorefront', () => {
     };
     getInventoryPublicStorefrontMock.mockResolvedValue(realPayload);
 
-    await expect(getOptionalInventoryPublicStorefront('demo')).resolves.toBe(
-      realPayload
+    await expect(
+      getOptionalInventoryPublicStorefront('demo', {
+        baseUrl: 'https://inventory.example.com',
+      })
+    ).resolves.toBe(realPayload);
+    expect(getInventoryPublicStorefrontMock).toHaveBeenCalledWith('demo', {
+      baseUrl: expect.stringContaining('inventory'),
+    });
+  });
+
+  it('proxies browser inventory APIs to the Inventory satellite', () => {
+    const storefrontRoot = process.cwd().endsWith('/apps/storefront')
+      ? process.cwd()
+      : join(process.cwd(), 'apps/storefront');
+    const nextConfig = readFileSync(
+      join(storefrontRoot, 'next.config.ts'),
+      'utf8'
+    );
+
+    expect(nextConfig).toContain("source: '/api/v1/inventory/:path*'");
+    expect(nextConfig).toContain(
+      [
+        'destination: `',
+        '${',
+        'INVENTORY_APP_URL}/api/v1/inventory/:path*`',
+      ].join('')
     );
   });
 

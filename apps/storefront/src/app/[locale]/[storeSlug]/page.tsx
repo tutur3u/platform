@@ -1,6 +1,7 @@
 import { getStorefrontBuyerDefaults } from '@/components/storefront/buyer-defaults';
 import { StorefrontClient } from '@/components/storefront/storefront-client';
 import { getOptionalInventoryPublicStorefront } from '@/components/storefront/storefront-loader';
+import { INVENTORY_APP_URL } from '@/constants/common';
 import { StorefrontHeaderActions } from '../storefront-header-actions';
 
 export default async function StorefrontPage({
@@ -13,7 +14,9 @@ export default async function StorefrontPage({
   // Falls back to null (client query still runs) if the server fetch fails.
   const [buyerDefaults, initialStorefront] = await Promise.all([
     getStorefrontBuyerDefaults(),
-    getOptionalInventoryPublicStorefront(storeSlug).catch(() => null),
+    getOptionalInventoryPublicStorefront(storeSlug, {
+      baseUrl: INVENTORY_APP_URL,
+    }).catch(() => null),
   ]);
 
   return (
