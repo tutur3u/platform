@@ -32,6 +32,24 @@ function toThread(row: AnyRecord): MailThread {
   };
 }
 
+export function getThreadUnreadCounts(
+  rows: AnyRecord[],
+  states: Map<string, AnyRecord>
+) {
+  const counts = new Map<string, number>();
+  for (const row of rows) {
+    if (
+      row.direction !== 'inbound' ||
+      !row.thread_id ||
+      states.get(row.id)?.read_at
+    ) {
+      continue;
+    }
+    counts.set(row.thread_id, (counts.get(row.thread_id) ?? 0) + 1);
+  }
+  return counts;
+}
+
 async function loadThread(
   admin: AnyRecord,
   mailboxId: string,
@@ -129,18 +147,27 @@ export async function listMailThreads({
   const messageIds = threadIds
     .map((threadId) => latestByThread.get(threadId)?.id as string | undefined)
     .filter((id): id is string => Boolean(id));
+  const visibleThreadIds = new Set(threadIds);
+  const visibleRows = rows.filter((row: AnyRecord) =>
+    visibleThreadIds.has(row.thread_id)
+  );
   const [{ data: threads, error }, states, labels] = await Promise.all([
     privateTable(access.admin, 'mail_threads')
       .select('*')
       .eq('mailbox_id', mailboxId)
       .in('id', threadIds),
-    getStatesByMessageId(access.admin, messageIds, ctx.user.id),
+    getStatesByMessageId(
+      access.admin,
+      visibleRows.map((row: AnyRecord) => row.id),
+      ctx.user.id
+    ),
     getLabelsByMessageId(access.admin, messageIds),
   ]);
   if (error) throw new Error(`Failed to list mail threads: ${error.message}`);
   const threadById = new Map<string, AnyRecord>(
     (threads ?? []).map((thread: AnyRecord) => [thread.id as string, thread])
   );
+  const unreadByThread = getThreadUnreadCounts(visibleRows, states);
   const summaries: MailThreadSummary[] = threadIds.flatMap((threadId) => {
     const thread = threadById.get(threadId);
     const message = latestByThread.get(threadId);
@@ -156,6 +183,7 @@ export async function listMailThreads({
         participants: [...(participantsByThread.get(threadId)?.values() ?? [])],
         starred: Boolean(state?.starred_at),
         subject: resolveMailThreadSubject(thread.subject, message.subject),
+        unreadCount: unreadByThread.get(threadId) ?? 0,
       },
     ];
   });

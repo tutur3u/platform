@@ -36,8 +36,6 @@ import TaskLabelsClient from '@tuturuuu/ui/tu-do/labels/client';
 import type { TaskLabel } from '@tuturuuu/ui/tu-do/labels/types';
 import LogsClient from '@tuturuuu/ui/tu-do/logs/logs-client';
 import NotesContent from '@tuturuuu/ui/tu-do/notes/notes-content';
-import type { TaskProgressView } from '@tuturuuu/ui/tu-do/progress/task-progress-page';
-import { TaskProgressPage } from '@tuturuuu/ui/tu-do/progress/task-progress-page';
 import { TaskProjectsClient } from '@tuturuuu/ui/tu-do/projects/task-projects-client';
 import type { TaskProject } from '@tuturuuu/ui/tu-do/projects/types';
 import { BoardLayoutSettingsContent } from '@tuturuuu/ui/tu-do/shared/board-layout-settings';
@@ -560,25 +558,6 @@ export function TaskLogsSettings({ wsId }: { wsId: string }) {
     <LogsClient
       boards={boardList}
       estimationTypes={estimationTypes}
-      wsId={wsId}
-    />
-  );
-}
-
-export function TaskProgressSettings({
-  onViewChange,
-  view,
-  wsId,
-}: {
-  onViewChange: (view: TaskProgressView) => void;
-  view: TaskProgressView;
-  wsId: string;
-}) {
-  return (
-    <TaskProgressPage
-      onViewChange={onViewChange}
-      routeWsId={wsId}
-      view={view}
       wsId={wsId}
     />
   );

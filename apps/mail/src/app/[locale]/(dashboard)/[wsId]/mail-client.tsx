@@ -1,6 +1,7 @@
 'use client';
 
 import {
+  type InfiniteData,
   useInfiniteQuery,
   useMutation,
   useQuery,
@@ -22,7 +23,9 @@ import {
   getMailBootstrap,
   getMailThread,
   listMailThreads,
+  type MailBootstrapResponse,
   type MailMessageDetail,
+  type MailThreadSummary,
   type MailThreadsResponse,
   type SendMailMessagePayload,
   sendMailMessage,
@@ -55,6 +58,11 @@ import {
   setCurrentMailPaneLayout,
 } from './mail-pane-layout';
 import { MailThreadRow } from './mail-thread-list';
+import {
+  getMailThreadsQueryKey,
+  getNextMailThreadPage,
+  MAIL_THREAD_PAGE_SIZE,
+} from './mail-thread-query';
 import { ThreadDetail } from './thread-detail';
 
 interface MailAppClientProps {
@@ -89,6 +97,7 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
   const [composeDraft, setComposeDraft] = useState<ComposeInitialDraft | null>(
     null
   );
+  const [composerVisible, setComposerVisible] = useState(composeParam === '1');
   const [selectedThreads, setSelectedThreads] = useState<Set<string>>(
     new Set()
   );
@@ -96,7 +105,10 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
     getCurrentMailPaneLayout()
   );
   const layoutReadyRef = useRef(false);
-  const composeOpen = composeParam === '1';
+
+  useEffect(() => {
+    setComposerVisible(composeParam === '1');
+  }, [composeParam]);
 
   useEffect(() => {
     const stored = window.localStorage.getItem('tuturuuu-mail-pane-layout');
@@ -127,36 +139,30 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
     mailboxes.find((mailbox) => mailbox.id === mailboxId) ?? mailboxes[0];
   const activeMailboxId = activeMailbox?.id ?? null;
   const FolderIcon = mailFolderIcons[folder];
+  const threadQueryKey = getMailThreadsQueryKey({
+    folder,
+    folderId,
+    label,
+    mailboxId: activeMailboxId ?? '',
+    query,
+    workspaceId,
+  });
 
   const threadsQuery = useInfiniteQuery({
     enabled: Boolean(activeMailboxId),
-    getNextPageParam: (lastPage: MailThreadsResponse) => {
-      const loadedThrough =
-        lastPage.pagination.page * lastPage.pagination.pageSize;
-      return loadedThrough < lastPage.pagination.total
-        ? lastPage.pagination.page + 1
-        : undefined;
-    },
+    getNextPageParam: getNextMailThreadPage,
     initialPageParam: 1,
-    queryFn: ({ pageParam }): Promise<MailThreadsResponse> =>
+    queryFn: ({ pageParam }) =>
       listMailThreads(workspaceId, activeMailboxId ?? '', {
         folder,
         folderId: folderId ?? undefined,
         label: label ?? undefined,
         page: pageParam,
-        pageSize: 40,
+        pageSize: MAIL_THREAD_PAGE_SIZE,
         query: query || undefined,
       }),
-    queryKey: [
-      'mail',
-      workspaceId,
-      activeMailboxId,
-      'threads',
-      folder,
-      folderId,
-      label,
-      query,
-    ],
+    queryKey: threadQueryKey,
+    staleTime: 30_000,
   });
   const detailQuery = useQuery({
     enabled: Boolean(activeMailboxId && threadId),
@@ -166,9 +172,14 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
   });
 
   const invalidateMailbox = async () => {
-    await queryClient.invalidateQueries({
-      queryKey: ['mail', workspaceId, activeMailboxId],
-    });
+    await Promise.all([
+      queryClient.invalidateQueries({
+        queryKey: ['mail', workspaceId, activeMailboxId],
+      }),
+      queryClient.invalidateQueries({
+        queryKey: ['mail', workspaceId, 'bootstrap'],
+      }),
+    ]);
   };
 
   const sendMutation = useMutation({
@@ -240,7 +251,53 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
 
   const openCompose = (draft: ComposeInitialDraft | null) => {
     setComposeDraft(draft);
+    setComposerVisible(true);
     void setComposeParam('1');
+  };
+  const openThread = (thread: MailThreadSummary) => {
+    void setThreadId(thread.id);
+    if (!activeMailboxId || thread.unreadCount <= 0) return;
+
+    queryClient.setQueryData<InfiniteData<MailThreadsResponse>>(
+      threadQueryKey,
+      (current) =>
+        current
+          ? {
+              ...current,
+              pages: current.pages.map((page) => ({
+                ...page,
+                threads: page.threads.map((item) =>
+                  item.id === thread.id ? { ...item, unreadCount: 0 } : item
+                ),
+              })),
+            }
+          : current
+    );
+    if (folder === 'inbox') {
+      queryClient.setQueryData<MailBootstrapResponse>(
+        ['mail', workspaceId, 'bootstrap'],
+        (current) =>
+          current
+            ? {
+                ...current,
+                mailboxes: current.mailboxes.map((mailbox) =>
+                  mailbox.id === activeMailboxId
+                    ? {
+                        ...mailbox,
+                        unreadCount: Math.max(
+                          0,
+                          mailbox.unreadCount - thread.unreadCount
+                        ),
+                      }
+                    : mailbox
+                ),
+              }
+            : current
+      );
+    }
+    void updateMailThreadState(workspaceId, activeMailboxId, thread.id, {
+      action: 'mark_read',
+    }).then(invalidateMailbox, invalidateMailbox);
   };
   const replyReferences = (message: MailMessageDetail) => [
     ...message.references,
@@ -440,7 +497,7 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
               <MailThreadRow
                 active={thread.id === threadId}
                 key={thread.id}
-                onClick={() => setThreadId(thread.id)}
+                onClick={() => openThread(thread)}
                 onSelect={(selected) =>
                   setSelectedThreads((current) => {
                     const next = new Set(current);
@@ -559,6 +616,7 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
         initialDraft={composeDraft}
         mailboxes={mailboxes}
         onOpenChange={(nextOpen) => {
+          setComposerVisible(nextOpen);
           if (!nextOpen) setComposeDraft(null);
           void setComposeParam(nextOpen ? '1' : null);
         }}
@@ -567,7 +625,7 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
             .mutateAsync({ nextMailboxId, payload })
             .then(() => undefined)
         }
-        open={composeOpen}
+        open={composerVisible}
         selectedMailboxId={activeMailboxId}
         sending={sendMutation.isPending}
         workspaceId={workspaceId}

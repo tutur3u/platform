@@ -1,10 +1,11 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Loader2, Mail, PenLine, Settings, Users } from '@tuturuuu/icons';
 import {
   getMailBootstrap,
   getMailboxOrganization,
+  listMailThreads,
   type MailMailbox,
 } from '@tuturuuu/internal-api';
 import {
@@ -21,7 +22,13 @@ import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { type ReactNode, useState } from 'react';
+import { isMailFolder } from './mail-folders';
 import { MailSettingsDialog } from './mail-settings-dialog';
+import {
+  getMailThreadsQueryKey,
+  getNextMailThreadPage,
+  MAIL_THREAD_PAGE_SIZE,
+} from './mail-thread-query';
 
 export function MailSidebarPanel({
   closeOnMobile,
@@ -37,6 +44,7 @@ export function MailSidebarPanel({
   workspaceId: string;
 }) {
   const t = useTranslations('mail');
+  const queryClient = useQueryClient();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const bootstrapQuery = useQuery({
@@ -75,6 +83,33 @@ export function MailSidebarPanel({
     onCompose();
     closeOnMobile?.();
   };
+  const getFolderHref = (href: string | undefined) => {
+    if (!href || !activeMailboxId) return href ?? '#';
+    const params = new URLSearchParams({ mailbox: activeMailboxId });
+    if (searchParams.get('compose') === '1') params.set('compose', '1');
+    return `${href.split('?')[0]}?${params}`;
+  };
+  const prefetchFolder = (href: string | undefined) => {
+    if (!href || !activeMailboxId) return;
+    const folder = href.split('?')[0]?.split('/').filter(Boolean).at(-1);
+    if (!folder || !isMailFolder(folder)) return;
+    void queryClient.prefetchInfiniteQuery({
+      getNextPageParam: getNextMailThreadPage,
+      initialPageParam: 1,
+      queryFn: ({ pageParam }) =>
+        listMailThreads(workspaceId, activeMailboxId, {
+          folder,
+          page: pageParam,
+          pageSize: MAIL_THREAD_PAGE_SIZE,
+        }),
+      queryKey: getMailThreadsQueryKey({
+        folder,
+        mailboxId: activeMailboxId,
+        workspaceId,
+      }),
+      staleTime: 30_000,
+    });
+  };
 
   if (isCollapsed) {
     return (
@@ -97,7 +132,14 @@ export function MailSidebarPanel({
                   pathname === link.href?.split('?')[0] ? 'secondary' : 'ghost'
                 }
               >
-                <Link href={link.href ?? '#'}>{link.icon}</Link>
+                <Link
+                  href={getFolderHref(link.href)}
+                  onFocus={() => prefetchFolder(link.href)}
+                  onPointerEnter={() => prefetchFolder(link.href)}
+                  prefetch
+                >
+                  {link.icon}
+                </Link>
               </Button>
             </IconTooltip>
           );
@@ -161,9 +203,12 @@ export function MailSidebarPanel({
                     pathname === link.href?.split('?')[0] &&
                       'bg-accent font-medium'
                   )}
-                  href={link.href ?? '#'}
+                  href={getFolderHref(link.href)}
                   key={link.id}
                   onClick={closeOnMobile}
+                  onFocus={() => prefetchFolder(link.href)}
+                  onPointerEnter={() => prefetchFolder(link.href)}
+                  prefetch
                 >
                   {link.icon}
                   <span className="min-w-0 flex-1">{link.title}</span>

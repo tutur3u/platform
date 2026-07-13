@@ -1,11 +1,5 @@
-import { Maximize2, Minimize2, MoreHorizontal, X } from '@tuturuuu/icons';
+import { Maximize2, Minimize2, X } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@tuturuuu/ui/dropdown-menu';
 
 export function MailComposerHeader({
   closeLabel,
@@ -14,13 +8,11 @@ export function MailComposerHeader({
   minimized,
   minimizeLabel,
   newMessageLabel,
-  onClose,
-  onMaximize,
-  onMinimize,
+  onRequestClose,
+  onToggleSize,
   restoreLabel,
   saveLabel,
   subject,
-  windowOptionsLabel,
 }: {
   closeLabel: string;
   maximized: boolean;
@@ -28,47 +20,49 @@ export function MailComposerHeader({
   minimized: boolean;
   minimizeLabel: string;
   newMessageLabel: string;
-  onClose: () => void;
-  onMaximize: () => void;
-  onMinimize: () => void;
+  onRequestClose: () => void;
+  onToggleSize: () => void;
   restoreLabel: string;
   saveLabel: string;
   subject: string;
-  windowOptionsLabel: string;
 }) {
+  const sizeLabel = minimized || maximized ? restoreLabel : maximizeLabel;
+  const SizeIcon = maximized ? Minimize2 : Maximize2;
+
   return (
     <header className="flex h-14 shrink-0 items-center gap-2 border-dynamic border-b px-3">
-      <div className="min-w-0 flex-1">
-        <div className="truncate font-semibold text-sm">
-          {subject || newMessageLabel}
-        </div>
-        <div className="text-[0.68rem] text-muted-foreground">{saveLabel}</div>
-      </div>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button aria-label={windowOptionsLabel} size="icon" variant="ghost">
-            <MoreHorizontal className="size-4" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="min-w-40">
-          <DropdownMenuItem onClick={onMinimize}>
-            <Minimize2 className="size-4" />
-            {minimized ? restoreLabel : minimizeLabel}
-          </DropdownMenuItem>
-          <DropdownMenuItem className="max-md:hidden" onClick={onMaximize}>
-            <Maximize2 className="size-4" />
-            {maximized ? restoreLabel : maximizeLabel}
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-      <Button
-        aria-label={closeLabel}
-        onClick={onClose}
-        size="icon"
-        variant="ghost"
+      <button
+        className="min-w-0 flex-1 rounded-md text-left outline-none"
+        onClick={minimized ? onToggleSize : undefined}
+        type="button"
       >
-        <X className="size-4" />
-      </Button>
+        <span className="block truncate font-semibold text-sm">
+          {subject || newMessageLabel}
+        </span>
+        <span className="block text-[0.68rem] text-muted-foreground">
+          {saveLabel}
+        </span>
+      </button>
+      <div className="flex shrink-0 items-center rounded-lg border border-dynamic bg-foreground/[0.025] p-0.5">
+        <Button
+          aria-label={sizeLabel}
+          className="size-8 max-md:hidden"
+          onClick={onToggleSize}
+          size="icon"
+          variant="ghost"
+        >
+          <SizeIcon className="size-3.5" />
+        </Button>
+        <Button
+          aria-label={minimized ? closeLabel : minimizeLabel}
+          className="size-8"
+          onClick={onRequestClose}
+          size="icon"
+          variant="ghost"
+        >
+          <X className="size-3.5" />
+        </Button>
+      </div>
     </header>
   );
 }

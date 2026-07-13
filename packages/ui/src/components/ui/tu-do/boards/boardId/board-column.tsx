@@ -22,6 +22,7 @@ import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card } from '@tuturuuu/ui/card';
+import { Checkbox } from '@tuturuuu/ui/checkbox';
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -469,6 +470,14 @@ export function BoardColumn({
       ? Math.max(listState.totalCount, visibleTasks.length)
       : visibleTasks.length
     : visibleTasks.length;
+  const selectedVisibleTaskCount = visibleTasks.reduce(
+    (count, task) => count + (selectedTasks?.has(task.id) ? 1 : 0),
+    0
+  );
+  const allVisibleTasksSelected =
+    visibleTasks.length > 0 && selectedVisibleTaskCount === visibleTasks.length;
+  const someVisibleTasksSelected =
+    selectedVisibleTaskCount > 0 && !allVisibleTasksSelected;
   const externalFilterCount =
     (externalIncludeDocuments ? 1 : 0) + (externalIncludeDoneClosed ? 1 : 0);
   const pinListLabel = specialPinned
@@ -496,13 +505,15 @@ export function BoardColumn({
     [attributes, listeners, isDragging, isOverlay, t]
   );
 
-  const handleSelectAll = () => {
-    if (!onTaskSelect || !setIsMultiSelectMode || tasks.length === 0) return;
+  const handleToggleAll = () => {
+    if (!onTaskSelect || !setIsMultiSelectMode || visibleTasks.length === 0)
+      return;
 
-    setIsMultiSelectMode(true);
-    // Select all tasks in this list
-    tasks.forEach((task) => {
-      if (selectedTasks?.has(task.id)) return;
+    if (!allVisibleTasksSelected) setIsMultiSelectMode(true);
+
+    visibleTasks.forEach((task) => {
+      const isSelected = selectedTasks?.has(task.id) ?? false;
+      if (allVisibleTasksSelected ? !isSelected : isSelected) return;
 
       const fakeEvent = {
         shiftKey: false,
@@ -606,7 +617,25 @@ export function BoardColumn({
       <div className="flex items-center gap-2 rounded-t-xl border-b p-3">
         {!readOnly && !isExternalStaging && DragHandle}
         <div className="flex flex-1 items-center gap-2">
-          <span className="text-sm">{statusIcon}</span>
+          {isMultiSelectMode && !readOnly && visibleTasks.length > 0 ? (
+            <Checkbox
+              aria-label={t('select_all_tasks')}
+              checked={
+                allVisibleTasksSelected
+                  ? true
+                  : someVisibleTasksSelected
+                    ? 'indeterminate'
+                    : false
+              }
+              className="size-4"
+              onCheckedChange={handleToggleAll}
+              title={t('select_all_tasks')}
+            />
+          ) : (
+            <span className="inline-flex size-4 items-center justify-center text-sm">
+              {statusIcon}
+            </span>
+          )}
           <h3
             className={cn(
               'font-semibold text-foreground/90 text-sm',
@@ -830,7 +859,7 @@ export function BoardColumn({
                   boardId={boardId}
                   wsId={wsId}
                   onUpdate={handleUpdate}
-                  onSelectAll={handleSelectAll}
+                  onSelectAll={handleToggleAll}
                   isEditOpen={isEditOpen}
                   onEditOpenChange={setIsEditOpen}
                 />

@@ -6,6 +6,14 @@ export type ComposerWarning =
   | 'empty_subject'
   | 'missing_attachment';
 
+export type ComposerCloseAction = 'confirm' | 'minimize';
+
+export function getComposerCloseAction(
+  minimized: boolean
+): ComposerCloseAction {
+  return minimized ? 'confirm' : 'minimize';
+}
+
 export function getSendableMailboxes(mailboxes: MailMailbox[]) {
   return mailboxes.filter((mailbox) =>
     ['admin', 'owner', 'sender'].includes(mailbox.role)
@@ -49,7 +57,7 @@ export function applyAiDraftToBody(bodyHtml: string, content: string) {
     : generatedHtml;
 }
 
-function stripHtml(value: string) {
+export function mailHtmlToText(value: string) {
   return value
     .replaceAll(/<br\s*\/?>/giu, '\n')
     .replaceAll(/<\/p>/giu, '\n')
@@ -65,7 +73,8 @@ function getSignature(mailbox: MailMailbox) {
   const html =
     mailbox.signatureHtml?.trim() ||
     (mailbox.signatureText ? textToHtml(mailbox.signatureText) : '');
-  const text = mailbox.signatureText?.trim() || (html ? stripHtml(html) : '');
+  const text =
+    mailbox.signatureText?.trim() || (html ? mailHtmlToText(html) : '');
   return { html, text };
 }
 
@@ -74,7 +83,7 @@ function signatureTextFromValues(
   signatureText: string | null | undefined
 ) {
   return signatureHtml?.trim()
-    ? stripHtml(signatureHtml)
+    ? mailHtmlToText(signatureHtml)
     : (signatureText?.trim() ?? '');
 }
 
@@ -87,7 +96,7 @@ export function buildComposerInitialBody(
   if (!signature.html || baseHtml.includes('data-mail-signature="true"')) {
     return {
       html: baseHtml,
-      text: initialDraft?.bodyText ?? stripHtml(baseHtml),
+      text: initialDraft?.bodyText ?? mailHtmlToText(baseHtml),
     };
   }
 
@@ -100,7 +109,7 @@ export function buildComposerInitialBody(
 
   return {
     html,
-    text: stripHtml(html).replace(/^--\s*/u, '-- \n'),
+    text: mailHtmlToText(html).replace(/^--\s*/u, '-- \n'),
   };
 }
 
@@ -113,7 +122,7 @@ function authoredText(bodyHtml: string, signatureText: string | null) {
     /<div\b[^>]*data-mail-signature=["']true["'][^>]*>[\s\S]*?<\/div>/giu,
     ''
   );
-  let text = stripHtml(withoutSignatureBlock).replace(/^--\s*/u, '');
+  let text = mailHtmlToText(withoutSignatureBlock).replace(/^--\s*/u, '');
   if (signatureText?.trim()) {
     text = text.replace(signatureText.trim(), '');
   }

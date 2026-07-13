@@ -18,6 +18,7 @@ import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { cookies, headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { type ReactNode, Suspense } from 'react';
+import { MailWorkspace } from './mail-workspace';
 import { getNavigationLinks } from './navigation';
 import { Structure } from './structure';
 
@@ -100,7 +101,11 @@ export default async function Layout({ children, params }: LayoutProps) {
         wsId={wsId}
       >
         <RealtimeLogProvider wsId={wsId}>
-          <div data-workspace-slug={workspaceSlug}>{children}</div>
+          <div data-workspace-slug={workspaceSlug}>
+            <MailWorkspace workspaceId={workspaceSlug}>
+              {children}
+            </MailWorkspace>
+          </div>
         </RealtimeLogProvider>
       </Structure>
     </SidebarProvider>
