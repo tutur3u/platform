@@ -34,6 +34,8 @@ describe('GET /api/v1/vocabulary/details scraper', () => {
             <div class="content">
               <div class="bg-grey bold font-large"><span>động từ</span></div>
               <div class="green bold margin25">ăn</div>
+              <div class="bold dot-blue">Phrasal verbs</div>
+              <div class="grey bold margin25">nội dung sau ranh giới</div>
               <div class="color-light-blue margin25">We eat dinner together.</div>
             </div>
           </div>

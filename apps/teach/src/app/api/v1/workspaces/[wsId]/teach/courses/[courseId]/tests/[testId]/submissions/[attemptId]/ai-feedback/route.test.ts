@@ -29,6 +29,7 @@ const mocks = vi.hoisted(() => {
   }
 
   return {
+    after: vi.fn((callback: () => unknown) => callback()),
     capMaxOutputTokensByCredits: vi.fn(),
     checkAiCredits: vi.fn(),
     deductAiCredits: vi.fn(),
@@ -63,6 +64,11 @@ vi.mock('@/lib/api-auth', () => ({
         (await Promise.resolve(routeContext?.params)) as typeof IDS
       ),
 }));
+
+vi.mock('next/server', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('next/server')>();
+  return { ...actual, after: mocks.after };
+});
 
 vi.mock('@ai-sdk/google', () => ({
   google: (...args: Parameters<typeof mocks.google>) => mocks.google(...args),
@@ -210,6 +216,28 @@ describe('test submission AI feedback route', () => {
     await expect(response.json()).resolves.toEqual({
       code: 'NO_BALANCE',
       message: 'AI credits unavailable',
+    });
+    expect(mocks.generateObject).not.toHaveBeenCalled();
+    expect(mocks.deductAiCredits).not.toHaveBeenCalled();
+  });
+
+  it('rejects generation when output cannot be capped to remaining credits', async () => {
+    mocks.checkAiCredits.mockResolvedValueOnce({
+      allowed: true,
+      errorCode: null,
+      errorMessage: null,
+      maxOutputTokens: 256,
+      remainingCredits: 0,
+    });
+    mocks.capMaxOutputTokensByCredits.mockResolvedValueOnce(null);
+    const { POST } = await import('./route');
+
+    const response = await POST(request(), routeContext());
+
+    expect(response.status).toBe(403);
+    await expect(response.json()).resolves.toEqual({
+      code: 'CREDITS_EXHAUSTED',
+      message: 'AI credits insufficient',
     });
     expect(mocks.generateObject).not.toHaveBeenCalled();
     expect(mocks.deductAiCredits).not.toHaveBeenCalled();

@@ -17,11 +17,6 @@ export interface VocabularySuggestion {
 
 export const LABAN_ORIGIN = 'https://dict.laban.vn';
 export const LABAN_TIMEOUT_MS = 5_000;
-type NextFetchRequestInit = RequestInit & {
-  next?: {
-    revalidate?: number;
-  };
-};
 
 export function emptyDictionaryDetails(word: string): DictionaryDetails {
   return {
@@ -129,17 +124,13 @@ export function normalizeLabanSuggestions(payload: unknown) {
 }
 
 export async function fetchLaban(url: URL, signal: AbortSignal) {
-  const options: NextFetchRequestInit = {
+  const options: RequestInit = {
+    cache: 'no-store',
     headers: {
       Accept:
         'text/html,application/xhtml+xml,application/xml;q=0.9,application/json;q=0.8,*/*;q=0.7',
       'Accept-Language': 'en-US,en;q=0.9,vi;q=0.8',
       Referer: LABAN_ORIGIN,
-      'User-Agent':
-        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36 vocabulary-laban',
-    },
-    next: {
-      revalidate: 60 * 60,
     },
     signal,
   };

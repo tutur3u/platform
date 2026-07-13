@@ -10,7 +10,7 @@ import {
   validateTeachCourse,
 } from '@tuturuuu/education-core/teach/api';
 import { generateObject } from 'ai';
-import { NextResponse } from 'next/server';
+import { after, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
 
@@ -245,28 +245,30 @@ Provide a concise, constructive explanation of 2-3 sentences in the language of 
         throw error;
       }
 
-      deductAiCredits({
-        feature: FEEDBACK_CREDIT_FEATURE,
-        inputTokens: usage?.inputTokens ?? 0,
-        metadata: {
-          attemptId,
-          quizId,
-          source: 'test_submission_feedback',
-          testId,
-        },
-        modelId: FEEDBACK_MODEL_ID,
-        outputTokens: usage?.outputTokens ?? 0,
-        reasoningTokens: usage?.outputTokenDetails?.reasoningTokens ?? 0,
-        userId: context.user.id,
-        wsId: access.normalizedWsId,
-      }).catch((error: unknown) =>
-        console.warn('Failed to deduct test feedback AI credits', {
-          attemptId,
-          error,
-          quizId,
+      after(() =>
+        deductAiCredits({
+          feature: FEEDBACK_CREDIT_FEATURE,
+          inputTokens: usage?.inputTokens ?? 0,
+          metadata: {
+            attemptId,
+            quizId,
+            source: 'test_submission_feedback',
+            testId,
+          },
+          modelId: FEEDBACK_MODEL_ID,
+          outputTokens: usage?.outputTokens ?? 0,
+          reasoningTokens: usage?.outputTokenDetails?.reasoningTokens ?? 0,
           userId: context.user.id,
           wsId: access.normalizedWsId,
-        })
+        }).catch((error: unknown) =>
+          console.warn('Failed to deduct test feedback AI credits', {
+            attemptId,
+            error,
+            quizId,
+            userId: context.user.id,
+            wsId: access.normalizedWsId,
+          })
+        )
       );
 
       return NextResponse.json(result);

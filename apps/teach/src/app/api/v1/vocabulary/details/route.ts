@@ -5,8 +5,8 @@ import {
   emptyDictionaryDetails,
   extractLabanDetails,
   fetchLaban,
-  LABAN_ORIGIN,
   LABAN_TIMEOUT_MS,
+  labanFindUrl,
 } from '../laban';
 
 async function loadVocabularyDetails(request: NextRequest) {
@@ -26,9 +26,7 @@ async function loadVocabularyDetails(request: NextRequest) {
     );
   }
 
-  const targetUrl = new URL('/find', LABAN_ORIGIN);
-  targetUrl.searchParams.set('type', '1');
-  targetUrl.searchParams.set('query', wordParam);
+  const targetUrl = new URL(labanFindUrl(wordParam));
 
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), LABAN_TIMEOUT_MS);
