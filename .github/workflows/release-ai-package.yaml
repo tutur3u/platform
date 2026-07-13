@@ -109,7 +109,6 @@ jobs:
     if: github.ref == 'refs/heads/production'
     runs-on: ubuntu-latest
     outputs:
-      package_name: ${{ steps.version-check.outputs.package_name }}
       package_version: ${{ steps.version-check.outputs.package_version }}
       should_publish: ${{ steps.version-check.outputs.should_publish }}
     permissions:
@@ -137,7 +136,6 @@ jobs:
         run: |
           PACKAGE_NAME=$(node -p "require('./package.json').name")
           PACKAGE_VERSION=$(node -p "require('./package.json').version")
-          echo "package_name=${PACKAGE_NAME}" >> "$GITHUB_OUTPUT"
           echo "package_version=${PACKAGE_VERSION}" >> "$GITHUB_OUTPUT"
 
           if npm view "${PACKAGE_NAME}@${PACKAGE_VERSION}" version --registry https://registry.npmjs.org >/dev/null 2>&1; then
@@ -221,7 +219,7 @@ jobs:
       - name: Verify package artifact
         id: artifact
         env:
-          EXPECTED_PACKAGE_NAME: ${{ needs.prepare-publish-npm.outputs.package_name }}
+          EXPECTED_PACKAGE_NAME: "@tuturuuu/ai"
           EXPECTED_PACKAGE_VERSION: ${{ needs.prepare-publish-npm.outputs.package_version }}
         run: |
           PACKAGE_TARBALL=$(find ai-package -maxdepth 1 -name '*.tgz' -type f | sort)
@@ -265,7 +263,7 @@ jobs:
       # secret is set.
       - name: Publish package
         env:
-          EXPECTED_PACKAGE_NAME: ${{ needs.prepare-publish-npm.outputs.package_name }}
+          EXPECTED_PACKAGE_NAME: "@tuturuuu/ai"
           EXPECTED_PACKAGE_VERSION: ${{ needs.prepare-publish-npm.outputs.package_version }}
         run: |
           set -o pipefail
@@ -281,7 +279,7 @@ jobs:
 
       - name: Wait for npm publication
         env:
-          EXPECTED_PACKAGE_NAME: ${{ needs.prepare-publish-npm.outputs.package_name }}
+          EXPECTED_PACKAGE_NAME: "@tuturuuu/ai"
           EXPECTED_PACKAGE_VERSION: ${{ needs.prepare-publish-npm.outputs.package_version }}
         run: |
           for attempt in {1..60}; do
