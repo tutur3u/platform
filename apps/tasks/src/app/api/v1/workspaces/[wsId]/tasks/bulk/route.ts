@@ -1,3 +1,18 @@
-import { POST } from '@tuturuuu/apis/tu-do/tasks/bulk/route';
+import { handleTaskBulkRoutePOST } from '@tuturuuu/apis/tu-do/tasks/bulk/route';
+import { withSessionAuth } from '@/lib/api-auth';
 
-export { POST };
+type Params = { wsId: string };
+
+export const POST = withSessionAuth<Params>(
+  (request, { supabase, user }, params) =>
+    handleTaskBulkRoutePOST(
+      request,
+      { params: Promise.resolve(params) },
+      { supabase, user }
+    ),
+  {
+    allowAppSessionAuth: {
+      targetApp: ['platform', 'calendar', 'tasks'],
+    },
+  }
+);

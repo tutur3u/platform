@@ -3,6 +3,7 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import type { Database } from '@tuturuuu/types';
 import type { TaskActorRpcArgs } from '@tuturuuu/types/db';
@@ -32,6 +33,19 @@ import {
 } from '../realtime-broadcast';
 
 const MAX_BULK_TASKS = 200;
+
+export type TaskBulkRouteAuthContext = {
+  supabase: TypedSupabaseClient;
+  user: SupabaseUser;
+};
+
+type TaskBulkRouteContext = {
+  params: Promise<{ wsId: string }>;
+};
+
+type TaskBulkRequestAuth =
+  | { auth: TaskBulkRouteAuthContext }
+  | { error: NextResponse };
 
 const paramsSchema = z.object({
   wsId: z.string().min(1),
@@ -144,6 +158,26 @@ async function parseJsonBody(request: NextRequest) {
   } catch (error) {
     return { data: null, error };
   }
+}
+
+async function resolveTaskBulkRequestAuth(
+  request: NextRequest,
+  auth?: TaskBulkRouteAuthContext
+): Promise<TaskBulkRequestAuth> {
+  if (auth) {
+    return { auth };
+  }
+
+  const supabase = (await createClient(request)) as TypedSupabaseClient;
+  const { user, authError } = await resolveAuthenticatedSessionUser(supabase);
+
+  if (authError || !user) {
+    return {
+      error: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }),
+    };
+  }
+
+  return { auth: { supabase, user } };
 }
 
 type MoveTaskUpdates = {
@@ -597,9 +631,10 @@ async function loadAccessiblePersonalExternalTaskIds({
   );
 }
 
-export async function POST(
+export async function handleTaskBulkRoutePOST(
   request: NextRequest,
-  { params }: { params: Promise<{ wsId: string }> }
+  { params }: TaskBulkRouteContext,
+  auth?: TaskBulkRouteAuthContext
 ) {
   try {
     const parsedParams = paramsSchema.safeParse(await params);
@@ -610,12 +645,9 @@ export async function POST(
       );
     }
 
-    const supabase = await createClient(request);
-    const { user, authError } = await resolveAuthenticatedSessionUser(supabase);
-
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const resolvedAuth = await resolveTaskBulkRequestAuth(request, auth);
+    if ('error' in resolvedAuth) return resolvedAuth.error;
+    const { supabase, user } = resolvedAuth.auth;
 
     const wsId = await normalizeWorkspaceId(parsedParams.data.wsId, supabase);
 
@@ -1097,4 +1129,8 @@ export async function POST(
       { status: 500 }
     );
   }
+}
+
+export function POST(request: NextRequest, context: TaskBulkRouteContext) {
+  return handleTaskBulkRoutePOST(request, context);
 }

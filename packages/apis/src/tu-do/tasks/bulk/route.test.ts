@@ -389,6 +389,66 @@ describe('task bulk route', () => {
     );
   });
 
+  it('uses an injected satellite actor for bulk due-date updates', async () => {
+    const { handleTaskBulkRoutePOST } = await import('./route.js');
+    const taskId = '22222222-2222-4222-8222-222222222222';
+    const endDate = '2026-07-13T16:59:59.999Z';
+
+    mocks.resolveAuthenticatedSessionUser.mockClear();
+    mocks.rpc.mockReset();
+    mocks.rpc.mockResolvedValueOnce({ data: [{ id: taskId }], error: null });
+    mocks.tasksEq.mockResolvedValueOnce({
+      data: [
+        {
+          id: taskId,
+          list_id: 'cccccccc-cccc-4ccc-8ccc-cccccccccccc',
+          completed: false,
+          completed_at: null,
+          closed_at: null,
+          task_lists: {
+            status: 'active',
+            board_id: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
+            workspace_boards: {
+              ws_id: '00000000-0000-0000-0000-000000000000',
+            },
+          },
+        },
+      ],
+      error: null,
+    });
+
+    const response = await handleTaskBulkRoutePOST(
+      asNextRequest(
+        new Request('http://localhost/api/v1/workspaces/ws-1/tasks/bulk', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            taskIds: [taskId],
+            operation: {
+              type: 'update_fields',
+              updates: { end_date: endDate },
+            },
+          }),
+        })
+      ),
+      { params: Promise.resolve({ wsId: 'ws-1' }) },
+      {
+        supabase: mocks.sessionSupabase as never,
+        user: {
+          id: '99999999-9999-4999-8999-999999999999',
+        } as never,
+      }
+    );
+
+    expect(response.status).toBe(200);
+    expect(mocks.resolveAuthenticatedSessionUser).not.toHaveBeenCalled();
+    expect(mocks.rpc).toHaveBeenCalledWith('update_task_fields_with_actor', {
+      p_actor_user_id: '99999999-9999-4999-8999-999999999999',
+      p_task_id: taskId,
+      p_task_updates: { end_date: endDate },
+    });
+  });
+
   it('removes linked calendar artifacts after bulk soft delete', async () => {
     const { POST } = await import('./route.js');
 
