@@ -28,6 +28,9 @@ const contactsOwnedRouteFiles = [
   '[groupId]/linked-products/[productId]/route.ts',
   '[groupId]/members/route.ts',
   '[groupId]/members/[userId]/route.ts',
+  '[groupId]/posts/route.ts',
+  '[groupId]/posts/[postId]/route.ts',
+  '[groupId]/posts/[postId]/status/route.ts',
   'activity-logs/route.ts',
   'sessions/route.ts',
   'sessions/[sessionId]/route.ts',
@@ -59,5 +62,18 @@ describe('Contacts user-group API ownership', () => {
 
     expect(source).toMatch(/\bGET\b/u);
     expect(source).toMatch(/\bPOST\b/u);
+  });
+
+  it.each([
+    ['[groupId]/posts/route.ts', ['GET', 'POST']],
+    ['[groupId]/posts/[postId]/route.ts', ['PUT', 'DELETE']],
+    ['[groupId]/posts/[postId]/status/route.ts', ['GET']],
+  ] as const)('exports the expected post methods from %s', (relativePath, methods) => {
+    const routePath = resolve(import.meta.dirname, relativePath);
+    const source = readFileSync(routePath, 'utf8');
+
+    for (const method of methods) {
+      expect(source).toMatch(new RegExp(`\\b${method}\\b`, 'u'));
+    }
   });
 });

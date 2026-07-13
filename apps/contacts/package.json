@@ -5,6 +5,8 @@
   "scripts": {
     "type-check": "node ../../scripts/run-tsc-build.js --build",
     "test": "vitest run",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
     "test:watch": "vitest",
     "dev": "node ../../scripts/portless-safe-dev.js",
     "dev:app": "node ../../scripts/portless-dev-banner.js -- next dev -p ${PORT:-7827} --turbopack",
@@ -56,6 +58,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@playwright/test": "^1.61.1",
     "@tailwindcss/postcss": "^4.3.2",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",

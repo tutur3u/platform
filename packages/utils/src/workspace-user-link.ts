@@ -2,6 +2,7 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { resolveWorkspaceId } from './constants';
 import { verifyWorkspaceMembershipType } from './workspace-helper';
@@ -48,12 +49,15 @@ function toLink(row: LinkRow): WorkspaceUserLink {
 export async function getWorkspaceUserLinkForUser(
   wsId: string,
   userId: string,
-  options: { autoRepair?: boolean } = {}
+  options: {
+    authorizationClient?: TypedSupabaseClient;
+    autoRepair?: boolean;
+  } = {}
 ): Promise<WorkspaceUserLink | null> {
-  const { autoRepair = true } = options;
+  const { authorizationClient, autoRepair = true } = options;
   if (!userId) return null;
 
-  const supabase = await createClient();
+  const supabase = authorizationClient ?? (await createClient());
   const resolvedWsId = resolveWorkspaceId(wsId);
 
   const { data: workspaceUser } = await supabase
