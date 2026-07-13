@@ -36,6 +36,9 @@ future work. Examples:
   including bulk modes when useful, instead of manual message JSON edits when
   possible
 - refine prompts, checklists, or skill descriptions so future triggering is more reliable
+- route deployed UI/API reproduction, Vercel log correlation, production-safe
+  verification, performance diagnosis, and evidence-driven UX audits through
+  `$tuturuuu-browser-vercel-debugging`
 - route shared-worktree ownership and handoff behavior through
   `$tuturuuu-agent-coordination`
 - extract repeated commit behavior into `$tuturuuu-commit` instead of relying on

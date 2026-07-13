@@ -15,9 +15,10 @@
     },
     {
       "title": "Agent Workflow",
-      "description": "Shared-worktree coordination, commits, review comments, validation, and tooling.",
+      "description": "Shared-worktree coordination, browser and Vercel troubleshooting, commits, validation, and tooling.",
       "skills": [
         "tuturuuu-agent-coordination",
+        "tuturuuu-browser-vercel-debugging",
         "tuturuuu-commit",
         "tuturuuu-review-comments",
         "tuturuuu-pr-merge-sync",

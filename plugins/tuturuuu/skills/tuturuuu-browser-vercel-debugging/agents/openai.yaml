@@ -1,0 +1,4 @@
+interface:
+  display_name: "Tuturuuu Browser and Vercel Debugging"
+  short_description: "Debug and improve Tuturuuu with browser and Vercel evidence"
+  default_prompt: "Diagnose this Tuturuuu production issue with the browser and Vercel CLI."

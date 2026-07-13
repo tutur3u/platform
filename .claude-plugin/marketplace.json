@@ -8,6 +8,7 @@
       "source": "./tuturuuu",
       "skills": [
         "./skills/tuturuuu-agent-coordination",
+        "./skills/tuturuuu-browser-vercel-debugging",
         "./skills/tuturuuu-ci-docs",
         "./skills/tuturuuu-cli",
         "./skills/tuturuuu-cli-finance",

@@ -52,6 +52,7 @@ not from this checkout:
 ```bash
 npx skills add tutur3u/platform --agent codex --copy -y \
   --skill tuturuuu-agent-coordination \
+  --skill tuturuuu-browser-vercel-debugging \
   --skill tuturuuu-ci-docs \
   --skill tuturuuu-cli \
   --skill tuturuuu-cli-finance \
@@ -82,6 +83,11 @@ Then verify the cached page after refresh at
   verification follow-through, including shared-worktree preflight, scoped
   staging expectations, and Effect adoption guidance for TypeScript
   server/service orchestration.
+- `$tuturuuu-browser-vercel-debugging`: authenticated Browser/Chrome and Vercel
+  CLI guidance for reproducing deployed UI/API bugs, correlating runtime and
+  build logs, checking satellite routing/auth, auditing responsive and i18n
+  behavior, investigating performance/cost, and verifying improvements without
+  mutating customer data.
 - `$tuturuuu-cms-studio`: CMS and external-project content studio guidance for
   `apps/cms`, branded project adapters, landing-page content editing, content
   collections, media workflows, preview delivery, and non-technical editor UX.
@@ -201,6 +207,7 @@ The CI check currently verifies:
 - dedicated prompt coverage for external app integrations and direct uploads
 - dedicated prompt coverage for satellite app UX and app-session workflows
 - dedicated prompt coverage for native local E2E auth and dev-session debugging
+- dedicated prompt coverage for browser and Vercel production troubleshooting
 - dedicated prompt coverage for shared-worktree coordination and agent handoff
 - dedicated prompt coverage for PR quiet-window merge sync with main-green
   gating before production sync

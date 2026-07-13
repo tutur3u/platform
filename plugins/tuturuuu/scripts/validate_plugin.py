@@ -27,6 +27,9 @@ SKILLS_SH_CONFIG = "skills.sh.json"
 MAX_DEFAULT_PROMPT_LENGTH = 120
 PROMPT_COVERAGE_PATTERNS = {
     "tuturuuu-platform": re.compile(r"\bplatform\b", re.IGNORECASE),
+    "tuturuuu-browser-vercel-debugging": re.compile(
+        r"\b(browser|Vercel|production troubleshooting)\b", re.IGNORECASE
+    ),
     "tuturuuu-commit": re.compile(r"\b(commit|scope|domain)\b", re.IGNORECASE),
     "tuturuuu-cli": re.compile(r"\b(cli|sdk|ttr)\b", re.IGNORECASE),
     "tuturuuu-cli-tasks": re.compile(
@@ -546,6 +549,47 @@ def validate_marketplace(repo_root: Path) -> None:
         fail(f"{marketplace_path} {PLUGIN_NAME} category must be Productivity")
 
 
+def validate_browser_vercel_guidance(
+    repo_root: Path, plugin_root: Path, manifest: dict
+) -> None:
+    skill_path = (
+        plugin_root
+        / "skills"
+        / "tuturuuu-browser-vercel-debugging"
+        / "SKILL.md"
+    )
+    reference_path = skill_path.parent / "references" / "production-debugging-playbook.md"
+    docs_path = (
+        repo_root / "apps" / "docs" / "build" / "development-tools" / "codex-plugin.mdx"
+    )
+
+    skill_text = read_text(skill_path)
+    for expected in (
+        "Keep production browser and Vercel work read-only by default.",
+        "Do not use `vercel deploy`",
+        "**Verified in production:**",
+        "references/production-debugging-playbook.md",
+    ):
+        require_text(skill_path, skill_text, expected)
+
+    reference_text = read_text(reference_path)
+    for expected in (
+        "vercel inspect <production-domain>",
+        "vercel logs --project <project>",
+        "## Common Tuturuuu Failure Signatures",
+        "## Performance And Cost",
+        "## Product Improvement Checklist",
+        "Satellite API returns 401",
+        "Satellite API returns 404",
+    ):
+        require_text(reference_path, reference_text, expected)
+
+    require_text(docs_path, read_text(docs_path), "$tuturuuu-browser-vercel-debugging")
+    capabilities = manifest.get("interface", {}).get("capabilities", [])
+    if "Browser and Vercel troubleshooting" not in capabilities:
+        fail("manifest capabilities must mention browser and Vercel troubleshooting")
+
+
 def validate_no_todo_under(plugin_root: Path) -> None:
     for path in sorted(plugin_root.rglob("*")):
         if not path.is_file():
@@ -588,6 +632,7 @@ def main() -> None:
     validate_commit_no_verify_guidance(repo_root, plugin_root, manifest)
     validate_ci(repo_root)
     validate_marketplace(repo_root)
+    validate_browser_vercel_guidance(repo_root, plugin_root, manifest)
     validate_public_claude_manifest(repo_root, plugin_root)
     validate_skills_sh_config(repo_root, plugin_root)
     validate_no_todo_under(plugin_root)
