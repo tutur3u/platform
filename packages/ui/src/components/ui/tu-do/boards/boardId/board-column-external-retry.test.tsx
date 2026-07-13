@@ -2,7 +2,14 @@
  * @vitest-environment jsdom
  */
 
-import { act, render, waitFor } from '@testing-library/react';
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from '@testing-library/react';
+import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ListPaginationState } from '../../shared/progressive-loader-context';
@@ -82,6 +89,19 @@ const loadedExternalState: ListPaginationState = {
   totalCount: 0,
 };
 
+const regularColumn: TaskList = {
+  ...externalColumn,
+  color: 'BLUE',
+  id: 'list-1',
+  is_external_staging: false,
+  name: 'In progress',
+};
+
+const regularTasks = [
+  { id: 'task-1', list_id: regularColumn.id, name: 'First task' },
+  { id: 'task-2', list_id: regularColumn.id, name: 'Second task' },
+] as Task[];
+
 function renderExternalColumn() {
   return (
     <BoardColumn
@@ -123,5 +143,43 @@ describe('BoardColumn external lane retry behavior', () => {
       externalIncludeDoneClosed: false,
       externalSortBy: 'created-desc',
     });
+  });
+
+  it('replaces the status icon with a stable select-all checkbox in bulk mode', () => {
+    mocks.pagination = {
+      [regularColumn.id]: {
+        ...loadedExternalState,
+        hasMore: false,
+        totalCount: regularTasks.length,
+      },
+    };
+    const onTaskSelect = vi.fn();
+
+    render(
+      <BoardColumn
+        boardId="board-1"
+        column={regularColumn}
+        isMultiSelectMode
+        onTaskSelect={onTaskSelect}
+        selectedTasks={new Set(['task-1'])}
+        setIsMultiSelectMode={vi.fn()}
+        tasks={regularTasks}
+        wsId="workspace-1"
+      />
+    );
+
+    const checkbox = screen.getByRole('checkbox', {
+      name: 'select_all_tasks',
+    });
+    expect(checkbox).toHaveAttribute('data-state', 'indeterminate');
+    expect(checkbox).toHaveClass('size-4');
+
+    fireEvent.click(checkbox);
+
+    expect(onTaskSelect).toHaveBeenCalledTimes(1);
+    expect(onTaskSelect).toHaveBeenCalledWith(
+      'task-2',
+      expect.objectContaining({ shiftKey: false })
+    );
   });
 });

@@ -330,12 +330,8 @@ describe('tasks app task pages', () => {
     expect(links[1]).toMatchObject({
       href: '/workspace-1/progress',
       aliases: ['/workspace-1/progress/*'],
-      children: [
-        { href: '/workspace-1/progress/goals' },
-        { href: '/workspace-1/progress/stats' },
-        { href: '/workspace-1/progress/leaderboards' },
-      ],
     });
+    expect(links[1]).not.toHaveProperty('children');
   });
 
   it('redirects unauthenticated entrypoint users to login', async () => {

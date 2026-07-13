@@ -2,13 +2,11 @@
 
 import { useQuery } from '@tanstack/react-query';
 import {
-  BarChart3,
   Bookmark,
   Box,
   CalendarDays,
   CheckSquare,
   FileEdit,
-  Goal,
   hexagons3,
   Icon,
   KanbanSquare,
@@ -21,9 +19,6 @@ import {
   Share2,
   Sparkle,
   Tags,
-  TrendingUp,
-  Trophy,
-  Upload,
   User,
 } from '@tuturuuu/icons';
 import { getWorkspace } from '@tuturuuu/internal-api/workspaces';
@@ -37,7 +32,6 @@ import { TaskSettings } from '@tuturuuu/ui/custom/settings/task-settings';
 import { SettingsDialogShell } from '@tuturuuu/ui/custom/settings-dialog-shell';
 import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
 import { useUserBooleanConfig } from '@tuturuuu/ui/hooks/use-user-config';
-import type { TaskProgressView } from '@tuturuuu/ui/tu-do/progress/task-progress-page';
 import { isExactTuturuuuDotComEmail } from '@tuturuuu/utils/email/client';
 import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useState } from 'react';
@@ -51,7 +45,6 @@ import {
   TaskLabelsSettings,
   TaskLogsSettings,
   TaskNotesSettings,
-  TaskProgressSettings,
   TaskProjectsSettings,
   TaskShareSettingsPanel,
   TaskTemplatesSettings,
@@ -64,22 +57,6 @@ interface SettingsDialogProps {
   defaultTab?: string;
   workspace?: Workspace | null;
 }
-
-const PROGRESS_TAB_TO_VIEW: Record<string, TaskProgressView> = {
-  task_goals: 'goals',
-  task_import: 'import',
-  task_leaderboards: 'leaderboards',
-  task_progress: 'progress',
-  task_stats: 'stats',
-};
-
-const PROGRESS_VIEW_TO_TAB: Record<TaskProgressView, string> = {
-  goals: 'task_goals',
-  import: 'task_import',
-  leaderboards: 'task_leaderboards',
-  progress: 'task_progress',
-  stats: 'task_stats',
-};
 
 function EstimateIcon({ className }: { className?: string }) {
   return <Icon iconNode={hexagons3} className={className} />;
@@ -228,51 +205,6 @@ export function SettingsDialog({
         ],
       },
       {
-        label: t('settings.tasks.progress_group'),
-        items: [
-          {
-            name: 'task_progress',
-            label: t('settings.tasks.progress'),
-            icon: TrendingUp,
-            description: t('settings.tasks.progress_description'),
-            hideContentHeader: true,
-            keywords: ['Tasks', 'Progress'],
-          },
-          {
-            name: 'task_goals',
-            label: t('settings.tasks.goals'),
-            icon: Goal,
-            description: t('settings.tasks.goals_description'),
-            hideContentHeader: true,
-            keywords: ['Tasks', 'Goals'],
-          },
-          {
-            name: 'task_stats',
-            label: t('settings.tasks.stats'),
-            icon: BarChart3,
-            description: t('settings.tasks.stats_description'),
-            hideContentHeader: true,
-            keywords: ['Tasks', 'Stats'],
-          },
-          {
-            name: 'task_leaderboards',
-            label: t('settings.tasks.leaderboards'),
-            icon: Trophy,
-            description: t('settings.tasks.leaderboards_description'),
-            hideContentHeader: true,
-            keywords: ['Tasks', 'Leaderboards'],
-          },
-          {
-            name: 'task_import',
-            label: t('common.import'),
-            icon: Upload,
-            description: t('settings.tasks.import_description'),
-            hideContentHeader: true,
-            keywords: ['Tasks', 'Import'],
-          },
-        ],
-      },
-      {
         label: t('settings.calendar.title'),
         items: [
           {
@@ -327,8 +259,6 @@ export function SettingsDialog({
     ],
     [t, tasksLabel]
   );
-
-  const progressView = PROGRESS_TAB_TO_VIEW[activeTab];
 
   return (
     <SettingsDialogShell
@@ -393,14 +323,6 @@ export function SettingsDialog({
 
       {activeTab === 'task_drafts' && wsId && (
         <TaskDraftsSettings wsId={wsId} />
-      )}
-
-      {progressView && wsId && (
-        <TaskProgressSettings
-          onViewChange={(view) => setActiveTab(PROGRESS_VIEW_TO_TAB[view])}
-          view={progressView}
-          wsId={wsId}
-        />
       )}
 
       {activeTab === 'profile' && user && (

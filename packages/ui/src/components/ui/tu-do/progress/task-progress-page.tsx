@@ -1,7 +1,7 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { BarChart3, Flag, Sparkles, Target, Trophy } from '@tuturuuu/icons';
+import { BarChart3, Flag, Target, Trophy, Upload } from '@tuturuuu/icons';
 import {
   createTaskLeaderboard,
   createTaskLeaderboardTeam,
@@ -40,7 +40,6 @@ export type TaskProgressView =
   | 'import';
 
 interface TaskProgressPageProps {
-  onViewChange?: (view: TaskProgressView) => void;
   routeWsId: string;
   view: TaskProgressView;
   wsId: string;
@@ -88,7 +87,6 @@ function parseImportRows(text: string, metrics: TaskProgressMetric[]) {
 }
 
 export function TaskProgressPage({
-  onViewChange,
   routeWsId,
   view,
   wsId,
@@ -244,32 +242,34 @@ export function TaskProgressPage({
   const leaderboards = leaderboardsQuery.data?.ok
     ? leaderboardsQuery.data.leaderboards
     : [];
+  const tabs = [
+    { icon: Flag, value: 'progress' },
+    { icon: Target, value: 'goals' },
+    { icon: BarChart3, value: 'stats' },
+    { icon: Trophy, value: 'leaderboards' },
+    { icon: Upload, value: 'import' },
+  ] as const;
 
   return (
     <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-6 p-4 md:p-6 lg:p-8">
-      <section className="relative overflow-hidden rounded-3xl border bg-gradient-to-br from-background via-background to-dynamic-blue/10 p-5 shadow-sm md:p-7">
-        <div className="pointer-events-none absolute -top-24 -right-20 h-64 w-64 rounded-full bg-dynamic-blue/10 blur-3xl" />
-        <div className="relative flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
-          <div className="max-w-2xl space-y-3">
-            <div className="flex items-center gap-2 font-semibold text-dynamic-blue text-xs uppercase tracking-[0.18em]">
-              <Sparkles className="h-4 w-4" />
+      <section className="overflow-hidden rounded-2xl border bg-card/60 shadow-sm backdrop-blur">
+        <div className="flex flex-col gap-4 p-5 md:flex-row md:items-center md:justify-between md:p-6">
+          <div className="max-w-2xl">
+            <h1 className="font-bold text-2xl tracking-tight md:text-3xl">
               {t('views.progress.title')}
-            </div>
-            <div>
-              <h1 className="font-bold text-3xl tracking-tight md:text-4xl">
-                {t(`views.${view}.title`)}
-              </h1>
-              <p className="mt-2 text-muted-foreground">
-                {t(`views.${view}.description`)}
-              </p>
-            </div>
+            </h1>
+            <p className="mt-1 text-muted-foreground text-sm md:text-base">
+              {t(`views.${view}.description`)}
+            </p>
+          </div>
+          <div className="shrink-0">
             {metrics.length > 0 ? (
-              <label className="inline-flex items-center gap-3 rounded-xl border bg-background/80 px-3 py-2 text-sm shadow-sm backdrop-blur">
+              <label className="flex min-w-56 items-center justify-between gap-3 rounded-xl border bg-background px-3 py-2 text-sm shadow-sm">
                 <span className="text-muted-foreground">
                   {t('fields.metric_name')}
                 </span>
                 <select
-                  className="min-w-32 bg-transparent font-medium outline-none"
+                  className="min-w-28 bg-transparent text-right font-medium outline-none"
                   onChange={(event) => setSelectedMetricId(event.target.value)}
                   value={selectedMetric?.id ?? ''}
                 >
@@ -282,41 +282,29 @@ export function TaskProgressPage({
               </label>
             ) : null}
           </div>
-          <nav className="flex max-w-full gap-1 overflow-x-auto rounded-2xl border bg-background/80 p-1.5 shadow-sm backdrop-blur">
-            {(
-              ['progress', 'goals', 'stats', 'leaderboards', 'import'] as const
-            ).map((tab) =>
-              onViewChange ? (
-                <Button
-                  key={tab}
-                  onClick={() => onViewChange(tab)}
-                  size="sm"
-                  type="button"
-                  variant={tab === view ? 'default' : 'ghost'}
-                >
-                  {t(`tabs.${tab}`)}
-                </Button>
-              ) : (
-                <Button
-                  key={tab}
-                  asChild
-                  size="sm"
-                  variant={tab === view ? 'default' : 'ghost'}
-                >
-                  <Link
-                    href={
-                      tab === 'progress'
-                        ? `/${routeWsId}/progress`
-                        : `/${routeWsId}/progress/${tab}`
-                    }
-                  >
-                    {t(`tabs.${tab}`)}
-                  </Link>
-                </Button>
-              )
-            )}
-          </nav>
         </div>
+        <nav className="flex max-w-full gap-1 overflow-x-auto border-t bg-muted/20 p-2">
+          {tabs.map(({ icon: TabIcon, value: tab }) => (
+            <Button
+              key={tab}
+              asChild
+              className="shrink-0 gap-2 rounded-lg"
+              size="sm"
+              variant={tab === view ? 'secondary' : 'ghost'}
+            >
+              <Link
+                href={
+                  tab === 'progress'
+                    ? `/${routeWsId}/progress`
+                    : `/${routeWsId}/progress/${tab}`
+                }
+              >
+                <TabIcon className="size-4" />
+                {t(`tabs.${tab}`)}
+              </Link>
+            </Button>
+          ))}
+        </nav>
       </section>
 
       {hasPendingSchema ? (
