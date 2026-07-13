@@ -246,4 +246,19 @@ describe('test submission AI feedback route', () => {
       })
     );
   });
+
+  it('returns 504 when the AI SDK throws a regular abort error', async () => {
+    const abortError = new Error('The operation was aborted');
+    abortError.name = 'AbortError';
+    mocks.generateObject.mockRejectedValueOnce(abortError);
+    const { POST } = await import('./route');
+
+    const response = await POST(request(), routeContext());
+
+    expect(response.status).toBe(504);
+    await expect(response.json()).resolves.toEqual({
+      message: 'AI feedback generation timed out',
+    });
+    expect(mocks.deductAiCredits).not.toHaveBeenCalled();
+  });
 });

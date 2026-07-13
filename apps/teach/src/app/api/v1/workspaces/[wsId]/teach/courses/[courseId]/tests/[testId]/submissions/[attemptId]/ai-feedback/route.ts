@@ -286,7 +286,7 @@ Provide a concise, constructive explanation of 2-3 sentences in the language of 
 
 function isAbortError(error: unknown) {
   return (
-    error instanceof DOMException &&
+    (error instanceof Error || error instanceof DOMException) &&
     (error.name === 'AbortError' || error.name === 'TimeoutError')
   );
 }

@@ -18,7 +18,7 @@ import {
 import { toast } from '@tuturuuu/ui/sonner';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { QuizSubmissionResponseViewer } from '@/components/quiz-submission-response-viewer';
 
 interface TestSubmissionDetailDialogProps {
@@ -136,6 +136,10 @@ function SubmissionContent({
   const incorrectAnswers = answers.filter((a) => a.is_correct === false).length;
 
   const [aiFeedbacks, setAiFeedbacks] = useState<Record<string, string>>({});
+  const pendingAiQuizIdsRef = useRef(new Set<string>());
+  const [pendingAiQuizIds, setPendingAiQuizIds] = useState<Set<string>>(
+    () => new Set()
+  );
   const aiFeedbackMutation = useMutation({
     mutationFn: (quizId: string) =>
       generateWorkspaceCourseTestSubmissionFeedback(
@@ -152,7 +156,19 @@ function SubmissionContent({
     onError: () => {
       toast.error(t('teachModules.aiFeedbackError'));
     },
+    onSettled: (_data, _error, quizId) => {
+      pendingAiQuizIdsRef.current.delete(quizId);
+      setPendingAiQuizIds(new Set(pendingAiQuizIdsRef.current));
+    },
   });
+
+  const generateAiFeedback = (quizId: string) => {
+    if (pendingAiQuizIdsRef.current.has(quizId)) return;
+
+    pendingAiQuizIdsRef.current.add(quizId);
+    setPendingAiQuizIds(new Set(pendingAiQuizIdsRef.current));
+    aiFeedbackMutation.mutate(quizId);
+  };
 
   return (
     <div className="mt-4 space-y-6">
@@ -277,11 +293,8 @@ function SubmissionContent({
                   maxScore={quiz.score}
                   t={t}
                   aiFeedback={aiFeedbacks[quiz.id]}
-                  isAiLoading={
-                    aiFeedbackMutation.isPending &&
-                    aiFeedbackMutation.variables === quiz.id
-                  }
-                  onGenerateAi={() => aiFeedbackMutation.mutate(quiz.id)}
+                  isAiLoading={pendingAiQuizIds.has(quiz.id)}
+                  onGenerateAi={() => generateAiFeedback(quiz.id)}
                 />
               </div>
             </div>
