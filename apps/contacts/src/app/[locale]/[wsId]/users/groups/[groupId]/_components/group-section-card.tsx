@@ -44,7 +44,7 @@ export function GroupSectionCard({
         className
       )}
     >
-      <header className="flex items-start justify-between gap-3 border-border/40 border-b bg-foreground/[0.015] px-5 py-4">
+      <header className="flex flex-col gap-3 border-border/40 border-b bg-foreground/[0.015] px-4 py-4 sm:flex-row sm:items-start sm:justify-between sm:px-5">
         <div className="flex min-w-0 items-center gap-3">
           {icon ? (
             <span
@@ -61,15 +61,19 @@ export function GroupSectionCard({
               {title}
             </h2>
             {description ? (
-              <p className="mt-0.5 truncate text-muted-foreground text-xs">
+              <p className="mt-0.5 line-clamp-2 text-muted-foreground text-xs">
                 {description}
               </p>
             ) : null}
           </div>
         </div>
-        {action ? <div className="flex-shrink-0">{action}</div> : null}
+        {action ? (
+          <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:flex-shrink-0">
+            {action}
+          </div>
+        ) : null}
       </header>
-      <div className={cn('flex flex-1 flex-col p-5', contentClassName)}>
+      <div className={cn('flex flex-1 flex-col p-4 sm:p-5', contentClassName)}>
         {children}
       </div>
     </section>

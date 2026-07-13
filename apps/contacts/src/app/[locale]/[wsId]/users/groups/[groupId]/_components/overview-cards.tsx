@@ -5,6 +5,7 @@ import {
   getCachedGroupScheduleSessions,
 } from '@tuturuuu/users-core/lib/user-groups/server-cache';
 import { getGroupStorageFiles } from '@tuturuuu/users-core/lib/user-groups/server-storage';
+import { connection } from 'next/server';
 import type { GroupMember } from '../group-member-card';
 import GroupMembers from '../group-members';
 import GroupStorage, { type GroupStorageFiles } from '../group-storage';
@@ -30,6 +31,7 @@ export async function MembersCardServer({
   canViewPublicInfo: boolean;
   canUpdateUserGroups: boolean;
 }) {
+  await connection();
   const page = await getCachedGroupMembersPage(
     wsId,
     groupId,
@@ -62,6 +64,7 @@ export async function ScheduleCardServer({
   canUpdateUserGroups: boolean;
   month?: string | null;
 }) {
+  await connection();
   const schedule = await getCachedGroupScheduleSessions(wsId, groupId, month);
 
   return (
@@ -90,6 +93,7 @@ export async function PostsCardServer({
   canDeletePosts: boolean;
   canViewPosts: boolean;
 }) {
+  await connection();
   const page = await getCachedGroupPostsPage(groupId, POSTS_PAGE_SIZE);
 
   return (
@@ -119,6 +123,7 @@ export async function LinkedProductsCardServer({
   groupId: string;
   canUpdateLinkedProducts: boolean;
 }) {
+  await connection();
   const linked = await getCachedGroupLinkedProducts(groupId);
 
   return (
@@ -140,6 +145,7 @@ export async function StorageCardServer({
   groupId: string;
   canUpdateGroup: boolean;
 }) {
+  await connection();
   const files = await getGroupStorageFiles(wsId, groupId);
 
   return (
