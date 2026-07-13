@@ -492,6 +492,26 @@ export function updateWorkspaceCourseTestSubmissionFeedback(
   );
 }
 
+export function generateWorkspaceCourseTestSubmissionFeedback(
+  workspaceId: string,
+  courseId: string,
+  testId: string,
+  attemptId: string,
+  payload: { quizId: string },
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(withTeachApiBaseUrl(options));
+  return client.json<{ feedback: string }>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/teach/courses/${encodePathSegment(courseId)}/tests/${encodePathSegment(testId)}/submissions/${encodePathSegment(attemptId)}/ai-feedback`,
+    {
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+      headers: { 'Content-Type': 'application/json' },
+      method: 'POST',
+    }
+  );
+}
+
 export interface TeachModuleQuizSubmission {
   answeredCount: number;
   correctCount: number;

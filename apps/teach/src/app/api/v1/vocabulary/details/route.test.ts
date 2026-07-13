@@ -22,46 +22,32 @@ describe('GET /api/v1/vocabulary/details scraper', () => {
     expect(data.message).toContain('Word query parameter is required');
   });
 
-  it('scrapes the best OED search result definition successfully from mocked HTML', async () => {
-    const searchHtml = `
+  it('scrapes Laban details successfully from HTML', async () => {
+    const mockHtml = `
       <html>
         <body>
-          <div class="resultsSet">
-            <div class="resultsSetItem">
-              <h3 class="resultTitle" id="eat_v">
-                <span class="hw"><span class="hw">eat, </span><span class="ps">v.</span></span>
-              </h3>
-              <div class="snippet">transitive. To take into the mouth piecemeal, and…</div>
-              <a class="viewEntry resultLink" href="/dictionary/eat_v?tab=meaning_and_use#5936857" title="eat, v.">View entry</a>
+          <div class="word_tab_title_0">
+            <h2>eat <span>(v)</span></h2>
+            <span class="color-black">/iːt/</span>
+          </div>
+          <div class="slide_content" rel="0">
+            <div class="content">
+              <div class="bg-grey bold font-large"><span>động từ</span></div>
+              <div class="green bold margin25">ăn</div>
+              <div class="bold dot-blue">Phrasal verbs</div>
+              <div class="grey bold margin25">nội dung sau ranh giới</div>
+              <div class="color-light-blue margin25">We eat dinner together.</div>
             </div>
           </div>
         </body>
       </html>
     `;
-    const entryHtml = `
-      <html>
-        <body>
-          <article>
-            <h1><span class="hw">eat</span></h1>
-            <span class="pronunciation">/iːt/</span>
-            <div class="definition">To consume food.</div>
-            <blockquote class="quotationText">We eat dinner together.</blockquote>
-          </article>
-        </body>
-      </html>
-    `;
 
-    vi.spyOn(globalThis, 'fetch')
-      .mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        text: async () => searchHtml,
-      } as Response)
-      .mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        text: async () => entryHtml,
-      } as Response);
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      status: 200,
+      text: async () => mockHtml,
+    } as Response);
 
     const request = new NextRequest(
       'http://localhost/api/v1/vocabulary/details?word=eat'
@@ -69,34 +55,29 @@ describe('GET /api/v1/vocabulary/details scraper', () => {
     const response = await GET(request);
     expect(response.status).toBe(200);
 
+    const [requestedUrl, requestInit] = fetchMock.mock.calls[0] ?? [];
+    expect(requestedUrl).toBeInstanceOf(URL);
+    expect(String(requestedUrl)).toBe(
+      'https://dict.laban.vn/find?type=1&query=eat'
+    );
+    expect(requestInit).toEqual(
+      expect.objectContaining({
+        next: { revalidate: 3600 },
+        signal: expect.any(AbortSignal),
+      })
+    );
+
     const data = await response.json();
     expect(data.word).toBe('eat');
     expect(data.pronunciation).toBe('/iːt/');
-    expect(data.definition).toBe('To consume food.');
+    expect(data.definition).toBe('động từ: ăn');
     expect(data.examples).toEqual(['We eat dinner together.']);
   });
 
-  it('falls back to the first OED search result when no exact title matches', async () => {
-    const mockHtml = `
-      <html>
-        <body>
-          <div class="resultsSet">
-            <div class="resultsSetItem">
-              <h3 class="resultTitle" id="oat_n">
-                <span class="hw"><span class="hw">oat, </span><span class="ps">n.</span></span>
-              </h3>
-              <div class="snippet">The cereal which yields this...</div>
-              <a class="viewEntry resultLink" href="/dictionary/oat_n" title="oat, n.">View entry</a>
-            </div>
-          </div>
-        </body>
-      </html>
-    `;
-
+  it('falls back to empty details if fetch returns non-OK response', async () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValue({
-      ok: true,
-      status: 200,
-      text: async () => mockHtml,
+      ok: false,
+      status: 500,
     } as Response);
 
     const request = new NextRequest(
@@ -106,7 +87,9 @@ describe('GET /api/v1/vocabulary/details scraper', () => {
     expect(response.status).toBe(200);
 
     const data = await response.json();
-    expect(data.word).toBe('oat');
-    expect(data.definition).toBe('The cereal which yields this...');
+    expect(data.word).toBe('example');
+    expect(data.definition).toBe('');
+    expect(data.pronunciation).toBe('');
+    expect(data.examples).toEqual([]);
   });
 });

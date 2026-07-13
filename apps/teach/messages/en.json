@@ -404,6 +404,8 @@
   "teachModules": {
     "addFeedback": "+ Add teacher feedback",
     "addSection": "Add section",
+    "aiFeedbackError": "Failed to generate AI feedback",
+    "aiFeedbackGenerated": "AI feedback generated successfully",
     "aiGenerate": {
       "actions": {
         "cancel": "Cancel",
@@ -472,6 +474,7 @@
     "feedbackPlaceholder": "Add your feedback here...",
     "feedbackSaved": "Feedback saved successfully",
     "feedbackSaveError": "Failed to save feedback",
+    "generateAiFeedback": "Generate AI feedback",
     "gradedError": "Failed to grade submission",
     "gradedSuccess": "Graded successfully",
     "hideScores": "Hide Scores",
@@ -736,7 +739,6 @@
     "workspaceFallback": "Education workspace"
   },
   "teachShell": {
-    "navigationLabel": "Teacher workspace navigation",
     "logout": "Log out",
     "nav": {
       "assignments": "Assignments",
@@ -748,6 +750,7 @@
       "reports": "Reports",
       "settings": "Settings"
     },
+    "navigationLabel": "Teacher workspace navigation",
     "workspaceFallback": "Education workspace"
   },
   "teachStudentPerformance": {

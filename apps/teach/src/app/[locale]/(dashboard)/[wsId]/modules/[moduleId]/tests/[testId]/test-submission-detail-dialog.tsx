@@ -3,6 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Loader2, X } from '@tuturuuu/icons';
 import {
+  generateWorkspaceCourseTestSubmissionFeedback,
   getWorkspaceCourseTestSubmission,
   type TeachTestSubmissionDetail,
   updateWorkspaceCourseTestSubmissionFeedback,
@@ -17,7 +18,7 @@ import {
 import { toast } from '@tuturuuu/ui/sonner';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { QuizSubmissionResponseViewer } from '@/components/quiz-submission-response-viewer';
 
 interface TestSubmissionDetailDialogProps {
@@ -134,6 +135,41 @@ function SubmissionContent({
   const correctAnswers = answers.filter((a) => a.is_correct === true).length;
   const incorrectAnswers = answers.filter((a) => a.is_correct === false).length;
 
+  const [aiFeedbacks, setAiFeedbacks] = useState<Record<string, string>>({});
+  const pendingAiQuizIdsRef = useRef(new Set<string>());
+  const [pendingAiQuizIds, setPendingAiQuizIds] = useState<Set<string>>(
+    () => new Set()
+  );
+  const aiFeedbackMutation = useMutation({
+    mutationFn: (quizId: string) =>
+      generateWorkspaceCourseTestSubmissionFeedback(
+        wsId,
+        courseId,
+        testId,
+        attemptId,
+        { quizId }
+      ),
+    onSuccess: (result, quizId) => {
+      setAiFeedbacks((prev) => ({ ...prev, [quizId]: result.feedback }));
+      toast.success(t('teachModules.aiFeedbackGenerated'));
+    },
+    onError: () => {
+      toast.error(t('teachModules.aiFeedbackError'));
+    },
+    onSettled: (_data, _error, quizId) => {
+      pendingAiQuizIdsRef.current.delete(quizId);
+      setPendingAiQuizIds(new Set(pendingAiQuizIdsRef.current));
+    },
+  });
+
+  const generateAiFeedback = (quizId: string) => {
+    if (pendingAiQuizIdsRef.current.has(quizId)) return;
+
+    pendingAiQuizIdsRef.current.add(quizId);
+    setPendingAiQuizIds(new Set(pendingAiQuizIdsRef.current));
+    aiFeedbackMutation.mutate(quizId);
+  };
+
   return (
     <div className="mt-4 space-y-6">
       {/* Stats summary row */}
@@ -229,7 +265,10 @@ function SubmissionContent({
               </div>
 
               {/* Student response render */}
-              <div className="border-2 border-border border-dashed bg-muted/10 p-3.5 text-sm">
+              <div
+                onClick={(e) => e.stopPropagation()}
+                className="cursor-default border-2 border-border border-dashed bg-muted/10 p-3.5 text-sm"
+              >
                 <QuizSubmissionResponseViewer
                   quiz={quiz}
                   answer={quizAns}
@@ -238,18 +277,34 @@ function SubmissionContent({
               </div>
 
               {/* Teacher feedback form */}
-              <FeedbackForm
-                wsId={wsId}
-                courseId={courseId}
-                testId={testId}
-                attemptId={attemptId}
-                quizId={quiz.id}
-                initialScoreAwarded={quizAns.score_awarded ?? 0}
-                initialFeedback={quizAns.feedback || ''}
-                isParagraph={quiz.type === 'paragraph'}
-                maxScore={quiz.score}
-                t={t}
-              />
+              <div
+                onClick={(e) => e.stopPropagation()}
+                className="cursor-default"
+              >
+                <FeedbackForm
+                  wsId={wsId}
+                  courseId={courseId}
+                  testId={testId}
+                  attemptId={attemptId}
+                  quizId={quiz.id}
+                  initialScoreAwarded={quizAns.score_awarded ?? 0}
+                  initialFeedback={quizAns.feedback || ''}
+                  isParagraph={quiz.type === 'paragraph'}
+                  maxScore={quiz.score}
+                  t={t}
+                  aiFeedback={aiFeedbacks[quiz.id]}
+                  isAiDisabled={pendingAiQuizIds.size > 0}
+                  isAiLoading={pendingAiQuizIds.has(quiz.id)}
+                  onGenerateAi={() => generateAiFeedback(quiz.id)}
+                  onFeedbackSaved={() =>
+                    setAiFeedbacks((prev) => {
+                      const next = { ...prev };
+                      delete next[quiz.id];
+                      return next;
+                    })
+                  }
+                />
+              </div>
             </div>
           );
         })}
@@ -270,6 +325,11 @@ function FeedbackForm({
   isParagraph,
   maxScore,
   t,
+  aiFeedback,
+  isAiDisabled,
+  isAiLoading,
+  onGenerateAi,
+  onFeedbackSaved,
 }: {
   wsId: string;
   courseId: string;
@@ -281,15 +341,28 @@ function FeedbackForm({
   isParagraph: boolean;
   maxScore: number | null;
   t: ReturnType<typeof useTranslations>;
+  aiFeedback?: string;
+  isAiDisabled?: boolean;
+  isAiLoading?: boolean;
+  onGenerateAi?: () => void;
+  onFeedbackSaved?: () => void;
 }) {
   const qc = useQueryClient();
   const [feedback, setFeedback] = useState(initialFeedback);
+  const [hasManualEdit, setHasManualEdit] = useState(false);
   const [scoreAwarded, setScoreAwarded] = useState(String(initialScoreAwarded));
 
   useEffect(() => {
     setFeedback(initialFeedback);
+    setHasManualEdit(false);
     setScoreAwarded(String(initialScoreAwarded));
   }, [initialFeedback, initialScoreAwarded]);
+
+  useEffect(() => {
+    if (aiFeedback && !hasManualEdit) {
+      setFeedback(aiFeedback);
+    }
+  }, [aiFeedback, hasManualEdit]);
 
   const parseManualScore = () => {
     const parsed = scoreAwarded.trim() ? Number(scoreAwarded) : 0;
@@ -328,6 +401,7 @@ function FeedbackForm({
       );
     },
     onSuccess: () => {
+      onFeedbackSaved?.();
       toast.success(t('teachModules.feedbackSaved'));
       qc.invalidateQueries({
         queryKey: [
@@ -357,9 +431,23 @@ function FeedbackForm({
 
   return (
     <div className="space-y-2 border-border border-t pt-2">
-      <label className="block font-black text-muted-foreground text-xs uppercase tracking-wider">
-        {t('teachModules.questionFeedback')}
-      </label>
+      <div className="flex items-center justify-between">
+        <label className="block font-black text-muted-foreground text-xs uppercase tracking-wider">
+          {t('teachModules.questionFeedback')}
+        </label>
+        <button
+          type="button"
+          onClick={onGenerateAi}
+          disabled={isAiDisabled || isAiLoading || feedbackMutation.isPending}
+          className="inline-flex cursor-pointer items-center gap-1 border border-border bg-background px-2 py-0.5 font-bold text-foreground text-xs shadow-[1px_1px_0_var(--border)] transition hover:-translate-y-0.5 disabled:opacity-50"
+        >
+          {isAiLoading ? (
+            <Loader2 className="h-3 w-3 animate-spin text-primary" />
+          ) : (
+            t('teachModules.generateAiFeedback')
+          )}
+        </button>
+      </div>
       {isParagraph && (
         <div className="max-w-xs space-y-1">
           <label
@@ -385,15 +473,18 @@ function FeedbackForm({
         <textarea
           rows={2}
           value={feedback}
-          onChange={(e) => setFeedback(e.target.value)}
+          onChange={(e) => {
+            setFeedback(e.target.value);
+            setHasManualEdit(true);
+          }}
           placeholder={t('teachModules.feedbackPlaceholder')}
           className="w-full resize-none border-2 border-border bg-background px-3 py-2 text-sm shadow-[2px_2px_0_var(--border)] outline-none focus:border-primary"
-          disabled={feedbackMutation.isPending}
+          disabled={feedbackMutation.isPending || isAiLoading}
         />
         <button
           type="button"
           onClick={() => feedbackMutation.mutate()}
-          disabled={feedbackMutation.isPending || !isChanged}
+          disabled={feedbackMutation.isPending || !isChanged || isAiLoading}
           className={cn(
             'inline-flex w-full shrink-0 cursor-pointer items-center justify-center gap-2 border-2 border-border px-4 py-2.5 font-bold text-sm shadow-[2px_2px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[3px_3px_0_var(--border)] active:translate-y-0 active:shadow-[1px_1px_0_var(--border)] disabled:opacity-50 sm:w-auto',
             isFeedbackChanged

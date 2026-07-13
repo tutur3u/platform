@@ -1558,6 +1558,7 @@ export {
   createWorkspaceCoursePost,
   createWorkspaceCourseReport,
   createWorkspaceCourseTest,
+  generateWorkspaceCourseTestSubmissionFeedback,
   getCourseStudentPerformance,
   getTeachBootstrap,
   getTeachDashboardStats,
