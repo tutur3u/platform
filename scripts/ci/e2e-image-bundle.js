@@ -5,6 +5,8 @@ const path = require('node:path');
 
 const {
   buildBlueGreenServices,
+  buildNativeWebArtifacts,
+  buildNativeWebRuntimeImages,
   getBlueGreenDeploymentBuildServices,
 } = require('../docker-web/blue-green.js');
 const {
@@ -31,6 +33,13 @@ const {
   validateRepository,
   verifyPackageVisibility,
 } = require('./e2e-image-bundle-ghcr.js');
+const {
+  createBakeMetadataRunner,
+  promoteRegistryImage,
+  readBuildDigest,
+  SOURCE_REPOSITORY_ANNOTATION,
+  writeRegistryBakeDefinition,
+} = require('./e2e-image-bundle-registry.js');
 
 const ROOT_DIR = path.resolve(__dirname, '..', '..');
 const DEFAULT_WAIT_SECONDS = 360;
@@ -38,8 +47,7 @@ const DEFAULT_POLL_MS = 10_000;
 const DEFAULT_PUBLISH_CONCURRENCY = 3;
 const CACHE_TAG_PREFIX = 'cache-';
 const SENTINEL_TAG = 'sentinel';
-const SOURCE_REPOSITORY_LABEL =
-  'LABEL org.opencontainers.image.source=https://github.com/tutur3u/platform';
+const BUNDLE_FRONTENDS = new Set(['both', 'next', 'tanstack']);
 const STABLE_BUILD_METADATA = Object.freeze({
   PLATFORM_BUILD_BUILT_AT: '2000-01-01T00:00:00.000Z',
   PLATFORM_BUILD_COMMIT_HASH: '0000000000000000000000000000000000000000',
@@ -105,6 +113,20 @@ function validateProjectName(projectName, name) {
   return normalized;
 }
 
+function validateBundleFrontend(frontend) {
+  const normalized = String(frontend ?? '')
+    .trim()
+    .toLowerCase();
+
+  if (!BUNDLE_FRONTENDS.has(normalized)) {
+    throw new Error(
+      'E2E image bundle frontend must be next, tanstack, or both.'
+    );
+  }
+
+  return normalized;
+}
+
 function parseArgs(argv = process.argv.slice(2), env = process.env) {
   const command = argv[0];
 
@@ -161,6 +183,16 @@ function parseArgs(argv = process.argv.slice(2), env = process.env) {
             '--consumer-project'
           )
         : null,
+    frontend:
+      command === 'pull'
+        ? validateBundleFrontend(
+            getOptionValue(
+              argv,
+              '--frontend',
+              env.E2E_IMAGE_BUNDLE_FRONTEND ?? 'both'
+            )
+          )
+        : 'both',
     producerProject:
       command === 'publish'
         ? validateProjectName(
@@ -182,25 +214,25 @@ function parseArgs(argv = process.argv.slice(2), env = process.env) {
   };
 }
 
-function getBundleServices(env = {}) {
+function getBundleServices(env = {}, frontend = 'both') {
+  const selectedFrontend = validateBundleFrontend(frontend);
   const baseEnv = {
     ...env,
     DOCKER_SUPERMEMORY_ENABLED: 'false',
     DOCKER_WEB_CRON_RUNNER_ENABLED: '0',
     SUPERMEMORY_ENABLED: 'false',
   };
-  const nextServices = getBlueGreenDeploymentBuildServices({
-    env: { ...baseEnv, DOCKER_WEB_FRONTEND: 'next' },
-    forceBuildSupportServices: true,
-    targetColor: 'blue',
-  });
-  const tanstackServices = getBlueGreenDeploymentBuildServices({
-    env: { ...baseEnv, DOCKER_WEB_FRONTEND: 'tanstack' },
-    forceBuildSupportServices: true,
-    targetColor: 'blue',
-  });
+  const frontends =
+    selectedFrontend === 'both' ? ['next', 'tanstack'] : [selectedFrontend];
+  const services = frontends.flatMap((plannedFrontend) =>
+    getBlueGreenDeploymentBuildServices({
+      env: { ...baseEnv, DOCKER_WEB_FRONTEND: plannedFrontend },
+      forceBuildSupportServices: true,
+      targetColor: 'blue',
+    })
+  );
 
-  return [...new Set([...nextServices, ...tanstackServices])].sort();
+  return [...new Set(services)].sort();
 }
 
 function getConsumerTargets(service, consumerProject) {
@@ -236,11 +268,12 @@ function getRemoteImage(repository, tagPrefix, suffix) {
 function createBundleManifest({
   consumerProject,
   env = {},
+  frontend = 'both',
   producerProject,
   repository,
   tagPrefix,
 }) {
-  return getBundleServices(env).map((service) => ({
+  return getBundleServices(env, frontend).map((service) => ({
     remote: getRemoteImage(repository, tagPrefix, service),
     service,
     source: producerProject ? `${producerProject}-${service}` : null,
@@ -281,8 +314,10 @@ function createBundleBuildEnv({
     DOCKER_WEB_CRON_RUNNER_ENABLED: '0',
     DOCKER_WEB_FRONTEND: 'next',
     DOCKER_WEB_NATIVE_BUILD: baseEnv.E2E_DOCKER_NATIVE_BUILD ?? '1',
+    DOCKER_WEB_NATIVE_RUNNER_BUILDX: '1',
     DOCKER_WEB_NATIVE_SUPPORT_BUILD:
       baseEnv.E2E_DOCKER_NATIVE_SUPPORT_BUILD ?? '1',
+    DOCKER_WEB_NATIVE_SUPPORT_BUILDX: '1',
     SUPERMEMORY_ENABLED: 'false',
   };
 }
@@ -302,42 +337,15 @@ async function runWithConcurrency(items, limit, operation) {
   await Promise.all(workers);
 }
 
-async function createRunScopedImage(
-  entry,
-  { env = process.env, producerProject, run = runCommand, tagPrefix }
-) {
-  const containerName = `${producerProject}-${entry.service}-bundle`;
-
-  await run('docker', ['image', 'inspect', entry.source], { env });
-  await run('docker', ['create', '--name', containerName, entry.source], {
-    env,
-  });
-
-  try {
-    await run(
-      'docker',
-      [
-        'commit',
-        '--change',
-        `LABEL io.tuturuuu.e2e-image-bundle=${tagPrefix}-${entry.service}`,
-        '--change',
-        SOURCE_REPOSITORY_LABEL,
-        containerName,
-        entry.remote,
-      ],
-      { env }
-    );
-  } finally {
-    await run('docker', ['rm', '--force', containerName], { env });
-  }
-}
-
 async function publishBundle(
   options,
   {
     buildRun = runDockerCommand,
     buildServices = buildBlueGreenServices,
+    buildNativeArtifacts = buildNativeWebArtifacts,
+    buildNativeImages = buildNativeWebRuntimeImages,
     env = process.env,
+    getBuildDigest = readBuildDigest,
     remoteImageExists = imageExists,
     run = runCommand,
     verifyVisibility = verifyPackageVisibility,
@@ -353,62 +361,101 @@ async function publishBundle(
     repository: options.repository,
     tagPrefix: options.tagPrefix,
   });
+  const registryEntries = manifest.map((entry) => ({
+    ...entry,
+    cacheImage: getCacheImage(options.repository, entry.service),
+  }));
+  fs.mkdirSync(path.join(ROOT_DIR, 'tmp'), { recursive: true });
+  const tempDir = fs.mkdtempSync(path.join(ROOT_DIR, 'tmp', 'e2e-bundle-'));
 
-  await buildServices({
-    buildStrategy: 'compose',
-    composeFile: PROD_COMPOSE_FILE,
-    composeGlobalArgs: ['--project-name', options.producerProject],
-    env: buildEnv,
-    rootDir: ROOT_DIR,
-    runCommand: buildRun,
-    services: manifest.map((entry) => entry.service),
-  });
-
-  const sentinelImage = `${options.repository}:${SENTINEL_TAG}`;
-  if (!(await remoteImageExists(sentinelImage, { env: buildEnv }))) {
-    await createRunScopedImage(
-      {
-        remote: sentinelImage,
-        service: SENTINEL_TAG,
-        source: manifest[0].source,
-      },
-      {
-        env: buildEnv,
-        producerProject: options.producerProject,
-        run,
-        tagPrefix: SENTINEL_TAG,
-      }
+  try {
+    const nativeEntry = registryEntries.find(
+      (entry) => entry.service === 'web-blue'
     );
-    await run('docker', ['push', sentinelImage], { env: buildEnv });
-  }
-  await verifyVisibility(options.repository, env);
+    const bakeEntries = registryEntries.filter(
+      (entry) => entry !== nativeEntry
+    );
+    const bakeFile = writeRegistryBakeDefinition(bakeEntries, tempDir);
+    const bakeMetadata = createBakeMetadataRunner({
+      directory: tempDir,
+      run: buildRun,
+      services: bakeEntries.map((entry) => entry.service),
+    });
+    const nativeMetadataFile = path.join(tempDir, 'web-blue.metadata.json');
 
-  await runWithConcurrency(
-    manifest,
-    DEFAULT_PUBLISH_CONCURRENCY,
-    async (entry) => {
-      const cacheImage = getCacheImage(options.repository, entry.service);
-      await run('docker', ['tag', entry.source, cacheImage], { env: buildEnv });
-      await run('docker', ['push', cacheImage], { env: buildEnv });
-
-      await createRunScopedImage(entry, {
+    if (nativeEntry) {
+      await buildNativeArtifacts({
         env: buildEnv,
-        producerProject: options.producerProject,
-        run,
-        tagPrefix: options.tagPrefix,
+        rootDir: ROOT_DIR,
+        runCommand: buildRun,
       });
-      await run('docker', ['push', entry.remote], { env: buildEnv });
+      await buildNativeImages({
+        composeGlobalArgs: ['--project-name', options.producerProject],
+        env: buildEnv,
+        imageTagResolver: () => nativeEntry.cacheImage,
+        labels: [SOURCE_REPOSITORY_ANNOTATION],
+        metadataFileResolver: () => nativeMetadataFile,
+        output: 'registry',
+        rootDir: ROOT_DIR,
+        runCommand: buildRun,
+        services: [nativeEntry.service],
+      });
     }
-  );
 
-  const readyImage = getReadyImage(options.repository, options.tagPrefix);
-  await run('docker', ['tag', manifest[0].remote, readyImage], {
-    env: buildEnv,
-  });
-  await run('docker', ['push', readyImage], { env: buildEnv });
-  process.stdout.write(
-    `Published ${manifest.length} E2E images and ready marker ${readyImage}.\n`
-  );
+    await buildServices({
+      bakeFile,
+      buildStrategy: 'bake',
+      composeFile: PROD_COMPOSE_FILE,
+      composeGlobalArgs: ['--project-name', options.producerProject],
+      env: buildEnv,
+      rootDir: ROOT_DIR,
+      runCommand: bakeMetadata.run,
+      services: bakeEntries.map((entry) => entry.service),
+    });
+
+    const digests = new Map(
+      registryEntries.map((entry) => [
+        entry.service,
+        getBuildDigest(
+          entry.service,
+          entry === nativeEntry
+            ? nativeMetadataFile
+            : bakeMetadata.metadataFiles.get(entry.service)
+        ),
+      ])
+    );
+    const promote = (entry, targetImage, bundleLabel) =>
+      promoteRegistryImage(
+        {
+          bundleLabel,
+          digest: digests.get(entry.service),
+          sourceImage: entry.cacheImage,
+          targetImage,
+        },
+        { env: buildEnv, run }
+      );
+
+    const sentinelImage = `${options.repository}:${SENTINEL_TAG}`;
+    if (!(await remoteImageExists(sentinelImage, { env: buildEnv }))) {
+      await promote(registryEntries[0], sentinelImage, SENTINEL_TAG);
+    }
+    await verifyVisibility(options.repository, env);
+
+    await runWithConcurrency(
+      registryEntries,
+      DEFAULT_PUBLISH_CONCURRENCY,
+      (entry) =>
+        promote(entry, entry.remote, `${options.tagPrefix}-${entry.service}`)
+    );
+
+    const readyImage = getReadyImage(options.repository, options.tagPrefix);
+    await promote(registryEntries[0], readyImage, `${options.tagPrefix}-ready`);
+    process.stdout.write(
+      `Published ${manifest.length} E2E images and ready marker ${readyImage}.\n`
+    );
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
 }
 
 async function imageExists(image, { env = process.env, runForOutput } = {}) {
@@ -475,6 +522,7 @@ async function pullBundle(
   const manifest = createBundleManifest({
     consumerProject: options.consumerProject,
     env,
+    frontend: options.frontend,
     repository: options.repository,
     tagPrefix: options.tagPrefix,
   });
@@ -551,12 +599,10 @@ module.exports = {
   DEFAULT_WAIT_SECONDS,
   SENTINEL_TAG,
   STABLE_BUILD_METADATA,
-  SOURCE_REPOSITORY_LABEL,
   appendGitHubEnv,
   cleanupBundle,
   createBundleBuildEnv,
   createBundleManifest,
-  createRunScopedImage,
   deletePackageVersion,
   getBundleServices,
   getCacheImage,
@@ -572,6 +618,7 @@ module.exports = {
   runWithConcurrency,
   selectPackageVersions,
   validateProjectName,
+  validateBundleFrontend,
   validateRepository,
   validateTagPrefix,
   verifyPackageVisibility,

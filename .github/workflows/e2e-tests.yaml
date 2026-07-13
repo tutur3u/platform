@@ -5,6 +5,14 @@ on:
     branches-ignore:
       - production
   workflow_dispatch:
+    inputs:
+      supabase_image_transport:
+        description: Supabase image transport benchmark mode
+        type: choice
+        options:
+          - cache
+          - registry
+        default: cache
 
 permissions:
   contents: read
@@ -16,6 +24,7 @@ env:
   E2E_IMAGE_BUNDLE_TAG_PREFIX: ${{ github.run_id }}-${{ github.run_attempt }}-${{ github.sha }}
   E2E_IMAGE_BUNDLE_WAIT_SECONDS: "10"
   E2E_DOCKER_SUPABASE_RESET: "0"
+  E2E_SUPABASE_IMAGE_TRANSPORT: ${{ inputs.supabase_image_transport || 'cache' }}
 
 jobs:
   check-ci:
@@ -211,6 +220,7 @@ jobs:
 
       - name: Restore cached Docker images
         id: cache-supabase
+        if: env.E2E_SUPABASE_IMAGE_TRANSPORT == 'cache'
         uses: actions/cache/restore@v6
         with:
           path: /tmp/supabase-docker
@@ -219,7 +229,7 @@ jobs:
             supabase-docker-v2-${{ runner.os }}-${{ runner.arch }}-${{ steps.supabase-version.outputs.version }}-
 
       - name: Load cached Docker images
-        if: steps.cache-supabase.outputs.cache-matched-key != ''
+        if: env.E2E_SUPABASE_IMAGE_TRANSPORT == 'cache' && steps.cache-supabase.outputs.cache-matched-key != ''
         run: docker load -i /tmp/supabase-docker/images.tar || true
 
       # --- Node / Bun ---
@@ -280,7 +290,7 @@ jobs:
         run: printf '%s' "$GHCR_TOKEN" | docker login ghcr.io --username "${{ github.actor }}" --password-stdin
 
       - name: Reuse prepared E2E image bundle
-        run: node scripts/ci/e2e-image-bundle.js pull
+        run: node scripts/ci/e2e-image-bundle.js pull --frontend next
 
       # --- Run E2E tests against Docker web + local Docker Supabase ---
       - name: Run Playwright shard
@@ -419,7 +429,7 @@ jobs:
 
       - name: Save Supabase Docker images for cache
         id: prepare-supabase-docker-cache
-        if: ${{ always() && github.ref == 'refs/heads/main' && matrix.shard == 1 && steps.cache-supabase.outputs.cache-matched-key == '' }}
+        if: ${{ always() && env.E2E_SUPABASE_IMAGE_TRANSPORT == 'cache' && github.ref == 'refs/heads/main' && matrix.shard == 1 && steps.cache-supabase.outputs.cache-matched-key == '' }}
         run: |
           mkdir -p /tmp/supabase-docker
           docker images --format '{{.Repository}}:{{.Tag}}' | grep 'supabase/' | grep -v '<none>' | xargs -r docker save -o /tmp/supabase-docker/images.tar
@@ -475,10 +485,12 @@ jobs:
       matrix:
         include:
           - mode: tanstack-dual-stack
+            bundle_frontend: tanstack
             command: bun test:e2e:tanstack:docker -- -- --project=chromium
             playwright_workdir: apps/tanstack-web
             setup_supabase: "false"
           - mode: compare-smoke
+            bundle_frontend: both
             command: bun test:e2e:web:docker:compare -- public-marketing-routes.noauth.spec.ts --project=chromium-no-auth
             playwright_workdir: apps/web
             setup_supabase: "true"
@@ -584,7 +596,7 @@ jobs:
         run: printf '%s' "$GHCR_TOKEN" | docker login ghcr.io --username "${{ github.actor }}" --password-stdin
 
       - name: Reuse prepared E2E image bundle
-        run: node scripts/ci/e2e-image-bundle.js pull
+        run: node scripts/ci/e2e-image-bundle.js pull --frontend ${{ matrix.bundle_frontend }}
 
       - name: Run migration E2E
         run: ${{ matrix.command }}

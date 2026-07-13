@@ -5,15 +5,12 @@ const path = require('node:path');
 const test = require('node:test');
 
 const {
-  CACHE_TAG_PREFIX,
   DEFAULT_PUBLISH_CONCURRENCY,
   SENTINEL_TAG,
   STABLE_BUILD_METADATA,
-  SOURCE_REPOSITORY_LABEL,
   cleanupBundle,
   createBundleBuildEnv,
   createBundleManifest,
-  createRunScopedImage,
   deletePackageVersion,
   getBundleServices,
   getCacheImage,
@@ -26,11 +23,19 @@ const {
   runWithConcurrency,
   selectPackageVersions,
   validateProjectName,
+  validateBundleFrontend,
   validateRepository,
   validateTagPrefix,
   verifyPackageVisibility,
   waitForReadyImage,
 } = require('./e2e-image-bundle.js');
+const {
+  createBakeMetadataRunner,
+  createRegistryBakeDefinition,
+  promoteRegistryImage,
+  readBuildDigest,
+  validateImageDigest,
+} = require('./e2e-image-bundle-registry.js');
 
 const REPOSITORY = 'ghcr.io/tutur3u/platform-e2e';
 const TAG_PREFIX = '12345-2-abcdef0123456789abcdef0123456789abcdef01';
@@ -52,6 +57,8 @@ test('validates the fixed GHCR repository and immutable tag shape', () => {
   assert.throws(() => validateTagPrefix('latest'));
   assert.throws(() => validateTagPrefix('1-1-$(whoami)'));
   assert.throws(() => validateProjectName('../unsafe', 'project'));
+  assert.equal(validateBundleFrontend('next'), 'next');
+  assert.throws(() => validateBundleFrontend('../unsafe'));
 });
 
 test('parseArgs resolves CI interfaces and rejects missing command inputs', () => {
@@ -64,7 +71,16 @@ test('parseArgs resolves CI interfaces and rejects missing command inputs', () =
 
   assert.equal(options.command, 'pull');
   assert.equal(options.consumerProject, 'ttr-migration-e2e-1-tanstack');
+  assert.equal(options.frontend, 'both');
   assert.equal(options.waitSeconds, 45);
+  assert.equal(
+    parseArgs(['pull', '--frontend', 'tanstack'], {
+      COMPOSE_PROJECT_NAME: 'consumer',
+      E2E_IMAGE_BUNDLE_REPOSITORY: REPOSITORY,
+      E2E_IMAGE_BUNDLE_TAG_PREFIX: TAG_PREFIX,
+    }).frontend,
+    'tanstack'
+  );
   assert.throws(() => parseArgs(['publish'], {}));
   assert.throws(() => parseArgs(['unknown'], {}));
 });
@@ -107,6 +123,26 @@ test('bundle manifest follows the blue-green planner and maps all consumer tags'
     getReadyImage(REPOSITORY, TAG_PREFIX),
     `${REPOSITORY}:${TAG_PREFIX}-ready`
   );
+  assert.deepEqual(getBundleServices({}, 'next'), [
+    'backend',
+    'hive-blue',
+    'hive-realtime',
+    'markitdown',
+    'meet-realtime',
+    'storage-unzip-proxy',
+    'web-blue',
+    'web-docker-control',
+  ]);
+  assert.deepEqual(getBundleServices({}, 'tanstack'), [
+    'backend',
+    'hive-blue',
+    'hive-realtime',
+    'markitdown',
+    'meet-realtime',
+    'storage-unzip-proxy',
+    'tanstack-web-blue',
+    'web-docker-control',
+  ]);
 });
 
 test('bundle build env pins metadata without changing production helpers', () => {
@@ -137,6 +173,7 @@ test('bundle build env pins metadata without changing production helpers', () =>
 
 test('publish builds the planned services once and pushes the ready marker last', async () => {
   const calls = [];
+  const nativeCalls = [];
   const buildResult = {
     code: 0,
     signal: null,
@@ -158,7 +195,10 @@ test('publish builds the planned services once and pushes the ready marker last'
       buildServices: async (options) => {
         buildOptions = options;
       },
+      buildNativeArtifacts: async (options) => nativeCalls.push(options),
+      buildNativeImages: async (options) => nativeCalls.push(options),
       env: {},
+      getBuildDigest: () => `sha256:${'a'.repeat(64)}`,
       remoteImageExists: async () => false,
       run: async (command, args) => calls.push([command, args]),
       verifyVisibility: async (repository) => {
@@ -167,60 +207,49 @@ test('publish builds the planned services once and pushes the ready marker last'
     }
   );
 
-  assert.deepEqual(buildOptions.services, getBundleServices({}));
+  assert.deepEqual(
+    buildOptions.services,
+    getBundleServices({}).filter((service) => service !== 'web-blue')
+  );
+  assert.equal(buildOptions.buildStrategy, 'bake');
+  assert.match(buildOptions.bakeFile, /registry-output\.json$/u);
+  assert.equal(nativeCalls.length, 2);
+  assert.deepEqual(nativeCalls[1].services, ['web-blue']);
+  assert.equal(nativeCalls[1].output, 'registry');
+  assert.deepEqual(nativeCalls[1].labels, [
+    'org.opencontainers.image.source=https://github.com/tutur3u/platform',
+  ]);
+  assert.equal(
+    nativeCalls[1].imageTagResolver(),
+    `${REPOSITORY}:cache-web-blue`
+  );
   assert.equal(
     await buildOptions.runCommand('docker', ['version']),
     buildResult
   );
   assert.equal(visibilityRepository, REPOSITORY);
-  assert.deepEqual(calls.at(-1), [
-    'docker',
-    ['push', `${REPOSITORY}:${TAG_PREFIX}-ready`],
-  ]);
   assert.equal(
-    calls.filter(([, args]) => args[0] === 'push').length,
-    getBundleServices({}).length * 2 + 2
+    calls.filter(
+      ([, args]) => args.slice(0, 3).join(' ') === 'buildx imagetools create'
+    ).length,
+    getBundleServices({}).length + 2
   );
-  assert.equal(
-    calls.filter(([, args]) => args[0] === 'commit').length,
-    getBundleServices({}).length + 1
+  const sentinelIndex = calls.findIndex(([, args]) =>
+    args.includes(`${REPOSITORY}:${SENTINEL_TAG}`)
   );
-  assert.equal(
-    calls.filter(([, args]) => args[0] === 'rm').length,
-    getBundleServices({}).length + 1
+  const firstBundleIndex = calls.findIndex(([, args]) =>
+    args.some((arg) => arg.startsWith(`${REPOSITORY}:${TAG_PREFIX}-`))
   );
-  const sentinelPushIndex = calls.findIndex(
-    ([, args]) =>
-      args[0] === 'push' && args[1] === `${REPOSITORY}:${SENTINEL_TAG}`
-  );
-  const firstBundlePushIndex = calls.findIndex(
-    ([, args]) =>
-      args[0] === 'push' && args[1].startsWith(`${REPOSITORY}:${TAG_PREFIX}-`)
-  );
-  assert.ok(sentinelPushIndex >= 0);
-  assert.ok(firstBundlePushIndex > sentinelPushIndex);
+  assert.ok(sentinelIndex >= 0);
+  assert.ok(firstBundleIndex > sentinelIndex);
   for (const service of getBundleServices({})) {
-    const cachePushIndex = calls.findIndex(
-      ([, args]) =>
-        args[0] === 'push' &&
-        args[1] === `${REPOSITORY}:${CACHE_TAG_PREFIX}${service}`
+    assert.ok(
+      calls.some(([, args]) =>
+        args.includes(`${REPOSITORY}:${TAG_PREFIX}-${service}`)
+      )
     );
-    const runPushIndex = calls.findIndex(
-      ([, args]) =>
-        args[0] === 'push' &&
-        args[1] === `${REPOSITORY}:${TAG_PREFIX}-${service}`
-    );
-    assert.ok(cachePushIndex >= 0);
-    assert.ok(runPushIndex > cachePushIndex);
   }
-  assert.deepEqual(calls.at(-2), [
-    'docker',
-    [
-      'tag',
-      `${REPOSITORY}:${TAG_PREFIX}-backend`,
-      `${REPOSITORY}:${TAG_PREFIX}-ready`,
-    ],
-  ]);
+  assert.ok(calls.at(-1)[1].includes(`${REPOSITORY}:${TAG_PREFIX}-ready`));
 });
 
 test('cache image tags are stable and reject unsafe service names', () => {
@@ -250,40 +279,95 @@ test('bundle operations enforce bounded concurrency', async () => {
   assert.equal(maximum, DEFAULT_PUBLISH_CONCURRENCY);
 });
 
-test('run-scoped image derivation reuses layers but isolates the manifest', async () => {
+test('registry promotion reuses a digest but creates an annotated run manifest', async () => {
   const calls = [];
-  const entry = {
-    remote: `${REPOSITORY}:${TAG_PREFIX}-backend`,
-    service: 'backend',
-    source: 'producer-backend',
-  };
+  const digest = `sha256:${'a'.repeat(64)}`;
 
-  await createRunScopedImage(entry, {
-    producerProject: 'producer',
-    run: async (command, args) => calls.push([command, args]),
-    tagPrefix: TAG_PREFIX,
-  });
+  await promoteRegistryImage(
+    {
+      bundleLabel: `${TAG_PREFIX}-backend`,
+      digest,
+      sourceImage: `${REPOSITORY}:cache-backend`,
+      targetImage: `${REPOSITORY}:${TAG_PREFIX}-backend`,
+    },
+    {
+      run: async (command, args) => calls.push([command, args]),
+    }
+  );
 
   assert.deepEqual(calls, [
-    ['docker', ['image', 'inspect', 'producer-backend']],
-    [
-      'docker',
-      ['create', '--name', 'producer-backend-bundle', 'producer-backend'],
-    ],
     [
       'docker',
       [
-        'commit',
-        '--change',
-        `LABEL io.tuturuuu.e2e-image-bundle=${TAG_PREFIX}-backend`,
-        '--change',
-        SOURCE_REPOSITORY_LABEL,
-        'producer-backend-bundle',
+        'buildx',
+        'imagetools',
+        'create',
+        '--annotation',
+        `index:io.tuturuuu.e2e-image-bundle=${TAG_PREFIX}-backend`,
+        '--annotation',
+        'index:org.opencontainers.image.source=https://github.com/tutur3u/platform',
+        '--tag',
         `${REPOSITORY}:${TAG_PREFIX}-backend`,
+        `${REPOSITORY}:cache-backend@${digest}`,
       ],
     ],
-    ['docker', ['rm', '--force', 'producer-backend-bundle']],
   ]);
+});
+
+test('registry Bake output records race-safe image digests', async () => {
+  const digest = `sha256:${'b'.repeat(64)}`;
+  const definition = createRegistryBakeDefinition([
+    {
+      cacheImage: `${REPOSITORY}:cache-backend`,
+      service: 'backend',
+    },
+  ]);
+  assert.deepEqual(definition.target.backend, {
+    labels: {
+      'org.opencontainers.image.source': 'https://github.com/tutur3u/platform',
+    },
+    output: ['type=registry'],
+    tags: [`${REPOSITORY}:cache-backend`],
+  });
+
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'e2e-bake-metadata-'));
+  const calls = [];
+  try {
+    const metadata = createBakeMetadataRunner({
+      directory: tempDir,
+      run: async (command, args) => calls.push([command, args]),
+      services: ['backend'],
+    });
+    await metadata.run('docker', [
+      'buildx',
+      'bake',
+      '-f',
+      'e2e.json',
+      'backend',
+    ]);
+    const metadataFile = metadata.metadataFiles.get('backend');
+    assert.deepEqual(calls[0], [
+      'docker',
+      [
+        'buildx',
+        'bake',
+        '-f',
+        'e2e.json',
+        '--metadata-file',
+        metadataFile,
+        'backend',
+      ],
+    ]);
+    fs.writeFileSync(
+      metadataFile,
+      JSON.stringify({ backend: { 'containerimage.digest': digest } })
+    );
+    assert.equal(readBuildDigest('backend', metadataFile), digest);
+    assert.equal(validateImageDigest(digest), digest);
+    assert.throws(() => validateImageDigest('sha256:unsafe'));
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
 });
 
 test('publish stops before run-scoped pushes when package visibility is unsafe', async () => {
@@ -298,7 +382,10 @@ test('publish stops before run-scoped pushes when package visibility is unsafe',
         },
         {
           buildServices: async () => {},
+          buildNativeArtifacts: async () => {},
+          buildNativeImages: async () => {},
           env: {},
+          getBuildDigest: () => `sha256:${'a'.repeat(64)}`,
           remoteImageExists: async () => false,
           run: async (_command, args) => calls.push(args),
           verifyVisibility: async () => {
@@ -309,15 +396,11 @@ test('publish stops before run-scoped pushes when package visibility is unsafe',
     /public package/u
   );
   assert.ok(
-    calls.some(
-      (args) =>
-        args[0] === 'push' && args[1] === `${REPOSITORY}:${SENTINEL_TAG}`
-    )
+    calls.some((args) => args.includes(`${REPOSITORY}:${SENTINEL_TAG}`))
   );
   assert.equal(
-    calls.some(
-      (args) =>
-        args[0] === 'push' && args[1].startsWith(`${REPOSITORY}:${TAG_PREFIX}-`)
+    calls.some((args) =>
+      args.some((arg) => arg.startsWith(`${REPOSITORY}:${TAG_PREFIX}-`))
     ),
     false
   );
@@ -334,7 +417,10 @@ test('publish reuses the permanent sentinel without creating stale versions', as
     },
     {
       buildServices: async () => {},
+      buildNativeArtifacts: async () => {},
+      buildNativeImages: async () => {},
       env: {},
+      getBuildDigest: () => `sha256:${'a'.repeat(64)}`,
       remoteImageExists: async (image) => image.endsWith(`:${SENTINEL_TAG}`),
       run: async (_command, args) => calls.push(args),
       verifyVisibility: async () => {},
@@ -346,8 +432,8 @@ test('publish reuses the permanent sentinel without creating stale versions', as
     false
   );
   assert.equal(
-    calls.filter((args) => args[0] === 'push').length,
-    getBundleServices({}).length * 2 + 1
+    calls.filter((args) => args[0] === 'buildx').length,
+    getBundleServices({}).length + 1
   );
 });
 
@@ -380,6 +466,7 @@ test('pull retags only after the complete bundle is available and enables no-bui
     const reused = await pullBundle(
       {
         consumerProject: 'consumer',
+        frontend: 'next',
         repository: REPOSITORY,
         tagPrefix: TAG_PREFIX,
         waitSeconds: 1,
@@ -395,6 +482,10 @@ test('pull retags only after the complete bundle is available and enables no-bui
     const firstTagIndex = calls.findIndex(([, args]) => args[0] === 'tag');
     const lastPullIndex = calls.findLastIndex(([, args]) => args[0] === 'pull');
     assert.ok(firstTagIndex > lastPullIndex);
+    assert.equal(
+      calls.some(([, args]) => args.some((arg) => arg.includes('tanstack'))),
+      false
+    );
     const output = fs.readFileSync(githubEnv, 'utf8');
     assert.match(output, /E2E_IMAGE_BUNDLE_READY=1/u);
     assert.match(output, /DOCKER_WEB_SKIP_BLUE_GREEN_WEB_BUILD=1/u);

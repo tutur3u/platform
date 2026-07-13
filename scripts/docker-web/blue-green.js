@@ -2915,22 +2915,35 @@ async function buildNativeWebArtifacts({
 async function buildNativeWebRuntimeImages({
   composeGlobalArgs = [],
   env = {},
+  imageTagResolver = getBlueGreenWebServiceImageTag,
+  labels = [],
+  metadataFileResolver,
   noCache = false,
+  output = 'load',
   rootDir = ROOT_DIR,
   runCommand: run = runCommand,
   services,
 }) {
+  if (!['load', 'registry'].includes(output)) {
+    throw new Error(`Unsupported native web image output: ${output}`);
+  }
+  if (output === 'registry' && !isNativeWebRunnerBuildxEnabled(env)) {
+    throw new Error('Registry output requires the native Buildx runner.');
+  }
+
   const commandEnv = getNativeWebRunnerDockerBuildEnv(env);
 
   for (const serviceName of services) {
     const builderName = env.BUILDX_BUILDER || env.DOCKER_WEB_BUILD_BUILDER_NAME;
+    const metadataFile = metadataFileResolver?.(serviceName);
     const buildArgs = [
       ...(noCache ? ['--no-cache'] : []),
       ...getPlatformBuildMetadataBuildArgs(env),
+      ...labels.flatMap((label) => ['--label', label]),
       '--file',
       getNativeWebRunnerDockerfile(rootDir),
       '--tag',
-      getBlueGreenWebServiceImageTag(serviceName, { composeGlobalArgs, env }),
+      imageTagResolver(serviceName, { composeGlobalArgs, env }),
       rootDir,
     ];
     const args = isNativeWebRunnerBuildxEnabled(env)
@@ -2938,7 +2951,10 @@ async function buildNativeWebRuntimeImages({
           'buildx',
           'build',
           ...(builderName ? ['--builder', builderName] : []),
-          '--load',
+          ...(output === 'registry'
+            ? ['--output', 'type=registry']
+            : ['--load']),
+          ...(metadataFile ? ['--metadata-file', metadataFile] : []),
           ...buildArgs,
         ]
       : ['build', ...buildArgs];

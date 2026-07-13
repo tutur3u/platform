@@ -658,12 +658,14 @@ test('TanStack migration E2E workflow keeps dual-stack and compare coverage', ()
     'tanstack-dual-stack',
   ]);
   assert.deepEqual(rowByMode.get('tanstack-dual-stack'), {
+    bundle_frontend: 'tanstack',
     command: 'bun test:e2e:tanstack:docker -- -- --project=chromium',
     mode: 'tanstack-dual-stack',
     playwright_workdir: 'apps/tanstack-web',
     setup_supabase: 'false',
   });
   assert.deepEqual(rowByMode.get('compare-smoke'), {
+    bundle_frontend: 'both',
     command:
       'bun test:e2e:web:docker:compare -- public-marketing-routes.noauth.spec.ts --project=chromium-no-auth',
     mode: 'compare-smoke',
@@ -765,21 +767,39 @@ test('E2E image bundle completes before private, bounded, optional consumers', (
   assert.equal(workflow.env?.E2E_IMAGE_BUNDLE_WAIT_SECONDS, '10');
   assert.equal(workflow.env?.E2E_DOCKER_SUPABASE_RESET, '0');
   assert.equal(
+    workflow.env?.E2E_SUPABASE_IMAGE_TRANSPORT,
+    githubExpression("inputs.supabase_image_transport || 'cache'")
+  );
+  assert.deepEqual(
+    workflow.true?.workflow_dispatch?.inputs?.supabase_image_transport?.options,
+    ['cache', 'registry']
+  );
+  assert.equal(
     workflow.env?.E2E_IMAGE_BUNDLE_TAG_PREFIX,
     `${githubExpression('github.run_id')}-${githubExpression(
       'github.run_attempt'
     )}-${githubExpression('github.sha')}`
   );
 
-  for (const job of [e2e, migration]) {
-    assert.ok(
-      job.steps.some(
-        (step) =>
-          step.name === 'Reuse prepared E2E image bundle' &&
-          step.run === 'node scripts/ci/e2e-image-bundle.js pull'
-      )
-    );
-  }
+  assert.ok(
+    e2e.steps.some(
+      (step) =>
+        step.name === 'Reuse prepared E2E image bundle' &&
+        step.run === 'node scripts/ci/e2e-image-bundle.js pull --frontend next'
+    )
+  );
+  assert.ok(
+    migration.steps.some(
+      (step) =>
+        step.name === 'Reuse prepared E2E image bundle' &&
+        step.run ===
+          `node scripts/ci/e2e-image-bundle.js pull --frontend ${githubExpression('matrix.bundle_frontend')}`
+    )
+  );
+  assert.deepEqual(
+    migration.strategy.matrix.include.map((entry) => entry.bundle_frontend),
+    ['tanstack', 'both']
+  );
 
   assert.deepEqual(cleanup.needs, [
     'check-ci',

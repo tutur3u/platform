@@ -528,9 +528,12 @@ publishes immutable tags under
 after every planned blue/green and TanStack image exists and the package has
 been verified private. Consumers wait up to
 `E2E_IMAGE_BUNDLE_WAIT_SECONDS` (ten seconds by default), pull the complete
-bundle, retag it for their isolated Compose project, and skip web/support image
-builds. Consumer jobs use `always()` at the job boundary, so a failed
-best-effort producer still starts the existing local cache-backed build path.
+frontend plan, retag it for their isolated Compose project, and skip web/support
+image builds. Playwright shards request only Next plus support images, the
+TanStack dual-stack mode requests only TanStack plus support images, and compare
+mode requests both frontends. Consumer jobs use `always()` at the job boundary,
+so a failed best-effort producer still starts the existing local cache-backed
+build path.
 Missing or partial bundles emit a notice and fall back without leaving matrix
 runners idle for minutes.
 
@@ -543,9 +546,10 @@ The workflow exposes only three bundle controls:
 
 The producer uses deterministic E2E-only `PLATFORM_BUILD_*` metadata so commit
 timestamps and messages do not invalidate otherwise reusable build work;
-production release metadata remains unchanged. Published images also carry the
-official `org.opencontainers.image.source` label so GHCR links the package to
-this repository and grants its workflow token package administration. The
+production release metadata remains unchanged. Published cache images carry the
+official `org.opencontainers.image.source` config label, and run indexes retain
+the corresponding OCI annotation, so GHCR links the package to this repository
+and grants its workflow token package administration. The
 privacy check retries briefly while GitHub's package metadata catches up. An
 `always()` cleanup job deletes the exact run prefix after all shards and
 migration modes finish, and the next producer removes abandoned bundle versions
@@ -567,11 +571,15 @@ The producer also maintains one mutable `cache-<service>` tag per planned image.
 These tags anchor the latest runnable layers in private GHCR after run-scoped
 tags are deleted, so the next commit does not have to upload unchanged final
 image layers again. Superseded cache versions become untagged and remain covered
-by the 24-hour stale sweep. Cache images are pushed with bounded concurrency,
-then each immutable run tag is published from the same local image; the ready
-marker remains last, so consumers never observe a partial bundle. These
-registry-layer anchors complement Turbo and BuildKit caches without adding
-Actions cache entries or artifact storage.
+by the 24-hour stale sweep. Buildx writes cache images directly to GHCR instead
+of exporting them through the runner's local Docker image store. Each successful
+build records its immutable digest; registry-side manifest promotion creates a
+distinct annotated run index from that digest, even if another workflow updates
+the mutable cache tag concurrently. Exact-prefix cleanup can therefore delete
+run indexes without deleting persistent cache tags. The ready index remains
+last, so consumers never observe a partial bundle. These registry-layer anchors
+complement Turbo and BuildKit caches without adding Actions cache entries or
+artifact storage.
 
 Trusted `main` producers also expose the Turbo team and token secret files to
 the native web artifact child process. This lets both Docker/BuildKit stages and
@@ -593,6 +601,14 @@ loading cached Supabase Docker images. Keep that cleanup ahead of the cache load
 running `docker system prune -af --volumes` after cached images are loaded would
 remove the images the shard is about to use, while skipping the cleanup can leave
 too little space for the web Docker image dependency layer.
+The default push workflow keeps the existing `cache` transport. To benchmark
+the cache archive against direct registry pulls without changing healthy main
+runs, dispatch **E2E Tests** manually with **Supabase image transport benchmark
+mode** set to `registry`. Compare the `Restore cached Docker images`, `Load
+cached Docker images`, and `Run Playwright shard` step durations with an
+otherwise equivalent `cache` dispatch. Do not replace the default until three
+successful paired runs show a consistent critical-path improvement; migration
+replay itself is only a small part of Supabase startup time.
 When an E2E shard fails, the runner prints diagnostics before teardown while the
 containers still exist. The job log includes the primary error, blue/green stage
 state, the Playwright `.last-run.json` file when available, Docker containers
