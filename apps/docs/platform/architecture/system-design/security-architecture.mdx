@@ -17,7 +17,7 @@ This document focuses on **architecture-level security patterns**. For implement
 **What is real vs. illustrative.** Tuturuuu's web tier (`apps/web`) is a conventional Next.js App Router app, not a network of independently keyed microservices. Several patterns below (a single API gateway, service-to-service token exchange, an immutable event-sourced audit log) are presented as **conceptual / target patterns** to explain the reasoning — they are explicitly labeled where they are not implemented as written. The concrete code examples (the `withApiAuth` wrapper, Supabase Row-Level Security, the Rust backend's Supabase auth) reflect the real codebase.
 
 The platform is also mid-migration: `apps/web` (Next.js, port `7803`) is being replaced by `apps/tanstack-web` (TanStack Start) plus `apps/backend` (Rust, port `7820`). See [TanStack Start And Rust Migration](/platform/architecture/tanstack-rust-migration) for how security responsibilities move into the Rust backend.
-</Note>
+</Warning>
 
 ## 1. Consistent Security Enforcement at the API Boundary
 
