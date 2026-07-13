@@ -1,8 +1,17 @@
 'use client';
 
-import { ArrowRight, Minus, Plus, ShoppingCart, Zap } from '@tuturuuu/icons';
+import {
+  ArrowRight,
+  Minus,
+  MonitorSmartphone,
+  Plus,
+  ShieldCheck,
+  ShoppingCart,
+  Zap,
+} from '@tuturuuu/icons';
 import type {
   InventoryListingVariant,
+  InventoryStorefront,
   InventoryStorefrontListing,
 } from '@tuturuuu/internal-api/inventory';
 import { cn } from '@tuturuuu/utils/format';
@@ -30,6 +39,7 @@ import {
 export function StorefrontProductDetail({
   cartHref,
   cartLines,
+  checkoutMode,
   currency,
   isSubmitting = false,
   labels,
@@ -39,11 +49,13 @@ export function StorefrontProductDetail({
   onIncrement,
   quantity,
   radius,
+  presentation = 'page',
   showInventoryBadges,
   surfaceClassName,
 }: {
   cartHref?: string;
   cartLines?: StorefrontCartLine[];
+  checkoutMode?: InventoryStorefront['checkoutMode'];
   currency: string;
   isSubmitting?: boolean;
   labels: StorefrontSurfaceLabels;
@@ -57,6 +69,7 @@ export function StorefrontProductDetail({
   ) => void;
   quantity: number;
   radius: string;
+  presentation?: 'dialog' | 'page';
   showInventoryBadges: boolean;
   surfaceClassName: string;
 }) {
@@ -114,19 +127,45 @@ export function StorefrontProductDetail({
     compareAtPrice && compareAtPrice > displayPrice
       ? Math.round((1 - displayPrice / compareAtPrice) * 100)
       : 0;
+  const isDialog = presentation === 'dialog';
+  const isSquareTerminal = checkoutMode === 'square_terminal';
+  const isPolar = checkoutMode === 'polar';
 
   return (
-    <div className="grid gap-6 lg:grid-cols-2">
-      <div className={cn('overflow-hidden', surfaceClassName, radius)}>
+    <div
+      className={cn(
+        'grid min-w-0',
+        isDialog
+          ? 'lg:grid-cols-[minmax(0,1.08fr)_minmax(22rem,0.92fr)]'
+          : 'gap-6 lg:grid-cols-2'
+      )}
+    >
+      <div
+        className={cn(
+          'overflow-hidden',
+          surfaceClassName,
+          isDialog ? 'border-border border-b lg:border-r lg:border-b-0' : radius
+        )}
+      >
         <StorefrontImagePanel
-          className="aspect-square"
+          className={cn(
+            isDialog
+              ? 'aspect-[4/3] min-h-72 lg:aspect-auto lg:h-full lg:min-h-[36rem]'
+              : 'aspect-square'
+          )}
           imageUrl={imageUrl}
           label={listing.title}
           priority
         />
       </div>
 
-      <div className="flex flex-col gap-5">
+      <div
+        className={cn(
+          'flex min-w-0 flex-col gap-5',
+          isDialog &&
+            'p-5 sm:p-7 lg:max-h-[min(44rem,90dvh)] lg:overflow-y-auto lg:p-9'
+        )}
+      >
         <div className="flex flex-wrap items-center gap-2">
           <Badge className="border-border bg-background" variant="outline">
             {listing.listingType === 'bundle' ? labels.bundle : labels.product}
@@ -141,7 +180,7 @@ export function StorefrontProductDetail({
           ) : null}
         </div>
 
-        <h2 className="text-balance font-semibold text-3xl tracking-tight md:text-4xl">
+        <h2 className="text-balance break-words font-semibold text-2xl tracking-tight sm:text-3xl lg:text-4xl">
           {listing.title}
         </h2>
 
@@ -217,6 +256,40 @@ export function StorefrontProductDetail({
         <p className="text-pretty text-muted-foreground leading-7">
           {listing.description ?? labels.fallbackDescription}
         </p>
+
+        {isSquareTerminal || isPolar ? (
+          <div
+            className={cn(
+              'flex items-start gap-3 border border-border bg-muted/25 p-3.5',
+              radius
+            )}
+          >
+            <span
+              className={cn(
+                'grid size-9 shrink-0 place-items-center border border-border bg-background',
+                radius
+              )}
+            >
+              {isSquareTerminal ? (
+                <MonitorSmartphone className="size-4" />
+              ) : (
+                <ShieldCheck className="size-4" />
+              )}
+            </span>
+            <div className="min-w-0">
+              <p className="font-medium text-sm">
+                {isSquareTerminal
+                  ? labels.squareTerminal
+                  : labels.onlineCheckout}
+              </p>
+              <p className="mt-0.5 text-muted-foreground text-xs leading-5">
+                {isSquareTerminal
+                  ? labels.squareTerminalDescription
+                  : labels.onlineCheckoutDescription}
+              </p>
+            </div>
+          </div>
+        ) : null}
 
         <div className="mt-auto flex flex-wrap items-center gap-3 border-border border-t pt-5">
           {canChange ? (

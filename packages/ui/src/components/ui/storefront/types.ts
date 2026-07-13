@@ -54,6 +54,8 @@ export type StorefrontSurfaceLabels = {
   fromPrice: string;
   instantCheckout: string;
   orderSummary: string;
+  onlineCheckout: string;
+  onlineCheckoutDescription: string;
   redirectingToCheckout: string;
   requiredItems: string;
   selectOptions: string;
@@ -83,6 +85,8 @@ export type StorefrontSurfaceLabels = {
   reservedCopy: string;
   simulatedBadge: string;
   soldOut: string;
+  squareTerminal: string;
+  squareTerminalDescription: string;
   shopTitle: string;
   total: string;
   visibleItems: string;
@@ -110,6 +114,9 @@ export const defaultStorefrontSurfaceLabels: StorefrontSurfaceLabels = {
   fromPrice: 'From',
   instantCheckout: 'Instant checkout',
   orderSummary: 'Order summary',
+  onlineCheckout: 'Secure online checkout',
+  onlineCheckoutDescription:
+    'Continue to Polar to complete payment securely online.',
   redirectingToCheckout: 'Taking you to secure checkout…',
   requiredItems: 'Select {count} items',
   selectOptions: 'Select options',
@@ -141,6 +148,9 @@ export const defaultStorefrontSurfaceLabels: StorefrontSurfaceLabels = {
     'Review your cart, then continue with the available checkout mode.',
   simulatedBadge: 'Simulated checkout',
   soldOut: 'Sold out',
+  squareTerminal: 'Square Terminal',
+  squareTerminalDescription:
+    'Complete payment in person on the paired terminal at the counter.',
   shopTitle: 'Shop',
   total: 'Total',
   visibleItems: '{count} items',

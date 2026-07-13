@@ -4,6 +4,7 @@ import { POST } from './route';
 const mocks = vi.hoisted(() => ({
   createAdminClient: vi.fn(),
   createInventoryPolarCheckout: vi.fn(),
+  createInventorySquareTerminalCheckout: vi.fn(),
   assertInventorySquareReady: vi.fn(),
   getCheckoutByPublicToken: vi.fn(),
   getPublicStorefront: vi.fn(),
@@ -35,6 +36,8 @@ vi.mock('@tuturuuu/inventory-core/commerce/polar', () => ({
 vi.mock('@tuturuuu/inventory-core/commerce/square', () => ({
   assertInventorySquareReady: (...args: unknown[]) =>
     mocks.assertInventorySquareReady(...args),
+  createInventorySquareTerminalCheckout: (...args: unknown[]) =>
+    mocks.createInventorySquareTerminalCheckout(...args),
 }));
 
 vi.mock('@tuturuuu/inventory-core/commerce/public-storefront', () => ({
@@ -94,6 +97,23 @@ describe('inventory storefront checkout route', () => {
       readiness: { issues: [], ready: true },
     });
     mocks.markCheckoutProvider.mockResolvedValue(undefined);
+    mocks.createInventorySquareTerminalCheckout.mockResolvedValue({
+      checkout: {
+        customerEmail: 'buyer@example.com',
+        customerName: 'Buyer',
+        id: 'checkout-1',
+        lines: [],
+        publicToken: 'public-token',
+        squareStatus: 'pending',
+        squareTerminalCheckoutId: 'terminal-checkout-1',
+        totalAmount: 2500,
+        wsId: 'ws-1',
+      },
+      squareCheckout: {
+        id: 'terminal-checkout-1',
+        status: 'PENDING',
+      },
+    });
     mocks.getCheckoutByPublicToken.mockResolvedValue({
       customerEmail: 'buyer@example.com',
       customerName: 'Buyer',
@@ -369,7 +389,7 @@ describe('inventory storefront checkout route', () => {
     expect(mocks.markCheckoutProvider).not.toHaveBeenCalled();
   });
 
-  it('returns a local order page for Square Terminal reservations', async () => {
+  it('dispatches Square Terminal payment and returns a local order page', async () => {
     mocks.getPublicStorefront.mockResolvedValue({
       listings: [],
       storefront: {
@@ -407,8 +427,13 @@ describe('inventory storefront checkout route', () => {
       provider: 'square_terminal',
       wsId: 'ws-1',
     });
+    expect(mocks.createInventorySquareTerminalCheckout).toHaveBeenCalledWith({
+      checkoutId: 'checkout-1',
+      wsId: 'ws-1',
+    });
     expect(mocks.createInventoryPolarCheckout).not.toHaveBeenCalled();
     expect(body.checkoutMode).toBe('square_terminal');
+    expect(body.checkout.squareTerminalCheckoutId).toBe('terminal-checkout-1');
     expect(body.nextUrl).toBe(
       'http://storefront.test/shop/orders/public-token'
     );
@@ -445,6 +470,48 @@ describe('inventory storefront checkout route', () => {
     );
 
     expect(response.status).toBe(409);
+    expect(mocks.rpc).toHaveBeenCalledWith(
+      'release_inventory_checkout_session',
+      {
+        p_checkout_id: 'checkout-1',
+        p_ws_id: 'ws-1',
+      }
+    );
+  });
+
+  it('releases Square reservations when Terminal dispatch fails', async () => {
+    mocks.getPublicStorefront.mockResolvedValue({
+      listings: [],
+      storefront: {
+        analyticsEnabled: true,
+        checkoutMode: 'square_terminal',
+        id: 'storefront-1',
+        visibility: 'public',
+        wsId: 'ws-1',
+      },
+    });
+    mocks.createInventorySquareTerminalCheckout.mockRejectedValue(
+      new Error('Square Terminal is offline')
+    );
+
+    const response = await POST(
+      new Request('http://test.local/api', {
+        body: JSON.stringify({
+          lines: [
+            {
+              listingId: '00000000-0000-4000-8000-000000000001',
+              quantity: 1,
+            },
+          ],
+        }),
+        method: 'POST',
+      }),
+      { params: Promise.resolve({ slug: 'shop' }) }
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(409);
+    expect(body.message).toBe('Square Terminal is offline');
     expect(mocks.rpc).toHaveBeenCalledWith(
       'release_inventory_checkout_session',
       {

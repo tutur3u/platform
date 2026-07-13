@@ -4,9 +4,8 @@ import { useQuery } from '@tanstack/react-query';
 import {
   Boxes,
   CalendarDays,
-  CircleDollarSign,
+  CreditCard,
   Keyboard,
-  MonitorSmartphone,
   Paintbrush,
   PanelLeft,
   User,
@@ -23,8 +22,7 @@ import { useUserBooleanConfig } from '@tuturuuu/ui/hooks/use-user-config';
 import { isExactTuturuuuDotComEmail } from '@tuturuuu/utils/email/client';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
-import { PolarSettingsPanel } from '@/components/operator/polar-settings-panel';
-import { SquareSettingsPanel } from '@/components/operator/square-settings-panel';
+import { PaymentSettingsPanel } from '@/components/operator/payment-settings-panel';
 import { InventoryCurrencySettings } from '@/components/settings/currency-settings';
 import { useSidebar } from '@/context/sidebar-context';
 
@@ -40,7 +38,13 @@ export function SettingsDialog({
   defaultTab = 'inventory_general',
 }: SettingsDialogProps) {
   const t = useTranslations();
-  const [activeTab, setActiveTab] = useState(defaultTab);
+  const paymentProvider =
+    defaultTab === 'inventory_square' ? 'square' : 'polar';
+  const [activeTab, setActiveTab] = useState(
+    defaultTab === 'inventory_polar' || defaultTab === 'inventory_square'
+      ? 'inventory_payments'
+      : defaultTab
+  );
   const { value: expandAllAccordions } = useUserBooleanConfig(
     'EXPAND_SETTINGS_ACCORDIONS',
     true
@@ -69,18 +73,18 @@ export function SettingsDialog({
           keywords: ['Inventory', 'Catalog', 'Stock', 'Storefront'],
         },
         {
-          name: 'inventory_polar',
-          label: t('settings.inventory.polar'),
-          icon: CircleDollarSign,
-          description: t('settings.inventory.polar_description'),
-          keywords: ['Polar', 'Checkout', 'Storefront', 'Payments'],
-        },
-        {
-          name: 'inventory_square',
-          label: t('settings.inventory.square'),
-          icon: MonitorSmartphone,
-          description: t('settings.inventory.square_description'),
-          keywords: ['Square', 'Terminal', 'POS', 'Checkout', 'Payments'],
+          name: 'inventory_payments',
+          label: t('settings.inventory.payments'),
+          icon: CreditCard,
+          description: t('settings.inventory.payments_description'),
+          keywords: [
+            'Payments',
+            'Polar',
+            'Square',
+            'Terminal',
+            'POS',
+            'Checkout',
+          ],
         },
       ],
     },
@@ -174,15 +178,9 @@ export function SettingsDialog({
         </div>
       )}
 
-      {activeTab === 'inventory_polar' && wsId && (
+      {activeTab === 'inventory_payments' && wsId && (
         <div className="h-full">
-          <PolarSettingsPanel wsId={wsId} />
-        </div>
-      )}
-
-      {activeTab === 'inventory_square' && wsId && (
-        <div className="h-full">
-          <SquareSettingsPanel wsId={wsId} />
+          <PaymentSettingsPanel defaultProvider={paymentProvider} wsId={wsId} />
         </div>
       )}
 

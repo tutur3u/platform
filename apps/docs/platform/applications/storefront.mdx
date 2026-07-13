@@ -44,5 +44,7 @@ checks its status from the commerce workflow.
 
 Square payment success is accepted only from verified Square webhook or status
 data. Cancellation, failure, or expiry releases the local reservation so stock
-returns to availability. Square catalog sync is intentionally out of scope;
-Inventory remains the source of truth for items, prices, and stock.
+returns to availability. Abandoned reserved sessions are materialized as expired
+by the Inventory sweeper as well as lazy checkout reconciliation. Catalog and
+physical stock can be synchronized in either direction from Inventory settings;
+Square-side updates are additive and never delete or archive Square objects.

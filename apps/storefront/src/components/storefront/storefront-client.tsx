@@ -31,6 +31,7 @@ import {
   isDemoStorefrontFixture,
 } from './storefront-fixture';
 import { getOptionalInventoryPublicStorefront } from './storefront-loader';
+import { StorefrontUnavailable } from './storefront-unavailable';
 
 type StorefrontMode = 'cart' | 'checkout' | 'order' | 'product' | 'store';
 
@@ -178,14 +179,9 @@ export function StorefrontClient({
     router.push(`${target.pathname}${target.search}${target.hash}`);
   };
 
-  const openPolarCheckoutWindow = (checkoutUrl: string) => {
+  const redirectToPolarCheckout = (checkoutUrl: string) => {
     setIsRedirecting(true);
-
-    const result = openHostedPolarCheckout(checkoutUrl);
-    if (result === 'new-tab') {
-      setIsCheckoutOpen(false);
-      setIsRedirecting(false);
-    }
+    openHostedPolarCheckout(checkoutUrl);
   };
 
   const startCheckout = (input: CheckoutInput) => {
@@ -227,7 +223,7 @@ export function StorefrontClient({
         return;
       }
 
-      openPolarCheckoutWindow(targetUrl);
+      redirectToPolarCheckout(targetUrl);
     },
   });
 
@@ -360,9 +356,14 @@ export function StorefrontClient({
 
   if (!storefront) {
     return (
-      <main className="grid min-h-dvh place-items-center px-4 text-muted-foreground">
-        {t('notFound')}
-      </main>
+      <StorefrontUnavailable
+        description={t('unavailableDescription')}
+        eyebrow={t('unavailableEyebrow')}
+        hint={t('unavailableHint')}
+        onRetry={() => storefrontQuery.refetch()}
+        retryLabel={t('retry')}
+        title={t('unavailableTitle')}
+      />
     );
   }
 
@@ -376,7 +377,7 @@ export function StorefrontClient({
     bundle: t('bundle'),
     bundles: t('bundles'),
     bundleSelectionTitle: t('bundleSelectionTitle'),
-    buyNow: t('buyNow'),
+    buyNow: isSquareTerminalCheckout ? t('squareBuyNow') : t('buyNow'),
     cart: t('cart'),
     cheapestFreePreview: t('cheapestFreePreview'),
     checkout: t('checkout'),
@@ -394,6 +395,8 @@ export function StorefrontClient({
     noResultsDescription: t('noResultsDescription'),
     noResultsTitle: t('noResultsTitle'),
     orderSummary: t('orderSummary'),
+    onlineCheckout: t('onlineCheckout'),
+    onlineCheckoutDescription: t('onlineCheckoutDescription'),
     redirectingToCheckout: t('redirectingToCheckout'),
     requiredItems: t('requiredItems'),
     searchBundleItems: t('searchBundleItems'),
@@ -430,6 +433,8 @@ export function StorefrontClient({
         : t('reservedCopy'),
     simulatedBadge: t('simulatedBadge'),
     soldOut: t('soldOut'),
+    squareTerminal: t('squareTerminal'),
+    squareTerminalDescription: t('squareTerminalDescription'),
     shopTitle: t('shopTitle'),
     total: t('total'),
     visibleItems: t.raw('visibleItems') as string,

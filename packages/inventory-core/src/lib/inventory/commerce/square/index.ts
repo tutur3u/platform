@@ -1,4 +1,9 @@
 export {
+  type InventorySquareCatalogSyncSummary,
+  syncInventorySquareCatalog,
+} from './catalog-sync';
+export { getInventorySquareSyncState } from './catalog-sync-state';
+export {
   createInventorySquareDeviceCode,
   listInventorySquareDevices,
   listInventorySquareLocations,

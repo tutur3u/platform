@@ -326,6 +326,7 @@ export function StorefrontSurface({
                 <StorefrontProductDetail
                   cartHref={cartHref}
                   cartLines={cartLines}
+                  checkoutMode={storefront.checkoutMode}
                   currency={currency}
                   isSubmitting={isSubmitting}
                   labels={labels}
@@ -417,6 +418,7 @@ export function StorefrontSurface({
       <StorefrontProductDialog
         cartHref={cartHref}
         cartLines={cartLines}
+        checkoutMode={storefront.checkoutMode}
         currency={currency}
         isSubmitting={isSubmitting}
         labels={labels}

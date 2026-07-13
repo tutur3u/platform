@@ -241,6 +241,50 @@ describe('StorefrontSurface', () => {
     expect(screen.queryByText('Buy 2 Get 1 Keychains')).not.toBeInTheDocument();
   });
 
+  it('opens a wide, readable Square Terminal product dialog', () => {
+    const longListing = {
+      ...listing,
+      title: 'Shikishi Board (8.8 x 10 inches, 253 mm x 225 mm)',
+    };
+
+    render(
+      <StorefrontSurface
+        detailListingId={longListing.id}
+        labels={{
+          buyNow: 'Pay at terminal',
+          squareTerminal: 'Square Terminal',
+          squareTerminalDescription: 'Finish payment on the counter device.',
+        }}
+        listings={[longListing]}
+        mode="store"
+        onBuyNow={() => undefined}
+        onDetailListingChange={() => undefined}
+        storefront={{ ...storefront, checkoutMode: 'square_terminal' }}
+      />
+    );
+
+    expect(screen.getByRole('dialog')).toHaveClass(
+      'sm:max-w-6xl',
+      'overflow-hidden',
+      'p-0'
+    );
+    const visibleHeading = screen
+      .getAllByRole('heading', { name: longListing.title })
+      .find((heading) => !heading.classList.contains('sr-only'));
+    expect(visibleHeading).toHaveClass(
+      'break-words',
+      'text-2xl',
+      'sm:text-3xl'
+    );
+    expect(screen.getByText('Square Terminal')).toBeInTheDocument();
+    expect(
+      screen.getByText('Finish payment on the counter device.')
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Pay at terminal' })
+    ).toBeEnabled();
+  });
+
   it('keeps the compatibility cart page as a full cart review', () => {
     render(
       <StorefrontSurface

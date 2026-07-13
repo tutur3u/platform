@@ -7,7 +7,10 @@ import { createInventoryPolarCheckout } from '@tuturuuu/inventory-core/commerce/
 import { getPublicStorefront } from '@tuturuuu/inventory-core/commerce/public-storefront';
 import { checkoutCreatePayloadSchema } from '@tuturuuu/inventory-core/commerce/schemas';
 import { createSimulatedCheckoutResponse } from '@tuturuuu/inventory-core/commerce/simulated-checkout';
-import { assertInventorySquareReady } from '@tuturuuu/inventory-core/commerce/square';
+import {
+  assertInventorySquareReady,
+  createInventorySquareTerminalCheckout,
+} from '@tuturuuu/inventory-core/commerce/square';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
@@ -314,8 +317,10 @@ export async function POST(request: Request, { params }: Params) {
           provider: 'square_terminal',
           wsId: checkout.wsId,
         });
-        const refreshedCheckout =
-          (await getCheckoutByPublicToken(publicToken)) ?? checkout;
+        const terminalCheckout = await createInventorySquareTerminalCheckout({
+          checkoutId: checkout.id,
+          wsId: checkout.wsId,
+        });
         const nextUrl = `${getStorefrontUrl(request).replace(/\/$/u, '')}/${slug}/orders/${publicToken}`;
         await recordCheckoutAnalyticsEvent(privateRpc, {
           checkoutId: checkout.id,
@@ -327,10 +332,11 @@ export async function POST(request: Request, { params }: Params) {
 
         return NextResponse.json(
           {
-            checkout: refreshedCheckout,
+            checkout: terminalCheckout.checkout,
             checkoutMode: 'square_terminal',
             checkoutUrl: nextUrl,
             nextUrl,
+            squareCheckout: terminalCheckout.squareCheckout,
           },
           { status: 201 }
         );

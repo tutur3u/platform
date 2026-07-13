@@ -1,6 +1,12 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "buildCommand": "cd ../.. && bun turbo:local run build --filter=@tuturuuu/inventory",
+  "crons": [
+    {
+      "path": "/api/cron/inventory/checkout-expiry",
+      "schedule": "*/5 * * * *"
+    }
+  ],
   "git": {
     "deploymentEnabled": false
   },

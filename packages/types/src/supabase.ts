@@ -4769,6 +4769,93 @@ export type Database = {
         };
         Relationships: [];
       };
+      inventory_square_catalog_links: {
+        Row: {
+          created_at: string;
+          environment: string;
+          id: string;
+          last_error: string | null;
+          last_synced_at: string | null;
+          local_hash: string | null;
+          product_id: string;
+          square_hash: string | null;
+          square_item_id: string;
+          square_item_name: string | null;
+          square_item_version: number | null;
+          square_sku: string | null;
+          square_variation_id: string;
+          square_variation_name: string | null;
+          square_variation_version: number | null;
+          status: string;
+          sync_origin: string;
+          unit_id: string;
+          updated_at: string;
+          warehouse_id: string;
+          ws_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          environment: string;
+          id?: string;
+          last_error?: string | null;
+          last_synced_at?: string | null;
+          local_hash?: string | null;
+          product_id: string;
+          square_hash?: string | null;
+          square_item_id: string;
+          square_item_name?: string | null;
+          square_item_version?: number | null;
+          square_sku?: string | null;
+          square_variation_id: string;
+          square_variation_name?: string | null;
+          square_variation_version?: number | null;
+          status?: string;
+          sync_origin?: string;
+          unit_id: string;
+          updated_at?: string;
+          warehouse_id: string;
+          ws_id: string;
+        };
+        Update: {
+          created_at?: string;
+          environment?: string;
+          id?: string;
+          last_error?: string | null;
+          last_synced_at?: string | null;
+          local_hash?: string | null;
+          product_id?: string;
+          square_hash?: string | null;
+          square_item_id?: string;
+          square_item_name?: string | null;
+          square_item_version?: number | null;
+          square_sku?: string | null;
+          square_variation_id?: string;
+          square_variation_name?: string | null;
+          square_variation_version?: number | null;
+          status?: string;
+          sync_origin?: string;
+          unit_id?: string;
+          updated_at?: string;
+          warehouse_id?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'inventory_square_catalog_links_unit_id_fkey';
+            columns: ['unit_id'];
+            isOneToOne: false;
+            referencedRelation: 'inventory_units';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'inventory_square_catalog_links_warehouse_id_fkey';
+            columns: ['warehouse_id'];
+            isOneToOne: false;
+            referencedRelation: 'inventory_warehouses';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       inventory_square_connections: {
         Row: {
           access_token_encrypted: string;
@@ -4967,6 +5054,45 @@ export type Database = {
           location_id?: string | null;
           location_name?: string | null;
           sandbox_device_id?: string | null;
+          updated_at?: string;
+          updated_by?: string | null;
+          ws_id?: string;
+        };
+        Relationships: [];
+      };
+      inventory_square_sync_state: {
+        Row: {
+          environment: string;
+          last_catalog_cursor_at: string | null;
+          last_direction: string | null;
+          last_error: string | null;
+          last_inventory_sync_at: string | null;
+          last_status: string;
+          last_summary: Json;
+          updated_at: string;
+          updated_by: string | null;
+          ws_id: string;
+        };
+        Insert: {
+          environment: string;
+          last_catalog_cursor_at?: string | null;
+          last_direction?: string | null;
+          last_error?: string | null;
+          last_inventory_sync_at?: string | null;
+          last_status?: string;
+          last_summary?: Json;
+          updated_at?: string;
+          updated_by?: string | null;
+          ws_id: string;
+        };
+        Update: {
+          environment?: string;
+          last_catalog_cursor_at?: string | null;
+          last_direction?: string | null;
+          last_error?: string | null;
+          last_inventory_sync_at?: string | null;
+          last_status?: string;
+          last_summary?: Json;
           updated_at?: string;
           updated_by?: string | null;
           ws_id?: string;
@@ -12930,6 +13056,13 @@ export type Database = {
       ensure_user_group_metric_category_ids: {
         Args: { p_category_ids?: string[]; p_ws_id: string };
         Returns: string[];
+      };
+      expire_inventory_checkout_sessions: {
+        Args: { p_limit?: number; p_now?: string; p_ws_id?: string };
+        Returns: {
+          checkout_id: string;
+          ws_id: string;
+        }[];
       };
       external_app_managed_cron_executions: {
         Args: {

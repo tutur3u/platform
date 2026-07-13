@@ -2,6 +2,10 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
 
+const inventoryRoot = process.cwd().endsWith('/apps/inventory')
+  ? process.cwd()
+  : join(process.cwd(), 'apps/inventory');
+
 vi.mock('next-intl', () => ({
   useTranslations: () => (key: string) => key,
 }));
@@ -18,10 +22,7 @@ vi.mock('@tuturuuu/internal-api/inventory', () => ({
 describe('PolarSettingsPanel', () => {
   it('keeps the access token field inside the manage dialog', async () => {
     const source = readFileSync(
-      join(
-        process.cwd(),
-        'apps/inventory/src/components/operator/polar-settings-panel.tsx'
-      ),
+      join(inventoryRoot, 'src/components/operator/polar-settings-panel.tsx'),
       'utf8'
     );
     const dialogStart = source.indexOf('OperatorDialogContent');
@@ -32,23 +33,25 @@ describe('PolarSettingsPanel', () => {
     expect(source.slice(0, dialogStart)).not.toContain('tokenPlaceholder');
   });
 
-  it('is only mounted from the settings dialog, not operator page bodies', () => {
+  it('is consolidated under the shared payment settings surface', () => {
     const operatorSource = readFileSync(
       join(
-        process.cwd(),
-        'apps/inventory/src/components/operator/inventory-operator-client.tsx'
+        inventoryRoot,
+        'src/components/operator/inventory-operator-client.tsx'
       ),
       'utf8'
     );
     const settingsSource = readFileSync(
-      join(
-        process.cwd(),
-        'apps/inventory/src/components/settings/settings-dialog.tsx'
-      ),
+      join(inventoryRoot, 'src/components/settings/settings-dialog.tsx'),
+      'utf8'
+    );
+    const paymentSource = readFileSync(
+      join(inventoryRoot, 'src/components/operator/payment-settings-panel.tsx'),
       'utf8'
     );
 
     expect(operatorSource).not.toContain('<PolarSettingsPanel');
-    expect(settingsSource).toContain('<PolarSettingsPanel');
+    expect(settingsSource).toContain('<PaymentSettingsPanel');
+    expect(paymentSource).toContain('<PolarSettingsPanel');
   });
 });

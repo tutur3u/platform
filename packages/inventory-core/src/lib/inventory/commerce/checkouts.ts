@@ -110,6 +110,15 @@ function normalizeSearch(q?: string) {
   return value ? value : null;
 }
 
+function isExpiredReservedCheckout(
+  checkout: Pick<InventoryCheckoutSession, 'expiresAt' | 'status'>,
+  now = Date.now()
+) {
+  if (checkout.status !== 'reserved' || !checkout.expiresAt) return false;
+  const expiresAt = Date.parse(checkout.expiresAt);
+  return Number.isFinite(expiresAt) && expiresAt <= now;
+}
+
 function mapRpcList<TKey extends string, TValue>(
   rows: ListRpcRow<TKey, TValue>[] | null | undefined,
   key: TKey
@@ -248,6 +257,7 @@ export async function listCheckouts(
   wsId: string,
   query: ListQuery<InventoryCheckoutStatus> = {}
 ) {
+  await expireCheckoutReservations({ wsId });
   const { inventory } = await createPrivateInventoryClient();
   const { limit, offset } = normalizePagination(query.page, query.pageSize);
   const status = query.status && query.status !== 'all' ? query.status : null;
@@ -283,7 +293,48 @@ export async function getCheckoutByPublicToken(publicToken: string) {
 
   if (error) throw error;
 
-  return data ?? null;
+  const checkout = data ?? null;
+  if (!checkout || !isExpiredReservedCheckout(checkout)) return checkout;
+
+  await expireCheckoutReservations({ wsId: checkout.wsId });
+  const { data: refreshed, error: refreshError } = (await inventory.rpc(
+    'get_inventory_checkout_by_public_token' as never,
+    {
+      p_public_token: publicToken,
+    } as never
+  )) as {
+    data: InventoryCheckoutSession | null;
+    error: SupabaseErrorLike;
+  };
+
+  if (refreshError) throw refreshError;
+  return refreshed ?? null;
+}
+
+export async function expireCheckoutReservations({
+  limit = 500,
+  now = new Date(),
+  wsId,
+}: {
+  limit?: number;
+  now?: Date;
+  wsId?: string | null;
+} = {}) {
+  const { inventory } = await createPrivateInventoryClient();
+  const { data, error } = (await inventory.rpc(
+    'expire_inventory_checkout_sessions' as never,
+    {
+      p_limit: Math.max(1, Math.min(limit, 5000)),
+      p_now: now.toISOString(),
+      p_ws_id: wsId ?? null,
+    } as never
+  )) as {
+    data: Array<{ checkout_id: string; ws_id: string }> | null;
+    error: SupabaseErrorLike;
+  };
+
+  if (error) throw error;
+  return data ?? [];
 }
 
 export async function getCheckoutById(wsId: string, checkoutId: string) {

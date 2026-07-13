@@ -5,11 +5,11 @@ import {
   Calculator,
   CircleDollarSign,
   ClipboardList,
+  CreditCard,
   Layers3,
   PackageSearch,
   Store,
   TriangleAlert,
-  Zap,
 } from '@tuturuuu/icons';
 import { useTranslations } from 'next-intl';
 import { parseAsStringLiteral, useQueryState } from 'nuqs';
@@ -169,7 +169,11 @@ export function InventoryOperatorClient({
           t('views.overview.title'),
           t('views.overview.description'),
         ],
-        polar: [Zap, t('views.polar.title'), t('views.polar.description')],
+        polar: [
+          CreditCard,
+          t('views.polar.title'),
+          t('views.polar.description'),
+        ],
         setup: [Boxes, t('views.setup.title'), t('views.setup.description')],
         stock: [
           TriangleAlert,

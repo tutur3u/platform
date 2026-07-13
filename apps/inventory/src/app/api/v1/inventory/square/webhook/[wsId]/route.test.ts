@@ -12,6 +12,8 @@ const mocks = vi.hoisted(() => {
     processInventorySquareWebhook: vi.fn(),
     serverError: vi.fn(),
     SquareWebhookSignatureError,
+    syncInventorySquareCatalog: vi.fn(),
+    waitUntil: vi.fn(),
   };
 });
 
@@ -27,7 +29,18 @@ vi.mock('@tuturuuu/inventory-core/commerce/square', () => ({
     ...args: Parameters<typeof mocks.processInventorySquareWebhook>
   ) => mocks.processInventorySquareWebhook(...args),
   SquareWebhookSignatureError: mocks.SquareWebhookSignatureError,
+  syncInventorySquareCatalog: (
+    ...args: Parameters<typeof mocks.syncInventorySquareCatalog>
+  ) => mocks.syncInventorySquareCatalog(...args),
 }));
+
+vi.mock('next/server', async (importOriginal) => {
+  const original = await importOriginal<typeof import('next/server')>();
+  return {
+    ...original,
+    after: (callback: () => unknown) => mocks.waitUntil(callback),
+  };
+});
 
 function params() {
   return {
@@ -45,6 +58,7 @@ describe('inventory Square webhook route', () => {
       environment: 'sandbox',
       eventType: 'payment.updated',
     });
+    mocks.syncInventorySquareCatalog.mockResolvedValue({ conflicts: 0 });
   });
 
   it('passes raw body and Square signature header into webhook processing', async () => {
@@ -99,5 +113,45 @@ describe('inventory Square webhook route', () => {
     await expect(response.json()).resolves.toEqual({
       message: 'Webhook signature verification failed',
     });
+  });
+
+  it.each([
+    'catalog.version.updated',
+    'inventory.count.updated',
+  ])('defers a safe Square-to-Tuturuuu sync for %s', async (eventType) => {
+    mocks.processInventorySquareWebhook.mockResolvedValue({
+      environment: 'production',
+      eventType,
+    });
+    const { POST } = await import('./route');
+    const response = await POST(
+      new Request(
+        'https://web.example.com/api/v1/inventory/square/webhook/workspace-1',
+        { body: JSON.stringify({ type: eventType }), method: 'POST' }
+      ),
+      params()
+    );
+
+    expect(response.status).toBe(200);
+    expect(mocks.waitUntil).toHaveBeenCalledOnce();
+    const callback = mocks.waitUntil.mock.calls[0]?.[0];
+    await callback?.();
+    expect(mocks.syncInventorySquareCatalog).toHaveBeenCalledWith({
+      direction: 'from_square',
+      userId: null,
+      wsId: 'workspace-1',
+    });
+  });
+
+  it('does not schedule a catalog sync for payment events', async () => {
+    const { POST } = await import('./route');
+    await POST(
+      new Request(
+        'https://web.example.com/api/v1/inventory/square/webhook/workspace-1',
+        { body: '{"type":"payment.updated"}', method: 'POST' }
+      ),
+      params()
+    );
+    expect(mocks.waitUntil).not.toHaveBeenCalled();
   });
 });

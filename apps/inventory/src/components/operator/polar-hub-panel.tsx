@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import {
   Activity,
   CreditCard,
+  MonitorSmartphone,
   Package,
   Settings2,
   TicketPercent,
@@ -11,6 +12,7 @@ import {
 } from '@tuturuuu/icons';
 import {
   getInventoryPolarSettings,
+  getInventorySquareSettings,
   listInventoryCheckouts,
   listInventoryPromotions,
 } from '@tuturuuu/internal-api/inventory';
@@ -19,7 +21,7 @@ import { useTranslations } from 'next-intl';
 import { OperatorMetricCard } from './operator-dashboard-primitives';
 import { money } from './operator-format';
 import { EmptyRow } from './operator-shell';
-import { PolarSettingsPanel } from './polar-settings-panel';
+import { PaymentSettingsPanel } from './payment-settings-panel';
 import { PolarSyncHealthPanel } from './polar-sync-health-panel';
 
 function StatusBadge({ value }: { value: string }) {
@@ -37,6 +39,10 @@ export function PolarHubPanel({ wsId }: { wsId: string }) {
     queryFn: () => getInventoryPolarSettings(wsId),
     queryKey: ['inventory', wsId, 'polar-settings'],
   });
+  const squareSettings = useQuery({
+    queryFn: () => getInventorySquareSettings(wsId),
+    queryKey: ['inventory', wsId, 'square-settings'],
+  });
   const checkouts = useQuery({
     queryFn: () => listInventoryCheckouts(wsId, { pageSize: 50 }),
     queryKey: ['inventory', wsId, 'checkouts', 'polar-hub'],
@@ -53,8 +59,11 @@ export function PolarHubPanel({ wsId }: { wsId: string }) {
   const productsReady = integrations.filter(
     (integration) => integration.polarProductId
   ).length;
-  const polarCheckouts = (checkouts.data?.data ?? []).filter(
-    (row) => row.polarStatus
+  const paymentCheckouts = (checkouts.data?.data ?? []).filter(
+    (row) => row.polarStatus || row.squareStatus
+  );
+  const squareConnections = (squareSettings.data?.connections ?? []).filter(
+    (connection) => connection.status === 'ready'
   );
   const syncedCoupons = (promotions.data?.data ?? []).filter(
     (promotion) => promotion.polar_discount_id
@@ -65,24 +74,25 @@ export function PolarHubPanel({ wsId }: { wsId: string }) {
       <div className="grid min-w-0 gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <OperatorMetricCard
           icon={Zap}
-          label={t('connectedEnvironments')}
+          label={t('polarConnections')}
           tone={readyEnvironments.length > 0 ? 'success' : 'default'}
           value={`${readyEnvironments.length}/${integrations.length || 2}`}
+        />
+        <OperatorMetricCard
+          icon={MonitorSmartphone}
+          label={t('squareConnections')}
+          tone={squareConnections.length > 0 ? 'success' : 'default'}
+          value={`${squareConnections.length}/${squareSettings.data?.connections.length || 2}`}
+        />
+        <OperatorMetricCard
+          icon={CreditCard}
+          label={t('recentCheckouts')}
+          value={paymentCheckouts.length}
         />
         <OperatorMetricCard
           icon={Package}
           label={t('productReady')}
           value={productsReady}
-        />
-        <OperatorMetricCard
-          icon={CreditCard}
-          label={t('recentCheckouts')}
-          value={polarCheckouts.length}
-        />
-        <OperatorMetricCard
-          icon={TicketPercent}
-          label={t('syncedCoupons')}
-          value={syncedCoupons.length}
         />
       </div>
 
@@ -90,7 +100,7 @@ export function PolarHubPanel({ wsId }: { wsId: string }) {
         <TabsList className="grid h-auto w-full grid-cols-3">
           <TabsTrigger className="gap-2 py-1.5" value="connection">
             <Settings2 className="h-4 w-4" />
-            {t('connectionTab')}
+            {t('providersTab')}
           </TabsTrigger>
           <TabsTrigger className="gap-2 py-1.5" value="health">
             <Activity className="h-4 w-4" />
@@ -104,7 +114,7 @@ export function PolarHubPanel({ wsId }: { wsId: string }) {
 
         {/* Connection + sync actions + product link status (per environment). */}
         <TabsContent value="connection">
-          <PolarSettingsPanel wsId={wsId} />
+          <PaymentSettingsPanel wsId={wsId} />
         </TabsContent>
 
         {/* Product catalog sync health (counts by status + recent errors). */}
@@ -122,11 +132,11 @@ export function PolarHubPanel({ wsId }: { wsId: string }) {
                 {t('recentCheckoutsTitle')}
               </h3>
             </div>
-            {polarCheckouts.length === 0 ? (
+            {paymentCheckouts.length === 0 ? (
               <EmptyRow label={t('recentCheckoutsEmpty')} />
             ) : (
               <div className="grid gap-2">
-                {polarCheckouts.map((row) => (
+                {paymentCheckouts.map((row) => (
                   <div
                     className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-border bg-background p-3 text-sm"
                     key={row.id}
@@ -135,11 +145,16 @@ export function PolarHubPanel({ wsId }: { wsId: string }) {
                       {row.customerName || row.publicToken}
                     </span>
                     <div className="flex flex-wrap items-center gap-2">
+                      <StatusBadge
+                        value={row.squareStatus ? t('square') : t('polar')}
+                      />
                       {row.polarEnvironment ? (
                         <StatusBadge value={row.polarEnvironment} />
                       ) : null}
-                      {row.polarStatus ? (
-                        <StatusBadge value={row.polarStatus} />
+                      {row.polarStatus || row.squareStatus ? (
+                        <StatusBadge
+                          value={row.polarStatus ?? row.squareStatus ?? ''}
+                        />
                       ) : null}
                       <span className="font-medium">
                         {money(row.totalAmount, row.currency)}

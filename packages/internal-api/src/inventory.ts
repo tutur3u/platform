@@ -707,6 +707,37 @@ export type InventorySquareTerminalCheckoutPayload = {
   deviceId?: string;
 };
 
+export type InventorySquareCatalogSyncDirection =
+  | 'bidirectional'
+  | 'from_square'
+  | 'to_square';
+
+export type InventorySquareCatalogSyncSummary = {
+  conflicts: number;
+  direction: InventorySquareCatalogSyncDirection;
+  environment: InventorySquareEnvironment;
+  inventoryPulled: number;
+  inventoryPushed: number;
+  itemsCreated: number;
+  itemsPulled: number;
+  itemsPushed: number;
+  preservedRemoteDeletions: number;
+  skipped: number;
+  variationsPulled: number;
+  variationsPushed: number;
+};
+
+export type InventorySquareCatalogSyncState = {
+  environment: InventorySquareEnvironment;
+  lastCatalogCursorAt: string | null;
+  lastDirection: InventorySquareCatalogSyncDirection | null;
+  lastError: string | null;
+  lastInventorySyncAt: string | null;
+  lastStatus: 'error' | 'idle' | 'partial' | 'running' | 'success';
+  lastSummary: InventorySquareCatalogSyncSummary | null;
+  updatedAt: string | null;
+};
+
 export type InventoryPolarSyncStatusCounts = {
   synced: number;
   pending: number;
@@ -2924,6 +2955,33 @@ export function updateInventorySquareSettings(
       body: JSON.stringify(payload),
       headers: jsonHeaders(options?.defaultHeaders),
       method: 'PUT',
+    }
+  );
+}
+
+export function getInventorySquareCatalogSyncState(
+  wsId: string,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(
+    options
+  ).json<InventorySquareCatalogSyncState | null>(
+    workspaceInventoryPath(wsId, '/square/catalog-sync'),
+    { cache: 'no-store' }
+  );
+}
+
+export function syncInventorySquareCatalog(
+  wsId: string,
+  direction: InventorySquareCatalogSyncDirection,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<InventorySquareCatalogSyncSummary>(
+    workspaceInventoryPath(wsId, '/square/catalog-sync'),
+    {
+      body: JSON.stringify({ direction }),
+      headers: jsonHeaders(options?.defaultHeaders),
+      method: 'POST',
     }
   );
 }

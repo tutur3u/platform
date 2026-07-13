@@ -25,7 +25,7 @@ import {
   type SquareSettingsRow,
   upsertSettings,
 } from './settings-store';
-import { SQUARE_OAUTH_SCOPES } from './types';
+import { SQUARE_TERMINAL_OAUTH_SCOPES } from './types';
 
 export function computeReadiness({
   appCredentials,
@@ -50,7 +50,7 @@ export function computeReadiness({
       (item) => item.environment === settings.environment
     );
     const scopes = new Set(connection.scopes ?? []);
-    if (SQUARE_OAUTH_SCOPES.some((scope) => !scopes.has(scope))) {
+    if (SQUARE_TERMINAL_OAUTH_SCOPES.some((scope) => !scopes.has(scope))) {
       issues.add('scopes_missing');
     }
     if (!hasUsableSquareAppCredentials(appCredential)) {

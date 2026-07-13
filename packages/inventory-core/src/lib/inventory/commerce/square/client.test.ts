@@ -1,5 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
+  batchChangeSquareInventoryApi,
+  batchRetrieveSquareInventoryCountsApi,
+  batchUpsertSquareCatalogApi,
   createSquareAuthorizeUrl,
   createSquareDeviceCodeApi,
   createSquareIdempotencyKey,
@@ -8,6 +11,7 @@ import {
   parseSquareScopes,
   refreshSquareOAuthToken,
   type SquareApiError,
+  searchSquareCatalogApi,
   squareFetch,
   toSquareMoney,
 } from './client';
@@ -68,10 +72,129 @@ describe('Square REST client', () => {
     expect(url.searchParams.get('scope')?.split(' ')).toEqual(
       expect.arrayContaining([
         'DEVICE_CREDENTIAL_MANAGEMENT',
+        'INVENTORY_READ',
+        'INVENTORY_WRITE',
+        'ITEMS_READ',
+        'ITEMS_WRITE',
         'ORDERS_WRITE',
         'PAYMENTS_WRITE',
       ])
     );
+  });
+
+  it('searches the complete catalog including deleted objects for preservation', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(
+        new Response(JSON.stringify({ objects: [] }), { status: 200 })
+      );
+    vi.stubGlobal('fetch', fetchMock);
+
+    await searchSquareCatalogApi({
+      accessToken: 'square-access-token',
+      beginTime: '2026-07-01T00:00:00.000Z',
+      environment: 'sandbox',
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://connect.squareupsandbox.com/v2/catalog/search',
+      expect.objectContaining({
+        body: JSON.stringify({
+          begin_time: '2026-07-01T00:00:00.000Z',
+          include_deleted_objects: true,
+          include_related_objects: true,
+          object_types: ['ITEM'],
+        }),
+        method: 'POST',
+      })
+    );
+  });
+
+  it('upserts catalog batches without issuing a Square delete request', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(
+        new Response(JSON.stringify({ catalog_objects: [] }), { status: 200 })
+      );
+    vi.stubGlobal('fetch', fetchMock);
+    const objects = [
+      {
+        id: '#item-1',
+        item_data: { name: 'Demo item' },
+        type: 'ITEM',
+      },
+    ];
+
+    await batchUpsertSquareCatalogApi({
+      accessToken: 'square-access-token',
+      environment: 'production',
+      idempotencyKey: 'catalog-idem-1',
+      objects,
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://connect.squareup.com/v2/catalog/batch-upsert',
+      expect.objectContaining({
+        body: JSON.stringify({
+          batches: [{ objects }],
+          idempotency_key: 'catalog-idem-1',
+        }),
+        method: 'POST',
+      })
+    );
+    expect(fetchMock.mock.calls[0]?.[1]).not.toMatchObject({
+      method: 'DELETE',
+    });
+  });
+
+  it('retrieves and writes physical inventory counts with provider contracts', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ counts: [] }), { status: 200 })
+      )
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ counts: [] }), { status: 200 })
+      );
+    vi.stubGlobal('fetch', fetchMock);
+
+    await batchRetrieveSquareInventoryCountsApi({
+      accessToken: 'square-access-token',
+      catalogObjectIds: ['variation-1'],
+      environment: 'sandbox',
+      locationIds: ['location-1'],
+    });
+    await batchChangeSquareInventoryApi({
+      accessToken: 'square-access-token',
+      changes: [{ physical_count: { quantity: '4' }, type: 'PHYSICAL_COUNT' }],
+      environment: 'sandbox',
+      idempotencyKey: 'inventory-idem-1',
+    });
+
+    expect(fetchMock.mock.calls[0]?.[0]).toBe(
+      'https://connect.squareupsandbox.com/v2/inventory/counts/batch-retrieve'
+    );
+    expect(fetchMock.mock.calls[0]?.[1]).toMatchObject({
+      body: JSON.stringify({
+        catalog_object_ids: ['variation-1'],
+        location_ids: ['location-1'],
+        states: ['IN_STOCK'],
+      }),
+      method: 'POST',
+    });
+    expect(fetchMock.mock.calls[1]?.[0]).toBe(
+      'https://connect.squareupsandbox.com/v2/inventory/changes/batch-create'
+    );
+    expect(fetchMock.mock.calls[1]?.[1]).toMatchObject({
+      body: JSON.stringify({
+        changes: [
+          { physical_count: { quantity: '4' }, type: 'PHYSICAL_COUNT' },
+        ],
+        idempotency_key: 'inventory-idem-1',
+        ignore_unchanged_counts: true,
+      }),
+      method: 'POST',
+    });
   });
 
   it('derives the default OAuth redirect URL from the request origin', () => {

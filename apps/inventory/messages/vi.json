@@ -913,7 +913,7 @@
         "title": "Tổng quan"
       },
       "polar": {
-        "title": "Polar"
+        "title": "Thanh toán"
       },
       "sales": {
         "description": "Rà soát đơn bán đã hoàn tất và liên kết hóa đơn tài chính.",
@@ -1749,6 +1749,18 @@
         "storefronts": "Cửa hàng"
       },
       "openStore": "Mở cửa hàng",
+      "payments": {
+        "checking": "Đang kiểm tra",
+        "description": "Cung cấp checkout trực tuyến an toàn với Polar hoặc gửi thanh toán trực tiếp tới Square Terminal đã ghép nối. Thiết lập từng nhà cung cấp độc lập rồi chọn chế độ checkout cho từng cửa hàng.",
+        "eyebrow": "Nhà cung cấp thanh toán",
+        "polarDescription": "Checkout trực tuyến",
+        "polarTitle": "Polar",
+        "ready": "Sẵn sàng",
+        "setupRequired": "Cần thiết lập",
+        "squareDescription": "POS trực tiếp",
+        "squareTitle": "Square Terminal",
+        "title": "Một nơi cho mọi cách khách hàng thanh toán"
+      },
       "polar": {
         "description": "Lưu token Polar của workspace và chọn môi trường thanh toán cho đơn cửa hàng.",
         "dialogDescription": "Dán token tổ chức Polar do workspace sở hữu cho từng môi trường. Token không hiển thị trong thân trang.",
@@ -1764,12 +1776,17 @@
           "connectedEnvironments": "Môi trường đã kết nối",
           "connectionTab": "Kết nối",
           "notConnected": "Chưa kết nối",
+          "polar": "Polar",
+          "polarConnections": "Môi trường Polar",
           "productReady": "Sản phẩm thanh toán",
           "productStatusTitle": "Sản phẩm Polar theo môi trường",
+          "providersTab": "Nhà cung cấp",
           "ready": "Sẵn sàng",
-          "recentCheckouts": "Thanh toán Polar gần đây",
-          "recentCheckoutsEmpty": "Chưa có thanh toán Polar nào.",
-          "recentCheckoutsTitle": "Thanh toán Polar gần đây",
+          "recentCheckouts": "Thanh toán gần đây",
+          "recentCheckoutsEmpty": "Chưa có thanh toán Polar hoặc Square nào.",
+          "recentCheckoutsTitle": "Hoạt động thanh toán gần đây",
+          "square": "Square",
+          "squareConnections": "Kết nối Square",
           "syncedCoupons": "Mã giảm giá đã đồng bộ",
           "syncedCouponsDescription": "Mã giảm giá tạo ở đây được tự động đồng bộ sang Polar.",
           "syncedCouponsEmpty": "Chưa có mã giảm giá nào được đồng bộ sang Polar.",
@@ -1971,8 +1988,8 @@
               "title": "Chọn địa điểm bán hàng"
             },
             "webhook": {
-              "production": "Trong Square Webhooks, tạo đăng ký Thực tế với URL hiển thị tại đây. Chọn các sự kiện tạo và cập nhật terminal checkout, cập nhật payment, ghép đôi thiết bị và thu hồi quyền. Lưu signature key bên dưới.",
-              "sandbox": "Tạo đăng ký tương tự trong Sandbox và lưu signature key của Sandbox. Gửi sự kiện thử và xác nhận Square báo phản hồi HTTP 200.",
+              "production": "Trong Square Webhooks, tạo đăng ký Thực tế với URL hiển thị tại đây. Chọn các sự kiện tạo và cập nhật terminal checkout, cập nhật payment, ghép đôi thiết bị, cập nhật phiên bản danh mục, cập nhật số lượng tồn kho và thu hồi quyền. Lưu signature key bên dưới.",
+              "sandbox": "Tạo đăng ký tương tự trong Sandbox, gồm cập nhật phiên bản danh mục và số lượng tồn kho, rồi lưu signature key Sandbox. Gửi sự kiện thử và xác nhận Square báo phản hồi HTTP 200.",
               "title": "Đăng ký cập nhật trạng thái"
             }
           },
@@ -1995,6 +2012,43 @@
         "saveSuccess": "Đã lưu cài đặt Square.",
         "saving": "Đang lưu...",
         "selectedEnvironment": "Đã chọn: {environment}",
+        "sync": {
+          "actions": {
+            "bidirectional": "Đồng bộ hai chiều",
+            "from_square": "Nhập từ Square",
+            "to_square": "Đăng lên Square"
+          },
+          "cancel": "Để sau",
+          "confirm": {
+            "bidirectional": "So sánh hai danh mục, nhập thay đổi từ Square và đăng các thay đổi không xung đột từ Tuturuuu. Nếu cả hai phía cùng thay đổi, Tuturuuu sẽ tạm dừng mục đó để xem xét.",
+            "from_square": "Nhập sản phẩm, biến thể, giá và tồn kho thực tế từ Square vào Tuturuuu. Các bản ghi Square hiện có không bị thay đổi.",
+            "to_square": "Đăng sản phẩm, đơn vị, giá và tồn kho thực tế từ Tuturuuu lên Square. Hãy kiểm tra môi trường đã chọn trước khi tiếp tục."
+          },
+          "confirmAction": "Bắt đầu đồng bộ",
+          "confirmTitle": "Xem lại đồng bộ danh mục",
+          "connectFirst": "Kết nối và xác thực môi trường Square này trước khi đồng bộ.",
+          "description": "Giữ sản phẩm, biến thể, giá và số lượng tồn kho đồng nhất. Chọn một chiều hoặc để Tuturuuu phát hiện các thay đổi không xung đột ở cả hai phía.",
+          "error": "Đồng bộ danh mục Square thất bại.",
+          "lastRun": "Lần chạy gần nhất {date}",
+          "metrics": {
+            "conflicts": "Cần xem lại",
+            "preserved": "Đã bảo toàn xóa từ Square",
+            "pulled": "Thay đổi đã nhập",
+            "pushed": "Thay đổi đã đăng"
+          },
+          "partialSuccess": "Đồng bộ hoàn tất với một số mục cần xem lại.",
+          "safetyDescription": "Tuturuuu không bao giờ xóa hoặc lưu trữ đối tượng danh mục Square. Các biến thể chỉ có trên Square được giữ nguyên và thao tác xóa từ Square được đánh dấu để xem lại mà không xóa dữ liệu cục bộ.",
+          "safetyTitle": "Thiết kế không phá hủy dữ liệu",
+          "status": {
+            "error": "Cần xử lý",
+            "idle": "Chưa đồng bộ",
+            "partial": "Cần xem lại",
+            "running": "Đang đồng bộ",
+            "success": "Đã cập nhật"
+          },
+          "success": "Đồng bộ danh mục Square hoàn tất.",
+          "title": "Đồng bộ danh mục và tồn kho"
+        },
         "terminalDescription": "Dùng thiết bị đã ghép nối trong production. Trong sandbox, dán ID thiết bị terminal sandbox của Square.",
         "terminalTitle": "Điều hướng terminal",
         "title": "Square Terminal",
@@ -2063,8 +2117,8 @@
           "title": "Trung tâm điều phối kho"
         },
         "polar": {
-          "description": "Kết nối Polar, đồng bộ sản phẩm & mã giảm giá, và đối soát đơn hàng.",
-          "title": "Trung tâm Polar"
+          "description": "Thiết lập checkout trực tuyến Polar và POS Square Terminal, sau đó theo dõi hoạt động thanh toán tại một nơi.",
+          "title": "Trung tâm thanh toán"
         },
         "sales": {
           "description": "Rà soát doanh số dựa trên hóa đơn từ các checkout kho đã hoàn tất.",
@@ -2777,6 +2831,8 @@
       "currency_update_success": "Đã cập nhật tiền tệ.",
       "general": "Chung",
       "general_description": "Thông tin workspace và tùy chọn Inventory",
+      "payments": "Thanh toán",
+      "payments_description": "Thiết lập checkout trực tuyến Polar và POS Square Terminal",
       "polar": "Thanh toán Polar",
       "polar_description": "Thông tin checkout và môi trường mặc định của workspace",
       "square": "Square Terminal",

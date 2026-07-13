@@ -1,6 +1,6 @@
 ---
 title: Square Terminal integration
-description: Connect Inventory and Storefront checkout to Square Terminal, OAuth, device pairing, and webhooks.
+description: Connect Inventory and Storefront checkout to Square Terminal, OAuth, catalog and stock sync, device pairing, and webhooks.
 ---
 
 This runbook covers the Inventory and Storefront integration with
@@ -31,11 +31,16 @@ driving physical terminals from Tuturuuu.
    raw webhook body signature before parsing, reconciles duplicate deliveries
    idempotently, and completes the checkout only after a verified paid payment.
 4. On Square create failure, cancellation, expiry, or failed terminal checkout,
-   Tuturuuu releases the local reservation so stock returns to availability.
+   Tuturuuu releases the local reservation so stock returns to availability. A
+   five-minute expiry sweep materializes abandoned 15-minute reservations as
+   `expired`; checkout reads and new checkout creation also reconcile stale rows.
 
-V1 does not sync the Square catalog. Tuturuuu Inventory remains the source of
-truth for products, stock, bundles, listing prices, and checkout reservation
-state.
+Catalog sync supports Square to Tuturuuu, Tuturuuu to Square, and two-way
+comparison. It is intentionally non-destructive on Square: Tuturuuu uses
+Catalog Batch Upsert and physical inventory counts, never calls a Square catalog
+delete endpoint, preserves Square-only variations when updating an item, and
+turns simultaneous edits into conflicts for operator review. A Square deletion
+marks the local link for review without deleting local product or stock data.
 
 ## Workspace credentials
 
@@ -68,6 +73,10 @@ credentials.
    - `PAYMENTS_READ`
    - `PAYMENTS_WRITE`
    - `DEVICE_CREDENTIAL_MANAGEMENT`
+   - `ITEMS_READ`
+   - `ITEMS_WRITE`
+   - `INVENTORY_READ`
+   - `INVENTORY_WRITE`
 
 4. Create a webhook subscription for the Inventory Square endpoint:
 
@@ -83,6 +92,8 @@ credentials.
    - `payment.created`
    - `payment.updated`
    - `oauth.authorization.revoked`
+   - `catalog.version.updated`
+   - `inventory.count.updated`
 
 5. Copy the webhook signature key into **Inventory → Settings → Square
    Terminal** for the matching environment.
@@ -110,6 +121,9 @@ notification URL so signature validation uses the same value.
    - Sandbox: use Square's sandbox terminal device id when device listing is not
      available.
 8. Set a storefront's checkout mode to `Square Terminal`.
+9. In **Catalog and stock sync**, import from Square first in Sandbox. Review
+   counts and conflicts, then rehearse publish and two-way sync. Repeat in
+   Production only after confirming the selected seller and location.
 
 Readiness fails closed until the connection, required scopes, webhook signature
 key, location, device, and environment all match. OAuth-backed connections also
@@ -131,6 +145,9 @@ The no-hardware suite must cover these Square contracts before release:
   storage, and secret redaction.
 - REST base URLs for sandbox and production, `Square-Version`, bearer auth,
   sanitized upstream errors, and idempotency keys.
+- Catalog search, additive Batch Upsert, unknown-variation preservation,
+  two-sided hash conflict detection, deleted-object preservation, and physical
+  inventory count payloads that never contain a delete instruction.
 - Orders API payloads before Terminal checkout creation.
 - Terminal checkout payloads with `order_id`,
   `device_options.device_id`, and `device_options.show_itemized_cart`.
@@ -143,6 +160,8 @@ The no-hardware suite must cover these Square contracts before release:
 - Reservation-first lifecycle: create local reservation before Square calls,
   release on Square create/cancel/failure/expiry, and complete stock/ledger
   state only after verified Square payment success.
+- Scheduled and lazy checkout-expiry reconciliation, including concurrent
+  sweeper safety and service-role-only database access.
 
 ## Physical-terminal smoke checklist
 

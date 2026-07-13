@@ -52,7 +52,7 @@ describe('SquareSettingsPanel', () => {
     expect(source).toContain('<SquareProductionSetupGuide');
   });
 
-  it('is mounted from the settings dialog, not operator page bodies', () => {
+  it('is consolidated under the shared payment settings surface', () => {
     const operatorSource = readFileSync(
       join(
         inventoryRoot,
@@ -64,8 +64,34 @@ describe('SquareSettingsPanel', () => {
       join(inventoryRoot, 'src/components/settings/settings-dialog.tsx'),
       'utf8'
     );
+    const paymentSource = readFileSync(
+      join(inventoryRoot, 'src/components/operator/payment-settings-panel.tsx'),
+      'utf8'
+    );
 
     expect(operatorSource).not.toContain('<SquareSettingsPanel');
-    expect(settingsSource).toContain('<SquareSettingsPanel');
+    expect(settingsSource).toContain('<PaymentSettingsPanel');
+    expect(paymentSource).toContain('<SquareSettingsPanel');
+  });
+
+  it('offers guarded pull, push, and non-destructive two-way catalog sync', () => {
+    const source = readFileSync(
+      join(
+        inventoryRoot,
+        'src/components/operator/square-catalog-sync-card.tsx'
+      ),
+      'utf8'
+    );
+    const panelSource = readFileSync(
+      join(inventoryRoot, 'src/components/operator/square-settings-panel.tsx'),
+      'utf8'
+    );
+
+    expect(panelSource).toContain('<SquareCatalogSyncCard');
+    expect(source).toContain("'from_square'");
+    expect(source).toContain("'to_square'");
+    expect(source).toContain("'bidirectional'");
+    expect(source).toContain('<AlertDialog');
+    expect(source).toContain("t('safetyDescription')");
   });
 });

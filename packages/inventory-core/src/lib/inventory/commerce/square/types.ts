@@ -9,13 +9,25 @@ import type {
 
 export const SQUARE_API_VERSION = '2026-05-20';
 
-export const SQUARE_OAUTH_SCOPES = [
+export const SQUARE_TERMINAL_OAUTH_SCOPES = [
   'MERCHANT_PROFILE_READ',
   'ORDERS_READ',
   'ORDERS_WRITE',
   'PAYMENTS_READ',
   'PAYMENTS_WRITE',
   'DEVICE_CREDENTIAL_MANAGEMENT',
+] as const;
+
+export const SQUARE_CATALOG_OAUTH_SCOPES = [
+  'ITEMS_READ',
+  'ITEMS_WRITE',
+  'INVENTORY_READ',
+  'INVENTORY_WRITE',
+] as const;
+
+export const SQUARE_OAUTH_SCOPES = [
+  ...SQUARE_TERMINAL_OAUTH_SCOPES,
+  ...SQUARE_CATALOG_OAUTH_SCOPES,
 ] as const;
 
 export type SquareEnvironment = InventorySquareEnvironment;
@@ -98,6 +110,44 @@ export type SquareApiPayment = {
   receipt_url?: string;
   status?: string;
   total_money?: SquareMoney;
+};
+
+export type SquareCatalogItemVariationData = {
+  item_id?: string;
+  name?: string;
+  price_money?: SquareMoney;
+  sku?: string;
+  track_inventory?: boolean;
+};
+
+export type SquareCatalogItemData = {
+  description?: string;
+  name?: string;
+  variations?: SquareCatalogObject[];
+};
+
+export type SquareCatalogObject = {
+  id?: string;
+  is_deleted?: boolean;
+  item_data?: SquareCatalogItemData;
+  item_variation_data?: SquareCatalogItemVariationData;
+  present_at_all_locations?: boolean;
+  type?: string;
+  updated_at?: string;
+  version?: number;
+};
+
+export type SquareCatalogIdMapping = {
+  client_object_id?: string;
+  object_id?: string;
+};
+
+export type SquareInventoryCount = {
+  calculated_at?: string;
+  catalog_object_id?: string;
+  location_id?: string;
+  quantity?: string;
+  state?: string;
 };
 
 export type SquareOAuthTokenResponse = {

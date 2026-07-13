@@ -13,6 +13,7 @@ import type { StorefrontCartLine, StorefrontSurfaceLabels } from './types';
 export function StorefrontProductDialog({
   cartHref,
   cartLines,
+  checkoutMode,
   currency,
   isSubmitting,
   labels,
@@ -27,6 +28,7 @@ export function StorefrontProductDialog({
 }: {
   cartHref?: string;
   cartLines?: StorefrontCartLine[];
+  checkoutMode?: Parameters<typeof StorefrontProductDetail>[0]['checkoutMode'];
   currency: string;
   isSubmitting?: boolean;
   labels: StorefrontSurfaceLabels;
@@ -45,13 +47,14 @@ export function StorefrontProductDialog({
 }) {
   return (
     <Dialog onOpenChange={onOpenChange} open={Boolean(listing)}>
-      <DialogContent className="max-h-[90vh] w-[calc(100%-1.5rem)] max-w-5xl overflow-y-auto sm:w-[calc(100%-2rem)]">
+      <DialogContent className="max-h-[92dvh] w-[calc(100%-1rem)] max-w-none overflow-hidden border-border p-0 shadow-2xl sm:w-[calc(100%-2rem)] sm:max-w-6xl">
         {listing ? (
           <>
             <DialogTitle className="sr-only">{listing.title}</DialogTitle>
             <StorefrontProductDetail
               cartHref={cartHref}
               cartLines={cartLines}
+              checkoutMode={checkoutMode}
               currency={currency}
               isSubmitting={isSubmitting}
               labels={labels}
@@ -61,6 +64,7 @@ export function StorefrontProductDialog({
               onIncrement={onIncrement}
               quantity={0}
               radius={radius}
+              presentation="dialog"
               showInventoryBadges={showInventoryBadges}
               surfaceClassName={surfaceClassName}
             />

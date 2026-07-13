@@ -88,9 +88,12 @@ The commerce storefront extension adds:
 - Square Terminal settings for workspace app credentials, OAuth/manual tokens,
   location selection, device pairing, webhook verification, and commerce actions
   that send, cancel, and reconcile terminal payments after local stock is
-  reserved.
+  reserved. The same settings surface provides guarded Square catalog and stock
+  import, additive publish, and conflict-aware two-way sync. Provider deletion
+  is deliberately unsupported.
 - service-role-only RPCs for creating reservations, releasing or expiring
-  reservations, and linking a completed checkout to a `finance_invoice`
+  reservations, materializing checkout TTL expiry, and linking a completed
+  checkout to a `finance_invoice`
 
 New commerce tables belong in the `private` schema, not `public`. Public and
 satellite clients must go through `apps/web` APIs plus

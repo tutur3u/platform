@@ -913,7 +913,7 @@
         "title": "Overview"
       },
       "polar": {
-        "title": "Polar"
+        "title": "Payments"
       },
       "sales": {
         "description": "Review finalized sales linked to finance invoices.",
@@ -1749,6 +1749,18 @@
         "storefronts": "Storefronts"
       },
       "openStore": "Open store",
+      "payments": {
+        "checking": "Checking",
+        "description": "Offer secure online checkout with Polar or send in-person payments to a paired Square Terminal. Configure each provider independently, then choose the checkout mode per storefront.",
+        "eyebrow": "Payment providers",
+        "polarDescription": "Online checkout",
+        "polarTitle": "Polar",
+        "ready": "Ready",
+        "setupRequired": "Setup required",
+        "squareDescription": "In-person POS",
+        "squareTitle": "Square Terminal",
+        "title": "One place for every way customers pay"
+      },
       "polar": {
         "description": "Save workspace-owned Polar tokens and choose checkout environments for storefront orders.",
         "dialogDescription": "Paste the workspace-owned Polar organization token for one environment. The token is never shown in the page body.",
@@ -1764,12 +1776,17 @@
           "connectedEnvironments": "Connected environments",
           "connectionTab": "Connection",
           "notConnected": "Not connected",
+          "polar": "Polar",
+          "polarConnections": "Polar environments",
           "productReady": "Checkout product",
           "productStatusTitle": "Polar product per environment",
+          "providersTab": "Providers",
           "ready": "Ready",
-          "recentCheckouts": "Recent Polar checkouts",
-          "recentCheckoutsEmpty": "No Polar checkouts yet.",
-          "recentCheckoutsTitle": "Recent Polar checkouts",
+          "recentCheckouts": "Recent payments",
+          "recentCheckoutsEmpty": "No Polar or Square checkouts yet.",
+          "recentCheckoutsTitle": "Recent payment activity",
+          "square": "Square",
+          "squareConnections": "Square connections",
           "syncedCoupons": "Synced coupons",
           "syncedCouponsDescription": "Coupons created here are mirrored to a Polar discount automatically.",
           "syncedCouponsEmpty": "No coupons are mirrored to Polar yet.",
@@ -1971,8 +1988,8 @@
               "title": "Choose the selling location"
             },
             "webhook": {
-              "production": "In Square Webhooks, create a Production subscription with the URL shown here. Select terminal checkout created and updated, payment updated, device paired, and authorization revoked events. Save the signature key below.",
-              "sandbox": "Create the same subscription in Sandbox and save its Sandbox signature key. Send a test event and confirm Square reports an HTTP 200 response.",
+              "production": "In Square Webhooks, create a Production subscription with the URL shown here. Select terminal checkout created and updated, payment updated, device paired, catalog version updated, inventory count updated, and authorization revoked events. Save the signature key below.",
+              "sandbox": "Create the same subscription in Sandbox, including catalog version and inventory count updates, and save its Sandbox signature key. Send a test event and confirm Square reports an HTTP 200 response.",
               "title": "Subscribe to status updates"
             }
           },
@@ -1995,6 +2012,43 @@
         "saveSuccess": "Square settings saved.",
         "saving": "Saving...",
         "selectedEnvironment": "Selected: {environment}",
+        "sync": {
+          "actions": {
+            "bidirectional": "Two-way sync",
+            "from_square": "Import from Square",
+            "to_square": "Publish to Square"
+          },
+          "cancel": "Not now",
+          "confirm": {
+            "bidirectional": "Compare both catalogs, import changes made in Square, and publish non-conflicting Tuturuuu changes. If both sides changed, Tuturuuu pauses that item for review.",
+            "from_square": "Import Square items, variations, prices, and physical stock into Tuturuuu. Existing Square records stay untouched.",
+            "to_square": "Publish Tuturuuu products, units, prices, and physical stock to Square. Review the selected environment before continuing."
+          },
+          "confirmAction": "Start sync",
+          "confirmTitle": "Review catalog sync",
+          "connectFirst": "Connect and validate this Square environment before syncing.",
+          "description": "Keep products, variations, prices, and on-hand quantities aligned. Choose one direction or let Tuturuuu detect non-conflicting changes on both sides.",
+          "error": "Square catalog sync failed.",
+          "lastRun": "Last run {date}",
+          "metrics": {
+            "conflicts": "Needs review",
+            "preserved": "Square deletions preserved",
+            "pulled": "Changes imported",
+            "pushed": "Changes published"
+          },
+          "partialSuccess": "Sync completed with items that need review.",
+          "safetyDescription": "Tuturuuu never deletes or archives Square catalog objects. Square-only variations are preserved, and Square deletions are marked for review without deleting local data.",
+          "safetyTitle": "Non-destructive by design",
+          "status": {
+            "error": "Needs attention",
+            "idle": "Not synced",
+            "partial": "Review needed",
+            "running": "Syncing",
+            "success": "Up to date"
+          },
+          "success": "Square catalog sync completed.",
+          "title": "Catalog and stock sync"
+        },
         "terminalDescription": "Use a paired device in production. In sandbox, paste Square's sandbox terminal device ID.",
         "terminalTitle": "Terminal routing",
         "title": "Square Terminal",
@@ -2063,8 +2117,8 @@
           "title": "Inventory command center"
         },
         "polar": {
-          "description": "Connect Polar, sync products & coupons, and reconcile checkout orders.",
-          "title": "Polar hub"
+          "description": "Configure Polar online checkout and Square Terminal POS, then monitor payment activity in one place.",
+          "title": "Payments hub"
         },
         "sales": {
           "description": "Review invoice-backed sales created from finalized inventory checkouts.",
@@ -2777,6 +2831,8 @@
       "currency_update_success": "Currency updated.",
       "general": "General",
       "general_description": "Workspace identity and Inventory preferences",
+      "payments": "Payments",
+      "payments_description": "Polar online checkout and Square Terminal POS setup",
       "polar": "Polar checkout",
       "polar_description": "Workspace checkout credentials and environment defaults",
       "square": "Square Terminal",

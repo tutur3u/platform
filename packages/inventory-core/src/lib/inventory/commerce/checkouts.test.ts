@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
+  expireCheckoutReservations,
   getCheckoutByPublicToken,
   getCheckoutStorefrontAccessByPublicToken,
   listCheckouts,
@@ -107,15 +108,17 @@ describe('getCheckoutByPublicToken', () => {
   });
 
   it('lists checkouts through the private checkout RPC', async () => {
-    mocks.rpc.mockResolvedValue({
-      data: [
-        {
-          checkout: { id: 'checkout-1', publicToken: 'public-token' },
-          total_count: 1,
-        },
-      ],
-      error: null,
-    });
+    mocks.rpc
+      .mockResolvedValueOnce({ data: [], error: null })
+      .mockResolvedValueOnce({
+        data: [
+          {
+            checkout: { id: 'checkout-1', publicToken: 'public-token' },
+            total_count: 1,
+          },
+        ],
+        error: null,
+      });
 
     await expect(
       listCheckouts('ws-1', { pageSize: 10, q: 'buyer', status: 'reserved' })
@@ -124,13 +127,77 @@ describe('getCheckoutByPublicToken', () => {
       data: [{ id: 'checkout-1', publicToken: 'public-token' }],
     });
 
-    expect(mocks.rpc).toHaveBeenCalledWith('list_inventory_checkouts', {
+    expect(mocks.rpc).toHaveBeenNthCalledWith(
+      1,
+      'expire_inventory_checkout_sessions',
+      expect.objectContaining({
+        p_limit: 500,
+        p_ws_id: 'ws-1',
+      })
+    );
+    expect(mocks.rpc).toHaveBeenNthCalledWith(2, 'list_inventory_checkouts', {
       p_limit: 10,
       p_offset: 0,
       p_search: 'buyer',
       p_status: 'reserved',
       p_ws_id: 'ws-1',
     });
+  });
+
+  it('materializes expired checkout and reservation states in bounded batches', async () => {
+    mocks.rpc.mockResolvedValue({
+      data: [{ checkout_id: 'checkout-1', ws_id: 'ws-1' }],
+      error: null,
+    });
+    const now = new Date('2026-07-13T08:00:00.000Z');
+
+    await expect(
+      expireCheckoutReservations({ limit: 99_999, now, wsId: 'ws-1' })
+    ).resolves.toEqual([{ checkout_id: 'checkout-1', ws_id: 'ws-1' }]);
+    expect(mocks.rpc).toHaveBeenCalledWith(
+      'expire_inventory_checkout_sessions',
+      {
+        p_limit: 5000,
+        p_now: now.toISOString(),
+        p_ws_id: 'ws-1',
+      }
+    );
+  });
+
+  it('lazily expires a stale public checkout before returning it', async () => {
+    const staleCheckout = {
+      expiresAt: '2026-07-13T07:00:00.000Z',
+      id: 'checkout-1',
+      lines: [],
+      publicToken: 'public-token',
+      status: 'reserved',
+      wsId: 'ws-1',
+    };
+    mocks.rpc
+      .mockResolvedValueOnce({ data: staleCheckout, error: null })
+      .mockResolvedValueOnce({
+        data: [{ checkout_id: 'checkout-1', ws_id: 'ws-1' }],
+        error: null,
+      })
+      .mockResolvedValueOnce({
+        data: { ...staleCheckout, status: 'expired' },
+        error: null,
+      });
+
+    await expect(getCheckoutByPublicToken('public-token')).resolves.toEqual({
+      ...staleCheckout,
+      status: 'expired',
+    });
+    expect(mocks.rpc).toHaveBeenNthCalledWith(
+      2,
+      'expire_inventory_checkout_sessions',
+      expect.objectContaining({ p_ws_id: 'ws-1' })
+    );
+    expect(mocks.rpc).toHaveBeenNthCalledWith(
+      3,
+      'get_inventory_checkout_by_public_token',
+      { p_public_token: 'public-token' }
+    );
   });
 
   it('releases a workspace checkout through the private release RPC', async () => {

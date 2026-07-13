@@ -9,7 +9,10 @@ import {
   type SquareApiLocation,
   type SquareApiOrder,
   type SquareApiTerminalCheckout,
+  type SquareCatalogIdMapping,
+  type SquareCatalogObject,
   type SquareEnvironment,
+  type SquareInventoryCount,
   type SquareMoney,
   type SquareOAuthTokenResponse,
 } from './types';
@@ -220,6 +223,137 @@ export async function listSquareLocationsApi({
     path: '/v2/locations',
   });
   return payload.locations ?? [];
+}
+
+export async function searchSquareCatalogApi({
+  accessToken,
+  beginTime,
+  cursor,
+  environment,
+}: {
+  accessToken: string;
+  beginTime?: string | null;
+  cursor?: string | null;
+  environment: SquareEnvironment;
+}) {
+  return squareFetch<{
+    cursor?: string;
+    latest_time?: string;
+    objects?: SquareCatalogObject[];
+    related_objects?: SquareCatalogObject[];
+  }>({
+    accessToken,
+    body: {
+      ...(beginTime ? { begin_time: beginTime } : {}),
+      ...(cursor ? { cursor } : {}),
+      include_deleted_objects: true,
+      include_related_objects: true,
+      object_types: ['ITEM'],
+    },
+    environment,
+    method: 'POST',
+    path: '/v2/catalog/search',
+  });
+}
+
+export async function retrieveSquareCatalogObjectApi({
+  accessToken,
+  environment,
+  objectId,
+}: {
+  accessToken: string;
+  environment: SquareEnvironment;
+  objectId: string;
+}) {
+  const payload = await squareFetch<{
+    object?: SquareCatalogObject;
+    related_objects?: SquareCatalogObject[];
+  }>({
+    accessToken,
+    environment,
+    path: `/v2/catalog/object/${encodeURIComponent(objectId)}?include_related_objects=true`,
+  });
+  return payload.object ?? null;
+}
+
+export async function batchUpsertSquareCatalogApi({
+  accessToken,
+  environment,
+  idempotencyKey,
+  objects,
+}: {
+  accessToken: string;
+  environment: SquareEnvironment;
+  idempotencyKey: string;
+  objects: SquareCatalogObject[];
+}) {
+  return squareFetch<{
+    catalog_objects?: SquareCatalogObject[];
+    id_mappings?: SquareCatalogIdMapping[];
+  }>({
+    accessToken,
+    body: {
+      batches: [{ objects }],
+      idempotency_key: idempotencyKey,
+    },
+    environment,
+    method: 'POST',
+    path: '/v2/catalog/batch-upsert',
+  });
+}
+
+export async function batchRetrieveSquareInventoryCountsApi({
+  accessToken,
+  catalogObjectIds,
+  cursor,
+  environment,
+  locationIds,
+}: {
+  accessToken: string;
+  catalogObjectIds: string[];
+  cursor?: string | null;
+  environment: SquareEnvironment;
+  locationIds: string[];
+}) {
+  return squareFetch<{
+    counts?: SquareInventoryCount[];
+    cursor?: string;
+  }>({
+    accessToken,
+    body: {
+      catalog_object_ids: catalogObjectIds,
+      ...(cursor ? { cursor } : {}),
+      location_ids: locationIds,
+      states: ['IN_STOCK'],
+    },
+    environment,
+    method: 'POST',
+    path: '/v2/inventory/counts/batch-retrieve',
+  });
+}
+
+export async function batchChangeSquareInventoryApi({
+  accessToken,
+  changes,
+  environment,
+  idempotencyKey,
+}: {
+  accessToken: string;
+  changes: Array<Record<string, unknown>>;
+  environment: SquareEnvironment;
+  idempotencyKey: string;
+}) {
+  return squareFetch<{ counts?: SquareInventoryCount[] }>({
+    accessToken,
+    body: {
+      changes,
+      idempotency_key: idempotencyKey,
+      ignore_unchanged_counts: true,
+    },
+    environment,
+    method: 'POST',
+    path: '/v2/inventory/changes/batch-create',
+  });
 }
 
 export async function createSquareDeviceCodeApi({

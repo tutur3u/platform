@@ -13,6 +13,7 @@ import {
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
+import { SquareCatalogSyncCard } from './square-catalog-sync-card';
 import { SquareProductionSetupGuide } from './square-production-setup-guide';
 import {
   SquareAppCredentialsCard,
@@ -248,6 +249,7 @@ export function SquareSettingsPanel({ wsId }: { wsId: string }) {
         setLocationId={setLocationId}
         setSandboxDeviceId={setSandboxDeviceId}
       />
+      <SquareCatalogSyncCard connected={hasReadyConnection} wsId={wsId} />
       <SquareWebhookCard
         readinessIssues={settings.data?.readiness.issues ?? []}
         tokenLast4={activeConnection?.accessTokenLast4 ?? null}
