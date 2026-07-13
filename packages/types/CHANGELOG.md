@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.17.0](https://github.com/tutur3u/platform/compare/types-v0.16.0...types-v0.17.0) (2026-07-13)
+
+
+### Features
+
+* **mail:** add smart labels and assisted composing ([8ccd2fa](https://github.com/tutur3u/platform/commit/8ccd2fac0dcf4c67f6eff062dc52e3fc01a2c6ef))
+
+
+### Bug Fixes
+
+* **contacts:** authorize attendance and consolidate manager links ([a11d06d](https://github.com/tutur3u/platform/commit/a11d06db3fc26216f9e39f12fdf0ce7fc089fc70))
+* **finance:** make pending invoice RPCs server-only ([8c73298](https://github.com/tutur3u/platform/commit/8c73298dbcc48ce696cc9857ce43eb2529891095))
+
 ## [0.16.0](https://github.com/tutur3u/platform/compare/types-v0.15.0...types-v0.16.0) (2026-07-11)
 
 

@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.4.0](https://github.com/tutur3u/platform/compare/users-ui-v0.3.0...users-ui-v0.4.0) (2026-07-13)
+
+
+### Features
+
+* **contacts:** reconcile managers and harden attendance ([9f0d302](https://github.com/tutur3u/platform/commit/9f0d30291f96bd22429622ea7a477d12a5678db9))
+
+
+### Bug Fixes
+
+* **platform:** address attendance and invoice feedback ([8d2a537](https://github.com/tutur3u/platform/commit/8d2a53782d01427839607c7b0d90eaa3ecc5a1d8))
+
 ## [0.3.0](https://github.com/tutur3u/platform/compare/users-ui-v0.2.0...users-ui-v0.3.0) (2026-07-11)
 
 

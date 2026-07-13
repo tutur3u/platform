@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.1](https://github.com/tutur3u/platform/compare/finance-core-v0.3.0...finance-core-v0.3.1) (2026-07-13)
+
+
+### Bug Fixes
+
+* **contacts:** restore group and report operations ([8760868](https://github.com/tutur3u/platform/commit/8760868f3b5a721b0e2712a964fb5ec71ec14048))
+
 ## [0.3.0](https://github.com/tutur3u/platform/compare/finance-core-v0.2.0...finance-core-v0.3.0) (2026-07-11)
 
 

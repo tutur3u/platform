@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.15.0](https://github.com/tutur3u/platform/compare/finance-v0.14.0...finance-v0.15.0) (2026-07-13)
+
+
+### Features
+
+* **contacts:** reconcile managers and harden attendance ([9f0d302](https://github.com/tutur3u/platform/commit/9f0d30291f96bd22429622ea7a477d12a5678db9))
+* **platform:** complete satellite app cutover ([b9ac2ef](https://github.com/tutur3u/platform/commit/b9ac2ef8be678a42c1f09f3bef1a05750dc2cba3))
+
+
+### Bug Fixes
+
+* **finance:** add overview net total translation ([5e2059b](https://github.com/tutur3u/platform/commit/5e2059b17b8dbf80618ca821ef8771b1dba960a8))
+* **finance:** restore invoice creation dependencies ([653d5cb](https://github.com/tutur3u/platform/commit/653d5cb2c9761884e662e76577aef2ecfb597663))
+* **finance:** restore invoice promotions ([00f7030](https://github.com/tutur3u/platform/commit/00f70308de8465077f729fc44b4d1f0ff1e41bff))
+* **platform:** address attendance and invoice feedback ([8d2a537](https://github.com/tutur3u/platform/commit/8d2a53782d01427839607c7b0d90eaa3ecc5a1d8))
+
 ## [0.14.0](https://github.com/tutur3u/platform/compare/finance-v0.13.0...finance-v0.14.0) (2026-07-11)
 
 

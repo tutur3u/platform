@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.14.0](https://github.com/tutur3u/platform/compare/storefront-v0.13.0...storefront-v0.14.0) (2026-07-13)
+
+
+### Features
+
+* **platform:** complete satellite app cutover ([b9ac2ef](https://github.com/tutur3u/platform/commit/b9ac2ef8be678a42c1f09f3bef1a05750dc2cba3))
+* **storefront:** refine the buyer experience ([45d0e76](https://github.com/tutur3u/platform/commit/45d0e763ff2adc858aa7c76024eb4554879b3977))
+
+
+### Bug Fixes
+
+* **storefront:** route inventory requests correctly ([d924e8f](https://github.com/tutur3u/platform/commit/d924e8fd02c85cbd7637340191b5173a5079e2dd))
+
 ## [0.13.0](https://github.com/tutur3u/platform/compare/storefront-v0.12.0...storefront-v0.13.0) (2026-07-11)
 
 

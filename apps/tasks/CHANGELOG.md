@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.14.0](https://github.com/tutur3u/platform/compare/tasks-v0.13.0...tasks-v0.14.0) (2026-07-13)
+
+
+### Features
+
+* **contacts:** reconcile managers and harden attendance ([9f0d302](https://github.com/tutur3u/platform/commit/9f0d30291f96bd22429622ea7a477d12a5678db9))
+* **platform:** complete satellite app cutover ([b9ac2ef](https://github.com/tutur3u/platform/commit/b9ac2ef8be678a42c1f09f3bef1a05750dc2cba3))
+* **tasks:** promote progress tracking workspace ([058503a](https://github.com/tutur3u/platform/commit/058503a96c8df10725ecd3f88738d574760fc944))
+
+
+### Bug Fixes
+
+* **tasks:** restore satellite bulk mutations ([d0282a4](https://github.com/tutur3u/platform/commit/d0282a4c84aea6f86749725ed5b3fdf50ad5654d))
+
 ## [0.13.0](https://github.com/tutur3u/platform/compare/tasks-v0.12.0...tasks-v0.13.0) (2026-07-11)
 
 

@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.9.0](https://github.com/tutur3u/platform/compare/learn-v0.8.0...learn-v0.9.0) (2026-07-13)
+
+
+### Features
+
+* **education:** align teach and learn navigation ([48896cd](https://github.com/tutur3u/platform/commit/48896cd9eaee11a8efae58f46901f2c60d7cf637))
+* **platform:** complete satellite app cutover ([b9ac2ef](https://github.com/tutur3u/platform/commit/b9ac2ef8be678a42c1f09f3bef1a05750dc2cba3))
+
 ## [0.8.0](https://github.com/tutur3u/platform/compare/learn-v0.7.0...learn-v0.8.0) (2026-07-11)
 
 

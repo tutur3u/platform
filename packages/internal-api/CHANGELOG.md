@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.18.0](https://github.com/tutur3u/platform/compare/internal-api-v0.17.0...internal-api-v0.18.0) (2026-07-13)
+
+
+### Features
+
+* **contacts:** reconcile managers and harden attendance ([9f0d302](https://github.com/tutur3u/platform/commit/9f0d30291f96bd22429622ea7a477d12a5678db9))
+* improve vocabulary details ([#4958](https://github.com/tutur3u/platform/issues/4958)) ([9e01bd1](https://github.com/tutur3u/platform/commit/9e01bd1e9017a4341487d1e9582e17c27a1a4404))
+* **mail:** add smart labels and assisted composing ([8ccd2fa](https://github.com/tutur3u/platform/commit/8ccd2fac0dcf4c67f6eff062dc52e3fc01a2c6ef))
+* **platform:** complete satellite app cutover ([b9ac2ef](https://github.com/tutur3u/platform/commit/b9ac2ef8be678a42c1f09f3bef1a05750dc2cba3))
+
+
+### Bug Fixes
+
+* **contacts:** consolidate manager profiles ([69529a3](https://github.com/tutur3u/platform/commit/69529a30cb276ea31d7fa191a823bb9949751058))
+* **finance:** keep server API calls on finance origin ([ca6248a](https://github.com/tutur3u/platform/commit/ca6248a224491c3df554310956102cc1fb5bb186))
+* **teach:** address vocabulary review feedback ([4efa1a8](https://github.com/tutur3u/platform/commit/4efa1a8037038f5fc3ba018e8ef4e3a128021b54))
+
 ## [0.17.0](https://github.com/tutur3u/platform/compare/internal-api-v0.16.0...internal-api-v0.17.0) (2026-07-11)
 
 

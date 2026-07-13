@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.15.1](https://github.com/tutur3u/platform/compare/utils-v0.15.0...utils-v0.15.1) (2026-07-13)
+
+
+### Bug Fixes
+
+* **contacts:** restore group post mutations ([fe621e4](https://github.com/tutur3u/platform/commit/fe621e4d7e4126f705082cc3e815aafdeebe535a))
+* **security:** prevent clickjacking across apps ([c8ed36e](https://github.com/tutur3u/platform/commit/c8ed36e708c08ebe3b17ee7f6249513644108c48))
+
 ## [0.15.0](https://github.com/tutur3u/platform/compare/utils-v0.14.0...utils-v0.15.0) (2026-07-11)
 
 

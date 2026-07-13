@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.9.0](https://github.com/tutur3u/platform/compare/teach-v0.8.0...teach-v0.9.0) (2026-07-13)
+
+
+### Features
+
+* **education:** align teach and learn navigation ([48896cd](https://github.com/tutur3u/platform/commit/48896cd9eaee11a8efae58f46901f2c60d7cf637))
+* implement AI-assisted feedback generation for student quiz submissions ([e347a46](https://github.com/tutur3u/platform/commit/e347a46ff86769c33a5312e2d5ea606c17d3e1a5))
+* improve vocabulary details ([#4958](https://github.com/tutur3u/platform/issues/4958)) ([9e01bd1](https://github.com/tutur3u/platform/commit/9e01bd1e9017a4341487d1e9582e17c27a1a4404))
+* **mail:** add smart labels and assisted composing ([8ccd2fa](https://github.com/tutur3u/platform/commit/8ccd2fac0dcf4c67f6eff062dc52e3fc01a2c6ef))
+* migrate vocabulary details and suggestions from OED to Laban Dictionary ([0f549c2](https://github.com/tutur3u/platform/commit/0f549c2767c0082fff733e0fe747c2681c50c2db))
+* **platform:** complete satellite app cutover ([b9ac2ef](https://github.com/tutur3u/platform/commit/b9ac2ef8be678a42c1f09f3bef1a05750dc2cba3))
+
+
+### Bug Fixes
+
+* **teach:** address final AI review feedback ([05fc697](https://github.com/tutur3u/platform/commit/05fc697e951d2c66f8661ba9d47cafbabd9aba37))
+* **teach:** address vocabulary review feedback ([4efa1a8](https://github.com/tutur3u/platform/commit/4efa1a8037038f5fc3ba018e8ef4e3a128021b54))
+* **teach:** harden AI feedback concurrency ([f470e6e](https://github.com/tutur3u/platform/commit/f470e6e415603e850b34b09fffb9516ea45d40a2))
+* **teach:** preserve saved vocabulary feedback ([976fd2c](https://github.com/tutur3u/platform/commit/976fd2c8f3e42bfd61b979e58ffe0039b7c90901))
+
 ## [0.8.0](https://github.com/tutur3u/platform/compare/teach-v0.7.0...teach-v0.8.0) (2026-07-11)
 
 
