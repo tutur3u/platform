@@ -60,6 +60,7 @@ const {
 } = require('./docker-web.js');
 const {
   buildBlueGreenServices,
+  buildNativeWebRuntimeImages,
   createBlueGreenBuildMetadataEnv,
   getBlueGreenDirectServiceName,
   getBlueGreenFrontend,
@@ -4036,6 +4037,62 @@ test('buildBlueGreenServices can explicitly package host-built artifacts with bu
     ],
   ]);
   assert.strictEqual(calls[1][2], env);
+});
+
+test('native web packaging can publish registry output with build metadata', async () => {
+  const calls = [];
+  const env = {
+    BUILDX_BUILDER: DEFAULT_BUILDER_NAME,
+    DOCKER_WEB_NATIVE_RUNNER_BUILDX: '1',
+  };
+
+  await buildNativeWebRuntimeImages({
+    env,
+    imageTagResolver: () => 'ghcr.io/tutur3u/platform-e2e:cache-web-blue',
+    metadataFileResolver: () => '/tmp/web-blue.metadata.json',
+    output: 'registry',
+    runCommand: async (command, args, options = {}) => {
+      calls.push([command, args, options.env]);
+      return { code: 0, signal: null, stderr: '', stdout: '' };
+    },
+    services: ['web-blue'],
+  });
+
+  assert.deepEqual(calls[0].slice(0, 2), [
+    'docker',
+    [
+      'buildx',
+      'build',
+      '--builder',
+      DEFAULT_BUILDER_NAME,
+      '--output',
+      'type=registry',
+      '--metadata-file',
+      '/tmp/web-blue.metadata.json',
+      '--file',
+      path.join(
+        path.resolve(__dirname, '..'),
+        'apps',
+        'web',
+        'docker',
+        'native-runner.Dockerfile'
+      ),
+      '--tag',
+      'ghcr.io/tutur3u/platform-e2e:cache-web-blue',
+      path.resolve(__dirname, '..'),
+    ],
+  ]);
+  assert.strictEqual(calls[0][2], env);
+
+  await assert.rejects(
+    () =>
+      buildNativeWebRuntimeImages({
+        env: {},
+        output: 'registry',
+        services: ['web-blue'],
+      }),
+    /requires the native Buildx runner/u
+  );
 });
 
 test('buildBlueGreenServices only diverts web services to native artifact builds', async () => {
