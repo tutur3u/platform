@@ -47,7 +47,7 @@ describe('Tasks API proxy', () => {
     const [targetUrl, init] = fetchMock.mock.calls[0] ?? [];
     expect(new URL(String(targetUrl)).pathname).toBe('/api/v1/workspaces');
     expect(new URL(String(targetUrl)).search).toBe('?x=1');
-    expect((init?.headers as Headers).get('cookie')).toBe(
+    expect(new Headers(init?.headers).get('cookie')).toBe(
       'tuturuuu_app_session=ttr_app_123; sidebar=hover'
     );
     expect(response.headers.get('set-cookie')).toContain(

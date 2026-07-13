@@ -1164,29 +1164,6 @@ When the runner heartbeat is stale, future cron times in the dashboard are
 scheduled estimates derived from config/control, not proof that the runner will
 execute them.
 
-The managed workspace cron worker runs at
-`/api/cron/workspaces/managed-jobs` through the `managed-workspace-cron-jobs`
-entry. It claims due `workspace_cron_jobs` rows with endpoint URLs, but only for
-workspaces that have the `MANAGED_CRON_ENABLED` workspace secret set to `true`.
-That secret is intentionally special: create, update, and delete operations are
-allowed only from an exact `@tuturuuu.com` employee session.
-
-Endpoint egress is separately constrained by the private
-`private.managed_cron_whitelisted_domains` allowlist. Manage that allowlist from
-Infrastructure -> Managed Cron Domains; it is not shared with the AI whitelist.
-Job endpoint URLs must use HTTPS, cannot include credentials, and must resolve
-to an exact or subdomain match of an enabled allowlist domain. Per-job request
-headers can be static values or references to `workspace_secrets` names; secret
-values are read server-side at execution time and are not exposed in the job UI.
-If a managed-cron status or setup request still returns HTTP 500 after the cron
-runner is available, check the Tuturuuu managed-cron prerequisites first:
-Supabase service-role access must be configured (`SUPABASE_SERVER_URL` or
-`NEXT_PUBLIC_SUPABASE_URL`, plus `SUPABASE_SECRET_KEY`), and the managed-cron
-migrations must have created `workspace_cron_jobs`,
-`private.managed_cron_whitelisted_domains`, and the private managed-cron RPCs.
-Managed cron status/setup no longer requires `PLATFORM_DATABASE_URL`,
-`POSTGRES_URL`, `DATABASE_URL`, or `DIRECT_URL`.
-
 Runtime cron telemetry is intentionally file-based and local to the host:
 
 - `tmp/docker-web/cron/status.json` for runner health, the current cycle, and

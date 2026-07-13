@@ -13,7 +13,6 @@ import { notFound } from 'next/navigation';
 import { setRequestLocale } from 'next-intl/server';
 import { NuqsAdapter } from 'nuqs/adapters/next/app';
 import { type ReactNode, Suspense } from 'react';
-import { VersionBadgeGate } from '@/components/version-badge-gate';
 
 export { viewport } from '@tuturuuu/utils/common/nextjs';
 
@@ -125,12 +124,7 @@ export default async function RootLayout({ children, params }: Props) {
           <VercelRuntimeSignals />
           <Suspense>
             <NuqsAdapter>
-              <Providers>
-                {children}
-                <Suspense fallback={null}>
-                  <VersionBadgeGate appName={siteConfig.name} />
-                </Suspense>
-              </Providers>
+              <Providers>{children}</Providers>
             </NuqsAdapter>
           </Suspense>
           <TailwindIndicator />

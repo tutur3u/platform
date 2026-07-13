@@ -30,7 +30,7 @@
     "script": "dev:app"
   },
   "dependencies": {
-    "@ai-sdk/google": "^4.0.8",
+    "@ai-sdk/google": "^4.0.12",
     "@tanstack/react-query": "^5.101.2",
     "@tanstack/react-table": "^8.21.3",
     "@tuturuuu/ai": "workspace:*",
@@ -50,9 +50,9 @@
     "@tuturuuu/ui": "workspace:*",
     "@tuturuuu/utils": "workspace:*",
     "@tuturuuu/vercel": "workspace:*",
-    "ai": "^7.0.16",
+    "ai": "^7.0.22",
     "next": "^16.3.0-preview.5",
-    "next-intl": "^4.13.1",
+    "next-intl": "^4.13.2",
     "next-themes": "^0.4.6",
     "nuqs": "^2.9.0",
     "postgres": "^3.4.9",
@@ -65,12 +65,12 @@
   "devDependencies": {
     "@tailwindcss/postcss": "^4.3.2",
     "@tuturuuu/typescript-config": "workspace:*",
-    "@types/node": "^26.1.0",
+    "@types/node": "^26.1.1",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "@typescript/native-preview": "7.0.0-dev.20260707.2",
     "babel-plugin-react-compiler": "^1.0.0",
-    "postcss": "^8.5.16",
+    "postcss": "^8.5.17",
     "typescript": "7.0.2"
   }
 }

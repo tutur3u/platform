@@ -63,6 +63,7 @@ function createOrderedSelectResult<T>(result: T) {
     eq: vi.fn(() => query),
     in: vi.fn(() => query),
     order: vi.fn(() => query),
+    range: vi.fn(() => query),
   };
 
   Object.defineProperty(query, 'then', {
@@ -79,6 +80,162 @@ describe('external project store cleanup', () => {
   beforeEach(() => {
     mocks.deleteWorkspaceStorageObjectByPath.mockReset();
     mocks.deleteWorkspaceStorageObjectByPath.mockResolvedValue(undefined);
+  });
+
+  it('loads entry relationships in bounded batches for large projects', async () => {
+    const entryIds = Array.from(
+      { length: 205 },
+      (_, index) => `entry-${index}`
+    );
+    const relationshipBatches: Record<string, string[][]> = {
+      workspace_external_project_assets: [],
+      workspace_external_project_blocks: [],
+    };
+    const collections = [
+      {
+        collection_type: 'characters',
+        config: {},
+        id: 'collection-1',
+        slug: 'characters',
+        title: 'Characters',
+      },
+    ];
+    const entries = entryIds.map((id, index) => ({
+      collection_id: 'collection-1',
+      created_at: '2026-01-01T00:00:00Z',
+      id,
+      metadata: {},
+      profile_data: {},
+      slug: `character-${index}`,
+      sort_order: index,
+      source_adapter: 'exocorpse',
+      stable_source_id: id,
+      status: 'published',
+      subtitle: null,
+      summary: null,
+      title: `Character ${index}`,
+    }));
+
+    const db = {
+      from: vi.fn((table: string) => ({
+        select: vi.fn(() => {
+          let selectedIds: string[] | null = null;
+          const query = {
+            eq: vi.fn(() => query),
+            in: vi.fn((_column: string, ids: string[]) => {
+              selectedIds = ids;
+              relationshipBatches[table]?.push(ids);
+              return query;
+            }),
+            limit: vi.fn(() => query),
+            order: vi.fn(() => query),
+            range: vi.fn(() => query),
+          };
+
+          Object.defineProperty(query, 'then', {
+            value: (
+              resolve: (value: { data: unknown[]; error: null }) => unknown,
+              reject?: (reason: unknown) => unknown
+            ) => {
+              let data: unknown[] = [];
+
+              if (table === 'workspace_external_project_collections') {
+                data = collections;
+              } else if (table === 'workspace_external_project_entries') {
+                data = entries;
+              } else if (
+                table === 'workspace_external_project_blocks' &&
+                selectedIds
+              ) {
+                data = selectedIds.map((entryId, index) => ({
+                  block_type: 'markdown',
+                  content: {},
+                  entry_id: entryId,
+                  id: `block-${entryId}`,
+                  sort_order: index,
+                }));
+              }
+
+              return Promise.resolve({ data, error: null }).then(
+                resolve,
+                reject
+              );
+            },
+          });
+
+          return query;
+        }),
+      })),
+    };
+
+    const { getWorkspaceExternalProjectStudioData } = await import('./store');
+    const studio = await getWorkspaceExternalProjectStudioData(
+      'workspace-1',
+      db as never
+    );
+
+    expect(studio.entries).toHaveLength(205);
+    expect(studio.blocks).toHaveLength(205);
+    expect(relationshipBatches.workspace_external_project_blocks).toEqual([
+      entryIds.slice(0, 100),
+      entryIds.slice(100, 200),
+      entryIds.slice(200),
+    ]);
+    expect(relationshipBatches.workspace_external_project_assets).toEqual([
+      entryIds.slice(0, 100),
+      entryIds.slice(100, 200),
+      entryIds.slice(200),
+    ]);
+  });
+
+  it('loads every entry page when a workspace exceeds the row limit', async () => {
+    const entries = Array.from({ length: 1185 }, (_, index) => ({
+      id: `entry-${index}`,
+      slug: `entry-${index}`,
+    }));
+    const ranges: Array<[number, number]> = [];
+    const db = {
+      from: vi.fn(() => ({
+        select: vi.fn(() => {
+          let selectedRange: [number, number] = [0, 999];
+          const query = {
+            eq: vi.fn(() => query),
+            order: vi.fn(() => query),
+            range: vi.fn((from: number, to: number) => {
+              selectedRange = [from, to];
+              ranges.push(selectedRange);
+              return query;
+            }),
+          };
+
+          Object.defineProperty(query, 'then', {
+            value: (
+              resolve: (value: { data: unknown[]; error: null }) => unknown,
+              reject?: (reason: unknown) => unknown
+            ) =>
+              Promise.resolve({
+                data: entries.slice(selectedRange[0], selectedRange[1] + 1),
+                error: null,
+              }).then(resolve, reject),
+          });
+
+          return query;
+        }),
+      })),
+    };
+
+    const { listWorkspaceExternalProjectEntries } = await import('./store');
+    const result = await listWorkspaceExternalProjectEntries(
+      'workspace-1',
+      { includeDrafts: true },
+      db as never
+    );
+
+    expect(result).toHaveLength(1185);
+    expect(ranges).toEqual([
+      [0, 999],
+      [1000, 1999],
+    ]);
   });
 
   it('excludes private delivery collections and entries from public delivery payloads', async () => {

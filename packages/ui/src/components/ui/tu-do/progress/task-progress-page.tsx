@@ -1,7 +1,7 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { BarChart3, Flag, Target, TrendingUp, Trophy } from '@tuturuuu/icons';
+import { BarChart3, Flag, Sparkles, Target, Trophy } from '@tuturuuu/icons';
 import {
   createTaskLeaderboard,
   createTaskLeaderboardTeam,
@@ -97,6 +97,7 @@ export function TaskProgressPage({
   const queryClient = useQueryClient();
   const [importText, setImportText] = useState('');
   const [importPreviewCount, setImportPreviewCount] = useState(0);
+  const [selectedMetricId, setSelectedMetricId] = useState<string | null>(null);
   const queryRoot = ['task-progress', wsId];
 
   const metricsQuery = useQuery({
@@ -105,7 +106,12 @@ export function TaskProgressPage({
   });
   const metrics =
     metricsQuery.data?.ok === true ? metricsQuery.data.metrics : [];
-  const selectedMetric = useMemo(() => metricOption(metrics), [metrics]);
+  const selectedMetric = useMemo(
+    () =>
+      metrics.find((metric) => metric.id === selectedMetricId) ??
+      metricOption(metrics),
+    [metrics, selectedMetricId]
+  );
 
   const entriesQuery = useQuery({
     queryKey: [...queryRoot, 'entries', selectedMetric?.id],
@@ -240,52 +246,78 @@ export function TaskProgressPage({
     : [];
 
   return (
-    <div className="flex flex-col gap-6 p-4 md:p-6">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-        <div className="space-y-2">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-dynamic-blue/10 ring-1 ring-dynamic-blue/20">
-              <TrendingUp className="h-5 w-5 text-dynamic-blue" />
+    <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-6 p-4 md:p-6 lg:p-8">
+      <section className="relative overflow-hidden rounded-3xl border bg-gradient-to-br from-background via-background to-dynamic-blue/10 p-5 shadow-sm md:p-7">
+        <div className="pointer-events-none absolute -top-24 -right-20 h-64 w-64 rounded-full bg-dynamic-blue/10 blur-3xl" />
+        <div className="relative flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
+          <div className="max-w-2xl space-y-3">
+            <div className="flex items-center gap-2 font-semibold text-dynamic-blue text-xs uppercase tracking-[0.18em]">
+              <Sparkles className="h-4 w-4" />
+              {t('views.progress.title')}
             </div>
             <div>
-              <h1 className="font-bold text-2xl tracking-tight">
+              <h1 className="font-bold text-3xl tracking-tight md:text-4xl">
                 {t(`views.${view}.title`)}
               </h1>
-              <p className="text-muted-foreground text-sm">
+              <p className="mt-2 text-muted-foreground">
                 {t(`views.${view}.description`)}
               </p>
             </div>
+            {metrics.length > 0 ? (
+              <label className="inline-flex items-center gap-3 rounded-xl border bg-background/80 px-3 py-2 text-sm shadow-sm backdrop-blur">
+                <span className="text-muted-foreground">
+                  {t('fields.metric_name')}
+                </span>
+                <select
+                  className="min-w-32 bg-transparent font-medium outline-none"
+                  onChange={(event) => setSelectedMetricId(event.target.value)}
+                  value={selectedMetric?.id ?? ''}
+                >
+                  {metrics.map((metric) => (
+                    <option key={metric.id} value={metric.id}>
+                      {metric.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            ) : null}
           </div>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {(
-            ['progress', 'goals', 'stats', 'leaderboards', 'import'] as const
-          ).map((tab) =>
-            onViewChange ? (
-              <Button
-                key={tab}
-                onClick={() => onViewChange(tab)}
-                size="sm"
-                type="button"
-                variant={tab === view ? 'default' : 'outline'}
-              >
-                {t(`tabs.${tab}`)}
-              </Button>
-            ) : (
-              <Button
-                key={tab}
-                asChild
-                size="sm"
-                variant={tab === view ? 'default' : 'outline'}
-              >
-                <Link href={`/${routeWsId}/tasks/${tab}`}>
+          <nav className="flex max-w-full gap-1 overflow-x-auto rounded-2xl border bg-background/80 p-1.5 shadow-sm backdrop-blur">
+            {(
+              ['progress', 'goals', 'stats', 'leaderboards', 'import'] as const
+            ).map((tab) =>
+              onViewChange ? (
+                <Button
+                  key={tab}
+                  onClick={() => onViewChange(tab)}
+                  size="sm"
+                  type="button"
+                  variant={tab === view ? 'default' : 'ghost'}
+                >
                   {t(`tabs.${tab}`)}
-                </Link>
-              </Button>
-            )
-          )}
+                </Button>
+              ) : (
+                <Button
+                  key={tab}
+                  asChild
+                  size="sm"
+                  variant={tab === view ? 'default' : 'ghost'}
+                >
+                  <Link
+                    href={
+                      tab === 'progress'
+                        ? `/${routeWsId}/progress`
+                        : `/${routeWsId}/progress/${tab}`
+                    }
+                  >
+                    {t(`tabs.${tab}`)}
+                  </Link>
+                </Button>
+              )
+            )}
+          </nav>
         </div>
-      </div>
+      </section>
 
       {hasPendingSchema ? (
         <Card>
@@ -295,7 +327,7 @@ export function TaskProgressPage({
         </Card>
       ) : null}
 
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <SummaryCard
           icon={<BarChart3 className="h-4 w-4" />}
           label={t('summary.total')}

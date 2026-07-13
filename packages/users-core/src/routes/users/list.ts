@@ -146,7 +146,9 @@ async function getDataFromSession(
   const access = await getFinanceRouteContext(
     req,
     rawWsId,
-    await resolveFinanceRouteAuthContext(req)
+    await resolveFinanceRouteAuthContext(req, {
+      targetApp: ['contacts', 'finance', 'platform'],
+    })
   );
 
   if (access.response) {

@@ -38,7 +38,9 @@ export async function resolveFinanceRouteAuthContext(
     // Extra app-session audiences to accept beyond finance/platform. The
     // inventory operator shares the promotions domain, so its routes pass
     // 'inventory' here so the inventory app session isn't rejected.
-    targetApp?: Array<'finance' | 'platform' | 'inventory' | 'storefront'>;
+    targetApp?: Array<
+      'contacts' | 'finance' | 'platform' | 'inventory' | 'storefront'
+    >;
   }
 ): Promise<FinanceRouteAuthContext | undefined> {
   const appSessionVerification = verifyAppSessionRequest(request, {

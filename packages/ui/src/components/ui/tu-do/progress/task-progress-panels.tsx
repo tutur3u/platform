@@ -22,15 +22,17 @@ export function SummaryCard({
   value: number;
 }) {
   return (
-    <Card>
+    <Card className="group overflow-hidden transition-all hover:-translate-y-0.5 hover:shadow-md">
       <CardHeader className="pb-2">
         <CardTitle className="flex items-center gap-2 text-muted-foreground text-sm">
-          {icon}
+          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-dynamic-blue/10 text-dynamic-blue transition-transform group-hover:scale-110">
+            {icon}
+          </span>
           {label}
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="font-bold text-2xl">
+        <div className="font-bold text-3xl tracking-tight">
           {Number(value).toLocaleString()}
         </div>
       </CardContent>
@@ -49,7 +51,7 @@ function MetricSelect({
 }) {
   return (
     <select
-      className="h-10 rounded-md border bg-background px-3 text-sm"
+      className="h-11 w-full rounded-xl border bg-background px-3 text-sm shadow-sm outline-none transition focus:border-dynamic-blue focus:ring-2 focus:ring-dynamic-blue/15"
       defaultValue={selectedMetric?.id}
       name={name}
       required
@@ -81,8 +83,8 @@ export function ProgressPanel(props: {
   } = props;
 
   return (
-    <div className="grid gap-4 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
-      <Card>
+    <div className="grid gap-4 xl:grid-cols-[minmax(20rem,0.75fr)_minmax(0,1.25fr)]">
+      <Card className="h-fit xl:sticky xl:top-6">
         <CardHeader>
           <CardTitle>{t('progress.log_entry')}</CardTitle>
         </CardHeader>
@@ -138,7 +140,7 @@ export function ProgressPanel(props: {
           ) : (
             entries.map((entry) => (
               <div
-                className="flex items-start justify-between gap-3 rounded-md border p-3"
+                className="flex items-start justify-between gap-3 rounded-xl border bg-background p-4 transition-colors hover:bg-muted/30"
                 key={entry.id}
               >
                 <div>
@@ -177,8 +179,8 @@ export function GoalsPanel(props: {
   const { createGoalMutation, goals, metrics, selectedMetric, t } = props;
 
   return (
-    <div className="grid gap-4 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
-      <Card>
+    <div className="grid gap-4 xl:grid-cols-[minmax(20rem,0.75fr)_minmax(0,1.25fr)]">
+      <Card className="h-fit xl:sticky xl:top-6">
         <CardHeader>
           <CardTitle>{t('goals.create_goal')}</CardTitle>
         </CardHeader>
@@ -202,7 +204,7 @@ export function GoalsPanel(props: {
             <Input defaultValue={today()} name="period_start" type="date" />
             <Input name="period_end" type="date" />
             <select
-              className="h-10 rounded-md border bg-background px-3 text-sm"
+              className="h-11 rounded-xl border bg-background px-3 text-sm shadow-sm outline-none focus:border-dynamic-blue focus:ring-2 focus:ring-dynamic-blue/15"
               name="goal_type"
             >
               <option value="target">{t('goal_types.target')}</option>

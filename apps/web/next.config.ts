@@ -63,6 +63,10 @@ const nextConfig = createTuturuuuNextConfig({
   serverExternalPackages: [...(serwistConfig.serverExternalPackages ?? [])],
   experimental: {
     ...(serwistConfig.experimental ?? {}),
+    // Reuse static route stages and shared shells across similar navigations.
+    // Personalized runtime stages remain request-bound unless a segment opts in.
+    cachedNavigations: true,
+    appShells: true,
     ...(staticGenerationMaxConcurrency
       ? { staticGenerationMaxConcurrency }
       : {}),

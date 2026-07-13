@@ -9,10 +9,6 @@
   },
   "crons": [
     {
-      "path": "/api/cron/discord/daily-report",
-      "schedule": "0 16 * * *"
-    },
-    {
       "path": "/api/cron/process-notification-batches",
       "schedule": "*/15 * * * *"
     },
@@ -27,10 +23,6 @@
     {
       "path": "/api/cron/tasks/deadline-reminders",
       "schedule": "0 */4 * * *"
-    },
-    {
-      "path": "/api/cron/workspaces/managed-jobs",
-      "schedule": "* * * * *"
     }
   ]
 }

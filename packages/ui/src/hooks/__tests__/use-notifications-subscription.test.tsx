@@ -8,7 +8,10 @@ import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   __resetNotificationSubscriptionRegistryForTests,
+  UNREAD_COUNT_FALLBACK_INTERVAL_MS,
+  useInfiniteNotifications,
   useNotificationSubscription,
+  useUnreadCount,
 } from '../use-notifications';
 
 type RealtimePayload = {
@@ -94,6 +97,37 @@ describe('useNotificationSubscription', () => {
 
   afterEach(() => {
     __resetNotificationSubscriptionRegistryForTests();
+    vi.unstubAllGlobals();
+  });
+
+  it('defers notification list requests until the consumer enables them', () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+    const queryClient = createQueryClient();
+
+    renderHook(
+      () =>
+        useInfiniteNotifications({
+          enabled: false,
+          unreadOnly: true,
+        }),
+      { wrapper: createWrapper(queryClient) }
+    );
+
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('uses realtime-first unread counts with a low-frequency fallback', () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+    const queryClient = createQueryClient();
+
+    renderHook(() => useUnreadCount(undefined, { enabled: false }), {
+      wrapper: createWrapper(queryClient),
+    });
+
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(UNREAD_COUNT_FALLBACK_INTERVAL_MS).toBe(5 * 60 * 1000);
   });
 
   it('shares one realtime channel across multiple consumers for the same user', async () => {

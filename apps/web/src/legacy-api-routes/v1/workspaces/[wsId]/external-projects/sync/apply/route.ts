@@ -3,7 +3,10 @@ import { z } from 'zod';
 import { requireWorkspaceExternalProjectAccess } from '@/lib/external-projects/access';
 import { applyWorkspaceExternalProjectSyncManifest } from '@/lib/external-projects/sync';
 import { withRequestLogDrain } from '@/lib/infrastructure/log-drain';
-import { parseSyncManifestRequest } from '../shared';
+import {
+  readSyncManifestRequest,
+  SyncManifestRequestBodyError,
+} from '../shared';
 
 interface Params {
   params: Promise<{
@@ -21,7 +24,7 @@ async function applyManifest(request: NextRequest, { params }: Params) {
   if (!access.ok) return access.response;
 
   try {
-    const { force, manifest } = parseSyncManifestRequest(await request.json());
+    const { force, manifest } = await readSyncManifestRequest(request);
     const result = await applyWorkspaceExternalProjectSyncManifest(
       {
         actorId: access.user.id,
@@ -35,11 +38,15 @@ async function applyManifest(request: NextRequest, { params }: Params) {
 
     return NextResponse.json(result);
   } catch (error) {
-    if (error instanceof z.ZodError) {
+    if (
+      error instanceof z.ZodError ||
+      error instanceof SyncManifestRequestBodyError
+    ) {
       return NextResponse.json(
         {
           error: 'Invalid external project sync manifest',
-          details: error.flatten(),
+          details:
+            error instanceof z.ZodError ? error.flatten() : error.message,
         },
         { status: 400 }
       );

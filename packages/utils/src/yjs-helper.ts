@@ -1,5 +1,5 @@
 import type { JSONContent } from '@tiptap/react';
-import { Node as ProseMirrorNode, type Schema } from 'prosemirror-model';
+import type { Schema } from 'prosemirror-model';
 import * as Y from 'yjs';
 
 const PROSEMIRROR_FRAGMENT_NAME = 'prosemirror';
@@ -179,7 +179,7 @@ function validateJsonContent(
     return jsonContent;
   }
 
-  return ProseMirrorNode.fromJSON(schema, jsonContent).toJSON() as JSONContent;
+  return schema.nodeFromJSON(jsonContent).toJSON() as JSONContent;
 }
 
 export function convertJsonContentToYjsState(

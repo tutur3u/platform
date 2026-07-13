@@ -2347,7 +2347,6 @@
             "docker_control_not_live": "Docker control không live",
             "last_execution_failed": "Lượt chạy cron gần nhất lỗi cho {jobId}",
             "managed_external_overdue": "{count} managed cron job đã quá hạn",
-            "managed_parent_failed": "Job cha managed-cron bị lỗi",
             "recovery_request_stalled": "Yêu cầu phục hồi cron runner bị kẹt",
             "runner_not_live": "Heartbeat cron runner không live",
             "watcher_not_live": "Heartbeat blue/green watcher không live"

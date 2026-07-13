@@ -1,10 +1,14 @@
 import { ATTENDANCE_COUNT_MANAGERS_CONFIG_ID } from '@tuturuuu/internal-api/workspace-configs';
 import type { SupabaseClient } from '@tuturuuu/supabase';
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
 import { removeAccents } from '@tuturuuu/utils/text-helper';
 import { getCurrentWorkspaceUser } from '@tuturuuu/utils/user-helper';
 import { getWorkspaceConfig } from '@tuturuuu/utils/workspace-helper';
+import { getWorkspaceUserLinkForUser } from '@tuturuuu/utils/workspace-user-link';
 import { notFound } from 'next/navigation';
 import type { ManagerUser } from './manager-user';
 
@@ -29,6 +33,29 @@ export async function getUserGroupMemberships(wsId: string): Promise<string[]> {
 
   return Array.from(
     new Set((memberships || []).map((m) => m.group_id).filter(Boolean))
+  ) as string[];
+}
+
+export async function getUserGroupMembershipsForActor(
+  wsId: string,
+  actorAuthUid: string
+): Promise<string[]> {
+  const workspaceUser = await getWorkspaceUserLinkForUser(wsId, actorAuthUid);
+  const userId =
+    workspaceUser?.virtual_user_id ?? workspaceUser?.platform_user_id;
+  if (!userId) return [];
+
+  const sbAdmin = await createAdminClient();
+  const { data, error } = await sbAdmin
+    .from('workspace_user_groups_users')
+    .select('group_id')
+    .eq('user_id', userId);
+  if (error) throw error;
+
+  return Array.from(
+    new Set(
+      (data ?? []).map((membership) => membership.group_id).filter(Boolean)
+    )
   ) as string[];
 }
 

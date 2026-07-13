@@ -1,3 +1,4 @@
+import { gzipSync } from 'node:zlib';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const { accessMocks, logDrainMocks } = vi.hoisted(() => ({
@@ -89,8 +90,9 @@ describe('external project setup route', () => {
       new Request(
         'http://localhost/api/v1/workspaces/ws_123/external-projects/setup',
         {
-          body: JSON.stringify({ manifest }),
+          body: gzipSync(JSON.stringify({ manifest })),
           headers: {
+            'Content-Encoding': 'gzip',
             'Content-Type': 'application/json',
           },
           method: 'POST',

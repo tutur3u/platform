@@ -1,4 +1,3 @@
-import { connection } from 'next/server';
 import { Suspense } from 'react';
 import {
   getLocalE2ESupabaseBrowserConfig,
@@ -11,8 +10,6 @@ function LoginShellFallback() {
 }
 
 export default async function Login() {
-  await connection();
-
   const localE2EAuthBypass = isLocalE2EAuthBypassEnabled();
 
   return (
