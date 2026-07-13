@@ -17,6 +17,7 @@ import { Input } from '@tuturuuu/ui/input';
 import { MoneyInput } from '@tuturuuu/ui/money-input';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
+import { parseAsString, useQueryState } from 'nuqs';
 import { type FormEvent, useState } from 'react';
 import {
   OperatorDialogBody,
@@ -27,6 +28,7 @@ import {
 import { SelectField, SelectValueField } from './operator-form-fields';
 import { EmptyRow, LoadingRows } from './operator-shell';
 import { ListingRow } from './storefront-listing-row';
+import { resolveActiveStorefrontId } from './storefront-selection';
 
 export function StorefrontListingsPanel({
   bundles,
@@ -41,7 +43,10 @@ export function StorefrontListingsPanel({
 }) {
   const t = useTranslations('inventory.operator.forms');
   const queryClient = useQueryClient();
-  const [storefrontId, setStorefrontId] = useState('');
+  const [storefrontId, setStorefrontId] = useQueryState(
+    'storefront',
+    parseAsString.withOptions({ shallow: true })
+  );
   const [listingType, setListingType] = useState<'product' | 'bundle'>(
     'product'
   );
@@ -50,7 +55,10 @@ export function StorefrontListingsPanel({
   // Price is held in integer minor units (cents) — the canonical storage unit.
   const [price, setPrice] = useState(0);
   const [open, setOpen] = useState(false);
-  const activeStorefrontId = storefrontId || storefronts[0]?.id || '';
+  const activeStorefrontId = resolveActiveStorefrontId(
+    storefronts,
+    storefrontId
+  );
   const activeCurrency =
     storefronts.find((storefront) => storefront.id === activeStorefrontId)
       ?.currency ?? 'USD';
@@ -114,7 +122,7 @@ export function StorefrontListingsPanel({
           className="min-w-0 flex-1"
           emptyText={t('emptyOptions')}
           label={t('storefront')}
-          onChange={setStorefrontId}
+          onChange={(value) => void setStorefrontId(value)}
           options={storefronts}
           placeholder={t('placeholders.storefront')}
           searchPlaceholder={t('searchOptions', {

@@ -1,3 +1,4 @@
+import { connection } from 'next/server';
 import { getStorefrontBuyerDefaults } from '@/components/storefront/buyer-defaults';
 import { StorefrontClient } from '@/components/storefront/storefront-client';
 import { getOptionalInventoryPublicStorefront } from '@/components/storefront/storefront-loader';
@@ -9,6 +10,7 @@ export default async function StorefrontPage({
 }: {
   params: Promise<{ storeSlug: string }>;
 }) {
+  await connection();
   const { storeSlug } = await params;
   // Resolve the storefront on the server so the first paint already has data.
   // Falls back to null (client query still runs) if the server fetch fails.
@@ -22,7 +24,12 @@ export default async function StorefrontPage({
   return (
     <StorefrontClient
       buyerDefaults={buyerDefaults}
-      headerActions={<StorefrontHeaderActions storeSlug={storeSlug} />}
+      headerActions={
+        <StorefrontHeaderActions
+          storefront={initialStorefront?.storefront ?? null}
+          storeSlug={storeSlug}
+        />
+      }
       initialStorefront={initialStorefront}
       mode="store"
       storeSlug={storeSlug}

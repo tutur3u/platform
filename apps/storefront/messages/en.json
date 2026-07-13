@@ -912,6 +912,7 @@
     },
     "instantCheckout": "Instant checkout",
     "loading": "Loading storefront...",
+    "manageStore": "Manage",
     "noResultsDescription": "Try another search or show every item.",
     "noResultsTitle": "No matching items",
     "notFound": "Storefront not found.",
