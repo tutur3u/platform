@@ -62,6 +62,7 @@ describe('GET /api/v1/vocabulary/details scraper', () => {
     );
     expect(requestInit).toEqual(
       expect.objectContaining({
+        next: { revalidate: 3600 },
         signal: expect.any(AbortSignal),
       })
     );

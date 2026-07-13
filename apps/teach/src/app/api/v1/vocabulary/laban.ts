@@ -123,9 +123,15 @@ export function normalizeLabanSuggestions(payload: unknown) {
     .filter((item): item is VocabularySuggestion => item !== null);
 }
 
-export async function fetchLaban(url: URL, signal: AbortSignal) {
-  const options: RequestInit = {
-    cache: 'no-store',
+export async function fetchLaban(
+  url: URL,
+  signal: AbortSignal,
+  revalidate?: number
+) {
+  const options: RequestInit & { next?: { revalidate: number } } = {
+    ...(revalidate === undefined
+      ? { cache: 'no-store' }
+      : { next: { revalidate } }),
     headers: {
       Accept:
         'text/html,application/xhtml+xml,application/xml;q=0.9,application/json;q=0.8,*/*;q=0.7',

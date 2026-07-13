@@ -12,7 +12,7 @@ describe('GET /api/v1/vocabulary/suggestions', () => {
   });
 
   it('keeps Laban autocomplete URLs on the Laban origin', async () => {
-    vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
       ok: true,
       status: 200,
       text: async () =>
@@ -32,6 +32,10 @@ describe('GET /api/v1/vocabulary/suggestions', () => {
     );
     const response = await GET(request);
     expect(response.status).toBe(200);
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.any(URL),
+      expect.objectContaining({ cache: 'no-store' })
+    );
 
     const data = await response.json();
     expect(data.suggestions).toEqual([

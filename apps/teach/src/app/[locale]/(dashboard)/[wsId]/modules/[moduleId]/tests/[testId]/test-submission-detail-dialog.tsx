@@ -296,6 +296,13 @@ function SubmissionContent({
                   isAiDisabled={pendingAiQuizIds.size > 0}
                   isAiLoading={pendingAiQuizIds.has(quiz.id)}
                   onGenerateAi={() => generateAiFeedback(quiz.id)}
+                  onFeedbackSaved={() =>
+                    setAiFeedbacks((prev) => {
+                      const next = { ...prev };
+                      delete next[quiz.id];
+                      return next;
+                    })
+                  }
                 />
               </div>
             </div>
@@ -322,6 +329,7 @@ function FeedbackForm({
   isAiDisabled,
   isAiLoading,
   onGenerateAi,
+  onFeedbackSaved,
 }: {
   wsId: string;
   courseId: string;
@@ -337,6 +345,7 @@ function FeedbackForm({
   isAiDisabled?: boolean;
   isAiLoading?: boolean;
   onGenerateAi?: () => void;
+  onFeedbackSaved?: () => void;
 }) {
   const qc = useQueryClient();
   const [feedback, setFeedback] = useState(initialFeedback);
@@ -392,6 +401,7 @@ function FeedbackForm({
       );
     },
     onSuccess: () => {
+      onFeedbackSaved?.();
       toast.success(t('teachModules.feedbackSaved'));
       qc.invalidateQueries({
         queryKey: [

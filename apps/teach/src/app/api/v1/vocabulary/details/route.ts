@@ -32,7 +32,7 @@ async function loadVocabularyDetails(request: NextRequest) {
   const timeout = setTimeout(() => controller.abort(), LABAN_TIMEOUT_MS);
 
   try {
-    const response = await fetchLaban(targetUrl, controller.signal);
+    const response = await fetchLaban(targetUrl, controller.signal, 3600);
 
     if (!response.ok) {
       return NextResponse.json(emptyDictionaryDetails(wordParam));
