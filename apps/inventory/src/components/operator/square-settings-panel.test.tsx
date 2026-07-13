@@ -38,6 +38,20 @@ describe('SquareSettingsPanel', () => {
     expect(cardsSource).toContain('disabled={oauthPending || !oauthReady}');
   });
 
+  it('uses the environment selected in the form for connection state and defaults', () => {
+    const source = readFileSync(
+      join(inventoryRoot, 'src/components/operator/square-settings-panel.tsx'),
+      'utf8'
+    );
+
+    expect(source).toContain(
+      "environment ?? settings.data?.environment ?? 'sandbox'"
+    );
+    expect(source).toContain('environment: selectedEnvironment');
+    expect(source).toContain('item.environment === selectedEnvironment');
+    expect(source).toContain('<SquareProductionSetupGuide');
+  });
+
   it('is mounted from the settings dialog, not operator page bodies', () => {
     const operatorSource = readFileSync(
       join(

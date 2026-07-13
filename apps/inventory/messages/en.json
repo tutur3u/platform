@@ -1631,6 +1631,7 @@
         "stockUnavailableDescription": "This product does not have a warehouse and unit stock row yet. Add a stock row here or manage warehouses from the Stock workspace.",
         "storefront": "Storefront",
         "storefrontStatus": {
+          "archived": "Archived",
           "draft": "Draft",
           "paused": "Paused",
           "published": "Published"
@@ -1916,6 +1917,67 @@
           "sandbox": "Sandbox"
         },
         "environmentLabel": "Environment",
+        "guide": {
+          "complete": "Saved and detected",
+          "eyebrow": "Square POS setup",
+          "inProgress": "Setup in progress",
+          "needsAction": "Needs your attention",
+          "openSquareGuide": "Open Square guide",
+          "production": {
+            "description": "Follow these steps in order. Tuturuuu checks each saved production setting, but never creates a real charge on its own.",
+            "safety": "Production uses real customer accounts, processing fees, and physical terminals. Rehearse in Sandbox first, then run one staff-approved live check.",
+            "tab": "Production"
+          },
+          "progress": "{completed}/{total} checks complete",
+          "ready": "Ready",
+          "safety": {
+            "checks": {
+              "approval": "Get explicit approval for the amount, item, card, and person running the test.",
+              "item": "Use one clearly labeled low-value item and verify tax, currency, and receipt settings first.",
+              "receipt": "Confirm the final order, payment, inventory release, and receipt. Refund only through the store's approved process.",
+              "terminal": "Keep Tuturuuu Commerce and the Square Dashboard open so both sides can be checked immediately."
+            },
+            "dialogDescription": "Use this only after Sandbox is ready and the store owner approves a live payment.",
+            "dialogTitle": "First production order checklist",
+            "realMoneyWarning": "A production checkout can move real money and incur Square processing fees. Tuturuuu will not start this test automatically.",
+            "review": "Review the safety check",
+            "title": "Before the first live order",
+            "understood": "I understand"
+          },
+          "sandbox": {
+            "description": "Practice the complete workflow with Square test data and the simulator before configuring the physical counter.",
+            "safety": "Sandbox is the safe place to create, cancel, and retry demo checkouts. It does not move real money.",
+            "tab": "Sandbox rehearsal"
+          },
+          "steps": {
+            "application": {
+              "production": "Open your app in Square Developer Console, switch to Production, then copy the Application ID and Application secret into the credentials card below. Keep the secret private.",
+              "sandbox": "Open the same Square app, stay in Sandbox, and use the test application credentials. Never paste production secrets into Sandbox.",
+              "title": "Create the Square application"
+            },
+            "connection": {
+              "production": "Save the app credentials, choose Connect OAuth, sign in to the Square seller account, and approve the requested permissions. OAuth is recommended because access can be refreshed and revoked safely.",
+              "sandbox": "Authorize the Square Sandbox test account, or save its Sandbox access token manually for a short rehearsal. Confirm the selected environment still says Sandbox.",
+              "title": "Authorize the Square account"
+            },
+            "device": {
+              "production": "Enter a clear device name, create a pairing code, then enter that code on the physical Square Terminal. Refresh the device list and save the paired terminal as the default.",
+              "sandbox": "Paste Square's Sandbox simulator device ID and save it as the default. Use success or failure simulator IDs to rehearse both outcomes.",
+              "title": "Pair and select the terminal"
+            },
+            "location": {
+              "production": "Choose the Square location that owns the physical counter, currency, receipts, and payment reporting. Orders from this workspace will be routed there.",
+              "sandbox": "Choose the test location created with your Square Sandbox account. This keeps rehearsal orders separate from real reporting.",
+              "title": "Choose the selling location"
+            },
+            "webhook": {
+              "production": "In Square Webhooks, create a Production subscription with the URL shown here. Select terminal checkout created and updated, payment updated, device paired, and authorization revoked events. Save the signature key below.",
+              "sandbox": "Create the same subscription in Sandbox and save its Sandbox signature key. Send a test event and confirm Square reports an HTTP 200 response.",
+              "title": "Subscribe to status updates"
+            }
+          },
+          "title": "Go from Square account to a working counter"
+        },
         "locationLabel": "Location",
         "locationPlaceholder": "Choose a location",
         "notConfigured": "No Square token saved",

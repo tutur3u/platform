@@ -13,6 +13,7 @@ import {
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
+import { SquareProductionSetupGuide } from './square-production-setup-guide';
 import {
   SquareAppCredentialsCard,
   SquareConnectionCard,
@@ -26,7 +27,7 @@ export function SquareSettingsPanel({ wsId }: { wsId: string }) {
   const t = useTranslations('inventory.operator.square');
   const queryClient = useQueryClient();
   const [environment, setEnvironment] =
-    useState<InventorySquareEnvironment>('sandbox');
+    useState<InventorySquareEnvironment | null>(null);
   const [accessToken, setAccessToken] = useState('');
   const [applicationId, setApplicationId] = useState('');
   const [applicationSecret, setApplicationSecret] = useState('');
@@ -43,9 +44,11 @@ export function SquareSettingsPanel({ wsId }: { wsId: string }) {
     queryFn: () => getInventorySquareSettings(wsId),
     queryKey: ['inventory', wsId, 'square-settings'],
   });
+  const selectedEnvironment =
+    environment ?? settings.data?.environment ?? 'sandbox';
   const hasReadyConnection = (settings.data?.connections ?? []).some(
     (item) =>
-      item.environment === settings.data?.environment && item.status === 'ready'
+      item.environment === selectedEnvironment && item.status === 'ready'
   );
   const locations = useQuery({
     enabled: hasReadyConnection,
@@ -70,9 +73,8 @@ export function SquareSettingsPanel({ wsId }: { wsId: string }) {
     label: device.name,
     value: device.id,
   }));
-  const selectedEnvironment = settings.data?.environment ?? environment;
   const activeAppCredential = (settings.data?.appCredentials ?? []).find(
-    (item) => item.environment === environment
+    (item) => item.environment === selectedEnvironment
   );
   const oauthReady = Boolean(
     activeAppCredential?.applicationId &&
@@ -100,7 +102,7 @@ export function SquareSettingsPanel({ wsId }: { wsId: string }) {
       updateInventorySquareSettings(wsId, {
         applicationId: applicationId || undefined,
         applicationSecret: applicationSecret || undefined,
-        environment,
+        environment: selectedEnvironment,
         oauthRedirectUrl: oauthRedirectUrl || undefined,
         webhookNotificationUrl: webhookNotificationUrl || undefined,
       }),
@@ -119,7 +121,7 @@ export function SquareSettingsPanel({ wsId }: { wsId: string }) {
     mutationFn: () =>
       updateInventorySquareSettings(wsId, {
         accessToken: accessToken || undefined,
-        environment,
+        environment: selectedEnvironment,
         webhookSignatureKey: webhookSignatureKey || undefined,
       }),
     onError: (error) =>
@@ -152,7 +154,7 @@ export function SquareSettingsPanel({ wsId }: { wsId: string }) {
     },
   });
   const oauthMutation = useMutation({
-    mutationFn: () => startInventorySquareOAuth(wsId, environment),
+    mutationFn: () => startInventorySquareOAuth(wsId, selectedEnvironment),
     onError: (error) =>
       toast.error(error instanceof Error ? error.message : t('oauthError')),
     onSuccess: ({ authorizeUrl }) => {
@@ -181,12 +183,18 @@ export function SquareSettingsPanel({ wsId }: { wsId: string }) {
   );
 
   return (
-    <section className="grid gap-4">
+    <section className="grid gap-5">
+      <SquareProductionSetupGuide
+        environment={selectedEnvironment}
+        onEnvironmentChange={setEnvironment}
+        settings={settings.data}
+        webhookUrl={webhookUrl}
+      />
       <SquareAppCredentialsCard
         appCredential={activeAppCredential}
         applicationId={applicationId}
         applicationSecret={applicationSecret}
-        environment={environment}
+        environment={selectedEnvironment}
         environmentOptions={environmentOptions}
         oauthPending={oauthMutation.isPending}
         oauthReady={oauthReady}
@@ -204,7 +212,7 @@ export function SquareSettingsPanel({ wsId }: { wsId: string }) {
       <SquareConnectionCard
         accessToken={accessToken}
         environmentLabel={t('selectedEnvironment', {
-          environment: t(`environment.${environment}`),
+          environment: t(`environment.${selectedEnvironment}`),
         })}
         onSaveToken={() => tokenMutation.mutate()}
         saveTokenPending={tokenMutation.isPending}

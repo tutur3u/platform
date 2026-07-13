@@ -1631,6 +1631,7 @@
         "stockUnavailableDescription": "Sản phẩm này chưa có dòng tồn kho với kho và đơn vị. Thêm dòng tồn kho tại đây hoặc quản lý kho trong không gian Tồn kho.",
         "storefront": "Cửa hàng",
         "storefrontStatus": {
+          "archived": "Đã lưu trữ",
           "draft": "Nháp",
           "paused": "Tạm dừng",
           "published": "Đã xuất bản"
@@ -1916,6 +1917,67 @@
           "sandbox": "Sandbox"
         },
         "environmentLabel": "Môi trường",
+        "guide": {
+          "complete": "Đã lưu và nhận diện",
+          "eyebrow": "Thiết lập POS Square",
+          "inProgress": "Đang thiết lập",
+          "needsAction": "Cần bạn thực hiện",
+          "openSquareGuide": "Mở hướng dẫn Square",
+          "production": {
+            "description": "Làm theo các bước theo thứ tự. Tuturuuu kiểm tra từng thiết lập thực tế đã lưu nhưng không tự tạo giao dịch thu tiền thật.",
+            "safety": "Môi trường thực tế sử dụng tài khoản khách hàng, phí xử lý và thiết bị thật. Hãy diễn tập trong Sandbox trước, sau đó chỉ kiểm tra thực tế khi đã được nhân viên phê duyệt.",
+            "tab": "Thực tế"
+          },
+          "progress": "Đã hoàn tất {completed}/{total} bước kiểm tra",
+          "ready": "Sẵn sàng",
+          "safety": {
+            "checks": {
+              "approval": "Nhận phê duyệt rõ ràng về số tiền, sản phẩm, thẻ và người thực hiện kiểm tra.",
+              "item": "Dùng một sản phẩm giá trị thấp được ghi nhãn rõ ràng và kiểm tra thuế, tiền tệ cùng cài đặt biên lai trước.",
+              "receipt": "Xác nhận đơn hàng, thanh toán, giải phóng tồn kho và biên lai cuối cùng. Chỉ hoàn tiền theo quy trình đã được cửa hàng phê duyệt.",
+              "terminal": "Mở đồng thời Tuturuuu Commerce và Square Dashboard để có thể kiểm tra ngay cả hai phía."
+            },
+            "dialogDescription": "Chỉ dùng sau khi Sandbox đã sẵn sàng và chủ cửa hàng phê duyệt một thanh toán thật.",
+            "dialogTitle": "Danh sách kiểm tra đơn thực tế đầu tiên",
+            "realMoneyWarning": "Thanh toán thực tế có thể di chuyển tiền thật và phát sinh phí xử lý Square. Tuturuuu sẽ không tự động bắt đầu kiểm tra này.",
+            "review": "Xem kiểm tra an toàn",
+            "title": "Trước đơn hàng thực tế đầu tiên",
+            "understood": "Tôi hiểu"
+          },
+          "sandbox": {
+            "description": "Thực hành toàn bộ quy trình với dữ liệu thử nghiệm và trình mô phỏng của Square trước khi cấu hình quầy thật.",
+            "safety": "Sandbox là nơi an toàn để tạo, hủy và thử lại đơn hàng demo. Môi trường này không di chuyển tiền thật.",
+            "tab": "Diễn tập Sandbox"
+          },
+          "steps": {
+            "application": {
+              "production": "Mở ứng dụng trong Square Developer Console, chuyển sang Thực tế, sau đó sao chép Application ID và Application secret vào thẻ thông tin bên dưới. Giữ bí mật khóa này.",
+              "sandbox": "Mở cùng ứng dụng Square, giữ ở Sandbox và dùng thông tin ứng dụng thử nghiệm. Không dán khóa bí mật thực tế vào Sandbox.",
+              "title": "Tạo ứng dụng Square"
+            },
+            "connection": {
+              "production": "Lưu thông tin ứng dụng, chọn Kết nối OAuth, đăng nhập tài khoản người bán Square và chấp thuận các quyền được yêu cầu. OAuth được khuyến nghị vì quyền truy cập có thể làm mới và thu hồi an toàn.",
+              "sandbox": "Cấp quyền cho tài khoản thử nghiệm Square Sandbox hoặc lưu thủ công access token Sandbox để diễn tập ngắn. Xác nhận môi trường đã chọn vẫn là Sandbox.",
+              "title": "Cấp quyền cho tài khoản Square"
+            },
+            "device": {
+              "production": "Nhập tên thiết bị rõ ràng, tạo mã ghép đôi rồi nhập mã đó trên Square Terminal thật. Làm mới danh sách thiết bị và lưu terminal đã ghép đôi làm mặc định.",
+              "sandbox": "Dán ID thiết bị mô phỏng Sandbox của Square và lưu làm mặc định. Dùng ID mô phỏng thành công hoặc thất bại để diễn tập cả hai kết quả.",
+              "title": "Ghép đôi và chọn terminal"
+            },
+            "location": {
+              "production": "Chọn địa điểm Square quản lý quầy thật, tiền tệ, biên lai và báo cáo thanh toán. Đơn hàng từ workspace này sẽ được chuyển đến đó.",
+              "sandbox": "Chọn địa điểm thử nghiệm được tạo cùng tài khoản Square Sandbox. Việc này giữ đơn diễn tập tách biệt khỏi báo cáo thật.",
+              "title": "Chọn địa điểm bán hàng"
+            },
+            "webhook": {
+              "production": "Trong Square Webhooks, tạo đăng ký Thực tế với URL hiển thị tại đây. Chọn các sự kiện tạo và cập nhật terminal checkout, cập nhật payment, ghép đôi thiết bị và thu hồi quyền. Lưu signature key bên dưới.",
+              "sandbox": "Tạo đăng ký tương tự trong Sandbox và lưu signature key của Sandbox. Gửi sự kiện thử và xác nhận Square báo phản hồi HTTP 200.",
+              "title": "Đăng ký cập nhật trạng thái"
+            }
+          },
+          "title": "Từ tài khoản Square đến quầy thanh toán hoạt động"
+        },
         "locationLabel": "Địa điểm",
         "locationPlaceholder": "Chọn địa điểm",
         "notConfigured": "Chưa lưu token Square",
