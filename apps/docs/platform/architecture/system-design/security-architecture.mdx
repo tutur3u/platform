@@ -1,7 +1,7 @@
 ---
 title: "Security Architecture"
 description: "Comprehensive security justification and architectural security patterns in Tuturuuu"
-updatedAt: "2026-06-21"
+updatedAt: "2026-07-13"
 ---
 
 Security is a foundational architectural concern in Tuturuuu, embedded at every level of the system design. This document explains the core architectural patterns that provide comprehensive security coverage.
@@ -235,6 +235,21 @@ For example, even if an attacker bypassed the API boundary's authentication (hig
 // - Request validation (e.g. zod query schemas)
 // Note: there is no separate gateway process; these run at the route boundary.
 ```
+
+**Browser framing boundary.** Every Next.js app that uses
+`createTuturuuuNextConfig` receives `Content-Security-Policy: frame-ancestors
+'none'` and `X-Frame-Options: DENY` on its responses. This prevents an
+attacker-controlled page from rendering Tuturuuu interfaces inside an iframe
+for UI redressing. App-specific `headers()` entries are composed after the
+shared security rule, so route-specific cache and indexing headers remain
+intact.
+
+The only shared exception is the CMS WebGL asset route
+`/api/v1/workspaces/:wsId/external-projects/assets/:assetId/webgl/*`. The CMS
+player intentionally renders that document in a sandboxed iframe without
+`allow-same-origin`; the asset route keeps its own restrictive CSP sandbox
+policy. New framing exceptions must be path-specific, justified by a documented
+product requirement, and preserve an equivalent sandbox boundary.
 
 **Layer 2: Application-Level Security**
 ```typescript

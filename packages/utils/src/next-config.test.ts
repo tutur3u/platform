@@ -1,3 +1,4 @@
+import { tryToParsePath } from 'next/dist/lib/try-to-parse-path';
 import { describe, expect, it } from 'vitest';
 import {
   createTuturuuuNextConfig,
@@ -38,6 +39,97 @@ describe('createTuturuuuNextConfig', () => {
       protocol: 'http',
       hostname: '127.0.0.1',
     });
+  });
+
+  it('protects responses from framing by default', async () => {
+    const config = createTuturuuuNextConfig();
+
+    await expect(config.headers?.()).resolves.toEqual([
+      {
+        source:
+          '/:path((?!api/v1/workspaces/[^/]+/external-projects/assets/[^/]+/webgl(?:/|$)).*)',
+        headers: [
+          {
+            key: 'Content-Security-Policy',
+            value: "frame-ancestors 'none'",
+          },
+          {
+            key: 'X-Frame-Options',
+            value: 'DENY',
+          },
+        ],
+      },
+    ]);
+  });
+
+  it('preserves app-specific response headers after shared security headers', async () => {
+    const config = createTuturuuuNextConfig({
+      async headers() {
+        return [
+          {
+            source: '/login',
+            headers: [
+              {
+                key: 'Cache-Control',
+                value: 'public, max-age=0, must-revalidate',
+              },
+              {
+                key: 'X-Robots-Tag',
+                value: 'noindex, nofollow',
+              },
+            ],
+          },
+        ];
+      },
+    });
+
+    const headers = await config.headers?.();
+
+    expect(headers).toHaveLength(2);
+    expect(headers?.[1]).toEqual({
+      source: '/login',
+      headers: [
+        {
+          key: 'Cache-Control',
+          value: 'public, max-age=0, must-revalidate',
+        },
+        {
+          key: 'X-Robots-Tag',
+          value: 'noindex, nofollow',
+        },
+      ],
+    });
+  });
+
+  it('exempts only the sandboxed CMS WebGL asset route from anti-framing headers', async () => {
+    const config = createTuturuuuNextConfig();
+    const [antiFramingRule] = (await config.headers?.()) ?? [];
+    const parsedPath = tryToParsePath(antiFramingRule?.source ?? '');
+
+    expect(parsedPath.error).toBeUndefined();
+    expect(parsedPath.regexStr).toBeDefined();
+
+    const routePattern = new RegExp(parsedPath.regexStr ?? '');
+
+    expect(routePattern.test('/')).toBe(true);
+    expect(routePattern.test('/login')).toBe(true);
+    expect(routePattern.test('/en/workspace')).toBe(true);
+    expect(routePattern.test('/api/billing/workspace/invoice')).toBe(true);
+    expect(
+      routePattern.test(
+        '/api/v1/workspaces/workspace-id/external-projects/assets/asset-id/webgl/index.html'
+      )
+    ).toBe(false);
+    expect(
+      routePattern.test(
+        '/api/v1/workspaces/workspace-id/external-projects/assets/asset-id/webgl'
+      )
+    ).toBe(false);
+    expect(
+      routePattern.test(
+        '/api/v1/workspaces/workspace-id/external-projects/assets/asset-id/webgl-preview'
+      )
+    ).toBe(true);
   });
 
   it('allows the exact worktree-prefixed Portless host for Next dev assets', () => {

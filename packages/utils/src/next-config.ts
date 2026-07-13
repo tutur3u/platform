@@ -33,6 +33,20 @@ export const TUTURUUU_NEXT_IMAGE_REMOTE_PATTERNS = [
   },
 ] satisfies NextImageRemotePattern[];
 
+const TUTURUUU_ANTI_FRAMING_SOURCE =
+  '/:path((?!api/v1/workspaces/[^/]+/external-projects/assets/[^/]+/webgl(?:/|$)).*)';
+
+const TUTURUUU_ANTI_FRAMING_HEADERS = [
+  {
+    key: 'Content-Security-Policy',
+    value: "frame-ancestors 'none'",
+  },
+  {
+    key: 'X-Frame-Options',
+    value: 'DENY',
+  },
+];
+
 function mergeStringArrays(
   first: readonly string[] | undefined,
   second: readonly string[] | undefined
@@ -106,6 +120,15 @@ export function createTuturuuuNextConfig(config: NextConfig = {}): NextConfig {
         TUTURUUU_NEXT_OPTIMIZE_PACKAGE_IMPORTS,
         experimentalConfig.optimizePackageImports
       ),
+    },
+    async headers() {
+      return [
+        {
+          source: TUTURUUU_ANTI_FRAMING_SOURCE,
+          headers: TUTURUUU_ANTI_FRAMING_HEADERS,
+        },
+        ...((await config.headers?.()) ?? []),
+      ];
     },
   };
 }
