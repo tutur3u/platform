@@ -213,6 +213,34 @@ describe('StorefrontSurface', () => {
     expect(screen.getAllByText('1M')).toHaveLength(1);
   });
 
+  it('filters and searches the buyer catalog without losing the store context', () => {
+    render(
+      <StorefrontSurface
+        bundles={[categoryBundle]}
+        listings={[listing, bundleListing]}
+        mode="store"
+        storefront={storefront}
+      />
+    );
+
+    expect(screen.getByText('1:1 Mentoring')).toBeInTheDocument();
+    expect(screen.getByText('Buy 2 Get 1 Keychains')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('tab', { name: 'Bundles' }));
+    expect(screen.queryByText('1:1 Mentoring')).not.toBeInTheDocument();
+    expect(screen.getByText('Buy 2 Get 1 Keychains')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('tab', { name: 'All' }));
+    fireEvent.change(
+      screen.getByRole('searchbox', { name: 'Search this store' }),
+      {
+        target: { value: '1:1' },
+      }
+    );
+    expect(screen.getByText('1:1 Mentoring')).toBeInTheDocument();
+    expect(screen.queryByText('Buy 2 Get 1 Keychains')).not.toBeInTheDocument();
+  });
+
   it('keeps the compatibility cart page as a full cart review', () => {
     render(
       <StorefrontSurface

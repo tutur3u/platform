@@ -15,6 +15,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '../dialog';
+import { StorefrontBrowsePanel } from './browse-panel';
 import { StorefrontBundleSelectionDialog } from './bundle-selection-dialog';
 import { StorefrontCartPopover } from './cart-popover';
 import { StorefrontCartSummary } from './cart-summary';
@@ -173,7 +174,6 @@ export function StorefrontSurface({
   const isCheckoutDialogOpen = checkoutOpen ?? isCheckout;
   const isPreview = mode === 'preview';
   const isCartPage = mode === 'cart';
-  const listingRows = visibleListings;
   const bundleSelectionListing = bundleSelectionListingId
     ? listings.find((listing) => listing.id === bundleSelectionListingId)
     : null;
@@ -256,27 +256,36 @@ export function StorefrontSurface({
         </div>
       ) : null}
 
-      <header className="sticky top-0 z-30 border-border border-b bg-background/80 backdrop-blur-md supports-[backdrop-filter]:bg-background/65">
-        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-3">
+      <header className="sticky top-0 z-30 border-border border-b bg-background/95 backdrop-blur-md supports-[backdrop-filter]:bg-background/85">
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-5 py-3 sm:px-6">
           <div className="min-w-0">
-            <h1 className="truncate font-semibold text-xl">
+            <h1 className="truncate font-semibold text-base tracking-tight">
               {storefrontHref ? (
                 <a
-                  className="block truncate rounded-sm transition hover:text-[var(--storefront-accent-text,var(--primary))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
+                  className="flex min-w-0 items-center gap-3 rounded-sm transition hover:text-[var(--storefront-accent-text,var(--primary))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
                   href={storefrontHref}
                   title={storefront.name}
                 >
-                  {storefront.name}
+                  <span
+                    aria-hidden
+                    className="grid size-8 shrink-0 place-items-center rounded-lg border border-border bg-muted/35 font-mono text-xs uppercase"
+                  >
+                    {storefront.name.slice(0, 1)}
+                  </span>
+                  <span className="truncate">{storefront.name}</span>
                 </a>
               ) : (
-                storefront.name
+                <span className="flex min-w-0 items-center gap-3">
+                  <span
+                    aria-hidden
+                    className="grid size-8 shrink-0 place-items-center rounded-lg border border-border bg-muted/35 font-mono text-xs uppercase"
+                  >
+                    {storefront.name.slice(0, 1)}
+                  </span>
+                  <span className="truncate">{storefront.name}</span>
+                </span>
               )}
             </h1>
-            {storefront.description ? (
-              <p className="mt-0.5 line-clamp-1 text-muted-foreground text-sm">
-                {storefront.description}
-              </p>
-            ) : null}
           </div>
           <div className="flex items-center gap-2">
             {headerActions}
@@ -295,7 +304,7 @@ export function StorefrontSurface({
 
       <section
         className={cn(
-          'mx-auto max-w-7xl px-4 py-5',
+          'mx-auto max-w-7xl px-5 py-8 sm:px-6 sm:py-10',
           compactLayout ? 'max-w-5xl' : null
         )}
       >
@@ -351,61 +360,54 @@ export function StorefrontSurface({
                   sections={storefront.sections ?? []}
                 />
 
-                <div
-                  className={cn(
-                    'mt-4 grid gap-4',
-                    compactLayout
-                      ? 'sm:grid-cols-2'
-                      : 'sm:grid-cols-2 xl:grid-cols-3'
-                  )}
-                >
-                  {listingRows.length === 0 ? (
+                <StorefrontBrowsePanel
+                  compactLayout={compactLayout}
+                  emptyListings={
                     <StorefrontEmptyListings
                       action={emptyAction}
                       labels={labels}
                       radius={radius}
                     />
-                  ) : (
-                    listingRows.map((listing) => {
-                      const listingBundle = listing.bundleId
-                        ? bundles.find(
-                            (bundle) => bundle.id === listing.bundleId
-                          )
-                        : undefined;
-                      const quantity = cartLines
-                        .filter((item) => item.listingId === listing.id)
-                        .reduce((sum, item) => sum + item.quantity, 0);
+                  }
+                  labels={labels}
+                  listings={visibleListings}
+                  renderListing={(listing) => {
+                    const listingBundle = listing.bundleId
+                      ? bundles.find((bundle) => bundle.id === listing.bundleId)
+                      : undefined;
+                    const quantity = cartLines
+                      .filter((item) => item.listingId === listing.id)
+                      .reduce((sum, item) => sum + item.quantity, 0);
 
-                      return (
-                        <StorefrontListingCard
-                          currency={currency}
-                          isList={false}
-                          key={listing.id}
-                          labels={labels}
-                          listing={listing}
-                          onDecrement={onDecrement}
-                          onConfigureBundle={
-                            listingBundle?.categoryComponents.length
-                              ? () => setBundleSelectionListingId(listing.id)
-                              : undefined
-                          }
-                          onIncrement={onIncrement}
-                          onOpenDetail={
-                            onDetailListingChange
-                              ? (id) => onDetailListingChange(id)
-                              : undefined
-                          }
-                          quantity={quantity}
-                          radius={radius}
-                          showInventoryBadges={storefront.showInventoryBadges}
-                          surfaceClassName={
-                            storefrontSurfaceClasses[storefront.surfaceStyle]
-                          }
-                        />
-                      );
-                    })
-                  )}
-                </div>
+                    return (
+                      <StorefrontListingCard
+                        currency={currency}
+                        isList={false}
+                        key={listing.id}
+                        labels={labels}
+                        listing={listing}
+                        onDecrement={onDecrement}
+                        onConfigureBundle={
+                          listingBundle?.categoryComponents.length
+                            ? () => setBundleSelectionListingId(listing.id)
+                            : undefined
+                        }
+                        onIncrement={onIncrement}
+                        onOpenDetail={
+                          onDetailListingChange
+                            ? (id) => onDetailListingChange(id)
+                            : undefined
+                        }
+                        quantity={quantity}
+                        radius={radius}
+                        showInventoryBadges={storefront.showInventoryBadges}
+                        surfaceClassName={
+                          storefrontSurfaceClasses[storefront.surfaceStyle]
+                        }
+                      />
+                    );
+                  }}
+                />
               </>
             )}
           </div>
@@ -453,7 +455,7 @@ export function StorefrontSurface({
         onOpenChange={(open) => onCheckoutOpenChange?.(open)}
         open={isCheckoutDialogOpen}
       >
-        <DialogContent className="grid max-h-[92dvh] max-w-[min(42rem,calc(100vw-1rem))] grid-rows-[auto_minmax(0,1fr)] gap-0 overflow-hidden border-border/60 p-0 shadow-2xl sm:rounded-2xl">
+        <DialogContent className="grid max-h-[92dvh] max-w-[min(42rem,calc(100vw-1rem))] grid-rows-[auto_minmax(0,1fr)] gap-0 overflow-hidden border-border p-0 shadow-sm sm:rounded-xl">
           <DialogHeader className="px-5 pt-5 pb-2 text-left sm:px-6">
             <DialogTitle>{labels.checkout}</DialogTitle>
             <DialogDescription>{labels.reservedCopy}</DialogDescription>

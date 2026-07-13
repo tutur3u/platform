@@ -59,10 +59,10 @@ export function StorefrontListingCard({
       className={cn(
         surfaceClassName,
         radius,
-        'group relative overflow-hidden transition duration-200 hover:-translate-y-0.5 hover:shadow-foreground/10 hover:shadow-md',
+        'group relative overflow-hidden transition duration-200 hover:border-foreground/20 hover:shadow-foreground/5 hover:shadow-sm',
         isList
           ? 'grid gap-4 p-3 sm:grid-cols-[112px_minmax(0,1fr)_auto] sm:items-center'
-          : 'flex min-h-full flex-col gap-4 p-3'
+          : 'flex min-h-full flex-col'
       )}
     >
       <div className="relative">
@@ -80,7 +80,7 @@ export function StorefrontListingCard({
             className={cn(
               'overflow-hidden transition duration-300 group-hover:scale-[1.02]',
               radius,
-              isList ? 'aspect-square' : 'aspect-[4/3]'
+              isList ? 'aspect-square' : 'aspect-[5/4] rounded-b-none'
             )}
             imageUrl={listing.imageUrl}
             label={listing.title}
@@ -92,7 +92,7 @@ export function StorefrontListingCard({
           </span>
         ) : null}
       </div>
-      <div className="min-w-0">
+      <div className={cn('min-w-0', isList ? null : 'px-5 pt-5')}>
         <div className="flex flex-wrap items-center gap-2">
           <button
             className="min-w-0 truncate text-left font-semibold transition hover:text-[var(--storefront-accent-text,var(--primary))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40 disabled:cursor-default disabled:hover:text-foreground"
@@ -122,7 +122,12 @@ export function StorefrontListingCard({
         ) : null}
       </div>
 
-      <div className="mt-auto flex flex-wrap items-center justify-between gap-3">
+      <div
+        className={cn(
+          'mt-auto flex flex-wrap items-center justify-between gap-3',
+          isList ? null : 'px-5 pt-4 pb-5'
+        )}
+      >
         <div className="min-w-0">
           {hasVariants ? (
             <p className="truncate font-semibold tabular-nums">

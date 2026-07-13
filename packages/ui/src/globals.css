@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "slot-text/style.css";
 @source "components";
 @source "../../../node_modules/streamdown/dist/*.js";
 @source "../../../node_modules/@streamdown/math/dist/*.js";

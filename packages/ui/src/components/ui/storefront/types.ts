@@ -34,9 +34,11 @@ export type StorefrontSurfaceMode =
 
 export type StorefrontSurfaceLabels = {
   add: string;
+  allItems: string;
   available: string;
   browse: string;
   bundle: string;
+  bundles: string;
   bundleSelectionTitle: string;
   buyNow: string;
   cart: string;
@@ -44,6 +46,7 @@ export type StorefrontSurfaceLabels = {
   checkout: string;
   checkoutDisabled: string;
   checkoutDisabledBadge: string;
+  clearFilters: string;
   contactDetails: string;
   couponNote: string;
   demoBadge: string;
@@ -55,11 +58,14 @@ export type StorefrontSurfaceLabels = {
   requiredItems: string;
   selectOptions: string;
   searchBundleItems: string;
+  searchStore: string;
   selectedItems: string;
   viewDetails: string;
   emptyListingsDescription: string;
   emptyListingsTitle: string;
   fallbackDescription: string;
+  noResultsDescription: string;
+  noResultsTitle: string;
   form: {
     email: string;
     name: string;
@@ -69,6 +75,7 @@ export type StorefrontSurfaceLabels = {
   privateStore: string;
   previewBadge: string;
   product: string;
+  products: string;
   publicStore: string;
   quantity: string;
   reserve: string;
@@ -76,14 +83,18 @@ export type StorefrontSurfaceLabels = {
   reservedCopy: string;
   simulatedBadge: string;
   soldOut: string;
+  shopTitle: string;
   total: string;
+  visibleItems: string;
 };
 
 export const defaultStorefrontSurfaceLabels: StorefrontSurfaceLabels = {
   add: 'Add',
+  allItems: 'All',
   available: 'available',
   browse: 'Browse',
   bundle: 'Bundle',
+  bundles: 'Bundles',
   bundleSelectionTitle: 'Build bundle',
   buyNow: 'Buy now',
   cart: 'Cart',
@@ -91,6 +102,7 @@ export const defaultStorefrontSurfaceLabels: StorefrontSurfaceLabels = {
   checkout: 'Checkout',
   checkoutDisabled: 'Checkout is disabled in preview',
   checkoutDisabledBadge: 'Checkout disabled',
+  clearFilters: 'Clear filters',
   contactDetails: 'Contact details',
   couponNote: 'Have a coupon? You can apply it at checkout.',
   demoBadge: 'Demo',
@@ -102,12 +114,15 @@ export const defaultStorefrontSurfaceLabels: StorefrontSurfaceLabels = {
   requiredItems: 'Select {count} items',
   selectOptions: 'Select options',
   searchBundleItems: 'Search items',
+  searchStore: 'Search this store',
   selectedItems: '{selected} of {required} selected',
   viewDetails: 'View details',
   emptyListingsDescription:
     'Publish a listing to make this storefront ready for buyers.',
   emptyListingsTitle: 'No listings yet',
   fallbackDescription: 'This listing is available for checkout.',
+  noResultsDescription: 'Try another search or show every item.',
+  noResultsTitle: 'No matching items',
   form: {
     email: 'Email',
     name: 'Name',
@@ -117,6 +132,7 @@ export const defaultStorefrontSurfaceLabels: StorefrontSurfaceLabels = {
   privateStore: 'Private',
   previewBadge: 'Preview',
   product: 'Product',
+  products: 'Products',
   publicStore: 'Public',
   quantity: 'Qty',
   reserve: 'Reserve with Polar',
@@ -125,7 +141,9 @@ export const defaultStorefrontSurfaceLabels: StorefrontSurfaceLabels = {
     'Review your cart, then continue with the available checkout mode.',
   simulatedBadge: 'Simulated checkout',
   soldOut: 'Sold out',
+  shopTitle: 'Shop',
   total: 'Total',
+  visibleItems: '{count} items',
 };
 
 export function mergeStorefrontSurfaceLabels(

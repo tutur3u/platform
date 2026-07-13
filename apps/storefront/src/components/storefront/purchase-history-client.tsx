@@ -37,10 +37,10 @@ function OrderHistoryCard({ order }: { order: InventoryOrderHistoryItem }) {
   const extraCount = Math.max(0, order.lines.length - 2);
 
   return (
-    <article className="grid gap-4 rounded-2xl border border-border bg-card p-4 shadow-foreground/5 shadow-sm sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+    <article className="grid gap-4 rounded-xl border border-border bg-card p-5 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
       <div className="min-w-0">
         <div className="flex min-w-0 items-center gap-2">
-          <span className="grid size-9 shrink-0 place-items-center rounded-full bg-muted text-muted-foreground">
+          <span className="grid size-9 shrink-0 place-items-center rounded-lg border border-border bg-muted/35 text-muted-foreground">
             <ReceiptText className="size-4" />
           </span>
           <div className="min-w-0">
@@ -58,7 +58,7 @@ function OrderHistoryCard({ order }: { order: InventoryOrderHistoryItem }) {
         </p>
       </div>
       <div className="flex flex-wrap items-center gap-2 sm:justify-end">
-        <span className="rounded-full border border-border bg-muted/40 px-3 py-1 font-semibold text-sm tabular-nums">
+        <span className="rounded-md border border-border bg-muted/30 px-3 py-1 font-semibold text-sm tabular-nums">
           {formatMoneyFromMinor(order.totalAmount, order.currency)}
         </span>
         <Button asChild size="sm" variant="outline">
@@ -88,8 +88,8 @@ export function PurchaseHistoryClient({
 
   return (
     <main className="min-h-dvh bg-background text-foreground">
-      <header className="sticky top-0 z-30 border-border border-b bg-background/80 backdrop-blur-md supports-[backdrop-filter]:bg-background/65">
-        <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 px-4 py-3">
+      <header className="sticky top-0 z-30 border-border border-b bg-background/95 backdrop-blur-md supports-[backdrop-filter]:bg-background/85">
+        <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 px-5 py-4 sm:px-6">
           <div className="min-w-0">
             <h1 className="truncate font-semibold text-xl">{t('title')}</h1>
             <p className="mt-0.5 text-muted-foreground text-sm">
@@ -100,7 +100,7 @@ export function PurchaseHistoryClient({
         </div>
       </header>
 
-      <section className="mx-auto grid max-w-5xl gap-4 px-4 py-5">
+      <section className="mx-auto grid max-w-5xl gap-5 px-5 py-8 sm:px-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <Button asChild size="sm" variant="ghost">
             <Link href={backHref}>
@@ -124,18 +124,18 @@ export function PurchaseHistoryClient({
           <div className="grid gap-3">
             {['a', 'b', 'c'].map((key) => (
               <div
-                className="h-28 animate-pulse rounded-2xl border border-border bg-muted/35"
+                className="h-28 animate-pulse rounded-xl border border-border bg-muted/35"
                 key={key}
               />
             ))}
           </div>
         ) : query.isError ? (
-          <section className="rounded-2xl border border-destructive/25 bg-destructive/10 p-5 text-destructive">
+          <section className="rounded-xl border border-destructive/25 bg-destructive/10 p-5 text-destructive">
             <p className="font-semibold">{t('errorTitle')}</p>
             <p className="mt-1 text-sm opacity-80">{t('errorDescription')}</p>
           </section>
         ) : orders.length === 0 ? (
-          <section className="grid min-h-72 place-items-center rounded-2xl border border-border border-dashed bg-card p-6 text-center">
+          <section className="grid min-h-72 place-items-center rounded-xl border border-border border-dashed bg-card p-6 text-center">
             <div className="max-w-sm">
               <Package className="mx-auto size-10 text-muted-foreground" />
               <h2 className="mt-4 font-semibold">{t('emptyTitle')}</h2>

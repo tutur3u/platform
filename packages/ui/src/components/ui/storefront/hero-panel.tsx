@@ -24,13 +24,40 @@ export function StorefrontHeroPanel({
   return (
     <section
       className={cn(
-        'relative isolate overflow-hidden',
+        'grid overflow-hidden md:grid-cols-[minmax(0,1.08fr)_minmax(18rem,0.92fr)]',
         storefrontSurfaceClasses[storefront.surfaceStyle],
         radius
       )}
     >
-      {/* Full-width featured banner backdrop. */}
-      <div className="relative h-40 w-full sm:h-52 md:h-60">
+      <div className="flex min-h-80 flex-col justify-between gap-10 p-6 sm:p-8 lg:p-10">
+        <div className="flex items-center gap-2 font-mono text-muted-foreground text-xs uppercase tracking-[0.16em]">
+          <Store className="size-4" />
+          <span>{labels.browse}</span>
+        </div>
+        <div className="max-w-2xl">
+          <h2 className="text-balance font-semibold text-4xl tracking-[-0.035em] sm:text-5xl lg:text-6xl">
+            {storefront.name}
+          </h2>
+          <p className="mt-4 max-w-xl text-pretty text-muted-foreground leading-7">
+            {storefront.description ?? labels.fallbackDescription}
+          </p>
+          <div className="mt-6 flex flex-wrap gap-2">
+            <Badge className="border-border bg-background" variant="outline">
+              {listingsCount} {labels.product}
+            </Badge>
+            <Badge className="border-border bg-background" variant="outline">
+              {currency}
+            </Badge>
+            <Badge className="border-border bg-background" variant="outline">
+              {storefront.visibility === 'public'
+                ? labels.publicStore
+                : labels.privateStore}
+            </Badge>
+          </div>
+        </div>
+      </div>
+
+      <div className="relative min-h-64 border-border border-t md:min-h-full md:border-t-0 md:border-l">
         {heroImage ? (
           <StorefrontImagePanel
             className="absolute inset-0 h-full w-full"
@@ -39,34 +66,12 @@ export function StorefrontHeroPanel({
             priority
           />
         ) : (
-          <div className="absolute inset-0 bg-gradient-to-br from-muted via-muted/60 to-background" />
-        )}
-        {/* Scrim that fades the banner into the page so overlaid text stays legible. */}
-        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/55 to-transparent" />
-      </div>
-
-      {/* Overlaid title block — pulled up onto the lower, faded part of the banner. */}
-      <div className="relative -mt-20 flex flex-col gap-4 p-5">
-        <div>
-          <div className="flex items-center gap-2 text-muted-foreground text-xs">
-            <Store className="h-4 w-4" />
-            <span>{labels.browse}</span>
+          <div className="absolute inset-0 grid place-items-center bg-muted/35">
+            <div className="grid size-24 place-items-center rounded-xl border border-border bg-background/80">
+              <Store className="size-8 text-muted-foreground" />
+            </div>
           </div>
-          <h2 className="mt-2 text-balance font-semibold text-3xl tracking-tight md:text-4xl">
-            {storefront.name}
-          </h2>
-          <p className="mt-2 max-w-2xl text-muted-foreground text-sm leading-6">
-            {storefront.description ?? labels.fallbackDescription}
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Badge className="border-border bg-background" variant="outline">
-            {listingsCount} {labels.product}
-          </Badge>
-          <Badge className="border-border bg-background" variant="outline">
-            {currency}
-          </Badge>
-        </div>
+        )}
       </div>
     </section>
   );

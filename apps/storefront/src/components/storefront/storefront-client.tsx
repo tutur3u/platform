@@ -245,7 +245,7 @@ export function StorefrontClient({
       orderQuery.isError || (shouldResolveDemoOrder && storefrontQuery.isError);
     return (
       <main className="mx-auto grid min-h-dvh w-full max-w-lg place-items-center px-4 py-10">
-        <section className="w-full overflow-hidden rounded-2xl border border-border bg-card p-6 text-center shadow-foreground/5 shadow-sm">
+        <section className="w-full overflow-hidden rounded-xl border border-border bg-card p-6 text-center">
           {isOrderUnavailable ? (
             <>
               <p className="text-muted-foreground text-sm">{t('order')}</p>
@@ -370,9 +370,11 @@ export function StorefrontClient({
   const surfaceMode = resolvedMode === 'checkout' ? 'cart' : resolvedMode;
   const surfaceLabels: Partial<StorefrontSurfaceLabels> = {
     add: t('add'),
+    allItems: t('allItems'),
     available: t('available'),
     browse: t('browse'),
     bundle: t('bundle'),
+    bundles: t('bundles'),
     bundleSelectionTitle: t('bundleSelectionTitle'),
     buyNow: t('buyNow'),
     cart: t('cart'),
@@ -380,6 +382,7 @@ export function StorefrontClient({
     checkout: t('checkout'),
     checkoutDisabled: t('checkoutDisabled'),
     checkoutDisabledBadge: t('checkoutDisabledBadge'),
+    clearFilters: t('clearFilters'),
     contactDetails: t('contactDetails'),
     demoBadge: t('demoBadge'),
     emptyCart: t('emptyCart'),
@@ -388,10 +391,13 @@ export function StorefrontClient({
     fallbackDescription: t('fallbackDescription'),
     fromPrice: t('fromPrice'),
     instantCheckout: t('instantCheckout'),
+    noResultsDescription: t('noResultsDescription'),
+    noResultsTitle: t('noResultsTitle'),
     orderSummary: t('orderSummary'),
     redirectingToCheckout: t('redirectingToCheckout'),
     requiredItems: t('requiredItems'),
     searchBundleItems: t('searchBundleItems'),
+    searchStore: t('searchStore'),
     selectOptions: t('selectOptions'),
     selectedItems: t('selectedItems'),
     viewDetails: t('viewDetails'),
@@ -404,6 +410,7 @@ export function StorefrontClient({
     privateStore: t('privateStore'),
     previewBadge: t('previewBadge'),
     product: t('product'),
+    products: t('products'),
     publicStore: t('publicStore'),
     quantity: t('quantity'),
     reserve: isSimulatedCheckout
@@ -423,7 +430,9 @@ export function StorefrontClient({
         : t('reservedCopy'),
     simulatedBadge: t('simulatedBadge'),
     soldOut: t('soldOut'),
+    shopTitle: t('shopTitle'),
     total: t('total'),
+    visibleItems: t.raw('visibleItems') as string,
   };
   const recordAnalyticsEvent = (
     payload: Parameters<typeof recordInventoryStorefrontAnalyticsEvent>[1]
@@ -545,21 +554,31 @@ function StorefrontSkeleton({ label }: { label: string }) {
       <header className="border-border border-b">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3">
           <div className="h-6 w-40 animate-pulse rounded-md bg-muted" />
-          <div className="h-11 w-16 animate-pulse rounded-2xl bg-muted" />
+          <div className="h-11 w-16 animate-pulse rounded-xl bg-muted" />
         </div>
       </header>
       <section className="mx-auto max-w-7xl px-4 py-5">
         <div className="min-w-0">
-          <div className="h-52 w-full animate-pulse rounded-2xl bg-muted" />
-          <div className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          <div className="grid min-h-80 animate-pulse overflow-hidden rounded-xl border border-border md:grid-cols-2">
+            <div className="flex flex-col justify-end gap-4 p-8">
+              <div className="h-3 w-28 rounded bg-muted" />
+              <div className="h-10 w-3/4 rounded bg-muted" />
+              <div className="h-4 w-2/3 rounded bg-muted" />
+            </div>
+            <div className="border-border border-t bg-muted/60 md:border-t-0 md:border-l" />
+          </div>
+          <div className="mt-10 h-10 w-52 animate-pulse rounded bg-muted" />
+          <div className="mt-5 grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
             {SKELETON_CARD_KEYS.map((key) => (
               <div
-                className="animate-pulse rounded-2xl border border-border/60 bg-card p-3"
+                className="animate-pulse overflow-hidden rounded-xl border border-border bg-card"
                 key={key}
               >
-                <div className="aspect-[4/3] w-full rounded-2xl bg-muted" />
-                <div className="mt-3 h-4 w-3/4 rounded bg-muted" />
-                <div className="mt-2 h-3 w-1/2 rounded bg-muted" />
+                <div className="aspect-[5/4] w-full bg-muted" />
+                <div className="p-5">
+                  <div className="h-4 w-3/4 rounded bg-muted" />
+                  <div className="mt-2 h-3 w-1/2 rounded bg-muted" />
+                </div>
               </div>
             ))}
           </div>

@@ -49,7 +49,7 @@ export function StorefrontCartPopover({
       <PopoverContent
         align="end"
         className={cn(
-          'w-[min(calc(100vw-2rem),24rem)] border-border/70 p-4 shadow-xl',
+          'w-[min(calc(100vw-2rem),24rem)] border-border p-4 shadow-sm',
           radius
         )}
         sideOffset={10}

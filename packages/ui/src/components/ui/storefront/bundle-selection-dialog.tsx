@@ -92,7 +92,7 @@ export function StorefrontBundleSelectionDialog({
       }}
       open={open}
     >
-      <DialogContent className="grid max-h-[90dvh] max-w-[min(42rem,calc(100vw-1rem))] grid-rows-[auto_auto_minmax(0,1fr)_auto] gap-4 overflow-hidden border-border/60 p-5 sm:rounded-2xl">
+      <DialogContent className="grid max-h-[90dvh] max-w-[min(42rem,calc(100vw-1rem))] grid-rows-[auto_auto_minmax(0,1fr)_auto] gap-4 overflow-hidden border-border p-5 shadow-sm sm:rounded-xl">
         <DialogHeader className="text-left">
           <DialogTitle>{labels.bundleSelectionTitle}</DialogTitle>
           <p className="text-muted-foreground text-sm">{listing.title}</p>

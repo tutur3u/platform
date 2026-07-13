@@ -15,8 +15,8 @@ import type { StorefrontCartLine } from './types';
 // in the data model for backwards compatibility, but every value resolves to the
 // same refined look so the experience is consistent across all storefronts.
 
-/** One soft, modern corner radius for every surface. */
-export const STOREFRONT_RADIUS = 'rounded-2xl';
+/** One restrained corner radius for every storefront surface. */
+export const STOREFRONT_RADIUS = 'rounded-xl';
 
 export const storefrontRadiusClasses: Record<
   InventoryStorefront['cornerStyle'],
@@ -27,9 +27,8 @@ export const storefrontRadiusClasses: Record<
   soft: STOREFRONT_RADIUS,
 };
 
-/** One elevated card surface for every storefront. */
-export const STOREFRONT_SURFACE =
-  'border border-border/60 bg-card shadow-sm shadow-foreground/5';
+/** One quiet, border-led card surface for every storefront. */
+export const STOREFRONT_SURFACE = 'border border-border bg-card';
 
 export const storefrontSurfaceClasses: Record<
   InventoryStorefront['surfaceStyle'],

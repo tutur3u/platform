@@ -27,21 +27,23 @@ export function StorefrontMerchSections({
   if (visibleSections.length === 0) return null;
 
   return (
-    <div className="mt-4 grid gap-3">
+    <div className="mt-6 grid gap-4">
       {visibleSections.map((section) => {
         const sectionHref = getSafeStorefrontHttpUrl(section.href);
 
         return (
           <section
             className={cn(
-              'grid overflow-hidden border border-border bg-card md:grid-cols-[minmax(0,1fr)_280px]',
+              'grid overflow-hidden border border-border bg-card md:grid-cols-[minmax(0,1fr)_minmax(16rem,0.7fr)]',
               radius
             )}
             key={section.id}
           >
-            <div className="flex min-w-0 flex-col justify-center gap-2 p-4">
+            <div className="flex min-w-0 flex-col justify-center gap-3 p-6 sm:p-8">
               {section.title ? (
-                <h2 className="font-semibold text-lg">{section.title}</h2>
+                <h2 className="text-balance font-semibold text-2xl tracking-tight">
+                  {section.title}
+                </h2>
               ) : null}
               {section.description ? (
                 <p className="text-muted-foreground text-sm leading-6">
@@ -50,7 +52,7 @@ export function StorefrontMerchSections({
               ) : null}
               {sectionHref ? (
                 <a
-                  className="mt-1 w-fit font-medium text-sm underline-offset-4 hover:underline"
+                  className="mt-2 w-fit border-border border-b pb-1 font-medium text-sm transition hover:border-foreground"
                   href={sectionHref}
                 >
                   {sectionHref.replace(/^https?:\/\//u, '')}
