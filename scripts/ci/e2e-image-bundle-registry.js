@@ -4,6 +4,10 @@ const path = require('node:path');
 const IMAGE_DIGEST_PATTERN = /^sha256:[0-9a-f]{64}$/u;
 const SOURCE_REPOSITORY_URL = 'https://github.com/tutur3u/platform';
 const SOURCE_REPOSITORY_ANNOTATION = `org.opencontainers.image.source=${SOURCE_REPOSITORY_URL}`;
+const TURBO_SECRET_FILE_ENV_KEYS = Object.freeze([
+  'DOCKER_WEB_TURBO_TEAM_SECRET_FILE',
+  'DOCKER_WEB_TURBO_TOKEN_SECRET_FILE',
+]);
 
 function validateImageDigest(digest) {
   const normalized = String(digest ?? '')
@@ -43,7 +47,30 @@ function writeRegistryBakeDefinition(entries, directory) {
   return filePath;
 }
 
-function createBakeMetadataRunner({ directory, run, services }) {
+function getBakeFsReadAllowArgs(env = {}) {
+  const paths = [];
+
+  for (const key of TURBO_SECRET_FILE_ENV_KEYS) {
+    const rawValue = String(env[key] ?? '');
+    if (/[\0\r\n]/u.test(rawValue)) {
+      throw new Error(`${key} contains invalid control characters.`);
+    }
+    const value = rawValue.trim();
+    if (!value || !path.isAbsolute(value)) continue;
+
+    const normalized = path.normalize(value);
+    if (!paths.includes(normalized)) paths.push(normalized);
+  }
+
+  return paths.map((filePath) => `--allow=fs.read=${filePath}`);
+}
+
+function createBakeMetadataRunner({
+  directory,
+  env = process.env,
+  run,
+  services,
+}) {
   const serviceSet = new Set(services);
   const metadataFiles = new Map();
 
@@ -68,7 +95,9 @@ function createBakeMetadataRunner({ directory, run, services }) {
 
       const firstTargetIndex = args.findIndex((arg) => serviceSet.has(arg));
       const registryArgs = [
-        ...args.slice(0, firstTargetIndex),
+        ...args.slice(0, 2),
+        ...getBakeFsReadAllowArgs(options?.env ?? env),
+        ...args.slice(2, firstTargetIndex),
         '--metadata-file',
         metadataFile,
         ...args.slice(firstTargetIndex),
