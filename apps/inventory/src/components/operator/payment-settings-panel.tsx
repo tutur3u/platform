@@ -8,6 +8,7 @@ import {
 } from '@tuturuuu/internal-api/inventory';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
+import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { PolarSettingsPanel } from './polar-settings-panel';
 import { SquareSettingsPanel } from './square-settings-panel';
@@ -25,8 +26,17 @@ function ProviderStatus({
 
   return (
     <Badge
-      className="ml-auto shrink-0 bg-background/80"
-      variant={ready ? 'default' : 'outline'}
+      className={cn(
+        'ml-auto shrink-0 font-semibold',
+        checking && 'border-border bg-muted/60 text-foreground',
+        !checking &&
+          ready &&
+          'border-dynamic-green/40 bg-dynamic-green/15 text-dynamic-green',
+        !checking &&
+          !ready &&
+          'border-dynamic-orange/40 bg-dynamic-orange/15 text-dynamic-orange'
+      )}
+      variant="outline"
     >
       {checking ? t('checking') : ready ? t('ready') : t('setupRequired')}
     </Badge>

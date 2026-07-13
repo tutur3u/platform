@@ -1762,9 +1762,11 @@
         "title": "Một nơi cho mọi cách khách hàng thanh toán"
       },
       "polar": {
+        "cancelEditing": "Dừng chỉnh sửa",
         "description": "Lưu token Polar của workspace và chọn môi trường thanh toán cho đơn cửa hàng.",
         "dialogDescription": "Dán token tổ chức Polar do workspace sở hữu cho từng môi trường. Token không hiển thị trong thân trang.",
         "dialogTitle": "Quản lý token Polar",
+        "editSettings": "Chỉnh sửa cài đặt Polar",
         "emptyEnvironments": "Không tìm thấy môi trường.",
         "environment": {
           "production": "Production",
@@ -1799,6 +1801,7 @@
         "productionDefault": "Mặc định production",
         "productMissing": "Chưa tạo sản phẩm checkout.",
         "productReady": "Sản phẩm {productId}",
+        "readOnlyHint": "Cài đặt ở chế độ chỉ đọc cho đến khi bạn chọn chỉnh sửa.",
         "ready": "Sẵn sàng",
         "saveDefaults": "Lưu mặc định",
         "saveError": "Không thể lưu cài đặt Polar.",
@@ -1810,12 +1813,19 @@
           "bundles": "Gói",
           "description": "Mỗi mục niêm yết và gói được đồng bộ sang một sản phẩm Polar. Đồng bộ lại để hợp nhất các mục tạo trước khi kết nối Polar hoặc bị lỗi.",
           "errorsTitle": "Lỗi đồng bộ gần đây",
+          "externalId": "Sản phẩm Polar {id}",
+          "itemsDescription": "Đây là các niêm yết cửa hàng, không phải sản phẩm danh mục gốc. Một sản phẩm có thể xuất hiện trong nhiều cửa hàng.",
+          "itemsEmpty": "Chưa có niêm yết cửa hàng nào được kết nối với Polar.",
+          "itemsTitle": "Niêm yết cửa hàng đã đồng bộ",
           "lastSynced": "Đồng bộ lần cuối",
           "listings": "Niêm yết",
+          "loadError": "Không thể tải chi tiết đồng bộ.",
           "never": "Chưa bao giờ",
+          "noExternalId": "Đang chờ sản phẩm Polar",
           "resync": "Đồng bộ lại",
           "resyncDone": "Đã đồng bộ lại {count} sản phẩm",
           "resyncing": "Đang đồng bộ…",
+          "retry": "Thử lại",
           "status": {
             "disabled": "vô hiệu",
             "error": "lỗi",
@@ -1920,6 +1930,7 @@
         "applicationSecretLabel": "Application secret",
         "applicationSecretPlaceholder": "Application secret Square",
         "appSecretEnding": "Application secret kết thúc bằng {last4}",
+        "cancelEditing": "Dừng chỉnh sửa",
         "connectOAuth": "Kết nối OAuth",
         "copyWebhook": "Sao chép URL",
         "createDeviceCode": "Tạo mã ghép nối",
@@ -1929,6 +1940,8 @@
         "deviceCodeSuccess": "Đã tạo mã ghép nối.",
         "deviceLabel": "Terminal mặc định",
         "devicePlaceholder": "Chọn terminal",
+        "editingHint": "Đã bật chỉnh sửa. Kiểm tra môi trường trước khi lưu hoặc đồng bộ.",
+        "editSettings": "Chỉnh sửa cài đặt Square",
         "environment": {
           "production": "Production",
           "sandbox": "Sandbox"
@@ -2003,6 +2016,7 @@
         "oauthRedirectPlaceholder": "Mặc định là URL callback OAuth Square của ứng dụng này",
         "oauthRequiresAppCredentials": "Lưu application ID và secret trước khi kết nối OAuth.",
         "readiness": "Sẵn sàng: {issues}",
+        "readOnlyHint": "Chi tiết kết nối ở chế độ chỉ đọc cho đến khi bạn chọn chỉnh sửa.",
         "ready": "sẵn sàng",
         "sandboxDeviceLabel": "ID thiết bị sandbox",
         "saveAppCredentials": "Lưu thông tin ứng dụng",
@@ -2012,6 +2026,10 @@
         "saveSuccess": "Đã lưu cài đặt Square.",
         "saving": "Đang lưu...",
         "selectedEnvironment": "Đã chọn: {environment}",
+        "settingsTitle": "Cài đặt kết nối Square",
+        "summaryApplication": "Ứng dụng Square",
+        "summaryConnection": "Kết nối",
+        "summaryWebhook": "Xác minh webhook",
         "sync": {
           "actions": {
             "bidirectional": "Đồng bộ hai chiều",
@@ -2028,6 +2046,7 @@
           "confirmTitle": "Xem lại đồng bộ danh mục",
           "connectFirst": "Kết nối và xác thực môi trường Square này trước khi đồng bộ.",
           "description": "Giữ sản phẩm, biến thể, giá và số lượng tồn kho đồng nhất. Chọn một chiều hoặc để Tuturuuu phát hiện các thay đổi không xung đột ở cả hai phía.",
+          "editToSync": "Chọn nút chỉnh sửa nhỏ phía trên để bật các thao tác đồng bộ danh mục.",
           "error": "Đồng bộ danh mục Square thất bại.",
           "lastRun": "Lần chạy gần nhất {date}",
           "metrics": {
@@ -2057,7 +2076,9 @@
         "tokenPlaceholder": "Access token Square",
         "webhookNotificationLabel": "URL thông báo webhook",
         "webhookNotificationPlaceholder": "Mặc định là URL webhook Square của workspace",
+        "webhookSignatureEnding": "Khóa chữ ký kết thúc bằng {last4}",
         "webhookSignatureLabel": "Khóa chữ ký webhook",
+        "webhookSignatureMissing": "Chưa đặt khóa chữ ký",
         "webhookSignaturePlaceholder": "Khóa chữ ký webhook Square",
         "webhookTitle": "Nhận webhook",
         "webhookUrlPending": "URL webhook sẽ xuất hiện sau khi tải cài đặt"

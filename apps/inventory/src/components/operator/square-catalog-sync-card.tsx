@@ -30,9 +30,11 @@ const directions: InventorySquareCatalogSyncDirection[] = [
 ];
 
 export function SquareCatalogSyncCard({
+  actionsEnabled,
   connected,
   wsId,
 }: {
+  actionsEnabled: boolean;
   connected: boolean;
   wsId: string;
 }) {
@@ -127,19 +129,25 @@ export function SquareCatalogSyncCard({
       ) : null}
 
       <div className="flex flex-wrap gap-2 p-4">
-        {directions.map((direction) => (
-          <Button
-            disabled={!connected || sync.isPending}
-            key={direction}
-            onClick={() => setPendingDirection(direction)}
-            type="button"
-            variant={direction === 'bidirectional' ? 'default' : 'outline'}
-          >
-            <RefreshCw className={sync.isPending ? 'animate-spin' : ''} />
-            {t(`actions.${direction}`)}
-          </Button>
-        ))}
-        {!connected ? (
+        {actionsEnabled
+          ? directions.map((direction) => (
+              <Button
+                disabled={!connected || sync.isPending}
+                key={direction}
+                onClick={() => setPendingDirection(direction)}
+                type="button"
+                variant={direction === 'bidirectional' ? 'default' : 'outline'}
+              >
+                <RefreshCw className={sync.isPending ? 'animate-spin' : ''} />
+                {t(`actions.${direction}`)}
+              </Button>
+            ))
+          : null}
+        {!actionsEnabled ? (
+          <p className="w-full text-muted-foreground text-xs">
+            {t('editToSync')}
+          </p>
+        ) : !connected ? (
           <p className="w-full text-muted-foreground text-xs">
             {t('connectFirst')}
           </p>

@@ -7,6 +7,20 @@ const inventoryRoot = process.cwd().endsWith('/apps/inventory')
   : join(process.cwd(), 'apps/inventory');
 
 describe('SquareSettingsPanel', () => {
+  it('keeps provider settings read-only until the compact edit control is used', () => {
+    const source = readFileSync(
+      join(inventoryRoot, 'src/components/operator/square-settings-panel.tsx'),
+      'utf8'
+    );
+
+    expect(source).toContain(
+      'const [isEditing, setIsEditing] = useState(false)'
+    );
+    expect(source).toContain('<SquareSettingsSummary');
+    expect(source).toContain('actionsEnabled={isEditing}');
+    expect(source).toContain("t('editSettings')");
+  });
+
   it('saves workspace app credentials through the Square settings API payload', () => {
     const source = readFileSync(
       join(inventoryRoot, 'src/components/operator/square-settings-panel.tsx'),

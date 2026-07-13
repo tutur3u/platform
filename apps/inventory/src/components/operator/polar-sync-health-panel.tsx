@@ -8,9 +8,11 @@ import {
   syncInventoryPolarProducts,
 } from '@tuturuuu/internal-api/inventory';
 import { Button } from '@tuturuuu/ui/button';
+import { Skeleton } from '@tuturuuu/ui/skeleton';
 import { toast } from '@tuturuuu/ui/sonner';
 import { cn } from '@tuturuuu/utils/format';
 import { useLocale, useTranslations } from 'next-intl';
+import { PolarSyncItemList } from './polar-sync-item-list';
 
 type StatusKey = 'synced' | 'pending' | 'error' | 'disabled';
 
@@ -112,13 +114,38 @@ export function PolarSyncHealthPanel({ wsId }: { wsId: string }) {
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2">
-        {renderChips(data?.listings ?? emptyCounts(), t('sync.listings'))}
-        {renderChips(data?.bundles ?? emptyCounts(), t('sync.bundles'))}
+        {summary.isPending ? (
+          <>
+            <Skeleton className="h-16 rounded-lg" />
+            <Skeleton className="h-16 rounded-lg" />
+          </>
+        ) : (
+          <>
+            {renderChips(data?.listings ?? emptyCounts(), t('sync.listings'))}
+            {renderChips(data?.bundles ?? emptyCounts(), t('sync.bundles'))}
+          </>
+        )}
       </div>
 
-      <p className="text-muted-foreground text-xs">
-        {t('sync.lastSynced')}: {lastSynced || t('sync.never')}
-      </p>
+      {summary.isError ? (
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-destructive/20 bg-destructive/10 px-3 py-2 text-destructive text-xs">
+          <span>{t('sync.loadError')}</span>
+          <Button
+            onClick={() => summary.refetch()}
+            size="sm"
+            type="button"
+            variant="outline"
+          >
+            {t('sync.retry')}
+          </Button>
+        </div>
+      ) : (
+        <p className="text-muted-foreground text-xs">
+          {t('sync.lastSynced')}: {lastSynced || t('sync.never')}
+        </p>
+      )}
+
+      {data ? <PolarSyncItemList items={data.items ?? []} /> : null}
 
       {data && data.errors.length > 0 ? (
         <div className="grid gap-1.5">

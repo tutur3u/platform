@@ -1,14 +1,7 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import {
-  ChevronDown,
-  Copy,
-  KeyRound,
-  Settings2,
-  ShieldCheck,
-  Webhook,
-} from '@tuturuuu/icons';
+import { ChevronDown, Copy, KeyRound, Webhook } from '@tuturuuu/icons';
 import {
   getInventoryPolarSettings,
   type InventoryPolarEnvironment,
@@ -20,32 +13,22 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@tuturuuu/ui/collapsible';
-import { Dialog, DialogClose, DialogTrigger } from '@tuturuuu/ui/dialog';
-import { Input } from '@tuturuuu/ui/input';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import type { FormEvent } from 'react';
 import { useEffect, useState } from 'react';
-import {
-  OperatorDialogBody,
-  OperatorDialogContent,
-  OperatorDialogFooter,
-  OperatorDialogHeader,
-} from './operator-dialog-shell';
 import { SelectValueField } from './operator-form-fields';
+import { CompactEditButton, ReadOnlyField } from './payment-read-only-fields';
+import { PolarIntegrationStatusGrid } from './polar-integration-status-grid';
+import { PolarTokenDialog } from './polar-token-dialog';
 
 const environments: InventoryPolarEnvironment[] = ['sandbox', 'production'];
 
 export function PolarSettingsPanel({ wsId }: { wsId: string }) {
   const t = useTranslations('inventory.operator.polar');
-  const formsText = useTranslations('inventory.operator.forms');
   const queryClient = useQueryClient();
-  const [open, setOpen] = useState(false);
-  const [accessToken, setAccessToken] = useState('');
-  const [webhookSecret, setWebhookSecret] = useState('');
+  const [isEditing, setIsEditing] = useState(false);
   const [webhookUrl, setWebhookUrl] = useState('');
-  const [tokenEnvironment, setTokenEnvironment] =
-    useState<InventoryPolarEnvironment>('sandbox');
 
   const [testingEnvironment, setTestingEnvironment] = useState<
     InventoryPolarEnvironment | ''
@@ -69,26 +52,6 @@ export function PolarSettingsPanel({ wsId }: { wsId: string }) {
       `${window.location.origin}/api/v1/inventory/polar/webhook/${resolvedWsId}`
     );
   }, [resolvedWsId]);
-  const tokenMutation = useMutation({
-    mutationFn: () =>
-      updateInventoryPolarSettings(wsId, {
-        accessToken: accessToken || undefined,
-        environment: tokenEnvironment,
-        webhookSecret: webhookSecret || undefined,
-      }),
-    onError: (error) =>
-      toast.error(error instanceof Error ? error.message : t('saveError')),
-    onSuccess: () => {
-      setOpen(false);
-      setAccessToken('');
-      setWebhookSecret('');
-      toast.success(t('saveSuccess'));
-      queryClient.invalidateQueries({
-        queryKey: ['inventory', wsId, 'polar-settings'],
-      });
-    },
-  });
-
   const copyWebhookUrl = async () => {
     if (!webhookUrl) return;
     try {
@@ -109,6 +72,9 @@ export function PolarSettingsPanel({ wsId }: { wsId: string }) {
     onError: (error) =>
       toast.error(error instanceof Error ? error.message : t('saveError')),
     onSuccess: () => {
+      setIsEditing(false);
+      setTestingEnvironment('');
+      setProductionEnvironment('');
       toast.success(t('saveSuccess'));
       queryClient.invalidateQueries({
         queryKey: ['inventory', wsId, 'polar-settings'],
@@ -140,114 +106,75 @@ export function PolarSettingsPanel({ wsId }: { wsId: string }) {
               </p>
             </div>
           </div>
-          <Dialog onOpenChange={setOpen} open={open}>
-            <DialogTrigger asChild>
-              <Button type="button" variant="outline">
-                <Settings2 className="h-4 w-4" />
-                {t('manage')}
-              </Button>
-            </DialogTrigger>
-            <OperatorDialogContent size="sm">
-              <OperatorDialogHeader
-                description={t('dialogDescription')}
-                title={t('dialogTitle')}
-              />
-              <form
-                className="flex min-h-0 flex-1 flex-col"
-                onSubmit={(event: FormEvent<HTMLFormElement>) => {
-                  event.preventDefault();
-                  tokenMutation.mutate();
-                }}
-              >
-                <OperatorDialogBody className="grid gap-6">
-                  <SelectValueField
-                    allowEmpty={false}
-                    emptyText={t('emptyEnvironments')}
-                    label={t('environmentLabel')}
-                    onChange={(value) =>
-                      setTokenEnvironment(value as InventoryPolarEnvironment)
-                    }
-                    options={environmentOptions}
-                    placeholder={t('environmentLabel')}
-                    searchPlaceholder={t('searchEnvironments')}
-                    value={tokenEnvironment}
-                  />
-                  <label className="grid min-w-0 gap-1 text-sm">
-                    <span className="font-medium">{t('tokenLabel')}</span>
-                    <Input
-                      className="h-10"
-                      onChange={(event) => setAccessToken(event.target.value)}
-                      placeholder={t('tokenPlaceholder')}
-                      type="password"
-                      value={accessToken}
-                    />
-                  </label>
-                  <label className="grid min-w-0 gap-1 text-sm">
-                    <span className="font-medium">
-                      {t('webhookSecretLabel')}
-                    </span>
-                    <Input
-                      className="h-10"
-                      onChange={(event) => setWebhookSecret(event.target.value)}
-                      placeholder={t('webhookSecretPlaceholder')}
-                      type="password"
-                      value={webhookSecret}
-                    />
-                    <span className="text-muted-foreground text-xs">
-                      {t('webhookHint')}
-                    </span>
-                  </label>
-                </OperatorDialogBody>
-                <OperatorDialogFooter>
-                  <DialogClose asChild>
-                    <Button type="button" variant="ghost">
-                      {formsText('cancel')}
-                    </Button>
-                  </DialogClose>
-                  <Button disabled={tokenMutation.isPending} type="submit">
-                    {tokenMutation.isPending ? t('saving') : t('saveToken')}
-                  </Button>
-                </OperatorDialogFooter>
-              </form>
-            </OperatorDialogContent>
-          </Dialog>
+          <CompactEditButton
+            editing={isEditing}
+            label={isEditing ? t('cancelEditing') : t('editSettings')}
+            onClick={() => {
+              setIsEditing((current) => !current);
+              setTestingEnvironment('');
+              setProductionEnvironment('');
+            }}
+          />
         </div>
 
-        <form
-          className="mt-4 grid gap-3 md:grid-cols-[1fr_1fr_auto] md:items-end"
-          onSubmit={(event: FormEvent<HTMLFormElement>) => {
-            event.preventDefault();
-            defaultsMutation.mutate();
-          }}
-        >
-          <SelectValueField
-            allowEmpty={false}
-            emptyText={t('emptyEnvironments')}
-            label={t('testingDefault')}
-            onChange={(value) =>
-              setTestingEnvironment(value as InventoryPolarEnvironment)
-            }
-            options={environmentOptions}
-            placeholder={t('testingDefault')}
-            searchPlaceholder={t('searchEnvironments')}
-            value={selectedTestingEnvironment}
-          />
-          <SelectValueField
-            allowEmpty={false}
-            emptyText={t('emptyEnvironments')}
-            label={t('productionDefault')}
-            onChange={(value) =>
-              setProductionEnvironment(value as InventoryPolarEnvironment)
-            }
-            options={environmentOptions}
-            placeholder={t('productionDefault')}
-            searchPlaceholder={t('searchEnvironments')}
-            value={selectedProductionEnvironment}
-          />
-          <Button disabled={defaultsMutation.isPending} type="submit">
-            {defaultsMutation.isPending ? t('saving') : t('saveDefaults')}
-          </Button>
-        </form>
+        {isEditing ? (
+          <>
+            <div className="mt-4 flex justify-end">
+              <PolarTokenDialog wsId={wsId} />
+            </div>
+            <form
+              className="mt-3 grid gap-3 md:grid-cols-[1fr_1fr_auto] md:items-end"
+              onSubmit={(event: FormEvent<HTMLFormElement>) => {
+                event.preventDefault();
+                defaultsMutation.mutate();
+              }}
+            >
+              <SelectValueField
+                allowEmpty={false}
+                emptyText={t('emptyEnvironments')}
+                label={t('testingDefault')}
+                onChange={(value) =>
+                  setTestingEnvironment(value as InventoryPolarEnvironment)
+                }
+                options={environmentOptions}
+                placeholder={t('testingDefault')}
+                searchPlaceholder={t('searchEnvironments')}
+                value={selectedTestingEnvironment}
+              />
+              <SelectValueField
+                allowEmpty={false}
+                emptyText={t('emptyEnvironments')}
+                label={t('productionDefault')}
+                onChange={(value) =>
+                  setProductionEnvironment(value as InventoryPolarEnvironment)
+                }
+                options={environmentOptions}
+                placeholder={t('productionDefault')}
+                searchPlaceholder={t('searchEnvironments')}
+                value={selectedProductionEnvironment}
+              />
+              <Button disabled={defaultsMutation.isPending} type="submit">
+                {defaultsMutation.isPending ? t('saving') : t('saveDefaults')}
+              </Button>
+            </form>
+          </>
+        ) : (
+          <>
+            <div className="mt-4 grid gap-px overflow-hidden rounded-lg border border-border bg-border sm:grid-cols-2">
+              <ReadOnlyField
+                label={t('testingDefault')}
+                value={t(`environment.${selectedTestingEnvironment}`)}
+              />
+              <ReadOnlyField
+                label={t('productionDefault')}
+                value={t(`environment.${selectedProductionEnvironment}`)}
+              />
+            </div>
+            <p className="mt-3 text-muted-foreground text-xs">
+              {t('readOnlyHint')}
+            </p>
+          </>
+        )}
       </div>
 
       <Collapsible className="rounded-lg border border-border bg-card">
@@ -285,60 +212,7 @@ export function PolarSettingsPanel({ wsId }: { wsId: string }) {
         </CollapsibleContent>
       </Collapsible>
 
-      <div className="grid gap-3 lg:grid-cols-2">
-        {environments.map((environment) => {
-          const integration = (data?.integrations ?? []).find(
-            (item) => item.environment === environment
-          );
-          const ready = integration?.status === 'ready';
-
-          return (
-            <article
-              className="rounded-lg border border-border bg-card p-4"
-              key={environment}
-            >
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <p className="font-medium">
-                    {t(`environment.${environment}`)}
-                  </p>
-                  <p className="text-muted-foreground text-xs">
-                    {integration?.accessTokenLast4
-                      ? t('tokenEnding', {
-                          last4: integration.accessTokenLast4,
-                        })
-                      : t('notConfigured')}
-                  </p>
-                </div>
-                <span className="inline-flex h-7 items-center gap-2 rounded-md border border-border px-2 text-xs">
-                  <ShieldCheck className="h-3.5 w-3.5" />
-                  {ready ? t('ready') : (integration?.status ?? t('pending'))}
-                </span>
-              </div>
-              <p className="mt-3 text-muted-foreground text-xs">
-                {integration?.polarProductId
-                  ? t('productReady', {
-                      productId: integration.polarProductId,
-                    })
-                  : t('productMissing')}
-              </p>
-              <p className="mt-2 inline-flex items-center gap-1.5 text-muted-foreground text-xs">
-                <Webhook className="h-3.5 w-3.5" />
-                {integration?.webhookSecretLast4
-                  ? t('webhookSecretEnding', {
-                      last4: integration.webhookSecretLast4,
-                    })
-                  : t('webhookNotConfigured')}
-              </p>
-              {integration?.lastError ? (
-                <p className="mt-3 rounded-md border border-destructive/20 bg-destructive/10 px-3 py-2 text-destructive text-xs">
-                  {integration.lastError}
-                </p>
-              ) : null}
-            </article>
-          );
-        })}
-      </div>
+      <PolarIntegrationStatusGrid integrations={data?.integrations ?? []} />
     </section>
   );
 }

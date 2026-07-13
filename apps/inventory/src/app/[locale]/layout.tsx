@@ -64,7 +64,7 @@ export default async function RootLayout({ children, params }: Props) {
           font.className
         )}
       >
-        <SerwistProvider>
+        <SerwistProvider register={false}>
           <VercelAnalytics />
           <VercelInsights />
           <Suspense>

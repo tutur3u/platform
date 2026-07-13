@@ -755,6 +755,13 @@ export type InventoryStorefrontAnalytics = {
 export type InventoryPolarProductSyncSummary = {
   listings: InventoryPolarSyncStatusCounts;
   bundles: InventoryPolarSyncStatusCounts;
+  items: Array<{
+    kind: 'listing' | 'bundle';
+    name: string;
+    polarProductId: string | null;
+    status: 'synced' | 'pending' | 'error' | 'disabled';
+    syncedAt: string | null;
+  }>;
   errors: Array<{
     kind: 'listing' | 'bundle';
     name: string;

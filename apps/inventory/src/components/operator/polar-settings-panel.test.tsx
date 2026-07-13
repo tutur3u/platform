@@ -20,9 +20,24 @@ vi.mock('@tuturuuu/internal-api/inventory', () => ({
 }));
 
 describe('PolarSettingsPanel', () => {
-  it('keeps the access token field inside the manage dialog', async () => {
+  it('renders saved settings read-only until the compact edit control is used', () => {
     const source = readFileSync(
       join(inventoryRoot, 'src/components/operator/polar-settings-panel.tsx'),
+      'utf8'
+    );
+
+    expect(source).toContain(
+      'const [isEditing, setIsEditing] = useState(false)'
+    );
+    expect(source).toContain("t('editSettings')");
+    expect(source).toContain('<CompactEditButton');
+    expect(source).toContain("t('readOnlyHint')");
+    expect(source).toContain('{isEditing ? (');
+  });
+
+  it('keeps the access token field inside the manage dialog', async () => {
+    const source = readFileSync(
+      join(inventoryRoot, 'src/components/operator/polar-token-dialog.tsx'),
       'utf8'
     );
     const dialogStart = source.indexOf('OperatorDialogContent');

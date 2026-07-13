@@ -1,6 +1,7 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Settings2 } from '@tuturuuu/icons';
 import {
   createInventorySquareDeviceCode,
   getInventorySquareSettings,
@@ -13,6 +14,7 @@ import {
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
+import { CompactEditButton } from './payment-read-only-fields';
 import { SquareCatalogSyncCard } from './square-catalog-sync-card';
 import { SquareProductionSetupGuide } from './square-production-setup-guide';
 import {
@@ -21,12 +23,14 @@ import {
   SquareTerminalCard,
   SquareWebhookCard,
 } from './square-settings-cards';
+import { SquareSettingsSummary } from './square-settings-summary';
 
 const environments: InventorySquareEnvironment[] = ['sandbox', 'production'];
 
 export function SquareSettingsPanel({ wsId }: { wsId: string }) {
   const t = useTranslations('inventory.operator.square');
   const queryClient = useQueryClient();
+  const [isEditing, setIsEditing] = useState(false);
   const [environment, setEnvironment] =
     useState<InventorySquareEnvironment | null>(null);
   const [accessToken, setAccessToken] = useState('');
@@ -183,73 +187,119 @@ export function SquareSettingsPanel({ wsId }: { wsId: string }) {
     (item) => item.environment === selectedEnvironment
   );
 
+  const stopEditing = () => {
+    setIsEditing(false);
+    setAccessToken('');
+    setApplicationId('');
+    setApplicationSecret('');
+    setOauthRedirectUrl('');
+    setWebhookNotificationUrl('');
+    setWebhookSignatureKey('');
+    setLocationId('');
+    setDeviceId('');
+    setSandboxDeviceId('');
+    setDeviceCodeName('');
+  };
+
   return (
     <section className="grid gap-5">
+      <div className="flex items-start justify-between gap-3 rounded-lg border border-border bg-card p-4">
+        <div className="flex min-w-0 items-start gap-3">
+          <span className="grid size-9 shrink-0 place-items-center rounded-md border border-border bg-primary/10 text-primary">
+            <Settings2 className="size-4" />
+          </span>
+          <div className="min-w-0">
+            <p className="font-semibold">{t('settingsTitle')}</p>
+            <p className="mt-1 text-muted-foreground text-sm">
+              {isEditing ? t('editingHint') : t('readOnlyHint')}
+            </p>
+          </div>
+        </div>
+        <CompactEditButton
+          editing={isEditing}
+          label={isEditing ? t('cancelEditing') : t('editSettings')}
+          onClick={() => (isEditing ? stopEditing() : setIsEditing(true))}
+        />
+      </div>
       <SquareProductionSetupGuide
         environment={selectedEnvironment}
         onEnvironmentChange={setEnvironment}
         settings={settings.data}
         webhookUrl={webhookUrl}
       />
-      <SquareAppCredentialsCard
+      <SquareSettingsSummary
         appCredential={activeAppCredential}
-        applicationId={applicationId}
-        applicationSecret={applicationSecret}
+        connection={activeConnection}
         environment={selectedEnvironment}
-        environmentOptions={environmentOptions}
-        oauthPending={oauthMutation.isPending}
-        oauthReady={oauthReady}
-        oauthRedirectUrl={oauthRedirectUrl}
-        onOAuth={() => oauthMutation.mutate()}
-        onSaveAppCredentials={() => appCredentialsMutation.mutate()}
-        saveAppCredentialsPending={appCredentialsMutation.isPending}
-        setApplicationId={setApplicationId}
-        setApplicationSecret={setApplicationSecret}
-        setEnvironment={setEnvironment}
-        setOauthRedirectUrl={setOauthRedirectUrl}
-        setWebhookNotificationUrl={setWebhookNotificationUrl}
-        webhookNotificationUrl={webhookNotificationUrl}
+        settings={settings.data}
       />
-      <SquareConnectionCard
-        accessToken={accessToken}
-        environmentLabel={t('selectedEnvironment', {
-          environment: t(`environment.${selectedEnvironment}`),
-        })}
-        onSaveToken={() => tokenMutation.mutate()}
-        saveTokenPending={tokenMutation.isPending}
-        setAccessToken={setAccessToken}
-        setWebhookSignatureKey={setWebhookSignatureKey}
-        webhookSignatureKey={webhookSignatureKey}
+      {isEditing ? (
+        <>
+          <SquareAppCredentialsCard
+            appCredential={activeAppCredential}
+            applicationId={applicationId}
+            applicationSecret={applicationSecret}
+            environment={selectedEnvironment}
+            environmentOptions={environmentOptions}
+            oauthPending={oauthMutation.isPending}
+            oauthReady={oauthReady}
+            oauthRedirectUrl={oauthRedirectUrl}
+            onOAuth={() => oauthMutation.mutate()}
+            onSaveAppCredentials={() => appCredentialsMutation.mutate()}
+            saveAppCredentialsPending={appCredentialsMutation.isPending}
+            setApplicationId={setApplicationId}
+            setApplicationSecret={setApplicationSecret}
+            setEnvironment={setEnvironment}
+            setOauthRedirectUrl={setOauthRedirectUrl}
+            setWebhookNotificationUrl={setWebhookNotificationUrl}
+            webhookNotificationUrl={webhookNotificationUrl}
+          />
+          <SquareConnectionCard
+            accessToken={accessToken}
+            environmentLabel={t('selectedEnvironment', {
+              environment: t(`environment.${selectedEnvironment}`),
+            })}
+            onSaveToken={() => tokenMutation.mutate()}
+            saveTokenPending={tokenMutation.isPending}
+            setAccessToken={setAccessToken}
+            setWebhookSignatureKey={setWebhookSignatureKey}
+            webhookSignatureKey={webhookSignatureKey}
+          />
+          <SquareTerminalCard
+            deviceCodeName={deviceCodeName}
+            deviceCodePending={deviceCodeMutation.isPending}
+            deviceId={deviceId}
+            deviceOptions={deviceOptions}
+            lastPairingCode={lastPairingCode}
+            locationId={locationId}
+            locationOptions={locationOptions}
+            onCreateDeviceCode={() => deviceCodeMutation.mutate()}
+            onSaveDefaults={() => defaultsMutation.mutate()}
+            sandboxDeviceId={sandboxDeviceId}
+            sandboxDevicePlaceholder={
+              settings.data?.sandboxDeviceId ?? 'device:sandbox'
+            }
+            saveDefaultsPending={defaultsMutation.isPending}
+            selectedDeviceId={settings.data?.deviceId ?? ''}
+            selectedDevicePlaceholder={
+              settings.data?.deviceName ?? t('devicePlaceholder')
+            }
+            selectedLocationId={settings.data?.locationId ?? ''}
+            selectedLocationPlaceholder={
+              settings.data?.locationName ?? t('locationPlaceholder')
+            }
+            setDeviceCodeName={setDeviceCodeName}
+            setDeviceId={setDeviceId}
+            setLocationId={setLocationId}
+            setSandboxDeviceId={setSandboxDeviceId}
+          />
+        </>
+      ) : null}
+      <SquareCatalogSyncCard
+        actionsEnabled={isEditing}
+        connected={hasReadyConnection}
+        wsId={wsId}
       />
-      <SquareTerminalCard
-        deviceCodeName={deviceCodeName}
-        deviceCodePending={deviceCodeMutation.isPending}
-        deviceId={deviceId}
-        deviceOptions={deviceOptions}
-        lastPairingCode={lastPairingCode}
-        locationId={locationId}
-        locationOptions={locationOptions}
-        onCreateDeviceCode={() => deviceCodeMutation.mutate()}
-        onSaveDefaults={() => defaultsMutation.mutate()}
-        sandboxDeviceId={sandboxDeviceId}
-        sandboxDevicePlaceholder={
-          settings.data?.sandboxDeviceId ?? 'device:sandbox'
-        }
-        saveDefaultsPending={defaultsMutation.isPending}
-        selectedDeviceId={settings.data?.deviceId ?? ''}
-        selectedDevicePlaceholder={
-          settings.data?.deviceName ?? t('devicePlaceholder')
-        }
-        selectedLocationId={settings.data?.locationId ?? ''}
-        selectedLocationPlaceholder={
-          settings.data?.locationName ?? t('locationPlaceholder')
-        }
-        setDeviceCodeName={setDeviceCodeName}
-        setDeviceId={setDeviceId}
-        setLocationId={setLocationId}
-        setSandboxDeviceId={setSandboxDeviceId}
-      />
-      <SquareCatalogSyncCard connected={hasReadyConnection} wsId={wsId} />
       <SquareWebhookCard
         readinessIssues={settings.data?.readiness.issues ?? []}
         tokenLast4={activeConnection?.accessTokenLast4 ?? null}

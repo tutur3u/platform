@@ -1762,9 +1762,11 @@
         "title": "One place for every way customers pay"
       },
       "polar": {
+        "cancelEditing": "Stop editing",
         "description": "Save workspace-owned Polar tokens and choose checkout environments for storefront orders.",
         "dialogDescription": "Paste the workspace-owned Polar organization token for one environment. The token is never shown in the page body.",
         "dialogTitle": "Manage Polar token",
+        "editSettings": "Edit Polar settings",
         "emptyEnvironments": "No environments found.",
         "environment": {
           "production": "Production",
@@ -1799,6 +1801,7 @@
         "productionDefault": "Production default",
         "productMissing": "Checkout product has not been created.",
         "productReady": "Product {productId}",
+        "readOnlyHint": "Settings are read-only until you choose edit.",
         "ready": "Ready",
         "saveDefaults": "Save defaults",
         "saveError": "Could not save Polar settings.",
@@ -1810,12 +1813,19 @@
           "bundles": "Bundles",
           "description": "Each listing and bundle is synced to a Polar product. Re-sync to converge rows created before Polar was connected or that errored.",
           "errorsTitle": "Recent sync errors",
+          "externalId": "Polar product {id}",
+          "itemsDescription": "These are storefront listings, not base catalog products. One product can appear in more than one storefront.",
+          "itemsEmpty": "No storefront listings are connected to Polar yet.",
+          "itemsTitle": "Synchronized storefront listings",
           "lastSynced": "Last synced",
           "listings": "Listings",
+          "loadError": "Sync details could not be loaded.",
           "never": "Never",
+          "noExternalId": "Waiting for a Polar product",
           "resync": "Re-sync now",
           "resyncDone": "Re-synced {count} products",
           "resyncing": "Re-syncing…",
+          "retry": "Retry",
           "status": {
             "disabled": "disabled",
             "error": "error",
@@ -1920,6 +1930,7 @@
         "applicationSecretLabel": "Application secret",
         "applicationSecretPlaceholder": "Square application secret",
         "appSecretEnding": "Application secret ending in {last4}",
+        "cancelEditing": "Stop editing",
         "connectOAuth": "Connect OAuth",
         "copyWebhook": "Copy URL",
         "createDeviceCode": "Create pairing code",
@@ -1929,6 +1940,8 @@
         "deviceCodeSuccess": "Pairing code created.",
         "deviceLabel": "Default terminal",
         "devicePlaceholder": "Choose a terminal",
+        "editingHint": "Editing is enabled. Review the environment before saving or synchronizing.",
+        "editSettings": "Edit Square settings",
         "environment": {
           "production": "Production",
           "sandbox": "Sandbox"
@@ -2003,6 +2016,7 @@
         "oauthRedirectPlaceholder": "Defaults to this app's Square OAuth callback URL",
         "oauthRequiresAppCredentials": "Save an application ID and secret before connecting OAuth.",
         "readiness": "Readiness: {issues}",
+        "readOnlyHint": "Connection details are read-only until you choose edit.",
         "ready": "ready",
         "sandboxDeviceLabel": "Sandbox device ID",
         "saveAppCredentials": "Save app credentials",
@@ -2012,6 +2026,10 @@
         "saveSuccess": "Square settings saved.",
         "saving": "Saving...",
         "selectedEnvironment": "Selected: {environment}",
+        "settingsTitle": "Square connection settings",
+        "summaryApplication": "Square application",
+        "summaryConnection": "Connection",
+        "summaryWebhook": "Webhook verification",
         "sync": {
           "actions": {
             "bidirectional": "Two-way sync",
@@ -2028,6 +2046,7 @@
           "confirmTitle": "Review catalog sync",
           "connectFirst": "Connect and validate this Square environment before syncing.",
           "description": "Keep products, variations, prices, and on-hand quantities aligned. Choose one direction or let Tuturuuu detect non-conflicting changes on both sides.",
+          "editToSync": "Choose the compact edit button above to enable catalog sync actions.",
           "error": "Square catalog sync failed.",
           "lastRun": "Last run {date}",
           "metrics": {
@@ -2057,7 +2076,9 @@
         "tokenPlaceholder": "Square access token",
         "webhookNotificationLabel": "Webhook notification URL",
         "webhookNotificationPlaceholder": "Defaults to the workspace Square webhook URL",
+        "webhookSignatureEnding": "Signature key ending in {last4}",
         "webhookSignatureLabel": "Webhook signature key",
+        "webhookSignatureMissing": "Signature key not set",
         "webhookSignaturePlaceholder": "Square webhook signature key",
         "webhookTitle": "Webhook ingestion",
         "webhookUrlPending": "Webhook URL will appear after settings load"

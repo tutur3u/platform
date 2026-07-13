@@ -713,6 +713,7 @@ export async function reconcileWorkspacePolarProducts(wsId: string): Promise<{
 type SyncStatusRow = {
   name: string;
   polar_last_error: string | null;
+  polar_product_id: string | null;
   polar_sync_status: string | null;
   polar_synced_at: string | null;
 };
@@ -733,19 +734,35 @@ export async function getInventoryPolarProductSyncSummary(
   const [listingRes, bundleRes] = await Promise.all([
     privateAdmin
       .from('inventory_storefront_listings' as never)
-      .select('title, polar_sync_status, polar_synced_at, polar_last_error')
+      .select(
+        'title, polar_product_id, polar_sync_status, polar_synced_at, polar_last_error'
+      )
       .eq('ws_id', wsId)
       .neq('status', 'archived'),
     privateAdmin
       .from('inventory_bundles' as never)
-      .select('name, polar_sync_status, polar_synced_at, polar_last_error')
+      .select(
+        'name, polar_product_id, polar_sync_status, polar_synced_at, polar_last_error'
+      )
       .eq('ws_id', wsId)
       .neq('status', 'archived'),
   ]);
 
+  if (listingRes.error) {
+    throw new Error(
+      listingRes.error.message ?? 'Failed to load Polar listing sync state'
+    );
+  }
+  if (bundleRes.error) {
+    throw new Error(
+      bundleRes.error.message ?? 'Failed to load Polar bundle sync state'
+    );
+  }
+
   const listings = emptyCounts();
   const bundles = emptyCounts();
   const errors: InventoryPolarProductSyncSummary['errors'] = [];
+  const items: InventoryPolarProductSyncSummary['items'] = [];
   let lastSyncedAt: string | null = null;
 
   const tally = (
@@ -755,19 +772,20 @@ export async function getInventoryPolarProductSyncSummary(
   ) => {
     for (const row of rows) {
       counts.total += 1;
-      const status = (row.polar_sync_status ?? 'pending') as
-        | 'synced'
-        | 'pending'
-        | 'error'
-        | 'disabled';
-      if (
-        status === 'synced' ||
-        status === 'pending' ||
-        status === 'error' ||
-        status === 'disabled'
-      ) {
-        counts[status] += 1;
-      }
+      const status =
+        row.polar_sync_status === 'synced' ||
+        row.polar_sync_status === 'error' ||
+        row.polar_sync_status === 'disabled'
+          ? row.polar_sync_status
+          : 'pending';
+      counts[status] += 1;
+      items.push({
+        kind,
+        name: row.name,
+        polarProductId: row.polar_product_id,
+        status,
+        syncedAt: row.polar_synced_at,
+      });
       if (
         row.polar_synced_at &&
         (!lastSyncedAt || row.polar_synced_at > lastSyncedAt)
@@ -790,6 +808,7 @@ export async function getInventoryPolarProductSyncSummary(
     ((listingRes.data ?? []) as Array<Record<string, unknown>>).map((r) => ({
       name: String(r.title ?? ''),
       polar_last_error: (r.polar_last_error as string | null) ?? null,
+      polar_product_id: (r.polar_product_id as string | null) ?? null,
       polar_sync_status: (r.polar_sync_status as string | null) ?? null,
       polar_synced_at: (r.polar_synced_at as string | null) ?? null,
     })),
@@ -800,11 +819,18 @@ export async function getInventoryPolarProductSyncSummary(
     ((bundleRes.data ?? []) as Array<Record<string, unknown>>).map((r) => ({
       name: String(r.name ?? ''),
       polar_last_error: (r.polar_last_error as string | null) ?? null,
+      polar_product_id: (r.polar_product_id as string | null) ?? null,
       polar_sync_status: (r.polar_sync_status as string | null) ?? null,
       polar_synced_at: (r.polar_synced_at as string | null) ?? null,
     })),
     'bundle'
   );
 
-  return { bundles, errors: errors.slice(0, 8), lastSyncedAt, listings };
+  return {
+    bundles,
+    errors: errors.slice(0, 8),
+    items,
+    lastSyncedAt,
+    listings,
+  };
 }
