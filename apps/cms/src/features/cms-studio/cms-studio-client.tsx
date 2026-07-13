@@ -45,6 +45,7 @@ import {
   getCmsCollectionPath,
   getCmsEntryPath,
   getCmsLibraryPath,
+  replaceCmsDialogHistoryPath,
 } from './cms-paths';
 import { CmsPreviewSection } from './cms-preview-section';
 import type { CmsStrings } from './cms-strings';
@@ -330,9 +331,9 @@ export function CmsStudioClient({
     );
     if (!entryStillExists) {
       setEditorEntryId(null);
-      router.replace(getCmsLibraryPath(pathname));
+      replaceCmsDialogHistoryPath(window.history, getCmsLibraryPath(pathname));
     }
-  }, [editorEntryId, entries, pathname, router]);
+  }, [editorEntryId, entries, pathname]);
 
   useEffect(() => {
     if (
@@ -480,12 +481,15 @@ export function CmsStudioClient({
   const openEntryEditor = (entryId: string) => {
     setSelectedEntryId(entryId);
     setEditorEntryId(entryId);
-    router.replace(getCmsEntryPath(pathname, entryId));
+    replaceCmsDialogHistoryPath(
+      window.history,
+      getCmsEntryPath(pathname, entryId)
+    );
   };
 
   const closeEntryEditor = () => {
     setEditorEntryId(null);
-    router.replace(getCmsLibraryPath(pathname));
+    replaceCmsDialogHistoryPath(window.history, getCmsLibraryPath(pathname));
   };
 
   const openQuickTaxonomy = (entryId: string) => {
@@ -1270,7 +1274,10 @@ export function CmsStudioClient({
           onEntryChange={(nextEntryId) => {
             setSelectedEntryId(nextEntryId);
             setEditorEntryId(nextEntryId);
-            router.replace(getCmsEntryPath(pathname, nextEntryId));
+            replaceCmsDialogHistoryPath(
+              window.history,
+              getCmsEntryPath(pathname, nextEntryId)
+            );
           }}
           onOpenChange={(open) => {
             if (!open) {

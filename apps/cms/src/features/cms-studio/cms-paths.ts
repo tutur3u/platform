@@ -43,6 +43,15 @@ export function getCmsEntryPath(pathname: string, entryId: string) {
   return `${getCmsActiveContentPath(pathname)}?entryId=${entryId}`;
 }
 
+type CmsDialogHistory = Pick<History, 'replaceState' | 'state'>;
+
+export function replaceCmsDialogHistoryPath(
+  history: CmsDialogHistory,
+  path: string
+) {
+  history.replaceState(history.state, '', path);
+}
+
 export function getCmsPreviewPath(pathname: string) {
   return `${getCmsWorkspaceBasePath(pathname)}/preview`;
 }
