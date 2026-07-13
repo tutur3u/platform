@@ -1,6 +1,5 @@
 'use client';
 
-import { Image as ImageIcon, Paperclip, Send, Trash2 } from '@tuturuuu/icons';
 import {
   copyMailDraftAttachments,
   createMailDraft,
@@ -12,16 +11,6 @@ import {
   updateMailDraft,
   uploadMailDraftAttachment,
 } from '@tuturuuu/internal-api';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@tuturuuu/ui/alert-dialog';
 import { Button } from '@tuturuuu/ui/button';
 import { Input } from '@tuturuuu/ui/input';
 import {
@@ -31,13 +20,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@tuturuuu/ui/select';
+import { toast } from '@tuturuuu/ui/sonner';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { MailComposerAi } from './mail-composer-ai';
 import { MailComposerAttachments } from './mail-composer-attachments';
+import { MailComposerCloseDialog } from './mail-composer-close-dialog';
 import { MailComposerEditor } from './mail-composer-editor';
+import { MailComposerFooter } from './mail-composer-footer';
 import { MailComposerHeader } from './mail-composer-header';
+import { MailComposerSendReview } from './mail-composer-send-review';
 import type {
   ComposeInitialDraft,
   MailComposerSaveState,
@@ -46,9 +38,10 @@ import {
   applyAiDraftToBody,
   buildComposerInitialBody,
   type ComposerWarning,
-  formatMailBytes,
+  getComposerCloseAction,
   getComposerWarnings,
   getSendableMailboxes,
+  mailHtmlToText,
 } from './mail-composer-utils';
 import { RecipientField } from './recipient-field';
 
@@ -93,6 +86,7 @@ export function FloatingComposer({
   const [minimized, setMinimized] = useState(false);
   const [maximized, setMaximized] = useState(false);
   const [discardOpen, setDiscardOpen] = useState(false);
+  const [aiOpen, setAiOpen] = useState(false);
   const [sendReviewOpen, setSendReviewOpen] = useState(false);
   const [sendWarnings, setSendWarnings] = useState<ComposerWarning[]>([]);
   const [saveState, setSaveState] = useState<MailComposerSaveState>('idle');
@@ -107,6 +101,7 @@ export function FloatingComposer({
   } | null>(null);
   const draftIdRef = useRef<string | null>(null);
   const dirtyVersionRef = useRef(0);
+  const failedSaveVersionRef = useRef<number | null>(null);
   const saveChainRef = useRef<Promise<string | null>>(Promise.resolve(null));
   const activeMailbox = sendableMailboxes.find(
     (mailbox) => mailbox.id === mailboxId
@@ -127,6 +122,7 @@ export function FloatingComposer({
     setBodyText(initialBody.text);
     setDraftId(null);
     draftIdRef.current = null;
+    failedSaveVersionRef.current = null;
     setAttachments([]);
     setPendingAttachmentCopy(
       initialDraft?.sourceMessageId && initialDraft.sourceAttachmentIds?.length
@@ -138,6 +134,7 @@ export function FloatingComposer({
     );
     setSaveState('idle');
     setSendReviewOpen(false);
+    setAiOpen(false);
     setSendWarnings([]);
     setDirty(Boolean(initialDraft));
     dirtyVersionRef.current = initialDraft ? 1 : 0;
@@ -205,10 +202,14 @@ export function FloatingComposer({
           draftIdRef.current = response.message.id;
           setDraftId(response.message.id);
           setSaveState('saved');
+          if (failedSaveVersionRef.current === savingVersion) {
+            failedSaveVersionRef.current = null;
+          }
           if (dirtyVersionRef.current === savingVersion) setDirty(false);
           return response.message.id;
         })
         .catch(() => {
+          failedSaveVersionRef.current = savingVersion;
           setSaveState('failed');
           return draftIdRef.current;
         });
@@ -348,13 +349,50 @@ export function FloatingComposer({
     await performSend();
   };
 
-  const saveAndClose = async () => {
+  const saveAndClose = () => {
     if (!online) {
       setSaveState('offline');
       return;
     }
-    await persist(snapshot, true);
+    const closingVersion = dirtyVersionRef.current;
+    setDiscardOpen(false);
     onOpenChange(false);
+    void persist(snapshot, true).then((savedDraftId) => {
+      if (!savedDraftId || failedSaveVersionRef.current === closingVersion) {
+        toast.error(t('save_failed'));
+      }
+    });
+  };
+
+  const discardAndClose = () => {
+    const currentDraftId = draftIdRef.current;
+    setDiscardOpen(false);
+    onOpenChange(false);
+    if (!currentDraftId) return;
+    void deleteMailDraft(workspaceId, mailboxId, currentDraftId).catch(
+      (error) =>
+        toast.error(
+          error instanceof Error ? error.message : t('delete_draft_failed')
+        )
+    );
+  };
+
+  const requestClose = () => {
+    if (getComposerCloseAction(minimized) === 'minimize') {
+      setMaximized(false);
+      setMinimized(true);
+      setAiOpen(false);
+      return;
+    }
+    setDiscardOpen(true);
+  };
+
+  const toggleComposerSize = () => {
+    if (minimized) {
+      setMinimized(false);
+      return;
+    }
+    setMaximized((current) => !current);
   };
 
   return (
@@ -362,10 +400,10 @@ export function FloatingComposer({
       <section
         aria-label={t('new_message')}
         className={cn(
-          'fixed z-50 flex flex-col overflow-hidden border border-dynamic bg-background shadow-2xl max-md:inset-0 md:right-5 md:bottom-5 md:rounded-2xl',
+          'fixed z-50 flex flex-col overflow-hidden border border-dynamic bg-background shadow-2xl',
           minimized
-            ? 'h-14 md:w-[28rem]'
-            : 'h-[min(78vh,48rem)] w-[min(46rem,calc(100vw-2.5rem))] resize md:min-h-[28rem] md:min-w-[28rem]',
+            ? 'right-0 bottom-0 left-0 h-14 md:right-5 md:bottom-5 md:left-auto md:w-[28rem] md:rounded-2xl'
+            : 'inset-0 h-dvh w-full md:inset-auto md:right-5 md:bottom-5 md:h-[min(78vh,48rem)] md:min-h-[28rem] md:w-[min(46rem,calc(100vw-2.5rem))] md:min-w-[28rem] md:resize md:rounded-2xl',
           maximized && 'inset-3 h-auto w-auto resize-none md:rounded-2xl'
         )}
         onDrop={(event) => {
@@ -391,7 +429,18 @@ export function FloatingComposer({
             event.preventDefault();
             void requestSend();
           }
-          if (event.key === 'Escape') setMinimized(true);
+          if (
+            event.key.toLowerCase() === 'j' &&
+            (event.metaKey || event.ctrlKey)
+          ) {
+            event.preventDefault();
+            setMinimized(false);
+            setAiOpen((current) => !current);
+          }
+          if (event.key === 'Escape') {
+            event.preventDefault();
+            requestClose();
+          }
         }}
         onPaste={(event) => {
           const files = event.clipboardData.files;
@@ -418,19 +467,11 @@ export function FloatingComposer({
           minimized={minimized}
           minimizeLabel={t('minimize')}
           newMessageLabel={t('new_message')}
-          onClose={() => void saveAndClose()}
-          onMaximize={() => {
-            setMinimized(false);
-            setMaximized(!maximized);
-          }}
-          onMinimize={() => {
-            setMaximized(false);
-            setMinimized(!minimized);
-          }}
+          onRequestClose={requestClose}
+          onToggleSize={toggleComposerSize}
           restoreLabel={t('restore')}
           saveLabel={t(`save_${saveState}`)}
           subject={subject}
-          windowOptionsLabel={t('composer_window_options')}
         />
 
         {!minimized ? (
@@ -566,131 +607,64 @@ export function FloatingComposer({
               }}
               removeLabel={t('remove_attachment')}
             />
-            <footer className="flex items-center gap-2 border-dynamic border-t px-3 py-2.5">
-              <Button
-                disabled={!canSend || sending}
-                onClick={() => void requestSend()}
-              >
-                <Send className="size-4" /> {sending ? t('sending') : t('send')}
-              </Button>
-              <MailComposerAi
-                bodyHtml={bodyHtml}
-                bodyText={bodyText}
-                mailboxId={mailboxId}
-                onApply={(result) => {
-                  setSubject(result.subject);
-                  setBodyHtml(applyAiDraftToBody(bodyHtml, result.content));
-                  setBodyText(result.content);
-                  markDirty();
-                }}
-                recipients={combinedRecipients}
-                subject={subject}
-                threadId={initialDraft?.threadId}
-                workspaceId={workspaceId}
-              />
-              <label className="inline-flex cursor-pointer">
-                <input
-                  aria-label={t('attach_files')}
-                  className="sr-only"
-                  multiple
-                  onChange={(event) =>
-                    event.target.files && void uploadFiles(event.target.files)
-                  }
-                  type="file"
-                />
-                <Button asChild size="icon" variant="ghost">
-                  <span>
-                    <Paperclip className="size-4" />
-                  </span>
-                </Button>
-              </label>
-              <label className="inline-flex cursor-pointer">
-                <input
-                  accept="image/*"
-                  aria-label={t('insert_images')}
-                  className="sr-only"
-                  multiple
-                  onChange={(event) =>
-                    event.target.files &&
-                    void uploadFiles(event.target.files, true)
-                  }
-                  type="file"
-                />
-                <Button asChild size="icon" variant="ghost">
-                  <span>
-                    <ImageIcon className="size-4" />
-                  </span>
-                </Button>
-              </label>
-              <span className="ml-auto text-muted-foreground text-xs tabular-nums">
-                {combinedRecipients.length}/{recipientLimit} ·{' '}
-                {formatMailBytes(estimatedBytes)}/
-                {formatMailBytes(messageLimit)}
-                {uploading ? ` · ${t('uploading')}` : ''}
-              </span>
-              <Button
-                aria-label={t('discard')}
-                onClick={() => setDiscardOpen(true)}
-                size="icon"
-                variant="ghost"
-              >
-                <Trash2 className="size-4" />
-              </Button>
-            </footer>
+            <MailComposerFooter
+              aiOpen={aiOpen}
+              bodyHtml={bodyHtml}
+              bodyText={bodyText}
+              canSend={canSend}
+              estimatedBytes={estimatedBytes}
+              mailboxId={mailboxId}
+              messageLimit={messageLimit}
+              onAiApply={(result) => {
+                const nextBodyHtml = applyAiDraftToBody(
+                  bodyHtml,
+                  result.content
+                );
+                setSubject(result.subject);
+                setBodyHtml(nextBodyHtml);
+                setBodyText(mailHtmlToText(nextBodyHtml));
+                markDirty();
+              }}
+              onAiOpenChange={setAiOpen}
+              onDiscard={() => setDiscardOpen(true)}
+              onSend={() => void requestSend()}
+              onUpload={(files, inline) => void uploadFiles(files, inline)}
+              recipientLimit={recipientLimit}
+              recipients={combinedRecipients}
+              sending={sending}
+              subject={subject}
+              threadId={initialDraft?.threadId}
+              uploading={uploading}
+              workspaceId={workspaceId}
+            />
           </>
         ) : null}
       </section>
 
-      <AlertDialog onOpenChange={setDiscardOpen} open={discardOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>{t('discard_draft')}</AlertDialogTitle>
-            <AlertDialogDescription>
-              {t('discard_draft_description')}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>{t('keep_draft')}</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={async () => {
-                const current = draftIdRef.current;
-                if (current)
-                  await deleteMailDraft(workspaceId, mailboxId, current);
-                onOpenChange(false);
-              }}
-            >
-              {t('discard')}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <MailComposerCloseDialog
+        cancelLabel={t('cancel')}
+        description={t('close_draft_description')}
+        discardLabel={t('discard')}
+        onDiscard={discardAndClose}
+        onOpenChange={setDiscardOpen}
+        onSave={saveAndClose}
+        open={discardOpen}
+        saveDisabled={!online}
+        saveLabel={t('save')}
+        title={t('close_draft')}
+      />
 
-      <AlertDialog onOpenChange={setSendReviewOpen} open={sendReviewOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>{t('review_before_sending')}</AlertDialogTitle>
-            <AlertDialogDescription>
-              {t('review_before_sending_description')}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <ul className="space-y-2 rounded-xl bg-foreground/[0.04] p-3 text-sm">
-            {sendWarnings.map((warning) => (
-              <li className="flex gap-2" key={warning}>
-                <span aria-hidden="true" className="text-muted-foreground">
-                  &bull;
-                </span>
-                {t(`warning_${warning}`)}
-              </li>
-            ))}
-          </ul>
-          <AlertDialogFooter>
-            <AlertDialogCancel>{t('continue_editing')}</AlertDialogCancel>
-            <AlertDialogAction onClick={() => void performSend()}>
-              {t('send_anyway')}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <MailComposerSendReview
+        cancelLabel={t('continue_editing')}
+        description={t('review_before_sending_description')}
+        onConfirm={() => void performSend()}
+        onOpenChange={setSendReviewOpen}
+        open={sendReviewOpen}
+        sendLabel={t('send_anyway')}
+        title={t('review_before_sending')}
+        warningLabel={(warning) => t(`warning_${warning}`)}
+        warnings={sendWarnings}
+      />
     </>
   );
 }

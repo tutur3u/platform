@@ -3,7 +3,9 @@ import { describe, expect, it } from 'vitest';
 import {
   applyAiDraftToBody,
   buildComposerInitialBody,
+  getComposerCloseAction,
   getComposerWarnings,
+  mailHtmlToText,
 } from './mail-composer-utils';
 
 const mailbox = {
@@ -34,6 +36,13 @@ describe('buildComposerInitialBody', () => {
   });
 });
 
+describe('getComposerCloseAction', () => {
+  it('minimizes first and confirms closure from the minimized state', () => {
+    expect(getComposerCloseAction(false)).toBe('minimize');
+    expect(getComposerCloseAction(true)).toBe('confirm');
+  });
+});
+
 describe('applyAiDraftToBody', () => {
   it('preserves the editable signature and quoted thread context', () => {
     const existing =
@@ -45,6 +54,8 @@ describe('applyAiDraftToBody', () => {
     expect(result).toContain('data-mail-signature="true"');
     expect(result).toContain('<blockquote><p>Earlier</p></blockquote>');
     expect(result).not.toContain('Old draft');
+    expect(mailHtmlToText(result)).toContain('Phúc');
+    expect(mailHtmlToText(result)).toContain('Earlier');
   });
 });
 

@@ -5,6 +5,7 @@ import type {
   MailMailboxRole,
   MailRouteContext,
 } from '../types';
+import { queryMailMessageRows } from './search';
 import {
   type AnyRecord,
   ensureSystemLabels,
@@ -16,6 +17,36 @@ import {
   toLabel,
   toMailbox,
 } from './shared';
+
+type MailMessageRowsQuery = typeof queryMailMessageRows;
+
+export async function getUnreadInboxCounts(
+  admin: AnyRecord,
+  mailboxIds: string[],
+  userId: string,
+  queryRows: MailMessageRowsQuery = queryMailMessageRows
+) {
+  const totals = await Promise.all(
+    mailboxIds.map(async (mailboxId) => ({
+      mailboxId,
+      total: (
+        await queryRows({
+          admin,
+          mailboxId,
+          params: {
+            folder: 'inbox',
+            page: 1,
+            pageSize: 1,
+            query: 'is:unread',
+          },
+          userId,
+        })
+      ).total,
+    }))
+  );
+
+  return new Map(totals.map(({ mailboxId, total }) => [mailboxId, total]));
+}
 
 async function ensurePersonalMailbox(ctx: MailRouteContext) {
   const admin = await getAdminClient();
@@ -173,25 +204,11 @@ export async function getMailBootstrap(
   const roleByMailboxId = new Map<string, MailMailboxRole>(
     (memberRows ?? []).map((row: AnyRecord) => [row.mailbox_id, row.role])
   );
-  const { data: threadRows, error: threadError } = await privateTable(
+  const unreadByMailbox = await getUnreadInboxCounts(
     admin,
-    'mail_threads'
-  )
-    .select('mailbox_id,unread_count')
-    .in('mailbox_id', mailboxIds);
-  if (threadError) {
-    throw new Error(
-      `Failed to load mailbox unread counts: ${threadError.message}`
-    );
-  }
-  const unreadByMailbox = new Map<string, number>();
-  for (const thread of threadRows ?? []) {
-    unreadByMailbox.set(
-      thread.mailbox_id,
-      (unreadByMailbox.get(thread.mailbox_id) ?? 0) +
-        Number(thread.unread_count ?? 0)
-    );
-  }
+    mailboxIds,
+    ctx.user.id
+  );
   const personalDisplayNames = await getCanonicalUserDisplayNames(
     admin,
     (mailboxRows ?? [])
