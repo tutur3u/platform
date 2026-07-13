@@ -1,5 +1,29 @@
 # Changelog
 
+## [0.4.0](https://github.com/tutur3u/platform/compare/contacts-v0.3.0...contacts-v0.4.0) (2026-07-13)
+
+
+### Features
+
+* **contacts:** reconcile managers and harden attendance ([9f0d302](https://github.com/tutur3u/platform/commit/9f0d30291f96bd22429622ea7a477d12a5678db9))
+* **contacts:** serve notifications locally ([0fd7a89](https://github.com/tutur3u/platform/commit/0fd7a89f8bf15e6cd8146382d5b659cceed84751))
+* **platform:** complete satellite app cutover ([b9ac2ef](https://github.com/tutur3u/platform/commit/b9ac2ef8be678a42c1f09f3bef1a05750dc2cba3))
+
+
+### Bug Fixes
+
+* **contacts:** authenticate users database requests ([54ddc74](https://github.com/tutur3u/platform/commit/54ddc741b9833ca835ce13adabb196aabff78fb8))
+* **contacts:** complete CRM translations ([0a9ba1c](https://github.com/tutur3u/platform/commit/0a9ba1c12a32238380be1ae38d896f229fdd8b56))
+* **contacts:** complete database translations ([d20b991](https://github.com/tutur3u/platform/commit/d20b991e01a4072659f1987ebb5fd960dc6708cf))
+* **contacts:** complete report translations ([61c77f0](https://github.com/tutur3u/platform/commit/61c77f07c4b7d069388cf231df0bf605579636e3))
+* **contacts:** consolidate manager profiles ([69529a3](https://github.com/tutur3u/platform/commit/69529a30cb276ea31d7fa191a823bb9949751058))
+* **contacts:** load group metrics and calendar ([8f3d310](https://github.com/tutur3u/platform/commit/8f3d3106aa3aec64c935c2ad8e1dc0135d9f4bd8))
+* **contacts:** own settings and profile APIs ([d809fe0](https://github.com/tutur3u/platform/commit/d809fe00699f7837b1ac829e5f8b92491e5f822c))
+* **contacts:** own workspace user mutations ([21ab1fb](https://github.com/tutur3u/platform/commit/21ab1fbbf5cf6e2a06274dbfba2616aac1f0e481))
+* **contacts:** restore group and report operations ([8760868](https://github.com/tutur3u/platform/commit/8760868f3b5a721b0e2712a964fb5ec71ec14048))
+* **contacts:** restore group post mutations ([fe621e4](https://github.com/tutur3u/platform/commit/fe621e4d7e4126f705082cc3e815aafdeebe535a))
+* **platform:** address attendance and invoice feedback ([8d2a537](https://github.com/tutur3u/platform/commit/8d2a53782d01427839607c7b0d90eaa3ecc5a1d8))
+
 ## [0.3.0](https://github.com/tutur3u/platform/compare/contacts-v0.2.0...contacts-v0.3.0) (2026-07-11)
 
 

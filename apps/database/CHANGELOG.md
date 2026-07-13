@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.17.0](https://github.com/tutur3u/platform/compare/database-v1.16.0...database-v1.17.0) (2026-07-13)
+
+
+### Features
+
+* **mail:** add smart labels and assisted composing ([8ccd2fa](https://github.com/tutur3u/platform/commit/8ccd2fac0dcf4c67f6eff062dc52e3fc01a2c6ef))
+
+
+### Bug Fixes
+
+* **contacts:** authorize attendance and consolidate manager links ([a11d06d](https://github.com/tutur3u/platform/commit/a11d06db3fc26216f9e39f12fdf0ce7fc089fc70))
+* **database:** link managers when membership arrives ([04691ce](https://github.com/tutur3u/platform/commit/04691cefac1d4338b6676e04746ec3ce487ad5b9))
+* **finance:** make pending invoice RPCs server-only ([8c73298](https://github.com/tutur3u/platform/commit/8c73298dbcc48ce696cc9857ce43eb2529891095))
+* **platform:** address attendance and invoice feedback ([8d2a537](https://github.com/tutur3u/platform/commit/8d2a53782d01427839607c7b0d90eaa3ecc5a1d8))
+
 ## [1.16.0](https://github.com/tutur3u/platform/compare/database-v1.15.0...database-v1.16.0) (2026-07-11)
 
 

@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.17.0](https://github.com/tutur3u/platform/compare/cms-v0.16.0...cms-v0.17.0) (2026-07-13)
+
+
+### Features
+
+* **contacts:** reconcile managers and harden attendance ([9f0d302](https://github.com/tutur3u/platform/commit/9f0d30291f96bd22429622ea7a477d12a5678db9))
+* **platform:** complete satellite app cutover ([b9ac2ef](https://github.com/tutur3u/platform/commit/b9ac2ef8be678a42c1f09f3bef1a05750dc2cba3))
+
+
+### Bug Fixes
+
+* **cms:** preserve entry dialog navigation state ([21f13c7](https://github.com/tutur3u/platform/commit/21f13c7317d10293a833b7bce2f55bff56d25dc5))
+
 ## [0.16.0](https://github.com/tutur3u/platform/compare/cms-v0.15.0...cms-v0.16.0) (2026-07-11)
 
 

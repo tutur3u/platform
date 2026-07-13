@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.9.1](https://github.com/tutur3u/platform/compare/apis-v0.9.0...apis-v0.9.1) (2026-07-13)
+
+
+### Bug Fixes
+
+* **tasks:** restore satellite bulk mutations ([d0282a4](https://github.com/tutur3u/platform/commit/d0282a4c84aea6f86749725ed5b3fdf50ad5654d))
+
 ## [0.9.0](https://github.com/tutur3u/platform/compare/apis-v0.8.0...apis-v0.9.0) (2026-07-11)
 
 

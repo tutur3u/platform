@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.0](https://github.com/tutur3u/platform/compare/pay-v0.3.0...pay-v0.4.0) (2026-07-13)
+
+
+### Features
+
+* **platform:** complete satellite app cutover ([b9ac2ef](https://github.com/tutur3u/platform/commit/b9ac2ef8be678a42c1f09f3bef1a05750dc2cba3))
+
 ## [0.3.0](https://github.com/tutur3u/platform/compare/pay-v0.2.0...pay-v0.3.0) (2026-07-11)
 
 

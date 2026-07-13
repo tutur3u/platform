@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.0](https://github.com/tutur3u/platform/compare/tools-v0.5.0...tools-v0.6.0) (2026-07-13)
+
+
+### Features
+
+* **platform:** complete satellite app cutover ([b9ac2ef](https://github.com/tutur3u/platform/commit/b9ac2ef8be678a42c1f09f3bef1a05750dc2cba3))
+
 ## [0.5.0](https://github.com/tutur3u/platform/compare/tools-v0.4.0...tools-v0.5.0) (2026-07-11)
 
 

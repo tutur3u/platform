@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.0](https://github.com/tutur3u/platform/compare/shortener-v0.6.0...shortener-v0.7.0) (2026-07-13)
+
+
+### Features
+
+* **platform:** complete satellite app cutover ([b9ac2ef](https://github.com/tutur3u/platform/commit/b9ac2ef8be678a42c1f09f3bef1a05750dc2cba3))
+
 ## [0.6.0](https://github.com/tutur3u/platform/compare/shortener-v0.5.0...shortener-v0.6.0) (2026-07-11)
 
 

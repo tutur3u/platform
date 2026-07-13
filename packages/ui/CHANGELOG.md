@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.17.0](https://github.com/tutur3u/platform/compare/ui-v0.16.0...ui-v0.17.0) (2026-07-13)
+
+
+### Features
+
+* **storefront:** refine the buyer experience ([45d0e76](https://github.com/tutur3u/platform/commit/45d0e763ff2adc858aa7c76024eb4554879b3977))
+* **tasks:** promote progress tracking workspace ([058503a](https://github.com/tutur3u/platform/commit/058503a96c8df10725ecd3f88738d574760fc944))
+
+
+### Bug Fixes
+
+* **platform:** address attendance and invoice feedback ([8d2a537](https://github.com/tutur3u/platform/commit/8d2a53782d01427839607c7b0d90eaa3ecc5a1d8))
+
+
+### Performance Improvements
+
+* **web:** reduce dashboard request overhead ([93f4b2b](https://github.com/tutur3u/platform/commit/93f4b2b354286b33c5cf8ff9ee0e54a31b18a022))
+
 ## [0.16.0](https://github.com/tutur3u/platform/compare/ui-v0.15.0...ui-v0.16.0) (2026-07-11)
 
 

@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.10.0](https://github.com/tutur3u/platform/compare/tanstack-web-v0.9.0...tanstack-web-v0.10.0) (2026-07-13)
+
+
+### Features
+
+* **platform:** complete satellite app cutover ([b9ac2ef](https://github.com/tutur3u/platform/commit/b9ac2ef8be678a42c1f09f3bef1a05750dc2cba3))
+
+
+### Bug Fixes
+
+* **ci:** align E2E with satellite routes ([1a26853](https://github.com/tutur3u/platform/commit/1a268536e3a2858c9575bc9d327837b72f06f49e))
+
+
+### Performance Improvements
+
+* **web:** reduce dashboard request overhead ([93f4b2b](https://github.com/tutur3u/platform/commit/93f4b2b354286b33c5cf8ff9ee0e54a31b18a022))
+
 ## [0.9.0](https://github.com/tutur3u/platform/compare/tanstack-web-v0.8.0...tanstack-web-v0.9.0) (2026-07-11)
 
 

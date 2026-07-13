@@ -1,5 +1,72 @@
 # Changelog
 
+## [0.22.0](https://github.com/tutur3u/platform/compare/platform-v0.21.0...platform-v0.22.0) (2026-07-13)
+
+
+### Features
+
+* **contacts:** reconcile managers and harden attendance ([9f0d302](https://github.com/tutur3u/platform/commit/9f0d30291f96bd22429622ea7a477d12a5678db9))
+* **contacts:** serve notifications locally ([0fd7a89](https://github.com/tutur3u/platform/commit/0fd7a89f8bf15e6cd8146382d5b659cceed84751))
+* **education:** align teach and learn navigation ([48896cd](https://github.com/tutur3u/platform/commit/48896cd9eaee11a8efae58f46901f2c60d7cf637))
+* implement AI-assisted feedback generation for student quiz submissions ([e347a46](https://github.com/tutur3u/platform/commit/e347a46ff86769c33a5312e2d5ea606c17d3e1a5))
+* improve vocabulary details ([#4958](https://github.com/tutur3u/platform/issues/4958)) ([9e01bd1](https://github.com/tutur3u/platform/commit/9e01bd1e9017a4341487d1e9582e17c27a1a4404))
+* **inventory:** add guided Square POS setup ([4f0560a](https://github.com/tutur3u/platform/commit/4f0560a9ba9c0f9f87a0bc2ff27dafbc8e42621c))
+* **mail:** add smart labels and assisted composing ([8ccd2fa](https://github.com/tutur3u/platform/commit/8ccd2fac0dcf4c67f6eff062dc52e3fc01a2c6ef))
+* migrate vocabulary details and suggestions from OED to Laban Dictionary ([0f549c2](https://github.com/tutur3u/platform/commit/0f549c2767c0082fff733e0fe747c2681c50c2db))
+* **platform:** complete satellite app cutover ([b9ac2ef](https://github.com/tutur3u/platform/commit/b9ac2ef8be678a42c1f09f3bef1a05750dc2cba3))
+* **storefront:** refine the buyer experience ([45d0e76](https://github.com/tutur3u/platform/commit/45d0e763ff2adc858aa7c76024eb4554879b3977))
+* **tasks:** promote progress tracking workspace ([058503a](https://github.com/tutur3u/platform/commit/058503a96c8df10725ecd3f88738d574760fc944))
+
+
+### Bug Fixes
+
+* **ci:** align E2E with satellite routes ([1a26853](https://github.com/tutur3u/platform/commit/1a268536e3a2858c9575bc9d327837b72f06f49e))
+* **ci:** preserve package release metadata ([a30c029](https://github.com/tutur3u/platform/commit/a30c0296c55af5990507c0ece586ff5e22d92fef))
+* **ci:** stabilize E2E caching ([18edc81](https://github.com/tutur3u/platform/commit/18edc813bc38efca5ceb51be6434e0ee1a0a7f63))
+* **cms:** accept compressed sync manifests ([#4959](https://github.com/tutur3u/platform/issues/4959)) ([bc77d84](https://github.com/tutur3u/platform/commit/bc77d84a65e51bd3b2d110b6d6dc880bb5440e4d))
+* **cms:** batch large project queries ([#4960](https://github.com/tutur3u/platform/issues/4960)) ([c71e58b](https://github.com/tutur3u/platform/commit/c71e58b4b68c9fd2fdb5a00ef6fed8e627e4e719))
+* **cms:** canonicalize sync schemas ([#4963](https://github.com/tutur3u/platform/issues/4963)) ([17fa553](https://github.com/tutur3u/platform/commit/17fa5530adc9e9efc70573731eae8325138da4a6))
+* **cms:** paginate external project snapshots ([#4962](https://github.com/tutur3u/platform/issues/4962)) ([1d3a253](https://github.com/tutur3u/platform/commit/1d3a253b62633f2bef5c7dc967cd8edb8c93417d))
+* **cms:** preserve entry dialog navigation state ([21f13c7](https://github.com/tutur3u/platform/commit/21f13c7317d10293a833b7bce2f55bff56d25dc5))
+* **cms:** reconcile legacy slug identities ([#4961](https://github.com/tutur3u/platform/issues/4961)) ([0499cb4](https://github.com/tutur3u/platform/commit/0499cb4b341e32556e267c8d3e2c3378205be728))
+* **contacts:** authenticate users database requests ([54ddc74](https://github.com/tutur3u/platform/commit/54ddc741b9833ca835ce13adabb196aabff78fb8))
+* **contacts:** authorize attendance and consolidate manager links ([a11d06d](https://github.com/tutur3u/platform/commit/a11d06db3fc26216f9e39f12fdf0ce7fc089fc70))
+* **contacts:** complete CRM translations ([0a9ba1c](https://github.com/tutur3u/platform/commit/0a9ba1c12a32238380be1ae38d896f229fdd8b56))
+* **contacts:** complete database translations ([d20b991](https://github.com/tutur3u/platform/commit/d20b991e01a4072659f1987ebb5fd960dc6708cf))
+* **contacts:** complete report translations ([61c77f0](https://github.com/tutur3u/platform/commit/61c77f07c4b7d069388cf231df0bf605579636e3))
+* **contacts:** consolidate manager profiles ([69529a3](https://github.com/tutur3u/platform/commit/69529a30cb276ea31d7fa191a823bb9949751058))
+* **contacts:** load group metrics and calendar ([8f3d310](https://github.com/tutur3u/platform/commit/8f3d3106aa3aec64c935c2ad8e1dc0135d9f4bd8))
+* **contacts:** own settings and profile APIs ([d809fe0](https://github.com/tutur3u/platform/commit/d809fe00699f7837b1ac829e5f8b92491e5f822c))
+* **contacts:** own workspace user mutations ([21ab1fb](https://github.com/tutur3u/platform/commit/21ab1fbbf5cf6e2a06274dbfba2616aac1f0e481))
+* **contacts:** resolve group API app sessions locally ([30a8917](https://github.com/tutur3u/platform/commit/30a8917c1d2cfd6ddccbbbb44ccad8c9199fef33))
+* **contacts:** restore group and report operations ([8760868](https://github.com/tutur3u/platform/commit/8760868f3b5a721b0e2712a964fb5ec71ec14048))
+* **contacts:** restore group post mutations ([fe621e4](https://github.com/tutur3u/platform/commit/fe621e4d7e4126f705082cc3e815aafdeebe535a))
+* **database:** link managers when membership arrives ([04691ce](https://github.com/tutur3u/platform/commit/04691cefac1d4338b6676e04746ec3ce487ad5b9))
+* **finance:** add overview net total translation ([5e2059b](https://github.com/tutur3u/platform/commit/5e2059b17b8dbf80618ca821ef8771b1dba960a8))
+* **finance:** keep server API calls on finance origin ([ca6248a](https://github.com/tutur3u/platform/commit/ca6248a224491c3df554310956102cc1fb5bb186))
+* **finance:** make pending invoice RPCs server-only ([8c73298](https://github.com/tutur3u/platform/commit/8c73298dbcc48ce696cc9857ce43eb2529891095))
+* **finance:** restore invoice creation dependencies ([653d5cb](https://github.com/tutur3u/platform/commit/653d5cb2c9761884e662e76577aef2ecfb597663))
+* **finance:** restore invoice promotions ([00f7030](https://github.com/tutur3u/platform/commit/00f70308de8465077f729fc44b4d1f0ff1e41bff))
+* **meet:** authorize workspace app sessions ([4a4f8b7](https://github.com/tutur3u/platform/commit/4a4f8b75b386926691e61645d631425e9d9b5f39))
+* **meet:** resolve personal workspace invites by actor ([1fab56d](https://github.com/tutur3u/platform/commit/1fab56d1edc3dae4245ec32d0d72e739a365235b))
+* **platform:** address attendance and invoice feedback ([8d2a537](https://github.com/tutur3u/platform/commit/8d2a53782d01427839607c7b0d90eaa3ecc5a1d8))
+* **security:** prevent clickjacking across apps ([c8ed36e](https://github.com/tutur3u/platform/commit/c8ed36e708c08ebe3b17ee7f6249513644108c48))
+* **storefront:** route inventory requests correctly ([d924e8f](https://github.com/tutur3u/platform/commit/d924e8fd02c85cbd7637340191b5173a5079e2dd))
+* **tasks:** restore satellite bulk mutations ([d0282a4](https://github.com/tutur3u/platform/commit/d0282a4c84aea6f86749725ed5b3fdf50ad5654d))
+* **teach:** address final AI review feedback ([05fc697](https://github.com/tutur3u/platform/commit/05fc697e951d2c66f8661ba9d47cafbabd9aba37))
+* **teach:** address vocabulary review feedback ([4efa1a8](https://github.com/tutur3u/platform/commit/4efa1a8037038f5fc3ba018e8ef4e3a128021b54))
+* **teach:** harden AI feedback concurrency ([f470e6e](https://github.com/tutur3u/platform/commit/f470e6e415603e850b34b09fffb9516ea45d40a2))
+* **teach:** preserve saved vocabulary feedback ([976fd2c](https://github.com/tutur3u/platform/commit/976fd2c8f3e42bfd61b979e58ffe0039b7c90901))
+
+
+### Performance Improvements
+
+* **ci:** prepare E2E images before allocating shards ([c109484](https://github.com/tutur3u/platform/commit/c10948463c864d3c4fc88aca1d0f1c25f268433b))
+* **ci:** retain E2E registry layers ([c6fcc55](https://github.com/tutur3u/platform/commit/c6fcc55c75935534bb6c70fc2850b33db5b7dbf3))
+* **ci:** reuse E2E Docker images across shards ([5329dbf](https://github.com/tutur3u/platform/commit/5329dbf21efcb12458e26e4d0a31fb8385e98be7))
+* **ci:** streamline E2E image caching ([21d8c85](https://github.com/tutur3u/platform/commit/21d8c8548a7707015bfea151e37cb91a9a203e06))
+* **web:** reduce dashboard request overhead ([93f4b2b](https://github.com/tutur3u/platform/commit/93f4b2b354286b33c5cf8ff9ee0e54a31b18a022))
+
 ## [0.21.0](https://github.com/tutur3u/platform/compare/platform-v0.20.0...platform-v0.21.0) (2026-07-11)
 
 

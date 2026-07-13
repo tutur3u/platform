@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.15.0](https://github.com/tutur3u/platform/compare/inventory-v0.14.0...inventory-v0.15.0) (2026-07-13)
+
+
+### Features
+
+* **inventory:** add guided Square POS setup ([4f0560a](https://github.com/tutur3u/platform/commit/4f0560a9ba9c0f9f87a0bc2ff27dafbc8e42621c))
+* **platform:** complete satellite app cutover ([b9ac2ef](https://github.com/tutur3u/platform/commit/b9ac2ef8be678a42c1f09f3bef1a05750dc2cba3))
+
 ## [0.14.0](https://github.com/tutur3u/platform/compare/inventory-v0.13.0...inventory-v0.14.0) (2026-07-11)
 
 

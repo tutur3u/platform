@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.7.0](https://github.com/tutur3u/platform/compare/mail-v0.6.0...mail-v0.7.0) (2026-07-13)
+
+
+### Features
+
+* **mail:** add smart labels and assisted composing ([8ccd2fa](https://github.com/tutur3u/platform/commit/8ccd2fac0dcf4c67f6eff062dc52e3fc01a2c6ef))
+* **platform:** complete satellite app cutover ([b9ac2ef](https://github.com/tutur3u/platform/commit/b9ac2ef8be678a42c1f09f3bef1a05750dc2cba3))
+
 ## [0.6.0](https://github.com/tutur3u/platform/compare/mail-v0.5.0...mail-v0.6.0) (2026-07-11)
 
 

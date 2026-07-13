@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.25.0](https://github.com/tutur3u/platform/compare/nova-v0.24.0...nova-v0.25.0) (2026-07-13)
+
+
+### Features
+
+* **platform:** complete satellite app cutover ([b9ac2ef](https://github.com/tutur3u/platform/commit/b9ac2ef8be678a42c1f09f3bef1a05750dc2cba3))
+
 ## [0.24.0](https://github.com/tutur3u/platform/compare/nova-v0.23.0...nova-v0.24.0) (2026-07-11)
 
 
