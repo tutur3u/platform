@@ -221,6 +221,9 @@ function attachmentBytes(attachment: Attachment) {
   if (attachment.content instanceof ArrayBuffer) {
     return new Uint8Array(attachment.content);
   }
+  if (attachment.content instanceof Uint8Array) {
+    return attachment.content;
+  }
   return new TextEncoder().encode(attachment.content);
 }
 

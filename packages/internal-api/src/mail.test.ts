@@ -120,10 +120,10 @@ describe('mail internal API helpers', () => {
     );
 
     expect(
-      (fetchMock.mock.calls[0]?.[1]?.headers as Headers).get('content-type')
+      new Headers(fetchMock.mock.calls[0]?.[1]?.headers).get('content-type')
     ).toBe('application/json');
     expect(
-      (fetchMock.mock.calls[1]?.[1]?.headers as Headers).get('content-type')
+      new Headers(fetchMock.mock.calls[1]?.[1]?.headers).get('content-type')
     ).toBe('application/json');
   });
 
