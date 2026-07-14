@@ -144,6 +144,43 @@ export async function listWorkspaceUserLinkedPromotions(
   );
 }
 
+export async function linkWorkspaceUserPromotion(
+  workspaceId: string,
+  userId: string,
+  promotionId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ message: string }>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/users/${encodePathSegment(userId)}/linked-promotions`,
+    {
+      body: JSON.stringify({ promoId: promotionId }),
+      cache: 'no-store',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      method: 'POST',
+    }
+  );
+}
+
+export async function unlinkWorkspaceUserPromotion(
+  workspaceId: string,
+  userId: string,
+  promotionId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ message: string }>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/users/${encodePathSegment(userId)}/linked-promotions`,
+    {
+      cache: 'no-store',
+      method: 'DELETE',
+      query: { promoId: promotionId },
+    }
+  );
+}
+
 export async function listWorkspaceUserReferralDiscounts(
   workspaceId: string,
   userId: string,

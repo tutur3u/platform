@@ -12,7 +12,9 @@ const contactsOwnedRouteFiles = [
   '../users/reports/groups/route.ts',
   '../users/reports/groups/[groupId]/dashboard/route.ts',
   '../users/reports/groups/[groupId]/bulk-export/route.ts',
+  '../users/[userId]/linked-promotions/route.ts',
   '../users/links/manual/route.ts',
+  '../promotions/route.ts',
   '../group-tags/route.ts',
   '../group-tags/[tagId]/route.ts',
   '../group-tags/[tagId]/user-groups/route.ts',
@@ -80,6 +82,8 @@ describe('Contacts user-group API ownership', () => {
     ['[groupId]/group-checks/[postId]/route.ts', ['PUT', 'DELETE']],
     ['[groupId]/group-checks/[postId]/logs/route.ts', ['GET']],
     ['[groupId]/group-checks/[postId]/email/route.ts', ['POST']],
+    ['../promotions/route.ts', ['GET']],
+    ['../users/[userId]/linked-promotions/route.ts', ['GET', 'POST', 'DELETE']],
   ] as const)('exports the expected CRUD methods from %s', (relativePath, methods) => {
     const routePath = resolve(import.meta.dirname, relativePath);
     const source = readFileSync(routePath, 'utf8');

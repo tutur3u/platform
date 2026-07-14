@@ -1,9 +1,11 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
   createWorkspacePromotion,
+  linkWorkspaceUserPromotion,
   listWorkspacePromotions,
   listWorkspaceUserLinkedPromotions,
   listWorkspaceUserReferralDiscounts,
+  unlinkWorkspaceUserPromotion,
   updateWorkspacePromotion,
 } from './promotions';
 
@@ -98,6 +100,45 @@ describe('promotions internal API helpers', () => {
       expect.objectContaining({
         cache: 'no-store',
       })
+    );
+  });
+
+  it('links and unlinks user promotions through encoded Contacts-owned routes', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(createJsonResponse({ message: 'success' }));
+    const options = {
+      baseUrl: 'https://contacts.example.com',
+      fetch: fetchMock as unknown as typeof fetch,
+    };
+
+    await linkWorkspaceUserPromotion(
+      'workspace 1',
+      'user/1',
+      'promo/1',
+      options
+    );
+    await unlinkWorkspaceUserPromotion(
+      'workspace 1',
+      'user/1',
+      'promo/1',
+      options
+    );
+
+    const route =
+      'https://contacts.example.com/api/v1/workspaces/workspace%201/users/user%2F1/linked-promotions';
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      route,
+      expect.objectContaining({
+        body: JSON.stringify({ promoId: 'promo/1' }),
+        method: 'POST',
+      })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      `${route}?promoId=promo%2F1`,
+      expect.objectContaining({ method: 'DELETE' })
     );
   });
 });

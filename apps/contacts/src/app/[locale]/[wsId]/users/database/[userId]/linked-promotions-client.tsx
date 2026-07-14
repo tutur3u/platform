@@ -1,15 +1,13 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { AlertTriangle, ExternalLink, TicketCheck } from '@tuturuuu/icons';
 import {
-  Link,
-  MoreHorizontal,
-  Tag,
-  TicketCheck,
-  Trash2,
-} from '@tuturuuu/icons';
+  listWorkspacePromotions,
+  listWorkspaceUserLinkedPromotions,
+  listWorkspaceUserReferralDiscounts,
+} from '@tuturuuu/internal-api/promotions';
 import { Button } from '@tuturuuu/ui/button';
-import { Combobox, type ComboboxOptions } from '@tuturuuu/ui/custom/combobox';
 import {
   Dialog,
   DialogContent,
@@ -17,29 +15,22 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@tuturuuu/ui/dialog';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@tuturuuu/ui/dropdown-menu';
-import { Label } from '@tuturuuu/ui/label';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
+import { INVENTORY_APP_URL } from '@/constants/common';
+import { LinkPromotionDialog } from './link-promotion-dialog';
+import {
+  LinkedPromotionCard,
+  type LinkedPromotionItem,
+} from './linked-promotion-card';
+import {
+  linkWorkspaceUserPromotion,
+  unlinkWorkspaceUserPromotion,
+} from './promotion-api-client';
 
 interface WorkspacePromotion {
-  id: string;
-  name: string | null;
-  description: string | null;
-  code: string | null;
-  value: number | null;
-  use_ratio: boolean | null;
-}
-
-interface LinkedPromotionItem {
   id: string;
   name: string | null;
   description: string | null;
@@ -56,31 +47,23 @@ interface LinkedPromotionsClientProps {
   initialCount: number;
 }
 
-const useWorkspacePromotions = (wsId: string) => {
-  const t = useTranslations();
+const useWorkspacePromotions = (wsId: string, enabled: boolean) => {
   return useQuery({
     queryKey: ['workspace-promotions', wsId],
     queryFn: async () => {
-      const response = await fetch(`/api/v1/workspaces/${wsId}/promotions`, {
-        cache: 'no-store',
-      });
-      if (!response.ok) {
-        const error = await response.json();
-        toast.error(error?.message || t('ws-user-linked-coupons.load_failed'));
-        return [] as WorkspacePromotion[];
-      }
-      const data = await response.json();
+      const data = await listWorkspacePromotions(wsId);
       return (Array.isArray(data) ? data : [])
-        .filter((p: any) => p.promo_type !== 'REFERRAL')
-        .map((p: any) => ({
-          id: p.id,
-          name: p.name,
-          description: p.description,
-          code: p.code,
-          value: p.value,
-          use_ratio: p.use_ratio,
+        .filter((promotion) => promotion.promo_type !== 'REFERRAL')
+        .map((promotion) => ({
+          id: promotion.id,
+          name: promotion.name,
+          description: promotion.description ?? null,
+          code: promotion.code,
+          value: promotion.value,
+          use_ratio: promotion.use_ratio,
         })) as WorkspacePromotion[];
     },
+    enabled,
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
     refetchOnWindowFocus: false,
@@ -105,23 +88,22 @@ export default function LinkedPromotionsClient({
   const userLinkedPromotionsQuery = useQuery({
     queryKey: ['user-linked-promotions', wsId, userId],
     queryFn: async (): Promise<LinkedPromotionItem[]> => {
-      const response = await fetch(
-        `/api/v1/workspaces/${wsId}/users/${userId}/linked-promotions`,
-        { cache: 'no-store' }
-      );
-      if (!response.ok) throw new Error('Failed to fetch linked promotions');
-      const data = await response.json();
-      const items = (Array.isArray(data) ? data : [])
-        .map((row: any) => row.workspace_promotions)
-        .filter(Boolean)
-        .map((p: any) => ({
-          id: p.id as string,
-          name: (p.name ?? null) as string | null,
-          description: (p.description ?? null) as string | null,
-          code: (p.code ?? null) as string | null,
-          value: (p.value ?? null) as number | null,
-          use_ratio: (p.use_ratio ?? null) as boolean | null,
-        })) as LinkedPromotionItem[];
+      const data = await listWorkspaceUserLinkedPromotions(wsId, userId);
+      const items = (Array.isArray(data) ? data : []).flatMap(
+        ({ workspace_promotions: promotion }) =>
+          promotion
+            ? [
+                {
+                  id: promotion.id,
+                  name: promotion.name,
+                  description: promotion.description ?? null,
+                  code: promotion.code,
+                  value: promotion.value,
+                  use_ratio: promotion.use_ratio,
+                },
+              ]
+            : []
+      ) as LinkedPromotionItem[];
       return items;
     },
     initialData: initialPromotions,
@@ -135,22 +117,19 @@ export default function LinkedPromotionsClient({
   const [selectedPromoId, setSelectedPromoId] = useState<string>('');
   const [deletingPromotion, setDeletingPromotion] =
     useState<LinkedPromotionItem | null>(null);
-  const [loading, setLoading] = useState(false);
   const queryClient = useQueryClient();
 
-  const { data: allPromotions } = useWorkspacePromotions(wsId);
+  const workspacePromotionsQuery = useWorkspacePromotions(
+    wsId,
+    canUpdateUsers && isAddDialogOpen
+  );
+  const allPromotions = workspacePromotionsQuery.data;
 
   // Fetch dynamic referral discount values per user/promo (percent)
   const referralDiscountsQuery = useQuery({
     queryKey: ['user-referral-discounts', wsId, userId],
-    queryFn: async (): Promise<ReferralDiscountRow[]> => {
-      const response = await fetch(
-        `/api/v1/workspaces/${wsId}/users/${userId}/referral-discounts`,
-        { cache: 'no-store' }
-      );
-      if (!response.ok) return [];
-      return await response.json();
-    },
+    queryFn: async (): Promise<ReferralDiscountRow[]> =>
+      listWorkspaceUserReferralDiscounts(wsId, userId),
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
     refetchOnWindowFocus: false,
@@ -174,21 +153,8 @@ export default function LinkedPromotionsClient({
   }, [allPromotions, userLinkedPromotionsQuery.data]);
 
   const addPromotionMutation = useMutation({
-    mutationFn: async ({ promoId }: { promoId: string }) => {
-      const response = await fetch(
-        `/api/v1/workspaces/${wsId}/users/${userId}/linked-promotions`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ promoId }),
-        }
-      );
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error?.message || 'Failed to link promotion');
-      }
-      return { promoId };
-    },
+    mutationFn: ({ promoId }: { promoId: string }) =>
+      linkWorkspaceUserPromotion(wsId, userId, promoId),
     onSuccess: () => {
       setIsAddDialogOpen(false);
       setSelectedPromoId('');
@@ -221,19 +187,10 @@ export default function LinkedPromotionsClient({
 
   const deletePromotionMutation = useMutation({
     mutationFn: async ({ promoId }: { promoId: string }) => {
-      const response = await fetch(
-        `/api/v1/workspaces/${wsId}/users/${userId}/linked-promotions?promoId=${promoId}`,
-        {
-          method: 'DELETE',
-        }
-      );
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error?.message || 'Failed to unlink promotion');
-      }
+      await unlinkWorkspaceUserPromotion(wsId, userId, promoId);
       return { promoId };
     },
-    onSuccess: ({ promoId: _promoId }) => {
+    onSuccess: () => {
       setIsDeleteDialogOpen(false);
       setDeletingPromotion(null);
       toast(t('ws-user-linked-coupons.unlink_success'));
@@ -263,166 +220,75 @@ export default function LinkedPromotionsClient({
     },
   });
 
-  const handleAdd = async () => {
-    if (!selectedPromoId) {
-      return;
-    }
-    setLoading(true);
-    try {
-      await addPromotionMutation.mutateAsync({ promoId: selectedPromoId });
-    } catch (_) {
-      // handled in onError
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleDelete = async () => {
-    if (!deletingPromotion) return;
-    setLoading(true);
-    try {
-      await deletePromotionMutation.mutateAsync({
-        promoId: deletingPromotion.id,
-      });
-    } catch (_) {
-      // handled in onError
-    } finally {
-      setLoading(false);
-    }
-  };
+  const promotionOptions = useMemo(
+    () =>
+      availablePromotions.map((promotion) => ({
+        value: promotion.id,
+        label: `${promotion.name || t('ws-user-linked-coupons.coupon_label')} ${promotion.code ? ` (${promotion.code})` : ''}${promotion.value ? ` (${promotion.value}${promotion.use_ratio ? '%' : ''})` : ''}`,
+      })),
+    [availablePromotions, t]
+  );
+  const managePromotionsUrl = `${INVENTORY_APP_URL}/${wsId}/commerce?tab=promotions`;
 
   return (
     <div className="flex flex-col rounded-lg border border-border bg-foreground/5 p-4">
-      <div className="mb-2 flex items-center justify-between">
+      <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="font-semibold text-xl">
           {t('ws-user-linked-coupons.title')}
           {!!count && ` (${count})`}
         </div>
-        {canUpdateUsers && (
-          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-            <DialogTrigger asChild>
-              <Button variant="outline" size="sm">
-                <Link className="mr-2 h-4 w-4" />
-                {t('ws-user-linked-coupons.link_action')}
-              </Button>
-            </DialogTrigger>
-            <DialogContent onWheel={(e) => e.stopPropagation()}>
-              <DialogHeader>
-                <DialogTitle>
-                  {t('ws-user-linked-coupons.link_action')}
-                </DialogTitle>
-                <DialogDescription>
-                  {t('ws-user-linked-coupons.link_description')}
-                </DialogDescription>
-              </DialogHeader>
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="promo-select">
-                    {t('ws-user-linked-coupons.coupon_label')}
-                  </Label>
-                  <Combobox
-                    t={t}
-                    options={availablePromotions.map(
-                      (p): ComboboxOptions => ({
-                        value: p.id,
-                        label: `${p.name || t('ws-user-linked-coupons.coupon_label')} ${p.code ? ` (${p.code})` : ''}${p.value ? ` (${p.value}${p.use_ratio ? '%' : ''})` : ''}`,
-                      })
-                    )}
-                    selected={selectedPromoId}
-                    onChange={(value) => setSelectedPromoId(value as string)}
-                    placeholder={t('ws-user-linked-coupons.search_placeholder')}
-                  />
-                </div>
-              </div>
-              <DialogFooter>
-                <Button
-                  variant="outline"
-                  onClick={() => setIsAddDialogOpen(false)}
-                  disabled={loading}
-                >
-                  {t('ws-settings.cancel')}
-                </Button>
-                <Button
-                  onClick={handleAdd}
-                  disabled={loading || !selectedPromoId}
-                >
-                  {loading
-                    ? t('ws-groups.linking')
-                    : t('ws-user-linked-coupons.link_action')}
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-        )}
+        <div className="flex flex-wrap gap-2">
+          <Button asChild variant="ghost" size="sm">
+            <a href={managePromotionsUrl} target="_blank" rel="noreferrer">
+              <ExternalLink className="mr-2 h-4 w-4" />
+              {t('ws-user-linked-coupons.manage_action')}
+            </a>
+          </Button>
+          {canUpdateUsers && (
+            <LinkPromotionDialog
+              isLinking={addPromotionMutation.isPending}
+              isLoading={workspacePromotionsQuery.isLoading}
+              isLoadError={workspacePromotionsQuery.isError}
+              manageUrl={managePromotionsUrl}
+              onLink={() => {
+                if (selectedPromoId) {
+                  addPromotionMutation.mutate({ promoId: selectedPromoId });
+                }
+              }}
+              onOpenChange={(open) => {
+                setIsAddDialogOpen(open);
+                if (!open) setSelectedPromoId('');
+              }}
+              onRetry={() => workspacePromotionsQuery.refetch()}
+              onSelect={setSelectedPromoId}
+              open={isAddDialogOpen}
+              options={promotionOptions}
+              selectedPromoId={selectedPromoId}
+            />
+          )}
+        </div>
       </div>
+
+      {userLinkedPromotionsQuery.isError && (
+        <div className="mb-3 flex items-start gap-2 rounded-lg border border-dynamic-red/30 bg-dynamic-red/5 p-3 text-sm">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-dynamic-red" />
+          <span>{t('ws-user-linked-coupons.linked_load_warning')}</span>
+        </div>
+      )}
 
       {count > 0 ? (
         <div className="grid grid-cols-1 gap-2 lg:grid-cols-2">
           {(userLinkedPromotionsQuery.data || []).map((promo) => (
-            <div
+            <LinkedPromotionCard
               key={promo.id}
-              className="group flex justify-between rounded-xl border border-border/50 bg-card/50 p-4 backdrop-blur-sm transition-all duration-200 hover:border-border hover:bg-card/80 hover:shadow-black/5 hover:shadow-lg md:p-6"
-            >
-              <div className="flex items-center space-x-4">
-                <div className="min-w-0 flex-1">
-                  <div className="mb-1 flex items-center gap-2 font-semibold text-foreground text-lg">
-                    <TicketCheck className="h-5 w-5" />
-                    <span className="sr-only">
-                      {t('ws-user-linked-coupons.coupon_label')}
-                    </span>
-                    {promo.name || t('ws-user-linked-coupons.coupon_label')}
-                  </div>
-                  <div>
-                    {promo.description && (
-                      <div className="mb-2 line-clamp-2 text-muted-foreground text-sm">
-                        {promo.description}
-                      </div>
-                    )}
-                    {(referralDiscountMap.has(promo.id) ||
-                      (promo.value ?? null) !== null) && (
-                      <div className="mt-1 inline-flex items-center gap-1 rounded-md bg-foreground/10 px-2 py-1 font-medium text-foreground text-xs">
-                        <Tag className="h-3.5 w-3.5" />
-                        <span className="sr-only">
-                          {t('ws-user-linked-coupons.discount_value_label')}
-                        </span>
-                        <span>
-                          {referralDiscountMap.has(promo.id)
-                            ? `${referralDiscountMap.get(promo.id) ?? 0}%`
-                            : promo.use_ratio
-                              ? `${promo.value ?? 0}%`
-                              : `${(promo.value ?? 0).toLocaleString()}`}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-              {!referralDiscountMap.has(promo.id) && canUpdateUsers && (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="opacity-60 transition-opacity hover:bg-muted/80 group-hover:opacity-100"
-                    >
-                      <MoreHorizontal className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-48">
-                    <DropdownMenuItem
-                      onClick={() => {
-                        setDeletingPromotion(promo);
-                        setIsDeleteDialogOpen(true);
-                      }}
-                      className="cursor-pointer text-dynamic-red"
-                    >
-                      <Trash2 className="mr-2 h-4 w-4 text-dynamic-red" />
-                      {t('ws-user-linked-coupons.unlink')}
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              )}
-            </div>
+              canUpdateUsers={canUpdateUsers}
+              onUnlink={(promotion) => {
+                setDeletingPromotion(promotion);
+                setIsDeleteDialogOpen(true);
+              }}
+              promotion={promo}
+              referralDiscount={referralDiscountMap.get(promo.id)}
+            />
           ))}
         </div>
       ) : (
@@ -434,6 +300,16 @@ export default function LinkedPromotionsClient({
           <div className="text-muted-foreground text-sm">
             {t('ws-user-linked-coupons.empty_description')}
           </div>
+          {canUpdateUsers && (
+            <Button
+              className="mt-4"
+              size="sm"
+              variant="outline"
+              onClick={() => setIsAddDialogOpen(true)}
+            >
+              {t('ws-user-linked-coupons.link_action')}
+            </Button>
+          )}
         </div>
       )}
 
@@ -454,16 +330,22 @@ export default function LinkedPromotionsClient({
             <Button
               variant="outline"
               onClick={() => setIsDeleteDialogOpen(false)}
-              disabled={loading}
+              disabled={deletePromotionMutation.isPending}
             >
               {t('ws-settings.cancel')}
             </Button>
             <Button
               variant="destructive"
-              onClick={handleDelete}
-              disabled={loading}
+              onClick={() => {
+                if (deletingPromotion) {
+                  deletePromotionMutation.mutate({
+                    promoId: deletingPromotion.id,
+                  });
+                }
+              }}
+              disabled={deletePromotionMutation.isPending}
             >
-              {loading
+              {deletePromotionMutation.isPending
                 ? t('ws-user-linked-coupons.unlinking')
                 : t('ws-user-linked-coupons.unlink')}
             </Button>

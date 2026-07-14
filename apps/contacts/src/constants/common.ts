@@ -16,6 +16,11 @@ const DEFAULT_WEB_APP_URL =
     ? 'https://tuturuuu.com'
     : getLocalInternalAppUrl('platform', `http://localhost:${CENTRAL_PORT}`);
 
+const DEFAULT_INVENTORY_APP_URL =
+  process.env.NODE_ENV === 'production'
+    ? 'https://inventory.tuturuuu.com'
+    : getLocalInternalAppUrl('inventory', 'http://localhost:7815');
+
 export const BASE_URL = resolveInternalAppUrl({
   appName: 'contacts',
   candidates: [
@@ -35,6 +40,15 @@ export const WEB_APP_URL = resolveInternalAppUrl({
     process.env.NEXT_PUBLIC_APP_URL,
   ],
   fallback: DEFAULT_WEB_APP_URL,
+});
+
+export const INVENTORY_APP_URL = resolveInternalAppUrl({
+  appName: 'inventory',
+  candidates: [
+    process.env.INVENTORY_APP_URL,
+    process.env.NEXT_PUBLIC_INVENTORY_APP_URL,
+  ],
+  fallback: DEFAULT_INVENTORY_APP_URL,
 });
 
 export const TTR_URL = WEB_APP_URL;
