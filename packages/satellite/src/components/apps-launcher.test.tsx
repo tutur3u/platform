@@ -1,16 +1,26 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { LAUNCHABLE_APPS } from '@tuturuuu/utils/launchable-apps';
 import { NextIntlClientProvider } from 'next-intl';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AppsLauncherDialog } from './apps-launcher';
 
-const originalLocation = window.location;
 const appNames = Object.fromEntries(
   LAUNCHABLE_APPS.map((app) => [
     app.slug,
     app.slug === 'platform' ? 'Workspace Platform' : app.title,
   ])
 );
+const localStorageValues = new Map<string, string>();
+const localStorageMock = {
+  clear: () => localStorageValues.clear(),
+  getItem: (key: string) => localStorageValues.get(key) ?? null,
+  key: (index: number) => [...localStorageValues.keys()][index] ?? null,
+  get length() {
+    return localStorageValues.size;
+  },
+  removeItem: (key: string) => localStorageValues.delete(key),
+  setItem: (key: string, value: string) => localStorageValues.set(key, value),
+} satisfies Storage;
 
 const messages = {
   command_launcher: {
@@ -69,13 +79,18 @@ function renderDialog() {
   return { onOpenChange };
 }
 
+beforeEach(() => {
+  localStorageValues.clear();
+  Object.defineProperty(window, 'localStorage', {
+    configurable: true,
+    value: localStorageMock,
+  });
+});
+
 afterEach(() => {
   cleanup();
   vi.restoreAllMocks();
-  Object.defineProperty(window, 'location', {
-    configurable: true,
-    value: originalLocation,
-  });
+  window.localStorage.clear();
 });
 
 describe('AppsLauncherDialog', () => {
@@ -124,14 +139,23 @@ describe('AppsLauncherDialog', () => {
     expect(dialogContent?.getAttribute('style')).not.toContain(
       'grid-template-rows'
     );
-    expect(dialogContent?.getAttribute('style')).toContain('height: 760px');
+    expect(dialogContent?.getAttribute('style')).toContain('height: 680px');
     expect(dialogContent?.getAttribute('style')).toContain(
-      'max-height: calc(100vh - 2rem)'
+      'max-height: calc(100dvh - 1rem)'
     );
-    expect(dialogContent?.getAttribute('style')).toContain('max-width: 1440px');
+    expect(dialogContent?.getAttribute('style')).toContain('max-width: 1320px');
     expect(dialogContent?.getAttribute('style')).toContain(
-      'width: calc(100vw - 2rem)'
+      'width: calc(100vw - 1rem)'
     );
+    expect(
+      document.querySelector('[data-slot="apps-launcher-mark"]')
+    ).toBeTruthy();
+    expect(
+      document.querySelector('[data-slot="apps-launcher-open-mode"]')
+    ).toBeTruthy();
+    expect(
+      screen.getByRole('radiogroup', { name: 'Open options' })
+    ).toBeTruthy();
 
     const launcherBody = document.querySelector(
       '[data-slot="apps-launcher-body"]'
@@ -164,8 +188,9 @@ describe('AppsLauncherDialog', () => {
     expect(launcherGrid?.className).toContain('w-full');
     expect(launcherGrid?.className).toContain('grid-cols-1');
     expect(launcherGrid?.className).toContain('sm:grid-cols-2');
-    expect(launcherGrid?.className).toContain('lg:grid-cols-3');
-    expect(launcherGrid?.className).toContain('xl:grid-cols-4');
+    expect(launcherGrid?.className).toContain('md:grid-cols-3');
+    expect(launcherGrid?.className).toContain('lg:grid-cols-4');
+    expect(launcherGrid?.className).toContain('xl:grid-cols-5');
   });
 
   it('groups apps by localized category sections', () => {
@@ -236,11 +261,11 @@ describe('AppsLauncherDialog', () => {
     expect(financeCard.getAttribute('rel')).toBe('noopener noreferrer');
     expect(financeCard?.className).toContain('flex');
     expect(financeCard?.className).toContain('cursor-pointer');
-    expect(financeCard?.className).toContain('hover:-translate-y-0.5');
+    expect(financeCard?.className).toContain('hover:-translate-y-px');
     expect(financeCard?.className).toContain('focus-visible:ring-2');
     expect(financeCard?.className).toContain('motion-reduce:transition-none');
-    expect(financeCard?.className).toContain('border-dynamic-green/30');
-    expect(financeCard?.className).toContain('bg-dynamic-green/10');
+    expect(financeCard?.className).toContain('border-dynamic-green/25');
+    expect(financeCard?.className).toContain('bg-dynamic-green/5');
     expect(financeCard?.className).not.toContain('grid-cols-');
     const financeIcon = financeCard.querySelector(
       '[data-slot="app-card-icon"]'
@@ -248,12 +273,12 @@ describe('AppsLauncherDialog', () => {
     expect(financeIcon?.className).toContain('text-dynamic-green');
     expect(
       financeCard.querySelector('[data-slot="app-card-affordance"]')
-    ).toBeNull();
+    ).toBeTruthy();
     const tasksCard = screen.getByRole('link', { name: 'Tasks' });
-    expect(tasksCard.className).toContain('border-dynamic-blue/30');
+    expect(tasksCard.className).toContain('border-dynamic-blue/25');
     expect(
       document.querySelector('[data-slot="app-card-affordance"]')
-    ).toBeNull();
+    ).toBeTruthy();
     expect(
       financeCard?.querySelector('[data-slot="app-card-actions"]')
     ).toBeNull();
@@ -312,34 +337,39 @@ describe('AppsLauncherDialog', () => {
     expect(open).not.toHaveBeenCalled();
   });
 
-  it('opens apps in the current tab when Ctrl or Cmd clicking a card', () => {
-    const assign = vi.fn();
-    Object.defineProperty(window, 'location', {
-      configurable: true,
-      value: {
-        ...originalLocation,
-        assign,
-        hostname: 'localhost',
-        origin: 'http://localhost:3000',
-      },
-    });
-    const { onOpenChange } = renderDialog();
+  it('persists the selected app opening mode on this device', () => {
+    renderDialog();
 
-    fireEvent.click(screen.getByRole('link', { name: 'Tasks' }), {
-      ctrlKey: true,
-    });
+    const currentTab = screen.getByRole('radio', { name: 'Open here' });
+    const newTab = screen.getByRole('radio', { name: 'Open in new tab' });
+    expect(newTab.getAttribute('data-state')).toBe('on');
+    expect(currentTab.getAttribute('data-state')).toBe('off');
 
-    expect(onOpenChange).toHaveBeenCalledWith(false);
-    expect(assign).toHaveBeenCalledWith(
-      'http://localhost:7809/personal/tasks?source=sidebar-apps'
-    );
+    fireEvent.click(currentTab);
 
-    assign.mockClear();
-    fireEvent.click(screen.getByRole('link', { name: 'Finance' }), {
-      metaKey: true,
-    });
-    expect(assign).toHaveBeenCalledWith(
-      'http://localhost:7808/personal?source=sidebar-apps'
-    );
+    const financeCard = screen.getByRole('link', { name: 'Finance' });
+    expect(financeCard.getAttribute('target')).toBeNull();
+    expect(financeCard.getAttribute('rel')).toBeNull();
+    expect(currentTab.getAttribute('data-state')).toBe('on');
+    expect(
+      window.localStorage.getItem('tuturuuu-apps-launcher-open-mode')
+    ).toBe('"current-tab"');
+
+    cleanup();
+    renderDialog();
+
+    expect(
+      screen.getByRole('link', { name: 'Finance' }).getAttribute('target')
+    ).toBeNull();
+    expect(
+      screen
+        .getByRole('radio', { name: 'Open here' })
+        .getAttribute('data-state')
+    ).toBe('on');
+
+    fireEvent.click(screen.getByRole('radio', { name: 'Open in new tab' }));
+    expect(
+      screen.getByRole('link', { name: 'Finance' }).getAttribute('target')
+    ).toBe('_blank');
   });
 });
