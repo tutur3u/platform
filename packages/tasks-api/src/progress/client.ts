@@ -4,7 +4,7 @@ import {
   type InternalApiClientOptions,
   type InternalApiQuery,
   withTaskApiBaseUrl,
-} from './client';
+} from '@tuturuuu/internal-api/client';
 import type {
   CreateTaskLeaderboardMemberPayload,
   CreateTaskLeaderboardPayload,
@@ -31,9 +31,9 @@ import type {
   UpdateTaskProgressEntryPayload,
   UpdateTaskProgressGoalPayload,
   UpdateTaskProgressMetricPayload,
-} from './task-progress-types';
+} from './types';
 
-export type * from './task-progress-types';
+export type * from './types';
 
 function getTaskApiClient(options?: InternalApiClientOptions) {
   return getInternalApiClient(withTaskApiBaseUrl(options));

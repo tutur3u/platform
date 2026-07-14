@@ -1,7 +1,7 @@
-import { resolveTaskBoardAccess } from '@tuturuuu/apis/tu-do/board-access';
 import { CLI_APP_TARGET_APP } from '@tuturuuu/auth/cli-session';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
+import { resolveTaskBoardAccess } from '@tuturuuu/tasks-api/server/board-access';
 import type { Database } from '@tuturuuu/types';
 import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';

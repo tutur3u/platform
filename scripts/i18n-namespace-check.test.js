@@ -119,3 +119,40 @@ test('tasks calendar settings keys are not hidden by config exceptions', () => {
     !config.keyExceptions?.['apps/tasks']?.includes('settings.calendar.*')
   );
 });
+
+test('namespace checker scopes task UI translations to direct consumers', (t) => {
+  const projectRoot = createProject(t);
+
+  writeFile(
+    projectRoot,
+    'packages/tasks-ui/src/task-progress-page.tsx',
+    `
+      import { useTranslations } from 'next-intl';
+
+      export function TaskProgressPage() {
+        const t = useTranslations('task-progress');
+        return <span>{t('summary.title')}</span>;
+      }
+    `
+  );
+
+  writeJson(projectRoot, 'apps/tasks/messages/en.json', {
+    'task-progress': {},
+  });
+  writeJson(projectRoot, 'apps/tasks/package.json', {
+    dependencies: {
+      '@tuturuuu/tasks-ui': 'workspace:*',
+    },
+  });
+  writeSharedUiApp(projectRoot, 'apps/web', { common: {} });
+
+  const result = spawnSync(process.execPath, [checkerPath], {
+    cwd: projectRoot,
+    encoding: 'utf8',
+  });
+
+  assert.notEqual(result.status, 0);
+  assert.match(result.stdout, /apps\/tasks: MISSING 1 translation key/u);
+  assert.match(result.stdout, /task-progress\.summary\.title/u);
+  assert.doesNotMatch(result.stdout, /apps\/web: MISSING.*task-progress/u);
+});

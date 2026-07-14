@@ -1,9 +1,9 @@
+import { getAppSessionTokenFromRequest } from '@tuturuuu/auth/app-session';
+import { CLI_APP_TARGET_APP } from '@tuturuuu/auth/cli-session';
 import {
   handleTaskLabelRouteDELETE,
   handleTaskLabelRoutePOST,
-} from '@tuturuuu/apis/tu-do/tasks/taskId/labels/route';
-import { getAppSessionTokenFromRequest } from '@tuturuuu/auth/app-session';
-import { CLI_APP_TARGET_APP } from '@tuturuuu/auth/cli-session';
+} from '@tuturuuu/tasks-api/server/tasks/taskId/labels/route';
 import { withSessionAuth } from '@/lib/api-auth';
 
 type Params = { wsId: string; taskId: string };

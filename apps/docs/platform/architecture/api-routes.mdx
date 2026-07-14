@@ -276,9 +276,14 @@ export const POST = withSessionAuth<Params>(
 
 > Real task-board routes (for example
 > `apps/web/src/app/api/v1/workspaces/[wsId]/tasks/route.ts`) keep handler logic
-> in `@tuturuuu/apis/tu-do/tasks/route` and only wire the wrapper in the route
-> file. Extract shared handler logic the same way when a route grows past a
-> simple CRUD shape. Use `containsPermission()` with a real `PermissionId` (such
+> in `@tuturuuu/tasks-api/server/tasks/route` and only wire the adapter in the
+> route file. Task-specific request clients and types live in
+> `@tuturuuu/tasks-api/progress`, while task-only React surfaces live in
+> `@tuturuuu/tasks-ui`. Keep generic modules in `@tuturuuu/apis`,
+> `@tuturuuu/internal-api`, and `@tuturuuu/ui` free of new task-only
+> implementations so Turbo can cache and rebuild the task packages
+> independently. Extract shared handler logic the same way when a route grows
+> past a simple CRUD shape. Use `containsPermission()` with a real `PermissionId` (such
 > as `'manage_projects'`); there is no `manage_tasks` permission and no
 > `@/lib/permissions` module.
 

@@ -1,4 +1,4 @@
-import { TASK_PROGRESS_GOAL_STYLE_CONFIG_ID } from '@tuturuuu/internal-api/users';
+import { TASK_PROGRESS_GOAL_STYLE_CONFIG_ID } from '@tuturuuu/tasks-api/progress/preferences';
 import { connection, type NextRequest, NextResponse } from 'next/server';
 import { buildAutonomousWeeklyGoal } from '../_autonomous-defaults';
 import {

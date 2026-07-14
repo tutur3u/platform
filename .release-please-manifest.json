@@ -56,6 +56,8 @@
   "packages/sdk": "0.14.0",
   "packages/storage-core": "0.1.1",
   "packages/supabase": "0.4.0",
+  "packages/tasks-api": "0.1.0",
+  "packages/tasks-ui": "0.1.0",
   "packages/transactional": "1.0.2",
   "packages/trigger": "0.2.0",
   "packages/turnstile": "0.1.1",

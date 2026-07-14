@@ -1,10 +1,6 @@
 'use server';
 
 import {
-  normalizeTaskBoardShareEmail,
-  strongestTaskBoardGuestPermission,
-} from '@tuturuuu/apis/tu-do/board-access';
-import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
@@ -15,6 +11,21 @@ import { searchIntent } from '@tuturuuu/utils/search';
 const WORKSPACE_SUMMARY_UNAUTHORIZED = 'WORKSPACE_SUMMARY_UNAUTHORIZED';
 const DEFAULT_WORKSPACE_SEARCH_LIMIT = 50;
 const MAX_WORKSPACE_SEARCH_LIMIT = 100;
+
+type TaskBoardGuestPermission = 'view' | 'edit';
+
+function normalizeTaskBoardShareEmail(email: string | null | undefined) {
+  const normalized = email?.trim().toLowerCase();
+  return normalized || null;
+}
+
+function strongestTaskBoardGuestPermission(
+  permissions: Array<TaskBoardGuestPermission | null | undefined>
+): TaskBoardGuestPermission | null {
+  if (permissions.includes('edit')) return 'edit';
+  if (permissions.includes('view')) return 'view';
+  return null;
+}
 
 function normalizeWorkspaceTier(
   tier: string | null | undefined

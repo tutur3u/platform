@@ -251,6 +251,14 @@
       "component": "supabase",
       "package-name": "@tuturuuu/supabase"
     },
+    "packages/tasks-api": {
+      "component": "tasks-api",
+      "package-name": "@tuturuuu/tasks-api"
+    },
+    "packages/tasks-ui": {
+      "component": "tasks-ui",
+      "package-name": "@tuturuuu/tasks-ui"
+    },
     "packages/transactional": {
       "component": "transactional",
       "package-name": "@tuturuuu/transactional"

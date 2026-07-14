@@ -141,7 +141,7 @@ vi.mock('@tuturuuu/utils/workspace-helper', () => ({
   ) => mocks.verifyWorkspaceMembershipType(...args),
 }));
 
-vi.mock('@tuturuuu/apis/tu-do/board-access', () => ({
+vi.mock('@tuturuuu/tasks-api/server/board-access', () => ({
   resolveTaskBoardAccess: (
     ...args: Parameters<typeof mocks.resolveTaskBoardAccess>
   ) => mocks.resolveTaskBoardAccess(...args),

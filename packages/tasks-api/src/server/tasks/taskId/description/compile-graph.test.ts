@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 
 const descriptionRouteDir = join(
   process.cwd(),
-  'src/tu-do/tasks/taskId/description'
+  'src/server/tasks/taskId/description'
 );
 const schemaSource = readFileSync(join(descriptionRouteDir, 'schema.ts'), {
   encoding: 'utf8',

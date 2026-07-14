@@ -109,6 +109,7 @@
     "@tuturuuu/satellite": "workspace:*",
     "@tuturuuu/storage-core": "workspace:*",
     "@tuturuuu/supabase": "workspace:*",
+    "@tuturuuu/tasks-api": "workspace:*",
     "@tuturuuu/transactional": "workspace:*",
     "@tuturuuu/trigger": "workspace:*",
     "@tuturuuu/turnstile": "workspace:*",

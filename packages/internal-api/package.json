@@ -207,16 +207,6 @@
       "import": "./dist/tasks-scheduling.js",
       "require": "./dist/tasks-scheduling.js"
     },
-    "./task-progress": {
-      "types": "./dist/task-progress.d.ts",
-      "import": "./dist/task-progress.js",
-      "require": "./dist/task-progress.js"
-    },
-    "./task-progress-types": {
-      "types": "./dist/task-progress-types.d.ts",
-      "import": "./dist/task-progress-types.js",
-      "require": "./dist/task-progress-types.js"
-    },
     "./teach": {
       "types": "./dist/teach.d.ts",
       "import": "./dist/teach.js",

@@ -12,9 +12,9 @@ import {
   listTaskProgressEntries,
   listTaskProgressGoals,
   listTaskProgressMetrics,
-} from './task-progress';
+} from './client';
 
-describe('task progress internal API helpers', () => {
+describe('task progress API helpers', () => {
   it('uses stable task-progress paths for list and mutation helpers', async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,

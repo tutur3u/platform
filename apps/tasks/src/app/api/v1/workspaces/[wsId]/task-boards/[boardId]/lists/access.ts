@@ -1,11 +1,11 @@
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import {
   canEditTaskBoardAccess,
   resolveTaskBoardAccess,
   type TaskBoardAccess,
   type TaskBoardGuestPermission,
-} from '@tuturuuu/apis/tu-do/board-access';
-import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
+} from '@tuturuuu/tasks-api/server/board-access';
 import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';

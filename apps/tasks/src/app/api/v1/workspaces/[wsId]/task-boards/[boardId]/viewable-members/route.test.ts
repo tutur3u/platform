@@ -24,7 +24,7 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
     createAdminClientMock(...args),
 }));
 
-vi.mock('@tuturuuu/apis/tu-do/board-access', () => ({
+vi.mock('@tuturuuu/tasks-api/server/board-access', () => ({
   resolveTaskBoardAccess: (
     ...args: Parameters<typeof resolveTaskBoardAccessMock>
   ) => resolveTaskBoardAccessMock(...args),

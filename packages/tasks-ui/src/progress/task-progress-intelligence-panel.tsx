@@ -9,7 +9,7 @@ import type {
   TaskProgressCatchup,
   TaskProgressCatchupPeriod,
   TaskProgressStatsResponse,
-} from '@tuturuuu/internal-api';
+} from '@tuturuuu/tasks-api';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';

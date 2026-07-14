@@ -1,5 +1,5 @@
-import { publishBoardListRealtime } from '@tuturuuu/apis/tu-do/tasks/realtime-broadcast';
 import { CLI_APP_TARGET_APP } from '@tuturuuu/auth/cli-session';
+import { publishBoardListRealtime } from '@tuturuuu/tasks-api/server/tasks/realtime-broadcast';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';

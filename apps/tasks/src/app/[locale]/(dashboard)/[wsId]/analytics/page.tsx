@@ -1,4 +1,4 @@
-import { TaskProgressPage } from '@tuturuuu/ui/tu-do/progress/task-progress-page';
+import { TaskProgressPage } from '@tuturuuu/tasks-ui/progress/task-progress-page';
 import type { Metadata } from 'next';
 import { connection } from 'next/server';
 import { createElement } from 'react';

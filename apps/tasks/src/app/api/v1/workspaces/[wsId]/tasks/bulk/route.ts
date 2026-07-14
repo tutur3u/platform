@@ -1,4 +1,4 @@
-import { handleTaskBulkRoutePOST } from '@tuturuuu/apis/tu-do/tasks/bulk/route';
+import { handleTaskBulkRoutePOST } from '@tuturuuu/tasks-api/server/tasks/bulk/route';
 import { withSessionAuth } from '@/lib/api-auth';
 
 type Params = { wsId: string };

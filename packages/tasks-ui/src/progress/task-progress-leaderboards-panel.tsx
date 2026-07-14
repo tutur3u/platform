@@ -1,6 +1,6 @@
 import type { UseMutationResult } from '@tanstack/react-query';
 import { Sparkles, Trophy } from '@tuturuuu/icons';
-import type { TaskProgressMetric } from '@tuturuuu/internal-api';
+import type { TaskProgressMetric } from '@tuturuuu/tasks-api';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';

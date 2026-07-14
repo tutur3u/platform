@@ -50,29 +50,29 @@ vi.mock('@tuturuuu/auth/cli-session', () => ({
   CLI_APP_TARGET_APP: 'platform',
 }));
 
-vi.mock('@tuturuuu/apis/tu-do/tasks/route', () => ({
+vi.mock('@tuturuuu/tasks-api/server/tasks/route', () => ({
   handleTaskRouteGET: mocks.handleTaskRouteGET,
   handleTaskRoutePOST: mocks.handleTaskRoutePOST,
 }));
 
-vi.mock('@tuturuuu/apis/tu-do/board/boardId/route', () => ({
+vi.mock('@tuturuuu/tasks-api/server/board/boardId/route', () => ({
   handleBoardRouteDELETE: mocks.handleBoardRouteDELETE,
   handleBoardRoutePUT: mocks.handleBoardRoutePUT,
 }));
 
-vi.mock('@tuturuuu/apis/tu-do/tasks/taskId/route', () => ({
+vi.mock('@tuturuuu/tasks-api/server/tasks/taskId/route', () => ({
   handleTaskDetailRouteDELETE: mocks.handleTaskDetailRouteDELETE,
   handleTaskDetailRouteGET: mocks.handleTaskDetailRouteGET,
   handleTaskDetailRoutePATCH: mocks.handleTaskDetailRoutePATCH,
   handleTaskDetailRoutePUT: mocks.handleTaskDetailRoutePUT,
 }));
 
-vi.mock('@tuturuuu/apis/tu-do/tasks/taskId/description/route', () => ({
+vi.mock('@tuturuuu/tasks-api/server/tasks/taskId/description/route', () => ({
   handleTaskDescriptionRouteGET: mocks.handleTaskDescriptionRouteGET,
   handleTaskDescriptionRoutePATCH: mocks.handleTaskDescriptionRoutePATCH,
 }));
 
-vi.mock('@tuturuuu/apis/tu-do/tasks/taskId/labels/route', () => ({
+vi.mock('@tuturuuu/tasks-api/server/tasks/taskId/labels/route', () => ({
   handleTaskLabelRouteDELETE: mocks.handleTaskLabelRouteDELETE,
   handleTaskLabelRoutePOST: mocks.handleTaskLabelRoutePOST,
 }));

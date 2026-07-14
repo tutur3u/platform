@@ -1,4 +1,4 @@
 export {
   paramsSchema,
   updateTaskDescriptionSchema,
-} from '@tuturuuu/apis/tu-do/tasks/taskId/description/schema';
+} from '@tuturuuu/tasks-api/server/tasks/taskId/description/schema';

@@ -1,7 +1,7 @@
-import { resolveTaskBoardAccess } from '@tuturuuu/apis/tu-do/board-access';
 import { CLI_APP_TARGET_APP } from '@tuturuuu/auth/cli-session';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
+import { resolveTaskBoardAccess } from '@tuturuuu/tasks-api/server/board-access';
 import {
   getPersonalExternalStagingListId,
   isPersonalExternalStagingListId,

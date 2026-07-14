@@ -13,7 +13,7 @@ import {
   listTaskProgressGoals,
   listTaskProgressMetrics,
   type TaskProgressMetric,
-} from '@tuturuuu/internal-api';
+} from '@tuturuuu/tasks-api';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Card, CardContent } from '@tuturuuu/ui/card';
 import { toast } from '@tuturuuu/ui/sonner';

@@ -1,4 +1,4 @@
-import type { TaskProgressMetric } from '@tuturuuu/internal-api';
+import type { TaskProgressMetric } from '@tuturuuu/tasks-api';
 import { describe, expect, it } from 'vitest';
 import {
   focusSessionRowsToEntries,

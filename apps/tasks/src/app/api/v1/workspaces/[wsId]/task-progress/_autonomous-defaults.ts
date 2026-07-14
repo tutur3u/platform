@@ -2,7 +2,7 @@ import type {
   TaskLeaderboard,
   TaskProgressGoal,
   TaskProgressMetric,
-} from '@tuturuuu/internal-api';
+} from '@tuturuuu/tasks-api';
 import { loadAutonomousTaskProgressEntries } from './_autonomous';
 import type { TaskProgressRouteAuth } from './_utils';
 

@@ -210,7 +210,7 @@ export default async function Layout({ children, params }: LayoutProps) {
       { loadTaskBoardGuestSharesForWorkspace, summarizeTaskBoardGuestShares },
     ] = await Promise.all([
       import('@tuturuuu/supabase/next/server'),
-      import('@tuturuuu/apis/tu-do/board-access'),
+      import('@tuturuuu/tasks-api/server/board-access'),
     ]);
     const [supabase, sbAdmin] = await Promise.all([
       createClient(),

@@ -1,11 +1,11 @@
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
+import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import {
   normalizeTaskBoardShareEmail,
   strongestTaskBoardGuestPermission,
   type TaskBoardGuestPermission,
-} from '@tuturuuu/apis/tu-do/board-access';
-import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
-import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
+} from '@tuturuuu/tasks-api/server/board-access';
 import type { InternalApiWorkspaceSummary } from '@tuturuuu/types';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';

@@ -135,6 +135,10 @@ services:
       - platform-web-sdk-dist:/workspace/packages/sdk/dist
       - platform-web-supabase-node_modules:/workspace/packages/supabase/node_modules
       - platform-web-supabase-dist:/workspace/packages/supabase/dist
+      - platform-web-tasks-api-node_modules:/workspace/packages/tasks-api/node_modules
+      - platform-web-tasks-api-dist:/workspace/packages/tasks-api/dist
+      - platform-web-tasks-ui-node_modules:/workspace/packages/tasks-ui/node_modules
+      - platform-web-tasks-ui-dist:/workspace/packages/tasks-ui/dist
       - platform-web-turbo:/workspace/.turbo
       - platform-web-transactional-node_modules:/workspace/packages/transactional/node_modules
       - platform-web-transactional-dist:/workspace/packages/transactional/dist
@@ -523,6 +527,10 @@ volumes:
   platform-web-sdk-dist:
   platform-web-supabase-node_modules:
   platform-web-supabase-dist:
+  platform-web-tasks-api-node_modules:
+  platform-web-tasks-api-dist:
+  platform-web-tasks-ui-node_modules:
+  platform-web-tasks-ui-dist:
   platform-web-turbo:
   platform-web-transactional-node_modules:
   platform-web-transactional-dist:

@@ -1,10 +1,10 @@
-import {
-  handleBoardRouteDELETE,
-  handleBoardRoutePUT,
-} from '@tuturuuu/apis/tu-do/board/boardId/route';
 import { getAppSessionTokenFromRequest } from '@tuturuuu/auth/app-session';
 import { CLI_APP_TARGET_APP } from '@tuturuuu/auth/cli-session';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
+import {
+  handleBoardRouteDELETE,
+  handleBoardRoutePUT,
+} from '@tuturuuu/tasks-api/server/board/boardId/route';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';

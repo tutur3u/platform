@@ -13,7 +13,7 @@ import { withAiMemory } from '@tuturuuu/ai/memory';
 import {
   TASK_PROGRESS_AI_CATCHUPS_CONFIG_ID,
   TASK_PROGRESS_CATCHUP_CADENCE_CONFIG_ID,
-} from '@tuturuuu/internal-api/users';
+} from '@tuturuuu/tasks-api/progress/preferences';
 import { generateObject, NoObjectGeneratedError } from 'ai';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';

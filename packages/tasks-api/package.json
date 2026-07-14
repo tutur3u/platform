@@ -1,0 +1,36 @@
+{
+  "name": "@tuturuuu/tasks-api",
+  "version": "0.1.0",
+  "private": true,
+  "main": "./src/progress/client.ts",
+  "types": "./src/progress/client.ts",
+  "exports": {
+    ".": "./src/progress/client.ts",
+    "./progress": "./src/progress/client.ts",
+    "./progress/preferences": "./src/progress/preferences.ts",
+    "./progress/types": "./src/progress/types.ts",
+    "./server/*": "./src/server/*.ts"
+  },
+  "license": "MIT",
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "type-check": "tsc --project tsconfig.typecheck.json"
+  },
+  "packageManager": "bun@1.3.14",
+  "dependencies": {
+    "@tuturuuu/ai": "workspace:*",
+    "@tuturuuu/internal-api": "workspace:*",
+    "@tuturuuu/supabase": "workspace:*",
+    "@tuturuuu/types": "workspace:*",
+    "@tuturuuu/utils": "workspace:*",
+    "next": "^16.3.0-preview.5",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@tuturuuu/typescript-config": "workspace:*",
+    "@types/node": "^26.1.1",
+    "typescript": "7.0.2",
+    "vitest": "^4.1.10"
+  }
+}

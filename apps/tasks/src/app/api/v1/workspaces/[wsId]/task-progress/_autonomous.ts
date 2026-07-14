@@ -1,4 +1,4 @@
-import type { TaskProgressMetric } from '@tuturuuu/internal-api';
+import type { TaskProgressMetric } from '@tuturuuu/tasks-api';
 import type { TaskProgressRouteAuth } from './_utils';
 
 export type TaskProgressEntryLike = {

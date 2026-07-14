@@ -15,7 +15,6 @@
     "type-check": "tsc --project tsconfig.typecheck.json"
   },
   "dependencies": {
-    "@tuturuuu/ai": "workspace:*",
     "@tuturuuu/supabase": "workspace:*",
     "@tuturuuu/utils": "workspace:*",
     "dayjs": "^1.11.20",

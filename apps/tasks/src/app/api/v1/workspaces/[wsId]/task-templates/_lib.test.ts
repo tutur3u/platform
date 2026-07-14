@@ -1,4 +1,4 @@
-import { handleTaskRoutePOST } from '@tuturuuu/apis/tu-do/tasks/route';
+import { handleTaskRoutePOST } from '@tuturuuu/tasks-api/server/tasks/route';
 import { NextResponse } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
@@ -18,7 +18,7 @@ import {
   updateTaskTemplateSchema,
 } from './_lib';
 
-vi.mock('@tuturuuu/apis/tu-do/tasks/route', () => ({
+vi.mock('@tuturuuu/tasks-api/server/tasks/route', () => ({
   handleTaskRoutePOST: vi.fn(),
 }));
 

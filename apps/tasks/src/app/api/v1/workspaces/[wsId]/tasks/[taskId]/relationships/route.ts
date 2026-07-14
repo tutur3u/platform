@@ -1,10 +1,10 @@
+import { getAppSessionTokenFromRequest } from '@tuturuuu/auth/app-session';
+import { CLI_APP_TARGET_APP } from '@tuturuuu/auth/cli-session';
 import {
   handleTaskRelationshipRouteDELETE,
   handleTaskRelationshipRouteGET,
   handleTaskRelationshipRoutePOST,
-} from '@tuturuuu/apis/tu-do/tasks/taskId/relationships/route';
-import { getAppSessionTokenFromRequest } from '@tuturuuu/auth/app-session';
-import { CLI_APP_TARGET_APP } from '@tuturuuu/auth/cli-session';
+} from '@tuturuuu/tasks-api/server/tasks/taskId/relationships/route';
 import { withSessionAuth } from '@/lib/api-auth';
 
 type Params = { wsId: string; taskId: string };

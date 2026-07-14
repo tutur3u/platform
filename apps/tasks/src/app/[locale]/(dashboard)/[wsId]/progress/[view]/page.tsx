@@ -1,7 +1,7 @@
 import {
   TaskProgressPage,
   type TaskProgressView,
-} from '@tuturuuu/ui/tu-do/progress/task-progress-page';
+} from '@tuturuuu/tasks-ui/progress/task-progress-page';
 import type { Metadata } from 'next';
 import { notFound, redirect } from 'next/navigation';
 import { connection } from 'next/server';

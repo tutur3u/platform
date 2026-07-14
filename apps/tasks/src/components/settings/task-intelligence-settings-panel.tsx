@@ -5,7 +5,7 @@ import {
   TASK_PROGRESS_CATCHUP_CADENCE_CONFIG_ID,
   TASK_PROGRESS_GOAL_STYLE_CONFIG_ID,
   TASK_PROGRESS_SHOW_DECISIONS_CONFIG_ID,
-} from '@tuturuuu/internal-api/users';
+} from '@tuturuuu/tasks-api/progress/preferences';
 import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
 import {
   useUpdateUserWorkspaceConfig,

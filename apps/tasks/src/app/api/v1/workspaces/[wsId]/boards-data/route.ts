@@ -1,8 +1,8 @@
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import {
   loadTaskBoardGuestSharesForWorkspace,
   summarizeTaskBoardGuestShares,
-} from '@tuturuuu/apis/tu-do/board-access';
-import { createAdminClient } from '@tuturuuu/supabase/next/server';
+} from '@tuturuuu/tasks-api/server/board-access';
 import type { WorkspaceTaskBoard } from '@tuturuuu/types';
 import {
   MAX_LONG_TEXT_LENGTH,

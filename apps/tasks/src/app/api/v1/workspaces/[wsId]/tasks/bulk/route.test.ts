@@ -31,7 +31,7 @@ const mocks = vi.hoisted(() => ({
   ),
 }));
 
-vi.mock('@tuturuuu/apis/tu-do/tasks/bulk/route', () => ({
+vi.mock('@tuturuuu/tasks-api/server/tasks/bulk/route', () => ({
   handleTaskBulkRoutePOST: mocks.handleTaskBulkRoutePOST,
   POST: mocks.legacyPost,
 }));

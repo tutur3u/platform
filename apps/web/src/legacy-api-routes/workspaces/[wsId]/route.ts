@@ -1,9 +1,9 @@
+import { createPolarClient } from '@tuturuuu/payment/polar/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import {
   loadTaskBoardGuestSharesForWorkspace,
   summarizeTaskBoardGuestShares,
-} from '@tuturuuu/apis/tu-do/board-access';
-import { createPolarClient } from '@tuturuuu/payment/polar/server';
-import { createAdminClient } from '@tuturuuu/supabase/next/server';
+} from '@tuturuuu/tasks-api/server/board-access';
 import {
   MAX_ID_LENGTH,
   MAX_WORKSPACE_NAME_LENGTH,

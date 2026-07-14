@@ -16,7 +16,7 @@ const mocks = vi.hoisted(() => ({
   verifyWorkspaceMembershipType: vi.fn(),
 }));
 
-vi.mock('@tuturuuu/apis/tu-do/board-access', () => ({
+vi.mock('@tuturuuu/tasks-api/server/board-access', () => ({
   loadTaskBoardGuestSharesForWorkspace: (
     ...args: Parameters<typeof mocks.loadTaskBoardGuestSharesForWorkspace>
   ) => mocks.loadTaskBoardGuestSharesForWorkspace(...args),

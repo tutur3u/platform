@@ -157,7 +157,7 @@ export async function WorkspaceNavigationLinks({
     const {
       loadTaskBoardGuestSharesForWorkspace,
       summarizeTaskBoardGuestShares,
-    } = await import('@tuturuuu/apis/tu-do/board-access');
+    } = await import('@tuturuuu/tasks-api/server/board-access');
     const guestShares = await loadTaskBoardGuestSharesForWorkspace({
       sbAdmin,
       user,

@@ -46,6 +46,7 @@ const ROOT_DIR = process.cwd();
 // Shared packages that may reference translation namespaces
 const SHARED_PACKAGES = [
   { name: 'packages/ui', dir: 'packages/ui/src' },
+  { name: 'packages/tasks-ui', dir: 'packages/tasks-ui/src' },
   { name: 'packages/satellite', dir: 'packages/satellite/src' },
   { name: 'packages/mind-ui', dir: 'packages/mind-ui/src' },
   { name: 'packages/hive-ui', dir: 'packages/hive-ui/src' },
@@ -316,6 +317,7 @@ function findUnregisteredApps() {
   ]);
   const sharedDepNames = [
     '@tuturuuu/ui',
+    '@tuturuuu/tasks-ui',
     '@tuturuuu/satellite',
     '@tuturuuu/mind-ui',
     '@tuturuuu/hive-ui',
@@ -359,6 +361,7 @@ function getAppDependencies(appDir) {
 
   const deps = new Set();
   if (allDeps['@tuturuuu/ui']) deps.add('packages/ui');
+  if (allDeps['@tuturuuu/tasks-ui']) deps.add('packages/tasks-ui');
   if (allDeps['@tuturuuu/satellite']) deps.add('packages/satellite');
   if (allDeps['@tuturuuu/mind-ui']) deps.add('packages/mind-ui');
   if (allDeps['@tuturuuu/hive-ui']) deps.add('packages/hive-ui');

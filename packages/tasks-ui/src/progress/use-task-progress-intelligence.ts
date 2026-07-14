@@ -4,12 +4,12 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   generateTaskProgressCatchup,
   type TaskProgressCatchupPeriod,
-} from '@tuturuuu/internal-api';
+} from '@tuturuuu/tasks-api';
 import {
   TASK_PROGRESS_AI_CATCHUPS_CONFIG_ID,
   TASK_PROGRESS_CATCHUP_CADENCE_CONFIG_ID,
   TASK_PROGRESS_SHOW_DECISIONS_CONFIG_ID,
-} from '@tuturuuu/internal-api/users';
+} from '@tuturuuu/tasks-api/progress/preferences';
 import { useUserWorkspaceConfig } from '@tuturuuu/ui/hooks/use-user-workspace-config';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useLocale, useTranslations } from 'next-intl';

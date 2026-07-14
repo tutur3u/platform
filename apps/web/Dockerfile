@@ -71,6 +71,8 @@ COPY packages/realtime/package.json ./packages/realtime/package.json
 COPY packages/satellite/package.json ./packages/satellite/package.json
 COPY packages/sdk/package.json ./packages/sdk/package.json
 COPY packages/supabase/package.json ./packages/supabase/package.json
+COPY packages/tasks-api/package.json ./packages/tasks-api/package.json
+COPY packages/tasks-ui/package.json ./packages/tasks-ui/package.json
 COPY packages/transactional/package.json ./packages/transactional/package.json
 COPY packages/trigger/package.json ./packages/trigger/package.json
 COPY packages/turnstile/package.json ./packages/turnstile/package.json

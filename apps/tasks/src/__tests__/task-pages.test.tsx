@@ -65,7 +65,7 @@ vi.mock('@tuturuuu/ui/tu-do/boards/workspace-projects-page', () => ({
   default: mocks.workspaceProjectsPage,
 }));
 
-vi.mock('@tuturuuu/ui/tu-do/progress/task-progress-page', () => ({
+vi.mock('@tuturuuu/tasks-ui/progress/task-progress-page', () => ({
   TaskProgressPage: mocks.taskProgressPage,
 }));
 

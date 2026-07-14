@@ -1,9 +1,9 @@
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import {
   normalizeTaskBoardShareEmail,
   type TaskBoardGuestPermission,
-} from '@tuturuuu/apis/tu-do/board-access';
-import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
+} from '@tuturuuu/tasks-api/server/board-access';
 import {
   getPermissions,
   normalizeWorkspaceId,
