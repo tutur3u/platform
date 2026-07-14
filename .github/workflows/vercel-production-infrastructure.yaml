@@ -58,7 +58,7 @@ jobs:
 
       - name: Use Node.js 24
         if: steps.check_commits.outputs.skip_build != 'true'
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v7
         with:
           node-version: 24
 
