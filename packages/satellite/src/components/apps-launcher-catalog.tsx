@@ -66,29 +66,29 @@ const CATEGORY_TONES: Record<
   { card: string; dot: string; icon: string }
 > = {
   ai: {
-    card: 'border-dynamic-cyan/25 bg-dynamic-cyan/5 hover:border-dynamic-cyan/45 hover:bg-dynamic-cyan/10',
+    card: 'border-dynamic-cyan/50 bg-dynamic-cyan/5 hover:border-dynamic-cyan/75 hover:bg-dynamic-cyan/10',
     dot: 'bg-dynamic-cyan',
-    icon: 'border-dynamic-cyan/30 bg-dynamic-cyan/10 text-dynamic-cyan',
+    icon: 'border-dynamic-cyan/55 bg-dynamic-cyan/10 text-dynamic-cyan',
   },
   learning: {
-    card: 'border-dynamic-orange/25 bg-dynamic-orange/5 hover:border-dynamic-orange/45 hover:bg-dynamic-orange/10',
+    card: 'border-dynamic-orange/50 bg-dynamic-orange/5 hover:border-dynamic-orange/75 hover:bg-dynamic-orange/10',
     dot: 'bg-dynamic-orange',
-    icon: 'border-dynamic-orange/30 bg-dynamic-orange/10 text-dynamic-orange',
+    icon: 'border-dynamic-orange/55 bg-dynamic-orange/10 text-dynamic-orange',
   },
   miscellaneous: {
-    card: 'border-dynamic-red/25 bg-dynamic-red/5 hover:border-dynamic-red/45 hover:bg-dynamic-red/10',
+    card: 'border-dynamic-red/50 bg-dynamic-red/5 hover:border-dynamic-red/75 hover:bg-dynamic-red/10',
     dot: 'bg-dynamic-red',
-    icon: 'border-dynamic-red/30 bg-dynamic-red/10 text-dynamic-red',
+    icon: 'border-dynamic-red/55 bg-dynamic-red/10 text-dynamic-red',
   },
   operations: {
-    card: 'border-dynamic-green/25 bg-dynamic-green/5 hover:border-dynamic-green/45 hover:bg-dynamic-green/10',
+    card: 'border-dynamic-green/50 bg-dynamic-green/5 hover:border-dynamic-green/75 hover:bg-dynamic-green/10',
     dot: 'bg-dynamic-green',
-    icon: 'border-dynamic-green/30 bg-dynamic-green/10 text-dynamic-green',
+    icon: 'border-dynamic-green/55 bg-dynamic-green/10 text-dynamic-green',
   },
   productivity: {
-    card: 'border-dynamic-blue/25 bg-dynamic-blue/5 hover:border-dynamic-blue/45 hover:bg-dynamic-blue/10',
+    card: 'border-dynamic-blue/50 bg-dynamic-blue/5 hover:border-dynamic-blue/75 hover:bg-dynamic-blue/10',
     dot: 'bg-dynamic-blue',
-    icon: 'border-dynamic-blue/30 bg-dynamic-blue/10 text-dynamic-blue',
+    icon: 'border-dynamic-blue/55 bg-dynamic-blue/10 text-dynamic-blue',
   },
 };
 

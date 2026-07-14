@@ -23,6 +23,9 @@ const localStorageMock = {
 } satisfies Storage;
 
 const messages = {
+  common: {
+    close: 'Close',
+  },
   command_launcher: {
     aliases_slot: 'Also matches: {aliases}',
     apps: 'Apps',
@@ -95,7 +98,7 @@ afterEach(() => {
 
 describe('AppsLauncherDialog', () => {
   it('renders the shared launchable app catalog in a bounded dialog', () => {
-    renderDialog();
+    const { onOpenChange } = renderDialog();
 
     expect(screen.getByRole('dialog')).toBeTruthy();
     expect(screen.getByRole('heading', { name: 'Apps' })).toBeTruthy();
@@ -156,6 +159,12 @@ describe('AppsLauncherDialog', () => {
     expect(
       screen.getByRole('radiogroup', { name: 'Open options' })
     ).toBeTruthy();
+    const closeButton = screen.getByRole('button', { name: 'Close' });
+    expect(
+      document
+        .querySelector('[data-slot="dialog-header"]')
+        ?.contains(closeButton)
+    ).toBe(true);
 
     const launcherBody = document.querySelector(
       '[data-slot="apps-launcher-body"]'
@@ -191,6 +200,9 @@ describe('AppsLauncherDialog', () => {
     expect(launcherGrid?.className).toContain('md:grid-cols-3');
     expect(launcherGrid?.className).toContain('lg:grid-cols-4');
     expect(launcherGrid?.className).toContain('xl:grid-cols-5');
+
+    fireEvent.click(closeButton);
+    expect(onOpenChange).toHaveBeenCalledWith(false);
   });
 
   it('groups apps by localized category sections', () => {
@@ -264,7 +276,7 @@ describe('AppsLauncherDialog', () => {
     expect(financeCard?.className).toContain('hover:-translate-y-px');
     expect(financeCard?.className).toContain('focus-visible:ring-2');
     expect(financeCard?.className).toContain('motion-reduce:transition-none');
-    expect(financeCard?.className).toContain('border-dynamic-green/25');
+    expect(financeCard?.className).toContain('border-dynamic-green/50');
     expect(financeCard?.className).toContain('bg-dynamic-green/5');
     expect(financeCard?.className).not.toContain('grid-cols-');
     const financeIcon = financeCard.querySelector(
@@ -275,7 +287,13 @@ describe('AppsLauncherDialog', () => {
       financeCard.querySelector('[data-slot="app-card-affordance"]')
     ).toBeTruthy();
     const tasksCard = screen.getByRole('link', { name: 'Tasks' });
-    expect(tasksCard.className).toContain('border-dynamic-blue/25');
+    expect(tasksCard.className).toContain('border-dynamic-blue/50');
+    expect(screen.getByRole('link', { name: 'Learn' }).className).toContain(
+      'border-dynamic-orange/50'
+    );
+    expect(screen.getByRole('link', { name: 'Hive' }).className).toContain(
+      'border-dynamic-cyan/50'
+    );
     expect(
       document.querySelector('[data-slot="app-card-affordance"]')
     ).toBeTruthy();
@@ -343,7 +361,10 @@ describe('AppsLauncherDialog', () => {
     const currentTab = screen.getByRole('radio', { name: 'Open here' });
     const newTab = screen.getByRole('radio', { name: 'Open in new tab' });
     expect(newTab.getAttribute('data-state')).toBe('on');
+    expect(newTab.getAttribute('data-selected')).toBe('true');
+    expect(newTab.className).toContain('data-[selected=true]:!bg-foreground');
     expect(currentTab.getAttribute('data-state')).toBe('off');
+    expect(currentTab.getAttribute('data-selected')).toBe('false');
 
     fireEvent.click(currentTab);
 
@@ -351,6 +372,8 @@ describe('AppsLauncherDialog', () => {
     expect(financeCard.getAttribute('target')).toBeNull();
     expect(financeCard.getAttribute('rel')).toBeNull();
     expect(currentTab.getAttribute('data-state')).toBe('on');
+    expect(currentTab.getAttribute('data-selected')).toBe('true');
+    expect(newTab.getAttribute('data-selected')).toBe('false');
     expect(
       window.localStorage.getItem('tuturuuu-apps-launcher-open-mode')
     ).toBe('"current-tab"');

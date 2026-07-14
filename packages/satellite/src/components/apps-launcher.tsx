@@ -1,8 +1,9 @@
 'use client';
 
-import { ArrowRight, ExternalLink } from '@tuturuuu/icons';
+import { ArrowRight, ExternalLink, X } from '@tuturuuu/icons';
 import {
   Dialog,
+  DialogClose,
   DialogContent,
   DialogDescription,
   DialogHeader,
@@ -36,6 +37,7 @@ export function AppsLauncherDialog({
   open,
 }: AppsLauncherDialogProps) {
   const t = useTranslations('command_launcher');
+  const commonT = useTranslations('common');
   const [storedOpenMode, setStoredOpenMode] = useLocalStorage<AppOpenMode>(
     APP_OPEN_MODE_STORAGE_KEY,
     'new-tab'
@@ -89,28 +91,35 @@ export function AppsLauncherDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         className="flex max-w-none flex-col gap-0 overflow-hidden border-border/70 bg-background p-0 sm:max-w-none sm:rounded-xl"
+        showCloseButton={false}
         style={dialogStyle}
       >
-        <DialogHeader className="flex w-full shrink-0 flex-col gap-3 border-b bg-muted/20 px-4 py-3 pr-12 text-left sm:flex-row sm:items-center sm:justify-between sm:pr-12">
+        <DialogHeader className="grid w-full shrink-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-b bg-muted/20 px-3 py-2.5 text-left sm:px-4">
           <div className="flex min-w-0 items-center gap-3">
             <LauncherMark />
             <div className="min-w-0">
               <DialogTitle className="font-semibold text-base tracking-tight">
                 {t('apps')}
               </DialogTitle>
-              <DialogDescription className="mt-0.5 text-xs">
+              <DialogDescription className="mt-0.5 hidden text-xs sm:block">
                 {t('apps_description')}
               </DialogDescription>
             </div>
           </div>
 
-          <OpenModeControl
-            currentLabel={t('open_here')}
-            label={t('open_options')}
-            mode={openMode}
-            newLabel={t('open_in_new_tab')}
-            onModeChange={setStoredOpenMode}
-          />
+          <div className="flex shrink-0 items-center gap-1.5">
+            <OpenModeControl
+              currentLabel={t('open_here')}
+              label={t('open_options')}
+              mode={openMode}
+              newLabel={t('open_in_new_tab')}
+              onModeChange={setStoredOpenMode}
+            />
+            <DialogClose className="flex size-7 shrink-0 items-center justify-center rounded-md border border-transparent text-muted-foreground transition-colors hover:border-border hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+              <X className="size-3.5" />
+              <span className="sr-only">{commonT('close')}</span>
+            </DialogClose>
+          </div>
         </DialogHeader>
 
         <div
@@ -135,7 +144,7 @@ function LauncherMark() {
   return (
     <div
       aria-hidden="true"
-      className="grid size-10 shrink-0 grid-cols-2 gap-1 rounded-xl border bg-background p-2 shadow-xs"
+      className="grid size-9 shrink-0 grid-cols-2 gap-1 rounded-lg border bg-background p-1.5 shadow-xs"
       data-slot="apps-launcher-mark"
     >
       <span className="rounded-[3px] bg-dynamic-blue" />
@@ -161,15 +170,12 @@ function OpenModeControl({
 }) {
   return (
     <div
-      className="flex shrink-0 items-center gap-2"
+      className="flex shrink-0 items-center"
       data-slot="apps-launcher-open-mode"
     >
-      <span className="hidden text-muted-foreground text-xs lg:inline">
-        {label}
-      </span>
       <ToggleGroup
         aria-label={label}
-        className="rounded-lg border bg-background p-0.5 shadow-xs"
+        className="rounded-lg border bg-background/80 p-0.5"
         onValueChange={(value) => {
           if (value === 'current-tab' || value === 'new-tab') {
             onModeChange(value);
@@ -180,19 +186,21 @@ function OpenModeControl({
       >
         <ToggleGroupItem
           aria-label={currentLabel}
-          className="h-7 gap-1.5 rounded-md px-2.5 text-xs data-[state=on]:bg-foreground data-[state=on]:text-background"
+          className="data-[selected=true]:!border-foreground/20 data-[selected=true]:!bg-foreground data-[selected=true]:!text-background h-7 min-w-7 gap-1.5 rounded-md border border-transparent px-2 text-muted-foreground text-xs data-[selected=true]:shadow-xs"
+          data-selected={mode === 'current-tab'}
           value="current-tab"
         >
           <ArrowRight className="size-3.5" />
-          {currentLabel}
+          <span className="hidden sm:inline">{currentLabel}</span>
         </ToggleGroupItem>
         <ToggleGroupItem
           aria-label={newLabel}
-          className="h-7 gap-1.5 rounded-md px-2.5 text-xs data-[state=on]:bg-foreground data-[state=on]:text-background"
+          className="data-[selected=true]:!border-foreground/20 data-[selected=true]:!bg-foreground data-[selected=true]:!text-background h-7 min-w-7 gap-1.5 rounded-md border border-transparent px-2 text-muted-foreground text-xs data-[selected=true]:shadow-xs"
+          data-selected={mode === 'new-tab'}
           value="new-tab"
         >
           <ExternalLink className="size-3.5" />
-          {newLabel}
+          <span className="hidden sm:inline">{newLabel}</span>
         </ToggleGroupItem>
       </ToggleGroup>
     </div>
