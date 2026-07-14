@@ -619,8 +619,9 @@ export function BoardColumn({
       <div className="flex items-center gap-2 rounded-t-xl border-b p-3">
         {!readOnly && !isExternalStaging && DragHandle}
         <div className="flex flex-1 items-center gap-2">
-          {isMultiSelectMode && !readOnly && visibleTasks.length > 0 ? (
+          {isMultiSelectMode && !readOnly ? (
             <Checkbox
+              aria-disabled={visibleTasks.length === 0}
               aria-label={t('select_all_tasks')}
               checked={
                 allVisibleTasksSelected
@@ -636,6 +637,7 @@ export function BoardColumn({
                 )
               )}
               onCheckedChange={handleToggleAll}
+              tabIndex={visibleTasks.length === 0 ? -1 : undefined}
               title={t('select_all_tasks')}
             />
           ) : (

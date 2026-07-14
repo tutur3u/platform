@@ -191,6 +191,49 @@ describe('BoardColumn external lane retry behavior', () => {
     );
   });
 
+  it('keeps the select-all checkbox visible for an empty task list', () => {
+    mocks.pagination = {
+      [regularColumn.id]: {
+        ...loadedExternalState,
+        hasMore: false,
+        totalCount: 0,
+      },
+    };
+    const onTaskSelect = vi.fn();
+    const setIsMultiSelectMode = vi.fn();
+
+    render(
+      <BoardColumn
+        boardId="board-1"
+        column={regularColumn}
+        isMultiSelectMode
+        onTaskSelect={onTaskSelect}
+        selectedTasks={new Set()}
+        setIsMultiSelectMode={setIsMultiSelectMode}
+        tasks={[]}
+        wsId="workspace-1"
+      />
+    );
+
+    const checkbox = screen.getByRole('checkbox', {
+      name: 'select_all_tasks',
+    });
+    expect(checkbox).toHaveAttribute('aria-disabled', 'true');
+    expect(checkbox).toHaveAttribute('data-state', 'unchecked');
+    expect(checkbox).toHaveAttribute('tabindex', '-1');
+    expect(checkbox).toHaveClass(
+      'border-2',
+      'border-dynamic-blue/70',
+      'bg-dynamic-blue/5',
+      'shadow-sm'
+    );
+
+    fireEvent.click(checkbox);
+
+    expect(onTaskSelect).not.toHaveBeenCalled();
+    expect(setIsMultiSelectMode).not.toHaveBeenCalled();
+  });
+
   it('offers collapse controls for regular task lists', () => {
     mocks.pagination = {
       [regularColumn.id]: {
