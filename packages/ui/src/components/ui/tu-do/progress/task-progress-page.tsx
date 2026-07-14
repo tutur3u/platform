@@ -20,6 +20,7 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
 import { ImportPanel } from './task-progress-import-panel';
+import { TaskProgressIntelligencePanel } from './task-progress-intelligence-panel';
 import { LeaderboardsPanel } from './task-progress-leaderboards-panel';
 import {
   GoalsPanel,
@@ -27,6 +28,7 @@ import {
   StatsPanel,
   SummaryCard,
 } from './task-progress-panels';
+import { useTaskProgressIntelligence } from './use-task-progress-intelligence';
 
 export type TaskProgressView =
   | 'progress'
@@ -134,6 +136,7 @@ export function TaskProgressPage({
     queryKey: [...queryRoot, 'leaderboards'],
     queryFn: () => listTaskLeaderboards(wsId, { status: 'active' }),
   });
+  const intelligence = useTaskProgressIntelligence({ view, wsId });
 
   const invalidateProgress = () =>
     queryClient.invalidateQueries({ queryKey: queryRoot });
@@ -286,6 +289,23 @@ export function TaskProgressPage({
           value={stats?.summary.currentStreak ?? 0}
         />
       </div>
+
+      {view === 'progress' || view === 'stats' ? (
+        <TaskProgressIntelligencePanel
+          aiEnabled={intelligence.aiEnabled}
+          cadence={intelligence.cadence}
+          catchup={intelligence.catchup}
+          catchupError={intelligence.catchupError}
+          catchupLoading={intelligence.catchupLoading}
+          onPeriodChange={intelligence.onPeriodChange}
+          onRefresh={intelligence.onRefresh}
+          period={intelligence.period}
+          refreshing={intelligence.refreshing}
+          showDecisions={intelligence.showDecisions}
+          stats={stats}
+          t={t}
+        />
+      ) : null}
 
       {view === 'progress' ? (
         <ProgressPanel

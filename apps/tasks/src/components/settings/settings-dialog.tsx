@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import {
   Bookmark,
   Box,
+  Brain,
   CalendarDays,
   CheckSquare,
   FileEdit,
@@ -36,6 +37,7 @@ import { isExactTuturuuuDotComEmail } from '@tuturuuu/utils/email/client';
 import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useState } from 'react';
 import { useSidebar } from '@/context/sidebar-context';
+import { TaskIntelligenceSettingsPanel } from './task-intelligence-settings-panel';
 import {
   TaskBoardSettingsPanel,
   TaskDraftsSettings,
@@ -117,6 +119,13 @@ export function SettingsDialog({
             icon: KanbanSquare,
             description: t('settings.tasks.board_description'),
             keywords: ['Tasks', 'Board', 'Layout'],
+          },
+          {
+            name: 'task_intelligence',
+            label: t('settings.tasks.intelligence.title'),
+            icon: Brain,
+            description: t('settings.tasks.intelligence.description'),
+            keywords: ['Tasks', 'AI', 'Insights', 'Analytics', 'Goals'],
           },
           {
             name: 'task_share',
@@ -283,6 +292,10 @@ export function SettingsDialog({
 
       {activeTab === 'task_board' && (
         <TaskBoardSettingsPanel boardId={boardId} wsId={wsId} />
+      )}
+
+      {activeTab === 'task_intelligence' && wsId && (
+        <TaskIntelligenceSettingsPanel wsId={wsId} />
       )}
 
       {activeTab === 'task_share' && (

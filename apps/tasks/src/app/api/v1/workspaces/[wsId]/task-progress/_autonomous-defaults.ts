@@ -28,7 +28,8 @@ function currentWeek() {
 
 export async function buildAutonomousWeeklyGoal(
   auth: TaskProgressRouteAuth,
-  metric: TaskProgressMetric
+  metric: TaskProgressMetric,
+  style: 'sustainable' | 'adaptive' | 'ambitious' = 'adaptive'
 ): Promise<TaskProgressGoal> {
   const week = currentWeek();
   const historyStart = formatDate(
@@ -47,7 +48,26 @@ export async function buildAutonomousWeeklyGoal(
   const previousTotal = personalEntries
     .filter((entry) => entry.entry_date < week.start)
     .reduce((total, entry) => total + entry.effectiveValue, 0);
-  const target = Math.max(5, Math.ceil((previousTotal / 4) * 1.1));
+  const goalProfile = {
+    sustainable: { minimum: 3, multiplier: 1 },
+    adaptive: { minimum: 5, multiplier: 1.1 },
+    ambitious: { minimum: 7, multiplier: 1.25 },
+  }[style];
+  const target = Math.max(
+    goalProfile.minimum,
+    Math.ceil((previousTotal / 4) * goalProfile.multiplier)
+  );
+  const today = new Date();
+  const weekStart = new Date(`${week.start}T00:00:00.000Z`);
+  const elapsedDays = Math.max(
+    1,
+    Math.min(
+      7,
+      Math.floor((today.getTime() - weekStart.getTime()) / 86_400_000) + 1
+    )
+  );
+  const expectedProgress = (target * elapsedDays) / 7;
+  const projectedTotal = (progress / elapsedDays) * 7;
 
   return {
     archived_at: null,
@@ -55,6 +75,7 @@ export async function buildAutonomousWeeklyGoal(
     board_id: null,
     created_at: `${week.start}T00:00:00.000Z`,
     description: 'Adapts automatically to your recent task completion pace.',
+    expected_progress: expectedProgress,
     goal_type: 'target',
     id: `autonomous-weekly-goal:${auth.user.id}:${week.start}`,
     metric,
@@ -62,6 +83,9 @@ export async function buildAutonomousWeeklyGoal(
     name: 'Weekly task momentum',
     owner_id: auth.user.id,
     percent: Math.min((progress / target) * 100, 100),
+    pace_delta: progress - expectedProgress,
+    projected_total: projectedTotal,
+    on_track: progress >= expectedProgress,
     period_end: week.end,
     period_start: week.start,
     progress,

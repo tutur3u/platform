@@ -224,6 +224,20 @@ export function GoalsPanel(props: {
                         {t('autopilot.badge')}
                       </Badge>
                     ) : null}
+                    {goal.automatic && typeof goal.on_track === 'boolean' ? (
+                      <Badge
+                        className={
+                          goal.on_track
+                            ? 'border-dynamic-green/30 bg-dynamic-green/10 text-dynamic-green'
+                            : 'border-dynamic-amber/30 bg-dynamic-amber/10 text-dynamic-amber'
+                        }
+                        variant="outline"
+                      >
+                        {goal.on_track
+                          ? t('goals.on_track')
+                          : t('goals.needs_attention')}
+                      </Badge>
+                    ) : null}
                     <Badge variant="secondary">{goal.goal_type}</Badge>
                   </div>
                 </div>
@@ -247,6 +261,26 @@ export function GoalsPanel(props: {
                   {Number(goal.target_value ?? 0).toLocaleString()}{' '}
                   {goal.metric?.unit_label}
                 </div>
+                {goal.automatic ? (
+                  <div className="grid gap-2 rounded-lg bg-muted/40 p-3 text-xs sm:grid-cols-2">
+                    <div>
+                      <span className="text-muted-foreground">
+                        {t('goals.expected_now')}
+                      </span>{' '}
+                      <strong>
+                        {Number(goal.expected_progress ?? 0).toFixed(1)}
+                      </strong>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">
+                        {t('goals.projected_finish')}
+                      </span>{' '}
+                      <strong>
+                        {Number(goal.projected_total ?? 0).toFixed(1)}
+                      </strong>
+                    </div>
+                  </div>
+                ) : null}
               </CardContent>
             </Card>
           ))

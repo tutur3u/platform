@@ -6825,6 +6825,27 @@
       "import_description": "Xem trước và nhập các mục tiến độ công việc",
       "initiatives": "Sáng kiến",
       "initiatives_description": "Tạo và quản lý các sáng kiến công việc chiến lược",
+      "intelligence": {
+        "ai_catchups": "Tổng kết AI hàng tuần và hàng tháng",
+        "ai_catchups_description": "Tự động chuẩn bị bản tóm tắt, điểm cần lưu ý và hành động tiếp theo từ tiến độ tổng hợp. Mặc định tắt.",
+        "autopilot_description": "Biến hoạt động công việc thành hướng dẫn hữu ích mà không cần ghi chép hay thiết lập thủ công.",
+        "autopilot_title": "Chế độ tự động tiến độ",
+        "catchup_cadence": "Tần suất tổng kết",
+        "catchup_cadence_description": "Chọn bản tổng kết kỳ hiện tại mà Tuturuuu chuẩn bị khi bạn mở Tiến độ.",
+        "description": "Thông tin tự động, mục tiêu thích ứng và bản tổng kết AI",
+        "goal_adaptive": "Thích ứng",
+        "goal_ambitious": "Tham vọng",
+        "goal_style": "Phong cách mục tiêu thích ứng",
+        "goal_style_description": "Chọn mức độ mục tiêu tuần tự động tăng so với nhịp độ gần đây.",
+        "goal_sustainable": "Bền vững",
+        "monthly": "Hàng tháng",
+        "privacy_note": "Bản tổng kết AI chỉ dùng số liệu và xu hướng tổng hợp. Tiêu đề và mô tả công việc không được gửi đi.",
+        "show_decisions": "Hiển thị tín hiệu quyết định",
+        "show_decisions_description": "Hiển thị dự báo, tính đều đặn, thói quen làm việc và bước tiếp theo được đề xuất.",
+        "title": "Thông tin thông minh",
+        "weekly": "Hàng tuần",
+        "weekly_monthly": "Tuần + tháng"
+      },
       "labels": "Nhãn",
       "labels_description": "Tạo và quản lý nhãn công việc",
       "leaderboards": "Bảng xếp hạng",
@@ -7778,12 +7799,62 @@
       "automatic_description": "Tự động điều chỉnh theo nhịp độ hoàn thành công việc gần đây của bạn.",
       "automatic_name": "Đà hoàn thành công việc hàng tuần",
       "create_goal": "Tạo mục tiêu",
-      "custom_goal": "Thêm mục tiêu tùy chỉnh"
+      "custom_goal": "Thêm mục tiêu tùy chỉnh",
+      "expected_now": "Dự kiến đến hiện tại",
+      "needs_attention": "Cần chú ý",
+      "on_track": "Đúng tiến độ",
+      "projected_finish": "Dự báo hoàn thành"
     },
     "import": {
       "placeholder": "2026-06-25,500,Words,writing|draft,Bản nháp chương",
       "preview_count": "Đã xem trước {count} dòng",
       "title": "Nhập tiến độ"
+    },
+    "intelligence": {
+      "active_days": "Hoạt động {value} trong 30 ngày qua",
+      "catchup": {
+        "disabled_description": "Khi bật, Tuturuuu chuẩn bị bản tổng kết tuần hoặc tháng riêng tư từ tiến độ tổng hợp và sử dụng tín dụng AI của không gian làm việc.",
+        "disabled_title": "Bật tổng kết tự động trong Cài đặt",
+        "enabled": "Tự động",
+        "error": "Không thể chuẩn bị bản tổng kết. Hãy thử lại sau hoặc kiểm tra cài đặt tín dụng AI.",
+        "highlights": "Điểm nổi bật",
+        "loading": "Đang chuẩn bị bản tổng kết ngắn gọn từ tiến độ hiện tại...",
+        "monthly": "Tháng",
+        "next_actions": "Hành động tiếp theo thông minh",
+        "opt_in": "Tùy chọn",
+        "refresh": "Tạo lại bản tổng kết",
+        "title": "Tổng kết AI",
+        "watchouts": "Điểm cần lưu ý",
+        "weekly": "Tuần"
+      },
+      "consistency": "Độ đều đặn 30 ngày",
+      "forecast_context": "Đã hoàn thành {value} trong tuần này",
+      "momentum": {
+        "accelerating": "Đang tăng tốc",
+        "slowing": "Đang chậm lại",
+        "starting": "Đang bắt đầu",
+        "steady": "Ổn định"
+      },
+      "not_enough_data": "Đang học nhịp độ của bạn",
+      "recommendations": {
+        "protect_streak": "Duy trì nhịp độ đang hoạt động tốt.",
+        "raise_goal": "Động lực đủ tốt để nâng mục tiêu một chút.",
+        "rebuild_rhythm": "Một hành động nhỏ lặp lại mỗi ngày có thể xây lại động lực.",
+        "start_small": "Hoàn thành một công việc có ý nghĩa để tạo mốc ban đầu.",
+        "stay_course": "Giữ nhịp độ hiện tại và xem lại sau khi có thêm hoạt động."
+      },
+      "strongest_day": "Ngày hiệu quả nhất",
+      "title": "Tín hiệu quyết định",
+      "week_forecast": "Dự báo tuần",
+      "weekdays": {
+        "0": "Chủ nhật",
+        "1": "Thứ Hai",
+        "2": "Thứ Ba",
+        "3": "Thứ Tư",
+        "4": "Thứ Năm",
+        "5": "Thứ Sáu",
+        "6": "Thứ Bảy"
+      }
     },
     "leaderboards": {
       "automatic_description": "Cập nhật từ các công việc đã hoàn thành trong không gian làm việc này.",

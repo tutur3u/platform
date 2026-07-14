@@ -17,6 +17,8 @@ import type {
   TaskLeaderboardResponse,
   TaskLeaderboardsResponse,
   TaskLeaderboardTeam,
+  TaskProgressCatchupPeriod,
+  TaskProgressCatchupResponse,
   TaskProgressEntriesResponse,
   TaskProgressEntryResponse,
   TaskProgressGoalResponse,
@@ -204,6 +206,21 @@ export function getTaskProgressStats(
     cache: 'no-store',
     query,
   });
+}
+
+export function generateTaskProgressCatchup(
+  workspaceId: string,
+  payload: {
+    force?: boolean;
+    locale?: string;
+    period: TaskProgressCatchupPeriod;
+  },
+  options?: InternalApiClientOptions
+) {
+  return getTaskApiClient(options).json<TaskProgressCatchupResponse>(
+    `${progressBasePath(workspaceId)}/catchup`,
+    jsonInit('POST', payload)
+  );
 }
 
 export function listTaskLeaderboards(

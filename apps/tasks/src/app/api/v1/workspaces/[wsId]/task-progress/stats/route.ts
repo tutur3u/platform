@@ -3,6 +3,7 @@ import {
   isAutonomousTaskMetric,
   loadAutonomousTaskProgressEntries,
 } from '../_autonomous';
+import { buildTaskProgressInsights } from '../_insights';
 import {
   buildEntryQuery,
   ensureDefaultTaskProgressMetrics,
@@ -136,6 +137,7 @@ export async function GET(
           ? 100
           : 0;
     const activeDays = daily.filter((day) => day.value > 0).length;
+    const intelligence = buildTaskProgressInsights(daily);
 
     return NextResponse.json({
       ok: true,
@@ -154,6 +156,7 @@ export async function GET(
         trendPercent,
         averagePerActiveDay: activeDays > 0 ? total / activeDays : 0,
       },
+      ...intelligence,
       daily,
       heatmap: daily,
       tags,
@@ -173,6 +176,27 @@ export async function GET(
           today: 0,
           total: 0,
           trendPercent: 0,
+        },
+        periods: {
+          last7Days: 0,
+          last30Days: 0,
+          previousMonth: 0,
+          previousWeek: 0,
+          thisMonth: 0,
+          thisWeek: 0,
+        },
+        insights: {
+          activeDaysLast30: 0,
+          averageLast7: 0,
+          averageLast30: 0,
+          bestDay: null,
+          consistencyScore: 0,
+          momentumStatus: 'starting',
+          projectedWeek: 0,
+          recommendation: 'start_small',
+          strongestWeekday: null,
+          weekTrendPercent: 0,
+          weekdayTotals: [],
         },
         daily: [],
         heatmap: [],

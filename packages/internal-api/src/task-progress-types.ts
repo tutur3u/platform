@@ -66,6 +66,7 @@ export interface TaskProgressEntry {
 
 export interface TaskProgressGoal {
   automatic?: boolean;
+  expected_progress?: number;
   id: string;
   ws_id: string;
   owner_id: string;
@@ -90,6 +91,9 @@ export interface TaskProgressGoal {
   progress?: number;
   remaining?: number;
   percent?: number;
+  pace_delta?: number;
+  projected_total?: number;
+  on_track?: boolean;
   metric?: TaskProgressMetric;
 }
 
@@ -161,9 +165,63 @@ export interface TaskProgressStatsResponse {
     total: number;
     trendPercent: number;
   };
+  periods: {
+    last7Days: number;
+    last30Days: number;
+    previousMonth: number;
+    previousWeek: number;
+    thisMonth: number;
+    thisWeek: number;
+  };
+  insights: {
+    activeDaysLast30: number;
+    averageLast7: number;
+    averageLast30: number;
+    bestDay: { date: string; value: number } | null;
+    consistencyScore: number;
+    momentumStatus: 'accelerating' | 'steady' | 'slowing' | 'starting';
+    projectedWeek: number;
+    recommendation:
+      | 'protect_streak'
+      | 'raise_goal'
+      | 'rebuild_rhythm'
+      | 'stay_course'
+      | 'start_small';
+    strongestWeekday: {
+      activeDays: number;
+      value: number;
+      weekday: number;
+    } | null;
+    weekTrendPercent: number;
+    weekdayTotals: Array<{
+      activeDays: number;
+      value: number;
+      weekday: number;
+    }>;
+  };
   daily: Array<{ date: string; value: number }>;
   heatmap: Array<{ date: string; value: number }>;
   tags: Array<{ tag: string; value: number }>;
+}
+
+export type TaskProgressCatchupPeriod = 'weekly' | 'monthly';
+
+export interface TaskProgressCatchup {
+  executiveSummary: string;
+  generatedAt: string;
+  highlights: string[];
+  nextActions: string[];
+  period: TaskProgressCatchupPeriod;
+  periodEnd: string;
+  periodKey: string;
+  periodStart: string;
+  watchouts: string[];
+}
+
+export interface TaskProgressCatchupResponse {
+  ok: true;
+  cached: boolean;
+  catchup: TaskProgressCatchup;
 }
 
 export type TaskProgressMetricsResponse =

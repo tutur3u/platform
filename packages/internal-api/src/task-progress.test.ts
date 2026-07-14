@@ -4,6 +4,7 @@ import {
   createTaskProgressEntry,
   createTaskProgressGoal,
   createTaskProgressMetric,
+  generateTaskProgressCatchup,
   getTaskProgressStats,
   importTaskProgressEntries,
   isTaskProgressSchemaUnavailable,
@@ -49,6 +50,11 @@ describe('task progress internal API helpers', () => {
       options
     );
     await getTaskProgressStats('ws 1', { metric_id: 'metric-1' }, options);
+    await generateTaskProgressCatchup(
+      'ws 1',
+      { locale: 'vi', period: 'weekly' },
+      options
+    );
     await listTaskLeaderboards('ws 1', { status: 'active' }, options);
     await createTaskLeaderboard(
       'ws 1',
@@ -73,10 +79,15 @@ describe('task progress internal API helpers', () => {
       'https://internal.example.com/api/v1/workspaces/ws%201/task-progress/goals?status=active',
       'https://internal.example.com/api/v1/workspaces/ws%201/task-progress/goals',
       'https://internal.example.com/api/v1/workspaces/ws%201/task-progress/stats?metric_id=metric-1',
+      'https://internal.example.com/api/v1/workspaces/ws%201/task-progress/catchup',
       'https://internal.example.com/api/v1/workspaces/ws%201/task-progress/leaderboards?status=active',
       'https://internal.example.com/api/v1/workspaces/ws%201/task-progress/leaderboards',
       'https://internal.example.com/api/v1/workspaces/ws%201/task-progress/import',
     ]);
+    expect(fetchMock.mock.calls[7]?.[1]).toMatchObject({
+      body: JSON.stringify({ locale: 'vi', period: 'weekly' }),
+      method: 'POST',
+    });
   });
 
   it('identifies rollout-safe schema unavailable responses', () => {

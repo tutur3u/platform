@@ -7611,12 +7611,62 @@
       "target": "Mục tiêu"
     },
     "goals": {
-      "create_goal": "Tạo mục tiêu"
+      "create_goal": "Tạo mục tiêu",
+      "expected_now": "Dự kiến đến hiện tại",
+      "needs_attention": "Cần chú ý",
+      "on_track": "Đúng tiến độ",
+      "projected_finish": "Dự báo hoàn thành"
     },
     "import": {
       "placeholder": "2026-06-25,500,Words,writing|draft,Bản nháp chương",
       "preview_count": "Đã xem trước {count} dòng",
       "title": "Nhập tiến độ"
+    },
+    "intelligence": {
+      "active_days": "Hoạt động {value} trong 30 ngày qua",
+      "catchup": {
+        "disabled_description": "Khi bật, Tuturuuu chuẩn bị bản tổng kết tuần hoặc tháng riêng tư từ tiến độ tổng hợp và sử dụng tín dụng AI của không gian làm việc.",
+        "disabled_title": "Bật tổng kết tự động trong Cài đặt",
+        "enabled": "Tự động",
+        "error": "Không thể chuẩn bị bản tổng kết. Hãy thử lại sau hoặc kiểm tra cài đặt tín dụng AI.",
+        "highlights": "Điểm nổi bật",
+        "loading": "Đang chuẩn bị bản tổng kết ngắn gọn từ tiến độ hiện tại...",
+        "monthly": "Tháng",
+        "next_actions": "Hành động tiếp theo thông minh",
+        "opt_in": "Tùy chọn",
+        "refresh": "Tạo lại bản tổng kết",
+        "title": "Tổng kết AI",
+        "watchouts": "Điểm cần lưu ý",
+        "weekly": "Tuần"
+      },
+      "consistency": "Độ đều đặn 30 ngày",
+      "forecast_context": "Đã hoàn thành {value} trong tuần này",
+      "momentum": {
+        "accelerating": "Đang tăng tốc",
+        "slowing": "Đang chậm lại",
+        "starting": "Đang bắt đầu",
+        "steady": "Ổn định"
+      },
+      "not_enough_data": "Đang học nhịp độ của bạn",
+      "recommendations": {
+        "protect_streak": "Duy trì nhịp độ đang hoạt động tốt.",
+        "raise_goal": "Động lực đủ tốt để nâng mục tiêu một chút.",
+        "rebuild_rhythm": "Một hành động nhỏ lặp lại mỗi ngày có thể xây lại động lực.",
+        "start_small": "Hoàn thành một công việc có ý nghĩa để tạo mốc ban đầu.",
+        "stay_course": "Giữ nhịp độ hiện tại và xem lại sau khi có thêm hoạt động."
+      },
+      "strongest_day": "Ngày hiệu quả nhất",
+      "title": "Tín hiệu quyết định",
+      "week_forecast": "Dự báo tuần",
+      "weekdays": {
+        "0": "Chủ nhật",
+        "1": "Thứ Hai",
+        "2": "Thứ Ba",
+        "3": "Thứ Tư",
+        "4": "Thứ Năm",
+        "5": "Thứ Sáu",
+        "6": "Thứ Bảy"
+      }
     },
     "leaderboards": {
       "create_leaderboard": "Tạo bảng xếp hạng"

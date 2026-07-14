@@ -3195,12 +3195,62 @@
       "target": "Target"
     },
     "goals": {
-      "create_goal": "Create goal"
+      "create_goal": "Create goal",
+      "expected_now": "Expected by now",
+      "needs_attention": "Needs attention",
+      "on_track": "On track",
+      "projected_finish": "Projected finish"
     },
     "import": {
       "placeholder": "2026-06-25,500,Words,writing|draft,Chapter draft",
       "preview_count": "Previewed {count} entries",
       "title": "Import progress"
+    },
+    "intelligence": {
+      "active_days": "Active on {value} of the last 30 days",
+      "catchup": {
+        "disabled_description": "When enabled, Tuturuuu prepares a private weekly or monthly summary from aggregate progress and uses your workspace AI credits.",
+        "disabled_title": "Enable automatic catch-ups in Settings",
+        "enabled": "Automatic",
+        "error": "The catch-up could not be prepared. Try again later or review AI credit settings.",
+        "highlights": "Highlights",
+        "loading": "Preparing a concise catch-up from your current progress...",
+        "monthly": "Month",
+        "next_actions": "Smart next actions",
+        "opt_in": "Optional",
+        "refresh": "Regenerate catch-up",
+        "title": "AI catch-up",
+        "watchouts": "Watchouts",
+        "weekly": "Week"
+      },
+      "consistency": "30-day consistency",
+      "forecast_context": "{value} completed so far this week",
+      "momentum": {
+        "accelerating": "Accelerating",
+        "slowing": "Slowing",
+        "starting": "Getting started",
+        "steady": "Steady"
+      },
+      "not_enough_data": "Learning your rhythm",
+      "recommendations": {
+        "protect_streak": "Protect the rhythm that is already working.",
+        "raise_goal": "Momentum is strong enough for a slightly higher target.",
+        "rebuild_rhythm": "A smaller repeatable daily action can rebuild momentum.",
+        "start_small": "Complete one meaningful task to establish a baseline.",
+        "stay_course": "Keep the current pace and review again after more activity."
+      },
+      "strongest_day": "Strongest weekday",
+      "title": "Decision signals",
+      "week_forecast": "Week forecast",
+      "weekdays": {
+        "0": "Sunday",
+        "1": "Monday",
+        "2": "Tuesday",
+        "3": "Wednesday",
+        "4": "Thursday",
+        "5": "Friday",
+        "6": "Saturday"
+      }
     },
     "leaderboards": {
       "create_leaderboard": "Create leaderboard"

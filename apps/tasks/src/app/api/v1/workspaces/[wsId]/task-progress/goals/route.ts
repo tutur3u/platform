@@ -1,3 +1,4 @@
+import { TASK_PROGRESS_GOAL_STYLE_CONFIG_ID } from '@tuturuuu/internal-api/users';
 import { connection, type NextRequest, NextResponse } from 'next/server';
 import { buildAutonomousWeeklyGoal } from '../_autonomous-defaults';
 import {
@@ -57,9 +58,24 @@ export async function GET(
       .limit(1)
       .maybeSingle();
     if (metricError) throw metricError;
+    const { data: goalStyleConfig, error: goalStyleError } = await (
+      auth.sbAdmin as any
+    )
+      .from('user_workspace_configs')
+      .select('value')
+      .eq('user_id', auth.user.id)
+      .eq('ws_id', auth.wsId)
+      .eq('id', TASK_PROGRESS_GOAL_STYLE_CONFIG_ID)
+      .maybeSingle();
+    if (goalStyleError) throw goalStyleError;
+    const goalStyle = ['sustainable', 'ambitious'].includes(
+      goalStyleConfig?.value
+    )
+      ? goalStyleConfig.value
+      : 'adaptive';
     const automaticGoal =
       (!status || status === 'active') && completedMetric
-        ? await buildAutonomousWeeklyGoal(auth, completedMetric)
+        ? await buildAutonomousWeeklyGoal(auth, completedMetric, goalStyle)
         : null;
     return NextResponse.json({
       ok: true,
