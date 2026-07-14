@@ -6,7 +6,6 @@ include:
   - path: docker-compose/compose.web.prod.web.yml
   - path: docker-compose/compose.web.prod.edge.yml
   - path: docker-compose/compose.web.prod.sidecars.yml
-  - path: docker-compose/compose.web.prod.voice.yml
   - path: docker-compose/compose.web.prod.ops.yml
   - path: docker-compose/compose.web.prod.redis.yml
 
@@ -26,5 +25,3 @@ volumes:
   platform-supermemory-postgres:
   platform-bun-install:
   platform-blue-green-watcher-node_modules:
-  platform-pronunciation-assessor-cache:
-  platform-voice-lab-cache:

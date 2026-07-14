@@ -872,14 +872,7 @@
     "overview_description": "Track course production and teaching-readiness across your workspace.",
     "publish_checklist": "Publish Checklist",
     "quizzes": "Quizzes",
-    "teacher_review_queue": "Teacher Review Queue",
-    "valsea": {
-      "audio_recording_failed": "Could not start audio recording.",
-      "audio_recording_unsupported": "This browser does not support live audio recording.",
-      "page_description": "Convert mixed-language classroom speech into clearer notes, translations, semantic cues, learner tone, and teacher next steps.",
-      "sample_1_text": "Teacher ah, I understand the formula but when the question say compare two graphs I blur already. The slope one can lah, but the intercept part I keep mixing up.",
-      "title": "Valsea Classroom Studio"
-    }
+    "teacher_review_queue": "Teacher Review Queue"
   },
   "workspace-invitation": {
     "accept": "Accept invitation",

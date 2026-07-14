@@ -84,7 +84,6 @@ x-web-service: &web-service
     - SUPERMEMORY_TIMEOUT_MS=${SUPERMEMORY_TIMEOUT_MS:-1500}
     - UPSTASH_REDIS_REST_TOKEN
     - UPSTASH_REDIS_REST_URL
-    - VALSEA_PRONUNCIATION_ASSESSOR_URL=${VALSEA_PRONUNCIATION_ASSESSOR_URL:-http://pronunciation-assessor:8010/assess}
   extra_hosts:
     - "host.docker.internal:host-gateway"
   healthcheck:

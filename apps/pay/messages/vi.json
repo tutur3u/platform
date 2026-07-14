@@ -1070,14 +1070,7 @@
     "overview_description": "Theo dõi tiến độ xây dựng khóa học và mức độ sẵn sàng giảng dạy trong workspace.",
     "publish_checklist": "Danh sách kiểm tra xuất bản",
     "quizzes": "Câu hỏi trắc nghiệm",
-    "teacher_review_queue": "Hàng đợi giáo viên chấm",
-    "valsea": {
-      "audio_recording_failed": "Không thể bắt đầu ghi âm.",
-      "audio_recording_unsupported": "Trình duyệt này không hỗ trợ ghi âm trực tiếp.",
-      "page_description": "Chuyển lời nói đa ngôn ngữ trong lớp thành ghi chú rõ ràng, bản dịch, tín hiệu ngữ nghĩa, sắc thái học viên và bước tiếp theo cho giáo viên.",
-      "sample_1_text": "Teacher ah, I understand the formula but when the question say compare two graphs I blur already. The slope one can lah, but the intercept part I keep mixing up.",
-      "title": "Valsea Classroom Studio"
-    }
+    "teacher_review_queue": "Hàng đợi giáo viên chấm"
   },
   "workspace-invitation": {
     "accept": "Chấp nhận lời mời",

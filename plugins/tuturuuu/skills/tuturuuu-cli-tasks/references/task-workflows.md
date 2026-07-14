@@ -105,8 +105,8 @@ Split a combined task by creating the replacements first, then closing the
 superseded original:
 
 ```bash
-ttr tasks create "Integrate Valsea demo into Tuturuuu web app" --board <board-id> --list <list-id> --labels <label-ids>
-ttr tasks create "Integrate Valsea demo into Tuturuuu mobile app" --board <board-id> --list <list-id> --labels <label-ids>
+ttr tasks create "Integrate the classroom demo into Tuturuuu web" --board <board-id> --list <list-id> --labels <label-ids>
+ttr tasks create "Integrate the classroom demo into Tuturuuu mobile" --board <board-id> --list <list-id> --labels <label-ids>
 ttr tasks close <combined-task-key>
 ```
 

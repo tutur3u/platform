@@ -46,15 +46,6 @@ pub(super) async fn dispatch_chunk_20(
         return Some(response);
     }
 
-    if let Some(response) =
-        workspaces_wsid_education_valsea::handle_workspaces_wsid_education_valsea_route(
-            config, request, outbound,
-        )
-        .await
-    {
-        return Some(response);
-    }
-
     if let Some(response) = workspaces_wsid_encryption::handle_workspaces_wsid_encryption_route(
         config, request, outbound,
     )

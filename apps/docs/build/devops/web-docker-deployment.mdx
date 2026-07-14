@@ -748,9 +748,8 @@ Blue/green deploy does this:
    `BACKEND_INTERNAL_URL=http://backend:7820`,
    `MARKITDOWN_ENDPOINT_URL=http://markitdown:8000/markitdown`,
    `DISCORD_APP_DEPLOYMENT_URL=http://markitdown:8000`,
-   `DRIVE_AUTO_EXTRACT_PROXY_URL=http://storage-unzip-proxy:8788/extract`,
-   `VALSEA_PRONUNCIATION_ASSESSOR_URL=http://pronunciation-assessor:8010/assess`,
-   and `INTERNAL_WEB_API_ORIGIN=http://web-proxy:7803`.
+   `DRIVE_AUTO_EXTRACT_PROXY_URL=http://storage-unzip-proxy:8788/extract`, and
+   `INTERNAL_WEB_API_ORIGIN=http://web-proxy:7803`.
 8. Keeps the stable `web-proxy` container running in place during ordinary
    promotions instead of re-running `compose up` against the public `:7803`
    listener. If the running proxy is missing required host ports or its
@@ -874,24 +873,6 @@ fallbacks for workspaces that have not supplied custom proxy secrets. If a
 workspace supplies a custom `DRIVE_AUTO_EXTRACT_PROXY_URL`, it must also supply
 its own `DRIVE_AUTO_EXTRACT_PROXY_TOKEN`; the process-wide fallback token must
 not be sent to a workspace-controlled proxy URL.
-
-The `pronunciation-assessor` helper is local-only. It defaults to
-`PRONUNCIATION_ASSESSOR_DEFAULT_MODEL=local-whisper-large-v3-turbo`, can switch
-between local Whisper sizes and `local-wav2vec2`, and stores downloaded
-Transformers checkpoints in the `platform-pronunciation-assessor-cache` volume.
-The default model preloads at container startup. Set
-`PRONUNCIATION_ASSESSOR_PRELOAD=false` only when startup speed matters more than
-first-request latency. On shared hosts, keep
-`PRONUNCIATION_ASSESSOR_MAX_LOADED_MODELS=1` and tune
-`PRONUNCIATION_ASSESSOR_IDLE_TTL_SECONDS` so idle models are unloaded before
-they hold GPU or RAM capacity unnecessarily. The helper rejects uploads over
-`PRONUNCIATION_ASSESSOR_MAX_UPLOAD_BYTES` (default: 10 MB) and rejects decoded
-audio longer than `PRONUNCIATION_ASSESSOR_MAX_AUDIO_SECONDS` (default: 120
-seconds) before local model inference. Leave
-`PRONUNCIATION_ASSESSOR_ADMIN_TOKEN` unset unless operators need to call
-`POST /models/load` or `POST /models/unload`; those model-control endpoints are
-disabled without the token and require `Authorization: Bearer <token>` when it
-is configured.
 
 CMS WebGL package uploads also use the `storage-unzip-proxy`, but they are a
 first-class CMS upload path rather than generic Drive automation. They require a

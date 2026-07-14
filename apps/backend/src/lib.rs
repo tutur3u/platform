@@ -474,7 +474,6 @@ mod workspaces_wsid_cron_jobs_jobid;
 mod workspaces_wsid_datasets_datasetid_rows;
 mod workspaces_wsid_documents;
 mod workspaces_wsid_documents_documentid;
-mod workspaces_wsid_education_valsea;
 mod workspaces_wsid_encryption;
 mod workspaces_wsid_external_apps_cron;
 mod workspaces_wsid_external_apps_cron_executions;

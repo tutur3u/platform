@@ -1032,7 +1032,6 @@ function validateDockerProdCompose(composeContent) {
     'path: docker-compose/compose.web.prod.web.yml',
     'path: docker-compose/compose.web.prod.edge.yml',
     'path: docker-compose/compose.web.prod.sidecars.yml',
-    'path: docker-compose/compose.web.prod.voice.yml',
     'path: docker-compose/compose.web.prod.ops.yml',
     'path: docker-compose/compose.web.prod.redis.yml',
     'x-web-service: &web-service',
