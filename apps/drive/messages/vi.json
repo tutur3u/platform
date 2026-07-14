@@ -7583,6 +7583,10 @@
       "commit_import": "Ghi nhận nhập liệu",
       "preview": "Xem trước"
     },
+    "autopilot": {
+      "badge": "Tự động",
+      "live": "Trực tiếp từ hoạt động công việc"
+    },
     "empty": {
       "entries": "Chưa có ghi nhận tiến độ.",
       "goals": "Chưa có mục tiêu đang hoạt động.",
@@ -7590,6 +7594,7 @@
       "stats": "Chưa có thống kê tiến độ."
     },
     "fields": {
+      "automatic_metric": "Chỉ số tự động",
       "color": "Màu",
       "goal_name": "Tên mục tiêu",
       "leaderboard_name": "Tên bảng xếp hạng",
@@ -7628,6 +7633,7 @@
       "entries": "Lượt ghi",
       "goals": "Mục tiêu",
       "streak": "Chuỗi ngày",
+      "today": "Hôm nay",
       "total": "Tổng"
     },
     "tabs": {
@@ -13545,6 +13551,7 @@
     "filter_source_scope_external_current_workspace": "Bên ngoài trong không gian này",
     "filter_source_scope_external_specific": "Nguồn cụ thể",
     "filter_workspaces": "Không gian làm việc",
+    "hide_empty_task_lists": "Ẩn danh sách công việc trống",
     "last_30_days": "30 ngày qua",
     "loading": "Đang tải...",
     "marked_done_with_part": "Đã đánh dấu hoàn thành phần của bạn",
@@ -13576,6 +13583,7 @@
     "show_less": "Thu gọn",
     "show_n_more_tasks": "Xem thêm {count} nhiệm vụ",
     "task_completed_toast": "Đã hoàn thành nhiệm vụ!",
+    "task_list_visibility": "Hiển thị danh sách công việc",
     "task_marked_incomplete": "Đã đánh dấu nhiệm vụ chưa hoàn thành",
     "task_not_on_board": "Nhiệm vụ không thuộc bảng nào",
     "task_personally_completed": "Đã hoàn thành nhiệm vụ cá nhân!",

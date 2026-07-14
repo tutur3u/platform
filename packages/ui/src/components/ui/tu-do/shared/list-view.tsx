@@ -654,7 +654,7 @@ function InteractiveListView({
                           onCheckedChange={(checked) =>
                             handleSelectAll(!!checked)
                           }
-                          aria-label={tc('select_all')}
+                          aria-label={tc('select_all_tasks')}
                           className={cn(
                             TASK_CARD_SELECTION_CHECKBOX_BASE_CLASSES,
                             '!border-2 !border-primary/70 data-[state=checked]:!border-primary/80 bg-primary/5 ring-1 ring-primary/15 data-[state=checked]:bg-primary/20 data-[state=checked]:text-primary'
@@ -662,7 +662,7 @@ function InteractiveListView({
                         />
                       </TooltipTrigger>
                       <TooltipContent side="top">
-                        {tc('select_all')}
+                        {tc('select_all_tasks')}
                       </TooltipContent>
                     </Tooltip>
                   </TableHead>

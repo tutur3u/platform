@@ -1,9 +1,18 @@
 import { CheckLine, ExternalLink, NotebookPen } from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from '@tuturuuu/ui/breadcrumb';
 import { Checkbox } from '@tuturuuu/ui/checkbox';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
-import type { MouseEvent } from 'react';
+import Link from 'next/link';
+import { Fragment, type MouseEvent } from 'react';
 import { TASK_CARD_SELECTION_CHECKBOX_BASE_CLASSES } from './task-card-checkbox-style';
 
 const COMPACT_CYAN_BADGE_CLASSES =
@@ -11,6 +20,8 @@ const COMPACT_CYAN_BADGE_CLASSES =
 
 interface TaskCardIdentifierRowProps {
   documentLabel: string;
+  externalSourceBreadcrumbs?: Array<{ href?: string; label: string }>;
+  externalSourceHref?: string;
   externalSourceLabel: string;
   externalSourceTitle?: string;
   isMultiSelectMode: boolean;
@@ -18,6 +29,7 @@ interface TaskCardIdentifierRowProps {
   isSelected: boolean;
   onSelect?: (event: MouseEvent<HTMLButtonElement>) => void;
   selectTaskLabel: string;
+  selectTaskTooltipLabel?: string;
   selectionCheckboxClassName?: string;
   taskListStatus?: string | null;
   ticketBadgeClassName?: string;
@@ -27,6 +39,8 @@ interface TaskCardIdentifierRowProps {
 
 export function TaskCardIdentifierRow({
   documentLabel,
+  externalSourceBreadcrumbs,
+  externalSourceHref,
   externalSourceLabel,
   externalSourceTitle,
   isMultiSelectMode,
@@ -34,6 +48,7 @@ export function TaskCardIdentifierRow({
   isSelected,
   onSelect,
   selectTaskLabel,
+  selectTaskTooltipLabel,
   selectionCheckboxClassName,
   taskListStatus,
   ticketBadgeClassName,
@@ -68,7 +83,9 @@ export function TaskCardIdentifierRow({
               }}
             />
           </TooltipTrigger>
-          <TooltipContent side="top">{selectTaskLabel}</TooltipContent>
+          <TooltipContent side="top">
+            {selectTaskTooltipLabel ?? selectTaskLabel}
+          </TooltipContent>
         </Tooltip>
       )}
       {taskListStatus === 'documents' && (
@@ -90,22 +107,75 @@ export function TaskCardIdentifierRow({
       {isPersonalExternalTask && (
         <Tooltip>
           <TooltipTrigger asChild>
-            <Badge
-              aria-label={externalSourceTitle || externalSourceLabel}
-              variant="secondary"
-              className={COMPACT_CYAN_BADGE_CLASSES}
-              data-testid="task-card-external-source"
-            >
-              <ExternalLink className="h-2.5 w-2.5 shrink-0" />
-              <span className="truncate">{externalSourceLabel}</span>
-            </Badge>
+            {externalSourceHref ? (
+              <Badge
+                asChild
+                variant="secondary"
+                className={cn(
+                  COMPACT_CYAN_BADGE_CLASSES,
+                  'cursor-pointer hover:bg-dynamic-cyan/15'
+                )}
+              >
+                <Link
+                  aria-label={externalSourceTitle || externalSourceLabel}
+                  data-testid="task-card-external-source"
+                  href={externalSourceHref}
+                  onPointerDown={(event) => event.stopPropagation()}
+                  onClick={(event) => event.stopPropagation()}
+                >
+                  <ExternalLink className="h-2.5 w-2.5 shrink-0" />
+                  <span className="truncate">{externalSourceLabel}</span>
+                </Link>
+              </Badge>
+            ) : (
+              <Badge
+                aria-label={externalSourceTitle || externalSourceLabel}
+                variant="secondary"
+                className={COMPACT_CYAN_BADGE_CLASSES}
+                data-testid="task-card-external-source"
+              >
+                <ExternalLink className="h-2.5 w-2.5 shrink-0" />
+                <span className="truncate">{externalSourceLabel}</span>
+              </Badge>
+            )}
           </TooltipTrigger>
-          <TooltipContent side="top">
-            {externalSourceTitle || externalSourceLabel}
+          <TooltipContent
+            side="top"
+            className="pointer-events-auto max-w-xs px-2 py-1.5"
+          >
+            {externalSourceBreadcrumbs?.length ? (
+              <Breadcrumb>
+                <BreadcrumbList className="gap-1 text-xs sm:gap-1">
+                  {externalSourceBreadcrumbs.map((item, index) => (
+                    <Fragment key={`${item.label}:${item.href ?? index}`}>
+                      {index > 0 && (
+                        <BreadcrumbSeparator className="[&>svg]:size-3" />
+                      )}
+                      <BreadcrumbItem>
+                        {item.href ? (
+                          <BreadcrumbLink asChild>
+                            <Link
+                              href={item.href}
+                              onClick={(event) => event.stopPropagation()}
+                            >
+                              {item.label}
+                            </Link>
+                          </BreadcrumbLink>
+                        ) : (
+                          <BreadcrumbPage>{item.label}</BreadcrumbPage>
+                        )}
+                      </BreadcrumbItem>
+                    </Fragment>
+                  ))}
+                </BreadcrumbList>
+              </Breadcrumb>
+            ) : (
+              externalSourceTitle || externalSourceLabel
+            )}
           </TooltipContent>
         </Tooltip>
       )}
-      {ticketIdentifier && (
+      {ticketIdentifier && taskListStatus !== 'documents' && (
         <Tooltip>
           <TooltipTrigger asChild>
             <Badge

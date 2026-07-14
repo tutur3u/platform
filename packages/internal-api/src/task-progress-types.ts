@@ -65,6 +65,7 @@ export interface TaskProgressEntry {
 }
 
 export interface TaskProgressGoal {
+  automatic?: boolean;
   id: string;
   ws_id: string;
   owner_id: string;
@@ -112,6 +113,7 @@ export interface TaskLeaderboardMember {
 }
 
 export interface TaskLeaderboard {
+  automatic?: boolean;
   id: string;
   ws_id: string;
   metric_id: string;
@@ -148,11 +150,16 @@ export interface TaskProgressStatsResponse {
   selectedMetricId: string | null;
   metrics: TaskProgressMetric[];
   summary: {
-    total: number;
-    entriesCount: number;
     activeDays: number;
+    averagePerActiveDay: number;
     currentStreak: number;
+    entriesCount: number;
+    last7Days: number;
     longestStreak: number;
+    previous7Days: number;
+    today: number;
+    total: number;
+    trendPercent: number;
   };
   daily: Array<{ date: string; value: number }>;
   heatmap: Array<{ date: string; value: number }>;

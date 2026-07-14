@@ -1,26 +1,22 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { BarChart3, Flag, Target, Trophy, Upload } from '@tuturuuu/icons';
+import { BarChart3, Flag, Sparkles, Target, Trophy } from '@tuturuuu/icons';
 import {
   createTaskLeaderboard,
   createTaskLeaderboardTeam,
-  createTaskProgressEntry,
   createTaskProgressGoal,
-  createTaskProgressMetric,
   getTaskProgressStats,
   importTaskProgressEntries,
   isTaskProgressSchemaUnavailable,
   listTaskLeaderboards,
-  listTaskProgressEntries,
   listTaskProgressGoals,
   listTaskProgressMetrics,
   type TaskProgressMetric,
 } from '@tuturuuu/internal-api';
-import { Button } from '@tuturuuu/ui/button';
+import { Badge } from '@tuturuuu/ui/badge';
 import { Card, CardContent } from '@tuturuuu/ui/card';
 import { toast } from '@tuturuuu/ui/sonner';
-import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
 import { ImportPanel } from './task-progress-import-panel';
@@ -46,6 +42,12 @@ interface TaskProgressPageProps {
 }
 
 const today = () => new Date().toISOString().slice(0, 10);
+const AUTOMATIC_METRIC_KINDS = new Set([
+  'focus_sessions',
+  'minutes',
+  'points',
+  'tasks',
+]);
 
 function metricOption(metrics: TaskProgressMetric[]) {
   return metrics.find((metric) => metric.is_default) ?? metrics[0] ?? null;
@@ -104,22 +106,20 @@ export function TaskProgressPage({
   });
   const metrics =
     metricsQuery.data?.ok === true ? metricsQuery.data.metrics : [];
+  const automaticMetrics = useMemo(
+    () =>
+      metrics.filter((metric) => AUTOMATIC_METRIC_KINDS.has(metric.unit_kind)),
+    [metrics]
+  );
+  const primaryMetrics =
+    automaticMetrics.length > 0 ? automaticMetrics : metrics;
   const selectedMetric = useMemo(
     () =>
-      metrics.find((metric) => metric.id === selectedMetricId) ??
-      metricOption(metrics),
-    [metrics, selectedMetricId]
+      primaryMetrics.find((metric) => metric.id === selectedMetricId) ??
+      metricOption(primaryMetrics),
+    [primaryMetrics, selectedMetricId]
   );
 
-  const entriesQuery = useQuery({
-    queryKey: [...queryRoot, 'entries', selectedMetric?.id],
-    queryFn: () =>
-      listTaskProgressEntries(wsId, {
-        metric_id: selectedMetric?.id,
-        pageSize: 25,
-      }),
-    enabled: metrics.length > 0,
-  });
   const goalsQuery = useQuery({
     queryKey: [...queryRoot, 'goals'],
     queryFn: () => listTaskProgressGoals(wsId, { status: 'active' }),
@@ -138,35 +138,6 @@ export function TaskProgressPage({
   const invalidateProgress = () =>
     queryClient.invalidateQueries({ queryKey: queryRoot });
 
-  const createMetricMutation = useMutation({
-    mutationFn: (formData: FormData) =>
-      createTaskProgressMetric(wsId, {
-        name: String(formData.get('name') ?? ''),
-        unit_label: String(formData.get('unit_label') ?? ''),
-        unit_kind: 'custom',
-      }),
-    onSuccess: () => {
-      toast.success(t('toast.metric_created'));
-      invalidateProgress();
-    },
-  });
-  const createEntryMutation = useMutation({
-    mutationFn: (formData: FormData) =>
-      createTaskProgressEntry(wsId, {
-        metric_id: String(formData.get('metric_id') ?? ''),
-        entry_date: String(formData.get('entry_date') ?? today()),
-        value: Number(formData.get('value') ?? 0),
-        tags: String(formData.get('tags') ?? '')
-          .split(',')
-          .map((tag) => tag.trim())
-          .filter(Boolean),
-        note: String(formData.get('note') ?? '') || null,
-      }),
-    onSuccess: () => {
-      toast.success(t('toast.entry_created'));
-      invalidateProgress();
-    },
-  });
   const createGoalMutation = useMutation({
     mutationFn: (formData: FormData) =>
       createTaskProgressGoal(wsId, {
@@ -236,44 +207,44 @@ export function TaskProgressPage({
   const hasPendingSchema =
     isTaskProgressSchemaUnavailable(metricsQuery.data) ||
     isTaskProgressSchemaUnavailable(statsQuery.data);
-  const entries = entriesQuery.data?.ok ? entriesQuery.data.entries : [];
   const goals = goalsQuery.data?.ok ? goalsQuery.data.goals : [];
   const stats = statsQuery.data?.ok ? statsQuery.data : null;
   const leaderboards = leaderboardsQuery.data?.ok
     ? leaderboardsQuery.data.leaderboards
     : [];
-  const tabs = [
-    { icon: Flag, value: 'progress' },
-    { icon: Target, value: 'goals' },
-    { icon: BarChart3, value: 'stats' },
-    { icon: Trophy, value: 'leaderboards' },
-    { icon: Upload, value: 'import' },
-  ] as const;
-
   return (
     <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-6 p-4 md:p-6 lg:p-8">
       <section className="overflow-hidden rounded-2xl border bg-card/60 shadow-sm backdrop-blur">
         <div className="flex flex-col gap-4 p-5 md:flex-row md:items-center md:justify-between md:p-6">
           <div className="max-w-2xl">
+            <div className="mb-3 flex flex-wrap items-center gap-2">
+              <Badge className="gap-1.5" variant="secondary">
+                <Sparkles className="size-3.5 text-dynamic-cyan" />
+                {t('autopilot.badge')}
+              </Badge>
+              <span className="text-muted-foreground text-xs">
+                {t('autopilot.live')}
+              </span>
+            </div>
             <h1 className="font-bold text-2xl tracking-tight md:text-3xl">
-              {t('views.progress.title')}
+              {t(`views.${view}.title`)}
             </h1>
             <p className="mt-1 text-muted-foreground text-sm md:text-base">
               {t(`views.${view}.description`)}
             </p>
           </div>
           <div className="shrink-0">
-            {metrics.length > 0 ? (
+            {primaryMetrics.length > 0 ? (
               <label className="flex min-w-56 items-center justify-between gap-3 rounded-xl border bg-background px-3 py-2 text-sm shadow-sm">
                 <span className="text-muted-foreground">
-                  {t('fields.metric_name')}
+                  {t('fields.automatic_metric')}
                 </span>
                 <select
                   className="min-w-28 bg-transparent text-right font-medium outline-none"
                   onChange={(event) => setSelectedMetricId(event.target.value)}
                   value={selectedMetric?.id ?? ''}
                 >
-                  {metrics.map((metric) => (
+                  {primaryMetrics.map((metric) => (
                     <option key={metric.id} value={metric.id}>
                       {metric.name}
                     </option>
@@ -283,28 +254,6 @@ export function TaskProgressPage({
             ) : null}
           </div>
         </div>
-        <nav className="flex max-w-full gap-1 overflow-x-auto border-t bg-muted/20 p-2">
-          {tabs.map(({ icon: TabIcon, value: tab }) => (
-            <Button
-              key={tab}
-              asChild
-              className="shrink-0 gap-2 rounded-lg"
-              size="sm"
-              variant={tab === view ? 'secondary' : 'ghost'}
-            >
-              <Link
-                href={
-                  tab === 'progress'
-                    ? `/${routeWsId}/progress`
-                    : `/${routeWsId}/progress/${tab}`
-                }
-              >
-                <TabIcon className="size-4" />
-                {t(`tabs.${tab}`)}
-              </Link>
-            </Button>
-          ))}
-        </nav>
       </section>
 
       {hasPendingSchema ? (
@@ -323,8 +272,8 @@ export function TaskProgressPage({
         />
         <SummaryCard
           icon={<Flag className="h-4 w-4" />}
-          label={t('summary.entries')}
-          value={stats?.summary.entriesCount ?? entries.length}
+          label={t('summary.today')}
+          value={stats?.summary.today ?? 0}
         />
         <SummaryCard
           icon={<Target className="h-4 w-4" />}
@@ -340,11 +289,9 @@ export function TaskProgressPage({
 
       {view === 'progress' ? (
         <ProgressPanel
-          createEntryMutation={createEntryMutation}
-          createMetricMutation={createMetricMutation}
-          entries={entries}
-          metrics={metrics}
+          routeWsId={routeWsId}
           selectedMetric={selectedMetric}
+          stats={stats}
           t={t}
         />
       ) : null}

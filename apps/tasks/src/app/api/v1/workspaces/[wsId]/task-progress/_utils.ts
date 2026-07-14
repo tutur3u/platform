@@ -10,6 +10,10 @@ import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { resolveSessionAuthContext } from '@/lib/api-auth';
 import {
+  isAutonomousTaskMetric,
+  loadAutonomousTaskProgressEntries,
+} from './_autonomous';
+import {
   DEFAULT_TASK_PROGRESS_METRICS,
   TASK_PROGRESS_ENTRY_SELECT,
 } from './_schemas';
@@ -151,18 +155,25 @@ export async function ensureDefaultTaskProgressMetrics(
 ) {
   const { data, error } = await (auth.sbAdmin as any)
     .from('task_progress_metrics')
-    .select('id')
+    .select('name')
     .eq('ws_id', auth.wsId)
-    .is('archived_at', null)
-    .limit(1);
+    .is('archived_at', null);
 
   if (error) throw error;
-  if ((data ?? []).length > 0) return;
+  const existingNames = new Set(
+    (data ?? []).map((metric: { name: string }) =>
+      metric.name.trim().toLowerCase()
+    )
+  );
+  const missingMetrics = DEFAULT_TASK_PROGRESS_METRICS.filter(
+    (metric) => !existingNames.has(metric.name.toLowerCase())
+  );
+  if (missingMetrics.length === 0) return;
 
   const { error: insertError } = await (auth.sbAdmin as any)
     .from('task_progress_metrics')
     .insert(
-      DEFAULT_TASK_PROGRESS_METRICS.map((metric) => ({
+      missingMetrics.map((metric) => ({
         ...metric,
         aggregation: 'sum',
         ws_id: auth.wsId,
@@ -170,7 +181,7 @@ export async function ensureDefaultTaskProgressMetrics(
       }))
     );
 
-  if (insertError) throw insertError;
+  if (insertError && insertError.code !== '23505') throw insertError;
 }
 
 export async function requireMetricInWorkspace(
@@ -442,23 +453,33 @@ export async function hydrateGoalsWithProgress(
 
   const effectiveEntries = withEffectiveProgressValues(entries ?? []);
 
-  return goals.map((goal) => {
-    const progress = effectiveEntries
-      .filter((entry: Record<string, any>) => entryMatchesGoal(entry, goal))
-      .reduce(
-        (total: number, entry: Record<string, any>) =>
-          total + Number(entry.effectiveValue ?? 0),
-        0
-      );
-    const target = Number(goal.target_value ?? 0);
+  return Promise.all(
+    goals.map(async (goal) => {
+      const metric = goal.metric;
+      const entriesForGoal =
+        metric && isAutonomousTaskMetric(metric)
+          ? await loadAutonomousTaskProgressEntries(auth, metric, {
+              from: goal.period_start,
+              to: goal.period_end,
+            })
+          : effectiveEntries;
+      const progress = entriesForGoal
+        .filter((entry: Record<string, any>) => entryMatchesGoal(entry, goal))
+        .reduce(
+          (total: number, entry: Record<string, any>) =>
+            total + Number(entry.effectiveValue ?? 0),
+          0
+        );
+      const target = Number(goal.target_value ?? 0);
 
-    return {
-      ...goal,
-      progress,
-      remaining: Math.max(target - progress, 0),
-      percent: target > 0 ? Math.min((progress / target) * 100, 100) : 0,
-    };
-  });
+      return {
+        ...goal,
+        progress,
+        remaining: Math.max(target - progress, 0),
+        percent: target > 0 ? Math.min((progress / target) * 100, 100) : 0,
+      };
+    })
+  );
 }
 
 export function logTaskProgressError(message: string, error: unknown) {

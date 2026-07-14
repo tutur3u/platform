@@ -4813,6 +4813,10 @@
       "commit_import": "Ghi nhận nhập liệu",
       "preview": "Xem trước"
     },
+    "autopilot": {
+      "badge": "Tự động",
+      "live": "Trực tiếp từ hoạt động công việc"
+    },
     "empty": {
       "entries": "Chưa có ghi nhận tiến độ.",
       "goals": "Chưa có mục tiêu đang hoạt động.",
@@ -4820,6 +4824,7 @@
       "stats": "Chưa có thống kê tiến độ."
     },
     "fields": {
+      "automatic_metric": "Chỉ số tự động",
       "color": "Màu",
       "goal_name": "Tên mục tiêu",
       "leaderboard_name": "Tên bảng xếp hạng",
@@ -4858,6 +4863,7 @@
       "entries": "Lượt ghi",
       "goals": "Mục tiêu",
       "streak": "Chuỗi ngày",
+      "today": "Hôm nay",
       "total": "Tổng"
     },
     "tabs": {
@@ -7572,6 +7578,7 @@
     "filter_source_scope_external_current_workspace": "Bên ngoài trong không gian này",
     "filter_source_scope_external_specific": "Nguồn cụ thể",
     "filter_workspaces": "Không gian làm việc",
+    "hide_empty_task_lists": "Ẩn danh sách công việc trống",
     "last_30_days": "Last 30 Days",
     "move_to_external_staging": "Chuyển về Công việc bên ngoài",
     "move_to_external_tasks": "Chuyển về Công việc bên ngoài",
@@ -7590,6 +7597,7 @@
     "placed_on_personal_board": "Đã đặt vào bảng cá nhân.",
     "remove_from_personal_board": "Xóa khỏi bảng cá nhân",
     "removed_from_personal_board": "Đã xóa khỏi bảng cá nhân.",
+    "task_list_visibility": "Hiển thị danh sách công việc",
     "untitled_board": "Bảng chưa đặt tên",
     "upcoming": "Upcoming"
   },

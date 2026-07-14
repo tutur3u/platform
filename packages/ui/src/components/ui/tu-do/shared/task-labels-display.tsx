@@ -67,26 +67,32 @@ export function TaskLabelsDisplay({
       {visibleLabels.map((label) => {
         const styles = computeAccessibleLabelStyles(label.color, isDark);
         return (
-          <Badge
-            key={getTaskLabelIdentity(label)}
-            variant="outline"
-            className={cn(
-              'inline-flex items-center gap-1 truncate border font-medium ring-0',
-              sizeClasses[size]
-            )}
-            style={
-              styles
-                ? {
-                    backgroundColor: styles.bg,
-                    borderColor: styles.border,
-                    color: styles.text,
-                  }
-                : undefined
-            }
-          >
-            {showIcon && <Tag className={iconSizes[size]} />}
-            <span className="truncate">{label.name ?? ''}</span>
-          </Badge>
+          <Tooltip key={getTaskLabelIdentity(label)}>
+            <TooltipTrigger asChild>
+              <Badge
+                variant="outline"
+                className={cn(
+                  'inline-flex items-center gap-1 truncate border font-medium ring-0',
+                  sizeClasses[size]
+                )}
+                style={
+                  styles
+                    ? {
+                        backgroundColor: styles.bg,
+                        borderColor: styles.border,
+                        color: styles.text,
+                      }
+                    : undefined
+                }
+              >
+                {showIcon && <Tag className={iconSizes[size]} />}
+                <span className="truncate">{label.name ?? ''}</span>
+              </Badge>
+            </TooltipTrigger>
+            <TooltipContent side="top" className="text-xs">
+              {label.name ?? ''}
+            </TooltipContent>
+          </Tooltip>
         );
       })}
       {hiddenCount > 0 && (

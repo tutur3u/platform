@@ -224,10 +224,10 @@ export const DEFAULT_TASK_PROGRESS_METRICS = [
     is_default: false,
   },
   {
-    name: 'Words',
-    unit_label: 'words',
-    unit_kind: 'words',
-    description: 'Writing-style word progress',
+    name: 'Focus sessions',
+    unit_label: 'sessions',
+    unit_kind: 'focus_sessions',
+    description: 'Completed focus sessions',
     is_default: false,
   },
 ] as const;

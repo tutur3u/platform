@@ -1,5 +1,7 @@
-import { type NextRequest, NextResponse } from 'next/server';
+import { connection, type NextRequest, NextResponse } from 'next/server';
+import { buildAutonomousWeeklyGoal } from '../_autonomous-defaults';
 import {
+  ensureDefaultTaskProgressMetrics,
   goalCreateSchema,
   hydrateGoalsWithProgress,
   isTaskProgressSchemaUnavailableError,
@@ -8,6 +10,7 @@ import {
   requireMetricInWorkspace,
   resolveTaskProgressRouteAuth,
   TASK_PROGRESS_GOAL_SELECT,
+  TASK_PROGRESS_METRIC_SELECT,
   type TaskProgressRouteContext,
   taskProgressRouteErrorResponse,
   taskProgressSchemaUnavailableResponse,
@@ -18,10 +21,12 @@ export async function GET(
   request: NextRequest,
   context: TaskProgressRouteContext
 ) {
+  await connection();
   const auth = await resolveTaskProgressRouteAuth(request, context);
   if (auth instanceof NextResponse) return auth;
 
   try {
+    await ensureDefaultTaskProgressMetrics(auth);
     const url = new URL(request.url);
     let query = (auth.sbAdmin as any)
       .from('task_progress_goals')
@@ -40,10 +45,26 @@ export async function GET(
     if (error) throw error;
 
     const goals = await hydrateGoalsWithProgress(auth, data ?? []);
+    const { data: completedMetric, error: metricError } = await (
+      auth.sbAdmin as any
+    )
+      .from('task_progress_metrics')
+      .select(TASK_PROGRESS_METRIC_SELECT)
+      .eq('ws_id', auth.wsId)
+      .eq('unit_kind', 'tasks')
+      .is('archived_at', null)
+      .order('is_default', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (metricError) throw metricError;
+    const automaticGoal =
+      (!status || status === 'active') && completedMetric
+        ? await buildAutonomousWeeklyGoal(auth, completedMetric)
+        : null;
     return NextResponse.json({
       ok: true,
       schemaAvailable: true,
-      goals,
+      goals: automaticGoal ? [automaticGoal, ...goals] : goals,
     });
   } catch (error) {
     if (isTaskProgressSchemaUnavailableError(error)) {

@@ -2,6 +2,7 @@
 
 import { Timer } from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
 import { mapEstimationPoints } from './estimation-mapping';
 
@@ -11,6 +12,7 @@ interface TaskEstimationDisplayProps {
   showIcon?: boolean;
   size?: 'sm' | 'md' | 'lg';
   estimationType?: string | null; // 't-shirt' etc.
+  tooltipLabel?: string;
 }
 
 export function TaskEstimationDisplay({
@@ -19,6 +21,7 @@ export function TaskEstimationDisplay({
   showIcon = true,
   size = 'sm',
   estimationType,
+  tooltipLabel,
 }: TaskEstimationDisplayProps) {
   if (points == null) return null;
 
@@ -36,7 +39,7 @@ export function TaskEstimationDisplay({
 
   const display = mapEstimationPoints(points, estimationType);
 
-  return (
+  const badge = (
     <Badge
       variant="secondary"
       className={cn(
@@ -48,5 +51,16 @@ export function TaskEstimationDisplay({
       {showIcon && <Timer className={iconSizes[size]} />}
       {display}
     </Badge>
+  );
+
+  if (!tooltipLabel) return badge;
+
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>{badge}</TooltipTrigger>
+      <TooltipContent side="top" className="text-xs">
+        {tooltipLabel}: {display}
+      </TooltipContent>
+    </Tooltip>
   );
 }

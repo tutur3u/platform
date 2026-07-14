@@ -100,6 +100,13 @@ describe('TaskFilter', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'common.filters' }));
 
+    expect(
+      screen.getByText('ws-tasks.task_list_visibility')
+    ).toBeInTheDocument();
+    fireEvent.click(screen.getByText('ws-tasks.hide_empty_task_lists'));
+    expect(onFiltersChange).toHaveBeenCalledWith(
+      expect.objectContaining({ hideEmptyTaskLists: true })
+    );
     expect(screen.getByText('common.quick_filters')).toBeInTheDocument();
     expect(
       screen.getAllByText('ws-tasks.filter_source_scope').length

@@ -9,8 +9,5 @@ export function isClosedTaskListColumnCollapsed(column: TaskList) {
 }
 
 export function isKanbanColumnCollapsed(column: TaskList) {
-  return (
-    column.is_external_collapsed === true ||
-    isClosedTaskListColumnCollapsed(column)
-  );
+  return column.is_external_collapsed === true || column.is_collapsed === true;
 }

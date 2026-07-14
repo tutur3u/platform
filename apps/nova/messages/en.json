@@ -3167,6 +3167,10 @@
       "commit_import": "Commit import",
       "preview": "Preview"
     },
+    "autopilot": {
+      "badge": "Autopilot",
+      "live": "Live from task activity"
+    },
     "empty": {
       "entries": "No progress entries yet.",
       "goals": "No active goals yet.",
@@ -3174,6 +3178,7 @@
       "stats": "No progress stats yet."
     },
     "fields": {
+      "automatic_metric": "Automatic metric",
       "color": "Color",
       "goal_name": "Goal name",
       "leaderboard_name": "Leaderboard name",
@@ -3212,6 +3217,7 @@
       "entries": "Entries",
       "goals": "Goals",
       "streak": "Streak",
+      "today": "Today",
       "total": "Total"
     },
     "tabs": {

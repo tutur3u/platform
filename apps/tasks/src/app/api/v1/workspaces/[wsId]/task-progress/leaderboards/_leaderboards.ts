@@ -1,4 +1,8 @@
 import {
+  isAutonomousTaskMetric,
+  loadAutonomousTaskProgressEntries,
+} from '../_autonomous';
+import {
   type TaskProgressRouteAuth,
   withEffectiveProgressValues,
 } from '../_utils';
@@ -49,10 +53,15 @@ export async function hydrateLeaderboards(
         if (result.error) throw result.error;
       }
 
+      const progressEntries =
+        leaderboard.metric && isAutonomousTaskMetric(leaderboard.metric)
+          ? await loadAutonomousTaskProgressEntries(auth, leaderboard.metric, {
+              from: leaderboard.period_start,
+              to: leaderboard.period_end,
+            })
+          : withEffectiveProgressValues(entriesResult.data ?? []);
       const totalsByUser = new Map<string, number>();
-      for (const entry of withEffectiveProgressValues(
-        entriesResult.data ?? []
-      )) {
+      for (const entry of progressEntries) {
         if (!entry.created_by) continue;
 
         totalsByUser.set(

@@ -12,7 +12,7 @@ const openTaskByIdMock = vi.hoisted(() => vi.fn());
 vi.mock('next-intl', () => ({
   useLocale: () => 'en',
   useTranslations: () => (key: string) =>
-    key === 'select_all' ? 'Select all tasks' : key,
+    key === 'select_all_tasks' ? 'Select all tasks' : key,
 }));
 
 vi.mock('next-themes', () => ({

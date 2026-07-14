@@ -46,13 +46,14 @@ import {
 import { getListTextColorClass } from '../../utils/taskColorUtils';
 import { normalizeBoardText } from './board-text-utils';
 import type { DragPreviewPosition } from './kanban/dnd/use-kanban-dnd';
-import {
-  isClosedTaskListColumnCollapsed,
-  isKanbanColumnCollapsed,
-} from './kanban/kanban-column-collapse';
+import { isKanbanColumnCollapsed } from './kanban/kanban-column-collapse';
 import { ListActions } from './list-actions';
 import { statusIcons } from './status-section';
 import type { TaskCardAssigneeMemberSource } from './task-card/task-card';
+import {
+  getTaskCardSelectionCheckboxToneClasses,
+  TASK_CARD_SELECTION_CHECKBOX_BASE_CLASSES,
+} from './task-card/task-card-checkbox-style';
 import type { TaskFilters } from './task-filter';
 import { VirtualizedTaskList } from './task-list';
 
@@ -238,7 +239,6 @@ export function BoardColumn({
   const [externalSortBy, setExternalSortBy] = useState<ExternalTaskSortBy>(
     DEFAULT_EXTERNAL_TASK_SORT_BY
   );
-  const isClosedCollapsed = isClosedTaskListColumnCollapsed(column);
   const isColumnCollapsed = isKanbanColumnCollapsed(column);
   const hasActiveFilters =
     !!filters &&
@@ -539,6 +539,7 @@ export function BoardColumn({
     return (
       <Card
         ref={composedRef}
+        id={`task-list-${column.id}`}
         style={columnStyle}
         data-kanban-pinned-special={specialStickyOffset ? 'true' : undefined}
         data-kanban-column-id={column.id}
@@ -593,6 +594,7 @@ export function BoardColumn({
   return (
     <Card
       ref={composedRef}
+      id={`task-list-${column.id}`}
       style={columnStyle}
       data-kanban-pinned-special={specialStickyOffset ? 'true' : undefined}
       data-kanban-column-id={column.id}
@@ -627,7 +629,12 @@ export function BoardColumn({
                     ? 'indeterminate'
                     : false
               }
-              className="size-4"
+              className={cn(
+                TASK_CARD_SELECTION_CHECKBOX_BASE_CLASSES,
+                getTaskCardSelectionCheckboxToneClasses(
+                  column.color as SupportedColor
+                )
+              )}
               onCheckedChange={handleToggleAll}
               title={t('select_all_tasks')}
             />
@@ -806,9 +813,9 @@ export function BoardColumn({
             </>
           ) : (
             <>
-              {isClosedCollapsed || column.status === 'closed' ? (
+              {onTaskListCollapsedChange ? (
                 <>
-                  {onSpecialPinnedChange ? (
+                  {column.status === 'closed' && onSpecialPinnedChange ? (
                     <Button
                       type="button"
                       variant="ghost"

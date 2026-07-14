@@ -1,5 +1,6 @@
 import type { CalendarHoursType } from '@tuturuuu/types/primitives/Task';
 import { Badge } from '@tuturuuu/ui/badge';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
 import type { ReactElement, SVGProps } from 'react';
 import {
@@ -155,20 +156,26 @@ export function TaskSchedulingBadge({
   });
 
   return (
-    <Badge
-      variant="secondary"
-      className={cn(
-        'h-5 shrink-0 border px-1.5 font-medium text-[10px]',
-        scheduleBadgeConfig.className
-      )}
-      title={schedulingTitle}
-      ref={(element) => onElement?.(element as HTMLElement | null)}
-    >
-      <ScheduleIcon className="h-2.5 w-2.5" />
-      {durationLabel}
-      {autoSchedule && (
-        <AutoScheduleMark className="-mr-0.5 h-2.5 w-2.5 opacity-80" />
-      )}
-    </Badge>
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Badge
+          variant="secondary"
+          className={cn(
+            'h-5 shrink-0 border px-1.5 font-medium text-[10px]',
+            scheduleBadgeConfig.className
+          )}
+          ref={(element) => onElement?.(element as HTMLElement | null)}
+        >
+          <ScheduleIcon className="h-2.5 w-2.5" />
+          {durationLabel}
+          {autoSchedule && (
+            <AutoScheduleMark className="-mr-0.5 h-2.5 w-2.5 opacity-80" />
+          )}
+        </Badge>
+      </TooltipTrigger>
+      <TooltipContent side="top" className="max-w-xs text-xs">
+        {schedulingTitle}
+      </TooltipContent>
+    </Tooltip>
   );
 }

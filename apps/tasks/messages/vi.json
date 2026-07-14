@@ -6789,6 +6789,8 @@
       "auto_assign_to_self": "Tự động gán cho bản thân",
       "auto_assign_to_self_description": "Tự động gán bạn vào các nhiệm vụ bạn tạo khi không có người được gán nào khác được chọn",
       "board": "Bảng",
+      "board_behavior": "Hành vi của bảng",
+      "board_behavior_description": "Tùy chỉnh cách danh sách công việc hiển thị và được ghi nhớ trên các bảng.",
       "board_description": "Chi tiết, bố cục, ước tính, hoạt động và thao tác quan trọng của bảng",
       "board_details": "Chi tiết bảng",
       "board_details_description": "Cập nhật tên bảng, biểu tượng, tiền tố phiếu và danh sách mặc định.",
@@ -6818,6 +6820,8 @@
       "goals_description": "Quản lý mục tiêu tiến độ công việc và mục tiêu thói quen",
       "habits": "Thói quen",
       "habits_description": "Theo dõi thói quen lặp lại và chuỗi hoàn thành",
+      "hide_empty_task_lists": "Mặc định chỉ hiển thị danh sách có công việc",
+      "hide_empty_task_lists_description": "Mặc định ẩn các danh sách không có công việc phù hợp. Bạn vẫn có thể thay đổi trong Bộ lọc của từng bảng.",
       "import_description": "Xem trước và nhập các mục tiến độ công việc",
       "initiatives": "Sáng kiến",
       "initiatives_description": "Tạo và quản lý các sáng kiến công việc chiến lược",
@@ -6843,6 +6847,8 @@
       "open_default_board": "Mở bảng Tasks cá nhân theo mặc định",
       "open_default_board_description": "Khi bật, không gian làm việc cá nhân sẽ mở thẳng bảng Tasks mặc định thay vì dừng ở bộ chọn bảng",
       "operations": "Vận hành",
+      "persist_collapsed_lists": "Ghi nhớ danh sách đã thu gọn",
+      "persist_collapsed_lists_description": "Khôi phục trạng thái thu gọn của từng danh sách khi bạn quay lại bảng.",
       "progress": "Tiến độ",
       "progress_description": "Theo dõi mục tiến độ, chỉ số và hoạt động gần đây",
       "progress_group": "Tiến độ",
@@ -7736,13 +7742,23 @@
       "commit_import": "Ghi nhận nhập liệu",
       "preview": "Xem trước"
     },
+    "autopilot": {
+      "badge": "Tự động",
+      "description": "Công việc hoàn thành, ước lượng và phiên tập trung tự động cập nhật tiến độ.",
+      "live": "Cập nhật trực tiếp từ hoạt động công việc",
+      "open_analytics": "Mở phân tích",
+      "review_goal": "Xem mục tiêu thích ứng",
+      "title": "Không cần ghi chép thêm"
+    },
     "empty": {
+      "automatic_activity": "Hoàn thành công việc hoặc phiên tập trung để bắt đầu tạo đà.",
       "entries": "Chưa có ghi nhận tiến độ.",
       "goals": "Chưa có mục tiêu đang hoạt động.",
       "leaderboards": "Chưa có bảng xếp hạng đang hoạt động.",
       "stats": "Chưa có thống kê tiến độ."
     },
     "fields": {
+      "automatic_metric": "Chỉ số tự động",
       "color": "Màu",
       "goal_name": "Tên mục tiêu",
       "leaderboard_name": "Tên bảng xếp hạng",
@@ -7759,7 +7775,10 @@
       "target": "Mục tiêu"
     },
     "goals": {
-      "create_goal": "Tạo mục tiêu"
+      "automatic_description": "Tự động điều chỉnh theo nhịp độ hoàn thành công việc gần đây của bạn.",
+      "automatic_name": "Đà hoàn thành công việc hàng tuần",
+      "create_goal": "Tạo mục tiêu",
+      "custom_goal": "Thêm mục tiêu tùy chỉnh"
     },
     "import": {
       "placeholder": "2026-06-25,500,Words,writing|draft,Bản nháp chương",
@@ -7767,20 +7786,28 @@
       "title": "Nhập tiến độ"
     },
     "leaderboards": {
-      "create_leaderboard": "Tạo bảng xếp hạng"
+      "automatic_description": "Cập nhật từ các công việc đã hoàn thành trong không gian làm việc này.",
+      "automatic_name": "Tuần này",
+      "create_leaderboard": "Tạo bảng xếp hạng",
+      "custom_leaderboard": "Tạo thử thách tùy chỉnh"
     },
     "progress": {
       "log_entry": "Ghi tiến độ",
+      "momentum": "Đà hoạt động",
       "recent_entries": "Ghi nhận gần đây"
     },
     "schema_unavailable": "Tiến độ công việc cần migration cơ sở dữ liệu mới nhất trước khi tải.",
     "stats": {
-      "daily_progress": "Tiến độ hằng ngày"
+      "average_active_day": "Trung bình mỗi ngày hoạt động",
+      "daily_progress": "Nhịp hoạt động",
+      "last_7_days": "7 ngày gần đây",
+      "weekly_trend": "Thay đổi so với tuần trước"
     },
     "summary": {
       "entries": "Lượt ghi",
       "goals": "Mục tiêu",
       "streak": "Chuỗi ngày",
+      "today": "Hôm nay",
       "total": "Tổng"
     },
     "tabs": {
@@ -7802,24 +7829,24 @@
     },
     "views": {
       "goals": {
-        "description": "Theo dõi mục tiêu và thói quen bằng các chỉ số tiến độ công việc.",
-        "title": "Mục tiêu công việc"
+        "description": "Mục tiêu hàng tuần tự thích ứng theo nhịp làm việc gần đây của bạn.",
+        "title": "Mục tiêu"
       },
       "import": {
         "description": "Xem trước và ghi nhận nhiều dòng tiến độ.",
         "title": "Nhập tiến độ"
       },
       "leaderboards": {
-        "description": "Tạo bảng xếp hạng và đội nội bộ cho các chỉ số tiến độ.",
-        "title": "Bảng xếp hạng công việc"
+        "description": "Xếp hạng không gian làm việc theo thời gian thực, tự động dựa trên công việc hoàn thành.",
+        "title": "Bảng xếp hạng"
       },
       "progress": {
-        "description": "Ghi nhận tiến độ linh hoạt theo công việc, dự án và bảng.",
-        "title": "Tiến độ công việc"
+        "description": "Theo dõi trực tiếp công việc hoàn thành, điểm ước lượng và thời gian tập trung—hoàn toàn tự động.",
+        "title": "Tiến độ"
       },
       "stats": {
-        "description": "Xem tổng tiến độ, ngày hoạt động, chuỗi ngày và tiến độ hằng ngày.",
-        "title": "Thống kê công việc"
+        "description": "Hiểu tốc độ, sự ổn định, chuỗi hoạt động và tập trung mà không cần công cụ theo dõi riêng.",
+        "title": "Phân tích"
       }
     }
   },
@@ -13688,6 +13715,7 @@
     "good_evening": "Chào buổi tối",
     "good_morning": "Chào buổi sáng",
     "good_night": "Chào buổi khuya",
+    "hide_empty_task_lists": "Ẩn danh sách công việc trống",
     "label_created": "Đã tạo nhãn",
     "last_30_days": "30 ngày qua",
     "list": "Danh sách",
@@ -13761,6 +13789,7 @@
     "show_n_more_tasks": "Xem thêm {count} nhiệm vụ",
     "task_completed_toast": "Đã hoàn thành nhiệm vụ!",
     "task_created_successfully": "Đã tạo nhiệm vụ thành công",
+    "task_list_visibility": "Hiển thị danh sách công việc",
     "task_marked_incomplete": "Đã đánh dấu nhiệm vụ chưa hoàn thành",
     "task_not_on_board": "Nhiệm vụ không thuộc bảng nào",
     "task_personally_completed": "Đã hoàn thành nhiệm vụ cá nhân!",

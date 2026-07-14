@@ -14,6 +14,7 @@ const mocks = vi.hoisted(() => ({
   redirect: vi.fn(),
   taskBoardLoadingState: vi.fn(),
   taskBoardServerPage: vi.fn(),
+  taskProgressPage: vi.fn(),
   toWorkspaceSlug: vi.fn(),
   updateWorkspaceTaskList: vi.fn(),
   withForwardedInternalApiAuth: vi.fn(),
@@ -62,6 +63,10 @@ vi.mock('@tuturuuu/ui/tu-do/shared/task-board-loading-state', () => ({
 
 vi.mock('@tuturuuu/ui/tu-do/boards/workspace-projects-page', () => ({
   default: mocks.workspaceProjectsPage,
+}));
+
+vi.mock('@tuturuuu/ui/tu-do/progress/task-progress-page', () => ({
+  TaskProgressPage: mocks.taskProgressPage,
 }));
 
 vi.mock('@tuturuuu/utils/constants', () => ({
@@ -311,14 +316,14 @@ describe('tasks app task pages', () => {
     }
   });
 
-  it('keeps task boards consolidated and exposes progress as a first-class destination', async () => {
+  it('exposes autonomous task intelligence as first-class destinations', async () => {
     const { getNavigationLinks } = await import(
       '@/app/[locale]/(dashboard)/[wsId]/navigation'
     );
 
     const links = await getNavigationLinks({ personalOrWsId: 'workspace-1' });
 
-    expect(links).toHaveLength(2);
+    expect(links).toHaveLength(6);
     expect(links[0]).toMatchObject({
       href: '/workspace-1/tasks',
       aliases: [
@@ -327,11 +332,51 @@ describe('tasks app task pages', () => {
         '/workspace-1/boards/*',
       ],
     });
-    expect(links[1]).toMatchObject({
+    expect(links[1]).toBeNull();
+    expect(links[2]).toMatchObject({
       href: '/workspace-1/progress',
       aliases: ['/workspace-1/progress/*'],
     });
-    expect(links[1]).not.toHaveProperty('children');
+    expect(links[3]).toMatchObject({
+      href: '/workspace-1/goals',
+      aliases: ['/workspace-1/goals/*'],
+    });
+    expect(links[4]).toMatchObject({
+      href: '/workspace-1/analytics',
+      aliases: ['/workspace-1/analytics/*'],
+    });
+    expect(links[5]).toMatchObject({
+      href: '/workspace-1/leaderboard',
+      aliases: ['/workspace-1/leaderboard/*'],
+    });
+  });
+
+  it('renders each task intelligence route with the matching view', async () => {
+    const [
+      { default: Goals },
+      { default: Analytics },
+      { default: Leaderboard },
+    ] = await Promise.all([
+      import('@/app/[locale]/(dashboard)/[wsId]/goals/page'),
+      import('@/app/[locale]/(dashboard)/[wsId]/analytics/page'),
+      import('@/app/[locale]/(dashboard)/[wsId]/leaderboard/page'),
+    ]);
+
+    const params = Promise.resolve({ wsId: 'workspace-1' });
+    const results = await Promise.all([
+      Goals({ params }),
+      Analytics({ params }),
+      Leaderboard({ params }),
+    ]);
+
+    expect(results.map((result) => result.props.view)).toEqual([
+      'goals',
+      'stats',
+      'leaderboards',
+    ]);
+    expect(
+      results.every((result) => result.type === mocks.taskProgressPage)
+    ).toBe(true);
   });
 
   it('redirects unauthenticated entrypoint users to login', async () => {

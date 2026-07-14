@@ -3167,6 +3167,10 @@
       "commit_import": "Ghi nhận nhập liệu",
       "preview": "Xem trước"
     },
+    "autopilot": {
+      "badge": "Tự động",
+      "live": "Trực tiếp từ hoạt động công việc"
+    },
     "empty": {
       "entries": "Chưa có ghi nhận tiến độ.",
       "goals": "Chưa có mục tiêu đang hoạt động.",
@@ -3174,6 +3178,7 @@
       "stats": "Chưa có thống kê tiến độ."
     },
     "fields": {
+      "automatic_metric": "Chỉ số tự động",
       "color": "Màu",
       "goal_name": "Tên mục tiêu",
       "leaderboard_name": "Tên bảng xếp hạng",
@@ -3212,6 +3217,7 @@
       "entries": "Lượt ghi",
       "goals": "Mục tiêu",
       "streak": "Chuỗi ngày",
+      "today": "Hôm nay",
       "total": "Tổng"
     },
     "tabs": {

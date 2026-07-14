@@ -3,7 +3,7 @@ import {
   type TaskProgressView,
 } from '@tuturuuu/ui/tu-do/progress/task-progress-page';
 import type { Metadata } from 'next';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { connection } from 'next/server';
 
 const VIEWS = new Set<TaskProgressView>([
@@ -28,6 +28,15 @@ export default async function ProgressViewPage({
   const { view, wsId } = await params;
 
   if (!VIEWS.has(view as TaskProgressView)) notFound();
+  const firstClassRoute = (
+    {
+      goals: `/${wsId}/goals`,
+      leaderboards: `/${wsId}/leaderboard`,
+      progress: `/${wsId}/progress`,
+      stats: `/${wsId}/analytics`,
+    } as Partial<Record<TaskProgressView, string>>
+  )[view as TaskProgressView];
+  if (firstClassRoute) redirect(firstClassRoute);
 
   return (
     <TaskProgressPage

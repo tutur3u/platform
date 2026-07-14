@@ -11,9 +11,7 @@ vi.mock('next-themes', () => ({
 
 vi.mock('@tuturuuu/ui/tooltip', () => ({
   Tooltip: ({ children }: { children: ReactNode }) => <>{children}</>,
-  TooltipContent: ({ children }: { children: ReactNode }) => (
-    <div>{children}</div>
-  ),
+  TooltipContent: () => null,
   TooltipTrigger: ({ children }: { children: ReactNode }) => <>{children}</>,
 }));
 

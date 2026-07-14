@@ -782,6 +782,80 @@ describe('BoardViews', () => {
     });
   });
 
+  it('collapses and restores any regular task list', async () => {
+    renderBoardViews();
+
+    await waitFor(() => {
+      expect(getUserConfigMock).toHaveBeenCalledWith(
+        'TASK_PERSIST_COLLAPSED_LISTS'
+      );
+    });
+
+    act(() => {
+      kanbanBoardProps?.onTaskListCollapsedChange?.('list-1', true);
+    });
+
+    await waitFor(() => {
+      expect(
+        kanbanBoardProps?.lists.find((list) => list.id === 'list-1')
+      ).toEqual(expect.objectContaining({ is_collapsed: true }));
+      expect(
+        window.localStorage.getItem('task-board-list-collapsed:board-1:list-1')
+      ).toBe('true');
+    });
+
+    act(() => {
+      kanbanBoardProps?.onTaskListCollapsedChange?.('list-1', false);
+    });
+
+    await waitFor(() => {
+      expect(
+        kanbanBoardProps?.lists.find((list) => list.id === 'list-1')
+          ?.is_collapsed
+      ).not.toBe(true);
+    });
+  });
+
+  it('keeps collapsed task lists session-only when persistence is disabled', async () => {
+    window.localStorage.setItem(
+      'task-board-list-collapsed:board-1:list-1',
+      'false'
+    );
+    getUserConfigMock.mockImplementation((configId: string) =>
+      Promise.resolve({
+        value: configId === 'TASK_PERSIST_COLLAPSED_LISTS' ? 'false' : null,
+      })
+    );
+
+    const { queryClient } = renderBoardViews();
+
+    await waitFor(() => {
+      expect(
+        queryClient.getQueryData([
+          'user-config',
+          'TASK_PERSIST_COLLAPSED_LISTS',
+        ])
+      ).toBe('false');
+      expect(
+        kanbanBoardProps?.lists.find((list) => list.id === 'list-1')
+          ?.is_collapsed
+      ).not.toBe(true);
+    });
+
+    act(() => {
+      kanbanBoardProps?.onTaskListCollapsedChange?.('list-1', true);
+    });
+
+    await waitFor(() => {
+      expect(
+        kanbanBoardProps?.lists.find((list) => list.id === 'list-1')
+      ).toEqual(expect.objectContaining({ is_collapsed: true }));
+      expect(
+        window.localStorage.getItem('task-board-list-collapsed:board-1:list-1')
+      ).toBe('false');
+    });
+  });
+
   it('collapses deadline sections by default and persists per board and section', async () => {
     window.localStorage.setItem(
       'task-board-deadline-section-collapsed:board-1:overdue',
@@ -1105,6 +1179,25 @@ describe('BoardViews', () => {
     });
 
     await waitFor(() => {
+      expect(kanbanBoardProps?.lists).toEqual([mockLists[0]]);
+    });
+  });
+
+  it('uses the persistent preference to hide empty task lists without another filter', async () => {
+    getUserConfigMock.mockImplementation((configId: string) =>
+      Promise.resolve({
+        value: configId === 'TASK_HIDE_EMPTY_LISTS' ? 'true' : null,
+      })
+    );
+    listWorkspaceTasksMock.mockResolvedValue({
+      listCounts: [{ count: 1, list_id: 'list-1' }],
+      tasks: mockTasks,
+    });
+
+    renderBoardViews();
+
+    await waitFor(() => {
+      expect(boardHeaderProps?.filters.hideEmptyTaskLists).toBe(true);
       expect(kanbanBoardProps?.lists).toEqual([mockLists[0]]);
     });
   });

@@ -1,4 +1,8 @@
-import { type NextRequest, NextResponse } from 'next/server';
+import { connection, type NextRequest, NextResponse } from 'next/server';
+import {
+  isAutonomousTaskMetric,
+  loadAutonomousTaskProgressEntries,
+} from '../_autonomous';
 import {
   buildEntryQuery,
   ensureDefaultTaskProgressMetrics,
@@ -59,6 +63,7 @@ export async function GET(
   request: NextRequest,
   context: TaskProgressRouteContext
 ) {
+  await connection();
   const auth = await resolveTaskProgressRouteAuth(request, context);
   if (auth instanceof NextResponse) return auth;
 
@@ -79,18 +84,23 @@ export async function GET(
     const selectedMetricId =
       url.searchParams.get('metric_id') || metrics?.[0]?.id || null;
     if (selectedMetricId) url.searchParams.set('metric_id', selectedMetricId);
-
-    const { data: entries, error } = await buildEntryQuery(auth, url).limit(
-      5000
+    const selectedMetric = (metrics ?? []).find(
+      (metric: { id: string }) => metric.id === selectedMetricId
     );
-
-    if (error) throw error;
+    let entries: Record<string, any>[] = [];
+    if (selectedMetric && isAutonomousTaskMetric(selectedMetric)) {
+      entries = await loadAutonomousTaskProgressEntries(auth, selectedMetric);
+    } else {
+      const { data, error } = await buildEntryQuery(auth, url).limit(5000);
+      if (error) throw error;
+      entries = withEffectiveProgressValues(data ?? []);
+    }
 
     const byDate = new Map<string, number>();
     const byTag = new Map<string, number>();
     let total = 0;
 
-    for (const entry of withEffectiveProgressValues(entries ?? [])) {
+    for (const entry of entries) {
       if (!entry.entry_date) continue;
 
       const value = Number(entry.effectiveValue ?? 0);
@@ -109,6 +119,23 @@ export async function GET(
     const tags = [...byTag.entries()]
       .sort(([, a], [, b]) => b - a)
       .map(([tag, value]) => ({ tag, value }));
+    const today = formatDate(new Date());
+    const sevenDaysAgo = formatDate(addDays(new Date(), -6));
+    const fourteenDaysAgo = formatDate(addDays(new Date(), -13));
+    const previousWeekEnd = formatDate(addDays(new Date(), -7));
+    const sumRange = (from: string, to: string) =>
+      daily
+        .filter((day) => day.date >= from && day.date <= to)
+        .reduce((sum, day) => sum + day.value, 0);
+    const last7Days = sumRange(sevenDaysAgo, today);
+    const previous7Days = sumRange(fourteenDaysAgo, previousWeekEnd);
+    const trendPercent =
+      previous7Days > 0
+        ? ((last7Days - previous7Days) / previous7Days) * 100
+        : last7Days > 0
+          ? 100
+          : 0;
+    const activeDays = daily.filter((day) => day.value > 0).length;
 
     return NextResponse.json({
       ok: true,
@@ -117,10 +144,15 @@ export async function GET(
       metrics: metrics ?? [],
       summary: {
         total,
-        entriesCount: entries?.length ?? 0,
-        activeDays: daily.filter((day) => day.value > 0).length,
+        entriesCount: entries.length,
+        activeDays,
         currentStreak: countCurrentStreak(byDate),
         longestStreak: countLongestStreak(byDate),
+        today: byDate.get(today) ?? 0,
+        last7Days,
+        previous7Days,
+        trendPercent,
+        averagePerActiveDay: activeDays > 0 ? total / activeDays : 0,
       },
       daily,
       heatmap: daily,
@@ -131,11 +163,16 @@ export async function GET(
       return taskProgressSchemaUnavailableResponse({
         metrics: [],
         summary: {
-          total: 0,
-          entriesCount: 0,
           activeDays: 0,
+          averagePerActiveDay: 0,
           currentStreak: 0,
+          entriesCount: 0,
+          last7Days: 0,
           longestStreak: 0,
+          previous7Days: 0,
+          today: 0,
+          total: 0,
+          trendPercent: 0,
         },
         daily: [],
         heatmap: [],

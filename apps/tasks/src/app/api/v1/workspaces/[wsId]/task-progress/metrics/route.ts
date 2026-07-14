@@ -1,4 +1,4 @@
-import { type NextRequest, NextResponse } from 'next/server';
+import { connection, type NextRequest, NextResponse } from 'next/server';
 import {
   ensureDefaultTaskProgressMetrics,
   isTaskProgressSchemaUnavailableError,
@@ -16,6 +16,7 @@ export async function GET(
   request: NextRequest,
   context: TaskProgressRouteContext
 ) {
+  await connection();
   const auth = await resolveTaskProgressRouteAuth(request, context);
   if (auth instanceof NextResponse) return auth;
 

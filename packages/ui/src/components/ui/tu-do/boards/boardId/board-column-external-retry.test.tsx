@@ -172,7 +172,15 @@ describe('BoardColumn external lane retry behavior', () => {
       name: 'select_all_tasks',
     });
     expect(checkbox).toHaveAttribute('data-state', 'indeterminate');
-    expect(checkbox).toHaveClass('size-4');
+    expect(checkbox).toHaveClass(
+      'border-2',
+      'border-dynamic-blue/70',
+      'bg-dynamic-blue/5',
+      'shadow-sm'
+    );
+    expect(checkbox.className).toContain(
+      'data-[state=checked]:border-dynamic-blue/70'
+    );
 
     fireEvent.click(checkbox);
 
@@ -181,5 +189,33 @@ describe('BoardColumn external lane retry behavior', () => {
       'task-2',
       expect.objectContaining({ shiftKey: false })
     );
+  });
+
+  it('offers collapse controls for regular task lists', () => {
+    mocks.pagination = {
+      [regularColumn.id]: {
+        ...loadedExternalState,
+        hasMore: false,
+      },
+    };
+    const onTaskListCollapsedChange = vi.fn();
+
+    render(
+      <BoardColumn
+        boardId="board-1"
+        column={regularColumn}
+        onTaskListCollapsedChange={onTaskListCollapsedChange}
+        tasks={regularTasks}
+        wsId="workspace-1"
+      />
+    );
+
+    fireEvent.click(
+      screen.getByRole('button', {
+        name: 'collapse_task_list:list_name_in_progress',
+      })
+    );
+
+    expect(onTaskListCollapsedChange).toHaveBeenCalledWith('list-1', true);
   });
 });

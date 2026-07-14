@@ -50,6 +50,7 @@ export interface TaskFilters {
   estimationRange: { min?: number; max?: number } | null;
   includeMyTasks: boolean;
   includeUnassigned: boolean;
+  hideEmptyTaskLists?: boolean;
   sourceScope: TaskSourceScope;
   sourceWorkspaceIds: string[];
   sourceBoardIds: string[];

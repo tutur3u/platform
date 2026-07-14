@@ -7583,6 +7583,10 @@
       "commit_import": "Commit import",
       "preview": "Preview"
     },
+    "autopilot": {
+      "badge": "Autopilot",
+      "live": "Live from task activity"
+    },
     "empty": {
       "entries": "No progress entries yet.",
       "goals": "No active goals yet.",
@@ -7590,6 +7594,7 @@
       "stats": "No progress stats yet."
     },
     "fields": {
+      "automatic_metric": "Automatic metric",
       "color": "Color",
       "goal_name": "Goal name",
       "leaderboard_name": "Leaderboard name",
@@ -7628,6 +7633,7 @@
       "entries": "Entries",
       "goals": "Goals",
       "streak": "Streak",
+      "today": "Today",
       "total": "Total"
     },
     "tabs": {
@@ -13545,6 +13551,7 @@
     "filter_source_scope_external_current_workspace": "External from this workspace",
     "filter_source_scope_external_specific": "Specific sources",
     "filter_workspaces": "Workspaces",
+    "hide_empty_task_lists": "Hide empty task lists",
     "last_30_days": "Last 30 Days",
     "loading": "Loading...",
     "marked_done_with_part": "Marked as done with your part",
@@ -13576,6 +13583,7 @@
     "show_less": "Show less",
     "show_n_more_tasks": "Show {count} more tasks",
     "task_completed_toast": "Task completed!",
+    "task_list_visibility": "Task list visibility",
     "task_marked_incomplete": "Task marked as incomplete",
     "task_not_on_board": "Task is not associated with a board",
     "task_personally_completed": "Task personally completed!",

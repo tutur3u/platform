@@ -27,6 +27,7 @@ describe('TaskCardIdentifierRow', () => {
         isSelected={false}
         onSelect={onSelect}
         selectTaskLabel="Select Draft response"
+        selectTaskTooltipLabel="Select task"
         selectionCheckboxClassName={getTaskCardSelectionCheckboxToneClasses(
           'BLUE'
         )}
@@ -56,11 +57,7 @@ describe('TaskCardIdentifierRow', () => {
     expect(checkbox).not.toHaveClass('bg-background/80');
     expect(
       screen.getAllByTestId('tooltip-content').map((node) => node.textContent)
-    ).toEqual([
-      'Select Draft response',
-      'Upskii / Roadmap / Review',
-      'Task OH-167',
-    ]);
+    ).toEqual(['Select task', 'Upskii / Roadmap / Review', 'Task OH-167']);
 
     fireEvent.click(checkbox);
     expect(onSelect).toHaveBeenCalledTimes(1);
@@ -93,7 +90,7 @@ describe('TaskCardIdentifierRow', () => {
     expect(screen.queryByTestId('task-card-external-source')).toBeNull();
   });
 
-  it('keeps document selection and compact badges on one identifier row', () => {
+  it('keeps document selection and compact badges on one row without a ticket id', () => {
     render(
       <TaskCardIdentifierRow
         documentLabel="Document"
@@ -115,7 +112,6 @@ describe('TaskCardIdentifierRow', () => {
     const checkbox = screen.getByTestId('task-card-selection-checkbox');
     const documentType = screen.getByTestId('task-card-document-type');
     const source = screen.getByTestId('task-card-external-source');
-    const ticket = screen.getByTestId('task-card-ticket-identifier');
 
     expect(checkbox.compareDocumentPosition(documentType)).toBe(
       Node.DOCUMENT_POSITION_FOLLOWING
@@ -123,9 +119,7 @@ describe('TaskCardIdentifierRow', () => {
     expect(documentType.compareDocumentPosition(source)).toBe(
       Node.DOCUMENT_POSITION_FOLLOWING
     );
-    expect(source.compareDocumentPosition(ticket)).toBe(
-      Node.DOCUMENT_POSITION_FOLLOWING
-    );
+    expect(screen.queryByTestId('task-card-ticket-identifier')).toBeNull();
     expect(documentType).toHaveTextContent('Document');
     expect(documentType.className).toBe(source.className);
     expect(documentType).toHaveClass(
@@ -134,10 +128,47 @@ describe('TaskCardIdentifierRow', () => {
       'text-dynamic-cyan'
     );
     expect(source).toHaveClass('h-4', 'px-1', 'text-[9px]');
-    expect(ticket).toHaveClass('h-4', 'px-1', 'text-[9px]');
     expect(
       screen.getAllByTestId('tooltip-content').map((node) => node.textContent)
-    ).toEqual(['Select task', 'Document', 'Exocorpse / Web', 'Task WEB-54']);
+    ).toEqual(['Select task', 'Document', 'Exocorpse / Web']);
+  });
+
+  it('renders linked source breadcrumbs for external tasks', () => {
+    render(
+      <TaskCardIdentifierRow
+        documentLabel="Document"
+        externalSourceBreadcrumbs={[
+          { href: '/source-workspace', label: 'Exocorpse' },
+          { href: '/source-workspace/boards/board-1', label: 'Web' },
+          {
+            href: '/source-workspace/boards/board-1#task-list-list-1',
+            label: 'Review',
+          },
+        ]}
+        externalSourceHref="/source-workspace/boards/board-1#task-list-list-1"
+        externalSourceLabel="Exocorpse"
+        isMultiSelectMode={false}
+        isPersonalExternalTask
+        isSelected={false}
+        selectTaskLabel="Select task"
+        taskListStatus="active"
+        ticketIdentifier={null}
+        ticketTitle=""
+      />
+    );
+
+    expect(screen.getByTestId('task-card-external-source')).toHaveAttribute(
+      'href',
+      '/source-workspace/boards/board-1#task-list-list-1'
+    );
+    expect(screen.getByRole('link', { name: 'Web' })).toHaveAttribute(
+      'href',
+      '/source-workspace/boards/board-1'
+    );
+    expect(screen.getByRole('link', { name: 'Review' })).toHaveAttribute(
+      'href',
+      '/source-workspace/boards/board-1#task-list-list-1'
+    );
   });
 
   it('omits the selector outside multi-select mode', () => {

@@ -1,5 +1,5 @@
 import type { UseMutationResult } from '@tanstack/react-query';
-import { Trophy } from '@tuturuuu/icons';
+import { Sparkles, Trophy } from '@tuturuuu/icons';
 import type { TaskProgressMetric } from '@tuturuuu/internal-api';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
@@ -55,10 +55,10 @@ export function LeaderboardsPanel(props: {
   } = props;
 
   return (
-    <div className="grid gap-4 xl:grid-cols-[minmax(20rem,0.75fr)_minmax(0,1.25fr)]">
-      <Card className="h-fit xl:sticky xl:top-6">
+    <div className="grid gap-4 xl:grid-cols-[minmax(0,1.25fr)_minmax(20rem,0.75fr)]">
+      <Card className="order-2 h-fit xl:sticky xl:top-6">
         <CardHeader>
-          <CardTitle>{t('leaderboards.create_leaderboard')}</CardTitle>
+          <CardTitle>{t('leaderboards.custom_leaderboard')}</CardTitle>
         </CardHeader>
         <CardContent>
           <form
@@ -88,7 +88,7 @@ export function LeaderboardsPanel(props: {
           </form>
         </CardContent>
       </Card>
-      <div className="grid gap-3">
+      <div className="order-1 grid gap-3">
         {leaderboards.length === 0 ? (
           <Card>
             <CardContent className="py-8 text-sm">
@@ -101,9 +101,21 @@ export function LeaderboardsPanel(props: {
               <CardContent className="space-y-4 py-4">
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <div className="font-semibold">{leaderboard.name}</div>
+                    <div className="flex items-center gap-2 font-semibold">
+                      {leaderboard.automatic
+                        ? t('leaderboards.automatic_name')
+                        : leaderboard.name}
+                      {leaderboard.automatic ? (
+                        <Badge className="gap-1" variant="secondary">
+                          <Sparkles className="size-3" />
+                          {t('autopilot.badge')}
+                        </Badge>
+                      ) : null}
+                    </div>
                     <div className="text-muted-foreground text-sm">
-                      {leaderboard.metric?.name} · {leaderboard.join_code}
+                      {leaderboard.automatic
+                        ? t('leaderboards.automatic_description')
+                        : leaderboard.description || leaderboard.metric?.name}
                     </div>
                   </div>
                   <Badge>{leaderboard.rankings?.length ?? 0}</Badge>
@@ -125,27 +137,29 @@ export function LeaderboardsPanel(props: {
                       </div>
                     ))}
                 </div>
-                <form
-                  className="grid gap-2 border-t pt-3 sm:grid-cols-[1fr_7rem_auto]"
-                  onSubmit={(event) => {
-                    event.preventDefault();
-                    createTeamMutation.mutate({
-                      formData: new FormData(event.currentTarget),
-                      leaderboardId: leaderboard.id,
-                    });
-                    event.currentTarget.reset();
-                  }}
-                >
-                  <Input
-                    name="name"
-                    placeholder={t('fields.team_name')}
-                    required
-                  />
-                  <Input name="color" placeholder={t('fields.color')} />
-                  <Button size="sm" variant="outline">
-                    {t('actions.add_team')}
-                  </Button>
-                </form>
+                {!leaderboard.automatic ? (
+                  <form
+                    className="grid gap-2 border-t pt-3 sm:grid-cols-[1fr_7rem_auto]"
+                    onSubmit={(event) => {
+                      event.preventDefault();
+                      createTeamMutation.mutate({
+                        formData: new FormData(event.currentTarget),
+                        leaderboardId: leaderboard.id,
+                      });
+                      event.currentTarget.reset();
+                    }}
+                  >
+                    <Input
+                      name="name"
+                      placeholder={t('fields.team_name')}
+                      required
+                    />
+                    <Input name="color" placeholder={t('fields.color')} />
+                    <Button size="sm" variant="outline">
+                      {t('actions.add_team')}
+                    </Button>
+                  </form>
+                ) : null}
               </CardContent>
             </Card>
           ))

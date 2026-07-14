@@ -572,6 +572,7 @@ export function TaskFilter({
     filters.estimationRange !== null ||
     filters.includeMyTasks ||
     filters.includeUnassigned ||
+    filters.hideEmptyTaskLists ||
     isSourceFilterActive;
 
   // Calculate filter count, avoiding double-counting when "Assigned to me" is checked
@@ -592,6 +593,7 @@ export function TaskFilter({
     (filters.estimationRange ? 1 : 0) +
     (filters.includeMyTasks ? 1 : 0) +
     (filters.includeUnassigned ? 1 : 0) +
+    (filters.hideEmptyTaskLists ? 1 : 0) +
     (isSourceFilterActive
       ? Math.max(
           1,
@@ -659,6 +661,33 @@ export function TaskFilter({
         >
           <ScrollArea className="h-[min(76dvh,36rem)]">
             <div className="space-y-3 p-3">
+              <FilterSection
+                icon={<ListFilter className="h-3.5 w-3.5" />}
+                title={t('ws-tasks.task_list_visibility')}
+                badge={
+                  filters.hideEmptyTaskLists ? (
+                    <Badge variant="secondary">1</Badge>
+                  ) : null
+                }
+                testId="task-filter-section-list-visibility"
+              >
+                <label className="flex min-w-0 cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent">
+                  <Checkbox
+                    checked={filters.hideEmptyTaskLists}
+                    onCheckedChange={(checked) =>
+                      onFiltersChange({
+                        ...filters,
+                        hideEmptyTaskLists: checked === true,
+                      })
+                    }
+                  />
+                  <ListFilter className="h-4 w-4 shrink-0 text-dynamic-cyan" />
+                  <span className="min-w-0 truncate">
+                    {t('ws-tasks.hide_empty_task_lists')}
+                  </span>
+                </label>
+              </FilterSection>
+
               {currentUserId && (
                 <FilterSection
                   icon={<User className="h-3.5 w-3.5" />}

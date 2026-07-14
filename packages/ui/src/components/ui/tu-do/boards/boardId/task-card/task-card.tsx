@@ -152,6 +152,7 @@ import { areTaskCardPropsEqual } from './task-card-comparator';
 import { shouldRenderTaskCardCompletionCheckbox } from './task-card-completion-checkbox-visibility';
 import { TaskCardIdentifierRow } from './task-card-identifier-row';
 import { mergeTaskCardLabelOptions } from './task-card-label-options';
+import { TaskCardMetadataTooltip } from './task-card-metadata-tooltip';
 import {
   getTaskCardHydratingOpenOptions,
   isExternalTaskSnapshot,
@@ -915,6 +916,28 @@ function TaskCardInner({
     task.source_workspace_id && task.source_board_id
       ? `/${task.source_workspace_id}${tasksHref(`/boards/${task.source_board_id}`)}`
       : null;
+  const sourceListUrl =
+    sourceBoardUrl && task.source_list_id
+      ? `${sourceBoardUrl}#task-list-${task.source_list_id}`
+      : sourceBoardUrl;
+  const externalSourceBreadcrumbs = [
+    task.source_workspace_name
+      ? {
+          href: task.source_workspace_id
+            ? `/${task.source_workspace_id}${tasksHref('/boards')}`
+            : undefined,
+          label: task.source_workspace_name,
+        }
+      : null,
+    task.source_board_name
+      ? { href: sourceBoardUrl ?? undefined, label: task.source_board_name }
+      : null,
+    task.source_list_name
+      ? { href: sourceListUrl ?? undefined, label: task.source_list_name }
+      : null,
+  ].filter(
+    (item): item is { href: string | undefined; label: string } => item !== null
+  );
   const taskTicketPrefix =
     'ticket_prefix' in task && typeof task.ticket_prefix === 'string'
       ? task.ticket_prefix
@@ -1339,15 +1362,21 @@ function TaskCardInner({
       badges.push({
         id: 'priority',
         element: (
-          <div
+          <TaskCardMetadataTooltip
             key="priority"
-            className="flex-none overflow-hidden"
-            ref={(el) => {
-              if (el) badgeRefs.current.set('priority', el);
-            }}
+            content={`${t('priority')}: ${taskBoardT(
+              `ws-task-boards.dialog.priority.${task.priority}` as any
+            )}`}
           >
-            {getPriorityIndicator(task.priority)}
-          </div>
+            <div
+              className="flex-none overflow-hidden"
+              ref={(el) => {
+                if (el) badgeRefs.current.set('priority', el);
+              }}
+            >
+              {getPriorityIndicator(task.priority)}
+            </div>
+          </TaskCardMetadataTooltip>
         ),
       });
     }
@@ -1359,31 +1388,34 @@ function TaskCardInner({
       badges.push({
         id: 'subtasks',
         element: (
-          <Badge
+          <TaskCardMetadataTooltip
             key="subtasks"
-            variant="secondary"
-            className={cn(
-              'border font-medium text-[10px]',
-              allChecked
-                ? 'border-dynamic-green/30 bg-dynamic-green/15 text-dynamic-green'
-                : 'border-dynamic-gray/30 bg-dynamic-gray/10 text-dynamic-gray'
-            )}
-            title={t('n_subtasks_completed', {
+            content={t('n_subtasks_completed', {
               checked: descriptionMeta.checkedCheckboxes,
               total: descriptionMeta.totalCheckboxes,
             })}
-            ref={(el) => {
-              if (el) badgeRefs.current.set('subtasks', el as any);
-            }}
           >
-            {allChecked ? (
-              <ListChecks className="h-3 w-3" />
-            ) : (
-              <ListTodo className="h-3 w-3" />
-            )}
-            {descriptionMeta.checkedCheckboxes}/
-            {descriptionMeta.totalCheckboxes}
-          </Badge>
+            <Badge
+              variant="secondary"
+              className={cn(
+                'border font-medium text-[10px]',
+                allChecked
+                  ? 'border-dynamic-green/30 bg-dynamic-green/15 text-dynamic-green'
+                  : 'border-dynamic-gray/30 bg-dynamic-gray/10 text-dynamic-gray'
+              )}
+              ref={(el) => {
+                if (el) badgeRefs.current.set('subtasks', el as any);
+              }}
+            >
+              {allChecked ? (
+                <ListChecks className="h-3 w-3" />
+              ) : (
+                <ListTodo className="h-3 w-3" />
+              )}
+              {descriptionMeta.checkedCheckboxes}/
+              {descriptionMeta.totalCheckboxes}
+            </Badge>
+          </TaskCardMetadataTooltip>
         ),
       });
     }
@@ -1393,21 +1425,24 @@ function TaskCardInner({
       badges.push({
         id: 'indeterminate-subtasks',
         element: (
-          <Badge
+          <TaskCardMetadataTooltip
             key="indeterminate-subtasks"
-            variant="secondary"
-            className="border border-dynamic-orange/30 bg-dynamic-orange/15 font-medium text-[10px] text-dynamic-orange"
-            title={t('n_subtasks_abandoned', {
+            content={t('n_subtasks_abandoned', {
               count: descriptionMeta.indeterminateCheckboxes,
             })}
-            ref={(el) => {
-              if (el)
-                badgeRefs.current.set('indeterminate-subtasks', el as any);
-            }}
           >
-            <SquareCenterlineDashedVertical className="h-3 w-3" />
-            {descriptionMeta.indeterminateCheckboxes}
-          </Badge>
+            <Badge
+              variant="secondary"
+              className="border border-dynamic-orange/30 bg-dynamic-orange/15 font-medium text-[10px] text-dynamic-orange"
+              ref={(el) => {
+                if (el)
+                  badgeRefs.current.set('indeterminate-subtasks', el as any);
+              }}
+            >
+              <SquareCenterlineDashedVertical className="h-3 w-3" />
+              {descriptionMeta.indeterminateCheckboxes}
+            </Badge>
+          </TaskCardMetadataTooltip>
         ),
       });
     }
@@ -1424,18 +1459,24 @@ function TaskCardInner({
               if (el) badgeRefs.current.set('projects', el);
             }}
           >
-            <Badge
-              variant="secondary"
-              className={cn(
-                'h-5 border px-2 text-[10px]',
-                'border-dynamic-sky/30 bg-dynamic-sky/10 text-dynamic-sky'
-              )}
+            <TaskCardMetadataTooltip
+              content={`${t('projects')}: ${task.projects
+                .map((project) => project.name)
+                .join(', ')}`}
             >
-              <Box className="h-2.5 w-2.5" />
-              {task.projects.length === 1
-                ? task.projects[0]?.name
-                : t('n_projects', { count: task.projects.length })}
-            </Badge>
+              <Badge
+                variant="secondary"
+                className={cn(
+                  'h-5 border px-2 text-[10px]',
+                  'border-dynamic-sky/30 bg-dynamic-sky/10 text-dynamic-sky'
+                )}
+              >
+                <Box className="h-2.5 w-2.5" />
+                {task.projects.length === 1
+                  ? task.projects[0]?.name
+                  : t('n_projects', { count: task.projects.length })}
+              </Badge>
+            </TaskCardMetadataTooltip>
           </div>
         ),
       });
@@ -1458,6 +1499,7 @@ function TaskCardInner({
               size="sm"
               estimationType={boardConfig?.estimation_type}
               showIcon
+              tooltipLabel={t('estimation')}
             />
           </div>
         ),
@@ -1521,33 +1563,36 @@ function TaskCardInner({
       badges.push({
         id: 'parent',
         element: (
-          <Badge
+          <TaskCardMetadataTooltip
             key="parent"
-            variant="secondary"
-            className="flex h-6 max-w-full shrink-0 items-center gap-1.5 overflow-hidden rounded-full border border-dynamic-purple/35 bg-dynamic-purple/10 px-2.5 text-[10px] text-dynamic-purple"
-            title={
+            content={
               parentBadgeTask
                 ? parentBadgeIdentifier
                   ? `${parentBadgeIdentifier} · ${parentBadgeTask.name}`
                   : t('subtask_of', { name: parentBadgeTask.name })
                 : undefined
             }
-            ref={(el) => {
-              if (el) badgeRefs.current.set('parent', el as any);
-            }}
           >
-            <ArrowUpCircle className="h-2.5 w-2.5" />
-            {parentBadgeIdentifier && (
-              <span className="rounded-full bg-dynamic-purple/12 px-1.5 py-0.5 font-mono text-[9px] leading-none">
-                {parentBadgeIdentifier}
+            <Badge
+              variant="secondary"
+              className="flex h-6 max-w-full shrink-0 items-center gap-1.5 overflow-hidden rounded-full border border-dynamic-purple/35 bg-dynamic-purple/10 px-2.5 text-[10px] text-dynamic-purple"
+              ref={(el) => {
+                if (el) badgeRefs.current.set('parent', el as any);
+              }}
+            >
+              <ArrowUpCircle className="h-2.5 w-2.5" />
+              {parentBadgeIdentifier && (
+                <span className="rounded-full bg-dynamic-purple/12 px-1.5 py-0.5 font-mono text-[9px] leading-none">
+                  {parentBadgeIdentifier}
+                </span>
+              )}
+              <span className="truncate">
+                {parentBadgeTask?.name ||
+                  parentBadgeIdentifier ||
+                  t('parent_task')}
               </span>
-            )}
-            <span className="truncate">
-              {parentBadgeTask?.name ||
-                parentBadgeIdentifier ||
-                t('parent_task')}
-            </span>
-          </Badge>
+            </Badge>
+          </TaskCardMetadataTooltip>
         ),
       });
     }
@@ -1557,26 +1602,29 @@ function TaskCardInner({
       badges.push({
         id: 'children',
         element: (
-          <Badge
+          <TaskCardMetadataTooltip
             key="children"
-            variant="secondary"
-            className={cn(
-              'h-5 shrink-0 border px-2 text-[10px]',
-              completedChildTaskCount === childTaskCount
-                ? 'border-dynamic-green/30 bg-dynamic-green/10 text-dynamic-green'
-                : 'border-dynamic-gray/30 bg-dynamic-gray/10 text-dynamic-gray'
-            )}
-            title={t('n_subtasks_completed', {
+            content={t('n_subtasks_completed', {
               checked: completedChildTaskCount,
               total: childTaskCount,
             })}
-            ref={(el) => {
-              if (el) badgeRefs.current.set('children', el as any);
-            }}
           >
-            <ListTree className="h-2.5 w-2.5" />
-            {completedChildTaskCount}/{childTaskCount}
-          </Badge>
+            <Badge
+              variant="secondary"
+              className={cn(
+                'h-5 shrink-0 border px-2 text-[10px]',
+                completedChildTaskCount === childTaskCount
+                  ? 'border-dynamic-green/30 bg-dynamic-green/10 text-dynamic-green'
+                  : 'border-dynamic-gray/30 bg-dynamic-gray/10 text-dynamic-gray'
+              )}
+              ref={(el) => {
+                if (el) badgeRefs.current.set('children', el as any);
+              }}
+            >
+              <ListTree className="h-2.5 w-2.5" />
+              {completedChildTaskCount}/{childTaskCount}
+            </Badge>
+          </TaskCardMetadataTooltip>
         ),
       });
     }
@@ -1586,18 +1634,21 @@ function TaskCardInner({
       badges.push({
         id: 'blocking',
         element: (
-          <Badge
+          <TaskCardMetadataTooltip
             key="blocking"
-            variant="secondary"
-            className="h-5 shrink-0 border border-dynamic-orange/30 bg-dynamic-orange/10 px-2 text-[10px] text-dynamic-orange"
-            title={t('blocking_n_tasks', { count: blockingCount })}
-            ref={(el) => {
-              if (el) badgeRefs.current.set('blocking', el as any);
-            }}
+            content={t('blocking_n_tasks', { count: blockingCount })}
           >
-            <Ban className="h-2.5 w-2.5" />
-            {blockingCount}
-          </Badge>
+            <Badge
+              variant="secondary"
+              className="h-5 shrink-0 border border-dynamic-orange/30 bg-dynamic-orange/10 px-2 text-[10px] text-dynamic-orange"
+              ref={(el) => {
+                if (el) badgeRefs.current.set('blocking', el as any);
+              }}
+            >
+              <Ban className="h-2.5 w-2.5" />
+              {blockingCount}
+            </Badge>
+          </TaskCardMetadataTooltip>
         ),
       });
     }
@@ -1607,18 +1658,21 @@ function TaskCardInner({
       badges.push({
         id: 'related',
         element: (
-          <Badge
+          <TaskCardMetadataTooltip
             key="related"
-            variant="secondary"
-            className="h-5 shrink-0 border border-dynamic-blue/30 bg-dynamic-blue/10 px-2 text-[10px] text-dynamic-blue"
-            title={t('n_related_tasks', { count: relatedTaskCount })}
-            ref={(el) => {
-              if (el) badgeRefs.current.set('related', el as any);
-            }}
+            content={t('n_related_tasks', { count: relatedTaskCount })}
           >
-            <Link2 className="h-2.5 w-2.5" />
-            {relatedTaskCount}
-          </Badge>
+            <Badge
+              variant="secondary"
+              className="h-5 shrink-0 border border-dynamic-blue/30 bg-dynamic-blue/10 px-2 text-[10px] text-dynamic-blue"
+              ref={(el) => {
+                if (el) badgeRefs.current.set('related', el as any);
+              }}
+            >
+              <Link2 className="h-2.5 w-2.5" />
+              {relatedTaskCount}
+            </Badge>
+          </TaskCardMetadataTooltip>
         ),
       });
     }
@@ -1973,6 +2027,8 @@ function TaskCardInner({
                 'task_project_detail.overview.document'
               )}
               externalSourceLabel={externalSourceLabel}
+              externalSourceBreadcrumbs={externalSourceBreadcrumbs}
+              externalSourceHref={sourceListUrl ?? undefined}
               externalSourceTitle={[
                 task.source_workspace_name,
                 task.source_board_name,
@@ -1985,6 +2041,7 @@ function TaskCardInner({
               isSelected={isSelected}
               onSelect={(event) => onSelect?.(task.id, event)}
               selectTaskLabel={t('select_task', { name: task.name ?? '' })}
+              selectTaskTooltipLabel={t('select_task', { name: t('task') })}
               selectionCheckboxClassName={selectionCheckboxClassName}
               taskListStatus={taskList?.status}
               ticketBadgeClassName={getTicketBadgeColorClasses(
@@ -2684,55 +2741,59 @@ function TaskCardInner({
                   className="flex min-w-0 shrink-0 items-center gap-0.5"
                 >
                   {descriptionMeta.hasText && (
-                    <div
-                      className="flex items-center gap-0.5 rounded bg-dynamic-surface/50 py-0.5"
-                      title={t('has_description')}
-                    >
-                      <FileText className="h-3.5 w-3.5 text-muted-foreground" />
-                    </div>
+                    <TaskCardMetadataTooltip content={t('has_description')}>
+                      <div className="flex items-center gap-0.5 rounded bg-dynamic-surface/50 py-0.5">
+                        <FileText className="h-3.5 w-3.5 text-muted-foreground" />
+                      </div>
+                    </TaskCardMetadataTooltip>
                   )}
                   {descriptionMeta.hasImages && (
-                    <div
-                      className="flex items-center gap-0.5 rounded bg-dynamic-surface/50 py-0.5"
-                      title={t('n_images', {
+                    <TaskCardMetadataTooltip
+                      content={t('n_images', {
                         count: descriptionMeta.imageCount,
                       })}
                     >
-                      <ImageIcon className="h-3.5 w-3.5 text-muted-foreground" />
-                      {descriptionMeta.imageCount > 1 && (
-                        <span className="text-[9px] text-muted-foreground">
-                          {descriptionMeta.imageCount}
-                        </span>
-                      )}
-                    </div>
+                      <div className="flex items-center gap-0.5 rounded bg-dynamic-surface/50 py-0.5">
+                        <ImageIcon className="h-3.5 w-3.5 text-muted-foreground" />
+                        {descriptionMeta.imageCount > 1 && (
+                          <span className="text-[9px] text-muted-foreground">
+                            {descriptionMeta.imageCount}
+                          </span>
+                        )}
+                      </div>
+                    </TaskCardMetadataTooltip>
                   )}
                   {descriptionMeta.hasVideos && (
-                    <div
-                      className="flex items-center gap-0.5 rounded bg-dynamic-surface/50 py-0.5"
-                      title={t('n_videos', {
+                    <TaskCardMetadataTooltip
+                      content={t('n_videos', {
                         count: descriptionMeta.videoCount,
                       })}
                     >
-                      <Play className="h-3.5 w-3.5 text-muted-foreground" />
-                      {descriptionMeta.videoCount > 1 && (
-                        <span className="text-[9px] text-muted-foreground">
-                          {descriptionMeta.videoCount}
-                        </span>
-                      )}
-                    </div>
+                      <div className="flex items-center gap-0.5 rounded bg-dynamic-surface/50 py-0.5">
+                        <Play className="h-3.5 w-3.5 text-muted-foreground" />
+                        {descriptionMeta.videoCount > 1 && (
+                          <span className="text-[9px] text-muted-foreground">
+                            {descriptionMeta.videoCount}
+                          </span>
+                        )}
+                      </div>
+                    </TaskCardMetadataTooltip>
                   )}
                   {descriptionMeta.hasLinks && (
-                    <div
-                      className="flex items-center gap-0.5 rounded bg-dynamic-surface/50 px-1 py-0.5"
-                      title={t('n_links', { count: descriptionMeta.linkCount })}
+                    <TaskCardMetadataTooltip
+                      content={t('n_links', {
+                        count: descriptionMeta.linkCount,
+                      })}
                     >
-                      <Link2 className="h-2.5 w-2.5 text-muted-foreground" />
-                      {descriptionMeta.linkCount > 1 && (
-                        <span className="text-[9px] text-muted-foreground">
-                          {descriptionMeta.linkCount}
-                        </span>
-                      )}
-                    </div>
+                      <div className="flex items-center gap-0.5 rounded bg-dynamic-surface/50 px-1 py-0.5">
+                        <Link2 className="h-2.5 w-2.5 text-muted-foreground" />
+                        {descriptionMeta.linkCount > 1 && (
+                          <span className="text-[9px] text-muted-foreground">
+                            {descriptionMeta.linkCount}
+                          </span>
+                        )}
+                      </div>
+                    </TaskCardMetadataTooltip>
                   )}
                 </div>
               )}
