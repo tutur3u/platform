@@ -2,7 +2,7 @@ import '@testing-library/jest-dom';
 import { fireEvent, render, screen } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { describe, expect, it, vi } from 'vitest';
-import { getTaskCardSelectionCheckboxToneClasses } from './task-card-checkbox-style';
+import { getTaskCardSelectionIconToneClasses } from './task-card-checkbox-style';
 import { TaskCardIdentifierRow } from './task-card-identifier-row';
 
 vi.mock('@tuturuuu/ui/tooltip', () => ({
@@ -28,9 +28,7 @@ describe('TaskCardIdentifierRow', () => {
         onSelect={onSelect}
         selectTaskLabel="Select Draft response"
         selectTaskTooltipLabel="Select task"
-        selectionCheckboxClassName={getTaskCardSelectionCheckboxToneClasses(
-          'BLUE'
-        )}
+        selectionCheckboxClassName={getTaskCardSelectionIconToneClasses('BLUE')}
         taskListStatus="active"
         ticketBadgeClassName="text-dynamic-blue"
         ticketIdentifier="OH-167"
@@ -39,28 +37,59 @@ describe('TaskCardIdentifierRow', () => {
     );
 
     const source = screen.getByTestId('task-card-external-source');
-    const checkbox = screen.getByTestId('task-card-selection-checkbox');
+    const checkboxControl = screen.getByTestId('task-card-selection-checkbox');
+    const checkbox = screen.getByRole('checkbox', {
+      name: 'Select Draft response',
+    });
     const ticket = screen.getByTestId('task-card-ticket-identifier');
 
-    expect(checkbox.compareDocumentPosition(source)).toBe(
+    expect(checkboxControl.compareDocumentPosition(source)).toBe(
       Node.DOCUMENT_POSITION_FOLLOWING
     );
     expect(source.compareDocumentPosition(ticket)).toBe(
       Node.DOCUMENT_POSITION_FOLLOWING
     );
-    expect(checkbox).toHaveClass('border-dynamic-blue/70');
-    expect(checkbox).toHaveClass('bg-dynamic-blue/5');
-    expect(checkbox.className).toContain(
-      'data-[state=checked]:border-dynamic-blue/70'
+    expect(checkboxControl).toHaveClass('border-dynamic-blue/70');
+    expect(checkboxControl).toHaveClass('bg-dynamic-blue/5');
+    expect(checkboxControl.className).toContain(
+      'data-[state=checked]:bg-dynamic-blue/15'
     );
-    expect(checkbox).not.toHaveClass('absolute');
-    expect(checkbox).not.toHaveClass('bg-background/80');
+    expect(checkbox).not.toBeChecked();
+    expect(screen.queryByTestId('task-card-selection-icon')).toBeNull();
+    expect(checkboxControl).not.toHaveClass('absolute');
+    expect(checkboxControl).not.toHaveClass('bg-background/80');
     expect(
       screen.getAllByTestId('tooltip-content').map((node) => node.textContent)
     ).toEqual(['Select task', 'Upskii / Roadmap / Review', 'Task OH-167']);
 
     fireEvent.click(checkbox);
     expect(onSelect).toHaveBeenCalledTimes(1);
+  });
+
+  it('uses the SquareCheck icon for the selected state', () => {
+    render(
+      <TaskCardIdentifierRow
+        documentLabel="Document"
+        externalSourceLabel="Source"
+        isMultiSelectMode
+        isPersonalExternalTask={false}
+        isSelected
+        selectTaskLabel="Select task"
+        selectionCheckboxClassName={getTaskCardSelectionIconToneClasses('RED')}
+        taskListStatus="active"
+        ticketIdentifier="OH-175"
+        ticketTitle="Task OH-175"
+      />
+    );
+
+    const checkbox = screen.getByRole('checkbox', { name: 'Select task' });
+
+    expect(checkbox).toBeChecked();
+    expect(screen.getByTestId('task-card-selection-checkbox')).toHaveAttribute(
+      'data-state',
+      'checked'
+    );
+    expect(screen.getByTestId('task-card-selection-icon')).toBeVisible();
   });
 
   it('renders the selection checkbox before an internal task identifier', () => {
@@ -72,7 +101,7 @@ describe('TaskCardIdentifierRow', () => {
         isPersonalExternalTask={false}
         isSelected={false}
         selectTaskLabel="Select task"
-        selectionCheckboxClassName={getTaskCardSelectionCheckboxToneClasses(
+        selectionCheckboxClassName={getTaskCardSelectionIconToneClasses(
           'GREEN'
         )}
         taskListStatus="active"
@@ -100,7 +129,7 @@ describe('TaskCardIdentifierRow', () => {
         isPersonalExternalTask
         isSelected={false}
         selectTaskLabel="Select task"
-        selectionCheckboxClassName={getTaskCardSelectionCheckboxToneClasses(
+        selectionCheckboxClassName={getTaskCardSelectionIconToneClasses(
           'PURPLE'
         )}
         taskListStatus="documents"

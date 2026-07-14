@@ -8,12 +8,11 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from '@tuturuuu/ui/breadcrumb';
-import { Checkbox } from '@tuturuuu/ui/checkbox';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
 import Link from 'next/link';
 import { Fragment, type MouseEvent } from 'react';
-import { TASK_CARD_SELECTION_CHECKBOX_BASE_CLASSES } from './task-card-checkbox-style';
+import { TaskCardSelectionCheckbox } from './task-card-selection-checkbox';
 
 const COMPACT_CYAN_BADGE_CLASSES =
   'h-4 min-w-0 max-w-[70%] gap-0.5 border border-dynamic-cyan/30 bg-dynamic-cyan/10 px-1 text-[9px] text-dynamic-cyan';
@@ -27,7 +26,7 @@ interface TaskCardIdentifierRowProps {
   isMultiSelectMode: boolean;
   isPersonalExternalTask: boolean;
   isSelected: boolean;
-  onSelect?: (event: MouseEvent<HTMLButtonElement>) => void;
+  onSelect?: (event: MouseEvent<HTMLInputElement>) => void;
   selectTaskLabel: string;
   selectTaskTooltipLabel?: string;
   selectionCheckboxClassName?: string;
@@ -65,20 +64,11 @@ export function TaskCardIdentifierRow({
       {isMultiSelectMode && (
         <Tooltip>
           <TooltipTrigger asChild>
-            <Checkbox
+            <TaskCardSelectionCheckbox
               checked={isSelected}
-              aria-label={selectTaskLabel}
-              data-testid="task-card-selection-checkbox"
-              className={cn(
-                TASK_CARD_SELECTION_CHECKBOX_BASE_CLASSES,
-                selectionCheckboxClassName
-              )}
-              onPointerDown={(event) => {
-                event.stopPropagation();
-              }}
-              onClick={(event) => {
-                event.preventDefault();
-                event.stopPropagation();
+              className={selectionCheckboxClassName}
+              label={selectTaskLabel}
+              onSelectionClick={(event) => {
                 onSelect?.(event);
               }}
             />

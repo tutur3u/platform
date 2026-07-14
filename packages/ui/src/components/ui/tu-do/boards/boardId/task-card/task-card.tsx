@@ -145,8 +145,8 @@ import { getTaskCardParentBadgeState } from '../task-parent-badge-state';
 import { TaskCardCheckbox } from './TaskCardCheckbox';
 import { shouldRenderTaskCardQuickArchive } from './task-card-archive-visibility';
 import {
-  getTaskCardSelectionCheckboxToneClasses,
-  TASK_CARD_OVERDUE_CHECKBOX_TONE_CLASSES,
+  getTaskCardSelectedStateToneClasses,
+  getTaskCardSelectionIconToneClasses,
 } from './task-card-checkbox-style';
 import { areTaskCardPropsEqual } from './task-card-comparator';
 import { shouldRenderTaskCardCompletionCheckbox } from './task-card-completion-checkbox-visibility';
@@ -1068,12 +1068,11 @@ function TaskCardInner({
         locale: dateLocale,
       })
     : null;
-  const selectionCheckboxClassName = cn(
-    getTaskCardSelectionCheckboxToneClasses(taskList?.color as SupportedColor),
-    isOverdue &&
-      !task.closed_at &&
-      !isResolvedListStatus &&
-      TASK_CARD_OVERDUE_CHECKBOX_TONE_CLASSES
+  const selectionCheckboxClassName = getTaskCardSelectionIconToneClasses(
+    taskList?.color as SupportedColor
+  );
+  const selectedCardToneClassName = getTaskCardSelectedStateToneClasses(
+    taskList?.color as SupportedColor
   );
 
   // Memoize description metadata to prevent unnecessary recalculations
@@ -2003,9 +2002,12 @@ function TaskCardInner({
           'border-dynamic-red/70 bg-dynamic-red/10 ring-1 ring-dynamic-red/20',
         // Hover state (no transitions)
         !isDragging && !isSelected && 'hover:ring-1 hover:ring-primary/15',
-        // Selection state - enhanced visual feedback
+        // Selection state - layered list-color feedback without a harsh outer outline
         isSelected &&
-          'scale-[1.01] border-l-primary bg-linear-to-r from-primary/10 via-primary/5 to-transparent shadow-lg ring-2 ring-primary/60',
+          cn(
+            'border-l-[5px] bg-linear-to-r to-transparent shadow-md ring-1 ring-inset',
+            selectedCardToneClassName
+          ),
         // Multi-select mode cursor
         isMultiSelectMode && 'cursor-pointer'
       )}
