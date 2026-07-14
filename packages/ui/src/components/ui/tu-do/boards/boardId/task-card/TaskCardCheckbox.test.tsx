@@ -2,8 +2,17 @@ import '@testing-library/jest-dom';
 import { render, screen } from '@testing-library/react';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
+import type { ReactNode } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { TaskCardCheckbox } from './TaskCardCheckbox';
+
+vi.mock('@tuturuuu/ui/tooltip', () => ({
+  Tooltip: ({ children }: { children: ReactNode }) => <>{children}</>,
+  TooltipContent: ({ children }: { children: ReactNode }) => (
+    <span data-testid="tooltip-content">{children}</span>
+  ),
+  TooltipTrigger: ({ children }: { children: ReactNode }) => <>{children}</>,
+}));
 
 const task: Task = {
   assignees: [],
@@ -40,9 +49,15 @@ describe('TaskCardCheckbox', () => {
         taskList={taskList}
         isLoading={false}
         onToggle={vi.fn()}
+        tooltipLabel="Mark as Done"
       />
     );
 
-    expect(screen.getByRole('checkbox')).toHaveClass('rounded-full');
+    expect(screen.getByRole('checkbox', { name: 'Mark as Done' })).toHaveClass(
+      'rounded-full'
+    );
+    expect(screen.getByTestId('tooltip-content')).toHaveTextContent(
+      'Mark as Done'
+    );
   });
 });

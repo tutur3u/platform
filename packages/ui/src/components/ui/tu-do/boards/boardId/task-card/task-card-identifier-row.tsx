@@ -1,9 +1,13 @@
 import { CheckLine, ExternalLink, NotebookPen } from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Checkbox } from '@tuturuuu/ui/checkbox';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
 import type { MouseEvent } from 'react';
 import { TASK_CARD_SELECTION_CHECKBOX_BASE_CLASSES } from './task-card-checkbox-style';
+
+const COMPACT_CYAN_BADGE_CLASSES =
+  'h-4 min-w-0 max-w-[70%] gap-0.5 border border-dynamic-cyan/30 bg-dynamic-cyan/10 px-1 text-[9px] text-dynamic-cyan';
 
 interface TaskCardIdentifierRowProps {
   documentLabel: string;
@@ -44,58 +48,81 @@ export function TaskCardIdentifierRow({
       )}
     >
       {isMultiSelectMode && (
-        <Checkbox
-          checked={isSelected}
-          aria-label={selectTaskLabel}
-          data-testid="task-card-selection-checkbox"
-          className={cn(
-            TASK_CARD_SELECTION_CHECKBOX_BASE_CLASSES,
-            selectionCheckboxClassName
-          )}
-          onPointerDown={(event) => {
-            event.stopPropagation();
-          }}
-          onClick={(event) => {
-            event.preventDefault();
-            event.stopPropagation();
-            onSelect?.(event);
-          }}
-        />
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Checkbox
+              checked={isSelected}
+              aria-label={selectTaskLabel}
+              data-testid="task-card-selection-checkbox"
+              className={cn(
+                TASK_CARD_SELECTION_CHECKBOX_BASE_CLASSES,
+                selectionCheckboxClassName
+              )}
+              onPointerDown={(event) => {
+                event.stopPropagation();
+              }}
+              onClick={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                onSelect?.(event);
+              }}
+            />
+          </TooltipTrigger>
+          <TooltipContent side="top">{selectTaskLabel}</TooltipContent>
+        </Tooltip>
       )}
       {taskListStatus === 'documents' && (
-        <Badge
-          variant="secondary"
-          className="h-4 gap-0.5 border border-border/80 bg-muted/70 px-1 text-[9px] text-muted-foreground"
-          data-testid="task-card-document-type"
-        >
-          <NotebookPen className="h-2.5 w-2.5 shrink-0" />
-          <span>{documentLabel}</span>
-        </Badge>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Badge
+              aria-label={documentLabel}
+              variant="secondary"
+              className={COMPACT_CYAN_BADGE_CLASSES}
+              data-testid="task-card-document-type"
+            >
+              <NotebookPen className="h-2.5 w-2.5 shrink-0" />
+              <span>{documentLabel}</span>
+            </Badge>
+          </TooltipTrigger>
+          <TooltipContent side="top">{documentLabel}</TooltipContent>
+        </Tooltip>
       )}
       {isPersonalExternalTask && (
-        <Badge
-          variant="secondary"
-          className="h-4 min-w-0 max-w-[70%] gap-0.5 border border-dynamic-cyan/30 bg-dynamic-cyan/10 px-1 text-[9px] text-dynamic-cyan"
-          title={externalSourceTitle}
-          data-testid="task-card-external-source"
-        >
-          <ExternalLink className="h-2.5 w-2.5 shrink-0" />
-          <span className="truncate">{externalSourceLabel}</span>
-        </Badge>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Badge
+              aria-label={externalSourceTitle || externalSourceLabel}
+              variant="secondary"
+              className={COMPACT_CYAN_BADGE_CLASSES}
+              data-testid="task-card-external-source"
+            >
+              <ExternalLink className="h-2.5 w-2.5 shrink-0" />
+              <span className="truncate">{externalSourceLabel}</span>
+            </Badge>
+          </TooltipTrigger>
+          <TooltipContent side="top">
+            {externalSourceTitle || externalSourceLabel}
+          </TooltipContent>
+        </Tooltip>
       )}
       {ticketIdentifier && (
-        <Badge
-          variant="outline"
-          className={cn(
-            'h-4 w-fit gap-0.5 px-1 py-0 font-mono text-[9px]',
-            ticketBadgeClassName
-          )}
-          title={ticketTitle}
-          data-testid="task-card-ticket-identifier"
-        >
-          <CheckLine className="h-2.5 w-2.5 shrink-0" />
-          {ticketIdentifier}
-        </Badge>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Badge
+              aria-label={ticketTitle}
+              variant="outline"
+              className={cn(
+                'h-4 w-fit gap-0.5 px-1 py-0 font-mono text-[9px]',
+                ticketBadgeClassName
+              )}
+              data-testid="task-card-ticket-identifier"
+            >
+              <CheckLine className="h-2.5 w-2.5 shrink-0" />
+              {ticketIdentifier}
+            </Badge>
+          </TooltipTrigger>
+          <TooltipContent side="top">{ticketTitle}</TooltipContent>
+        </Tooltip>
       )}
     </div>
   );

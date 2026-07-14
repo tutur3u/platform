@@ -52,7 +52,12 @@ import {
   TableHeader,
   TableRow,
 } from '@tuturuuu/ui/table';
-import { TooltipProvider } from '@tuturuuu/ui/tooltip';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
 import { format, isPast, isToday, isTomorrow } from 'date-fns';
 import { enUS, vi } from 'date-fns/locale';
@@ -62,10 +67,7 @@ import { useTheme } from 'next-themes';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useBulkOperations } from '../boards/boardId/kanban/bulk/bulk-operations';
 import type { TaskCardAssigneeMemberSource } from '../boards/boardId/task-card/task-card';
-import {
-  getTaskCardSelectionCheckboxToneClasses,
-  TASK_CARD_SELECTION_CHECKBOX_BASE_CLASSES,
-} from '../boards/boardId/task-card/task-card-checkbox-style';
+import { TASK_CARD_SELECTION_CHECKBOX_BASE_CLASSES } from '../boards/boardId/task-card/task-card-checkbox-style';
 import {
   getTaskCardHydratingOpenOptions,
   isExternalTaskSnapshot,
@@ -642,18 +644,27 @@ function InteractiveListView({
               <TableHeader className="sticky top-0 z-10 border-b">
                 <TableRow className="hover:bg-transparent">
                   <TableHead className="flex h-7 items-center justify-center px-0">
-                    <Checkbox
-                      checked={
-                        selectedTasks.size === displayedTasks.length &&
-                        displayedTasks.length > 0
-                      }
-                      onCheckedChange={(checked) => handleSelectAll(!!checked)}
-                      aria-label="Select all tasks"
-                      className={cn(
-                        TASK_CARD_SELECTION_CHECKBOX_BASE_CLASSES,
-                        getTaskCardSelectionCheckboxToneClasses('GRAY')
-                      )}
-                    />
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Checkbox
+                          checked={
+                            selectedTasks.size === displayedTasks.length &&
+                            displayedTasks.length > 0
+                          }
+                          onCheckedChange={(checked) =>
+                            handleSelectAll(!!checked)
+                          }
+                          aria-label={tc('select_all')}
+                          className={cn(
+                            TASK_CARD_SELECTION_CHECKBOX_BASE_CLASSES,
+                            '!border-2 !border-primary/70 data-[state=checked]:!border-primary/80 bg-primary/5 ring-1 ring-primary/15 data-[state=checked]:bg-primary/20 data-[state=checked]:text-primary'
+                          )}
+                        />
+                      </TooltipTrigger>
+                      <TooltipContent side="top">
+                        {tc('select_all')}
+                      </TooltipContent>
+                    </Tooltip>
                   </TableHead>
                   {columnVisibility.status && (
                     <TableHead className="h-9 w-10 px-2 text-center">

@@ -2752,6 +2752,7 @@ function TaskCardInner({
                   taskList={taskList}
                   isLoading={isLoading}
                   onToggle={handleArchiveToggle}
+                  tooltipLabel={t('mark_as_done')}
                 />
               )}
             </div>

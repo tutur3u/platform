@@ -1,8 +1,17 @@
 import '@testing-library/jest-dom';
 import { fireEvent, render, screen } from '@testing-library/react';
+import type { ReactNode } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { getTaskCardSelectionCheckboxToneClasses } from './task-card-checkbox-style';
 import { TaskCardIdentifierRow } from './task-card-identifier-row';
+
+vi.mock('@tuturuuu/ui/tooltip', () => ({
+  Tooltip: ({ children }: { children: ReactNode }) => <>{children}</>,
+  TooltipContent: ({ children }: { children: ReactNode }) => (
+    <span data-testid="tooltip-content">{children}</span>
+  ),
+  TooltipTrigger: ({ children }: { children: ReactNode }) => <>{children}</>,
+}));
 
 describe('TaskCardIdentifierRow', () => {
   it('renders the selection checkbox before the external source and task identifier', () => {
@@ -45,6 +54,13 @@ describe('TaskCardIdentifierRow', () => {
     );
     expect(checkbox).not.toHaveClass('absolute');
     expect(checkbox).not.toHaveClass('bg-background/80');
+    expect(
+      screen.getAllByTestId('tooltip-content').map((node) => node.textContent)
+    ).toEqual([
+      'Select Draft response',
+      'Upskii / Roadmap / Review',
+      'Task OH-167',
+    ]);
 
     fireEvent.click(checkbox);
     expect(onSelect).toHaveBeenCalledTimes(1);
@@ -111,8 +127,17 @@ describe('TaskCardIdentifierRow', () => {
       Node.DOCUMENT_POSITION_FOLLOWING
     );
     expect(documentType).toHaveTextContent('Document');
+    expect(documentType.className).toBe(source.className);
+    expect(documentType).toHaveClass(
+      'border-dynamic-cyan/30',
+      'bg-dynamic-cyan/10',
+      'text-dynamic-cyan'
+    );
     expect(source).toHaveClass('h-4', 'px-1', 'text-[9px]');
     expect(ticket).toHaveClass('h-4', 'px-1', 'text-[9px]');
+    expect(
+      screen.getAllByTestId('tooltip-content').map((node) => node.textContent)
+    ).toEqual(['Select task', 'Document', 'Exocorpse / Web', 'Task WEB-54']);
   });
 
   it('omits the selector outside multi-select mode', () => {

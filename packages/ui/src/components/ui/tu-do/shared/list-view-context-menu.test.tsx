@@ -11,7 +11,8 @@ const openTaskByIdMock = vi.hoisted(() => vi.fn());
 
 vi.mock('next-intl', () => ({
   useLocale: () => 'en',
-  useTranslations: () => (key: string) => key,
+  useTranslations: () => (key: string) =>
+    key === 'select_all' ? 'Select all tasks' : key,
 }));
 
 vi.mock('next-themes', () => ({
@@ -140,10 +141,10 @@ describe('ListView task context menu', () => {
     const selectAll = screen.getByRole('checkbox', {
       name: 'Select all tasks',
     });
-    expect(selectAll).toHaveClass('border-2', 'shadow-sm');
-    expect(selectAll).toHaveClass('border-dynamic-gray/70');
+    expect(selectAll).toHaveClass('!border-2', 'shadow-sm');
+    expect(selectAll).toHaveClass('!border-primary/70', 'ring-primary/15');
     expect(selectAll.className).toContain(
-      'data-[state=checked]:border-dynamic-gray/70'
+      'data-[state=checked]:!border-primary/80'
     );
 
     fireEvent.contextMenu(screen.getByText('Openable task'), {
