@@ -915,6 +915,10 @@
       "polar": {
         "title": "Payments"
       },
+      "promotions": {
+        "description": "Create and manage discount codes for inventory sales.",
+        "title": "Promotions"
+      },
       "sales": {
         "description": "Review finalized sales linked to finance invoices.",
         "title": "Sales"
@@ -2140,6 +2144,10 @@
         "polar": {
           "description": "Configure Polar online checkout and Square Terminal POS, then monitor payment activity in one place.",
           "title": "Payments hub"
+        },
+        "promotions": {
+          "description": "Create, review, and update discount codes from one dedicated workspace.",
+          "title": "Promotions"
         },
         "sales": {
           "description": "Review invoice-backed sales created from finalized inventory checkouts.",

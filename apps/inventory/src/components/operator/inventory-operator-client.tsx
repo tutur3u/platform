@@ -9,6 +9,7 @@ import {
   Layers3,
   PackageSearch,
   Store,
+  TicketPercent,
   TriangleAlert,
 } from '@tuturuuu/icons';
 import { useTranslations } from 'next-intl';
@@ -17,6 +18,7 @@ import { useMemo } from 'react';
 import { AuditRows } from './audit-rows';
 import { BundleComponentsPanel } from './bundle-components-panel';
 import { CommercePanel } from './commerce-panel';
+import { PromotionRows } from './commerce-rows';
 import { CostingPanel } from './costing-panel';
 import { BundleForm, StorefrontForm } from './inventory-forms';
 import { InventoryGuidance } from './inventory-guidance';
@@ -122,10 +124,11 @@ export function InventoryOperatorClient({
     }
 
     if (
-      view === 'commerce' &&
-      (commerceTab === 'sales' ||
-        commerceTab === 'revenue-share' ||
-        commerceTab === 'promotions')
+      view === 'promotions' ||
+      (view === 'commerce' &&
+        (commerceTab === 'sales' ||
+          commerceTab === 'revenue-share' ||
+          commerceTab === 'promotions'))
     ) {
       return [all];
     }
@@ -174,6 +177,11 @@ export function InventoryOperatorClient({
           t('views.polar.title'),
           t('views.polar.description'),
         ],
+        promotions: [
+          TicketPercent,
+          t('views.promotions.title'),
+          t('views.promotions.description'),
+        ],
         setup: [Boxes, t('views.setup.title'), t('views.setup.description')],
         stock: [
           TriangleAlert,
@@ -214,6 +222,7 @@ export function InventoryOperatorClient({
     view === 'commerce' && commerceTab === 'promotions'
       ? data.promotions
       : null,
+    view === 'promotions' ? data.promotions : null,
     view === 'costing' ? data.costingProfiles : null,
     view === 'costing' ? data.costingAnalytics : null,
     ['catalog', 'stock'].includes(view) ? data.costingProfiles : null,
@@ -402,6 +411,12 @@ export function InventoryOperatorClient({
                 void setCommerceTab(tab);
               }}
               tab={commerceTab}
+              wsId={wsId}
+            />
+          ) : null}
+          {!isLoading && !isError && view === 'promotions' ? (
+            <PromotionRows
+              rows={data.promotions.data?.data ?? []}
               wsId={wsId}
             />
           ) : null}

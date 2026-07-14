@@ -20,6 +20,7 @@ describe('Inventory navigation', () => {
       '/acme/bundles',
       '/acme/costing',
       '/acme/commerce',
+      '/acme/promotions',
       '/acme/storefront',
       '/acme/polar',
       '/acme/setup',
@@ -35,13 +36,18 @@ describe('Inventory navigation', () => {
       titleKey: 'commerce.title',
     });
     expect(visibleLinks[6]).toMatchObject({
-      aliases: ['/acme/storefront/preview', '/acme/stripe'],
+      href: '/acme/promotions',
+      icon: 'promotions',
+      titleKey: 'promotions.title',
     });
     expect(visibleLinks[7]).toMatchObject({
+      aliases: ['/acme/storefront/preview', '/acme/stripe'],
+    });
+    expect(visibleLinks[8]).toMatchObject({
       href: '/acme/polar',
       titleKey: 'polar.title',
     });
-    expect(visibleLinks[8]).toMatchObject({
+    expect(visibleLinks[9]).toMatchObject({
       sectionKey: 'sections.controls',
     });
   });

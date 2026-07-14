@@ -8,6 +8,7 @@ import {
   PackageSearch,
   Settings2,
   Store,
+  TicketPercent,
 } from '@tuturuuu/icons';
 import type { NavLink } from '@tuturuuu/ui/custom/navigation';
 import { getTranslations } from 'next-intl/server';
@@ -36,6 +37,8 @@ function getNavigationIcon(icon: InventoryNavigationItem['icon']) {
       return <LayoutDashboard className={className} />;
     case 'polar':
       return <CreditCard className={className} />;
+    case 'promotions':
+      return <TicketPercent className={className} />;
     case 'setup':
       return <Settings2 className={className} />;
     case 'stock':

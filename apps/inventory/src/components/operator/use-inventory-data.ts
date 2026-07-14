@@ -120,7 +120,9 @@ export function useInventoryData(
     queryKey: ['inventory', wsId, 'sales'],
   });
   const promotions = useQuery({
-    enabled: view === 'commerce' && commerceTab === 'promotions',
+    enabled:
+      view === 'promotions' ||
+      (view === 'commerce' && commerceTab === 'promotions'),
     queryFn: () =>
       listInventoryPromotions(wsId, { pageSize: 50, q: filters.q }),
     queryKey: ['inventory', wsId, 'promotions', filters.q],

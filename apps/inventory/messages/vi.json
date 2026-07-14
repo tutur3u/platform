@@ -915,6 +915,10 @@
       "polar": {
         "title": "Thanh toán"
       },
+      "promotions": {
+        "description": "Tạo và quản lý mã giảm giá cho hoạt động bán hàng tồn kho.",
+        "title": "Khuyến mãi"
+      },
       "sales": {
         "description": "Rà soát đơn bán đã hoàn tất và liên kết hóa đơn tài chính.",
         "title": "Bán hàng"
@@ -2140,6 +2144,10 @@
         "polar": {
           "description": "Thiết lập checkout trực tuyến Polar và POS Square Terminal, sau đó theo dõi hoạt động thanh toán tại một nơi.",
           "title": "Trung tâm thanh toán"
+        },
+        "promotions": {
+          "description": "Tạo, rà soát và cập nhật mã giảm giá trong một không gian riêng.",
+          "title": "Khuyến mãi"
         },
         "sales": {
           "description": "Rà soát doanh số dựa trên hóa đơn từ các checkout kho đã hoàn tất.",
