@@ -45,8 +45,14 @@ describe('BulkActionsIsland', () => {
     );
 
     const island = screen.getByTestId('kanban-bulk-actions-island');
-    expect(island).toHaveTextContent('2 tasks_plural');
+    expect(island).toHaveTextContent('2 selected');
     expect(island).not.toHaveTextContent('selection_instruction');
+    expect(screen.getByTestId('bulk-selection-status-icon')).toBeVisible();
+    expect(island.firstElementChild).toHaveClass(
+      'gap-0.5',
+      'rounded-xl',
+      'p-1'
+    );
 
     fireEvent.click(screen.getByRole('button', { name: 'common.move' }));
     expect(onOpenBoardSelector).toHaveBeenCalledTimes(1);

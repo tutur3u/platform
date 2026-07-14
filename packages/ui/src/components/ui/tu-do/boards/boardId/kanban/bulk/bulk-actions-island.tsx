@@ -2,9 +2,9 @@
 
 import {
   ArrowRightLeft,
-  Check,
   Loader2,
   MoreHorizontal,
+  SquareCheck,
   X,
 } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
@@ -36,26 +36,26 @@ export function BulkActionsIsland({
 
   return (
     <div
-      className="pointer-events-none fixed inset-x-3 bottom-4 z-40 flex justify-center sm:bottom-6"
+      className="pointer-events-none fixed inset-x-3 bottom-3 z-40 flex justify-center sm:bottom-5"
       data-testid="kanban-bulk-actions-island"
     >
       <div
         className={cn(
-          'pointer-events-auto flex max-w-[calc(100vw-1.5rem)] items-center gap-1.5 rounded-2xl border border-border/70 bg-background/95 p-1.5 shadow-xl backdrop-blur-xl',
+          'pointer-events-auto flex max-w-[calc(100vw-1.5rem)] items-center gap-0.5 rounded-xl border border-border/70 bg-background/95 p-1 shadow-lg backdrop-blur-xl',
           'transition-[opacity,transform] duration-200 ease-out'
         )}
       >
-        <div className="flex min-w-0 items-center gap-2 rounded-xl bg-muted/60 px-2.5 py-1.5">
-          <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground">
-            {bulkWorking ? (
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-            ) : (
-              <Check className="h-3.5 w-3.5" />
-            )}
-          </span>
+        <div className="flex min-w-0 items-center gap-1.5 rounded-lg bg-muted/60 px-2 py-1.5 text-primary">
+          {bulkWorking ? (
+            <Loader2 className="size-4 shrink-0 animate-spin" />
+          ) : (
+            <SquareCheck
+              className="size-4 shrink-0"
+              data-testid="bulk-selection-status-icon"
+            />
+          )}
           <span className="whitespace-nowrap font-semibold text-sm">
-            {selectedCount}{' '}
-            {selectedCount === 1 ? tc('task') : tc('tasks_plural')}
+            {selectedCount} {tc('selected')}
           </span>
         </div>
 
@@ -64,7 +64,7 @@ export function BulkActionsIsland({
             <Button
               variant="ghost"
               size="sm"
-              className="h-9 gap-1.5 rounded-xl px-2.5"
+              className="h-8 gap-1 rounded-lg px-2"
               disabled={bulkWorking}
               aria-label={t('common.bulk_actions')}
             >
@@ -81,7 +81,7 @@ export function BulkActionsIsland({
           variant="ghost"
           size="sm"
           onClick={onOpenBoardSelector}
-          className="h-9 gap-1.5 rounded-xl px-2.5"
+          className="h-8 gap-1 rounded-lg px-2"
           disabled={bulkWorking}
           aria-label={t('common.move')}
         >
@@ -93,7 +93,7 @@ export function BulkActionsIsland({
           variant="ghost"
           size="sm"
           onClick={onClearSelection}
-          className="h-9 gap-1.5 rounded-xl px-2.5"
+          className="h-8 gap-1 rounded-lg px-2"
           disabled={bulkWorking}
           aria-label={t('common.clear')}
         >
