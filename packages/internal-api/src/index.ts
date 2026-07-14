@@ -1324,6 +1324,7 @@ export {
   deleteWorkspaceUserGroupStorageFile,
   exportWorkspaceStorageLinks,
   getWorkspaceStorageAnalytics,
+  getWorkspaceTaskMediaAccess,
   listWorkspaceStorageObjects,
   listWorkspaceUserGroupStorageFiles,
   migrateWorkspaceStorage,
@@ -1335,6 +1336,7 @@ export {
   type WorkspaceStorageExportLinksResponse,
   type WorkspaceStorageListItem,
   type WorkspaceStorageListResponse,
+  type WorkspaceTaskMediaAccess,
 } from './storage';
 export {
   addWorkspaceTaskPlanWorkspace,

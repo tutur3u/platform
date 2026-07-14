@@ -4,7 +4,6 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { Editor, JSONContent } from '@tiptap/react';
 import { Archive, CheckCircle2, Trash2 } from '@tuturuuu/icons';
 import {
-  checkWorkspacePermission,
   createWorkspaceTask,
   createWorkspaceTaskSuggestions,
   updateWorkspaceCalendarEvent,
@@ -99,6 +98,10 @@ import { TaskDeleteDialog } from './task-edit-dialog/task-delete-dialog';
 import { TaskDescriptionRestoreBanner } from './task-edit-dialog/task-description-restore-banner';
 import { TaskDescriptionVersionRestoreDialog } from './task-edit-dialog/task-description-version-restore-dialog';
 import { TaskInstancesSection } from './task-edit-dialog/task-instances-section';
+import {
+  type TaskMediaPermissionAccess,
+  TaskMediaPermissionDialog,
+} from './task-edit-dialog/task-media-permission-dialog';
 import { TaskPropertiesSection } from './task-edit-dialog/task-properties-section';
 import { TaskRelationshipsProperties } from './task-edit-dialog/task-relationships-properties';
 import type { WorkspaceTaskLabel } from './task-edit-dialog/types';
@@ -265,27 +268,6 @@ export function TaskEditDialog({
     realtimeEnabled && !isHydratingTask && !taskLoadError;
   const effectiveCollaborationMode =
     collaborationMode && !isHydratingTask && !taskLoadError;
-
-  // Defer task media permission checks until an upload is requested. The dialog
-  // is often opened from satellite app sessions that can edit task fields but
-  // should not make a drive permission request unless the user uploads media.
-  const { data: canManageTaskMedia, isPending: isCheckingTaskMediaPermission } =
-    useQuery({
-      queryKey: [
-        'workspace-permission',
-        effectiveTaskWsId,
-        'manage_drive_tasks_directory',
-      ],
-      queryFn: async () => {
-        const result = await checkWorkspacePermission(
-          effectiveTaskWsId,
-          'manage_drive_tasks_directory'
-        );
-        return result.hasPermission;
-      },
-      enabled: false,
-      staleTime: 5 * 60 * 1000,
-    });
 
   // Core loading state
   const [isLoading, setIsLoading] = useState(false);
@@ -722,6 +704,10 @@ export function TaskEditDialog({
   const [showDescriptionCloseWarning, setShowDescriptionCloseWarning] =
     useState(false);
   const [showShareDialog, setShowShareDialog] = useState(false);
+  const [showTaskMediaPermissionDialog, setShowTaskMediaPermissionDialog] =
+    useState(false);
+  const [taskMediaAccess, setTaskMediaAccess] =
+    useState<TaskMediaPermissionAccess | null>(null);
   const [saveAsDraft, setSaveAsDraft] = useState(draftModeEnabled);
   const [presentation, setPresentation] =
     useState<TaskDialogPresentation>(openingPresentation);
@@ -1407,42 +1393,28 @@ export function TaskEditDialog({
         });
       }
 
-      let hasPermission = canManageTaskMedia;
-      if (hasPermission === undefined || isCheckingTaskMediaPermission) {
-        try {
-          hasPermission = await queryClient.fetchQuery({
-            queryKey: [
-              'workspace-permission',
-              effectiveTaskWsId,
-              'manage_drive_tasks_directory',
-            ],
-            queryFn: async () => {
-              const result = await checkWorkspacePermission(
-                effectiveTaskWsId,
-                'manage_drive_tasks_directory'
-              );
-              return result.hasPermission;
-            },
-            staleTime: 5 * 60 * 1000,
-          });
-        } catch {
-          throw Object.assign(new Error(t('insufficient_permissions')), {
-            code: 'INSUFFICIENT_PERMISSIONS',
-          });
-        }
-      }
-
-      if (!hasPermission) {
-        throw Object.assign(new Error(t('insufficient_permissions')), {
-          code: 'INSUFFICIENT_PERMISSIONS',
+      let uploadResult: Awaited<ReturnType<typeof uploadWorkspaceTaskFile>>;
+      try {
+        uploadResult = await uploadWorkspaceTaskFile(effectiveTaskWsId, file, {
+          taskId: task?.id,
         });
+      } catch (error) {
+        const permissionError = error as {
+          code?: string;
+          status?: number;
+          statusCode?: number;
+          taskMediaAccess?: TaskMediaPermissionAccess | null;
+        };
+        if (
+          permissionError.code === 'TASK_MEDIA_PERMISSION_DENIED' ||
+          permissionError.status === 403 ||
+          permissionError.statusCode === 403
+        ) {
+          setTaskMediaAccess(permissionError.taskMediaAccess ?? null);
+          setShowTaskMediaPermissionDialog(true);
+        }
+        throw error;
       }
-
-      const uploadResult = await uploadWorkspaceTaskFile(
-        effectiveTaskWsId,
-        file,
-        { taskId: task?.id }
-      );
 
       const query = new URLSearchParams({ path: uploadResult.path });
       if (task?.id) {
@@ -1451,21 +1423,11 @@ export function TaskEditDialog({
 
       return `/api/v1/workspaces/${encodeURIComponent(effectiveTaskWsId)}/storage/share?${query.toString()}`;
     },
-    [
-      canManageTaskMedia,
-      disabled,
-      effectiveTaskWsId,
-      isCheckingTaskMediaPermission,
-      queryClient,
-      task?.id,
-      t,
-    ]
+    [disabled, effectiveTaskWsId, task?.id, t]
   );
 
   const imageUploadHandler =
-    !effectiveTaskWsId || disabled || canManageTaskMedia === false
-      ? undefined
-      : handleImageUpload;
+    !effectiveTaskWsId || disabled ? undefined : handleImageUpload;
 
   const handleEstimationConfigSuccess = useCallback(async () => {
     await queryClient.invalidateQueries({
@@ -3034,6 +2996,12 @@ export function TaskEditDialog({
         isLoading={isLoading}
         onSuccess={onUpdate}
         onClose={onClose}
+      />
+
+      <TaskMediaPermissionDialog
+        access={taskMediaAccess}
+        onOpenChange={setShowTaskMediaPermissionDialog}
+        open={showTaskMediaPermissionDialog}
       />
 
       {isCreateMode && (

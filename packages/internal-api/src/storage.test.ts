@@ -5,6 +5,7 @@ import {
   createWorkspaceUserGroupStorageUploadUrl,
   deleteWorkspaceStorageObjects,
   deleteWorkspaceUserGroupStorageFile,
+  getWorkspaceTaskMediaAccess,
   uploadWorkspaceStorageFile,
   uploadWorkspaceTaskFile,
   uploadWorkspaceUserGroupStorageFile,
@@ -19,6 +20,71 @@ function createJsonResponse(payload: unknown) {
 }
 
 describe('workspace task upload helpers', () => {
+  it('reads task media access details from the Tasks-owned endpoint', async () => {
+    const access = {
+      effectivePermissions: ['manage_drive_tasks_directory'],
+      hasPermission: true,
+      membershipType: 'MEMBER',
+      permission: 'manage_drive_tasks_directory',
+      roles: [{ id: 'role-1', name: 'Project manager' }],
+    };
+    const fetchMock = vi.fn().mockResolvedValue(createJsonResponse(access));
+
+    await expect(
+      getWorkspaceTaskMediaAccess('workspace 1', {
+        baseUrl: 'https://internal.example.com',
+        fetch: fetchMock as unknown as typeof fetch,
+      })
+    ).resolves.toEqual(access);
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://internal.example.com/api/v1/workspaces/workspace%201/tasks/upload-url',
+      expect.objectContaining({
+        cache: 'no-store',
+      })
+    );
+  });
+
+  it('adds current access details to task media permission errors', async () => {
+    const access = {
+      effectivePermissions: [],
+      hasPermission: false,
+      membershipType: 'MEMBER',
+      permission: 'manage_drive_tasks_directory',
+      roles: [{ id: 'role-1', name: 'Contributor' }],
+    };
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 403,
+        headers: new Headers(),
+        json: async () => ({
+          code: 'TASK_MEDIA_PERMISSION_DENIED',
+          error: 'Insufficient permissions',
+        }),
+      })
+      .mockResolvedValueOnce(createJsonResponse(access));
+
+    const file = new File(['hello'], 'task.png', { type: 'image/png' });
+    await expect(
+      uploadWorkspaceTaskFile('ws-1', file, undefined, {
+        baseUrl: 'https://internal.example.com',
+        fetch: fetchMock as unknown as typeof fetch,
+      })
+    ).rejects.toMatchObject({
+      code: 'TASK_MEDIA_PERMISSION_DENIED',
+      status: 403,
+      taskMediaAccess: access,
+    });
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      'https://internal.example.com/api/v1/workspaces/ws-1/tasks/upload-url',
+      expect.objectContaining({ cache: 'no-store' })
+    );
+  });
+
   it('deletes Drive files through workspace-scoped authenticated routes', async () => {
     const fetchMock = vi
       .fn()

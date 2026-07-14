@@ -6,6 +6,7 @@ import {
   encodePathSegment,
   getInternalApiClient,
   type InternalApiClientOptions,
+  InternalApiError,
   withTaskApiBaseUrl,
 } from './client';
 
@@ -18,6 +19,17 @@ export interface WorkspaceUploadUrlResponse {
   filename?: string;
   contentType?: string;
   provider?: 'r2' | 'supabase';
+}
+
+export interface WorkspaceTaskMediaAccess {
+  effectivePermissions: string[];
+  hasPermission: boolean;
+  membershipType: string;
+  permission: 'manage_drive_tasks_directory';
+  roles: Array<{
+    id: string;
+    name: string;
+  }>;
 }
 
 interface WorkspaceStorageShareResponse {
@@ -470,12 +482,35 @@ export async function uploadWorkspaceTaskFile(
 ) {
   const fetchImpl = clientOptions?.fetch ?? globalThis.fetch;
   const { onUploadProgress, ...uploadOptions } = options ?? {};
-  const uploadUrlResult = await createWorkspaceTaskUploadUrl(
-    workspaceId,
-    file.name,
-    uploadOptions,
-    clientOptions
-  );
+  let uploadUrlResult: Awaited<ReturnType<typeof createWorkspaceTaskUploadUrl>>;
+  try {
+    uploadUrlResult = await createWorkspaceTaskUploadUrl(
+      workspaceId,
+      file.name,
+      uploadOptions,
+      clientOptions
+    );
+  } catch (error) {
+    if (
+      error instanceof InternalApiError &&
+      (error.code === 'TASK_MEDIA_PERMISSION_DENIED' || error.status === 403)
+    ) {
+      let taskMediaAccess: WorkspaceTaskMediaAccess | null = null;
+      try {
+        taskMediaAccess = await getWorkspaceTaskMediaAccess(
+          workspaceId,
+          clientOptions
+        );
+      } catch (detailsError) {
+        console.error(
+          'Failed to load task media permission details:',
+          detailsError
+        );
+      }
+      Object.assign(error, { taskMediaAccess });
+    }
+    throw error;
+  }
 
   return uploadFileWithSignedUrl(
     file,
@@ -588,6 +623,19 @@ export async function createWorkspaceTaskUploadUrl(
   );
 
   return parseSignedUploadPayload(payload);
+}
+
+export async function getWorkspaceTaskMediaAccess(
+  workspaceId: string,
+  clientOptions?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(withTaskApiBaseUrl(clientOptions));
+  return client.json<WorkspaceTaskMediaAccess>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/tasks/upload-url`,
+    {
+      cache: 'no-store',
+    }
+  );
 }
 
 export async function createWorkspaceStorageSignedUrl(
