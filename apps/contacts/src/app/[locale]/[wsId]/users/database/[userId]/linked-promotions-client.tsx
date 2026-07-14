@@ -228,7 +228,7 @@ export default function LinkedPromotionsClient({
       })),
     [availablePromotions, t]
   );
-  const managePromotionsUrl = `${INVENTORY_APP_URL}/${wsId}/commerce?tab=promotions`;
+  const managePromotionsUrl = `${INVENTORY_APP_URL}/${wsId}/promotions`;
 
   return (
     <div className="flex flex-col rounded-lg border border-border bg-foreground/5 p-4">

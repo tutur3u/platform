@@ -48,6 +48,18 @@ export const STOREFRONT_APP_URL = resolveInternalAppUrl({
       : getLocalInternalAppUrl('storefront', 'http://localhost:7822'),
 });
 
+export const CONTACTS_APP_URL = resolveInternalAppUrl({
+  appName: 'contacts',
+  candidates: [
+    process.env.CONTACTS_APP_URL,
+    process.env.NEXT_PUBLIC_CONTACTS_APP_URL,
+  ],
+  fallback:
+    process.env.NODE_ENV === 'production'
+      ? 'https://contacts.tuturuuu.com'
+      : getLocalInternalAppUrl('contacts', 'http://localhost:7827'),
+});
+
 export const BASE_URL = INVENTORY_APP_URL;
 export const API_URL = process.env.API_URL || `${BASE_URL}/api`;
 

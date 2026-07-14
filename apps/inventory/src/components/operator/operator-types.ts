@@ -11,11 +11,7 @@ export type InventoryOperatorView =
   | 'stock'
   | 'storefront';
 
-export type InventoryCommerceTab =
-  | 'checkouts'
-  | 'promotions'
-  | 'revenue-share'
-  | 'sales';
+export type InventoryCommerceTab = 'checkouts' | 'revenue-share' | 'sales';
 
 export type InventoryStockTab = 'stock' | 'warehouses';
 

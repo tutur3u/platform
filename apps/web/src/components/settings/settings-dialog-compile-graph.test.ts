@@ -107,7 +107,6 @@ describe('settings dialog compile graph', () => {
       './account/session-settings',
       './appearance-settings',
       './forms/forms-autosave-settings',
-      './inventory/referral-settings',
       './keyboard-shortcuts-settings',
       './sidebar-settings',
       './workspace/billing-settings',

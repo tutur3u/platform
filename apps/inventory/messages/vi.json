@@ -916,7 +916,7 @@
         "title": "Thanh toán"
       },
       "promotions": {
-        "description": "Tạo và quản lý mã giảm giá cho hoạt động bán hàng tồn kho.",
+        "description": "Quản lý chiến dịch, phần thưởng giới thiệu và lượt dùng giảm giá.",
         "title": "Khuyến mãi"
       },
       "sales": {
@@ -1063,7 +1063,6 @@
         "tabs": {
           "checkouts": "Checkout",
           "label": "Chế độ thương mại",
-          "promotions": "Khuyến mãi",
           "revenueShare": "Chia doanh thu",
           "sales": "Bán hàng"
         },
@@ -1873,6 +1872,7 @@
       },
       "previewStore": "Xem trước",
       "promotions": {
+        "campaignsDescription": "Tạo giảm giá cho cửa hàng, theo dõi lượt dùng và xem chiến dịch nào đã được đồng bộ sang Polar.",
         "code": "Mã giảm giá",
         "createDescription": "Tạo mã giảm giá cho các cửa hàng của bạn.",
         "description": "Mã giảm giá khách có thể áp dụng khi thanh toán.",
@@ -1886,8 +1886,55 @@
           "unit": "Giảm theo phần trăm trừ vào tạm tính; số tiền cố định trừ một giá trị đã định.",
           "value": "Mức giảm — theo phần trăm đơn hàng hoặc một số tiền cố định."
         },
+        "inventoryOnly": "Chỉ Inventory",
         "maxUses": "Giới hạn lượt dùng",
         "newPromotion": "Khuyến mãi mới",
+        "polarSynced": "Đã đồng bộ Polar",
+        "referral": {
+          "cancelEditing": "Dừng chỉnh sửa",
+          "configured": "Đã cấu hình",
+          "countCap": "Giới hạn lượt giới thiệu được thưởng",
+          "countCapHint": "Số lượt giới thiệu tối đa làm tăng phần thưởng thành viên.",
+          "defaultPromotion": "Chiến dịch mặc định",
+          "defaultPromotionHint": "Tùy chọn ghép phần thưởng giới thiệu với một khuyến mãi thông thường.",
+          "description": "Thưởng cho thành viên khi người họ giới thiệu tham gia không gian làm việc.",
+          "editSettings": "Chỉnh sửa cài đặt giới thiệu",
+          "incrementPercent": "Phần thưởng mỗi lượt giới thiệu",
+          "incrementPercentHint": "Phần trăm được cộng cho mỗi lượt giới thiệu hợp lệ.",
+          "loadingError": "Không thể tải cài đặt giới thiệu",
+          "loadingErrorDescription": "Hãy thử lại trước khi thay đổi chương trình giới thiệu.",
+          "manageMembers": "Quản lý thành viên",
+          "membersDescription": "Gán người giới thiệu và xem phần thưởng theo thành viên trong cơ sở dữ liệu người dùng Contacts.",
+          "membersTitle": "Giới thiệu thành viên",
+          "noCampaigns": "Không có chiến dịch khả dụng",
+          "noPromotion": "Không liên kết chiến dịch",
+          "readOnlyHint": "Cài đặt ở chế độ chỉ đọc cho đến khi bạn chọn chỉnh sửa.",
+          "retry": "Thử lại",
+          "rewardType": "Người nhận phần thưởng",
+          "rewardTypes": {
+            "both": "Cả hai thành viên",
+            "receiver": "Chỉ thành viên mới",
+            "referrer": "Chỉ người giới thiệu"
+          },
+          "save": "Lưu chương trình giới thiệu",
+          "saveError": "Không thể lưu chương trình giới thiệu",
+          "saveSuccess": "Đã lưu chương trình giới thiệu",
+          "saving": "Đang lưu…",
+          "title": "Chương trình giới thiệu",
+          "unnamedCampaign": "Chiến dịch chưa đặt tên",
+          "usingDefaults": "Đang dùng mặc định an toàn"
+        },
+        "sections": {
+          "campaigns": "Chiến dịch",
+          "label": "Các mục trong không gian khuyến mãi",
+          "referrals": "Giới thiệu"
+        },
+        "summary": {
+          "campaigns": "{count, plural, one {chiến dịch đang hoạt động} other {chiến dịch đang hoạt động}}",
+          "eyebrow": "Hoạt động khuyến mãi",
+          "polarSynced": "Đã đồng bộ sang Polar",
+          "uses": "Tổng lượt sử dụng"
+        },
         "title": "Khuyến mãi & mã giảm giá",
         "unit": "Loại giảm giá",
         "units": {
@@ -1895,6 +1942,7 @@
           "percentage": "Phần trăm (%)"
         },
         "unlimited": "Không giới hạn",
+        "usage": "Lượt dùng",
         "usesLabel": "Đã dùng {used}/{max}",
         "usesUnlimited": "Đã dùng {used}",
         "value": "Giá trị giảm"
@@ -2146,7 +2194,7 @@
           "title": "Trung tâm thanh toán"
         },
         "promotions": {
-          "description": "Tạo, rà soát và cập nhật mã giảm giá trong một không gian riêng.",
+          "description": "Vận hành chiến dịch giảm giá và cấu hình phần thưởng giới thiệu tại một nơi.",
           "title": "Khuyến mãi"
         },
         "sales": {

@@ -11,7 +11,6 @@ import {
   Goal,
   HandCoins,
   LayoutGrid,
-  Ticket,
 } from '@tuturuuu/icons';
 import type { SettingsNavGroup } from '@tuturuuu/ui/custom/settings-dialog-shell';
 import type { SettingsNavBuilderParams } from './settings-dialog-nav-types';
@@ -105,18 +104,6 @@ export function buildDomainSettingsNavGroups({
           icon: ClipboardList,
           description: t('settings.attendance.display_description'),
           keywords: ['Attendance', 'Display', 'Members', 'Managers', 'Totals'],
-        },
-      ],
-    },
-    {
-      label: t('common.inventory'),
-      items: [
-        {
-          name: 'referrals',
-          label: t('inventory.referral_reward_type'),
-          icon: Ticket,
-          description: t('user-data-table.referral_settings_desc'),
-          keywords: ['Referral', 'Promotion', 'Reward'],
         },
       ],
     },

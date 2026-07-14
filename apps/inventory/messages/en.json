@@ -916,7 +916,7 @@
         "title": "Payments"
       },
       "promotions": {
-        "description": "Create and manage discount codes for inventory sales.",
+        "description": "Manage campaigns, referral rewards, and discount usage.",
         "title": "Promotions"
       },
       "sales": {
@@ -1063,7 +1063,6 @@
         "tabs": {
           "checkouts": "Checkouts",
           "label": "Commerce view",
-          "promotions": "Promotions",
           "revenueShare": "Revenue share",
           "sales": "Sales"
         },
@@ -1873,6 +1872,7 @@
       },
       "previewStore": "Preview",
       "promotions": {
+        "campaignsDescription": "Create storefront discounts, monitor usage, and see which campaigns are mirrored to Polar.",
         "code": "Coupon code",
         "createDescription": "Create a discount code for your storefronts.",
         "description": "Discount codes shoppers can apply at checkout.",
@@ -1886,8 +1886,55 @@
           "unit": "Percentage discounts come off the subtotal; fixed amounts subtract a set value.",
           "value": "How much is taken off — a percentage of the order or a fixed amount."
         },
+        "inventoryOnly": "Inventory only",
         "maxUses": "Usage limit",
         "newPromotion": "New promotion",
+        "polarSynced": "Polar synced",
+        "referral": {
+          "cancelEditing": "Stop editing",
+          "configured": "Configured",
+          "countCap": "Rewarded referral limit",
+          "countCapHint": "Maximum referrals that increase the member reward.",
+          "defaultPromotion": "Default campaign",
+          "defaultPromotionHint": "Optionally pair referral rewards with a regular promotion.",
+          "description": "Reward members when their referrals join this workspace.",
+          "editSettings": "Edit referral settings",
+          "incrementPercent": "Reward per referral",
+          "incrementPercentHint": "Percentage added for each eligible referral.",
+          "loadingError": "Referral settings could not be loaded",
+          "loadingErrorDescription": "Retry before changing the referral program.",
+          "manageMembers": "Manage members",
+          "membersDescription": "Assign referrers and review member-specific rewards in the Contacts user database.",
+          "membersTitle": "Member referrals",
+          "noCampaigns": "No campaigns available",
+          "noPromotion": "No linked campaign",
+          "readOnlyHint": "Settings stay read-only until you select edit.",
+          "retry": "Retry",
+          "rewardType": "Who receives the reward",
+          "rewardTypes": {
+            "both": "Both members",
+            "receiver": "New member only",
+            "referrer": "Referrer only"
+          },
+          "save": "Save referral program",
+          "saveError": "Referral program could not be saved",
+          "saveSuccess": "Referral program saved",
+          "saving": "Saving…",
+          "title": "Referral program",
+          "unnamedCampaign": "Unnamed campaign",
+          "usingDefaults": "Using safe defaults"
+        },
+        "sections": {
+          "campaigns": "Campaigns",
+          "label": "Promotion workspace sections",
+          "referrals": "Referrals"
+        },
+        "summary": {
+          "campaigns": "{count, plural, one {active campaign} other {active campaigns}}",
+          "eyebrow": "Promotion activity",
+          "polarSynced": "Synced to Polar",
+          "uses": "Total redemptions"
+        },
         "title": "Promotions & coupons",
         "unit": "Discount type",
         "units": {
@@ -1895,6 +1942,7 @@
           "percentage": "Percentage (%)"
         },
         "unlimited": "Unlimited",
+        "usage": "Usage",
         "usesLabel": "{used}/{max} used",
         "usesUnlimited": "{used} used",
         "value": "Discount value"
@@ -2146,7 +2194,7 @@
           "title": "Payments hub"
         },
         "promotions": {
-          "description": "Create, review, and update discount codes from one dedicated workspace.",
+          "description": "Run discount campaigns and configure referral rewards in one place.",
           "title": "Promotions"
         },
         "sales": {

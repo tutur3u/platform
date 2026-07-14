@@ -5,7 +5,6 @@ import {
   CreditCard,
   Percent,
   ShieldCheck,
-  TicketPercent,
   User,
 } from '@tuturuuu/icons';
 import type {
@@ -13,15 +12,9 @@ import type {
   InventoryRevenueShareEarning,
   InventorySaleSummary,
 } from '@tuturuuu/internal-api/inventory';
-import type { ProductPromotion } from '@tuturuuu/types/primitives/ProductPromotion';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { useTranslations } from 'next-intl';
-import {
-  CheckoutRows,
-  PromotionRows,
-  RevenueShareRows,
-  SaleRows,
-} from './commerce-rows';
+import { CheckoutRows, RevenueShareRows, SaleRows } from './commerce-rows';
 import { OperatorMetricCard } from './operator-dashboard-primitives';
 import { money } from './operator-format';
 import { LoadingRows } from './operator-shell';
@@ -31,7 +24,6 @@ import { ProfitSummaryPanel } from './profit-summary-panel';
 export function CommercePanel({
   checkouts,
   isLoading,
-  promotions,
   query,
   revenueShares,
   sales,
@@ -41,7 +33,6 @@ export function CommercePanel({
 }: {
   checkouts: InventoryCheckoutSession[];
   isLoading?: boolean;
-  promotions: ProductPromotion[];
   query: string;
   revenueShares: InventoryRevenueShareEarning[];
   sales: InventorySaleSummary[];
@@ -62,7 +53,6 @@ export function CommercePanel({
     { icon: CreditCard, label: tabsT('checkouts'), value: 'checkouts' },
     { icon: ShieldCheck, label: tabsT('sales'), value: 'sales' },
     { icon: Percent, label: tabsT('revenueShare'), value: 'revenue-share' },
-    { icon: TicketPercent, label: tabsT('promotions'), value: 'promotions' },
   ] as const;
 
   return (
@@ -102,7 +92,7 @@ export function CommercePanel({
       >
         <TabsList
           aria-label={tabsT('label')}
-          className="grid h-auto w-full grid-cols-2 sm:grid-cols-4"
+          className="grid h-auto w-full grid-cols-3"
         >
           {commerceTabs.map(({ icon: Icon, label, value }) => (
             <TabsTrigger className="gap-2 py-1.5" key={value} value={value}>
@@ -133,13 +123,6 @@ export function CommercePanel({
             <LoadingRows />
           ) : (
             <RevenueShareRows query={query} rows={revenueShares} />
-          )}
-        </TabsContent>
-        <TabsContent value="promotions">
-          {isLoading ? (
-            <LoadingRows />
-          ) : (
-            <PromotionRows rows={promotions} wsId={wsId} />
           )}
         </TabsContent>
       </Tabs>

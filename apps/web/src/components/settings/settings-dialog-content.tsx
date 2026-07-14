@@ -24,7 +24,6 @@ import {
   NavigationSidebarSettings,
   NotificationSettings,
   ProfileSettingsPanel,
-  ReferralSettings,
   ReportDefaultTitleSettings,
   SecuritySettings,
   SessionSettings,
@@ -238,7 +237,6 @@ export function SettingsDialogContent({
       {activeTab === 'experimental_finance' && workspace?.id && (
         <ExperimentalFinanceSettings workspaceId={workspace.id} />
       )}
-      {activeTab === 'referrals' && wsId && <ReferralSettings wsId={wsId} />}
       {activeTab === 'calendar_general' && (
         <CalendarGeneralSettingsPanel
           title={t('settings.calendar.general')}

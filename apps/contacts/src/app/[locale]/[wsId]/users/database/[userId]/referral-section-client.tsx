@@ -30,6 +30,7 @@ import { RequireAttentionName } from '@tuturuuu/users-ui/components/require-atte
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useState } from 'react';
+import { INVENTORY_APP_URL } from '@/constants/common';
 
 interface ReferralSectionClientProps {
   wsId: string;
@@ -293,7 +294,9 @@ export default function ReferralSectionClient({
               <AlertTitle>{t('referral_settings_title')}</AlertTitle>
               <AlertDescription>{t('referral_settings_desc')}</AlertDescription>
             </div>
-            <Link href={`/${wsId}/inventory/promotions`}>
+            <Link
+              href={`${INVENTORY_APP_URL}/${wsId}/promotions?section=referrals`}
+            >
               <Button
                 size="xs"
                 className="border border-dynamic-red/30 bg-dynamic-red/10 text-dynamic-red hover:bg-dynamic-red/15"

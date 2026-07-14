@@ -18,7 +18,6 @@ import { useMemo } from 'react';
 import { AuditRows } from './audit-rows';
 import { BundleComponentsPanel } from './bundle-components-panel';
 import { CommercePanel } from './commerce-panel';
-import { PromotionRows } from './commerce-rows';
 import { CostingPanel } from './costing-panel';
 import { BundleForm, StorefrontForm } from './inventory-forms';
 import { InventoryGuidance } from './inventory-guidance';
@@ -37,6 +36,7 @@ import { OverviewPanel } from './overview-panel';
 import { PolarHubPanel } from './polar-hub-panel';
 import { ProductCreateForm } from './product-management';
 import { ProductsTable } from './products-table';
+import { PromotionsWorkspacePanel } from './promotions-workspace-panel';
 import { SetupPanel } from './setup-panel';
 import { SimpleRows } from './simple-rows';
 import { StockWorkspacePanel } from './stock-workspace-panel';
@@ -60,12 +60,7 @@ type InventoryQueryState = {
   refetch: () => unknown;
 };
 
-const commerceTabs = [
-  'checkouts',
-  'sales',
-  'revenue-share',
-  'promotions',
-] as const;
+const commerceTabs = ['checkouts', 'sales', 'revenue-share'] as const;
 
 export function InventoryOperatorClient({
   view,
@@ -126,9 +121,7 @@ export function InventoryOperatorClient({
     if (
       view === 'promotions' ||
       (view === 'commerce' &&
-        (commerceTab === 'sales' ||
-          commerceTab === 'revenue-share' ||
-          commerceTab === 'promotions'))
+        (commerceTab === 'sales' || commerceTab === 'revenue-share'))
     ) {
       return [all];
     }
@@ -219,9 +212,6 @@ export function InventoryOperatorClient({
     view === 'commerce' && commerceTab === 'revenue-share'
       ? data.revenueShares
       : null,
-    view === 'commerce' && commerceTab === 'promotions'
-      ? data.promotions
-      : null,
     view === 'promotions' ? data.promotions : null,
     view === 'costing' ? data.costingProfiles : null,
     view === 'costing' ? data.costingAnalytics : null,
@@ -262,11 +252,9 @@ export function InventoryOperatorClient({
       ? data.checkouts.isPending || data.checkouts.isFetching
       : view === 'commerce' && commerceTab === 'sales'
         ? data.sales.isPending || data.sales.isFetching
-        : view === 'commerce' && commerceTab === 'promotions'
-          ? data.promotions.isPending || data.promotions.isFetching
-          : view === 'commerce' && commerceTab === 'revenue-share'
-            ? data.revenueShares.isPending || data.revenueShares.isFetching
-            : false;
+        : view === 'commerce' && commerceTab === 'revenue-share'
+          ? data.revenueShares.isPending || data.revenueShares.isFetching
+          : false;
 
   const headerActions =
     view === 'catalog' ? (
@@ -402,7 +390,6 @@ export function InventoryOperatorClient({
             <CommercePanel
               checkouts={data.checkouts.data?.data ?? []}
               isLoading={commerceLoading}
-              promotions={data.promotions.data?.data ?? []}
               query={data.filters.q}
               revenueShares={data.revenueShares.data?.data ?? []}
               sales={sales}
@@ -415,8 +402,8 @@ export function InventoryOperatorClient({
             />
           ) : null}
           {!isLoading && !isError && view === 'promotions' ? (
-            <PromotionRows
-              rows={data.promotions.data?.data ?? []}
+            <PromotionsWorkspacePanel
+              promotions={data.promotions.data?.data ?? []}
               wsId={wsId}
             />
           ) : null}

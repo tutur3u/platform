@@ -37,9 +37,6 @@ const LazyProfileSettingsPanel = lazy(() =>
     default: module.ProfileSettingsPanel,
   }))
 );
-const LazyReferralSettings = lazy(
-  () => import('./inventory/referral-settings')
-);
 const LazySecuritySettings = lazy(() => import('./account/security-settings'));
 const LazySessionSettings = lazy(() => import('./account/session-settings'));
 const LazyTaskGeneralSettingsPanel = lazy(() =>
@@ -203,7 +200,6 @@ export const NavigationSidebarSettings = withPanelSuspense(
 );
 export const NotificationSettings = withPanelSuspense(LazyNotificationSettings);
 export const ProfileSettingsPanel = withPanelSuspense(LazyProfileSettingsPanel);
-export const ReferralSettings = withPanelSuspense(LazyReferralSettings);
 export const ReportDefaultTitleSettings = withPanelSuspense(
   LazyReportDefaultTitleSettings
 );
