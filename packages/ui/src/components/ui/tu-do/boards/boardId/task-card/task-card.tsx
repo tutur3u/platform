@@ -193,6 +193,7 @@ export interface TaskCardProps {
 
 function ReadOnlyTaskCard({ task, taskList }: TaskCardProps) {
   const t = useTranslations('common');
+  const taskProjectT = useTranslations('task_project_detail.overview');
   const publicBoardT = useTranslations('ws-task-boards.public');
   const priorityT = useTranslations('ws-task-boards.dialog.priority');
   const locale = useLocale();
@@ -218,6 +219,7 @@ function ReadOnlyTaskCard({ task, taskList }: TaskCardProps) {
       data-task-read-only="true"
     >
       <TaskCardIdentifierRow
+        documentLabel={taskProjectT('document')}
         externalSourceLabel=""
         isMultiSelectMode={false}
         isPersonalExternalTask={false}
@@ -1967,6 +1969,9 @@ function TaskCardInner({
         <div className="flex items-start gap-1">
           <div className="min-w-0 flex-1">
             <TaskCardIdentifierRow
+              documentLabel={taskBoardT(
+                'task_project_detail.overview.document'
+              )}
               externalSourceLabel={externalSourceLabel}
               externalSourceTitle={[
                 task.source_workspace_name,

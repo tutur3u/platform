@@ -1,10 +1,12 @@
-import { ExternalLink } from '@tuturuuu/icons';
+import { CheckLine, ExternalLink, NotebookPen } from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Checkbox } from '@tuturuuu/ui/checkbox';
 import { cn } from '@tuturuuu/utils/format';
 import type { MouseEvent } from 'react';
+import { TASK_CARD_SELECTION_CHECKBOX_BASE_CLASSES } from './task-card-checkbox-style';
 
 interface TaskCardIdentifierRowProps {
+  documentLabel: string;
   externalSourceLabel: string;
   externalSourceTitle?: string;
   isMultiSelectMode: boolean;
@@ -20,6 +22,7 @@ interface TaskCardIdentifierRowProps {
 }
 
 export function TaskCardIdentifierRow({
+  documentLabel,
   externalSourceLabel,
   externalSourceTitle,
   isMultiSelectMode,
@@ -46,7 +49,7 @@ export function TaskCardIdentifierRow({
           aria-label={selectTaskLabel}
           data-testid="task-card-selection-checkbox"
           className={cn(
-            'h-4 w-4 shrink-0 border-2 shadow-sm transition-all duration-200 hover:scale-110 hover:border-primary/50',
+            TASK_CARD_SELECTION_CHECKBOX_BASE_CLASSES,
             selectionCheckboxClassName
           )}
           onPointerDown={(event) => {
@@ -59,10 +62,20 @@ export function TaskCardIdentifierRow({
           }}
         />
       )}
+      {taskListStatus === 'documents' && (
+        <Badge
+          variant="secondary"
+          className="h-4 gap-0.5 border border-border/80 bg-muted/70 px-1 text-[9px] text-muted-foreground"
+          data-testid="task-card-document-type"
+        >
+          <NotebookPen className="h-2.5 w-2.5 shrink-0" />
+          <span>{documentLabel}</span>
+        </Badge>
+      )}
       {isPersonalExternalTask && (
         <Badge
           variant="secondary"
-          className="h-5 min-w-0 max-w-[70%] gap-1 border border-dynamic-cyan/30 bg-dynamic-cyan/10 px-1.5 text-[10px] text-dynamic-cyan"
+          className="h-4 min-w-0 max-w-[70%] gap-0.5 border border-dynamic-cyan/30 bg-dynamic-cyan/10 px-1 text-[9px] text-dynamic-cyan"
           title={externalSourceTitle}
           data-testid="task-card-external-source"
         >
@@ -70,16 +83,17 @@ export function TaskCardIdentifierRow({
           <span className="truncate">{externalSourceLabel}</span>
         </Badge>
       )}
-      {taskListStatus !== 'documents' && ticketIdentifier && (
+      {ticketIdentifier && (
         <Badge
           variant="outline"
           className={cn(
-            'w-fit px-1 py-0 font-mono text-[10px]',
+            'h-4 w-fit gap-0.5 px-1 py-0 font-mono text-[9px]',
             ticketBadgeClassName
           )}
           title={ticketTitle}
           data-testid="task-card-ticket-identifier"
         >
+          <CheckLine className="h-2.5 w-2.5 shrink-0" />
           {ticketIdentifier}
         </Badge>
       )}

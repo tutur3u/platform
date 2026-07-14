@@ -113,7 +113,7 @@ function renderListView(viewTasks = tasks) {
     },
   });
 
-  return render(
+  const view = render(
     <QueryClientProvider client={queryClient}>
       <ListView
         boardId="board-1"
@@ -124,6 +124,8 @@ function renderListView(viewTasks = tasks) {
       />
     </QueryClientProvider>
   );
+
+  return { ...view, queryClient };
 }
 
 describe('ListView task context menu', () => {
@@ -134,6 +136,15 @@ describe('ListView task context menu', () => {
 
   it('opens the shared task menu from row right-click and the compact menu button', () => {
     renderListView();
+
+    const selectAll = screen.getByRole('checkbox', {
+      name: 'Select all tasks',
+    });
+    expect(selectAll).toHaveClass('border-2', 'shadow-sm');
+    expect(selectAll).toHaveClass('border-dynamic-gray/70');
+    expect(selectAll.className).toContain(
+      'data-[state=checked]:border-dynamic-gray/70'
+    );
 
     fireEvent.contextMenu(screen.getByText('Openable task'), {
       clientX: 120,
@@ -199,5 +210,43 @@ describe('ListView task context menu', () => {
       })
     );
     expect(openTaskMock).not.toHaveBeenCalled();
+  });
+
+  it('preserves the expanded render window when task data updates in place', () => {
+    const manyTasks = Array.from({ length: 60 }, (_, index) => ({
+      ...tasks[0]!,
+      display_number: index + 1,
+      id: `task-${index + 1}`,
+      name: `Task ${index + 1}`,
+    }));
+    const { queryClient, rerender } = renderListView(manyTasks);
+    const scrollContainer = document.querySelector('[data-scroll-container]');
+
+    expect(scrollContainer).not.toBeNull();
+    Object.defineProperties(scrollContainer, {
+      clientHeight: { configurable: true, value: 20 },
+      scrollHeight: { configurable: true, value: 100 },
+      scrollTop: { configurable: true, value: 81 },
+    });
+    fireEvent.scroll(scrollContainer!);
+    expect(screen.getByText('Task 60')).toBeInTheDocument();
+
+    const updatedTasks = manyTasks.map((task) => ({
+      ...task,
+      end_date: null,
+    }));
+    rerender(
+      <QueryClientProvider client={queryClient}>
+        <ListView
+          boardId="board-1"
+          lists={lists}
+          tasks={updatedTasks}
+          workspaceId="ws-1"
+          isPersonalWorkspace={true}
+        />
+      </QueryClientProvider>
+    );
+
+    expect(screen.getByText('Task 60')).toBeInTheDocument();
   });
 });

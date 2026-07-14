@@ -31,7 +31,7 @@ export const TaskCardCheckbox = memo(function TaskCardCheckbox({
     <Checkbox
       checked={!!task.closed_at}
       className={cn(
-        'h-4 w-4 flex-none transition-all duration-200',
+        'h-4 w-4 flex-none rounded-full transition-all duration-200',
         'data-[state=checked]:border-dynamic-green/70 data-[state=checked]:bg-dynamic-green/70',
         'hover:scale-110 hover:border-primary/50',
         getTaskCardCheckboxToneClasses(taskList?.color as SupportedColor),

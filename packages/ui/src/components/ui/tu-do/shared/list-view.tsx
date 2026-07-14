@@ -63,6 +63,10 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useBulkOperations } from '../boards/boardId/kanban/bulk/bulk-operations';
 import type { TaskCardAssigneeMemberSource } from '../boards/boardId/task-card/task-card';
 import {
+  getTaskCardSelectionCheckboxToneClasses,
+  TASK_CARD_SELECTION_CHECKBOX_BASE_CLASSES,
+} from '../boards/boardId/task-card/task-card-checkbox-style';
+import {
   getTaskCardHydratingOpenOptions,
   isExternalTaskSnapshot,
 } from '../boards/boardId/task-card/task-card-open-options';
@@ -428,7 +432,6 @@ function InteractiveListView({
   // Update local state when props change
   useEffect(() => {
     setLocalTasks(tasks);
-    setDisplayCount(50); // Reset display count when tasks change
   }, [tasks]);
 
   useEffect(() => {
@@ -443,6 +446,7 @@ function InteractiveListView({
 
     previousWorkspaceIdRef.current = workspaceId;
     previousBoardIdRef.current = boardId;
+    setDisplayCount(50);
     clearSelection();
     if (previousBoardId) {
       void queryClient.cancelQueries({ queryKey: ['tasks', previousBoardId] });
@@ -645,7 +649,10 @@ function InteractiveListView({
                       }
                       onCheckedChange={(checked) => handleSelectAll(!!checked)}
                       aria-label="Select all tasks"
-                      className="h-3.5 w-3.5 transition-all"
+                      className={cn(
+                        TASK_CARD_SELECTION_CHECKBOX_BASE_CLASSES,
+                        getTaskCardSelectionCheckboxToneClasses('GRAY')
+                      )}
                     />
                   </TableHead>
                   {columnVisibility.status && (

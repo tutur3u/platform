@@ -10,6 +10,7 @@ describe('TaskCardIdentifierRow', () => {
 
     render(
       <TaskCardIdentifierRow
+        documentLabel="Document"
         externalSourceLabel="Upskii"
         externalSourceTitle="Upskii / Roadmap / Review"
         isMultiSelectMode
@@ -52,6 +53,7 @@ describe('TaskCardIdentifierRow', () => {
   it('renders the selection checkbox before an internal task identifier', () => {
     render(
       <TaskCardIdentifierRow
+        documentLabel="Document"
         externalSourceLabel="Source"
         isMultiSelectMode
         isPersonalExternalTask={false}
@@ -75,9 +77,10 @@ describe('TaskCardIdentifierRow', () => {
     expect(screen.queryByTestId('task-card-external-source')).toBeNull();
   });
 
-  it('keeps the selection checkbox first when document lists omit the identifier', () => {
+  it('keeps document selection and compact badges on one identifier row', () => {
     render(
       <TaskCardIdentifierRow
+        documentLabel="Document"
         externalSourceLabel="Exocorpse"
         externalSourceTitle="Exocorpse / Web"
         isMultiSelectMode
@@ -94,17 +97,28 @@ describe('TaskCardIdentifierRow', () => {
     );
 
     const checkbox = screen.getByTestId('task-card-selection-checkbox');
+    const documentType = screen.getByTestId('task-card-document-type');
     const source = screen.getByTestId('task-card-external-source');
+    const ticket = screen.getByTestId('task-card-ticket-identifier');
 
-    expect(checkbox.compareDocumentPosition(source)).toBe(
+    expect(checkbox.compareDocumentPosition(documentType)).toBe(
       Node.DOCUMENT_POSITION_FOLLOWING
     );
-    expect(screen.queryByTestId('task-card-ticket-identifier')).toBeNull();
+    expect(documentType.compareDocumentPosition(source)).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING
+    );
+    expect(source.compareDocumentPosition(ticket)).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING
+    );
+    expect(documentType).toHaveTextContent('Document');
+    expect(source).toHaveClass('h-4', 'px-1', 'text-[9px]');
+    expect(ticket).toHaveClass('h-4', 'px-1', 'text-[9px]');
   });
 
   it('omits the selector outside multi-select mode', () => {
     render(
       <TaskCardIdentifierRow
+        documentLabel="Document"
         externalSourceLabel="Source"
         isMultiSelectMode={false}
         isPersonalExternalTask={false}
