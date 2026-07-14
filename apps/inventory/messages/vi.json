@@ -912,6 +912,9 @@
         "description": "Tồn kho, thanh toán và sức khỏe vận hành.",
         "title": "Tổng quan"
       },
+      "payments": {
+        "title": "Thanh toán"
+      },
       "polar": {
         "title": "Thanh toán"
       },
@@ -1764,6 +1767,40 @@
         "squareTitle": "Square Terminal",
         "title": "Một nơi cho mọi cách khách hàng thanh toán"
       },
+      "paymentsHub": {
+        "actionNeeded": "Cần thao tác",
+        "continue": "Tiếp tục",
+        "description": "Bắt đầu trong Square Sandbox, xác minh liên kết danh mục và sự kiện thiết bị, sau đó chỉ chuẩn bị Production khi mọi tín hiệu an toàn đã rõ ràng. Tuturuuu không bao giờ xóa đối tượng danh mục hiện có trên Square.",
+        "eyebrow": "Trung tâm điều hành thanh toán",
+        "guarded": "Quy trình được bảo vệ",
+        "metrics": {
+          "squareLinks": "Biến thể Square đã liên kết",
+          "squareTests": "Bản ghi giao dịch Square",
+          "webhooks": "Khóa webhook đã xác minh"
+        },
+        "nextStep": "Bước tiếp theo được đề xuất",
+        "nextSteps": {
+          "connectSandbox": "Hãy kết nối tài khoản Square Sandbox trước. Kiểm thử thiết bị Sandbox không làm phát sinh tiền thật.",
+          "importCatalog": "Nhập danh mục Square Sandbox để tạo liên kết sản phẩm hiển thị trước khi kiểm thử giao dịch.",
+          "monitor": "Kết nối và kiểm thử đã sẵn sàng. Theo dõi bằng chứng giao dịch và xử lý mọi xung đột đồng bộ trước khi ra mắt.",
+          "prepareProduction": "Đã có bằng chứng Sandbox. Hãy xem danh sách kiểm tra Production mà chưa thay đổi môi trường đang hoạt động.",
+          "runTerminalTest": "Chạy một giao dịch Terminal Sandbox thành công và một giao dịch bị hủy, sau đó xác minh dấu vết sự kiện tại đây."
+        },
+        "polar": "Polar Checkout",
+        "polarDescription": "Thanh toán trực tuyến được lưu trữ",
+        "readinessCount": "{completed} / {total} tín hiệu an toàn",
+        "readinessTitle": "Mức độ sẵn sàng của workspace",
+        "ready": "Sẵn sàng",
+        "safetyPromise": "Sandbox luôn tách biệt với tiền thật và đồng bộ danh mục giữ nguyên dữ liệu phía Square.",
+        "square": "Square POS",
+        "squareDescription": "Thanh toán trực tiếp qua thiết bị",
+        "tabs": {
+          "setup": "Kết nối & thiết lập",
+          "sync": "Đồng bộ danh mục",
+          "transactions": "Kiểm thử & xác minh"
+        },
+        "title": "Biết rõ những gì đã kết nối, đã đồng bộ và cần kiểm thử tiếp theo."
+      },
       "polar": {
         "cancelEditing": "Dừng chỉnh sửa",
         "description": "Lưu token Polar của workspace và chọn môi trường thanh toán cho đơn cửa hàng.",
@@ -1979,6 +2016,8 @@
         "appCredentialsTitle": "Thông tin ứng dụng Square",
         "applicationIdLabel": "Application ID",
         "applicationIdPlaceholder": "Application ID Square",
+        "applicationMissing": "Chưa thiết lập",
+        "applicationOptionalWithManualToken": "Không bắt buộc — đang kết nối bằng token thủ công",
         "applicationSecretLabel": "Application secret",
         "applicationSecretPlaceholder": "Application secret Square",
         "appSecretEnding": "Application secret kết thúc bằng {last4}",
@@ -2103,9 +2142,13 @@
           "lastRun": "Lần chạy gần nhất {date}",
           "metrics": {
             "conflicts": "Cần xem lại",
+            "created": "Sản phẩm đã tạo",
             "preserved": "Đã bảo toàn xóa từ Square",
+            "products": "Sản phẩm đã xử lý",
             "pulled": "Thay đổi đã nhập",
-            "pushed": "Thay đổi đã đăng"
+            "pushed": "Thay đổi đã đăng",
+            "stock": "Dòng tồn kho đã thay đổi",
+            "variations": "Biến thể đã thay đổi"
           },
           "partialSuccess": "Đồng bộ hoàn tất với một số mục cần xem lại.",
           "safetyDescription": "Tuturuuu không bao giờ xóa hoặc lưu trữ đối tượng danh mục Square. Các biến thể chỉ có trên Square được giữ nguyên và thao tác xóa từ Square được đánh dấu để xem lại mà không xóa dữ liệu cục bộ.",
@@ -2135,6 +2178,37 @@
         "webhookTitle": "Nhận webhook",
         "webhookUrlPending": "URL webhook sẽ xuất hiện sau khi tải cài đặt"
       },
+      "squareObservability": {
+        "countExplanation": "Vì sao số lượng có thể khác nhau: một lần nhập sản phẩm có thể cập nhật cả biến thể Square và số lượng tồn kho. Do đó năm sản phẩm đã liên kết có thể hiển thị thành mười thay đổi được nhập.",
+        "description": "Xem từng sản phẩm Tuturuuu được liên kết với biến thể mặt hàng Square, nguồn gốc và trạng thái cần xử lý.",
+        "emptyDescription": "Kết nối Sandbox, bật thao tác đồng bộ và chọn Nhập từ Square. Sản phẩm được nhập sẽ xuất hiện tại đây cùng mã mặt hàng và biến thể Square.",
+        "emptyTitle": "Chưa có liên kết Square hiển thị",
+        "enableActions": "Bật thao tác đồng bộ",
+        "environment": {
+          "production": "Dữ liệu Production",
+          "sandbox": "Dữ liệu Sandbox"
+        },
+        "linkedDescription": "{count, plural, =0 {Chưa có biến thể Square nào được liên kết} other {# biến thể Square đã được liên kết}}.",
+        "linkedRows": "{count} dòng liên kết",
+        "linkedTitle": "Bản ghi danh mục đã liên kết",
+        "lockActions": "Khóa thao tác đồng bộ",
+        "never": "Chưa ghi nhận lần đồng bộ nào",
+        "observedAt": "Ghi nhận {date}",
+        "origin": {
+          "square": "Được nhập từ Square",
+          "tuturuuu": "Được xuất bản từ Tuturuuu"
+        },
+        "status": {
+          "active": "Đã liên kết",
+          "conflict": "Xem xung đột",
+          "error": "Lỗi đồng bộ",
+          "remote_deleted": "Đã giữ nguyên khi Square xóa"
+        },
+        "title": "Khả năng quan sát danh mục Square",
+        "tuturuuu": "Sản phẩm Tuturuuu",
+        "unnamedSquareItem": "Mặt hàng Square chưa đặt tên",
+        "variationId": "biến thể …{id}"
+      },
       "states": {
         "errorDescription": "Hãy làm mới chế độ xem này hoặc thử lại sau khi API hoạt động ổn định.",
         "errorTitle": "Không thể tải dữ liệu kho",
@@ -2159,6 +2233,73 @@
         },
         "warehousesDescription": "Tạo và đổi tên kho cùng đơn vị mà các dòng tồn kho của sản phẩm sử dụng.",
         "warehousesTitle": "Thiết lập kho"
+      },
+      "transactionVerification": {
+        "activityDescription": "{square} bản ghi Square trong {total} checkout nhà cung cấp gần đây.",
+        "activityTitle": "Bằng chứng giao dịch",
+        "empty": "Chưa ghi nhận giao dịch nhà cung cấp nào. Hãy bắt đầu với diễn tập Sandbox ở trên.",
+        "environment": {
+          "production": "Production",
+          "sandbox": "Sandbox"
+        },
+        "evidence": {
+          "description": "Giao dịch Square đã xác minh có đúng môi trường, mã checkout thiết bị, trạng thái nhà cung cấp cuối, số tiền và tiền tệ, kết quả tồn kho khớp và—khi hoàn tất—mã thanh toán hoặc biên lai. Bài kiểm thử bị hủy hoặc hết hạn cũng là bằng chứng hữu ích khi tồn kho đã giữ được hoàn trả.",
+          "title": "Thế nào là một giao dịch đã xác minh?"
+        },
+        "mostRecent": "{count} bản ghi mới nhất",
+        "openReceipt": "Mở biên lai Square",
+        "production": {
+          "description": "Production làm phát sinh tiền thật. Hoàn tất bằng chứng Sandbox trước, sau đó dùng mặt hàng giá trị thấp đã phê duyệt và thiết bị có nhân viên trực.",
+          "steps": {
+            "amount": {
+              "description": "Dùng một mặt hàng demo giá trị thấp và không thử lại khi kết quả thiết bị đầu tiên vẫn đang chờ.",
+              "title": "Thu số tiền tối thiểu đã được phê duyệt"
+            },
+            "approval": {
+              "description": "Thống nhất mặt hàng, số tiền, người vận hành, kế hoạch hoàn tiền và phí xử lý chấp nhận được trước khi kiểm thử.",
+              "title": "Có phê duyệt rõ ràng của chủ sở hữu"
+            },
+            "location": {
+              "description": "Địa điểm Production, tiền tệ, thiết bị đã ghép và đăng ký webhook phải khớp với quầy thực tế.",
+              "title": "Kiểm tra lại địa điểm và thiết bị thật"
+            },
+            "receipt": {
+              "description": "So sánh checkout Tuturuuu, biên lai Square, mã thanh toán, trạng thái cuối, biến động tồn kho và mục trên Square Dashboard.",
+              "title": "Đối chiếu biên lai và bằng chứng quyết toán"
+            }
+          },
+          "tab": "Ra mắt Production",
+          "title": "Dùng một giao dịch thật đầu tiên có kiểm soát",
+          "warning": "Không chuyển sang Production hoặc khởi tạo checkout thật khi chưa được chủ sở hữu phê duyệt. Có thể phát sinh phí, hoàn tiền và thời gian quyết toán."
+        },
+        "provider": {
+          "polar": "Polar",
+          "square": "Square"
+        },
+        "sandbox": {
+          "description": "Dùng trình mô phỏng Square Terminal để diễn tập thành công, hủy, lỗi, gửi webhook và hoàn trả tồn kho.",
+          "steps": {
+            "simulator": {
+              "description": "Chạy cả hai kết quả để đội ngũ hiểu trạng thái người mua và đường dẫn thử lại.",
+              "title": "Phê duyệt hoặc hủy trong trình mô phỏng"
+            },
+            "status": {
+              "description": "Xác nhận nhà cung cấp, môi trường, trạng thái cuối, số tiền và mã Square xuất hiện trong hoạt động gần đây.",
+              "title": "Xác minh bằng chứng giao dịch"
+            },
+            "stock": {
+              "description": "Thanh toán hoàn tất sẽ chốt phần giữ hàng; checkout bị hủy hoặc hết hạn phải hoàn trả tồn kho.",
+              "title": "Xác nhận tồn kho được chốt hoặc hoàn trả"
+            },
+            "storefront": {
+              "description": "Chỉ dùng sản phẩm demo và xác minh tóm tắt checkout trước khi giữ tồn kho.",
+              "title": "Chọn Square Terminal trên storefront demo"
+            }
+          },
+          "tab": "Diễn tập Sandbox",
+          "title": "Xác minh toàn bộ luồng mà không dùng tiền thật",
+          "warning": "Thanh toán Sandbox chỉ là bản ghi kiểm thử. Hãy xác nhận huy hiệu môi trường hiển thị Sandbox trước khi tạo checkout."
+        }
       },
       "views": {
         "audits": {
@@ -2188,6 +2329,10 @@
         "overview": {
           "description": "Quét nhanh sức khỏe sản phẩm, mức sẵn sàng cửa hàng và rủi ro sắp hết hàng.",
           "title": "Trung tâm điều phối kho"
+        },
+        "payments": {
+          "description": "Kết nối, đồng bộ, kiểm thử và theo dõi Polar Checkout cùng Square POS với các biện pháp an toàn rõ ràng.",
+          "title": "Trung tâm điều hành thanh toán"
         },
         "polar": {
           "description": "Thiết lập checkout trực tuyến Polar và POS Square Terminal, sau đó theo dõi hoạt động thanh toán tại một nơi.",

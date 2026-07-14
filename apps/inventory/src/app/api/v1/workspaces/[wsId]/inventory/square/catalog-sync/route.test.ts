@@ -45,12 +45,30 @@ describe('Square catalog sync route', () => {
   });
 
   it('loads the current environment sync state', async () => {
-    mocks.getState.mockResolvedValue({ last_status: 'success' });
+    mocks.getState.mockResolvedValue({
+      lastStatus: 'success',
+      links: [
+        {
+          productName: 'Demo poster',
+          squareVariationId: 'variation-1',
+          status: 'active',
+        },
+      ],
+    });
     const { GET } = await import('./route');
     const response = await GET(request(), params);
     expect(response.status).toBe(200);
     expect(mocks.getState).toHaveBeenCalledWith('workspace-1');
-    await expect(response.json()).resolves.toEqual({ last_status: 'success' });
+    await expect(response.json()).resolves.toEqual({
+      lastStatus: 'success',
+      links: [
+        {
+          productName: 'Demo poster',
+          squareVariationId: 'variation-1',
+          status: 'active',
+        },
+      ],
+    });
   });
 
   it('rejects viewers without catalog and stock management access', async () => {

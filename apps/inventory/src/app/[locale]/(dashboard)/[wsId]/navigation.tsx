@@ -35,7 +35,7 @@ function getNavigationIcon(icon: InventoryNavigationItem['icon']) {
       return <Calculator className={className} />;
     case 'overview':
       return <LayoutDashboard className={className} />;
-    case 'polar':
+    case 'payments':
       return <CreditCard className={className} />;
     case 'promotions':
       return <TicketPercent className={className} />;

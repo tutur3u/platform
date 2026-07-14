@@ -45,7 +45,12 @@ export function SquareSettingsSummary({
       />
       <ReadOnlyField
         label={t('summaryApplication')}
-        value={appCredential?.applicationId || t('notConfigured')}
+        value={
+          appCredential?.applicationId ||
+          (connection?.accessTokenLast4
+            ? t('applicationOptionalWithManualToken')
+            : t('applicationMissing'))
+        }
       />
       <ReadOnlyField
         label={t('locationLabel')}

@@ -17,7 +17,6 @@ describe('SquareSettingsPanel', () => {
       'const [isEditing, setIsEditing] = useState(false)'
     );
     expect(source).toContain('<SquareSettingsSummary');
-    expect(source).toContain('actionsEnabled={isEditing}');
     expect(source).toContain("t('editSettings')");
   });
 
@@ -96,12 +95,17 @@ describe('SquareSettingsPanel', () => {
       ),
       'utf8'
     );
-    const panelSource = readFileSync(
-      join(inventoryRoot, 'src/components/operator/square-settings-panel.tsx'),
+    const observabilitySource = readFileSync(
+      join(
+        inventoryRoot,
+        'src/components/operator/square-sync-observability-panel.tsx'
+      ),
       'utf8'
     );
 
-    expect(panelSource).toContain('<SquareCatalogSyncCard');
+    expect(observabilitySource).toContain('<SquareCatalogSyncCard');
+    expect(observabilitySource).toContain('actionsEnabled={actionsEnabled}');
+    expect(observabilitySource).toContain('<CompactEditButton');
     expect(source).toContain("'from_square'");
     expect(source).toContain("'to_square'");
     expect(source).toContain("'bidirectional'");

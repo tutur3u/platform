@@ -1,4 +1,4 @@
-import { InventoryOperatorClient } from '@/components/operator/inventory-operator-client';
+import { redirect } from 'next/navigation';
 
 export default async function InventoryPolarPage({
   params,
@@ -6,5 +6,5 @@ export default async function InventoryPolarPage({
   params: Promise<{ wsId: string }>;
 }) {
   const { wsId } = await params;
-  return <InventoryOperatorClient view="polar" wsId={wsId} />;
+  redirect(`/${wsId}/payments`);
 }

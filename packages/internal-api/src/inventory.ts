@@ -727,6 +727,22 @@ export type InventorySquareCatalogSyncSummary = {
   variationsPushed: number;
 };
 
+export type InventorySquareCatalogLink = {
+  lastError: string | null;
+  lastSyncedAt: string | null;
+  productId: string;
+  productName: string;
+  squareItemId: string;
+  squareItemName: string | null;
+  squareSku: string | null;
+  squareVariationId: string;
+  squareVariationName: string | null;
+  status: 'active' | 'conflict' | 'error' | 'remote_deleted';
+  syncOrigin: 'square' | 'tuturuuu';
+  unitId: string;
+  warehouseId: string;
+};
+
 export type InventorySquareCatalogSyncState = {
   environment: InventorySquareEnvironment;
   lastCatalogCursorAt: string | null;
@@ -735,6 +751,7 @@ export type InventorySquareCatalogSyncState = {
   lastInventorySyncAt: string | null;
   lastStatus: 'error' | 'idle' | 'partial' | 'running' | 'success';
   lastSummary: InventorySquareCatalogSyncSummary | null;
+  links: InventorySquareCatalogLink[];
   updatedAt: string | null;
 };
 

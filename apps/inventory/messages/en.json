@@ -912,6 +912,9 @@
         "description": "Inventory, payments, and operating health.",
         "title": "Overview"
       },
+      "payments": {
+        "title": "Payments"
+      },
       "polar": {
         "title": "Payments"
       },
@@ -1764,6 +1767,40 @@
         "squareTitle": "Square Terminal",
         "title": "One place for every way customers pay"
       },
+      "paymentsHub": {
+        "actionNeeded": "Action needed",
+        "continue": "Continue",
+        "description": "Start in Square Sandbox, verify catalog links and terminal events, then prepare Production only when every safety signal is understood. Existing Square catalog objects are never deleted by Tuturuuu.",
+        "eyebrow": "Payment control center",
+        "guarded": "Guarded workflow",
+        "metrics": {
+          "squareLinks": "Linked Square variations",
+          "squareTests": "Square transaction records",
+          "webhooks": "Verified webhook keys"
+        },
+        "nextStep": "Recommended next step",
+        "nextSteps": {
+          "connectSandbox": "Connect a Square Sandbox account first. Sandbox terminal tests do not move real money.",
+          "importCatalog": "Import the Square Sandbox catalog to create visible product links before testing transactions.",
+          "monitor": "Connections and tests are in place. Monitor transaction evidence and resolve any sync conflicts before launch.",
+          "prepareProduction": "Sandbox evidence is present. Review the Production checklist without changing the active environment yet.",
+          "runTerminalTest": "Run one successful and one cancelled Sandbox Terminal checkout, then verify the event trail here."
+        },
+        "polar": "Polar checkout",
+        "polarDescription": "Hosted online payments",
+        "readinessCount": "{completed} of {total} safety signals",
+        "readinessTitle": "Workspace readiness",
+        "ready": "Ready",
+        "safetyPromise": "Sandbox stays isolated from real funds, and catalog sync preserves Square-side records.",
+        "square": "Square POS",
+        "squareDescription": "In-person terminal payments",
+        "tabs": {
+          "setup": "Connect & set up",
+          "sync": "Catalog sync",
+          "transactions": "Test & verify"
+        },
+        "title": "Know what is connected, what is synchronized, and what to test next."
+      },
       "polar": {
         "cancelEditing": "Stop editing",
         "description": "Save workspace-owned Polar tokens and choose checkout environments for storefront orders.",
@@ -1979,6 +2016,8 @@
         "appCredentialsTitle": "Square app credentials",
         "applicationIdLabel": "Application ID",
         "applicationIdPlaceholder": "Square application ID",
+        "applicationMissing": "Not configured",
+        "applicationOptionalWithManualToken": "Optional — connected with a manual token",
         "applicationSecretLabel": "Application secret",
         "applicationSecretPlaceholder": "Square application secret",
         "appSecretEnding": "Application secret ending in {last4}",
@@ -2103,9 +2142,13 @@
           "lastRun": "Last run {date}",
           "metrics": {
             "conflicts": "Needs review",
+            "created": "Products created",
             "preserved": "Square deletions preserved",
+            "products": "Products processed",
             "pulled": "Changes imported",
-            "pushed": "Changes published"
+            "pushed": "Changes published",
+            "stock": "Stock rows changed",
+            "variations": "Variations changed"
           },
           "partialSuccess": "Sync completed with items that need review.",
           "safetyDescription": "Tuturuuu never deletes or archives Square catalog objects. Square-only variations are preserved, and Square deletions are marked for review without deleting local data.",
@@ -2135,6 +2178,37 @@
         "webhookTitle": "Webhook ingestion",
         "webhookUrlPending": "Webhook URL will appear after settings load"
       },
+      "squareObservability": {
+        "countExplanation": "Why counts can differ: one product import can update both its Square variation and its stock count. Five linked products can therefore appear as ten imported changes.",
+        "description": "See every Tuturuuu product linked to a Square item variation, where it came from, and whether it needs attention.",
+        "emptyDescription": "Connect Sandbox, enable sync actions, and choose Import from Square. The imported products will appear here with their Square item and variation IDs.",
+        "emptyTitle": "No visible Square links yet",
+        "enableActions": "Enable sync actions",
+        "environment": {
+          "production": "Production data",
+          "sandbox": "Sandbox data"
+        },
+        "linkedDescription": "{count, plural, =0 {No Square variations are linked yet} one {# Square variation is linked} other {# Square variations are linked}}.",
+        "linkedRows": "{count} link rows",
+        "linkedTitle": "Linked catalog records",
+        "lockActions": "Lock sync actions",
+        "never": "No sync observed yet",
+        "observedAt": "Observed {date}",
+        "origin": {
+          "square": "Imported from Square",
+          "tuturuuu": "Published from Tuturuuu"
+        },
+        "status": {
+          "active": "Linked",
+          "conflict": "Review conflict",
+          "error": "Sync error",
+          "remote_deleted": "Square deletion preserved"
+        },
+        "title": "Square catalog observability",
+        "tuturuuu": "Tuturuuu product",
+        "unnamedSquareItem": "Unnamed Square item",
+        "variationId": "variation …{id}"
+      },
       "states": {
         "errorDescription": "Refresh this view or try again after the API recovers.",
         "errorTitle": "Inventory data could not be loaded",
@@ -2159,6 +2233,73 @@
         },
         "warehousesDescription": "Create and rename the warehouses and units that product stock rows use.",
         "warehousesTitle": "Warehouse setup"
+      },
+      "transactionVerification": {
+        "activityDescription": "{square} Square records across {total} recent provider checkouts.",
+        "activityTitle": "Transaction evidence",
+        "empty": "No provider transactions have been recorded yet. Start with the Sandbox rehearsal above.",
+        "environment": {
+          "production": "Production",
+          "sandbox": "Sandbox"
+        },
+        "evidence": {
+          "description": "A verified Square transaction has the expected environment, terminal checkout ID, final provider status, amount and currency, matching stock outcome, and—when completed—a payment ID or receipt. A cancelled or expired test is also useful evidence when its reserved stock is released.",
+          "title": "What counts as a verified transaction?"
+        },
+        "mostRecent": "Latest {count}",
+        "openReceipt": "Open Square receipt",
+        "production": {
+          "description": "Production moves real money. Complete the Sandbox evidence first, then use an approved low-value item and a staffed terminal.",
+          "steps": {
+            "amount": {
+              "description": "Use one low-value demo item and never retry while the first terminal result is still pending.",
+              "title": "Charge the approved minimum amount"
+            },
+            "approval": {
+              "description": "Agree on the item, amount, operator, refund plan, and acceptable processing fee before testing.",
+              "title": "Get explicit owner approval"
+            },
+            "location": {
+              "description": "The Production location, currency, paired device, and webhook subscription must match the physical counter.",
+              "title": "Recheck the live location and terminal"
+            },
+            "receipt": {
+              "description": "Compare the Tuturuuu checkout, Square receipt, payment ID, final status, stock movement, and Square Dashboard entry.",
+              "title": "Match the receipt and settlement evidence"
+            }
+          },
+          "tab": "Production launch",
+          "title": "Use a controlled first live transaction",
+          "warning": "Do not switch to Production or initiate a live checkout without owner approval. Fees, refunds, and settlement timing may apply."
+        },
+        "provider": {
+          "polar": "Polar",
+          "square": "Square"
+        },
+        "sandbox": {
+          "description": "Use the Square Terminal simulator to rehearse success, cancellation, failure, webhook delivery, and stock release.",
+          "steps": {
+            "simulator": {
+              "description": "Run both outcomes so the team understands the buyer state and retry path.",
+              "title": "Approve or cancel in the simulator"
+            },
+            "status": {
+              "description": "Confirm provider, environment, final status, amount, and Square identifiers appear in recent activity.",
+              "title": "Verify the transaction evidence"
+            },
+            "stock": {
+              "description": "A completed payment settles the reservation; a cancelled or expired checkout must return stock.",
+              "title": "Confirm stock settles or releases"
+            },
+            "storefront": {
+              "description": "Use only demo products and verify the checkout summary before reserving stock.",
+              "title": "Select Square Terminal on a demo storefront"
+            }
+          },
+          "tab": "Sandbox rehearsal",
+          "title": "Prove the complete flow without real money",
+          "warning": "Sandbox payments are test records only. Confirm the environment badge says Sandbox before creating a checkout."
+        }
       },
       "views": {
         "audits": {
@@ -2188,6 +2329,10 @@
         "overview": {
           "description": "Scan product health, storefront readiness, and low-stock risk.",
           "title": "Inventory command center"
+        },
+        "payments": {
+          "description": "Connect, synchronize, test, and monitor Polar checkout and Square POS with clear safety controls.",
+          "title": "Payments control center"
         },
         "polar": {
           "description": "Configure Polar online checkout and Square Terminal POS, then monitor payment activity in one place.",

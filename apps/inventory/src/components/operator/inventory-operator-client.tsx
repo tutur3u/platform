@@ -33,7 +33,7 @@ import type {
   InventoryStatusOption,
 } from './operator-types';
 import { OverviewPanel } from './overview-panel';
-import { PolarHubPanel } from './polar-hub-panel';
+import { PaymentsHubPanel } from './payments-hub-panel';
 import { ProductCreateForm } from './product-management';
 import { ProductsTable } from './products-table';
 import { PromotionsWorkspacePanel } from './promotions-workspace-panel';
@@ -165,10 +165,10 @@ export function InventoryOperatorClient({
           t('views.overview.title'),
           t('views.overview.description'),
         ],
-        polar: [
+        payments: [
           CreditCard,
-          t('views.polar.title'),
-          t('views.polar.description'),
+          t('views.payments.title'),
+          t('views.payments.description'),
         ],
         promotions: [
           TicketPercent,
@@ -277,11 +277,13 @@ export function InventoryOperatorClient({
         icon={<Icon className="h-5 w-5" />}
         title={section[1] as string}
       >
-        <Toolbar
-          filters={data.filters}
-          setFilters={data.setFilters}
-          statusOptions={statusOptions}
-        />
+        {view !== 'payments' ? (
+          <Toolbar
+            filters={data.filters}
+            setFilters={data.setFilters}
+            statusOptions={statusOptions}
+          />
+        ) : null}
         <div className="grid gap-4">
           {isLoading && view !== 'commerce' ? <LoadingRows /> : null}
           {isError ? (
@@ -410,7 +412,9 @@ export function InventoryOperatorClient({
           {!isLoading && !isError && view === 'audits' ? (
             <AuditRows rows={data.audits.data?.data ?? []} wsId={wsId} />
           ) : null}
-          {!isError && view === 'polar' ? <PolarHubPanel wsId={wsId} /> : null}
+          {!isError && view === 'payments' ? (
+            <PaymentsHubPanel wsId={wsId} />
+          ) : null}
         </div>
       </SectionShell>
     </WorkspaceCurrencyProvider>

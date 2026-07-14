@@ -111,10 +111,12 @@ export function SquareCatalogSyncCard({
       </div>
 
       {summary ? (
-        <div className="grid grid-cols-2 gap-px bg-border sm:grid-cols-4">
+        <div className="grid grid-cols-2 gap-px bg-border sm:grid-cols-3 xl:grid-cols-6">
           {[
-            ['pulled', summary.variationsPulled + summary.inventoryPulled],
-            ['pushed', summary.variationsPushed + summary.inventoryPushed],
+            ['products', summary.itemsPulled + summary.itemsPushed],
+            ['created', summary.itemsCreated],
+            ['variations', summary.variationsPulled + summary.variationsPushed],
+            ['stock', summary.inventoryPulled + summary.inventoryPushed],
             ['conflicts', summary.conflicts],
             ['preserved', summary.preservedRemoteDeletions],
           ].map(([label, value]) => (
