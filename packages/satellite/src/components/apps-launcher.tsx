@@ -9,7 +9,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
-import { useLocalStorage } from '@tuturuuu/ui/hooks/use-local-storage';
 import { ToggleGroup, ToggleGroupItem } from '@tuturuuu/ui/toggle-group';
 import type {
   LaunchableApp,
@@ -20,16 +19,15 @@ import {
   resolveLaunchableAppUrl,
 } from '@tuturuuu/utils/launchable-apps';
 import { useTranslations } from 'next-intl';
-import type { CSSProperties } from 'react';
+import { type CSSProperties, useRef } from 'react';
 import { type AppOpenMode, AppsLauncherCatalog } from './apps-launcher-catalog';
+import { useAppsLauncherOpenMode } from './apps-launcher-preference';
 
 interface AppsLauncherDialogProps {
   currentWorkspace?: LaunchableWorkspace | null;
   onOpenChange: (open: boolean) => void;
   open: boolean;
 }
-
-const APP_OPEN_MODE_STORAGE_KEY = 'tuturuuu-apps-launcher-open-mode';
 
 export function AppsLauncherDialog({
   currentWorkspace,
@@ -38,11 +36,8 @@ export function AppsLauncherDialog({
 }: AppsLauncherDialogProps) {
   const t = useTranslations('command_launcher');
   const commonT = useTranslations('common');
-  const [storedOpenMode, setStoredOpenMode] = useLocalStorage<AppOpenMode>(
-    APP_OPEN_MODE_STORAGE_KEY,
-    'new-tab'
-  );
-  const openMode = storedOpenMode === 'current-tab' ? 'current-tab' : 'new-tab';
+  const [openMode, setOpenMode] = useAppsLauncherOpenMode();
+  const dialogContentRef = useRef<HTMLDivElement>(null);
   const appNames: Record<string, string> = {
     apps: t('app_names.apps'),
     calendar: t('app_names.calendar'),
@@ -91,6 +86,13 @@ export function AppsLauncherDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         className="flex max-w-none flex-col gap-0 overflow-hidden border-border/70 bg-background p-0 sm:max-w-none sm:rounded-xl"
+        onOpenAutoFocus={(event) => {
+          event.preventDefault();
+          dialogContentRef.current
+            ?.querySelector<HTMLElement>('[data-slot="app-card"]')
+            ?.focus();
+        }}
+        ref={dialogContentRef}
         showCloseButton={false}
         style={dialogStyle}
       >
@@ -113,7 +115,7 @@ export function AppsLauncherDialog({
               label={t('open_options')}
               mode={openMode}
               newLabel={t('open_in_new_tab')}
-              onModeChange={setStoredOpenMode}
+              onModeChange={setOpenMode}
             />
             <DialogClose className="flex size-7 shrink-0 items-center justify-center rounded-md border border-transparent text-muted-foreground transition-colors hover:border-border hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
               <X className="size-3.5" />
@@ -144,13 +146,13 @@ function LauncherMark() {
   return (
     <div
       aria-hidden="true"
-      className="grid size-9 shrink-0 grid-cols-2 gap-1 rounded-lg border bg-background p-1.5 shadow-xs"
+      className="grid size-9 shrink-0 grid-cols-2 gap-1 rounded-xl border bg-background p-1.5 shadow-xs"
       data-slot="apps-launcher-mark"
     >
-      <span className="rounded-[3px] bg-dynamic-blue" />
-      <span className="rounded-[3px] bg-dynamic-green" />
-      <span className="rounded-[3px] bg-dynamic-orange" />
-      <span className="rounded-[3px] bg-dynamic-purple" />
+      <span className="rounded-[4px] bg-dynamic-blue" />
+      <span className="rounded-[4px] bg-dynamic-green" />
+      <span className="rounded-[4px] bg-dynamic-orange" />
+      <span className="rounded-[4px] bg-dynamic-purple" />
     </div>
   );
 }
@@ -175,7 +177,7 @@ function OpenModeControl({
     >
       <ToggleGroup
         aria-label={label}
-        className="rounded-lg border bg-background/80 p-0.5"
+        className="gap-1 rounded-lg border bg-background/80 p-0.5"
         onValueChange={(value) => {
           if (value === 'current-tab' || value === 'new-tab') {
             onModeChange(value);

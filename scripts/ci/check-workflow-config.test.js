@@ -898,7 +898,7 @@ test('ci configuration gate runs TypeScript scripts with Node strip-types', () =
     'utf8'
   );
 
-  assert.match(workflow, /uses: actions\/setup-node@v6/);
+  assert.match(workflow, /uses: actions\/setup-node@v7/);
   assert.match(workflow, /node-version: 24/);
   assert.match(
     workflow,

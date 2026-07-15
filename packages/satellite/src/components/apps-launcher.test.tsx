@@ -1,8 +1,18 @@
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from '@testing-library/react';
 import { LAUNCHABLE_APPS } from '@tuturuuu/utils/launchable-apps';
 import { NextIntlClientProvider } from 'next-intl';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AppsLauncherDialog } from './apps-launcher';
+import {
+  APP_OPEN_MODE_PREFERENCE_KEY,
+  getAppsLauncherPreferenceCookieOptions,
+} from './apps-launcher-preference';
 
 const appNames = Object.fromEntries(
   LAUNCHABLE_APPS.map((app) => [
@@ -84,6 +94,8 @@ function renderDialog() {
 
 beforeEach(() => {
   localStorageValues.clear();
+  // biome-ignore lint/suspicious/noDocumentCookie: Reset the client preference between JSDOM tests.
+  document.cookie = `${APP_OPEN_MODE_PREFERENCE_KEY}=; Max-Age=0; path=/`;
   Object.defineProperty(window, 'localStorage', {
     configurable: true,
     value: localStorageMock,
@@ -153,12 +165,24 @@ describe('AppsLauncherDialog', () => {
     expect(
       document.querySelector('[data-slot="apps-launcher-mark"]')
     ).toBeTruthy();
+    const launcherMark = document.querySelector(
+      '[data-slot="apps-launcher-mark"]'
+    );
+    expect(launcherMark?.className).toContain('rounded-xl');
+    expect(
+      Array.from(launcherMark?.children ?? []).every((child) =>
+        child.className.includes('rounded-[4px]')
+      )
+    ).toBe(true);
     expect(
       document.querySelector('[data-slot="apps-launcher-open-mode"]')
     ).toBeTruthy();
     expect(
       screen.getByRole('radiogroup', { name: 'Open options' })
     ).toBeTruthy();
+    expect(
+      screen.getByRole('radiogroup', { name: 'Open options' }).className
+    ).toContain('gap-1');
     const closeButton = screen.getByRole('button', { name: 'Close' });
     expect(
       document
@@ -203,6 +227,16 @@ describe('AppsLauncherDialog', () => {
 
     fireEvent.click(closeButton);
     expect(onOpenChange).toHaveBeenCalledWith(false);
+  });
+
+  it('focuses the first app instead of the open-mode control', async () => {
+    renderDialog();
+
+    await waitFor(() => {
+      expect(document.activeElement).toBe(
+        screen.getByRole('link', { name: 'Workspace Platform' })
+      );
+    });
   });
 
   it('groups apps by localized category sections', () => {
@@ -355,7 +389,7 @@ describe('AppsLauncherDialog', () => {
     expect(open).not.toHaveBeenCalled();
   });
 
-  it('persists the selected app opening mode on this device', () => {
+  it('persists the selected app opening mode in a shared cookie', async () => {
     renderDialog();
 
     const currentTab = screen.getByRole('radio', { name: 'Open here' });
@@ -374,25 +408,73 @@ describe('AppsLauncherDialog', () => {
     expect(currentTab.getAttribute('data-state')).toBe('on');
     expect(currentTab.getAttribute('data-selected')).toBe('true');
     expect(newTab.getAttribute('data-selected')).toBe('false');
-    expect(
-      window.localStorage.getItem('tuturuuu-apps-launcher-open-mode')
-    ).toBe('"current-tab"');
+    expect(document.cookie).toContain(
+      `${APP_OPEN_MODE_PREFERENCE_KEY}=current-tab`
+    );
 
     cleanup();
     renderDialog();
 
-    expect(
-      screen.getByRole('link', { name: 'Finance' }).getAttribute('target')
-    ).toBeNull();
-    expect(
-      screen
-        .getByRole('radio', { name: 'Open here' })
-        .getAttribute('data-state')
-    ).toBe('on');
+    await waitFor(() => {
+      expect(
+        screen.getByRole('link', { name: 'Finance' }).getAttribute('target')
+      ).toBeNull();
+      expect(
+        screen
+          .getByRole('radio', { name: 'Open here' })
+          .getAttribute('data-state')
+      ).toBe('on');
+    });
 
     fireEvent.click(screen.getByRole('radio', { name: 'Open in new tab' }));
     expect(
       screen.getByRole('link', { name: 'Finance' }).getAttribute('target')
     ).toBe('_blank');
+  });
+
+  it('shares the open-mode cookie across Tuturuuu subdomains', () => {
+    expect(
+      getAppsLauncherPreferenceCookieOptions(
+        'https://tasks.tuturuuu.com/personal'
+      )
+    ).toMatchObject({ domain: '.tuturuuu.com', secure: true });
+    expect(
+      getAppsLauncherPreferenceCookieOptions(
+        'https://contacts.tuturuuu.com/personal'
+      )
+    ).toMatchObject({ domain: '.tuturuuu.com', secure: true });
+    expect(
+      getAppsLauncherPreferenceCookieOptions(
+        'http://finance.tuturuuu.localhost:7808/personal'
+      )
+    ).toMatchObject({ domain: '.tuturuuu.localhost', secure: false });
+    expect(
+      getAppsLauncherPreferenceCookieOptions(
+        'https://platform-git-feature.vercel.app/personal'
+      )
+    ).not.toHaveProperty('domain');
+  });
+
+  it('migrates the previous local preference into the shared cookie', async () => {
+    window.localStorage.setItem(
+      APP_OPEN_MODE_PREFERENCE_KEY,
+      JSON.stringify('current-tab')
+    );
+
+    renderDialog();
+
+    await waitFor(() => {
+      expect(
+        screen
+          .getByRole('radio', { name: 'Open here' })
+          .getAttribute('data-state')
+      ).toBe('on');
+    });
+    expect(document.cookie).toContain(
+      `${APP_OPEN_MODE_PREFERENCE_KEY}=current-tab`
+    );
+    expect(
+      window.localStorage.getItem(APP_OPEN_MODE_PREFERENCE_KEY)
+    ).toBeNull();
   });
 });
