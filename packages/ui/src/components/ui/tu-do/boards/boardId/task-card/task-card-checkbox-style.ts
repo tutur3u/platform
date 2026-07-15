@@ -21,21 +21,21 @@ const CHECKED_LIST_TONE_CLASSES: Record<SupportedColor, string> = {
 };
 
 const TASK_CARD_ICON_TONE_CLASSES: Record<SupportedColor, string> = {
-  BLUE: 'data-[state=checked]:border-transparent data-[state=checked]:bg-dynamic-blue/15 data-[state=checked]:text-dynamic-blue',
-  CYAN: 'data-[state=checked]:border-transparent data-[state=checked]:bg-dynamic-cyan/15 data-[state=checked]:text-dynamic-cyan',
-  GRAY: 'data-[state=checked]:border-transparent data-[state=checked]:bg-dynamic-gray/15 data-[state=checked]:text-foreground',
+  BLUE: 'text-dynamic-blue data-[state=unchecked]:border-dynamic-blue/70 data-[state=unchecked]:bg-dynamic-blue/5',
+  CYAN: 'text-dynamic-cyan data-[state=unchecked]:border-dynamic-cyan/70 data-[state=unchecked]:bg-dynamic-cyan/5',
+  GRAY: 'text-foreground data-[state=unchecked]:border-dynamic-gray/70 data-[state=unchecked]:bg-dynamic-gray/5',
   GREEN:
-    'data-[state=checked]:border-transparent data-[state=checked]:bg-dynamic-green/15 data-[state=checked]:text-dynamic-green',
+    'text-dynamic-green data-[state=unchecked]:border-dynamic-green/70 data-[state=unchecked]:bg-dynamic-green/5',
   INDIGO:
-    'data-[state=checked]:border-transparent data-[state=checked]:bg-dynamic-indigo/15 data-[state=checked]:text-dynamic-indigo',
+    'text-dynamic-indigo data-[state=unchecked]:border-dynamic-indigo/70 data-[state=unchecked]:bg-dynamic-indigo/5',
   ORANGE:
-    'data-[state=checked]:border-transparent data-[state=checked]:bg-dynamic-orange/15 data-[state=checked]:text-dynamic-orange',
-  PINK: 'data-[state=checked]:border-transparent data-[state=checked]:bg-dynamic-pink/15 data-[state=checked]:text-dynamic-pink',
+    'text-dynamic-orange data-[state=unchecked]:border-dynamic-orange/70 data-[state=unchecked]:bg-dynamic-orange/5',
+  PINK: 'text-dynamic-pink data-[state=unchecked]:border-dynamic-pink/70 data-[state=unchecked]:bg-dynamic-pink/5',
   PURPLE:
-    'data-[state=checked]:border-transparent data-[state=checked]:bg-dynamic-purple/15 data-[state=checked]:text-dynamic-purple',
-  RED: 'data-[state=checked]:border-transparent data-[state=checked]:bg-dynamic-red/15 data-[state=checked]:text-dynamic-red',
+    'text-dynamic-purple data-[state=unchecked]:border-dynamic-purple/70 data-[state=unchecked]:bg-dynamic-purple/5',
+  RED: 'text-dynamic-red data-[state=unchecked]:border-dynamic-red/70 data-[state=unchecked]:bg-dynamic-red/5',
   YELLOW:
-    'data-[state=checked]:border-transparent data-[state=checked]:bg-dynamic-yellow/15 data-[state=checked]:text-dynamic-yellow',
+    'text-dynamic-yellow data-[state=unchecked]:border-dynamic-yellow/70 data-[state=unchecked]:bg-dynamic-yellow/5',
 };
 
 const SELECTED_CARD_TONE_CLASSES: Record<SupportedColor, string> = {
@@ -52,7 +52,10 @@ const SELECTED_CARD_TONE_CLASSES: Record<SupportedColor, string> = {
 };
 
 export const TASK_CARD_SELECTION_CHECKBOX_BASE_CLASSES =
-  'relative grid size-[18px] shrink-0 cursor-pointer place-items-center rounded-[5px] border-2 shadow-sm outline-none transition-[transform,background-color,border-color,box-shadow] duration-150 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-primary/35 has-[:focus-visible]:ring-offset-1 has-[:focus-visible]:ring-offset-background hover:-translate-y-px hover:shadow-md active:translate-y-0 active:scale-95';
+  'relative grid size-4 shrink-0 cursor-pointer place-items-center rounded-[4px] border-2 border-transparent bg-transparent shadow-sm outline-none transition-[background-color,border-color,box-shadow,color] duration-150 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-primary/35 has-[:focus-visible]:ring-offset-1 has-[:focus-visible]:ring-offset-background data-[state=checked]:shadow-none hover:brightness-110';
+
+export const TASK_CARD_SELECTED_STATE_BASE_CLASSES =
+  'bg-linear-to-r to-transparent shadow-md ring-1 ring-inset';
 
 export const TASK_CARD_OVERDUE_CHECKBOX_TONE_CLASSES =
   'border-dynamic-red/70 bg-dynamic-red/10 ring-1 ring-dynamic-red/20 data-[state=checked]:border-dynamic-red/70 data-[state=checked]:bg-dynamic-red/20 data-[state=checked]:text-dynamic-red';
@@ -75,12 +78,7 @@ export function getTaskCardSelectionCheckboxToneClasses(
 export function getTaskCardSelectionIconToneClasses(
   color?: SupportedColor | null
 ) {
-  const resolvedColor = color ?? 'GRAY';
-
-  return cn(
-    getTaskCardCheckboxToneClasses(resolvedColor),
-    TASK_CARD_ICON_TONE_CLASSES[resolvedColor]
-  );
+  return TASK_CARD_ICON_TONE_CLASSES[color ?? 'GRAY'];
 }
 
 export function getTaskCardSelectedStateToneClasses(

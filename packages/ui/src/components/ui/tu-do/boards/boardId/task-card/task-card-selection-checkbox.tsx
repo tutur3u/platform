@@ -48,7 +48,7 @@ export const TaskCardSelectionCheckbox = forwardRef<
       {checked && (
         <SquareCheck
           aria-hidden="true"
-          className="pointer-events-none size-[15px] shrink-0 stroke-[2.4]"
+          className="pointer-events-none size-4 shrink-0 stroke-[2.4]"
           data-testid="task-card-selection-icon"
         />
       )}

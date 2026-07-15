@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import {
   getTaskCardSelectedStateToneClasses,
   getTaskCardSelectionIconToneClasses,
+  TASK_CARD_SELECTED_STATE_BASE_CLASSES,
+  TASK_CARD_SELECTION_CHECKBOX_BASE_CLASSES,
 } from './task-card-checkbox-style';
 
 describe('task card selection styles', () => {
@@ -13,11 +15,28 @@ describe('task card selection styles', () => {
     expect(classes).not.toContain('primary');
   });
 
-  it('keeps the checked control compact and removes its duplicate outer border', () => {
+  it('keeps the control geometry fixed and compact across selection states', () => {
+    expect(TASK_CARD_SELECTION_CHECKBOX_BASE_CLASSES).toContain('size-4');
+    expect(TASK_CARD_SELECTION_CHECKBOX_BASE_CLASSES).not.toContain(
+      'size-[18px]'
+    );
+    expect(TASK_CARD_SELECTION_CHECKBOX_BASE_CLASSES).not.toContain(
+      'translate-y'
+    );
+    expect(TASK_CARD_SELECTION_CHECKBOX_BASE_CLASSES).not.toContain('scale-');
+  });
+
+  it('uses the list color on the icon and only draws the box while unchecked', () => {
     const classes = getTaskCardSelectionIconToneClasses('CYAN');
 
-    expect(classes).toContain('data-[state=checked]:border-transparent');
-    expect(classes).toContain('data-[state=checked]:bg-dynamic-cyan/15');
-    expect(classes).toContain('data-[state=checked]:text-dynamic-cyan');
+    expect(classes).toContain('text-dynamic-cyan');
+    expect(classes).toContain('data-[state=unchecked]:border-dynamic-cyan/70');
+    expect(classes).toContain('data-[state=unchecked]:bg-dynamic-cyan/5');
+    expect(classes).not.toContain('data-[state=checked]:bg-');
+  });
+
+  it('does not change the card border width when selected', () => {
+    expect(TASK_CARD_SELECTED_STATE_BASE_CLASSES).not.toContain('border-l-');
+    expect(TASK_CARD_SELECTED_STATE_BASE_CLASSES).toContain('ring-inset');
   });
 });

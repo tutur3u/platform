@@ -147,6 +147,7 @@ import { shouldRenderTaskCardQuickArchive } from './task-card-archive-visibility
 import {
   getTaskCardSelectedStateToneClasses,
   getTaskCardSelectionIconToneClasses,
+  TASK_CARD_SELECTED_STATE_BASE_CLASSES,
 } from './task-card-checkbox-style';
 import { areTaskCardPropsEqual } from './task-card-comparator';
 import { shouldRenderTaskCardCompletionCheckbox } from './task-card-completion-checkbox-visibility';
@@ -2004,10 +2005,7 @@ function TaskCardInner({
         !isDragging && !isSelected && 'hover:ring-1 hover:ring-primary/15',
         // Selection state - layered list-color feedback without a harsh outer outline
         isSelected &&
-          cn(
-            'border-l-[5px] bg-linear-to-r to-transparent shadow-md ring-1 ring-inset',
-            selectedCardToneClassName
-          ),
+          cn(TASK_CARD_SELECTED_STATE_BASE_CLASSES, selectedCardToneClassName),
         // Multi-select mode cursor
         isMultiSelectMode && 'cursor-pointer'
       )}

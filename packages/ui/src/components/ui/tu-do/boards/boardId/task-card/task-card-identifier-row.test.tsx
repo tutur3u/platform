@@ -49,10 +49,11 @@ describe('TaskCardIdentifierRow', () => {
     expect(source.compareDocumentPosition(ticket)).toBe(
       Node.DOCUMENT_POSITION_FOLLOWING
     );
-    expect(checkboxControl).toHaveClass('border-dynamic-blue/70');
-    expect(checkboxControl).toHaveClass('bg-dynamic-blue/5');
     expect(checkboxControl.className).toContain(
-      'data-[state=checked]:bg-dynamic-blue/15'
+      'data-[state=unchecked]:border-dynamic-blue/70'
+    );
+    expect(checkboxControl.className).toContain(
+      'data-[state=unchecked]:bg-dynamic-blue/5'
     );
     expect(checkbox).not.toBeChecked();
     expect(screen.queryByTestId('task-card-selection-icon')).toBeNull();
@@ -85,11 +86,14 @@ describe('TaskCardIdentifierRow', () => {
     const checkbox = screen.getByRole('checkbox', { name: 'Select task' });
 
     expect(checkbox).toBeChecked();
-    expect(screen.getByTestId('task-card-selection-checkbox')).toHaveAttribute(
-      'data-state',
-      'checked'
-    );
-    expect(screen.getByTestId('task-card-selection-icon')).toBeVisible();
+    const checkboxControl = screen.getByTestId('task-card-selection-checkbox');
+    const selectionIcon = screen.getByTestId('task-card-selection-icon');
+
+    expect(checkboxControl).toHaveAttribute('data-state', 'checked');
+    expect(checkboxControl).toHaveClass('size-4', 'border-transparent');
+    expect(checkboxControl.className).not.toContain('data-[state=checked]:bg-');
+    expect(selectionIcon).toBeVisible();
+    expect(selectionIcon).toHaveClass('size-4');
   });
 
   it('renders the selection checkbox before an internal task identifier', () => {
