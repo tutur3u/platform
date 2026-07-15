@@ -6,6 +6,7 @@
   "types": "./src/progress/task-progress-page.tsx",
   "exports": {
     ".": "./src/progress/task-progress-page.tsx",
+    "./globals.css": "./src/globals.css",
     "./progress/task-progress-page": "./src/progress/task-progress-page.tsx",
     "./calendar/task-calendar-page-shell": "./src/calendar/task-calendar-page-shell.tsx",
     "./calendar/components/*": "./src/calendar/components/*.tsx",

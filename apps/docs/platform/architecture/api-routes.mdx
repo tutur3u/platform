@@ -290,7 +290,10 @@ export const POST = withSessionAuth<Params>(
 > implementations so Turbo can cache and rebuild the task packages
 > independently. Apps must import task modules directly from
 > `@tuturuuu/tasks-ui`; do not re-export them through `@tuturuuu/ui`, because
-> that broadens the affected build graph again. Extract shared handler logic the same way when a route grows
+> that broadens the affected build graph again. Direct consumer apps must also
+> import `@tuturuuu/tasks-ui/globals.css` so Tailwind scans task-owned utilities;
+> keep that source registration out of generic UI globals so task-only changes
+> do not invalidate unrelated apps. Extract shared handler logic the same way when a route grows
 > past a simple CRUD shape. Use `containsPermission()` with a real `PermissionId` (such
 > as `'manage_projects'`); there is no `manage_tasks` permission and no
 > `@/lib/permissions` module.
