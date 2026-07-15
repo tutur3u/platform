@@ -54,7 +54,7 @@ describe('TaskCardIdentifierRow', () => {
       'bg-dynamic-blue/5'
     );
     expect(checkboxControl.className).toContain(
-      'data-[state=checked]:border-0'
+      'data-[selected=true]:border-0'
     );
     expect(checkbox).not.toBeChecked();
     expect(screen.queryByTestId('task-card-selection-icon')).toBeNull();
@@ -90,13 +90,13 @@ describe('TaskCardIdentifierRow', () => {
     const checkboxControl = screen.getByTestId('task-card-selection-checkbox');
     const selectionIcon = screen.getByTestId('task-card-selection-icon');
 
-    expect(checkboxControl).toHaveAttribute('data-state', 'checked');
+    expect(checkboxControl).toHaveAttribute('data-selected', 'true');
     expect(checkboxControl).toHaveClass('size-4');
     expect(checkboxControl.className).toContain(
-      'data-[state=checked]:border-0'
+      'data-[selected=true]:border-0'
     );
     expect(checkboxControl.className).toContain(
-      'data-[state=checked]:bg-transparent'
+      'data-[selected=true]:bg-transparent'
     );
     expect(selectionIcon).toBeVisible();
     expect(selectionIcon).toHaveClass('size-4');

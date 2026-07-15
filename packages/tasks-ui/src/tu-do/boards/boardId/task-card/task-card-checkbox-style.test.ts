@@ -32,8 +32,8 @@ describe('task card selection styles', () => {
     expect(classes).toContain('border-dynamic-cyan/70');
     expect(classes).toContain('bg-dynamic-cyan/5');
     expect(classes).toContain('text-dynamic-cyan');
-    expect(classes).toContain('data-[state=checked]:border-0');
-    expect(classes).toContain('data-[state=checked]:bg-transparent');
+    expect(classes).toContain('data-[selected=true]:border-0');
+    expect(classes).toContain('data-[selected=true]:bg-transparent');
   });
 
   it('does not change the card border width when selected', () => {

@@ -21,21 +21,21 @@ const CHECKED_LIST_TONE_CLASSES: Record<SupportedColor, string> = {
 };
 
 const TASK_CARD_ICON_TONE_CLASSES: Record<SupportedColor, string> = {
-  BLUE: 'border-dynamic-blue/70 bg-dynamic-blue/5 text-dynamic-blue data-[state=checked]:border-0 data-[state=checked]:bg-transparent',
-  CYAN: 'border-dynamic-cyan/70 bg-dynamic-cyan/5 text-dynamic-cyan data-[state=checked]:border-0 data-[state=checked]:bg-transparent',
-  GRAY: 'border-dynamic-gray/70 bg-dynamic-gray/5 text-foreground data-[state=checked]:border-0 data-[state=checked]:bg-transparent',
+  BLUE: 'border-dynamic-blue/70 bg-dynamic-blue/5 text-dynamic-blue data-[selected=true]:border-0 data-[selected=true]:bg-transparent',
+  CYAN: 'border-dynamic-cyan/70 bg-dynamic-cyan/5 text-dynamic-cyan data-[selected=true]:border-0 data-[selected=true]:bg-transparent',
+  GRAY: 'border-dynamic-gray/70 bg-dynamic-gray/5 text-foreground data-[selected=true]:border-0 data-[selected=true]:bg-transparent',
   GREEN:
-    'border-dynamic-green/70 bg-dynamic-green/5 text-dynamic-green data-[state=checked]:border-0 data-[state=checked]:bg-transparent',
+    'border-dynamic-green/70 bg-dynamic-green/5 text-dynamic-green data-[selected=true]:border-0 data-[selected=true]:bg-transparent',
   INDIGO:
-    'border-dynamic-indigo/70 bg-dynamic-indigo/5 text-dynamic-indigo data-[state=checked]:border-0 data-[state=checked]:bg-transparent',
+    'border-dynamic-indigo/70 bg-dynamic-indigo/5 text-dynamic-indigo data-[selected=true]:border-0 data-[selected=true]:bg-transparent',
   ORANGE:
-    'border-dynamic-orange/70 bg-dynamic-orange/5 text-dynamic-orange data-[state=checked]:border-0 data-[state=checked]:bg-transparent',
-  PINK: 'border-dynamic-pink/70 bg-dynamic-pink/5 text-dynamic-pink data-[state=checked]:border-0 data-[state=checked]:bg-transparent',
+    'border-dynamic-orange/70 bg-dynamic-orange/5 text-dynamic-orange data-[selected=true]:border-0 data-[selected=true]:bg-transparent',
+  PINK: 'border-dynamic-pink/70 bg-dynamic-pink/5 text-dynamic-pink data-[selected=true]:border-0 data-[selected=true]:bg-transparent',
   PURPLE:
-    'border-dynamic-purple/70 bg-dynamic-purple/5 text-dynamic-purple data-[state=checked]:border-0 data-[state=checked]:bg-transparent',
-  RED: 'border-dynamic-red/70 bg-dynamic-red/5 text-dynamic-red data-[state=checked]:border-0 data-[state=checked]:bg-transparent',
+    'border-dynamic-purple/70 bg-dynamic-purple/5 text-dynamic-purple data-[selected=true]:border-0 data-[selected=true]:bg-transparent',
+  RED: 'border-dynamic-red/70 bg-dynamic-red/5 text-dynamic-red data-[selected=true]:border-0 data-[selected=true]:bg-transparent',
   YELLOW:
-    'border-dynamic-yellow/70 bg-dynamic-yellow/5 text-dynamic-yellow data-[state=checked]:border-0 data-[state=checked]:bg-transparent',
+    'border-dynamic-yellow/70 bg-dynamic-yellow/5 text-dynamic-yellow data-[selected=true]:border-0 data-[selected=true]:bg-transparent',
 };
 
 const SELECTED_CARD_TONE_CLASSES: Record<SupportedColor, string> = {
@@ -52,7 +52,7 @@ const SELECTED_CARD_TONE_CLASSES: Record<SupportedColor, string> = {
 };
 
 export const TASK_CARD_SELECTION_CHECKBOX_BASE_CLASSES =
-  'relative grid size-4 shrink-0 cursor-pointer place-items-center rounded-[4px] border-2 shadow-sm outline-none transition-[background-color,border-color,box-shadow,color] duration-150 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-primary/35 has-[:focus-visible]:ring-offset-1 has-[:focus-visible]:ring-offset-background data-[state=checked]:shadow-none hover:brightness-110';
+  'relative grid size-4 shrink-0 cursor-pointer place-items-center rounded-[4px] border-2 shadow-sm outline-none transition-[background-color,border-color,box-shadow,color] duration-150 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-primary/35 has-[:focus-visible]:ring-offset-1 has-[:focus-visible]:ring-offset-background data-[selected=true]:shadow-none hover:brightness-110';
 
 export const TASK_CARD_SELECTED_STATE_BASE_CLASSES =
   'bg-linear-to-r to-transparent shadow-md ring-1 ring-inset';

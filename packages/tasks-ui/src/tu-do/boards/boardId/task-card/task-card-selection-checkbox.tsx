@@ -25,7 +25,7 @@ export const TaskCardSelectionCheckbox = forwardRef<
     <label
       ref={ref}
       className={cn(TASK_CARD_SELECTION_CHECKBOX_BASE_CLASSES, className)}
-      data-state={checked ? 'checked' : 'unchecked'}
+      data-selected={checked}
       data-testid="task-card-selection-checkbox"
       onPointerDown={(event) => {
         event.stopPropagation();
