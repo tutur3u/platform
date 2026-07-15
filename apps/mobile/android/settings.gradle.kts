@@ -23,7 +23,7 @@ plugins {
     id("com.google.gms.google-services") version("4.4.4") apply false
     id("com.google.firebase.crashlytics") version("2.8.1") apply false
     // END: FlutterFire Configuration
-    id("org.jetbrains.kotlin.android") version "2.2.10" apply false
+    id("org.jetbrains.kotlin.android") version "2.3.10" apply false
     id("org.gradle.toolchains.foojay-resolver-convention") version "1.0.0"
 }
 

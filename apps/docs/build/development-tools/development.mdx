@@ -562,6 +562,43 @@ bun check:mobile
 `apps/mobile`. Flutter test output is streamed by default so slow suites still
 show progress instead of appearing stuck.
 
+### Mobile release builds
+
+The native build commands verify or hydrate each flavor's ignored Firebase SDK
+configuration from the `tuturuuu-mobile` Firebase project before compiling. The
+Firebase CLI must be authenticated with access to that project.
+
+```bash
+# Production Android App Bundle
+bun build:android
+
+# Signed production iOS IPA
+bun build:ios
+```
+
+The default iOS command requires an Apple signing identity and provisioning
+profile. `bun build:ios:ipa` is an alias for the same signed release build. To
+compile the production app on a machine without signing credentials, use:
+
+```bash
+bun build:ios:unsigned
+```
+
+`bun build:android` only produces signed production bundles. Configure the
+protected upload keystore through all four `ANDROID_KEYSTORE_*` environment
+variables or `apps/mobile/android/key.properties`; the command fails before
+compilation when signing is absent and verifies the resulting AAB with
+`jarsigner`. The Mobile Store Deployment workflow hydrates these credentials in
+its protected runner and executes this exact command. Development builds remain
+available through `bun build:android:dev`.
+
+To hydrate or validate a native Firebase configuration without compiling, run:
+
+```bash
+bun mobile:firebase:configure --environment production --platform android
+bun mobile:firebase:configure --environment production --platform ios
+```
+
 <Warning>
   
 Tests are still a work in progress. We're currently working on adding tests to all packages to ensure the best quality possible.

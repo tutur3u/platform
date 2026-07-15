@@ -17,6 +17,10 @@ if (keystorePropertiesFile.exists()) {
     keystoreProperties.load(FileInputStream(keystorePropertiesFile))
 }
 
+val productionReleaseRequested = gradle.startParameter.taskNames.any {
+    it.contains("ProductionRelease", ignoreCase = true)
+}
+
 android {
     namespace = "com.tuturuuu.app.mobile"
     // flutter_pcm_sound pulls AndroidX artifacts that require compileSdk 34+.
@@ -89,6 +93,10 @@ android {
             val releaseSigning = signingConfigs.getByName("release")
             if (releaseSigning.storeFile?.exists() == true) {
                 signingConfig = releaseSigning
+            } else if (productionReleaseRequested) {
+                throw GradleException(
+                    "Production release signing is required. Configure the protected Android upload keystore before building."
+                )
             }
             isMinifyEnabled = true
             proguardFiles(

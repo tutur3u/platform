@@ -8,7 +8,7 @@ import 'dart:math' as math;
 import 'package:equatable/equatable.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart' hide Badge;
-import 'package:flutter_markdown/flutter_markdown.dart';
+import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:intl/intl.dart';
 import 'package:mobile/data/repositories/finance_repository.dart';
 import 'package:mobile/data/repositories/time_tracker_repository.dart';

@@ -63,6 +63,11 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
 
+      - name: Setup Bun
+        uses: ./.github/actions/setup-bun-with-retry
+        with:
+          bun-version: 1.3.14
+
       - name: Setup Java
         uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654
         with:
@@ -124,8 +129,12 @@ jobs:
             -storepass "$ANDROID_KEYSTORE_PASSWORD" \
             -alias "$ANDROID_KEYSTORE_ALIAS" >/dev/null
 
-      - name: Build Android App Bundle
-        run: flutter build appbundle --release --flavor production --target lib/main_production.dart --dart-define-from-file=.env.github
+      - name: Build and verify signed Android App Bundle
+        uses: ./.github/actions/run-with-turbo-remote-cache
+        env:
+          MOBILE_DART_DEFINE_FILE: .env.github
+        with:
+          command: bun build:android
 
       - name: Upload Android App Bundle artifact
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a

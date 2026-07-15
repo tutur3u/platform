@@ -408,6 +408,8 @@ test('mobile store deployment workflow is production-push beta delivery only', (
   );
   assert.match(workflow, /X-GitHub-OIDC-Token/);
   assert.match(workflow, /hydrate-bundle\.mjs/);
+  assert.match(workflow, /bun build:android/);
+  assert.match(workflow, /Build and verify signed Android App Bundle/);
   assert.match(workflow, /--dart-define-from-file=\.env\.github/);
   assert.match(
     workflow,
