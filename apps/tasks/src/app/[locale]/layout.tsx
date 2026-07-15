@@ -6,7 +6,6 @@ import { SerwistProvider } from '@tuturuuu/offline/provider';
 import { ProductionIndicator } from '@tuturuuu/ui/custom/production-indicator';
 import { StaffToolbar } from '@tuturuuu/ui/custom/staff-toolbar';
 import { TailwindIndicator } from '@tuturuuu/ui/custom/tailwind-indicator';
-import '@tuturuuu/ui/globals.css';
 import '@tuturuuu/tasks-ui/globals.css';
 import { FadeSettingInitializer } from '@tuturuuu/tasks-ui/tu-do/shared/fade-setting-initializer';
 import { TaskSoundEffectsInitializer } from '@tuturuuu/tasks-ui/tu-do/shared/task-sound-effects';

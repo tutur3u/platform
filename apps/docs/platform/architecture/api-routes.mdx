@@ -291,7 +291,8 @@ export const POST = withSessionAuth<Params>(
 > independently. Apps must import task modules directly from
 > `@tuturuuu/tasks-ui`; do not re-export them through `@tuturuuu/ui`, because
 > that broadens the affected build graph again. Direct consumer apps must also
-> import `@tuturuuu/tasks-ui/globals.css` so Tailwind scans task-owned utilities;
+> import `@tuturuuu/tasks-ui/globals.css` instead of the generic globals so
+> Tailwind compiles the UI foundation and task-owned utilities together;
 > keep that source registration out of generic UI globals so task-only changes
 > do not invalidate unrelated apps. Extract shared handler logic the same way when a route grows
 > past a simple CRUD shape. Use `containsPermission()` with a real `PermissionId` (such

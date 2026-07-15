@@ -5,7 +5,6 @@ import { TailwindIndicator } from '@tuturuuu/ui/custom/tailwind-indicator';
 import { Providers } from '@/components/providers';
 import { siteConfig } from '@/constants/configs';
 import { type Locale, routing, supportedLocales } from '@/i18n/routing';
-import '@tuturuuu/ui/globals.css';
 import '@tuturuuu/tasks-ui/globals.css';
 import { FadeSettingInitializer } from '@tuturuuu/tasks-ui/tu-do/shared/fade-setting-initializer';
 import { Toaster } from '@tuturuuu/ui/sonner';

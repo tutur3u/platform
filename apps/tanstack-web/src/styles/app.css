@@ -1,4 +1,3 @@
-@import "@tuturuuu/ui/globals.css";
 @import "@tuturuuu/tasks-ui/globals.css";
 @source "../**/*.{ts,tsx}";
 @source "../../../packages/ui/src/**/*.{ts,tsx}";

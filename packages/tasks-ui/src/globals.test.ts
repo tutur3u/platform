@@ -16,9 +16,10 @@ describe('task UI Tailwind source boundary', () => {
     ) as { exports: Record<string, string> };
 
     expect(packageJson.exports['./globals.css']).toBe('./src/globals.css');
-    expect(readRepoFile('packages/tasks-ui/src/globals.css')).toContain(
-      '@source "./**/*.{ts,tsx}";'
-    );
+    const taskGlobals = readRepoFile('packages/tasks-ui/src/globals.css');
+
+    expect(taskGlobals).toContain('@import "@tuturuuu/ui/globals.css";');
+    expect(taskGlobals).toContain('@source "./**/*.{ts,tsx}";');
   });
 
   it.each([
@@ -27,9 +28,10 @@ describe('task UI Tailwind source boundary', () => {
     'apps/web/src/app/[locale]/layout.tsx',
     'apps/tanstack-web/src/styles/app.css',
   ])('%s opts into task-owned styles', (consumerEntryPoint) => {
-    expect(readRepoFile(consumerEntryPoint)).toContain(
-      '@tuturuuu/tasks-ui/globals.css'
-    );
+    const consumerStyles = readRepoFile(consumerEntryPoint);
+
+    expect(consumerStyles).toContain('@tuturuuu/tasks-ui/globals.css');
+    expect(consumerStyles).not.toContain('@tuturuuu/ui/globals.css');
   });
 
   it('does not widen the generic UI rebuild graph', () => {
