@@ -1,4 +1,3 @@
-import { google } from '@ai-sdk/google';
 import { capMaxOutputTokensByCredits } from '@tuturuuu/ai/credits/cap-output-tokens';
 import {
   checkAiCredits,
@@ -14,7 +13,7 @@ import {
   TASK_PROGRESS_AI_CATCHUPS_CONFIG_ID,
   TASK_PROGRESS_CATCHUP_CADENCE_CONFIG_ID,
 } from '@tuturuuu/tasks-api/progress/preferences';
-import { generateObject, NoObjectGeneratedError } from 'ai';
+import { gateway, generateObject, NoObjectGeneratedError } from 'ai';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import {
@@ -229,7 +228,7 @@ export async function POST(
       const { object, usage } = await generateObject({
         model: await withAiMemory({
           customId: `task-progress-catchup-${periodKey}`,
-          model: google(modelId.split('/').slice(-1)[0]!),
+          model: gateway(modelId),
           product: 'tasks',
           source: 'task_progress_catchup',
           surface: 'task_progress_catchup',
