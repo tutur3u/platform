@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { dispatchRecentSidebarVisit } from '@tuturuuu/tasks-ui/tu-do/shared/recent-sidebar-events';
 import type { NavLink } from '@tuturuuu/ui/custom/navigation';
-import { dispatchRecentSidebarVisit } from '@tuturuuu/ui/tu-do/shared/recent-sidebar-events';
 import type {
   AnchorHTMLAttributes,
   ButtonHTMLAttributes,
@@ -49,7 +49,7 @@ vi.mock('@tuturuuu/ui/button', () => ({
   ),
 }));
 
-vi.mock('@tuturuuu/ui/tu-do/shared/task-open-events', () => ({
+vi.mock('@tuturuuu/ui/lib/task-open-events', () => ({
   dispatchRequestOpenTask: (payload: { taskId: string; wsId?: string }) =>
     mockDispatchRequestOpenTask(payload),
   waitForTaskOpenResult: (requestId: string, timeoutMs?: number) =>

@@ -1,8 +1,8 @@
 'use client';
 
 import type { WorkspaceTaskBoardDetail } from '@tuturuuu/internal-api/tasks';
+import { BoardLayoutSettingsContent } from '@tuturuuu/tasks-ui/tu-do/shared/board-layout-settings';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
-import { BoardLayoutSettingsContent } from '@tuturuuu/ui/tu-do/shared/board-layout-settings';
 import { useTranslations } from 'next-intl';
 import { useMemo } from 'react';
 

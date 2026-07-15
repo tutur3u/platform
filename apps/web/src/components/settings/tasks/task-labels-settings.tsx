@@ -3,8 +3,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { Loader2 } from '@tuturuuu/icons';
 import { listWorkspaceLabels } from '@tuturuuu/internal-api/tasks';
-import TaskLabelsClient from '@tuturuuu/ui/tu-do/labels/client';
-import type { TaskLabel } from '@tuturuuu/ui/tu-do/labels/types';
+import TaskLabelsClient from '@tuturuuu/tasks-ui/tu-do/labels/client';
+import type { TaskLabel } from '@tuturuuu/tasks-ui/tu-do/labels/types';
 
 function getBrowserInternalApiOptions() {
   return typeof window !== 'undefined'

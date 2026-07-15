@@ -1,6 +1,6 @@
 'use server';
 
-import type { BoardTemplate } from '@tuturuuu/ui/tu-do/templates/types';
+import type { BoardTemplate } from '@tuturuuu/tasks-ui/tu-do/templates/types';
 import { resolveAuthenticatedSessionUser } from '@/lib/app-session-user';
 
 export async function listPublicBoardTemplates(): Promise<BoardTemplate[]> {

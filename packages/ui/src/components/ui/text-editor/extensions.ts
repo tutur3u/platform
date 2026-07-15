@@ -26,7 +26,7 @@ import { CustomImage } from './image-extension';
 import { ListConverter } from './list-converter-extension';
 import { ListItemBase } from './list-item-extension';
 import { MarkdownPaste } from './markdown-paste-extension';
-import { Mention } from './mention-extension';
+import { Mention, type TaskMentionNodeViewRenderer } from './mention-extension';
 import { NodeDrag } from './node-drag-extension';
 import { TaskItemCheckbox } from './task-item-checkbox-extension';
 import { TextShortcuts } from './text-shortcuts-extension';
@@ -64,6 +64,7 @@ interface EditorExtensionsOptions {
     project_name?: string;
     create_project?: string;
   };
+  renderTaskMention?: TaskMentionNodeViewRenderer;
   readOnly?: boolean;
 }
 
@@ -78,6 +79,7 @@ export function getEditorExtensions({
   getOnImageUpload,
   getOnVideoUpload,
   mentionTranslations,
+  renderTaskMention,
   readOnly = false,
 }: EditorExtensionsOptions = {}): Extensions {
   return [
@@ -180,6 +182,7 @@ export function getEditorExtensions({
     Subscript,
     Superscript,
     Mention.configure({
+      renderTaskMention,
       translations: mentionTranslations,
     }),
     ListItemBase,

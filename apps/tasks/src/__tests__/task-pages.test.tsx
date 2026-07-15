@@ -49,19 +49,22 @@ vi.mock('@tuturuuu/satellite/auth', () => ({
   ) => mocks.getSatelliteAppSessionUser(...args),
 }));
 
-vi.mock('@tuturuuu/ui/tu-do/my-tasks/my-tasks-page', () => ({
+vi.mock('@tuturuuu/tasks-ui/tu-do/my-tasks/my-tasks-page', () => ({
   default: mocks.myTasksPage,
 }));
 
-vi.mock('@tuturuuu/ui/tu-do/boards/boardId/task-board-server-page', () => ({
-  default: mocks.taskBoardServerPage,
-}));
+vi.mock(
+  '@tuturuuu/tasks-ui/tu-do/boards/boardId/task-board-server-page',
+  () => ({
+    default: mocks.taskBoardServerPage,
+  })
+);
 
-vi.mock('@tuturuuu/ui/tu-do/shared/task-board-loading-state', () => ({
+vi.mock('@tuturuuu/tasks-ui/tu-do/shared/task-board-loading-state', () => ({
   TaskBoardLoadingState: mocks.taskBoardLoadingState,
 }));
 
-vi.mock('@tuturuuu/ui/tu-do/boards/workspace-projects-page', () => ({
+vi.mock('@tuturuuu/tasks-ui/tu-do/boards/workspace-projects-page', () => ({
   default: mocks.workspaceProjectsPage,
 }));
 

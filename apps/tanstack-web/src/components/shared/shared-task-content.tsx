@@ -1,10 +1,10 @@
 import { useRouter } from '@tanstack/react-router';
-import type { Task } from '@tuturuuu/types/primitives/Task';
-import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import {
   type SharedTaskContext,
   TaskEditDialog,
-} from '@tuturuuu/ui/tu-do/shared/task-edit-dialog';
+} from '@tuturuuu/tasks-ui/tu-do/shared/task-edit-dialog';
+import type { Task } from '@tuturuuu/types/primitives/Task';
+import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { useCallback, useMemo, useRef, useState } from 'react';
 
 type BoardConfig = NonNullable<SharedTaskContext['boardConfig']>;

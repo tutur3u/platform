@@ -1,5 +1,5 @@
 import { createFileRoute, notFound } from '@tanstack/react-router';
-import NotesContent from '@tuturuuu/ui/tu-do/notes/notes-content';
+import NotesContent from '@tuturuuu/tasks-ui/tu-do/notes/notes-content';
 import { requireCurrentUser } from '../../../../lib/platform/auth-gate';
 import { createPageHead } from '../../../../lib/platform/head';
 import { resolveMessagesLocale } from '../../../../lib/platform/messages';

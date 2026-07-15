@@ -1,5 +1,5 @@
 import { createFileRoute, notFound } from '@tanstack/react-router';
-import LogsClient from '@tuturuuu/ui/tu-do/logs/logs-client';
+import LogsClient from '@tuturuuu/tasks-ui/tu-do/logs/logs-client';
 import { requireCurrentUser } from '../../../../lib/platform/auth-gate';
 import { createPageHead } from '../../../../lib/platform/head';
 import { resolveMessagesLocale } from '../../../../lib/platform/messages';

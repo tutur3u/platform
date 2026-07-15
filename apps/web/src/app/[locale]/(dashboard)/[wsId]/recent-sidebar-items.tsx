@@ -13,18 +13,18 @@ import {
   Wallet,
   X,
 } from '@tuturuuu/icons';
-import { Button } from '@tuturuuu/ui/button';
-import type { NavLink } from '@tuturuuu/ui/custom/navigation';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import {
   RECENT_SIDEBAR_VISIT_EVENT,
   type RecentSidebarIconKey,
   type RecentSidebarVisitPayload,
-} from '@tuturuuu/ui/tu-do/shared/recent-sidebar-events';
+} from '@tuturuuu/tasks-ui/tu-do/shared/recent-sidebar-events';
+import { Button } from '@tuturuuu/ui/button';
+import type { NavLink } from '@tuturuuu/ui/custom/navigation';
 import {
   dispatchRequestOpenTask,
   waitForTaskOpenResult,
-} from '@tuturuuu/ui/tu-do/shared/task-open-events';
+} from '@tuturuuu/ui/lib/task-open-events';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';

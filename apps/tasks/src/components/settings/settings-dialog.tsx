@@ -23,13 +23,13 @@ import {
   User,
 } from '@tuturuuu/icons';
 import { getWorkspace } from '@tuturuuu/internal-api/workspaces';
+import { TaskSettings } from '@tuturuuu/tasks-ui/settings/task-settings';
 import type { Workspace } from '@tuturuuu/types';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { AppearanceSettings } from '@tuturuuu/ui/custom/settings/appearance-settings';
 import { KeyboardShortcutsSettings } from '@tuturuuu/ui/custom/settings/keyboard-shortcuts-settings';
 import { LunarCalendarSettings } from '@tuturuuu/ui/custom/settings/lunar-calendar-settings';
 import SharedSidebarSettings from '@tuturuuu/ui/custom/settings/sidebar-settings';
-import { TaskSettings } from '@tuturuuu/ui/custom/settings/task-settings';
 import { SettingsDialogShell } from '@tuturuuu/ui/custom/settings-dialog-shell';
 import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
 import { useUserBooleanConfig } from '@tuturuuu/ui/hooks/use-user-config';

@@ -1,6 +1,6 @@
 import { createFileRoute, notFound } from '@tanstack/react-router';
-import { TaskProjectsClient } from '@tuturuuu/ui/tu-do/projects/task-projects-client';
-import type { TaskProject } from '@tuturuuu/ui/tu-do/projects/types';
+import { TaskProjectsClient } from '@tuturuuu/tasks-ui/tu-do/projects/task-projects-client';
+import type { TaskProject } from '@tuturuuu/tasks-ui/tu-do/projects/types';
 import { useTranslations } from 'use-intl';
 import { requireCurrentUser } from '../../../../lib/platform/auth-gate';
 import { createPageHead } from '../../../../lib/platform/head';

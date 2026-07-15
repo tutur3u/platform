@@ -1,6 +1,6 @@
 import { createFileRoute, notFound } from '@tanstack/react-router';
 import { Calculator } from '@tuturuuu/icons';
-import TaskEstimatesClient from '@tuturuuu/ui/tu-do/estimates/client';
+import TaskEstimatesClient from '@tuturuuu/tasks-ui/tu-do/estimates/client';
 import { useTranslations } from 'use-intl';
 import { requireCurrentUser } from '../../../../lib/platform/auth-gate';
 import { createPageHead } from '../../../../lib/platform/head';

@@ -1,4 +1,5 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import type { Node as ProseMirrorNode } from '@tiptap/pm/model';
+import type { Editor } from '@tiptap/react';
 import { Node } from '@tiptap/react';
 import {
   Box,
@@ -8,20 +9,25 @@ import {
   User,
 } from '@tuturuuu/icons';
 import { getInitials } from '@tuturuuu/utils/name-helper';
-import { createRoot, type Root } from 'react-dom/client';
 import { renderToString } from 'react-dom/server';
-import { TaskMentionChip } from './task-mention-chip';
 
-// Create a QueryClient instance for mention components
-// This is needed because mention chips are rendered in isolated React roots
-const mentionQueryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 30000,
-      retry: 1,
-    },
-  },
-});
+export interface TaskMentionNodeView {
+  dom: HTMLElement;
+  destroy?: () => void;
+  ignoreMutation?: () => boolean;
+  update?: (node: ProseMirrorNode) => boolean;
+}
+
+export interface TaskMentionNodeViewRenderProps {
+  editor: Editor;
+  getPos: () => number | undefined;
+  node: ProseMirrorNode;
+  translations?: Record<string, unknown>;
+}
+
+export type TaskMentionNodeViewRenderer = (
+  props: TaskMentionNodeViewRenderProps
+) => TaskMentionNodeView;
 
 interface MentionVisualMeta {
   prefix: string;
@@ -165,6 +171,7 @@ export const Mention = Node.create({
 
   addOptions() {
     return {
+      renderTaskMention: undefined as TaskMentionNodeViewRenderer | undefined,
       translations: undefined as Record<string, unknown> | undefined,
     };
   },
@@ -353,6 +360,15 @@ export const Mention = Node.create({
 
   addNodeView() {
     return ({ node, editor, getPos }) => {
+      if (node.attrs.entityType === 'task' && this.options.renderTaskMention) {
+        return this.options.renderTaskMention({
+          editor,
+          getPos,
+          node,
+          translations: this.options.translations,
+        });
+      }
+
       let currentDisplayName =
         (node.attrs.displayName as string | null)?.trim() || 'Member';
       let currentAvatarUrl = node.attrs.avatarUrl as string | null;
@@ -361,8 +377,6 @@ export const Mention = Node.create({
       let currentEntityType =
         (node.attrs.entityType as string | null) ?? 'user';
       let currentSubtitle = (node.attrs.subtitle as string | null) ?? null;
-      let currentWorkspaceId =
-        (node.attrs.workspaceId as string | null) ?? null;
       let visuals = getMentionVisualMeta(currentEntityType);
 
       const dom = document.createElement('span');
@@ -370,111 +384,9 @@ export const Mention = Node.create({
       dom.style.verticalAlign = 'middle';
       dom.contentEditable = 'false';
 
-      // For task mentions, render React component with dropdown
-      if (currentEntityType === 'task') {
-        let reactRoot: Root | null = null;
-
-        const renderTaskChip = () => {
-          if (!reactRoot) {
-            reactRoot = createRoot(dom);
-          }
-          reactRoot.render(
-            <QueryClientProvider client={mentionQueryClient}>
-              <TaskMentionChip
-                entityId={currentEntityId ?? ''}
-                displayNumber={currentDisplayName}
-                avatarUrl={currentAvatarUrl}
-                subtitle={currentSubtitle}
-                workspaceId={currentWorkspaceId}
-                translations={this.options.translations}
-                editor={editor}
-                onResolvedTaskMention={(attrs) => {
-                  if (typeof getPos !== 'function') return;
-
-                  const position = getPos();
-                  if (typeof position !== 'number') return;
-
-                  const currentNode = editor.state.doc.nodeAt(position);
-                  if (currentNode?.type.name !== 'mention') {
-                    return;
-                  }
-
-                  editor.view.dispatch(
-                    editor.state.tr.setNodeMarkup(position, undefined, {
-                      ...currentNode.attrs,
-                      avatarUrl: attrs.avatarUrl ?? null,
-                      displayName: attrs.displayName,
-                      entityId: attrs.entityId,
-                      priority: attrs.priority ?? null,
-                      subtitle: attrs.subtitle ?? null,
-                      workspaceId: attrs.workspaceId ?? null,
-                    })
-                  );
-                }}
-              />
-            </QueryClientProvider>
-          );
-        };
-
-        renderTaskChip();
-
-        return {
-          dom,
-          update(updatedNode) {
-            if (updatedNode.type.name !== 'mention') return false;
-            const nextEntityType =
-              (updatedNode.attrs.entityType as string | null) ?? 'user';
-
-            // If entity type changed from task to something else, bail out
-            if (nextEntityType !== 'task') return false;
-
-            const nextDisplayName =
-              (updatedNode.attrs.displayName as string | null)?.trim() ||
-              'Member';
-            const nextAvatarUrl = updatedNode.attrs.avatarUrl as string | null;
-            const nextEntityId =
-              (updatedNode.attrs.entityId as string | null) ??
-              (updatedNode.attrs.userId as string | null) ??
-              null;
-            const nextSubtitle =
-              (updatedNode.attrs.subtitle as string | null) ?? null;
-            const nextWorkspaceId =
-              (updatedNode.attrs.workspaceId as string | null) ?? null;
-
-            // Update state and re-render if changed
-            if (
-              nextDisplayName !== currentDisplayName ||
-              nextAvatarUrl !== currentAvatarUrl ||
-              nextEntityId !== currentEntityId ||
-              nextSubtitle !== currentSubtitle ||
-              nextWorkspaceId !== currentWorkspaceId
-            ) {
-              currentDisplayName = nextDisplayName;
-              currentAvatarUrl = nextAvatarUrl;
-              currentEntityId = nextEntityId ?? '';
-              currentSubtitle = nextSubtitle;
-              currentWorkspaceId = nextWorkspaceId;
-              renderTaskChip();
-            }
-
-            return true;
-          },
-          destroy() {
-            if (reactRoot) {
-              // Use setTimeout to avoid React warnings about synchronous unmounting
-              setTimeout(() => {
-                reactRoot?.unmount();
-                reactRoot = null;
-              }, 0);
-            }
-          },
-          ignoreMutation() {
-            return true;
-          },
-        };
-      }
-
-      // For non-task mentions, use the original DOM-based rendering
+      // The generic editor renders a lightweight DOM mention. Task surfaces can
+      // provide a richer node view without making the shared UI package depend
+      // on task-specific code.
       dom.setAttribute('data-mention', 'true');
       dom.setAttribute('data-user-id', userId);
       dom.setAttribute('data-display-name', currentDisplayName);

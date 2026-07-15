@@ -9,9 +9,9 @@ import {
   parseSidebarBehavior,
 } from '@tuturuuu/satellite/workspace-layout-helpers';
 import { RealtimeLogProvider } from '@tuturuuu/supabase/next/realtime-log-provider';
-import { WorkspacePresenceProvider } from '@tuturuuu/ui/tu-do/providers/workspace-presence-provider';
-import { TaskDialogWrapper } from '@tuturuuu/ui/tu-do/shared/task-dialog-wrapper';
-import { TasksRouteProvider } from '@tuturuuu/ui/tu-do/tasks-route-context';
+import { WorkspacePresenceProvider } from '@tuturuuu/tasks-ui/tu-do/providers/workspace-presence-provider';
+import { TaskDialogWrapper } from '@tuturuuu/tasks-ui/tu-do/shared/task-dialog-wrapper';
+import { TasksRouteProvider } from '@tuturuuu/tasks-ui/tu-do/tasks-route-context';
 import { toWorkspaceSlug } from '@tuturuuu/utils/constants';
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { cookies, headers } from 'next/headers';

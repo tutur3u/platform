@@ -1,10 +1,10 @@
 'use client';
 
 import type { PublicTaskBoardPayload } from '@tuturuuu/internal-api';
+import { TaskDialogProvider } from '@tuturuuu/tasks-ui/tu-do/providers/task-dialog-provider';
+import { BoardViews } from '@tuturuuu/tasks-ui/tu-do/shared/board-views';
+import { ProgressiveLoaderProvider } from '@tuturuuu/tasks-ui/tu-do/shared/progressive-loader-context';
 import { TUTURUUU_LOCAL_LOGO_URL } from '@tuturuuu/ui/custom/tuturuuu-logo-urls';
-import { TaskDialogProvider } from '@tuturuuu/ui/tu-do/providers/task-dialog-provider';
-import { BoardViews } from '@tuturuuu/ui/tu-do/shared/board-views';
-import { ProgressiveLoaderProvider } from '@tuturuuu/ui/tu-do/shared/progressive-loader-context';
 import { useMemo } from 'react';
 import {
   createPublicTaskBoardProgressiveLoader,

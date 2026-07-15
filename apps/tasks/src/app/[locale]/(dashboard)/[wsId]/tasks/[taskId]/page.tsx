@@ -1,4 +1,4 @@
-import TaskDetailServerPage from '@tuturuuu/ui/tu-do/shared/task-detail-server-page';
+import TaskDetailServerPage from '@tuturuuu/tasks-ui/tu-do/shared/task-detail-server-page';
 import type { Metadata } from 'next';
 import { connection } from 'next/server';
 

@@ -1,7 +1,7 @@
 import { getSatelliteAppSessionUser } from '@tuturuuu/satellite/auth';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import { CalendarPageShell } from '@tuturuuu/ui/calendar-app/calendar-page-shell';
-import { loadSmartSchedulingTasks } from '@tuturuuu/ui/calendar-app/components/load-smart-scheduling-tasks';
+import { loadSmartSchedulingTasks } from '@tuturuuu/tasks-ui/calendar/components/load-smart-scheduling-tasks';
+import { TaskCalendarPageShell } from '@tuturuuu/tasks-ui/calendar/task-calendar-page-shell';
 import { fetchUserWorkspaceCalendarGoogleTokenForClient } from '@tuturuuu/utils/calendar-auth-token';
 import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
@@ -61,7 +61,7 @@ export default async function CalendarPage({ params }: PageProps) {
   const isPersonalWorkspace = workspace.id === user?.id;
 
   return (
-    <CalendarPageShell
+    <TaskCalendarPageShell
       calendarConnections={calendarConnections || []}
       enableSmartScheduling={enableSmartScheduling}
       experimentalGoogleToken={googleToken}

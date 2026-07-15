@@ -1,8 +1,8 @@
 'use client';
 
+import { BoardShareSettingsPanel } from '@tuturuuu/tasks-ui/tu-do/boards/board-share-settings-panel';
 import { Badge } from '@tuturuuu/ui/badge';
 import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
-import { BoardShareSettingsPanel } from '@tuturuuu/ui/tu-do/boards/board-share-settings-panel';
 import { useTranslations } from 'next-intl';
 
 interface TaskShareSettingsProps {

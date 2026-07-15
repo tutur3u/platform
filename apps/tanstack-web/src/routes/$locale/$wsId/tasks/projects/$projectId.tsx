@@ -6,7 +6,7 @@ import {
   getWorkspaceTaskProject,
   getWorkspaceTaskProjectTasks,
 } from '@tuturuuu/internal-api/tasks';
-import TaskProjectDetailPageClient from '@tuturuuu/ui/tu-do/projects/projectId/task-project-detail-page-client';
+import TaskProjectDetailPageClient from '@tuturuuu/tasks-ui/tu-do/projects/projectId/task-project-detail-page-client';
 import { requireCurrentUser } from '../../../../../lib/platform/auth-gate';
 import { createPageHead } from '../../../../../lib/platform/head';
 import { resolveMessagesLocale } from '../../../../../lib/platform/messages';

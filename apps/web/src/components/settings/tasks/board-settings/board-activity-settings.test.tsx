@@ -27,7 +27,7 @@ vi.mock('@tuturuuu/internal-api/tasks', async (importOriginal) => {
   };
 });
 
-vi.mock('@tuturuuu/ui/tu-do/shared/task-open-events', () => ({
+vi.mock('@tuturuuu/ui/lib/task-open-events', () => ({
   dispatchRequestOpenTask: dispatchRequestOpenTaskMock,
 }));
 

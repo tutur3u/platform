@@ -3,8 +3,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { Loader2 } from '@tuturuuu/icons';
 import { listWorkspaceTemplates } from '@tuturuuu/internal-api';
-import TemplatesClient from '@tuturuuu/ui/tu-do/templates/client';
-import type { BoardTemplate } from '@tuturuuu/ui/tu-do/templates/types';
+import TemplatesClient from '@tuturuuu/tasks-ui/tu-do/templates/client';
+import type { BoardTemplate } from '@tuturuuu/tasks-ui/tu-do/templates/types';
 
 function getBrowserInternalApiOptions() {
   return typeof window !== 'undefined'

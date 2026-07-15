@@ -1,1 +1,1 @@
-export { TaskSettings } from '@tuturuuu/ui/custom/settings/task-settings';
+export { TaskSettings } from '@tuturuuu/tasks-ui/settings/task-settings';

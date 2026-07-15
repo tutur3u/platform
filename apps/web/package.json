@@ -110,6 +110,7 @@
     "@tuturuuu/storage-core": "workspace:*",
     "@tuturuuu/supabase": "workspace:*",
     "@tuturuuu/tasks-api": "workspace:*",
+    "@tuturuuu/tasks-ui": "workspace:*",
     "@tuturuuu/transactional": "workspace:*",
     "@tuturuuu/trigger": "workspace:*",
     "@tuturuuu/turnstile": "workspace:*",

@@ -12,6 +12,26 @@ import {
   type WorkspaceTaskBoardDetail,
 } from '@tuturuuu/internal-api/tasks';
 import { listWorkspaceTemplates } from '@tuturuuu/internal-api/templates';
+import { BoardShareSettingsPanel } from '@tuturuuu/tasks-ui/tu-do/boards/board-share-settings-panel';
+import { DraftsPage } from '@tuturuuu/tasks-ui/tu-do/drafts/drafts-page';
+import TaskEstimatesClient from '@tuturuuu/tasks-ui/tu-do/estimates/client';
+import HabitsClientPage from '@tuturuuu/tasks-ui/tu-do/habits/client';
+import { TaskInitiativesClient } from '@tuturuuu/tasks-ui/tu-do/initiatives/task-initiatives-client';
+import TaskLabelsClient from '@tuturuuu/tasks-ui/tu-do/labels/client';
+import type { TaskLabel } from '@tuturuuu/tasks-ui/tu-do/labels/types';
+import LogsClient from '@tuturuuu/tasks-ui/tu-do/logs/logs-client';
+import NotesContent from '@tuturuuu/tasks-ui/tu-do/notes/notes-content';
+import { TaskProjectsClient } from '@tuturuuu/tasks-ui/tu-do/projects/task-projects-client';
+import type { TaskProject } from '@tuturuuu/tasks-ui/tu-do/projects/types';
+import { BoardLayoutSettingsContent } from '@tuturuuu/tasks-ui/tu-do/shared/board-layout-settings';
+import {
+  TASK_HIDE_EMPTY_LISTS_CONFIG_ID,
+  TASK_PERSIST_COLLAPSED_LISTS_CONFIG_ID,
+} from '@tuturuuu/tasks-ui/tu-do/shared/task-board-preferences';
+import MarketplaceClient from '@tuturuuu/tasks-ui/tu-do/templates/marketplace/client';
+import { TaskTemplatesHub } from '@tuturuuu/tasks-ui/tu-do/templates/task-templates-hub';
+import TaskTemplateDetailPageClient from '@tuturuuu/tasks-ui/tu-do/templates/templateId/task-template-detail-page-client';
+import type { BoardTemplate } from '@tuturuuu/tasks-ui/tu-do/templates/types';
 import type { Workspace } from '@tuturuuu/types';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { Button } from '@tuturuuu/ui/button';
@@ -31,26 +51,6 @@ import { Separator } from '@tuturuuu/ui/separator';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Switch } from '@tuturuuu/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
-import { BoardShareSettingsPanel } from '@tuturuuu/ui/tu-do/boards/board-share-settings-panel';
-import { DraftsPage } from '@tuturuuu/ui/tu-do/drafts/drafts-page';
-import TaskEstimatesClient from '@tuturuuu/ui/tu-do/estimates/client';
-import HabitsClientPage from '@tuturuuu/ui/tu-do/habits/client';
-import { TaskInitiativesClient } from '@tuturuuu/ui/tu-do/initiatives/task-initiatives-client';
-import TaskLabelsClient from '@tuturuuu/ui/tu-do/labels/client';
-import type { TaskLabel } from '@tuturuuu/ui/tu-do/labels/types';
-import LogsClient from '@tuturuuu/ui/tu-do/logs/logs-client';
-import NotesContent from '@tuturuuu/ui/tu-do/notes/notes-content';
-import { TaskProjectsClient } from '@tuturuuu/ui/tu-do/projects/task-projects-client';
-import type { TaskProject } from '@tuturuuu/ui/tu-do/projects/types';
-import { BoardLayoutSettingsContent } from '@tuturuuu/ui/tu-do/shared/board-layout-settings';
-import {
-  TASK_HIDE_EMPTY_LISTS_CONFIG_ID,
-  TASK_PERSIST_COLLAPSED_LISTS_CONFIG_ID,
-} from '@tuturuuu/ui/tu-do/shared/task-board-preferences';
-import MarketplaceClient from '@tuturuuu/ui/tu-do/templates/marketplace/client';
-import { TaskTemplatesHub } from '@tuturuuu/ui/tu-do/templates/task-templates-hub';
-import TaskTemplateDetailPageClient from '@tuturuuu/ui/tu-do/templates/templateId/task-template-detail-page-client';
-import type { BoardTemplate } from '@tuturuuu/ui/tu-do/templates/types';
 import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useState } from 'react';
 import { listPublicBoardTemplates } from './template-marketplace-actions';

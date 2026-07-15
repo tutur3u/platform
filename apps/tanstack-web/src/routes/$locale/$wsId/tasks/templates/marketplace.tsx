@@ -1,9 +1,9 @@
 import { createFileRoute, notFound } from '@tanstack/react-router';
 import { ArrowLeft, Globe } from '@tuturuuu/icons';
+import MarketplaceClient from '@tuturuuu/tasks-ui/tu-do/templates/marketplace/client';
+import type { BoardTemplate } from '@tuturuuu/tasks-ui/tu-do/templates/types';
 import { Button } from '@tuturuuu/ui/button';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
-import MarketplaceClient from '@tuturuuu/ui/tu-do/templates/marketplace/client';
-import type { BoardTemplate } from '@tuturuuu/ui/tu-do/templates/types';
 import { useTranslations } from 'use-intl';
 import { requireCurrentUser } from '../../../../../lib/platform/auth-gate';
 import { createPageHead } from '../../../../../lib/platform/head';

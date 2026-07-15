@@ -4,59 +4,69 @@ import type {
   WorkspaceCalendarGoogleTokenClient,
 } from '@tuturuuu/types';
 import { CalendarSyncProvider } from '@tuturuuu/ui/hooks/use-calendar-sync';
-import { TaskDialogWrapper } from '@tuturuuu/ui/tu-do/shared/task-dialog-wrapper';
+import type { ComponentType } from 'react';
 import type { ExtendedWorkspaceTask } from '../time-tracker/types';
-import { CalendarClientPage } from './calendar-client-page';
-import TasksSidebar from './components/tasks-sidebar';
+import {
+  CalendarClientPage,
+  type CalendarHeaderActionsComponent,
+} from './calendar-client-page';
+
+export interface CalendarTasksSidebarProps {
+  locale: string;
+  resolvedWsId: string;
+  tasks?: ExtendedWorkspaceTask[];
+  userId: string;
+}
+
+export type CalendarTasksSidebarComponent =
+  ComponentType<CalendarTasksSidebarProps>;
 
 interface CalendarPageShellProps {
   calendarConnections: CalendarConnection[] | null;
   enableSmartScheduling: boolean;
   experimentalGoogleToken?: WorkspaceCalendarGoogleTokenClient | null;
-  isPersonalWorkspace: boolean;
+  HeaderActions: CalendarHeaderActionsComponent;
   locale: string;
   smartSchedulingTasks?: ExtendedWorkspaceTask[];
   userId: string;
   workspace: Workspace;
+  TasksSidebar: CalendarTasksSidebarComponent;
 }
 
 export function CalendarPageShell({
   calendarConnections,
   enableSmartScheduling,
   experimentalGoogleToken,
-  isPersonalWorkspace,
+  HeaderActions,
   locale,
   smartSchedulingTasks = [],
   userId,
   workspace,
+  TasksSidebar,
 }: CalendarPageShellProps) {
   return (
-    <TaskDialogWrapper
-      isPersonalWorkspace={isPersonalWorkspace}
+    <CalendarSyncProvider
       wsId={workspace.id}
+      experimentalGoogleToken={experimentalGoogleToken}
+      initialCalendarConnections={calendarConnections || []}
     >
-      <CalendarSyncProvider
-        wsId={workspace.id}
-        experimentalGoogleToken={experimentalGoogleToken}
-        initialCalendarConnections={calendarConnections || []}
-      >
-        <div className="flex h-[calc(100vh-2rem)]">
-          <CalendarClientPage
-            experimentalGoogleToken={experimentalGoogleToken}
-            workspace={workspace}
-            enableSmartScheduling={enableSmartScheduling}
+      <div className="flex h-[calc(100vh-2rem)]">
+        <CalendarClientPage
+          experimentalGoogleToken={experimentalGoogleToken}
+          workspace={workspace}
+          enableSmartScheduling={enableSmartScheduling}
+          HeaderActions={HeaderActions}
+        />
+        {enableSmartScheduling && (
+          <TasksSidebar
+            resolvedWsId={workspace.id}
+            locale={locale}
+            userId={userId}
+            tasks={smartSchedulingTasks}
           />
-          {enableSmartScheduling && (
-            <TasksSidebar
-              resolvedWsId={workspace.id}
-              locale={locale}
-              userId={userId}
-              tasks={smartSchedulingTasks}
-            />
-          )}
-        </div>
-      </CalendarSyncProvider>
-    </TaskDialogWrapper>
+        )}
+      </div>
+    </CalendarSyncProvider>
   );
 }
 

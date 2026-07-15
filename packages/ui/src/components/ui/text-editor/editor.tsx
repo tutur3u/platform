@@ -17,6 +17,7 @@ import type * as Y from 'yjs';
 import { migrateInlineImagesToBlock } from './content-migration';
 import { getEditorExtensions } from './extensions';
 import { handlePlainEnterFallback } from './keyboard';
+import type { TaskMentionNodeViewRenderer } from './mention-extension';
 import { FixedToolbar, ToolBar } from './tool-bar';
 
 const hasContent = (node: JSONContent): boolean => {
@@ -62,7 +63,7 @@ function serializeEditorContent(content: JSONContent | null) {
   return JSON.stringify(content ?? { type: 'doc', content: [] });
 }
 
-interface RichTextEditorProps {
+export interface RichTextEditorProps {
   content: JSONContent | null;
   onChange?: (content: JSONContent | null) => void;
   onImmediateChange?: (content: JSONContent | null) => void;
@@ -110,6 +111,7 @@ interface RichTextEditorProps {
     project_name?: string;
     create_project?: string;
   };
+  renderTaskMention?: TaskMentionNodeViewRenderer;
 }
 
 export function RichTextEditor({
@@ -136,6 +138,7 @@ export function RichTextEditor({
   collaborationUser,
   allowCollaboration = false,
   mentionTranslations,
+  renderTaskMention,
 }: RichTextEditorProps) {
   // Use refs to ensure we have stable references for handlers
   const onImageUploadRef = useRef(onImageUpload);
@@ -312,6 +315,7 @@ export function RichTextEditor({
       getOnImageUpload: getDelegatedImageUpload,
       getOnVideoUpload: getDelegatedImageUpload,
       mentionTranslations,
+      renderTaskMention,
       readOnly,
     }),
     // Migrate inline images to block-level for backward compatibility
@@ -545,6 +549,7 @@ export function RichTextEditor({
           getOnImageUpload: getDelegatedImageUpload,
           getOnVideoUpload: getDelegatedImageUpload,
           mentionTranslations,
+          renderTaskMention,
           readOnly,
         }),
       });
@@ -559,6 +564,7 @@ export function RichTextEditor({
     titlePlaceholder,
     writePlaceholder,
     mentionTranslations,
+    renderTaskMention,
     readOnly,
     getDelegatedImageUpload,
   ]);

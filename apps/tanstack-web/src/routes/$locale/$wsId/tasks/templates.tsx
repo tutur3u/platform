@@ -1,9 +1,9 @@
 import { createFileRoute, notFound } from '@tanstack/react-router';
 import { Store } from '@tuturuuu/icons';
+import TemplatesClient from '@tuturuuu/tasks-ui/tu-do/templates/client';
+import type { BoardTemplate } from '@tuturuuu/tasks-ui/tu-do/templates/types';
 import { Button } from '@tuturuuu/ui/button';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
-import TemplatesClient from '@tuturuuu/ui/tu-do/templates/client';
-import type { BoardTemplate } from '@tuturuuu/ui/tu-do/templates/types';
 import { useTranslations } from 'use-intl';
 import {
   getWorkspaceNextPath,

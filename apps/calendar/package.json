@@ -39,6 +39,7 @@
     "@tuturuuu/offline": "workspace:*",
     "@tuturuuu/satellite": "workspace:*",
     "@tuturuuu/supabase": "workspace:*",
+    "@tuturuuu/tasks-ui": "workspace:*",
     "@tuturuuu/trigger": "workspace:*",
     "@tuturuuu/turnstile": "workspace:*",
     "@tuturuuu/types": "workspace:*",

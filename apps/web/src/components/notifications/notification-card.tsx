@@ -13,11 +13,11 @@ import {
 } from '@tuturuuu/icons';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
-import { toast } from '@tuturuuu/ui/sonner';
 import {
   dispatchRequestOpenTask,
   waitForTaskOpenResult,
-} from '@tuturuuu/ui/tu-do/shared/task-open-events';
+} from '@tuturuuu/ui/lib/task-open-events';
+import { toast } from '@tuturuuu/ui/sonner';
 import { cn } from '@tuturuuu/utils/format';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';

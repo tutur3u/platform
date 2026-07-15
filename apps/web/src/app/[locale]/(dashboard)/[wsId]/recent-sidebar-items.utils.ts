@@ -1,9 +1,9 @@
-import type { NavLink } from '@tuturuuu/ui/custom/navigation';
 import type {
   RecentSidebarIconKey,
   RecentSidebarVisitBadge,
   RecentSidebarVisitSnapshot,
-} from '@tuturuuu/ui/tu-do/shared/recent-sidebar-events';
+} from '@tuturuuu/tasks-ui/tu-do/shared/recent-sidebar-events';
+import type { NavLink } from '@tuturuuu/ui/custom/navigation';
 import {
   ROOT_WORKSPACE_ID,
   resolveWorkspaceId,

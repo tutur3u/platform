@@ -1,9 +1,9 @@
 'use client';
 
 import { RealtimeLogProvider } from '@tuturuuu/supabase/next/realtime-log-provider';
+import { TaskDialogProvider } from '@tuturuuu/tasks-ui/tu-do/providers/task-dialog-provider';
+import { WorkspacePresenceProvider } from '@tuturuuu/tasks-ui/tu-do/providers/workspace-presence-provider';
 import type { WorkspaceProductTier } from '@tuturuuu/types';
-import { TaskDialogProvider } from '@tuturuuu/ui/tu-do/providers/task-dialog-provider';
-import { WorkspacePresenceProvider } from '@tuturuuu/ui/tu-do/providers/workspace-presence-provider';
 import type { ComponentType, ReactNode } from 'react';
 import { useLazyClientComponent } from '@/hooks/use-lazy-client-component';
 import { preloadTaskDialogManager } from './task-dialog-manager-loader';

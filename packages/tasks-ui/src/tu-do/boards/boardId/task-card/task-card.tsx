@@ -1,0 +1,2956 @@
+import { useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  AlertCircle,
+  Archive,
+  ArrowUpCircle,
+  Ban,
+  Box,
+  Calendar,
+  CheckCircle2,
+  CircleSlash,
+  Clock,
+  Copy,
+  ExternalLink,
+  FileText,
+  Image as ImageIcon,
+  Link2,
+  ListChecks,
+  ListTodo,
+  ListTree,
+  Loader2,
+  MoreHorizontal,
+  MoveRight,
+  Play,
+  Share2,
+  SquareCenterlineDashedVertical,
+  Timer,
+  Trash2,
+} from '@tuturuuu/icons';
+import {
+  getWorkspaceTask,
+  listWorkspaceTaskBoardViewableMembers,
+  listWorkspaceTaskLists,
+  listWorkspaceTaskProjects,
+  listWorkspaceTaskProjectsByIds,
+  removeCurrentUserTaskPersonalPlacement,
+} from '@tuturuuu/internal-api/tasks';
+import { useTaskActions } from '@tuturuuu/tasks-ui/hooks/use-task-actions';
+import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
+import type { Task } from '@tuturuuu/types/primitives/Task';
+import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
+import { Badge } from '@tuturuuu/ui/badge';
+import { Button } from '@tuturuuu/ui/button';
+import { Card } from '@tuturuuu/ui/card';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@tuturuuu/ui/dropdown-menu';
+import { useCalendarPreferences } from '@tuturuuu/ui/hooks/use-calendar-preferences';
+import { useUserBooleanConfig } from '@tuturuuu/ui/hooks/use-user-config';
+import {
+  useWorkspaceMembers,
+  type WorkspaceMember,
+} from '@tuturuuu/ui/hooks/use-workspace-members';
+import {
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from '@tuturuuu/ui/hover-card';
+import { isPersonalExternalOverlayTask } from '@tuturuuu/ui/lib/task-personal-external';
+import { toast } from '@tuturuuu/ui/sonner';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
+import { cn } from '@tuturuuu/utils/format';
+import {
+  createTask,
+  getPersonalExternalStagingListId,
+  getTicketIdentifier,
+  useBoardConfig,
+  useWorkspaceLabels,
+} from '@tuturuuu/utils/task-helper';
+import { isTaskBoardResolvedStatus } from '@tuturuuu/utils/task-list-status';
+import { getDescriptionMetadata } from '@tuturuuu/utils/text-helper';
+import { getTimeFormatPattern } from '@tuturuuu/utils/time-helper';
+import { format, formatDistance } from 'date-fns';
+import { enUS, vi } from 'date-fns/locale';
+import Link from 'next/link';
+import { useParams } from 'next/navigation';
+import { useLocale, useTranslations } from 'next-intl';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
+import {
+  enqueueTaskCardRelationshipRequest,
+  useTaskCardRelationships,
+} from '../../../hooks/useTaskCardRelationships';
+import { useTaskDialog } from '../../../hooks/useTaskDialog';
+import { useTaskDialogState } from '../../../hooks/useTaskDialogState';
+import { useTaskLabelManagement } from '../../../hooks/useTaskLabelManagement';
+import { useTaskProjectManagement } from '../../../hooks/useTaskProjectManagement';
+import { useTaskDialogContext } from '../../../providers/task-dialog-provider';
+import { AssigneeSelect } from '../../../shared/assignee-select';
+import { useBoardBroadcast } from '../../../shared/board-broadcast-context';
+import { CreateListDialog } from '../../../shared/create-list-dialog';
+import { formatRelationshipTaskIdentifier } from '../../../shared/relationship-task-identifier';
+import {
+  shouldShowTaskDueDate,
+  shouldShowTaskStartDate,
+  TASKS_SHOW_REVIEW_DUE_DATES_CONFIG_ID,
+} from '../../../shared/task-due-date-visibility';
+import { TaskEstimationDisplay } from '../../../shared/task-estimation-display';
+import { TaskLabelsDisplay } from '../../../shared/task-labels-display';
+import { TaskShareDialog } from '../../../shared/task-share-dialog';
+import { TaskViewerAvatarsComponent } from '../../../shared/user-presence-avatars';
+import { useTasksHref } from '../../../tasks-route-context';
+import {
+  getCardColorClasses as getCardColorClassesUtil,
+  getListTextColorClass,
+  getTicketBadgeColorClasses,
+} from '../../../utils/taskColorUtils';
+import {
+  DESTINATION_TONE_COLORS,
+  getRandomNewLabelColor,
+} from '../../../utils/taskConstants';
+import { formatSmartDate } from '../../../utils/taskDateUtils';
+import { getPriorityIndicator } from '../../../utils/taskPriorityUtils';
+import { sortByDisplayName } from '../board-text-utils';
+import { invalidateKanbanDeadlineTasks } from '../kanban/data/kanban-deadline-query';
+import {
+  TaskAssigneesMenu,
+  TaskBlockingMenu,
+  TaskDueDateMenu,
+  TaskEstimationMenu,
+  TaskLabelsMenu,
+  TaskMoveMenu,
+  TaskParentMenu,
+  TaskPriorityMenu,
+  TaskProjectsMenu,
+  TaskRelatedMenu,
+  TaskSchedulingMenu,
+} from '../menus';
+import { TaskActions } from '../task-actions';
+import { TaskCustomDateDialog } from '../task-dialogs/TaskCustomDateDialog';
+import { TaskDeleteDialog } from '../task-dialogs/TaskDeleteDialog';
+import { TaskNewLabelDialog } from '../task-dialogs/TaskNewLabelDialog';
+import { TaskNewProjectDialog } from '../task-dialogs/TaskNewProjectDialog';
+import { getTaskCardParentBadgeState } from '../task-parent-badge-state';
+import { TaskCardCheckbox } from './TaskCardCheckbox';
+import { shouldRenderTaskCardQuickArchive } from './task-card-archive-visibility';
+import {
+  getTaskCardSelectedStateToneClasses,
+  getTaskCardSelectionIconToneClasses,
+  TASK_CARD_SELECTED_STATE_BASE_CLASSES,
+} from './task-card-checkbox-style';
+import { areTaskCardPropsEqual } from './task-card-comparator';
+import { shouldRenderTaskCardCompletionCheckbox } from './task-card-completion-checkbox-visibility';
+import { TaskCardIdentifierRow } from './task-card-identifier-row';
+import { mergeTaskCardLabelOptions } from './task-card-label-options';
+import { TaskCardMetadataTooltip } from './task-card-metadata-tooltip';
+import {
+  getTaskCardHydratingOpenOptions,
+  isExternalTaskSnapshot,
+} from './task-card-open-options';
+import { getTaskCardResourceContext } from './task-card-resource-context';
+import { getTaskCardVisibilityState } from './task-card-visibility';
+import { TaskSchedulingBadge } from './task-scheduling-badge';
+
+export type TaskCardAssigneeMemberSource =
+  | 'workspace'
+  | 'board'
+  | 'workspace-and-board';
+
+export interface TaskCardProps {
+  task: Task;
+  boardId: string;
+  workspaceId?: string;
+  taskList?: TaskList;
+  isOverlay?: boolean;
+  onUpdate: () => void;
+  availableLists?: TaskList[]; // Optional: pass from parent to avoid redundant API calls
+  isSelected?: boolean;
+  isMultiSelectMode?: boolean;
+  isPersonalWorkspace?: boolean;
+  canUseBoardAssignees?: boolean;
+  assigneeMemberSource?: TaskCardAssigneeMemberSource;
+  onSelect?: (taskId: string, event: React.MouseEvent) => void;
+  onClearSelection?: () => void;
+  dragDisabled?: boolean;
+  sortableId?: string;
+  suppressSortableTransform?: boolean;
+  optimisticUpdateInProgress?: Set<string>;
+  selectedTasks?: Set<string>; // For bulk operations
+  bulkUpdateCustomDueDate?: (date: Date | null) => Promise<void>; // From useBulkOperations
+  deadlineContext?: 'overdue' | 'upcoming';
+  deadlineNow?: number;
+  readOnly?: boolean;
+}
+
+function ReadOnlyTaskCard({ task, taskList }: TaskCardProps) {
+  const t = useTranslations('common');
+  const taskProjectT = useTranslations('task_project_detail.overview');
+  const publicBoardT = useTranslations('ws-task-boards.public');
+  const priorityT = useTranslations('ws-task-boards.dialog.priority');
+  const locale = useLocale();
+  const dateLocale = locale === 'vi' ? vi : enUS;
+  const ticketPrefix = (task as Task & { ticket_prefix?: string | null })
+    .ticket_prefix;
+  const ticketIdentifier =
+    typeof task.display_number === 'number' && task.display_number > 0
+      ? getTicketIdentifier(ticketPrefix, task.display_number)
+      : null;
+  const dueDate = task.end_date
+    ? format(new Date(task.end_date), 'MMM d, yyyy', { locale: dateLocale })
+    : null;
+
+  return (
+    <Card
+      className={cn(
+        'relative overflow-hidden rounded-lg border border-l-4 bg-background p-3 shadow-xs',
+        getCardColorClassesUtil(taskList, task.priority),
+        task.closed_at && 'opacity-60 saturate-50'
+      )}
+      data-task-card-id={task.id}
+      data-task-read-only="true"
+    >
+      <TaskCardIdentifierRow
+        documentLabel={taskProjectT('document')}
+        externalSourceLabel=""
+        isMultiSelectMode={false}
+        isPersonalExternalTask={false}
+        isSelected={false}
+        selectTaskLabel={t('select_task', { name: task.name })}
+        taskListStatus={taskList?.status}
+        ticketBadgeClassName={getTicketBadgeColorClasses(
+          taskList,
+          task.priority
+        )}
+        ticketIdentifier={ticketIdentifier}
+        ticketTitle={ticketIdentifier ?? ''}
+      />
+
+      <div className="space-y-2">
+        <h3
+          className={cn(
+            'line-clamp-2 break-words font-medium text-sm leading-5',
+            (task.completed_at || task.closed_at) &&
+              'text-muted-foreground line-through'
+          )}
+        >
+          {task.name}
+        </h3>
+
+        <div className="flex flex-wrap items-center gap-1.5">
+          {task.priority && (
+            <Badge variant="outline" className="h-5 px-1.5 font-normal text-xs">
+              {priorityT(task.priority)}
+            </Badge>
+          )}
+          {dueDate && (
+            <Badge
+              variant="secondary"
+              className="h-5 gap-1 px-1.5 font-normal text-xs"
+            >
+              <Calendar className="h-3 w-3" />
+              {dueDate}
+            </Badge>
+          )}
+          {typeof task.estimation_points === 'number' && (
+            <Badge variant="outline" className="h-5 px-1.5 font-normal text-xs">
+              {publicBoardT('points', { count: task.estimation_points })}
+            </Badge>
+          )}
+        </div>
+
+        {(task.labels?.length ||
+          task.projects?.length ||
+          task.assignees?.length) && (
+          <div className="flex flex-wrap items-center gap-1.5">
+            {task.labels?.map((label) => (
+              <Badge
+                key={label.id}
+                variant="outline"
+                className="h-5 gap-1 px-1.5 font-normal text-xs"
+              >
+                <span
+                  aria-hidden="true"
+                  className="h-2 w-2 rounded-full"
+                  style={{ backgroundColor: label.color }}
+                />
+                {label.name}
+              </Badge>
+            ))}
+            {task.projects?.map((project) => (
+              <Badge
+                key={project.id}
+                variant="outline"
+                className="h-5 gap-1 px-1.5 font-normal text-xs"
+              >
+                <Box className="h-3 w-3" />
+                {project.name}
+              </Badge>
+            ))}
+            {task.assignees?.map((assignee) => (
+              <Badge
+                key={assignee.id}
+                variant="secondary"
+                className="h-5 px-1.5 font-normal text-xs"
+              >
+                {assignee.display_name ||
+                  (assignee.handle ? `@${assignee.handle}` : t('assignee'))}
+              </Badge>
+            ))}
+          </div>
+        )}
+      </div>
+    </Card>
+  );
+}
+
+// Memoized full TaskCard
+function TaskCardInner({
+  task,
+  boardId,
+  workspaceId,
+  taskList,
+  isOverlay,
+  onUpdate,
+  availableLists: propAvailableLists,
+  isSelected = false,
+  isMultiSelectMode = false,
+  isPersonalWorkspace = false,
+  canUseBoardAssignees,
+  assigneeMemberSource,
+  onSelect,
+  onClearSelection,
+  dragDisabled: dragDisabledProp = false,
+  sortableId: sortableIdProp,
+  suppressSortableTransform = false,
+  optimisticUpdateInProgress,
+  selectedTasks,
+  bulkUpdateCustomDueDate,
+  deadlineContext,
+  deadlineNow,
+}: TaskCardProps) {
+  const { wsId: rawWsId } = useParams();
+  const wsId = Array.isArray(rawWsId) ? rawWsId[0] : rawWsId;
+  const queryClient = useQueryClient();
+  const broadcast = useBoardBroadcast();
+  const t = useTranslations('common');
+  const tTasks = useTranslations('ws-tasks');
+  const taskBoardT = useTranslations();
+  const tasksHref = useTasksHref();
+  const locale = useLocale();
+  const dateLocale = locale === 'vi' ? vi : enUS;
+  const { weekStartsOn, timeFormat } = useCalendarPreferences();
+  const { value: showReviewDueDates } = useUserBooleanConfig(
+    TASKS_SHOW_REVIEW_DUE_DATES_CONFIG_ID,
+    false
+  );
+  const timePattern = getTimeFormatPattern(timeFormat);
+
+  const [isLoading, setIsLoading] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [isCreateListDialogOpen, setIsCreateListDialogOpen] = useState(false);
+  const [menuGuardUntil, setMenuGuardUntil] = useState(0);
+  const [shareDialogOpen, setShareDialogOpen] = useState(false);
+  const [isInViewport, setIsInViewport] = useState(false);
+  const [relationshipMenusOpen, setRelationshipMenusOpen] = useState({
+    parent: false,
+    dependencies: false,
+    related: false,
+  });
+  const isAnyRelationshipMenuOpen =
+    relationshipMenusOpen.parent ||
+    relationshipMenusOpen.dependencies ||
+    relationshipMenusOpen.related;
+  const cardElementRef = useRef<HTMLDivElement | null>(null);
+
+  // Use extracted dialog state management hook
+  const { state: dialogState, actions: dialogActions } = useTaskDialogState();
+  const { createSubtask } = useTaskDialogContext();
+
+  // Use centralized task dialog
+  const { openTask, openTaskById } = useTaskDialog();
+
+  // Guarded select handler for Radix DropdownMenuItem to avoid immediate action on context open
+  const handleMenuItemSelect = useCallback(
+    (e: Event, action: () => void) => {
+      if (Date.now() < menuGuardUntil) {
+        // Keep menu open by preventing default close
+        if (e && typeof (e as any).preventDefault === 'function') {
+          (e as any).preventDefault();
+        }
+        return;
+      }
+      action();
+    },
+    [menuGuardUntil]
+  );
+
+  // Use React Query hooks for shared data (cached across all task cards)
+  const workspaceContextWsId = workspaceId ?? wsId;
+  const { data: boardConfig } = useBoardConfig(boardId, workspaceContextWsId);
+  const pageWorkspaceId = workspaceId ?? boardConfig?.ws_id ?? wsId;
+  const {
+    boardViewableMembersBoardId,
+    boardViewableMembersWorkspaceId,
+    effectiveWorkspaceId,
+    initialAvailableLists,
+    isSourceWorkspaceTask,
+    taskBoardId,
+  } = getTaskCardResourceContext({
+    boardId,
+    pageWorkspaceId,
+    propAvailableLists,
+    task,
+  });
+  const taskProjectIds = useMemo(
+    () => task.projects?.map((project) => project.id).filter(Boolean) ?? [],
+    [task.projects]
+  );
+  const taskShareWsId = effectiveWorkspaceId;
+  const { data: workspaceLabels = [], isLoading: labelsLoading } =
+    useWorkspaceLabels(effectiveWorkspaceId);
+
+  // Local state for UI interactions
+  const [estimationSaving, setEstimationSaving] = useState(false);
+
+  // Use extracted label management hook
+  const {
+    toggleTaskLabel,
+    createNewLabel,
+    newLabelName,
+    setNewLabelName,
+    newLabelColor,
+    setNewLabelColor,
+    creatingLabel,
+  } = useTaskLabelManagement({
+    task,
+    boardId,
+    workspaceLabels,
+    workspaceId: effectiveWorkspaceId,
+    selectedTasks,
+    isMultiSelectMode,
+    onClearSelection,
+    labelCacheWorkspaceIds: [
+      effectiveWorkspaceId,
+      workspaceContextWsId,
+      wsId,
+      task.source_workspace_id ?? undefined,
+    ],
+  });
+
+  const openNewLabelDialog = () => {
+    setNewLabelColor((previousColor) => getRandomNewLabelColor(previousColor));
+    dialogActions.openNewLabelDialog();
+  };
+
+  // Fetch workspace projects
+  const { data: workspaceProjects = [], isLoading: projectsLoading } = useQuery(
+    {
+      queryKey: [
+        'task_projects',
+        effectiveWorkspaceId,
+        isSourceWorkspaceTask ? taskProjectIds.join(',') : 'all',
+      ],
+      queryFn: async () => {
+        if (!effectiveWorkspaceId) return [];
+        if (isSourceWorkspaceTask) {
+          return listWorkspaceTaskProjectsByIds(
+            effectiveWorkspaceId,
+            taskProjectIds
+          );
+        }
+        return listWorkspaceTaskProjects(effectiveWorkspaceId);
+      },
+      enabled:
+        !!effectiveWorkspaceId &&
+        (!isSourceWorkspaceTask || taskProjectIds.length > 0),
+      staleTime: 5 * 60 * 1000, // 5 minutes - projects rarely change
+    }
+  );
+
+  // Use extracted project management hook
+  const {
+    toggleTaskProject,
+    newProjectName,
+    setNewProjectName,
+    creatingProject,
+    createNewProject,
+  } = useTaskProjectManagement({
+    task,
+    boardId,
+    workspaceProjects,
+    workspaceId: effectiveWorkspaceId,
+    selectedTasks,
+    isMultiSelectMode,
+    onClearSelection,
+  });
+  const shouldUseBoardAssignees = canUseBoardAssignees ?? !isPersonalWorkspace;
+  const effectiveAssigneeMemberSource =
+    assigneeMemberSource ?? (isPersonalWorkspace ? 'board' : 'workspace');
+  const shouldLoadWorkspaceMembers =
+    shouldUseBoardAssignees && effectiveAssigneeMemberSource !== 'board';
+  const shouldLoadBoardViewableMembers =
+    shouldUseBoardAssignees && effectiveAssigneeMemberSource !== 'workspace';
+
+  // Fetch workspace members
+  const normalMembersQuery = useWorkspaceMembers(effectiveWorkspaceId, {
+    enabled: !!effectiveWorkspaceId && shouldLoadWorkspaceMembers,
+  });
+  const boardViewableMembersQuery = useQuery({
+    queryKey: [
+      'task-board-viewable-members',
+      boardViewableMembersWorkspaceId,
+      boardViewableMembersBoardId,
+    ],
+    queryFn: async (): Promise<WorkspaceMember[]> => {
+      if (!boardViewableMembersWorkspaceId || !boardViewableMembersBoardId) {
+        return [];
+      }
+
+      const payload = await listWorkspaceTaskBoardViewableMembers(
+        boardViewableMembersWorkspaceId,
+        boardViewableMembersBoardId
+      );
+      const members = Array.isArray(payload?.members) ? payload.members : [];
+
+      return members.map((member) => ({
+        id: member.user_id,
+        user_id: member.user_id,
+        workspace_id: boardViewableMembersWorkspaceId,
+        display_name: member.display_name ?? member.email ?? member.user_id,
+        email: member.email ?? undefined,
+        avatar_url: member.avatar_url ?? undefined,
+      }));
+    },
+    enabled:
+      !!boardViewableMembersWorkspaceId &&
+      !!boardViewableMembersBoardId &&
+      shouldLoadBoardViewableMembers,
+    staleTime: 5 * 60 * 1000,
+  });
+  const normalWorkspaceMembers = normalMembersQuery.data ?? [];
+  const boardViewableMembers = boardViewableMembersQuery.data ?? [];
+  const workspaceMembers = useMemo(() => {
+    const seen = new Set<string>();
+    const merged: WorkspaceMember[] = [];
+
+    for (const member of [...normalWorkspaceMembers, ...boardViewableMembers]) {
+      const memberId = member.user_id ?? member.id;
+      if (!memberId || seen.has(memberId)) continue;
+      seen.add(memberId);
+      merged.push(member);
+    }
+
+    return merged;
+  }, [boardViewableMembers, normalWorkspaceMembers]);
+  const membersLoading =
+    normalMembersQuery.isLoading || boardViewableMembersQuery.isLoading;
+
+  const relationshipSummary =
+    task.relationship_summary ??
+    ({
+      parent_task_id: null,
+      parent_task: null,
+      child_count: 0,
+      completed_child_count: 0,
+      blocked_by_count: 0,
+      blocking_count: 0,
+      related_count: 0,
+    } as const);
+  const shouldLoadRelationshipPreview =
+    isInViewport &&
+    (isAnyRelationshipMenuOpen || relationshipSummary.blocked_by_count > 0);
+
+  // Use task relationships hook for managing parent/child/blocking/related tasks
+  const {
+    parentTask,
+    childTasks,
+    blocking: blockingTasks,
+    blockedBy: blockedByTasks,
+    relatedTasks,
+    setParentTask,
+    removeParentTask,
+    addBlockingTask,
+    removeBlockingTask,
+    addBlockedByTask,
+    removeBlockedByTask,
+    addRelatedTask,
+    removeRelatedTask,
+    isSaving: relationshipSaving,
+    savingTaskId: relationshipSavingTaskId,
+    hasLoadedRelationships,
+  } = useTaskCardRelationships({
+    taskId: task.id,
+    boardId,
+    wsId: effectiveWorkspaceId,
+    enabled: shouldLoadRelationshipPreview,
+  });
+
+  const summaryParentTaskId = relationshipSummary.parent_task_id;
+  const summaryParentTask = relationshipSummary.parent_task ?? null;
+  const { data: cachedBoardParentTask } = useQuery({
+    queryKey: ['tasks', boardId],
+    queryFn: async () => [] as Task[],
+    enabled: false,
+    select: (tasks: Task[]) => {
+      if (!summaryParentTaskId) {
+        return null;
+      }
+
+      const match = tasks.find(
+        (candidate) => candidate.id === summaryParentTaskId
+      );
+      if (!match) {
+        return null;
+      }
+
+      return {
+        id: match.id,
+        name: match.name,
+        display_number: match.display_number,
+        ticket_prefix:
+          'ticket_prefix' in match && typeof match.ticket_prefix === 'string'
+            ? match.ticket_prefix
+            : (boardConfig?.ticket_prefix ?? null),
+      };
+    },
+  });
+  const shouldHydrateParentTask =
+    isInViewport &&
+    !!effectiveWorkspaceId &&
+    !!summaryParentTaskId &&
+    !summaryParentTask &&
+    !cachedBoardParentTask &&
+    (!parentTask || parentTask.id !== summaryParentTaskId);
+  const { data: hydratedParentTask } = useQuery({
+    queryKey: [
+      'task-parent-summary',
+      effectiveWorkspaceId,
+      summaryParentTaskId ?? 'none',
+    ],
+    queryFn: async () => {
+      if (!effectiveWorkspaceId || !summaryParentTaskId) {
+        return null;
+      }
+
+      const response = await enqueueTaskCardRelationshipRequest(() =>
+        getWorkspaceTask(effectiveWorkspaceId, summaryParentTaskId)
+      );
+      const fetchedTask = response.task;
+
+      return {
+        id: fetchedTask.id,
+        name: fetchedTask.name,
+        display_number: fetchedTask.display_number,
+        ticket_prefix:
+          'ticket_prefix' in fetchedTask &&
+          typeof fetchedTask.ticket_prefix === 'string'
+            ? fetchedTask.ticket_prefix
+            : fetchedTask.board_id === boardId
+              ? (boardConfig?.ticket_prefix ?? null)
+              : null,
+      };
+    },
+    enabled: shouldHydrateParentTask,
+    staleTime: 5 * 60 * 1000,
+  });
+  const [resolvedParentTask, setResolvedParentTask] = useState(
+    summaryParentTask ?? parentTask
+  );
+
+  useEffect(() => {
+    if (parentTask?.id && parentTask.id === summaryParentTaskId) {
+      setResolvedParentTask(parentTask);
+      return;
+    }
+
+    if (summaryParentTask?.id && summaryParentTask.id === summaryParentTaskId) {
+      setResolvedParentTask(summaryParentTask);
+      return;
+    }
+
+    if (
+      cachedBoardParentTask?.id &&
+      cachedBoardParentTask.id === summaryParentTaskId
+    ) {
+      setResolvedParentTask(cachedBoardParentTask);
+      return;
+    }
+
+    if (
+      hydratedParentTask?.id &&
+      hydratedParentTask.id === summaryParentTaskId
+    ) {
+      setResolvedParentTask(hydratedParentTask);
+      return;
+    }
+
+    if (!summaryParentTaskId) {
+      setResolvedParentTask(null);
+    }
+  }, [
+    cachedBoardParentTask,
+    hydratedParentTask,
+    parentTask,
+    summaryParentTask,
+    summaryParentTaskId,
+  ]);
+
+  const { hasParentRelationship, parentBadgeTask } =
+    getTaskCardParentBadgeState({
+      summaryParentTaskId,
+      summaryParentTask,
+      parentTask,
+      resolvedParentTask,
+      hasLoadedRelationships,
+    });
+  const childTaskCount = hasLoadedRelationships
+    ? childTasks.length
+    : relationshipSummary.child_count;
+  const completedChildTaskCount = hasLoadedRelationships
+    ? childTasks.filter((childTask) => childTask.completed).length
+    : (relationshipSummary.completed_child_count ?? 0);
+  const blockedByCount = hasLoadedRelationships
+    ? blockedByTasks.length
+    : relationshipSummary.blocked_by_count;
+  const blockingCount = hasLoadedRelationships
+    ? blockingTasks.length
+    : relationshipSummary.blocking_count;
+  const relatedTaskCount = hasLoadedRelationships
+    ? relatedTasks.length
+    : relationshipSummary.related_count;
+  const parentBadgeIdentifier = parentBadgeTask
+    ? formatRelationshipTaskIdentifier(parentBadgeTask)
+    : null;
+  const blockedByPreviewTasks = useMemo(() => {
+    if (!hasLoadedRelationships) {
+      return [];
+    }
+
+    return [...blockedByTasks]
+      .sort((left, right) => {
+        const leftCompleted = left.completed ? 1 : 0;
+        const rightCompleted = right.completed ? 1 : 0;
+        if (leftCompleted !== rightCompleted) {
+          return leftCompleted - rightCompleted;
+        }
+
+        return left.name.localeCompare(right.name);
+      })
+      .slice(0, 1);
+  }, [blockedByTasks, hasLoadedRelationships]);
+  const primaryBlockedByTask = blockedByPreviewTasks[0] ?? null;
+  const primaryBlockedByTaskIdentifier = primaryBlockedByTask
+    ? formatRelationshipTaskIdentifier(primaryBlockedByTask)
+    : null;
+  const blockedByOverflowCount = Math.max(
+    0,
+    blockedByCount - blockedByPreviewTasks.length
+  );
+  const showBlockedByCallout =
+    blockedByCount > 0 && !(task.closed_at || task.completed_at);
+
+  // Fetch available task lists using React Query (same key as other components)
+  const { data: availableLists = [] } = useQuery({
+    queryKey: ['task_lists', taskBoardId],
+    queryFn: async () => {
+      if (!effectiveWorkspaceId || !taskBoardId) {
+        return [];
+      }
+
+      const { lists } = await listWorkspaceTaskLists(
+        effectiveWorkspaceId,
+        taskBoardId,
+        typeof window !== 'undefined'
+          ? { baseUrl: window.location.origin }
+          : undefined
+      );
+
+      return lists.filter((list) => !list.deleted) as TaskList[];
+    },
+    enabled: !initialAvailableLists && !!effectiveWorkspaceId && !!taskBoardId,
+    initialData: initialAvailableLists,
+    staleTime: 60 * 1000, // 1 minute - lists change less frequently
+  });
+
+  // Find the first list with 'done' or 'closed' status
+  const getTargetCompletionList = () => {
+    const doneList = availableLists.find(
+      (list) => list.status === 'done' && !list.deleted
+    );
+    const closedList = availableLists.find(
+      (list) => list.status === 'closed' && !list.deleted
+    );
+    return doneList || closedList || null;
+  };
+
+  const duplicateTaskMutation = useMutation({
+    mutationFn: async (tasksToDuplicate: Task[]) => {
+      if (!effectiveWorkspaceId) {
+        throw new Error('Workspace ID is required to duplicate tasks');
+      }
+
+      const duplicatedTasks: Task[] = [];
+
+      for (const sourceTask of tasksToDuplicate) {
+        const taskData: Parameters<typeof createTask>[2] = {
+          name: sourceTask.name.trim(),
+          description: sourceTask.description,
+          priority: sourceTask.priority,
+          start_date: sourceTask.start_date,
+          end_date: sourceTask.end_date,
+          estimation_points: sourceTask.estimation_points ?? null,
+          label_ids: sourceTask.labels?.map((label) => label.id) ?? [],
+          assignee_ids:
+            sourceTask.assignees?.map((assignee) => assignee.id) ?? [],
+          project_ids: sourceTask.projects?.map((project) => project.id) ?? [],
+        };
+
+        const newTask = await createTask(
+          effectiveWorkspaceId,
+          sourceTask.list_id,
+          taskData
+        );
+
+        duplicatedTasks.push({
+          ...newTask,
+          assignees: sourceTask.assignees,
+          labels: sourceTask.labels,
+          projects: sourceTask.projects,
+        });
+      }
+
+      return duplicatedTasks;
+    },
+    onSuccess: (duplicatedTasks) => {
+      const localMutationAt = Date.now();
+      const locallyDuplicatedTasks = duplicatedTasks.map(
+        (duplicatedTask) =>
+          ({
+            ...(duplicatedTask as Task & { _localMutationAt?: number }),
+            _localMutationAt: localMutationAt,
+          }) as Task
+      );
+
+      queryClient.setQueryData(
+        ['tasks', boardId],
+        (old: Task[] | undefined) => {
+          if (!old) return locallyDuplicatedTasks;
+          const newTasks = locallyDuplicatedTasks.filter(
+            (newTask) => !old.some((task) => task.id === newTask.id)
+          );
+          return [...old, ...newTasks];
+        }
+      );
+
+      for (const duplicatedTask of locallyDuplicatedTasks) {
+        broadcast?.('task:upsert', { task: duplicatedTask });
+        if (
+          (duplicatedTask.assignees && duplicatedTask.assignees.length > 0) ||
+          (duplicatedTask.labels && duplicatedTask.labels.length > 0) ||
+          (duplicatedTask.projects && duplicatedTask.projects.length > 0)
+        ) {
+          broadcast?.('task:relations-changed', {
+            taskId: duplicatedTask.id,
+          });
+        }
+      }
+
+      toast.success(
+        t('tasks_duplicated_successfully', { count: duplicatedTasks.length })
+      );
+    },
+    onError: (error) => {
+      console.error('Error duplicating task(s):', error);
+      toast.error(
+        error instanceof Error ? error.message : t('please_try_again_later')
+      );
+    },
+    onSettled: () => {
+      setIsLoading(false);
+    },
+  });
+
+  // Find specifically the closed list
+  const getTargetClosedList = () => {
+    return (
+      availableLists.find(
+        (list) => list.status === 'closed' && !list.deleted
+      ) || null
+    );
+  };
+
+  const targetCompletionList = getTargetCompletionList();
+  const targetClosedList = getTargetClosedList();
+  const canMoveToCompletion =
+    targetCompletionList && targetCompletionList.id !== task.list_id;
+  const canMoveToClose =
+    targetClosedList && targetClosedList.id !== task.list_id;
+  const isDocumentList = taskList?.status === 'documents';
+  const canQuickArchive = shouldRenderTaskCardQuickArchive({
+    hasTargetClosedList: Boolean(canMoveToClose),
+    isOverlay: Boolean(isOverlay),
+    taskListStatus: taskList?.status,
+  });
+  const canShowCloseAction =
+    Boolean(canMoveToClose) &&
+    (isDocumentList || targetClosedList?.id !== targetCompletionList?.id);
+  const quickArchiveToneClass = taskList?.color
+    ? DESTINATION_TONE_COLORS[taskList.color]
+    : DESTINATION_TONE_COLORS.GRAY;
+
+  // Check if task is optimistically added (pending realtime confirmation)
+  const isOptimistic = '_isOptimistic' in task && task._isOptimistic === true;
+  const isPersonalExternalTask = isExternalTaskSnapshot(task);
+  const isPersonalExternalOverlay = isPersonalExternalOverlayTask(task);
+  const sourceBoardUrl =
+    task.source_workspace_id && task.source_board_id
+      ? `/${task.source_workspace_id}${tasksHref(`/boards/${task.source_board_id}`)}`
+      : null;
+  const sourceListUrl =
+    sourceBoardUrl && task.source_list_id
+      ? `${sourceBoardUrl}#task-list-${task.source_list_id}`
+      : sourceBoardUrl;
+  const externalSourceBreadcrumbs = [
+    task.source_workspace_name
+      ? {
+          href: task.source_workspace_id
+            ? `/${task.source_workspace_id}${tasksHref('/boards')}`
+            : undefined,
+          label: task.source_workspace_name,
+        }
+      : null,
+    task.source_board_name
+      ? { href: sourceBoardUrl ?? undefined, label: task.source_board_name }
+      : null,
+    task.source_list_name
+      ? { href: sourceListUrl ?? undefined, label: task.source_list_name }
+      : null,
+  ].filter(
+    (item): item is { href: string | undefined; label: string } => item !== null
+  );
+  const taskTicketPrefix =
+    'ticket_prefix' in task && typeof task.ticket_prefix === 'string'
+      ? task.ticket_prefix
+      : null;
+  const taskTicketIdentifier = getTicketIdentifier(
+    isPersonalExternalTask ? taskTicketPrefix : boardConfig?.ticket_prefix,
+    task.display_number
+  );
+  const externalSourceLabel =
+    task.source_workspace_name ??
+    task.source_board_name ??
+    tTasks('external_task');
+
+  const dragDisabled =
+    dragDisabledProp ||
+    dialogState.editDialogOpen ||
+    dialogState.deleteDialogOpen ||
+    dialogState.customDateDialogOpen ||
+    dialogState.newLabelDialogOpen ||
+    dialogState.newProjectDialogOpen ||
+    menuOpen ||
+    isOptimistic; // Disable drag for optimistic tasks until confirmed
+
+  const sortableDisabled = dragDisabled || isOverlay;
+  const sortableId = isOverlay
+    ? `${task.id}:drag-overlay`
+    : (sortableIdProp ?? task.id);
+  const {
+    setNodeRef,
+    attributes,
+    listeners,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({
+    id: sortableId,
+    data: {
+      type: 'Task',
+      task: {
+        ...task,
+        list_id: String(task.list_id),
+      },
+    },
+    disabled: sortableDisabled,
+  });
+
+  const cardVisibilityState = getTaskCardVisibilityState({
+    isDragging,
+    optimisticUpdateInProgress:
+      optimisticUpdateInProgress?.has(task.id) ?? false,
+  });
+
+  const setCardRefs = useCallback(
+    (node: HTMLDivElement | null) => {
+      cardElementRef.current = node;
+      setNodeRef(node);
+    },
+    [setNodeRef]
+  );
+
+  useEffect(() => {
+    const node = cardElementRef.current;
+    if (!node) return;
+
+    if (typeof IntersectionObserver === 'undefined') {
+      setIsInViewport(true);
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry) {
+          return;
+        }
+        setIsInViewport(entry.isIntersecting);
+      },
+      {
+        rootMargin: '220px 0px',
+        threshold: 0.05,
+      }
+    );
+
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, []);
+
+  const style: React.CSSProperties = {
+    transform:
+      isOverlay || isDragging || suppressSortableTransform
+        ? 'translate3d(0, 0, 0)'
+        : CSS.Transform.toString(transform),
+    transition: isOverlay || suppressSortableTransform ? 'none' : transition,
+    height: 'var(--task-height)',
+    background: isOverlay || isDragging ? 'var(--card)' : undefined,
+    // Show reduced opacity for optimistic tasks (pending realtime confirmation)
+    opacity: isOverlay ? 1 : isOptimistic ? 0.6 : undefined,
+  };
+
+  const now = useMemo(() => new Date(deadlineNow ?? Date.now()), [deadlineNow]);
+  const shouldRenderDueDate = shouldShowTaskDueDate({
+    completedAt: task.completed_at,
+    closedAt: task.closed_at,
+    dueDate: task.end_date,
+    listStatus: taskList?.status,
+    showReviewDueDates,
+  });
+  const shouldRenderStartDate = shouldShowTaskStartDate({
+    completedAt: task.completed_at,
+    closedAt: task.closed_at,
+    listStatus: taskList?.status,
+    startDate: task.start_date,
+  });
+  const isOverdue = Boolean(
+    shouldRenderDueDate && task.end_date && new Date(task.end_date) < now
+  );
+  const isResolvedListStatus = isTaskBoardResolvedStatus(taskList?.status);
+  const startDate = task.start_date ? new Date(task.start_date) : null;
+  const endDate = task.end_date ? new Date(task.end_date) : null;
+  const upcomingDeadlineCountdown =
+    deadlineContext === 'upcoming' && endDate
+      ? formatDistance(endDate, now, {
+          addSuffix: true,
+          locale: dateLocale,
+        })
+      : null;
+  const upcomingDeadlineExactDate = endDate
+    ? format(endDate, `MMM dd '${t('at')}' ${timePattern}`, {
+        locale: dateLocale,
+      })
+    : null;
+  const selectionCheckboxClassName = getTaskCardSelectionIconToneClasses(
+    taskList?.color as SupportedColor
+  );
+  const selectedCardToneClassName = getTaskCardSelectedStateToneClasses(
+    taskList?.color as SupportedColor
+  );
+
+  // Memoize description metadata to prevent unnecessary recalculations
+  // This is important because descriptionMeta is used in taskBadges dependency array
+  const descriptionMeta = useMemo(
+    () => getDescriptionMetadata(task.description),
+    [task.description]
+  );
+
+  // Helper function to get card color classes
+  const getCardColorClasses = () =>
+    getCardColorClassesUtil(taskList, task.priority);
+
+  // Use the extracted task actions hook
+  const {
+    handleArchiveToggle,
+    handleMoveToCompletion,
+    handleMoveToClose,
+    handleDelete,
+    handleMoveToList,
+    handleDueDateChange,
+    handlePriorityChange,
+    updateEstimationPoints,
+    handleCustomDateChange,
+    handleToggleAssignee,
+  } = useTaskActions({
+    task,
+    boardId,
+    workspaceId: effectiveWorkspaceId,
+    targetCompletionList,
+    targetClosedList,
+    availableLists,
+    onUpdate,
+    setIsLoading,
+    setMenuOpen,
+    setCustomDateDialogOpen: (open: boolean) =>
+      open
+        ? dialogActions.openCustomDateDialog()
+        : dialogActions.closeCustomDateDialog(),
+    setDeleteDialogOpen: (open: boolean) =>
+      open
+        ? dialogActions.openDeleteDialog()
+        : dialogActions.closeDeleteDialog(),
+    setEstimationSaving,
+    selectedTasks,
+    isMultiSelectMode,
+    onClearSelection,
+    bulkUpdateCustomDueDate,
+  });
+
+  const onToggleAssignee = useCallback(
+    (assigneeId: string) => handleToggleAssignee(assigneeId),
+    [handleToggleAssignee]
+  );
+
+  const quickArchiveButton = canQuickArchive ? (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <button
+          type="button"
+          aria-label={t('archive')}
+          disabled={isLoading}
+          onPointerDown={(e) => {
+            e.stopPropagation();
+          }}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            void handleMoveToClose();
+          }}
+          className={cn(
+            'flex h-5 w-5 flex-none items-center justify-center rounded-sm border border-transparent transition-all duration-200',
+            quickArchiveToneClass,
+            'hover:scale-110 hover:ring-2 hover:brightness-110',
+            'focus-visible:outline-none focus-visible:ring-2',
+            'disabled:cursor-not-allowed disabled:opacity-60'
+          )}
+        >
+          {isLoading ? (
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          ) : (
+            <Archive className="h-3.5 w-3.5" />
+          )}
+        </button>
+      </TooltipTrigger>
+      <TooltipContent side="top" className="text-xs">
+        {t('archive')}
+      </TooltipContent>
+    </Tooltip>
+  ) : null;
+
+  // Memoize drag handle for performance
+  // Removed explicit drag handle – entire card is now draggable for better UX.
+  // Keep attributes/listeners to spread onto root interactive area.
+
+  const openExternalTask = useCallback(() => {
+    void openTaskById(
+      task.id,
+      getTaskCardHydratingOpenOptions({
+        task,
+        boardId,
+        availableLists,
+        canUseBoardAssignees: task.source_workspace_id
+          ? true
+          : shouldUseBoardAssignees,
+        assigneeMemberSource: task.source_workspace_id
+          ? 'board'
+          : effectiveAssigneeMemberSource,
+        effectiveWorkspaceId,
+        isPersonalWorkspace,
+      })
+    );
+  }, [
+    task,
+    boardId,
+    availableLists,
+    shouldUseBoardAssignees,
+    effectiveAssigneeMemberSource,
+    effectiveWorkspaceId,
+    isPersonalWorkspace,
+    openTaskById,
+  ]);
+
+  const handleCardClick = useCallback(
+    (e: React.MouseEvent) => {
+      // Check if only Shift is held (without CMD/Ctrl) for multiselect
+      const isShiftOnlyHeld =
+        e.shiftKey && !e.metaKey && !e.ctrlKey && !e.altKey;
+
+      // Handle multi-select functionality only when Shift is held alone
+      if (isMultiSelectMode || isShiftOnlyHeld) {
+        onSelect?.(task.id, e);
+      } else if (
+        !isDragging &&
+        !dialogState.editDialogOpen &&
+        !dialogState.isClosingDialog &&
+        !menuOpen &&
+        !dialogState.deleteDialogOpen &&
+        !dialogState.customDateDialogOpen &&
+        !dialogState.newLabelDialogOpen &&
+        !dialogState.newProjectDialogOpen
+      ) {
+        // Only open edit dialog if not in multi-select mode, not dragging, and no other dialogs are open
+        if (isPersonalExternalTask) {
+          openExternalTask();
+          return;
+        }
+
+        openTask(task, boardId, availableLists, false, {
+          taskWsId: effectiveWorkspaceId,
+          taskWorkspacePersonal: isPersonalWorkspace,
+          canUseBoardAssignees: shouldUseBoardAssignees,
+          assigneeMemberSource: effectiveAssigneeMemberSource,
+        });
+      }
+    },
+    [
+      task,
+      boardId,
+      effectiveWorkspaceId,
+      effectiveAssigneeMemberSource,
+      isPersonalWorkspace,
+      shouldUseBoardAssignees,
+      isPersonalExternalTask,
+      isMultiSelectMode,
+      availableLists,
+      isDragging,
+      menuOpen,
+      dialogState,
+      onSelect,
+      openTask,
+      openExternalTask,
+    ]
+  );
+
+  // Refs for measuring badge widths
+  const containerRef = useRef<HTMLDivElement>(null);
+  const badgeRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+  const descriptionMetaRef = useRef<HTMLDivElement>(null);
+  const [visibleBadgeCount, setVisibleBadgeCount] = useState(0);
+
+  const handleDuplicateTask = async () => {
+    setIsLoading(true);
+    setMenuOpen(false);
+
+    // Check if we're in multi-select mode and have multiple tasks selected
+    const shouldBulkDuplicate =
+      isMultiSelectMode &&
+      selectedTasks &&
+      selectedTasks.size > 1 &&
+      selectedTasks.has(task.id);
+
+    // Get all tasks data from cache for bulk operations
+    const allTasks =
+      (queryClient.getQueryData<Task[]>(['tasks', boardId]) as Task[]) || [];
+    const tasksToDuplicate = shouldBulkDuplicate
+      ? allTasks.filter((t) => selectedTasks?.has(t.id))
+      : [task];
+
+    try {
+      await duplicateTaskMutation.mutateAsync(tasksToDuplicate);
+    } catch {
+      // Error handling is centralized in the mutation callbacks.
+    }
+  };
+
+  const handleAddSubtask = () => {
+    setMenuOpen(false);
+    // Open subtask creation dialog - the relationship will be created when the user saves
+    createSubtask(
+      task.id,
+      task.name,
+      taskBoardId,
+      task.list_id,
+      availableLists
+    );
+  };
+
+  const handleMoveToExternalStaging = async () => {
+    if (!task.personal_board_id) return;
+
+    setIsLoading(true);
+    setMenuOpen(false);
+
+    try {
+      await removeCurrentUserTaskPersonalPlacement(task.id);
+
+      const localMutationAt = Date.now();
+      queryClient.setQueryData(['tasks', boardId], (old: Task[] | undefined) =>
+        old?.map((candidate) =>
+          candidate.id === task.id
+            ? {
+                ...candidate,
+                list_id: getPersonalExternalStagingListId(
+                  task.personal_board_id ?? boardId
+                ),
+                sort_key: null,
+                personal_list_id: null,
+                personal_sort_key: null,
+                personal_placed_at: null,
+                is_personal_external: true,
+                is_personal_external_default: true,
+                _localMutationAt: localMutationAt,
+              }
+            : candidate
+        )
+      );
+
+      void invalidateKanbanDeadlineTasks(queryClient, boardId);
+      toast.success(tTasks('moved_to_external_tasks'));
+    } catch (error) {
+      console.error('Failed to move task to external staging:', error);
+      toast.error(tTasks('failed_update_personal_placement'));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleRemoveFromPersonalBoard = async () => {
+    setIsLoading(true);
+    setMenuOpen(false);
+
+    try {
+      await removeCurrentUserTaskPersonalPlacement(task.id);
+
+      queryClient.setQueryData(['tasks', boardId], (old: Task[] | undefined) =>
+        old?.filter((candidate) => candidate.id !== task.id)
+      );
+
+      void invalidateKanbanDeadlineTasks(queryClient, boardId);
+      toast.success(tTasks('removed_from_personal_board'));
+    } catch (error) {
+      console.error('Failed to remove task from personal board:', error);
+      toast.error(tTasks('failed_update_personal_placement'));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const taskBadges = useMemo(() => {
+    // Collect all badges into an array for overflow handling
+    const badges: { id: string; element: React.ReactNode }[] = [];
+
+    // Priority badge
+    if (task.priority) {
+      badges.push({
+        id: 'priority',
+        element: (
+          <TaskCardMetadataTooltip
+            key="priority"
+            content={`${t('priority')}: ${taskBoardT(
+              `ws-task-boards.dialog.priority.${task.priority}` as any
+            )}`}
+          >
+            <div
+              className="flex-none overflow-hidden"
+              ref={(el) => {
+                if (el) badgeRefs.current.set('priority', el);
+              }}
+            >
+              {getPriorityIndicator(task.priority)}
+            </div>
+          </TaskCardMetadataTooltip>
+        ),
+      });
+    }
+
+    // Sub-tasks counter badge (checked / total, excludes indeterminate)
+    if (descriptionMeta.totalCheckboxes > 0) {
+      const allChecked =
+        descriptionMeta.checkedCheckboxes === descriptionMeta.totalCheckboxes;
+      badges.push({
+        id: 'subtasks',
+        element: (
+          <TaskCardMetadataTooltip
+            key="subtasks"
+            content={t('n_subtasks_completed', {
+              checked: descriptionMeta.checkedCheckboxes,
+              total: descriptionMeta.totalCheckboxes,
+            })}
+          >
+            <Badge
+              variant="secondary"
+              className={cn(
+                'border font-medium text-[10px]',
+                allChecked
+                  ? 'border-dynamic-green/30 bg-dynamic-green/15 text-dynamic-green'
+                  : 'border-dynamic-gray/30 bg-dynamic-gray/10 text-dynamic-gray'
+              )}
+              ref={(el) => {
+                if (el) badgeRefs.current.set('subtasks', el as any);
+              }}
+            >
+              {allChecked ? (
+                <ListChecks className="h-3 w-3" />
+              ) : (
+                <ListTodo className="h-3 w-3" />
+              )}
+              {descriptionMeta.checkedCheckboxes}/
+              {descriptionMeta.totalCheckboxes}
+            </Badge>
+          </TaskCardMetadataTooltip>
+        ),
+      });
+    }
+
+    // Indeterminate (abandoned) sub-tasks badge
+    if (descriptionMeta.indeterminateCheckboxes > 0) {
+      badges.push({
+        id: 'indeterminate-subtasks',
+        element: (
+          <TaskCardMetadataTooltip
+            key="indeterminate-subtasks"
+            content={t('n_subtasks_abandoned', {
+              count: descriptionMeta.indeterminateCheckboxes,
+            })}
+          >
+            <Badge
+              variant="secondary"
+              className="border border-dynamic-orange/30 bg-dynamic-orange/15 font-medium text-[10px] text-dynamic-orange"
+              ref={(el) => {
+                if (el)
+                  badgeRefs.current.set('indeterminate-subtasks', el as any);
+              }}
+            >
+              <SquareCenterlineDashedVertical className="h-3 w-3" />
+              {descriptionMeta.indeterminateCheckboxes}
+            </Badge>
+          </TaskCardMetadataTooltip>
+        ),
+      });
+    }
+
+    // Project indicator badge
+    if (task.projects && task.projects.length > 0) {
+      badges.push({
+        id: 'projects',
+        element: (
+          <div
+            key="projects"
+            className="min-w-0 shrink-0"
+            ref={(el) => {
+              if (el) badgeRefs.current.set('projects', el);
+            }}
+          >
+            <TaskCardMetadataTooltip
+              content={`${t('projects')}: ${task.projects
+                .map((project) => project.name)
+                .join(', ')}`}
+            >
+              <Badge
+                variant="secondary"
+                className={cn(
+                  'h-5 border px-2 text-[10px]',
+                  'border-dynamic-sky/30 bg-dynamic-sky/10 text-dynamic-sky'
+                )}
+              >
+                <Box className="h-2.5 w-2.5" />
+                {task.projects.length === 1
+                  ? task.projects[0]?.name
+                  : t('n_projects', { count: task.projects.length })}
+              </Badge>
+            </TaskCardMetadataTooltip>
+          </div>
+        ),
+      });
+    }
+
+    // Estimation Points badge
+    if (task.estimation_points != null) {
+      badges.push({
+        id: 'estimation',
+        element: (
+          <div
+            key="estimation"
+            className="min-w-0 shrink-0"
+            ref={(el) => {
+              if (el) badgeRefs.current.set('estimation', el);
+            }}
+          >
+            <TaskEstimationDisplay
+              points={task.estimation_points}
+              size="sm"
+              estimationType={boardConfig?.estimation_type}
+              showIcon
+              tooltipLabel={t('estimation')}
+            />
+          </div>
+        ),
+      });
+    }
+
+    if ((task.total_duration ?? 0) > 0) {
+      badges.push({
+        id: 'duration',
+        element: (
+          <TaskSchedulingBadge
+            key="duration"
+            autoSchedule={task.auto_schedule}
+            calendarHours={task.calendar_hours}
+            isSplittable={task.is_splittable}
+            labels={{
+              autoSchedule: taskBoardT('ws-task-boards.dialog.auto_schedule'),
+              estimatedDuration: taskBoardT(
+                'ws-task-boards.dialog.estimated_duration'
+              ),
+              meetingHours: taskBoardT('ws-task-boards.dialog.meeting_hours'),
+              personalHours: taskBoardT('ws-task-boards.dialog.personal_hours'),
+              splittable: taskBoardT('ws-task-boards.dialog.splittable'),
+              workHours: taskBoardT('ws-task-boards.dialog.work_hours'),
+            }}
+            maxSplitDurationMinutes={task.max_split_duration_minutes}
+            minSplitDurationMinutes={task.min_split_duration_minutes}
+            onElement={(element) => {
+              if (element) badgeRefs.current.set('duration', element as any);
+            }}
+            totalDuration={task.total_duration}
+          />
+        ),
+      });
+    }
+
+    // Labels badge
+    if (task.labels && task.labels.length > 0) {
+      badges.push({
+        id: 'labels',
+        element: (
+          <div
+            key="labels"
+            className="flex min-w-0 shrink-0 flex-wrap gap-1"
+            ref={(el) => {
+              if (el) badgeRefs.current.set('labels', el);
+            }}
+          >
+            <TaskLabelsDisplay
+              labels={sortByDisplayName(task.labels)}
+              size="sm"
+              hiddenLabelsLabel={t('hidden_labels')}
+            />
+          </div>
+        ),
+      });
+    }
+
+    // Parent task indicator badge
+    if (hasParentRelationship) {
+      badges.push({
+        id: 'parent',
+        element: (
+          <TaskCardMetadataTooltip
+            key="parent"
+            content={
+              parentBadgeTask
+                ? parentBadgeIdentifier
+                  ? `${parentBadgeIdentifier} · ${parentBadgeTask.name}`
+                  : t('subtask_of', { name: parentBadgeTask.name })
+                : undefined
+            }
+          >
+            <Badge
+              variant="secondary"
+              className="flex h-6 max-w-full shrink-0 items-center gap-1.5 overflow-hidden rounded-full border border-dynamic-purple/35 bg-dynamic-purple/10 px-2.5 text-[10px] text-dynamic-purple"
+              ref={(el) => {
+                if (el) badgeRefs.current.set('parent', el as any);
+              }}
+            >
+              <ArrowUpCircle className="h-2.5 w-2.5" />
+              {parentBadgeIdentifier && (
+                <span className="rounded-full bg-dynamic-purple/12 px-1.5 py-0.5 font-mono text-[9px] leading-none">
+                  {parentBadgeIdentifier}
+                </span>
+              )}
+              <span className="truncate">
+                {parentBadgeTask?.name ||
+                  parentBadgeIdentifier ||
+                  t('parent_task')}
+              </span>
+            </Badge>
+          </TaskCardMetadataTooltip>
+        ),
+      });
+    }
+
+    // Child tasks (sub-tasks) count badge
+    if (childTaskCount > 0) {
+      badges.push({
+        id: 'children',
+        element: (
+          <TaskCardMetadataTooltip
+            key="children"
+            content={t('n_subtasks_completed', {
+              checked: completedChildTaskCount,
+              total: childTaskCount,
+            })}
+          >
+            <Badge
+              variant="secondary"
+              className={cn(
+                'h-5 shrink-0 border px-2 text-[10px]',
+                completedChildTaskCount === childTaskCount
+                  ? 'border-dynamic-green/30 bg-dynamic-green/10 text-dynamic-green'
+                  : 'border-dynamic-gray/30 bg-dynamic-gray/10 text-dynamic-gray'
+              )}
+              ref={(el) => {
+                if (el) badgeRefs.current.set('children', el as any);
+              }}
+            >
+              <ListTree className="h-2.5 w-2.5" />
+              {completedChildTaskCount}/{childTaskCount}
+            </Badge>
+          </TaskCardMetadataTooltip>
+        ),
+      });
+    }
+
+    // Blocking indicator badge (this task blocks others)
+    if (blockingCount > 0) {
+      badges.push({
+        id: 'blocking',
+        element: (
+          <TaskCardMetadataTooltip
+            key="blocking"
+            content={t('blocking_n_tasks', { count: blockingCount })}
+          >
+            <Badge
+              variant="secondary"
+              className="h-5 shrink-0 border border-dynamic-orange/30 bg-dynamic-orange/10 px-2 text-[10px] text-dynamic-orange"
+              ref={(el) => {
+                if (el) badgeRefs.current.set('blocking', el as any);
+              }}
+            >
+              <Ban className="h-2.5 w-2.5" />
+              {blockingCount}
+            </Badge>
+          </TaskCardMetadataTooltip>
+        ),
+      });
+    }
+
+    // Related tasks indicator badge
+    if (relatedTaskCount > 0) {
+      badges.push({
+        id: 'related',
+        element: (
+          <TaskCardMetadataTooltip
+            key="related"
+            content={t('n_related_tasks', { count: relatedTaskCount })}
+          >
+            <Badge
+              variant="secondary"
+              className="h-5 shrink-0 border border-dynamic-blue/30 bg-dynamic-blue/10 px-2 text-[10px] text-dynamic-blue"
+              ref={(el) => {
+                if (el) badgeRefs.current.set('related', el as any);
+              }}
+            >
+              <Link2 className="h-2.5 w-2.5" />
+              {relatedTaskCount}
+            </Badge>
+          </TaskCardMetadataTooltip>
+        ),
+      });
+    }
+
+    return badges;
+  }, [
+    // Only depend on specific task properties that affect badge rendering
+    // to prevent recalculation when unrelated properties (like name) change
+    task.priority,
+    task.projects,
+    task.estimation_points,
+    task.total_duration,
+    task.auto_schedule,
+    task.calendar_hours,
+    task.is_splittable,
+    task.max_split_duration_minutes,
+    task.min_split_duration_minutes,
+    task.labels,
+    boardConfig?.estimation_type,
+    descriptionMeta.totalCheckboxes,
+    descriptionMeta.checkedCheckboxes,
+    descriptionMeta.indeterminateCheckboxes,
+    parentBadgeTask,
+    hasParentRelationship,
+    childTaskCount,
+    completedChildTaskCount,
+    blockingCount,
+    relatedTaskCount,
+    t,
+    taskBoardT,
+    parentBadgeIdentifier,
+  ]);
+
+  // Calculate visible badges based on available width
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const calculateVisibleCount = () => {
+      const containerWidth = container.clientWidth;
+      const gap = 4; // gap-1 = 4px
+
+      // Get description meta width
+      let descriptionMetaWidth = 0;
+      if (descriptionMetaRef.current) {
+        descriptionMetaWidth = descriptionMetaRef.current.offsetWidth + gap;
+      }
+
+      // Calculate total width needed for each badge
+      let totalWidth = descriptionMetaWidth;
+      let count = 0;
+
+      for (let i = 0; i < taskBadges.length; i++) {
+        const badge = taskBadges[i];
+        const badgeElement = badgeRefs.current.get(badge?.id || '');
+        if (!badgeElement) continue;
+
+        const isLastBadge = i === taskBadges.length - 1;
+        const badgeWidth = badgeElement.offsetWidth + (isLastBadge ? 0 : gap);
+
+        const totalNeeded = totalWidth + badgeWidth;
+
+        if (totalNeeded <= containerWidth) {
+          totalWidth += badgeWidth;
+          count++;
+        } else {
+          break;
+        }
+      }
+
+      setVisibleBadgeCount(count);
+    };
+
+    // Initial calculation
+    calculateVisibleCount();
+
+    // Re-calculate on container resize
+    const resizeObserver = new ResizeObserver(calculateVisibleCount);
+    resizeObserver.observe(container);
+
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, [taskBadges]);
+
+  const visibleBadges = taskBadges.slice(0, visibleBadgeCount);
+  const hiddenBadges = taskBadges.slice(visibleBadgeCount);
+  const showBlockedByInlineWithCheckbox =
+    showBlockedByCallout && taskBadges.length === 0;
+  const showBlockedByUnderTitle =
+    showBlockedByCallout && !showBlockedByInlineWithCheckbox;
+
+  // Get all tasks from query to subscribe to cache updates
+  const { data: allTasksFromQuery } = useQuery({
+    queryKey: ['tasks', boardId],
+    queryFn: () => [], // No-op function - we only want to read from cache
+    enabled: false, // Don't fetch, just subscribe to cache
+  });
+
+  // Compute collective attributes for bulk operations
+  const {
+    displayLabels,
+    displayProjects,
+    displayAssignees,
+    displayEstimation,
+  } = useMemo(() => {
+    const shouldUseBulkMode =
+      isMultiSelectMode &&
+      selectedTasks &&
+      selectedTasks.size > 1 &&
+      selectedTasks.has(task.id);
+
+    if (!shouldUseBulkMode) {
+      return {
+        displayLabels: task.labels || [],
+        displayProjects: task.projects || [],
+        displayAssignees: task.assignees || [],
+        displayEstimation: task.estimation_points,
+      };
+    }
+
+    // Get all selected tasks data from query cache
+    const allTasks = (allTasksFromQuery as Task[]) || [];
+    const selectedTasksData = allTasks.filter((t) => selectedTasks?.has(t.id));
+
+    if (selectedTasksData.length === 0) {
+      return {
+        displayLabels: task.labels || [],
+        displayProjects: task.projects || [],
+        displayAssignees: task.assignees || [],
+        displayEstimation: task.estimation_points,
+      };
+    }
+
+    // Find attributes that ALL selected tasks have in common
+    // Start with all unique attributes from all selected tasks
+    const allLabels = new Map<string, any>();
+    const allProjects = new Map<string, any>();
+    const allAssignees = new Map<string, any>();
+
+    selectedTasksData.forEach((t) => {
+      t.labels?.forEach((label) => {
+        allLabels.set(label.id, label);
+      });
+      t.projects?.forEach((project) => {
+        allProjects.set(project.id, project);
+      });
+      t.assignees?.forEach((assignee) => {
+        allAssignees.set(assignee.id, assignee);
+      });
+    });
+
+    // Filter to only those present in ALL selected tasks
+    const commonLabels = Array.from(allLabels.values()).filter((label) =>
+      selectedTasksData.every((t) => t.labels?.some((l) => l.id === label.id))
+    );
+
+    const commonProjects = Array.from(allProjects.values()).filter((project) =>
+      selectedTasksData.every((t) =>
+        t.projects?.some((p) => p.id === project.id)
+      )
+    );
+
+    const commonAssignees = Array.from(allAssignees.values()).filter(
+      (assignee) =>
+        selectedTasksData.every((t) =>
+          t.assignees?.some((a) => a.id === assignee.id)
+        )
+    );
+
+    // Check if ALL selected tasks have the same estimation
+    const firstEstimation = selectedTasksData[0]?.estimation_points;
+    const allSameEstimation = selectedTasksData.every(
+      (t) => t.estimation_points === firstEstimation
+    );
+    const commonEstimation = allSameEstimation ? firstEstimation : undefined;
+
+    return {
+      displayLabels: commonLabels,
+      displayProjects: commonProjects,
+      displayAssignees: commonAssignees,
+      displayEstimation: commonEstimation,
+    };
+  }, [
+    isMultiSelectMode,
+    selectedTasks,
+    task.id,
+    task.labels,
+    task.projects,
+    task.assignees,
+    task.estimation_points,
+    allTasksFromQuery,
+  ]);
+
+  const availableLabelsForMenu = useMemo(() => {
+    return mergeTaskCardLabelOptions(workspaceLabels, displayLabels);
+  }, [workspaceLabels, displayLabels]);
+
+  const blockedByCluster = (
+    <div className="relative overflow-hidden rounded-md border border-dynamic-red/16 bg-dynamic-red/[0.045] px-2 py-1.5">
+      <div className="absolute inset-y-1.5 left-1.5 w-0.75 rounded-full bg-dynamic-red/45" />
+      <div className="flex min-w-0 items-center justify-between gap-2 pl-3">
+        <div className="flex min-w-0 items-center gap-1.5">
+          <div className="flex shrink-0 items-center gap-1 font-semibold text-[10px] text-dynamic-red uppercase tracking-[0.12em]">
+            <Ban className="h-3 w-3" />
+            <span>{t('blocked_by')}</span>
+          </div>
+          {!primaryBlockedByTask && (
+            <span className="truncate text-[11px] text-muted-foreground">
+              {t('blocked_by_help')}
+            </span>
+          )}
+        </div>
+        {primaryBlockedByTask && (
+          <div className="flex shrink-0 items-center gap-1">
+            <HoverCard openDelay={120}>
+              <HoverCardTrigger asChild>
+                <button
+                  type="button"
+                  className={cn(
+                    'rounded-md border border-dynamic-red/18 bg-background/90 px-1.5 py-0.5 font-mono text-[9px] text-dynamic-red/85 uppercase transition-colors',
+                    'hover:border-dynamic-red/30 hover:bg-background'
+                  )}
+                  aria-label={t('blocked_by_n_tasks', {
+                    count: blockedByCount,
+                  })}
+                >
+                  {primaryBlockedByTaskIdentifier ?? t('blocked')}
+                </button>
+              </HoverCardTrigger>
+              <HoverCardContent
+                side="top"
+                align="end"
+                className="w-64 border-dynamic-red/20 bg-background/95 p-3 backdrop-blur-sm"
+              >
+                <div className="flex flex-col gap-1">
+                  <div className="flex items-center gap-2">
+                    <span className="rounded-md border border-dynamic-red/18 bg-dynamic-red/8 px-1.5 py-0.5 font-mono text-[10px] text-dynamic-red uppercase">
+                      {primaryBlockedByTaskIdentifier ?? t('blocked')}
+                    </span>
+                    {primaryBlockedByTask.completed && (
+                      <Badge
+                        variant="secondary"
+                        className="h-5 border-dynamic-green/20 bg-dynamic-green/10 px-1.5 text-[10px] text-dynamic-green"
+                      >
+                        {t('done')}
+                      </Badge>
+                    )}
+                  </div>
+                  <div
+                    className={cn(
+                      'text-sm leading-snug',
+                      primaryBlockedByTask.completed &&
+                        'text-muted-foreground line-through'
+                    )}
+                  >
+                    {primaryBlockedByTask.name}
+                  </div>
+                  {primaryBlockedByTask.board_name && (
+                    <div className="text-[11px] text-muted-foreground">
+                      {primaryBlockedByTask.board_name}
+                    </div>
+                  )}
+                </div>
+              </HoverCardContent>
+            </HoverCard>
+            {blockedByOverflowCount > 0 && (
+              <Badge
+                variant="secondary"
+                className="h-5 border-dynamic-red/16 bg-dynamic-red/8 px-1.5 text-[10px] text-dynamic-red/80"
+              >
+                +{blockedByOverflowCount}
+              </Badge>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
+  return (
+    <Card
+      data-id={task.id}
+      data-task-id={task.id}
+      ref={setCardRefs}
+      style={style}
+      onClick={handleCardClick}
+      onContextMenu={(e) => {
+        // If only Shift is held (without CMD/Ctrl), handle as selection
+        if (e.shiftKey && !e.metaKey && !e.ctrlKey && !e.altKey) {
+          e.preventDefault();
+          e.stopPropagation();
+          // Trigger selection
+          onSelect?.(task.id, e as any);
+          return;
+        }
+
+        // Normal right-click behavior - open context menu
+        e.preventDefault();
+        e.stopPropagation();
+        // Open the context menu (actions dropdown) and guard first click briefly
+        setMenuOpen(true);
+        setMenuGuardUntil(Date.now() + 300);
+      }}
+      // Apply sortable listeners/attributes to the full card so the whole surface remains draggable
+      {...(sortableDisabled ? {} : attributes)}
+      {...(sortableDisabled ? {} : listeners)}
+      className={cn(
+        'group relative overflow-hidden rounded-lg border-l-4',
+        cardVisibilityState.hidden && 'pointer-events-none opacity-0',
+        sortableDisabled
+          ? 'cursor-default'
+          : 'cursor-grab touch-none select-none active:cursor-grabbing',
+        // Task list or priority-based styling
+        getCardColorClasses(),
+        showBlockedByCallout && 'bg-dynamic-red/[0.03]',
+        cardVisibilityState.pending
+          ? 'border-dashed opacity-90'
+          : 'border-solid',
+        (isOverlay || isDragging) &&
+          'bg-card bg-none shadow-lg ring-2 ring-primary/50',
+        // Closed state (closed tasks)
+        (!!task.closed_at || !!task.completed_at) && 'opacity-70 saturate-75',
+        // Overdue state
+        isOverdue &&
+          !isResolvedListStatus &&
+          !(!!task.closed_at || !!task.completed_at) &&
+          'border-dynamic-red/70 bg-dynamic-red/10 ring-1 ring-dynamic-red/20',
+        // Hover state (no transitions)
+        !isDragging && !isSelected && 'hover:ring-1 hover:ring-primary/15',
+        // Selection state - layered list-color feedback without a harsh outer outline
+        isSelected &&
+          cn(TASK_CARD_SELECTED_STATE_BASE_CLASSES, selectedCardToneClassName),
+        // Multi-select mode cursor
+        isMultiSelectMode && 'cursor-pointer'
+      )}
+    >
+      {/* Overdue indicator */}
+      {isOverdue &&
+        !isResolvedListStatus &&
+        !(!!task.closed_at || !!task.completed_at) && (
+          <div className="absolute top-0 right-0 h-0 w-0 border-t-20 border-t-dynamic-red border-l-20 border-l-transparent">
+            <AlertCircle className="absolute -top-4 -right-4.5 h-3 w-3" />
+          </div>
+        )}
+      <div className="p-3">
+        {/* Header */}
+        <div className="flex items-start gap-1">
+          <div className="min-w-0 flex-1">
+            <TaskCardIdentifierRow
+              documentLabel={taskBoardT(
+                'task_project_detail.overview.document'
+              )}
+              externalSourceLabel={externalSourceLabel}
+              externalSourceBreadcrumbs={externalSourceBreadcrumbs}
+              externalSourceHref={sourceListUrl ?? undefined}
+              externalSourceTitle={[
+                task.source_workspace_name,
+                task.source_board_name,
+                task.source_list_name,
+              ]
+                .filter(Boolean)
+                .join(' / ')}
+              isMultiSelectMode={isMultiSelectMode}
+              isPersonalExternalTask={isPersonalExternalTask}
+              isSelected={isSelected}
+              onSelect={(event) => onSelect?.(task.id, event)}
+              selectTaskLabel={t('select_task', { name: task.name ?? '' })}
+              selectTaskTooltipLabel={t('select_task', { name: t('task') })}
+              selectionCheckboxClassName={selectionCheckboxClassName}
+              taskListStatus={taskList?.status}
+              ticketBadgeClassName={getTicketBadgeColorClasses(
+                taskList,
+                task.priority
+              )}
+              ticketIdentifier={taskTicketIdentifier}
+              ticketTitle={t('ticket_id_label', {
+                id: taskTicketIdentifier,
+              })}
+            />
+            <div className="mb-1">
+              {/* Task Name */}
+              <button
+                type="button"
+                className={cn(
+                  'w-full cursor-pointer text-left font-semibold text-xs leading-tight transition-colors duration-200',
+                  'line-clamp-2',
+                  task.closed_at || task.completed_at
+                    ? 'text-muted-foreground line-through'
+                    : '-mx-1 -my-0.5 rounded-sm px-1 py-0.5 text-foreground active:bg-muted/50'
+                )}
+                aria-label={t('edit_task_aria', { name: task.name })}
+                title={t('click_to_edit_task')}
+              >
+                {task.name}
+              </button>
+              {showBlockedByUnderTitle && blockedByCluster}
+            </div>
+          </div>
+          {/* Actions menu only */}
+          <div className="flex items-center justify-end gap-1">
+            {/* Main Actions Menu - With integrated date picker */}
+            {!isOverlay && (
+              <DropdownMenu
+                open={menuOpen}
+                onOpenChange={(open) => {
+                  setMenuOpen(open);
+                  if (!open) {
+                    setRelationshipMenusOpen({
+                      parent: false,
+                      dependencies: false,
+                      related: false,
+                    });
+                  }
+                }}
+              >
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="xs"
+                    className={cn(
+                      'h-7 w-7 shrink-0 p-0 transition-all duration-200',
+                      'hover:scale-105 hover:bg-muted',
+                      menuOpen
+                        ? 'opacity-100'
+                        : 'opacity-0 group-hover:opacity-100',
+                      menuOpen && 'bg-muted ring-1 ring-border'
+                    )}
+                  >
+                    <MoreHorizontal className="h-3 w-3" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  align="end"
+                  className="w-56"
+                  sideOffset={5}
+                  onClick={(e) => {
+                    e.stopPropagation(); // Prevent triggering task card click
+                  }}
+                >
+                  {!isDocumentList && (
+                    <DropdownMenuItem
+                      className="cursor-pointer"
+                      disabled={isLoading}
+                    >
+                      <Link
+                        href={`/${wsId}/time-tracker/timer?taskSelect=${task?.id}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2"
+                      >
+                        <Timer className="h-4 w-4 text-dynamic-blue" />
+                        {t('start_tracking_time')}
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
+                  {!isDocumentList && <DropdownMenuSeparator />}
+                  {/* Quick Completion Action */}
+                  {!isDocumentList && canMoveToCompletion && (
+                    <DropdownMenuItem
+                      onSelect={(e) =>
+                        handleMenuItemSelect(
+                          e as unknown as Event,
+                          handleMoveToCompletion
+                        )
+                      }
+                      className="cursor-pointer"
+                      disabled={isLoading}
+                    >
+                      <CheckCircle2 className="h-4 w-4 text-dynamic-green" />
+                      {targetCompletionList?.status === 'done'
+                        ? t('mark_as_done')
+                        : t('mark_as_closed')}
+                    </DropdownMenuItem>
+                  )}
+
+                  {/* Mark as Closed Action - Only show if closed list exists and is different from the generic completion */}
+                  {canShowCloseAction && (
+                    <DropdownMenuItem
+                      onSelect={(e) =>
+                        handleMenuItemSelect(
+                          e as unknown as Event,
+                          handleMoveToClose
+                        )
+                      }
+                      className="cursor-pointer"
+                      disabled={isLoading}
+                    >
+                      {isDocumentList ? (
+                        <Archive className="h-4 w-4 text-dynamic-purple" />
+                      ) : (
+                        <CircleSlash className="h-4 w-4 text-dynamic-purple" />
+                      )}
+                      {isDocumentList ? t('archive') : t('mark_as_closed')}
+                    </DropdownMenuItem>
+                  )}
+
+                  {((!isDocumentList && canMoveToCompletion) ||
+                    canShowCloseAction) && <DropdownMenuSeparator />}
+
+                  {/* Priority Menu */}
+                  <TaskPriorityMenu
+                    currentPriority={task.priority ?? null}
+                    isLoading={isLoading}
+                    onPriorityChange={handlePriorityChange}
+                    onMenuItemSelect={handleMenuItemSelect}
+                    onClose={() => setMenuOpen(false)}
+                    translations={{
+                      priority: t('priority'),
+                      none: t('none'),
+                      urgent: t('priority_urgent'),
+                      high: t('priority_high'),
+                      medium: t('priority_medium'),
+                      low: t('priority_low'),
+                    }}
+                  />
+
+                  {/* Due Date Menu */}
+                  <TaskDueDateMenu
+                    endDate={task.end_date}
+                    isLoading={isLoading}
+                    weekStartsOn={weekStartsOn}
+                    onDueDateChange={handleDueDateChange}
+                    onCustomDateClick={() => {
+                      setMenuOpen(false);
+                      setTimeout(
+                        () => dialogActions.openCustomDateDialog(),
+                        100
+                      );
+                    }}
+                    onMenuItemSelect={handleMenuItemSelect}
+                    onClose={() => setMenuOpen(false)}
+                    translations={{
+                      dueDate: t('due_date'),
+                      none: t('none'),
+                      today: t('today'),
+                      tomorrow: t('tomorrow'),
+                      yesterday: t('yesterday'),
+                      thisWeek: t('this_week'),
+                      nextWeek: t('next_week'),
+                      customDate: t('custom_date'),
+                      removeDueDate: t('remove_due_date'),
+                    }}
+                  />
+
+                  {/* Scheduling Menu */}
+                  {taskList?.status !== 'documents' && (
+                    <TaskSchedulingMenu
+                      task={task}
+                      boardId={boardId}
+                      isLoading={isLoading}
+                      onUpdate={onUpdate}
+                      onClose={() => setMenuOpen(false)}
+                      translations={{
+                        schedule: taskBoardT('ws-task-boards.dialog.schedule'),
+                        estimatedDuration: taskBoardT(
+                          'ws-task-boards.dialog.estimated_duration'
+                        ),
+                        h: taskBoardT('ws-task-boards.dialog.h'),
+                        m: taskBoardT('ws-task-boards.dialog.m'),
+                        splittable: taskBoardT(
+                          'ws-task-boards.dialog.splittable'
+                        ),
+                        minSplit: taskBoardT('ws-task-boards.dialog.min_split'),
+                        maxSplit: taskBoardT('ws-task-boards.dialog.max_split'),
+                        hourType: taskBoardT('ws-task-boards.dialog.hour_type'),
+                        workHours: taskBoardT(
+                          'ws-task-boards.dialog.work_hours'
+                        ),
+                        meetingHours: taskBoardT(
+                          'ws-task-boards.dialog.meeting_hours'
+                        ),
+                        personalHours: taskBoardT(
+                          'ws-task-boards.dialog.personal_hours'
+                        ),
+                        autoSchedule: taskBoardT(
+                          'ws-task-boards.dialog.auto_schedule'
+                        ),
+                        save: t('save'),
+                        clear: t('clear'),
+                        saved: t('saved'),
+                        error: t('error'),
+                      }}
+                    />
+                  )}
+
+                  {/* Estimation Menu */}
+                  {boardConfig?.estimation_type && (
+                    <TaskEstimationMenu
+                      currentPoints={displayEstimation}
+                      estimationType={boardConfig?.estimation_type}
+                      extendedEstimation={boardConfig?.extended_estimation}
+                      allowZeroEstimates={boardConfig?.allow_zero_estimates}
+                      isLoading={estimationSaving}
+                      onEstimationChange={updateEstimationPoints}
+                      onMenuItemSelect={handleMenuItemSelect}
+                    />
+                  )}
+
+                  {/* Labels Menu */}
+                  <TaskLabelsMenu
+                    taskLabels={displayLabels}
+                    availableLabels={availableLabelsForMenu}
+                    isLoading={labelsLoading}
+                    onToggleLabel={toggleTaskLabel}
+                    onCreateNewLabel={() => {
+                      openNewLabelDialog();
+                      setMenuOpen(false);
+                    }}
+                    onMenuItemSelect={handleMenuItemSelect}
+                    translations={{
+                      labels: t('labels'),
+                      searchLabels: t('search_labels'),
+                      loading: t('loading'),
+                      noLabelsFound: t('no_labels_found'),
+                      noLabelsAvailable: t('no_labels_available'),
+                      applied: t('applied'),
+                      createNewLabel: t('create_new_label'),
+                    }}
+                  />
+
+                  {/* Projects Menu */}
+                  <TaskProjectsMenu
+                    taskProjects={displayProjects}
+                    availableProjects={workspaceProjects}
+                    isLoading={projectsLoading}
+                    onToggleProject={toggleTaskProject}
+                    onCreateNewProject={() => {
+                      dialogActions.openNewProjectDialog();
+                      setMenuOpen(false);
+                    }}
+                    onMenuItemSelect={handleMenuItemSelect}
+                    translations={{
+                      projects: t('projects'),
+                      searchProjects: t('search_projects'),
+                      loading: t('loading'),
+                      noProjectsFound: t('no_projects_found'),
+                      noProjectsAvailable: t('no_projects_available'),
+                      assigned: t('assigned'),
+                      createNewProject: t('create_new_project'),
+                    }}
+                  />
+
+                  <DropdownMenuSeparator />
+
+                  {/* Task Relationships Section */}
+                  {effectiveWorkspaceId && (
+                    <>
+                      {/* Parent Task Menu */}
+                      <TaskParentMenu
+                        wsId={effectiveWorkspaceId}
+                        taskId={task.id}
+                        parentTask={parentTask}
+                        childTaskIds={childTasks.map((t) => t.id)}
+                        isSaving={relationshipSaving}
+                        onSetParent={setParentTask}
+                        onRemoveParent={removeParentTask}
+                        onOpenChange={(open) =>
+                          setRelationshipMenusOpen((prev) => ({
+                            ...prev,
+                            parent: open,
+                          }))
+                        }
+                        translations={{
+                          parent_task: t('parent_task'),
+                          search_tasks: t('search_tasks'),
+                          error_loading_tasks: t('error'),
+                          no_matching_tasks: t('no-results'),
+                          no_available_tasks: t('no_tasks'),
+                          n_set: '1',
+                        }}
+                      />
+
+                      {/* Blocking/Blocked By Menu */}
+                      <TaskBlockingMenu
+                        wsId={effectiveWorkspaceId}
+                        taskId={task.id}
+                        blockingTasks={blockingTasks}
+                        blockedByTasks={blockedByTasks}
+                        isSaving={relationshipSaving}
+                        savingTaskId={relationshipSavingTaskId}
+                        onAddBlocking={addBlockingTask}
+                        onRemoveBlocking={removeBlockingTask}
+                        onAddBlockedBy={addBlockedByTask}
+                        onRemoveBlockedBy={removeBlockedByTask}
+                        onOpenChange={(open) =>
+                          setRelationshipMenusOpen((prev) => ({
+                            ...prev,
+                            dependencies: open,
+                          }))
+                        }
+                        translations={{
+                          dependencies: t('dependencies'),
+                          blocks: t('blocks'),
+                          blocked_by: t('blocked_by'),
+                          search_tasks_to_block: t('search_tasks'),
+                          search_blocking_tasks: t('search_tasks'),
+                          error_loading_tasks: t('error'),
+                          no_matching_tasks: t('no-results'),
+                          no_available_tasks: t('no_tasks'),
+                          remove_dependency: t('remove'),
+                          tasks_that_cannot_start: t('blocks_help'),
+                          tasks_that_must_complete: t('blocked_by_help'),
+                        }}
+                      />
+
+                      {/* Related Tasks Menu */}
+                      <TaskRelatedMenu
+                        wsId={effectiveWorkspaceId}
+                        taskId={task.id}
+                        relatedTasks={relatedTasks}
+                        isSaving={relationshipSaving}
+                        savingTaskId={relationshipSavingTaskId}
+                        onAddRelated={addRelatedTask}
+                        onRemoveRelated={removeRelatedTask}
+                        onOpenChange={(open) =>
+                          setRelationshipMenusOpen((prev) => ({
+                            ...prev,
+                            related: open,
+                          }))
+                        }
+                        translations={{
+                          related_tasks: t('related_tasks'),
+                          currently_related: t('currently_related'),
+                          search_tasks_to_link: t('search_tasks'),
+                          no_matching_tasks: t('no-results'),
+                          no_available_tasks: t('no_tasks'),
+                          related_tasks_help: t('related_tasks_help'),
+                        }}
+                      />
+
+                      <DropdownMenuSeparator />
+                    </>
+                  )}
+
+                  {/* Move Menu */}
+                  {availableLists.length > 0 && effectiveWorkspaceId && (
+                    <TaskMoveMenu
+                      currentListId={task.list_id}
+                      availableLists={availableLists}
+                      isLoading={isLoading}
+                      onMoveToList={handleMoveToList}
+                      onMenuItemSelect={handleMenuItemSelect}
+                      onRequestOpenCreateDialog={() => {
+                        setMenuOpen(false);
+                        setIsCreateListDialogOpen(true);
+                      }}
+                      translations={{
+                        move: t('move'),
+                      }}
+                    />
+                  )}
+
+                  {isPersonalExternalOverlay && (
+                    <>
+                      {task.personal_board_id && task.personal_list_id && (
+                        <DropdownMenuItem
+                          onSelect={(e) =>
+                            handleMenuItemSelect(
+                              e as unknown as Event,
+                              () => void handleMoveToExternalStaging()
+                            )
+                          }
+                          className="cursor-pointer"
+                          disabled={isLoading}
+                        >
+                          <MoveRight className="h-4 w-4 text-dynamic-cyan" />
+                          {tTasks('move_to_external_tasks')}
+                        </DropdownMenuItem>
+                      )}
+                      {sourceBoardUrl && (
+                        <DropdownMenuItem asChild>
+                          <Link href={sourceBoardUrl}>
+                            <ExternalLink className="h-4 w-4 text-foreground" />
+                            {tTasks('open_source_board')}
+                          </Link>
+                        </DropdownMenuItem>
+                      )}
+                      {!task.is_personal_external_default && (
+                        <DropdownMenuItem
+                          onSelect={(e) =>
+                            handleMenuItemSelect(e as unknown as Event, () => {
+                              void handleRemoveFromPersonalBoard();
+                            })
+                          }
+                          className="cursor-pointer text-dynamic-red focus:text-dynamic-red"
+                          disabled={isLoading}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                          {tTasks('remove_from_personal_board')}
+                        </DropdownMenuItem>
+                      )}
+                      <DropdownMenuSeparator />
+                    </>
+                  )}
+
+                  {/* Assignee Actions */}
+                  {shouldUseBoardAssignees && (
+                    <TaskAssigneesMenu
+                      taskAssignees={displayAssignees}
+                      availableMembers={workspaceMembers}
+                      isLoading={membersLoading}
+                      onToggleAssignee={onToggleAssignee}
+                      onMenuItemSelect={handleMenuItemSelect}
+                      translations={{
+                        assignees: t('assignees'),
+                        searchMembers: t('search_members'),
+                        loading: t('loading'),
+                        noMembersFound: t('no_members_found'),
+                        noMembersAvailable: t('no_members_available'),
+                        assigned: t('assigned'),
+                        memberNoLongerInWorkspace: t(
+                          'member_no_longer_in_workspace'
+                        ),
+                      }}
+                    />
+                  )}
+
+                  <DropdownMenuSeparator />
+                  {taskShareWsId && (
+                    <DropdownMenuItem
+                      onSelect={(e) =>
+                        handleMenuItemSelect(e as unknown as Event, () => {
+                          setShareDialogOpen(true);
+                          setMenuOpen(false);
+                        })
+                      }
+                      className="cursor-pointer"
+                    >
+                      <Share2 className="h-4 w-4 text-foreground" />
+                      {t('task_sharing.share_task')}
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuItem
+                    onSelect={handleDuplicateTask}
+                    className="cursor-pointer"
+                  >
+                    <Copy className="h-4 w-4 text-foreground" />
+                    {t('duplicate_task')}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onSelect={handleAddSubtask}
+                    className="cursor-pointer"
+                  >
+                    <ListTree className="h-4 w-4 text-foreground" />
+                    {t('add_subtask')}
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  {!isPersonalExternalTask && (
+                    <DropdownMenuItem
+                      onSelect={(e) =>
+                        handleMenuItemSelect(e as unknown as Event, () => {
+                          dialogActions.openDeleteDialog();
+                          setMenuOpen(false);
+                        })
+                      }
+                      className="cursor-pointer"
+                    >
+                      <Trash2 className="h-4 w-4 text-dynamic-red" />
+                      {t('delete_task')}
+                    </DropdownMenuItem>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+          </div>
+          {/* Assignee: left, not cut off */}
+          {shouldUseBoardAssignees && (
+            <div className="flex flex-none items-start justify-start">
+              <AssigneeSelect
+                taskId={task.id}
+                assignees={task.assignees}
+                onUpdate={onUpdate}
+              />
+            </div>
+          )}
+        </div>
+        {/* Dates Section (improved layout & conditional rendering) */}
+        {(shouldRenderStartDate || shouldRenderDueDate) && (
+          <div className="mb-1 space-y-0.5 text-[10px] leading-snug">
+            {/* Show start only if in the future (hide historical start for visual simplicity) */}
+            {shouldRenderStartDate && startDate && startDate > now && (
+              <div className="flex items-center gap-1 text-muted-foreground">
+                <Clock className="h-2.5 w-2.5 shrink-0" />
+                <span className="truncate">
+                  {t('starts_at', {
+                    date: formatSmartDate(
+                      startDate,
+                      {
+                        today: t('today'),
+                        tomorrow: t('tomorrow'),
+                        yesterday: t('yesterday'),
+                      },
+                      dateLocale
+                    ),
+                  })}
+                </span>
+              </div>
+            )}
+            {shouldRenderDueDate && endDate && (
+              <div
+                className={cn(
+                  'flex items-center gap-1',
+                  isOverdue && !task.closed_at
+                    ? 'font-medium text-dynamic-red'
+                    : 'text-muted-foreground'
+                )}
+              >
+                {upcomingDeadlineCountdown && upcomingDeadlineExactDate ? (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span className="inline-flex min-w-0 items-center gap-1 truncate font-medium">
+                        <Timer className="h-2.5 w-2.5" />
+                        <span className="truncate">
+                          {upcomingDeadlineCountdown}
+                        </span>
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent side="top" className="text-xs">
+                      {upcomingDeadlineExactDate}
+                    </TooltipContent>
+                  </Tooltip>
+                ) : (
+                  <>
+                    <Calendar className="h-2.5 w-2.5 shrink-0" />
+                    <span className="truncate">
+                      {t('due_at', {
+                        date: formatSmartDate(
+                          endDate,
+                          {
+                            today: t('today'),
+                            tomorrow: t('tomorrow'),
+                            yesterday: t('yesterday'),
+                          },
+                          dateLocale
+                        ),
+                      })}
+                    </span>
+                    {isOverdue && !task.closed_at ? (
+                      <Badge className="ml-1 h-4 bg-dynamic-red px-1 font-semibold text-[9px] text-white tracking-wide">
+                        {t('overdue')}
+                      </Badge>
+                    ) : (
+                      <span className="ml-1 hidden text-[10px] text-muted-foreground md:inline">
+                        {upcomingDeadlineExactDate}
+                      </span>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+        {taskList?.status === 'done' || taskList?.status === 'closed' ? (
+          /*
+            Completion and Closed Dates Section
+            Show completed_at when in done list, closed_at when in closed list
+          */
+          <div className="mb-1 flex min-h-5 items-center justify-between gap-2 text-[10px] leading-snug sm:min-h-6">
+            <div className="min-w-0 space-y-0.5">
+              {taskList?.status === 'done' && task.completed_at && (
+                <div
+                  className={cn(
+                    'flex min-w-0 items-center gap-1',
+                    getListTextColorClass(taskList?.color)
+                  )}
+                >
+                  <CheckCircle2 className="h-2.5 w-2.5 shrink-0" />
+                  <span className="truncate">
+                    {t('completed')}{' '}
+                    {formatDistance(new Date(task.completed_at), now, {
+                      addSuffix: true,
+                      locale: dateLocale,
+                    })}
+                  </span>
+                  <span className="ml-1 hidden shrink-0 text-[10px] text-muted-foreground md:inline">
+                    {format(
+                      new Date(task.completed_at),
+                      `MMM dd '${t('at')}' ${timePattern}`,
+                      { locale: dateLocale }
+                    )}
+                  </span>
+                </div>
+              )}
+              {taskList?.status === 'closed' && task.closed_at && (
+                <div
+                  className={cn(
+                    'flex min-w-0 items-center gap-1',
+                    getListTextColorClass(taskList?.color)
+                  )}
+                >
+                  <CircleSlash className="h-2.5 w-2.5 shrink-0" />
+                  <span className="truncate">
+                    {t('closed')}{' '}
+                    {formatDistance(new Date(task.closed_at), now, {
+                      addSuffix: true,
+                      locale: dateLocale,
+                    })}
+                  </span>
+                  <span className="ml-1 hidden shrink-0 text-[10px] text-muted-foreground md:inline">
+                    {format(
+                      new Date(task.closed_at),
+                      `MMM dd '${t('at')}' ${timePattern}`,
+                      { locale: dateLocale }
+                    )}
+                  </span>
+                </div>
+              )}
+            </div>
+            {quickArchiveButton}
+          </div>
+        ) : (
+          /*
+            Bottom Row: Three-column layout for assignee, priority, and checkbox, with only one tag visible and +N tooltip for extras.
+            Hide bottom row entirely when in done/closed list
+          */
+          <div className="flex items-center gap-2">
+            {/* Hidden measurement container - render all badges to measure their width */}
+            <div
+              className="pointer-events-none absolute top-0 -left-2499.75 flex items-center gap-1 opacity-0"
+              aria-hidden="true"
+            >
+              {taskBadges.map((badge) => badge.element)}
+            </div>
+            {/* Visible container - only show badges that fit */}
+            <div
+              ref={containerRef}
+              className="scrollbar-hide flex w-full items-center gap-1 overflow-auto whitespace-nowrap rounded-lg"
+            >
+              {showBlockedByInlineWithCheckbox && (
+                <div className="min-w-0 flex-1">{blockedByCluster}</div>
+              )}
+              {visibleBadges.map((badge) => badge.element)}
+              {visibleBadges.length > 0 && hiddenBadges.length > 0 && (
+                <HoverCard openDelay={200}>
+                  <HoverCardTrigger asChild>
+                    <Badge
+                      variant="secondary"
+                      className="cursor-pointer border border-border bg-muted/50 font-medium text-[10px] text-muted-foreground hover:bg-muted"
+                    >
+                      +{hiddenBadges.length}
+                    </Badge>
+                  </HoverCardTrigger>
+                  <HoverCardContent
+                    side="top"
+                    align="start"
+                    className="flex w-auto max-w-xs flex-col gap-2 p-2"
+                  >
+                    <div className="text-center font-semibold text-sm">
+                      {t('other_properties')}
+                    </div>
+                    <div className="border" />
+                    <div className="flex flex-col gap-2">
+                      {hiddenBadges.map((badge) => badge.element)}
+                    </div>
+                  </HoverCardContent>
+                </HoverCard>
+              )}
+              {/* Description indicators */}
+              {(descriptionMeta.hasText ||
+                descriptionMeta.hasImages ||
+                descriptionMeta.hasVideos ||
+                descriptionMeta.hasLinks) && (
+                <div
+                  ref={descriptionMetaRef}
+                  className="flex min-w-0 shrink-0 items-center gap-0.5"
+                >
+                  {descriptionMeta.hasText && (
+                    <TaskCardMetadataTooltip content={t('has_description')}>
+                      <div className="flex items-center gap-0.5 rounded bg-dynamic-surface/50 py-0.5">
+                        <FileText className="h-3.5 w-3.5 text-muted-foreground" />
+                      </div>
+                    </TaskCardMetadataTooltip>
+                  )}
+                  {descriptionMeta.hasImages && (
+                    <TaskCardMetadataTooltip
+                      content={t('n_images', {
+                        count: descriptionMeta.imageCount,
+                      })}
+                    >
+                      <div className="flex items-center gap-0.5 rounded bg-dynamic-surface/50 py-0.5">
+                        <ImageIcon className="h-3.5 w-3.5 text-muted-foreground" />
+                        {descriptionMeta.imageCount > 1 && (
+                          <span className="text-[9px] text-muted-foreground">
+                            {descriptionMeta.imageCount}
+                          </span>
+                        )}
+                      </div>
+                    </TaskCardMetadataTooltip>
+                  )}
+                  {descriptionMeta.hasVideos && (
+                    <TaskCardMetadataTooltip
+                      content={t('n_videos', {
+                        count: descriptionMeta.videoCount,
+                      })}
+                    >
+                      <div className="flex items-center gap-0.5 rounded bg-dynamic-surface/50 py-0.5">
+                        <Play className="h-3.5 w-3.5 text-muted-foreground" />
+                        {descriptionMeta.videoCount > 1 && (
+                          <span className="text-[9px] text-muted-foreground">
+                            {descriptionMeta.videoCount}
+                          </span>
+                        )}
+                      </div>
+                    </TaskCardMetadataTooltip>
+                  )}
+                  {descriptionMeta.hasLinks && (
+                    <TaskCardMetadataTooltip
+                      content={t('n_links', {
+                        count: descriptionMeta.linkCount,
+                      })}
+                    >
+                      <div className="flex items-center gap-0.5 rounded bg-dynamic-surface/50 px-1 py-0.5">
+                        <Link2 className="h-2.5 w-2.5 text-muted-foreground" />
+                        {descriptionMeta.linkCount > 1 && (
+                          <span className="text-[9px] text-muted-foreground">
+                            {descriptionMeta.linkCount}
+                          </span>
+                        )}
+                      </div>
+                    </TaskCardMetadataTooltip>
+                  )}
+                </div>
+              )}
+            </div>
+            <div className="flex min-h-5 items-center gap-2 sm:min-h-6">
+              {!isPersonalWorkspace && (
+                <TaskViewerAvatarsComponent taskId={task.id} />
+              )}
+
+              {/* Checkbox: hidden for documents lists */}
+              {shouldRenderTaskCardCompletionCheckbox({
+                isMultiSelectMode,
+                taskListStatus: taskList?.status,
+              }) && (
+                <TaskCardCheckbox
+                  task={task}
+                  taskList={taskList}
+                  isLoading={isLoading}
+                  onToggle={handleArchiveToggle}
+                  tooltipLabel={t('mark_as_done')}
+                />
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+      <TaskDeleteDialog
+        task={task}
+        open={dialogState.deleteDialogOpen}
+        isLoading={isLoading}
+        onOpenChange={(open) =>
+          open
+            ? dialogActions.openDeleteDialog()
+            : dialogActions.closeDeleteDialog()
+        }
+        onConfirm={handleDelete}
+        translations={{
+          delete_task: t('delete_task'),
+          delete_task_confirmation: t('delete_task_confirmation', {
+            name: task.name ?? '',
+          }),
+          cancel: t('cancel'),
+          deleting: t('deleting'),
+        }}
+      />
+      {effectiveWorkspaceId && (
+        <CreateListDialog
+          open={isCreateListDialogOpen}
+          onOpenChange={setIsCreateListDialogOpen}
+          boardId={taskBoardId}
+          wsId={effectiveWorkspaceId}
+          initialStatus="active"
+          onSuccess={(listId) => {
+            handleMoveToList(listId);
+          }}
+          translations={{
+            listNameAlreadyExists: taskBoardT(
+              'ws-task-boards.layout_settings.list_name_exists'
+            ),
+          }}
+        />
+      )}
+      <TaskNewLabelDialog
+        open={dialogState.newLabelDialogOpen}
+        newLabelName={newLabelName}
+        newLabelColor={newLabelColor}
+        creatingLabel={creatingLabel}
+        onNameChange={setNewLabelName}
+        onColorChange={setNewLabelColor}
+        onOpenChange={(open) =>
+          open ? openNewLabelDialog() : dialogActions.closeNewLabelDialog()
+        }
+        onConfirm={async () => {
+          const result = await createNewLabel();
+          if (result) dialogActions.closeNewLabelDialog();
+        }}
+        translations={{
+          create_new_label: t('create_new_label'),
+          create_new_label_description: t('create_new_label_description'),
+          label_name: t('label_name'),
+          color: t('color'),
+          preview: t('preview'),
+          cancel: t('cancel'),
+          creating: t('creating'),
+          create_label: t('create_label'),
+          randomize_color: t('randomize_color'),
+        }}
+      />
+
+      <TaskNewProjectDialog
+        open={dialogState.newProjectDialogOpen}
+        newProjectName={newProjectName}
+        creatingProject={creatingProject}
+        onNameChange={setNewProjectName}
+        onOpenChange={(open) =>
+          open
+            ? dialogActions.openNewProjectDialog()
+            : dialogActions.closeNewProjectDialog()
+        }
+        onConfirm={async () => {
+          const result = await createNewProject();
+          if (result) dialogActions.closeNewProjectDialog();
+        }}
+        translations={{
+          create_new_project: t('create_new_project'),
+          create_new_project_description: t('create_new_project_description'),
+          project_name: t('project_name'),
+          cancel: t('cancel'),
+          creating: t('creating'),
+          create_project: t('create_project'),
+        }}
+      />
+
+      <TaskCustomDateDialog
+        open={dialogState.customDateDialogOpen}
+        endDate={task.end_date ?? null}
+        isLoading={isLoading}
+        onOpenChange={(open) =>
+          open
+            ? dialogActions.openCustomDateDialog()
+            : dialogActions.closeCustomDateDialog()
+        }
+        onDateChange={handleCustomDateChange}
+        onClear={() => {
+          handleDueDateChange(null);
+          dialogActions.closeCustomDateDialog();
+        }}
+        translations={{
+          set_custom_due_date: t('set_custom_due_date'),
+          custom_due_date_description: t('custom_due_date_description'),
+          cancel: t('cancel'),
+          remove_due_date: t('remove_due_date'),
+        }}
+      />
+      {taskShareWsId && (
+        <TaskShareDialog
+          open={shareDialogOpen}
+          onOpenChange={setShareDialogOpen}
+          taskId={task.id}
+          taskName={task.name ?? ''}
+          wsId={taskShareWsId}
+        />
+      )}
+
+      {!isOverlay && !isPersonalExternalTask && (
+        <TaskActions taskId={task.id} boardId={boardId} onUpdate={onUpdate} />
+      )}
+    </Card>
+  );
+}
+
+function TaskCardComponent(props: TaskCardProps) {
+  if (props.readOnly) {
+    return <ReadOnlyTaskCard {...props} />;
+  }
+
+  return <TaskCardInner {...props} />;
+}
+
+export const TaskCard = React.memo(TaskCardComponent, areTaskCardPropsEqual);

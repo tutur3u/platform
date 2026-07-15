@@ -1,7 +1,7 @@
 ---
 title: "API Route Patterns"
 description: "Implementing and organizing API routes in the Tuturuuu platform"
-updatedAt: "2026-06-23"
+updatedAt: "2026-07-15"
 ---
 
 The Tuturuuu platform uses Next.js App Router API routes with consistent patterns for versioning, authentication, error handling, and workspace isolation.
@@ -279,10 +279,18 @@ export const POST = withSessionAuth<Params>(
 > in `@tuturuuu/tasks-api/server/tasks/route` and only wire the adapter in the
 > route file. Task-specific request clients and types live in
 > `@tuturuuu/tasks-api/progress`, while task-only React surfaces live in
-> `@tuturuuu/tasks-ui`. Keep generic modules in `@tuturuuu/apis`,
+> `@tuturuuu/tasks-ui`. This includes board UI, task dialogs and settings,
+> task-aware rich-text mention renderers, realtime board hooks, and task
+> scheduling controls used by Calendar. Generic editors and Calendar shells
+> expose component or renderer interfaces from `@tuturuuu/ui`; the task
+> package supplies their implementations. Keep this dependency one-way:
+> `@tuturuuu/tasks-ui` may depend on `@tuturuuu/ui`, but shared UI must not
+> import task UI. Keep generic modules in `@tuturuuu/apis`,
 > `@tuturuuu/internal-api`, and `@tuturuuu/ui` free of new task-only
 > implementations so Turbo can cache and rebuild the task packages
-> independently. Extract shared handler logic the same way when a route grows
+> independently. Apps must import task modules directly from
+> `@tuturuuu/tasks-ui`; do not re-export them through `@tuturuuu/ui`, because
+> that broadens the affected build graph again. Extract shared handler logic the same way when a route grows
 > past a simple CRUD shape. Use `containsPermission()` with a real `PermissionId` (such
 > as `'manage_projects'`); there is no `manage_tasks` permission and no
 > `@/lib/permissions` module.

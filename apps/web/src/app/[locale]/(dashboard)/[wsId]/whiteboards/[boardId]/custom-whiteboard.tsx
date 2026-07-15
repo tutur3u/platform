@@ -25,16 +25,16 @@ import {
   WifiIcon,
   WifiOffIcon,
 } from '@tuturuuu/icons';
+import { useOptionalWorkspacePresenceContext } from '@tuturuuu/tasks-ui/tu-do/providers/workspace-presence-provider';
+import {
+  PresenceAvatarList,
+  type PresenceViewerEntry,
+} from '@tuturuuu/tasks-ui/tu-do/shared/user-presence-avatars';
 import { Button } from '@tuturuuu/ui/button';
 import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
 import { Input } from '@tuturuuu/ui/input';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
-import { useOptionalWorkspacePresenceContext } from '@tuturuuu/ui/tu-do/providers/workspace-presence-provider';
-import {
-  PresenceAvatarList,
-  type PresenceViewerEntry,
-} from '@tuturuuu/ui/tu-do/shared/user-presence-avatars';
 import { cn } from '@tuturuuu/utils/format';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';

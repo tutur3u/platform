@@ -1,4 +1,4 @@
-import TaskBoardServerPage from '@tuturuuu/ui/tu-do/boards/boardId/task-board-server-page';
+import TaskBoardServerPage from '@tuturuuu/tasks-ui/tu-do/boards/boardId/task-board-server-page';
 import { connection } from 'next/server';
 import { createElement } from 'react';
 

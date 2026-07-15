@@ -7,7 +7,7 @@ import {
   CommandItem,
   CommandSeparator,
 } from '@tuturuuu/ui/command';
-import { dispatchRequestOpenTask } from '@tuturuuu/ui/tu-do/shared/task-open-events';
+import { dispatchRequestOpenTask } from '@tuturuuu/ui/lib/task-open-events';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import { useRouter } from 'next/navigation';

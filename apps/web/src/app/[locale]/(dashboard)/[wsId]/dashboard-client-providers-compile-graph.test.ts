@@ -42,6 +42,18 @@ function staticImportPattern(modulePath: string) {
   );
 }
 
+function dynamicImportPattern(modulePath: string) {
+  const escapedModulePath = modulePath.replace(
+    /[.*+?^${}()|[\]\\]/gu,
+    String.raw`\$&`
+  );
+
+  return new RegExp(
+    String.raw`import\(\s*['"]${escapedModulePath}['"]\s*\)`,
+    'u'
+  );
+}
+
 describe('[wsId] dashboard client providers compile graph', () => {
   it('keeps realtime and task provider modules behind a workspace-provider split point', () => {
     expect(dashboardClientProvidersSource).not.toMatch(
@@ -50,9 +62,9 @@ describe('[wsId] dashboard client providers compile graph', () => {
 
     for (const modulePath of [
       '@tuturuuu/supabase/next/realtime-log-provider',
-      '@tuturuuu/ui/tu-do/providers/task-dialog-provider',
-      '@tuturuuu/ui/tu-do/providers/workspace-presence-provider',
-      '@tuturuuu/ui/tu-do/shared/task-dialog-manager',
+      '@tuturuuu/tasks-ui/tu-do/providers/task-dialog-provider',
+      '@tuturuuu/tasks-ui/tu-do/providers/workspace-presence-provider',
+      '@tuturuuu/tasks-ui/tu-do/shared/task-dialog-manager',
       './personal-workspace-collaboration-banner',
     ] as const) {
       expect(dashboardClientProvidersSource).not.toMatch(
@@ -67,10 +79,12 @@ describe('[wsId] dashboard client providers compile graph', () => {
 
   it('loads fade setting setup after hydration instead of preloading it through next/dynamic', () => {
     expect(dashboardClientProvidersSource).not.toMatch(
-      /const\s+FadeSettingInitializer\s*=\s*dynamic\(\s*\(\)\s*=>[\s\S]*?import\(['"]@tuturuuu\/ui\/tu-do\/shared\/fade-setting-initializer['"]\)/u
+      /const\s+FadeSettingInitializer\s*=\s*dynamic\(\s*\(\)\s*=>[\s\S]*?import\(['"]@tuturuuu\/tasks-ui\/tu-do\/shared\/fade-setting-initializer['"]\)/u
     );
-    expect(dashboardClientProvidersSource).toContain(
-      "import('@tuturuuu/ui/tu-do/shared/fade-setting-initializer')"
+    expect(dashboardClientProvidersSource).toMatch(
+      dynamicImportPattern(
+        '@tuturuuu/tasks-ui/tu-do/shared/fade-setting-initializer'
+      )
     );
     expect(dashboardClientProvidersSource).toContain(
       'useFadeSettingInitializerComponent'
@@ -79,10 +93,10 @@ describe('[wsId] dashboard client providers compile graph', () => {
 
   it('loads task sound effects setup after hydration instead of preloading it through next/dynamic', () => {
     expect(dashboardClientProvidersSource).not.toMatch(
-      /const\s+TaskSoundEffectsInitializer\s*=\s*dynamic\(\s*\(\)\s*=>[\s\S]*?import\(['"]@tuturuuu\/ui\/tu-do\/shared\/task-sound-effects['"]\)/u
+      /const\s+TaskSoundEffectsInitializer\s*=\s*dynamic\(\s*\(\)\s*=>[\s\S]*?import\(['"]@tuturuuu\/tasks-ui\/tu-do\/shared\/task-sound-effects['"]\)/u
     );
-    expect(dashboardClientProvidersSource).toContain(
-      "import('@tuturuuu/ui/tu-do/shared/task-sound-effects')"
+    expect(dashboardClientProvidersSource).toMatch(
+      dynamicImportPattern('@tuturuuu/tasks-ui/tu-do/shared/task-sound-effects')
     );
     expect(dashboardClientProvidersSource).toContain(
       'useTaskSoundEffectsInitializerComponent'
@@ -97,7 +111,7 @@ describe('[wsId] dashboard client providers compile graph', () => {
       staticImportPattern('./personal-workspace-collaboration-banner')
     );
     expect(dashboardWorkspaceProvidersSource).not.toMatch(
-      staticImportPattern('@tuturuuu/ui/tu-do/shared/task-dialog-manager')
+      staticImportPattern('@tuturuuu/tasks-ui/tu-do/shared/task-dialog-manager')
     );
     expect(dashboardWorkspaceProvidersSource).toContain(
       "import('./personal-workspace-collaboration-banner')"
@@ -109,10 +123,12 @@ describe('[wsId] dashboard client providers compile graph', () => {
       'useLazyClientComponent(preloadTaskDialogManager)'
     );
     expect(taskDialogManagerLoaderSource).not.toMatch(
-      staticImportPattern('@tuturuuu/ui/tu-do/shared/task-dialog-manager')
+      staticImportPattern('@tuturuuu/tasks-ui/tu-do/shared/task-dialog-manager')
     );
     expect(taskDialogManagerLoaderSource).toMatch(
-      /import\(\s*['"]@tuturuuu\/ui\/tu-do\/shared\/task-dialog-manager['"]\s*\)/u
+      dynamicImportPattern(
+        '@tuturuuu/tasks-ui/tu-do/shared/task-dialog-manager'
+      )
     );
     expect(taskDialogManagerLoaderSource).toContain('taskDialogManagerPromise');
   });

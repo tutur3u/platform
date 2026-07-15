@@ -2,6 +2,10 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { Loader2 } from '@tuturuuu/icons';
+import { MyTasksFilters } from '@tuturuuu/tasks-ui/tu-do/my-tasks/my-tasks-filters';
+import { MyTasksHeader } from '@tuturuuu/tasks-ui/tu-do/my-tasks/my-tasks-header';
+import TaskList from '@tuturuuu/tasks-ui/tu-do/my-tasks/task-list';
+import { useMyTasksState } from '@tuturuuu/tasks-ui/tu-do/my-tasks/use-my-tasks-state';
 import type {
   JsonRenderComponentContext,
   JsonRenderMyTasksProps,
@@ -18,10 +22,6 @@ import {
 } from '@tuturuuu/ui/card';
 import { useWorkspaceUser } from '@tuturuuu/ui/hooks/use-workspace-user';
 import { Progress } from '@tuturuuu/ui/progress';
-import { MyTasksFilters } from '@tuturuuu/ui/tu-do/my-tasks/my-tasks-filters';
-import { MyTasksHeader } from '@tuturuuu/ui/tu-do/my-tasks/my-tasks-header';
-import TaskList from '@tuturuuu/ui/tu-do/my-tasks/task-list';
-import { useMyTasksState } from '@tuturuuu/ui/tu-do/my-tasks/use-my-tasks-state';
 import { useParams } from 'next/navigation';
 import { formatDurationLabel, resolveStatsRange } from '../shared';
 

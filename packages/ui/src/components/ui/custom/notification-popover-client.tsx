@@ -32,12 +32,12 @@ import {
   useUnreadCount,
   useUpdateNotification,
 } from '@tuturuuu/ui/hooks/use-notifications';
-import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
-import { toast } from '@tuturuuu/ui/sonner';
 import {
   dispatchRequestOpenTask,
   waitForTaskOpenResult,
-} from '@tuturuuu/ui/tu-do/shared/task-open-events';
+} from '@tuturuuu/ui/lib/task-open-events';
+import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
+import { toast } from '@tuturuuu/ui/sonner';
 import { cn } from '@tuturuuu/utils/format';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';

@@ -7,7 +7,7 @@ import {
   removeWorkspaceTaskLabel,
   upsertCurrentUserTaskPersonalPlacement,
 } from '../../../packages/internal-api/src/tasks';
-import { getTaskCardResourceContext } from '../../../packages/ui/src/components/ui/tu-do/boards/boardId/task-card/task-card-resource-context';
+import { getTaskCardResourceContext } from '../../../packages/tasks-ui/src/tu-do/boards/boardId/task-card/task-card-resource-context';
 
 const REPORTED_TASK_ID = 'bdd713b7-a7d0-4e8d-b651-399d6006e794';
 const REPORTED_PERSONAL_BOARD_ID = '2ad6c068-c69d-4011-a3c8-46ac45c3cd05';

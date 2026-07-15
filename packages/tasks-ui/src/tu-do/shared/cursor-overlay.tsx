@@ -1,0 +1,78 @@
+'use client';
+
+import type { CursorPosition } from '@tuturuuu/tasks-ui/hooks/useCursorTracking';
+import { Badge } from '@tuturuuu/ui/badge';
+
+interface CursorOverlayProps {
+  cursors: Map<string, CursorPosition>;
+  currentUserId?: string;
+  width?: number;
+  height?: number;
+}
+
+export default function CursorOverlay({
+  cursors,
+  width,
+  height,
+}: CursorOverlayProps) {
+  return (
+    <div
+      className="pointer-events-none absolute inset-0 z-50"
+      style={{
+        width: width ? `${width}px` : undefined,
+        height: height ? `${height}px` : undefined,
+      }}
+    >
+      {Array.from(cursors.entries()).map(([userId, cursor]) => {
+        const { x, y, user } = cursor;
+
+        // Don't render if cursor is outside the visible area
+        if (x < 0 || y < 0) return null;
+
+        return (
+          <div
+            key={userId}
+            className="pointer-events-none absolute z-50"
+            style={{
+              transform: `translate(${x}px, ${y}px)`,
+            }}
+          >
+            {/* Filled cursor indicator with stroke for visibility */}
+            <div className="absolute z-10">
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <title>Cursor</title>
+                {/* White stroke for visibility over any background */}
+                <path
+                  d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="stroke-background"
+                />
+                {/* Filled cursor */}
+                <path
+                  d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z"
+                  fill="currentColor"
+                  className="text-foreground"
+                />
+              </svg>
+            </div>
+
+            {/* Badge */}
+            <Badge className="absolute top-4 left-4 border-2 border-background bg-background px-1 py-0.5 ring-1 ring-border transition-shadow hover:ring-2">
+              <p className="font-medium text-foreground text-xs">
+                {user?.display_name || 'Unknown User'}
+              </p>
+            </Badge>
+          </div>
+        );
+      })}
+    </div>
+  );
+}

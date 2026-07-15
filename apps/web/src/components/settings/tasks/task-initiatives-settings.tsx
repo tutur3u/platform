@@ -3,7 +3,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { Loader2 } from '@tuturuuu/icons';
 import { listWorkspaceTaskInitiatives } from '@tuturuuu/internal-api/tasks';
-import { TaskInitiativesClient } from '@tuturuuu/ui/tu-do/initiatives/task-initiatives-client';
+import { TaskInitiativesClient } from '@tuturuuu/tasks-ui/tu-do/initiatives/task-initiatives-client';
 
 function getBrowserInternalApiOptions() {
   return typeof window !== 'undefined'

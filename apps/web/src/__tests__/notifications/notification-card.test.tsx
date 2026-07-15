@@ -41,7 +41,7 @@ vi.mock('motion/react', () => ({
 const mockDispatchRequestOpenTask = vi.fn();
 const mockWaitForTaskOpenResult = vi.fn();
 
-vi.mock('@tuturuuu/ui/tu-do/shared/task-open-events', () => ({
+vi.mock('@tuturuuu/ui/lib/task-open-events', () => ({
   dispatchRequestOpenTask: (payload: { taskId: string; wsId?: string }) => {
     mockDispatchRequestOpenTask(payload);
     return {

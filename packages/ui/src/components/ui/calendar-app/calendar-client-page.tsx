@@ -7,12 +7,20 @@ import type {
 } from '@tuturuuu/types';
 import { SmartCalendar } from '@tuturuuu/ui/legacy/calendar/smart-calendar';
 import { useLocale, useTranslations } from 'next-intl';
-import { useState } from 'react';
-import { CalendarHeaderActions } from './components/calendar-header-actions';
+import { type ComponentType, useState } from 'react';
 import { RequireWorkspaceTimezoneDialog } from './components/require-workspace-timezone-dialog';
 import { useCalendarSettings } from './hooks';
 
+export interface CalendarHeaderActionsProps {
+  enableSmartScheduling: boolean;
+  workspaceId: string;
+}
+
+export type CalendarHeaderActionsComponent =
+  ComponentType<CalendarHeaderActionsProps>;
+
 interface CalendarClientPageProps {
+  HeaderActions: CalendarHeaderActionsComponent;
   experimentalGoogleToken?: WorkspaceCalendarGoogleTokenClient | null;
   workspace: Workspace;
   enableSmartScheduling: boolean;
@@ -22,6 +30,7 @@ export function CalendarClientPage({
   experimentalGoogleToken,
   workspace,
   enableSmartScheduling,
+  HeaderActions,
 }: CalendarClientPageProps) {
   const t = useTranslations('calendar');
   const locale = useLocale();
@@ -34,7 +43,7 @@ export function CalendarClientPage({
   const needsCalendarGate = !calendarGateCompleted && settingsNeedGate;
 
   const extras = (
-    <CalendarHeaderActions
+    <HeaderActions
       workspaceId={workspace.id}
       enableSmartScheduling={enableSmartScheduling}
     />

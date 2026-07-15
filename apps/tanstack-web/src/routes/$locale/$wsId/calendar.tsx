@@ -1,6 +1,6 @@
 import { createFileRoute, notFound } from '@tanstack/react-router';
+import { TaskCalendarPageShell } from '@tuturuuu/tasks-ui/calendar/task-calendar-page-shell';
 import type { CalendarConnection } from '@tuturuuu/types';
-import { CalendarPageShell } from '@tuturuuu/ui/calendar-app/calendar-page-shell';
 import { requireCurrentUser } from '../../../lib/platform/auth-gate';
 import { createPageHead } from '../../../lib/platform/head';
 import { resolveMessagesLocale } from '../../../lib/platform/messages';
@@ -72,7 +72,7 @@ function CalendarRoutePage() {
   // data-origin gap); the shell renders correctly with no connected calendars
   // and no Google token, which is also the genuine first-load state.
   return (
-    <CalendarPageShell
+    <TaskCalendarPageShell
       calendarConnections={EMPTY_CONNECTIONS}
       enableSmartScheduling
       experimentalGoogleToken={null}

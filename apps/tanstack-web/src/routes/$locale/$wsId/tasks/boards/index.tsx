@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { BoardsListSkeleton } from '@tuturuuu/ui/tu-do/boards/boards-list-skeleton';
-import WorkspaceProjectsClientPage from '@tuturuuu/ui/tu-do/boards/workspace-projects-client-page';
+import { BoardsListSkeleton } from '@tuturuuu/tasks-ui/tu-do/boards/boards-list-skeleton';
+import WorkspaceProjectsClientPage from '@tuturuuu/tasks-ui/tu-do/boards/workspace-projects-client-page';
 import { Suspense } from 'react';
 import { requireCurrentUser } from '../../../../../lib/platform/auth-gate';
 import { createPageHead } from '../../../../../lib/platform/head';

@@ -1,7 +1,7 @@
 'use client';
 
 import { Sparkles } from '@tuturuuu/icons';
-import { AiCreditIndicator } from '@tuturuuu/ui/tu-do/my-tasks/ai-credit-indicator';
+import { AiCreditIndicator } from '@tuturuuu/tasks-ui/tu-do/my-tasks/ai-credit-indicator';
 import { useTranslations } from 'next-intl';
 import { useMemo } from 'react';
 import MiraNameBadge from './mira-name-badge';

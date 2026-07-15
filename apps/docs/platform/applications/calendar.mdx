@@ -1,7 +1,7 @@
 ---
 title: "Calendar"
 description: "Shared Calendar product surface across apps/web and apps/calendar."
-updatedAt: "2026-07-03"
+updatedAt: "2026-07-15"
 ---
 
 ## Overview
@@ -13,6 +13,11 @@ mutations, permissions, and user-facing workflow updates.
 - Calendar UI and logic should live in shared packages, primarily
   `@tuturuuu/ui/calendar-app/*`, with app route files acting as thin auth and
   workspace-context wrappers.
+- Task-aware Calendar controls (task creation, task scheduling, habits, and
+  task time tracking) live in `@tuturuuu/tasks-ui/calendar/*`. The generic
+  Calendar shell accepts those controls through typed component seams, keeping
+  `@tuturuuu/ui` independent from task-only code and preserving narrow Turbo
+  rebuilds.
 - `apps/calendar` owns its standalone workspace shell, local `/login`, and
   local `/verify-token` completion route.
 - `apps/web /{wsId}/calendar` renders the same shared Calendar product surface

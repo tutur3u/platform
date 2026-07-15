@@ -1,6 +1,6 @@
 import { Loader2 } from '@tuturuuu/icons';
+import { KanbanSkeleton } from '@tuturuuu/tasks-ui/tu-do/boards/boardId/kanban/rendering/kanban-skeleton';
 import { Skeleton } from '@tuturuuu/ui/skeleton';
-import { KanbanSkeleton } from '@tuturuuu/ui/tu-do/boards/boardId/kanban/rendering/kanban-skeleton';
 import { getCommonMessages } from '../../lib/platform/messages';
 
 type LocaleLoadingProps = {

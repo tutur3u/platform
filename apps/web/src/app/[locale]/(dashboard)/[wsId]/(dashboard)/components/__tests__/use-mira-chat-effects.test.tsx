@@ -1,7 +1,7 @@
 import { QueryClient } from '@tanstack/react-query';
 import { render, waitFor } from '@testing-library/react';
 import type { UIMessage } from '@tuturuuu/ai/types';
-import { setActiveBoardRefresh } from '@tuturuuu/ui/tu-do/shared/board-broadcast-context';
+import { setActiveBoardRefresh } from '@tuturuuu/tasks-ui/tu-do/shared/board-broadcast-context';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import type { Dispatch, SetStateAction } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';

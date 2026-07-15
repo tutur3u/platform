@@ -16,6 +16,9 @@ import {
   listWorkspaceTaskLists,
   updateWorkspaceTask,
 } from '@tuturuuu/internal-api';
+import { useTaskDialog } from '@tuturuuu/tasks-ui/tu-do/hooks/useTaskDialog';
+import { TaskEstimationDisplay } from '@tuturuuu/tasks-ui/tu-do/shared/task-estimation-display';
+import { TaskLabelsDisplay } from '@tuturuuu/tasks-ui/tu-do/shared/task-labels-display';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
@@ -25,9 +28,6 @@ import {
   type PlatformIconKey,
 } from '@tuturuuu/ui/custom/icon-picker';
 import { toast } from '@tuturuuu/ui/sonner';
-import { useTaskDialog } from '@tuturuuu/ui/tu-do/hooks/useTaskDialog';
-import { TaskEstimationDisplay } from '@tuturuuu/ui/tu-do/shared/task-estimation-display';
-import { TaskLabelsDisplay } from '@tuturuuu/ui/tu-do/shared/task-labels-display';
 import { cn } from '@tuturuuu/utils/format';
 import { getDescriptionText } from '@tuturuuu/utils/text-helper';
 import {

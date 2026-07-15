@@ -6,7 +6,90 @@
   "types": "./src/progress/task-progress-page.tsx",
   "exports": {
     ".": "./src/progress/task-progress-page.tsx",
-    "./progress/task-progress-page": "./src/progress/task-progress-page.tsx"
+    "./progress/task-progress-page": "./src/progress/task-progress-page.tsx",
+    "./calendar/task-calendar-page-shell": "./src/calendar/task-calendar-page-shell.tsx",
+    "./calendar/components/*": "./src/calendar/components/*.tsx",
+    "./hooks/*": "./src/hooks/*.ts",
+    "./settings/task-settings": "./src/settings/task-settings.tsx",
+    "./text-editor/task-mention-node-view": "./src/text-editor/task-mention-node-view.tsx",
+    "./text-editor/task-rich-text-editor": "./src/text-editor/task-rich-text-editor.tsx",
+    "./tu-do/hooks/useTaskDialog": {
+      "types": "./src/tu-do/hooks/useTaskDialog.ts",
+      "import": "./src/tu-do/hooks/useTaskDialog.ts"
+    },
+    "./tu-do/providers/task-dialog-provider": {
+      "types": "./src/tu-do/providers/task-dialog-provider.tsx",
+      "import": "./src/tu-do/providers/task-dialog-provider.tsx"
+    },
+    "./tu-do/shared/task-dialog-manager": {
+      "types": "./src/tu-do/shared/task-dialog-manager.tsx",
+      "import": "./src/tu-do/shared/task-dialog-manager.tsx"
+    },
+    "./tu-do/shared/recent-sidebar-events": {
+      "types": "./src/tu-do/shared/recent-sidebar-events.ts",
+      "import": "./src/tu-do/shared/recent-sidebar-events.ts"
+    },
+    "./tu-do/hooks/*": "./src/tu-do/hooks/*",
+    "./tu-do/providers/*": "./src/tu-do/providers/*.tsx",
+    "./tu-do/shared/*": "./src/tu-do/shared/*.tsx",
+    "./tu-do/shared/task-edit-dialog/*": "./src/tu-do/shared/task-edit-dialog/*.tsx",
+    "./tu-do/shared/estimation-mapping": {
+      "types": "./src/tu-do/shared/estimation-mapping.ts",
+      "import": "./src/tu-do/shared/estimation-mapping.ts"
+    },
+    "./tu-do/utils/label-colors": {
+      "types": "./src/tu-do/utils/label-colors.ts",
+      "import": "./src/tu-do/utils/label-colors.ts"
+    },
+    "./tu-do/boards/*": "./src/tu-do/boards/*.tsx",
+    "./tu-do/drafts/*": "./src/tu-do/drafts/*.tsx",
+    "./tu-do/my-tasks/use-my-tasks-state": {
+      "types": "./src/tu-do/my-tasks/use-my-tasks-state.ts",
+      "import": "./src/tu-do/my-tasks/use-my-tasks-state.ts"
+    },
+    "./tu-do/my-tasks/*": "./src/tu-do/my-tasks/*.tsx",
+    "./tu-do/habits/*": "./src/tu-do/habits/*.tsx",
+    "./tu-do/notes/*": "./src/tu-do/notes/*.tsx",
+    "./tu-do/labels/types": {
+      "types": "./src/tu-do/labels/types.ts",
+      "import": "./src/tu-do/labels/types.ts"
+    },
+    "./tu-do/labels/*": "./src/tu-do/labels/*.tsx",
+    "./tu-do/labels/components/*": "./src/tu-do/labels/components/*.tsx",
+    "./tu-do/labels/hooks/*": "./src/tu-do/labels/hooks/*.ts",
+    "./tu-do/estimates/*": "./src/tu-do/estimates/*.tsx",
+    "./tu-do/initiatives/*": "./src/tu-do/initiatives/*.tsx",
+    "./tu-do/cycles/*": "./src/tu-do/cycles/*.tsx",
+    "./tu-do/logs/*": "./src/tu-do/logs/*.tsx",
+    "./tu-do/templates/types": {
+      "types": "./src/tu-do/templates/types.ts",
+      "import": "./src/tu-do/templates/types.ts"
+    },
+    "./tu-do/templates/*": "./src/tu-do/templates/*.tsx",
+    "./tu-do/templates/marketplace/*": "./src/tu-do/templates/marketplace/*.tsx",
+    "./tu-do/templates/templateId/*": "./src/tu-do/templates/templateId/*.tsx",
+    "./tu-do/projects/types": {
+      "types": "./src/tu-do/projects/types.ts",
+      "import": "./src/tu-do/projects/types.ts"
+    },
+    "./tu-do/projects/*": "./src/tu-do/projects/*.tsx",
+    "./tu-do/projects/components/*": "./src/tu-do/projects/components/*.tsx",
+    "./tu-do/projects/dialogs/*": "./src/tu-do/projects/dialogs/*.tsx",
+    "./tu-do/projects/hooks/*": "./src/tu-do/projects/hooks/*.ts",
+    "./tu-do/projects/projectId/*": "./src/tu-do/projects/projectId/*.tsx",
+    "./tu-do/projects/projectId/components/*": "./src/tu-do/projects/projectId/components/*.tsx",
+    "./tu-do/projects/projectId/components/overview/*": "./src/tu-do/projects/projectId/components/overview/*.tsx",
+    "./tu-do/projects/projectId/dialogs/*": "./src/tu-do/projects/projectId/dialogs/*.tsx",
+    "./tu-do/projects/projectId/hooks/*": "./src/tu-do/projects/projectId/hooks/*.ts",
+    "./tu-do/shared/task-detail-page": {
+      "types": "./src/tu-do/shared/task-detail-page.tsx",
+      "import": "./src/tu-do/shared/task-detail-page.tsx"
+    },
+    "./tu-do/shared/text-diff-viewer": {
+      "types": "./src/tu-do/shared/text-diff-viewer.tsx",
+      "import": "./src/tu-do/shared/text-diff-viewer.tsx"
+    },
+    "./tu-do/*": "./src/tu-do/*.tsx"
   },
   "license": "MIT",
   "scripts": {
@@ -16,17 +99,43 @@
   },
   "packageManager": "bun@1.3.14",
   "dependencies": {
+    "@dnd-kit/core": "^6.3.1",
+    "@dnd-kit/sortable": "^10.0.0",
+    "@dnd-kit/utilities": "^3.2.2",
+    "@tanstack/react-hotkeys": "^0.10.0",
     "@tanstack/react-query": "^5.101.2",
+    "@tanstack/react-table": "^8.21.3",
+    "@tiptap/pm": "3.27.3",
+    "@tiptap/react": "3.27.3",
     "@tuturuuu/icons": "workspace:*",
+    "@tuturuuu/internal-api": "workspace:*",
+    "@tuturuuu/supabase": "workspace:*",
     "@tuturuuu/tasks-api": "workspace:*",
+    "@tuturuuu/types": "workspace:*",
     "@tuturuuu/ui": "workspace:*",
+    "@tuturuuu/utils": "workspace:*",
+    "date-fns": "^4.4.0",
+    "dayjs": "^1.11.20",
+    "framer-motion": "^12.42.2",
+    "lodash": "4.18.1",
+    "moment": "^2.30.1",
+    "motion": "^12.42.2",
     "next": "^16.3.0-preview.5",
     "next-intl": "^4.13.2",
+    "next-themes": "^0.4.6",
     "react": "^19.2.7",
-    "react-dom": "^19.2.7"
+    "react-dom": "^19.2.7",
+    "sonner": "^2.0.7",
+    "use-debounce": "^10.0.6",
+    "uuid": "^14.0.1",
+    "yjs": "^13.6.31",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
     "@tuturuuu/typescript-config": "workspace:*",
+    "@types/lodash": "^4.17.24",
     "@types/node": "^26.1.1",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",

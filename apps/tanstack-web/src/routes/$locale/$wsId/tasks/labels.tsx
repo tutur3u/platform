@@ -1,6 +1,6 @@
 import { createFileRoute, notFound } from '@tanstack/react-router';
-import TaskLabelsClient from '@tuturuuu/ui/tu-do/labels/client';
-import type { TaskLabel } from '@tuturuuu/ui/tu-do/labels/types';
+import TaskLabelsClient from '@tuturuuu/tasks-ui/tu-do/labels/client';
+import type { TaskLabel } from '@tuturuuu/tasks-ui/tu-do/labels/types';
 import { requireCurrentUser } from '../../../../lib/platform/auth-gate';
 import { createPageHead } from '../../../../lib/platform/head';
 import { resolveMessagesLocale } from '../../../../lib/platform/messages';

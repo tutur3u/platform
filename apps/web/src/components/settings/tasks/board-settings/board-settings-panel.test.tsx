@@ -169,7 +169,7 @@ vi.mock('@tuturuuu/ui/custom/icon-picker', () => ({
     },
 }));
 
-vi.mock('@tuturuuu/ui/tu-do/shared/board-layout-settings', () => ({
+vi.mock('@tuturuuu/tasks-ui/tu-do/shared/board-layout-settings', () => ({
   BoardLayoutSettingsContent: () => (
     <div data-testid="board-layout-settings-content" />
   ),

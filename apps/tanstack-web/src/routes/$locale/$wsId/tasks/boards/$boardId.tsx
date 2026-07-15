@@ -6,8 +6,8 @@ import {
   withForwardedInternalApiAuth,
 } from '@tuturuuu/internal-api';
 import { getWorkspaceTaskBoard } from '@tuturuuu/internal-api/tasks';
+import { BoardClient } from '@tuturuuu/tasks-ui/tu-do/shared/board-client';
 import type { Workspace, WorkspaceProductTier } from '@tuturuuu/types';
-import { BoardClient } from '@tuturuuu/ui/tu-do/shared/board-client';
 import { requireCurrentUser } from '../../../../../lib/platform/auth-gate';
 import { createPageHead } from '../../../../../lib/platform/head';
 import { resolveMessagesLocale } from '../../../../../lib/platform/messages';

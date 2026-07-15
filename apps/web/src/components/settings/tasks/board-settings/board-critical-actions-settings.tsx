@@ -2,6 +2,8 @@
 
 import { Archive, Bookmark, Copy, RotateCcw, Trash2 } from '@tuturuuu/icons';
 import type { WorkspaceTaskBoardDetail } from '@tuturuuu/internal-api/tasks';
+import { CopyBoardDialog } from '@tuturuuu/tasks-ui/tu-do/boards/copy-board-dialog';
+import { SaveAsTemplateDialog } from '@tuturuuu/tasks-ui/tu-do/templates/save-as-template-dialog';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -14,8 +16,6 @@ import {
 } from '@tuturuuu/ui/alert-dialog';
 import { Button } from '@tuturuuu/ui/button';
 import { useBoardActions } from '@tuturuuu/ui/hooks/use-board-actions';
-import { CopyBoardDialog } from '@tuturuuu/ui/tu-do/boards/copy-board-dialog';
-import { SaveAsTemplateDialog } from '@tuturuuu/ui/tu-do/templates/save-as-template-dialog';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { getTasksAppUrlClient } from '@/lib/tasks-app-url-client';

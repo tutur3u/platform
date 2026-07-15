@@ -6,7 +6,7 @@ import {
   getWorkspaceTemplate,
   getWorkspaceTemplateBackgroundUrl,
 } from '@tuturuuu/internal-api/templates';
-import TaskTemplateDetailPageClient from '@tuturuuu/ui/tu-do/templates/templateId/task-template-detail-page-client';
+import TaskTemplateDetailPageClient from '@tuturuuu/tasks-ui/tu-do/templates/templateId/task-template-detail-page-client';
 import { requireCurrentUser } from '../../../../../lib/platform/auth-gate';
 import { createPageHead } from '../../../../../lib/platform/head';
 import { resolveMessagesLocale } from '../../../../../lib/platform/messages';

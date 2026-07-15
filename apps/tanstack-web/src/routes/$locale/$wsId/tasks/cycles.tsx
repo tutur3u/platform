@@ -1,5 +1,5 @@
 import { createFileRoute, notFound } from '@tanstack/react-router';
-import { TaskCyclesClient } from '@tuturuuu/ui/tu-do/cycles/task-cycles-client';
+import { TaskCyclesClient } from '@tuturuuu/tasks-ui/tu-do/cycles/task-cycles-client';
 import { requireCurrentUser } from '../../../../lib/platform/auth-gate';
 import { createPageHead } from '../../../../lib/platform/head';
 import { resolveMessagesLocale } from '../../../../lib/platform/messages';

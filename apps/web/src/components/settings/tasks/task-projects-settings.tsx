@@ -3,8 +3,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { Loader2 } from '@tuturuuu/icons';
 import { listWorkspaceTaskProjectDetails } from '@tuturuuu/internal-api/tasks';
-import { TaskProjectsClient } from '@tuturuuu/ui/tu-do/projects/task-projects-client';
-import type { TaskProject } from '@tuturuuu/ui/tu-do/projects/types';
+import { TaskProjectsClient } from '@tuturuuu/tasks-ui/tu-do/projects/task-projects-client';
+import type { TaskProject } from '@tuturuuu/tasks-ui/tu-do/projects/types';
 
 function getBrowserInternalApiOptions() {
   return typeof window !== 'undefined'

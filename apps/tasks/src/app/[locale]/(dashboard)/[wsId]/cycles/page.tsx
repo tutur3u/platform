@@ -1,4 +1,4 @@
-import TaskCyclesPage from '@tuturuuu/ui/tu-do/cycles/task-cycles-page';
+import TaskCyclesPage from '@tuturuuu/tasks-ui/tu-do/cycles/task-cycles-page';
 import { connection } from 'next/server';
 
 interface Props {

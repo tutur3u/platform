@@ -8,7 +8,7 @@ import { useTranslations } from 'use-intl';
 
 /**
  * Local mirror of the shared (but not subpath-exported) `buildWorkspaceTaskUrl`
- * from `@tuturuuu/ui/tu-do/shared/task-url`. The shared module is a `.ts` file
+ * from `@tuturuuu/tasks-ui/tu-do/shared/task-url`. The shared module is a `.ts` file
  * and the `@tuturuuu/ui` export map only exposes `tu-do/shared/*.tsx`, so it
  * cannot be imported across the package boundary; this keeps the same logic.
  */
