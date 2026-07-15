@@ -26,14 +26,13 @@ describe('task card selection styles', () => {
     expect(TASK_CARD_SELECTION_CHECKBOX_BASE_CLASSES).not.toContain('scale-');
   });
 
-  it('uses the list color and removes the box inside the selected fixed-size slot', () => {
+  it('uses the list color without coupling its tone to a DOM state attribute', () => {
     const classes = getTaskCardSelectionIconToneClasses('CYAN');
 
     expect(classes).toContain('border-dynamic-cyan/70');
     expect(classes).toContain('bg-dynamic-cyan/5');
     expect(classes).toContain('text-dynamic-cyan');
-    expect(classes).toContain('data-[selected=true]:border-0');
-    expect(classes).toContain('data-[selected=true]:bg-transparent');
+    expect(classes).not.toContain('data-[');
   });
 
   it('does not change the card border width when selected', () => {
