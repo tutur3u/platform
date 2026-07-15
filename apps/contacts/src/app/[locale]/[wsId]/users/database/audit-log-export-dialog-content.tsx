@@ -20,6 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@tuturuuu/ui/select';
+import { toast } from '@tuturuuu/ui/sonner';
 import { XLSX } from '@tuturuuu/ui/xlsx';
 import { getAuditLogTimeRange } from '@tuturuuu/users-core/database/audit-log-time';
 import type {
@@ -143,6 +144,12 @@ export function AuditLogExportDialogContent({
       return allRows;
     },
     onSuccess: (allRows) => {
+      if (allRows.length === 0) {
+        setProgress(0);
+        toast.info(t('no_activity'));
+        return;
+      }
+
       const exportRows = allRows.map((entry) => ({
         [tableT('action')]: tableT(`event_kind.${entry.eventKind}`),
         [tableT('summary')]: entry.summary,
@@ -189,9 +196,12 @@ export function AuditLogExportDialogContent({
       }
 
       setProgress(100);
+      toast.success(commonT('common.export-success'));
     },
     onError: (error) => {
       console.error('Failed to export audit log:', error);
+      setProgress(0);
+      toast.error(commonT('common.export-error'));
     },
   });
 
@@ -239,6 +249,11 @@ export function AuditLogExportDialogContent({
 
         {exportMutation.isPending ? (
           <Progress value={progress} className="h-2 w-full" />
+        ) : null}
+        {exportMutation.isError ? (
+          <p className="text-destructive text-sm" role="alert">
+            {commonT('common.export-error')}
+          </p>
         ) : null}
       </div>
 

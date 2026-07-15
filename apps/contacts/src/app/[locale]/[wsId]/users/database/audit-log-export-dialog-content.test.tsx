@@ -4,12 +4,19 @@ import type { ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AuditLogExportDialogContent } from './audit-log-export-dialog-content';
 
-const { listWorkspaceUserAuditLogsMock, xlsxJsonToSheetMock } = vi.hoisted(
-  () => ({
-    listWorkspaceUserAuditLogsMock: vi.fn(),
-    xlsxJsonToSheetMock: vi.fn(() => ({})),
-  })
-);
+const {
+  listWorkspaceUserAuditLogsMock,
+  toastErrorMock,
+  toastInfoMock,
+  toastSuccessMock,
+  xlsxJsonToSheetMock,
+} = vi.hoisted(() => ({
+  listWorkspaceUserAuditLogsMock: vi.fn(),
+  toastErrorMock: vi.fn(),
+  toastInfoMock: vi.fn(),
+  toastSuccessMock: vi.fn(),
+  xlsxJsonToSheetMock: vi.fn(() => ({})),
+}));
 
 vi.mock('next-intl', () => ({
   useTranslations: () => (key: string, values?: Record<string, unknown>) =>
@@ -36,6 +43,14 @@ vi.mock('@tuturuuu/ui/dialog', () => ({
   DialogTitle: ({ children }: { children: ReactNode }) => <div>{children}</div>,
 }));
 
+vi.mock('@tuturuuu/ui/sonner', () => ({
+  toast: {
+    error: toastErrorMock,
+    info: toastInfoMock,
+    success: toastSuccessMock,
+  },
+}));
+
 vi.mock('@tuturuuu/ui/xlsx', () => ({
   XLSX: {
     utils: {
@@ -49,7 +64,30 @@ vi.mock('@tuturuuu/ui/xlsx', () => ({
 
 function renderWithQueryClient(node: ReactNode) {
   return render(
-    <QueryClientProvider client={new QueryClient()}>{node}</QueryClientProvider>
+    <QueryClientProvider
+      client={
+        new QueryClient({
+          defaultOptions: { mutations: { retry: false } },
+        })
+      }
+    >
+      {node}
+    </QueryClientProvider>
+  );
+}
+
+function renderExportDialog() {
+  return renderWithQueryClient(
+    <AuditLogExportDialogContent
+      wsId="ws-1"
+      locale="en"
+      period="monthly"
+      month="2026-03"
+      eventKind="archived"
+      source="all"
+      affectedUserQuery=""
+      actorQuery=""
+    />
   );
 }
 
@@ -96,18 +134,7 @@ describe('AuditLogExportDialogContent', () => {
   });
 
   it('includes archival notes as a first-class export column', async () => {
-    renderWithQueryClient(
-      <AuditLogExportDialogContent
-        wsId="ws-1"
-        locale="en"
-        period="monthly"
-        month="2026-03"
-        eventKind="archived"
-        source="all"
-        affectedUserQuery=""
-        actorQuery=""
-      />
-    );
+    renderExportDialog();
 
     fireEvent.click(screen.getByRole('button', { name: 'common.export' }));
 
@@ -118,5 +145,32 @@ describe('AuditLogExportDialogContent', () => {
         }),
       ]);
     });
+    expect(toastSuccessMock).toHaveBeenCalledWith('common.export-success');
+  });
+
+  it('does not create an empty workbook when no audit events exist', async () => {
+    listWorkspaceUserAuditLogsMock.mockResolvedValue({ data: [], count: 0 });
+    renderExportDialog();
+
+    fireEvent.click(screen.getByRole('button', { name: 'common.export' }));
+
+    await waitFor(() => {
+      expect(toastInfoMock).toHaveBeenCalledWith('no_activity');
+    });
+    expect(xlsxJsonToSheetMock).not.toHaveBeenCalled();
+    expect(toastSuccessMock).not.toHaveBeenCalled();
+  });
+
+  it('shows a translated error when the audit export request fails', async () => {
+    listWorkspaceUserAuditLogsMock.mockRejectedValue(new Error('Unauthorized'));
+    renderExportDialog();
+
+    fireEvent.click(screen.getByRole('button', { name: 'common.export' }));
+
+    await waitFor(() => {
+      expect(toastErrorMock).toHaveBeenCalledWith('common.export-error');
+    });
+    expect(screen.getByRole('alert')).toHaveTextContent('common.export-error');
+    expect(xlsxJsonToSheetMock).not.toHaveBeenCalled();
   });
 });
