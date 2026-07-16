@@ -1,6 +1,7 @@
 ---
 title: Square Terminal integration
 description: Connect Inventory and Storefront checkout to Square Terminal, OAuth, catalog and stock sync, device pairing, and webhooks.
+updatedAt: '2026-07-17'
 ---
 
 This runbook covers the Inventory and Storefront integration with
@@ -20,14 +21,62 @@ For a store-owner-friendly walkthrough, use
   private-schema storage.
 </Warning>
 
+## Customer guide map
+
+<CardGroup cols={2}>
+  <Card
+    title="Account and counter setup"
+    icon="plug"
+    href="/platform/applications/inventory-square-pos/customer-setup"
+  >
+    Roles, credentials, OAuth, webhooks, location, and device setup.
+  </Card>
+  <Card
+    title="Sandbox test plan"
+    icon="flask"
+    href="/platform/applications/inventory-square-pos/sandbox-testing"
+  >
+    Success, cancel, timeout, offline, expiry, duplicate event, and stock tests.
+  </Card>
+  <Card
+    title="Catalog synchronization"
+    icon="arrows-rotate"
+    href="/platform/applications/inventory-square-pos/catalog-sync"
+  >
+    Direction selection, links, conflicts, prices, counts, and no-delete rules.
+  </Card>
+  <Card
+    title="Production launch"
+    icon="shield-check"
+    href="/platform/applications/inventory-square-pos/production-launch"
+  >
+    Physical pairing, first live sale, go/no-go gate, and customer handoff.
+  </Card>
+  <Card
+    title="Operations"
+    icon="chart-line"
+    href="/platform/applications/inventory-square-pos/operations"
+  >
+    Payments hub observability, lifecycle, reconciliation, and daily checks.
+  </Card>
+  <Card
+    title="Troubleshooting"
+    icon="life-ring"
+    href="/platform/applications/inventory-square-pos/troubleshooting"
+  >
+    Safe symptom-based recovery and escalation packets.
+  </Card>
+</CardGroup>
+
 ## How the flow works
 
 1. A shopper checks out on a `checkoutMode: 'square_terminal'` storefront.
    Tuturuuu validates Square readiness, creates a local checkout reservation,
    stores the provider as `square_terminal`, and returns the buyer to the local
    order reference page.
-2. Inventory staff sends the reserved checkout to a Square Terminal from the
-   commerce workflow. Tuturuuu creates a Square order, then creates a Terminal
+2. A Square Terminal Storefront dispatches the reserved checkout immediately;
+   an eligible reserved row can also be sent or canceled from the Inventory
+   Commerce workflow. Tuturuuu creates a Square order, then creates a Terminal
    checkout for the selected location and device with the Square order id and
    itemized cart display enabled.
 3. Square sends terminal checkout and payment webhooks. Tuturuuu verifies the
@@ -50,8 +99,8 @@ marks the local link for review without deleting local product or stock data.
 Square credentials are self-serve per workspace, like Inventory Polar settings.
 Do not configure Square app credentials, access tokens, or webhook signature
 keys as deployment secrets. Workspace admins save these values in **Inventory →
-Settings → Square Terminal**, where Tuturuuu encrypts secret values before
-private-schema storage.
+Payments → Connect & set up → Square POS**, where Tuturuuu encrypts secret
+values before private-schema storage.
 
 The Square REST client pins `Square-Version: 2026-05-20` and uses native
 `fetch`. OAuth is the recommended connection method because Tuturuuu can refresh
@@ -87,19 +136,22 @@ credentials.
    https://<your-tuturuuu-domain>/api/v1/inventory/square/webhook/<workspace-id>
    ```
 
-   Subscribe at minimum to:
+   Subscribe to these required events:
 
    - `device.code.paired`
    - `terminal.checkout.created`
    - `terminal.checkout.updated`
-   - `payment.created`
    - `payment.updated`
    - `oauth.authorization.revoked`
    - `catalog.version.updated`
    - `inventory.count.updated`
 
-5. Copy the webhook signature key into **Inventory → Settings → Square
-   Terminal** for the matching environment.
+   `payment.created` can be added for additional delivery visibility, but
+   `payment.updated` is the required payment-state signal in the customer setup
+   checklist.
+
+5. Copy the webhook signature key into **Inventory → Payments → Connect & set
+   up → Square POS** for the matching environment.
 
 For local development, expose `apps/web` with an HTTPS tunnel and either use the
 tunnel URL in Square or save that exact URL as the workspace webhook
@@ -107,7 +159,7 @@ notification URL so signature validation uses the same value.
 
 ## Connect a workspace
 
-1. Open **Inventory → Settings → Square Terminal**.
+1. Open **Inventory → Payments → Connect & set up → Square POS**.
 2. Choose `Sandbox` or `Production`.
 3. Save the Square Application ID and Application Secret for that environment.
    If Square is configured with a tunnel or canonical URL that differs from the
@@ -140,6 +192,85 @@ The verified Tuturuuu launch path requires reliable connectivity. Square lists
 Terminal API offline payments as an opt-in beta capability, but Tuturuuu does
 not currently certify or depend on that flow. Operators should restore the
 network and reconcile any uncertain checkout before retrying.
+
+## Runtime ownership and endpoints
+
+The Inventory satellite owns the customer-facing Square routes and delegates
+provider orchestration to `@tuturuuu/inventory-core`. Client components use
+`@tuturuuu/internal-api`; they must not call provider APIs or private database
+tables directly.
+
+| Method and route | Purpose |
+| --- | --- |
+| `GET/PUT /api/v1/workspaces/:wsId/inventory/square-settings` | Read masked readiness state or save the workspace Square configuration |
+| `GET /api/v1/workspaces/:wsId/inventory/square/oauth/start` | Start environment-bound OAuth |
+| `GET /api/v1/inventory/square/oauth/callback` | Exchange the authorization and return to Inventory |
+| `GET /api/v1/workspaces/:wsId/inventory/square/locations` | List locations for the connected seller |
+| `GET /api/v1/workspaces/:wsId/inventory/square/devices` | List paired Production Terminal API devices |
+| `POST /api/v1/workspaces/:wsId/inventory/square/device-codes` | Create a five-minute `TERMINAL_API` pairing code |
+| `GET/POST /api/v1/workspaces/:wsId/inventory/square/catalog-sync` | Inspect links or run import, publish, or two-way sync |
+| `POST /api/v1/workspaces/:wsId/inventory/square/terminal-checkouts` | Dispatch one reserved checkout to Square |
+| `POST /api/v1/workspaces/:wsId/inventory/square/terminal-checkouts/:checkoutId/cancel` | Cancel the same Square Terminal checkout and reconcile release |
+| `POST /api/v1/inventory/square/webhook/:wsId` | Verify and process workspace-scoped Square events |
+| `POST /api/v1/inventory/storefronts/:slug/checkouts` | Reserve the cart and dispatch provider checkout when the Storefront uses Square Terminal |
+
+The environment, workspace, seller connection, location, and device are checked
+again server-side. A client-visible control is not an authorization boundary.
+
+## State and idempotency boundaries
+
+```mermaid
+flowchart TD
+  A["Public cart validation"] --> B["Private reservation RPC"]
+  B --> C["Square order with idempotency key"]
+  C --> D["Terminal checkout with idempotency key"]
+  D --> E["Signed Square webhooks"]
+  E --> F{"Verified paid payment?"}
+  F -->|"Yes"| G["Complete once, consume stock, book at most one sale"]
+  F -->|"Cancel, fail, or expire"| H["Release once"]
+```
+
+Provider IDs have unique database indexes, webhook events carry Square event
+IDs, and reconciliation routines are safe to call repeatedly. Never weaken
+those constraints to make a duplicate test pass.
+
+The local checkout is reserved for 15 minutes. The database expiry function is
+service-role only, concurrency-safe, and invoked by a five-minute cron plus lazy
+reconciliation on reads and new checkout creation. Terminal cancellation and
+Square final-state webhooks use the same release/complete boundaries.
+
+## Focused verification commands
+
+Run the narrow Square contract suites before the wider repository gate:
+
+```bash
+bun --filter @tuturuuu/inventory-core test
+
+bun x vitest run \
+  'apps/inventory/src/app/api/v1/inventory/square/webhook/[wsId]/route.test.ts' \
+  'apps/inventory/src/app/api/v1/inventory/storefronts/[slug]/checkouts/route.test.ts' \
+  'apps/inventory/src/app/api/v1/workspaces/[wsId]/inventory/square-settings/route.test.ts' \
+  'apps/inventory/src/app/api/v1/workspaces/[wsId]/inventory/square/catalog-sync/route.test.ts' \
+  'apps/inventory/src/app/api/v1/workspaces/[wsId]/inventory/square/terminal-checkouts/route.test.ts' \
+  'apps/inventory/src/app/api/v1/workspaces/[wsId]/inventory/square/terminal-checkouts/[checkoutId]/cancel/route.test.ts' \
+  'apps/inventory/src/app/api/cron/inventory/checkout-expiry/route.test.ts' \
+  apps/inventory/src/components/operator/payments-readiness.test.ts \
+  apps/inventory/src/components/operator/square-setup-progress.test.ts
+
+bun --filter @tuturuuu/inventory type-check
+bun check
+```
+
+When implementation routes or app dependencies change, also run the real
+Inventory build as required by the repository operating manual:
+
+```bash
+cd apps/inventory
+bun run build
+```
+
+Do not treat a passing build as physical hardware certification. The customer
+must still complete the Production smoke test below.
 
 ## Hardware-free verification
 
@@ -175,9 +306,11 @@ The no-hardware suite must cover these Square contracts before release:
 
 ## Physical-terminal smoke checklist
 
-Use sandbox first when terminal coverage is available. If hardware sandbox
-coverage is not sufficient, use a production test procedure that avoids real
-customer inventory and refunds immediately after verification.
+Complete the simulator matrix in Sandbox first. Square does not pair real
+hardware to Sandbox, so physical-device certification requires a separately
+approved Production test with a low-value item and real card-present processing.
+Do not promise that a refund also refunds every processing fee; the Square owner
+must approve the store's refund plan.
 
 1. Pair a terminal for the selected Square location.
 2. Create a small Storefront order and confirm Inventory shows it as reserved.
@@ -189,4 +322,10 @@ customer inventory and refunds immediately after verification.
 6. Confirm stock reservations were consumed and the finance ledger sale was
    booked once.
 7. Repeat cancel, expiry/failure, duplicate webhook delivery, and transient
-   Square failure cases. Cancel/failure/expiry must release inventory.
+   Square failure cases in Sandbox. Cancel/failure/expiry must release
+   inventory. Do not repeat destructive Production failure tests unless the
+   owner explicitly approves their real-money and operational effects.
+
+Use the customer-facing
+[Production launch gate](/platform/applications/inventory-square-pos/production-launch)
+for the exact owner, operator, receipt, stock, and go/no-go checklist.

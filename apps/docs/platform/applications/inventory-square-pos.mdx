@@ -1,171 +1,178 @@
 ---
-title: Set up a physical Square POS
-description: A non-technical, safety-first guide to pair Square Terminal with Tuturuuu Inventory and verify the first live payment.
+title: Square POS with Tuturuuu Inventory
+description: Start here to connect Square Terminal, synchronize catalog and stock, rehearse safely, and launch in-person payments.
 ---
 
-This guide takes a store owner or manager from a prepared Square account to a
-physical Square Terminal that can receive orders from Tuturuuu Inventory.
-Complete the steps in order from **Inventory → Payments → Setup → Square**.
+Tuturuuu connects a Storefront order to a physical **Square Terminal** through
+Square's Terminal API. Customers shop in the Tuturuuu Storefront, Inventory
+reserves the stock, and the Square checkout is dispatched to the selected
+Terminal. An authorized operator can also send or cancel an eligible reserved
+checkout from Commerce. Square processes the card-present payment and reports
+the result back to Tuturuuu.
 
 <Info>
-  Tuturuuu never creates a production charge just because you connect Square,
-  save credentials, synchronize products, or pair a Terminal. A charge starts
-  only when an authorized operator sends a real order to the paired device and
-  the buyer completes payment.
+  This integration uses Square Terminal in Connected Mode. It does not launch
+  the Square Point of Sale mobile app, and connecting an account never creates
+  a charge by itself.
 </Info>
+
+## Choose your guide
 
 <CardGroup cols={2}>
   <Card
-    title="Open Inventory Payments"
-    icon="credit-card"
-    href="https://inventory.tuturuuu.com"
+    title="Set up the account and counter"
+    icon="plug"
+    href="/platform/applications/inventory-square-pos/customer-setup"
   >
-    Select the workspace, then open Payments and the Square Production tab.
+    A non-technical walkthrough for the Square owner, Inventory admin, and
+    counter operator.
   </Card>
   <Card
-    title="Square Terminal setup"
-    icon="tablet"
-    href="https://squareup.com/help/us/en/article/6535-set-up-square-terminal"
+    title="Rehearse in Sandbox"
+    icon="flask"
+    href="/platform/applications/inventory-square-pos/sandbox-testing"
   >
-    Follow Square's hardware, power, network, update, and receipt-paper guide.
+    Test success, cancellation, timeout, offline behavior, stock release, and
+    duplicate webhooks without moving real money.
+  </Card>
+  <Card
+    title="Synchronize catalog and stock"
+    icon="arrows-rotate"
+    href="/platform/applications/inventory-square-pos/catalog-sync"
+  >
+    Import from Square, publish from Tuturuuu, compare both sides, and resolve
+    conflicts without deleting Square objects.
+  </Card>
+  <Card
+    title="Launch Production safely"
+    icon="shield-check"
+    href="/platform/applications/inventory-square-pos/production-launch"
+  >
+    Pair the physical Terminal, run one owner-approved live sale, and apply the
+    go/no-go gate.
+  </Card>
+  <Card
+    title="Operate and verify payments"
+    icon="chart-line"
+    href="/platform/applications/inventory-square-pos/operations"
+  >
+    Read the Payments hub, reconcile transactions, and understand reservation
+    and webhook behavior.
+  </Card>
+  <Card
+    title="Troubleshoot safely"
+    icon="life-ring"
+    href="/platform/applications/inventory-square-pos/troubleshooting"
+  >
+    Follow symptom-based recovery steps without double-charging or corrupting
+    stock.
   </Card>
 </CardGroup>
 
-## The launch path
+## How one payment travels
+
+```mermaid
+sequenceDiagram
+  autonumber
+  actor Buyer
+  participant Store as Tuturuuu Storefront
+  participant Inv as Inventory
+  participant Sq as Square
+  participant Term as Square Terminal
+
+  Buyer->>Store: Submit the cart
+  Store->>Inv: Create checkout and reserve stock
+  Inv->>Sq: Create Square order and Terminal checkout
+  Sq->>Term: Show the itemized payment request
+  Buyer->>Term: Complete or cancel payment
+  Term-->>Sq: Report the result
+  Sq-->>Inv: Deliver signed webhooks
+  Inv->>Inv: Complete sale or release reservation
+  Inv-->>Store: Show final order status and receipt evidence
+```
+
+Tuturuuu finishes a sale only after it can reconcile a verified Square payment.
+If checkout creation fails, the buyer cancels, Square reports failure or expiry,
+or the local reservation expires, Tuturuuu releases the reserved stock.
+
+## The Payments control center
+
+Open:
+
+```text
+https://inventory.tuturuuu.com/<workspace-id>/payments
+```
+
+The page is read-only by default. Use the compact edit control only when you
+intend to change settings or start a catalog synchronization.
+
+| Payments section | What it answers |
+| --- | --- |
+| **Connect & set up** | Is the selected Square environment connected, signed, located, and routed to a device? |
+| **Catalog sync** | Which products and variations are linked, where they originated, and which conflicts need review? |
+| **Test & verify** | Did a provider checkout create one transaction with the expected amount, status, and evidence? |
+
+## Sandbox and Production stay separate
 
 ```mermaid
 flowchart LR
-  A["Prepare account and counter"] --> B["Rehearse in Sandbox"]
-  B --> C["Connect Production"]
-  C --> D["Pair from Tuturuuu"]
-  D --> E["Activate Storefront"]
-  E --> F["Verify one live sale"]
+  A["Square Sandbox seller"] --> B["Sandbox token, webhook, location, simulator ID"]
+  B --> C["Tuturuuu Sandbox rehearsal"]
+  C -->|"All exit checks pass"| D["Create a separate Production connection"]
+  D --> E["Production token, webhook, location, physical device"]
+  E --> F["One approved low-value live sale"]
 ```
 
-The Payments page detects the connection, webhook key, location, and paired
-device automatically. Hardware readiness and the first live payment require a
-person at the counter.
-
-## Before you start
-
-Have these people and items available:
-
-| Owner | Counter operator | Hardware |
-| --- | --- | --- |
-| Square account owner login and approval | Permission to manage Inventory Payments | Square Terminal and power supply |
-| Confirmed bank, business, tax, tip, and receipt settings | A clearly named low-value test item | Reliable Wi-Fi or Ethernet |
-| Approval for one real test payment and refund owner | Access to Tuturuuu and Square Dashboard | Receipt paper and a supported payment card |
+| Sandbox | Production |
+| --- | --- |
+| Test seller, credentials, objects, and simulator device IDs | Real seller, credentials, catalog, location, and physical Terminal |
+| No real card or Square hardware | Real card-present processing and possible fees |
+| Safe place for demo CRUD, retries, cancellations, and timeouts | Change only approved records and run only approved payments |
+| No physical receipt | Verify the actual Terminal and printed or digital receipt |
 
 <Warning>
-  Production moves real money and can incur processing fees. Do not run the
-  live check until the store owner approves the exact item, amount, card, and
-  person responsible for the test and any refund.
+  Never copy a Sandbox token, object ID, location ID, webhook signature key, or
+  simulator device ID into Production. Square keeps the environments isolated,
+  and Tuturuuu checks that the saved connection matches the selected
+  environment.
 </Warning>
 
-## Set up the counter
+## Safety contract
 
-<Steps>
-  <Step title="Prepare Square and the physical Terminal">
-    Confirm the Production Square seller and location. Power and charge the
-    Terminal, install its updates, load receipt paper, and connect it to stable
-    Wi-Fi or Ethernet. Networks that require a browser sign-in page are not
-    suitable. Review Square's
-    [hardware setup](https://squareup.com/help/us/en/article/6535-set-up-square-terminal)
-    and [network requirements](https://squareup.com/help/us/en/article/8348-set-up-network-requirements-for-square-hardware).
-  </Step>
-  <Step title="Finish the Sandbox rehearsal">
-    In Inventory Payments, select **Sandbox** and complete every detected check.
-    Square Sandbox uses simulator device IDs rather than pairing a physical
-    Terminal through the Devices API. Rehearse success, cancellation, failure,
-    and expiry without moving money. Confirm canceled, failed, and expired
-    orders release reserved stock.
-  </Step>
-  <Step title="Connect the Production seller">
-    Switch to **Production**, enable the compact edit control, and save the
-    Production application credentials. Use **Connect OAuth** to authorize the
-    correct Square seller, then confirm the merchant and environment shown in
-    the read-only summary. Never reuse Sandbox credentials in Production.
-  </Step>
-  <Step title="Select the location and verify webhooks">
-    Select the Square location that owns this counter, currency, reporting, and
-    receipts. In Square Developer Console, subscribe the Production webhook URL
-    shown by Tuturuuu to the required Terminal, payment, device, catalog,
-    inventory, and authorization events. Save its matching signature key and
-    send a Square test event. Square should report an HTTP 200 response.
-  </Step>
-  <Step title="Create the pairing code inside Tuturuuu">
-    In the Terminal settings card, name the counter and choose **Create pairing
-    code**. Enter that code on the physical Terminal within five minutes. If it
-    expires, create a new Tuturuuu code. Wait for pairing, refresh the devices,
-    select the paired Terminal as the default, and save.
+Tuturuuu provides these protections:
 
-    <Warning>
-      Do not create the code in Square Dashboard. Dashboard device codes are not
-      compatible with Terminal API. The code must come from Tuturuuu, which uses
-      Square's Devices API with the `TERMINAL_API` product type.
-    </Warning>
-  </Step>
-  <Step title="Activate the Storefront and catalog">
-    Confirm the intended Storefront belongs to the same Inventory workspace and
-    uses **Square Terminal** checkout. Review catalog links and stock before
-    opening sales. Square synchronization from Tuturuuu is additive and must not
-    delete Square-side objects; review conflicts instead of overwriting
-    uncertain changes.
-  </Step>
-  <Step title="Run one controlled live payment">
-    With the owner present, create one order for the approved low-value item.
-    Send it to the Terminal once and complete payment. Do not double-click or
-    retry while the checkout is pending. Keep Tuturuuu Payments and Square
-    Dashboard open together until every verification below passes.
-  </Step>
-</Steps>
+- Square settings and synchronization controls start in read-only mode.
+- Checkout readiness fails closed when the connection, webhook key, location,
+  or device is missing.
+- Square catalog synchronization is additive and never deletes or archives
+  Square catalog objects.
+- Duplicate and out-of-order Square webhooks are reconciled idempotently.
+- A reserved checkout expires after 15 minutes; cancellation, failure, and
+  expiry release its stock.
+- A Production charge requires a person to send a real order and a buyer to
+  finish payment on the Terminal.
 
-## First-payment verification
+People still own these decisions:
 
-Do not call the counter live until every row matches:
+- which Square seller, location, catalog records, and device belong to the
+  workspace;
+- whether a Production sync or payment is authorized;
+- the amount, card, refund policy, and staff member for the first live test;
+- business, banking, tax, tip, receipt, and hardware configuration in Square.
 
-| Evidence | Expected result |
-| --- | --- |
-| Tuturuuu checkout | Completed, with one Square order, Terminal checkout, payment ID, and receipt reference |
-| Square Payments | One completed payment at the intended location for the exact amount and currency |
-| Terminal and receipt | One approval and a matching printed or digital receipt |
-| Inventory | The reservation is consumed and stock changes exactly once |
-| Finance | The sale is recorded exactly once |
-| Webhooks | Square delivery succeeds and Tuturuuu shows no unresolved payment state |
+## Definition of fully working
 
-If the owner wants the test reversed, use the store's approved refund process
-and verify the refund in both systems. Do not create a second payment to
-"balance" an uncertain first payment.
+Call the integration ready only when all of these are true:
 
-## Safe troubleshooting
+1. Sandbox connection shows all five setup checks complete.
+2. The Sandbox test matrix passes for success, cancel, timeout, and offline
+   simulation, with stock changing exactly once in every path.
+3. Catalog links are visible and have no unexplained conflict or error state.
+4. Production uses its own OAuth connection, webhook subscription, location,
+   and paired Terminal.
+5. One owner-approved low-value Production sale matches in Tuturuuu, Square,
+   the Terminal receipt, stock, and finance exactly once.
+6. Counter staff know the stop-and-reconcile procedure for an uncertain payment.
 
-<AccordionGroup>
-  <Accordion title="The pairing code expired">
-    Create a new code from Tuturuuu and enter it promptly. Do not replace it with
-    a code from Square Dashboard.
-  </Accordion>
-  <Accordion title="The Terminal does not show the payment">
-    Confirm the Terminal is online, paired to the selected Production seller and
-    location, and saved as the workspace's default device. Then check the
-    transaction status before sending anything again.
-  </Accordion>
-  <Accordion title="The checkout is pending or the result is uncertain">
-    Stop retrying. Compare Tuturuuu transaction evidence, Square Payments, and
-    webhook delivery. Reconcile the existing checkout before accepting another
-    payment for the same order.
-  </Accordion>
-  <Accordion title="The Terminal loses its network">
-    Restore Wi-Fi or Ethernet and re-check the existing checkout. Tuturuuu's
-    verified launch path requires connected checkout. Square documents offline
-    processing as an opt-in beta capability; do not rely on it unless Tuturuuu
-    explicitly adds and verifies that workflow for the workspace.
-  </Accordion>
-</AccordionGroup>
-
-## Official references
-
-- [Pair a POS application with Square Terminal](https://developer.squareup.com/docs/terminal-api/pos-integration)
-- [Connect a Square Terminal to a POS application](https://developer.squareup.com/docs/terminal-api/integrate-square-terminal)
-- [Square webhook overview](https://developer.squareup.com/docs/webhooks/overview)
-- [Square hardware network requirements](https://squareup.com/help/us/en/article/8348-set-up-network-requirements-for-square-hardware)
-- [Tuturuuu operator and engineering runbook](/build/devops/square-terminal-integration)
+For implementation details and automated coverage, use the
+[Square Terminal engineering runbook](/build/devops/square-terminal-integration).

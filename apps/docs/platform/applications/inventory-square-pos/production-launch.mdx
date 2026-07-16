@@ -1,0 +1,221 @@
+---
+title: Launch a physical Square Terminal
+description: Pair Production safely, run one owner-approved card-present sale, and decide whether the counter is ready.
+---
+
+Production launch is the only part of this guide that can move real money. It
+requires the Square account owner, an Inventory workspace admin, the physical
+Terminal, and the counter operator to work through the same checklist.
+
+<Warning>
+  A Production payment can incur Square processing fees. Get explicit approval
+  for the seller, location, item, amount, card, operator, and refund owner before
+  creating the checkout. Tuturuuu never runs this test automatically.
+</Warning>
+
+## Launch gates
+
+```mermaid
+flowchart LR
+  A["Sandbox exit criteria"] --> B["Production 5/5 connection checks"]
+  B --> C["Physical Terminal paired"]
+  C --> D["Catalog, price, tax, stock reviewed"]
+  D --> E["Owner approves one live sale"]
+  E --> F["Payment, receipt, stock, finance match"]
+  F --> G["Open the counter"]
+```
+
+Do not skip a gate because the Sandbox test passed. Sandbox cannot prove the
+real seller, physical device, counter network, or receipt behavior.
+
+## Preflight checklist
+
+### Square owner
+
+- [ ] Legal business and bank details are complete in Square.
+- [ ] The intended selling location, currency, taxes, tips, and receipt settings
+  are correct.
+- [ ] The Square application is in Production and authorizes this seller.
+- [ ] The owner approves one clearly named low-value test item and exact amount.
+- [ ] The owner decides whether and how the test will be refunded afterward.
+
+### Inventory admin
+
+- [ ] The Payments page shows **Production**.
+- [ ] Application, connection, webhook, and location checks are complete.
+- [ ] The selected location matches the owner's intended counter.
+- [ ] The Production webhook has the required seven events and its test delivery
+  returns `2xx`.
+- [ ] Catalog links, price, currency, tax, and stock are reviewed.
+- [ ] The intended Storefront uses **Square Terminal** checkout.
+
+### Counter operator
+
+- [ ] The Terminal is powered, charged, updated, and loaded with receipt paper.
+- [ ] Wi-Fi or Ethernet is stable and does not require a browser sign-in page.
+- [ ] A backup connection and Square login are available if the network fails.
+- [ ] The operator knows not to retry an uncertain payment.
+
+## Pair the physical Terminal
+
+<Steps>
+  <Step title="Open the Production setup">
+    In the correct workspace, open **Payments → Connect & set up → Square POS**
+    and select **Production**. Read the connection and location summary before
+    enabling editing.
+  </Step>
+  <Step title="Name the counter">
+    Use a durable name such as `Front counter`, `Convention booth A`, or
+    `Warehouse pickup`. The name should tell support which physical Terminal is
+    receiving an order.
+  </Step>
+  <Step title="Create the pairing code in Tuturuuu">
+    Choose **Create pairing code**. Tuturuuu asks Square's Devices API for a code
+    with product type `TERMINAL_API` at the selected location.
+
+    <Warning>
+      Do not create a generic device code in Square Dashboard. Dashboard codes
+      are not compatible with Terminal API Connected Mode.
+    </Warning>
+  </Step>
+  <Step title="Enter the code on the Terminal">
+    At the Terminal sign-in screen, choose the device-code option and enter the
+    Tuturuuu code within five minutes. If it expires, generate a new code in
+    Tuturuuu; do not keep retrying the old one.
+  </Step>
+  <Step title="Wait for paired status">
+    Square sends `device.code.paired`. Refresh the device list in Tuturuuu,
+    select the newly paired Terminal as the default, and save. The Production
+    setup should now show **5/5 checks complete**.
+  </Step>
+</Steps>
+
+Square's official pairing sequence is documented in
+[Connect a Square Terminal to a POS application](https://developer.squareup.com/docs/terminal-api/integrate-square-terminal).
+
+## Activate the selling path
+
+1. Open **Storefronts** in Inventory and select the intended storefront.
+2. Confirm it belongs to the same workspace as the Square connection.
+3. Select **Square Terminal** checkout mode.
+4. Publish only the approved listings and bundles.
+5. Place one non-payment test cart and verify the name, variant, quantity, tax,
+   discount, currency, and total.
+6. Keep **Payments → Test & verify**, Square Payments, and the physical Terminal
+   visible during the first sale.
+
+When a ready Square Terminal storefront submits checkout, Tuturuuu reserves the
+stock and dispatches the Square order and Terminal checkout. If a reserved row
+still needs operator action, the Commerce surface can send or cancel that same
+checkout. Never create a replacement order until the existing one is reconciled.
+
+## Run one controlled live sale
+
+<Steps>
+  <Step title="Read the approval aloud">
+    Confirm the seller, location, item, quantity, amount, currency, card owner,
+    operator, and refund decision. Stop if any detail differs from the owner's
+    approval.
+  </Step>
+  <Step title="Record the starting evidence">
+    Write down the product's available stock, the Tuturuuu time, and the
+    intended total. Open Square Payments before submitting the checkout.
+  </Step>
+  <Step title="Submit exactly once">
+    Submit the Storefront checkout once. Wait for the itemized request on the
+    selected Terminal. Do not double-click, reload into another order, or send a
+    second request while the status is pending.
+  </Step>
+  <Step title="Complete the card-present payment">
+    Use the owner-approved card and follow the Terminal prompts. Capture the
+    printed or digital receipt according to the store's policy.
+  </Step>
+  <Step title="Match both systems">
+    Compare the amount, currency, location, status, Square order ID, Terminal
+    checkout ID, payment ID, and receipt evidence in Tuturuuu and Square.
+  </Step>
+  <Step title="Verify stock and finance exactly once">
+    The checkout should be completed, its reservation consumed, available stock
+    reduced once, and the finance sale recorded at most once. A duplicate
+    webhook delivery must not repeat any of those changes.
+  </Step>
+  <Step title="Apply the approved refund decision">
+    If the owner planned to reverse the test, use the store's normal approved
+    Square refund process and reconcile the refund in both systems. Do not make
+    a second charge to offset an uncertain first charge.
+  </Step>
+</Steps>
+
+## First-sale evidence
+
+| Evidence | Pass condition |
+| --- | --- |
+| Tuturuuu checkout | One completed checkout for the approved cart |
+| Square order | One order with the matching items, tax, currency, and total |
+| Terminal checkout | One completed checkout for the paired device and location |
+| Square payment | One completed payment for the exact amount |
+| Receipt | Printed or digital receipt matches the payment and location |
+| Inventory | Reservation consumed and on-hand changed once |
+| Finance | One sale entry when finance booking is configured |
+| Webhooks | Signed deliveries accepted; duplicates cause no duplicate state |
+
+## Go/no-go decision
+
+```mermaid
+flowchart TD
+  A{"Do all eight evidence rows match?"}
+  A -->|"Yes"| B["Mark the counter ready"]
+  A -->|"No"| C["Stop new Square orders"]
+  C --> D["Reconcile the existing checkout"]
+  D --> E{"Was money captured?"}
+  E -->|"Yes or uncertain"| F["Use Square payment evidence; do not retry"]
+  E -->|"No"| G["Cancel or allow the checkout to expire"]
+  F --> H["Escalate with IDs and timestamps"]
+  G --> H
+```
+
+The counter is **no-go** when any of these are true:
+
+- the Production environment or seller is uncertain;
+- the location, device, price, currency, or tax is wrong;
+- the webhook test is not accepted;
+- the Terminal is offline or shows a different account;
+- the prior checkout is still pending or its payment result is unknown;
+- stock or finance changed more than once;
+- staff do not know who owns reconciliation and refunds.
+
+Follow the
+[troubleshooting guide](/platform/applications/inventory-square-pos/troubleshooting)
+before accepting another order.
+
+## Counter handoff message
+
+Copy this into the customer's Discord channel and replace the brackets:
+
+```text
+Square Terminal launch handoff
+
+Workspace: [workspace name]
+Square seller and location: [seller / location]
+Physical Terminal: [counter name]
+Launch owner: [name]
+Counter operator: [name]
+
+Completed:
+- Sandbox 5/5 setup checks
+- Success, cancel, timeout, offline, expiry, and duplicate-webhook tests
+- Catalog links and stock reviewed with no unexplained conflicts
+- Production OAuth, webhook, location, and Terminal pairing
+
+Customer action:
+1. Confirm business, bank, tax, tip, receipt, and location settings in Square.
+2. Approve one low-value item, exact amount, card, operator, and refund plan.
+3. Keep Tuturuuu Payments and Square Payments open.
+4. Submit the checkout once and complete it on the paired Terminal.
+5. Reply with the Tuturuuu checkout ID, Square payment ID, amount, status, receipt result, stock result, and any error.
+
+Safety rule: if the status is pending or uncertain, do not retry. Stop and reconcile the existing checkout first.
+```
+
+After launch, give counter staff the
+[operations and verification guide](/platform/applications/inventory-square-pos/operations).

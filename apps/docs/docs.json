@@ -231,7 +231,18 @@
                   "platform/applications/drive",
                   "platform/applications/finance",
                   "platform/applications/inventory",
-                  "platform/applications/inventory-square-pos",
+                  {
+                    "group": "Square POS",
+                    "pages": [
+                      "platform/applications/inventory-square-pos",
+                      "platform/applications/inventory-square-pos/customer-setup",
+                      "platform/applications/inventory-square-pos/sandbox-testing",
+                      "platform/applications/inventory-square-pos/catalog-sync",
+                      "platform/applications/inventory-square-pos/production-launch",
+                      "platform/applications/inventory-square-pos/operations",
+                      "platform/applications/inventory-square-pos/troubleshooting"
+                    ]
+                  },
                   "platform/applications/storefront",
                   "platform/applications/mail",
                   "platform/applications/shiraoki",
