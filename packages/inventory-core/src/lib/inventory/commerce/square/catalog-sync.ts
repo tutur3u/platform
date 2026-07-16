@@ -5,8 +5,10 @@ import {
   buildSquarePhysicalCountChanges,
   decideSquareCatalogSync,
   hasSquareDeleteInstruction,
+  inventoryPriceToSquareAmount,
   mergeSquareItemWithoutDeleting,
   type SquareCatalogSyncDirection,
+  squareAmountToInventoryPrice,
   squareSyncHash,
 } from './catalog-sync-contract';
 import {
@@ -185,6 +187,7 @@ async function fetchSquareCounts({
 
 async function pullFromSquare({
   accessToken,
+  currency,
   direction,
   environment,
   locationId,
@@ -193,6 +196,7 @@ async function pullFromSquare({
   wsId,
 }: {
   accessToken: string;
+  currency: string;
   direction: SquareCatalogSyncDirection;
   environment: SquareEnvironment;
   locationId: string;
@@ -281,6 +285,12 @@ async function pullFromSquare({
 
       const link = linksByVariation.get(variation.id);
       const amount = counts.get(variation.id) ?? 0;
+      const priceCurrency =
+        variation.item_variation_data?.price_money?.currency ?? currency;
+      const priceMajor = squareAmountToInventoryPrice(
+        variation.item_variation_data?.price_money?.amount ?? 0,
+        priceCurrency
+      );
       const squareHash = squareVariationHash(item, variation, amount);
       const local = link ? await loadLocalSnapshot(link) : null;
       const sku = variation.item_variation_data?.sku ?? '';
@@ -330,9 +340,10 @@ async function pullFromSquare({
           table: 'inventory_units',
           wsId,
         }));
-      productId = await applySquareVariationToLocal({
+      const syncedProductId = await applySquareVariationToLocal({
         amount,
         categoryId,
+        currency: priceCurrency,
         item,
         link,
         ownerId,
@@ -342,21 +353,19 @@ async function pullFromSquare({
         warehouseId: link?.warehouse_id ?? warehouseId,
         wsId,
       });
+      productId = syncedProductId;
       const localHash = localVariationHash({
         amount,
         description: item.item_data?.description ?? null,
         name: item.item_data?.name || 'Square item',
-        price: Math.max(
-          0,
-          Math.round(variation.item_variation_data?.price_money?.amount ?? 0)
-        ),
+        price: priceMajor,
         sku,
         unitName: variationName,
       });
       await upsertLink({
         environment,
         local_hash: localHash,
-        product_id: productId,
+        product_id: syncedProductId,
         square_hash: squareHash,
         square_item_id: item.id,
         square_item_name: item.item_data?.name ?? null,
@@ -499,7 +508,7 @@ async function pushToSquare({
       variations: eligible.map(({ link, localHash, sku, stock, unitName }) => ({
         amount: stock.amount,
         localHash,
-        price: stock.price,
+        priceMajor: stock.price,
         sku,
         squareVariationId: link?.square_variation_id,
         squareVariationVersion: link?.square_variation_version,
@@ -531,11 +540,16 @@ async function pushToSquare({
       const returnedVariation = returnedItem?.item_data?.variations?.find(
         (variation) => variation.id === actualVariationId
       );
+      const squareCurrency =
+        returnedVariation?.item_variation_data?.price_money?.currency ??
+        currency;
       const squareHash = squareSyncHash({
         amount: entry.stock.amount,
         description: product.description,
         itemName: product.name,
-        price: entry.stock.price,
+        price:
+          returnedVariation?.item_variation_data?.price_money?.amount ??
+          inventoryPriceToSquareAmount(entry.stock.price, squareCurrency),
         sku: entry.sku,
         variationName: entry.unitName,
       });
@@ -637,6 +651,7 @@ export async function syncInventorySquareCatalog({
     if (direction === 'from_square' || direction === 'bidirectional') {
       latestTime = await pullFromSquare({
         accessToken: context.accessToken,
+        currency,
         direction,
         environment: context.environment,
         locationId: settings.location_id,

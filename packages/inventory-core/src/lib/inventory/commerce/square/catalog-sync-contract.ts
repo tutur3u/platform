@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import { majorToMinor, minorToMajor } from '@tuturuuu/utils/money';
 import type { SquareCatalogObject } from './types';
 
 export type SquareCatalogSyncDirection =
@@ -11,13 +12,27 @@ export type SquareCatalogSyncDecision = 'conflict' | 'noop' | 'pull' | 'push';
 export type LocalSquareVariation = {
   amount: number | null;
   localHash: string;
-  price: number;
+  priceMajor: number;
   sku: string;
   squareVariationId?: string | null;
   squareVariationVersion?: number | null;
   tempId: string;
   unitName: string;
 };
+
+export function inventoryPriceToSquareAmount(
+  priceMajor: number,
+  currency = 'USD'
+) {
+  return Math.max(0, majorToMinor(priceMajor, currency));
+}
+
+export function squareAmountToInventoryPrice(
+  amountMinor: number,
+  currency = 'USD'
+) {
+  return minorToMajor(Math.max(0, Math.round(amountMinor)), currency);
+}
 
 function stableValue(value: unknown): unknown {
   if (Array.isArray(value)) return value.map(stableValue);
@@ -89,6 +104,8 @@ export function mergeSquareItemWithoutDeleting({
       : undefined;
     if (!replacement) return remoteVariation;
     replacements.delete(remoteVariation.id);
+    const priceCurrency =
+      remoteVariation.item_variation_data?.price_money?.currency ?? currency;
     return {
       ...remoteVariation,
       id: remoteVariation.id,
@@ -97,10 +114,11 @@ export function mergeSquareItemWithoutDeleting({
         item_id: itemId,
         name: replacement.unitName,
         price_money: {
-          amount: Math.max(0, Math.round(replacement.price)),
-          currency:
-            remoteVariation.item_variation_data?.price_money?.currency ??
-            currency,
+          amount: inventoryPriceToSquareAmount(
+            replacement.priceMajor,
+            priceCurrency
+          ),
+          currency: priceCurrency,
         },
         sku: replacement.sku,
         track_inventory: true,
@@ -125,7 +143,7 @@ export function mergeSquareItemWithoutDeleting({
         item_id: itemId,
         name: variation.unitName,
         price_money: {
-          amount: Math.max(0, Math.round(variation.price)),
+          amount: inventoryPriceToSquareAmount(variation.priceMajor, currency),
           currency,
         },
         sku: variation.sku,

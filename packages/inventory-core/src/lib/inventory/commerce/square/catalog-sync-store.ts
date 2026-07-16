@@ -1,7 +1,10 @@
 import 'server-only';
 
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import type { SquareCatalogSyncDirection } from './catalog-sync-contract';
+import {
+  type SquareCatalogSyncDirection,
+  squareAmountToInventoryPrice,
+} from './catalog-sync-contract';
 import { getPrivateAdmin, type SupabaseErrorLike } from './settings-store';
 import type { SquareCatalogObject, SquareEnvironment } from './types';
 
@@ -251,6 +254,7 @@ export async function loadLocalSnapshot(link: SquareCatalogLinkRow) {
 export async function applySquareVariationToLocal({
   amount,
   categoryId,
+  currency,
   item,
   link,
   ownerId,
@@ -262,6 +266,7 @@ export async function applySquareVariationToLocal({
 }: {
   amount: number | null;
   categoryId: string;
+  currency: string;
   item: SquareCatalogObject;
   link?: SquareCatalogLinkRow;
   ownerId: string;
@@ -270,7 +275,7 @@ export async function applySquareVariationToLocal({
   variation: SquareCatalogObject;
   warehouseId: string;
   wsId: string;
-}) {
+}): Promise<string> {
   const sbAdmin = await createAdminClient();
   const privateAdmin = sbAdmin.schema('private');
   let productId = link?.product_id ?? requestedProductId;
@@ -306,9 +311,9 @@ export async function applySquareVariationToLocal({
     {
       amount,
       min_amount: 0,
-      price: Math.max(
-        0,
-        Math.round(variation.item_variation_data?.price_money?.amount ?? 0)
+      price: squareAmountToInventoryPrice(
+        variation.item_variation_data?.price_money?.amount ?? 0,
+        currency
       ),
       product_id: productId,
       unit_id: unitId,

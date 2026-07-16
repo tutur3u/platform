@@ -3,7 +3,9 @@ import {
   buildSquarePhysicalCountChanges,
   decideSquareCatalogSync,
   hasSquareDeleteInstruction,
+  inventoryPriceToSquareAmount,
   mergeSquareItemWithoutDeleting,
+  squareAmountToInventoryPrice,
   squareSyncHash,
 } from './catalog-sync-contract';
 
@@ -70,6 +72,23 @@ describe('Square catalog sync contract', () => {
     ).toBe('pull');
   });
 
+  it.each([
+    ['USD', 20, 2000],
+    ['JPY', 500, 500],
+    ['BHD', 1.234, 1234],
+  ] as const)(
+    'converts %s catalog prices between Inventory major units and Square minor units',
+    (currency, major, minor) => {
+      expect(inventoryPriceToSquareAmount(major, currency)).toBe(minor);
+      expect(squareAmountToInventoryPrice(minor, currency)).toBe(major);
+    }
+  );
+
+  it('clamps invalid negative catalog prices at the provider boundary', () => {
+    expect(inventoryPriceToSquareAmount(-1, 'USD')).toBe(0);
+    expect(squareAmountToInventoryPrice(-100, 'USD')).toBe(0);
+  });
+
   it('keeps unknown remote variations when updating a linked item', () => {
     const result = mergeSquareItemWithoutDeleting({
       itemId: 'item-1',
@@ -101,7 +120,7 @@ describe('Square catalog sync contract', () => {
         {
           amount: 4,
           localHash: 'hash',
-          price: 125,
+          priceMajor: 1.25,
           sku: 'SKU-1',
           squareVariationId: 'known-variation',
           squareVariationVersion: 3,
@@ -112,6 +131,15 @@ describe('Square catalog sync contract', () => {
     });
 
     expect(result.item_data?.variations).toHaveLength(2);
+    expect(
+      result.item_data?.variations?.find(
+        (variation) => variation.id === 'known-variation'
+      )
+    ).toMatchObject({
+      item_variation_data: {
+        price_money: { amount: 125, currency: 'USD' },
+      },
+    });
     expect(
       result.item_data?.variations?.find(
         (variation) => variation.id === 'remote-only-variation'
@@ -128,7 +156,7 @@ describe('Square catalog sync contract', () => {
         {
           amount: 1,
           localHash: 'hash',
-          price: 100,
+          priceMajor: 1,
           sku: 'SKU-NEW',
           tempId: '#variation',
           unitName: 'Default',
@@ -137,6 +165,11 @@ describe('Square catalog sync contract', () => {
     });
 
     expect(result.item_data?.variations).toHaveLength(1);
+    expect(result.item_data?.variations?.[0]).toMatchObject({
+      item_variation_data: {
+        price_money: { amount: 100, currency: 'USD' },
+      },
+    });
     expect(hasSquareDeleteInstruction(result)).toBe(false);
   });
 
