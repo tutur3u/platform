@@ -1,11 +1,12 @@
-import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
+import { createMarketingMetadata } from '@/lib/seo/marketing-metadata';
 
-export const metadata: Metadata = {
-  title: 'Inventory Product',
+export const generateMetadata = createMarketingMetadata({
+  title: 'Inventory Management',
   description:
     'Monitor stock levels and fulfillment workflows with Tuturuuu Inventory.',
-};
+  pathname: '/products/inventory',
+});
 
 export default function InventoryLayout({ children }: { children: ReactNode }) {
   return children;

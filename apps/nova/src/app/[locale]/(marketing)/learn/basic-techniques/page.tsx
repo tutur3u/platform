@@ -1,4 +1,12 @@
 import { LessonContent } from '@/components/learn/lesson-content';
+import { createNovaPageMetadata } from '@/lib/page-metadata';
+
+export const generateMetadata = createNovaPageMetadata({
+  title: 'Basic Prompt Engineering Techniques',
+  description:
+    'Learn zero-shot, few-shot, chain-of-thought, role prompting, and the core techniques for writing clearer AI prompts.',
+  pathname: '/learn/basic-techniques',
+});
 
 const lessonData = {
   title: 'Basic Techniques in Prompt Engineering',

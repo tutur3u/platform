@@ -31,6 +31,21 @@ export interface CommonMetadataConfig {
   publisher?: string;
 }
 
+export interface PageMetadataConfig {
+  baseUrl: string;
+  description: string;
+  image?: string;
+  imageAlt?: string;
+  indexable?: boolean;
+  keywords?: string[];
+  locale: string;
+  pathname: string;
+  siteName?: string;
+  socialDescription?: string;
+  socialTitle?: string;
+  title: string;
+}
+
 interface CreateCommonMetadataProps {
   config: CommonMetadataConfig;
   locale: string;
@@ -43,8 +58,22 @@ interface GenerateCommonMetadataProps {
   }>;
 }
 
+interface GeneratePageMetadataProps {
+  config: Omit<PageMetadataConfig, 'locale'>;
+  params: Promise<{
+    locale: string;
+  }>;
+}
+
 function getOpenGraphLocale(locale: string) {
   return locale === 'vi' ? 'vi_VN' : 'en_US';
+}
+
+function getLocalizedUrl(baseUrl: string, locale: string, pathname: string) {
+  const normalizedPathname =
+    pathname === '/' ? '' : `/${pathname.replace(/^\/+|\/+$/g, '')}`;
+
+  return new URL(`/${locale}${normalizedPathname}`, baseUrl).toString();
 }
 
 function getRobotsMetadata(indexable: boolean): Metadata['robots'] {
@@ -139,10 +168,81 @@ export function createCommonMetadata({
   };
 }
 
+export function createPageMetadata({
+  baseUrl,
+  description,
+  image = DEFAULT_OG_IMAGE,
+  imageAlt,
+  indexable,
+  keywords,
+  locale,
+  pathname,
+  siteName = 'Tuturuuu',
+  title,
+  socialDescription = description,
+  socialTitle = title,
+}: PageMetadataConfig): Metadata {
+  const canonical = getLocalizedUrl(baseUrl, locale, pathname);
+  const englishUrl = getLocalizedUrl(baseUrl, 'en', pathname);
+  const vietnameseUrl = getLocalizedUrl(baseUrl, 'vi', pathname);
+  const openGraphLocale = getOpenGraphLocale(locale);
+  const absoluteImage = new URL(image, baseUrl).toString();
+
+  return {
+    title,
+    description,
+    ...(keywords?.length ? { keywords } : {}),
+    ...(typeof indexable === 'boolean'
+      ? { robots: getRobotsMetadata(indexable) }
+      : {}),
+    alternates: {
+      canonical,
+      languages: {
+        'en-US': englishUrl,
+        'vi-VN': vietnameseUrl,
+        'x-default': englishUrl,
+      },
+    },
+    openGraph: {
+      type: 'website',
+      url: canonical,
+      locale: openGraphLocale,
+      alternateLocale: [openGraphLocale === 'vi_VN' ? 'en_US' : 'vi_VN'],
+      siteName,
+      title: socialTitle,
+      description: socialDescription,
+      images: [
+        {
+          url: absoluteImage,
+          width: 1200,
+          height: 630,
+          alt: imageAlt ?? socialTitle,
+        },
+      ],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: socialTitle,
+      description: socialDescription,
+      images: [absoluteImage],
+      creator: '@tuturuuu',
+      site: '@tuturuuu',
+    },
+  };
+}
+
 export async function generateCommonMetadata({
   config,
   params,
 }: GenerateCommonMetadataProps): Promise<Metadata> {
   const { locale } = await params;
   return createCommonMetadata({ config, locale });
+}
+
+export async function generatePageMetadata({
+  config,
+  params,
+}: GeneratePageMetadataProps): Promise<Metadata> {
+  const { locale } = await params;
+  return createPageMetadata({ ...config, locale });
 }

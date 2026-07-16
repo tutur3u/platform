@@ -26,10 +26,12 @@ import {
   Video,
   Wallet,
 } from '@tuturuuu/icons';
+import { createPageMetadata } from '@tuturuuu/utils/common/metadata';
 import { cn } from '@tuturuuu/utils/format';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
+import { BASE_URL } from '@/constants/common';
 import {
   APP_CATEGORIES,
   type AppCategory,
@@ -85,10 +87,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     namespace: 'appsGateway.metadata',
   });
 
-  return {
+  return createPageMetadata({
+    baseUrl: BASE_URL,
     description: t('description'),
+    indexable: true,
+    locale,
+    pathname: '/',
+    siteName: 'Tuturuuu Apps',
     title: t('title'),
-  };
+  });
 }
 
 export default async function AppsGatewayPage() {

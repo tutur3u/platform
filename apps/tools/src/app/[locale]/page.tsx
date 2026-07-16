@@ -1,7 +1,9 @@
 import { QrCode, Shuffle } from '@tuturuuu/icons';
+import { createPageMetadata } from '@tuturuuu/utils/common/metadata';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
+import { BASE_URL } from '@/constants/common';
 
 interface Props {
   params: Promise<{
@@ -13,10 +15,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: 'toolsPage' });
 
-  return {
+  return createPageMetadata({
+    baseUrl: BASE_URL,
     description: t('subtitle'),
+    indexable: true,
+    locale,
+    pathname: '/',
+    siteName: 'Tuturuuu Tools',
     title: t('title'),
-  };
+  });
 }
 
 export default async function ToolsLandingPage() {

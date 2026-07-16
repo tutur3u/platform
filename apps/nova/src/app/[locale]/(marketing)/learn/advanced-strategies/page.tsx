@@ -1,4 +1,12 @@
 import { LessonContent } from '@/components/learn/lesson-content';
+import { createNovaPageMetadata } from '@/lib/page-metadata';
+
+export const generateMetadata = createNovaPageMetadata({
+  title: 'Advanced Prompt Engineering Strategies',
+  description:
+    'Explore advanced prompting patterns, prompt iteration, chain-of-thought techniques, constraints, and evaluation strategies.',
+  pathname: '/learn/advanced-strategies',
+});
 
 const lessonData = {
   title: 'Advanced Strategies in Prompt Engineering',

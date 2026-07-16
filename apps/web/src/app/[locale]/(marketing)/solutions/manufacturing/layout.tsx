@@ -1,10 +1,11 @@
-import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
+import { createMarketingMetadata } from '@/lib/seo/marketing-metadata';
 
-export const metadata: Metadata = {
+export const generateMetadata = createMarketingMetadata({
   title: 'Manufacturing Solution',
   description: 'Synchronize production and quality operations with Tuturuuu.',
-};
+  pathname: '/solutions/manufacturing',
+});
 
 export default function ManufacturingLayout({
   children,

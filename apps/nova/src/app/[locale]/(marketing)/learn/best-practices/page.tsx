@@ -1,4 +1,12 @@
 import { LessonContent } from '@/components/learn/lesson-content';
+import { createNovaPageMetadata } from '@/lib/page-metadata';
+
+export const generateMetadata = createNovaPageMetadata({
+  title: 'Prompt Engineering Best Practices',
+  description:
+    'Write more reliable AI prompts with personas, delimiters, examples, structured instructions, and iterative refinement.',
+  pathname: '/learn/best-practices',
+});
 
 const lessonData = {
   title: 'Best Practices in Prompt Engineering',

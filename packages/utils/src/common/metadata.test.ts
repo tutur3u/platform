@@ -1,7 +1,11 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { createCommonMetadata } from './metadata';
+import {
+  createCommonMetadata,
+  createPageMetadata,
+  NO_INDEX_ROBOTS,
+} from './metadata';
 
 const repoRoot = resolve(__dirname, '../../../..');
 
@@ -102,6 +106,65 @@ describe('createCommonMetadata', () => {
   });
 });
 
+describe('createPageMetadata', () => {
+  it('builds canonical, hreflang, and social metadata for a localized page', () => {
+    const metadata = createPageMetadata({
+      baseUrl: 'https://test.tuturuuu.com',
+      description: 'Plan and automate team workflows.',
+      image: '/media/workflows-og.png',
+      locale: 'vi',
+      pathname: '/products/workflows',
+      title: 'Workflow Automation',
+    });
+
+    expect(metadata.alternates).toEqual({
+      canonical: 'https://test.tuturuuu.com/vi/products/workflows',
+      languages: {
+        'en-US': 'https://test.tuturuuu.com/en/products/workflows',
+        'vi-VN': 'https://test.tuturuuu.com/vi/products/workflows',
+        'x-default': 'https://test.tuturuuu.com/en/products/workflows',
+      },
+    });
+    expect(metadata.openGraph).toMatchObject({
+      alternateLocale: ['en_US'],
+      description: 'Plan and automate team workflows.',
+      locale: 'vi_VN',
+      siteName: 'Tuturuuu',
+      title: 'Workflow Automation',
+      url: 'https://test.tuturuuu.com/vi/products/workflows',
+      images: [
+        {
+          alt: 'Workflow Automation',
+          height: 630,
+          url: 'https://test.tuturuuu.com/media/workflows-og.png',
+          width: 1200,
+        },
+      ],
+    });
+    expect(metadata.twitter).toMatchObject({
+      card: 'summary_large_image',
+      creator: '@tuturuuu',
+      site: '@tuturuuu',
+      title: 'Workflow Automation',
+    });
+  });
+
+  it('does not override inherited robots unless page indexing is explicit', () => {
+    const baseConfig = {
+      baseUrl: 'https://test.tuturuuu.com',
+      description: 'Private workspace page.',
+      locale: 'en',
+      pathname: '/workspace',
+      title: 'Workspace',
+    };
+
+    expect(createPageMetadata(baseConfig).robots).toBeUndefined();
+    expect(
+      createPageMetadata({ ...baseConfig, indexable: false }).robots
+    ).toEqual(NO_INDEX_ROBOTS);
+  });
+});
+
 describe('application metadata coverage', () => {
   it('keeps every Next.js application on the shared metadata contract', () => {
     const appsDirectory = resolve(repoRoot, 'apps');
@@ -152,5 +215,47 @@ describe('application metadata coverage', () => {
     expect(mobileHead).toContain('name="robots" content="noindex, nofollow"');
     expect(mobileHead).toContain('property="og:image"');
     expect(docsConfig.description).toMatch(/Tuturuuu platform/);
+  });
+
+  it('keeps SEO-critical public routes on page-specific metadata', () => {
+    const routeFiles = [
+      'apps/apps/src/app/[locale]/page.tsx',
+      'apps/learn/src/app/[locale]/page.tsx',
+      'apps/teach/src/app/[locale]/page.tsx',
+      'apps/tools/src/app/[locale]/page.tsx',
+      'apps/tools/src/app/[locale]/qr/page.tsx',
+      'apps/tools/src/app/[locale]/random/page.tsx',
+      'apps/storefront/src/app/[locale]/[storeSlug]/page.tsx',
+      'apps/storefront/src/app/[locale]/[storeSlug]/products/[listingId]/page.tsx',
+      'apps/nova/src/app/[locale]/(marketing)/layout.tsx',
+      'apps/nova/src/app/[locale]/(marketing)/learn/layout.tsx',
+    ];
+
+    for (const routeFile of routeFiles) {
+      const source = readFileSync(resolve(repoRoot, routeFile), 'utf8');
+
+      expect(source, `${routeFile} is missing page-specific SEO metadata`).toMatch(
+        /create(?:Page|NovaPage)Metadata/
+      );
+    }
+
+    const marketingLayouts = readdirSync(
+      resolve(repoRoot, 'apps/web/src/app/[locale]/(marketing)'),
+      { recursive: true, withFileTypes: true }
+    )
+      .filter(
+        (entry) =>
+          entry.isFile() &&
+          entry.name === 'layout.tsx' &&
+          readFileSync(resolve(entry.parentPath, entry.name), 'utf8').includes(
+            'createMarketingMetadata'
+          )
+      )
+      .map((entry) => resolve(entry.parentPath, entry.name));
+
+    expect(marketingLayouts).toHaveLength(34);
+    for (const layoutPath of marketingLayouts) {
+      expect(readFileSync(layoutPath, 'utf8')).toMatch(/pathname:\s*['`]/);
+    }
   });
 });

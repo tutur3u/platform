@@ -1,5 +1,13 @@
 import { Card } from '@tuturuuu/ui/card';
 import type { ReactNode } from 'react';
+import { createNovaPageMetadata } from '@/lib/page-metadata';
+
+export const generateMetadata = createNovaPageMetadata({
+  title: 'Free Prompt Engineering Lessons',
+  description:
+    'Learn large language model fundamentals, prompting techniques, best practices, and advanced prompt engineering strategies.',
+  pathname: '/learn',
+});
 
 export default function LearnLayout({ children }: { children: ReactNode }) {
   return (

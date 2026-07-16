@@ -1,7 +1,9 @@
 import QR from '@tuturuuu/ui/custom/qr/qr';
 import { Separator } from '@tuturuuu/ui/separator';
+import { createPageMetadata } from '@tuturuuu/utils/common/metadata';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
+import { BASE_URL } from '@/constants/common';
 
 interface Props {
   params: Promise<{
@@ -16,10 +18,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     namespace: 'qrPage.metadata',
   });
 
-  return {
+  return createPageMetadata({
+    baseUrl: BASE_URL,
     description: t('description'),
+    indexable: true,
+    locale,
+    pathname: '/qr',
+    siteName: 'Tuturuuu Tools',
     title: t('title'),
-  };
+  });
 }
 
 export default async function QRGeneratorPage() {

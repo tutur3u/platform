@@ -4,8 +4,11 @@ import { Noto_Sans } from 'next/font/google';
 export {
   type CommonMetadataConfig,
   createCommonMetadata,
+  createPageMetadata,
   generateCommonMetadata,
+  generatePageMetadata,
   NO_INDEX_ROBOTS,
+  type PageMetadataConfig,
 } from './metadata';
 
 export const font = Noto_Sans({

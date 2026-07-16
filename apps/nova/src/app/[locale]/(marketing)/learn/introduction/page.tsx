@@ -1,4 +1,12 @@
 import { LessonContent } from '@/components/learn/lesson-content';
+import { createNovaPageMetadata } from '@/lib/page-metadata';
+
+export const generateMetadata = createNovaPageMetadata({
+  title: 'Introduction to LLMs and Prompt Engineering',
+  description:
+    'Understand language models, transformers, large language model use cases, and the foundations of effective prompt engineering.',
+  pathname: '/learn/introduction',
+});
 
 const lessonData = {
   title: 'Introduction to Large Language Models and Prompt Engineering',

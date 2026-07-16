@@ -1,11 +1,12 @@
-import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
+import { createMarketingMetadata } from '@/lib/seo/marketing-metadata';
 
-export const metadata: Metadata = {
+export const generateMetadata = createMarketingMetadata({
   title: 'Restaurant Solution',
   description:
     'Run restaurant operations, scheduling, and loyalty with Tuturuuu.',
-};
+  pathname: '/solutions/restaurants',
+});
 
 export default function RestaurantsLayout({
   children,
