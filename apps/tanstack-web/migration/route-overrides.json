@@ -810,6 +810,41 @@
         }
       }
     },
+    "api:/api/v1/workspaces/:wsId/external-projects/assets/import-jobs:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/external-projects/assets/import-jobs/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "Managed external-project asset import job creation remains Next-owned while the Rust backend lacks authenticated workspace storage writes, bounded SSRF-safe source fetching, and resumable import orchestration."
+    },
+    "api:/api/v1/workspaces/:wsId/external-projects/assets/import-jobs/:jobId:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/external-projects/assets/import-jobs/[jobId]/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "Managed external-project asset import job inspection remains Next-owned until import orchestration and report persistence move to Rust."
+    },
+    "api:/api/v1/workspaces/:wsId/external-projects/assets/import-jobs/:jobId/process:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/external-projects/assets/import-jobs/[jobId]/process/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "Bounded managed external-project asset import processing remains Next-owned while Rust lacks the storage provider integration and SSRF-safe retry pipeline."
+    },
+    "api:/api/v1/workspaces/:wsId/external-projects/entries/bundle:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/external-projects/entries/bundle/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "Transactional external-project entry bundle creation remains Next-owned while the Rust backend lacks the authenticated RPC mutation facade."
+    },
+    "api:/api/v1/workspaces/:wsId/external-projects/entries/:entryId/bundle:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/external-projects/entries/[entryId]/bundle/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "Optimistic-concurrency external-project entry bundle replacement remains Next-owned while the Rust backend lacks the authenticated RPC mutation facade."
+    },
+    "api:/api/v1/workspaces/:wsId/external-projects/relation-definitions:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/external-projects/relation-definitions/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "External-project relation definition listing and creation remain Next-owned while Rust delivery is read-only for relation metadata."
+    },
+    "api:/api/v1/workspaces/:wsId/external-projects/relation-definitions/:relationDefinitionId:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/external-projects/relation-definitions/[relationDefinitionId]/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "External-project relation definition update and deletion remain Next-owned while Rust delivery is read-only for relation metadata."
+    },
     "api:/api/v1/workspaces/:wsId/external-projects/submissions:apps/web/src/app/api/v1/workspaces/[wsId]/external-projects/submissions/route.ts": {
       "status": "legacy-next",
       "targetOwner": "rust-backend",

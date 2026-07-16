@@ -20,6 +20,7 @@ import type {
   ExternalProjectFieldType,
   ExternalProjectImportReport,
   ExternalProjectLoadingData,
+  ExternalProjectRelationDefinition,
   ExternalProjectStudioData,
   ExternalProjectSummary,
   ExternalProjectSyncField,
@@ -32,6 +33,7 @@ import type {
   YoolaExternalProjectLoreCapsuleLoadingItem,
   YoolaExternalProjectSectionLoadingItem,
 } from '@tuturuuu/types';
+import { invalidateWorkspaceExternalProjectCache } from './cache';
 import {
   EXTERNAL_PROJECT_CANONICAL_ID_SECRET,
   EXTERNAL_PROJECT_ENABLED_SECRET,
@@ -41,6 +43,7 @@ import {
   assertExternalProjectStoragePath,
   isExternalProjectStoragePath,
 } from './storage-path';
+import { listWorkspaceExternalProjectRelationData } from './store-relations';
 
 type AdminDb = TypedSupabaseClient;
 const WORKSPACE_SECRET_QUERY_CHUNK_SIZE = 100;
@@ -232,17 +235,14 @@ function buildDeliveryAssetUrl(
   workspaceId: string,
   asset: {
     id: string;
-    source_url: string | null;
+    updated_at: string;
   },
   options?: {
     transform?: ImageTransformOptions;
   }
 ) {
-  if (asset.source_url) {
-    return asset.source_url;
-  }
-
   const searchParams = new URLSearchParams();
+  searchParams.set('v', getExternalProjectAssetRevision(asset.updated_at));
 
   if (options?.transform?.width !== undefined) {
     searchParams.set('width', options.transform.width.toString());
@@ -267,6 +267,31 @@ function buildDeliveryAssetUrl(
   const queryString = searchParams.toString();
 
   return `/api/v1/workspaces/${workspaceId}/external-projects/assets/${asset.id}${queryString ? `?${queryString}` : ''}`;
+}
+
+function getExternalProjectAssetRevision(updatedAt: string) {
+  return updatedAt.replace(/\D/g, '') || '0';
+}
+
+function getExternalProjectDeliveryRevision(
+  collections: ExternalProjectCollection[],
+  entries: ExternalProjectEntry[],
+  assets: ExternalProjectAsset[],
+  relations: Array<{ created_at: string }>,
+  definitions: ExternalProjectRelationDefinition[]
+) {
+  const latest = [
+    ...collections.map((item) => item.updated_at),
+    ...entries.map((item) => item.updated_at),
+    ...assets.map((item) => item.updated_at),
+    ...relations.map((item) => item.created_at),
+    ...definitions.map((item) => item.updated_at),
+  ].sort((left, right) => right.localeCompare(left))[0];
+
+  return {
+    generatedAt: latest ?? '1970-01-01T00:00:00.000Z',
+    revision: latest?.replace(/\D/g, '') || 'empty',
+  };
 }
 
 const EPM_IMAGE_PREVIEW_TRANSFORM = {
@@ -454,9 +479,12 @@ function buildExocorpseLoadingEntry(
   return {
     assets: entry.assets,
     bodyMarkdown: findMarkdownBlockMarkdown(entry),
+    blocks: entry.blocks,
     entryId: entry.id,
     metadata: asJsonObject(entry.metadata),
     profileData: asJsonObject(entry.profile_data),
+    publishedAt: entry.published_at,
+    relations: entry.relations,
     slug: entry.slug,
     status: entry.status,
     subtitle: entry.subtitle,
@@ -518,7 +546,6 @@ function buildExocorpseLoadingData(
       writing: entries('portfolio-writing'),
     },
     reference: {
-      cofiSamples: entries('cofi-samples'),
       entityTags: entries('entity-tags'),
       mediaAssets: entries('media-assets'),
       moodboards: entries('moodboards'),
@@ -862,40 +889,47 @@ export async function getWorkspaceExternalProjectStudioData(
   db?: AdminDb
 ): Promise<ExternalProjectStudioData> {
   const admin = db ?? ((await createAdminClient()) as TypedSupabaseClient);
-  const [collections, entries, fieldDefinitions, importJobs, publishEvents] =
-    await Promise.all([
-      listWorkspaceExternalProjectCollections(workspaceId, admin),
-      listWorkspaceExternalProjectEntries(
-        workspaceId,
-        { includeDrafts: true },
-        admin
-      ),
-      listWorkspaceExternalProjectFieldDefinitions(
-        workspaceId,
-        { includeDisabled: true },
-        admin
-      ),
+  const [
+    collections,
+    entries,
+    fieldDefinitions,
+    importJobs,
+    publishEvents,
+    relationData,
+  ] = await Promise.all([
+    listWorkspaceExternalProjectCollections(workspaceId, admin),
+    listWorkspaceExternalProjectEntries(
+      workspaceId,
+      { includeDrafts: true },
       admin
-        .from('workspace_external_project_import_jobs')
-        .select('*')
-        .eq('ws_id', workspaceId)
-        .order('created_at', { ascending: false })
-        .limit(10)
-        .then(({ data, error }) => {
-          if (error) throw new Error(error.message);
-          return data ?? [];
-        }),
+    ),
+    listWorkspaceExternalProjectFieldDefinitions(
+      workspaceId,
+      { includeDisabled: true },
       admin
-        .from('workspace_external_project_publish_events')
-        .select('*')
-        .eq('ws_id', workspaceId)
-        .order('created_at', { ascending: false })
-        .limit(10)
-        .then(({ data, error }) => {
-          if (error) throw new Error(error.message);
-          return data ?? [];
-        }),
-    ]);
+    ),
+    admin
+      .from('workspace_external_project_import_jobs')
+      .select('*')
+      .eq('ws_id', workspaceId)
+      .order('created_at', { ascending: false })
+      .limit(10)
+      .then(({ data, error }) => {
+        if (error) throw new Error(error.message);
+        return data ?? [];
+      }),
+    admin
+      .from('workspace_external_project_publish_events')
+      .select('*')
+      .eq('ws_id', workspaceId)
+      .order('created_at', { ascending: false })
+      .limit(10)
+      .then(({ data, error }) => {
+        if (error) throw new Error(error.message);
+        return data ?? [];
+      }),
+    listWorkspaceExternalProjectRelationData(workspaceId, admin),
+  ]);
 
   const entryIds = entries.map((entry) => entry.id);
   const [blocks, rawAssets] = await Promise.all([
@@ -937,8 +971,28 @@ export async function getWorkspaceExternalProjectStudioData(
               sort_order: asset.sort_order,
               source_url: asset.source_url,
               storage_path: asset.storage_path,
+              updated_at: asset.updated_at,
+              assetRevision: getExternalProjectAssetRevision(asset.updated_at),
             })),
           blocks: blocks.filter((block) => block.entry_id === entry.id),
+          relations: relationData.relations
+            .filter((relation) => relation.from_entry_id === entry.id)
+            .flatMap((relation) => {
+              const definition = relationData.definitions.find(
+                (item) => item.id === relation.relation_definition_id
+              );
+              return definition && relation.relation_definition_id
+                ? [
+                    {
+                      definitionId: relation.relation_definition_id,
+                      id: relation.id,
+                      key: definition.key,
+                      metadata: relation.metadata,
+                      to_entry_id: relation.to_entry_id,
+                    },
+                  ]
+                : [];
+            }),
         })),
     }));
 
@@ -954,6 +1008,9 @@ export async function getWorkspaceExternalProjectStudioData(
       collectionsPayload
     ),
     publishEvents,
+    relationDefinitions: relationData.definitions,
+    relationDefinitionTargets: relationData.targets,
+    relations: relationData.relations,
   };
 }
 
@@ -1253,6 +1310,7 @@ export async function createWorkspaceExternalProjectCollection(
     throw new Error(error.message);
   }
 
+  await invalidateWorkspaceExternalProjectCache(workspaceId);
   return data;
 }
 
@@ -1288,6 +1346,7 @@ export async function updateWorkspaceExternalProjectCollection(
     throw new Error(error.message);
   }
 
+  await invalidateWorkspaceExternalProjectCache(workspaceId);
   return data;
 }
 
@@ -1420,6 +1479,7 @@ export async function deleteWorkspaceExternalProjectCollection(
     throw new Error(error.message);
   }
 
+  await invalidateWorkspaceExternalProjectCache(workspaceId);
   return { id: collectionId };
 }
 
@@ -1478,6 +1538,7 @@ export async function createWorkspaceExternalProjectFieldDefinition(
     throw new Error(error.message);
   }
 
+  await invalidateWorkspaceExternalProjectCache(payload.workspaceId);
   return data;
 }
 
@@ -1547,6 +1608,7 @@ export async function updateWorkspaceExternalProjectFieldDefinition(
     throw new Error(error.message);
   }
 
+  await invalidateWorkspaceExternalProjectCache(workspaceId);
   return data;
 }
 
@@ -1568,6 +1630,7 @@ export async function deleteWorkspaceExternalProjectFieldDefinition(
     throw new Error(error.message);
   }
 
+  await invalidateWorkspaceExternalProjectCache(payload.workspaceId);
   return { id: fieldDefinitionId };
 }
 
@@ -1791,6 +1854,7 @@ export async function createWorkspaceExternalProjectBlock(
     throw new Error(error.message);
   }
 
+  await invalidateWorkspaceExternalProjectCache(workspaceId);
   return data;
 }
 
@@ -1824,6 +1888,7 @@ export async function updateWorkspaceExternalProjectBlock(
     throw new Error(error.message);
   }
 
+  await invalidateWorkspaceExternalProjectCache(workspaceId);
   return data;
 }
 
@@ -1881,6 +1946,7 @@ export async function deleteWorkspaceExternalProjectBlock(
     throw new Error(error.message);
   }
 
+  await invalidateWorkspaceExternalProjectCache(workspaceId);
   return { id: blockId };
 }
 
@@ -1919,6 +1985,7 @@ export async function createWorkspaceExternalProjectEntry(
     throw new Error(error.message);
   }
 
+  await invalidateWorkspaceExternalProjectCache(workspaceId);
   return data;
 }
 
@@ -1956,6 +2023,7 @@ export async function updateWorkspaceExternalProjectEntry(
     throw new Error(error.message);
   }
 
+  await invalidateWorkspaceExternalProjectCache(workspaceId);
   return data;
 }
 
@@ -2003,6 +2071,7 @@ export async function deleteWorkspaceExternalProjectEntry(
     throw new Error(error.message);
   }
 
+  await invalidateWorkspaceExternalProjectCache(workspaceId);
   return { id: entryId };
 }
 
@@ -2156,6 +2225,7 @@ export async function duplicateWorkspaceExternalProjectEntry(
     }
   }
 
+  await invalidateWorkspaceExternalProjectCache(workspaceId);
   return duplicatedEntry;
 }
 
@@ -2248,6 +2318,7 @@ export async function bulkUpdateWorkspaceExternalProjectEntries(
     throw new Error(error.message);
   }
 
+  await invalidateWorkspaceExternalProjectCache(workspaceId);
   return data ?? [];
 }
 
@@ -2287,6 +2358,7 @@ export async function createWorkspaceExternalProjectAsset(
     throw new Error(error.message);
   }
 
+  await invalidateWorkspaceExternalProjectCache(workspaceId, [data.id]);
   return data;
 }
 
@@ -2325,6 +2397,7 @@ export async function updateWorkspaceExternalProjectAsset(
     throw new Error(error.message);
   }
 
+  await invalidateWorkspaceExternalProjectCache(workspaceId, [data.id]);
   return data;
 }
 
@@ -2362,6 +2435,7 @@ export async function deleteWorkspaceExternalProjectAsset(
     await deleteWorkspaceStorageObjectByPath(workspaceId, asset.storage_path);
   }
 
+  await invalidateWorkspaceExternalProjectCache(workspaceId, [assetId]);
   return { id: assetId };
 }
 
@@ -2432,6 +2506,7 @@ export async function publishWorkspaceExternalProjectEntry(
     throw new Error(eventError.message);
   }
 
+  await invalidateWorkspaceExternalProjectCache(workspaceId);
   return entry;
 }
 
@@ -2863,9 +2938,10 @@ export async function buildWorkspaceExternalProjectDeliveryPayload(
   );
   const entryIds = entries.map((entry) => entry.id);
 
-  const [blocks, assets] = await Promise.all([
+  const [blocks, assets, relationData] = await Promise.all([
     listWorkspaceExternalProjectBlocksByEntryIds(workspaceId, entryIds, admin),
     listWorkspaceExternalProjectAssetsByEntryIds(workspaceId, entryIds, admin),
+    listWorkspaceExternalProjectRelationData(workspaceId, admin),
   ]);
 
   const deliveryCollections = collections.filter((collection) => {
@@ -2881,6 +2957,12 @@ export async function buildWorkspaceExternalProjectDeliveryPayload(
     (entry) =>
       deliveryCollectionIds.has(entry.collection_id) &&
       !hasPrivateDeliveryFlag(entry.metadata)
+  );
+  const deliveryEntryIds = new Set(deliveryEntries.map((entry) => entry.id));
+  const publicRelations = relationData.relations.filter(
+    (relation) =>
+      deliveryEntryIds.has(relation.from_entry_id) &&
+      deliveryEntryIds.has(relation.to_entry_id)
   );
 
   const collectionsPayload = deliveryCollections.map((collection) => ({
@@ -2902,22 +2984,50 @@ export async function buildWorkspaceExternalProjectDeliveryPayload(
             sort_order: asset.sort_order,
             source_url: asset.source_url,
             storage_path: asset.storage_path,
+            updated_at: asset.updated_at,
+            assetRevision: getExternalProjectAssetRevision(asset.updated_at),
           })),
         blocks: blocks.filter((block) => block.entry_id === entry.id),
+        relations: publicRelations
+          .filter((relation) => relation.from_entry_id === entry.id)
+          .flatMap((relation) => {
+            const definition = relationData.definitions.find(
+              (item) => item.id === relation.relation_definition_id
+            );
+            return definition && relation.relation_definition_id
+              ? [
+                  {
+                    definitionId: relation.relation_definition_id,
+                    id: relation.id,
+                    key: definition.key,
+                    metadata: relation.metadata,
+                    to_entry_id: relation.to_entry_id,
+                  },
+                ]
+              : [];
+          }),
       })),
   }));
   const loadingData = buildExternalProjectLoadingData(
     binding.adapter,
     collectionsPayload
   );
+  const deliveryRevision = getExternalProjectDeliveryRevision(
+    deliveryCollections,
+    deliveryEntries,
+    assets,
+    publicRelations,
+    relationData.definitions
+  );
 
   return {
     adapter: binding.adapter,
     canonicalProjectId: binding.canonical_id,
     collections: collectionsPayload,
-    generatedAt: new Date().toISOString(),
+    generatedAt: deliveryRevision.generatedAt,
     loadingData,
     profileData,
+    revision: deliveryRevision.revision,
     workspaceId,
   };
 }

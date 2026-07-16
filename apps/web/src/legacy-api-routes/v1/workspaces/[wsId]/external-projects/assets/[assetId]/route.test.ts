@@ -120,10 +120,11 @@ describe('external project asset route', () => {
       'ws-1',
       'external-projects/yoola/artworks/entry-one/cover.png',
       {
-        expiresIn: 60 * 60,
+        expiresIn: 7 * 24 * 60 * 60,
         provider: 'supabase',
         requireExists: true,
         transform: {
+          format: undefined,
           height: 1200,
           quality: 80,
           resize: 'cover',
@@ -188,7 +189,7 @@ describe('external project asset route', () => {
       'ws-1',
       'external-projects/yoola/games/mine/cover.png',
       {
-        expiresIn: 60 * 60,
+        expiresIn: 7 * 24 * 60 * 60,
         provider: 'r2',
         requireExists: true,
         transform: undefined,
@@ -252,7 +253,7 @@ describe('external project asset route', () => {
       'ws-1',
       'external-projects/theguyser/gallery/hero.png',
       {
-        expiresIn: 60 * 60,
+        expiresIn: 7 * 24 * 60 * 60,
         provider: 'r2',
         requireExists: true,
         transform: undefined,
@@ -263,10 +264,11 @@ describe('external project asset route', () => {
       'ws-1',
       'external-projects/theguyser/gallery/hero.png',
       {
-        expiresIn: 60 * 60,
+        expiresIn: 7 * 24 * 60 * 60,
         provider: 'supabase',
         requireExists: true,
         transform: {
+          format: undefined,
           height: 600,
           resize: 'cover',
           width: 900,
@@ -329,7 +331,7 @@ describe('external project asset route', () => {
       'ws-1',
       'external-projects/yoola/gallery/cover.png',
       {
-        expiresIn: 60 * 60,
+        expiresIn: 7 * 24 * 60 * 60,
         provider: 'supabase',
         requireExists: true,
         transform: undefined,
@@ -340,7 +342,7 @@ describe('external project asset route', () => {
       'ws-1',
       'external-projects/yoola/gallery/cover.png',
       {
-        expiresIn: 60 * 60,
+        expiresIn: 7 * 24 * 60 * 60,
         provider: 'r2',
         requireExists: true,
         transform: undefined,

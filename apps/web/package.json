@@ -123,6 +123,7 @@
     "@upstash/qstash": "^2.11.2",
     "@upstash/ratelimit": "^2.0.8",
     "@upstash/redis": "^1.38.0",
+    "@vercel/functions": "^3.7.5",
     "@xyflow/react": "^12.11.2",
     "ai": "^7.0.22",
     "bcrypt": "^6.0.0",

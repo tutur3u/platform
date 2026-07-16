@@ -20,6 +20,12 @@ import {
   resolveWorkspaceExternalProjectBinding,
 } from '@/lib/external-projects/access';
 import {
+  EXTERNAL_PROJECT_ASSET_REDIRECT_CACHE_CONTROL,
+  EXTERNAL_PROJECT_PRIVATE_CACHE_CONTROL,
+  externalProjectAssetCacheTag,
+  workspaceExternalProjectCacheTag,
+} from '@/lib/external-projects/cache';
+import {
   EXTERNAL_PROJECTS_STORAGE_PREFIX,
   isExternalProjectStoragePath,
 } from '@/lib/external-projects/storage-path';
@@ -109,6 +115,28 @@ export async function GET(
   const { assetId, wsId } = await params;
   const admin = (await createAdminClient()) as TypedSupabaseClient;
   const resolvedWsId = resolveWorkspaceId(wsId);
+  let isPublished = false;
+
+  const privateJson = (body: unknown, status: number) =>
+    NextResponse.json(body, {
+      headers: { 'Cache-Control': EXTERNAL_PROJECT_PRIVATE_CACHE_CONTROL },
+      status,
+    });
+  const redirect = (url: string) =>
+    NextResponse.redirect(url, {
+      headers: isPublished
+        ? {
+            'Cache-Control': EXTERNAL_PROJECT_ASSET_REDIRECT_CACHE_CONTROL,
+            'Vercel-CDN-Cache-Control':
+              'max-age=518400, stale-while-revalidate=43200',
+            'Vercel-Cache-Tag': [
+              workspaceExternalProjectCacheTag(resolvedWsId),
+              externalProjectAssetCacheTag(assetId),
+            ].join(','),
+          }
+        : { 'Cache-Control': EXTERNAL_PROJECT_PRIVATE_CACHE_CONTROL },
+      status: 307,
+    });
 
   try {
     const transform = assetTransformQuerySchema.parse(
@@ -119,26 +147,27 @@ export async function GET(
       admin
     );
     if (!binding.enabled || !binding.canonical_project) {
-      return NextResponse.json(
+      return privateJson(
         { error: 'External project delivery unavailable for this workspace' },
-        { status: 404 }
+        404
       );
     }
 
     const { data: asset, error } = await admin
       .from('workspace_external_project_assets')
       .select(
-        'id, ws_id, entry_id, metadata, source_url, storage_path, workspace_external_project_entries!inner(status)'
+        'id, ws_id, entry_id, metadata, source_url, storage_path, updated_at, workspace_external_project_entries!inner(status)'
       )
       .eq('id', assetId)
       .eq('ws_id', resolvedWsId)
       .single();
 
     if (error || !asset) {
-      return NextResponse.json({ error: 'Asset not found' }, { status: 404 });
+      return privateJson({ error: 'Asset not found' }, 404);
     }
 
     const entryStatus = asset.workspace_external_project_entries?.status;
+    isPublished = entryStatus === 'published';
     if (entryStatus !== 'published') {
       const access = await requireWorkspaceExternalProjectAccess({
         mode: 'read',
@@ -147,29 +176,24 @@ export async function GET(
       });
 
       if (!access.ok) {
-        return NextResponse.json(
-          { error: 'Asset not available' },
-          { status: 404 }
-        );
+        return privateJson({ error: 'Asset not available' }, 404);
       }
     }
 
     if (asset.source_url) {
-      return NextResponse.redirect(asset.source_url, { status: 307 });
+      const sourceUrl = new URL(asset.source_url);
+      if (!['http:', 'https:'].includes(sourceUrl.protocol)) {
+        return privateJson({ error: 'Asset not available' }, 404);
+      }
+      return redirect(sourceUrl.toString());
     }
 
     if (!asset.storage_path) {
-      return NextResponse.json(
-        { error: 'Asset not available' },
-        { status: 404 }
-      );
+      return privateJson({ error: 'Asset not available' }, 404);
     }
 
     if (!isExternalProjectStoragePath(asset.storage_path)) {
-      return NextResponse.json(
-        { error: 'Asset not available' },
-        { status: 404 }
-      );
+      return privateJson({ error: 'Asset not available' }, 404);
     }
 
     const { provider: activeProvider } =
@@ -185,7 +209,7 @@ export async function GET(
           resolvedWsId,
           asset.storage_path,
           {
-            expiresIn: 60 * 60,
+            expiresIn: 7 * 24 * 60 * 60,
             provider,
             requireExists: true,
             transform:
@@ -195,7 +219,7 @@ export async function GET(
           }
         );
 
-        return NextResponse.redirect(signedUrl, { status: 307 });
+        return redirect(signedUrl);
       } catch (error) {
         if (error instanceof WorkspaceStorageError && error.status === 404) {
           continue;
@@ -212,19 +236,19 @@ export async function GET(
       }
     }
 
-    return NextResponse.json({ error: 'Asset not available' }, { status: 404 });
+    return privateJson({ error: 'Asset not available' }, 404);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json(
+      return privateJson(
         { error: 'Invalid transform query', details: error.flatten() },
-        { status: 400 }
+        400
       );
     }
 
     console.error('Failed to resolve external project asset', error);
-    return NextResponse.json(
+    return privateJson(
       { error: 'Failed to resolve external project asset' },
-      { status: 500 }
+      500
     );
   }
 }

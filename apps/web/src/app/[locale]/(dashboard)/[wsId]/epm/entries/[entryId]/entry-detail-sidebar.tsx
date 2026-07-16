@@ -27,6 +27,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@tuturuuu/ui/select';
+import type { ReactNode } from 'react';
 import type { EpmStrings } from '../../epm-strings';
 import { EntryDetailFeaturedEntryCard } from './entry-detail-featured-entry-card';
 import { EntryDetailFeaturedPlacementCard } from './entry-detail-featured-placement-card';
@@ -84,6 +85,7 @@ type EntryDetailSidebarProps = {
   onTagSelectionChange: (value: string[]) => void;
   onTitleChange: (value: string) => void;
   pairedArtworkSlug: string;
+  relationsCard?: ReactNode;
   strings: EpmStrings;
   supportsPairedVisual: boolean;
   tagCreateOpen: boolean;
@@ -136,6 +138,7 @@ export function EntryDetailSidebar({
   onTagSelectionChange,
   onTitleChange,
   pairedArtworkSlug,
+  relationsCard,
   strings,
   supportsPairedVisual,
   tagCreateOpen,
@@ -219,6 +222,7 @@ export function EntryDetailSidebar({
               tagDraft={tagDraft}
               tagOptions={tagOptions}
             />
+            {relationsCard}
 
             {featuredEntryConfig ? (
               <EntryDetailFeaturedEntryCard

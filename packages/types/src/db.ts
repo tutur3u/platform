@@ -767,6 +767,10 @@ export type ExternalProjectTaxonomy =
   Tables<'workspace_external_project_taxonomies'>;
 export type ExternalProjectEntryRelation =
   Tables<'workspace_external_project_entry_relations'>;
+export type ExternalProjectRelationDefinition =
+  Tables<'workspace_external_project_relation_definitions'>;
+export type ExternalProjectRelationDefinitionTarget =
+  Tables<'workspace_external_project_relation_definition_targets'>;
 export type ExternalProjectImportJob =
   Tables<'workspace_external_project_import_jobs'>;
 export type ExternalProjectPublishEvent =
@@ -839,8 +843,18 @@ export type ExternalProjectDeliveryAsset = Pick<
   | 'alt_text'
   | 'sort_order'
   | 'metadata'
+  | 'updated_at'
 > & {
   assetUrl: string | null;
+  assetRevision: string;
+};
+
+export type ExternalProjectDeliveryRelation = Pick<
+  ExternalProjectEntryRelation,
+  'id' | 'to_entry_id' | 'metadata'
+> & {
+  definitionId: string;
+  key: string;
 };
 
 export type ExternalProjectDeliveryEntry = Pick<
@@ -857,6 +871,7 @@ export type ExternalProjectDeliveryEntry = Pick<
 > & {
   blocks: ExternalProjectBlock[];
   assets: ExternalProjectDeliveryAsset[];
+  relations: ExternalProjectDeliveryRelation[];
 };
 
 export type ExternalProjectDeliveryCollection = Pick<
@@ -932,10 +947,13 @@ export type ExocorpseExternalProjectLoadingEntry = {
   subtitle: string | null;
   summary: string | null;
   status: ExternalProjectEntryStatus;
+  publishedAt: string | null;
   bodyMarkdown: string | null;
+  blocks: ExternalProjectBlock[];
   profileData: Record<string, unknown>;
   metadata: Record<string, unknown>;
   assets: ExternalProjectDeliveryAsset[];
+  relations: ExternalProjectDeliveryRelation[];
 };
 
 export type ExocorpseExternalProjectLoadingCollection = {
@@ -989,7 +1007,6 @@ export type ExocorpseExternalProjectLoadingData = {
     entityTags: ExocorpseExternalProjectLoadingEntry[];
     moodboards: ExocorpseExternalProjectLoadingEntry[];
     mediaAssets: ExocorpseExternalProjectLoadingEntry[];
-    cofiSamples: ExocorpseExternalProjectLoadingEntry[];
   };
 };
 
@@ -1077,6 +1094,7 @@ export type ExternalProjectDeliveryPayload = {
   canonicalProjectId: string;
   adapter: ExternalProjectAdapterKind;
   generatedAt: string;
+  revision: string;
   collections: ExternalProjectDeliveryCollection[];
   profileData: Record<string, unknown>;
   loadingData: ExternalProjectLoadingData | null;
@@ -1088,6 +1106,9 @@ export type ExternalProjectStudioData = {
   blocks: ExternalProjectBlock[];
   assets: ExternalProjectStudioAsset[];
   fieldDefinitions: ExternalProjectFieldDefinition[];
+  relationDefinitions?: ExternalProjectRelationDefinition[];
+  relationDefinitionTargets?: ExternalProjectRelationDefinitionTarget[];
+  relations?: ExternalProjectEntryRelation[];
   importJobs: ExternalProjectImportJob[];
   publishEvents: ExternalProjectPublishEvent[];
   cmsCapabilities?: CmsEditorCapabilities | null;

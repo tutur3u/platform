@@ -6,25 +6,32 @@ use super::*;
 
 pub(super) fn decorate_asset(workspace_id: &str, mut asset: Value) -> Value {
     let id = asset.get("id").and_then(Value::as_str).map(str::to_owned);
-    let source_url = asset
-        .get("source_url")
+    let revision = asset
+        .get("updated_at")
         .and_then(Value::as_str)
-        .map(str::to_owned);
+        .map(|value| {
+            value
+                .chars()
+                .filter(char::is_ascii_digit)
+                .collect::<String>()
+        })
+        .filter(|value| !value.is_empty())
+        .unwrap_or_else(|| "0".to_owned());
     let asset_type = asset
         .get("asset_type")
         .and_then(Value::as_str)
         .map(str::to_owned);
 
-    let asset_url =
-        build_delivery_asset_url(workspace_id, id.as_deref(), source_url.as_deref(), false);
+    let asset_url = build_delivery_asset_url(workspace_id, id.as_deref(), &revision, false);
     let preview_url = if asset_type.as_deref() == Some("image") {
-        build_delivery_asset_url(workspace_id, id.as_deref(), source_url.as_deref(), true)
+        build_delivery_asset_url(workspace_id, id.as_deref(), &revision, true)
     } else {
         asset_url.clone()
     };
 
     if let Value::Object(map) = &mut asset {
         map.insert("asset_url".to_owned(), json!(asset_url));
+        map.insert("assetRevision".to_owned(), json!(revision));
         map.insert("preview_url".to_owned(), json!(preview_url));
     }
     asset
@@ -36,26 +43,23 @@ pub(super) fn decorate_asset(workspace_id: &str, mut asset: Value) -> Value {
 fn build_delivery_asset_url(
     workspace_id: &str,
     asset_id: Option<&str>,
-    source_url: Option<&str>,
+    revision: &str,
     preview: bool,
 ) -> Option<String> {
-    if let Some(source) = source_url {
-        // Legacy returns asset.source_url verbatim when present.
-        return Some(source.to_owned());
-    }
-
     // If there is no id we cannot build a delivery URL. The legacy code never hits
     // this branch (assets always have an id), so this is a defensive fallback.
     let asset_id = asset_id?;
 
-    let base = format!("/api/v1/workspaces/{workspace_id}/external-projects/assets/{asset_id}");
+    let base = format!(
+        "/api/v1/workspaces/{workspace_id}/external-projects/assets/{asset_id}?v={revision}"
+    );
     if !preview {
         return Some(base);
     }
 
     // Preview transform query (stable order matching the legacy .set() calls).
     Some(format!(
-        "{base}?width=1600&height=1600&resize=cover&quality=82"
+        "{base}&width=1600&height=1600&resize=cover&quality=82"
     ))
 }
 
