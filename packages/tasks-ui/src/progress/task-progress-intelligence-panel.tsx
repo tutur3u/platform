@@ -199,6 +199,11 @@ export function TaskProgressIntelligencePanel({
               <p className="text-sm leading-relaxed">
                 {catchup.executiveSummary}
               </p>
+              {catchup.source === 'deterministic' ? (
+                <p className="-mt-3 text-muted-foreground text-xs">
+                  {t('intelligence.catchup.from_activity')}
+                </p>
+              ) : null}
               {catchup.highlights.length ? (
                 <div>
                   <h4 className="mb-2 font-medium text-xs uppercase tracking-wide">

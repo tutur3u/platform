@@ -7655,6 +7655,7 @@
         "disabled_title": "Enable automatic catch-ups in Settings",
         "enabled": "Automatic",
         "error": "The catch-up could not be prepared. Try again later or review AI credit settings.",
+        "from_activity": "Generated from your recent activity",
         "highlights": "Highlights",
         "loading": "Preparing a concise catch-up from your current progress...",
         "monthly": "Month",
@@ -7744,6 +7745,18 @@
       "success": "Progress logged",
       "tags": "Tags (comma separated)",
       "title": "Log progress"
+    },
+    "recommendations": {
+      "documents": "Recent documents",
+      "due": "Due {date}",
+      "next_tasks": "Next tasks",
+      "no_documents": "No documents yet.",
+      "no_due": "No due date",
+      "no_tasks": "You're all caught up — no open tasks.",
+      "open": "Open",
+      "title": "Recommended next",
+      "updated": "{date}",
+      "view_all_tasks": "View all tasks"
     },
     "schema_unavailable": "Task progress needs the latest database migration before it can load.",
     "stats": {

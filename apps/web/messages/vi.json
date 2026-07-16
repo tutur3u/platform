@@ -13922,6 +13922,7 @@
         "disabled_title": "Bật tổng kết tự động trong Cài đặt",
         "enabled": "Tự động",
         "error": "Không thể chuẩn bị bản tổng kết. Hãy thử lại sau hoặc kiểm tra cài đặt tín dụng AI.",
+        "from_activity": "Được tạo từ hoạt động gần đây của bạn",
         "highlights": "Điểm nổi bật",
         "loading": "Đang chuẩn bị bản tổng kết ngắn gọn từ tiến độ hiện tại...",
         "monthly": "Tháng",
@@ -14011,6 +14012,18 @@
       "success": "Đã ghi tiến độ",
       "tags": "Thẻ (phân tách bằng dấu phẩy)",
       "title": "Ghi tiến độ"
+    },
+    "recommendations": {
+      "documents": "Tài liệu gần đây",
+      "due": "Hạn {date}",
+      "next_tasks": "Nhiệm vụ tiếp theo",
+      "no_documents": "Chưa có tài liệu nào.",
+      "no_due": "Không có hạn",
+      "no_tasks": "Bạn đã hoàn thành hết — không còn nhiệm vụ nào.",
+      "open": "Mở",
+      "title": "Đề xuất tiếp theo",
+      "updated": "{date}",
+      "view_all_tasks": "Xem tất cả nhiệm vụ"
     },
     "schema_unavailable": "Tiến độ công việc cần migration cơ sở dữ liệu mới nhất trước khi tải.",
     "stats": {

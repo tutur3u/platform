@@ -20,6 +20,7 @@ import {
   isAutonomousTaskMetric,
   loadAutonomousTaskProgressEntries,
 } from '../_autonomous';
+import { buildDeterministicCatchup } from '../_deterministic-catchup';
 import { buildTaskProgressInsights } from '../_insights';
 import {
   ensureDefaultTaskProgressMetrics,
@@ -151,6 +152,37 @@ export async function POST(
       }
     }
 
+    // Deterministic fallback so the panel never hard-fails when AI is
+    // unavailable (disabled, no credits/allocation, or a gateway error).
+    const respondDeterministic = (
+      daily: Array<{ date: string; value: number }>,
+      intelligence: ReturnType<typeof buildTaskProgressInsights>,
+      unitLabel: string,
+      reason: string
+    ) => {
+      console.warn('Task progress catch-up: using deterministic fallback', {
+        reason,
+        wsId: auth.wsId,
+      });
+      const object = buildDeterministicCatchup({
+        daily,
+        insights: intelligence.insights,
+        period: body.period,
+        periods: intelligence.periods,
+        unitLabel,
+      });
+      const catchup = {
+        ...object,
+        generatedAt: new Date().toISOString(),
+        period: body.period,
+        periodEnd: period.end,
+        periodKey,
+        periodStart: period.start,
+        source: 'deterministic' as const,
+      };
+      return NextResponse.json({ ok: true, cached: false, catchup });
+    };
+
     await ensureDefaultTaskProgressMetrics(auth);
     const { data: metric, error: metricError } = await (auth.sbAdmin as any)
       .from('task_progress_metrics')
@@ -163,11 +195,14 @@ export async function POST(
       .maybeSingle();
     if (metricError) throw metricError;
     if (!metric || !isAutonomousTaskMetric(metric)) {
-      return NextResponse.json(
-        { error: 'No automatic task metric found' },
-        { status: 422 }
+      return respondDeterministic(
+        [],
+        buildTaskProgressInsights([]),
+        'tasks',
+        'no_automatic_metric'
       );
     }
+    const unitLabel = String(metric.unit_label ?? 'tasks');
 
     const entries = (
       await loadAutonomousTaskProgressEntries(auth, metric, {
@@ -195,9 +230,11 @@ export async function POST(
       ).modelId;
     } catch (error) {
       if (error instanceof PlanModelResolutionError) {
-        return NextResponse.json(
-          { error: error.message, code: error.code },
-          { status: error.code === 'NO_ALLOCATION' ? 503 : 500 }
+        return respondDeterministic(
+          daily,
+          intelligence,
+          unitLabel,
+          `plan_model:${error.code}`
         );
       }
       throw error;
@@ -206,9 +243,11 @@ export async function POST(
       userId: auth.user.id,
     });
     if (!creditCheck.allowed) {
-      return NextResponse.json(
-        { error: creditCheck.errorMessage, code: creditCheck.errorCode },
-        { status: 403 }
+      return respondDeterministic(
+        daily,
+        intelligence,
+        unitLabel,
+        `credits:${creditCheck.errorCode ?? 'not_allowed'}`
       );
     }
     const maxOutputTokens = await capMaxOutputTokensByCredits(
@@ -218,9 +257,11 @@ export async function POST(
       (creditCheck as CreditCheckResult).remainingCredits
     );
     if (maxOutputTokens === null && creditCheck.remainingCredits <= 0) {
-      return NextResponse.json(
-        { error: 'AI credits insufficient', code: 'CREDITS_EXHAUSTED' },
-        { status: 403 }
+      return respondDeterministic(
+        daily,
+        intelligence,
+        unitLabel,
+        'credits:exhausted'
       );
     }
 
@@ -270,6 +311,7 @@ export async function POST(
         periodEnd: period.end,
         periodKey,
         periodStart: period.start,
+        source: 'ai' as const,
       };
       await saveCache(auth, cacheId, catchup);
       return NextResponse.json({ ok: true, cached: false, catchup });
@@ -291,7 +333,19 @@ export async function POST(
           })
         );
       }
-      throw error;
+      // AI generation failed (gateway, schema, timeout, …). Log the real cause
+      // for debugging, then degrade gracefully instead of erroring the panel.
+      console.error('Task progress catch-up AI generation failed', {
+        error,
+        modelId,
+        wsId: auth.wsId,
+      });
+      return respondDeterministic(
+        daily,
+        intelligence,
+        unitLabel,
+        'ai_generation_error'
+      );
     }
   } catch (error) {
     console.error('Failed to generate task progress catch-up', {

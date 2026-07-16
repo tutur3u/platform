@@ -235,6 +235,8 @@ export interface TaskProgressCatchup {
   periodKey: string;
   periodStart: string;
   watchouts: string[];
+  /** Whether this catch-up came from the AI model or the deterministic fallback. */
+  source?: 'ai' | 'deterministic';
 }
 
 export interface TaskProgressCatchupResponse {
@@ -445,3 +447,32 @@ export type JoinTaskLeaderboardResponse =
 export type LeaveTaskLeaderboardResponse =
   | { ok: true; schemaAvailable: true; left: true }
   | SchemaUnavailableResponse;
+
+export interface TaskProgressNextTask {
+  id: string;
+  name: string;
+  priority: number | null;
+  end_date: string | null;
+  list_name: string | null;
+  board_name: string | null;
+}
+
+export interface TaskProgressDocument {
+  id: string;
+  name: string;
+  created_at: string | null;
+}
+
+export type TaskProgressRecommendationsResponse =
+  | {
+      ok: true;
+      schemaAvailable: true;
+      nextTasks: TaskProgressNextTask[];
+      documents: TaskProgressDocument[];
+      activeGoals: number;
+    }
+  | (SchemaUnavailableResponse & {
+      nextTasks?: TaskProgressNextTask[];
+      documents?: TaskProgressDocument[];
+      activeGoals?: number;
+    });

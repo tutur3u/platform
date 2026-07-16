@@ -38,6 +38,7 @@ import {
   SummaryCard,
 } from './task-progress-panels';
 import { QuickLogProgressDialog } from './task-progress-quick-log-dialog';
+import { RecommendationsPanel } from './task-progress-recommendations-panel';
 import { TaskProgressWritingPackCard } from './task-progress-writing-pack-card';
 import { useTaskProgressIntelligence } from './use-task-progress-intelligence';
 
@@ -356,6 +357,7 @@ export function TaskProgressPage({
             stats={stats}
             t={t}
           />
+          <RecommendationsPanel routeWsId={routeWsId} t={t} wsId={wsId} />
           <TaskProgressAchievementsCard t={t} wsId={wsId} />
         </>
       ) : null}

@@ -30,6 +30,7 @@ import type {
   TaskProgressMetricPackResponse,
   TaskProgressMetricResponse,
   TaskProgressMetricsResponse,
+  TaskProgressRecommendationsResponse,
   TaskProgressStatsResponse,
   UpdateTaskLeaderboardPayload,
   UpdateTaskProgressEntryPayload,
@@ -329,6 +330,16 @@ export function getTaskProgressAchievements(
 ) {
   return getTaskApiClient(options).json<TaskProgressAchievementsResponse>(
     `${progressBasePath(workspaceId)}/achievements`,
+    { cache: 'no-store' }
+  );
+}
+
+export function getTaskProgressRecommendations(
+  workspaceId: string,
+  options?: InternalApiClientOptions
+) {
+  return getTaskApiClient(options).json<TaskProgressRecommendationsResponse>(
+    `${progressBasePath(workspaceId)}/recommendations`,
     { cache: 'no-store' }
   );
 }
