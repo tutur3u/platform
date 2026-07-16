@@ -67,7 +67,7 @@ flowchart LR
 | Product name and description | Catalog item name and description | Trimmed display data; review branding before Production publish |
 | Unit or sellable variant | Item variation | One product can have several variation links |
 | SKU | Variation SKU | Use stable, unique SKUs where possible |
-| Price and currency | Square Money amount and currency | Currency-aware integer conversion happens at the integration boundary |
+| Price and currency | Square Money amount and currency | Exact whole-major-unit prices import directly; fractional major-unit prices are preserved for review instead of rounded |
 | Warehouse stock row | Physical inventory count at selected location | The chosen Square location is part of the routing context; Tuturuuu Inventory stores whole-unit counts |
 | Link origin and last hashes | Link metadata in Tuturuuu | Supports conflict detection and observability |
 
@@ -77,11 +77,12 @@ currency-aware integer Money representation. If USD 10.00 appears as USD 0.10
 or USD 1,000.00, stop and investigate before another sync.
 
 <Warning>
-  Square can report fractional physical counts, while Tuturuuu Inventory
-  currently stores whole units. Import still creates the product and variation
-  link, but it preserves an existing local count or initializes a new row at
-  zero and marks that link **Sync error** for review. Tuturuuu does not round the
-  Square quantity or write anything back to Square automatically.
+  Square can report fractional prices or physical counts, while Tuturuuu's base
+  Inventory rows currently store whole major-currency units and whole stock
+  units. Import still creates the product and variation link, but it preserves
+  an existing local value or initializes a new value at zero and marks that
+  link **Sync error** for review. Tuturuuu does not round the Square value or
+  write anything back to Square automatically.
 </Warning>
 
 ## Safe first synchronization

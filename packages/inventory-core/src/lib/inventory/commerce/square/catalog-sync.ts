@@ -10,9 +10,9 @@ import {
   type InventorySquareCatalogSyncSummary,
   inventoryPriceToSquareAmount,
   mergeSquareItemWithoutDeleting,
+  resolveSquareWholeUnitPrice,
   resolveSquareWholeUnitStock,
   type SquareCatalogSyncDirection,
-  squareAmountToInventoryPrice,
   squareSyncHash,
 } from './catalog-sync-contract';
 import {
@@ -267,16 +267,21 @@ async function pullFromSquare({
       const remoteAmount = counts.get(variation.id) ?? 0;
       const priceCurrency =
         variation.item_variation_data?.price_money?.currency ?? currency;
-      const priceMajor = squareAmountToInventoryPrice(
-        variation.item_variation_data?.price_money?.amount ?? 0,
-        priceCurrency
-      );
       const squareHash = squareVariationHash(item, variation, remoteAmount);
       const local = link ? await loadLocalSnapshot(link) : null;
       const stock = resolveSquareWholeUnitStock({
         currentAmount: local?.stock.amount ?? null,
         remoteAmount,
       });
+      const price = resolveSquareWholeUnitPrice({
+        currency: priceCurrency,
+        currentPrice: local?.stock.price ?? null,
+        remoteAmountMinor:
+          variation.item_variation_data?.price_money?.amount ?? 0,
+      });
+      const syncError = [stock.error, price.error]
+        .filter((message): message is string => Boolean(message))
+        .join(' ');
       const sku = variation.item_variation_data?.sku ?? '';
       const rawVariationName = variation.item_variation_data?.name || 'Default';
       const variationName =
@@ -327,13 +332,12 @@ async function pullFromSquare({
       const syncedProductId = await applySquareVariationToLocal({
         amount: stock.amount,
         categoryId,
-        currency: priceCurrency,
         item,
         link,
         ownerId,
+        price: price.price,
         productId,
         unitId,
-        variation,
         warehouseId: link?.warehouse_id ?? warehouseId,
         wsId,
       });
@@ -342,13 +346,13 @@ async function pullFromSquare({
         amount: stock.amount,
         description: item.item_data?.description ?? null,
         name: item.item_data?.name || 'Square item',
-        price: priceMajor,
+        price: price.price,
         sku,
         unitName: variationName,
       });
       await upsertLink({
         environment,
-        last_error: stock.error,
+        last_error: syncError || null,
         local_hash: localHash,
         product_id: syncedProductId,
         square_hash: squareHash,
@@ -359,18 +363,17 @@ async function pullFromSquare({
         square_variation_id: variation.id,
         square_variation_name: variationName,
         square_variation_version: variation.version ?? null,
-        status: stock.error ? 'error' : 'active',
+        status: syncError ? 'error' : 'active',
         sync_origin: link?.sync_origin ?? 'square',
         unit_id: unitId,
         warehouse_id: link?.warehouse_id ?? warehouseId,
         ws_id: wsId,
       });
       summary.variationsPulled += 1;
-      if (stock.error) {
-        summary.conflicts += 1;
-      } else {
+      if (!stock.error) {
         summary.inventoryPulled += 1;
       }
+      if (syncError) summary.conflicts += 1;
       importedItem = true;
     }
     if (importedItem) {

@@ -6,6 +6,7 @@ import {
   hasSquareDeleteInstruction,
   inventoryPriceToSquareAmount,
   mergeSquareItemWithoutDeleting,
+  resolveSquareWholeUnitPrice,
   resolveSquareWholeUnitStock,
   selectUnlinkedSquareImportProduct,
   squareAmountToInventoryPrice,
@@ -115,6 +116,44 @@ describe('Square catalog sync contract', () => {
       amount: 0,
       error:
         'Square reported non-whole stock (0.5). Tuturuuu set it to 0 until an operator reviews the count.',
+    });
+  });
+
+  it('preserves an exact whole-unit Square price', () => {
+    expect(
+      resolveSquareWholeUnitPrice({
+        currency: 'USD',
+        currentPrice: 20,
+        remoteAmountMinor: 2500,
+      })
+    ).toEqual({ error: null, price: 25 });
+  });
+
+  it('keeps an existing price when Square uses fractional major units', () => {
+    expect(
+      resolveSquareWholeUnitPrice({
+        currency: 'USD',
+        currentPrice: 12,
+        remoteAmountMinor: 1351,
+      })
+    ).toEqual({
+      error:
+        'Square reported a non-whole USD price (13.51). Tuturuuu kept its value until an operator reviews the price.',
+      price: 12,
+    });
+  });
+
+  it('fails closed at zero for a new fractional Square price', () => {
+    expect(
+      resolveSquareWholeUnitPrice({
+        currency: 'BHD',
+        currentPrice: null,
+        remoteAmountMinor: 1234,
+      })
+    ).toEqual({
+      error:
+        'Square reported a non-whole BHD price (1.234). Tuturuuu set it to 0 until an operator reviews the price.',
+      price: 0,
     });
   });
 

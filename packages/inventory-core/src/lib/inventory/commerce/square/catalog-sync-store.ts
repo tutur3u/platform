@@ -4,7 +4,6 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import {
   type SquareCatalogSyncDirection,
   selectUnlinkedSquareImportProduct,
-  squareAmountToInventoryPrice,
 } from './catalog-sync-contract';
 import { getPrivateAdmin, type SupabaseErrorLike } from './settings-store';
 import type { SquareCatalogObject, SquareEnvironment } from './types';
@@ -298,25 +297,23 @@ export async function loadLocalSnapshot(link: SquareCatalogLinkRow) {
 export async function applySquareVariationToLocal({
   amount,
   categoryId,
-  currency,
   item,
   link,
   ownerId,
+  price,
   productId: requestedProductId,
   unitId,
-  variation,
   warehouseId,
   wsId,
 }: {
   amount: number | null;
   categoryId: string;
-  currency: string;
   item: SquareCatalogObject;
   link?: SquareCatalogLinkRow;
   ownerId: string;
+  price: number;
   productId?: string;
   unitId: string;
-  variation: SquareCatalogObject;
   warehouseId: string;
   wsId: string;
 }): Promise<string> {
@@ -355,10 +352,7 @@ export async function applySquareVariationToLocal({
     {
       amount,
       min_amount: 0,
-      price: squareAmountToInventoryPrice(
-        variation.item_variation_data?.price_money?.amount ?? 0,
-        currency
-      ),
+      price,
       product_id: productId,
       unit_id: unitId,
       warehouse_id: warehouseId,
