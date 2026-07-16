@@ -42,7 +42,7 @@ export async function POST(
   try {
     const body = joinSchema.parse(await parseTaskProgressJson(request));
     const leaderboard = await findLeaderboardByCode(auth, body.join_code);
-    if (!leaderboard || leaderboard.status !== 'active') {
+    if (leaderboard?.status !== 'active') {
       return taskProgressErrorResponse('Leaderboard not found', 404);
     }
 
