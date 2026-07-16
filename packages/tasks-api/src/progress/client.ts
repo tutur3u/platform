@@ -12,11 +12,14 @@ import type {
   CreateTaskProgressEntryPayload,
   CreateTaskProgressGoalPayload,
   CreateTaskProgressMetricPayload,
+  JoinTaskLeaderboardResponse,
+  LeaveTaskLeaderboardResponse,
   SchemaUnavailableResponse,
   TaskLeaderboardMember,
   TaskLeaderboardResponse,
   TaskLeaderboardsResponse,
   TaskLeaderboardTeam,
+  TaskProgressAchievementsResponse,
   TaskProgressCatchupPeriod,
   TaskProgressCatchupResponse,
   TaskProgressEntriesResponse,
@@ -24,6 +27,7 @@ import type {
   TaskProgressGoalResponse,
   TaskProgressGoalsResponse,
   TaskProgressImportResponse,
+  TaskProgressMetricPackResponse,
   TaskProgressMetricResponse,
   TaskProgressMetricsResponse,
   TaskProgressStatsResponse,
@@ -316,5 +320,48 @@ export function importTaskProgressEntries(
   return getTaskApiClient(options).json<TaskProgressImportResponse>(
     `${progressBasePath(workspaceId)}/import`,
     jsonInit('POST', payload)
+  );
+}
+
+export function getTaskProgressAchievements(
+  workspaceId: string,
+  options?: InternalApiClientOptions
+) {
+  return getTaskApiClient(options).json<TaskProgressAchievementsResponse>(
+    `${progressBasePath(workspaceId)}/achievements`,
+    { cache: 'no-store' }
+  );
+}
+
+export function applyTaskProgressMetricPack(
+  workspaceId: string,
+  payload: { pack?: string },
+  options?: InternalApiClientOptions
+) {
+  return getTaskApiClient(options).json<TaskProgressMetricPackResponse>(
+    `${progressBasePath(workspaceId)}/metrics/pack`,
+    jsonInit('POST', payload)
+  );
+}
+
+export function joinTaskLeaderboard(
+  workspaceId: string,
+  payload: { join_code: string; display_name?: string | null },
+  options?: InternalApiClientOptions
+) {
+  return getTaskApiClient(options).json<JoinTaskLeaderboardResponse>(
+    `${progressBasePath(workspaceId)}/leaderboards/join`,
+    jsonInit('POST', payload)
+  );
+}
+
+export function leaveTaskLeaderboard(
+  workspaceId: string,
+  payload: { join_code: string },
+  options?: InternalApiClientOptions
+) {
+  return getTaskApiClient(options).json<LeaveTaskLeaderboardResponse>(
+    `${progressBasePath(workspaceId)}/leaderboards/join`,
+    jsonInit('DELETE', payload)
   );
 }

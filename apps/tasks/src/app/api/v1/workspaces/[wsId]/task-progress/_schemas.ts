@@ -91,6 +91,13 @@ export const goalCreateSchema = z.object({
   status: taskProgressGoalStatusSchema.default('active'),
   starred: z.boolean().default(false),
   visibility: taskProgressVisibilitySchema.default('private'),
+  // Habit-goal configuration (ignored for target goals).
+  habit_frequency: z
+    .enum(['per_day', 'per_week', 'per_month'])
+    .nullable()
+    .optional(),
+  habit_target_count: z.number().int().positive().nullable().optional(),
+  habit_threshold: z.number().finite().nonnegative().nullable().optional(),
 });
 
 export const goalUpdateSchema = goalCreateSchema.partial();

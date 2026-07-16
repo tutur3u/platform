@@ -1,0 +1,64 @@
+---
+title: 'Progress, Goals & Leaderboards'
+description: 'TrackBear-style progress tracking for tasks: flexible metrics, target/habit goals, activity heatmaps, leaderboards, and gamification.'
+updatedAt: '2026-07-17'
+---
+
+## TL;DR
+
+The Tasks app turns everyday work into a motivating, glanceable progress system. Progress is
+derived **automatically** from completed tasks and focus sessions, and can also be **logged
+manually** in any unit — including writing units like words, pages, and chapters. Goals, an
+activity heatmap, leaderboards, and a full achievement/XP layer keep momentum visible.
+
+## Metrics
+
+Every workspace tracks a few automatic metrics (completed tasks, estimate points, focus time,
+focus sessions). Teams that write can enable a one-click **Writing pack** that adds Words, Pages,
+Chapters, Scenes, and Lines. Metrics support two aggregation styles — summed deltas or a running
+total — so you can log either "+500 words today" or "project total is now 12,000".
+
+## Logging progress
+
+- **Automatic**: completing a task or finishing a focus session feeds the relevant metric with no
+  manual step.
+- **Quick log**: a persistent button (and a mobile floating action button) opens a dialog to record
+  an amount for any metric, on any date, with a note and tags. Zero and negative values are allowed
+  so a "showed up but wrote nothing" day is distinct from an untracked one, and corrections are easy.
+
+## Goals
+
+Two goal types, mirroring TrackBear:
+
+- **Target** — accumulate toward a total by an optional end date. Shows a progress bar, the expected
+  pace ("par"), a projected finish, and an on-track / needs-attention chip.
+- **Habit** — write regularly at a chosen cadence (per day / week / month) with an optional
+  per-period threshold. Shows a gauge that turns gold when the period is met, plus current, longest,
+  and typical streak length and the percentage of periods hit.
+
+## Visualizations
+
+- **Activity heatmap** — a year-long contribution grid; darker cells mean more progress that day.
+- **Cumulative chart** — accumulated progress over time, with an optional par line for dated targets.
+- **Analytics dashboard** — KPI strip, daily bars, weekday distribution, tag breakdown, best day,
+  consistency, and a momentum recommendation.
+
+## Leaderboards
+
+Anyone can create a leaderboard for a metric and period. Members **join by code**, appear on a
+podium (top three) with a ranked overflow list, and can be organized into teams. Automatic weekly
+leaderboards are synthesized from task activity so a workspace always has something live.
+
+## Gamification
+
+Logging progress unlocks **achievements** (streaks, volume, consistency, milestones, social) across
+bronze → platinum tiers, awards **XP**, and raises your **level**. Streak freezes are earned as
+streaks grow. Unlocks surface as celebratory toasts and in an achievements card on the Progress and
+Analytics views.
+
+## Under the hood
+
+Progress data lives in the `task_progress_*` and `task_leaderboard*` tables, with the gamification
+layer in `task_progress_achievements`, `task_progress_user_achievements`, and
+`task_progress_user_stats`. XP and achievement evaluation is deterministic and idempotent — it is
+recomputed from current activity on every progress write, so it never drifts or double-counts.

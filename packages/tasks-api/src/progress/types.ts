@@ -24,6 +24,7 @@ export type TaskProgressGoalStatus =
   | 'completed'
   | 'archived';
 export type TaskProgressRecurrence = 'none' | 'daily' | 'weekly' | 'monthly';
+export type TaskProgressHabitFrequency = 'per_day' | 'per_week' | 'per_month';
 export type TaskLeaderboardStatus = 'active' | 'archived';
 export type TaskProgressVisibility = 'private' | 'workspace';
 
@@ -95,6 +96,21 @@ export interface TaskProgressGoal {
   projected_total?: number;
   on_track?: boolean;
   metric?: TaskProgressMetric;
+  // Habit configuration (goal_type === 'habit')
+  habit_frequency?: TaskProgressHabitFrequency | null;
+  habit_target_count?: number | null;
+  habit_threshold?: number | null;
+  // Server-computed habit stats
+  current_streak?: number;
+  longest_streak?: number;
+  typical_streak?: number;
+  percent_hit?: number;
+  /** Progress accrued in the current habit period. */
+  period_value?: number;
+  /** Number of periods that met the threshold. */
+  periods_hit?: number;
+  /** Total periods elapsed so far. */
+  periods_total?: number;
 }
 
 export interface TaskLeaderboardTeam {
@@ -241,7 +257,12 @@ export type TaskProgressEntriesResponse =
     }
   | (SchemaUnavailableResponse & { entries?: TaskProgressEntry[] });
 export type TaskProgressEntryResponse =
-  | { ok: true; schemaAvailable: true; entry: TaskProgressEntry }
+  | {
+      ok: true;
+      schemaAvailable: true;
+      entry: TaskProgressEntry;
+      newlyUnlocked?: string[];
+    }
   | SchemaUnavailableResponse;
 export type TaskProgressGoalsResponse =
   | { ok: true; schemaAvailable: true; goals: TaskProgressGoal[] }
@@ -316,7 +337,11 @@ export type CreateTaskProgressGoalPayload = Pick<
       | 'starred'
       | 'visibility'
     >
-  >;
+  > & {
+    habit_frequency?: TaskProgressHabitFrequency | null;
+    habit_target_count?: number | null;
+    habit_threshold?: number | null;
+  };
 export type UpdateTaskProgressGoalPayload =
   Partial<CreateTaskProgressGoalPayload>;
 
@@ -337,3 +362,83 @@ export type CreateTaskLeaderboardTeamPayload = Pick<
 export type CreateTaskLeaderboardMemberPayload = Partial<
   Pick<TaskLeaderboardMember, 'user_id' | 'team_id' | 'display_name'>
 >;
+
+// Gamification --------------------------------------------------------------
+export type TaskProgressAchievementTier =
+  | 'bronze'
+  | 'silver'
+  | 'gold'
+  | 'platinum';
+export type TaskProgressAchievementCategory =
+  | 'streak'
+  | 'volume'
+  | 'consistency'
+  | 'milestone'
+  | 'social';
+
+export interface TaskProgressAchievement {
+  id: string;
+  ws_id: string;
+  code: string;
+  name: string;
+  description: string | null;
+  icon: string | null;
+  tier: TaskProgressAchievementTier;
+  category: TaskProgressAchievementCategory;
+  criteria: Record<string, unknown>;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+  unlocked: boolean;
+  unlocked_at: string | null;
+}
+
+export interface TaskProgressUserStats {
+  xp: number;
+  level: number;
+  streak_freezes: number;
+  next_level_xp: number;
+  current_level_xp: number;
+  into_level: number;
+  level_span: number;
+  level_percent: number;
+  unlocked_count: number;
+  total_count: number;
+}
+
+export type TaskProgressAchievementsResponse =
+  | {
+      ok: true;
+      schemaAvailable: true;
+      achievements: TaskProgressAchievement[];
+      stats: TaskProgressUserStats;
+      newlyUnlocked: string[];
+    }
+  | (SchemaUnavailableResponse & {
+      achievements?: TaskProgressAchievement[];
+      stats?: null;
+    });
+
+export type TaskProgressMetricPackResponse =
+  | {
+      ok: true;
+      schemaAvailable: true;
+      pack: string;
+      added: number;
+      metrics: TaskProgressMetric[];
+    }
+  | (SchemaUnavailableResponse & { metrics?: TaskProgressMetric[] });
+
+export type JoinTaskLeaderboardResponse =
+  | {
+      ok: true;
+      schemaAvailable: true;
+      leaderboard: { id: string; name: string };
+      member: TaskLeaderboardMember;
+      newlyUnlocked: string[];
+    }
+  | SchemaUnavailableResponse;
+
+export type LeaveTaskLeaderboardResponse =
+  | { ok: true; schemaAvailable: true; left: true }
+  | SchemaUnavailableResponse;

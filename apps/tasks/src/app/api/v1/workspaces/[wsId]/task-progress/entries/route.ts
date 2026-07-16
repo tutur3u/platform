@@ -1,4 +1,5 @@
 import { type NextRequest, NextResponse } from 'next/server';
+import { syncTaskProgressGamification } from '../_gamification-sync';
 import {
   buildEntryQuery,
   entryCreateSchema,
@@ -86,10 +87,24 @@ export async function POST(
 
     if (error) throw error;
 
+    // Refresh gamification (unlock achievements / award XP) after logging.
+    let newlyUnlocked: string[] = [];
+    try {
+      const sync = await syncTaskProgressGamification(
+        auth.sbAdmin,
+        auth.wsId,
+        auth.user.id
+      );
+      newlyUnlocked = sync.newlyUnlocked;
+    } catch (syncError) {
+      logTaskProgressError('Gamification sync failed after entry', syncError);
+    }
+
     return NextResponse.json({
       ok: true,
       schemaAvailable: true,
       entry: data,
+      newlyUnlocked,
     });
   } catch (error) {
     logTaskProgressError('Failed to create task progress entry', error);

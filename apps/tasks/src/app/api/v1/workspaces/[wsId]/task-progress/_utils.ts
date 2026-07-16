@@ -14,6 +14,10 @@ import {
   loadAutonomousTaskProgressEntries,
 } from './_autonomous';
 import {
+  computeTaskProgressHabitStreaks,
+  type HabitFrequency,
+} from './_habit-streaks';
+import {
   DEFAULT_TASK_PROGRESS_METRICS,
   TASK_PROGRESS_ENTRY_SELECT,
 } from './_schemas';
@@ -437,6 +441,9 @@ export async function hydrateGoalsWithProgress(
     .filter(Boolean)
     .sort()
     .at(-1);
+  // Open-ended goals (habits or no end date) must see entries up to today, so
+  // only cap the window when every goal is bounded.
+  const hasOpenEnded = goals.some((goal) => !goal.period_end);
 
   let query = (auth.sbAdmin as any)
     .from('task_progress_entries')
@@ -446,7 +453,7 @@ export async function hydrateGoalsWithProgress(
     .in('metric_id', metricIds);
 
   if (minStart) query = query.gte('entry_date', minStart);
-  if (maxEnd) query = query.lte('entry_date', maxEnd);
+  if (maxEnd && !hasOpenEnded) query = query.lte('entry_date', maxEnd);
 
   const { data: entries, error } = await query;
   if (error) throw error;
@@ -463,21 +470,38 @@ export async function hydrateGoalsWithProgress(
               to: goal.period_end,
             })
           : effectiveEntries;
-      const progress = entriesForGoal
-        .filter((entry: Record<string, any>) => entryMatchesGoal(entry, goal))
-        .reduce(
-          (total: number, entry: Record<string, any>) =>
-            total + Number(entry.effectiveValue ?? 0),
-          0
-        );
+      const matchedEntries = entriesForGoal.filter(
+        (entry: Record<string, any>) => entryMatchesGoal(entry, goal)
+      );
+      const progress = matchedEntries.reduce(
+        (total: number, entry: Record<string, any>) =>
+          total + Number(entry.effectiveValue ?? 0),
+        0
+      );
       const target = Number(goal.target_value ?? 0);
 
-      return {
+      const base = {
         ...goal,
         progress,
         remaining: Math.max(target - progress, 0),
         percent: target > 0 ? Math.min((progress / target) * 100, 100) : 0,
       };
+
+      // Habit goals report streak/consistency stats instead of a raw target bar.
+      if (goal.goal_type === 'habit') {
+        const streaks = computeTaskProgressHabitStreaks({
+          entries: matchedEntries.map((entry: Record<string, any>) => ({
+            entry_date: String(entry.entry_date),
+            value: Number(entry.effectiveValue ?? 0),
+          })),
+          frequency: (goal.habit_frequency ?? 'per_week') as HabitFrequency,
+          threshold: goal.habit_threshold ?? goal.habit_target_count ?? 0,
+          periodStart: goal.period_start,
+        });
+        return { ...base, ...streaks };
+      }
+
+      return base;
     })
   );
 }

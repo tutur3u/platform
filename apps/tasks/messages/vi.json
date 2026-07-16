@@ -7808,7 +7808,8 @@
       "entries": "Chưa có ghi nhận tiến độ.",
       "goals": "Chưa có mục tiêu đang hoạt động.",
       "leaderboards": "Chưa có bảng xếp hạng đang hoạt động.",
-      "stats": "Chưa có thống kê tiến độ."
+      "stats": "Chưa có thống kê tiến độ.",
+      "tags": "Chưa có thẻ nào — thêm thẻ khi ghi tiến độ để xem phân tích."
     },
     "fields": {
       "automatic_metric": "Chỉ số tự động",
@@ -7823,6 +7824,18 @@
       "unit": "Đơn vị",
       "value": "Giá trị"
     },
+    "gamification": {
+      "celebrate": "Đã mở khóa thành tựu: {name}!",
+      "empty": "Ghi tiến độ để bắt đầu nhận thành tựu.",
+      "level": "Cấp {level}",
+      "locked": "Chưa mở khóa",
+      "streak_freezes": "{count} lần đóng băng chuỗi",
+      "title": "Thành tựu",
+      "to_next": "Còn {remaining} XP để lên cấp {level}",
+      "unlocked_of": "Đã mở khóa {unlocked}/{total}",
+      "unlocked_toast": "Đã mở khóa thành tựu!",
+      "xp": "{xp} XP"
+    },
     "goal_types": {
       "habit": "Thói quen",
       "target": "Mục tiêu"
@@ -7831,11 +7844,22 @@
       "automatic_description": "Tự động điều chỉnh theo nhịp độ hoàn thành công việc gần đây của bạn.",
       "automatic_name": "Đà hoàn thành công việc hàng tuần",
       "create_goal": "Tạo mục tiêu",
+      "current_streak": "Hiện tại",
       "custom_goal": "Thêm mục tiêu tùy chỉnh",
       "expected_now": "Dự kiến đến hiện tại",
+      "frequency": {
+        "per_day": "Mỗi ngày",
+        "per_month": "Mỗi tháng",
+        "per_week": "Mỗi tuần"
+      },
+      "frequency_label": "Bao lâu một lần?",
+      "longest_streak": "Dài nhất",
       "needs_attention": "Cần chú ý",
       "on_track": "Đúng tiến độ",
-      "projected_finish": "Dự báo hoàn thành"
+      "percent_hit": "Đạt {percent}% số kỳ",
+      "projected_finish": "Dự báo hoàn thành",
+      "threshold_placeholder": "Số lượng mỗi kỳ (tùy chọn)",
+      "typical_streak": "Trung bình"
     },
     "import": {
       "placeholder": "2026-06-25,500,Words,writing|draft,Bản nháp chương",
@@ -7892,18 +7916,64 @@
       "automatic_description": "Cập nhật từ các công việc đã hoàn thành trong không gian làm việc này.",
       "automatic_name": "Tuần này",
       "create_leaderboard": "Tạo bảng xếp hạng",
-      "custom_leaderboard": "Tạo thử thách tùy chỉnh"
+      "custom_leaderboard": "Tạo thử thách tùy chỉnh",
+      "join": "Tham gia",
+      "join_code": "Mã tham gia",
+      "join_error": "Không thể tham gia. Kiểm tra mã và thử lại.",
+      "join_success": "Đã tham gia bảng xếp hạng!",
+      "join_title": "Tham gia thử thách",
+      "joined": "Đã tham gia",
+      "leave": "Rời khỏi",
+      "member": "Thành viên",
+      "podium": "Bảng vinh danh",
+      "rank": "Hạng",
+      "score": "Điểm",
+      "share_code": "Chia sẻ mã",
+      "you": "Bạn"
+    },
+    "metrics": {
+      "enable_writing": "Bật chỉ số viết",
+      "writing_enabled": "Đã thêm chỉ số viết!",
+      "writing_error": "Không thể thêm chỉ số viết.",
+      "writing_pack_description": "Thêm từ, trang, chương, cảnh và dòng — hoàn hảo cho tiểu thuyết, fanfic hoặc bất kỳ dự án viết nào.",
+      "writing_pack_title": "Theo dõi tiến độ viết"
     },
     "progress": {
+      "activity_calendar": "Lịch hoạt động",
       "log_entry": "Ghi tiến độ",
       "momentum": "Đà hoạt động",
       "recent_entries": "Ghi nhận gần đây"
     },
+    "quicklog": {
+      "amount": "Số lượng",
+      "date": "Ngày",
+      "description": "Ghi lại những gì bạn đã hoàn thành. Có thể ghi lùi ngày, ghi số 0 hoặc chỉnh sửa.",
+      "error": "Không thể ghi tiến độ. Vui lòng thử lại.",
+      "metric": "Chỉ số",
+      "mode_delta": "Cộng vào tổng",
+      "mode_hint_delta": "Cộng số lượng này vào tổng hiện tại của bạn.",
+      "mode_hint_total": "Đặt tổng của dự án; chúng tôi sẽ tính phần chênh lệch.",
+      "mode_total": "Đặt tổng mới",
+      "note": "Ghi chú (tùy chọn)",
+      "note_placeholder": "Ghi chú nhanh về phiên làm việc này…",
+      "open": "Ghi tiến độ",
+      "submit": "Lưu tiến độ",
+      "success": "Đã ghi tiến độ",
+      "tags": "Thẻ (phân tách bằng dấu phẩy)",
+      "title": "Ghi tiến độ"
+    },
     "schema_unavailable": "Tiến độ công việc cần migration cơ sở dữ liệu mới nhất trước khi tải.",
     "stats": {
+      "active_days_30": "{count} ngày hoạt động trong 30 ngày gần nhất",
       "average_active_day": "Trung bình mỗi ngày hoạt động",
+      "best_day": "Ngày tốt nhất",
+      "consistency": "Độ đều đặn",
       "daily_progress": "Nhịp hoạt động",
       "last_7_days": "7 ngày gần đây",
+      "longest_streak": "Chuỗi dài nhất: {count}",
+      "projected_week": "Dự kiến tuần này",
+      "tag_breakdown": "Tiến độ theo thẻ",
+      "weekday_distribution": "Tiến độ theo ngày trong tuần",
       "weekly_trend": "Thay đổi so với tuần trước"
     },
     "summary": {

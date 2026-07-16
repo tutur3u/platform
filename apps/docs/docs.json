@@ -1,417 +1,423 @@
 {
-  "$schema": "https://mintlify.com/docs.json",
-  "theme": "mint",
-  "name": "Tuturuuu Docs",
-  "description": "Technical documentation for building, integrating, operating, and contributing to the Tuturuuu platform.",
-  "colors": {
-    "primary": "#000000",
-    "light": "#ffffff",
-    "dark": "#000000"
-  },
-  "favicon": "/favicon.svg",
-  "navigation": {
-    "anchors": [
-      {
-        "anchor": "Documentation",
-        "icon": "book-open",
-        "groups": [
-          {
-            "group": "Overview",
-            "pages": [
-              "overview/vision",
-              "overview/organization-guide",
-              "overview/agent-operating-manual"
-            ]
-          },
-          {
-            "group": "Platform",
-            "pages": [
-              "platform/overview",
-              {
-                "group": "Features",
-                "pages": [
-                  "platform/features/command-center-dashboard",
-                  "platform/features/external-project-studio",
-                  "platform/features/meet-together",
-                  "platform/features/mobile-workspace-tools",
-                  "platform/features/user-management",
-                  {
-                    "group": "Smart Scheduling",
-                    "pages": [
-                      "platform/features/smart-scheduling/overview",
-                      "platform/features/smart-scheduling/priority-system",
-                      "platform/features/smart-scheduling/duration-optimization",
-                      "platform/features/smart-scheduling/api-reference"
-                    ]
-                  }
-                ]
-              },
-              {
-                "group": "Architecture",
-                "pages": [
-                  "platform/architecture/routing",
-                  "platform/architecture/tanstack-rust-migration",
-                  "platform/architecture/tanstack-rust-migration-plan",
-                  "platform/architecture/data-fetching",
-                  "platform/architecture/effect",
-                  "platform/architecture/api-routes",
-                  "platform/architecture/trpc",
-                  "platform/architecture/authentication",
-                  "platform/architecture/satellite-apps",
-                  "platform/architecture/app-coordination",
-                  "platform/architecture/sepay-integration",
-                  "platform/architecture/authorization",
-                  "platform/architecture/workspaces-permissions",
-                  {
-                    "group": "System Design",
-                    "pages": [
-                      "platform/architecture/system-design/overview",
-                      "platform/architecture/system-design/architectural-decisions",
-                      "platform/architecture/system-design/layering-patterns",
-                      "platform/architecture/system-design/architectural-patterns-comparison",
-                      "platform/architecture/system-design/event-driven-architecture",
-                      "platform/architecture/system-design/extensibility-resilience-scalability",
-                      "platform/architecture/system-design/encapsulation-patterns",
-                      "platform/architecture/system-design/quality-attributes",
-                      "platform/architecture/system-design/security-architecture",
-                      "platform/architecture/system-design/observability-monitoring",
-                      "platform/architecture/system-design/hexagonal-architecture",
-                      "platform/architecture/system-design/microservices-patterns"
-                    ]
-                  },
-                  {
-                    "group": "Components",
-                    "pages": [
-                      "platform/components/overview",
-                      "platform/components/workspace-wrapper",
-                      "platform/components/workspace-wrapper-quick-reference",
-                      {
-                        "group": "UI Components",
-                        "pages": [
-                          "platform/components/ui/overview",
-                          {
-                            "group": "Actions",
-                            "pages": [
-                              "platform/components/ui/button",
-                              "platform/components/ui/toggle",
-                              "platform/components/ui/toggle-group"
-                            ]
-                          },
-                          {
-                            "group": "Inputs",
-                            "pages": [
-                              "platform/components/ui/calendar",
-                              "platform/components/ui/checkbox",
-                              "platform/components/ui/color-picker",
-                              "platform/components/ui/currency-input",
-                              "platform/components/ui/date-time-picker",
-                              "platform/components/ui/optional-time-picker",
-                              "platform/components/ui/form",
-                              "platform/components/ui/form-required-indicator",
-                              "platform/components/ui/input",
-                              "platform/components/ui/input-otp",
-                              "platform/components/ui/label",
-                              "platform/components/ui/radio-group",
-                              "platform/components/ui/select",
-                              "platform/components/ui/slider",
-                              "platform/components/ui/switch",
-                              "platform/components/ui/textarea",
-                              "platform/components/ui/time-picker-input"
-                            ]
-                          },
-                          {
-                            "group": "Overlays",
-                            "pages": [
-                              "platform/components/ui/alert-dialog",
-                              "platform/components/ui/context-menu",
-                              "platform/components/ui/dialog",
-                              "platform/components/ui/drawer",
-                              "platform/components/ui/dropdown-menu",
-                              "platform/components/ui/hover-card",
-                              "platform/components/ui/popover",
-                              "platform/components/ui/sheet",
-                              "platform/components/ui/tooltip"
-                            ]
-                          },
-                          {
-                            "group": "Navigation",
-                            "pages": [
-                              "platform/components/ui/breadcrumb",
-                              "platform/components/ui/command",
-                              "platform/components/ui/quick-command-center",
-                              "platform/components/ui/menubar",
-                              "platform/components/ui/navbar",
-                              "platform/components/ui/navigation-menu",
-                              "platform/components/ui/pagination",
-                              "platform/components/ui/sidebar",
-                              "platform/components/ui/tabs"
-                            ]
-                          },
-                          {
-                            "group": "Feedback",
-                            "pages": [
-                              "platform/components/ui/alert",
-                              "platform/components/ui/avatar",
-                              "platform/components/ui/badge",
-                              "platform/components/ui/progress",
-                              "platform/components/ui/skeleton",
-                              "platform/components/ui/sonner",
-                              "platform/components/ui/sticky-bottom-bar",
-                              "platform/components/ui/toast",
-                              "platform/components/ui/toaster"
-                            ]
-                          },
-                          {
-                            "group": "Data",
-                            "pages": [
-                              "platform/components/ui/chart",
-                              "platform/components/ui/diff-viewer",
-                              "platform/components/ui/table"
-                            ]
-                          },
-                          {
-                            "group": "Layout",
-                            "pages": [
-                              "platform/components/ui/accordion",
-                              "platform/components/ui/aspect-ratio",
-                              "platform/components/ui/card",
-                              "platform/components/ui/carousel",
-                              "platform/components/ui/collapsible",
-                              "platform/components/ui/resizable",
-                              "platform/components/ui/scroll-area",
-                              "platform/components/ui/separator"
-                            ]
-                          },
-                          {
-                            "group": "Typography",
-                            "pages": [
-                              "platform/components/ui/codeblock",
-                              "platform/components/ui/kbd",
-                              "platform/components/ui/markdown"
-                            ]
-                          },
-                          {
-                            "group": "Advanced",
-                            "pages": [
-                              "platform/components/ui/report-problem-dialog"
-                            ]
-                          }
-                        ]
-                      }
-                    ]
-                  }
-                ]
-              },
-              {
-                "group": "AI",
-                "pages": [
-                  "platform/ai/ai-agent-deployment",
-                  "platform/ai/memory-service",
-                  "platform/ai/model-catalog",
-                  "platform/ai/omni-channel-chat-sdk",
-                  "platform/ai/structured-data"
-                ]
-              },
-              {
-                "group": "Personalization",
-                "pages": [
-                  "platform/personalization/themes",
-                  "platform/personalization/language",
-                  "platform/personalization/sidebar-navigation"
-                ]
-              },
-              {
-                "group": "Applications",
-                "pages": [
-                  "platform/applications/apps",
-                  "platform/applications/calendar",
-                  "platform/applications/chat",
-                  "platform/applications/cms",
-                  "platform/applications/drive",
-                  "platform/applications/finance",
-                  "platform/applications/inventory",
-                  "platform/applications/inventory-square-pos",
-                  "platform/applications/storefront",
-                  "platform/applications/mail",
-                  "platform/applications/shiraoki",
-                  "platform/applications/nova",
-                  "platform/applications/qr",
-                  "platform/applications/tasks",
-                  "platform/applications/learn",
-                  "platform/applications/teach",
-                  "platform/applications/hive",
-                  "platform/applications/mind",
-                  "platform/applications/hive-world-event-troubleshooting"
-                ]
-              }
-            ]
-          },
-          {
-            "group": "Build",
-            "pages": [
-              "build/overview",
-              {
-                "group": "DevOps & Deployment",
-                "pages": [
-                  "build/devops/overview",
-                  "build/devops/environments-release-flow",
-                  "build/devops/web-docker-deployment",
-                  "build/devops/tanstack-rust-local-deploy",
-                  "build/devops/tanstack-rust-cutover-runbook",
-                  "build/devops/chat-realtime-runbook",
-                  "build/devops/hive-realtime-runbook",
-                  "build/devops/log-drain-observability",
-                  "build/devops/adaptive-abuse-rate-limits",
-                  "build/devops/github-actions-runbook",
-                  "build/devops/mobile-store-deployment",
-                  "build/devops/secrets-and-configuration",
-                  "build/devops/sepay-testing-guide",
-                  "build/devops/polar-storefront-integration",
-                  "build/devops/square-terminal-integration"
-                ]
-              },
-              "build/development-tools/overview",
-              "build/development-tools/development",
-              "build/development-tools/codex-plugin",
-              "build/development-tools/monorepo-architecture",
-              "build/development-tools/git-conventions",
-              "build/development-tools/local-supabase-development",
-              "build/development-tools/remote-devboxes",
-              "build/development-tools/ci-cd-pipelines",
-              "build/development-tools/ci-cd-optimization",
-              "build/development-tools/cleaning-clone",
-              "build/development-tools/documenting",
-              {
-                "group": "Skills",
-                "pages": ["build/skills/overview", "build/skills/installation"]
-              }
-            ]
-          },
-          {
-            "group": "Learn",
-            "pages": [
-              "learn/overview",
-              {
-                "group": "Examples",
-                "pages": ["learn/examples/overview"]
-              },
-              {
-                "group": "Workshops",
-                "pages": [
-                  {
-                    "group": "Next.js Workshop",
-                    "pages": [
-                      "learn/workshops/nextjs-workshop/overview",
-                      "learn/workshops/nextjs-workshop/01-web-fundamentals",
-                      "learn/workshops/nextjs-workshop/02-tailwind-css",
-                      "learn/workshops/nextjs-workshop/03-typescript",
-                      "learn/workshops/nextjs-workshop/04-react",
-                      "learn/workshops/nextjs-workshop/05-nextjs",
-                      "learn/workshops/nextjs-workshop/06-ai-sdk",
-                      "learn/workshops/nextjs-workshop/07-next-steps"
-                    ]
-                  }
-                ]
-              },
-              {
-                "group": "Experiments",
-                "pages": [
-                  "learn/experiments/form-builder",
-                  "learn/experiments/calendar",
-                  "learn/experiments/finance",
-                  "learn/experiments/project-management",
-                  "learn/experiments/ai-chat"
-                ]
-              },
-              {
-                "group": "Guides",
-                "pages": [
-                  "learn/guides/prompt-engineering/introduction",
-                  {
-                    "group": "Prompt Design Strategies",
-                    "pages": [
-                      "learn/guides/prompt-engineering/prompt-design-strategies/overview",
-                      "learn/guides/prompt-engineering/prompt-design-strategies/clear-instructions",
-                      "learn/guides/prompt-engineering/prompt-design-strategies/few-shot-examples",
-                      "learn/guides/prompt-engineering/prompt-design-strategies/context-strategies",
-                      "learn/guides/prompt-engineering/prompt-design-strategies/prefixes-patterns",
-                      "learn/guides/prompt-engineering/prompt-design-strategies/modular-prompts",
-                      "learn/guides/prompt-engineering/prompt-design-strategies/parameters-iteration",
-                      "learn/guides/prompt-engineering/prompt-design-strategies/fallback-caution"
-                    ]
-                  }
-                ]
-              }
-            ]
-          },
-          {
-            "group": "Reference",
-            "pages": [
-              "reference/overview",
-              {
-                "group": "Database",
-                "pages": [
-                  "reference/database/schema-overview",
-                  "reference/database/rls-policies",
-                  "reference/database/migrations-guide"
-                ]
-              },
-              {
-                "group": "Packages",
-                "pages": [
-                  "reference/packages/sdk",
-                  "reference/packages/masonry",
-                  "reference/packages/utils-effect",
-                  "reference/packages/supabase",
-                  "reference/packages/trigger"
-                ]
-              },
-              {
-                "group": "API Reference",
-                "pages": [
-                  "reference/api-reference/introduction",
-                  "reference/api-reference/endpoint/generate"
-                ]
-              }
-            ]
-          }
-        ]
-      }
-    ],
-    "global": {
-      "anchors": [
-        {
-          "anchor": "GitHub Repository",
-          "href": "https://github.com/tutur3u/platform",
-          "icon": "github"
-        }
-      ]
-    }
-  },
-  "logo": {
-    "light": "/logo/light.svg",
-    "dark": "/logo/dark.svg",
-    "href": "https://tuturuuu.com"
-  },
-  "navbar": {
-    "links": [
-      {
-        "label": "Support",
-        "href": "mailto:contact@tuturuuu.com"
-      }
-    ],
-    "primary": {
-      "type": "button",
-      "label": "Get Started",
-      "href": "https://tuturuuu.com/login"
-    }
-  },
-  "footer": {
-    "socials": {
-      "facebook": "https://www.facebook.com/tuturuuu",
-      "x": "https://x.com/tutur3u",
-      "github": "https://github.com/tutur3u",
-      "linkedin": "https://www.linkedin.com/company/tuturuuu"
-    }
-  }
+	"$schema": "https://mintlify.com/docs.json",
+	"theme": "mint",
+	"name": "Tuturuuu Docs",
+	"description": "Technical documentation for building, integrating, operating, and contributing to the Tuturuuu platform.",
+	"colors": {
+		"primary": "#000000",
+		"light": "#ffffff",
+		"dark": "#000000"
+	},
+	"favicon": "/favicon.svg",
+	"navigation": {
+		"anchors": [
+			{
+				"anchor": "Documentation",
+				"icon": "book-open",
+				"groups": [
+					{
+						"group": "Overview",
+						"pages": [
+							"overview/vision",
+							"overview/organization-guide",
+							"overview/agent-operating-manual"
+						]
+					},
+					{
+						"group": "Platform",
+						"pages": [
+							"platform/overview",
+							{
+								"group": "Features",
+								"pages": [
+									"platform/features/command-center-dashboard",
+									"platform/features/external-project-studio",
+									"platform/features/meet-together",
+									"platform/features/mobile-workspace-tools",
+									"platform/features/user-management",
+									{
+										"group": "Smart Scheduling",
+										"pages": [
+											"platform/features/smart-scheduling/overview",
+											"platform/features/smart-scheduling/priority-system",
+											"platform/features/smart-scheduling/duration-optimization",
+											"platform/features/smart-scheduling/api-reference"
+										]
+									},
+									"platform/features/progress-goals-leaderboards"
+								]
+							},
+							{
+								"group": "Architecture",
+								"pages": [
+									"platform/architecture/routing",
+									"platform/architecture/tanstack-rust-migration",
+									"platform/architecture/tanstack-rust-migration-plan",
+									"platform/architecture/data-fetching",
+									"platform/architecture/effect",
+									"platform/architecture/api-routes",
+									"platform/architecture/trpc",
+									"platform/architecture/authentication",
+									"platform/architecture/satellite-apps",
+									"platform/architecture/app-coordination",
+									"platform/architecture/sepay-integration",
+									"platform/architecture/authorization",
+									"platform/architecture/workspaces-permissions",
+									{
+										"group": "System Design",
+										"pages": [
+											"platform/architecture/system-design/overview",
+											"platform/architecture/system-design/architectural-decisions",
+											"platform/architecture/system-design/layering-patterns",
+											"platform/architecture/system-design/architectural-patterns-comparison",
+											"platform/architecture/system-design/event-driven-architecture",
+											"platform/architecture/system-design/extensibility-resilience-scalability",
+											"platform/architecture/system-design/encapsulation-patterns",
+											"platform/architecture/system-design/quality-attributes",
+											"platform/architecture/system-design/security-architecture",
+											"platform/architecture/system-design/observability-monitoring",
+											"platform/architecture/system-design/hexagonal-architecture",
+											"platform/architecture/system-design/microservices-patterns"
+										]
+									},
+									{
+										"group": "Components",
+										"pages": [
+											"platform/components/overview",
+											"platform/components/workspace-wrapper",
+											"platform/components/workspace-wrapper-quick-reference",
+											{
+												"group": "UI Components",
+												"pages": [
+													"platform/components/ui/overview",
+													{
+														"group": "Actions",
+														"pages": [
+															"platform/components/ui/button",
+															"platform/components/ui/toggle",
+															"platform/components/ui/toggle-group"
+														]
+													},
+													{
+														"group": "Inputs",
+														"pages": [
+															"platform/components/ui/calendar",
+															"platform/components/ui/checkbox",
+															"platform/components/ui/color-picker",
+															"platform/components/ui/currency-input",
+															"platform/components/ui/date-time-picker",
+															"platform/components/ui/optional-time-picker",
+															"platform/components/ui/form",
+															"platform/components/ui/form-required-indicator",
+															"platform/components/ui/input",
+															"platform/components/ui/input-otp",
+															"platform/components/ui/label",
+															"platform/components/ui/radio-group",
+															"platform/components/ui/select",
+															"platform/components/ui/slider",
+															"platform/components/ui/switch",
+															"platform/components/ui/textarea",
+															"platform/components/ui/time-picker-input"
+														]
+													},
+													{
+														"group": "Overlays",
+														"pages": [
+															"platform/components/ui/alert-dialog",
+															"platform/components/ui/context-menu",
+															"platform/components/ui/dialog",
+															"platform/components/ui/drawer",
+															"platform/components/ui/dropdown-menu",
+															"platform/components/ui/hover-card",
+															"platform/components/ui/popover",
+															"platform/components/ui/sheet",
+															"platform/components/ui/tooltip"
+														]
+													},
+													{
+														"group": "Navigation",
+														"pages": [
+															"platform/components/ui/breadcrumb",
+															"platform/components/ui/command",
+															"platform/components/ui/quick-command-center",
+															"platform/components/ui/menubar",
+															"platform/components/ui/navbar",
+															"platform/components/ui/navigation-menu",
+															"platform/components/ui/pagination",
+															"platform/components/ui/sidebar",
+															"platform/components/ui/tabs"
+														]
+													},
+													{
+														"group": "Feedback",
+														"pages": [
+															"platform/components/ui/alert",
+															"platform/components/ui/avatar",
+															"platform/components/ui/badge",
+															"platform/components/ui/progress",
+															"platform/components/ui/skeleton",
+															"platform/components/ui/sonner",
+															"platform/components/ui/sticky-bottom-bar",
+															"platform/components/ui/toast",
+															"platform/components/ui/toaster"
+														]
+													},
+													{
+														"group": "Data",
+														"pages": [
+															"platform/components/ui/chart",
+															"platform/components/ui/diff-viewer",
+															"platform/components/ui/table"
+														]
+													},
+													{
+														"group": "Layout",
+														"pages": [
+															"platform/components/ui/accordion",
+															"platform/components/ui/aspect-ratio",
+															"platform/components/ui/card",
+															"platform/components/ui/carousel",
+															"platform/components/ui/collapsible",
+															"platform/components/ui/resizable",
+															"platform/components/ui/scroll-area",
+															"platform/components/ui/separator"
+														]
+													},
+													{
+														"group": "Typography",
+														"pages": [
+															"platform/components/ui/codeblock",
+															"platform/components/ui/kbd",
+															"platform/components/ui/markdown"
+														]
+													},
+													{
+														"group": "Advanced",
+														"pages": [
+															"platform/components/ui/report-problem-dialog"
+														]
+													}
+												]
+											}
+										]
+									}
+								]
+							},
+							{
+								"group": "AI",
+								"pages": [
+									"platform/ai/ai-agent-deployment",
+									"platform/ai/memory-service",
+									"platform/ai/model-catalog",
+									"platform/ai/omni-channel-chat-sdk",
+									"platform/ai/structured-data"
+								]
+							},
+							{
+								"group": "Personalization",
+								"pages": [
+									"platform/personalization/themes",
+									"platform/personalization/language",
+									"platform/personalization/sidebar-navigation"
+								]
+							},
+							{
+								"group": "Applications",
+								"pages": [
+									"platform/applications/apps",
+									"platform/applications/calendar",
+									"platform/applications/chat",
+									"platform/applications/cms",
+									"platform/applications/drive",
+									"platform/applications/finance",
+									"platform/applications/inventory",
+									"platform/applications/inventory-square-pos",
+									"platform/applications/storefront",
+									"platform/applications/mail",
+									"platform/applications/shiraoki",
+									"platform/applications/nova",
+									"platform/applications/qr",
+									"platform/applications/tasks",
+									"platform/applications/learn",
+									"platform/applications/teach",
+									"platform/applications/hive",
+									"platform/applications/mind",
+									"platform/applications/hive-world-event-troubleshooting"
+								]
+							}
+						]
+					},
+					{
+						"group": "Build",
+						"pages": [
+							"build/overview",
+							{
+								"group": "DevOps & Deployment",
+								"pages": [
+									"build/devops/overview",
+									"build/devops/environments-release-flow",
+									"build/devops/web-docker-deployment",
+									"build/devops/tanstack-rust-local-deploy",
+									"build/devops/tanstack-rust-cutover-runbook",
+									"build/devops/chat-realtime-runbook",
+									"build/devops/hive-realtime-runbook",
+									"build/devops/log-drain-observability",
+									"build/devops/adaptive-abuse-rate-limits",
+									"build/devops/github-actions-runbook",
+									"build/devops/mobile-store-deployment",
+									"build/devops/secrets-and-configuration",
+									"build/devops/sepay-testing-guide",
+									"build/devops/polar-storefront-integration",
+									"build/devops/square-terminal-integration"
+								]
+							},
+							"build/development-tools/overview",
+							"build/development-tools/development",
+							"build/development-tools/codex-plugin",
+							"build/development-tools/monorepo-architecture",
+							"build/development-tools/git-conventions",
+							"build/development-tools/local-supabase-development",
+							"build/development-tools/remote-devboxes",
+							"build/development-tools/ci-cd-pipelines",
+							"build/development-tools/ci-cd-optimization",
+							"build/development-tools/cleaning-clone",
+							"build/development-tools/documenting",
+							{
+								"group": "Skills",
+								"pages": [
+									"build/skills/overview",
+									"build/skills/installation"
+								]
+							}
+						]
+					},
+					{
+						"group": "Learn",
+						"pages": [
+							"learn/overview",
+							{
+								"group": "Examples",
+								"pages": [
+									"learn/examples/overview"
+								]
+							},
+							{
+								"group": "Workshops",
+								"pages": [
+									{
+										"group": "Next.js Workshop",
+										"pages": [
+											"learn/workshops/nextjs-workshop/overview",
+											"learn/workshops/nextjs-workshop/01-web-fundamentals",
+											"learn/workshops/nextjs-workshop/02-tailwind-css",
+											"learn/workshops/nextjs-workshop/03-typescript",
+											"learn/workshops/nextjs-workshop/04-react",
+											"learn/workshops/nextjs-workshop/05-nextjs",
+											"learn/workshops/nextjs-workshop/06-ai-sdk",
+											"learn/workshops/nextjs-workshop/07-next-steps"
+										]
+									}
+								]
+							},
+							{
+								"group": "Experiments",
+								"pages": [
+									"learn/experiments/form-builder",
+									"learn/experiments/calendar",
+									"learn/experiments/finance",
+									"learn/experiments/project-management",
+									"learn/experiments/ai-chat"
+								]
+							},
+							{
+								"group": "Guides",
+								"pages": [
+									"learn/guides/prompt-engineering/introduction",
+									{
+										"group": "Prompt Design Strategies",
+										"pages": [
+											"learn/guides/prompt-engineering/prompt-design-strategies/overview",
+											"learn/guides/prompt-engineering/prompt-design-strategies/clear-instructions",
+											"learn/guides/prompt-engineering/prompt-design-strategies/few-shot-examples",
+											"learn/guides/prompt-engineering/prompt-design-strategies/context-strategies",
+											"learn/guides/prompt-engineering/prompt-design-strategies/prefixes-patterns",
+											"learn/guides/prompt-engineering/prompt-design-strategies/modular-prompts",
+											"learn/guides/prompt-engineering/prompt-design-strategies/parameters-iteration",
+											"learn/guides/prompt-engineering/prompt-design-strategies/fallback-caution"
+										]
+									}
+								]
+							}
+						]
+					},
+					{
+						"group": "Reference",
+						"pages": [
+							"reference/overview",
+							{
+								"group": "Database",
+								"pages": [
+									"reference/database/schema-overview",
+									"reference/database/rls-policies",
+									"reference/database/migrations-guide"
+								]
+							},
+							{
+								"group": "Packages",
+								"pages": [
+									"reference/packages/sdk",
+									"reference/packages/masonry",
+									"reference/packages/utils-effect",
+									"reference/packages/supabase",
+									"reference/packages/trigger"
+								]
+							},
+							{
+								"group": "API Reference",
+								"pages": [
+									"reference/api-reference/introduction",
+									"reference/api-reference/endpoint/generate"
+								]
+							}
+						]
+					}
+				]
+			}
+		],
+		"global": {
+			"anchors": [
+				{
+					"anchor": "GitHub Repository",
+					"href": "https://github.com/tutur3u/platform",
+					"icon": "github"
+				}
+			]
+		}
+	},
+	"logo": {
+		"light": "/logo/light.svg",
+		"dark": "/logo/dark.svg",
+		"href": "https://tuturuuu.com"
+	},
+	"navbar": {
+		"links": [
+			{
+				"label": "Support",
+				"href": "mailto:contact@tuturuuu.com"
+			}
+		],
+		"primary": {
+			"type": "button",
+			"label": "Get Started",
+			"href": "https://tuturuuu.com/login"
+		}
+	},
+	"footer": {
+		"socials": {
+			"facebook": "https://www.facebook.com/tuturuuu",
+			"x": "https://x.com/tutur3u",
+			"github": "https://github.com/tutur3u",
+			"linkedin": "https://www.linkedin.com/company/tuturuuu"
+		}
+	}
 }

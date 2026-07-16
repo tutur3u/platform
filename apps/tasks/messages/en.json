@@ -7808,7 +7808,8 @@
       "entries": "No progress entries yet.",
       "goals": "No active goals yet.",
       "leaderboards": "No active leaderboards yet.",
-      "stats": "No progress stats yet."
+      "stats": "No progress stats yet.",
+      "tags": "No tags yet — add tags when logging progress to see a breakdown."
     },
     "fields": {
       "automatic_metric": "Automatic metric",
@@ -7823,6 +7824,18 @@
       "unit": "Unit",
       "value": "Value"
     },
+    "gamification": {
+      "celebrate": "Achievement unlocked: {name}!",
+      "empty": "Log progress to start earning achievements.",
+      "level": "Level {level}",
+      "locked": "Locked",
+      "streak_freezes": "{count} streak freezes",
+      "title": "Achievements",
+      "to_next": "{remaining} XP to level {level}",
+      "unlocked_of": "{unlocked} of {total} unlocked",
+      "unlocked_toast": "Achievement unlocked!",
+      "xp": "{xp} XP"
+    },
     "goal_types": {
       "habit": "Habit",
       "target": "Target"
@@ -7831,11 +7844,22 @@
       "automatic_description": "Adapts automatically to your recent task completion pace.",
       "automatic_name": "Weekly task momentum",
       "create_goal": "Create goal",
+      "current_streak": "Current",
       "custom_goal": "Add a custom goal",
       "expected_now": "Expected by now",
+      "frequency": {
+        "per_day": "Every day",
+        "per_month": "Every month",
+        "per_week": "Every week"
+      },
+      "frequency_label": "How often?",
+      "longest_streak": "Longest",
       "needs_attention": "Needs attention",
       "on_track": "On track",
-      "projected_finish": "Projected finish"
+      "percent_hit": "Hit {percent}% of periods",
+      "projected_finish": "Projected finish",
+      "threshold_placeholder": "Amount per period (optional)",
+      "typical_streak": "Typical"
     },
     "import": {
       "placeholder": "2026-06-25,500,Words,writing|draft,Chapter draft",
@@ -7892,18 +7916,64 @@
       "automatic_description": "Updates from completed tasks across this workspace.",
       "automatic_name": "This week",
       "create_leaderboard": "Create leaderboard",
-      "custom_leaderboard": "Create a custom challenge"
+      "custom_leaderboard": "Create a custom challenge",
+      "join": "Join",
+      "join_code": "Join code",
+      "join_error": "Could not join. Check the code and try again.",
+      "join_success": "Joined the leaderboard!",
+      "join_title": "Join a challenge",
+      "joined": "Joined",
+      "leave": "Leave",
+      "member": "Member",
+      "podium": "Podium",
+      "rank": "Rank",
+      "score": "Score",
+      "share_code": "Share code",
+      "you": "You"
+    },
+    "metrics": {
+      "enable_writing": "Enable writing metrics",
+      "writing_enabled": "Writing metrics added!",
+      "writing_error": "Could not add writing metrics.",
+      "writing_pack_description": "Add words, pages, chapters, scenes, and lines — perfect for novels, fanfic, or any writing project.",
+      "writing_pack_title": "Track writing progress"
     },
     "progress": {
+      "activity_calendar": "Activity calendar",
       "log_entry": "Log progress",
       "momentum": "Activity momentum",
       "recent_entries": "Recent entries"
     },
+    "quicklog": {
+      "amount": "Amount",
+      "date": "Date",
+      "description": "Record what you got done. Backdating, zero, and corrections are all fine.",
+      "error": "Could not log progress. Please try again.",
+      "metric": "Metric",
+      "mode_delta": "Add to total",
+      "mode_hint_delta": "Adds this amount to your running total.",
+      "mode_hint_total": "Sets your project total; we calculate the difference.",
+      "mode_total": "Set new total",
+      "note": "Note (optional)",
+      "note_placeholder": "A quick note about this session…",
+      "open": "Log progress",
+      "submit": "Save progress",
+      "success": "Progress logged",
+      "tags": "Tags (comma separated)",
+      "title": "Log progress"
+    },
     "schema_unavailable": "Task progress needs the latest database migration before it can load.",
     "stats": {
+      "active_days_30": "{count} active days in the last 30",
       "average_active_day": "Average per active day",
+      "best_day": "Best day",
+      "consistency": "Consistency",
       "daily_progress": "Activity rhythm",
       "last_7_days": "Last 7 days",
+      "longest_streak": "Longest streak: {count}",
+      "projected_week": "Projected this week",
+      "tag_breakdown": "Progress by tag",
+      "weekday_distribution": "Progress by weekday",
       "weekly_trend": "Change vs previous week"
     },
     "summary": {

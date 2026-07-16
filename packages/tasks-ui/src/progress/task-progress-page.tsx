@@ -1,7 +1,14 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { BarChart3, Flag, Sparkles, Target, Trophy } from '@tuturuuu/icons';
+import {
+  BarChart3,
+  Flag,
+  Plus,
+  Sparkles,
+  Target,
+  Trophy,
+} from '@tuturuuu/icons';
 import {
   createTaskLeaderboard,
   createTaskLeaderboardTeam,
@@ -15,10 +22,12 @@ import {
   type TaskProgressMetric,
 } from '@tuturuuu/tasks-api';
 import { Badge } from '@tuturuuu/ui/badge';
+import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent } from '@tuturuuu/ui/card';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
+import { TaskProgressAchievementsCard } from './task-progress-achievements-card';
 import { ImportPanel } from './task-progress-import-panel';
 import { TaskProgressIntelligencePanel } from './task-progress-intelligence-panel';
 import { LeaderboardsPanel } from './task-progress-leaderboards-panel';
@@ -28,6 +37,8 @@ import {
   StatsPanel,
   SummaryCard,
 } from './task-progress-panels';
+import { QuickLogProgressDialog } from './task-progress-quick-log-dialog';
+import { TaskProgressWritingPackCard } from './task-progress-writing-pack-card';
 import { useTaskProgressIntelligence } from './use-task-progress-intelligence';
 
 export type TaskProgressView =
@@ -100,6 +111,7 @@ export function TaskProgressPage({
   const [importText, setImportText] = useState('');
   const [importPreviewCount, setImportPreviewCount] = useState(0);
   const [selectedMetricId, setSelectedMetricId] = useState<string | null>(null);
+  const [quickLogOpen, setQuickLogOpen] = useState(false);
   const queryRoot = ['task-progress', wsId];
 
   const metricsQuery = useQuery({
@@ -142,16 +154,32 @@ export function TaskProgressPage({
     queryClient.invalidateQueries({ queryKey: queryRoot });
 
   const createGoalMutation = useMutation({
-    mutationFn: (formData: FormData) =>
-      createTaskProgressGoal(wsId, {
+    mutationFn: (formData: FormData) => {
+      const isHabit = String(formData.get('goal_type')) === 'habit';
+      const rawThreshold = formData.get('habit_threshold');
+      const threshold =
+        rawThreshold != null && String(rawThreshold).trim() !== ''
+          ? Number(rawThreshold)
+          : null;
+      return createTaskProgressGoal(wsId, {
         metric_id: String(formData.get('metric_id') ?? ''),
         name: String(formData.get('name') ?? ''),
-        target_value: Number(formData.get('target_value') ?? 0),
+        target_value: Number(formData.get('target_value') ?? 0) || 1,
         period_start: String(formData.get('period_start') ?? today()),
         period_end: String(formData.get('period_end') || '') || null,
-        goal_type:
-          String(formData.get('goal_type')) === 'habit' ? 'habit' : 'target',
-      }),
+        goal_type: isHabit ? 'habit' : 'target',
+        ...(isHabit
+          ? {
+              habit_frequency:
+                (String(formData.get('habit_frequency') || 'per_week') as
+                  | 'per_day'
+                  | 'per_week'
+                  | 'per_month') ?? 'per_week',
+              habit_threshold: threshold,
+            }
+          : {}),
+      });
+    },
     onSuccess: () => {
       toast.success(t('toast.goal_created'));
       invalidateProgress();
@@ -236,7 +264,7 @@ export function TaskProgressPage({
               {t(`views.${view}.description`)}
             </p>
           </div>
-          <div className="shrink-0">
+          <div className="flex shrink-0 flex-wrap items-center gap-2">
             {primaryMetrics.length > 0 ? (
               <label className="flex min-w-56 items-center justify-between gap-3 rounded-xl border bg-background px-3 py-2 text-sm shadow-sm">
                 <span className="text-muted-foreground">
@@ -254,6 +282,12 @@ export function TaskProgressPage({
                   ))}
                 </select>
               </label>
+            ) : null}
+            {metrics.length > 0 ? (
+              <Button onClick={() => setQuickLogOpen(true)} type="button">
+                <Plus className="mr-2 size-4" />
+                {t('quicklog.open')}
+              </Button>
             ) : null}
           </div>
         </div>
@@ -308,12 +342,22 @@ export function TaskProgressPage({
       ) : null}
 
       {view === 'progress' ? (
-        <ProgressPanel
-          routeWsId={routeWsId}
-          selectedMetric={selectedMetric}
-          stats={stats}
-          t={t}
-        />
+        <>
+          <TaskProgressWritingPackCard
+            metrics={metrics}
+            onApplied={invalidateProgress}
+            t={t}
+            wsId={wsId}
+          />
+          <ProgressPanel
+            onQuickLog={() => setQuickLogOpen(true)}
+            routeWsId={routeWsId}
+            selectedMetric={selectedMetric}
+            stats={stats}
+            t={t}
+          />
+          <TaskProgressAchievementsCard t={t} wsId={wsId} />
+        </>
       ) : null}
       {view === 'goals' ? (
         <GoalsPanel
@@ -324,15 +368,22 @@ export function TaskProgressPage({
           t={t}
         />
       ) : null}
-      {view === 'stats' ? <StatsPanel stats={stats} t={t} /> : null}
+      {view === 'stats' ? (
+        <>
+          <StatsPanel selectedMetric={selectedMetric} stats={stats} t={t} />
+          <TaskProgressAchievementsCard t={t} wsId={wsId} />
+        </>
+      ) : null}
       {view === 'leaderboards' ? (
         <LeaderboardsPanel
           createLeaderboardMutation={createLeaderboardMutation}
           createTeamMutation={createTeamMutation}
           leaderboards={leaderboards}
           metrics={metrics}
+          onJoined={invalidateProgress}
           selectedMetric={selectedMetric}
           t={t}
+          wsId={wsId}
         />
       ) : null}
       {view === 'import' ? (
@@ -343,6 +394,29 @@ export function TaskProgressPage({
           setImportText={setImportText}
           t={t}
         />
+      ) : null}
+
+      {metrics.length > 0 ? (
+        <>
+          <Button
+            aria-label={t('quicklog.open')}
+            className="fixed right-5 bottom-5 z-40 size-14 rounded-full shadow-lg md:hidden"
+            onClick={() => setQuickLogOpen(true)}
+            size="icon"
+            type="button"
+          >
+            <Plus className="size-6" />
+          </Button>
+          <QuickLogProgressDialog
+            defaultMetricId={selectedMetric?.id ?? metrics[0]?.id ?? null}
+            metrics={metrics}
+            onLogged={invalidateProgress}
+            onOpenChange={setQuickLogOpen}
+            open={quickLogOpen}
+            t={t}
+            wsId={wsId}
+          />
+        </>
       ) : null}
     </div>
   );
