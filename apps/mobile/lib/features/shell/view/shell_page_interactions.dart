@@ -199,8 +199,11 @@ extension _ShellPageInteractions on _ShellPageState {
       ..start();
   }
 
-  void _startLongPressTimer(PointerDownEvent event) {
-    if (!_isAppsTabHit(event.position)) return;
+  void _startLongPressTimer(
+    PointerDownEvent event,
+    BuildContext navContext,
+  ) {
+    if (!_isAppsTabHit(event, navContext)) return;
     _stopLongPressTimer();
     _longPressTimer = Timer(
       const Duration(milliseconds: 500),
@@ -208,9 +211,9 @@ extension _ShellPageInteractions on _ShellPageState {
     );
   }
 
-  void _handlePointerUp(PointerUpEvent event) {
+  void _handlePointerUp(PointerUpEvent event, BuildContext navContext) {
     _stopLongPressTimer();
-    if (!_isAppsTabHit(event.position)) {
+    if (!_isAppsTabHit(event, navContext)) {
       return;
     }
 

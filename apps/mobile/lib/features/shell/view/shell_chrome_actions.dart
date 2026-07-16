@@ -1,7 +1,13 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
+import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/features/notifications/widgets/notifications_action_button.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
+import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class ShellChromeActions extends StatefulWidget {
@@ -66,9 +72,14 @@ class _ShellChromeActionsState extends State<ShellChromeActions> {
 }
 
 class ShellInjectedActionsHost extends StatefulWidget {
-  const ShellInjectedActionsHost({required this.matchedLocation, super.key});
+  const ShellInjectedActionsHost({
+    required this.matchedLocation,
+    this.includeNotifications = false,
+    super.key,
+  });
 
   final String matchedLocation;
+  final bool includeNotifications;
 
   @override
   State<ShellInjectedActionsHost> createState() =>
@@ -143,6 +154,12 @@ class _ShellInjectedActionsHostState extends State<ShellInjectedActionsHost> {
   Widget build(BuildContext context) {
     final cubit = _lookupShellChromeActionsCubit(context);
     if (cubit == null) {
+      if (widget.includeNotifications &&
+          shouldShowNotificationsActionForLocation(widget.matchedLocation)) {
+        return ShellNotificationsActionSlot(
+          matchedLocation: widget.matchedLocation,
+        );
+      }
       return const SizedBox.shrink();
     }
 
@@ -174,12 +191,23 @@ class _ShellInjectedActionsHostState extends State<ShellInjectedActionsHost> {
           (false, true) => _retainedActions,
           (false, false) => resolvedActions,
         };
+        final showNotifications =
+            widget.includeNotifications &&
+            shouldShowNotificationsActionForLocation(widget.matchedLocation);
+        final extraActionCount = actions.length + (showNotifications ? 1 : 0);
+
+        if (extraActionCount > 1) {
+          return _ShellActionsOverflow(
+            actions: actions,
+            showNotifications: showNotifications,
+          );
+        }
 
         return AnimatedSize(
           duration: const Duration(milliseconds: 220),
           curve: Curves.easeOutCubic,
           alignment: Alignment.centerRight,
-          child: actions.isEmpty
+          child: extraActionCount == 0
               ? const SizedBox(key: ValueKey<String>('shell-actions-empty'))
               : Row(
                   mainAxisSize: MainAxisSize.min,
@@ -190,10 +218,89 @@ class _ShellInjectedActionsHostState extends State<ShellInjectedActionsHost> {
                         padding: const EdgeInsets.only(right: 2),
                         child: _ShellActionButton(action: action),
                       ),
+                    if (showNotifications)
+                      ShellNotificationsActionSlot(
+                        matchedLocation: widget.matchedLocation,
+                      ),
                   ],
                 ),
         );
       },
+    );
+  }
+}
+
+class _ShellActionsOverflow extends StatelessWidget {
+  const _ShellActionsOverflow({
+    required this.actions,
+    required this.showNotifications,
+  });
+
+  static const _notificationsId = '__notifications__';
+
+  final List<ShellActionSpec> actions;
+  final bool showNotifications;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = shad.Theme.of(context);
+
+    return PopupMenuButton<String>(
+      key: const ValueKey<String>('shell-actions-overflow'),
+      tooltip: MaterialLocalizations.of(context).showMenuTooltip,
+      icon: const Icon(Icons.more_horiz_rounded, size: 22),
+      onSelected: (id) {
+        if (id == _notificationsId) {
+          unawaited(context.push(Routes.notifications));
+          return;
+        }
+
+        for (final action in actions) {
+          if (action.id == id && action.enabled && !action.isLoading) {
+            action.onPressed?.call();
+            return;
+          }
+        }
+      },
+      itemBuilder: (context) => [
+        for (final action in actions)
+          PopupMenuItem<String>(
+            value: action.id,
+            enabled: action.enabled && !action.isLoading,
+            child: Row(
+              children: [
+                SizedBox.square(
+                  dimension: 20,
+                  child: action.isLoading
+                      ? const Padding(
+                          padding: EdgeInsets.all(3),
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : Icon(
+                          action.icon,
+                          size: 19,
+                          color: action.highlighted
+                              ? theme.colorScheme.primary
+                              : null,
+                        ),
+                ),
+                const SizedBox(width: 12),
+                Flexible(child: Text(action.tooltip ?? action.id)),
+              ],
+            ),
+          ),
+        if (showNotifications)
+          PopupMenuItem<String>(
+            value: _notificationsId,
+            child: Row(
+              children: [
+                const Icon(Icons.notifications_none_rounded, size: 19),
+                const SizedBox(width: 12),
+                Flexible(child: Text(context.l10n.notificationsTitle)),
+              ],
+            ),
+          ),
+      ],
     );
   }
 }

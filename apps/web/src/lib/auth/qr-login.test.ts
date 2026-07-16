@@ -175,12 +175,12 @@ describe('QR login helpers', () => {
       expect.objectContaining({
         expires_at: expect.any(String),
         request_metadata: expect.objectContaining({
-          creatorUserId: 'user-1',
           origin: 'https://tuturuuu.com',
         }),
         status: 'pending',
       })
     );
+    expect(mocks.createClient).not.toHaveBeenCalled();
     expect(result.status).toBe(200);
     expect(result.body).toMatchObject({
       challenge: {
@@ -193,12 +193,15 @@ describe('QR login helpers', () => {
     });
   });
 
-  it('requires authentication before creating QR challenges', async () => {
+  it('creates QR challenges while the receiving device is signed out', async () => {
     const { createQrLoginChallenge } = await import('./qr-login');
-    mocks.userClient.auth.getUser.mockResolvedValueOnce({
-      data: { user: null },
-      error: null,
+    const expiresAt = new Date(Date.now() + 120_000).toISOString();
+    const insertBuilder = createMaybeSingleBuilder({
+      expires_at: expiresAt,
+      id: 'challenge-1',
+      status: 'pending',
     });
+    mocks.adminClient.from.mockReturnValue(insertBuilder);
 
     const result = await createQrLoginChallenge(
       {
@@ -214,12 +217,10 @@ describe('QR login helpers', () => {
       }
     );
 
-    expect(mocks.verifyTurnstileToken).not.toHaveBeenCalled();
-    expect(mocks.adminClient.from).not.toHaveBeenCalled();
-    expect(result).toEqual({
-      body: { error: 'Authentication required' },
-      status: 401,
-    });
+    expect(mocks.createClient).not.toHaveBeenCalled();
+    expect(mocks.verifyTurnstileToken).toHaveBeenCalled();
+    expect(insertBuilder.insert).toHaveBeenCalled();
+    expect(result.status).toBe(200);
   });
 
   it('requires Turnstile verification before creating QR challenges', async () => {
@@ -431,7 +432,7 @@ describe('QR login helpers', () => {
     });
   });
 
-  it('rejects approvals when approver is not the challenge creator', async () => {
+  it('allows the authenticated scanner holding the challenge secret', async () => {
     const { approveQrLoginChallenge } = await import('./qr-login');
     const pending = {
       approval_metadata: {},
@@ -450,7 +451,14 @@ describe('QR login helpers', () => {
       updated_at: new Date().toISOString(),
     };
     const loadBuilder = createMaybeSingleBuilder(pending);
-    mocks.adminClient.from.mockReturnValueOnce(loadBuilder);
+    const updateBuilder = createMaybeSingleBuilder({
+      expires_at: pending.expires_at,
+      id: pending.id,
+      status: 'approved',
+    });
+    mocks.adminClient.from
+      .mockReturnValueOnce(loadBuilder)
+      .mockReturnValueOnce(updateBuilder);
 
     const result = await approveQrLoginChallenge(
       {
@@ -463,10 +471,19 @@ describe('QR login helpers', () => {
       }
     );
 
-    expect(mocks.adminClient.from).toHaveBeenCalledTimes(1);
+    expect(updateBuilder.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        approver_user_id: 'user-1',
+        status: 'approved',
+      })
+    );
     expect(result).toEqual({
-      body: { error: 'Invalid or expired QR login request.' },
-      status: 403,
+      body: {
+        expiresAt: pending.expires_at,
+        status: 'approved',
+        success: true,
+      },
+      status: 200,
     });
   });
 });

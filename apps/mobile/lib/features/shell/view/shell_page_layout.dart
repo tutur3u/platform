@@ -343,45 +343,51 @@ extension _ShellPageLayout on _ShellPageState {
       child: _buildFloatingNavigationBar(
         context: context,
         isCompact: isCompact,
-        child: Listener(
-          behavior: HitTestBehavior.translucent,
-          onPointerDown: isMiniAppRoute ? null : _startLongPressTimer,
-          onPointerUp: isMiniAppRoute ? null : _handlePointerUp,
-          onPointerCancel: isMiniAppRoute ? null : _stopLongPressTimer,
-          child: AnimatedSwitcher(
-            duration: _ShellPageState._navSwitcherDuration,
-            reverseDuration: _ShellPageState._navSwitcherReverseDuration,
-            layoutBuilder: (currentChild, previousChildren) => Stack(
-              alignment: Alignment.center,
-              fit: StackFit.passthrough,
-              children: [
-                ...previousChildren,
-                if (currentChild != null) currentChild,
-              ],
+        child: Builder(
+          builder: (navContext) => Listener(
+            behavior: HitTestBehavior.translucent,
+            onPointerDown: isMiniAppRoute
+                ? null
+                : (event) => _startLongPressTimer(event, navContext),
+            onPointerUp: isMiniAppRoute
+                ? null
+                : (event) => _handlePointerUp(event, navContext),
+            onPointerCancel: isMiniAppRoute ? null : _stopLongPressTimer,
+            child: AnimatedSwitcher(
+              duration: _ShellPageState._navSwitcherDuration,
+              reverseDuration: _ShellPageState._navSwitcherReverseDuration,
+              layoutBuilder: (currentChild, previousChildren) => Stack(
+                alignment: Alignment.center,
+                fit: StackFit.passthrough,
+                children: [
+                  ...previousChildren,
+                  if (currentChild != null) currentChild,
+                ],
+              ),
+              transitionBuilder: (child, animation) {
+                final curvedAnimation = CurvedAnimation(
+                  parent: animation,
+                  curve: Curves.easeOutCubic,
+                  reverseCurve: Curves.easeInCubic,
+                );
+                final slideAnimation = Tween<Offset>(
+                  begin: const Offset(0, 0.18),
+                  end: Offset.zero,
+                ).animate(curvedAnimation);
+                final scaleAnimation = Tween<double>(
+                  begin: 0.98,
+                  end: 1,
+                ).animate(curvedAnimation);
+                return FadeTransition(
+                  opacity: curvedAnimation,
+                  child: SlideTransition(
+                    position: slideAnimation,
+                    child: ScaleTransition(scale: scaleAnimation, child: child),
+                  ),
+                );
+              },
+              child: RepaintBoundary(key: navTransitionKey, child: navContent),
             ),
-            transitionBuilder: (child, animation) {
-              final curvedAnimation = CurvedAnimation(
-                parent: animation,
-                curve: Curves.easeOutCubic,
-                reverseCurve: Curves.easeInCubic,
-              );
-              final slideAnimation = Tween<Offset>(
-                begin: const Offset(0, 0.18),
-                end: Offset.zero,
-              ).animate(curvedAnimation);
-              final scaleAnimation = Tween<double>(
-                begin: 0.98,
-                end: 1,
-              ).animate(curvedAnimation);
-              return FadeTransition(
-                opacity: curvedAnimation,
-                child: SlideTransition(
-                  position: slideAnimation,
-                  child: ScaleTransition(scale: scaleAnimation, child: child),
-                ),
-              );
-            },
-            child: RepaintBoundary(key: navTransitionKey, child: navContent),
           ),
         ),
       ),
@@ -518,45 +524,49 @@ extension _ShellPageLayout on _ShellPageState {
                               _ShellPageState._floatingNavMinItemWidth,
                           children: miniItems,
                         ))
-                : Listener(
-                    behavior: HitTestBehavior.translucent,
-                    onPointerDown: _startLongPressTimer,
-                    onPointerUp: _handlePointerUp,
-                    onPointerCancel: _stopLongPressTimer,
-                    child: isCompact
-                        ? shad.NavigationBar(
-                            key: _ShellPageState._globalLayerKey,
-                            selectedKey: globalSelectedKey,
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
+                : Builder(
+                    builder: (navContext) => Listener(
+                      behavior: HitTestBehavior.translucent,
+                      onPointerDown: (event) =>
+                          _startLongPressTimer(event, navContext),
+                      onPointerUp: (event) =>
+                          _handlePointerUp(event, navContext),
+                      onPointerCancel: _stopLongPressTimer,
+                      child: isCompact
+                          ? shad.NavigationBar(
+                              key: _ShellPageState._globalLayerKey,
+                              selectedKey: globalSelectedKey,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
+                              onSelected: (key) => _onItemTapped(
+                                _ShellPageState._indexForKey(key),
+                                context,
+                              ),
+                              children: _buildNavItems(
+                                context,
+                                state,
+                                context.l10n,
+                              ).map((item) => Expanded(child: item)).toList(),
+                            )
+                          : CustomNavigationBar(
+                              key: _ShellPageState._globalLayerKey,
+                              selectedKey: globalSelectedKey,
+                              onSelected: (key) => _onItemTapped(
+                                _ShellPageState._indexForKey(key),
+                                context,
+                              ),
+                              expandItems: false,
+                              minItemWidth:
+                                  _ShellPageState._floatingNavMinItemWidth,
+                              children: _buildNavItems(
+                                context,
+                                state,
+                                context.l10n,
+                              ),
                             ),
-                            onSelected: (key) => _onItemTapped(
-                              _ShellPageState._indexForKey(key),
-                              context,
-                            ),
-                            children: _buildNavItems(
-                              context,
-                              state,
-                              context.l10n,
-                            ).map((item) => Expanded(child: item)).toList(),
-                          )
-                        : CustomNavigationBar(
-                            key: _ShellPageState._globalLayerKey,
-                            selectedKey: globalSelectedKey,
-                            onSelected: (key) => _onItemTapped(
-                              _ShellPageState._indexForKey(key),
-                              context,
-                            ),
-                            expandItems: false,
-                            minItemWidth:
-                                _ShellPageState._floatingNavMinItemWidth,
-                            children: _buildNavItems(
-                              context,
-                              state,
-                              context.l10n,
-                            ),
-                          ),
+                    ),
                   ),
           ),
         ),
@@ -682,15 +692,9 @@ class _ShellTrailingActions extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        ShellInjectedActionsHost(matchedLocation: matchedLocation),
-        const SizedBox(width: 6),
-        KeyedSubtree(
-          key: _ShellPageState._shellNotificationsKey,
-          child: RepaintBoundary(
-            child: ShellNotificationsActionSlot(
-              matchedLocation: matchedLocation,
-            ),
-          ),
+        ShellInjectedActionsHost(
+          matchedLocation: matchedLocation,
+          includeNotifications: true,
         ),
         const SizedBox(width: 6),
         _ShellAvatarSlot(matchedLocation: matchedLocation),

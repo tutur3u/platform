@@ -25,6 +25,7 @@ class _ShellChromeActionsHarnessState
   String _matchedLocation = '/requests';
   String _workspaceId = 'ws-a';
   var _enabled = false;
+  var _showSecondAction = false;
   var _tapCount = 0;
   String _lastWorkspaceAction = 'none';
 
@@ -49,6 +50,13 @@ class _ShellChromeActionsHarnessState
                 _lastWorkspaceAction = workspaceId;
               }),
             ),
+            if (_showSecondAction)
+              ShellActionSpec(
+                id: 'search',
+                icon: Icons.search_rounded,
+                tooltip: 'Search requests',
+                enabled: _enabled,
+              ),
           ],
         ),
         ShellChromeActions(
@@ -82,6 +90,10 @@ class _ShellChromeActionsHarnessState
         TextButton(
           onPressed: () => setState(() => _workspaceId = 'ws-b'),
           child: const Text('switch-workspace'),
+        ),
+        TextButton(
+          onPressed: () => setState(() => _showSecondAction = true),
+          child: const Text('show-second-action'),
         ),
         Text('tap-count:$_tapCount'),
         Text('last-workspace:$_lastWorkspaceAction'),
@@ -162,6 +174,31 @@ void main() {
       await _pumpFrames(tester);
 
       expect(find.byIcon(Icons.filter_alt_outlined), findsNothing);
+    });
+
+    testWidgets('collapses multiple top-bar actions into an overflow menu', (
+      tester,
+    ) async {
+      await tester.pumpApp(
+        BlocProvider(
+          create: (_) => ShellChromeActionsCubit(),
+          child: const Material(child: _ShellChromeActionsHarness()),
+        ),
+      );
+      await tester.pump();
+
+      await tester.tap(find.text('show-second-action'));
+      await _pumpFrames(tester);
+
+      expect(find.byKey(const ValueKey('shell-actions-overflow')), findsOne);
+      expect(find.byIcon(Icons.filter_alt_outlined), findsNothing);
+      expect(find.byIcon(Icons.search_rounded), findsNothing);
+
+      await tester.tap(find.byKey(const ValueKey('shell-actions-overflow')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Filter requests'), findsOneWidget);
+      expect(find.text('Search requests'), findsOneWidget);
     });
 
     testWidgets(

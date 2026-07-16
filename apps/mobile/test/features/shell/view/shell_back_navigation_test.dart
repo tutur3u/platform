@@ -561,6 +561,46 @@ void main() {
       expect(find.text(l10n.taskPortfolioTitle), findsNothing);
     });
 
+    testWidgets('rapid nested navigation does not reuse outgoing nav keys', (
+      tester,
+    ) async {
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = const Size(390, 844);
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      final router = _buildRouter(initialLocation: Routes.apps);
+      addTearDown(router.dispose);
+
+      await tester.pumpWidget(
+        _buildTestApp(
+          router: router,
+          appTabCubit: appTabCubit,
+          authCubit: authCubit,
+          workspaceCubit: workspaceCubit,
+          shellProfileCubit: shellProfileCubit,
+        ),
+      );
+      await _pumpForTransitions(tester);
+
+      router.go(Routes.tasks);
+      await tester.pump(const Duration(milliseconds: 40));
+      router.go(Routes.apps);
+      await tester.pump(const Duration(milliseconds: 40));
+      router.go(Routes.taskBoards);
+      await tester.pump(const Duration(milliseconds: 40));
+
+      expect(tester.takeException(), isNull);
+      await _pumpForTransitions(tester);
+      expect(tester.takeException(), isNull);
+      expect(
+        router.routeInformationProvider.value.uri.path,
+        Routes.taskBoards,
+      );
+    });
+
     testWidgets('injected mini-nav takes precedence over module mini-nav', (
       tester,
     ) async {

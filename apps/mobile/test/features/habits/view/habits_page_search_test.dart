@@ -251,11 +251,15 @@ void main() {
 
     expect(find.byType(shad.TextField), findsNothing);
 
+    await tester.tap(find.byKey(const ValueKey('shell-actions-overflow')));
+    await tester.pumpAndSettle();
     await tester.tap(find.byIcon(Icons.search_rounded));
     await pumpUi(tester);
 
     expect(find.byType(shad.TextField), findsOneWidget);
 
+    await tester.tap(find.byKey(const ValueKey('shell-actions-overflow')));
+    await tester.pumpAndSettle();
     await tester.tap(find.byIcon(Icons.close_rounded));
     await pumpUi(tester);
 

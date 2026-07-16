@@ -16,7 +16,6 @@ import 'package:mobile/features/apps/view/apps_hub_page.dart';
 import 'package:mobile/features/assistant/cubit/assistant_chrome_cubit.dart';
 import 'package:mobile/features/assistant/view/assistant_page.dart';
 import 'package:mobile/features/dashboard/view/dashboard_page.dart';
-import 'package:mobile/features/notifications/widgets/notifications_action_button.dart';
 import 'package:mobile/features/shell/cubit/shell_title_override_cubit.dart';
 import 'package:mobile/features/shell/view/avatar_dropdown.dart';
 import 'package:mobile/features/shell/view/custom_navigation_bar.dart';
@@ -65,9 +64,6 @@ class _ShellPageState extends State<ShellPage>
   static const ValueKey<String> _miniLayerKey = ValueKey('mini-layer');
   static const ValueKey<String> _backToRootKey = ValueKey('back-to-root');
   static const ValueKey<String> _shellAvatarKey = ValueKey('shell-avatar');
-  static const ValueKey<String> _shellNotificationsKey = ValueKey(
-    'shell-notifications',
-  );
   static const double _navIconSize = 22;
   static const double _assistantNavIconSize = 38;
   static const double _navItemSpacing = 2;
@@ -75,7 +71,7 @@ class _ShellPageState extends State<ShellPage>
   static const double _miniNavLabelFontSize = 10;
   static const double _miniNavItemSpacing = 1;
   static const double _floatingNavMinItemWidth = 96;
-  static const double _compactBottomNavHeight = 72;
+  static const double _compactBottomNavHeight = 60;
   static const Duration _exitConfirmationWindow = Duration(seconds: 2);
   static const Duration _assistantSpinDuration = Duration(milliseconds: 680);
   static const Duration _navSwitcherDuration = Duration(milliseconds: 320);
@@ -91,7 +87,6 @@ class _ShellPageState extends State<ShellPage>
   final Stopwatch _tapStopwatch = Stopwatch();
   int? _lastTabIndex;
   Timer? _longPressTimer;
-  final GlobalKey _appsTabKey = GlobalKey();
   DateTime? _lastAppsTabPointerUpAt;
   late final PageController _layerController;
   Widget? _cachedGlobalBody;
@@ -143,16 +138,14 @@ class _ShellPageState extends State<ShellPage>
     debugPrint(message);
   }
 
-  bool _isAppsTabHit(Offset position) {
-    final ctx = _appsTabKey.currentContext;
-    if (ctx == null) return false;
-    final renderBox = ctx.findRenderObject() as RenderBox?;
-    if (renderBox == null || !renderBox.hasSize) return false;
-    final overlay = Overlay.of(ctx).context.findRenderObject() as RenderBox?;
-    if (overlay == null) return false;
-    final topLeft = renderBox.localToGlobal(Offset.zero, ancestor: overlay);
-    final bounds = topLeft & renderBox.size;
-    return bounds.contains(position);
+  bool _isAppsTabHit(PointerEvent event, BuildContext navContext) {
+    final renderBox = navContext.findRenderObject() as RenderBox?;
+    if (renderBox == null || !renderBox.hasSize || renderBox.size.width <= 0) {
+      return false;
+    }
+
+    final appsStartsAt = renderBox.size.width * 2 / 3;
+    return event.localPosition.dx >= appsStartsAt;
   }
 
   @override

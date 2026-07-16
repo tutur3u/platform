@@ -4,9 +4,8 @@ extension _ShellPageNavigation on _ShellPageState {
   List<shad.NavigationItem> _buildNavItems(
     BuildContext context,
     AppTabState state,
-    AppLocalizations l10n, {
-    bool useGlobalKey = true,
-  }) {
+    AppLocalizations l10n,
+  ) {
     final theme = shad.Theme.of(context);
     final labelStyle = theme.typography.p.copyWith(
       fontSize: 12,
@@ -46,7 +45,7 @@ extension _ShellPageNavigation on _ShellPageState {
         ),
       ),
       shad.NavigationItem(
-        key: useGlobalKey ? _appsTabKey : _ShellPageState._appsKey,
+        key: _ShellPageState._appsKey,
         spacing: _ShellPageState._navItemSpacing,
         label: isCompact
             ? _buildNavLabel(l10n.navApps, labelStyle, itemIndex: 2)
@@ -386,7 +385,7 @@ extension _ShellPageNavigation on _ShellPageState {
     return bestMatchLength >= 0 ? bestIndex : 0;
   }
 
-  Key? _selectedKeyForLocation(String location, {bool useGlobalKey = true}) {
+  Key? _selectedKeyForLocation(String location) {
     if (location == Routes.home) {
       return _ShellPageState._homeKey;
     }
@@ -395,7 +394,7 @@ extension _ShellPageNavigation on _ShellPageState {
     }
     if (location == Routes.apps ||
         AppRegistry.moduleFromLocation(location) != null) {
-      return useGlobalKey ? _appsTabKey : _ShellPageState._appsKey;
+      return _ShellPageState._appsKey;
     }
 
     return null;
