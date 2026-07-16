@@ -73,7 +73,7 @@
     "@tanstack/react-table": "^8.21.3",
     "@testing-library/jest-dom": "^6.9.1",
     "@tiptap/extension-highlight": "3.27.4",
-    "@tiptap/extension-link": "3.27.4",
+    "@tiptap/extension-link": "3.28.0",
     "@tiptap/extension-strike": "3.27.4",
     "@tiptap/extension-subscript": "3.27.4",
     "@tiptap/extension-superscript": "3.27.4",
