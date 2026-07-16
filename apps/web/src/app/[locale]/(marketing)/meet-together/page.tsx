@@ -1,11 +1,12 @@
 import { MeetTogetherPage } from '@tuturuuu/ui/legacy/meet/page';
-import type { Metadata } from 'next';
+import { createMarketingMetadata } from '@/lib/seo/marketing-metadata';
 
-export const metadata: Metadata = {
+export const generateMetadata = createMarketingMetadata({
   title: 'Meet Together Overview',
   description:
     'See how Tuturuuu Meet Together streamlines collaborative meetings.',
-};
+  pathname: '/meet-together',
+});
 
 interface TumeetPageProps {
   searchParams: Promise<{

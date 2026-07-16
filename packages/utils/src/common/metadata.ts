@@ -39,6 +39,7 @@ export interface PageMetadataConfig {
   indexable?: boolean;
   keywords?: string[];
   locale: string;
+  localePrefix?: 'always' | 'as-needed' | 'never';
   pathname: string;
   siteName?: string;
   socialDescription?: string;
@@ -69,11 +70,22 @@ function getOpenGraphLocale(locale: string) {
   return locale === 'vi' ? 'vi_VN' : 'en_US';
 }
 
-function getLocalizedUrl(baseUrl: string, locale: string, pathname: string) {
+function getLocalizedUrl(
+  baseUrl: string,
+  locale: string,
+  pathname: string,
+  localePrefix: NonNullable<PageMetadataConfig['localePrefix']>
+) {
   const normalizedPathname =
     pathname === '/' ? '' : `/${pathname.replace(/^\/+|\/+$/g, '')}`;
+  const localizedPrefix =
+    localePrefix === 'never' ||
+    (localePrefix === 'as-needed' && locale === 'en')
+      ? ''
+      : `/${locale}`;
+  const localizedPathname = `${localizedPrefix}${normalizedPathname}` || '/';
 
-  return new URL(`/${locale}${normalizedPathname}`, baseUrl).toString();
+  return new URL(localizedPathname, baseUrl).toString();
 }
 
 function getRobotsMetadata(indexable: boolean): Metadata['robots'] {
@@ -176,15 +188,16 @@ export function createPageMetadata({
   indexable,
   keywords,
   locale,
+  localePrefix = 'as-needed',
   pathname,
   siteName = 'Tuturuuu',
   title,
   socialDescription = description,
   socialTitle = title,
 }: PageMetadataConfig): Metadata {
-  const canonical = getLocalizedUrl(baseUrl, locale, pathname);
-  const englishUrl = getLocalizedUrl(baseUrl, 'en', pathname);
-  const vietnameseUrl = getLocalizedUrl(baseUrl, 'vi', pathname);
+  const canonical = getLocalizedUrl(baseUrl, locale, pathname, localePrefix);
+  const englishUrl = getLocalizedUrl(baseUrl, 'en', pathname, localePrefix);
+  const vietnameseUrl = getLocalizedUrl(baseUrl, 'vi', pathname, localePrefix);
   const openGraphLocale = getOpenGraphLocale(locale);
   const absoluteImage = new URL(image, baseUrl).toString();
 
@@ -197,11 +210,15 @@ export function createPageMetadata({
       : {}),
     alternates: {
       canonical,
-      languages: {
-        'en-US': englishUrl,
-        'vi-VN': vietnameseUrl,
-        'x-default': englishUrl,
-      },
+      ...(localePrefix === 'never'
+        ? {}
+        : {
+            languages: {
+              'en-US': englishUrl,
+              'vi-VN': vietnameseUrl,
+              'x-default': englishUrl,
+            },
+          }),
     },
     openGraph: {
       type: 'website',

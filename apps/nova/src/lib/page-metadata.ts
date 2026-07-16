@@ -20,6 +20,7 @@ export function createNovaPageMetadata(config: NovaPageMetadataConfig) {
         baseUrl: siteConfig.url,
         image: config.image ?? siteConfig.ogImage,
         indexable: config.indexable ?? true,
+        localePrefix: 'as-needed',
         siteName: config.siteName ?? siteConfig.name,
       },
       params,

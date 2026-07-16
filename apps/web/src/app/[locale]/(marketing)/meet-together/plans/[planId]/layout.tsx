@@ -1,7 +1,7 @@
 import { getPlan } from '@tuturuuu/utils/plan-helpers';
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
-import { siteConfig } from '@/constants/configs';
+import { getMarketingMetadata } from '@/lib/seo/marketing-metadata';
 
 interface Props {
   params: Promise<{
@@ -27,36 +27,15 @@ export const generateMetadata = async ({
   const title = `${planName} - Tuturuuu Meet`;
   const description = locale === 'vi' ? viDescription : enDescription;
 
-  return {
-    title: {
-      default: title,
-      template: `%s - ${title}`,
-    },
-    description,
-    openGraph: {
-      type: 'website',
-      locale,
-      url: `${siteConfig.url}/meet-together/plans/${planId}`,
+  return getMarketingMetadata(
+    {
       title,
       description,
-      siteName: siteConfig.name,
-      images: [
-        {
-          url: siteConfig.ogImage,
-          width: 1200,
-          height: 630,
-          alt: `${title} - ${siteConfig.name}`,
-        },
-      ],
+      imageAlt: `${title} - Tuturuuu`,
+      pathname: `/meet-together/plans/${planId}`,
     },
-    twitter: {
-      card: 'summary_large_image',
-      title,
-      description,
-      images: [siteConfig.ogImage],
-      creator: '@tuturuuu',
-    },
-  };
+    locale
+  );
 };
 
 export default async function MeetTogetherLayout({

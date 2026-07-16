@@ -2,6 +2,7 @@ import { User } from '@tuturuuu/icons';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
+import { NO_INDEX_ROBOTS } from '@tuturuuu/utils/common/metadata';
 import { getInitials } from '@tuturuuu/utils/name-helper';
 import type { Metadata } from 'next';
 import Image from 'next/image';
@@ -10,6 +11,7 @@ import { redirect } from 'next/navigation';
 export const metadata: Metadata = {
   title: 'Community Profile',
   description: 'View a Tuturuuu community member profile.',
+  robots: NO_INDEX_ROBOTS,
 };
 
 interface Props {

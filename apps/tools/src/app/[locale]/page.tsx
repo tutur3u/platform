@@ -20,6 +20,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     description: t('subtitle'),
     indexable: true,
     locale,
+    localePrefix: 'never',
     pathname: '/',
     siteName: 'Tuturuuu Tools',
     title: t('title'),

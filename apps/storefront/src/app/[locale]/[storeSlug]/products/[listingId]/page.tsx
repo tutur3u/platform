@@ -33,6 +33,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     image: listing?.imageUrl || storefront?.heroImageUrl || undefined,
     indexable: Boolean(listing && storefront),
     locale,
+    localePrefix: 'never',
     pathname: `/${storeSlug}/products/${listingId}`,
     siteName: storefront?.name ?? siteConfig.name,
     title: listing

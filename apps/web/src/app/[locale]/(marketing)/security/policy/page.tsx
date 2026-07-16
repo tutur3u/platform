@@ -13,6 +13,7 @@ import {
 } from '@tuturuuu/icons/lucide';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
+import { getMarketingMetadata } from '@/lib/seo/marketing-metadata';
 import {
   SecuritySubpageBadge as Badge,
   SecuritySubpageCard as Card,
@@ -28,13 +29,24 @@ import {
   SectionHeader,
 } from './policy-components';
 
-export async function generateMetadata(): Promise<Metadata> {
+interface MetadataProps {
+  params: Promise<{ locale: string }>;
+}
+
+export async function generateMetadata({
+  params,
+}: MetadataProps): Promise<Metadata> {
+  const { locale } = await params;
   const t = await getTranslations('security-policy');
 
-  return {
-    title: t('meta.title'),
-    description: t('meta.description'),
-  };
+  return getMarketingMetadata(
+    {
+      title: t('meta.title'),
+      description: t('meta.description'),
+      pathname: '/security/policy',
+    },
+    locale
+  );
 }
 
 export default async function SecurityPolicyPage() {

@@ -1,4 +1,5 @@
 import {
+  createPageMetadata,
   generatePageMetadata,
   type PageMetadataConfig,
 } from '@tuturuuu/utils/common/metadata';
@@ -19,8 +20,23 @@ export function createMarketingMetadata(config: MarketingMetadataConfig) {
         ...config,
         baseUrl: siteConfig.url,
         indexable: config.indexable ?? true,
+        localePrefix: 'as-needed',
         siteName: config.siteName ?? siteConfig.name,
       },
       params,
     });
+}
+
+export function getMarketingMetadata(
+  config: MarketingMetadataConfig,
+  locale: string
+) {
+  return createPageMetadata({
+    ...config,
+    baseUrl: siteConfig.url,
+    indexable: config.indexable ?? true,
+    locale,
+    localePrefix: 'as-needed',
+    siteName: config.siteName ?? siteConfig.name,
+  });
 }

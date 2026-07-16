@@ -18,6 +18,7 @@ import type { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { getMarketingMetadata } from '@/lib/seo/marketing-metadata';
 import { ChangelogContentRenderer } from './content-renderer';
 
 interface ChangelogEntry {
@@ -35,6 +36,7 @@ interface ChangelogEntry {
 
 interface Props {
   params: Promise<{
+    locale: string;
     slug: string;
   }>;
 }
@@ -92,59 +94,54 @@ function formatDate(dateString: string): string {
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { slug } = await params;
+  const { locale, slug } = await params;
   const changelog = await getChangelog(slug);
 
   if (!changelog) {
-    return {
-      title: 'Changelog Not Found | Tuturuuu',
-      description: 'The requested changelog entry could not be found.',
-    };
+    return getMarketingMetadata(
+      {
+        title: 'Changelog Not Found',
+        description: 'The requested changelog entry could not be found.',
+        indexable: false,
+        pathname: `/changelog/${slug}`,
+      },
+      locale
+    );
   }
 
-  const title = `${changelog.title} | Changelog | Tuturuuu`;
+  const title = `${changelog.title} — Changelog`;
   const description =
     changelog.summary || `Read about ${changelog.title} on Tuturuuu`;
   const categoryLabel =
     categoryConfig[changelog.category]?.label || changelog.category;
-
-  return {
-    title,
-    description,
-    keywords: [
-      'changelog',
-      'updates',
-      'tuturuuu',
-      categoryLabel.toLowerCase(),
-      changelog.version ? `v${changelog.version}` : '',
-    ].filter(Boolean),
-    authors: [{ name: 'Tuturuuu Team' }],
-    openGraph: {
+  const metadata = getMarketingMetadata(
+    {
       title,
       description,
+      image: changelog.cover_image_url || undefined,
+      imageAlt: changelog.title,
+      keywords: [
+        'changelog',
+        'updates',
+        'tuturuuu',
+        categoryLabel.toLowerCase(),
+        changelog.version ? `v${changelog.version}` : '',
+      ].filter(Boolean),
+      pathname: `/changelog/${slug}`,
+    },
+    locale
+  );
+
+  return {
+    ...metadata,
+    authors: [{ name: 'Tuturuuu Team' }],
+    openGraph: {
+      ...metadata.openGraph,
       type: 'article',
       publishedTime: changelog.published_at,
       modifiedTime: changelog.created_at,
       authors: ['Tuturuuu Team'],
       tags: [categoryLabel, 'changelog', 'update'],
-      images: changelog.cover_image_url
-        ? [
-            {
-              url: changelog.cover_image_url,
-              width: 1200,
-              height: 630,
-              alt: changelog.title,
-            },
-          ]
-        : undefined,
-    },
-    twitter: {
-      card: 'summary_large_image',
-      title,
-      description,
-      images: changelog.cover_image_url
-        ? [changelog.cover_image_url]
-        : undefined,
     },
   };
 }

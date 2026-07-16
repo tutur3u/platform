@@ -92,6 +92,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     description: t('description'),
     indexable: true,
     locale,
+    localePrefix: 'never',
     pathname: '/',
     siteName: 'Tuturuuu Apps',
     title: t('title'),

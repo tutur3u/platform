@@ -12,16 +12,17 @@ import { createClient } from '@tuturuuu/supabase/next/server';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card } from '@tuturuuu/ui/card';
-import type { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
+import { createMarketingMetadata } from '@/lib/seo/marketing-metadata';
 
-export const metadata: Metadata = {
-  title: 'Changelog | Tuturuuu',
+export const generateMetadata = createMarketingMetadata({
+  title: 'Product Changelog',
   description:
     'Stay up to date with the latest features, improvements, and updates to the Tuturuuu platform.',
-};
+  pathname: '/changelog',
+});
 
 interface ChangelogEntry {
   id: string;

@@ -120,9 +120,9 @@ describe('createPageMetadata', () => {
     expect(metadata.alternates).toEqual({
       canonical: 'https://test.tuturuuu.com/vi/products/workflows',
       languages: {
-        'en-US': 'https://test.tuturuuu.com/en/products/workflows',
+        'en-US': 'https://test.tuturuuu.com/products/workflows',
         'vi-VN': 'https://test.tuturuuu.com/vi/products/workflows',
-        'x-default': 'https://test.tuturuuu.com/en/products/workflows',
+        'x-default': 'https://test.tuturuuu.com/products/workflows',
       },
     });
     expect(metadata.openGraph).toMatchObject({
@@ -162,6 +162,63 @@ describe('createPageMetadata', () => {
     expect(
       createPageMetadata({ ...baseConfig, indexable: false }).robots
     ).toEqual(NO_INDEX_ROBOTS);
+  });
+
+  it('uses the unprefixed English URL configured by the public router', () => {
+    const metadata = createPageMetadata({
+      baseUrl: 'https://test.tuturuuu.com',
+      description: 'The main product landing page.',
+      locale: 'en',
+      pathname: '/',
+      title: 'Tuturuuu',
+    });
+
+    expect(metadata.alternates).toEqual({
+      canonical: 'https://test.tuturuuu.com/',
+      languages: {
+        'en-US': 'https://test.tuturuuu.com/',
+        'vi-VN': 'https://test.tuturuuu.com/vi',
+        'x-default': 'https://test.tuturuuu.com/',
+      },
+    });
+  });
+
+  it('supports apps that never expose locale prefixes', () => {
+    const metadata = createPageMetadata({
+      baseUrl: 'https://tools.tuturuuu.com',
+      description: 'Localized tools on one stable URL.',
+      locale: 'vi',
+      localePrefix: 'never',
+      pathname: '/qr',
+      title: 'QR Code Generator',
+    });
+
+    expect(metadata.alternates).toEqual({
+      canonical: 'https://tools.tuturuuu.com/qr',
+    });
+    expect(metadata.openGraph).toMatchObject({
+      locale: 'vi_VN',
+      url: 'https://tools.tuturuuu.com/qr',
+    });
+  });
+
+  it('supports apps that always expose locale prefixes', () => {
+    const metadata = createPageMetadata({
+      baseUrl: 'https://example.tuturuuu.com',
+      description: 'A prefixed localized page.',
+      locale: 'en',
+      localePrefix: 'always',
+      pathname: '/about',
+      title: 'About',
+    });
+
+    expect(metadata.alternates).toMatchObject({
+      canonical: 'https://example.tuturuuu.com/en/about',
+      languages: {
+        'en-US': 'https://example.tuturuuu.com/en/about',
+        'vi-VN': 'https://example.tuturuuu.com/vi/about',
+      },
+    });
   });
 });
 
@@ -234,9 +291,10 @@ describe('application metadata coverage', () => {
     for (const routeFile of routeFiles) {
       const source = readFileSync(resolve(repoRoot, routeFile), 'utf8');
 
-      expect(source, `${routeFile} is missing page-specific SEO metadata`).toMatch(
-        /create(?:Page|NovaPage)Metadata/
-      );
+      expect(
+        source,
+        `${routeFile} is missing page-specific SEO metadata`
+      ).toMatch(/create(?:Page|NovaPage)Metadata/);
     }
 
     const marketingLayouts = readdirSync(

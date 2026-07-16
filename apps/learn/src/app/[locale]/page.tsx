@@ -22,6 +22,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       : 'Follow lessons, practice, assignments, marks, and learning progress in one focused Tuturuuu student portal.',
     indexable: true,
     locale,
+    localePrefix: 'never',
     pathname: '/',
     siteName: 'Learn',
     title: isVietnamese ? 'Cổng học tập Tuturuuu' : 'Tuturuuu Student Portal',
