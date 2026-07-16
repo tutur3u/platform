@@ -397,6 +397,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get appLockLockedTitle => 'Tuturuuu is locked';
 
   @override
+  String get appLockProtectedDevice => 'Protected on this device';
+
+  @override
   String get appLockSettingsDescription => 'Require Face ID, fingerprint, or device PIN before using the app.';
 
   @override
@@ -413,6 +416,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get appLockUnlockAction => 'Unlock';
+
+  @override
+  String get appLockUnlockingAction => 'Unlocking...';
 
   @override
   String get appLockUnlockReason => 'Unlock Tuturuuu.';

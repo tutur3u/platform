@@ -835,6 +835,12 @@ abstract class AppLocalizations {
   /// **'Tuturuuu is locked'**
   String get appLockLockedTitle;
 
+  /// No description provided for @appLockProtectedDevice.
+  ///
+  /// In en, this message translates to:
+  /// **'Protected on this device'**
+  String get appLockProtectedDevice;
+
   /// No description provided for @appLockSettingsDescription.
   ///
   /// In en, this message translates to:
@@ -870,6 +876,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Unlock'**
   String get appLockUnlockAction;
+
+  /// No description provided for @appLockUnlockingAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlocking...'**
+  String get appLockUnlockingAction;
 
   /// No description provided for @appLockUnlockReason.
   ///

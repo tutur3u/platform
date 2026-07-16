@@ -397,6 +397,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get appLockLockedTitle => 'Tuturuuu đang bị khóa';
 
   @override
+  String get appLockProtectedDevice => 'Được bảo vệ trên thiết bị này';
+
+  @override
   String get appLockSettingsDescription => 'Yêu cầu Face ID, vân tay hoặc mã PIN thiết bị trước khi dùng ứng dụng.';
 
   @override
@@ -413,6 +416,9 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get appLockUnlockAction => 'Mở khóa';
+
+  @override
+  String get appLockUnlockingAction => 'Đang mở khóa...';
 
   @override
   String get appLockUnlockReason => 'Mở khóa Tuturuuu.';
