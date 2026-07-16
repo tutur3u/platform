@@ -18,7 +18,6 @@ import 'package:mobile/features/inventory/widgets/inventory_ui.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
-import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class InventoryPage extends StatefulWidget {
@@ -51,6 +50,12 @@ class _InventoryPageState extends State<InventoryPage> {
   }
 
   @override
+  void dispose() {
+    _repository.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return shad.Scaffold(
       child: BlocListener<WorkspaceCubit, WorkspaceState>(
@@ -66,7 +71,7 @@ class _InventoryPageState extends State<InventoryPage> {
 
             if (!snapshot.hasData &&
                 snapshot.connectionState != ConnectionState.done) {
-              return const Center(child: NovaLoadingIndicator());
+              return const InventoryOverviewSkeleton();
             }
 
             if (snapshot.hasError || !snapshot.hasData) {
@@ -148,6 +153,10 @@ class _InventoryPageState extends State<InventoryPage> {
                         shad.SecondaryButton(
                           onPressed: () => context.go(Routes.inventoryManage),
                           child: Text(l10n.inventoryManageLabel),
+                        ),
+                        shad.SecondaryButton(
+                          onPressed: () => context.go(Routes.storefronts),
+                          child: Text(l10n.storefrontTitle),
                         ),
                       ],
                     ),

@@ -14,6 +14,7 @@ import type {
   InventoryCheckoutSession,
   InventoryRevenueShareEarning,
   InventorySaleSummary,
+  InventorySalesPeriod,
 } from '@tuturuuu/internal-api/inventory';
 import {
   cancelInventorySquareTerminalCheckout,
@@ -38,6 +39,7 @@ import {
 import { money } from './operator-format';
 import { EmptyRow } from './operator-shell';
 import { SaleNoteDialog } from './sale-detail-panel';
+import { SalePeriodPicker } from './sales-periods-panel';
 
 export function CheckoutRows({
   rows,
@@ -202,10 +204,12 @@ export function CheckoutRows({
 }
 
 export function SaleRows({
+  periods,
   query,
   rows,
   wsId,
 }: {
+  periods: InventorySalesPeriod[];
   query: string;
   rows: InventorySaleSummary[];
   wsId: string;
@@ -278,6 +282,7 @@ export function SaleRows({
               </div>
             </div>
             <div className="flex flex-wrap items-center justify-start gap-2 sm:justify-end">
+              <SalePeriodPicker periods={periods} sale={row} wsId={wsId} />
               <StatusBadge
                 value={money(row.paid_amount, row.currency ?? 'USD')}
               />

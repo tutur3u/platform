@@ -3769,6 +3769,72 @@ class AppLocalizationsVi extends AppLocalizations {
   String get inventorySalesTitle => 'Tiêu đề';
 
   @override
+  String get inventorySalesPeriodsTitle => 'Giai đoạn bán hàng';
+
+  @override
+  String get inventorySalesPeriodsDescription => 'Theo dõi theo mùa, sự kiện và khoảng chiến dịch.';
+
+  @override
+  String get inventorySalesPeriodsAll => 'Tất cả giai đoạn';
+
+  @override
+  String get inventorySalesPeriodArchive => 'Lưu trữ giai đoạn';
+
+  @override
+  String get inventorySalesPeriodRestore => 'Khôi phục giai đoạn';
+
+  @override
+  String get inventorySalesPeriodCreate => 'Giai đoạn mới';
+
+  @override
+  String get inventorySalesPeriodCreateTitle => 'Tạo giai đoạn bán hàng';
+
+  @override
+  String get inventorySalesPeriodCreateDescription => 'Nhóm doanh số theo mùa, sự kiện, chiến dịch hoặc khoảng vận hành.';
+
+  @override
+  String get inventorySalesPeriodName => 'Tên';
+
+  @override
+  String get inventorySalesPeriodNamePlaceholder => 'Hè 2026 hoặc TuCon 2026';
+
+  @override
+  String get inventorySalesPeriodStartsAt => 'Ngày bắt đầu';
+
+  @override
+  String get inventorySalesPeriodEndsAt => 'Ngày kết thúc';
+
+  @override
+  String get inventorySalesPeriodNotes => 'Ghi chú';
+
+  @override
+  String get inventorySalesPeriodNotesPlaceholder => 'Thông tin tùy chọn cho đội ngũ';
+
+  @override
+  String get inventorySalesPeriodNameRequired => 'Nhập tên giai đoạn.';
+
+  @override
+  String get inventorySalesPeriodDateInvalid => 'Ngày kết thúc phải bằng hoặc sau ngày bắt đầu.';
+
+  @override
+  String get inventorySalesPeriodNoDate => 'Không có ngày';
+
+  @override
+  String get inventorySalesPeriodArchived => 'Đã lưu trữ giai đoạn bán hàng.';
+
+  @override
+  String get inventorySalesPeriodRestored => 'Đã khôi phục giai đoạn bán hàng.';
+
+  @override
+  String get inventorySalesPeriodUnassigned => 'Chưa có giai đoạn';
+
+  @override
+  String get inventorySalesPeriodAssignmentLabel => 'Giai đoạn bán hàng';
+
+  @override
+  String get inventorySalesPeriodAssignmentHelp => 'Dùng mùa hoặc sự kiện để nhóm giao dịch này trong báo cáo.';
+
+  @override
   String get inventorySaveProduct => 'Lưu sản phẩm';
 
   @override
@@ -7188,6 +7254,179 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get cmsTitleApp => 'CMS';
+
+  @override
+  String get storefrontTitle => 'Cửa hàng';
+
+  @override
+  String get storefrontSubtitle => 'Đăng sản phẩm, kiểm soát tồn kho và quản lý mọi cửa hàng dành cho khách hàng.';
+
+  @override
+  String get storefrontStores => 'Cửa hàng';
+
+  @override
+  String get storefrontPublished => 'Đã đăng';
+
+  @override
+  String get storefrontListings => 'Sản phẩm đăng bán';
+
+  @override
+  String get storefrontCreate => 'Cửa hàng mới';
+
+  @override
+  String get storefrontEdit => 'Sửa cửa hàng';
+
+  @override
+  String get storefrontEditorSubtitle => 'Thiết lập nhận diện, thanh toán, quyền xem và giao diện của cửa hàng.';
+
+  @override
+  String get storefrontName => 'Tên cửa hàng';
+
+  @override
+  String get storefrontSlug => 'Địa chỉ công khai';
+
+  @override
+  String get storefrontDescription => 'Mô tả';
+
+  @override
+  String get storefrontCurrency => 'Tiền tệ';
+
+  @override
+  String get storefrontStatus => 'Trạng thái';
+
+  @override
+  String get storefrontVisibility => 'Quyền xem';
+
+  @override
+  String get storefrontCheckoutMode => 'Thanh toán';
+
+  @override
+  String get storefrontTheme => 'Chủ đề';
+
+  @override
+  String get storefrontLayout => 'Bố cục sản phẩm';
+
+  @override
+  String get storefrontSurface => 'Kiểu bề mặt';
+
+  @override
+  String get storefrontCorners => 'Kiểu bo góc';
+
+  @override
+  String get storefrontInventoryBadges => 'Hiện tình trạng tồn kho';
+
+  @override
+  String get storefrontAnalytics => 'Bật phân tích cửa hàng';
+
+  @override
+  String get storefrontValidationError => 'Hãy nhập tên cửa hàng, địa chỉ công khai hợp lệ và mã tiền tệ ba chữ cái.';
+
+  @override
+  String get storefrontSaved => 'Đã lưu cửa hàng.';
+
+  @override
+  String get storefrontSearch => 'Tìm cửa hàng';
+
+  @override
+  String get storefrontEmptyTitle => 'Tạo cửa hàng đầu tiên';
+
+  @override
+  String get storefrontEmptyBody => 'Biến tồn kho thành danh mục thân thiện với di động và đăng khi bạn sẵn sàng.';
+
+  @override
+  String storefrontListingCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count sản phẩm',
+      one: '1 sản phẩm',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get storefrontListingCreate => 'Thêm sản phẩm';
+
+  @override
+  String get storefrontListingEdit => 'Sửa sản phẩm';
+
+  @override
+  String get storefrontListingEditorSubtitle => 'Chọn sản phẩm còn hàng và thiết lập cách hiển thị trong cửa hàng.';
+
+  @override
+  String get storefrontProduct => 'Sản phẩm';
+
+  @override
+  String get storefrontStockRow => 'Kho và đơn vị';
+
+  @override
+  String get storefrontListingTitle => 'Tên sản phẩm đăng bán';
+
+  @override
+  String get storefrontPrice => 'Giá';
+
+  @override
+  String get storefrontCompareAtPrice => 'Giá so sánh';
+
+  @override
+  String get storefrontMaxPerOrder => 'Tối đa mỗi đơn';
+
+  @override
+  String get storefrontListingValidationError => 'Hãy chọn sản phẩm còn hàng và nhập tên, giá cùng giới hạn đơn hàng hợp lệ.';
+
+  @override
+  String get storefrontPreview => 'Xem trước';
+
+  @override
+  String get storefrontDelete => 'Xóa cửa hàng';
+
+  @override
+  String get storefrontDeleteConfirm => 'Xóa cửa hàng này cùng toàn bộ sản phẩm đăng bán? Thao tác này không thể hoàn tác.';
+
+  @override
+  String get storefrontDeleted => 'Đã xóa cửa hàng.';
+
+  @override
+  String get storefrontListingsEmptyTitle => 'Chưa có sản phẩm đăng bán';
+
+  @override
+  String get storefrontListingsEmptyBody => 'Thêm sản phẩm từ Tồn kho để cửa hàng sẵn sàng phục vụ khách hàng.';
+
+  @override
+  String get storefrontProductsRequired => 'Hãy tạo sản phẩm có tồn kho trước khi thêm sản phẩm vào cửa hàng.';
+
+  @override
+  String get storefrontListingSaved => 'Đã lưu sản phẩm đăng bán.';
+
+  @override
+  String get storefrontListingDelete => 'Xóa sản phẩm';
+
+  @override
+  String get storefrontListingDeleteConfirm => 'Gỡ sản phẩm này khỏi cửa hàng? Sản phẩm trong Tồn kho sẽ không bị xóa.';
+
+  @override
+  String get storefrontListingDeleted => 'Đã xóa sản phẩm đăng bán.';
+
+  @override
+  String get storefrontStatusAll => 'Tất cả';
+
+  @override
+  String get storefrontStatusDraft => 'Bản nháp';
+
+  @override
+  String get storefrontStatusPublished => 'Đã đăng';
+
+  @override
+  String get storefrontStatusPaused => 'Tạm dừng';
+
+  @override
+  String get storefrontStatusArchived => 'Đã lưu trữ';
+
+  @override
+  String get storefrontVisibilityPrivate => 'Riêng tư';
+
+  @override
+  String get storefrontVisibilityPublic => 'Công khai';
 
   @override
   String get meetCreated => 'Đã tạo cuộc họp.';

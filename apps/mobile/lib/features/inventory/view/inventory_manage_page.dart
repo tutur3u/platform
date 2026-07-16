@@ -20,7 +20,6 @@ import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/app_dialog_scaffold.dart';
-import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class InventoryManagePage extends StatefulWidget {
@@ -49,7 +48,10 @@ class _InventoryManagePageState extends State<InventoryManagePage> {
   }
 
   @override
-  void dispose() => super.dispose();
+  void dispose() {
+    _inventoryRepository.dispose();
+    super.dispose();
+  }
 
   void _reload() {
     final wsId = _wsId;
@@ -152,7 +154,7 @@ class _InventoryManagePageState extends State<InventoryManagePage> {
           builder: (context, snapshot) {
             if (!snapshot.hasData &&
                 snapshot.connectionState != ConnectionState.done) {
-              return const Center(child: NovaLoadingIndicator());
+              return const InventoryOverviewSkeleton();
             }
 
             if (snapshot.hasError || !snapshot.hasData) {

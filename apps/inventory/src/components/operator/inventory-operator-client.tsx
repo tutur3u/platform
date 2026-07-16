@@ -209,6 +209,7 @@ export function InventoryOperatorClient({
     ['bundles', 'storefront'].includes(view) ? data.bundles : null,
     view === 'commerce' && commerceTab === 'checkouts' ? data.checkouts : null,
     view === 'commerce' && commerceTab === 'sales' ? data.sales : null,
+    view === 'commerce' && commerceTab === 'sales' ? data.salesPeriods : null,
     view === 'commerce' && commerceTab === 'revenue-share'
       ? data.revenueShares
       : null,
@@ -251,7 +252,10 @@ export function InventoryOperatorClient({
     view === 'commerce' && commerceTab === 'checkouts'
       ? data.checkouts.isPending || data.checkouts.isFetching
       : view === 'commerce' && commerceTab === 'sales'
-        ? data.sales.isPending || data.sales.isFetching
+        ? data.sales.isPending ||
+          data.sales.isFetching ||
+          data.salesPeriods.isPending ||
+          data.salesPeriods.isFetching
         : view === 'commerce' && commerceTab === 'revenue-share'
           ? data.revenueShares.isPending || data.revenueShares.isFetching
           : false;
@@ -395,6 +399,11 @@ export function InventoryOperatorClient({
               query={data.filters.q}
               revenueShares={data.revenueShares.data?.data ?? []}
               sales={sales}
+              salesPeriods={data.salesPeriods.data?.data ?? []}
+              selectedPeriodId={data.filters.period}
+              setPeriodId={(period) => {
+                void data.setFilters({ period });
+              }}
               setTab={(tab: InventoryCommerceTab) => {
                 void data.setFilters({ status: 'all' });
                 void setCommerceTab(tab);

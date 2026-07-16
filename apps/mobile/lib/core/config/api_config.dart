@@ -266,13 +266,21 @@ abstract final class InventoryEndpoints {
   static String owners(String wsId) =>
       '/api/v1/workspaces/$wsId/inventory/owners';
 
-  static String sales(String wsId, {int? limit, int? offset}) {
+  static String sales(
+    String wsId, {
+    int? limit,
+    int? offset,
+    String? periodId,
+  }) {
     final params = <String, String>{};
     if (limit != null) {
       params['limit'] = '$limit';
     }
     if (offset != null) {
       params['offset'] = '$offset';
+    }
+    if (periodId != null && periodId.isNotEmpty) {
+      params['period_id'] = periodId;
     }
     final suffix = params.isEmpty
         ? ''
@@ -282,6 +290,16 @@ abstract final class InventoryEndpoints {
 
   static String sale(String wsId, String saleId) =>
       '/api/v1/workspaces/$wsId/inventory/sales/$saleId';
+
+  static String salePeriod(String wsId, String saleId) =>
+      '/api/v1/workspaces/$wsId/inventory/sales/$saleId/period';
+
+  static String salesPeriods(String wsId, {bool includeArchived = false}) =>
+      '/api/v1/workspaces/$wsId/inventory/sales-periods'
+      '?include_archived=$includeArchived';
+
+  static String salesPeriod(String wsId, String periodId) =>
+      '/api/v1/workspaces/$wsId/inventory/sales-periods/$periodId';
 
   static String auditLogs(String wsId, {int? limit, int? offset}) {
     final params = <String, String>{};
@@ -314,6 +332,35 @@ abstract final class InventoryEndpoints {
 
   static String invoices(String wsId) =>
       '/api/v1/workspaces/$wsId/finance/invoices';
+}
+
+/// Storefront management endpoint paths.
+abstract final class StorefrontEndpoints {
+  static String storefronts(
+    String wsId, {
+    String status = 'all',
+    String? query,
+  }) {
+    final params = <String, String>{'status': status, 'pageSize': '100'};
+    if (query != null && query.trim().isNotEmpty) {
+      params['q'] = query.trim();
+    }
+    return '/api/v1/workspaces/$wsId/inventory/storefronts'
+        '?${Uri(queryParameters: params).query}';
+  }
+
+  static String storefront(String wsId, String storefrontId) =>
+      '/api/v1/workspaces/$wsId/inventory/storefronts/$storefrontId';
+
+  static String listings(String wsId, String storefrontId) =>
+      '/api/v1/workspaces/$wsId/inventory/storefronts/$storefrontId/listings?status=all';
+
+  static String listing(
+    String wsId,
+    String storefrontId,
+    String listingId,
+  ) =>
+      '/api/v1/workspaces/$wsId/inventory/storefronts/$storefrontId/listings/$listingId';
 }
 
 /// Habits endpoint paths.

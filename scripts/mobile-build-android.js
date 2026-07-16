@@ -142,10 +142,15 @@ function runCommand(command, args, options = {}) {
   if (result.status !== 0) process.exit(result.status || 1);
 }
 
-function main() {
+function resolveFlutterBuildArgs(argv = process.argv.slice(2)) {
+  return [...argv];
+}
+
+function main(argv = process.argv.slice(2)) {
   const signing = resolveReleaseSigning();
   const dartDefineFile =
     process.env.MOBILE_DART_DEFINE_FILE || '.env.production';
+  const buildArgs = resolveFlutterBuildArgs(argv);
 
   console.log(
     `Building Android production release with ${signing.source} signing.`
@@ -160,6 +165,7 @@ function main() {
       'production',
       '--target',
       'lib/main_production.dart',
+      ...buildArgs,
     ],
     { cwd: MOBILE_ROOT }
   );
@@ -181,5 +187,6 @@ module.exports = {
   findJarsigner,
   isVerifiedSignatureOutput,
   parseProperties,
+  resolveFlutterBuildArgs,
   resolveReleaseSigning,
 };

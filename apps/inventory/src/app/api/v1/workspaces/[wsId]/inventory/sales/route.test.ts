@@ -4,8 +4,11 @@ const mocks = vi.hoisted(() => ({
   authorizeInventoryWorkspace: vi.fn(),
   createAdminClient: vi.fn(),
   getInventorySales: vi.fn(),
+  getInventorySalesPeriod: vi.fn(),
+  getSalesPeriodAssignments: vi.fn(),
   isInventoryRealtimeEnabled: vi.fn(),
   listCompletedCheckoutSales: vi.fn(),
+  listInventorySalesForPeriod: vi.fn(),
   serverError: vi.fn(),
 }));
 
@@ -43,6 +46,18 @@ vi.mock('@tuturuuu/inventory-core/sales-rpc', () => ({
     mocks.getInventorySales(...args),
 }));
 
+vi.mock('@tuturuuu/inventory-core/sales-periods', () => ({
+  getInventorySalesPeriod: (
+    ...args: Parameters<typeof mocks.getInventorySalesPeriod>
+  ) => mocks.getInventorySalesPeriod(...args),
+  getSalesPeriodAssignments: (
+    ...args: Parameters<typeof mocks.getSalesPeriodAssignments>
+  ) => mocks.getSalesPeriodAssignments(...args),
+  listInventorySalesForPeriod: (
+    ...args: Parameters<typeof mocks.listInventorySalesForPeriod>
+  ) => mocks.listInventorySalesForPeriod(...args),
+}));
+
 function permissionsWith(granted: string[]) {
   return {
     containsPermission: vi.fn((permission: string) =>
@@ -76,6 +91,26 @@ describe('inventory sales route', () => {
       },
     });
     mocks.isInventoryRealtimeEnabled.mockResolvedValue(true);
+    mocks.getSalesPeriodAssignments.mockResolvedValue(new Map());
+    mocks.getInventorySalesPeriod.mockResolvedValue({
+      id: '11111111-1111-4111-8111-111111111111',
+      name: 'Summer 2026',
+    });
+    mocks.listInventorySalesForPeriod.mockResolvedValue({
+      count: 1,
+      data: [
+        {
+          completed_at: '2026-06-04T00:00:00.000Z',
+          created_at: '2026-06-04T00:00:00.000Z',
+          customer_name: 'Summer customer',
+          id: 'summer-sale',
+          items_count: 1,
+          paid_amount: 4000,
+          source: 'finance_invoice',
+          total_quantity: 1,
+        },
+      ],
+    });
     mocks.getInventorySales.mockResolvedValue({
       count: 2,
       data: [
@@ -169,6 +204,44 @@ describe('inventory sales route', () => {
     expect(payload.data[0]).toMatchObject({
       id: 'invoice-new',
       source: 'finance_invoice',
+    });
+  });
+
+  it('filters the mixed-source feed by a sales period', async () => {
+    const periodId = '11111111-1111-4111-8111-111111111111';
+    const response = await listSales(`?period_id=${periodId}`);
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+      count: 1,
+      data: [
+        {
+          id: 'summer-sale',
+          period: { id: periodId, name: 'Summer 2026' },
+        },
+      ],
+    });
+    expect(mocks.listInventorySalesForPeriod).toHaveBeenCalledWith({
+      limit: 50,
+      offset: 0,
+      periodId,
+      sbAdmin: { id: 'admin' },
+      wsId: 'ws-real',
+    });
+    expect(mocks.getInventorySales).not.toHaveBeenCalled();
+    expect(mocks.listCompletedCheckoutSales).not.toHaveBeenCalled();
+  });
+
+  it('returns a controlled error when period enrichment fails', async () => {
+    mocks.getSalesPeriodAssignments.mockRejectedValueOnce(
+      new Error('period lookup failed')
+    );
+
+    const response = await listSales('?limit=1');
+
+    expect(response.status).toBe(500);
+    await expect(response.json()).resolves.toEqual({
+      message: 'Failed to fetch inventory sales',
     });
   });
 

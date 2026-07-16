@@ -15,6 +15,7 @@ import {
   listInventoryPromotions,
   listInventoryRevenueShareEarnings,
   listInventorySales,
+  listInventorySalesPeriods,
   listInventoryStorefronts,
   listInventorySuppliers,
 } from '@tuturuuu/internal-api/inventory';
@@ -33,6 +34,7 @@ export function useInventoryData(
 ) {
   const [filters, setFilters] = useQueryStates({
     q: parseAsString.withDefault(''),
+    period: parseAsString.withDefault(''),
     status: parseAsString.withDefault('all'),
   });
   const status = filters.status === 'all' ? undefined : filters.status;
@@ -116,8 +118,17 @@ export function useInventoryData(
   });
   const sales = useQuery({
     enabled: view === 'commerce' && commerceTab === 'sales',
-    queryFn: () => listInventorySales(wsId, { limit: 50 }),
-    queryKey: ['inventory', wsId, 'sales'],
+    queryFn: () =>
+      listInventorySales(wsId, {
+        limit: 50,
+        period_id: filters.period || undefined,
+      }),
+    queryKey: ['inventory', wsId, 'sales', filters.period],
+  });
+  const salesPeriods = useQuery({
+    enabled: view === 'commerce' && commerceTab === 'sales',
+    queryFn: () => listInventorySalesPeriods(wsId, { include_archived: true }),
+    queryKey: ['inventory', wsId, 'sales-periods'],
   });
   const promotions = useQuery({
     enabled: view === 'promotions',
@@ -183,6 +194,7 @@ export function useInventoryData(
     promotions,
     revenueShares,
     sales,
+    salesPeriods,
     setFilters,
     storefronts,
     suppliers,

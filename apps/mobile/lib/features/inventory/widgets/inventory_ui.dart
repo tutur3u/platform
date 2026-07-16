@@ -140,3 +140,31 @@ class InventoryMetricTile extends StatelessWidget {
     return FinanceStatChip(label: label, value: value, icon: icon, tint: tint);
   }
 }
+
+class InventoryOverviewSkeleton extends StatelessWidget {
+  const InventoryOverviewSkeleton({super.key});
+
+  @override
+  Widget build(BuildContext context) => ListView(
+    physics: const AlwaysScrollableScrollPhysics(),
+    padding: EdgeInsets.fromLTRB(
+      16,
+      8,
+      16,
+      32 + MediaQuery.paddingOf(context).bottom,
+    ),
+    children: const [
+      FinanceSkeletonBlock(height: 248, radius: 28),
+      shad.Gap(24),
+      FinanceSkeletonBlock(height: 22, width: 180, radius: 8),
+      shad.Gap(12),
+      FinanceSkeletonBlock(height: 92, radius: 22),
+      shad.Gap(12),
+      FinanceSkeletonBlock(height: 92, radius: 22),
+      shad.Gap(24),
+      FinanceSkeletonBlock(height: 22, width: 160, radius: 8),
+      shad.Gap(12),
+      FinanceSkeletonBlock(height: 132, radius: 22),
+    ],
+  );
+}

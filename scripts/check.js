@@ -300,6 +300,15 @@ const checks = [
     },
   },
   {
+    name: 'mobile-api-mappings',
+    command: 'node',
+    args: ['scripts/check-mobile-api-mappings.js'],
+    parseOutput: (stdout) => {
+      const match = stdout.match(/verified: (\d+) Flutter paths/iu);
+      return match ? `${match[1]} mobile API paths mapped` : 'Passed';
+    },
+  },
+  {
     name: 'script-tests',
     command: 'bun',
     args: ['run', 'test:scripts'],

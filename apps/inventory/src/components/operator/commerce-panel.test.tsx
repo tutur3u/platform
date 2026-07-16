@@ -16,6 +16,9 @@ describe('CommercePanel', () => {
         query=""
         revenueShares={[]}
         sales={[]}
+        salesPeriods={[]}
+        selectedPeriodId=""
+        setPeriodId={() => undefined}
         setTab={() => undefined}
         tab="sales"
         wsId="ws-1"

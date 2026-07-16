@@ -1080,6 +1080,28 @@ export type InventoryBatchPayload = {
 
 export type InventorySaleSource = 'checkout_session' | 'finance_invoice';
 
+export type InventorySalesPeriodStatus = 'active' | 'archived';
+
+export type InventorySalesPeriod = {
+  created_at: string;
+  description: string | null;
+  ends_at: string | null;
+  id: string;
+  name: string;
+  sale_count: number;
+  starts_at: string | null;
+  status: InventorySalesPeriodStatus;
+  updated_at: string;
+  ws_id: string;
+};
+
+export type InventorySalesPeriodPayload = {
+  description?: string | null;
+  ends_at?: string | null;
+  name: string;
+  starts_at?: string | null;
+};
+
 export type InventorySaleSummary = {
   category_name?: string | null;
   completed_at: string | null;
@@ -1093,6 +1115,7 @@ export type InventorySaleSummary = {
   notice?: string | null;
   owners?: string[];
   paid_amount: number;
+  period?: InventorySalesPeriod | null;
   polar_order_id?: string | null;
   public_token?: string | null;
   square_order_id?: string | null;
@@ -1256,6 +1279,10 @@ export type InventoryUnitPayload = {
 export type InventoryOffsetListQuery = {
   limit?: number;
   offset?: number;
+};
+
+export type InventorySalesListQuery = InventoryOffsetListQuery & {
+  period_id?: string;
 };
 
 export type InventoryOrderHistoryQuery = InventoryOffsetListQuery & {
@@ -2424,7 +2451,7 @@ export function listInventoryUnitsPage(
 
 export function listInventorySales(
   wsId: string,
-  query?: InventoryOffsetListQuery,
+  query?: InventorySalesListQuery,
   options?: InternalApiClientOptions
 ) {
   return getInternalApiClient(options).json<
@@ -2433,6 +2460,90 @@ export function listInventorySales(
     cache: 'no-store',
     query: asQuery(query),
   });
+}
+
+export function listInventorySalesPeriods(
+  wsId: string,
+  query?: { include_archived?: boolean },
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<{
+    data: InventorySalesPeriod[];
+  }>(workspaceInventoryPath(wsId, '/sales-periods'), {
+    cache: 'no-store',
+    query: asQuery(query),
+  });
+}
+
+export function createInventorySalesPeriod(
+  wsId: string,
+  payload: InventorySalesPeriodPayload,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<{ data: InventorySalesPeriod }>(
+    workspaceInventoryPath(wsId, '/sales-periods'),
+    {
+      body: JSON.stringify(payload),
+      headers: jsonHeaders(options?.defaultHeaders),
+      method: 'POST',
+    }
+  );
+}
+
+export function updateInventorySalesPeriod(
+  wsId: string,
+  periodId: string,
+  payload: Partial<
+    InventorySalesPeriodPayload & { status: InventorySalesPeriodStatus }
+  >,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<{ data: InventorySalesPeriod }>(
+    workspaceInventoryPath(
+      wsId,
+      `/sales-periods/${encodePathSegment(periodId)}`
+    ),
+    {
+      body: JSON.stringify(payload),
+      headers: jsonHeaders(options?.defaultHeaders),
+      method: 'PATCH',
+    }
+  );
+}
+
+export function deleteInventorySalesPeriod(
+  wsId: string,
+  periodId: string,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<{ ok: true }>(
+    workspaceInventoryPath(
+      wsId,
+      `/sales-periods/${encodePathSegment(periodId)}`
+    ),
+    { headers: options?.defaultHeaders, method: 'DELETE' }
+  );
+}
+
+export function setInventorySalePeriod(
+  wsId: string,
+  saleId: string,
+  payload: {
+    period_id: string | null;
+    source: InventorySaleSource;
+  },
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<{
+    data: InventorySalesPeriod | null;
+  }>(
+    workspaceInventoryPath(wsId, `/sales/${encodePathSegment(saleId)}/period`),
+    {
+      body: JSON.stringify(payload),
+      headers: jsonHeaders(options?.defaultHeaders),
+      method: 'PUT',
+    }
+  );
 }
 
 export type InventoryProductSalesRow = {

@@ -273,6 +273,12 @@ String _inventoryLocation(List<String> segments) {
   if (segments.length > 1 && segments[1] == 'checkout') {
     return Routes.inventoryCheckout;
   }
+  if (segments.length > 2 && segments[1] == 'storefronts') {
+    return Routes.storefrontDetailPath(segments[2]);
+  }
+  if (segments.length > 1 && segments[1] == 'storefronts') {
+    return Routes.storefronts;
+  }
   return Routes.inventory;
 }
 

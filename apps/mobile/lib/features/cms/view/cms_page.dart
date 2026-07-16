@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart' hide Card;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/core/responsive/responsive_padding.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/core/responsive/responsive_wrapper.dart';
@@ -10,6 +11,7 @@ import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/models/cms/cms_models.dart';
 import 'package:mobile/data/repositories/cms_repository.dart';
 import 'package:mobile/data/sources/api_client.dart';
+import 'package:mobile/features/cms/widgets/cms_loading_skeleton.dart';
 import 'package:mobile/features/finance/widgets/finance_ui.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
@@ -17,7 +19,6 @@ import 'package:mobile/features/shell/view/shell_mini_nav.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
-import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class CmsPage extends StatefulWidget {
@@ -143,9 +144,8 @@ class _CmsPageState extends State<CmsPage> {
     );
     var enabled = collection?.isEnabled ?? true;
 
-    final saved = await showModalBottomSheet<bool>(
+    final saved = await showAdaptiveSheet<bool>(
       context: context,
-      isScrollControlled: true,
       builder: (context) => StatefulBuilder(
         builder: (context, setSheetState) => Padding(
           padding: EdgeInsets.fromLTRB(
@@ -270,9 +270,8 @@ class _CmsPageState extends State<CmsPage> {
         entry?.collectionId ?? _selectedCollectionId ?? _collections.first.id;
     var status = entry?.status ?? 'draft';
 
-    final saved = await showModalBottomSheet<bool>(
+    final saved = await showAdaptiveSheet<bool>(
       context: context,
-      isScrollControlled: true,
       builder: (context) => StatefulBuilder(
         builder: (context, setSheetState) => Padding(
           padding: EdgeInsets.fromLTRB(
@@ -611,10 +610,7 @@ class _CmsPageState extends State<CmsPage> {
                     ),
                     const SizedBox(height: 16),
                     if (_isLoading && _summary == null)
-                      const SizedBox(
-                        height: 260,
-                        child: Center(child: NovaLoadingIndicator()),
-                      )
+                      const CmsLoadingSkeleton()
                     else if (_error != null)
                       _CmsMessageCard(message: _error!)
                     else if (_section == 0)
@@ -769,37 +765,43 @@ class _CmsMetricsGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final counts = summary.counts;
-    return GridView(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        childAspectRatio: 1.55,
-        crossAxisSpacing: 12,
-        mainAxisSpacing: 12,
+    return LayoutBuilder(
+      builder: (context, constraints) => GridView(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: constraints.maxWidth >= 760
+              ? 4
+              : constraints.maxWidth < 360
+              ? 1
+              : 2,
+          childAspectRatio: constraints.maxWidth < 360 ? 2.5 : 1.55,
+          crossAxisSpacing: 12,
+          mainAxisSpacing: 12,
+        ),
+        children: [
+          _MetricTile(
+            label: context.l10n.cmsCollections,
+            value: counts.collections,
+            icon: Icons.collections_bookmark_outlined,
+          ),
+          _MetricTile(
+            label: context.l10n.cmsEntries,
+            value: counts.entries,
+            icon: Icons.article_outlined,
+          ),
+          _MetricTile(
+            label: context.l10n.cmsStatusPublished,
+            value: counts.published,
+            icon: Icons.verified_outlined,
+          ),
+          _MetricTile(
+            label: context.l10n.cmsStatusDraft,
+            value: counts.drafts,
+            icon: Icons.edit_note_outlined,
+          ),
+        ],
       ),
-      children: [
-        _MetricTile(
-          label: context.l10n.cmsCollections,
-          value: counts.collections,
-          icon: Icons.collections_bookmark_outlined,
-        ),
-        _MetricTile(
-          label: context.l10n.cmsEntries,
-          value: counts.entries,
-          icon: Icons.article_outlined,
-        ),
-        _MetricTile(
-          label: context.l10n.cmsStatusPublished,
-          value: counts.published,
-          icon: Icons.verified_outlined,
-        ),
-        _MetricTile(
-          label: context.l10n.cmsStatusDraft,
-          value: counts.drafts,
-          icon: Icons.edit_note_outlined,
-        ),
-      ],
     );
   }
 }

@@ -46,6 +46,8 @@ import 'package:mobile/features/settings/view/settings_workspace_roles_page.dart
 import 'package:mobile/features/settings/view/settings_workspace_secrets_page.dart';
 import 'package:mobile/features/shell/view/manage_accounts_page.dart';
 import 'package:mobile/features/shell/view/shell_page.dart';
+import 'package:mobile/features/storefront/view/storefront_detail_page.dart';
+import 'package:mobile/features/storefront/view/storefronts_page.dart';
 import 'package:mobile/features/task_planning/view/task_planning_page.dart';
 import 'package:mobile/features/task_portfolio/view/task_project_detail_page.dart';
 import 'package:mobile/features/tasks_boards/cubit/task_board_detail_cubit.dart';
@@ -461,6 +463,20 @@ GoRouter createAppRouter(
           GoRoute(
             path: Routes.inventoryCheckout,
             builder: (context, state) => const InventoryCheckoutPage(),
+          ),
+          GoRoute(
+            path: Routes.storefronts,
+            builder: (context, state) => const StorefrontsPage(),
+          ),
+          GoRoute(
+            path: Routes.storefrontDetail,
+            builder: (context, state) {
+              final storefrontId = state.pathParameters['storefrontId'];
+              if (storefrontId == null || storefrontId.isEmpty) {
+                return const StorefrontsPage();
+              }
+              return StorefrontDetailPage(storefrontId: storefrontId);
+            },
           ),
           GoRoute(
             path: Routes.documentDetail,

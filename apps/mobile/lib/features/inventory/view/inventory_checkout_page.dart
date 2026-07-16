@@ -54,10 +54,12 @@ class _InventoryCheckoutPageState extends State<InventoryCheckoutPage> {
   List<InventoryProduct> _products = const [];
   List<Wallet> _wallets = const [];
   List<TransactionCategory> _categories = const [];
+  List<InventorySalesPeriod> _salesPeriods = const [];
   final Map<String, int> _quantities = <String, int>{};
   String? _walletId;
   String? _manualCategoryId;
   String? _selectedProductCategory;
+  String? _periodId;
 
   String? get _wsId =>
       context.read<WorkspaceCubit>().state.currentWorkspace?.id;
@@ -71,6 +73,7 @@ class _InventoryCheckoutPageState extends State<InventoryCheckoutPage> {
     _searchController = TextEditingController();
     _titleController = TextEditingController(text: widget.sale?.notice ?? '');
     _noteController = TextEditingController(text: widget.sale?.note ?? '');
+    _periodId = widget.sale?.period?.id;
     unawaited(_load());
   }
 
@@ -94,6 +97,7 @@ class _InventoryCheckoutPageState extends State<InventoryCheckoutPage> {
         _inventoryRepository.getProductOptions(wsId),
         _financeRepository.getWallets(wsId),
         _financeRepository.getCategories(wsId),
+        _inventoryRepository.getSalesPeriods(wsId),
       ]);
       setState(() {
         _products = results[0] as List<InventoryProduct>;
@@ -101,6 +105,7 @@ class _InventoryCheckoutPageState extends State<InventoryCheckoutPage> {
         _categories = (results[2] as List<TransactionCategory>)
             .where((item) => !(item.isExpense ?? false))
             .toList(growable: false);
+        _salesPeriods = results[3] as List<InventorySalesPeriod>;
         _walletId =
             widget.sale?.walletId ??
             _walletId ??
@@ -306,6 +311,12 @@ class _InventoryCheckoutPageState extends State<InventoryCheckoutPage> {
               )
               .toList(growable: false),
         );
+        await _inventoryRepository.setSalePeriod(
+          wsId: wsId,
+          saleId: sale.id,
+          source: sale.source,
+          periodId: _periodId,
+        );
         await _settingsRepository.setLastIncomeCategory(
           wsId,
           resolvedCategoryId,
@@ -339,6 +350,7 @@ class _InventoryCheckoutPageState extends State<InventoryCheckoutPage> {
               },
             )
             .toList(growable: false),
+        periodId: _periodId,
       );
       await _settingsRepository.setLastIncomeCategory(wsId, resolvedCategoryId);
 
@@ -523,6 +535,31 @@ class _InventoryCheckoutPageState extends State<InventoryCheckoutPage> {
                     onChanged: (value) => setState(() => _walletId = value),
                     decoration: InputDecoration(
                       labelText: l10n.inventoryCheckoutWallet,
+                    ),
+                  ),
+                  const shad.Gap(12),
+                  DropdownButtonFormField<String>(
+                    initialValue: _periodId ?? '',
+                    items: [
+                      DropdownMenuItem<String>(
+                        value: '',
+                        child: Text(l10n.inventorySalesPeriodUnassigned),
+                      ),
+                      ..._salesPeriods.map(
+                        (period) => DropdownMenuItem<String>(
+                          value: period.id,
+                          child: Text(period.name),
+                        ),
+                      ),
+                    ],
+                    onChanged: (value) => setState(
+                      () => _periodId = value == null || value.isEmpty
+                          ? null
+                          : value,
+                    ),
+                    decoration: InputDecoration(
+                      labelText: l10n.inventorySalesPeriodAssignmentLabel,
+                      helperText: l10n.inventorySalesPeriodAssignmentHelp,
                     ),
                   ),
                   const shad.Gap(12),

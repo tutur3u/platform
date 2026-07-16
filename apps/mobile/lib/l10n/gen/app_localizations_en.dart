@@ -3793,6 +3793,72 @@ class AppLocalizationsEn extends AppLocalizations {
   String get inventorySalesTitle => 'Title';
 
   @override
+  String get inventorySalesPeriodsTitle => 'Sales periods';
+
+  @override
+  String get inventorySalesPeriodsDescription => 'Track seasons, conventions, and campaign windows.';
+
+  @override
+  String get inventorySalesPeriodsAll => 'All periods';
+
+  @override
+  String get inventorySalesPeriodArchive => 'Archive period';
+
+  @override
+  String get inventorySalesPeriodRestore => 'Restore period';
+
+  @override
+  String get inventorySalesPeriodCreate => 'New period';
+
+  @override
+  String get inventorySalesPeriodCreateTitle => 'Create sales period';
+
+  @override
+  String get inventorySalesPeriodCreateDescription => 'Group sales into a season, convention, campaign, or operating window.';
+
+  @override
+  String get inventorySalesPeriodName => 'Name';
+
+  @override
+  String get inventorySalesPeriodNamePlaceholder => 'Summer 2026 or TuCon 2026';
+
+  @override
+  String get inventorySalesPeriodStartsAt => 'Start date';
+
+  @override
+  String get inventorySalesPeriodEndsAt => 'End date';
+
+  @override
+  String get inventorySalesPeriodNotes => 'Notes';
+
+  @override
+  String get inventorySalesPeriodNotesPlaceholder => 'Optional context for your team';
+
+  @override
+  String get inventorySalesPeriodNameRequired => 'Enter a period name.';
+
+  @override
+  String get inventorySalesPeriodDateInvalid => 'The end date must be on or after the start date.';
+
+  @override
+  String get inventorySalesPeriodNoDate => 'No date';
+
+  @override
+  String get inventorySalesPeriodArchived => 'Sales period archived.';
+
+  @override
+  String get inventorySalesPeriodRestored => 'Sales period restored.';
+
+  @override
+  String get inventorySalesPeriodUnassigned => 'No period';
+
+  @override
+  String get inventorySalesPeriodAssignmentLabel => 'Sales period';
+
+  @override
+  String get inventorySalesPeriodAssignmentHelp => 'Use a season or event period to group this sale in reports.';
+
+  @override
   String get inventorySaveProduct => 'Save product';
 
   @override
@@ -7218,6 +7284,179 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get cmsTitleApp => 'CMS';
+
+  @override
+  String get storefrontTitle => 'Storefront';
+
+  @override
+  String get storefrontSubtitle => 'Publish products, control availability, and manage every customer-facing shop.';
+
+  @override
+  String get storefrontStores => 'Stores';
+
+  @override
+  String get storefrontPublished => 'Published';
+
+  @override
+  String get storefrontListings => 'Listings';
+
+  @override
+  String get storefrontCreate => 'New store';
+
+  @override
+  String get storefrontEdit => 'Edit store';
+
+  @override
+  String get storefrontEditorSubtitle => 'Configure identity, checkout, visibility, and the visual presentation of this store.';
+
+  @override
+  String get storefrontName => 'Store name';
+
+  @override
+  String get storefrontSlug => 'Public address';
+
+  @override
+  String get storefrontDescription => 'Description';
+
+  @override
+  String get storefrontCurrency => 'Currency';
+
+  @override
+  String get storefrontStatus => 'Status';
+
+  @override
+  String get storefrontVisibility => 'Visibility';
+
+  @override
+  String get storefrontCheckoutMode => 'Checkout';
+
+  @override
+  String get storefrontTheme => 'Theme';
+
+  @override
+  String get storefrontLayout => 'Product layout';
+
+  @override
+  String get storefrontSurface => 'Surface style';
+
+  @override
+  String get storefrontCorners => 'Corner style';
+
+  @override
+  String get storefrontInventoryBadges => 'Show stock availability';
+
+  @override
+  String get storefrontAnalytics => 'Enable storefront analytics';
+
+  @override
+  String get storefrontValidationError => 'Add a store name, a valid public address, and a three-letter currency code.';
+
+  @override
+  String get storefrontSaved => 'Storefront saved.';
+
+  @override
+  String get storefrontSearch => 'Search storefronts';
+
+  @override
+  String get storefrontEmptyTitle => 'Create your first storefront';
+
+  @override
+  String get storefrontEmptyBody => 'Turn inventory into a mobile-ready catalog and publish it when you are ready.';
+
+  @override
+  String storefrontListingCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count listings',
+      one: '1 listing',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get storefrontListingCreate => 'Add listing';
+
+  @override
+  String get storefrontListingEdit => 'Edit listing';
+
+  @override
+  String get storefrontListingEditorSubtitle => 'Choose a stocked product and set how it appears in this storefront.';
+
+  @override
+  String get storefrontProduct => 'Product';
+
+  @override
+  String get storefrontStockRow => 'Warehouse and unit';
+
+  @override
+  String get storefrontListingTitle => 'Listing title';
+
+  @override
+  String get storefrontPrice => 'Price';
+
+  @override
+  String get storefrontCompareAtPrice => 'Compare-at price';
+
+  @override
+  String get storefrontMaxPerOrder => 'Max per order';
+
+  @override
+  String get storefrontListingValidationError => 'Choose a stocked product and enter a valid title, price, and order limit.';
+
+  @override
+  String get storefrontPreview => 'Preview';
+
+  @override
+  String get storefrontDelete => 'Delete store';
+
+  @override
+  String get storefrontDeleteConfirm => 'Delete this storefront and all of its listings? This cannot be undone.';
+
+  @override
+  String get storefrontDeleted => 'Storefront deleted.';
+
+  @override
+  String get storefrontListingsEmptyTitle => 'No listings yet';
+
+  @override
+  String get storefrontListingsEmptyBody => 'Add products from Inventory to make this storefront useful to customers.';
+
+  @override
+  String get storefrontProductsRequired => 'Create a stocked inventory product before adding a storefront listing.';
+
+  @override
+  String get storefrontListingSaved => 'Listing saved.';
+
+  @override
+  String get storefrontListingDelete => 'Delete listing';
+
+  @override
+  String get storefrontListingDeleteConfirm => 'Remove this product from the storefront? The inventory product is not deleted.';
+
+  @override
+  String get storefrontListingDeleted => 'Listing deleted.';
+
+  @override
+  String get storefrontStatusAll => 'All';
+
+  @override
+  String get storefrontStatusDraft => 'Draft';
+
+  @override
+  String get storefrontStatusPublished => 'Published';
+
+  @override
+  String get storefrontStatusPaused => 'Paused';
+
+  @override
+  String get storefrontStatusArchived => 'Archived';
+
+  @override
+  String get storefrontVisibilityPrivate => 'Private';
+
+  @override
+  String get storefrontVisibilityPublic => 'Public';
 
   @override
   String get meetCreated => 'Meeting created.';

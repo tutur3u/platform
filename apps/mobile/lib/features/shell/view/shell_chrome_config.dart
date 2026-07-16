@@ -25,6 +25,7 @@ class ShellChromeConfig {
       Routes.inventorySales => l10n.inventorySalesLabel,
       Routes.inventoryManage => l10n.inventoryManageLabel,
       Routes.inventoryAuditLogs => l10n.inventoryAuditLabel,
+      Routes.storefronts => l10n.storefrontTitle,
       Routes.transactions => l10n.financeActivityLabel,
       Routes.financeCheckpoints => l10n.financeCheckpointsTitle,
       Routes.categories => l10n.financeManageLabel,

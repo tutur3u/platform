@@ -108,6 +108,14 @@ void main() {
         )?.location,
         Routes.taskPortfolioProjectPath('project-1'),
       );
+      expect(
+        resolveMobileDeepLink(
+          Uri.parse(
+            'https://tuturuuu.com/workspace-1/inventory/storefronts/store-1',
+          ),
+        )?.location,
+        Routes.storefrontDetailPath('store-1'),
+      );
     });
 
     test('maps settings section links to fullscreen section routes', () {

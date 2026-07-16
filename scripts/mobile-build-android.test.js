@@ -7,6 +7,7 @@ const test = require('node:test');
 const {
   isVerifiedSignatureOutput,
   parseProperties,
+  resolveFlutterBuildArgs,
   resolveReleaseSigning,
 } = require('./mobile-build-android.js');
 
@@ -63,5 +64,12 @@ test('signature verification rejects an unsigned bundle', () => {
   assert.equal(
     isVerifiedSignatureOutput('no manifest.\njar is unsigned.'),
     false
+  );
+});
+
+test('release build forwards explicit Flutter version overrides', () => {
+  assert.deepEqual(
+    resolveFlutterBuildArgs(['--build-name', '0.7.0', '--build-number', '78']),
+    ['--build-name', '0.7.0', '--build-number', '78']
   );
 });

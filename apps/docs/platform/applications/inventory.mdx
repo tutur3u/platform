@@ -94,14 +94,26 @@ The commerce storefront extension adds:
 - service-role-only RPCs for creating reservations, releasing or expiring
   reservations, materializing checkout TTL expiry, and linking a completed
   checkout to a `finance_invoice`
+- private sales periods that group both invoice-backed and completed checkout
+  sales into seasons, conventions, campaigns, or other operating windows. A
+  sale has at most one period assignment, while archived periods keep their
+  historical assignments and remain available for reporting.
 
 New commerce tables belong in the `private` schema, not `public`. Public and
-satellite clients must go through `apps/web` APIs plus
+satellite clients must go through Inventory-owned `apps/inventory` APIs plus
 `@tuturuuu/internal-api`; direct Supabase client access to these tables is not
 part of the contract. Protected workspace routes must authenticate and normalize
 the workspace with the request-scoped client before any private-table read or
 write, then use server-only database access or service-role RPCs behind
-`apps/web`.
+`apps/inventory`.
+
+Sales-period clients use the Inventory-owned routes below. Keep these paths in
+the Flutter API mapping check whenever the mobile catalog changes:
+
+- `GET/POST /api/v1/workspaces/:wsId/inventory/sales-periods`
+- `PATCH/DELETE /api/v1/workspaces/:wsId/inventory/sales-periods/:periodId`
+- `PUT /api/v1/workspaces/:wsId/inventory/sales/:saleId/period`
+- `GET /api/v1/workspaces/:wsId/inventory/sales?period_id=:periodId`
 
 Core stock and setup data lives in private inventory tables:
 `private.inventory_products`, `private.inventory_units`,

@@ -456,6 +456,52 @@ class InventoryOverview extends Equatable {
   ];
 }
 
+class InventorySalesPeriod extends Equatable {
+  const InventorySalesPeriod({
+    required this.id,
+    required this.name,
+    required this.status,
+    required this.saleCount,
+    this.description,
+    this.startsAt,
+    this.endsAt,
+  });
+
+  factory InventorySalesPeriod.fromJson(Map<String, dynamic> json) =>
+      InventorySalesPeriod(
+        id: _asString(json['id']),
+        name: _asString(json['name']),
+        description: json['description'] as String?,
+        startsAt: _asDateTime(json['starts_at']),
+        endsAt: _asDateTime(json['ends_at']),
+        status: _asString(json['status']).isEmpty
+            ? 'active'
+            : _asString(json['status']),
+        saleCount: (json['sale_count'] as num?)?.toInt() ?? 0,
+      );
+
+  final String id;
+  final String name;
+  final String? description;
+  final DateTime? startsAt;
+  final DateTime? endsAt;
+  final String status;
+  final int saleCount;
+
+  bool get isArchived => status == 'archived';
+
+  @override
+  List<Object?> get props => [
+    id,
+    name,
+    description,
+    startsAt,
+    endsAt,
+    status,
+    saleCount,
+  ];
+}
+
 class InventorySaleSummary extends Equatable {
   const InventorySaleSummary({
     required this.id,
@@ -463,6 +509,7 @@ class InventorySaleSummary extends Equatable {
     required this.itemsCount,
     required this.totalQuantity,
     required this.owners,
+    required this.source,
     this.notice,
     this.note,
     this.createdAt,
@@ -471,6 +518,7 @@ class InventorySaleSummary extends Equatable {
     this.categoryName,
     this.customerName,
     this.creatorName,
+    this.period,
   });
 
   factory InventorySaleSummary.fromJson(Map<String, dynamic> json) =>
@@ -484,12 +532,20 @@ class InventorySaleSummary extends Equatable {
         owners: (json['owners'] as List<dynamic>? ?? const <dynamic>[])
             .whereType<String>()
             .toList(growable: false),
+        source: _asString(json['source']).isEmpty
+            ? 'finance_invoice'
+            : _asString(json['source']),
         createdAt: _asDateTime(json['created_at']),
         completedAt: _asDateTime(json['completed_at']),
         walletName: json['wallet_name'] as String?,
         categoryName: json['category_name'] as String?,
         customerName: json['customer_name'] as String?,
         creatorName: json['creator_name'] as String?,
+        period: json['period'] is Map
+            ? InventorySalesPeriod.fromJson(
+                Map<String, dynamic>.from(json['period'] as Map),
+              )
+            : null,
       );
 
   final String id;
@@ -499,12 +555,14 @@ class InventorySaleSummary extends Equatable {
   final int itemsCount;
   final double totalQuantity;
   final List<String> owners;
+  final String source;
   final DateTime? createdAt;
   final DateTime? completedAt;
   final String? walletName;
   final String? categoryName;
   final String? customerName;
   final String? creatorName;
+  final InventorySalesPeriod? period;
 
   @override
   List<Object?> get props => [
@@ -515,12 +573,14 @@ class InventorySaleSummary extends Equatable {
     itemsCount,
     totalQuantity,
     owners,
+    source,
     createdAt,
     completedAt,
     walletName,
     categoryName,
     customerName,
     creatorName,
+    period,
   ];
 }
 
@@ -586,6 +646,7 @@ class InventorySaleDetail extends Equatable {
     required this.totalQuantity,
     required this.owners,
     required this.lines,
+    required this.source,
     this.notice,
     this.note,
     this.createdAt,
@@ -597,6 +658,7 @@ class InventorySaleDetail extends Equatable {
     this.customerId,
     this.customerName,
     this.creatorName,
+    this.period,
   });
 
   factory InventorySaleDetail.fromJson(Map<String, dynamic> json) =>
@@ -615,6 +677,9 @@ class InventorySaleDetail extends Equatable {
             .whereType<Map<String, dynamic>>()
             .map(InventorySaleLine.fromJson)
             .toList(growable: false),
+        source: _asString(json['source']).isEmpty
+            ? 'finance_invoice'
+            : _asString(json['source']),
         createdAt: _asDateTime(json['created_at']),
         completedAt: _asDateTime(json['completed_at']),
         walletId: json['wallet_id'] as String?,
@@ -624,6 +689,11 @@ class InventorySaleDetail extends Equatable {
         customerId: json['customer_id'] as String?,
         customerName: json['customer_name'] as String?,
         creatorName: json['creator_name'] as String?,
+        period: json['period'] is Map
+            ? InventorySalesPeriod.fromJson(
+                Map<String, dynamic>.from(json['period'] as Map),
+              )
+            : null,
       );
 
   final String id;
@@ -634,6 +704,7 @@ class InventorySaleDetail extends Equatable {
   final double totalQuantity;
   final List<String> owners;
   final List<InventorySaleLine> lines;
+  final String source;
   final DateTime? createdAt;
   final DateTime? completedAt;
   final String? walletId;
@@ -643,6 +714,7 @@ class InventorySaleDetail extends Equatable {
   final String? customerId;
   final String? customerName;
   final String? creatorName;
+  final InventorySalesPeriod? period;
 
   @override
   List<Object?> get props => [
@@ -654,6 +726,7 @@ class InventorySaleDetail extends Equatable {
     totalQuantity,
     owners,
     lines,
+    source,
     createdAt,
     completedAt,
     walletId,
@@ -663,6 +736,7 @@ class InventorySaleDetail extends Equatable {
     customerId,
     customerName,
     creatorName,
+    period,
   ];
 }
 

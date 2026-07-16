@@ -70,6 +70,8 @@ abstract final class Routes {
   static const inventoryManage = '/inventory/manage';
   static const inventoryAuditLogs = '/inventory/audit-logs';
   static const inventoryCheckout = '/inventory/checkout';
+  static const storefronts = '/inventory/storefronts';
+  static const storefrontDetail = '/inventory/storefronts/:storefrontId';
   static const documentDetail = '/documents/:documentId';
   static const timerHistory = '/timer/history';
   static const timerStats = '/timer/stats';
@@ -88,6 +90,9 @@ abstract final class Routes {
 
   static String inventoryProductDetailPath(String productId) =>
       '/inventory/products/$productId';
+
+  static String storefrontDetailPath(String storefrontId) =>
+      '/inventory/storefronts/$storefrontId';
 
   static String taskPortfolioProjectPath(String projectId) =>
       '/tasks/portfolio/projects/$projectId';

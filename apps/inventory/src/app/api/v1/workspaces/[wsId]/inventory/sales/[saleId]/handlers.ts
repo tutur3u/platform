@@ -9,6 +9,7 @@ import {
   canUpdateInventorySales,
   canViewInventorySales,
 } from '@tuturuuu/inventory-core/permissions';
+import { getSalesPeriodAssignments } from '@tuturuuu/inventory-core/sales-periods';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import {
@@ -48,7 +49,18 @@ export async function handleGetSale(req: Request, { params }: Params) {
     return NextResponse.json({ message: 'Sale not found' }, { status: 404 });
   }
 
-  return NextResponse.json({ data: normalizeSaleDetail(data) });
+  const normalized = normalizeSaleDetail(data);
+  const assignments = await getSalesPeriodAssignments({
+    sales: [{ id: saleId, source: 'finance_invoice' }],
+    sbAdmin,
+    wsId,
+  });
+  return NextResponse.json({
+    data: {
+      ...normalized,
+      period: assignments.get(`finance_invoice:${saleId}`) ?? null,
+    },
+  });
 }
 
 export async function handlePutSale(req: Request, { params }: Params) {

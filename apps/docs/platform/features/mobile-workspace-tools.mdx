@@ -152,6 +152,38 @@ The mobile Education module uses authenticated workspace routes from `apps/web`:
 
 For mobile-facing collection APIs, keep list routes request-aware and list-shaped. A cookie-only helper or `.single()` response on a collection endpoint can work in the web dashboard but break mobile Bearer-token callers or pagination assumptions.
 
+The mobile endpoint registry is guarded by `bun check:mobile-api-mappings`.
+The check extracts Flutter `/api/*` templates from `api_config.dart` and the
+production endpoint catalog used by the `ttr` CLI SDK. It verifies that both
+legacy clients still resolve to a canonical owner in a checked-in Next
+satellite, the legacy route wrappers, or the Rust/TanStack migration manifest.
+The `Mobile API Mappings` workflow runs whenever either client catalog, an app
+API route, or the migration manifest changes. If a route is migrated or
+removed, update Flutter and the CLI SDK in the same change instead of leaving a
+legacy client to discover the break in production.
+
+## Mobile Inventory And Storefront Coverage
+
+Inventory is a native mobile workspace with overview, product CRUD, checkout,
+sales, setup, audit-log access, and storefront management. Storefronts support
+create/edit/delete, status and visibility controls, public preview, product
+listing CRUD, stock-row selection, pricing, and per-order limits through the
+same authenticated inventory satellite APIs:
+
+Mobile sales also support workspace sales periods. Operators can create a
+season or event such as `Summer 2026` or `TuCon 2026`, filter the mixed
+invoice/checkout history by that period, and assign the period during sale
+creation or editing. Archiving preserves historical reporting.
+
+- `/api/v1/workspaces/:wsId/inventory/storefronts`
+- `/api/v1/workspaces/:wsId/inventory/storefronts/:storefrontId`
+- `/api/v1/workspaces/:wsId/inventory/storefronts/:storefrontId/listings`
+- `/api/v1/workspaces/:wsId/inventory/storefronts/:storefrontId/listings/:listingId`
+
+Keep Storefront in the five-item Inventory mini navigation. Audit logs remain
+discoverable from Inventory Manage so compact phones retain a stable native
+navigation bar.
+
 When an Education mobile list needs derived counts from workspace-protected join tables such as `course_module_quiz_sets`, verify workspace membership first with the request-scoped client, then run the joined read on an admin-backed client. Also select real join columns such as `module_id`; do not assume those bridge tables expose a synthetic `id`.
 
 ## Import And Export Format Notes

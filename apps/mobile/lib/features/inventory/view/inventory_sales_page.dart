@@ -16,6 +16,7 @@ import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/finance/widgets/finance_ui.dart';
 import 'package:mobile/features/inventory/inventory_permissions.dart';
 import 'package:mobile/features/inventory/view/inventory_checkout_page.dart';
+import 'package:mobile/features/inventory/widgets/inventory_sales_periods.dart';
 import 'package:mobile/features/inventory/widgets/inventory_ui.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
@@ -42,6 +43,8 @@ class _InventorySalesPageState extends State<InventorySalesPage> {
   final ScrollController _scrollController = ScrollController();
 
   List<InventorySaleSummary> _sales = const [];
+  List<InventorySalesPeriod> _salesPeriods = const [];
+  String? _selectedPeriodId;
   int _count = 0;
   String _currency = 'USD';
   bool _canCreateSales = false;
@@ -89,7 +92,12 @@ class _InventorySalesPageState extends State<InventorySalesPage> {
 
     try {
       final results = await Future.wait<dynamic>([
-        _inventoryRepository.getSales(wsId, limit: _pageSize),
+        _inventoryRepository.getSales(
+          wsId,
+          limit: _pageSize,
+          periodId: _selectedPeriodId,
+        ),
+        _inventoryRepository.getSalesPeriods(wsId),
         _financeRepository.getWorkspaceDefaultCurrency(wsId),
         _permissionsRepository.getPermissions(wsId: wsId),
       ]);
@@ -105,11 +113,13 @@ class _InventorySalesPageState extends State<InventorySalesPage> {
                 int count,
                 bool realtimeEnabled,
               });
-      final currency = results[1] as String;
-      final permissions = results[2] as WorkspacePermissions;
+      final periods = results[1] as List<InventorySalesPeriod>;
+      final currency = results[2] as String;
+      final permissions = results[3] as WorkspacePermissions;
 
       setState(() {
         _sales = sales.data;
+        _salesPeriods = periods;
         _count = sales.count;
         _currency = currency;
         _canCreateSales = canCreateInventorySales(permissions);
@@ -159,6 +169,7 @@ class _InventorySalesPageState extends State<InventorySalesPage> {
         wsId,
         limit: _pageSize,
         offset: _sales.length,
+        periodId: _selectedPeriodId,
       );
 
       if (!mounted || requestToken != _requestToken) {
@@ -193,6 +204,57 @@ class _InventorySalesPageState extends State<InventorySalesPage> {
     final position = _scrollController.position;
     if (position.maxScrollExtent - position.pixels <= 200) {
       unawaited(_loadMore());
+    }
+  }
+
+  Future<void> _selectPeriod(String? periodId) async {
+    if (_selectedPeriodId == periodId) return;
+    setState(() {
+      _selectedPeriodId = periodId;
+      _sales = const [];
+      _count = 0;
+      _hasMore = true;
+    });
+    await _loadInitial();
+  }
+
+  Future<void> _createSalesPeriod() async {
+    final wsId = _wsId;
+    if (wsId == null) return;
+    final period = await showCreateInventorySalesPeriod(
+      context: context,
+      repository: _inventoryRepository,
+      wsId: wsId,
+    );
+    if (period == null || !mounted) return;
+    setState(() {
+      _selectedPeriodId = period.id;
+      _sales = const [];
+    });
+    await _loadInitial();
+  }
+
+  Future<void> _togglePeriodArchive(InventorySalesPeriod period) async {
+    final wsId = _wsId;
+    if (wsId == null) return;
+    try {
+      await _inventoryRepository.updateSalesPeriod(
+        wsId: wsId,
+        periodId: period.id,
+        status: period.isArchived ? 'active' : 'archived',
+      );
+      if (!mounted) return;
+      showInventoryToast(
+        context,
+        period.isArchived
+            ? context.l10n.inventorySalesPeriodRestored
+            : context.l10n.inventorySalesPeriodArchived,
+      );
+      await _loadInitial();
+    } on Exception catch (error) {
+      if (mounted) {
+        showInventoryToast(context, error.toString(), destructive: true);
+      }
     }
   }
 
@@ -234,7 +296,14 @@ class _InventorySalesPageState extends State<InventorySalesPage> {
       child: BlocListener<WorkspaceCubit, WorkspaceState>(
         listenWhen: (previous, current) =>
             previous.currentWorkspace?.id != current.currentWorkspace?.id,
-        listener: (context, state) => unawaited(_loadInitial()),
+        listener: (context, state) {
+          setState(() {
+            _selectedPeriodId = null;
+            _sales = const [];
+            _salesPeriods = const [];
+          });
+          unawaited(_loadInitial());
+        },
         child: Builder(
           builder: (context) {
             if (_isLoadingInitial && _sales.isEmpty) {
@@ -269,6 +338,17 @@ class _InventorySalesPageState extends State<InventorySalesPage> {
                         108 + MediaQuery.paddingOf(context).bottom,
                       ),
                       children: [
+                        InventorySalesPeriodBar(
+                          periods: _salesPeriods,
+                          selectedPeriodId: _selectedPeriodId,
+                          canManage: _canCreateSales || _canUpdateSales,
+                          onChanged: (periodId) =>
+                              unawaited(_selectPeriod(periodId)),
+                          onCreate: () => unawaited(_createSalesPeriod()),
+                          onToggleArchive: (period) =>
+                              unawaited(_togglePeriodArchive(period)),
+                        ),
+                        const shad.Gap(12),
                         FinancePanel(
                           child: Wrap(
                             spacing: 8,
@@ -412,6 +492,11 @@ class _InventorySaleCard extends StatelessWidget {
             spacing: 8,
             runSpacing: 8,
             children: [
+              if (sale.period != null)
+                _SaleBadge(
+                  label: sale.period!.name,
+                  color: theme.colorScheme.primary,
+                ),
               if (creator != null && creator.isNotEmpty)
                 _SaleBadge(
                   label: context.l10n.inventorySalesCreatorBadge(creator),

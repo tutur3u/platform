@@ -91,6 +91,19 @@ void main() {
       ]);
     });
 
+    test('inventory exposes storefront while audit remains in manage', () {
+      final inventory = AppRegistry.moduleById('inventory');
+
+      expect(inventory, isNotNull);
+      final routes = inventory!.miniAppNavItems
+          .map((item) => item.route)
+          .toList();
+
+      expect(routes, contains(Routes.storefronts));
+      expect(routes, isNot(contains(Routes.inventoryAuditLogs)));
+      expect(routes, contains(Routes.inventoryManage));
+    });
+
     test('all modules define at least one mini nav item', () {
       for (final module in AppRegistry.allModules) {
         expect(module.miniAppNavItems, isNotEmpty, reason: module.id);

@@ -1,0 +1,53 @@
+name: Mobile API Mappings
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "apps/mobile/lib/core/config/api_config.dart"
+      - "apps/*/src/app/api/**"
+      - "apps/web/src/legacy-api-routes/**"
+      - "apps/tanstack-web/migration/route-manifest.json"
+      - "packages/sdk/src/**"
+      - "scripts/check-mobile-api-mappings.*"
+      - ".github/workflows/mobile-api-mappings.yaml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "apps/mobile/lib/core/config/api_config.dart"
+      - "apps/*/src/app/api/**"
+      - "apps/web/src/legacy-api-routes/**"
+      - "apps/tanstack-web/migration/route-manifest.json"
+      - "packages/sdk/src/**"
+      - "scripts/check-mobile-api-mappings.*"
+      - ".github/workflows/mobile-api-mappings.yaml"
+  workflow_dispatch:
+
+jobs:
+  check-ci:
+    uses: ./.github/workflows/ci-check.yml
+    with:
+      workflow_name: mobile-api-mappings.yaml
+
+  verify:
+    needs: [check-ci]
+    if: needs.check-ci.outputs.should_run == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Setup Bun
+        uses: ./.github/actions/setup-bun-with-retry
+        with:
+          bun-version: 1.3.14
+
+      - name: Verify mobile API ownership mappings
+        run: bun check:mobile-api-mappings
+
+      - name: Test mobile API mapping guard
+        run: node --test scripts/check-mobile-api-mappings.test.js

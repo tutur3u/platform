@@ -329,10 +329,10 @@ class AppRegistry {
       labelBuilder: _labelInventoryManage,
     ),
     MiniAppNavItem(
-      id: 'inventory_audit',
-      route: Routes.inventoryAuditLogs,
-      icon: Icons.history_rounded,
-      labelBuilder: _labelInventoryAudit,
+      id: 'inventory_storefront',
+      route: Routes.storefronts,
+      icon: Icons.storefront_outlined,
+      labelBuilder: _labelStorefront,
     ),
   ];
 
@@ -622,8 +622,7 @@ class AppRegistry {
       l10n.inventorySalesLabel;
   static String _labelInventoryManage(AppLocalizations l10n) =>
       l10n.inventoryManageLabel;
-  static String _labelInventoryAudit(AppLocalizations l10n) =>
-      l10n.inventoryAuditLabel;
+  static String _labelStorefront(AppLocalizations l10n) => l10n.storefrontTitle;
   static String _labelFinanceOverview(AppLocalizations l10n) =>
       l10n.financeOverviewLabel;
   static String _labelFinanceActivity(AppLocalizations l10n) =>

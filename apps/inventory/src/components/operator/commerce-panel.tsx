@@ -11,6 +11,7 @@ import type {
   InventoryCheckoutSession,
   InventoryRevenueShareEarning,
   InventorySaleSummary,
+  InventorySalesPeriod,
 } from '@tuturuuu/internal-api/inventory';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { useTranslations } from 'next-intl';
@@ -20,6 +21,7 @@ import { money } from './operator-format';
 import { LoadingRows } from './operator-shell';
 import type { InventoryCommerceTab } from './operator-types';
 import { ProfitSummaryPanel } from './profit-summary-panel';
+import { SalesPeriodsPanel } from './sales-periods-panel';
 
 export function CommercePanel({
   checkouts,
@@ -27,6 +29,9 @@ export function CommercePanel({
   query,
   revenueShares,
   sales,
+  salesPeriods,
+  selectedPeriodId,
+  setPeriodId,
   setTab,
   tab,
   wsId,
@@ -36,6 +41,9 @@ export function CommercePanel({
   query: string;
   revenueShares: InventoryRevenueShareEarning[];
   sales: InventorySaleSummary[];
+  salesPeriods: InventorySalesPeriod[];
+  selectedPeriodId: string;
+  setPeriodId: (periodId: string) => void;
   setTab: (tab: InventoryCommerceTab) => void;
   tab: InventoryCommerceTab;
   wsId: string;
@@ -113,8 +121,19 @@ export function CommercePanel({
             <LoadingRows />
           ) : (
             <div className="grid gap-3">
+              <SalesPeriodsPanel
+                onSelect={setPeriodId}
+                periods={salesPeriods}
+                selectedPeriodId={selectedPeriodId}
+                wsId={wsId}
+              />
               <ProfitSummaryPanel sales={sales} wsId={wsId} />
-              <SaleRows query={query} rows={sales} wsId={wsId} />
+              <SaleRows
+                periods={salesPeriods}
+                query={query}
+                rows={sales}
+                wsId={wsId}
+              />
             </div>
           )}
         </TabsContent>

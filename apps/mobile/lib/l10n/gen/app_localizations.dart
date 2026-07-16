@@ -7351,6 +7351,138 @@ abstract class AppLocalizations {
   /// **'Title'**
   String get inventorySalesTitle;
 
+  /// No description provided for @inventorySalesPeriodsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Sales periods'**
+  String get inventorySalesPeriodsTitle;
+
+  /// No description provided for @inventorySalesPeriodsDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Track seasons, conventions, and campaign windows.'**
+  String get inventorySalesPeriodsDescription;
+
+  /// No description provided for @inventorySalesPeriodsAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All periods'**
+  String get inventorySalesPeriodsAll;
+
+  /// No description provided for @inventorySalesPeriodArchive.
+  ///
+  /// In en, this message translates to:
+  /// **'Archive period'**
+  String get inventorySalesPeriodArchive;
+
+  /// No description provided for @inventorySalesPeriodRestore.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore period'**
+  String get inventorySalesPeriodRestore;
+
+  /// No description provided for @inventorySalesPeriodCreate.
+  ///
+  /// In en, this message translates to:
+  /// **'New period'**
+  String get inventorySalesPeriodCreate;
+
+  /// No description provided for @inventorySalesPeriodCreateTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Create sales period'**
+  String get inventorySalesPeriodCreateTitle;
+
+  /// No description provided for @inventorySalesPeriodCreateDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Group sales into a season, convention, campaign, or operating window.'**
+  String get inventorySalesPeriodCreateDescription;
+
+  /// No description provided for @inventorySalesPeriodName.
+  ///
+  /// In en, this message translates to:
+  /// **'Name'**
+  String get inventorySalesPeriodName;
+
+  /// No description provided for @inventorySalesPeriodNamePlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'Summer 2026 or TuCon 2026'**
+  String get inventorySalesPeriodNamePlaceholder;
+
+  /// No description provided for @inventorySalesPeriodStartsAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Start date'**
+  String get inventorySalesPeriodStartsAt;
+
+  /// No description provided for @inventorySalesPeriodEndsAt.
+  ///
+  /// In en, this message translates to:
+  /// **'End date'**
+  String get inventorySalesPeriodEndsAt;
+
+  /// No description provided for @inventorySalesPeriodNotes.
+  ///
+  /// In en, this message translates to:
+  /// **'Notes'**
+  String get inventorySalesPeriodNotes;
+
+  /// No description provided for @inventorySalesPeriodNotesPlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'Optional context for your team'**
+  String get inventorySalesPeriodNotesPlaceholder;
+
+  /// No description provided for @inventorySalesPeriodNameRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a period name.'**
+  String get inventorySalesPeriodNameRequired;
+
+  /// No description provided for @inventorySalesPeriodDateInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'The end date must be on or after the start date.'**
+  String get inventorySalesPeriodDateInvalid;
+
+  /// No description provided for @inventorySalesPeriodNoDate.
+  ///
+  /// In en, this message translates to:
+  /// **'No date'**
+  String get inventorySalesPeriodNoDate;
+
+  /// No description provided for @inventorySalesPeriodArchived.
+  ///
+  /// In en, this message translates to:
+  /// **'Sales period archived.'**
+  String get inventorySalesPeriodArchived;
+
+  /// No description provided for @inventorySalesPeriodRestored.
+  ///
+  /// In en, this message translates to:
+  /// **'Sales period restored.'**
+  String get inventorySalesPeriodRestored;
+
+  /// No description provided for @inventorySalesPeriodUnassigned.
+  ///
+  /// In en, this message translates to:
+  /// **'No period'**
+  String get inventorySalesPeriodUnassigned;
+
+  /// No description provided for @inventorySalesPeriodAssignmentLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Sales period'**
+  String get inventorySalesPeriodAssignmentLabel;
+
+  /// No description provided for @inventorySalesPeriodAssignmentHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Use a season or event period to group this sale in reports.'**
+  String get inventorySalesPeriodAssignmentHelp;
+
   /// No description provided for @inventorySaveProduct.
   ///
   /// In en, this message translates to:
@@ -13770,6 +13902,336 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'CMS'**
   String get cmsTitleApp;
+
+  /// No description provided for @storefrontTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Storefront'**
+  String get storefrontTitle;
+
+  /// No description provided for @storefrontSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Publish products, control availability, and manage every customer-facing shop.'**
+  String get storefrontSubtitle;
+
+  /// No description provided for @storefrontStores.
+  ///
+  /// In en, this message translates to:
+  /// **'Stores'**
+  String get storefrontStores;
+
+  /// No description provided for @storefrontPublished.
+  ///
+  /// In en, this message translates to:
+  /// **'Published'**
+  String get storefrontPublished;
+
+  /// No description provided for @storefrontListings.
+  ///
+  /// In en, this message translates to:
+  /// **'Listings'**
+  String get storefrontListings;
+
+  /// No description provided for @storefrontCreate.
+  ///
+  /// In en, this message translates to:
+  /// **'New store'**
+  String get storefrontCreate;
+
+  /// No description provided for @storefrontEdit.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit store'**
+  String get storefrontEdit;
+
+  /// No description provided for @storefrontEditorSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Configure identity, checkout, visibility, and the visual presentation of this store.'**
+  String get storefrontEditorSubtitle;
+
+  /// No description provided for @storefrontName.
+  ///
+  /// In en, this message translates to:
+  /// **'Store name'**
+  String get storefrontName;
+
+  /// No description provided for @storefrontSlug.
+  ///
+  /// In en, this message translates to:
+  /// **'Public address'**
+  String get storefrontSlug;
+
+  /// No description provided for @storefrontDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Description'**
+  String get storefrontDescription;
+
+  /// No description provided for @storefrontCurrency.
+  ///
+  /// In en, this message translates to:
+  /// **'Currency'**
+  String get storefrontCurrency;
+
+  /// No description provided for @storefrontStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Status'**
+  String get storefrontStatus;
+
+  /// No description provided for @storefrontVisibility.
+  ///
+  /// In en, this message translates to:
+  /// **'Visibility'**
+  String get storefrontVisibility;
+
+  /// No description provided for @storefrontCheckoutMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Checkout'**
+  String get storefrontCheckoutMode;
+
+  /// No description provided for @storefrontTheme.
+  ///
+  /// In en, this message translates to:
+  /// **'Theme'**
+  String get storefrontTheme;
+
+  /// No description provided for @storefrontLayout.
+  ///
+  /// In en, this message translates to:
+  /// **'Product layout'**
+  String get storefrontLayout;
+
+  /// No description provided for @storefrontSurface.
+  ///
+  /// In en, this message translates to:
+  /// **'Surface style'**
+  String get storefrontSurface;
+
+  /// No description provided for @storefrontCorners.
+  ///
+  /// In en, this message translates to:
+  /// **'Corner style'**
+  String get storefrontCorners;
+
+  /// No description provided for @storefrontInventoryBadges.
+  ///
+  /// In en, this message translates to:
+  /// **'Show stock availability'**
+  String get storefrontInventoryBadges;
+
+  /// No description provided for @storefrontAnalytics.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable storefront analytics'**
+  String get storefrontAnalytics;
+
+  /// No description provided for @storefrontValidationError.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a store name, a valid public address, and a three-letter currency code.'**
+  String get storefrontValidationError;
+
+  /// No description provided for @storefrontSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Storefront saved.'**
+  String get storefrontSaved;
+
+  /// No description provided for @storefrontSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Search storefronts'**
+  String get storefrontSearch;
+
+  /// No description provided for @storefrontEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Create your first storefront'**
+  String get storefrontEmptyTitle;
+
+  /// No description provided for @storefrontEmptyBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn inventory into a mobile-ready catalog and publish it when you are ready.'**
+  String get storefrontEmptyBody;
+
+  /// No description provided for @storefrontListingCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 listing} other{{count} listings}}'**
+  String storefrontListingCount(int count);
+
+  /// No description provided for @storefrontListingCreate.
+  ///
+  /// In en, this message translates to:
+  /// **'Add listing'**
+  String get storefrontListingCreate;
+
+  /// No description provided for @storefrontListingEdit.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit listing'**
+  String get storefrontListingEdit;
+
+  /// No description provided for @storefrontListingEditorSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a stocked product and set how it appears in this storefront.'**
+  String get storefrontListingEditorSubtitle;
+
+  /// No description provided for @storefrontProduct.
+  ///
+  /// In en, this message translates to:
+  /// **'Product'**
+  String get storefrontProduct;
+
+  /// No description provided for @storefrontStockRow.
+  ///
+  /// In en, this message translates to:
+  /// **'Warehouse and unit'**
+  String get storefrontStockRow;
+
+  /// No description provided for @storefrontListingTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Listing title'**
+  String get storefrontListingTitle;
+
+  /// No description provided for @storefrontPrice.
+  ///
+  /// In en, this message translates to:
+  /// **'Price'**
+  String get storefrontPrice;
+
+  /// No description provided for @storefrontCompareAtPrice.
+  ///
+  /// In en, this message translates to:
+  /// **'Compare-at price'**
+  String get storefrontCompareAtPrice;
+
+  /// No description provided for @storefrontMaxPerOrder.
+  ///
+  /// In en, this message translates to:
+  /// **'Max per order'**
+  String get storefrontMaxPerOrder;
+
+  /// No description provided for @storefrontListingValidationError.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a stocked product and enter a valid title, price, and order limit.'**
+  String get storefrontListingValidationError;
+
+  /// No description provided for @storefrontPreview.
+  ///
+  /// In en, this message translates to:
+  /// **'Preview'**
+  String get storefrontPreview;
+
+  /// No description provided for @storefrontDelete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete store'**
+  String get storefrontDelete;
+
+  /// No description provided for @storefrontDeleteConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete this storefront and all of its listings? This cannot be undone.'**
+  String get storefrontDeleteConfirm;
+
+  /// No description provided for @storefrontDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Storefront deleted.'**
+  String get storefrontDeleted;
+
+  /// No description provided for @storefrontListingsEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No listings yet'**
+  String get storefrontListingsEmptyTitle;
+
+  /// No description provided for @storefrontListingsEmptyBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Add products from Inventory to make this storefront useful to customers.'**
+  String get storefrontListingsEmptyBody;
+
+  /// No description provided for @storefrontProductsRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Create a stocked inventory product before adding a storefront listing.'**
+  String get storefrontProductsRequired;
+
+  /// No description provided for @storefrontListingSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Listing saved.'**
+  String get storefrontListingSaved;
+
+  /// No description provided for @storefrontListingDelete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete listing'**
+  String get storefrontListingDelete;
+
+  /// No description provided for @storefrontListingDeleteConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove this product from the storefront? The inventory product is not deleted.'**
+  String get storefrontListingDeleteConfirm;
+
+  /// No description provided for @storefrontListingDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Listing deleted.'**
+  String get storefrontListingDeleted;
+
+  /// No description provided for @storefrontStatusAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get storefrontStatusAll;
+
+  /// No description provided for @storefrontStatusDraft.
+  ///
+  /// In en, this message translates to:
+  /// **'Draft'**
+  String get storefrontStatusDraft;
+
+  /// No description provided for @storefrontStatusPublished.
+  ///
+  /// In en, this message translates to:
+  /// **'Published'**
+  String get storefrontStatusPublished;
+
+  /// No description provided for @storefrontStatusPaused.
+  ///
+  /// In en, this message translates to:
+  /// **'Paused'**
+  String get storefrontStatusPaused;
+
+  /// No description provided for @storefrontStatusArchived.
+  ///
+  /// In en, this message translates to:
+  /// **'Archived'**
+  String get storefrontStatusArchived;
+
+  /// No description provided for @storefrontVisibilityPrivate.
+  ///
+  /// In en, this message translates to:
+  /// **'Private'**
+  String get storefrontVisibilityPrivate;
+
+  /// No description provided for @storefrontVisibilityPublic.
+  ///
+  /// In en, this message translates to:
+  /// **'Public'**
+  String get storefrontVisibilityPublic;
 
   /// No description provided for @meetCreated.
   ///

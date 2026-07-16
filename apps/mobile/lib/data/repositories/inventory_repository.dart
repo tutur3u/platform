@@ -268,9 +268,19 @@ class InventoryRepository {
   }
 
   Future<({List<InventorySaleSummary> data, int count, bool realtimeEnabled})>
-  getSales(String wsId, {int limit = 20, int offset = 0}) async {
+  getSales(
+    String wsId, {
+    int limit = 20,
+    int offset = 0,
+    String? periodId,
+  }) async {
     final response = await _api.getJson(
-      InventoryEndpoints.sales(wsId, limit: limit, offset: offset),
+      InventoryEndpoints.sales(
+        wsId,
+        limit: limit,
+        offset: offset,
+        periodId: periodId,
+      ),
     );
     return (
       data: (response['data'] as List<dynamic>? ?? const <dynamic>[])
@@ -280,6 +290,73 @@ class InventoryRepository {
       count: (response['count'] as num?)?.toInt() ?? 0,
       realtimeEnabled: response['realtime_enabled'] as bool? ?? false,
     );
+  }
+
+  Future<List<InventorySalesPeriod>> getSalesPeriods(
+    String wsId, {
+    bool includeArchived = true,
+  }) async {
+    final response = await _api.getJson(
+      InventoryEndpoints.salesPeriods(
+        wsId,
+        includeArchived: includeArchived,
+      ),
+    );
+    return (response['data'] as List<dynamic>? ?? const <dynamic>[])
+        .whereType<Map<String, dynamic>>()
+        .map(InventorySalesPeriod.fromJson)
+        .toList(growable: false);
+  }
+
+  Future<InventorySalesPeriod> createSalesPeriod({
+    required String wsId,
+    required String name,
+    String? description,
+    DateTime? startsAt,
+    DateTime? endsAt,
+  }) async {
+    final response = await _api.postJson(
+      InventoryEndpoints.salesPeriods(wsId),
+      {
+        'name': name,
+        'description': description,
+        'starts_at': _dateOnly(startsAt),
+        'ends_at': _dateOnly(endsAt),
+      },
+    );
+    return InventorySalesPeriod.fromJson(
+      Map<String, dynamic>.from(response['data'] as Map),
+    );
+  }
+
+  Future<InventorySalesPeriod> updateSalesPeriod({
+    required String wsId,
+    required String periodId,
+    String? status,
+  }) async {
+    final response = await _api.patchJson(
+      InventoryEndpoints.salesPeriod(wsId, periodId),
+      {if (status != null) 'status': status},
+    );
+    return InventorySalesPeriod.fromJson(
+      Map<String, dynamic>.from(response['data'] as Map),
+    );
+  }
+
+  Future<InventorySalesPeriod?> setSalePeriod({
+    required String wsId,
+    required String saleId,
+    required String source,
+    required String? periodId,
+  }) async {
+    final response = await _api.putJson(
+      InventoryEndpoints.salePeriod(wsId, saleId),
+      {'period_id': periodId, 'source': source},
+    );
+    final data = response['data'];
+    return data is Map
+        ? InventorySalesPeriod.fromJson(Map<String, dynamic>.from(data))
+        : null;
   }
 
   Future<InventorySaleDetail> getSaleDetail(String wsId, String saleId) async {
@@ -338,6 +415,7 @@ class InventoryRepository {
     String? content,
     String? notes,
     String? categoryId,
+    String? periodId,
   }) async {
     final response = await _api.postJson(InventoryEndpoints.invoices(wsId), {
       'customer_id': null,
@@ -348,6 +426,24 @@ class InventoryRepository {
       'products': products,
     });
 
-    return response['invoice_id'] as String;
+    final invoiceId = response['invoice_id'] as String;
+    if (periodId != null && periodId.isNotEmpty) {
+      await setSalePeriod(
+        wsId: wsId,
+        saleId: invoiceId,
+        source: 'finance_invoice',
+        periodId: periodId,
+      );
+    }
+    return invoiceId;
   }
+
+  void dispose() => _api.dispose();
+}
+
+String? _dateOnly(DateTime? value) {
+  if (value == null) return null;
+  final month = value.month.toString().padLeft(2, '0');
+  final day = value.day.toString().padLeft(2, '0');
+  return '${value.year}-$month-$day';
 }
