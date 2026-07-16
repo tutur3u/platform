@@ -63,12 +63,30 @@ class _InventoryManagePageState extends State<InventoryManagePage> {
 
   Future<_InventoryManageData> _loadData(String wsId) async {
     final results = await Future.wait<dynamic>([
-      _inventoryRepository.getOwners(wsId),
-      _inventoryRepository.getManufacturers(wsId),
-      _inventoryRepository.getProductCategories(wsId),
-      _inventoryRepository.getProductUnits(wsId),
-      _inventoryRepository.getProductWarehouses(wsId),
-      _financeRepository.getCategories(wsId),
+      _loadManageCollection(
+        'owners',
+        () => _inventoryRepository.getOwners(wsId),
+      ),
+      _loadManageCollection(
+        'manufacturers',
+        () => _inventoryRepository.getManufacturers(wsId),
+      ),
+      _loadManageCollection(
+        'product categories',
+        () => _inventoryRepository.getProductCategories(wsId),
+      ),
+      _loadManageCollection(
+        'product units',
+        () => _inventoryRepository.getProductUnits(wsId),
+      ),
+      _loadManageCollection(
+        'product warehouses',
+        () => _inventoryRepository.getProductWarehouses(wsId),
+      ),
+      _loadManageCollection(
+        'finance categories',
+        () => _financeRepository.getCategories(wsId),
+      ),
       _permissionsRepository.getPermissions(wsId: wsId),
     ]);
 
@@ -83,6 +101,20 @@ class _InventoryManagePageState extends State<InventoryManagePage> {
         results[6] as WorkspacePermissions,
       ),
     );
+  }
+
+  Future<List<T>> _loadManageCollection<T>(
+    String collectionName,
+    Future<List<T>> Function() loader,
+  ) async {
+    try {
+      return await loader();
+    } on Object catch (error, stackTrace) {
+      debugPrint(
+        'Failed to load inventory Manage $collectionName: $error\n$stackTrace',
+      );
+      return <T>[];
+    }
   }
 
   Future<void> _createOwner(String name) async {
@@ -162,7 +194,7 @@ class _InventoryManagePageState extends State<InventoryManagePage> {
                 child: FinanceEmptyState(
                   icon: Icons.error_outline,
                   title: l10n.commonSomethingWentWrong,
-                  body: l10n.inventoryManageLabel,
+                  body: snapshot.error?.toString() ?? l10n.inventoryManageLabel,
                   action: shad.SecondaryButton(
                     onPressed: _reload,
                     child: Text(l10n.commonRetry),

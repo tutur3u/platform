@@ -1,8 +1,10 @@
 import {
   attachSupabaseAuthUser,
   createAppSessionUser,
+  getAppSessionTokenFromRequest,
   verifyAppSessionRequest,
 } from '@tuturuuu/auth/app-session';
+import { resolveSupabaseSessionRequest } from '@tuturuuu/auth/supabase-session-user';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
@@ -61,12 +63,30 @@ export async function resolveAuthenticatedSessionUser(
     };
   }
 
-  const verification = verifyAppSessionRequest(
-    request as Pick<Request, 'headers'>,
-    {
-      targetApp: ['platform', 'calendar', 'tasks'],
+  const requestWithHeaders = request as Pick<Request, 'headers'> &
+    Partial<Pick<Request, 'url'>>;
+  const appSessionToken = getAppSessionTokenFromRequest(requestWithHeaders);
+
+  if (!appSessionToken) {
+    const resolution = await resolveSupabaseSessionRequest(
+      requestWithHeaders,
+      providedSupabase ??
+        (isRequestLike(requestOrClient) ? undefined : requestOrClient)
+    );
+
+    if (resolution.user) {
+      setLogDrainUserContext({
+        userEmail: resolution.user.email,
+        userId: resolution.user.id,
+      });
     }
-  );
+
+    return resolution;
+  }
+
+  const verification = verifyAppSessionRequest(requestWithHeaders, {
+    targetApp: ['platform', 'calendar', 'tasks'],
+  });
 
   if (!verification.ok) {
     return {
