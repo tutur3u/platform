@@ -86,6 +86,7 @@ describe('inventory sales periods collection', () => {
       payload: {
         ends_at: '2027-05-31',
         name: 'Spring 2027',
+        product_scope: 'all',
         starts_at: '2027-03-01',
       },
       sbAdmin: { id: 'admin' },
@@ -101,6 +102,23 @@ describe('inventory sales periods collection', () => {
           ends_at: '2026-06-01',
           name: 'Summer 2026',
           starts_at: '2026-08-31',
+        }),
+        method: 'POST',
+      }),
+      context
+    );
+
+    expect(response.status).toBe(400);
+    expect(mocks.create).not.toHaveBeenCalled();
+  });
+
+  it('requires products for allowlist and blocklist periods', async () => {
+    const { POST } = await import('./route');
+    const response = await POST(
+      new Request('http://localhost/sales-periods', {
+        body: JSON.stringify({
+          name: 'Restricted period',
+          product_scope: 'allowlist',
         }),
         method: 'POST',
       }),

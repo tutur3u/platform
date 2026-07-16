@@ -75,9 +75,11 @@ export function InventoryOperatorClient({
   );
   const data = useInventoryData(wsId, view, { commerceTab });
   const products = data.products.data?.data ?? [];
+  const periodProducts =
+    data.periodProducts.data?.pages.flatMap((page) => page.data) ?? [];
   const storefronts = data.storefronts.data?.data ?? [];
   const bundles = data.bundles.data?.data ?? [];
-  const sales = data.sales.data?.data ?? [];
+  const sales = data.sales.data?.pages.flatMap((page) => page.data) ?? [];
   const suppliers = data.suppliers.data?.data ?? [];
   const batches = data.batches.data?.data ?? [];
   const lowStock = data.overview.data?.low_stock_products ?? [];
@@ -197,6 +199,7 @@ export function InventoryOperatorClient({
     [
       'bundles',
       'catalog',
+      'commerce',
       'costing',
       'stock',
       'setup',
@@ -252,10 +255,7 @@ export function InventoryOperatorClient({
     view === 'commerce' && commerceTab === 'checkouts'
       ? data.checkouts.isPending || data.checkouts.isFetching
       : view === 'commerce' && commerceTab === 'sales'
-        ? data.sales.isPending ||
-          data.sales.isFetching ||
-          data.salesPeriods.isPending ||
-          data.salesPeriods.isFetching
+        ? data.sales.isPending || data.salesPeriods.isPending
         : view === 'commerce' && commerceTab === 'revenue-share'
           ? data.revenueShares.isPending || data.revenueShares.isFetching
           : false;
@@ -399,7 +399,17 @@ export function InventoryOperatorClient({
               query={data.filters.q}
               revenueShares={data.revenueShares.data?.data ?? []}
               sales={sales}
+              salesCount={data.sales.data?.pages[0]?.count ?? sales.length}
               salesPeriods={data.salesPeriods.data?.data ?? []}
+              fetchNextSalesPage={() => data.sales.fetchNextPage()}
+              hasNextSalesPage={data.sales.hasNextPage}
+              isFetchingNextSalesPage={data.sales.isFetchingNextPage}
+              fetchNextProductsPage={() => data.periodProducts.fetchNextPage()}
+              hasNextProductsPage={data.periodProducts.hasNextPage}
+              isFetchingNextProductsPage={
+                data.periodProducts.isFetchingNextPage
+              }
+              products={periodProducts}
               selectedPeriodId={data.filters.period}
               setPeriodId={(period) => {
                 void data.setFilters({ period });

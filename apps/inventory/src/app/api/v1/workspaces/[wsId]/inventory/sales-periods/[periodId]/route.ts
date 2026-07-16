@@ -16,6 +16,8 @@ const PeriodPatchSchema = z
     description: z.string().trim().max(500).nullable().optional(),
     ends_at: z.iso.date().nullable().optional(),
     name: z.string().trim().min(1).max(120).optional(),
+    product_ids: z.array(z.uuid()).max(500).optional(),
+    product_scope: z.enum(['all', 'allowlist', 'blocklist']).optional(),
     starts_at: z.iso.date().nullable().optional(),
     status: z.enum(['active', 'archived']).optional(),
   })
@@ -27,6 +29,16 @@ const PeriodPatchSchema = z
       !(payload.starts_at && payload.ends_at) ||
       payload.starts_at <= payload.ends_at,
     { message: 'Start date must be on or before end date', path: ['ends_at'] }
+  )
+  .refine(
+    (payload) =>
+      payload.product_scope === undefined ||
+      payload.product_scope === 'all' ||
+      (payload.product_ids?.length ?? 0) > 0,
+    {
+      message: 'Choose at least one product for this product rule',
+      path: ['product_ids'],
+    }
   );
 
 interface Params {

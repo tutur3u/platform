@@ -3847,6 +3847,32 @@ class AppLocalizationsVi extends AppLocalizations {
   String get inventorySalesPeriodDateInvalid => 'Ngày kết thúc phải bằng hoặc sau ngày bắt đầu.';
 
   @override
+  String get inventorySalesPeriodProductRules => 'Điều kiện sản phẩm';
+
+  @override
+  String get inventorySalesPeriodProductRulesDescription => 'Chọn doanh số sản phẩm nào có thể được đưa vào giai đoạn này.';
+
+  @override
+  String get inventorySalesPeriodScopeAll => 'Tất cả sản phẩm';
+
+  @override
+  String get inventorySalesPeriodScopeAllowlist => 'Chỉ sản phẩm đã chọn';
+
+  @override
+  String get inventorySalesPeriodScopeBlocklist => 'Tất cả trừ sản phẩm đã chọn';
+
+  @override
+  String get inventorySalesPeriodSearchProducts => 'Tìm sản phẩm';
+
+  @override
+  String get inventorySalesPeriodProductsRequired => 'Chọn ít nhất một sản phẩm cho quy tắc này.';
+
+  @override
+  String inventorySalesPeriodProductsSelected(int count) {
+    return 'Đã chọn $count';
+  }
+
+  @override
   String get inventorySalesPeriodNoDate => 'Không có ngày';
 
   @override

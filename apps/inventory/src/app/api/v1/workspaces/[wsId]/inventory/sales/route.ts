@@ -9,6 +9,8 @@ import {
 } from '@tuturuuu/inventory-core/sales-periods';
 import { getInventorySales } from '@tuturuuu/inventory-core/sales-rpc';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { resolveSupportedCurrency } from '@tuturuuu/utils/currencies';
+import { getWorkspaceConfig } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
@@ -58,11 +60,12 @@ function saleTimestamp(sale: InventorySaleListItem) {
 function normalizeFinanceSale(
   sale: Omit<InventorySaleListItem, 'source'> & {
     source?: InventorySaleListItem['source'];
-  }
+  },
+  workspaceCurrency: string
 ): InventorySaleListItem {
   return {
     ...sale,
-    currency: sale.currency ?? null,
+    currency: sale.currency ?? workspaceCurrency,
     owners: sale.owners ?? [],
     source: 'finance_invoice',
   };
@@ -93,27 +96,36 @@ export async function GET(req: Request, { params }: Params) {
   const { limit, offset, period_id: periodId } = parsed.data;
   if (periodId) {
     try {
-      const [period, sales, realtimeEnabled] = await Promise.all([
-        getInventorySalesPeriod({ periodId, sbAdmin, wsId }),
-        listInventorySalesForPeriod({
-          limit,
-          offset,
-          periodId,
-          sbAdmin,
-          wsId,
-        }),
-        isInventoryRealtimeEnabled(wsId),
-      ]);
+      const [period, sales, realtimeEnabled, configuredCurrency] =
+        await Promise.all([
+          getInventorySalesPeriod({ periodId, sbAdmin, wsId }),
+          listInventorySalesForPeriod({
+            limit,
+            offset,
+            periodId,
+            sbAdmin,
+            wsId,
+          }),
+          isInventoryRealtimeEnabled(wsId),
+          getWorkspaceConfig(wsId, 'DEFAULT_CURRENCY'),
+        ]);
       if (!period) {
         return NextResponse.json(
           { message: 'Period not found' },
           { status: 404 }
         );
       }
+      const workspaceCurrency = resolveSupportedCurrency(configuredCurrency);
       return NextResponse.json({
         count: sales.count,
-        data: sales.data.map((sale) => ({ ...sale, period })),
+        data: sales.data.map((sale) => ({
+          ...(sale.source === 'finance_invoice'
+            ? normalizeFinanceSale(sale, workspaceCurrency)
+            : sale),
+          period,
+        })),
         realtime_enabled: realtimeEnabled,
+        workspace_currency: workspaceCurrency,
       });
     } catch (error) {
       console.error('Error fetching inventory sales for period', error);
@@ -125,26 +137,33 @@ export async function GET(req: Request, { params }: Params) {
   }
 
   const windowLimit = limit + offset;
-  const [financeSalesResult, checkoutSalesResult, realtimeEnabled] =
-    await Promise.all([
-      getInventorySales<InventorySaleListItem>({
-        limit: windowLimit,
-        offset: 0,
-        sbAdmin,
-        wsId,
-      })
-        .then((data) => ({ data, error: null }))
-        .catch((error) => ({ data: null, error })),
-      listCompletedCheckoutSales({
-        limit: windowLimit,
-        offset: 0,
-        sbAdmin,
-        wsId,
-      })
-        .then((data) => ({ data, error: null }))
-        .catch((error) => ({ data: null, error })),
-      isInventoryRealtimeEnabled(wsId),
-    ]);
+  const [
+    financeSalesResult,
+    checkoutSalesResult,
+    realtimeEnabled,
+    configuredCurrency,
+  ] = await Promise.all([
+    getInventorySales<InventorySaleListItem>({
+      limit: windowLimit,
+      offset: 0,
+      sbAdmin,
+      wsId,
+    })
+      .then((data) => ({ data, error: null }))
+      .catch((error) => ({ data: null, error })),
+    listCompletedCheckoutSales({
+      limit: windowLimit,
+      offset: 0,
+      sbAdmin,
+      wsId,
+    })
+      .then((data) => ({ data, error: null }))
+      .catch((error) => ({ data: null, error })),
+    isInventoryRealtimeEnabled(wsId),
+    getWorkspaceConfig(wsId, 'DEFAULT_CURRENCY'),
+  ]);
+
+  const workspaceCurrency = resolveSupportedCurrency(configuredCurrency);
 
   if (financeSalesResult.error || checkoutSalesResult.error) {
     console.error('Error fetching inventory sales', {
@@ -158,7 +177,9 @@ export async function GET(req: Request, { params }: Params) {
   }
 
   const merged = [
-    ...(financeSalesResult.data?.data ?? []).map(normalizeFinanceSale),
+    ...(financeSalesResult.data?.data ?? []).map((sale) =>
+      normalizeFinanceSale(sale, workspaceCurrency)
+    ),
     ...(checkoutSalesResult.data?.data ?? []),
   ]
     .sort((a, b) => saleTimestamp(b) - saleTimestamp(a))
@@ -188,5 +209,6 @@ export async function GET(req: Request, { params }: Params) {
       (financeSalesResult.data?.count ?? 0) +
       (checkoutSalesResult.data?.count ?? 0),
     realtime_enabled: realtimeEnabled,
+    workspace_currency: workspaceCurrency,
   });
 }

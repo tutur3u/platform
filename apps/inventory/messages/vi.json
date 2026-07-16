@@ -1015,12 +1015,19 @@
       "commerce": {
         "attributedRevenue": "Doanh thu ghi nhận",
         "cancelSquare": "Hủy trên terminal",
+        "categoryLabel": "Danh mục",
+        "creator": "Tạo bởi {name}",
+        "creatorLabel": "Người tạo",
+        "customer": "Khách hàng: {name}",
+        "customerLabel": "Khách hàng",
+        "details": "Chi tiết",
         "earnedAmount": "Số tiền kiếm được",
         "empty": "Chưa có bản ghi thương mại",
         "emptyDescriptions": {
           "revenueShare": "Thu nhập chia doanh thu sẽ xuất hiện tại đây sau khi doanh số đã hoàn tất có dòng tồn kho đủ điều kiện."
         },
         "items": "{count, plural, one {# mặt hàng} other {# mặt hàng}}",
+        "lineItems": "Sản phẩm trong hóa đơn",
         "metrics": {
           "completed": "Hoàn tất",
           "completedDescription": "Phiên checkout đã hoàn tất trong chế độ xem này",
@@ -1031,6 +1038,8 @@
           "sales": "Doanh số",
           "salesDescription": "Bản ghi doanh số đã hoàn tất"
         },
+        "owner": "Chủ sở hữu: {name}",
+        "ownersLabel": "Chủ sở hữu",
         "periods": {
           "all": "Tất cả giai đoạn",
           "archive": "Lưu trữ",
@@ -1048,15 +1057,27 @@
           "editDescription": "Cập nhật tên, ngày và ghi chú nội bộ của giai đoạn.",
           "editTitle": "Chỉnh sửa giai đoạn bán hàng",
           "endsAt": "Ngày kết thúc",
+          "loadingProducts": "Đang tải sản phẩm…",
+          "loadMoreProducts": "Tải thêm sản phẩm",
           "name": "Tên",
           "namePlaceholder": "Hè 2026 hoặc TuCon 2026",
+          "noProducts": "Không có sản phẩm phù hợp",
           "notes": "Ghi chú",
           "notesPlaceholder": "Thông tin tùy chọn cho đội ngũ",
+          "productRules": "Điều kiện sản phẩm",
+          "productRulesDescription": "Kiểm soát doanh số sản phẩm nào có thể được gán vào giai đoạn này.",
+          "productsSelected": "Đã chọn {count}",
           "restore": "Khôi phục",
           "restoredSuccess": "Đã khôi phục giai đoạn bán hàng",
           "save": "Lưu thay đổi",
           "saveError": "Không thể lưu giai đoạn bán hàng",
           "saving": "Đang lưu…",
+          "scopeAll": "Tất cả sản phẩm",
+          "scopeAllowlist": "Chỉ sản phẩm đã chọn",
+          "scopeAllowlistDescription": "Doanh số chỉ được đưa vào giai đoạn khi mọi dòng đều dùng sản phẩm đã chọn.",
+          "scopeBlocklist": "Tất cả trừ sản phẩm đã chọn",
+          "scopeBlocklistDescription": "Doanh số chứa bất kỳ sản phẩm đã chọn nào sẽ không thể đưa vào giai đoạn.",
+          "searchProducts": "Tìm sản phẩm",
           "startsAt": "Ngày bắt đầu",
           "title": "Giai đoạn bán hàng",
           "unassigned": "Chưa có giai đoạn",
@@ -1071,6 +1092,7 @@
           "grossProfit": "Lợi nhuận gộp ước tính",
           "margin": "Biên lợi nhuận gộp ước tính",
           "noProductData": "Chưa có sản phẩm nào được bán.",
+          "otherCurrenciesExcluded": "{count, plural, one {# doanh số đã tải bằng tiền tệ khác không được tính trong tóm tắt theo tiền tệ không gian làm việc.} other {# doanh số đã tải bằng tiền tệ khác không được tính trong tóm tắt theo tiền tệ không gian làm việc.}}",
           "product": "Sản phẩm",
           "profit": "Lợi nhuận ước tính",
           "revenue": "Doanh thu",
@@ -1079,9 +1101,11 @@
           "units": "Số lượng đã bán"
         },
         "productsLabel": "{count, plural, one {# sản phẩm} other {# sản phẩm}}",
+        "quantity": "SL {count}",
         "release": "Giải phóng",
         "releaseHint": "Giải phóng lượng tồn kho mà phiên giữ chỗ này đang giữ trở lại kho khả dụng và hủy phiên thanh toán. Dùng cho các phiên giữ chỗ bị bỏ dở hoặc treo.",
         "releaseUnavailable": "Chỉ có thể giải phóng các phiên giữ chỗ đang hoạt động. Phiên thanh toán này đã hoàn tất hoặc đã được giải phóng.",
+        "saleFallback": "Hóa đơn {id}",
         "sendSquare": "Gửi tới terminal",
         "source": {
           "checkout": "Checkout",
@@ -1100,7 +1124,8 @@
           "revenueShare": "Chia doanh thu",
           "sales": "Bán hàng"
         },
-        "unitsLabel": "{count, plural, one {# đơn vị} other {# đơn vị}}"
+        "unitsLabel": "{count, plural, one {# đơn vị} other {# đơn vị}}",
+        "walletLabel": "Ví"
       },
       "costing": {
         "addProfitShare": "Thêm chia lợi nhuận",

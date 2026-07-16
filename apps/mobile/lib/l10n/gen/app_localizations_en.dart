@@ -3871,6 +3871,32 @@ class AppLocalizationsEn extends AppLocalizations {
   String get inventorySalesPeriodDateInvalid => 'The end date must be on or after the start date.';
 
   @override
+  String get inventorySalesPeriodProductRules => 'Product eligibility';
+
+  @override
+  String get inventorySalesPeriodProductRulesDescription => 'Choose which product sales can join this period.';
+
+  @override
+  String get inventorySalesPeriodScopeAll => 'All products';
+
+  @override
+  String get inventorySalesPeriodScopeAllowlist => 'Only selected products';
+
+  @override
+  String get inventorySalesPeriodScopeBlocklist => 'All except selected products';
+
+  @override
+  String get inventorySalesPeriodSearchProducts => 'Search products';
+
+  @override
+  String get inventorySalesPeriodProductsRequired => 'Choose at least one product for this rule.';
+
+  @override
+  String inventorySalesPeriodProductsSelected(int count) {
+    return '$count selected';
+  }
+
+  @override
   String get inventorySalesPeriodNoDate => 'No date';
 
   @override

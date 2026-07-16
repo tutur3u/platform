@@ -4,6 +4,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   CalendarDays,
   CreditCard,
+  Loader2,
   MonitorSmartphone,
   Percent,
   RotateCcw,
@@ -30,7 +31,7 @@ import {
   TooltipTrigger,
 } from '@tuturuuu/ui/tooltip';
 import { useLocale, useTranslations } from 'next-intl';
-import { useMemo } from 'react';
+import { useCallback, useMemo, useRef } from 'react';
 import {
   CheckoutStatusBadge,
   formatDate,
@@ -204,26 +205,54 @@ export function CheckoutRows({
 }
 
 export function SaleRows({
+  fetchNextPage,
+  hasNextPage,
+  isFetchingNextPage,
   periods,
   query,
   rows,
+  workspaceCurrency,
   wsId,
 }: {
+  fetchNextPage: () => unknown;
+  hasNextPage: boolean;
+  isFetchingNextPage: boolean;
   periods: InventorySalesPeriod[];
   query: string;
   rows: InventorySaleSummary[];
+  workspaceCurrency: string;
   wsId: string;
 }) {
   const t = useTranslations('inventory.operator');
   const locale = useLocale();
+  const observerRef = useRef<IntersectionObserver | null>(null);
+  const loadMoreRef = useCallback(
+    (node: HTMLDivElement | null) => {
+      observerRef.current?.disconnect();
+      if (!node || !hasNextPage) return;
+      observerRef.current = new IntersectionObserver(
+        (entries) => {
+          if (entries[0]?.isIntersecting && !isFetchingNextPage) {
+            void fetchNextPage();
+          }
+        },
+        { rootMargin: '320px' }
+      );
+      observerRef.current.observe(node);
+    },
+    [fetchNextPage, hasNextPage, isFetchingNextPage]
+  );
   const filteredRows = useMemo(() => {
     const needle = query.trim().toLowerCase();
     if (!needle) return rows;
 
     return rows.filter((row) =>
       [
+        row.creator_name,
         row.customer_name,
         row.id,
+        row.notice,
+        row.owners?.join(' '),
         row.completed_at,
         row.created_at,
         String(row.paid_amount),
@@ -258,7 +287,11 @@ export function SaleRows({
                   <User className="h-4 w-4 shrink-0 text-muted-foreground" />
                 )}
                 <p className="truncate font-medium">
-                  {row.customer_name ?? row.id}
+                  {row.notice?.trim() ||
+                    row.customer_name?.trim() ||
+                    t('commerce.saleFallback', {
+                      id: row.id.slice(0, 8),
+                    })}
                 </p>
                 <StatusBadge
                   value={
@@ -280,11 +313,38 @@ export function SaleRows({
                   <span className="font-mono">{row.public_token}</span>
                 ) : null}
               </div>
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {row.creator_name?.trim() ? (
+                  <StatusBadge
+                    value={t('commerce.creator', {
+                      name: row.creator_name.trim(),
+                    })}
+                  />
+                ) : null}
+                {(row.owners ?? [])
+                  .filter((owner) => owner.trim())
+                  .map((owner) => (
+                    <StatusBadge
+                      key={owner}
+                      value={t('commerce.owner', { name: owner.trim() })}
+                    />
+                  ))}
+                {row.customer_name?.trim() && row.notice?.trim() ? (
+                  <StatusBadge
+                    value={t('commerce.customer', {
+                      name: row.customer_name.trim(),
+                    })}
+                  />
+                ) : null}
+              </div>
             </div>
             <div className="flex flex-wrap items-center justify-start gap-2 sm:justify-end">
               <SalePeriodPicker periods={periods} sale={row} wsId={wsId} />
               <StatusBadge
-                value={money(row.paid_amount, row.currency ?? 'USD')}
+                value={money(
+                  row.paid_amount,
+                  row.currency ?? workspaceCurrency
+                )}
               />
               {isCheckoutSale ? null : (
                 <SaleNoteDialog sale={row} wsId={wsId} />
@@ -293,6 +353,15 @@ export function SaleRows({
           </article>
         );
       })}
+      <div
+        aria-hidden={!hasNextPage}
+        className="flex min-h-10 items-center justify-center"
+        ref={loadMoreRef}
+      >
+        {isFetchingNextPage ? (
+          <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+        ) : null}
+      </div>
     </div>
   );
 }

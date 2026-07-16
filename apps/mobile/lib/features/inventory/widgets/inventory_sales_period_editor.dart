@@ -53,9 +53,14 @@ class _SalesPeriodEditor extends StatefulWidget {
 class _SalesPeriodEditorState extends State<_SalesPeriodEditor> {
   late final TextEditingController _nameController;
   late final TextEditingController _notesController;
+  late final TextEditingController _productSearchController;
   DateTime? _startsAt;
   DateTime? _endsAt;
   bool _saving = false;
+  bool _loadingProducts = false;
+  String _productScope = 'all';
+  List<String> _productIds = const [];
+  List<InventoryProduct> _products = const [];
 
   bool get _isEditing => widget.period != null;
 
@@ -66,14 +71,19 @@ class _SalesPeriodEditorState extends State<_SalesPeriodEditor> {
     _notesController = TextEditingController(
       text: widget.period?.description ?? '',
     );
+    _productSearchController = TextEditingController();
     _startsAt = widget.period?.startsAt;
     _endsAt = widget.period?.endsAt;
+    _productScope = widget.period?.productScope ?? 'all';
+    _productIds = widget.period?.productIds ?? const [];
+    unawaited(_loadProducts());
   }
 
   @override
   void dispose() {
     _nameController.dispose();
     _notesController.dispose();
+    _productSearchController.dispose();
     super.dispose();
   }
 
@@ -158,6 +168,16 @@ class _SalesPeriodEditorState extends State<_SalesPeriodEditor> {
             maxLength: 500,
             maxLines: 3,
           ),
+          const shad.Gap(12),
+          _ProductRuleEditor(
+            loading: _loadingProducts,
+            onProductIdsChanged: (ids) => setState(() => _productIds = ids),
+            onScopeChanged: (scope) => setState(() => _productScope = scope),
+            productIds: _productIds,
+            products: _products,
+            scope: _productScope,
+            searchController: _productSearchController,
+          ),
         ],
       ),
     );
@@ -181,6 +201,14 @@ class _SalesPeriodEditorState extends State<_SalesPeriodEditor> {
       );
       return;
     }
+    if (_productScope != 'all' && _productIds.isEmpty) {
+      showInventoryToast(
+        context,
+        context.l10n.inventorySalesPeriodProductsRequired,
+        destructive: true,
+      );
+      return;
+    }
 
     setState(() => _saving = true);
     try {
@@ -193,6 +221,8 @@ class _SalesPeriodEditorState extends State<_SalesPeriodEditor> {
               description: description.isEmpty ? null : description,
               startsAt: _startsAt,
               endsAt: _endsAt,
+              productScope: _productScope,
+              productIds: _productScope == 'all' ? const [] : _productIds,
             )
           : await widget.repository.createSalesPeriod(
               wsId: widget.wsId,
@@ -200,6 +230,8 @@ class _SalesPeriodEditorState extends State<_SalesPeriodEditor> {
               description: description.isEmpty ? null : description,
               startsAt: _startsAt,
               endsAt: _endsAt,
+              productScope: _productScope,
+              productIds: _productScope == 'all' ? const [] : _productIds,
             );
       if (mounted) Navigator.of(context).pop(period);
     } on Exception catch (error) {
@@ -208,6 +240,174 @@ class _SalesPeriodEditorState extends State<_SalesPeriodEditor> {
         setState(() => _saving = false);
       }
     }
+  }
+
+  Future<void> _loadProducts() async {
+    setState(() => _loadingProducts = true);
+    try {
+      final products = await widget.repository.getProductOptions(widget.wsId);
+      if (mounted) setState(() => _products = products);
+    } on Object catch (error, stackTrace) {
+      debugPrint('Sales period product options failed: $error\n$stackTrace');
+    } finally {
+      if (mounted) setState(() => _loadingProducts = false);
+    }
+  }
+}
+
+class _ProductRuleEditor extends StatefulWidget {
+  const _ProductRuleEditor({
+    required this.loading,
+    required this.onProductIdsChanged,
+    required this.onScopeChanged,
+    required this.productIds,
+    required this.products,
+    required this.scope,
+    required this.searchController,
+  });
+
+  final bool loading;
+  final ValueChanged<List<String>> onProductIdsChanged;
+  final ValueChanged<String> onScopeChanged;
+  final List<String> productIds;
+  final List<InventoryProduct> products;
+  final String scope;
+  final TextEditingController searchController;
+
+  @override
+  State<_ProductRuleEditor> createState() => _ProductRuleEditorState();
+}
+
+class _ProductRuleEditorState extends State<_ProductRuleEditor> {
+  @override
+  void initState() {
+    super.initState();
+    widget.searchController.addListener(_refresh);
+  }
+
+  @override
+  void didUpdateWidget(covariant _ProductRuleEditor oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.searchController != widget.searchController) {
+      oldWidget.searchController.removeListener(_refresh);
+      widget.searchController.addListener(_refresh);
+    }
+  }
+
+  @override
+  void dispose() {
+    widget.searchController.removeListener(_refresh);
+    super.dispose();
+  }
+
+  void _refresh() => setState(() {});
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final query = widget.searchController.text.trim().toLowerCase();
+    final products = widget.products
+        .where(
+          (product) =>
+              query.isEmpty ||
+              (product.name ?? '').toLowerCase().contains(query),
+        )
+        .toList(growable: false);
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        border: Border.all(color: Theme.of(context).dividerColor),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              l10n.inventorySalesPeriodProductRules,
+              style: Theme.of(context).textTheme.titleSmall,
+            ),
+            const shad.Gap(4),
+            Text(
+              l10n.inventorySalesPeriodProductRulesDescription,
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+            const shad.Gap(10),
+            DropdownButtonFormField<String>(
+              initialValue: widget.scope,
+              items: [
+                DropdownMenuItem(
+                  value: 'all',
+                  child: Text(l10n.inventorySalesPeriodScopeAll),
+                ),
+                DropdownMenuItem(
+                  value: 'allowlist',
+                  child: Text(l10n.inventorySalesPeriodScopeAllowlist),
+                ),
+                DropdownMenuItem(
+                  value: 'blocklist',
+                  child: Text(l10n.inventorySalesPeriodScopeBlocklist),
+                ),
+              ],
+              onChanged: (value) {
+                if (value != null) widget.onScopeChanged(value);
+              },
+            ),
+            if (widget.scope != 'all') ...[
+              const shad.Gap(10),
+              TextField(
+                controller: widget.searchController,
+                decoration: InputDecoration(
+                  hintText: l10n.inventorySalesPeriodSearchProducts,
+                  prefixIcon: const Icon(Icons.search_rounded, size: 18),
+                ),
+              ),
+              const shad.Gap(8),
+              SizedBox(
+                height: 210,
+                child: widget.loading
+                    ? const Center(child: shad.CircularProgressIndicator())
+                    : ListView.builder(
+                        itemCount: products.length,
+                        itemBuilder: (context, index) {
+                          final product = products[index];
+                          final selected = widget.productIds.contains(
+                            product.id,
+                          );
+                          return CheckboxListTile(
+                            dense: true,
+                            value: selected,
+                            title: Text(
+                              product.name ?? product.id,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            onChanged: (checked) {
+                              widget.onProductIdsChanged(
+                                checked == true
+                                    ? [...widget.productIds, product.id]
+                                    : widget.productIds
+                                          .where((id) => id != product.id)
+                                          .toList(growable: false),
+                              );
+                            },
+                          );
+                        },
+                      ),
+              ),
+              const shad.Gap(6),
+              Text(
+                l10n.inventorySalesPeriodProductsSelected(
+                  widget.productIds.length,
+                ),
+                style: Theme.of(context).textTheme.labelSmall,
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
   }
 }
 

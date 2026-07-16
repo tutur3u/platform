@@ -14,9 +14,13 @@ import { money } from './operator-format';
 import { buildProductPnl, computeProfitSummary } from './operator-pnl';
 
 export function ProfitSummaryPanel({
+  currency,
+  excludedCurrencyCount,
   sales,
   wsId,
 }: {
+  currency: string;
+  excludedCurrencyCount: number;
   sales: InventorySaleSummary[];
   wsId: string;
 }) {
@@ -51,19 +55,24 @@ export function ProfitSummaryPanel({
         <p className="mt-1 text-muted-foreground text-xs leading-5">
           {t('description')}
         </p>
+        {excludedCurrencyCount > 0 ? (
+          <p className="mt-1 text-muted-foreground text-xs leading-5">
+            {t('otherCurrenciesExcluded', { count: excludedCurrencyCount })}
+          </p>
+        ) : null}
       </div>
       <div className="grid min-w-0 gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <OperatorMetricCard
           icon={CircleDollarSign}
           label={t('revenue')}
-          value={money(summary.revenue)}
+          value={money(summary.revenue, currency)}
         />
         <OperatorMetricCard
           description={t('estimated')}
           icon={Coins}
           label={t('grossProfit')}
           tone={summary.estGrossProfit > 0 ? 'success' : 'default'}
-          value={money(summary.estGrossProfit)}
+          value={money(summary.estGrossProfit, currency)}
         />
         <OperatorMetricCard
           description={t('estimated')}
@@ -112,13 +121,17 @@ export function ProfitSummaryPanel({
                     </td>
                     <td className="px-3 py-2 text-right">{row.unitsSold}</td>
                     <td className="px-3 py-2 text-right">
-                      {money(row.revenue)}
+                      {money(row.revenue, currency)}
                     </td>
                     <td className="px-3 py-2 text-right text-muted-foreground">
-                      {row.estCogs === null ? '—' : money(row.estCogs)}
+                      {row.estCogs === null
+                        ? '—'
+                        : money(row.estCogs, currency)}
                     </td>
                     <td className="px-3 py-2 text-right">
-                      {row.estProfit === null ? '—' : money(row.estProfit)}
+                      {row.estProfit === null
+                        ? '—'
+                        : money(row.estProfit, currency)}
                     </td>
                     <td className="px-3 py-2 text-right">
                       {row.marginPercentage === null ? (

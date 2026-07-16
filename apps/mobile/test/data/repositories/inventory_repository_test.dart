@@ -31,6 +31,8 @@ void main() {
         wsId: 'ws-1',
         periodId: 'period-1',
         name: 'Summer 2027',
+        productScope: 'blocklist',
+        productIds: const ['product-1'],
       );
 
       expect(requestBody, {
@@ -38,6 +40,8 @@ void main() {
         'description': null,
         'starts_at': null,
         'ends_at': null,
+        'product_scope': 'blocklist',
+        'product_ids': ['product-1'],
       });
     },
   );
